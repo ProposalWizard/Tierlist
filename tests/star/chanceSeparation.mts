@@ -4,9 +4,9 @@
  * Harry, 3 Oct 2026: "these new scenarios need to be separate to the scenario
  * gallery for now please - just in case they suck."
  *
- *  1. The pin (lib/star/chanceSet.ts): while EnginePlay holds a "classic" pin
- *     the match is served Classic chances whatever Settings says, and the
- *     phone's own choice comes back the moment the pin is lifted.
+ *  1. The pin (lib/star/chanceSet.ts): the game always serves the drawn
+ *     chances (decided 12 Oct 2026); only a test page's "new" pin serves the
+ *     library, and lifting it goes straight back to the drawn chances.
  *  2. The mark (lib/star/libraryMark.ts): makeChance stamps every New-set
  *     chance, the stamp survives the match's structuredClone snapshot, and a
  *     Classic chance carries none.
@@ -17,7 +17,7 @@
 import { readFileSync } from "node:fs";
 import { mulberry32 } from "@/lib/star/season";
 import type { ScenarioKind } from "@/lib/star/canvasEngine";
-import { chanceSet, chanceSetChoice, chanceSetPin, pinChanceSet, setChanceSet } from "@/lib/star/chanceSet";
+import { chanceSet, chanceSetChoice, chanceSetPin, pinChanceSet } from "@/lib/star/chanceSet";
 import { makeChance } from "@/lib/star/chanceMaker";
 import { ChanceDeck, libraryFor } from "@/lib/star/chanceLibrary";
 import { newChanceMark, NEW_CHANCE_REFUSAL, isNewChanceRefused } from "@/lib/star/libraryMark";
@@ -26,31 +26,25 @@ import { liveMatchScenario, liveSaveRefusal } from "@/lib/star/liveEdit";
 let failed = 0;
 const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  FAIL ${what}`); } else console.log(`  ✓ ${what}`); };
 
-// ── 1. The pin ──
+// ── 1. The pin ── (12 Oct 2026: no in-game choice any more; drawn chances only)
 console.log("\nTHE PIN");
-setChanceSet("new");
-ok(chanceSet() === "new" && chanceSetPin() === null, "no pin: serves the phone's choice (New)");
-const lift = pinChanceSet("classic");
-ok(chanceSet() === "classic", "pinned Classic: serves Classic while Settings says New");
-ok(chanceSetChoice() === "new", "pinned: Settings still shows the phone's own choice");
+ok(chanceSetChoice() === "classic", "the game's own choice is always the drawn chances");
+ok(chanceSet() === "classic" && chanceSetPin() === null, "no pin: serves the drawn chances");
 const liftNew = pinChanceSet("new");
-ok(chanceSet() === "new", "a newer pin wins (the New Chances page)");
+ok(chanceSet() === "new", "the New Chances test page's pin serves the library");
+const liftC = pinChanceSet("classic");
+ok(chanceSet() === "classic", "a newer Classic pin wins");
+liftC();
+ok(chanceSet() === "new", "lifting the newer pin goes back to the older one");
 liftNew();
-ok(chanceSet() === "classic", "lifting the newer pin goes back to the older one");
-lift();
-ok(chanceSet() === "new" && chanceSetPin() === null, "lifted: back to the phone's choice");
-lift();
-ok(chanceSet() === "new", "lifting twice is harmless");
+ok(chanceSet() === "classic" && chanceSetPin() === null, "lifted: back to the drawn chances");
+liftNew();
+ok(chanceSet() === "classic", "lifting twice is harmless");
 // React mounts an effect twice in development: pin, lift, pin.
-const a = pinChanceSet("classic"); a(); const b = pinChanceSet("classic");
-ok(chanceSet() === "classic", "pin, lift, pin (a double-mounted effect) leaves exactly one pin");
+const a = pinChanceSet("new"); a(); const b = pinChanceSet("new");
+ok(chanceSet() === "new", "pin, lift, pin (a double-mounted effect) leaves exactly one pin");
 b();
 ok(chanceSetPin() === null, "and lifting it leaves none");
-setChanceSet("classic");
-const c = pinChanceSet("classic");
-c();
-ok(chanceSet() === "classic", "a Classic phone stays Classic after a pin is lifted");
-setChanceSet("new");
 
 // What the match actually serves under each — CanvasMatch passes `chanceSet()`.
 const kinds = (["one_on_one", "cutback", "through_ball", "corner", "free_kick", "long_range"] as ScenarioKind[])
@@ -61,12 +55,12 @@ const serve = (k: ScenarioKind, i: number) => makeChance({
   set: chanceSet(), deck: new ChanceDeck(`sep-${i}`, false),
 });
 let pinnedMarked = 0, freeMarked = 0, n = 0;
-const unpin = pinChanceSet("classic");
 kinds.forEach((k, ki) => { for (let i = 0; i < 20; i++) { n++; if (newChanceMark(serve(k, ki * 100 + i).sc)) pinnedMarked++; } });
-unpin();
+const unpin = pinChanceSet("new");
 kinds.forEach((k, ki) => { for (let i = 0; i < 20; i++) { if (newChanceMark(serve(k, ki * 100 + i).sc)) freeMarked++; } });
-ok(pinnedMarked === 0, `pinned Classic: 0 of ${n} served chances are New (got ${pinnedMarked})`);
-ok(freeMarked === n, `unpinned on a New phone: ${freeMarked} of ${n} served chances are New`);
+unpin();
+ok(pinnedMarked === 0, `the match (no pin): 0 of ${n} served chances are New (got ${pinnedMarked})`);
+ok(freeMarked === n, `the New Chances test page's pin: ${freeMarked} of ${n} served chances are New`);
 
 // ── 2. The mark ──
 console.log("\nTHE MARK");

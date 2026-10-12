@@ -36,13 +36,10 @@ import {
 } from "@/lib/star/dribble";
 import { passBand, pickWaveSizes, duelWaveSizes, newRun as newFpRun, stepRun as stepFpRun, applySteer as fpSteer, applyBurst as fpBurst, applyFeint as fpFeint, applyPass as fpPass, wavesBeaten as fpWavesBeaten, carryLead, BURST_T as FP_BURST_T, type FpRunState, type RunPhase as FpRunPhase, type DuelEvent } from "@/lib/star/firstPersonDribble";
 import { classifyRelease } from "@/lib/star/dribbleGesture";
-import { dribbleStyle } from "@/lib/star/dribbleStyleLook";
 import { PASS_RING } from "@/lib/star/firstPersonRender";
 import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
-import Dribble3D from "./Dribble3D";
-import { dribble3dLook } from "@/lib/star/dribble3dLook";
 import { dribbleReward } from "@/lib/star/dribbleReward";
-import { oldDribble, oldDribbleDuels, oldClearances, oldChances, oldKaneDrawings, oldBallPhysics, oldMatchFlow } from "@/lib/star/gameplayVersion";
+import { oldDribbleDuels, oldKaneDrawings, oldBallPhysics, oldMatchFlow } from "@/lib/star/gameplayVersion";
 import { setBallPhysics, realBallOn } from "@/lib/star/ballPhysics";
 import { kaneMomentsReady, loadKaneMoments } from "@/lib/star/kaneMoments";
 // Kane drawings (testing): start fetching as the match code loads, so the
@@ -184,7 +181,6 @@ import {
   playZoom, playZoomOf, playZoomProbe,
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
-import { animationsLook } from "@/lib/star/animLook";
 import {
   animFromAction, outfieldAnimFrame, keeperAnimFrame, keeperLeanWithAnim,
   type ActorAnim, type OutfieldAnimFrame,
@@ -760,7 +756,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       speedMin: getTuning("clearance.speedMin"),
       speedMax: getTuning("clearance.speedMax"),
       maxAngleDeg: getTuning("clearance.maxAngle"),
-      miscues: !oldClearances(),
+      miscues: true, // Clearances: always on (decided 12 Oct 2026)
       miscueWeak: getTuning("clearance.miscueWeak"),
       miscueStrong: getTuning("clearance.miscueStrong"),
       bodyLen: getTuning("clearance.bodyLen"),
@@ -1336,7 +1332,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const tdNoteCountRef = useRef(0);
   const [tdReady, setTdReady] = useState(false);
   /** Settings → Look → "Dribble runs 3D", read once per match (switching mid-run would remount it). */
-  const dribble3dRef = useRef(dribble3dLook());
   const flickStartRef = useRef<{ x: number; y: number } | null>(null);
   // Curve boots: a swipe captured in screen pixels (not pitch metres — the
   // ball is in flight, moving through 3D space the aim gesture never has to
@@ -1590,9 +1585,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // true while you're a majority owner of the club you're actually
       // playing for right now, which `talisman` is stored against.
       talisman: !!(car && car.ownedClubs?.[car.player.club]?.talisman),
-      // Settings → Match → Chance mix: New — you drop off for the ball too,
-      // Kane-style (hiddenMatch.ts's DEEP_TOUCH).
-      deepTouches: !oldChances(),
       // Settings → Look → Gameplay → Match flow: New — the unseen match
       // against real numbers (shots, corners, possession; hiddenMatch.ts).
       matchFlow: !oldMatchFlow(),
@@ -3545,7 +3537,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Animations: New | Old (Settings → Look; lib/star/animLook.ts). New: the
     // man who touched the ball is drawn doing it (lib/star/actionAnim.ts).
     // Old: nothing below changes a single figure.
-    const animNew = animationsLook() === "new";
+    const animNew = true; // Animations: always New (decided 12 Oct 2026)
     // How big each animation is, and which families are on (animDials.ts,
     // edited on /star-animations-dev). A family switched off is drawn Old.
     const animSet = animSettings();
@@ -4872,7 +4864,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const rng = rngRef.current;
         fpDribbleRef.current = rollDribbleRun(rng);
         setAim(null); setOutcome(null); dragRef.current = null; draggingRef.current = false;
-        setPhase(dribbleStyle() === "topdown" ? startTopDownDribble() : "fpDribble");
+        setPhase(startTopDownDribble()); // Dribble: always top-down in matches (decided 12 Oct 2026)
         return true;
       },
     };
@@ -5190,7 +5182,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           if (ev === "received") { pushLine(commentaryReceived(label, rngRef.current)); showAction(passBanner()); }
           // Old animations: the team-mate's shot swung YOUR leg (the one
           // kick pose there was). New: he swings his own (actorAnimRef).
-          else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(label, rngRef.current)); playKick(); if (animationsLook() === "old" || !animFamilyOn("shots")) kickPoseRef.current = KICK_POSE_S; }
+          else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(label, rngRef.current)); playKick(); if (!animFamilyOn("shots")) kickPoseRef.current = KICK_POSE_S; }
           // He was told to leave it, and he has left it. Named, because the
           // whole point of the order is that the move went through somebody
           // rather than ending at the first man who could see the goal.
@@ -5198,7 +5190,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             pushLine(`${label} leaves it — the captain wanted it moved on.`);
             showAction("PASS");
             playKick();
-            if (animationsLook() === "old" || !animFamilyOn("passes")) kickPoseRef.current = KICK_POSE_S;
+            if (!animFamilyOn("passes")) kickPoseRef.current = KICK_POSE_S;
           }
         }
         if (ballRef.current) ballRef.current.event = null;
@@ -5945,7 +5937,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const rollDribbleRun = (rng: () => number) => (
     oldDribbleDuels()
-      ? { waveSizes: pickWaveSizes(rng, oldDribble() ? undefined : { minRounds: 3 }), seed: Math.floor(rng() * 1e9) }
+      ? { waveSizes: pickWaveSizes(rng, { minRounds: 3 }), seed: Math.floor(rng() * 1e9) }
       : { waveSizes: duelWaveSizes(rng), seed: Math.floor(rng() * 1e9), duels: true }
   );
 
@@ -5962,7 +5954,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       pace: fp.duels ? (car?.skills.pace ?? 60) : 100,
       oppStrength: fp.duels ? Math.round(oppStrengthRef.current ?? 70) : 100,
       waveSizes: fp.waveSizes, roster: fpRosterRef.current, rng: mulberry32(fp.seed),
-      mates: oldDribble() ? 0 : Math.round(getTuning("dribble.mates")),
+      mates: Math.round(getTuning("dribble.mates")),
       ...(fp.duels ? { duels: true, dribbling: car?.skills.technique ?? 55 } : {}),
     });
     tdRef.current = run;
@@ -6083,16 +6075,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (result.beaten > 0 || result.cleared) t.dribbles += 1;
       setStats({ ...t });
       logChance("dribble", "dribble");
-      if (!passed && oldDribble()) {
-        // Settings → Gameplay → Dribble runs: Old — the reward from before
-        // 5 Oct 2026, exactly (a position only; the even mix picks the kind).
-        const bonus = result.beaten >= 7;
-        pushLine(bonus ? "Clean through — you've beaten the lot of them." : "You are through — and the chance is on.");
-        showAction("BEAT HIM");
-        chainRef.current = bonus
-          ? { pos: { x: CX + (rng() - 0.5) * 8, y: PEN_SPOT_Y - 2 + rng() * 4 }, depth: 0, ambition: 1 }
-          : { pos: { x: CX + (rng() - 0.5) * 12, y: 28 + rng() * 3 }, depth: 0, ambition: 1 };
-      } else {
+      {
       const reward = dribbleReward({
         cleared: result.cleared, menBeaten: result.beaten,
         wavesBeaten: result.wavesBeaten ?? (result.cleared ? 1 : 0),
@@ -6938,7 +6921,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         facingRef.current = "up";
         // Settings → Match → Dribble style: Top-down plays the same run here,
         // in the match view; First-person (the default) as before.
-        setPhase(dribbleStyle() === "topdown" ? startTopDownDribble() : "fpDribble");
+        setPhase(startTopDownDribble()); // Dribble: always top-down in matches (decided 12 Oct 2026)
         // A dribble has no ScenarioKind, so it is reported under its own name
         // rather than left out — see `onChanceServed`.
         onChanceServedRef.current?.({ kind: "dribble", minute: matchMinuteRef.current, reason: request.reason });
@@ -7013,8 +6996,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // career's deck so a picture comes back as rarely as possible).
         set: chanceSet(),
         deck: chanceDeck(careerDeckScope(careerRef.current?.player)),
-        // Settings → Match → Chance mix: New deals the real (Kane) mix.
-        realMix: !oldChances(),
         // Settings → Match → Kane drawings (testing): New deals Kane's real moments.
         kaneDrawings: oldKaneDrawings() ? null : kaneMomentsReady(),
       });
@@ -8055,10 +8036,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             dribble is. `waveSizes`/`seed` are rolled once at trigger time
             (fpDribbleRef) and held fixed so this never remounts mid-run. */}
         {phase === "fpDribble" && fpDribbleRef.current && (() => {
-          // The duel's own props, exactly as before. Settings → Look →
-          // "Dribble runs 3D": 3D plays the SAME run (these waves, this
-          // roster, this onComplete) in the Free Roam look instead
-          // (Dribble3D.tsx); Old is this duel, untouched.
+          // The duel's own props, exactly as before. (The "Dribble runs 3D"
+          // row is gone, 12 Oct 2026: Dribble3D.tsx is no longer mounted.)
           const duel = {
             pace: 100,
             oppStrength: 100,
@@ -8069,7 +8048,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             chasePitchDeg: 5,
             chaseOffset: 4,
             cameraFollowRate: 10,
-            passOptions: oldDribble() ? 0 : Math.round(getTuning("dribble.mates")),
+            passOptions: Math.round(getTuning("dribble.mates")),
             vision: visionRef.current,
             onComplete: finishFpDribble,
           };
@@ -8080,19 +8059,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const duelExtra = fpd.duels
             ? { duels: true, dribbling: car0?.skills.technique ?? 55, pace: car0?.skills.pace ?? 60, oppStrength: Math.round(oppStrength ?? 70) }
             : {};
-          if (dribble3dRef.current !== "3d") return <FirstPersonDribble embedded {...duel} {...duelExtra} />;
-          const car = careerRef.current;
-          return (
-            <Dribble3D
-              {...duel}
-              // a fair run in 3D: the career's real numbers, not the duel's fixed 100
-              oppStrength={Math.round(oppStrength ?? 70)}
-              skills={car ? { pace: car.skills.pace, power: car.skills.power, technique: car.skills.technique, vision: car.skills.vision } : undefined}
-              you={{ name: car?.player.lastName, photo: car?.player.portrait }}
-              kits={{ us: ourKit(), them: theirKit() }}
-              fallback={{ ...duel, embedded: true }}
-            />
-          );
+          // Only a safety net now: matches play the dribble top-down (decided
+          // 12 Oct 2026). The first-person duel lives on /star-dribble-dev.
+          return <FirstPersonDribble embedded {...duel} {...duelExtra} />;
         })()}
 
         {/* Contact overlay. After a run-up it has a countdown

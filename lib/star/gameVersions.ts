@@ -38,10 +38,8 @@ import { chanceFraming, setChanceFraming } from "./chanceFraming";
 import { wideChances, setWideChances, wideChancesStored } from "./wideChances";
 import { ovationLook, setOvationLook } from "./ovationLook";
 import { ovationMoves, setOvationMoves } from "./ovationMoves";
-import { chanceSetChoice, setChanceSet, CHANCE_SET_DEFAULT } from "./chanceSet";
-import { animationsLook, setAnimationsLook } from "./animLook";
 import { matchPlayersLook, setMatchPlayersLook, matchBallLook, setMatchBallLook } from "./newLook";
-import { gameplayVersion, setGameplayVersion, chanceMixStored } from "./gameplayVersion";
+import { gameplayVersion, setGameplayVersion } from "./gameplayVersion";
 import { humanBodyLook, setHumanBodyLook } from "./human3d/look";
 import { playerStyleLook, setPlayerStyleLook, playerStyleStored } from "./style3d/toon/look";
 import { matchPlayersStyleLook, setMatchPlayersStyleLook, matchPlayersStyleStored } from "./style3d/toon/matchLook";
@@ -50,8 +48,6 @@ import { cutscenePeopleLook, setCutscenePeopleLook, cutsceneCameraLook, setCutsc
 import { motionLook, setMotionLook } from "./motionLook";
 import { realCameraLook, setRealCameraLook, playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
 import { matchView3d, setMatchView3d, matchView3dStored } from "./matchView3d";
-import { dribble3dLook, setDribble3dLook, dribble3dStored } from "./dribble3dLook";
-import { dribbleStyle, setDribbleStyle } from "./dribbleStyleLook";
 import { matchRadarLook, setMatchRadarLook } from "./matchRadarLook";
 
 export type GameVersion = "classic" | "standard" | "preview";
@@ -82,22 +78,12 @@ export const LOOK_ROWS = {
   matchView3d: row("Match view 3D", "on", "off", matchView3d, setMatchView3d),
   matchPlayers: row("Players in the match", "3d", "drawn", matchPlayersLook, setMatchPlayersLook),
   ball: row("Ball", "new", "classic", matchBallLook, setMatchBallLook),
-  chances: row("Chances", "new", "classic", chanceSetChoice, setChanceSet),
-  animations: row("Animations", "new", "old", animationsLook, setAnimationsLook),
-  keepers: row("Keepers", "new", "old", () => gameplayVersion("keepers"), (v) => setGameplayVersion("keepers", v)),
   // Leo v0.15 (11 Oct 2026): the goalkeeper to "perfect" (lib/star/keeperBrain.ts KEEPER_PRO).
   keeperPro: row("Keeper pro", "new", "old", () => gameplayVersion("keeperPro"), (v) => setGameplayVersion("keeperPro", v)),
-  dribble: row("Dribble runs", "new", "old", () => gameplayVersion("dribble"), (v) => setGameplayVersion("dribble", v)),
-  dribble3d: row("Dribble runs 3D", "3d", "old", dribble3dLook, setDribble3dLook),
-  // Leo, 11 Oct 2026: the duel in the match view (Top-down) or the chase camera (First-person); his call.
-  dribbleStyle: row("Dribble style", "topdown", "firstperson", dribbleStyle, setDribbleStyle),
   dribbleDuels: row("Dribble duels", "new", "old", () => gameplayVersion("dribbleDuels"), (v) => setGameplayVersion("dribbleDuels", v)),
-  clearances: row("Clearances", "new", "old", () => gameplayVersion("clearances"), (v) => setGameplayVersion("clearances", v)),
   shotsPro: row("Shots", "new", "old", () => gameplayVersion("shotsPro"), (v) => setGameplayVersion("shotsPro", v)),
   knucklePower: row("Knuckleball & power shot", "new", "old", () => gameplayVersion("knucklePower"), (v) => setGameplayVersion("knucklePower", v)),
   ballPhysics: row("Ball physics", "new", "old", () => gameplayVersion("ballPhysics"), (v) => setGameplayVersion("ballPhysics", v)),
-  // Mikey, 9 Oct 2026: Kane-style highlights, being tested (old by default).
-  chanceMix: row("Chance mix", "new", "old", () => gameplayVersion("chanceMix"), (v) => setGameplayVersion("chanceMix", v)),
   // Mikey, 9 Oct 2026: real Kane positions as the drawings. Old everywhere
   // (Standard and Preview) until it is switched on by hand.
   kaneDrawings: row("Kane drawings", "new", "old", () => gameplayVersion("kaneDrawings"), (v) => setGameplayVersion("kaneDrawings", v)),
@@ -151,7 +137,7 @@ const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
  *  Chance mix (Kane-style highlights) joined Preview on 9 Oct 2026 (Mikey).
  *  Chances left Preview on 9 Oct 2026 (Harry: "the zoom and scenarios is terrible"). */
 // Player style (Style A, 9 Oct 2026) is New in Preview AND Standard: Harry made it the standard look.
-export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d", "playerStyle", "chanceMix", "wideChances"];
+export const PREVIEW_ROWS: readonly LookRowId[] = ["humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "playerStyle", "wideChances"];
 
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
@@ -171,19 +157,11 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     matchView3d: O("matchView3d"),
     matchPlayers: N("matchPlayers"),
     ball: N("ball"),
-    chances: CHANCE_SET_DEFAULT,
-    animations: O("animations"),
-    keepers: N("keepers"),
     keeperPro: O("keeperPro"),
-    dribble: N("dribble"),
-    dribble3d: O("dribble3d"),
-    dribbleStyle: O("dribbleStyle"),
     dribbleDuels: O("dribbleDuels"),
-    clearances: N("clearances"),
     shotsPro: O("shotsPro"),
     knucklePower: O("knucklePower"),
     ballPhysics: O("ballPhysics"),
-    chanceMix: O("chanceMix"),
     kaneDrawings: O("kaneDrawings"),
     actionCamera: O("actionCamera"),
     matchFlow: O("matchFlow"),
@@ -231,9 +209,6 @@ for (const id of LOOK_ROW_IDS) if (!PREVIEW_ROWS.includes(id)) VERSION_PRESETS.p
 // own stored choice, so a row someone already set by hand is never changed.
 const LATE_PREVIEW_ROWS: readonly LookRowId[] = [
   ...(typeof window !== "undefined" && !matchView3dStored() ? (["matchView3d", "camera3d", "playerLight3d"] as const) : []),
-  ...(typeof window !== "undefined" && !dribble3dStored() ? (["dribble3d"] as const) : []),
-  // The chance mix (Mikey, 9 Oct 2026), the same way.
-  ...(typeof window !== "undefined" && !chanceMixStored() ? (["chanceMix"] as const) : []),
   // Wide chances side-on (Leo, 11 Oct 2026), the same way.
   ...(typeof window !== "undefined" && !wideChancesStored() ? (["wideChances"] as const) : []),
 ];

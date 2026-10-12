@@ -181,9 +181,9 @@ export function QuickSwitches({ glow, fullscreen }: {
 /** The v0.15 gameplay round's switches: Old by default, "All new" = how the round finished. */
 const V015_ALL_NEW: [LookRowId, string][] = [
   ["actionCamera", "new"], ["keeperPro", "new"], ["shotsPro", "new"], ["knucklePower", "new"], ["ballPhysics", "new"],
-  ["matchFlow", "new"], ["matchRadar", "new"], ["dribbleDuels", "new"], ["dribbleStyle", "firstperson"],
+  ["matchFlow", "new"], ["matchRadar", "new"], ["dribbleDuels", "new"],
 ];
-const V015_ALL_OLD: [LookRowId, string][] = V015_ALL_NEW.map(([id]) => [id, id === "dribbleStyle" ? "firstperson" : "old"]);
+const V015_ALL_OLD: [LookRowId, string][] = V015_ALL_NEW.map(([id]) => [id, "old"]);
 
 function LookRow({ id, tabs, note, look }: {
   id: LookRowId;
@@ -209,8 +209,8 @@ function LookRow({ id, tabs, note, look }: {
 }
 
 const ROW_LABEL: Record<LookRowId, string> = {
-  matchView: "Match view", chanceFraming: "Chance framing", wideChances: "Wide chances", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
-  animations: "Animations", keepers: "Keepers", keeperPro: "Keeper pro (testing)", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", dribbleStyle: "Dribble style", dribbleDuels: "Dribble duels (testing)", clearances: "Clearances", shotsPro: "Shots (testing)", knucklePower: "Knuckleball & power shot (testing)", ballPhysics: "Ball physics (testing)", chanceMix: "Chance mix (testing)", kaneDrawings: "Kane drawings (testing)", actionCamera: "Match camera", matchFlow: "Match flow (testing)", matchRadar: "Match radar (testing)",
+  matchView: "Match view", chanceFraming: "Chance framing", wideChances: "Wide chances", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball",
+  keeperPro: "Keeper pro (testing)", dribbleDuels: "Dribble duels (testing)", shotsPro: "Shots (testing)", knucklePower: "Knuckleball & power shot (testing)", ballPhysics: "Ball physics (testing)", kaneDrawings: "Kane drawings (testing)", actionCamera: "Match camera", matchFlow: "Match flow (testing)", matchRadar: "Match radar (testing)",
   garden: "3D garden", house: "House", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", playerStyle: "Player style", matchPlayers3d: "Players in a 3D match", tierLook3d: "3D quality look", cutscenePeople: "Cut-scene people", cutsceneCamera: "Cut-scene camera", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
   casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", ballonDorNight: "Ballon d'Or night", homeScreen: "Home screen", shop2d: "Shop",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style", sprites2d: "2D players",
@@ -268,7 +268,6 @@ function MatchGroup() {
       <LookRow id="matchFlow" look={look} tabs={NEW_OLD} note={gp("matchFlow")} />
       <LookRow id="matchRadar" look={look} tabs={NEW_OLD} note="New: a live mini-pitch above the commentary between your chances — the ball moving zone to zone in the colours of the side on it, the momentum, and a flash for shots and goals. Old: the commentary on its own." />
       <LookRow id="dribbleDuels" look={look} tabs={NEW_OLD} note={gp("dribbleDuels")} />
-      <LookRow id="dribbleStyle" look={look} tabs={[["firstperson", "1st person"], ["topdown", "Top-down"]]} note="Leo's choice. First-person: the run behind your player's shoulder. Top-down: the same run in the normal match view, with the match's players and ball." />
       </div>
       <LookRow id="matchView" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="New: zoomed out, the pitch fills the screen. Classic: the close-up view." />
       <LookRow id="chanceFraming" look={look} tabs={[["zoom", "Zoom"], ["old", "Old"]]} note="New view only. Zoom: the camera moves in on the play, less empty grass. Nobody is cut off; the players and the drag are the same. Corners stay as they are." />
@@ -284,13 +283,6 @@ function MatchGroup() {
       <PrefRow label="Your player in open play" note="New view only. Hidden: the ball is you; you still take penalties, free kicks and corners.">
         <SegTabs className="w-[150px] shrink-0" value={you} onChange={setYouInOpenPlay} tabs={[["hidden", "Hidden"], ["shown", "Shown"]] as const} />
       </PrefRow>
-      <LookRow id="chances" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="Classic: your drawn chances. New (being tested): about 100 pictures of each chance with both full teams." />
-      <LookRow id="animations" look={look} tabs={NEW_OLD} note={<>New (being tested): whoever touches the ball is seen doing it — shots, passes, headers, blocks, the keeper&apos;s catch and fumble.{tester && <> <a href="/star-animations-dev" className="font-bold text-amber-300 underline">Animation test area →</a></>}</>} />
-      <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
-      <LookRow id="dribble" look={look} tabs={NEW_OLD} note={gp("dribble")} />
-      <LookRow id="dribble3d" look={look} tabs={[["3d", "3D"], ["old", "Old"]]} note="Being tested. 3D: a dribble run is played top-down, in the Free Roam look, with the stick, sprint and stamina. Old: the first-person duel." />
-      <LookRow id="clearances" look={look} tabs={NEW_OLD} note={gp("clearances")} />
-      <LookRow id="chanceMix" look={look} tabs={NEW_OLD} note={gp("chanceMix")} />
       <LookRow id="kaneDrawings" look={look} tabs={NEW_OLD} note={gp("kaneDrawings")} />
       <SetToggle label="Player faces" on={faceStyle.facesEnabled} onClick={() => flipFace("facesEnabled")} />
       <SetToggle label="Player names" on={faceStyle.namesEnabled} onClick={() => flipFace("namesEnabled")} />
@@ -365,7 +357,7 @@ export function SettingsGroups({ glow, extra = [] }: { glow: string; extra?: Ext
     if (open) refs.current[open]?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [open]);
   const groups: (ExtraGroup & { card?: boolean })[] = [
-    { id: "match", title: "Match", sub: "View, camera, ball, chances, keepers, dribble…", count: 15, content: <MatchGroup />, card: true },
+    { id: "match", title: "Match", sub: "View, camera, ball, faces, names, reactions…", count: 15, content: <MatchGroup />, card: true },
     { id: "world", title: "3D world", sub: "Garden, look, shop, people, body, motion, office, casino, signing", count: 11, content: <World3dGroup />, card: true },
     { id: "screens", title: "Screens", sub: "UI, badges, all seasons, ovations, drawn style", count: 6, content: <ScreensGroup />, card: true },
     ...extra,
