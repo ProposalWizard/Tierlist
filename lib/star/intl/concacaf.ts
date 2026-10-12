@@ -21,7 +21,8 @@
  *
  * GOLD CUP (odd years): 16 teams. Direct: the four Nations League
  * quarter-final winners and the B group winners. The preliminary round
- * (two legs in the June window, best-ranked against worst) fills the rest;
+ * (one match on the June window's second matchday, best-ranked at home
+ * against the worst) fills the rest;
  * if it is one short (an odd number), the best-ranked loser goes through.
  * Four groups of four, top two to the quarter-finals, extra time and
  * penalties. Hosted by the United States.
@@ -32,12 +33,12 @@
  * hosts; with none (2030), group winners and runners-up take the six places
  * and the two best thirds go to the inter-confederation play-off.
  */
-import { type Row, rngFor, shuffled, pots, drawGroups, rankAcrossGroups } from "./engine";
+import { type Row, rngFor, shuffled, pots, drawGroups, rankAcrossGroups, winnerOf, loserOf } from "./engine";
 import { type World, dayAfter, noon } from "./world";
 import { nationsIn } from "./nations";
 import {
   matchday, matchdays, groupStage, groupTables, placed, twoLegs, legsWinner, legsLoser, bracket,
-  tournament, plusDays,
+  tournament, plusDays, single,
 } from "./build";
 import { CNL_2026, realList } from "./realData";
 import { worldCupHosts, GOLD_CUP_HOSTS } from "./hosts";
@@ -163,16 +164,18 @@ export function goldCup(w: World, year: number): void {
     const prelim = Array.from(new Set([...qfl, ...g.prelim])).filter((n) => !direct.includes(n))
       .sort((a, b) => w.rankOf(a) - w.rankOf(b));
     const need = 16 - direct.length;
-    const ties: ReturnType<typeof twoLegs>[] = [];
+    // One match each, the better-ranked at home, on the window's second
+    // matchday (the first is World Cup qualifying in the year before one).
+    const ties: ReturnType<typeof single>[] = [];
     const n = Math.floor(prelim.length / 2);
     for (let i = 0; i < n; i++) {
-      ties.push(twoLegs(w, { edition: ed, comp: "Gold Cup Qualifier", importance: 25, stage: "Preliminary Round" },
-        prelim[prelim.length - 1 - i], prelim[i], jun, `P-${i + 1}`));
+      ties.push(single(w, { edition: ed, comp: "Gold Cup Qualifier", importance: 25, stage: "Preliminary Round", level: "et-pens" },
+        prelim[i], prelim[prelim.length - 1 - i], jun[1], `P-${i + 1}`));
     }
     const bye = prelim.length % 2 ? [prelim[n]] : [];
     w.at(dayAfter(jun[1]), () => {
-      const wins = [...ties.map((t) => legsWinner(t)!), ...bye];
-      const losers = ties.map((t) => legsLoser(t)!).sort((a, b) => w.rankOf(a) - w.rankOf(b));
+      const wins = [...ties.map((t) => winnerOf(t)!), ...bye];
+      const losers = ties.map((t) => loserOf(t)!).sort((a, b) => w.rankOf(a) - w.rankOf(b));
       prelimWinners.push(...[...wins, ...losers].slice(0, need));
       const field = fillTo(w, [...direct, ...prelimWinners], 16, concacafNations());
       const hosts = GOLD_CUP_HOSTS.filter((h) => field.includes(h));
