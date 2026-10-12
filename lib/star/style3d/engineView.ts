@@ -214,7 +214,7 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const { renderer, release } = acquireRenderer(THREE, container, prof);
   // the stadium's shadows drawn once and kept; the men from a lighter shadow body (three3d/shadowCache.ts)
   installShadowCache(THREE, renderer);
-  const dprCap = tier === "high" ? 2 : tier === "medium" ? SMALL_MEN.mediumDpr : 1.25; // never under 1.25 on a phone: smooth edges (9 Oct 2026)
+  const dprCap = tier === "high" || tier === "medium" ? SMALL_MEN.mediumDpr : 1.25; // Medium and High: 2.5 (Harry approved, 12 Oct 2026); // never under 1.25 on a phone: smooth edges (9 Oct 2026)
   renderer.setPixelRatio(Math.min(dprCap, window.devicePixelRatio || 1));
   // The governor (three3d/governor.ts): slow frames for 2.5 s → one rung down
   // (pixel ratio, then shadows and the post pass; look H reads the rung itself).

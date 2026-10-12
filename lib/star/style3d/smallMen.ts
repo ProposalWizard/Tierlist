@@ -4,7 +4,8 @@
  * seem the same"). A real-size man in the 3D match is ~35 px tall on a phone.
  * Sizes stay real (size3d.ts); these only change how such a small man is drawn:
  *
- * - `mediumDpr`: the drawing buffer's pixel ratio on Medium (an iPhone screen is 3).
+ * - `mediumDpr`: the drawing buffer's pixel ratio on Medium AND High (an iPhone screen is 3). Approved by Harry,
+ *   12 Oct 2026: "that's how I WANTED THE CHARACTERS TO LOOK" (px 2.5, ink 2.2, flat cel).
  * - `outlinePx`: an ink line round every man, this many SCREEN pixels thick
  *   whatever his distance (the Home player's outline, kept at its on-screen
  *   thickness). 0: none (Medium had no outline before).
