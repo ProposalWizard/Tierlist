@@ -486,3 +486,23 @@ export function solveCornerCam(
   const b = best!;
   return { ...b, k: man.man, man: b.share, anchorShare: bcProject(b, f.W, f.H, ball).fr, extra: 0 } as Match2DCamera;
 }
+
+/**
+ * ROOM TO DRAG BACK, EVERY CHANCE (Harry, 12 Oct 2026, on a one-on-one still: "a player wont be
+ * able to drag that back on phone"). The 2D always keeps grass under the ball for the pull-back
+ * (matchView.ts ZOOM_MIN_PULL_M; the set-piece camera's dragRoomW). The 3D camera must too, whatever
+ * framing it is in (the default, pinched in or out, a corner's start view): the ball's spot on the
+ * screen stays at least a full-power drag (plus a finger) above the bottom edge. Camera only: it
+ * slides towards itself along the ground until the ball is high enough; nothing is scaled.
+ * Pure: tests/star/match2dCam.mts checks every served kind.
+ */
+export function keepDragRoom<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">>(c: T, ball: BcPoint, W: number, H: number, S = SET_PIECE_CAM): T {
+  const limit = 1 - dragRoomShare(W, H, S);
+  const at = (d: number) => ({ ...c, tx: c.tx + c.ax * d, tz: c.tz + c.az * d });
+  const fr = (d: number) => bcProject(at(d), W, H, ball).fr;
+  if (fr(0) <= limit) return c;
+  let lo = 0, hi = 1;
+  while (fr(hi) > limit && hi < 200) hi *= 2;
+  for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (fr(m) > limit) lo = m; else hi = m; }
+  return at(hi);
+}

@@ -56,8 +56,9 @@ import { SIZE3D } from "./size3d";
 import { SMALL_MEN } from "./smallMen";
 import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./camZoom";
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
-const OPEN_DEFAULT_K = 0.85;
-import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, type Match2DCamera } from "./match2dCam";
+/** Open play's default = the 2D's own frame of the same chance, exactly (Harry, 12 Oct 2026: a 0.85 zoom-in cut the taker off on tight angles and cutbacks). */
+const OPEN_DEFAULT_K = 1;
+import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -1293,7 +1294,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * inside the nearest framed spot, so a stand between the camera and the pitch is
    * never drawn (Harry's corner still: the roof over two thirds of the screen).
    */
-  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1 };
+  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, aimBall: null as { x: number; y: number } | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1 };
   /** The one absolute size (size3d.ts), which the set-piece camera frames around: never per chance. */
   const mScale = matchScale();
   /**
@@ -1359,9 +1360,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         def = lerpCamera(m2.sp, A, e);
       }
     }
+    // room to drag back (match2dCam.ts keepDragRoom): while aiming, the ball's spot stays a full-power
+    // drag above the screen's bottom in every framing (default, pinched, a corner's start view); the
+    // spot is held through the kick so the camera never jumps when the ball is struck
+    if (f.ball && (f.phase === "aim" || f.phase === "runup" || f.phase === "contact")) m2.aimBall = { x: f.ball.x, y: f.ball.y };
     const cz = zoomCamera(def, wide, zoom);
     const elevDeg = cz.elevDeg + camHeightTest(); // the camera-height test slider (0 in the game)
-    const c = { ...cz, elevDeg, elev: (elevDeg * Math.PI) / 180 };
+    const c0 = { ...cz, elevDeg, elev: (elevDeg * Math.PI) / 180 };
+    // open play at the default zoom IS the 2D frame (it already leaves the 2D's drag room): untouched
+    const c = m2.aimBall && (sp || zoom !== 0) ? keepDragRoom(c0, m2.aimBall, W, H) : c0;
     const pose = bcPose(c);
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
     camera.up.set(0, 1, 0);
