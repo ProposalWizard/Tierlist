@@ -8,7 +8,10 @@
  * Read at the moment it matters (a new chance, a new run), never cached, so
  * flipping it in Settings takes effect on the next chance without a reload.
  *
- * Decided, no toggle (12 Oct 2026): Keepers (New), Dribble runs (New),
+ * Keepers: New | Old row kept, default New (Harry, 12 Oct 2026: "keep the
+ * keeper toggle on but default it to new … haven't tested enough yet").
+ *
+ * Decided, no toggle (12 Oct 2026): Dribble runs (New),
  * Clearances (always on), Chance mix (removed: the basic mix), Match camera
  * (Old until the rebuilt camera lands), Dribble duels (Old) and Kane drawings
  * (Old: the game's own drawings) are no longer switches. Their old localStorage keys (star-gameplay-keepers etc.) are
@@ -18,6 +21,11 @@
 export type GameplayVersion = "new" | "old";
 
 export const GAMEPLAY_SWITCHES = {
+  keepers: {
+    label: "Keepers",
+    newText: "Top corners beat them more, weaker keepers are slower, players in front block their view, trial free kicks and penalties easier.",
+    oldText: "The keepers from before 5 Oct 2026.",
+  },
   keeperPro: {
     label: "Keeper pro (testing)",
     // Leo, 12 Oct 2026: "id rather keep things how they are … make em options to test out".
@@ -83,6 +91,7 @@ export function setGameplayVersion(s: GameplaySwitch, v: GameplayVersion): void 
   } catch { /* private window: stays on the default */ }
 }
 
+export const oldKeepers = () => gameplayVersion("keepers") === "old";
 export const oldKeeperPro = () => gameplayVersion("keeperPro") === "old";
 export const oldBallPhysics = () => gameplayVersion("ballPhysics") === "old";
 export const oldShots = () => gameplayVersion("shotsPro") === "old";

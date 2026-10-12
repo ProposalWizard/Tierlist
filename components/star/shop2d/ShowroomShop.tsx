@@ -236,7 +236,8 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
     return stars >= need ? null : Math.min(1, stars / need);
   } : undefined), [career]);
   // The item to land on in a category: the cheapest one you don't own yet (lib/star/shopNextItem.ts).
-  const bootsList = useMemo(() => (hasBootDeal(career) ? BOOTS_FULL_PRICE.map((b) => ({ ...b, price: bootPrice(career, b.price) })) : BOOTS_FULL_PRICE), [career]);
+  // boots are priced off your wage (bootPrice, Harry 12 Oct 2026), sponsor 25% after
+  const bootsList = useMemo(() => BOOTS_FULL_PRICE.map((b) => ({ ...b, price: bootPrice(career, b.price) })), [career]);
   /** Yours already: the boots you have on (not worn out), a style item you own (not worn out). Cans are used up, never "owned". */
   const isOwned = (cat: CatId, k: string): boolean => {
     if (cat === "cans") return false;

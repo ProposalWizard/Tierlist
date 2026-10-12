@@ -530,7 +530,8 @@ unreachable (the getter returns the kept value), marked "Decided, no toggle".
   Play Area). The New chance library, its drawings, script, tests and test
   page, and the Play Area's "Generator", were DELETED ("they're wrong").
 - **Chance mix:** the basic even mix. **Kane drawings:** the game's own.
-- **Animations:** New. **Keepers:** New (5 Oct). **Clearances:** always on.
+- **Animations:** New. **Clearances:** always on. (Keepers left this list:
+  "Keepers: New | Old row kept, default New, Harry 12 Oct".)
 - **Dribble:** top-down in every match, with team-mates to pass to; Dribble
   duels Old. The first-person duel is on `/star-dribble-dev` only.
 - **Match camera (action fit):** Old until the rebuilt camera lands.
@@ -546,7 +547,7 @@ unreachable (the getter returns the kept value), marked "Decided, no toggle".
 - **Screens:** badges, all seasons, Ballon d'Or night, home, shop, ovation and
   ovation greetings New; drawn players Shaded; post-match reactions on.
 - **Rows that stay:** full screen, sound, 3D quality, skip the line-up (main
-  Settings only), Match view 3D, player names (default off), UI Old | New, the
+  Settings only), Keepers New | Old (default New), Match view 3D, player names (default off), UI Old | New, the
   v0.15 test box (keeper pro, shots, knuckleball, ball physics, match flow,
   radar). **No Version picker and no Preview** — something becomes a
   "Preview" only when someone asks for that in those words.

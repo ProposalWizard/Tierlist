@@ -261,7 +261,7 @@ function BootsTab({ career, homeLevel, focus, soldOut, ask, onOpen3D }: {
   ask: (b: Boot, blackMarket: boolean) => void;
 }) {
   const bootDeal = hasBootDeal(career);
-  const boots = useMemo(() => (bootDeal ? BOOTS_FULL_PRICE.map((b) => ({ ...b, price: bootPrice(career, b.price) })) : BOOTS_FULL_PRICE), [bootDeal, career]);
+  const boots = useMemo(() => BOOTS_FULL_PRICE.map((b) => ({ ...b, price: bootPrice(career, b.price) })), [career]);
   const banned = new Set(ruleBookFor(career, "FA").bannedItems);
   const levelsOf = (base: string) => boots.filter((b) => baseIdOf(b) === base).sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
   const [sheet, setSheet] = useState<{ base: string; level: number } | null>(() =>

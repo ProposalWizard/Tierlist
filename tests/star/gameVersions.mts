@@ -6,7 +6,8 @@
  *     and Settings has no Version card.
  *  2. Cut-scene people and camera are decided New, with no row; an old phone's
  *     stored "old" is ignored.
- *  3. The rows left: the v0.15 test box (Old by default) and UI: Old | New.
+ *  3. The rows left: Keepers (New by default, Harry 12 Oct: not tested
+ *     enough yet), the v0.15 test box (Old by default) and UI: Old | New.
  *  4. A brand-new phone reads every row's default; setting a row reads back.
  *  5. Setting a row never touches the preferences (sound, skip the line-up).
  */
@@ -43,14 +44,17 @@ check(!/VersionCard|applyGameVersion|data-version-card|data-version=|GAME_VERSIO
 // 2.
 check(cutscenePeopleLook() === "new", `cut-scene people read "${cutscenePeopleLook()}" on an old phone`);
 check(cutsceneCameraLook() === "new", `cut-scene camera read "${cutsceneCameraLook()}" on an old phone`);
-for (const gone of ["cutscenePeople", "cutsceneCamera", "chances", "animations", "keepers", "dribble", "matchView", "sprites2d", "badges"]) {
+for (const gone of ["cutscenePeople", "cutsceneCamera", "chances", "animations", "dribble", "matchView", "sprites2d", "badges"]) {
   check(!(gone in LOOK_ROWS), `${gone} is decided and must not be a row`);
 }
 check(!/cutscenePeople|cutsceneCamera/.test(settings), "Settings still has a cut-scene row");
 
 // 3.
-const expected = ["keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "matchRadar", "ui"];
+const expected = ["keepers", "keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "matchRadar", "ui"];
 check(LOOK_ROW_IDS.join() === expected.join(), `rows are ${LOOK_ROW_IDS.join()}`);
+
+check(LOOK_ROWS.keepers.standard === "new", "Keepers must default to New");
+check(/<LookRow id="keepers"/.test(settings), "Settings has no Keepers row");
 
 // 4.
 const fresh = readLook();

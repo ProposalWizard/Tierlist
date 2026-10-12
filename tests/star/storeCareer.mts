@@ -1,3 +1,4 @@
+import { bootPriceForWage } from "../../lib/star/economy";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import type { CareerState, StarPlayer } from "../../lib/star/types";
 import {
@@ -99,7 +100,7 @@ check(!careerStoreBuy(c0, "stat-can", "stars", DAY).ok, "and can't be bought");
 const boot = pick(bootsAtLevel(ctx.level)).boot;
 const bt1 = careerStoreBuy(c0, boot.id, "stars", DAY);
 check(bt1.ok && bt1.career.currentBoot.id === boot.id && bt1.career.currentBoot.matches === boot.matches, "a bought boot goes on your feet");
-check(bt1.career.money === c0.money - boot.price, "at the Boots shop's ★ price");
+check(bt1.career.money === c0.money - bootPriceForWage(boot.price, c0.contract.wage), "at the Boots shop's ★ price (off your wage, like the cans)");
 const bt2 = careerStoreBuy(bt1.career, boot.id, "coins", DAY);
 check(bt2.ok && bt2.career.currentBoot.matches === boot.matches * 2, "buying the same pair again stacks its matches");
 check(careerBootStatus(bt2.career, boot.id) === `Wearing · ${boot.matches * 2} matches left`, "boot card says Wearing");

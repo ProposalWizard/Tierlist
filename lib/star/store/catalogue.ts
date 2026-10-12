@@ -24,6 +24,7 @@
  */
 import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_ALL_LEVELS, baseIdOf } from "../shopData";
 import type { Boot } from "../types";
+import { bootPriceForWage } from "../economy";
 import { coinPriceForStars, coinPriceForWeeks, starPriceForWeeks } from "./coins";
 import { PENALTY_RUNUPS, FREE_KICK_RUNUPS, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP, type PenaltyRunupId, type FreeKickRunupId } from "../runupStyles";
 
@@ -261,7 +262,7 @@ export function basePrice(item: StoreItem, ctx: PriceContext): Price {
     case "accessory":
       return fromWeeks(RARITY_WEEKS[item.rarity], ctx);
     case "boot":
-      return fromStars(item.boot.price, ctx);
+      return fromStars(bootPriceForWage(item.boot.price, ctx.weeklyWage), ctx);
     case "boost": {
       if (item.canId) {
         const can = KIB_CANS.find((c) => c.id === item.canId);

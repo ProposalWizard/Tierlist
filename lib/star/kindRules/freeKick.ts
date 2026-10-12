@@ -39,6 +39,7 @@ import type { KindRule, StrikeDecision } from "./index";
 import type { Ball, Scenario } from "../canvasEngine";
 import { CX, GOAL_W, POST_L, POST_R, ARC_R } from "../pitch";
 import { topCornerReach } from "../keeperBrain";
+import { oldKeepers } from "../gameplayVersion";
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
@@ -233,7 +234,7 @@ export const freeKickRules: KindRule = {
     // Decided here and saved with the decision, so a replay (which plays a
     // copy of the picture) keeps the same keeper.
     // Settings → Gameplay → Keepers: Old = the drill keeper is the match keeper again.
-    const drill = !isMatchFreeKick(sc);
+    const drill = !isMatchFreeKick(sc) && !oldKeepers();
     return {
       kind: "free_kick",
       data: {

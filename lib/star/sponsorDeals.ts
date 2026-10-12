@@ -3,7 +3,7 @@ import { fameOf, fameLevel, isWornOut } from "./fame";
 import { divisionOf } from "./calendar";
 import { clubExpectation } from "./expectations";
 import { wageShareFor } from "./wages";
-import { WAGE_FLOOR } from "./economy";
+import { WAGE_FLOOR, bootPriceForWage } from "./economy";
 import { mulberry32 } from "./season";
 import { starLevel } from "./starPoints";
 
@@ -251,9 +251,12 @@ export function sponsorPayFor(career: CareerState, fixture: Fixture | undefined)
 export function hasBootDeal(career: Pick<CareerState, "brands">): boolean {
   return brandsOf(career).deals.some(d => d.category === "Boots");
 }
-/** A boots deal takes 25% off every pair. */
-export function bootPrice(career: Pick<CareerState, "brands">, price: number): number {
-  return hasBootDeal(career) ? Math.max(1, Math.round((price * (1 - BOOT_DEAL_DISCOUNT)) / 5) * 5) : price;
+/** What a pair costs THIS player: the catalogue price scaled to his own wage
+ *  (economy.ts `bootPriceForWage`, the same rule as the cans), then 25% off
+ *  with a boots deal. */
+export function bootPrice(career: Pick<CareerState, "brands" | "contract">, price: number): number {
+  const p = bootPriceForWage(price, career.contract?.wage ?? 0);
+  return hasBootDeal(career) ? Math.max(1, Math.round((p * (1 - BOOT_DEAL_DISCOUNT)) / 5) * 5) : p;
 }
 
 // ── Targets ─────────────────────────────────────────────────────────────────
