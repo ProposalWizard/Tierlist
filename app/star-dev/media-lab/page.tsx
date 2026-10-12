@@ -64,6 +64,8 @@ export default function MediaLab() {
   const [shopBar, setShopBar] = useState<"A" | "B" | "C">("A");
   const [shopDemoClips, setShopDemoClips] = useState(false);
   const [shopLocks, setShopLocks] = useState(false);
+  const [shopMark, setShopMark] = useState<"trophy" | "none">("trophy");
+  const [shopBuy, setShopBuy] = useState<"A" | "B">("B");
   // `?shopmock=A|B|C|D` (+ `&at=` a start state): the shop layout concepts (throwaway, 9 Oct 2026).
   const [shopMock, setShopMock] = useState<{ id: MockId; at?: string } | null>(null);
   const [trainingPreview, setTrainingPreview] = useState<{ skill: keyof Skills; level: number; run?: number } | null>(null);
@@ -80,6 +82,8 @@ export default function MediaLab() {
     if (sb === "B" || sb === "C") setShopBar(sb);
     setShopDemoClips(q.has("democlips"));
     setShopLocks(q.has("locks"));
+    if (q.get("mark") === "none") setShopMark("none");
+    if (q.get("buy") === "A") setShopBuy("A");
     const scat = q.get("cat");
     if (scat && SHOWROOM_CATS.some((x) => x.id === scat)) setShopCat(scat as CatId);
     const sm = q.get("shopmock");
@@ -133,7 +137,7 @@ export default function MediaLab() {
   if (shopMock) return <><ShopConcepts id={shopMock.id} initial={shopMock.at} /><PageGuide page="/star-dev/media-lab" /></>;
   if (shopPreview) {
     return <>
-      <ShopLabPreview kind={shopPreview} look={shopLookLab} cat={shopCat} bar={shopBar} demoClips={shopDemoClips} locks={shopLocks} onBack={() => setShopPreview(null)} />
+      <ShopLabPreview kind={shopPreview} look={shopLookLab} cat={shopCat} bar={shopBar} demoClips={shopDemoClips} locks={shopLocks} mark={shopMark} buy={shopBuy} onBack={() => setShopPreview(null)} />
       <PageGuide page="/star-dev/media-lab" />
     </>;
   }

@@ -34,7 +34,7 @@
  * Blender models as public/shop (tools/shop2d/render_big.py); the small
  * pictures/drawings are the fallback if one is missing.
  */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
 import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_ALL_LEVELS as BOOTS_FULL_PRICE, LIFESTYLE_ALL_LEVELS, baseIdOf, type KibCan } from "@/lib/star/shopData";
@@ -59,6 +59,7 @@ import { nextUpIndex } from "@/lib/star/shopNextItem";
 import { listClips } from "@/lib/star/goalClip/store";
 import ForYouFeed, { type FeedEntry, type HighlightAd } from "./ForYouFeed";
 import { loadShopItemsView, saveShopItemsView, type ShopItemsView } from "@/lib/star/shopItemsView";
+import TrophyBadge from "./TrophyBadge";
 import { art, tierColour, rungName, LevelLadder, GiveChips, StoreSheet, GoldButton, ConfirmSheet, PurchaseMoment, type ConfirmInfo, type StoreTab } from "./parts";
 
 interface ActionResult { ok: boolean; reason?: string }
@@ -191,7 +192,13 @@ interface Props {
    *  the header (default); B = a "Homes ▾" pill that opens a grid; C = a text strip above
    *  the bottom bar. The media-lab bench passes ?bar=A|B|C. */
   barOption?: "A" | "B" | "C";
+  /** How an item's level shows (12 Oct 2026): the trophy badge (default) or nothing. Bench: &mark=none. */
+  levelMark?: "trophy" | "none";
+  /** The Buy pill (12 Oct 2026): A = solid in the category's colour; B = white with a gold price (default: it reads as a native button whatever the category colour, and a red Cars pill looked like a warning). Bench: &buy=A. */
+  buyStyle?: "A" | "B";
 }
+
+const ItemLook = createContext<{ mark: "trophy" | "none"; buy: "A" | "B" }>({ mark: "trophy", buy: "B" });
 
 export interface ShopLink { id: string; icon: string; label: string; onClick: () => void; locked?: boolean }
 
@@ -207,7 +214,7 @@ export interface View {
   extra?: { label: string; disabled: boolean; run: () => void };
 }
 
-export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, focus, onKind, onUseCan, onOpen3D, startCat, links, guideCorner = false, barOption = "A" }: Props) {
+export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, focus, onKind, onUseCan, onOpen3D, startCat, links, guideCorner = false, barOption = "A", levelMark = "trophy", buyStyle = "B" }: Props) {
   const bar = barOption;
   /** The bottom bar's two pages: For You (the TikTok feed) and Shop (the showroom). */
   const [tab, setTab] = useState<"foryou" | "shop">("shop");
@@ -412,7 +419,8 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
     if (cat === "boots") {
       const levels = bootLevels(key);
       const mineLv = wearing === key ? cur.level ?? 1 : 0;
-      const def = wearing === key ? (cur.matches > 0 ? Math.min(levels.length, mineLv + 1) : mineLv) : Math.min(levels.length, homeLevel);
+      // one level at a time: the next one you don't own (Harry, 12 Oct 2026); the others are in the item's sheet
+      const def = wearing === key ? (cur.matches > 0 ? Math.min(levels.length, mineLv + 1) : mineLv) : 1;
       const lv = pick[key] ?? def;
       const b = levels.find((x) => x.level === lv) ?? levels[0];
       const isBanned = banned.has(key);
@@ -443,8 +451,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
     const worn = !!mine && isWornOut(mine);
     const ownLv = ownedLevelOf(mine);
     const yours = !!mine && !worn;
-    const affordable = levels.filter((l) => (l.level ?? 1) <= homeLevel && l.price <= career.money);
-    const def = yours ? Math.min(levels.length, ownLv + (ownLv < levels.length ? 1 : 0)) : (affordable[affordable.length - 1]?.level ?? 1);
+    const def = yours ? Math.min(levels.length, ownLv + (ownLv < levels.length ? 1 : 0)) : 1;
     const lv = levels.length === 1 ? 1 : (pick[key] ?? def);
     const it = levels.find((l) => l.level === lv) ?? levels[0];
     const lock = lockOf?.(key) ?? null;
@@ -627,6 +634,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   const needStars = (key: string) => (lockOf?.(key) != null ? { need: styleUnlockStar(key), have: Math.floor(starsNow(career)) } : null);
 
   return (
+    <ItemLook.Provider value={{ mark: levelMark, buy: buyStyle }}>
     <div data-showroom-shop data-items-view={view} data-shop-tab={tab} data-bar={bar} data-sk-tone="calm" className="fixed inset-0 z-[60] overflow-hidden bg-[#05080f] text-white"
       style={{ touchAction: "pan-x pan-y", ["--sr-top" as string]: `calc(${topPx}px + env(safe-area-inset-top))`, ["--sr-bot" as string]: `calc(${botPx}px + env(safe-area-inset-bottom))` }}>
       <div data-star-game hidden />
@@ -815,6 +823,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
       {confirm && <ConfirmSheet info={confirm.info} money={career.money} onCancel={() => setConfirm(null)} onConfirm={confirm.run} />}
       {moment && <PurchaseMoment art={moment.art} level={moment.level} title={moment.title} word={moment.word} fx={moment.fx} onDone={() => setMoment(null)} />}
     </div>
+    </ItemLook.Provider>
   );
 }
 
@@ -1029,11 +1038,33 @@ function ItemPage({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCo
   );
 }
 
+/** Buy, sized like a native app button (Harry, 12 Oct 2026: the wide slab "still doesn't look quite right").
+ *  A: a solid pill in the category's colour, the price inside after a thin rule.
+ *  B: a white pill, the word in black, the price in a gold capsule inside. */
+function BuyPill({ b, accent, variant }: { b: View["button"]; accent: string; variant: "A" | "B" }) {
+  const off = b.disabled;
+  const bg = off ? "rgba(255,255,255,.12)" : b.danger ? "#dc2626" : variant === "A" ? accent : "#ffffff";
+  const ink = off ? "rgba(255,255,255,.7)" : b.danger ? "#fff" : "#0b1222";
+  return (
+    <button onClick={b.run} disabled={off} data-showroom-buy data-buy-style={variant}
+      className="kib-press flex h-[44px] max-w-[200px] items-center gap-2 rounded-full pl-[18px] pr-[6px] disabled:cursor-not-allowed"
+      style={{ background: bg, color: ink, boxShadow: off ? "inset 0 0 0 1px rgba(255,255,255,.2)" : `0 6px 16px -6px ${b.danger ? "#dc2626" : variant === "A" ? accent : "rgba(0,0,0,.8)"}, inset 0 1px 0 rgba(255,255,255,.35)` }}>
+      <span className="truncate text-[14px] font-extrabold">{b.label}</span>
+      {b.price !== undefined && (variant === "A" || off || b.danger ? (
+        <span className="flex h-[32px] shrink-0 items-center rounded-full px-2.5 text-[15px] font-black tabular-nums" style={{ background: off ? "transparent" : "rgba(0,0,0,.16)" }}>★{formatMoney(b.price)}</span>
+      ) : (
+        <span className="flex h-[32px] shrink-0 items-center rounded-full px-2.5 text-[15px] font-black tabular-nums text-[#1c1203]" style={{ background: "#f5b82e" }}>★{formatMoney(b.price)}</span>
+      ))}
+      {b.price === undefined && <span className="w-3" />}
+    </button>
+  );
+}
+
 /** Under the item: the name, the level pips, what it gives, and Buy (sits above the tab bar). */
-function ItemInfo({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCorner = false }: {
+function ItemInfo({ v, accent, catLabel, pos, next, onOpen, guideCorner = false }: {
   v: View; accent: string; catLabel: string; pos: string; next?: string; onOpen: () => void; onPickLevel: (lv: number) => void; guideCorner?: boolean;
 }) {
-  const tier = v.levels > 1 ? tierColour(v.level) : accent;
+  const look = useContext(ItemLook);
   return (
     <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#05080f] via-[#05080f]/90 to-transparent px-4 pt-8" style={{ paddingBottom: "calc(12px + var(--sr-bot))" }} data-item-info={v.key}>
       <div className="mx-auto max-w-md">
@@ -1045,7 +1076,7 @@ function ItemInfo({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCo
           <div className="truncate text-[26px] font-black leading-[1.08]" data-item-title>{v.title}</div>
         </button>
         <div className="mt-0.5 flex items-center gap-2">
-          <Pips level={v.level} of={v.levels} onPick={v.locked === null ? onPickLevel : undefined} accent={tier} />
+          {look.mark === "trophy" && v.levels > 1 && <TrophyBadge level={v.level} size={38} className="-my-2 shrink-0" />}
           <span className="min-w-0 truncate text-[12px] font-bold text-white/80">{v.sub}</span>
         </div>
         <div className="mt-1.5 flex items-end gap-2">
@@ -1058,16 +1089,7 @@ function ItemInfo({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCo
                 <button onClick={v.extra.run} disabled={v.extra.disabled} data-can-use={v.key}
                   className="kib-press h-[40px] rounded-full bg-black/40 px-3 text-[12px] font-black uppercase text-white ring-1 ring-white/30 disabled:opacity-35">{v.extra.label}</button>
               )}
-              {/* Buy: a small floating pill (Harry, 12 Oct 2026: the wide block "takes up too much space") */}
-              <button onClick={v.button.run} disabled={v.button.disabled} data-showroom-buy
-                className="kib-press flex h-[42px] max-w-[190px] items-center gap-2 rounded-full pl-4 pr-3.5 disabled:cursor-not-allowed"
-                style={v.button.disabled ? { background: "rgba(255,255,255,.1)", color: "rgba(255,255,255,.65)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.18)" }
-                  : v.button.danger ? { background: "linear-gradient(180deg,#f87171,#b91c1c)", color: "#fff", boxShadow: "0 6px 18px -6px rgba(220,38,38,.9)" }
-                  : v.button.blue ? { background: "linear-gradient(180deg,#7dd3fc,#0284c7)", color: "#04121f", boxShadow: "0 6px 18px -6px rgba(14,165,233,.9)" }
-                  : { background: "linear-gradient(180deg,#fde68a,#f59e0b 55%,#d97706)", color: "#1c1203", boxShadow: "inset 0 1px 0 rgba(255,255,255,.6), 0 6px 18px -6px rgba(245,158,11,.95)" }}>
-                <span className="truncate text-[13px] font-black uppercase">{v.button.label}</span>
-                {v.button.price !== undefined && <span className="shrink-0 text-[15px] font-black tabular-nums">★{formatMoney(v.button.price)}</span>}
-              </button>
+              <BuyPill b={v.button} accent={accent} variant={look.buy} />
             </div>
           ) : (
             <span className={`shrink-0 rounded-full bg-white/[0.08] px-3 py-2 text-[11px] font-black uppercase tracking-wide text-white/75 ring-1 ring-white/15 ${guideCorner ? "mr-11" : ""}`}>🔒 Higher star rating</span>

@@ -48,7 +48,7 @@ async function putDemoClips(): Promise<void> {
   }
 }
 
-export default function ShopLabPreview({ kind, look, onBack, cat, bar = "A", demoClips = false, locks = false }: { kind: StoreTab | "landing"; look: "new" | "old" | "grid"; onBack: () => void; cat?: CatId; bar?: "A" | "B" | "C"; demoClips?: boolean; locks?: boolean }) {
+export default function ShopLabPreview({ kind, look, onBack, cat, bar = "A", demoClips = false, locks = false, mark = "trophy", buy = "B" }: { kind: StoreTab | "landing"; look: "new" | "old" | "grid"; onBack: () => void; cat?: CatId; bar?: "A" | "B" | "C"; demoClips?: boolean; locks?: boolean; mark?: "trophy" | "none"; buy?: "A" | "B" }) {
   useEffect(() => { if (demoClips) void putDemoClips(); }, [demoClips]);
   const [career, setCareer] = useState<CareerState>(() => sampleCareer(locks));
   const [tab, setTab] = useState<StoreTab>(kind === "landing" ? "kib" : kind);
@@ -79,7 +79,7 @@ export default function ShopLabPreview({ kind, look, onBack, cat, bar = "A", dem
   }
   const back = kind === "landing" && look !== "new" ? () => setPage("landing") : onBack;
   if (look === "new") {
-    return <ShowroomShop career={career} kind={tab} onKind={setTab} onBack={back} startCat={cat} barOption={bar}
+    return <ShowroomShop career={career} kind={tab} onKind={setTab} onBack={back} startCat={cat} barOption={bar} levelMark={mark} buyStyle={buy}
       onBuyKib={buyKib} onBuyBoot={buyBoot} onBuyItem={buyItem} onBuyFromBlackMarket={black} onUseCan={useCan} onOpen3D={() => {}}
       guideCorner links={[
         { id: "sponsors", icon: "🤝", label: "Sponsors", locked: true, onClick: () => {} },
