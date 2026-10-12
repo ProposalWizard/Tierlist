@@ -50,7 +50,7 @@ import { followStep } from "./figureFollow";
 import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { solveBroadcast, actionPoints, bcPose, BROADCAST, type BcFigure } from "./broadcastCam";
-import { solveMatch2D, MATCH2D } from "./match2dCam";
+import { solveMatch2D, visibleQuad, MATCH2D } from "./match2dCam";
 
 export interface EngineView {
   /** Every frame the 2D picture draws (EngineFrameObserver.onFrame). */
@@ -1240,6 +1240,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         .then((made) => {
           if (tk !== hToken || !def.real) { made.dispose(); return; }
           h = made;
+          clipArenaNearSide();
           kit?.setActive(false); // the kit drew the wait; its post pictures are freed now H draws
           ballShadow.visible = false;
           h.dressPeople(list.map((b) => b.p));
@@ -1567,7 +1568,28 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * inside the nearest framed spot, so a stand between the camera and the pitch is
    * never drawn (Harry's corner still: the roof over two thirds of the screen).
    */
+  /** Test page only: ?bcam=0 shows the New camera as it was before the broadcast camera (for before/after stills). */
+  const preBroadcast = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
+  /** Test pages / stills only: ?cam2d=0 shows the broadcast camera (New before 12 Oct 2026). */
+  const preMatch2D = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("cam2d") === "0";
   const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null };
+  /**
+   * The stand on the camera's side: everything of the stadium nearer the camera than
+   * the bottom edge of the 2D's view is not drawn (a roof there sits over the grass the
+   * 2D shows: Harry's corner still). Shadows are untouched (clipShadows stays off).
+   * Only the stadium group, only with 3D camera New; far away (no effect) otherwise.
+   */
+  const arenaClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e6);
+  function clipArenaNearSide() {
+    if (realCameraLook() !== "new" || preMatch2D || preBroadcast) return;
+    const g = scene.getObjectByName("h-arena");
+    if (!g) return;
+    renderer.localClippingEnabled = true;
+    g.traverse((o: THREE.Object3D) => {
+      const raw = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+      for (const m of Array.isArray(raw) ? raw : raw ? [raw] : []) { m.clippingPlanes = [arenaClip]; (m as THREE.ShaderMaterial).clipping = true; m.needsUpdate = true; }
+    });
+  }
   const placeMatch2D = (f: EngineFrame) => {
     const { viewport: vp, facing, tilt, W, H } = f.cam;
     if (!(W > 0 && H > 0)) return;
@@ -1588,15 +1610,20 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     lean = 0;
     tv.init = true;
     tvFig = MATCH2D.fig;
+    // the stadium nearer the camera than the 2D view's bottom edge (1.5 m spare) is not drawn
+    {
+      const q = visibleQuad(fr2);
+      let far = -Infinity;
+      for (const p of q) far = Math.max(far, (p.x - CX) * c.ax + p.y * c.az);
+      arenaClip.normal.set(-c.ax, 0, -c.az);
+      arenaClip.constant = far + 1.5;
+    }
     (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: c.D, elevDeg: c.elevDeg, fov: c.fov, extra: c.extra, near: camera.near, facing };
   };
-  /** Test page only: ?bcam=0 shows the New camera as it was before the broadcast camera (for before/after stills). */
-  const preBroadcast = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
-  /** Test pages / stills only: ?cam2d=0 shows the broadcast camera (New before 12 Oct 2026). */
-  const preMatch2D = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("cam2d") === "0";
   const placeCamera = (f: EngineFrame, dt: number) => {
-    if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast && !preMatch2D) placeMatch2D(f);
-    else if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast) placeBroadcast(f, dt);
+    if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast && !preMatch2D) { placeMatch2D(f); return; }
+    if (arenaClip.constant !== 1e6) { arenaClip.normal.set(0, 1, 0); arenaClip.constant = 1e6; } // another camera: clip nothing
+    if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast) placeBroadcast(f, dt);
     else if (camMode === "tv" && f.cam.facing === "up") placeTvCamera(f, dt);
     else { tv.init = false; placeExactCamera(f); }
   };

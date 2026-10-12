@@ -41,8 +41,8 @@ export const MATCH2D = {
   prefElev: 55,
   /** Room at every edge, CSS px. */
   marginPx: 3,
-  /** Every man and the keeper, × life size, always (one size: PR #710's rule). Set to match the 2D's men at the same framing: the 2D's men measure 1.58–2.60× (median 1.72) a life-size 3D man there (tests/star/match2dCam.mts prints it); 1.6 sits just under the median. */
-  fig: 1.6,
+  /** Every man and the keeper, × life size, always (one size: PR #710's rule). Set to match the 2D's men at the same framing: the 2D's men measure 1.58–2.60× (median 1.72) a life-size 3D man there (tests/star/match2dCam.mts prints it): 1.75 is the median. */
+  fig: 1.75,
   /** A man's true height, m. */
   manH: 1.8,
 };
