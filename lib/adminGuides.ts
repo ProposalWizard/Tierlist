@@ -224,6 +224,22 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Ballon d'Or night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts.",
   },
+  "/star-intl-dev": {
+    title: "International world",
+    what: "Every national team's competitions played out from August 2026 — Nations Leagues, qualifiers, the Euro, World Cup, Copa América, AFCON, Asian Cup, Gold Cup, OFC Nations Cup, friendlies — without playing a career.",
+    buttons: [
+      { items: [
+        ["Up to Aug (year)", "Plays the world from August 2026 to 1 August of that year."],
+        ["(nation)", "Whose tables and matches are shown, and whose flag the squad screens use."],
+        ["▶ Called up screen / ▶ Left out screen", "The squad announcement as the game shows it, with that nation's last two matches as the sample. Continue comes back here."],
+      ] },
+    ],
+    saving: ["Nothing is saved. The world here has no career in it (no player results, no real-player strengths)."],
+    inGame: [
+      "The same world runs inside every career. Your nation's call-ups come at each international window and before each tournament; Stats → Country shows the manager bar, the ranking, your tables, your matches and Who won; Relations shows the national manager.",
+    ],
+    dev: "app/star-intl-dev/page.tsx; the world lib/star/intl (world.ts, replay.ts, build.ts, engine.ts, uefa.ts, conmebol.ts, concacaf.ts, caf.ts, afc.ts, ofc.ts, worldCup.ts, friendlies.ts, realData.ts, hosts.ts, windows.ts, nations.ts); your career on it lib/star/intl/career.ts; screens components/star/CallUpScreen.tsx, IntlWorldPanel.tsx.",
+  },
   "/star-real-moments-dev": {
     title: "Real moments",
     what: "Real match positions from StatsBomb's free data (every Premier League 2015/16 shot, every Kane touch at the 2022 World Cup and Euro 2024), each drawn as a chance in the game's camera and playable in the real match. Testing only.",

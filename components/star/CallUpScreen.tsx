@@ -13,7 +13,7 @@
  */
 import type { IntlDecision } from "@/lib/star/intl/career";
 import { SQUAD_AT, START_AT } from "@/lib/star/intl/career";
-import { PressButton, LiquidBar, RiseIn } from "./ui";
+import { PressButton, RiseIn } from "./ui";
 import NationFlag from "./NationFlag";
 
 const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
@@ -74,8 +74,8 @@ export default function CallUpScreen({ decision, onContinue }: {
           <div className="mb-1 flex justify-between text-[10px] font-black uppercase tracking-wider text-white/70">
             <span>{nation} manager</span><span>{Math.round(manager)} / 100</span>
           </div>
-          <div className="relative">
-            <LiquidBar value={Math.round(manager)} colors={["#38bdf8", "#a5f3fc"]} className="h-3" />
+          <div className="relative h-3 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-200" style={{ width: `${Math.round(manager)}%` }} />
             <span className="absolute top-0 h-3 w-0.5 bg-white/80" style={{ left: `${SQUAD_AT}%` }} />
             <span className="absolute top-0 h-3 w-0.5 bg-amber-300" style={{ left: `${START_AT}%` }} />
           </div>
