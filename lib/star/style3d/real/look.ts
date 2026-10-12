@@ -36,7 +36,7 @@ import { lightReachOff } from "../../three3d/lightReach";
 import { safeCompileAsync } from "../../three3d/safeCompile";
 
 /** Low's pitch under 3D quality look New, round 2 (see applyDials). */
-export const GRASS_LOW_RGB: [number, number, number] = [0.62, 0.9, 0.63], GRASS_LOW_STRIPES = 1.25;
+export const GRASS_LOW_RGB: [number, number, number] = [0.82, 0.92, 0.82], GRASS_LOW_STRIPES = 1.25;
 const scaleHex = (hex: string, k: [number, number, number]) => {
   const n = parseInt(hex.slice(1), 16), c = (x: number) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0");
   return `#${c(((n >> 16) & 255) * k[0])}${c(((n >> 8) & 255) * k[1])}${c((n & 255) * k[2])}`;
