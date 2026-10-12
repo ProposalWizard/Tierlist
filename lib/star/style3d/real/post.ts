@@ -16,6 +16,7 @@
  */
 import type { Quality3d } from "../../three3d/quality";
 import { tierLookNew } from "../../three3d/tierLook";
+import { gradeExposure, gradeToneMapGlsl } from "./toneGrade";
 
 const VERT = /* glsl */ `
 varying vec2 vUv;
@@ -154,6 +155,8 @@ export interface HGrade {
   lut?: any; lutAmt?: number;
   /** A multiple of the tier's own sharpening (High only; 1 = as it was). */
   sharpen?: number;
+  /** Which grade the no-pass tone map uses (toneGrade.ts gradeSlot): Low copies High's colour. */
+  slot?: number;
 }
 
 export type HPostMode = "full" | "lite" | "off";
@@ -186,23 +189,14 @@ export interface HPost {
  * numbers (golden-hour broadcast, between day and night): a shader built once keeps
  * them, so they are not per time of day. No colour cube (it needs a texture).
  */
-const GRADE_TONEMAP = /* glsl */ `vec3 CustomToneMapping( vec3 color ) {
-  vec3 c = ACESFilmicToneMapping( color );
-  vec3 s = pow( max( c, vec3( 0.0 ) ), vec3( 1.0 / 2.2 ) );
-  s = s * vec3( 1.025, 1.0, 0.965 ) + vec3( 0.006, 0.003, 0.0 );
-  s = mix( s, s * s * ( 3.0 - 2.0 * s ), 0.24 );
-  float l = dot( s, vec3( 0.299, 0.587, 0.114 ) );
-  s *= mix( vec3( 0.97, 1.0, 1.04 ), vec3( 1.03, 1.0, 0.97 ), smoothstep( 0.15, 0.75, l ) );
-  s = mix( vec3( dot( s, vec3( 0.299, 0.587, 0.114 ) ) ), s, 1.12 );
-  return pow( clamp( s, 0.0, 1.0 ), vec3( 2.2 ) );
-}`;
+// (round 2: High's own chain per place and time of day, toneGrade.ts; slot 0 keeps round 1's fixed grade)
 let gradeToneMapInstalled = false;
 /** Puts the grade into three's CustomToneMapping (once a page). Returns the tone mapping to use. */
 export function gradeToneMapping(T: any): number {
   if (!gradeToneMapInstalled && T.ShaderChunk?.tonemapping_pars_fragment) {
     const src: string = T.ShaderChunk.tonemapping_pars_fragment;
     const stub = "vec3 CustomToneMapping( vec3 color ) { return color; }";
-    if (src.includes(stub)) T.ShaderChunk.tonemapping_pars_fragment = src.replace(stub, GRADE_TONEMAP);
+    if (src.includes(stub)) T.ShaderChunk.tonemapping_pars_fragment = src.replace(stub, gradeToneMapGlsl());
     gradeToneMapInstalled = true;
   }
   return T.ShaderChunk?.tonemapping_pars_fragment?.includes("ACESFilmicToneMapping( color );") ? T.CustomToneMapping : T.ACESFilmicToneMapping;
@@ -253,6 +247,7 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
   // the frame drawn straight to the screen: shaders built (compile) for the tone map it will use
   if (mode === "off" && fresh) renderer.toneMapping = offTM;
 
+  const vig = makeVignette(T, renderer);
   const pass = (mat: any, target: any) => { quad.material = mat; renderer.setRenderTarget(target); renderer.render(quadScene, quadCam); };
 
   return {
@@ -261,9 +256,13 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
     render(scene, camera, g) {
       if (mode === "off") {
         renderer.toneMapping = offTM;
-        renderer.toneMappingExposure = g.exposure;
+        // round 2: the slot rides on the exposure (the tone map's only per-frame number), split in the shader
+        renderer.toneMappingExposure = offTM === T.CustomToneMapping ? gradeExposure(g.exposure, g.slot ?? 0) : g.exposure;
         renderer.setRenderTarget(null);
         renderer.render(scene, camera);
+        renderer.toneMappingExposure = g.exposure;
+        // and High's vignette, as a darkening ring drawn over the edges (no pass, no picture read)
+        if (fresh && (g.slot ?? 0) > 0 && g.vignette > 0.001) vig.draw(g.vignette);
         return;
       }
       renderer.getDrawingBufferSize(size);
@@ -327,8 +326,72 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
     },
     dispose() {
       main.depthTexture?.dispose(); main.dispose(); soft.dispose(); chain.forEach((c) => c.dispose());
-      downMat.dispose(); upMat.dispose(); finalMat.dispose(); quad.geometry.dispose();
+      downMat.dispose(); upMat.dispose(); finalMat.dispose(); quad.geometry.dispose(); vig.dispose();
       void depthOk; depthOk = false;
     },
+  };
+}
+
+/**
+ * High's vignette with no pass (3D quality look New, round 2): a grid over the
+ * screen's edges, each vertex darkening by High's own formula (v·1.5·r², r from
+ * the centre in screen units), multiplied onto what is already drawn. The
+ * middle, where it would darken by under ~3%, is left out of the mesh, so those
+ * pixels are not touched. One draw, no texture; the fill is a single multiply.
+ */
+export const VIGNETTE_CUT = 0.03;
+const VIG_N = 12;
+/** The grid cells the vignette draws for strength v (the rest of the screen is not touched). */
+export function vignetteCells(v: number, n = VIG_N): number[] {
+  const r0 = VIGNETTE_CUT / Math.max(1e-3, 1.5 * v), out: number[] = [];
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    let mx = 0;
+    for (const [a, b] of [[i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]]) { const x = a / n - 0.5, y = b / n - 0.5; mx = Math.max(mx, x * x + y * y); }
+    if (mx > r0) out.push(j * n + i);
+  }
+  return out;
+}
+function makeVignette(T: any, renderer: any) {
+  const N = VIG_N;
+  let mesh: any = null, sc: any = null, cam: any = null, lastV = -1;
+  const pos: number[] = [], r2: number[] = [];
+  for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
+    const x = i / N - 0.5, y = j / N - 0.5;
+    pos.push(x * 2, y * 2, 0); r2.push(x * x + y * y);
+  }
+  const index = (v: number) => {
+    const idx: number[] = [];
+    for (const c of vignetteCells(v, N)) {
+      const i = c % N, j = Math.floor(c / N), at = (a: number, b: number) => b * (N + 1) + a;
+      idx.push(at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j), at(i + 1, j + 1), at(i, j + 1));
+    }
+    return idx;
+  };
+  return {
+    draw(v: number) {
+      if (!mesh) {
+        const geo = new T.BufferGeometry();
+        geo.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
+        geo.setAttribute("r2", new T.Float32BufferAttribute(r2, 1));
+        const mat = new T.ShaderMaterial({
+          uniforms: { v: { value: 0 } },
+          vertexShader: `attribute float r2; uniform float v; varying float vD;
+void main() { vD = max(0.0, v * 1.5 * r2 - ${VIGNETTE_CUT.toFixed(4)}); gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+          fragmentShader: `varying float vD; void main() { gl_FragColor = vec4(vec3(1.0 - vD), 1.0); }`,
+          depthTest: false, depthWrite: false, blending: T.CustomBlending,
+          blendSrc: T.ZeroFactor, blendDst: T.SrcColorFactor, blendEquation: T.AddEquation,
+        });
+        mesh = new T.Mesh(geo, mat); mesh.frustumCulled = false;
+        sc = new T.Scene(); sc.add(mesh);
+        cam = new T.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      }
+      if (Math.abs(v - lastV) > 0.02) { mesh.geometry.setIndex(index(v)); lastV = v; }
+      mesh.material.uniforms.v.value = v;
+      const auto = renderer.autoClear;
+      renderer.autoClear = false;
+      renderer.render(sc, cam);
+      renderer.autoClear = auto;
+    },
+    dispose() { mesh?.geometry.dispose(); mesh?.material.dispose(); },
   };
 }

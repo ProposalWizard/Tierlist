@@ -22,6 +22,16 @@
 import type { Quality3d } from "../../three3d/quality";
 import { PITCH_LEN as L, PITCH_HALF_W as W } from "./pitch";
 import { mergeStaticByMaterial } from "../../three3d/perf";
+import { tierLookNew } from "../../three3d/tierLook";
+
+/**
+ * 3D quality look New, round 2 (12 Oct 2026): Medium draws 1.5 pixels a point
+ * (High 2), so the far crowd and boards take a softer mip level. A small negative
+ * mip bias picks the sharper level: no extra reads (the same one read a pixel),
+ * only a few more texture-cache misses on those two materials. Seen on the
+ * round-2 stills (Medium round 1 vs round 2). Not tried: −1 (likely shimmer as the crowd bobs).
+ */
+export const crowdMipBias = (tier: Quality3d) => (tier === "medium" && tierLookNew() ? -0.5 : 0);
 
 const GOAL_W = 7.32, GOAL_H = 2.44, NET_D = 2.0;
 
@@ -49,7 +59,7 @@ varying float vShade;`;
 const CROWD_FRAG_HEAD = /* glsl */ `
 varying float vTeam;
 varying float vShade;
-uniform float uTime, uBob, uCheer, uLit;
+uniform float uTime, uBob, uCheer, uLit, uMipBias;
 uniform vec3 uHome, uHome2, uAway;
 float ch(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 15731.743); }`;
 const CROWD_MAP = /* glsl */ `
@@ -62,7 +72,7 @@ const CROWD_MAP = /* glsl */ `
   float hop = sin(beat) * (0.25 + 0.75 * hs);
   float jump = max(0.0, sin(uTime * 9.0 + hs * 6.283)) * uCheer;
   cuv.y -= (hop * uBob * 0.006 + jump * 0.03);
-  vec4 tc = texture2D(map, cuv);
+  vec4 tc = texture2D(map, cuv, uMipBias);
   float mx = max(tc.r, max(tc.g, tc.b)), mn = min(tc.r, min(tc.g, tc.b));
   float sat = (mx - mn) / max(mx, 1e-3);
   float lum = dot(tc.rgb, vec3(0.3333));
@@ -138,7 +148,7 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
 
   // ── the crowd material ──
   const cu: Record<string, { value: any }> = {
-    uTime: { value: 0 }, uBob: { value: 1 }, uCheer: { value: 0 }, uLit: { value: 1 },
+    uTime: { value: 0 }, uBob: { value: 1 }, uCheer: { value: 0 }, uLit: { value: 1 }, uMipBias: { value: crowdMipBias(tier) },
     uHome: { value: new T.Color(colours.home) }, uHome2: { value: new T.Color(colours.home2) }, uAway: { value: new T.Color(colours.away) },
   };
   const crowdMat = keep(new T.MeshStandardMaterial({ map: maps.crowd, roughness: 0.95, side: T.FrontSide }));
@@ -166,6 +176,11 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
       const t = keep(maps.led.clone());
       t.wrapS = T.RepeatWrapping; t.needsUpdate = true;
       m = keep(new T.MeshBasicMaterial({ map: t, color: new T.Color(1.05, 1.05, 1.05) }));
+      const bias = crowdMipBias(tier);
+      if (bias !== 0) {
+        m.onBeforeCompile = (sh: any) => { sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", `vec4 sampledDiffuseColor = texture2D( map, vMapUv, ${bias.toFixed(2)} );\ndiffuseColor *= sampledDiffuseColor;`); };
+        m.customProgramCacheKey = () => `h-led-bias${bias}`;
+      }
       m.userData.speed = speed;
       ledMats.push(m);
       ledBySpeed.set(speed, m);

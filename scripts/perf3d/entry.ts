@@ -83,7 +83,7 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
       kit: KIT, number: 10, tier: opts.tier ?? 3, stable: 3, horse: { name: "Shergar" },
       trophies: [{ name: "Premier League", count: 2, art: null }, { name: "FA Cup", count: 1, art: null }],
       cars: ["/star/shop3d/items/car-1.glb", "/star/shop3d/items/car-suv.glb"],
-      sky: "day", mates: [4, 7, 9], arrive: "gate",
+      sky: opts.sky ?? "day", mates: [4, 7, 9], arrive: "gate",
       player: { look: opts.look ?? "new", skin: "#e0b89a", hair: "#3d2616", hairStyle: "short" },
     }, { quality: opts.quality ?? "high", fixedStep: 1 / 30 });
     M.ready = performance.now();

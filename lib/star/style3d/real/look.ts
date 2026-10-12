@@ -25,6 +25,7 @@ import { TODS, type TodLook } from "./tod";
 import { buildRealPitch, type RealPitch } from "./pitch";
 import { buildArena, type Arena, type ArenaColours } from "./arena";
 import { makeHPost, type HPost } from "./post";
+import { gradeSlot } from "./toneGrade";
 import { currentGovernor, type GovRung } from "../../three3d/governor";
 import { dressHBall, type HBall } from "./ball";
 import { bakedLightNow, type BakedLight } from "../../look/bakedLight";
@@ -34,6 +35,12 @@ import { tierLookNew } from "../../three3d/tierLook";
 import { lightReachOff } from "../../three3d/lightReach";
 import { safeCompileAsync } from "../../three3d/safeCompile";
 
+/** Low's pitch under 3D quality look New, round 2 (see applyDials). */
+export const GRASS_LOW_RGB: [number, number, number] = [0.82, 0.92, 0.82], GRASS_LOW_STRIPES = 1.25;
+const scaleHex = (hex: string, k: [number, number, number]) => {
+  const n = parseInt(hex.slice(1), 16), c = (x: number) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0");
+  return `#${c(((n >> 16) & 255) * k[0])}${c(((n >> 8) & 255) * k[1])}${c((n & 255) * k[2])}`;
+};
 /** Each of the three extra floodlight banks, as a share of the night "sun" (the fourth bank). */
 const FLOOD_BANK = 1.0;
 
@@ -54,6 +61,11 @@ void main() {
   float sd = max(dot(d, normalize(sunDir)), 0.0);
   c += sunCol * (pow(sd, 400.0) * 40.0 + pow(sd, 24.0) * 0.6) * sunDisc;
   gl_FragColor = vec4(c, 1.0);
+  // straight to the screen (Low) the sky is graded like everything else; into the pass's picture these do nothing
+  #ifdef H_SKY_GRADE
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+  #endif
 }`;
 
 export interface RealLookOptions {
@@ -179,7 +191,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     tSky: { value: null }, scale: { value: 1 }, gain: { value: 1 }, rot: { value: 0.12 }, sunDisc: { value: 0 },
     sunDir: { value: new T.Vector3(0, 1, 0) }, sunCol: { value: new T.Color() }, below: { value: new T.Color("#1a1f1a") },
   };
-  const sky = new T.Mesh(new T.SphereGeometry(400, 48, 24), new T.ShaderMaterial({ uniforms: su, vertexShader: SKY_VERT, fragmentShader: SKY_FRAG, side: T.BackSide, depthWrite: false, fog: false }));
+  const sky = new T.Mesh(new T.SphereGeometry(400, 48, 24), new T.ShaderMaterial({ uniforms: su, vertexShader: SKY_VERT, fragmentShader: SKY_FRAG, side: T.BackSide, depthWrite: false, fog: false, defines: tierLookNew() ? { H_SKY_GRADE: "" } : {} }));
   sky.renderOrder = -10; sky.frustumCulled = false;
   root.add(sky);
 
@@ -218,6 +230,14 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   // ── pitch, stadium, ball ──
   const pitch: RealPitch = buildRealPitch(T, maps, { lines: o.lines !== false, stripes: o.lines !== false, w: withArena ? 104 : 600, l: withArena ? 141 : 600 });
   root.add(pitch.mesh);
+  // 3D quality look New (12 Oct 2026): the pitch, crowd and boards filtered at 8x on Medium, 4x on Low.
+  // Sharp mown stripes and lines at a slant for a texture fetch, not a higher pixel ratio. Round 2: set
+  // BEFORE the stadium is built (its boards are copies taken then: round 1's 8x never reached them).
+  const freshTier = tierLookNew();
+  if (o.sharp || (o.crisp && tier !== "low") || freshTier) {
+    const an = Math.min(tier === "low" && !o.sharp ? 4 : 8, renderer.capabilities?.getMaxAnisotropy?.() ?? 4);
+    for (const t of [maps.col, maps.nrm, maps.orh, crowdTex, ledTex]) if (t && t.anisotropy < an) { t.anisotropy = an; t.needsUpdate = true; }
+  }
   const arena: Arena | null = withArena ? buildArena(T, tier, { crowd: crowdTex, led: ledTex }, { colours: o.colours, merge: (bgu as any)?.mergeGeometries }) : null;
   if (arena) root.add(arena.group);
   // the crowd keeps a neutral, lifted shade under the baked light (lib/star/look/bakedLight.ts)
@@ -241,24 +261,23 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   const csGeo = new T.PlaneGeometry(1, 1);
   csGeo.rotateX(-Math.PI / 2);
   // one draw for every contact shadow (9 Oct 2026: was one draw a man, 22 in a match)
-  // (3D quality look New) where the men cast no live shadow (Low, the emergency rungs), each also gets a
-  // long soft shadow along the sun from the same instanced draw: no man floats, nothing more to draw
-  const CS_MAX = 80;
+  const CS_MAX = 40;
   const csInst = new T.InstancedMesh(csGeo, csMat, CS_MAX);
   csInst.renderOrder = 1; csInst.count = 0; csInst.frustumCulled = false;
   root.add(csInst);
+  // (3D quality look New) where the men cast no live shadow (Low, the emergency rungs), each also gets a
+  // short, faint soft shadow along the sun beside the round one under his feet. Round 2 (12 Oct 2026): its
+  // own draw at a third of the strength, at most 1.5 m (round 1 shared the contact draw at full strength
+  // and up to 4.2 m: long dark streaks). One draw more, a third of round 1's shadow pixels.
+  const sunMat = new T.MeshBasicMaterial({ map: csTex, transparent: true, depthWrite: false, opacity: 0.3 });
+  const sunInst = new T.InstancedMesh(csGeo, sunMat, CS_MAX);
+  sunInst.renderOrder = 1; sunInst.count = 0; sunInst.frustumCulled = false;
+  root.add(sunInst);
   const csM = new T.Matrix4(), csQ = new T.Quaternion(), csP = new T.Vector3(), csS = new T.Vector3();
   const UP_Y = new T.Vector3(0, 1, 0);
   const contacts: { p: Person3D }[] = [];
 
   const post: HPost = makeHPost(T, renderer, tier, o.sharp && tier !== "low" ? { msaa: tier === "high" ? 4 : 2 } : {});
-  // 3D quality look New (12 Oct 2026): the pitch, crowd and boards filtered at 8x on Medium, 4x on Low.
-  // Sharp mown stripes and lines at a slant for a texture fetch, not a higher pixel ratio.
-  const freshTier = tierLookNew();
-  if (o.sharp || (o.crisp && tier !== "low") || freshTier) {
-    const an = Math.min(tier === "low" && !o.sharp ? 4 : 8, renderer.capabilities?.getMaxAnisotropy?.() ?? 4);
-    for (const t of [maps.col, maps.nrm, maps.orh, crowdTex, ledTex]) if (t && t.anisotropy < an) { t.anisotropy = an; t.needsUpdate = true; }
-  }
   // the shadow-only pass: a 1-pixel target and a camera that sees nothing
   const shadowOnly = new T.WebGLRenderTarget(1, 1);
   const BLIND_LAYER = 31;
@@ -275,7 +294,12 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     for (const f of floods) f.visible = f.intensity > 0 || lightReachOff();
     hemi.intensity = look.hemi.intensity * p.hemi;
     scene.environmentIntensity = look.env * p.env;
-    pitch.setLook({ grass: [tuneGrass(look.grass[0], p), tuneGrass(look.grass[1], p)], wet: look.wet, blades: p.blades, stripes: p.stripes });
+    // 3D quality look New, round 2: Low has no sun shadow map, so its pitch reads brighter and flatter than
+    // High's under the same grade (measured on the stills: red 79 vs 57, green 99 vs 85). A darker, less warm
+    // grass colour and stronger mown stripes: colour numbers only, nothing more drawn or read.
+    const lowG = tier === "low" && freshTier;
+    const gr = (h: string) => (lowG ? scaleHex(tuneGrass(h, p), GRASS_LOW_RGB) : tuneGrass(h, p));
+    pitch.setLook({ grass: [gr(look.grass[0]), gr(look.grass[1])], wet: look.wet, blades: p.blades, stripes: p.stripes * (lowG ? GRASS_LOW_STRIPES : 1) });
     baked?.setStrength({ ao: p.ao, shade: p.shade, bounce: p.bounce });
     baked?.setLight(sun.color, sun.intensity);
   };
@@ -389,23 +413,25 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
         csP.set(r.position.x, 0.015, r.position.z + 0.04 * s); csS.set(0.75 * s, 1, 0.75 * s);
         csInst.setMatrixAt(ci++, csM.compose(csP, csQ, csS));
       }
+      csInst.count = ci;
+      csInst.instanceMatrix.needsUpdate = true;
+      let si = 0;
       if (freshTier && !peopleCast) {
-        // the sun's shadow on the grass: away from the sun, longer the lower it is (a 1.8 m man)
+        // the sun's shadow on the grass: away from the sun, a little longer the lower it is; short and faint
         const hl = Math.hypot(dir.x, dir.z) || 1e-3;
-        const len = Math.min(4.2, Math.max(0.9, (1.8 * hl) / Math.max(0.2, dir.y)));
+        const len = Math.min(1.5, Math.max(0.7, (0.75 * hl) / Math.max(0.2, dir.y)));
         const sx = -dir.x / hl, sz = -dir.z / hl;
         csQ.setFromAxisAngle(UP_Y, Math.atan2(sx, sz));
         for (const c of contacts) {
           const r = c.p.root;
-          if (!(r.visible && c.p.body.visible !== false) || ci >= CS_MAX) continue;
+          if (!(r.visible && c.p.body.visible !== false) || si >= CS_MAX) continue;
           const s = r.scale.x || 1;
-          csP.set(r.position.x + sx * len * 0.5 * s, 0.014, r.position.z + sz * len * 0.5 * s); csS.set(0.6 * s, 1, len * s);
-          csInst.setMatrixAt(ci++, csM.compose(csP, csQ, csS));
+          csP.set(r.position.x + sx * len * 0.45 * s, 0.014, r.position.z + sz * len * 0.45 * s); csS.set(0.5 * s, 1, len * s);
+          sunInst.setMatrixAt(si++, csM.compose(csP, csQ, csS));
         }
         csQ.identity();
       }
-      csInst.count = ci;
-      csInst.instanceMatrix.needsUpdate = true;
+      if (sunInst.count !== si || si) { sunInst.count = si; sunInst.instanceMatrix.needsUpdate = true; }
       arena?.update(dt, ball);
       if (hball && ball) hball.update(dt, { x: ball.vx, y: ball.vz, z: ball.vy });
     },
@@ -454,7 +480,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       post.render(sc, camera, {
         exposure: look.exposure * p.exposure, bloom: look.bloom * p.bloom, bloomThresh: look.bloomThresh,
         contrast: look.contrast * p.contrast, sat: look.sat * p.sat, tint: look.tint, lift: look.lift,
-        vignette: look.vignette * p.vignette, lut, lutAmt: p.lut, sharpen: p.sharpen,
+        vignette: look.vignette * p.vignette, lut, lutAmt: p.lut, sharpen: p.sharpen, slot: gradeSlot("stadium", tod),
       });
       renderer.shadowMap.autoUpdate = true;
       // dev builds: the look-tuner re-draws this same frame after turning a dial
@@ -477,7 +503,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       shadowOnly.dispose();
       root.remove(csInst);
       for (const c of contacts) fabric(c.p.body.material as any, false);
-      csGeo.dispose(); csMat.dispose(); csTex.dispose();
+      csGeo.dispose(); csMat.dispose(); sunMat.dispose(); csTex.dispose();
       sky.geometry.dispose(); sky.material.dispose();
       scene.remove(root);
       scene.environment = prevEnv; scene.fog = prevFog; scene.background = prevBg;

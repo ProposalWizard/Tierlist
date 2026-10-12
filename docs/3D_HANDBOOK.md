@@ -135,7 +135,7 @@ exactly today's bodies. You never pick a file yourself:
 - One renderer for all scenes, warm-up, cached loads, dynamic resolution, frame gate: `lib/star/three3d/perf.ts` (`acquireRenderer`, `warmUp`, `loadGltfCached`, `DynamicResolution`, `FrameGate`). Its header lists the steps to adopt.
 - The governor: `lib/star/three3d/governor.ts` (the rule: steps down if the middle frame is over ~22 ms for 2.5 s, but only to rung 2; rungs 3–4 need under 30 fps for 5 s; back up after 8 s; one-off long frames and the 1 s after `hush()` — a chance start or camera cut — are not judged) and `lib/star/three3d/governThree.ts` (what a rung does: pixel ratio, shadows, post). A phone opens on Medium and stays there while it keeps up. Call `governScene(...)` once and `g.frame(now)` each drawn frame. Add `?gov=0` to any page to switch stepping off while you measure one tier.
 - The frame meter: `lib/star/three3d/frameMeter.ts`. Shows fps, worst frame, draw calls, triangles, shadow and skinned draws, post passes, JS ms, tier and rung. Add `?fps=1` to any page (`?fps=0` hides it; admins and testers see it anyway). The numbers are also on `window.__frame3d`.
-- **3D quality look (12 Oct 2026):** Medium and Low buy High's look back cheaply instead of switching it off. Settings → Look → "3D quality look: New | Old" (`lib/star/three3d/tierLook.ts`, row `tierLook3d`; `?tierlook=old|new` on any page). What each tier gets and what it costs: "3D quality look: Medium and Low" below.
+- **3D quality look (12 Oct 2026):** Medium and Low buy High's look back cheaply instead of switching it off.  Round 2: Low runs High's own grade per place and time of day in the tone map (`real/toneGrade.ts`). Settings → Look → "3D quality look: New | Old" (`lib/star/three3d/tierLook.ts`, row `tierLook3d`; `?tierlook=old|new` on any page). What each tier gets and what it costs: "3D quality look: Medium and Low" below.
 - The build machine has NO graphics chip. Frame times here are 10 to 100 times a phone's. Read percentages, never milliseconds. A phone is the only true judge.
 - `scripts/perf3d` measures a scene without Next (read its README).
 - **Speed pass 2 (9 Oct 2026): same picture, less work.** Each saving has a switch so a before/after still can be taken:
@@ -857,6 +857,21 @@ Measured here (SwiftShader, no graphics chip, harness career chance and garden, 
 Final pass reads per pixel on Medium (reasoned from the shader, not measured): before ~10 on a plain pixel (5 FXAA reads × colour + bloom), after ~7 (5 × colour, + bloom once, + depth once; + the soft copy only where the far stands are). Low: no pass added; the grade is ~15 ALU ops inside the tone map. On a phone (estimated, not seen): Medium the same or a little cheaper; Low under 1% more.
 
 Stills (390×844 at 3×, the same chance, High | Medium before | Medium after | Low before | Low after): made by `tiers.mjs` then a contact sheet; not committed (scratch). The garden stills are not the same moment (the walk-in runs per frame, and each tier draws a different number of frames).
+
+**Round 2 (12 Oct 2026, Harry: "put full focus on the medium/low look").** Still behind the same New | Old setting.
+
+| Tier | Change | Cost |
+|---|---|---|
+| Low | High's own colour chain in the tone map (`lib/star/style3d/real/toneGrade.ts`): the pass's ACES (not three's), tint, lift, S-curve, split tone, saturation and the broadcast LUT as a 10-term colour polynomial fitted to `public/star/look/lut-*.png` (weighted mean error 0.066 day, 0.041 golden and night, of full scale; weighted extra to dark colours). Per place (stadium / garden-shop-casino) and time of day: 7 slots. | No pass, no texture: about 45 ALU ops a lit pixel instead of round 1's ~15 (estimated from the shader). |
+| Low | Which slot: the tone map's only per-frame number is the exposure, so the pass writes `exposure + 16 × slot` (`gradeExposure`) and the shader splits it. Slot 0 = round 1's fixed grade (anything without a slot). | Nothing. |
+| Low | High's vignette as a ring mesh multiplied over the edges (`makeVignette`, post.ts); the middle where it would darken under 3% is left out (`vignetteCells`: 128 of 144 cells drawn at 0.3). | +1 draw, ~600 triangles, a one-multiply fill on the ring. No texture read. |
+| Low | The sky gets the tone map and colour space (`H_SKY_GRADE`, only when New; no-ops inside the pass's picture). | Nothing measurable. |
+| Low | Men's sun shadow: own draw at 0.3 opacity, 0.7–1.5 m long (round 1: shared draw at full strength, up to 4.2 m: dark streaks). Garden: the same under you. | +1 draw; about a third of round 1's shadow pixels. |
+| Low | Pitch colour scaled (`GRASS_LOW_RGB`) and mown stripes ×1.25: no sun shadow map makes Low's pitch brighter and flatter than High's under the same grade. | Colour numbers only. |
+| Medium | Crowd and LED boards sample with a −0.5 mip bias (`crowdMipBias`, arena.ts); anisotropy is now set before the stadium is built, so the boards (copies taken then) get 8× too (round 1's never reached them). | Same one read a pixel; a few more texture-cache misses on two materials. |
+| Medium | Grade, LUT and vignette: already High's (the same final pass); unchanged. | — |
+
+Not done in round 2: SMAA (not tried; FXAA + sharpen kept), a pre-sharpened crowd texture, crowd impostors, player LOD, light probes, cel shading on Low, the goal net and lines as geometry, player rim light on Low. Stills: `tiers.mjs … --tod=day|golden|night` (new flag; the garden takes `sky`).
 
 ### Cut-scene camera + music (9 Oct 2026)
 
