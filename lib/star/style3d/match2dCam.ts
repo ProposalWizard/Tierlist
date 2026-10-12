@@ -67,6 +67,42 @@ export const MATCH2D = {
 };
 export type Match2DParams = typeof MATCH2D;
 
+/**
+ * ONE SIZE FOR EVERYTHING, ALWAYS (Harry, 12 Oct 2026): "no changes in size for any player
+ * or goalie or goal should ever occur". Each object has ONE fixed scale (× real life), the
+ * same in every chance and every frame. It never follows the camera and is never worked out
+ * per chance (before: the men were sized per chance to ~6% of the screen, 1.5–3.0×).
+ * A man reads smaller on a wide side-on chance: that is the camera being further away.
+ *
+ * `lean`: men lean back from the camera by (angle − 40°) (picture only, feet planted).
+ * `goal`: the goal frame (posts, bar, net) about the middle of its line. The pitch lines
+ * stay true: they sit under the ball and the men (a scaled box would move the spot off the ball).
+ *
+ * DEFAULT: A, real proportions (Harry on the first penalty still: "the goalie's head is out the damn goal").
+ * B and C are comparison stills only (scripts/cam3d/scale.mts measures them); `current`
+ * is the old per-chance median, fixed (for before stills).
+ */
+export interface MatchScale { man: number; keeper: number; goal: number; lean: boolean }
+export const MATCH_SCALES = {
+  /** The median of the old per-chance size (2.02×), held fixed; the keeper the same as a man (as the new camera drew him). */
+  current: { man: 2.0, keeper: 2.0, goal: 1, lean: true },
+  /** A: real life. Men, keeper and goal all true size, no lean: the man-to-goal ratio is real. */
+  A: { man: 1.0, keeper: 1.0, goal: 1, lean: false },
+  /** B: men as now; the goal frame scaled up so man-to-goal on screen matches the 2D view. */
+  B: { man: 2.0, keeper: 2.0, goal: 2.5, lean: true },
+  /** C: halfway between A and B. */
+  C: { man: 1.5, keeper: 1.5, goal: 1.75, lean: true },
+} satisfies Record<string, MatchScale>;
+export type MatchScaleId = keyof typeof MATCH_SCALES;
+/** The one tuning constant. Change it when Harry picks (A, B or C). */
+export const MATCH_SCALE_PICK: MatchScaleId = "A";
+/** The fixed scale in use. Test pages may pass ?mscale=A|B|C|current (stills only). */
+export function matchScale(): MatchScale {
+  const q = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("mscale");
+  const id = q && q in MATCH_SCALES ? (q as MatchScaleId) : MATCH_SCALE_PICK;
+  return MATCH_SCALES[id];
+}
+
 /** Canvas fraction (0..1 each way) -> pitch metres, for the 2D frame. */
 export function canvasToPitch(f: Frame2D, sx: number, sy: number): BcPoint {
   const v = f.viewport;
@@ -253,4 +289,135 @@ export function solveMatch2D(f: Frame2D, P: Match2DParams = MATCH2D, pick?: { el
     if (score < bestScore) { bestScore = score; best = c; }
   }
   return best!;
+}
+
+/**
+ * THE SET-PIECE CAMERA (Harry, 12 Oct 2026): every chance is framed like the 2D (wide) EXCEPT
+ * a penalty and a direct free kick, which get a closer camera: the ball, the taker, the keeper,
+ * the whole goal and the wall stay on screen, and the taker and keeper read at about
+ * `targetShare` of the screen's height. Only the camera moves: nothing is scaled (the one fixed
+ * scale, MATCH_SCALES, still holds). Touch still lands right: the 3D view maps every touch
+ * through the grass under the finger (engineView.ts groundAt → to2dClient).
+ */
+export const SET_PIECE_CAM = {
+  kinds: ["penalty", "free_kick"] as string[],
+  elevs: [45, 50, 55, 60] as number[],
+  fovs: [26, 32, 38] as number[],
+  /** A man at the ball, share of the screen's height, aimed for (Harry: "about 5–6%"). */
+  targetShare: 0.055,
+  /** Room at every edge, share of the screen (the goal's posts, the taker's feet). */
+  margin: 0.04,
+  /**
+   * Free pitch below the ball for a full-power drag back, as a share of the screen's WIDTH:
+   * the 2D's longest full-power drag (dragForFullPower at power 0 = 0.14 × DRAG_LENGTH_SCALE 0.75
+   * = 0.105 of the classic 5:8 canvas height, i.e. 0.168 of the width), plus a finger's room.
+   */
+  dragRoomW: 0.168 + 0.03,
+};
+
+/** The free pitch below the ball the drag needs, as a share of the screen's height. */
+export function dragRoomShare(W: number, H: number, S = SET_PIECE_CAM): number { return (S.dragRoomW * W) / Math.max(1, H); }
+
+type SpCam = Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov"> & { minDepth: number; elevDeg: number };
+export function usesSetPieceCam(kind: string): boolean { return SET_PIECE_CAM.kinds.includes(kind); }
+
+/**
+ * Fit a camera from this azimuth to `pts` (all on screen, centred), at angle `elevDeg` and lens
+ * `fov`, no nearer than `minD`. Returns the camera and the nearest point's depth.
+ */
+export function fitPoints(W: number, H: number, pts: BcPoint[], ax: number, az: number, elevDeg: number, fov: number, margin: number, minD = 4): SpCam {
+  const elev = (elevDeg * Math.PI) / 180;
+  let gx = 0, gy = 0;
+  for (const p of pts) { gx += p.x; gy += p.y; }
+  gx /= pts.length; gy /= pts.length;
+  const cam = (D: number, a: number, s: number) => ({ tx: gx - CX - ax * a - az * s, tz: gy - az * a + ax * s, ax, az, elev, D, fov });
+  const centred = (D: number) => {
+    let lo = -120, hi = 120;
+    const vbal = (a: number) => {
+      let mn = Infinity, mxf = -Infinity;
+      for (const p of pts) { const r = bcProject(cam(D, a, 0), W, H, p); if (r.depth <= 0.1) return 9; mn = Math.min(mn, r.fr); mxf = Math.max(mxf, r.fr); }
+      return mn + mxf - 1;
+    };
+    for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (vbal(m) > 0) hi = m; else lo = m; }
+    const a = (lo + hi) / 2;
+    let sl = -120, sh = 120;
+    const hbal = (s: number) => {
+      let mn = Infinity, mxn = -Infinity;
+      for (const p of pts) { const r = bcProject(cam(D, a, s), W, H, p); mn = Math.min(mn, r.nx); mxn = Math.max(mxn, r.nx); }
+      return mn + mxn;
+    };
+    for (let i = 0; i < 40; i++) { const m = (sl + sh) / 2; if (hbal(m) > 0) sh = m; else sl = m; }
+    return cam(D, a, (sl + sh) / 2);
+  };
+  const mx = 1 - 2 * margin, my0 = margin, my1 = 1 - margin;
+  const fits = (D: number) => {
+    const c = centred(D);
+    for (const p of pts) {
+      const r = bcProject(c, W, H, p);
+      if (r.depth <= 0.5 || Math.abs(r.nx) > mx || r.fr < my0 || r.fr > my1) return false;
+    }
+    return true;
+  };
+  let lo = minD, hi = 600;
+  if (!fits(lo)) { for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (fits(m)) hi = m; else lo = m; } } else hi = lo;
+  const c = centred(hi);
+  let minDepth = Infinity;
+  for (const p of pts) minDepth = Math.min(minDepth, bcProject(c, W, H, p).depth);
+  return { ...c, minDepth, elevDeg };
+}
+
+/**
+ * The closer camera for a penalty or a free kick. `keep` = the points that must stay on screen
+ * (ball, taker, keeper, the goal's posts and bar, the wall: feet and heads). Tries each angle and
+ * lens; keeps the one whose man at the ball is nearest `targetShare` (never nearer than all of
+ * `keep` allows). Facing as the 2D. Pure: tests/star/match2dCam.mts.
+ */
+export function solveSetPieceCam(f: Frame2D, keep: BcPoint[], ball: BcPoint, man: MatchScale, S = SET_PIECE_CAM): Match2DCamera {
+  const { ax, az } = azimuth2D(f.facing);
+  let best: (SpCam & { share: number }) | null = null, bestScore = Infinity;
+  // a full drag back must fit under the ball: if the ball sits too low, keep a spot of grass
+  // further towards the camera on screen too (the camera backs off / slides; nothing is scaled)
+  const room = dragRoomShare(f.W, f.H, S);
+  const withRoom = (e: number, fov: number, minD?: number) => {
+    let pts = keep, c = fitPoints(f.W, f.H, pts, ax, az, e, fov, S.margin, minD);
+    for (let i = 0, d = 1; i < 24 && bcProject(c, f.W, f.H, ball).fr > 1 - S.margin - room; i++, d += 1) {
+      pts = [...keep, { x: ball.x + ax * d, y: ball.y + az * d, z: 0 }];
+      c = fitPoints(f.W, f.H, pts, ax, az, e, fov, S.margin, minD);
+    }
+    return c;
+  };
+  for (const e of S.elevs) for (const fov of S.fovs) {
+    let c = withRoom(e, fov);
+    const lean = man.lean ? leanFor(e) : 0;
+    let share = leanedManShare(c, f.W, f.H, ball, MATCH2D.manH * man.man, lean);
+    // closer than the target needs: back off (more room round the action), the angle and lens kept
+    if (share > S.targetShare) {
+      let lo = c.D, hi = c.D * 4;
+      for (let i = 0; i < 30; i++) {
+        const m = (lo + hi) / 2;
+        const cm = withRoom(e, fov, m);
+        if (leanedManShare(cm, f.W, f.H, ball, MATCH2D.manH * man.man, lean) > S.targetShare) lo = m; else hi = m;
+      }
+      c = withRoom(e, fov, hi);
+      share = leanedManShare(c, f.W, f.H, ball, MATCH2D.manH * man.man, lean);
+    }
+    const score = Math.abs(share - S.targetShare) + Math.abs(e - 50) * 0.0004;
+    if (score < bestScore) { bestScore = score; best = { ...c, share }; }
+  }
+  const b = best!;
+  return { ...b, k: man.man, man: b.share, anchorShare: bcProject(b, f.W, f.H, ball).fr, extra: 0 } as Match2DCamera;
+}
+
+/** What a penalty / free kick camera must keep on screen, from the frame's own men. */
+export function setPieceKeep(ball: BcPoint, figures: { sid: string; x: number; y: number; team: string }[], keeper: BcPoint | null, man: MatchScale): BcPoint[] {
+  const hm = MATCH2D.manH * man.man, hk = MATCH2D.manH * man.keeper, gh = 2.44 * man.goal, gw = 3.66 * man.goal;
+  const pts: BcPoint[] = [{ ...ball, z: 0 }, { ...ball, z: 0.3 }];
+  for (const px of [CX - gw, CX + gw]) pts.push({ x: px, y: 0, z: 0 }, { x: px, y: 0, z: gh });
+  if (keeper) pts.push({ ...keeper, z: 0 }, { ...keeper, z: hk });
+  for (const g of figures) {
+    // the taker, and the wall: their men between the ball and the goal, near the line of the kick
+    const wall = g.team === "them" && g.y < ball.y + 1 && g.y > 1 && Math.abs(g.x - ball.x) < 14;
+    if (g.sid === "you" || wall) pts.push({ x: g.x, y: g.y, z: 0 }, { x: g.x, y: g.y, z: hm });
+  }
+  return pts;
 }

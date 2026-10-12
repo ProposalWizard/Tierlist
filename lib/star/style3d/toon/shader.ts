@@ -327,7 +327,10 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
     outgoingLight = min(hl, vec3(uHome.z));
   }
 }
-#include <opaque_fragment>`);
+#include <opaque_fragment>
+// the 3D match's men are marked in the picture's alpha (0.5) so Medium's post pass keeps them clean
+// (real/post.ts menClean). Opaque, so the alpha is never blended; nothing else reads it.
+if (uHome.x > 0.5) gl_FragColor.a = 0.5;`);
   };
   mat.customProgramCacheKey = () => "people3d-toon-v5";
 }

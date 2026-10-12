@@ -20,7 +20,12 @@ import { frameForNewView, turnWideChance } from "../../lib/star/matchView";
 import { hasRunup } from "../../lib/star/penaltyRunup";
 import { tiltFor } from "../../lib/star/cameraTilt";
 import { solveBroadcast, actionPoints, bcProject, BROADCAST, type BcFigure, type BcPoint, type BcCamera } from "../../lib/star/style3d/broadcastCam";
-import { solveMatch2D, framedQuad, on2dScreen, pitchTo2dScreen, MATCH2D, type Frame2D } from "../../lib/star/style3d/match2dCam";
+import { solveMatch2D, framedQuad, on2dScreen, pitchTo2dScreen, leanedManShare, leanFor, MATCH2D, MATCH_SCALES, MATCH_SCALE_PICK, matchScale, type Frame2D } from "../../lib/star/style3d/match2dCam";
+import fs from "node:fs";
+import { usesSetPieceCam, solveSetPieceCam, setPieceKeep, groundUnder, dragRoomShare, SET_PIECE_CAM } from "../../lib/star/style3d/match2dCam";
+import { dragForFullPower, DRAG_LENGTH_SCALE } from "../../lib/star/canvasEngine";
+import { standBackFor, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP } from "../../lib/star/runupStyles";
+import { drawnTakerAt } from "../../lib/star/kickFoot";
 
 let fails = 0;
 const ok = (c: boolean, m: string) => { if (!c) { fails++; console.error("  ✗ " + m); } else console.log("  ✓ " + m); };
@@ -80,19 +85,27 @@ if (isMain) {
   const rows = process.env.MATCH2D_ROWS === "1";
   const tot = { old: { seen: 0, kept: 0, full: 0, ball: [] as number[] }, nu: { seen: 0, kept: 0, full: 0, ball: [] as number[] } };
   let n = 0, cornersOff = 0, badAngle = 0, kinds = new Set<string>();
-  const ks: number[] = [], shares: number[] = [];
+  const ks: number[] = [], shares: number[] = [], keeperKs: number[] = [], goalKs: number[] = [], keeperBar: number[] = [];
   const ratio: number[] = [], extra: number[] = [], elevs: Record<string, number> = {};
   for (const kind of SCENARIO_KINDS) {
     for (let seed = 1; seed <= 6; seed++) {
       const c = chanceFor(kind, seed);
       n++; kinds.add(kind);
       const o = oldCam(c), nu = solveMatch2D(c.f);
-      const so = score(c, o, BROADCAST.fig), sn = score(c, nu, nu.k);
+      const fixed = matchScale();
+      const so = score(c, o, BROADCAST.fig), sn = score(c, nu, fixed.man);
       for (const [k, s] of [["old", so], ["nu", sn]] as const) {
         tot[k].seen += s.seen; tot[k].kept += s.kept; tot[k].ball.push(s.ballPx); if (s.kept === s.seen) tot[k].full++;
       }
       for (const q of framedQuad(c.f)) if (!on3d(nu, q)) { cornersOff++; break; }
-      extra.push(nu.extra); ks.push(nu.k); shares.push(nu.man); elevs[`${nu.elevDeg}°/${nu.fov}`] = (elevs[`${nu.elevDeg}°/${nu.fov}`] ?? 0) + 1;
+      extra.push(nu.extra); ks.push(fixed.man); keeperKs.push(fixed.keeper); goalKs.push(fixed.goal);
+      shares.push(leanedManShare(nu, W, H, c.sc.ball, MATCH2D.manH * fixed.man, fixed.lean ? leanFor(nu.elevDeg) : 0));
+      if (c.gv) {
+        // the keeper on his line against the bar, on the 3D screen (Harry: "the goalie's head is out the damn goal")
+        const kp = leanedManShare(nu, W, H, { x: c.keeper.x, y: c.keeper.y }, MATCH2D.manH * fixed.keeper, fixed.lean ? leanFor(nu.elevDeg) : 0);
+        const bar = bcProject(nu, W, H, { x: 34, y: 0 }).fr - bcProject(nu, W, H, { x: 34, y: 0, z: 2.44 * fixed.goal }).fr;
+        keeperBar.push(kp / bar);
+      } elevs[`${nu.elevDeg}°/${nu.fov}`] = (elevs[`${nu.elevDeg}°/${nu.fov}`] ?? 0) + 1;
       if (nu.elevDeg < 40 || nu.elevDeg > 60) badAngle++;
       // the 2D man's height on the phone vs a life-size 3D man at the ball: the fig that would match
       const v = c.f.viewport, turned = c.f.facing !== "up";
@@ -112,11 +125,54 @@ if (isMain) {
   console.log(`fig that matches the 2D's men at this framing: p10 ${pct(ratio, 0.1).toFixed(2)}, median ${pct(ratio, 0.5).toFixed(2)}, p90 ${pct(ratio, 0.9).toFixed(2)} (set ${MATCH2D.fig})`);
   console.log(`extra grass on the 3D screen the 2D does not show: median ${(pct(extra, 0.5) * 100).toFixed(0)}%, p90 ${(pct(extra, 0.9) * 100).toFixed(0)}%; angle/lens picked ${JSON.stringify(elevs)}`);
   console.log(`men: size per chance ${pct(ks, 0).toFixed(2)}–${pct(ks, 1).toFixed(2)}× (median ${pct(ks, 0.5).toFixed(2)}), a man in the action ${(pct(shares, 0) * 100).toFixed(1)}–${(pct(shares, 1) * 100).toFixed(1)}% of the height (median ${(pct(shares, 0.5) * 100).toFixed(1)}%)`);
-  ok(pct(shares, 0.5) >= MATCH2D.manShare - 0.002 && Math.min(...shares) >= 0.035, `men readable: the median chance at the ${(MATCH2D.manShare * 100).toFixed(0)}% target, none under 3.5%`);
+  // ONE SIZE (Harry, 12 Oct 2026: "no changes in size for any player or goalie or goal should ever occur")
+  const same = (a: number[]) => a.every((v) => v === a[0]);
+  ok(same(ks) && same(keeperKs) && same(goalKs), `one fixed scale in every chance: men ${ks[0]}x, keeper ${keeperKs[0]}x, goal ${goalKs[0]}x (option "${MATCH_SCALE_PICK}")`);
+  const ev = fs.readFileSync(new URL("../../lib/star/style3d/engineView.ts", import.meta.url), "utf8");
+  const pm = ev.slice(ev.indexOf("const placeMatch2D"), ev.indexOf("const placeCamera"));
+  ok(pm.length > 0 && !/m2\.k\s*=\s*c\.k|tvFig\s*=\s*c\.k|=\s*c\.k\b/.test(pm) && /m2\.k = mScale\.man/.test(pm), "the 2D-frame camera never takes a size from the camera solve (c.k)");
+  if (MATCH_SCALE_PICK === "A") ok(keeperBar.length > 20 && Math.max(...keeperBar) < 0.85 && Math.min(...keeperBar) > 0.68, `the keeper's height on the 3D screen sits under the bar in every chance: ${(Math.min(...keeperBar)).toFixed(2)}–${(Math.max(...keeperBar)).toFixed(2)} of the bar's (real: 1.8 / 2.44 = 0.74; ${keeperBar.length} chances with a goal)`);
+  ok(Math.max(...keeperBar) < 1, `the keeper never stands taller than the bar on the screen (max ${(Math.max(...keeperBar)).toFixed(2)})`);
+  for (const [id, sc] of Object.entries(MATCH_SCALES)) ok(sc.man > 0 && sc.keeper > 0 && sc.goal > 0, `scale option ${id} is a set of fixed numbers`);
+  if (MATCH_SCALE_PICK === "current") ok(pct(shares, 0.5) >= MATCH2D.manShare - 0.002, `men readable: the median chance at the ${(MATCH2D.manShare * 100).toFixed(0)}% target at the fixed ${ks[0]}x (smallest ${(Math.min(...shares) * 100).toFixed(1)}%: a wide side-on chance)`);
   ok(n >= 40, `${n} chances`);
   ok(tot.nu.kept === tot.nu.seen, `every person and post the 2D shows is on the 3D screen (${share(tot.nu)}%)`);
   ok(cornersOff === 0, `the 2D view box's grass corners (up to 3 m past the pitch on the camera's side) are on the 3D screen in every chance (${cornersOff} not)`);
   ok(badAngle === 0, `every camera 40–60° down (${badAngle} not)`);
   ok(pct(tot.nu.ball, 0.5) < pct(tot.old.ball, 0.5), `the ball sits nearer its 2D spot than before`);
+
+  // THE SET-PIECE CAMERA (Harry: penalties and free kicks closer; every other kind as the 2D)
+  ok(SCENARIO_KINDS.filter((k) => usesSetPieceCam(k)).sort().join() === "free_kick,penalty", "only penalties and free kicks get the closer camera");
+  const spShares: number[] = [];
+  let spOff = 0, spDrag = 0, spN = 0, spRoom = 0;
+  const rooms: number[] = [];
+  // the 2D's longest full-power drag on this phone, px (a fraction of the classic 5:8 canvas: 1.6 × width)
+  const fullDragPx = dragForFullPower(0) * 1.6 * W;
+  ok(Math.abs(dragForFullPower(0) / (0.14 * DRAG_LENGTH_SCALE) - 1) < 1e-9 && Math.abs(SET_PIECE_CAM.dragRoomW - 0.03 - dragForFullPower(0) * 1.6) < 1e-9, `the set-piece camera's drag room matches the 2D's full-power drag (${fullDragPx.toFixed(0)} px on a ${W} px wide box)`);
+  const fixedS = matchScale();
+  for (const kind of ["penalty", "free_kick"]) for (let seed = 1; seed <= 6; seed++) {
+    const c = chanceFor(kind, seed);
+    const id = kind === "penalty" ? DEFAULT_PENALTY_RUNUP : DEFAULT_FREE_KICK_RUNUP;
+    const you = c.figs.find((g) => g.sid === "you")!;
+    const st = drawnTakerAt(c.sc.ball, standBackFor(id, c.sc.ball, c.sc.player, c.f.viewport), 1).at;
+    you.x = st.x; you.y = st.y;
+    const keep = setPieceKeep(c.sc.ball, c.figs, { x: c.keeper.x, y: c.keeper.y }, fixedS);
+    const cam = solveSetPieceCam(c.f, keep, c.sc.ball, fixedS);
+    spN++; spShares.push(cam.man);
+    for (const p of keep) { const r = bcProject(cam, W, H, p); if (r.depth <= 0.3 || Math.abs(r.nx) > 1 || r.fr < 0 || r.fr > 1) { spOff++; break; } }
+    // the drag: a finger on the ball's picture finds the ball's own spot on the grass (the 3D view's touch → 2D mapping)
+    const b = bcProject(cam, W, H, c.sc.ball);
+    const below = (1 - b.fr) * H;
+    rooms.push(below);
+    if (below < fullDragPx || b.fr > 1 - dragRoomShare(W, H) + 1e-6) spRoom++;
+    const g = groundUnder(cam, W, H, b.nx, 1 - 2 * b.fr);
+    if (!g || Math.hypot(g.x - c.sc.ball.x, g.y - c.sc.ball.y) > 0.05) spDrag++;
+  }
+  console.log(`set-piece camera: a man at the ball ${(pct(spShares, 0) * 100).toFixed(1)}–${(pct(spShares, 1) * 100).toFixed(1)}% of the height (median ${(pct(spShares, 0.5) * 100).toFixed(1)}%), ${spN} chances`);
+  ok(spOff === 0, `ball, taker, keeper, the whole goal and the wall on screen in every penalty and free kick (${spOff} not)`);
+  ok(pct(spShares, 0.5) >= 0.045 && pct(spShares, 1) <= 0.065, "taker readable: about 5–6% of the screen's height (camera distance only)");
+  console.log(`room below the ball for the drag: ${Math.min(...rooms).toFixed(0)}–${Math.max(...rooms).toFixed(0)} px (a full-power drag needs ${fullDragPx.toFixed(0)} px)`);
+  ok(spRoom === 0, `a full-power drag back always fits below the ball on penalties and free kicks (${spRoom} short)`);
+  ok(spDrag === 0, `the ball's spot on the glass maps back to the ball on the grass (the drag), ${spDrag} off`);
   if (fails) { console.error(`${fails} failed`); process.exit(1); }
 }

@@ -5,6 +5,10 @@
 import fs from "node:fs";
 import { chanceFor } from "../../tests/star/match2dCam.mts";
 import { pitchTo2dScreen, type Frame2D } from "../../lib/star/style3d/match2dCam";
+import { hasRunup, plantBeside } from "../../lib/star/penaltyRunup";
+import { standBackFor, planRunup, runupPositionAt, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP, RUNUP_MOTION } from "../../lib/star/runupStyles";
+import { drawnTakerAt } from "../../lib/star/kickFoot";
+import { SET_PIECE_KINDS } from "../../lib/star/newLook";
 
 const out = process.argv[2] ?? "/tmp/cam3d";
 fs.mkdirSync(`${out}/raw`, { recursive: true });
@@ -38,11 +42,23 @@ function svgFor(f: Frame2D, c: ReturnType<typeof chanceFor>): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${f.W}" height="${f.H}" viewBox="0 0 ${f.W} ${f.H}"><rect width="100%" height="100%" fill="#2f7d32"/>${L.join("")}</svg>`;
 }
 
+// --phases: also the run-up (penalty, free kick) and the strike screen (every kind), for the set-piece stills
+const phases = process.argv.includes("--phases");
 const list: unknown[] = [];
 for (const [kind, seed, label] of PICK) {
   const c = chanceFor(kind, seed);
   const f = c.f;
-  const fig = (sid: string, x: number, y: number, team: "us" | "them") => ({ sid, x, y, team, shirt: team === "us" ? "#c8102e" : "#1d4ed8", shorts: "#ffffff", kick: false, kickFoot: 1, drawn: true });
+  // the stance CanvasMatch gives a penalty / free kick taker (loadScenario: standBackFor; the picture: drawnTakerAt)
+  let standAt: { x: number; y: number } | null = null;
+  if (hasRunup(kind)) {
+    const id = kind === "penalty" ? DEFAULT_PENALTY_RUNUP : DEFAULT_FREE_KICK_RUNUP;
+    const p = standBackFor(id, c.sc.ball, c.sc.player, f.viewport);
+    standAt = p;
+    const at = drawnTakerAt(c.sc.ball, p, 1).at;
+    const you = c.figs.find((g) => g.sid === "you");
+    if (you) { you.x = at.x; you.y = at.y; }
+  }
+  const fig = (sid: string, x: number, y: number, team: "us" | "them") => ({ sid, x, y, team, shirt: team === "us" ? "#c8102e" : "#1d4ed8", shorts: "#ffffff", kick: false, kickFoot: 1, drawn: sid !== "you" || SET_PIECE_KINDS.has(kind) });
   const frame = {
     t: 0, phase: "aim", kind,
     cam: { viewport: f.viewport, facing: f.facing, tilt: f.tilt, W: f.W, H: f.H },
@@ -53,6 +69,19 @@ for (const [kind, seed, label] of PICK) {
   const name = `${kind}-${seed}`;
   fs.writeFileSync(`${out}/raw/2d-${name}.svg`, svgFor(f, c));
   list.push({ name, label, frame });
+  if (phases) {
+    const runS = hasRunup(kind) ? RUNUP_MOTION[kind === "penalty" ? DEFAULT_PENALTY_RUNUP : DEFAULT_FREE_KICK_RUNUP].runS : 0;
+    if (hasRunup(kind) && standAt) {
+      const id = kind === "penalty" ? DEFAULT_PENALTY_RUNUP : DEFAULT_FREE_KICK_RUNUP;
+      const at = drawnTakerAt(c.sc.ball, runupPositionAt(planRunup(id, c.sc.ball, standAt), runS - 0.6), 1).at;
+      const figures = frame.figures.map((g) => (g.sid === "you" ? { ...g, x: at.x, y: at.y } : g));
+      list.push({ name: `${name}-runup`, label: `${label}, run-up (0.6 s before the plant)`, frame: { ...frame, figures, phase: "runup", runup: { t: runS - 0.6, runS } } });
+    }
+    // the strike screen: a penalty / free kick taker is where the 2D's run-up ends (beside the ball)
+    const plantAt = hasRunup(kind) && standAt ? drawnTakerAt(c.sc.ball, plantBeside(c.sc.ball, standAt), 1).at : null;
+    const cfig = plantAt ? frame.figures.map((g) => (g.sid === "you" ? { ...g, x: plantAt.x, y: plantAt.y } : g)) : frame.figures;
+    list.push({ name: `${name}-contact`, label: `${label}, strike screen up`, frame: { ...frame, figures: cfig, phase: "contact" } });
+  }
 }
 fs.writeFileSync(`${out}/raw/chances.json`, JSON.stringify(list));
 console.log(`${list.length} chances → ${out}`);

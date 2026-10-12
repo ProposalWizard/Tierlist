@@ -58,7 +58,7 @@ const FINAL = /* glsl */ `
 precision highp float;
 uniform sampler2D tColor, tDepth, tSoft, tBloom;
 uniform vec2 res;
-uniform float cNear, cFar, exposure, bloom, contrast, sat, vignette, grain, time, sharpen, fxaa, fxSharp, dofOnce, dof, dofNear, dofFar, useDepth, lite, bloomThresh;
+uniform float cNear, cFar, exposure, bloom, contrast, sat, vignette, grain, time, sharpen, fxaa, fxSharp, dofOnce, dof, dofNear, dofFar, useDepth, lite, bloomThresh, menClean;
 uniform vec3 tint, lift, shadowTint, lightTint;
 uniform sampler2D tLut;
 uniform float lutAmt;
@@ -77,8 +77,13 @@ vec3 aces(vec3 x) { x *= exposure; return clamp((x * (2.51 * x + 0.03)) / (x * (
 vec3 toSRGB(vec3 c) { return mix(c * 12.92, 1.055 * pow(max(c, vec3(0.0)), vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
 float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+// the alpha of the last scene() read: 0.5 marks a Style A match man (toon/shader.ts, MEN_MARK)
+float gA;
+bool isMan(float a) { return abs(a - 0.5) < 0.12; }
 vec3 scene(vec2 uv) {
-  vec3 c = texture2D(tColor, uv).rgb;
+  vec4 t4 = texture2D(tColor, uv);
+  gA = t4.a;
+  vec3 c = t4.rgb;
   if (dof > 0.0 && useDepth > 0.5 && dofOnce < 0.5) {
     float d = linD(texture2D(tDepth, uv).r);
     float k = smoothstep(dofNear, dofFar, d) * dof;
@@ -90,6 +95,7 @@ vec3 scene(vec2 uv) {
 void main() {
   vec2 px = 1.0 / res;
   vec3 c = scene(vUv);
+  float aM = gA;
   // lite (Medium, 9 Oct 2026): no bloom chain; a light 8-tap glow here instead, added once
   vec3 glow = vec3(0.0);
   if (lite > 0.5 && bloom > 0.0) {
@@ -101,12 +107,20 @@ void main() {
     glow = toSRGB(aces(glow * bloom * 0.18)) ;
   }
   if (fxaa > 0.5) {
-    vec3 nw = scene(vUv + vec2(-1.0, 1.0) * px), ne = scene(vUv + vec2(1.0, 1.0) * px);
-    vec3 sw = scene(vUv + vec2(-1.0, -1.0) * px), se = scene(vUv + vec2(1.0, -1.0) * px);
+    vec3 nw = scene(vUv + vec2(-1.0, 1.0) * px); float aNW = gA;
+    vec3 ne = scene(vUv + vec2(1.0, 1.0) * px); float aNE = gA;
+    vec3 sw = scene(vUv + vec2(-1.0, -1.0) * px); float aSW = gA;
+    vec3 se = scene(vUv + vec2(1.0, -1.0) * px); float aSE = gA;
+    // Medium, Style A men (menClean): inside a man no smoothing and no sharpen (his flat cel bands
+    // and kit edges stay clean, not smeared or crunchy); his outline against the grass is still
+    // smoothed, never sharpened. Uses the alphas of the reads above: no extra texture read.
+    bool manC = menClean > 0.5 && isMan(aM);
+    bool manAll = manC && isMan(aNW) && isMan(aNE) && isMan(aSW) && isMan(aSE);
+    bool manAny = menClean > 0.5 && (manC || isMan(aNW) || isMan(aNE) || isMan(aSW) || isMan(aSE));
     float lNW = luma(nw), lNE = luma(ne), lSW = luma(sw), lSE = luma(se), lM = luma(c);
     float lMin = min(lM, min(min(lNW, lNE), min(lSW, lSE)));
     float lMax = max(lM, max(max(lNW, lNE), max(lSW, lSE)));
-    if (lMax - lMin > max(0.04, lMax * 0.12)) {
+    if (!manAll && lMax - lMin > max(0.04, lMax * 0.12)) {
       vec2 dir = vec2(-((lNW + lNE) - (lSW + lSE)), ((lNW + lSW) - (lNE + lSE)));
       float red = max((lNW + lNE + lSW + lSE) * 0.03125, 0.0078);
       float rcp = 1.0 / (min(abs(dir.x), abs(dir.y)) + red);
@@ -118,7 +132,7 @@ void main() {
     }
     // 3D quality look New (12 Oct 2026): a light sharpen after the smoothing, from the four corner
     // samples FXAA has already read (no extra texture reads)
-    if (fxSharp > 0.0) c = max(c + (c - (nw + ne + sw + se) * 0.25) * fxSharp, 0.0);
+    if (fxSharp > 0.0 && !manAny) c = max(c + (c - (nw + ne + sw + se) * 0.25) * fxSharp, 0.0);
   } else if (sharpen > 0.0) {
     vec3 n = scene(vUv + vec2(0.0, px.y)) + scene(vUv - vec2(0.0, px.y)) + scene(vUv + vec2(px.x, 0.0)) + scene(vUv - vec2(px.x, 0.0));
     c = max(c + (c - n * 0.25) * sharpen, 0.0);
@@ -202,6 +216,10 @@ export function gradeToneMapping(T: any): number {
   return T.ShaderChunk?.tonemapping_pars_fragment?.includes("ACESFilmicToneMapping( color );") ? T.CustomToneMapping : T.ACESFilmicToneMapping;
 }
 
+/** Medium (3D quality look New): leave the Style A men out of FXAA's insides and the sharpen. ?menclean=0 on test pages shows before. */
+export const MEN_CLEAN = { on: typeof window === "undefined" || new URLSearchParams(window.location.search).get("menclean") !== "0" };
+if (typeof window !== "undefined") (window as unknown as { __menClean?: typeof MEN_CLEAN }).__menClean = MEN_CLEAN;
+
 export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: number } = {}): HPost {
   const msaa = renderer.capabilities?.isWebGL2 === false ? 0 : o.msaa ?? (tier === "high" ? 4 : 0);
   // 3D quality look New: Medium buys High's look back where it costs next to nothing
@@ -237,7 +255,7 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
     dof: { value: tier === "high" ? 0.75 : 0 }, dofNear: { value: 58 }, dofFar: { value: 95 }, useDepth: { value: 1 },
     tint: { value: new T.Vector3(1, 1, 1) }, lift: { value: new T.Vector3() },
     shadowTint: { value: new T.Vector3(0.97, 1.0, 1.04) }, lightTint: { value: new T.Vector3(1.03, 1.0, 0.97) },
-    tLut: { value: null }, lutAmt: { value: 0 }, lite: { value: 0 }, bloomThresh: { value: 1 },
+    tLut: { value: null }, lutAmt: { value: 0 }, lite: { value: 0 }, bloomThresh: { value: 1 }, menClean: { value: 0 },
   };
   const finalMat = new T.ShaderMaterial({ uniforms: fu, vertexShader: VERT, fragmentShader: FINAL, depthTest: false, depthWrite: false });
   const size = new T.Vector2();
@@ -296,6 +314,8 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
       fu.lite.value = 0; fu.dof.value = tier === "high" ? 0.75 : medNew ? 0.6 : 0; fu.fxaa.value = tier === "medium" && !msaa ? 1 : 0;
       fu.fxSharp.value = medNew && !msaa ? 0.45 * (g.sharpen ?? 1) : 0;
       fu.dofOnce.value = medNew ? 1 : 0;
+      // 3D quality look New, Medium: Style A men kept clean (no smoothing inside, no sharpen on them); Old: as before
+      fu.menClean.value = medNew && MEN_CLEAN.on ? 1 : 0;
       // half size copy, then the bloom chain
       du.tSrc.value = main.texture; du.texel.value.set(0.5 / w, 0.5 / h); du.thresh.value = 0;
       pass(downMat, soft);
