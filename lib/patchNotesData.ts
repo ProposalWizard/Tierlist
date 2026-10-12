@@ -27,35 +27,149 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
-      "version": "1.1",
-      "title": "Harry's patch notes: the big 3D round, then shop, settings clean-up and cameras",
+      "version": "0.48",
+      "title": "Harry's patch notes: Gameplay & settings",
       "publishedAt": "2026-10-12T18:00:00Z",
       "updatedAt": null,
-      "artifactUrl": "https://claude.ai/artifact/UcP8z2ppzmj82qRb8ncLyQ",
-      "summary": "8 to 12 Oct. Part 2 (12 Oct): shop pictures made from the 3D shop's models, boots priced off your wage like the energy cans, about 45 Settings toggles removed, and 3D match camera work (approved look, corner glide, zoom, penalty pull-back). The new shop layout, byline glide, side-on cutbacks and the tight-angle camera are built but not on the branch yet. The full page, with pictures, is the Page tab.",
+      "artifactUrl": "https://claude.ai/artifact/Aw5gexz5UkweXFamZB3Tqu",
+      "summary": "About 45 Settings toggles removed: the game decides. Drawn chances only, Style A heads for everyone, Keepers New | Old kept. On branch Harry, not live.",
       "stats": [
-        { "value": "30 weeks", "label": "top boot costs 30 weeks of wage in every division (Prem: was 5.5)" },
-        { "value": "~45", "label": "Settings toggles removed" },
-        { "value": "7 and 5 of 60", "label": "served one-on-ones and through balls with an offside team-mate (not fixed)" },
-        { "value": "1.8 m", "label": "every player, on every 3D screen" }
+        {
+          "value": "~45",
+          "label": "Settings toggles removed"
+        },
+        {
+          "value": "7 and 5 of 60",
+          "label": "served one-on-ones and through balls with an offside team-mate (not fixed)"
+        }
       ],
       "sections": [
         {
           "kind": "changed",
-          "title": "12 Oct, part 2",
+          "title": "12 Oct 2026",
           "items": [
-            { "title": "Shop pictures come from the 3D shop's own models", "detail": "Cars repainted per level; the blazer redrawn. The new layout (bottom bar, 1|3|5, For You, trophy badge, Buy button) is coming, not on the branch yet." },
-            { "title": "Boots cost the same weeks of wage in every division", "detail": "NS-Maestro L5: 35,000 to 193,000 in the Premier League, 750 in non-league. Early-game boots are now very cheap. Worked out from code, not played." },
-            { "title": "Settings: about 45 toggles removed", "detail": "Drawn chances only, Style A heads for everyone, photo faces off. Keepers New | Old stays." },
-            { "title": "3D match: approved look, one size, corner glide, zoom, penalty pull-back", "detail": "Byline glide, side-on cutbacks (59 m, was 123 m) and the FIFA tight-angle camera are coming." }
+            {
+              "title": "Settings clean-up",
+              "detail": "Drawn chances only, no version picker, Style A heads for everyone, photo faces off, player names toggle stays."
+            },
+            {
+              "title": "Keepers New | Old stays",
+              "detail": "Default New, until it is tested more."
+            }
           ]
         },
         {
           "kind": "known",
-          "title": "Found, not fixed",
+          "title": "Known issues",
           "items": [
-            { "title": "Offside team-mate in some served chances", "detail": "7 of 60 one-on-ones, 5 of 60 through balls." },
-            { "title": "Garden walking 10 to 25 fps, 1 to 3 second freezes at doors", "detail": "From Mikey's video. A speed job is queued." }
+            {
+              "title": "Offside team-mate in some served chances",
+              "detail": "7 of 60 one-on-ones, 5 of 60 through balls."
+            },
+            {
+              "title": "Garden walking 10 to 25 fps, 1 to 3 second freezes at doors",
+              "detail": "From Mikey's video. A speed job is queued."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.47",
+      "title": "Harry's patch notes: 3D match & cameras",
+      "publishedAt": "2026-10-12T18:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/4GnQVtDhxndhFJPjYXtMJv",
+      "summary": "Every man one real size, a camera for each kind of chance. On branch Harry, not live.",
+      "stats": [
+        {
+          "value": "1.8 m",
+          "label": "every player, on every 3D screen"
+        },
+        {
+          "value": "123 to 59 m",
+          "label": "cutback camera distance"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "12 Oct 2026",
+          "items": [
+            {
+              "title": "Approved look and one real size",
+              "detail": "Thin sharp outline, every man 1.8 m. Open play uses the 2D frame."
+            },
+            {
+              "title": "Corners and byline crosses glide in",
+              "detail": "Start wide, glide to the box in 0.42 s."
+            },
+            {
+              "title": "Zoom and penalty",
+              "detail": "Pinch on phone, slider on PC. Penalty man 5.5% to 4% of screen height."
+            },
+            {
+              "title": "Cutbacks side-on, FIFA tight angle, camera swipe",
+              "detail": "Cutback 59 m (was 123 m). Tight angle over the taker's shoulder. Swipe turns the camera round the ball."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not seen on a phone",
+              "detail": "Stills from a build machine only."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.46",
+      "title": "Harry's patch notes: Shop update",
+      "publishedAt": "2026-10-12T18:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/Aw7yz4kbFZnEyVpC7sYNgV",
+      "summary": "Shop pictures from the 3D models and boots priced off your wage are on branch Harry. The new layout (bottom bar, For You, 1|3|5, Buy button) is coming, on a side branch.",
+      "stats": [
+        {
+          "value": "30 weeks",
+          "label": "top boot costs 30 weeks of wage in every division (Prem: was 5.5)"
+        },
+        {
+          "value": "193,000",
+          "label": "best boot in the Premier League (was 35,000)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "12 Oct 2026",
+          "items": [
+            {
+              "title": "Shop pictures come from the 3D shop's own models",
+              "detail": "Cars repainted per level; the blazer redrawn."
+            },
+            {
+              "title": "Boots cost the same weeks of wage in every division",
+              "detail": "NS-Maestro L5: 750 in non-league, 193,000 in the Premier League."
+            },
+            {
+              "title": "Coming: bottom bar, For You feed, 1|3|5, trophy badge, Buy button",
+              "detail": "Not on branch Harry yet."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Early-game boots are very cheap",
+              "detail": "8 for a first boot in non-league. Harry decides."
+            }
           ]
         }
       ]
