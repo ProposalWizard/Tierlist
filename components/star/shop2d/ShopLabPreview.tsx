@@ -48,7 +48,7 @@ async function putDemoClips(): Promise<void> {
   }
 }
 
-export default function ShopLabPreview({ kind, look, onBack, cat, bar = "A", demoClips = false, locks = false, mark = "trophy", buy = "B" }: { kind: StoreTab | "landing"; look: "new" | "old" | "grid"; onBack: () => void; cat?: CatId; bar?: "A" | "B" | "C"; demoClips?: boolean; locks?: boolean; mark?: "trophy" | "none"; buy?: "A" | "B" }) {
+export default function ShopLabPreview({ kind, look, onBack, cat, bar = "A", demoClips = false, locks = false, mark = "trophy", buy = "auto" }: { kind: StoreTab | "landing"; look: "new" | "old" | "grid"; onBack: () => void; cat?: CatId; bar?: "A" | "B" | "C"; demoClips?: boolean; locks?: boolean; mark?: "trophy" | "none"; buy?: "A" | "B" | "auto" }) {
   useEffect(() => { if (demoClips) void putDemoClips(); }, [demoClips]);
   const [career, setCareer] = useState<CareerState>(() => sampleCareer(locks));
   const [tab, setTab] = useState<StoreTab>(kind === "landing" ? "kib" : kind);

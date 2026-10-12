@@ -194,11 +194,11 @@ interface Props {
   barOption?: "A" | "B" | "C";
   /** How an item's level shows (12 Oct 2026): the trophy badge (default) or nothing. Bench: &mark=none. */
   levelMark?: "trophy" | "none";
-  /** The Buy pill (12 Oct 2026): A = solid in the category's colour; B = white with a gold price (default: it reads as a native button whatever the category colour, and a red Cars pill looked like a warning). Bench: &buy=A. */
-  buyStyle?: "A" | "B";
+  /** The Buy pill (12 Oct 2026): A = solid red; B = white with a gold price. Default "auto": Homes B, everything else A, so both can be compared in the real shop. Bench: &buy=A or &buy=B. */
+  buyStyle?: "A" | "B" | "auto";
 }
 
-const ItemLook = createContext<{ mark: "trophy" | "none"; buy: "A" | "B" }>({ mark: "trophy", buy: "B" });
+const ItemLook = createContext<{ mark: "trophy" | "none"; buy: "A" | "B" | "auto" }>({ mark: "trophy", buy: "auto" });
 
 export interface ShopLink { id: string; icon: string; label: string; onClick: () => void; locked?: boolean }
 
@@ -214,7 +214,7 @@ export interface View {
   extra?: { label: string; disabled: boolean; run: () => void };
 }
 
-export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, focus, onKind, onUseCan, onOpen3D, startCat, links, guideCorner = false, barOption = "A", levelMark = "trophy", buyStyle = "B" }: Props) {
+export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, focus, onKind, onUseCan, onOpen3D, startCat, links, guideCorner = false, barOption = "A", levelMark = "trophy", buyStyle = "auto" }: Props) {
   const bar = barOption;
   /** The bottom bar's two pages: For You (the TikTok feed) and Shop (the showroom). */
   const [tab, setTab] = useState<"foryou" | "shop">("shop");
@@ -1039,10 +1039,13 @@ function ItemPage({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCo
   );
 }
 
+const BUY_RED = "#f87171";
+
 /** Buy, sized like a native app button (Harry, 12 Oct 2026: the wide slab "still doesn't look quite right").
- *  A: a solid pill in the category's colour, the price inside after a thin rule.
- *  B: a white pill, the word in black, the price in a gold capsule inside. */
-function BuyPill({ b, accent, variant }: { b: View["button"]; accent: string; variant: "A" | "B" }) {
+ *  A: a solid red pill, the price in a darker capsule inside. B: a white pill, the price in a gold capsule.
+ *  Harry preferred A but wants both in use to compare (12 Oct 2026): Homes shows B, every other category A. */
+function BuyPill({ b, variant }: { b: View["button"]; variant: "A" | "B" }) {
+  const accent = BUY_RED;
   const off = b.disabled;
   const bg = off ? "rgba(255,255,255,.12)" : b.danger ? "#dc2626" : variant === "A" ? accent : "#ffffff";
   const ink = off ? "rgba(255,255,255,.7)" : b.danger ? "#fff" : "#0b1222";
@@ -1090,7 +1093,7 @@ function ItemInfo({ v, accent, catLabel, pos, next, onOpen, guideCorner = false 
                 <button onClick={v.extra.run} disabled={v.extra.disabled} data-can-use={v.key}
                   className="kib-press h-[40px] rounded-full bg-black/40 px-3 text-[12px] font-black uppercase text-white ring-1 ring-white/30 disabled:opacity-35">{v.extra.label}</button>
               )}
-              <BuyPill b={v.button} accent={accent} variant={look.buy} />
+              <BuyPill b={v.button} variant={look.buy === "auto" ? (v.cat === "homes" ? "B" : "A") : look.buy} />
             </div>
           ) : (
             <span className={`shrink-0 rounded-full bg-white/[0.08] px-3 py-2 text-[11px] font-black uppercase tracking-wide text-white/75 ring-1 ring-white/15 ${guideCorner ? "mr-11" : ""}`}>🔒 Higher star rating</span>

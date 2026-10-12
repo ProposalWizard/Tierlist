@@ -65,7 +65,7 @@ export default function MediaLab() {
   const [shopDemoClips, setShopDemoClips] = useState(false);
   const [shopLocks, setShopLocks] = useState(false);
   const [shopMark, setShopMark] = useState<"trophy" | "none">("trophy");
-  const [shopBuy, setShopBuy] = useState<"A" | "B">("B");
+  const [shopBuy, setShopBuy] = useState<"A" | "B" | "auto">("auto");
   // `?shopmock=A|B|C|D` (+ `&at=` a start state): the shop layout concepts (throwaway, 9 Oct 2026).
   const [shopMock, setShopMock] = useState<{ id: MockId; at?: string } | null>(null);
   const [trainingPreview, setTrainingPreview] = useState<{ skill: keyof Skills; level: number; run?: number } | null>(null);
@@ -83,7 +83,7 @@ export default function MediaLab() {
     setShopDemoClips(q.has("democlips"));
     setShopLocks(q.has("locks"));
     if (q.get("mark") === "none") setShopMark("none");
-    if (q.get("buy") === "A") setShopBuy("A");
+    if (q.get("buy") === "A" || q.get("buy") === "B") setShopBuy(q.get("buy") as "A" | "B");
     const scat = q.get("cat");
     if (scat && SHOWROOM_CATS.some((x) => x.id === scat)) setShopCat(scat as CatId);
     const sm = q.get("shopmock");
