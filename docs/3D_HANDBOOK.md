@@ -1024,3 +1024,11 @@ Harry, on a Medium crop: "I just don't like how pixely the players look … comp
 - A 2.2 px screen-space ink line round every man (`outlinePx` in `people3d.ts`, `setPeople3dOutlineRes`), on every tier. Harry chose 2.2 over 2.8.
 - Flat 2-tone cel and no rim (`uSmall.x` in `toon/shader.ts`), no kit weave or seam, skin/hair map mip bias 1.5 (`uSmall.y`).
 - Measured here at px 2.5 (one penalty frame, frame meter): about 48 draws and 78k triangles with the ink line, against about 46 draws and 49k triangles without it (the line redraws each man's body). The meter's numbers swing ±10 between frames.
+
+### Camera: corners, zoom, penalty (12 Oct 2026)
+
+Only the camera moves; sizes never change.
+- **Corners** (`CORNER_CAM` in `match2dCam.ts`, `pick: "glide"`): the corner starts wide on view B (lower, turned 35°) or C (taker, ball, box, keeper and goal), seeded per corner while Harry sees both. From the kick it eases to view A (the box) in 0.42 s, following the landing spot. A, B and C can each be held with `pick`.
+- **Zoom** (`camZoom.ts`): two-finger pinch in the match, Settings → "3D match zoom", and the mouse wheel. -1 is closest, 0 the default, 1 the whole scenario the 2D draws. It keeps between chances. A second finger lifts the first touch where it started (a zero-length drag, so no kick).
+- **"3D camera height (test)"**: degrees added to the camera's angle down. Testing only; 0 in the game.
+- **Penalty**: `SET_PIECE_CAM.penaltyShare` 0.04 (a man ~4% of the height; free kicks stay 5.5%).
