@@ -1,4 +1,5 @@
 "use client";
+import { useCamZoom, setCamZoom, useCamHeightTest, setCamHeightTest, ZOOM_MIN, ZOOM_MAX, HEIGHT_TEST_MIN, HEIGHT_TEST_MAX } from "@/lib/star/style3d/camZoom";
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
@@ -303,8 +304,16 @@ function MatchGroup() {
 function World3dGroup() {
   const look = useLook();
   const controls = useControlChoice();
+  const zoom = useCamZoom();
+  const camH = useCamHeightTest();
   return (
     <>
+      <PrefRow label="3D match zoom" note="Closer or further out. On a phone, pinch with two fingers in the match. Players stay the same size: only the camera moves. All the way out shows the whole chance.">
+        <input type="range" min={ZOOM_MIN} max={ZOOM_MAX} step={0.05} value={zoom} onChange={(e) => setCamZoom(Number(e.target.value))} className="w-[150px] shrink-0 accent-amber-400" aria-label="3D match zoom" data-cam-zoom />
+      </PrefRow>
+      <PrefRow label="3D camera height (test)" note={`Testing only. Raises or lowers the 3D match camera (${camH > 0 ? "+" : ""}${camH}°). Leave at 0.`}>
+        <input type="range" min={HEIGHT_TEST_MIN} max={HEIGHT_TEST_MAX} step={1} value={camH} onChange={(e) => setCamHeightTest(Number(e.target.value))} className="w-[150px] shrink-0 accent-amber-400" aria-label="3D camera height (test)" data-cam-height-test />
+      </PrefRow>
       <PrefRow label="3D drill controls" note={`Auto: this device's own (${detectScheme() === "touch" ? "touch" : "keys and mouse"}). Touch: a stick under your left thumb, swipe to kick. Keys: WASD, Shift sprints, the mouse kicks.`}>
         <SegTabs className="w-[150px] shrink-0" value={controls} onChange={(v) => setControlChoice(v as ControlChoice)} tabs={[["auto", "Auto"], ["touch", "Touch"], ["pc", "Keys"]] as const} />
       </PrefRow>

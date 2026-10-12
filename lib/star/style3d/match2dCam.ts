@@ -308,6 +308,8 @@ export const SET_PIECE_CAM = {
   fovs: [26, 32, 38] as number[],
   /** A man at the ball, share of the screen's height, aimed for (Harry: "about 5–6%"). */
   targetShare: 0.055,
+  /** A penalty: pulled back so the man reads about 4% of the height (Harry, 12 Oct 2026). Real size, so the keeper stays under the bar. */
+  penaltyShare: 0.04,
   /** Room at every edge, share of the screen (the goal's posts, the taker's feet). */
   margin: 0.04,
   /**
@@ -375,7 +377,7 @@ export function fitPoints(W: number, H: number, pts: BcPoint[], ax: number, az: 
  * lens; keeps the one whose man at the ball is nearest `targetShare` (never nearer than all of
  * `keep` allows). Facing as the 2D. Pure: tests/star/match2dCam.mts.
  */
-export function solveSetPieceCam(f: Frame2D, keep: BcPoint[], ball: BcPoint, man: MatchScale, S = SET_PIECE_CAM): Match2DCamera {
+export function solveSetPieceCam(f: Frame2D, keep: BcPoint[], ball: BcPoint, man: MatchScale, S = SET_PIECE_CAM, target = S.targetShare): Match2DCamera {
   const { ax, az } = azimuth2D(f.facing);
   let best: (SpCam & { share: number }) | null = null, bestScore = Infinity;
   // a full drag back must fit under the ball: if the ball sits too low, keep a spot of grass
@@ -394,17 +396,17 @@ export function solveSetPieceCam(f: Frame2D, keep: BcPoint[], ball: BcPoint, man
     const lean = man.lean ? leanFor(e) : 0;
     let share = leanedManShare(c, f.W, f.H, ball, MATCH2D.manH * man.man, lean);
     // closer than the target needs: back off (more room round the action), the angle and lens kept
-    if (share > S.targetShare) {
+    if (share > target) {
       let lo = c.D, hi = c.D * 4;
       for (let i = 0; i < 30; i++) {
         const m = (lo + hi) / 2;
         const cm = withRoom(e, fov, m);
-        if (leanedManShare(cm, f.W, f.H, ball, MATCH2D.manH * man.man, lean) > S.targetShare) lo = m; else hi = m;
+        if (leanedManShare(cm, f.W, f.H, ball, MATCH2D.manH * man.man, lean) > target) lo = m; else hi = m;
       }
       c = withRoom(e, fov, hi);
       share = leanedManShare(c, f.W, f.H, ball, MATCH2D.manH * man.man, lean);
     }
-    const score = Math.abs(share - S.targetShare) + Math.abs(e - 50) * 0.0004;
+    const score = Math.abs(share - target) + Math.abs(e - 50) * 0.0004;
     if (score < bestScore) { bestScore = score; best = { ...c, share }; }
   }
   const b = best!;
