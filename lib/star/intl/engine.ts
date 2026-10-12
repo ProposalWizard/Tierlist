@@ -317,7 +317,8 @@ export function drawGroups(
 ): string[][] {
   const groups: string[][] = Array.from({ length: groupCount }, (_, i) => [...(fixed[i] ?? [])]);
   const cap = (g: number) => sizes?.[g] ?? potList.length;
-  const order = potList.flatMap((p) => shuffled(p, rng));
+  const pre = new Set(Object.values(fixed).flat());
+  const order = potList.flatMap((p) => shuffled(p.filter((t) => !pre.has(t)), rng));
   const place = (k: number): boolean => {
     if (k >= order.length) return true;
     const team = order[k];

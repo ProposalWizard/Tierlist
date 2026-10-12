@@ -38,6 +38,7 @@ import {
 
 export const WORLD_START = Date.UTC(2026, 7, 1);
 const DAY = 86_400_000;
+const REVERT = 0.15;
 
 export type CompKind =
   | "World Cup" | "World Cup Qualifier" | "World Cup Play-Off"
@@ -63,6 +64,8 @@ export interface WorldMatch extends Match {
   firstLeg?: string;
   /** Host nation playing at home in its own tournament. */
   hostHome?: boolean;
+  /** Group letter/name for a group-stage match ("A", "B1", "Path 2"). */
+  group?: string;
 }
 
 export interface Final {
@@ -107,14 +110,41 @@ export class World {
   readonly finals: Final[] = [];
   /** Facts competitions leave for later ones (who qualified, NL leagues…). */
   readonly facts = new Map<string, unknown>();
+  /** Nations with a match on a date (noon timestamp), for friendlies. */
+  private onDate = new Map<number, Set<string>>();
   private events: Event[] = [];
   private seq = 0;
-  private cursor = 0;
+  /** Unplayed matches, sorted by date (then order added). */
+  private queue: WorldMatch[] = [];
   private clock = WORLD_START;
+
+  /**
+   * The rating results are played from. FIFA's own points (above) never drop
+   * after a knockout loss at a final tournament, so over twenty years they
+   * only climb for whoever reaches knockouts often (measured: Canada +555,
+   * Nigeria +550 by 2046, both as strong as Spain). Playing strength uses the
+   * same formula without that exception (every match gives what it takes),
+   * and drifts 15% back towards the July 2026 ranking every summer, so the
+   * football world stays recognisable while still having eras; the real
+   * players the save knows move it on top (see `strength`).
+   */
+  readonly rating = new Map<string, number>();
+  private readonly base = new Map<string, number>();
 
   constructor(inputs: WorldInputs) {
     this.inputs = inputs;
-    for (const n of NATIONS) this.points.set(n.name, n.points);
+    for (const n of NATIONS) {
+      this.points.set(n.name, n.points);
+      this.rating.set(n.name, n.points);
+      this.base.set(n.name, n.points);
+    }
+    for (let y = 2027; y <= 2060; y++) {
+      this.at(Date.UTC(y, 6, 25), () => {
+        for (const [n, r] of Array.from(this.rating.entries())) {
+          this.rating.set(n, r + REVERT * ((this.base.get(n) ?? r) - r));
+        }
+      });
+    }
   }
 
   /** Now, inside the replay. */
@@ -128,11 +158,22 @@ export class World {
   add(m: WorldMatch): WorldMatch {
     if (this.byId.has(m.id)) return this.byId.get(m.id)!;
     this.matches.push(m);
+    const day = this.onDate.get(m.date) ?? new Set<string>();
+    day.add(m.home); day.add(m.away);
+    this.onDate.set(m.date, day);
+    // Binary insert into the queue (stable: after equal dates).
+    let lo = 0, hi = this.queue.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (this.queue[mid].date <= m.date) lo = mid + 1; else hi = mid; }
+    this.queue.splice(lo, 0, m);
     this.byId.set(m.id, m);
     const list = this.byEdition.get(m.edition) ?? [];
     list.push(m);
     this.byEdition.set(m.edition, list);
     return m;
+  }
+
+  busyOn(date: number): Set<string> {
+    return this.onDate.get(date) ?? new Set<string>();
   }
 
   edition(id: string): WorldMatch[] {
@@ -141,7 +182,7 @@ export class World {
 
   /** Strength of a nation on a date: ranking points + the season's players. */
   strength(nation: string, t: number = this.clock): number {
-    const pts = this.points.get(nation) ?? 1192;
+    const pts = this.rating.get(nation) ?? 1192;
     const season = seasonOfDate(t, this.inputs.firstYear);
     const xi = this.inputs.xi[season]?.[nation] ?? this.latestXi(nation, season);
     return Math.max(35, Math.min(95, rankingStrength(pts) + xi));
@@ -170,38 +211,28 @@ export class World {
 
   /** Run everything up to (and including) `until`. */
   run(until: number): void {
-    const items = () => {
-      this.events.sort((a, b) => a.at - b.at || a.seq - b.seq);
-    };
-    items();
-    for (let guard = 0; guard < 2_000_000; guard++) {
+    this.events.sort((a, b) => a.at - b.at || a.seq - b.seq);
+    let sorted = true;
+    for (let guard = 0; guard < 5_000_000; guard++) {
+      if (!sorted) { this.events.sort((a, b) => a.at - b.at || a.seq - b.seq); sorted = true; }
       const nextEvent = this.events[0];
-      const pending = this.nextUnplayed();
+      const pending = this.queue[0];
       const evAt = nextEvent ? nextEvent.at : Infinity;
       const mAt = pending ? pending.date : Infinity;
       if (Math.min(evAt, mAt) > until) break;
       if (evAt <= mAt) {
         this.events.shift();
         this.clock = Math.max(this.clock, evAt);
+        const before = this.events.length;
         nextEvent!.run();
-        items();
+        if (this.events.length !== before) sorted = false;
       } else {
+        this.queue.shift();
         this.clock = Math.max(this.clock, mAt);
-        this.play(pending!);
+        if (!played(pending!)) this.play(pending!);
       }
     }
     this.clock = Math.max(this.clock, until);
-  }
-
-  private nextUnplayed(): WorldMatch | null {
-    // Matches are added roughly in date order; scan for the earliest unplayed.
-    let best: WorldMatch | null = null;
-    for (let i = this.cursor; i < this.matches.length; i++) {
-      const m = this.matches[i];
-      if (played(m)) { if (i === this.cursor) this.cursor++; continue; }
-      if (!best || m.date < best.date) best = m;
-    }
-    return best;
   }
 
   private play(m: WorldMatch): void {
@@ -249,10 +280,14 @@ export class World {
     // A two-legged second leg counts as an ordinary match (the shoot-out is
     // disregarded), which is what the branch above does by ignoring pens.
     const weH = 1 / (Math.pow(10, -(ph - pa) / 600) + 1);
-    let dh = m.importance * (wh - weH), da = m.importance * (wa - (1 - weH));
-    if (m.finalsKnockout) { dh = Math.max(0, dh); da = Math.max(0, da); }
-    this.points.set(m.home, ph + dh);
-    this.points.set(m.away, pa + da);
+    const dh = m.importance * (wh - weH), da = m.importance * (wa - (1 - weH));
+    this.points.set(m.home, ph + Math.max(dh, m.finalsKnockout ? 0 : dh));
+    this.points.set(m.away, pa + Math.max(da, m.finalsKnockout ? 0 : da));
+    // Playing rating: the same formula on its own numbers, no exception.
+    const rh = this.rating.get(m.home)!, ra = this.rating.get(m.away)!;
+    const reH = 1 / (Math.pow(10, -(rh - ra) / 600) + 1);
+    this.rating.set(m.home, rh + m.importance * (wh - reH));
+    this.rating.set(m.away, ra + m.importance * (wa - (1 - reH)));
   }
 
   /** Record a final for the "Who won" list. */
