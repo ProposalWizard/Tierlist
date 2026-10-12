@@ -255,7 +255,7 @@ export function SettingsGroups({ glow, extra = [], inMatch = false }: { glow: st
     );
   }
   const groups: (ExtraGroup & { card?: boolean })[] = [
-    { id: "match", title: "Match", sub: "Testing (v0.15), 2D or 3D, names", count: 8, content: <MatchGroup />, card: true },
+    { id: "match", title: "Match", sub: "Keepers, testing (v0.15), 2D or 3D, names", count: 9, content: <MatchGroup />, card: true },
     { id: "world", title: "3D match camera", sub: "Zoom and camera height", count: 2, content: <World3dGroup />, card: true },
     { id: "screens", title: "Screens", sub: "Old UI or New UI", count: 1, content: <ScreensGroup />, card: true },
     ...extra,
