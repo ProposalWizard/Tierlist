@@ -134,6 +134,7 @@ exactly today's bodies. You never pick a file yourself:
 - One renderer for all scenes, warm-up, cached loads, dynamic resolution, frame gate: `lib/star/three3d/perf.ts` (`acquireRenderer`, `warmUp`, `loadGltfCached`, `DynamicResolution`, `FrameGate`). Its header lists the steps to adopt.
 - The governor: `lib/star/three3d/governor.ts` (the rule: steps down if the middle frame is over ~22 ms for 2.5 s, but only to rung 2; rungs 3–4 need under 30 fps for 5 s; back up after 8 s; one-off long frames and the 1 s after `hush()` — a chance start or camera cut — are not judged) and `lib/star/three3d/governThree.ts` (what a rung does: pixel ratio, shadows, post). A phone opens on Medium and stays there while it keeps up. Call `governScene(...)` once and `g.frame(now)` each drawn frame. Add `?gov=0` to any page to switch stepping off while you measure one tier.
 - The frame meter: `lib/star/three3d/frameMeter.ts`. Shows fps, worst frame, draw calls, triangles, shadow and skinned draws, post passes, JS ms, tier and rung. Add `?fps=1` to any page (`?fps=0` hides it; admins and testers see it anyway). The numbers are also on `window.__frame3d`.
+- **3D quality look (12 Oct 2026):** Medium and Low buy High's look back cheaply instead of switching it off. Settings → Look → "3D quality look: New | Old" (`lib/star/three3d/tierLook.ts`, row `tierLook3d`; `?tierlook=old|new` on any page). What each tier gets and what it costs: "3D quality look: Medium and Low" below.
 - The build machine has NO graphics chip. Frame times here are 10 to 100 times a phone's. Read percentages, never milliseconds. A phone is the only true judge.
 - `scripts/perf3d` measures a scene without Next (read its README).
 - **Speed pass 2 (9 Oct 2026): same picture, less work.** Each saving has a switch so a before/after still can be taken:
@@ -797,6 +798,46 @@ vs New) was the biggest visible difference on a phone; the tier second.
 phone check); KTX2 grass/crowd are ETC1S (lossy) — compare `?ktx2=0` on a
 phone before keeping them; the governor already keeps shadows and look H
 until rung 3, so it was left alone.
+
+### 3D quality look: Medium and Low (12 Oct 2026)
+
+Harry: "we need a way for say medium/low to not look terrible using every percent of optimisation we can". Every iPhone opens on Medium; weaker phones on Low. Rule: buy the look cheaply, never switch it off; keep or beat the frame time. Settings → Look → "3D quality look: New | Old" (`lib/star/three3d/tierLook.ts`, row `tierLook3d`, New in Standard). Old = each tier exactly as before.
+
+What New does (all in `lib/star/style3d/real/post.ts`, `real/look.ts`, plus one blob in `garden3d/scene.ts`; look H scenes only: the career match, drills, garden, shop, casino):
+
+| Tier | Added | Why it is cheap |
+|---|---|---|
+| Medium | Far-stand soft focus (`dof` 0.6, `dofOnce`) | The half-size copy it reads was drawn and thrown away before; read once on the centre, not inside each FXAA read |
+| Medium | The bloom added once on the centre (`dofOnce`), not inside each of FXAA's 5–9 reads | Pays for the soft focus: fewer reads than before |
+| Medium | Light sharpen after FXAA (`fxSharp` 0.45) | Uses the four corner samples FXAA already read: no extra reads. Wins back most of the 1.5 vs 2 pixel softness |
+| Medium, Low | Pitch, crowd, boards at 8× / 4× anisotropy | A texture setting, no draw; sharp stripes and lines at a slant instead of more pixels |
+| Low (and every tier's emergency rung "off") | The broadcast grade inside the tone map: three's ACES, then S-curve, split tone, saturation, a touch of warmth (`gradeToneMapping`, three's `CustomToneMapping`) | No pass, no target: a few ALU ops in the tone map every lit material already runs. Fixed numbers (no colour cube, no vignette: those need a texture / the screen size) |
+| Low (and lite/off rungs) | A long soft shadow from every man along the sun, beside his contact shadow | Same instanced draw as the contact shadows (`CS_MAX` 40 → 80) |
+| Low, garden | The same sun shadow under you | One small blob mesh |
+
+Not done, and why:
+- Baked/cached shadows for the stadium: already there (`bakedLight` stadium set on every tier; `shadowCache.ts` keeps the static map). Low keeps no live map at all.
+- A 5-level bloom chain on Medium: tried, +4 small passes for a slightly wider glow; measured as a cost, dropped.
+- SMAA: a 3-pass method; FXAA + sharpen is one pass and looked close enough on the stills. Low keeps the canvas's own MSAA (no pass at all), which already has clean lines.
+- Render at 1.25–1.5 then sharpen: that is what Medium now does (1.5 + sharpen). Low stays 1.25 with MSAA.
+- Light probes / toon ramp on Low, crowd impostors, player LOD: not measured this round. The crowd is already a few merged textured meshes.
+- The governor already drops the moving picture's pixels (rung 2) before any look (rungs 3–4); left as it is. Its emergency rungs now keep the grade (above).
+
+Measure: `node scripts/perf3d/tiers.mjs <career|garden> <high|medium|low> <new|old> --out=DIR` (one still + draws, triangles, posts, ms a frame; runs the harness with `?gov=0&tierlook=…`). Test: `tests/star/tierLook.mts`.
+
+Measured here (SwiftShader, no graphics chip, harness career chance and garden, `?gov=0`). Draws and triangles are the frame meter's; ms is the gap between frames at dpr 1 over 20 s; this shared machine moved ±40% run to run, so the ms only says "no clear change".
+
+| Tier | Draws | Triangles | Post passes | ms a frame, before → after |
+|---|---|---|---|---|
+| Career High | 84 | 285k (shadow frame) | 11 | 1207 (reference) |
+| Career Medium | 80 → 80 | 285k → 285k | 7 → 7 | old 373–809, new 360–738, paired runs −1% to +7%: within noise |
+| Career Low | 46 → 46 | 208k → 208k | 0 → 0 | 792 → 802 (two pairs; noise) |
+| Garden Medium | 145 → 148 | 166k → 168k | 7 → 7 (was 11 with the dropped 5-level bloom) | not measurable (1–3 frames a window) |
+| Garden Low | 133 → 134 | 139k → 139k | 0 → 0 | 813 → 807 |
+
+Final pass reads per pixel on Medium (reasoned from the shader, not measured): before ~10 on a plain pixel (5 FXAA reads × colour + bloom), after ~7 (5 × colour, + bloom once, + depth once; + the soft copy only where the far stands are). Low: no pass added; the grade is ~15 ALU ops inside the tone map. On a phone (estimated, not seen): Medium the same or a little cheaper; Low under 1% more.
+
+Stills (390×844 at 3×, the same chance, High | Medium before | Medium after | Low before | Low after): made by `tiers.mjs` then a contact sheet; not committed (scratch). The garden stills are not the same moment (the walk-in runs per frame, and each tier draws a different number of frames).
 
 ### Cut-scene camera + music (9 Oct 2026)
 
