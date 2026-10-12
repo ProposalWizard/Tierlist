@@ -140,7 +140,23 @@ const NATIONALITY_ISO: Record<string, string> = {
   "Samoa": "WS", "American Samoa": "AS",
   "Tonga": "TO", "Cook Islands": "CK",
   "New Caledonia": "NC", "Tahiti": "PF",
+  // FIFA members the list was missing, and FIFA's own spellings as aliases
+  // (lib/star/intl/nations.ts matches the FIFA ranking through these).
+  "Guam": "GU", "US Virgin Islands": "VI", "British Virgin Islands": "VG",
+  "IR Iran": "IR", "The Gambia": "GM", "DPR Korea": "KP", "St Kitts and Nevis": "KN",
+  "Hong Kong, China": "HK", "St Vincent and the Grenadines": "VC",
 };
+
+/**
+ * In the flag map but not FIFA member nations, so no national team to play
+ * for (Mikey, 12 Oct 2026: "any of the names in the picker that are not FIFA
+ * nations will be removed"). Great Britain plays only at the Olympics; the
+ * French overseas regions, Bonaire and Sint Maarten are CONCACAF/CAF members
+ * without FIFA membership; Monaco has no FIFA national team. Their flags stay,
+ * for club players from there.
+ */
+const NOT_FIFA = new Set(["Great Britain", "Monaco", "Bonaire", "French Guiana", "Guadeloupe", "Martinique",
+  "Reunion", "Saint Barthelemy", "Sint Maarten"]);
 
 /**
  * Every nationality this map actually knows a flag for, one entry per real
@@ -160,10 +176,22 @@ export const ALL_NATIONALITIES: string[] = (() => {
     const key = SUBDIVISION_FLAGS[name] ? `sub:${name}` : NATIONALITY_ISO[name];
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push(name);
+    if (!NOT_FIFA.has(name)) out.push(name);
   }
   return out.sort((a, b) => a.localeCompare(b));
 })();
+
+/**
+ * One stable key per country, whatever spelling a player row or a picker
+ * uses: "sub:England" for the four UK nations, the ISO code for the rest,
+ * or null when the name is unknown.
+ */
+export function nationalityKey(nationality: string | null | undefined): string | null {
+  if (!nationality) return null;
+  const n = canonNat(nationality);
+  if (SUBDIVISION_FLAGS_LC[n]) return `sub:${n}`;
+  return NATIONALITY_ISO_LC[n] ?? (n.length === 2 ? n.toUpperCase() : null);
+}
 
 // Canonicalise a nationality for lookup so casing, accents and apostrophe style
 // never cause a miss. Lowercases, strips diacritics (Türkiye → turkiye), and

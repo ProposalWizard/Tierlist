@@ -23,6 +23,7 @@
  * highlights one after another the way Infinite Highlights does, drawn
  * small enough to fit the phone's screen.
  */
+import { nextFixtureFor, byFixtureDate } from "@/lib/star/competitions";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { divisionOf, fixtureDate, formatDateNumeric, fixtureDateLabel } from "@/lib/star/calendar";
@@ -252,7 +253,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed }: {
   onClose?: () => void;
   installed?: (id: string) => boolean;
 }) {
-  const next = career.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
+  const next = nextFixtureFor(career);
   // A new career's phone shows every app, the ones it does not have yet
   // blacked out (NSS-style), plus the App Store that gets them.
   const grid = installed
@@ -395,7 +396,7 @@ function Kickabout({ ready }: { ready: boolean }) {
 }
 
 function Fixtures({ career, glow }: { career: CareerState; glow: string }) {
-  const list = [...career.fixtures].sort((a, b) => a.week - b.week);
+  const list = [...career.fixtures].sort(byFixtureDate(career));
   const upcoming = list.filter((f) => !f.played).slice(0, 12);
   const played = list.filter((f) => f.played).slice(-4).reverse();
   const row = (f: (typeof list)[number], i: number, next = false) => {

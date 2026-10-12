@@ -1666,7 +1666,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // Play-offs (Mikey, 8 Oct 2026): the bracket so far before each of your
     // play-off matches, and once more when your run is over.
     if (from.playOffState) {
-      const upcoming = from.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
+      const upcoming = nextFixtureFor(from);
       const runOver = !!from.playOffState.yourRunOver && playedFixture?.kind === "playoff";
       const key = upcoming?.kind === "playoff" ? `${from.season}:${upcoming.round}:${upcoming.week}`
         : runOver ? `${from.season}:end` : null;
@@ -4126,7 +4126,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   if (phase === "playoff-roundup" && career.playOffState) {
     const table = sortLeague(career.league).map((t) => t.name);
-    const upcoming = career.fixtures.filter((f) => !f.played).sort((a, b) => a.week - b.week)[0];
+    const upcoming = nextFixtureFor(career);
     const nextPo = upcoming?.kind === "playoff" ? upcoming : undefined;
     const po = career.playOffState;
     const you = career.player.club;
