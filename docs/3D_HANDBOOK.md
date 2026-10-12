@@ -873,6 +873,18 @@ Stills (390×844 at 3×, the same chance, High | Medium before | Medium after | 
 
 Not done in round 2: SMAA (not tried; FXAA + sharpen kept), a pre-sharpened crowd texture, crowd impostors, player LOD, light probes, cel shading on Low, the goal net and lines as geometry, player rim light on Low. Stills: `tiers.mjs … --tod=day|golden|night` (new flag; the garden takes `sky`).
 
+**Round 3 (12 Oct 2026, Harry: "keep fixing").** Same New | Old setting. Draws and triangles per tier unchanged (Low 50/51, Medium 80–82 with a shadow frame).
+
+| Tier | Change | Cost |
+|---|---|---|
+| Medium | Goal net: the mesh fades (at most 70%) to a faint flat haze where a cell is under ~7 px (`netFade`, `NET_FADE`, `NET_FADE_MAX`, `NET_FAR_ALPHA` in `real/arena.ts`); the net texture's anisotropy drops to 1. Before: the mesh aliased into horizontal bands (moiré). | Two derivatives and a mix on the net's pixels only; no read. |
+| Low | The stands' baked sun shadow raised to a power (`shadePow`, a new `BakeStrength` field in `look/bakedLight.ts`), so the stand and roof shadow bands across the pitch read like High's live map. Golden 2.6; day and night 1 (day's box is already near black, night's shade is 0.2). | One `pow` in the shader; no read, no draw, no shadow map. |
+| Low | Pitch colour and mown stripes per time of day (`LOW_PITCH` in `real/look.ts`, replaces round 2's one scale for Low). Day grass now matches High's green (99 vs 98 on the stills; was 83). | Colour numbers only. |
+
+Measured on the pitch (blurred, the same chance; mean colour, then spread of brightness 10th→90th %): day High (58,98,56) 106 · Low before (60,83,49) 87 → after (67,99,56) 94. Golden High (58,87,35) 56 · Low (66,86,40) 42 → (61,87,39) 48. Night High (32,82,40) 65 · Low (42,84,50) 50 → (40,82,49) 57. `tiers.mjs` now takes `--q=` (extra page query) and `--tag=` and prints the broadcast camera's man size (`tv`).
+
+Not done in round 3: Low's day red is still ~9 higher than High's (it comes from the grade, not the grass colour); Low's day penalty box under the stand's baked shadow reads near black (High's is dark green); soft contact shadows on Low were already there (round 1–2), not changed. Men's size: measured, not changed (the camera has a new owner): the harness chance draws a man 4.96% of the canvas height now (fig 1.35) against 6.14% before #710 (k 1.708), the same on High, Medium and Low.
+
 ### Cut-scene camera + music (9 Oct 2026)
 
 Harry: "do a pass of camera angles in the cut scenes, hide bad animations with

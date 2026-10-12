@@ -1,6 +1,6 @@
 // One still + frame cost per quality tier, Old vs New tier look (Settings → Look →
 // "3D quality look: New | Old", lib/star/three3d/tierLook.ts).
-// Usage: node scripts/perf3d/tiers.mjs <career|garden> <high|medium|low> <new|old> --out=DIR [--port=3502] [--tod=day|golden|night]
+// Usage: node scripts/perf3d/tiers.mjs <career|garden> <high|medium|low> <new|old> --out=DIR [--port=3502] [--tod=day|golden|night] [--q=animfix=0&…] [--tag=name]
 // Prints one JSON line: draws, triangles, shadow draws, posts, pixel ratio, median ms a frame
 // (this machine: SwiftShader, no graphics chip — read the % change, not the ms).
 import { chromium } from "playwright";
@@ -14,7 +14,7 @@ const page = await ctx.newPage();
 const errs = [];
 page.on("pageerror", (e) => errs.push(String(e).slice(0, 200)));
 page.on("console", (m) => { if (m.type() === "error") errs.push(m.text().slice(0, 200)); });
-await page.goto(`http://localhost:${flag("port", "3502")}/index.html?gov=0&tierlook=${look}&fps=0`);
+await page.goto(`http://localhost:${flag("port", "3502")}/index.html?gov=0&tierlook=${look}&fps=0${flag("q", "") ? "&" + flag("q", "") : ""}`);
 const tod = flag("tod", "");
 const opts = scene === "garden" ? { quality: tier, ...(tod ? { sky: tod } : {}) } : { tier, ...(tod ? { tod } : {}) };
 await page.evaluate(([s, o]) => { window.__run = window.H[s](o).catch((e) => { window.__err = String(e); }); }, [scene, opts]);
@@ -32,9 +32,9 @@ const m = await page.evaluate((since) => {
   const gaps = all.slice(1).map((f, i) => f.t - all[i].t);
   const k = (key) => med(all.map((f) => f[key] || 0));
   return { frames: all.length, msMed: Math.round(med(gaps) ?? 0), draws: k("draws"), tris: Math.round(k("tris") ?? 0), shadowDraws: k("shadowDraws"), posts: k("posts"),
-    pr: window.__M.renderer?.getPixelRatio() };
+    pr: window.__M.renderer?.getPixelRatio(), tv: window.__tvSolve ? { k: +window.__tvSolve.k.toFixed(3), man: +window.__tvSolve.man.toFixed(4), D: +window.__tvSolve.D.toFixed(2) } : null };
 }, since);
-const shot = `${out}/${scene}${tod ? `-${tod}` : ""}-${tier}-${look}.png`;
+const shot = `${out}/${scene}${tod ? `-${tod}` : ""}-${tier}-${look}${flag("tag", "") ? "-" + flag("tag", "") : ""}.png`;
 await page.screenshot({ path: shot, timeout: 240000 });
 console.log(JSON.stringify({ scene, tier, look, ...m, shot, errs: errs.slice(0, 3) }));
 await browser.close();
