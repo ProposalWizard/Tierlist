@@ -287,7 +287,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
       )}
 
       {status !== "ready" && (
-        <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: 24, textAlign: "center" }}>
+        <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: 24, textAlign: "center", background: "#120e0b" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }}>
           {status === "loading" ? (
             <div>
               <div style={{ fontWeight: 900, fontSize: 17 }}>Opening the shop…</div>
