@@ -30,7 +30,7 @@ import { injuryRiskFor, rollInjury } from "./careerFlow";
 
 export type RadarEventKind =
   | "goal-us" | "goal-them" | "chance-us" | "chance-them" | "quiet" | "highlight" | "highlight-goal" | "highlight-miss"
-  | "injury";
+  | "injury" | "corner-us" | "corner-them";
 
 export interface RadarEvent {
   minute: number;
@@ -216,6 +216,21 @@ export function radarSummary(m: RadarMatch): RadarSummary {
   };
 }
 
+/**
+ * WHICH WAY EACH SIDE ATTACKS on the radar. Both radars draw your goal on the
+ * left (own_box, x = 0) and theirs on the right (box, x = 105), and the ball's
+ * own arrow points right when you have it. So you attack →, they attack ←.
+ * The corner labels read "US →" and "← THEM": the way each side is going,
+ * the same way the ball's arrow points. (The test-page radar used to say
+ * "US ←", pointing at your own goal, the opposite of its own ball arrow.)
+ */
+export const ATTACK_ARROW: Record<Side, "→" | "←"> = { user: "→", opponent: "←" };
+/** "CHELSEA →" for you, "← BRIGHTON" for them. */
+export function attackLabel(short: string, side: Side): string {
+  const name = short.toUpperCase();
+  return side === "user" ? `${name} ${ATTACK_ARROW.user}` : `${ATTACK_ARROW.opponent} ${name}`;
+}
+
 // ── Bits ───────────────────────────────────────────────────────────────────
 
 function snapshot(s: HiddenMatchState, events: RadarEvent[], highlight: RadarHighlight | undefined): RadarFrame {
@@ -234,6 +249,8 @@ function fromRequest(minute: number, r: ScenarioRequest): RadarHighlight {
 
 function classify(e: HiddenMatchEvent): RadarEvent {
   if (e.isGoal) return { minute: e.minute, kind: e.teammateGoal ? "goal-us" : "goal-them", text: e.text };
-  if (CHANCE_LINES.has(e.text)) return { minute: e.minute, kind: e.isOpponent ? "chance-them" : "chance-us", text: e.text };
+  // Match flow (Leo v0.15) marks its own shots and corners.
+  if (e.corner) return { minute: e.minute, kind: e.isOpponent ? "corner-them" : "corner-us", text: e.text };
+  if (CHANCE_LINES.has(e.text) || e.shot) return { minute: e.minute, kind: e.isOpponent ? "chance-them" : "chance-us", text: e.text };
   return { minute: e.minute, kind: "quiet", text: e.text };
 }

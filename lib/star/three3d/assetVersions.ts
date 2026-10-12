@@ -142,7 +142,7 @@ export const ASSET_VERSIONS: Record<string, string> = {
   "/star/home3d/terrace-props.glb": "b9f2c568",
   "/star/human3d/human.glb": "3dc76b54",
   "/star/human3d/human.ktx2.glb": "a8a8e5c5",
-  "/star/kane-moments.json": "8e8e5728",
+  "/star/kane-moments.json": "42c04f7f",
   "/star/kib-basic.png": "9f9e8526",
   "/star/kib-basic.webp": "3b122b84",
   "/star/kib-elite.png": "e3b08281",

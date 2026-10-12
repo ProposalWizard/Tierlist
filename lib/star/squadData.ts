@@ -6,7 +6,7 @@ import { mulberry32 } from "./season";
 import { fakeFaceFor } from "./fakeFaces";
 import type { SquadPlayer } from "./types";
 
-const FIRST_NAMES = [
+export const FIRST_NAMES = [
   "Jack", "Harry", "Ryan", "Tom", "James", "Charlie", "Oliver", "Luke", "George",
   "Mason", "Marcus", "Jordan", "Theo", "Emre", "Kai", "Luca", "Bruno", "Fabio",
   "Carlos", "Diego", "Pablo", "Sergio", "Alexis", "Pierre", "Antoine", "Oumar",
@@ -15,7 +15,7 @@ const FIRST_NAMES = [
   "Ruben", "Diogo", "Bernardo", "Raphael", "Gabriel", "Eddie", "Callum", "Ben",
 ];
 
-const LAST_NAMES = [
+export const LAST_NAMES = [
   "Smith", "Jones", "Williams", "Brown", "Taylor", "Anderson", "Wright", "Walker",
   "Clarke", "Mitchell", "Barrett", "Nkrumah", "Traore", "Diallo", "Ba", "Coulibaly",
   "Silva", "Santos", "Costa", "Ferreira", "Rodrigues", "Garcia", "Martinez", "Lopez",

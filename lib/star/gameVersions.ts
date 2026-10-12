@@ -31,9 +31,11 @@ import { casino3dLook, setCasino3dLook } from "./casino3d/look";
 import { casinoRoomLook, setCasinoRoomLook } from "./casino3d/roomLook";
 import { badgeLook, setBadgeLook } from "./badgeLook";
 import { allSeasonsLook, setAllSeasonsLook } from "./allSeasonsLook";
+import { ballonDorNightLook, setBallonDorNightLook, ballonDorNightStored } from "./ballonDorNightLook";
 import { homeLook, setHomeLook } from "./homeLook";
 import { shopLook, setShopLook } from "./shopLook";
 import { chanceFraming, setChanceFraming } from "./chanceFraming";
+import { wideChances, setWideChances, wideChancesStored } from "./wideChances";
 import { ovationLook, setOvationLook } from "./ovationLook";
 import { ovationMoves, setOvationMoves } from "./ovationMoves";
 import { chanceSetChoice, setChanceSet, CHANCE_SET_DEFAULT } from "./chanceSet";
@@ -48,6 +50,8 @@ import { motionLook, setMotionLook } from "./motionLook";
 import { realCameraLook, setRealCameraLook, playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
 import { matchView3d, setMatchView3d, matchView3dStored } from "./matchView3d";
 import { dribble3dLook, setDribble3dLook, dribble3dStored } from "./dribble3dLook";
+import { dribbleStyle, setDribbleStyle } from "./dribbleStyleLook";
+import { matchRadarLook, setMatchRadarLook } from "./matchRadarLook";
 
 export type GameVersion = "classic" | "standard" | "preview";
 export const GAME_VERSIONS: readonly GameVersion[] = ["classic", "standard", "preview"];
@@ -72,20 +76,34 @@ const row = <V extends string>(
 export const LOOK_ROWS = {
   matchView: row("Match view", "new", "classic", storedMatchView, setMatchView),
   chanceFraming: row("Chance framing", "zoom", "old", chanceFraming, setChanceFraming),
+  // Leo, 11 Oct 2026: tight angles, cutbacks and penalties side-on (Old by default; Harry decides).
+  wideChances: row("Wide chances", "new", "old", wideChances, setWideChances),
   matchView3d: row("Match view 3D", "on", "off", matchView3d, setMatchView3d),
   matchPlayers: row("Players in the match", "3d", "drawn", matchPlayersLook, setMatchPlayersLook),
   ball: row("Ball", "new", "classic", matchBallLook, setMatchBallLook),
   chances: row("Chances", "new", "classic", chanceSetChoice, setChanceSet),
   animations: row("Animations", "new", "old", animationsLook, setAnimationsLook),
   keepers: row("Keepers", "new", "old", () => gameplayVersion("keepers"), (v) => setGameplayVersion("keepers", v)),
+  // Leo v0.15 (11 Oct 2026): the goalkeeper to "perfect" (lib/star/keeperBrain.ts KEEPER_PRO).
+  keeperPro: row("Keeper pro", "new", "old", () => gameplayVersion("keeperPro"), (v) => setGameplayVersion("keeperPro", v)),
   dribble: row("Dribble runs", "new", "old", () => gameplayVersion("dribble"), (v) => setGameplayVersion("dribble", v)),
   dribble3d: row("Dribble runs 3D", "3d", "old", dribble3dLook, setDribble3dLook),
+  // Leo, 11 Oct 2026: the duel in the match view (Top-down) or the chase camera (First-person); his call.
+  dribbleStyle: row("Dribble style", "topdown", "firstperson", dribbleStyle, setDribbleStyle),
+  dribbleDuels: row("Dribble duels", "new", "old", () => gameplayVersion("dribbleDuels"), (v) => setGameplayVersion("dribbleDuels", v)),
   clearances: row("Clearances", "new", "old", () => gameplayVersion("clearances"), (v) => setGameplayVersion("clearances", v)),
+  shotsPro: row("Shots", "new", "old", () => gameplayVersion("shotsPro"), (v) => setGameplayVersion("shotsPro", v)),
+  knucklePower: row("Knuckleball & power shot", "new", "old", () => gameplayVersion("knucklePower"), (v) => setGameplayVersion("knucklePower", v)),
+  ballPhysics: row("Ball physics", "new", "old", () => gameplayVersion("ballPhysics"), (v) => setGameplayVersion("ballPhysics", v)),
   // Mikey, 9 Oct 2026: Kane-style highlights, being tested (old by default).
   chanceMix: row("Chance mix", "new", "old", () => gameplayVersion("chanceMix"), (v) => setGameplayVersion("chanceMix", v)),
   // Mikey, 9 Oct 2026: real Kane positions as the drawings. Old everywhere
   // (Standard and Preview) until it is switched on by hand.
   kaneDrawings: row("Kane drawings", "new", "old", () => gameplayVersion("kaneDrawings"), (v) => setGameplayVersion("kaneDrawings", v)),
+  actionCamera: row("Match camera", "new", "old", () => gameplayVersion("actionCamera"), (v) => setGameplayVersion("actionCamera", v)),
+  // Leo v0.15 (11 Oct 2026): the unseen match against real numbers, and the live radar.
+  matchFlow: row("Match flow", "new", "old", () => gameplayVersion("matchFlow"), (v) => setGameplayVersion("matchFlow", v)),
+  matchRadar: row("Match radar (testing)", "new", "old", matchRadarLook, setMatchRadarLook),
   garden: row("3D garden", "new", "old", garden3dLook, setGarden3dLook),
   // Harry, 9 Oct 2026: a home of rooms you walk through (New by default).
   house: row("House", "new", "old", houseLook, setHouseLook),
@@ -109,6 +127,8 @@ export const LOOK_ROWS = {
   ui: row("UI", "new", "old", uiVersion, setUiVersion),
   badges: row("Club badges", "new", "old", badgeLook, setBadgeLook),
   allSeasons: row("All seasons page", "new", "old", allSeasonsLook, setAllSeasonsLook),
+  // STAR_ROADMAP #7 (11 Oct 2026): the ceremony on a stage (New by default).
+  ballonDorNight: row("Ballon d'Or night", "new", "old", ballonDorNightLook, setBallonDorNightLook),
   homeScreen: row("Home screen", "new", "old", homeLook, setHomeLook),
   shop2d: row("Shop", "new", "old", shopLook, setShopLook),
   ovation: row("Standing ovation", "new", "old", ovationLook, setOvationLook),
@@ -128,7 +148,7 @@ const O = (id: LookRowId) => LOOK_ROWS[id].oldValue;
  *  Chance mix (Kane-style highlights) joined Preview on 9 Oct 2026 (Mikey).
  *  Chances left Preview on 9 Oct 2026 (Harry: "the zoom and scenarios is terrible"). */
 // Player style (Style A, 9 Oct 2026) is New in Preview AND Standard: Harry made it the standard look.
-export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d", "playerStyle", "chanceMix"];
+export const PREVIEW_ROWS: readonly LookRowId[] = ["animations", "humanBody", "cutscenePeople", "camera3d", "playerLight3d", "matchView3d", "dribble3d", "playerStyle", "chanceMix", "wideChances"];
 
 const build = (f: (id: LookRowId) => string) =>
   Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, f(id)])) as Record<LookRowId, string>;
@@ -144,17 +164,27 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
   standard: {
     matchView: MATCH_VIEW_DEFAULT,
     chanceFraming: N("chanceFraming"),
+    wideChances: O("wideChances"),
     matchView3d: O("matchView3d"),
     matchPlayers: N("matchPlayers"),
     ball: N("ball"),
     chances: CHANCE_SET_DEFAULT,
     animations: O("animations"),
     keepers: N("keepers"),
+    keeperPro: O("keeperPro"),
     dribble: N("dribble"),
     dribble3d: O("dribble3d"),
+    dribbleStyle: O("dribbleStyle"),
+    dribbleDuels: O("dribbleDuels"),
     clearances: N("clearances"),
+    shotsPro: O("shotsPro"),
+    knucklePower: O("knucklePower"),
+    ballPhysics: O("ballPhysics"),
     chanceMix: O("chanceMix"),
     kaneDrawings: O("kaneDrawings"),
+    actionCamera: O("actionCamera"),
+    matchFlow: O("matchFlow"),
+    matchRadar: O("matchRadar"),
     garden: N("garden"),
     house: N("house"),
     look3d: N("look3d"),
@@ -175,6 +205,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     ui: UI_VERSION_DEFAULT,
     badges: N("badges"),
     allSeasons: N("allSeasons"),
+    ballonDorNight: N("ballonDorNight"),
     homeScreen: N("homeScreen"),
     shop2d: N("shop2d"), // New = Showroom + Feed (9 Oct 2026)
     ovation: N("ovation"),
@@ -199,6 +230,8 @@ const LATE_PREVIEW_ROWS: readonly LookRowId[] = [
   ...(typeof window !== "undefined" && !dribble3dStored() ? (["dribble3d"] as const) : []),
   // The chance mix (Mikey, 9 Oct 2026), the same way.
   ...(typeof window !== "undefined" && !chanceMixStored() ? (["chanceMix"] as const) : []),
+  // Wide chances side-on (Leo, 11 Oct 2026), the same way.
+  ...(typeof window !== "undefined" && !wideChancesStored() ? (["wideChances"] as const) : []),
 ];
 // Player style arrived on New (its default) for every phone; a phone already on
 // Classic (every row Old) takes its Old once, so Classic stays Classic.
@@ -220,6 +253,11 @@ if (typeof window !== "undefined" && !cutsceneCameraStored()) {
 if (typeof window !== "undefined" && !houseLookStored()) {
   const off = LOOK_ROW_IDS.filter((id) => id !== "house" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
   if (off.length === 0) LOOK_ROWS.house.set("old");
+}
+// The Ballon d'Or night (11 Oct 2026) arrived on New the same way: a Classic phone takes its Old once.
+if (typeof window !== "undefined" && !ballonDorNightStored()) {
+  const off = LOOK_ROW_IDS.filter((id) => id !== "ballonDorNight" && LOOK_ROWS[id].get() !== VERSION_PRESETS.classic[id]);
+  if (off.length === 0) LOOK_ROWS.ballonDorNight.set("old");
 }
 if (LATE_PREVIEW_ROWS.length) {
   const now = Object.fromEntries(LOOK_ROW_IDS.map((id) => [id, LOOK_ROWS[id].get()])) as Record<LookRowId, string>;

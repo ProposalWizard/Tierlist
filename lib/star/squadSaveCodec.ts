@@ -74,12 +74,45 @@ function same(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+/**
+ * THE SIX STATS, SAVED AS ONE SHIFT.
+ *
+ * The world ages (worldAgeing.ts): every season each man's six stats move
+ * with his rating — the same amount for all six, plus an extra drop for
+ * pace (and, late on, physical). Saved key by key that is about 70 bytes a
+ * player, ~200 KB for the wider world at its peak (measured: a save's
+ * squads went 132 → 277 KB by season 6). Saved as `sd: [all, paceExtra,
+ * physicalExtra]` against the database's own numbers, it is ~15 bytes. A
+ * stat that does not fit the shift is still written out in full; a save
+ * read back before any fetch keeps `sd` (and simply has no stats yet, as
+ * any thin save before a fetch) until hydrateSquads works them out.
+ */
+const STATS = ["pace", "shooting", "passing", "dribbling", "defending", "physical"] as const;
+type StatKey = typeof STATS[number];
+function shiftOf(k: StatKey, sd: [number, number, number]): number {
+  return sd[0] + (k === "pace" ? sd[1] : k === "physical" ? sd[2] : 0);
+}
+function statShift(p: LeaguePlayer, base: LeaguePlayer): [number, number, number] | null {
+  const ref = (["shooting", "passing", "dribbling", "defending"] as const).find(k => typeof p[k] === "number" && typeof base[k] === "number");
+  if (!ref) return null;
+  const all = (p[ref] as number) - (base[ref] as number);
+  const pe = typeof p.pace === "number" && typeof base.pace === "number" ? p.pace - base.pace - all : 0;
+  const pf = typeof p.physical === "number" && typeof base.physical === "number" ? p.physical - base.physical - all : 0;
+  return all || pe || pf ? [all, pe, pf] : null;
+}
+
 export function encodePlayer(p: LeaguePlayer): SavedPlayer {
   const base = fetched.get(p.id);
   const rest: Record<string, unknown> = {};
   let any = false;
+  const held = (p as unknown as { sd?: [number, number, number] }).sd;
+  const sd = (base ? statShift(p, base) : null) ?? (Array.isArray(held) ? held : null);
+  if (sd) { rest.sd = sd; any = true; }
   for (const k of Object.keys(p)) {
     if (CORE.has(k)) continue;
+    if (k === "sd") continue;
+    if (sd && base && (STATS as readonly string[]).includes(k)
+      && typeof base[k as StatKey] === "number" && p[k as StatKey] === (base[k as StatKey] as number) + shiftOf(k as StatKey, sd)) continue;
     const v = (p as unknown as Record<string, unknown>)[k];
     if (v === undefined) continue;
     if (base && k in base && same(v, (base as unknown as Record<string, unknown>)[k])) continue;
@@ -144,13 +177,21 @@ export function hydrateSquads(squads: LeagueSquad[]): LeagueSquad[] {
       const base = fetched.get(p.id);
       if (!base) return p;
       let next: LeaguePlayer | null = null;
+      // A saved stat shift (see statShift above): the six stats are the
+      // database's own, moved by it.
+      const sd = (p as unknown as { sd?: [number, number, number] }).sd;
       for (const k of Object.keys(base)) {
         if (CORE.has(k)) continue;
         if ((p as unknown as Record<string, unknown>)[k] !== undefined) continue;
-        const v = (base as unknown as Record<string, unknown>)[k];
+        let v = (base as unknown as Record<string, unknown>)[k];
         if (v === undefined) continue;
+        if (Array.isArray(sd) && typeof v === "number" && (STATS as readonly string[]).includes(k)) v = v + shiftOf(k as StatKey, sd);
         if (!next) next = { ...p };
         (next as unknown as Record<string, unknown>)[k] = v;
+      }
+      if (Array.isArray(sd)) {
+        if (!next) next = { ...p };
+        delete (next as unknown as { sd?: unknown }).sd;
       }
       if (!next) return p;
       clubChanged = true;

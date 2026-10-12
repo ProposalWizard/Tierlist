@@ -178,6 +178,13 @@ export function QuickSwitches({ glow, fullscreen }: {
 }
 
 /** One New | Old row. A dot marks a row you changed by hand. */
+/** The v0.15 gameplay round's switches: Old by default, "All new" = how the round finished. */
+const V015_ALL_NEW: [LookRowId, string][] = [
+  ["actionCamera", "new"], ["keeperPro", "new"], ["shotsPro", "new"], ["knucklePower", "new"], ["ballPhysics", "new"],
+  ["matchFlow", "new"], ["matchRadar", "new"], ["dribbleDuels", "new"], ["dribbleStyle", "firstperson"],
+];
+const V015_ALL_OLD: [LookRowId, string][] = V015_ALL_NEW.map(([id]) => [id, id === "dribbleStyle" ? "firstperson" : "old"]);
+
 function LookRow({ id, tabs, note, look }: {
   id: LookRowId;
   tabs: readonly (readonly [string, string])[];
@@ -202,10 +209,10 @@ function LookRow({ id, tabs, note, look }: {
 }
 
 const ROW_LABEL: Record<LookRowId, string> = {
-  matchView: "Match view", chanceFraming: "Chance framing", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
-  animations: "Animations", keepers: "Keepers", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", clearances: "Clearances", chanceMix: "Chance mix (testing)", kaneDrawings: "Kane drawings (testing)",
+  matchView: "Match view", chanceFraming: "Chance framing", wideChances: "Wide chances", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
+  animations: "Animations", keepers: "Keepers", keeperPro: "Keeper pro (testing)", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", dribbleStyle: "Dribble style", dribbleDuels: "Dribble duels (testing)", clearances: "Clearances", shotsPro: "Shots (testing)", knucklePower: "Knuckleball & power shot (testing)", ballPhysics: "Ball physics (testing)", chanceMix: "Chance mix (testing)", kaneDrawings: "Kane drawings (testing)", actionCamera: "Match camera", matchFlow: "Match flow (testing)", matchRadar: "Match radar (testing)",
   garden: "3D garden", house: "House", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", playerStyle: "Player style", matchPlayers3d: "Players in a 3D match", cutscenePeople: "Cut-scene people", cutsceneCamera: "Cut-scene camera", motion: "Motion", camera3d: "3D camera", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
-  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", homeScreen: "Home screen", shop2d: "Shop",
+  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", ballonDorNight: "Ballon d'Or night", homeScreen: "Home screen", shop2d: "Shop",
   ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style", sprites2d: "2D players",
 };
 
@@ -241,8 +248,31 @@ function MatchGroup() {
   const gp = (k: GameplaySwitch) => (look[k] === "new" ? GAMEPLAY_SWITCHES[k].newText : GAMEPLAY_SWITCHES[k].oldText);
   return (
     <>
+      {/* Leo, 12 Oct 2026: every new thing from the v0.15 gameplay round in one place,
+          Old by default; "All new" = the game exactly as that round finished. */}
+      <div className="my-2 border-2 border-amber-400/70 bg-amber-400/10 px-3 py-3" data-new-round="v0.15">
+        <p className="text-[13px] font-black uppercase tracking-wider text-amber-300">New in v0.15 · testing</p>
+        <p className="mt-1 text-[12px] font-bold text-white">All start on Old (the game as before). All new = the game exactly as the v0.15 round finished.</p>
+        <div className="mt-2 flex gap-2">
+          <button className="flex-1 border-2 border-amber-300 bg-amber-400 px-2 py-1.5 text-[12px] font-black uppercase text-gray-950" data-new-round-all="new"
+            onClick={() => { for (const [id, v] of V015_ALL_NEW) setLookRow(id, v); }}>All new</button>
+          <button className="flex-1 border-2 border-white/40 px-2 py-1.5 text-[12px] font-black uppercase text-white" data-new-round-all="old"
+            onClick={() => { for (const [id, v] of V015_ALL_OLD) setLookRow(id, v); }}>All old</button>
+        </div>
+        <p className="mt-2 text-[12px] font-bold text-white">Try them without a career: <a href="/star-play-dev" className="text-amber-300 underline">Play Area</a> (camera, shots, keeper, ball) · <a href="/star-radar-dev" className="text-amber-300 underline">Match radar</a> · <a href="/star-dribble-dev" className="text-amber-300 underline">Dribble</a> · <a href="/star-tournament-dev" className="text-amber-300 underline">Tournament</a></p>
+      <LookRow id="actionCamera" look={look} tabs={NEW_OLD} note={gp("actionCamera")} />
+      <LookRow id="keeperPro" look={look} tabs={NEW_OLD} note={gp("keeperPro")} />
+      <LookRow id="shotsPro" look={look} tabs={NEW_OLD} note={gp("shotsPro")} />
+      <LookRow id="knucklePower" look={look} tabs={NEW_OLD} note={gp("knucklePower")} />
+      <LookRow id="ballPhysics" look={look} tabs={NEW_OLD} note={gp("ballPhysics")} />
+      <LookRow id="matchFlow" look={look} tabs={NEW_OLD} note={gp("matchFlow")} />
+      <LookRow id="matchRadar" look={look} tabs={NEW_OLD} note="New: a live mini-pitch above the commentary between your chances — the ball moving zone to zone in the colours of the side on it, the momentum, and a flash for shots and goals. Old: the commentary on its own." />
+      <LookRow id="dribbleDuels" look={look} tabs={NEW_OLD} note={gp("dribbleDuels")} />
+      <LookRow id="dribbleStyle" look={look} tabs={[["firstperson", "1st person"], ["topdown", "Top-down"]]} note="Leo's choice. First-person: the run behind your player's shoulder. Top-down: the same run in the normal match view, with the match's players and ball." />
+      </div>
       <LookRow id="matchView" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="New: zoomed out, the pitch fills the screen. Classic: the close-up view." />
       <LookRow id="chanceFraming" look={look} tabs={[["zoom", "Zoom"], ["old", "Old"]]} note="New view only. Zoom: the camera moves in on the play, less empty grass. Nobody is cut off; the players and the drag are the same. Corners stay as they are." />
+      <LookRow id="wideChances" look={look} tabs={NEW_OLD} note="New view only. New: tight angles, cutbacks and penalties are watched side-on, like corners, so the players fill the screen instead of a block of empty grass. Nobody is cut off; the players and the drag are the same." />
       <PrefRow label="Camera angle" note="New view only. Tipped back (corners and crosses stay flat); Flat is straight down.">
         <SegTabs className="w-[150px] shrink-0" value={String(tilt) as "20" | "30" | "0"} onChange={(v) => setCameraTilt(Number(v) as CameraTilt)} tabs={[["20", "20°"], ["30", "30°"], ["0", "Flat"]] as const} />
       </PrefRow>
@@ -306,6 +336,7 @@ function ScreensGroup() {
       <LookRow id="ui" look={look} tabs={[["new", "New"], ["old", "Old"]]} note="Old: the game as it was before v0.23, kept as a backup. Same save." />
       <LookRow id="badges" look={look} tabs={NEW_OLD} note="New: drawn badges in each club's colours. Old: the letters." />
       <LookRow id="allSeasons" look={look} tabs={NEW_OLD} note="New: goals by season, the cabinet and every season. Old: the three tables." />
+      <LookRow id="ballonDorNight" look={look} tabs={NEW_OLD} note="New: the ceremony on a stage — the final three on podiums, the host calls the winner up. Old: the countdown cards." />
       <LookRow id="homeScreen" look={look} tabs={NEW_OLD} note="New: big reputation, fame, goals, assists and cans at the top, no goal behind you. Old: Home and the title as before." />
       <LookRow id="shop2d" look={look} tabs={NEW_OLD} note="New: the showroom — one item fills the screen; swipe sideways for the next item, up and down for the next category. Old: the shop as before." />
       <LookRow id="ovation" look={look} tabs={NEW_OLD} note="New: your farewell's 85th minute in 3D. Old: the banner." />
@@ -332,7 +363,7 @@ export function SettingsGroups({ glow, extra = [] }: { glow: string; extra?: Ext
     if (open) refs.current[open]?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [open]);
   const groups: (ExtraGroup & { card?: boolean })[] = [
-    { id: "match", title: "Match", sub: "View, camera, ball, chances, keepers, dribble…", count: 14, content: <MatchGroup />, card: true },
+    { id: "match", title: "Match", sub: "View, camera, ball, chances, keepers, dribble…", count: 15, content: <MatchGroup />, card: true },
     { id: "world", title: "3D world", sub: "Garden, look, shop, people, body, motion, office, casino, signing", count: 11, content: <World3dGroup />, card: true },
     { id: "screens", title: "Screens", sub: "UI, badges, all seasons, ovations, drawn style", count: 6, content: <ScreensGroup />, card: true },
     ...extra,

@@ -1,7 +1,7 @@
 import type { CareerState, Fixture, MatchStats } from "../types";
 import { fameOf } from "../fame";
 import { sortLeague } from "../season";
-import { divisionOf, relegationPlaces } from "../calendar";
+import { divisionOf, leagueNameFor, relegationPlaces } from "../calendar";
 import { isDerby, strongestTier, derbyName } from "../rivalries";
 import { monthOfCareer, monthRace, endsMonthOn, MONTH_NAMES } from "../potm";
 import type { MatchRecord, GoalRecord, TableSnapshot } from "./types";
@@ -71,7 +71,9 @@ export function buildMatchRecord(
   // engine covers it as a cup run rather than needing a fifth kind of its own
   // that every detector and template would then have to know about.
   const kind = fixture.kind === "playoff" ? "cup" : (fixture.kind ?? "league");
-  const competition = fixture.competition ?? "Premier League";
+  // A league fixture carries no competition: it is the division's own league
+  // (it was "Premier League" for every division until 11 Oct 2026).
+  const competition = fixture.competition ?? leagueNameFor(divisionOf(before));
   const derby = fixture.derby ?? isDerby(before.player.club, fixture.opponent);
   const rivalryTier = strongestTier(before.player.club, fixture.opponent) ?? undefined;
   const derbyNameValue = derbyName(before.player.club, fixture.opponent) ?? undefined;

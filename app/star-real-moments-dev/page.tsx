@@ -30,16 +30,16 @@ const PAGE = 24;
 const KIND_LABEL: Partial<Record<ScenarioKind, string>> = {
   one_on_one: "One-on-one", volley: "In the box", tight_angle: "Tight angle",
   long_range: "Long range", midfield_pass: "Midfield",
-  through_ball: "Through ball", buildup: "Build-up", cutback: "Pass in the box",
+  through_ball: "Through ball", buildup: "Build-up", cutback: "Pass in the box", byline_cross: "Byline cross",
 };
 
-/** The game's Kane drawings, shown as cards (they carry their own target run). */
+/** The game's striker drawings (Settings → Kane drawings), shown as cards (they carry their own target run). */
 const kaneById = new Map<string, KaneMoment>();
 function fromKane(k: KaneMoment): RealMoment {
   kaneById.set(k.id, k);
   return {
     id: k.id, source: "kane", kind: k.kind, seed: k.seed, override: k.override, faults: k.faults,
-    meta: { player: "Harry Kane", match: `${k.meta.comp} · ${k.meta.match}`, minute: k.meta.minute, what: k.meta.what, xg: k.meta.xg },
+    meta: { player: `${k.meta.player ?? "Harry Kane"}${k.kane ? " ★" : ""}`, match: `${k.meta.comp} · ${k.meta.match}`, minute: k.meta.minute, what: `${k.meta.what}${k.grade ? ` · ${k.grade}` : ""}`, xg: k.meta.xg },
   };
 }
 const BANDS: { label: string; lo: number; hi: number }[] = [
@@ -121,9 +121,9 @@ export default function RealMomentsDev() {
     try {
       const j = await (await fetch(KANE_MOMENTS_URL)).json() as { moments?: KaneMoment[] };
       const got = (j.moments ?? []).map(fromKane);
-      if (!got.length) { setError("No Kane drawings found."); return; }
+      if (!got.length) { setError("No striker drawings found."); return; }
       setError(""); setAll(got); setSource("kane"); setKind("all"); setBand(0);
-    } catch { setError("Couldn't load the Kane drawings."); }
+    } catch { setError("Couldn't load the striker drawings."); }
   }
 
   async function load(file: File) {
@@ -145,7 +145,7 @@ export default function RealMomentsDev() {
           onChange={(e) => { const f = e.target.files?.[0]; if (f) void load(f); }} />
       </label>
       <button className="ml-2 mt-4 inline-block rounded bg-amber-500 px-4 py-2 text-sm font-black text-black" onClick={() => void loadKane()}>
-        Kane drawings (in the game)
+        Striker drawings (in the game)
       </button>
       {error && <div className="mt-2 text-sm font-bold text-red-300">{error}</div>}
 
@@ -153,7 +153,7 @@ export default function RealMomentsDev() {
         <>
           <div className="mt-4 flex flex-wrap gap-2">
             <button className={chip(source === "pl1516")} onClick={() => { setSource("pl1516"); setKind("all"); }}>Premier League 15/16 shots</button>
-            <button className={chip(source === "kane")} onClick={() => { setSource("kane"); setKind("all"); }}>Kane, every touch</button>
+            <button className={chip(source === "kane")} onClick={() => { setSource("kane"); setKind("all"); }}>Striker drawings</button>
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
             <button className={chip(kind === "all")} onClick={() => setKind("all")}>Every kind</button>

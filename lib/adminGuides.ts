@@ -201,6 +201,13 @@ export const ADMIN_GUIDES = {
         ["▶ Full time (made-up 4–3)", "The farewell's last screen, with a made-up score. Hang them up opens the overview with the farewell line on it."],
         ["The match itself", "Not here: it is the real match. In the game, Dev Skip to the end of season 20, then Hang them up."],
       ] },
+      { group: "The Ballon d'Or night", items: [
+        ["▶ You win · 3D / You come 2nd · 3D", "The ceremony as the game shows it (Settings → Look → Ballon d'Or night: New): the host at his lectern, the final three walk up one by one as he calls each name, \"And the winner is…\", the name, the golden ball over him, confetti, then your place. Skip › goes to the result page."],
+        ["▶ Not in the top three (7th) · 3D", "The shorter night: the three walk up together, the winner is named, then \"You finished 7th\"."],
+        ["▶ … · drawn", "What a phone that can't run 3D sees: the same night on a drawn stage."],
+        ["▶ The result page after it", "Your season, the winner and the top ten, as after the ceremony. Continue comes back here."],
+        ["▶ Old (the countdown cards)", "The Ballon d'Or screen as it was (Settings → Look → Ballon d'Or night: Old)."],
+      ] },
       { group: "Online", items: [
         ["▶ Head to head", "The made-up legend (left, yours) against the career picked above (right): one bar per number."],
         ["▶ Compare with a friend", "Type a friend's code or paste their link, pick one of your careers. Needs the database (the code is looked up)."],
@@ -211,10 +218,11 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Every screen here is in the game. The warning shows after season 19, the final whistle after season 20 (a career is 20 seasons).",
       "Hang them up on the final whistle opens the farewell invite (once per career), then the overview.",
+      "The Ballon d'Or night is shown at the end of every season (New: the ceremony, then the result page; Old: the countdown cards).",
       "The overview replaced the old end screen. The Hall of Fame is on the title screen. All seasons is Stats → All seasons (Settings → Look → All seasons page: New | Old).",
       "Share link and Compare: on the end screen and in the Hall of Fame. A shared career opens at /legend/CODE, no sign-in.",
     ],
-    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts.",
+    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Ballon d'Or night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts.",
   },
   "/star-real-moments-dev": {
     title: "Real moments",
@@ -222,10 +230,10 @@ export const ADMIN_GUIDES = {
     buttons: [
       { group: "Loading", items: [
         ["Load moments file", "Pick real-moments.json from your device. A developer makes it with tools/statsbomb (fetch, then convert)."],
-        ["Kane drawings (in the game)", "The 376 Kane drawings the game uses when Settings → Match → Kane drawings (testing) is New: every Kane pass and shot from 21 matches (Euro 2020, World Cup 2022, Euro 2024, Bayern v Leverkusen 2023/24). No file needed."],
+        ["Striker drawings (in the game)", "The drawings the game uses when Settings → Match → Kane drawings (testing) is New: real strikers' passes and shots from every free StatsBomb set with positions (Kane's marked ★ and dealt 3× as often). Each card says easy / normal / hard; the game deals 50 / 35 / 15. No file needed."],
       ] },
       { group: "Filters", items: [
-        ["Premier League 15/16 shots / Kane, every touch", "Which set to show."],
+        ["Premier League 15/16 shots / Striker drawings", "Which set to show."],
         ["Every kind / One-on-one / In the box / Tight angle / Long range / Midfield", "Which chance kind the moment was put in. \"In the box\" is a close shot with defenders in the way."],
         ["All / xG under 8% / 8–50% / Over 50%", "How likely the real shot was to go in (StatsBomb's own number). 8–50% is the band worth playing."],
         ["Goals only", "Only shots that went in for real."],
@@ -239,7 +247,7 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: ["Nothing saves. The file stays on your device and is read again each time you load it."],
-    inGame: ["The Kane drawings: in a match when Settings → Match → Kane drawings (testing) is New (Old by default). The file you load: nowhere."],
+    inGame: ["The striker drawings: in a match when Settings → Match → Kane drawings (testing) is New (Old by default). The file you load: nowhere."],
     dev: "app/star-real-moments-dev/page.tsx; lib/star/realMoments.ts (the moment shape, buildRealMoment); tools/statsbomb/fetch.py, convert.mts, measure.mts and README.md.",
   },
   "/star-goal-clips-dev": {
@@ -307,7 +315,7 @@ export const ADMIN_GUIDES = {
         ["The number box", "The XP it pays (or the multiplier, or a %). Type a new amount."],
         ["Was … in the code", "Shows when your amount is different from the code's."],
         ["Not checked / Confirmed ✓ / Change it", "Tap to move it on. Change it opens a note box: write what should change and it gets built from that."],
-        ["Easy / Medium / Hard / Own amount", "Achievements only: which level it pays, or Own amount to type its own XP."],
+        ["Easy / Medium / Hard / Legendary / Own amount", "Achievements only: which level it pays (Bronze, Silver, Gold, Legend on the player's list), or Own amount to type its own XP."],
       ] },
       { group: "New ideas", items: [
         ["+ Add an idea", "A new achievement, record, award or milestone: its name, how you get it, and the XP it should pay."],

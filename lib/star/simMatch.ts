@@ -41,6 +41,7 @@ import { pickWaveSizes } from "./firstPersonDribble";
 import { selectChance, newSelectionMemory } from "./scenarioSelect";
 import { withoutSwitchedOff, playableKind } from "./switchedOffKinds";
 import { mulberry32 } from "./season";
+import { oldMatchFlow } from "./gameplayVersion";
 import { finaliseMatch, fairRating } from "./matchStats";
 import { hookCheck, subComesOnNow, SUB_OFF_ENERGY, type SelectionVerdict, type HookReason } from "./selection";
 import { matchTeamStrength } from "./matchday";
@@ -139,6 +140,8 @@ export function simulateOwnMatch(career: CareerState, fixture: Fixture, o: SimOp
     impactSub: sub,
     talisman: !!career.ownedClubs?.[career.player.club]?.talisman,
     fergie: { from: 90, to: whistle },
+    // The same match flow the played match uses (Settings → Match flow).
+    matchFlow: !oldMatchFlow(),
     // v0.26: the same match context the played match passes.
     context: {
       playstyle: career.playstyle ?? "balanced",

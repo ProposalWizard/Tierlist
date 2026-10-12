@@ -141,7 +141,9 @@ export interface FpIdentity {
 
 /** "passed": you played it to a team-mate and it arrived (see `applyPass`).
  *  A pass that does not arrive ends the run as "lost", like a tackle. */
-export type RunPhase = "running" | "clear" | "lost" | "passed";
+/** "fouled" only ever happens with duels on (Dribble duels: New) — he took
+ *  you down: a free kick, not a lost ball. */
+export type RunPhase = "running" | "clear" | "lost" | "passed" | "fouled";
 
 export type DefenderPhase =
   | "waiting"     // standing off, not yet worth engaging
@@ -149,7 +151,10 @@ export type DefenderPhase =
   | "telegraph"   // shoulder dropped, side already chosen — the window
   | "committed"   // gone; can no longer change side
   | "beaten"
-  | "won";
+  | "won"
+  // Duels only (Dribble duels: New — see "REAL DUELS" below):
+  | "jockey"      // in front of you, backing off, showing you one way
+  | "bitten";     // sold by a feint: leaning the wrong way, off balance
 
 export interface FpDefender {
   /** Pitch x — his lane. Not meaningful until he engages; see spawnAt. */
@@ -204,6 +209,21 @@ export interface FpDefender {
    *  `overall` (already folded into mirrorSpeed/lagT/closeSpeed/tellT at
    *  construction, same as every other defender). */
   who?: FpIdentity;
+  // ── Duels only (absent with duels off) — see "REAL DUELS" below. ──
+  /** His defending, 0-1. */
+  q?: number;
+  /** The side he shows you (+1 = to your right), and stands across from. */
+  show?: -1 | 1;
+  /** Seconds he has jockeyed, and how long he will before he stabs at it. */
+  jockeyT?: number;
+  patience?: number;
+  /** Seconds he stays off balance after biting, and which way he leans. */
+  offBal?: number;
+  leanDir?: -1 | 1;
+  /** How many of your feints he has already seen (each one sells less). */
+  feints?: number;
+  /** He brought you down. */
+  fouled?: boolean;
 }
 
 export interface FpBurst {
@@ -216,6 +236,11 @@ export interface FpBurst {
   /** 0-1, fixed the instant the burst fires — see `applyBurst`'s own
    *  header on why a burst fired too late is deliberately mostly wasted. */
   power: number;
+  /** Duels only: metres of sideways travel at full power (pace and a cut
+   *  inside change it). Absent = BURST_LATERAL, as before. */
+  lat?: number;
+  /** Duels only: which move this was. */
+  move?: DribbleMove;
 }
 
 /**
@@ -307,6 +332,21 @@ export interface FpRunState {
   mates: FpMate[];
   /** Set once a pass is played (arrived or not). */
   pass: FpPassResult | null;
+  // ── Duels only (absent with duels off) — see "REAL DUELS" below. ──
+  duels?: boolean;
+  /** Your dribbling (technique) and pace, 0-100. */
+  dribbling?: number;
+  paceStat?: number;
+  /** A feint being played (step-over or drop of the shoulder). */
+  feint?: FpFeint | null;
+  /** What just happened, newest last — the screen shows the latest. */
+  events?: DuelEvent[];
+  /** The man who fouled you (index), when the run ended "fouled". */
+  fouledBy?: number | null;
+  /** Seconds since the last touch of the ball (a picture: the touch you see). */
+  touchT?: number;
+  /** The man taking you on now (index); the rest of his wave cover. */
+  presser?: number | null;
 }
 
 // ── Tuned constants ─────────────────────────────────────────────────────────
@@ -525,6 +565,16 @@ export function newRun(opts: {
   mateRoster?: FpIdentity[];
   /** true = the defenders from before 5 Oct 2026. Absent = Settings → Gameplay → Dribble runs. */
   classic?: boolean;
+  /**
+   * Real duels (Settings → Gameplay → Dribble duels: New): defenders jockey
+   * and show you one way, you have step-overs, drops of the shoulder, cut
+   * inside and the burst, and your dribbling and pace count. Absent/false =
+   * the run exactly as before (tests/star/dribbleDuels.mts fingerprints it).
+   * Only the real match and the dev page set it; the trial and training don't.
+   */
+  duels?: boolean;
+  /** Your dribbling (technique), 0-100. Duels only. */
+  dribbling?: number;
   rng: () => number;
 }): FpRunState {
   const { rng } = opts;
@@ -627,6 +677,7 @@ export function newRun(opts: {
     pass: null,
   };
   for (const m of run.mates) placeMate(run, m, 0, true);
+  if (opts.duels) initDuels(run, opts.pace, opts.dribbling ?? 55);
   return run;
 }
 
@@ -670,6 +721,7 @@ function nearestLiveInActiveRound(s: FpRunState): FpDefender | undefined {
  * longer has anywhere to hide.
  */
 export function applyBurst(s: FpRunState, dir: -1 | 1): boolean {
+  if (s.duels) return applyBurstDuel(s, dir);
   if (s.phase !== "running" || s.burst || s.burstLock > 0) return false;
   const threat = nearestLiveInActiveRound(s);
   const power = threat?.phase === "committed" ? 0.3 : 1;
@@ -756,6 +808,7 @@ function stepDefender(idx: number, s: FpRunState, sdt: number): void {
 
 /** Advance the run by one tick. */
 export function stepRun(s: FpRunState, dt: number): RunPhase {
+  if (s.duels) return stepRunDuels(s, dt);
   if (s.phase !== "running") return s.phase;
 
   const sdt = dt * s.timeScale;
@@ -1032,4 +1085,447 @@ export function carryLead(stride: number, footSide: 1 | -1, burst = 0): number {
   if (u < 0) u += 1;
   const away = Math.sin(Math.PI * Math.pow(u, 0.6));
   return CARRY.leadMin + CARRY.push * away + CARRY.burstExtra * clamp(burst, 0, 1);
+}
+
+// ── REAL DUELS (Settings → Gameplay → Dribble duels: New) ───────────────────
+//
+// Leo, 11 Oct 2026: dribbling "so far from perfect". Measured on the run as it
+// was (tests/star/dribbleDuels.mts, 2,000 runs a row, a human-like bot): a man
+// who was really on you was beaten 75% of the time by a player reacting in
+// 0.25 s, and 43% by a player swiping at random — and your pace changed it by
+// about 1 point. You did not have to time anything, and your stats did not count.
+//
+// Real take-ons (Opta, docs/gameplay15/dribble.md): about 1 in 2 succeed across
+// a league, about 2 in 3 for the best dribblers, and roughly 1 in 8-10 ends in
+// a foul. A defender does not charge at you: he gets goal-side, backs off at
+// your pace ("jockeys"), stands across your line so you can only go one way
+// ("shows you" outside), and only stabs at the ball when you are close or he
+// loses patience. The dribbler beats him one of three ways:
+//   1. sells him a feint (step-over, drop of the shoulder) and goes the other
+//      way while he is leaning;
+//   2. knocks it past him the instant he plants to tackle (the burst), away
+//      from his foot — or cuts inside, across his body;
+//   3. is simply too quick once level (pace).
+// Go too early, while he is balanced, and he just shuffles across and takes
+// it. Go too late and his foot is already there.
+//
+// So in a duel:
+//   closing → jockey (backs off, shows you one way) → telegraph (he plants) →
+//   committed (the tackle) → beaten / won / a foul.
+//   A feint he bites on: bitten (leaning the wrong way, off balance) → a
+//   scrambled telegraph (longer) → committed.
+// Your dribbling makes feints sell, widens how late a burst still works and
+// cuts heavy touches; your pace sets how far a knock-on takes you and whether
+// a beaten man gets back at you. His defending does the opposite.
+// Nothing here runs unless `newRun` was given `duels: true`.
+
+export type DribbleMove = "burst" | "cut" | "shoulder" | "stepover";
+export interface FpFeint { kind: "shoulder" | "stepover"; dir: -1 | 1; t: number; dur: number }
+export interface DuelEvent { t: number; text: string; tone: "good" | "bad" | "info" }
+
+/** Every duel number in one place. Distances in metres, times in sim seconds. */
+export const DUEL = {
+  /** He starts coming across at this gap… */
+  engageD: 15,
+  /** …gets in front and starts backing off at this one. */
+  jockeyD: 6.4,
+  /** He backs off at this share of your forward speed (the gap still closes). */
+  give: 0.7,
+  /** He stabs at it from this gap (jittered per man)… */
+  stabD: [4.1, 4.9] as const,
+  /** …or once he has jockeyed this long (more patient the better he is). */
+  patience: [0.5, 1.2] as const,
+  /** He stands this far across your line, on the side he doesn't want you. */
+  showOff: 0.6,
+  /** His plant before the tackle, at defending 0 and 100 (the window). */
+  tell: [0.23, 0.11] as const,
+  lungeT: 0.26,
+  /** m/s he steps in during the tackle. */
+  lungeIn: 3.0,
+  lungeReach: 1.15,
+  feint: {
+    shoulder: { dur: 0.16, bite: 0.5, range: 6.8 },
+    stepover: { dur: 0.32, bite: 0.64, range: 5.8 },
+  },
+  /** How far he lurches when he bites, and how long he stays off balance
+   *  (defending 0 → 100). */
+  lean: 0.75,
+  offBal: [0.55, 0.3] as const,
+  /** A man who bit scrambles: his next plant is this much longer. */
+  scramble: 1.45,
+  /** A man who read your feint plants this much quicker. */
+  readTell: 0.85,
+  /** Heavy touch on a burst, at dribbling 0 (× (1 − dribbling)^1.3). */
+  heavy: 0.13,
+  /** Share of his tackle you can still react in, dribbling 0 → 100. */
+  grace: [0.05, 0.6] as const,
+  /** Fouls: when you beat him narrowly, or he misses the ball but not you. */
+  foulNear: 0.5,
+  foulBeaten: 0.42,
+  foulMiss: 0.45,
+  foulWon: 0.42,
+  /** A narrowly beaten man gets back at you, scaled by his pace over yours. */
+  recoverNear: 0.8,
+  recover: 0.3,
+};
+
+function lerp01(a: number, b: number, t: number) { return a + (b - a) * clamp(t, 0, 1); }
+
+function duelEvent(s: FpRunState, text: string, tone: DuelEvent["tone"]) {
+  (s.events ??= []).push({ t: s.elapsed, text, tone });
+  if (s.events.length > 12) s.events.shift();
+}
+
+/** His defending 0-1, read back from what newRun already gave him. */
+function qualityOf(d: FpDefender): number {
+  return clamp((d.mirrorSpeed - 2.0) / 1.6, 0, 1.1);
+}
+
+function initDuels(s: FpRunState, pace: number, dribbling: number) {
+  const rng = s.rng;
+  s.duels = true;
+  s.dribbling = clamp(dribbling, 0, 100);
+  s.paceStat = clamp(pace, 0, 100);
+  s.feint = null;
+  s.events = [];
+  s.fouledBy = null;
+  s.touchT = 0;
+  for (const d of s.defenders) {
+    const q = qualityOf(d);
+    d.q = q;
+    // He shows you towards the touchline on his side (outside), now and then the other way.
+    const outside: -1 | 1 = d.x >= CX ? 1 : -1;
+    d.show = rng() < 0.8 ? outside : (-outside as -1 | 1);
+    d.jockeyT = 0;
+    d.patience = lerp01(DUEL.patience[0], DUEL.patience[1], q) * (0.8 + rng() * 0.4);
+    d.commitD = DUEL.stabD[0] + rng() * (DUEL.stabD[1] - DUEL.stabD[0]);
+    d.tellT = lerp01(DUEL.tell[0], DUEL.tell[1], q);
+    d.feints = 0;
+  }
+}
+
+/** Share of his tackle a burst still beats, for your dribbling. */
+export function graceShare(dribbling: number): number {
+  return lerp01(DUEL.grace[0], DUEL.grace[1], dribbling / 100);
+}
+
+/** The chance a feint sells, before repeats (each repeat on the same man halves it). */
+export function biteChance(kind: FpFeint["kind"], dribbling: number, defending01: number): number {
+  return clamp(DUEL.feint[kind].bite + 0.7 * (dribbling / 100 - 0.6) - 0.5 * (defending01 - 0.6), 0.05, 0.9);
+}
+
+/** Heavy-touch chance on a burst, for your dribbling. */
+export function heavyTouchChance(dribbling: number): number {
+  return DUEL.heavy * Math.pow(1 - clamp(dribbling, 0, 100) / 100, 1.3);
+}
+
+function startTell(d: FpDefender, s: FpRunState, scramble: boolean) {
+  d.phase = "telegraph";
+  const drift = s.x - d.x;
+  // He goes for the ball: where you are if you are clearly to one side of
+  // him, otherwise the side he showed you (he was waiting for you there).
+  d.commitSide = Math.abs(drift) > SHOW_SIDE ? (drift > 0 ? 1 : -1) : (d.show ?? d.bias);
+  // Sold: you went the other way while he was leaning — he is already gone
+  // the wrong way and can only stab after where you were.
+  if (scramble && sold.has(d)) d.commitSide = d.leanDir ?? d.commitSide;
+  d.tell = d.tellT * (scramble ? DUEL.scramble : read.has(d) ? DUEL.readTell : 1);
+}
+
+/** Where a biting man started his lurch (so the lurch is DUEL.lean in total). */
+const leanFrom = new WeakMap<FpDefender, number>();
+/** Men you went the other way from while they were leaning. */
+const sold = new WeakSet<FpDefender>();
+/** Men who read your feint (their next plant is quicker). */
+const read = new WeakSet<FpDefender>();
+/** Men who have stopped backing off and are stepping in to tackle. */
+const stepIn = new WeakSet<FpDefender>();
+
+function stepDefenderDuel(idx: number, s: FpRunState, sdt: number, forward: number): void {
+  const d = s.defenders[idx];
+  const gap = () => s.y - d.y;
+  const showOff = (d.show ?? 1) * DUEL.showOff;
+  switch (d.phase) {
+    case "waiting":
+      if (gap() <= DUEL.engageD) d.phase = "closing";
+      return;
+    case "closing": {
+      d.read += (s.x - d.read) * Math.min(1, sdt / d.lagT);
+      const mirror = d.mirrorSpeed; // the man taking you on presses fully
+      d.x += clamp(d.read - showOff - d.x, -mirror * sdt, mirror * sdt);
+      d.y += d.closeSpeed * sdt;
+      if (gap() <= DUEL.jockeyD) { d.phase = "jockey"; d.jockeyT = 0; }
+      break;
+    }
+    case "jockey": {
+      d.read += (s.x - d.read) * Math.min(1, sdt / d.lagT);
+      const mirror = d.mirrorSpeed; // the man taking you on presses fully
+      d.x += clamp(d.read - showOff - d.x, -mirror * sdt, mirror * sdt);
+      d.jockeyT = (d.jockeyT ?? 0) + sdt;
+      // Backing off, goal-side — until he has had enough (or you went too
+      // early): then he steps in to stab at it.
+      if (d.jockeyT >= (d.patience ?? 1)) stepIn.add(d);
+      if (stepIn.has(d)) d.y += d.closeSpeed * 0.5 * sdt;
+      else d.y -= forward * DUEL.give * sdt;
+      if (gap() <= d.commitD) startTell(d, s, false);
+      break;
+    }
+    case "bitten": {
+      // Leaning the wrong way, planted: the gap closes at your full speed.
+      d.offBal = (d.offBal ?? 0) - sdt;
+      const from = leanFrom.get(d) ?? d.x;
+      const to = from + (d.leanDir ?? 1) * DUEL.lean;
+      d.x += clamp(to - d.x, -5 * sdt, 5 * sdt);
+      if (d.offBal <= 0) startTell(d, s, true);
+      break;
+    }
+    case "telegraph": {
+      d.tell -= sdt;
+      if (d.tell <= 0) { d.phase = "committed"; d.lungeFrom = d.x; d.lunge = 0; }
+      break;
+    }
+    case "committed": {
+      d.lunge = Math.min(1, d.lunge + sdt / DUEL.lungeT);
+      d.x = d.lungeFrom + d.commitSide * DUEL.lungeReach * easeOutCubic(d.lunge);
+      d.y += DUEL.lungeIn * sdt;
+      break;
+    }
+    default:
+      return;
+  }
+
+  if (gap() > CONTACT_D) return;
+  const sep = Math.abs(s.x - d.x);
+  d.sepAtContact = sep;
+  const rng = s.rng;
+  const tackling = d.phase === "committed";
+  if (sep >= CLEAR_SEP) {
+    if (tackling && sep < CLEAR_SEP + DUEL.foulNear && rng() < DUEL.foulBeaten) {
+      foul(s, idx);
+      return;
+    }
+    if (sep < CLEAR_SEP + DUEL.recoverNear) {
+      // Level with him: does he get back? His pace (from his defending) against yours.
+      const hisPace = 60 + 25 * ((d.q ?? 0.6) - 0.5);
+      const p = DUEL.recover * clamp(1 + (hisPace - (s.paceStat ?? 60)) / 50, 0.25, 1.8);
+      if (rng() < p) {
+        if (rng() < 0.5) { foul(s, idx); return; }
+        lose(s, idx, "He gets back and takes it");
+        return;
+      }
+    }
+    d.phase = "beaten";
+    s.speed *= 0.95;
+    duelEvent(s, "Past him!", "good");
+    return;
+  }
+  if (sep > CLEAR_SEP - DUEL.foulMiss && rng() < DUEL.foulWon) {
+    foul(s, idx);
+    return;
+  }
+  lose(s, idx, tackling ? "Tackled" : "He stands you up");
+}
+
+/** A man covering behind the one pressing you: he drifts across with you and
+ *  holds a few metres deeper, waiting his turn. He never tackles from there. */
+const COVER_DEPTH = 6.5;
+/** The next wave holds at least this far ahead of you while one is on you. */
+const WAVE_HOLD = 12;
+function stepCover(idx: number, s: FpRunState, sdt: number): void {
+  const d = s.defenders[idx];
+  if (d.phase === "waiting") {
+    if (s.y - d.y <= DUEL.engageD) d.phase = "closing";
+    return;
+  }
+  const p = s.presser != null ? s.defenders[s.presser] : undefined;
+  const mirror = d.mirrorSpeed * d.press * 0.7;
+  d.read += (s.x - d.read) * Math.min(1, sdt / d.lagT);
+  // Hold his own side of the man pressing, a little across, not on top of him.
+  const side = p ? (d.x >= p.x ? 1 : -1) : 0;
+  const wantX = p ? clamp(d.read + side * 2.4, s.minX - 1, s.maxX + 1) : d.read;
+  d.x += clamp(wantX - d.x, -mirror * sdt, mirror * sdt);
+  const wantY = p ? Math.min(d.y + d.closeSpeed * sdt, p.y - COVER_DEPTH) : d.y + d.closeSpeed * sdt;
+  d.y = Math.max(Math.min(wantY, s.y - DUEL.jockeyD - 0.5), d.y - s.speed * sdt);
+  d.phase = "closing";
+}
+
+function foul(s: FpRunState, idx: number) {
+  const d = s.defenders[idx];
+  d.phase = "beaten";
+  d.fouled = true;
+  s.phase = "fouled";
+  s.fouledBy = idx;
+  duelEvent(s, "Fouled — free kick", "good");
+}
+
+function lose(s: FpRunState, idx: number, text: string) {
+  s.defenders[idx].phase = "won";
+  s.phase = "lost";
+  s.lostTo = idx;
+  duelEvent(s, text, "bad");
+}
+
+/** The man a move is played against: nearest still-live man in the live wave. */
+export function duelThreat(s: FpRunState): FpDefender | undefined {
+  return nearestLiveInActiveRound(s);
+}
+
+function applyBurstDuel(s: FpRunState, dir: -1 | 1): boolean {
+  if (s.phase !== "running" || s.burst || s.burstLock > 0 || s.feint) return false;
+  const threat = nearestLiveInActiveRound(s);
+  const drib = s.dribbling ?? 55;
+  let power = 1;
+  if (threat?.phase === "committed") power = threat.lunge <= graceShare(drib) ? 1 : 0.3;
+  // Across towards the middle, from out wide: a cut inside — sharper, a little slower.
+  const cut = Math.abs(s.x - CX) > 1.2 && Math.sign(CX - s.x) === dir;
+  const lat = BURST_LATERAL * (0.9 + 0.25 * (s.paceStat ?? 60) / 100) * (cut ? 1.2 : 1);
+  if (s.rng() < heavyTouchChance(drib)) {
+    power *= 0.35;
+    duelEvent(s, "Heavy touch", "bad");
+  } else {
+    duelEvent(s, cut ? "Cuts inside" : "Knocks it past", "info");
+  }
+  if (threat && threat.phase === "bitten" && dir === -(threat.leanDir ?? 0) && power >= 1) sold.add(threat);
+  if (threat && threat.phase === "jockey") {
+    // Too early: he is balanced, sees it and goes for it now.
+    threat.read = s.x + dir * lat * 0.5;
+    stepIn.add(threat);
+  }
+  s.burst = { dir, t: 0, done: 0, power, lat, move: cut ? "cut" : "burst" };
+  s.burstLock = BURST_LOCK;
+  s.touchT = 0;
+  return true;
+}
+
+/**
+ * A feint: a step-over or a drop of the shoulder, selling `dir`. Returns false
+ * when one can't be played now (a burst or another feint is still going).
+ */
+export function applyFeint(s: FpRunState, kind: FpFeint["kind"], dir: -1 | 1): boolean {
+  if (!s.duels || s.phase !== "running" || s.feint || s.burst) return false;
+  s.feint = { kind, dir, t: 0, dur: DUEL.feint[kind].dur };
+  if (kind === "shoulder") s.laneTarget = clamp(s.x + dir * 0.3, s.minX, s.maxX);
+  return true;
+}
+
+function resolveFeint(s: FpRunState, f: FpFeint) {
+  const d = nearestLiveInActiveRound(s);
+  const name = f.kind === "stepover" ? "Step-over" : "Shoulder drop";
+  if (!d) { duelEvent(s, name, "info"); return; }
+  const gap = s.y - d.y;
+  if (d.phase === "telegraph" || d.phase === "committed") { duelEvent(s, `${name} — too late`, "bad"); return; }
+  if (d.phase === "bitten") { duelEvent(s, name, "info"); return; }
+  if (gap > DUEL.feint[f.kind].range || (d.phase !== "jockey" && d.phase !== "closing")) { duelEvent(s, `${name} — too far out`, "info"); return; }
+  const p = biteChance(f.kind, s.dribbling ?? 55, d.q ?? 0.6) * Math.pow(0.5, d.feints ?? 0);
+  d.feints = (d.feints ?? 0) + 1;
+  if (s.rng() < p) {
+    d.phase = "bitten";
+    d.leanDir = f.dir;
+    leanFrom.set(d, d.x);
+    d.offBal = lerp01(DUEL.offBal[0], DUEL.offBal[1], d.q ?? 0.6);
+    duelEvent(s, `${name} — he bites!`, "good");
+  } else {
+    stepIn.add(d);
+    // He saw it coming and is waiting for you: a quicker stab.
+    read.add(d);
+    duelEvent(s, `${name} — he reads it`, "bad");
+  }
+}
+
+function stepRunDuels(s: FpRunState, dt: number): RunPhase {
+  if (s.phase !== "running") return s.phase;
+  const sdt = dt * s.timeScale;
+  s.elapsed += sdt;
+  s.burstLock = Math.max(0, s.burstLock - sdt);
+  s.touchT = (s.touchT ?? 0) + sdt;
+
+  let boost = 1;
+  if (s.burst) {
+    const b = s.burst;
+    b.t += sdt;
+    const f = easeOutCubic(b.t / BURST_T);
+    const target = (b.lat ?? BURST_LATERAL) * b.power * f;
+    s.x += b.dir * (target - b.done);
+    b.done = target;
+    const peak = b.move === "cut" ? 1.12 : BURST_BOOST;
+    boost = 1 + (peak - 1) * b.power * (1 - clamp(b.t / BURST_T, 0, 1));
+    if (b.t >= BURST_T) { s.burst = null; s.laneTarget = s.x; }
+  }
+  let slow = 1;
+  if (s.feint) {
+    const f = s.feint;
+    f.t += sdt;
+    slow = f.kind === "stepover" ? 0.8 : 0.92;
+    if (f.t >= f.dur) { s.feint = null; resolveFeint(s, f); }
+  }
+
+  s.x += clamp(s.laneTarget - s.x, -STEER_SPEED * sdt, STEER_SPEED * sdt);
+  s.x = clamp(s.x, s.minX, s.maxX);
+
+  const forward = s.speed * boost * slow;
+  s.y -= forward * sdt;
+  s.stride += forward * sdt;
+
+  for (const m of s.mates) placeMate(s, m, sdt, false);
+
+  let activeRound = -1;
+  for (const d of s.defenders) {
+    if (d.phase !== "beaten" && d.phase !== "won") { activeRound = d.round; break; }
+  }
+  s.activeRound = activeRound;
+  if (activeRound >= 0) {
+    // One man takes you on at a time; the rest of his wave cover behind him
+    // (the first defender presses, the second covers). Whoever is nearest
+    // steps up once the man in front of him is beaten.
+    const live = (i: number) => {
+      const d = s.defenders[i];
+      return d && d.round === activeRound && d.phase !== "beaten" && d.phase !== "won";
+    };
+    if (s.presser == null || !live(s.presser)) {
+      let best = -1, bestD = Infinity;
+      s.defenders.forEach((d, i) => {
+        if (!live(i)) return;
+        const dist = (s.y - d.y) + 0.6 * Math.abs(s.x - d.x);
+        if (dist < bestD) { bestD = dist; best = i; }
+      });
+      s.presser = best >= 0 ? best : null;
+    }
+    for (let i = 0; i < s.defenders.length; i++) {
+      if (!live(i)) continue;
+      if (i === s.presser) stepDefenderDuel(i, s, sdt, s.speed * slow);
+      else stepCover(i, s, sdt);
+      if (s.phase !== "running") break;
+    }
+    s.timeScale = s.defenders.some(d => d.round === activeRound && (d.phase === "telegraph" || d.phase === "bitten")) ? TELE_SLOW : 1;
+    // The waves behind keep their shape and drop off with you, so the next man
+    // to take you on has room to get set (a duel backs off towards them).
+    for (const d of s.defenders) {
+      if (d.round <= activeRound || d.phase !== "waiting") continue;
+      const ahead = WAVE_HOLD + DUEL_GAP * 0.5 * (d.round - activeRound - 1);
+      if (s.y - d.y < ahead) d.y = Math.max(1, s.y - ahead);
+    }
+  } else {
+    s.timeScale = 1;
+  }
+  if (s.phase !== "running") { s.timeScale = 1; return s.phase; }
+
+  if (s.defenders.every(d => d.phase === "beaten") && s.y <= s.clearY) {
+    s.phase = "clear";
+    return s.phase;
+  }
+  if (s.elapsed > RUN_TIMEOUT) {
+    s.phase = "lost";
+    s.lostTo = null;
+    return s.phase;
+  }
+  return "running";
+}
+
+/**
+ * A duels run's waves: two or three, one or two men each, five at most. With
+ * one man taking you on at a time and about half of take-ons won, a run of the
+ * old size (up to ten men) was a run nobody could finish; this is three or so
+ * real take-ons, like a winger's run at a back line.
+ */
+export function duelWaveSizes(rng: () => number): number[] {
+  return pickWaveSizes(rng, { minRounds: 2, maxRounds: 3, maxSize: 2, maxTotal: 5 });
 }

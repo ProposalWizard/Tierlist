@@ -489,6 +489,10 @@ function shearFor(def: FpDefender): number {
   if (def.phase === "committed") {
     return def.commitSide * (0.20 + 0.30 * easeOutCubic(def.lunge));
   }
+  // Duels: side-on in his jockey, hips open to the side he shows you; and
+  // when sold by a feint, leaning hard the wrong way.
+  if (def.phase === "jockey") return (def.show ?? 0) * 0.08;
+  if (def.phase === "bitten") return (def.leanDir ?? 0) * 0.42;
   return 0;
 }
 
@@ -1094,8 +1098,25 @@ function drawDefender(
     }
   }
 
-  const legSpread = 0.16 + (def.phase === "committed" ? 0.10 * easeOutCubic(def.lunge) : 0);
-  const flungOut = def.phase === "committed" ? 0.75 * easeOutCubic(def.lunge) : -0.25;
+  // Duels: the side he is showing you, a pale arrow on the turf at his feet —
+  // what his body shape tells a dribbler (go that way and he is waiting).
+  if (def.phase === "jockey" && def.show) {
+    const feet = project(cam, def.x, def.y, 0);
+    const chev = project(cam, def.x + def.show * 0.95, def.y + 0.2, 0);
+    if (chev && feet) {
+      const r = 0.24 * feet.scale;
+      ctx.fillStyle = "rgba(255,255,255,0.38)";
+      ctx.beginPath();
+      ctx.moveTo(chev.px + def.show * r, chev.py);
+      ctx.lineTo(chev.px - def.show * r * 0.4, chev.py - r * 0.55);
+      ctx.lineTo(chev.px - def.show * r * 0.4, chev.py + r * 0.55);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  const jockeying = def.phase === "jockey" || def.phase === "bitten";
+  const legSpread = 0.16 + (def.phase === "committed" ? 0.10 * easeOutCubic(def.lunge) : jockeying ? 0.08 : 0);
+  const flungOut = def.phase === "committed" ? 0.75 * easeOutCubic(def.lunge) : def.phase === "bitten" ? 0.6 : -0.25;
   // A running phase keyed to distance closed, not wall-clock — same
   // discipline `stride` already uses for the ground stripes, so it can
   // never drift out of sync with how fast he's actually closing you down.
@@ -1104,7 +1125,7 @@ function drawDefender(
   const runPhase = def.phase === "waiting" ? 0 : (-def.y / 1.5) * Math.PI * 2;
   drawFigure(ctx, cam, def, shear, kit, {
     legSpread,
-    armFlungSide: def.phase === "committed" ? def.commitSide : 0,
+    armFlungSide: def.phase === "committed" ? def.commitSide : def.phase === "bitten" ? (def.leanDir ?? 0) : 0,
     armFlungAmount: flungOut,
     runPhase,
     face: getFace?.(def.who?.face),

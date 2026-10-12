@@ -1,4 +1,5 @@
 "use client";
+import { noteCasinoBet } from "@/lib/star/casinoScandal";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   pickShot, resolveDive, liveDiveState, streakMultiplier, shotLabel,
@@ -422,6 +423,7 @@ export default function GoalieMode({ bank, bet, onSetBank, onExit, onChangeBet, 
     setBusy(false);
     if (played.kind === "error") { setNote(played.message); return; }
     runRef.current = played.slot !== null && played.result.playId ? { slot: played.slot, playId: played.result.playId } : null;
+    noteCasinoBet();
     onSetBank(bank - stake);
     stakedRef.current = stake;
     setStreak(0);

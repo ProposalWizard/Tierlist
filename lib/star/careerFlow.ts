@@ -4,7 +4,10 @@
 // the next CareerState, never mutating the input's nested objects. The page owns
 // phase routing and toasts; this owns the numbers.
 
+import { recordIntlMatch } from "./international";
+import { settleTournamentMatch, isTournamentFixture } from "./tournament";
 import { bestsAfterMatch, archiveRowFor, historyRowFor, bestMatesOf } from "./careerRecords";
+import { featsAfterMatch } from "./feats";
 import { brandsAfterMatch, brandsAfterSeason, sponsorPayFor } from "./sponsorDeals";
 import { withStars, ledgerAfterMatch, ledgerOf } from "./starPoints";
 import { computeBallonDorShortlist } from "./ballonDor";
@@ -55,9 +58,12 @@ import { dayFor, transferWindowFor, divisionOf, divisionRank, leagueNameFor, fix
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { wageForFixture } from "./wages";
 import { signingOnFee, typicalWeeklyWage, goalBonusFor, assistBonusFor } from "./economy";
-import { resolveLadder, membershipOf, type LadderOutcome } from "./promotion";
+import { resolveLadder, membershipOf, estimateClubStrength, type LadderOutcome } from "./promotion";
+import { englishTopFlightTable } from "./englishTopFlight";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids, moveSquadsWithLadder } from "./leagueSquads";
+import { ageLeagueSquads, ageOwnSquad, clubLevelOf } from "./worldAgeing";
+import { notableRetirements } from "./retirementNews";
 import { advanceIncumbencyWeek } from "./incumbency";
 import {
   monthOfCareer, endsMonthOn, alreadyAwarded, voteMonth, catchUpAwards, compactPotmHistory, type MonthAward,
@@ -872,6 +878,10 @@ export function creditMatchResult(
   // double a team-mate's goal/assist tally either.
   const goalEvents = alreadyPlayed ? [] : (stats.goalEvents ?? []);
   const updatedSquad = (career.squad ?? []).map(p => {
+    // An international is played by the national squad (international.ts),
+    // not your club team-mates: a goal by a man of the same name is not a
+    // club goal.
+    if (kind === "international") return p;
     const scored = goalEvents.filter(e => !e.isUserGoal && e.scorer === p.name).length;
     const assisted = goalEvents.filter(e => e.assist === p.name).length;
     if (scored === 0 && assisted === 0) return p;
@@ -906,7 +916,18 @@ export function creditMatchResult(
   // had been drawn NEXT — auto-winning or auto-eliminating a round never
   // actually played, and potentially minting a duplicate trophy if that
   // phantom result happened to land on the final.
-  if (kind !== "league" && fixture.competition && !alreadyPlayed) {
+  // The summer tournament (lib/star/tournament.ts): a group game or a knockout
+  // tie of yours. Checked first — it is neither a cup nor Europe.
+  let tournament = career.tournament;
+  const tourn = !alreadyPlayed ? settleTournamentMatch(career, fixture, {
+    us: stats.homeScore, them: stats.awayScore, pens: stats.shootout, extraTime: stats.wentToExtraTime,
+  }) : null;
+  if (tourn) {
+    tournament = tourn.state;
+    extraFixtures = tourn.nextFixture ? [tourn.nextFixture] : [];
+    cupTrophy = tourn.trophy;
+    knockoutMessage = tourn.message;
+  } else if (kind !== "league" && fixture.competition && !alreadyPlayed) {
     // Real, named goals for a European match actually played — the same
     // conversion the league block above does for `yours`/`theirs`, so a
     // Champions League scout report can eventually show them the same way a
@@ -1108,6 +1129,8 @@ export function creditMatchResult(
       const s = isInternational ? career.seasonStats : accrue(career.seasonStats);
       return bestsAfterMatch(career, fixture, stats, s.goals, s.assists);
     })(),
+    // Roadmap #4: the per-match tallies achievements read (lib/star/feats.ts).
+    feats: alreadyPlayed ? career.feats : featsAfterMatch(career, fixture, stats),
     thisSeasonClub: isInternational ? career.thisSeasonClub : career.player.club,
     leagueSeasonStats,
     careerLeagueStats,
@@ -1116,7 +1139,11 @@ export function creditMatchResult(
     // appearance in that regard.
     caps: (career.caps ?? 0) + (isInternational && !alreadyPlayed ? 1 : 0),
     internationalGoals: (career.internationalGoals ?? 0) + (isInternational && !alreadyPlayed ? stats.goals : 0),
+    // …and the match itself, for the international record on the stats page.
+    international: isInternational && !alreadyPlayed
+      ? recordIntlMatch(career.international, career.season, fixture, stats) : career.international,
     cups,
+    tournament,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,
     knockoutMessage,
     cupState,
@@ -1156,7 +1183,7 @@ export function creditMatchResult(
     // numbers the manager/dressing-room/fanbase systems are built to track
     // honestly.
     // Scaled, kept as fractions and drifting to the middle (relationships.ts).
-    ...(alreadyPlayed ? { relationships: { ...career.relationships, sponsors: newSponsorRel } } : (() => {
+    ...(alreadyPlayed || isInternational ? { relationships: { ...career.relationships, sponsors: newSponsorRel } } : (() => {
       // Capped again after the derby scaling: one match never moves a bar more than MATCH_REL_CAP.
       const raw = { boss: capRel(stats.bossChange * derbyScale.boss), team: capRel(stats.teamChange * derbyScale.team), fans: capRel(stats.fansChange * derbyScale.fans) };
       const rel = { ...career.relationships, sponsors: newSponsorRel };
@@ -1184,10 +1211,10 @@ export function creditMatchResult(
     currentBoot,
     horse,
     squad: updatedSquad,
-    form: alreadyPlayed ? career.form : [stats.rating, ...career.form].slice(0, 5),
+    form: alreadyPlayed || isInternational ? career.form : [stats.rating, ...career.form].slice(0, 5),
     // Item 24: the real ratings, never pulled toward 6.5 for a cameo — what
     // the shirt is judged on. Seeded from `form` on a save that predates it.
-    rawForm: alreadyPlayed ? career.rawForm
+    rawForm: alreadyPlayed || isInternational ? career.rawForm
       : [stats.rawRating ?? stats.rating, ...(career.rawForm ?? career.form)].slice(0, 5),
   };
   // Appearances at THIS club, which is what the armband is judged on — career
@@ -1243,20 +1270,20 @@ export function creditMatchResult(
   }
   // Being hooked for your form is a message from the manager as well as a
   // scoreline — it costs you a little more of him than the rating alone.
-  if (stats.hooked === "form" && !alreadyPlayed) {
+  if (stats.hooked === "form" && !alreadyPlayed && !isInternational) {
     next.relationships = { ...next.relationships, boss: clamp01to100(next.relationships.boss - 3) };
   }
   // Item 24 (v0.15): a substitute who changes the game moves up the ladder.
   // +5 with the manager per goal or assist off the bench (at most +10), on
   // top of what the rating itself earns — about +2 standing each, so two
   // cameo goals are roughly one rung (80' → 70').
-  if (stats.cameo && !alreadyPlayed) {
+  if (stats.cameo && !alreadyPlayed && !isInternational) {
     const boost = Math.min(10, 5 * (stats.goals + stats.assists));
     if (boost > 0) next.relationships = { ...next.relationships, boss: clamp01to100(next.relationships.boss + boost) };
   }
   // One more appearance at this club, and whether that has won you your shirt
   // (selection.ts). Only for a match you actually played in.
-  if (!alreadyPlayed && (stats.minutes ?? 0) > 0) {
+  if (!alreadyPlayed && !isInternational && (stats.minutes ?? 0) > 0) {
     next.shirt = recordAppearance(next);
   }
   // The manager's view going into next week, so the dashboard's status is live
@@ -1444,8 +1471,15 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
   // own qualifying field, before anyone has actually played it out to know
   // who (if anyone) wins Europe this season — that's exactly what
   // crownWithoutYou below uses this very field to determine.
-  const qualifiers = seasonQualifiers(career.league, faCupWinner, leagueCupWinner, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
-  const strengthOf = (name: string) => career.league.find(t => t.name === name)?.strength ?? 75;
+  // England's places come from the PREMIER LEAGUE, whatever division you
+  // play in (englishTopFlight.ts). Before 11 Oct 2026 this read your own
+  // table, so a Championship club could win the Champions League.
+  const topFlight = englishTopFlightTable(career);
+  const qualifiers = seasonQualifiers(topFlight, faCupWinner, leagueCupWinner, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
+  const strengthOf = (name: string) =>
+    topFlight.find(t => t.name === name)?.strength
+    ?? career.league.find(t => t.name === name)?.strength
+    ?? estimateClubStrength(career, name);
   const inYourCompetition = (id: "Champions League" | "Europa League") =>
     career.euroState?.competition === id ? career.euroState : null;
 
@@ -1469,6 +1503,8 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
     leagueCup: leagueCupWinner ?? undefined,
     championsLeague: championsLeagueWinner,
     europaLeague: europaLeagueWinner,
+    ...(career.tournament?.season === career.season && career.tournament.winner
+      ? { tournament: { competition: career.tournament.competition, winner: career.tournament.winner } } : {}),
   };
 }
 
@@ -1782,18 +1818,44 @@ export function advanceSeason(
     // after 19 seasons Man United and Wolves lined up exactly as on day one,
     // while their real players had long moved on (Mikey's playtest, 8 Oct
     // 2026). See moveSquadsWithLadder.
+    // Then the whole world gets a year older (worldAgeing.ts): ratings move
+    // along the age curve, men from 33 retire and a boy replaces each one.
+    // Your own team-mates (`squad`) get the same rolls, so a man retires
+    // from both copies of your club at once.
     ...(() => {
       const moved = moveSquadsWithLadder(career.leagueSquads ?? [], career.externalSquads ?? [], clubs);
+      const tier = (club: string) => facilitiesFor(career, club).trainingGroundTier;
+      const grownLeague = growWonderkids(
+        resetLeagueSquads(moved.leagueSquads), mulberry32(career.season * 71923 + 5), tier,
+      );
+      const grownExternal = growWonderkids(moved.externalSquads, mulberry32(career.season * 71923 + 7), tier);
+      const agedLeague = ageLeagueSquads(grownLeague, career.season, tier, career.clubLevels ?? {});
+      const agedExternal = ageLeagueSquads(grownExternal, career.season, tier, agedLeague.clubLevels);
+      const levels = agedExternal.clubLevels;
+      const own = career.player.club;
+      const ownCopy = (career.leagueSquads ?? []).find(s => s.club === own)
+        ?? (career.externalSquads ?? []).find(s => s.club === own);
+      const ownLevel = levels[own] ?? (ownCopy ? clubLevelOf(levels, ownCopy) : undefined)
+        ?? career.league.find(t => t.name === own)?.strength ?? 65;
+      const agedOwn = ageOwnSquad(
+        (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0, leagueGoals: 0, leagueAssists: 0 })),
+        own, career.season, ownLevel, tier(own),
+      );
+      const squad = agedOwn.squad;
+      // The few retirements worth a post (media at the rollover, page.tsx):
+      // read off the squads as they were before this rollover reset them.
+      const lastRetirements = notableRetirements(
+        [...agedOwn.retired, ...agedLeague.retired, ...agedExternal.retired],
+        { leagueSquads: career.leagueSquads, externalSquads: career.externalSquads, squad: career.squad },
+        own,
+      );
       return {
-        leagueSquads: growWonderkids(
-          resetLeagueSquads(moved.leagueSquads),
-          mulberry32(career.season * 71923 + 5),
-          club => facilitiesFor(career, club).trainingGroundTier,
-        ),
-        externalSquads: growWonderkids(
-          moved.externalSquads, mulberry32(career.season * 71923 + 7),
-          club => facilitiesFor(career, club).trainingGroundTier,
-        ),
+        leagueSquads: agedLeague.squads,
+        externalSquads: agedExternal.squads,
+        squad,
+        lastRetirements,
+        clubLevels: levels,
+        worldAgedSince: career.worldAgedSince ?? career.season,
       };
     })(),
     // A fresh season — a rivalry's grace tracking is keyed off cumulative
@@ -1819,7 +1881,7 @@ export function advanceSeason(
       seasonsRemaining: career.contract.seasonsRemaining - 1,
     },
     ballonDorWins: career.ballonDorWins + (userWonBallonDor ? 1 : 0),
-    squad: (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0, leagueGoals: 0, leagueAssists: 0 })),
+    // `squad` (season tallies reset, a year older) is set with the squads above.
     europeanQualification: qualification,
     // Kept because the European draw seeds you into a pot off it, and by the
     // time that draw happens the table below has already been wiped.
@@ -2003,7 +2065,10 @@ export function simulateMissedFixture(
 
   const rng = mulberry32(career.season * 1000 + career.week + 7717);
   const strength = (name: string) => career.league.find((t) => t.name === name)?.strength ?? 65;
-  const mine = strength(career.player.club);
+  // At the summer tournament your side is your nation, not your club.
+  const mine = isTournamentFixture(career, fixture)
+    ? (career.tournament!.strengths[career.tournament!.nation] ?? 70)
+    : strength(career.player.club);
   // A European opponent is not in career.league at all — the domestic lookup
   // above would silently fall back to a flat 65 for every single one of
   // them. `fixture.opponentStrength` is the real number (set by euro.ts's
@@ -2040,7 +2105,15 @@ export function simulateMissedFixture(
   let cupTrophy: Trophy | null = null;
   let knockoutMessage: string | null = null;
   let cupState = career.cupState;
-  if (kind !== "league" && fixture.competition) {
+  // A tournament match you missed (injured) is simulated nation against nation.
+  let tournament = career.tournament;
+  const tourn = settleTournamentMatch(career, fixture, { us: userScore, them: oppScore });
+  if (tourn) {
+    tournament = tourn.state;
+    extraFixtures = tourn.nextFixture ? [tourn.nextFixture] : [];
+    cupTrophy = tourn.trophy;
+    knockoutMessage = tourn.message;
+  } else if (kind !== "league" && fixture.competition) {
     const settled = settleCupTie(career, fixture, userScore, oppScore);
     if (settled) {
       cupState = settled.states;
@@ -2115,6 +2188,7 @@ export function simulateMissedFixture(
     externalSquads,
     fixtures: [...fixtures, ...extraFixtures],
     cups,
+    tournament,
     cupState,
     euroState,
     trophies: cupTrophy ? [...career.trophies, cupTrophy] : career.trophies,

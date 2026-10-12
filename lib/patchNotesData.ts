@@ -27,6 +27,256 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.45",
+      "title": "Leo's patch notes — the gameplay round: camera, keeper, shots, ball, radar, dribbling",
+      "publishedAt": "2026-10-12T00:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/3x6BjhftYfYtYCYJRkKDbg",
+      "summary": "The six gameplay things Harry and Mikey asked for, each measured against real football and behind a New | Old switch: a tighter match camera and the late-sub score fix; Keeper pro built from a full StatsBomb Premier League season; shots whose height follows where you hit the ball, with a spread cone and contact grades; knuckleball and power shot in the real match; a believable 90 minutes and a live match radar; dribble duels that need timing, plus a top-down option; real ball physics. Leo, 12 Oct: all of these start on Old as \"(testing)\" switches; Settings → Look → New in v0.15 has All new / All old; a new Tournament test page plays a Euros or World Cup to the final in one tap.",
+      "stats": [
+        {
+          "value": "6",
+          "label": "gameplay jobs merged"
+        },
+        {
+          "value": "39% → 28%",
+          "label": "empty grass on screen"
+        },
+        {
+          "value": "13 → 24",
+          "label": "shots a match in the game you don't play (real 25)"
+        },
+        {
+          "value": "76% → 46%",
+          "label": "take-ons won (real ~50%)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Tighter match camera",
+              "detail": "Any chance: less empty grass. Settings → Look → Match camera."
+            },
+            {
+              "title": "Late-sub score matches",
+              "detail": "Stats screen score = scoreboard."
+            },
+            {
+              "title": "Keeper pro",
+              "detail": "He holds about half his saves; parries go wide."
+            },
+            {
+              "title": "Shot cone and contact grade",
+              "detail": "Aim screen cone; CLEAN / SLICED on the strike screen."
+            },
+            {
+              "title": "Knuckleball and ⚡ power shot",
+              "detail": "⚡ button bottom-left on the aim screen."
+            },
+            {
+              "title": "Match radar",
+              "detail": "Mini-pitch above the commentary between chances."
+            },
+            {
+              "title": "Dribble duels",
+              "detail": "He jockeys; a feint at the right time beats him."
+            },
+            {
+              "title": "Top-down dribble option",
+              "detail": "Settings → Look → Dribble style."
+            },
+            {
+              "title": "Ball physics (testing, off)",
+              "detail": "Settings → Look → Ball physics: New to try."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Mostly not seen on a phone yet",
+              "detail": "Measured, not yet seen; a playtest is running."
+            },
+            {
+              "title": "Tournament not played through on screen",
+              "detail": "Grey-globe flag bug fixed."
+            },
+            {
+              "title": "Tight angles and volleys still go in too often",
+              "detail": "21% vs real 8%; 32% vs 10%."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.44",
+      "title": "Leo's patch notes — the big evening: camera, careers that move, a world that ages",
+      "publishedAt": "2026-10-11T20:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/9wg6tn2XxSyT8mUBRhrbgy",
+      "summary": "12 jobs built side by side: Harry's empty-pitch camera fixed in the real match; Find a new club and January moves; an international career with call-ups, qualifiers and Euros/World Cup every two summers; a world that ages, retires and replaces its players; a real Ballon d'Or night; 35 → 136 achievements; a bug sweep (league account per division, full goal clips, England's Europe from the Premier League, no holes in posts) and a 20-season money check with renewals capped.",
+      "stats": [
+        {
+          "value": "12",
+          "label": "jobs built and merged"
+        },
+        {
+          "value": "11% → 51%",
+          "label": "screen filled by players (Kane one-on-ones)"
+        },
+        {
+          "value": "35 → 136",
+          "label": "achievements"
+        },
+        {
+          "value": "318/321",
+          "label": "tests pass"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Empty-pitch camera fixed",
+              "detail": "Any match chance: the opening picture fits the players."
+            },
+            {
+              "title": "Find a new club",
+              "detail": "Stats → Contract → Find a new club."
+            },
+            {
+              "title": "January moves",
+              "detail": "Agree a deal, then in January: Join [club] now."
+            },
+            {
+              "title": "International breaks",
+              "detail": "Sep/Oct/Nov/Mar: Called up or Not selected; Stats → 🌍 Country."
+            },
+            {
+              "title": "Euros and World Cup",
+              "detail": "Every two summers: squad, groups, knockouts."
+            },
+            {
+              "title": "Ballon d'Or night",
+              "detail": "End of each season; Settings → Look → Ballon d'Or night."
+            },
+            {
+              "title": "A world that ages",
+              "detail": "Next season: squads a year older, young newcomers, retirement news."
+            },
+            {
+              "title": "136 achievements",
+              "detail": "Achievements screen; Stats → Records."
+            },
+            {
+              "title": "Side-on wide chances (off)",
+              "detail": "Settings → Look → Wide chances: New."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Camera framed empty grass",
+              "detail": "A parked spare striker 400 m off the pitch made the camera use its widest view. Kane one-on-ones: players fill 11% → 51% of the screen."
+            },
+            {
+              "title": "League account always 'Premier League'",
+              "detail": "Named after your division; wrong names 153 → 0."
+            },
+            {
+              "title": "Goal clips cut 1.5 s after the goal",
+              "detail": "Full 2.2 s now."
+            },
+            {
+              "title": "Lower-league clubs winning the Champions League",
+              "detail": "England's places come from the real Premier League; 134 → 0 in 600 seasons."
+            },
+            {
+              "title": "Posts with holes ('-.', 'undefined', 'FC FC')",
+              "detail": "A post never names a missing fact; 0 in a 5,786-post scan."
+            },
+            {
+              "title": "Renewals past the wage cap",
+              "detail": "Stop at ★100k a week."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Find a new club + January moves",
+              "detail": "Ask every club or one; yes with terms or no with a reason; League Two player asking the Premier League: 0 yes at 55–70, 13 of 20 at 80."
+            },
+            {
+              "title": "International career",
+              "detail": "Four breaks a season; England call-up 15% at 3★, 91% at 4★; real matches with a national squad; caps once."
+            },
+            {
+              "title": "Euros and World Cup",
+              "detail": "Squad selection, 3 group games, knockouts with extra time and penalties; named opposing nations."
+            },
+            {
+              "title": "A world that ages",
+              "detail": "Age curve, retirement 33–40, regens; divisions steady within 2–3 over 20 seasons; retirement news posts."
+            },
+            {
+              "title": "Ballon d'Or night",
+              "detail": "3D stage with podiums and reveal; drawn fallback; New | Old switch."
+            },
+            {
+              "title": "136 achievements",
+              "detail": "10 groups; money ones moved from ★100/★500 to ★10k/★100k/★1m/★10m; new records."
+            },
+            {
+              "title": "Side-on camera (off)",
+              "detail": "Empty grass below: tight angle 58% → 24%, penalty 55% → 27%."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Money decisions for Harry and Mikey",
+              "detail": "Renewal ceiling, sponsor fees vs wage, KIB can prices: options in docs/money-balance-oct2026.md."
+            },
+            {
+              "title": "Not seen on a phone",
+              "detail": "Everything checked in a test browser or tests only."
+            },
+            {
+              "title": "Three tests fail",
+              "detail": "Two 3D asset lists out of date on main too; the Wembley mini-game balance check."
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "0.39 — smart passing, highlights first",
+              "detail": "Good passers keep runners onside (14% → 4% offside); HIGHLIGHTS after every match, made first."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.43",
       "title": "Mikey's patch notes",
       "publishedAt": "2026-10-09T15:00:00Z",

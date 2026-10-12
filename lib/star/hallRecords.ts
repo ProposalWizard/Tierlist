@@ -106,6 +106,26 @@ export const HALL_RECORDS: HallRecordDef[] = [
       return b && b.metres > 0 ? { value: Math.round(b.metres), season: b.season } : null;
     },
   },
+  // Roadmap #4 (11 Oct 2026).
+  {
+    id: "caps", icon: "🧢", label: "Most caps", unit: "caps", unitOne: "cap", scope: "career",
+    best: c => (n(c.caps) > 0 ? { value: n(c.caps) } : null),
+    now: c => n(c.caps),
+  },
+  {
+    id: "scoring-run", icon: "🔥", label: "Longest scoring run", unit: "matches", unitOne: "match", scope: "match",
+    best: c => {
+      const f = c.feats;
+      return f && n(f.bestScoringRun) > 0 ? { value: n(f.bestScoringRun), ...(f.bestScoringRunSeason ? { season: f.bestScoringRunSeason } : {}) } : null;
+    },
+  },
+  {
+    id: "biggest-win", icon: "💥", label: "Biggest win", unit: "goal margin", unitOne: "goal margin", scope: "match",
+    best: c => {
+      const b = c.careerBests?.biggestWin;
+      return b && b.us - b.them > 0 ? { value: b.us - b.them, season: b.season } : null;
+    },
+  },
 ];
 
 /** One career's mark on a record. */

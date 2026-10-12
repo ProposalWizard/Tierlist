@@ -148,6 +148,16 @@ const HALL_RECORD: CareerDetector = (r) => {
   }, "instant");
 };
 
+/** A casino night in the papers. The id says what kind; step 3+ is the exposé, step 4 the ban. */
+const CASINO_SCANDAL: CareerDetector = (r) => {
+  if (r.moment.kind !== "casino-scandal") return null;
+  const m = r.moment;
+  const id = m.step >= 4 ? "casino-ban" : m.step === 3 ? "casino-expose" : `casino-${m.story}`;
+  return make(id, { kind: "you", name: r.you.name }, 50 + m.step * 10, ["shame", "drama"], {
+    ...base(r), bets: m.bets, step: m.step,
+  }, "instant");
+};
+
 const SEASON_REVIEW: CareerDetector = (r) => {
   if (r.moment.kind !== "season-end") return null;
   const m = r.moment;
@@ -158,5 +168,5 @@ const SEASON_REVIEW: CareerDetector = (r) => {
 
 export const CAREER_DETECTORS: CareerDetector[] = [
   TRANSFER, CONTRACT, AWARD, BALLON_DOR, MANAGER, CALL_UP,
-  CAPTAIN, TESTIMONIAL, RETIREMENT, HALL_RECORD, SEASON_REVIEW,
+  CAPTAIN, TESTIMONIAL, RETIREMENT, HALL_RECORD, CASINO_SCANDAL, SEASON_REVIEW,
 ];

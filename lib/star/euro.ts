@@ -10,6 +10,9 @@ import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
 } from "./clubs";
 import { seasonQualifiers } from "./qualification";
+import { englishTopFlightTable } from "./englishTopFlight";
+import { membershipOf, estimateClubStrength } from "./promotion";
+import { divisionOf as divisionOfCareer } from "./calendar";
 import { extraTimeScore, simulateShootout } from "./shootout";
 
 /**
@@ -338,7 +341,13 @@ function strengthOf(club: string, career: CareerState): number {
   if (inLeague) return inLeague.strength;
   const saudi = SAUDI_CLUBS.find(s => s.name === club);
   if (saudi) return saudi.strength;
-  return NON_ENGLISH_CLUB_STRENGTH[club] ?? 72;
+  if (NON_ENGLISH_CLUB_STRENGTH[club] !== undefined) return NON_ENGLISH_CLUB_STRENGTH[club];
+  // A Premier League club while you play below it: its estimated strength,
+  // the same one its stand-in table (englishTopFlight.ts) was played with.
+  if (divisionOfCareer(career) !== "premier" && membershipOf(career).premier.includes(club)) {
+    return estimateClubStrength(career, club);
+  }
+  return 72;
 }
 
 const MAIN_NATIONS = ["England", "Spain", "Italy", "Germany", "France"];
@@ -412,12 +421,14 @@ function seasonField(competition: "Champions League" | "Europa League", career: 
   // actually an ENGLISH one — an English club can't win both in one season,
   // so at most one of these two is ever real.
   const uefaRules = ruleBookFor(career, "UEFA");
-  const englishNames = new Set(career.league.map(t => t.name));
+  // The Premier League's table, not your own division's (englishTopFlight.ts).
+  const topFlight = englishTopFlightTable(career);
+  const englishNames = new Set(topFlight.map(t => t.name));
   const europeanTrophyWinner = [
     career.lastSeasonWinners?.championsLeague, career.lastSeasonWinners?.europaLeague,
   ].find(name => name && englishNames.has(name)) ?? null;
   const englishQualifiers = seasonQualifiers(
-    career.league, career.lastSeasonWinners?.faCup ?? null, career.lastSeasonWinners?.leagueCup ?? null,
+    topFlight, career.lastSeasonWinners?.faCup ?? null, career.lastSeasonWinners?.leagueCup ?? null,
     europeanTrophyWinner,
     uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots,
   );
@@ -443,7 +454,7 @@ function seasonField(competition: "Champions League" | "Europa League", career: 
   const englishEuropa = [...englishQualifiers.europa];
   if (englishEuropa.length < MAIN_NATION_ALLOCATION.England.europa) {
     const claimed = new Set([...englishChampions, ...englishEuropa]);
-    for (const team of sortLeague(career.league)) {
+    for (const team of sortLeague(topFlight)) {
       if (englishEuropa.length >= MAIN_NATION_ALLOCATION.England.europa) break;
       if (!claimed.has(team.name)) { englishEuropa.push(team.name); claimed.add(team.name); }
     }
