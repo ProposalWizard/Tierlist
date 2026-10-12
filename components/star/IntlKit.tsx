@@ -11,7 +11,8 @@
  * (IntlWorldPanel), national-duty mode (League tab and Home while you're
  * away with your country), and the watched-match screen (not picked).
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { intlSeason, scorerLines, type IntlSeason } from "@/lib/star/intl/scorers";
 import type React from "react";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import {
@@ -122,7 +123,28 @@ export function NationTable({ group, nation, glow, through = 2 }: { group: Group
 
 // ── Match rows and the results board ───────────────────────────────────────
 
-export function MatchRow({ m, glow, nation }: { m: MatchView; glow: string; nation?: string }) {
+/** Scorer lines for a results row, from the season's named goals. */
+export type ScorerLookup = (m: MatchView) => { home: string[]; away: string[] } | null;
+
+/** Every named international goal this Ballon d'Or year, as a row lookup. */
+export function useScorers(career: CareerState): ScorerLookup {
+  const season = useMemo<IntlSeason | null>(() => { try { return intlSeason(career); } catch { return null; } }, [career]);
+  return (m) => (season && m.id ? scorerLines(career, season, m.id, m.home) : null);
+}
+
+function ScorerLine({ goals }: { goals: { home: string[]; away: string[] } }) {
+  if (!goals.home.length && !goals.away.length) return null;
+  return (
+    <div className="col-span-3 grid grid-cols-[1fr_auto_1fr] gap-1.5 text-[9.5px] font-bold leading-snug text-white/85" data-intl-scorers>
+      <span className="text-right">{goals.home.join(", ")}</span>
+      <span className="w-[34px]" aria-hidden>{goals.home.length || goals.away.length ? "⚽" : ""}</span>
+      <span>{goals.away.join(", ")}</span>
+    </div>
+  );
+}
+
+export function MatchRow({ m, glow, nation, scorers }: { m: MatchView; glow: string; nation?: string; scorers?: ScorerLookup }) {
+  const goals = scorers ? scorers(m) : null;
   const mine = m.mine || (nation ? m.home === nation || m.away === nation : false);
   const done = m.hs !== undefined && m.as !== undefined;
   const [ph, pa] = m.pens ? m.pens.split(" ")[0].split("-").map(Number) : [0, 0];
@@ -145,11 +167,12 @@ export function MatchRow({ m, glow, nation }: { m: MatchView; glow: string; nati
         <span className="truncate">{m.away}</span>
       </span>
       {m.pens && <span className="col-span-3 text-center text-[9.5px] font-bold text-amber-300">{m.pens}</span>}
+      {goals && <ScorerLine goals={goals} />}
     </div>
   );
 }
 
-export function ResultsBoard({ rounds, glow, start, nation }: { rounds: RoundView[]; glow: string; start?: number; nation?: string }) {
+export function ResultsBoard({ rounds, glow, start, nation, scorers }: { rounds: RoundView[]; glow: string; start?: number; nation?: string; scorers?: ScorerLookup }) {
   const [i, setI] = useState(() => start ?? Math.max(0, rounds.length - 1));
   const r = rounds[Math.min(i, rounds.length - 1)];
   return (
@@ -163,7 +186,7 @@ export function ResultsBoard({ rounds, glow, start, nation }: { rounds: RoundVie
         <PressButton onClick={() => setI(i + 1)} disabled={i >= rounds.length - 1} aria-label="Next matchday" variant="secondary" size="none" className="grid h-7 w-7 place-items-center rounded-lg text-xs font-black">→</PressButton>
       </div>
       <div className="space-y-1 p-1.5">
-        {r?.matches.map((m, k) => <MatchRow key={k} m={m} glow={glow} nation={nation} />)}
+        {r?.matches.map((m, k) => <MatchRow key={k} m={m} glow={glow} nation={nation} scorers={scorers} />)}
       </div>
     </ClubCard>
   );
@@ -228,6 +251,7 @@ export function DutyBanner({ duty, onClub }: { duty: DutyView; onClub?: () => vo
 
 export function NationalLeague({ career, duty, onClub }: { career: CareerState; duty: DutyView; onClub?: () => void }) {
   const [view, setView] = useState<"table" | "results" | "fixtures" | "squad">("table");
+  const scorers = useScorers(career);
   const nation = duty.nation;
   const glow = nationGlow(nation);
   const rounds = roundsOf(career, duty.period);
@@ -255,7 +279,7 @@ export function NationalLeague({ career, duty, onClub }: { career: CareerState; 
       )}
       {view === "results" && (
         <RiseIn key="r">
-          {playedRounds.length ? <ResultsBoard rounds={playedRounds} glow={glow} nation={nation} />
+          {playedRounds.length ? <ResultsBoard rounds={playedRounds} glow={glow} nation={nation} scorers={scorers} />
             : <ClubCard glow={glow} className="p-3 text-[12px] font-bold text-white">No games played yet this {tournament ? "tournament" : "break"}.</ClubCard>}
         </RiseIn>
       )}
@@ -320,8 +344,13 @@ export function WatchedScreen({ career, fixture, onContinue }: { career: CareerS
   const s = intlOf(career);
   const nation = s.nation;
   const glow = nationGlow(nation);
+  const scorers = useScorers(career);
   const w = worldOf(career);
   const m = fixture.intlId ? w.byId.get(fixture.intlId) : undefined;
+  const goals = m ? scorers({ id: m.id, date: m.date, comp: m.comp, stage: m.stage, home: m.home, away: m.away }) : null;
+  // The card is drawn in your terms (you on the side the fixture says).
+  const flip = m ? (m.home === nation) !== !!fixture.home : false;
+  const cardGoals = goals ? (flip ? { home: goals.away, away: goals.home } : goals) : null;
   const rounds = m ? roundsOf(career, { key: "x", kind: "window", label: "", matches: [m], start: m.date, end: m.date }) : [];
   const g = m ? groupOf(career, m) : null;
   const t = fixtureTimestamp(career.player.startYear, career.season, fixture.week, fixture.kind, divisionOf(career));
@@ -353,10 +382,16 @@ export function WatchedScreen({ career, fixture, onContinue }: { career: CareerS
                 <span className="text-center text-[13px] font-black leading-tight">{fixture.home ? fixture.opponent : nation}</span>
               </div>
             </div>
+            {cardGoals && (cardGoals.home.length > 0 || cardGoals.away.length > 0) && (
+              <div className="mt-3 grid grid-cols-2 gap-3 border-t border-white/10 pt-2 text-[11px] font-bold text-white" data-intl-watched-scorers>
+                <div className="text-right">{cardGoals.home.map((x) => <div key={x}>{x}</div>)}</div>
+                <div>{cardGoals.away.map((x) => <div key={x}>{x}</div>)}</div>
+              </div>
+            )}
           </ClubCard>
         </RiseIn>
         {g && <RiseIn index={2}><NationTable group={g} nation={nation} glow={glow} /></RiseIn>}
-        {rounds[0] && rounds[0].matches.length > 1 && <RiseIn index={3}><ResultsBoard rounds={rounds} glow={glow} nation={nation} /></RiseIn>}
+        {rounds[0] && rounds[0].matches.length > 1 && <RiseIn index={3}><ResultsBoard rounds={rounds} glow={glow} nation={nation} scorers={scorers} /></RiseIn>}
         <RiseIn index={4}><ManagerCard value={s.manager} nation={nation} line={managerLine(career)} /></RiseIn>
         <RiseIn index={5}>
           <PressButton variant="gold" size="none" onClick={onContinue} className="w-full rounded-2xl py-3.5 text-[15px] font-black uppercase">Continue →</PressButton>

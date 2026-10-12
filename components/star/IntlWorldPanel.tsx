@@ -19,7 +19,8 @@ import {
 import NationFlag from "./NationFlag";
 import { ClubCard, RiseIn } from "./ui";
 import { SegTabs, CardTitle, youRowStyle } from "./screenKit";
-import { ManagerCard, NationTable, MatchRow, nationGlow } from "./IntlKit";
+import { ManagerCard, NationTable, MatchRow, nationGlow, useScorers } from "./IntlKit";
+import { intlSeason, topIntlScorers } from "@/lib/star/intl/scorers";
 
 const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
@@ -39,10 +40,21 @@ export default function IntlWorldPanel({ career }: { career: CareerState }) {
   const data = useMemo(() => ({
     s: intlOf(career), line: managerLine(career), groups: myGroups(career, 2), matches: myMatches(career),
     rank: myRanking(career), top: topRanking(career, 10), won: whoWon(career),
+    scorers: (() => {
+      try {
+        // You are on the list too, with the goals you scored for your country.
+        const season = intlSeason(career);
+        const you = { name: `${career.player.firstName} ${career.player.lastName} (you)`, nation: intlOf(career).nation, goals: season.you.goals, assists: season.you.assists, real: true, position: career.player.position };
+        const list = topIntlScorers(season, 15);
+        return (you.goals || you.assists ? [...list, you] : list)
+          .sort((a, b) => b.goals - a.goals || b.assists - a.assists).slice(0, 15);
+      } catch { return []; }
+    })(),
   }), [career]);
-  const [tab, setTab] = useState<"overview" | "matches" | "ranking" | "winners">("overview");
+  const lookup = useScorers(career);
+  const [tab, setTab] = useState<"overview" | "matches" | "scorers" | "ranking" | "winners">("overview");
   const [allWinners, setAllWinners] = useState(false);
-  const { s, line, groups, matches, rank, top, won } = data;
+  const { s, line, groups, matches, rank, top, won, scorers } = data;
   const nation = s.nation;
   const glow = nationGlow(nation);
   return (
@@ -63,7 +75,7 @@ export default function IntlWorldPanel({ career }: { career: CareerState }) {
         </ClubCard>
       </RiseIn>
       <RiseIn index={1}><ManagerCard value={s.manager} nation={nation} line={line} /></RiseIn>
-      <SegTabs value={tab} onChange={setTab} tabs={[["overview", "Tables"], ["matches", "Matches"], ["ranking", "Ranking"], ["winners", "Who won"]] as const} />
+      <SegTabs value={tab} onChange={setTab} tabs={[["overview", "Tables"], ["matches", "Matches"], ["scorers", "Scorers"], ["ranking", "Ranking"], ["winners", "Who won"]] as const} />
 
       {tab === "overview" && (
         <RiseIn key="o" className="space-y-2">
@@ -89,9 +101,30 @@ export default function IntlWorldPanel({ career }: { career: CareerState }) {
             {matches.last.length ? matches.last.map((m, i) => (
               <div key={i}>
                 <div className="px-1 pb-0.5 pt-1 text-[9.5px] font-bold text-white/75">{day(m.date)} · {m.comp} · {m.stage}</div>
-                <MatchRow m={m} glow={glow} nation={nation} />
+                <MatchRow m={m} glow={glow} nation={nation} scorers={lookup} />
               </div>
             )) : <div className="p-1.5 text-[11.5px] font-bold text-white/85">None played yet.</div>}
+          </Card>
+        </RiseIn>
+      )}
+
+      {tab === "scorers" && (
+        <RiseIn key="s">
+          <Card title="International scorers · this season" glow={glow}>
+            {scorers.length === 0 ? (
+              <div className="p-1.5 text-[11.5px] font-bold text-white/85">No international goals yet this season.</div>
+            ) : scorers.map((p, i) => {
+              const mine = p.nation === nation;
+              return (
+                <div key={`${p.nation}|${p.name}`} data-intl-scorer className={`grid grid-cols-[22px_1fr_auto_auto] items-center gap-1.5 rounded-md px-1.5 py-1.5 text-[11.5px] font-bold text-white ${mine ? "" : i % 2 === 0 ? "bg-white/[0.035]" : ""}`} style={mine ? youRowStyle(glow) : undefined}>
+                  <span className="text-center font-black">{i + 1}</span>
+                  <span className="flex min-w-0 items-center gap-1.5"><NationFlag nation={p.nation} width={18} rounded={2} /><span className="truncate">{p.name}</span></span>
+                  <span className="font-black tabular-nums text-emerald-300">{p.goals}<span className="text-[9px] text-white/75"> g</span></span>
+                  <span className="w-8 text-right font-black tabular-nums text-white/85">{p.assists}<span className="text-[9px] text-white/75"> a</span></span>
+                </div>
+              );
+            })}
+            <div className="px-1.5 pt-1.5 text-[10px] font-bold text-white/80">Every match in the world since last season&apos;s Ballon d&apos;Or night. These count towards this year&apos;s.</div>
           </Card>
         </RiseIn>
       )}

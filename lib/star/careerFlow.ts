@@ -5,7 +5,7 @@
 // phase routing and toasts; this owns the numbers.
 
 import { recordIntlMatch } from "./international";
-import { creditIntl, syncIntl, managerAfterClubMatch, awayOnDuty, watchedScore } from "./intl/career";
+import { creditIntl, syncIntl, managerAfterClubMatch, awayOnDuty, watchedScore, markBallonDorNight } from "./intl/career";
 import { settleTournamentMatch, isTournamentFixture } from "./tournament";
 import { bestsAfterMatch, archiveRowFor, historyRowFor, bestMatesOf } from "./careerRecords";
 import { featsAfterMatch } from "./feats";
@@ -2023,7 +2023,9 @@ export function advanceSeason(
     next.money += b.bonus;
   }
 
-  // The new season's internationals and real-player strengths.
+  // The new season's internationals and real-player strengths. First, where
+  // the world stood on this Ballon d'Or night (the next one counts from it).
+  if (career.intl) next.intl = markBallonDorNight(career);
   Object.assign(next, syncIntl(next));
 
   const settled = applyAchievements(next);

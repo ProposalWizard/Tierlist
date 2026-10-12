@@ -52,7 +52,11 @@ import { madeUpNames } from "../nationNames";
 
 const DAY = 86_400_000;
 
-export interface PlayedResult { hs: number; as: number; pens?: { hs: number; as: number }; et?: boolean }
+export interface PlayedResult {
+  hs: number; as: number; pens?: { hs: number; as: number }; et?: boolean;
+  /** Your own goals and assists in that match (absent in saves from before 12 Oct 2026). */
+  mine?: { g: number; a: number };
+}
 
 export interface IntlState {
   v: 1;
@@ -72,6 +76,9 @@ export interface IntlState {
   awarded: string[];
   /** Your last international, for rotation. */
   last?: { lost: boolean; rating: number };
+  /** Season → how far the world had been played on its Ballon d'Or night.
+   *  The next night counts international goals from there (intl/scorers.ts). */
+  nights?: Record<number, number>;
 }
 
 export const SQUAD_AT = 34;
@@ -159,9 +166,9 @@ export function expectedXi(strength: number): number {
   return 38.93 + 0.533 * strength;
 }
 
-interface PoolPlayer { name: string; nation: string; overall: number; position: string; positions?: string[]; club?: string; image?: string; age?: number }
+export interface PoolPlayer { name: string; nation: string; overall: number; position: string; positions?: string[]; club?: string; image?: string; age?: number }
 
-function realPlayers(career: CareerState): PoolPlayer[] {
+export function realPlayers(career: CareerState): PoolPlayer[] {
   const out = new Map<string, PoolPlayer>();
   const add = (p: PoolPlayer) => { if (p.nation && !out.has(`${p.nation}|${p.name}`)) out.set(`${p.nation}|${p.name}`, p); };
   for (const p of career.squad ?? []) {
@@ -358,6 +365,25 @@ function seasonEnd(career: CareerState): number {
 
 function inSeason(career: CareerState, t: number): boolean {
   return t >= openingSaturday(seasonStartYear(career.player.startYear, career.season)).getTime() && t <= seasonEnd(career);
+}
+
+/** The season is over (Ballon d'Or night has been): remember how far the
+ *  world had been played, so the next night counts from there. */
+export function markBallonDorNight(career: CareerState): IntlState {
+  const s = intlOf(career);
+  return { ...s, nights: { ...(s.nights ?? {}), [career.season]: worldOf(career).now } };
+}
+
+/** When the Ballon d'Or year `season` starts: the night before it, or (a
+ *  save from before 12 Oct 2026, or the first season) the June before its
+ *  club season, or the career's own start. */
+export function ballonDorYearStart(career: CareerState, season: number): number {
+  const s = intlOf(career);
+  const prev = s.nights?.[season - 1];
+  if (prev != null) return prev + 1; // after the night, never on it
+  const careerStart = openingSaturday(seasonStartYear(career.player.startYear, 1)).getTime();
+  if (season <= 1) return careerStart;
+  return Math.max(careerStart, Date.UTC(seasonStartYear(career.player.startYear, season), 5, 1));
 }
 
 /** When your last played match (of any kind) was. */
@@ -667,7 +693,7 @@ export function intlSelection(career: CareerState, f: Fixture): { status: "1st T
  */
 export function creditIntl(
   career: CareerState, f: Fixture,
-  stats: Pick<MatchStats, "homeScore" | "awayScore" | "rating"> & Partial<Pick<MatchStats, "shootout" | "wentToExtraTime">> | null,
+  stats: Pick<MatchStats, "homeScore" | "awayScore" | "rating"> & Partial<Pick<MatchStats, "shootout" | "wentToExtraTime" | "goals" | "assists">> | null,
   opts: { keepManager?: boolean } = {},
 ): CareerState {
   const id = f.intlId;
@@ -685,6 +711,7 @@ export function creditIntl(
   const res: PlayedResult = {
     hs: nationHome ? us : them, as: nationHome ? them : us,
     ...(stats.wentToExtraTime ? { et: true } : {}), ...(pens ? { pens } : {}),
+    ...(stats.goals != null ? { mine: { g: stats.goals, a: stats.assists ?? 0 } } : {}),
   };
   const won = us > them || (us === them && !!pens && (nationHome ? pens.hs > pens.as : pens.as > pens.hs));
   const lost = us < them || (us === them && !!pens && !won);
@@ -724,10 +751,10 @@ const SLOTS_26: SquadPlayer["position"][] = [...SLOTS_23, "CB", "CM", "ST"];
  * 23 for a window, 26 for a tournament. You are never in it here — the
  * match puts you on the pitch.
  */
-export function squadFor(career: CareerState, nation: string, size: 23 | 26 = 23): SquadPlayer[] {
+export function squadFor(career: CareerState, nation: string, size: 23 | 26 = 23, everyone?: PoolPlayer[]): SquadPlayer[] {
   const youName = `${career.player.firstName} ${career.player.lastName}`;
   const score = (p: PoolPlayer) => p.overall + divisionPenalty(p.club ? clubDivision(career, p.club) : null);
-  const pool = realPlayers(career).filter((p) => p.nation === nation && p.name !== youName)
+  const pool = (everyone ?? realPlayers(career)).filter((p) => p.nation === nation && p.name !== youName)
     .sort((a, b) => score(b) - score(a));
   const used = new Set<string>();
   const slots = size === 26 ? SLOTS_26 : SLOTS_23;
@@ -814,7 +841,7 @@ export function myGroups(career: CareerState, max = 2): GroupView[] {
   return out;
 }
 
-export interface MatchView { date: number; comp: string; stage: string; home: string; away: string; hs?: number; as?: number; pens?: string; mine?: boolean }
+export interface MatchView { id?: string; date: number; comp: string; stage: string; home: string; away: string; hs?: number; as?: number; pens?: string; mine?: boolean }
 
 /** Your nation's last and next matches (the next only as far as they are drawn). */
 export function myMatches(career: CareerState): { last: MatchView[]; next: MatchView[] } {
@@ -822,7 +849,7 @@ export function myMatches(career: CareerState): { last: MatchView[]; next: Match
   const nation = intlOf(career).nation;
   const all = w.matches.filter((m) => m.home === nation || m.away === nation).sort((a, b) => a.date - b.date);
   const view = (m: WorldMatch): MatchView => ({
-    date: m.date, comp: m.comp, stage: m.stage, home: m.home, away: m.away, hs: m.hs, as: m.as,
+    id: m.id, date: m.date, comp: m.comp, stage: m.stage, home: m.home, away: m.away, hs: m.hs, as: m.as,
     ...(m.pens ? { pens: `${m.pens.hs}-${m.pens.as} pens` } : {}),
   });
   return {
@@ -892,7 +919,7 @@ export function groupOf(career: CareerState, m: WorldMatch): GroupView | null {
 }
 
 const viewOf = (m: WorldMatch): MatchView => ({
-  date: m.date, comp: m.comp, stage: m.stage, home: m.home, away: m.away, hs: m.hs, as: m.as,
+  id: m.id, date: m.date, comp: m.comp, stage: m.stage, home: m.home, away: m.away, hs: m.hs, as: m.as,
   ...(m.pens ? { pens: `${m.pens.hs}-${m.pens.as} pens` } : {}),
 });
 
