@@ -515,7 +515,9 @@ export const INTL_DAY_BASE = 1000;
 
 export function intlWeek(startYear: number, season: number, date: Date): number {
   const opening = openingSaturday(seasonStartYear(startYear, season));
-  return INTL_DAY_BASE + Math.round((date.getTime() - opening.getTime()) / DAY_MS);
+  // Floor, not round: matches are at noon, and rounding a half day up put
+  // every international on the day after it was played (found 12 Oct 2026).
+  return INTL_DAY_BASE + Math.floor((date.getTime() - opening.getTime()) / DAY_MS);
 }
 
 /** Is this a fixture week that carries its own real date (an international)? */

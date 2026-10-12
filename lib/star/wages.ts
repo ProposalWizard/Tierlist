@@ -1,5 +1,5 @@
 import type { CareerState, Fixture } from "./types";
-import { dayFor, divisionOf } from "./calendar";
+import { dayFor, divisionOf, fixtureTimestamp, stopsForBreaks } from "./calendar";
 
 /**
  * WHAT A WEEK'S WAGE IS, AND WHICH MATCH PAYS IT.
@@ -52,6 +52,19 @@ function sameFixture(a: Fixture, b: Fixture): boolean {
  * nothing would be worse than paying it fully.
  */
 export function wageShareFor(career: CareerState, fixture: Fixture): number {
+  // Internationals (Mikey, 12 Oct 2026): each one sits in its own calendar
+  // slot, so each used to pay a whole week (a 4-match break paid 4 weeks).
+  // A break replaces club weekends only in the leagues that stop for it: there
+  // the Sunday match of each break week pays that week. Lower down the club
+  // games go on (and pay), so the internationals pay nothing extra.
+  if (fixture.kind === "international") {
+    const division = divisionOf(career);
+    const tournament = ["World Cup", "European Championship", "Copa América", "Africa Cup of Nations", "Asian Cup", "Gold Cup", "OFC Nations Cup"]
+      .includes(fixture.competition ?? "");
+    if (!stopsForBreaks(division) || tournament) return 0;
+    const t = fixtureTimestamp(career.player.startYear, career.season, fixture.week, fixture.kind, division);
+    return new Date(t).getUTCDay() === 0 ? 1 : 0;
+  }
   const inWeek = (career.fixtures ?? []).filter(f => f.week === fixture.week);
 
   // Not a fixture this career knows about, or the only one that week.

@@ -261,6 +261,12 @@ export interface Fixture {
    * second leg the first leg's score from your side.
    */
   intlKo?: { level: "et-pens" | "pens"; firstLeg?: { us: number; them: number } };
+  /**
+   * Your nation's match in a break you were not picked for (Mikey, 12 Oct
+   * 2026): on the calendar so Play shows the result, in the leagues that stop
+   * for the break. Never played by you; the world plays it.
+   */
+  watch?: boolean;
   round?: string;
   /** A two-legged cup tie (the League Cup semi-final): which leg this is.
    *  Absent on everything else, and on a semi drawn before legs existed. */
@@ -1739,6 +1745,8 @@ export type StarPhase =
   | "intl-callup"
   | "intl-tournament"
   | "intl-tournament-table"
+  /** Your nation's match watched on TV, not picked (lib/star/intl, Plan B). */
+  | "intl-watched"
   | "farewell-sheets"
   | "farewell-walkout"
   | "farewell-match"

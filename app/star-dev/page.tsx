@@ -183,6 +183,7 @@ import { matchPlayersLook } from "@/lib/star/newLook";
 import { rollCasinoScandal, takeCasinoVisitBets, casinoBanned, casinoBanWeeksLeft } from "@/lib/star/casinoScandal";
 import { internationalCareer, nationKits, nationStrength } from "@/lib/star/international";
 import { periodDue, decide, applyDecision, syncIntl } from "@/lib/star/intl/career";
+import { WatchedScreen } from "@/components/star/IntlKit";
 import CallUpScreen from "@/components/star/CallUpScreen";
 import { tournamentDue, openTournament, applyTournament } from "@/lib/star/tournament";
 import TournamentScreen from "@/components/star/TournamentScreen";
@@ -886,6 +887,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // name the NEXT opponent — and would be null after the final fixture, which
   // used to strand the career with no way to reach the Ballon d'Or / next season.
   const [playedFixture, setPlayedFixture] = useState<Fixture | null>(null);
+  /** The nation's match you just watched on TV (Plan B). */
+  const [watchedFixture, setWatchedFixture] = useState<Fixture | null>(null);
   // The freshly-drawn round waiting to be shown on the Draw screen. Set by
   // continueAfterMatch when the match just played drew a new round in a
   // domestic cup, or a new tie in the Champions/Europa League; cleared once
@@ -931,7 +934,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (phase === "dashboard" && tournDue) setPhase("intl-tournament");
     else if (phase === "intl-tournament" && !tournDue) setPhase("dashboard");
     else if (phase === "intl-tournament-table" && career && career.tournament?.season !== career.season) setPhase("dashboard");
-  }, [phase, tournDue, career]);
+    else if (phase === "intl-watched" && !watchedFixture) setPhase("dashboard");
+  }, [phase, tournDue, career, watchedFixture]);
   // Every fixture played and the season not yet rolled over. The dashboard has
   // nothing to offer in this state on its own, which is what made a refresh here
   // a dead end.
@@ -1260,6 +1264,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     toastAchievements(newlyUnlocked);
     toastRatingChange(starsNow(career), starsNow(next));
     setCareer(next);
+    // Your nation's match, watched on TV (not picked): show how it went.
+    if (nextFixture.watch) {
+      setWatchedFixture(next.fixtures.find((f) => f.intlId === nextFixture.intlId && f.played) ?? null);
+      setPhase("intl-watched");
+      return;
+    }
     setActiveNav("home");
     setPhase("dashboard");
   }, [career, nextFixture]);
@@ -4071,6 +4081,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         />
       );
     }
+  }
+
+  if (phase === "intl-watched" && watchedFixture) {
+    return (
+      <WatchedScreen
+        career={career}
+        fixture={watchedFixture}
+        onContinue={() => { setWatchedFixture(null); setActiveNav("home"); setPhase("dashboard"); }}
+      />
+    );
   }
 
   if (phase === "intl-tournament-table" && career.tournament?.season === career.season) {

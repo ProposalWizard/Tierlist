@@ -42,7 +42,7 @@ import { nationFor, rankingStrength } from "./nations";
 import { windowFor, type WindowKind } from "./windows";
 import { winnerOf, loserOf, played, rngFor, table } from "./engine";
 import {
-  divisionOf, fixtureTimestamp, seasonStartYear, intlWeek, openingSaturday, type CareerDivision,
+  divisionOf, fixtureTimestamp, seasonStartYear, intlWeek, openingSaturday, stopsForBreaks, type CareerDivision,
 } from "../calendar";
 import { displayOverall } from "../rating";
 import { clubDivision } from "../energy";
@@ -114,7 +114,9 @@ function ts(career: CareerState, f: Fixture): number {
 export function frontier(career: CareerState): number {
   let next = Infinity, last = -Infinity;
   for (const f of career.fixtures ?? []) {
-    const t = ts(career, f);
+    // An international's day starts at 11:30 here: the day's friendlies are
+    // drawn at 11:00 and every match kicks off at noon.
+    const t = ts(career, f) + (f.kind === "international" ? 11.5 * 3_600_000 : 0);
     if (f.played) last = Math.max(last, t); else next = Math.min(next, t);
   }
   if (next < Infinity) return next - 60_000;
@@ -128,8 +130,19 @@ export function worldOf(career: CareerState, until = frontier(career)): World {
   const start = openingSaturday(seasonStartYear(career.player.startYear, 1)).getTime();
   // Your nation's matches wait for the squad to be named (or for you to
   // play them); a window or tournament you were left out of is played.
-  const hold = (m: WorldMatch) => (m.home === nation || m.away === nation) && m.date >= start
-    && !s.played[m.id] && !(s.periods[periodKeyOf(m)]?.called === false);
+  // Left out of a break in a league that stops for it (Mikey, 12 Oct 2026):
+  // the matches wait on your calendar until you watch them (watch fixtures).
+  const watching = stopsForBreaks(divisionOf(career));
+  const watched = new Set((career.fixtures ?? []).filter((f) => f.watch && f.played).map((f) => f.intlId));
+  const since = lastPlayedTime(career);
+  const hold = (m: WorldMatch) => {
+    if ((m.home !== nation && m.away !== nation) || m.date < start || s.played[m.id]) return false;
+    const decided = s.periods[periodKeyOf(m)];
+    if (decided?.called !== false) return true;
+    // Only what is still ahead of you: a break already behind you (an old
+    // save, a Dev Skip) is played as before.
+    return watching && !TOURNAMENT_COMPS.includes(m.comp) && !watched.has(m.id) && m.date > since && inSeason(career, m.date);
+  };
   return worldAt(inputsOf(s), until, hold);
 }
 
@@ -343,6 +356,10 @@ function seasonEnd(career: CareerState): number {
   return Date.UTC(seasonStartYear(career.player.startYear, career.season) + 1, 6, 31);
 }
 
+function inSeason(career: CareerState, t: number): boolean {
+  return t >= openingSaturday(seasonStartYear(career.player.startYear, career.season)).getTime() && t <= seasonEnd(career);
+}
+
 /** When your last played match (of any kind) was. */
 function lastPlayedTime(career: CareerState): number {
   let t = -Infinity;
@@ -487,11 +504,25 @@ export function syncIntl(career: CareerState): CareerState {
     if (!s.periods[p.key]?.called || p.start > seasonEnd(career)) continue;
     for (const m of p.matches) if (!s.played[m.id] && !played(m) && m.date <= seasonEnd(career)) wanted.set(m.id, m);
   }
+  // Left out, in a league that stops for the break: your nation's matches go
+  // on the calendar to watch (Plan B, Mikey 12 Oct 2026).
+  const watchList = new Map<string, WorldMatch>();
+  if (stopsForBreaks(divisionOf(career))) {
+    for (const p of periodsFrom(w, nation, from)) {
+      if (p.kind !== "window" || s.periods[p.key]?.called !== false) continue;
+      for (const m of p.matches) {
+        if (!s.played[m.id] && !played(m) && inSeason(career, m.date) && m.date > lastT) watchList.set(m.id, m);
+      }
+    }
+  }
   // Unplayed internationals are rebuilt each time (a knockout's opponent, a
   // second leg's first-leg score); played ones stay as they are.
   const keep = (career.fixtures ?? []).filter((f) => !f.intlId || f.played);
   const done = new Set(keep.map((f) => f.intlId).filter(Boolean));
-  const add = Array.from(wanted.values()).filter((m) => !done.has(m.id)).map((m) => fixtureFor(career, w, m, nation));
+  const add = [
+    ...Array.from(wanted.values()).filter((m) => !done.has(m.id)).map((m) => fixtureFor(career, w, m, nation)),
+    ...Array.from(watchList.values()).filter((m) => !done.has(m.id) && !wanted.has(m.id)).map((m) => ({ ...fixtureFor(career, w, m, nation), watch: true })),
+  ];
   // Trophies: a final your nation won in a period you were called up for.
   const trophies: Trophy[] = [];
   const awarded = [...s.awarded];
@@ -509,6 +540,27 @@ export function syncIntl(career: CareerState): CareerState {
     fixtures: [...keep, ...add],
     trophies: trophies.length ? [...(career.trophies ?? []), ...trophies] : career.trophies,
     intl: { ...s, awarded },
+  };
+}
+
+// ── Watching your nation (not picked) ──────────────────────────────────────
+
+/**
+ * The result of a match you watched (a `watch` fixture), in your fixture's
+ * terms (us = your nation). The match is let go by the world (the fixture
+ * marked played) and read off it. Null if the world has no such match.
+ */
+export function watchedScore(career: CareerState, f: Fixture): { us: number; them: number; pens?: { us: number; them: number } } | null {
+  if (!f.intlId) return null;
+  const marked = { ...career, fixtures: career.fixtures.map((x) => (x.intlId === f.intlId ? { ...x, played: true } : x)) };
+  const w = worldOf(marked, Math.max(frontier(marked), ts(career, f) + DAY));
+  const m = w.byId.get(f.intlId);
+  if (!m || !played(m)) return null;
+  const nation = intlOf(career).nation;
+  const home = m.home === nation;
+  return {
+    us: home ? m.hs! : m.as!, them: home ? m.as! : m.hs!,
+    ...(m.pens ? { pens: home ? { us: m.pens.hs, them: m.pens.as } : { us: m.pens.as, them: m.pens.hs } } : {}),
   };
 }
 
@@ -762,7 +814,7 @@ export function myGroups(career: CareerState, max = 2): GroupView[] {
   return out;
 }
 
-export interface MatchView { date: number; comp: string; stage: string; home: string; away: string; hs?: number; as?: number; pens?: string }
+export interface MatchView { date: number; comp: string; stage: string; home: string; away: string; hs?: number; as?: number; pens?: string; mine?: boolean }
 
 /** Your nation's last and next matches (the next only as far as they are drawn). */
 export function myMatches(career: CareerState): { last: MatchView[]; next: MatchView[] } {
@@ -790,4 +842,83 @@ export function myRanking(career: CareerState): { rank: number; points: number; 
 export function topRanking(career: CareerState, n = 10): { name: string; points: number }[] {
   const w = worldOf(career);
   return w.ranking().slice(0, n).map((name) => ({ name, points: Math.round(w.points.get(name) ?? 0) }));
+}
+
+// ── National duty (Plan A) and the screens ─────────────────────────────────
+
+export interface DutyView {
+  nation: string;
+  period: Period;
+  /** Your nation's matches in it so far, and in all. */
+  played: number;
+  total: number;
+}
+
+/**
+ * Away with your nation right now (Mikey, 12 Oct 2026, Plan A): your next
+ * match is an international you were picked for, or your club plays without
+ * you because you are at a tournament. Home and the League switch to the
+ * national team while this is true. Null otherwise (watch days included).
+ */
+export function dutyNow(career: CareerState): DutyView | null {
+  if (!career.intl || !career.fixtures?.length) return null;
+  const s = career.intl;
+  let next: Fixture | null = null;
+  let nt = Infinity;
+  for (const f of career.fixtures) {
+    if (f.played) continue;
+    const t = ts(career, f);
+    if (t < nt) { nt = t; next = f; }
+  }
+  if (!next || next.watch) return null;
+  if (next.kind !== "international" && !awayOnDuty(career, next)) return null;
+  const w = worldOf(career);
+  const p = periodsFrom(w, s.nation, nt - 60 * DAY).find((x) =>
+    next!.intlId ? x.matches.some((m) => m.id === next!.intlId) : nt >= x.start && nt <= x.end);
+  if (!p || !s.periods[p.key]?.called) return null;
+  const done = (m: WorldMatch) => played(m) || !!s.played[m.id];
+  return { nation: s.nation, period: p, played: p.matches.filter(done).length, total: p.matches.length };
+}
+
+/** The live table of the group a match belongs to (null for a knockout). */
+export function groupOf(career: CareerState, m: WorldMatch): GroupView | null {
+  if (!m.group) return null;
+  const w = worldOf(career);
+  const ms = w.edition(m.edition).filter((x) => x.group === m.group);
+  const teams = Array.from(new Set(ms.flatMap((x) => [x.home, x.away])));
+  const tie = m.comp === "World Cup" || m.comp === "Copa América" || m.comp.startsWith("Gold") || m.comp === "CONCACAF Nations League" ? "overall" : "h2h";
+  const rows = table(teams, ms, tie, w.rankOf).map((r) => ({ name: r.name, p: r.p, w: r.w, d: r.d, l: r.l, gd: r.gf - r.ga, pts: r.pts }));
+  return { title: `${m.comp} · ${m.stage.replace(/ · Matchday \d+/, "")}`, rows };
+}
+
+const viewOf = (m: WorldMatch): MatchView => ({
+  date: m.date, comp: m.comp, stage: m.stage, home: m.home, away: m.away, hs: m.hs, as: m.as,
+  ...(m.pens ? { pens: `${m.pens.hs}-${m.pens.as} pens` } : {}),
+});
+
+export interface RoundView {
+  date: number;
+  /** "Nations League · League B · Matchday 3". */
+  title: string;
+  /** Your nation's match first, then the rest of that competition's games that day. */
+  matches: MatchView[];
+}
+
+/**
+ * The matchdays of a period, each with every game of that competition on the
+ * same day (Results board, Plan A). Friendlies show only your own.
+ */
+export function roundsOf(career: CareerState, p: Period): RoundView[] {
+  const w = worldOf(career);
+  const nation = intlOf(career).nation;
+  const sameDay = (a: number, b: number) => Math.abs(a - b) < 12 * 3_600_000;
+  return p.matches.map((m) => {
+    const others = m.comp === "International Friendly" ? []
+      : w.edition(m.edition).filter((x) => x.id !== m.id && sameDay(x.date, m.date)
+        && (m.group ? x.stage.split(" · ")[0].split(" Group")[0] === m.stage.split(" · ")[0].split(" Group")[0] : !x.group));
+    const sorted = others.sort((a, b) => Number(!!b.group && b.group === m.group) - Number(!!a.group && a.group === m.group)).slice(0, 15);
+    const mine = { ...viewOf(m), ...(career.intl?.played[m.id] ? { hs: career.intl.played[m.id].hs, as: career.intl.played[m.id].as } : {}) };
+    const md = m.stage.match(/Matchday \d+/)?.[0];
+    return { date: m.date, title: `${m.comp} · ${md ?? m.stage}`, matches: [mine, ...sorted.map(viewOf)] };
+  }).map((r) => ({ ...r, matches: r.matches.map((x) => ({ ...x, mine: x.home === nation || x.away === nation })) }));
 }

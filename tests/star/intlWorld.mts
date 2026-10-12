@@ -5,6 +5,8 @@ import { WC_SLOTS } from "../../lib/star/intl/worldCup";
 import { worldCupHosts } from "../../lib/star/intl/hosts";
 import { played } from "../../lib/star/intl/engine";
 import type { NlOutcome } from "../../lib/star/intl/uefa";
+import { realLayout, placed, type KnockoutLayout } from "../../lib/star/intl/build";
+import type { Row } from "../../lib/star/intl/engine";
 
 /**
  * THE INTERNATIONAL WORLD KEEPS ITS RULES FOR TWENTY YEARS.
@@ -35,6 +37,30 @@ for (const [g, t] of Object.entries(ASIAN_CUP_2027)) check(realList(t).length ==
 check(realList(CNL_2026.A).length === 15, "CONCACAF League A: 15 FIFA nations (Martinique is not one)");
 check(realList(CNL_2026.B).length === 12, "CONCACAF League B: 12 FIFA nations");
 check(realList(CNL_2026.C).length === 8, "CONCACAF League C: 8 FIFA nations");
+
+// The real knockout tables: every first knockout round is exactly the one
+// FIFA's / UEFA's / the AFC's table gives for the thirds that went through.
+{
+  let checked = 0;
+  for (const ed of new Set(w.matches.map((m) => m.edition))) {
+    const sample = w.edition(ed)[0];
+    const layout: KnockoutLayout | null = sample.comp === "World Cup" ? "wc48" : sample.comp === "European Championship" ? "euro24"
+      : sample.comp === "Asian Cup" || sample.comp === "Africa Cup of Nations" ? "afc24" : null;
+    const tables = w.facts.get(`${ed}:tables`) as Record<string, Row[]> | undefined;
+    if (!layout || !tables || !Object.keys(tables).every((g) => /^[A-L]$/.test(g))) continue;
+    const thirds = placed(w, tables, 2).slice(0, layout === "wc48" ? 8 : 4).map((r) => r.name);
+    const groupOf = new Map<string, string>();
+    for (const [g, rows] of Object.entries(tables)) for (const r of rows) groupOf.set(r.name, g);
+    const want = realLayout(tables, layout, thirds, groupOf);
+    const firstKo = w.edition(ed).filter((m) => !m.group).sort((a, b) => a.date - b.date).slice(0, layout === "wc48" ? 16 : 8);
+    const got = new Set(firstKo.map((m) => [m.home, m.away].sort().join("|")));
+    const exp = want ? Array.from({ length: want.length / 2 }, (_, i) => [want[2 * i], want[2 * i + 1]].sort().join("|")) : [];
+    check(!!want && exp.every((p) => got.has(p)), `${ed}: first knockout round follows the real table`);
+    checked++;
+  }
+  check(checked >= 10, `real knockout tables checked on ${checked} tournaments`);
+  console.log(`Real knockout tables: ${checked} tournaments checked`);
+}
 
 // Nobody plays twice on one day.
 const seen = new Map<string, string>();

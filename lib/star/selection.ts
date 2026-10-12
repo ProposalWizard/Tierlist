@@ -37,6 +37,8 @@ export interface SelectionVerdict {
   standing: number;
   /** Not picked because you are away with your nation (lib/star/intl/career.ts). */
   away?: boolean;
+  /** Your nation's match you were not picked for: watched on TV (Plan B). */
+  watch?: boolean;
   /** A planned change: you come off at this minute (international friendlies). */
   offAt?: number;
 }
@@ -212,6 +214,14 @@ export function selectionFor(career: CareerState): SelectionVerdict {
     const f = nextFixtureFor(career);
     // The international world (lib/star/intl/career.ts): the national
     // manager picks his side — starts, the bench, rotation.
+    // Not picked, in a league that stops for the break: watch them (Plan B).
+    if (f?.watch) {
+      const nation = career.intl?.nation ?? career.player.nationality ?? "your country";
+      return {
+        status: "Squad", onAt: 90, standing: selectionStanding(career), watch: true,
+        reason: `Not in the ${nation} squad this time. Watch them on TV; the break is yours to train and rest.`,
+      };
+    }
     if (f?.kind === "international" && f.intlId) {
       const v = intlSelection(career, f);
       return { status: v.status, onAt: v.onAt, ...(v.offAt ? { offAt: v.offAt } : {}), standing: selectionStanding(career), reason: v.reason };

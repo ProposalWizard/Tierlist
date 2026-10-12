@@ -48,6 +48,8 @@ import SpinPlayer from "./SpinPlayer";
 import HomePlayer from "./HomePlayer";
 import { useHomeLook } from "@/lib/star/homeLook";
 import { LeagueDropdown, LEAGUE_DROPDOWN_H } from "./MiniLeague";
+import { NationDropdown, nationGlow } from "./IntlKit";
+import { dutyNow } from "@/lib/star/intl/career";
 import { homeSkyFor, type HomeSky } from "@/lib/star/kickoff";
 import {
   FlatPanel, SquareBar, PressButton, RiseIn, Glow,
@@ -162,7 +164,11 @@ export function playerSizeFor(room: number | null, rows = 3, extra = 0, maxH = 2
 
 export default function HomeHub(p: Props) {
   const { career } = p;
-  const { shirt, trim, glow } = useClubTheme(career);
+  const { shirt, trim, glow: clubGlow } = useClubTheme(career);
+  // Away with your country (Plan A): Home is lit in its colours and the
+  // league row is its group.
+  const duty = dutyNow(career);
+  const glow = duty ? nationGlow(duty.nation) : clubGlow;
   const [ref, room] = useRoom();
   const rows = leagueRowsFor(room);
   const lookHome = useHomeLook();
@@ -176,7 +182,7 @@ export default function HomeHub(p: Props) {
         <HomeScene sky={homeSkyFor(career, p.nextFixture)} />
         <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
         <RiseIn onPageActive index={1} className="relative z-10 mt-1 px-3"><StatTiles career={career} /></RiseIn>
-        <div data-home-league className="relative z-20 mt-1"><LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} /></div>
+        <div data-home-league className="relative z-20 mt-1">{duty ? <NationDropdown career={career} duty={duty} onOpen={p.onLeague} /> : <LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} />}</div>
         <HeroNew {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
         <MiddleLinks career={career} onOpen={p.onOpen} />
       </div>
@@ -190,7 +196,7 @@ export default function HomeHub(p: Props) {
     <div ref={ref} className="relative -mx-3 flex min-h-full flex-col overflow-hidden">
       <HomeScene sky={homeSkyFor(career, p.nextFixture)} />
       <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
-      <div data-home-league className="relative z-20 mt-1"><LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} /></div>
+      <div data-home-league className="relative z-20 mt-1">{duty ? <NationDropdown career={career} duty={duty} onOpen={p.onLeague} /> : <LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} />}</div>
       <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
       <MiddleLinks career={career} onOpen={p.onOpen} />
     </div>

@@ -8,10 +8,11 @@
  * why, the national manager's bar (0-100; in the squad from 34, starting
  * from 55) and back to the club.
  *
- * Built from the Home screen's kit (Mikey, 12 Oct 2026: "it doesn't take any
- * inspiration from the design style of the homepage"): the night stadium lit
- * in your nation's colours, the heavy font for the verdict, flat panels that
- * fade into the page (no floating cards), the liquid bar for the manager.
+ * Built from the League and Training screens' kit (Mikey, 12 Oct 2026: "more
+ * the same design style ... the league table, all that"): the night stadium
+ * lit in your nation's colours, the heavy font for the verdict, the glass
+ * cards and results rows of the League, the Training stat card for the
+ * national manager (IntlKit.tsx).
  *
  * Flags are drawn (NationFlag), so the page never shows a blank or a globe
  * when the flag CDN is blocked.
@@ -19,8 +20,10 @@
 import type { IntlDecision } from "@/lib/star/intl/career";
 import { SQUAD_AT, START_AT } from "@/lib/star/intl/career";
 import { nationKits } from "@/lib/star/international";
-import { KitStyles, Stadium, FlatPanel, SquareBar, PressButton, RiseIn, Glow, glowOf, rgba } from "./ui";
+import { KitStyles, Stadium, ClubCard, SquareBar, PressButton, RiseIn, Glow, glowOf, rgba } from "./ui";
 import NationFlag from "./NationFlag";
+import { ManagerCard, MatchRow } from "./IntlKit";
+import { CardTitle } from "./screenKit";
 
 const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 
@@ -87,38 +90,34 @@ export default function CallUpScreen({ decision, onContinue }: {
         </RiseIn>
 
         <RiseIn index={2}>
-          <FlatPanel bleed edge glow={glow} className="mt-7 px-4 py-3">
-            <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-white/80">
-              {tournament ? "Group games" : `${nation}'s matches`}
+          <ClubCard glow={glow} className="mt-7 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/10 bg-black/30 px-2.5 py-1.5">
+              <CardTitle tone="text-amber-300">{tournament ? "Group games" : `${nation}'s matches`}</CardTitle>
+              <span className="text-[10px] font-black uppercase tracking-wide text-white/75">{matches.length} {matches.length === 1 ? "match" : "matches"}</span>
             </div>
-            {matches.map((m) => (
-              <div key={m.id} className="border-t border-white/10 py-2 first:border-t-0">
-                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[14px] font-bold">
-                  <span className="flex min-w-0 items-center justify-end gap-1.5"><span className="truncate">{m.home}</span><NationFlag nation={m.home} width={22} /></span>
-                  <span className="px-1 text-[12px] text-white/60">v</span>
-                  <span className="flex min-w-0 items-center gap-1.5"><NationFlag nation={m.away} width={22} /><span className="truncate">{m.away}</span></span>
+            <div className="space-y-1 p-1.5">
+              {matches.map((m) => (
+                <div key={m.id}>
+                  <div className="px-1 pb-0.5 pt-0.5 text-[9.5px] font-bold text-white/75">{day(m.date)} · {m.comp} · {m.stage}</div>
+                  <MatchRow m={{ date: m.date, comp: m.comp, stage: m.stage, home: m.home, away: m.away }} glow={glow} nation={nation} />
                 </div>
-                <div className="mt-0.5 text-center text-[11px] font-semibold text-white/75">{day(m.date)} · {m.comp} · {m.stage}</div>
-              </div>
-            ))}
-            <div className="mt-1 text-[12px] font-semibold text-white/80">
-              {!called ? "Played without you."
-                : tournament ? `You stay with the squad until ${nation} are knocked out.`
-                : "Any club games in between are played without you."}
+              ))}
             </div>
-          </FlatPanel>
+            <div className="border-t border-white/10 bg-black/25 px-2.5 py-1.5 text-[11px] font-bold text-white/85">
+              {!called ? "Played without you." : tournament ? `You stay with the squad until ${nation} are knocked out.` : "Any club games in between are played without you."}
+            </div>
+          </ClubCard>
         </RiseIn>
 
         <RiseIn index={3}>
-          <FlatPanel bleed fade="both" className="mt-3 px-4 py-4" data-callup-manager>
-            <ManagerBar value={manager} nation={nation} />
-            <div className="mt-2 text-[13px] font-semibold text-white">{line}</div>
-          </FlatPanel>
+          <div className="mt-2.5" data-callup-manager>
+            <ManagerCard value={manager} nation={nation} line={line} />
+          </div>
         </RiseIn>
 
         <RiseIn index={4}>
           <div className="mt-6" data-callup-continue>
-            <PressButton variant="gold" size="none" pulse={called} onClick={onContinue} className="w-full rounded-none py-3.5 text-[15px] font-black uppercase">
+            <PressButton variant="gold" size="none" pulse={called} onClick={onContinue} className="w-full rounded-2xl py-3.5 text-[15px] font-black uppercase">
               {called ? "Report for duty →" : "Back to the club →"}
             </PressButton>
           </div>

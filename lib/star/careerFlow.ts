@@ -5,7 +5,7 @@
 // phase routing and toasts; this owns the numbers.
 
 import { recordIntlMatch } from "./international";
-import { creditIntl, syncIntl, managerAfterClubMatch, awayOnDuty } from "./intl/career";
+import { creditIntl, syncIntl, managerAfterClubMatch, awayOnDuty, watchedScore } from "./intl/career";
 import { settleTournamentMatch, isTournamentFixture } from "./tournament";
 import { bestsAfterMatch, archiveRowFor, historyRowFor, bestMatesOf } from "./careerRecords";
 import { featsAfterMatch } from "./feats";
@@ -2089,11 +2089,13 @@ export function simulateMissedFixture(
   const theirs = fixture.opponentStrength ?? strength(fixture.opponent);
 
   // Reported from the player's point of view, the same way stats.homeScore is.
+  // Your nation's match watched on TV (not picked): the world's own result.
+  const watched = fixture.watch ? watchedScore(career, fixture) : null;
   const score = fixture.home
     ? simulateFixtureScore(mine, theirs, rng)
     : simulateFixtureScore(theirs, mine, rng);
-  const userScore = fixture.home ? score.home : score.away;
-  const oppScore = fixture.home ? score.away : score.home;
+  const userScore = watched ? watched.us : fixture.home ? score.home : score.away;
+  const oppScore = watched ? watched.them : fixture.home ? score.away : score.home;
 
   let league = career.league;
   let weekResults = career.results ?? [];
@@ -2223,7 +2225,7 @@ export function simulateMissedFixture(
     money: career.money + wageForFixture(career, fixture) + sponsorPayFor(career, fixture) - (career.horse ? horseUpkeep(career.horse) : 0),
     weekActions: WEEK_ACTIONS,
     ...sessionsAfterMatch(career, dayFor(fixture.kind, fixture.week, divisionOf(career))),
-    matchFitness: Math.max(20, career.matchFitness + MISSED_WEEK.matchFitness),
+    matchFitness: Math.max(20, career.matchFitness + (fixture.watch ? 0 : MISSED_WEEK.matchFitness)),
     // Not playing costs nothing, and the rest days until the next fixture
     // give energy back like any other gap (energy.ts).
     energy: Math.round(clampEnergy(career.energy + restRecoveryAfter(career, fixture, fixtures))),
@@ -2232,12 +2234,12 @@ export function simulateMissedFixture(
       : null,
     relationships: {
       ...career.relationships,
-      boss: drift(clamp01to100(career.relationships.boss + MISSED_WEEK.boss), career.week),
+      boss: drift(clamp01to100(career.relationships.boss + (fixture.watch ? 0 : MISSED_WEEK.boss)), career.week),
       team: drift(career.relationships.team, career.week),
       fans: drift(career.relationships.fans, career.week),
     },
     happiness: happinessOf({ relationships: {
-      boss: drift(clamp01to100(career.relationships.boss + MISSED_WEEK.boss), career.week),
+      boss: drift(clamp01to100(career.relationships.boss + (fixture.watch ? 0 : MISSED_WEEK.boss)), career.week),
       team: drift(career.relationships.team, career.week),
       fans: drift(career.relationships.fans, career.week),
     } }),
@@ -2276,7 +2278,9 @@ export function simulateMissedFixture(
   // calendar); a club match missed moves the national manager a little —
   // unless you missed it because you were away with him.
   if (!alreadyPlayed) {
-    Object.assign(next, fixture.intlId
+    Object.assign(next, fixture.watch
+      ? syncIntl(next)
+      : fixture.intlId
       ? creditIntl(next, fixture, { homeScore: userScore, awayScore: oppScore, rating: 6.6 }, { keepManager: true })
       : syncIntl(managerAfterClubMatch(next, null, !!awayOnDuty(career, fixture))));
   }

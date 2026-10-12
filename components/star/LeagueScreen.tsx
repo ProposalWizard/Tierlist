@@ -19,6 +19,8 @@ import ImageWithFallback from "@/components/ImageWithFallback";
 import ClubBadge from "./ClubBadge";
 import { ClubCard, RiseIn, Shine, PressButton, prefersReducedMotion, rgba, useClubTheme } from "./ui";
 import { SegTabs, ChipTabs, CardTitle, seenScope, youRowStyle } from "./screenKit";
+import { dutyNow } from "@/lib/star/intl/career";
+import { NationalLeague } from "./IntlKit";
 
 /**
  * THE LEAGUE — table, results, fixtures, awards, squad, cups and Europe.
@@ -53,6 +55,19 @@ interface Props {
 /** A cup round's name as a heading over its ties: "Quarter-Final" → "Quarter-Finals". */
 export function roundListLabel(name: string): string {
   return /-Final$/.test(name) ? `${name}s` : name;
+}
+
+/**
+ * NATIONAL DUTY (Mikey, 12 Oct 2026, Plan A): while you're away with your
+ * country, the League is your country's — its group table, the matchday's
+ * results, its fixtures and the national squad. One tap back to the club's.
+ * The match-week page (a forced view) and the phone's app stay the club's.
+ */
+export default function LeagueScreen(props: Props) {
+  const duty = props.view || props.compact ? null : dutyNow(props.career);
+  const [club, setClub] = useState(false);
+  if (duty && !club) return <NationalLeague career={props.career} duty={duty} onClub={() => setClub(true)} />;
+  return <ClubLeagueScreen {...props} />;
 }
 
 // ── Zones ───────────────────────────────────────────────────────────────────
@@ -176,7 +191,7 @@ function ovrStyle(o?: number): string {
     : "bg-gradient-to-b from-gray-500 to-gray-700 text-white";
 }
 
-export default function LeagueScreen({ career, compact = false, view: forcedView, hideTabs = false }: Props) {
+function ClubLeagueScreen({ career, compact = false, view: forcedView, hideTabs = false }: Props) {
   const { glow } = useClubTheme(career);
   // The league tables' columns and club names (see `compact`).
   // Inside the phone the table is zoomed in (Mikey, 5 Oct 2026: "it doesn't
