@@ -1132,3 +1132,28 @@ export function weeksOfWallet(price: number, weeklyWage: number): number {
  * Mikey, 6 Oct 2026: a Basic can is 2 weeks' wage.
  */
 export const KIB_CAN_WAGE_WEEKS = { basic: 2, premium: 1, elite: 2 } as const;
+
+/**
+ * BOOTS, PRICED OFF THE PLAYER'S OWN WAGE — the same way as the cans.
+ *
+ * Harry, 12 Oct 2026: "the boots definitely should scale … to the exact same
+ * degree as the energy … when you get to the Prem a boot that costs 35k lasts
+ * you 35 games and gives you max boosts." So a boot now costs the same share
+ * of YOUR weekly wage in every division, exactly as a can does.
+ *
+ * Each boot's catalogue `price` (shopDefaults.ts) is its price for a player on
+ * this wage: an ordinary Championship first-teamer's. At that wage the shop
+ * reads as it always did; below it every boot is cheaper, above it dearer,
+ * by the wage ratio and nothing else. Chosen so the dearest boot (NS-Maestro
+ * level 5, Touch Mode, 13 matches) costs about 2.3 weeks' wage per match,
+ * the same as an Elite can (2 weeks for one match of Touch Mode).
+ */
+export const BOOT_PRICE_REF_WAGE = typicalWeeklyWage("championship");
+
+/** What a boot with this catalogue price costs a player on this wage. */
+export function bootPriceForWage(listPrice: number, weeklyWage: number): number {
+  const wage = Math.max(WAGE_FLOOR, weeklyWage || 0);
+  const raw = (listPrice * wage) / BOOT_PRICE_REF_WAGE;
+  const step = priceStep(raw);
+  return Math.max(1, Math.round(raw / step) * step);
+}

@@ -30,8 +30,7 @@ if (typeof window !== "undefined") {
 }
 
 export function allSeasonsLook(): AllSeasonsLook {
-  if (stored === undefined) stored = read();
-  return stored;
+  return "new"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 export function setAllSeasonsLook(v: AllSeasonsLook): void {

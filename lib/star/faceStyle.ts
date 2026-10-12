@@ -87,6 +87,18 @@ export const CROP_VIEWPORT = 256;
 // been wrong at any zoom other than exactly 1. No database needed for this
 // — it's just the starting point every device with no local override
 // already opens on.
+/**
+ * PHOTO FACES: OFF. Decided, no toggle (Harry, 12 Oct 2026): "we need to
+ * revamp the taking photo feature anyway cos idk how it works now". Every
+ * head is the drawn one (Style A in the 2D match's sprites and in 3D, the
+ * drawn head anywhere else): real players' photos, the fake faces and your
+ * own uploaded photo alike. A stored `facesEnabled: true` is ignored. The
+ * photo code (drawPlayerHead's photo path, the Face Editors, PortraitPicker)
+ * stays in the files: Hidden until the photo revamp (Harry, 12 Oct 2026).
+ * Flip this one line to bring photos back.
+ */
+export const PHOTO_FACES = false;
+
 export const DEFAULT_FACE_STYLE: FaceStyle = {
   scale: 2.2,
   offsetX: 0,
@@ -97,7 +109,7 @@ export const DEFAULT_FACE_STYLE: FaceStyle = {
   outlineColor: "#ffffff",
   outlineWidth: 0.5,
   crop: { zoom: 1.3, x: -38, y: -38 },
-  facesEnabled: true,
+  facesEnabled: PHOTO_FACES,
   namesEnabled: false,
 };
 
@@ -147,7 +159,8 @@ export function sanitize(partial: Partial<FaceStyle>): FaceStyle {
       x: clamp(numberOr(s.crop?.x, 0), -4000, 4000),
       y: clamp(numberOr(s.crop?.y, 0), -4000, 4000),
     },
-    facesEnabled: !!s.facesEnabled,
+    // Decided, no toggle (12 Oct 2026): the stored value is ignored. See PHOTO_FACES.
+    facesEnabled: PHOTO_FACES && !!s.facesEnabled,
     namesEnabled: !!s.namesEnabled,
   };
 }

@@ -13,12 +13,7 @@
 const KEY = "star-postmatch-reactions";
 
 export function getPostMatchReactionsEnabled(): boolean {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw === null ? true : raw === "1";
-  } catch {
-    return true;
-  }
+  return true; // Decided, no toggle (12 Oct 2026): always on; the stored choice is ignored.
 }
 
 export function setPostMatchReactionsEnabled(enabled: boolean): void {

@@ -65,7 +65,7 @@
  */
 
 import { DIVISION_BASE_WAGE, PREMIER_WAGE_CAP, REPUTATION_PREMIUM_MAX,
-  SIGNING_ON_WEEKS_MAX, WAGE_FLOOR, standingMultiplier, tierWeeklyIncome, typicalWeeklyWage } from "./economy";
+  SIGNING_ON_WEEKS_MAX, WAGE_FLOOR, standingMultiplier, tierWeeklyIncome, typicalWeeklyWage, bootPriceForWage } from "./economy";
 import { TRAINING_LEVELS, SKILL_MAX, skillFromStars, starsFromSkill } from "./trainingLevels";
 import { BOOT_LEVELS, BOOTS_CATALOGUE_DEFAULT, KIB_CANS_DEFAULT, LIFESTYLE_LEVELS, LIFESTYLE_ITEMS_DEFAULT } from "./shopDefaults";
 import { computeStarRating } from "./rating";
@@ -385,7 +385,9 @@ function cheapest<T extends { id: string }>(rows: T[], pick: (r: T) => number): 
   for (const r of rows) m.set(r.id, Math.min(m.get(r.id) ?? Infinity, pick(r)));
   return m;
 }
-const BOOT_PRICE = cheapest([...BOOTS_CATALOGUE_DEFAULT, ...BOOT_LEVELS], b => b.price);
+// Boots are priced off the player's wage (economy.ts bootPriceForWage), so the
+// floor is the price at the lowest wage there is.
+const BOOT_PRICE = cheapest([...BOOTS_CATALOGUE_DEFAULT, ...BOOT_LEVELS], b => bootPriceForWage(b.price, WAGE_FLOOR));
 /** Most matches a pair gives, so a stacked pair is never over-counted. */
 const BOOT_MATCHES = new Map<string, number>();
 for (const b of [...BOOTS_CATALOGUE_DEFAULT, ...BOOT_LEVELS]) BOOT_MATCHES.set(b.id, Math.max(BOOT_MATCHES.get(b.id) ?? 0, b.matches));

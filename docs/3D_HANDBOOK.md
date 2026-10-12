@@ -632,6 +632,7 @@ Tools: `scripts/perf3d/prof2.mjs` (profile the Nth open in one page: `THROTTLE=4
 - **What:** the New option of Settings → Look → "Shop: New | Old" is now the Showroom + Feed shop (Harry, 9 Oct: "showroom swipe + feed is definitely something"). One item fills the screen. Swipe left/right = items in a category (dots, tap a dot to jump); swipe up/down = the next category (Cans → Boots → Drip → Gadgets → Cars → Homes → Holiday; the rail at the top jumps). Back chip top-left; balance + fame chip top-right (tap it: the fame banner). Buy/Upgrade pinned at the bottom; tap the item for its sheet (level ladder, what you gain, View in 3D). PC: mouse drag, wheel/trackpad, arrow keys, side arrows.
 - **Where:** `components/star/shop2d/ShowroomShop.tsx`, wired in `app/star-dev/page.tsx` (shop phases). Old is still `components/star/Shop.tsx`. The earlier card store (`StoreShop.tsx`) is only on the media-lab bench now (`&look=grid`).
 - **Pictures:** `public/star/shop2d/items/*.webp` — 1440x1080 renders of the same Blender models as `/shop/*.webp`, no shadow floor (the page draws a soft contact shadow). Made by `tools/shop2d/render_big.py` (it sets `SHOP_RES`/`SHOP_NO_FLOOR` in `tools/blender-shop/scripts/studio.py`), about 40 s a picture on this machine. Not the Higgsfield GLBs: those are one model per family, so every level would show the same thing ("Rusty Moped" as a superbike). Missing still → the small picture. Test: `tests/star/showroomShop.mts`.
+- **Pictures from the 3D models (Harry, 12 Oct 2026: the 2D pictures were "a really bad version of the model"):** Settings → Look → "Shop pictures: New | Old" (`lib/star/shopPicsLook.ts`, row `shopPics`). New = `public/star/shop2d/items3d/`, rendered from the 3D shop's own `*-hf.glb` by `tools/shop2d/render_from_3d/` (read its README). Cars and the motorbike are repainted per level (worn → blue → red → black → gold); the SUV, jet, homes, watches, jewellery and boots show one picture for every level, as the 3D shop does. Items with no 3D model (suit, art, phone, console, headphones, music, tablet, TV, gaming PC) keep the drawings.
 - **Kept:** every buy handler, price, sponsor 25%, black market + lawyers, Style locks, worn-out repair, sold out per visit, focus from the 3D shop, Use a can.
 - **Judge it:** `/star-dev/media-lab?shop=kib|boots|lifestyle&cat=cars` (`&look=grid` = the card store, `&look=old` = the old shop).
 - **No front page (9 Oct, Harry: the framed grid was "horrendous"):** Home's Shop swipe/tab opens the Showroom directly (`page.tsx` SwipePages `onIndex`; last category remembered in `lastShowroom`). `StoreLanding.tsx` is now only the shop window you see mid-swipe. Sponsors / Casino / Store / 3D shop are `links` at the end of the rail. The dev bench passes `guideCorner` so the page-guide eye never covers Buy.
@@ -1016,3 +1017,23 @@ Harry: "Why can't the players just have a measurement on their own? Why is it 4%
 - `matchScale()` always returns A; MATCH_SCALES B / C / current are paper numbers for `scripts/cam3d/scale.mts` only.
 - Left on purpose: the 2D-frame camera still keeps head room for a 5.4 m man at the top of its frame (`MATCH2D.figMax`) and returns a framing number `k`. Camera only; it never sizes anyone.
 - Test: `tests/star/size3d.mts`.
+
+### Small men read cleanly (12 Oct 2026)
+
+Harry, on a Medium crop: "I just don't like how pixely the players look … compared to [the Home player] it doesn't seem the same." Sizes stay real; only the drawing changed (`lib/star/style3d/smallMen.ts`):
+- Medium draws at pixel ratio 2.5 (was 1.5). Harry: "pixel ratio 2.5 already looks better". Needs a phone check for frame time.
+- A 2.2 px screen-space ink line round every man (`outlinePx` in `people3d.ts`, `setPeople3dOutlineRes`), on every tier. Harry chose 2.2 over 2.8.
+- Flat 2-tone cel and no rim (`uSmall.x` in `toon/shader.ts`), no kit weave or seam, skin/hair map mip bias 1.5 (`uSmall.y`).
+- Measured here at px 2.5 (one penalty frame, frame meter): about 48 draws and 78k triangles with the ink line, against about 46 draws and 49k triangles without it (the line redraws each man's body). The meter's numbers swing ±10 between frames.
+
+### Camera: corners, zoom, penalty (12 Oct 2026)
+
+Only the camera moves; sizes never change.
+- **Corners** (`CORNER_CAM` in `match2dCam.ts`, `pick: "glide"`): the corner starts wide on view B (lower, turned 35°) or C (taker, ball, box, keeper and goal), seeded per corner while Harry sees both. From the kick it eases to view A (the box) in 0.42 s, following the landing spot. A, B and C can each be held with `pick`.
+- **Byline crosses** take the corner's camera and glide (`CORNER_CAM_KINDS`). 3D only.
+- **Cutbacks and tight angles** (`KIND_CAM`, `solveKindCam`, 3D only, Harry 12 Oct 2026): a cutback is side-on from the ball's touchline, framed on the action (men ~30–38 px, was ~15 px at 85 m). A tight angle is FIFA-style: low (30°) behind the taker, turned 14° over his shoulder so his body never hides the ball, the ball 70% down, the goal and keeper ahead. Both keep the drag room. Tests: `tests/star/match2dCam.mts`; numbers: `scripts/cam3d/kindCamProbe.mts`.
+- **Camera swipe** (`ORBIT`, `orbitCamera`): a one-finger sideways drag that starts on open grass while aiming turns the view round the ball, ±45°; it eases back when the chance ends. The press is held back from the 2D game until it shows what it is, so a swipe never reaches it (no kick, no order). A press on the ball or a team-mate works as before.
+- **Far, small men** (`SMALL_INK` in `smallMen.ts`): under 70 drawing px tall the ink thins, the light/shade step gets a soft edge and the face/hair map's mip bias fades. Above it, nothing changes.
+- **Zoom** (`camZoom.ts`): two-finger pinch in the match, Settings → "3D match zoom", and the mouse wheel. -1 is closest, 0 the default, 1 the whole scenario the 2D draws. It keeps between chances. A second finger lifts the first touch where it started (a zero-length drag, so no kick).
+- **"3D camera height (test)"**: degrees added to the camera's angle down. Testing only; 0 in the game.
+- **Penalty**: `SET_PIECE_CAM.penaltyShare` 0.04 (a man ~4% of the height; free kicks stay 5.5%).

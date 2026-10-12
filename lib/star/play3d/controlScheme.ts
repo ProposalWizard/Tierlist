@@ -35,8 +35,7 @@ function read(): ControlChoice {
 }
 
 export function controlChoice(): ControlChoice {
-  if (stored === undefined) stored = read();
-  return stored;
+  return "auto"; // Decided, no toggle (12 Oct 2026): this device's own controls; the stored choice is ignored.
 }
 
 /** What "auto" means on this device: a coarse pointer (a finger) is touch, anything else is PC. */

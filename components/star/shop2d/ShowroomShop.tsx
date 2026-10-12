@@ -9,7 +9,16 @@
  *   - swipe UP / DOWN   = the next / previous category (the Feed):
  *                         Cans → Boots → Drip → Gadgets → Cars → Homes → Holiday;
  *   - swipe LEFT / RIGHT = the items in that category (the Showroom), with dots;
- *   - a thin category rail at the top (tap to jump), a back chip, and a balance
+ *   - the categories as a phone-app tab bar at the BOTTOM (12 Oct 2026: Mikey
+ *     found the thin top rail hard to read; Harry: "put the menu at the bottom,
+ *     phone style"), above the iPhone home bar;
+ *   - a 1 | 3 | 5 switch in the header (lib/star/shopItemsView.ts, kept per
+ *     device, 3 by default): 1 = one item fills the screen; 3 = the centre item
+ *     big, the one before and after small and faded (tap one to bring it in);
+ *     5 = a compact list of the category (a row of cards on PC);
+ *   - each category opens, and the shop moves on after a purchase, to the
+ *     cheapest item you don't own yet (lib/star/shopNextItem.ts);
+ *   - a back chip, More (⋯: Sponsors, Casino, Store, 3D shop), and a balance
  *     chip with your fame (tap it: the fame banner drops down);
  *   - the Buy / Upgrade button pinned at the bottom with the price; tap the
  *     item for its sheet (level ladder, what you gain, View in 3D).
@@ -25,7 +34,7 @@
  * Blender models as public/shop (tools/shop2d/render_big.py); the small
  * pictures/drawings are the fallback if one is missing.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import type { CareerState, Boot, OwnedItem } from "@/lib/star/types";
 import { KIB_CANS, kibCanPrice, kibCanEffectLabel, BOOTS_ALL_LEVELS as BOOTS_FULL_PRICE, LIFESTYLE_ALL_LEVELS, baseIdOf, type KibCan } from "@/lib/star/shopData";
@@ -36,6 +45,7 @@ import { ruleBookFor } from "@/lib/star/ruleBook";
 import { formatMoney } from "@/lib/star/money";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import { fameGainFromBuying, fameLevel, fameOf, isWornOut, itemLifeSeasons, nextFameLevel, ownedFame, OWNED_FAME_MAX } from "@/lib/star/fame";
+import { useShopPicsLook, shopPic3d } from "@/lib/star/shopPicsLook";
 import { styleGroupOf, levelName, familyName, fameFromOwned, fameText, type StyleGroup } from "@/lib/star/lifestyleLevels";
 import { styleUnlockStar } from "@/lib/star/unlocks";
 import { starsNow } from "@/lib/star/starPoints";
@@ -45,6 +55,11 @@ import BootPicture from "../BootPicture";
 import StylePicture from "../StylePicture";
 import { weeksText } from "../ShopSheet";
 import { PhoneOpens, SaveUp } from "../StyleShop";
+import { nextUpIndex } from "@/lib/star/shopNextItem";
+import { listClips } from "@/lib/star/goalClip/store";
+import ForYouFeed, { type FeedEntry, type HighlightAd } from "./ForYouFeed";
+import { loadShopItemsView, saveShopItemsView, type ShopItemsView } from "@/lib/star/shopItemsView";
+import TrophyBadge from "./TrophyBadge";
 import { art, tierColour, rungName, LevelLadder, GiveChips, StoreSheet, GoldButton, ConfirmSheet, PurchaseMoment, type ConfirmInfo, type StoreTab } from "./parts";
 
 interface ActionResult { ok: boolean; reason?: string }
@@ -59,6 +74,7 @@ export const SHOWROOM_CATS: { id: CatId; label: string; icon: string; accent: st
   { id: "homes", label: "Homes", icon: "icon-homes", accent: "#a3e635" },
   { id: "holiday", label: "Holiday", icon: "icon-holiday", accent: "#22d3ee" },
 ];
+const BOOTS_I = SHOWROOM_CATS.findIndex((c) => c.id === "boots");
 const kindOf = (c: CatId): StoreTab => (c === "cans" ? "kib" : c === "boots" ? "boots" : "lifestyle");
 
 const BOOT_ORDER = ["starter", "speed", "power", "control", "elite", "curl", "maestro"];
@@ -104,7 +120,10 @@ const bigName = (kind: "boot" | "style", base: string, lv: number) =>
 
 /** The big still; the small picture/drawing if it is missing. */
 function BigPic({ kind, base, level, className = "", grey = false }: { kind: "boot" | "style"; base: string; level: number; className?: string; grey?: boolean }) {
-  const name = bigName(kind, base, level);
+  // Settings → Look → "Shop pictures": New = renders of the 3D shop's own models (shopPicsLook.ts)
+  const pics = useShopPicsLook();
+  const from3d = pics === "new" ? shopPic3d(kind, base, level) : null;
+  const name = from3d ?? bigName(kind, base, level);
   const [bad, setBad] = useState<string | null>(null);
   const [shown, setShown] = useState<string | null>(null);
   if (bad === name) {
@@ -118,7 +137,7 @@ function BigPic({ kind, base, level, className = "", grey = false }: { kind: "bo
   const small = kind === "boot" ? `/shop/boot-${base}-L${Math.max(1, Math.min(5, level))}.webp` : `/shop/${base}-L${base === "phone" ? 1 : Math.max(1, Math.min(5, level))}.webp`;
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={`/star/shop2d/items/${name}.webp`} alt="" draggable={false} decoding="async" onError={() => setBad(name)}
+    <img src={from3d ?? `/star/shop2d/items/${name}.webp`} alt="" draggable={false} decoding="async" onError={() => setBad(name)}
       onLoad={() => setShown(name)}
       style={shown === name ? undefined : { backgroundImage: `url(${small})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}
       data-big-pic={name} data-big-loaded={shown === name ? "1" : "0"} className={`select-none object-contain ${grey ? "opacity-30 grayscale" : ""} ${className}`} />
@@ -169,7 +188,17 @@ interface Props {
   links?: ShopLink[];
   /** Dev benches only: keep the bottom-right corner clear for the page-guide eye. */
   guideCorner?: boolean;
+  /** Where the categories sit (12 Oct 2026, three options for Harry): A = a text strip under
+   *  the header (default); B = a "Homes ▾" pill that opens a grid; C = a text strip above
+   *  the bottom bar. The media-lab bench passes ?bar=A|B|C. */
+  barOption?: "A" | "B" | "C";
+  /** How an item's level shows (12 Oct 2026): the trophy badge (default) or nothing. Bench: &mark=none. */
+  levelMark?: "trophy" | "none";
+  /** The Buy pill (12 Oct 2026): A = solid red; B = white with a gold price. Default "auto": Homes B, everything else A, so both can be compared in the real shop. Bench: &buy=A or &buy=B. */
+  buyStyle?: "A" | "B" | "auto";
 }
+
+const ItemLook = createContext<{ mark: "trophy" | "none"; buy: "A" | "B" | "auto" }>({ mark: "trophy", buy: "auto" });
 
 export interface ShopLink { id: string; icon: string; label: string; onClick: () => void; locked?: boolean }
 
@@ -177,7 +206,7 @@ type Moment = { art: React.ReactNode; level: number; title: string; word: string
 type Sheet = { cat: CatId; key: string; level: number };
 
 /** One item as the screen shows it. */
-interface View {
+export interface View {
   key: string; cat: CatId; title: string; sub: string; level: number; levels: number;
   pic: React.ReactNode; badges: React.ReactNode[]; stats: { text: string; color: string }[];
   locked: number | null; tour?: string; flash?: boolean;
@@ -185,7 +214,12 @@ interface View {
   extra?: { label: string; disabled: boolean; run: () => void };
 }
 
-export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, focus, onKind, onUseCan, onOpen3D, startCat, links, guideCorner = false }: Props) {
+export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, focus, onKind, onUseCan, onOpen3D, startCat, links, guideCorner = false, barOption = "A", levelMark = "trophy", buyStyle = "auto" }: Props) {
+  const bar = barOption;
+  /** The bottom bar's two pages: For You (the TikTok feed) and Shop (the showroom). */
+  const [tab, setTab] = useState<"foryou" | "shop">("shop");
+  const [pickOpen, setPickOpen] = useState(false);
+  const [adShown, setAdShown] = useState(false);
   const homeLevel = Math.max(1, SHOP_TIERS.findIndex((t) => t.anchor === divisionOf(career)) + 1);
   const [spent, setSpent] = useState({ n: 0, text: "" });
   const spend = (price: number) => setSpent((s) => ({ n: s.n + 1, text: `−★${formatMoney(price)}` }));
@@ -201,8 +235,39 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
     const stars = starsNow(career);
     return stars >= need ? null : Math.min(1, stars / need);
   } : undefined), [career]);
+  // The item to land on in a category: the cheapest one you don't own yet (lib/star/shopNextItem.ts).
+  // boots are priced off your wage (bootPrice, Harry 12 Oct 2026), sponsor 25% after
+  const bootsList = useMemo(() => BOOTS_FULL_PRICE.map((b) => ({ ...b, price: bootPrice(career, b.price) })), [career]);
+  /** Yours already: the boots you have on (not worn out), a style item you own (not worn out). Cans are used up, never "owned". */
+  const isOwned = (cat: CatId, k: string): boolean => {
+    if (cat === "cans") return false;
+    if (cat === "boots") return baseIdOf(career.currentBoot) === k && career.currentBoot.matches > 0;
+    const mine = career.ownedItems.find((o) => baseIdOf(o) === k);
+    return !!mine && !isWornOut(mine);
+  };
+  /** The owned tag on a 5-items card. */
+  const ownLabel = (cat: CatId, k: string): string | null => {
+    if (cat === "cans") { const n = career.kibCans[k as KibCan["id"]] ?? 0; return n > 0 ? `×${n} owned` : null; }
+    if (cat === "boots") return baseIdOf(career.currentBoot) === k ? (career.currentBoot.matches > 0 ? `On · L${career.currentBoot.level ?? 1}` : "Worn out") : null;
+    const mine = career.ownedItems.find((o) => baseIdOf(o) === k);
+    if (!mine) return null;
+    if (isWornOut(mine)) return "Worn out";
+    return (STYLE_BASES.get(k)?.length ?? 1) > 1 ? `Owned · L${ownedLevelOf(mine)}` : "Owned";
+  };
+  const nextUp = (cat: CatId, from = 0): number => {
+    const keys = SHOWROOM_KEYS[cat];
+    if (cat === "cans") return Math.max(0, Math.min(keys.length - 1, from));
+    return nextUpIndex(keys.map((k) => {
+      if (cat === "boots") {
+        const l1 = bootsList.filter((b) => baseIdOf(b) === k).sort((a, b) => (a.level ?? 0) - (b.level ?? 0))[0];
+        return { owned: isOwned(cat, k), locked: false, price: l1?.price ?? 0 };
+      }
+      return { owned: isOwned(cat, k), locked: (lockOf?.(k) ?? null) !== null, price: STYLE_BASES.get(k)?.[0]?.price ?? 0 };
+    }), from);
+  };
   const start = useMemo(() => {
     const at = (cat: CatId, key: string) => ({ ci: SHOWROOM_CATS.findIndex((c) => c.id === cat), ii: Math.max(0, SHOWROOM_KEYS[cat].indexOf(key)) });
+    const landing = (cat: CatId) => ({ ci: SHOWROOM_CATS.findIndex((c) => c.id === cat), ii: nextUp(cat) });
     if (focus) {
       if (SHOWROOM_KEYS.cans.includes(focus.id)) return { ...at("cans", focus.id), sheet: null };
       if (SHOWROOM_KEYS.boots.includes(focus.id)) return { ...at("boots", focus.id), sheet: { cat: "boots" as CatId, key: focus.id, level: focus.level } };
@@ -212,20 +277,58 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
         return { ...at(g, focus.id), sheet: lockOf?.(focus.id) == null ? { cat: g as CatId, key: focus.id, level: focus.level } : null };
       }
     }
-    if (startCat) return { ...at(startCat, SHOWROOM_KEYS[startCat][0]), sheet: null };
+    if (startCat) return { ...landing(startCat), sheet: null };
     if (kind === "kib") return { ...at("cans", "basic"), sheet: null };
-    if (kind === "boots") return { ...at("boots", baseIdOf(career.currentBoot)), sheet: null };
+    if (kind === "boots") return { ...landing("boots"), sheet: null };
     if (lockOf && !career.ownedItems.some((o) => baseIdOf(o) === "phone")) return { ...at("gadgets", "phone"), sheet: null };
-    return { ...at("drip", SHOWROOM_KEYS.drip[0]), sheet: null };
+    return { ...landing("drip"), sheet: null };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [ci, setCi] = useState(start.ci);
-  const [idx, setIdx] = useState<number[]>(() => SHOWROOM_CATS.map((_, i) => (i === start.ci ? start.ii : 0)));
+  // every category opens on its next item, not only the one you start in
+  const [idx, setIdx] = useState<number[]>(() => SHOWROOM_CATS.map((c, i) => (i === start.ci ? start.ii : nextUp(c.id))));
+  // 1 | 3 | 5 items on screen (remembered on this device; 3 by default)
+  const [view, setViewState] = useState<ShopItemsView>(loadShopItemsView);
+  const setView = (v: ShopItemsView) => { setViewState(v); saveShopItemsView(v); };
+  const [moreOpen, setMoreOpen] = useState(false);
+  /** After a purchase: the category to move on to its next item once the burst closes. */
+  const jumpAfterBuy = useRef<number | null>(null);
+  /** The last category that was not Boots: where the Shop tab goes back to from the Boots tab. */
+  const lastNotBoots = useRef(start.ci === BOOTS_I ? SHOWROOM_CATS.findIndex((c) => c.id === "drip") : start.ci);
+
+  // ── For You: every item in the store, mixed, with your last match's goals as the odd "ad" ──
+  const [ad, setAd] = useState<HighlightAd | null>(null);
+  useEffect(() => {
+    if (tab !== "foryou") return;
+    let live = true;
+    void lastMatchHighlights().then((a) => { if (live) setAd(a); });
+    return () => { live = false; };
+  }, [tab]);
+  const feedEntries = useMemo<FeedEntry[]>(() => {
+    // the same mix all week; a new one next week
+    let seed = ((career.season ?? 1) * 997 + (career.week ?? 0) * 31 + 7) >>> 0;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    const shuffle = <T,>(a: T[]) => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+    const piles = shuffle(SHOWROOM_CATS).map((c) => ({ c, keys: shuffle(SHOWROOM_KEYS[c.id]) }));
+    const out: FeedEntry[] = [];
+    let n = 0;
+    while (piles.some((p) => p.keys.length)) {
+      for (const p of piles) {
+        const k = p.keys.shift();
+        if (!k) continue;
+        if (ad && (n === 3 || (n > 3 && (n - 3) % 10 === 0))) out.push({ ad: true, id: `ad-${n}` });
+        out.push({ ad: false, item: { cat: p.c.id, key: k, accent: p.c.accent, label: p.c.label } });
+        n++;
+      }
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ad]);
   const [sheet, setSheet] = useState<Sheet | null>(start.sheet);
 
   // ── The buy flows (unchanged from the store) ───────────────────────────
   const bootDeal = hasBootDeal(career);
-  const boots = useMemo(() => (bootDeal ? BOOTS_FULL_PRICE.map((b) => ({ ...b, price: bootPrice(career, b.price) })) : BOOTS_FULL_PRICE), [bootDeal, career]);
+  const boots = bootsList;
   const banned = new Set(ruleBookFor(career, "FA").bannedItems);
   const bootLevels = (base: string) => boots.filter((b) => baseIdOf(b) === base).sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
   const cur = career.currentBoot;
@@ -248,6 +351,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
     const base = baseIdOf(b);
     const done = (price: number) => {
       spend(price); setConfirm(null);
+      jumpAfterBuy.current = SHOWROOM_CATS.findIndex((c) => c.id === "boots");
       setSoldOut((s) => new Set(s).add(b.id));
       setMoment({ art: <BigPic kind="boot" base={base} level={lv} className="w-full" />, level: lv, title: `${b.name} L${lv} — ${b.matches} matches`, word: "Equipped!", fx: b.extraTouch ? "fx-touch" : b.curve ? "fx-curve" : "fx-power" });
     };
@@ -284,6 +388,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
       run: () => {
         if (career.money < it.price) return "Not enough money";
         onBuyItem(it); spend(it.price); setConfirm(null);
+        jumpAfterBuy.current = SHOWROOM_CATS.findIndex((c) => c.id === styleGroupOf(it));
         setMoment({ art: <BigPic kind="style" base={base} level={lv} className="w-full" />, level: lv, title: levelName(it), word: verb === "Upgrade" ? "Upgraded!" : verb === "Repair" ? "Repaired!" : "Yours!" });
       },
     });
@@ -315,7 +420,8 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
     if (cat === "boots") {
       const levels = bootLevels(key);
       const mineLv = wearing === key ? cur.level ?? 1 : 0;
-      const def = wearing === key ? (cur.matches > 0 ? Math.min(levels.length, mineLv + 1) : mineLv) : Math.min(levels.length, homeLevel);
+      // one level at a time: the next one you don't own (Harry, 12 Oct 2026); the others are in the item's sheet
+      const def = wearing === key ? (cur.matches > 0 ? Math.min(levels.length, mineLv + 1) : mineLv) : 1;
       const lv = pick[key] ?? def;
       const b = levels.find((x) => x.level === lv) ?? levels[0];
       const isBanned = banned.has(key);
@@ -346,8 +452,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
     const worn = !!mine && isWornOut(mine);
     const ownLv = ownedLevelOf(mine);
     const yours = !!mine && !worn;
-    const affordable = levels.filter((l) => (l.level ?? 1) <= homeLevel && l.price <= career.money);
-    const def = yours ? Math.min(levels.length, ownLv + (ownLv < levels.length ? 1 : 0)) : (affordable[affordable.length - 1]?.level ?? 1);
+    const def = yours ? Math.min(levels.length, ownLv + (ownLv < levels.length ? 1 : 0)) : 1;
     const lv = levels.length === 1 ? 1 : (pick[key] ?? def);
     const it = levels.find((l) => l.level === lv) ?? levels[0];
     const lock = lockOf?.(key) ?? null;
@@ -375,42 +480,78 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   };
 
   // ── Scrolling: native snap for touch + trackpad, drag for the mouse ────
+  // 1 and 3 items: the Feed (categories up/down) of Showroom rows (items sideways).
+  // 5 items: no Feed; one category's list, and the tab bar picks the category.
   const outer = useRef<HTMLDivElement>(null);
   const rows = useRef<(HTMLDivElement | null)[]>([]);
-  const pageW = () => outer.current?.clientWidth ?? 390;
-  const pageH = () => outer.current?.clientHeight ?? 844;
-  useLayoutEffect(() => {
-    const o = outer.current;
-    if (!o) return;
-    o.scrollTop = start.ci * o.clientHeight;
-    const r = rows.current[start.ci];
-    if (r) r.scrollLeft = start.ii * r.clientWidth;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const goCat = useCallback((c: number, smooth = true) => {
-    const o = outer.current;
-    if (!o) return;
-    const n = Math.max(0, Math.min(SHOWROOM_CATS.length - 1, c));
-    o.scrollTo({ top: n * o.clientHeight, behavior: smooth ? "smooth" : "auto" });
-  }, []);
-  const goItem = useCallback((c: number, i: number) => {
+  const list = useRef<HTMLDivElement>(null);
+  /** One step sideways: the whole width (1 item) or one slide (3 items). */
+  const stepW = (c: number) => {
     const r = rows.current[c];
-    if (!r) return;
+    if (!r) return 390;
+    return Math.max(1, r.querySelector<HTMLElement>("[data-show-item]")?.offsetWidth ?? r.clientWidth);
+  };
+  const pageH = () => outer.current?.clientHeight ?? 844;
+  // put the Feed and every row on its item: when the shop opens, and when 1 | 3 | 5 changes
+  useLayoutEffect(() => {
+    if (view === 5) return;
+    const o = outer.current;
+    if (o) o.scrollTop = ci * o.clientHeight;
+    rows.current.forEach((r, c) => { if (r) r.scrollLeft = idx[c] * stepW(c); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, tab]);
+  const goCat = (c: number, smooth = true) => {
+    const n = Math.max(0, Math.min(SHOWROOM_CATS.length - 1, c));
+    const o = outer.current;
+    if (!o) { setCi(n); setFameOpen(false); return; }
+    o.scrollTo({ top: n * o.clientHeight, behavior: smooth ? "smooth" : "auto" });
+  };
+  const goItem = (c: number, i: number, smooth = true) => {
     const n = Math.max(0, Math.min(SHOWROOM_KEYS[SHOWROOM_CATS[c].id].length - 1, i));
-    r.scrollTo({ left: n * r.clientWidth, behavior: "smooth" });
-  }, []);
+    const r = rows.current[c];
+    if (!r) { setIdx((a) => a.map((v, k) => (k === c ? n : v))); return; }
+    r.scrollTo({ left: n * stepW(c), behavior: smooth ? "smooth" : "auto" });
+  };
+  /** A tab in the bottom bar: open that category on its next item. */
+  const openCat = (i: number) => {
+    setMoreOpen(false); setPickOpen(false);
+    const land = nextUp(SHOWROOM_CATS[i].id, idx[i]);
+    setIdx((a) => a.map((v, k) => (k === i ? land : v)));
+    const r = rows.current[i];
+    if (r) r.scrollLeft = land * stepW(i);
+    goCat(i, Math.abs(i - ci) <= 1);
+  };
   const onOuterScroll = () => {
     const o = outer.current;
     if (!o) return;
     const c = Math.round(o.scrollTop / Math.max(1, o.clientHeight));
-    if (c !== ci) { setCi(c); setFameOpen(false); }
+    if (c !== ci) { setCi(c); setFameOpen(false); setMoreOpen(false); setPickOpen(false); }
   };
   const onRowScroll = (c: number) => {
     const r = rows.current[c];
     if (!r) return;
-    const i = Math.round(r.scrollLeft / Math.max(1, r.clientWidth));
+    const i = Math.round(r.scrollLeft / stepW(c));
     setIdx((a) => (a[c] === i ? a : a.map((v, k) => (k === c ? i : v))));
   };
+  // after a purchase: once the burst has gone, move on to the next item you don't own
+  useEffect(() => {
+    if (moment || confirm || sheet || jumpAfterBuy.current === null) return;
+    const c = jumpAfterBuy.current;
+    jumpAfterBuy.current = null;
+    const n = nextUp(SHOWROOM_CATS[c].id, idx[c]);
+    if (n !== idx[c]) goItem(c, n);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moment, confirm, sheet, career]);
+  // 5 items: keep the item you are on (the next one, on open) in view
+  const curKey = SHOWROOM_KEYS[SHOWROOM_CATS[ci].id][idx[ci]];
+  useEffect(() => {
+    if (view !== 5) return;
+    const l = list.current;
+    const el = l?.querySelector<HTMLElement>(`[data-list-item="${curKey}"]`);
+    if (!l || !el) return;
+    const top = el.offsetTop - (l.clientHeight - el.offsetHeight) / 2;
+    l.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  }, [view, curKey]);
   // keep the help pointers in step with the kind of thing on screen
   useEffect(() => {
     if (!onKind) return;
@@ -424,16 +565,16 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (busy) return;
-      if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); goCat(ci + 1); }
-      else if (e.key === "ArrowUp" || e.key === "PageUp") { e.preventDefault(); goCat(ci - 1); }
+      if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); if (view === 5) openCat(ci + 1); else goCat(ci + 1); }
+      else if (e.key === "ArrowUp" || e.key === "PageUp") { e.preventDefault(); if (view === 5) openCat(ci - 1); else goCat(ci - 1); }
       else if (e.key === "ArrowRight") { e.preventDefault(); goItem(ci, idx[ci] + 1); }
       else if (e.key === "ArrowLeft") { e.preventDefault(); goItem(ci, idx[ci] - 1); }
       else if (e.key === "Escape") onBack();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [busy, ci, idx, goCat, goItem, onBack]);
-  // mouse drag: decide the axis after 6 px, follow the pointer, then snap one page
+  });
+  // mouse drag: decide the axis after 6 px, follow the pointer, then snap one step
   const drag = useRef<null | { x: number; y: number; axis: "x" | "y" | null; c: number; sx: number; sy: number; moved: boolean }>(null);
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.pointerType !== "mouse" || e.button !== 0) return;
@@ -462,8 +603,9 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
     const el = d.axis === "x" ? rows.current[d.c] : outer.current;
     if (el) { el.style.scrollSnapType = ""; el.style.scrollBehavior = ""; }
     if (d.axis === "x") {
-      const from = Math.round(d.sx / pageW());
-      goItem(d.c, from + (Math.abs(dx) > pageW() * 0.12 ? (dx < 0 ? 1 : -1) : 0));
+      const w = stepW(d.c);
+      const from = Math.round(d.sx / w);
+      goItem(d.c, from + (Math.abs(dx) > w * 0.12 ? (dx < 0 ? 1 : -1) : 0));
     } else {
       const from = Math.round(d.sy / pageH());
       goCat(from + (Math.abs(dy) > pageH() * 0.1 ? (dy < 0 ? 1 : -1) : 0));
@@ -481,9 +623,21 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   const nfl = nextFameLevel(fame);
   const stuffFame = ownedFame(owned);
   const nItems = SHOWROOM_KEYS[cat.id].length;
+  const openSheet = (c: CatId, k: string) => setSheet({ cat: c, key: k, level: viewOf(c, k).level });
+  // what sits over the item: the header (+ the category strip in A, + the dots) and the bottom bar (+ the strip in C)
+  const topPx = 46 + (tab === "shop" && bar !== "C" ? STRIP_H : 0) + (tab === "shop" && view !== 5 ? 18 : 0);
+  const botPx = TAB_H + (tab === "shop" && bar === "C" ? STRIP_H : 0);
+  // the bottom bar has Sponsors, Casino and the 3D shop; the rest stay under More
+  const moreLinks = (links ?? []).filter((l) => !ON_BAR.has(l.id));
+  // Boots is its own tab on the bar (Harry, 12 Oct 2026: "it's quite a big aspect"), so the word strip leaves it out
+  const onBoots = cat.id === "boots";
+  if (!onBoots) lastNotBoots.current = ci;
+  const needStars = (key: string) => (lockOf?.(key) != null ? { need: styleUnlockStar(key), have: Math.floor(starsNow(career)) } : null);
 
   return (
-    <div data-showroom-shop data-sk-tone="calm" className="fixed inset-0 z-[60] overflow-hidden bg-[#05080f] text-white" style={{ touchAction: "pan-x pan-y" }}>
+    <ItemLook.Provider value={{ mark: levelMark, buy: buyStyle }}>
+    <div data-showroom-shop data-items-view={view} data-shop-tab={tab} data-bar={bar} data-sk-tone="calm" className="fixed inset-0 z-[60] overflow-hidden bg-[#05080f] text-white"
+      style={{ touchAction: "pan-x pan-y", ["--sr-top" as string]: `calc(${topPx}px + env(safe-area-inset-top))`, ["--sr-bot" as string]: `calc(${botPx}px + env(safe-area-inset-bottom))` }}>
       <div data-star-game hidden />
       <style>{`
         [data-showroom-shop] .sr-noscroll{scrollbar-width:none}
@@ -491,63 +645,144 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
         @keyframes srSpent{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(26px);opacity:0}}
         @keyframes srFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
         @keyframes srDrop{from{transform:translateY(-12px);opacity:0}to{transform:none;opacity:1}}
-        @media (prefers-reduced-motion: reduce){[data-showroom-shop] *{animation:none!important;scroll-behavior:auto!important}}
+        @media (prefers-reduced-motion: reduce){[data-showroom-shop] *{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
       `}</style>
       {/* the store at night (Higgsfield shop art), darkened: the item is the light */}
       <div aria-hidden className="pointer-events-none absolute inset-[-24px]" style={{ background: `url(${art("wall")}) center 40% / cover`, filter: "blur(10px) brightness(.42) saturate(.8)" }} />
       <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(90% 60% at 50% 42%, rgba(5,8,15,.25), rgba(5,8,15,.8) 75%), linear-gradient(180deg, rgba(5,8,15,.55), rgba(5,8,15,.35) 40%, rgba(5,8,15,.95) 85%)" }} />
 
-      <div ref={outer} onScroll={onOuterScroll} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}
-        className="sr-noscroll relative h-full w-full overflow-y-auto overflow-x-hidden" style={{ scrollSnapType: "y mandatory", overscrollBehavior: "contain" }} data-feed>
-        {SHOWROOM_CATS.map((c, cIdx) => {
-          const keys = SHOWROOM_KEYS[c.id];
-          const near = Math.abs(cIdx - ci) <= 1;
-          return (
-            <section key={c.id} data-feed-cat={c.id} className="relative h-full w-full" style={{ scrollSnapAlign: "start", scrollSnapStop: "always" }}>
-              <div ref={(el) => { rows.current[cIdx] = el; }} onScroll={() => onRowScroll(cIdx)} data-showroom-row={c.id}
-                className="sr-noscroll flex h-full w-full overflow-x-auto overflow-y-hidden" style={{ scrollSnapType: "x mandatory", overscrollBehaviorX: "contain" }}>
-                {keys.map((k, i) => {
-                  const show = near && Math.abs(i - idx[cIdx]) <= 1;
-                  return (
-                    <div key={k} data-show-item={k} className="relative h-full w-full shrink-0" style={{ scrollSnapAlign: "center", scrollSnapStop: "always" }}>
-                      {show ? <ItemPage v={viewOf(c.id, k)} accent={c.accent} catLabel={c.label} pos={`${i + 1}/${keys.length}`}
-                        next={SHOWROOM_CATS[cIdx + 1]?.label} guideCorner={guideCorner} onOpen={() => setSheet({ cat: c.id, key: k, level: viewOf(c.id, k).level })}
-                        onPickLevel={(lv) => setPick((p) => ({ ...p, [k]: lv }))} /> : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })}
-      </div>
+      {tab === "foryou" ? (
+        <ForYouFeed onAdShown={setAdShown} entries={feedEntries} viewOf={viewOf} ownLabel={ownLabel} ad={ad} needStars={needStars}
+          onDetails={(c, k) => { if (viewOf(c, k).locked === null) openSheet(c, k); }}
+          onSeeAll={(c, k) => {
+            const n = SHOWROOM_CATS.findIndex((x) => x.id === c);
+            setIdx((a) => a.map((v, j) => (j === n ? Math.max(0, SHOWROOM_KEYS[c].indexOf(k)) : v)));
+            setCi(n); setTab("shop");
+          }} />
+      ) : view === 5 ? (
+        <div ref={list} data-shop-list={cat.id} className="sr-noscroll absolute inset-0 overflow-y-auto overflow-x-hidden"
+          style={{ paddingTop: "calc(var(--sr-top) - 4px)", paddingBottom: BOTTOM_PAD, overscrollBehavior: "contain" }}>
+          <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-2 px-3 md:grid-cols-5 md:gap-3 md:px-6 md:pt-4">
+            {(() => {
+              const keys = SHOWROOM_KEYS[cat.id];
+              const nu = cat.id === "cans" ? -1 : nextUp(cat.id, -1);
+              return keys.map((k, i) => {
+                const v = viewOf(cat.id, k);
+                const isNext = i === nu && !isOwned(cat.id, k);
+                return (
+                  <ListCard key={k} v={v} accent={cat.accent} on={i === idx[ci]} next={isNext} own={ownLabel(cat.id, k)}
+                    onTap={() => { setIdx((a) => a.map((x, c) => (c === ci ? i : x))); if (v.locked === null) openSheet(cat.id, k); }} />
+                );
+              });
+            })()}
+          </div>
+        </div>
+      ) : (
+        <div ref={outer} onScroll={onOuterScroll} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}
+          className="sr-noscroll relative h-full w-full overflow-y-auto overflow-x-hidden" style={{ scrollSnapType: "y mandatory", overscrollBehavior: "contain" }} data-feed>
+          {SHOWROOM_CATS.map((c, cIdx) => {
+            const keys = SHOWROOM_KEYS[c.id];
+            const near = Math.abs(cIdx - ci) <= 1;
+            const cur = Math.max(0, Math.min(keys.length - 1, idx[cIdx]));
+            const curView = near && view === 3 ? viewOf(c.id, keys[cur]) : null;
+            return (
+              <section key={c.id} data-feed-cat={c.id} className="relative h-full w-full" style={{ scrollSnapAlign: "start", scrollSnapStop: "always" }}>
+                {view === 3 && (
+                  <div aria-hidden className="pointer-events-none absolute inset-0" style={{
+                    background: `radial-gradient(40% 30% at 50% 42%, rgba(255,255,255,.14), transparent 70%), radial-gradient(70% 42% at 50% 44%, ${c.accent}2a, transparent 72%)`,
+                  }} />
+                )}
+                <div ref={(el) => { rows.current[cIdx] = el; }} onScroll={() => onRowScroll(cIdx)} data-showroom-row={c.id}
+                  className="sr-noscroll relative flex h-full w-full overflow-x-auto overflow-y-hidden" style={{ scrollSnapType: "x mandatory", overscrollBehaviorX: "contain" }}>
+                  {view === 3 && <div aria-hidden className="h-full shrink-0" style={{ width: SIDE_W }} />}
+                  {keys.map((k, i) => {
+                    const show = near && Math.abs(i - cur) <= (view === 3 ? 2 : 1);
+                    return (
+                      <div key={k} data-show-item={k} className="relative h-full shrink-0" style={{ width: view === 3 ? SLIDE_W : "100%", scrollSnapAlign: "center", scrollSnapStop: "always" }}>
+                        {show ? (view === 1
+                          ? <ItemPage v={viewOf(c.id, k)} accent={c.accent} catLabel={c.label} pos={`${i + 1}/${keys.length}`}
+                              next={SHOWROOM_CATS[cIdx + 1]?.label} onOpen={() => openSheet(c.id, k)}
+                              onPickLevel={(lv) => setPick((p) => ({ ...p, [k]: lv }))} />
+                          : <SideSlide v={viewOf(c.id, k)} accent={c.accent} d={i - cur}
+                              onTap={() => (i === cur ? openSheet(c.id, k) : goItem(cIdx, i))} />) : null}
+                      </div>
+                    );
+                  })}
+                  {view === 3 && <div aria-hidden className="h-full shrink-0" style={{ width: SIDE_W }} />}
+                </div>
+                {curView && (
+                  <>
+                    {curView.badges.length > 0 && <div className="pointer-events-none absolute left-3 z-10 flex max-w-[70%] flex-wrap gap-1" style={{ top: "calc(var(--sr-top) + 2px)" }}>{curView.badges}</div>}
+                    <ItemInfo v={curView} accent={c.accent} catLabel={c.label} pos={`${cur + 1}/${keys.length}`} next={SHOWROOM_CATS[cIdx + 1]?.label}
+                      guideCorner={false} onOpen={() => openSheet(c.id, keys[cur])} onPickLevel={(lv) => setPick((p) => ({ ...p, [keys[cur]]: lv }))} />
+                  </>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      )}
 
       {/* PC arrows (pointer devices only) */}
-      <div className="pointer-events-none absolute inset-0 hidden [@media(hover:hover)_and_(pointer:fine)]:block">
-        {idx[ci] > 0 && <button onClick={() => goItem(ci, idx[ci] - 1)} aria-label="Previous item" className="pointer-events-auto absolute left-3 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-[24px] font-black ring-1 ring-white/20 hover:bg-black/70">‹</button>}
-        {idx[ci] < nItems - 1 && <button onClick={() => goItem(ci, idx[ci] + 1)} aria-label="Next item" className="pointer-events-auto absolute right-3 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-[24px] font-black ring-1 ring-white/20 hover:bg-black/70">›</button>}
-      </div>
+      {tab === "shop" && view !== 5 && (
+        <div className="pointer-events-none absolute inset-0 hidden [@media(hover:hover)_and_(pointer:fine)]:block">
+          {idx[ci] > 0 && <button onClick={() => goItem(ci, idx[ci] - 1)} aria-label="Previous item" className="pointer-events-auto absolute left-3 top-[42%] grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-[24px] font-black ring-1 ring-white/20 hover:bg-black/70">‹</button>}
+          {idx[ci] < nItems - 1 && <button onClick={() => goItem(ci, idx[ci] + 1)} aria-label="Next item" className="pointer-events-auto absolute right-3 top-[42%] grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-[24px] font-black ring-1 ring-white/20 hover:bg-black/70">›</button>}
+        </div>
+      )}
 
-      {/* Top: back · the category rail · balance + fame. Floats over the item. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/70 via-black/30 to-transparent pb-3" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      {!(tab === "foryou" && adShown) && <>
+      {/* Top: back · the category name · 1|3|5 · More · balance + fame. Floats over the item. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/75 via-black/35 to-transparent pb-2" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="pointer-events-auto mx-auto flex h-[46px] max-w-[820px] items-center gap-1.5 px-2.5">
           <button onClick={onBack} aria-label="Back" data-shop-back className="kib-press grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black/55 text-[20px] font-black ring-1 ring-white/20 backdrop-blur">‹</button>
-          <Rail ci={ci} onJump={(i) => goCat(i)} links={links} />
-          <button onClick={() => setFameOpen((v) => !v)} data-balance-chip aria-label="Balance and fame"
+          <div className="min-w-0 flex-1 truncate pl-1 text-[16px] font-black" data-shop-cat-title>{tab === "foryou" ? "For You" : onBoots ? <span style={{ color: cat.accent }}>Boots</span> : ""}</div>
+          {tab === "shop" && <ViewSwitch view={view} onPick={setView} />}
+          {tab === "shop" && moreLinks.length > 0 && (
+            <button onClick={() => { setMoreOpen((v) => !v); setFameOpen(false); }} aria-label="More: sponsors, casino, store, 3D shop" data-shop-more
+              className={`kib-press grid h-9 w-9 shrink-0 place-items-center rounded-full text-[18px] font-black ring-1 backdrop-blur ${moreOpen ? "bg-white/20 ring-white/50" : "bg-black/55 ring-white/20"}`}>⋯</button>
+          )}
+          <button onClick={() => { setFameOpen((v) => !v); setMoreOpen(false); }} data-balance-chip aria-label="Balance and fame"
             className="kib-press relative flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-black/60 pl-2.5 pr-2 ring-1 ring-amber-300/45 backdrop-blur">
             <span className="text-[13.5px] font-black tabular-nums text-amber-300">★{formatMoney(career.money)}</span>
             <span className="flex items-center gap-0.5 rounded-full bg-amber-300/15 px-1.5 py-0.5 text-[11px] font-black tabular-nums text-amber-100" data-fame-chip>👑{fame}</span>
             {spent.n > 0 && <span key={spent.n} className="pointer-events-none absolute right-2 top-full text-[12px] font-black text-red-300" style={{ animation: "srSpent 1.4s ease-out both" }}>{spent.text}</span>}
           </button>
         </div>
-        {/* the dots: where you are in this category; tap one to jump to it */}
-        <div className="pointer-events-auto mx-auto flex h-[18px] w-max items-center justify-center" data-item-dots>
-          {SHOWROOM_KEYS[cat.id].map((k, i) => (
-            <button key={k} onClick={() => goItem(ci, i)} aria-label={`Item ${i + 1}`} data-dot={i} className="flex h-[18px] items-center px-[4px]">
-              <span className="block h-[5px] rounded-full transition-all" style={{ width: i === idx[ci] ? 16 : 6, background: i === idx[ci] ? cat.accent : "rgba(255,255,255,.4)" }} />
+        {tab === "shop" && bar === "A" && (onBoots ? <div style={{ height: STRIP_H }} /> : <CatStrip ci={ci} onPick={openCat} />)}
+        {tab === "shop" && bar === "B" && (
+          <div className="pointer-events-auto flex items-center justify-center" style={{ height: STRIP_H }}>
+            <button onClick={() => { setPickOpen((v) => !v); setMoreOpen(false); setFameOpen(false); }} data-cat-pill aria-label="Categories"
+              className="kib-press flex h-[34px] items-center gap-1.5 rounded-full bg-black/55 px-3.5 backdrop-blur" style={{ boxShadow: `inset 0 0 0 1.5px ${cat.accent}` }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={art(cat.icon)} alt="" className="h-[22px] w-[22px]" draggable={false} />
+              <span className="text-[16px] font-black" style={{ color: cat.accent }}>{cat.label}</span>
+              <span className="text-[11px] text-white/70">{pickOpen ? "▲" : "▼"}</span>
             </button>
-          ))}
-        </div>
+          </div>
+        )}
+        {/* the dots: where you are in this category; tap one to jump to it */}
+        {tab === "shop" && view !== 5 && (
+          <div className="pointer-events-auto mx-auto flex h-[18px] w-max items-center justify-center" data-item-dots>
+            {SHOWROOM_KEYS[cat.id].map((k, i) => (
+              <button key={k} onClick={() => goItem(ci, i)} aria-label={`Item ${i + 1}`} data-dot={i} className="flex h-[18px] items-center px-[4px]">
+                <span className="block h-[5px] rounded-full transition-all" style={{ width: i === idx[ci] ? 16 : 6, background: i === idx[ci] ? cat.accent : "rgba(255,255,255,.4)" }} />
+              </button>
+            ))}
+          </div>
+        )}
+        {pickOpen && tab === "shop" && <CatGrid ci={ci} onPick={openCat} />}
+        {moreOpen && moreLinks.length > 0 && (
+          <div className="pointer-events-auto mx-auto mt-1.5 grid max-w-[420px] grid-cols-4 gap-1.5 rounded-[14px] bg-[#0b1222]/95 p-2 ring-1 ring-white/15 backdrop-blur" style={{ animation: "srDrop .18s ease-out", marginInline: 10 }} data-shop-more-menu>
+            {moreLinks.map((l) => (
+              <button key={l.id} onClick={() => { setMoreOpen(false); l.onClick(); }} data-shop-link={l.id} aria-label={l.label}
+                className={`kib-press flex flex-col items-center gap-1 rounded-[10px] bg-white/[0.06] py-2 ${l.locked ? "opacity-50" : ""}`}>
+                <span className="text-[22px] leading-none">{l.locked ? "🔒" : l.icon}</span>
+                <span className="whitespace-nowrap text-[10.5px] font-black uppercase tracking-wide text-white">{l.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
         {fameOpen && (
           <div className="pointer-events-auto mx-2.5 mt-1.5 rounded-[12px] bg-[#0b1222]/95 p-3 ring-1 ring-amber-300/40 backdrop-blur" style={{ animation: "srDrop .18s ease-out" }} data-fame-banner onClick={() => setFameOpen(false)}>
             <div className="flex items-center gap-3">
@@ -567,6 +802,21 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
           </div>
         )}
       </div>
+      </>}
+
+      {tab === "shop" && bar === "C" && (
+        <div className="absolute inset-x-0 z-30 bg-gradient-to-t from-[#070b14] to-[#070b14]/70" style={{ bottom: `calc(${TAB_H}px + env(safe-area-inset-bottom))` }}>
+          <CatStrip ci={ci} onPick={openCat} />
+        </div>
+      )}
+      <BottomBar active={tab === "foryou" ? "foryou" : onBoots ? "boots" : "shop"} links={links} onOpen3D={onOpen3D} guideCorner={guideCorner}
+        onPick={(t) => {
+          setMoreOpen(false); setPickOpen(false); setFameOpen(false);
+          if (t === "foryou") { setTab("foryou"); return; }
+          setTab("shop");
+          if (t === "boots") { if (!onBoots) openCat(BOOTS_I); }
+          else if (onBoots) openCat(lastNotBoots.current);
+        }} />
 
       {sheet && <DetailSheet sheet={sheet} onClose={() => setSheet(null)} onPick={(lv) => setSheet({ ...sheet, level: lv })} career={career} homeLevel={homeLevel}
         bootLevels={bootLevels} banned={banned} soldOut={soldOut} onOpen3D={onOpen3D}
@@ -574,46 +824,194 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
       {confirm && <ConfirmSheet info={confirm.info} money={career.money} onCancel={() => setConfirm(null)} onConfirm={confirm.run} />}
       {moment && <PurchaseMoment art={moment.art} level={moment.level} title={moment.title} word={moment.word} fx={moment.fx} onDone={() => setMoment(null)} />}
     </div>
+    </ItemLook.Provider>
   );
 }
 
-/** The thin category rail: icons, the one you are on with its name. */
-function Rail({ ci, onJump, links }: { ci: number; onJump: (i: number) => void; links?: ShopLink[] }) {
+/** Your last match's goals, from the recordings on this device (newest match only). */
+async function lastMatchHighlights(): Promise<HighlightAd | null> {
+  try {
+    const all = await listClips();
+    const top = all[0];
+    if (!top) return null;
+    const t0 = Date.parse(top.createdAt) || 0;
+    const same = all.filter((c) => c.home === top.home && c.away === top.away && Math.abs((Date.parse(c.createdAt) || 0) - t0) < 4 * 3600_000);
+    const ids = same.map((c) => c.id).reverse();
+    return { clipIds: ids, title: "Your highlights", sub: `${top.home} v ${top.away} · ${ids.length} goal${ids.length === 1 ? "" : "s"}` };
+  } catch {
+    return null;
+  }
+}
+
+/** The bottom bar's height (above the iPhone home bar). */
+const TAB_H = 64;
+/** The category text strip (A: under the header; C: above the bottom bar). */
+const STRIP_H = 38;
+const ON_BAR = new Set(["sponsors", "shop3d"]);
+const BOTTOM_PAD = "calc(12px + var(--sr-bot))";
+/** 3 items: the centre slide's width, and the space either side of the first and last. */
+const SLIDE_W = "min(46%, 400px)";
+const SIDE_W = "calc((100% - min(46%, 400px)) / 2)";
+
+/** Line icons for the bottom bar (TikTok-style: thin, white, filled for the page you are on). */
+function BarIcon({ name, on }: { name: "foryou" | "shop" | "sponsors" | "boots"; on: boolean }) {
+  const p = { fill: on ? "currentColor" : "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinejoin: "round" as const, strokeLinecap: "round" as const };
+  return (
+    <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" aria-hidden>
+      {name === "foryou" && <><rect x="4" y="3" width="16" height="18" rx="4" {...p} /><path d="M10 9l5 3-5 3z" fill={on ? "#05080f" : "currentColor"} stroke="none" /></>}
+      {name === "shop" && <><path d="M5 8h14l-1.2 12H6.2z" {...p} /><path d="M9 8V6.5a3 3 0 016 0V8" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" /></>}
+      {name === "sponsors" && <><circle cx="12" cy="9" r="5" {...p} /><path d="M8.5 13l-1.5 7 5-2.5 5 2.5-1.5-7" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinejoin="round" /></>}
+      {name === "boots" && <><path d="M5 6h6l1 5 6.5 2.2a2.5 2.5 0 011.5 2.3V17H4.5z" {...p} /><path d="M6 20v-2.5M10 20v-2.5M14 20v-2.5M18 20v-2.5" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" /></>}
+    </svg>
+  );
+}
+
+/** The bottom bar, TikTok-style: Shop · For You · 3D (the big centre button: the walk-around shop) · Boots · Sponsors.
+ *  Harry, 12 Oct 2026. Casino moved off it, back under More (⋯) in the shop header. */
+function BottomBar({ active, onPick, links, onOpen3D, guideCorner }: {
+  active: "shop" | "foryou" | "boots"; onPick: (t: "shop" | "foryou" | "boots") => void; links?: ShopLink[]; onOpen3D?: () => void; guideCorner: boolean;
+}) {
+  const link = (id: string) => links?.find((l) => l.id === id);
+  const sponsors = link("sponsors"), three = link("shop3d");
+  const Tab = ({ on, label, icon, onClick, locked, data }: { on: boolean; label: string; icon: React.ReactNode; onClick?: () => void; locked?: boolean; data: string }) => (
+    <button onClick={onClick} disabled={!onClick} data-bar-tab={data} aria-current={on ? "page" : undefined} aria-label={label}
+      className={`kib-press relative flex min-w-0 flex-1 flex-col items-center justify-center gap-[3px] disabled:opacity-30 ${on ? "text-white" : "text-white/60"} ${locked ? "opacity-50" : ""}`}>
+      {icon}
+      <span className="text-[10px] font-bold leading-none">{locked ? `🔒 ${label}` : label}</span>
+    </button>
+  );
+  return (
+    <nav data-shop-tabs aria-label="Shop" className="absolute inset-x-0 bottom-0 z-30 border-t border-white/10 bg-[#05080f]"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className={`mx-auto flex max-w-[620px] items-stretch ${guideCorner ? "pr-11" : ""}`} style={{ height: TAB_H }}>
+        <Tab data="shop" on={active === "shop"} label="Shop" icon={<BarIcon name="shop" on={active === "shop"} />} onClick={() => onPick("shop")} />
+        <Tab data="foryou" on={active === "foryou"} label="For You" icon={<BarIcon name="foryou" on={active === "foryou"} />} onClick={() => onPick("foryou")} />
+        <div className="flex flex-1 items-center justify-center">
+          <button onClick={three?.onClick ?? onOpen3D} disabled={!(three || onOpen3D)} data-bar-tab="shop3d" aria-label="3D shop"
+            className="kib-press relative grid h-[36px] w-[54px] place-items-center rounded-[11px] text-[15px] font-black text-[#05080f] disabled:opacity-30"
+            style={{ background: "#fff", boxShadow: "-4px 0 0 #22d3ee, 4px 0 0 #f43f5e" }}>3D</button>
+        </div>
+        <Tab data="boots" on={active === "boots"} label="Boots" icon={<BarIcon name="boots" on={active === "boots"} />} onClick={() => onPick("boots")} />
+        <Tab data="sponsors" on={false} label="Sponsors" locked={sponsors?.locked} icon={<BarIcon name="sponsors" on={false} />} onClick={sponsors?.onClick} />
+      </div>
+    </nav>
+  );
+}
+
+/** The categories as words, like TikTok's "Following | For You": swipe it, tap one; yours is white and underlined. */
+function CatStrip({ ci, onPick }: { ci: number; onPick: (i: number) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const el = ref.current?.querySelector<HTMLElement>(`[data-rail-cat="${SHOWROOM_CATS[ci].id}"]`);
-    el?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    const box = ref.current;
+    const el = box?.querySelector<HTMLElement>(`[data-strip-cat="${SHOWROOM_CATS[ci].id}"]`);
+    if (box && el) box.scrollTo({ left: el.offsetLeft - (box.clientWidth - el.offsetWidth) / 2, behavior: "smooth" });
   }, [ci]);
   return (
-    <div ref={ref} className="sr-noscroll flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto rounded-full bg-black/45 px-1 py-0.5 ring-1 ring-white/10 backdrop-blur" data-category-rail>
+    <div ref={ref} className="sr-noscroll pointer-events-auto relative flex items-center gap-5 overflow-x-auto px-[38%]" style={{ height: STRIP_H }} data-cat-strip>
       {SHOWROOM_CATS.map((c, i) => {
+        if (c.id === "boots") return null; // Boots has its own tab on the bar
         const on = i === ci;
         return (
-          <button key={c.id} onClick={() => onJump(i)} data-rail-cat={c.id} aria-label={c.label}
-            className="kib-press flex h-8 shrink-0 items-center gap-1 rounded-full px-1.5 transition-all"
-            style={on ? { background: `${c.accent}2e`, boxShadow: `inset 0 0 0 1.5px ${c.accent}` } : undefined}>
-            <img src={art(c.icon)} alt="" className={`h-[22px] w-[22px] ${on ? "" : "opacity-60 saturate-50"}`} draggable={false} />
-            {on && <span className="pr-0.5 text-[11.5px] font-black uppercase tracking-wide text-white">{c.label}</span>}
+          <button key={c.id} onClick={() => onPick(i)} data-strip-cat={c.id} aria-current={on ? "true" : undefined}
+            className="relative shrink-0 pb-1 text-[16px] font-extrabold transition-colors" style={{ color: on ? "#fff" : "rgba(255,255,255,.55)", textShadow: "0 1px 6px rgba(0,0,0,.8)" }}>
+            {c.label}
+            <span aria-hidden className="absolute inset-x-1/4 -bottom-[1px] h-[3px] rounded-full transition-opacity" style={{ background: on ? "#fff" : "transparent" }} />
           </button>
         );
       })}
-      {links && links.length > 0 && <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-white/20" />}
-      {links?.map((l) => (
-        <button key={l.id} onClick={l.onClick} data-shop-link={l.id} aria-label={l.label}
-          className={`kib-press flex h-8 shrink-0 items-center gap-1 rounded-full px-2 ${l.locked ? "opacity-50" : ""}`}>
-          <span className="text-[17px] leading-none">{l.locked ? "🔒" : l.icon}</span>
-          <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-wide text-white/85">{l.label}</span>
+    </div>
+  );
+}
+
+/** Option B: the category pill opens this grid. */
+function CatGrid({ ci, onPick }: { ci: number; onPick: (i: number) => void }) {
+  return (
+    <div className="pointer-events-auto mx-2.5 mt-1.5 grid grid-cols-4 gap-1.5 rounded-[14px] bg-[#0b1222]/95 p-2 ring-1 ring-white/15 backdrop-blur" style={{ animation: "srDrop .18s ease-out" }} data-cat-grid>
+      {SHOWROOM_CATS.map((c, i) => (
+        <button key={c.id} onClick={() => onPick(i)} data-grid-cat={c.id}
+          className="kib-press flex flex-col items-center gap-1 rounded-[10px] py-2" style={i === ci ? { background: `${c.accent}33`, boxShadow: `inset 0 0 0 1.5px ${c.accent}` } : { background: "rgba(255,255,255,.06)" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={art(c.icon)} alt="" className="h-[30px] w-[30px]" draggable={false} />
+          <span className="text-[11px] font-black" style={{ color: i === ci ? c.accent : "#fff" }}>{c.label}</span>
         </button>
       ))}
     </div>
   );
 }
 
-/** One item, full screen. */
+/** 1 | 3 | 5 items on screen. */
+function ViewSwitch({ view, onPick }: { view: ShopItemsView; onPick: (v: ShopItemsView) => void }) {
+  return (
+    <div className="flex h-9 shrink-0 items-center rounded-full bg-black/55 p-[3px] ring-1 ring-white/20 backdrop-blur" role="group" aria-label="Items on screen" data-view-switch>
+      {([1, 3, 5] as ShopItemsView[]).map((n) => (
+        <button key={n} onClick={() => onPick(n)} data-view={n} aria-label={`${n} item${n === 1 ? "" : "s"} on screen`} aria-pressed={view === n}
+          className={`kib-press grid h-[30px] w-[28px] place-items-center rounded-full text-[13px] font-black tabular-nums ${view === n ? "bg-white text-[#05080f]" : "text-white/75"}`}>{n}</button>
+      ))}
+    </div>
+  );
+}
+
+/** 3 items: one slide. The centre is big; the ones beside it small and faded. Tap a side one to bring it in. */
+function SideSlide({ v, accent, d, onTap }: { v: View; accent: string; d: number; onTap: () => void }) {
+  const far = Math.abs(d);
+  // the centre item spills past its slide; the side ones lean in so they peek from the edges
+  const scale = far === 0 ? 1.32 : far === 1 ? 0.64 : 0.5;
+  const opacity = far === 0 ? 1 : far === 1 ? 0.4 : 0.14;
+  const lean = far === 0 ? 0 : -Math.sign(d) * (far === 1 ? 20 : 34);
+  return (
+    <button onClick={onTap} aria-label={far === 0 ? `${v.title}: details` : `Show ${v.title}`} data-item-page={v.key} data-side={d}
+      className={`absolute inset-x-0 flex flex-col items-center justify-center ${far === 0 && v.flash ? "kit-tile-flash" : ""}`}
+      style={{ top: "var(--sr-top)", bottom: "calc(166px + var(--sr-bot))" }} data-tour={far === 0 ? v.tour : undefined}>
+      <span className="relative flex h-full w-full items-center justify-center transition-[transform,opacity] duration-300 ease-out" style={{ transform: `translateX(${lean}%) scale(${scale})`, opacity }}>
+        <span aria-hidden className="absolute bottom-[16%] left-1/2 h-[30px] w-[80%] -translate-x-1/2 rounded-[50%]" style={{ background: "radial-gradient(closest-side, rgba(0,0,0,.75), transparent)" }} />
+        <span aria-hidden className="absolute bottom-[10%] left-1/2 h-[70px] w-[100%] -translate-x-1/2 rounded-[50%]" style={{ background: `radial-gradient(closest-side, ${accent}22, transparent)` }} />
+        <span className="relative flex h-full w-full items-center justify-center" style={far === 0 ? { animation: "srFloat 5s ease-in-out infinite" } : undefined}>{v.pic}</span>
+        {v.locked !== null && <span className="absolute inset-0 grid place-items-center text-[44px]">🔒</span>}
+      </span>
+      {far === 1 && (
+        <span className="pointer-events-none absolute top-[66%] inset-x-1 truncate text-center text-[11px] font-black uppercase tracking-wide text-white/55" style={{ transform: `translateX(${lean * 0.9}%)` }}>{v.title}</span>
+      )}
+    </button>
+  );
+}
+
+/** 5 items: one row (phone) or card (PC) — picture, name, price, owned / locked. Tap to open. */
+function ListCard({ v, accent, on, next, own, onTap }: { v: View; accent: string; on: boolean; next: boolean; own: string | null; onTap: () => void }) {
+  const locked = v.locked !== null;
+  const tier = v.levels > 1 ? tierColour(v.level) : accent;
+  return (
+    <button onClick={onTap} data-list-item={v.key} data-tour={v.tour} aria-label={`${v.title}: details`}
+      className={`kib-press relative flex h-[126px] items-stretch gap-3 overflow-hidden rounded-[16px] p-2 text-left md:h-auto md:flex-col md:gap-1.5 md:p-2.5 ${locked ? "opacity-60" : ""} ${v.flash ? "kit-tile-flash" : ""}`}
+      style={{ background: "linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03))", boxShadow: on ? `inset 0 0 0 2px ${accent}, 0 8px 24px -12px ${accent}` : "inset 0 0 0 1px rgba(255,255,255,.1)" }}>
+      <span className="relative flex w-[132px] shrink-0 items-center justify-center overflow-hidden rounded-[12px] md:aspect-[4/3] md:w-full"
+        style={{ background: `radial-gradient(70% 65% at 50% 45%, rgba(255,255,255,.14), transparent 70%), radial-gradient(90% 70% at 50% 55%, ${tier}2e, transparent 75%), #0a1120` }}>
+        <span className={`flex h-full w-full items-center justify-center p-1 ${locked ? "grayscale" : ""}`}>{v.pic}</span>
+        {locked && <span className="absolute inset-0 grid place-items-center text-[30px]">🔒</span>}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+        <span className="flex items-center gap-1.5">
+          {next && <span className="shrink-0 rounded-full px-2 py-[3px] text-[9.5px] font-black uppercase tracking-wide text-[#05080f]" style={{ background: accent }} data-next-up>Next up</span>}
+          {own && <span className="shrink-0 rounded-full bg-emerald-800/90 px-2 py-[3px] text-[9.5px] font-black uppercase tracking-wide text-emerald-200 ring-1 ring-emerald-300/40" data-owned>{own}</span>}
+        </span>
+        <span className="truncate text-[17px] font-black leading-tight text-white md:text-[15px]">{v.title}</span>
+        <span className="truncate text-[11.5px] font-bold text-white/70">{v.sub}</span>
+        {locked ? (
+          <span className="text-[12px] font-black uppercase tracking-wide text-amber-300">Higher star rating</span>
+        ) : (
+          <span className="flex items-baseline gap-1.5">
+            <span className={`text-[11.5px] font-black uppercase ${v.button.disabled ? "text-white/55" : "text-white/85"}`}>{v.button.label}</span>
+            {v.button.price !== undefined && <span className={`text-[16px] font-black tabular-nums ${v.button.disabled ? "text-white/45" : "text-amber-300"}`}>★{formatMoney(v.button.price)}</span>}
+          </span>
+        )}
+      </span>
+    </button>
+  );
+}
+
+/** 1 item: one item, full screen. */
 function ItemPage({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCorner = false }: {
   v: View; accent: string; catLabel: string; pos: string; next?: string; onOpen: () => void; onPickLevel: (lv: number) => void; guideCorner?: boolean;
 }) {
-  const tier = v.levels > 1 ? tierColour(v.level) : accent;
   return (
     <div className="absolute inset-0" data-tour={v.tour} data-item-page={v.key}>
       {/* product-shot light: a soft cone from above, the category colour as the rim */}
@@ -621,7 +1019,8 @@ function ItemPage({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCo
         background: `radial-gradient(52% 34% at 50% 44%, rgba(255,255,255,.16), transparent 70%), radial-gradient(80% 46% at 50% 46%, ${accent}2e, transparent 72%), linear-gradient(180deg, transparent 62%, ${accent}14 82%, transparent)`,
       }} />
       <button onClick={v.locked === null ? onOpen : undefined} aria-label={`${v.title}: details`} data-item-pic
-        className={`absolute inset-x-0 top-[60px] bottom-[212px] flex items-center justify-center overflow-visible ${v.flash ? "kit-tile-flash" : ""}`}>
+        className={`absolute inset-x-0 flex items-center justify-center overflow-visible ${v.flash ? "kit-tile-flash" : ""}`}
+        style={{ top: "var(--sr-top)", bottom: "calc(166px + var(--sr-bot))" }}>
         {/* the contact shadow (drawn here, not baked into the picture) */}
         <span aria-hidden className="absolute bottom-[20%] left-1/2 h-[40px] w-[74%] max-w-[620px] -translate-x-1/2 rounded-[50%]" style={{ background: "radial-gradient(closest-side, rgba(0,0,0,.75), transparent)" }} />
         <span aria-hidden className="absolute bottom-[14%] left-1/2 h-[90px] w-[96%] max-w-[900px] -translate-x-1/2 rounded-[50%]" style={{ background: `radial-gradient(closest-side, ${accent}22, transparent)` }} />
@@ -634,43 +1033,70 @@ function ItemPage({ v, accent, catLabel, pos, next, onOpen, onPickLevel, guideCo
           </span>
         )}
       </button>
-      {v.badges.length > 0 && <div className="pointer-events-none absolute left-3 top-[62px] flex max-w-[70%] flex-wrap gap-1">{v.badges}</div>}
+      {v.badges.length > 0 && <div className="pointer-events-none absolute left-3 flex max-w-[70%] flex-wrap gap-1" style={{ top: "calc(var(--sr-top) + 2px)" }}>{v.badges}</div>}
+      <ItemInfo v={v} accent={accent} catLabel={catLabel} pos={pos} next={next} onOpen={onOpen} onPickLevel={onPickLevel} guideCorner={guideCorner} />
+    </div>
+  );
+}
 
-      {/* Bottom: the name, the level pips, what it gives, and Buy. */}
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#05080f] via-[#05080f]/90 to-transparent px-4 pt-10" style={{ paddingBottom: "calc(14px + env(safe-area-inset-bottom))" }}>
-        <div className="mx-auto max-w-md">
-          <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.16em]">
-            <span style={{ color: accent }}>{catLabel} · {pos}</span>
-            {next && <span className="text-white/55">⌃ {next}</span>}
-          </div>
-          <button onClick={onOpen} className="block w-full text-left">
-            <div className="truncate text-[28px] font-black leading-[1.08]" data-item-title>{v.title}</div>
-          </button>
-          <div className="mt-0.5 flex items-center gap-2">
-            <Pips level={v.level} of={v.levels} onPick={v.locked === null ? onPickLevel : undefined} accent={tier} />
-            <span className="min-w-0 truncate text-[12px] font-bold text-white/80">{v.sub}</span>
-          </div>
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[13px] font-black">
+const BUY_RED = "#f87171";
+
+/** Buy, sized like a native app button (Harry, 12 Oct 2026: the wide slab "still doesn't look quite right").
+ *  A: a solid red pill, the price in a darker capsule inside. B: a white pill, the price in a gold capsule.
+ *  Harry preferred A but wants both in use to compare (12 Oct 2026): Homes shows B, every other category A. */
+function BuyPill({ b, variant }: { b: View["button"]; variant: "A" | "B" }) {
+  const accent = BUY_RED;
+  const off = b.disabled;
+  const bg = off ? "rgba(255,255,255,.12)" : b.danger ? "#dc2626" : variant === "A" ? accent : "#ffffff";
+  const ink = off ? "rgba(255,255,255,.7)" : b.danger ? "#fff" : "#0b1222";
+  return (
+    <button onClick={b.run} disabled={off} data-showroom-buy data-buy-style={variant}
+      className="kib-press flex h-[44px] max-w-[200px] items-center gap-2 rounded-full pl-[18px] pr-[6px] disabled:cursor-not-allowed"
+      style={{ background: bg, color: ink, boxShadow: off ? "inset 0 0 0 1px rgba(255,255,255,.2)" : `0 6px 16px -6px ${b.danger ? "#dc2626" : variant === "A" ? accent : "rgba(0,0,0,.8)"}, inset 0 1px 0 rgba(255,255,255,.35)` }}>
+      <span className="truncate text-[14px] font-extrabold">{b.label}</span>
+      {b.price !== undefined && (variant === "A" || off || b.danger ? (
+        <span className="flex h-[32px] shrink-0 items-center rounded-full px-2.5 text-[15px] font-black tabular-nums" style={{ background: off ? "transparent" : "rgba(0,0,0,.16)" }}>★{formatMoney(b.price)}</span>
+      ) : (
+        <span className="flex h-[32px] shrink-0 items-center rounded-full px-2.5 text-[15px] font-black tabular-nums text-[#1c1203]" style={{ background: "#f5b82e" }}>★{formatMoney(b.price)}</span>
+      ))}
+      {b.price === undefined && <span className="w-3" />}
+    </button>
+  );
+}
+
+/** Under the item: the name, the level pips, what it gives, and Buy (sits above the tab bar). */
+function ItemInfo({ v, accent, catLabel, pos, next, onOpen, guideCorner = false }: {
+  v: View; accent: string; catLabel: string; pos: string; next?: string; onOpen: () => void; onPickLevel: (lv: number) => void; guideCorner?: boolean;
+}) {
+  const look = useContext(ItemLook);
+  return (
+    <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#05080f] via-[#05080f]/90 to-transparent px-4 pt-8" style={{ paddingBottom: "calc(12px + var(--sr-bot))" }} data-item-info={v.key}>
+      <div className="mx-auto max-w-md">
+        <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.16em]">
+          <span style={{ color: accent }}>{catLabel} · {pos}</span>
+          {next && <span className="text-white/55">⌃ {next}</span>}
+        </div>
+        <button onClick={onOpen} className="block w-full text-left">
+          <div className="truncate text-[26px] font-black leading-[1.08]" data-item-title>{v.title}</div>
+        </button>
+        <div className="mt-0.5 flex items-center gap-2">
+          {look.mark === "trophy" && v.levels > 1 && <TrophyBadge level={v.level} size={38} className="-my-2 shrink-0" />}
+          <span className="min-w-0 truncate text-[12px] font-bold text-white/80">{v.sub}</span>
+        </div>
+        <div className="mt-1.5 flex items-end gap-2">
+          <div className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-0.5 text-[13px] font-black">
             {v.stats.map((s) => <span key={s.text} style={{ color: s.color }}>{s.text}</span>)}
           </div>
           {v.locked === null ? (
-            <div className={`mt-2.5 flex gap-2 ${guideCorner ? "pr-11" : ""}`}>
-              <button onClick={v.button.run} disabled={v.button.disabled} data-showroom-buy
-                className="kib-press flex h-[54px] min-w-0 flex-1 items-center justify-between rounded-[12px] px-4 disabled:cursor-not-allowed"
-                style={v.button.disabled ? { background: "rgba(255,255,255,.09)", color: "rgba(255,255,255,.6)" }
-                  : v.button.danger ? { background: "linear-gradient(180deg,#f87171,#b91c1c)", color: "#fff", boxShadow: "0 8px 22px -8px rgba(220,38,38,.9)" }
-                  : v.button.blue ? { background: "linear-gradient(180deg,#7dd3fc,#0284c7)", color: "#04121f", boxShadow: "0 8px 22px -8px rgba(14,165,233,.9)" }
-                  : { background: "linear-gradient(180deg,#fde68a,#f59e0b 55%,#d97706)", color: "#1c1203", boxShadow: "inset 0 1px 0 rgba(255,255,255,.6), 0 8px 22px -8px rgba(245,158,11,.95)" }}>
-                <span className="truncate text-[16px] font-black uppercase">{v.button.label}</span>
-                {v.button.price !== undefined && <span className="shrink-0 text-[19px] font-black tabular-nums">★{formatMoney(v.button.price)}</span>}
-              </button>
+            <div className={`flex shrink-0 items-center gap-1.5 ${guideCorner ? "mr-11" : ""}`}>
               {v.extra && (
                 <button onClick={v.extra.run} disabled={v.extra.disabled} data-can-use={v.key}
-                  className="kib-press h-[54px] shrink-0 rounded-[12px] px-3.5 text-[13px] font-black uppercase text-white ring-1 ring-white/25 disabled:opacity-35">{v.extra.label}</button>
+                  className="kib-press h-[40px] rounded-full bg-black/40 px-3 text-[12px] font-black uppercase text-white ring-1 ring-white/30 disabled:opacity-35">{v.extra.label}</button>
               )}
+              <BuyPill b={v.button} variant={look.buy === "auto" ? (v.cat === "homes" ? "B" : "A") : look.buy} />
             </div>
           ) : (
-            <div className={`mt-2.5 grid h-[54px] place-items-center rounded-[12px] bg-white/[0.06] text-[13px] font-black uppercase tracking-wide text-white/75 ring-1 ring-white/10 ${guideCorner ? "mr-11" : ""}`}>Opens at a higher star rating</div>
+            <span className={`shrink-0 rounded-full bg-white/[0.08] px-3 py-2 text-[11px] font-black uppercase tracking-wide text-white/75 ring-1 ring-white/15 ${guideCorner ? "mr-11" : ""}`}>🔒 Higher star rating</span>
           )}
         </div>
       </div>

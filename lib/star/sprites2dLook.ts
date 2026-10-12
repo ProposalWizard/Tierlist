@@ -18,11 +18,7 @@ let cached: Sprites2dLook | null = null;
 const listeners = new Set<() => void>();
 
 export function sprites2dLook(): Sprites2dLook {
-  if (cached) return cached;
-  let v: string | null = null;
-  try { v = typeof localStorage === "undefined" ? null : localStorage.getItem(KEY); } catch { v = null; }
-  cached = v === "stylea" || v === "current" ? v : SPRITES2D_DEFAULT;
-  return cached;
+  return "stylea"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 export function setSprites2dLook(v: Sprites2dLook) {
   try { localStorage.setItem(KEY, v); } catch { /* in-memory still changes */ }

@@ -48,6 +48,7 @@ function recordingCanvas() {
     get(t, prop) {
       if (prop in t) return t[prop];
       if (prop === "moveTo" || prop === "lineTo") return (x: number, y: number) => { pts.push({ x, y }); };
+      if (prop === "getTransform") return () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
       if (prop === "measureText") return () => ({ width: 10, actualBoundingBoxAscent: 5, actualBoundingBoxDescent: 1 });
       return () => stub;
     },

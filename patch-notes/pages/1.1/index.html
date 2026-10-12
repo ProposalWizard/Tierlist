@@ -1,0 +1,427 @@
+<title>Knowitball v1.1</title>
+<style>
+:root{--bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;--ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;--green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;--r:12px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;--ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;--green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;--ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;--green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow-x:hidden}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+header{padding:30px 0 4px}
+.ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--green);color:#fff;padding:4px 10px;border-radius:999px}
+h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+.sub{color:var(--ink3);font-size:13.5px;margin:0 0 22px}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin:0 0 26px}
+.s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px;min-width:0}
+.s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+.s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:38px 0 12px;display:flex;align-items:center;gap:9px}
+h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.c-hand{color:var(--green)}.c-hand i{background:var(--green)}
+.c-hf{color:var(--violet)}.c-hf i{background:var(--violet)}
+.c-add{color:var(--blue)}.c-add i{background:var(--blue)}
+.c-fix{color:var(--green)}.c-fix i{background:var(--green)}
+.c-chg{color:var(--violet)}.c-chg i{background:var(--violet)}
+.c-bug{color:var(--amber)}.c-bug i{background:var(--amber)}
+.c-nxt{color:var(--ink3)}.c-nxt i{background:var(--ink3)}
+.intro{color:var(--ink2);font-size:14.5px;margin:0 0 12px}
+ul.n{list-style:none;margin:0;padding:0}
+ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+ul.n>li:last-child{border-bottom:0}
+.hd{font-weight:700}
+.dt{color:var(--ink2);font-size:14px;margin-top:3px}
+.dt b,.dt strong{color:var(--ink)}
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;margin:0 0 12px}
+.box.g{border-left:3px solid var(--green)}.box.v{border-left:3px solid var(--violet)}.box.a{border-left:3px solid var(--amber)}
+.box .t{font-weight:800;font-size:12px;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px}
+.box.g .t{color:var(--green)}.box.v .t{color:var(--violet)}.box.a .t{color:var(--amber)}
+.box p{margin:0 0 8px;font-size:14px;color:var(--ink2)}
+.box p:last-child{margin-bottom:0}
+ol.steps{margin:6px 0 0;padding-left:20px;font-size:14px;color:var(--ink2)}
+ol.steps li{margin-bottom:5px}
+ol.steps b,.box b{color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;margin:0 0 12px}
+.card h3{margin:0 0 8px;font-size:16px}
+.row{margin:8px 0 0}
+.lab{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;border-radius:999px;margin-bottom:3px}
+.l-done{background:rgba(15,157,88,.15);color:var(--green)}
+.l-half{background:rgba(245,185,66,.18);color:var(--amber)}
+.l-next{background:rgba(111,184,255,.18);color:var(--blue)}
+.row ul,.row ol{margin:2px 0 0;padding-left:19px;font-size:14px;color:var(--ink2)}
+.row li{margin-bottom:4px}
+.row b{color:var(--ink)}
+.bars{margin:9px 0 2px}
+.bar{display:grid;grid-template-columns:minmax(86px,118px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+.bar .lb{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.fill.was{background:var(--line)}.fill.now{background:var(--green);opacity:.85}.fill.now.warn{background:var(--amber)}.fill.now.bad{background:var(--red)}
+.vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+.vv s{color:var(--ink3);font-weight:400;opacity:.85}
+details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+details[open]{padding-bottom:12px}
+summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;gap:7px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"\25B8";transition:transform .15s;color:var(--ink3)}
+details[open] summary::before{transform:rotate(90deg)}
+details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+details li{margin-bottom:6px}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85em;background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;word-break:break-word}
+.pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+.p-red{background:rgba(255,107,107,.15);color:var(--red)}.p-amb{background:rgba(245,185,66,.18);color:var(--amber)}.p-grn{background:rgba(15,157,88,.15);color:var(--green)}
+figure{margin:12px 0 2px}
+figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:11px;margin:12px 0 2px}
+.shots figure{margin:0;min-width:0}
+.login{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px;margin:8px 0}
+.login code{font-size:16px;font-weight:700;flex:1 1 200px;min-width:0;user-select:all;background:transparent;border:0;padding:0}
+button.copy{font:inherit;font-weight:700;font-size:13px;background:var(--green);color:#fff;border:0;border-radius:8px;padding:9px 16px;cursor:pointer}
+.say{font-style:italic;color:var(--ink2);margin:6px 0;padding-left:11px;border-left:2px solid var(--line);font-size:14px}
+.tick{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.tick:last-child{border:0}.tick input{margin-top:4px}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="ver">v1.1</span>
+  <h1>Knowitball v1.1</h1>
+  <p class="sub">The big 3D round · 8 to 12 Oct 2026 · branch <code>Harry</code> · for Leo, Mikey and Harry</p>
+</header>
+
+<h2 class="c-add"><i></i>12 Oct 2026 (part 2): shop, settings clean-up, cameras</h2>
+<div class="strip">
+<div class="s"><b>&#9733;193,000</b><span>best boot in the Premier League (was &#9733;35,000, now 30 weeks of wage, like the energy cans)</span></div>
+<div class="s"><b>~45</b><span>Settings toggles removed. The game now decides.</span></div>
+<div class="s"><b>123&rarr;59 m</b><span>cutback camera distance (coming, not on the branch yet)</span></div>
+<div class="s"><b>7 and 5 / 60</b><span>served one-on-ones and through balls with an offside team-mate (not fixed)</span></div>
+</div>
+<div class="box a"><div class="t">Not seen on a phone</div><p>Everything here is on branch Harry, not live yet. Pictures come from a build machine with no graphics chip. Items marked <b>COMING</b> are built somewhere else and are <b>not on branch Harry yet</b>.</p></div>
+<div class="box g"><div class="t">The headline: the shop</div><p>The shop pictures are now made from the 3D shop&rsquo;s own models. The new shop layout (bottom bar, For You feed, 1|3|5 items) is built but <b>not on the branch yet</b>. See item 1.</p></div>
+<div class="box"><div class="t" style="color:var(--ink3)">Check these</div><ul style="margin:0;padding-left:18px;font-size:14px;color:var(--ink2)">
+<li>Shop &rarr; Cars: each car looks real and changes paint by level</li>
+<li>Shop &rarr; Gadgets: the Charity-Shop Blazer has a tie and no price tag</li>
+<li>Shop &rarr; Boots: prices in your division (a top boot costs 30 weeks of wage)</li>
+<li>Settings: far fewer rows. Match &rarr; Keepers New | Old is back</li>
+<li>Match: every player has the same sharp Style A head, no photo faces</li>
+<li>3D match, corner: the camera starts wide and glides into the box</li>
+<li>3D match, phone: pinch to zoom. PC: Settings &rarr; 3D match camera slider</li>
+<li>3D penalty: the camera sits further back</li>
+<li><b>COMING:</b> bottom bar, 1|3|5 switch, For You, trophy badge, Buy button, byline glide, side-on cutbacks, tight-angle FIFA camera</li></ul></div>
+
+<div class="card"><h3>1. Shop: pictures from the 3D models <span class="pill p-grn">on branch</span> <span class="pill p-amb">layout: coming</span></h3>
+<div class="row"><span class="lab l-half">Problem</span><div class="dt">The shop pictures were home-made drawings. They looked unprofessional next to the 3D shop.</div></div>
+<div class="row"><span class="lab l-next">Why</span><div class="dt">The 2D shop and the 3D shop used two different sets of art.</div></div>
+<div class="row"><span class="lab l-done">Fix</span><div class="dt"><ul><li>Pictures are now rendered from the 3D shop&rsquo;s own models (1440&times;1080, clear background).</li><li>Cars and the motorbike are repainted per level: worn, blue, red, black, gold.</li><li>SUV, jet, homes, watches, jewellery and boots show one picture for every level.</li><li>The Charity-Shop Blazer is redrawn: no price tag, a tie, lapels you can see.</li></ul></div></div>
+<figure><img src="img/p2-cars.jpg" alt="Cars before and after" loading="lazy"><figcaption>Cars, before and after, phone size. Look at the paint and the motorbike.</figcaption></figure>
+<figure><img src="img/p2-blazer.jpg" alt="Blazer" loading="lazy"><figcaption>The blazer. Look at the tie.</figcaption></figure>
+<details><summary>COMING: the new shop layout (not on the branch yet)</summary>
+<ul><li><b>Bottom bar:</b> Shop | For You | 3D | Boots | Sponsors. Casino leaves the bar.</li><li><b>1 | 3 | 5</b> items on screen. 3 is the default.</li><li>The shop opens on the <b>next item you do not own</b>.</li><li><b>For You:</b> a TikTok-style feed of every item, locked ones too. Your last match&rsquo;s goal highlights appear as full-screen &ldquo;ads&rdquo;.</li><li><b>Trophy badge</b> replaces the level tabs. The badge is built but not used anywhere yet.</li><li><b>New Buy button.</b></li></ul>
+<p>The bar, the 1|3|5 switch and &ldquo;lands on next item&rdquo; are committed on a side branch. For You is not committed yet. Stills below are from that side build.</p>
+<div class="shots"><figure><img src="img/p2-bar.jpg" alt="Shop bottom bar" loading="lazy"><figcaption>COMING: bottom bar and 1|3|5.</figcaption></figure><figure><img src="img/p2-foryou.jpg" alt="For You highlight ad" loading="lazy"><figcaption>COMING: your goal as a full-screen ad.</figcaption></figure></div></details></div>
+
+<div class="card"><h3>2. Boots now cost the same share of your wage as the energy cans <span class="pill p-grn">on branch</span></h3>
+<div class="row"><span class="lab l-half">Problem</span><div class="dt">The top boot cost &#9733;35,000 in every division. In the Premier League that is 5.5 weeks of wage. In non-league it is out of reach.</div></div>
+<div class="row"><span class="lab l-next">Why</span><div class="dt">Boots had one fixed price. Energy cans already scaled with your wage.</div></div>
+<div class="row"><span class="lab l-done">Fix</span><div class="dt">Price = list price &times; (your wage &divide; a Championship wage). The same weeks of wage in every division. A boots sponsor still takes 25% off after.
+<div class="bars"><div class="bar"><span class="lb">Top boot, weeks of wage (Prem)</span><div class="track"><div class="fill was" style="width:18%"></div><div class="fill now" style="width:100%"></div></div><span class="vv">30 <s>5.5</s></span></div></div></div></div>
+<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:13px;width:100%;min-width:430px"><tr style="text-align:left;color:var(--ink3)"><th style="padding:6px">Boot</th><th>Before (all)</th><th>Non-league</th><th>League Two</th><th>Champ.</th><th>Prem</th></tr>
+<tr style="border-top:1px solid var(--line)"><td style="padding:6px">NS-Pure L1</td><td>&#9733;365</td><td>&#9733;8</td><td>&#9733;25</td><td>&#9733;375</td><td>&#9733;2,000</td></tr>
+<tr style="border-top:1px solid var(--line)"><td style="padding:6px">NS-Maestro L5</td><td>&#9733;35,000</td><td>&#9733;750</td><td>&#9733;2,400</td><td>&#9733;35,000</td><td>&#9733;193,000</td></tr></table></div>
+<details><summary>Known issue and how this was checked</summary><ul><li><b>Early-game boots are very cheap.</b> A first boot costs &#9733;8 in non-league. One number sets this (<code>BOOT_PRICE_REF_WAGE</code>). Harry decides if it feels too easy.</li><li>Worked out from the code with typical wages per division. <b>Not played.</b></li><li>The Old UI shop (frozen) still shows list prices.</li><li>Stats and boot life are unchanged. Lifestyle and cosmetics are unchanged.</li></ul></details></div>
+
+<div class="card"><h3>3. Settings clean-up: the game decides <span class="pill p-grn">on branch</span></h3>
+<div class="row"><span class="lab l-half">Problem</span><div class="dt">Settings had about 45 toggles for looks that were already settled. Nobody could tell which one was right.</div></div>
+<div class="row"><span class="lab l-next">Why</span><div class="dt">Every new look got a New | Old switch, and old ones were never deleted.</div></div>
+<div class="row"><span class="lab l-done">Fix</span><div class="dt"><ul><li>About 45 rows removed. The chosen look is fixed. Old saved choices are ignored.</li><li><b>Drawn chances only.</b> The New chance library is deleted.</li><li>No Classic | Standard picker. Cut scenes are New.</li><li><b>Keepers New | Old stays</b> (default New) until it is tested more.</li><li>Style A heads for everyone. <b>Photo faces are off.</b> Taking a photo is hidden until the photo revamp.</li><li>Player names toggle stays (off).</li></ul></div></div>
+<figure><img src="img/p2-settings.jpg" alt="Settings after clean-up" loading="lazy"><figcaption>Settings now. Look at how short it is. (The numbers at the bottom are a test overlay.)</figcaption></figure></div>
+
+<div class="card"><h3>4. 3D match camera and look <span class="pill p-grn">most on branch</span> <span class="pill p-amb">3 parts coming</span></h3>
+<div class="row"><span class="lab l-half">Problem</span><div class="dt">Small players looked soft. Corners and penalties framed badly. Phones could not zoom.</div></div>
+<div class="row"><span class="lab l-next">Why</span><div class="dt">One camera was used for every kind of chance.</div></div>
+<div class="row"><span class="lab l-done">Fix (on branch)</span><div class="dt"><ul><li><b>Approved player look:</b> sharp, thin outline (2.2 px), flat shading.</li><li><b>One real size:</b> every man 1.8 m, every screen.</li><li><b>Open play uses exactly the 2D frame.</b></li><li><b>Corners start wide</b> and glide into the box in 0.42 s after the kick.</li><li><b>Zoom:</b> pinch on phone, slider and wheel on PC. A pinch never starts a kick.</li><li><b>Penalty camera pulled back:</b> man 5.5% &rarr; 4% of the screen height.</li></ul></div></div>
+<div class="row"><span class="lab l-half">Coming (not on branch)</span><div class="dt"><ul><li><b>Byline crosses</b> start wide and glide into the box, like corners.</li><li><b>Cutbacks side-on</b> and tighter: 59 m away (was 123 m).</li><li><b>Tight angles</b> get a FIFA-style camera over the taker&rsquo;s shoulder (33 m, man 49 px tall).</li></ul></div></div>
+<figure><img src="img/p2-look.jpg" alt="Approved look" loading="lazy"><figcaption>One-on-one, the approved look. Look at the thin outline on the men.</figcaption></figure>
+<div class="shots"><figure><img src="img/p2-corner.jpg" alt="Corner glide" loading="lazy"><figcaption>Corner, halfway through the glide.</figcaption></figure><figure><img src="img/p2-pen.jpg" alt="Penalty before and after" loading="lazy"><figcaption>Penalty, before (left) and after (right).</figcaption></figure></div>
+<details><summary>COMING: byline, cutback and tight-angle stills</summary><div class="shots"><figure><img src="img/p2-byline.jpg" alt="Byline glide" loading="lazy"><figcaption>COMING: byline cross in flight.</figcaption></figure><figure><img src="img/p2-cutback.jpg" alt="Cutback side-on" loading="lazy"><figcaption>COMING: cutback, side-on, 59 m.</figcaption></figure><figure><img src="img/p2-fifa.jpg" alt="Tight angle FIFA camera" loading="lazy"><figcaption>COMING: tight angle, over the shoulder.</figcaption></figure></div></details></div>
+
+<h2 class="c-bug"><i></i>Found, not fixed</h2>
+<ul class="n">
+<li><div class="hd">Some served chances have an offside team-mate <span class="pill p-amb">measured</span></div><div class="dt">7 of 60 one-on-ones and 5 of 60 through balls.</div></li>
+<li><div class="hd">Garden walking is slow, and doors freeze <span class="pill p-amb">from Mikey&rsquo;s video</span></div><div class="dt">10 to 25 fps while walking. 1 to 3 second freezes at doors. A speed job is queued.</div></li>
+<li><div class="hd">Early-game boots are very cheap <span class="pill p-amb">Harry decides</span></div><div class="dt">&#9733;8 for a first boot in non-league. See item 2.</div></li>
+</ul>
+<div class="box"><div class="t" style="color:var(--ink3)">Rules now</div><p>Nothing goes live until Harry says so. No new version toggles: unfinished work goes on test pages.</p></div>
+<div class="box"><div class="t" style="color:var(--ink3)">What I saw, measured, or worked out</div><p><b>Seen (stills):</b> shop pictures, settings, 3D look, corner, penalty, and the coming shop and camera stills. <b>Measured:</b> offside counts (60 served chances each). <b>Worked out from code, not played:</b> boot prices. <b>Not seen:</b> any of it on a phone.</p></div>
+
+<h2 class="c-add"><i></i>12 Oct 2026, 3D match + look</h2>
+<div class="strip">
+<div class="s"><b>82%&rarr;100%</b><span>of chances where the 3D screen shows every player and post the 2D shows (78 chances)</span></div>
+<div class="s"><b>172&rarr;33 px</b><span>how far the 3D ball sits from its 2D spot</span></div>
+<div class="s"><b>1.8 m</b><span>every player, on every 3D screen (was 1.8 to 4 m)</span></div>
+<div class="s"><b>6</b><span>pull requests live today (#711 to #716)</span></div>
+</div>
+<div class="box a"><div class="t">Not seen on a phone</div><p>Everything below is live, but none of it has been judged on a phone yet. Pictures come from a build machine with no graphics chip.</p></div>
+<div class="box g"><div class="t">The headline: one size, one camera</div><p>Before, the same chance drew a man at 1.8 m, 2.4 m, 2.9 m or up to 4 m tall, depending on which camera path ran. Now every player is 1.8 m on every 3D screen. Only the camera moves. See item 4.</p></div>
+<div class="box"><div class="t" style="color:var(--ink3)">Check these</div><ul style="margin:0;padding-left:18px;font-size:14px;color:var(--ink2)"><li>Career match, 3D, Low then Medium: the pitch colour and the goal net (match &#9881; sheet)</li><li>Any chance in 3D: every player and the posts are on screen, no stand in the way</li><li>3D match: each player has his own build, hair, skin and boots</li><li>Penalty and free kick in 3D: closer camera, the taker runs up from behind the ball</li><li>Keeper head is below the bar</li><li>Settings: the Old 3D camera row is gone</li></ul></div>
+<div class="card"><h3>1. Medium and Low look better <span class="pill p-grn">#711 #712 #713</span></h3><div class="row"><span class="lab l-half">Problem</span><div class="dt">Low quality looked flat and washed out next to High. Medium crowds and boards shimmered, and the goal net crawled.</div></div><div class="row"><span class="lab l-next">Why</span><div class="dt">Low and Medium used cheaper colour and shadow settings that dropped most of High&rsquo;s look.</div></div><div class="row"><span class="lab l-done">Fix</span><div class="dt"><ul><li><b>Low</b> gets High&rsquo;s colour at day, golden hour and night, plus a vignette and short soft shadows. Its pitch shading and grass are closer to High.</li><li><b>Medium</b> gets sharper crowds and boards, and a goal net that does not shimmer.</li></ul></div></div><figure><img src="img/t-low.jpg" alt="Low, before and after: golden hour, day, night. Look at the colour." loading="lazy"><figcaption>Low, before and after: golden hour, day, night. Look at the colour.</figcaption></figure><figure><img src="img/t-sheet.jpg" alt="Golden hour: High, Medium, Low side by side." loading="lazy"><figcaption>Golden hour: High, Medium, Low side by side.</figcaption></figure><figure><img src="img/t-net.jpg" alt="Medium goal net up close. No shimmer." loading="lazy"><figcaption>Medium goal net up close. No shimmer.</figcaption></figure></div><div class="card"><h3>2. The 3D camera frames what the 2D shows <span class="pill p-grn">#714</span></h3><div class="row"><span class="lab l-half">Problem</span><div class="dt">The 3D screen often left out players and posts that the 2D shows. The ball sat far from where the 2D puts it. The stand sometimes blocked the view, and a black band showed.</div></div><div class="row"><span class="lab l-next">Why</span><div class="dt">The 3D camera chose its own frame instead of using the 2D frame.</div></div><div class="row"><span class="lab l-done">Fix</span><div class="dt">The 3D camera now frames exactly what the 2D shows. Style A players with the Home player&rsquo;s look are the default in the 3D match, and each player has his own look (build by position, hair, skin, boots). 3D quality is now in the match &#9881; sheet.<div class="bars"><div class="bar"><span class="lb">Everything in frame</span><div class="track"><div class="fill was" style="width:82%"></div><div class="fill now " style="width:100%"></div></div><span class="vv">100% <s>81.9%</s></span></div><div class="bar"><span class="lb">Ball off its 2D spot (px)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now " style="width:19%"></div></div><span class="vv">33 px <s>172</s></span></div></div></div></div><figure><img src="img/c-1v1.jpg" alt="One-on-one: 2D, old 3D, new 3D. Look at who is on screen." loading="lazy"><figcaption>One-on-one: 2D, old 3D, new 3D. Look at who is on screen.</figcaption></figure><figure><img src="img/c-looks.jpg" alt="Each man his own look in the match (High)." loading="lazy"><figcaption>Each man his own look in the match (High).</figcaption></figure></div><div class="card"><h3>3. Real sizes and set pieces <span class="pill p-grn">#715</span></h3><div class="row"><span class="lab l-half">Problem</span><div class="dt">The keeper&rsquo;s head showed above the crossbar. Penalties and free kicks were far away. The penalty taker stood beside the ball. Players looked soft on Medium.</div></div><div class="row"><span class="lab l-next">Why</span><div class="dt">Men, keeper and goal were scaled by separate rules that did not agree.</div></div><div class="row"><span class="lab l-done">Fix</span><div class="dt"><ul><li>Everyone is real size now, so the keeper&rsquo;s head is under the bar.</li><li>Penalties and free kicks get a closer camera (taker about 5.5% of the screen, goal, keeper and wall kept).</li><li>The taker stands behind the ball and plays the real run-up and strike.</li><li>Players are sharper on Medium.</li></ul></div></div><figure><img src="img/s-pen.jpg" alt="Penalty, closer camera. Look at the keeper under the bar." loading="lazy"><figcaption>Penalty, closer camera. Look at the keeper under the bar.</figcaption></figure><figure><img src="img/s-fk.jpg" alt="Free kick: wall and goal still in frame." loading="lazy"><figcaption>Free kick: wall and goal still in frame.</figcaption></figure><figure><img src="img/s-runup.jpg" alt="Taker: stance, run-up, strike." loading="lazy"><figcaption>Taker: stance, run-up, strike.</figcaption></figure></div><div class="card"><h3>4. One real size everywhere, one camera <span class="pill p-grn">#716</span></h3><div class="row"><span class="lab l-half">Problem</span><div class="dt">The same chance drew a man at 1.8 m, 2.4 m, 2.9 m or up to 4 m tall, depending on which camera path ran. Two cameras and a Settings row (Old 3D camera) made it worse.</div></div><div class="row"><span class="lab l-next">Why</span><div class="dt">Size was tied to the camera and the screen, so each path scaled the men differently.</div></div><div class="row"><span class="lab l-done">Fix</span><div class="dt">Every player, keeper, ball and goal is one fixed real size on every 3D screen. Only the camera moves. The Old 3D camera setting and the extra cameras are gone. A test fails if any size ever follows the camera, screen or chance.<div class="bars"><div class="bar"><span class="lb">Man height, old camera (m)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now " style="width:62%"></div></div><span class="vv">1.8 <s>2.88</s></span></div><div class="bar"><span class="lb">Man height, broadcast (m)</span><div class="track"><div class="fill was" style="width:84%"></div><div class="fill now " style="width:62%"></div></div><span class="vv">1.8 <s>2.43</s></span></div></div></div></div><div class="shots"><figure><img src="img/z-b4.jpg" alt="BEFORE, old camera: man 2.88 m, keeper 2.45 m." loading="lazy"><figcaption>BEFORE, old camera: man 2.88 m, keeper 2.45 m.</figcaption></figure><figure><img src="img/z-b3.jpg" alt="BEFORE, broadcast camera: 2.43 m." loading="lazy"><figcaption>BEFORE, broadcast camera: 2.43 m.</figcaption></figure><figure><img src="img/z-a.jpg" alt="AFTER: 1.80 m, same chance." loading="lazy"><figcaption>AFTER: 1.80 m, same chance.</figcaption></figure></div><figure><img src="img/z-strip.jpg" alt="Camera close, middle, far: the camera moves, men stay 1.8 m." loading="lazy"><figcaption>Camera close, middle, far: the camera moves, men stay 1.8 m.</figcaption></figure></div><h2 class="c-nxt"><i></i>Coming next, not live yet</h2>
+<ul class="n">
+<li><div class="hd">New shop layout</div><div class="dt">Bottom bar, 1|3|5, For You, trophy badge, Buy button. Not on branch Harry.</div></li>
+<li><div class="hd">Byline glide, side-on cutbacks, FIFA tight-angle camera</div></li>
+<li><div class="hd">Offside team-mate fix, garden speed job</div></li>
+<li><div class="hd">2D keeper and goal scale fix</div></li>
+</ul>
+<h2 class="c-nxt"><i></i>Previous versions</h2>
+<p class="intro">The earlier rounds are kept below, unchanged.</p>
+<div class="strip">
+  <div class="s"><b>8</b><span>new stylised people (6 players, 2 managers in suits)</span></div>
+  <div class="s"><b>232k&rarr;46k</b><span>shadow triangles drawn each frame in the career match</span></div>
+  <div class="s"><b>61%&rarr;83%</b><span>of the time the ball is in frame in Free Roam</span></div>
+  <div class="s"><b>29%&rarr;94%</b><span>of the shop screen used by items (best new layout)</span></div>
+</div>
+
+<div class="box a"><div class="t">Not seen on a phone</div><p>Nothing from this round has been judged on a phone. Pictures come from a machine with no graphics chip.</p></div>
+
+<!-- 1 HANDOFF -->
+<div class="box g"><div class="t">For Leo &amp; Mikey</div>
+<p><b>Merge main to get everything.</b> For 3D work, paste this to your Claude:</p>
+<pre id="mdtxt" style="margin:8px 0;padding:12px;background:var(--card2);border:1px solid var(--line);border-radius:10px;font:12.5px/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word;color:var(--ink);user-select:all"># 3D work on Knowitball: read first
+Before anything: merge main into your branch (git fetch origin main &amp;&amp; git merge origin/main).
+Then read docs/3D_HANDBOOK.md and .claude/skills/3d-building/SKILL.md.
+
+## Golden rules
+- Merge main first, every session.
+- Every GLTFLoader must call withMeshopt (lib/star/three3d/meshopt.ts).
+- Every new 3D file needs a POLICY line in scripts/perf3d/shrink-models.mjs.
+- Every new look gets a New | Old toggle (lib/star/gameVersions.ts). Old stays frozen.
+- The 2D match is the brain. 3D only draws what it decides.
+- Fully 3D games own their physics in lib/star/play3d. Never import lib/star/canvasEngine.ts.
+- Never touch the one-engine guard lists (KNOWN_COPIES, CEILING, canary).
+- No real brands. No new realtime lights.
+
+## Where things live
+- Tools and sources: tools/styletest, tools/modeltest, tools/models3d, tools/anims3d, tools/mocap3d
+- Finished 3D files: public/star/...
+- Commit your sources under tools/&lt;area>/ with a README. Scratch folders are lost.
+
+## Open jobs
+See the "Handover (9 Oct)" section of docs/3D_HANDBOOK.md.</pre>
+<button class="copy" id="cpmd" type="button">Copy markdown</button></div>
+
+<!-- 2 HIGGSFIELD -->
+<h2 class="c-hand"><i></i>Higgsfield</h2>
+<div class="box g"><div class="t">Higgsfield login</div>
+<div class="login"><code id="hfmail">haluvowry@gmail.com</code><button class="copy" id="cp" type="button">Copy</button></div>
+<p>Shared account, about <b>167 credits</b> left. Keep at least <b>60</b> for each other. Ask Harry for the password (never write it anywhere). Used for item 3D models, concept art and UI art.</p>
+</div>
+
+<!-- 3 HEADLINES -->
+<h2 class="c-add"><i></i>Hourly update</h2>
+<ul class="n">
+<li><div class="hd">LIVE: lag pass 4 <span class="pill p-grn">live</span></div><div class="dt">Scenes load only the heads they show (8 &rarr; 3&ndash;5). Bench "GET OUT THERE" freezes are split into slices (after-number not measured yet). Faces kept full quality, because packing turned them grey.</div><div class="bars"><div class="bar"><span class="lb">Career 3D, 2nd visit (s)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:53%"></div></div><span class="vv">~3 <s>5.7</s></span></div><div class="bar"><span class="lb">Drill ready (s)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:80%"></div></div><span class="vv">5.2 <s>6.5</s></span></div><div class="bar"><span class="lb">Cut scene ready (s)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:77%"></div></div><span class="vv">4.4 <s>5.7</s></span></div><div class="bar"><span class="lb">Memory per body (MB)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:25%"></div></div><span class="vv">2.8 <s>11</s></span></div><div class="bar"><span class="lb">Human model (MB)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:26%"></div></div><span class="vv">13 <s>50</s></span></div><div class="bar"><span class="lb">Garden late shaders</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:23%"></div></div><span class="vv">5 <s>22</s></span></div></div></li>
+<li><div class="hd">LIVE: every house size has its rooms <span class="pill p-grn">live</span></div><div class="dt">Camera further back and higher, never through walls. Sofa with shape and cushions. Each room opens on a set shot until you move.</div>
+<ul style="margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:14px"><li><b>Villa:</b> garage (your cars as full-quality models, glossy paint, a bike) and a games room (pool table).</li><li><b>Estate:</b> cinema (your club badge on screen, starry ceiling), gym, garden terrace (jet, horse, fountain).</li><li><b>Penthouse:</b> terrace with skyline and a car behind glass. <b>Flat:</b> hallway nook.</li></ul>
+<div class="shots"><figure><img src="img/villa-rooms.jpg" alt="Villa rooms" loading="lazy"><figcaption>Villa.</figcaption></figure><figure><img src="img/estate-rooms.jpg" alt="Estate rooms" loading="lazy"><figcaption>Estate.</figcaption></figure></div></li>
+<li><div class="hd">LIVE: loading times cut <span class="pill p-grn">live</span></div><div class="dt">Home no longer flashes the old flat figure. The Showroom boots "green blob" is gone.</div><div class="bars"><div class="bar"><span class="lb">Casino open (s)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:35%"></div></div><span class="vv">7.2 <s>20.3</s></span></div><div class="bar"><span class="lb">Garden (s)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:64%"></div></div><span class="vv">12.3 <s>19.1</s></span></div><div class="bar"><span class="lb">3D shop memory (MB)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:36%"></div></div><span class="vv">103 <s>288</s></span></div><div class="bar"><span class="lb">Pictures (MB)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:7%"></div></div><span class="vv">1.4 <s>20.6</s></span></div><div class="bar"><span class="lb">Garden server trips</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:5%"></div></div><span class="vv">2 <s>37</s></span></div></div><div class="dt">The ball picture went from 1,035 KB to 11 KB.</div></li>
+<li><div class="hd">LIVE: a house with 4 rooms you walk through <span class="pill p-grn">live</span></div><div class="dt">The House-size home has a hallway, lounge, dressing room and trophy room. One is built at a time, with a short fade at each door and dots to jump. Your kits, watches, cans, wardrobe, suit and trophies fill them. Settings &rarr; Look &rarr; "House: New | Old".</div><figure><img src="img/house-rooms.jpg" alt="House rooms" loading="lazy"><figcaption>The four rooms.</figcaption></figure></li>
+<li><div class="hd">LIVE: clean animations in every mode <span class="pill p-grn">live</span></div><div class="dt">Drills, garden, shop, house, casino. Sprint no longer starts on the wrong foot.</div><div class="bars"><div class="bar"><span class="lb">Move-change pops</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:0%"></div></div><span class="vv">0 <s>4</s></span></div><div class="bar"><span class="lb">Foot slide (cm/m)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:70%"></div></div><span class="vv">5.0 <s>7.1</s></span></div><div class="bar"><span class="lb">Worst foot slide</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:45%"></div></div><span class="vv">14.5 <s>32.3</s></span></div><div class="bar"><span class="lb">About-turn, per frame</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:12%"></div></div><span class="vv">10.8&deg; <s>90&deg;</s></span></div><div class="bar"><span class="lb">Style A sprint lean</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:74%"></div></div><span class="vv">14.8&deg; <s>20&deg;</s></span></div></div><div class="dt">About-turn now settles in 0.37 s. The worst pop before was 53&deg; in one frame; now there are none.</div></li>
+<li><div class="hd">LIVE: keeper dives and slides are smoother <span class="pill p-grn">live</span></div><div class="dt">Biggest one-frame snap in all 9 keyed clips: <b>86&ndash;90&deg; &rarr; 32&ndash;41&deg;</b>.</div></li>
+<li><div class="hd">LIVE: Style A kit <span class="pill p-grn">live</span></div><div class="dt">Name and number placed right on all six heads and builds. Small chest number, weave, seams, collar, cuffs. 24 clubs get stripes, hoops or sleeves.</div><figure><img src="img/kit-sheet.jpg" alt="Kit back" loading="lazy"><figcaption>Kit backs: name and number.</figcaption></figure></li>
+<li><div class="hd">LIVE: cut scenes get a camera and music pass <span class="pill p-grn">live</span></div><div class="dt">Wide, then over-shoulder, then prop or face. Weak moves hidden within 1 s. No face fills the frame. Farewell has its own stadium scene. 5 music beds made in code (not yet listened to). Settings &rarr; Look &rarr; "Cut-scene camera: New | Old".</div><figure><img src="img/cutcam-v2.jpg" alt="Cut-scene camera" loading="lazy"><figcaption>Signing scene, new camera.</figcaption></figure></li>
+<li><div class="hd">LIVE: faster app start <span class="pill p-grn">live</span></div><div class="dt">3D scenes can no longer hang on the spinner.</div><div class="bars"><div class="bar"><span class="lb">First download (MB)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:59%"></div></div><span class="vv">0.94 <s>1.6</s></span></div><div class="bar"><span class="lb">First button (s)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:75%"></div></div><span class="vv">2.7 <s>3.6</s></span></div><div class="bar"><span class="lb">Kick-off (s)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:47%"></div></div><span class="vv">0.8 <s>1.7</s></span></div><div class="bar"><span class="lb">Worst ball-flight frame (ms)</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:55%"></div></div><span class="vv">83 <s>150</s></span></div></div></li>
+<li><div class="hd">LIVE: lag pass 3 (memory halved) <span class="pill p-grn">live</span></div><div class="dt">Career match memory <b>149 MB &rarr; 72 MB</b>. 3D effects are prepared up front, so the first shot no longer stutters.</div>
+<div class="bars"><div class="bar"><span class="lb">Match memory</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:48%"></div></div><span class="vv">72 MB <s>149</s></span></div></div></li>
+<li><div class="hd">LIVE: all 186 shop pictures redone <span class="pill p-grn">live</span></div><div class="dt">Sharp pictures in Showroom + Feed. The card now says "3D model &middot; level N shown".</div></li>
+<li><div class="hd">LIVE: 2D Style A sprites are the default <span class="pill p-grn">live</span></div><div class="dt">Settings &rarr; Look &rarr; "2D players: Style A | Current". Classic keeps Current. Casual clothes in the house keep the Style A body.</div></li>
+<li><div class="hd">In progress: cut-scene camera and music</div><div class="dt">Wide, then mid, then close in each scene. The trophy close-up face is smeared; being fixed. House expansion is queued after these.</div><figure><img src="img/cutcam.jpg" alt="Cut-scene camera" loading="lazy"><figcaption>Cut-scene camera pass, work in progress.</figcaption></figure></li>
+<li><div class="hd">LIVE: Showroom + Feed is the New shop <span class="pill p-grn">live</span></div><div class="dt">Swipe up/down for category, sideways for item. Items fill <b>94.5%</b> of the screen (was ~30%). 2 taps to buy. All 186 item pictures are sharp 1440&times;1080.</div><figure><img src="img/shop-live.jpg" alt="The new shop." loading="lazy"><figcaption>The new shop.</figcaption></figure></li>
+<li><div class="hd">LIVE: Style A is the player look everywhere in 3D <span class="pill p-grn">live</span></div><div class="dt">Glow bug fixed. Casual clothes in the house keep your Style A player.</div><figure><img src="img/house-toon.jpg" alt="House wardrobe with the Style A player." loading="lazy"><figcaption>House wardrobe with the Style A player.</figcaption></figure></li>
+<li><div class="hd">LIVE: the 2D match uses Style A players by default <span class="pill p-grn">live</span></div><div class="dt">Switch back: Settings &rarr; Look &rarr; "2D players: Current | Style A". Classic keeps Current.</div><figure><img src="img/styleA-2d.jpg" alt="2D match, Style A." loading="lazy"><figcaption>2D match, Style A.</figcaption></figure></li>
+<li><div class="hd">LIVE: 3D never leaves a blank pitch <span class="pill p-grn">live</span></div><div class="dt">It falls back to 2D with an amber "3D &#8635;" button to retry.</div></li>
+<li><div class="hd">In progress</div><div class="dt">Lag fix (chance-start freezes and memory). Style A kit: number on the upper back done, fabric texture next. Re-check of every place.</div><figure><img src="img/kit-back.jpg" alt="Style A kit, back." loading="lazy"><figcaption>Style A kit, back.</figcaption></figure></li>
+<li><div class="hd">LIVE now: the big merge</div><div class="dt">Career 3D camera (6%, 48&ndash;50&deg;), 3D | 2D button and cog, Free Roam call, your house, speed pass 2, new Home screen.</div></li>
+<li><div class="hd">Style A: glowing squares fixed <span class="pill p-grn">fixed</span></div><div class="dt">Light gave full strength at grazing angles, making white edge pixels that the glow effect blew up. Fixed version is now live.</div>
+<div class="shots"><figure><img src="img/specks-fixed.jpg" alt="Clean garden" loading="lazy"><figcaption>Garden, Style A, no specks.</figcaption></figure><figure><img src="img/ingame.jpg" alt="In game" loading="lazy"><figcaption>3D Old, 3D Style A, 2D Style A.</figcaption></figure></div></li>
+</ul>
+<h2 class="c-add"><i></i>This round (9 Oct)</h2>
+
+<ul class="n">
+<li>
+<div class="hd">Style A: every 3D person has the new look</div>
+<div class="dt">Eight stylised heads (two managers in suits), fixed hands. Everywhere in 3D, plus Home and title. Old saves get a head automatically.</div>
+<div class="bars">
+<div class="bar"><span class="lb">Triangles / person</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:69%"></div></div><span class="vv">14.5k <s>20.9k</s></span></div>
+<div class="bar"><span class="lb">Idle wrist bend</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:36%"></div></div><span class="vv">8&deg; <s>22&deg;</s></span></div>
+<div class="bar"><span class="lb">Idle elbow bend</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:48%"></div></div><span class="vv">13&deg; <s>27&deg;</s></span></div>
+</div>
+<figure><img src="img/styleA.jpg" alt="Stylised heads and hands" loading="lazy"><figcaption>Look at the hands: open, not clawed. Stand-alone test, not a phone.</figcaption></figure>
+<details><summary>In progress</summary><ul><li>The 2D match gets a re-skin in Style A (same frames, same timings).</li><li>Cut scenes move over.</li><li>Scenes load only the heads they need (now all 8, 1.8 MB).</li></ul></details>
+</li>
+<li>
+<div class="hd">Career 3D camera: smaller players, higher angle, room to drag</div>
+<div class="dt">Players about <b>6%</b> of the screen. Angle <b>48 to 50&deg;</b>. <b>40 to 45%</b> of the pitch below the ball. No top-down corners. Smoother animation. New 3D | 2D button and settings cog in the match.</div>
+<figure><img src="img/cam3d.jpg" alt="Camera sheet" loading="lazy"><figcaption>Left to right: before, players at 8%, players at 6% (chosen). Look at the grass under the ball.</figcaption></figure>
+</li>
+<li>
+<div class="hd">Free Roam: the camera follows the ball, and you can CALL for it</div>
+<div class="dt">Phone button or F on PC. Two Touch stick is out of the way.</div>
+<div class="bars">
+<div class="bar"><span class="lb">Ball in frame</span><div class="track"><div class="fill was" style="width:61%"></div><div class="fill now" style="width:83%"></div></div><span class="vv">83% <s>61%</s></span></div>
+<div class="bar"><span class="lb">Ball in frame, away</span><div class="track"><div class="fill was" style="width:50%"></div><div class="fill now" style="width:82%"></div></div><span class="vv">82% <s>50%</s></span></div>
+<div class="bar"><span class="lb">Goal in frame</span><div class="track"><div class="fill was" style="width:97%"></div><div class="fill now warn" style="width:58%"></div></div><span class="vv">58% <s>97%</s></span></div>
+</div>
+<figure><img src="img/freeroam.jpg" alt="Free Roam sheet" loading="lazy"><figcaption>Free Roam frames. The goal is in view less often: the trade for following the ball. 93% once you have had it 1.5 s.</figcaption></figure>
+</li>
+<li>
+<div class="hd">Your house in 3D</div>
+<div class="dt">Six tiers, wardrobe and mirror, trophy cabinet, cars on the drive.</div>
+<figure><img src="img/house.jpg" alt="The house" loading="lazy"><figcaption>Room, wardrobe, cabinet, cars on the drive. Test page only.</figcaption></figure>
+</li>
+<li>
+<div class="hd">Speed pass 2: same picture, less work</div>
+<div class="dt">Plus: the speed manager no longer drops quality for one-off stalls (it went 1&rarr;2&rarr;3&rarr;4, now 1&rarr;2&rarr;1).</div>
+<div class="bars">
+<div class="bar"><span class="lb">Career triangles</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:54%"></div></div><span class="vv">512k <s>946k</s></span></div>
+<div class="bar"><span class="lb">Shadow triangles</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:20%"></div></div><span class="vv">46k <s>232k</s></span></div>
+<div class="bar"><span class="lb">Career draws</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:82%"></div></div><span class="vv">80 <s>98</s></span></div>
+<div class="bar"><span class="lb">Cut-scene draws</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:69%"></div></div><span class="vv">81 <s>117</s></span></div>
+<div class="bar"><span class="lb">Garden memory</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:86%"></div></div><span class="vv">74 MB <s>86</s></span></div>
+</div>
+</li>
+<li>
+<div class="hd">Shop: Harry chose "Showroom + Feed"</div>
+<div class="dt">Swipe up/down for categories, left/right for items, full-screen sharp pictures. Being built. New 2D shop with Higgsfield UI art came first, then four layout concepts.</div>
+<div class="bars">
+<div class="bar"><span class="lb">Today</span><div class="track"><div class="fill now bad" style="width:29%"></div></div><span class="vv">29%</span></div>
+<div class="bar"><span class="lb">A</span><div class="track"><div class="fill now" style="width:92%"></div></div><span class="vv">92%</span></div>
+<div class="bar"><span class="lb">B</span><div class="track"><div class="fill now" style="width:85%"></div></div><span class="vv">85%</span></div>
+<div class="bar"><span class="lb">C</span><div class="track"><div class="fill now" style="width:61%"></div></div><span class="vv">61%</span></div>
+<div class="bar"><span class="lb">D</span><div class="track"><div class="fill now" style="width:94%"></div></div><span class="vv">94%</span></div>
+</div>
+<figure><img src="img/shop-concepts.jpg" alt="Shop layout concepts" loading="lazy"><figcaption>Today, then A to D. Bars show how much of the screen is actual items.</figcaption></figure>
+</li>
+<li>
+<div class="hd">Home screen New: big stats, player centre stage</div>
+<div class="dt">Rep, Fame, Goals and Assists tiles. Goal removed. Style A player going in.</div>
+<figure><img src="img/home-screen.jpg" alt="Home screen old and new" loading="lazy"><figcaption>Old vs New.</figcaption></figure>
+</li>
+</ul>
+
+<!-- 4 EARLIER -->
+<h2 class="c-fix"><i></i>Earlier in the 3D rebuild (8 Oct)</h2>
+
+<div class="box"><div class="t" style="color:var(--blue)">Headline: the real game now plays in 3D</div>
+<p>The 2D game still decides every result. A 3D camera draws what it decides. Touches go to the 2D game. Switch: Settings &rarr; Look &rarr; "Match view 3D".</p>
+<figure><img src="img/realgame.jpg" alt="Real game scale" loading="lazy"><figcaption>Old camera, men at 1.15&times;, men at 1.6&times;. Bottom: player light, old vs new.</figcaption></figure></div>
+
+<h2 class="c-fix" style="margin-top:22px"><i></i>Fixed</h2>
+<ul class="n">
+<li><div class="hd">Keeper dived with no shot</div><div class="dt">About 3 dives a run &rarr; <b>0</b> in 60 runs.</div></li>
+<li><div class="hd">Passes to a runner missed</div><div class="dt">Clean 14 m passes: <b>32 &rarr; 73</b> of 80. Passes now lead the runner.</div></li>
+<li><div class="hd">Keeper missing on build-up chances</div><div class="dt">Now always in goal: 0 frames without him in 44,000.</div></li>
+<li><div class="hd">3D stuck on round 2</div><div class="dt">The 3D view never saw your finger lift. Fixed. A drag also now aims the shot, not tilts the camera.</div></li>
+<li><div class="hd">Free Roam keeper unstoppable</div><div class="dt">Shots on target that go in against a 70 keeper at 18 m: <b>2% &rarr; 23%</b>. Corners 0% &rarr; 53%.</div></li>
+<li><div class="hd">Keeper dive snapped flat</div><div class="dt">He now crouches and pushes off. The kick has a backswing and left-footers use the left foot. Feet no longer slide.</div></li>
+<li><div class="hd">Shop player's head tilted</div><div class="dt">Head was held 13&deg; to one side, skin too orange, camera twitchy (45.8&deg; &rarr; 22.9&deg; per 100 px).</div></li>
+<li><div class="hd">Running neck and arms</div><div class="dt">Neck lean 11&ndash;17&deg; &rarr; 5&deg;. Wrist bend 82&deg; &rarr; 12&deg;.</div></li>
+<li><div class="hd">Edges were blurry at Medium</div><div class="dt">Every quality level now smooths edges at 1.25&times; or more.</div></li>
+<li><div class="hd">Career 3D crash with the new body</div><div class="dt">Found by the career play-through. Fixed and live.</div></li>
+<li><div class="hd">Free Roam camera spun too fast</div><div class="dt">Turn rate 519&deg;/s &rarr; 75&deg;/s, later 60&deg;/s.</div></li>
+<li><div class="hd">Empty grass in the chance view</div><div class="dt">Long range: <b>53% &rarr; 38%</b> empty grass. Settings &rarr; Look &rarr; "Chance framing: Zoom | Old".</div>
+<figure><img src="img/grass.jpg" alt="Grass zoom" loading="lazy"><figcaption>Long range: Old vs Zoom.</figcaption></figure></li>
+<li><div class="hd">Headers &amp; Volleys keeper</div><div class="dt">Close strikes now get a reflex save: goals per 10 shots 5.7 &rarr; 4.1.</div></li>
+</ul>
+
+<h2 class="c-add"><i></i>Added</h2>
+<ul class="n">
+<li><div class="hd">The 3D handbook and skill</div><div class="dt">See the start of this page. Rig files, concept pictures and test tools were rescued into the repo.</div></li>
+<li><div class="hd">Real motion capture</div><div class="dt">36 real human motion clips. Feet slide at most 2.3 cm. Setting: "Motion: Mocap | Old". 18 more clips since: keeper dives, tackles, chest and thigh control, walk, sit, talk.</div></li>
+<li><div class="hd">Cut-scene Director</div><div class="dt">One system turns a game event into a film scene. 16 event kinds, 18 camera shots, 9 places.</div></li>
+<li><div class="hd">Style Testing page</div><div class="dt">Every look and scene side by side at <code>/star-style-dev</code>.</div></li>
+<li><div class="hd">Day, Night and Golden hour looks</div><div class="dt">Night distance to the target look 2.48 &rarr; 0.72. Day 1.27 &rarr; 0.60 (0 = equal). Golden hour is the default.</div>
+<figure><img src="img/daynight.jpg" alt="Day, golden hour, night" loading="lazy"><figcaption>Top: your iPhone shots. Bottom: after. Left to right: Day, Golden hour, Night.</figcaption></figure></li>
+<li><div class="hd">Pace and sprint</div><div class="dt">Stick push sets walk, jog, run, sprint. Pace 0 sprints at 20.2 km/h, pace 100 at 29.5. A full sprint drains about 6 s of stamina. New Pace Sprint drill (30 m with a chaser).</div>
+<figure><img src="img/pacesprint.jpg" alt="Pace sprint" loading="lazy"><figcaption>Pace Sprint on phone and PC.</figcaption></figure></li>
+<li><div class="hd">Drill camera like a practice arena</div><div class="dt">Over your shoulder, turns by itself at most 60&deg;/s. Two Touch grades each touch: Perfect, Good, Heavy, Scuffed. Back button on every drill.</div>
+<figure><img src="img/drillcam.jpg" alt="Drill camera" loading="lazy"><figcaption>Top: phone. Bottom: PC.</figcaption></figure></li>
+<li><div class="hd">Kicks by power</div><div class="dt">Soft kick is a side-foot. A full-power kick has a big backswing.</div>
+<div class="shots"><figure><img src="img/motion-dive.jpg" alt="Dive" loading="lazy"><figcaption>Dive: before he goes flat in one frame. After he crouches and pushes off.</figcaption></figure><figure><img src="img/motion-kick.jpg" alt="Kick" loading="lazy"><figcaption>Kick: the leg draws back first.</figcaption></figure></div></li>
+<li><div class="hd">Speed manager in every 3D place</div><div class="dt">Nothing gets lower until the phone is under 45 fps for 2.5 s. Still frames stay sharp. Admin frame meter with <code>?fps=1</code>.</div></li>
+<li><div class="hd">New 3D shop models</div><div class="dt">32 of 41 items are proper models: 6 cars, bike, jet, 9 homes, watches, jewellery, 7 boots, the can. New Family Car. 268 credits spent in total on shop models.</div>
+<figure><img src="img/shop-cars.jpg" alt="Shop cars" loading="lazy"><figcaption>Shop cars, before and after.</figcaption></figure></li>
+<li><div class="hd">Greener garden</div><div class="dt">Leaf trees, hay, flowers, golden-hour light.</div></li>
+<li><div class="hd">Style A chosen</div><div class="dt">Harry picked cel-shaded as the standard look, then Stylised heads.</div>
+<figure><img src="img/styletest.jpg" alt="Style test" loading="lazy"><figcaption>The style test: you picked A.</figcaption></figure></li>
+</ul>
+
+<h2 class="c-chg"><i></i>Changed</h2>
+<ul class="n">
+<li><div class="hd">Men are bigger in the real 3D game</div><div class="dt">1.6&times; life size (later cut to about 6% of screen in the career view).</div></li>
+<li><div class="hd">2D match: outfield men and ball at 0.8&times;</div><div class="dt">The keeper stays full size.</div></li>
+<li><div class="hd">New chances out of Preview</div><div class="dt">Every phone is back on the team's own chances. New can still be picked by hand.</div></li>
+<li><div class="hd">Primary look: Golden hour</div><div class="dt">Default time of day in the Real game.</div></li>
+<li><div class="hd">Tried and dropped</div><div class="dt">Framing 3D like the 2D chance window gave more empty grass (75 to 80%).</div></li>
+</ul>
+
+<!-- 5 KNOWN ISSUES -->
+<h2 class="c-bug"><i></i>Known issues</h2>
+<ul class="n">
+<li><div class="hd">Garage car models are still a bit blotchy up close <span class="pill p-amb">open</span></div></li>
+<li><div class="hd">The estate horse doesn't move <span class="pill p-amb">open</span></div></li>
+<li><div class="hd">Bench freeze: the after-number is not measured <span class="pill p-amb">not measured</span></div></li>
+<li><div class="hd">Still nothing seen on a phone <span class="pill p-red">not seen</span></div></li>
+<li><div class="hd">Career match revisit is about 2 s slower <span class="pill p-amb">being fixed</span></div></li>
+<li><div class="hd">A ~350 ms freeze when coming on from the bench <span class="pill p-amb">open</span></div></li>
+<li><div class="hd">The match engine is still in the first download <span class="pill p-amb">blocked on Harry</span></div><div class="dt">Moving it needs a change to the one-engine check.</div></li>
+<li><div class="hd">If the amber 3D &#8635; shows often, memory is the cause <span class="pill p-amb">fix in progress</span></div><div class="dt">Lag fix is in progress.</div></li>
+<li><div class="hd">Style A shirt is flat colour <span class="pill p-amb">next</span></div></li>
+<li><div class="hd">Nothing this round has been seen on a phone <span class="pill p-red">not seen</span></div><div class="dt">Every picture is from a machine with no graphics chip.</div></li>
+<li><div class="hd">The 3D | 2D button and the cog were never clicked in a browser <span class="pill p-red">not seen</span></div><div class="dt">Built and type-checked only.</div></li>
+<li><div class="hd">A small white dot on the grass in the 3D match <span class="pill p-amb">not traced</span></div><div class="dt">Present before and after the camera change.</div></li>
+<li><div class="hd">Chance-start stalls still happen <span class="pill p-amb">hidden</span></div><div class="dt">The speed manager now ignores them. They are not removed.</div></li>
+<li><div class="hd">All 8 heads load in every scene (1.8 MB) <span class="pill p-amb">fix next</span></div><div class="dt">Heavy on a first match on mobile data.</div></li>
+<li><div class="hd">Shop Style tab look is not good enough <span class="pill p-amb">being replaced</span></div><div class="dt">Harry: "70% of this isn't even the shop". The Showroom + Feed layout replaces it.</div></li>
+<li><div class="hd">2D match: 4 moves can only be near-matched in Style A <span class="pill p-amb">half fixed</span></div><div class="dt">Sprint, kick and the keeper dives. Their source files were never saved.</div></li>
+<li><div class="hd">Garden: house and horse are still cartoon. Shop wall units never seen. <span class="pill p-amb">open</span></div></li>
+<li><div class="hd">Ginger head shows in the wrong hair colour <span class="pill p-amb">open</span></div></li>
+</ul>
+
+<!-- 6 NEXT -->
+<h2 class="c-nxt"><i></i>Next</h2>
+<ul class="n">
+<li><div class="hd">Harry plays the round on his phone</div><div class="dt">Career 3D camera, Free Roam, the house, the Home screen. Tune from what he says.</div></li>
+<li><div class="hd">Build the Showroom + Feed shop</div></li>
+<li><div class="hd">Finish Style A</div><div class="dt">2D match re-skin, cut scenes, only load the heads a scene needs, more suit heads.</div></li>
+<li><div class="hd">Remove the chance-start stalls and fix the shop draw count</div></li>
+<li><div class="hd">Leo carries on the open jobs in the handbook</div></li>
+</ul>
+
+<details><summary>Check these on your phone (ticks stay on this device)</summary>
+<div id="ticks"></div></details>
+
+<footer>Private page. Only you can open it until Harry shares it. Every "seen" is a still on a build machine; nothing is yet judged on a phone.</footer>
+</div>
+
+<script>
+(function(){
+var btn=document.getElementById('cp'),el=document.getElementById('hfmail');
+btn.addEventListener('click',function(){
+  var t=el.textContent.trim();
+  function sel(){var r=document.createRange();r.selectNodeContents(el);var s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Selected: press copy';}
+  try{navigator.clipboard.writeText(t).then(function(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy'},1800)},sel)}catch(e){sel()}
+});
+var b2=document.getElementById('cpmd'),m=document.getElementById('mdtxt');
+b2.addEventListener('click',function(){var x=m.textContent;function sel(){var r=document.createRange();r.selectNodeContents(m);var s=getSelection();s.removeAllRanges();s.addRange(r);b2.textContent='Selected: press copy';}
+try{navigator.clipboard.writeText(x).then(function(){b2.textContent='Copied';setTimeout(function(){b2.textContent='Copy markdown'},1800)},sel)}catch(e){sel()}});
+var items=['Career 3D match: Settings > Look > 3D camera New. Play a chance: size, angle, drag room','3D | 2D button and cog during a match','Free Roam: camera follows the ball, CALL button','Two Touch: stick out of the way','Garden > the house door: wardrobe, mirror, cabinet, drive','Home screen New: four tiles, player centre stage','Settings > Look > Player style New | Old in the shop, garden and casino','Speed: add ?fps=1 to a 3D page. Any lag at the start of a chance?'];
+var k='v11ticks',st={};try{st=JSON.parse(localStorage.getItem(k)||'{}')}catch(e){}
+var box=document.getElementById('ticks');
+items.forEach(function(t,i){
+  var d=document.createElement('label');d.className='tick';
+  var c=document.createElement('input');c.type='checkbox';c.checked=!!st[i];
+  c.addEventListener('change',function(){st[i]=c.checked;try{localStorage.setItem(k,JSON.stringify(st))}catch(e){}});
+  var s=document.createElement('span');s.textContent=t;d.appendChild(c);d.appendChild(s);box.appendChild(d);
+});
+})();
+</script>

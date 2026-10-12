@@ -34,14 +34,7 @@ let cached: MatchPlayersStyle | null = null;
 const listeners = new Set<() => void>();
 
 export function matchPlayersStyleLook(): MatchPlayersStyle {
-  if (cached) return cached;
-  let v: string | null = null;
-  try {
-    v = typeof localStorage === "undefined" ? null : localStorage.getItem(KEY);
-    if (v === null && typeof localStorage !== "undefined" && localStorage.getItem(KEY_V1) === "follow") v = "follow";
-  } catch { v = null; }
-  cached = v && (VALUES as readonly string[]).includes(v) ? (v as MatchPlayersStyle) : MATCH_PLAYERS_STYLE_DEFAULT;
-  return cached;
+  return "styleA"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 /** Has this phone ever stored a choice? (gameVersions: a Classic phone picks up Old once.) */
 export function matchPlayersStyleStored(): boolean {

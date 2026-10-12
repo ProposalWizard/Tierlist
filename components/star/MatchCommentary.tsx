@@ -135,7 +135,25 @@ export default function MatchCommentary({
         }
       `}</style>
 
-      {radar && <div className="shrink-0 pr-[3.75rem]">{radar}</div>}
+      {/* With the radar on, the clock sits ABOVE it in its own row, a shade
+          darker so it reads easily, and never covers the mini-pitch (Harry,
+          12 Oct 2026: the floating clock sat on top of the radar). */}
+      {radar && (
+        <div className="flex shrink-0 items-center justify-end gap-1.5 bg-black px-2 py-1" data-match-clock-row>
+          {onOpenScores && (
+            <button onClick={onOpenScores} aria-label="Live scores"
+              className="flex items-center gap-0.5 rounded-md border border-white/10 bg-gray-950 px-2 py-1 text-[10px] font-black uppercase text-white">
+              Scores <span aria-hidden className="text-[10px]">▸</span>
+            </button>
+          )}
+          <button onClick={onSpeed} aria-label={`Commentary speed ${speed}x`}
+            className="flex items-center gap-1.5 rounded-md border border-white/10 bg-gray-950 px-2 py-1">
+            <span className={`font-black leading-none tabular-nums ${minuteLabel && minuteLabel.includes("+") ? "text-[12px] text-amber-300" : "text-sm text-white"}`}>{minuteLabel ?? minute}&#39;</span>
+            <span className={`text-[9px] font-black leading-none ${speed > 1 ? "text-amber-300" : "text-white/45"}`}>{"▶".repeat(speed >= 8 ? 4 : speed === 4 ? 3 : speed)}</span>
+          </button>
+        </div>
+      )}
+      {radar && <div className="shrink-0">{radar}</div>}
 
       {/* ── The commentary ── */}
       <div
@@ -177,7 +195,7 @@ export default function MatchCommentary({
       {/* The minute, and the speed control on the same plate — the number and
           how fast it is moving are one idea. Floats over the feed rather than
           reserving its own row, so the panel underneath scrolls past it. */}
-      <button
+      {!radar && <button
         onClick={onSpeed}
         aria-label={`Commentary speed ${speed}x`}
         className="absolute right-2 top-2 z-20 flex w-12 flex-col items-center justify-center rounded-lg border border-white/10 bg-gray-900/85 py-1 shadow-md backdrop-blur-sm transition hover:bg-gray-800"
@@ -188,10 +206,10 @@ export default function MatchCommentary({
         >
           {"▶".repeat(speed >= 8 ? 4 : speed === 4 ? 3 : speed)}
         </span>
-      </button>
+      </button>}
 
       {/* Every other score in the division, right now (item 35). */}
-      {onOpenScores && (
+      {onOpenScores && !radar && (
         <button
           onClick={onOpenScores}
           aria-label="Live scores"

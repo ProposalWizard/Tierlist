@@ -35,14 +35,10 @@ const overrides = new Map<string, string>();
 const listeners = new Set<() => void>();
 
 function read<T extends string>(s: LookSetting<T>): T {
+  // Decided, no toggle (12 Oct 2026): a phone's stored choice is ignored;
+  // only a dev page's override (setLookOverride) changes it.
   const o = overrides.get(s.key);
-  if (o) return o as T;
-  if (!cache.has(s.key)) {
-    let v: string | null = null;
-    try { v = typeof localStorage === "undefined" ? null : localStorage.getItem(s.key); } catch { v = null; }
-    cache.set(s.key, v && (s.values as readonly string[]).includes(v) ? v : null);
-  }
-  return (cache.get(s.key) as T | null) ?? s.fallback;
+  return (o as T | undefined) ?? s.fallback;
 }
 function write<T extends string>(s: LookSetting<T>, v: T): void {
   try { localStorage.setItem(s.key, v); } catch { /* in-memory still changes */ }
@@ -83,22 +79,26 @@ export function setLookOverride(o: { players?: MatchPlayersLook; ball?: MatchBal
 /** The set pieces: the man over the ball is drawn, because he takes it. */
 export const SET_PIECE_KINDS: ReadonlySet<string> = new Set(["penalty", "free_kick", "corner"]);
 
+/** Build-up chances, where you play the pass (and the dribble): you are drawn. */
+export const BUILD_UP_KINDS: ReadonlySet<string> = new Set(["midfield_pass", "buildup", "through_ball", "cutback", "byline_cross"]);
+
 /**
- * THE ONE RULE for whether your own man is drawn (Harry, 3 Oct 2026):
- * "Remove the user's player from non-set-piece highlights and drills."
+ * THE ONE RULE for whether your own man is drawn. No toggle (Harry, 12 Oct
+ * 2026; the "Your player in open play" row is gone):
  *
  *  - A feature that has taken you off the picture (`scene.you === false`)
  *    keeps you off, as before.
- *  - The Classic view, or "Your player in open play: Shown": drawn.
- *  - Penalties, free kicks and corners (you are the taker): drawn — which
- *    covers the trial and training penalty and free-kick drills too.
- *  - Everything else (open play and the other drills): not drawn. The ball,
- *    with the ring under it, is "you". The drag, the aim, the strike and the
- *    captain's taps are untouched: only the picture of the man is left out.
+ *  - The Classic view: drawn.
+ *  - Set pieces (penalties, free kicks, corners): drawn, so you see the run-up.
+ *  - Build-up chances, where you play the pass (BUILD_UP_KINDS): drawn.
+ *  - Shooting chances (one-on-ones, tight angles, long range, volleys,
+ *    headers): hidden. The ball, with the ring under it, is "you". The drag,
+ *    the aim and the strike are untouched: only the picture is left out.
+ *  A dev page can still force "shown" with setLookOverride({ you: "shown" }).
  */
 export function showYouFigure(kind: string, ctx: { newView: boolean; sceneYou?: boolean }): boolean {
   if (ctx.sceneYou === false) return false;
   if (!ctx.newView) return true;
   if (youInOpenPlay() === "shown") return true;
-  return SET_PIECE_KINDS.has(kind);
+  return SET_PIECE_KINDS.has(kind) || BUILD_UP_KINDS.has(kind);
 }

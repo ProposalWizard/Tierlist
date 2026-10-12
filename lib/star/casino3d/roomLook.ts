@@ -41,8 +41,7 @@ if (typeof window !== "undefined") {
 }
 
 export function casinoRoomLook(): CasinoRoomLook {
-  if (stored === undefined) stored = read();
-  return stored;
+  return "new"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 export function setCasinoRoomLook(v: CasinoRoomLook): void {
