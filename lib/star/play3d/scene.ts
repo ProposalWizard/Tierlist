@@ -17,6 +17,7 @@ import type { World } from "./world";
 import type { P3, Act3 } from "./player";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, toonHeadsFor, type Person3D, type FacePic, type PlayerModel } from "../people3d";
 import { people3dLook } from "../look3d";
+import { matchPlayerStyle } from "../style3d/toon/matchLook";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
 import { governScene } from "../three3d/governThree";
 import { acquireRenderer } from "../three3d/perf";
@@ -126,7 +127,7 @@ export async function createPlay3DScene(
   const [animG] = await Promise.all([
     loadPeople3d(loader, "anims", body),
     // only the heads on this pitch (toonHeadsFor; Style A)
-    ...Array.from(want).map(async (m) => { models.set(m, await loadPeople3d(loader, m, body, toonHeadsFor(world.players.map((p) => ({ who: String(p.id), you: p === world.you() }))))); }),
+    ...Array.from(want).map(async (m) => { models.set(m, await loadPeople3d(loader, m, body, toonHeadsFor(world.players.map((p) => ({ who: String(p.id), you: p === world.you() }))), matchPlayerStyle())); }),
   ]);
   const fb: any = await loadAnims3d(loader, "football").catch((e) => { console.error("football clips failed to load", e); return null; });
 

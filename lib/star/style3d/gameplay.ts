@@ -20,6 +20,7 @@ import { disposeObject3D } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
+import { matchPlayerStyle } from "./toon/matchLook";
 import { addClips, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import { newNumberCanvas, drawShirtNumber } from "../signing3dTextures";
 import { createStyleKit, glowTexture, glowSprite, type StyleKit } from "./kit";
@@ -99,7 +100,7 @@ export async function createStyleGameplay(container: HTMLElement, o: StyleGamepl
   const loader = await withMeshopt(new GLTFLoader());
   const body = people3dLook();
   const [model, animG, fb] = await Promise.all([
-    loadPeople3d(loader, "player", body), loadPeople3d(loader, "anims", body),
+    loadPeople3d(loader, "player", body, undefined, matchPlayerStyle()), loadPeople3d(loader, "anims", body),
     loadAnims3d(loader, "football").catch(() => null),
   ]);
 
