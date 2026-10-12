@@ -54,7 +54,7 @@ import { TODS } from "./real/tod";
 import { bcPose } from "./broadcastCam";
 import { SIZE3D } from "./size3d";
 import { SMALL_MEN } from "./smallMen";
-import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, type Match2DCamera } from "./match2dCam";
+import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -1312,7 +1312,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const placeMatch2D = (f: EngineFrame) => {
     const { viewport: vp, facing, tilt, W, H } = f.cam;
     if (!(W > 0 && H > 0)) return;
-    const sp = usesSetPieceCam(f.kind) && !!f.ball;
+    const corner = usesCornerCam(f.kind) && !!f.ball;
+    const sp = (usesSetPieceCam(f.kind) || corner) && !!f.ball;
     const key = `${f.kind}|${facing}|${tilt ? tilt.deg : 0}|${Math.round(W)}|${Math.round(H)}`;
     // a new set piece: a new ball spot while aiming (a shootout's next kick from the same spot keeps its camera)
     const spKey = sp && f.ball && f.phase === "aim" ? `${key}|${f.ball.x.toFixed(1)},${f.ball.y.toFixed(1)}` : m2.spKey;
@@ -1322,7 +1323,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (sp && f.ball && (spKey !== m2.spKey || !m2.sp)) {
       m2.spKey = spKey;
       const kp = f.keeper ? { x: f.keeper.x, y: f.keeper.y } : null;
-      m2.sp = solveSetPieceCam(fr2, setPieceKeep({ x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale), { x: f.ball.x, y: f.ball.y }, mScale);
+      // a corner: its own closer camera (match2dCam.ts CORNER_CAM), camera only
+      m2.sp = corner
+        ? solveCornerCam(fr2, { x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale)
+        : solveSetPieceCam(fr2, setPieceKeep({ x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale), { x: f.ball.x, y: f.ball.y }, mScale);
     }
     if (!sp) { m2.sp = null; m2.spKey = ""; }
     const c = sp && m2.sp ? m2.sp : key === m2.key && m2.pick ? solveMatch2D(fr2, MATCH2D, m2.pick) : solveMatch2D(fr2, MATCH2D);
@@ -1334,7 +1338,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     camera.lookAt(pose.look[0], 0, pose.look[2]);
     camera.fov = c.fov;
     camera.aspect = W / H;
-    camera.near = sp ? Math.max(0.3, c.minDepth * 0.3) : Math.max(0.1, c.minDepth * 0.8);
+    camera.near = sp && !corner ? Math.max(0.3, c.minDepth * 0.3) : Math.max(0.1, c.minDepth * 0.8); // a corner: nothing nearer than the framed men (the taker under the camera in A)
     camera.far = c.D + 500;
     camera.updateProjectionMatrix();
     down3.set(c.ax, 0, c.az);
@@ -1625,6 +1629,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       { const db = renderer.getDrawingBufferSize(outlineRes); setPeople3dOutlineRes(THREE, db.x, db.y); } // the ink line keeps its screen pixels (smallMen.ts)
       lastFrame = f;
       placeCamera(f);
+      if ((window as unknown as { __ev3dDiag?: unknown }).__ev3dDiag) (window as unknown as { __ev3dProject?: unknown }).__ev3dProject = (x: number, y: number, z: number) => { tmpV.set(x - CX, z, y).project(camera); return { X: (tmpV.x * 0.5 + 0.5) * size.w, Y: (0.5 - tmpV.y * 0.5) * size.h }; };
       {
         // the rim light sits beyond the play, opposite the camera, low
         const lx = camera.position.x, lz = camera.position.z;

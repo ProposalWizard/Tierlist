@@ -424,3 +424,52 @@ export function setPieceKeep(ball: BcPoint, figures: { sid: string; x: number; y
   }
   return pts;
 }
+
+/**
+ * THE CORNER CAMERA (Harry, 12 Oct 2026, on a corner still with the camera 111 m away: "this still
+ * looks rlly bad"). The 2D's wide frame has to fit the flag AND the box, so every man was a dot.
+ * Corners get their own closer camera, like penalties and free kicks. Camera only: nothing scaled.
+ *   A: the box only (its men, the keeper, the goal); the taker just off screen.
+ *   B: the box from lower (38–42°) and turned ~35° more side-on; the taker at an edge.
+ *   C: the set-piece way: ball, taker, the box's men, keeper and goal all kept, 45–60° down.
+ * `pick` is the one in the game ("off": the 2D's own frame, as before).
+ */
+export const CORNER_CAM = {
+  pick: "C" as "A" | "B" | "C" | "off",
+  margin: 0.05,
+  /** The box's men: within this far of the goal line and of the goal's middle, m. */
+  boxDepth: 20,
+  boxHalfW: 24,
+};
+export function usesCornerCam(kind: string): boolean { return kind === "corner" && CORNER_CAM.pick !== "off"; }
+
+export function solveCornerCam(
+  f: Frame2D, ball: BcPoint, figures: { sid: string; x: number; y: number; team: string }[], keeper: BcPoint | null,
+  man: MatchScale, variant: "A" | "B" | "C" = CORNER_CAM.pick === "off" ? "C" : CORNER_CAM.pick,
+): Match2DCamera {
+  const hm = MATCH2D.manH * man.man, gh = 2.44 * man.goal, gw = 3.66 * man.goal;
+  const box: BcPoint[] = [];
+  for (const px of [CX - gw, CX + gw]) box.push({ x: px, y: 0, z: 0 }, { x: px, y: 0, z: gh });
+  if (keeper) box.push({ ...keeper, z: 0 }, { ...keeper, z: MATCH2D.manH * man.keeper });
+  for (const g of figures) {
+    if (g.sid === "you") continue;
+    if (g.y < CORNER_CAM.boxDepth && Math.abs(g.x - CX) < CORNER_CAM.boxHalfW) box.push({ x: g.x, y: g.y, z: 0 }, { x: g.x, y: g.y, z: hm });
+  }
+  const taker = figures.find((g) => g.sid === "you");
+  const withTaker: BcPoint[] = [...box, { ...ball, z: 0 }, ...(taker ? [{ x: taker.x, y: taker.y, z: 0 }, { x: taker.x, y: taker.y, z: hm }] : [])];
+  const base = azimuth2D(f.facing);
+  const azs = variant === "B"
+    ? [35, -35].map((d) => { const r = (d * Math.PI) / 180; return { ax: base.ax * Math.cos(r) - base.az * Math.sin(r), az: base.ax * Math.sin(r) + base.az * Math.cos(r) }; })
+    : [base];
+  const elevs = variant === "B" ? [38, 42] : variant === "A" ? [50, 55, 60] : [45, 50, 55, 60];
+  const keep = variant === "A" ? box : withTaker;
+  const mid = { x: CX, y: 8 };
+  let best: (SpCam & { share: number }) | null = null;
+  for (const a of azs) for (const e of elevs) for (const fov of [26, 32, 38]) {
+    const c = fitPoints(f.W, f.H, keep, a.ax, a.az, e, fov, CORNER_CAM.margin);
+    const share = leanedManShare(c, f.W, f.H, mid, hm, 0);
+    if (!best || share > best.share) best = { ...c, share };
+  }
+  const b = best!;
+  return { ...b, k: man.man, man: b.share, anchorShare: bcProject(b, f.W, f.H, ball).fr, extra: 0 } as Match2DCamera;
+}
