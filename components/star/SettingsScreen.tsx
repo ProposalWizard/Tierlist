@@ -5,6 +5,7 @@ import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
 import { devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
+import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { SettingsTop, SettingsGroups } from "./DeviceSettings";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import DevSkipPanel from "./DevSkipPanel";
@@ -36,9 +37,10 @@ import { SetCard, SetHead, SetNote, Switch } from "./settingsKit";
  * in, and each block rising in on open. Visual only — every handler, save
  * path, switch and dev tool is exactly the one it was before.
  *
- * 8 Oct 2026 (Harry picked the "hybrid"): Version on top (Classic |
- * Standard | Preview), the four quick switches, then folded groups — Match,
- * 3D world, Screens, Career & saves. Developer tools are their own tab,
+ * 8 Oct 2026 (Harry picked the "hybrid"): the four quick switches, then
+ * folded groups — Match, 3D match camera, Screens, Career & saves. (The
+ * Version picker went 12 Oct 2026; so did the Photo and face-editor cards,
+ * hidden until the photo revamp.) Developer tools are their own tab,
  * testers and admins only. The rows live in DeviceSettings.tsx.
  */
 
@@ -131,7 +133,10 @@ export default function SettingsScreen({
   // ── Career & saves: only here, inside a career ──
   const careerAndSaves = (
     <>
-      <SetCard tone={glow}>
+      {/* Hidden until the photo revamp (Harry, 12 Oct 2026): photo faces are
+          off (PHOTO_FACES, faceStyle.ts), so the Photo picker and the face
+          editors are not shown. The code stays for the revamp. */}
+      {PHOTO_FACES && <SetCard tone={glow}>
         <SetHead>Photo</SetHead>
         <SetNote>Change the photograph on your graphics, or take it back off.</SetNote>
         <div className="mt-2">
@@ -142,7 +147,7 @@ export default function SettingsScreen({
             number={career.squadNumber}
           />
         </div>
-      </SetCard>
+      </SetCard>}
 
       {onSetLook3d && (
         <SetCard tone={glow}>
@@ -175,7 +180,7 @@ export default function SettingsScreen({
         </SetCard>
       )}
 
-      <SetCard tone={glow}>
+      {PHOTO_FACES && <SetCard tone={glow}>
         <SetHead>Face editors</SetHead>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <PressButton variant="primary" size="none" onClick={onOpenFaceEditor} className="rounded-xl py-2 text-[11px] font-black">
@@ -185,7 +190,7 @@ export default function SettingsScreen({
             Fake Faces →
           </PressButton>
         </div>
-      </SetCard>
+      </SetCard>}
 
       <SaveSlotsPanel
         saves={saves}
@@ -245,7 +250,7 @@ export default function SettingsScreen({
         <RiseIn index={next()}>
           <SettingsGroups
             glow={glow}
-            extra={[{ id: "career", title: "Career & saves", sub: "Photo, run-ups, face editors, saves, exit", content: careerAndSaves }]}
+            extra={[{ id: "career", title: "Career & saves", sub: PHOTO_FACES ? "Photo, run-ups, face editors, saves, exit" : "Your look, run-ups, saves, exit", content: careerAndSaves }]}
           />
         </RiseIn>
         {/* A save a cheat has touched (lib/star/godMode.ts). Shown to everyone. */}

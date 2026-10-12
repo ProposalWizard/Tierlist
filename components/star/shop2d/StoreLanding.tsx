@@ -18,12 +18,15 @@ import { baseIdOf } from "@/lib/star/shopData";
 import { formatMoney } from "@/lib/star/money";
 import type { HubPhase } from "../HomeHub";
 import { art } from "./parts";
+import { useShopPicsLook, shopPic3d } from "@/lib/star/shopPicsLook";
 // Not imported from ShowroomShop: that screen is lazy-loaded; this page is not.
 const ICONS = ["cans", "boots", "drip", "gadgets", "cars", "homes", "holiday"];
 
 export default function StoreLanding({ career, onOpen }: { career: CareerState; onOpen: (ph: HubPhase) => void; sponsorsLock?: string }) {
   const boot = career.currentBoot;
   const lv = Math.max(1, Math.min(5, boot.level ?? 1));
+  const pics = useShopPicsLook();
+  const bootPic = (pics === "new" && shopPic3d("boot", baseIdOf(boot), lv)) || `/star/shop2d/items/boot-${baseIdOf(boot)}-L${lv}.webp`;
   return (
     <button type="button" onClick={() => onOpen("shop-kib")} data-store-landing data-tour="shop-style"
       className="relative block h-[calc(100dvh-170px)] min-h-[420px] w-full overflow-hidden text-left">
@@ -31,7 +34,7 @@ export default function StoreLanding({ career, onOpen }: { career: CareerState; 
       <div aria-hidden className="absolute inset-0" style={{ background: "radial-gradient(70% 45% at 50% 42%, rgba(255,255,255,.14), transparent 70%), linear-gradient(180deg, rgba(5,8,15,.3), rgba(5,8,15,.9) 85%)" }} />
       <div className="relative flex h-full flex-col items-center justify-center px-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`/star/shop2d/items/boot-${baseIdOf(boot)}-L${lv}.webp`} alt="" draggable={false} className="w-full max-w-[420px] select-none object-contain" />
+        <img src={bootPic} alt="" draggable={false} className="w-full max-w-[420px] select-none object-contain" />
         <div className="mt-2 text-[34px] font-black uppercase leading-none text-white">Shop</div>
         <div className="mt-1 text-[13px] font-black tabular-nums text-amber-300">★{formatMoney(career.money)}</div>
         <div className="mt-4 flex gap-2">

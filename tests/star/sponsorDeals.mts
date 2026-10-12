@@ -10,7 +10,7 @@ import {
   type BrandOffer, type BrandDeal, type BrandsState,
 } from "../../lib/star/sponsorDeals.ts";
 import { mulberry32 } from "../../lib/star/season.ts";
-import { weeklyWageFor } from "../../lib/star/economy.ts";
+import { weeklyWageFor, bootPriceForWage } from "../../lib/star/economy.ts";
 import type { CareerState, MatchStats, StarPlayer } from "../../lib/star/types.ts";
 
 let fail = 0;
@@ -51,7 +51,9 @@ const famous = (c: CareerState, fame: number): CareerState => ({ ...c, fame, own
     check(!poor.ok, "you can't walk away if you can't pay the full guaranteed value");
     const rich = walkAway({ ...r.career, money: 10_000 }, d.id);
     check(rich.ok && rich.career.money === 10_000 - 8000 && brandsOf(rich.career).deals.length === 0, "walking away costs ★8,000 here: all 80 weeks");
-    check(bootPrice(r.career, 1000) === 750 && bootPrice(c0, 1000) === 1000, "a boots deal takes 25% off boots");
+    // Boots are priced off your wage like the cans (Harry, 12 Oct 2026); a deal takes 25% off that.
+    const full = bootPriceForWage(1000, c0.contract.wage);
+    check(bootPrice(c0, 1000) === full && bootPrice(r.career, 1000) === Math.max(1, Math.round((full * 0.75) / 5) * 5), "a boots deal takes 25% off boots");
   }
 }
 

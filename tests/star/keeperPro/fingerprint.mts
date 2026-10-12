@@ -21,8 +21,11 @@ export function keeperFingerprint(): { hash: string; n: number } {
   return { hash: h.toString(16), n };
 }
 
-/** The hash recorded on 11 Oct 2026, before Keeper pro existed. */
-export const KEEPER_FINGERPRINT_BEFORE = "d8dc5b7d";
+/** The hash of the keeper from before Keeper pro. Recorded 11 Oct 2026 as
+ *  d8dc5b7d on the New chance library; re-recorded 12 Oct 2026 on the drawn
+ *  chances when the library was deleted (the harness now serves drawn ones).
+ *  The keeper code it fingerprints did not change. */
+export const KEEPER_FINGERPRINT_BEFORE = "c808f663";
 
 if (process.argv[1]?.endsWith("fingerprint.mts")) {
   const store = new Map<string, string>();

@@ -31,8 +31,7 @@ if (typeof window !== "undefined") {
 }
 
 export function houseLook(): HouseLook {
-  if (stored === undefined) stored = read();
-  return stored;
+  return "new"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 /** Has this phone ever stored a choice? (A Classic phone takes Old once: gameVersions.ts.) */

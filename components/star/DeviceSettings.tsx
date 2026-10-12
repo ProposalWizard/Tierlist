@@ -1,23 +1,17 @@
 "use client";
+import { useCamZoom, setCamZoom, useCamHeightTest, setCamHeightTest, ZOOM_MIN, ZOOM_MAX, HEIGHT_TEST_MIN, HEIGHT_TEST_MAX } from "@/lib/star/style3d/camZoom";
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
-import { getPostMatchReactionsEnabled, setPostMatchReactionsEnabled } from "@/lib/star/postMatchPrefs";
 import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
-import { useCameraTilt, setCameraTilt, type CameraTilt } from "@/lib/star/cameraTilt";
-import { useYouInOpenPlay, setYouInOpenPlay } from "@/lib/star/newLook";
+import { useMatchView3d, setMatchView3d } from "@/lib/star/matchView3d";
 import { GAMEPLAY_SWITCHES, type GameplaySwitch } from "@/lib/star/gameplayVersion";
-import {
-  GAME_VERSIONS, GAME_VERSION_LABEL, LOOK_ROW_IDS, VERSION_PRESETS,
-  applyGameVersion, gameVersionOf, setLookRow, useLook, type LookRowId,
-} from "@/lib/star/gameVersions";
-import { useIsTester } from "@/lib/useIsAdmin";
+import { LOOK_ROWS, changedFromDefault, setLookRow, useLook, type LookRowId } from "@/lib/star/lookRows";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetNote, SetSection, SetToggle } from "./settingsKit";
 import Quality3dRow from "./Quality3dRow";
-import { useControlChoice, setControlChoice, detectScheme, type ControlChoice } from "@/lib/star/play3d/controlScheme";
 
 /**
  * THE SETTINGS THAT BELONG TO THIS DEVICE, NOT TO A SAVE.
@@ -103,61 +97,15 @@ function HomeScreenTip() {
 }
 
 
-// ── THE HYBRID SETTINGS (Harry, 8 Oct 2026) ─────────────────────────────
+// ── SETTINGS (Harry, 8 Oct 2026; trimmed 12 Oct 2026) ──────────────────
 //
-//   Version   Classic | Standard | Preview — one tap sets every New | Old
-//             switch (lib/star/gameVersions.ts). "Custom" once one is
-//             changed by hand.
 //   Quick     full screen, sound, 3D quality, skip the line-up.
-//   Groups    folded: Match, 3D world, Screens, then the screen's own
+//   Groups    folded: Match, 3D match camera, Screens, then the screen's own
 //             (Career & saves, or Saves on the title). One open at a time.
-// Every row is still stored on this phone only; saves are never touched.
-
-/** The Version card: three versions, and how far this phone is from them. */
-export function VersionCard({ glow }: { glow: string }) {
-  const look = useLook();
-  const state = gameVersionOf(look);
-  const nearest = GAME_VERSION_LABEL[state.nearest];
-  return (
-    <SetCard tone={glow} className="px-3 py-2.5" data-version-card>
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="text-[15px] font-black leading-tight text-white">Version</div>
-        <div className="text-[11px] font-semibold leading-tight text-white/85">Sets all {LOOK_ROW_IDS.length} look and gameplay switches</div>
-      </div>
-      <div className="mt-2">
-        <div className="grid grid-cols-3 gap-0.5 rounded-xl bg-black/30 p-1" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,.5)" }} role="radiogroup" aria-label="Version">
-          {GAME_VERSIONS.map((v) => {
-            const on = state.version === v;
-            return (
-              <button
-                key={v}
-                role="radio"
-                aria-checked={on}
-                data-version={v}
-                onClick={() => applyGameVersion(v)}
-                className={`kib-press relative rounded-lg px-1.5 py-1.5 text-[10px] font-black uppercase tracking-wide min-[380px]:text-[11px] ${on ? "bg-white/15 text-white" : "text-white/55"}`}
-                style={on ? { boxShadow: "inset 0 1px 0 rgba(255,255,255,.16), 0 2px 6px rgba(0,0,0,.35)" } : undefined}
-              >
-                {GAME_VERSION_LABEL[v]}
-                {on && <span className="absolute inset-x-2 -bottom-[3px] h-[3px] rounded-full bg-emerald-400" style={{ boxShadow: "0 0 8px rgba(52,211,153,.8)" }} />}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      {state.version === "custom" ? (
-        <p className="mt-2 text-[12px] font-black text-amber-300" data-version-state="custom">
-          ● Custom · {nearest} + {state.changes} change{state.changes === 1 ? "" : "s"} ·{" "}
-          <button onClick={() => applyGameVersion(state.nearest)} className="kib-press underline">Undo</button>
-        </p>
-      ) : (
-        <p className="mt-2 text-[12px] font-black text-emerald-300" data-version-state={state.version}>
-          ✓ {nearest}, no changes of your own
-        </p>
-      )}
-    </SetCard>
-  );
-}
+// 12 Oct 2026: every settled look lost its row ("decide things and be done
+// with it"), and the Version picker (Classic | Standard) went with the cut-
+// scene rows ("the new cut scenes will be staying"). See CLAUDE.md →
+// "Decided, no toggle".
 
 /** The first screen's switches: full screen, sound, 3D quality, skip the line-up. */
 export function QuickSwitches({ glow, fullscreen }: {
@@ -177,29 +125,23 @@ export function QuickSwitches({ glow, fullscreen }: {
   );
 }
 
-/** One New | Old row. A dot marks a row you changed by hand. */
 /** The v0.15 gameplay round's switches: Old by default, "All new" = how the round finished. */
-const V015_ALL_NEW: [LookRowId, string][] = [
-  ["actionCamera", "new"], ["keeperPro", "new"], ["shotsPro", "new"], ["knucklePower", "new"], ["ballPhysics", "new"],
-  ["matchFlow", "new"], ["matchRadar", "new"], ["dribbleDuels", "new"], ["dribbleStyle", "firstperson"],
-];
-const V015_ALL_OLD: [LookRowId, string][] = V015_ALL_NEW.map(([id]) => [id, id === "dribbleStyle" ? "firstperson" : "old"]);
+const V015_ROWS: LookRowId[] = ["keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "matchRadar"];
 
+/** One New | Old row. A dot marks a row you changed by hand. */
 function LookRow({ id, tabs, note, look }: {
   id: LookRowId;
   tabs: readonly (readonly [string, string])[];
   note?: React.ReactNode;
   look: Record<LookRowId, string>;
 }) {
-  const state = gameVersionOf(look);
-  const changed = state.version === "custom" && look[id] !== VERSION_PRESETS[state.nearest][id];
-  const label = id in GAMEPLAY_SWITCHES ? GAMEPLAY_SWITCHES[id as GameplaySwitch].label : ROW_LABEL[id];
+  const changed = changedFromDefault(id, look);
   return (
     <div className="border-b border-white/10 py-2 last:border-b-0" data-look-row={id}>
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-1.5 text-[14px] font-bold leading-tight text-white">
           {changed && <span aria-label="changed by you" className="h-2 w-2 shrink-0 rounded-full bg-amber-300" />}
-          {label}
+          {LOOK_ROWS[id].label}
         </span>
         <SegTabs className="w-[150px] shrink-0" value={look[id]} onChange={(v) => setLookRow(id, v)} tabs={tabs} />
       </div>
@@ -207,14 +149,6 @@ function LookRow({ id, tabs, note, look }: {
     </div>
   );
 }
-
-const ROW_LABEL: Record<LookRowId, string> = {
-  matchView: "Match view", chanceFraming: "Chance framing", wideChances: "Wide chances", matchView3d: "Match view 3D", matchPlayers: "Players in the match", ball: "Ball", chances: "Chances",
-  animations: "Animations", keepers: "Keepers", keeperPro: "Keeper pro (testing)", dribble: "Dribble runs", dribble3d: "Dribble runs 3D", dribbleStyle: "Dribble style", dribbleDuels: "Dribble duels (testing)", clearances: "Clearances", shotsPro: "Shots (testing)", knucklePower: "Knuckleball & power shot (testing)", ballPhysics: "Ball physics (testing)", chanceMix: "Chance mix (testing)", kaneDrawings: "Kane drawings (testing)", actionCamera: "Match camera", matchFlow: "Match flow (testing)", matchRadar: "Match radar (testing)",
-  garden: "3D garden", house: "House", look3d: "3D look", shopPlayer: "3D shop player", people3d: "3D people", humanBody: "3D body", playerStyle: "Player style", matchPlayers3d: "Players in a 3D match", tierLook3d: "3D quality look", cutscenePeople: "Cut-scene people", cutsceneCamera: "Cut-scene camera", motion: "Motion", playerLight3d: "3D player light", bossRoom: "Talk to your manager",
-  casino: "Casino", casinoLook: "Casino look", signing: "Signing scene", ui: "UI", badges: "Club badges", allSeasons: "All seasons page", ballonDorNight: "Ballon d'Or night", homeScreen: "Home screen", shop2d: "Shop",
-  ovation: "Standing ovation", ovationMoves: "Ovation greetings", drawnStyle: "Drawn-player style", sprites2d: "2D players",
-};
 
 const NEW_OLD = [["new", "New"], ["old", "Old"]] as const;
 
@@ -231,21 +165,17 @@ function PrefRow({ label, children, note }: { label: string; children: React.Rea
   );
 }
 
-/** Match: the view, its look, the chances, animations, gameplay, faces, names, reactions. */
+/** Match: the v0.15 test box, 2D or 3D, names above heads. */
 function MatchGroup() {
   const look = useLook();
-  const tilt = useCameraTilt();
-  const you = useYouInOpenPlay();
-  const tester = useIsTester();
-  const [postMatch, setPostMatch] = useState(() => getPostMatchReactionsEnabled());
-  const flipPostMatch = () => { const next = !postMatch; setPostMatch(next); setPostMatchReactionsEnabled(next); };
+  const view3d = useMatchView3d();
   const [faceStyle, setFaceStyle] = useState<FaceStyle>(loadFaceStyle);
-  const flipFace = (key: "facesEnabled" | "namesEnabled") => {
-    const next = { ...faceStyle, [key]: !faceStyle[key] };
+  const flipNames = () => {
+    const next = { ...faceStyle, namesEnabled: !faceStyle.namesEnabled };
     setFaceStyle(next);
     saveFaceStyle(next);
   };
-  const gp = (k: GameplaySwitch) => (look[k] === "new" ? GAMEPLAY_SWITCHES[k].newText : GAMEPLAY_SWITCHES[k].oldText);
+  const gp = (k: GameplaySwitch) => (look[k as LookRowId] === "new" ? GAMEPLAY_SWITCHES[k].newText : GAMEPLAY_SWITCHES[k].oldText);
   return (
     <>
       {/* Leo, 12 Oct 2026: every new thing from the v0.15 gameplay round in one place,
@@ -255,96 +185,46 @@ function MatchGroup() {
         <p className="mt-1 text-[12px] font-bold text-white">All start on Old (the game as before). All new = the game exactly as the v0.15 round finished.</p>
         <div className="mt-2 flex gap-2">
           <button className="flex-1 border-2 border-amber-300 bg-amber-400 px-2 py-1.5 text-[12px] font-black uppercase text-gray-950" data-new-round-all="new"
-            onClick={() => { for (const [id, v] of V015_ALL_NEW) setLookRow(id, v); }}>All new</button>
+            onClick={() => { for (const id of V015_ROWS) setLookRow(id, "new"); }}>All new</button>
           <button className="flex-1 border-2 border-white/40 px-2 py-1.5 text-[12px] font-black uppercase text-white" data-new-round-all="old"
-            onClick={() => { for (const [id, v] of V015_ALL_OLD) setLookRow(id, v); }}>All old</button>
+            onClick={() => { for (const id of V015_ROWS) setLookRow(id, "old"); }}>All old</button>
         </div>
-        <p className="mt-2 text-[12px] font-bold text-white">Try them without a career: <a href="/star-play-dev" className="text-amber-300 underline">Play Area</a> (camera, shots, keeper, ball) · <a href="/star-radar-dev" className="text-amber-300 underline">Match radar</a> · <a href="/star-dribble-dev" className="text-amber-300 underline">Dribble</a> · <a href="/star-tournament-dev" className="text-amber-300 underline">Tournament</a></p>
-      <LookRow id="actionCamera" look={look} tabs={NEW_OLD} note={gp("actionCamera")} />
-      <LookRow id="keeperPro" look={look} tabs={NEW_OLD} note={gp("keeperPro")} />
-      <LookRow id="shotsPro" look={look} tabs={NEW_OLD} note={gp("shotsPro")} />
-      <LookRow id="knucklePower" look={look} tabs={NEW_OLD} note={gp("knucklePower")} />
-      <LookRow id="ballPhysics" look={look} tabs={NEW_OLD} note={gp("ballPhysics")} />
-      <LookRow id="matchFlow" look={look} tabs={NEW_OLD} note={gp("matchFlow")} />
-      <LookRow id="matchRadar" look={look} tabs={NEW_OLD} note="New: a live mini-pitch above the commentary between your chances — the ball moving zone to zone in the colours of the side on it, the momentum, and a flash for shots and goals. Old: the commentary on its own." />
-      <LookRow id="dribbleDuels" look={look} tabs={NEW_OLD} note={gp("dribbleDuels")} />
-      <LookRow id="dribbleStyle" look={look} tabs={[["firstperson", "1st person"], ["topdown", "Top-down"]]} note="Leo's choice. First-person: the run behind your player's shoulder. Top-down: the same run in the normal match view, with the match's players and ball." />
+        <LookRow id="keeperPro" look={look} tabs={NEW_OLD} note={gp("keeperPro")} />
+        <LookRow id="shotsPro" look={look} tabs={NEW_OLD} note={gp("shotsPro")} />
+        <LookRow id="knucklePower" look={look} tabs={NEW_OLD} note={gp("knucklePower")} />
+        <LookRow id="ballPhysics" look={look} tabs={NEW_OLD} note={gp("ballPhysics")} />
+        <LookRow id="matchFlow" look={look} tabs={NEW_OLD} note={gp("matchFlow")} />
+        <LookRow id="matchRadar" look={look} tabs={NEW_OLD} note="New: a live mini-pitch above the commentary between your chances. Old: the commentary on its own." />
       </div>
-      <LookRow id="matchView" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="New: zoomed out, the pitch fills the screen. Classic: the close-up view." />
-      <LookRow id="chanceFraming" look={look} tabs={[["zoom", "Zoom"], ["old", "Old"]]} note="New view only. Zoom: the camera moves in on the play, less empty grass. Nobody is cut off; the players and the drag are the same. Corners stay as they are." />
-      <LookRow id="wideChances" look={look} tabs={NEW_OLD} note="New view only. New: tight angles, cutbacks and penalties are watched side-on, like corners, so the players fill the screen instead of a block of empty grass. Nobody is cut off; the players and the drag are the same." />
-      <PrefRow label="Camera angle" note="New view only. Tipped back (corners and crosses stay flat); Flat is straight down.">
-        <SegTabs className="w-[150px] shrink-0" value={String(tilt) as "20" | "30" | "0"} onChange={(v) => setCameraTilt(Number(v) as CameraTilt)} tabs={[["20", "20°"], ["30", "30°"], ["0", "Flat"]] as const} />
-      </PrefRow>
-      <LookRow id="matchView3d" look={look} tabs={[["on", "On"], ["off", "Off"]]} note="Being tested. On: your match drawn in 3D, in a full stadium. The football is the same; only the picture changes." />
-      <div className="border-b border-white/10 py-2.5"><Quality3dRow when="In a 3D match it changes when you go back to the match." /></div>
-      <LookRow id="matchPlayers" look={look} tabs={[["3d", "3D"], ["drawn", "Drawn"]]} note="New view only." />
-      <LookRow id="sprites2d" look={look} tabs={[["current", "Current"], ["stylea", "Style A"]]} note="Current: the 2D match players as they are. Style A: the same moves on the Style A body, the same height on the pitch." />
-      <LookRow id="ball" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="New view only." />
-      <PrefRow label="Your player in open play" note="New view only. Hidden: the ball is you; you still take penalties, free kicks and corners.">
-        <SegTabs className="w-[150px] shrink-0" value={you} onChange={setYouInOpenPlay} tabs={[["hidden", "Hidden"], ["shown", "Shown"]] as const} />
-      </PrefRow>
-      <LookRow id="chances" look={look} tabs={[["new", "New"], ["classic", "Classic"]]} note="Classic: your drawn chances. New (being tested): about 100 pictures of each chance with both full teams." />
-      <LookRow id="animations" look={look} tabs={NEW_OLD} note={<>New (being tested): whoever touches the ball is seen doing it — shots, passes, headers, blocks, the keeper&apos;s catch and fumble.{tester && <> <a href="/star-animations-dev" className="font-bold text-amber-300 underline">Animation test area →</a></>}</>} />
       <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
-      <LookRow id="dribble" look={look} tabs={NEW_OLD} note={gp("dribble")} />
-      <LookRow id="dribble3d" look={look} tabs={[["3d", "3D"], ["old", "Old"]]} note="Being tested. 3D: a dribble run is played top-down, in the Free Roam look, with the stick, sprint and stamina. Old: the first-person duel." />
-      <LookRow id="clearances" look={look} tabs={NEW_OLD} note={gp("clearances")} />
-      <LookRow id="chanceMix" look={look} tabs={NEW_OLD} note={gp("chanceMix")} />
-      <LookRow id="kaneDrawings" look={look} tabs={NEW_OLD} note={gp("kaneDrawings")} />
-      <SetToggle label="Player faces" on={faceStyle.facesEnabled} onClick={() => flipFace("facesEnabled")} />
-      <SetToggle label="Player names" on={faceStyle.namesEnabled} onClick={() => flipFace("namesEnabled")} />
-      <SetToggle label="Post-match reactions" on={postMatch} onClick={flipPostMatch} last />
+      <PrefRow label="Match view 3D" note="On: your match drawn in 3D, in a full stadium. The football is the same; only the picture changes.">
+        <SegTabs className="w-[150px] shrink-0" value={view3d} onChange={(v) => setMatchView3d(v)} tabs={[["on", "On"], ["off", "Off"]] as const} />
+      </PrefRow>
+      <SetToggle label="Player names" on={faceStyle.namesEnabled} onClick={flipNames} last />
     </>
   );
 }
 
-/** 3D world: garden, shop player, people, the manager's office, casino, signing. */
+/** The 3D match camera: zoom, and the height test. (Cut scenes: decided New, no row.) */
 function World3dGroup() {
-  const look = useLook();
-  const controls = useControlChoice();
+  const zoom = useCamZoom();
+  const camH = useCamHeightTest();
   return (
     <>
-      <PrefRow label="3D drill controls" note={`Auto: this device's own (${detectScheme() === "touch" ? "touch" : "keys and mouse"}). Touch: a stick under your left thumb, swipe to kick. Keys: WASD, Shift sprints, the mouse kicks.`}>
-        <SegTabs className="w-[150px] shrink-0" value={controls} onChange={(v) => setControlChoice(v as ControlChoice)} tabs={[["auto", "Auto"], ["touch", "Touch"], ["pc", "Keys"]] as const} />
+      <PrefRow label="3D match zoom" note="Closer or further out. On a phone, pinch with two fingers in the match. Players stay the same size: only the camera moves. All the way out shows the whole chance.">
+        <input type="range" min={ZOOM_MIN} max={ZOOM_MAX} step={0.05} value={zoom} onChange={(e) => setCamZoom(Number(e.target.value))} className="w-[150px] shrink-0 accent-amber-400" aria-label="3D match zoom" data-cam-zoom />
       </PrefRow>
-      <LookRow id="garden" look={look} tabs={NEW_OLD} note="New: golden-hour light, a real shop front. Old: the garden as it was." />
-      <LookRow id="house" look={look} tabs={NEW_OLD} note="New: your home has rooms (a house: hallway, lounge, dressing room, trophy room). Old: the one room." />
-      <LookRow id="look3d" look={look} tabs={[["h", "H"], ["old", "Old"]] as const} note="H: console realism. The 3D drills in a full stadium with a crowd, real sky light, a broadcast picture; the garden and shop lit by a real sky. Old: as before." />
-      <LookRow id="shopPlayer" look={look} tabs={NEW_OLD} />
-      <LookRow id="people3d" look={look} tabs={NEW_OLD} note="New: one body in the signing, shop and garden, with real fingers." />
-      <LookRow id="playerStyle" look={look} tabs={NEW_OLD} note="New: the Knowitball look on every 3D person: painted (cel) shading, a warm rim of light, an ink outline, three new bodies, real kits with the number, trims and a badge; managers in suits. Old: the bodies and shading as before." />
-      <LookRow id="matchPlayers3d" look={look} tabs={[["styleA", "Style A"], ["real", "Real"], ["follow", "Old"]] as const} note="Style A: the 3D match, the 3D drills and Free Roam draw the Home screen's players: painted shading, an ink edge, no glow halo. Real: realistic players. Old: the match follows Player style, as before." />
-      <LookRow id="tierLook3d" look={look} tabs={NEW_OLD} note="New: Medium and Low look closer to High for the same speed. Medium gets the soft far stands and a light sharpen; Low gets the colour grade and a sun shadow under every man. Old: each quality as before." />
-      <LookRow id="humanBody" look={look} tabs={[["human", "Human"], ["before", "Before"]]} note="Being tested. Human: a real human body, real clothes and hair, any height and build. Before: the one body. Needs 3D people: New." />
-      <LookRow id="cutscenePeople" look={look} tabs={NEW_OLD} note="Being tested. New: painted faces with real eyes that blink, and expressions. Old: the faces as they were." />
-      <LookRow id="cutsceneCamera" look={look} tabs={NEW_OLD} note="New: opens on a wide of the place, the camera always moving a little, stiff moves hidden behind faces and close-ups, and music. Old: the shots as they were, no music." />
-      <LookRow id="playerLight3d" look={look} tabs={NEW_OLD} note="Being tested. The real game in 3D. New: the players lit from the side and behind, darker underneath, a shadow under each man. Old: the light as it was." />
-      <LookRow id="motion" look={look} tabs={[["mocap", "Mocap"], ["old", "Old"]]} note="Mocap: real people's movement, recorded in a motion-capture studio, on every 3D player. Old: the hand-made moves." />
-      <LookRow id="bossRoom" look={look} tabs={[["3d", "3D office"], ["old", "Old"]]} />
-      <LookRow id="casino" look={look} tabs={[["3d", "3D"], ["classic", "Classic"]]} note="3D: walk the casino room. Classic: the casino menu." />
-      <LookRow id="casinoLook" look={look} tabs={[["new", "New"], ["old", "Old"]]} note="New: the 3D casino in warm light with shadows, crystal chandeliers, woven walls and a camera that keeps out of the lamps. Old: as before." />
-      <LookRow id="signing" look={look} tabs={[["3d", "3D"], ["drawn", "Drawn"]]} note="3D: a live scene with your player. Drawn: the picture signing." />
+      <PrefRow label="3D camera height (test)" note={`Testing only. Raises or lowers the 3D match camera (${camH > 0 ? "+" : ""}${camH}°). Leave at 0.`}>
+        <input type="range" min={HEIGHT_TEST_MIN} max={HEIGHT_TEST_MAX} step={1} value={camH} onChange={(e) => setCamHeightTest(Number(e.target.value))} className="w-[150px] shrink-0 accent-amber-400" aria-label="3D camera height (test)" data-cam-height-test />
+      </PrefRow>
     </>
   );
 }
 
-/** Screens: the UI, badges, all seasons, ovations, the drawn-player style. */
+/** Screens: Old UI or New UI. */
 function ScreensGroup() {
   const look = useLook();
-  return (
-    <>
-      <LookRow id="ui" look={look} tabs={[["new", "New"], ["old", "Old"]]} note="Old: the game as it was before v0.23, kept as a backup. Same save." />
-      <LookRow id="badges" look={look} tabs={NEW_OLD} note="New: drawn badges in each club's colours. Old: the letters." />
-      <LookRow id="allSeasons" look={look} tabs={NEW_OLD} note="New: goals by season, the cabinet and every season. Old: the three tables." />
-      <LookRow id="ballonDorNight" look={look} tabs={NEW_OLD} note="New: the ceremony on a stage — the final three on podiums, the host calls the winner up. Old: the countdown cards." />
-      <LookRow id="homeScreen" look={look} tabs={NEW_OLD} note="New: big reputation, fame, goals, assists and cans at the top, no goal behind you. Old: Home and the title as before." />
-      <LookRow id="shop2d" look={look} tabs={NEW_OLD} note="New: the showroom — one item fills the screen; swipe sideways for the next item, up and down for the next category. Old: the shop as before." />
-      <LookRow id="ovation" look={look} tabs={NEW_OLD} note="New: your farewell's 85th minute in 3D. Old: the banner." />
-      <LookRow id="ovationMoves" look={look} tabs={NEW_OLD} note="New: hugs and claps made in Blender. Old: arms placed live." />
-      <LookRow id="drawnStyle" look={look} tabs={[["3d", "Shaded"], ["classic", "Flat"]]} note="Drawn players only (Classic view, five-a-side, the dribble)." />
-    </>
-  );
+  return <LookRow id="ui" look={look} tabs={NEW_OLD} note="Old: the game as it was before v0.23, kept as a backup. Same save." />;
 }
 
 export interface ExtraGroup {
@@ -356,17 +236,28 @@ export interface ExtraGroup {
   content: React.ReactNode;
 }
 
-/** The folded groups. One open at a time; opening one scrolls it to the top. */
-export function SettingsGroups({ glow, extra = [] }: { glow: string; extra?: ExtraGroup[] }) {
+/**
+ * The folded groups. One open at a time; opening one scrolls it to the top.
+ * `inMatch`: the ⚙ sheet over a match shows only what matters mid-game (the
+ * Match group, open), never the cut scenes, the UI or the career's own things.
+ */
+export function SettingsGroups({ glow, extra = [], inMatch = false }: { glow: string; extra?: ExtraGroup[]; inMatch?: boolean }) {
   const [open, setOpen] = useState<string | null>(null);
   const refs = useRef<Record<string, HTMLDivElement | null>>({});
   useEffect(() => {
     if (open) refs.current[open]?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [open]);
+  if (inMatch) {
+    return (
+      <SetCard tone={glow} className="px-3 pb-1" data-group="match">
+        <MatchGroup />
+      </SetCard>
+    );
+  }
   const groups: (ExtraGroup & { card?: boolean })[] = [
-    { id: "match", title: "Match", sub: "View, camera, ball, chances, keepers, dribble…", count: 15, content: <MatchGroup />, card: true },
-    { id: "world", title: "3D world", sub: "Garden, look, shop, people, body, motion, office, casino, signing", count: 11, content: <World3dGroup />, card: true },
-    { id: "screens", title: "Screens", sub: "UI, badges, all seasons, ovations, drawn style", count: 6, content: <ScreensGroup />, card: true },
+    { id: "match", title: "Match", sub: "Keepers, testing (v0.15), 2D or 3D, names", count: 9, content: <MatchGroup />, card: true },
+    { id: "world", title: "3D match camera", sub: "Zoom and camera height", count: 2, content: <World3dGroup />, card: true },
+    { id: "screens", title: "Screens", sub: "Old UI or New UI", count: 1, content: <ScreensGroup />, card: true },
     ...extra,
   ];
   return (
@@ -402,18 +293,15 @@ export function SettingsGroups({ glow, extra = [] }: { glow: string; extra?: Ext
   );
 }
 
-/** Version on top, then the quick switches: the first screen of both Settings pages. */
+/** The quick switches: the first screen of both Settings pages. */
 export function SettingsTop({ glow, fullscreen }: {
   glow: string;
   fullscreen: { support: FullscreenSupport; on: boolean; onToggle: () => void };
 }) {
   return (
     <>
-      <SetSection className="mb-1.5 mt-1">Game version</SetSection>
-      <VersionCard glow={glow} />
-      <SetSection className="mb-1.5 mt-3">Quick</SetSection>
+      <SetSection className="mb-1.5 mt-1">Quick</SetSection>
       <QuickSwitches glow={glow} fullscreen={fullscreen} />
     </>
   );
 }
-

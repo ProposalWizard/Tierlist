@@ -114,6 +114,9 @@ function isOffside(p: { y: number }, line: number, ballY: number): boolean {
  * check. Only definitions that are unambiguous football are encoded; a kind we
  * have not agreed the shape of yet returns nothing rather than guessing.
  */
+/** A byline cross: the ball at most this far out from the goal line, m (Harry, 12 Oct 2026: match the drawings). */
+export const BYLINE_CROSS_MAX_OUT = 18;
+
 function identityFault(sc: Scenario): string | null {
   const dist = sc.ball.y;
   const lat = Math.abs(sc.ball.x - CX);
@@ -154,7 +157,11 @@ function identityFault(sc: Scenario): string | null {
       // touchline test. Whether 9.7m is wide enough to read as a real byline
       // cross (a real one comes from nearer 16-20m+) is a design call for the
       // owner, deliberately raised rather than silently "fixed" here.
-      if (dist > 6) return "not a byline cross — ball is not near the byline";
+      // Harry, 12 Oct 2026: the rule follows the drawings. The served (drawn) byline
+      // crosses sit 2.3–16.5 m out and 23–31 m wide (scripts/cam3d/bylineSpots.mts,
+      // 300 served): a deep cross from wide, level with the box at most. So the
+      // limit is the box's depth plus a yard (18 m), not 6 m (55 of 60 broke it).
+      if (dist > BYLINE_CROSS_MAX_OUT) return "not a byline cross — ball is not near the byline";
       if (lat < 8) return "not a byline cross — ball is too central";
       return null;
     case "through_ball":

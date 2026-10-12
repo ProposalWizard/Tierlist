@@ -66,7 +66,7 @@ function store(key: string, FALLBACK: RealGameLook) {
 const light = store("star-look-3d-player-light", "old");
 
 
-export const playerLightLook = light.get;
+export const playerLightLook = (): RealGameLook => "old"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 export const setPlayerLightLook = light.set;
 export const previewPlayerLightLook = light.preview;
 export const usePlayerLightLook = light.use;
