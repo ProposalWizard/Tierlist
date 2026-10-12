@@ -95,13 +95,35 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     im.src = src;
   });
 }
-function pixels(im: HTMLImageElement): ImageData | null {
+/**
+ * An atlas's pixels, read WITHOUT one long freeze (speed pass, 12 Oct 2026).
+ * Before: drawImage of a freshly loaded picture decoded it on the page
+ * thread, then one getImageData read all of it — 370-420 ms with the CPU
+ * slowed 4x for the New-clips atlas, and that atlas was first asked for by
+ * the first KICK (the kick clips live in it): the freeze right after a kick
+ * in Mikey's video. Now the picture is decoded off the page thread
+ * (createImageBitmap), and read a band of rows at a time between frames.
+ * Same pixels.
+ */
+async function pixels(im: HTMLImageElement): Promise<ImageData | null> {
+  let src: CanvasImageSource = im;
+  try { if (typeof createImageBitmap === "function") src = await createImageBitmap(im); else await im.decode?.(); } catch { /* drawn as before */ }
+  const w = im.naturalWidth, h = im.naturalHeight;
   const c = document.createElement("canvas");
-  c.width = im.naturalWidth; c.height = im.naturalHeight;
+  c.width = w; c.height = h;
   const g = c.getContext("2d", { willReadFrequently: true });
   if (!g) return null;
-  g.drawImage(im, 0, 0);
-  return g.getImageData(0, 0, c.width, c.height);
+  g.drawImage(src, 0, 0);
+  (src as ImageBitmap).close?.();
+  const out = new ImageData(w, h);
+  const BAND = 128;
+  for (let y = 0; y < h; y += BAND) {
+    const t0 = performance.now();
+    const rows = Math.min(BAND, h - y);
+    out.data.set(g.getImageData(0, y, w, rows).data, y * w * 4);
+    if (y + rows < h && performance.now() - t0 > 2) await nextSlice();
+  }
+  return out;
 }
 
 /** Start loading the atlases (safe to call every frame). Resolves true when ready. */
@@ -115,7 +137,7 @@ export function loadSprites(base: string = SPRITE_BASE): Promise<boolean> {
       if (!r.ok) return false;
       const idx = (await r.json()) as SpriteIndex;
       const [ci, mi] = await Promise.all([loadImage(base + idx.atlas.color), loadImage(base + idx.atlas.mask)]);
-      const c = pixels(ci), m = pixels(mi);
+      const [c, m] = await Promise.all([pixels(ci), pixels(mi)]);
       if (!c || !m) return false;
       indexBase = base;
       // The lit-white reference: a high percentile of the kit pixels' brightness.
@@ -131,6 +153,9 @@ export function loadSprites(base: string = SPRITE_BASE): Promise<boolean> {
       for (let v = 255; v >= 0; v--) { acc += hist[v]; if (acc > n * 0.1) { kitWhite = Math.max(120, v); break; } }
       atlasData.set(0, { color: c, mask: m });
       index = idx;
+      // the later atlases (the New clips: kicks, volleys, dives) now, while the
+      // page is idle, so the first kick never waits on one (speed pass, 12 Oct 2026)
+      preloadLaterAtlases();
       return true;
     } catch {
       loading = null; // let a later frame try again
@@ -155,7 +180,7 @@ function loadAtlas(n: number): Promise<boolean> {
       const info = index?.atlases?.[String(n)];
       if (!info) return false;
       const [ci, mi] = await Promise.all([loadImage(indexBase + info.color), loadImage(indexBase + info.mask)]);
-      const c = pixels(ci), m = pixels(mi);
+      const [c, m] = await Promise.all([pixels(ci), pixels(mi)]);
       if (!c || !m) { atlasLoading.delete(n); return false; }
       atlasData.set(n, { color: c, mask: m });
       return true;
@@ -166,6 +191,15 @@ function loadAtlas(n: number): Promise<boolean> {
   })();
   atlasLoading.set(n, p);
   return p;
+}
+
+/** Load and colour every later atlas in the background, after atlas 0 (idle time). */
+function preloadLaterAtlases(): void {
+  const ns = Object.keys(index?.atlases ?? {}).map(Number).filter((n) => n >= 1);
+  if (!ns.length || typeof window === "undefined") return;
+  const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+  const go = () => { for (const n of ns) void loadAtlas(n).then((ok) => { if (ok) warmAtlas(n); }); };
+  if (ric) ric(go, { timeout: 2000 }); else setTimeout(go, 500);
 }
 
 /** A clip's own entry and where its cells come from (itself, or the clip it mirrors). */
@@ -346,6 +380,9 @@ export function warmSpriteKits(kits: SpriteKit[]): void {
       for (const kit of kits) {
         await tintChunked(kit, 0);
         seenKits.set(kit.shirt + "|" + kit.shorts + "|" + kit.socks, kit);
+        // the later atlases already in (the New clips): these kits too, so a
+        // kick never colours a whole atlas on the spot
+        for (const n of Array.from(atlasData.keys())) if (n > 0) await tintChunked(kit, n);
       }
     } catch { /* coloured on first draw instead, as before */ }
   })();

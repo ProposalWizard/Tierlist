@@ -257,7 +257,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
       </div>
 
       {status === "loading" && (
-        <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
+        <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: "#0d1420" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }}>
           <div style={{ display: "grid", placeItems: "center", gap: 12 }}>
             <div style={{ width: 44, height: 44, borderRadius: 999, border: "4px solid rgba(255,255,255,0.15)", borderTopColor: GOLD, animation: "g3dspin 0.9s linear infinite" }} />
             <style>{"@keyframes g3dspin{to{transform:rotate(360deg)}}"}</style>

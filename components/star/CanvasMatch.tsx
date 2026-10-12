@@ -774,14 +774,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // lib/star/teamsheet.ts — this is the same eleven the pre-match team sheet
   // showed, and every place that puts a name to a team-mate's goal reads from
   // it instead of from the full squad list.
-  const startingXI = career && fixture ? startingTeammateRoles(career, fixture) : null;
+  // Worked out once per career/fixture, not on every render: each call reads
+  // the saved line-ups from localStorage (JSON.parse) and builds both team
+  // sheets, and the match re-renders on every phase change — the kick
+  // included (speed pass, 12 Oct 2026). Same values: both are pure in
+  // (career, fixture).
+  const startingXI = useMemo(() => (career && fixture ? startingTeammateRoles(career, fixture) : null), [career, fixture]);
   const onPitch = (squad: SquadPlayer[]): SquadPlayer[] =>
     onPitchToday(fillMissingFromFullRoster(squad, startingXI, career ?? null), startingXI);
   // The other lot's actual starting XI — see opponentStartingXI's own note.
   // Null (not an empty array) when there's nothing to scout, same as
   // `startingXI`, so the opponent-goal branch below can tell "nobody to
   // draw from" apart from "a real XI with, say, no listed CAM this week".
-  const oppXI = career && fixture ? opponentStartingXI(career, fixture) : null;
+  const oppXI = useMemo(() => (career && fixture ? opponentStartingXI(career, fixture) : null), [career, fixture]);
   // Reshaped for castDefence (lib/star/lineup.ts) — the keeper and the men
   // marking you, drawn from this same real sheet rather than left as
   // anonymous shirts. See that function's own doc for why position-matching

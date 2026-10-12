@@ -222,7 +222,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
       </div>
 
       {status !== "ready" && (
-        <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: 24, textAlign: "center" }}>
+        <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: 24, textAlign: "center", background: "#1a1612" /* opaque: the first frames (still building) are drawn under it, not seen (three3d/perf.ts awaitSmoothFrame) */ }}>
           {status === "loading" ? (
             <div>
               <div style={{ fontWeight: 900, fontSize: 17 }}>Opening your house…</div>

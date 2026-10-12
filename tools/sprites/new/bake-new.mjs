@@ -22,6 +22,10 @@
  * Writes public/star/sprites/{atlas-1.webp,mask-1.png} and merges only the new
  * clips (and atlases["1"]) into index.json. atlas-0, mask-0 and every old
  * clip entry are never touched.
+ * The game reads the masks as LOSSLESS WebP (mask-*.webp, pixel-identical,
+ * about a third of the PNG; 12 Oct 2026). After a bake, make the .webp again
+ * (Pillow: save(..., "WEBP", lossless=True, exact=True)) and point the index
+ * at it, or the index goes back to the bigger PNG (it still works).
  */
 import http from "node:http";
 import fs from "node:fs";
