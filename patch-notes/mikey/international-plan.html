@@ -91,23 +91,87 @@
   footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
 </style><div class="wrap">
 <header>
-  <span class="ver">PLAN · NOT BUILT</span>
+  <span class="ver" style="background:var(--green)">BUILT · LIVE</span>
   <h1>International football</h1>
-  <p class="sub">Star Career · Mikey, 12 Oct 2026 · every competition rule below comes from official or well-sourced pages (listed at the bottom). Anything not yet confirmed in real life is marked <b>Not confirmed</b>.</p>
+  <p class="sub">Star Career · Mikey, 12 Oct 2026 · built and merged (PR #717). The research and the original plan are kept at the bottom.</p>
 </header>
 
 <div class="strip">
-  <div class="s"><b>217</b><span>nationalities in the game's picker</span></div>
-  <div class="s"><b>211</b><span>FIFA member nations in real life</span></div>
-  <div class="s"><b>9</b><span>competitions in the plan (with their qualifying)</span></div>
-  <div class="s"><b>~15 KB</b><span>extra per save (full detail only for your own competitions)</span></div>
+  <div class="s"><b>211</b><span>FIFA nations, all playable</span></div>
+  <div class="s"><b>21,732</b><span>international matches, Aug 2026 – Aug 2046</span></div>
+  <div class="s"><b>0.35 s</b><span>to replay all 20 years</span></div>
+  <div class="s"><b>2.57</b><span>goals a match (real internationals ≈ 2.6)</span></div>
 </div>
 
-<div class="head">
-  <p class="big">Build every competition the real way, simulate all of it, and store full detail only for your own country.</p>
-  <p>Every nation and every qualifying match is played in the background each season. You play only your own country's matches, in the real match engine. For every other competition, the save keeps the winner, the runner-up and the final score.</p>
+<div class="head" style="border-left-color:var(--green)">
+  <p class="big">Every confederation's competitions now play out, from August 2026, for the whole career.</p>
+  <p>You play only your own country's matches, in the real match. Everything else is simulated, and the save keeps only your results.</p>
 </div>
 
+<h2 class="k-amb"><i></i>Check these</h2>
+<ul class="n">
+<li><div class="hd">The call-up screen</div><div class="dt">Appears before each international break and each tournament your country is in.</div></li>
+<li><div class="hd">The national manager bar</div><div class="dt">Relations → "(your country) manager". It starts at 0.</div></li>
+<li><div class="hd">The international page</div><div class="dt">Stats → Country: the manager bar, FIFA ranking, your group tables, your matches, Who won.</div></li>
+<li><div class="hd">Away on duty</div><div class="dt">In League One or below, a club game on a break weekend shows "Away on international duty" and is played without you.</div></li>
+<li><div class="hd">The test page</div><div class="dt"><code>/star-intl-dev</code>: pick a year and a nation and see every final, the ranking, tables, matches and both call-up screens.</div></li>
+</ul>
+
+<h2 class="k-grn"><i></i>What it looks like</h2>
+<div class="tbl" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+  <figure style="margin:0"><img src="intl-img/called.jpg" alt="Called up screen: Scotland flag, CALLED UP, two Euro 2028 group matches, manager bar 62 of 100" style="width:100%;border-radius:10px;border:1px solid var(--line)"><figcaption class="cap">Called up (sample: Scotland, manager bar 62)</figcaption></figure>
+  <figure style="margin:0"><img src="intl-img/leftout.jpg" alt="Not selected screen: manager bar 12 of 100 and the line saying the squad is picked at about 81" style="width:100%;border-radius:10px;border:1px solid var(--line)"><figcaption class="cap">Left out (manager bar 12)</figcaption></figure>
+  <figure style="margin:0"><img src="intl-img/world.jpg" alt="Test page: Who won list for 2027-28 and the FIFA ranking top 9" style="width:100%;border-radius:10px;border:1px solid var(--line)"><figcaption class="cap">Test page, world played to Aug 2028</figcaption></figure>
+</div>
+<p class="cap">Stills from the test page at phone size. Seen: these screens. Not seen: a full career season played on screen (checked by rule tests instead).</p>
+
+<h2 class="k-grn"><i></i>Added</h2>
+<ul class="n">
+<li><div class="hd">Every competition, every confederation</div><div class="dt">Nations League (real 2026–27 groups, then 3 leagues of 18, promotion/relegation, quarter-finals, Finals), Euro + qualifying + play-offs, World Cup 2030 on with every region's qualifying and the play-off between regions, Copa América, Africa Cup of Nations (real 2027 qualifying groups), Asian Cup (real 2027 groups), CONCACAF Nations League (real leagues) + Gold Cup, OFC Nations Cup, friendlies on every free date. <span class="pill" style="color:var(--green)">measured</span></div></li>
+<li><div class="hd">Real starting strengths</div><div class="dt">From the FIFA ranking of 20 July 2026 (Spain 1st, 1,996 pts … San Marino 211th, 721 pts). Each season, the real players the save knows move a nation up or down by up to 8. <span class="pill" style="color:var(--green)">measured</span></div></li>
+<li><div class="hd">The national manager bar (0–100, starts at 0)</div><div class="dt">In the squad from 34, a starter from 55: the same lines as your club manager. Good club games move it; a higher division counts more; a big nation is harder to impress. <span class="pill" style="color:var(--green)">measured</span></div>
+  <div class="tbl"><table><tr><th>A 3★ Premier League starter</th><th>Squad picked at</th><th>Where the bar heads</th></tr>
+  <tr><td>England</td><td class="num">80.8</td><td class="num neg">0</td></tr>
+  <tr><td>DR Congo</td><td class="num">72.5</td><td class="num">42</td></tr>
+  <tr><td>San Marino</td><td class="num">57.7</td><td class="num pos">100</td></tr></table></div></li>
+<li><div class="hd">Your matches on their real dates</div><div class="dt">Played in the real match with extra time, penalties or two legs as the competition says. Squads are 23 (26 at a tournament), picked by rating with a division penalty: Championship −4, League One −8, League Two −11, National League −14.</div></li>
+<li><div class="hd">Away on duty</div><div class="dt">Called up, you miss club games during the break (League One and below) or until your country is knocked out of a tournament (winter Asian Cup, winter Africa Cup of Nations). Measured: a League One Scotland player missed 3 club games from August to December 2026.</div></li>
+<li><div class="hd">Rotation</div><div class="dt">In friendlies, a starter under 75 is rested about 1 game in 3. After a defeat where you rated under 6.0, you start the next game on the bench.</div></li>
+<li><div class="hd">Trophies and Who won</div><div class="dt">If your country wins a final while you're in the squad, it goes in your trophies. Every final played goes in the Who won list.</div></li>
+</ul>
+
+<h2 class="k-vio"><i></i>Changed</h2>
+<ul class="n">
+<li><div class="hd">Break weekends</div><div class="dt">The Premier League and Championship leave the 4 break weekends empty and finish on the same weekend as before. To fit, the Premier League now has 4 midweek rounds and the Championship 12 (was 8). League One and below play through.</div></li>
+<li><div class="hd">Nationality picker</div><div class="dt">217 → 211 names: the non-FIFA ones are gone (Great Britain, Monaco, Bonaire, French Guiana, Guadeloupe, Martinique, Réunion, Saint Barthélemy, Sint Maarten).</div></li>
+<li><div class="hd">The old flow is replaced</div><div class="dt">The 4 one-match windows and the old summer tournament are gone. A save already part-way through an old summer tournament still finishes it.</div></li>
+</ul>
+
+<h2 class="k-amb"><i></i>My guesses (nothing official yet)</h2>
+<ul class="n">
+<li>World Cup 2030 stays 48 teams; each host takes one of its own region's places.</li>
+<li>UEFA's new qualifying format isn't confirmed, so the current one is used until it is.</li>
+<li>Nations League from 2028: groups of 6 play each other once (10 games don't fit in the autumn).</li>
+<li>Copa América: which 6 CONCACAF teams go, and the hosts where none is named.</li>
+<li>Gold Cup qualifying is one match each; the Caribbean teams that aren't FIFA members are left out.</li>
+<li>Africa Cup of Nations: 2027 and 2028 are June–July (real). 2032 on are played in the winter break (CAF hasn't fixed dates).</li>
+<li>Tournament knockout pairings use a simple rule, not FIFA's exact table.</li>
+<li>Strength drifts 15% a year back towards the 2026 ranking, so the world stays recognisable over 20 years. Without it, Canada and Nigeria climbed level with Spain by 2046.</li>
+</ul>
+
+<h2 class="k-mut"><i></i>The FIFA ranking (checked 12 Oct)</h2>
+<ul class="n">
+<li><div class="hd">FIFA published a new ranking on 7 October 2026</div><div class="dt">Spain 2,012 pts, Argentina 1,973, France 1,959; Portugal up to 5th; Brazil 6th; Morocco 7th. Next due 18 November. The game keeps the 20 July list, because its world starts on 1 August and plays the September–October break itself. Starting from October's list would count that break twice.</div></li>
+</ul>
+
+<h2 class="k-mut"><i></i>Tests</h2>
+<ul class="n">
+<li>New world test: field sizes, places per region, World Cup draw limits, Nations League leagues, real starting groups, nobody playing twice on one day, the same replay every time. Passes.</li>
+<li>Career test: 4 squads named in 2026/27 as England, 10 internationals, caps counted once, a skipped break not offered late. Passes.</li>
+<li>Full suite: 326 pass; the 2 failures are 3D tests that also fail without this work. Production build passes.</li>
+</ul>
+
+<details><summary>The plan and research (12 Oct, before building)</summary>
 <h2 class="k-mut"><i></i>What the game has today (Leo, 11–12 Oct)</h2>
 <ul class="n">
   <li><div class="hd">Four international breaks a season, one match each</div><div class="dt">September, October, November and March. The match is called a qualifier, but there are no qualifying groups or tables behind it.</div></li>
@@ -321,5 +385,7 @@
 <li>League One and League Two play on through breaks; 3 or more call-ups allow a postponement: Blackpool Gazette, Portsmouth News, The League Paper (EFL rule as reported, not the rulebook itself).</li>
 </ul></details>
 
-<footer>A plan only. Nothing is built. The competition rules are researched; the call-up and squad numbers are proposals for you to judge.</footer>
+</details>
+
+<footer>Built and merged 12 Oct 2026 (PR #717). Stills seen on the test page; a full season of call-ups is checked by tests, not yet played on screen.</footer>
 </div>
