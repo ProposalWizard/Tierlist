@@ -427,6 +427,12 @@ than once.
 **Progress updates follow `.claude/skills/progress-update/SKILL.md`: every 5
 minutes on every task, auto-deploy at every major update.**
 
+**Pictures as they come in, not in one go (Harry, 12 Oct 2026).** *"I want
+pictures constantly as they come in instead of in one go, easier to tweak
+missteps."* Builders save each finished still to the top of their output folder
+the moment it is made (scratch frames in `raw/`). The lead watches those folders
+(a Monitor) and sends each new still straight to Harry with a one-line caption.
+
 **Answer shape — key point, key number, key change.** Reported directly:
 *"there's sometimes too much fluff in how you speak… I'm having to skim
 through too much yap."* No preamble, no restating the request, no praise for
