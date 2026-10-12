@@ -298,6 +298,19 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   camera.layers.enable(MATE_LAYER);
   for (let k = 0; k < 3; k++) camera.layers.enable(CAR_LAYER + k);
   let disposed = false;
+  /**
+   * Building the garden used to run as one block between its file loads and
+   * its shader build: 1.8 s with the CPU slowed 4x (Mikey's video: a 984 ms
+   * JS spike on opening it). It now gives the page a moment between each part
+   * (boundary, trees, shop, casino, house, pitch, fountain, cabinet, gazebo,
+   * stable, cars, people — one team-mate at a time — horse, bird, merge), so
+   * no part freezes it for long and the loading spinner keeps turning. Same
+   * garden; the cover is up the whole time.
+   */
+  const breathe = async () => {
+    await new Promise<void>((r) => setTimeout(r, 0));
+    if (disposed) throw new Error("disposed");
+  };
 
   const canvasTex = (c: HTMLCanvasElement, repeat?: [number, number]) => {
     const t = new THREE.CanvasTexture(c);
@@ -715,6 +728,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     return m;
   };
 
+  await breathe();
   // ── The boundary: it grows with your home (fence → hedge → brick wall) ──
   // Long single runs, not a row of little pieces: a close-boarded fence, a
   // tall clipped hedge, or a brick wall with stone coping and piers.
@@ -766,6 +780,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   }
   bound.done();
 
+  await breathe();
   // ── Trees: a ring beyond the boundary, a few inside ──
   const treeKeys = ["tree_oak", "tree_default", "tree_detailed", "tree_fat", "tree_tall", "tree_pine", "tree_pine2"];
   const treeAt: Record<string, number[][]> = {};
@@ -877,6 +892,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   }
   void tufts; // Kenney's grass reads as dark spikes at this size; the mown lawn is enough
 
+  await breathe();
   // ── The shop, where the house was: a real small shop front ──
   // Brick, a slate roof with a chimney, and a painted green shopfront: fascia
   // with the name in gold, pilasters, two lit display windows (your kit on
@@ -1051,6 +1067,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     }
   }
 
+  await breathe();
   // ── The casino (8 Oct 2026, Harry: "start work on making the casino 3D and
   // adding it to the garden/shop walkable area") ──
   // A small glamorous front, same family as the shop's: deep burgundy with
@@ -1193,6 +1210,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   sidePave(CASINO.door + 1.0 - 4.2, 1.4, (4.2 + CASINO.door + 1.0) / 2, -6.0, 0.0155);
   sidePave(2.0, -6.7 - CASINO.z1, CASINO.door, (CASINO.z1 - 6.7) / 2, 0.016);
 
+  await breathe();
   // ── Your house (9 Oct 2026, Harry: "imagine you actually had your current
   // house with all your stuff and that's where you change clothes"): its back
   // door on the east boundary, a path to it from the main path. Walk through
@@ -1237,6 +1255,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     sidePave(X - 1.37, 1.4, (X + 1.37) / 2, Z, 0.0155);
   }
 
+  await breathe();
   // ── The training pitch (8 Oct 2026): a small fenced pitch, a goal at the
   // far end, cones, a gate. Walk through the gate and the 3D training opens
   // (cb.onTrainingGate; the training itself is built separately). ──
@@ -1334,6 +1353,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   sidePave(-2.7 - (PITCH.gate - 0.7), 1.4, (-2.7 + PITCH.gate - 0.7) / 2, SIDE_Z, 0.0155);
   sidePave(1.4, SIDE_Z - 0.7 - PITCH.z1, PITCH.gate, (SIDE_Z - 0.7 + PITCH.z1) / 2, 0.016);
 
+  await breathe();
   // ── The fountain, and a bird that drops in for a drink ──
   one("fountain", FOUNTAIN.x, FOUNTAIN.z, 1.9);
   const waterM = new THREE.MeshStandardMaterial({ color: "#5aa8d6", roughness: 0.08, metalness: 0.2, transparent: true, opacity: 0.85, emissive: "#0c3550", emissiveIntensity: 0.4 });
@@ -1370,6 +1390,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   scene.add(spray);
   CIRCLES.push([FOUNTAIN.x, FOUNTAIN.z, FOUNTAIN.r]);
 
+  await breathe();
   // ── The trophy cabinet: a glass summer-house, your trophies on lit shelves ──
   const cab = new THREE.Group();
   cab.position.set(CABINET.x, 0, CABINET.z);
@@ -1435,6 +1456,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   solid(CABINET.x - cd / 2 - 0.15, CABINET.x + cd / 2 + 0.15, CABINET.z - cw / 2 - 0.15, CABINET.z + cw / 2 + 0.15);
 
 
+  await breathe();
   // ── The gazebo: a pergola, a bench, three team-mates, cans, a plant ──
   const woodM = mat("#ffffff", { map: canvasTex(boardsCanvas("#8b5e3c"), [1, 1]), roughness: 0.75 });
   const gz = GAZEBO;
@@ -1529,6 +1551,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.11, 2), ballM);
   add(ball, TEQ.x + 1.0, 0.11, TEQ.z + 1.9);
 
+  await breathe();
   // ── The stable, paddock, hay and water ──
   const st = STABLE;
   const stableLv = Math.max(1, data.stable);
@@ -1621,6 +1644,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   one("bucket", pd.x1 - 2.7, pd.z1 - 0.9, 2.6);
   one("log_stack", st.x + 0.6, st.z + st.d / 2 + 0.9, 2.6, 0.3);
 
+  await breathe();
   // ── Parking for your cars ──
   const bays = [8.0, 11.0, 14.0];
   const lineM = mat("#f4f1ea", { roughness: 0.6 });
@@ -1756,6 +1780,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     };
   }
 
+  await breathe();
   // ── People: you, and the team-mates on the bench ──
   const clip = (g: any, n: string) => g.animations.find((a: any) => a.name === n);
   let player: any, mixer: any, idleA: any, walkA: any, jogA: any;
@@ -1804,7 +1829,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     playerBlob = blob(0.9, 0.9, st0.x, st0.z, 0.9);
     // the team-mates: the same body, sat on the bench with the clips' "sitidle"
     const SKIN = ["#8d5524", "#e0ac69", "#5c3a1e"];
-    data.mates.slice(0, 3).forEach((num, i) => {
+    const mateNums = data.mates.slice(0, 3);
+    for (let i = 0; i < mateNums.length; i++) {
+      const num = mateNums[i];
+      await breathe(); // one team-mate per slice: no single long freeze while the garden opens
       const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true, who: `garden-mate-${num}` });
       outlines.push(m.outline);
       dressPerson3d(THREE, m, { skin: SKIN[i % 3], hair: HAIR[i % 3], kit: data.kit, number: canvasTex(numberCanvas(num, "#ffffff")) });
@@ -1861,7 +1889,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       // drawn on their own layer, so they can be pictured on their own (below)
       m.root.traverse((o: any) => o.layers.set(MATE_LAYER));
       mates.push({ root: m.root, mixer: m.mixer, upright: { a: sit, phase: i * 2.1 } });
-    });
+    }
     if (!dbg.has("noimp") && mates.length) impostor = makeImpostor(mates.map((m) => m.root), MATE_LAYER, 7, 8);
   } else {
     const dress = (root: any, number: number, key: string) => {
@@ -1942,6 +1970,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   strideFor(THREE, personRef, mixer, { idle: idleA, walk: walkA, jog: jogA })
     .then((g) => { if (!disposed) gaitBlend = g; })
     .catch((e) => console.error("gait clips", e));
+  await breathe();
   // ── Your horse, grazing and wandering the paddock ──
   // More than one pose (7 Oct 2026, "horses have one pose"): between walks he
   // either grazes (head down, nose at knee height, chewing) or stands and looks
@@ -2009,6 +2038,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     h.tail.forEach((b: any, i: number) => turnBone(b, hUp, sway * (0.6 + 0.3 * i)));
   };
 
+  await breathe();
   // ── A bird: circles high, drops onto the fountain's rim, drinks, flies off ──
   let bird: { root: any; mixer: any; fly: any; idle: any; phase: "circle" | "land" | "drink" | "leave"; t: number; next: number } | null = null;
   load("/star/garden3d/bird.glb").then((g: any) => {
@@ -2025,6 +2055,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   }).catch((e: any) => console.error("garden bird", e));
   const RIM = { x: FOUNTAIN.x + 1.66, y: 0.5, z: FOUNTAIN.z };
 
+  await breathe();
   // ── Lag: everything that never moves, merged ──
   // Each little box of the gazebo, bench, stable, cabinet and beds was its own
   // draw: here every still piece is joined with the others of the same
@@ -2045,6 +2076,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     sunBlob.position.y = 0.021;
   }
 
+  await breathe();
   // ── The training pitch's team-mates (Harry, 8 Oct 2026: "build all the
   // animations for any new 3D areas"). Behind the fence: two passing it
   // back and forth, one dribbling the slalom, one stretching, one jogging
