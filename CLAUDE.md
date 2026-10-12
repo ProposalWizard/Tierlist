@@ -425,7 +425,10 @@ english only."* Everything below is a standing instruction, confirmed more
 than once.
 
 **Progress updates follow `.claude/skills/progress-update/SKILL.md`: every 5
-minutes on every task.**
+minutes on every task, with % + time left on every bar and the token/weekly
+usage block on every update (Harry, 12 Oct 2026: "why aren't we using the
+progress skill with the estimated tokens"). Its "auto-deploy" section is
+replaced by "Deploy only when told" below.**
 
 **Deploy only when told (Harry, 12 Oct 2026; replaces "auto-deploy at every
 major update").** *"what happened to patch notes? What happened to telling me
@@ -505,7 +508,22 @@ change … so that I can tell you if it's good now before you go ahead"*). How
 the filming works: "Checking what a frame can't show" in
 `scripts/playtest-video/README.md`.
 
+**No more version toggles for new work; unfinished work lives on test pages
+(Harry, 12 Oct 2026). Replaces the toggle rule below for new work.** *"I don't
+like that system in the slightest … when I push changes, I now create a new
+version toggle. He creates a new version toggle … When I'm ready to push my
+stuff, we'll push it into the actual game because I trust my own judgement.
+For Leo, I think he needs to push the version 1.50 changes … into the test
+pages or create new test pages."*
+- Harry's changes go straight into the game when he says push. No new
+  New | Old row, no Preview entry.
+- Work that isn't finished (Leo's v0.15 gameplay switches and similar) goes on
+  a test page (a `/star-*-dev` page, new or existing), not behind a switch in
+  the real game. It moves into the game when it is ready, as a normal change.
+- Existing switches stay until someone decides each one. Never delete one unasked.
+
 **Every new look gets a toggle; the old one stays playable (Harry, 3 Oct 2026).**
+*(Superseded for new work by the rule above.)*
 Looks and feel only (match view, players, ball, your figure in open play,
 signing scene, 3D shop model, UI): a "New | Old" row in the shared device
 Settings "Look" group, default New, the old option exactly the old code.
