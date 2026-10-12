@@ -16,6 +16,10 @@
  *   every chance, ball at 55–60% height, men ~6% of the canvas, plus smoother
  *   playback in engineView. Old is unchanged.
  *
+ *   New, round 4 (Harry, 12 Oct 2026: "the framing is not exactly the same on
+ *   3d and 2d"): the 3D shows the 2D's own view box (lib/star/style3d/match2dCam.ts).
+ *   The broadcast camera stays reachable on test pages with ?cam2d=0.
+ *
  *   Settings → Look → "3D player light: New | Old" ("the players on the pitch
  *   still look slightly flat"). New: a soft key and rim light on the players
  *   only, darker undersides and feet, less flat fill, a tight shadow under

@@ -133,7 +133,7 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     them.forEach(([x, y], i) => figures.push(fig(`def${i}`, x, y, "them")));
     const t0 = performance.now() / 1000;
     let facing = "up";
-    const bp = { x: 34, y: 17.2 };
+    const bp = { x: opts.ballX ?? 34, y: opts.ballY ?? 17.2 };
     const f = () => ({
       t: performance.now() / 1000, phase: "aim", kind: "one_on_one",
       cam: { viewport: { x1: 10, x2: 58, y1: -4, y2: 44 }, facing, tilt: null, W: 390, H: 600 },
@@ -170,6 +170,32 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     };
     let on = true;
     const tick = () => { if (!on) return; const fr: any = f(); fr.kind = kind; fr.cam.viewport = vp; const a = performance.now(); v.frame(fr); M.vf.push({ t: a, ms: performance.now() - a, chance }); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { on = false; v.dispose(); } };
+    return true;
+  },
+  /**
+   * One real chance, held still: `opts.frame` is an engine frame (the camera's view box, facing,
+   * tilt and box size, the men, ball and keeper) made by scripts/cam3d/stills.mjs from a real
+   * scenario. The stage is sized to the frame's box. URL ?cam2d=0 = the broadcast camera (before).
+   */
+  async chance(opts: any = {}) {
+    M.t0 = performance.now();
+    let fr0 = opts.frame;
+    M.setFrame = (f: any) => { fr0 = f; };
+    const st = stage();
+    Object.assign(st.style, { inset: "auto", left: "0", top: "0", width: `${fr0.cam.W}px`, height: `${fr0.cam.H}px` });
+    const v = await createEngineView(st, { def: resolveStyle("real", "play"), tier: opts.tier ?? "medium", tod: opts.tod ?? "golden", tilt: 45 });
+    const t0 = performance.now() / 1000;
+    let on = true;
+    const tick = () => {
+      if (!on) return;
+      const now = performance.now() / 1000;
+      const fr = { ...fr0, t: now, keeper: fr0.keeper ? { ...fr0.keeper, idleT: now - t0 } : null };
+      v.frame(fr);
+      requestAnimationFrame(tick);
+    };
     requestAnimationFrame(tick);
     M.ready = performance.now();
     M.ctrl = { dispose() { on = false; v.dispose(); } };
@@ -250,6 +276,60 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     requestAnimationFrame(tick);
     M.ready = performance.now();
     M.ctrl = { dispose() { on = false; renderer.dispose(); renderer.domElement.remove(); } };
+    return true;
+  },
+  /**
+   * The Home / title player exactly as ToonHomePlayer draws him (same lights, tone map, outline,
+   * camera fit, pixel ratio), at any box size: `{ w, h }` in CSS px, to set one man at Home next
+   * to one man in the match at the same height on screen (Style A match pass, 12 Oct 2026).
+   */
+  async homeman(opts: any = {}) {
+    M.t0 = performance.now();
+    const width = opts.w ?? 40, height = opts.h ?? 72;
+    const el = stage();
+    const { toonYou } = await import("@/lib/star/style3d/toon/bodies");
+    const you = toonYou();
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(width, height); renderer.setClearColor(0x2f6b2a, 1);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    el.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight("#b9cdf0", "#4a5a2a", 1.2));
+    const sun = new THREE.DirectionalLight("#ffe0b0", 2.6); sun.position.set(2.5, 4, 4); scene.add(sun);
+    const loader = await withMeshopt(new GLTFLoader());
+    const [g, anims] = await Promise.all([loadToonHead(loader as any, you.head), loadPeople3d(loader as any, "anims", "new")]);
+    const p = makePerson3d(THREE as any, ((SkeletonUtils as any).default ?? SkeletonUtils) as any, g, anims, { outline: 0.006, you: true });
+    dressPerson3d(THREE as any, p, { skin: you.skin, hair: you.hair, kit: { shirt: "#c8102e", trim: "#ffffff" }, number: null });
+    p.root.rotation.y = opts.yaw ?? Math.PI;
+    scene.add(p.root);
+    const tall = 1.83 * (p.root.children[0]?.scale.y ?? 1);
+    const cam = new THREE.PerspectiveCamera(18, width / height, 0.1, 40);
+    const fit = (tall * 1.06) / 2 / Math.tan((18 * Math.PI) / 360);
+    const tl = ((opts.tilt ?? 0) * Math.PI) / 180; // 0 = level, as Home; ~45 = the match camera's look down
+    cam.position.set(0, tall * 0.53 + fit * Math.sin(tl), fit * Math.cos(tl)); cam.lookAt(0, tall * 0.53, 0);
+    let on = true;
+    const tick = () => { if (!on) return; renderer.render(scene, cam); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { on = false; renderer.dispose(); renderer.domElement.remove(); } };
+    return true;
+  },
+  /**
+   * The 3D animation test grid (/star-anim3d-dev's picture, lib/star/style3d/animGrid3d.ts) without
+   * Next: every match clip on its own man. `window.__grid.draw(times)` poses them; `__grid.info`
+   * lists each tile's clip and length (contact sheets of several frames per clip).
+   */
+  async animgrid(opts: any = {}) {
+    M.t0 = performance.now();
+    const { createAnimGrid, ANIM_TILES } = await import("@/lib/star/style3d/animGrid3d");
+    const tiles = ANIM_TILES.flatMap((g) => g.tiles);
+    const c = document.createElement("canvas");
+    stage().appendChild(c);
+    const g = await createAnimGrid(c, tiles, opts.cols ?? 6, opts.w ?? 120, opts.h ?? 150);
+    (window as any).__grid = g;
+    (window as any).__gridTiles = tiles.map((t) => t.label);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { g.dispose(); c.remove(); } };
     return true;
   },
   /** Home's idle early download for a place (perf.ts preloadScene), then window.__preloadDone. */

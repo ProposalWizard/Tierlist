@@ -160,6 +160,7 @@ exactly today's bodies. You never pick a file yourself:
 - `lib/star/three3d/orbitCam.ts` — the look-around camera for the garden and shop (drag turns, eased, tilt held, never under the floor). Test: `tests/star/orbitCam.mts`.
 - `lib/star/three3d/practiceCam.ts` — the 3D drills' camera: behind your shoulder, turns on its own towards what it frames, never turned by your stick, ball-track for crosses, peek, and PLAY mode for Free Roam (frames the play: tight with the ball, turns to the ball and pulls back when it's away, slides ahead of your run). Test: `tests/star/practiceCam.mts`.
 - The real game's 3D camera is built from the 2D canvas's own tilt (`lib/star/cameraTilt.ts`), so every spot on the grass lands on the same pixel. Do not change one without the other.
+- 3D camera New (12 Oct 2026) frames the 2D's own view box: `lib/star/style3d/match2dCam.ts`. See "3D match camera: the 2D's own frame" below.
 
 ### Movement and animation helpers
 
@@ -818,6 +819,20 @@ Harry: "players are kicking and jumping/ half teleporting with the ball. The goa
 - Test area: `/star-anim3d-dev`.
 
 **Not done:** foot-to-ball at contact is reasoned, not measured on a screen (the old spot put the foot ~1 m × size past the ball); before/after stills and clips of the real match; a kick clip picked at the strike (`kickStyleFor`) that differs from the aimed one still uses the aimed clip's foot spot; keeper dives still add their own sideways travel on top of the 2D lunge.
+### 3D match camera: the 2D's own frame (12 Oct 2026)
+
+Harry (iPhone, Medium): "the framing is not exactly the same on 3d and 2d … on 2d it might be able to be a shot but on 3d it seems like a build up." One corner still had the camera inside the near stand, its roof over two thirds of the screen.
+
+**The rule: the 3D camera shows the patch of grass the 2D shows, nothing cut, as little extra as the angle allows.** Settings → Look → "3D camera: New" (`lib/star/style3d/match2dCam.ts`, `placeMatch2D` in `engineView.ts`). Old is untouched; the broadcast camera (New before) is `?cam2d=0` on test pages.
+- `visibleQuad`: the 2D's view box (`cam.viewport`), turned by `facing`, through the canvas tilt (`screenToCanvas`): 4 pitch points, exactly what the phone shows.
+- `solveMatch2D`: the 2D's own facing (never turned), 50/55/60° down × lens 26/32/38°, each fitted so the quad's corners, a man's head on its far edge and a goal's bar touch the screen's edges; the one with the least extra grass wins (a small cost off 55°). Angle and lens are held for a chance; the position follows the 2D's box every frame (the 2D glides, so the 3D does).
+- Stands: the near clip sits at 0.8 × the nearest framed spot, and every stadium material (`h-arena`) is clipped by a plane at the 2D view's bottom edge + 1.5 m, so nothing between the camera and the pitch is drawn. Shadows keep the whole stadium (`clipShadows` off).
+- Men: sized against the screen ONCE per chance (a man in the action = `MATCH2D.manShare` 6% of the height, 1.5–3.0 × life) and held for the whole chance (PR #710: never resized as the camera moves). They lean back from the camera by (angle − 40°), picture only, so a man at 60° down still reads full height. Measured over 78 chances: 5.3–8.1% of the height, median 6.0%.
+- A 2D view that runs off the pitch on the camera's side is cut 3 m past the line (`apron`) and sat on the screen's bottom edge: no dark band of stand base under the corner taker.
+- Measured (`tests/star/match2dCam.mts`, 78 chances, all 13 kinds, phone box 372×704): people and posts the 2D shows that are on the 3D screen, 81.9% → 100% (whole chances 18/78 → 78/78); ball's distance from its 2D spot, median 172 → 33 px; extra grass, median 13%, p90 29% (side-on chances: the 2D looks straight down there, the 3D at 60°).
+- Stills: `scripts/cam3d/frames.mts` (real chances, framed as CanvasMatch does) → `scripts/cam3d/stills.mjs` (perf3d harness `H.chance`) → `scripts/cam3d/sheet.mjs`.
+- 3D quality: also in the in-match ⚙ and Settings → Match; a change rebuilds the 3D view when you tap "Back to the match" (`Match3DLayer.tsx`).
+
 ### 3D quality look: Medium and Low (12 Oct 2026)
 
 Harry: "we need a way for say medium/low to not look terrible using every percent of optimisation we can". Every iPhone opens on Medium; weaker phones on Low. Rule: buy the look cheaply, never switch it off; keep or beat the frame time. Settings → Look → "3D quality look: New | Old" (`lib/star/three3d/tierLook.ts`, row `tierLook3d`, New in Standard). Old = each tier exactly as before.
@@ -932,3 +947,26 @@ Only the director page plays cut scenes today; a host plays music with
 **Next:** shallow depth of field is not done (the cel style has no depth pass);
 nobody has listened to the music yet (levels measured only); the real game does
 not play these cut scenes yet.
+
+### Style A men in the 3D match, like the Home player (12 Oct 2026)
+
+Harry: "I want it in style A but I don't want that blocky minecraft look. I want exactly what the model looks like in the home screen".
+Settings → Look → "Players in a 3D match: Style A | Real | Old" (`lib/star/style3d/toon/matchLook.ts`, row `matchPlayers3d`). Style A is the new default (stored key moved to `…-style2`, so every phone takes it once; a phone on Old keeps Old). Real = the realistic bodies. Old = follows Player style, exactly as before.
+
+Why the men looked blocky, measured on one man at the same on-screen height (`scripts/perf3d/styleA.mjs` + the harness `homeman` scene; stills in the session scratchpad `styleA/`):
+- Light: the stadium sun, rim, floodlights and grade washed the kit pale (shirt red read pink) and the skin yellow. Home lights him with its own soft rig.
+- Edges: Medium draws at px 1.5 then FXAA + the light sharpen (`fxSharp`, post.ts). That sharpen gives the crunchy, stepped edges; Old tier look is soft, High (px 2, MSAA) is clean. Not changed here (post.ts belongs to the look work): the next fix to try.
+- No outline on Medium (`prof.outlines` is High only); Home has one.
+- The pale glow round the legs of the man on the ball is the ball's additive light ring (`real/ball.ts`), not a halo on him.
+- Size: from 48° above a Slim man at ~6% of the screen reads thin and small-headed.
+
+What Style A does now (only in the 3D match and the animation grid):
+- `HOME_LIGHT` (`toon/shader.ts`, uniform `uHome`): the body shader lights the man with Home's own rig (hemisphere 1.2, warm sun 2.6 from the camera's upper right, cel bands, warm rim) whatever the stadium does, adds an ink line on the silhouette (no extra draw), and caps brightness under the bloom.
+- `HOME_MATCH_BUILD`: head 1.32, neck 1.4, full-size hands, ×1.14 across.
+- The ball's light ring is off (`setHBallLightRing`, back on when the match view closes).
+- Each man his own look: `lib/star/playerLook.ts` (`playerLookFor({ id, position?, skin? })`, no three.js, for the 2D re-bake later): head, build and height by role (GK/CB taller, CDM stockier, wingers slighter), flair heads (Bun, Quiff) and bleached hair more often up front, seeded skin, boot colour. The match frame has no positions yet, so only the keeper is placed by role.
+Cost (harness career chance, Medium, same frame): Realistic 82 draws / 326k triangles → Style A 82 / 267k (the same 11 skinned draws). The look adds no draw and no texture.
+
+Animation grid: the harness `animgrid` scene + `scripts/perf3d/animgrid.mjs` + `animsheet.py` make a contact sheet of every match clip (35 tiles, none missing) at 0/25/50/75%.
+
+Not done: Medium's edge crunch (post.ts sharpen), positions into the frame for `playerLookFor`, long hair / mohawk / braids heads, clip work (foot slide, blending) beyond checking each clip plays on Style A.

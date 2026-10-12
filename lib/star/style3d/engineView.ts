@@ -33,7 +33,9 @@ import { cullSkinned } from "../three3d/cullPeople";
 import { withMeshopt } from "../three3d/meshopt";
 import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
-import { matchPlayerStyle } from "./toon/matchLook";
+import { matchPlayerStyle, matchPlayersStyleLook } from "./toon/matchLook";
+import { HOME_MATCH_BUILD } from "./toon/shader";
+import { playerLookFor } from "../playerLook";
 import { TOON_PLAYER_HEADS, toonBodyFor, toonHeadFor, toonHairFor, toonSkinFor, toonYou, type ToonHead } from "./toon/bodies";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import { faceFromUrl } from "../three3d/faceFromUrl";
@@ -50,6 +52,7 @@ import { followStep } from "./figureFollow";
 import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { solveBroadcast, actionPoints, bcPose, BROADCAST, type BcFigure } from "./broadcastCam";
+import { solveMatch2D, visibleQuad, leanFor, MATCH2D } from "./match2dCam";
 
 export interface EngineView {
   /** Every frame the 2D picture draws (EngineFrameObserver.onFrame). */
@@ -632,13 +635,20 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   // Style A (Player style: New): a man's head is seeded by who he is, so spares are kept per head
   // (his build is a scale, set again when a spare is used).
   const toonOn = mStyle === "new";
+  // "Players in a 3D match: Style A" (toon/matchLook.ts): every man lit like the Home player, with an ink edge (toon/shader.ts HOME_LIGHT)
+  const homeMen = toonOn && matchPlayersStyleLook() === "styleA";
+  // ...and built like him: a bigger head and broader at this small size (a man is ~6% of the screen; HOME_MATCH_BUILD)
+  const homeLook = homeMen ? HOME_MATCH_BUILD.look : undefined;
+  if (o.def.real) void import("./real/ball").then(({ setHBallLightRing }) => setHBallLightRing(!homeMen)).catch(() => {});
+  const homeLight = (p: Person3D) => { const hu = (p.u as any).uHome?.value; if (hu) hu.x = homeMen ? 1 : 0; };
   const spareBins = new Map<string, Person3D[]>();
   const bin = (h?: ToonHead) => { const k = h ?? "-"; let l = spareBins.get(k); if (!l) { l = []; spareBins.set(k, l); } return l; };
   const spares = { push: (p: Person3D) => bin(p.toonHead).push(p), pop: () => Array.from(spareBins.values()).find((l) => l.length)?.pop() };
   let built = 0;
   const buildShell = (th?: ToonHead) => {
-    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonHead: toonOn ? (th ?? TOON_PLAYER_HEADS[built % TOON_PLAYER_HEADS.length]) : undefined, toonBody: toonOn ? "c1" : undefined });
+    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonHead: toonOn ? (th ?? TOON_PLAYER_HEADS[built % TOON_PLAYER_HEADS.length]) : undefined, toonBody: toonOn ? "c1" : undefined, toonLook: homeLook });
     if (fb) addClips(THREE, p, fb as any);
+    homeLight(p);
     cullSkinned(THREE, p.root); // off-screen men are not drawn (three3d/cullPeople.ts)
     matchSizedMap(p);
     p.root.visible = false;
@@ -657,7 +667,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const LIKELY_SIDS = ["you", "keeper", "follower",
     ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap((i) => [`def${i}`, `mate${i}`]),
     "run0", "run1", "run2", "run3"];
-  const headOf = (sid: string): ToonHead | undefined => (toonOn ? (sid === "you" ? toonYou().head : toonHeadFor(sid)) : undefined);
+  // Style A match men (homeMen): each his own head, build, height, skin, hair and boots (lib/star/playerLook.ts)
+  const manLook = (sid: string) => playerLookFor({ id: sid, position: sid === "keeper" ? "GK" : undefined });
+  const headOf = (sid: string): ToonHead | undefined => (toonOn ? (sid === "you" ? toonYou().head : homeMen ? manLook(sid).head : toonHeadFor(sid)) : undefined);
   const spareQueue = LIKELY_SIDS.slice(0, Math.max(6, SPARE_TARGET)).map(headOf);
   for (let i = 0; i < 6 && spareQueue.length; i++) spares.push(buildShell(spareQueue.shift()));
   const topUpSpares = () => { if (spareQueue.length && built < SPARE_TARGET + 6) spares.push(buildShell(spareQueue.shift())); };
@@ -707,17 +719,19 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     return { x: lx * Math.cos(b.yaw) + lz * Math.sin(b.yaw), y: -lx * Math.sin(b.yaw) + lz * Math.cos(b.yaw) };
   };
   const makeBody = (sid: string, shirt: string, shorts: string): Body => {
-    const tb = toonOn ? (sid === "you" ? toonYou().body : toonBodyFor(sid)) : undefined;
-    const th = toonOn ? (sid === "you" ? toonYou().head : toonHeadFor(sid)) : undefined;
+    const ml = homeMen && sid !== "you" ? manLook(sid) : null;
+    const tb = toonOn ? (sid === "you" ? toonYou().body : ml ? ml.body : toonBodyFor(sid)) : undefined;
+    const th = toonOn ? (sid === "you" ? toonYou().head : ml ? ml.head : toonHeadFor(sid)) : undefined;
     const spare = bin(th).pop();
-    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb, toonHead: th });
-    if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); }
+    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb, toonHead: th, toonLook: homeLook });
+    if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); homeLight(p); }
     if (tb) setToonBuild(p, tb);
+    if (tb && homeMen) p.root.children[0]?.scale.multiply(new THREE.Vector3(...HOME_MATCH_BUILD.across)).multiply(new THREE.Vector3(1, ml?.height ?? 1, 1));
     const look: PersonLook = {
-      skin: toonOn ? (sid === "you" ? toonYou().skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
-      hair: toonOn ? (sid === "you" ? toonYou().hair : toonHairFor(sid)) : "#1b120c",
+      skin: toonOn ? (sid === "you" ? toonYou().skin : ml ? ml.skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
+      hair: toonOn ? (sid === "you" ? toonYou().hair : ml ? ml.hair : toonHairFor(sid)) : "#1b120c",
       kit: { shirt, trim: shorts }, number: numberTex(numberFor(sid)),
-      accessories: sid === "keeper" ? [{ slot: "hands", color: "#f5f5f5", color2: "#16a34a" }] : [],
+      accessories: [...(sid === "keeper" ? [{ slot: "hands" as const, color: "#f5f5f5", color2: "#16a34a" }] : []), ...(ml ? [{ slot: "boots" as const, color: ml.boots }] : [])],
     };
     dressPerson3d(THREE, p, look);
     plainHead(p, look.skin, look.hair ?? "#1b120c");
@@ -1239,6 +1253,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         .then((made) => {
           if (tk !== hToken || !def.real) { made.dispose(); return; }
           h = made;
+          clipArenaNearSide();
           kit?.setActive(false); // the kit drew the wait; its post pictures are freed now H draws
           ballShadow.visible = false;
           h.dressPeople(list.map((b) => b.p));
@@ -1556,9 +1571,74 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     tvFig = bc.k;
     (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: bc.D, elevDeg: BC.elevDeg, k: bc.k, man: c.man, anchorShare: c.anchorShare, hold, facing: f.cam.facing };
   };
+  /**
+   * THE 2D'S OWN FRAME (3D camera: New since 12 Oct 2026, lib/star/style3d/match2dCam.ts).
+   * Harry: "the framing is not exactly the same on 3d and 2d … on 2d it might be able
+   * to be a shot but on 3d it seems like a build up". The 3D shows the patch of grass
+   * the 2D shows on the phone (its view box, turned and tilted), 50–60° down, never
+   * turned off the 2D's facing; it moves exactly when the 2D's box moves. The angle
+   * and lens are picked once a chance (no flicker on a glide). The near clip sits just
+   * inside the nearest framed spot, so a stand between the camera and the pitch is
+   * never drawn (Harry's corner still: the roof over two thirds of the screen).
+   */
   /** Test page only: ?bcam=0 shows the New camera as it was before the broadcast camera (for before/after stills). */
   const preBroadcast = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bcam") === "0";
+  /** Test pages / stills only: ?cam2d=0 shows the broadcast camera (New before 12 Oct 2026). */
+  const preMatch2D = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("cam2d") === "0";
+  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, k: MATCH2D.fig };
+  /**
+   * The stand on the camera's side: everything of the stadium nearer the camera than
+   * the bottom edge of the 2D's view (or the touchline / goal line on that side) is not drawn (a roof there sits over the grass the
+   * 2D shows: Harry's corner still). Shadows are untouched (clipShadows stays off).
+   * Only the stadium group, only with 3D camera New; far away (no effect) otherwise.
+   */
+  const arenaClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e6);
+  function clipArenaNearSide() {
+    if (realCameraLook() !== "new" || preMatch2D || preBroadcast) return;
+    const g = scene.getObjectByName("h-arena");
+    if (!g) return;
+    renderer.localClippingEnabled = true;
+    g.traverse((o: { material?: unknown }) => {
+      const raw = o.material as { clippingPlanes: unknown[]; clipping?: boolean; needsUpdate: boolean } | { clippingPlanes: unknown[]; clipping?: boolean; needsUpdate: boolean }[] | undefined;
+      for (const m of Array.isArray(raw) ? raw : raw ? [raw] : []) { m.clippingPlanes = [arenaClip]; m.clipping = true; m.needsUpdate = true; }
+    });
+  }
+  const placeMatch2D = (f: EngineFrame) => {
+    const { viewport: vp, facing, tilt, W, H } = f.cam;
+    if (!(W > 0 && H > 0)) return;
+    const key = `${f.kind}|${facing}|${tilt ? tilt.deg : 0}|${Math.round(W)}|${Math.round(H)}`;
+    const fr2 = { viewport: vp, facing, tilt, W, H };
+    const c = key === m2.key && m2.pick ? solveMatch2D(fr2, MATCH2D, m2.pick) : solveMatch2D(fr2, MATCH2D);
+    if (key !== m2.key) { if (tv.init) gov.hush(performance.now()); m2.key = key; m2.pick = { elevDeg: c.elevDeg, fov: c.fov }; m2.k = c.k; } // the size: once a chance
+    const pose = bcPose(c);
+    camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(pose.look[0], 0, pose.look[2]);
+    camera.fov = c.fov;
+    camera.aspect = W / H;
+    camera.near = Math.max(0.1, c.minDepth * 0.8);
+    camera.far = c.D + 500;
+    camera.updateProjectionMatrix();
+    down3.set(c.ax, 0, c.az);
+    lean = leanFor(c.elevDeg);
+    tv.init = true;
+    tvFig = m2.k;
+    // the stadium nearer the camera than the 2D view's bottom edge (1.5 m spare) is not drawn
+    {
+      const q = visibleQuad(fr2);
+      let far = -Infinity;
+      for (const p of q) far = Math.max(far, (p.x - CX) * c.ax + p.y * c.az);
+      // … and never past the pitch's own edge on that side (the stand's front, its roof and truss
+      // otherwise hang over the touchline the 2D shows: a corner's taker sat under the truss)
+      const edge = Math.abs(c.ax) > 0.5 ? CX : 105;
+      arenaClip.normal.set(-c.ax, 0, -c.az);
+      arenaClip.constant = Math.min(far + 1.5, edge + 0.3);
+    }
+    (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: c.D, elevDeg: c.elevDeg, fov: c.fov, extra: c.extra, near: camera.near, facing, fig: m2.k, man: c.man };
+  };
   const placeCamera = (f: EngineFrame, dt: number) => {
+    if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast && !preMatch2D) { placeMatch2D(f); return; }
+    if (arenaClip.constant !== 1e6) { arenaClip.normal.set(0, 1, 0); arenaClip.constant = 1e6; } // another camera: clip nothing
     if (camMode === "tv" && realCameraLook() === "new" && !preBroadcast) placeBroadcast(f, dt);
     else if (camMode === "tv" && f.cam.facing === "up") placeTvCamera(f, dt);
     else { tv.init = false; placeExactCamera(f); }
@@ -1926,6 +2006,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       hToken++;
       gov.dispose();
       hball?.dispose(); hball = null;
+      if (homeMen) void import("./real/ball").then(({ setHBallLightRing }) => setHBallLightRing(true)).catch(() => {}); // drills keep their ring
       h?.dispose(); h = null;
       kit?.dispose(); kit = null;
       // the spares never reached the scene, so release(root) never saw them: their own materials and bones go here
