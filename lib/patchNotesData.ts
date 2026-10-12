@@ -27,6 +27,40 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "1.1",
+      "title": "Harry's patch notes: the big 3D round, then shop, settings clean-up and cameras",
+      "publishedAt": "2026-10-12T18:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/UcP8z2ppzmj82qRb8ncLyQ",
+      "summary": "8 to 12 Oct. Part 2 (12 Oct): shop pictures made from the 3D shop's models, boots priced off your wage like the energy cans, about 45 Settings toggles removed, and 3D match camera work (approved look, corner glide, zoom, penalty pull-back). The new shop layout, byline glide, side-on cutbacks and the tight-angle camera are built but not on the branch yet. The full page, with pictures, is the Page tab.",
+      "stats": [
+        { "value": "30 weeks", "label": "top boot costs 30 weeks of wage in every division (Prem: was 5.5)" },
+        { "value": "~45", "label": "Settings toggles removed" },
+        { "value": "7 and 5 of 60", "label": "served one-on-ones and through balls with an offside team-mate (not fixed)" },
+        { "value": "1.8 m", "label": "every player, on every 3D screen" }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "12 Oct, part 2",
+          "items": [
+            { "title": "Shop pictures come from the 3D shop's own models", "detail": "Cars repainted per level; the blazer redrawn. The new layout (bottom bar, 1|3|5, For You, trophy badge, Buy button) is coming, not on the branch yet." },
+            { "title": "Boots cost the same weeks of wage in every division", "detail": "NS-Maestro L5: 35,000 to 193,000 in the Premier League, 750 in non-league. Early-game boots are now very cheap. Worked out from code, not played." },
+            { "title": "Settings: about 45 toggles removed", "detail": "Drawn chances only, Style A heads for everyone, photo faces off. Keepers New | Old stays." },
+            { "title": "3D match: approved look, one size, corner glide, zoom, penalty pull-back", "detail": "Byline glide, side-on cutbacks (59 m, was 123 m) and the FIFA tight-angle camera are coming." }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Found, not fixed",
+          "items": [
+            { "title": "Offside team-mate in some served chances", "detail": "7 of 60 one-on-ones, 5 of 60 through balls." },
+            { "title": "Garden walking 10 to 25 fps, 1 to 3 second freezes at doors", "detail": "From Mikey's video. A speed job is queued." }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.45",
       "title": "Leo's patch notes — the gameplay round: camera, keeper, shots, ball, radar, dribbling",
       "publishedAt": "2026-10-12T00:30:00Z",
