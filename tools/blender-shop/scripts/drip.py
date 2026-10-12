@@ -362,7 +362,8 @@ def _weave(m, c1, c2, scale):
     mix.inputs['B'].default_value = (*S.srgb('#8f7650'), 1)
     S.link(m, nz.outputs['Fac'], mix.inputs['Factor'])
     S.link(m, mix.outputs['Result'], b.inputs['Base Color'])
-    bump = S.node(m, 'ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.35
+    bump = S.node(m, 'ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.2
+    bump.inputs['Distance'].default_value = 0.002  # a fine cloth grain, the same in every Blender (4.0 read the default as lumps)
     S.link(m, nz.outputs['Fac'], bump.inputs['Height']); S.link(m, bump.outputs['Normal'], b.inputs['Normal'])
 
 
@@ -387,8 +388,9 @@ def suit_make(lv):
     shirt = M0('#e9e4d4' if lv == 1 else '#f6f6f3', 0.7)
     if lv == 4: lapel = S.principled('Satin', '#0b0c10', rough=0.16, coat=0.7, sheen=0.9)
     elif lv == 5: lapel = S.principled('GoldSatin', '#c79a2b', rough=0.22, metal=0.85, coat=0.4)
+    elif lv == 1: lapel = S.principled('Lapel1', '#5b4527', rough=0.85, sheen=0.4)
     else: lapel = cloth
-    tie_col = {1: None, 2: '#b8332b', 3: '#6e1a2c', 4: None, 5: '#d8a924'}[lv]
+    tie_col = {1: '#6e2f1f', 2: '#b8332b', 3: '#6e1a2c', 4: None, 5: '#d8a924'}[lv]
 
     # ---- jacket body: shoulders -> chest -> waist -> hem
     def prof(t):
@@ -447,23 +449,18 @@ def suit_make(lv):
         bv = lp.modifiers.new('bev', 'BEVEL'); bv.width = 0.003; bv.segments = 2
         P.append(lp)
     # ---- buttons, flap pockets, breast pocket + square
-    for z in ((0.30, 0.20) if lv != 1 else (0.30,)):
+    for z in (0.30, 0.20):
         P.append(cyl('Btn', (0.0, y_front(z) - 0.004, z), 0.0125, 0.007, 'Y', mat=gold if lv >= 4 else (brass if lv == 1 else M0('#161616', 0.35, 0.0, 0.5)), bevel=0.0012))
         P[-1].rotation_euler = (math.pi / 2, 0, 0)
     for sg in (-1, 1):
         P.append(box('Flap', (sg * 0.115, y_front(0.17) - 0.004, 0.17), (0.085, 0.008, 0.026), lapel if lv >= 3 else cloth, bevel=0.003, rot=(0, 0, sg * -0.05)))
     P.append(box('Pocket', (0.115, y_front(0.46) - 0.003, 0.455), (0.058, 0.005, 0.011), lapel if lv >= 3 else cloth, bevel=0.002))
-    if lv >= 2:
-        sq = M0({2: '#f1f1ee', 3: '#f6f2e8', 4: '#f6f6f3', 5: '#e2b53a'}[lv], 0.55, 0.9 if lv == 5 else 0.0)
+    if lv >= 1:
+        sq = M0({1: '#c9b48a', 2: '#f1f1ee', 3: '#f6f2e8', 4: '#f6f6f3', 5: '#e2b53a'}[lv], 0.55, 0.9 if lv == 5 else 0.0)
         P.append(box('Square', (0.115, y_front(0.47) - 0.005, 0.478), (0.046, 0.008, 0.026), sq, bevel=0.003, rot=(0, 0.15, 0)))
         P.append(box('Square2', (0.108, y_front(0.47) - 0.006, 0.485), (0.026, 0.006, 0.022), sq, bevel=0.003, rot=(0, -0.2, 0)))
-    if lv == 1:      # elbow patches + a charity-shop price tag on a string
-        pa = S.principled('Patch', '#4a3a22', rough=0.9)
-        for sg in (-1, 1):
-            P.append(sph('Patch', (sg * 0.238, 0.06, 0.345), 0.04, pa, scale=(0.8, 0.5, 1.2)))
-        tag = S.principled('Tag', '#efe7d2', rough=0.7)
-        P.append(box('Tag', (-0.172, y_front(0.40) - 0.01, 0.37), (0.05, 0.004, 0.034), tag, bevel=0.002, rot=(0, 0.0, 0.3)))
-        P.append(tube('Str', [(-0.19, y_front(0.46) - 0.006, 0.455), (-0.185, y_front(0.42) - 0.012, 0.40), (-0.172, y_front(0.40) - 0.01, 0.385)], 0.0012, M0('#222222', 0.5), smooth=False, res=4))
+    if lv == 1:      # a worn tweed with a knitted tie (Harry, 12 Oct 2026: the price tag and elbow lumps read as mess)
+        pass
     if lv == 5:      # gold lapel pin and cufflinks sparkle
         P.append(sph('Pin', (-0.105, y_front(0.5) - 0.008, 0.5), 0.011, gold))
     # ---- display form: neck stub, pole and base

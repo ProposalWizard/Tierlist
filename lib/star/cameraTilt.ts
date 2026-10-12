@@ -53,8 +53,7 @@ if (typeof window !== "undefined") {
 
 /** This phone's camera angle. */
 export function cameraTilt(): CameraTilt {
-  if (stored === undefined) stored = readStored();
-  return stored;
+  return 20; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 export function setCameraTilt(v: CameraTilt): void {

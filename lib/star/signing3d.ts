@@ -107,8 +107,7 @@ if (typeof window !== "undefined") {
 }
 
 export function signing3dOn(): boolean {
-  if (stored === undefined) stored = read();
-  return stored;
+  return true; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 export function setSigning3d(on: boolean): void {
@@ -150,8 +149,7 @@ if (typeof window !== "undefined") {
 }
 
 export function shop3dPlayerLook(): Shop3dPlayerLook {
-  if (storedShop === undefined) storedShop = readShop();
-  return storedShop;
+  return "new"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 export function setShop3dPlayerLook(v: Shop3dPlayerLook): void {

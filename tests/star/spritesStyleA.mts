@@ -7,8 +7,7 @@
  * height on the pitch (±5%); Current is the default in every preset.
  */
 import fs from "node:fs";
-import { spriteIndexFile, SPRITES2D_DEFAULT } from "../../lib/star/sprites2dLook";
-import { VERSION_PRESETS } from "../../lib/star/gameVersions";
+import { spriteIndexFile, SPRITES2D_DEFAULT, sprites2dLook } from "../../lib/star/sprites2dLook";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -18,8 +17,8 @@ const sa = JSON.parse(fs.readFileSync(D + "index-a.json", "utf8"));
 
 check(spriteIndexFile("current") === "index.json" && spriteIndexFile("stylea") === "index-a.json", "index file per look");
 check(SPRITES2D_DEFAULT === "stylea", "Style A is the default (Harry, 9 Oct 2026)");
-check(VERSION_PRESETS.classic.sprites2d === "current", `classic: 2D players ${VERSION_PRESETS.classic.sprites2d}`);
-for (const v of ["standard", "preview"] as const) check(VERSION_PRESETS[v].sprites2d === "stylea", `${v}: 2D players ${VERSION_PRESETS[v].sprites2d}`);
+// Decided, no toggle (12 Oct 2026): every phone plays Style A.
+check(sprites2dLook() === "stylea", `the game plays ${sprites2dLook()}, not Style A`);
 
 const KEYS = ["fps", "loop", "dirs", "frames", "strikeFrame", "atlas", "mirrorOf"] as const;
 let clips = 0, cells = 0;

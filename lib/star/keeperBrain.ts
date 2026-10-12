@@ -65,7 +65,7 @@ import { keeperSaveRadius } from "./canvasEngine";
 import { CX, POST_L, POST_R } from "./pitch";
 import { decidePenaltyRead, penaltyReadFor, type PenaltyReadSettings } from "./penaltyKeeper";
 import { testAreaSetting } from "./compareSwitches";
-import { oldKeepers, oldKeeperPro } from "./gameplayVersion";
+import { oldKeeperPro } from "./gameplayVersion";
 import { getTuning } from "./tuningStore";
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
@@ -321,7 +321,6 @@ export interface Abilities {
  */
 export function abilities(rating: number): Abilities {
   const r = clamp(Number.isFinite(rating) ? rating : 62, 20, 99);
-  if (oldKeepers()) return abilitiesBefore(r);
   return {
     rating: r,
     correction: 0.27 + 0.68 * grow(r, 40, 95, 1.2),
@@ -337,29 +336,6 @@ export function abilities(rating: number): Abilities {
     stepSpeed: 1.65 + 0.95 * grow(r, 40, 95, 1.0),
     diveSpeed: 4.5 + 1.7 * grow(r, 40, 95, 1.2),
     maxTravel: 2.2 + 1.0 * grow(r, 40, 95, 1.5),
-    diveWindow: 0.33 + 0.10 * grow(r, 40, 95, 1.0),
-    anticipStep: 0.9 * grow(r, 65, 95, 1.6),
-  };
-}
-
-/** Settings → Gameplay → Keepers: Old. The keeper's skills exactly as they
- *  were before 5 Oct 2026, so the change can be compared and undone. */
-function abilitiesBefore(r: number): Abilities {
-  return {
-    rating: r,
-    correction: 0.35 + 0.60 * grow(r, 40, 95, 1.2),
-    posErr: 1.0 - 0.80 * grow(r, 40, 95, 1.3),
-    badSet: 0.25 - 0.21 * grow(r, 40, 95, 1.0),
-    setSpeed: 1.6 + 1.0 * grow(r, 40, 95, 1.0),
-    rt: 0.30 - 0.10 * grow(r, 40, 95, 1.2),
-    rtSd: 0.035,
-    lateChance: 0.18 - 0.15 * grow(r, 40, 95, 1.0),
-    lateExtra: 0.15,
-    readErr: 1.3 - 0.9 * grow(r, 40, 95, 1.4),
-    timingErr: 0.12 - 0.07 * grow(r, 40, 95, 1.2),
-    stepSpeed: 1.9 + 0.7 * grow(r, 40, 95, 1.0),
-    diveSpeed: 4.8 + 1.4 * grow(r, 40, 95, 1.2),
-    maxTravel: 2.4 + 0.8 * grow(r, 40, 95, 1.5),
     diveWindow: 0.33 + 0.10 * grow(r, 40, 95, 1.0),
     anticipStep: 0.9 * grow(r, 65, 95, 1.6),
   };
@@ -791,7 +767,7 @@ function onShot(sc: Scenario, st: State, ball: Ball) {
   // one random draw is taken only when somebody is in the way, so a clear
   // view leaves his stream exactly as it was.
   st.blocked = 0; st.wrongRead = false;
-  if (sc.kind !== "penalty" && st.opts.vision !== false && !oldKeepers()) {
+  if (sc.kind !== "penalty" && st.opts.vision !== false) {
     const b = sightlineBlockage(sc, ball.pos);
     if (b > 0) {
       const H = KEEPER_HUMAN;
@@ -936,7 +912,7 @@ export function brainStep(sc: Scenario, ball: Ball | null, dt: number): void {
  */
 function applyTopCorner(sc: Scenario, st: State, ball: Ball | null): void {
   const k = sc.keeper;
-  const live = !!ball && sc.kind !== "penalty" && st.opts.topCorner !== false && !oldKeepers() && !k.done
+  const live = !!ball && sc.kind !== "penalty" && st.opts.topCorner !== false && !k.done
     && (st.phase === "wait" || st.phase === "step" || st.phase === "dive")
     && st.lastShot && k.saves === 0 && !k.scrambling
     && ball.lastTouch === "attack" && !ball.loose && ball.pos.y > k.y;
@@ -1339,7 +1315,7 @@ function applyProReach(sc: Scenario, st: State, ball: Ball | null): void {
   }
   if (st.phase === "dive") windowReach(sc, st);
   const r0 = st.phase === "dive" ? (sc.keeperReach ?? 1) : (st.baseReach ?? 1);
-  const top = st.opts.topCorner !== false && !oldKeepers() ? topCornerReach(sc, ball!, st.shotX) : 1;
+  const top = st.opts.topCorner !== false ? topCornerReach(sc, ball!, st.shotX) : 1;
   const P = KEEPER_PRO_BRAIN;
   const full = Math.max(0.5, st.fullR);
   const hand = P.handNow + (full - P.handNow) * clamp((st.t - st.rt) / P.handFull, 0, 1);

@@ -3,7 +3,8 @@
 // box shows on the phone (lines, men, ball, goal), drawn through the 2D's own
 // tilt. Usage: npx tsx scripts/cam3d/frames.mts OUTDIR   (writes chances.json + 2d-*.svg)
 import fs from "node:fs";
-import { chanceFor } from "../../tests/star/match2dCam.mts";
+import { cleanServed, servedChance, SERVED_KINDS, type Served } from "./served.mts";
+import { setWideChancesOverride } from "../../lib/star/wideChances";
 import { pitchTo2dScreen, type Frame2D } from "../../lib/star/style3d/match2dCam";
 import { hasRunup, plantBeside } from "../../lib/star/penaltyRunup";
 import { standBackFor, planRunup, runupPositionAt, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP, RUNUP_MOTION } from "../../lib/star/runupStyles";
@@ -12,13 +13,12 @@ import { SET_PIECE_KINDS } from "../../lib/star/newLook";
 
 const out = process.argv[2] ?? "/tmp/cam3d";
 fs.mkdirSync(`${out}/raw`, { recursive: true });
-const PICK: [string, number, string][] = [
-  ["corner", 1, "Corner (side-on, image 1 type)"], ["byline_cross", 1, "Byline cross (side-on)"], ["one_on_one", 1, "One-on-one"],
-  ["cutback", 1, "Cutback"], ["through_ball", 1, "Through ball"], ["long_range", 1, "Long range"], ["penalty", 1, "Penalty"],
-  ["free_kick", 1, "Free kick"], ["header", 2, "Header"],
-];
+// Every kind the game serves FROM DRAWINGS, the n-th served chance of it that passes its kind's rules
+// (baseScenario.ts scenarioFaults). Never a raw build (Harry, 12 Oct 2026: a "one-on-one" still with a
+// defender between the ball and the goal: "NOT a one on one which u should know by reading a scenarios rules").
+const PICK: [string, number, string][] = SERVED_KINDS.map((k) => [k, 1, k.replace(/_/g, " ")] as [string, number, string]);
 
-function svgFor(f: Frame2D, c: ReturnType<typeof chanceFor>): string {
+function svgFor(f: Frame2D, c: Served): string {
   const P = (x: number, y: number) => { const s = pitchTo2dScreen(f, { x, y }); return `${s.X.toFixed(1)},${s.Y.toFixed(1)}`; };
   const line = (pts: [number, number][]) => `<polyline points="${pts.map(([x, y]) => P(x, y)).join(" ")}" fill="none" stroke="#fff" stroke-width="2" stroke-opacity=".85"/>`;
   const seg = (a: [number, number], b: [number, number], n = 12) => Array.from({ length: n + 1 }, (_, i) => [a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n] as [number, number]);
@@ -49,9 +49,20 @@ function svgFor(f: Frame2D, c: ReturnType<typeof chanceFor>): string {
 }
 // --phases: also the run-up (penalty, free kick) and the strike screen (every kind), for the set-piece stills
 const phases = process.argv.includes("--phases");
+// --wide=new : Wide chances side-on (the code still in matchView.ts; not in the game). Names get "-sideon".
+const sideOn = process.argv.includes("--wide=new") || process.argv.includes("--wide=force");
+if (sideOn) setWideChancesOverride("new");
+// --wide=force : side-on even where turnWideChance refuses (it turns only when side-on is tighter)
+const force = process.argv.includes("--wide=force");
+// --seed : the --kinds numbers are served seeds, not the n-th clean chance (to compare one chance two ways)
+const bySeed = process.argv.includes("--seed");
 const list: unknown[] = [];
-for (const [kind, seed, label] of PICK) {
-  const c = chanceFor(kind, seed);
+for (const [kind, nth, kindLabel] of PICK) {
+  const s0 = bySeed ? { ...servedChance(kind, nth, 372, 704, force), seed: nth } : null;
+  const c = s0 && s0.faults.length === 0 && s0.sc.kind === kind ? s0 : bySeed ? undefined : cleanServed(kind, nth)[nth - 1];
+  if (!c || !c.drawn) { console.log(`skip ${kind}: ${!c ? "no served chance passes its rules" : "not served from drawings"}`); continue; }
+  const seed = c.seed;
+  const label = `${kindLabel} · rules: ok · served seed ${seed}`;
   const f = c.f;
   // the stance CanvasMatch gives a penalty / free kick taker (loadScenario: standBackFor; the picture: drawnTakerAt)
   let standAt: { x: number; y: number } | null = null;
@@ -71,7 +82,7 @@ for (const [kind, seed, label] of PICK) {
     keeper: { x: c.keeper.x, y: c.keeper.y, dive: 0, saveLunge: 0, saveDir: 0, saveKind: null, idleT: 0, shirt: "#16a34a", shorts: "#111111", drawn: c.keeper.drawn },
     figures: c.figs.map((g) => fig(g.sid, g.x, g.y, g.team)), aim: null, ring: { x: c.sc.ball.x, y: c.sc.ball.y }, goalSide: null, goalInView: c.gv, orders: null,
   };
-  const name = `${kind}-${seed}`;
+  const name = `${kind}-${seed}${sideOn ? "-sideon" : ""}`;
   fs.writeFileSync(`${out}/raw/2d-${name}.svg`, svgFor(f, c));
   list.push({ name, label, frame });
   if (phases) {

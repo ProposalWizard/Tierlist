@@ -517,6 +517,35 @@ gl_Position = projectionMatrix * mvPosition;`,
   return m;
 }
 
+/** The drawing buffer's size in pixels, shared by every screen-space outline (set by the scene on resize). */
+const OUTLINE_RES = { value: null as THREE.Vector2 | null };
+export function setPeople3dOutlineRes(T: Three, w: number, h: number): void {
+  if (!OUTLINE_RES.value) OUTLINE_RES.value = new T.Vector2(w, h); else OUTLINE_RES.value.set(w, h);
+}
+/** The outline as a SCREEN-space ink line: the hull pushed out `px` pixels on the screen, whatever
+ *  the man's distance (the Home player's clean edge on a 35 px man; a metres-wide hull is under a pixel there). */
+function outlinePxMaterial(T: Three, px: number): THREE.MeshBasicMaterial {
+  const m = new T.MeshBasicMaterial({ color: 0x15171c, side: T.BackSide });
+  m.userData.screenPx = true;
+  if (!OUTLINE_RES.value) OUTLINE_RES.value = new T.Vector2(1170, 2532);
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uOutlineRes = OUTLINE_RES;
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nuniform vec2 uOutlineRes;")
+      .replace("#include <project_vertex>", `#include <project_vertex>
+vec3 opN = normalize(transformedNormal);
+#ifdef FLIP_SIDED
+opN = -opN;
+#endif
+vec4 opC = projectionMatrix * vec4(opN, 0.0);
+vec2 opD = length(opC.xy) > 1e-5 ? normalize(opC.xy) : vec2(0.0);
+gl_Position.xy += opD * ${px.toFixed(2)} * 2.0 / uOutlineRes * gl_Position.w;
+gl_Position.z += 0.0005 * gl_Position.w;`);
+  };
+  m.customProgramCacheKey = () => `people3d-outline-px-${px.toFixed(2)}`;
+  return m;
+}
+
 // ── A person ──────────────────────────────────────────────────────────────
 
 export interface MakePersonOptions {
@@ -525,6 +554,8 @@ export interface MakePersonOptions {
   castShadow?: boolean;
   /** Thin the outline nearer the camera than this (metres): see outlineMaterial. Unset: a fixed width, as before. */
   outlineNear?: number;
+  /** The outline this many SCREEN pixels thick at any distance (setPeople3dOutlineRes keeps the size). Overrides `outline`'s metres. */
+  outlinePx?: number;
   /** The human body only: who to build (height, build, hair, outfit …). Unset: by the file name asked for. */
   human?: HumanSpec;
   /** Style A: who this is (a stable id seeds his body), or `you` for your player (your chosen body). */
@@ -668,10 +699,10 @@ export function makePerson3d(
   // Style A's ink line is a little bolder (the look test's 7 mm against the old 4.5).
   const tlk = toon ? { ...TOON_LOOK_DEFAULT, ...opts.toonLook } : null;
   const thin = tlk && tlk.outlineThin < 1 ? { chinY: meta.face.chinY - 0.03, handX: Math.abs(meta.joints.LeftHand?.[0] ?? 0.4) - 0.01, k: tlk.outlineThin } : undefined;
-  const outline = new T.SkinnedMesh(body.geometry, outlineMaterial(T, (opts.outline ?? 0.0045) * (toon ? 1.3 : 1), opts.outlineNear, thin));
+  const outline = new T.SkinnedMesh(body.geometry, opts.outlinePx ? outlinePxMaterial(T, opts.outlinePx) : outlineMaterial(T, (opts.outline ?? 0.0045) * (toon ? 1.3 : 1), opts.outlineNear, thin));
   outline.name = "Outline";
   outline.frustumCulled = false;
-  outline.visible = (opts.outline ?? 0.0045) > 0;
+  outline.visible = !!opts.outlinePx || (opts.outline ?? 0.0045) > 0;
   body.parent!.add(outline);
   outline.bind(body.skeleton, body.bindMatrix);
 

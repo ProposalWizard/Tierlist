@@ -84,7 +84,8 @@ const {
   store.clear();
   store.set("star-face-style", JSON.stringify({ facesEnabled: "yes", namesEnabled: 0 }));
   const back = loadFaceStyle();
-  check(back.facesEnabled === true, `a truthy non-boolean still reads as on (${back.facesEnabled})`);
+  // Photo faces are off, decided (Harry, 12 Oct 2026): a stored "on" is ignored.
+  check(back.facesEnabled === false, `photo faces are off whatever is stored (${back.facesEnabled})`);
   check(back.namesEnabled === false, `a falsy non-boolean still reads as off (${back.namesEnabled})`);
 }
 
@@ -99,12 +100,12 @@ const {
 }
 
 // ── An old save from before facesEnabled/namesEnabled existed still loads,
-// with the real defaults filled in (faces on, names off) ─────────────────
+// with the real defaults filled in (faces off since 12 Oct 2026, names off) ──
 {
   store.clear();
   store.set("star-face-style", JSON.stringify({ scale: 2.2, outlineEnabled: false }));
   const back = loadFaceStyle();
-  check(back.facesEnabled === true, `no record of it: falls back to the real default, on (${back.facesEnabled})`);
+  check(back.facesEnabled === false, `no record of it: falls back to the real default, off (${back.facesEnabled})`);
   check(back.namesEnabled === false, `no record of it: falls back to the real default, off (${back.namesEnabled})`);
   check(back.scale === 2.2 && back.outlineEnabled === false, "…without losing the fields that WERE on record");
 }

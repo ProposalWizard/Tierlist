@@ -308,6 +308,8 @@ export const SET_PIECE_CAM = {
   fovs: [26, 32, 38] as number[],
   /** A man at the ball, share of the screen's height, aimed for (Harry: "about 5–6%"). */
   targetShare: 0.055,
+  /** A penalty: pulled back so the man reads about 4% of the height (Harry, 12 Oct 2026). Real size, so the keeper stays under the bar. */
+  penaltyShare: 0.04,
   /** Room at every edge, share of the screen (the goal's posts, the taker's feet). */
   margin: 0.04,
   /**
@@ -375,7 +377,7 @@ export function fitPoints(W: number, H: number, pts: BcPoint[], ax: number, az: 
  * lens; keeps the one whose man at the ball is nearest `targetShare` (never nearer than all of
  * `keep` allows). Facing as the 2D. Pure: tests/star/match2dCam.mts.
  */
-export function solveSetPieceCam(f: Frame2D, keep: BcPoint[], ball: BcPoint, man: MatchScale, S = SET_PIECE_CAM): Match2DCamera {
+export function solveSetPieceCam(f: Frame2D, keep: BcPoint[], ball: BcPoint, man: MatchScale, S = SET_PIECE_CAM, target = S.targetShare): Match2DCamera {
   const { ax, az } = azimuth2D(f.facing);
   let best: (SpCam & { share: number }) | null = null, bestScore = Infinity;
   // a full drag back must fit under the ball: if the ball sits too low, keep a spot of grass
@@ -394,17 +396,17 @@ export function solveSetPieceCam(f: Frame2D, keep: BcPoint[], ball: BcPoint, man
     const lean = man.lean ? leanFor(e) : 0;
     let share = leanedManShare(c, f.W, f.H, ball, MATCH2D.manH * man.man, lean);
     // closer than the target needs: back off (more room round the action), the angle and lens kept
-    if (share > S.targetShare) {
+    if (share > target) {
       let lo = c.D, hi = c.D * 4;
       for (let i = 0; i < 30; i++) {
         const m = (lo + hi) / 2;
         const cm = withRoom(e, fov, m);
-        if (leanedManShare(cm, f.W, f.H, ball, MATCH2D.manH * man.man, lean) > S.targetShare) lo = m; else hi = m;
+        if (leanedManShare(cm, f.W, f.H, ball, MATCH2D.manH * man.man, lean) > target) lo = m; else hi = m;
       }
       c = withRoom(e, fov, hi);
       share = leanedManShare(c, f.W, f.H, ball, MATCH2D.manH * man.man, lean);
     }
-    const score = Math.abs(share - S.targetShare) + Math.abs(e - 50) * 0.0004;
+    const score = Math.abs(share - target) + Math.abs(e - 50) * 0.0004;
     if (score < bestScore) { bestScore = score; best = { ...c, share }; }
   }
   const b = best!;
@@ -423,4 +425,84 @@ export function setPieceKeep(ball: BcPoint, figures: { sid: string; x: number; y
     if (g.sid === "you" || wall) pts.push({ x: g.x, y: g.y, z: 0 }, { x: g.x, y: g.y, z: hm });
   }
   return pts;
+}
+
+/**
+ * THE CORNER CAMERA (Harry, 12 Oct 2026, on a corner still with the camera 111 m away: "this still
+ * looks rlly bad"). The 2D's wide frame has to fit the flag AND the box, so every man was a dot.
+ * Corners get their own closer camera, like penalties and free kicks. Camera only: nothing scaled.
+ *   A: the box only (its men, the keeper, the goal); the taker just off screen.
+ *   B: the box from lower (38–42°) and turned ~35° more side-on; the taker at an edge.
+ *   C: the set-piece way: ball, taker, the box's men, keeper and goal all kept, 45–60° down.
+ * `pick` is the one in the game ("off": the 2D's own frame, as before).
+ */
+export const CORNER_CAM = {
+  /**
+   * Harry, 12 Oct 2026, on the A/B/C stills: liked B ("very cool, not executed perfectly") and C, and
+   * wants the corner to START wide (B or C) and glide to A (the box) right after the kick, while the
+   * ball is in the air. `pick` "glide" does that; "A" | "B" | "C" hold one framing; "off" = the 2D's frame.
+   */
+  pick: "glide" as "A" | "B" | "C" | "glide" | "off",
+  /** The glide: the start view (B or C) seeded per corner while Harry sees both. */
+  starts: ["B", "C"] as ("B" | "C")[],
+  /** Seconds from the kick to the box framing (eased, never a cut). */
+  glideS: 0.42,
+  /** The box framing follows the ball's landing spot this much (0 none, 1 centred on it). */
+  followLanding: 0.5,
+  margin: 0.05,
+  /** The box's men: within this far of the goal line and of the goal's middle, m. */
+  boxDepth: 20,
+  boxHalfW: 24,
+};
+export function usesCornerCam(kind: string): boolean { return kind === "corner" && CORNER_CAM.pick !== "off"; }
+
+export function solveCornerCam(
+  f: Frame2D, ball: BcPoint, figures: { sid: string; x: number; y: number; team: string }[], keeper: BcPoint | null,
+  man: MatchScale, variant: "A" | "B" | "C" = CORNER_CAM.pick === "off" || CORNER_CAM.pick === "glide" ? "C" : CORNER_CAM.pick,
+): Match2DCamera {
+  const hm = MATCH2D.manH * man.man, gh = 2.44 * man.goal, gw = 3.66 * man.goal;
+  const box: BcPoint[] = [];
+  for (const px of [CX - gw, CX + gw]) box.push({ x: px, y: 0, z: 0 }, { x: px, y: 0, z: gh });
+  if (keeper) box.push({ ...keeper, z: 0 }, { ...keeper, z: MATCH2D.manH * man.keeper });
+  for (const g of figures) {
+    if (g.sid === "you") continue;
+    if (g.y < CORNER_CAM.boxDepth && Math.abs(g.x - CX) < CORNER_CAM.boxHalfW) box.push({ x: g.x, y: g.y, z: 0 }, { x: g.x, y: g.y, z: hm });
+  }
+  const taker = figures.find((g) => g.sid === "you");
+  const withTaker: BcPoint[] = [...box, { ...ball, z: 0 }, ...(taker ? [{ x: taker.x, y: taker.y, z: 0 }, { x: taker.x, y: taker.y, z: hm }] : [])];
+  const base = azimuth2D(f.facing);
+  const azs = variant === "B"
+    ? [35, -35].map((d) => { const r = (d * Math.PI) / 180; return { ax: base.ax * Math.cos(r) - base.az * Math.sin(r), az: base.ax * Math.sin(r) + base.az * Math.cos(r) }; })
+    : [base];
+  const elevs = variant === "B" ? [38, 42] : variant === "A" ? [50, 55, 60] : [45, 50, 55, 60];
+  const keep = variant === "A" ? box : withTaker;
+  const mid = { x: CX, y: 8 };
+  let best: (SpCam & { share: number }) | null = null;
+  for (const a of azs) for (const e of elevs) for (const fov of [26, 32, 38]) {
+    const c = fitPoints(f.W, f.H, keep, a.ax, a.az, e, fov, CORNER_CAM.margin);
+    const share = leanedManShare(c, f.W, f.H, mid, hm, 0);
+    if (!best || share > best.share) best = { ...c, share };
+  }
+  const b = best!;
+  return { ...b, k: man.man, man: b.share, anchorShare: bcProject(b, f.W, f.H, ball).fr, extra: 0 } as Match2DCamera;
+}
+
+/**
+ * ROOM TO DRAG BACK, EVERY CHANCE (Harry, 12 Oct 2026, on a one-on-one still: "a player wont be
+ * able to drag that back on phone"). The 2D always keeps grass under the ball for the pull-back
+ * (matchView.ts ZOOM_MIN_PULL_M; the set-piece camera's dragRoomW). The 3D camera must too, whatever
+ * framing it is in (the default, pinched in or out, a corner's start view): the ball's spot on the
+ * screen stays at least a full-power drag (plus a finger) above the bottom edge. Camera only: it
+ * slides towards itself along the ground until the ball is high enough; nothing is scaled.
+ * Pure: tests/star/match2dCam.mts checks every served kind.
+ */
+export function keepDragRoom<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">>(c: T, ball: BcPoint, W: number, H: number, S = SET_PIECE_CAM): T {
+  const limit = 1 - dragRoomShare(W, H, S);
+  const at = (d: number) => ({ ...c, tx: c.tx + c.ax * d, tz: c.tz + c.az * d });
+  const fr = (d: number) => bcProject(at(d), W, H, ball).fr;
+  if (fr(0) <= limit) return c;
+  let lo = 0, hi = 1;
+  while (fr(hi) > limit && hi < 200) hi *= 2;
+  for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (fr(m) > limit) lo = m; else hi = m; }
+  return at(hi);
 }

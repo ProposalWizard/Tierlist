@@ -45,6 +45,7 @@ import { ruleBookFor } from "@/lib/star/ruleBook";
 import { formatMoney } from "@/lib/star/money";
 import { blackMarketPrice, LAWYER_FEE } from "@/lib/star/corruption";
 import { fameGainFromBuying, fameLevel, fameOf, isWornOut, itemLifeSeasons, nextFameLevel, ownedFame, OWNED_FAME_MAX } from "@/lib/star/fame";
+import { useShopPicsLook, shopPic3d } from "@/lib/star/shopPicsLook";
 import { styleGroupOf, levelName, familyName, fameFromOwned, fameText, type StyleGroup } from "@/lib/star/lifestyleLevels";
 import { styleUnlockStar } from "@/lib/star/unlocks";
 import { starsNow } from "@/lib/star/starPoints";
@@ -115,7 +116,10 @@ const bigName = (kind: "boot" | "style", base: string, lv: number) =>
 
 /** The big still; the small picture/drawing if it is missing. */
 function BigPic({ kind, base, level, className = "", grey = false }: { kind: "boot" | "style"; base: string; level: number; className?: string; grey?: boolean }) {
-  const name = bigName(kind, base, level);
+  // Settings → Look → "Shop pictures": New = renders of the 3D shop's own models (shopPicsLook.ts)
+  const pics = useShopPicsLook();
+  const from3d = pics === "new" ? shopPic3d(kind, base, level) : null;
+  const name = from3d ?? bigName(kind, base, level);
   const [bad, setBad] = useState<string | null>(null);
   const [shown, setShown] = useState<string | null>(null);
   if (bad === name) {
@@ -129,7 +133,7 @@ function BigPic({ kind, base, level, className = "", grey = false }: { kind: "bo
   const small = kind === "boot" ? `/shop/boot-${base}-L${Math.max(1, Math.min(5, level))}.webp` : `/shop/${base}-L${base === "phone" ? 1 : Math.max(1, Math.min(5, level))}.webp`;
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={`/star/shop2d/items/${name}.webp`} alt="" draggable={false} decoding="async" onError={() => setBad(name)}
+    <img src={from3d ?? `/star/shop2d/items/${name}.webp`} alt="" draggable={false} decoding="async" onError={() => setBad(name)}
       onLoad={() => setShown(name)}
       style={shown === name ? undefined : { backgroundImage: `url(${small})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}
       data-big-pic={name} data-big-loaded={shown === name ? "1" : "0"} className={`select-none object-contain ${grey ? "opacity-30 grayscale" : ""} ${className}`} />

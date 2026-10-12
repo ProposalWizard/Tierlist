@@ -38,13 +38,7 @@ function urlOverride(): TierLook | null {
 }
 
 export function tierLook(): TierLook {
-  if (cached) return cached;
-  const u = urlOverride();
-  if (u) return (cached = u);
-  let v: string | null = null;
-  try { v = typeof localStorage === "undefined" ? null : localStorage.getItem(KEY); } catch { v = null; }
-  cached = v && (VALUES as readonly string[]).includes(v) ? (v as TierLook) : TIER_LOOK_DEFAULT;
-  return cached;
+  return urlOverride() ?? "new"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored (?look3dq= still forces it on a test page).
 }
 export function setTierLook(v: TierLook) {
   try { localStorage.setItem(KEY, v); } catch { /* in-memory still changes */ }

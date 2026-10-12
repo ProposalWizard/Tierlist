@@ -26,6 +26,9 @@ import { usesSetPieceCam, solveSetPieceCam, setPieceKeep, groundUnder, dragRoomS
 import { dragForFullPower, DRAG_LENGTH_SCALE } from "../../lib/star/canvasEngine";
 import { standBackFor, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP } from "../../lib/star/runupStyles";
 import { drawnTakerAt } from "../../lib/star/kickFoot";
+import { keepDragRoom, usesCornerCam, solveCornerCam } from "../../lib/star/style3d/match2dCam";
+import { zoomCamera } from "../../lib/star/style3d/camZoom";
+import { servedChance, SERVED_KINDS } from "../../scripts/cam3d/served.mts";
 
 let fails = 0;
 const ok = (c: boolean, m: string) => { if (!c) { fails++; console.error("  ✗ " + m); } else console.log("  ✓ " + m); };
@@ -174,5 +177,85 @@ if (isMain) {
   console.log(`room below the ball for the drag: ${Math.min(...rooms).toFixed(0)}–${Math.max(...rooms).toFixed(0)} px (a full-power drag needs ${fullDragPx.toFixed(0)} px)`);
   ok(spRoom === 0, `a full-power drag back always fits below the ball on penalties and free kicks (${spRoom} short)`);
   ok(spDrag === 0, `the ball's spot on the glass maps back to the ball on the grass (the drag), ${spDrag} off`);
+
+  // ROOM TO DRAG BACK, EVERY SERVED CHANCE (Harry, 12 Oct 2026: "a player wont be able to drag that back
+  // on phone"). The chances the game really serves (makeChance; drawn kinds; kinds' rules passed), the 3D
+  // camera as engineView builds it while aiming (default, pinched in and out, a corner's B and C start
+  // views): the ball's spot on the screen is at least a full-power drag above the bottom.
+  {
+    const OPEN_K = 1;
+    const ev2 = fs.readFileSync(new URL("../../lib/star/style3d/engineView.ts", import.meta.url), "utf8");
+    ok(ev2.includes("m2.aimBall && (sp || zoom !== 0) ? keepDragRoom(c0, m2.aimBall, W, H) : c0") && ev2.includes("const OPEN_DEFAULT_K = 1;"), "the 3D view: open play at the default zoom is the 2D frame untouched; the drag room is kept on set pieces, corners and when pinched (engineView.ts)");
+    for (const [w, h] of [[372, 704], [390, 844]] as const) {
+      const full = dragForFullPower(0) * 1.6 * w;
+      let n2 = 0, before = 0, after = 0, worst = Infinity, skipped = 0;
+      const per: Record<string, string> = {};
+      for (const kind of SERVED_KINDS) {
+        let kn = 0, kb = 0;
+        for (let seed = 1; seed <= 8; seed++) {
+          const c = servedChance(kind, seed, w, h);
+          if (!c.drawn || c.faults.length || c.sc.kind !== kind) { skipped++; continue; }
+          const b = c.sc.ball;
+          if (hasRunup(kind as Scenario["kind"])) {
+            const id = kind === "penalty" ? DEFAULT_PENALTY_RUNUP : DEFAULT_FREE_KICK_RUNUP;
+            const you = c.figs.find((g) => g.sid === "you")!;
+            const st = drawnTakerAt(b, standBackFor(id, b, c.sc.player, c.f.viewport), 1).at;
+            you.x = st.x; you.y = st.y;
+          }
+          const wide = solveMatch2D(c.f);
+          const kp = { x: c.keeper.x, y: c.keeper.y };
+          const defs = usesCornerCam(kind)
+            ? (["B", "C"] as const).map((v) => solveCornerCam(c.f, b, c.figs, kp, matchScale(), v))
+            : usesSetPieceCam(kind)
+              ? [solveSetPieceCam(c.f, setPieceKeep(b, c.figs, kp, matchScale()), b, matchScale(), SET_PIECE_CAM, kind === "penalty" ? SET_PIECE_CAM.penaltyShare : SET_PIECE_CAM.targetShare)]
+              : [{ ...wide, D: wide.D * OPEN_K, minDepth: wide.minDepth * OPEN_K }];
+          for (const def of defs) for (const z of [-1, -0.5, 0, 0.5, 1]) {
+            const cz = zoomCamera(def, wide, z);
+            const c0 = { ...cz, elev: (cz.elevDeg * Math.PI) / 180 };
+            const y0 = bcProject(c0, w, h, b).fr * h;
+            const cam = usesSetPieceCam(kind) || usesCornerCam(kind) || z !== 0 ? keepDragRoom(c0, b, w, h) : c0;
+            const y1 = bcProject(cam, w, h, b).fr * h;
+            n2++; kn++;
+            if (y0 > h - full) { before++; kb++; }
+            if (y1 > h - full) after++;
+            worst = Math.min(worst, h - y1);
+          }
+        }
+        per[kind] = `${kb}/${kn}`;
+      }
+      console.log(`drag room on ${w}x${h}: a full-power drag is ${full.toFixed(0)} px; ${n2} aiming cameras over the served kinds (${skipped} chances skipped: not drawn, or broke their kind's rules)`);
+      console.log(`  short of room before: ${before}/${n2} ${JSON.stringify(per)}; after: ${after}/${n2}; least room left under the ball ${worst.toFixed(0)} px`);
+      ok(after === 0, `${w}x${h}: the ball is at least a full-power drag (${full.toFixed(0)} px) above the bottom in every served kind, every zoom, both corner start views (${after} short)`);
+    }
+  }
+
+  // THE 3D DEFAULT FRAME IS THE 2D FRAME (coordinator, 12 Oct 2026, relaying Harry): every served open-play
+  // kind, at the default zoom, puts the ball and the taker where the 2D puts them (within 10% of the screen),
+  // both on screen; only corners (the glide) and penalties / free kicks (the set-piece camera) differ.
+  {
+    let n3 = 0, off = 0, out = 0, worstD = 0, minEdge = 1;
+    for (const kind of SERVED_KINDS) {
+      if (usesSetPieceCam(kind) || usesCornerCam(kind)) continue;
+      for (let seed = 1; seed <= 10; seed++) {
+        const c = servedChance(kind, seed);
+        if (!c.drawn || c.faults.length || c.sc.kind !== kind) continue;
+        const cam = solveMatch2D(c.f);
+        const you = c.figs.find((g) => g.sid === "you")!;
+        for (const p of [c.sc.ball, you]) {
+          const a = pitchTo2dScreen(c.f, p), r = bcProject(cam, W, H, p);
+          const d = Math.hypot(a.X / W - (r.nx + 1) / 2, a.Y / H - r.fr);
+          worstD = Math.max(worstD, d);
+          if (d > 0.1) off++;
+          const edge = Math.min((r.nx + 1) / 2, 1 - (r.nx + 1) / 2, r.fr, 1 - r.fr);
+          minEdge = Math.min(minEdge, edge);
+          if (edge < 0.02) out++;
+        }
+        n3++;
+      }
+    }
+    console.log(`3D default vs the 2D frame: ${n3} served open-play chances; ball and taker at most ${(worstD * 100).toFixed(1)}% of the screen from their 2D spot; nearest to an edge ${(minEdge * 100).toFixed(1)}%`);
+    ok(off === 0, `the ball and the taker sit where the 2D puts them, within 10% of the screen (${off} not)`);
+    ok(out === 0, `the ball and the taker are on the 3D screen, at least 2% in from every edge (${out} not)`);
+  }
   if (fails) { console.error(`${fails} failed`); process.exit(1); }
 }

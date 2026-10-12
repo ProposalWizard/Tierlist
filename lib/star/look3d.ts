@@ -42,14 +42,15 @@ if (typeof window !== "undefined") {
 }
 const subscribe = (f: () => void) => { listeners.add(f); return () => { listeners.delete(f); }; };
 
-export const people3dLook = (): People3dLook => read(PEOPLE);
+let fellBackPeople = false;
+export const people3dLook = (): People3dLook => (fellBackPeople ? "old" : "new"); // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 export const setPeople3dLook = (v: People3dLook) => write(PEOPLE, v);
 export const usePeople3dLook = () => useSyncExternalStore(subscribe, people3dLook, () => PEOPLE.fallback);
 /** A 3D scene failed with the one body (Harry's iPhone, 5 Oct 2026: "The 3D
  *  shop didn't load"): use the old bodies for the rest of this visit, without
  *  changing the saved setting, so the scene can try again. */
-export const fallBackToOldPeople = () => { cache.set(PEOPLE.key, "old"); };
+export const fallBackToOldPeople = () => { fellBackPeople = true; cache.set(PEOPLE.key, "old"); };
 
-export const bossRoomLook = (): BossRoomLook => read(ROOM);
+export const bossRoomLook = (): BossRoomLook => "3d"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 export const setBossRoomLook = (v: BossRoomLook) => write(ROOM, v);
 export const useBossRoomLook = () => useSyncExternalStore(subscribe, bossRoomLook, () => ROOM.fallback);

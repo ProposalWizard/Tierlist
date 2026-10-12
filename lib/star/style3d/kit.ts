@@ -247,8 +247,10 @@ export function createStyleKit(T: any, renderer: any, scene: any, tier: Quality3
     stylePeople(people) {
       for (const p of people) {
         if (p.outline) {
-          p.outline.visible = def.personOutline && prof.outlines;
-          (p.outline.material as any)?.color?.set(def.outlineColor);
+          // a screen-space ink line (people3d outlinePx, smallMen.ts) is the small man's edge on every tier
+          const px = !!(p.outline.material as any)?.userData?.screenPx;
+          p.outline.visible = px || (def.personOutline && prof.outlines);
+          if (!px) (p.outline.material as any)?.color?.set(def.outlineColor);
         }
         // The human body ("3D body: Human") has a list of materials, the old body one.
         const raw = p.body?.material as any;

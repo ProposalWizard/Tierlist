@@ -1,68 +1,20 @@
 /**
- * ANIMATIONS: NEW | OLD — Settings → Look. One phone at a time.
+ * ANIMATIONS — always New. Decided, no toggle (Harry, 12 Oct 2026: "Why do we
+ * even need the Old? ... It should not be a toggle in the game.")
  *
- * Leo, 6 Oct 2026: "i dont wanna see something happen in game thats not how
- * it looks." New: every man who touches the ball is seen doing it — a team-
- * mate's shot, pass and touch, a defender's block and clearance, a header
- * jump, and the keeper's catch, parry, one-handed stretch and fumble
- * (lib/star/actionAnim.ts). Old: the match exactly as drawn before.
+ * Every man who touches the ball is seen doing it: a team-mate's shot, pass
+ * and touch, a defender's block and clearance, a header jump, and the keeper's
+ * catch, parry, one-handed stretch and fumble (lib/star/actionAnim.ts). The
+ * Settings → Animations row and the Old path are gone; an old phone's
+ * `star-look-animations = "old"` is ignored. The Old code lives in git (see
+ * CLAUDE.md → "Decided, no toggle").
  *
- * Harry's standing rule (3 Oct 2026): every new look gets a toggle and the
- * old one stays playable. Like newLook.ts this is a module-level value read
- * inside the match screen, never a prop, so every screen that mounts the real
- * match follows it and the one-engine guard has nothing new to compare.
+ * The type stays because the goal-video cutter (lib/star/goalClip) still takes
+ * a "moves" value; it is always "new" now.
  */
-import { useSyncExternalStore } from "react";
-
 export type AnimationsLook = "new" | "old";
 
-const KEY = "star-look-animations";
-const FALLBACK: AnimationsLook = "old";
-
-let cached: AnimationsLook | null | undefined;
-let override: AnimationsLook | null = null;
-const listeners = new Set<() => void>();
-
-function readStored(): AnimationsLook | null {
-  try {
-    if (typeof localStorage === "undefined") return null;
-    const v = localStorage.getItem(KEY);
-    return v === "new" || v === "old" ? v : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Read every frame by the match: cheap. */
-export function animationsLook(): AnimationsLook {
-  if (override) return override;
-  if (cached === undefined) cached = readStored();
-  return cached ?? FALLBACK;
-}
-
-export function setAnimationsLook(v: AnimationsLook): void {
-  try { localStorage.setItem(KEY, v); } catch { /* the in-memory value still changes */ }
-  cached = v;
-  listeners.forEach((f) => f());
-}
-
-/** Force it while a dev screen is open. Returns the undo. */
-export function setAnimationsLookOverride(v: AnimationsLook | null): () => void {
-  const before = override;
-  override = v;
-  listeners.forEach((f) => f());
-  return () => { override = before; listeners.forEach((f) => f()); };
-}
-
-if (typeof window !== "undefined") {
-  window.addEventListener("storage", (e) => {
-    if (e.key === KEY) { cached = undefined; listeners.forEach((f) => f()); }
-  });
-}
-
-function subscribe(f: () => void): () => void {
-  listeners.add(f);
-  return () => { listeners.delete(f); };
-}
-
-export const useAnimationsLook = () => useSyncExternalStore(subscribe, animationsLook, () => FALLBACK);
+/** Read every frame by the match: always "new". */
+export const animationsLook = (): AnimationsLook => "new";
+/** Hook form, for the goal videos. */
+export const useAnimationsLook = (): AnimationsLook => "new";

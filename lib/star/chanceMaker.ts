@@ -7,23 +7,13 @@
  * Highlights all go through this one file, and a chance is made the same way
  * in all three.
  *
- * ── Two ways (v0.15, decided) ──
- *
- *   drawings   THE GAME. One of your drawings is the base, nudged (open play
- *              only — never a penalty or a free kick) and checked against its
- *              own rules, the gallery Sim's randomiser unchanged, then
- *              mirrored half the time. Nothing underneath it: no chance-
- *              formula plan is laid on first, and the drawing decides who is
- *              on the pitch (applyAuthoredShape: "the drawing is the team").
- *
- *   generator  A dev dial on the Play Area only (PlaySettings.chanceMaker),
- *              never a career. Every figure is sampled from the spread of
- *              that kind's drawings: the ball from one drawing, your stance
- *              from another, the keeper from a third, each defender from all
- *              the drawn defenders, carried with the ball. Only for open-play
- *              kinds with 10+ drawings; the rest are served "drawings".
- *
- * ── What both add ──
+ * ── Drawings only (Harry, 12 Oct 2026) ──
+ *   One of your drawings is the base, nudged (open play only — never a
+ *   penalty or a free kick) and checked against its own rules, then mirrored
+ *   half the time. The drawing decides who is on the pitch. The generator and
+ *   the New chance library were deleted ("they're wrong"); see git before
+ *   commit for them.
+ * ── What it adds ──
  *
  *   A rebuild on fault. The served picture is checked with the game's own
  *   checks (scenarioFaults) plus overlap, off-frame, keeper-beyond-the-ball
@@ -78,22 +68,12 @@ import {
 import { separateBodies } from "./spacing";
 import { finishServedFrame } from "./goalFrame";
 import { CX, PITCH_W } from "./pitch";
-import { libraryFor, serveEntry, shapeOfEntry, type ChanceDeck } from "./chanceLibrary";
-import { addContext, withoutContext } from "./contextShape";
 import { buildKaneMoment, dealKaneMoment, type KaneMoment } from "./kaneMoments";
-import type { ChanceSet } from "./chanceSet";
-import { markNewChance } from "./libraryMark";
 import { mulberry32 } from "./season";
-import { loadPlaySettings } from "./playArea";
 
 // ─────────────────────────────────────────────────────────────────────────
 //  THE ONE DIAL
 // ─────────────────────────────────────────────────────────────────────────
-
-/** "drawings" is the game; "generator" is a Play Area dev dial. */
-export type ChanceMakerMode = "drawings" | "generator";
-export const CHANCE_MAKER_MODES: ChanceMakerMode[] = ["drawings", "generator"];
-export const DEFAULT_CHANCE_MAKER: ChanceMakerMode = "drawings";
 
 /** How many served pictures of a kind are remembered (Harry: keep it). */
 export const PICTURE_MEMORY = 5;
@@ -380,12 +360,6 @@ export function memoryRule(kind: string): { n: number; within: number } {
   if (IDENTICAL_ONLY.has(kind)) return { n: 1, within: 0.5 };
   return { n: PICTURE_MEMORY, within: SAME_PICTURE_M };
 }
-/** Set pieces are always a drawing, never generated — a wall or a crowd at a
- *  corner has a structure per-figure sampling does not keep. */
-const NEVER_GENERATED = new Set<string>(["corner", "penalty", "free_kick"]);
-/** Below this many drawings the generator's clouds are too thin (design §6:
- *  cutback, with 6, still faulted 14% after rebuilding). */
-export const GENERATOR_MIN_DRAWINGS = 10;
 /** Tries at a clean, fresh picture before serving the best one found. */
 export const MAX_TRIES = 10;
 
@@ -405,12 +379,6 @@ function drawingsOf(kind: string, set: RuleSet): Drawn[] {
 export function servesDrawings(kind: string): boolean {
   const set = ruleSetFor(kind);
   return !!set && set.n >= MIN_SAMPLES_FOR_INVARIANT;
-}
-
-export function canGenerate(kind: string): boolean {
-  if (NEVER_GENERATED.has(kind)) return false;
-  const set = ruleSetFor(kind);
-  return !!set && drawingsOf(kind, set).length >= GENERATOR_MIN_DRAWINGS;
 }
 
 const mirrorV = (v: Vec2): Vec2 => ({ x: PITCH_W - v.x, y: v.y });
@@ -548,61 +516,6 @@ function stableIndex(ids: string[], key: number): number {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-//  THE GENERATOR — every figure from the drawings' spread (design's B)
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * Ball: one drawing's ball ± 1.6 m, inside the drawn range. You: another
- * drawing's stance relative to its ball. Keeper: a third drawing's two shares.
- * Defender and
- * team-mate counts from a fourth and fifth. Each defender: a random drawn
- * defender of this kind, carried with the ball, ± 1.2 m, never within 1.5 m
- * of another body. Nothing hand-written places anyone.
- */
-export function generatorShape(
-  kind: string, rng: () => number,
-): AuthoredShape | null {
-  const set = ruleSetFor(kind);
-  if (!set) return null;
-  const base = drawingsOf(kind, set);
-  if (base.length < GENERATOR_MIN_DRAWINGS) return null;
-  const side: -1 | 1 = rng() < 0.5 ? -1 : 1;
-  const pool = base.map((s) => onSide(s, side));
-  const pick = <T,>(xs: T[]): T => xs[Math.floor(rng() * xs.length) % xs.length];
-  const defCloud = pool.flatMap((s) => s.defenders.map((d) => ({ p: d, ball: s.ball })));
-  const mateCloud = pool.flatMap((s) => s.mates.map((m) => ({ p: m, ball: s.ball })));
-  for (let attempt = 0; attempt < 60; attempt++) {
-    const bsrc = pick(pool);
-    const ball = inPitch({ x: bsrc.ball.x + gauss(rng) * 1.6, y: bsrc.ball.y + gauss(rng) * 1.6 });
-    const ysrc = pick(pool);
-    const you = { x: ball.x + (ysrc.you.x - ysrc.ball.x) + gauss(rng) * 0.1, y: ball.y + (ysrc.you.y - ysrc.ball.y) + gauss(rng) * 0.1 };
-    const ksrc = pick(pool);
-    const keeper = placeKeeper(ball, keeperSharesOf(ksrc), ksrc.keeper, kind);
-    const nD = pick(pool).defenders.length, nM = pick(pool).mates.length;
-    const defenders: Vec2[] = [], mates: Vec2[] = [];
-    let ok = true;
-    const place = (cloud: { p: Vec2; ball: Vec2 }[], into: Vec2[]) => {
-      for (let t = 0; t < 12; t++) {
-        const c = pick(cloud);
-        const p0 = carry(c.p, c.ball, ball);
-        const p = inPitch({ x: p0.x + gauss(rng) * 1.2, y: p0.y + gauss(rng) * 1.2 });
-        if ([you, ...defenders, ...mates].every((q) => hyp(p, q) >= 1.5) && hyp(p, ball) > 1.4) { into.push(p); return true; }
-      }
-      return false;
-    };
-    for (let i = 0; i < nD && ok; i++) ok = defCloud.length > 0 && place(defCloud, defenders);
-    for (let i = 0; i < nM && ok; i++) ok = mateCloud.length > 0 && place(mateCloud, mates);
-    if (!ok) continue;
-    const cand: ShapeSample = { ball, you, keeper, defenders, mates };
-    if (!ballInRange(cand, set, 0.5)) continue;
-    if (closestPair(cand) + 0.05 < 1.0) continue;
-    if (violations(cand, set).length) continue;
-    return { sourceId: `gen:${bsrc.id}`, ...cand, camera: DEFAULT_CAMERA, jitter: 1, rejected: attempt };
-  }
-  return null;
-}
-
-// ─────────────────────────────────────────────────────────────────────────
 //  THE MIX — which KIND of chance (the one-on-one switch)
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -659,20 +572,8 @@ export interface MakeChanceOptions {
   selection?: SelectionMemory;
   /** The opponent's block, for kinds with no drawing (formationShape.ts). */
   formation?: ShapeInput | null;
-  /** Drawings (the game) unless a Play Area dial says generator. */
-  mode?: ChanceMakerMode;
   /** A gallery cell: keep its base drawing as the pool grows. */
   stableKey?: number;
-  /**
-   * Which chances (Settings → Chances). "new": the checked library, dealt
-   * from `deck`, with the rest of both teams on the pitch
-   * (chanceLibrary.ts, contextShape.ts). Absent or "classic": exactly as
-   * before — so every caller that does not ask (the gallery's Sim, every
-   * test) is unchanged.
-   */
-  set?: ChanceSet;
-  /** The deck a "new" chance is dealt from (remembered across matches). */
-  deck?: ChanceDeck | null;
   /** Deal open play from the real mix, not the even one (kindMix.ts's
    *  REAL_MIX; Settings → Match → Chance mix). Absent: the even mix. */
   realMix?: boolean;
@@ -685,7 +586,7 @@ export interface MadeChance {
   sc: Scenario;
   /** The drawn/generated shape laid on (null for a plan or the builder). */
   shape: AuthoredShape | null;
-  how: "drawing" | "generator" | "plan" | "builder" | "library" | "kane";
+  how: "drawing" | "plan" | "builder" | "kane";
   appliedPlan: boolean;
   appliedAuthored: boolean;
   sourceId: string | null;
@@ -699,7 +600,6 @@ export interface MadeChance {
   nearestRecent: number;
   /** Figures moved apart because two stood on one spot (spacing.ts). */
   separated: number;
-  mode: ChanceMakerMode;
 }
 
 /**
@@ -708,7 +608,6 @@ export interface MadeChance {
  * only has faces, roles and the camera left to do.
  */
 export function makeChance(o: MakeChanceOptions): MadeChance {
-  const mode = o.mode ?? DEFAULT_CHANCE_MAKER;
   const rng = o.rng;
   const ks = o.strength?.keeper ?? 62, tr = o.strength?.team ?? 60, vis = o.strength?.vision ?? 55;
   const build = (k: ScenarioKind) => buildScenario(k, rng, ks, tr, vis);
@@ -762,44 +661,10 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
       const sc = buildKaneMoment(km);
       return {
         sc, shape: null, how: "kane", appliedPlan: false, appliedAuthored: true, sourceId: km.id,
-        faultRebuilds: 0, memoryRebuilds: 0, faults: km.faults, nearestRecent: Infinity, separated: 0, mode,
+        faultRebuilds: 0, memoryRebuilds: 0, faults: km.faults, nearestRecent: Infinity, separated: 0,
       };
     }
   }
-
-  // ── 1b. New chances: a picture from the library, dealt from the deck ──
-  //
-  // Every picture in the library was made from the drawings, checked by the
-  // game's own checks and by eye, and is served exactly as checked (see
-  // chanceLibrary.ts). The deck never deals a picture again until every
-  // other one of its kind has been dealt. The rest of both teams stand
-  // around it (contextShape.ts), from the opponent's real formation.
-  if (o.set === "new") {
-    const entries = libraryFor(kind);
-    if (entries.length) {
-      const pickRng = saltedRng(rng, saltFor(o));
-      const pick = o.deck ? o.deck.next(kind, entries, pickRng) : entries[Math.floor(pickRng() * entries.length) % entries.length];
-      if (pick) {
-        const sc = first && first.kind === kind ? first : build(kind);
-        const ctx = o.formation ? { formation: o.formation.formation, playstyle: o.formation.playstyle } : {};
-        serveEntry(sc, pick, { keeperStrength: ks, context: ctx });
-        // Never into the gallery (libraryMark.ts, Harry 3 Oct 2026).
-        markNewChance(sc, { from: "library", id: pick.id });
-        o.memory?.remember(pictureOf(withoutContext(sc)));
-        return {
-          sc, shape: shapeOfEntry(pick), how: "library", appliedPlan: false, appliedAuthored: true, sourceId: pick.id,
-          faultRebuilds: 0, memoryRebuilds: 0, faults: [], nearestRecent: Infinity, separated: 0, mode,
-        };
-      }
-    }
-  }
-  /** New chances on a kind the library has no picture of: today's chance,
-   *  with the rest of both teams around it. Classic: untouched. */
-  const finishNew = (sc: Scenario) => {
-    if (o.set !== "new") return;
-    markNewChance(sc, { from: "context" });
-    addContext(sc, o.formation ? { formation: o.formation.formation, playstyle: o.formation.playstyle, laws: ruleSetFor(sc.kind) } : { laws: ruleSetFor(sc.kind) });
-  };
 
   // ── 2. A kind with fewer than 5 drawings: the formula's plan or the builder ──
   if (!servesDrawings(kind)) {
@@ -828,30 +693,22 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     setupKind(sc, prng, { appliedAuthored: false, appliedPlan, keeperStrength: ks });
     const separated = separateBodies(sc);
     finishServedFrame(sc);
-    finishNew(sc);
     return {
       sc, shape: null, how: appliedPlan ? "plan" : "builder", appliedPlan, appliedAuthored: false, sourceId: null,
-      faultRebuilds: 0, memoryRebuilds: 0, faults: [], nearestRecent: Infinity, separated, mode,
+      faultRebuilds: 0, memoryRebuilds: 0, faults: [], nearestRecent: Infinity, separated,
     };
   }
 
   // ── 3. A drawn kind, rebuilt until clean and fresh ──
-  const useGen = mode === "generator" && canGenerate(kind);
   const rule = memoryRule(kind);
-  let best: { sc: Scenario; shape: AuthoredShape; faults: string[]; gap: number; how: "drawing" | "generator"; separated: number } | null = null;
+  let best: { sc: Scenario; shape: AuthoredShape; faults: string[]; gap: number; how: "drawing"; separated: number } | null = null;
   let faultRebuilds = 0, memoryRebuilds = 0;
   for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
     const sc = attempt === 0 && first ? first : build(kind);
-    let how: "drawing" | "generator" = "drawing";
-    let shape: AuthoredShape | null = null;
+    const how = "drawing" as const;
     let own: string[] = [];
-    if (useGen) { shape = generatorShape(kind, rng); how = "generator"; }
-    if (!shape) {
-      const d = drawingShape(kind, rng, attempt === 0 ? o.stableKey : undefined, saltFor(o));
-      if (d) own = drawingOwnFaults(kind, d.sourceId, d.mirrored);
-      shape = d;
-      how = "drawing";
-    }
+    const shape = drawingShape(kind, rng, attempt === 0 ? o.stableKey : undefined, saltFor(o));
+    if (shape) own = drawingOwnFaults(kind, shape.sourceId, shape.mirrored);
     if (!shape) break;
     // The drawing is the team; the keeper stands, and leans, where drawn.
     applyAuthoredShape(sc, shape);
@@ -877,17 +734,15 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     setupKind(sc, rng, { appliedAuthored: false, appliedPlan: false, keeperStrength: ks });
     const separated = separateBodies(sc);
     finishServedFrame(sc);
-    finishNew(sc);
-    return { sc, shape: null, how: "builder", appliedPlan: false, appliedAuthored: false, sourceId: null, faultRebuilds, memoryRebuilds, faults: [], nearestRecent: Infinity, separated, mode };
+    return { sc, shape: null, how: "builder", appliedPlan: false, appliedAuthored: false, sourceId: null, faultRebuilds, memoryRebuilds, faults: [], nearestRecent: Infinity, separated };
   }
   // The camera's last word (v0.15 items 12 and 20): the whole goal, and room
   // to pull back — the camera moves, never the chance (lib/star/goalFrame.ts).
   finishServedFrame(best.sc);
   o.memory?.remember(pictureOf(best.sc));
-  finishNew(best.sc);
   return {
     sc: best.sc, shape: best.shape, how: best.how, appliedPlan: false, appliedAuthored: true, sourceId: best.shape.sourceId,
-    faultRebuilds, memoryRebuilds, faults: best.faults, nearestRecent: best.gap, separated: best.separated, mode,
+    faultRebuilds, memoryRebuilds, faults: best.faults, nearestRecent: best.gap, separated: best.separated,
   };
 }
 
@@ -917,24 +772,13 @@ export function rollKind(req: ScenarioRequest, position: string, rng: () => numb
 //  THE DEV TOOLS — the gallery's Sim and Infinite Highlights
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * The dev tools' chance maker: the Play Area's own dial on this device
- * (PlaySettings.chanceMaker). The gallery's Sim and Infinite Highlights read
- * it; a career never does — CanvasMatch takes it as a prop, and only the
- * Play Area's engine mount (EnginePlay) passes anything but "drawings".
- */
-export function devChanceMaker(): ChanceMakerMode {
-  return loadPlaySettings().chanceMaker;
-}
-
 /** One Sim of a drawn kind, rebuilt from its seed alone (a cell never wanders). */
-export function buildDrawnSim(kind: ScenarioKind, seed: number, mode: ChanceMakerMode = devChanceMaker()): MadeChance {
+export function buildDrawnSim(kind: ScenarioKind, seed: number): MadeChance {
   return makeChance({
     source: { from: "kind", kind },
     rng: mulberry32(seed),
     memory: null,
     stableKey: seed,
-    mode,
   });
 }
 
@@ -945,14 +789,14 @@ export function buildDrawnSim(kind: ScenarioKind, seed: number, mode: ChanceMake
  * a seed still rebuilds to the same picture forever.
  */
 export function nextDrawnSeed(
-  kind: ScenarioKind, rng: () => number, memory: PictureMemory, mode: ChanceMakerMode = devChanceMaker(),
+  kind: ScenarioKind, rng: () => number, memory: PictureMemory,
 ): { seed: number; made: MadeChance; tries: number } {
   const rule = memoryRule(kind);
   let best: { seed: number; made: MadeChance; gap: number } | null = null;
   let tries = 0;
   for (; tries < MAX_TRIES; tries++) {
     const seed = Math.floor(rng() * 2_000_000_000) + 1;
-    const made = buildDrawnSim(kind, seed, mode);
+    const made = buildDrawnSim(kind, seed);
     const gap = memory.nearest(pictureOf(made.sc), rule.n);
     if (!best || gap > best.gap) best = { seed, made, gap };
     if (gap >= rule.within) break;

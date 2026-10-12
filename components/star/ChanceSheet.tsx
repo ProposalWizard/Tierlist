@@ -24,7 +24,7 @@ import { mulberry32 } from "@/lib/star/season";
 import { frameFromScenario, paint, type FrameKits } from "@/lib/star/scenarioFrame";
 import { nextSim, newSimMemory, buildSimScenario, authoredShapeFor } from "@/lib/star/gallerySim";
 import {
-  devChanceMaker, simIsMadeHere, nextDrawnSeed, PictureMemory, pictureOf, pictureGap, servedFaults,
+  simIsMadeHere, nextDrawnSeed, PictureMemory, pictureOf, pictureGap, servedFaults,
   drawingOwnFaults, nearestDrawing, SAME_PICTURE_M, type Picture,
 } from "@/lib/star/chanceMaker";
 
@@ -43,7 +43,6 @@ const short = (id: string | null | undefined) =>
 
 function makeSheet(kind: ScenarioKind, seed: number): Cell[] {
   const rng = mulberry32(seed);
-  const mode = devChanceMaker();
   const fresh = new PictureMemory("sheet", false);
   const sel = newSimMemory();
   let last: string | undefined;
@@ -52,7 +51,7 @@ function makeSheet(kind: ScenarioKind, seed: number): Cell[] {
   for (let n = 1; n <= 24; n++) {
     let sc: Scenario, sourceId: string | null, mirrored = false;
     if (simIsMadeHere(kind)) {
-      const r = nextDrawnSeed(kind, rng, fresh, mode);
+      const r = nextDrawnSeed(kind, rng, fresh);
       sc = r.made.sc;
       sourceId = r.made.sourceId;
       mirrored = !!(r.made.shape as { mirrored?: boolean } | null)?.mirrored;
@@ -124,7 +123,6 @@ export default function ChanceSheet({ kinds, kits, onBack }: {
   const cols = vw < 560 ? 2 : vw < 900 ? 3 : 6;
   const w = Math.floor((Math.min(vw, 1400) - 24 - (cols - 1) * 8) / cols);
   // Read once: the Play Area's Chances dial (drawings or generator).
-  const mode = useMemo(() => devChanceMaker(), []);
   const shown = kinds;
   const summary = cells && {
     added: cells.filter((c) => c.added.length).length,
@@ -141,7 +139,7 @@ export default function ChanceSheet({ kinds, kits, onBack }: {
         <button onClick={() => setSeed((s) => s + 1)} style={pill(false)}>New sheet</button>
       </div>
       <div style={{ fontSize: 12.5, fontWeight: 700, color: "#93a4ba", marginBottom: 10, lineHeight: 1.45 }}>
-        24 {kind.replace(/_/g, " ")}s in a row, as served, from a fresh memory · chance maker: <b style={{ color: "#e0f2fe" }}>{mode === "drawings" ? "your drawings" : "generator"} (Play Area → Chances)</b>
+        24 {kind.replace(/_/g, " ")}s in a row, as served, from a fresh memory
         {summary && <> · <span style={{ color: summary.added ? "#f87171" : "#86efac" }}>{summary.added} with a fault the serving added</span> · {summary.own} with the drawing&apos;s own fault · {summary.like} like one of the 5 before</>}
       </div>
       {!cells ? (

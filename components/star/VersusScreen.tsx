@@ -7,6 +7,8 @@ import { getFlagUrl } from "@/lib/nationalities";
 import { shortClub } from "@/lib/star/media/grammar";
 import { faceOrFake, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import { PHOTO_FACES } from "@/lib/star/faceStyle";
+import DrawnHeadChip from "./DrawnHeadChip";
 import { place, across } from "@/lib/star/pitchLayout";
 import ClubCrest from "./ClubCrest";
 import { loadLineup, managerFor } from "@/lib/star/lineupStore";
@@ -598,12 +600,18 @@ function Man({ p, kit, keeper, bottom, index = 0, chip = 34 }: {
               match draws on him — never a silhouette (Harry, v0.15 item 37).
               `fallbackSrc` covers a real URL that has gone dead. You, with no
               photo of your own, get the default fake face the match uses. */}
-          <ImageWithFallback
-            src={p.isYou && !p.face ? DEFAULT_FAKE_FACE : faceOrFake(p.face, p.id)}
-            fallbackSrc={p.isYou ? DEFAULT_FAKE_FACE : faceOrFake(null, p.id)}
-            alt=""
-            className="h-full w-full object-cover object-top"
-          />
+          {/* Photo faces are off (Harry, 12 Oct 2026): the drawn head the
+              match draws on him. The photo path stays for the revamp. */}
+          {PHOTO_FACES ? (
+            <ImageWithFallback
+              src={p.isYou && !p.face ? DEFAULT_FAKE_FACE : faceOrFake(p.face, p.id)}
+              fallbackSrc={p.isYou ? DEFAULT_FAKE_FACE : faceOrFake(null, p.id)}
+              alt=""
+              className="h-full w-full object-cover object-top"
+            />
+          ) : (
+            <DrawnHeadChip id={p.id} shirt={worn.shirt} shorts={worn.trim} trim={worn.trim} size={chip - 4} />
+          )}
         </div>
       </div>
       {/* No background pill — the outline is what keeps this legible over

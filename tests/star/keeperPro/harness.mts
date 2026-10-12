@@ -60,7 +60,7 @@ function zoneOf(x: number, y: number): ShotRec["zone"] {
 
 export function shoot(kind: E.ScenarioKind, seed: number, ks: number, o: ShotOpts = {}): ShotRec {
   const rng = mulberry32(seed);
-  const sc = makeChance({ source: { from: "kind", kind }, rng, strength: { keeper: ks, team: 60, vision: 55 }, memory: null, set: "new" }).sc;
+  const sc = makeChance({ source: { from: "kind", kind }, rng, strength: { keeper: ks, team: 60, vision: 55 }, memory: null }).sc;
   E.initDefenders(sc, rng);
   B.brainSetup(sc, (seed ^ 0x4b7e) >>> 0, ks, o.pro === undefined ? { openPlay: 0.55 } : { openPlay: 0.55, pro: o.pro });
   for (let t = 0; t < 1.5; t += 1 / 60) { E.stepKeeper(sc, 1 / 60); B.brainAim(sc, 1 / 60); }
@@ -178,7 +178,7 @@ const clamp01 = (v: number) => Math.max(0.05, Math.min(1, v));
 /** A cross or a through ball played toward the runner, about as well as a player judges it — then whatever happens. */
 export function deliver(kind: "corner" | "byline_cross" | "through_ball", seed: number, ks: number): DeliveryRec {
   const rng = mulberry32(seed);
-  const sc = makeChance({ source: { from: "kind", kind }, rng, strength: { keeper: ks, team: 60, vision: 55 }, memory: null, set: "new" }).sc;
+  const sc = makeChance({ source: { from: "kind", kind }, rng, strength: { keeper: ks, team: 60, vision: 55 }, memory: null }).sc;
   E.initDefenders(sc, rng);
   B.brainSetup(sc, (seed ^ 0x4b7e) >>> 0, ks, { openPlay: 0.55 });
   for (let t = 0; t < 1.5; t += 1 / 60) { E.stepKeeper(sc, 1 / 60); B.brainAim(sc, 1 / 60); }

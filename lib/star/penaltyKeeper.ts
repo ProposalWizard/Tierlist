@@ -76,7 +76,6 @@
  * can apply the exact same decision again (see GoalReplay.penaltyRead).
  */
 import type { Ball, Scenario } from "./canvasEngine";
-import { oldKeepers } from "./gameplayVersion";
 import { getTuning } from "./tuningStore";
 
 export interface PenaltyReadSettings {
@@ -142,7 +141,6 @@ export const PENALTY_TRIAL_REACH = getTuning("keepers.trialPenReachLow");
 export const PENALTY_TRIAL_REACH_TOP = getTuning("keepers.trialPenReachHigh");
 /** The trial keeper's reach while diving, for his rating. */
 export function penaltyTrialReach(keeperStrength: number): number {
-  if (oldKeepers()) return 1; // Settings → Gameplay → Keepers: Old
   const p = Math.max(0, Math.min(1, ((Number.isFinite(keeperStrength) ? keeperStrength : 62) - 45) / (88 - 45)));
   return PENALTY_TRIAL_REACH + (PENALTY_TRIAL_REACH_TOP - PENALTY_TRIAL_REACH) * p;
 }

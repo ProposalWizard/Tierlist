@@ -29,8 +29,7 @@ if (typeof window !== "undefined") {
 }
 
 export function ovationLook(): OvationLook {
-  if (stored === undefined) stored = read();
-  return stored;
+  return "new"; // Decided, no toggle (12 Oct 2026): the stored choice is ignored.
 }
 
 export function setOvationLook(v: OvationLook): void {

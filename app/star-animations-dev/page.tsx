@@ -27,7 +27,6 @@ import {
   ANIM_FAMILIES, DIAL_INFO, DIAL_KEYS, FIRST_VERSION_DIALS, DEFAULT_ANIM_DIALS,
   type AnimSettings,
 } from "@/lib/star/animDials";
-import { useAnimationsLook, setAnimationsLook } from "@/lib/star/animLook";
 import { FIGURE_HEIGHT_R } from "@/lib/star/fiveASide/render";
 import type { FigureSkin } from "@/lib/star/figureSkin";
 import Sprite3dSheet from "@/components/star/Sprite3dSheet";
@@ -90,7 +89,6 @@ function Strip({ item, version, skin, foot, settings, speed, paused, scrub }: {
 
 export default function AnimationsTestPage() {
   const settings = useAnimSettings();
-  const master = useAnimationsLook();
   const [group, setGroup] = useState<Group>("Shots");
   const [skin, setSkin] = useState<FigureSkin>("classic");
   const [foot, setFoot] = useState<1 | -1>(1);
@@ -140,17 +138,6 @@ export default function AnimationsTestPage() {
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 900 }}>Animations</h1>
         </div>
 
-        {/* ── Master switch ── */}
-        <div style={{ ...card, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <div>
-            <div style={{ fontWeight: 900, fontSize: 14 }}>Animations in the game</div>
-            <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>The real switch (also Settings → Look). Old = the game exactly as before.</div>
-          </div>
-          <div style={{ display: "flex", gap: 6 }}>
-            <button style={pill(master === "new")} onClick={() => setAnimationsLook("new")}>New</button>
-            <button style={pill(master === "old")} onClick={() => setAnimationsLook("old")}>Old</button>
-          </div>
-        </div>
 
         {/* ── Gallery controls ── */}
         <div style={{ ...card, display: "grid", gap: 8 }}>

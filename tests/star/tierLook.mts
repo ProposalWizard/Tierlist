@@ -49,7 +49,7 @@ const store = new Map<string, string>();
 (globalThis as any).localStorage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => { store.set(k, v); } };
 check(TIER_LOOK_DEFAULT === "new" && tierLook() === "new", "New by default");
 setTierLook("old");
-check(tierLook() === "old" && store.get("star-3d-tier-look") === "old", "Old is remembered on this phone");
+check(tierLook() === "new", "decided, no toggle (12 Oct 2026): a stored Old is ignored");
 
 if (problems.length) { console.error("tierLook FAILED:\n  " + problems.join("\n  ")); process.exit(1); }
-console.log(`tierLook: grade tone map installs once; ${slots.size} place/time slots; vignette ring ${cells.length}/144 cells at 0.3; switch New by default, Old remembered`);
+console.log(`tierLook: grade tone map installs once; ${slots.size} place/time slots; vignette ring ${cells.length}/144 cells at 0.3; always New (decided 12 Oct 2026)`);
