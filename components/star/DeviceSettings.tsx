@@ -253,14 +253,13 @@ function MatchGroup() {
   );
 }
 
-/** Cut scenes and the 3D camera: still being reworked, so they keep a row. */
+/** Cut scenes: still being reworked, so they keep a row. */
 function World3dGroup() {
   const look = useLook();
   return (
     <>
       <LookRow id="cutscenePeople" look={look} tabs={NEW_OLD} note="Being reworked. New: painted faces with real eyes that blink, and expressions. Old: the faces as they were." />
       <LookRow id="cutsceneCamera" look={look} tabs={NEW_OLD} note="Being reworked. New: opens on a wide of the place, the camera always moving a little, and music. Old: the shots as they were, no music." />
-      <LookRow id="camera3d" look={look} tabs={NEW_OLD} note="The real game in 3D. New: the 3D shows the same part of the pitch as the 2D view. Old: everyone in the chance on screen, men drawn big." />
     </>
   );
 }
@@ -300,7 +299,7 @@ export function SettingsGroups({ glow, extra = [], inMatch = false }: { glow: st
   }
   const groups: (ExtraGroup & { card?: boolean })[] = [
     { id: "match", title: "Match", sub: "Testing (v0.15), 2D or 3D, names", count: 8, content: <MatchGroup />, card: true },
-    { id: "world", title: "Cut scenes & 3D camera", sub: "Being reworked", count: 3, content: <World3dGroup />, card: true },
+    { id: "world", title: "Cut scenes", sub: "Being reworked", count: 2, content: <World3dGroup />, card: true },
     { id: "screens", title: "Screens", sub: "Old UI or New UI", count: 1, content: <ScreensGroup />, card: true },
     ...extra,
   ];

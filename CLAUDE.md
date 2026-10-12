@@ -533,9 +533,13 @@ unreachable (the getter returns the kept value), marked "Decided, no toggle".
 - **Rows that stay:** full screen, sound, 3D quality, skip the line-up (main
   Settings only), Match view 3D, player names (default off), UI Old | New, the
   v0.15 test box (keeper pro, shots, knuckleball, ball physics, match flow,
-  radar), cut-scene people and camera (being reworked), 3D camera (another
-  builder's). Version picker: Classic | Standard; **no Preview** — something
-  becomes a "Preview" only when someone asks for that in those words.
+  radar), cut-scene people and camera (being reworked). Version picker:
+  Classic | Standard; **no Preview** — something becomes a "Preview" only
+  when someone asks for that in those words.
+- **New work (Harry, 12 Oct 2026, standing):** no New | Old row and no
+  Preview entry for anything new. It goes straight into the game when Harry
+  says push. Unfinished work lives on a test page, not behind a switch in
+  the real game.
 
 **No test build link on patch notes (Harry, 3 Oct 2026, latest): mostly stills, clips only for gameplay.**
 *"the test build stuff doesn't work imo so stop doing that for patch notes, lets just stick to mostly stills except gameplay stuff."*

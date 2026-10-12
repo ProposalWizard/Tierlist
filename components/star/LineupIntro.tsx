@@ -265,8 +265,9 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
                 <Office3DCareer career={career} speaker="boss" onFail={() => setRoom3dFailed(true)}
                   className="mb-3 w-full" style={{ height: "34vh", borderRadius: 4 }} />
               )}
-              <div className="text-center text-[34px] leading-none">{status === "Injured" ? "🩹" : "📋"}</div>
-              <div className="mt-2 text-center text-[20px] font-black uppercase tracking-wide">{status === "Injured" ? "You're injured" : "Not in the squad"}</div>
+              <div className="text-center text-[34px] leading-none">{status === "Injured" ? "🩹" : preMatchSelection?.away ? "✈️" : "📋"}</div>
+              <div className="mt-2 text-center text-[20px] font-black uppercase tracking-wide">{status === "Injured" ? "You're injured" : preMatchSelection?.away ? "Away with your country" : "Not in the squad"}</div>
+              {preMatchSelection?.away && <div className="mt-1 text-center text-[13px] font-bold text-white">{preMatchSelection.reason}</div>}
               <PressButton variant="secondary" size="none" onClick={onWatchFromStands} className="mt-4 w-full py-3 text-[15px] font-black uppercase tracking-wide">🏟️ Watch from the stands</PressButton>
             </>
           ) : (

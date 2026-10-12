@@ -77,7 +77,8 @@ ok(/keeper: rec\.keeper,/.test(cm) && !/keeperInView \? rec\.keeper/.test(cm), "
 ok(/!rec\.keeper && frameHasKeeper\(sceneRef\.current\?\.keeper\)/.test(cm), "CanvasMatch records the undrawn keeper");
 const ev = readFileSync(join(root, "lib/star/style3d/engineView.ts"), "utf8");
 ok(/if \(f\.keeper\) placeKeeper\(/.test(ev), "the 3D view places every keeper in the frame");
-ok(/f\.keeper\.drawn !== false/.test(ev), "the 3D camera frames only on a keeper the 2D drew");
+// one camera since 12 Oct 2026: it frames the 2D's own view box, so an undrawn keeper never pulls it (only a penalty / free kick reads the keeper, and the 2D always draws him there)
+ok(/const placeCamera = \(f: EngineFrame\) => placeMatch2D\(f\);/.test(ev), "the 3D camera frames the 2D's view box, never an undrawn keeper");
 
 if (fails) { console.error(`${fails} failed`); process.exit(1); }
 console.log("engineFrameKeeper: all passed");

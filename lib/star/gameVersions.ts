@@ -10,8 +10,8 @@
  * 12 Oct 2026 (Harry): "decide things and be done with it". Every look that
  * was settled lost its row and is now just the game (see CLAUDE.md →
  * "Decided, no toggle"). What is left here: the v0.15 gameplay round still
- * being tested, the cut scenes being reworked, the 3D camera (another
- * builder's), and UI: Old | New. Preview is gone: something becomes a
+ * being tested, the cut scenes being reworked, and UI: Old | New. (The 3D
+ * camera row went the same day, in another builder's camera round.) Preview is gone: something becomes a
  * "Preview" only when someone asks for that in those words; everything else
  * just goes into the game.
  *
@@ -21,7 +21,6 @@
 import { useSyncExternalStore } from "react";
 import { uiVersion, setUiVersion, UI_VERSION_DEFAULT } from "./uiLook";
 import { cutscenePeopleLook, setCutscenePeopleLook, cutsceneCameraLook, setCutsceneCameraLook } from "./cutscene/look";
-import { realCameraLook, setRealCameraLook } from "./style3d/realGameLook";
 import { gameplayVersion, setGameplayVersion, defaultVersion } from "./gameplayVersion";
 import { matchRadarLook, setMatchRadarLook } from "./matchRadarLook";
 
@@ -61,8 +60,6 @@ export const LOOK_ROWS = {
   // Cut scenes: no decision yet, being reworked (Harry, 12 Oct 2026).
   cutscenePeople: row("Cut-scene people", "new", "old", "old", cutscenePeopleLook, setCutscenePeopleLook),
   cutsceneCamera: row("Cut-scene camera", "new", "old", "new", cutsceneCameraLook, setCutsceneCameraLook),
-  // Another builder's row (the real game's 3D camera).
-  camera3d: row("3D camera", "new", "old", "new", realCameraLook, setRealCameraLook),
   ui: row("UI", "new", "old", UI_VERSION_DEFAULT, uiVersion, setUiVersion),
 } as const satisfies Record<string, LookRow>;
 

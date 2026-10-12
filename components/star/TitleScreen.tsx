@@ -22,6 +22,7 @@
  * Built from the design kit (components/star/ui). A still picture plus CSS
  * motion — no animation loop.
  */
+import { nextFixtureFor } from "@/lib/star/competitions";
 import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { SaveSlotSummary } from "@/lib/star/storage";
@@ -128,7 +129,7 @@ export default function TitleScreen(p: TitleScreenProps) {
   // The stand and sky behind the goal, as on Home: day, sunset or night by
   // the next match's kick-off (lib/star/kickoff.ts); sunset with no match yet
   // (Harry's favourite).
-  const next = career ? [...career.fixtures].filter((f) => !f.played).sort((a, b) => a.week - b.week)[0] ?? null : null;
+  const next = career ? nextFixtureFor(career) : null;
   const sky: HomeSky = career && next ? homeSkyFor(career, next) : "sunset";
   const plate = `/home/title-stadium-${sky}.webp`;
   const plateFailed = useRenderFailed(plate);

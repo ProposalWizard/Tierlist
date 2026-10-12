@@ -38,7 +38,7 @@ for (const id of LOOK_ROW_IDS) {
 check(gameVersionOf().version === "standard", `a new phone reads as ${gameVersionOf().version}, not Standard`);
 
 // 1 and 2.
-check(LOOK_ROW_IDS.length === 10, `${LOOK_ROW_IDS.length} switches listed (10 after the 12 Oct 2026 clean-up)`);
+check(LOOK_ROW_IDS.length === 9, `${LOOK_ROW_IDS.length} switches listed (9 after the 12 Oct 2026 clean-up)`);
 check((GAME_VERSIONS as readonly string[]).join() === "classic,standard", `versions are ${GAME_VERSIONS.join()}`);
 for (const gone of ["chances", "animations", "keepers", "dribble", "clearances", "chanceMix", "actionCamera", "dribbleDuels", "matchView", "sprites2d", "badges"]) check(!(gone in LOOK_ROWS), `${gone} is decided and must not be a row`);
 for (const v of GAME_VERSIONS) {
@@ -65,7 +65,7 @@ setLookRow("matchRadar", "new");
 const c = gameVersionOf();
 check(c.version === "custom" && c.nearest === "standard" && c.changes === 1, `one change reads ${JSON.stringify(c)}`);
 applyGameVersion("classic");
-setLookRow("ui", "new");
+setLookRow("cutscenePeople", "new");
 const c2 = gameVersionOf();
 check(c2.version === "custom" && c2.nearest === "classic" && c2.changes === 1, `Classic + 1 reads ${JSON.stringify(c2)}`);
 

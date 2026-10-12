@@ -22,6 +22,7 @@ import { TOON_PLAYER_HEADS } from "./toon/bodies";
 import { HOME_MATCH_BUILD } from "./toon/shader";
 import { addClips, clipInfo, loadAnims3d } from "../three3d/footballAnims";
 import { BROADCAST } from "./broadcastCam";
+import { SIZE3D } from "./size3d";
 
 import type * as THREE from "three";
 type Three = typeof import("three");
@@ -114,7 +115,7 @@ export async function createAnimGrid(canvas: HTMLCanvasElement, tiles: AnimTile[
   const SPACING = 40;
   const grass = new T.Mesh(new T.PlaneGeometry(SPACING * (tiles.length + 2), 80), new T.MeshLambertMaterial({ color: 0x3f8a43 }));
   grass.rotation.x = -Math.PI / 2; grass.position.x = (SPACING * tiles.length) / 2; scene.add(grass);
-  const FIG = BROADCAST.fig;
+  const FIG = SIZE3D.man; // real size (size3d.ts); the camera below is placed for it (was BROADCAST.fig 1.35)
   const ballGeo = new T.SphereGeometry(0.11, 18, 12), ballMat = new T.MeshLambertMaterial({ color: 0xffffff });
 
   type Man = { p: Person3D; clip: string | null; act: THREE.AnimationAction | null; ball: THREE.Mesh | null; x: number; tile: AnimTile; hold: boolean };

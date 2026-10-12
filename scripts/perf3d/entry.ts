@@ -178,7 +178,7 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
   /**
    * One real chance, held still: `opts.frame` is an engine frame (the camera's view box, facing,
    * tilt and box size, the men, ball and keeper) made by scripts/cam3d/stills.mjs from a real
-   * scenario. The stage is sized to the frame's box. URL ?cam2d=0 = the broadcast camera (before).
+   * scenario. The stage is sized to the frame's box. (One camera since 12 Oct 2026: ?cam2d=0 is gone.)
    */
   async chance(opts: any = {}) {
     M.t0 = performance.now();

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type React from "react";
-import { fixtureDateLabel, fixtureTimestamp, isPostSeason, divisionOf, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
+import { fixtureDateLabel, fixtureTimestamp, isPostSeason, divisionOf, leagueNameFor, type CareerDivision, INTL_DAY_BASE } from "@/lib/star/calendar";
 import { displayOverall } from "@/lib/star/rating";
 import { starLevel } from "@/lib/star/starPoints";
 import type { CareerState } from "@/lib/star/types";
@@ -662,7 +662,7 @@ export default function LeagueScreen({ career, compact = false, view: forcedView
                         date stays underneath it. */}
                     <div className="text-center leading-none">
                       <div className="whitespace-nowrap text-[11px] font-black text-white">
-                        {isPostSeason(f.week, divisionOf(career)) ? "FINAL" : f.week === 0 ? "PRE" : `W${f.week}`}
+                        {f.week >= INTL_DAY_BASE ? "INT" : isPostSeason(f.week, divisionOf(career)) ? "FINAL" : f.week === 0 ? "PRE" : `W${f.week}`}
                       </div>
                       <div className="mt-0.5 whitespace-nowrap text-[8px] font-bold text-white/60">
                         {fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career))}

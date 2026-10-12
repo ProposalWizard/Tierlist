@@ -1,34 +1,39 @@
 "use client";
 
 /**
- * THE INTERNATIONAL BREAK — the national manager names his squad
- * (lib/star/international.ts). Called up: the match is next on your
- * calendar, played in the real match. Left out: one line why, a bar of how
- * close you are with what would move it, and back to the club.
+ * THE SQUAD ANNOUNCEMENT — the national manager names his squad for an
+ * international window or a tournament (lib/star/intl/career.ts). Called up:
+ * every match of the window (or the tournament's group games) goes on your
+ * calendar on its real date, played in the real match. Left out: one line
+ * why, the national manager's bar (0-100; in the squad from 34, starting
+ * from 55) and back to the club.
  *
  * Flags are drawn (NationFlag), so the page never shows a blank or a globe
  * when the flag CDN is blocked.
  */
-import type { CallUpDecision } from "@/lib/star/international";
-import { PressButton, LiquidBar, RiseIn } from "./ui";
+import type { IntlDecision } from "@/lib/star/intl/career";
+import { SQUAD_AT, START_AT } from "@/lib/star/intl/career";
+import { PressButton, RiseIn } from "./ui";
 import NationFlag from "./NationFlag";
 
-export default function CallUpScreen({ decision, dateLabel, onContinue }: {
-  decision: CallUpDecision;
-  /** "Wed 9 Oct". */
-  dateLabel: string;
+const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+
+export default function CallUpScreen({ decision, onContinue }: {
+  decision: IntlDecision;
   onContinue: () => void;
 }) {
-  const { called, nation, fixture, monthName, reason, chance, closeLine } = decision;
-  const home = fixture.home ? nation : fixture.opponent;
-  const away = fixture.home ? fixture.opponent : nation;
+  const { called, nation, period, reason, manager, line, starter } = decision;
+  const tournament = period.kind === "tournament";
+  const matches = period.matches.slice(0, tournament ? 3 : 6);
   return (
     <div data-callup={called ? "called" : "left-out"} className="min-h-screen bg-gray-950 text-white px-4 py-6"
       style={{ backgroundImage: called
         ? "radial-gradient(80% 50% at 50% 0%, rgba(56,189,248,0.28), transparent 70%)"
         : "radial-gradient(80% 50% at 50% 0%, rgba(148,163,184,0.18), transparent 70%)" }}>
       <div className="mx-auto flex max-w-sm flex-col items-center text-center">
-        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-sky-200/80">International break · {monthName}</div>
+        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-sky-200">
+          {tournament ? period.label : `International break · ${period.label}`}
+        </div>
         <RiseIn>
           <div className="mt-6 flex flex-col items-center">
             <div className={`rounded-md shadow-lg ring-2 ring-white/25 ${called ? "" : "opacity-70"}`}>
@@ -39,29 +44,46 @@ export default function CallUpScreen({ decision, dateLabel, onContinue }: {
               {called ? "Called up" : "Not selected"}
             </div>
             <div className="mt-2 text-[15px] font-bold text-white">
-              {called ? `You're in the ${nation} squad.` : `Left out of the ${nation} squad.`}
+              {called
+                ? `You're in the ${nation} squad${tournament ? ` for the ${period.comp}` : ""}${starter ? " — as a starter" : ""}.`
+                : `Left out of the ${nation} squad.`}
             </div>
-            <div className="mt-1 text-[13px] font-bold text-white/80">{reason}</div>
+            <div className="mt-1 text-[13px] font-bold text-white">{reason}</div>
           </div>
         </RiseIn>
 
-        <div className="mt-6 w-full border-y border-white/10 py-3">
-          <div className="text-[10px] font-black uppercase tracking-wider text-white/60">{fixture.competition} · {dateLabel}</div>
-          <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-[16px] font-black">
-            <span className="flex min-w-0 items-center justify-end gap-2"><span className="truncate">{home}</span><NationFlag nation={home} width={28} /></span>
-            <span className="text-white/50">v</span>
-            <span className="flex min-w-0 items-center gap-2"><NationFlag nation={away} width={28} /><span className="truncate">{away}</span></span>
+        <div className="mt-6 w-full border-y border-white/10 py-3 text-left">
+          <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-white/70">
+            {tournament ? "Group games" : `${nation}'s matches`}
           </div>
-          {!called && <div className="mt-2 text-[11px] font-bold text-white/60">Played without you.</div>}
+          {matches.map((m) => (
+            <div key={m.id} className="mt-1.5 grid grid-cols-[3.6rem_1fr_auto_1fr] items-center gap-2 text-[13px] font-black">
+              <span className="text-[10.5px] font-bold text-white/70">{day(m.date)}</span>
+              <span className="flex min-w-0 items-center justify-end gap-1.5"><span className="truncate">{m.home}</span><NationFlag nation={m.home} width={20} /></span>
+              <span className="text-white/60">v</span>
+              <span className="flex min-w-0 items-center gap-1.5"><NationFlag nation={m.away} width={20} /><span className="truncate">{m.away}</span></span>
+              <span className="col-span-4 -mt-0.5 text-[10px] font-bold text-white/60">{m.comp} · {m.stage}</span>
+            </div>
+          ))}
+          {!called && <div className="mt-2 text-[11px] font-bold text-white/70">Played without you.</div>}
+          {called && !tournament && <div className="mt-2 text-[11px] font-bold text-white/70">Any club games in between are played without you.</div>}
+          {called && tournament && <div className="mt-2 text-[11px] font-bold text-white/70">You stay with the squad until {nation} are knocked out.</div>}
         </div>
 
-        {!called && (
-          <div className="mt-5 w-full text-left" data-callup-close>
-            <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-white/60">How close you are</div>
-            <LiquidBar value={Math.round(chance * 100)} colors={["#38bdf8", "#a5f3fc"]} className="h-3" />
-            <div className="mt-1.5 text-[12px] font-bold text-white/80">{closeLine}</div>
+        <div className="mt-5 w-full text-left" data-callup-manager>
+          <div className="mb-1 flex justify-between text-[10px] font-black uppercase tracking-wider text-white/70">
+            <span>{nation} manager</span><span>{Math.round(manager)} / 100</span>
           </div>
-        )}
+          <div className="relative h-3 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-200" style={{ width: `${Math.round(manager)}%` }} />
+            <span className="absolute top-0 h-3 w-0.5 bg-white/80" style={{ left: `${SQUAD_AT}%` }} />
+            <span className="absolute top-0 h-3 w-0.5 bg-amber-300" style={{ left: `${START_AT}%` }} />
+          </div>
+          <div className="mt-1 flex justify-between text-[10px] font-bold text-white/70">
+            <span>Squad from {SQUAD_AT}</span><span>Starter from {START_AT}</span>
+          </div>
+          <div className="mt-1.5 text-[12px] font-bold text-white">{line}</div>
+        </div>
 
         <div className="mt-8 w-full" data-callup-continue>
           <PressButton variant="gold" size="none" onClick={onContinue} className="w-full rounded-xl py-3 text-[14px] font-black uppercase">

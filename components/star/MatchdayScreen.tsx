@@ -201,7 +201,7 @@ export default function MatchdayScreen(p: Props) {
               className="kib-press min-h-[54px] flex-1 rounded-2xl bg-gradient-to-b from-slate-500 to-slate-600 px-3 text-[16px] font-black text-white"
               style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.22), 0 4px 12px -4px rgba(0,0,0,.8)" }}
             >
-              🏟️ Watch from the stands
+              {preMatchSelection?.away ? "✈️ Club plays without you" : "🏟️ Watch from the stands"}
             </button>
           ) : (
             <button
@@ -387,7 +387,9 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
       ? { label: "On the bench", cls: "from-amber-200 to-amber-400 text-gray-950", glow: "#f59e0b" }
       : sel.status === "Injured"
         ? { label: "Injured", cls: "from-red-400 to-red-600 text-white", glow: "#dc2626" }
-        : { label: "Out of squad", cls: "from-red-400 to-red-600 text-white", glow: "#dc2626" };
+        : sel.away
+          ? { label: "Away on international duty", cls: "from-sky-300 to-sky-500 text-gray-950", glow: "#0ea5e9" }
+          : { label: "Out of squad", cls: "from-red-400 to-red-600 text-white", glow: "#dc2626" };
   // The bench minute is not shown (Harry, 28 Sep 2026: the badge alone is
   // enough). The sub ladder below stays developer info.
 
@@ -414,6 +416,13 @@ function StatusCard(p: Props & { preMatchSelection: SelectionVerdict; glow: stri
         </span>
         <PositionSelect career={career} playAs={p.playAs} onChange={p.onPlayAs} fixed={p.intl} />
       </div>
+
+      {sel.away && (
+        <div className="mt-2 flex items-center gap-2 rounded-xl bg-sky-500/15 px-2.5 py-1.5 ring-1 ring-sky-400/40">
+          <span className="text-[16px]">✈️</span>
+          <div className="min-w-0 flex-1 text-[12px] font-black text-white">{sel.reason} Your club plays without you.</div>
+        </div>
+      )}
 
       {career.injury && (
         <div className="mt-2 flex items-center gap-2 rounded-xl bg-red-500/15 px-2.5 py-1.5 ring-1 ring-red-400/40">

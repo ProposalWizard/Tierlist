@@ -5,6 +5,7 @@
 // phase routing and toasts; this owns the numbers.
 
 import { recordIntlMatch } from "./international";
+import { creditIntl, syncIntl, managerAfterClubMatch, awayOnDuty } from "./intl/career";
 import { settleTournamentMatch, isTournamentFixture } from "./tournament";
 import { bestsAfterMatch, archiveRowFor, historyRowFor, bestMatesOf } from "./careerRecords";
 import { featsAfterMatch } from "./feats";
@@ -1342,6 +1343,15 @@ export function creditMatchResult(
     next.money += b.bonus;
   }
 
+  // The international world (lib/star/intl/career.ts): your result goes into
+  // it, or — after a club match — the national manager's view moves; then the
+  // calendar is brought into step (the next knockout round, trophies).
+  if (!alreadyPlayed) {
+    Object.assign(next, fixture.intlId
+      ? creditIntl(next, fixture, stats)
+      : syncIntl(managerAfterClubMatch(next, stats.rating)));
+  }
+
   const settled = applyAchievements(next);
   return {
     career: withStars({ ...settled.career, starRating: computeStarRating(settled.career) }),
@@ -2013,6 +2023,9 @@ export function advanceSeason(
     next.money += b.bonus;
   }
 
+  // The new season's internationals and real-player strengths.
+  Object.assign(next, syncIntl(next));
+
   const settled = applyAchievements(next);
   return {
     career: withStars({ ...settled.career, starRating: computeStarRating(settled.career) }),
@@ -2256,6 +2269,16 @@ export function simulateMissedFixture(
       next.playOffState = seeded.state;
       next.fixtures = [...next.fixtures, ...seeded.fixtures];
     }
+  }
+
+  // The international world: a missed international is played as the
+  // simulation above had it (your result, so the world agrees with the
+  // calendar); a club match missed moves the national manager a little —
+  // unless you missed it because you were away with him.
+  if (!alreadyPlayed) {
+    Object.assign(next, fixture.intlId
+      ? creditIntl(next, fixture, { homeScore: userScore, awayScore: oppScore, rating: 6.6 }, { keepManager: true })
+      : syncIntl(managerAfterClubMatch(next, null, !!awayOnDuty(career, fixture))));
   }
 
   const { career: withAchievements, newlyUnlocked } = applyAchievements(next);
