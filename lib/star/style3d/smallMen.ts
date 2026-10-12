@@ -14,12 +14,12 @@
  *
  * Looks only; nothing reads the camera to size anything. The values are the pick from the
  * 12 Oct 2026 comparison sheets (scratchpad size1/14-*, 16-*): Harry chose 2.5 as the base, then the
- * thicker ink (2.8 px) and map bias 2 read cleanest.
+ * thinner ink (2.2 px, Harry: the 2.8 one is not needed) with map bias 1.5.
  */
 export const SMALL_MEN = {
   mediumDpr: 2.5,
-  outlinePx: 2.8,
+  outlinePx: 2.2,
   flatCel: true,
   kitNoise: false,
-  mapBias: 2,
+  mapBias: 1.5,
 };
