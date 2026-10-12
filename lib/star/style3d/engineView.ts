@@ -34,6 +34,7 @@ import { withMeshopt } from "../three3d/meshopt";
 import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
 import { matchPlayerStyle, matchPlayersStyleLook } from "./toon/matchLook";
+import { HOME_MATCH_BUILD } from "./toon/shader";
 import { TOON_PLAYER_HEADS, toonBodyFor, toonHeadFor, toonHairFor, toonSkinFor, toonYou, type ToonHead } from "./toon/bodies";
 import { addClips, clipInfo, ClipPlayer, loadAnims3d } from "../three3d/footballAnims";
 import { faceFromUrl } from "../three3d/faceFromUrl";
@@ -634,13 +635,16 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const toonOn = mStyle === "new";
   // "Players in a 3D match: Style A" (toon/matchLook.ts): every man lit like the Home player, with an ink edge (toon/shader.ts HOME_LIGHT)
   const homeMen = toonOn && matchPlayersStyleLook() === "styleA";
+  // ...and built like him: a bigger head and broader at this small size (a man is ~6% of the screen; HOME_MATCH_BUILD)
+  const homeLook = homeMen ? HOME_MATCH_BUILD.look : undefined;
+  if (o.def.real) void import("./real/ball").then(({ setHBallLightRing }) => setHBallLightRing(!homeMen)).catch(() => {});
   const homeLight = (p: Person3D) => { const hu = (p.u as any).uHome?.value; if (hu) hu.x = homeMen ? 1 : 0; };
   const spareBins = new Map<string, Person3D[]>();
   const bin = (h?: ToonHead) => { const k = h ?? "-"; let l = spareBins.get(k); if (!l) { l = []; spareBins.set(k, l); } return l; };
   const spares = { push: (p: Person3D) => bin(p.toonHead).push(p), pop: () => Array.from(spareBins.values()).find((l) => l.length)?.pop() };
   let built = 0;
   const buildShell = (th?: ToonHead) => {
-    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonHead: toonOn ? (th ?? TOON_PLAYER_HEADS[built % TOON_PLAYER_HEADS.length]) : undefined, toonBody: toonOn ? "c1" : undefined });
+    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonHead: toonOn ? (th ?? TOON_PLAYER_HEADS[built % TOON_PLAYER_HEADS.length]) : undefined, toonBody: toonOn ? "c1" : undefined, toonLook: homeLook });
     if (fb) addClips(THREE, p, fb as any);
     homeLight(p);
     cullSkinned(THREE, p.root); // off-screen men are not drawn (three3d/cullPeople.ts)
@@ -714,9 +718,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const tb = toonOn ? (sid === "you" ? toonYou().body : toonBodyFor(sid)) : undefined;
     const th = toonOn ? (sid === "you" ? toonYou().head : toonHeadFor(sid)) : undefined;
     const spare = bin(th).pop();
-    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb, toonHead: th });
+    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb, toonHead: th, toonLook: homeLook });
     if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); homeLight(p); }
     if (tb) setToonBuild(p, tb);
+    if (tb && homeMen) p.root.children[0]?.scale.multiply(new THREE.Vector3(...HOME_MATCH_BUILD.across));
     const look: PersonLook = {
       skin: toonOn ? (sid === "you" ? toonYou().skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
       hair: toonOn ? (sid === "you" ? toonYou().hair : toonHairFor(sid)) : "#1b120c",
@@ -1930,6 +1935,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       hToken++;
       gov.dispose();
       hball?.dispose(); hball = null;
+      if (homeMen) void import("./real/ball").then(({ setHBallLightRing }) => setHBallLightRing(true)).catch(() => {}); // drills keep their ring
       h?.dispose(); h = null;
       kit?.dispose(); kit = null;
       // the spares never reached the scene, so release(root) never saw them: their own materials and bones go here

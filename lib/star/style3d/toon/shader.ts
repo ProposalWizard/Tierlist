@@ -231,6 +231,13 @@ const TOON_BODY = `
  * bloom starts at 1.0, so 0.95 never blooms). Off (uHome.x 0) for every place but the 3D match.
  */
 export const HOME_LIGHT = { hemi: 1.2, sun: 2.6, sunDir: [2.5, 4, 4] as const, ink: 1, cap: 0.95 } as const;
+/**
+ * The match men's build under "Players in a 3D match: Style A" (lead's review, 12 Oct 2026: the
+ * Home player reads chunky; at the match's ~6% of the screen the same man read thin, small-headed).
+ * `look`: people3d's toonLook (head and neck bone scales; hands at full size). `across`: on top of
+ * his seeded build, [across, up, front-to-back].
+ */
+export const HOME_MATCH_BUILD = { look: { head: 1.32, neck: 1.4, hands: 1 }, across: [1.14, 1, 1.12] as [number, number, number] } as const;
 const HOME_SKY = [0.4851, 0.6105, 0.8714], HOME_GROUND = [0.0685, 0.1022, 0.0232], HOME_SUN = [1.0, 0.7454, 0.4342];
 
 /** The cloth: weave strength (± share of the colour) and how much darker a stitched seam is. */

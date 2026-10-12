@@ -18,7 +18,7 @@ page.on("console", (m) => { if (m.type() === "error") errs.push(m.text().slice(0
 const q = flag("q", "");
 await page.goto(`http://localhost:${flag("port", "3502")}/index.html?gov=0&fps=0${q ? "&" + q : ""}`);
 const sceneName = flag("scene", "career");
-const opts = sceneName === "career" ? { tier: flag("tier", "medium"), tod: flag("tod", "golden") } : JSON.parse(flag("opts", "{}"));
+const opts = sceneName === "career" ? { tier: flag("tier", "medium"), tod: flag("tod", "golden"), ...JSON.parse(flag("opts", "{}")) } : JSON.parse(flag("opts", "{}"));
 await page.evaluate(([s, o]) => { window.__run = window.H[s](o).catch((e) => { window.__err = String(e); }); }, [sceneName, opts]);
 await page.waitForFunction(() => window.__err || window.__M.ready, null, { timeout: 300000 });
 const err = await page.evaluate(() => window.__err);

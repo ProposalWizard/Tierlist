@@ -133,7 +133,7 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     them.forEach(([x, y], i) => figures.push(fig(`def${i}`, x, y, "them")));
     const t0 = performance.now() / 1000;
     let facing = "up";
-    const bp = { x: 34, y: 17.2 };
+    const bp = { x: opts.ballX ?? 34, y: opts.ballY ?? 17.2 };
     const f = () => ({
       t: performance.now() / 1000, phase: "aim", kind: "one_on_one",
       cam: { viewport: { x1: 10, x2: 58, y1: -4, y2: 44 }, facing, tilt: null, W: 390, H: 600 },
@@ -286,6 +286,24 @@ const KIT = { shirt: "#c8102e", trim: "#ffffff" };
     requestAnimationFrame(tick);
     M.ready = performance.now();
     M.ctrl = { dispose() { on = false; renderer.dispose(); renderer.domElement.remove(); } };
+    return true;
+  },
+  /**
+   * The 3D animation test grid (/star-anim3d-dev's picture, lib/star/style3d/animGrid3d.ts) without
+   * Next: every match clip on its own man. `window.__grid.draw(times)` poses them; `__grid.info`
+   * lists each tile's clip and length (contact sheets of several frames per clip).
+   */
+  async animgrid(opts: any = {}) {
+    M.t0 = performance.now();
+    const { createAnimGrid, ANIM_TILES } = await import("@/lib/star/style3d/animGrid3d");
+    const tiles = ANIM_TILES.flatMap((g) => g.tiles);
+    const c = document.createElement("canvas");
+    stage().appendChild(c);
+    const g = await createAnimGrid(c, tiles, opts.cols ?? 6, opts.w ?? 120, opts.h ?? 150);
+    (window as any).__grid = g;
+    (window as any).__gridTiles = tiles.map((t) => t.label);
+    M.ready = performance.now();
+    M.ctrl = { dispose() { g.dispose(); c.remove(); } };
     return true;
   },
   /** Home's idle early download for a place (perf.ts preloadScene), then window.__preloadDone. */
