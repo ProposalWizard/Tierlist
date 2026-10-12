@@ -45,6 +45,7 @@ import { gameplayVersion, setGameplayVersion, chanceMixStored } from "./gameplay
 import { humanBodyLook, setHumanBodyLook } from "./human3d/look";
 import { playerStyleLook, setPlayerStyleLook, playerStyleStored } from "./style3d/toon/look";
 import { matchPlayersStyleLook, setMatchPlayersStyleLook, matchPlayersStyleStored } from "./style3d/toon/matchLook";
+import { tierLook, setTierLook } from "./three3d/tierLook";
 import { cutscenePeopleLook, setCutscenePeopleLook, cutsceneCameraLook, setCutsceneCameraLook, cutsceneCameraStored } from "./cutscene/look";
 import { motionLook, setMotionLook } from "./motionLook";
 import { realCameraLook, setRealCameraLook, playerLightLook, setPlayerLightLook } from "./style3d/realGameLook";
@@ -114,6 +115,8 @@ export const LOOK_ROWS = {
   playerStyle: row("Player style", "new", "old", playerStyleLook, setPlayerStyleLook),
   // Harry, 12 Oct 2026: "for cut scenes the Style A is good and in game the realistic players is good".
   matchPlayers3d: row("Players in a 3D match", "real", "follow", matchPlayersStyleLook, setMatchPlayersStyleLook),
+  // Harry, 12 Oct 2026: "medium/low to not look terrible using every percent of optimisation we can".
+  tierLook3d: row("3D quality look", "new", "old", tierLook, setTierLook),
   cutscenePeople: row("Cut-scene people", "new", "old", cutscenePeopleLook, setCutscenePeopleLook),
   // Harry, 9 Oct 2026: camera pass + music on every cut scene (New by default).
   cutsceneCamera: row("Cut-scene camera", "new", "old", cutsceneCameraLook, setCutsceneCameraLook),
@@ -193,6 +196,7 @@ export const VERSION_PRESETS: Record<GameVersion, Record<LookRowId, string>> = {
     humanBody: O("humanBody"),
     playerStyle: N("playerStyle"), // Style A glow bug fixed (toon/shader.ts, 9 Oct 2026)
     matchPlayers3d: N("matchPlayers3d"), // realistic players in any 3D football; Style A off the pitch (12 Oct 2026)
+    tierLook3d: N("tierLook3d"), // Medium and Low buy High's look back cheaply (12 Oct 2026)
     cutscenePeople: O("cutscenePeople"),
     cutsceneCamera: N("cutsceneCamera"),
     motion: N("motion"),
