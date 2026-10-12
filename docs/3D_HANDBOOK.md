@@ -1016,3 +1016,11 @@ Harry: "Why can't the players just have a measurement on their own? Why is it 4%
 - `matchScale()` always returns A; MATCH_SCALES B / C / current are paper numbers for `scripts/cam3d/scale.mts` only.
 - Left on purpose: the 2D-frame camera still keeps head room for a 5.4 m man at the top of its frame (`MATCH2D.figMax`) and returns a framing number `k`. Camera only; it never sizes anyone.
 - Test: `tests/star/size3d.mts`.
+
+### Small men read cleanly (12 Oct 2026)
+
+Harry, on a Medium crop: "I just don't like how pixely the players look … compared to [the Home player] it doesn't seem the same." Sizes stay real; only the drawing changed (`lib/star/style3d/smallMen.ts`):
+- Medium draws at pixel ratio 2.5 (was 1.5). Harry: "pixel ratio 2.5 already looks better". Needs a phone check for frame time.
+- A 2.2 px screen-space ink line round every man (`outlinePx` in `people3d.ts`, `setPeople3dOutlineRes`), on every tier. Harry chose 2.2 over 2.8.
+- Flat 2-tone cel and no rim (`uSmall.x` in `toon/shader.ts`), no kit weave or seam, skin/hair map mip bias 1.5 (`uSmall.y`).
+- Measured here at px 2.5 (one penalty frame, frame meter): about 48 draws and 78k triangles with the ink line, against about 46 draws and 49k triangles without it (the line redraws each man's body). The meter's numbers swing ±10 between frames.
