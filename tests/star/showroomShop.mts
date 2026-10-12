@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { BOOTS_ALL_LEVELS, LIFESTYLE_ALL_LEVELS, baseIdOf } from "../../lib/star/shopData";
 import { styleGroupOf } from "../../lib/star/lifestyleLevels";
+import { shopPic3d } from "../../lib/star/shopPicsLook";
 
 /**
  * THE SHOWROOM + FEED SHOP (components/star/shop2d/ShowroomShop.tsx): every
@@ -37,6 +38,22 @@ for (const n of names) {
   const s = webpSize(p);
   check(!!s && s.h >= 1080, `${n}: not at least 1080 px tall (${s ? `${s.w}x${s.h}` : "unreadable"})`);
 }
+
+// Settings → Look → "Shop pictures: New": every 3D-model still the shop names exists, 1080 px tall
+let from3d = 0;
+for (const b of BOOTS_ALL_LEVELS) {
+  const p = shopPic3d("boot", baseIdOf(b), b.level ?? 1);
+  if (p) { from3d++; check(existsSync(`public${p}`), `${p}: missing`); }
+}
+for (const i of LIFESTYLE_ALL_LEVELS) {
+  const p = shopPic3d("style", baseIdOf(i), i.level ?? 1);
+  if (!p) continue;
+  from3d++;
+  if (!existsSync(`public${p}`)) { check(false, `${p}: missing`); continue; }
+  const s = webpSize(`public${p}`);
+  check(!!s && s.h >= 1080, `${p}: not at least 1080 px tall`);
+}
+check(from3d >= 100, `only ${from3d} item levels have a 3D-model still`);
 
 if (problems.length) {
   console.log(`showroomShop: ${problems.length} problem(s)`);

@@ -1,0 +1,3 @@
+Showroom stills rendered from the 3D shop models in ../../shop3d/items/*-hf.glb
+(Higgsfield picture -> Tripo image-to-3D; see public/star/shop3d/LICENSE.txt).
+Made by tools/shop2d/render_from_3d (three.js, studio lights). No brands.
