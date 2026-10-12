@@ -9,11 +9,10 @@
  *  - "progress": after each of your tournament matches — your group table,
  *    or the knockout road so far, and the line about what just happened.
  */
-import { useState } from "react";
 import type { TournamentState } from "@/lib/star/tournament";
 import { groupTable, yourGroup } from "@/lib/star/tournament";
 import { tieWinner } from "@/lib/star/cups";
-import { getFlagUrl } from "@/lib/nationalities";
+import NationFlag from "./NationFlag";
 import { PressButton, LiquidBar, RiseIn } from "./ui";
 
 const NAME: Record<string, string> = { "World Cup": "World Cup", "European Championship": "Euros" };
@@ -28,8 +27,6 @@ export default function TournamentScreen({ state, mode, year, message, onContinu
   onContinue: () => void;
 }) {
   const { nation, entered, selected, chance, competition, winner } = state;
-  const big = getFlagUrl(nation)?.replace("/20x15/", "/w160/") ?? null;
-  const [flagOk, setFlagOk] = useState(true);
   const g = yourGroup(state);
   const table = g ? groupTable(g) : [];
   const inKo = state.ko.length > 0 && state.ko[0].ties.some(t => t.home === nation || t.away === nation);
@@ -53,9 +50,9 @@ export default function TournamentScreen({ state, mode, year, message, onContinu
         <div className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-200/90">{NAME[competition] ?? competition} · Summer {year}</div>
         <RiseIn>
           <div className="mt-5 flex flex-col items-center">
-            {big && flagOk
-              ? <img src={big} alt="" onError={() => setFlagOk(false)} className="h-16 w-24 rounded-md object-cover shadow-lg ring-2 ring-white/20" />
-              : <div className="grid h-16 w-24 place-items-center rounded-md bg-white/10 text-3xl">🌍</div>}
+            {/* Drawn, never a network image: the flag CDN was blocked or slow and
+                left a globe here (tournament playtest, 11 Oct 2026). */}
+            <div className="rounded-md shadow-lg ring-2 ring-white/20"><NationFlag nation={nation} width={96} rounded={6} /></div>
             <div data-tournament-headline className="mt-3 text-[30px] font-black uppercase leading-none tracking-wide"
               style={{ color: lit ? "#fde047" : "#cbd5e1" }}>{headline}</div>
             {sub && <div className="mt-2 text-[14px] font-bold text-white">{sub}</div>}
@@ -148,6 +145,5 @@ export default function TournamentScreen({ state, mode, year, message, onContinu
 }
 
 function Flag({ name }: { name: string }) {
-  const f = getFlagUrl(name);
-  return f ? <img src={f} alt="" className="h-3 w-[18px] rounded-sm object-cover" /> : null;
+  return <NationFlag nation={name} width={18} rounded={2} />;
 }

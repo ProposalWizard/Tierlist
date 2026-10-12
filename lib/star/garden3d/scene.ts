@@ -47,6 +47,7 @@ import { installAssetVersions } from "../three3d/assetUrl";
 import { dressInKit, type KitColours } from "../shop3d/scene";
 import { turnTo } from "../three3d/animBlend";
 import { blobCanvas, neonCanvas, numberCanvas } from "../shop3d/textures";
+import { tierLookNew } from "../three3d/tierLook";
 import { loadPeople3d, makePerson3d, dressPerson3d, playerModelFor, relaxHands, toonHeadsFor, type Person3D } from "../people3d";
 import { people3dLook } from "../look3d";
 import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ } from "../tapWalk";
@@ -2027,6 +2028,19 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // material in the same group, so the garden draws in far fewer calls. The
   // picture is exactly the same.
   const frozen = dbg.has("nofreeze") ? { before: 0, after: 0 } : freezeStatic(THREE, mergeGeometries, scene, new Set<any>([player, playerBlob, column, bowl, bowlWater, topper, dome, sunSprite, ...mates.map((m) => m.root)]));
+  // 3D quality look New (12 Oct 2026): where nothing casts a live shadow (Low), a long soft shadow
+  // along the sun under him, so he stands on the path, never floats. One small draw.
+  let sunBlob: any = null;
+  let sbx = 0, sbz = 0;
+  if (!prof.shadows && tierLookNew() && playerBlob) {
+    const hl = Math.hypot(sunDir.x, sunDir.z) || 1e-3;
+    // round 2: short and faint (round 1's up to 3.2 m at 0.7 read as a dark streak), like the stadium's
+    const len = Math.min(1.5, Math.max(0.7, (0.75 * hl) / Math.max(0.2, sunDir.y)));
+    sbx = (-sunDir.x / hl) * len * 0.45; sbz = (-sunDir.z / hl) * len * 0.45;
+    sunBlob = blob(0.5, len, player.position.x + sbx, player.position.z + sbz, 0.3);
+    sunBlob.rotation.z = Math.atan2(sunDir.x, sunDir.z);
+    sunBlob.position.y = 0.021;
+  }
 
   // ── The training pitch's team-mates (Harry, 8 Oct 2026: "build all the
   // animations for any new 3D areas"). Behind the fence: two passing it
@@ -2513,6 +2527,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     player.position.x = nx; player.position.z = nz;
     player.rotation.y = yaw;
     playerBlob.position.set(nx, 0.02, nz);
+    sunBlob?.position.set(nx + sbx, 0.021, nz + sbz);
     marker.update(dt);
     const wWalk = speed < WALK ? speed / WALK : Math.max(0, 1 - (speed - WALK) / (JOG - WALK));
     const wJog = speed <= WALK ? 0 : Math.min(1, (speed - WALK) / (JOG - WALK));

@@ -16,22 +16,27 @@
  *   every chance, ball at 55–60% height, men ~6% of the canvas, plus smoother
  *   playback in engineView. Old is unchanged.
  *
+ *   New, round 4 (Harry, 12 Oct 2026: "the framing is not exactly the same on
+ *   3d and 2d"): the 3D shows the 2D's own view box (lib/star/style3d/match2dCam.ts).
+ *   12 Oct 2026, later: the only camera; the Old and broadcast cameras were deleted.
+ *
  *   Settings → Look → "3D player light: New | Old" ("the players on the pitch
  *   still look slightly flat"). New: a soft key and rim light on the players
  *   only, darker undersides and feet, less flat fill, a tight shadow under
  *   each man. Old: the players lit exactly as before.
  *
- * Being tested: Preview only (lib/star/gameVersions.ts), so both default Old.
- * The Style Testing page can force either for that page: ?cam=new|old&plight=new|old.
+ * The camera: New by default (12 Oct 2026). The player light: being tested,
+ * Preview only (lib/star/gameVersions.ts), so it defaults Old.
+ * The Style Testing page can force the light for that page: ?plight=new|old.
+ * (The 3D camera row was removed on 12 Oct 2026: one camera, no setting.)
  */
 import { useSyncExternalStore } from "react";
 
 export type RealGameLook = "new" | "old";
 
 const VALUES: readonly RealGameLook[] = ["new", "old"];
-const FALLBACK: RealGameLook = "old";
 
-function store(key: string) {
+function store(key: string, FALLBACK: RealGameLook) {
   let cached: RealGameLook | null = null;
   const listeners = new Set<() => void>();
   const get = (): RealGameLook => {
@@ -56,13 +61,10 @@ function store(key: string) {
   return { get, set, preview, use };
 }
 
-const cam = store("star-look-3d-camera");
-const light = store("star-look-3d-player-light");
+// The 3D camera has no New | Old any more (Harry, 12 Oct 2026: decided things are not settings):
+// one camera, the 2D's own frame (match2dCam.ts). The player light stays a choice, Old by default.
+const light = store("star-look-3d-player-light", "old");
 
-export const realCameraLook = cam.get;
-export const setRealCameraLook = cam.set;
-export const previewRealCameraLook = cam.preview;
-export const useRealCameraLook = cam.use;
 
 export const playerLightLook = light.get;
 export const setPlayerLightLook = light.set;

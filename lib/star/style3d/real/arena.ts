@@ -22,6 +22,32 @@
 import type { Quality3d } from "../../three3d/quality";
 import { PITCH_LEN as L, PITCH_HALF_W as W } from "./pitch";
 import { mergeStaticByMaterial } from "../../three3d/perf";
+import { tierLookNew } from "../../three3d/tierLook";
+
+/**
+ * 3D quality look New, round 2 (12 Oct 2026): Medium draws 1.5 pixels a point
+ * (High 2), so the far crowd and boards take a softer mip level. A small negative
+ * mip bias picks the sharper level: no extra reads (the same one read a pixel),
+ * only a few more texture-cache misses on those two materials. Seen on the
+ * round-2 stills (Medium round 1 vs round 2). Not tried: −1 (likely shimmer as the crowd bobs).
+ */
+/**
+ * The goal frame's size (× real), fixed for a whole match: the 3D match sets it from
+ * MATCH_SCALES (style3d/match2dCam.ts) before it builds its stadium, and puts it back to 1
+ * when it closes. Every other scene builds true-size goals. The pitch lines are not scaled.
+ */
+let arenaGoalScale = 1;
+export function setArenaGoalScale(s: number): void { arenaGoalScale = s > 0 ? s : 1; }
+
+/** Round 3: the goal net fades to a flat haze where its cells get too small to draw (Medium, New look). */
+export const netFade = (tier: Quality3d) => tier === "medium" && tierLookNew();
+/** Cells per pixel where the fade starts / is complete (a cell ~7 px → ~2 px wide). */
+export const NET_FADE: [number, number] = [0.15, 0.45];
+/** The net's see-through-ness once faded: about what its lines cover, seen from afar on High. */
+export const NET_FAR_ALPHA = 0.05;
+/** At most this much faded: a trace of the mesh stays, the bands drop to under a third. */
+export const NET_FADE_MAX = 0.7;
+export const crowdMipBias = (tier: Quality3d) => (tier === "medium" && tierLookNew() ? -0.5 : 0);
 
 const GOAL_W = 7.32, GOAL_H = 2.44, NET_D = 2.0;
 
@@ -49,7 +75,7 @@ varying float vShade;`;
 const CROWD_FRAG_HEAD = /* glsl */ `
 varying float vTeam;
 varying float vShade;
-uniform float uTime, uBob, uCheer, uLit;
+uniform float uTime, uBob, uCheer, uLit, uMipBias;
 uniform vec3 uHome, uHome2, uAway;
 float ch(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 15731.743); }`;
 const CROWD_MAP = /* glsl */ `
@@ -62,7 +88,7 @@ const CROWD_MAP = /* glsl */ `
   float hop = sin(beat) * (0.25 + 0.75 * hs);
   float jump = max(0.0, sin(uTime * 9.0 + hs * 6.283)) * uCheer;
   cuv.y -= (hop * uBob * 0.006 + jump * 0.03);
-  vec4 tc = texture2D(map, cuv);
+  vec4 tc = texture2D(map, cuv, uMipBias);
   float mx = max(tc.r, max(tc.g, tc.b)), mn = min(tc.r, min(tc.g, tc.b));
   float sat = (mx - mn) / max(mx, 1e-3);
   float lum = dot(tc.rgb, vec3(0.3333));
@@ -138,7 +164,7 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
 
   // ── the crowd material ──
   const cu: Record<string, { value: any }> = {
-    uTime: { value: 0 }, uBob: { value: 1 }, uCheer: { value: 0 }, uLit: { value: 1 },
+    uTime: { value: 0 }, uBob: { value: 1 }, uCheer: { value: 0 }, uLit: { value: 1 }, uMipBias: { value: crowdMipBias(tier) },
     uHome: { value: new T.Color(colours.home) }, uHome2: { value: new T.Color(colours.home2) }, uAway: { value: new T.Color(colours.away) },
   };
   const crowdMat = keep(new T.MeshStandardMaterial({ map: maps.crowd, roughness: 0.95, side: T.FrontSide }));
@@ -166,6 +192,11 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
       const t = keep(maps.led.clone());
       t.wrapS = T.RepeatWrapping; t.needsUpdate = true;
       m = keep(new T.MeshBasicMaterial({ map: t, color: new T.Color(1.05, 1.05, 1.05) }));
+      const bias = crowdMipBias(tier);
+      if (bias !== 0) {
+        m.onBeforeCompile = (sh: any) => { sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", `vec4 sampledDiffuseColor = texture2D( map, vMapUv, ${bias.toFixed(2)} );\ndiffuseColor *= sampledDiffuseColor;`); };
+        m.customProgramCacheKey = () => `h-led-bias${bias}`;
+      }
       m.userData.speed = speed;
       ledMats.push(m);
       ledBySpeed.set(speed, m);
@@ -457,10 +488,24 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
   const netTex = canvasTex(netCanvas());
   const netMat = keep(new T.MeshStandardMaterial({ map: netTex, color: "#ffffff", roughness: 0.8, alphaTest: 0.02, side: T.DoubleSide, transparent: true, depthWrite: false }));
   netMat.alphaMap = netTex;
+  // 3D quality look New, round 3 (Harry: the Medium net "shimmers"): a mesh cell under ~8 px aliases into
+  // bands at Medium's 1.5 pixel ratio + FXAA + sharpen. Far off, the net fades to its own average (a flat,
+  // see-through white) by how many cells a pixel spans: no extra texture read, two derivatives.
+  if (netFade(tier)) {
+    netTex.anisotropy = 1;
+    netMat.onBeforeCompile = (sh: any) => {
+      sh.fragmentShader = sh.fragmentShader.replace("#include <alphamap_fragment>", `#include <alphamap_fragment>
+{ float cellsPerPx = max(length(fwidth(vMapUv)), 1e-4);
+  float far = ${NET_FADE_MAX.toFixed(2)} * smoothstep(${NET_FADE[0].toFixed(3)}, ${NET_FADE[1].toFixed(3)}, cellsPerPx);
+  diffuseColor = mix(diffuseColor, vec4(vec3(1.0), ${NET_FAR_ALPHA.toFixed(3)}), far); }`);
+    };
+    netMat.customProgramCacheKey = () => "h-net-fade";
+  }
   type Net = { geo: any; base: Float32Array; hit: { x: number; y: number; amp: number; v: number } ; end: number };
   const nets: Net[] = [];
   for (const end of [0, 1]) {
     const g = new T.Group();
+    g.name = "h-goal";
     const R = 0.06, HW = GOAL_W / 2;
     for (const sx of [-1, 1]) {
       const post = new T.Mesh(keep(new T.CylinderGeometry(R, R, GOAL_H + R, 16)), postMat);
@@ -491,6 +536,8 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
       g.add(new T.Mesh(sg, netMat));
     }
     if (end) { g.rotation.y = Math.PI; g.position.z = L; }
+    // the match's one fixed goal scale (style3d/match2dCam.ts MATCH_SCALES), about the middle of its line
+    if (arenaGoalScale !== 1) g.scale.setScalar(arenaGoalScale);
     G.add(g);
     nets.push({ geo: back, base: Float32Array.from(back.attributes.position.array), hit: { x: 0, y: 1, amp: 0, v: 0 }, end });
   }

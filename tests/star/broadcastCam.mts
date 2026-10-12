@@ -6,7 +6,8 @@
  * chance kind × 20 seeds, on a 390×844 phone:
  *   - always the same angle (48–50° down; Harry: "a little bit higher still"): never top-down, never at the grass;
  *   - the ball at 55–65% of the height, so ≥ 25% of the canvas is pitch below it;
- *   - a man at the ball the target share (6%, ±1) of the canvas height (measured through the camera);
+ *   - every man ONE size (BROADCAST.fig × life) in every chance (Harry, 12 Oct 2026: never resized by the camera);
+ *   - a man at the ball at most the target share (6%) of the canvas height: the camera's distance frames it, so a wide chance shows him smaller;
  *   - everything in the action on the screen.
  */
 import { buildScenario, initDefenders, goalInView, SCENARIO_KINDS } from "../../lib/star/canvasEngine";
@@ -43,7 +44,7 @@ for (const kind of SCENARIO_KINDS) {
     room.push(1 - c.anchorShare); man.push(c.man);
     if (gv) bar.push(bcProject(c, W, H, { x: 34, y: 0, z: 2.44 }).fr);
     if (c.anchorShare < 0.549 || c.anchorShare > 0.65 || 1 - c.anchorShare < 0.25) badRoom++;
-    if (c.man < BROADCAST.manShare - 0.01 || c.man > BROADCAST.manShare + 0.01) { badMan++; if (process.env.V) console.log(kind, seed, facing, c.man.toFixed(3), c.k.toFixed(2)); }
+    if (Math.abs(c.k - BROADCAST.fig) > 1e-9 || c.man > BROADCAST.manShare + 0.01) { badMan++; if (process.env.V) console.log(kind, seed, facing, c.man.toFixed(3), c.k.toFixed(2)); }
     if (c.k >= BROADCAST.kMax - 1e-6) kCapped++;
     for (const p of pts) { const s = bcProject(c, W, H, p); if (Math.abs(s.nx) > 1 || s.fr < 0 || s.fr > 1) { offScreen++; break; } }
   }
@@ -55,7 +56,7 @@ ok(SCENARIO_KINDS.length >= 13, `${SCENARIO_KINDS.length} chance kinds`);
 ok(sideKinds.size > 0, `side-on chances are in the set (${[...sideKinds].join(", ")}) and use the same camera`);
 ok(badAngle === 0, `every chance ${BROADCAST.elevDeg}–${BROADCAST.elevMaxDeg}° down, never top-down (${badAngle} not)`);
 ok(badRoom === 0, `the ball at 55–65% of the height, ≥ 25% pitch below it (${badRoom} not)`);
-ok(badMan <= n * 0.03, `a man at the ball is the target ${(BROADCAST.manShare * 100).toFixed(0)}% ±1 of the canvas height in ≥ 97% of chances (${badMan} of ${n} not: the widest, where the size cap holds)`);
-ok(Math.min(...man) >= BROADCAST.manShare * 0.75 && Math.max(...man) <= BROADCAST.manShare + 0.01, `never under ¾ of the target or over it +1% (${(Math.min(...man) * 100).toFixed(1)}–${(Math.max(...man) * 100).toFixed(1)}%)`);
+ok(badMan === 0, `every man ${BROADCAST.fig}× life in all ${n} chances, and never over the ${(BROADCAST.manShare * 100).toFixed(0)}% target +1 (${badMan} not)`);
+ok(pct(man, 0.5) >= BROADCAST.manShare - 0.005 && Math.min(...man) >= 0.025, `the median chance at the target, the widest still ≥ 2.5% (${(Math.min(...man) * 100).toFixed(1)}–${(Math.max(...man) * 100).toFixed(1)}%, median ${(pct(man, 0.5) * 100).toFixed(1)}%)`);
 ok(offScreen === 0, `everything in the action is on the screen (${offScreen} chances not)`);
 if (fails) { console.error(`${fails} failed`); process.exit(1); }

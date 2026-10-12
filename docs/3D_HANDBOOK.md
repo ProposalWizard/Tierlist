@@ -41,6 +41,7 @@ Preview) sets them all at once.
 | Style test (five art looks, goal / signing / walk-out cut scenes, Free Roam, Real game) | `components/star/StyleTest3D.tsx` | `lib/star/style3d/` (`styles.ts`, `kit.ts`, `post.ts`, `cutscenes.ts`, `gameplay.ts`) | `/star-style-dev` (query: `style`, `scene`, `tod`, `tilt`, `view`, `seed`, `kinds`, `cam`, `plight`, `demo`, `clean=1`) | none (test page only) |
 | Star Pass podium | `components/star/Podium3D.tsx` | spins a GLB from `tools/star-pass-art/export_live3d.py` | on the Star Pass screens | none |
 | Style A people (every 3D person under Player style: New) | Settings → Your look (`components/star/YourLookPanel.tsx`); Home and title (`components/star/ToonHomePlayer.tsx` via `HomePlayerFigure`) | `lib/star/style3d/toon/` (shader, heads, builds, switch) through `lib/star/people3d.ts` | `/star-look-dev` (`?head=h1..h6`, `?body=c1..c3`, `?pstyle=old`) | Player style: New / Old (`lib/star/style3d/toon/look.ts`) |
+| 3D animations (every match move looping, match camera and size, a frame slider each) | page only | `lib/star/style3d/animGrid3d.ts` (one WebGL canvas, a tile each by scissor) | `/star-anim3d-dev` | none |
 | The test area index | page only | `lib/star/area3d.ts`, `lib/star/assets3dManifest.ts` | `/star-3d-area-dev` | none |
 | One of every mode in 3D skin | page only | `lib/star/figureSkin.ts`, `lib/star/figure3d.ts` | `/star-3d-dev` | Drawn-player style |
 
@@ -134,6 +135,7 @@ exactly today's bodies. You never pick a file yourself:
 - One renderer for all scenes, warm-up, cached loads, dynamic resolution, frame gate: `lib/star/three3d/perf.ts` (`acquireRenderer`, `warmUp`, `loadGltfCached`, `DynamicResolution`, `FrameGate`). Its header lists the steps to adopt.
 - The governor: `lib/star/three3d/governor.ts` (the rule: steps down if the middle frame is over ~22 ms for 2.5 s, but only to rung 2; rungs 3–4 need under 30 fps for 5 s; back up after 8 s; one-off long frames and the 1 s after `hush()` — a chance start or camera cut — are not judged) and `lib/star/three3d/governThree.ts` (what a rung does: pixel ratio, shadows, post). A phone opens on Medium and stays there while it keeps up. Call `governScene(...)` once and `g.frame(now)` each drawn frame. Add `?gov=0` to any page to switch stepping off while you measure one tier.
 - The frame meter: `lib/star/three3d/frameMeter.ts`. Shows fps, worst frame, draw calls, triangles, shadow and skinned draws, post passes, JS ms, tier and rung. Add `?fps=1` to any page (`?fps=0` hides it; admins and testers see it anyway). The numbers are also on `window.__frame3d`.
+- **3D quality look (12 Oct 2026):** Medium and Low buy High's look back cheaply instead of switching it off.  Round 2: Low runs High's own grade per place and time of day in the tone map (`real/toneGrade.ts`). Settings → Look → "3D quality look: New | Old" (`lib/star/three3d/tierLook.ts`, row `tierLook3d`; `?tierlook=old|new` on any page). What each tier gets and what it costs: "3D quality look: Medium and Low" below.
 - The build machine has NO graphics chip. Frame times here are 10 to 100 times a phone's. Read percentages, never milliseconds. A phone is the only true judge.
 - `scripts/perf3d` measures a scene without Next (read its README).
 - **Speed pass 2 (9 Oct 2026): same picture, less work.** Each saving has a switch so a before/after still can be taken:
@@ -158,6 +160,7 @@ exactly today's bodies. You never pick a file yourself:
 - `lib/star/three3d/orbitCam.ts` — the look-around camera for the garden and shop (drag turns, eased, tilt held, never under the floor). Test: `tests/star/orbitCam.mts`.
 - `lib/star/three3d/practiceCam.ts` — the 3D drills' camera: behind your shoulder, turns on its own towards what it frames, never turned by your stick, ball-track for crosses, peek, and PLAY mode for Free Roam (frames the play: tight with the ball, turns to the ball and pulls back when it's away, slides ahead of your run). Test: `tests/star/practiceCam.mts`.
 - The real game's 3D camera is built from the 2D canvas's own tilt (`lib/star/cameraTilt.ts`), so every spot on the grass lands on the same pixel. Do not change one without the other.
+- The real match's ONE 3D camera frames the 2D's own view box (`lib/star/style3d/match2dCam.ts`), with the closer set-piece camera for penalties and free kicks. The Old, broadcast and exact cameras and the "3D camera" Settings row were deleted on 12 Oct 2026. See "Sizes are absolute; the camera only moves" below.
 
 ### Movement and animation helpers
 
@@ -309,6 +312,7 @@ The body must be fitted to the game skeleton or the clips will not play on it. `
 8. **Never tell Harry to `git pull` or `git checkout` locally.** Give a link or paste the file.
 9. **Changes to the match engine file** `lib/star/canvasEngine.ts` fire a warning hook. Say so in your reply, run `node scripts/run-star-tests.mjs finishing keeper aiming outcomes`, and playtest.
 10. **Admin pages** carry a page guide. If you change a button or a save on one, load `.claude/skills/admin-page-guide/SKILL.md`.
+11. **Sizes are absolute; the camera only moves.** Every man, the keeper, the ball and the goal are real size (`SIZE3D` in `lib/star/style3d/size3d.ts`, all 1) on every 3D screen. A man's own build (playerLook height) sits on his model, never on his root. Never size anything from the screen, the camera's distance, pixels per metre, the field of view, the framing or the chance. `tests/star/size3d.mts` fails if you do.
 
 ---
 
@@ -761,6 +765,142 @@ outline and shadow, as Old); every new look behind New | Old.
 `?pstyle=old` for Old). Stand-alone stills without Next.js:
 `tools/styletest/heads.ts` (`?head=h1..h6|m1|m2&view=front|34&clip=idle|run|kick_r&inset=hand`).
 
+### Match Lab vs the real game: why the 3D looked worse (12 Oct 2026)
+
+Harry: "how come in game the 3D doesn't look like this at all?" (a Match Lab still).
+Then: "for cut scenes the Style A is good and in game the realistic players is good".
+
+The Match Lab (`/star-style-dev?scene=real`, `RealGame3D.tsx`) and the career
+match (`Match3DLayer.tsx`) call `createEngineView` with the SAME options. Every
+difference comes from the device and its Settings, not the mount:
+
+| What | Match Lab still | Career on an iPhone (before) |
+|---|---|---|
+| Quality tier | High (a desktop browser) | Medium (Auto on every iPhone) |
+| Post pass | MSAA 4×, sharpen, depth blur, 5 bloom levels | FXAA, no sharpen, no depth blur, 3 bloom levels |
+| Pixel ratio / shadow map | 2.0 / 2048 | 1.5 / 1024 |
+| 3D camera | New (page forced `?cam=new`) | Old (Standard default): wide, half the screen empty grass |
+| Grass/crowd filtering | 4× | 4× |
+
+Same chance, 390×844: `scratchpad/look3d/` stills of the round. The camera (Old
+vs New) was the biggest visible difference on a phone; the tier second.
+
+**Done:**
+- Settings → Look → "Players in a 3D match: Realistic | Old" (`lib/star/style3d/toon/matchLook.ts`,
+  row `matchPlayers3d`). Realistic (default) = every 3D football scene loads the
+  non-Style-A bodies: `engineView.ts`, `play3d/scene.ts`, `training3d/scene.ts`,
+  `style3d/gameplay.ts` pass `matchPlayerStyle()` as `loadPeople3d`'s new 5th
+  argument. Old = follows "Player style" exactly as before. Cut scenes, garden,
+  shop, house and Home keep "Player style" (Style A). Classic phones take Old once.
+  The Home preload fetches the realistic body too when both are in use.
+- "3D camera" New is now the default (`realGameLook.ts`, Standard preset).
+- Camera New also asks look H for `crisp` (`real/look.ts`): grass, crowd and
+  boards at up to 8× anisotropy. No draw, no MSAA, no triangle added.
+
+**Not done:** MSAA 2× on Medium (the iPhone memory / context-loss risk, needs a
+phone check); KTX2 grass/crowd are ETC1S (lossy) — compare `?ktx2=0` on a
+phone before keeping them; the governor already keeps shadows and look H
+until rung 3, so it was left alone.
+
+### 3D match: one size, no teleports, the foot on the ball (12 Oct 2026)
+
+Harry: "players are kicking and jumping/ half teleporting with the ball. The goalie and players are changing scale based on where the camera is whereas that should never be the case."
+
+| Measured | Before | After |
+|---|---|---|
+| Men's and keeper's size (Match Lab stream, 919 frames, 3 chances) | 1.0–3.2 × life, variance 0.46, one frame jumped 2.2 | 1.35 every frame, variance 0 |
+| Size over 260 chances (`broadcastCam.mts`) | 1.0–2.2 | 1.35 in all; man 6% in the median chance, 3.4% in the widest |
+| A 2D jump of up to 4 m, drawn | one step | steps ≤ 0.5 m, caught up in ≤ 19 frames (`animSmoothMatch.mts`) |
+
+- **Size**: `BROADCAST.fig` (`lib/star/style3d/broadcastCam.ts`) is the one size. The camera's distance does the framing (before: the figure scale `k` did). The Old TV camera is fixed at `TV_FIG_FIXED` 1.6 (`engineView.ts`).
+- **Teleports**: `lib/star/style3d/figureFollow.ts` (`followStep`): the drawn man follows the 2D spot at ≤ 12 m/s, ≤ 3.5 m behind; over 4 m is a cut. His gait is read from the drawn move, so a 2D jump no longer flashes the sprint clip.
+- **Half teleport in a one-shot**: a pass, shot, tackle or celebration started at its contact frame, where the clip's hips are already ~1 m forward, then walked back at the end. Now the hips are held over his spot (`pinHips`) through every one-shot and 0.4 s after. Keeper dives are not held.
+- **Foot on the ball**: you stood a fixed 0.55 m / 0.42 m off the ball whatever way you faced. Now `calibrateFeet` poses each strike clip at contact once, and you stand so that foot meets the ball. Once the kick starts you are never dragged after the ball.
+- `?animfix=0` (test pages only) draws it the old way, for before stills. `window.__ev3dDiag = {}` turns on measuring (`maxStep`, `scales`, `footBall` at contact).
+- Test area: `/star-anim3d-dev`.
+
+**Not done:** foot-to-ball at contact is reasoned, not measured on a screen (the old spot put the foot ~1 m × size past the ball); before/after stills and clips of the real match; a kick clip picked at the strike (`kickStyleFor`) that differs from the aimed one still uses the aimed clip's foot spot; keeper dives still add their own sideways travel on top of the 2D lunge.
+### 3D match camera: the 2D's own frame (12 Oct 2026)
+
+Harry (iPhone, Medium): "the framing is not exactly the same on 3d and 2d … on 2d it might be able to be a shot but on 3d it seems like a build up." One corner still had the camera inside the near stand, its roof over two thirds of the screen.
+
+**The rule: the 3D camera shows the patch of grass the 2D shows, nothing cut, as little extra as the angle allows.** Settings → Look → "3D camera: New" (`lib/star/style3d/match2dCam.ts`, `placeMatch2D` in `engineView.ts`). Old is untouched; the broadcast camera (New before) is `?cam2d=0` on test pages.
+- `visibleQuad`: the 2D's view box (`cam.viewport`), turned by `facing`, through the canvas tilt (`screenToCanvas`): 4 pitch points, exactly what the phone shows.
+- `solveMatch2D`: the 2D's own facing (never turned), 50/55/60° down × lens 26/32/38°, each fitted so the quad's corners, a man's head on its far edge and a goal's bar touch the screen's edges; the one with the least extra grass wins (a small cost off 55°). Angle and lens are held for a chance; the position follows the 2D's box every frame (the 2D glides, so the 3D does).
+- Stands: the near clip sits at 0.8 × the nearest framed spot, and every stadium material (`h-arena`) is clipped by a plane at the 2D view's bottom edge + 1.5 m, so nothing between the camera and the pitch is drawn. Shadows keep the whole stadium (`clipShadows` off).
+- Men: sized against the screen ONCE per chance (a man in the action = `MATCH2D.manShare` 6% of the height, 1.5–3.0 × life) and held for the whole chance (PR #710: never resized as the camera moves). They lean back from the camera by (angle − 40°), picture only, so a man at 60° down still reads full height. Measured over 78 chances: 5.3–8.1% of the height, median 6.0%.
+- A 2D view that runs off the pitch on the camera's side is cut 3 m past the line (`apron`) and sat on the screen's bottom edge: no dark band of stand base under the corner taker.
+- Measured (`tests/star/match2dCam.mts`, 78 chances, all 13 kinds, phone box 372×704): people and posts the 2D shows that are on the 3D screen, 81.9% → 100% (whole chances 18/78 → 78/78); ball's distance from its 2D spot, median 172 → 33 px; extra grass, median 13%, p90 29% (side-on chances: the 2D looks straight down there, the 3D at 60°).
+- Stills: `scripts/cam3d/frames.mts` (real chances, framed as CanvasMatch does) → `scripts/cam3d/stills.mjs` (perf3d harness `H.chance`) → `scripts/cam3d/sheet.mjs`.
+- 3D quality: also in the in-match ⚙ and Settings → Match; a change rebuilds the 3D view when you tap "Back to the match" (`Match3DLayer.tsx`).
+
+### 3D quality look: Medium and Low (12 Oct 2026)
+
+Harry: "we need a way for say medium/low to not look terrible using every percent of optimisation we can". Every iPhone opens on Medium; weaker phones on Low. Rule: buy the look cheaply, never switch it off; keep or beat the frame time. Settings → Look → "3D quality look: New | Old" (`lib/star/three3d/tierLook.ts`, row `tierLook3d`, New in Standard). Old = each tier exactly as before.
+
+What New does (all in `lib/star/style3d/real/post.ts`, `real/look.ts`, plus one blob in `garden3d/scene.ts`; look H scenes only: the career match, drills, garden, shop, casino):
+
+| Tier | Added | Why it is cheap |
+|---|---|---|
+| Medium | Far-stand soft focus (`dof` 0.6, `dofOnce`) | The half-size copy it reads was drawn and thrown away before; read once on the centre, not inside each FXAA read |
+| Medium | The bloom added once on the centre (`dofOnce`), not inside each of FXAA's 5–9 reads | Pays for the soft focus: fewer reads than before |
+| Medium | Light sharpen after FXAA (`fxSharp` 0.45) | Uses the four corner samples FXAA already read: no extra reads. Wins back most of the 1.5 vs 2 pixel softness |
+| Medium, Low | Pitch, crowd, boards at 8× / 4× anisotropy | A texture setting, no draw; sharp stripes and lines at a slant instead of more pixels |
+| Low (and every tier's emergency rung "off") | The broadcast grade inside the tone map: three's ACES, then S-curve, split tone, saturation, a touch of warmth (`gradeToneMapping`, three's `CustomToneMapping`) | No pass, no target: a few ALU ops in the tone map every lit material already runs. Fixed numbers (no colour cube, no vignette: those need a texture / the screen size) |
+| Low (and lite/off rungs) | A long soft shadow from every man along the sun, beside his contact shadow | Same instanced draw as the contact shadows (`CS_MAX` 40 → 80) |
+| Low, garden | The same sun shadow under you | One small blob mesh |
+
+Not done, and why:
+- Baked/cached shadows for the stadium: already there (`bakedLight` stadium set on every tier; `shadowCache.ts` keeps the static map). Low keeps no live map at all.
+- A 5-level bloom chain on Medium: tried, +4 small passes for a slightly wider glow; measured as a cost, dropped.
+- SMAA: a 3-pass method; FXAA + sharpen is one pass and looked close enough on the stills. Low keeps the canvas's own MSAA (no pass at all), which already has clean lines.
+- Render at 1.25–1.5 then sharpen: that is what Medium now does (1.5 + sharpen). Low stays 1.25 with MSAA.
+- Light probes / toon ramp on Low, crowd impostors, player LOD: not measured this round. The crowd is already a few merged textured meshes.
+- The governor already drops the moving picture's pixels (rung 2) before any look (rungs 3–4); left as it is. Its emergency rungs now keep the grade (above).
+
+Measure: `node scripts/perf3d/tiers.mjs <career|garden> <high|medium|low> <new|old> --out=DIR` (one still + draws, triangles, posts, ms a frame; runs the harness with `?gov=0&tierlook=…`). Test: `tests/star/tierLook.mts`.
+
+Measured here (SwiftShader, no graphics chip, harness career chance and garden, `?gov=0`). Draws and triangles are the frame meter's; ms is the gap between frames at dpr 1 over 20 s; this shared machine moved ±40% run to run, so the ms only says "no clear change".
+
+| Tier | Draws | Triangles | Post passes | ms a frame, before → after |
+|---|---|---|---|---|
+| Career High | 84 | 285k (shadow frame) | 11 | 1207 (reference) |
+| Career Medium | 80 → 80 | 285k → 285k | 7 → 7 | old 373–809, new 360–738, paired runs −1% to +7%: within noise |
+| Career Low | 46 → 46 | 208k → 208k | 0 → 0 | 792 → 802 (two pairs; noise) |
+| Garden Medium | 145 → 148 | 166k → 168k | 7 → 7 (was 11 with the dropped 5-level bloom) | not measurable (1–3 frames a window) |
+| Garden Low | 133 → 134 | 139k → 139k | 0 → 0 | 813 → 807 |
+
+Final pass reads per pixel on Medium (reasoned from the shader, not measured): before ~10 on a plain pixel (5 FXAA reads × colour + bloom), after ~7 (5 × colour, + bloom once, + depth once; + the soft copy only where the far stands are). Low: no pass added; the grade is ~15 ALU ops inside the tone map. On a phone (estimated, not seen): Medium the same or a little cheaper; Low under 1% more.
+
+Stills (390×844 at 3×, the same chance, High | Medium before | Medium after | Low before | Low after): made by `tiers.mjs` then a contact sheet; not committed (scratch). The garden stills are not the same moment (the walk-in runs per frame, and each tier draws a different number of frames).
+
+**Round 2 (12 Oct 2026, Harry: "put full focus on the medium/low look").** Still behind the same New | Old setting.
+
+| Tier | Change | Cost |
+|---|---|---|
+| Low | High's own colour chain in the tone map (`lib/star/style3d/real/toneGrade.ts`): the pass's ACES (not three's), tint, lift, S-curve, split tone, saturation and the broadcast LUT as a 10-term colour polynomial fitted to `public/star/look/lut-*.png` (weighted mean error 0.066 day, 0.041 golden and night, of full scale; weighted extra to dark colours). Per place (stadium / garden-shop-casino) and time of day: 7 slots. | No pass, no texture: about 45 ALU ops a lit pixel instead of round 1's ~15 (estimated from the shader). |
+| Low | Which slot: the tone map's only per-frame number is the exposure, so the pass writes `exposure + 16 × slot` (`gradeExposure`) and the shader splits it. Slot 0 = round 1's fixed grade (anything without a slot). | Nothing. |
+| Low | High's vignette as a ring mesh multiplied over the edges (`makeVignette`, post.ts); the middle where it would darken under 3% is left out (`vignetteCells`: 128 of 144 cells drawn at 0.3). | +1 draw, ~600 triangles, a one-multiply fill on the ring. No texture read. |
+| Low | The sky gets the tone map and colour space (`H_SKY_GRADE`, only when New; no-ops inside the pass's picture). | Nothing measurable. |
+| Low | Men's sun shadow: own draw at 0.3 opacity, 0.7–1.5 m long (round 1: shared draw at full strength, up to 4.2 m: dark streaks). Garden: the same under you. | +1 draw; about a third of round 1's shadow pixels. |
+| Low | Pitch colour scaled (`GRASS_LOW_RGB`) and mown stripes ×1.25: no sun shadow map makes Low's pitch brighter and flatter than High's under the same grade. | Colour numbers only. |
+| Medium | Crowd and LED boards sample with a −0.5 mip bias (`crowdMipBias`, arena.ts); anisotropy is now set before the stadium is built, so the boards (copies taken then) get 8× too (round 1's never reached them). | Same one read a pixel; a few more texture-cache misses on two materials. |
+| Medium | Grade, LUT and vignette: already High's (the same final pass); unchanged. | — |
+
+Not done in round 2: SMAA (not tried; FXAA + sharpen kept), a pre-sharpened crowd texture, crowd impostors, player LOD, light probes, cel shading on Low, the goal net and lines as geometry, player rim light on Low. Stills: `tiers.mjs … --tod=day|golden|night` (new flag; the garden takes `sky`).
+
+**Round 3 (12 Oct 2026, Harry: "keep fixing").** Same New | Old setting. Draws and triangles per tier unchanged (Low 50/51, Medium 80–82 with a shadow frame).
+
+| Tier | Change | Cost |
+|---|---|---|
+| Medium | Goal net: the mesh fades (at most 70%) to a faint flat haze where a cell is under ~7 px (`netFade`, `NET_FADE`, `NET_FADE_MAX`, `NET_FAR_ALPHA` in `real/arena.ts`); the net texture's anisotropy drops to 1. Before: the mesh aliased into horizontal bands (moiré). | Two derivatives and a mix on the net's pixels only; no read. |
+| Low | The stands' baked sun shadow raised to a power (`shadePow`, a new `BakeStrength` field in `look/bakedLight.ts`), so the stand and roof shadow bands across the pitch read like High's live map. Golden 2.6; day and night 1 (day's box is already near black, night's shade is 0.2). | One `pow` in the shader; no read, no draw, no shadow map. |
+| Low | Pitch colour and mown stripes per time of day (`LOW_PITCH` in `real/look.ts`, replaces round 2's one scale for Low). Day grass now matches High's green (99 vs 98 on the stills; was 83). | Colour numbers only. |
+
+Measured on the pitch (blurred, the same chance; mean colour, then spread of brightness 10th→90th %): day High (58,98,56) 106 · Low before (60,83,49) 87 → after (67,99,56) 94. Golden High (58,87,35) 56 · Low (66,86,40) 42 → (61,87,39) 48. Night High (32,82,40) 65 · Low (42,84,50) 50 → (40,82,49) 57. `tiers.mjs` now takes `--q=` (extra page query) and `--tag=` and prints the broadcast camera's man size (`tv`).
+
+Not done in round 3: Low's day red is still ~9 higher than High's (it comes from the grade, not the grass colour); Low's day penalty box under the stand's baked shadow reads near black (High's is dark green); soft contact shadows on Low were already there (round 1–2), not changed. Men's size: measured, not changed (the camera has a new owner): the harness chance draws a man 4.96% of the canvas height now (fig 1.35) against 6.14% before #710 (k 1.708), the same on High, Medium and Low.
+
 ### Cut-scene camera + music (9 Oct 2026)
 
 Harry: "do a pass of camera angles in the cut scenes, hide bad animations with
@@ -808,3 +948,71 @@ Only the director page plays cut scenes today; a host plays music with
 **Next:** shallow depth of field is not done (the cel style has no depth pass);
 nobody has listened to the music yet (levels measured only); the real game does
 not play these cut scenes yet.
+
+### Style A men in the 3D match, like the Home player (12 Oct 2026)
+
+Harry: "I want it in style A but I don't want that blocky minecraft look. I want exactly what the model looks like in the home screen".
+Settings → Look → "Players in a 3D match: Style A | Real | Old" (`lib/star/style3d/toon/matchLook.ts`, row `matchPlayers3d`). Style A is the new default (stored key moved to `…-style2`, so every phone takes it once; a phone on Old keeps Old). Real = the realistic bodies. Old = follows Player style, exactly as before.
+
+Why the men looked blocky, measured on one man at the same on-screen height (`scripts/perf3d/styleA.mjs` + the harness `homeman` scene; stills in the session scratchpad `styleA/`):
+- Light: the stadium sun, rim, floodlights and grade washed the kit pale (shirt red read pink) and the skin yellow. Home lights him with its own soft rig.
+- Edges: Medium draws at px 1.5 then FXAA + the light sharpen (`fxSharp`, post.ts). That sharpen gives the crunchy, stepped edges; Old tier look is soft, High (px 2, MSAA) is clean. Not changed here (post.ts belongs to the look work): the next fix to try.
+- No outline on Medium (`prof.outlines` is High only); Home has one.
+- The pale glow round the legs of the man on the ball is the ball's additive light ring (`real/ball.ts`), not a halo on him.
+- Size: from 48° above a Slim man at ~6% of the screen reads thin and small-headed.
+
+What Style A does now (only in the 3D match and the animation grid):
+- `HOME_LIGHT` (`toon/shader.ts`, uniform `uHome`): the body shader lights the man with Home's own rig (hemisphere 1.2, warm sun 2.6 from the camera's upper right, cel bands, warm rim) whatever the stadium does, adds an ink line on the silhouette (no extra draw), and caps brightness under the bloom.
+- `HOME_MATCH_BUILD`: head 1.32, neck 1.4, full-size hands, ×1.14 across.
+- The ball's light ring is off (`setHBallLightRing`, back on when the match view closes).
+- Each man his own look: `lib/star/playerLook.ts` (`playerLookFor({ id, position?, skin? })`, no three.js, for the 2D re-bake later): head, build and height by role (GK/CB taller, CDM stockier, wingers slighter), flair heads (Bun, Quiff) and bleached hair more often up front, seeded skin, boot colour. The match frame has no positions yet, so only the keeper is placed by role.
+Cost (harness career chance, Medium, same frame): Realistic 82 draws / 326k triangles → Style A 82 / 267k (the same 11 skinned draws). The look adds no draw and no texture.
+
+Animation grid: the harness `animgrid` scene + `scripts/perf3d/animgrid.mjs` + `animsheet.py` make a contact sheet of every match clip (35 tiles, none missing) at 0/25/50/75%.
+
+Not done: Medium's edge crunch (post.ts sharpen), positions into the frame for `playerLookFor`, long hair / mohawk / braids heads, clip work (foot slide, blending) beyond checking each clip plays on Style A.
+
+
+### One fixed size, the set-piece camera, the taker's run-up, clean men on Medium (12 Oct 2026)
+
+Harry on the penalty still: "are you drawing from scratch? We should be using the penalty animations, why is he just stood next to the ball … can you also see how off the scale of the goal is?" Then: "no changes in size for any player or goalie or goal should ever occur", and "the goalie's head is out the damn goal".
+
+**RULE: one fixed size, always.** Men, keeper and goal each have ONE scale (× real life), the same in every chance and every frame. Never size anything per chance, and never let a size follow the camera: the camera's distance does the framing. `MATCH_SCALES` / `MATCH_SCALE_PICK` in `lib/star/style3d/match2dCam.ts` (default **A = real life**: man 1, keeper 1, goal 1, no lean). B (men 2×, goal 2.5×) and C (halfway) exist only for comparison stills (`?mscale=B|C|current` on test pages). The goal scale reaches the stadium through `setArenaGoalScale` (`real/arena.ts`, 3D camera New only). Tests: `tests/star/match2dCam.mts` (one scale in every chance; the keeper's height on the screen 0.71–0.74 of the bar's, real 0.74).
+
+Measured (`npx tsx scripts/cam3d/scale.mts`, 78 real chances, phone box 372×704): before, men 1.5–3.0× chosen per chance, a man 1.94× the bar's height on the screen (real 0.74; the 2D view 0.76). A: man 0.65 of the bar, the keeper 0.73; a man in the action 2.1% of the screen height (median), 0.9% on a wide corner.
+
+**Set-piece camera.** Every kind is framed as the 2D (wide) EXCEPT a penalty and a direct free kick: `solveSetPieceCam` (`match2dCam.ts`, `SET_PIECE_CAM`) keeps the ball, the taker, the keeper, the whole goal and the wall on screen and puts the taker at ~5.5% of the screen height, by camera distance only. Worked out when the chance starts (ball spot while aiming) and held. Touch is unchanged: the 3D view maps a finger through the grass under it (`groundAt` → `to2dClient`), so the drag lands where the 2D expects it (test: the ball's spot on the glass maps back to the ball).
+
+**The man on the ball** (`lib/star/style3d/setPiece3d.ts`, engineView `takerSpot`, `moveMocap`):
+- Penalty / free kick: the 2D already stands him a few steps back (`standBackFor`) and walks him in over `runS`. The frame now carries `runup: { t, runS }` (CanvasMatch → `EngineFrame.runup`). The 3D plays the real run-up-and-strike capture `kick_r` / `kick_l` (CMU 11_01) for the last ≤1.2 s, timed so it reaches its held backswing exactly when the 2D's strike screen opens, then swings through on the tap. He is drawn onto the spot where that clip's foot meets the ball over the same stretch.
+- Corner / open play: a stance behind the ball on the line of the shot (corner 2.6 m / 35°, open play 1.3 m / 12°, the kick-foot's side), facing the ball; when the strike screen opens he takes the last steps in on the same clip (1.0 s / 0.45 s).
+- The keeper is set and on his toes from the moment a penalty taker stands over the ball.
+- Test: `tests/star/setPiece3d.mts`.
+
+**Medium: clean Style A men** (`real/post.ts` `menClean`, `toon/shader.ts`): the match men write 0.5 into the picture's alpha; Medium's final pass skips FXAA inside a man and never sharpens him; his outline on the grass is still smoothed. No extra texture read (the alphas come from FXAA's own reads), so the frame cost is the same or lower. Only with "3D quality look: New"; Old unchanged. `?menclean=0` shows before. Harry: "defo an improvement".
+
+**Stills:** `npx tsx scripts/cam3d/frames.mts DIR --phases` (real chances from `buildScenario`, with CanvasMatch's own penalty/free-kick stance, plus run-up and strike-screen frames) → `node scripts/cam3d/stills.mjs DIR new stylea [--q=mscale=B] [--tag=x]`; `node scripts/cam3d/cleanStill.mjs DIR NAME` draws one moment with and without `menClean`.
+
+**Not done:** none of this seen in a real career match (`/star-dev`) yet, only the harness; the open-play step-in at the strike screen not caught on a still (the harness draws a frame every 1–5 s); a free kick's wall has no set "arms in" pose (no clip); box markings are never scaled (they sit under the ball).
+
+### Sizes are absolute; the camera only moves (12 Oct 2026)
+
+Harry: "Why can't the players just have a measurement on their own? Why is it 4% of the screen? … why aren't they just a set size?"
+
+| Size path (before) | What it did | Now |
+|---|---|---|
+| New camera (2D's frame) | men, keeper, goal 1.0 (MATCH_SCALES A) | SIZE3D 1.0 |
+| Broadcast camera (`?cam2d=0`) | 1.35 (BROADCAST.fig); `?animfix=0`: 6% of the screen, 1.24–2.05 by chance | deleted |
+| Old camera, goal up | men 1.6 (TV_FIG_FIXED), keeper 1.36; `?animfix=0`: from pixels per metre (TARGET_PX 46), 1.99–2.22 | deleted |
+| Old camera, side-on / exact | men 1.3 (figScale / ENGINE_VIEW_FIG_SCALE), keeper 1.105 (× 0.85) | deleted |
+| `?fig=` / `?man=` / `?mscale=` | test flags picking a size | removed |
+| Ball | New: min(2, man size); Old: the style's 1.7–2.0 × 0.85 | SIZE3D.ball 1.0 |
+| Style page Free Roam (`gameplay.ts`) | men 2.0 (look H 1.45), ball the style's 1.7–2.0 | 1.0 |
+| Anim test page (`animGrid3d.ts`) | 1.35 | 1.0 (its camera moved closer instead) |
+| Drills / Free Roam (`play3d`) | 1.0 already | unchanged |
+
+- `lib/star/style3d/size3d.ts` is the one place. `engineView.ts`'s `figNow()` and `keeperFig()` return it; nothing else.
+- One 3D match camera: `placeCamera` = `placeMatch2D`. Old cameras are in the repo's history, not in Settings.
+- `matchScale()` always returns A; MATCH_SCALES B / C / current are paper numbers for `scripts/cam3d/scale.mts` only.
+- Left on purpose: the 2D-frame camera still keeps head room for a 5.4 m man at the top of its frame (`MATCH2D.figMax`) and returns a framing number `k`. Camera only; it never sizes anyone.
+- Test: `tests/star/size3d.mts`.

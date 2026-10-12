@@ -1135,6 +1135,29 @@ export const ADMIN_GUIDES = {
     dev: "app/star-3d-area-dev/office/page.tsx · components/star/Office3D.tsx (stage + career look) · lib/star/signing3dScene.ts (stage: \"office\" dresses the room) · components/star/relgames/BossChat.tsx, components/star/ManagerMoments.tsx, components/star/LineupIntro.tsx (mount it) · lib/star/look3d.ts (the Settings switches)",
   },
 
+  "/star-anim3d-dev": {
+    title: "3D animations",
+    what: "Every move the 3D match plays (outfield and keeper), each looping on its own tile, seen through the real 3D match camera at the real match size: a man is 6% of a phone screen, the men 1.35 × life, the realistic players.",
+    buttons: [
+      { group: "Top", items: [
+        ["‹ 3D test area", "Back to the list of 3D test pages."],
+        ["❚❚ Pause / ▶ Play", "Stops or starts every tile. Play also lets go of any tile you held with its slider."],
+        ["1× / ½× / ¼×", "Playback speed."],
+        ["Match size / 3× closer", "Match size is exactly how big a man is in a real 3D match. 3× closer brings the camera in to judge hands and feet."],
+        ["As you shoot / Side on", "Which way the men face: away from the camera (as you face the goal when you shoot), or side on."],
+      ] },
+      { group: "Each tile", items: [
+        ["The slider", "Holds that tile on one frame and steps through it. The line under it names the clip and the second."],
+        ["The white ball", "On a kick, pass, header, volley or tackle tile: where the kicking foot is at the moment it meets the ball, as the match plays it."],
+      ] },
+    ],
+    saving: ["Nothing is saved."],
+    inGame: [
+      "These are the clips a real 3D match plays (Settings → Look → Match view 3D: On). Changing a clip changes it here and in the match.",
+      "A pass, shot, tackle or celebration plays on the man's own spot, as in the match: the clip never walks him off where the 2D game put him.",
+    ],
+    dev: "app/star-anim3d-dev/page.tsx · lib/star/style3d/animGrid3d.ts (the tiles: one WebGL canvas, one tile each via scissor) · the clips: public/star/anims3d/{football,mocap}.glb through lib/star/three3d/footballAnims.ts · the camera numbers: lib/star/style3d/broadcastCam.ts (BROADCAST) · the match drawing: lib/star/style3d/engineView.ts. Filming: window.__frameStep.",
+  },
   "/star-animations-dev": {
     title: "Animations",
     what: "Every New player animation (keeper saves, touches, shots, passes, headers, blocks, clearances) looping next to how the Old game drew that moment, with the dials and switches that size them.",

@@ -57,6 +57,8 @@ uniform vec4 uFrontNum;   // the small number on his right chest: x, y, size, on
 uniform vec4 uPattern;    // kind (0 plain, 1 stripes, 2 hoops, 3 halves, 4 sleeves), stripe width, -, -
 uniform vec3 uPat2;       // the pattern's second colour
 uniform vec4 uCloth;      // weave strength, seam darkness, skin shade (long sleeves over skin), -
+uniform vec4 uHome;       // Home light (0/1), ink edge, brightest a pixel may be, - (HOME_LIGHT)
+uniform vec3 uHomeSun;    // Home's sun, in view space
 float tnLitEdge = 0.0;
 float tnFace = 0.0;       // this point is face skin (set before the lights)
 vec3 toonStep(float d) {
@@ -221,6 +223,23 @@ const TOON_BODY = `
   }
 `;
 
+/**
+ * The Home player's light on a match man (Harry, 12 Oct 2026: "exactly what the model looks like
+ * in the home screen"). ToonHomePlayer's rig in linear colour: HemisphereLight("#b9cdf0",
+ * "#4a5a2a", 1.2) and DirectionalLight("#ffe0b0", 2.6) at (2.5, 4, 4) from a level camera.
+ * `ink`: how dark the silhouette edge goes; `cap`: the brightest a pixel may be (the post's
+ * bloom starts at 1.0, so 0.95 never blooms). Off (uHome.x 0) for every place but the 3D match.
+ */
+export const HOME_LIGHT = { hemi: 1.2, sun: 2.6, sunDir: [2.5, 4, 4] as const, ink: 1, cap: 0.95 } as const;
+/**
+ * The match men's build under "Players in a 3D match: Style A" (lead's review, 12 Oct 2026: the
+ * Home player reads chunky; at the match's ~6% of the screen the same man read thin, small-headed).
+ * `look`: people3d's toonLook (head and neck bone scales; hands at full size). `across`: on top of
+ * his seeded build, [across, up, front-to-back].
+ */
+export const HOME_MATCH_BUILD = { look: { head: 1.32, neck: 1.4, hands: 1 }, across: [1.14, 1, 1.12] as [number, number, number] } as const;
+const HOME_SKY = [0.4851, 0.6105, 0.8714], HOME_GROUND = [0.0685, 0.1022, 0.0232], HOME_SUN = [1.0, 0.7454, 0.4342];
+
 /** The cloth: weave strength (± share of the colour) and how much darker a stitched seam is. */
 export const TOON_CLOTH = { weave: 0.04, seam: 0.3 } as const;
 
@@ -257,6 +276,8 @@ export function toonUniforms(T: Three, mask: THREE.Texture, kit: { collarY?: num
     uFrontNum: { value: new T.Vector4(-0.085, (kit.collarY ?? neckY - 0.03) - 0.1, 0.075, 1) },
     uPattern: { value: new T.Vector4(0, 0.1, 0, 0) }, uPat2: { value: new T.Color(1, 1, 1) },
     uCloth: { value: new T.Vector4(TOON_CLOTH.weave, TOON_CLOTH.seam, 0.7, 0) },
+    uHome: { value: new T.Vector4(0, HOME_LIGHT.ink, HOME_LIGHT.cap, 0) },
+    uHomeSun: { value: new T.Vector3(...HOME_LIGHT.sunDir).normalize() },
   };
 }
 
@@ -292,8 +313,24 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
   float tnRim = step(0.72, tnF) * step(0.05, tnLitEdge);
   // capped: a bright lamp close by (the shop's spots) made the rim burn white through the bloom
   outgoingLight += tnRim * 0.35 * vec3(1.0, 0.75, 0.45) * diffuseColor.rgb * clamp(tnLitEdge, 0.5, 1.2);
+  if (uHome.x > 0.5) {
+    // THE HOME PLAYER'S LIGHT (HOME_LIGHT): the man lit as Home lights him (ToonHomePlayer: a sky/grass
+    // hemisphere 1.2 and a warm sun 2.6 from the camera's upper right, cel bands, the warm rim),
+    // whatever the stadium's lamps do; an ink line on his silhouette in place of the hull outline
+    // (no extra draw); never bright enough to bloom (the halo round white shorts).
+    vec3 upV = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+    vec3 hemi = mix(${v3(HOME_GROUND)}, ${v3(HOME_SKY)}, dot(normal, upV) * 0.5 + 0.5) * ${HOME_LIGHT.hemi.toFixed(2)} * vec3(0.9, 0.9, 1.06);
+    float hSd = dot(normal, normalize(uHomeSun));
+    vec3 hl = diffuseColor.rgb * RECIPROCAL_PI * (hemi + toonStep(hSd) * ${v3(HOME_SUN)} * ${HOME_LIGHT.sun.toFixed(2)});
+    hl += step(0.72, tnF) * step(0.42, hSd) * 0.42 * vec3(1.0, 0.75, 0.45) * diffuseColor.rgb;
+    hl *= 1.0 - 0.72 * smoothstep(0.80, 0.94, tnF) * uHome.y;
+    outgoingLight = min(hl, vec3(uHome.z));
+  }
 }
-#include <opaque_fragment>`);
+#include <opaque_fragment>
+// the 3D match's men are marked in the picture's alpha (0.5) so Medium's post pass keeps them clean
+// (real/post.ts menClean). Opaque, so the alpha is never blended; nothing else reads it.
+if (uHome.x > 0.5) gl_FragColor.a = 0.5;`);
   };
-  mat.customProgramCacheKey = () => "people3d-toon-v4";
+  mat.customProgramCacheKey = () => "people3d-toon-v5";
 }

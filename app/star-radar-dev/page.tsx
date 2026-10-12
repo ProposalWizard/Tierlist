@@ -19,15 +19,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import PageGuide from "@/components/admin/PageGuide";
 import {
-  RadarPitch, MomentumStrip, RadarFeed, Scoreboard, FullTime, describeArea, handedKinds,
+  RadarPitch, MomentumStrip, LiveRadar, RadarFeed, Scoreboard, FullTime, describeArea, handedKinds,
   type RadarSide,
 } from "@/components/star/MatchRadar";
 import {
   startRadar, stepRadar, resolveHighlight, radarOver, radarSummary, type RadarMatch,
 } from "@/lib/star/matchRadar";
-import { benchConversion, type HiddenMatchInputs } from "@/lib/star/hiddenMatch";
+import { benchConversion, type HiddenMatchInputs, type RadarTick } from "@/lib/star/hiddenMatch";
 import { PREMIER_LEAGUE_CLUBS, CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsFor, labelInk, kitLabelOnDark, type Kit } from "@/lib/star/kits";
+import { oldMatchFlow } from "@/lib/star/gameplayVersion";
 
 const BG = "#05070d";
 const INK = "#f2f5f9";
@@ -48,6 +49,25 @@ const DEFAULT_SETUP: Setup = {
   home: true, position: "ST", skill: 75, stopAtHighlights: false, energy: 100,
 };
 
+/** The dev radar's frames as the live radar's minutes. */
+function ticksOf(frames: RadarMatch["frames"]): Map<number, RadarTick> {
+  const out = new Map<number, RadarTick>();
+  for (const f of frames.slice(1)) {
+    const t: RadarTick = { minute: f.minute, possession: f.possession, zone: f.zone, lane: f.lane, momentum: f.momentum };
+    for (const e of f.events) {
+      if (e.kind === "goal-us" || e.kind === "highlight-goal") { t.goal = "user"; t.shot = "user"; }
+      else if (e.kind === "goal-them") { t.goal = "opponent"; t.shot = "opponent"; }
+      else if (e.kind === "chance-us" && !t.shot) t.shot = "user";
+      else if (e.kind === "chance-them" && !t.shot) t.shot = "opponent";
+      else if (e.kind === "corner-us") t.corner = "user";
+      else if (e.kind === "corner-them") t.corner = "opponent";
+    }
+    if (f.highlight) t.yours = true;
+    out.set(f.minute, t);
+  }
+  return out;
+}
+
 function side(club: string, strength: number, k: Kit): RadarSide {
   const short = CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
   // On the dark page a near-black or near-white shirt still has to read.
@@ -59,6 +79,8 @@ function inputsFor(s: Setup): HiddenMatchInputs {
   return {
     teamStrength: s.usStrength, oppStrength: s.themStrength, home: s.home,
     playerSkill: s.skill, pace: s.skill, freeKick: s.skill, position: s.position,
+    // Settings → Look → Gameplay → Match flow, as the real match reads it.
+    matchFlow: !oldMatchFlow(),
   };
 }
 
@@ -143,6 +165,11 @@ export default function MatchRadarPage() {
 
         <div style={{ padding: "10px 12px", borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
           <Scoreboard us={us} them={them} frame={frame} over={over} />
+        </div>
+
+        {/* The radar as the real match shows it above the commentary (Settings → Look → Match radar). */}
+        <div style={{ marginTop: 10, maxWidth: 330, borderRadius: 12, overflow: "hidden" }}>
+          <LiveRadar trace={ticksOf(m.frames)} minute={frame.minute} us={{ short: us.short, colour: us.colour }} them={{ short: them.short, colour: them.colour }} stepMs={stepMs} />
         </div>
 
         <div style={{ position: "relative", marginTop: 10 }}>

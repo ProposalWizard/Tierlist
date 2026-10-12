@@ -39,6 +39,8 @@ import { resolveStyle } from "@/lib/star/style3d/styles";
 import { useMatchView3d, setMatchView3d } from "@/lib/star/matchView3d";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { SettingsGroups } from "./DeviceSettings";
+import Quality3dRow from "./Quality3dRow";
+import { quality3dTier } from "@/lib/star/three3d/quality";
 import { SetCard, SetToggle } from "./settingsKit";
 
 /** The TV camera's angle, degrees from straight down (the Style Testing page's default). */
@@ -60,6 +62,8 @@ export default function Match3DLayer({ children }: { children: ReactNode }) {
   const autoLeft = useRef(AUTO_RETRIES);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const killRef = useRef<(() => void) | null>(null);
+  /** The quality the 3D view was built at: a change in the in-match Settings rebuilds it on "Back to the match". */
+  const builtTier = useRef<string | null>(null);
   /** Bumped when the match hands over its pitch box (it can mount after this layer). */
   const [boxN, setBoxN] = useState(0);
 
@@ -75,6 +79,7 @@ export default function Match3DLayer({ children }: { children: ReactNode }) {
     let lost = false;
     errRun.current = 0;
     setStatus("loading");
+    builtTier.current = quality3dTier();
     const onContextLost = () => {
       if (dead) return;
       lost = true;
@@ -193,7 +198,12 @@ export default function Match3DLayer({ children }: { children: ReactNode }) {
   return (
     <div className="relative" data-career-3d={on ? status : "2d"}>
       <EngineFrameContext.Provider value={obs}>{children}</EngineFrameContext.Provider>
-      {settingsOpen && <MatchSettings onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <MatchSettings onClose={() => {
+        setSettingsOpen(false);
+        // 3D quality changed while the match was held: build the 3D again at the new quality now
+        // (the same as the "3D ↻" tap; the 2D match underneath never stops, so nothing is lost)
+        if (killRef.current && builtTier.current && builtTier.current !== quality3dTier()) rebuild();
+      }} />}
     </div>
   );
 }
@@ -213,7 +223,8 @@ function MatchSettings({ onClose }: { onClose: () => void }) {
         <div className="mx-auto max-w-md space-y-2">
           <div className="text-[12px] font-bold text-white/85">The match is paused.</div>
           <SetCard tone={GLOW} className="px-3 py-1">
-            <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const v = !sfxNow; setSfxOn(v); if (v) sfx("ui-confirm"); }} last />
+            <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const v = !sfxNow; setSfxOn(v); if (v) sfx("ui-confirm"); }} />
+            <div className="py-2.5"><Quality3dRow when="Changes when you go back to the match." /></div>
           </SetCard>
           <SettingsGroups glow={GLOW} />
         </div>

@@ -68,6 +68,14 @@ export const SCENES_3D: Scene3d[] = [
     files: "app/star-blender-dev · public/star/blender · tools/blender-footballer",
   },
   {
+    id: "anim3d",
+    title: "3D animations",
+    line: "Every move the 3D match plays, looping at the real match camera and size, with a frame slider each.",
+    status: "Test page",
+    href: "/star-anim3d-dev",
+    files: "app/star-anim3d-dev · lib/star/style3d/animGrid3d.ts",
+  },
+  {
     id: "look3d",
     title: "3D look in every mode",
     line: "One of every mode with the shaded \"3D\" players, next to today's look.",
