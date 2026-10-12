@@ -412,6 +412,36 @@ export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THR
 }
 
 /**
+ * Keep the loading cover up until the scene's REAL first frames have been
+ * drawn and the page is running smoothly again (Mikey's video, 12 Oct 2026:
+ * after each door the cover dropped onto 1-3 fps frames — the first draws
+ * still built shadow shaders, uploaded pictures and skinning data on screen).
+ * Call after the scene's animation loop has started, before handing the
+ * controller back: resolves once `minDraws` frames have been drawn AND the
+ * last page tick took under `gapMs` (about 30 a second), or after
+ * `timeoutMs` whatever happens (a slow phone still gets in).
+ */
+export function awaitSmoothFrame(renderer: Pick<THREE.WebGLRenderer, "info">, opts: { minDraws?: number; gapMs?: number; timeoutMs?: number; isDead?: () => boolean } = {}): Promise<{ draws: number; ms: number; smooth: boolean }> {
+  const minDraws = opts.minDraws ?? 2, gapMs = opts.gapMs ?? 40, timeoutMs = opts.timeoutMs ?? 2500;
+  if (typeof requestAnimationFrame === "undefined") return Promise.resolve({ draws: 0, ms: 0, smooth: false });
+  const t0 = performance.now();
+  const f0 = renderer.info.render.frame;
+  return new Promise((finish) => {
+    let last = t0;
+    const tick = (now: number) => {
+      const gap = now - last; last = now;
+      const draws = renderer.info.render.frame - f0;
+      const ms = now - t0;
+      if (opts.isDead?.()) { finish({ draws, ms, smooth: false }); return; }
+      if (draws >= minDraws && gap <= gapMs) { finish({ draws, ms, smooth: true }); return; }
+      if (ms >= timeoutMs) { finish({ draws, ms, smooth: false }); return; }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+/**
  * Before `PMREMGenerator.fromScene(scene)` (the shop's and the casino's
  * "bake the room into its reflections"): compile every material's
  * draw-into-a-picture variant in the background first. Drawing into a render

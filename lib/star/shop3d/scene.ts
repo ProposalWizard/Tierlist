@@ -42,7 +42,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor, sessionStartTier } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu, compileForBake, noteSceneFiles, acquireRenderer } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, compileForBake, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
 import { ktx2LoaderForModels } from "../three3d/ktx2";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
@@ -1633,6 +1633,10 @@ async function buildShop(
     },
   };
   showCar(0);
+  // the loading cover stays up until the real first frames are drawn and the
+  // page runs at ~30 a second again (perf.ts awaitSmoothFrame): the first
+  // draws' leftover building (shadow shaders, uploads) happens behind it
+  await awaitSmoothFrame(renderer, { isDead: () => disposed });
   return ctrl;
 }
 

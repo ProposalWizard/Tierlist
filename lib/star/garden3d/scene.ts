@@ -56,7 +56,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor, sessionStartTier } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles, acquireRenderer } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
 import { loadRealNature, makeTree, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
@@ -2947,6 +2947,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       release(scene);
     },
   };
+  // the loading cover stays up until the real first frames are drawn and the
+  // page runs at ~30 a second again (perf.ts awaitSmoothFrame): the first
+  // draws' leftover building (shadow shaders, uploads) happens behind it
+  await awaitSmoothFrame(renderer, { isDead: () => disposed });
   return ctrl;
 }
 

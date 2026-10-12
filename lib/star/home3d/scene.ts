@@ -39,7 +39,7 @@ import type { Person3D } from "../people3d";
 import { turnTo } from "../three3d/animBlend";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
 import { Governor, sessionStartTier } from "../three3d/governor";
-import { DynamicResolution, rememberGpu, noteSceneFiles, acquireRenderer } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
@@ -766,5 +766,9 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       release(scene, keep);
     },
   };
+  // the loading cover stays up until the real first frames are drawn and the
+  // page runs at ~30 a second again (perf.ts awaitSmoothFrame): the first
+  // draws' leftover building (shadow shaders, uploads) happens behind it
+  await awaitSmoothFrame(renderer, { isDead: () => disposed });
   return ctrl;
 }

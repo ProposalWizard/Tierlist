@@ -62,7 +62,7 @@ import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, type Quality3d } from "../three3d/quality";
 import { Governor, sessionStartTier } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows, compileForBake, noteSceneFiles, acquireRenderer } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached, freezeStaticShadows, compileForBake, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
 import { OrbitCam } from "../three3d/orbitCam";
 import { casinoRoomLook } from "./roomLook";
 import { dressCasinoH, type CasinoH } from "./hRoom";
@@ -1107,5 +1107,9 @@ async function buildCasino(container: HTMLElement, cb: CasinoCallbacks, opts: Ca
       release(scene);
     },
   };
+  // the loading cover stays up until the real first frames are drawn and the
+  // page runs at ~30 a second again (perf.ts awaitSmoothFrame): the first
+  // draws' leftover building (shadow shaders, uploads) happens behind it
+  await awaitSmoothFrame(renderer, { isDead: () => disposed });
   return ctrl;
 }
