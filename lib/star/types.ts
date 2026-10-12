@@ -214,7 +214,19 @@ export type Competition =
   /** International breaks (lib/star/international.ts): one match a window. */
   | "International Friendly"
   | "World Cup Qualifier"
-  | "Euro Qualifier";
+  | "Euro Qualifier"
+  /** The international world (lib/star/intl): every other competition. */
+  | "World Cup Play-Off"
+  | "Nations League"
+  | "Copa América"
+  | "Africa Cup of Nations"
+  | "AFCON Qualifier"
+  | "Asian Cup"
+  | "Asian Cup Qualifier"
+  | "Gold Cup"
+  | "Gold Cup Qualifier"
+  | "CONCACAF Nations League"
+  | "OFC Nations Cup";
 
 export interface Fixture {
   week: number;
@@ -232,6 +244,14 @@ export interface Fixture {
   kind?: "league" | "cup" | "europe" | "international" | "playoff";
   /** The one against the club down the road. Same football, louder consequences. */
   derby?: boolean;
+  /** An international from the world (lib/star/intl/world.ts): its match id. */
+  intlId?: string;
+  /**
+   * A knockout international: what a level score goes to ("et-pens", or
+   * "pens" straight away — the Copa América before its final), and for a
+   * second leg the first leg's score from your side.
+   */
+  intlKo?: { level: "et-pens" | "pens"; firstLeg?: { us: number; them: number } };
   round?: string;
   /** A two-legged cup tie (the League Cup semi-final): which leg this is.
    *  Absent on everything else, and on a semi drawn before legs existed. */
@@ -1139,6 +1159,8 @@ export interface CareerState {
    *  and the last few internationals (lib/star/international.ts). Absent on
    *  an older save, which starts it at the next window. */
   international?: import("./international").InternationalRecord;
+  /** The international world's record of you (lib/star/intl/career.ts). */
+  intl?: import("./intl/career").IntlState;
   /** This season's (or the last) summer tournament — groups, knockouts, the
    *  winner, and whether you were in the squad (lib/star/tournament.ts).
    *  Absent on a save from before it, and in a season with none yet. */

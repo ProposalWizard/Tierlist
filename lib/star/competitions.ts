@@ -512,6 +512,17 @@ const COMPETITION_ABBREV: Record<Competition, string> = {
   "International Friendly": "Friendly",
   "World Cup Qualifier": "WCQ",
   "Euro Qualifier": "Euro Q",
+  "World Cup Play-Off": "WC PO",
+  "Nations League": "UNL",
+  "Copa América": "Copa",
+  "Africa Cup of Nations": "AFCON",
+  "AFCON Qualifier": "AFCON Q",
+  "Asian Cup": "Asian Cup",
+  "Asian Cup Qualifier": "AC Q",
+  "Gold Cup": "Gold Cup",
+  "Gold Cup Qualifier": "GC Q",
+  "CONCACAF Nations League": "CNL",
+  "OFC Nations Cup": "OFC NC",
 };
 
 /** Short enough for a scoreboard badge — "Prem" / "UCL" / "L Cup" — rather

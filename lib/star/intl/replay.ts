@@ -7,7 +7,7 @@
  * Cached by the record: asking again with the same record and a later date
  * carries on from where the last replay stopped.
  */
-import { World, type WorldInputs } from "./world";
+import { World, type WorldInputs, type WorldMatch } from "./world";
 import { nationsLeague, euroCycle } from "./uefa";
 import { copaAmerica } from "./conmebol";
 import { concacafNationsLeague, goldCup } from "./concacaf";
@@ -46,11 +46,12 @@ function keyOf(inputs: WorldInputs): string {
 }
 
 /** The world as it stands at `until` (cached; a later `until` continues). */
-export function worldAt(inputs: WorldInputs, until: number): World {
+export function worldAt(inputs: WorldInputs, until: number, hold?: (m: WorldMatch) => boolean): World {
   const key = keyOf(inputs);
   if (!cache || cache.key !== key || cache.world.now > until) {
     cache = { key, world: newWorld(inputs) };
   }
+  cache.world.hold = hold;
   cache.world.run(until);
   return cache.world;
 }

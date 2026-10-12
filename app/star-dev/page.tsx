@@ -181,7 +181,8 @@ import { lazyScreen, preloadScreens } from "@/lib/star/lazyScreen";
 import { loadSprites } from "@/lib/star/sprites";
 import { matchPlayersLook } from "@/lib/star/newLook";
 import { rollCasinoScandal, takeCasinoVisitBets, casinoBanned, casinoBanWeeksLeft } from "@/lib/star/casinoScandal";
-import { windowDue, decideCallUp, applyCallUp, internationalCareer, nationKits, nationStrength } from "@/lib/star/international";
+import { internationalCareer, nationKits, nationStrength } from "@/lib/star/international";
+import { periodDue, decide, applyDecision, syncIntl } from "@/lib/star/intl/career";
 import CallUpScreen from "@/components/star/CallUpScreen";
 import { tournamentDue, openTournament, applyTournament } from "@/lib/star/tournament";
 import TournamentScreen from "@/components/star/TournamentScreen";
@@ -903,7 +904,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // International breaks (lib/star/international.ts): the window that has
   // come round and not been decided yet, and — for an international — the
   // stand-in career the match is handed (your side is the nation).
-  const intlDue = career ? windowDue(career) : null;
+  // The international world (lib/star/intl/career.ts): the window or
+  // tournament whose squad is named now.
+  const intlDue = useMemo(() => (career ? periodDue(career) : null), [career]);
+  // A save from before the international world (or a new season the rollover
+  // has not synced yet): bring it into step once.
+  useEffect(() => {
+    if (career?.player?.club && career.fixtures?.length && !career.intl?.xi?.[career.season]) setCareer(syncIntl(career));
+  }, [career]);
   const intlMatchCareer = useMemo(
     () => (career && nextFixture?.kind === "international" ? internationalCareer(career, nextFixture) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -915,7 +923,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [phase, intlDue]);
   // The summer tournament (lib/star/tournament.ts): once the club season is
   // over in a tournament summer, the manager names his squad.
-  const tournDue = career ? tournamentDue(career) : false;
+  // Replaced by the international world; an old save part-way through one
+  // still finishes it (its fixtures settle through tournament.ts).
+  const tournDue = false as boolean;
+  void tournamentDue;
   useEffect(() => {
     if (phase === "dashboard" && tournDue) setPhase("intl-tournament");
     else if (phase === "intl-tournament" && !tournDue) setPhase("dashboard");
@@ -1691,7 +1702,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
     // An international break has come round: the national manager names his
     // squad before the next club match (lib/star/international.ts).
-    if (windowDue(from) !== null) {
+    if (periodDue(from) !== null) {
       setCareer(from);
       setPhase("intl-callup");
       return;
@@ -4019,18 +4030,19 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "intl-callup" && intlDue !== null) {
-    const decision = decideCallUp(career, intlDue);
+    const decision = decide(career, intlDue);
     return (
       <CallUpScreen
         decision={decision}
-        dateLabel={fixtureDateLabel(career.player.startYear, career.season, decision.fixture.week, "international", divisionOf(career))}
         onContinue={() => {
-          let next = applyCallUp(career, decision);
+          let next = applyDecision(career, decision);
+          const rec = next.international ?? { decided: [], callUps: 0, snubs: 0, matches: [] };
+          next = { ...next, international: { ...rec, callUps: rec.callUps + (decision.called ? 1 : 0), snubs: rec.snubs + (decision.called ? 0 : 1) } };
           // Named in the squad: the club, the press and you post about it,
-          // once (the cycle id carries the window).
+          // once (the cycle id carries the period).
           if (decision.called) {
             next = { ...next, media: generateForCallUp(next, decision.nation, next.international?.callUps ?? 1,
-              decision.monthName, `callup-${decision.season}-${decision.window}`) };
+              decision.period.label, `callup-${decision.period.key}`) };
           }
           setCareer(next);
           setActiveNav("home");

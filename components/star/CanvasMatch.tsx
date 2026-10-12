@@ -1032,6 +1032,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         isLevelNow: () => (firstUs + userScoreRef.current) === (firstThem + oppScoreRef.current),
       };
     }
+    // An international knockout from the world (lib/star/intl): extra time
+    // then penalties, or penalties straight away; a second leg on aggregate.
+    if (fixture.intlKo) {
+      const ko = fixture.intlKo;
+      if (ko.firstLeg) {
+        const f = ko.firstLeg;
+        return { extraTime: true, isLevelNow: () => f.us + userScoreRef.current === f.them + oppScoreRef.current };
+      }
+      return { extraTime: ko.level === "et-pens", isLevelNow: () => userScoreRef.current === oppScoreRef.current };
+    }
     // A summer-tournament knockout (lib/star/tournament.ts): extra time, then
     // penalties. A group game, and an old save's counter-style run, can be drawn.
     if (fixture.kind === "international" && fixture.round && !fixture.round.startsWith("Group")

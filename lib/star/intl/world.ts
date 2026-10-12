@@ -114,6 +114,12 @@ export class World {
   private onDate = new Map<number, Set<string>>();
   private events: Event[] = [];
   private seq = 0;
+  /**
+   * Matches the replay must not play yet: your nation's, while the squad for
+   * them has not been named (career.ts sets it). `run` stops in front of the
+   * first one, so the world never decides a match you might be picked for.
+   */
+  hold?: (m: WorldMatch) => boolean;
   /** Unplayed matches, sorted by date (then order added). */
   private queue: WorldMatch[] = [];
   private clock = WORLD_START;
@@ -219,7 +225,9 @@ export class World {
       const pending = this.queue[0];
       const evAt = nextEvent ? nextEvent.at : Infinity;
       const mAt = pending ? pending.date : Infinity;
-      if (Math.min(evAt, mAt) > until) break;
+      if (!nextEvent && !pending) break;
+      if (!(Math.min(evAt, mAt) <= until)) break;
+      if (pending && this.hold?.(pending) && evAt > mAt) break;
       if (evAt <= mAt) {
         this.events.shift();
         this.clock = Math.max(this.clock, evAt);
@@ -244,6 +252,13 @@ export class World {
     let r: { hs: number; as: number; et?: boolean; pens?: Score };
     if (yours) {
       r = { ...yours };
+      // A knockout your result left level with no shoot-out (a match you
+      // missed, simulated by the club calendar): settle it on penalties.
+      if (!r.pens) {
+        const f = m.firstLeg ? this.byId.get(m.firstLeg) : null;
+        const level = m.firstLeg ? !!f && played(f) && f.hs! + r.as === f.as! + r.hs : !!m.level && r.hs === r.as;
+        if (level) r.pens = shootout(hS, aS, rng);
+      }
     } else {
       r = ninety(hS, aS, neutral, rng);
       if (m.firstLeg) {
