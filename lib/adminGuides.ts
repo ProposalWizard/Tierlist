@@ -232,6 +232,7 @@ export const ADMIN_GUIDES = {
         ["Up to Aug (year)", "Plays the world from August 2026 to 1 August of that year."],
         ["(nation)", "Whose tables and matches are shown, and whose flag the squad screens use."],
         ["▶ Called up screen / ▶ Left out screen", "The squad announcement as the game shows it, with that nation's last two matches as the sample. Continue comes back here."],
+        ["▶ Country page", "Stats → Country as the game draws it, for a new Arsenal career of the chosen nation with the national manager's bar at 62. Back comes here."],
       ] },
     ],
     saving: ["Nothing is saved. The world here has no career in it (no player results, no real-player strengths)."],

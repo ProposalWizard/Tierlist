@@ -37,6 +37,8 @@ export interface SelectionVerdict {
   standing: number;
   /** Not picked because you are away with your nation (lib/star/intl/career.ts). */
   away?: boolean;
+  /** A planned change: you come off at this minute (international friendlies). */
+  offAt?: number;
 }
 
 /** A player with no recent games is judged on a neutral performance, not a bad one. */
@@ -212,7 +214,7 @@ export function selectionFor(career: CareerState): SelectionVerdict {
     // manager picks his side — starts, the bench, rotation.
     if (f?.kind === "international" && f.intlId) {
       const v = intlSelection(career, f);
-      return { status: v.status, onAt: v.onAt, standing: selectionStanding(career), reason: v.reason };
+      return { status: v.status, onAt: v.onAt, ...(v.offAt ? { offAt: v.offAt } : {}), standing: selectionStanding(career), reason: v.reason };
     }
     // Away with your nation (a League One break weekend, a winter tournament):
     // the club plays without you.

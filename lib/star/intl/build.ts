@@ -52,11 +52,13 @@ export interface GroupStageSpec {
   label?: string;
   neutral?: boolean;
   hosts?: string[];
+  /** Own fixture list per group (each inner array is one round). */
+  schedule?: (teams: string[], group: string) => [string, string][][];
 }
 
 export function groupStage(w: World, s: GroupStageSpec): void {
   for (const [g, teams] of Object.entries(s.groups)) {
-    let days = s.rounds === "double" ? doubleRoundRobin(teams) : singleRoundRobin(teams);
+    let days = s.schedule ? s.schedule(teams, g) : s.rounds === "double" ? doubleRoundRobin(teams) : singleRoundRobin(teams);
     if (s.maxRounds) days = days.slice(0, s.maxRounds);
     if (days.length > s.dates.length) {
       throw new Error(`${s.edition} group ${g}: ${days.length} rounds, ${s.dates.length} dates`);

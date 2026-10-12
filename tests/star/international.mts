@@ -137,6 +137,31 @@ function stats(over: Partial<MatchStats>): MatchStats {
   check(!p || !p.key.includes("sepoct"), `jumping past September–October does not offer it late (${p?.key})`);
 }
 
+// ── Friendlies: regulars rotated, changed early; squad players get minutes ──
+for (const [bar, want] of [[65, 2], [85, 3], [45, 1]] as const) {
+  let s = base("Japan");
+  const keep = () => { s = { ...s, intl: { ...intlOf(s), manager: bar } }; };
+  keep();
+  const sepoct: { start: boolean; off?: number; on: number }[] = [];
+  let guard = 0;
+  while (guard++ < 120) {
+    const p = periodDue(s);
+    if (p) { s = applyDecision(s, { ...decide(s, p), called: true }); continue; }
+    const next = nextFixtureFor(s);
+    if (!next) break;
+    if (next.kind === "international" && next.competition === "International Friendly" && new Date(fixtureTimestamp(s.player.startYear, s.season, next.week, next.kind, divisionOf(s))).getUTCMonth() <= 9) {
+      const v = selectionFor(s);
+      sepoct.push({ start: v.status === "1st Team", off: v.offAt, on: v.onAt });
+    }
+    if (fixtureTimestamp(s.player.startYear, s.season, next.week, next.kind, divisionOf(s)) > Date.UTC(2026, 9, 31)) break;
+    s = creditMatchResult(s, next, stats({})).career; keep();
+  }
+  const starts = sepoct.filter((x) => x.start).length;
+  console.log(`Japan, bar ${bar}, Sep–Oct 2026 friendlies: started ${starts} of ${sepoct.length}; ${sepoct.map((x) => x.start ? `off ${x.off}'` : `on ${x.on}'`).join(", ")}`);
+  if (sepoct.length === 4) check(starts === want, `bar ${bar}: starts ${want} of 4 friendlies (${starts})`);
+  check(sepoct.every((x) => x.start ? (x.off ?? 90) >= 55 && (x.off ?? 90) <= 80 : x.on >= 46 && x.on <= 65), "friendly minutes: off 55'–80' when starting, on 46'–65' from the bench");
+}
+
 check(SQUAD_AT === 34 && START_AT === 55, "the same thresholds as the club manager");
 
 if (problems.length) {

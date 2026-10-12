@@ -535,19 +535,73 @@ export function awayOnDuty(career: CareerState, f: Fixture): string | null {
 
 // ── Your matches ────────────────────────────────────────────────────────────
 
-/** Start or bench for an international, and when a sub comes on. */
-export function intlSelection(career: CareerState, f: Fixture): { status: "1st Team" | "Substitute"; onAt: number; reason: string } {
+/**
+ * FRIENDLIES ARE FOR LOOKING AT PLAYERS (Mikey, 12 Oct 2026): "friendlies are
+ * about trying to figure out your nation's best team … a lot of substitutes
+ * will be used, usually the maximum, which is five … if you had three or four
+ * friendlies in an international break, regular starters get about two games,
+ * maybe three, and probably not the whole 90."
+ *
+ * Which of the window's friendlies you start, by the manager's bar:
+ *   friendlies in the window   1   2   3   4
+ *   starter (55–74)            1   1   2   2
+ *   sure starter (75+)         1   2   2   3
+ *   squad player (34–54)       0   0   1   1
+ * The rest you come on in (46'–65'). Starting a friendly, you come off at
+ * 55'–75' (a sure starter 65'–80'). Seeded per window, so it never changes on
+ * a reload. Competitive matches are untouched.
+ */
+export function friendlyPlan(career: CareerState, f: Fixture): { start: boolean; onAt: number; offAt?: number; nth: number; of: number } | null {
+  const s = intlOf(career);
+  const w = worldOf(career);
+  const m = w.byId.get(f.intlId ?? "");
+  if (!m || m.importance !== 10) return null;
+  const nation = s.nation;
+  // The window's matchdays with no competitive match for this nation. Friendlies
+  // are only drawn the day before they are played, so count the free days, not
+  // the friendlies already known.
+  const wk = windowKeyOf(m.date);
+  const kind = wk?.key.split("-")[1] as WindowKind | undefined;
+  const win = kind ? windowFor(new Date(m.date).getUTCFullYear(), kind) : null;
+  const sameDay = (a: number, b: number) => Math.floor(a / DAY) === Math.floor(b / DAY);
+  const days = (win?.matchdays ?? [new Date(m.date)]).map((d) => d.getTime())
+    .filter((d) => sameDay(d, m.date) || !w.matches.some((x) => x.importance !== 10 && (x.home === nation || x.away === nation) && sameDay(x.date, d)));
+  const n = Math.max(1, days.length);
+  const nth = Math.max(0, days.findIndex((d) => sameDay(d, m.date)));
+  const bar = s.manager;
+  const tier = bar >= SURE_START ? 2 : bar >= START_AT ? 1 : 0;
+  const STARTS = [[0, 0, 1, 1], [1, 1, 2, 2], [1, 2, 2, 3]];
+  const starts = STARTS[tier][Math.min(n, 4) - 1];
+  // Which ones: a seeded shuffle of the window's friendlies.
+  const rng = rngFor(`friendlies|${wk?.key ?? m.id}|${nation}`);
+  const order = days.map((_, i) => ({ i, r: rng() })).sort((a, b) => a.r - b.r).map((x) => x.i);
+  const start = order.slice(0, starts).includes(nth);
+  const r = rngFor(`friendly-mins|${m.id}|${nation}`);
+  if (start) {
+    const lo = tier === 2 ? 65 : 55;
+    return { start, onAt: 0, offAt: lo + Math.floor(r() * 16), nth, of: n };
+  }
+  return { start, onAt: 46 + Math.floor(r() * 20), nth, of: n };
+}
+
+/** Start or bench for an international, when a sub comes on, and (friendlies) when you come off. */
+export function intlSelection(career: CareerState, f: Fixture): { status: "1st Team" | "Substitute"; onAt: number; offAt?: number; reason: string } {
   const s = intlOf(career);
   const bar = s.manager;
   const m = worldOf(career).byId.get(f.intlId ?? "");
-  const friendly = m?.importance === 10;
   const tournament = m ? TOURNAMENT_COMPS.includes(m.comp) : false;
   const nation = s.nation;
+  const plan = friendlyPlan(career, f);
+  if (plan) {
+    const of = plan.of > 1 ? ` (friendly ${plan.nth + 1} of ${plan.of})` : "";
+    return plan.start
+      ? { status: "1st Team", onAt: 0, offAt: plan.offAt, reason: `A friendly${of}: you start, and the manager plans to change you around ${plan.offAt}'.` }
+      : { status: "Substitute", onAt: plan.onAt, reason: `A friendly${of}: the manager is looking at other players. You come on around ${plan.onAt}'.` };
+  }
   let start = bar >= START_AT;
   let why = start ? `In the ${nation} side — you start.` : `On the ${nation} bench.`;
-  if (start && bar < SURE_START && !tournament) {
-    if (friendly && rngFor(`rotate|${f.week}|${nation}`)() < 0.33) { start = false; why = "A friendly: the manager rests some regulars. You're on the bench."; }
-    else if (s.last?.lost && s.last.rating < 6.0) { start = false; why = "Dropped to the bench after the last defeat."; }
+  if (start && bar < SURE_START && !tournament && s.last?.lost && s.last.rating < 6.0) {
+    start = false; why = "Dropped to the bench after the last defeat.";
   }
   if (start) return { status: "1st Team", onAt: 0, reason: why };
   const onAt = bar >= 47 ? 60 : bar >= 40 ? 70 : 80;

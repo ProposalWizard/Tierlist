@@ -19,6 +19,10 @@
  *      winners → Gold Cup preliminary round.
  *   Finals (March): semi-finals, third place, final.
  *
+ * COPA AMÉRICA PLACES (as in 2024; 2028's are not announced): the four
+ * quarter-final winners, plus two one-match play-offs in March between the
+ * four losers (best-ranked v worst, second v third).
+ *
  * GOLD CUP (odd years): 16 teams. Direct: the four Nations League
  * quarter-final winners and the B group winners. The preliminary round
  * (one match on the June window's second matchday, best-ranked at home
@@ -105,9 +109,32 @@ export function concacafNationsLeague(w: World, year: number): void {
     }, entrants, (r) => {
       const sf = [r.winner, r.runnerUp, ...(r.losers[1] ?? [])];
       const qfLosers = (r.losers[0] ?? []).sort((a, b) => w.rankOf(a) - w.rankOf(b));
-      w.facts.set(`${ed}:copa`, [...sf, ...qfLosers].slice(0, 6));
       w.facts.set(`${ed}:qfWinners`, sf);
       w.facts.set(`${ed}:qfLosers`, qfLosers);
+      void sf;
+    });
+    // Copa América places, as in 2024 (the 2023–24 Nations League): the four
+    // quarter-final winners go; the four losers play one-match play-offs in
+    // March (best-ranked at home to the worst), the two winners go too.
+    // Every Copa América is two years after this Nations League.
+    w.at(dayAfter(nov[1]), () => {
+      const ws = (w.edition(ed).filter((m) => m.stage.startsWith("Quarter")));
+      const ties = new Map<string, string[]>();
+      for (const m of ws) { const k = [m.home, m.away].sort().join("|"); ties.set(k, [m.home, m.away]); }
+      const qfW: string[] = [], qfL: string[] = [];
+      for (const [k] of Array.from(ties)) {
+        const legs = ws.filter((m) => [m.home, m.away].sort().join("|") === k).sort((a, b) => a.date - b.date);
+        const win = legs.length === 2 ? legsWinner({ first: legs[0], second: legs[1] }) : winnerOf(legs[0]);
+        if (!win) continue;
+        qfW.push(win); qfL.push(k.split("|").find((x) => x !== win)!);
+      }
+      const L = qfL.sort((a, b) => w.rankOf(a) - w.rankOf(b));
+      const po = L.length >= 4 ? [single(w, { edition: ed, comp: "CONCACAF Nations League", stage: "Copa América Play-Off", importance: 15 }, L[0], L[3], mar[0], "CPO-1"),
+        single(w, { edition: ed, comp: "CONCACAF Nations League", stage: "Copa América Play-Off", importance: 15 }, L[1], L[2], mar[0], "CPO-2")] : [];
+      w.at(dayAfter(mar[0]), () => {
+        const poW = po.map((m) => winnerOf(m)).filter((x): x is string => !!x);
+        w.facts.set(`${ed}:copa`, [...qfW, ...poW, ...L.filter((x) => !poW.includes(x))].slice(0, 6));
+      });
     });
   });
 

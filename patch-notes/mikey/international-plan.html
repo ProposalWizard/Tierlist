@@ -1,4 +1,5 @@
 <title>International Football Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
@@ -89,12 +90,168 @@
   .opt.rec{border-color:var(--green);color:var(--green)}
   .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:1px;background:var(--card2);color:var(--amber)}
   footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+  .disp{font-family:Anton,Impact,"Arial Narrow",sans-serif;font-weight:400;letter-spacing:.01em;text-transform:uppercase;font-size:clamp(34px,9vw,52px)}
+  .q .dt,.q p.dt{margin:0 0 8px}
+  .tl{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+  .tl-w{margin:0}
+  .tl-w summary{flex-wrap:wrap;align-items:baseline;color:var(--ink)}
+  .tl-w summary b{font-weight:800}
+  .tl-d{font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;min-width:150px}
+  .tl-k{font-size:11px;font-weight:800;color:var(--amber);text-transform:uppercase;letter-spacing:.06em}
+  .tl-c{display:grid;grid-template-columns:150px 1fr;gap:4px 12px;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}
+  .tl-c span{color:var(--ink2)} .tl-c .fr{color:var(--ink3);font-size:12.5px}
+  .tl-cn{font-weight:800;color:var(--blue)}
+  @media (max-width:520px){.tl-c{grid-template-columns:1fr}}
+  .tl-t{background:linear-gradient(90deg,color-mix(in srgb,var(--amber) 16%,var(--card)),var(--card));border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:var(--r);padding:10px 14px}
+  .tl-n{font-weight:800;font-size:15px}
+  .tl-s{font-size:12.5px;color:var(--ink2)}
+  a{color:var(--blue)}
 </style><div class="wrap">
 <header>
-  <span class="ver" style="background:var(--green)">BUILT · LIVE</span>
-  <h1>International football</h1>
-  <p class="sub">Star Career · Mikey, 12 Oct 2026 · built and merged (PR #717). The research and the original plan are kept at the bottom.</p>
+  <span class="ver" style="background:var(--green)">ROUND 2 · 12 OCT</span>
+  <h1 class="disp">International football</h1>
+  <p class="sub">Star Career · Mikey · your review answered. Built this round: friendly rotation, the real 2028 Nations League, Copa América places, restyled screens. The first build (PR #717) and the original plan are kept at the bottom.</p>
 </header>
+
+<div class="strip">
+  <div class="s"><b>2 of 4</b><span>friendlies a regular starts (was all 4, rested 1 in 3)</span></div>
+  <div class="s"><b>6</b><span>games each in the 2028 Nations League (was 5, a guess)</span></div>
+  <div class="s"><b>6 of 6</b><span>Copa 2028 guests match how 2024 was decided</span></div>
+  <div class="s"><b>25</b><span>breaks and tournaments, Sep 2026 – Jul 2030, in the timeline below</span></div>
+</div>
+
+<div class="head" style="border-left-color:var(--green)">
+  <p class="big">Four answers needed from you; everything else you asked for is built or planned below.</p>
+  <p>Two plans to approve (national-duty mode, following your nation when not picked), one choice on how nations get stronger, one on FIFA's exact knockout tables.</p>
+</div>
+
+<h2 class="k-amb"><i></i>Answers needed</h2>
+<div class="q"><div class="t">1. How should nations get stronger over 20 years?</div>
+<p class="dt">Today a nation's playing strength = its July 2026 ranking + its results since + its real players (up to ±8). The results part feeds itself: win in a weak region, gain strength, win more. That is why Canada and Nigeria reached Spain's level by 2046 with no better players. The 15% yearly pull back to 2026 was my patch for it.</p>
+<p class="dt">Your Nathan Saliba example is exactly the part that already works: if Canada's real players in your save improve, Canada's strength rises. It is the results loop that is "unnatural".</p>
+<div class="opts"><span class="opt rec">A. Strength from players only (recommended)</span><span class="opt">B. Keep it as it is</span><span class="opt">C. Results loop, no pull back</span></div>
+<p class="cap">A: results still move the FIFA ranking you see, but not how good a team is. Canada climbs only if its players do. Remove the 15% pull. Catch: in-game players don't age or retire yet (found 5 Oct), so most nations would stay close to their 2026 level until that is fixed.</p></div>
+
+<div class="q"><div class="t">2. FIFA's exact knockout tables?</div>
+<p class="dt">When the best third-placed teams go through, FIFA and UEFA don't draw who they play: a fixed table in the rules decides it from which groups they came from. The game uses a simpler rule (best group winners get the weakest thirds, no rematch of a group).</p>
+<div class="tbl"><table><tr><th>Tournament</th><th>Thirds through</th><th>Rows in the real table</th></tr>
+<tr><td>World Cup (48 teams)</td><td class="num">8 of 12</td><td class="num">495</td></tr>
+<tr><td>Euro, Africa Cup of Nations, Asian Cup</td><td class="num">4 of 6</td><td class="num">15</td></tr></table></div>
+<div class="opts"><span class="opt rec">Yes, all four (recommended)</span><span class="opt">Euro/AFCON/Asian Cup only</span><span class="opt">Keep the simple rule</span></div>
+<p class="cap">The 15-row tables are short. The World Cup's 495 rows are in Annex C of FIFA's regulations; I'd copy them in from there, not type them.</p></div>
+
+<div class="q"><div class="t">3. Copa América 2028: who hosts?</div>
+<p class="dt">Not announced. Reported (The Athletic, mid-2026): CONMEBOL and CONCACAF are talking about the USA again. Ecuador was next in CONMEBOL's rotation but pulled out of 2024. The game picks a random CONMEBOL nation.</p>
+<div class="opts"><span class="opt">United States (the reports)</span><span class="opt rec">Keep random South American until announced</span></div></div>
+
+<div class="q"><div class="t">4. Approve the two plans below?</div>
+<div class="opts"><span class="opt">Plan A: national-duty mode</span><span class="opt">Plan B: following your nation when not picked</span></div></div>
+
+<h2 class="k-grn"><i></i>Built this round</h2>
+<ul class="n">
+<li><div class="hd">Friendlies rotate the squad</div><div class="dt">Which of a break's friendlies you start, by the national manager's bar. Starting, you come off at 55'–75' (a sure starter 65'–80'). On the bench, you come on at 46'–65'. Every minute counts in your stats. Competitive games are unchanged. <span class="pill" style="color:var(--green)">measured</span></div>
+<div class="tbl"><table><tr><th>Friendlies in the break</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+<tr><td>Sure starter (bar 75+)</td><td class="num">1</td><td class="num">2</td><td class="num">2</td><td class="num">3</td></tr>
+<tr><td>Starter (55–74)</td><td class="num">1</td><td class="num">1</td><td class="num">2</td><td class="num">2</td></tr>
+<tr><td>Squad player (34–54)</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td></tr></table></div>
+<p class="cap">Measured, Japan, Sep–Oct 2026, 4 friendlies: bar 65 started 2 (off 68', 61'); bar 85 started 3 (off 78', 75', 71'); bar 45 started 1. The opponents' subs aren't counted; the match has no "5 subs" limit to show.</p></li>
+<li><div class="hd">Nations League 2028–29 on: the real format</div><div class="dt">Checked against UEFA (approved May 2026) and the 15 Sep 2026 transition rules. 3 leagues of 18; 3 groups of 6, two from each pot of 6; 6 games: home and away against your pot-mate, once against the other four (2 home, 2 away); 6 matchdays Sep–Nov. A: winners, runners-up and the 2 best thirds to the March quarter-finals, then the June Finals. B and C winners up, A and B sixths down. Play-offs in March: A 4th/5th v B 2nd/3rd, B 4th/5th v C 2nd/3rd. <span class="pill" style="color:var(--green)">measured</span></div>
+<p class="cap">Measured 2028, 2030, 2032: 54 teams, every one plays 6 games against 5 opponents, 3 at home. Not published, so the game's own: the matchday order, the home side in the single games, the quarter-final draw. The 55th member (Russia) is banned, so no group of seven is needed.</p></li>
+<li><div class="hd">Euro and World Cup qualifying make room</div><div class="dt">The real 2028 format sends 32 teams to March games (was 24). The qualifying draw now adds a 13th group when the busy teams don't fit. Euro: winners + best runners-up still make 20; World Cup 2030 stays 12 groups. Euro 2032/2036 stay 24 teams, World Cups 48.</div></li>
+<li><div class="hd">Copa América: CONCACAF's 6 places, as in 2024</div><div class="dt">The 4 CONCACAF Nations League quarter-final winners go; the 4 losers play one-off play-offs in March (best v worst), and the 2 winners go. Copa 2028 uses the 2026–27 Nations League. Played from the real 2026 leagues, the game came out with Mexico, USA, Jamaica, Panama, Canada, Costa Rica: the same six as the real 2024. <span class="pill" style="color:var(--green)">measured</span></div></li>
+<li><div class="hd">The screens, in the Home look</div><div class="dt">Called up, Not selected and Stats → Country now use the Home screen's kit: the night stadium lit in your country's colours, the heavy font for the verdict, flat panels that fade into the page, the liquid bar for the manager with the Squad 34 and Starter 55 marks. <span class="pill" style="color:var(--green)">seen</span></div></li>
+</ul>
+<div class="tbl" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+  <figure style="margin:0"><img src="intl-img/called.jpg" alt="Called up screen in the Home look: England flag in a lit stadium, CALLED UP in the heavy font, two matches, the manager bar at 62 with Squad 34 and Starter 55 marks" style="width:100%;border-radius:10px;border:1px solid var(--line)"><figcaption class="cap">Called up</figcaption></figure>
+  <figure style="margin:0"><img src="intl-img/leftout.jpg" alt="Not selected screen: grey stadium, faded flag, manager bar at 12" style="width:100%;border-radius:10px;border:1px solid var(--line)"><figcaption class="cap">Not selected</figcaption></figure>
+  <figure style="margin:0"><img src="intl-img/world.jpg" alt="Stats Country page: England, FIFA ranking 4th, the manager bar, top 10 ranking" style="width:100%;border-radius:10px;border:1px solid var(--line)"><figcaption class="cap">Stats → Country</figcaption></figure>
+</div>
+<p class="cap">Seen on the test page (<code>/star-intl-dev</code>, new "▶ Country page" button) at phone size. The sample matches on the two squad screens are the test page's sample, not that break's real games.</p>
+
+<h2 class="k-blue"><i></i>Your questions</h2>
+<ul class="n">
+<li><div class="hd">Does the game know how to make the next Nations League?</div><div class="dt">Yes. 2026–27 uses the real groups. When it ends, every team's league for 2028–29 comes from the real transition rules: B and C winners up, the 2 worst A fourths down, all of D into C, and the March play-offs (A's 2 worst thirds and 2 best fourths v B runners-up; B fourths v C runners-up). Then pots by the overall ranking and a draw. From 2028 each edition feeds the next the same way. This makes exactly 18 per league (checked 2028, 2030, 2032).</div></li>
+<li><div class="hd">How long is each break, and how many games?</div><div class="dt">The real FIFA calendar for 2026–2030: Sep–Oct is one double break (16 days, 4 games: Thursday, Sunday, Thursday, Sunday). November, March and June are 9 days, 2 games. The game uses the real dates to 2030, then the same weeks each year.</div></li>
+<li><div class="hd">Do the USA, Mexico and others qualify for the Copa América?</div><div class="dt">Yes, through the CONCACAF Nations League (built above). The 10 South American teams go automatically. Nothing is announced for 2028, so the 2024 route is used.</div></li>
+<li><div class="hd">What did "a 3★ Premier League starter: England 80.8 / 0" mean?</div><div class="dt">The same player, three countries. England's squad is picked at about 80.8 (rating with the division penalty), far above him, so his bar heads to 0: never picked. DR Congo's is about 72.5: his bar heads to 42, just in the squad. San Marino's is 57.7: it heads to 100, a sure starter. How you get called up is the talk you said we'd have later.</div></li>
+</ul>
+
+<h2 class="k-vio"><i></i>Plan A · national-duty mode <span class="pill">not built</span></h2>
+<div class="step"><div class="w">What you'd see</div><div class="t">While you're away with your country, the game becomes your country's.</div>
+<ul>
+<li><b>Home</b>: the next match panel shows your nation's next game (flags, date, competition, stage). The mini table becomes that competition's table. The stadium lights up in your nation's colours.</li>
+<li><b>League tab → your competition</b>: the Nations League group, the World Cup qualifying group, the tournament group, or the bracket once it's knockouts.</li>
+<li><b>Fixtures</b>: your nation's games in this break or tournament, results filled in as they're played.</li>
+<li><b>Squad</b>: the national squad (23, or 26 at a tournament), your place in it, starters marked.</li>
+<li><b>A banner</b> on every screen: "On duty with Scotland · 2 of 4 played". The club's pages are one tap away.</li>
+<li><b>It switches back</b> after your last game of the break, or when your country is knocked out.</li>
+</ul></div>
+<div class="step"><div class="w">How</div>
+<ul>
+<li>One "on duty" check, which already exists for missing club games (<code>awayOnDuty</code>). The screens ask it and swap their data source; no new save data.</li>
+<li>Tables and brackets come from the international world (already simulated); the squad from the same national squad picker.</li>
+<li>Touches the shared page (<code>app/star-dev/page.tsx</code>) only to pass "on duty" down; the Home, League and Squad screens get a national version of their data.</li>
+<li>A Look toggle is not needed: it is new, not a restyle.</li>
+</ul></div>
+
+<h2 class="k-vio"><i></i>Plan B · following your nation when you're not picked <span class="pill">not built</span></h2>
+<div class="step"><div class="w">What you'd see</div><div class="t">Not called up, the break still happens in front of you.</div>
+<ul>
+<li>Premier League or Championship, not picked: the Play button stays. Each press goes to your nation's next match day and shows the result ("Cameroon 2–0 Republic of Ireland", scorers, the table).</li>
+<li>Between those days you can train, rest and do the week as normal, so the break still counts for something.</li>
+<li>After the last match day of the break, Play goes back to your club's next game.</li>
+<li>League One and below already play through the break; there the result appears as a news line instead.</li>
+</ul></div>
+<div class="step"><div class="w">How</div>
+<ul>
+<li>Your nation's games already sit in the world, dated. When you're left out, they go on your calendar as "watch" days instead of being skipped.</li>
+<li>Pressing Play on a watch day shows a result screen (no match engine; the world already played it), then moves the week on.</li>
+<li>Training and rest work as on any week without a match.</li>
+</ul></div>
+
+<h2 class="k-blue"><i></i>Timeline: every break and tournament, Sep 2026 – Jul 2030</h2>
+<p class="dt">From the game's own world (the real FIFA dates to 2030). Tap a break to see what each continent plays. Friendlies fill the days a team has no competitive game.</p>
+<div class="tl">
+<details class="tl-w"><summary><span class="tl-d">21 Sep 2026 – 6 Oct 2026</span> <b>September–October 2026 break</b> <span class="tl-k">4 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>Nations League</b> <span>(Leagues A, B, C, D groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>CONCACAF Nations League</b> <span>(Leagues A, B, C groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><b>AFCON Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><span class="fr">Friendlies only</span></div></div></details>
+<details class="tl-w"><summary><span class="tl-d">9 Nov 2026 – 17 Nov 2026</span> <b>November 2026 break</b> <span class="tl-k">2 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>Nations League</b> <span>(Leagues A, B, C, D groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>CONCACAF Nations League</b> <span>(Leagues B, C groups; Quarter-Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><b>AFCON Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><span class="fr">Friendlies only</span></div></div></details>
+<div class="tl-t"><div class="tl-d">7 Jan 2027 – 5 Feb 2027</div><div class="tl-n">🏆 Asian Cup 2027</div><div class="tl-s">Asia · 24 teams · finals tournament</div></div>
+<details class="tl-w"><summary><span class="tl-d">22 Mar 2027 – 30 Mar 2027</span> <b>March 2027 break</b> <span class="tl-k">2 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>Nations League</b> <span>(League A/B Play-Off; League B/C Play-Off; Quarter-Final)</span> · <b>Euro Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>CONCACAF Nations League</b> <span>(Play-In; Semi-Final; Copa América Play-Off; Third Place; Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><b>AFCON Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><span class="fr">Friendlies only</span></div></div></details>
+<details class="tl-w"><summary><span class="tl-d">7 Jun 2027 – 15 Jun 2027</span> <b>June 2027 break</b> <span class="tl-k">2 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>Euro Qualifier</b> <span>(Groups)</span> · <b>Nations League</b> <span>(Semi-Final; Third Place; Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>Gold Cup Qualifier</b> <span>(Preliminary Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><b>AFCON Qualifier</b> <span>(Preliminary Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><span class="fr">Friendlies only</span></div></div></details>
+<div class="tl-t"><div class="tl-d">19 Jun 2027 – 17 Jul 2027</div><div class="tl-n">🏆 Africa Cup of Nations 2027</div><div class="tl-s">Africa · 24 teams · finals tournament</div></div>
+<div class="tl-t"><div class="tl-d">19 Jun 2027 – 10 Jul 2027</div><div class="tl-n">🏆 Gold Cup 2027</div><div class="tl-s">North & Central America · 16 teams · finals tournament</div></div>
+<details class="tl-w"><summary><span class="tl-d">20 Sep 2027 – 5 Oct 2027</span> <b>September–October 2027 break</b> <span class="tl-k">4 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>Euro Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><b>World Cup Qualifier</b> <span>(one table: all ten play each other home and away)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><b>AFCON Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><b>World Cup Qualifier</b> <span>(First Round; Second Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><span class="fr">Friendlies only</span></div></div></details>
+<details class="tl-w"><summary><span class="tl-d">8 Nov 2027 – 16 Nov 2027</span> <b>November 2027 break</b> <span class="tl-k">2 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>Euro Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><b>World Cup Qualifier</b> <span>(one table: all ten play each other home and away)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>World Cup Qualifier</b> <span>(First Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><b>AFCON Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><b>World Cup Qualifier</b> <span>(Second Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><span class="fr">Friendlies only</span></div></div></details>
+<details class="tl-w"><summary><span class="tl-d">20 Mar 2028 – 28 Mar 2028</span> <b>March 2028 break</b> <span class="tl-k">2 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>Euro Qualifier</b> <span>(Play-Off Semi-Final; Play-Off Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><b>World Cup Qualifier</b> <span>(one table: all ten play each other home and away)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>World Cup Qualifier</b> <span>(Second Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><b>World Cup Qualifier</b> <span>(Second Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><b>OFC Nations Cup</b> <span>(Preliminary Semi-Final; Preliminary Final)</span> · <span class="fr">+ friendlies on free days</span></div></div></details>
+<div class="tl-t"><div class="tl-d">23 Mar 2028 – 24 Jun 2028</div><div class="tl-n">🏆 OFC Nations Cup 2028</div><div class="tl-s">Oceania · 11 teams · finals tournament</div></div>
+<details class="tl-w"><summary><span class="tl-d">29 May 2028 – 6 Jun 2028</span> <b>June 2028 break</b> <span class="tl-k">2 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><b>World Cup Qualifier</b> <span>(one table: all ten play each other home and away)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>World Cup Qualifier</b> <span>(Second Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><b>World Cup Qualifier</b> <span>(Third Round)</span> · <b>Asian Cup Qualifier</b> <span>(Third Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><span class="fr">Friendlies only</span></div></div></details>
+<div class="tl-t"><div class="tl-d">9 Jun 2028 – 9 Jul 2028</div><div class="tl-n">🏆 European Championship 2028</div><div class="tl-s">Europe · 24 teams · finals tournament</div></div>
+<div class="tl-t"><div class="tl-d">12 Jun 2028 – 10 Jul 2028</div><div class="tl-n">🏆 Africa Cup of Nations 2028</div><div class="tl-s">Africa · 24 teams · finals tournament</div></div>
+<div class="tl-t"><div class="tl-d">16 Jun 2028 – 7 Jul 2028</div><div class="tl-n">🏆 Copa América 2028</div><div class="tl-s">South America · 16 teams · finals tournament</div></div>
+<details class="tl-w"><summary><span class="tl-d">18 Sep 2028 – 3 Oct 2028</span> <b>September–October 2028 break</b> <span class="tl-k">4 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>Nations League</b> <span>(Leagues A, B, C groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><b>World Cup Qualifier</b> <span>(one table: all ten play each other home and away)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>CONCACAF Nations League</b> <span>(Leagues A, B, C groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><b>World Cup Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><b>World Cup Qualifier</b> <span>(Third Round)</span> · <b>Asian Cup Qualifier</b> <span>(Third Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><b>World Cup Qualifier</b> <span>(Preliminary Semi-Final; Preliminary Final; Second Round)</span> · <span class="fr">+ friendlies on free days</span></div></div></details>
+<details class="tl-w"><summary><span class="tl-d">13 Nov 2028 – 21 Nov 2028</span> <b>November 2028 break</b> <span class="tl-k">2 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>Nations League</b> <span>(Leagues A, B, C groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>CONCACAF Nations League</b> <span>(Leagues B, C groups; Quarter-Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><b>World Cup Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><b>World Cup Qualifier</b> <span>(Third Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><b>World Cup Qualifier</b> <span>(Second Round)</span> · <span class="fr">+ friendlies on free days</span></div></div></details>
+<details class="tl-w"><summary><span class="tl-d">19 Mar 2029 – 27 Mar 2029</span> <b>March 2029 break</b> <span class="tl-k">2 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>Nations League</b> <span>(League A/B Play-Off; League B/C Play-Off; Quarter-Final)</span> · <b>World Cup Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>CONCACAF Nations League</b> <span>(Play-In; Semi-Final; Copa América Play-Off; Third Place; Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><b>World Cup Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><b>World Cup Qualifier</b> <span>(Third Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><b>World Cup Qualifier</b> <span>(Third Round Semi-Final; Third Round Final)</span> · <span class="fr">+ friendlies on free days</span></div></div></details>
+<details class="tl-w"><summary><span class="tl-d">4 Jun 2029 – 12 Jun 2029</span> <b>June 2029 break</b> <span class="tl-k">2 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>World Cup Qualifier</b> <span>(Groups)</span> · <b>Nations League</b> <span>(Semi-Final; Third Place; Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>World Cup Qualifier</b> <span>(Second Round)</span> · <b>Gold Cup Qualifier</b> <span>(Preliminary Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><b>World Cup Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><span class="fr">Friendlies only</span></div></div></details>
+<div class="tl-t"><div class="tl-d">16 Jun 2029 – 7 Jul 2029</div><div class="tl-n">🏆 Gold Cup 2029</div><div class="tl-s">North & Central America · 16 teams · finals tournament</div></div>
+<details class="tl-w"><summary><span class="tl-d">24 Sep 2029 – 9 Oct 2029</span> <b>September–October 2029 break</b> <span class="tl-k">4 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>World Cup Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>World Cup Qualifier</b> <span>(Third Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><b>World Cup Qualifier</b> <span>(Fourth Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><span class="fr">Friendlies only</span></div></div></details>
+<details class="tl-w"><summary><span class="tl-d">12 Nov 2029 – 20 Nov 2029</span> <b>November 2029 break</b> <span class="tl-k">2 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>World Cup Qualifier</b> <span>(Groups)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>World Cup Qualifier</b> <span>(Third Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><b>World Cup Qualifier</b> <span>(Play-Off Semi-Final; Play-Off Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><b>World Cup Qualifier</b> <span>(Fifth Round)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><span class="fr">Friendlies only</span></div></div></details>
+<details class="tl-w"><summary><span class="tl-d">18 Mar 2030 – 26 Mar 2030</span> <b>March 2030 break</b> <span class="tl-k">2 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><b>World Cup Qualifier</b> <span>(Play-Off Semi-Final; Play-Off Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><b>World Cup inter-region play-off</b> <span>(Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><b>World Cup inter-region play-off</b> <span>(Semi-Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><b>World Cup inter-region play-off</b> <span>(Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><b>World Cup inter-region play-off</b> <span>(Semi-Final; Final)</span> · <span class="fr">+ friendlies on free days</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><b>World Cup inter-region play-off</b> <span>(Semi-Final; Final)</span> · <span class="fr">+ friendlies on free days</span></div></div></details>
+<details class="tl-w"><summary><span class="tl-d">3 Jun 2030 – 11 Jun 2030</span> <b>June 2030 break</b> <span class="tl-k">2 matches</span></summary><div class="tl-c"><div class="tl-cn">Europe</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">South America</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">North & Central America</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">Africa</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">Asia</div><div><span class="fr">Friendlies only</span></div></div><div class="tl-c"><div class="tl-cn">Oceania</div><div><span class="fr">Friendlies only</span></div></div></details>
+<div class="tl-t"><div class="tl-d">13 Jun 2030 – 18 Jul 2030</div><div class="tl-n">🏆 World Cup 2030</div><div class="tl-s">Everyone · 48 teams · finals tournament</div></div></div>
+<p class="cap">Two things are outside the windows on purpose: the January–February 2027 Asian Cup (real) and, from 2032, the Africa Cup of Nations in the winter break (CAF has not fixed dates). The 2027 and 2028 Africa Cups are June–July (real).</p>
+
+<h2 class="k-mut"><i></i>Tests</h2>
+<ul class="n">
+<li>World test (21,755 matches 2026–2046, nobody plays twice on a day, fields and places right): passes. Career test, now with a friendly-rotation check (bar 65 starts 2 of 4, 85 starts 3, 45 starts 1): passes. Type check and the one-engine guard: pass.</li>
+</ul>
+
+<h2 class="k-mut"><i></i>Sources</h2>
+<ul class="n">
+<li><a href="https://en.wikipedia.org/wiki/2028%E2%80%9329_UEFA_Nations_League">2028–29 UEFA Nations League</a> · <a href="https://www.uefa.com/uefanationsleague/news/02a5-20abaa999b8a-b0a852eae001-1000--new-concept-for-men-s-national-team-competitions-as-of-202/">UEFA: new concept as of 2028</a> · <a href="https://uaf.ua/en/news/approved-new-concept-for-mens-national-team-competitions-starting-in-2028">UAF summary</a> · <a href="https://www.beinsports.com/en-us/soccer/uefa-nations-league/articles/the-executive-committee-approves-new-changes-to-the-uefa-nations-league-2026-09-15">15 Sep 2026 transition rules</a></li>
+<li><a href="https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage">2026 World Cup knockout stage (Annex C, 495 combinations)</a></li>
+<li><a href="https://www.starsandstripesfc.com/usmnt-news/41646/report-conmebol-concacaf-discussing-option-of-usa-hosting-2028-copa-america">Copa 2028 USA talks</a> · <a href="https://footballpath2026.com/copa-america-2028/">Copa 2028: what we know</a> · <a href="https://www.si.com/soccer/2023/01/27/copa-america-2024-united-states-host-partnership-concacaf-conmebol">2024 CONCACAF route</a></li>
+</ul>
+
+<details><summary>First build (12 Oct, PR #717): what was added then</summary>
 
 <div class="strip">
   <div class="s"><b>211</b><span>FIFA nations, all playable</span></div>
@@ -116,14 +273,6 @@
 <li><div class="hd">Away on duty</div><div class="dt">In League One or below, a club game on a break weekend shows "Away on international duty" and is played without you.</div></li>
 <li><div class="hd">The test page</div><div class="dt"><code>/star-intl-dev</code>: pick a year and a nation and see every final, the ranking, tables, matches and both call-up screens.</div></li>
 </ul>
-
-<h2 class="k-grn"><i></i>What it looks like</h2>
-<div class="tbl" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
-  <figure style="margin:0"><img src="intl-img/called.jpg" alt="Called up screen: Scotland flag, CALLED UP, two Euro 2028 group matches, manager bar 62 of 100" style="width:100%;border-radius:10px;border:1px solid var(--line)"><figcaption class="cap">Called up (sample: Scotland, manager bar 62)</figcaption></figure>
-  <figure style="margin:0"><img src="intl-img/leftout.jpg" alt="Not selected screen: manager bar 12 of 100 and the line saying the squad is picked at about 81" style="width:100%;border-radius:10px;border:1px solid var(--line)"><figcaption class="cap">Left out (manager bar 12)</figcaption></figure>
-  <figure style="margin:0"><img src="intl-img/world.jpg" alt="Test page: Who won list for 2027-28 and the FIFA ranking top 9" style="width:100%;border-radius:10px;border:1px solid var(--line)"><figcaption class="cap">Test page, world played to Aug 2028</figcaption></figure>
-</div>
-<p class="cap">Stills from the test page at phone size. Seen: these screens. Not seen: a full career season played on screen (checked by rule tests instead).</p>
 
 <h2 class="k-grn"><i></i>Added</h2>
 <ul class="n">
@@ -170,6 +319,7 @@
 <li>Career test: 4 squads named in 2026/27 as England, 10 internationals, caps counted once, a skipped break not offered late. Passes.</li>
 <li>Full suite: 326 pass; the 2 failures are 3D tests that also fail without this work. Production build passes.</li>
 </ul>
+</details>
 
 <details><summary>The plan and research (12 Oct, before building)</summary>
 <h2 class="k-mut"><i></i>What the game has today (Leo, 11–12 Oct)</h2>

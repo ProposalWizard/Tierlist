@@ -3981,6 +3981,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             oppStrength={oppStrength}
             onComplete={handleMatchComplete}
             startMinute={selection?.onAt ?? 0}
+            plannedOffAt={selection?.offAt}
             duties={duties ?? undefined}
             conditions={conditionsFor(career.season, nextFixture.week, career.homeCity)}
             seed={career.season * 1000 + career.week}
