@@ -32,7 +32,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-12T18:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/Aw5gexz5UkweXFamZB3Tqu",
-      "summary": "About 45 Settings toggles removed: the game decides. Drawn chances only, Style A heads for everyone, Keepers New | Old kept. On branch Harry, not live.",
+      "summary": "About 45 Settings toggles removed: the game decides. Drawn chances only, Style A heads for everyone, Keepers New | Old kept. Live 12 Oct 2026.",
       "stats": [
         {
           "value": "~45",
@@ -80,7 +80,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-12T18:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/4GnQVtDhxndhFJPjYXtMJv",
-      "summary": "Every man one real size, a camera for each kind of chance. On branch Harry, not live.",
+      "summary": "Every man one real size, a camera for each kind of chance. Live 12 Oct 2026.",
       "stats": [
         {
           "value": "1.8 m",
