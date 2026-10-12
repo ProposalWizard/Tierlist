@@ -433,7 +433,10 @@ replaced by "Deploy only when told" below.**
 **Deploy only when told (Harry, 12 Oct 2026; replaces "auto-deploy at every
 major update").** *"what happened to patch notes? What happened to telling me
 if I tell you to push everything currently, push it? Don't just be pushing
-stuff, because sometimes it's not ready to go."* Commit and push to the `Harry`
+stuff, because sometimes it's not ready to go."* Later the same day: *"When I
+say it's ready to be pushed, push it into the game … If I'm saying I need to
+see patch notes first, do that. We'll just play it by ear."* So: Harry decides
+each time whether to push now or see the patch notes first. Commit and push to the `Harry`
 branch freely, but merge to `main` (= live) ONLY when Harry says push / deploy /
 merge. Every deploy comes with patch notes. "Preview" (game version) is used
 only when someone asks for it in those words; otherwise a change goes straight
