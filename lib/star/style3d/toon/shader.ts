@@ -59,6 +59,7 @@ uniform vec3 uPat2;       // the pattern's second colour
 uniform vec4 uCloth;      // weave strength, seam darkness, skin shade (long sleeves over skin), -
 uniform vec4 uHome;       // Home light (0/1), ink edge, brightest a pixel may be, - (HOME_LIGHT)
 uniform vec3 uHomeSun;    // Home's sun, in view space
+uniform vec4 uSmall;      // a small man (smallMen.ts): flat cel (0/1), skin/hair map mip bias, -, -
 float tnLitEdge = 0.0;
 float tnFace = 0.0;       // this point is face skin (set before the lights)
 vec3 toonStep(float d) {
@@ -278,6 +279,7 @@ export function toonUniforms(T: Three, mask: THREE.Texture, kit: { collarY?: num
     uCloth: { value: new T.Vector4(TOON_CLOTH.weave, TOON_CLOTH.seam, 0.7, 0) },
     uHome: { value: new T.Vector4(0, HOME_LIGHT.ink, HOME_LIGHT.cap, 0) },
     uHomeSun: { value: new T.Vector3(...HOME_LIGHT.sunDir).normalize() },
+    uSmall: { value: new T.Vector4(0, 0, 0, 0) },
   };
 }
 
@@ -303,7 +305,7 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
       .replace("#include <begin_vertex>", "#include <begin_vertex>\nvRest = position;\nvRestN = normal;");
     sh.fragmentShader = sh.fragmentShader
       .replace("#include <common>", `#include <common>${head}${TOON_HEAD}`)
-      .replace("#include <map_fragment>", `#include <map_fragment>${TOON_BODY}${accessories}`)
+      .replace("#include <map_fragment>", `${(T.ShaderChunk as Record<string, string>).map_fragment.replace("texture2D( map, vMapUv )", "texture2D( map, vMapUv, uSmall.y )")}${TOON_BODY}${accessories}`)
       .replace("#include <lights_physical_pars_fragment>", lightsPars)
       // the shadow side: sky light a touch cooler (Style A's purple shadows)
       .replace("#include <lights_fragment_end>", "#include <lights_fragment_end>\nreflectedLight.indirectDiffuse *= vec3(0.9, 0.9, 1.06);")
@@ -319,10 +321,13 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
     // whatever the stadium's lamps do; an ink line on his silhouette in place of the hull outline
     // (no extra draw); never bright enough to bloom (the halo round white shorts).
     vec3 upV = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
-    vec3 hemi = mix(${v3(HOME_GROUND)}, ${v3(HOME_SKY)}, dot(normal, upV) * 0.5 + 0.5) * ${HOME_LIGHT.hemi.toFixed(2)} * vec3(0.9, 0.9, 1.06);
+    // a small man (uSmall.x, smallMen.ts flatCel): one sky tone and a hard sun step, no rim: 2 tones + the ink
+    float hK = uSmall.x > 0.5 ? 0.6 : dot(normal, upV) * 0.5 + 0.5;
+    vec3 hemi = mix(${v3(HOME_GROUND)}, ${v3(HOME_SKY)}, hK) * ${HOME_LIGHT.hemi.toFixed(2)} * vec3(0.9, 0.9, 1.06);
     float hSd = dot(normal, normalize(uHomeSun));
-    vec3 hl = diffuseColor.rgb * RECIPROCAL_PI * (hemi + toonStep(hSd) * ${v3(HOME_SUN)} * ${HOME_LIGHT.sun.toFixed(2)});
-    hl += step(0.72, tnF) * step(0.42, hSd) * 0.42 * vec3(1.0, 0.75, 0.45) * diffuseColor.rgb;
+    vec3 hSun = uSmall.x > 0.5 ? vec3(mix(0.45, 1.0, step(0.2, hSd))) : toonStep(hSd);
+    vec3 hl = diffuseColor.rgb * RECIPROCAL_PI * (hemi + hSun * ${v3(HOME_SUN)} * ${HOME_LIGHT.sun.toFixed(2)});
+    hl += (1.0 - uSmall.x) * step(0.72, tnF) * step(0.42, hSd) * 0.42 * vec3(1.0, 0.75, 0.45) * diffuseColor.rgb;
     hl *= 1.0 - 0.72 * smoothstep(0.80, 0.94, tnF) * uHome.y;
     outgoingLight = min(hl, vec3(uHome.z));
   }
@@ -332,5 +337,5 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
 // (real/post.ts menClean). Opaque, so the alpha is never blended; nothing else reads it.
 if (uHome.x > 0.5) gl_FragColor.a = 0.5;`);
   };
-  mat.customProgramCacheKey = () => "people3d-toon-v5";
+  mat.customProgramCacheKey = () => "people3d-toon-v6";
 }

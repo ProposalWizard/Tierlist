@@ -31,7 +31,7 @@ import { Governor, governedPixelRatio } from "../three3d/governor";
 import { installShadowCache } from "../three3d/shadowCache";
 import { cullSkinned } from "../three3d/cullPeople";
 import { withMeshopt } from "../three3d/meshopt";
-import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, type Person3D, type PersonLook } from "../people3d";
+import { loadPeople3d, makePerson3d, dressPerson3d, relaxHands, setToonBuild, setPeople3dOutlineRes, type Person3D, type PersonLook } from "../people3d";
 import { people3dLook } from "../look3d";
 import { matchPlayerStyle, matchPlayersStyleLook } from "./toon/matchLook";
 import { HOME_MATCH_BUILD } from "./toon/shader";
@@ -53,7 +53,11 @@ import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { bcPose } from "./broadcastCam";
 import { SIZE3D } from "./size3d";
-import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, type Match2DCamera } from "./match2dCam";
+import { SMALL_MEN } from "./smallMen";
+import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./camZoom";
+/** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
+const OPEN_DEFAULT_K = 0.85;
+import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -213,14 +217,15 @@ export async function createEngineView(container: HTMLElement, o: { def: StyleDe
   const { renderer, release } = acquireRenderer(THREE, container, prof);
   // the stadium's shadows drawn once and kept; the men from a lighter shadow body (three3d/shadowCache.ts)
   installShadowCache(THREE, renderer);
-  const dprCap = tier === "high" ? 2 : tier === "medium" ? 1.5 : 1.25; // never under 1.25 on a phone: smooth edges (9 Oct 2026)
+  const dprCap = tier === "high" || tier === "medium" ? SMALL_MEN.mediumDpr : 1.25; // Medium and High: 2.5 (Harry approved, 12 Oct 2026); // never under 1.25 on a phone: smooth edges (9 Oct 2026)
   renderer.setPixelRatio(Math.min(dprCap, window.devicePixelRatio || 1));
   // The governor (three3d/governor.ts): slow frames for 2.5 s → one rung down
   // (pixel ratio, then shadows and the post pass; look H reads the rung itself).
   const gov = new Governor({
     start: tier, name: "real game",
     onChange: (r) => {
-      renderer.setPixelRatio(governedPixelRatio(dprCap, r, window.devicePixelRatio || 1));
+      // the rung's ratio scaled to this tier's cap (Medium draws at SMALL_MEN.mediumDpr at its top rung)
+      renderer.setPixelRatio(governedPixelRatio(dprCap, { ...r, pixelRatio: r.pixelRatio * Math.max(1, dprCap / prof.maxPixelRatio) }, window.devicePixelRatio || 1));
       if (!h) renderer.shadowMap.enabled = prof.shadows && r.shadows !== "off";
     },
   });
@@ -565,13 +570,19 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   // ...and built like him: a bigger head and broader at this small size (a man is ~6% of the screen; HOME_MATCH_BUILD)
   const homeLook = homeMen ? HOME_MATCH_BUILD.look : undefined;
   if (o.def.real) void import("./real/ball").then(({ setHBallLightRing }) => setHBallLightRing(!homeMen)).catch(() => {});
-  const homeLight = (p: Person3D) => { const hu = (p.u as any).uHome?.value; if (hu) hu.x = homeMen ? 1 : 0; };
+  const homeLight = (p: Person3D) => {
+    const pu = p.u as any, hu = pu.uHome?.value;
+    if (hu) hu.x = homeMen ? 1 : 0;
+    // a small man reads cleanly (smallMen.ts): flat cel, a softer skin/hair picture, no kit weave at 35 px
+    if (pu.uSmall?.value) pu.uSmall.value.set(homeMen && SMALL_MEN.flatCel ? 1 : 0, homeMen ? SMALL_MEN.mapBias : 0, 0, 0);
+    if (pu.uCloth?.value && homeMen && !SMALL_MEN.kitNoise) { pu.uCloth.value.x = 0; pu.uCloth.value.y = 0; }
+  };
   const spareBins = new Map<string, Person3D[]>();
   const bin = (h?: ToonHead) => { const k = h ?? "-"; let l = spareBins.get(k); if (!l) { l = []; spareBins.set(k, l); } return l; };
   const spares = { push: (p: Person3D) => bin(p.toonHead).push(p), pop: () => Array.from(spareBins.values()).find((l) => l.length)?.pop() };
   let built = 0;
   const buildShell = (th?: ToonHead) => {
-    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonHead: toonOn ? (th ?? TOON_PLAYER_HEADS[built % TOON_PLAYER_HEADS.length]) : undefined, toonBody: toonOn ? "c1" : undefined, toonLook: homeLook });
+    const p = makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, outlinePx: homeMen && SMALL_MEN.outlinePx > 0 ? SMALL_MEN.outlinePx : undefined, castShadow: prof.shadows, toonHead: toonOn ? (th ?? TOON_PLAYER_HEADS[built % TOON_PLAYER_HEADS.length]) : undefined, toonBody: toonOn ? "c1" : undefined, toonLook: homeLook });
     if (fb) addClips(THREE, p, fb as any);
     homeLight(p);
     cullSkinned(THREE, p.root); // off-screen men are not drawn (three3d/cullPeople.ts)
@@ -653,7 +664,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const tb = toonOn ? (sid === "you" ? toonYou().body : ml ? ml.body : toonBodyFor(sid)) : undefined;
     const th = toonOn ? (sid === "you" ? toonYou().head : ml ? ml.head : toonHeadFor(sid)) : undefined;
     const spare = bin(th).pop();
-    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, castShadow: prof.shadows, toonBody: tb, toonHead: th, toonLook: homeLook });
+    const p = spare ?? makePerson3d(THREE, SK, model, animG, { outline: prof.outlines ? 0.005 : 0, outlinePx: homeMen && SMALL_MEN.outlinePx > 0 ? SMALL_MEN.outlinePx : undefined, castShadow: prof.shadows, toonBody: tb, toonHead: th, toonLook: homeLook });
     if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); homeLight(p); }
     if (tb) setToonBuild(p, tb);
     if (tb && homeMen) p.root.children[0]?.scale.multiply(new THREE.Vector3(...HOME_MATCH_BUILD.across)).multiply(new THREE.Vector3(1, ml?.height ?? 1, 1));
@@ -1260,6 +1271,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
 
   // ── the camera: the 2D canvas's tilt, as a pinhole (see the top of the file) ──
   const tmpV = new THREE.Vector3();
+  const outlineRes = new THREE.Vector2();
   let lean = 0;
   const down3 = new THREE.Vector3(0, 0, 1);
   /** `init`: the camera has been placed once (touch waits for it). */
@@ -1281,7 +1293,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * inside the nearest framed spot, so a stand between the camera and the pitch is
    * never drawn (Harry's corner still: the roof over two thirds of the screen).
    */
-  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "" };
+  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1 };
   /** The one absolute size (size3d.ts), which the set-piece camera frames around: never per chance. */
   const mScale = matchScale();
   /**
@@ -1303,7 +1315,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const placeMatch2D = (f: EngineFrame) => {
     const { viewport: vp, facing, tilt, W, H } = f.cam;
     if (!(W > 0 && H > 0)) return;
-    const sp = usesSetPieceCam(f.kind) && !!f.ball;
+    const corner = usesCornerCam(f.kind) && !!f.ball;
+    const sp = (usesSetPieceCam(f.kind) || corner) && !!f.ball;
     const key = `${f.kind}|${facing}|${tilt ? tilt.deg : 0}|${Math.round(W)}|${Math.round(H)}`;
     // a new set piece: a new ball spot while aiming (a shootout's next kick from the same spot keeps its camera)
     const spKey = sp && f.ball && f.phase === "aim" ? `${key}|${f.ball.x.toFixed(1)},${f.ball.y.toFixed(1)}` : m2.spKey;
@@ -1313,19 +1326,49 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (sp && f.ball && (spKey !== m2.spKey || !m2.sp)) {
       m2.spKey = spKey;
       const kp = f.keeper ? { x: f.keeper.x, y: f.keeper.y } : null;
-      m2.sp = solveSetPieceCam(fr2, setPieceKeep({ x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale), { x: f.ball.x, y: f.ball.y }, mScale);
+      // a corner: its own closer camera (match2dCam.ts CORNER_CAM), camera only
+      // the glide: start on B or C (seeded per corner), and keep the box framing (A) for after the kick
+      const glide = CORNER_CAM.pick === "glide";
+      m2.cornerStart = corner && glide ? CORNER_CAM.starts[hashOf(spKey) % CORNER_CAM.starts.length] : "";
+      m2.cornerA = corner && glide ? solveCornerCam(fr2, { x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale, "A") : null;
+      m2.cornerT0 = -1;
+      m2.sp = corner
+        ? solveCornerCam(fr2, { x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale, m2.cornerStart || undefined)
+        : solveSetPieceCam(fr2, setPieceKeep({ x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale), { x: f.ball.x, y: f.ball.y }, mScale, SET_PIECE_CAM, f.kind === "penalty" ? SET_PIECE_CAM.penaltyShare : SET_PIECE_CAM.targetShare);
     }
     if (!sp) { m2.sp = null; m2.spKey = ""; }
-    const c = sp && m2.sp ? m2.sp : key === m2.key && m2.pick ? solveMatch2D(fr2, MATCH2D, m2.pick) : solveMatch2D(fr2, MATCH2D);
+    // the whole scenario the 2D draws (its own frame): zoomed all the way out
+    const wide = key === m2.key && m2.pick ? solveMatch2D(fr2, MATCH2D, m2.pick) : solveMatch2D(fr2, MATCH2D);
     // the angle and lens are held through a chance; sizes are absolute (SIZE3D), never from c
-    if (key !== m2.key) { if (tv.init) gov.hush(performance.now()); m2.key = key; m2.pick = { elevDeg: c.elevDeg, fov: c.fov }; }
+    if (key !== m2.key) { if (tv.init) gov.hush(performance.now()); m2.key = key; m2.pick = { elevDeg: wide.elevDeg, fov: wide.fov }; }
+    // ZOOM (camZoom.ts; pinch, the Settings slider, the mouse wheel): 0 = the default framing (a set
+    // piece's own camera, else the 2D's frame a little closer), 1 = the whole scenario, -1 = closest.
+    // It only moves the camera; it keeps between chances.
+    const zoom = camZoom();
+    let def: Match2DCamera = sp && m2.sp ? m2.sp : { ...wide, D: wide.D * OPEN_DEFAULT_K, minDepth: wide.minDepth * OPEN_DEFAULT_K };
+    // the corner glide: from the kick, ease to the box framing (A) in CORNER_CAM.glideS, following where the ball will land
+    if (corner && m2.sp && m2.cornerA) {
+      const struck = f.phase !== "aim" && f.phase !== "runup" && f.phase !== "contact";
+      if (struck && m2.cornerT0 < 0) m2.cornerT0 = f.t;
+      if (!struck) m2.cornerT0 = -1;
+      if (m2.cornerT0 >= 0) {
+        const u = Math.min(1, (f.t - m2.cornerT0) / CORNER_CAM.glideS);
+        const e = u * u * (3 - 2 * u); // smooth step: eased in and out
+        const land = f.landing ?? (f.ball ? { x: f.ball.x, y: f.ball.y } : null);
+        const A = land ? { ...m2.cornerA, tx: m2.cornerA.tx + (land.x - CX - m2.cornerA.tx) * CORNER_CAM.followLanding * 0.5, tz: m2.cornerA.tz + (land.y - m2.cornerA.tz) * CORNER_CAM.followLanding * 0.5 } : m2.cornerA;
+        def = lerpCamera(m2.sp, A, e);
+      }
+    }
+    const cz = zoomCamera(def, wide, zoom);
+    const elevDeg = cz.elevDeg + camHeightTest(); // the camera-height test slider (0 in the game)
+    const c = { ...cz, elevDeg, elev: (elevDeg * Math.PI) / 180 };
     const pose = bcPose(c);
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
     camera.up.set(0, 1, 0);
     camera.lookAt(pose.look[0], 0, pose.look[2]);
     camera.fov = c.fov;
     camera.aspect = W / H;
-    camera.near = sp ? Math.max(0.3, c.minDepth * 0.3) : Math.max(0.1, c.minDepth * 0.8);
+    camera.near = sp && !corner && zoom < 0.5 ? Math.max(0.3, c.minDepth * 0.3) : Math.max(0.1, c.minDepth * 0.8); // a corner: nothing nearer than the framed men (the taker under the camera in A)
     camera.far = c.D + 500;
     camera.updateProjectionMatrix();
     down3.set(c.ax, 0, c.az);
@@ -1373,7 +1416,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const g = canvasToScreen(f.cam.tilt, sx, sy, f.cam.W, f.cam.H);
     return { x: r.left + g.X, y: r.top + g.Y };
   };
-  const touch = { id: -1, start3: { x: 0, y: 0 }, start2: { x: 0, y: 0 }, g0: { x: 0, y: 0 }, shot: false, mate: false, last: 0 };
+  const touch = { ev0: null as PointerEvent | null, id: -1, start3: { x: 0, y: 0 }, start2: { x: 0, y: 0 }, g0: { x: 0, y: 0 }, shot: false, mate: false, last: 0 };
   const send = (type: string, e: PointerEvent, at: { x: number; y: number }) => {
     const c = o.canvas2d;
     if (!c) return;
@@ -1433,7 +1476,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     return out;
   };
   const onDown = (e: PointerEvent) => {
-    if (!visible) return;
+    if (!visible || pinch.on) return;
     // One finger at a time — but a touch that never ended here (its "up" went
     // elsewhere) must never lock the pitch: the same pointer pressing again, or
     // a touch silent for a second, starts afresh. (The bug behind "stuck on
@@ -1446,7 +1489,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     e.preventDefault();
     try { container.setPointerCapture(e.pointerId); } catch { /* fine */ }
     const f = lastFrame;
-    touch.id = e.pointerId; touch.start3 = { x: e.clientX, y: e.clientY }; touch.start2 = at; touch.g0 = g;
+    touch.id = e.pointerId; touch.ev0 = e; touch.start3 = { x: e.clientX, y: e.clientY }; touch.start2 = at; touch.g0 = g;
     // a team-mate first (as the 2D game does: he takes priority over the ball)
     const mate = f?.phase === "aim" ? mateOnGlass(e.clientX, e.clientY) : null;
     const m2 = mate && to2dClient(mate);
@@ -1499,9 +1542,52 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     touch.id = -1;
     send(e.type === "pointercancel" ? "pointercancel" : "pointerup", e, at);
   };
+  // PINCH ZOOM (Harry, 12 Oct 2026). Two fingers down = zoom only. The second finger landing ends any
+  // one-finger touch first by taking it back to where it started and lifting it there: a zero-length
+  // drag, which the 2D game ignores (no kick; a team-mate pressed first gets his tap, an order).
+  const pinch = { pts: new Map<number, { x: number; y: number }>(), d0: 0, z0: 0, on: false };
+  const pinchDist = () => { const a = Array.from(pinch.pts.values()); return a.length < 2 ? 0 : Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); };
+  const onPinchDown = (e: PointerEvent) => {
+    if (!visible || e.pointerType !== "touch") return;
+    pinch.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch.pts.size < 2) return;
+    if (!pinch.on && touch.id !== -1 && touch.ev0) {
+      send("pointermove", touch.ev0, touch.start2);
+      send("pointerup", touch.ev0, touch.start2);
+      touch.id = -1;
+    }
+    pinch.on = true; pinch.d0 = Math.max(1, pinchDist()); pinch.z0 = camZoom();
+    try { container.setPointerCapture(e.pointerId); } catch { /* fine */ }
+    e.stopImmediatePropagation(); e.preventDefault();
+  };
+  const onPinchMove = (e: PointerEvent) => {
+    if (!pinch.pts.has(e.pointerId)) return;
+    pinch.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (!pinch.on) return;
+    // fingers apart = in (closer), together = out; a doubling of the gap is a full step of 1
+    if (pinch.pts.size >= 2) setCamZoom(pinch.z0 - Math.log2(Math.max(1, pinchDist()) / pinch.d0));
+    e.stopImmediatePropagation();
+  };
+  const onPinchUp = (e: PointerEvent) => {
+    if (!pinch.pts.delete(e.pointerId)) return;
+    if (!pinch.on) return;
+    if (pinch.pts.size === 0) pinch.on = false;
+    e.stopImmediatePropagation();
+  };
+  const onWheel = (e: WheelEvent) => {
+    if (!visible) return;
+    e.preventDefault();
+    setCamZoom(camZoom() + Math.sign(e.deltaY) * Math.min(0.25, Math.abs(e.deltaY) / 400));
+  };
   if (o.canvas2d) {
     container.style.pointerEvents = "auto";
     container.style.touchAction = "none";
+    // the pinch first, so a second finger never reaches the aim
+    container.addEventListener("pointerdown", onPinchDown);
+    container.addEventListener("pointermove", onPinchMove);
+    container.addEventListener("pointerup", onPinchUp);
+    container.addEventListener("pointercancel", onPinchUp);
+    container.addEventListener("wheel", onWheel, { passive: false });
     container.addEventListener("pointerdown", onDown);
     container.addEventListener("pointermove", onMove);
     container.addEventListener("pointerup", onUp);
@@ -1613,8 +1699,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       topUpSpares();
       const cw = container.clientWidth, ch = container.clientHeight;
       if (cw !== size.w || ch !== size.h) { size = { w: cw, h: ch }; renderer.setSize(Math.max(1, cw), Math.max(1, ch), false); }
+      { const db = renderer.getDrawingBufferSize(outlineRes); setPeople3dOutlineRes(THREE, db.x, db.y); } // the ink line keeps its screen pixels (smallMen.ts)
       lastFrame = f;
       placeCamera(f);
+      if ((window as unknown as { __ev3dDiag?: unknown }).__ev3dDiag) (window as unknown as { __ev3dProject?: unknown }).__ev3dProject = (x: number, y: number, z: number) => { tmpV.set(x - CX, z, y).project(camera); return { X: (tmpV.x * 0.5 + 0.5) * size.w, Y: (0.5 - tmpV.y * 0.5) * size.h }; };
       {
         // the rim light sits beyond the play, opposite the camera, low
         const lx = camera.position.x, lz = camera.position.z;
@@ -1758,6 +1846,11 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       svg.remove();
       canvas3d.removeEventListener("webglcontextlost", onLostEv);
       canvas3d.removeEventListener("webglcontextrestored", onRestoredEv);
+      container.removeEventListener("pointerdown", onPinchDown);
+      container.removeEventListener("pointermove", onPinchMove);
+      container.removeEventListener("pointerup", onPinchUp);
+      container.removeEventListener("pointercancel", onPinchUp);
+      container.removeEventListener("wheel", onWheel);
       container.removeEventListener("pointerdown", onDown);
       container.removeEventListener("pointermove", onMove);
       container.removeEventListener("pointerup", onUp);
