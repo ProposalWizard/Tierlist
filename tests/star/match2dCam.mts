@@ -22,7 +22,8 @@ import { tiltFor } from "../../lib/star/cameraTilt";
 import { solveBroadcast, actionPoints, bcProject, BROADCAST, type BcFigure, type BcPoint, type BcCamera } from "../../lib/star/style3d/broadcastCam";
 import { solveMatch2D, framedQuad, on2dScreen, pitchTo2dScreen, leanedManShare, leanFor, MATCH2D, MATCH_SCALES, MATCH_SCALE_PICK, matchScale, type Frame2D } from "../../lib/star/style3d/match2dCam";
 import fs from "node:fs";
-import { usesSetPieceCam, solveSetPieceCam, setPieceKeep, groundUnder } from "../../lib/star/style3d/match2dCam";
+import { usesSetPieceCam, solveSetPieceCam, setPieceKeep, groundUnder, dragRoomShare, SET_PIECE_CAM } from "../../lib/star/style3d/match2dCam";
+import { dragForFullPower, DRAG_LENGTH_SCALE } from "../../lib/star/canvasEngine";
 import { standBackFor, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP } from "../../lib/star/runupStyles";
 import { drawnTakerAt } from "../../lib/star/kickFoot";
 
@@ -143,7 +144,11 @@ if (isMain) {
   // THE SET-PIECE CAMERA (Harry: penalties and free kicks closer; every other kind as the 2D)
   ok(SCENARIO_KINDS.filter((k) => usesSetPieceCam(k)).sort().join() === "free_kick,penalty", "only penalties and free kicks get the closer camera");
   const spShares: number[] = [];
-  let spOff = 0, spDrag = 0, spN = 0;
+  let spOff = 0, spDrag = 0, spN = 0, spRoom = 0;
+  const rooms: number[] = [];
+  // the 2D's longest full-power drag on this phone, px (a fraction of the classic 5:8 canvas: 1.6 × width)
+  const fullDragPx = dragForFullPower(0) * 1.6 * W;
+  ok(Math.abs(dragForFullPower(0) / (0.14 * DRAG_LENGTH_SCALE) - 1) < 1e-9 && Math.abs(SET_PIECE_CAM.dragRoomW - 0.03 - dragForFullPower(0) * 1.6) < 1e-9, `the set-piece camera's drag room matches the 2D's full-power drag (${fullDragPx.toFixed(0)} px on a ${W} px wide box)`);
   const fixedS = matchScale();
   for (const kind of ["penalty", "free_kick"]) for (let seed = 1; seed <= 6; seed++) {
     const c = chanceFor(kind, seed);
@@ -157,12 +162,17 @@ if (isMain) {
     for (const p of keep) { const r = bcProject(cam, W, H, p); if (r.depth <= 0.3 || Math.abs(r.nx) > 1 || r.fr < 0 || r.fr > 1) { spOff++; break; } }
     // the drag: a finger on the ball's picture finds the ball's own spot on the grass (the 3D view's touch → 2D mapping)
     const b = bcProject(cam, W, H, c.sc.ball);
+    const below = (1 - b.fr) * H;
+    rooms.push(below);
+    if (below < fullDragPx || b.fr > 1 - dragRoomShare(W, H) + 1e-6) spRoom++;
     const g = groundUnder(cam, W, H, b.nx, 1 - 2 * b.fr);
     if (!g || Math.hypot(g.x - c.sc.ball.x, g.y - c.sc.ball.y) > 0.05) spDrag++;
   }
   console.log(`set-piece camera: a man at the ball ${(pct(spShares, 0) * 100).toFixed(1)}–${(pct(spShares, 1) * 100).toFixed(1)}% of the height (median ${(pct(spShares, 0.5) * 100).toFixed(1)}%), ${spN} chances`);
   ok(spOff === 0, `ball, taker, keeper, the whole goal and the wall on screen in every penalty and free kick (${spOff} not)`);
   ok(pct(spShares, 0.5) >= 0.045 && pct(spShares, 1) <= 0.065, "taker readable: about 5–6% of the screen's height (camera distance only)");
+  console.log(`room below the ball for the drag: ${Math.min(...rooms).toFixed(0)}–${Math.max(...rooms).toFixed(0)} px (a full-power drag needs ${fullDragPx.toFixed(0)} px)`);
+  ok(spRoom === 0, `a full-power drag back always fits below the ball on penalties and free kicks (${spRoom} short)`);
   ok(spDrag === 0, `the ball's spot on the glass maps back to the ball on the grass (the drag), ${spDrag} off`);
   if (fails) { console.error(`${fails} failed`); process.exit(1); }
 }

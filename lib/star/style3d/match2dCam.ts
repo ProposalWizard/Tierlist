@@ -307,7 +307,16 @@ export const SET_PIECE_CAM = {
   targetShare: 0.055,
   /** Room at every edge, share of the screen (the goal's posts, the taker's feet). */
   margin: 0.04,
+  /**
+   * Free pitch below the ball for a full-power drag back, as a share of the screen's WIDTH:
+   * the 2D's longest full-power drag (dragForFullPower at power 0 = 0.14 × DRAG_LENGTH_SCALE 0.75
+   * = 0.105 of the classic 5:8 canvas height, i.e. 0.168 of the width), plus a finger's room.
+   */
+  dragRoomW: 0.168 + 0.03,
 };
+
+/** The free pitch below the ball the drag needs, as a share of the screen's height. */
+export function dragRoomShare(W: number, H: number, S = SET_PIECE_CAM): number { return (S.dragRoomW * W) / Math.max(1, H); }
 
 type SpCam = Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov"> & { minDepth: number; elevDeg: number };
 export function usesSetPieceCam(kind: string): boolean { return SET_PIECE_CAM.kinds.includes(kind); }
@@ -366,8 +375,19 @@ export function fitPoints(W: number, H: number, pts: BcPoint[], ax: number, az: 
 export function solveSetPieceCam(f: Frame2D, keep: BcPoint[], ball: BcPoint, man: MatchScale, S = SET_PIECE_CAM): Match2DCamera {
   const { ax, az } = azimuth2D(f.facing);
   let best: (SpCam & { share: number }) | null = null, bestScore = Infinity;
+  // a full drag back must fit under the ball: if the ball sits too low, keep a spot of grass
+  // further towards the camera on screen too (the camera backs off / slides; nothing is scaled)
+  const room = dragRoomShare(f.W, f.H, S);
+  const withRoom = (e: number, fov: number, minD?: number) => {
+    let pts = keep, c = fitPoints(f.W, f.H, pts, ax, az, e, fov, S.margin, minD);
+    for (let i = 0, d = 1; i < 24 && bcProject(c, f.W, f.H, ball).fr > 1 - S.margin - room; i++, d += 1) {
+      pts = [...keep, { x: ball.x + ax * d, y: ball.y + az * d, z: 0 }];
+      c = fitPoints(f.W, f.H, pts, ax, az, e, fov, S.margin, minD);
+    }
+    return c;
+  };
   for (const e of S.elevs) for (const fov of S.fovs) {
-    let c = fitPoints(f.W, f.H, keep, ax, az, e, fov, S.margin);
+    let c = withRoom(e, fov);
     const lean = man.lean ? leanFor(e) : 0;
     let share = leanedManShare(c, f.W, f.H, ball, MATCH2D.manH * man.man, lean);
     // closer than the target needs: back off (more room round the action), the angle and lens kept
@@ -375,10 +395,10 @@ export function solveSetPieceCam(f: Frame2D, keep: BcPoint[], ball: BcPoint, man
       let lo = c.D, hi = c.D * 4;
       for (let i = 0; i < 30; i++) {
         const m = (lo + hi) / 2;
-        const cm = fitPoints(f.W, f.H, keep, ax, az, e, fov, S.margin, m);
+        const cm = withRoom(e, fov, m);
         if (leanedManShare(cm, f.W, f.H, ball, MATCH2D.manH * man.man, lean) > S.targetShare) lo = m; else hi = m;
       }
-      c = fitPoints(f.W, f.H, keep, ax, az, e, fov, S.margin, hi);
+      c = withRoom(e, fov, hi);
       share = leanedManShare(c, f.W, f.H, ball, MATCH2D.manH * man.man, lean);
     }
     const score = Math.abs(share - S.targetShare) + Math.abs(e - 50) * 0.0004;
