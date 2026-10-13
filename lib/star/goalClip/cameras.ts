@@ -7,6 +7,9 @@
  *    replay cuts to.
  *  - "fan": a phone held up in the end stand by the corner flag, portrait,
  *    a little shaky, shakier when it goes in.
+ *  - "match": the main camera for a whole match (the full-match replay,
+ *    /star-sim90-dev) — high in the main stand on the halfway line, panning
+ *    to follow the ball the length of the pitch.
  *
  * Every camera is a function of the recording and the clip time only: no state
  * carried from frame to frame, no random numbers drawn at draw time. The same
@@ -19,7 +22,7 @@ import { CX, PITCH_W } from "../pitch";
 import { frameAt, trackDuration, type GoalTrack } from "./track";
 import type { StandId } from "./scene";
 
-export type ClipAngle = "tv" | "net" | "fan" | "high" | "side" | "tight";
+export type ClipAngle = "tv" | "net" | "fan" | "high" | "side" | "tight" | "match";
 
 export interface Rig {
   cam: FpCamera;
@@ -76,6 +79,20 @@ export function rigFor(track: GoalTrack, angle: ClipAngle, t: number, W: number,
     const l = look(pos, target);
     // How much pitch the picture spans across, metres, at the target.
     const span = Math.max(24, Math.min(46, toGoal * 0.9 + 18));
+    return {
+      cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: (W * l.dist) / span, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
+      roll: 0,
+      skip: ["near"],
+    };
+  }
+  if (angle === "match") {
+    // High on the halfway line, panning with the ball (a slow, wide follow
+    // so a pass doesn't whip the picture round).
+    const pos = { x: -34, y: 52.5, eye: 26 };
+    const ball = smoothBall(track, t, -1.6, 1.0, 10);
+    const target = { x: Math.max(8, Math.min(PITCH_W - 10, ball.x * 0.7 + CX * 0.3)), y: Math.max(14, Math.min(91, ball.y)), z: 0 };
+    const l = look(pos, target);
+    const span = 46;
     return {
       cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: (W * l.dist) / span, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
       roll: 0,
