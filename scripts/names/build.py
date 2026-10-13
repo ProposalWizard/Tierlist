@@ -78,18 +78,36 @@ counters = {n: (native(F, GF), native(L, GL), p) for n, (F, L, p) in counters.it
 # Nations with few players on record are topped up from their neighbours
 # (their own names count three times as much, so they still lead).
 NEIGHBOURS = {
+  # Under 40 players on record, or under 80 surnames / 50 first names: topped up.
   "Tahiti": ["New Caledonia", "Samoa"], "Cook Islands": ["Samoa", "Tonga"], "Guam": ["Philippines", "United States"],
-  "Cayman Islands": ["Jamaica"], "Macau": ["Hong Kong"], "Montserrat": ["Antigua and Barbuda", "Saint Kitts and Nevis"],
-  "Djibouti": ["Somalia", "Eritrea"], "São Tomé and Príncipe": ["Cape Verde", "Angola"],
-  "Turks and Caicos Islands": ["Bahamas", "Jamaica"], "US Virgin Islands": ["Saint Kitts and Nevis", "Antigua and Barbuda"],
-  "Tonga": ["Samoa", "Cook Islands"], "British Virgin Islands": ["Antigua and Barbuda", "Saint Kitts and Nevis"],
-  "Dominica": ["Saint Lucia", "Grenada"], "Eswatini": ["South Africa", "Lesotho"],
+  "Cayman Islands": ["Jamaica", "Bahamas"], "Macau": ["Hong Kong", "China PR"], "Montserrat": ["Antigua and Barbuda", "Saint Kitts and Nevis", "Jamaica"],
+  "Djibouti": ["Somalia", "Eritrea", "Ethiopia"], "São Tomé and Príncipe": ["Cape Verde", "Angola"],
+  "Turks and Caicos Islands": ["Bahamas", "Jamaica"], "US Virgin Islands": ["Saint Kitts and Nevis", "Antigua and Barbuda", "Jamaica"],
+  "Tonga": ["Samoa", "Cook Islands"], "British Virgin Islands": ["Antigua and Barbuda", "Saint Kitts and Nevis", "Jamaica"],
+  "Dominica": ["Saint Lucia", "Grenada", "Trinidad and Tobago"], "Eswatini": ["South Africa", "Lesotho"],
+  "Bahamas": ["Jamaica", "Trinidad and Tobago"], "Saint Vincent and the Grenadines": ["Trinidad and Tobago", "Grenada", "Barbados"],
+  "Anguilla": ["Antigua and Barbuda", "Saint Kitts and Nevis", "Jamaica"], "Somalia": ["Djibouti", "Ethiopia", "Kenya"],
+  "Timor-Leste": ["Indonesia", "Portugal"], "Puerto Rico": ["Dominican Republic", "Cuba", "Venezuela"],
+  "Nicaragua": ["Honduras", "El Salvador", "Costa Rica"], "Aruba": ["Curacao", "Suriname"], "Bhutan": ["Nepal", "India"],
+  "Hong Kong": ["China PR", "Macau"], "Grenada": ["Trinidad and Tobago", "Saint Lucia", "Barbados"], "Korea DPR": ["Korea Republic"],
+  "Belize": ["Honduras", "Jamaica", "Guatemala"], "Antigua and Barbuda": ["Jamaica", "Saint Kitts and Nevis", "Trinidad and Tobago"],
+  "Saint Lucia": ["Trinidad and Tobago", "Grenada", "Dominica"], "Samoa": ["Tonga", "New Zealand"], "Seychelles": ["Mauritius", "Madagascar"],
+  "Chinese Taipei": ["China PR", "Hong Kong"], "Guyana": ["Trinidad and Tobago", "Suriname", "Jamaica"],
+  "Barbados": ["Trinidad and Tobago", "Jamaica"], "Nepal": ["India", "Bhutan"], "Brunei": ["Malaysia", "Singapore"],
+  "Myanmar": ["Thailand", "Laos"], "Eritrea": ["Ethiopia", "Sudan"], "Maldives": ["Sri Lanka", "Bangladesh"],
+  "Saint Kitts and Nevis": ["Antigua and Barbuda", "Jamaica", "Trinidad and Tobago"], "Cape Verde": ["Guinea-Bissau", "Portugal", "São Tomé and Príncipe"],
+  "Papua New Guinea": ["Solomon Islands", "Vanuatu", "Fiji"], "Dominican Republic": ["Cuba", "Venezuela", "Puerto Rico"],
+  "Bermuda": ["Jamaica", "Bahamas"], "Mongolia": ["Kyrgyzstan", "Kazakhstan"], "Solomon Islands": ["Vanuatu", "Papua New Guinea", "Fiji"],
+  "Gibraltar": ["England", "Spain"], "New Caledonia": ["Vanuatu", "Tahiti", "France"], "Chad": ["Cameroon", "Niger", "Central African Republic"],
+  "Vanuatu": ["Solomon Islands", "New Caledonia", "Fiji"], "Yemen": ["Oman", "Saudi Arabia"], "Andorra": ["Spain", "France"],
+  "Mauritius": ["Seychelles", "Madagascar", "Réunion"], "Central African Republic": ["Cameroon", "Congo", "Chad"],
+  "Philippines": ["Guam", "Indonesia", "Spain"], "San Marino": ["Italy"], "Bahrain": ["Saudi Arabia", "Kuwait", "Qatar"],
 }
 for n, (F, L, people) in counters.items():
     f2, l2 = collections.Counter(), collections.Counter()
     for x, c in F.items(): f2[x] += 3 * c
     for x, c in L.items(): l2[x] += 3 * c
-    for nb in NEIGHBOURS.get(n, []):
+    for nb in [x for x in NEIGHBOURS.get(n, []) if x in counters]:
         for x, c in counters[nb][0].most_common(60): f2[x] += c
         for x, c in counters[nb][1].most_common(100): l2[x] += c
     out[n] = {"f": [x for x, _ in f2.most_common(100)], "l": [x for x, _ in l2.most_common(160)], "players": people,
