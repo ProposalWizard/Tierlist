@@ -202,6 +202,9 @@ import { spriteKickStrikeT, keeperDiveClip, spriteClipReady, spriteClipFps, spri
 import { outfieldSpriteClip, keeperDiveClipNew, keeperStandingClip, keeperGetUpT, sideOfDive } from "@/lib/star/sprite3dAnim";
 import { POST_L, POST_R } from "@/lib/star/pitch";
 import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt } from "@/lib/star/cameraTilt";
+
+/** The net's drawn depth from the side, metres: a real goal's ~2 m. */
+const SIDE_NET_DEPTH = 2.0;
 import { cam2dSwipeOn, useCam2dSwipe } from "@/lib/star/cam2dSwipe";
 import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
@@ -3340,7 +3343,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     //
     // Drawn by lib/star/matchGoal.ts — moved there unchanged so the gallery,
     // its editor and Infinite Highlights draw exactly this goal too (v0.15).
-    if (sceneRef.current?.goal !== false) drawMatchGoal(ctx, P, unit, heightScale);
+    if (sceneRef.current?.goal !== false) {
+      // Posts stand straight on the tipped-back screen (Mikey, 13 Oct 2026).
+      // The goal is drawn in the canvas's own pixels; the tilt works in
+      // fractions of it. The top keeps its height on screen and moves to
+      // straight above the foot.
+      const tg = tiltGeomRef.current;
+      const cw = canvasRef.current?.width ?? 0, chh = canvasRef.current?.height ?? 0;
+      const upright = tg && cw > 0 && chh > 0 ? (foot: { px: number; py: number }, top: { px: number; py: number }) => {
+        const F = canvasToScreen(tg, foot.px / cw, foot.py / chh, tg.W, tg.H);
+        const T = canvasToScreen(tg, top.px / cw, top.py / chh, tg.W, tg.H);
+        const q = screenToCanvas(tg, F.X, T.Y, tg.W, tg.H);
+        return { px: q.sx * cw, py: q.sy * chh };
+      } : undefined;
+      // From the side the net is drawn a real goal's depth (Mikey, 13 Oct 2026).
+      const sideOn = facingRef.current === "left" || facingRef.current === "right";
+      drawMatchGoal(ctx, P, unit, heightScale, upright, sideOn ? SIDE_NET_DEPTH : undefined);
+    }
 
     // ── What you can SEE ──
     //

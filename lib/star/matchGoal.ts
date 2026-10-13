@@ -38,14 +38,29 @@ export function drawMatchGoal(
   P: (x: number, y: number) => GoalPt,
   unit: number,
   heightScale: number,
+  /** Stands a post up on the SCREEN: given its foot and its top as drawn,
+   *  where the top must be drawn so that, once the picture is tipped back
+   *  (cameraTilt.ts), the post is straight above its foot. Without it, a
+   *  goal off to one side had one post leaning out (Mikey's review, 13 Oct
+   *  2026, 06:38: "this is a bent post compared to this post"). */
+  upright?: (foot: GoalPt, top: GoalPt) => GoalPt,
+  /** How deep the net is DRAWN, in metres (the ball's own net stays
+   *  NET_DEPTH). The side view uses a real goal's ~2 m: at 1.2 m the net was
+   *  a thin strip from the side (Mikey's review, 13 Oct 2026, 11:25: "it
+   *  doesn't have any depth … the goal would normally go to about here"). */
+  depth: number = NET_DEPTH,
 ): void {
   const hpx = GOAL_H * heightScale;
+  const up = (foot: GoalPt): GoalPt => {
+    const top = { px: foot.px, py: foot.py - hpx };
+    return upright ? upright(foot, top) : top;
+  };
   const bl = P(POST_L, 0), br = P(POST_R, 0);                 // feet of the posts
-  const tl = { px: bl.px, py: bl.py - hpx };                  // top of the near post
-  const tr = { px: br.px, py: br.py - hpx };
-  const rl = P(POST_L, -NET_DEPTH), rr = P(POST_R, -NET_DEPTH); // feet at the back
-  const ul = { px: rl.px, py: rl.py - hpx };                  // and the back frame
-  const ur = { px: rr.px, py: rr.py - hpx };
+  const tl = up(bl);                                          // top of the near post
+  const tr = up(br);
+  const rl = P(POST_L, -depth), rr = P(POST_R, -depth);       // feet at the back
+  const ul = up(rl);                                          // and the back frame
+  const ur = up(rr);
 
   type Pt = GoalPt;
   const path = (q: Pt[]) => {
