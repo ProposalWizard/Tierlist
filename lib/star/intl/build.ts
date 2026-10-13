@@ -6,6 +6,7 @@
  * Everything is added to the World as matches with dates, and as events that
  * run the day after a stage ends (that is when the next stage is known).
  */
+import knockoutTables from "../../../data/fifa/knockout-tables.json";
 import {
   type LevelRule, type TieBreak, type Row, table, rankAcrossGroups, singleRoundRobin,
   doubleRoundRobin, winnerOf, loserOf, twoLegWinner, played,
@@ -52,11 +53,13 @@ export interface GroupStageSpec {
   label?: string;
   neutral?: boolean;
   hosts?: string[];
+  /** Own fixture list per group (each inner array is one round). */
+  schedule?: (teams: string[], group: string) => [string, string][][];
 }
 
 export function groupStage(w: World, s: GroupStageSpec): void {
   for (const [g, teams] of Object.entries(s.groups)) {
-    let days = s.rounds === "double" ? doubleRoundRobin(teams) : singleRoundRobin(teams);
+    let days = s.schedule ? s.schedule(teams, g) : s.rounds === "double" ? doubleRoundRobin(teams) : singleRoundRobin(teams);
     if (s.maxRounds) days = days.slice(0, s.maxRounds);
     if (days.length > s.dates.length) {
       throw new Error(`${s.edition} group ${g}: ${days.length} rounds, ${s.dates.length} dates`);
@@ -260,16 +263,53 @@ export function bracket(w: World, s: BracketSpec, entrants: string[], onDone?: (
  * Pair the group-stage qualifiers for the first knockout round.
  * Winners play the best third-placed teams first (from other groups), then
  * runners-up; the runners-up left play each other. Pairs are laid into the
- * bracket so the group winners are spread across it (a simplification of the
- * fixed tables FIFA and UEFA publish; flagged in the plan).
+ * bracket so the group winners are spread across it. Used where no real table
+ * applies (the tournaments with real tables use realLayout above).
  */
-export function pairQualifiers(w: World, tables: Record<string, Row[]>, thirds: number): string[] {
+/**
+ * THE REAL KNOCKOUT TABLES (Mikey, 12 Oct 2026: "use FIFA's exact table").
+ * When the best third-placed teams go through, FIFA and UEFA fix in their
+ * rules who each one plays, by which groups they came from:
+ *   wc48   — World Cup from 2026: 12 groups, 8 thirds, 495 combinations
+ *            (FIFA regulations Annex C), round of 32 in FIFA's order;
+ *   euro24 — the Euro: 6 groups, 4 thirds, 15 combinations;
+ *   afc24  — the Asian Cup, and the Africa Cup of Nations (CAF's own table
+ *            is not online; it matched the real 2023 AFCON draw).
+ * data/fifa/knockout-tables.json. `order` is the bracket from top to bottom
+ * ("1E-3" = winner of E against a third), so neighbours meet in the next round.
+ */
+export type KnockoutLayout = "wc48" | "euro24" | "afc24";
+const LAYOUTS = knockoutTables as unknown as Record<KnockoutLayout, { winners: string[]; order: string[]; table: Record<string, string[]> }>;
+
+export function realLayout(tables: Record<string, Row[]>, layout: KnockoutLayout, thirdsRanked: string[], groupOf: Map<string, string>): string[] | null {
+  const L = LAYOUTS[layout];
+  const groups = Object.keys(tables).sort();
+  if (!L || groups.length !== (layout === "wc48" ? 12 : 6) || groups.some((g, i) => g !== "ABCDEFGHIJKL"[i])) return null;
+  const key = thirdsRanked.map((t) => groupOf.get(t)!).sort().join("");
+  const row = L.table[key];
+  if (!row) return null;
+  const third = new Map(L.winners.map((wl, i) => [wl, tables[row[i]][2].name]));
+  const at = (code: string, winner: string): string => {
+    if (code === "3") return third.get(winner)!;
+    return tables[code[1]][code[0] === "1" ? 0 : 1].name;
+  };
+  return L.order.flatMap((m) => {
+    const [a, b] = m.split("-");
+    return [at(a, a[1]), at(b, a[1])];
+  });
+}
+
+export function pairQualifiers(w: World, tables: Record<string, Row[]>, thirds: number, layout?: KnockoutLayout): string[] {
   const groups = Object.keys(tables);
   const W = groups.map((g) => tables[g][0].name);
   const R = groups.map((g) => tables[g][1].name);
   const groupOf = new Map<string, string>();
   for (const g of groups) for (const r of tables[g]) groupOf.set(r.name, g);
   const T = placed(w, tables, 2).slice(0, thirds).map((r) => r.name);
+  if (layout && thirds > 0) {
+    const real = realLayout(tables, layout, T, groupOf);
+    if (real) return real;
+  }
   const pairs: [string, string][] = [];
   if (thirds === 0) {
     // A1 v B2, B1 v A2, C1 v D2 …
@@ -348,7 +388,7 @@ export function tournament(w: World, s: TournamentSpec, onDone?: (r: BracketResu
       edition: s.edition, comp: s.comp, names: s.names, dates: s.koDates, importance: s.koImportance,
       level: s.level ?? "et-pens", finalLevel: s.finalLevel, neutral: true, finalsKnockout: true,
       hosts: s.hosts, thirdPlace: s.thirdPlace,
-    }, pairQualifiers(w, tables, s.thirds), (r) => {
+    }, pairQualifiers(w, tables, s.thirds, s.thirds === 8 ? "wc48" : s.thirds === 4 ? (s.comp === "European Championship" ? "euro24" : "afc24") : undefined), (r) => {
       w.facts.set(`${s.edition}:result`, r);
       onDone?.(r);
     });

@@ -3,6 +3,8 @@ import { resolveSeasonWinners } from "./careerFlow";
 import { divisionOf, leagueNameFor } from "./calendar";
 import { leagueMultiplierFor } from "./clubLeagues";
 import { mulberry32 } from "./season";
+import { intlSeason, intlTallyOf, tallyKey, type IntlSeason } from "./intl/scorers";
+import { nationFor } from "./intl/nations";
 
 /**
  * THE BALLON D'OR SHORTLIST.
@@ -126,6 +128,9 @@ export interface BallonDorEntry {
   ratingIsReal: boolean;
   trophies: string[];
   score: number;
+  /** Of `goals`/`assists`, how many were for his country this season. */
+  intlGoals?: number;
+  intlAssists?: number;
   /** His real photo, when the database has one — see LeaguePlayer.image.
    *  Your own is `career.player.portrait`. Absent for a generated squad or
    *  an unphotographed player; the UI falls back to the silhouette. */
@@ -136,7 +141,10 @@ interface Candidate {
   name: string; club: string; overall: number;
   goals: number; assists: number;
   rating: number; ratingIsReal: boolean;
-  starMan: number;
+  /** International goals and assists this season (already inside goals/assists). */
+  intlGoals: number; intlAssists: number;
+  /** A World Cup or Euro won with his nation this season (rivals; yours is in career.trophies). */
+  nationTrophy?: string;
   isPlayer: boolean;
   image?: string;
 }
@@ -190,31 +198,44 @@ function clubNameHash(s: string): number {
   return h >>> 0;
 }
 
-function you(career: CareerState): Candidate {
+function you(career: CareerState, intl: IntlSeason | null): Candidate {
   const stats = career.seasonStats;
   const avgRating = stats.ratingCount > 0 ? stats.totalRating / stats.ratingCount : 0;
+  const ig = intl?.you.goals ?? 0, ia = intl?.you.assists ?? 0;
   return {
     name: `${career.player.firstName} ${career.player.lastName}`,
     club: career.player.club,
     overall: 0, // unused — you always get your real rating, never the proxy
-    goals: stats.goals, assists: stats.assists,
+    goals: stats.goals + ig, assists: stats.assists + ia,
     rating: avgRating, ratingIsReal: stats.ratingCount > 0,
-    starMan: stats.starMan,
+    intlGoals: ig, intlAssists: ia,
     isPlayer: true,
     image: career.player.portrait,
   };
 }
 
-function domesticRivals(career: CareerState): Candidate[] {
+/** A rival's international season: his goals and assists for his country,
+ *  and a World Cup or Euro if his nation won one with him in the squad. */
+function intlPart(intl: IntlSeason | null, nation: string | undefined, name: string): Pick<Candidate, "intlGoals" | "intlAssists" | "nationTrophy"> {
+  if (!intl) return { intlGoals: 0, intlAssists: 0 };
+  const t = intlTallyOf(intl, nation, name);
+  const n = nation ? nationFor(nation)?.name : undefined;
+  const comp = n ? intl.champions.get(n) : undefined;
+  const won = comp && n && intl.championSquads.has(tallyKey(n, name)) ? comp : undefined;
+  return { intlGoals: t.goals, intlAssists: t.assists, ...(won ? { nationTrophy: won } : {}) };
+}
+
+function domesticRivals(career: CareerState, intl: IntlSeason | null): Candidate[] {
   const out: Candidate[] = [];
   for (const sq of career.leagueSquads ?? []) {
     if (sq.club === career.player.club) continue; // that is you, above
     for (const p of sq.players) {
+      const ip = intlPart(intl, p.nation, p.name);
       out.push({
         name: p.name, club: sq.club, overall: p.overall,
-        goals: p.goals, assists: p.assists,
+        goals: p.goals + ip.intlGoals, assists: p.assists + ip.intlAssists,
         rating: ratingProxy(p.overall), ratingIsReal: false,
-        starMan: 0, isPlayer: false,
+        ...ip, isPlayer: false,
         image: p.image,
       });
     }
@@ -225,17 +246,18 @@ function domesticRivals(career: CareerState): Candidate[] {
 /** The other nineteen's OWN best XI is real too — a teammate on your bench
  *  is not a Ballon d'Or contender, but the real names on the other clubs'
  *  team sheets are exactly the rivals the shortlist should be full of. */
-function internationalRivals(career: CareerState, season: number): Candidate[] {
+function internationalRivals(career: CareerState, season: number, intl: IntlSeason | null): Candidate[] {
   const out: Candidate[] = [];
   for (const sq of career.externalSquads ?? []) {
     const best = [...sq.players].sort((a, b) => b.overall - a.overall)[0];
     if (!best) continue;
     const sim = simulatedSeasonFor({ id: `${sq.club}:${best.id}`, overall: best.overall, position: best.position }, season);
+    const ip = intlPart(intl, best.nation, best.name);
     out.push({
       name: best.name, club: sq.club, overall: best.overall,
-      goals: sim.goals, assists: sim.assists,
+      goals: sim.goals + ip.intlGoals, assists: sim.assists + ip.intlAssists,
       rating: ratingProxy(best.overall), ratingIsReal: false,
-      starMan: 0, isPlayer: false,
+      ...ip, isPlayer: false,
       image: best.image,
     });
   }
@@ -245,8 +267,13 @@ function internationalRivals(career: CareerState, season: number): Candidate[] {
 // ── Scoring ──────────────────────────────────────────────────────────────
 
 /**
- * goals × 4  +  assists × 2  +  average rating × 10  +  Star Man × 3
- * + trophy points, all multiplied by the club's league strength.
+ * goals × 4  +  assists × 2  +  average rating × 10  +  trophy points, all
+ * multiplied by the club's league strength. Goals and assists are club and
+ * country together (intl/scorers.ts names every international goal in the
+ * world, so rivals' count the same way yours do).
+ *
+ * Star Man is not in it (Mikey, 12 Oct 2026: "you are the only player that
+ * can receive Starman … it just is a favour to you"). It was × 3.
  *
  * The international trophy — a World Cup or a European Championship — is
  * the one exception folded in separately here rather than in
@@ -256,9 +283,10 @@ function internationalRivals(career: CareerState, season: number): Candidate[] {
  */
 function scoreOf(c: Candidate, world: WorldTrophy[], internationalPoints: number): { score: number; trophyNames: string[] } {
   const club = trophyPointsFor(c.club, world);
-  const trophyPoints = club.points + (c.isPlayer ? internationalPoints : 0);
-  const base = c.goals * 4 + c.assists * 2 + c.rating * 10 + c.starMan * 3 + trophyPoints;
-  return { score: base * leagueMultiplierFor(c.club), trophyNames: club.names };
+  const nation = c.isPlayer ? internationalPoints : c.nationTrophy ? TROPHY_POINTS[c.nationTrophy] ?? 0 : 0;
+  const trophyPoints = club.points + nation;
+  const base = c.goals * 4 + c.assists * 2 + c.rating * 10 + trophyPoints;
+  return { score: base * leagueMultiplierFor(c.club), trophyNames: c.nationTrophy ? [...club.names, c.nationTrophy] : club.names };
 }
 
 export interface BallonDorResult {
@@ -319,10 +347,14 @@ export function computeBallonDorShortlist(career: CareerState): BallonDorResult 
   const internationalTrophyPoints = yourInternationalTrophies
     .reduce((sum, t) => sum + (TROPHY_POINTS[t.competition] ?? 0), 0);
 
+  // Every international goal this season, named (intl/scorers.ts). A save
+  // with no international world yet (or a broken one) simply adds nothing.
+  let intl: IntlSeason | null = null;
+  try { intl = intlSeason(career); } catch { intl = null; }
   const pool: Candidate[] = [
-    you(career),
-    ...domesticRivals(career),
-    ...internationalRivals(career, career.season),
+    you(career, intl),
+    ...domesticRivals(career, intl),
+    ...internationalRivals(career, career.season, intl),
   ];
 
   const reach = ballonDorReach(career, pool);
@@ -354,6 +386,7 @@ export function computeBallonDorShortlist(career: CareerState): BallonDorResult 
       ? [...t.trophyNames, ...yourInternationalTrophies.map(tr => tr.competition)]
       : t.trophyNames,
     score: Math.round(t.score),
+    intlGoals: t.c.intlGoals, intlAssists: t.c.intlAssists,
     image: t.c.image,
   }));
 

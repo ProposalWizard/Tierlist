@@ -480,6 +480,12 @@ interface Props {
    * Absent — every real match — nothing here changes.
    */
   farewell?: { offAt: number; onOvation?: (minute: number) => void };
+  /**
+   * A planned change (international friendlies, Mikey 12 Oct 2026): you start
+   * and the manager takes you off at this minute to look at other players.
+   * The ordinary substitution rules still apply before it.
+   */
+  plannedOffAt?: number;
 }
 
 
@@ -724,7 +730,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
  *  Most first chances come by 7' (measured); a later one is read out. */
 const QUICK_START_MAX = 12;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell, plannedOffAt }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -1438,6 +1444,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** See the `farewell` prop. */
   const farewellRef = useRef(farewell);
   farewellRef.current = farewell;
+  const plannedOffRef = useRef(plannedOffAt);
+  plannedOffRef.current = plannedOffAt;
   /** The farewell: the minute you came off to the standing ovation. */
   const [ovation, setOvation] = useState<number | null>(null);
   // The ovation waits for the commentary to reach that minute: the match
@@ -6201,6 +6209,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const e = liveEnergyAt(st.minute);
       if (perMin > 0) offAt = e <= SUB_OFF_ENERGY ? st.minute : st.minute + Math.ceil((e - SUB_OFF_ENERGY) / perMin);
     }
+    // A planned change (a friendly): off at that minute, if nothing took you off first.
+    let plannedOff = false;
+    const po = plannedOffRef.current;
+    if (!fw && po && !hookedRef.current && !neverHookedRef.current && po < offAt) {
+      offAt = Math.max(st.minute, po);
+      plannedOff = true;
+    }
     const stretchEnd = Math.min(matchCeilingRef.current, offAt);
     const handedOver: HiddenMatchEvent[] = [];
     // A foul on you while you pulled back (v0.15 item 22) whose set piece is
@@ -6279,6 +6294,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ? (legsGone
           ? { hooked: true, reason: "rested" as HookReason, message: `${st.minute}' — you come off. The whole ground is on its feet for you.` }
           : { hooked: false, reason: null, message: "" })
+        : legsGone && plannedOff
+        ? { hooked: true, reason: "rested" as HookReason, message: `${st.minute}' — a planned change. The manager wants a look at someone else; you come off.` }
         : legsGone
         ? { hooked: true, reason: "legs" as HookReason, message: `Out on your feet at ${Math.round(liveEnergyAt(st.minute))}% energy — you are taken off.` }
         : hookCheck({

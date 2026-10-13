@@ -137,6 +137,81 @@ function stats(over: Partial<MatchStats>): MatchStats {
   check(!p || !p.key.includes("sepoct"), `jumping past September–October does not offer it late (${p?.key})`);
 }
 
+// ── Friendlies: regulars rotated, changed early; squad players get minutes ──
+for (const [bar, want] of [[65, 2], [85, 3], [45, 1]] as const) {
+  let s = base("Japan");
+  const keep = () => { s = { ...s, intl: { ...intlOf(s), manager: bar } }; };
+  keep();
+  const sepoct: { start: boolean; off?: number; on: number }[] = [];
+  let guard = 0;
+  while (guard++ < 120) {
+    const p = periodDue(s);
+    if (p) { s = applyDecision(s, { ...decide(s, p), called: true }); continue; }
+    const next = nextFixtureFor(s);
+    if (!next) break;
+    if (next.kind === "international" && next.competition === "International Friendly" && new Date(fixtureTimestamp(s.player.startYear, s.season, next.week, next.kind, divisionOf(s))).getUTCMonth() <= 9) {
+      const v = selectionFor(s);
+      sepoct.push({ start: v.status === "1st Team", off: v.offAt, on: v.onAt });
+    }
+    if (fixtureTimestamp(s.player.startYear, s.season, next.week, next.kind, divisionOf(s)) > Date.UTC(2026, 9, 31)) break;
+    s = creditMatchResult(s, next, stats({})).career; keep();
+  }
+  const starts = sepoct.filter((x) => x.start).length;
+  console.log(`Japan, bar ${bar}, Sep–Oct 2026 friendlies: started ${starts} of ${sepoct.length}; ${sepoct.map((x) => x.start ? `off ${x.off}'` : `on ${x.on}'`).join(", ")}`);
+  if (sepoct.length === 4) check(starts === want, `bar ${bar}: starts ${want} of 4 friendlies (${starts})`);
+  check(sepoct.every((x) => x.start ? (x.off ?? 90) >= 55 && (x.off ?? 90) <= 80 : x.on >= 46 && x.on <= 65), "friendly minutes: off 55'–80' when starting, on 46'–65' from the bench");
+}
+
+// ── Not picked, Premier League: watch your nation on the break days (Plan B) ──
+{
+  let s = base("Scotland");
+  s = { ...s, intl: { ...intlOf(s), manager: 0 } };
+  let guard = 0, watched = 0, clubAfter = 0, lastWatchT = 0, results: string[] = [];
+  const keep = () => { s = { ...s, intl: { ...intlOf(s), manager: 0 } }; };
+  while (guard++ < 120) {
+    const p = periodDue(s);
+    if (p) { s = applyDecision(s, { ...decide(s, p), called: false }); continue; }
+    const next = nextFixtureFor(s);
+    if (!next) break;
+    const t = fixtureTimestamp(s.player.startYear, s.season, next.week, next.kind, divisionOf(s));
+    if (t > Date.UTC(2026, 10, 30)) break;
+    if (next.watch) {
+      const v = selectionFor(s);
+      check(v.status === "Squad" && !!v.watch, "a watch day: not playing, watching");
+      const before = s.week;
+      const r = simulateMissedFixture(s, next);
+      s = r.career; keep();
+      watched++; lastWatchT = t;
+      check(s.week === before + 1, "watching moves the week on (training sessions come back)");
+      results.push(`${next.home ? "Scotland" : next.opponent} ${next.home ? r.homeScore : r.awayScore}-${next.home ? r.awayScore : r.homeScore} ${next.home ? next.opponent : "Scotland"}`);
+      continue;
+    }
+    if (lastWatchT && t > lastWatchT) clubAfter++;
+    s = creditMatchResult(s, next, stats({})).career; keep();
+  }
+  console.log(`Premier League, Scotland, not picked, Aug–Nov 2026: ${watched} matches watched (${results.join(", ")})`);
+  check(watched >= 4, `not picked: the break's matches come up to watch (${watched})`);
+  check(clubAfter > 0, "the club season carries on after the break");
+  const wv = (s.fixtures ?? []).filter((f) => f.watch);
+  check(wv.every((f) => f.played && f.homeScore !== undefined), "every watched match has its score");
+  check((s.caps ?? 0) === 0, "watching is not a cap");
+}
+// League One: no watch days (the club plays through the break).
+{
+  let s = base("Scotland", LEAGUE_ONE_CLUBS[0], LEAGUE_ONE_CLUBS);
+  let guard = 0, watch = 0;
+  while (guard++ < 60) {
+    const p = periodDue(s);
+    if (p) { s = applyDecision(s, { ...decide(s, p), called: false }); continue; }
+    const next = nextFixtureFor(s);
+    if (!next) break;
+    if (next.watch) watch++;
+    if (fixtureTimestamp(s.player.startYear, s.season, next.week, next.kind, divisionOf(s)) > Date.UTC(2026, 10, 30)) break;
+    s = next.watch ? simulateMissedFixture(s, next).career : creditMatchResult(s, next, stats({})).career;
+  }
+  check(watch === 0, `League One: no watch days (${watch})`);
+}
+
 check(SQUAD_AT === 34 && START_AT === 55, "the same thresholds as the club manager");
 
 if (problems.length) {

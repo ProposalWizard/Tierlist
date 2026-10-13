@@ -9,6 +9,48 @@
  * Nothing is saved.
  */
 import { useMemo, useState } from "react";
+import "@/components/star/ui/flat.css";
+import { pitchFont } from "@/components/star/ui/pitchFont";
+import IntlWorldPanel from "@/components/star/IntlWorldPanel";
+import { makeInitialCareer } from "@/lib/star/careerFlow";
+import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";
+import { syncIntl, intlOf, periodDue, decide, applyDecision, dutyNow } from "@/lib/star/intl/career";
+import { NationalLeague, WatchedScreen } from "@/components/star/IntlKit";
+import { creditMatchResult, simulateMissedFixture } from "@/lib/star/careerFlow";
+import { nextFixtureFor } from "@/lib/star/competitions";
+import type { CareerState, Fixture } from "@/lib/star/types";
+import type { StarPlayer } from "@/lib/star/types";
+
+const ZERO = { chances: 0, goals: 0, assists: 0, passes: 0, rating: 6.8, starMan: false, bossChange: 0, teamChange: 0, fansChange: 0, wage: 0, goalBonus: 0, sponsorPay: 0, totalCash: 0, homeScore: 1, awayScore: 0, minutes: 90 };
+
+/**
+ * A new Arsenal career for `nation`, played on to its first break with the
+ * squad decision forced (called = on duty, else not picked), for the two
+ * break screens. Returns the career at the break.
+ */
+function careerAtBreak(nation: string, called: boolean): { career: CareerState; watched?: Fixture } {
+  const p = { firstName: "Test", lastName: "Player", age: 24, position: "ST", club: "Arsenal", nationality: nation, startYear: 2027 } as StarPlayer;
+  let c = syncIntl(makeInitialCareer(p, [...PREMIER_LEAGUE_CLUBS], "premier"));
+  c = { ...c, intl: { ...intlOf(c), manager: called ? 70 : 10 } };
+  for (let g = 0; g < 80; g++) {
+    const due = periodDue(c);
+    if (due) { c = applyDecision(c, { ...decide(c, due), called }); continue; }
+    const f = nextFixtureFor(c);
+    if (!f) break;
+    if (called && dutyNow(c) && f.kind === "international") {
+      // Play the first international of the break so Results has one.
+      if (c.fixtures.some((x) => x.kind === "international" && x.played)) break;
+      c = creditMatchResult(c, f, { ...ZERO }).career;
+      continue;
+    }
+    if (f.watch) {
+      const r = simulateMissedFixture(c, f).career;
+      return { career: r, watched: r.fixtures.find((x) => x.intlId === f.intlId) };
+    }
+    c = creditMatchResult(c, f, { ...ZERO }).career;
+  }
+  return { career: c };
+}
 import PageGuide from "@/components/admin/PageGuide";
 import CallUpScreen from "@/components/star/CallUpScreen";
 import NationFlag from "@/components/star/NationFlag";
@@ -23,7 +65,7 @@ const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { day: "numer
 export default function IntlDevPage() {
   const [year, setYear] = useState(2028);
   const [nation, setNation] = useState("England");
-  const [shot, setShot] = useState<null | "called" | "out">(null);
+  const [shot, setShot] = useState<null | "called" | "out" | "country" | "duty" | "watched">(null);
   const nations = useMemo(() => NATIONS.map((n) => n.name).sort(), []);
   const w = useMemo(() => {
     const world = newWorld({ xi: {}, played: {}, firstYear: 2026 });
@@ -46,6 +88,37 @@ export default function IntlDevPage() {
     return out;
   }, [done, w]);
 
+  if (shot === "duty" || shot === "watched") {
+    const { career: c, watched } = careerAtBreak(nation, shot === "duty");
+    const duty = dutyNow(c);
+    return (
+      <div className={`star-root ${pitchFont.variable} min-h-screen bg-[#05080f] text-white`}>
+        {shot === "watched" && watched
+          ? <WatchedScreen career={c} fixture={watched} onContinue={() => setShot(null)} />
+          : (
+            <div className="px-3 py-4">
+              <button onClick={() => setShot(null)} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
+              {duty ? <NationalLeague career={c} duty={duty} /> : <div className="text-[13px] font-bold">{nation} has no break match to show yet.</div>}
+            </div>
+          )}
+      </div>
+    );
+  }
+
+  if (shot === "country") {
+    // A new career for this nation (Arsenal, manager's bar 62): the Country
+    // page exactly as Stats → Country draws it.
+    const p = { firstName: "Test", lastName: "Player", age: 24, position: "ST", club: "Arsenal", nationality: nation, startYear: 2027 } as StarPlayer;
+    let c = syncIntl(makeInitialCareer(p, [...PREMIER_LEAGUE_CLUBS], "premier"));
+    c = { ...c, intl: { ...intlOf(c), manager: 62 } };
+    return (
+      <div className={`star-root ${pitchFont.variable} min-h-screen bg-[#05080f] px-3 py-4 text-white`}>
+        <button onClick={() => setShot(null)} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
+        <IntlWorldPanel career={c} />
+      </div>
+    );
+  }
+
   if (shot) {
     const lastWindow = done.filter((m) => m.comp !== "World Cup").slice(-2);
     const period: Period = {
@@ -55,7 +128,7 @@ export default function IntlDevPage() {
     const d: IntlDecision = shot === "called"
       ? { period, nation, called: true, chance: 0.9, starter: true, reason: "You're one of his first names on the team sheet.", manager: 62, line: `${nation}'s manager sees you as a starter.` }
       : { period, nation, called: false, chance: 0.1, starter: false, reason: `${nation}'s manager isn't looking at you yet.`, manager: 12, line: `${nation}'s manager doesn't know your name yet. Their squad is picked at about 81.` };
-    return <CallUpScreen decision={d} onContinue={() => setShot(null)} />;
+    return <div className={`star-root ${pitchFont.variable}`}><CallUpScreen decision={d} onContinue={() => setShot(null)} /></div>;
   }
 
   return (
@@ -71,6 +144,9 @@ export default function IntlDevPage() {
         </select>
         <button onClick={() => setShot("called")} className="rounded bg-sky-600 px-2 py-1">▶ Called up screen</button>
         <button onClick={() => setShot("out")} className="rounded bg-slate-600 px-2 py-1">▶ Left out screen</button>
+        <button onClick={() => setShot("country")} className="rounded bg-emerald-700 px-2 py-1">▶ Country page</button>
+        <button onClick={() => setShot("duty")} className="rounded bg-amber-700 px-2 py-1">▶ On duty (League)</button>
+        <button onClick={() => setShot("watched")} className="rounded bg-indigo-700 px-2 py-1">▶ Watched on TV</button>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">

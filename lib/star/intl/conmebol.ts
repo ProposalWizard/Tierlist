@@ -12,8 +12,9 @@
  *
  * COPA AMÉRICA (2024 format; 2028's is not confirmed): 16 teams, the ten of
  * CONMEBOL and six from CONCACAF (2024 took them from the CONCACAF Nations
- * League; here the four semi-finalists, then the two best-ranked other
- * quarter-finalists). Four groups of four, top two to the quarter-finals.
+ * League: the four quarter-final winners and the two winners of one-match
+ * play-offs between the quarter-final losers; see concacaf.ts). No host or
+ * format is announced for 2028 (Oct 2026: reports of talks with the USA). Four groups of four, top two to the quarter-finals.
  * Level knockout games go straight to penalties; only the final has extra
  * time. A third-place match. Every four years, in Euro years.
  */

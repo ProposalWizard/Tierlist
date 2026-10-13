@@ -20,15 +20,28 @@
  *   B: winners up; fourths play the C runners-up (B/C play-offs).
  *   C: winners up. D: all six move up (the 2028–29 edition has no League D).
  *   Finals (June 2027): semi-finals, third place, final.
- * NATIONS LEAGUE 2028–29 ON: three leagues of 18, three groups of 6 each
- *   (UEFA, approved). Details not published: each group plays once (five
- *   matchdays fit the autumn), A winners, runners-up and the two best thirds
- *   reach the quarter-finals, sixths go down, fifths play the runners-up below.
+ * NATIONS LEAGUE 2028–29 ON (UEFA, approved May 2026; 2026–27 transition
+ *   rules approved 15 Sep 2026; read 12 Oct 2026):
+ *   Three leagues of 18. Each is drawn from three pots of six (by the last
+ *   edition's overall ranking) into three groups of six, two from each pot.
+ *   Six matches each: home and away against the other team from your pot,
+ *   once against the four others. Six matchdays, Sep–Nov.
+ *   A: winners, runners-up and the two best thirds → quarter-finals (two
+ *      legs, March), Finals in June (semi-finals, third place, final).
+ *   B and C winners go up; A and B sixths go down. Play-offs (two legs,
+ *   March): A 4th/5th v B 2nd/3rd, B 4th/5th v C 2nd/3rd; winners play in
+ *   the higher league. (55 members would give League C a group of seven;
+ *   the game has no Russia in competitions, so 54 fill the 3 × 18 exactly.)
+ *   Not published, so the game's own: the order of the six matchdays, who is
+ *   at home in the four single games (two home, two away), the quarter-final
+ *   draw (the four best seeded, no team against its own group).
  *
  * QUALIFYING (Euro 2028 regulations, read 12 Oct 2026): 12 groups (6 of 4,
- *   6 of 5). The 24 teams busy in March (Nations League quarter-finals and
+ *   6 of 5); a 13th group of 4 when the March-busy teams need it (from 2028,
+ *   32 of them: UEFA's new qualifying format, which avoids March, is not
+ *   published in full). The 24 teams busy in March (Nations League quarter-finals and
  *   play-offs) are drawn into the groups of 4, which start in September.
- *   Euro: 12 winners + 8 best runners-up qualify; up to two places are kept
+ *   Euro: the group winners + the best runners-up make 20; up to two places are kept
  *   for hosts who miss out; the rest go through play-offs (paths of four).
  *   World Cup (2026 format, kept until UEFA confirms the new tiered one —
  *   Mikey: "switch to the new rules once they are confirmed"): 12 winners;
@@ -46,7 +59,7 @@ import { UNL_2026, realList } from "./realData";
 import { euroHosts, worldCupHosts } from "./hosts";
 
 const DAY = 86_400_000;
-const letters = "ABCDEFGHIJKL";
+const letters = "ABCDEFGHIJKLMN";
 
 export function uefaNations(): string[] {
   return nationsIn("UEFA").map((n) => n.name);
@@ -67,9 +80,7 @@ export interface NlOutcome {
 
 export function nationsLeague(w: World, year: number): void {
   const ed = `NL-${year}`;
-  const autumn = year === 2026
-    ? matchdays([[year, "sepoct"], [year, "nov"]])
-    : matchdays([[year, "sepoct"], [year, "nov"]]).slice(0, 5);
+  const autumn = matchdays([[year, "sepoct"], [year, "nov"]]);
   const mar = [matchday(year + 1, "mar", 0)!, matchday(year + 1, "mar", 1)!] as [number, number];
   const jun = [matchday(year + 1, "jun", 0)!, matchday(year + 1, "jun", 1)!];
   const groupsByLeague: Record<string, Record<string, string[]>> = {};
@@ -85,10 +96,23 @@ export function nationsLeague(w: World, year: number): void {
       leagues = (w.facts.get(`NL-${year - 2}:outcome`) as NlOutcome | undefined)?.next
         ?? defaultLeagues(w);
       const rng = rngFor(`draw|${ed}`);
+      const last = (w.facts.get(`NL-${year - 2}:ranking`) as string[] | undefined) ?? [];
+      const seedOf = (t: string) => { const i = last.indexOf(t); return i < 0 ? 1000 + w.rankOf(t) : i; };
       for (const [L, teams] of Object.entries(leagues)) {
-        const seeded = [...teams].sort((a, b) => w.rankOf(a) - w.rankOf(b));
-        const gs = drawGroups(pots(seeded, 3), 3, rng);
-        groupsByLeague[L] = Object.fromEntries(gs.map((g, i) => [`${L}${i + 1}`, g]));
+        const seeded = [...teams].sort((a, b) => seedOf(a) - seedOf(b));
+        if (seeded.length === 18) {
+          // Three pots of six; two from each pot into each group, at random.
+          const gs: string[][] = [[], [], []];
+          for (const pot of pots(seeded, 6)) {
+            const s6 = shuffled(pot, rng);
+            gs.forEach((g, i) => g.push(s6[2 * i], s6[2 * i + 1]));
+          }
+          groupsByLeague[L] = Object.fromEntries(gs.map((g, i) => [`${L}${i + 1}`, g]));
+        } else {
+          const n = Math.max(1, Math.round(seeded.length / 6));
+          const gs = drawGroups(pots(seeded, n), n, rng);
+          groupsByLeague[L] = Object.fromEntries(gs.map((g, i) => [`${L}${i + 1}`, g]));
+        }
       }
     }
     w.facts.set(`${ed}:groups`, groupsByLeague);
@@ -96,6 +120,7 @@ export function nationsLeague(w: World, year: number): void {
       groupStage(w, {
         edition: ed, comp: "Nations League", importance: 15, groups, dates: autumn,
         rounds: year === 2026 ? "double" : "single", label: `League ${L} · Group`,
+        ...(year === 2026 ? {} : { schedule: (t: string[], g: string) => nl6Schedule(t, rngFor(`nl6|${ed}|${g}`)) }),
       });
     }
   };
@@ -149,20 +174,21 @@ export function nationsLeague(w: World, year: number): void {
     } else {
       const w1 = pos("A", 0), r1 = pos("A", 1), t1 = pos("A", 2);
       qfTeams = [...w1, ...r1, ...t1.slice(0, 2)];
-      for (const L of ["A", "B", "C"]) {
-        const up = L === "A" ? null : L === "B" ? "A" : "B";
-        const down = L === "A" ? "B" : L === "B" ? "C" : null;
-        const p = (k: number) => pos(L, k);
-        // Winners go up (A's stay), sixths go down (C's stay).
-        for (const t of p(0)) move(t, up ?? L);
-        for (const t of [...p(2), ...p(3)]) move(t, L);
-        for (const t of p(5)) move(t, down ?? L);
-        if (L === "A") for (const t of p(1)) move(t, "A");
-        if (down) {
-          const lowerRu = shuffled(pos(down, 1), rng);
-          p(4).forEach((u, i) => playoff(u, lowerRu[i], L, down, `${L}${down}-${i + 1}`));
-        } else for (const t of p(4)) move(t, L);
-        if (L === "C") for (const t of p(1)) if (!busy.includes(t)) move(t, L);
+      // A: the top two and the best two thirds stay (and go to the
+      // quarter-finals), the worst third stays; sixths go down.
+      for (const t of [...w1, ...r1, ...t1]) move(t, "A");
+      for (const t of pos("A", 5)) move(t, "B");
+      // B and C winners go up; B sixths go down; C 4th–6th stay.
+      for (const t of pos("B", 0)) move(t, "A");
+      for (const t of pos("B", 5)) move(t, "C");
+      for (const t of pos("C", 0)) move(t, "B");
+      for (const t of [...pos("C", 3), ...pos("C", 4), ...pos("C", 5)]) move(t, "C");
+      // Play-offs: 4th/5th of the league above v 2nd/3rd of the one below,
+      // best of the upper four/fifths against the worst of the lower.
+      for (const [U, D] of [["A", "B"], ["B", "C"]] as const) {
+        const upper = [...pos(U, 3), ...pos(U, 4)];
+        const lower = [...pos(D, 1), ...pos(D, 2)].reverse();
+        upper.forEach((u, i) => playoff(u, lower[i], U, D, `${U}${D}-${i + 1}`));
       }
     }
 
@@ -205,6 +231,38 @@ export function nationsLeague(w: World, year: number): void {
   });
 }
 
+/**
+ * A group of six, 2028 format: the two from each pot meet home and away, and
+ * everyone else once. Six rounds of three games. The pot pairs are (0,1),
+ * (2,3), (4,5) — the draw puts them in that order. The circle method's first
+ * round is exactly the three pot pairs, so it is played first and again last
+ * (home and away swapped); the four rounds between are the single games,
+ * two at home and two away for everyone.
+ */
+export function nl6Schedule(t: string[], rng: () => number): [string, string][][] {
+  // Circle-method labels so round 0 = {t0-t1, t2-t3, t4-t5}.
+  const L = [t[1], t[2], t[4], t[5], t[3], t[0]];
+  const rounds: [string, string][][] = [];
+  for (let r = 0; r < 5; r++) {
+    rounds.push([[L[5], L[r]], [L[(r + 1) % 5], L[(r + 4) % 5]], [L[(r + 2) % 5], L[(r + 3) % 5]]]);
+  }
+  const first = rounds[0].map(([a, b]) => (rng() < 0.5 ? [a, b] : [b, a]) as [string, string]);
+  // The four single games: two at home, two away, for everyone. 4,096 ways to
+  // pick home sides; start from a random one and take the first that works.
+  const games = rounds.slice(1).flat();
+  const startAt = Math.floor(rng() * 4096);
+  let pick = 0;
+  for (let k = 0; k < 4096; k++) {
+    const mask = (startAt + k) % 4096;
+    const h = new Map<string, number>();
+    games.forEach(([a, b], i) => { const home = mask & (1 << i) ? a : b; h.set(home, (h.get(home) ?? 0) + 1); });
+    if (t.every((x) => h.get(x) === 2)) { pick = mask; break; }
+  }
+  let i = 0;
+  const middle = rounds.slice(1).map((day) => day.map(([a, b]) => (pick & (1 << i++) ? [a, b] : [b, a]) as [string, string]));
+  return [first, ...middle, first.map(([h, a]) => [a, h] as [string, string])];
+}
+
 function defaultLeagues(w: World): Record<string, string[]> {
   const all = uefaNations().sort((a, b) => w.rankOf(a) - w.rankOf(b));
   return { A: all.slice(0, 18), B: all.slice(18, 36), C: all.slice(36) };
@@ -225,7 +283,12 @@ function qualifyingGroups(w: World, ed: string, comp: "Euro Qualifier" | "World 
     const field = uefaNations().filter((n) => !exclude.includes(n));
     const rankKey = (n: string) => { const i = nlRank.indexOf(n); return i < 0 ? 900 + w.rankOf(n) : i; };
     field.sort((a, b) => rankKey(a) - rankKey(b));
-    const G = 12;
+    // 12 groups, unless the March-busy teams don't fit the groups of 4 (from
+    // 2028 the Nations League sends 32 teams to March games, not 24): then
+    // the fewest extra groups that make room.
+    let G = 12;
+    const need4 = Math.ceil(busySet.size / 4);
+    while (G < 14 && G - Math.max(0, Math.min(G, field.length - 4 * G)) < need4) G++;
     const fives = Math.max(0, Math.min(G, field.length - 4 * G));
     const fours = G - fives;
     // Groups of 4 take the March-busy teams, topped up with the lowest-ranked others.
@@ -290,13 +353,13 @@ export function euroCycle(w: World, euroYear: number): void {
   qualifyingGroups(w, qed, "Euro Qualifier", euroYear, [], (tables) => {
     const winners = Object.values(tables).map((t) => t[0].name);
     const ru = placedFair(w, qed, tables, 1).map((r) => r.name);
-    qualified.push(...winners, ...ru.slice(0, 8));
+    qualified.push(...winners, ...ru.slice(0, Math.max(0, 20 - winners.length)));
     const missedHosts = hosts.filter((h) => !qualified.includes(h))
       .sort((a, b) => w.rankOf(a) - w.rankOf(b)).slice(0, 2);
     qualified.push(...missedHosts);
     const paths = Math.max(0, 24 - qualified.length);
     const nlRank = (w.facts.get(`NL-${euroYear - 2}:ranking`) as string[] | undefined) ?? [];
-    const cands = [...ru.slice(8), ...nlRank].filter((n, i, a) => !qualified.includes(n) && a.indexOf(n) === i);
+    const cands = [...ru.slice(Math.max(0, 20 - winners.length)), ...nlRank].filter((n, i, a) => !qualified.includes(n) && a.indexOf(n) === i);
     playoffPaths(w, qed, "Euro Qualifier", euroYear, cands.slice(0, paths * 4), paths, (pw) => {
       qualified.push(...pw);
       w.facts.set(`${ed}:qualified`, [...qualified]);

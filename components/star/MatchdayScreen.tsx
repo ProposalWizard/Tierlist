@@ -201,7 +201,7 @@ export default function MatchdayScreen(p: Props) {
               className="kib-press min-h-[54px] flex-1 rounded-2xl bg-gradient-to-b from-slate-500 to-slate-600 px-3 text-[16px] font-black text-white"
               style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.22), 0 4px 12px -4px rgba(0,0,0,.8)" }}
             >
-              {preMatchSelection?.away ? "✈️ Club plays without you" : "🏟️ Watch from the stands"}
+              {preMatchSelection?.watch ? "📺 Watch on TV" : preMatchSelection?.away ? "✈️ Club plays without you" : "🏟️ Watch from the stands"}
             </button>
           ) : (
             <button

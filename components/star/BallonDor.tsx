@@ -337,6 +337,11 @@ export default function BallonDor({ career, onContinue, startAt, result }: Props
               <Stat label="Assists" value={playerEntry.assists} />
               <Stat label="Rating" value={playerEntry.rating.toFixed(1)} accent />
             </div>
+            {((playerEntry.intlGoals ?? 0) > 0 || (playerEntry.intlAssists ?? 0) > 0) && (
+              <p className="mt-2 text-center text-[11px] font-bold text-white" data-bdo-intl>
+                Includes {playerEntry.intlGoals ?? 0} goals and {playerEntry.intlAssists ?? 0} assists for your country
+              </p>
+            )}
             {playerEntry.trophies.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5 border-t border-white/10 pt-3">
                 {playerEntry.trophies.map((t, i) => (
