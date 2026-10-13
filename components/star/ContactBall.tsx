@@ -37,7 +37,9 @@ export function ballMotionAt(motion: BallMotion, t: number, period: number): { x
 
 interface Props {
   power: number;
-  onContact: (contact: { cx: number; cy: number }) => void;
+  /** `lift` (0 grass … 1 top of the arc) only for a ball in the air
+   *  (float/bounce): how high it was when you hit it (lib/star/airborneChance.ts). */
+  onContact: (contact: { cx: number; cy: number; lift?: number }) => void;
   /** The three "how to read the ball" badges and the explanatory line under
    *  them — the tutorial copy, only actually needed the first time anyone
    *  sees this screen. TrialPenalty (the profile-setup trial) passes true;
@@ -78,6 +80,8 @@ export const STRIKE_ZONE_R = 1.18;
 export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, hold = false, grades = false, knuckles = false }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
+  const shadowRef = useRef<HTMLDivElement>(null);
+  const liftRef = useRef(0);
   const areaRef = useRef<HTMLDivElement>(null);
   // One sweep across takes 2.2s at technique 40, 3.4s at 100.
   const period = 2.2 + Math.max(0, Math.min(100, technique) - 40) / 60 * 1.2;
@@ -92,6 +96,16 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       if (!area || !mover) return;
       const { x, y } = ballMotionAt(motion, (performance.now() - t0) / 1000, period);
       mover.style.transform = `translate(${x * area.clientWidth}px, ${y * area.clientHeight}px)`;
+      // How high it is now, 0..1 of this motion's top (float sits ~0.42-0.5 up).
+      const top = motion === "float" ? 0.5 : motion === "bounce" ? 0.26 : 0.05;
+      liftRef.current = Math.max(0, Math.min(1, -y / top));
+      const sh = shadowRef.current;
+      if (sh) {
+        // The shadow stays on the grass, under the ball, smaller and fainter the higher it is.
+        const k = 1 - 0.45 * Math.min(1, -y / 0.5);
+        sh.style.transform = `translateX(calc(-50% + ${x * area.clientWidth}px)) scale(${k})`;
+        sh.style.opacity = String(0.35 + 0.65 * k);
+      }
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
@@ -171,7 +185,9 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       if (g.label) setGraded({ label: g.label, good: g.grade === "clean" || g.grade === "knuckle" });
     }
     // A graded strike holds a beat longer so the verdict can be read.
-    setTimeout(() => onContact({ cx, cy }), grades ? 420 : 200);
+    const air = motion === "float" || motion === "bounce";
+    const lift = liftRef.current;
+    setTimeout(() => onContact(air ? { cx, cy, lift } : { cx, cy }), grades ? 420 : 200);
   };
 
   const powerPct = Math.round(power * 100);
@@ -236,7 +252,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
             textShadow: "0 3px 6px rgba(0,0,0,0.6)",
           }}
         >
-          {motion === "float" ? "Head it?" : "Strike it?"}
+          {motion === "float" ? "Head it?" : motion === "bounce" ? "Volley it?" : "Strike it?"}
         </div>
 
         {/* Three ways to read the ball, as chips rather than a run-on line —
@@ -315,6 +331,19 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
           sky with the turf a long way below it, which reads as a ball in the
           air, and this screen is you standing over a ball at your feet. */}
       <div ref={areaRef} className="relative z-30 flex-1 flex items-end justify-center pb-[10%]">
+        {/* A ball in the air (header/volley): its shadow on the grass below it. */}
+        {(motion === "float" || motion === "bounce") && <div
+          ref={shadowRef}
+          className="absolute left-1/2 pointer-events-none"
+          style={{
+            bottom: "calc(10% - 3%)",
+            width: "32%",
+            height: "6%",
+            borderRadius: "50%",
+            transform: "translateX(-50%)",
+            background: "radial-gradient(ellipse, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 72%)",
+          }}
+        />}
         <div ref={moverRef} className="flex w-full items-end justify-center" style={{ willChange: motion === "still" ? undefined : "transform" }}>
         <div
           ref={ballRef}

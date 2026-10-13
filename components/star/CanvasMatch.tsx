@@ -94,6 +94,12 @@ const SHOT_LINES: Partial<Record<ContactRead["grade"], string>> = {
   scuffed: "Scuffed! He's barely caught it.",
 };
 
+/** The strike screen's ball: the airborne test switch's picks when it is on
+ *  (lib/star/airborneChance.ts), today's otherwise. */
+function strikeMotion(kind: string, seed: number): BallMotion {
+  return airborneOn() ? airborneMotion(kind, seed) : contactMotion(kind, seed);
+}
+
 function contactMotion(kind: string, seed: number): BallMotion {
   if (kind === "header") return "float";
   if (kind === "volley") return "bounce";
@@ -126,6 +132,7 @@ import {
   RUNUP_MOTION, type RunupId, type PenaltyRunupId, type FreeKickRunupId, type StyledRunup, type RunupPose,
 } from "@/lib/star/runupStyles";
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
+import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
 import { useFitWidth } from "./useFitWidth";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, assistFor, noteMatePlays, probeMatePlays, type CreditDelta, type MatePlay } from "@/lib/star/credit";
@@ -2559,6 +2566,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ballRef.current = r.shot
         ? launchShot(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng, r.shot, r.shot, launch).ball
         : launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
+      applyAirborne(ballRef.current, scenarioRef.current, (r.contact as StrikeContact).air);
       // The keeper brain, put back exactly as he was at the strike, then the
       // same strike stream — so the replay throws the same dive.
       if (r.keeperBrain) {
@@ -7640,12 +7648,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   //     team-mate or an opponent with HIS aim and HIS skills (`skills`) —
   //     the SAME strike as yours from here on.
   const handleContact = (
-    contact: { cx: number; cy: number },
+    tapped: { cx: number; cy: number; lift?: number },
     over?: { dir: { x: number; y: number }; power: number; skills?: KickSkills },
     extras?: ShotExtras,
   ) => {
     const a = over ? { dir: over.dir, power: over.power } : aim;
     if (!a) return;
+    // A ball you hit in the air (airborne test switch): a header or a volley,
+    // started from the height it was at. Kept on the contact so a replay does the same.
+    let contact: StrikeContact = { cx: tapped.cx, cy: tapped.cy };
+    if (!over && tapped.lift !== undefined && airborneOn()) {
+      const m = strikeMotion(scenarioRef.current.kind, seedRef.current);
+      if (m === "float" || m === "bounce") contact = { ...contact, air: { kind: m === "float" ? "header" : "volley", lift: tapped.lift } };
+    }
     const auto = over?.skills ? { skills: over.skills } : null;
     setContactTimerS(null);
     // A dead ball is struck with your free-kick rating, not your general
@@ -7710,6 +7725,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     } else {
       ballRef.current = launch(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current);
     }
+    applyAirborne(ballRef.current, scenarioRef.current, contact.air);
     // ── The keeper brain sees you strike it ── its own seeded stream (built
     // the way the penalty read's is), and a snapshot of him as he stands, so
     // a goal replay throws exactly the same dive. For a penalty the brain
@@ -8194,7 +8210,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             grades={shotsPro() && aimedAtGoal(scenarioRef.current, aim.dir)}
             knuckles={knucklePowerOn()}
             onContact={(c) => handleContact(c)}
-            motion={contactMotion(scenarioRef.current.kind, seedRef.current)}
+            motion={strikeMotion(scenarioRef.current.kind, seedRef.current)}
             technique={skills.technique}
             timeLimitS={contactTimerS ?? undefined}
             onTimeout={contactTimerS ? handleScuff : undefined}
