@@ -702,17 +702,28 @@ export function overStand(c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" |
  * `share` of the way to the furthest distance at which it stands inside the stadium (bowlSpot); the
  * ball keeps its drag room. share 0 (the default camera): untouched.
  */
+/** The closest a camera kept inside the bowl may come, as a share of its framing's distance. */
+export const BOWL_MIN_D = 0.85;
 export function keepInBowl<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov"> & { minDepth?: number }>(c: T, ball: BcPoint, share: number, W: number, H: number, S = SET_PIECE_CAM): T {
   const fine = (x: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D">) => camSpot(x) !== "out";
   if (share <= 0 || fine(c)) return c;
   const u = Math.min(1, share);
+  // First RISE (Harry, 13 Oct 2026: "now that the ball is centred in camera the zoom is too zoomed in on most
+  // highlights"): a higher, more top-down camera at the same distance stays inside the bowl and keeps the
+  // framing; only if even the highest allowed angle is still outside does it come a little closer.
+  const e0 = (c.elev * 180) / Math.PI;
+  for (let up = 2; e0 + up <= TILT.maxElev; up += 2) {
+    const raised = tiltCamera(c, ball, up * u, W, H);
+    if (fine(raised)) return keepDragRoom(raised, ball, W, H, S);
+  }
   let cur = c;
   for (let i = 0; i < 4; i++) {
     if (fine(cur)) break;
     // the furthest distance (in 0.25 m steps) that is fine, from where it is
     let Dok = 4;
     for (let D = cur.D; D > 4; D -= 0.25) if (fine({ ...cur, D })) { Dok = D; break; }
-    const want = c.D + (Math.min(c.D, Dok) - c.D) * u;
+    // never closer than BOWL_MIN_D of the framing's own distance (it read as a zoom-in)
+    const want = c.D + (Math.min(c.D, Math.max(Dok, c.D * BOWL_MIN_D)) - c.D) * u;
     if (want >= cur.D - 1e-6) break;
     const k = want / cur.D;
     const shrunk = { ...cur, D: want, ...(cur.minDepth !== undefined ? { minDepth: cur.minDepth * k } : {}) };

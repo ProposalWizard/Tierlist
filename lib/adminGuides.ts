@@ -1528,6 +1528,29 @@ export const ADMIN_GUIDES = {
     dev: "app/star-radar-dev/page.tsx · components/star/MatchRadar.tsx · lib/star/matchRadar.ts (calls tick/resolveScenario in lib/star/hiddenMatch.ts)",
   },
 
+  "/star-sim90-dev": {
+    title: "Full match (test)",
+    what: "A whole simulated ninety minutes you can watch: 22 men and the ball, from the TV camera. The unseen match the career runs decides everything (who has the ball each minute, where, every shot, corner and goal, and the score); this page only stages it in each club's formation and plays it back.",
+    buttons: [
+      {
+        items: [
+          ["▶ / ❚❚", "Starts and pauses the replay. At full time it becomes ↻ and starts from kick-off."],
+          ["1× 4× 16× 60×", "How fast the match plays. 60× plays all ninety minutes in about a minute and a half."],
+          ["↻ (right of the speeds)", "A new match: a different roll of the same fixture."],
+          ["The slider", "Drag to any minute of the match."],
+          ["The radar strip", "The unseen match minute by minute: who has it and where — the same strip the real match shows above the commentary."],
+          ["Match events", "Goals, saves and misses (Show all adds corners and every shot). Tap one to jump just before it."],
+          ["Change", "Pick both clubs and how strong they are. The match is built again."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. Changing a setting builds a new match; leaving the page forgets it."],
+    inGame: [
+      "Nowhere — a test page. The score and the chances are the real unseen match's; the men's positions and passes are made up to show it.",
+    ],
+    dev: "app/star-sim90-dev/page.tsx · components/star/Sim90View.tsx · lib/star/sim90.ts (runs lib/star/matchRadar.ts, places men with formationShape.ts) · drawn by lib/star/goalClip/render.ts (camera \"match\") · test tests/star/sim90.mts",
+  },
+
   "/star-scenario-dev": {
     title: "Scenario Builder",
     what: "Build a match moment by hand: place team-mates, opponents and the ball, and frame the camera.",
