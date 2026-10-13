@@ -133,7 +133,8 @@ const V015_ROWS: LookRowId[] = ["keeperPro", "shotsPro", "knucklePower", "ballPh
 const OCT13_ROWS: LookRowId[] = ["shotPower", "contactField", "keeperFeel", "mateShots"];
 /** …and "Try the whole update" also flips the v0.15 ones it was measured with
  *  (tests/star/gameplay13.mts: all of them together keep scoring in band). */
-const OCT13_ALL: LookRowId[] = [...OCT13_ROWS, "shotsPro", "keeperPro", "ballPhysics"];
+//    Match feel (the impact/juice look) rides along too, so one tap tries the lot.
+const OCT13_ALL: LookRowId[] = [...OCT13_ROWS, "shotsPro", "keeperPro", "ballPhysics", "matchFeel"];
 
 /** One New | Old row. A dot marks a row you changed by hand. */
 function LookRow({ id, tabs, note, look }: {
@@ -207,7 +208,7 @@ function MatchGroup() {
           field, keepers, team-mates. Old by default. */}
       <div className="my-2 border-2 border-sky-400/70 bg-sky-400/10 px-3 py-3" data-new-round="oct13">
         <p className="text-[13px] font-black uppercase tracking-wider text-sky-300">New 13 Oct · testing</p>
-        <p className="mt-1 text-[12px] font-bold text-white">Try the whole Oct 13 gameplay update: these four, plus Shots, Keeper pro and Ball physics above.</p>
+        <p className="mt-1 text-[12px] font-bold text-white">Try the whole Oct 13 gameplay update: these four, plus Shots, Keeper pro, Ball physics and Match feel.</p>
         <div className="mt-2 flex gap-2">
           <button className="flex-1 border-2 border-sky-300 bg-sky-400 px-2 py-1.5 text-[12px] font-black uppercase text-gray-950" data-new-round-all="oct13-new"
             onClick={() => { for (const id of OCT13_ALL) setLookRow(id, "new"); }}>All new</button>
