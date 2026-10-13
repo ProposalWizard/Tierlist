@@ -27,6 +27,170 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.50",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-10-13T18:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/SqbYRDsV64zyZbAoe43i99",
+      "summary": "The Oct 13 gameplay update, for review (pushed to Leo only, not live, every switch off by default): shots at goal leave the boot slower, the side of the ball gives a low curler, keepers read shots better, team-mates carry the ball before shooting, and a Match feel layer gives the strike weight. Settings → Match → \"New 13 Oct · testing\" → All new tries it all; All old puts the game back exactly.",
+      "stats": [
+        {
+          "value": "15.7% → 0.7%",
+          "label": "power-100 shots that sail over the bar"
+        },
+        {
+          "value": "1% → 75%",
+          "label": "side-of-ball taps that cross the line under 0.5 m"
+        },
+        {
+          "value": "85% → 34%",
+          "label": "team-mate shots struck from 22 m or more"
+        },
+        {
+          "value": "24.8% → 18.5%",
+          "label": "goals per shot against a 70 keeper"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The \"New 13 Oct · testing\" box: All new / All old",
+              "detail": "Settings → Match, near the top."
+            },
+            {
+              "title": "Shot power",
+              "detail": "Shots at goal leave the boot slower; a 100 rarely goes over the bar."
+            },
+            {
+              "title": "Contact field",
+              "detail": "Tap the side of the ball: label CURLER, curl marks at each edge."
+            },
+            {
+              "title": "Keeper feel",
+              "detail": "Soft shots straight at the keeper are gathered."
+            },
+            {
+              "title": "Team-mate shots",
+              "detail": "A team-mate in space carries it, then shoots from nearer."
+            },
+            {
+              "title": "Match feel",
+              "detail": "Wind-up, freeze, flash, clods, net ripple, clang. Dials: Play Area → Animations → Match feel."
+            },
+            {
+              "title": "All old",
+              "detail": "Puts the game back exactly."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Problems fixed",
+          "items": [
+            {
+              "title": "Shots were too strong at high power",
+              "detail": "A 60 now hits like a 40 did, a 100 like a 70 (96 km/h, not 103). Over the bar at power 100: 15.7% → 0.7%. Penalties at 100 scored: 45% → 73%. Passes, crosses, corners and free kicks keep their pace."
+            },
+            {
+              "title": "The side of the ball could not give a low curler",
+              "detail": "Toward the edges up/down barely matters. Side at mid-height: peak 2.2 m → 1.1 m. The reported left-wing shot crosses the line at 1.71 m → 0.23 m. 300 human-style taps under 0.5 m at the line: 1% → 75%; in the goal 60% → 66%."
+            },
+            {
+              "title": "Keepers misread soft shots",
+              "detail": "Save % of shots on target, all old / v0.15 three on / all new: keeper 40: 50/53/64, 70: 69/72/77, 90: 83/84/89. Goals per shot v a 70: 24.8% → 22.0% → 18.5%. A 70's save % by distance 53/75/97 v the Premier League's 53/77/90 (all old: 53/71/79)."
+            },
+            {
+              "title": "Team-mates shot from far too deep",
+              "detail": "Median strike distance 25.3 m → 15.8 m; from 22 m or more 85% → 34%. Not seen on screen."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added and changed",
+          "items": [
+            {
+              "title": "Match feel: the strike has weight",
+              "detail": "Impact scales with launch speed times contact quality. Wind-up 90 ms, freeze 75 ms, camera punch 7 px, flash, ring, speed lines, clods, ball squash and stretch, layered kick sound, phone buzz 28 ms, net ripple, woodwork clang, keeper glove spark and hop. Look and sound only; every amount is a dial."
+            },
+            {
+              "title": "One pair of buttons for the whole update",
+              "detail": "All new / All old in Settings → Match."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not felt on a phone yet",
+              "detail": "The numbers are simulations."
+            },
+            {
+              "title": "Team-mates are very accurate (not changed)",
+              "detail": "65–91% on target and 30–48% score, against real football's ~35% and 10–15%."
+            },
+            {
+              "title": "Not seen",
+              "detail": "The team-mate carry (the run may glide), the faint height lines, the keeper's pre-strike hop, any sound."
+            },
+            {
+              "title": "Checks",
+              "detail": "Star tests 340 of 342 (assets3d and wembley3d fail the same on main); build passes."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Questions for you",
+          "items": [
+            {
+              "title": "Shot power at 100",
+              "detail": "Keep 96 km/h, higher (about 100) or lower (about 88)?"
+            },
+            {
+              "title": "Goals drop",
+              "detail": "24.8% → 18.5% of shots against a 70 keeper: OK or too low?"
+            },
+            {
+              "title": "Team-mates",
+              "detail": "Make them miss more? And was this what \"teammates shooting sometimes\" meant?"
+            },
+            {
+              "title": "Feel",
+              "detail": "Freeze plus wind-up punchy or laggy? Flash big enough? Buzz strength?"
+            },
+            {
+              "title": "After review",
+              "detail": "Turn the update on by default: yes, some of it, or not yet?"
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "0.45 (v0.15) — the gameplay round",
+              "detail": "Tighter match camera (empty grass 39% → 28%); Keeper pro from a full Premier League season; shots whose height follows contact; knuckleball and power shot; believable 90 minutes and a live radar (13 → 24 shots); dribble duels that need timing (take-ons won 76% → 46%); real ball physics (off). Still open: mostly not seen on a phone; tight angles and volleys score too often."
+            },
+            {
+              "title": "0.44 (v0.14) — the big evening: camera, careers that move, a world that ages",
+              "detail": "Find a new club, January moves, international career and tournaments, the world ages, a 3D Ballon d'Or night, 35 → 136 achievements."
+            },
+            {
+              "title": "0.39 — smart passing, highlights first",
+              "detail": "Good passers keep runners onside (14% → 4% offside); HIGHLIGHTS after every match, made first."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.49",
       "title": "Mikey's patch notes v0.15: International football",
       "publishedAt": "2026-10-13T09:00:00Z",
@@ -313,7 +477,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "title": "Leo's patch notes — the gameplay round: camera, keeper, shots, ball, radar, dribbling",
       "publishedAt": "2026-10-12T00:30:00Z",
       "updatedAt": null,
-      "artifactUrl": "https://claude.ai/artifact/3x6BjhftYfYtYCYJRkKDbg",
+      "artifactUrl": null,
       "summary": "The six gameplay things Harry and Mikey asked for, each measured against real football and behind a New | Old switch: a tighter match camera and the late-sub score fix; Keeper pro built from a full StatsBomb Premier League season; shots whose height follows where you hit the ball, with a spread cone and contact grades; knuckleball and power shot in the real match; a believable 90 minutes and a live match radar; dribble duels that need timing, plus a top-down option; real ball physics. Leo, 12 Oct: all of these start on Old as \"(testing)\" switches; Settings → Look → New in v0.15 has All new / All old; a new Tournament test page plays a Euros or World Cup to the final in one tap.",
       "stats": [
         {
