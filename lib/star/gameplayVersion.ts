@@ -62,6 +62,35 @@ export const GAMEPLAY_SWITCHES = {
     newText: "The match around you plays like a real one: about 25 shots, 10 corners and 2.8 goals a game, much less of the ball against a far better side, the side behind pushing after a goal, and more happening late.",
     oldText: "The unseen match from before 11 Oct 2026: about 13 shots a game, no corners but yours.",
   },
+  shotPower: {
+    label: "Shot power (testing)",
+    // Oct 13 gameplay update (Leo: "at 40 shooting is WAYYY too high … at 100 it's literally insane").
+    defaultVersion: "old",
+    newText: "Shots at goal leave the boot slower: a 60 hits it like a 40 used to, a 100 like a 70 (96 km/h, not 103). A 100 rarely blazes it over the bar. Passes and crosses keep their pace.",
+    oldText: "Shot pace from before 13 Oct 2026: 79 km/h at power 40, 103 at 100.",
+  },
+  contactField: {
+    label: "Contact field (testing)",
+    // Oct 13 gameplay update (Mikey: max curve came out as a shot aimed up).
+    defaultVersion: "old",
+    newText: "Hit the ball on its side for a low curler along the floor: toward the edges, up/down barely matters. The middle is the same (top = low drive, bottom = lifted); the bottom corners give curl and some lift.",
+    oldText: "Contact from before 13 Oct 2026: the side of the ball at mid-height curls AND lifts it.",
+  },
+  mateShots: {
+    label: "Team-mate shots (testing)",
+    // Oct 13 gameplay update ("teammates shooting sometimes"): measured, a
+    // team-mate put through on goal shot from where he got it (through balls: 25 m).
+    defaultVersion: "old",
+    newText: "A team-mate who gets the ball in space far from goal runs on with it first (about 1-2 seconds), then shoots from nearer — unless a defender or the keeper comes to him.",
+    oldText: "Team-mates from before 13 Oct 2026: whoever gets it shoots from right there after one touch, even 25 m out with nobody near him.",
+  },
+  keeperFeel: {
+    label: "Keeper feel (testing)",
+    // Oct 13 gameplay update ("goalies need to be better and more realistic, diving and catching").
+    defaultVersion: "old",
+    newText: "Builds on Keeper pro (turns it on too). Keepers read a shot better the nearer it gets, take a ball coming at them on their feet instead of lunging, hold more of the soft ones, and fewer parries drop back in front of goal.",
+    oldText: "Keepers' dives and hands from before 13 Oct 2026.",
+  },
 } as const;
 
 export type GameplaySwitch = keyof typeof GAMEPLAY_SWITCHES;
@@ -96,3 +125,4 @@ export const oldKeeperPro = () => gameplayVersion("keeperPro") === "old";
 export const oldBallPhysics = () => gameplayVersion("ballPhysics") === "old";
 export const oldShots = () => gameplayVersion("shotsPro") === "old";
 export const oldMatchFlow = () => gameplayVersion("matchFlow") === "old";
+export const oldKeeperFeel = () => gameplayVersion("keeperFeel") === "old";

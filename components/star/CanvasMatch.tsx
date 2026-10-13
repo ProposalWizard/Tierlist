@@ -147,6 +147,7 @@ import {
   shotsPro, knucklePowerOn, launchShot, shotSeedFor, stepKnuckle, stepWindUp, aimedAtGoal, spreadDeg,
   powerShotStrike, POWER_SHOT_WINDUP_S, POWER_SHOT_CONTACT, type ShotExtras, type ContactRead,
 } from "@/lib/star/shotModel";
+import { shotPowerOn, contactFieldOn, feelPower, feelLift, struckAtGoal, fieldApplies } from "@/lib/star/shotFeel";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
 import { LiveRadar } from "./MatchRadar";
@@ -7642,7 +7643,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // real power (powerFromDrag), so it feels exactly the same. The Play
     // Area's compare switch "Shot power" puts the old straight line back on
     // one device's test screens (never the real game).
-    const launchWith = switchOn("powerCurve")
+    // Oct 13 "Shot power (testing)" (lib/star/shotFeel.ts): a strike at goal
+    // is struck with the lower curve instead, and keeps less of its rise.
+    const feelPow = !auto && shotPowerOn() && struckAtGoal(scenarioRef.current, a.dir, contact.cx);
+    const launchWith = feelPow
+      ? { ...strikeWith, power: feelPower(strikeWith.power) }
+      : switchOn("powerCurve")
       ? { ...strikeWith, power: strikingPower(strikeWith.power) }
       : strikeWith;
     // Snapshot everything a replay would need to reproduce this exact strike
@@ -7657,8 +7663,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // plain `launch` below, exactly as before.
     const shotPro = !auto && shotsPro();
     const shotKnuckle = !auto && knucklePowerOn();
-    const shotRec = (shotPro || shotKnuckle || extras)
-      ? { seed: shotSeedFor(seedRef.current, rngCallCountRef.current), extras, pro: shotPro, knuckle: shotKnuckle }
+    // Oct 13: the contact field and the power curve's rise ride the same record.
+    const shotField = !auto && contactFieldOn();
+    const shotLift = feelPow ? feelLift(strikeWith.power) : 1;
+    const shotRec = (shotPro || shotKnuckle || extras || shotField || shotLift !== 1)
+      ? { seed: shotSeedFor(seedRef.current, rngCallCountRef.current), extras, pro: shotPro, knuckle: shotKnuckle, field: shotField, lift: shotLift }
       : null;
     pendingReplayRef.current = auto ? null : {
       seed: seedRef.current,
@@ -8171,6 +8180,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             power={aim.power}
             grades={shotsPro() && aimedAtGoal(scenarioRef.current, aim.dir)}
             knuckles={knucklePowerOn()}
+            field={contactFieldOn() && fieldApplies(scenarioRef.current.kind)}
             onContact={(c) => handleContact(c)}
             motion={contactMotion(scenarioRef.current.kind, seedRef.current)}
             technique={skills.technique}

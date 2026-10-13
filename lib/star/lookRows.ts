@@ -28,7 +28,8 @@ const row = <V extends string>(
   label: string, newValue: V, oldValue: V, standard: V, get: () => V, set: (v: V) => void,
 ): LookRow => ({ label, newValue, oldValue, standard, get, set: (v) => set(v as V) });
 
-const gp = (label: string, s: "keepers" | "keeperPro" | "shotsPro" | "knucklePower" | "ballPhysics" | "matchFlow") =>
+const gp = (label: string, s: "keepers" | "keeperPro" | "shotsPro" | "knucklePower" | "ballPhysics" | "matchFlow"
+  | "shotPower" | "contactField" | "keeperFeel" | "mateShots") =>
   row(label, "new", "old", defaultVersion(s), () => gameplayVersion(s), (v) => setGameplayVersion(s, v));
 
 /** Every New | Old row left in Settings, keyed by a short id. */
@@ -41,6 +42,11 @@ export const LOOK_ROWS = {
   knucklePower: gp("Knuckleball & power shot", "knucklePower"),
   ballPhysics: gp("Ball physics", "ballPhysics"),
   matchFlow: gp("Match flow", "matchFlow"),
+  // The Oct 13 gameplay update, still being tested (Old by default).
+  shotPower: gp("Shot power", "shotPower"),
+  contactField: gp("Contact field", "contactField"),
+  keeperFeel: gp("Keeper feel", "keeperFeel"),
+  mateShots: gp("Team-mate shots", "mateShots"),
   matchRadar: row("Match radar (testing)", "new", "old", "old", matchRadarLook, setMatchRadarLook),
   ui: row("UI", "new", "old", UI_VERSION_DEFAULT, uiVersion, setUiVersion),
 } as const satisfies Record<string, LookRow>;

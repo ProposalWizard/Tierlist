@@ -50,7 +50,7 @@ for (const gone of ["cutscenePeople", "cutsceneCamera", "chances", "animations",
 check(!/cutscenePeople|cutsceneCamera/.test(settings), "Settings still has a cut-scene row");
 
 // 3.
-const expected = ["keepers", "keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "matchRadar", "ui"];
+const expected = ["keepers", "keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "shotPower", "contactField", "keeperFeel", "mateShots", "matchRadar", "ui"]; // + the Oct 13 gameplay update (Old by default)
 check(LOOK_ROW_IDS.join() === expected.join(), `rows are ${LOOK_ROW_IDS.join()}`);
 
 check(LOOK_ROWS.keepers.standard === "new", "Keepers must default to New");

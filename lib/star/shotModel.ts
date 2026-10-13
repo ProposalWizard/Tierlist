@@ -42,6 +42,7 @@ import {
 } from "./canvasEngine";
 import { gameplayVersion } from "./gameplayVersion";
 import { mulberry32 } from "./season";
+import { fieldApplies, fieldContact, struckAtGoal } from "./shotFeel";
 
 // ─────────────────────────────────────────────────────────────────────────
 //  Switches
@@ -106,13 +107,16 @@ export const KNUCKLE_MIN_POWER = 0.8;
  * side it is sliced, and outside the ball altogether it is scuffed. The
  * bottom rim is the chip — a deliberate shot, not a mistake.
  */
-export function gradeContact(c: Contact, power: number, knuckles = true): ContactRead {
+export function gradeContact(c: Contact, power: number, knuckles = true, field = false): ContactRead {
   const r = Math.hypot(c.cx, c.cy);
   if (r >= 0.999) return { grade: "scuffed", power: 0.62, spread: 2.2, label: "SCUFFED" };
   if (knuckles && r < KNUCKLE_R && power >= KNUCKLE_MIN_POWER) return { grade: "knuckle", power: 1.04, spread: 1, label: "KNUCKLEBALL" };
   if (c.cy > 0.62 && Math.abs(c.cx) < 0.55) return { grade: "chip", power: 1, spread: 1, label: "" };
   if (r > 0.78) {
     if (c.cy < -0.6) return { grade: "topped", power: 0.78, spread: 1.4, label: "TOPPED" };
+    // Contact field (shotFeel.ts): the side of the ball is the side-foot
+    // curler, a strike on purpose — not a slice.
+    if (field && Math.abs(c.cx) > 0.55) return { grade: "plain", power: 1, spread: 1.1, label: "CURLER" };
     if (Math.abs(c.cx) > 0.55) return { grade: "sliced", power: 0.88, spread: 1.8, label: "SLICED" };
     return { grade: "plain", power: 1, spread: 1.15, label: "" };
   }
@@ -245,33 +249,60 @@ function rot(v: Vec2, deg: number): Vec2 {
 export function launchShot(
   sc: Scenario, dir: Vec2, power: number, contact: Contact, skills: KickSkills,
   rng: () => number, rec: ShotRecord,
-  opts: { pro: boolean; knuckle: boolean },
+  opts: { pro: boolean; knuckle: boolean; field?: boolean; lift?: number },
+  launch: Kick,
+): StruckShot {
+  const st = launchShotRaw(sc, dir, power, contact, skills, rng, rec, opts, launch);
+  // Shot power (shotFeel.ts, Oct 13): a harder striker's ball rises a little
+  // less, so a 100 is not "guaranteed over the bar". Only a strike at goal
+  // that is still yours; never with the Shots model on (it aims the height
+  // at the line itself).
+  const lift = opts.lift ?? 1;
+  const b = st.ball;
+  if (lift !== 1 && !opts.pro && struckAtGoal(sc, dir, contact.cx) &&b.lastTouch === "attack" && !b.loose && b.vel.y < -1) {
+    b.vz *= lift;
+    b.shot = isDriveAtGoal(b, sc);
+    b.youStruckAtGoal = b.shot;
+    markLanding(b, sc);
+  }
+  return st;
+}
+
+function launchShotRaw(
+  sc: Scenario, dir: Vec2, power: number, contact: Contact, skills: KickSkills,
+  rng: () => number, rec: ShotRecord,
+  opts: { pro: boolean; knuckle: boolean; field?: boolean },
   launch: Kick,
 ): StruckShot {
   const extras = rec.extras ?? {};
   const atGoal = aimedAtGoal(sc, dir);
   const powered = extras.powerMult && extras.powerMult > 1;
+  // Contact field (shotFeel.ts, Oct 13): the tap as the ball feels it — the
+  // up/down part fades toward the edges. `contact` stays the real tap for
+  // grading (a side strike is a curler, not a slice).
+  const field = !!opts.field && fieldApplies(sc.kind);
+  const vc = field ? fieldContact(contact) : contact;
   if (!opts.pro && !(opts.knuckle && atGoal)) {
     // Today's strike (plus, when only the power shot is on, its pace and drift).
     const d = powered || extras.driftDeg ? rot(dir, extras.driftDeg ?? 0) : dir;
-    return { ball: launch(sc, d, power * (extras.powerMult ?? 1), contact, skills, rng) };
+    return { ball: launch(sc, d, power * (extras.powerMult ?? 1), vc, skills, rng) };
   }
   if (!atGoal) {
-    return { ball: launch(sc, dir, power, contact, skills, rng) };
+    return { ball: launch(sc, dir, power, vc, skills, rng) };
   }
   const r = mulberry32(rec.seed >>> 0);
-  const read = gradeContact(contact, power, opts.knuckle && !extras.noKnuckle);
+  const read = gradeContact(contact, power, opts.knuckle && !extras.noKnuckle, field);
   if (!opts.pro) {
     // Knuckleball/power shot on, Shots model off: today's strike + the extras.
     const d = rot(dir, extras.driftDeg ?? 0);
-    const ball = launch(sc, d, power * (extras.powerMult ?? 1), contact, skills, rng);
+    const ball = launch(sc, d, power * (extras.powerMult ?? 1), vc, skills, rng);
     if (read.grade === "knuckle") makeKnuckle(ball, r);
     return { ball, read: read.grade === "knuckle" ? read : undefined };
   }
   const spread = spreadDeg(sc, power, skills.technique) * read.spread;
   const d = rot(dir, gauss(r) * spread + (extras.driftDeg ?? 0));
   const p = power * read.power * (extras.powerMult ?? 1);
-  const ball = launch(sc, d, p, contact, skills, rng);
+  const ball = launch(sc, d, p, vc, skills, rng);
   // Only a ball still yours and still heading for goal (a header can be lost
   // in the air: applyAerialContest has already turned it into a clearance).
   if (ball.lastTouch !== "attack" || ball.loose || !(ball.vel.y < -1)) return { ball, read, spread };
@@ -294,9 +325,9 @@ export function launchShot(
     // already skids in low under the bodies in front of it (and is blocked at
     // the real rate); close in, today's "low drive" arrived at 1.3-1.9 m — a
     // full-power penalty struck on the top of the ball went in at chest height.
-    const want = read.grade === "topped" ? 0.12 : intendedHeight(contact.cy);
+    const want = read.grade === "topped" ? 0.12 : intendedHeight(vc.cy);
     const vz = vzForHeight(dist, speed, want, ball.z);
-    if (vz !== null) ball.vz = contact.cy < DRIVE_BELOW_CY || read.grade === "topped" ? Math.min(ball.vz, vz) : vz;
+    if (vz !== null) ball.vz = vc.cy < DRIVE_BELOW_CY || read.grade === "topped" ? Math.min(ball.vz, vz) : vz;
     // The up/down part of the spread, as an angle off the struck line.
     const slope = Math.tan((spreadDeg(sc, power, skills.technique) * VERT_RATIO * read.spread * Math.PI) / 180);
     ball.vz = clamp(ball.vz + gauss(r) * slope * speed, 0.2, 14);
