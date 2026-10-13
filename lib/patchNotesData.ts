@@ -103,6 +103,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
               "detail": "855 matches, 2,131 goals named in a season; same every time."
             },
             {
+              "title": "Made-up national players named from their own country",
+              "detail": "Name banks for all 211 nations from 166,311 real footballers: 38-100 first names, 60-160 surnames each (was 24 surnames, 75 nations). No surname twice in a squad."
+            },
+            {
               "title": "Casino scandals",
               "detail": "2% + 0.4% a bet × fame, max 25%; costs climb to a fine, the armband and an 8-week ban."
             }
