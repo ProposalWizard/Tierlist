@@ -353,7 +353,7 @@ if (isMain) {
       ok(noRoom6 === 0, `orbit centred: the ball stays a full-power drag above the bottom and in the middle band (${noRoom6} not)`);
       ok(dist6 === 0, "orbit centred: camera distance, angle and lens kept (3D sizes never change)");
       // INSIDE THE BOWL: turned/tilted, the camera never stands outside the stadium
-      let nB = 0, standB = 0, outB = 0, offB = 0, roomB = 0, lensB = 0, shrunkB = 0, same0 = 0, minD = Infinity;
+      let nB = 0, standB = 0, outB = 0, offB = 0, roomB = 0, lensB = 0, shrunkB = 0, raisedB = 0, same0 = 0, minD = Infinity, minRatio = Infinity;
       for (const kind of ["tight_angle", "cutback", "one_on_one"]) for (const c of cleanServed(kind, 6)) {
         const cam0 = usesKindCam(kind) ? solveKindCam(kind, c.f, c.sc.ball, c.figs, { x: c.keeper.x, y: c.keeper.y }, matchScale()) : solveMatch2D(c.f);
         if (keepInBowl(cam0, c.sc.ball, 0, W, H) !== cam0) same0++;
@@ -366,16 +366,20 @@ if (isMain) {
           const b = bcProject(o, W, H, c.sc.ball);
           nB++; minD = Math.min(minD, o.D);
           if (o.D < tl.D - 1e-6) shrunkB++;
+          if (o.elev > tl.elev + 1e-6) raisedB++;
+          minRatio = Math.min(minRatio, o.D / tl.D);
           const spot = bowlSpot(px, pz, o.D * Math.sin(o.elev));
           if (spot === "out") outB++;
           if (spot === "stand") standB++;
           if (Math.abs(b.nx) / 2 > 0.1) offB++;
           if (b.fr > limit + 1e-3) roomB++;
-          if (Math.abs(o.fov - tl.fov) > 1e-9 || Math.abs(o.elev - tl.elev) > 1e-9) lensB++;
+          // it may RISE to stay inside the bowl (13 Oct 2026: closer read as a zoom-in), never drop, never change lens
+          if (Math.abs(o.fov - tl.fov) > 1e-9 || o.elev < tl.elev - 1e-9) lensB++;
         }
       }
-      ok(nB > 0 && outB === 0, `inside the bowl: every turned/tilted camera stands inside the stadium, over the grass or over a stand clear of its seats (${nB} views, ${standB} over a stand, ${outB} outside, ${shrunkB} brought closer, nearest ${minD.toFixed(0)} m)`);
-      ok(offB === 0 && roomB === 0 && lensB === 0, `inside the bowl: the ball still in the middle (${offB} off), drag room kept (${roomB} short), angle and lens kept (${lensB} changed)`);
+      ok(nB > 0 && outB === 0, `inside the bowl: every turned/tilted camera stands inside the stadium, over the grass or over a stand clear of its seats (${nB} views, ${standB} over a stand, ${outB} outside, ${raisedB} raised, ${shrunkB} brought closer, nearest ${minD.toFixed(0)} m)`);
+      ok(minRatio >= 0.85 - 1e-6, `inside the bowl: never closer than 85% of the framing's own distance, so no zoom-in (closest ${(minRatio * 100).toFixed(0)}%)`);
+      ok(offB === 0 && roomB === 0 && lensB === 0, `inside the bowl: the ball still in the middle (${offB} off), drag room kept (${roomB} short), lens kept and the angle only ever rises (${lensB} not)`);
       ok(same0 === 0, "inside the bowl: the default camera (no turn, no tilt) is untouched");
       ok(centreShare(0, 0) === 0 && centreShare(7.5, 0) === 0.5 && centreShare(15, 0) === 1 && centreShare(0, 5) === 1 && centreShare(0, 0, true) === 1, "orbit centred: none at the default, half at 7.5°, full from 15° turned or 5° tilted, full while dragging");
     }
