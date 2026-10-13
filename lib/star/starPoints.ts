@@ -127,8 +127,11 @@ export interface StarBest {
   carry?: number;
   /** The one-level-a-match cap (MAX_RISE_PER_MATCH): `apps` is how many
    *  matches you had played when this window opened, `base` your rating then.
-   *  Until you play again the rating can't pass base + 1. */
-  win?: { apps: number; base: number };
+   *  Until you play again the rating can't pass base + 1. `ach`: your
+   *  achievement points when it opened — achievements earned since lift the
+   *  cap by what they are worth (Mikey, 13 Oct 2026: "achievements should be
+   *  allowed to level you up on the spot"). Absent in older saves. */
+  win?: { apps: number; base: number; ach?: number };
 }
 
 /** The career's ledger; a save from before Star Points gets one rebuilt. */
@@ -516,7 +519,7 @@ export interface StarStatus {
   /** Star Points past the next level, carried to the matches after (0 unless held). */
   carried: number;
   /** The cap's window (see StarBest.win), to bank. */
-  win: { apps: number; base: number };
+  win: { apps: number; base: number; ach?: number };
 }
 
 /** True for a career saved on the 1.0-10.0 scale and not yet converted. */
@@ -583,10 +586,17 @@ export function starStatus(career: CareerState): StarStatus {
   // played (the ledger's count moved on), at the rating banked before it.
   // No banked rating at all (a brand-new career) has nothing to hold back.
   const apps = matchesPlayed(led);
+  const achNow = pointLines(career).find(l => l.key === "achievements")?.sp ?? 0;
   const newWindow = !(best?.win && best.win.apps === apps);
-  const win = !newWindow && best?.win ? best.win : { apps, base: best?.stars ?? stars };
+  const win = !newWindow && best?.win ? { ...best.win, ach: best.win.ach ?? achNow } : { apps, base: best?.stars ?? stars, ach: achNow };
   const reach = stars;
-  stars = Math.min(stars, win.base + MAX_RISE_PER_MATCH);
+  // Achievements level you up on the spot (Mikey, 13 Oct 2026): what you
+  // have earned from them since this window opened lifts the cap by the
+  // levels it is worth on top of the window's own rating.
+  const achSince = Math.max(0, achNow - (win.ach ?? achNow));
+  const achBase = win.base < POINTS_CAP_LEVEL && achSince > 0
+    ? Math.max(win.base, levelFromPoints(pointsForLevel(win.base) + achSince)) : win.base;
+  stars = Math.min(stars, achBase + MAX_RISE_PER_MATCH);
   // The floor is the banked rating — except on the first look after a new
   // match, when a run of SLUMP_MATCHES poor ones lets it slip one level (2c).
   const banked = best?.stars ?? 1;
