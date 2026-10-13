@@ -278,7 +278,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       { group: "Tabs", items: [
         ["Shots", "The list of real shots, each with its picture and Play button."],
-        ["Moving highlight", "Only shots with 2–3 real passes before them. ▶ Watch the move: the match radar (the same one as the Match Radar page) shows the move coming up the pitch, then the real passes play on our pitch (everyone drifts from where StatsBomb's 360 frame had them to where they stood at the shot), then the shot is yours in the real match. ↺ Again replays it; ■ Stop closes it. The lead-in is a drawing only; the real engine plays just the shot."],
+        ["Moving highlight", "Only shots with 2–3 real passes before them. ▶ Watch the move: the match radar (the same one as the Match Radar page) shows the move coming up the pitch, then the real match itself replays the real passes in its own picture (2D or 3D: the 3D | 2D button in the match bar, the same as a career match), everyone moving from where StatsBomb's 360 frame had them to where they stood at the shot, and YOU receive the last pass. Then the shot is yours, live, from exactly there. ↺ Again replays it; ■ Stop closes it. The replay is recorded positions, not physics; the engine plays only the shot. A team-mate who passed from outside the shot's picture is on the pitch for the replay only."],
         ["Ours vs real", "Four bars per chance kind: shot distance, defenders between ball and goal, nearest defender, keeper off his line. Real = the real shots of that kind; Ours = 200 of the game's own chances of that kind."],
       ] },
       { group: "Filters", items: [
@@ -297,7 +297,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing saves. The shots are read from data/statsbomb/shots.json each time the page opens."],
     inGame: ["Nowhere. This is a test page; the real game never reads this data."],
-    dev: "app/star-statsbomb-dev/page.tsx, MovingHighlight.tsx (radar + lead-in, uses components/star/MatchRadar.tsx RadarPitch); lib/star/statsbombShots.ts (sbToPitch, kindForShot, scenarioForShot, leadinPlan, the measures); app/api/star/statsbomb-shots/route.ts; data/statsbomb/ (shots.json, leadins.json, README); scripts/statsbomb/fetch_shots.py; tests/star/statsbomb.mts.",
+    dev: "app/star-statsbomb-dev/page.tsx, MovingHighlight.tsx (radar + EnginePlay inside components/star/Match3DLayer.tsx, uses components/star/MatchRadar.tsx RadarPitch); lib/star/statsbombShots.ts (sbToPitch, kindForShot, scenarioForShot, leadinPlan, leadinTrack, the measures); lib/star/leadIn.ts (the lead-in CanvasMatch replays: its `leadIn` prop); tests/star/leadIn.mts; app/api/star/statsbomb-shots/route.ts; data/statsbomb/ (shots.json, leadins.json, README); scripts/statsbomb/fetch_shots.py; tests/star/statsbomb.mts.",
   },
   "/star-goal-clips-dev": {
     title: "Goal videos",

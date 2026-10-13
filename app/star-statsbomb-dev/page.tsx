@@ -204,7 +204,7 @@ export default function StatsbombShotsDev() {
         <>
           {tab === "move" && (
             <div className="mb-2 text-xs font-bold">
-              The match radar shows the move coming, then the last 2–3 real passes play on our pitch, then the shot is yours in the real engine.
+              The match radar follows the move; the real match replays the last 2–3 real passes in its own picture (2D or 3D), you receive the last one, then the shot is yours.
             </div>
           )}
           {tab === "move" && watching && leadins?.[watching.id] && (

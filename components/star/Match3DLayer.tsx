@@ -196,6 +196,7 @@ export default function Match3DLayer({ children, tod = "golden" }: { children: R
   // Until the 3D picture is ready the 2D match shows, so the screen is never blank.
   const obs = useMemo<EngineFrameObserver>(() => ({
     hide2D: on && status === "ready", attach, onFrame, hold: settingsOpen, chrome,
+    warming: on && (status === "idle" || status === "loading"),
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [on, status, attach, onFrame, settingsOpen, can3d, rebuild]);
 
