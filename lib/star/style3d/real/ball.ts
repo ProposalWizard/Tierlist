@@ -31,6 +31,52 @@ function ballCanvas(): HTMLCanvasElement {
   return c;
 }
 
+/**
+ * The classic ball (texture packs Cartoon and Bright, Harry 13 Oct 2026: "a better ball with like
+ * clear black on it"): a truncated icosahedron, white hexagons and twelve black pentagons, thin
+ * dark seams. Each texel of the sphere's map is given to the face its ray meets first
+ * (max dot(dir, n) / inradius), so the panels are true pentagons and hexagons, not circles.
+ * Drawn in sphere-UV space to match three's SphereGeometry (u round, v from the top pole).
+ */
+function classicBallCanvas(): HTMLCanvasElement {
+  const W = 512, H = 256;
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const g = c.getContext("2d")!;
+  const img = g.createImageData(W, H);
+  const P = (1 + Math.sqrt(5)) / 2;
+  const ico: number[][] = [];
+  for (const a of [-1, 1]) for (const b of [-1, 1]) { ico.push([0, a, b * P], [a, b * P, 0], [b * P, 0, a]); }
+  const norm = (v: number[]) => { const l = Math.hypot(v[0], v[1], v[2]); return [v[0] / l, v[1] / l, v[2] / l]; };
+  const dist = (a: number[], b: number[]) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  const hex: number[][] = [];
+  for (let i = 0; i < 12; i++) for (let j = i + 1; j < 12; j++) for (let k = j + 1; k < 12; k++) {
+    if (Math.abs(dist(ico[i], ico[j]) - 2) < 1e-6 && Math.abs(dist(ico[j], ico[k]) - 2) < 1e-6 && Math.abs(dist(ico[i], ico[k]) - 2) < 1e-6) {
+      hex.push(norm([ico[i][0] + ico[j][0] + ico[k][0], ico[i][1] + ico[j][1] + ico[k][1], ico[i][2] + ico[j][2] + ico[k][2]]));
+    }
+  }
+  // inradii of the truncated icosahedron (edge 1): pentagon faces 2.32744, hexagon faces 2.26728
+  const faces = [...ico.map((v) => ({ n: norm(v), r: 2.32744, pent: true })), ...hex.map((n) => ({ n, r: 2.26728, pent: false }))];
+  for (let py = 0; py < H; py++) {
+    const th = ((py + 0.5) / H) * Math.PI, st = Math.sin(th), y = Math.cos(th);
+    for (let px = 0; px < W; px++) {
+      const ph = ((px + 0.5) / W) * Math.PI * 2;
+      const x = -Math.cos(ph) * st, z = Math.sin(ph) * st;
+      let b1 = -1, b2 = -1, pent = false;
+      for (const f of faces) {
+        const s = (x * f.n[0] + y * f.n[1] + z * f.n[2]) / f.r;
+        if (s > b1) { b2 = b1; b1 = s; pent = f.pent; } else if (s > b2) b2 = s;
+      }
+      const seam = (b1 - b2) * 2.3 < 0.012; // a thin dark seam where two panels meet
+      const v = pent ? 22 : seam ? 70 : 246;
+      const o = (py * W + px) * 4;
+      img.data[o] = v; img.data[o + 1] = v; img.data[o + 2] = pent ? 26 : seam ? 74 : 242; img.data[o + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+
 function softDisc(T: any, inner: string, outer: string) {
   const c = document.createElement("canvas"); c.width = c.height = 64;
   const g = c.getContext("2d")!; const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
@@ -66,8 +112,8 @@ export interface HBall {
  */
 let lightRingOn = true;
 export function setHBallLightRing(on: boolean) { lightRingOn = on; }
-export function dressHBall(T: any, ball: any, root: any, o: { lightRing?: boolean } = {}): HBall {
-  const tex = new T.CanvasTexture(ballCanvas());
+export function dressHBall(T: any, ball: any, root: any, o: { lightRing?: boolean; classic?: boolean } = {}): HBall {
+  const tex = new T.CanvasTexture(o.classic ? classicBallCanvas() : ballCanvas());
   tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = 4;
   const mat = new T.MeshPhysicalMaterial({ map: tex, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.25, emissive: new T.Color("#ffffff"), emissiveIntensity: 0.06 });
   const sphere = new T.Mesh(new T.SphereGeometry(0.11, 32, 20), mat);

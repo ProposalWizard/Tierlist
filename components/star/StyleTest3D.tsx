@@ -15,6 +15,7 @@ import type { StyleGameplay } from "@/lib/star/style3d/gameplay";
 import type { CutScene } from "@/lib/star/style3d/cutscenes";
 import { realMatchHeight } from "@/lib/star/engineProfile";
 import { quality3dTier } from "@/lib/star/three3d/quality";
+import { useTexturePack, setTexturePack, TEXTURE_PACK_NAMES } from "@/lib/star/style3d/texturePack";
 import CutsceneDirector from "@/components/star/CutsceneDirector";
 import { DEMOS, makeWorldSeek, publishFrameStep, type TimelineEvent } from "@/lib/star/frameStep";
 
@@ -198,6 +199,7 @@ export default function StyleTest3D() {
   const realTilt = Math.max(20, Math.min(70, rtilt));
   // the real game opens in Golden hour (Harry, 9 Oct 2026: "by far the best textures"); Day and Night stay a tap away
   const todNow = tod ?? (style === "mix" || real ? "golden" : "day");
+  const packNow = useTexturePack();
   useEffect(() => {
     if (!isPlay(scene) || status !== "ready") return;
     const id = window.setInterval(() => { const g = play.current; if (g) { setHud(g.session.hud()); setDots(g.dots()); } }, 120);
@@ -302,6 +304,14 @@ export default function StyleTest3D() {
               <button key={v} onClick={() => setView(v)} className={chip(view === v)} data-view={v}>{v === "2d" ? "2D" : "3D view"}</button>
             ))}
             <span className="ml-1 truncate text-[11px] font-bold text-white/70">The real match, its real chances</span>
+          </div>
+        )}
+        {real && isH && (
+          <div className="flex items-center gap-1.5" data-pack-chips>
+            <span className="mr-0.5 shrink-0 text-[11px] font-black uppercase text-white/60">Pack</span>
+            {(["real", "cartoon", "bright"] as const).map((p) => (
+              <button key={p} onClick={() => setTexturePack(p)} className={chip(packNow === p)} data-pack={p}>{TEXTURE_PACK_NAMES[p]}</button>
+            ))}
           </div>
         )}
         {(isPlay(scene) || real) && isH && (

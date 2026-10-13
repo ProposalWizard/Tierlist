@@ -53,6 +53,7 @@ import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { bcPose } from "./broadcastCam";
 import { SIZE3D } from "./size3d";
+import { texturePack, onTexturePack } from "./texturePack";
 import { SMALL_MEN } from "./smallMen";
 import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./camZoom";
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
@@ -1216,7 +1217,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       kit.setActive(false);
       const tod = hTod ?? def.real;
       if (h) { h.setTod(tod); return; }
-      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" }, crisp: true }))
+      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" }, crisp: true, pack: texturePack() }))
         .then((made) => {
           if (tk !== hToken || !def.real) { made.dispose(); return; }
           h = made;
@@ -1267,8 +1268,27 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   if (def.real) {
     // the ball's look H dressing, kept across style changes
     const { dressHBall } = await import("./real/ball");
-    hball = dressHBall(THREE, ball, root);
+    hball = dressHBall(THREE, ball, root, { classic: texturePack() !== "real" });
   }
+  /**
+   * Settings → Texture pack changed (texturePack.ts): the world (pitch, stadium, sky, light, ball)
+   * is built again in the new pack, live, mid-match too. The men, the camera and every size stay.
+   */
+  let packNow = texturePack();
+  const offPack = onTexturePack(() => {
+    const pk = texturePack();
+    if (pk === packNow) return;
+    packNow = pk;
+    if (!def.real) return;
+    hToken++;
+    h?.dispose(); h = null; // its own ball dressing goes with it
+    hball?.dispose(); hball = null;
+    void import("./real/ball").then(({ dressHBall }) => {
+      if (!def.real) return;
+      if (!hball) hball = dressHBall(THREE, ball, root, { classic: packNow !== "real" });
+      restyle();
+    }).catch(() => {});
+  });
 
   // ── the camera: the 2D canvas's tilt, as a pinhole (see the top of the file) ──
   const tmpV = new THREE.Vector3();
@@ -1951,7 +1971,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       def = d;
       restyle();
       if (!!d.real !== wasReal) {
-        if (d.real && !hball) void import("./real/ball").then(({ dressHBall }) => { if (def.real && !hball) hball = dressHBall(THREE, ball, root); });
+        if (d.real && !hball) void import("./real/ball").then(({ dressHBall }) => { if (def.real && !hball) hball = dressHBall(THREE, ball, root, { classic: texturePack() !== "real" }); });
         if (!d.real && hball) { hball.dispose(); hball = null; }
       }
     },
@@ -1960,6 +1980,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     setVisible(on) { visible = on; gov.setPaused("hidden", !on); if (!on) (window as unknown as { __engineView3dBall?: unknown }).__engineView3dBall = null; container.style.pointerEvents = on && o.canvas2d ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
     dispose() {
       hToken++;
+      offPack();
       gov.dispose();
       hball?.dispose(); hball = null;
       if (homeMen) void import("./real/ball").then(({ setHBallLightRing }) => setHBallLightRing(true)).catch(() => {}); // drills keep their ring
