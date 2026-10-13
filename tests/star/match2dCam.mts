@@ -26,7 +26,7 @@ import { usesSetPieceCam, solveSetPieceCam, setPieceKeep, groundUnder, dragRoomS
 import { dragForFullPower, DRAG_LENGTH_SCALE } from "../../lib/star/canvasEngine";
 import { standBackFor, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP } from "../../lib/star/runupStyles";
 import { drawnTakerAt } from "../../lib/star/kickFoot";
-import { keepDragRoom, usesCornerCam, solveCornerCam } from "../../lib/star/style3d/match2dCam";
+import { keepDragRoom, usesCornerCam, solveCornerCam, tiltCamera, TILT } from "../../lib/star/style3d/match2dCam";
 import { zoomCamera } from "../../lib/star/style3d/camZoom";
 import { servedChance, cleanServed, SERVED_KINDS } from "../../scripts/cam3d/served.mts";
 import { usesKindCam, solveKindCam, wideFromSide, orbitCamera, clampOrbit, ORBIT } from "../../lib/star/style3d/match2dCam";
@@ -339,8 +339,25 @@ if (isMain) {
     const orbitBranch = mv.slice(mv.indexOf("if (touch.orbit) {"), mv.indexOf("const at = moveTarget(e);"));
     ok(dn.includes("touch.pend = !touch.shot && f?.phase === \"aim\";\n    if (touch.pend) return;") && dn.indexOf("if (m2 && mate)") < dn.indexOf("touch.pend ="),
       "camera swipe: only a press on open grass can become one (the ball and a team-mate are taken first), and nothing is sent to the 2D game until it shows what it is");
-    ok(orbitBranch.length > 0 && !orbitBranch.includes("send(") && orbitBranch.includes("return;") && /if \(touch\.orbit\) \{ touch\.orbit = false; orbit\.drag = false; touch\.id = -1; return; \}/.test(up),
+    ok(orbitBranch.length > 0 && !orbitBranch.includes("send(") && orbitBranch.includes("return;") && /if \(touch\.orbit \|\| touch\.tilt\) \{ touch\.orbit = false; touch\.tilt = false; orbit\.drag = false; orbit\.tiltDrag = false; touch\.id = -1; return; \}/.test(up),
       "camera swipe: a swipe sends nothing to the 2D game, moving or lifting (it can never start a kick)");
+    // UP AND DOWN (Harry, 13 Oct 2026): tilts the camera; the ball keeps its spot; never past the limits
+    let tMoved = 0, tN = 0, tOut = 0;
+    for (const c of cleanServed("tight_angle", 6)) {
+      const cam = solveKindCam("tight_angle", c.f, c.sc.ball, c.figs, { x: c.keeper.x, y: c.keeper.y }, matchScale());
+      const b0 = bcProject(cam, W, H, c.sc.ball);
+      for (const d of [-25, -10, 10, 25]) {
+        const t = tiltCamera(cam, c.sc.ball, d, W, H);
+        const b1 = bcProject(t, W, H, c.sc.ball);
+        const e = (t.elev * 180) / Math.PI;
+        tN++;
+        if (Math.abs(b1.fr - b0.fr) * H > 0.5) tMoved++;
+        if (e < TILT.minElev - 1e-6 || e > TILT.maxElev + 1e-6) tOut++;
+      }
+    }
+    ok(tN > 0 && tMoved === 0 && tOut === 0, `camera tilt: the ball keeps its height on the screen and the angle stays ${TILT.minElev}–${TILT.maxElev}° (${tN} tilted views, ${tMoved} moved, ${tOut} out of range)`);
+    const tiltBranch = mv.slice(mv.indexOf("if (touch.tilt) {"), mv.indexOf("const at = moveTarget(e);"));
+    ok(tiltBranch.length > 0 && !tiltBranch.includes("send(") && tiltBranch.includes("return;"), "camera tilt: an up/down swipe sends nothing to the 2D game");
   }
   if (fails) { console.error(`${fails} failed`); process.exit(1); }
 }

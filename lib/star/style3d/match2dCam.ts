@@ -646,6 +646,32 @@ export function orbitCamera<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az">>
 }
 
 /**
+ * THE CAMERA SWIPE, UP AND DOWN (Harry, 13 Oct 2026: "can we add up and down swiping for the camera
+ * aswell as side to side?"). A one-finger drag up or down on open grass tilts the camera: up lowers
+ * it (see further up the pitch), down raises it (towards top-down). At most `maxDeg` either way and
+ * never outside `minElev`..`maxElev`. The distance is kept, and the ball keeps its spot on the screen
+ * (the camera slides along the grass to hold it), so the room to drag back is kept too. Eases back
+ * with the side-to-side swipe when the chance ends. Camera only: it never reaches the 2D game.
+ */
+export const TILT = { maxDeg: 25, degPerHeight: 60, minElev: 22, maxElev: 85, upright: 1.2 };
+export function clampTilt(deg: number): number { return Math.max(-TILT.maxDeg, Math.min(TILT.maxDeg, deg)); }
+export function tiltCamera<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov"> & { elevDeg?: number }>(c: T, ball: BcPoint, deg: number, W: number, H: number): T {
+  if (!deg) return c;
+  const e0 = (c.elev * 180) / Math.PI;
+  const e1 = Math.max(TILT.minElev, Math.min(TILT.maxElev, e0 + deg));
+  if (Math.abs(e1 - e0) < 1e-6) return c;
+  const want = bcProject(c, W, H, ball).fr;
+  const tilted = { ...c, elev: (e1 * Math.PI) / 180, elevDeg: e1 };
+  // slide along the grass (towards/away from the camera) until the ball is back on its spot
+  const at = (d: number) => ({ ...tilted, tx: tilted.tx + c.ax * d, tz: tilted.tz + c.az * d });
+  const fr = (d: number) => bcProject(at(d), W, H, ball).fr;
+  let lo = -200, hi = 200;
+  const up = fr(hi) > fr(lo); // which way fr grows as the camera slides
+  for (let i = 0; i < 50; i++) { const m = (lo + hi) / 2; if ((fr(m) > want) === up) hi = m; else lo = m; }
+  return at((lo + hi) / 2);
+}
+
+/**
  * ROOM TO DRAG BACK, EVERY CHANCE (Harry, 12 Oct 2026, on a one-on-one still: "a player wont be
  * able to drag that back on phone"). The 2D always keeps grass under the ball for the pull-back
  * (matchView.ts ZOOM_MIN_PULL_M; the set-piece camera's dragRoomW). The 3D camera must too, whatever

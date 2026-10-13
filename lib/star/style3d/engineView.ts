@@ -58,7 +58,7 @@ import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./ca
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
 /** Open play's default = the 2D's own frame of the same chance, exactly (Harry, 12 Oct 2026: a 0.85 zoom-in cut the taker off on tight angles and cutbacks). */
 const OPEN_DEFAULT_K = 1;
-import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, orbitCamera, type Match2DCamera } from "./match2dCam";
+import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, orbitCamera, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -1296,8 +1296,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    */
   const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, aimBall: null as { x: number; y: number } | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1, spWide: null as Match2DCamera | null };
   /** The camera swipe (match2dCam.ts ORBIT): degrees turned round the ball now, where it is heading, a finger on it. */
-  const orbit = { deg: 0, target: 0, drag: false, ballKey: "", t: -1, d0: 0 };
+  const orbit = { deg: 0, target: 0, drag: false, ballKey: "", t: -1, d0: 0, tilt: 0, tiltTarget: 0, tiltDrag: false, t0: 0 };
   (window as unknown as { __cam3dOrbit?: (deg: number) => void }).__cam3dOrbit = (deg: number) => { orbit.target = clampOrbit(deg); orbit.deg = orbit.target; }; // dev/test: stills of a turned view
+  (window as unknown as { __cam3dTilt?: (deg: number) => void }).__cam3dTilt = (deg: number) => { orbit.tiltTarget = clampTilt(deg); orbit.tilt = orbit.tiltTarget; }; // dev/test: stills of a tilted view
   /** The one absolute size (size3d.ts), which the set-piece camera frames around: never per chance. */
   const mScale = matchScale();
   /**
@@ -1383,22 +1384,25 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     {
       const live = f.phase === "aim" || f.phase === "runup" || f.phase === "contact" || f.phase === "flight";
       const bk = f.ball && f.phase === "aim" ? `${key}|${f.ball.x.toFixed(1)},${f.ball.y.toFixed(1)}` : orbit.ballKey;
-      if (!live || bk !== orbit.ballKey) { orbit.target = 0; if (!touch.orbit) orbit.drag = false; }
+      if (!live || bk !== orbit.ballKey) { orbit.target = 0; orbit.tiltTarget = 0; if (!touch.orbit) orbit.drag = false; if (!touch.tilt) orbit.tiltDrag = false; }
       orbit.ballKey = bk;
       const dt = orbit.t < 0 ? 0 : Math.max(0, Math.min(0.1, f.t - orbit.t));
       orbit.t = f.t;
       orbit.deg = orbit.drag ? orbit.target : orbit.deg + (orbit.target - orbit.deg) * Math.min(1, dt / ORBIT.easeS * 3);
       if (Math.abs(orbit.deg) < 0.05 && orbit.target === 0) orbit.deg = 0;
+      orbit.tilt = orbit.tiltDrag ? orbit.tiltTarget : orbit.tilt + (orbit.tiltTarget - orbit.tilt) * Math.min(1, dt / ORBIT.easeS * 3);
+      if (Math.abs(orbit.tilt) < 0.05 && orbit.tiltTarget === 0) orbit.tilt = 0;
     }
     const pivot = m2.aimBall ?? (f.ball ? { x: f.ball.x, y: f.ball.y } : null);
-    const c = pivot && orbit.deg ? orbitCamera(cKept, pivot, orbit.deg) : cKept;
+    const cTurned = pivot && orbit.deg ? orbitCamera(cKept, pivot, orbit.deg) : cKept;
+    const c = pivot && orbit.tilt ? tiltCamera(cTurned, pivot, orbit.tilt, W, H) : cTurned;
     const pose = bcPose(c);
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
     camera.up.set(0, 1, 0);
     camera.lookAt(pose.look[0], 0, pose.look[2]);
     camera.fov = c.fov;
     camera.aspect = W / H;
-    camera.near = (sp && !corner && zoom < 0.5) || orbit.deg ? Math.max(0.3, c.minDepth * 0.3) : Math.max(0.1, c.minDepth * 0.8); // a corner: nothing nearer than the framed men (the taker under the camera in A)
+    camera.near = (sp && !corner && zoom < 0.5) || orbit.deg || orbit.tilt ? Math.max(0.3, c.minDepth * 0.3) : Math.max(0.1, c.minDepth * 0.8); // a corner: nothing nearer than the framed men (the taker under the camera in A)
     camera.far = c.D + 500;
     camera.updateProjectionMatrix();
     down3.set(c.ax, 0, c.az);
@@ -1446,7 +1450,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const g = canvasToScreen(f.cam.tilt, sx, sy, f.cam.W, f.cam.H);
     return { x: r.left + g.X, y: r.top + g.Y };
   };
-  const touch = { ev0: null as PointerEvent | null, id: -1, start3: { x: 0, y: 0 }, start2: { x: 0, y: 0 }, g0: { x: 0, y: 0 }, shot: false, mate: false, last: 0, pend: false, orbit: false };
+  const touch = { ev0: null as PointerEvent | null, id: -1, start3: { x: 0, y: 0 }, start2: { x: 0, y: 0 }, g0: { x: 0, y: 0 }, shot: false, mate: false, last: 0, pend: false, orbit: false, tilt: false };
   const send = (type: string, e: PointerEvent, at: { x: number; y: number }) => {
     const c = o.canvas2d;
     if (!c) return;
@@ -1545,7 +1549,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // THE CAMERA SWIPE: a press on open grass while aiming is held back from the 2D game until it shows
     // what it is. Sideways first → it turns the camera and NEVER reaches the 2D game (no kick, no order);
     // anything else (a tap, a drag up or down) is handed over from its start exactly as before.
-    touch.orbit = false;
+    touch.orbit = false; touch.tilt = false;
     touch.pend = !touch.shot && f?.phase === "aim";
     if (touch.pend) return;
     send("pointerdown", e, touch.start2);
@@ -1574,11 +1578,17 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       if (Math.hypot(dx, dy) < ORBIT.startPx) return;
       touch.pend = false;
       if (Math.abs(dx) > Math.abs(dy) * ORBIT.sideways) { touch.orbit = true; orbit.drag = true; orbit.d0 = orbit.target; }
+      else if (Math.abs(dy) > Math.abs(dx) * TILT.upright) { touch.tilt = true; orbit.tiltDrag = true; orbit.t0 = orbit.tiltTarget; }
       else if (touch.ev0) send("pointerdown", touch.ev0, touch.start2);
     }
     if (touch.orbit) {
       const w = container.getBoundingClientRect().width || 1;
       orbit.target = clampOrbit(orbit.d0 - (dx / w) * ORBIT.degPerWidth);
+      return;
+    }
+    if (touch.tilt) {
+      const h = container.getBoundingClientRect().height || 1;
+      orbit.tiltTarget = clampTilt(orbit.t0 + (dy / h) * TILT.degPerHeight); // finger down → higher, up → lower
       return;
     }
     const at = moveTarget(e);
@@ -1587,7 +1597,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   const onUp = (e: PointerEvent) => {
     if (e.pointerId !== touch.id) return;
     // a camera swipe ends here: nothing was ever sent to the 2D game
-    if (touch.orbit) { touch.orbit = false; orbit.drag = false; touch.id = -1; return; }
+    if (touch.orbit || touch.tilt) { touch.orbit = false; touch.tilt = false; orbit.drag = false; orbit.tiltDrag = false; touch.id = -1; return; }
     // a held-back tap on the grass: handed over now, down and up at its start (as before)
     if (touch.pend && touch.ev0) { touch.pend = false; send("pointerdown", touch.ev0, touch.start2); }
     const at = moveTarget(e) ?? touch.start2;
@@ -1603,7 +1613,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (!visible || e.pointerType !== "touch") return;
     pinch.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch.pts.size < 2) return;
-    if (!pinch.on && touch.id !== -1 && (touch.pend || touch.orbit)) { touch.pend = false; touch.orbit = false; orbit.drag = false; touch.id = -1; }
+    if (!pinch.on && touch.id !== -1 && (touch.pend || touch.orbit || touch.tilt)) { touch.pend = false; touch.orbit = false; touch.tilt = false; orbit.drag = false; orbit.tiltDrag = false; touch.id = -1; }
     if (!pinch.on && touch.id !== -1 && touch.ev0) {
       send("pointermove", touch.ev0, touch.start2);
       send("pointerup", touch.ev0, touch.start2);
