@@ -5984,13 +5984,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     return "tdDribble";
   };
 
-  /** Top-down: the frame follows you up the pitch, about 30 m deep. */
+  /** Top-down: the frame follows you up the pitch, about 30 m deep, and sideways too, centred on
+   *  you (Harry, 13 Oct 2026: "what happened to our top-down dribbling that was actually moving with
+   *  the ball?" — it was fixed sideways at the pitch centre). Same width; never past a touchline.
+   *  The picture only: the run's rules and the hidden match are untouched. */
   const topDownViewport = (run: FpRunState) => {
     const c = canvasRef.current;
     const aspect = c && c.height > 0 ? c.width / c.height : 5 / 8;
     const y1 = run.y - 20, y2 = run.y + 9;
     const w = (y2 - y1) * aspect;
-    const cx = Math.max(w / 2, Math.min(PITCH_W - w / 2, CX));
+    const cx = Math.max(w / 2, Math.min(PITCH_W - w / 2, run.x));
     return { x1: cx - w / 2, x2: cx + w / 2, y1, y2 };
   };
 
