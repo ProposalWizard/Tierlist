@@ -116,12 +116,19 @@ export interface HBall {
  */
 let lightRingOn = true;
 export function setHBallLightRing(on: boolean) { lightRingOn = on; }
+/** How much the ball lights itself (was 0.06): bright in shade, short of blooming into a halo. */
+const BALL_GLOW = 0.32;
+
 export function dressHBall(T: any, ball: any, root: any, o: { lightRing?: boolean; classic?: boolean } = {}): HBall {
   const tex = new T.CanvasTexture(o.classic ? classicBallCanvas() : ballCanvas());
   tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = 4;
-  const mat = new T.MeshPhysicalMaterial({ map: tex, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.25, emissive: new T.Color("#ffffff"), emissiveIntensity: 0.06 });
+  // brighter and sharper (Harry, 13 Oct 2026: "brighten/sharpen the goal and the ball alot"): it glows a little
+  // from within so it never sinks into a shadow, and a thin dark ink edge (a back-face shell) gives it a crisp outline
+  const mat = new T.MeshPhysicalMaterial({ map: tex, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.25, emissive: new T.Color("#ffffff"), emissiveMap: tex, emissiveIntensity: BALL_GLOW });
   const sphere = new T.Mesh(new T.SphereGeometry(0.11, 32, 20), mat);
   sphere.castShadow = true;
+  const ink = new T.Mesh(new T.SphereGeometry(0.11 * 1.09, 20, 12), new T.MeshBasicMaterial({ color: 0x0b0f14, side: T.BackSide }));
+  sphere.add(ink);
   const hidden: any[] = [];
   for (const ch of ball.children) { if (ch.visible) { ch.visible = false; hidden.push(ch); } }
   ball.add(sphere);
@@ -175,12 +182,12 @@ export function dressHBall(T: any, ball: any, root: any, o: { lightRing?: boolea
         streak.material.opacity = Math.min(0.55, (sp - 12) * 0.05);
       }
     },
-    setNight(on) { mat.emissiveIntensity = on ? 0.1 : 0.06; },
+    setNight(on) { mat.emissiveIntensity = on ? BALL_GLOW + 0.05 : BALL_GLOW; },
     dispose() {
       root.remove(shadow, ring, streak, drop);
       ball.remove(sphere);
       for (const h of hidden) h.visible = true;
-      for (const m of [shadow, ring, streak, sphere, drop]) { m.geometry.dispose(); m.material.dispose(); }
+      for (const m of [shadow, ring, streak, sphere, drop, ink]) { m.geometry.dispose(); m.material.dispose(); }
       tex.dispose(); shTex.dispose(); rTex.dispose(); stTex.dispose();
     },
   };

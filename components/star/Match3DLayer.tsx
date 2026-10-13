@@ -36,6 +36,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { EngineFrameContext, type EngineFrame, type EngineFrameObserver } from "@/lib/star/engineFrame";
 import type { EngineView } from "@/lib/star/style3d/engineView";
 import { resolveStyle } from "@/lib/star/style3d/styles";
+import type { TimeOfDay } from "@/lib/star/style3d/real/assets";
 import { useMatchView3d, setMatchView3d } from "@/lib/star/matchView3d";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { SettingsGroups } from "./DeviceSettings";
@@ -51,9 +52,12 @@ export const MAX_FRAME_ERRORS = 3;
 /** Rebuilds a match does by itself after the phone gives the 3D back. */
 const AUTO_RETRIES = 2;
 
-export default function Match3DLayer({ children }: { children: ReactNode }) {
+export default function Match3DLayer({ children, tod = "golden" }: { children: ReactNode; tod?: TimeOfDay }) {
   const on = useMatchView3d() === "on";
   const ev = useRef<EngineView | null>(null);
+  // the fixture's light (lib/star/style3d/matchTod.ts), read when the 3D is built
+  const todRef = useRef(tod);
+  todRef.current = tod;
   const box = useRef<{ wrap: HTMLDivElement; canvas: HTMLCanvasElement } | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "off" | "lost">("idle");
   const statusRef = useRef(status);
@@ -93,7 +97,7 @@ export default function Match3DLayer({ children }: { children: ReactNode }) {
       rebuildRef.current?.();
     };
     void import("@/lib/star/style3d/engineView").then(({ createEngineView }) =>
-      createEngineView(holder, { def: resolveStyle("real", "play"), tod: "golden", tilt: CAREER_3D_TILT, canvas2d: b.canvas, onContextLost, onContextRestored }))
+      createEngineView(holder, { def: resolveStyle("real", "play"), tod: todRef.current, tilt: CAREER_3D_TILT, canvas2d: b.canvas, onContextLost, onContextRestored }))
       .then((v) => {
         if (dead) { v.dispose(); return; }
         ev.current = v;

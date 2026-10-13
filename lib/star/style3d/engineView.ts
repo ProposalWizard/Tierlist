@@ -190,6 +190,9 @@ type Body = {
   sw?: number;
 };
 
+/** The keeper's height against his team-mates (Harry, 13 Oct 2026: "a little bit taller"): 1.07 = about 13 cm on 1.8 m. */
+const KEEPER_TALL = 1.07;
+
 export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; faces?: boolean; tilt?: number; canvas2d?: HTMLCanvasElement; onContextLost?: () => void; onContextRestored?: () => void }): Promise<EngineView> {
   const faces = !!o.faces;
   const tier = o.tier ?? quality3dTier();
@@ -670,6 +673,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); homeLight(p); }
     if (tb) setToonBuild(p, tb);
     if (tb && homeMen) p.root.children[0]?.scale.multiply(new THREE.Vector3(...HOME_MATCH_BUILD.across)).multiply(new THREE.Vector3(1, ml?.height ?? 1, 1));
+    // the keeper a little taller than his team (Harry, 13 Oct 2026). His own build, under the root, so his
+    // root stays SIZE3D.keeper (size3d.ts): one fixed size, the same in every chance and every frame.
+    if (sid === "keeper" && (tb || !spare)) p.root.children[0]?.scale.multiply(new THREE.Vector3(1.03, KEEPER_TALL, 1.03));
     const look: PersonLook = {
       skin: toonOn ? (sid === "you" ? toonYou().skin : ml ? ml.skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
       hair: toonOn ? (sid === "you" ? toonYou().hair : ml ? ml.hair : toonHairFor(sid)) : "#1b120c",

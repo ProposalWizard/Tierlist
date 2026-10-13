@@ -487,9 +487,11 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
   }
 
   // ── goals with a real net ──
-  const postMat = keep(new T.MeshStandardMaterial({ color: "#ffffff", roughness: 0.28, metalness: 0.05 }));
+  // bright white whatever the shade (Harry, 13 Oct 2026: "brighten/sharpen the goal and the ball alot"): the frame
+  // lights itself a good deal, and the net a little, so the goal reads crisp against the dark goal end
+  const postMat = keep(new T.MeshStandardMaterial({ color: "#ffffff", roughness: 0.28, metalness: 0.05, emissive: new T.Color("#ffffff"), emissiveIntensity: 0.55 }));
   const netTex = canvasTex(netCanvas());
-  const netMat = keep(new T.MeshStandardMaterial({ map: netTex, color: "#ffffff", roughness: 0.8, alphaTest: 0.02, side: T.DoubleSide, transparent: true, depthWrite: false }));
+  const netMat = keep(new T.MeshStandardMaterial({ map: netTex, color: "#ffffff", roughness: 0.8, alphaTest: 0.02, side: T.DoubleSide, transparent: true, depthWrite: false, emissive: new T.Color("#ffffff"), emissiveMap: netTex, emissiveIntensity: 0.3 }));
   netMat.alphaMap = netTex;
   // 3D quality look New, round 3 (Harry: the Medium net "shimmers"): a mesh cell under ~8 px aliases into
   // bands at Medium's 1.5 pixel ratio + FXAA + sharpen. Far off, the net fades to its own average (a flat,

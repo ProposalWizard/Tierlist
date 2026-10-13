@@ -129,6 +129,8 @@ const brightGrass = (hex: string) => {
   const c = (x: number) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0");
   return `#${c(r * 0.95 + 6)}${c(g * 1.32 + 22)}${c(b * 1.05 + 6)}`;
 };
+/** How much an afternoon match's picture is lifted (see the grade in render). */
+const DAY_LIFT = 1.3;
 /** Light's grass (Harry, 13 Oct 2026: "inbetween the current and the bright one with dirt"): half way to Bright's. */
 const lightGrass = (hex: string) => {
   const a = parseInt(hex.slice(1), 16), b = parseInt(brightGrass(hex).slice(1), 16);
@@ -370,6 +372,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   const applyDials = () => {
     p = lookParams(tod);
     sun.intensity = look.sunIntensity * p.sun;
+    // a high afternoon sun throws short, soft shadows: lighter than golden hour's long ones
+    (sun.shadow as any).intensity = tod === "day" ? 0.45 : 0.7;
     for (const f of floods) f.intensity = look.floods ? sun.intensity * FLOOD_BANK : 0;
     // a bank at nothing (by day) leaves the lighting altogether: same picture, three fewer lights for every pixel
     for (const f of floods) f.visible = f.intensity > 0 || lightReachOff();
@@ -384,15 +388,15 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     if (pack === "real") {
       pitch.setLook({ grass: [gr(look.grass[0]), gr(look.grass[1])], wet: look.wet, blades: p.blades, stripes: p.stripes * (lowG ? lp.stripes : 1) });
       // shadows a touch lighter (Harry, 13 Oct 2026: "lighten up the goal line, the shadows are a bit heavy"):
-      // the stands' baked shade over the goal end at 35%, and a little more open-sky fill in the shade
+      // the stands' baked shade over the goal end at 35% (8% in an afternoon match: no stand shadow on a high sun), and a little more open-sky fill in the shade
       hemi.intensity *= 1.12;
-      baked?.setStrength({ ao: p.ao * 0.85, shade: p.shade * 0.35, bounce: p.bounce, shadePow: lowG ? lp.shadePow : 1 });
+      baked?.setStrength({ ao: p.ao * 0.85, shade: p.shade * (tod === "day" ? 0.08 : 0.35), bounce: p.bounce, shadePow: lowG ? lp.shadePow : 1 });
     } else if (light) {
       // Light: half way to Bright, but the sun's shadows, the wear and the dirt all stay
       hemi.intensity *= 1.35;
       scene.environmentIntensity *= 1.12;
       pitch.setLook({ grass: [lightGrass(gr(look.grass[0])), lightGrass(gr(look.grass[1]))], wet: look.wet * 0.75, blades: p.blades, stripes: p.stripes });
-      baked?.setStrength({ ao: p.ao * 0.6, shade: p.shade * 0.3, bounce: p.bounce, shadePow: 1 });
+      baked?.setStrength({ ao: p.ao * 0.6, shade: p.shade * (tod === "day" ? 0.05 : 0.3), bounce: p.bounce, shadePow: 1 });
     } else if (bright) {
       // much lighter grass, more open-sky light, and no baked stand shadow over the pitch
       hemi.intensity *= 1.7;
@@ -582,7 +586,9 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       }
       if (lookVersion() !== seenVersion) { seenVersion = lookVersion(); applyDials(); }
       const g0 = {
-        exposure: look.exposure * p.exposure, bloom: look.bloom * p.bloom, bloomThresh: look.bloomThresh,
+        // an afternoon match (now a career match's most common light, style3d/matchTod.ts) read a third darker than
+        // golden hour on the stills: lifted to sit level with it
+        exposure: look.exposure * p.exposure * (tod === "day" ? DAY_LIFT : 1), bloom: look.bloom * p.bloom, bloomThresh: look.bloomThresh,
         contrast: look.contrast * p.contrast, sat: look.sat * p.sat, tint: look.tint, lift: look.lift,
         vignette: look.vignette * p.vignette, lut, lutAmt: p.lut, sharpen: p.sharpen, slot: gradeSlot("stadium", tod),
       };
