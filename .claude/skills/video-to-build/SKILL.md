@@ -1,6 +1,6 @@
 ---
 name: video-to-build
-description: Harry's playtest-to-build loop (trial, 13 Oct 2026). Load when Harry hands over a playtest recording and says to analyse, plan and build without waiting ("analyse, plan, patch notes, then build with no confirmation"). Video → breakdown → plan → my own answers → final plan → build → Harry reviews.
+description: Harry's playtest-to-build loop (/video-to-build). Load when Harry types /video-to-build, or hands over a playtest recording and says to analyse, plan and build without waiting ("analyse, plan, patch notes, then build with no confirmation"). Video → breakdown → plan → my own answers → final plan → build → Harry reviews.
 ---
 
 # Video → build, no waiting
@@ -8,8 +8,9 @@ description: Harry's playtest-to-build loop (trial, 13 Oct 2026). Load when Harr
 Harry, 13 Oct 2026: *"analyse, plan and then make a patch notes with the plan, then with no
 confirmation needed from me begin building and build out the answers to ur own questions in the
 patch notes … Video - breakdown - plan - response to plan/solutions - plan - execute - Harry
-reviews (let's test this and if it works we will make it a skill.)"* Status: TRIAL. First run was
-v0.49 (13 Oct). Keep it only if Harry says it worked.
+reviews (let's test this and if it works we will make it a skill.)"* First run was v0.49 (13 Oct).
+Confirmed the same day: *"I like the video to build skill make it a / skill."* Type `/video-to-build`
+(optionally with the Drive link or file name) to start it.
 
 ## The six steps
 
