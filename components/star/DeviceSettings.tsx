@@ -11,6 +11,7 @@ import { LOOK_ROWS, changedFromDefault, setLookRow, useLook, type LookRowId } fr
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetNote, SetSection, SetToggle } from "./settingsKit";
+import { useCam2dSwipe, setCam2dSwipeOn } from "@/lib/star/cam2dSwipe";
 import Quality3dRow from "./Quality3dRow";
 
 /**
@@ -221,6 +222,17 @@ function World3dGroup() {
   );
 }
 
+/** The 2D match camera (lib/star/cam2dSwipe.ts): the swipe camera, off by default. */
+function Match2dCamGroup() {
+  const on = useCam2dSwipe();
+  return (
+    <>
+      <SetToggle label="Swipe camera" on={on} onClick={() => setCam2dSwipeOn(!on)} last />
+      <p className="px-3 pb-2 text-[11px] text-white/70">On: in the 2D match, swipe up or down on open grass to lean the camera, double tap to put it back, and the video-camera button to lock your angle. A drag from the ball always kicks.</p>
+    </>
+  );
+}
+
 /** Screens: Old UI or New UI. */
 function ScreensGroup() {
   const look = useLook();
@@ -257,6 +269,7 @@ export function SettingsGroups({ glow, extra = [], inMatch = false }: { glow: st
   const groups: (ExtraGroup & { card?: boolean })[] = [
     { id: "match", title: "Match", sub: "Keepers, testing (v0.15), 2D or 3D, names", count: 9, content: <MatchGroup />, card: true },
     { id: "world", title: "3D match camera", sub: "Zoom and camera height", count: 2, content: <World3dGroup />, card: true },
+    { id: "cam2d", title: "2D match camera", sub: "Swipe camera (off by default)", count: 1, content: <Match2dCamGroup />, card: true },
     { id: "screens", title: "Screens", sub: "Old UI or New UI", count: 1, content: <ScreensGroup />, card: true },
     ...extra,
   ];
