@@ -60,6 +60,7 @@ import { listClips } from "@/lib/star/goalClip/store";
 import ForYouFeed, { type FeedEntry, type HighlightAd } from "./ForYouFeed";
 import { loadShopItemsView, saveShopItemsView, type ShopItemsView } from "@/lib/star/shopItemsView";
 import TrophyBadge from "./TrophyBadge";
+import { bestHome, homeNameOf } from "@/lib/star/home3d/homes";
 import { art, tierColour, rungName, LevelLadder, GiveChips, StoreSheet, GoldButton, ConfirmSheet, PurchaseMoment, type ConfirmInfo, type StoreTab } from "./parts";
 
 interface ActionResult { ok: boolean; reason?: string }
@@ -196,6 +197,9 @@ interface Props {
   levelMark?: "trophy" | "none";
   /** The Buy pill (12 Oct 2026): A = solid red; B = white with a gold price. Default "auto": Homes B, everything else A, so both can be compared in the real shop. Bench: &buy=A or &buy=B. */
   buyStyle?: "A" | "B" | "auto";
+  /** Your house in 3D (Harry, 13 Oct 2026: "There needs to be a place to go to my home"). On the Homes
+   *  category: "My home" once you own one; before that it says "Buy a home to move in". */
+  onOpenHome?: () => void;
 }
 
 const ItemLook = createContext<{ mark: "trophy" | "none"; buy: "A" | "B" | "auto" }>({ mark: "trophy", buy: "auto" });
@@ -214,7 +218,7 @@ export interface View {
   extra?: { label: string; disabled: boolean; run: () => void };
 }
 
-export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, focus, onKind, onUseCan, onOpen3D, startCat, links, guideCorner = false, barOption = "A", levelMark = "trophy", buyStyle = "auto" }: Props) {
+export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, focus, onKind, onUseCan, onOpen3D, startCat, links, guideCorner = false, barOption = "A", levelMark = "trophy", buyStyle = "auto", onOpenHome }: Props) {
   const bar = barOption;
   /** The bottom bar's two pages: For You (the TikTok feed) and Shop (the showroom). */
   const [tab, setTab] = useState<"foryou" | "shop">("shop");
@@ -410,7 +414,8 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
       stats.push({ text: `Energy ${Math.round(career.energy ?? 0)}/100`, color: "rgba(255,255,255,.8)" });
       return {
         key, cat, title: c.name.replace(" KIB Can", ""), sub: "KIB Can", level: CAN_TIER[c.id], levels: 0,
-        pic: <KibCanIcon can={c} className="h-full max-h-[440px] w-auto" />,
+        // 40% smaller than it was (h-full, up to 440px): a can now reads about the size of a boot or a watch on its page (Harry, 13 Oct 2026: "way too big")
+        pic: <KibCanIcon can={c} className="h-[60%] max-h-[264px] w-auto" />,
         badges: [<Badge key="n" kind="blue">×{have} owned</Badge>, ...(waiting ? [<Badge key="w" kind="gold">Ready next match</Badge>] : [])],
         stats, locked: null,
         button: { label: can ? "Buy" : "Not enough", price, disabled: !can, run: () => askCan(c) },
@@ -652,6 +657,9 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
       <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(90% 60% at 50% 42%, rgba(5,8,15,.25), rgba(5,8,15,.8) 75%), linear-gradient(180deg, rgba(5,8,15,.55), rgba(5,8,15,.35) 40%, rgba(5,8,15,.95) 85%)" }} />
 
       {tab === "foryou" ? (
+        // a phone-width column, centred, on a PC (Harry, 13 Oct 2026: "Is there no for you page on PC?" — full width it
+        // read as a stretched picture, not a feed); on a phone it is the whole screen as before
+        <div className="absolute inset-y-0 left-1/2 w-full max-w-[460px] -translate-x-1/2 min-[520px]:border-x min-[520px]:border-white/10 min-[520px]:shadow-[0_0_60px_rgba(0,0,0,.6)]" data-foryou-column>
         <ForYouFeed onAdShown={setAdShown} entries={feedEntries} viewOf={viewOf} ownLabel={ownLabel} ad={ad} needStars={needStars}
           onDetails={(c, k) => { if (viewOf(c, k).locked === null) openSheet(c, k); }}
           onSeeAll={(c, k) => {
@@ -659,6 +667,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
             setIdx((a) => a.map((v, j) => (j === n ? Math.max(0, SHOWROOM_KEYS[c].indexOf(k)) : v)));
             setCi(n); setTab("shop");
           }} />
+        </div>
       ) : view === 5 ? (
         <div ref={list} data-shop-list={cat.id} className="sr-noscroll absolute inset-0 overflow-y-auto overflow-x-hidden"
           style={{ paddingTop: "calc(var(--sr-top) - 4px)", paddingBottom: BOTTOM_PAD, overscrollBehavior: "contain" }}>
@@ -803,6 +812,22 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
         )}
       </div>
       </>}
+
+      {/* Homes: the way into your house (Harry, 13 Oct 2026) */}
+      {tab === "shop" && cat.id === "homes" && (
+        <div className="pointer-events-none absolute right-3 z-20 flex justify-end" style={{ top: "calc(var(--sr-top) + 2px)" }} data-shop-my-home>
+          {bestHome(career.ownedItems) && onOpenHome ? (
+            <button onClick={onOpenHome} data-open-home aria-label={`My home: ${homeNameOf(career.ownedItems)}`}
+              className="kib-press pointer-events-auto flex h-9 items-center gap-1.5 rounded-full bg-lime-300 px-3.5 text-[13px] font-black uppercase tracking-wide text-[#05080f] shadow-[0_6px_18px_-6px_rgba(163,230,53,.7)]">
+              <span className="text-[16px] leading-none">🏠</span>My home ›
+            </button>
+          ) : (
+            <span className="flex h-8 items-center gap-1.5 rounded-full bg-black/60 px-3 text-[11.5px] font-black uppercase tracking-wide text-lime-200 ring-1 ring-lime-300/40 backdrop-blur" data-no-home>
+              <span className="text-[14px] leading-none">🏠</span>Buy a home to move in
+            </span>
+          )}
+        </div>
+      )}
 
       {tab === "shop" && bar === "C" && (
         <div className="absolute inset-x-0 z-30 bg-gradient-to-t from-[#070b14] to-[#070b14]/70" style={{ bottom: `calc(${TAB_H}px + env(safe-area-inset-bottom))` }}>

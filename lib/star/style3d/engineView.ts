@@ -53,12 +53,13 @@ import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { bcPose } from "./broadcastCam";
 import { SIZE3D } from "./size3d";
+import { texturePack, onTexturePack } from "./texturePack";
 import { SMALL_MEN } from "./smallMen";
 import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./camZoom";
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
 /** Open play's default = the 2D's own frame of the same chance, exactly (Harry, 12 Oct 2026: a 0.85 zoom-in cut the taker off on tight angles and cutbacks). */
 const OPEN_DEFAULT_K = 1;
-import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, orbitCamera, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
+import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, orbitCamera, centreShare, centreOnPivot, keepInBowl, overStand, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -188,6 +189,9 @@ type Body = {
   /** Smooth playback (3D camera: New): when his loop last changed (f.t). */
   sw?: number;
 };
+
+/** The keeper's height against his team-mates (Harry, 13 Oct 2026: "a little bit taller"): 1.07 = about 13 cm on 1.8 m. */
+const KEEPER_TALL = 1.07;
 
 export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; faces?: boolean; tilt?: number; canvas2d?: HTMLCanvasElement; onContextLost?: () => void; onContextRestored?: () => void }): Promise<EngineView> {
   const faces = !!o.faces;
@@ -669,6 +673,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); homeLight(p); }
     if (tb) setToonBuild(p, tb);
     if (tb && homeMen) p.root.children[0]?.scale.multiply(new THREE.Vector3(...HOME_MATCH_BUILD.across)).multiply(new THREE.Vector3(1, ml?.height ?? 1, 1));
+    // the keeper a little taller than his team (Harry, 13 Oct 2026). His own build, under the root, so his
+    // root stays SIZE3D.keeper (size3d.ts): one fixed size, the same in every chance and every frame.
+    if (sid === "keeper" && (tb || !spare)) p.root.children[0]?.scale.multiply(new THREE.Vector3(1.03, KEEPER_TALL, 1.03));
     const look: PersonLook = {
       skin: toonOn ? (sid === "you" ? toonYou().skin : ml ? ml.skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
       hair: toonOn ? (sid === "you" ? toonYou().hair : ml ? ml.hair : toonHairFor(sid)) : "#1b120c",
@@ -1109,8 +1116,23 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     b.p.root.visible = true;
   };
 
+  /**
+   * The keeper in a really bright kit (Harry, 13 Oct 2026: "make the goalie rlly bright in 3d"): his own
+   * colour's hue, full saturation and lit up, so he never sinks into the stand shadow on the goal line.
+   */
+  const neonKit = (hex: string) => {
+    const c = new THREE.Color(hex), hsl = { h: 0, s: 0, l: 0 };
+    c.getHSL(hsl);
+    // a grey/black/white kit has no hue of its own, and a green one sinks into the grass: neon yellow
+    const deg = hsl.h * 360;
+    if (hsl.s < 0.15 || (deg > 70 && deg < 175)) return "#ffe81a";
+    return `#${c.setHSL(hsl.h, 1, 0.56).getHexString()}`;
+  };
   const placeKeeper = (k: NonNullable<EngineFrame["keeper"]>, f: EngineFrame, dt: number, frameNo: number) => {
-    const b = bodyFor("keeper", k.shirt, k.shorts, faces ? k.face : undefined);
+    const b = bodyFor("keeper", neonKit(k.shirt), neonKit(k.shorts), faces ? k.face : undefined);
+    // never capped below full white by the Home light (its 0.95 cap keeps shorts from blooming; he can glow)
+    const hu = (b.p.u as any).uHome?.value;
+    if (hu) hu.z = 1.6;
     b.seen = frameNo;
     const jump = Math.hypot(k.x - b.x, k.y - b.y);
     const cut = !b.init || jump > 4;
@@ -1216,7 +1238,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       kit.setActive(false);
       const tod = hTod ?? def.real;
       if (h) { h.setTod(tod); return; }
-      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" }, crisp: true }))
+      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" }, crisp: true, pack: texturePack() }))
         .then((made) => {
           if (tk !== hToken || !def.real) { made.dispose(); return; }
           h = made;
@@ -1267,8 +1289,27 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   if (def.real) {
     // the ball's look H dressing, kept across style changes
     const { dressHBall } = await import("./real/ball");
-    hball = dressHBall(THREE, ball, root);
+    hball = dressHBall(THREE, ball, root, { classic: texturePack() !== "real" });
   }
+  /**
+   * Settings → Texture pack changed (texturePack.ts): the world (pitch, stadium, sky, light, ball)
+   * is built again in the new pack, live, mid-match too. The men, the camera and every size stay.
+   */
+  let packNow = texturePack();
+  const offPack = onTexturePack(() => {
+    const pk = texturePack();
+    if (pk === packNow) return;
+    packNow = pk;
+    if (!def.real) return;
+    hToken++;
+    h?.dispose(); h = null; // its own ball dressing goes with it
+    hball?.dispose(); hball = null;
+    void import("./real/ball").then(({ dressHBall }) => {
+      if (!def.real) return;
+      if (!hball) hball = dressHBall(THREE, ball, root, { classic: packNow !== "real" });
+      restyle();
+    }).catch(() => {});
+  });
 
   // ── the camera: the 2D canvas's tilt, as a pinhole (see the top of the file) ──
   const tmpV = new THREE.Vector3();
@@ -1296,7 +1337,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    */
   const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, aimBall: null as { x: number; y: number } | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1, spWide: null as Match2DCamera | null };
   /** The camera swipe (match2dCam.ts ORBIT): degrees turned round the ball now, where it is heading, a finger on it. */
-  const orbit = { deg: 0, target: 0, drag: false, ballKey: "", t: -1, d0: 0, tilt: 0, tiltTarget: 0, tiltDrag: false, t0: 0 };
+  const orbit = { deg: 0, target: 0, drag: false, ballKey: "", t: -1, d0: 0, tilt: 0, tiltTarget: 0, tiltDrag: false, t0: 0, centre: 0 };
   (window as unknown as { __cam3dOrbit?: (deg: number) => void }).__cam3dOrbit = (deg: number) => { orbit.target = clampOrbit(deg); orbit.deg = orbit.target; }; // dev/test: stills of a turned view
   // THE CAMERA LOCK (Harry, 13 Oct 2026: "a little floating camera icon that can lock/unlock the camera
   // and maybe a double tap to get back to our default camera angle"). Locked: the angle you left it at is
@@ -1317,13 +1358,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * Only the stadium group, only with 3D camera New; far away (no effect) otherwise.
    */
   const arenaClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e6);
+  /** The same cut for the seats, steps and walls; a turned camera over a stand keeps them (overStand). */
+  const seatClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e6);
   function clipArenaNearSide() {
     const g = scene.getObjectByName("h-arena");
     if (!g) return;
     renderer.localClippingEnabled = true;
     g.traverse((o: { material?: unknown }) => {
       const raw = o.material as { clippingPlanes: unknown[]; clipping?: boolean; needsUpdate: boolean } | { clippingPlanes: unknown[]; clipping?: boolean; needsUpdate: boolean }[] | undefined;
-      for (const m of Array.isArray(raw) ? raw : raw ? [raw] : []) { m.clippingPlanes = [arenaClip]; m.clipping = true; m.needsUpdate = true; }
+      for (const m of Array.isArray(raw) ? raw : raw ? [raw] : []) { m.clippingPlanes = [(m as { userData?: { overhead?: boolean } }).userData?.overhead ? arenaClip : seatClip]; m.clipping = true; m.needsUpdate = true; }
     });
   }
   const placeMatch2D = (f: EngineFrame) => {
@@ -1401,10 +1444,19 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       if (Math.abs(orbit.deg - orbit.target) < 0.05) orbit.deg = orbit.target;
       orbit.tilt = orbit.tiltDrag ? orbit.tiltTarget : orbit.tilt + (orbit.tiltTarget - orbit.tilt) * Math.min(1, dt / ORBIT.easeS * 3);
       if (Math.abs(orbit.tilt - orbit.tiltTarget) < 0.05) orbit.tilt = orbit.tiltTarget;
+      // ROUND OUR PLAYER, CENTRED (match2dCam.ts centreOnPivot): eased over ORBIT.centreS by how far it is turned
+      const want = centreShare(orbit.deg, orbit.tilt, orbit.drag || orbit.tiltDrag);
+      orbit.centre += (want - orbit.centre) * Math.min(1, dt / ORBIT.centreS * 3);
+      if (Math.abs(orbit.centre - want) < 0.002) orbit.centre = want;
     }
     const pivot = m2.aimBall ?? (f.ball ? { x: f.ball.x, y: f.ball.y } : null);
     const cTurned = pivot && orbit.deg ? orbitCamera(cKept, pivot, orbit.deg) : cKept;
-    const c = pivot && orbit.tilt ? tiltCamera(cTurned, pivot, orbit.tilt, W, H) : cTurned;
+    // turned: an automatic extra tilt down (ORBIT.autoTilt x the centring), so the near stand fills less of the screen
+    const tiltAll = orbit.tilt + ORBIT.autoTilt * orbit.centre;
+    const cTilted = pivot && tiltAll ? tiltCamera(cTurned, pivot, tiltAll, W, H) : cTurned;
+    // turned or tilted: the look point slides onto our player (middle of the screen, drag room kept below him)
+    // ...and stays inside the stadium bowl (match2dCam.ts keepInBowl): closer, like a zoom, never a size change
+    const c = pivot && orbit.centre > 0 ? keepInBowl(centreOnPivot(cTilted, pivot, orbit.centre, W, H), pivot, orbit.centre, W, H) : cTilted;
     const pose = bcPose(c);
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
     camera.up.set(0, 1, 0);
@@ -1427,6 +1479,22 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       const edge = Math.abs(c.ax) > 0.5 ? CX : 105;
       arenaClip.normal.set(-c.ax, 0, -c.az);
       arenaClip.constant = Math.min(far + 1.5, edge + 0.3);
+      // turned or tilted round our player: the 2D's box no longer says what is on the screen. Keep all
+      // the ground the 3D screen shows (to its bottom corners); only what stands nearer the camera than
+      // that (a roof in front of the lens) is not drawn (13 Oct 2026: a 90° turn showed a black band)
+      if (orbit.deg || orbit.tilt) {
+        let near = -Infinity;
+        for (const nx of [-1, 0, 1]) { const g = groundUnder(c, W, H, nx, -1); if (g) near = Math.max(near, (g.x - CX) * c.ax + g.y * c.az); }
+        if (near > -Infinity) arenaClip.constant = near + 1.5;
+      }
+      // a turned camera standing over a stand (keepInBowl): its seats stay, like a reverse-angle
+      // broadcast shot; only the roof, truss and lamps nearer than the screen's bottom are not drawn
+      seatClip.copy(arenaClip);
+      const over = !!(orbit.deg || orbit.tilt) && overStand(c);
+      if (over) seatClip.constant = 1e6;
+      // ...and its crowd, which faces the pitch, is seen from behind: drawn both sides while it is
+      const crowd = scene.getObjectByName("h-crowd") as { material?: { side: number } } | undefined;
+      if (crowd?.material) crowd.material.side = over ? THREE.DoubleSide : THREE.FrontSide;
     }
     (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: c.D, elevDeg: c.elevDeg, fov: c.fov, extra: c.extra, near: camera.near, facing, fig: SIZE3D.man, man: c.man };
   };
@@ -1520,6 +1588,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   };
   const onDown = (e: PointerEvent) => {
     if (!visible || pinch.on) return;
+    // PC: the left button only (a mouse drag on open grass turns/tilts the camera, as a finger does)
+    if (e.pointerType === "mouse" && e.button !== 0) return;
     // One finger at a time — but a touch that never ended here (its "up" went
     // elsewhere) must never lock the pitch: the same pointer pressing again, or
     // a touch silent for a second, starts afresh. (The bug behind "stuck on
@@ -1662,20 +1732,17 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (pinch.pts.size === 0) pinch.on = false;
     e.stopImmediatePropagation();
   };
-  // THE WHEEL (Harry, 13 Oct 2026: "the zoom needs to only be triggered by two fingers and mouse wheel
-  // on pc (or two fingers on track pad)"). A trackpad pinch (ctrlKey) or a real mouse wheel (whole
-  // notches, nothing sideways) zooms; a two-finger trackpad slide moves the camera like a one-finger
-  // swipe (sideways = turn, up/down = tilt). A locked camera ignores all of it.
+  // THE WHEEL (Harry, 13 Oct 2026 playtest: every wheel is zoom). A mouse wheel, a precision wheel, a
+  // two-finger trackpad scroll and a trackpad pinch (ctrlKey) all ZOOM, and nothing else: the camera is
+  // turned and tilted on PC by click-and-drag on open grass (onDown/onMove, as a finger on a phone).
+  // A locked camera ignores it.
   const onWheel = (e: WheelEvent) => {
     if (!visible) return;
     e.preventDefault();
     if (camLock.on) return;
-    const mouseWheel = e.deltaMode !== 0 || (e.deltaX === 0 && Math.abs(e.deltaY) >= 40 && Number.isInteger(e.deltaY));
-    if (e.ctrlKey || mouseWheel) { setCamZoom(camZoom() + Math.sign(e.deltaY) * Math.min(0.25, Math.abs(e.deltaY) / 400)); return; }
-    if (lastFrame?.phase !== "aim") return;
-    const r = container.getBoundingClientRect();
-    if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) orbit.target = clampOrbit(orbit.target + (e.deltaX / (r.width || 1)) * ORBIT.degPerWidth);
-    else orbit.tiltTarget = clampTilt(orbit.tiltTarget - (e.deltaY / (r.height || 1)) * TILT.degPerHeight);
+    const px = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY; // lines / pages → pixels
+    if (!px) return;
+    setCamZoom(camZoom() + Math.sign(px) * Math.min(0.25, Math.abs(px) / 400));
   };
   // the floating camera button (THE CAMERA LOCK above): top-left of the pitch, clear of the ball, the commentary and the speed readout
   let camBtn: HTMLButtonElement | null = null;
@@ -1951,7 +2018,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       def = d;
       restyle();
       if (!!d.real !== wasReal) {
-        if (d.real && !hball) void import("./real/ball").then(({ dressHBall }) => { if (def.real && !hball) hball = dressHBall(THREE, ball, root); });
+        if (d.real && !hball) void import("./real/ball").then(({ dressHBall }) => { if (def.real && !hball) hball = dressHBall(THREE, ball, root, { classic: texturePack() !== "real" }); });
         if (!d.real && hball) { hball.dispose(); hball = null; }
       }
     },
@@ -1960,6 +2027,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     setVisible(on) { visible = on; gov.setPaused("hidden", !on); if (!on) (window as unknown as { __engineView3dBall?: unknown }).__engineView3dBall = null; container.style.pointerEvents = on && o.canvas2d ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
     dispose() {
       hToken++;
+      offPack();
       gov.dispose();
       hball?.dispose(); hball = null;
       if (homeMen) void import("./real/ball").then(({ setHBallLightRing }) => setHBallLightRing(true)).catch(() => {}); // drills keep their ring

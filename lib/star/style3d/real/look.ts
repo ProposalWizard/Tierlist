@@ -34,6 +34,7 @@ import { shadowCacheOff } from "../../three3d/shadowCache";
 import { tierLookNew } from "../../three3d/tierLook";
 import { lightReachOff } from "../../three3d/lightReach";
 import { safeCompileAsync } from "../../three3d/safeCompile";
+import type { TexturePack } from "../texturePack";
 
 /** Low's pitch under 3D quality look New, round 2 (see applyDials). */
 export const GRASS_LOW_RGB: [number, number, number] = [0.82, 0.92, 0.82], GRASS_LOW_STRIPES = 1.25;
@@ -79,6 +80,10 @@ void main() {
   float el = asin(clamp(d.y, -1.0, 1.0));
   float v = (1.5707963 - el) / 3.1415926 / 0.625;
   vec3 c = v < 1.0 ? texture2D(tSky, vec2(u, 1.0 - v)).rgb * scale * gain : below;
+  #ifdef H_SKY_FLAT
+  // texture pack Cartoon: a plain painted sky, horizon to top
+  c = mix(vec3(0.80, 0.90, 0.97), vec3(0.32, 0.58, 0.90), pow(clamp(d.y, 0.0, 1.0), 0.55));
+  #endif
   float sd = max(dot(d, normalize(sunDir)), 0.0);
   c += sunCol * (pow(sd, 400.0) * 40.0 + pow(sd, 24.0) * 0.6) * sunDisc;
   gl_FragColor = vec4(c, 1.0);
@@ -110,6 +115,36 @@ export interface RealLookOptions {
    * no extra draw: a texture-filter setting.
    */
   crisp?: boolean;
+  /**
+   * Texture pack (Settings, lib/star/style3d/texturePack.ts; the career 3D match passes it).
+   * "real" (default) is look H exactly as before; "light", "cartoon" and "bright" are described there.
+   */
+  pack?: TexturePack;
+}
+
+/** Bright's grass: the look's own two mown shades, much lighter and a little fresher. */
+const brightGrass = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const c = (x: number) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0");
+  return `#${c(r * 0.95 + 6)}${c(g * 1.32 + 22)}${c(b * 1.05 + 6)}`;
+};
+/** How much an afternoon match's picture is lifted (see the grade in render). */
+const DAY_LIFT = 1.3;
+/** Light's grass (Harry, 13 Oct 2026: "inbetween the current and the bright one with dirt"): half way to Bright's. */
+const lightGrass = (hex: string) => {
+  const a = parseInt(hex.slice(1), 16), b = parseInt(brightGrass(hex).slice(1), 16);
+  const m = (sh: number) => Math.round((((a >> sh) & 255) + ((b >> sh) & 255)) / 2);
+  return `#${((m(16) << 16) | (m(8) << 8) | m(0)).toString(16).padStart(6, "0")}`;
+};
+/** Cartoon's grass: two flat greens, like the drawn 2D pitch. */
+const CARTOON_GRASS: [string, string] = ["#4aa83c", "#58b949"];
+/** A 3-band light ramp for the cartoon stadium (the Style A men's hard bands). */
+function toonRamp(T: any) {
+  const d = new Uint8Array([120, 120, 120, 255, 200, 200, 200, 255, 255, 255, 255, 255]);
+  const t = new T.DataTexture(d, 3, 1, T.RGBAFormat);
+  t.minFilter = t.magFilter = T.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true;
+  return t;
 }
 
 export interface RealLook {
@@ -206,13 +241,17 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   let baked: BakedLight | null = null;
   let dead = false;
   let rungSeen: GovRung | null = null;
+  const pack: TexturePack = o.pack ?? "real";
+  const cartoon = pack === "cartoon", bright = pack === "bright", light = pack === "light";
+  /** Cartoon and Bright: no cast shadows at all (Harry: "the shadow does not help at all"). */
+  const noCast = cartoon || bright;
 
   // ── sky ──
   const su: Record<string, { value: any }> = {
     tSky: { value: null }, scale: { value: 1 }, gain: { value: 1 }, rot: { value: 0.12 }, sunDisc: { value: 0 },
     sunDir: { value: new T.Vector3(0, 1, 0) }, sunCol: { value: new T.Color() }, below: { value: new T.Color("#1a1f1a") },
   };
-  const sky = new T.Mesh(new T.SphereGeometry(400, 48, 24), new T.ShaderMaterial({ uniforms: su, vertexShader: SKY_VERT, fragmentShader: SKY_FRAG, side: T.BackSide, depthWrite: false, fog: false, defines: tierLookNew() ? { H_SKY_GRADE: "" } : {} }));
+  const sky = new T.Mesh(new T.SphereGeometry(400, 48, 24), new T.ShaderMaterial({ uniforms: su, vertexShader: SKY_VERT, fragmentShader: SKY_FRAG, side: T.BackSide, depthWrite: false, fog: false, defines: { ...(tierLookNew() ? { H_SKY_GRADE: "" } : {}), ...(cartoon ? { H_SKY_FLAT: "" } : {}) } }));
   sky.renderOrder = -10; sky.frustumCulled = false;
   root.add(sky);
 
@@ -220,7 +259,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   const hemi = new T.HemisphereLight("#ffffff", "#444444", 0.3);
   const sun = new T.DirectionalLight("#ffffff", 3);
   root.add(hemi, sun, sun.target);
-  if (prof.shadows) {
+  if (prof.shadows && !noCast) {
     sun.castShadow = true;
     const s = prof.shadowScale >= 1 ? 2048 : 1024;
     sun.shadow.mapSize.set(s, s);
@@ -228,6 +267,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     sun.shadow.bias = -0.00025;
     sun.shadow.normalBias = 0.03;
     sun.shadow.radius = 3;
+    // the men's and goal's live shadows at 70% (Harry, 13 Oct 2026: "the shadows are a bit heavy")
+    (sun.shadow as any).intensity = 0.7;
   }
   // night: three more lamp banks round the bowl, one per roof corner (the "sun" is the fourth). Each casts its
   // own soft shadow, so a player at night stands on the four-way shadow star of a floodlit pitch, not on flat
@@ -249,7 +290,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   root.add(rim, rim.target);
 
   // ── pitch, stadium, ball ──
-  const pitch: RealPitch = buildRealPitch(T, maps, { lines: o.lines !== false, stripes: o.lines !== false, w: withArena ? 104 : 600, l: withArena ? 141 : 600 });
+  const pitch: RealPitch = buildRealPitch(T, maps, { lines: o.lines !== false, stripes: o.lines !== false, w: withArena ? 104 : 600, l: withArena ? 141 : 600, flat: cartoon });
   root.add(pitch.mesh);
   // 3D quality look New (12 Oct 2026): the pitch, crowd and boards filtered at 8x on Medium, 4x on Low.
   // Sharp mown stripes and lines at a slant for a texture fetch, not a higher pixel ratio. Round 2: set
@@ -263,12 +304,33 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   if (arena) root.add(arena.group);
   // the crowd keeps a neutral, lifted shade under the baked light (lib/star/look/bakedLight.ts)
   arena?.group.traverse((x: any) => { if (x.name === "h-crowd" && x.material) x.material.userData.bakeNeutral = true; });
+  // Texture pack Cartoon: the stadium in flat cel bands, its own colours, no photo textures. The crowd
+  // and the nets keep their own shaders (the crowd's kit colours and cheering, the nets' see-through mesh).
+  const toonMats: any[] = [];
+  const toonGrad = cartoon && arena ? toonRamp(T) : null;
+  if (cartoon && arena) {
+    const swap = new Map<any, any>();
+    const toon = (m: any) => {
+      if (!m || !m.isMeshStandardMaterial || m.onBeforeCompile !== T.Material.prototype.onBeforeCompile) return m;
+      let t = swap.get(m);
+      if (!t) {
+        t = new T.MeshToonMaterial({ color: m.color, gradientMap: toonGrad, transparent: m.transparent, opacity: m.opacity, side: m.side, depthWrite: m.depthWrite, alphaTest: m.alphaTest });
+        t.color = m.color; // the same colour object: setColours still reaches it
+        swap.set(m, t); toonMats.push(t);
+      }
+      return t;
+    };
+    arena.group.traverse((x: any) => {
+      if (!x.isMesh || x.name === "h-crowd") return;
+      x.material = Array.isArray(x.material) ? x.material.map(toon) : toon(x.material);
+    });
+  }
   // a far ring of trees and roofs for the training patch (no stadium)
   if (!withArena) {
     const hedge = new T.Mesh(new T.CylinderGeometry(150, 150, 9, 64, 1, true), new T.MeshStandardMaterial({ color: "#2b4a24", roughness: 1, side: T.BackSide }));
     hedge.position.set(0, 4.5, 30); root.add(hedge);
   }
-  const hball: HBall | null = o.ball ? dressHBall(T, o.ball, root) : null;
+  const hball: HBall | null = o.ball ? dressHBall(T, o.ball, root, { classic: cartoon || bright }) : null;
 
   // contact shadows: a soft dark patch under each person's feet
   const csTex = (() => {
@@ -310,6 +372,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   const applyDials = () => {
     p = lookParams(tod);
     sun.intensity = look.sunIntensity * p.sun;
+    // a high afternoon sun throws short, soft shadows: lighter than golden hour's long ones
+    (sun.shadow as any).intensity = tod === "day" ? 0.45 : 0.7;
     for (const f of floods) f.intensity = look.floods ? sun.intensity * FLOOD_BANK : 0;
     // a bank at nothing (by day) leaves the lighting altogether: same picture, three fewer lights for every pixel
     for (const f of floods) f.visible = f.intensity > 0 || lightReachOff();
@@ -321,8 +385,30 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     const lowG = tier === "low" && freshTier;
     const lp = LOW_PITCH[tod] ?? { rgb: GRASS_LOW_RGB, stripes: GRASS_LOW_STRIPES, shadePow: 1 };
     const gr = (h: string) => (lowG ? scaleHex(tuneGrass(h, p), lp.rgb) : tuneGrass(h, p));
-    pitch.setLook({ grass: [gr(look.grass[0]), gr(look.grass[1])], wet: look.wet, blades: p.blades, stripes: p.stripes * (lowG ? lp.stripes : 1) });
-    baked?.setStrength({ ao: p.ao, shade: p.shade, bounce: p.bounce, shadePow: lowG ? lp.shadePow : 1 });
+    if (pack === "real") {
+      pitch.setLook({ grass: [gr(look.grass[0]), gr(look.grass[1])], wet: look.wet, blades: p.blades, stripes: p.stripes * (lowG ? lp.stripes : 1) });
+      // shadows a touch lighter (Harry, 13 Oct 2026: "lighten up the goal line, the shadows are a bit heavy"):
+      // the stands' baked shade over the goal end at 35% (8% in an afternoon match: no stand shadow on a high sun), and a little more open-sky fill in the shade
+      hemi.intensity *= 1.12;
+      baked?.setStrength({ ao: p.ao * 0.85, shade: p.shade * (tod === "day" ? 0.08 : 0.35), bounce: p.bounce, shadePow: lowG ? lp.shadePow : 1 });
+    } else if (light) {
+      // Light: half way to Bright, but the sun's shadows, the wear and the dirt all stay
+      hemi.intensity *= 1.35;
+      scene.environmentIntensity *= 1.12;
+      pitch.setLook({ grass: [lightGrass(gr(look.grass[0])), lightGrass(gr(look.grass[1]))], wet: look.wet * 0.75, blades: p.blades, stripes: p.stripes });
+      baked?.setStrength({ ao: p.ao * 0.6, shade: p.shade * (tod === "day" ? 0.05 : 0.3), bounce: p.bounce, shadePow: 1 });
+    } else if (bright) {
+      // much lighter grass, more open-sky light, and no baked stand shadow over the pitch
+      hemi.intensity *= 1.7;
+      scene.environmentIntensity *= 1.3;
+      pitch.setLook({ grass: [brightGrass(tuneGrass(look.grass[0], p)), brightGrass(tuneGrass(look.grass[1], p))], wet: look.wet * 0.5, blades: p.blades, stripes: p.stripes });
+      baked?.setStrength({ ao: p.ao * 0.35, shade: 0, bounce: p.bounce, shadePow: 1 });
+    } else {
+      // cartoon: flat greens, even light from the sky (no bake)
+      hemi.intensity *= 2.2;
+      scene.environmentIntensity *= 0.7;
+      pitch.setLook({ grass: CARTOON_GRASS, wet: 0, blades: 1, stripes: 1 });
+    }
     baked?.setLight(sun.color, sun.intensity);
   };
   const applyTod = async () => {
@@ -335,8 +421,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     su.sunDir.value.set(...look.sunDir).normalize(); su.sunCol.value.set(look.sunColor); su.sunDisc.value = look.sunDisc;
     su.gain.value = look.sky; su.scale.value = SKY_SCALE[tod];
     su.below.value.set(look.fog.color).multiplyScalar(0.4);
-    for (const f of floods) { f.castShadow = prof.shadows && look.floods && rungSeen?.shadows === "full"; }
-    pitch.setLook({ grass: look.grass, wet: look.wet });
+    for (const f of floods) { f.castShadow = prof.shadows && !noCast && look.floods && rungSeen?.shadows === "full"; }
+    if (pack === "real") pitch.setLook({ grass: look.grass, wet: look.wet });
     arena?.setNight(look.floods);
     hball?.setNight(look.floods);
     renderer.toneMappingExposure = look.exposure;
@@ -351,7 +437,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   };
   await applyTod();
   // the stadium's baked light (the training patch has no stadium to bake)
-  if (withArena) {
+  if (withArena && !cartoon) {
     // Patched NOW, its pictures arriving in the background (lag pass 3, 9 Oct 2026): patched
     // after the first frames, every shader in the stadium was built twice, the second time mid-play.
     baked = bakedLightNow(T, "stadium", tod);
@@ -379,7 +465,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   const applyRung = (r: GovRung) => {
     rungSeen = r;
     post.setMode(r.post);
-    const mode = prof.shadows ? r.shadows : "off";
+    const mode = prof.shadows && !noCast ? r.shadows : "off";
     shadowsOn = mode !== "off";
     peopleCast = mode === "full";
     sun.castShadow = shadowsOn;
@@ -438,7 +524,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       csInst.count = ci;
       csInst.instanceMatrix.needsUpdate = true;
       let si = 0;
-      if (freshTier && !peopleCast) {
+      if (freshTier && !peopleCast && !cartoon) {
         // the sun's shadow on the grass: away from the sun, a little longer the lower it is; short and faint
         const hl = Math.hypot(dir.x, dir.z) || 1e-3;
         const len = Math.min(1.5, Math.max(0.7, (0.75 * hl) / Math.max(0.2, dir.y)));
@@ -499,11 +585,21 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
         renderer.shadowMap.needsUpdate = false;
       }
       if (lookVersion() !== seenVersion) { seenVersion = lookVersion(); applyDials(); }
-      post.render(sc, camera, {
-        exposure: look.exposure * p.exposure, bloom: look.bloom * p.bloom, bloomThresh: look.bloomThresh,
+      const g0 = {
+        // an afternoon match (now a career match's most common light, style3d/matchTod.ts) read a third darker than
+        // golden hour on the stills: lifted to sit level with it
+        exposure: look.exposure * p.exposure * (tod === "day" ? DAY_LIFT : 1), bloom: look.bloom * p.bloom, bloomThresh: look.bloomThresh,
         contrast: look.contrast * p.contrast, sat: look.sat * p.sat, tint: look.tint, lift: look.lift,
         vignette: look.vignette * p.vignette, lut, lutAmt: p.lut, sharpen: p.sharpen, slot: gradeSlot("stadium", tod),
-      });
+      };
+      // the goal end sits at the top of the screen, where the vignette is darkest: a lighter vignette in Real and Light
+      post.render(sc, camera, pack === "real" ? { ...g0, vignette: g0.vignette * 0.5 }
+        // Bright: a lighter picture, the darks lifted, a touch less contrast and vignette
+        // Light: half of Bright's lift
+        : light ? { ...g0, exposure: g0.exposure * 1.025, contrast: 1 + (g0.contrast - 1) * 0.88, tint: g0.tint.map((t) => 1 + (t - 1) * 0.7) as [number, number, number], lift: [g0.lift[0] + 0.005, g0.lift[1] + 0.006, g0.lift[2] + 0.006] as [number, number, number], vignette: g0.vignette * 0.45 }
+        : bright ? { ...g0, exposure: g0.exposure * 1.05, contrast: 1 + (g0.contrast - 1) * 0.75, tint: g0.tint.map((t) => 1 + (t - 1) * 0.4) as [number, number, number], lift: [g0.lift[0] + 0.01, g0.lift[1] + 0.012, g0.lift[2] + 0.012] as [number, number, number], vignette: g0.vignette * 0.4 }
+        // Cartoon: no broadcast grade (no colour LUT, curve, tint or vignette); clean bright colours
+        : { ...g0, exposure: g0.exposure, bloom: g0.bloom * 0.3, contrast: 1, sat: 1.12, tint: [1, 1, 1] as [number, number, number], lift: [0, 0, 0] as [number, number, number], vignette: 0, lutAmt: 0, sharpen: 0 });
       renderer.shadowMap.autoUpdate = true;
       // dev builds: the look-tuner re-draws this same frame after turning a dial
       if (!last) {
@@ -526,6 +622,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       root.remove(csInst);
       for (const c of contacts) fabric(c.p.body.material as any, false);
       csGeo.dispose(); csMat.dispose(); sunMat.dispose(); csTex.dispose();
+      for (const m of toonMats) m.dispose();
+      toonGrad?.dispose();
       sky.geometry.dispose(); sky.material.dispose();
       scene.remove(root);
       scene.environment = prevEnv; scene.fog = prevFog; scene.background = prevBg;

@@ -76,6 +76,7 @@ import { ageFetchedForCareer, ageOwnFetchedForCareer } from "@/lib/star/worldAge
 import { hydrateSquads } from "@/lib/star/squadSaveCodec";
 import { externalClubsFor } from "@/lib/star/clubs";
 import { conditionsFor } from "@/lib/star/weather";
+import { matchTodFor } from "@/lib/star/style3d/matchTod";
 import { ovationLook } from "@/lib/star/ovationLook";
 import {
   farewellSides, farewellCareer, farewellFixture, farewellDuties, farewellRecordFrom, farewellSkipped, farewellSeed,
@@ -4005,7 +4006,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <PitchScope>
        <div className="min-h-screen sk-shell bg-gray-950 text-white py-4 px-3">
         <div className="max-w-sm mx-auto">
-          <Match3DLayer>
+          <Match3DLayer tod={matchTodFor(career.season, nextFixture.week, career.homeCity)}>
           <CanvasMatch
             skills={{ power: effectivePower, technique: effectiveTechnique }}
             canCurve={canCurve}
@@ -4549,6 +4550,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             onKind={(k) => { const to = k === "kib" ? "shop-kib" : k === "boots" ? "shop-boots" : "shop-lifestyle"; lastShowroom.current = to; setPhase(to); }}
             onUseCan={handleUseCan}
             onOpen3D={() => { setShopAtDoor(false); setPhase("shop-3d"); }}
+            onOpenHome={HOME3D_IN_CAREER ? () => { setHomeFromGarden(false); setPhase("home-3d"); } : undefined}
           />
         ) : (
         <Shop

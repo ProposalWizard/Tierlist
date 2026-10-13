@@ -25,20 +25,35 @@ export function drawMatchBall(
 ): void {
   // ── The shadow: soft, offset like the players' (lower right) ──
   const k = 1 / (1 + h * 0.18);
+  // the shadow stays dark however high it goes (it only shrinks), so the ball-to-shadow gap reads as height
+  const dk = Math.max(0.65, k);
   const sx = gx + r * (0.45 + h * 0.08), sy = gy + r * 0.25;
   ctx.save();
   ctx.translate(sx, sy);
   ctx.scale(1, 0.5);
   const sr = r * 1.25 * k;
   const g = ctx.createRadialGradient(0, 0, 0, 0, 0, sr);
-  g.addColorStop(0, `rgba(0,0,0,${0.42 * k})`);
-  g.addColorStop(0.65, `rgba(0,0,0,${0.2 * k})`);
+  g.addColorStop(0, `rgba(0,0,0,${0.42 * dk})`);
+  g.addColorStop(0.65, `rgba(0,0,0,${0.2 * dk})`);
   g.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(0, 0, sr, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
+
+  // ── Height cue (Harry, 13 Oct 2026): a faint line from the grass up to a ball in the air ──
+  const air = Math.max(0, Math.min(1, (h - 0.5) / 0.7));
+  if (air > 0 && gy - by > r * 1.5) {
+    ctx.save();
+    ctx.strokeStyle = `rgba(255,255,255,${0.4 * air})`;
+    ctx.lineWidth = Math.max(px1, r * 0.12);
+    ctx.beginPath();
+    ctx.moveTo(gx, gy);
+    ctx.lineTo(gx, by + r);
+    ctx.stroke();
+    ctx.restore();
+  }
 
   // ── The ball ──
   ctx.save();

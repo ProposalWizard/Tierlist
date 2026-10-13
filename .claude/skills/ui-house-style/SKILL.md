@@ -39,6 +39,14 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 13 Oct 2026 — shop playtest (Harry)
+- **A can is about the size of a boot or a watch on its page** ("way too big on this
+  page"): the Showroom can went 581 → 348px tall at 390×844.
+- **No wild effect round a product** ("the can shouldn't have this wild thing around
+  it"): the Elite can's baked lightning aura was masked off the picture.
+- **Every place you own has a way in.** "How do I actually access my home?" — My home
+  sits on Home's bottom strip and on the shop's Homes category.
+
 ### 9 Oct 2026 — the shop has no front page (Harry)
 - **"WHY THE HELL IS THE SHOP STILL NOT DONE????"** He liked "Showroom swipe +
   Feed" and called the framed-card grid "horrendous"; earlier: "70% of this

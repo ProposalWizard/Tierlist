@@ -31,6 +31,56 @@ function ballCanvas(): HTMLCanvasElement {
   return c;
 }
 
+/**
+ * The classic ball (texture packs Cartoon and Bright, Harry 13 Oct 2026: "a better ball with like
+ * clear black on it"): a truncated icosahedron, white hexagons and twelve black pentagons, thin
+ * dark seams. Each texel of the sphere's map is given to the face its ray meets first
+ * (max dot(dir, n) / inradius), so the panels are true pentagons and hexagons, not circles.
+ * Drawn in sphere-UV space to match three's SphereGeometry (u round, v from the top pole).
+ */
+let classicCanvas: HTMLCanvasElement | null = null;
+/** Drawn once a page (about 4 million small sums), then reused by every classic ball. */
+function classicBallCanvas(): HTMLCanvasElement {
+  if (classicCanvas) return classicCanvas;
+  const W = 512, H = 256;
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const g = c.getContext("2d")!;
+  const img = g.createImageData(W, H);
+  const P = (1 + Math.sqrt(5)) / 2;
+  const ico: number[][] = [];
+  for (const a of [-1, 1]) for (const b of [-1, 1]) { ico.push([0, a, b * P], [a, b * P, 0], [b * P, 0, a]); }
+  const norm = (v: number[]) => { const l = Math.hypot(v[0], v[1], v[2]); return [v[0] / l, v[1] / l, v[2] / l]; };
+  const dist = (a: number[], b: number[]) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  const hex: number[][] = [];
+  for (let i = 0; i < 12; i++) for (let j = i + 1; j < 12; j++) for (let k = j + 1; k < 12; k++) {
+    if (Math.abs(dist(ico[i], ico[j]) - 2) < 1e-6 && Math.abs(dist(ico[j], ico[k]) - 2) < 1e-6 && Math.abs(dist(ico[i], ico[k]) - 2) < 1e-6) {
+      hex.push(norm([ico[i][0] + ico[j][0] + ico[k][0], ico[i][1] + ico[j][1] + ico[k][1], ico[i][2] + ico[j][2] + ico[k][2]]));
+    }
+  }
+  // inradii of the truncated icosahedron (edge 1): pentagon faces 2.32744, hexagon faces 2.26728
+  const faces = [...ico.map((v) => ({ n: norm(v), r: 2.32744, pent: true })), ...hex.map((n) => ({ n, r: 2.26728, pent: false }))];
+  for (let py = 0; py < H; py++) {
+    const th = ((py + 0.5) / H) * Math.PI, st = Math.sin(th), y = Math.cos(th);
+    for (let px = 0; px < W; px++) {
+      const ph = ((px + 0.5) / W) * Math.PI * 2;
+      const x = -Math.cos(ph) * st, z = Math.sin(ph) * st;
+      let b1 = -1, b2 = -1, pent = false;
+      for (const f of faces) {
+        const s = (x * f.n[0] + y * f.n[1] + z * f.n[2]) / f.r;
+        if (s > b1) { b2 = b1; b1 = s; pent = f.pent; } else if (s > b2) b2 = s;
+      }
+      const seam = (b1 - b2) * 2.3 < 0.012; // a thin dark seam where two panels meet
+      const v = pent ? 22 : seam ? 70 : 246;
+      const o = (py * W + px) * 4;
+      img.data[o] = v; img.data[o + 1] = v; img.data[o + 2] = pent ? 26 : seam ? 74 : 242; img.data[o + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  classicCanvas = c;
+  return c;
+}
+
 function softDisc(T: any, inner: string, outer: string) {
   const c = document.createElement("canvas"); c.width = c.height = 64;
   const g = c.getContext("2d")!; const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
@@ -66,12 +116,19 @@ export interface HBall {
  */
 let lightRingOn = true;
 export function setHBallLightRing(on: boolean) { lightRingOn = on; }
-export function dressHBall(T: any, ball: any, root: any, o: { lightRing?: boolean } = {}): HBall {
-  const tex = new T.CanvasTexture(ballCanvas());
+/** How much the ball lights itself (was 0.06): bright in shade, short of blooming into a halo. */
+const BALL_GLOW = 0.32;
+
+export function dressHBall(T: any, ball: any, root: any, o: { lightRing?: boolean; classic?: boolean } = {}): HBall {
+  const tex = new T.CanvasTexture(o.classic ? classicBallCanvas() : ballCanvas());
   tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = 4;
-  const mat = new T.MeshPhysicalMaterial({ map: tex, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.25, emissive: new T.Color("#ffffff"), emissiveIntensity: 0.06 });
+  // brighter and sharper (Harry, 13 Oct 2026: "brighten/sharpen the goal and the ball alot"): it glows a little
+  // from within so it never sinks into a shadow, and a thin dark ink edge (a back-face shell) gives it a crisp outline
+  const mat = new T.MeshPhysicalMaterial({ map: tex, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.25, emissive: new T.Color("#ffffff"), emissiveMap: tex, emissiveIntensity: BALL_GLOW });
   const sphere = new T.Mesh(new T.SphereGeometry(0.11, 32, 20), mat);
   sphere.castShadow = true;
+  const ink = new T.Mesh(new T.SphereGeometry(0.11 * 1.09, 20, 12), new T.MeshBasicMaterial({ color: 0x0b0f14, side: T.BackSide }));
+  sphere.add(ink);
   const hidden: any[] = [];
   for (const ch of ball.children) { if (ch.visible) { ch.visible = false; hidden.push(ch); } }
   ball.add(sphere);
@@ -91,14 +148,27 @@ export function dressHBall(T: any, ball: any, root: any, o: { lightRing?: boolea
   })();
   const streak = new T.Mesh(new T.PlaneGeometry(1, 1), new T.MeshBasicMaterial({ map: stTex, transparent: true, depthWrite: false, opacity: 0.6 }));
   streak.renderOrder = 3;
-  root.add(shadow, ring, streak);
+  // Height cue (Harry, 13 Oct 2026: "a ball animation where u can see its height in the air"): a faint
+  // line from the ball straight down to its shadow, shown only once it is clearly off the grass.
+  const dropGeo = new T.BufferGeometry();
+  dropGeo.setAttribute("position", new T.Float32BufferAttribute([0, 0, 0, 0, 1, 0], 3));
+  const drop = new T.Line(dropGeo, new T.LineBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, opacity: 0 }));
+  drop.renderOrder = 2; drop.frustumCulled = false; drop.visible = false;
+  root.add(shadow, ring, streak, drop);
   const tmp = new T.Vector3();
   return {
     update(_dt, vel) {
       const p = ball.getWorldPosition(tmp);
       const s = ball.scale.x;
-      const k = Math.max(0.3, 1 - p.y / 5);
-      shadow.position.set(p.x, 0.012, p.z); shadow.scale.setScalar(0.42 * s * (1.4 - k * 0.4)); shadow.material.opacity = 0.55 * k;
+      // the shadow stays dark and gets SMALLER as the ball climbs, so the gap between the two reads as height
+      const k = Math.max(0.55, 1 - p.y / 12);
+      shadow.position.set(p.x, 0.012, p.z); shadow.scale.setScalar(0.42 * s * (0.55 + 0.45 * k)); shadow.material.opacity = 0.6 * k;
+      const air = Math.max(0, Math.min(1, (p.y - 0.5) / 0.7));
+      drop.visible = air > 0;
+      if (air > 0) {
+        drop.position.set(p.x, 0.015, p.z); drop.scale.set(1, Math.max(0.01, p.y - 0.015 - 0.11 * s), 1);
+        drop.material.opacity = 0.35 * air;
+      }
       ring.visible = o.lightRing ?? lightRingOn;
       ring.position.set(p.x, 0.014, p.z); ring.scale.setScalar(0.62 * s); ring.material.opacity = 0.2 * k;
       const sp = Math.hypot(vel.x, vel.y, vel.z);
@@ -112,12 +182,12 @@ export function dressHBall(T: any, ball: any, root: any, o: { lightRing?: boolea
         streak.material.opacity = Math.min(0.55, (sp - 12) * 0.05);
       }
     },
-    setNight(on) { mat.emissiveIntensity = on ? 0.1 : 0.06; },
+    setNight(on) { mat.emissiveIntensity = on ? BALL_GLOW + 0.05 : BALL_GLOW; },
     dispose() {
-      root.remove(shadow, ring, streak);
+      root.remove(shadow, ring, streak, drop);
       ball.remove(sphere);
       for (const h of hidden) h.visible = true;
-      for (const m of [shadow, ring, streak, sphere]) { m.geometry.dispose(); m.material.dispose(); }
+      for (const m of [shadow, ring, streak, sphere, drop, ink]) { m.geometry.dispose(); m.material.dispose(); }
       tex.dispose(); shTex.dispose(); rTex.dispose(); stTex.dispose();
     },
   };
