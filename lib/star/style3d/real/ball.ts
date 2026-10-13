@@ -38,7 +38,10 @@ function ballCanvas(): HTMLCanvasElement {
  * (max dot(dir, n) / inradius), so the panels are true pentagons and hexagons, not circles.
  * Drawn in sphere-UV space to match three's SphereGeometry (u round, v from the top pole).
  */
+let classicCanvas: HTMLCanvasElement | null = null;
+/** Drawn once a page (about 4 million small sums), then reused by every classic ball. */
 function classicBallCanvas(): HTMLCanvasElement {
+  if (classicCanvas) return classicCanvas;
   const W = 512, H = 256;
   const c = document.createElement("canvas");
   c.width = W; c.height = H;
@@ -74,6 +77,7 @@ function classicBallCanvas(): HTMLCanvasElement {
     }
   }
   g.putImageData(img, 0, 0);
+  classicCanvas = c;
   return c;
 }
 
