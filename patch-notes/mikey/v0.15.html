@@ -1,0 +1,280 @@
+<title>Knowitball Patch Notes Mikey v0.15</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));align-items:start;gap:10px;margin:12px 0 4px}
+  .shots figure{margin:0}.shots img{width:100%;border-radius:10px;border:1px solid var(--line);display:block}
+  .shots figcaption{font-size:12px;color:var(--ink3);margin-top:5px}
+  .tbl{overflow-x:auto;margin:9px 0 2px}.tbl table{border-collapse:collapse;font-size:13px;width:100%}
+  .tbl th,.tbl td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left}.tbl th{color:var(--ink3);font-weight:700}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="ver">v0.15</span>
+  <h1>Knowitball Patch Notes Mikey v0.15</h1>
+  <p class="sub">13 October 2026 · branch Mikey, merged to main (live) · 18 commits since v0.14 · tests: 337 of 339 pass (the 2 failures are old 3D tests, unrelated)</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>211</b><span>FIFA nations, each with a real 2026 ranking</span></div>
+  <div class="s"><b>2,131</b><span>international goals named in one season, every one with a scorer</span></div>
+  <div class="s"><b>0</b><span>Ballon d'Or points for Star Man (was 3 each, you only)</span></div>
+  <div class="s"><b>25%</b><span>most a casino visit can risk a scandal</span></div>
+</div>
+
+<h2 class="bug"><i></i>Check these</h2>
+<ul class="n">
+  <li><div class="hd">Before each international break: the call-up screen (Called up / Not selected)</div></li>
+  <li><div class="hd">Relations → "(your country) manager", starting at 0</div></li>
+  <li><div class="hd">Stats → Country: Tables, Matches (with scorers), Scorers, Ranking, Who won</div></li>
+  <li><div class="hd">Called up: the League tab and Home switch to your country until the break ends</div></li>
+  <li><div class="hd">Premier League or Championship, not picked: "📺 Watch on TV" days in each break</div></li>
+  <li><div class="hd">Ballon d'Or night: "Includes X goals and Y assists for your country"</div></li>
+  <li><div class="hd">Casino: a long visit can end in a story in the media feed</div></li>
+</ul>
+
+
+<h2 class="add"><i></i>How it looks in game</h2>
+<p class="dt">Reaching all of this in a real career takes seasons, so these come from the test page (<code>/star-intl-dev</code>), which plays a career on to each moment. They are the game's own screens at phone size. The names are made up because the test machine has no player database; your game shows real players.</p>
+<h3 style="font-size:15px;margin:22px 0 4px">1 · The squad announcement</h3>
+<p class="dt" style="margin:0 0 6px">Before every break and tournament your country plays. The bar is the national manager's opinion of you: in the squad from 34, a starter from 55.</p>
+<div class="shots">
+  <figure><img src="v0.15-img/01-called.jpg" alt="Called up: England flag in a lit stadium, the break's matches, the manager bar at 62" loading="lazy"><figcaption>Called up</figcaption></figure>
+  <figure><img src="v0.15-img/02-leftout.jpg" alt="Not selected: faded flag, manager bar at 12, Back to the club" loading="lazy"><figcaption>Not selected</figcaption></figure>
+</div>
+<h3 style="font-size:15px;margin:22px 0 4px">2 · On international duty (called up, a Nations League break)</h3>
+<p class="dt" style="margin:0 0 6px">The League tab becomes your country's until the break ends. Scotland, September 2026, one game played.</p>
+<div class="shots">
+  <figure><img src="v0.15-img/03-duty-Table.jpg" alt="Nations League group table with Scotland's row lit" loading="lazy"><figcaption>Table</figcaption></figure>
+  <figure><img src="v0.15-img/03-duty-Results.jpg" alt="Matchday 1 results board with scorers under every game" loading="lazy"><figcaption>Results, with scorers</figcaption></figure>
+  <figure><img src="v0.15-img/03-duty-Fixtures.jpg" alt="Scotland's four games in the break" loading="lazy"><figcaption>Fixtures</figcaption></figure>
+  <figure><img src="v0.15-img/03-duty-Squad.jpg" alt="The 24-man Scotland squad with ratings" loading="lazy"><figcaption>Squad (you at the top)</figcaption></figure>
+</div>
+<h3 style="font-size:15px;margin:22px 0 4px">3 · On duty at a tournament</h3>
+<p class="dt" style="margin:0 0 6px">England at Euro 2028, two group games in.</p>
+<div class="shots">
+  <figure><img src="v0.15-img/06-tournament-Table.jpg" alt="European Championship Group A table" loading="lazy"><figcaption>Group table</figcaption></figure>
+  <figure><img src="v0.15-img/06-tournament-Results.jpg" alt="Euro matchday results with scorers" loading="lazy"><figcaption>Results</figcaption></figure>
+  <figure><img src="v0.15-img/06-tournament-Fixtures.jpg" alt="England's Euro games" loading="lazy"><figcaption>Fixtures</figcaption></figure>
+  <figure><img src="v0.15-img/06-tournament-Squad.jpg" alt="England's 26-man tournament squad" loading="lazy"><figcaption>26-man squad</figcaption></figure>
+</div>
+<h3 style="font-size:15px;margin:22px 0 4px">4 · Not picked: watching on TV (Premier League and Championship)</h3>
+<p class="dt" style="margin:0 0 6px">Each of your country's break games is a day on your calendar. You see the score, the scorers, the group and the day's other results.</p>
+<div class="shots">
+  <figure><img src="v0.15-img/04-watched.jpg" alt="Croatia 0-2 England with scorers, the group table and the matchday's results" loading="lazy"><figcaption>Watched on TV</figcaption></figure>
+</div>
+<h3 style="font-size:15px;margin:22px 0 4px">5 · Stats → Country, after a season</h3>
+<p class="dt" style="margin:0 0 6px">England, after the 2026/27 season with you in every squad.</p>
+<div class="shots">
+  <figure><img src="v0.15-img/05-country-Tables.jpg" alt="England's Nations League group, played out" loading="lazy"><figcaption>Tables</figcaption></figure>
+  <figure><img src="v0.15-img/05-country-Matches.jpg" alt="Next and last results with scorers" loading="lazy"><figcaption>Matches, with scorers ("You" for yours)</figcaption></figure>
+  <figure><img src="v0.15-img/05-country-Scorers.jpg" alt="Top 15 international scorers this season" loading="lazy"><figcaption>Scorers (the whole world)</figcaption></figure>
+  <figure><img src="v0.15-img/05-country-Ranking.jpg" alt="FIFA ranking top 10" loading="lazy"><figcaption>FIFA ranking</figcaption></figure>
+  <figure><img src="v0.15-img/05-country-Whowon.jpg" alt="Every final played: Nations League, CONCACAF Nations League, Asian Cup" loading="lazy"><figcaption>Who won</figcaption></figure>
+</div>
+<h3 style="font-size:15px;margin:22px 0 4px">6 · The Ballon d'Or night</h3>
+<p class="dt" style="margin:0 0 6px">After 2027/28 with Euro 2028 won: the international goals are counted and shown, and the Euro is on the trophy list.</p>
+<div class="shots">
+  <figure><img src="v0.15-img/07-ballondor.jpg" alt="Ballon d'Or winner card with the international goals line and the European Championship trophy" loading="lazy"><figcaption>"Includes 6 goals and 3 assists for your country"</figcaption></figure>
+</div>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">International football: the whole world plays</div>
+    <div class="dt">Every confederation's competitions, played out from your save: Nations League (real 2026–27 groups, then the real 2028 format), Euro and its qualifying, World Cup 2030 on with every region's qualifying, Copa América, Africa Cup of Nations, Asian Cup, CONCACAF Nations League and Gold Cup, OFC Nations Cup, and friendlies. Strengths start from the FIFA ranking of 20 July 2026. <span class="tag seen">measured</span></div>
+    <details><summary>The details</summary>
+      <p>21,755 matches 2026–2046 in about half a second. Knockouts with the best third-placed teams use FIFA and UEFA's own tables (World Cup 495 rows, Euro 15; AFCON uses the Asian Cup's, which matched the real 2023 draw); 21 tournaments checked. CONCACAF's 6 Copa América places come from its Nations League; played from the real 2026 leagues the game picked the same six as the real 2024.</p>
+    </details>
+  </li>
+  <li>
+    <div class="hd">Getting called up: the national manager bar</div>
+    <div class="dt">0 to 100, starting at 0. In the squad from 34, a starter from 55, the same lines as your club manager. Good club games raise it; a higher division counts more; a big nation is harder to impress. <span class="tag seen">measured</span></div>
+    <div class="tbl"><table><tr><th>A 3★ Premier League starter</th><th class="num">Squad picked at</th><th class="num">Bar heads to</th></tr>
+    <tr><td>England</td><td class="num">80.8</td><td class="num">0</td></tr>
+    <tr><td>DR Congo</td><td class="num">72.5</td><td class="num">42</td></tr>
+    <tr><td>San Marino</td><td class="num">57.7</td><td class="num">100</td></tr></table></div>
+  </li>
+  <li>
+    <div class="hd">Your internationals on their real dates</div>
+    <div class="dt">Played in the real match, with extra time, penalties or two legs where the competition has them. 23-man squads (26 at a tournament). Friendlies rotate the squad: a regular starts about 2 of 4 and comes off around 55'–75'. <span class="tag seen">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">National-duty mode</div>
+    <div class="dt">While you're away, the League tab is your country's (Table, Results by matchday, Fixtures, Squad) and Home shows your country. Your club's tables are one tap away. <span class="tag seen">seen on the test page</span></div>
+  </li>
+  <li>
+    <div class="hd">Following your country when you're not picked</div>
+    <div class="dt">Premier League and Championship: each of your country's break games is a "📺 Watch on TV" day showing the score, scorers, the group and that day's other results. You can train or rest in between. League One and below: no change. Measured: 6 Scotland games in a test season. <span class="tag seen">measured + seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Every international goal has a scorer</div>
+    <div class="dt">Every match in the world, named from each nation's squad: forwards most, the starting eleven far more than the bench, keepers never, 3 in 4 with an assist. The same save always names the same scorers. One season: 855 matches, 2,131 goals, all named. New Scorers tab on Stats → Country. <span class="tag seen">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Casino scandals</div>
+    <div class="dt">A visit can reach the papers. The chance comes from how many bets you place in one visit (2% for the first, +0.4% each after), times your fame (×0.25 Unknown to ×1.5 Icon), never above 25%. How much you win or lose changes the headline, not the chance. <span class="tag seen">measured</span></div>
+    <div class="tbl"><table><tr><th>Story this season</th><th>What it costs</th></tr>
+    <tr><td>1st</td><td>Reputation −3, fans −2</td></tr>
+    <tr><td>2nd</td><td>Reputation −8, manager −6, fans −5, sponsors unhappy</td></tr>
+    <tr><td>3rd</td><td>Reputation −15, manager −12, team-mates −6, a fine of 2 weeks' wages, the armband taken</td></tr>
+    <tr><td>4th</td><td>As the 3rd, plus banned from the casino for 8 weeks</td></tr></table></div>
+    <details><summary>The small print</summary><p>One roll as you leave. At most one story a week, and half the chance for 4 weeks after one. Losing 8+ weeks' wages makes it one step worse; winning that much, one step milder. Replaces the old hidden sponsor-only rule.</p></details>
+  </li>
+</ul>
+
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Ballon d'Or: club and country together, for everyone</div>
+    <div class="dt">Goals (×4) and assists (×2) now include international ones, for you and every rival. A World Cup or Euro gives 50 trophy points to all 26 in the winning squad (was you only). A night counts everything played since the last night, so a summer tournament you watch from home counts at the next one. <span class="tag seen">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Star Man taken out of the Ballon d'Or</div>
+    <div class="dt">Only you could ever get it, so it was a free bonus. About the same comes back for a regular international scorer. <span class="tag">reasoned</span></div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Star Man before</span><span class="track"><span class="fill was" style="width:100%"></span></span><span class="vv"><s>+25 to +35 a season</s></span></div>
+      <div class="bar"><span class="lb">Star Man now</span><span class="track"><span class="fill now" style="width:0%"></span></span><span class="vv">0</span></div>
+      <div class="bar"><span class="lb">7 intl goals now</span><span class="track"><span class="fill now" style="width:85%"></span></span><span class="vv">+28</span></div>
+    </div>
+  </li>
+  <li>
+    <div class="hd">Break weekends in the top two divisions</div>
+    <div class="dt">The Premier League and Championship leave the 4 break weekends empty and still finish on the same weekend. The Premier League now has 4 midweek rounds; the Championship 12 (was 8). League One and below play through. <span class="tag seen">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">Nationality picker: 217 → 211</div>
+    <div class="dt">Names that aren't FIFA members are gone (Great Britain, Monaco, Martinique, Réunion and others). The old 4 one-match windows and the old summer tournament are replaced by the real calendar.</div>
+  </li>
+  <li>
+    <div class="hd">Kane drawings (test page only)</div>
+    <div class="dt">1,346 drawings from 472 real strikers (300 of Kane's) on the Real moments test page. Harry's 12 Oct decision keeps the game's own drawings in the real game, so this is not in matches. <span class="tag">measured</span></div>
+  </li>
+</ul>
+
+<h2 class="fix"><i></i>Fixed</h2>
+<ul class="n">
+  <li><div class="hd">International dates were a day late</div><div class="dt">A rounding error put each match on the next day. Now on the real date. <span class="tag seen">measured</span></div></li>
+  <li><div class="hd">Each international paid a full week's wage</div><div class="dt">Now only Sunday break games pay, and only in a league that stops for breaks; tournament games pay nothing. <span class="tag seen">measured</span></div></li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li><div class="hd">Not yet played through in a real career <span class="pill p-red">High</span></div><div class="dt">It's in the game; I checked it on the test page and in tests. Nobody has yet watched a real career reach a Ballon d'Or night with international goals, or Home on duty, with real player names.</div></li>
+  <li><div class="hd">Players never age or retire elsewhere <span class="pill p-amb">Low</span></div><div class="dt">Nations' strengths come partly from their real players, who don't age yet (found 5 Oct). Over 20 seasons, most nations stay near their 2026 level.</div></li>
+  <li><div class="hd">125 of 211 flags are plain colour bands <span class="pill p-amb">Low</span></div><div class="dt">The game draws flags itself (no download). 86 nations have their real flag; the other 125 (DR Congo, Mali, India, Vietnam and others) show two bands in their kit colours, some grey (see the Scorers still). This was already the case before this round.</div></li>
+  <li><div class="hd">Long scorer lists wrap <span class="pill p-amb">Low</span></div><div class="dt">Three scorers on one side can wrap to two lines on a phone.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">Copa América 2028 host</div><div class="dt">Random South American nation until it's announced.</div></li>
+  <li><div class="hd">Full write-up of the international work</div><div class="dt"><a href="https://claude.ai/artifact/AFCRmaujwsoe83dLKDPszZ" style="color:var(--green)">International football page</a>: rounds 1–4, the timeline and the plans.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li><a href="https://claude.ai/artifact/843j4zo8tXx2CKCzYceAFh">v0.14</a> · 2026-10-09 · Real Premier League shots playable as test chances; Chances (testing): about 9 Kane-style highlights a match, Old still the default</li>
+  <li><a href="https://claude.ai/artifact/D2mVBLe6QDF2jqzHnrjiWt">v0.13</a> · 2026-10-08 · Play-off, cup and European round-ups with animated brackets; the real UEFA knockout; two-legged League Cup semis; ±25% wage when your club goes down or up; relegation day</li>
+  <li><a href="https://claude.ai/artifact/6tgaVydhSjEeQea6tkA3oX">v0.12</a> · 2026-10-08 · The ovation's hugs, dap-ups, pat and claps made in Blender; the farewell's 3D ovation checked in a real match</li>
+  <li><a href="https://claude.ai/artifact/23eP6tYuyTjuvAbBisnkCj">v0.11</a> · 2026-10-08 · 3D standing ovation; centre-back Golden Boot and day-one line-ups fixed; more assists; clearances, negotiations and Relations reworked</li>
+  <li><a href="https://claude.ai/artifact/26Lh4jWsraDKYSaZZpqWWk">v0.10</a> · 2026-10-04 · Relationships rebuilt: bars that move slowly, one game per relationship, happiness decides recovery, no Sponsors bar; injuries switched off</li>
+  <li><a href="https://claude.ai/artifact/UTFsvaBcLbYJjWmnYtXLHg">v0.9</a> · 2026-10-03 · XP rebuilt (slower start, XP by the minute, no double pay) and the XP Book to edit every amount; 3D garden, North/South 2026/27, Club Data</li>
+  <li><a href="https://claude.ai/artifact/6degCbK833CTu3YAZtoyCz">v0.8</a> · 2026-09-30 · Sponsors Revamp: brands send offers, deal slots by fame, weekly fees, targets, brand happiness, bidding wars, buy-outs and scandals</li>
+  <li><a href="https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo">v0.7</a> · 2026-09-30 · A new 1-10 star career rating separate from overall, 7 boots, dearer Style, 2 training sessions a week, restyled training, contract terms</li>
+  <li><a href="https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue">v0.6</a> · 2026-09-27 · Five levels of every boot and lifestyle item, a moving ball on the strike screen, commentary that barely repeats, new chants</li>
+  <li><a href="https://claude.ai/artifact/Q681hvwMs83X9895Aevav7">v0.5</a> · 2026-09-26 · How you get picked: win your shirt from a better-rated rival, form over 3 games, subs when the score says, cup rotation</li>
+  <li><a href="https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ">v0.4</a> · 2026-09-25 · Training rebuilt the New Star Soccer way: 30 fixed levels, three tries, stars raise the skill; pace, vision and free kick matter in matches</li>
+  <li><a href="https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm">v0.3</a> · 2026-09-25 · What you see on the pitch matches where people stand: nearer players and the ball drawn right, corners from the flag; trophy pictures, instant energy modes, feed likes</li>
+  <li><a href="https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu">v0.2</a> · 2026-09-22 · Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules</li>
+  <li><a href="https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6">v0.1</a> · 2026-09-21 · Economy, fame and reputation rebuild: Premier League wages to â˜…100k, fame levels, one reputation number, 50-season careers</li>
+</ul>
+</div>

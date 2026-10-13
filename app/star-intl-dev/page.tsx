@@ -16,9 +16,10 @@ import { makeInitialCareer } from "@/lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";
 import { syncIntl, intlOf, periodDue, decide, applyDecision, dutyNow } from "@/lib/star/intl/career";
 import { NationalLeague, WatchedScreen } from "@/components/star/IntlKit";
-import { creditMatchResult, simulateMissedFixture } from "@/lib/star/careerFlow";
+import { creditMatchResult, simulateMissedFixture, advanceSeason } from "@/lib/star/careerFlow";
+import { generateSquad, clubNameSeed } from "@/lib/star/squadData";
 import { nextFixtureFor } from "@/lib/star/competitions";
-import type { CareerState, Fixture } from "@/lib/star/types";
+import type { CareerState, Fixture, LeaguePlayer, LeagueSquad } from "@/lib/star/types";
 import type { StarPlayer } from "@/lib/star/types";
 
 const ZERO = { chances: 0, goals: 0, assists: 0, passes: 0, rating: 6.8, starMan: false, bossChange: 0, teamChange: 0, fansChange: 0, wage: 0, goalBonus: 0, sponsorPay: 0, totalCash: 0, homeScore: 1, awayScore: 0, minutes: 90 };
@@ -51,7 +52,70 @@ function careerAtBreak(nation: string, called: boolean): { career: CareerState; 
   }
   return { career: c };
 }
+/**
+ * A whole first season (2027/28) for `nation`, always called up, playing
+ * every international you're picked for (a goal in about one in three) and
+ * every club game, to the last fixture: the Country page full of tables,
+ * scorers and finals, a tournament on duty (`stopAtTournament`), and a
+ * Ballon d'Or night. The division's players are given the big nations'
+ * nationalities so rivals have international goals too.
+ */
+const RIVAL_NATIONS = ["England", "France", "Brazil", "Spain", "Germany", "Portugal", "Netherlands", "Argentina", "Belgium", "Norway"];
+/** Made-up rivals for the other 19 clubs (the test page has no player
+ *  database), each with a nationality and a season's club goals. */
+function madeUpDivision(): LeagueSquad[] {
+  return PREMIER_LEAGUE_CLUBS.filter((club) => club !== "Arsenal").map((club, i) => ({
+    club,
+    players: generateSquad(clubNameSeed(club)).map((pl, j) => {
+      const atk = pl.position === "ST" ? 1 : ["LW", "RW", "CAM"].includes(pl.position) ? 0.6 : pl.position === "CM" ? 0.25 : 0.05;
+      const q = Math.max(0, (pl.overall ?? 70) - 66) / 20;
+      return {
+        id: `${club}-${pl.id}`, name: pl.name, position: pl.position, overall: (pl.overall ?? 70) + 8,
+        goals: Math.round(atk * q * (14 + ((i * 7 + j * 3) % 12))), assists: Math.round((atk * 0.6 + 0.1) * q * (6 + ((i + j) % 8))),
+        nation: RIVAL_NATIONS[(i + j) % RIVAL_NATIONS.length], image: pl.imageUrl,
+      } as LeaguePlayer;
+    }),
+  }));
+}
+
+/**
+ * `seasons` whole seasons (from 2026/27) for `nation`, always called up as
+ * a regular (the bar held at 80), playing every international (a goal in
+ * about one in three) and every club game. `stopAtTournament`: stop in the
+ * last season two group games into a tournament, so the League tab is on
+ * duty there. For the Country page full of tables, scorers and finals, a
+ * tournament on duty and a Ballon d'Or night.
+ */
+function careerSeason(nation: string, seasons = 1, stopAtTournament = false): CareerState {
+  const p = { firstName: "Test", lastName: "Player", age: 24, position: "ST", club: "Arsenal", nationality: nation, startYear: 2027 } as StarPlayer;
+  let c = makeInitialCareer(p, [...PREMIER_LEAGUE_CLUBS], "premier");
+  c = syncIntl({ ...c, leagueSquads: madeUpDivision() });
+  let n = 0;
+  for (let season = 1; season <= seasons; season++) {
+    if (season > 1) c = syncIntl({ ...advanceSeason(c, false).career, leagueSquads: madeUpDivision() });
+    for (let g = 0; g < 400; g++) {
+      c = { ...c, intl: { ...intlOf(c), manager: 80 } };
+      const due = periodDue(c);
+      if (due) { c = applyDecision(c, { ...decide(c, due), called: true }); continue; }
+      const f = nextFixtureFor(c);
+      if (!f) break;
+      const d = stopAtTournament && season === seasons && f.kind === "international" ? dutyNow(c) : null;
+      if (d && d.period.kind === "tournament") {
+        // Two group games played: stop, so the group has a table and results.
+        const ids = new Set(d.period.matches.map((m) => m.id));
+        if (c.fixtures.filter((x) => x.played && x.intlId && ids.has(x.intlId)).length >= 2) return c;
+      }
+      if (f.watch) { c = simulateMissedFixture(c, f).career; continue; }
+      const intl = f.kind === "international";
+      n++;
+      const goals = intl ? (n % 3 === 0 ? 1 : 0) : (n % 2 === 0 ? 1 : 0);
+      c = creditMatchResult(c, f, { ...ZERO, goals, assists: n % 4 === 0 ? 1 : 0, homeScore: 2, awayScore: 1, rating: 7.4 }).career;
+    }
+  }
+  return c;
+}
 import PageGuide from "@/components/admin/PageGuide";
+import BallonDor from "@/components/star/BallonDor";
 import CallUpScreen from "@/components/star/CallUpScreen";
 import NationFlag from "@/components/star/NationFlag";
 import { newWorld } from "@/lib/star/intl/replay";
@@ -65,7 +129,7 @@ const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { day: "numer
 export default function IntlDevPage() {
   const [year, setYear] = useState(2028);
   const [nation, setNation] = useState("England");
-  const [shot, setShot] = useState<null | "called" | "out" | "country" | "duty" | "watched">(null);
+  const [shot, setShot] = useState<null | "called" | "out" | "country" | "duty" | "watched" | "season" | "tournament" | "ballon">(null);
   const nations = useMemo(() => NATIONS.map((n) => n.name).sort(), []);
   const w = useMemo(() => {
     const world = newWorld({ xi: {}, played: {}, firstYear: 2026 });
@@ -101,6 +165,25 @@ export default function IntlDevPage() {
               {duty ? <NationalLeague career={c} duty={duty} /> : <div className="text-[13px] font-bold">{nation} has no break match to show yet.</div>}
             </div>
           )}
+      </div>
+    );
+  }
+
+  if (shot === "season" || shot === "tournament" || shot === "ballon") {
+    // Country page: one season. Tournament and Ballon d'Or: two (Euro 2028
+    // and the 2028 Copa América, Asian Cup and AFCON are in 2027/28).
+    const c = careerSeason(nation, shot === "season" ? 1 : 2, shot === "tournament");
+    const duty = dutyNow(c);
+    return (
+      <div className={`star-root ${pitchFont.variable} min-h-screen bg-[#05080f] text-white`}>
+        {shot === "ballon" ? <BallonDor career={c} startAt="result" onContinue={() => setShot(null)} /> : (
+          <div className="px-3 py-4">
+            <button onClick={() => setShot(null)} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
+            {shot === "tournament"
+              ? (duty ? <NationalLeague career={c} duty={duty} /> : <div className="text-[13px] font-bold">{nation} didn&apos;t reach a tournament in 2027/28 (try another nation).</div>)
+              : <IntlWorldPanel career={c} />}
+          </div>
+        )}
       </div>
     );
   }
@@ -147,6 +230,9 @@ export default function IntlDevPage() {
         <button onClick={() => setShot("country")} className="rounded bg-emerald-700 px-2 py-1">▶ Country page</button>
         <button onClick={() => setShot("duty")} className="rounded bg-amber-700 px-2 py-1">▶ On duty (League)</button>
         <button onClick={() => setShot("watched")} className="rounded bg-indigo-700 px-2 py-1">▶ Watched on TV</button>
+        <button onClick={() => setShot("season")} className="rounded bg-emerald-800 px-2 py-1">▶ Country page after a season</button>
+        <button onClick={() => setShot("tournament")} className="rounded bg-amber-800 px-2 py-1">▶ On duty at a tournament</button>
+        <button onClick={() => setShot("ballon")} className="rounded bg-yellow-700 px-2 py-1">▶ Ballon d&apos;Or after a season</button>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">

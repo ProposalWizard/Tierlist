@@ -27,6 +27,136 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.49",
+      "title": "Mikey's patch notes v0.15: International football",
+      "publishedAt": "2026-10-13T09:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/1VrPsvpikmWNaxcTFzpgGt",
+      "summary": "Every national team's competitions played out, call-ups from a national manager bar, duty mode, watching your country on TV, a scorer for every international goal, the Ballon d'Or counting club and country (Star Man out), casino scandals. Live 12 Oct 2026.",
+      "stats": [
+        {
+          "value": "211",
+          "label": "FIFA nations"
+        },
+        {
+          "value": "2,131",
+          "label": "international goals named in one season"
+        },
+        {
+          "value": "0",
+          "label": "Ballon d'Or points for Star Man (was 3 each)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The call-up screen before each break",
+              "detail": "Called up / Not selected."
+            },
+            {
+              "title": "Relations → your country's manager",
+              "detail": "Starts at 0; squad from 34, starter from 55."
+            },
+            {
+              "title": "Stats → Country",
+              "detail": "Tables, Matches, Scorers, Ranking, Who won."
+            },
+            {
+              "title": "Called up: League tab and Home switch to your country",
+              "detail": "Until the break ends."
+            },
+            {
+              "title": "Premier League/Championship, not picked: Watch on TV days",
+              "detail": "Score, scorers, group, the day's results."
+            },
+            {
+              "title": "Ballon d'Or: international goals line",
+              "detail": "Includes X goals and Y assists for your country."
+            },
+            {
+              "title": "Casino: long visits can make the papers",
+              "detail": "Chance from bets per visit, capped at 25%."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Every confederation's competitions",
+              "detail": "Nations League, Euro, World Cup 2030 qualifying, Copa América, AFCON, Asian Cup, Gold Cup, OFC, friendlies. FIFA/UEFA's real knockout tables."
+            },
+            {
+              "title": "National manager bar and call-ups",
+              "detail": "23-man squads (26 at tournaments), matches on their real dates."
+            },
+            {
+              "title": "Duty mode and Watch on TV",
+              "detail": "Your country's tables and results while away; TV days when not picked (top two divisions)."
+            },
+            {
+              "title": "Scorers for every international goal",
+              "detail": "855 matches, 2,131 goals named in a season; same every time."
+            },
+            {
+              "title": "Casino scandals",
+              "detail": "2% + 0.4% a bet × fame, max 25%; costs climb to a fine, the armband and an 8-week ban."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Ballon d'Or: club + country for everyone",
+              "detail": "World Cup/Euro points for the whole winning squad."
+            },
+            {
+              "title": "Star Man out of the Ballon d'Or",
+              "detail": "Was ×3, only you could get it."
+            },
+            {
+              "title": "Break weekends",
+              "detail": "Premier League 4 midweek rounds, Championship 12 (was 8)."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Internationals a day late",
+              "detail": "Now on the real date."
+            },
+            {
+              "title": "Each international paid a week's wage",
+              "detail": "Only Sunday break games pay."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not yet played through in a real career",
+              "detail": "Checked on the test page and in tests."
+            },
+            {
+              "title": "125 of 211 flags are plain colour bands",
+              "detail": "Already the case before."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.48",
       "title": "Harry's patch notes: Gameplay & settings",
       "publishedAt": "2026-10-12T18:00:00Z",
