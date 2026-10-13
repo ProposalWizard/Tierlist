@@ -629,13 +629,35 @@ export function wideFromSide(f: Frame2D, c: Pick<BcCamera, "ax" | "az" | "fov"> 
 
 /**
  * THE CAMERA SWIPE (Harry, 12 Oct 2026): a one-finger sideways drag that does NOT start on the ball or
- * on a team-mate turns the view round the ball, to find the team-mate you want. At most `maxDeg` either
+ * on a team-mate turns the view round the ball, to find the team-mate you want (13 Oct: a full turn, ±180°;
+ * a drag across the whole screen is half a turn). At most `maxDeg` either
  * way; a drag across the whole screen turns `degPerWidth`; when the chance ends it eases back over about
  * `easeS`. Camera only: the ball keeps its spot on the screen, the distance and angle down are kept.
  * Such a drag never reaches the 2D game, so it can never start a kick (engineView.ts onDown/onMove).
  */
-export const ORBIT = { maxDeg: 45, degPerWidth: 90, easeS: 0.35, startPx: 10, sideways: 1.2 };
+export const ORBIT = { maxDeg: 180, degPerWidth: 180, easeS: 0.35, startPx: 10, sideways: 1.2, centreDeg: 15, centreTilt: 5, centreS: 0.3 };
+/** Harry, 13 Oct 2026: a full turn round our player is allowed, so ±180° (the same view either end). */
 export function clampOrbit(deg: number): number { return Math.max(-ORBIT.maxDeg, Math.min(ORBIT.maxDeg, deg)); }
+/**
+ * ORBIT ROUND OUR PLAYER, CENTRED (Harry, 13 Oct 2026). How far the camera's look point has moved onto the
+ * ball (0 = the default framing, 1 = the ball in the middle): full once turned `centreDeg` or tilted
+ * `centreTilt`, or while a finger/mouse is turning it.
+ */
+export function centreShare(deg: number, tilt: number, dragging = false): number {
+  if (dragging) return 1;
+  return Math.max(0, Math.min(1, Math.max(Math.abs(deg) / ORBIT.centreDeg, Math.abs(tilt) / ORBIT.centreTilt)));
+}
+/**
+ * The camera with the ball (our player's spot) moved `share` of the way to the middle of the screen:
+ * the look point slides along the grass onto the ball, then back towards the camera only as far as the
+ * room to drag back needs (keepDragRoom). Distance, angle and lens are kept: nothing changes size.
+ */
+export function centreOnPivot<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">>(c: T, ball: BcPoint, share: number, W: number, H: number, S = SET_PIECE_CAM): T {
+  if (share <= 0) return c;
+  const full = keepDragRoom({ ...c, tx: ball.x - CX, tz: ball.y }, ball, W, H, S);
+  const u = Math.min(1, share);
+  return { ...c, tx: c.tx + (full.tx - c.tx) * u, tz: c.tz + (full.tz - c.tz) * u };
+}
 /** The camera turned `deg` round the ball (on the grass): the look point and the camera's side both turn. */
 export function orbitCamera<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az">>(c: T, ball: { x: number; y: number }, deg: number): T {
   if (!deg) return c;

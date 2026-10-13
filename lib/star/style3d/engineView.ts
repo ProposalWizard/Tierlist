@@ -58,7 +58,7 @@ import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./ca
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
 /** Open play's default = the 2D's own frame of the same chance, exactly (Harry, 12 Oct 2026: a 0.85 zoom-in cut the taker off on tight angles and cutbacks). */
 const OPEN_DEFAULT_K = 1;
-import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, orbitCamera, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
+import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, orbitCamera, centreShare, centreOnPivot, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -1296,7 +1296,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    */
   const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, aimBall: null as { x: number; y: number } | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1, spWide: null as Match2DCamera | null };
   /** The camera swipe (match2dCam.ts ORBIT): degrees turned round the ball now, where it is heading, a finger on it. */
-  const orbit = { deg: 0, target: 0, drag: false, ballKey: "", t: -1, d0: 0, tilt: 0, tiltTarget: 0, tiltDrag: false, t0: 0 };
+  const orbit = { deg: 0, target: 0, drag: false, ballKey: "", t: -1, d0: 0, tilt: 0, tiltTarget: 0, tiltDrag: false, t0: 0, centre: 0 };
   (window as unknown as { __cam3dOrbit?: (deg: number) => void }).__cam3dOrbit = (deg: number) => { orbit.target = clampOrbit(deg); orbit.deg = orbit.target; }; // dev/test: stills of a turned view
   // THE CAMERA LOCK (Harry, 13 Oct 2026: "a little floating camera icon that can lock/unlock the camera
   // and maybe a double tap to get back to our default camera angle"). Locked: the angle you left it at is
@@ -1401,10 +1401,16 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       if (Math.abs(orbit.deg - orbit.target) < 0.05) orbit.deg = orbit.target;
       orbit.tilt = orbit.tiltDrag ? orbit.tiltTarget : orbit.tilt + (orbit.tiltTarget - orbit.tilt) * Math.min(1, dt / ORBIT.easeS * 3);
       if (Math.abs(orbit.tilt - orbit.tiltTarget) < 0.05) orbit.tilt = orbit.tiltTarget;
+      // ROUND OUR PLAYER, CENTRED (match2dCam.ts centreOnPivot): eased over ORBIT.centreS by how far it is turned
+      const want = centreShare(orbit.deg, orbit.tilt, orbit.drag || orbit.tiltDrag);
+      orbit.centre += (want - orbit.centre) * Math.min(1, dt / ORBIT.centreS * 3);
+      if (Math.abs(orbit.centre - want) < 0.002) orbit.centre = want;
     }
     const pivot = m2.aimBall ?? (f.ball ? { x: f.ball.x, y: f.ball.y } : null);
     const cTurned = pivot && orbit.deg ? orbitCamera(cKept, pivot, orbit.deg) : cKept;
-    const c = pivot && orbit.tilt ? tiltCamera(cTurned, pivot, orbit.tilt, W, H) : cTurned;
+    const cTilted = pivot && orbit.tilt ? tiltCamera(cTurned, pivot, orbit.tilt, W, H) : cTurned;
+    // turned or tilted: the look point slides onto our player (middle of the screen, drag room kept below him)
+    const c = pivot && orbit.centre > 0 ? centreOnPivot(cTilted, pivot, orbit.centre, W, H) : cTilted;
     const pose = bcPose(c);
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
     camera.up.set(0, 1, 0);
@@ -1427,6 +1433,14 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       const edge = Math.abs(c.ax) > 0.5 ? CX : 105;
       arenaClip.normal.set(-c.ax, 0, -c.az);
       arenaClip.constant = Math.min(far + 1.5, edge + 0.3);
+      // turned or tilted round our player: the 2D's box no longer says what is on the screen. Keep all
+      // the ground the 3D screen shows (to its bottom corners); only what stands nearer the camera than
+      // that (a roof in front of the lens) is not drawn (13 Oct 2026: a 90° turn showed a black band)
+      if (orbit.deg || orbit.tilt) {
+        let near = -Infinity;
+        for (const nx of [-1, 0, 1]) { const g = groundUnder(c, W, H, nx, -1); if (g) near = Math.max(near, (g.x - CX) * c.ax + g.y * c.az); }
+        if (near > -Infinity) arenaClip.constant = near + 1.5;
+      }
     }
     (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: c.D, elevDeg: c.elevDeg, fov: c.fov, extra: c.extra, near: camera.near, facing, fig: SIZE3D.man, man: c.man };
   };
@@ -1520,6 +1534,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   };
   const onDown = (e: PointerEvent) => {
     if (!visible || pinch.on) return;
+    // PC: the left button only (a mouse drag on open grass turns/tilts the camera, as a finger does)
+    if (e.pointerType === "mouse" && e.button !== 0) return;
     // One finger at a time — but a touch that never ended here (its "up" went
     // elsewhere) must never lock the pitch: the same pointer pressing again, or
     // a touch silent for a second, starts afresh. (The bug behind "stuck on
@@ -1662,20 +1678,17 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (pinch.pts.size === 0) pinch.on = false;
     e.stopImmediatePropagation();
   };
-  // THE WHEEL (Harry, 13 Oct 2026: "the zoom needs to only be triggered by two fingers and mouse wheel
-  // on pc (or two fingers on track pad)"). A trackpad pinch (ctrlKey) or a real mouse wheel (whole
-  // notches, nothing sideways) zooms; a two-finger trackpad slide moves the camera like a one-finger
-  // swipe (sideways = turn, up/down = tilt). A locked camera ignores all of it.
+  // THE WHEEL (Harry, 13 Oct 2026 playtest: every wheel is zoom). A mouse wheel, a precision wheel, a
+  // two-finger trackpad scroll and a trackpad pinch (ctrlKey) all ZOOM, and nothing else: the camera is
+  // turned and tilted on PC by click-and-drag on open grass (onDown/onMove, as a finger on a phone).
+  // A locked camera ignores it.
   const onWheel = (e: WheelEvent) => {
     if (!visible) return;
     e.preventDefault();
     if (camLock.on) return;
-    const mouseWheel = e.deltaMode !== 0 || (e.deltaX === 0 && Math.abs(e.deltaY) >= 40 && Number.isInteger(e.deltaY));
-    if (e.ctrlKey || mouseWheel) { setCamZoom(camZoom() + Math.sign(e.deltaY) * Math.min(0.25, Math.abs(e.deltaY) / 400)); return; }
-    if (lastFrame?.phase !== "aim") return;
-    const r = container.getBoundingClientRect();
-    if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) orbit.target = clampOrbit(orbit.target + (e.deltaX / (r.width || 1)) * ORBIT.degPerWidth);
-    else orbit.tiltTarget = clampTilt(orbit.tiltTarget - (e.deltaY / (r.height || 1)) * TILT.degPerHeight);
+    const px = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY; // lines / pages → pixels
+    if (!px) return;
+    setCamZoom(camZoom() + Math.sign(px) * Math.min(0.25, Math.abs(px) / 400));
   };
   // the floating camera button (THE CAMERA LOCK above): top-left of the pitch, clear of the ball, the commentary and the speed readout
   let camBtn: HTMLButtonElement | null = null;

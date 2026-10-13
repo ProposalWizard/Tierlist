@@ -29,7 +29,7 @@ import { drawnTakerAt } from "../../lib/star/kickFoot";
 import { keepDragRoom, usesCornerCam, solveCornerCam, tiltCamera, TILT } from "../../lib/star/style3d/match2dCam";
 import { zoomCamera } from "../../lib/star/style3d/camZoom";
 import { servedChance, cleanServed, SERVED_KINDS } from "../../scripts/cam3d/served.mts";
-import { usesKindCam, solveKindCam, wideFromSide, orbitCamera, clampOrbit, ORBIT } from "../../lib/star/style3d/match2dCam";
+import { usesKindCam, solveKindCam, wideFromSide, orbitCamera, clampOrbit, ORBIT, centreOnPivot, centreShare } from "../../lib/star/style3d/match2dCam";
 import { stanceFor, shotTarget } from "../../lib/star/style3d/setPiece3d";
 
 let fails = 0;
@@ -331,7 +331,28 @@ if (isMain) {
       }
     }
     ok(n5 > 0 && moved === 0, `camera swipe: the ball keeps its spot on the screen and the camera its distance (${n5} turned views, ${moved} moved)`);
-    ok(clampOrbit(90) === ORBIT.maxDeg && clampOrbit(-90) === -ORBIT.maxDeg && ORBIT.maxDeg === 45, "camera swipe: at most 45° either way");
+    ok(clampOrbit(270) === 180 && clampOrbit(-270) === -180 && clampOrbit(180) === 180 && clampOrbit(90) === 90 && ORBIT.maxDeg === 180, "camera swipe: a full turn round our player (±180°)");
+    // ROUND OUR PLAYER, CENTRED (Harry, 13 Oct 2026): turned, the ball sits in the middle; drag room kept; sizes kept
+    {
+      let n6 = 0, offC = 0, noRoom6 = 0, dist6 = 0, worst = 0;
+      const limit = 1 - dragRoomShare(W, H);
+      for (const kind of ["tight_angle", "cutback", "one_on_one"]) for (const c of cleanServed(kind, 6)) {
+        const cam0 = usesKindCam(kind) ? solveKindCam(kind, c.f, c.sc.ball, c.figs, { x: c.keeper.x, y: c.keeper.y }, matchScale()) : solveMatch2D(c.f);
+        for (const d of [90, -90, 180, -180, 45]) {
+          const o = centreOnPivot(orbitCamera(cam0, c.sc.ball, d), c.sc.ball, centreShare(d, 0), W, H);
+          const b = bcProject(o, W, H, c.sc.ball);
+          n6++;
+          worst = Math.max(worst, Math.abs(b.nx) / 2);
+          if (Math.abs(b.nx) / 2 > 0.1) offC++;
+          if (b.fr > limit + 1e-3 || b.fr < 0.25) noRoom6++;
+          if (Math.abs(o.D - cam0.D) > 1e-9 || Math.abs(o.fov - cam0.fov) > 1e-9 || Math.abs(o.elev - cam0.elev) > 1e-9) dist6++;
+        }
+      }
+      ok(n6 > 0 && offC === 0, `orbit centred: after a 45–180° turn the ball is within 10% of the screen's middle (${n6} views, ${offC} off, worst ${(worst * 100).toFixed(1)}%)`);
+      ok(noRoom6 === 0, `orbit centred: the ball stays a full-power drag above the bottom and in the middle band (${noRoom6} not)`);
+      ok(dist6 === 0, "orbit centred: camera distance, angle and lens kept (3D sizes never change)");
+      ok(centreShare(0, 0) === 0 && centreShare(7.5, 0) === 0.5 && centreShare(15, 0) === 1 && centreShare(0, 5) === 1 && centreShare(0, 0, true) === 1, "orbit centred: none at the default, half at 7.5°, full from 15° turned or 5° tilted, full while dragging");
+    }
     const ev4 = fs.readFileSync(new URL("../../lib/star/style3d/engineView.ts", import.meta.url), "utf8");
     const mv = ev4.slice(ev4.indexOf("const onMove = "), ev4.indexOf("const onUp = "));
     const up = ev4.slice(ev4.indexOf("const onUp = "), ev4.indexOf("// PINCH ZOOM"));
@@ -356,6 +377,9 @@ if (isMain) {
       }
     }
     ok(tN > 0 && tMoved === 0 && tOut === 0, `camera tilt: the ball keeps its height on the screen and the angle stays ${TILT.minElev}–${TILT.maxElev}° (${tN} tilted views, ${tMoved} moved, ${tOut} out of range)`);
+    const wh = ev4.slice(ev4.indexOf("const onWheel = "), ev4.indexOf("// the floating camera button"));
+    ok(wh.length > 0 && wh.includes("setCamZoom(") && !wh.includes("orbit.") && !wh.includes("clampOrbit") && !wh.includes("clampTilt") && wh.includes("if (camLock.on) return;"), "wheel: every wheel event zooms and never turns or tilts the camera; locked = nothing");
+    ok(dn.includes("const in2dGrab =") && dn.includes("in2dGrab ||"), "a press inside the 2D ball zone always kicks");
     const tiltBranch = mv.slice(mv.indexOf("if (touch.tilt) {"), mv.indexOf("const at = moveTarget(e);"));
     ok(tiltBranch.length > 0 && !tiltBranch.includes("send(") && tiltBranch.includes("return;"), "camera tilt: an up/down swipe sends nothing to the 2D game");
   }
