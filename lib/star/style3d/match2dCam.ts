@@ -629,13 +629,35 @@ export function wideFromSide(f: Frame2D, c: Pick<BcCamera, "ax" | "az" | "fov"> 
 
 /**
  * THE CAMERA SWIPE (Harry, 12 Oct 2026): a one-finger sideways drag that does NOT start on the ball or
- * on a team-mate turns the view round the ball, to find the team-mate you want. At most `maxDeg` either
+ * on a team-mate turns the view round the ball, to find the team-mate you want (13 Oct: a full turn, ±180°;
+ * a drag across the whole screen is half a turn). At most `maxDeg` either
  * way; a drag across the whole screen turns `degPerWidth`; when the chance ends it eases back over about
  * `easeS`. Camera only: the ball keeps its spot on the screen, the distance and angle down are kept.
  * Such a drag never reaches the 2D game, so it can never start a kick (engineView.ts onDown/onMove).
  */
-export const ORBIT = { maxDeg: 45, degPerWidth: 90, easeS: 0.35, startPx: 10, sideways: 1.2 };
+export const ORBIT = { maxDeg: 180, degPerWidth: 180, easeS: 0.35, startPx: 10, sideways: 1.2, centreDeg: 15, centreTilt: 5, centreS: 0.3, autoTilt: 10 };
+/** Harry, 13 Oct 2026: a full turn round our player is allowed, so ±180° (the same view either end). */
 export function clampOrbit(deg: number): number { return Math.max(-ORBIT.maxDeg, Math.min(ORBIT.maxDeg, deg)); }
+/**
+ * ORBIT ROUND OUR PLAYER, CENTRED (Harry, 13 Oct 2026). How far the camera's look point has moved onto the
+ * ball (0 = the default framing, 1 = the ball in the middle): full once turned `centreDeg` or tilted
+ * `centreTilt`, or while a finger/mouse is turning it.
+ */
+export function centreShare(deg: number, tilt: number, dragging = false): number {
+  if (dragging) return 1;
+  return Math.max(0, Math.min(1, Math.max(Math.abs(deg) / ORBIT.centreDeg, Math.abs(tilt) / ORBIT.centreTilt)));
+}
+/**
+ * The camera with the ball (our player's spot) moved `share` of the way to the middle of the screen:
+ * the look point slides along the grass onto the ball, then back towards the camera only as far as the
+ * room to drag back needs (keepDragRoom). Distance, angle and lens are kept: nothing changes size.
+ */
+export function centreOnPivot<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">>(c: T, ball: BcPoint, share: number, W: number, H: number, S = SET_PIECE_CAM): T {
+  if (share <= 0) return c;
+  const full = keepDragRoom({ ...c, tx: ball.x - CX, tz: ball.y }, ball, W, H, S);
+  const u = Math.min(1, share);
+  return { ...c, tx: c.tx + (full.tx - c.tx) * u, tz: c.tz + (full.tz - c.tz) * u };
+}
 /** The camera turned `deg` round the ball (on the grass): the look point and the camera's side both turn. */
 export function orbitCamera<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az">>(c: T, ball: { x: number; y: number }, deg: number): T {
   if (!deg) return c;
@@ -643,6 +665,60 @@ export function orbitCamera<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az">>
   const bx = ball.x - CX, bz = ball.y;
   const dx = c.tx - bx, dz = c.tz - bz;
   return { ...c, tx: bx + dx * cs - dz * sn, tz: bz + dx * sn + dz * cs, ax: c.ax * cs - c.az * sn, az: c.ax * sn + c.az * cs };
+}
+
+/**
+ * INSIDE THE BOWL (13 Oct 2026: a 90° turn on a cutback put the camera outside the stadium, a black
+ * lower third). The 3D stadium (real/arena.ts), in pitch metres: the stand fronts sit gapSide 6.0 m past
+ * each touchline and gapEnd 4.9 m behind each goal line; each stand runs `depth` back, its seats rising
+ * as `standTop` (two tiers: lower 0.49 m up a metre back, upper from 14.5 m back, 21.7 m high at the
+ * back). A turned or tilted camera stands either over the grass (inside the fronts) or over a stand, at
+ * least `clear` above its seats; never outside the stadium (`margin` inside its back).
+ */
+export const BOWL = { x0: CX - 34 - 6.0, x1: CX + 34 + 6.0, y0: -4.9, y1: 105 + 4.9, depth: 29, margin: 2, clear: 3 };
+/** How high the seats are `s` metres behind a stand's front (real/arena.ts `two` tiers). */
+export function standTop(s: number): number {
+  if (s <= 0) return 1.1;
+  const lower = 1.1 + Math.min(s, 16.4) * (0.4 / 0.82);
+  const upper = s >= 14.5 ? 12.2 + Math.min(s - 14.5, 14.6) * (0.56 / 0.86) : 0;
+  return Math.max(lower, upper);
+}
+/** Where a camera at pitch (x, z), y m up stands: "grass" inside the stand fronts, "stand" over a stand high enough, else "out". */
+export function bowlSpot(x: number, z: number, y: number): "grass" | "stand" | "out" {
+  const m = BOWL.margin;
+  const s = Math.max(BOWL.x0 - x, x - BOWL.x1, BOWL.y0 - z, z - BOWL.y1); // metres behind the nearest front
+  if (s <= -m) return "grass";
+  if (s > BOWL.depth - m) return "out";
+  return y >= standTop(Math.max(0, s)) + BOWL.clear ? "stand" : "out";
+}
+const camSpot = (c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D">) => {
+  const ce = Math.cos(c.elev);
+  return bowlSpot(c.tx + CX + c.ax * c.D * ce, c.tz + c.az * c.D * ce, c.D * Math.sin(c.elev));
+};
+/** True when this camera stands over a stand (engineView.ts then draws the near stand's seats and clips only its roof). */
+export function overStand(c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D">): boolean { return camSpot(c) === "stand"; }
+/**
+ * The camera moved closer to its look point (like a zoom: men, keeper and goal keep their one size) by
+ * `share` of the way to the furthest distance at which it stands inside the stadium (bowlSpot); the
+ * ball keeps its drag room. share 0 (the default camera): untouched.
+ */
+export function keepInBowl<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov"> & { minDepth?: number }>(c: T, ball: BcPoint, share: number, W: number, H: number, S = SET_PIECE_CAM): T {
+  const fine = (x: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D">) => camSpot(x) !== "out";
+  if (share <= 0 || fine(c)) return c;
+  const u = Math.min(1, share);
+  let cur = c;
+  for (let i = 0; i < 4; i++) {
+    if (fine(cur)) break;
+    // the furthest distance (in 0.25 m steps) that is fine, from where it is
+    let Dok = 4;
+    for (let D = cur.D; D > 4; D -= 0.25) if (fine({ ...cur, D })) { Dok = D; break; }
+    const want = c.D + (Math.min(c.D, Dok) - c.D) * u;
+    if (want >= cur.D - 1e-6) break;
+    const k = want / cur.D;
+    const shrunk = { ...cur, D: want, ...(cur.minDepth !== undefined ? { minDepth: cur.minDepth * k } : {}) };
+    cur = keepDragRoom(shrunk, ball, W, H, S);
+  }
+  return cur;
 }
 
 /**

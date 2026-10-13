@@ -161,6 +161,9 @@ export function buildArena(T: any, tier: Quality3d, maps: { crowd: any; led: any
   const padding = keep(new T.MeshStandardMaterial({ color: "#3b4a5e", roughness: 0.7 }));
   const lampOff = new T.Color("#dfe4ea"), lampOn = new T.Color(14, 14, 12.5);
   const lampMat = keep(new T.MeshBasicMaterial({ color: lampOff.clone(), toneMapped: true }));
+  // what hangs over the seats (roof, truss, masts, lamps): a turned 3D match camera standing over a
+  // stand clips only these, and keeps the seats under it (style3d/engineView.ts clipArenaNearSide)
+  for (const m of [steel, roofMat, lampMat]) m.userData.overhead = true;
 
   // ── the crowd material ──
   const cu: Record<string, { value: any }> = {
