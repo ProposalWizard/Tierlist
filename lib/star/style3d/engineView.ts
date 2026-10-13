@@ -1298,6 +1298,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   /** The camera swipe (match2dCam.ts ORBIT): degrees turned round the ball now, where it is heading, a finger on it. */
   const orbit = { deg: 0, target: 0, drag: false, ballKey: "", t: -1, d0: 0, tilt: 0, tiltTarget: 0, tiltDrag: false, t0: 0 };
   (window as unknown as { __cam3dOrbit?: (deg: number) => void }).__cam3dOrbit = (deg: number) => { orbit.target = clampOrbit(deg); orbit.deg = orbit.target; }; // dev/test: stills of a turned view
+  // THE CAMERA LOCK (Harry, 13 Oct 2026: "a little floating camera icon that can lock/unlock the camera
+  // and maybe a double tap to get back to our default camera angle"). Locked: the angle you left it at is
+  // kept for every chance and a swipe on the grass does nothing to the camera. Unlocked: swipes turn and
+  // tilt it, and it eases back each chance. A double tap on open grass puts it back to the default.
+  // Kept per device (a player preference, not a game setting).
+  const LOCK_KEY = "star-cam3d-lock";
+  const camLock = (() => { try { const v = JSON.parse(localStorage.getItem(LOCK_KEY) || "null"); return v && v.on ? { on: true, deg: clampOrbit(+v.deg || 0), tilt: clampTilt(+v.tilt || 0) } : { on: false, deg: 0, tilt: 0 }; } catch { return { on: false, deg: 0, tilt: 0 }; } })();
+  const saveLock = () => { try { localStorage.setItem(LOCK_KEY, JSON.stringify(camLock)); } catch { /* private mode */ } };
+  if (camLock.on) { orbit.target = orbit.deg = camLock.deg; orbit.tiltTarget = orbit.tilt = camLock.tilt; }
   (window as unknown as { __cam3dTilt?: (deg: number) => void }).__cam3dTilt = (deg: number) => { orbit.tiltTarget = clampTilt(deg); orbit.tilt = orbit.tiltTarget; }; // dev/test: stills of a tilted view
   /** The one absolute size (size3d.ts), which the set-piece camera frames around: never per chance. */
   const mScale = matchScale();
@@ -1384,14 +1393,14 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     {
       const live = f.phase === "aim" || f.phase === "runup" || f.phase === "contact" || f.phase === "flight";
       const bk = f.ball && f.phase === "aim" ? `${key}|${f.ball.x.toFixed(1)},${f.ball.y.toFixed(1)}` : orbit.ballKey;
-      if (!live || bk !== orbit.ballKey) { orbit.target = 0; orbit.tiltTarget = 0; if (!touch.orbit) orbit.drag = false; if (!touch.tilt) orbit.tiltDrag = false; }
+      if (!live || bk !== orbit.ballKey) { orbit.target = camLock.on ? camLock.deg : 0; orbit.tiltTarget = camLock.on ? camLock.tilt : 0; if (!touch.orbit) orbit.drag = false; if (!touch.tilt) orbit.tiltDrag = false; }
       orbit.ballKey = bk;
       const dt = orbit.t < 0 ? 0 : Math.max(0, Math.min(0.1, f.t - orbit.t));
       orbit.t = f.t;
       orbit.deg = orbit.drag ? orbit.target : orbit.deg + (orbit.target - orbit.deg) * Math.min(1, dt / ORBIT.easeS * 3);
-      if (Math.abs(orbit.deg) < 0.05 && orbit.target === 0) orbit.deg = 0;
+      if (Math.abs(orbit.deg - orbit.target) < 0.05) orbit.deg = orbit.target;
       orbit.tilt = orbit.tiltDrag ? orbit.tiltTarget : orbit.tilt + (orbit.tiltTarget - orbit.tilt) * Math.min(1, dt / ORBIT.easeS * 3);
-      if (Math.abs(orbit.tilt) < 0.05 && orbit.tiltTarget === 0) orbit.tilt = 0;
+      if (Math.abs(orbit.tilt - orbit.tiltTarget) < 0.05) orbit.tilt = orbit.tiltTarget;
     }
     const pivot = m2.aimBall ?? (f.ball ? { x: f.ball.x, y: f.ball.y } : null);
     const cTurned = pivot && orbit.deg ? orbitCamera(cKept, pivot, orbit.deg) : cKept;
@@ -1450,7 +1459,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const g = canvasToScreen(f.cam.tilt, sx, sy, f.cam.W, f.cam.H);
     return { x: r.left + g.X, y: r.top + g.Y };
   };
-  const touch = { ev0: null as PointerEvent | null, id: -1, start3: { x: 0, y: 0 }, start2: { x: 0, y: 0 }, g0: { x: 0, y: 0 }, shot: false, mate: false, last: 0, pend: false, orbit: false, tilt: false };
+  const touch = { ev0: null as PointerEvent | null, id: -1, start3: { x: 0, y: 0 }, start2: { x: 0, y: 0 }, g0: { x: 0, y: 0 }, shot: false, mate: false, last: 0, pend: false, orbit: false, tilt: false, dbl: false, tapAt: 0, tapX: 0, tapY: 0 };
   const send = (type: string, e: PointerEvent, at: { x: number; y: number }) => {
     const c = o.canvas2d;
     if (!c) return;
@@ -1551,6 +1560,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // anything else (a tap, a drag up or down) is handed over from its start exactly as before.
     touch.orbit = false; touch.tilt = false;
     touch.pend = !touch.shot && f?.phase === "aim";
+    // a second quick tap on open grass: back to the default camera (nothing reaches the 2D game)
+    touch.dbl = touch.pend && performance.now() - touch.tapAt < 320 && Math.hypot(e.clientX - touch.tapX, e.clientY - touch.tapY) < 40;
     if (touch.pend) return;
     send("pointerdown", e, touch.start2);
     // The 2D canvas captures the pointer on its own pointerdown, which would
@@ -1576,7 +1587,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const dx = e.clientX - touch.start3.x, dy = e.clientY - touch.start3.y;
     if (touch.pend) {
       if (Math.hypot(dx, dy) < ORBIT.startPx) return;
-      touch.pend = false;
+      touch.pend = false; touch.dbl = false;
+      if (camLock.on) { if (touch.ev0) send("pointerdown", touch.ev0, touch.start2); } else
       if (Math.abs(dx) > Math.abs(dy) * ORBIT.sideways) { touch.orbit = true; orbit.drag = true; orbit.d0 = orbit.target; }
       else if (Math.abs(dy) > Math.abs(dx) * TILT.upright) { touch.tilt = true; orbit.tiltDrag = true; orbit.t0 = orbit.tiltTarget; }
       else if (touch.ev0) send("pointerdown", touch.ev0, touch.start2);
@@ -1598,6 +1610,14 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (e.pointerId !== touch.id) return;
     // a camera swipe ends here: nothing was ever sent to the 2D game
     if (touch.orbit || touch.tilt) { touch.orbit = false; touch.tilt = false; orbit.drag = false; orbit.tiltDrag = false; touch.id = -1; return; }
+    // a double tap: the default camera again (and unlocked angle 0 if locked: the lock keeps the default)
+    if (touch.pend && touch.dbl) {
+      touch.pend = false; touch.dbl = false; touch.id = -1; touch.tapAt = 0;
+      orbit.target = orbit.tiltTarget = 0;
+      if (camLock.on) { camLock.deg = camLock.tilt = 0; saveLock(); }
+      return;
+    }
+    if (touch.pend) { touch.tapAt = performance.now(); touch.tapX = e.clientX; touch.tapY = e.clientY; }
     // a held-back tap on the grass: handed over now, down and up at its start (as before)
     if (touch.pend && touch.ev0) { touch.pend = false; send("pointerdown", touch.ev0, touch.start2); }
     const at = moveTarget(e) ?? touch.start2;
@@ -1642,6 +1662,35 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     e.preventDefault();
     setCamZoom(camZoom() + Math.sign(e.deltaY) * Math.min(0.25, Math.abs(e.deltaY) / 400));
   };
+  // the floating camera button (THE CAMERA LOCK above): top-left of the pitch, clear of the ball, the commentary and the speed readout
+  let camBtn: HTMLButtonElement | null = null;
+  if (o.canvas2d) {
+    camBtn = document.createElement("button");
+    camBtn.type = "button";
+    camBtn.setAttribute("data-cam-lock", "");
+    Object.assign(camBtn.style, { position: "absolute", left: "10px", top: "10px", width: "40px", height: "40px", borderRadius: "999px", border: "1px solid rgba(255,255,255,0.35)", display: "flex", alignItems: "center", justifyContent: "center", padding: "0", zIndex: "5", pointerEvents: "auto", cursor: "pointer", backdropFilter: "blur(4px)", touchAction: "manipulation" });
+    const paint = () => {
+      if (!camBtn) return;
+      camBtn.style.background = camLock.on ? "rgba(250,204,21,0.92)" : "rgba(15,23,42,0.55)";
+      const ink = camLock.on ? "#422006" : "#ffffff";
+      camBtn.setAttribute("aria-label", camLock.on ? "Camera locked: tap to unlock" : "Camera free: tap to lock this angle");
+      camBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2l1.5-2h5l1.5 2h2A1.5 1.5 0 0 1 18 8.5V16a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 3 16z"/><circle cx="10.5" cy="12" r="3"/>${camLock.on
+        ? `<rect x="15.5" y="15" width="7" height="6" rx="1" fill="${ink}" stroke="none"/><path d="M17 15v-1.6a2 2 0 0 1 4 0V15" />`
+        : `<rect x="15.5" y="15" width="7" height="6" rx="1" fill="${ink}" stroke="none"/><path d="M17 15v-1.6a2 2 0 0 1 3.8-.9" />`}</svg>`;
+    };
+    paint();
+    const stop = (e: Event) => e.stopPropagation();
+    camBtn.addEventListener("pointerdown", stop);
+    camBtn.addEventListener("pointerup", stop);
+    camBtn.addEventListener("pointermove", stop);
+    camBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      camLock.on = !camLock.on;
+      camLock.deg = camLock.on ? orbit.target : 0; camLock.tilt = camLock.on ? orbit.tiltTarget : 0;
+      saveLock(); paint();
+    });
+    container.appendChild(camBtn);
+  }
   if (o.canvas2d) {
     container.style.pointerEvents = "auto";
     container.style.touchAction = "none";
@@ -1907,6 +1956,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       numberCache.forEach((t) => t.dispose()); numberCache.clear();
       new Set(smallMaps.values()).forEach((t) => t?.dispose()); smallMaps.clear();
       svg.remove();
+      camBtn?.remove();
       canvas3d.removeEventListener("webglcontextlost", onLostEv);
       canvas3d.removeEventListener("webglcontextrestored", onRestoredEv);
       container.removeEventListener("pointerdown", onPinchDown);

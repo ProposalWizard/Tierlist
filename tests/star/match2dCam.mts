@@ -337,7 +337,7 @@ if (isMain) {
     const up = ev4.slice(ev4.indexOf("const onUp = "), ev4.indexOf("// PINCH ZOOM"));
     const dn = ev4.slice(ev4.indexOf("const onDown = "), ev4.indexOf("const moveTarget = "));
     const orbitBranch = mv.slice(mv.indexOf("if (touch.orbit) {"), mv.indexOf("const at = moveTarget(e);"));
-    ok(dn.includes("touch.pend = !touch.shot && f?.phase === \"aim\";\n    if (touch.pend) return;") && dn.indexOf("if (m2 && mate)") < dn.indexOf("touch.pend ="),
+    ok(dn.includes("touch.pend = !touch.shot && f?.phase === \"aim\";") && dn.indexOf("if (touch.pend) return;") > dn.indexOf("touch.pend =") && dn.indexOf("if (touch.pend) return;") < dn.indexOf("send(\"pointerdown\", e, touch.start2)") && dn.indexOf("if (m2 && mate)") < dn.indexOf("touch.pend ="),
       "camera swipe: only a press on open grass can become one (the ball and a team-mate are taken first), and nothing is sent to the 2D game until it shows what it is");
     ok(orbitBranch.length > 0 && !orbitBranch.includes("send(") && orbitBranch.includes("return;") && /if \(touch\.orbit \|\| touch\.tilt\) \{ touch\.orbit = false; touch\.tilt = false; orbit\.drag = false; orbit\.tiltDrag = false; touch\.id = -1; return; \}/.test(up),
       "camera swipe: a swipe sends nothing to the 2D game, moving or lifting (it can never start a kick)");
