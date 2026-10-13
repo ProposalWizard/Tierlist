@@ -265,6 +265,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     sun.shadow.bias = -0.00025;
     sun.shadow.normalBias = 0.03;
     sun.shadow.radius = 3;
+    // the men's and goal's live shadows at 70% (Harry, 13 Oct 2026: "the shadows are a bit heavy")
+    (sun.shadow as any).intensity = 0.7;
   }
   // night: three more lamp banks round the bowl, one per roof corner (the "sun" is the fourth). Each casts its
   // own soft shadow, so a player at night stands on the four-way shadow star of a floodlit pitch, not on flat
@@ -381,13 +383,16 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     const gr = (h: string) => (lowG ? scaleHex(tuneGrass(h, p), lp.rgb) : tuneGrass(h, p));
     if (pack === "real") {
       pitch.setLook({ grass: [gr(look.grass[0]), gr(look.grass[1])], wet: look.wet, blades: p.blades, stripes: p.stripes * (lowG ? lp.stripes : 1) });
-      baked?.setStrength({ ao: p.ao, shade: p.shade, bounce: p.bounce, shadePow: lowG ? lp.shadePow : 1 });
+      // shadows a touch lighter (Harry, 13 Oct 2026: "lighten up the goal line, the shadows are a bit heavy"):
+      // the stands' baked shade over the goal end at 35%, and a little more open-sky fill in the shade
+      hemi.intensity *= 1.12;
+      baked?.setStrength({ ao: p.ao * 0.85, shade: p.shade * 0.35, bounce: p.bounce, shadePow: lowG ? lp.shadePow : 1 });
     } else if (light) {
       // Light: half way to Bright, but the sun's shadows, the wear and the dirt all stay
-      hemi.intensity *= 1.3;
+      hemi.intensity *= 1.35;
       scene.environmentIntensity *= 1.12;
       pitch.setLook({ grass: [lightGrass(gr(look.grass[0])), lightGrass(gr(look.grass[1]))], wet: look.wet * 0.75, blades: p.blades, stripes: p.stripes });
-      baked?.setStrength({ ao: p.ao * 0.7, shade: p.shade * 0.5, bounce: p.bounce, shadePow: 1 });
+      baked?.setStrength({ ao: p.ao * 0.6, shade: p.shade * 0.3, bounce: p.bounce, shadePow: 1 });
     } else if (bright) {
       // much lighter grass, more open-sky light, and no baked stand shadow over the pitch
       hemi.intensity *= 1.7;
@@ -581,10 +586,11 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
         contrast: look.contrast * p.contrast, sat: look.sat * p.sat, tint: look.tint, lift: look.lift,
         vignette: look.vignette * p.vignette, lut, lutAmt: p.lut, sharpen: p.sharpen, slot: gradeSlot("stadium", tod),
       };
-      post.render(sc, camera, pack === "real" ? g0
+      // the goal end sits at the top of the screen, where the vignette is darkest: a lighter vignette in Real and Light
+      post.render(sc, camera, pack === "real" ? { ...g0, vignette: g0.vignette * 0.5 }
         // Bright: a lighter picture, the darks lifted, a touch less contrast and vignette
         // Light: half of Bright's lift
-        : light ? { ...g0, exposure: g0.exposure * 1.025, contrast: 1 + (g0.contrast - 1) * 0.88, tint: g0.tint.map((t) => 1 + (t - 1) * 0.7) as [number, number, number], lift: [g0.lift[0] + 0.005, g0.lift[1] + 0.006, g0.lift[2] + 0.006] as [number, number, number], vignette: g0.vignette * 0.7 }
+        : light ? { ...g0, exposure: g0.exposure * 1.025, contrast: 1 + (g0.contrast - 1) * 0.88, tint: g0.tint.map((t) => 1 + (t - 1) * 0.7) as [number, number, number], lift: [g0.lift[0] + 0.005, g0.lift[1] + 0.006, g0.lift[2] + 0.006] as [number, number, number], vignette: g0.vignette * 0.45 }
         : bright ? { ...g0, exposure: g0.exposure * 1.05, contrast: 1 + (g0.contrast - 1) * 0.75, tint: g0.tint.map((t) => 1 + (t - 1) * 0.4) as [number, number, number], lift: [g0.lift[0] + 0.01, g0.lift[1] + 0.012, g0.lift[2] + 0.012] as [number, number, number], vignette: g0.vignette * 0.4 }
         // Cartoon: no broadcast grade (no colour LUT, curve, tint or vignette); clean bright colours
         : { ...g0, exposure: g0.exposure, bloom: g0.bloom * 0.3, contrast: 1, sat: 1.12, tint: [1, 1, 1] as [number, number, number], lift: [0, 0, 0] as [number, number, number], vignette: 0, lutAmt: 0, sharpen: 0 });

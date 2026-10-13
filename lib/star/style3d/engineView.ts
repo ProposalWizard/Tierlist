@@ -1110,8 +1110,23 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     b.p.root.visible = true;
   };
 
+  /**
+   * The keeper in a really bright kit (Harry, 13 Oct 2026: "make the goalie rlly bright in 3d"): his own
+   * colour's hue, full saturation and lit up, so he never sinks into the stand shadow on the goal line.
+   */
+  const neonKit = (hex: string) => {
+    const c = new THREE.Color(hex), hsl = { h: 0, s: 0, l: 0 };
+    c.getHSL(hsl);
+    // a grey/black/white kit has no hue of its own, and a green one sinks into the grass: neon yellow
+    const deg = hsl.h * 360;
+    if (hsl.s < 0.15 || (deg > 70 && deg < 175)) return "#ffe81a";
+    return `#${c.setHSL(hsl.h, 1, 0.56).getHexString()}`;
+  };
   const placeKeeper = (k: NonNullable<EngineFrame["keeper"]>, f: EngineFrame, dt: number, frameNo: number) => {
-    const b = bodyFor("keeper", k.shirt, k.shorts, faces ? k.face : undefined);
+    const b = bodyFor("keeper", neonKit(k.shirt), neonKit(k.shorts), faces ? k.face : undefined);
+    // never capped below full white by the Home light (its 0.95 cap keeps shorts from blooming; he can glow)
+    const hu = (b.p.u as any).uHome?.value;
+    if (hu) hu.z = 1.6;
     b.seen = frameNo;
     const jump = Math.hypot(k.x - b.x, k.y - b.y);
     const cut = !b.init || jump > 4;
