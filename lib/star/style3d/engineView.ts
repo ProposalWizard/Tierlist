@@ -58,7 +58,7 @@ import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./ca
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
 /** Open play's default = the 2D's own frame of the same chance, exactly (Harry, 12 Oct 2026: a 0.85 zoom-in cut the taker off on tight angles and cutbacks). */
 const OPEN_DEFAULT_K = 1;
-import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, orbitCamera, centreShare, centreOnPivot, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
+import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, orbitCamera, centreShare, centreOnPivot, keepInBowl, overStand, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -1317,13 +1317,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * Only the stadium group, only with 3D camera New; far away (no effect) otherwise.
    */
   const arenaClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e6);
+  /** The same cut for the seats, steps and walls; a turned camera over a stand keeps them (overStand). */
+  const seatClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e6);
   function clipArenaNearSide() {
     const g = scene.getObjectByName("h-arena");
     if (!g) return;
     renderer.localClippingEnabled = true;
     g.traverse((o: { material?: unknown }) => {
       const raw = o.material as { clippingPlanes: unknown[]; clipping?: boolean; needsUpdate: boolean } | { clippingPlanes: unknown[]; clipping?: boolean; needsUpdate: boolean }[] | undefined;
-      for (const m of Array.isArray(raw) ? raw : raw ? [raw] : []) { m.clippingPlanes = [arenaClip]; m.clipping = true; m.needsUpdate = true; }
+      for (const m of Array.isArray(raw) ? raw : raw ? [raw] : []) { m.clippingPlanes = [(m as { userData?: { overhead?: boolean } }).userData?.overhead ? arenaClip : seatClip]; m.clipping = true; m.needsUpdate = true; }
     });
   }
   const placeMatch2D = (f: EngineFrame) => {
@@ -1408,9 +1410,12 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     }
     const pivot = m2.aimBall ?? (f.ball ? { x: f.ball.x, y: f.ball.y } : null);
     const cTurned = pivot && orbit.deg ? orbitCamera(cKept, pivot, orbit.deg) : cKept;
-    const cTilted = pivot && orbit.tilt ? tiltCamera(cTurned, pivot, orbit.tilt, W, H) : cTurned;
+    // turned: an automatic extra tilt down (ORBIT.autoTilt x the centring), so the near stand fills less of the screen
+    const tiltAll = orbit.tilt + ORBIT.autoTilt * orbit.centre;
+    const cTilted = pivot && tiltAll ? tiltCamera(cTurned, pivot, tiltAll, W, H) : cTurned;
     // turned or tilted: the look point slides onto our player (middle of the screen, drag room kept below him)
-    const c = pivot && orbit.centre > 0 ? centreOnPivot(cTilted, pivot, orbit.centre, W, H) : cTilted;
+    // ...and stays inside the stadium bowl (match2dCam.ts keepInBowl): closer, like a zoom, never a size change
+    const c = pivot && orbit.centre > 0 ? keepInBowl(centreOnPivot(cTilted, pivot, orbit.centre, W, H), pivot, orbit.centre, W, H) : cTilted;
     const pose = bcPose(c);
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
     camera.up.set(0, 1, 0);
@@ -1441,6 +1446,14 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         for (const nx of [-1, 0, 1]) { const g = groundUnder(c, W, H, nx, -1); if (g) near = Math.max(near, (g.x - CX) * c.ax + g.y * c.az); }
         if (near > -Infinity) arenaClip.constant = near + 1.5;
       }
+      // a turned camera standing over a stand (keepInBowl): its seats stay, like a reverse-angle
+      // broadcast shot; only the roof, truss and lamps nearer than the screen's bottom are not drawn
+      seatClip.copy(arenaClip);
+      const over = !!(orbit.deg || orbit.tilt) && overStand(c);
+      if (over) seatClip.constant = 1e6;
+      // ...and its crowd, which faces the pitch, is seen from behind: drawn both sides while it is
+      const crowd = scene.getObjectByName("h-crowd") as { material?: { side: number } } | undefined;
+      if (crowd?.material) crowd.material.side = over ? THREE.DoubleSide : THREE.FrontSide;
     }
     (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: c.D, elevDeg: c.elevDeg, fov: c.fov, extra: c.extra, near: camera.near, facing, fig: SIZE3D.man, man: c.man };
   };

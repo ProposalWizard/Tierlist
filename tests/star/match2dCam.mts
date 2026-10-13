@@ -22,6 +22,7 @@ import { tiltFor } from "../../lib/star/cameraTilt";
 import { solveBroadcast, actionPoints, bcProject, BROADCAST, type BcFigure, type BcPoint, type BcCamera } from "../../lib/star/style3d/broadcastCam";
 import { solveMatch2D, framedQuad, on2dScreen, pitchTo2dScreen, leanedManShare, leanFor, MATCH2D, MATCH_SCALES, MATCH_SCALE_PICK, matchScale, type Frame2D } from "../../lib/star/style3d/match2dCam";
 import fs from "node:fs";
+import { CX } from "../../lib/star/pitch";
 import { usesSetPieceCam, solveSetPieceCam, setPieceKeep, groundUnder, dragRoomShare, SET_PIECE_CAM } from "../../lib/star/style3d/match2dCam";
 import { dragForFullPower, DRAG_LENGTH_SCALE } from "../../lib/star/canvasEngine";
 import { standBackFor, DEFAULT_PENALTY_RUNUP, DEFAULT_FREE_KICK_RUNUP } from "../../lib/star/runupStyles";
@@ -29,7 +30,7 @@ import { drawnTakerAt } from "../../lib/star/kickFoot";
 import { keepDragRoom, usesCornerCam, solveCornerCam, tiltCamera, TILT } from "../../lib/star/style3d/match2dCam";
 import { zoomCamera } from "../../lib/star/style3d/camZoom";
 import { servedChance, cleanServed, SERVED_KINDS } from "../../scripts/cam3d/served.mts";
-import { usesKindCam, solveKindCam, wideFromSide, orbitCamera, clampOrbit, ORBIT, centreOnPivot, centreShare } from "../../lib/star/style3d/match2dCam";
+import { usesKindCam, solveKindCam, wideFromSide, orbitCamera, clampOrbit, ORBIT, centreOnPivot, centreShare, keepInBowl, bowlSpot, ORBIT as ORB } from "../../lib/star/style3d/match2dCam";
 import { stanceFor, shotTarget } from "../../lib/star/style3d/setPiece3d";
 
 let fails = 0;
@@ -351,6 +352,31 @@ if (isMain) {
       ok(n6 > 0 && offC === 0, `orbit centred: after a 45–180° turn the ball is within 10% of the screen's middle (${n6} views, ${offC} off, worst ${(worst * 100).toFixed(1)}%)`);
       ok(noRoom6 === 0, `orbit centred: the ball stays a full-power drag above the bottom and in the middle band (${noRoom6} not)`);
       ok(dist6 === 0, "orbit centred: camera distance, angle and lens kept (3D sizes never change)");
+      // INSIDE THE BOWL: turned/tilted, the camera never stands outside the stadium
+      let nB = 0, standB = 0, outB = 0, offB = 0, roomB = 0, lensB = 0, shrunkB = 0, same0 = 0, minD = Infinity;
+      for (const kind of ["tight_angle", "cutback", "one_on_one"]) for (const c of cleanServed(kind, 6)) {
+        const cam0 = usesKindCam(kind) ? solveKindCam(kind, c.f, c.sc.ball, c.figs, { x: c.keeper.x, y: c.keeper.y }, matchScale()) : solveMatch2D(c.f);
+        if (keepInBowl(cam0, c.sc.ball, 0, W, H) !== cam0) same0++;
+        for (const [d, t] of [[90, 0], [-90, 0], [180, 0], [0, 15], [0, -15], [45, 10]] as const) {
+          const turned = orbitCamera(cam0, c.sc.ball, d);
+          const sh = centreShare(d, t);
+          const tl = tiltCamera(turned, c.sc.ball, t + ORB.autoTilt * sh, W, H);
+          const o = keepInBowl(centreOnPivot(tl, c.sc.ball, sh, W, H), c.sc.ball, sh, W, H);
+          const ce = Math.cos(o.elev), px = o.tx + CX + o.ax * o.D * ce, pz = o.tz + o.az * o.D * ce;
+          const b = bcProject(o, W, H, c.sc.ball);
+          nB++; minD = Math.min(minD, o.D);
+          if (o.D < tl.D - 1e-6) shrunkB++;
+          const spot = bowlSpot(px, pz, o.D * Math.sin(o.elev));
+          if (spot === "out") outB++;
+          if (spot === "stand") standB++;
+          if (Math.abs(b.nx) / 2 > 0.1) offB++;
+          if (b.fr > limit + 1e-3) roomB++;
+          if (Math.abs(o.fov - tl.fov) > 1e-9 || Math.abs(o.elev - tl.elev) > 1e-9) lensB++;
+        }
+      }
+      ok(nB > 0 && outB === 0, `inside the bowl: every turned/tilted camera stands inside the stadium, over the grass or over a stand clear of its seats (${nB} views, ${standB} over a stand, ${outB} outside, ${shrunkB} brought closer, nearest ${minD.toFixed(0)} m)`);
+      ok(offB === 0 && roomB === 0 && lensB === 0, `inside the bowl: the ball still in the middle (${offB} off), drag room kept (${roomB} short), angle and lens kept (${lensB} changed)`);
+      ok(same0 === 0, "inside the bowl: the default camera (no turn, no tilt) is untouched");
       ok(centreShare(0, 0) === 0 && centreShare(7.5, 0) === 0.5 && centreShare(15, 0) === 1 && centreShare(0, 5) === 1 && centreShare(0, 0, true) === 1, "orbit centred: none at the default, half at 7.5°, full from 15° turned or 5° tilted, full while dragging");
     }
     const ev4 = fs.readFileSync(new URL("../../lib/star/style3d/engineView.ts", import.meta.url), "utf8");
