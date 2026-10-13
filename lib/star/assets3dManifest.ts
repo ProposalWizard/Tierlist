@@ -703,7 +703,7 @@ export const ASSETS_3D: Asset3dFolder[] = [
       },
       {
         "path": "/shop/suit-L1.webp",
-        "bytes": 18328
+        "bytes": 9606
       },
       {
         "path": "/shop/suit-L2.webp",
@@ -1076,16 +1076,32 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 597756
       },
       {
+        "path": "/star/onebody/manager.ktx2.glb",
+        "bytes": 1533156
+      },
+      {
         "path": "/star/onebody/player-buzz.glb",
         "bytes": 512488
+      },
+      {
+        "path": "/star/onebody/player-buzz.ktx2.glb",
+        "bytes": 1447608
       },
       {
         "path": "/star/onebody/player-long.glb",
         "bytes": 514756
       },
       {
+        "path": "/star/onebody/player-long.ktx2.glb",
+        "bytes": 1459632
+      },
+      {
         "path": "/star/onebody/player.glb",
         "bytes": 517828
+      },
+      {
+        "path": "/star/onebody/player.ktx2.glb",
+        "bytes": 1467948
       }
     ]
   },
@@ -1188,12 +1204,24 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 392612
       },
       {
+        "path": "/star/shop3d/items/bike-hf.ktx2.glb",
+        "bytes": 652008
+      },
+      {
         "path": "/star/shop3d/items/boot-classic-hf.glb",
         "bytes": 348916
       },
       {
+        "path": "/star/shop3d/items/boot-classic-hf.ktx2.glb",
+        "bytes": 598160
+      },
+      {
         "path": "/star/shop3d/items/boot-control-hf.glb",
         "bytes": 275836
+      },
+      {
+        "path": "/star/shop3d/items/boot-control-hf.ktx2.glb",
+        "bytes": 494936
       },
       {
         "path": "/star/shop3d/items/boot-control.glb",
@@ -1208,6 +1236,10 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 240664
       },
       {
+        "path": "/star/shop3d/items/boot-elite-hf.ktx2.glb",
+        "bytes": 438384
+      },
+      {
         "path": "/star/shop3d/items/boot-elite.glb",
         "bytes": 67056
       },
@@ -1216,8 +1248,16 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 276272
       },
       {
+        "path": "/star/shop3d/items/boot-hf.ktx2.glb",
+        "bytes": 459920
+      },
+      {
         "path": "/star/shop3d/items/boot-maestro-hf.glb",
         "bytes": 229828
+      },
+      {
+        "path": "/star/shop3d/items/boot-maestro-hf.ktx2.glb",
+        "bytes": 444152
       },
       {
         "path": "/star/shop3d/items/boot-maestro.glb",
@@ -1232,6 +1272,10 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 293452
       },
       {
+        "path": "/star/shop3d/items/boot-speed-hf.ktx2.glb",
+        "bytes": 499592
+      },
+      {
         "path": "/star/shop3d/items/boot-speed.glb",
         "bytes": 69144
       },
@@ -1240,12 +1284,20 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 186676
       },
       {
+        "path": "/star/shop3d/items/boot-starter-hf.ktx2.glb",
+        "bytes": 292768
+      },
+      {
         "path": "/star/shop3d/items/boot-starter.glb",
         "bytes": 66808
       },
       {
         "path": "/star/shop3d/items/can-kib-hf.glb",
         "bytes": 53604
+      },
+      {
+        "path": "/star/shop3d/items/can-kib-hf.ktx2.glb",
+        "bytes": 120228
       },
       {
         "path": "/star/shop3d/items/car-1.glb",
@@ -1268,6 +1320,10 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 415152
       },
       {
+        "path": "/star/shop3d/items/car-classic-hf.ktx2.glb",
+        "bytes": 641440
+      },
+      {
         "path": "/star/shop3d/items/car-classic.glb",
         "bytes": 200612
       },
@@ -1276,20 +1332,40 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 463340
       },
       {
+        "path": "/star/shop3d/items/car-family-hf.ktx2.glb",
+        "bytes": 719428
+      },
+      {
         "path": "/star/shop3d/items/car-hatch-hf.glb",
         "bytes": 362244
+      },
+      {
+        "path": "/star/shop3d/items/car-hatch-hf.ktx2.glb",
+        "bytes": 627976
       },
       {
         "path": "/star/shop3d/items/car-sports-hf.glb",
         "bytes": 340276
       },
       {
+        "path": "/star/shop3d/items/car-sports-hf.ktx2.glb",
+        "bytes": 566368
+      },
+      {
         "path": "/star/shop3d/items/car-super-hf.glb",
         "bytes": 360320
       },
       {
+        "path": "/star/shop3d/items/car-super-hf.ktx2.glb",
+        "bytes": 569932
+      },
+      {
         "path": "/star/shop3d/items/car-suv-hf.glb",
         "bytes": 394252
+      },
+      {
+        "path": "/star/shop3d/items/car-suv-hf.ktx2.glb",
+        "bytes": 645592
       },
       {
         "path": "/star/shop3d/items/car-suv.glb",
@@ -1300,60 +1376,120 @@ export const ASSETS_3D: Asset3dFolder[] = [
         "bytes": 327948
       },
       {
+        "path": "/star/shop3d/items/home-estate-hf.ktx2.glb",
+        "bytes": 567176
+      },
+      {
         "path": "/star/shop3d/items/home-flat1-hf.glb",
         "bytes": 264944
+      },
+      {
+        "path": "/star/shop3d/items/home-flat1-hf.ktx2.glb",
+        "bytes": 485228
       },
       {
         "path": "/star/shop3d/items/home-flat2-hf.glb",
         "bytes": 338452
       },
       {
+        "path": "/star/shop3d/items/home-flat2-hf.ktx2.glb",
+        "bytes": 485968
+      },
+      {
         "path": "/star/shop3d/items/home-house1-hf.glb",
         "bytes": 352200
+      },
+      {
+        "path": "/star/shop3d/items/home-house1-hf.ktx2.glb",
+        "bytes": 575500
       },
       {
         "path": "/star/shop3d/items/home-house2-hf.glb",
         "bytes": 329244
       },
       {
+        "path": "/star/shop3d/items/home-house2-hf.ktx2.glb",
+        "bytes": 564188
+      },
+      {
         "path": "/star/shop3d/items/home-island-hf.glb",
         "bytes": 293764
+      },
+      {
+        "path": "/star/shop3d/items/home-island-hf.ktx2.glb",
+        "bytes": 512812
       },
       {
         "path": "/star/shop3d/items/home-penthouse-hf.glb",
         "bytes": 365696
       },
       {
+        "path": "/star/shop3d/items/home-penthouse-hf.ktx2.glb",
+        "bytes": 508748
+      },
+      {
         "path": "/star/shop3d/items/home-stable-hf.glb",
         "bytes": 362088
+      },
+      {
+        "path": "/star/shop3d/items/home-stable-hf.ktx2.glb",
+        "bytes": 610656
       },
       {
         "path": "/star/shop3d/items/home-villa-hf.glb",
         "bytes": 272804
       },
       {
+        "path": "/star/shop3d/items/home-villa-hf.ktx2.glb",
+        "bytes": 453488
+      },
+      {
         "path": "/star/shop3d/items/jet-hf.glb",
         "bytes": 305708
+      },
+      {
+        "path": "/star/shop3d/items/jet-hf.ktx2.glb",
+        "bytes": 525512
       },
       {
         "path": "/star/shop3d/items/jewel-diamond-hf.glb",
         "bytes": 198328
       },
       {
+        "path": "/star/shop3d/items/jewel-diamond-hf.ktx2.glb",
+        "bytes": 360708
+      },
+      {
         "path": "/star/shop3d/items/jewel-silver-hf.glb",
         "bytes": 280608
+      },
+      {
+        "path": "/star/shop3d/items/jewel-silver-hf.ktx2.glb",
+        "bytes": 453812
       },
       {
         "path": "/star/shop3d/items/watch-gold-hf.glb",
         "bytes": 217824
       },
       {
+        "path": "/star/shop3d/items/watch-gold-hf.ktx2.glb",
+        "bytes": 449324
+      },
+      {
         "path": "/star/shop3d/items/watch-luxury-hf.glb",
         "bytes": 343680
       },
       {
+        "path": "/star/shop3d/items/watch-luxury-hf.ktx2.glb",
+        "bytes": 541372
+      },
+      {
         "path": "/star/shop3d/items/watch-smart-hf.glb",
         "bytes": 165496
+      },
+      {
+        "path": "/star/shop3d/items/watch-smart-hf.ktx2.glb",
+        "bytes": 379316
       }
     ]
   }
