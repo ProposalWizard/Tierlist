@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useIsTester } from "@/lib/useIsAdmin";
+import { frameMeterOn, setFrameMeterOn } from "@/lib/star/three3d/frameMeterPref";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
@@ -244,6 +245,8 @@ export default function SettingsScreen({
       )}
 
       {!showDev && (<>
+        {/* the speed readout (lib/star/three3d/frameMeterPref.ts): testers only, off by default */}
+        {isTester && <RiseIn index={next()}><SpeedReadoutRow /></RiseIn>}
         <RiseIn index={next()}>
           <SettingsTop glow={glow} fullscreen={{ support: fullscreenSupport, on: immersiveActive, onToggle: onToggleImmersive }} />
         </RiseIn>
@@ -351,5 +354,18 @@ function RunupPicker<Id extends RunupId>({ title, styles, current, onPick }: {
         })}
       </div>
     </div>
+  );
+}
+
+/** Top of Settings, testers only (Harry, 13 Oct 2026): the 3D speed readout (fps, slowest frame,
+ *  draws) in the corner of every 3D place. Off by default; works at once, no reload. */
+function SpeedReadoutRow() {
+  const [on, setOn] = useState(false);
+  useEffect(() => { setOn(frameMeterOn()); }, []);
+  return (
+    <label data-speed-readout className="mb-2 flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/30 px-3 py-2">
+      <span className="text-[12px] font-bold text-white">🧪 Speed readout <span className="font-normal text-white/70">(testing: fps and lag in 3D)</span></span>
+      <input type="checkbox" className="h-5 w-5 accent-amber-400" checked={on} onChange={(e) => { setFrameMeterOn(e.target.checked); setOn(e.target.checked); }} />
+    </label>
   );
 }
