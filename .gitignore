@@ -62,3 +62,4 @@ scripts/tmp/
 # Playtest screen recordings and their breakdowns (scripts/playtest-video).
 # Videos are hundreds of MB; the frames and sheets are rebuilt from them.
 .playtests/
+.cache/statsbomb/
