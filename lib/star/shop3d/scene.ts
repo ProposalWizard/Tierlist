@@ -40,9 +40,9 @@ import { stepDwell } from "./dwell";
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
-import { Governor } from "../three3d/governor";
+import { Governor, sessionStartTier } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu, compileForBake, noteSceneFiles } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, compileForBake, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
 import { ktx2LoaderForModels } from "../three3d/ktx2";
 import { withMeshopt } from "../three3d/meshopt";
 import { withMocapOwn } from "../three3d/footballAnims";
@@ -195,26 +195,30 @@ export async function startShop(
   container: HTMLElement, cb: ShopCallbacks, kit0: KitColours,
   displays: Record<DisplayId, Display>, opts: ShopOptions = {},
 ): Promise<ShopController> {
-  const own: { renderer?: any } = {};
+  const own: { release?: (root?: any) => void; root?: any } = {};
   try {
     const t0 = performance.now();
     const c = await buildShop(container, cb, kit0, displays, opts, own);
     noteSceneFiles("shop", t0); // what it asked for: Home's next preload fetches exactly these (three3d/perf.ts)
     return c;
   } catch (e) {
-    const r = own.renderer;
-    if (r) { try { r.setAnimationLoop(null); r.dispose(); r.forceContextLoss(); r.domElement.remove(); } catch { /* already gone */ } }
+    // the shared renderer stays alive (three3d/perf.ts acquireRenderer); only this half-built scene goes
+    if (own.release) { try { own.release(own.root); } catch { /* already gone */ } }
     throw e;
   }
 }
 
 async function buildShop(
   container: HTMLElement, cb: ShopCallbacks, kit0: KitColours,
-  displays: Record<DisplayId, Display>, opts: ShopOptions, own: { renderer?: any },
+  displays: Record<DisplayId, Display>, opts: ShopOptions, own: { release?: (root?: any) => void; root?: any },
 ): Promise<ShopController> {
   // 3D quality: one tier, chosen before the renderer (Settings, else Auto).
   // High is the New look exactly as it was on 5 Oct 2026.
-  let tier: Quality3d = opts.quality ?? quality3dTier();
+  // the scene's own tier (Settings, else Auto); built lower if this session's
+  // governor already settled lower (three3d/governor.ts sessionStartTier), so a
+  // door never opens a place too heavy for the phone and then steps it down
+  const ownTier: Quality3d = opts.quality ?? quality3dTier();
+  let tier: Quality3d = sessionStartTier(ownTier);
   let prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
   await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
@@ -224,8 +228,11 @@ async function buildShop(
   const { mergeGeometries, toCreasedNormals }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
 
   // ── Renderer ──
-  const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
-  own.renderer = renderer;
+  // ONE renderer for every 3D place (three3d/perf.ts): garden → shop → garden
+  // keeps the same WebGL context and its compiled shaders, instead of a new
+  // context (and every shader built again) at each door.
+  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  own.release = release;
   rememberGpu(renderer);
   // LAG (Harry, 5 Oct 2026): the tier's still cap standing still (High 1.5x
   // a CSS pixel), its moving cap while walking (High 1x: 2.25x fewer pixels
@@ -236,7 +243,7 @@ async function buildShop(
   // The governor (three3d/governor.ts): under ~45 fps for 2 s → one rung down
   // (first the MOVING picture's pixels, never under 1.5 — a still frame keeps
   // full quality; only then, as an emergency, the tier's shadows). It replaces this scene's own "three slow seconds" check.
-  const gov = new Governor({ start: tier, name: "shop", slowSeconds: 2, onChange: (r, _i, why) => {
+  const gov = new Governor({ start: tier, ceiling: ownTier, name: "shop", slowSeconds: 2, onChange: (r, _i, why) => {
     if (why === "start") return;
     if (why === "down" && r.tier !== tier) { if (!stepDown()) capAlways = true; }
     pr = stillPR(); renderer.setPixelRatio(pr);
@@ -259,15 +266,11 @@ async function buildShop(
   renderer.toneMappingExposure = 1.1;
   renderer.shadowMap.enabled = prof.shadows;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.domElement.style.display = "block";
-  renderer.domElement.style.width = "100%";
-  renderer.domElement.style.height = "100%";
-  renderer.domElement.style.touchAction = "none";
-  container.appendChild(renderer.domElement);
   const onLost = (e: Event) => { e.preventDefault(); if (!disposed) cb.onContextLost?.(); };
   renderer.domElement.addEventListener("webglcontextlost", onLost);
 
   const scene = new THREE.Scene();
+  own.root = scene;
   const BG = "#120e0b";
   scene.background = new THREE.Color(BG);
   scene.fog = new THREE.Fog(BG, 22, 42);
@@ -1620,22 +1623,20 @@ async function buildShop(
       window.removeEventListener("keyup", ku);
       renderer.domElement.removeEventListener("webglcontextlost", onLost);
       marker.dispose();
-      scene.traverse((o: any) => {
-        o.geometry?.dispose?.();
-        const m = o.material;
-        (Array.isArray(m) ? m : m ? [m] : []).forEach((x: any) => { x.map?.dispose?.(); x.dispose?.(); });
-      });
       draco.dispose();
       envTex.dispose();
       pmrem.dispose();
-      renderer.dispose();
-      // give the phone its 3D back now (iPhone Safari allows only a few at
-      // once, and the shop and the garden swap often)
-      renderer.forceContextLoss();
-      renderer.domElement.remove();
+      // the shared renderer stays (one context for every place); the scene's
+      // geometries, materials and textures are freed a moment later, after
+      // the next place has built the shaders both share (perf.ts release)
+      release(scene);
     },
   };
   showCar(0);
+  // the loading cover stays up until the real first frames are drawn and the
+  // page runs at ~30 a second again (perf.ts awaitSmoothFrame): the first
+  // draws' leftover building (shadow shaders, uploads) happens behind it
+  await awaitSmoothFrame(renderer, { isDead: () => disposed });
   return ctrl;
 }
 

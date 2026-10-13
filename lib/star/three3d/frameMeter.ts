@@ -3,7 +3,8 @@
  * build machine has no graphics chip, so a phone is the only true measure:
  * this puts a small readout in the corner of every 3D place —
  *   fps · slowest frame in the last 2 s · draw calls · triangles · pixel ratio · tier
- * — for admins and testers (and anyone with ?fps=1; ?fps=0 hides it).
+ * — off unless switched on at the top of Settings (testers) or with ?fps=1 (frameMeterPref.ts;
+ * Harry, 13 Oct 2026). The switch takes effect at once, no reload.
  * Second pass (9 Oct 2026): also shadow-map draws, skinned draws, post passes,
  * JS ms per frame (frameStats.ts) and the governor's rung (governor.ts).
  * The same numbers sit on window.__frame3d for measuring scripts.
@@ -19,24 +20,16 @@
 import { quality3dTier } from "./quality";
 import { currentGovernor } from "./governor";
 import { startFrameStats } from "./frameStats";
+import { frameMeterOn } from "./frameMeterPref";
 
 let installed = false;
-
-function wanted(): Promise<boolean> {
-  if (typeof window === "undefined") return Promise.resolve(false);
-  const q = new URLSearchParams(window.location.search).get("fps");
-  if (q === "1") return Promise.resolve(true);
-  if (q === "0") return Promise.resolve(false);
-  return import("@/lib/useIsAdmin").then((m) => m.isTesterNow()).catch(() => false);
-}
 
 /** Start the meter (once per page). Safe to call from every scene. */
 export function installFrameMeter(): void {
   if (installed || typeof window === "undefined") return;
   installed = true;
-  void wanted().then((on) => {
-    if (!on) return;
-    const st = startFrameStats();
+  {
+    let st: ReturnType<typeof startFrameStats> | null = null;
     const el = document.createElement("div");
     el.setAttribute("data-frame-meter", "");
     Object.assign(el.style, {
@@ -46,6 +39,8 @@ export function installFrameMeter(): void {
     } as Partial<CSSStyleDeclaration>);
     document.body.appendChild(el);
     window.setInterval(() => {
+      if (!frameMeterOn()) { el.style.display = "none"; return; }
+      st ??= startFrameStats(); // counting starts only once someone switches it on
       const f = st.summary();
       if (!f) { el.style.display = "none"; return; }
       const g = currentGovernor();
@@ -53,5 +48,5 @@ export function installFrameMeter(): void {
       el.textContent = `${f.fps.toFixed(0)} fps  worst ${f.worstMs.toFixed(0)} ms  js ${f.jsMs.toFixed(1)} ms\n${f.draws} draws  ${(f.tris / 1000).toFixed(0)}k tris  shadow ${f.shadowDraws}\nskinned ${f.skinnedDraws}  post ${f.posts}\npx ${f.pixelRatio.toFixed(2)}  ${gov}`;
       el.style.display = "block";
     }, 500);
-  });
+  }
 }

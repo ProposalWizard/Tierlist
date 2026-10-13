@@ -248,7 +248,7 @@ export class DynamicResolution {
 
 // ───────────────────────── one shared renderer ─────────────────────────
 
-interface Shared { renderer: THREE.WebGLRenderer; antialias: boolean; owner: number; pending: THREE.Object3D[]; flushTimer: ReturnType<typeof setTimeout> | null }
+interface Shared { renderer: THREE.WebGLRenderer; antialias: boolean; owner: number; pending: { root: THREE.Object3D; keep?: Set<unknown> }[]; flushTimer: ReturnType<typeof setTimeout> | null }
 let shared: Shared | null = null;
 let ownerSeq = 0;
 
@@ -264,7 +264,7 @@ let ownerSeq = 0;
  * scene's warmUp, or after 3 s. So the shaders both scenes use are still
  * compiled when the next scene asks for them.
  */
-export function acquireRenderer(T: Three, container: HTMLElement, prof: Pick<TierProfile, "antialias" | "maxPixelRatio">): { renderer: THREE.WebGLRenderer; release: (root?: THREE.Object3D | null) => void } {
+export function acquireRenderer(T: Three, container: HTMLElement, prof: Pick<TierProfile, "antialias" | "maxPixelRatio">): { renderer: THREE.WebGLRenderer; release: (root?: THREE.Object3D | null, keep?: Set<unknown>) => void; isOwner: () => boolean } {
   installFrameMeter();
   if (shared && (shared.antialias !== prof.antialias || shared.renderer.getContext().isContextLost())) dropSharedRenderer();
   if (!shared) {
@@ -294,17 +294,19 @@ export function acquireRenderer(T: Three, container: HTMLElement, prof: Pick<Tie
   c.style.width = "100%";
   c.style.height = "100%";
   c.style.touchAction = "none";
+  c.style.pointerEvents = ""; // the real game's view sets "none" on it
   container.appendChild(c);
   return {
     renderer: r,
-    release: (root) => {
-      if (!shared || shared.renderer !== r) { if (root) disposeObject3D(root); return; }
+    isOwner: () => !!shared && shared.renderer === r && shared.owner === me,
+    release: (root, keep) => {
+      if (!shared || shared.renderer !== r) { if (root) disposeObject3D(root, keep); return; }
       if (shared.owner === me) {
         r.setAnimationLoop(null);
         c.remove();
       }
       if (root) {
-        shared.pending.push(root);
+        shared.pending.push({ root, keep });
         if (shared.flushTimer) clearTimeout(shared.flushTimer);
         shared.flushTimer = setTimeout(flushReleased, 3000);
       }
@@ -317,7 +319,7 @@ export function flushReleased() {
   if (!shared) return;
   if (shared.flushTimer) { clearTimeout(shared.flushTimer); shared.flushTimer = null; }
   const roots = shared.pending.splice(0);
-  for (const root of roots) disposeObject3D(root);
+  for (const p of roots) disposeObject3D(p.root, p.keep);
   shared.renderer.renderLists.dispose();
 }
 
@@ -407,6 +409,36 @@ export async function warmUp(T: Three, renderer: THREE.WebGLRenderer, scene: THR
     for (const o of hidden) o.visible = false;
   }
   flushReleased();
+}
+
+/**
+ * Keep the loading cover up until the scene's REAL first frames have been
+ * drawn and the page is running smoothly again (Mikey's video, 12 Oct 2026:
+ * after each door the cover dropped onto 1-3 fps frames — the first draws
+ * still built shadow shaders, uploaded pictures and skinning data on screen).
+ * Call after the scene's animation loop has started, before handing the
+ * controller back: resolves once `minDraws` frames have been drawn AND the
+ * last page tick took under `gapMs` (about 30 a second), or after
+ * `timeoutMs` whatever happens (a slow phone still gets in).
+ */
+export function awaitSmoothFrame(renderer: Pick<THREE.WebGLRenderer, "info">, opts: { minDraws?: number; gapMs?: number; timeoutMs?: number; isDead?: () => boolean } = {}): Promise<{ draws: number; ms: number; smooth: boolean }> {
+  const minDraws = opts.minDraws ?? 2, gapMs = opts.gapMs ?? 40, timeoutMs = opts.timeoutMs ?? 2500;
+  if (typeof requestAnimationFrame === "undefined") return Promise.resolve({ draws: 0, ms: 0, smooth: false });
+  const t0 = performance.now();
+  const f0 = renderer.info.render.frame;
+  return new Promise((finish) => {
+    let last = t0;
+    const tick = (now: number) => {
+      const gap = now - last; last = now;
+      const draws = renderer.info.render.frame - f0;
+      const ms = now - t0;
+      if (opts.isDead?.()) { finish({ draws, ms, smooth: false }); return; }
+      if (draws >= minDraws && gap <= gapMs) { finish({ draws, ms, smooth: true }); return; }
+      if (ms >= timeoutMs) { finish({ draws, ms, smooth: false }); return; }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
 }
 
 /**

@@ -34,6 +34,8 @@ for (const c of list) {
   // a sequence of frames (glideFrames.mjs): each shown for a few rendered frames, the last one kept
   // --orbit=DEG: the camera swipe turned this far (engineView.ts window.__cam3dOrbit; the game's swipe sets the same)
   if (flag("orbit", "")) { await page.evaluate((d) => window.__cam3dOrbit?.(d), +flag("orbit", "0")); await page.waitForTimeout(+flag("step", "4000")); }
+  // --tilt=DEG: the up/down camera swipe (engineView.ts window.__cam3dTilt)
+  if (flag("tilt", "")) { await page.evaluate((d) => window.__cam3dTilt?.(d), +flag("tilt", "0")); await page.waitForTimeout(+flag("step", "4000")); }
   for (const fr of c.seq ?? []) {
     await page.evaluate((x) => window.__M.setFrame(x), fr);
     await page.waitForTimeout(+flag("step", "4000"));

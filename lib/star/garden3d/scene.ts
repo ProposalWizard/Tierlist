@@ -54,9 +54,9 @@ import { buildGrid, findPath, TapWalker, makeTapMarker, type WalkGrid, type XZ }
 import { makeWalkClip } from "../walkClip";
 import { freezeStatic } from "../freezeStatic";
 import { TIER_PROFILES, quality3dTier, stepDownTier, shadowSizeFor, type Quality3d } from "../three3d/quality";
-import { Governor } from "../three3d/governor";
+import { Governor, sessionStartTier } from "../three3d/governor";
 import { sceneSavings } from "../three3d/sceneSavings";
-import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles } from "../three3d/perf";
+import { DynamicResolution, rememberGpu, loadGltfCached, noteSceneFiles, acquireRenderer, awaitSmoothFrame } from "../three3d/perf";
 import { withMeshopt } from "../three3d/meshopt";
 import { look3dStyle } from "../look3dStyle";
 import { loadRealNature, makeTree, makeBale, makeFlowerBeds, makeGroundDetail } from "./realNature";
@@ -202,11 +202,15 @@ const SKY: Record<GardenSky, { top: string; mid: string; low: string; fog: strin
   night: { top: "#04070f", mid: "#0c1730", low: "#1b2747", fog: "#111a30", sun: "#9db8ff", sunI: 0.45, hemi: ["#5a6f9c", "#1a2216", 0.42], exp: 1.15, dir: [0.45, 0.9, -0.5], env: 0.1, hill: "#1d2c22" },
 };
 
-async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions, own: { renderer?: any }): Promise<GardenController> {
+async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions, own: { release?: (root?: any) => void; root?: any }): Promise<GardenController> {
   // ── 3D quality (Settings → Look → "3D quality"): one tier, chosen before the
   // renderer (antialias is fixed when the context is made). High is the New
   // look exactly as it was on 5 Oct 2026. ──
-  let tier: Quality3d = opts.quality ?? quality3dTier();
+  // the scene's own tier (Settings, else Auto); built lower if this session's
+  // governor already settled lower (three3d/governor.ts sessionStartTier), so a
+  // door never opens a place too heavy for the phone and then steps it down
+  const ownTier: Quality3d = opts.quality ?? quality3dTier();
+  let tier: Quality3d = sessionStartTier(ownTier);
   let prof = TIER_PROFILES[tier];
   const THREE: any = await import("three");
   await installAssetVersions(); // every file this place asks for by its versioned address (three3d/assetUrl.ts)
@@ -228,8 +232,11 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // ── Renderer ──
   const { RoomEnvironment }: any = await import("three/examples/jsm/environments/RoomEnvironment.js");
   const { mergeGeometries }: any = await import("three/examples/jsm/utils/BufferGeometryUtils.js");
-  const renderer = new THREE.WebGLRenderer({ antialias: prof.antialias, powerPreference: "high-performance" });
-  own.renderer = renderer;
+  // ONE renderer for every 3D place (three3d/perf.ts): garden → shop → garden
+  // keeps the same WebGL context and its compiled shaders (Mikey's video, 12 Oct:
+  // 1.5-1.7 s freezes coming back into the garden were a new context + every shader again)
+  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  own.release = release;
   rememberGpu(renderer);
   // ── LAG (Harry, 5 Oct 2026: "find ways to minimise lag") ──
   // Pixels: the tier's still cap standing still (High 1.5x a CSS pixel), its
@@ -242,7 +249,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // The governor (three3d/governor.ts): under ~45 fps for 2 s → one rung down
   // (first the MOVING picture's pixels, never under 1.5 — a still frame keeps
   // full quality; only then, as an emergency, the tier's shadows). It replaces this scene's own "three slow seconds" check.
-  const gov = new Governor({ start: tier, name: "garden", slowSeconds: 2, onChange: (r, _i, why) => {
+  const gov = new Governor({ start: tier, ceiling: ownTier, name: "garden", slowSeconds: 2, onChange: (r, _i, why) => {
     if (why === "start") return;
     if (why === "down" && r.tier !== tier) { if (!stepDown()) capAlways = true; }
     pr = stillPR(); renderer.setPixelRatio(pr);
@@ -268,16 +275,12 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // The sun's shadow is drawn again only when something that casts one has
   // moved (you, or a car arriving): standing still costs no shadow pass.
   renderer.shadowMap.autoUpdate = false;
-  renderer.domElement.style.display = "block";
-  renderer.domElement.style.width = "100%";
-  renderer.domElement.style.height = "100%";
-  renderer.domElement.style.touchAction = "none";
-  container.appendChild(renderer.domElement);
   // iPhone Safari takes the 3D away when memory runs short: say so, cleanly.
   const onLost = (e: Event) => { e.preventDefault(); if (!disposed) cb.onContextLost?.(); };
   renderer.domElement.addEventListener("webglcontextlost", onLost);
 
   const scene = new THREE.Scene();
+  own.root = scene;
   scene.fog = new THREE.Fog(look.fog, 30, 110);
   scene.background = new THREE.Color(look.fog);
   // The shop's soft room reflection, so the people and the glass are lit as
@@ -295,6 +298,19 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   camera.layers.enable(MATE_LAYER);
   for (let k = 0; k < 3; k++) camera.layers.enable(CAR_LAYER + k);
   let disposed = false;
+  /**
+   * Building the garden used to run as one block between its file loads and
+   * its shader build: 1.8 s with the CPU slowed 4x (Mikey's video: a 984 ms
+   * JS spike on opening it). It now gives the page a moment between each part
+   * (boundary, trees, shop, casino, house, pitch, fountain, cabinet, gazebo,
+   * stable, cars, people — one team-mate at a time — horse, bird, merge), so
+   * no part freezes it for long and the loading spinner keeps turning. Same
+   * garden; the cover is up the whole time.
+   */
+  const breathe = async () => {
+    await new Promise<void>((r) => setTimeout(r, 0));
+    if (disposed) throw new Error("disposed");
+  };
 
   const canvasTex = (c: HTMLCanvasElement, repeat?: [number, number]) => {
     const t = new THREE.CanvasTexture(c);
@@ -712,6 +728,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     return m;
   };
 
+  await breathe();
   // ── The boundary: it grows with your home (fence → hedge → brick wall) ──
   // Long single runs, not a row of little pieces: a close-boarded fence, a
   // tall clipped hedge, or a brick wall with stone coping and piers.
@@ -763,6 +780,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   }
   bound.done();
 
+  await breathe();
   // ── Trees: a ring beyond the boundary, a few inside ──
   const treeKeys = ["tree_oak", "tree_default", "tree_detailed", "tree_fat", "tree_tall", "tree_pine", "tree_pine2"];
   const treeAt: Record<string, number[][]> = {};
@@ -874,6 +892,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   }
   void tufts; // Kenney's grass reads as dark spikes at this size; the mown lawn is enough
 
+  await breathe();
   // ── The shop, where the house was: a real small shop front ──
   // Brick, a slate roof with a chimney, and a painted green shopfront: fascia
   // with the name in gold, pilasters, two lit display windows (your kit on
@@ -1048,6 +1067,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     }
   }
 
+  await breathe();
   // ── The casino (8 Oct 2026, Harry: "start work on making the casino 3D and
   // adding it to the garden/shop walkable area") ──
   // A small glamorous front, same family as the shop's: deep burgundy with
@@ -1190,6 +1210,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   sidePave(CASINO.door + 1.0 - 4.2, 1.4, (4.2 + CASINO.door + 1.0) / 2, -6.0, 0.0155);
   sidePave(2.0, -6.7 - CASINO.z1, CASINO.door, (CASINO.z1 - 6.7) / 2, 0.016);
 
+  await breathe();
   // ── Your house (9 Oct 2026, Harry: "imagine you actually had your current
   // house with all your stuff and that's where you change clothes"): its back
   // door on the east boundary, a path to it from the main path. Walk through
@@ -1234,6 +1255,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     sidePave(X - 1.37, 1.4, (X + 1.37) / 2, Z, 0.0155);
   }
 
+  await breathe();
   // ── The training pitch (8 Oct 2026): a small fenced pitch, a goal at the
   // far end, cones, a gate. Walk through the gate and the 3D training opens
   // (cb.onTrainingGate; the training itself is built separately). ──
@@ -1331,6 +1353,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   sidePave(-2.7 - (PITCH.gate - 0.7), 1.4, (-2.7 + PITCH.gate - 0.7) / 2, SIDE_Z, 0.0155);
   sidePave(1.4, SIDE_Z - 0.7 - PITCH.z1, PITCH.gate, (SIDE_Z - 0.7 + PITCH.z1) / 2, 0.016);
 
+  await breathe();
   // ── The fountain, and a bird that drops in for a drink ──
   one("fountain", FOUNTAIN.x, FOUNTAIN.z, 1.9);
   const waterM = new THREE.MeshStandardMaterial({ color: "#5aa8d6", roughness: 0.08, metalness: 0.2, transparent: true, opacity: 0.85, emissive: "#0c3550", emissiveIntensity: 0.4 });
@@ -1367,6 +1390,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   scene.add(spray);
   CIRCLES.push([FOUNTAIN.x, FOUNTAIN.z, FOUNTAIN.r]);
 
+  await breathe();
   // ── The trophy cabinet: a glass summer-house, your trophies on lit shelves ──
   const cab = new THREE.Group();
   cab.position.set(CABINET.x, 0, CABINET.z);
@@ -1432,6 +1456,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   solid(CABINET.x - cd / 2 - 0.15, CABINET.x + cd / 2 + 0.15, CABINET.z - cw / 2 - 0.15, CABINET.z + cw / 2 + 0.15);
 
 
+  await breathe();
   // ── The gazebo: a pergola, a bench, three team-mates, cans, a plant ──
   const woodM = mat("#ffffff", { map: canvasTex(boardsCanvas("#8b5e3c"), [1, 1]), roughness: 0.75 });
   const gz = GAZEBO;
@@ -1526,6 +1551,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.11, 2), ballM);
   add(ball, TEQ.x + 1.0, 0.11, TEQ.z + 1.9);
 
+  await breathe();
   // ── The stable, paddock, hay and water ──
   const st = STABLE;
   const stableLv = Math.max(1, data.stable);
@@ -1618,6 +1644,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   one("bucket", pd.x1 - 2.7, pd.z1 - 0.9, 2.6);
   one("log_stack", st.x + 0.6, st.z + st.d / 2 + 0.9, 2.6, 0.3);
 
+  await breathe();
   // ── Parking for your cars ──
   const bays = [8.0, 11.0, 14.0];
   const lineM = mat("#f4f1ea", { roughness: 0.6 });
@@ -1753,6 +1780,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     };
   }
 
+  await breathe();
   // ── People: you, and the team-mates on the bench ──
   const clip = (g: any, n: string) => g.animations.find((a: any) => a.name === n);
   let player: any, mixer: any, idleA: any, walkA: any, jogA: any;
@@ -1801,7 +1829,10 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     playerBlob = blob(0.9, 0.9, st0.x, st0.z, 0.9);
     // the team-mates: the same body, sat on the bench with the clips' "sitidle"
     const SKIN = ["#8d5524", "#e0ac69", "#5c3a1e"];
-    data.mates.slice(0, 3).forEach((num, i) => {
+    const mateNums = data.mates.slice(0, 3);
+    for (let i = 0; i < mateNums.length; i++) {
+      const num = mateNums[i];
+      await breathe(); // one team-mate per slice: no single long freeze while the garden opens
       const m: Person3D = makePerson3d(THREE, SK, charG, animG, { outline: prof.outlines ? 0.006 : 0, castShadow: true, who: `garden-mate-${num}` });
       outlines.push(m.outline);
       dressPerson3d(THREE, m, { skin: SKIN[i % 3], hair: HAIR[i % 3], kit: data.kit, number: canvasTex(numberCanvas(num, "#ffffff")) });
@@ -1858,7 +1889,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       // drawn on their own layer, so they can be pictured on their own (below)
       m.root.traverse((o: any) => o.layers.set(MATE_LAYER));
       mates.push({ root: m.root, mixer: m.mixer, upright: { a: sit, phase: i * 2.1 } });
-    });
+    }
     if (!dbg.has("noimp") && mates.length) impostor = makeImpostor(mates.map((m) => m.root), MATE_LAYER, 7, 8);
   } else {
     const dress = (root: any, number: number, key: string) => {
@@ -1939,6 +1970,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   strideFor(THREE, personRef, mixer, { idle: idleA, walk: walkA, jog: jogA })
     .then((g) => { if (!disposed) gaitBlend = g; })
     .catch((e) => console.error("gait clips", e));
+  await breathe();
   // ── Your horse, grazing and wandering the paddock ──
   // More than one pose (7 Oct 2026, "horses have one pose"): between walks he
   // either grazes (head down, nose at knee height, chewing) or stands and looks
@@ -2006,6 +2038,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     h.tail.forEach((b: any, i: number) => turnBone(b, hUp, sway * (0.6 + 0.3 * i)));
   };
 
+  await breathe();
   // ── A bird: circles high, drops onto the fountain's rim, drinks, flies off ──
   let bird: { root: any; mixer: any; fly: any; idle: any; phase: "circle" | "land" | "drink" | "leave"; t: number; next: number } | null = null;
   load("/star/garden3d/bird.glb").then((g: any) => {
@@ -2022,6 +2055,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   }).catch((e: any) => console.error("garden bird", e));
   const RIM = { x: FOUNTAIN.x + 1.66, y: 0.5, z: FOUNTAIN.z };
 
+  await breathe();
   // ── Lag: everything that never moves, merged ──
   // Each little box of the gazebo, bench, stable, cabinet and beds was its own
   // draw: here every still piece is joined with the others of the same
@@ -2042,6 +2076,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     sunBlob.position.y = 0.021;
   }
 
+  await breathe();
   // ── The training pitch's team-mates (Harry, 8 Oct 2026: "build all the
   // animations for any new 3D areas"). Behind the fence: two passing it
   // back and forth, one dribbling the slalom, one stretching, one jogging
@@ -2936,20 +2971,18 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       impostor?.dispose();
       for (const ci of carImpostors) ci.dispose();
       marker.dispose();
-      scene.traverse((o: any) => {
-        o.geometry?.dispose?.();
-        const m = o.material;
-        (Array.isArray(m) ? m : m ? [m] : []).forEach((x: any) => { x.map?.dispose?.(); x.dispose?.(); });
-      });
       envTex.dispose();
       draco.dispose();
-      renderer.dispose();
-      // give the phone its 3D back now, not whenever the page is collected
-      // (iPhone Safari allows only a few at once: the shop and garden swap often)
-      renderer.forceContextLoss();
-      renderer.domElement.remove();
+      // the shared renderer stays (one context for every place, so no pile-up
+      // of contexts on an iPhone either); the scene is freed after the next
+      // place built the shaders both share (perf.ts release)
+      release(scene);
     },
   };
+  // the loading cover stays up until the real first frames are drawn and the
+  // page runs at ~30 a second again (perf.ts awaitSmoothFrame): the first
+  // draws' leftover building (shadow shaders, uploads) happens behind it
+  await awaitSmoothFrame(renderer, { isDead: () => disposed });
   return ctrl;
 }
 
@@ -2959,17 +2992,15 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
  * doesn't leave a dead WebGL context behind on an iPhone).
  */
 export async function startGarden(container: HTMLElement, cb: GardenCallbacks, data: GardenData, opts: GardenOptions = {}): Promise<GardenController> {
-  const own: { renderer?: any } = {};
+  const own: { release?: (root?: any) => void; root?: any } = {};
   try {
     const t0 = performance.now();
     const c = await buildGarden(container, cb, data, opts, own);
     noteSceneFiles("garden", t0); // what it asked for: Home's next preload fetches exactly these (three3d/perf.ts)
     return c;
   } catch (e) {
-    const r = own.renderer;
-    if (r) {
-      try { r.setAnimationLoop(null); r.dispose(); r.forceContextLoss(); r.domElement.remove(); } catch { /* already gone */ }
-    }
+    // the shared renderer stays alive (three3d/perf.ts acquireRenderer); only this half-built scene goes
+    if (own.release) { try { own.release(own.root); } catch { /* already gone */ } }
     throw e;
   }
 }
