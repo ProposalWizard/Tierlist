@@ -1674,9 +1674,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       camBtn.style.background = camLock.on ? "rgba(250,204,21,0.92)" : "rgba(15,23,42,0.55)";
       const ink = camLock.on ? "#422006" : "#ffffff";
       camBtn.setAttribute("aria-label", camLock.on ? "Camera locked: tap to unlock" : "Camera free: tap to lock this angle");
-      camBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2l1.5-2h5l1.5 2h2A1.5 1.5 0 0 1 18 8.5V16a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 3 16z"/><circle cx="10.5" cy="12" r="3"/>${camLock.on
-        ? `<rect x="15.5" y="15" width="7" height="6" rx="1" fill="${ink}" stroke="none"/><path d="M17 15v-1.6a2 2 0 0 1 4 0V15" />`
-        : `<rect x="15.5" y="15" width="7" height="6" rx="1" fill="${ink}" stroke="none"/><path d="M17 15v-1.6a2 2 0 0 1 3.8-.9" />`}</svg>`;
+      camBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="13" height="10" rx="2"/><path d="M15 10.5l5-3v9l-5-3z"/>${camLock.on
+        ? `<rect x="5" y="10.5" width="6" height="4.5" rx="0.8" fill="${ink}" stroke="none"/><path d="M6.3 10.5V9.4a1.7 1.7 0 0 1 3.4 0v1.1" stroke-width="1.5"/>`
+        : `<circle cx="8.5" cy="12" r="1.6" fill="#ef4444" stroke="none"/>`}</svg>`;
     };
     paint();
     const stop = (e: Event) => e.stopPropagation();
