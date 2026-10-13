@@ -80,7 +80,7 @@ export default function ShopLabPreview({ kind, look, onBack, cat, bar = "A", dem
   const back = kind === "landing" && look !== "new" ? () => setPage("landing") : onBack;
   if (look === "new") {
     return <ShowroomShop career={career} kind={tab} onKind={setTab} onBack={back} startCat={cat} barOption={bar} levelMark={mark} buyStyle={buy}
-      onBuyKib={buyKib} onBuyBoot={buyBoot} onBuyItem={buyItem} onBuyFromBlackMarket={black} onUseCan={useCan} onOpen3D={() => {}}
+      onBuyKib={buyKib} onBuyBoot={buyBoot} onBuyItem={buyItem} onBuyFromBlackMarket={black} onUseCan={useCan} onOpen3D={() => {}} onOpenHome={() => alert("My home")}
       guideCorner links={[
         { id: "sponsors", icon: "🤝", label: "Sponsors", locked: true, onClick: () => {} },
         { id: "casino", icon: "🎰", label: "Casino", onClick: () => {} },

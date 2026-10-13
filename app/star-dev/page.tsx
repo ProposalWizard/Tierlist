@@ -4522,6 +4522,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             onKind={(k) => { const to = k === "kib" ? "shop-kib" : k === "boots" ? "shop-boots" : "shop-lifestyle"; lastShowroom.current = to; setPhase(to); }}
             onUseCan={handleUseCan}
             onOpen3D={() => { setShopAtDoor(false); setPhase("shop-3d"); }}
+            onOpenHome={HOME3D_IN_CAREER ? () => { setHomeFromGarden(false); setPhase("home-3d"); } : undefined}
           />
         ) : (
         <Shop
