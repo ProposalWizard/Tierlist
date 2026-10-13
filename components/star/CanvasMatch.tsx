@@ -202,6 +202,7 @@ import { spriteKickStrikeT, keeperDiveClip, spriteClipReady, spriteClipFps, spri
 import { outfieldSpriteClip, keeperDiveClipNew, keeperStandingClip, keeperGetUpT, sideOfDive } from "@/lib/star/sprite3dAnim";
 import { POST_L, POST_R } from "@/lib/star/pitch";
 import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt } from "@/lib/star/cameraTilt";
+import { cam2dSwipeOn, useCam2dSwipe } from "@/lib/star/cam2dSwipe";
 import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
 
@@ -2268,7 +2269,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  crosses/byline and corners") — they are watched side-on, then cut. */
   const tiltForChance = (sc: Scenario | null | undefined): number =>
     sc && (sc.kind === "corner" || sc.kind === "byline_cross" || (sc.facing ?? "up") !== "up") ? 0
-      : cam2dLockRef.current.on ? cam2dLockRef.current.tilt : tiltSettingRef.current;
+      : cam2dSwipeOn() && cam2dLockRef.current.on ? cam2dLockRef.current.tilt : tiltSettingRef.current;
   /** THE 2D CAMERA SWIPE + LOCK (Harry, 13 Oct 2026, after the 3D one: "carrying the same tech over
    *  to 2d"). While aiming, a drag up or down on open grass (not the ball, not a team-mate) leans the
    *  camera: up = more lean (lower, see further up the pitch), down = flatter, 0–CAM2D_MAX_DEG. A double
@@ -2282,11 +2283,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     try { const v = JSON.parse(localStorage.getItem("star-cam2d-lock") || "null"); return v && v.on ? { on: true, tilt: Math.max(0, Math.min(CAM2D_MAX_DEG, +v.tilt || 0)) } : { on: false, tilt: 0 }; } catch { return { on: false, tilt: 0 }; }
   })());
   const [cam2dLocked, setCam2dLocked] = useState(() => cam2dLockRef.current.on);
+  const cam2dSwipe = useCam2dSwipe(); // Settings → 2D match camera → Swipe camera (off by default)
   const cam2dGestRef = useRef<{ id: number; x0: number; y0: number; deg0: number; tilting: boolean } | null>(null);
   const cam2dTapRef = useRef({ t: 0, x: 0, y: 0 });
   const cam2dCanTilt = () => tiltForChance(scenarioRef.current) > 0 || (scenarioRef.current && scenarioRef.current.kind !== "corner" && scenarioRef.current.kind !== "byline_cross" && (scenarioRef.current.facing ?? "up") === "up");
   const startCam2dGesture = (e: React.PointerEvent) => {
-    if (!e.nativeEvent.isTrusted || !newViewRef.current || !cam2dCanTilt()) return;
+    if (!cam2dSwipeOn() || !e.nativeEvent.isTrusted || !newViewRef.current || !cam2dCanTilt()) return;
     const now = performance.now(), tp = cam2dTapRef.current;
     if (now - tp.t < 320 && Math.hypot(e.clientX - tp.x, e.clientY - tp.y) < 40) {
       // the double tap: back to the Settings angle (a locked camera keeps that from now on)
@@ -8048,7 +8050,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
         {/* The 2D camera lock (cam2dLockRef above): top-left, clear of the commentary, the power-shot button and the
             ball's pull room. Hidden while the 3D view is drawing (it has its own). */}
-        {phase === "aim" && newViewRef.current && !replayOf && !(typeof document !== "undefined" && document.querySelector("[data-real3d] [data-cam-lock]")) && (
+        {cam2dSwipe && phase === "aim" && newViewRef.current && !replayOf && !(typeof document !== "undefined" && document.querySelector("[data-real3d] [data-cam-lock]")) && (
           <button
             type="button"
             data-cam2d-lock

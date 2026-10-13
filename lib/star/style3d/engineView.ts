@@ -1549,7 +1549,12 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // ball, so the aim starts as surely as a press on the 2D ball does.
     const b3 = ballOnGlass();
     const nearBall = !!b3 && Math.hypot(e.clientX - b3.x, e.clientY - b3.y) <= GRAB_PX;
-    touch.shot = !!f?.ball && f.phase === "aim" && (nearBall || Math.hypot(g.x - f.ball.x, g.y - f.ball.y) < 3.2);
+    // ...and so does a press inside the 2D game's OWN grab zone round the ball (CanvasMatch.tsx
+    // BALL_GRAB_FRACTION, 18% of its height): those always kicked before the camera swipe existed, so
+    // they must never become a swipe (Harry, 13 Oct 2026: "I can't drag the ball back on many highlights").
+    const b2d = f?.ball ? to2dClient(f.ball) : null;
+    const in2dGrab = !!b2d && !!f && Math.hypot(at.x - b2d.x, at.y - b2d.y) <= 0.2 * f.cam.H;
+    touch.shot = !!f?.ball && f.phase === "aim" && (nearBall || in2dGrab || Math.hypot(g.x - f.ball.x, g.y - f.ball.y) < 3.2);
     if (touch.shot && f?.ball) {
       const b2 = to2dClient(f.ball);
       if (b2) { touch.start2 = b2; touch.g0 = { x: f.ball.x, y: f.ball.y }; }
@@ -1648,7 +1653,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     pinch.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (!pinch.on) return;
     // fingers apart = in (closer), together = out; a doubling of the gap is a full step of 1
-    if (pinch.pts.size >= 2) setCamZoom(pinch.z0 - Math.log2(Math.max(1, pinchDist()) / pinch.d0));
+    if (pinch.pts.size >= 2 && !camLock.on) setCamZoom(pinch.z0 - Math.log2(Math.max(1, pinchDist()) / pinch.d0)); // a locked camera: no zoom either
     e.stopImmediatePropagation();
   };
   const onPinchUp = (e: PointerEvent) => {
@@ -1657,10 +1662,20 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (pinch.pts.size === 0) pinch.on = false;
     e.stopImmediatePropagation();
   };
+  // THE WHEEL (Harry, 13 Oct 2026: "the zoom needs to only be triggered by two fingers and mouse wheel
+  // on pc (or two fingers on track pad)"). A trackpad pinch (ctrlKey) or a real mouse wheel (whole
+  // notches, nothing sideways) zooms; a two-finger trackpad slide moves the camera like a one-finger
+  // swipe (sideways = turn, up/down = tilt). A locked camera ignores all of it.
   const onWheel = (e: WheelEvent) => {
     if (!visible) return;
     e.preventDefault();
-    setCamZoom(camZoom() + Math.sign(e.deltaY) * Math.min(0.25, Math.abs(e.deltaY) / 400));
+    if (camLock.on) return;
+    const mouseWheel = e.deltaMode !== 0 || (e.deltaX === 0 && Math.abs(e.deltaY) >= 40 && Number.isInteger(e.deltaY));
+    if (e.ctrlKey || mouseWheel) { setCamZoom(camZoom() + Math.sign(e.deltaY) * Math.min(0.25, Math.abs(e.deltaY) / 400)); return; }
+    if (lastFrame?.phase !== "aim") return;
+    const r = container.getBoundingClientRect();
+    if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) orbit.target = clampOrbit(orbit.target + (e.deltaX / (r.width || 1)) * ORBIT.degPerWidth);
+    else orbit.tiltTarget = clampTilt(orbit.tiltTarget - (e.deltaY / (r.height || 1)) * TILT.degPerHeight);
   };
   // the floating camera button (THE CAMERA LOCK above): top-left of the pitch, clear of the ball, the commentary and the speed readout
   let camBtn: HTMLButtonElement | null = null;
