@@ -27,6 +27,60 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.51",
+      "title": "Harry's patch notes: Camera, 3D look & keeper",
+      "publishedAt": "2026-10-13T21:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/R5FFG4ugSWNiWxQEMoQjng",
+      "summary": "From Harry's 13 Oct playtest: zoom on wheel/pinch, drag turns the 3D camera a full 360° with you kept centred, the 2D swipe removed, smaller cans, For You on PC, a My home button. Then: a Light texture pack, a ball height line, a neon keeper 7% taller, a brighter goal and ball, lighter goal ends, and a time of day for every match. Live 13 Oct 2026.",
+      "stats": [
+        {
+          "value": "108 / 108",
+          "label": "turned camera views with you in the middle"
+        },
+        {
+          "value": "100% → 31%",
+          "label": "matches at golden hour (51% afternoon, 18% night)"
+        },
+        {
+          "value": "+7%",
+          "label": "keeper height"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            { "title": "Texture pack: Light", "detail": "Between Real and Bright; dirt and shadows kept." },
+            { "title": "Ball height line", "detail": "2D and 3D: a faint line to the grass once the ball is in the air." },
+            { "title": "A time of day for every match", "detail": "Afternoon, golden hour or night, seeded per fixture." },
+            { "title": "My home button", "detail": "On the Homes page and the Home screen." }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            { "title": "3D camera controls", "detail": "Wheel, scroll and pinch zoom. Drag turns and tilts, full 360°, you kept centred. A pull from the ball always kicks." },
+            { "title": "Keeper", "detail": "Neon kit (yellow if green or grey), 7% taller." },
+            { "title": "Goal and ball", "detail": "Brighter; the ball has a thin dark edge." },
+            { "title": "Shadows", "detail": "Goal end lighter, live shadows softer." },
+            { "title": "Shop", "detail": "KIB cans 40% smaller, no glow; For You works on PC." },
+            { "title": "2D swipe camera", "detail": "Removed." }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            { "title": "Afternoon goal end", "detail": "A softer stand-shadow band remains." },
+            { "title": "Not seen on a phone", "detail": "Stills only." }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.50",
       "title": "Mikey's patch notes v0.16: Gameplay review fixes",
       "publishedAt": "2026-10-13T17:00:00Z",
