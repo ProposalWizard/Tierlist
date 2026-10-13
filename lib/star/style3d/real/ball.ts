@@ -39,6 +39,8 @@ function ballCanvas(): HTMLCanvasElement {
  * Drawn in sphere-UV space to match three's SphereGeometry (u round, v from the top pole).
  */
 let classicCanvas: HTMLCanvasElement | null = null;
+/** < 1 makes each black pentagon claim more of the ball (1 = a real ball, about 15% black). */
+const PENT_GROW = 0.92;
 /** Drawn once a page (about 4 million small sums), then reused by every classic ball. */
 function classicBallCanvas(): HTMLCanvasElement {
   if (classicCanvas) return classicCanvas;
@@ -59,7 +61,9 @@ function classicBallCanvas(): HTMLCanvasElement {
     }
   }
   // inradii of the truncated icosahedron (edge 1): pentagon faces 2.32744, hexagon faces 2.26728
-  const faces = [...ico.map((v) => ({ n: norm(v), r: 2.32744, pent: true })), ...hex.map((n) => ({ n, r: 2.26728, pent: false }))];
+  // the pentagons drawn BIGGER than a real ball's (Harry, 13 Oct 2026: "u cant see the black spots on it"):
+  // at match distance the ball is a few pixels across, and true-size patches blur into a grey dot
+  const faces = [...ico.map((v) => ({ n: norm(v), r: 2.32744 * PENT_GROW, pent: true })), ...hex.map((n) => ({ n, r: 2.26728, pent: false }))];
   for (let py = 0; py < H; py++) {
     const th = ((py + 0.5) / H) * Math.PI, st = Math.sin(th), y = Math.cos(th);
     for (let px = 0; px < W; px++) {
@@ -117,7 +121,7 @@ export interface HBall {
 let lightRingOn = true;
 export function setHBallLightRing(on: boolean) { lightRingOn = on; }
 /** How much the ball lights itself (was 0.06): bright in shade, short of blooming into a halo. */
-const BALL_GLOW = 0.32;
+const BALL_GLOW = 0.18;
 
 export function dressHBall(T: any, ball: any, root: any, o: { lightRing?: boolean; classic?: boolean } = {}): HBall {
   const tex = new T.CanvasTexture(o.classic ? classicBallCanvas() : ballCanvas());
