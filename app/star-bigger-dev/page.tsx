@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import EnginePlay from "@/components/star/EnginePlay";
 import { buildScenario, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
-import { setMatchViewOverride, setFigureGrowOverride } from "@/lib/star/matchView";
+import { setMatchViewOverride, setFigureGrowOverride, setFramingV2Override } from "@/lib/star/matchView";
 
 const SIZES = [1, 1.15, 1.3, 1.45];
 const KINDS: ScenarioKind[] = ["one_on_one", "corner", "cutback", "through_ball", "tight_angle", "long_range"];
@@ -20,12 +20,14 @@ export default function BiggerPlayersDev() {
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     setMatchViewOverride("new");
+    // ?framing=new: the review's new framing (Mikey, 13 Oct 2026); otherwise the game's own.
+    setFramingV2Override(p.get("framing") === "new" ? true : null);
     setQ({
       kind: (p.get("kind") as ScenarioKind) || "one_on_one",
       seed: Number(p.get("seed") || 3),
       size: Number(p.get("size") || 1.3),
     });
-    return () => { setFigureGrowOverride(null); setMatchViewOverride(null); };
+    return () => { setFigureGrowOverride(null); setMatchViewOverride(null); setFramingV2Override(null); };
   }, []);
   if (!q) return null;
   setFigureGrowOverride(q.size);

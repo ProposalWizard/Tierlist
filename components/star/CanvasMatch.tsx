@@ -2731,7 +2731,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
     applyTilt(tiltForChance(sc));
+    const wasFacing = sc.facing ?? "up";
     const cam = frameForNewView(sc, canvasHW(), replay, tiltDegRef.current);
+    // Framing V2 may turn a wide chance side-on while framing it.
+    if ((sc.facing ?? "up") !== wasFacing) { facingRef.current = sc.facing ?? "up"; applyTilt(tiltForChance(sc)); }
     viewportRef.current = { ...cam };
     baseViewportRef.current = { ...cam };
     playZoomRef.current = playZoomOf(sc);

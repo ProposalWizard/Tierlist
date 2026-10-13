@@ -6,6 +6,7 @@ import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
 import { devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
+import { useFramingV2, setFramingV2 } from "@/lib/star/matchView";
 import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { SettingsTop, SettingsGroups } from "./DeviceSettings";
 import type { FullscreenSupport } from "./ImmersiveToggle";
@@ -126,6 +127,7 @@ export default function SettingsScreen({
   const showDev = isTester && tab === "dev";
   // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
   const [devInfo, setDevInfoState] = useState<boolean>(() => devInfoOn());
+  const framingV2 = useFramingV2();
   const flipDevInfo = () => { const next = !devInfo; setDevInfoState(next); setDevInfo(next); };
 
   let rise = 0;
@@ -279,6 +281,18 @@ export default function SettingsScreen({
               <SetNote className="mt-0.5">On the match-day card: the minute a sub is planned to come on, and his ladder.</SetNote>
             </div>
             <Switch on={devInfo} onClick={flipDevInfo} label="Show developer info" />
+          </div>
+        </SetCard>
+      </RiseIn>
+
+      <RiseIn index={next()}>
+        <SetCard tone={DEV} strength={0.18}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[11px] font-black text-white">New framing (test)</div>
+              <SetNote className="mt-0.5">Chances zoom in with the whole goal in view and the ball a quarter in from the edges; wide chances near the box turn side-on. Off = today&apos;s camera.</SetNote>
+            </div>
+            <Switch on={framingV2} onClick={() => setFramingV2(!framingV2)} label="New framing (test)" />
           </div>
         </SetCard>
       </RiseIn>
