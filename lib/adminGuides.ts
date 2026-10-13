@@ -272,6 +272,33 @@ export const ADMIN_GUIDES = {
     inGame: ["The striker drawings: in a match when Settings → Match → Kane drawings (testing) is New (Old by default). The file you load: nowhere."],
     dev: "app/star-real-moments-dev/page.tsx; lib/star/realMoments.ts (the moment shape, buildRealMoment); tools/statsbomb/fetch.py, convert.mts, measure.mts and README.md.",
   },
+  "/star-statsbomb-dev": {
+    title: "Real shots (test)",
+    what: "Every shot of the 2022 World Cup and Euro 2024 that StatsBomb's free data has a freeze frame for (where everyone near the shot stood), drawn on our pitch, playable in the real match, and measured against our own chances. Test only: the licence for a paid game is not cleared, so none of it is in the game.",
+    buttons: [
+      { group: "Tabs", items: [
+        ["Shots", "The list of real shots, each with its picture and Play button."],
+        ["Moving highlight", "Only shots with 2–3 real passes before them. ▶ Watch the move: the match radar (the same one as the Match Radar page) shows the move coming up the pitch, then the real passes play on our pitch (everyone drifts from where StatsBomb's 360 frame had them to where they stood at the shot), then the shot is yours in the real match. ↺ Again replays it; ■ Stop closes it. The lead-in is a drawing only; the real engine plays just the shot."],
+        ["Ours vs real", "Four bars per chance kind: shot distance, defenders between ball and goal, nearest defender, keeper off his line. Real = the real shots of that kind; Ours = 200 of the game's own chances of that kind."],
+      ] },
+      { group: "Filters", items: [
+        ["All / World Cup 2022 / Euro 2024", "Which tournament."],
+        ["All / Goal / Saved / Off T / Blocked / Other", "What really happened to the shot."],
+        ["All / Open Play / Free Kick / Penalty / Corner", "How the shot came about."],
+        ["Any xG / under 8% / 8–30% / over 30%", "How likely the real shot was to go in (StatsBomb's own number)."],
+        ["Search", "A player or team name."],
+        ["More", "Shows 20 more."],
+      ] },
+      { group: "Each shot", items: [
+        ["The picture", "Our pitch from above, goal at the top. Yellow = the shooter, white = ball, red = opponents, green = keeper, blue = team-mates. The dashed line is where the shot went."],
+        ["▶ Play this shot", "Plays the real match on that picture at the top of the page: the shooter is YOU, the real keeper, opponents and team-mates inside the camera are where they stood. Nothing is counted or saved."],
+        ["■ Stop", "Closes the match."],
+      ] },
+    ],
+    saving: ["Nothing saves. The shots are read from data/statsbomb/shots.json each time the page opens."],
+    inGame: ["Nowhere. This is a test page; the real game never reads this data."],
+    dev: "app/star-statsbomb-dev/page.tsx, MovingHighlight.tsx (radar + lead-in, uses components/star/MatchRadar.tsx RadarPitch); lib/star/statsbombShots.ts (sbToPitch, kindForShot, scenarioForShot, leadinPlan, the measures); app/api/star/statsbomb-shots/route.ts; data/statsbomb/ (shots.json, leadins.json, README); scripts/statsbomb/fetch_shots.py; tests/star/statsbomb.mts.",
+  },
   "/star-goal-clips-dev": {
     title: "Goal videos",
     what: "Score a chance in the real match and watch the goal back as a video from three cameras, then save it. The same recordings the post-match feed plays.",
