@@ -2267,7 +2267,44 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  3 Oct 2026: "I don't think the 20 degrees should apply to the
    *  crosses/byline and corners") — they are watched side-on, then cut. */
   const tiltForChance = (sc: Scenario | null | undefined): number =>
-    sc && (sc.kind === "corner" || sc.kind === "byline_cross" || (sc.facing ?? "up") !== "up") ? 0 : tiltSettingRef.current;
+    sc && (sc.kind === "corner" || sc.kind === "byline_cross" || (sc.facing ?? "up") !== "up") ? 0
+      : cam2dLockRef.current.on ? cam2dLockRef.current.tilt : tiltSettingRef.current;
+  /** THE 2D CAMERA SWIPE + LOCK (Harry, 13 Oct 2026, after the 3D one: "carrying the same tech over
+   *  to 2d"). While aiming, a drag up or down on open grass (not the ball, not a team-mate) leans the
+   *  camera: up = more lean (lower, see further up the pitch), down = flatter, 0–CAM2D_MAX_DEG. A double
+   *  tap on open grass puts the angle back to the Settings one. The video-camera button locks it: the
+   *  angle you left it at is kept every chance and swipes leave the camera alone. Flat chances (corners,
+   *  byline crosses, side-on) stay flat. No side-to-side slide in 2D: the frame IS the chance, there is
+   *  nothing outside it to slide to (see "there is nothing out there to pan to" below). Only real
+   *  touches: the 3D view's forwarded ones (isTrusted false) never move the 2D camera. */
+  const CAM2D_MAX_DEG = 35;
+  const cam2dLockRef = useRef<{ on: boolean; tilt: number }>((() => {
+    try { const v = JSON.parse(localStorage.getItem("star-cam2d-lock") || "null"); return v && v.on ? { on: true, tilt: Math.max(0, Math.min(CAM2D_MAX_DEG, +v.tilt || 0)) } : { on: false, tilt: 0 }; } catch { return { on: false, tilt: 0 }; }
+  })());
+  const [cam2dLocked, setCam2dLocked] = useState(() => cam2dLockRef.current.on);
+  const cam2dGestRef = useRef<{ id: number; x0: number; y0: number; deg0: number; tilting: boolean } | null>(null);
+  const cam2dTapRef = useRef({ t: 0, x: 0, y: 0 });
+  const cam2dCanTilt = () => tiltForChance(scenarioRef.current) > 0 || (scenarioRef.current && scenarioRef.current.kind !== "corner" && scenarioRef.current.kind !== "byline_cross" && (scenarioRef.current.facing ?? "up") === "up");
+  const startCam2dGesture = (e: React.PointerEvent) => {
+    if (!e.nativeEvent.isTrusted || !newViewRef.current || !cam2dCanTilt()) return;
+    const now = performance.now(), tp = cam2dTapRef.current;
+    if (now - tp.t < 320 && Math.hypot(e.clientX - tp.x, e.clientY - tp.y) < 40) {
+      // the double tap: back to the Settings angle (a locked camera keeps that from now on)
+      cam2dTapRef.current = { t: 0, x: 0, y: 0 };
+      if (cam2dLockRef.current.on) { cam2dLockRef.current.tilt = tiltSettingRef.current; try { localStorage.setItem("star-cam2d-lock", JSON.stringify(cam2dLockRef.current)); } catch { /* private */ } }
+      applyTilt(tiltForChance(scenarioRef.current));
+      return;
+    }
+    if (cam2dLockRef.current.on) { cam2dTapRef.current = { t: now, x: e.clientX, y: e.clientY }; return; }
+    cam2dGestRef.current = { id: e.pointerId, x0: e.clientX, y0: e.clientY, deg0: tiltDegRef.current, tilting: false };
+    try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+  };
+  const toggleCam2dLock = () => {
+    const on = !cam2dLockRef.current.on;
+    cam2dLockRef.current = { on, tilt: on ? tiltDegRef.current : 0 };
+    try { if (on) localStorage.setItem("star-cam2d-lock", JSON.stringify(cam2dLockRef.current)); else localStorage.removeItem("star-cam2d-lock"); } catch { /* private */ }
+    setCam2dLocked(on);
+  };
   /** Tip the canvas to `deg` (0 = flat) for its current size. */
   const applyTilt = (deg: number) => {
     tiltDegRef.current = deg;
@@ -7275,7 +7312,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // closer to a team-mate than to the ball never starts an aim-drag now,
     // even when it missed every hit-circle — better a missed order than an
     // accidental, badly-aimed kick.
-    if (ballD >= nearestCaptainCandidateDist(p)) return;
+    if (ballD >= nearestCaptainCandidateDist(p)) { startCam2dGesture(e); return; }
     // The grab zone round the ball: BALL_GRAB_FRACTION of the framed height
     // (28% let a drag start from a third of the screen away — Mikey, 28 Sep
     // 2026: "you're supposed to be able to start dragging only from the
@@ -7284,8 +7321,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // pitch faces (side-on it used to be a share of the width, about 64 px
     // against 100 px top-down — playtest, 3 Oct 2026). Classic is unchanged.
     if (ballD > sameOnScreenM((vp.y2 - vp.y1) * BALL_GRAB_FRACTION, BALL_GRAB_FRACTION, "height")) {
-      // Missed both a player and the ball — nothing happens, exactly as
+      // Missed both a player and the ball: the 2D camera swipe / double tap (startCam2dGesture);
+      // otherwise nothing happens, exactly as
       // before the armband existed.
+      startCam2dGesture(e);
       return;
     }
     draggingRef.current = true;
@@ -7297,6 +7336,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   };
   const onPointerMove = (e: React.PointerEvent) => {
+    const cg = cam2dGestRef.current;
+    if (cg && e.pointerId === cg.id) {
+      const dx = e.clientX - cg.x0, dy = e.clientY - cg.y0;
+      if (!cg.tilting && Math.hypot(dx, dy) >= 10 && Math.abs(dy) > Math.abs(dx) * 1.2) cg.tilting = true;
+      if (cg.tilting) {
+        const h = canvasRef.current?.getBoundingClientRect().height || 1;
+        applyTilt(Math.max(0, Math.min(CAM2D_MAX_DEG, cg.deg0 - (dy / h) * 60)));
+      }
+      return;
+    }
     if (phaseRef.current === "tdDribble") {
       // Drag steers (your lane follows your thumb); a fast sideways flick knocks it past.
       const run = tdRef.current, tch = tdTouchRef.current, c = canvasRef.current;
@@ -7365,6 +7414,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
   };
   const onPointerUp = (e: React.PointerEvent) => {
+    const cg = cam2dGestRef.current;
+    if (cg && e.pointerId === cg.id) {
+      cam2dGestRef.current = null;
+      try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      if (!cg.tilting && Math.hypot(e.clientX - cg.x0, e.clientY - cg.y0) < 10) cam2dTapRef.current = { t: performance.now(), x: e.clientX, y: e.clientY };
+      return;
+    }
     if (nudgeDragRef.current) {
       // The swing stays where you left it; another drag carries on from there.
       nudgeDragRef.current = null;
@@ -7987,6 +8043,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               {touchModeOn && <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />}
             </svg>
             TOUCH
+          </button>
+        )}
+
+        {/* The 2D camera lock (cam2dLockRef above): top-left, clear of the commentary, the power-shot button and the
+            ball's pull room. Hidden while the 3D view is drawing (it has its own). */}
+        {phase === "aim" && newViewRef.current && !replayOf && !(typeof document !== "undefined" && document.querySelector("[data-real3d] [data-cam-lock]")) && (
+          <button
+            type="button"
+            data-cam2d-lock
+            onClick={toggleCam2dLock}
+            aria-label={cam2dLocked ? "Camera locked: tap to unlock" : "Camera free: tap to lock this angle"}
+            className={`absolute top-2 left-2 z-30 pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition ${cam2dLocked ? "bg-yellow-400 border-yellow-200/60" : "bg-gray-950/60 border-white/35"}`}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={cam2dLocked ? "#422006" : "#ffffff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="13" height="10" rx="2" /><path d="M15 10.5l5-3v9l-5-3z" />
+              {cam2dLocked
+                ? (<><rect x="5" y="10.5" width="6" height="4.5" rx="0.8" fill="#422006" stroke="none" /><path d="M6.3 10.5V9.4a1.7 1.7 0 0 1 3.4 0v1.1" strokeWidth="1.5" /></>)
+                : <circle cx="8.5" cy="12" r="1.6" fill="#ef4444" stroke="none" />}
+            </svg>
           </button>
         )}
 
