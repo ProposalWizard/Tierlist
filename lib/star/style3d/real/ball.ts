@@ -148,26 +148,38 @@ export function dressHBall(T: any, ball: any, root: any, o: { lightRing?: boolea
   })();
   const streak = new T.Mesh(new T.PlaneGeometry(1, 1), new T.MeshBasicMaterial({ map: stTex, transparent: true, depthWrite: false, opacity: 0.6 }));
   streak.renderOrder = 3;
-  // Height cue (Harry, 13 Oct 2026: "a ball animation where u can see its height in the air"): a faint
-  // line from the ball straight down to its shadow, shown only once it is clearly off the grass.
-  const dropGeo = new T.BufferGeometry();
-  dropGeo.setAttribute("position", new T.Float32BufferAttribute([0, 0, 0, 0, 1, 0], 3));
-  const drop = new T.Line(dropGeo, new T.LineBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, opacity: 0 }));
-  drop.renderOrder = 2; drop.frustumCulled = false; drop.visible = false;
-  root.add(shadow, ring, streak, drop);
+  // Air (Harry, 13 Oct 2026: "the ball rising up in the air as an animation with maybe slight air particles"):
+  // a ball off the grass leaves a few small puffs that swell and fade in about 0.4 s. A fixed pool, no new draws
+  // when it is on the ground.
+  const puffTex = softDisc(T, "rgba(255,255,255,0.9)", "rgba(255,255,255,0)");
+  const puffs: { m: any; age: number }[] = [];
+  for (let i = 0; i < 12; i++) {
+    const m = new T.Sprite(new T.SpriteMaterial({ map: puffTex, transparent: true, depthWrite: false, opacity: 0 }));
+    m.visible = false; m.renderOrder = 3; puffs.push({ m, age: 9 });
+  }
+  let puffNext = 0, puffClock = 0;
+  root.add(shadow, ring, streak, ...puffs.map((q) => q.m));
   const tmp = new T.Vector3();
   return {
-    update(_dt, vel) {
+    update(dt, vel) {
       const p = ball.getWorldPosition(tmp);
       const s = ball.scale.x;
       // the shadow stays dark and gets SMALLER as the ball climbs, so the gap between the two reads as height
       const k = Math.max(0.55, 1 - p.y / 12);
       shadow.position.set(p.x, 0.012, p.z); shadow.scale.setScalar(0.42 * s * (0.55 + 0.45 * k)); shadow.material.opacity = 0.6 * k;
-      const air = Math.max(0, Math.min(1, (p.y - 0.5) / 0.7));
-      drop.visible = air > 0;
-      if (air > 0) {
-        drop.position.set(p.x, 0.015, p.z); drop.scale.set(1, Math.max(0.01, p.y - 0.015 - 0.11 * s), 1);
-        drop.material.opacity = 0.35 * air;
+      const PUFF_LIFE = 0.42;
+      puffClock += dt;
+      if (p.y > 0.45 && puffClock > 0.05 && Math.hypot(vel.x, vel.y, vel.z) > 3) {
+        puffClock = 0;
+        const q = puffs[puffNext]; puffNext = (puffNext + 1) % puffs.length;
+        q.age = 0; q.m.position.set(p.x, p.y, p.z); q.m.visible = true;
+      }
+      for (const q of puffs) {
+        if (q.age >= PUFF_LIFE) { q.m.visible = false; continue; }
+        q.age += dt;
+        const a = Math.min(1, q.age / PUFF_LIFE);
+        q.m.scale.setScalar(0.22 * s * (0.8 + a * 1.2));
+        q.m.material.opacity = 0.32 * (1 - a);
       }
       ring.visible = o.lightRing ?? lightRingOn;
       ring.position.set(p.x, 0.014, p.z); ring.scale.setScalar(0.62 * s); ring.material.opacity = 0.2 * k;
@@ -184,10 +196,10 @@ export function dressHBall(T: any, ball: any, root: any, o: { lightRing?: boolea
     },
     setNight(on) { mat.emissiveIntensity = on ? BALL_GLOW + 0.05 : BALL_GLOW; },
     dispose() {
-      root.remove(shadow, ring, streak, drop);
+      root.remove(shadow, ring, streak, ...puffs.map((q) => q.m));
       ball.remove(sphere);
       for (const h of hidden) h.visible = true;
-      for (const m of [shadow, ring, streak, sphere, drop, ink]) { m.geometry.dispose(); m.material.dispose(); }
+      for (const m of [shadow, ring, streak, sphere, ink, ...puffs.map((q) => q.m)]) { m.geometry.dispose(); m.material.dispose(); }
       tex.dispose(); shTex.dispose(); rTex.dispose(); stTex.dispose();
     },
   };

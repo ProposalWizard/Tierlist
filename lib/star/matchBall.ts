@@ -42,19 +42,6 @@ export function drawMatchBall(
   ctx.fill();
   ctx.restore();
 
-  // ── Height cue (Harry, 13 Oct 2026): a faint line from the grass up to a ball in the air ──
-  const air = Math.max(0, Math.min(1, (h - 0.5) / 0.7));
-  if (air > 0 && gy - by > r * 1.5) {
-    ctx.save();
-    ctx.strokeStyle = `rgba(255,255,255,${0.4 * air})`;
-    ctx.lineWidth = Math.max(px1, r * 0.12);
-    ctx.beginPath();
-    ctx.moveTo(gx, gy);
-    ctx.lineTo(gx, by + r);
-    ctx.stroke();
-    ctx.restore();
-  }
-
   // ── The ball ──
   ctx.save();
   ctx.translate(gx, by);

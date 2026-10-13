@@ -2314,6 +2314,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const shakeRef = useRef({ t: 0, dur: 1, mag: 0 });   // camera nudge
   const flashRef = useRef({ t: 0, dur: 1 });            // goal flash
   const seamRef = useRef(0);                            // ball roll angle
+  /** A ball in the air leaves a few puffs of air behind it (Harry, 13 Oct 2026). Screen px, newest last. */
+  const airPuffsRef = useRef<{ x: number; y: number; r: number; t: number }[]>([]);
   /**
    * The same real ball ContactBall already puts on the strike screen —
    * public/star/ball.webp — instead of a canvas-drawn white disc. Reported
@@ -4375,7 +4377,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
       // The ball, lifted off the shadow and grown a little with height.
       const by = py - h * heightScale * scale;
-      const br = bScale * (1 + Math.min(h, 8) * 0.055);
+      // Harry, 13 Oct 2026: "actually the ball rising up in the air": it grows clearly as it climbs (was +5.5%
+      // a metre, now +9%, up to +72% at 8 m), and leaves faint puffs of air behind it while it is up.
+      const br = bScale * (1 + Math.min(h, 8) * 0.09);
+      {
+        const now = performance.now();
+        const puffs = airPuffsRef.current;
+        const last = puffs[puffs.length - 1];
+        if (h > 0.4 && (!last || now - last.t > 45 || Math.hypot(px - last.x, by - last.y) > br * 1.2)) {
+          puffs.push({ x: px, y: by, r: br, t: now });
+          if (puffs.length > 14) puffs.shift();
+        }
+        while (puffs.length && now - puffs[0].t > 420) puffs.shift();
+        for (const q of puffs) {
+          const age = (now - q.t) / 420;
+          if (age <= 0.02) continue;
+          ctx.beginPath();
+          ctx.arc(q.x, q.y, q.r * (0.55 + age * 0.6), 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,255,255,${0.22 * (1 - age)})`;
+          ctx.fill();
+        }
+      }
       // New view, Settings → Look → Ball: New — a clean drawn match ball with
       // its own soft offset shadow (lib/star/matchBall.ts). Classic: below.
       if (nv && matchBallLook() === "new") {
