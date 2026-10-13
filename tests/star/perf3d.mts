@@ -4,7 +4,7 @@ import {
   DynamicResolution, FrameGate, cameraMoved, tierFromBenchMs, tierHintFromGpu, TIER_PROFILES,
   mergeStaticByMaterial, instanceRepeats, disposeObject3D,
 } from "../../lib/star/three3d/perf";
-import { Governor, GOV_LADDER, rungForTier, governedPixelRatio } from "../../lib/star/three3d/governor";
+import { Governor, GOV_LADDER, rungForTier, governedPixelRatio, settledRung, noteSettledRung, sessionStartTier } from "../../lib/star/three3d/governor";
 import { autoTierFromDevice, deviceKind, stepDownTier, shadowSizeFor, parseQuality3d, quality3dTier, type DeviceInfo } from "../../lib/star/three3d/quality";
 
 /**
@@ -168,7 +168,7 @@ check(TIER_PROFILES.low.fpsCap === 30 && !TIER_PROFILES.low.shadows, "low tier: 
   check(texFreed === 1 && matFreed === 1 && geoFreed === 1, `each thing freed once (tex ${texFreed}, mat ${matFreed}, geo ${geoFreed})`);
 }
 
-// ── the governor (three3d/governor.ts): one rung down after ~2.5 s of slow frames, one back up after 8 s of fast; stalls ignored ──
+// ── the governor (three3d/governor.ts): one rung down after ~2.5 s of slow frames, one back up after 12 s of fast (climbing is the slow way); stalls ignored ──
 {
   const changes: string[] = [];
   const g = new Governor({ start: "medium", onChange: (r, i, why) => changes.push(`${why}:${i}:${r.tier}`) });
@@ -196,7 +196,9 @@ check(TIER_PROFILES.low.fpsCap === 30 && !TIER_PROFILES.low.shadows, "low tier: 
   run(16.7, 6);
   check(g.index === GOV_LADDER.length - 1, "not fast for long enough yet: no step up");
   run(16.7, 2.5);
-  check(g.index === GOV_LADDER.length - 2 && g.ups === 1, `8 s at full rate: one rung back up (now ${g.index})`);
+  check(g.index === GOV_LADDER.length - 1, `8.5 s at full rate: still no climb (climbing is slower than falling; now ${g.index})`);
+  run(16.7, 4);
+  check(g.index === GOV_LADDER.length - 2 && g.ups === 1, `12 s at full rate: one rung back up (now ${g.index})`);
   run(16.7, 3.5);
   t += 1000; g.frame(t);
   run(40, 6);
@@ -243,6 +245,32 @@ check(TIER_PROFILES.low.fpsCap === 30 && !TIER_PROFILES.low.shadows, "low tier: 
   t = 0; for (let i = 0; i < 400; i++) { t += 60; frozen.frame(t); }
   check(frozen.index === 0, "frozen (?gov=0): never steps");
   g2.dispose(); frozen.dispose();
+}
+
+// ── the session's settled rung: the next scene opens where the last one ended (Mikey's video, 12 Oct 2026) ──
+{
+  noteSettledRung(null);
+  const a = new Governor({ start: "medium", remember: true });
+  let t = 1000; for (let i = 0; i < 400; i++) { t += 28; a.frame(t); }
+  check(a.index === 2 && settledRung() === 2, `a slow scene settles on rung 2 and the session keeps it (kept ${settledRung()})`);
+  a.dispose();
+  const b = new Governor({ start: "medium", remember: true });
+  check(b.index === 2 && b.startIndex === 1, `the next scene opens on rung 2, with its own rung 1 as the ceiling (index ${b.index}, ceiling ${b.startIndex})`);
+  t = 1000; for (let i = 0; i < 900; i++) { t += 16.7; b.frame(t); }
+  check(b.index === 1 && settledRung() === 1, `full-rate frames climb it back to its own tier, and the session keeps that (index ${b.index})`);
+  b.dispose();
+  const c = new Governor({ start: "low", remember: true });
+  check(c.index === 3, "never opens above its own tier because of a better session rung");
+  c.dispose();
+  noteSettledRung(3);
+  check(sessionStartTier("high") === "low" && sessionStartTier("low") === "low", "a scene builds at the session's lower tier");
+  const d = new Governor({ start: sessionStartTier("high"), ceiling: "high", remember: true });
+  check(d.index === 3 && d.startIndex === 0, "built lower, it may still climb back to its own tier");
+  d.dispose();
+  const e = new Governor({ start: "medium" });
+  check(e.index === 1, "without remember (tests, the harness) the session rung is ignored");
+  e.dispose();
+  noteSettledRung(null);
 }
 
 if (problems.length) {

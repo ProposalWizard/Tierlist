@@ -81,7 +81,7 @@ for (const char of ["player", "keeper"] as const) {
   const extra = Object.keys(idx.chars[char].clips).filter((n) => !(OLD[char] as readonly string[]).includes(n) && !((char === "player" ? NEW_PLAYER_CLIPS : NEW_KEEPER_CLIPS) as readonly string[]).includes(n));
   check(extra.length === 0, `${char} has clips nobody knows: ${extra.join(", ")}`);
 }
-check(idx.atlas.color === "atlas-0.webp" && idx.atlas.mask === "mask-0.png" && idx.atlas.w === 1024 && idx.atlas.h === 1251, "atlas 0's entry changed");
+check(idx.atlas.color === "atlas-0.webp" && idx.atlas.mask === "mask-0.webp" /* lossless WebP, same pixels (12 Oct 2026) */ && idx.atlas.w === 1024 && idx.atlas.h === 1251, "atlas 0's entry changed");
 check(fs.statSync(path.join(dir, "atlas-0.webp")).size === 589626, "atlas-0.webp changed");
 check(fs.statSync(path.join(dir, "mask-0.png")).size === 342281, "mask-0.png changed");
 

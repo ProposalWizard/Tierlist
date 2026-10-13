@@ -32,6 +32,7 @@ import { toonYou } from "../style3d/toon/bodies";
 import { people3dLook } from "../look3d";
 import { makeHuman, defaultHumanSpec, HUMAN3D_FILE, type HumanSpec } from "../human3d/human";
 import { loadGltfCached } from "../three3d/perf";
+import { loadModel3d } from "../three3d/ktx2";
 import type { Worn, Kit2 } from "./outfits";
 
 export interface WearInput {
@@ -75,7 +76,10 @@ export async function buildWearer(T: any, SkeletonUtils: any, loader: any, w: We
     return p;
   }
   if (w.worn.kind === "casual") {
-    humanFile ??= loadGltfCached(loader, HUMAN3D_FILE).catch((e) => { humanFile = null; throw e; });
+    // the packed twin where the phone reads KTX2, as every other place loads
+    // the human (three3d/ktx2.ts): never both files on one phone (the plain
+    // one is 5.6 MB) — speed pass, 12 Oct 2026
+    humanFile ??= loadModel3d(loader as never, HUMAN3D_FILE, (u) => loadGltfCached(loader, u)).catch((e) => { humanFile = null; throw e; });
     const g = await humanFile;
     const set = w.worn.set;
     const spec: HumanSpec = { ...defaultHumanSpec(model), outfit: set.outfit, colours: set.colours(w.kits.home), scarf: !!set.scarf };
