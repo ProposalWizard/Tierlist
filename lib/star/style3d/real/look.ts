@@ -330,7 +330,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     const hedge = new T.Mesh(new T.CylinderGeometry(150, 150, 9, 64, 1, true), new T.MeshStandardMaterial({ color: "#2b4a24", roughness: 1, side: T.BackSide }));
     hedge.position.set(0, 4.5, 30); root.add(hedge);
   }
-  const hball: HBall | null = o.ball ? dressHBall(T, o.ball, root, { classic: cartoon || bright }) : null;
+  const hball: HBall | null = o.ball ? dressHBall(T, o.ball, root, { classic: true }) : null;
 
   // contact shadows: a soft dark patch under each person's feet
   const csTex = (() => {

@@ -21,8 +21,8 @@
  *   bright   look H much lighter: light green grass, no cast shadows and no
  *            baked stand shadow, more sky light, a touch more exposure.
  *
- * Cartoon and Bright both use the classic ball (white, clear black
- * pentagons, real/ball.ts); Realism keeps its own.
+ * Every pack uses the classic ball (white, clear black pentagons,
+ * real/ball.ts) since 13 Oct 2026 (Harry: "u cant see the black spots on it").
  *
  * Not a three.js file: Settings imports it. `?pack=real|light|cartoon|bright` on
  * any page overrides it for that page only (stills, the perf harness).
