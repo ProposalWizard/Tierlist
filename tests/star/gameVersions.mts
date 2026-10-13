@@ -50,7 +50,9 @@ for (const gone of ["cutscenePeople", "cutsceneCamera", "chances", "animations",
 check(!/cutscenePeople|cutsceneCamera/.test(settings), "Settings still has a cut-scene row");
 
 // 3.
-const expected = ["keepers", "keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "shotPower", "contactField", "keeperFeel", "mateShots", "matchRadar", "ui"]; // + the Oct 13 gameplay update (Old by default)
+const expected = ["keepers", "keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "shotPower", "contactField", "keeperFeel", "mateShots", "matchRadar", "matchFeel", "ui"]; // + the Oct 13 gameplay update (Old by default)
+// Match feel (Leo, 13 Oct 2026): a testing row, Old by default.
+check(LOOK_ROWS.matchFeel.standard === "old", "Match feel must default to Old while tested");
 check(LOOK_ROW_IDS.join() === expected.join(), `rows are ${LOOK_ROW_IDS.join()}`);
 
 check(LOOK_ROWS.keepers.standard === "new", "Keepers must default to New");

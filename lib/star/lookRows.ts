@@ -12,6 +12,7 @@ import { useSyncExternalStore } from "react";
 import { uiVersion, setUiVersion, UI_VERSION_DEFAULT } from "./uiLook";
 import { gameplayVersion, setGameplayVersion, defaultVersion } from "./gameplayVersion";
 import { matchRadarLook, setMatchRadarLook } from "./matchRadarLook";
+import { matchFeelLook, setMatchFeelLook } from "./matchFeel";
 
 /** One New | Old switch: how to read it, how to set it, and its default. */
 export interface LookRow {
@@ -48,6 +49,8 @@ export const LOOK_ROWS = {
   keeperFeel: gp("Keeper feel", "keeperFeel"),
   mateShots: gp("Team-mate shots", "mateShots"),
   matchRadar: row("Match radar (testing)", "new", "old", "old", matchRadarLook, setMatchRadarLook),
+  // Leo, 13 Oct 2026: impact, hit-stop, sounds, keeper dives (lib/star/matchFeel.ts). Old while tested.
+  matchFeel: row("Match feel (testing)", "new", "old", "old", matchFeelLook, setMatchFeelLook),
   ui: row("UI", "new", "old", UI_VERSION_DEFAULT, uiVersion, setUiVersion),
 } as const satisfies Record<string, LookRow>;
 

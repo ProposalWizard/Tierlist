@@ -220,6 +220,7 @@ function MatchGroup() {
         <LookRow id="mateShots" look={look} tabs={NEW_OLD} note={gp("mateShots")} />
       </div>
       <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
+      <LookRow id="matchFeel" look={look} tabs={NEW_OLD} note="New: every hit is felt: a wind-up, a short freeze at the contact, a flash, a deeper kick sound and a buzz, all bigger the harder you hit it. Thuds on landing, the net bulging, a clang off the post, keeper hops and dives. Old: as before." />
       <PrefRow label="Match view 3D" note="On: your match drawn in 3D, in a full stadium. The football is the same; only the picture changes.">
         <SegTabs className="w-[150px] shrink-0" value={view3d} onChange={(v) => setMatchView3d(v)} tabs={[["on", "On"], ["off", "Off"]] as const} />
       </PrefRow>

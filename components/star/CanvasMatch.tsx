@@ -60,6 +60,7 @@ import {
 } from "@/lib/star/matchCommentary";
 import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
+  playStrike, playThud, playClang, playGlove,
 } from "@/lib/star/matchSound";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
 import { goalZone, passGrade, missKind } from "@/lib/star/chanceRating";
@@ -146,8 +147,14 @@ import PowerShotContact from "./PowerShotContact";
 import {
   shotsPro, knucklePowerOn, launchShot, shotSeedFor, stepKnuckle, stepWindUp, aimedAtGoal, spreadDeg,
   powerShotStrike, POWER_SHOT_WINDUP_S, POWER_SHOT_CONTACT, type ShotExtras, type ContactRead,
+  gradeContact,
 } from "@/lib/star/shotModel";
 import { shotPowerOn, contactFieldOn, feelPower, feelLift, struckAtGoal, fieldApplies } from "@/lib/star/shotFeel";
+import {
+  matchFeelOn, feelDials, strikeFeel, squashAt, streakMetres, speedStretch, punchOffset,
+  keeperSetHop, keeperDiveArc, feelHaptic, type StrikeFeel,
+} from "@/lib/star/matchFeel";
+import { drawImpactBurst, drawDustPuff, drawSpeedStreak, drawGloveSpark, drawClang, drawNetBulge } from "@/lib/star/matchFeelDraw";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
 import { LiveRadar } from "./MatchRadar";
@@ -180,7 +187,7 @@ import {
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
 import {
-  animFromAction, outfieldAnimFrame, keeperAnimFrame, keeperLeanWithAnim,
+  animFromAction, outfieldAnimFrame, keeperAnimFrame, keeperLeanWithAnim, STRIKE_S,
   type ActorAnim, type OutfieldAnimFrame,
 } from "@/lib/star/actionAnim";
 import { animSettings, animFamilyOn, type AnimFamily } from "@/lib/star/animDials";
@@ -2345,6 +2352,41 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const flashRef = useRef({ t: 0, dur: 1 });            // goal flash
   const seamRef = useRef(0);                            // ball roll angle
   /**
+   * Match feel: New (lib/star/matchFeel.ts) — the juice on every hit. Looks
+   * and sound only: the freeze (`hitStop`) holds the whole loop for a few
+   * frames, which only delays the flight; the ball is stepped exactly as
+   * before once it lets go. Times are performance.now() seconds.
+   */
+  const feelRef = useRef<{
+    /** Seconds the loop is held (wind-up + freeze at the contact). */
+    hitStop: number;
+    /** Seconds of that which are the wind-up (before the contact). */
+    windUp: number;
+    windUpTotal: number;
+    /** The strike waiting for the end of the wind-up to land. */
+    pending: { f: StrikeFeel; x: number; y: number; z: number; vx: number; vy: number } | null;
+    /** The strike that landed: when, how hard, which way. */
+    struck: { at: number; f: StrikeFeel } | null;
+    /** The camera punch: started at, length, px, pitch direction. */
+    punch: { at: number; dur: number; px: number; vx: number; vy: number };
+    /** Ball squash: started at, amount, pitch axis. */
+    squash: { at: number; amt: number; ax: number; ay: number };
+    /** Bursts, puffs, sparks and clangs being drawn (pitch metres). */
+    fx: { kind: "impact" | "dust" | "glove" | "clang"; at: number; dur: number; x: number; y: number; z: number; size: number; vx: number; vy: number; power: number; turf: boolean; scuff: boolean; salt: number }[];
+    /** The ball as it was last frame, to see it land or be hit. */
+    prev: { ball: object; x: number; y: number; z: number; vx: number; vy: number; vz: number } | null;
+    /** The net bulging round a goal. */
+    net: { at: number; amt: number } | null;
+    /** How fast your follow-through plays (harder = held longer). */
+    followRate: number;
+    salt: number;
+  }>({
+    hitStop: 0, windUp: 0, windUpTotal: 0, pending: null, struck: null,
+    punch: { at: -9, dur: 0.3, px: 0, vx: 0, vy: -1 },
+    squash: { at: -9, amt: 0, ax: 0, ay: -1 },
+    fx: [], prev: null, net: null, followRate: 1, salt: 0,
+  });
+  /**
    * The same real ball ContactBall already puts on the strike screen —
    * public/star/ball.webp — instead of a canvas-drawn white disc. Reported
    * directly: "the football that you kick in the game... is something that
@@ -3196,6 +3238,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ox = Math.sin(sh.t * 73) * m;
       oy = Math.cos(sh.t * 57) * m * 0.7;
     }
+    // Match feel: New — the camera punch along the hit (lib/star/matchFeel.ts).
+    const feelOn = matchFeelOn();
+    const feelT = performance.now() / 1000;
+    const feelSt = feelRef.current;
+    /** A pitch direction as a unit screen direction. */
+    const screenDir = (vx: number, vy: number) => {
+      const a = toPx(CX, 10), b = toPx(CX + vx, 10 + vy);
+      const dx = b.px - a.px, dy = b.py - a.py, l = Math.hypot(dx, dy) || 1;
+      return { x: dx / l, y: dy / l };
+    };
+    if (feelOn && !reducedMotionRef.current && feelSt.punch.px > 0) {
+      const d = screenDir(feelSt.punch.vx, feelSt.punch.vy);
+      const o = punchOffset(feelT - feelSt.punch.at, feelSt.punch.dur, feelSt.punch.px, d.x, d.y);
+      ox += o.x; oy += o.y;
+    }
     ctx.save();
     ctx.translate(ox, oy);
 
@@ -3450,6 +3507,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       } else if (opts.pose === "kick" && id === "you") {
         clip = "kick";
         t = Math.max(0, spriteKickStrikeT() - 0.12 + (KICK_POSE_S - kickPoseRef.current));
+        // Match feel: New — the leg drawn back through the wind-up, held at
+        // the contact while the picture freezes, then the follow-through.
+        if (feelOn) {
+          if (feelSt.windUp > 0 && feelSt.windUpTotal > 0) t = Math.max(0, spriteKickStrikeT() - 0.12 - 0.28 * (feelSt.windUp / feelSt.windUpTotal));
+          else if (feelSt.hitStop > 0 && kickPoseRef.current >= KICK_POSE_S) t = spriteKickStrikeT();
+          else t = spriteKickStrikeT() + (KICK_POSE_S - kickPoseRef.current);
+        }
       } else if (opts.anim && opts.anim.kickClipU !== null) {
         // Animations: New — the kick clip on whoever actually struck it.
         clip = "kick";
@@ -3594,6 +3658,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // How big each animation is, and which families are on (animDials.ts,
     // edited on /star-animations-dev). A family switched off is drawn Old.
     const animSet = animSettings();
+    // Match feel: New — team-mates' and defenders' moves drawn a size bigger
+    // so they read at phone size (the "Team-mate moves bigger" feel dial).
+    const mateDials = feelOn ? { ...animSet.dials, exaggeration: animSet.dials.exaggeration * feelDials().mateBoost } : animSet.dials;
     // Animations: New with the 3D players: start fetching the New clips' atlas
     // now, so the first touch already has its 3D twin. Never with Old.
     if (animNew && nv) spriteClipReady("player", "touch");
@@ -3614,7 +3681,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const bp = ballRef.current?.pos ?? a.at ?? { x, y };
       const ref = a.kind === "block" && a.at ? a.at : bp;
       const dx = toPx(ref.x, ref.y).px - me.px;
-      const fr = outfieldAnimFrame(a, now - a.start, Math.abs(dx) < 1 ? 1 : Math.sign(dx), animSet.dials);
+      const fr = outfieldAnimFrame(a, now - a.start, Math.abs(dx) < 1 ? 1 : Math.sign(dx), mateDials);
       if (fr) animNow.set(sid, { a, e: now - a.start });
       if (fr && fr.flash > 0 && animSet.on.flashes && a.at) bootFlashes.push({ x: a.at.x, y: a.at.y, z: a.at.z, f: fr });
       return fr;
@@ -4073,8 +4140,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ctx.stroke();
       ctx.restore();
     }
+    // Match feel: New — your own strike (drawn players): a wind-up, then the
+    // big follow-through from the Animations system, sized by how hard you
+    // hit it. The 3D players get the same from their kick clip (spriteHint).
+    let youFeelAnim: OutfieldAnimFrame | null = null;
+    if (feelOn && kickPoseRef.current > 0) {
+      const fs = takerFoot >= 0 ? 1 : -1;
+      if (feelSt.windUp > 0 && feelSt.windUpTotal > 0) {
+        const w = Math.sin((Math.PI / 2) * (1 - feelSt.windUp / feelSt.windUpTotal)) ;
+        youFeelAnim = { pose: { crouch: 0.22 * w, armSpread: 0.5 * w, armLift: -0.3, legSwing: -0.6 * w * fs }, liftR: 0, lean: -0.14 * w * fs, kickClipU: null, flash: 0, flashSize: 0, dust: false };
+      } else {
+        const pw = feelSt.struck?.f.power ?? 0.6;
+        const dials = { ...animSet.dials, strikeSwing: animSet.dials.strikeSwing * (0.7 + 0.6 * pw), contactFlash: 0 };
+        const e = feelSt.hitStop > 0 && kickPoseRef.current >= KICK_POSE_S ? 0.06 : ((KICK_POSE_S - kickPoseRef.current) / KICK_POSE_S) * STRIKE_S;
+        youFeelAnim = outfieldAnimFrame({ kind: "shot", mode: "ground", start: 0, scene: sc }, Math.min(STRIKE_S, e), fs, dials);
+      }
+    }
     if (auto) {
       footballer(tx, ty, R, takerKit.shirt, takerKit.trim, {
+        anim: youFeelAnim,
         sid: "you",
         pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", tx, ty),
         phase: runPhase(tx),
@@ -4093,6 +4177,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // happening entirely between two frames.
       sid: "you",
       pose: kickPoseRef.current > 0 ? "kick" : poseFor("you", tx, ty),
+      anim: youFeelAnim,
       phase: runPhase(tx),
       body: runBody,
       kickFoot: takerFoot,
@@ -4195,6 +4280,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // His old drawn height was 2.482 KR against an outfielder's 2.509 r —
       // inside 1%, so one conversion does for both.
       const kr = figureRForHeight(KR * MATCH_FIGURE_HEIGHT_R);
+      // Match feel: New — he gets set and hops onto his toes as it is struck,
+      // and a dive has a flight: push off, airborne at full stretch, down on
+      // the grass (lib/star/matchFeel.ts). Drawing only.
+      let feelLiftPx = 0;
+      if (feelOn) {
+        const FD = feelDials();
+        if (feelSt.struck && lunge < 0.05) feelLiftPx += keeperSetHop(now - feelSt.struck.at, FD) * kr;
+        const diving = lunge > 0.04 && sign !== 0 && (kind === "low" || kind === "high" || kind === "fingertip");
+        if (diving) feelLiftPx += keeperDiveArc(lunge, kind === "low", FD) * kr * (nv ? 0.5 : 1);
+      }
 
       ctx.save();
       ctx.globalAlpha = 0.92;
@@ -4290,12 +4385,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // exactly as far as it did — hence dive 0 and the lean handed in as a
         // facing. `lunge` still drives the shared set-crouch-to-full-stretch.
         keeper: { dive: 0, lunge },
+        extraLiftPx: feelLiftPx,
         faceStyle: faceStyleRef.current, fakeFaceStyle: fakeFaceStyleRef.current,
         opts: {
           facing: lean,
           // cyOff is the save's own vertical drop plus his breathing. It moves
           // the BODY, never the shadow, which is what a negative lift means.
-          liftPx: -cyOff,
+          liftPx: -cyOff + feelLiftPx,
           shadowR: kr * (0.53 + diveN * 0.38),
           pose: {
             // Direction and spread come from the save being played. A high
@@ -4352,7 +4448,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     // --- Ball trail (fades along the flight; curl makes it sing) ---
     const trail = trailRef.current;
-    for (let i = 0; i < trail.length; i++) {
+    // Match feel: New — a speed streak instead of the dots: a tapered smear
+    // behind the ball whose length follows how fast it is going.
+    const feelBall = ballRef.current;
+    const feelSpeed = feelBall ? Math.hypot(feelBall.vel.x, feelBall.vel.y, feelBall.vz) : 0;
+    if (feelOn && feelBall && trail.length > 1) {
+      const want = streakMetres(feelSpeed, feelDials());
+      const pts: { x: number; y: number }[] = [];
+      const head = { x: feelBall.pos.x, y: feelBall.pos.y, z: Math.max(0, feelBall.z) };
+      let acc = 0, last = head;
+      const toS = (q: { x: number; y: number; z: number }) => { const f = toPx(q.x, q.y); return { x: f.px, y: f.py - q.z * heightScale * f.scale }; };
+      pts.push(toS(head));
+      for (let i = trail.length - 1; i >= 0 && acc < want; i--) {
+        const q = trail[i];
+        acc += Math.hypot(q.x - last.x, q.y - last.y, q.z - last.z);
+        pts.push(toS(q));
+        last = q;
+      }
+      if (want > 0 && pts.length > 1 && phaseRef.current === "flight") {
+        pts.reverse();
+        const hb = toPx(head.x, head.y);
+        drawSpeedStreak(ctx, pts, BALL_PX * hb.scale * 1.05, Math.min(1, (feelSpeed - 9) / 14));
+      }
+    } else for (let i = 0; i < trail.length; i++) {
       const t = trail[i];
       const k = (i + 1) / trail.length;
       const { px, py, scale } = toPx(t.x, t.y);
@@ -4386,10 +4504,35 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // The ball, lifted off the shadow and grown a little with height.
       const by = py - h * heightScale * scale;
       const br = bScale * (1 + Math.min(h, 8) * 0.055);
+      // Match feel: New — the ball squashes at a hit and springs back, and
+      // stretches along its flight with speed. Drawing only.
+      let feelXf = false;
+      if (feelOn) {
+        const FD = feelDials();
+        const q = squashAt(feelT - feelSt.squash.at, feelSt.squash.amt);
+        const st = phaseRef.current === "flight" && feelBall && !feelBall.resting ? speedStretch(feelSpeed, FD) : 1;
+        if (Math.abs(q) > 0.01 || st > 1.01) {
+          feelXf = true;
+          ctx.save();
+          ctx.translate(px, by);
+          if (st > 1.01 && feelBall) {
+            const d = screenDir(feelBall.vel.x, feelBall.vel.y);
+            const th = Math.atan2(d.y, d.x);
+            ctx.rotate(th); ctx.scale(st, 1 / Math.sqrt(st)); ctx.rotate(-th);
+          }
+          if (Math.abs(q) > 0.01) {
+            const d = screenDir(feelSt.squash.ax, feelSt.squash.ay);
+            const th = Math.atan2(d.y, d.x);
+            ctx.rotate(th); ctx.scale(1 - 0.38 * q, 1 + 0.28 * q); ctx.rotate(-th);
+          }
+          ctx.translate(-px, -by);
+        }
+      }
       // New view, Settings → Look → Ball: New — a clean drawn match ball with
       // its own soft offset shadow (lib/star/matchBall.ts). Classic: below.
       if (nv && matchBallLook() === "new") {
         drawMatchBall(ctx, px, py, by, br, seamRef.current, h, 1);
+        if (feelXf) ctx.restore();
         return;
       }
       const img = ballImgRef.current;
@@ -4416,6 +4559,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.strokeStyle = "#0f172a";
         ctx.stroke();
       }
+      if (feelXf) ctx.restore();
     };
 
     // ── Where it will land ──
@@ -4459,6 +4603,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
       else drawIt();
     }
+    // Match feel: New — the back of the net bulges round a goal and ripples
+    // out (under the ball, over the goal's mesh).
+    if (feelOn && feelSt.net && feelBall && feelBall.inNet) {
+      const t = feelT - feelSt.net.at;
+      const env = t < 0 ? 0 : t < 0.1 ? Math.sin((Math.PI / 2) * (t / 0.1))
+        : (0.55 + 0.45 * Math.cos((t - 0.1) * 16) * Math.exp(-(t - 0.1) * 5)) * Math.max(0, 1 - Math.max(0, t - 1.2) / 0.8);
+      if (env > 0.01) {
+        const g = toPx(feelBall.pos.x, feelBall.pos.y);
+        const gy = g.py - Math.max(0, feelBall.z) * heightScale * g.scale;
+        const back = toPx(feelBall.pos.x, feelBall.pos.y - 1);
+        drawNetBulge(ctx, g.px, gy, back.px, back.py - Math.max(0, feelBall.z) * heightScale * back.scale,
+          BALL_PX * g.scale * 5, feelSt.net.amt * env);
+      }
+    }
     flushFigures();
     // The orders go over every man now rather than between the groups — the
     // groups no longer exist as layers. Thin gold lines, so they never hide
@@ -4476,6 +4634,28 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     for (const b of bootFlashes) {
       const f = toPx(b.x, b.y);
       drawContactFlash(ctx, f.px, f.py - Math.max(0, b.z) * heightScale * f.scale, R * 0.55 * f.scale * b.f.flashSize, b.f.flash, b.f.dust);
+    }
+
+    // Match feel: New — the contact bursts, landing puffs, glove sparks and
+    // woodwork clangs (lib/star/matchFeelDraw.ts). Over everything.
+    if (feelOn && feelSt.fx.length) {
+      const live: typeof feelSt.fx = [];
+      for (const e of feelSt.fx) {
+        const u = (feelT - e.at) / e.dur;
+        if (u >= 1) continue;
+        live.push(e);
+        if (u < 0) continue;
+        const f = toPx(e.x, e.y);
+        const sy = f.py - Math.max(0, e.z) * heightScale * f.scale;
+        const sz = BALL_PX * f.scale * 4.2 * e.size;
+        if (e.kind === "impact") {
+          const d = screenDir(e.vx, e.vy);
+          drawImpactBurst(ctx, f.px, sy, sz, u, d.x, d.y, e.power, e.turf, e.scuff);
+        } else if (e.kind === "dust") drawDustPuff(ctx, f.px, f.py, sz * 0.8, u, 6, e.salt);
+        else if (e.kind === "glove") drawGloveSpark(ctx, f.px, sy, sz * 0.8, u, e.salt);
+        else drawClang(ctx, f.px, sy, sz, u);
+      }
+      feelSt.fx = live;
     }
 
     // --- Curve boots: a live guide line while the swipe is in progress ---
@@ -4737,6 +4917,126 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     shakeRef.current = { t: dur, dur, mag };
   };
 
+  // ── Match feel: New (lib/star/matchFeel.ts) ── looks and sound only.
+  // Nothing below reads or writes the ball, the keeper or rngRef.
+  const feelNow = () => performance.now() / 1000;
+  const feelFx = (kind: "impact" | "dust" | "glove" | "clang", x: number, y: number, z: number, size: number, dur: number,
+    extra: { vx?: number; vy?: number; power?: number; turf?: boolean; scuff?: boolean } = {}) => {
+    const fl = feelRef.current;
+    fl.salt = (fl.salt + 1) % 997;
+    fl.fx.push({ kind, at: feelNow(), dur, x, y, z, size, vx: extra.vx ?? 0, vy: extra.vy ?? -1, power: extra.power ?? 0.5,
+      turf: !!extra.turf, scuff: !!extra.scuff, salt: fl.salt * 13 });
+    if (fl.fx.length > 24) fl.fx.shift();
+  };
+  const feelPunch = (px: number, dur: number, vx: number, vy: number) => {
+    if (reducedMotionRef.current || !(px > 0)) return;
+    const fl = feelRef.current;
+    // A bigger punch already ringing is not cut short by a smaller one.
+    const left = fl.punch.at + fl.punch.dur - feelNow();
+    if (left > 0 && fl.punch.px * (left / fl.punch.dur) > px) return;
+    fl.punch = { at: feelNow(), dur, px, vx, vy };
+  };
+  const feelSquash = (amt: number, ax: number, ay: number) => {
+    const l = Math.hypot(ax, ay) || 1;
+    feelRef.current.squash = { at: feelNow(), amt, ax: ax / l, ay: ay / l };
+  };
+  /** The strike lands: the moment of contact, after the wind-up. */
+  const feelLandStrike = () => {
+    const fl = feelRef.current;
+    const p = fl.pending;
+    fl.pending = null;
+    if (!p) return;
+    const f = p.f;
+    fl.struck = { at: feelNow(), f };
+    feelFx("impact", p.x, p.y, p.z, f.flash, 0.28 + 0.14 * f.power, { vx: p.vx, vy: p.vy, power: f.power, turf: p.z < 0.3, scuff: f.scuff });
+    feelSquash(f.squash, p.vx, p.vy);
+    feelPunch(f.shakePx, 0.22 + 0.12 * f.power, p.vx, p.vy);
+    playStrike(f.power, f.gain, f.bass, f.scuff);
+    feelHaptic(f.hapticMs);
+  };
+  /** Called every frame first thing: true while the picture is held. */
+  const feelTick = (dt: number): boolean => {
+    const fl = feelRef.current;
+    if (!(fl.hitStop > 0)) return false;
+    if (fl.windUp > 0) {
+      fl.windUp -= dt;
+      if (fl.windUp <= 0) { fl.windUp = 0; feelLandStrike(); }
+    }
+    fl.hitStop -= dt;
+    if (fl.hitStop <= 0) {
+      fl.hitStop = 0;
+      if (fl.pending) feelLandStrike();
+      return false;
+    }
+    return true;
+  };
+  /** Hold the picture for `s` seconds (a glove, the woodwork). */
+  const feelFreeze = (s: number) => {
+    if (!(s > 0)) return;
+    const fl = feelRef.current;
+    fl.hitStop = Math.max(fl.hitStop, s);
+  };
+  /** Every frame of a live ball: did it land, or was it hit (glove, post, a body)? */
+  const feelWatchBall = () => {
+    const b = ballRef.current;
+    const fl = feelRef.current;
+    if (!b) { fl.prev = null; return; }
+    const D = feelDials();
+    const p = fl.prev;
+    if (p && p.ball === b) {
+      const dvx = b.vel.x - p.vx, dvy = b.vel.y - p.vy, dvz = b.vz - p.vz;
+      // Landing: it was up, now it is down, and it was coming down.
+      if (D.landing > 0 && p.z > 0.3 && b.z < 0.12 && p.vz < -2) {
+        const k = Math.min(1, -p.vz / 11);
+        feelFx("dust", b.pos.x, b.pos.y, 0, (0.55 + 0.6 * k) * D.landing, 0.45);
+        playThud(k, D.soundGain * D.landing);
+        feelSquash(0.35 * k * D.squash, 0, 1);
+      } else {
+        // Hit by something (a glove, a post, a body): the ball squashes along the knock.
+        const dv = Math.hypot(dvx, dvy, dvz);
+        if (dv > 6) feelSquash(Math.min(1, dv / 22) * D.squash, dvx, dvy);
+      }
+    }
+    fl.prev = { ball: b, x: b.pos.x, y: b.pos.y, z: b.z, vx: b.vel.x, vy: b.vel.y, vz: b.vz };
+  };
+  /** The keeper got a glove (or two) to it. */
+  const feelGlove = (at: { x: number; y: number; z: number }, save: string) => {
+    const D = feelDials();
+    if (!(D.gloveImpact > 0)) return;
+    const p = feelRef.current.prev;
+    const speed = p ? Math.hypot(p.vx, p.vy, p.vz) : 15;
+    const k = Math.max(0.25, Math.min(1, (speed - 6) / 20));
+    const held = save === "catch";
+    feelFx("glove", at.x, at.y, at.z, (held ? 0.8 : 1.1) * (0.6 + 0.6 * k) * D.gloveImpact, held ? 0.3 : 0.36);
+    playGlove(k, D.soundGain, held);
+    feelPunch(D.shakePx * 0.5 * k * D.gloveImpact, 0.22, 0, 1);
+    feelFreeze((held ? 0.035 : 0.05) * k * D.gloveImpact);
+    feelHaptic(Math.round(D.hapticMs * 0.5 * k));
+  };
+  /** The outcome of a chance, felt. */
+  const feelOutcome = (res: string, isGoal: boolean) => {
+    const b = ballRef.current;
+    const D = feelDials();
+    const p = feelRef.current.prev;
+    const speed = p ? Math.hypot(p.vx, p.vy, p.vz) : 15;
+    const k = Math.max(0.3, Math.min(1, (speed - 5) / 20));
+    if (isGoal && b && D.netBulge > 0) {
+      feelRef.current.net = { at: feelNow(), amt: k * D.netBulge };
+      feelHaptic(Math.round(D.hapticMs * 1.4));
+    }
+    if (res === "post" && b) feelClang(b.pos.x, b.pos.y, b.z, k);
+  };
+  const feelClang = (x: number, y: number, z: number, k: number) => {
+    const D = feelDials();
+    // One clang per hit (the live "post" and the outcome can both name it).
+    if (feelRef.current.fx.some((f) => f.kind === "clang" && feelNow() - f.at < 0.4)) return;
+    feelFx("clang", x, y, z, 1.1 * (0.6 + 0.5 * k), 0.55);
+    playClang(k, D.soundGain);
+    feelPunch(D.shakePx * 0.9 * k, 0.4, 1, 0);
+    feelFreeze(0.04 * k);
+    feelHaptic(Math.round(D.hapticMs * 0.8 * k));
+  };
+
   const spawnGoalFx = () => {
     if (sceneRef.current?.banners === false) return;
     if (reducedMotionRef.current) {
@@ -4935,6 +5235,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       let dt = (ts - last) / 1000;
       lastTsRef.current = ts;
       dt = Math.min(dt, 0.05); // clamp big frame gaps
+
+      // Match feel: New (lib/star/matchFeel.ts) — the picture holds at the
+      // contact (the wind-up, then the hit-stop). Nothing is stepped while it
+      // holds: the flight starts, step for step the same, when it lets go.
+      if (feelTick(dt)) { render(); rafRef.current = requestAnimationFrame(loop); return; }
 
       // Top-down dribble (Dribble style: Top-down): the duel's own sim, stepped
       // here in the match's one loop — no loop of its own.
@@ -5200,6 +5505,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               // Goal videos: who touched it, when (it happened a moment ago,
               // in the ball's own clock).
               if (onGoalClipRef.current) goalRecRef.current?.event(a.kind, a.actor, { mode: a.mode, save: a.save }, Math.max(0, (bl.clock ?? 0) - a.t));
+              // Match feel: New — the ball into the keeper's gloves.
+              if (a.kind === "save" && a.actor === "keeper" && a.save && a.save !== "beaten" && a.at && matchFeelOn()) feelGlove(a.at, a.save);
               // Your own swing stays on kickPoseRef, as it always was.
               if (a.actor === "you") continue;
               actorAnimRef.current.set(a.actor, animFromAction(a, nowS - Math.max(0, (bl.clock ?? 0) - a.t), scenarioRef.current));
@@ -5228,6 +5535,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           nudge(0.28, 0.25);
           playPost();
           playCrowdSwell("groan");
+          if (matchFeelOn()) {
+            const pb = ballRef.current, pp = feelRef.current.prev;
+            feelClang(pb.pos.x, pb.pos.y, pb.z, pp ? Math.max(0.3, Math.min(1, (Math.hypot(pp.vx, pp.vy, pp.vz) - 5) / 20)) : 0.7);
+          }
         }
         if (ev && receiver) {
           // His name, if we know it — and by now we do, because the identity is
@@ -5306,8 +5617,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         brainStep(scenarioRef.current, ballRef.current, dt);
       }
 
+      // Match feel: New — watch the live ball land and get hit (looks only).
+      if (matchFeelOn() && (phaseRef.current === "flight" || phaseRef.current === "result")) feelWatchBall();
+
       // Cosmetic FX advance (pausing the rAF pauses everything together)
-      if (kickPoseRef.current > 0) kickPoseRef.current = Math.max(0, kickPoseRef.current - dt);
+      // Match feel: New — a harder strike holds its follow-through longer.
+      if (kickPoseRef.current > 0) kickPoseRef.current = Math.max(0, kickPoseRef.current - dt * (matchFeelOn() ? feelRef.current.followRate : 1));
 
       // ── There is no camera ──
       //
@@ -5616,6 +5931,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       nudge(0.18, 0.14);
       playSave();
     }
+
+    // Match feel: New — the net bulges on a goal, the woodwork clangs.
+    if (matchFeelOn()) feelOutcome(res, kind === "goal");
 
     // Assign named squad players to goals and update the goal events log.
     // Chain goals → a named attacker from the squad scores; user assisted.
@@ -6731,6 +7049,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     particlesRef.current = [];
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
+    feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null;
     shootoutKickRef.current = { resolve: submit };
     setPhase("aim");
     logMoment(kick.taker.you ? "Your penalty — up to you." : `${kick.taker.shortName} steps up…`, "you");
@@ -6774,6 +7093,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     particlesRef.current = [];
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
+    feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null;
     setPhase("aim");
     onChanceServedRef.current?.({ kind: "penalty", minute: matchMinuteRef.current, reason: request.reason, scenario: snapshotScenario(sc) });
     logMoment(`Penalty! ${taker.shortName} to take it.`, "you");
@@ -6917,6 +7237,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       particlesRef.current = [];
       shakeRef.current.t = 0;
       flashRef.current.t = 0;
+      feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null;
       setPhase("aim");
       playWhistle();
       scheduleAutoKick();
@@ -7147,6 +7468,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     particlesRef.current = [];
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
+    feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null;
     setPhase("aim");
     // The kind is final from here: the authored-shape overlay above changes
     // where the bodies are, never which chance this is.
@@ -7799,7 +8121,29 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       pushLine(commentaryStrike(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     }
     if (extras?.powerMult) showAction(`⚡ x${extras.powerMult.toFixed(2)}`);
-    playKick();
+    // ── Match feel: New (lib/star/matchFeel.ts) ── read off the ball as it
+    // left the boot (its real speed) and how cleanly it was hit; the ball is
+    // only read here, never changed. A wind-up, then the contact lands (flash,
+    // squash, punch, sound, buzz) and the picture holds a beat before the
+    // flight starts. Old: the plain kick sound, as before.
+    if (matchFeelOn()) {
+      const bl = ballRef.current;
+      const D = feelDials();
+      const speed = Math.hypot(bl.vel.x, bl.vel.y, bl.vz);
+      const grade = shotRead?.grade ?? gradeContact(contact, a.power, false).grade;
+      const f = strikeFeel(speed, grade, D);
+      const fl = feelRef.current;
+      fl.pending = { f, x: bl.pos.x, y: bl.pos.y, z: bl.z, vx: bl.vel.x, vy: bl.vel.y };
+      fl.windUp = f.windUpS;
+      fl.windUpTotal = f.windUpS;
+      fl.hitStop = f.windUpS + f.hitStopS;
+      fl.followRate = 1.2 - 0.5 * f.power;
+      fl.prev = null;
+      fl.net = null;
+      if (!(fl.hitStop > 0)) { fl.hitStop = 0; feelLandStrike(); }
+    } else {
+      playKick();
+    }
     kickPoseRef.current = KICK_POSE_S;
   };
   handleContactRef.current = handleContact;

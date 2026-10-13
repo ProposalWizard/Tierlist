@@ -142,3 +142,52 @@ export function playCrowdSwell(kind: "cheer" | "groan") {
   noiseBurst(dur, peak, freq, 0.6, "bandpass");
   if (kind === "cheer") noiseBurst(dur * 0.8, peak * 0.6, freq * 2.2, 0.4, "highpass");
 }
+
+// ── Match feel: New (lib/star/matchFeel.ts) ── the heavier, layered sounds.
+// Each scales with how hard it was; Old never calls these.
+
+/** A strike: a deep thump (bassier and louder with power), a leather crack on
+ *  top for a clean hit, or a dull lowpassed scuff for a bad one. */
+export function playStrike(power: number, gain: number, bass: number, scuff: boolean) {
+  if (!may("kick") || !(gain > 0)) return;
+  const p = Math.max(0, Math.min(1, power));
+  if (scuff) {
+    tone(150, 0.1, "sine", 0.35 * gain, 80);
+    noiseBurst(0.09, 0.3 * gain, 500, 0.8, "lowpass");
+    return;
+  }
+  // Body: a low sine that drops, longer and deeper the harder it is.
+  tone(95 + 45 * (1 - bass), 0.1 + 0.12 * p, "sine", (0.45 + 0.4 * p) * gain, 38 + 14 * (1 - bass));
+  // Sub thud under it for a big one.
+  if (p > 0.45) tone(60, 0.16 + 0.08 * p, "sine", 0.35 * p * gain, 32);
+  // Leather crack: a bright, very short burst.
+  noiseBurst(0.035 + 0.03 * p, (0.18 + 0.32 * p) * gain, 2600 + 1600 * p, 0.9, "bandpass");
+  // Boot on turf.
+  noiseBurst(0.07, 0.12 * gain, 900, 0.7, "lowpass");
+}
+
+/** The ball landing: a soft thud, heavier from higher up. */
+export function playThud(v: number, gain: number) {
+  if (!may("thud") || !(gain > 0)) return;
+  const k = Math.max(0, Math.min(1, v));
+  tone(110, 0.09 + 0.05 * k, "sine", (0.12 + 0.3 * k) * gain, 55);
+  noiseBurst(0.06, (0.05 + 0.12 * k) * gain, 600, 0.8, "lowpass");
+}
+
+/** Woodwork: a ringing metal clang, louder for a harder shot. */
+export function playClang(v: number, gain: number) {
+  if (!may("clang") || !(gain > 0)) return;
+  const k = Math.max(0.3, Math.min(1, v));
+  tone(640, 0.7, "triangle", 0.35 * k * gain, 600);
+  tone(1710, 0.5, "sine", 0.18 * k * gain, 1650);
+  tone(2930, 0.3, "sine", 0.08 * k * gain, 2900);
+  noiseBurst(0.04, 0.3 * k * gain, 3500, 1.2, "bandpass");
+}
+
+/** The ball smacking into the keeper's gloves. */
+export function playGlove(v: number, gain: number, held: boolean) {
+  if (!may("glove") || !(gain > 0)) return;
+  const k = Math.max(0.25, Math.min(1, v));
+  tone(held ? 140 : 190, held ? 0.16 : 0.1, "sine", (0.3 + 0.3 * k) * gain, held ? 70 : 100);
+  noiseBurst(0.05, (0.22 + 0.25 * k) * gain, held ? 900 : 1800, 1.1, "bandpass");
+}
