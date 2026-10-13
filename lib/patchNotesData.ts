@@ -27,6 +27,116 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.50",
+      "title": "Mikey's patch notes v0.16: Gameplay review fixes",
+      "publishedAt": "2026-10-13T17:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/S5EvHkuf7wJTaGPeXd3WeM",
+      "summary": "From Mikey's gameplay review video: feed videos play only when pressed (at most 2 a match), goal posts stand straight and the side-view net has depth, achievements unlock and level you up at once. New framing and headers/volleys are built behind test switches, off by default.",
+      "stats": [
+        {
+          "value": "13 → 6",
+          "label": "goal videos in a match's feed"
+        },
+        {
+          "value": "19%",
+          "label": "bigger players with the new framing (test)"
+        },
+        {
+          "value": "1 in 10",
+          "label": "close chances as a header (test)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Feed videos play only when you press ▶",
+              "detail": "At most 2 a match."
+            },
+            {
+              "title": "Off-pitch achievements pop up at once",
+              "detail": "Star bar fills in the pop-up."
+            },
+            {
+              "title": "Corners: net has real depth; posts stand straight",
+              "detail": "Every view."
+            },
+            {
+              "title": "Developer tools → New framing (test)",
+              "detail": "Off by default."
+            },
+            {
+              "title": "Developer tools → Headers & volleys (test)",
+              "detail": "Off by default."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added (test switches)",
+          "items": [
+            {
+              "title": "New chance framing",
+              "detail": "Whole goal always on screen, ball a quarter in from the edges, side-on near the box when wide. Players 19% bigger. Measured over 840 chances."
+            },
+            {
+              "title": "Headers and volleys",
+              "detail": "1 in 10 close chances in the air, 1 in 8 bouncing; the shot starts from that height. Scoring unchanged (82/81/82 of 300)."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Achievements away from a match unlock at once",
+              "detail": "Was: only after the next match."
+            },
+            {
+              "title": "Achievements level you up on the spot",
+              "detail": "They lift the one-level-a-match limit."
+            },
+            {
+              "title": "Goal posts upright; side-view net 2.0 m deep",
+              "detail": "Was a leaning far post and a 1.2 m strip."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Fewer feed videos",
+              "detail": "13 → 6 in a test match; highlights placed at random in the first screenful."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Side view draws players differently",
+              "detail": "Waiting on a decision."
+            },
+            {
+              "title": "Chance builder: team-mates in front, no defenders",
+              "detail": "Not fixed yet."
+            },
+            {
+              "title": "Corner glitch at 11:02 in the review",
+              "detail": "Not reproduced yet."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.49",
       "title": "Mikey's patch notes v0.15: International football",
       "publishedAt": "2026-10-13T09:00:00Z",
