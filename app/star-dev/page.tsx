@@ -87,7 +87,12 @@ import { earnedBetween, addSeasonRecords, type EarnPop } from "@/lib/star/earnPo
 // The unlock chain a new career walks (Harry, 1 Oct 2026, P13-P40).
 import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, installApp, appInstalled, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft, gameFirst, managerTalkDue, phoneShortfall, phoneStepLine, DRILLS_TO_OPEN_SHOP } from "@/lib/star/unlocks";
 import { applyGameGain } from "@/lib/star/relationshipGame";
-import { AchievementPop, UnlockChallenges, LockedPage, UnlockPop, AchievementToasts, SlotQuestion, type StepGo } from "@/components/star/UnlockChain";
+import { AchievementPop, UnlockChallenges, LockedPage, UnlockPop, AchievementToasts, SlotQuestion, type StepGo, type StarStep } from "@/components/star/UnlockChain";
+
+/** Pop-up cards for achievement ids. */
+function achievementCards(ids: string[]): { label: string; description: string }[] {
+  return ids.flatMap((id) => { const a = ACHIEVEMENTS.find((x) => x.id === id); return a ? [{ label: a.label, description: a.description }] : []; });
+}
 import { DrillIntroOff, DrillTutorial, DrillHelpButton } from "@/components/star/TrainingIntro";
 import { ACHIEVEMENTS } from "@/lib/star/achievements";
 import EnergyBackToast from "@/components/star/EnergyBackToast";
@@ -552,6 +557,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    *  on Market like it always has. */
   const [investmentsEntry, setInvestmentsEntry] = useState<{ tab: "market" | "portfolio" | "boardroom"; club?: string; section?: "squad" | "sign" | "manager" | "powers" } | null>(null);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+  // Achievements earned away from a match (a purchase, training, a choice):
+  // their pop-ups, with the star rating bar filling (Mikey, 13 Oct 2026).
+  const [offMatchAch, setOffMatchAch] = useState<{ items: { label: string; description: string }[]; star?: { from: StarStep; to: StarStep } } | null>(null);
   // Achievements and records earned, waiting to pop up on Home (P36; lib/star/earnPops.ts).
   const [earnPops, setEarnPops] = useState<EarnPop[]>([]);
   /** A star rating that just moved — see toastRatingChange. Cleared the same
@@ -1418,17 +1426,36 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const toastAchievements = (ids: string[]) => {
     if (ids.length > 0) {
       setUnlockedAchievements(ids);
-      sfx("achievement-pop");
+      setOffMatchAch({ items: achievementCards(ids) });
       setTimeout(() => setUnlockedAchievements([]), 3000);
     }
   };
 
   // For handlers that build state inline: append newly-earned achievements + toast.
-  const checkAndSetAchievements = (state: CareerState) => {
-    const newlyUnlocked = checkNewAchievements(state);
-    if (newlyUnlocked.length > 0) state.achievements = [...state.achievements, ...newlyUnlocked];
-    toastAchievements(newlyUnlocked);
-  };
+  // Kept for the handlers that call it: the central check below now unlocks
+  // and shows every achievement earned away from a match, star bar and all.
+  const checkAndSetAchievements = (_state: CareerState) => {};
+
+  // THE CENTRAL CHECK (Mikey, 13 Oct 2026: a shop purchase's achievement
+  // only unlocked, and moved the star rating, after the next match). Any
+  // change to the career outside a match: newly earned achievements unlock
+  // at once, the star rating is brought up to date, and the pop-up shows the
+  // star bar filling. Match achievements are still credited with the match
+  // (creditMatchResult), so they are never found here twice.
+  useEffect(() => {
+    if (!career || !hydrated || phase === "match") return;
+    const ids = checkNewAchievements(career);
+    if (ids.length === 0) return;
+    const before = starStatus(career);
+    const unlocked = { ...career, achievements: [...career.achievements, ...ids] };
+    const next = withStars({ ...unlocked, starRating: computeStarRating(unlocked) });
+    const after = starStatus(next);
+    setCareer(next);
+    setOffMatchAch({
+      items: achievementCards(ids),
+      star: { from: { stars: before.stars, toNext: before.toNext }, to: { stars: after.stars, toNext: after.toNext } },
+    });
+  }, [career, hydrated, phase]);
 
   // The visible moment a rating change asked for — requested directly,
   // "not just a number quietly drifting". Compares the ROUNDED display
@@ -5146,6 +5173,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             <div className="mt-6 inline-block rounded-xl bg-amber-400 px-5 py-2 text-sm font-black text-gray-950">Continue</div>
           </div>
         </button>
+      )}
+      {offMatchAch && offMatchAch.items.length > 0 && (
+        <AchievementToasts items={offMatchAch.items} star={offMatchAch.star} hold={3200} onDone={() => setOffMatchAch(null)} />
       )}
       {ratingChange && (
         <div className="mb-2 bg-emerald-500 border border-emerald-300 rounded-lg p-2 text-center text-black font-black text-xs animate-pulse">

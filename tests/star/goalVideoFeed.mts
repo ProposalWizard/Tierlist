@@ -243,7 +243,7 @@ function track(id: string, goalAt = 2.2): GoalTrack {
 {
   let c = newCareer(9);
   const rng = mulberry32(77);
-  let played = 0, hlNotFirst = 0, yoursNotSecond = 0, brokenText = 0;
+  let played = 0, hlNotFirst = 0, yoursNotSecond = 0, brokenText = 0, hlTop = 0, tooManyVideos = 0;
   for (let w = 0; w < 30; w++) {
     const fixture = c.fixtures.find(f => !f.played);
     if (!fixture) break;
@@ -277,16 +277,24 @@ function track(id: string, goalAt = 2.2): GoalTrack {
       { kind: "award", won: false, award: "March Player of the Month", detail: "Someone else takes it." }, `potm-t-${w}`);
     const { posts } = feedFor(after, "moment");
     played++;
-    if (us + them > 0 && posts[0]?.eventId !== "match-highlights") hlNotFirst++;
-    if (mine + set > 0 && posts[us + them > 0 ? 1 : 0]?.eventId !== "your-highlights") yoursNotSecond++;
+    // Mikey, 13 Oct 2026: near the top, not always AT the top, and two
+    // videos at most from a match.
+    const hlAt = posts.findIndex(p => p.eventId === "match-highlights");
+    if (us + them > 0 && (hlAt < 0 || hlAt > 5)) hlNotFirst++;
+    if (us + them > 0 && hlAt === 0) hlTop++;
+    if (mine + set > 0 && posts.findIndex(p => p.eventId === "your-highlights") > 6) yoursNotSecond++;
+    const cyc = posts.filter(p => p.id.startsWith(after.media!.lastMatchCycleId + ":"));
+    tooManyVideos += Math.max(0, cyc.filter(p => p.graphic?.type === "goalVideo" || (p.graphic?.type === "thumbnail" && ((p.graphic.clips?.length ?? 0) + (p.graphic.synth?.length ?? 0)) > 0)).length - 2);
     const bad = posts.filter(p => /^-\.|\s-\.\s/.test(p.text));
     if (bad.length) console.log(bad.map(p => `${p.author.handle} ${p.eventId} ${p.text}`));
     brokenText += bad.length;
     c = after;
   }
   check(played >= 20, `enough matches (${played})`);
-  check(hlNotFirst === 0, `the match's HIGHLIGHTS is the first post after every match with a goal (${hlNotFirst} not)`);
-  check(yoursNotSecond === 0, `your goals' video comes straight after it (${yoursNotSecond} not)`);
+  check(hlNotFirst === 0, `the match's HIGHLIGHTS is in the first screenful (top 6) after every match with a goal (${hlNotFirst} not)`);
+  check(hlTop < played, `…but not always the very first post (${hlTop} of ${played} at the top)`);
+  check(yoursNotSecond === 0, `your goals' video is in the first screenful too (${yoursNotSecond} not)`);
+  check(tooManyVideos === 0, `no match makes more than 2 video posts (${tooManyVideos} over)`);
   check(brokenText === 0, `no post reads "-." for a missing score (${brokenText})`);
 }
 

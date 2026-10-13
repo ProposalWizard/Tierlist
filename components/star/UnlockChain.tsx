@@ -154,7 +154,37 @@ export function UnlockPop({ features, onSeeAll, onClose }: { features: Feature[]
  * which should pop up without the next button"). Each one slams in, holds for
  * a moment and makes way for the next; a tap moves it on sooner.
  */
-export function AchievementToasts({ items, onDone, hold = 2400, delay = 0 }: { items: { label: string; description: string }[]; onDone: () => void; hold?: number; /** Wait this long first (the post-match screen's own beats come first). */ delay?: number }) {
+/** Where the star rating stood before and after an achievement: the level and
+ *  0-1 of the way to the next (starStatus's `stars` and `toNext`). */
+export type StarStep = { stars: number; toNext: number };
+
+/**
+ * The star rating bar inside an achievement pop-up (Mikey, 13 Oct 2026: "when
+ * you complete an achievement, you can see your star rating bar increase …
+ * just like you would at the end of a match"). Fills from where you were to
+ * where the achievement put you; past the top it fills, then shows the new level.
+ */
+function AchievementStarBar({ from, to }: { from: StarStep; to: StarStep }) {
+  const up = to.stars > from.stars;
+  const start = Math.round(from.toNext * 100);
+  const end = up ? 100 : Math.max(start, Math.round(to.toNext * 100));
+  const [w, setW] = useState(start);
+  useEffect(() => { const t = setTimeout(() => setW(end), 250); return () => clearTimeout(t); }, [end]);
+  return (
+    <div className="mt-2.5 text-left" data-ach-star>
+      <div className="mb-1 flex items-center justify-between text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">
+        <span>Star rating</span>
+        <span className="tabular-nums">{up && w >= 100 ? `★ ${Math.floor(to.stars)} reached` : `★ ${Math.floor(from.stars)} → ${Math.floor(from.stars) + 1}`}</span>
+      </div>
+      <div className="h-3 overflow-hidden rounded-[3px] bg-white/10 ring-1 ring-amber-300/40">
+        <div className="h-full bg-gradient-to-r from-amber-500 to-yellow-300" style={{ width: `${w}%`, transition: "width 1100ms cubic-bezier(.2,.7,.2,1)" }} />
+      </div>
+    </div>
+  );
+}
+
+export function AchievementToasts({ items, onDone, hold = 2400, delay = 0, star }: { items: { label: string; description: string }[]; onDone: () => void; hold?: number; /** Wait this long first (the post-match screen's own beats come first). */ delay?: number;
+  /** The star rating before and after these achievements: a bar fills on the first card. */ star?: { from: StarStep; to: StarStep } }) {
   const [k, setK] = useState(delay > 0 ? -1 : 0);
   const a = items[k];
   useEffect(() => {
@@ -175,6 +205,7 @@ export function AchievementToasts({ items, onDone, hold = 2400, delay = 0 }: { i
         <div className="kib-ach-star mt-1 text-[40px] leading-none" style={{ filter: "drop-shadow(0 0 14px rgba(251,191,36,.8))" }}>⭐</div>
         <div className="mt-1 text-[18px] font-black leading-tight">{a.label}</div>
         <div className="text-[12px] font-bold text-white/85">{a.description}</div>
+        {star && k === 0 && <AchievementStarBar from={star.from} to={star.to} />}
         <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
           <div className="h-full origin-left bg-amber-300" style={{ animation: `kib-ach-bar ${hold}ms linear both` }} />
         </div>
