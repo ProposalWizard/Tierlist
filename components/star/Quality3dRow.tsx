@@ -43,10 +43,10 @@ function TexturePackRow() {
     <>
       <div className="mt-3 flex items-center justify-between gap-2" data-texture-pack-row>
         <span className="text-[14px] font-bold text-white">Texture pack</span>
-        <SegTabs className="w-[220px] shrink-0" value={p} onChange={setTexturePack} tabs={[["real", "Real+toon"], ["cartoon", "Cartoon"], ["bright", "Bright"]] as const} />
+        <SegTabs className="w-[250px] shrink-0" value={p} onChange={setTexturePack} tabs={[["real", "Real"], ["light", "Light"], ["cartoon", "Cartoon"], ["bright", "Bright"]] as const} />
       </div>
       <SetNote dim className="mt-1 text-[10px]">
-        The 3D match&apos;s pitch, stadium and ball. Realism + cartoon is today&apos;s look. Cartoon is flat, like the players. Bright is lighter, with no big shadows.
+        The 3D match&apos;s pitch, stadium and ball. Real is today&apos;s look. Light is half way to Bright, dirt and shadows kept. Cartoon is flat, like the players. Bright is lighter, with no big shadows.
       </SetNote>
     </>
   );

@@ -1,5 +1,5 @@
 /**
- * Settings → "Texture pack: Realism + cartoon | Cartoon | Bright" (Harry,
+ * Settings → "Texture pack: Realism + cartoon | Light | Cartoon | Bright" (Harry,
  * 13 Oct 2026, career 3D match playtest: "the shadow does not help at all …
  * Can we make a different skin that we can just toggle between? … Let's make
  * one that's fully cartoon, like fully the same as our people. Let's make one
@@ -11,6 +11,10 @@
  * the camera are the same in every pack.
  *
  *   real     Realism + cartoon: look H as it was (the default, unchanged).
+ *   light    between the two (Harry, 13 Oct 2026: "inbetween the current [and]
+ *            the bright one with dirt, a bit too bright"): grass half way to
+ *            Bright's, a little more sky light, half the stand shade; the sun's
+ *            shadows, the wear and the dirt all stay. Realism's ball.
  *   cartoon  the world in the same flat cel style as the Style A men: flat
  *            grass with simple mow stripes, flat-coloured stands, a plain
  *            sky, no cast shadows, no baked shade, no colour grade.
@@ -20,17 +24,17 @@
  * Cartoon and Bright both use the classic ball (white, clear black
  * pentagons, real/ball.ts); Realism keeps its own.
  *
- * Not a three.js file: Settings imports it. `?pack=real|cartoon|bright` on
+ * Not a three.js file: Settings imports it. `?pack=real|light|cartoon|bright` on
  * any page overrides it for that page only (stills, the perf harness).
  */
 import { useSyncExternalStore } from "react";
 
-export type TexturePack = "real" | "cartoon" | "bright";
+export type TexturePack = "real" | "light" | "cartoon" | "bright";
 
 export const TEXTURE_PACK_KEY = "star-3d-texture-pack";
 export const TEXTURE_PACK_DEFAULT: TexturePack = "real";
-const VALUES: readonly TexturePack[] = ["real", "cartoon", "bright"];
-export const TEXTURE_PACK_NAMES: Record<TexturePack, string> = { real: "Realism + cartoon", cartoon: "Cartoon", bright: "Bright" };
+const VALUES: readonly TexturePack[] = ["real", "light", "cartoon", "bright"];
+export const TEXTURE_PACK_NAMES: Record<TexturePack, string> = { real: "Realism + cartoon", light: "Light", cartoon: "Cartoon", bright: "Bright" };
 
 export function parseTexturePack(v: string | null | undefined): TexturePack | null {
   return v && (VALUES as readonly string[]).includes(v) ? (v as TexturePack) : null;

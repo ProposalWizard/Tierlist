@@ -309,7 +309,7 @@ export default function StyleTest3D() {
         {real && isH && (
           <div className="flex items-center gap-1.5" data-pack-chips>
             <span className="mr-0.5 shrink-0 text-[11px] font-black uppercase text-white/60">Pack</span>
-            {(["real", "cartoon", "bright"] as const).map((p) => (
+            {(["real", "light", "cartoon", "bright"] as const).map((p) => (
               <button key={p} onClick={() => setTexturePack(p)} className={chip(packNow === p)} data-pack={p}>{TEXTURE_PACK_NAMES[p]}</button>
             ))}
           </div>

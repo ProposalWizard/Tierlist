@@ -117,7 +117,7 @@ export interface RealLookOptions {
   crisp?: boolean;
   /**
    * Texture pack (Settings, lib/star/style3d/texturePack.ts; the career 3D match passes it).
-   * "real" (default) is look H exactly as before; "cartoon" and "bright" are described there.
+   * "real" (default) is look H exactly as before; "light", "cartoon" and "bright" are described there.
    */
   pack?: TexturePack;
 }
@@ -128,6 +128,12 @@ const brightGrass = (hex: string) => {
   const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
   const c = (x: number) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0");
   return `#${c(r * 0.95 + 6)}${c(g * 1.32 + 22)}${c(b * 1.05 + 6)}`;
+};
+/** Light's grass (Harry, 13 Oct 2026: "inbetween the current and the bright one with dirt"): half way to Bright's. */
+const lightGrass = (hex: string) => {
+  const a = parseInt(hex.slice(1), 16), b = parseInt(brightGrass(hex).slice(1), 16);
+  const m = (sh: number) => Math.round((((a >> sh) & 255) + ((b >> sh) & 255)) / 2);
+  return `#${((m(16) << 16) | (m(8) << 8) | m(0)).toString(16).padStart(6, "0")}`;
 };
 /** Cartoon's grass: two flat greens, like the drawn 2D pitch. */
 const CARTOON_GRASS: [string, string] = ["#4aa83c", "#58b949"];
@@ -234,9 +240,9 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
   let dead = false;
   let rungSeen: GovRung | null = null;
   const pack: TexturePack = o.pack ?? "real";
-  const cartoon = pack === "cartoon", bright = pack === "bright";
+  const cartoon = pack === "cartoon", bright = pack === "bright", light = pack === "light";
   /** Cartoon and Bright: no cast shadows at all (Harry: "the shadow does not help at all"). */
-  const noCast = pack !== "real";
+  const noCast = cartoon || bright;
 
   // ── sky ──
   const su: Record<string, { value: any }> = {
@@ -320,7 +326,7 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     const hedge = new T.Mesh(new T.CylinderGeometry(150, 150, 9, 64, 1, true), new T.MeshStandardMaterial({ color: "#2b4a24", roughness: 1, side: T.BackSide }));
     hedge.position.set(0, 4.5, 30); root.add(hedge);
   }
-  const hball: HBall | null = o.ball ? dressHBall(T, o.ball, root, { classic: pack !== "real" }) : null;
+  const hball: HBall | null = o.ball ? dressHBall(T, o.ball, root, { classic: cartoon || bright }) : null;
 
   // contact shadows: a soft dark patch under each person's feet
   const csTex = (() => {
@@ -376,6 +382,12 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
     if (pack === "real") {
       pitch.setLook({ grass: [gr(look.grass[0]), gr(look.grass[1])], wet: look.wet, blades: p.blades, stripes: p.stripes * (lowG ? lp.stripes : 1) });
       baked?.setStrength({ ao: p.ao, shade: p.shade, bounce: p.bounce, shadePow: lowG ? lp.shadePow : 1 });
+    } else if (light) {
+      // Light: half way to Bright, but the sun's shadows, the wear and the dirt all stay
+      hemi.intensity *= 1.3;
+      scene.environmentIntensity *= 1.12;
+      pitch.setLook({ grass: [lightGrass(gr(look.grass[0])), lightGrass(gr(look.grass[1]))], wet: look.wet * 0.75, blades: p.blades, stripes: p.stripes });
+      baked?.setStrength({ ao: p.ao * 0.7, shade: p.shade * 0.5, bounce: p.bounce, shadePow: 1 });
     } else if (bright) {
       // much lighter grass, more open-sky light, and no baked stand shadow over the pitch
       hemi.intensity *= 1.7;
@@ -571,6 +583,8 @@ export async function createRealLook(T: any, renderer: any, scene: any, tier: Qu
       };
       post.render(sc, camera, pack === "real" ? g0
         // Bright: a lighter picture, the darks lifted, a touch less contrast and vignette
+        // Light: half of Bright's lift
+        : light ? { ...g0, exposure: g0.exposure * 1.025, contrast: 1 + (g0.contrast - 1) * 0.88, tint: g0.tint.map((t) => 1 + (t - 1) * 0.7) as [number, number, number], lift: [g0.lift[0] + 0.005, g0.lift[1] + 0.006, g0.lift[2] + 0.006] as [number, number, number], vignette: g0.vignette * 0.7 }
         : bright ? { ...g0, exposure: g0.exposure * 1.05, contrast: 1 + (g0.contrast - 1) * 0.75, tint: g0.tint.map((t) => 1 + (t - 1) * 0.4) as [number, number, number], lift: [g0.lift[0] + 0.01, g0.lift[1] + 0.012, g0.lift[2] + 0.012] as [number, number, number], vignette: g0.vignette * 0.4 }
         // Cartoon: no broadcast grade (no colour LUT, curve, tint or vignette); clean bright colours
         : { ...g0, exposure: g0.exposure, bloom: g0.bloom * 0.3, contrast: 1, sat: 1.12, tint: [1, 1, 1] as [number, number, number], lift: [0, 0, 0] as [number, number, number], vignette: 0, lutAmt: 0, sharpen: 0 });
