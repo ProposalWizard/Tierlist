@@ -29,8 +29,8 @@
  * tests/star/playOn.mts measures it.
  */
 import {
-  goalInView, chainReturnChance, logBallAction, orderableRunners, acceptsCaptainOrders, offsideAt, passQuality,
-  type Ball, type Scenario, type ScenarioKind, type Receiver, type Vec2,
+  goalInView, chainReturnChance, logBallAction, orderableRunners, acceptsCaptainOrders, offsideAt, passQuality, setMateReceptionRule,
+  type MateReception, type Ball, type Scenario, type ScenarioKind, type Receiver, type Vec2,
 } from "./canvasEngine";
 import { CX, PEN_SPOT_Y } from "./pitch";
 import { leadInEntities, ballAlong, type LeadIn, type LeadBallKey } from "./leadIn";
@@ -82,6 +82,7 @@ export function supportRunTarget(sc: Scenario, passTo?: Vec2): Vec2 {
 }
 
 export function startPlayOn(sc: Scenario, rng: () => number, passTo?: Vec2): PlayOn {
+  delete sc.matePace;
   if (!sc.receiver) sc.receiver = playOnReceiver(rng);
   return { target: supportRunTarget(sc, passTo), layOff: null, layOffLive: false };
 }
@@ -345,6 +346,65 @@ export const STICK_PASS_MAX_M = 32;
 export const STICK_WAIT_S = 0.35;
 export const STICK_WAIT_BELOW = 0.6;
 
+// ── The tempo after your pass (Harry, 14 Oct 2026) ──
+//
+// "with the joystick one, I think the play needs to slow down a bit. If it's a
+// position where someone can straight away shoot, then they shoot first time.
+// Right now, they're shooting pretty much first time, instantly, every time."
+//
+// Measured before (tests/star/afterPassStick.mts §5, 500 passes): the man who
+// took your pass held it 0.46 s whatever the spot (the engine's one touch,
+// RECEIVER_CONTROL_T), then shot — 94% of the time — and a named finisher hit
+// it first time MORE often outside the box or marked (15%) than in the box and
+// clear (11%). So on the joystick only (Scenario.matePace "stick"):
+//   - first time ONLY when it is on (stickShotIsOn): close, a clear sight of
+//     goal, and nobody tight on him — then always, whoever he is;
+//   - otherwise a real touch and a look up (STICK_TOUCH_T), and far out in
+//     space he runs on with it first (STICK_CARRY_FROM_M, the engine's own
+//     MATE_CARRY run). Then he reads you as before: shoot, to feet, through.
+
+/** First time only this close to the goal's centre (m). */
+export const FIRST_TIME_MAX_M = 15;
+/** …with at least this clear a sight of goal (shotValue: angle, distance, bodies in the way). */
+export const FIRST_TIME_MIN_VALUE = 0.4;
+/** …and nobody this close to him (m), or goal-side of him within FIRST_TIME_SCREEN_M. */
+export const FIRST_TIME_TIGHT_M = 1.8;
+export const FIRST_TIME_SCREEN_M = 5;
+/** His touch and look up when it is not on (s). The engine's own touch is 0.45. */
+export const STICK_TOUCH_T = 1.0;
+/** A loose ball he has run down: a quicker touch, men are closing (s). */
+export const STICK_SCRAMBLE_T = 0.6;
+/** Further out than this (m) and in space: he runs on with it first. */
+export const STICK_CARRY_FROM_M = 20;
+export const STICK_CARRY_T = 1.4;
+/** At his touch: his own shot this poor, no pass on, and room ahead → he runs on with it and looks again (once). */
+export const STICK_DEVELOP_BELOW = 0.22;
+/** The ball back to you, a calmer pace than before (m/s at its quickest; was 21 to feet, 23 through). */
+export const STICK_PASS_MAX_FEET = 18;
+export const STICK_PASS_MAX_THROUGH = 20;
+
+/** Is a first-time shot on from `at`? Close, a clear sight of goal, nobody tight. */
+export function stickShotIsOn(sc: Scenario, at: Vec2): boolean {
+  const gcx = (sc.goal.x1 + sc.goal.x2) / 2 || CX;
+  if (Math.hypot(at.x - gcx, at.y) > FIRST_TIME_MAX_M) return false;
+  if (shotValue(sc, at) < FIRST_TIME_MIN_VALUE) return false;
+  for (const d of sc.defenders) {
+    const dx = d.x - at.x, dy = d.y - at.y;
+    if (Math.hypot(dx, dy) < FIRST_TIME_TIGHT_M) return false;
+    // Goal-side and in front of him: he would be shooting into the man.
+    if (dy < 0 && dy > -FIRST_TIME_SCREEN_M && Math.abs(dx) < 1.6) return false;
+  }
+  return true;
+}
+
+/** The joystick's reception rule (canvasEngine setMateReceptionRule). */
+export function stickReception(sc: Scenario, at: Vec2, _mode: string, scrambled: boolean): MateReception {
+  if (stickShotIsOn(sc, at)) return { firstTime: true, holdT: 0, carryT: 0 };
+  const gcx = (sc.goal.x1 + sc.goal.x2) / 2 || CX;
+  const far = Math.hypot(at.x - gcx, at.y) > STICK_CARRY_FROM_M;
+  const space = nobodyNear(sc, at, 4);
+  return { firstTime: false, holdT: scrambled ? STICK_SCRAMBLE_T : STICK_TOUCH_T, carryT: far && space && !scrambled ? STICK_CARRY_T : 0 };
+}
 export type StickChoice = "shoot" | "feet" | "through";
 
 export interface PlayOnStick {
@@ -364,6 +424,8 @@ export interface PlayOnStick {
   note: "late" | "noLane" | null;
   /** The read he made (for tests and the dev hook). */
   read: StickRead | null;
+  /** He has already run on with it once, looking for a better shot (STICK_DEVELOP_BELOW). */
+  developed?: boolean;
 }
 
 export interface StickRead {
@@ -381,6 +443,10 @@ export function playOnStickWanted(o: { newChances: boolean; stick: boolean; kind
 
 export function startPlayOnStick(sc: Scenario, rng: () => number, passTo?: Vec2, run = PLAY_ON_RUN_SPEED): PlayOn {
   if (!sc.receiver) sc.receiver = playOnReceiver(rng);
+  // The calmer tempo (stickReception): whoever takes it asks the joystick's rule.
+  sc.matePace = "stick";
+  // Registered here, not at load: the engine's module may finish loading after this one.
+  setMateReceptionRule(stickReception);
   return {
     target: supportRunTarget(sc, passTo), layOff: null, layOffLive: false,
     stick: { push: { x: 0, y: 0 }, vel: { x: 0, y: 0 }, run, called: false, choice: null, passTo: null, note: null, read: null },
@@ -441,7 +507,7 @@ export function shotValue(sc: Scenario, p: Vec2): number {
 }
 
 function passSpeedFor(d: number, through: boolean): number {
-  return through ? Math.max(14, Math.min(23, 12 + d * 0.5)) : Math.max(13, Math.min(21, 11 + d * 0.45));
+  return through ? Math.max(13, Math.min(STICK_PASS_MAX_THROUGH, 11 + d * 0.45)) : Math.max(12, Math.min(STICK_PASS_MAX_FEET, 10 + d * 0.4));
 }
 
 /** Where a through ball from `at` meets your run: you + your velocity × its travel time, a metre on into your stride. */
@@ -557,9 +623,16 @@ function stepPlayOnStick(st: PlayOn, stk: PlayOnStick, sc: Scenario, ball: Ball,
       if (pick) go = pick; else stk.note = "noLane";
       stk.called = false;
     } else if (layOffsLeft > 0 && pick && rng() < r.pPass) go = pick;
+    const gcx = (sc.goal.x1 + sc.goal.x2) / 2 || CX;
     if (go) {
       stk.choice = go;
       playPassTo(st, stk, sc, ball, go === "through" ? r.throughAt! : { x: p.x, y: p.y }, go === "through", rng);
+    } else if (!stk.developed && r.his < STICK_DEVELOP_BELOW && Math.hypot(ball.pos.x - gcx, ball.pos.y) > 16 && nobodyNear(sc, ball.pos, 3)) {
+      // Nothing on yet: he runs on with it toward goal (the engine's own
+      // MATE_CARRY run) and looks again when he stops — shot, or you.
+      stk.developed = true;
+      ball.carryT = STICK_CARRY_T;
+      ball.receiverControlT = 0.3;
     } else stk.choice = "shoot";
   }
   return null;
