@@ -95,7 +95,7 @@ function TexturePackRow() {
           <span aria-hidden className="text-[12px] text-white/80">▾</span>
         </button>
       </div>
-      <SetNote dim className="mt-1 text-[10px]">The 3D match&apos;s pitch, stadium and ball.</SetNote>
+      <SetNote dim className="mt-1 text-[10px]">The match&apos;s pitch, stadium, ball, banners and sounds.</SetNote>
       {open && mounted && createPortal(
         <div data-texture-pack-sheet className="fixed inset-0 z-[95] flex items-end justify-center bg-black/60 sm:items-center" onClick={() => setOpen(false)}>
           <div
