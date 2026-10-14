@@ -1558,6 +1558,34 @@ export const ADMIN_GUIDES = {
     dev: "app/star-3d-dev/page.tsx · lib/star/{figureSkin,figure3d,heroFigure,faceFit}.ts · lib/star/fiveASide/render.ts (drawFigureAt picks the look) · lib/star/firstPersonRender.ts",
   },
 
+  "/star-sound-lab-dev": {
+    title: "Sound Lab",
+    what: "Hear, edit and rate different sounds for each thing that happens in a match (a pass, a shot, a save, the net, the whistle, the crowd), then send us your favourites.",
+    buttons: [
+      {
+        items: [
+          ["Event buttons (top row)", "Pick what you are listening to: pass, shot, first touch, keeper save, keeper catch, post/bar, net, block, header, whistle, goal roar, near miss. A ✓ means you have picked one for it."],
+          ["▶", "Plays that sound. The first tap also switches sound on (phones keep it off until you tap)."],
+          ["IN GAME NOW / FILE", "\"Current (match)\" is the sound the live match makes today. \"Current file\" is the recorded file the game has (goal videos use it), including any replacement uploaded on the Sound Board."],
+          ["Green picture / blue bars", "The shape of the sound (loud parts tall) and how much low (left) and high (right) it has. The number is its length in seconds."],
+          ["★ ★ ★ ★ ★", "Rate it. Tap the same star again to clear it."],
+          ["Pick this / ✓ My pick", "Your favourite for this event (one per event). Tap again to un-pick."],
+          ["Note", "Write what you like or don't. It goes into the export."],
+          ["Edit ▾", "Opens the sliders: Volume, Pitch, Length, Brightness, Punch, Body (low end), Room (echo). Let go of a slider to hear the change."],
+          ["Reset", "Puts that sound's sliders back to how it was made."],
+          ["Copy recipe", "Copies how that sound is built plus your slider settings, for us."],
+          ["Save WAV", "Downloads that sound, with your sliders, as a .wav file."],
+          ["▶ Pass → shot → GOAL (and the other blue buttons)", "Plays a short run of sounds together, using your pick for each event (or your best rated, or the first one), so you can judge them side by side."],
+          ["Export my picks", "Copies a short plain-text list (each event → your pick, its stars, sliders and note, plus any other sounds you rated) and shows it in a box. Paste it to us."],
+          ["Clear everything", "Wipes your ratings, notes, slider edits and picks on this device."],
+        ],
+      },
+    ],
+    saving: ["This browser only, instantly. Ratings, notes, slider edits and picks stay on this device; nobody else sees them until you send the export."],
+    inGame: ["Nowhere yet. It is for choosing. Once Leo picks, the chosen recipes can be built into the match's sounds."],
+    dev: "app/star-sound-lab-dev/page.tsx · lib/star/sfxLab.ts (recipes, the pure renderer, export) · tests/star/sfxLab.mts · files via lib/star/sfx.ts sfxUrl() · the live match's sounds: lib/star/matchSound.ts",
+  },
+
   "/star-radar-dev": {
     title: "Match Radar",
     what: "Watch the match that runs behind your highlights — all ninety minutes, minute by minute: who has the ball, where it is, the momentum, and the moments that would be yours. It is the real unseen match, not a copy.",
