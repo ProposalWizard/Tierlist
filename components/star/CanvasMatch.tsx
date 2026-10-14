@@ -5788,8 +5788,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // His name, if we know it — and by now we do, because the identity is
           // taken off whoever the ball actually reached. See lib/star/lineup.ts.
           const label = receiver.who?.shortName ?? receiver.roleLabel;
-          // While your pass plays on (playOn.ts) it is one move: no PASS banner in the middle of it.
-          if (ev === "received") { pushLine(commentaryReceived(label, rngRef.current)); if (!playOnRef.current) showAction(passBanner()); }
+          // PASS still shows while your pass plays on (Harry, 14 Oct: "I don't think
+          // 'pass' 'goal' etc should go"): the words stay, the cut does not.
+          if (ev === "received") { pushLine(commentaryReceived(label, rngRef.current)); showAction(passBanner()); }
           // Old animations: the team-mate's shot swung YOUR leg (the one
           // kick pose there was). New: he swings his own (actorAnimRef).
           else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(label, rngRef.current)); playKick(); if (!animFamilyOn("shots")) kickPoseRef.current = KICK_POSE_S; }
@@ -6153,7 +6154,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // Chances: New — a lay-off taken back in your stride, or a pass in a
       // no-goal picture, carries on in the same move (playOn.ts): its banner,
       // if any, is decided below where the move carries on or stops.
-      if (!playOnCaughtRef.current && !(newChancesOn() && !goalInView(sc.kind))) showAction(passBanner());
+      showAction(passBanner()); // words stay (Harry, 14 Oct); the move still carries on
     } else if (res === "touchOn") {
       // Touch Mode's own catch had no banner at all — the result screen paused
       // exactly the way a genuinely dead chance does, with nothing on screen

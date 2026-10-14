@@ -27,6 +27,42 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.54",
+      "title": "Harry's patch notes: New chances, 3D camera, build-ups that play on",
+      "publishedAt": "2026-10-14T16:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/1dwJjYucacMcjgxypP342X",
+      "summary": "Everything since v0.52 on one page. New chances follow your wing and the match (crosses and cutbacks at most 2 in 8, a short build-up on some chances); corner camera turn stops at 60°; 3D drag-back fixed after 2D/3D switching; no black players in Bright/Light. Now also: build-ups play on with no PASS / BACK TO YOU cut, menus open on the tap, a texture pack dropdown with pictures, dribble chances by league, real shots move like build-ups, and Full match / Dribble-on-the-stick test pages.",
+      "stats": [
+        { "value": "100% → 0%", "label": "build-up passes that cut to a new picture" },
+        { "value": "3.5 s → 0.4 s", "label": "Home → Settings, tap to fully shown" },
+        { "value": "≤ 2 in 8", "label": "crosses and cutbacks in New chances" },
+        { "value": "±60°", "label": "corner camera turn, goal on screen 4 of 4" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "New chances (Settings → Chances: New)", "detail": "Each chance follows your wing and the match radar; no kind twice in a row; some get a short build-up first." },
+          { "title": "Texture pack dropdown", "detail": "A picture of each pack; tap to pick." },
+          { "title": "Test pages", "detail": "Full match with 2D | 3D | Radar, played live; Dribble on the stick." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Build-ups play on", "detail": "Pass and the move carries on: he shoots or lays it back to you. No PASS / BACK TO YOU cut." },
+          { "title": "3D controls after switching", "detail": "Drag-back and zoom no longer swap after flicking 2D/3D." },
+          { "title": "Black players", "detail": "Bright and Light packs keep the kits." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Menus open on the tap", "detail": "No fades or slides; big moments keep their reveal." },
+          { "title": "Corner camera", "detail": "Turn stops softly at 60°." },
+          { "title": "Dribble chances", "detail": "More of them up the leagues (3% National League → 10% Premier League)." },
+          { "title": "Real shots", "detail": "Players move like the build-ups instead of chasing the ball." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Lay-off not seen live", "detail": "Measured only." },
+          { "title": "Cameras", "detail": "Some 2D/3D camera problems remain; waiting on Harry's 3D video." }
+        ]}
+      ]
+    },
+    {
       "version": "0.53",
       "title": "Leo's patch notes",
       "publishedAt": "2026-10-13T18:00:00Z",
