@@ -27,6 +27,54 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.52",
+      "title": "Harry's patch notes: Camera, ball and two test pages",
+      "publishedAt": "2026-10-14T01:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/R5FFG4ugSWNiWxQEMoQjng",
+      "summary": "Night of 13–14 Oct: a readable 3D ball (classic, 1.6×, rises with air puffs), the turned 3D camera keeps the goal and drops the roof, drag up/down fixed, the Real shots test page (real keeper start, wide frame) and the Full match test page (2D/3D, play your chances, real names, ends swap, keeper dives, shape from real tracking). Live 14 Oct 2026.",
+      "stats": [
+        { "value": "213 / 216", "label": "turned 3D views keep the whole goal (was 171)" },
+        { "value": "35% → 0%", "label": "stand roof on screen when turned" },
+        { "value": "16% → 100%", "label": "real shots with every man near the ball on screen" },
+        { "value": "14 → 0", "label": "full-match shape checks failed against real tracking" }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            { "title": "Drag up and down in 3D", "detail": "The ball's grab zone covered 60% of a turned screen; now 6% at most. A press on open grass never kicks." },
+            { "title": "Turned camera", "detail": "Keeps the goal (213 of 216 views) and the pitch, never comes closer, turns smoothly. No roof when turned; fans and boards stay." }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            { "title": "Real shots test page", "detail": "Real passes replayed in 2D or 3D before your shot. The keeper starts on his real spot; Play frames every man within 20 m." },
+            { "title": "Full match test page", "detail": "A whole 90 minutes at 1×–60×, 2D or 3D. Stops on your chances to play them. Real names, ends swap, keeper dives, shape set from real tracking data." }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            { "title": "3D ball", "detail": "Classic black-and-white in every pack, bigger patches, one size 1.6×." },
+            { "title": "Ball in the air", "detail": "The height line is gone; the ball rises and grows, with faint air puffs in 2D and 3D." }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            { "title": "Corner turned 90°", "detail": "Goal partly off the edge in 3 views; holding it needs tiny men. Harry to pick." },
+            { "title": "Not seen on a phone", "detail": "Stills only." }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.51",
       "title": "Harry's patch notes: Camera, 3D look & keeper",
       "publishedAt": "2026-10-13T21:30:00Z",
