@@ -12,6 +12,7 @@ import { buildScenario, goalInView, VIEW_ASPECT, type Scenario, type ScenarioKin
 import { applyOverrideToScenario, type PosOverride } from "./scenarioEdit";
 import { frameFromScenario } from "./scenarioFrame";
 import { mulberry32 } from "./season";
+import { leadInEntities, alongKeys, type LeadIn, type LeadEntity, type KeyPt } from "./leadIn";
 import {
   PITCH_W, HALF_LEN, CX, GOAL_W, POST_L, POST_R, NET_DEPTH, BOX_DEPTH, BOX_L,
 } from "./pitch";
@@ -396,3 +397,228 @@ export function leadinPlan(s: SbShot, lead: SbLeadin): LeadPlan {
 }
 
 export const lerpVec = (a: Vec2, b: Vec2, f: number): Vec2 => ({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f });
+
+// ─────────────────────────────────────────────────────────────────────────
+//  THE LEAD-IN IN THE MATCH'S OWN PICTURE (2D and 3D)
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Harry, 13 Oct 2026: "the 3 shots in real shot and all of it should be in 3d
+// aswell and needs to be playable in 2d/3d. u need to actually see the 3 moves
+// before u". The real match plays this (CanvasMatch's `leadIn`, lib/star/leadIn.ts)
+// as a replay of the recorded positions, then the chance starts where it ends.
+
+/** The ball's keyframes: when it is where, and whether it got there by a pass (lofted or not). */
+export interface LeadBallKey { t: number; p: Vec2; pass?: { h: number } }
+
+/** Seconds a pass of this length takes. */
+const passFlightS = (d: number) => Math.min(1.8, Math.max(0.35, d / 16));
+/** Seconds a carry of this length takes (0: no carry). */
+const carryS = (d: number) => (d < 0.5 ? 0 : Math.min(2.2, Math.max(0.2, d / 6)));
+/** A lead-in longer than this is played faster (the same shape, quicker). */
+export const LEAD_MAX_S = 12;
+/** The fastest a man may be made to run in a lead-in, m/s (lead-in time). */
+export const LEAD_MAX_RUN = 9;
+/** The pause on the ball before the first pass. */
+export const LEAD_HOLD_S = 0.45;
+
+/**
+ * The ball's timeline at the real timing: each pass starts the real number of
+ * seconds before the shot that StatsBomb has (pushed later only where the ball
+ * could not have got there in time), and the whole is sped up only when it
+ * would last longer than LEAD_MAX_S. Ends on `end` (the chance's ball).
+ */
+export function leadinBallKeys(s: SbShot, lead: SbLeadin, end: Vec2): LeadBallKey[] {
+  const s0 = lead.passes[0][0];
+  const keys: LeadBallKey[] = [];
+  let t = 0;
+  let ball = sbToPitch(lead.passes[0][1]);
+  keys.push({ t: 0, p: ball });
+  lead.passes.forEach((p, i) => {
+    const from = sbToPitch(p[1]), to = sbToPitch(p[2]);
+    const real = LEAD_HOLD_S + (s0 - p[0]);
+    const carry = carryS(Math.hypot(from.x - ball.x, from.y - ball.y));
+    // Carried to where the next pass is played from, arriving just before it.
+    if (carry > 0) { t = Math.max(t + carry, real - 0.15); keys.push({ t, p: from }); }
+    t = Math.max(t + (i === 0 ? LEAD_HOLD_S : 0.12), real);
+    if (keys[keys.length - 1].t < t) keys.push({ t, p: from });
+    const d = Math.hypot(to.x - from.x, to.y - from.y);
+    t += passFlightS(d);
+    keys.push({ t, p: to, pass: { h: d > 22 ? Math.min(5, d * 0.1) : 0 } });
+    ball = to;
+  });
+  const shotReal = LEAD_HOLD_S + s0;
+  const last = carryS(Math.hypot(end.x - ball.x, end.y - ball.y));
+  t = Math.max(t + Math.max(0.35, last), shotReal);
+  keys.push({ t, p: { ...end } });
+  if (t > LEAD_MAX_S) { const k = LEAD_MAX_S / t; for (const q of keys) q.t *= k; }
+  return keys;
+}
+
+/** The ball along its keys: straight lines on the grass, a long pass lofted. */
+export function ballAlong(keys: LeadBallKey[], t: number): { x: number; y: number; z: number } {
+  if (t <= keys[0].t) return { ...keys[0].p, z: 0 };
+  for (let i = 1; i < keys.length; i++) {
+    const a = keys[i - 1], b = keys[i];
+    if (t <= b.t) {
+      const f = b.t > a.t ? (t - a.t) / (b.t - a.t) : 1;
+      // A pass slows a little as it runs; a carry is steady.
+      const g = b.pass ? f * (1.3 - 0.3 * f) : f;
+      const z = b.pass && b.pass.h > 0 ? 4 * b.pass.h * f * (1 - f) : 0;
+      return { x: a.p.x + (b.p.x - a.p.x) * g, y: a.p.y + (b.p.y - a.p.y) * g, z };
+    }
+  }
+  const e = keys[keys.length - 1].p;
+  return { x: e.x, y: e.y, z: 0 };
+}
+
+const lastNameOf = (n: string) => n.split(" ").slice(-1)[0];
+
+export type LeadTrack = LeadIn & {
+  ballKeys: LeadBallKey[];
+  paths: Map<string, KeyPt[]>;
+  /** Who plays each pass (an entity key), and when each pass starts and arrives. */
+  holders: (string | null)[];
+  passStart: number[];
+  passEnd: number[];
+};
+
+/**
+ * The real shot's lead-in for the chance `sc` (scenarioForShot, once the match
+ * has set it up): the ball at the real timing, each passer on the ball as he
+ * passes, YOU receiving the last pass, and everyone else moving from where
+ * StatsBomb's 360 frame had them (a team-shape guess otherwise — the same as
+ * leadinPlan) to exactly where the chance has them.
+ */
+export function leadinTrack(s: SbShot, lead: SbLeadin, sc: Scenario): LeadTrack {
+  const plan = leadinPlan(s, lead);
+  const end = { x: sc.ball.x, y: sc.ball.y };
+  const ballKeys = leadinBallKeys(s, lead, end);
+  const durS = ballKeys[ballKeys.length - 1].t;
+  const ents = leadInEntities(sc);
+  const passStart: number[] = [], passEnd: number[] = [];
+  for (let i = 1; i < ballKeys.length; i++) if (ballKeys[i].pass) { passStart.push(ballKeys[i - 1].t); passEnd.push(ballKeys[i].t); }
+
+  // Where each of the chance's people starts: the plan's man who ends where he does.
+  const used = new Set<string>();
+  const dotFor = (side: LeadEntity["side"], at: Vec2): LeadDot | null => {
+    let best: LeadDot | null = null, bd = 1.2;
+    for (const d of plan.dots) {
+      if (used.has(d.id) || d.id === "you") continue;
+      if ((d.side === "mate") !== (side === "mate") || (d.side === "keeper") !== (side === "keeper")) continue;
+      const dd = Math.hypot(d.to.x - at.x, d.to.y - at.y);
+      if (dd < bd) { bd = dd; best = d; }
+    }
+    if (best) used.add(best.id);
+    return best;
+  };
+  const ball0 = ballKeys[0].p;
+  const shift = { x: ball0.x - end.x, y: ball0.y - end.y };
+  const share: Record<LeadEntity["side"], number> = { you: 0.6, mate: 0.6, opp: 0.4, keeper: 0 };
+  const paths = new Map<string, KeyPt[]>();
+  const people: { key: string; side: LeadEntity["side"] }[] = ents.map((e) => ({ key: e.key, side: e.side }));
+  let extraMates = 0;
+  /**
+   * Still nobody: a team-mate who is in the move but not in the chance's
+   * picture, there for the lead-in only (CanvasMatch draws him while it plays).
+   * He plays his pass, then jogs after the move.
+   */
+  const extra = (spot: Vec2, t: number): string => {
+    const key = `extra${extraMates++}`;
+    paths.set(key, [{ t: 0, p: { ...spot } }, { t: durS, p: { x: spot.x + (end.x - spot.x) * 0.3, y: spot.y + (end.y - spot.y) * 0.3 } }]);
+    people.push({ key, side: "mate" });
+    void t;
+    return key;
+  };
+  /** Men with no 360 start (a guess): free to start wherever they are needed. */
+  const guessed = new Set<string>();
+  for (const e of ents) {
+    const to = e.get();
+    let from: Vec2;
+    if (e.key === "you") from = plan.dots[0].from;
+    else {
+      const d = dotFor(e.side, to);
+      if (!d) guessed.add(e.key);
+      from = d ? d.from : {
+        x: Math.min(PITCH_W, Math.max(0, to.x + shift.x * share[e.side])),
+        y: Math.min(2 * HALF_LEN, Math.max(0, to.y + shift.y * share[e.side])),
+      };
+    }
+    paths.set(e.key, [{ t: 0, p: from }, { t: durS, p: to }]);
+  }
+  /** The team-mate nearest a spot at time t (not one already used), within reach. */
+  const mateNear = (p: Vec2, t: number, not: Set<string>): string | null => {
+    let best: string | null = null, bd = 16;
+    for (const e of people) {
+      if (e.side !== "mate" || not.has(e.key)) continue;
+      const q = alongKeys(paths.get(e.key)!, t);
+      const d = Math.hypot(q.x - p.x, q.y - p.y);
+      if (d < bd) { bd = d; best = e.key; }
+    }
+    return best;
+  };
+  /**
+   * Nobody near the passer: the team-mate who can get there and still reach
+   * his place in the chance without running faster than a man can (one with no
+   * 360 start simply starts there). Without this a third of the passes were
+   * played from a spot with nobody on it.
+   */
+  const recruit = (spot: Vec2, t: number, not: Set<string>): string | null => {
+    let best: string | null = null, bs = LEAD_MAX_RUN;
+    for (const e of people) {
+      if (e.side !== "mate" || not.has(e.key)) continue;
+      const path = paths.get(e.key)!;
+      const endP = path[path.length - 1].p;
+      const after = Math.hypot(spot.x - endP.x, spot.y - endP.y) / Math.max(0.1, durS - t);
+      const before = guessed.has(e.key) ? 0 : Math.hypot(spot.x - path[0].p.x, spot.y - path[0].p.y) / Math.max(0.1, t);
+      const sp = Math.max(after, before);
+      if (sp <= bs) { bs = sp; best = e.key; }
+    }
+    if (best && guessed.has(best)) paths.get(best)![0].p = { ...spot };
+    return best;
+  };
+  // The chance has you just behind the ball: kept whenever the ball is at a man's feet.
+  const youEnd = paths.get("you")![1].p;
+  const off = { x: youEnd.x - end.x, y: youEnd.y - end.y };
+  const at = (p: Vec2) => ({ x: p.x + off.x, y: p.y + off.y });
+  // Who plays each pass: the shooter by name, the man who received the one
+  // before if it is him, else the nearest team-mate.
+  const n = lead.passes.length;
+  const holders: (string | null)[] = [];
+  const taken = new Set<string>(["you"]);
+  lead.passes.forEach((p, i) => {
+    let who: string | null = p[3] === s.player ? "you" : null;
+    if (!who && i > 0 && lead.passes[i - 1][4] === p[3] && holders[i - 1] !== "you") who = holders[i - 1];
+    if (!who) who = mateNear(sbToPitch(p[1]), passStart[i], taken) ?? recruit(sbToPitch(p[1]), passStart[i], taken) ?? extra(sbToPitch(p[1]), passStart[i]);
+    holders.push(who);
+    if (who && who !== "you") taken.add(who);
+  });
+  lead.passes.forEach((p, i) => {
+    const who = holders[i];
+    if (!who) return;
+    const path = paths.get(who)!;
+    if (i > 0 && lead.passes[i - 1][4] === p[3]) path.push({ t: passEnd[i - 1], p: at(sbToPitch(lead.passes[i - 1][2])) });
+    path.push({ t: passStart[i], p: at(sbToPitch(p[1])) });
+  });
+  const lastArrive = passEnd[n - 1];
+  paths.get("you")!.push({ t: lastArrive, p: at(sbToPitch(lead.passes[n - 1][2])) });
+  paths.forEach((path) => path.sort((a, b) => a.t - b.t));
+
+  const captionAt = (t: number) => {
+    for (let i = n - 1; i >= 0; i--) {
+      if (t < passStart[i]) continue;
+      const p = lead.passes[i];
+      if (t < passEnd[i]) return `${lastNameOf(p[3])} → ${lastNameOf(i === n - 1 ? s.player : p[4])}`;
+      return i === n - 1 ? `${lastNameOf(s.player)} — that's you` : `${lastNameOf(p[4])} on the ball`;
+    }
+    return `${lastNameOf(lead.passes[0][3])} on the ball`;
+  };
+  return {
+    durS, ballKeys, paths, holders, passStart, passEnd, captionAt, extraMates,
+    ballAt: (t) => ballAlong(ballKeys, t),
+    posAt: (key, t) => {
+      if (key === "you" && t >= lastArrive) return at(ballAlong(ballKeys, t));
+      const path = paths.get(key);
+      return path ? alongKeys(path, t) : null;
+    },
+  };
+}

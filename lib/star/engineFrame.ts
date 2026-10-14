@@ -167,6 +167,12 @@ export interface EngineFrameObserver {
    * commentary waits. Lifting it carries on exactly where it stopped.
    */
   hold?: boolean;
+  /**
+   * The screen's picture is still being built (the 3D view loading). A lead-in
+   * (CanvasMatch's `leadIn`) waits on its first frame until it is ready, so
+   * the moves before the chance are seen in the picture they were asked for.
+   */
+  warming?: boolean;
   /** Small buttons the screen puts in the match's stats bar, by the speaker (the 3D/2D switch, the cog). */
   chrome?: ReactNode;
 }
