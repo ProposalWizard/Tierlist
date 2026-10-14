@@ -10,7 +10,7 @@
  * metres gained, possessions into the final third), after Harry's "a lot of
  * passing side to side" (14 Oct 2026).
  */
-import { simulate90, SIM_FPS, FULL_T } from "../../lib/star/sim90";
+import { simulate90, startSim90, resolveSim90Chance, SIM_FPS, FULL_T } from "../../lib/star/sim90";
 import { frameAt, trackDuration } from "../../lib/star/goalClip/track";
 import { PITCH_W } from "../../lib/star/pitch";
 import { formationForClub } from "../../lib/star/clubFormation";
@@ -192,6 +192,50 @@ console.log(rows.join("\n"));
   check(back <= 0.34, `back passes ${pct(flowAll.backward)}% (want 34% or under)`);
   check(gain >= 3, `metres gained a pass ${gain.toFixed(1)} (want 3+)`);
   check(reach >= 0.4, `possessions into the final third ${Math.round(reach * 100)}% (want 40%+)`);
+}
+{
+  // Played live (Harry, 14 Oct 2026: "the game is determined pre-game"): the
+  // unseen match runs only up to your chance, and your result goes back in.
+  // Same seed, your first chance scored vs missed: the same match up to it,
+  // a different one after, and the score carries your goal.
+  let tried = 0, differ = 0, sameAgain = 0;
+  for (let s = 0; s < 6; s++) {
+    const [home, hs, away, as] = FIXTURES[s % FIXTURES.length];
+    const setup = { home, away, homeStrength: hs, awayStrength: as, seed: 5000 + s * 104729, matchFlow: s % 2 === 0 };
+    const tag = `${home} v ${away} seed ${setup.seed} (live)`;
+    const run = (first: "goal" | "missed") => {
+      const live = startSim90(setup);
+      const w = live.waiting ? { ...live.waiting } : null;
+      const ahead = live.events.filter((e) => e.t > live.readyT + 0.11).length;
+      const before = live.track.data.slice(0, live.track.n * (live.track.data.length / (FULL_T * SIM_FPS + 1)));
+      if (live.waiting) resolveSim90Chance(live, first);
+      for (let g = 0; g < 400 && !live.over; g++) if (live.waiting) resolveSim90Chance(live, "bench-rate");
+      return { live, w, ahead, before };
+    };
+    const A = run("goal"), B = run("missed"), A2 = run("goal");
+    if (!A.w || !B.w) continue;
+    tried++;
+    const M = A.w.minute;
+    check(A.ahead === 0, `${tag}: ${A.ahead} events staged past the picture while waiting`);
+    check(A.w.t < FULL_T && A.w.minute === B.w.minute && A.w.t === B.w.t, `${tag}: both runs wait at the same chance`);
+    check(A.before.length === B.before.length && A.before.every((v, k) => v === B.before[k]), `${tag}: the replay up to your chance is the same`);
+    check(A.live.score[0] === A.live.radar.state.userScore && A.live.score[1] === A.live.radar.state.oppScore, `${tag}: scored run's score is the unseen match's`);
+    check(B.live.score[0] === B.live.radar.state.userScore && B.live.score[1] === B.live.radar.state.oppScore, `${tag}: missed run's score is the unseen match's`);
+    const fa = A.live.radar.frames[M], fb = B.live.radar.frames[M];
+    check(fa.events.some((e) => e.kind === "highlight-goal") && fb.events.some((e) => e.kind === "highlight-miss"), `${tag}: your result went into minute ${M}`);
+    check(fa.userScore === fb.userScore + 1, `${tag}: after your chance ${fa.userScore} vs ${fb.userScore}`);
+    check(A.live.events.some((e) => e.kind === "goal" && e.side === 0 && Math.abs(e.minute - M) <= 1), `${tag}: your goal is in the scored run's events`);
+    const later = (x: typeof A) => x.live.radar.frames.slice(M + 1).map((f) => `${f.possession}${f.zone}${f.lane}${f.userScore}${f.oppScore}`).join();
+    const restDiffers = later(A) !== later(B) && A.live.track.data.some((v, k) => v !== B.live.track.data[k]);
+    if (restDiffers) differ++;
+    check(restDiffers, `${tag}: the rest of the match is the same whether you scored or not`);
+    const same = A2.live.track.data.every((v, k) => v === A.live.track.data[k]) && A2.live.score.join() === A.live.score.join();
+    if (same) sameAgain++;
+    check(same, `${tag}: same seed and same results, a different match`);
+    console.log(`${tag}: first chance ${M}' · scored → ${A.live.score.join("-")}, missed → ${B.live.score.join("-")}`);
+  }
+  check(tried >= 4, `only ${tried} live fixtures had a chance of yours`);
+  console.log(`live: ${tried} fixtures · rest of match differs ${differ}/${tried} · same seed + same results identical ${sameAgain}/${tried}`);
 }
 console.log(`mean |possession diff| ${((sumPossDiff / n) * 100).toFixed(1)} pts · mean line ${((sumLine / n) * 100).toFixed(1)}% · mean per-minute agree ${((sumAgree / n) * 100).toFixed(1)}%`);
 if (problems.length) { console.error(problems.join("\n")); process.exit(1); }

@@ -33,7 +33,7 @@
  *    switches play only when its side is shut (PASS_FLOW, CARRY). The
  *    unseen match still decides which area each minute is in.
  */
-import { startRadar, stepRadar, resolveHighlight, radarOver, type RadarMatch } from "./matchRadar";
+import { startRadar, stepRadar, resolveHighlight, radarOver, type RadarMatch, type RadarFrame, type RadarHighlight } from "./matchRadar";
 import type { HiddenMatchInputs, RadarTick, Zone, Lane } from "./hiddenMatch";
 import { mulberry32 } from "./season";
 import { PITCH_W, CX, HALF_LEN, POST_L, POST_R } from "./pitch";
@@ -77,8 +77,8 @@ export interface Sim90Chance {
   kinds: string[];
   dribble: boolean;
   reason: string;
-  /** What the unseen match decided at the bench rate. */
-  result: "goal" | "missed";
+  /** How it went (yours, or the bench rate in Watch only). Unset while it waits to be played. */
+  result?: "goal" | "missed";
 }
 
 export type Sim90EventKind = "goal" | "shot" | "save" | "miss" | "corner" | "kickoff" | "half" | "full";
@@ -303,7 +303,8 @@ const CARRY = { clearAhead: 7, step: 4.5, maxExtra: 2.5, speed: 5.2 };
 interface Attempt {
   t: number;
   side: Team;
-  outcome: "goal" | "saved" | "wide" | "corner" | "cornerOnly";
+  /** "pending": your chance, not played yet. */
+  outcome: "goal" | "saved" | "wide" | "corner" | "cornerOnly" | "pending";
   text: string;
   minute: number;
   done: boolean;
@@ -334,68 +335,79 @@ export function radarTicks(m: RadarMatch): Map<number, RadarTick> {
   return out;
 }
 
-function runRadar(setup: Sim90Setup): RadarMatch {
+function radarFor(setup: Sim90Setup): RadarMatch {
   const inputs: HiddenMatchInputs = {
     teamStrength: setup.homeStrength, oppStrength: setup.awayStrength, home: true,
     playerSkill: 70, pace: 70, freeKick: 70, position: "ST", matchFlow: !!setup.matchFlow,
   };
-  const m = startRadar(setup.seed, inputs, 90, 100);
-  for (let guard = 0; guard < 400 && !radarOver(m); guard++) {
-    if (m.pending) resolveHighlight(m, "bench-rate");
-    else stepRadar(m);
-  }
-  return m;
+  return startRadar(setup.seed, inputs, 90, 100);
 }
 
-function planOf(radar: RadarMatch, rng: () => number): { plans: MinutePlan[]; attempts: Attempt[] } {
-  const plans: MinutePlan[] = [];
-  const attempts: Attempt[] = [];
-  for (let i = 1; i <= 90; i++) {
-    const f = radar.frames[i] ?? radar.frames[radar.frames.length - 1];
-    const [d0, d1] = ZONE_D[f.zone], [x0, x1] = LANE_X[f.lane];
-    const d = d0 + (d1 - d0) * (0.3 + 0.4 * rng());
-    plans.push({ poss: f.possession === "user" ? 0 : 1, anchor: { x: x0 + (x1 - x0) * (0.25 + 0.5 * rng()), y: LEN - d }, band: [LEN - d0, LEN - d1] });
-    const here: Omit<Attempt, "t" | "done" | "spot" | "minute">[] = [];
-    let cornersUs = 0, cornersThem = 0;
-    const hl = f.highlight;
-    const chanceOf = (result: "goal" | "missed"): Sim90Chance | undefined =>
-      hl ? { kinds: [...hl.kinds], dribble: hl.dribble, reason: hl.reason, result } : undefined;
-    for (const e of f.events) {
-      if (e.kind === "highlight-goal") here.push({ side: 0, outcome: "goal", text: e.text, chance: chanceOf("goal") });
-      else if (e.kind === "highlight-miss") here.push({ side: 0, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text, chance: chanceOf("missed") });
-      else if (e.kind === "goal-us") here.push({ side: 0, outcome: "goal", text: e.text });
-      else if (e.kind === "goal-them") here.push({ side: 1, outcome: "goal", text: e.text });
-      else if (e.kind === "chance-us") here.push({ side: 0, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text });
-      else if (e.kind === "chance-them") here.push({ side: 1, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text });
-      else if (e.kind === "corner-us") cornersUs++;
-      else if (e.kind === "corner-them") cornersThem++;
-    }
-    // A corner goes with a shot of that side when there is one (parried
-    // behind); otherwise it comes from a cross knocked behind.
-    for (const [side, n] of [[0, cornersUs], [1, cornersThem]] as [Team, number][]) {
-      for (let k = 0; k < n; k++) {
-        const shot = here.find((a) => a.side === side && a.outcome !== "goal" && a.outcome !== "corner");
-        if (shot) shot.outcome = "corner";
-        else here.push({ side, outcome: "cornerOnly", text: side === 0 ? "Corner." : "Corner to them." });
-      }
-    }
-    // Goals first: they can never be dropped.
-    const rank = (a: { outcome: string; chance?: Sim90Chance }) => (a.outcome === "goal" || a.chance ? 0 : 1);
-    here.sort((a, b) => rank(a) - rank(b));
-    const kept = here.slice(0, 3).sort(() => rng() - 0.5);
-    // Goals must stay; if the shuffle pushed one out of the first three, it was kept above anyway.
-    const offs = kept.length === 1 ? [40] : kept.length === 2 ? [18, 48] : [12, 32, 52];
-    kept.forEach((a, k) => {
-      const lane = f.lane;
-      const sx = lane === "left" ? 22 + rng() * 6 : lane === "right" ? 40 + rng() * 6 : 28 + rng() * 12;
-      attempts.push({
-        ...a, minute: i, done: false,
-        t: (i - 1) * 60 + offs[k] + (rng() - 0.5) * 6,
-        spot: { x: sx, y: 11 + rng() * 9 },
-      });
-    });
+/** One radar minute as the live radar strip draws it. */
+function tickOf(f: RadarFrame): RadarTick {
+  return radarTicks({ frames: [f, f] } as RadarMatch).get(f.minute)!;
+}
+
+/** The side on the ball and a point in the minute's area. */
+function areaOf(f: RadarFrame, rng: () => number): MinutePlan {
+  const [d0, d1] = ZONE_D[f.zone], [x0, x1] = LANE_X[f.lane];
+  const d = d0 + (d1 - d0) * (0.3 + 0.4 * rng());
+  return { poss: f.possession === "user" ? 0 : 1, anchor: { x: x0 + (x1 - x0) * (0.25 + 0.5 * rng()), y: LEN - d }, band: [LEN - d0, LEN - d1] };
+}
+
+/**
+ * Plan one minute of the unseen match the moment it is played: its area, and
+ * the shots and corners in it. Your own chance (the radar's waiting highlight)
+ * goes in as "pending": its outcome is only known once you have played it.
+ */
+function planMinute(f: RadarFrame, rng: () => number, plans: MinutePlan[], attempts: Attempt[]): void {
+  const i = f.minute;
+  const area = areaOf(f, rng);
+  // Your chance ends the move however it goes (hiddenMatch's endOfMove: the
+  // ball goes to them, scored or not), so that minute is theirs apart from
+  // the build-up to your shot, which the attempt itself stages.
+  if (f.highlight && !f.highlight.result) area.poss = 1;
+  plans.push(area);
+  const here: Omit<Attempt, "t" | "done" | "spot" | "minute">[] = [];
+  let cornersUs = 0, cornersThem = 0;
+  const hl = f.highlight;
+  const chanceOf = (result?: "goal" | "missed"): Sim90Chance | undefined =>
+    hl ? { kinds: [...hl.kinds], dribble: hl.dribble, reason: hl.reason, result } : undefined;
+  for (const e of f.events) {
+    if (e.kind === "highlight" && hl && !hl.result) here.push({ side: 0, outcome: "pending", text: e.text, chance: chanceOf() });
+    else if (e.kind === "highlight-goal") here.push({ side: 0, outcome: "goal", text: e.text, chance: chanceOf("goal") });
+    else if (e.kind === "highlight-miss") here.push({ side: 0, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text, chance: chanceOf("missed") });
+    else if (e.kind === "goal-us") here.push({ side: 0, outcome: "goal", text: e.text });
+    else if (e.kind === "goal-them") here.push({ side: 1, outcome: "goal", text: e.text });
+    else if (e.kind === "chance-us") here.push({ side: 0, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text });
+    else if (e.kind === "chance-them") here.push({ side: 1, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text });
+    else if (e.kind === "corner-us") cornersUs++;
+    else if (e.kind === "corner-them") cornersThem++;
   }
-  return { plans, attempts };
+  // A corner goes with a shot of that side when there is one (parried
+  // behind); otherwise it comes from a cross knocked behind. Never your own
+  // waiting chance: its outcome is yours to decide.
+  for (const [side, n] of [[0, cornersUs], [1, cornersThem]] as [Team, number][]) {
+    for (let k = 0; k < n; k++) {
+      const shot = here.find((a) => a.side === side && a.outcome !== "goal" && a.outcome !== "corner" && a.outcome !== "pending");
+      if (shot) shot.outcome = "corner";
+      else here.push({ side, outcome: "cornerOnly", text: side === 0 ? "Corner." : "Corner to them." });
+    }
+  }
+  // Goals and your chance first: they can never be dropped.
+  const rank = (a: { outcome: string; chance?: Sim90Chance }) => (a.outcome === "goal" || a.chance ? 0 : 1);
+  here.sort((a, b) => rank(a) - rank(b));
+  const kept = here.slice(0, 3).sort(() => rng() - 0.5);
+  const offs = kept.length === 1 ? [40] : kept.length === 2 ? [18, 48] : [12, 32, 52];
+  kept.forEach((a, k) => {
+    const lane = f.lane;
+    const sx = lane === "left" ? 22 + rng() * 6 : lane === "right" ? 40 + rng() * 6 : 28 + rng() * 12;
+    attempts.push({
+      ...a, minute: i, done: false,
+      t: (i - 1) * 60 + offs[k] + (rng() - 0.5) * 6,
+      spot: { x: sx, y: 11 + rng() * 9 },
+    });
+  });
 }
 
 // ── The replay ──────────────────────────────────────────────────────────────
@@ -414,10 +426,39 @@ type Dead =
   | { sub: "out"; t0: number; restart: Team }
   | { sub: "corner"; t0: number; restart: Team; flag: V; taker: number };
 
-export function simulate90(setup: Sim90Setup): Sim90 {
+/**
+ * A FULL MATCH PLAYED LIVE. The unseen match is run only up to your next
+ * chance, and the replay is staged only up to the moment that chance is
+ * struck (`readyT`). Then it waits (`waiting`): play the chance and hand the
+ * result back with `resolveSim90Chance` — it goes into the unseen match
+ * through resolveHighlight → resolveScenario, the same call a career match
+ * makes — and the match carries on from THAT score, momentum and possession.
+ * So what happens after your chance depends on how it went (a side behind
+ * chases it late: hiddenMatch's own score effects). The same seed with the
+ * same results always gives the same match.
+ */
+export interface Sim90Live extends Sim90 {
+  /** Replay seconds staged so far (the picture exists up to here). */
+  readyT: number;
+  /** Your chance, once the replay has been staged up to it: play it, then resolveSim90Chance. */
+  waiting: { minute: number; t: number; chance: Sim90Chance } | null;
+  /** Full time has been staged. */
+  over: boolean;
+}
+
+interface LiveInner { advance: () => void; resolve: (how: "goal" | "missed" | "bench-rate") => void }
+const INNER = new WeakMap<Sim90Live, LiveInner>();
+
+/** Start a live match: staged up to your first chance (or to full time). */
+export function startSim90(setup: Sim90Setup): Sim90Live {
   const rng = mulberry32((setup.seed ^ 0x9e3779b1) >>> 0);
-  const radar = runRadar(setup);
-  const { plans, attempts } = planOf(radar, rng);
+  // Planning each minute has its own stream, so planning a minute later or
+  // earlier never changes how the men move.
+  const planRng = mulberry32((setup.seed ^ 0x51ed270b) >>> 0);
+  const radar = radarFor(setup);
+  const plans: MinutePlan[] = [];
+  const attempts: Attempt[] = [];
+  const ticks = new Map<number, RadarTick>();
   const sides: [Side, Side] = [sideOf(setup.home, setup.homeStrength, setup.seed), sideOf(setup.away, setup.awayStrength, setup.seed + 1)];
 
   // Who plays: the club's formation filled from a squad (made-up names
@@ -472,6 +513,10 @@ export function simulate90(setup: Sim90Setup): Sim90 {
   let cornerTargets: V[] | null = null;
   /** The keeper's dive in progress, if any. */
   let diveNow = null as { k: number; x0: number; tx: number; start: number; end: number; dir: number; high: boolean } | null;
+  /** Your chance, at the moment it is struck, waiting for its result: struck on the next frame once known. */
+  let shootNext = null as Attempt | null;
+  /** Set by a frame that reached your waiting chance: the staging stops after it. */
+  let pauseHere = false;
 
   const offsideLineD = (A: Team): number => {
     // In A's depth: the second-last defender of the other side, never inside
@@ -514,7 +559,7 @@ export function simulate90(setup: Sim90Setup): Sim90 {
     const shape = kickoffShape(K);
     if (cut) for (let i = 0; i < 22; i++) { P[i] = { ...shape[i] }; Vel[i] = { x: 0, y: 0 }; }
     ball.x = CX; ball.y = HALF_LEN; ball.z = 0;
-    flight = null; dead = null; cornerTargets = null; diveNow = null;
+    flight = null; dead = null; cornerTargets = null; diveNow = null; shootNext = null;
     carrier = kickerOf(K);
     if (cut) { P[carrier] = { x: CX, y: HALF_LEN + (K === 0 ? 0.6 : -0.6) }; }
     holdUntil = t + 1.0;
@@ -776,7 +821,7 @@ export function simulate90(setup: Sim90Setup): Sim90 {
   const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club;
 
   // ── Frame by frame ──────────────────────────────────────────────────────
-  for (let f = 0; f < N; f++) {
+  const runFrame = (f: number) => {
     const t = f * DT;
     if (f === HALF_T * SIM_FPS) kickoff(1, t, true);
     const mi = Math.min(89, Math.floor(t / 60));
@@ -835,8 +880,14 @@ export function simulate90(setup: Sim90Setup): Sim90 {
       const T = teamOf(carrier);
       // A shot that is due, for the side on the ball.
       const shotNow = due && due.side === T && t >= due.t;
-      if (shotNow && (Math.hypot(ball.x - CX, ball.y - goalY(T)) <= 30 || t >= due.t + 6 || due.outcome === "cornerOnly")) {
-        shoot(t, due);
+      if (shootNext && !shootNext.done && shootNext.side === T && shootNext.outcome !== "pending") {
+        // Your chance, now played: struck from where the staging stopped.
+        const a = shootNext;
+        shootNext = null;
+        shoot(t, a);
+      } else if (shotNow && (Math.hypot(ball.x - CX, ball.y - goalY(T)) <= 30 || t >= due.t + 6 || due.outcome === "cornerOnly")) {
+        if (due.outcome === "pending") { shootNext = due; pauseHere = true; }
+        else shoot(t, due);
       } else if (T !== wanted) {
         // Pressed: the nearest of the other side wins it on reaching him.
         const pr = nearestOf(wanted, ball);
@@ -980,8 +1031,7 @@ export function simulate90(setup: Sim90Setup): Sim90 {
       keeper: keeperState,
     };
     packFrame(fs, data, f * stride);
-  }
-  events.push({ t: FULL_T, minute: 90, kind: "full", side: -1, text: `Full time: ${short(setup.home)} ${score[0]}-${score[1]} ${short(setup.away)}.` });
+  };
 
   function cornerShape(A: Team, taker: number, flag: V): V[] {
     const D: Team = A === 0 ? 1 : 0;
@@ -1012,13 +1062,92 @@ export function simulate90(setup: Sim90Setup): Sim90 {
     v: TRACK_VERSION,
     meta: {
       id: `sim90-${setup.seed}`, createdAt: "", minute: 0, minuteLabel: "0", scorer: "", scorerShort: "",
-      isYou: false, home: setup.home, away: setup.away, youAreHome: true, scoreAfter: [score[0], score[1]],
+      isYou: false, home: setup.home, away: setup.away, youAreHome: true, scoreAfter: [0, 0],
     },
-    fps: SIM_FPS, bodies, data, n: N, goalT: -100, strikeT: 0, firstKickT: 0,
+    fps: SIM_FPS, bodies, data, n: 1, goalT: -100, strikeT: 0, firstKickT: 0,
     events: clipEvents,
   };
-  events.sort((a, b) => a.t - b.t);
-  return { setup, track, radar, ticks: radarTicks(radar), events, control, score, names, stats };
+  const live: Sim90Live = { setup, track, radar, ticks, events, control, score, names, stats, readyT: 0, waiting: null, over: false };
+
+  /** Frames written so far. */
+  let done = 0;
+  /** Can frame time t be staged with the minutes planned so far? */
+  const safe = (t: number): boolean => {
+    if (radarOver(radar)) return true;
+    const mi = Math.floor(t / 60);
+    if (mi >= plans.length) return false;
+    // Attempts look 20 s ahead: fine while an unplayed planned one is already in view.
+    if (Math.floor((t + 20) / 60) < plans.length) return true;
+    return attempts.some((a) => !a.done && a.t - 20 <= t);
+  };
+  const advance = () => {
+    if (live.over || radar.pending) return;
+    // The unseen match, minute by minute, up to your next chance (or full time).
+    while (!radar.pending && !radarOver(radar)) {
+      const fr = stepRadar(radar);
+      if (!fr) break;
+      planMinute(fr, planRng, plans, attempts);
+      ticks.set(fr.minute, tickOf(fr));
+    }
+    // The replay, up to the moment that chance is struck.
+    while (done < N && safe(done * DT)) {
+      runFrame(done);
+      done++;
+      if (pauseHere) { pauseHere = false; break; }
+    }
+    track.n = Math.max(1, done);
+    live.readyT = (track.n - 1) * DT;
+    const h = radar.pending as RadarHighlight | null;
+    const a = attempts.find((x) => x.outcome === "pending");
+    live.waiting = h && a?.chance ? { minute: h.minute, t: live.readyT, chance: a.chance } : h ? { minute: h.minute, t: live.readyT, chance: { kinds: [...h.kinds], dribble: h.dribble, reason: h.reason } } : null;
+    if (done >= N && !live.over) {
+      live.over = true;
+      events.push({ t: FULL_T, minute: 90, kind: "full", side: -1, text: `Full time: ${short(setup.home)} ${score[0]}-${score[1]} ${short(setup.away)}.` });
+      track.meta.scoreAfter = [score[0], score[1]];
+    }
+    events.sort((x, y) => x.t - y.t);
+  };
+  const resolve = (how: "goal" | "missed" | "bench-rate") => {
+    const h = radar.pending;
+    if (!h) return;
+    // Into the unseen match the career's way (resolveHighlight → resolveScenario):
+    // score, momentum and possession move, and the next minutes play from there.
+    resolveHighlight(radar, how);
+    const fr = radar.frames[radar.frames.length - 1];
+    const a = attempts.find((x) => x.outcome === "pending");
+    if (a) {
+      a.outcome = h.result === "goal" ? "goal" : planRng() < 0.5 ? "saved" : "wide";
+      a.text = fr.events[fr.events.length - 1]?.text ?? a.text;
+      if (a.chance) a.chance.result = h.result;
+    }
+    // The rest of that minute is played from where the chance left it.
+    plans[fr.minute - 1] = areaOf(fr, planRng);
+    ticks.set(fr.minute, tickOf(fr));
+    live.waiting = null;
+    advance();
+  };
+  INNER.set(live, { advance, resolve });
+  advance();
+  return live;
+}
+
+/**
+ * Hand your chance's result back: "goal" or "missed" from the real match, or
+ * "bench-rate" (Watch only: the rate a chance falls to whoever is on instead).
+ * The match then carries on, staged up to your next chance.
+ */
+export function resolveSim90Chance(live: Sim90Live, how: "goal" | "missed" | "bench-rate"): void {
+  INNER.get(live)?.resolve(how);
+}
+
+/** The whole match at once, every chance of yours at the bench rate (tests, Watch only). */
+export function simulate90(setup: Sim90Setup): Sim90Live {
+  const live = startSim90(setup);
+  for (let guard = 0; guard < 400 && !live.over; guard++) {
+    if (live.waiting) resolveSim90Chance(live, "bench-rate");
+    else INNER.get(live)?.advance();
+  }
+  return live;
 }
 
 /** Replay seconds → the match clock, "37:12". */

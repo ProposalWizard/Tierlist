@@ -1530,28 +1530,28 @@ export const ADMIN_GUIDES = {
 
   "/star-sim90-dev": {
     title: "Full match (test)",
-    what: "A whole simulated ninety minutes you can watch: 22 men and the ball, from the TV camera. The unseen match the career runs decides everything (who has the ball each minute, where, every shot, corner and goal, and the score); this page only stages it in each club's formation and plays it back.",
+    what: "A whole simulated ninety minutes you can watch: 22 men and the ball. It is played live: the unseen match the career runs plays only up to your next chance, you play that chance, and the rest of the match plays on from how it went (score, momentum, who has the ball). This page stages it in each club's formation.",
     buttons: [
       {
         items: [
-          ["▶ / ❚❚", "Starts and pauses the replay. At full time it becomes ↻ and starts from kick-off."],
+          ["▶ / ❚❚", "Starts and pauses the match. At full time it becomes ↻ and plays it again from kick-off."],
           ["1× 4× 16× 60×", "How fast the match plays. 60× plays all ninety minutes in about a minute and a half."],
           ["↻ (right of the speeds)", "A new match: a different roll of the same fixture."],
-          ["The slider", "Drag to any minute of the match."],
-          ["The radar strip", "The unseen match minute by minute: who has it and where — the same strip the real match shows above the commentary."],
-          ["Match events", "Goals, saves and misses (Show all adds corners and every shot). Tap one to jump just before it."],
-          ["Change", "Pick both clubs and how strong they are. The match is built again."],
-          ["Your chance (no button)", "You watch until the ball reaches you. At each of YOUR chances (home is your side) the replay hands straight over to the real match (2D or 3D, as Settings says), with no question. The replay keeps the unseen match's result whatever you do."],
-          ["Back to the match", "Once the chance is over the replay carries on by itself after 3 seconds (the button counts down). Tap it to go at once, or to leave a chance early."],
-          ["Watch only (don't play my chances)", "Off by default. On: the replay plays straight through your chances."],
+          ["2D | 3D | Radar", "One view, three ways to show it: the TV picture, the 3D picture, or the radar (who has the ball each minute, and where). Only the one you pick is drawn. This device remembers your choice. Default 2D."],
+          ["The slider", "Drag back to any moment already played. You can't jump ahead: the rest hasn't happened yet."],
+          ["Match events", "Goals, saves and misses so far, newest first (Show all adds corners and every shot). Nothing shows before it happens. Tap one to watch it again."],
+          ["Change", "Pick both clubs and how strong they are. The match starts again."],
+          ["Your chance (no button)", "You watch until the ball reaches you. At each of YOUR chances (home is your side) the real match takes over (2D or 3D, as Settings says), with no question. Score it and it's a goal in this match; miss it and it isn't. The rest of the match is played from that score."],
+          ["Back to the match", "Once the chance is over the match carries on by itself after 3 seconds (the button counts down). Tap it to go at once. Leaving a chance early counts as a miss."],
+          ["Watch only (don't play my chances)", "Off by default. On: your chances are settled at the bench rate (how often a chance goes in for whoever plays instead) and the match plays straight on."],
         ],
       },
     ],
-    saving: ["Nothing is saved. Changing a setting builds a new match; leaving the page forgets it. Real squad names come from the league-squads data route; made-up names when it does not answer. The teams swap ends at half-time; keepers dive on saves. The side on the ball looks forward first, runs with it into space and switches play only when its side is shut."],
+    saving: ["Nothing is saved. Changing a setting starts a new match; leaving the page forgets it (the 2D | 3D | Radar choice is the one thing this device keeps). The same match and the same results always play out the same way. Real squad names come from the league-squads data route; made-up names when it does not answer. The teams swap ends at half-time; keepers dive on saves. The side on the ball looks forward first, runs with it into space and switches play only when its side is shut."],
     inGame: [
-      "Nowhere — a test page. The score and the chances are the real unseen match's; the men's positions and passes are made up to show it.",
+      "Nowhere — a test page. The score and the chances are the real unseen match's, with your results fed in the career's way; the men's positions and passes are made up to show it.",
     ],
-    dev: "app/star-sim90-dev/page.tsx · components/star/Sim90View.tsx · lib/star/sim90.ts (runs lib/star/matchRadar.ts, places men with formationShape.ts) · drawn by lib/star/goalClip/render.ts (camera \"match\") · test tests/star/sim90.mts",
+    dev: "app/star-sim90-dev/page.tsx · components/star/Sim90View.tsx, Sim90View3D.tsx · lib/star/sim90.ts (startSim90 / resolveSim90Chance; runs lib/star/matchRadar.ts live, places men with formationShape.ts) · drawn by lib/star/goalClip/render.ts (camera \"match\") · test tests/star/sim90.mts",
   },
 
   "/star-scenario-dev": {
