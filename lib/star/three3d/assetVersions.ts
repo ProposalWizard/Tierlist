@@ -322,6 +322,7 @@ export const ASSET_VERSIONS: Record<string, string> = {
   "/star/star-pass/reward-penalty.webp": "d8c32b46",
   "/star/star-pass/reward-slow-runup.webp": "3d02ecae",
   "/star/star-pass/star-badge.webp": "098bf0ea",
+  "/star/texture-packs/arcade.webp": "c7967b90",
   "/star/texture-packs/bright.webp": "05579763",
   "/star/texture-packs/broadcast.webp": "1a44c952",
   "/star/texture-packs/cartoon.webp": "7d395adb",

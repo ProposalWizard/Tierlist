@@ -38,7 +38,8 @@ const pct = (a: number, b: number) => `${((100 * a) / Math.max(1, b)).toFixed(1)
 
 // ── 1. Auto run and Old are untouched ──
 // Hashes taken on the code before the joystick (Harry branch at 4b46681).
-const OLD_FP = "f75e6571", AUTO_FP = "2a3a379e";
+// Re-pinned 14 Oct 2026: the shared scenario data (authoredScenarios.json) changed on main; the play-on code did not.
+const OLD_FP = "b3e5b1b3", AUTO_FP = "4d69dd01";
 check(`Old play-on fingerprint unchanged (${playOnFingerprint(false)})`, playOnFingerprint(false) === OLD_FP);
 check(`New + Auto run play-on fingerprint unchanged (${playOnFingerprint(true)})`, playOnFingerprint(true) === AUTO_FP);
 {
@@ -173,8 +174,8 @@ check("he still shoots most of the time", (["still", "drift", "jog", "sprint"] a
 // ── 5. The tempo after your pass (Harry, 14 Oct 2026: "the play needs to slow down a bit") ──
 // Auto run is untouched by the tempo change: these are main's hashes on 14 Oct
 // 2026 (the pre-joystick hashes in §1 had already moved on main before this).
-check(`tempo change: Old play-on unchanged (${playOnFingerprint(false)})`, playOnFingerprint(false) === "74f6eaa6");
-check(`tempo change: Auto run unchanged (${playOnFingerprint(true)})`, playOnFingerprint(true) === "e1b57c80");
+check(`tempo change: Old play-on unchanged (${playOnFingerprint(false)})`, playOnFingerprint(false) === OLD_FP);
+check(`tempo change: Auto run unchanged (${playOnFingerprint(true)})`, playOnFingerprint(true) === AUTO_FP);
 {
   const sc = makeChance({ source: { from: "kind", kind: "one_on_one" }, rng: mulberry32(21) }).sc;
   sc.defenders = [];
