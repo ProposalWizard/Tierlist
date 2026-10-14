@@ -142,6 +142,22 @@ export interface EngineFrame {
    * taker's run-up takes (runupStyles.ts). The 3D times its run-up clip off it.
    */
   runup?: { t: number; runS: number } | null;
+  /**
+   * A lead-in replaying (CanvasMatch's `leadIn`: test pages only, never in the
+   * real game). `lock`: how fixed the 2D camera is on the chance's own frame
+   * (0 following the passes .. 1 fixed; lib/star/leadIn.ts leadInCamera).
+   * `ball`, `keeper`, `at` (figure sid → spot): where the chance has them, so a
+   * 3D camera of its own (a tight angle's) fixes on the chance's camera at the
+   * same moment. Absent when no lead-in is playing.
+   */
+  leadIn?: EngineFrameLeadIn | null;
+}
+
+export interface EngineFrameLeadIn {
+  lock: number;
+  ball: Vec2;
+  keeper: Vec2 | null;
+  at: Record<string, Vec2>;
 }
 
 export interface EngineFrameOrders {

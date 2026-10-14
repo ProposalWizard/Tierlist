@@ -15,6 +15,12 @@
  * `leadIn`: recorded positions, no physics; lib/star/statsbombShots.ts
  * leadinTrack), with you receiving the last one; then the shot is yours to
  * play, live, from exactly where the replay ended.
+ *
+ * The camera (Harry, 14 Oct 2026: "maybe do it on the pass and then fixed once
+ * in the 6 yard box"): it follows the passes (the passer and the man it goes
+ * to), then is FIXED on the shot's wide frame once the ball is in the 6-yard
+ * box, or as the replay ends for a shot from further out (lib/star/leadIn.ts
+ * leadInCamera; the box is LEAD_LOCK_AREA).
  */
 import { useCallback, useMemo, useRef, useState } from "react";
 import EnginePlay from "@/components/star/EnginePlay";
@@ -50,15 +56,18 @@ function opponentOf(s: SbShot): string {
   if (!m) return "Them";
   return m[1] === s.team ? m[2] : m[1];
 }
+const OWN_FRAME = { ownFrame: true } as const;
 const short = (n: string) => n.slice(0, 3).toUpperCase();
 
 export default function MovingHighlight({ shot, lead, onClose }: { shot: SbShot; lead: SbLeadin; onClose: () => void }) {
   const frames = useMemo(() => radarFrames(shot, lead), [shot, lead]);
   const [run, setRun] = useState(0);
   /** How far through the lead-in (0..1), and its caption; 1 = the shot is yours. */
-  const [prog, setProg] = useState<{ f: number; text: string; done: boolean }>({ f: 0, text: "", done: false });
+  const [prog, setProg] = useState<{ f: number; text: string; done: boolean; t?: number }>({ f: 0, text: "", done: false });
   const lastSent = useRef({ at: -1, text: "" });
-  const openOn = useMemo(() => () => scenarioForShot(shot), [shot]);
+  // The shot's frame is the Play tab's wide one (every real man within 20 m, the
+  // keeper, the ball and the whole goal), kept by `scene.ownFrame`.
+  const openOn = useMemo(() => () => scenarioForShot(shot, { wideFrame: true }), [shot]);
   const leadIn = useCallback((sc: Scenario): LeadIn => {
     const track = leadinTrack(shot, lead, sc);
     lastSent.current = { at: -1, text: "" };
@@ -69,7 +78,7 @@ export default function MovingHighlight({ shot, lead, onClose }: { shot: SbShot;
         const text = track.captionAt?.(t) ?? "";
         if (!done && text === lastSent.current.text && t - lastSent.current.at < 0.25) return;
         lastSent.current = { at: t, text };
-        setProg({ f: Math.min(1, t / track.durS), text, done });
+        setProg({ f: Math.min(1, t / track.durS), text, done, t });
       },
     };
   }, [shot, lead]);
@@ -107,14 +116,14 @@ export default function MovingHighlight({ shot, lead, onClose }: { shot: SbShot;
         </div>
       </div>
 
-      <div data-caption data-leadin-state={prog.done ? "play" : "leadin"} className="mb-1 text-sm font-black text-emerald-300">{caption}</div>
+      <div data-caption data-leadin-state={prog.done ? "play" : "leadin"} data-leadin-t={(prog.t ?? 0).toFixed(2)} className="mb-1 text-sm font-black text-emerald-300">{caption}</div>
       <div className="mb-1 text-[11px] font-bold">
         {KIND_LABEL[kind] ?? kind} · You are {shot.player}. The real passes first, then it is yours.
         {lead.start ? " Start positions: StatsBomb's 360 frame at the first pass." : " No 360 frame for this move: the others start from their team's shape."}
         {" "}3D | 2D: the button in the match bar.
       </div>
       <Match3DLayer key={`${shot.id}-${run}`}>
-        <EnginePlay seed={7} openOn={openOn} leadIn={leadIn} />
+        <EnginePlay seed={7} openOn={openOn} leadIn={leadIn} scene={OWN_FRAME} />
       </Match3DLayer>
     </div>
   );
