@@ -114,6 +114,10 @@ export interface ShotResult {
   speedAtLine: number | null;
   thumb: Thumb;
   read?: ContactRead;
+  /** The keeper's first touch on it (catch / parry / push / fumble), if any. */
+  save?: E.SaveResult;
+  /** Metres from the goal centre at the strike. */
+  dist?: number;
 }
 
 export interface LabOptions {
@@ -124,6 +128,12 @@ export interface LabOptions {
   afterLaunch?: (ball: E.Ball, sc: E.Scenario, thumb: Thumb, rng: () => number) => void;
   /** The Shots model (null = plain launch, today's game). */
   model?: { pro: boolean; knuckle: boolean } | null;
+  /** The stat the ball is struck with (default: the v0.15 knee, strikingPower). */
+  strikePower?: (stat: number) => number;
+  /** Contact field on (shotFeel.ts). */
+  field?: boolean;
+  /** Shot power's rise share for this real stat (shotFeel.ts feelLift). */
+  lift?: (stat: number) => number;
   /** Shoot THIS served chance (a copy of it) instead of making one of `kind`. */
   scenario?: E.Scenario;
 }
@@ -168,11 +178,16 @@ export function shoot(kind: E.ScenarioKind, seed: number, o: LabOptions = {}): S
   const arrowX = sc.ball.x + dir.x * (sc.ball.y / -dir.y);
   const base = o.skills ?? { power: 65, technique: 65 };
   const withSet = setPieceSkills(base, base.technique, kind);
-  const skills = { ...withSet, power: strikingPower(withSet.power) };
+  const curve = o.strikePower ?? strikingPower;
+  const skills = { ...withSet, power: curve(withSet.power) };
   let read: ContactRead | undefined;
   let ball: E.Ball;
-  if (o.model) {
-    const st = launchShot(sc, dir, thumb.power, thumb.contact, skills, rng, { seed: shotSeedFor(seed, 0) }, o.model, E.launch);
+  let model: { pro: boolean; knuckle: boolean; field?: boolean; lift?: number } | null | undefined = o.model;
+  if (o.field || o.lift) {
+    model = { ...(o.model ?? { pro: false, knuckle: false }), field: !!o.field, lift: o.lift ? o.lift(withSet.power) : 1 };
+  }
+  if (model) {
+    const st = launchShot(sc, dir, thumb.power, thumb.contact, skills, rng, { seed: shotSeedFor(seed, 0) }, model, E.launch);
     ball = st.ball; read = st.read;
   } else ball = E.launch(sc, dir, thumb.power, thumb.contact, skills, rng);
   o.afterLaunch?.(ball, sc, thumb, rng);
@@ -195,7 +210,8 @@ export function shoot(kind: E.ScenarioKind, seed: number, o: LabOptions = {}): S
     onTarget: goal || sc.keeper.saves > 0 || out === "saved" || out === "caught",
     blocked: out === "blocked" || out === "tackled",
     arrowX, ballX: clean?.x ?? null, ballZ: clean?.z ?? null, speedAtLine: clean?.speed ?? null,
-    thumb, read,
+    thumb, read, dist: Math.hypot(sc.ball.x - CX, sc.ball.y),
+    save: (ball.actionLog ?? []).find((a) => a.kind === "save" && a.save && a.save !== "beaten")?.save,
   };
 }
 

@@ -73,6 +73,10 @@ export interface GoalReplay {
     extras?: { powerMult?: number; driftDeg?: number; noKnuckle?: boolean };
     pro: boolean;
     knuckle: boolean;
+    /** Oct 13 (lib/star/shotFeel.ts): contact field on, and the share of
+     *  rise a strike at goal kept under Shot power. Absent = off / 1. */
+    field?: boolean;
+    lift?: number;
   };
 }
 

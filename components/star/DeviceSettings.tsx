@@ -197,6 +197,8 @@ function MatchGroup() {
         <LookRow id="matchRadar" look={look} tabs={NEW_OLD} note="New: a live mini-pitch above the commentary between your chances. Old: the commentary on its own." />
       </div>
       <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
+      {/* The Oct 13 update (shot power, contact field, keepers, team-mates, match feel)
+          is one switch on its test page, /star-update-dev (lib/star/oct13Update.ts). */}
       <PrefRow label="Match view 3D" note="On: your match drawn in 3D, in a full stadium. The football is the same; only the picture changes.">
         <SegTabs className="w-[150px] shrink-0" value={view3d} onChange={(v) => setMatchView3d(v)} tabs={[["on", "On"], ["off", "Off"]] as const} />
       </PrefRow>

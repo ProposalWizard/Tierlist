@@ -65,7 +65,7 @@ import { keeperSaveRadius } from "./canvasEngine";
 import { CX, POST_L, POST_R } from "./pitch";
 import { decidePenaltyRead, penaltyReadFor, type PenaltyReadSettings } from "./penaltyKeeper";
 import { testAreaSetting } from "./compareSwitches";
-import { oldKeepers, oldKeeperPro } from "./gameplayVersion";
+import { oldKeepers, oldKeeperPro, oldKeeperFeel } from "./gameplayVersion";
 import { getTuning } from "./tuningStore";
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
@@ -266,6 +266,8 @@ export interface BrainOptions {
   topCorner?: boolean;
   /** KEEPER PRO on/off for this chance. Absent = Settings → Gameplay → Keeper pro. */
   pro?: boolean;
+  /** KEEPER FEEL on/off (Oct 13; needs pro). Absent = Settings → Gameplay → Keeper feel. */
+  feel?: boolean;
 }
 
 /** The options the match sets a chance up with, on this screen. */
@@ -491,6 +493,8 @@ interface State {
   claimGo: { x: number; y: number; at: number; t: number } | null;
   /** His full standing reach (m) for this shot, read at the strike. */
   fullR: number;
+  // ── KEEPER FEEL (Oct 13) ──
+  feel: boolean;
 }
 
 const states = new WeakMap<Scenario, State>();
@@ -551,8 +555,12 @@ export function brainSetup(sc: Scenario, seed: number, rating: number, opts: Bra
     nextReadT: 0, reads: 0, timingErr: 0, locked: false, diveFloor: ab.diveWindow, penFloor: 1, hopSide: 0, hopAt: null, hopFromX: null, leanAt: null, leanSide: 0, leaned: false, farRead: 0, blocked: 0, wrongRead: false, cutOn: false, shotX: k.x,
     lastShot: false, ownShot: false, lastRecv: null, planted: false, reason: "",
     moveAtT: null, stepAtT: null, diveAtT: null, wrongFooted: false,
-    pro: sc.kind !== "penalty" && (opts.pro ?? !oldKeeperPro()), claimRead: false, claimGo: null, fullR: 2.4,
+    pro: sc.kind !== "penalty" && (opts.pro ?? (!oldKeeperPro() || !oldKeeperFeel())), claimRead: false, claimGo: null, fullR: 2.4,
+    feel: false,
   };
+  // KEEPER FEEL builds on Keeper pro: New plays pro as well.
+  st.feel = st.pro && (opts.feel ?? !oldKeeperFeel());
+  if (st.feel) sc.keeperFeel = true; else delete sc.keeperFeel;
   // KEEPER PRO: the engine's half (resolveKeeperPro, keeperClaimTouch) is
   // switched on by this one flag, and only here. Old leaves the scenario
   // exactly as it was.
@@ -859,13 +867,20 @@ function read(sc: Scenario, st: State, ball: Ball, errScale: number): boolean {
   const far = st.farRead;
   // Vision: his first two reads were made round the bodies in the way.
   const unsighted = st.reads < 2 ? 1 + KEEPER_HUMAN.visionReadErr * st.blocked : 1;
-  const scale = Math.max(errScale, KEEPER_BRAIN.farReadFloor * far) * (1 + KEEPER_BRAIN.farReadErr * far) * unsighted;
+  let scale = Math.max(errScale, KEEPER_BRAIN.farReadFloor * far) * (1 + KEEPER_BRAIN.farReadErr * far) * unsighted;
+  // KEEPER FEEL: the nearer it gets the better he sees it — a ball still a
+  // second away is read as before, one about to arrive far more truly.
+  const Tf = st.feel ? timeToLine(ball, k.y) : 99;
+  if (st.feel) scale *= KEEPER_FEEL_BRAIN.readScale * clamp(KEEPER_FEEL_BRAIN.readNear + KEEPER_FEEL_BRAIN.readPerS * Tf, KEEPER_FEEL_BRAIN.readNear, 1);
   const xEst = xTrue + gauss(st.rng) * st.ab.readErr * scale;
   let off = xEst - k.x;
   // …and once in a while the first one is the wrong way entirely.
   if (st.reads === 0 && st.wrongRead) off = -off;
   const newDir = Math.abs(off) < 0.3 ? 0 : Math.sign(off);
   const short = newDir === 0 ? 0 : newDir * Math.min(0.25, Math.abs(off) * 0.3);
+  // KEEPER FEEL: still on his feet with time in hand, he simply changes his
+  // mind and shuffles back; wrong-footed only once it is nearly on him.
+  if (st.feel && st.locked && newDir !== 0 && newDir !== st.dir && Tf > KEEPER_FEEL_BRAIN.adjustT) st.locked = false;
   if (st.locked && newDir !== 0 && newDir !== st.dir) {
     // Wrong-footed (a curl, a deflection): he can stop, he cannot turn round.
     st.target = k.x;
@@ -1071,7 +1086,11 @@ function brainStepInner(sc: Scenario, ball: Ball | null, dt: number): void {
     }
     const T = timeToLine(ball, k.y);
     const need = Math.abs(st.target - k.x) / ab.diveSpeed;
-    if (T <= need + KEEPER_BRAIN.diveLead + st.timingErr) {
+    // KEEPER FEEL: a ball coming at him (within an arm and a step) is not
+    // dived at: he gets his body behind it and takes it on his feet, at full
+    // standing reach — the "set" save, where a lunge used to cut his reach.
+    const behindIt = st.feel && Math.abs(st.target - k.x) <= KEEPER_FEEL_BRAIN.standWithin;
+    if (!behindIt && T <= need + KEEPER_BRAIN.diveLead + st.timingErr) {
       leaveFeet(sc, st, ball);
       return;
     }
@@ -1083,6 +1102,27 @@ function brainStepInner(sc: Scenario, ball: Ball | null, dt: number): void {
     if (step > 1e-6) k.dive = Math.sign(dx) * 0.35;
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+//  KEEPER FEEL (Oct 13 gameplay update) — on top of Keeper pro
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Measured with Keeper pro alone (scratch harness, keeper 70, shots of under
+// 18 m/s struck straight at him): 13% went in. He read the crossing point with
+// half a metre of error even with a second to look at it, locked his side on
+// two reads, and threw a lunge at the last moment that cut his reach to about
+// 40%. A soft shot at a keeper is his. The engine's half (holding more at the
+// body, fewer parries back into danger) is KEEPER_FEEL in canvasEngine.ts.
+export const KEEPER_FEEL_BRAIN = {
+  /** Read error × readScale × (readNear + readPerS × seconds still to come, capped at 1). */
+  readScale: 0.9,
+  readNear: 0.4,
+  readPerS: 0.9,
+  /** With more than this left (s) he may change his mind instead of being wrong-footed. */
+  adjustT: 0.45,
+  /** A ball crossing within this of him (m) is taken on his feet, not dived at. */
+  standWithin: 0.9,
+};
 
 // ─────────────────────────────────────────────────────────────────────────
 //  GOAL REPLAYS
