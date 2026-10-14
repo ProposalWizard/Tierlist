@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import PageGuide from "@/components/admin/PageGuide";
+import FunTargetsReport from "@/components/star/FunTargetsReport";
 import {
   RadarPitch, MomentumStrip, LiveRadar, RadarFeed, Scoreboard, FullTime, describeArea, handedKinds,
   type RadarSide,
@@ -273,6 +274,7 @@ export default function MatchRadarPage() {
             </Chips>
           </div>
         )}
+        <FunTargetsReport />
       </div>
       <PageGuide page="/star-radar-dev" />
     </div>
