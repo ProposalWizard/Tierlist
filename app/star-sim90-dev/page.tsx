@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import PageGuide from "@/components/admin/PageGuide";
 import Sim90View from "@/components/star/Sim90View";
+import Sim90View3D from "@/components/star/Sim90View3D";
 import { LiveRadar } from "@/components/star/MatchRadar";
 import { simulate90, clockOf, FULL_T, type Sim90, type Sim90Event } from "@/lib/star/sim90";
 import { PREMIER_LEAGUE_CLUBS, CLUB_SHORT_NAMES } from "@/lib/star/clubs";
@@ -48,6 +49,7 @@ export default function FullMatchPage() {
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(16);
   const [showSetup, setShowSetup] = useState(false);
   const [onlyBig, setOnlyBig] = useState(true);
+  const [view3d, setView3d] = useState(false);
   const tRef = useRef(0);
   tRef.current = t;
 
@@ -135,7 +137,8 @@ export default function FullMatchPage() {
 
         {/* The picture */}
         <div style={{ marginTop: 8, position: "relative" }}>
-          {sim ? <Sim90View track={sim.track} t={t} /> : (
+          {sim && <View3DSwitch on={view3d} onChange={setView3d} />}
+          {sim ? (view3d ? <Sim90View3D track={sim.track} t={t} /> : <Sim90View track={sim.track} t={t} />) : (
             <div style={{ height: 220, borderRadius: 12, display: "grid", placeItems: "center", background: "rgba(255,255,255,0.04)", color: MUTED, fontWeight: 800 }}>
               Building the match…
             </div>
@@ -249,6 +252,25 @@ function ClubRow({ label, club, strength, onClub, onStrength }: {
       </select>
       <input type="range" min={50} max={95} value={strength} onChange={(e) => onStrength(Number(e.target.value))}
         style={{ width: "100%", accentColor: "#38bdf8" }} />
+    </div>
+  );
+}
+
+/** 2D | 3D: how the replay is drawn (default 2D). */
+function View3DSwitch({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div data-sim90-view-switch style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
+      <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)" }}>
+        {(["2D", "3D"] as const).map((k) => {
+          const sel = (k === "3D") === on;
+          return (
+            <button key={k} data-sim90-view-mode={k} onClick={() => onChange(k === "3D")} style={{
+              width: 48, height: 30, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 900,
+              background: sel ? "rgba(56,189,248,0.25)" : "rgba(255,255,255,0.03)", color: sel ? "#e0f2fe" : MUTED,
+            }}>{k}</button>
+          );
+        })}
+      </div>
     </div>
   );
 }
