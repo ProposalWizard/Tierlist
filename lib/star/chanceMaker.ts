@@ -49,7 +49,7 @@ import {
   type Scenario, type ScenarioKind, type Vec2,
 } from "./canvasEngine";
 import { kindsForZone, type ScenarioRequest, type Zone } from "./hiddenMatch";
-import { EVEN_KIND_MIX, EVEN_KINDS, newKindBag, nextEvenKind, guardedDeal, noteDealt } from "./kindMix";
+import { EVEN_KIND_MIX, EVEN_KINDS, newKindBag, nextEvenKind, guardedDeal, guardAllows, noteDealt } from "./kindMix";
 import { newChancesOn } from "./newChances";
 import { selectChance, newSelectionMemory, FREQ, type SelectionMemory } from "./scenarioSelect";
 import { applyChancePlan, type ChancePlan } from "./chanceFormula";
@@ -845,6 +845,28 @@ export function drawnKindFor(kind: ScenarioKind): ScenarioKind {
 }
 
 /**
+ * New only: at most this many crosses and cutbacks TOGETHER in any 8 chances
+ * (on top of the per-kind guard), and a lighter weight. Harry, 14 Oct 2026: "there's probably a bit
+ * too much crossing and cutbacks right now" — New dealt them 32.9% of open
+ * play against Old's 26.8% (tests/star/chanceJudge.mts, 40 matches). While the
+ * cap is reached, a cross is swapped for the zone's other kinds, then the
+ * zones either side (as the guard already does).
+ */
+export const NEW_CROSS_MAX_IN_8 = 2;
+/** Their weight in the deal next to the other kinds (the radar's own = 1),
+ *  so the cap is reached less often and fewer chances have to leave the zone. */
+export const NEW_CROSS_WEIGHT = 0.6;
+const CROSS_KINDS: ReadonlySet<ScenarioKind> = new Set<ScenarioKind>(["byline_cross", "cutback"]);
+/** Copies are the deal's weights: every kind ×10, a cross or cutback ×10·weight. */
+function weighCrosses(ks: readonly ScenarioKind[]): ScenarioKind[] {
+  const n = Math.round(10 * NEW_CROSS_WEIGHT);
+  return ks.flatMap((k) => Array<ScenarioKind>(CROSS_KINDS.has(k) ? n : 10).fill(k));
+}
+function crossesCapped(dealt: readonly ScenarioKind[]): boolean {
+  return dealt.slice(-7).filter((k) => CROSS_KINDS.has(k)).length >= NEW_CROSS_MAX_IN_8;
+}
+
+/**
  * New: the kind for a request, and the side it goes on. Open play is dealt
  * from the radar's own weighted kinds (request.kinds: weightKinds' copies)
  * with the guard (never twice in a row, at most 2 of a kind in any 8); a set
@@ -867,7 +889,18 @@ function newRequestKind(
   const zi = ZONES.indexOf(req.zone);
   const near = [ZONES[zi + 1], ZONES[zi - 1]].filter((z): z is Zone => !!z);
   const wider = [zoneKinds(req.zone), Array.from(new Set(near.flatMap(zoneKinds)))];
-  return { kind: guardedDeal(swap(offered), wider, mem?.dealt ?? [], rng), side };
+  const dealt = mem?.dealt ?? [];
+  const off = weighCrosses(swap(offered)), wid = wider.map(weighCrosses);
+  if (crossesCapped(dealt)) {
+    const noCross = (ks: ScenarioKind[]) => ks.filter((k) => !CROSS_KINDS.has(k));
+    const offC = noCross(off), widC = wid.map(noCross);
+    // The cap gives way to the kind guard: it bites only while something that
+    // is not a cross still passes the guard.
+    if ([offC, ...widC].some((ks) => ks.some((k) => guardAllows(k, dealt)))) {
+      return { kind: guardedDeal(offC, widC, dealt, rng), side };
+    }
+  }
+  return { kind: guardedDeal(off, wid, dealt, rng), side };
 }
 
 /**
