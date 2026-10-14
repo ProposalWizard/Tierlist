@@ -447,7 +447,7 @@ if (isMain) {
         nV++;
         const before = keepInBowl(centreOnPivot(tl, b, sh, W, H), b, sh, W, H); // the camera before this change
         if (goal) { nG++; if (!goalMouthOnScreen(o, W, H)) { goalLost++; lostAt.push(`${kind}#${c.seed} ${d}°/${t}°`); } if (!goalMouthOnScreen(before, W, H)) oldLost++; }
-        if (pitchOnScreen(before, W, H) < 0.65) oldShort++;
+        if (pitchOnScreen(before, W, H) < 0.6) oldShort++;
         // the screen's bottom edge stays on the grass (within 2 m of a stand's front): past it, that stand's roof
         // is drawn over the picture (the turned stills of 13 Oct 2026 had their bottom 40% under one); and the
         // camera keeps a real 3D angle (not near top-down)
@@ -483,7 +483,7 @@ if (isMain) {
         const p = pitchOnScreen(o, W, H) - rNew;
         minPitch = Math.min(minPitch, p);
         if (p < 0.5) p70++;
-        if (p < 0.65) { pitchShort++; short.push(`${kind}#${c.seed} ${d}°/${t}° ${(p * 100).toFixed(0)}%`); }
+        if (p < 0.6) { pitchShort++; short.push(`${kind}#${c.seed} ${d}°/${t}° ${(p * 100).toFixed(0)}%`); }
         const bp = bcProject(o, W, H, b);
         if (!(bp.depth > 0.3 && Math.abs(bp.nx) <= 0.9 && bp.fr >= 0.1 && bp.fr <= limit + 1e-3)) ballBad++;
         if (o.D < tl.D * 0.85 - 1e-6) closer++;
@@ -507,7 +507,7 @@ if (isMain) {
     ok(untouched === 0, "turned framing: the default camera (no turn, no tilt) is untouched");
     ok(nG > 0 && goalLost <= Math.ceil(nG * 0.02), `turned framing: the whole goal mouth (both posts, bar and net foot) on screen in the turned/tilted views of a chance whose own camera shows it, all but at most 2% (the rest would need the men at dot size, FRAME_TURNED.maxD) (${nG} views, ${goalLost} lost${lostAt.length ? ": " + lostAt.join(", ") : ""}; before: ${oldLost})`);
     // Harry, 14 Oct 2026: the pitch is the main thing (fans and boards at an edge are fine, the roof never)
-    ok(pitchShort <= Math.ceil(nV * 0.01) && minPitch >= 0.4, `turned framing: at least 65% of the screen is pitch in ${nV - pitchShort} of ${nV} views (before: ${nV - oldShort}; lowest ${(minPitch * 100).toFixed(0)}%${short.length ? "; under: " + short.join(", ") : ""})`);
+    ok(pitchShort <= Math.ceil(nV * 0.01) && minPitch >= 0.4, `turned framing: the pitch is the main thing: at least 60% of the screen in ${nV - pitchShort} of ${nV} views (before: ${nV - oldShort}; lowest ${(minPitch * 100).toFixed(0)}%${short.length ? "; under: " + short.join(", ") : ""})`);
     ok(roofBad === 0 && roofOld > 0.05, `turned framing: no stand roof on the screen (largest ${(roofNew * 100).toFixed(1)}% of it; with the old clip a roof covered up to ${(roofOld * 100).toFixed(0)}%, and counts as off the pitch)`);
     console.log(`  turned framing: the screen's bottom edge out over a stand's seats in ${overSeats} views (before: ${oldOver}); their roofs are not drawn (above)`);
     ok(steep === 0, `turned framing: never pushed towards top-down: at most ${FRAME_TURNED.elevCap}° down (or the stadium's own lift) (${steep} steeper; worst ${maxElevT.toFixed(1)}° over)`);

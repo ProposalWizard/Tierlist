@@ -779,7 +779,7 @@ export const FRAME_TURNED = {
   /** Room at the screen's edges round the goal's posts and bar, share of the half-screen. */
   margin: 0.05,
   /** Least share of the screen that is pitch (grass inside the lines, the goal): the main thing (Harry, 14 Oct 2026; a strip of fans and boards is fine). */
-  pitchMin: 0.7,
+  pitchMin: 0.65,
   /** Where the ball may sit: |nx| at most this, at least `ballTop` down (and the drag room below). */
   ballNx: 0.88,
   ballTop: 0.12,
