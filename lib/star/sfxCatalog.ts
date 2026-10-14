@@ -9,8 +9,8 @@
  * `wired` says whether the game plays this sound today. The UI sounds play
  * through lib/star/sfx.ts; the kick, net, keeper and stadium-roar files and
  * the commentator lines play in goal videos (lib/star/goalClip/audio.ts). The
- * live match still uses its own synthesised sounds (lib/star/matchSound.ts),
- * and the whistles, the small-ground cheer and the groan are not played yet.
+ * live match plays the match-pass/-goal/-crowd files and makes the rest in
+ * code (lib/star/matchSound.ts), and the whistles, the small-ground cheer and the groan are not played yet.
  *
  * Pure data — no browser or server imports — so both sides can use it.
  */
@@ -34,6 +34,9 @@ export const SFX_CATALOG: SfxCatalogEntry[] = [
   { name: "kick-hard", label: "A struck shot", group: "The match", wired: true, where: "In goal videos in the feed (and a saved video). The live match still makes its own sound." },
   { name: "goal-net", label: "Ball hits the back of the net", group: "The match", wired: true, where: "In goal videos in the feed (and a saved video). The live match still makes its own sound." },
   { name: "keeper-save", label: "Keeper catches or parries", group: "The match", wired: true, where: "In goal videos in the feed (and a saved video). The live match still makes its own sound." },
+  { name: "match-pass", label: "Live match: a pass or a team-mate's kick", group: "The match", wired: true, where: "In the live match when a team-mate passes, lays it off or shoots (Arcade set, made by scripts/sfx/arcade.py)." },
+  { name: "match-goal", label: "Live match: goal sting", group: "The match", wired: true, where: "In the live match the moment your team scores, with the net and the crowd." },
+  { name: "match-crowd", label: "Live match: crowd swell", group: "The crowd", wired: true, where: "In the live match after your goal or their miss, and on Ballon d'Or night." },
   { name: "crowd-cheer-small", label: "Goal at a small non-league ground", group: "The crowd", wired: false, where: "Not played yet. The match makes its own crowd noise." },
   { name: "crowd-cheer-stadium", label: "Goal in a big stadium", group: "The crowd", wired: true, where: "In goal videos in the feed (and a saved video). The live match still makes its own sound." },
   { name: "crowd-groan", label: "A near miss or a save", group: "The crowd", wired: false, where: "Not played yet. The match makes its own crowd noise." },

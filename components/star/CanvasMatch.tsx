@@ -65,7 +65,7 @@ import {
 } from "@/lib/star/matchCommentary";
 import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
-  playStrike, playThud, playClang, playGlove,
+  playStrike, playThud, playClang, playGlove, playGoalSting,
 } from "@/lib/star/matchSound";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
 import { goalZone, passGrade, missKind } from "@/lib/star/chanceRating";
@@ -140,6 +140,7 @@ import {
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
 import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
 import { useFitWidth } from "./useFitWidth";
+import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, assistFor, noteMatePlays, probeMatePlays, type CreditDelta, type MatePlay } from "@/lib/star/credit";
 import { matchTeamStrength } from "@/lib/star/matchday";
@@ -764,7 +765,7 @@ function countedRng(seed: number, counter: { current: number }): () => number {
 /** useLayoutEffect in the browser, useEffect on the server (no warning). */
 const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-/** How long "PASS" / "GOAL" stays on screen after the action. */
+/** When BACK TO YOU follows a PASS (ms). PASS itself is up 0.7 s (ArcadeBanner.tsx), so it pops fresh. */
 const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
@@ -2374,16 +2375,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // Whose goal it was, while the result is up (they celebrate). Picture only.
   const goalSideRef = useRef<"us" | "them" | null>(null);
   // Action banner ("PASS" / "GOAL") and how long it stays up.
-  const [actionBanner, setActionBanner] = useState<string | null>(null);
-  const actionBannerTextRef = useRef<HTMLDivElement>(null);
+  // Arcade pop (Harry, 14 Oct 2026): its own file, its own clock (ArcadeBanner.tsx).
+  const arcade = useArcadeBanner();
   const offsideBannerTextRef = useRef<HTMLDivElement>(null);
-  const bannerTimerRef = useRef<number | null>(null);
   const showAction = useCallback((text: string) => {
     if (sceneRef.current?.banners === false) return;
-    setActionBanner(text);
-    if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
-    bannerTimerRef.current = window.setTimeout(() => setActionBanner(null), ACTION_BANNER_MS);
-  }, []);
+    arcade.show(text, bannerSideNow());
+  }, [arcade.show]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Cosmetic FX state (never touches physics) ---
   const reducedMotionRef = useRef(false);
@@ -2918,6 +2916,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
   /** A pitch point -> where it is on the glass (client px). The inverse of
    *  pitchFromPointer, turn and tilt and all. */
+  /** The banner goes to the half of the pitch the ball is NOT in (Arcade pop). 3D: above the play. */
+  const bannerSideNow = (): BannerSide => {
+    try {
+      if (frameObsRef.current?.hide2D) return "top3d";
+      const r = wrapRef.current?.getBoundingClientRect();
+      if (!r || !(r.height > 0)) return "top";
+      const q = pitchToClient(ballRef.current ? ballRef.current.pos : scenarioRef.current.ball);
+      return (q.y - r.top) / r.height < 0.5 ? "bottom" : "top";
+    } catch { return "top"; }
+  };
   const pitchToClient = (p: { x: number; y: number }) => {
     const vp = viewportRef.current, b = canvasBox(), f = facingRef.current;
     const fx = (p.x - vp.x1) / (vp.x2 - vp.x1), fy = (p.y - vp.y1) / (vp.y2 - vp.y1);
@@ -6129,6 +6137,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     } else if (kind === "goal") {
       showAction("GOAL");
       spawnGoalFx();
+      playGoalSting();
       playNet();
       playCrowdSwell("cheer");
     } else if (res === "tackled" || res === "blocked") {
@@ -8682,7 +8691,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // The big banner words fit the pitch they are on: on the phone's Kickabout
   // pitch (~226 px) a 48 px "DEFLECTED" ran off both edges. Only ever shrinks —
   // a word that already fits keeps its size (useFitWidth.ts).
-  useFitWidth(actionBannerTextRef, actionBanner);
   useFitWidth(offsideBannerTextRef, phase === "result" && outcome === "offside");
 
   // ── The sandbox's live commentary and the situation hint ──
@@ -9057,21 +9065,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           />
         )}
 
-        {/* Action banner — the moment an action actually completes. "PASS" when
-            a team-mate brings your ball under control, "GOAL" when it goes in.
-            Sits high so it never covers the strike itself. */}
-        {actionBanner && (
-          <div className="absolute inset-x-0 top-[18%] flex items-center justify-center pointer-events-none z-20">
-            <div
-              ref={actionBannerTextRef}
-              className={`kib-pop text-5xl font-black italic tracking-wider drop-shadow-[0_3px_10px_rgba(0,0,0,0.95)] ${
-                actionBanner === "GOAL" ? "text-emerald-300" : "text-cyan-200"
-              }`}
-            >
-              {actionBanner}
-            </div>
-          </div>
-        )}
+        {/* Action banner — Arcade pop (ArcadeBanner.tsx). Over the commentary
+            too, so a cut away never cuts it short. */}
+        <ArcadeBanner item={arcade.item} />
 
         {/* Outcome. Deliberately NOT announced for anything the pitch already
             shows you — the ball in the net, off the post, wide, in the keeper's
