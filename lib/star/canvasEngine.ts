@@ -24,6 +24,7 @@ import {
 // Re-exported so a test that imports the engine flips the SAME switch the
 // engine reads (a node test can load this file and ballPhysics.ts twice).
 export { setBallPhysics, realBallOn } from "./ballPhysics";
+import { gameplayVersion } from "./gameplayVersion";
 
 export interface Vec2 { x: number; y: number; }
 export interface Viewport { x1: number; x2: number; y1: number; y2: number; }
@@ -176,6 +177,9 @@ export interface Ball {
   loose: boolean;      // true once the ball has been parried/deflected and is a live rebound
   contactCd: number;   // seconds of immunity from another deflection/save (prevents same-frame re-trigger)
   receiverControlT: number; // seconds a teammate spends controlling a received pass before shooting
+  /** Team-mate shots (Oct 13, Settings → Gameplay): seconds he may still run
+   *  on with it before the touch and the shot. Absent/0 = he does not carry. */
+  carryT?: number;
   event: BallEvent | null;  // one-shot flag for the UI to narrate, cleared once read
   inNet: boolean;      // crossed the line — the UI keeps animating it into the netting
   /**
@@ -604,6 +608,14 @@ export interface Scenario {
    * keeperClaimTouch) called only when this is true.
    */
   keeperPro?: boolean;
+  /**
+   * KEEPER FEEL (Oct 13 gameplay update, Settings → Gameplay → Keeper feel).
+   * Set only by the keeper brain, only alongside keeperPro. In
+   * resolveKeeperPro it swaps two numbers (KEEPER_FEEL): he holds more of
+   * what comes at his body, and fewer parries drop back into danger. Absent:
+   * resolveKeeperPro is exactly as before.
+   */
+  keeperFeel?: boolean;
   /**
    * REAL SHOTS TEST PAGE ONLY (/star-statsbomb-dev, lib/star/statsbombShots.ts).
    * True = the keeper starts where the picture put him (a real StatsBomb
@@ -3605,6 +3617,56 @@ function relayShouldGoNow(scenario: Scenario, target: Runner, ballAt: Vec2, q: n
   const lookT = 0.08 + 0.22 * q;                 // how far ahead he reads it
   const yAhead = target.pos.y + vy * lookT;
   return yAhead < secondLast + 0.3 && target.pos.y >= secondLast - OFFSIDE_EPS && yAhead < ballAt.y;
+}
+
+/**
+ * TEAM-MATE SHOTS (Oct 13 gameplay update; Settings → Gameplay → Team-mate
+ * shots). Measured before (scratch harness, 400 passes a kind): a team-mate
+ * put through on goal struck it where he received it — through balls from a
+ * median 25 m, 87% of them from 22 m+, with nobody near him. A man in space
+ * runs on with it: toward goal at a run, until he is MATE_CARRY.until out, a
+ * defender is on him, the keeper comes, or MATE_CARRY.maxT runs out. Then
+ * his usual touch (shortened) and shot. Old: never set, never runs.
+ */
+export const MATE_CARRY = {
+  /** Only a man who receives it further out than this (m from the goal centre). */
+  from: 18,
+  /** He shoots once he is this close (m). */
+  until: 13.5,
+  /** Running with the ball (m/s). */
+  speed: 6.2,
+  /** At most this long on the ball (s). */
+  maxT: 1.8,
+  /** A defender this close and not behind him stops the run (m). */
+  threatR: 2.6,
+  /** The keeper this close stops it (m). */
+  keeperR: 5,
+  /** The touch left before the shot once he stops (s). */
+  touchT: 0.15,
+};
+
+function stepMateCarry(ball: Ball, scenario: Scenario, dt: number): boolean {
+  const stop = () => { ball.carryT = 0; ball.receiverControlT = Math.min(ball.receiverControlT, MATE_CARRY.touchT); return false; };
+  const C = MATE_CARRY;
+  const at = ball.pos;
+  if (Math.hypot(at.x - CX, at.y) <= C.until || relayTargetFor(scenario) || relayFollowerTargetFor(scenario)) return stop();
+  // Toward goal, drifting in toward the middle.
+  const dir = normalize({ x: (CX - at.x) * 0.65, y: -at.y });
+  for (const d of scenario.defenders) {
+    const fx = d.x - at.x, fy = d.y - at.y;
+    if (fx * dir.x + fy * dir.y > -0.5 && Math.hypot(fx, fy) < C.threatR) return stop();
+  }
+  const k = scenario.keeper;
+  if (Math.hypot(k.x - at.x, k.y - at.y) < C.keeperR) return stop();
+  const step = C.speed * dt;
+  ball.pos = { x: at.x + dir.x * step, y: at.y + dir.y * step };
+  ball.z = 0.11;
+  const r = scenario.receivedBy;
+  if (r) r.pos = { x: r.pos.x + dir.x * step, y: r.pos.y + dir.y * step };
+  scenario.receivedAt = { x: ball.pos.x, y: ball.pos.y };
+  ball.carryT = Math.max(0, (ball.carryT ?? 0) - dt);
+  if (ball.carryT <= 0) return stop();
+  return true;
 }
 
 /** Is the man he was told to find offside right now? (The same test as offsideSnapshot.) */
@@ -6631,6 +6693,19 @@ export const KEEPER_PRO = {
   nutmegZ: 0.3, nutmegR: 0.4, nutmeg: [0.16, 0.05] as [number, number],
 };
 
+/**
+ * KEEPER FEEL (Oct 13): the two KEEPER_PRO numbers Scenario.keeperFeel swaps.
+ * Measured with Keeper pro alone: a soft shot (< 18 m/s) at a 40's body was
+ * held in only 41% of its saves, and 70% of a 40's parries fell back into the
+ * six-yard area. Numbers and before/after: tests/star/gameplay13.mts.
+ */
+export const KEEPER_FEEL = {
+  /** Held: a 40-rated keeper keeps this share of KEEPER_PRO's hold chance, a 95 this. */
+  holdRating: [0.78, 1.0] as [number, number],
+  /** A live parry that drops back in front of goal: 40-rated → 95-rated. */
+  danger: [0.5, 0.3] as [number, number],
+};
+
 /** How far his body may finish from where he saved it (m): an arm and a shoulder at full stretch. */
 export const KEEPER_PRO_HAND = 1.0;
 
@@ -6693,7 +6768,8 @@ function resolveKeeperPro(ball: Ball, scenario: Scenario, dist: number, reach: n
     : z <= P.holdBand[1] ? 1
     : z <= 2.0 ? P.holdHigh : P.holdOverhead;
   const body = clamp((P.holdBody[1] - Math.abs(ball.pos.x - k.x)) / (P.holdBody[1] - P.holdBody[0]), 0, 1);
-  const rate = P.holdRating[0] + (P.holdRating[1] - P.holdRating[0]) * g;
+  const hr = scenario.keeperFeel ? KEEPER_FEEL.holdRating : P.holdRating;
+  const rate = hr[0] + (hr[1] - hr[0]) * g;
   const pHold = Math.min(P.holdMax, pace * height * (0.1 + 0.9 * body) * rate);
   if (rng() < pHold) return hold();
 
@@ -6708,7 +6784,8 @@ function resolveKeeperPro(ball: Ball, scenario: Scenario, dist: number, reach: n
   // ── Parried, still live ── most go wide, away from goal, the way the ball
   // was travelling; a share drop short in front of him (the rebound a
   // striker follows in for).
-  const dangerous = rng() < P.danger[0] + (P.danger[1] - P.danger[0]) * g;
+  const dg = scenario.keeperFeel ? KEEPER_FEEL.danger : P.danger;
+  const dangerous = rng() < dg[0] + (dg[1] - dg[0]) * g;
   const side = Math.sign(ball.vel.x) || Math.sign(ball.pos.x - k.x) || (rng() < 0.5 ? -1 : 1);
   let dir: Vec2, sp: number;
   if (dangerous) {
@@ -7018,6 +7095,8 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   // A teammate is controlling a pass they've just received — hold the ball, then
   // strike it. Unless he was told to do something else with it: see relayTargetFor.
   if (ball.receiverControlT > 0) {
+    // Team-mate shots (Oct 13): a man in space carries it on toward goal first.
+    if (ball.carryT && stepMateCarry(ball, scenario, dt)) return null;
     ball.receiverControlT = Math.max(0, ball.receiverControlT - dt);
     if (ball.receiverControlT <= 0) {
       const relay = relayTargetFor(scenario);
@@ -7477,6 +7556,10 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
               // A lay-off on your orders: a good passer takes a quicker touch.
               ball.receiverControlT = (relay || followerRelay) ? relayControlT(passerQuality(scenario)) : RECEIVER_CONTROL_T;
               ball.event = "received";
+              // Team-mate shots (Oct 13; Old: never). Read once, here.
+              ball.carryT = !relay && !followerRelay && scenario.receiver && goalInView(scenario.kind)
+                && Math.hypot(tgt.x - CX, tgt.y) > MATE_CARRY.from && gameplayVersion("mateShots") === "new"
+                ? MATE_CARRY.maxT : 0;
             }
           }
           return null;

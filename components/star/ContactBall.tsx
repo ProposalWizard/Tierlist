@@ -67,6 +67,10 @@ interface Props {
   grades?: boolean;
   /** A hard strike through the dead centre knuckles (only with `grades`). */
   knuckles?: boolean;
+  /** Contact field on (lib/star/shotFeel.ts, Oct 13): a faint guide on the
+   *  ball — the up/down lines fade out toward the sides, where a strike is a
+   *  low curler. Absent: exactly the old screen. */
+  field?: boolean;
 }
 
 /** How long "TOO SLOW" shows before the scuffed kick is taken. */
@@ -77,7 +81,7 @@ const TOO_SLOW_MS = 350;
 export const STRIKE_ZONE_R = 1.18;
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, hold = false, grades = false, knuckles = false }: Props) {
+export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, hold = false, grades = false, knuckles = false, field = false }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
@@ -181,8 +185,8 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
     locked.current = true;
     setSpark({ left: r + cx * r, top: r + cy * r });
     if (grades) {
-      const g = gradeContact({ cx, cy }, power, knuckles);
-      if (g.label) setGraded({ label: g.label, good: g.grade === "clean" || g.grade === "knuckle" });
+      const g = gradeContact({ cx, cy }, power, knuckles, field);
+      if (g.label) setGraded({ label: g.label, good: g.grade === "clean" || g.grade === "knuckle" || g.label === "CURLER" });
     }
     // A graded strike holds a beat longer so the verdict can be read.
     const air = motion === "float" || motion === "bounce";
@@ -379,6 +383,27 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
             draggable={false}
             className="relative w-full h-full object-cover rounded-full select-none pointer-events-none"
           />
+
+          {/* Contact field guide (Oct 13): height lines that fade out toward
+              the sides, and a curl mark at each edge. One faint layer. */}
+          {field && (
+            <svg data-contact-field className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
+              <defs>
+                <linearGradient id="kibFieldFade" x1="0" x2="1" y1="0" y2="0">
+                  <stop offset="0" stopColor="#fff" stopOpacity="0" />
+                  <stop offset="0.3" stopColor="#fff" stopOpacity="0.55" />
+                  <stop offset="0.7" stopColor="#fff" stopOpacity="0.55" />
+                  <stop offset="1" stopColor="#fff" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {[-0.5, 0, 0.5].map((y) => (
+                <line key={y} x1={-Math.sqrt(1 - y * y)} x2={Math.sqrt(1 - y * y)} y1={y} y2={y}
+                  stroke="url(#kibFieldFade)" strokeWidth="0.025" strokeDasharray="0.06 0.05" />
+              ))}
+              <path d="M -0.86 -0.28 Q -0.98 0 -0.86 0.28" fill="none" stroke="#fde047" strokeOpacity="0.7" strokeWidth="0.04" strokeLinecap="round" />
+              <path d="M 0.86 -0.28 Q 0.98 0 0.86 0.28" fill="none" stroke="#fde047" strokeOpacity="0.7" strokeWidth="0.04" strokeLinecap="round" />
+            </svg>
+          )}
 
           {/* The countdown again, as a ring round the ball itself — where
               your eyes (and thumb) already are. Drains clockwise from the top. */}

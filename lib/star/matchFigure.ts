@@ -54,6 +54,9 @@ export interface MatchFigureSpec {
   keeper?: KeeperPose;
   /** Given: the baked 3D figure to draw instead, in the new view. */
   sprite?: MatchSpriteHint;
+  /** Match feel: New — px the 3D figure is lifted off its shadow on top of
+   *  everything else (a keeper's set hop, the flight of his dive). Looks only. */
+  extraLiftPx?: number;
 }
 
 /** Off-screen scratch canvases for the outline, reused for every figure. */
@@ -99,7 +102,7 @@ export function drawMatchFigure(
   // air (a wall jumping) is lifted off his shadow; a keeper's dive is in the
   // clip itself.
   if (spec.sprite && matchPlayersLook() === "3d") {
-    const lift = spec.keeper ? 0 : Math.max(0, spec.opts.liftPx ?? 0);
+    const lift = (spec.keeper ? 0 : Math.max(0, spec.opts.liftPx ?? 0)) + Math.max(0, spec.extraLiftPx ?? 0);
     const height = r * FIGURE_HEIGHT_R * SPRITE_HEIGHT_K;
     const tilt = spec.sprite.tilt ?? 0;
     if (tilt) { ctx.save(); ctx.translate(x, groundY - lift); ctx.rotate(tilt); ctx.translate(-x, -(groundY - lift)); }

@@ -1189,6 +1189,33 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-anim3d-dev/page.tsx · lib/star/style3d/animGrid3d.ts (the tiles: one WebGL canvas, one tile each via scissor) · the clips: public/star/anims3d/{football,mocap}.glb through lib/star/three3d/footballAnims.ts · the camera numbers: lib/star/style3d/broadcastCam.ts (BROADCAST) · the match drawing: lib/star/style3d/engineView.ts. Filming: window.__frameStep.",
   },
+  "/star-update-dev": {
+    title: "Oct 13 update",
+    what: "The whole Oct 13 gameplay update behind one Old | New switch: shot power, the contact field (strike the side of the ball to curl it low), keepers, team-mates shooting, and match feel. Each part also has its own row.",
+    buttons: [
+      { group: "Top", items: [
+        ["‹ Play Area", "Back to the Play Area."],
+      ] },
+      { group: "The whole update", items: [
+        ["New / Old", "Flips every part at once, on this phone. New also plays in your real career matches on this phone. Starts on Old."],
+        ["Play your career → / Play Area →", "Opens the real game or the Play Area to try it."],
+      ] },
+      { group: "Each part", items: [
+        ["New / Old on each row", "One part on its own. If they don't all match, the big switch shows Mixed. The last three rows are v0.15 parts the update was measured with; they also sit in Settings → Match (New in v0.15)."],
+      ] },
+      { group: "Match feel", items: [
+        ["The feel card", "The Match feel pictures, sounds and sliders, the same as on the Animations page."],
+      ] },
+    ],
+    saving: [
+      "This phone only, instantly. Nobody else's game changes.",
+    ],
+    inGame: [
+      "Every real match on this phone plays the parts set to New.",
+      "There is no row for this in Settings: the switch lives here until the update is decided (Harry, 12 Oct 2026).",
+    ],
+    dev: "app/star-update-dev/page.tsx · lib/star/oct13Update.ts (the switch) · rows in lib/star/lookRows.ts · physics in lib/star/shotFeel.ts, keeperBrain.ts, canvasEngine.ts (KEEPER_FEEL, MATE_CARRY) · feel in lib/star/matchFeel.ts · tests/star/gameplay13.mts, matchFeel.mts.",
+  },
   "/star-animations-dev": {
     title: "Animations",
     what: "Every New player animation (keeper saves, touches, shots, passes, headers, blocks, clearances) looping next to how the Old game drew that moment, with the dials and switches that size them.",
@@ -1203,6 +1230,13 @@ export const ADMIN_GUIDES = {
         ["vs Old game / vs First version", "What the left picture of each card shows: the Old game, or the first New version from before the strikes were made bigger."],
         ["1× / ½× / ¼×", "Playback speed."],
         ["❚❚ Pause / ▶ Play", "Stops every animation. While paused, the slider steps through the frames."],
+      ] },
+      { group: "Match feel", items: [
+        ["New / Old", "The same switch as Match feel on the Oct 13 update page (/star-update-dev), on this phone. New: every hit is felt (wind-up, a short freeze at the contact, flash and turf, camera punch, ball squash and streak, deeper kick sound, phone buzz), plus landing thuds, the net bulging, post clangs, glove sparks and a keeper who hops and arcs his dive. Old: the game as before. Default Old."],
+        ["The six picture rows", "Your strike, a glove save, a landing, the net bulge, a ball off the post and the keeper's hop and dive, each at soft · medium · full power, painted with the match's own drawing at 0.6× speed."],
+        ["▶ Soft kick / Full kick + buzz / Scuff / Thud / Glove / Clang", "Plays that sound once (and the buzz, on a phone that has one)."],
+        ["The sliders", "How big each effect is: freeze ms, wind-up ms, camera punch px, flash, streak length, squash, sound loudness, buzz ms, landing, net bulge, keeper motion, glove spark, team-mate moves. Saved on this phone at once; the match reads them every frame."],
+        ["Reset feel to defaults", "Every feel slider back to the shipped value."],
       ] },
       { group: "3D figures", items: [
         ["→ ↘ ↓ ↙ ← ↖ ↑ ↗", "Which way the men face. Every frame of each New 3D clip (touch, pass, shot, volley, chip, header, block, clearance; the keeper's one-hand stretch, low dive, parry, catch, fumble, getting up) next to the old clip the match showed for that moment. Keepers have 4 facings and use the nearest."],
@@ -1230,7 +1264,7 @@ export const ADMIN_GUIDES = {
       "With Settings → Look → Players: 3D, the same moments play the New 3D clips (a second picture file, fetched only when Animations is New). Old plays the old 3D clips exactly as before.",
       "To take the whole feature out of a phone: set Animations to Old.",
     ],
-    dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (always New since 12 Oct 2026) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
+    dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · Match feel: lib/star/matchFeel.ts (switch key star-match-feel, dials key star-feel-dials), lib/star/matchFeelDraw.ts (the drawing), components/star/FeelPreview.tsx (the Feel card), sounds in lib/star/matchSound.ts · lib/star/animLook.ts (always New since 12 Oct 2026) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
   },
   "/star-look-dev": {
     title: "Player style (Style A)",

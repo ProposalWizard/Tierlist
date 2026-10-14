@@ -30,6 +30,7 @@ import {
 import { FIGURE_HEIGHT_R } from "@/lib/star/fiveASide/render";
 import type { FigureSkin } from "@/lib/star/figureSkin";
 import Sprite3dSheet from "@/components/star/Sprite3dSheet";
+import FeelPreview from "@/components/star/FeelPreview";
 
 const CELL_W = 84, CELL_H = 120, FPS = 24;
 const BG = "#05070d", INK = "#f2f5f9", MUTED = "#8a97aa", CARD = "rgba(255,255,255,0.05)";
@@ -189,6 +190,9 @@ export default function AnimationsTestPage() {
             </div>
           ))}
         </div>
+
+        {/* ── Match feel (lib/star/matchFeel.ts) ── */}
+        <FeelPreview pill={pill} card={card} />
 
         {/* ── The 3D figures' New clips ── */}
         <Sprite3dSheet pill={pill} card={card} />
