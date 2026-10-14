@@ -129,13 +129,6 @@ export function QuickSwitches({ glow, fullscreen }: {
 /** The v0.15 gameplay round's switches: Old by default, "All new" = how the round finished. */
 const V015_ROWS: LookRowId[] = ["keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "matchRadar"];
 
-/** The Oct 13 gameplay update's own switches (Old by default)… */
-const OCT13_ROWS: LookRowId[] = ["shotPower", "contactField", "keeperFeel", "mateShots"];
-/** …and "Try the whole update" also flips the v0.15 ones it was measured with
- *  (tests/star/gameplay13.mts: all of them together keep scoring in band). */
-//    Match feel (the impact/juice look) rides along too, so one tap tries the lot.
-const OCT13_ALL: LookRowId[] = [...OCT13_ROWS, "shotsPro", "keeperPro", "ballPhysics", "matchFeel"];
-
 /** One New | Old row. A dot marks a row you changed by hand. */
 function LookRow({ id, tabs, note, look }: {
   id: LookRowId;
@@ -204,24 +197,9 @@ function MatchGroup() {
         <LookRow id="matchFlow" look={look} tabs={NEW_OLD} note={gp("matchFlow")} />
         <LookRow id="matchRadar" look={look} tabs={NEW_OLD} note="New: a live mini-pitch above the commentary between your chances. Old: the commentary on its own." />
       </div>
-      {/* Oct 13 gameplay update (Leo, Harry, Mikey): shot power, the contact
-          field, keepers, team-mates. Old by default. */}
-      <div className="my-2 border-2 border-sky-400/70 bg-sky-400/10 px-3 py-3" data-new-round="oct13">
-        <p className="text-[13px] font-black uppercase tracking-wider text-sky-300">New 13 Oct · testing</p>
-        <p className="mt-1 text-[12px] font-bold text-white">Try the whole Oct 13 gameplay update: these four, plus Shots, Keeper pro, Ball physics and Match feel.</p>
-        <div className="mt-2 flex gap-2">
-          <button className="flex-1 border-2 border-sky-300 bg-sky-400 px-2 py-1.5 text-[12px] font-black uppercase text-gray-950" data-new-round-all="oct13-new"
-            onClick={() => { for (const id of OCT13_ALL) setLookRow(id, "new"); }}>All new</button>
-          <button className="flex-1 border-2 border-white/40 px-2 py-1.5 text-[12px] font-black uppercase text-white" data-new-round-all="oct13-old"
-            onClick={() => { for (const id of OCT13_ALL) setLookRow(id, "old"); }}>All old</button>
-        </div>
-        <LookRow id="shotPower" look={look} tabs={NEW_OLD} note={gp("shotPower")} />
-        <LookRow id="contactField" look={look} tabs={NEW_OLD} note={gp("contactField")} />
-        <LookRow id="keeperFeel" look={look} tabs={NEW_OLD} note={gp("keeperFeel")} />
-        <LookRow id="mateShots" look={look} tabs={NEW_OLD} note={gp("mateShots")} />
-      </div>
       <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
-      <LookRow id="matchFeel" look={look} tabs={NEW_OLD} note="New: every hit is felt: a wind-up, a short freeze at the contact, a flash, a deeper kick sound and a buzz, all bigger the harder you hit it. Thuds on landing, the net bulging, a clang off the post, keeper hops and dives. Old: as before." />
+      {/* The Oct 13 update (shot power, contact field, keepers, team-mates, match feel)
+          is one switch on its test page, /star-update-dev (lib/star/oct13Update.ts). */}
       <PrefRow label="Match view 3D" note="On: your match drawn in 3D, in a full stadium. The football is the same; only the picture changes.">
         <SegTabs className="w-[150px] shrink-0" value={view3d} onChange={(v) => setMatchView3d(v)} tabs={[["on", "On"], ["off", "Off"]] as const} />
       </PrefRow>

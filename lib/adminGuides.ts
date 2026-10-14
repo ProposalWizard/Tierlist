@@ -1162,6 +1162,33 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-anim3d-dev/page.tsx · lib/star/style3d/animGrid3d.ts (the tiles: one WebGL canvas, one tile each via scissor) · the clips: public/star/anims3d/{football,mocap}.glb through lib/star/three3d/footballAnims.ts · the camera numbers: lib/star/style3d/broadcastCam.ts (BROADCAST) · the match drawing: lib/star/style3d/engineView.ts. Filming: window.__frameStep.",
   },
+  "/star-update-dev": {
+    title: "Oct 13 update",
+    what: "The whole Oct 13 gameplay update behind one Old | New switch: shot power, the contact field (strike the side of the ball to curl it low), keepers, team-mates shooting, and match feel. Each part also has its own row.",
+    buttons: [
+      { group: "Top", items: [
+        ["‹ Play Area", "Back to the Play Area."],
+      ] },
+      { group: "The whole update", items: [
+        ["New / Old", "Flips every part at once, on this phone. New also plays in your real career matches on this phone. Starts on Old."],
+        ["Play your career → / Play Area →", "Opens the real game or the Play Area to try it."],
+      ] },
+      { group: "Each part", items: [
+        ["New / Old on each row", "One part on its own. If they don't all match, the big switch shows Mixed. The last three rows are v0.15 parts the update was measured with; they also sit in Settings → Match (New in v0.15)."],
+      ] },
+      { group: "Match feel", items: [
+        ["The feel card", "The Match feel pictures, sounds and sliders, the same as on the Animations page."],
+      ] },
+    ],
+    saving: [
+      "This phone only, instantly. Nobody else's game changes.",
+    ],
+    inGame: [
+      "Every real match on this phone plays the parts set to New.",
+      "There is no row for this in Settings: the switch lives here until the update is decided (Harry, 12 Oct 2026).",
+    ],
+    dev: "app/star-update-dev/page.tsx · lib/star/oct13Update.ts (the switch) · rows in lib/star/lookRows.ts · physics in lib/star/shotFeel.ts, keeperBrain.ts, canvasEngine.ts (KEEPER_FEEL, MATE_CARRY) · feel in lib/star/matchFeel.ts · tests/star/gameplay13.mts, matchFeel.mts.",
+  },
   "/star-animations-dev": {
     title: "Animations",
     what: "Every New player animation (keeper saves, touches, shots, passes, headers, blocks, clearances) looping next to how the Old game drew that moment, with the dials and switches that size them.",
@@ -1178,7 +1205,7 @@ export const ADMIN_GUIDES = {
         ["❚❚ Pause / ▶ Play", "Stops every animation. While paused, the slider steps through the frames."],
       ] },
       { group: "Match feel", items: [
-        ["New / Old", "The same switch as Settings → Match → Match feel (testing), on this phone. New: every hit is felt (wind-up, a short freeze at the contact, flash and turf, camera punch, ball squash and streak, deeper kick sound, phone buzz), plus landing thuds, the net bulging, post clangs, glove sparks and a keeper who hops and arcs his dive. Old: the game as before. Default Old."],
+        ["New / Old", "The same switch as Match feel on the Oct 13 update page (/star-update-dev), on this phone. New: every hit is felt (wind-up, a short freeze at the contact, flash and turf, camera punch, ball squash and streak, deeper kick sound, phone buzz), plus landing thuds, the net bulging, post clangs, glove sparks and a keeper who hops and arcs his dive. Old: the game as before. Default Old."],
         ["The six picture rows", "Your strike, a glove save, a landing, the net bulge, a ball off the post and the keeper's hop and dive, each at soft · medium · full power, painted with the match's own drawing at 0.6× speed."],
         ["▶ Soft kick / Full kick + buzz / Scuff / Thud / Glove / Clang", "Plays that sound once (and the buzz, on a phone that has one)."],
         ["The sliders", "How big each effect is: freeze ms, wind-up ms, camera punch px, flash, streak length, squash, sound loudness, buzz ms, landing, net bulge, keeper motion, glove spark, team-mate moves. Saved on this phone at once; the match reads them every frame."],

@@ -157,7 +157,7 @@ export default function FeelPreview({ pill, card }: { pill: (on: boolean) => Rea
         </div>
       </div>
       <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>
-        The same switch as Settings → Match → Match feel. Looks and sound only. Each picture: soft · medium · full power, 0.6× speed.
+        The same switch as Match feel on the Oct 13 update page (/star-update-dev). Looks and sound only. Each picture: soft · medium · full power, 0.6× speed.
       </div>
       {SCENES.map((sc) => (
         <div key={sc.id} style={{ display: "grid", gap: 4 }}>
