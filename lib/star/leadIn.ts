@@ -14,6 +14,7 @@
  * Pure: no React, no canvas. tests/star/leadIn.mts checks it.
  */
 import type { Scenario, Vec2, Viewport } from "./canvasEngine";
+import type { Lane, ChancePattern } from "./hiddenMatch";
 import { SIX_DEPTH, SIX_L, SIX_R, BOX_DEPTH, BOX_L, BOX_R } from "./pitch";
 
 export interface LeadIn {
@@ -39,6 +40,32 @@ export interface LeadIn {
   captionAt?(t: number): string;
   /** Told every frame while it plays, and once with done = true. Read only. */
   onTick?(t: number, done: boolean): void;
+  /** A tap ends it at once and the chance starts (the career's build-ups). Absent: it is watched to the end. */
+  skippable?: boolean;
+}
+
+/**
+ * What the match knows about the moment a chance comes from, handed to a
+ * lead-in builder with the chance (CanvasMatch's `leadIn` prop).
+ */
+export interface LeadMoment {
+  /** The opening chance of a screen that plays one picture (openOn): the Real shots page. */
+  opening: boolean;
+  /** A new chance from the match: not a move carrying on (a pass found its man,
+   *  a lay-off, a re-touch) and not a set piece. */
+  fresh: boolean;
+  /** The radar's moment: which channel, and settled play or a break. */
+  lane?: Lane;
+  pattern?: ChancePattern;
+  /** The chance's own seed (the same each time this chance is served). */
+  seed: number;
+  /** The two clubs and their strengths, for the team shapes (absent: made-up sides). */
+  us?: string;
+  them?: string;
+  usStrength?: number;
+  themStrength?: number;
+  /** The chance's own camera frame as the match shows it (absent: sc.viewport). */
+  frame?: Viewport;
 }
 
 /** One person in a chance, by a key that is stable within the chance. */
@@ -251,4 +278,29 @@ export function alongKeys(keys: KeyPt[], t: number, ease = true): Vec2 {
     }
   }
   return { ...keys[keys.length - 1].p };
+}
+
+// ── Shared with the Real shots lead-in (statsbombShots.ts) and the build-ups (leadInGen.ts) ──
+
+/** The ball's keyframes: when it is where, and whether it got there by a pass (lofted or not). */
+export interface LeadBallKey { t: number; p: Vec2; pass?: { h: number } }
+
+/** The fastest a man may be made to run in a lead-in, m/s (lead-in time). */
+export const LEAD_MAX_RUN = 9;
+
+/** The ball along its keys: straight lines on the grass, a long pass lofted. */
+export function ballAlong(keys: LeadBallKey[], t: number): { x: number; y: number; z: number } {
+  if (t <= keys[0].t) return { ...keys[0].p, z: 0 };
+  for (let i = 1; i < keys.length; i++) {
+    const a = keys[i - 1], b = keys[i];
+    if (t <= b.t) {
+      const f = b.t > a.t ? (t - a.t) / (b.t - a.t) : 1;
+      // A pass slows a little as it runs; a carry is steady.
+      const g = b.pass ? f * (1.3 - 0.3 * f) : f;
+      const z = b.pass && b.pass.h > 0 ? 4 * b.pass.h * f * (1 - f) : 0;
+      return { x: a.p.x + (b.p.x - a.p.x) * g, y: a.p.y + (b.p.y - a.p.y) * g, z };
+    }
+  }
+  const e = keys[keys.length - 1].p;
+  return { x: e.x, y: e.y, z: 0 };
 }

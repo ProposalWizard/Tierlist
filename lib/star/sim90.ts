@@ -893,3 +893,20 @@ export function clockOf(t: number): string {
   const s = Math.max(0, Math.min(FULL_T, Math.floor(t)));
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
+
+/**
+ * THE TWO TEAMS' SHAPES FOR ONE MOMENT — for the build-ups before a chance
+ * (lib/star/leadInGen.ts). Exactly the replay's own shapeOf, with no drift:
+ * `us` on the ball and attacking toward y = 0 (home in this file's frame, the
+ * same frame as a chance: goal line at y = 0), `them` out of possession, the
+ * front line held level with their second-last man as the replay does.
+ * GK first in each list. Adds nothing to simulate90 and changes none of it.
+ */
+export function teamShapesAt(o: { us: string; them: string; usStrength?: number; themStrength?: number; ball: V; seed?: number }): { us: V[]; them: V[] } {
+  const seed = o.seed ?? 0;
+  const us = sideOf(o.us, o.usStrength ?? 70, seed), them = sideOf(o.them, o.themStrength ?? 70, seed + 1);
+  const def = shapeOf(1, them, us, false, o.ball, HALF_LEN);
+  const ds = def.map((p) => depthOf(1, p.y)).sort((a, b) => a - b);
+  const offsideD = Math.max(LEN - ds[1], HALF_LEN, depthOf(0, o.ball.y));
+  return { us: shapeOf(0, us, them, true, o.ball, offsideD), them: def };
+}

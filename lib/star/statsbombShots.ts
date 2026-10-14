@@ -14,7 +14,9 @@ import { frameFromScenario } from "./scenarioFrame";
 import { mulberry32 } from "./season";
 import { brainSetup, brainAim, brainOptionsHere } from "./keeperBrain";
 import { enforceHardRules } from "./kindRules";
-import { leadInEntities, alongKeys, type LeadIn, type LeadEntity, type KeyPt } from "./leadIn";
+import { leadInEntities, alongKeys, ballAlong, LEAD_MAX_RUN, type LeadIn, type LeadEntity, type KeyPt, type LeadBallKey } from "./leadIn";
+// Moved to leadIn.ts (shared with the build-ups, leadInGen.ts); still exported from here.
+export { ballAlong, LEAD_MAX_RUN, type LeadBallKey } from "./leadIn";
 import {
   PITCH_W, HALF_LEN, CX, GOAL_W, POST_L, POST_R, NET_DEPTH, BOX_DEPTH, BOX_L,
 } from "./pitch";
@@ -480,17 +482,12 @@ export const lerpVec = (a: Vec2, b: Vec2, f: number): Vec2 => ({ x: a.x + (b.x -
 // before u". The real match plays this (CanvasMatch's `leadIn`, lib/star/leadIn.ts)
 // as a replay of the recorded positions, then the chance starts where it ends.
 
-/** The ball's keyframes: when it is where, and whether it got there by a pass (lofted or not). */
-export interface LeadBallKey { t: number; p: Vec2; pass?: { h: number } }
-
 /** Seconds a pass of this length takes. */
 const passFlightS = (d: number) => Math.min(1.8, Math.max(0.35, d / 16));
 /** Seconds a carry of this length takes (0: no carry). */
 const carryS = (d: number) => (d < 0.5 ? 0 : Math.min(2.2, Math.max(0.2, d / 6)));
 /** A lead-in longer than this is played faster (the same shape, quicker). */
 export const LEAD_MAX_S = 12;
-/** The fastest a man may be made to run in a lead-in, m/s (lead-in time). */
-export const LEAD_MAX_RUN = 9;
 /** The pause on the ball before the first pass. */
 export const LEAD_HOLD_S = 0.45;
 
@@ -525,23 +522,6 @@ export function leadinBallKeys(s: SbShot, lead: SbLeadin, end: Vec2): LeadBallKe
   keys.push({ t, p: { ...end } });
   if (t > LEAD_MAX_S) { const k = LEAD_MAX_S / t; for (const q of keys) q.t *= k; }
   return keys;
-}
-
-/** The ball along its keys: straight lines on the grass, a long pass lofted. */
-export function ballAlong(keys: LeadBallKey[], t: number): { x: number; y: number; z: number } {
-  if (t <= keys[0].t) return { ...keys[0].p, z: 0 };
-  for (let i = 1; i < keys.length; i++) {
-    const a = keys[i - 1], b = keys[i];
-    if (t <= b.t) {
-      const f = b.t > a.t ? (t - a.t) / (b.t - a.t) : 1;
-      // A pass slows a little as it runs; a carry is steady.
-      const g = b.pass ? f * (1.3 - 0.3 * f) : f;
-      const z = b.pass && b.pass.h > 0 ? 4 * b.pass.h * f * (1 - f) : 0;
-      return { x: a.p.x + (b.p.x - a.p.x) * g, y: a.p.y + (b.p.y - a.p.y) * g, z };
-    }
-  }
-  const e = keys[keys.length - 1].p;
-  return { x: e.x, y: e.y, z: 0 };
 }
 
 const lastNameOf = (n: string) => n.split(" ").slice(-1)[0];

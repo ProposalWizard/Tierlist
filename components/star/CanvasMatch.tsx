@@ -17,7 +17,7 @@ import {
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
   type Facing, type Runner, type Vec2,
 } from "@/lib/star/canvasEngine";
-import { leadInEntities, leadInCamera, type LeadIn, type LeadEntity } from "@/lib/star/leadIn";
+import { leadInEntities, leadInCamera, type LeadIn, type LeadEntity, type LeadMoment } from "@/lib/star/leadIn";
 import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario, lateSubQuota, noteServedKind,
   type HiddenMatchState, type RadarTick, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
@@ -328,10 +328,14 @@ interface Props {
    * positions in this picture (and so in the 3D view reading its frames):
    * the people and the ball are put where it says, nothing is stepped, no
    * touch is taken. It ends with everyone exactly where the chance has them,
-   * and the chance starts. Absent (every real match): nothing changes.
+   * and the chance starts. Absent: nothing changes.
    * lib/star/leadIn.ts.
+   *
+   * With `openOn` (one picture) it is asked once, for the opening chance. Without
+   * it (the career's build-ups, lib/star/leadInGen.ts) it is asked for every
+   * chance the match serves, with the moment the chance came from; null = none.
    */
-  leadIn?: (sc: Scenario) => LeadIn | null;
+  leadIn?: (sc: Scenario, moment?: LeadMoment) => LeadIn | null;
   /**
    * Strip the match furniture — the scoreboard plate, the live commentary
    * ticker and the situation hint — leaving the pitch and nothing else.
@@ -4974,12 +4978,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     sc.ball.x = b.x; sc.ball.y = b.y; L.z = b.z;
     viewportRef.current = L.cam.at(L.t, baseViewportRef.current);
   };
-  const startLeadIn = () => {
+  const startLeadIn = (moment?: LeadMoment) => {
     const build = leadInPropRef.current;
     if (!build) return;
     const sc = scenarioRef.current;
     let lead: LeadIn | null = null;
-    try { lead = build(sc); } catch (e) { console.error("Lead-in could not be built (the chance plays as normal)", e); }
+    try { lead = build(sc, moment ?? { opening: true, fresh: true, seed: seedRef.current }); } catch (e) { console.error("Lead-in could not be built (the chance plays as normal)", e); }
     if (!lead || !(lead.durS > 0)) return;
     const ents = leadInEntities(sc);
     const ends = ents.map((e) => e.get());
@@ -5022,6 +5026,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setLeadInOn(false);
     try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
   };
+  /** A tap on a skippable lead-in (the career's build-ups): straight to the chance. */
+  const skipLeadIn = () => {
+    const L = leadRef.current;
+    if (!L) return;
+    L.t = L.lead.durS;
+    stepLeadIn(0);
+  };
 
   // --- Main animation loop ---
   useEffect(() => {
@@ -5063,8 +5074,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       //
       // The keeper is no exception either: he stands on his line, and where he
       // is standing is the thing you are reading. He only breathes.
-      // A lead-in (the `leadIn` prop): started on the opening chance, once.
-      if (phaseRef.current === "aim" && !leadTriedRef.current && leadInPropRef.current) {
+      // A lead-in (the `leadIn` prop) on a one-picture screen (openOn): started
+      // on the opening chance, once. Without openOn, loadScenario asks for one
+      // on every chance it serves (the career's build-ups).
+      if (phaseRef.current === "aim" && !leadTriedRef.current && leadInPropRef.current && openOnRef.current) {
         leadTriedRef.current = true;
         startLeadIn();
       }
@@ -7285,6 +7298,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     } else {
       pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     }
+    // A build-up before it (the `leadIn` prop without openOn: the career's,
+    // lib/star/leadInGen.ts). Asked for every chance; null = none.
+    if (leadInPropRef.current && !openOnRef.current) {
+      leadTriedRef.current = true;
+      startLeadIn({
+        opening: false,
+        fresh: !attacking && !chain && !setPiece,
+        lane: request?.lane, pattern: request?.pattern,
+        seed: seedRef.current,
+        us: careerRef.current?.player.club, them: fixture?.opponent,
+        themStrength: oppStrengthRef.current,
+        frame: { ...baseViewportRef.current },
+      });
+    }
     playWhistle();
   };
 
@@ -7346,8 +7373,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const onPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     primeMatchSound();
-    // A lead-in is being replayed: it is watched, not played.
-    if (leadRef.current) return;
+    // A lead-in is being replayed: it is watched, not played. A build-up skips on a tap.
+    if (leadRef.current) { if (leadRef.current.lead.skippable) skipLeadIn(); return; }
     // Somebody else's penalty (v0.15 items 6/7): you watch it, you don't take it.
     if (phaseRef.current === "aim" && autoKickOf(scenarioRef.current)) return;
     if (phaseRef.current === "tdDribble") {
@@ -8146,6 +8173,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           </button>
         )}
 
+        {/* A build-up before the chance (lib/star/leadInGen.ts): a tap skips it. */}
+        {leadInOn && leadRef.current?.lead.skippable && (
+          <div data-buildup className="absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none rounded-full bg-black/60 px-3 py-1 text-[11px] font-black text-white">
+            Build-up · tap to skip
+          </div>
+        )}
         {/* ⚡ Power shot (Settings → Gameplay "Knuckleball & power shot",
             lib/star/shotModel.ts). Arms the next shot at goal; bottom-left,
             clear of the ball's own pull room. Its own pointer-events-auto so
