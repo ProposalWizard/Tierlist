@@ -52,6 +52,7 @@ import {
 } from "@/lib/star/pitch";
 import { mulberry32 } from "@/lib/star/season";
 import { newChancesOn } from "@/lib/star/newChances";
+import { playOnWanted, startPlayOn, stepPlayOn, carryFrom, carryOnLeadIn, MAX_LAY_OFFS, type PlayOn, type CarryFrom } from "@/lib/star/playOn";
 import { dealDribble, dribbleLevelFor, newDribbleDeal, type DribbleDeal } from "@/lib/star/dribbleDeal";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { deflectBlock } from "@/lib/star/deflection";
@@ -215,7 +216,7 @@ import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt
 
 /** The net's drawn depth from the side, metres: a real goal's ~2 m. */
 const SIDE_NET_DEPTH = 2.0;
-import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook } from "@/lib/star/newLook";
+import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook, BUILD_UP_KINDS as PASS_BUILD_UP_KINDS } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
 
 /**
@@ -1432,6 +1433,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   leadInPropRef.current = leadIn;
   const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null } | null>(null);
   const leadTriedRef = useRef(false);
+  // ── The move plays on after your pass (lib/star/playOn.ts, Chances: New) ──
+  /** A lead-in played before this chance (a build-up, or a carry-on). */
+  const leadPlayedRef = useRef(false);
+  /** Your run and the team-mate's lay-off, while your pass plays on. */
+  const playOnRef = useRef<PlayOn | null>(null);
+  const playOnRngRef = useRef<() => number>(Math.random);
+  const layOffsLeftRef = useRef(MAX_LAY_OFFS);
+  /** The lay-off reached you: the same picture, your next kick. */
+  const playOnCaughtRef = useRef(false);
+  /** Where everyone was when a pass in a no-goal picture found its man: the next picture is reached from here. */
+  const carryOnRef = useRef<CarryFrom | null>(null);
   const [leadInOn, setLeadInOn] = useState(false);
   /** See the `onChanceServed` / `neverHooked` props. Held in refs for the
    *  same reason `openOn` is — the loop reads them outside React's render. */
@@ -4118,7 +4130,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Harry, 3 Oct 2026: in open play your own man is not drawn (new view) —
     // the ball, with this ring under it, is "you". lib/star/newLook.ts.
     // During a lead-in you are a man running onto the last pass, so you are drawn.
-    const youShown = leadRef.current ? sceneRef.current?.you !== false : showYouFigure(sc.kind, { newView: nv, sceneYou: sceneRef.current?.you });
+    // …and while your pass plays on you are the man making the run (playOn.ts).
+    const youShown = leadRef.current || playOnRef.current ? sceneRef.current?.you !== false : showYouFigure(sc.kind, { newView: nv, sceneYou: sceneRef.current?.you });
     const ringOnBall = !auto && !youShown && sceneRef.current?.you !== false;
     if (nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)) {
       const f = ringOnBall ? toPx(sc.ball.x, sc.ball.y) : toPx(tx, ty);
@@ -5025,8 +5038,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     sc.ball.x = b.x; sc.ball.y = b.y; L.z = b.z;
     viewportRef.current = L.cam.at(L.t, baseViewportRef.current);
   };
-  const startLeadIn = (moment?: LeadMoment) => {
-    const build = leadInPropRef.current;
+  const startLeadIn = (moment?: LeadMoment, own?: (sc: Scenario) => LeadIn | null) => {
+    const build = own ? ((s: Scenario) => own(s)) : leadInPropRef.current;
     if (!build) return;
     const sc = scenarioRef.current;
     let lead: LeadIn | null = null;
@@ -5050,6 +5063,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (sid) endAt[sid] = { ...ends[i] }; else endKeeper = { ...ends[i] };
     });
     leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, cam: leadInCamera(lead, ents.map((e) => e.key)), endAt, endKeeper };
+    leadPlayedRef.current = true;
     setLeadInOn(true);
     applyLeadIn();
   };
@@ -5312,6 +5326,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const incoming = { vx: bIn.vel.x, vy: bIn.vel.y, vz: bIn.vz, z: bIn.z, spin: bIn.spin };
           const mateProbe = probeMatePlays(scenarioRef.current);
           stepKnuckle(ballRef.current, h);
+          // Your pass plays on (playOn.ts): your run, and his lay-off back into it.
+          const po = playOnRef.current;
+          if (po && !touchLive) {
+            const wasLive = po.layOffLive;
+            if (stepPlayOn(po, scenarioRef.current, ballRef.current, h, playOnRngRef.current, layOffsLeftRef.current) === "caught") {
+              playOnCaughtRef.current = true;
+              resolveOutcome("delivered");
+              break;
+            }
+            if (po.layOffLive && !wasLive) {
+              layOffsLeftRef.current -= 1;
+              pushLine("He lays it back into your run…");
+              playKick();
+            }
+          }
           let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
           noteMatePlays(matePlaysRef.current, mateProbe, scenarioRef.current);
           // ── v0.15 item 16: a block deflects instead of ending the chance ──
@@ -5403,7 +5432,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           // His name, if we know it — and by now we do, because the identity is
           // taken off whoever the ball actually reached. See lib/star/lineup.ts.
           const label = receiver.who?.shortName ?? receiver.roleLabel;
-          if (ev === "received") { pushLine(commentaryReceived(label, rngRef.current)); showAction(passBanner()); }
+          // While your pass plays on (playOn.ts) it is one move: no PASS banner in the middle of it.
+          if (ev === "received") { pushLine(commentaryReceived(label, rngRef.current)); if (!playOnRef.current) showAction(passBanner()); }
           // Old animations: the team-mate's shot swung YOUR leg (the one
           // kick pose there was). New: he swings his own (actorAnimRef).
           else if (ev === "receiverShot") { pushLine(commentaryReceiverShot(label, rngRef.current)); playKick(); if (!animFamilyOn("shots")) kickPoseRef.current = KICK_POSE_S; }
@@ -5760,7 +5790,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // way a goal does. It only said PASS when the move carried on into a
       // finish, so the safe ball in midfield resolved in silence and read as
       // nothing having happened.
-      showAction(passBanner());
+      // Chances: New — a lay-off taken back in your stride, or a pass in a
+      // no-goal picture, carries on in the same move (playOn.ts): its banner,
+      // if any, is decided below where the move carries on or stops.
+      if (!playOnCaughtRef.current && !(newChancesOn() && !goalInView(sc.kind))) showAction(passBanner());
     } else if (res === "touchOn") {
       // Touch Mode's own catch had no banner at all — the result screen paused
       // exactly the way a genuinely dead chance does, with nothing on screen
@@ -5990,7 +6023,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // build-up only, and jumped to a random attacking situation; now any
     // completed pass can come back, and what you get next is read off where the
     // ball actually arrived.
-    if (res === "delivered") {
+    let quickOn = false;
+    if (res === "delivered" && playOnCaughtRef.current) {
+      // The lay-off came back into your run (playOn.ts): the same picture,
+      // your next kick, straight away. Repositioned like a Touch Mode
+      // re-touch (resetForTouchOn), without spending its budget.
+      playOnCaughtRef.current = false;
+      const b = ballRef.current;
+      if (b) {
+        chainRef.current = {
+          pos: { x: b.pos.x, y: b.pos.y },
+          depth: sc.chainDepth ?? 0,
+          ambition: Math.max(sc.passDifficulty, sc.passAmbition ?? 0),
+          touchTouches: sc.touchTouches ?? 0,
+        };
+        logMoment(`${sc.receivedBy?.who?.shortName ?? "He"} lays it back to ${playerLabel()}.`, "chance");
+        quickOn = true;
+      }
+    } else if (res === "delivered") {
       const depth = sc.chainDepth ?? 0;
       const at = sc.receivedAt ?? sc.runner?.pos ?? sc.passTarget;
       // ── THE GIVE-AND-GO (v0.24, Harry's first National League match) ──
@@ -6018,10 +6068,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         chainRef.current = { pos: { x: at.x, y: at.y }, depth: depth + 1, ambition };
         pushLine(at.y < 25 ? "It comes straight back to you, higher up…" : "He lays it off — the move keeps going…");
         logMoment(`${who ?? "He"} plays it back to ${playerLabel()}.`, "chance");
-        const gen = sceneGenRef.current;
-        window.setTimeout(() => { if (sceneGenRef.current === gen) showAction("BACK TO YOU"); }, ACTION_BANNER_MS - 100);
+        if (newChancesOn() && !goalInView(sc.kind)) {
+          // Chances: New — no cut: the next picture is reached by a carry-on
+          // from where everyone is now (playOn.ts carryOnLeadIn), the camera
+          // following, with no PASS or BACK TO YOU.
+          const b = ballRef.current;
+          carryOnRef.current = carryFrom(sc, b ? { x: b.pos.x, y: b.pos.y } : at);
+          quickOn = true;
+        } else {
+          const gen = sceneGenRef.current;
+          window.setTimeout(() => { if (sceneGenRef.current === gen) showAction("BACK TO YOU"); }, ACTION_BANNER_MS - 100);
+        }
       } else {
         logMoment(`${who ?? "He"} keeps it — the move goes on without ${playerLabel()}.`, "chance");
+        // The move is over for you: it says what you did.
+        if (newChancesOn() && !goalInView(sc.kind)) showAction(passBanner());
       }
     } else if (res === "touchOn") {
       // Touch Mode's own chain — deterministic, not chainReturnChance's
@@ -6067,7 +6128,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // The move continues: no simulation, straight into the next link.
     if (chainRef.current) {
       const gen = sceneGenRef.current;
-      window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(true); }, 1600);
+      window.setTimeout(() => { if (sceneGenRef.current === gen) loadScenario(true); }, quickOn ? 250 : 1600);
       return;
     }
 
@@ -7219,6 +7280,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // completely different path from an ordinary completed pass's chain,
     // not just a different position fed into the same rebuild.
     const isTouchContinuation = chain !== null && chain.touchTouches !== undefined;
+    // A new picture starts a new move (playOn.ts); a re-touch / a lay-off taken back is the same move.
+    playOnRef.current = null;
+    if (!isTouchContinuation) { leadPlayedRef.current = false; layOffsLeftRef.current = MAX_LAY_OFFS; }
+    const carry = chain && !isTouchContinuation ? carryOnRef.current : null;
+    carryOnRef.current = null;
     // ── EVERY NEW CHANCE COMES FROM ONE FUNCTION (lib/star/chanceMaker.ts) ──
     //
     // Harry, 27 Sep 2026: "every single highlight should feel different", and
@@ -7374,7 +7440,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     // A build-up before it (the `leadIn` prop without openOn: the career's,
     // lib/star/leadInGen.ts). Asked for every chance; null = none.
-    if (leadInPropRef.current && !openOnRef.current) {
+    if (carry) {
+      // A pass in a no-goal picture found its man: the new picture is reached
+      // from where everyone was, the camera following (playOn.ts).
+      startLeadIn(undefined, (s) => carryOnLeadIn(s, carry));
+    } else if (leadInPropRef.current && !openOnRef.current) {
       leadTriedRef.current = true;
       startLeadIn({
         opening: false,
@@ -8046,6 +8116,25 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // move before it's actually kicked toward.
     if (touchModeOnRef.current && canExtraTouch && !auto) {
       scenarioRef.current.player = { x: ballRef.current.pos.x, y: ballRef.current.pos.y };
+    }
+    // ── Your pass plays on (lib/star/playOn.ts; Chances: New only) ──
+    // After a build-up, a pass (not a shot) is one move: you make a run, the
+    // man who takes it shoots or lays it back into your run, and nothing cuts
+    // until the move is over. Its own seeded stream, so the match's is unchanged.
+    playOnRef.current = null;
+    playOnCaughtRef.current = false;
+    {
+      const sc = scenarioRef.current;
+      const touchOn = touchModeOnRef.current && canExtraTouch;
+      if (!touchOn && !shootoutKickRef.current && playOnWanted({
+        newChances: newChancesOn(),
+        hadBuildUp: leadPlayedRef.current || PASS_BUILD_UP_KINDS.has(sc.kind),
+        kind: sc.kind, youShotAtGoal: ballRef.current.youStruckAtGoal === true, auto: !!auto,
+      })) {
+        playOnRngRef.current = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x61a7) >>> 0);
+        const bl = ballRef.current;
+        playOnRef.current = startPlayOn(sc, playOnRngRef.current, { x: bl.pos.x + bl.vel.x * 0.8, y: bl.pos.y + bl.vel.y * 0.8 });
+      }
     }
     setPhase("flight");
     // A header scenario can be lost in the air before your header ever
