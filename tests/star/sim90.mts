@@ -79,9 +79,11 @@ for (let s = 0; s < 8; s++) {
     }
     const c = sim.control[f];
     if (c > 0 && f % 5 === 0) {
+      // Ends swap at half-time, so depth is measured from each team's own end in each half.
+      const second = f >= (FULL_T / 2) * SIM_FPS;
       for (const T of [0, 1]) {
         const slots = formationForClub(T === 0 ? home : away).slots;
-        const dep = (y: number) => (T === 0 ? LEN - y : y) - 52.5;
+        const dep = (y: number) => ((T === 0) !== second ? LEN - y : y) - 52.5;
         const bx = dep(b.y), zx = Math.min(5, Math.max(0, Math.floor((bx + 52.5) / 17.5)));
         const inP = c === T + 1;
         const xs: number[] = [], back: number[] = [], mid: number[] = [];
