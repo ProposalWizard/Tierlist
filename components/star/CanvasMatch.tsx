@@ -4771,7 +4771,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const st = poStickUiRef.current;
       const rr = Math.min(W, H) * 0.13;
       // Resting above the commentary box, which covers the bottom of the pitch.
-      const ox = st ? st.fx * W : W * 0.2, oy = st ? st.fy * H : H * 0.72;
+      const ox = st ? st.fx * W : Math.max(rr * 1.25, W * 0.27), oy = st ? st.fy * H : H * 0.72;
       ctx.beginPath(); ctx.arc(ox, oy, rr, 0, Math.PI * 2);
       ctx.fillStyle = st ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.22)"; ctx.fill();
       ctx.lineWidth = Math.max(2, rr * 0.06); ctx.strokeStyle = st ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.45)"; ctx.stroke();
