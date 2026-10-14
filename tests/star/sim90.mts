@@ -2,7 +2,8 @@
  * The full-match replay (lib/star/sim90.ts, /star-sim90-dev): over several
  * seeds and fixtures, the replay covers all ninety minutes, ends on the
  * unseen match's own score, has 22 men and a ball on the pitch every frame,
- * nobody stands on a team-mate for long, the defending side's back line is
+ * nobody stands on a team-mate for long, the teams swap ends at half-time,
+ * the keeper dives on saves, the defending side's back line is
  * between the ball and its goal, possession matches the unseen match's within
  * a few points, and no pass goes to a man in an offside position.
  */
@@ -64,8 +65,11 @@ for (let s = 0; s < 8; s++) {
       const hp = sim.radar.frames[minute].possession === "user" ? 1 : 2;
       if (c === hp) agree++;
       // The defending side: its deepest outfielder nearer its own goal than the ball.
+      // The teams swap ends at half-time: home defends y = 105 in the first
+      // half and y = 0 in the second.
       const D = c === 1 ? 1 : 0;
-      const own = D === 0 ? (y: number) => LEN - y : (y: number) => y;
+      const second = f >= (FULL_T / 2) * SIM_FPS;
+      const own = (D === 0) !== second ? (y: number) => LEN - y : (y: number) => y;
       let deepest = Infinity;
       for (let k = 1; k < 11; k++) deepest = Math.min(deepest, own(fr.bodies[D * 11 + k].y));
       lineN++;
@@ -82,9 +86,21 @@ for (let s = 0; s < 8; s++) {
   check(longClose <= 6, `${tag}: ${longClose} times two team-mates within 1.5 m for 2 s+`);
   check(sim.stats.offsidePasses === 0, `${tag}: ${sim.stats.offsidePasses} passes to an offside man`);
   check(sim.stats.snaps <= 2, `${tag}: ${sim.stats.snaps} times the ball jumped to a shooter`);
+  // Ends swapped: home's keeper is at the far end (y near 105) before the
+  // break and the near end after it.
+  const k1 = frameAt(tr, 30 * 60).bodies[0].y, k2 = frameAt(tr, 60 * 60).bodies[0].y;
+  check(k1 > 105 / 2 && k2 < 105 / 2, `${tag}: ends swap at half-time (home keeper y ${k1.toFixed(0)} then ${k2.toFixed(0)})`);
+  const saves = sim.events.filter((e) => e.kind === "save").length;
+  let diveFrames = 0;
+  for (let f = 0; f < tr.n; f += 1) { const k = frameAt(tr, f / SIM_FPS).keeper; if (k.lunge > 0.04 && k.dir !== 0) diveFrames++; }
+  if (saves >= 2) check(diveFrames > 0, `${tag}: ${saves} saves but no dives`);
+  const yours = sim.events.filter((e) => e.chance).length;
+  const want = sim.radar.frames.filter((x) => x.highlight).length;
+  check(yours <= want, `${tag}: ${yours} chances marked yours, unseen match had ${want}`);
+  if (want > 0) check(yours >= 1, `${tag}: unseen match handed you ${want} chances, none marked`);
   const goals = sim.events.filter((e) => e.kind === "goal").length;
   const shots = sim.events.filter((e) => e.kind === "shot").length;
-  rows.push(`${tag}: ${sim.score.join("-")} (unseen ${sim.radar.state.userScore}-${sim.radar.state.oppScore}) · possession ${Math.round(tm * 100)}% vs ${Math.round(hm * 100)}% · per-minute agree ${Math.round((agree / ctlAll) * 100)}% · line ${Math.round(line * 100)}% · close ${longClose} · passes ${sim.stats.passes} offside ${sim.stats.offsidePasses} · snaps ${sim.stats.snaps} · goals ${goals} shots ${shots}`);
+  rows.push(`${tag}: ${sim.score.join("-")} (unseen ${sim.radar.state.userScore}-${sim.radar.state.oppScore}) · possession ${Math.round(tm * 100)}% vs ${Math.round(hm * 100)}% · per-minute agree ${Math.round((agree / ctlAll) * 100)}% · line ${Math.round(line * 100)}% · close ${longClose} · passes ${sim.stats.passes} offside ${sim.stats.offsidePasses} · snaps ${sim.stats.snaps} · goals ${goals} shots ${shots} · dives ${diveFrames}f · yours ${yours}/${want}`);
   n++; sumPossDiff += Math.abs(tm - hm); sumLine += line; sumAgree += agree / ctlAll;
 }
 console.log(rows.join("\n"));

@@ -21,10 +21,13 @@
  * passes and shots the unseen match already decided. No canvas, no React.
  *
  * Simplifications, on purpose:
- *  - Home is always "your side" in the unseen match, and keeps the same end
- *    both halves (the radar draws it that way too).
+ *  - Home is always "your side" in the unseen match. The teams swap ends at
+ *    half-time: the second half is staged exactly like the first and the
+ *    picture is turned round (x and y both mirrored), so home attacks the far
+ *    goal after the break. The radar strip still draws home one way.
  *  - Half-time is a cut: everyone is stood back in kick-off positions.
- *  - Keepers do not dive: a save is the ball arriving in his hands.
+ *  - Keepers dive on a save (and on a goal that beats them) toward where the
+ *    ball is going; the goal-video renderer draws the dive.
  *  - No cards, fouls or offside calls: the unseen match has none.
  */
 import { startRadar, stepRadar, resolveHighlight, radarOver, type RadarMatch } from "./matchRadar";
@@ -65,6 +68,16 @@ export interface Sim90Setup {
   names?: { home?: string[]; away?: string[] };
 }
 
+/** One of YOUR chances: the unseen match handed you a scenario to play
+ *  (its highlight / scenario request). The page can open it in the real match. */
+export interface Sim90Chance {
+  kinds: string[];
+  dribble: boolean;
+  reason: string;
+  /** What the unseen match decided at the bench rate. */
+  result: "goal" | "missed";
+}
+
 export type Sim90EventKind = "goal" | "shot" | "save" | "miss" | "corner" | "kickoff" | "half" | "full";
 
 export interface Sim90Event {
@@ -75,6 +88,8 @@ export interface Sim90Event {
   kind: Sim90EventKind;
   side: Team | -1;
   text: string;
+  /** Set on the shot of one of your own chances. */
+  chance?: Sim90Chance;
 }
 
 export interface Sim90 {
@@ -181,6 +196,7 @@ interface Attempt {
   done: boolean;
   /** Where the shot is struck from: an x and a distance from goal. */
   spot: V;
+  chance?: Sim90Chance;
 }
 
 interface MinutePlan { poss: Team; anchor: V }
@@ -227,10 +243,15 @@ function planOf(radar: RadarMatch, rng: () => number): { plans: MinutePlan[]; at
     plans.push({ poss: f.possession === "user" ? 0 : 1, anchor: { x: x0 + (x1 - x0) * (0.25 + 0.5 * rng()), y: LEN - d } });
     const here: Omit<Attempt, "t" | "done" | "spot" | "minute">[] = [];
     let cornersUs = 0, cornersThem = 0;
+    const hl = f.highlight;
+    const chanceOf = (result: "goal" | "missed"): Sim90Chance | undefined =>
+      hl ? { kinds: [...hl.kinds], dribble: hl.dribble, reason: hl.reason, result } : undefined;
     for (const e of f.events) {
-      if (e.kind === "goal-us" || e.kind === "highlight-goal") here.push({ side: 0, outcome: "goal", text: e.text });
+      if (e.kind === "highlight-goal") here.push({ side: 0, outcome: "goal", text: e.text, chance: chanceOf("goal") });
+      else if (e.kind === "highlight-miss") here.push({ side: 0, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text, chance: chanceOf("missed") });
+      else if (e.kind === "goal-us") here.push({ side: 0, outcome: "goal", text: e.text });
       else if (e.kind === "goal-them") here.push({ side: 1, outcome: "goal", text: e.text });
-      else if (e.kind === "chance-us" || e.kind === "highlight-miss") here.push({ side: 0, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text });
+      else if (e.kind === "chance-us") here.push({ side: 0, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text });
       else if (e.kind === "chance-them") here.push({ side: 1, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text });
       else if (e.kind === "corner-us") cornersUs++;
       else if (e.kind === "corner-them") cornersThem++;
@@ -245,7 +266,8 @@ function planOf(radar: RadarMatch, rng: () => number): { plans: MinutePlan[]; at
       }
     }
     // Goals first: they can never be dropped.
-    here.sort((a, b) => (a.outcome === "goal" ? 0 : 1) - (b.outcome === "goal" ? 0 : 1));
+    const rank = (a: { outcome: string; chance?: Sim90Chance }) => (a.outcome === "goal" || a.chance ? 0 : 1);
+    here.sort((a, b) => rank(a) - rank(b));
     const kept = here.slice(0, 3).sort(() => rng() - 0.5);
     // Goals must stay; if the shuffle pushed one out of the first three, it was kept above anyway.
     const offs = kept.length === 1 ? [40] : kept.length === 2 ? [18, 48] : [12, 32, 52];
@@ -331,6 +353,8 @@ export function simulate90(setup: Sim90Setup): Sim90 {
   let receiverLock = -1, receiverAt: V = { x: 0, y: 0 };
   const facing: V[] = P.map((_, i) => ({ x: 0, y: teamOf(i) === 0 ? -1 : 1 }));
   let cornerTargets: V[] | null = null;
+  /** The keeper's dive in progress, if any. */
+  let diveNow = null as { k: number; x0: number; tx: number; start: number; end: number; dir: number; high: boolean } | null;
 
   const offsideLineD = (A: Team): number => {
     // In A's depth: the second-last defender of the other side, never inside
@@ -373,7 +397,7 @@ export function simulate90(setup: Sim90Setup): Sim90 {
     const shape = kickoffShape(K);
     if (cut) for (let i = 0; i < 22; i++) { P[i] = { ...shape[i] }; Vel[i] = { x: 0, y: 0 }; }
     ball.x = CX; ball.y = HALF_LEN; ball.z = 0;
-    flight = null; dead = null; cornerTargets = null;
+    flight = null; dead = null; cornerTargets = null; diveNow = null;
     carrier = kickerOf(K);
     if (cut) { P[carrier] = { x: CX, y: HALF_LEN + (K === 0 ? 0.6 : -0.6) }; }
     holdUntil = t + 1.0;
@@ -489,15 +513,26 @@ export function simulate90(setup: Sim90Setup): Sim90 {
       return;
     } else {
       // Saved (and maybe parried behind): into the keeper's hands.
-      to = { x: clamp(keeper.x + (rng() - 0.5) * 1.6, POST_L + 0.4, POST_R - 0.4), y: keeper.y, z: 0.3 + rng() * 1.3 };
+      const off = rng() < 0.3 ? (rng() - 0.5) * 1.0 : (rng() < 0.5 ? -1 : 1) * (1.3 + rng() * 1.7);
+      to = { x: clamp(keeper.x + off, POST_L + 0.4, POST_R - 0.4), y: keeper.y, z: 0.3 + rng() * 1.3 };
     }
     T_ = Math.max(0.35, Math.hypot(to.x - ball.x, to.y - ball.y) / speed);
+    // The keeper goes for it: a dive toward where it is going, starting just
+    // before it gets to him. Beaten by a goal, he gets most of the way.
+    {
+      const k = D * 11;
+      const reach = a.outcome === "goal" ? 0.75 : 1;
+      const tx = clamp(P[k].x + (to.x - P[k].x) * reach, POST_L - 0.8, POST_R + 0.8);
+      if (Math.abs(to.x - P[k].x) > 0.9 && a.outcome !== "wide") {
+        diveNow = { k, x0: P[k].x, tx, start: t + Math.max(0, T_ - 0.45), end: t + T_ + 0.8, dir: Math.sign(to.x - P[k].x), high: to.z > 1.6 };
+      }
+    }
     startFlight({ kind: "shot", from: { ...ball }, to, t0: t, T: T_, peak: Math.min(1.2, fromGoal * 0.03), receiver: -1, kicker: c, side: T, attempt: a });
     kickEvent(t, c, "shot");
     receiverLock = a.outcome === "saved" || a.outcome === "corner" ? D * 11 : -1;
     receiverAt = { x: to.x, y: to.y };
     a.done = true;
-    events.push({ t, minute: a.minute, kind: a.outcome === "goal" ? "shot" : "shot", side: T, text: `${names[c]} shoots${fromGoal > 22 ? " from range" : ""}.` });
+    events.push({ t, minute: a.minute, kind: "shot", side: T, text: `${names[c]} shoots${fromGoal > 22 ? " from range" : ""}${a.chance ? " — your chance" : ""}.`, chance: a.chance });
   };
 
   const goCorner = (t: number, A: Team, x: number) => {
@@ -711,6 +746,18 @@ export function simulate90(setup: Sim90Setup): Sim90 {
     }
     for (let i = 0; i < 22; i++) { P[i].x = clamp(P[i].x, 0.6, PITCH_W - 0.6); P[i].y = clamp(P[i].y, 0.4, LEN - 0.4); }
 
+    // The dive: he is thrown across toward the ball, and stays down a moment.
+    let keeperState: FrameState["keeper"] = { dive: 0, lunge: 0, dir: 0, kind: null };
+    if (diveNow && t >= diveNow.end) diveNow = null;
+    if (diveNow && t >= diveNow.start) {
+      const dn = diveNow;
+      const lunge = clamp((t - dn.start) / 0.35, 0, 1);
+      const ease = 1 - (1 - lunge) * (1 - lunge);
+      P[dn.k].x = dn.x0 + (dn.tx - dn.x0) * ease;
+      Vel[dn.k].x = 0; Vel[dn.k].y = 0;
+      keeperState = { dive: (dn.tx - dn.x0) * ease, lunge: Math.max(0.05, lunge), dir: dn.dir, kind: dn.high ? "high" : "low" };
+    }
+
     // The ball at the carrier's feet.
     if (!flight && !dead && carrier >= 0) {
       const v = Vel[carrier], sp = Math.hypot(v.x, v.y);
@@ -722,10 +769,16 @@ export function simulate90(setup: Sim90Setup): Sim90 {
 
     control[f] = dead ? 0 : flight ? ((flight as Flight).kind === "pass" || (flight as Flight).kind === "clear" ? ((flight as Flight).receiver >= 0 ? teamOf((flight as Flight).receiver) + 1 : 0) : (flight as Flight).side + 1) : carrier >= 0 ? teamOf(carrier) + 1 : 0;
 
-    const fs: FrameState = {
+    // Second half: the teams have swapped ends — the same staging, turned round.
+    const swap = t >= HALF_T;
+    const fs: FrameState = swap ? {
+      ball: { x: PITCH_W - ball.x, y: LEN - ball.y, z: ball.z },
+      bodies: P.map((p) => ({ x: PITCH_W - p.x, y: LEN - p.y, z: 0 })),
+      keeper: { ...keeperState, dive: -keeperState.dive, dir: -keeperState.dir },
+    } : {
       ball: { ...ball },
       bodies: P.map((p) => ({ x: p.x, y: p.y, z: 0 })),
-      keeper: { dive: 0, lunge: 0, dir: 0, kind: null },
+      keeper: keeperState,
     };
     packFrame(fs, data, f * stride);
   }
