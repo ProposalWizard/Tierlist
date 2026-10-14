@@ -59,7 +59,7 @@ import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./ca
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
 /** Open play's default = the 2D's own frame of the same chance, exactly (Harry, 12 Oct 2026: a 0.85 zoom-in cut the taker off on tight angles and cutbacks). */
 const OPEN_DEFAULT_K = 1;
-import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, orbitCamera, centreShare, centreOnPivot, keepInBowl, overStand, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
+import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, orbitCamera, centreShare, frameTurned, solveTurnFit, easeFit, type TurnFit, showsGoal, grabsBall, overheadClipAlong, overStand, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -1337,6 +1337,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    */
   const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, aimBall: null as { x: number; y: number } | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1, spWide: null as Match2DCamera | null };
   /** The camera swipe (match2dCam.ts ORBIT): degrees turned round the ball now, where it is heading, a finger on it. */
+  /** The turned camera's framing, eased frame to frame (match2dCam.ts solveTurnFit / easeFit). */
+  const turn = { fit: null as TurnFit | null, want: null as TurnFit | null, key: "", at: 0 };
+  const TURN_SOLVE_S = 0.05;
   const orbit = { deg: 0, target: 0, drag: false, ballKey: "", t: -1, d0: 0, tilt: 0, tiltTarget: 0, tiltDrag: false, t0: 0, centre: 0 };
   (window as unknown as { __cam3dOrbit?: (deg: number) => void }).__cam3dOrbit = (deg: number) => { orbit.target = clampOrbit(deg); orbit.deg = orbit.target; }; // dev/test: stills of a turned view
   // THE CAMERA LOCK (Harry, 13 Oct 2026: "a little floating camera icon that can lock/unlock the camera
@@ -1431,6 +1434,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const c0 = { ...cz, elevDeg, elev: (elevDeg * Math.PI) / 180 };
     // open play at the default zoom IS the 2D frame (it already leaves the 2D's drag room): untouched
     const cKept = m2.aimBall && (sp || zoom !== 0) ? keepDragRoom(c0, m2.aimBall, W, H) : c0;
+    let turnDt = 0;
     // THE CAMERA SWIPE (match2dCam.ts ORBIT): turned round the ball while the chance lasts; a new chance,
     // or the end of this one, eases it back to 0
     {
@@ -1439,6 +1443,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       if (!live || bk !== orbit.ballKey) { orbit.target = camLock.on ? camLock.deg : 0; orbit.tiltTarget = camLock.on ? camLock.tilt : 0; if (!touch.orbit) orbit.drag = false; if (!touch.tilt) orbit.tiltDrag = false; }
       orbit.ballKey = bk;
       const dt = orbit.t < 0 ? 0 : Math.max(0, Math.min(0.1, f.t - orbit.t));
+      turnDt = dt;
       orbit.t = f.t;
       orbit.deg = orbit.drag ? orbit.target : orbit.deg + (orbit.target - orbit.deg) * Math.min(1, dt / ORBIT.easeS * 3);
       if (Math.abs(orbit.deg - orbit.target) < 0.05) orbit.deg = orbit.target;
@@ -1454,9 +1459,24 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // turned: an automatic extra tilt down (ORBIT.autoTilt x the centring), so the near stand fills less of the screen
     const tiltAll = orbit.tilt + ORBIT.autoTilt * orbit.centre;
     const cTilted = pivot && tiltAll ? tiltCamera(cTurned, pivot, tiltAll, W, H) : cTurned;
-    // turned or tilted: the look point slides onto our player (middle of the screen, drag room kept below him)
-    // ...and stays inside the stadium bowl (match2dCam.ts keepInBowl): closer, like a zoom, never a size change
-    const c = pivot && orbit.centre > 0 ? keepInBowl(centreOnPivot(cTilted, pivot, orbit.centre, W, H), pivot, orbit.centre, W, H) : cTilted;
+    // turned or tilted: framed round our player (match2dCam.ts frameTurned): the ball near the middle with its
+    // drag room, the whole goal mouth when the chance's own camera shows it, mostly pitch on the screen, inside
+    // the stadium. Only ever further back or higher (never in, never a size change), smoothly with the turn.
+    // The framing glides to each frame's answer (match2dCam.ts easeFit), so it never pops even where the
+    // answer moves fast with the turn; the turn itself follows the finger exactly.
+    let c = cTilted;
+    if (pivot && orbit.centre > 0) {
+      // worked out at most every TURN_SOLVE_S (a few ms each on a phone); the glide covers the frames between
+      const same = !!turn.fit && turn.key === orbit.ballKey;
+      if (!same || !turn.want || f.t - turn.at >= TURN_SOLVE_S || f.t < turn.at) {
+        turn.want = solveTurnFit(cTilted, pivot, W, H, showsGoal(cKept, W, H));
+        turn.at = f.t;
+      }
+      const want = turn.want;
+      turn.fit = same && turn.fit ? easeFit(turn.fit, want, turnDt) : want;
+      turn.key = orbit.ballKey;
+      c = frameTurned(cTilted, pivot, orbit.centre, W, H, true, turn.fit);
+    } else { turn.fit = null; turn.want = null; }
     const pose = bcPose(c);
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
     camera.up.set(0, 1, 0);
@@ -1485,11 +1505,18 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       if (orbit.deg || orbit.tilt) {
         let near = -Infinity;
         for (const nx of [-1, 0, 1]) { const g = groundUnder(c, W, H, nx, -1); if (g) near = Math.max(near, (g.x - CX) * c.ax + g.y * c.az); }
-        if (near > -Infinity) arenaClip.constant = near + 1.5;
+        // blended in with the centring (orbit.centre), so the cut never jumps the moment a turn starts
+        if (near > -Infinity) arenaClip.constant += (near + 1.5 - arenaClip.constant) * Math.min(1, orbit.centre);
       }
       // a turned camera standing over a stand (keepInBowl): its seats stay, like a reverse-angle
       // broadcast shot; only the roof, truss and lamps nearer than the screen's bottom are not drawn
       seatClip.copy(arenaClip);
+      // ...and turned, no stand roof, truss or lamp (Harry, 14 Oct 2026: "I only mean the top white roof, not
+      // the advertising boards and fans"; from a high camera a roof lay over 40% of the picture, 13 Oct stills)
+      if ((orbit.deg || orbit.tilt) && pivot) {
+        const cap = Math.min(arenaClip.constant, overheadClipAlong(c, pivot, orbit.centre));
+        arenaClip.constant += (cap - arenaClip.constant) * Math.min(1, orbit.centre);
+      }
       const over = !!(orbit.deg || orbit.tilt) && overStand(c);
       if (over) seatClip.constant = 1e6;
       // ...and its crowd, which faces the pitch, is seen from behind: drawn both sides while it is
@@ -1536,8 +1563,6 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       button: e.button, buttons: e.buttons, bubbles: true, cancelable: true, composed: true,
     }));
   };
-  /** How near the ball's picture a press grabs it, CSS px (a fingertip either side of a small ball). */
-  const GRAB_PX = 48;
   /** Where the ball is on the glass right now (client px), or null. */
   const ballOnGlass = (): { x: number; y: number } | null => {
     if (!lastFrame?.ball || !ball.visible) return null;
@@ -1617,14 +1642,16 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // A press on or near the ball AS SEEN (its 3D picture, lifted off the grass
     // and drawn big) grabs the ball: the 2D game is pressed exactly on its own
     // ball, so the aim starts as surely as a press on the 2D ball does.
+    // The grab zone is bounded on the GLASS round the ball as seen (match2dCam.ts grabsBall): a fingertip
+    // always grabs; a little further only if the press is also in the 2D game's own zone (CanvasMatch.tsx
+    // BALL_GRAB_FRACTION) or within 3.2 m on the grass. Those used to grab on their own, as circles on the
+    // GRASS, which a turned camera centred on the ball blew up to most of the screen (measured: ~170 px
+    // radius on a 362 px view): "it's just dragging back from anywhere on the screen".
     const b3 = ballOnGlass();
-    const nearBall = !!b3 && Math.hypot(e.clientX - b3.x, e.clientY - b3.y) <= GRAB_PX;
-    // ...and so does a press inside the 2D game's OWN grab zone round the ball (CanvasMatch.tsx
-    // BALL_GRAB_FRACTION, 18% of its height): those always kicked before the camera swipe existed, so
-    // they must never become a swipe (Harry, 13 Oct 2026: "I can't drag the ball back on many highlights").
     const b2d = f?.ball ? to2dClient(f.ball) : null;
     const in2dGrab = !!b2d && !!f && Math.hypot(at.x - b2d.x, at.y - b2d.y) <= 0.2 * f.cam.H;
-    touch.shot = !!f?.ball && f.phase === "aim" && (nearBall || in2dGrab || Math.hypot(g.x - f.ball.x, g.y - f.ball.y) < 3.2);
+    const glass = b3 ? Math.hypot(e.clientX - b3.x, e.clientY - b3.y) : Infinity;
+    touch.shot = !!f?.ball && f.phase === "aim" && grabsBall(glass, in2dGrab || false, Math.hypot(g.x - f.ball.x, g.y - f.ball.y));
     if (touch.shot && f?.ball) {
       const b2 = to2dClient(f.ball);
       if (b2) { touch.start2 = b2; touch.g0 = { x: f.ball.x, y: f.ball.y }; }
