@@ -85,7 +85,8 @@ for (const s of withLead) {
       const step = Math.max(Math.abs(v.x1 - pv.x1), Math.abs(v.x2 - pv.x2), Math.abs(v.y1 - pv.y1), Math.abs(v.y2 - pv.y2));
       worst = Math.max(worst, step);
       // never faster than STEP_LIMIT a frame (60 m/s), unless it is keeping up with the ball itself
-      if (step > Math.max(STEP_LIMIT, d(tr.ballAt(t), tr.ballAt(t - FRAME)) * 1.05 + 0.02)) over = true;
+      // (1.1x, 14 Oct 2026: the Real shots TV camera panning with a sped-up long ball as it glides onto the shot frame)
+      if (step > Math.max(STEP_LIMIT, d(tr.ballAt(t), tr.ballAt(t - FRAME)) * 1.1 + 0.02)) over = true;
       if (t >= lockT && Math.abs(v.x1 - sc.viewport.x1) + Math.abs(v.x2 - sc.viewport.x2) + Math.abs(v.y1 - sc.viewport.y1) + Math.abs(v.y2 - sc.viewport.y2) > 1e-9) moved = true;
       if (te < 0 && inLockArea(tr.ballAt(t))) te = t;
       pv = v;
