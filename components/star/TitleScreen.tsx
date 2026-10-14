@@ -150,14 +150,14 @@ export default function TitleScreen(p: TitleScreenProps) {
           stays. */}
       <div className="absolute inset-0" style={{ transform: `translate3d(${-tilt.x * 8}px, ${-tilt.y * 4}px, 0)`, transition: "transform 700ms cubic-bezier(.2,.8,.2,1)" }}>
         {plateFailed ? (
-          <div className="kit-fade absolute inset-[-4%]">
+          <div className="absolute inset-[-4%]">
             <Stadium glow={theme.glow} intro big pitch={false} floods={false} />
             <SkyPlate sky={sky} />
             {sky !== "day" && <Floodlights />}
             <PitchFloor />
           </div>
         ) : (
-          <div className="kit-fade absolute inset-[-4%]">
+          <div className="absolute inset-[-4%]">
             <div className="absolute inset-0" aria-hidden style={{ backgroundImage: `url(${plate})`, backgroundSize: "cover", backgroundPosition: "center 62%" }} />
           </div>
         )}
@@ -283,7 +283,7 @@ function Wordmark({ glow }: { glow: string }) {
   const word = "kit-text-shine block font-black italic uppercase tracking-[-0.04em]";
   const fill = { backgroundImage: "linear-gradient(100deg, #f8fafc 0%, #e2e8f0 38%, #ffffff 46%, #fde68a 50%, #ffffff 54%, #e2e8f0 62%, #f8fafc 100%)", fontSize: px, lineHeight: 0.9, paddingRight: "0.08em" } as const;
   return (
-    <div ref={box} className="kit-drop-in relative z-10 text-center" style={{ animationDelay: "280ms" }}>
+    <div ref={box} className="relative z-10 text-center">
       <span ref={probe} aria-hidden className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap font-black italic uppercase tracking-[-0.04em]" style={{ fontSize: 100 }}>KNOWITBALL</span>
       <div className="relative inline-block px-1" style={{ filter: `drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 22px ${rgba(glow, 0.6)})` }}>
         <span className={`${word} whitespace-nowrap`} style={fill}>KNOWITBALL</span>
@@ -302,7 +302,7 @@ function Wordmark({ glow }: { glow: string }) {
  *  the headlight light coming down"). */
 function Floodlights() {
   const lamp = (side: "left" | "right", delay: string) => (
-    <div key={side} className="kit-flicker absolute top-[5.5%] rounded-[3px] bg-slate-800 p-[2px]"
+    <div key={side} className="absolute top-[5.5%] rounded-[3px] bg-slate-800 p-[2px]"
       style={{ [side]: "2%", width: 50, height: 21, boxShadow: "0 0 18px 6px rgba(235,245,255,.7)", animationDelay: delay } as React.CSSProperties}>
       <div className="h-full w-full rounded-[2px]" style={{ backgroundImage: "radial-gradient(circle, #fff 1.4px, rgba(255,255,255,.4) 2px, transparent 2.6px)", backgroundSize: "7px 5px" }} />
     </div>
@@ -310,7 +310,7 @@ function Floodlights() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       {/* The two beams: from each lamp bank down and in, widening onto the pitch. */}
-      <svg className="kit-flicker absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ filter: "blur(3px)", mixBlendMode: "screen" }}>
+      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ filter: "blur(3px)", mixBlendMode: "screen" }}>
         <defs>
           <linearGradient id="tb" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#eaf3ff" stopOpacity=".55" />

@@ -71,7 +71,7 @@ function TrophyCard({ competition, club, isYou, index }: {
 }) {
   return (
     <div
-      className="kit-card kit-rise relative overflow-hidden p-2.5"
+      className="kit-card kit-reveal relative overflow-hidden p-2.5"
       style={{ animationDelay: `${150 + index * 90}ms`, ...(isYou ? { boxShadow: "inset 0 0 0 1px rgba(251,191,36,.6), 0 0 22px rgba(251,191,36,.25)" } : {}) }}
     >
       {isYou && <Shine trigger={1} />}
@@ -104,7 +104,7 @@ function AwardCard({ id, winner, index }: { id: keyof typeof AWARD_META; winner:
   const meta = AWARD_META[id];
   return (
     <div
-      className="kit-card kit-rise relative overflow-hidden p-3"
+      className="kit-card kit-reveal relative overflow-hidden p-3"
       style={{ animationDelay: `${700 + index * 110}ms`, ...(winner?.isYou ? { boxShadow: "inset 0 0 0 1px rgba(251,191,36,.6), 0 0 22px rgba(251,191,36,.25)" } : {}) }}
     >
       {winner?.isYou && <Shine trigger={1} />}
@@ -166,7 +166,7 @@ function TeamOfSeasonPitch({ career }: { career: CareerState }) {
             style={{ left: `${m.x * 100}%`, top: `${m.y * 100}%`, width: "26%" }}
             title={`${m.name} — ${shortClub(m.club)}`}
           >
-            <div className="kit-rise flex w-full flex-col items-center" style={{ animationDelay: `${1300 + i * 70}ms` }}>
+            <div className="kit-reveal flex w-full flex-col items-center" style={{ animationDelay: `${1300 + i * 70}ms` }}>
             <div className="relative">
               <ImageWithFallback
                 src={faceOrFake(m.image, m.name)}
