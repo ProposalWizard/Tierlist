@@ -18,7 +18,7 @@
  * over a short window, so the pan is smooth without any memory.
  */
 import type { FpCamera } from "../firstPersonView";
-import { CX, PITCH_W } from "../pitch";
+import { CX, HALF_LEN, PITCH_W } from "../pitch";
 import { frameAt, trackDuration, type GoalTrack } from "./track";
 import type { StandId } from "./scene";
 
@@ -86,17 +86,18 @@ export function rigFor(track: GoalTrack, angle: ClipAngle, t: number, W: number,
     };
   }
   if (angle === "match") {
-    // High on the halfway line, panning with the ball (a slow, wide follow
-    // so a pass doesn't whip the picture round).
-    const pos = { x: -34, y: 52.5, eye: 26 };
+    // High and steep beside the play, following the ball along and across (a slow, wide follow so a pass
+    // doesn't whip the picture round). Harry, 14 Oct 2026: "I don't love seeing the stadiums": steep enough
+    // (about 50° down) and moved with the ball so the frame stays on the pitch, never the stands.
     const ball = smoothBall(track, t, -1.6, 1.0, 10);
-    const target = { x: Math.max(8, Math.min(PITCH_W - 10, ball.x * 0.7 + CX * 0.3)), y: Math.max(14, Math.min(91, ball.y)), z: 0 };
+    const target = { x: Math.max(10, Math.min(42, ball.x * 0.7 + CX * 0.3)), y: Math.max(29, Math.min(HALF_LEN * 2 - 29, ball.y)), z: 0 };
+    const pos = { x: target.x - 38, y: target.y, eye: 58 };
     const l = look(pos, target);
     const span = 46;
     return {
       cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: (W * l.dist) / span, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
       roll: 0,
-      skip: ["near"],
+      skip: ["near", "far", "end", "farEnd"], // no stands on the full-match view (Harry, 14 Oct 2026)
     };
   }
   if (angle === "net") {
