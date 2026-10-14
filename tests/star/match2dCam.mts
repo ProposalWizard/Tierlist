@@ -33,6 +33,7 @@ import { servedChance, cleanServed, SERVED_KINDS } from "../../scripts/cam3d/ser
 import { usesKindCam, solveKindCam, wideFromSide, orbitCamera, clampOrbit, ORBIT, centreOnPivot, centreShare, keepInBowl, bowlSpot, ORBIT as ORB } from "../../lib/star/style3d/match2dCam";
 import { stanceFor, shotTarget } from "../../lib/star/style3d/setPiece3d";
 import { frameTurned, solveTurnFit, easeFit, goalMouthOnScreen, pitchOnScreen, grabsBall, ballGrabMaxPx, bottomOverStand, overheadClipAlong, BOWL, FRAME_TURNED, showsGoal, type TurnFit } from "../../lib/star/style3d/match2dCam";
+import { limitOrbit, orbitMaxFor, ORBIT_LIMIT } from "../../lib/star/style3d/match2dCam";
 
 let fails = 0;
 const ok = (c: boolean, m: string) => { if (!c) { fails++; console.error("  ✗ " + m); } else console.log("  ✓ " + m); };
@@ -545,6 +546,41 @@ if (isMain) {
     }
     console.log("  smoothness (largest / typical camera step per frame): " + rep.join("; "));
     ok(nS > 0 && worstRatio <= 4 && worstElev <= 4 && worstLook <= 4, `turned framing is smooth: no frame's camera step over 4x the typical one (worst ${worstRatio.toFixed(1)}x), angle under 4° a frame (worst ${worstElev.toFixed(1)}°), look point under 4 m a frame (worst ${worstLook.toFixed(1)} m)`);
+  }
+  // CORNERS TURN LESS (Harry, 14 Oct 2026, option C): on a corner the turn stops softly at ±60° (distance cap
+  // still 165 m); every other kind keeps the full ±180°. At the limit the whole goal stays on screen.
+  {
+    const asks = Array.from({ length: 801 }, (_, i) => -400 + i);
+    const got = asks.map((d) => limitOrbit(d, "corner"));
+    const within = got.every((g) => Math.abs(g) <= ORBIT_LIMIT.corner + 1e-9);
+    const reaches = limitOrbit(180, "corner") > ORBIT_LIMIT.corner - 0.05 && limitOrbit(-180, "corner") < -ORBIT_LIMIT.corner + 0.05;
+    const free = asks.filter((d) => Math.abs(d) <= ORBIT_LIMIT.corner - ORBIT_LIMIT.knee).every((d) => limitOrbit(d, "corner") === d);
+    // soft: never turns back, and never moves more than the finger asked (no jump)
+    let soft = true;
+    for (let i = 1; i < asks.length; i++) { const step = got[i] - got[i - 1]; if (step < -1e-12 || step > 1 + 1e-9) soft = false; }
+    ok(orbitMaxFor("corner") === 60 && within && reaches && free && soft && FRAME_TURNED.maxD === 165,
+      `corner swipe: the turn stops at ±60° (asked 90° → ${limitOrbit(90, "corner").toFixed(1)}°, 180° → ${limitOrbit(180, "corner").toFixed(2)}°), follows the finger exactly up to ±${ORBIT_LIMIT.corner - ORBIT_LIMIT.knee}°, eases in after (no jump); distance cap still ${FRAME_TURNED.maxD} m`);
+    let otherBad = 0;
+    for (const k of [...SERVED_KINDS.filter((x) => x !== "corner"), "byline_cross"]) for (const d of asks) if (limitOrbit(d, k) !== clampOrbit(d)) otherBad++;
+    ok(otherBad === 0 && orbitMaxFor("byline_cross") === 180 && orbitMaxFor("one_on_one") === 180, `corner swipe: every other kind unchanged, a full ±180° (${otherBad} differ)`);
+    const ms = matchScale();
+    const lost: string[] = [];
+    let views = 0;
+    for (const seed of [1, 3]) {
+      const c = servedChance("corner", seed, W, H);
+      const b = { x: c.sc.ball.x, y: c.sc.ball.y };
+      const cam0 = keepDragRoom(solveCornerCam(c.f, b, c.figs, { x: c.keeper.x, y: c.keeper.y }, ms), b, W, H);
+      const goal = showsGoal(cam0, W, H);
+      for (const ask of [180, -180]) {
+        const d = limitOrbit(ask, "corner");
+        const o = frameTurned(orbitCamera(cam0, b, d), b, centreShare(d, 0), W, H, goal);
+        views++;
+        if (!goal || !goalMouthOnScreen(o, W, H)) lost.push(`#${seed} ${d.toFixed(0)}°`);
+      }
+    }
+    ok(views === 4 && lost.length === 0, `corner swipe at the limit: the whole goal mouth on screen for corner seeds 1 and 3, turned both ways (${views - lost.length} of ${views}${lost.length ? "; lost " + lost.join(", ") : ""})`);
+    const ev5 = fs.readFileSync(new URL("../../lib/star/style3d/engineView.ts", import.meta.url), "utf8");
+    ok(ev5.includes("orbit.target = limitOrbit(orbit.d0 - (dx / w) * ORBIT.degPerWidth, orbit.kind)") && ev5.includes("orbit.kind = f.kind;"), "corner swipe: the game's swipe uses the kind's limit (engineView.ts onMove)");
   }
   if (fails) { console.error(`${fails} failed`); process.exit(1); }
 }
