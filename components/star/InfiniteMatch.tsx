@@ -43,6 +43,8 @@ import { useIsAdmin } from "@/lib/useIsAdmin";
 import { saveScenarioShared } from "@/lib/star/scenarioStore";
 import type { Scenario, ScenarioKind } from "@/lib/star/canvasEngine";
 import type { PlaySettings } from "@/lib/star/playArea";
+import TuningSessionPanel from "./TuningSessionPanel";
+import { recordSeen } from "@/lib/star/tuningSession";
 import { PINNED_TOP } from "@/lib/pinnedTop";
 
 const INK = "#f2f5f9";
@@ -113,9 +115,20 @@ export default function InfiniteMatch({ settings, onBack }: {
   };
 
   const built = useMemo(() => buildTestCareer(settings, 1000 + run), [settings, run]);
+  // Read inside onChanceServed, which stays the same function across renders.
+  const seedRef = useRef(1000 + run);
+  seedRef.current = 1000 + run;
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
   const onChanceServed = useCallback((info: { kind: ScenarioKind | "dribble"; minute: number; scenario?: Scenario }) => {
     servedRef.current = [...servedRef.current, { kind: info.kind, minute: info.minute }];
+    // The Tuning panel's session count (lib/star/tuningSession.ts).
+    recordSeen({
+      page: "match", kind: info.kind, minute: info.minute, match: `${seedRef.current}`,
+      ball: info.scenario ? { x: info.scenario.ball.x, y: info.scenario.ball.y } : undefined,
+      position: settingsRef.current.position, league: settingsRef.current.division, seed: seedRef.current,
+    });
     setServed(servedRef.current);
     setCurrent(info.scenario ? { scenario: info.scenario, minute: info.minute } : null);
     setFlash(null);
@@ -265,6 +278,14 @@ export default function InfiniteMatch({ settings, onBack }: {
       {done && (
         <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80" }}>{done}</div>
       )}
+
+      <TuningSessionPanel
+        page="match"
+        context={() => ({
+          kind: current?.scenario.kind, minute: current?.minute, seed: 1000 + run,
+          league: settings.division, position: settings.position,
+        })}
+      />
     </div>
   );
 }

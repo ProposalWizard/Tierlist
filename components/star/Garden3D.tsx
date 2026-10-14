@@ -142,23 +142,23 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
           onShopDoor: () => {
             if (dead) return;
             setLeaving(true);
-            setTimeout(() => shopRef.current(), 350);
+            shopRef.current();
           },
-          // the casino's doors and the pitch's gate: a fade, then through
+          // the casino's doors and the pitch's gate: straight through (no fade, 14 Oct 2026)
           onCasinoDoor: onCasino ? () => {
             if (dead) return;
             setLeaving(true);
-            setTimeout(() => casinoRef.current?.(), 350);
+            casinoRef.current?.();
           } : undefined,
           onTrainingGate: onTraining ? () => {
             if (dead) return;
             setLeaving(true);
-            setTimeout(() => trainingRef.current?.(), 350);
+            trainingRef.current?.();
           } : undefined,
           onHouseDoor: onHouse ? () => {
             if (dead) return;
             setLeaving(true);
-            setTimeout(() => houseRef.current?.(), 350);
+            houseRef.current?.();
           } : undefined,
           onContextLost: () => {
             if (dead) return;
@@ -272,7 +272,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
       )}
 
       {/* a quick fade as you step into the shop */}
-      <div style={{ position: "absolute", inset: 0, background: "#120e0b", opacity: leaving ? 1 : 0, transition: "opacity 0.35s ease", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", inset: 0, background: "#120e0b", opacity: leaving ? 1 : 0, pointerEvents: "none" }} />
     </div>
   );
 }
