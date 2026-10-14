@@ -179,6 +179,7 @@ const GROUPS: AdminGroup[] = [
     links: [
       { name: "Match Engine", href: "/star-match-dev" },
       { name: "Dribble", href: "/star-dribble-dev" },
+      { name: "Dribble (stick)", href: "/star-dribble-stick-dev" },
       { name: "Live Attack", href: "/star-attack-dev" },
       { name: "Bicycle Kick", href: "/star-bicycle-dev" },
       { name: "Draft (dev)", href: "/draft-dev" },

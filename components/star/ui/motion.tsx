@@ -23,8 +23,13 @@ import { useEffect, useRef, useState } from "react";
 
 export const KIT_CSS = `
   @keyframes kib-rise { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
-  [data-page-active="true"] .kib-rise { animation: kib-rise 520ms cubic-bezier(.2,.9,.25,1) both; }
-  .kit-rise { animation: kib-rise 560ms cubic-bezier(.2,.9,.25,1) both; }
+  /* Menus open on the tap's own frame (Harry, 14 Oct 2026: "there are too many
+     animations in the menus. If I click on something, it should just go
+     straight in."). kib-rise / kit-rise stay as class names so nothing that
+     uses them breaks, but they no longer move or fade anything. A reveal that
+     belongs to a MOMENT (awards night, a signing, the post-match money) uses
+     kit-reveal instead — never a menu, a list or a screen you tapped into. */
+  .kit-reveal { animation: kib-rise 560ms cubic-bezier(.2,.9,.25,1) both; }
   @keyframes kib-breathe { 0%,100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1.5px) scaleY(1.012); } }
   .kib-breathe { animation: kib-breathe 3.6s ease-in-out infinite; transform-origin: 50% 100%; }
   @keyframes kib-hop { 0%,100% { transform: translateY(0); } 18% { transform: translateY(-16px); } 34% { transform: translateY(0); } 52% { transform: translateY(-10px); } 68% { transform: translateY(0); } }
@@ -46,7 +51,7 @@ export const KIT_CSS = `
   .kib-glow-pulse { animation: kib-glow-pulse 3.2s ease-in-out infinite; }
   @keyframes kib-flood { 0%,100% { opacity: .75; } 50% { opacity: 1; } }
   .kib-flood { animation: kib-flood 4s ease-in-out infinite; }
-  .kib-press { transition: transform 120ms ease, filter 120ms ease; }
+  .kib-press { transition: transform 70ms ease, filter 70ms ease; }
   .kib-press:active { transform: scale(.94); filter: brightness(.92); }
 
   @keyframes kit-float { 0% { opacity: 0; transform: translate(-50%, 6px) scale(.9); } 18% { opacity: 1; transform: translate(-50%, 0) scale(1.08); } 30% { transform: translate(-50%, -4px) scale(1); } 100% { opacity: 0; transform: translate(-50%, -34px) scale(1); } }
@@ -79,12 +84,6 @@ export const KIT_CSS = `
   .kit-loss-flash { animation: kit-loss-flash 700ms ease-out 1 both; }
   @keyframes kit-badge-pop { 0% { opacity: 0; transform: scale(0); } 55% { opacity: 1; transform: scale(1.35); } 75% { transform: scale(.88); } 100% { opacity: 1; transform: scale(1); } }
   .kit-badge-pop { animation: kit-badge-pop 520ms cubic-bezier(.3,.7,.4,1.4) 1 both; }
-  @keyframes kit-app-open { 0% { opacity: 0; transform: scale(.14); border-radius: 40%; } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
-  .kit-app-open { animation: kit-app-open 380ms cubic-bezier(.2,.9,.25,1) 1 both; }
-  @keyframes kit-app-close { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: scale(.14); } }
-  .kit-app-close { animation: kit-app-close 230ms cubic-bezier(.5,0,.75,.2) 1 both; }
-  @keyframes kit-icon-in { 0% { opacity: 0; transform: scale(.55) translateY(8px); } 70% { opacity: 1; transform: scale(1.06); } 100% { opacity: 1; transform: none; } }
-  .kit-icon-in { animation: kit-icon-in 420ms cubic-bezier(.3,.8,.35,1.2) 1 both; }
   @keyframes kit-fly-x { from { transform: translateX(0); } to { transform: translateX(var(--tx)); } }
   .kit-fly-x { animation: kit-fly-x 780ms cubic-bezier(.35,0,.65,1) 1 both; }
   @keyframes kit-fly-y { from { transform: translateY(0); } to { transform: translateY(var(--ty)); } }
@@ -150,9 +149,9 @@ export const KIT_CSS = `
 
   @media (prefers-reduced-motion: reduce) {
     .kit-hand-bob, .kit-tour-ring, .kit-tile-flash { animation: none !important; }
-    .kit-shake-x, .kit-badge-pop, .kit-app-open, .kit-app-close, .kit-icon-in, .kit-win-pop, .kit-deal, .kit-reel-spin { animation: none !important; }
+    .kit-shake-x, .kit-badge-pop, .kit-win-pop, .kit-deal, .kit-reel-spin { animation: none !important; }
     .kit-loss-flash, .kit-win-overlay, .kit-fly-x, .kit-fly-y, .kit-fly-s, .kit-rays { animation: none !important; display: none !important; }
-    [data-page-active="true"] .kib-rise, .kit-rise, .kib-breathe, .kib-hop, .kib-confetti, .kib-play-pulse, .kib-shake,
+    .kit-reveal, .kib-breathe, .kib-hop, .kib-confetti, .kib-play-pulse, .kib-shake,
     .kib-drop, .kib-minus, .kib-sheen, .kib-sheen-fast, .kib-glow-pulse, .kib-flood,
     .kit-pop, .kit-text-shine, .kit-flicker, .kit-fade, .kit-drop-in, .kit-drift { animation: none !important; }
     .kit-float, .kit-shine, .kit-shine-loop, .kit-mote, .kit-gain { animation: none !important; opacity: 0 !important; }

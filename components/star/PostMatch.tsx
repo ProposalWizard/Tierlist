@@ -222,7 +222,7 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
           </div>
         )}
 
-        <div className={moneyIn ? "kit-rise" : "opacity-0"}>
+        <div className={moneyIn ? "kit-reveal" : "opacity-0"}>
         <ClubCard glow="#fbbf24" strength={0.18} className="mt-2 overflow-hidden">
           <SectionLabel className="px-3 pb-1 pt-2.5">Pay</SectionLabel>
           <RowStar label="Wage" value={stats.wage} on={moneyIn} />
@@ -340,7 +340,7 @@ function ChanceList({ chances }: { chances: { minute: number; kind: string; outc
     <div className="border-t border-white/10 bg-black/30 px-3 py-2">
       {chances.length === 0 && <div className="text-[12px] font-bold text-white/80">No chances came to you.</div>}
       {chances.map((c, i) => (
-        <div key={i} className="kit-rise flex items-center gap-2 py-0.5 text-[12px] font-black text-white" style={{ animationDelay: `${i * 50}ms` }}>
+        <div key={i} className="kit-reveal flex items-center gap-2 py-0.5 text-[12px] font-black text-white" style={{ animationDelay: `${i * 50}ms` }}>
           <span className="w-10 shrink-0 tabular-nums text-white/75">{minuteLabel(c.minute)}&apos;</span>
           <span className="min-w-0 flex-1 truncate">{CHANCE_KIND_LABEL[c.kind] ?? c.kind}</span>
           <span className={`shrink-0 ${chanceOutcomeGood(c.outcome) ? "text-emerald-300" : "text-red-300"}`}>

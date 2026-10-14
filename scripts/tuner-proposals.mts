@@ -27,6 +27,7 @@ import {
   proposalsFrom, isCorrection, FAULT_LABEL, PROPOSAL_THRESHOLD,
   type Correction, type FaultKind,
 } from "../lib/star/scenarioCorrections";
+import { printTuningNotes } from "./tuning-notes.mts";
 
 function env(name: string): string | undefined {
   if (process.env[name]) return process.env[name];
@@ -71,6 +72,9 @@ try {
   corrections = file ? fromFile(file) : await fromTable();
 } catch (e) {
   console.error(`Could not read corrections: ${(e as Error).message}`);
+  // The notes live in their own table, so they still print.
+  await printTuningNotes();
+  console.log("");
   process.exit(1);
 }
 
@@ -105,4 +109,6 @@ if (near.length) {
 }
 const silent = corrections.filter((c) => !c.faults.length).length;
 if (silent) console.log(`\n${silent} corrections repaired nothing measurable (recorded, not evidence).`);
+// What the team said in plain words, from the Tuning panel (star_tuning_notes).
+await printTuningNotes();
 console.log("");

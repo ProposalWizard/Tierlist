@@ -366,6 +366,9 @@ export interface RandomiseOptions {
   /** Serve the drawing exactly, no nudge on anyone (a penalty: "the ball on
    *  the spot… faking variety there would be inventing it"). */
   noNudge?: boolean;
+  /** Measurement only (tests/star/nudgeSafeRange.mts): multiplies JITTER_M and
+   *  the ball/you nudge. Absent: 1, the game exactly as today. */
+  nudgeScale?: number;
 }
 
 export function randomiseAuthored(
@@ -382,6 +385,8 @@ export function randomiseAuthored(
   // even saw it. Harry's named penalty and free-kick rules decide those.
   const kindOf = base.source?.kind ?? base.kind;
   const exact = !!opts.noNudge || DEAD_BALL_EXACT.has(kindOf);
+  const k = opts.nudgeScale ?? 1;
+  const ballJitter = BALL_JITTER_M * k, manJitter = JITTER_M * k;
   for (const scale of exact ? [0] : ATTEMPT_SCALE) {
     // The ball and you travel as one rigid pair, so the stance between you
     // survives; everyone else is nudged independently.
@@ -389,14 +394,14 @@ export function randomiseAuthored(
     // pitch in 34.2% of served corners (behind the goal line or over the
     // touchline). The taker stays with it, so neither moves.
     const deadBall = kindOf === "corner" || !!opts.fixedBall;
-    const shift = scale === 0 || deadBall ? { x: 0, y: 0 } : nudge({ x: 0, y: 0 }, BALL_JITTER_M * scale, rng);
+    const shift = scale === 0 || deadBall ? { x: 0, y: 0 } : nudge({ x: 0, y: 0 }, ballJitter * scale, rng);
     const cand: ShapeSample = {
       ball: { x: s0.ball.x + shift.x, y: s0.ball.y + shift.y },
       you: { x: s0.you.x + shift.x, y: s0.you.y + shift.y },
       // Derived from the nudged ball, never copied — see KeeperTuning.
       keeper: { x: 0, y: 0 },
-      defenders: s0.defenders.map((d) => (scale === 0 ? d : nudge(d, JITTER_M * scale, rng))),
-      mates: s0.mates.map((m) => (scale === 0 ? m : nudge(m, JITTER_M * scale, rng))),
+      defenders: s0.defenders.map((d) => (scale === 0 ? d : nudge(d, manJitter * scale, rng))),
+      mates: s0.mates.map((m) => (scale === 0 ? m : nudge(m, manJitter * scale, rng))),
     };
     cand.keeper = placeKeeper(cand.ball, shares, s0.keeper, base.source?.kind);
     // NO NUDGE PUTS TWO MEN INSIDE EACH OTHER. Harry, 26 Sep 2026, on a sheet

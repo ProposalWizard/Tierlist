@@ -349,12 +349,12 @@ export default function VersusScreen({ matchday, date, competition, results, clu
               onClick={() => setShowSubs(s => !s)}
               className="flex h-[28px] w-full items-center justify-center gap-1.5 px-3 text-[11px] font-black uppercase tracking-widest text-white/80"
             >
-              <span className={`text-white/40 transition-transform ${showSubs ? "rotate-90" : ""}`}>›</span>
+              <span className={`text-white/40 ${showSubs ? "rotate-90" : ""}`}>›</span>
               Substitutes
               <span className="text-amber-300">+{yours.bench.length}</span>
             </button>
             <div
-              className="grid grid-cols-2 gap-px overflow-y-auto border-t border-white/10 bg-white/10 transition-[max-height] duration-300 ease-out"
+              className="grid grid-cols-2 gap-px overflow-y-auto border-t border-white/10 bg-white/10"
               style={{ maxHeight: showSubs ? "60vh" : "0px" }}
             >
               {homeScouted ? <Bench sheet={home} kit={kits.home} /> : <UnscoutedBench club={home.club} />}

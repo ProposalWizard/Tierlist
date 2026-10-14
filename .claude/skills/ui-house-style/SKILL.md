@@ -39,6 +39,47 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 14 Oct 2026 — menus open on the tap's own frame (Harry)
+- **"There are too many animations in the menus. If I click on something, it
+  should just go straight in."** A tap shows the next screen at once: no fade,
+  slide, rise, stagger, zoom, scale-in, delayed reveal or wait before going on.
+  Measured at 390×844 (dev server, tap → screen still): Home → Settings
+  3485 → 392 ms, Settings → Home 3433 → 360, Home ↔ Stats 873/966 → 54,
+  Phone 1348 → 90, a phone app 667 → 164, League 944 → 192.
+- **What this means when building:**
+  - `kit-rise` / `kib-rise` / `RiseIn` no longer animate (kept as names so old
+    code compiles). Do not add a new entrance to a menu, list, tab or screen.
+  - A tab or arrow tap on swipe pages jumps; only a finger that dragged the
+    page part-way gets a 140 ms settle.
+  - Phone apps open without the icon zoom; no icon stagger; a badge pops only
+    when its count changes while you watch.
+  - Dropdowns (league mini-table, shop menus) just appear. Bars start at
+    their value; they only glide when the value changes.
+  - No `setTimeout` between a tap and the next screen (the contract "signed"
+    stamp held 1.3 s; the 3D doors faded 350 ms — both gone).
+- **Still allowed:** press feedback on the button itself, 80 ms or less
+  (`kib-press`, `kit-btn` are 70 ms); progress bars that show real work; a
+  value that changes while you look (count-ups, a can filling the bar); idle
+  loops that do not hold anything back; in-match play and cut scenes.
+- **Moments, not menus, keep their reveal** — they use `kit-reveal`, never a
+  menu: awards night (`SeasonAwardsScreen`, `BallonDor`), the signing
+  (`TransferSigning`), post-match money (`PostMatch`), deadline-day and
+  knockout/play-off roundups (Mikey asked for the bracket animation, 8 Oct),
+  the cup draw, the vote ceremony, the call-up. If Harry calls one of these a
+  menu, it loses its reveal too.
+
+### 14 Oct 2026 — texture packs are a picture dropdown (Harry)
+- **"I think texture packs should have its own drop down where you can see a
+  preview image."** Settings → Texture pack is a button showing the current
+  pack's picture and name; tap opens a sheet (bottom on a phone, centred on a
+  wide screen) with one row per pack: picture, name, one line, a tick on the
+  current one. Choosing applies at once. The pictures are the real 3D match
+  (same chance, same camera, golden hour, `?pack=<id>`), 288×201 WebP, 2–13 KB
+  each (`public/star/texture-packs/`). The list reads `TEXTURE_PACKS` +
+  `TEXTURE_PACK_PREVIEW` (lib/star/style3d/texturePack.ts), so a new pack shows
+  up by itself. A choice with a look to it gets a picture, not a word (inferred
+  for other look settings).
+
 ### 13 Oct 2026 — shop playtest (Harry)
 - **A can is about the size of a boot or a watch on its page** ("way too big on this
   page"): the Showroom can went 581 → 348px tall at 390×844.

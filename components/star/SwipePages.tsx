@@ -13,14 +13,12 @@
 import { useRef, useState } from "react";
 import { ArrowButton, type EdgeArrow } from "./ui/Nav";
 
-/** A settle with a little overshoot, so a page lands rather than stops. The
- *  reduced-motion rule in HomeFx.tsx does not reach inline transitions, so a
- *  phone set to reduce motion gets the plain curve (see `settle`). */
-const SPRING = "420ms cubic-bezier(.3,1.35,.45,1)";
-let SETTLE = SPRING;
-if (typeof window !== "undefined") {
-  try { if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) SETTLE = "1ms linear"; } catch { /* keep the spring */ }
-}
+/** A TAP on a tab or an arrow turns the page on the same frame: no slide
+ *  (Harry, 14 Oct 2026: "If I click on something, it should just go
+ *  straight in"). Only a finger that dragged the page part-way gets a short
+ *  settle for the rest of the way, so the page does not jump out from under
+ *  it. It was a 420 ms spring for both. */
+const DRAG_SETTLE = "140ms ease-out";
 
 export type PageTone = "calm" | "pitch";
 
@@ -47,6 +45,10 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
   const dragged = useRef(false);
   const [dx, setDx] = useState(0);
+  /** The page is settling after a drag (cleared when that settle ends, so a
+   *  later tap — here or from the parent — still jumps). */
+  const [fromDrag, setFromDrag] = useState(false);
+  const settle = fromDrag ? `transform ${DRAG_SETTLE}` : "none";
   const [width, setWidth] = useState(1);
   const vp = useRef<HTMLDivElement>(null);
 
@@ -75,6 +77,7 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
     if (!s || !dragged.current) { setDx(0); return; }
     const mx = e.clientX - s.x;
     const turn = Math.abs(mx) > Math.min(80, width * 0.18);
+    setFromDrag(true);
     if (turn && mx < 0 && index < 2) onIndex(index + 1);
     if (turn && mx > 0 && index > 0) onIndex(index - 1);
     setDx(0);
@@ -89,13 +92,13 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
       {!arrows ? (
       <div className={`relative mb-2 grid shrink-0 grid-cols-3 rounded-[3px] bg-black/30 p-1 ${inset ? "mx-3" : ""}`}>
         {/* The highlight and its underline follow the finger while you
-            drag, then spring onto the tab you land on. */}
+            drag; a tap moves them at once. */}
         <div
           className="absolute bottom-1 top-1 rounded-[2px] bg-white/15"
           style={{
             width: "calc((100% - 0.5rem) / 3)", left: "0.25rem",
             transform: `translateX(${(index - dx / width) * 100}%)`,
-            transition: dx === 0 ? `transform ${SETTLE}` : "none",
+            transition: dx === 0 ? settle : "none",
           }}
         >
           <div className="absolute inset-x-5 -bottom-[3px] h-[3px] rounded-full bg-emerald-400" style={{ boxShadow: "0 0 8px rgba(52,211,153,.8)" }} />
@@ -104,8 +107,8 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
           <button
             key={l}
             data-tour={`tab-${i}`}
-            onClick={() => onIndex(i)}
-            className={`relative z-10 py-1.5 text-[11px] font-black uppercase tracking-widest transition ${i === index ? "text-white" : "text-white/55"}`}
+            onClick={() => { setFromDrag(false); onIndex(i); }}
+            className={`relative z-10 py-1.5 text-[11px] font-black uppercase tracking-widest ${i === index ? "text-white" : "text-white/55"}`}
           >
             {l}
           </button>
@@ -127,16 +130,17 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
           style={{
             width: "300%",
             transform: `translateX(calc(${-index * (100 / 3)}% + ${dx}px))`,
-            transition: dx === 0 ? `transform ${SETTLE}` : "none",
+            transition: dx === 0 ? settle : "none",
           }}
+          onTransitionEnd={(e) => { if (e.target === e.currentTarget) setFromDrag(false); }}
         >
           {children.map((c, i) => (
             // Each page scrolls on its own, and a scroll box starts a fresh
             // touch-action: without pan-y here too, a finger's sideways drag
             // was taken by the phone as a scroll (pointercancel) and the page
             // never turned. Mouse drags were unaffected, which hid it.
-            // data-page-active: the page on screen, so its cards can play
-            // their rise-in each time it is opened (HomeFx.tsx).
+            // data-page-active: the page on screen (its cards used to play a
+            // rise-in on it; since 14 Oct 2026 they just show).
             <div key={i} data-scroll-root data-page-active={i === index} data-sk-tone={tones?.[i]} className={`kib-shell-noscroll h-full overflow-y-auto ${inset ? "px-3" : ""} ${arrows && !arrows.bleed?.includes(i) ? "pb-[38px]" : ""}`} style={{ width: "33.3333%", touchAction: "pan-y" }}>
               {c}
             </div>
@@ -148,11 +152,11 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
         <div data-edge-arrows className="pointer-events-none absolute inset-x-0 bottom-1 z-20 flex items-end justify-between px-2">
           <div className="pointer-events-auto">
             {index > 0
-              ? <ArrowButton compact side="left" a={{ tour: `tab-${index - 1}`, icon: arrows.icons[index - 1], label: labels[index - 1], onClick: () => onIndex(index - 1) }} />
+              ? <ArrowButton compact side="left" a={{ tour: `tab-${index - 1}`, icon: arrows.icons[index - 1], label: labels[index - 1], onClick: () => { setFromDrag(false); onIndex(index - 1); } }} />
               : arrows.leftEnd ? <ArrowButton compact side="left" a={arrows.leftEnd} /> : null}
           </div>
           <div className="pointer-events-auto">
-            {index < 2 ? <ArrowButton compact side="right" a={{ tour: `tab-${index + 1}`, icon: arrows.icons[index + 1], label: labels[index + 1], onClick: () => onIndex(index + 1) }} /> : null}
+            {index < 2 ? <ArrowButton compact side="right" a={{ tour: `tab-${index + 1}`, icon: arrows.icons[index + 1], label: labels[index + 1], onClick: () => { setFromDrag(false); onIndex(index + 1); } }} /> : null}
           </div>
         </div>
       )}

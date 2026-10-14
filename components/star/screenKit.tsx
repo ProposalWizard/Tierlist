@@ -60,14 +60,14 @@ export function SegTabs<T extends string>({ tabs, value, onChange, small = false
   }
   return (
     <div className={`relative grid rounded-xl bg-black/30 p-1 ${className}`} style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`, boxShadow: "inset 0 1px 3px rgba(0,0,0,.5)" }}>
-      {/* The lit tab slides to the one you pick, like the home tabs. */}
+      {/* The lit tab sits on the one you pick. */}
       <div
         aria-hidden
         className="absolute bottom-1 top-1 rounded-lg bg-white/15"
         style={{
           width: `calc((100% - 0.5rem) / ${n})`, left: "0.25rem",
           transform: `translateX(${i * 100}%)`,
-          transition: "transform 380ms cubic-bezier(.2,.9,.25,1.15)",
+          // A tap moves it at once (menus open still, 14 Oct 2026).
           boxShadow: "inset 0 1px 0 rgba(255,255,255,.16), 0 2px 6px rgba(0,0,0,.35)",
         }}
       >

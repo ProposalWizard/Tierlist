@@ -649,7 +649,6 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
         [data-showroom-shop] .sr-noscroll::-webkit-scrollbar{display:none}
         @keyframes srSpent{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(26px);opacity:0}}
         @keyframes srFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-        @keyframes srDrop{from{transform:translateY(-12px);opacity:0}to{transform:none;opacity:1}}
         @media (prefers-reduced-motion: reduce){[data-showroom-shop] *{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
       `}</style>
       {/* the store at night (Higgsfield shop art), darkened: the item is the light */}
@@ -782,7 +781,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
         )}
         {pickOpen && tab === "shop" && <CatGrid ci={ci} onPick={openCat} />}
         {moreOpen && moreLinks.length > 0 && (
-          <div className="pointer-events-auto mx-auto mt-1.5 grid max-w-[420px] grid-cols-4 gap-1.5 rounded-[14px] bg-[#0b1222]/95 p-2 ring-1 ring-white/15 backdrop-blur" style={{ animation: "srDrop .18s ease-out", marginInline: 10 }} data-shop-more-menu>
+          <div className="pointer-events-auto mx-auto mt-1.5 grid max-w-[420px] grid-cols-4 gap-1.5 rounded-[14px] bg-[#0b1222]/95 p-2 ring-1 ring-white/15 backdrop-blur" style={{ marginInline: 10 }} data-shop-more-menu>
             {moreLinks.map((l) => (
               <button key={l.id} onClick={() => { setMoreOpen(false); l.onClick(); }} data-shop-link={l.id} aria-label={l.label}
                 className={`kib-press flex flex-col items-center gap-1 rounded-[10px] bg-white/[0.06] py-2 ${l.locked ? "opacity-50" : ""}`}>
@@ -793,7 +792,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
           </div>
         )}
         {fameOpen && (
-          <div className="pointer-events-auto mx-2.5 mt-1.5 rounded-[12px] bg-[#0b1222]/95 p-3 ring-1 ring-amber-300/40 backdrop-blur" style={{ animation: "srDrop .18s ease-out" }} data-fame-banner onClick={() => setFameOpen(false)}>
+          <div className="pointer-events-auto mx-2.5 mt-1.5 rounded-[12px] bg-[#0b1222]/95 p-3 ring-1 ring-amber-300/40 backdrop-blur" data-fame-banner onClick={() => setFameOpen(false)}>
             <div className="flex items-center gap-3">
               <div className="text-[34px] font-black leading-none tabular-nums text-amber-300" style={{ textShadow: "0 0 16px rgba(251,191,36,.5)" }}>{fame}</div>
               <div className="min-w-0 flex-1">
@@ -951,7 +950,7 @@ function CatStrip({ ci, onPick }: { ci: number; onPick: (i: number) => void }) {
 /** Option B: the category pill opens this grid. */
 function CatGrid({ ci, onPick }: { ci: number; onPick: (i: number) => void }) {
   return (
-    <div className="pointer-events-auto mx-2.5 mt-1.5 grid grid-cols-4 gap-1.5 rounded-[14px] bg-[#0b1222]/95 p-2 ring-1 ring-white/15 backdrop-blur" style={{ animation: "srDrop .18s ease-out" }} data-cat-grid>
+    <div className="pointer-events-auto mx-2.5 mt-1.5 grid grid-cols-4 gap-1.5 rounded-[14px] bg-[#0b1222]/95 p-2 ring-1 ring-white/15 backdrop-blur" data-cat-grid>
       {SHOWROOM_CATS.map((c, i) => (
         <button key={c.id} onClick={() => onPick(i)} data-grid-cat={c.id}
           className="kib-press flex flex-col items-center gap-1 rounded-[10px] py-2" style={i === ci ? { background: `${c.accent}33`, boxShadow: `inset 0 0 0 1.5px ${c.accent}` } : { background: "rgba(255,255,255,.06)" }}>
