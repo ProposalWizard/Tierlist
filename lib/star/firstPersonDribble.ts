@@ -1,5 +1,6 @@
 import { CX } from "./pitch";
 import { getTuning } from "./tuningStore";
+import { STICK } from "./three3d/gait";
 
 /**
  * FIRST-PERSON DRIBBLING — THREE WAVES, ONE TO THREE MEN EACH, THROUGH HIS
@@ -346,6 +347,12 @@ export interface FpRunState {
   touchT?: number;
   /** The man taking you on now (index); the rest of his wave cover. */
   presser?: number | null;
+  // ── The stick (prototype; absent = the swipe run, exactly as before) ──
+  /** Where the stick is pushed: x right, y up the pitch, length 0..1. Set
+   *  (even to 0,0) = the stick drives the run; see "THE STICK" below. */
+  stick?: FpStick;
+  /** Forward m/s you are actually running at (the stick builds and eases it). */
+  fwd?: number;
 }
 
 // ── Tuned constants ─────────────────────────────────────────────────────────
@@ -685,6 +692,81 @@ export function applySteer(s: FpRunState, laneTarget: number): void {
   s.laneTarget = clamp(laneTarget, s.minX, s.maxX);
 }
 
+// ── THE STICK (prototype, Harry 14 Oct 2026) ────────────────────────────────
+//
+// "the other top-down dribbling we had, especially in 3D, where you had the
+// joystick and you were moving around with the ball. You're actually
+// dribbling, not just swiping left and right."
+//
+// The same run, the same men, the same tackle (lateral gap at contact), the
+// same burst and the same passes. Only how YOU move changes: with the swipe
+// you always run forward at full speed and the thumb picks a lane; with the
+// stick you choose the speed too. How far it is pushed is how fast (3D's own
+// stick zones, lib/star/three3d/gait.ts STICK: stand, walk, jog, run, a full
+// push sprints), and the way it points is the way you go — you can stop and
+// wait for a man, back off, cut across. Speed builds and eases off (about a
+// quarter of a second), never jumps. Sideways is capped (STICK_LAT): the
+// whole run rests on "you cannot out-jog a man's mirror, only a burst beats
+// him", and a full sideways push at run speed would break that.
+
+export interface FpStick { x: number; y: number }
+
+/** Your sideways speed at most, m/s (the swipe's STEER_SPEED is 2.0). */
+export const STICK_LAT = 2.4;
+/** Speed for a walk, a jog and a sprint push, as a share of your run speed. */
+export const STICK_WALK = 0.3;
+export const STICK_JOG = 0.62;
+export const STICK_SPRINT = 1.15;
+/** Seconds from standing to your run speed, and from it to standing. */
+export const STICK_UP_T = 0.28;
+export const STICK_DOWN_T = 0.3;
+/** You may back off this far behind where the run started. */
+export const STICK_BACK_ROOM = 3;
+
+/** Point the stick. (0,0) stands still — the stick stays in charge. */
+export function applyStick(s: FpRunState, x: number, y: number): void {
+  let mx = Number.isFinite(x) ? x : 0, my = Number.isFinite(y) ? y : 0;
+  const m = Math.hypot(mx, my);
+  if (m > 1) { mx /= m; my /= m; }
+  s.stick = { x: mx, y: my };
+  if (s.fwd === undefined) s.fwd = 0;
+}
+
+/** How fast this push asks you to go (m/s), from your run speed. */
+export function stickSpeed(mag: number, run: number): number {
+  const m = clamp(mag, 0, 1);
+  if (m < STICK.dead) return 0;
+  if (m >= STICK.sprint) return run * STICK_SPRINT;
+  if (m < STICK.walk) return run * STICK_WALK * (0.5 + 0.5 * (m - STICK.dead) / (STICK.walk - STICK.dead));
+  if (m < STICK.jog) return run * (STICK_WALK + (STICK_JOG - STICK_WALK) * (m - STICK.walk) / (STICK.jog - STICK.walk));
+  return run * (STICK_JOG + (1 - STICK_JOG) * (m - STICK.jog) / (STICK.sprint - STICK.jog));
+}
+
+/** One tick of you, on the stick: moves you sideways and returns the forward m/s (before a burst's boost). */
+function stickMotion(s: FpRunState, sdt: number): number {
+  const st = s.stick!;
+  const mag = Math.hypot(st.x, st.y);
+  const want = stickSpeed(mag, s.speed);
+  const ux = mag > 1e-6 ? st.x / mag : 0, uy = mag > 1e-6 ? st.y / mag : 0;
+  const wantFwd = want * uy;
+  const cur = s.fwd ?? 0;
+  const rate = (wantFwd > cur ? s.speed / STICK_UP_T : s.speed / STICK_DOWN_T) * sdt;
+  s.fwd = cur + clamp(wantFwd - cur, -rate, rate);
+  s.x += clamp(want * ux, -STICK_LAT, STICK_LAT) * sdt;
+  s.x = clamp(s.x, s.minX, s.maxX);
+  s.laneTarget = s.x;
+  return s.fwd;
+}
+
+/** Where the ball sits ahead of your feet with the stick (m): closer when slow,
+ *  a longer touch on at a sprint. A picture only. */
+export function stickBallLead(s: FpRunState, footSide: 1 | -1, burst = 0): number {
+  const sp = Math.max(0, s.fwd ?? 0);
+  const k = clamp(sp / Math.max(0.1, s.speed), 0, STICK_SPRINT);
+  const step = 0.55 + 1.5 * (carryLead(s.stride, footSide, burst) - 0.42);
+  return 0.32 + (step - 0.32) * Math.min(1, k) + Math.max(0, k - 1) * 2.2;
+}
+
 /** The nearest still-live man in the currently active wave — whoever a
  *  burst fired right now would actually be judged against. */
 function nearestLiveInActiveRound(s: FpRunState): FpDefender | undefined {
@@ -827,14 +909,19 @@ export function stepRun(s: FpRunState, dt: number): RunPhase {
     if (b.t >= BURST_T) s.burst = null;
   }
 
-  // Steer — always slower than a defender's mirror; see the file header.
-  s.x += clamp(s.laneTarget - s.x, -STEER_SPEED * sdt, STEER_SPEED * sdt);
-  // Clamp, never lose the ball for drifting wide — dribble.ts's own lesson.
-  s.x = clamp(s.x, s.minX, s.maxX);
-
-  const forward = s.speed * boost;
+  let forward: number;
+  if (s.stick) {
+    forward = stickMotion(s, sdt) * boost;
+  } else {
+    // Steer — always slower than a defender's mirror; see the file header.
+    s.x += clamp(s.laneTarget - s.x, -STEER_SPEED * sdt, STEER_SPEED * sdt);
+    // Clamp, never lose the ball for drifting wide — dribble.ts's own lesson.
+    s.x = clamp(s.x, s.minX, s.maxX);
+    forward = s.speed * boost;
+  }
   s.y -= forward * sdt;
-  s.stride += forward * sdt;
+  if (s.y > s.startY + STICK_BACK_ROOM) s.y = s.startY + STICK_BACK_ROOM;
+  s.stride += Math.abs(forward) * sdt;
 
   for (const m of s.mates) placeMate(s, m, sdt, false);
 
@@ -1457,12 +1544,17 @@ function stepRunDuels(s: FpRunState, dt: number): RunPhase {
     if (f.t >= f.dur) { s.feint = null; resolveFeint(s, f); }
   }
 
-  s.x += clamp(s.laneTarget - s.x, -STEER_SPEED * sdt, STEER_SPEED * sdt);
-  s.x = clamp(s.x, s.minX, s.maxX);
-
-  const forward = s.speed * boost * slow;
+  let forward: number;
+  if (s.stick) {
+    forward = stickMotion(s, sdt) * boost * slow;
+  } else {
+    s.x += clamp(s.laneTarget - s.x, -STEER_SPEED * sdt, STEER_SPEED * sdt);
+    s.x = clamp(s.x, s.minX, s.maxX);
+    forward = s.speed * boost * slow;
+  }
   s.y -= forward * sdt;
-  s.stride += forward * sdt;
+  if (s.y > s.startY + STICK_BACK_ROOM) s.y = s.startY + STICK_BACK_ROOM;
+  s.stride += Math.abs(forward) * sdt;
 
   for (const m of s.mates) placeMate(s, m, sdt, false);
 

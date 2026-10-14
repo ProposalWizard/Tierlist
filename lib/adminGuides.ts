@@ -1713,6 +1713,23 @@ export const ADMIN_GUIDES = {
     dev: "app/star-dribble-dev/page.tsx · components/star/{FirstPersonDribble,FirstPersonRoam}.tsx",
   },
 
+  "/star-dribble-stick-dev": {
+    title: "Dribble on the stick (test)",
+    what: "The real match, where every chance you get is a dribble run. Try moving with a stick, as in the 3D games, against the game's own swipe.",
+    buttons: [
+      {
+        items: [
+          ["Stick / Swipe", "How you move on the run. Stick: a stick under your left thumb sets your speed and direction. Swipe: the game's own controls. Each press starts a new match."],
+          ["The stick (left half)", "Put your thumb down anywhere on the left. A small push walks, a full push sprints. Let go and you stop. A fast flick sideways knocks the ball past a man."],
+          ["Right half", "Tap a team-mate to pass to him. A fast sideways swipe knocks the ball past a man."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. It is a test match: no career, nothing counted."],
+    inGame: ["Nothing here is in the game yet. The game still uses the swipe."],
+    dev: "app/star-dribble-stick-dev/page.tsx · lib/star/firstPersonDribble.ts (THE STICK) · components/star/CanvasMatch.tsx (dribbleControl, dribbleOnly) · tests/star/dribbleStick.mts",
+  },
+
   "/star-attack-dev": {
     title: "Live Attack (sandbox)",
     what: "A prototype of a moving attack: the ball is delivered, you have to get there in time and aim the finish.",
