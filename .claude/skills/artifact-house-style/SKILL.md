@@ -1,6 +1,6 @@
 ---
 name: artifact-house-style
-description: How Knowitball artifacts are built — the recipe from the v0.1 patch notes, which the owner called "10x better" and asked to be the starting point every time. Load BEFORE writing ANY artifact for this project: patch notes, a build write-up, a review, a decision page, a handover. Triggers on "make artifact", "make an artifact", "patch notes", "write this up", "give me a page", "something I can send the team".
+description: How Knowitball artifacts are built — start from references/tuning-plan-standard.html (Harry, 14 Oct 2026: "this should be standard"): numbered points, a drawn diagram for each idea, numbers hidden in a toggle. Load BEFORE writing ANY artifact for this project: patch notes, a build write-up, a review, a decision page, a handover. Triggers on "make artifact", "make an artifact", "patch notes", "write this up", "give me a page", "something I can send the team".
 ---
 
 # The Knowitball artifact recipe
