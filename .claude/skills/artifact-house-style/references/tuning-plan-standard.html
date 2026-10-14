@@ -1,0 +1,225 @@
+<title>Knowitball Tuning</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">PLAN</span>
+  <h1>Tune the match by playing it</h1>
+  <p class="sub">You play and say what feels wrong. We turn that into the numbers. Defenders get smarter as you go up the leagues.</p>
+</header>
+
+<h2 class="fix"><i></i>1 · TUNING, NOT A TARGET TABLE</h2>
+<div class="dt" style="margin-bottom:10px">You don't set numbers. You play matches and tell us in plain words — "not enough chances", "too many cutbacks", "I never get the ball on my wing". We find the cause, change it, and you play again.</div>
+<div class="tw" style="padding:14px">
+<svg viewBox="0 0 560 230" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+<g fill="var(--card2)" stroke="var(--line)" stroke-width="1.5">
+<rect x="200" y="10" width="160" height="58" rx="12"/><rect x="390" y="86" width="160" height="58" rx="12"/><rect x="200" y="162" width="160" height="58" rx="12"/><rect x="10" y="86" width="160" height="58" rx="12"/></g>
+<g font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle"><text x="280" y="36">🎮 You play</text><text x="470" y="112">💬 You say</text><text x="280" y="188">🔧 We fix</text><text x="90" y="112">✅ You check</text></g>
+<g font-size="12" fill="var(--ink2)" text-anchor="middle"><text x="280" y="56">a few matches</text><text x="470" y="132">"too many cutbacks"</text><text x="280" y="208">find the cause, change it</text><text x="90" y="132">play again</text></g>
+<g stroke="var(--ink3)" stroke-width="2" fill="none" marker-end="url(#a)"><path d="M360 40Q470 40 470 84"/><path d="M470 146Q470 192 362 192"/><path d="M200 192Q90 192 90 146"/><path d="M90 84Q90 40 198 40"/></g>
+</svg></div>
+<div class="dt" style="margin-top:8px">The numbers stay behind the scenes, so every fix is measured, not guessed. Anyone who wants them can open them.</div>
+
+<h2 class="add"><i></i>2 · THE TUNER: HOW A SENTENCE BECOMES A FIX</h2>
+<div class="dt" style="margin-bottom:10px">One thing you say often has more than one cause. The tuner plays hundreds of matches in seconds, tries each possible cause, and keeps the smallest change that fixes it without breaking anything else.</div>
+<div class="tw" style="padding:14px">
+<svg viewBox="0 0 560 150" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+<rect x="5" y="45" width="130" height="60" rx="12" fill="var(--card2)" stroke="var(--line)"/>
+<text x="70" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">"I never get</text><text x="70" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">it on my wing"</text>
+<g fill="var(--card2)" stroke="var(--line)"><rect x="185" y="5" width="170" height="36" rx="9"/><rect x="185" y="57" width="170" height="36" rx="9"/><rect x="185" y="109" width="170" height="36" rx="9"/></g>
+<g font-size="12" fill="var(--ink2)" text-anchor="middle"><text x="270" y="28">cause A: chances ignore wing</text><text x="270" y="80">cause B: moves stay central</text><text x="270" y="132">cause C: your runs</text></g>
+<rect x="405" y="45" width="150" height="60" rx="12" fill="rgba(61,220,132,.12)" stroke="var(--green)"/>
+<text x="480" y="72" text-anchor="middle" font-size="13" font-weight="700" fill="var(--green)">Fix A only</text><text x="480" y="90" text-anchor="middle" font-size="11.5" fill="var(--ink2)">smallest change that works</text>
+<g stroke="var(--ink3)" stroke-width="1.6" fill="none" marker-end="url(#b)"><path d="M135 75L183 23"/><path d="M135 75H183"/><path d="M135 75L183 127"/><path d="M355 23L403 70"/></g>
+<g stroke="var(--line)" stroke-width="1.6" fill="none" stroke-dasharray="4 4"><path d="M355 75H403"/><path d="M355 127L403 82"/></g>
+</svg></div>
+<div class="dt" style="margin-top:8px">It always shows you before and after, and nothing changes until you say yes. Real example from today: the match "gives up" and hands you a chance when you've waited too long — and that fallback ignores which wing you play on. That's why wingers rarely get their own wing.</div>
+
+<h2 class="chg"><i></i>3 · DEFENDERS GET A BRAIN, BY LEAGUE</h2>
+<div class="dt" style="margin-bottom:10px">Today every defender reacts the same, instantly, and the back line moves as one block. Real defenders make mistakes — more of them lower down. A National League centre-back steps up late; a Premier League line holds.</div>
+<div class="shots" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+<figure><svg viewBox="0 0 240 200" width="100%" style="display:block;border-radius:12px;background:#1f6b3a">
+<rect x="70" y="0" width="100" height="34" fill="none" stroke="rgba(255,255,255,.6)"/><rect x="100" y="0" width="40" height="8" fill="none" stroke="#fff"/>
+<path d="M20 112H220" stroke="#ffe066" stroke-width="2" stroke-dasharray="6 5"/>
+<g fill="#ef4444" stroke="#fff" stroke-width="1.5"><circle cx="45" cy="112" r="8"/><circle cx="95" cy="112" r="8"/><circle cx="150" cy="136" r="8"/><circle cx="200" cy="112" r="8"/></g>
+<path d="M150 136L150 120" stroke="#ef4444" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="140" cy="122" r="8" fill="#3b82f6" stroke="#fff" stroke-width="1.5"/>
+<path d="M140 122L130 50" stroke="#fff" stroke-width="2" stroke-dasharray="5 4"/>
+<circle cx="110" cy="176" r="8" fill="#3b82f6" stroke="#fff" stroke-width="1.5"/><circle cx="116" cy="168" r="3.5" fill="#fff"/>
+<path d="M116 168L132 60" stroke="#fff" stroke-width="1.5"/>
+<text x="120" y="196" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">one man late → striker onside</text>
+</svg><figcaption><b>National League:</b> one defender steps up late, the line breaks, you're through.</figcaption></figure>
+<figure><svg viewBox="0 0 240 200" width="100%" style="display:block;border-radius:12px;background:#1f6b3a">
+<rect x="70" y="0" width="100" height="34" fill="none" stroke="rgba(255,255,255,.6)"/><rect x="100" y="0" width="40" height="8" fill="none" stroke="#fff"/>
+<path d="M20 112H220" stroke="#ffe066" stroke-width="2" stroke-dasharray="6 5"/>
+<g fill="#ef4444" stroke="#fff" stroke-width="1.5"><circle cx="45" cy="112" r="8"/><circle cx="95" cy="112" r="8"/><circle cx="150" cy="112" r="8"/><circle cx="200" cy="112" r="8"/></g>
+<circle cx="140" cy="96" r="8" fill="#3b82f6" stroke="#fff" stroke-width="1.5"/>
+<text x="164" y="92" font-size="11" fill="#ffe066" font-weight="700">offside</text>
+<circle cx="110" cy="176" r="8" fill="#3b82f6" stroke="#fff" stroke-width="1.5"/><circle cx="116" cy="168" r="3.5" fill="#fff"/>
+<text x="120" y="196" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">line holds → harder to get through</text>
+</svg><figcaption><b>Premier League:</b> the line holds; you need a better pass or run.</figcaption></figure>
+<figure><svg viewBox="0 0 240 200" width="100%" style="display:block;border-radius:12px;background:#1f6b3a">
+<circle cx="120" cy="120" r="9" fill="#3b82f6" stroke="#fff" stroke-width="1.5"/><circle cx="128" cy="110" r="4" fill="#fff"/>
+<circle cx="150" cy="80" r="9" fill="#ef4444" stroke="#fff" stroke-width="1.5"/>
+<path d="M150 80L135 108" stroke="#ef4444" stroke-width="2.5"/>
+<path d="M120 120Q80 90 100 40" stroke="#fff" stroke-width="2" stroke-dasharray="5 4" fill="none"/>
+<text x="120" y="190" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">jumps in too early → you skip past</text>
+</svg><figcaption><b>Lower leagues:</b> defenders dive in early, so a dribble beats them more often.</figcaption></figure>
+</div>
+<div class="tw" style="margin-top:12px"><table style="min-width:0">
+<tr><th>Stage</th><th>What defenders learn</th></tr>
+<tr><td>A · start of a chance</td><td class="s">Sometimes one man is out of line; marking is looser lower down</td></tr>
+<tr><td>B · during play</td><td class="s">React a beat late, recover, dive in early, press — all by league</td></tr>
+<tr><td>C · reading play</td><td class="s">Step into your passing lane, read your pass</td></tr>
+</table></div>
+<div class="dt" style="margin-top:8px">Each stage can go live on its own. Better players (by their real rating) make fewer mistakes, so a strong National League side still defends well. Your scoring stays the same unless you choose to make a league harder.</div>
+
+<h2 class="add"><i></i>4 · REAL DATA + OUR GAME</h2>
+<div class="dt" style="margin-bottom:10px">We're not copying real football. We mix three things:</div>
+<div class="tw" style="padding:14px">
+<svg viewBox="0 0 560 170" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<defs><marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+<g stroke="var(--line)"><rect x="5" y="5" width="190" height="46" rx="10" fill="rgba(111,184,255,.12)"/><rect x="5" y="62" width="190" height="46" rx="10" fill="rgba(177,140,255,.12)"/><rect x="5" y="119" width="190" height="46" rx="10" fill="rgba(245,185,66,.12)"/></g>
+<g font-size="13" font-weight="700" fill="var(--ink)"><text x="18" y="25">📊 Real data</text><text x="18" y="82">✏️ Your drawings</text><text x="18" y="139">🎮 Your feel</text></g>
+<g font-size="11.5" fill="var(--ink2)"><text x="18" y="42">where players stand, how they move</text><text x="18" y="99">what each chance looks like</text><text x="18" y="156">how often, how exciting</text></g>
+<g stroke="var(--ink3)" stroke-width="1.6" fill="none" marker-end="url(#c)"><path d="M195 28Q300 28 358 78"/><path d="M195 85H356"/><path d="M195 142Q300 142 358 92"/></g>
+<rect x="360" y="55" width="195" height="60" rx="12" fill="rgba(61,220,132,.12)" stroke="var(--green)"/>
+<text x="457" y="82" text-anchor="middle" font-size="14" font-weight="700" fill="var(--green)">⚽ Our match</text><text x="457" y="101" text-anchor="middle" font-size="11.5" fill="var(--ink2)">looks real, plays fun</text>
+</svg></div>
+<div class="dt" style="margin-top:8px">The data keeps it looking like football. Your drawings decide the chances. Your feel decides how often things happen — it's not fun to play like Gary Neville just because it's realistic.</div>
+
+<h2 class="nxt"><i></i>YOUR CALLS</h2>
+<ul class="n">
+<li><div class="hd">Play a few New matches and tell us what feels off</div><div class="dt">That's the whole input. Plain words are enough.</div></li>
+<li><div class="hd">Quick fix: chances follow your wing <span class="pill p-amb">yes / no</span></div><div class="dt">The "waited too long" chance would come down your own side.</div></li>
+<li><div class="hd">Quick fix: more touches deeper <span class="pill p-amb">yes / no</span></div><div class="dt">Mikey's Kane idea, built but switched off: more chances, shorter waits, but fewer of them in the box.</div></li>
+</ul>
+
+<details><summary>The numbers, if you want them</summary>
+<p><b>Today, a striker in an even game:</b> about 6 chances a match; about a quarter come from the "waited too long" fallback; the longest wait is about half an hour. A winger gets his own wing about a quarter of the time.</p>
+<p><b>Deep touches on:</b> about 8 chances, shorter waits, fewer in the box.</p>
+<p><b>Behind the scenes</b> there's a ruler that plays 1,000 matches per position in about a second and prints ours against a draft target. It stays as our measuring tool, so you never have to fill it in.</p>
+<p><b>Defender brains:</b> stages A–C, about 2–3 weeks in all. Lower leagues are designed (free data only covers top-flight football).</p>
+</details>
+<footer>14 Oct 2026. Nothing in the game has changed from this plan yet.</footer>
+</div>

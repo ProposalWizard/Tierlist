@@ -20,6 +20,16 @@ remember how you made this one and build from there."*
 that reaction. Read it before writing anything — copy its structure, its CSS and
 its density, then change the content.
 
+## THE STANDARD: `references/tuning-plan-standard.html` (Harry, 14 Oct 2026)
+*"I love the diagrams, this is a much better patch notes and unless stated
+that more is needed this should be standard."* Every page — patch notes,
+plans, reviews — starts from this file now, not from v0.1. Copy its shape:
+numbered points, each a plain idea in two or three sentences, then a drawn
+diagram (flow boxes, pitches with dots and arrows); numbers in one closed
+toggle at the bottom; YOUR CALLS as short yes/no items. Add more (stills,
+bars, clips) only when someone asks for more. Check the diagrams at 390px:
+never force an SVG wider than the phone.
+
 ## Pictures, not numbers (Harry, 14 Oct 2026, overrides the rules below where they differ)
 
 *"Over the course of the building cycle, patch notes have decreased in quality
