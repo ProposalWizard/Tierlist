@@ -1698,6 +1698,18 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (dl < 1e-6) return touch.start2;
     return { x: touch.start2.x + (dx / dl) * len, y: touch.start2.y + (dy / dl) * len };
   };
+  /**
+   * A held-back press on the grass handed to the 2D game late (it was neither a turn nor a tilt).
+   * The 2D canvas takes the pointer's capture on its own pointerdown when the press lands in its
+   * grab zone (the ball's, or a team-mate's), so the rest of this touch went to it at the raw finger
+   * spot and its "up" never came back here: this view kept that finger as still down, and every
+   * later one-finger touch became a "pinch" (Harry, 14 Oct 2026: "cant drag the ball back anymore
+   * and zoom/swipes mixed up"). Take the capture back, as onDown does.
+   */
+  const handOver = (e: PointerEvent) => {
+    if (touch.ev0) send("pointerdown", touch.ev0, touch.start2);
+    try { container.setPointerCapture(e.pointerId); } catch { /* fine */ }
+  };
   const onMove = (e: PointerEvent) => {
     if (e.pointerId !== touch.id) return;
     touch.last = performance.now();
@@ -1705,10 +1717,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (touch.pend) {
       if (Math.hypot(dx, dy) < ORBIT.startPx) return;
       touch.pend = false; touch.dbl = false;
-      if (camLock.on) { if (touch.ev0) send("pointerdown", touch.ev0, touch.start2); } else
+      if (camLock.on) handOver(e); else
       if (Math.abs(dx) > Math.abs(dy) * ORBIT.sideways) { touch.orbit = true; orbit.drag = true; orbit.d0 = orbit.target; }
       else if (Math.abs(dy) > Math.abs(dx) * TILT.upright) { touch.tilt = true; orbit.tiltDrag = true; orbit.t0 = orbit.tiltTarget; }
-      else if (touch.ev0) send("pointerdown", touch.ev0, touch.start2);
+      else handOver(e);
     }
     if (touch.orbit) {
       const w = container.getBoundingClientRect().width || 1;
@@ -1745,6 +1757,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   // one-finger touch first by taking it back to where it started and lifting it there: a zero-length
   // drag, which the 2D game ignores (no kick; a team-mate pressed first gets his tap, an order).
   const pinch = { pts: new Map<number, { x: number; y: number }>(), d0: 0, z0: 0, on: false };
+  // dev/test: what the touch handling holds right now (scripts/star-sandbox/switch3d.mjs)
+  (window as unknown as { __cam3dInput?: () => unknown }).__cam3dInput = () => ({ visible, orbit: orbit.target, tilt: orbit.tiltTarget, zoom: camZoom(), pinchOn: pinch.on, pinchPts: pinch.pts.size, touchId: touch.id, pend: touch.pend, shot: touch.shot });
   const pinchDist = () => { const a = Array.from(pinch.pts.values()); return a.length < 2 ? 0 : Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); };
   const onPinchDown = (e: PointerEvent) => {
     if (!visible || e.pointerType !== "touch") return;
@@ -1773,6 +1787,24 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (!pinch.on) return;
     if (pinch.pts.size === 0) pinch.on = false;
     e.stopImmediatePropagation();
+  };
+  /** Forget the one-finger touch (a camera swipe, a held press, a hand-over) without sending anything. */
+  const endTouch = () => { touch.id = -1; touch.pend = false; touch.orbit = false; touch.tilt = false; touch.dbl = false; touch.shot = false; touch.mate = false; orbit.drag = false; orbit.tiltDrag = false; };
+  /**
+   * A finger lifted ANYWHERE (on this view, on the 2D canvas under it, on the stats bar, or while
+   * the 3D is hidden) is no longer down. Checked once the lift has been handled where it landed, so
+   * this view's own handlers always run first; a finger they never heard lift is dropped here. So a
+   * lost "up" can never leave a stuck finger behind (a one-finger "pinch", or a pitch that ignores
+   * every press). Real events only: the 2D game is sent copies of this view's own.
+   */
+  const onAnyUp = (e: PointerEvent) => {
+    if (!e.isTrusted) return;
+    const id = e.pointerId;
+    setTimeout(() => {
+      pinch.pts.delete(id);
+      if (pinch.pts.size === 0) pinch.on = false;
+      if (touch.id === id) endTouch();
+    }, 0);
   };
   // THE WHEEL (Harry, 13 Oct 2026 playtest: every wheel is zoom). A mouse wheel, a precision wheel, a
   // two-finger trackpad scroll and a trackpad pinch (ctrlKey) all ZOOM, and nothing else: the camera is
@@ -1828,6 +1860,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     container.addEventListener("pointermove", onMove);
     container.addEventListener("pointerup", onUp);
     container.addEventListener("pointercancel", onUp);
+    window.addEventListener("pointerup", onAnyUp, true);
+    window.addEventListener("pointercancel", onAnyUp, true);
   }
 
   const leanQ = new THREE.Quaternion(), yawQ = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0), axis = new THREE.Vector3();
@@ -2066,7 +2100,11 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     },
     setTod(t) { hTod = t; h?.setTod(t); },
     setTilt() { /* one camera: it takes its tilt from the 2D frame (f.cam.tilt) */ },
-    setVisible(on) { visible = on; gov.setPaused("hidden", !on); if (!on) (window as unknown as { __engineView3dBall?: unknown }).__engineView3dBall = null; container.style.pointerEvents = on && o.canvas2d ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
+    setVisible(on) {
+      // the 2D | 3D switch mid-gesture: a pinch or a camera swipe ends here (a drag already handed to
+      // the 2D game is left to finish, so a pull-back in progress still kicks)
+      if (on !== visible) { pinch.pts.clear(); pinch.on = false; if (touch.pend || touch.orbit || touch.tilt) endTouch(); }
+      visible = on; gov.setPaused("hidden", !on); if (!on) (window as unknown as { __engineView3dBall?: unknown }).__engineView3dBall = null; container.style.pointerEvents = on && o.canvas2d ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
     dispose() {
       hToken++;
       offPack();
@@ -2093,6 +2131,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       container.removeEventListener("pointermove", onMove);
       container.removeEventListener("pointerup", onUp);
       container.removeEventListener("pointercancel", onUp);
+      window.removeEventListener("pointerup", onAnyUp, true);
+      window.removeEventListener("pointercancel", onAnyUp, true);
       release(root);
     },
   };
