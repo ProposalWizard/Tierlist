@@ -126,6 +126,7 @@ import PitchScope from "@/components/star/ui/PitchScope";
 import SkillsScreen, { TRAINING_ENERGY_COST } from "@/components/star/SkillsScreen";
 import { applyLevelResult, starsOf } from "@/lib/star/trainingLevels";
 import CanvasMatch from "@/components/star/CanvasMatch";
+import { careerBuildUp } from "@/lib/star/leadInGen";
 import { pressureForDivision } from "@/lib/star/pressure";
 import PostMatch, { achievementToastDelay } from "@/components/star/PostMatch";
 import { type DrawRound } from "@/components/star/CupDrawReveal";
@@ -4028,6 +4029,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             pressure={pressureForDivision(career.division)}
             penaltyRunup={careerPenaltyRunup(career)}
             freeKickRunup={careerFreeKickRunup(career)}
+            leadIn={careerBuildUp}
           />
           </Match3DLayer>
         </div>
