@@ -25,7 +25,7 @@ export default function TransferWindow({ career, offers, onAccept, onStay }: Pro
       <div className="w-full">
         <div className="text-center">
           <Kicker color="#c4b5fd">Transfer window</Kicker>
-          <h1 className="kit-drop-in mt-2 text-2xl font-black uppercase leading-tight" style={{ textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>
+          <h1 className="mt-2 text-2xl font-black uppercase leading-tight" style={{ textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>
             {offers.length === 1 ? "There is an offer on the table" : `${offers.length} clubs have come in`}
           </h1>
           <p className="mt-1 text-xs text-gray-200">

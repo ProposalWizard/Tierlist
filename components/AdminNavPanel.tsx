@@ -154,6 +154,7 @@ const GROUPS: AdminGroup[] = [
       { name: "Animations", href: "/star-animations-dev" },
       { name: "3D Animations", href: "/star-anim3d-dev" },
       { name: "Match Radar", href: "/star-radar-dev" },
+      { name: "Sound Lab", href: "/star-sound-lab-dev" },
       { name: "Full match (test)", href: "/star-sim90-dev" },
       { name: "Store (test)", href: "/star-store-dev" },
       { name: "Gems (test)", href: "/star-wallet-dev" },
@@ -179,6 +180,7 @@ const GROUPS: AdminGroup[] = [
     links: [
       { name: "Match Engine", href: "/star-match-dev" },
       { name: "Dribble", href: "/star-dribble-dev" },
+      { name: "Dribble (stick)", href: "/star-dribble-stick-dev" },
       { name: "Live Attack", href: "/star-attack-dev" },
       { name: "Bicycle Kick", href: "/star-bicycle-dev" },
       { name: "Draft (dev)", href: "/draft-dev" },

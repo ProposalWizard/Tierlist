@@ -52,6 +52,8 @@ import {
   type SimSpec,
 } from "@/lib/star/gallerySim";
 import TuningPanel from "@/components/star/TuningPanel";
+import TuningSessionPanel from "@/components/star/TuningSessionPanel";
+import { recordSeen } from "@/lib/star/tuningSession";
 import { showSavedScenarios } from "@/lib/star/authoredChance";
 import ScenarioEditor from "@/components/star/ScenarioEditor";
 import type { MatchScenario, ScenarioSide } from "@/lib/star/scenarios";
@@ -1463,6 +1465,14 @@ export default function StarGalleryDevPage() {
    * one — that is the endless part. On a built-in version the arrows step
    * through the versions, exactly as the on-screen chevrons already did.
    */
+  // The Tuning panel's session count: every version or simulated chance
+  // opened here, once each (lib/star/tuningSession.ts).
+  useEffect(() => {
+    if (screen !== "version" || !cell || cell.game !== "eleven") return;
+    const sc = rebuildScenario(cell);
+    recordSeen({ id: `gallery-${cell.key}`, page: "gallery", kind: cell.kind, ball: { x: sc.ball.x, y: sc.ball.y }, seed: cell.seed ?? undefined });
+  }, [screen, cell?.key]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const stepVersion = useCallback((d: number) => {
     setVersionIdx((i) => (i + d + versions.length) % versions.length);
     setSim(null);
@@ -1684,6 +1694,11 @@ export default function StarGalleryDevPage() {
             </>
           );
         })()}
+        {game === "eleven" && !builderTab && (
+          <div style={{ display: "grid", justifyItems: "center", padding: "0 14px 28px" }}>
+            <TuningSessionPanel page="gallery" context={() => ({ kind: kindId })} />
+          </div>
+        )}
       </>,
       false,
     );
@@ -2213,6 +2228,12 @@ export default function StarGalleryDevPage() {
           </div>
         </div>
       ) : pane}
+
+      {cell.game === "eleven" && (
+        <div style={{ display: "grid", justifyItems: "center", padding: "0 12px 28px" }}>
+          <TuningSessionPanel page="gallery" context={() => ({ kind: cell.kind, seed: cell.seed ?? undefined })} />
+        </div>
+      )}
 
       {sheetOpen && (
         <div

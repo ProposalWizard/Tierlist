@@ -2,8 +2,9 @@
 import type React from "react";
 
 /**
- * A STAGGERED ENTRANCE: each child block rises and fades in a beat after the
- * one above it.
+ * WAS a staggered entrance (each block rose in a beat after the one above).
+ * Since 14 Oct 2026 it draws its children at once: menus open on the tap's
+ * own frame (ui-house-style skill).
  *
  *   <RiseIn index={0}>…</RiseIn>
  *   <RiseIn index={1}>…</RiseIn>
@@ -21,8 +22,12 @@ export default function RiseIn({ index = 0, step = 80, delay = 0, onPageActive =
   style?: React.CSSProperties;
   children?: React.ReactNode;
 }) {
+  // No entrance any more (Harry, 14 Oct 2026: "If I click on something, it
+  // should just go straight in"). The block is there on the first frame; the
+  // props stay so every screen that uses RiseIn keeps compiling unchanged.
+  void index; void step; void delay; void onPageActive;
   return (
-    <div className={`${onPageActive ? "kib-rise" : "kit-rise"}${className ? ` ${className}` : ""}`} style={{ animationDelay: `${delay + index * step}ms`, ...style }}>
+    <div className={className || undefined} style={style}>
       {children}
     </div>
   );

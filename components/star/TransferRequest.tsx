@@ -75,7 +75,7 @@ export default function TransferRequest({ career, onAsk, onAccept, onTalk, onCal
       <div className="w-full" data-transfer-request>
         <div className="text-center">
           <Kicker color="#c4b5fd">Transfer request</Kicker>
-          <h1 className="kit-drop-in mt-2 text-2xl font-black uppercase leading-tight" style={{ textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>
+          <h1 className="mt-2 text-2xl font-black uppercase leading-tight" style={{ textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>
             Find a new club
           </h1>
           <p className="mt-1 text-xs font-bold text-white" data-transfer-window>

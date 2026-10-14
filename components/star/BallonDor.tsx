@@ -282,7 +282,7 @@ export default function BallonDor({ career, onContinue, startAt, result }: Props
               variant="secondary"
               size="md"
               onClick={() => setPhase("result")}
-              className="kit-rise w-full"
+              className="kit-reveal w-full"
             >
               Continue →
             </PressButton>
@@ -298,7 +298,7 @@ export default function BallonDor({ career, onContinue, startAt, result }: Props
   return (
     <Screen glow={GOLD} className="max-w-sm px-3 pb-10 pt-6">
       <div className="space-y-4">
-        <div className="kit-card kit-rise relative overflow-hidden p-6 text-center" style={playerWon ? { boxShadow: "inset 0 0 0 1px rgba(251,191,36,.6), 0 0 40px rgba(251,191,36,.25)" } : undefined}>
+        <div className="kit-card kit-reveal relative overflow-hidden p-6 text-center" style={playerWon ? { boxShadow: "inset 0 0 0 1px rgba(251,191,36,.6), 0 0 40px rgba(251,191,36,.25)" } : undefined}>
           {playerWon ? (
             <>
               <Rays color="#fde68a" size={280} className="top-[38%]" />
@@ -330,7 +330,7 @@ export default function BallonDor({ career, onContinue, startAt, result }: Props
         </div>
 
         {playerEntry && (
-          <div className="kit-card kit-rise p-4" style={{ animationDelay: "120ms" }}>
+          <div className="kit-card kit-reveal p-4" style={{ animationDelay: "120ms" }}>
             <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-white/70">Your Season</p>
             <div className="grid grid-cols-3 gap-2 text-center">
               <Stat label="Goals" value={playerEntry.goals} />
@@ -353,7 +353,7 @@ export default function BallonDor({ career, onContinue, startAt, result }: Props
         )}
 
         {!playerWon && winner && (
-          <div className="kit-card kit-rise p-4" style={{ animationDelay: "200ms" }}>
+          <div className="kit-card kit-reveal p-4" style={{ animationDelay: "200ms" }}>
             <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-white/70">Winner</p>
             <div className="flex items-center gap-3">
               <Face image={winner.image} name={winner.name} size={36} ring="border-amber-400/40" />
@@ -369,7 +369,7 @@ export default function BallonDor({ career, onContinue, startAt, result }: Props
           </div>
         )}
 
-        <div className="kit-card kit-rise p-4" style={{ animationDelay: "280ms" }}>
+        <div className="kit-card kit-reveal p-4" style={{ animationDelay: "280ms" }}>
           <p className="mb-2.5 text-[10px] font-black uppercase tracking-widest text-white/70">Final Top 10</p>
           <div className="space-y-1.5">
             {entries.map(e => (

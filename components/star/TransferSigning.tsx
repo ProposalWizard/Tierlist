@@ -116,7 +116,7 @@ export default function TransferSigning({
                 <div className="kit-stamp mt-3 rounded-xl border-4 border-emerald-400 bg-emerald-950/85 px-5 py-1.5 text-[26px] font-black uppercase tracking-widest text-emerald-300" style={{ boxShadow: "0 0 40px rgba(52,211,153,.5)", animationDelay: "350ms" }}>
                   Signed
                 </div>
-                <div className="kit-rise mt-2 text-[13px] font-black uppercase tracking-[0.2em] text-white" style={{ animationDelay: "600ms", textShadow: "0 2px 6px rgba(0,0,0,.8)" }}>
+                <div className="kit-reveal mt-2 text-[13px] font-black uppercase tracking-[0.2em] text-white" style={{ animationDelay: "600ms", textShadow: "0 2px 6px rgba(0,0,0,.8)" }}>
                   {club}
                 </div>
               </div>
