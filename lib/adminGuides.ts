@@ -60,6 +60,21 @@ const COMMIT_HOW = [
 ];
 const GITHUB_TOKEN_NEEDED =
   "GITHUB_TOKEN set in Vercel's environment variables — without it every Commit button refuses (and says so).";
+/** The Tuning panel (components/star/TuningSessionPanel.tsx) — the same on the
+ *  gallery, Infinite Highlights and Infinite Match. */
+const TUNING_PANEL_GROUP = {
+  group: "Tuning panel",
+  items: [
+    ["Tuning · what you've seen this session", "Folded to one line. Tap to open: what the chances you've seen this session add up to — the mix of chance types, how many start up the pitch, how many come down your wing, chances a match and the longest wait (the last two from Infinite Match only). The count is shared by the gallery, Infinite Highlights and Infinite Match in this browser tab."],
+    ["feels: about right / a lot / a little", "Each line against the DRAFT fun ranges (lib/star/funTargets.ts, first guesses). The green band on the bar is the range, the tick is you. Under 5 chances it says \"too few to tell\"."],
+    ["Start the count again", "Empties this session's count. Notes are not touched."],
+    ["Say what feels off: chips / your own words / Send", "Tap any chips (too many cutbacks, too many crosses, not enough chances, never on my wing, too easy, too hard) and/or write a line, then Send. It is saved with the page, the chance on screen, the league, the seed and the time."],
+  ] as [string, string][],
+};
+const TUNING_NOTES_SAVING =
+  "Tuning panel: the session count stays in this browser tab only. Notes go to the shared table star_tuning_notes; until that table exists they say \"Saved on this device only\" and are sent with the next note that gets through. Read them in the terminal: npx tsx scripts/tuning-notes.mts (also printed by scripts/tuner-proposals.mts). Nothing is committed and nothing in the game changes.";
+const TUNING_NOTES_NEEDED =
+  "For notes to reach the team: run supabase/migrations/star_tuning_notes.sql (PENDING). The terminal needs SUPABASE_SERVICE_ROLE_KEY to read them (admin-read).";
 
 export const ADMIN_GUIDES = {
   // ════════════════════════════════════════════════════════════════════
@@ -747,20 +762,22 @@ export const ADMIN_GUIDES = {
           ["Rules list", "Tap a type to see the hard rules read off its saved drawings."],
         ],
       },
+      { ...TUNING_PANEL_GROUP, group: "Tuning panel (under the 11-a-side grid and under a card)" },
     ],
     saving: [
       "Drags, ✓ / ✕ marks, added versions and removed cards are kept in THIS browser only until you Save.",
       SCENARIO_SAVE_SHARED,
       SCENARIO_NOT_IN_GAME_UNTIL_COMMIT,
       "Tune corrections go to the shared table star_scenario_corrections, so the whole team's corrections add up.",
+      TUNING_NOTES_SAVING,
     ],
     commit: COMMIT_HOW,
     inGame: [
       "Committed 11-a-side scenarios are used by the real game's chance generator in /star-dev matches, for every player, once the deploy finishes.",
       "5-a-side cards are review only — nothing from them reaches the game yet.",
     ],
-    needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
-    dev: "app/star-gallery-dev/page.tsx · components/star/{EditableFrame,ScenarioPlay,EnginePlay,TuningPanel}.tsx · lib/star/{scenarioEdit,scenarioStatus,scenarioCorrections}.ts · /api/star/scenarios, /api/star/scenarios/commit, /api/star/corrections",
+    needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED, TUNING_NOTES_NEEDED],
+    dev: "app/star-gallery-dev/page.tsx · components/star/{EditableFrame,ScenarioPlay,EnginePlay,TuningPanel,TuningSessionPanel}.tsx · lib/star/{tuningSession,tuningNotes}.ts · /api/star/tuning-notes · lib/star/{scenarioEdit,scenarioStatus,scenarioCorrections}.ts · /api/star/scenarios, /api/star/scenarios/commit, /api/star/corrections",
   },
 
   "/star-training-dev": {
@@ -829,12 +846,14 @@ export const ADMIN_GUIDES = {
           ["Amber box", "Saved scenarios of this type that break a rule, so the game isn't using them."],
         ],
       },
+      { ...TUNING_PANEL_GROUP, group: "Tuning panel (bottom of the page)" },
     ],
     saving: [
       "Chosen types, flags and unsaved drags are kept in THIS browser only.",
       "Save / Save this fix: " + SCENARIO_SAVE_SHARED + " It lands in the gallery as a simulated card of its type.",
       SCENARIO_NOT_IN_GAME_UNTIL_COMMIT,
       "Tune corrections go to the shared table star_scenario_corrections.",
+      TUNING_NOTES_SAVING,
     ],
     commit: [
       "Commit puts this one chance straight into the game's code. Saved-but-not-committed ones can also be committed together from Scenario Gallery → Tuning & Commit.",
@@ -844,8 +863,8 @@ export const ADMIN_GUIDES = {
       "The chances are made by the same function as in a real /star-dev match (lib/star/chanceMaker.ts): one of your drawings, nudged, mirrored half the time, the drawing's own players and nobody else, never one of the last five pictures of its type. The Play Area's Chances dial can switch this page (and the gallery's Sim) to the generator; a career always plays the drawings.",
       "Your fixes reach real matches only once they're committed — here, or from the gallery.",
     ],
-    needs: [SCENARIO_TABLE_NEEDED],
-    dev: "app/star-highlights-dev/page.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit}.ts · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
+    needs: [SCENARIO_TABLE_NEEDED, TUNING_NOTES_NEEDED],
+    dev: "app/star-highlights-dev/page.tsx · components/star/TuningSessionPanel.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit,tuningSession,tuningNotes}.ts · /api/star/tuning-notes · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
   },
 
   "/star-play-dev": {
@@ -888,11 +907,13 @@ export const ADMIN_GUIDES = {
           ["Back to the match", "Closes the editor."],
         ],
       },
+      { ...TUNING_PANEL_GROUP, group: "Tuning panel (Infinite Match, under What it served)" },
     ],
     saving: [
       "The dials save the moment you change them, on this device only. There's no Save button.",
       "The Compare old and new switches and the keeper dial save the same way, instantly, on this device only, and stay until you set them back (\"Back to the defaults\" resets them too).",
       "Save as a scenario: " + SCENARIO_SAVE_SHARED,
+      TUNING_NOTES_SAVING,
     ],
     commit: [
       "Commit (on the pinned bar) and \"Commit to the game\" (in the editor) both commit — one scenario, straight onto main.",
@@ -904,8 +925,8 @@ export const ADMIN_GUIDES = {
       "Everything else is the real game: the same engine, the same size on screen, the real squads (real faces, real finishing), and fresh legs every 90 minutes in a long match.",
       "A chance you commit from the editor is used by real /star-dev matches once the deploy finishes.",
     ],
-    needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
-    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure,runupStyles}.ts",
+    needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED, TUNING_NOTES_NEEDED],
+    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor,TuningSessionPanel}.tsx · lib/star/{tuningSession,tuningNotes}.ts · /api/star/tuning-notes · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure,runupStyles}.ts",
   },
 
   "/star-wallet-dev": {
