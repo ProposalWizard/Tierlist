@@ -846,6 +846,16 @@ export const ADMIN_GUIDES = {
           ["Amber box", "Saved scenarios of this type that break a rule, so the game isn't using them."],
         ],
       },
+      {
+        group: "Hitboxes & jumping (Leo)",
+        items: [
+          ["Hitboxes & jumping", "Tap to open. Shows New or Old and whether the hitboxes are being drawn."],
+          ["New / Old", "New: players are the shape of a man (widest at the feet, narrow at the head, nothing above the head unless they jump) and really jump for a ball in the air. Old: the hitboxes from before 14 Oct 2026. Stored on this phone, so it also changes a real career on this phone."],
+          ["Show / Hide hitboxes", "Draws every body's hitbox on Play: red defenders, blue team-mates (dashed ring: how far he goes for a ball played to him, tick: how high), yellow keeper, bright yellow while in the air, and the ball's height in metres. Test screens only — never in a career match."],
+          ["Sliders", "Standing height, jump height, reach at the feet and at the head, header bonus, block bonus, and how much harder a keeper finds a ball above his standing reach. Kept on this phone; used from the next touch."],
+          ["Reset to defaults", "Puts every slider back."],
+        ],
+      },
       { ...TUNING_PANEL_GROUP, group: "Tuning panel (bottom of the page)" },
     ],
     saving: [
@@ -864,7 +874,7 @@ export const ADMIN_GUIDES = {
       "Your fixes reach real matches only once they're committed — here, or from the gallery.",
     ],
     needs: [SCENARIO_TABLE_NEEDED, TUNING_NOTES_NEEDED],
-    dev: "app/star-highlights-dev/page.tsx · components/star/TuningSessionPanel.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit,tuningSession,tuningNotes}.ts · /api/star/tuning-notes · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
+    dev: "app/star-highlights-dev/page.tsx · components/star/HitboxPanel.tsx, lib/star/hitbox.ts · components/star/TuningSessionPanel.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit,tuningSession,tuningNotes}.ts · /api/star/tuning-notes · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
   },
 
   "/star-play-dev": {
@@ -892,6 +902,16 @@ export const ADMIN_GUIDES = {
           ["Back to the defaults", "Resets every dial, the keeper row and the Compare switches."],
           ["Compare old and new: New / Old", "Two switches: Penalty rules and Shot power. Old puts that one change back to how it was, so the two can be played side by side. Test screens only — a real career, its trial and its shootouts always play New."],
           ["Scenario Gallery →", "Opens the gallery."],
+        ],
+      },
+      {
+        group: "Hitboxes & jumping (Leo)",
+        items: [
+          ["Hitboxes & jumping", "Tap to open. Shows New or Old and whether the hitboxes are being drawn."],
+          ["New / Old", "New: players are the shape of a man (widest at the feet, narrow at the head, nothing above the head unless they jump) and really jump for a ball in the air. Old: the hitboxes from before 14 Oct 2026. Stored on this phone, so it also changes a real career on this phone."],
+          ["Show / Hide hitboxes", "Draws every body's hitbox on Play: red defenders, blue team-mates (dashed ring: how far he goes for a ball played to him, tick: how high), yellow keeper, bright yellow while in the air, and the ball's height in metres. Test screens only — never in a career match."],
+          ["Sliders", "Standing height, jump height, reach at the feet and at the head, header bonus, block bonus, and how much harder a keeper finds a ball above his standing reach. Kept on this phone; used from the next touch."],
+          ["Reset to defaults", "Puts every slider back."],
         ],
       },
       {
@@ -1556,6 +1576,34 @@ export const ADMIN_GUIDES = {
       "To try 3D in a real career on one phone: Settings → Look → Drawn-player style → Shaded (that phone only). Harry decides when it becomes everyone's look.",
     ],
     dev: "app/star-3d-dev/page.tsx · lib/star/{figureSkin,figure3d,heroFigure,faceFit}.ts · lib/star/fiveASide/render.ts (drawFigureAt picks the look) · lib/star/firstPersonRender.ts",
+  },
+
+  "/star-sound-lab-dev": {
+    title: "Sound Lab",
+    what: "Hear, edit and rate different sounds for each thing that happens in a match (a pass, a shot, a save, the net, the whistle, the crowd), then send us your favourites.",
+    buttons: [
+      {
+        items: [
+          ["Event buttons (top row)", "Pick what you are listening to: pass, shot, first touch, keeper save, keeper catch, post/bar, net, block, header, whistle, goal roar, near miss. A ✓ means you have picked one for it."],
+          ["▶", "Plays that sound. The first tap also switches sound on (phones keep it off until you tap)."],
+          ["IN GAME NOW / FILE", "\"Current (match)\" is the sound the live match makes today. \"Current file\" is the recorded file the game has (goal videos use it), including any replacement uploaded on the Sound Board."],
+          ["Green picture / blue bars", "The shape of the sound (loud parts tall) and how much low (left) and high (right) it has. The number is its length in seconds."],
+          ["★ ★ ★ ★ ★", "Rate it. Tap the same star again to clear it."],
+          ["Pick this / ✓ My pick", "Your favourite for this event (one per event). Tap again to un-pick."],
+          ["Note", "Write what you like or don't. It goes into the export."],
+          ["Edit ▾", "Opens the sliders: Volume, Pitch, Length, Brightness, Punch, Body (low end), Room (echo). Let go of a slider to hear the change."],
+          ["Reset", "Puts that sound's sliders back to how it was made."],
+          ["Copy recipe", "Copies how that sound is built plus your slider settings, for us."],
+          ["Save WAV", "Downloads that sound, with your sliders, as a .wav file."],
+          ["▶ Pass → shot → GOAL (and the other blue buttons)", "Plays a short run of sounds together, using your pick for each event (or your best rated, or the first one), so you can judge them side by side."],
+          ["Export my picks", "Copies a short plain-text list (each event → your pick, its stars, sliders and note, plus any other sounds you rated) and shows it in a box. Paste it to us."],
+          ["Clear everything", "Wipes your ratings, notes, slider edits and picks on this device."],
+        ],
+      },
+    ],
+    saving: ["This browser only, instantly. Ratings, notes, slider edits and picks stay on this device; nobody else sees them until you send the export."],
+    inGame: ["Nowhere yet. It is for choosing. Once Leo picks, the chosen recipes can be built into the match's sounds."],
+    dev: "app/star-sound-lab-dev/page.tsx · lib/star/sfxLab.ts (recipes, the pure renderer, export) · tests/star/sfxLab.mts · files via lib/star/sfx.ts sfxUrl() · the live match's sounds: lib/star/matchSound.ts",
   },
 
   "/star-radar-dev": {

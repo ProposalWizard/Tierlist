@@ -27,6 +27,39 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.55",
+      "title": "Leo's patch notes: Updates tab, Henry finish, hitboxes, sound lab",
+      "publishedAt": "2026-10-14T21:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/As3hzmBBUNwdgdf8DhygZm",
+      "summary": "Leo v0.16. Settings → Updates: every New | Old update switch in the game, by update. Keepers stop saving everything near them: the Henry finish (low across him to the far post) and hard top corners go in far more. Players have the shape of a man and really jump, so chips go over heads and crosses get headed. Hitbox outlines and sliders on Infinite Highlights / Infinite Match. A Sound Lab test page with 12 match sounds to pick from.",
+      "stats": [
+        { "value": "3 in 4 → 1 in 2", "label": "Henry finishes saved (Oct 13 update on)" },
+        { "value": "74% → 32%", "label": "lofted shots over a team-mate that he stops" },
+        { "value": "85% → 89%", "label": "byline crosses that reach their man" },
+        { "value": "12 × 6–8", "label": "match sounds and options in the Sound Lab" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Settings → Updates", "detail": "Each update folds open: All new, All old, or flip one row. Changes this phone only." },
+          { "title": "Hitbox panel", "detail": "Infinite Highlights and Infinite Match: show outlines, New | Old, 7 sliders, Reset." },
+          { "title": "Sound Lab (/star-sound-lab-dev)", "detail": "12 sounds, 6–8 options each plus today's; play, star, pick, note, 7 sliders, export your picks." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "The Henry finish goes in", "detail": "Low across the keeper to the far post: he dives across his body slower and reaches less. Switch: Keeper realism (Leo), New." },
+          { "title": "Top corners", "detail": "Harder to reach the harder you hit; near-post top corner from close harder too." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Players are the shape of a man", "detail": "Wide at the feet, narrow at the head, nothing above the head unless he jumps. Switch: Hitboxes & jumping (Leo), New." },
+          { "title": "Real jumps", "detail": "A team-mate jumps for a ball played to him and the jump lifts his reach; a little extra for headers and blocks." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Headers score a little less", "detail": "43.8% → 41.9%: more won, but the keeper saves more high ones." },
+          { "title": "Not played in a full match; sounds not heard", "detail": "Measured on the real engine only; no speakers on the build machine." }
+        ]}
+      ]
+    },
+    {
       "version": "0.54",
       "title": "Harry's patch notes: New chances, 3D camera, build-ups that play on",
       "publishedAt": "2026-10-14T16:00:00Z",
