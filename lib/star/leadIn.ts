@@ -15,7 +15,7 @@
  */
 import type { Scenario, Vec2, Viewport } from "./canvasEngine";
 import type { Lane, ChancePattern } from "./hiddenMatch";
-import { SIX_DEPTH, SIX_L, SIX_R, BOX_DEPTH, BOX_L, BOX_R } from "./pitch";
+import { SIX_DEPTH, SIX_L, SIX_R, BOX_DEPTH, BOX_L, BOX_R, CX } from "./pitch";
 
 export interface LeadIn {
   /** How long it lasts, seconds. */
@@ -42,6 +42,13 @@ export interface LeadIn {
   onTick?(t: number, done: boolean): void;
   /** A tap ends it at once and the chance starts (the career's build-ups). Absent: it is watched to the end. */
   skippable?: boolean;
+  /**
+   * "tv": the TV camera (the Real shots page). The frame may be WIDER than the
+   * chance's own, so the passer and the man the pass goes to are both on the
+   * screen; it zooms out before a long pass and back in onto the chance's frame
+   * at the end. Absent: the build-ups' camera (never wider than the chance's frame).
+   */
+  camera?: "tv";
 }
 
 /**
@@ -105,6 +112,50 @@ export const LEAD_FOLLOW_TOP = 30;
 export const LEAD_FRAME_MIN_W = 28;
 
 /**
+ * THE TV CAMERA (lead.camera "tv"; Harry, 14 Oct 2026: "the camerawork needs to
+ * change up until you get your chance").
+ *
+ * Filmed, round 1: the old follow frame was the chance's size but chased the
+ * ball, so it slid up to 23 px a frame and jumped between passes. Round 2 made
+ * it smooth but zoomed out to 54 m (the whole half; men 2/3 their size).
+ * Round 3 (this): a TV operator's frame —
+ *   - the SAME scale as the chance's own frame (men the size you play them at),
+ *     widening at most LEAD_TV_MAX_RATIO only when the passer and the man the
+ *     pass goes to can't both fit;
+ *   - aimed between the ball and where it is going (lead room), looking
+ *     LEAD_TV_AIM_S ahead, so it is already moving when the pass is hit;
+ *   - the goal brought into the frame once the ball is within LEAD_TV_GOAL_Y;
+ *   - eased springs and a top speed, never a snap;
+ *   - glides onto the chance's frame over LEAD_TV_SETTLE_S, and IS it at the end.
+ */
+/** The widest it goes, as a multiple of the chance's own frame width. */
+export const LEAD_TV_MAX_RATIO = 1.2;
+/** Room round the ball and the receiver (m, added across and down). */
+export const LEAD_TV_MARGIN = 3;
+/** How far ahead it aims (s): the frame centre is the average of the next LEAD_TV_AIM_S. */
+export const LEAD_TV_AIM_S = 0.9;
+/** How far ahead it looks to pick its size (s): out before a long pass, not after it. */
+export const LEAD_TV_LOOK_S = 1.2;
+/** Once the ball is this close to the goal line (m), the goal comes into the frame. */
+export const LEAD_TV_GOAL_Y = 42;
+/** Its springs (per second): position, zooming out, zooming in. Lower = steadier. */
+export const LEAD_TV_OMEGA = 2.4;
+export const LEAD_TV_OMEGA_OUT = 1.6;
+export const LEAD_TV_OMEGA_SIZE = 1.0;
+/** Its top speed, m/s. */
+export const LEAD_TV_TOP = 34;
+/** How long it takes to glide onto the chance's own frame (s). */
+export const LEAD_TV_SETTLE_S = 2.5;
+/**
+ * The part of the frame you can actually see (shares of the frame; the Real
+ * shots page always faces up, goal at the top). Filmed: the match canvas is
+ * wider than a 390-px phone (about 11% cut off each side) and the commentary
+ * box covers the bottom quarter, so a ball "in frame" down the touchline or at
+ * the bottom was hidden. The TV camera keeps the ball and the move inside this.
+ */
+export const LEAD_TV_SAFE = { l: 0.15, r: 0.15, t: 0.1, b: 0.3 };
+
+/**
  * WHERE THE CAMERA STOPS FOLLOWING (Harry, 14 Oct 2026: "maybe do it on the
  * pass and then fixed once in the 6 yard box"). While the passes play, the
  * camera follows the move. Once the ball is inside this box it is FIXED on the
@@ -154,6 +205,20 @@ function keepBall(v: Viewport, b: Vec2): Viewport {
   return { x1: v.x1 + dx, x2: v.x2 + dx, y1: v.y1 + dy, y2: v.y2 + dy };
 }
 
+/** keepBall for the TV camera: the ball kept inside LEAD_TV_SAFE (scaled by k; never less than keepBall's margin). */
+function keepSafe(v: Viewport, b: Vec2, k = 1): Viewport {
+  const w = v.x2 - v.x1, h = v.y2 - v.y1, m = ballMargin(v);
+  const l = Math.max(m, LEAD_TV_SAFE.l * w * k), r = Math.max(m, LEAD_TV_SAFE.r * w * k);
+  const t = Math.max(m, LEAD_TV_SAFE.t * h * k), bo = Math.max(m, LEAD_TV_SAFE.b * h * k);
+  // A soft edge: the frame starts and stops moving with the ball gradually (no
+  // sudden stop when the ball comes back in); the ball may go up to 0.8 x the
+  // margin past the line, so it is always still inside the frame.
+  const soft = (e: number, mm: number) => { const K = 0.8 * mm; return e <= 0 ? 0 : (e * e) / (e + K); };
+  const dx = b.x < v.x1 + l ? -soft(v.x1 + l - b.x, l) : b.x > v.x2 - r ? soft(b.x - (v.x2 - r), r) : 0;
+  const dy = b.y < v.y1 + t ? -soft(v.y1 + t - b.y, t) : b.y > v.y2 - bo ? soft(b.y - (v.y2 - bo), bo) : 0;
+  return { x1: v.x1 + dx, x2: v.x2 + dx, y1: v.y1 + dy, y2: v.y2 + dy };
+}
+
 /**
  * When the camera is fixed: the first moment the ball is inside the lock box
  * (LEAD_LOCK_AREA) and stays inside the chance's own frame from then on (so a
@@ -196,15 +261,21 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
   // A camera operator: a critically damped spring on the frame's middle and size
   // (it speeds up and slows down smoothly, never a jolt when the play moves on to
   // the next pass), with a top speed.
-  const STEP = 1 / 60, W_POS = LEAD_FOLLOW_OMEGA, W_SIZE = LEAD_FOLLOW_OMEGA * 0.6, TOP = LEAD_FOLLOW_TOP;
+  const tv = lead.camera === "tv";
+  const STEP = 1 / 60;
+  const W_POS = tv ? LEAD_TV_OMEGA : LEAD_FOLLOW_OMEGA;
+  const W_SIZE = tv ? LEAD_TV_OMEGA_SIZE : LEAD_FOLLOW_OMEGA * 0.6;
+  const TOP = tv ? LEAD_TV_TOP : LEAD_FOLLOW_TOP;
+  const SETTLE = tv ? LEAD_TV_SETTLE_S : LEAD_SETTLE_S;
+  const MARGIN = tv ? LEAD_TV_MARGIN : 14;
   const ps = lead.passStart, pe = lead.passEnd;
   const hasPasses = !!ps && !!pe && ps.length > 0 && ps.length === pe.length;
   const box = (pts: Vec2[]) => {
     let x1 = Infinity, x2 = -Infinity, y1 = Infinity, y2 = -Infinity;
     for (const p of pts) { x1 = Math.min(x1, p.x); x2 = Math.max(x2, p.x); y1 = Math.min(y1, p.y); y2 = Math.max(y2, p.y); }
-    return { cx: (x1 + x2) / 2, cy: (y1 + y2) / 2, sx: x2 - x1 + 14, sy: y2 - y1 + 14 };
+    return { cx: (x1 + x2) / 2, cy: (y1 + y2) / 2, sx: x2 - x1 + MARGIN, sy: y2 - y1 + MARGIN };
   };
-  const target = (t: number) => {
+  const target0 = (t: number) => {
     if (hasPasses) {
       // The pass being played, or the next one: its passer's spot and where it goes.
       const tt = Math.min(lead.durS, Math.max(0, t));
@@ -215,21 +286,71 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
     const a = actionBox(lead, t, keys);
     const ahead = lead.ballAt(Math.min(lead.durS, t + 0.35));
     const x1 = Math.min(a.x1, ahead.x), x2 = Math.max(a.x2, ahead.x), y1 = Math.min(a.y1, ahead.y), y2 = Math.max(a.y2, ahead.y);
-    return { cx: ((x1 + x2) / 2 + a.bx) / 2, cy: ((y1 + y2) / 2 + a.by) / 2, sx: x2 - x1 + 14, sy: y2 - y1 + 14 };
+    return { cx: ((x1 + x2) / 2 + a.bx) / 2, cy: ((y1 + y2) / 2 + a.by) / 2, sx: x2 - x1 + MARGIN, sy: y2 - y1 + MARGIN };
   };
+  // The chance's frame shape (the TV camera works at its scale); set by at().
+  let cw0 = 30, ch0 = 58;
+  // TV: what to keep in frame at t — the ball, the pass being played or the next
+  // one (its passer until it is hit, and where it goes), and the goal near the box.
+  const tvGoal = { x: CX, y: 0 };
+  const tvTarget0 = (t: number) => {
+    const tt = Math.min(lead.durS, Math.max(0, t));
+    const b = lead.ballAt(tt);
+    const pts: Vec2[] = [b];
+    if (hasPasses) {
+      const i = pe!.findIndex((e) => tt < e);
+      if (i >= 0) { if (tt < ps![i]) pts.push(lead.ballAt(ps![i])); pts.push(lead.ballAt(pe![i])); }
+      else pts.push(lead.ballAt(lead.durS));
+    } else pts.push(lead.ballAt(Math.min(lead.durS, tt + 0.8)));
+    if (b.y < LEAD_TV_GOAL_Y) pts.push(tvGoal);
+    return box(pts);
+  };
+  // TV: the frame it wants at t, at the chance's scale (width cw..cw x LEAD_TV_MAX_RATIO).
+  const tvTarget = (t: number) => {
+    let cx = 0, cy = 0, sx = 0, sy = 0;
+    const N = 6;
+    for (let k = 0; k < N; k++) { const g = tvTarget0(t + (LEAD_TV_AIM_S * k) / (N - 1)); cx += g.cx / N; cy += g.cy / N; }
+    for (let k = 0; k < N; k++) { const g = tvTarget0(t + (LEAD_TV_LOOK_S * k) / (N - 1)); sx = Math.max(sx, g.sx); sy = Math.max(sy, g.sy); }
+    // It frames the move inside the part you can see (LEAD_TV_SAFE).
+    const fw = 1 - LEAD_TV_SAFE.l - LEAD_TV_SAFE.r, fh = 1 - LEAD_TV_SAFE.t - LEAD_TV_SAFE.b;
+    const need = Math.max(sx / fw, (sy / fh) * cw0 / ch0);
+    const w = Math.min(cw0 * LEAD_TV_MAX_RATIO, Math.max(cw0, need)), h = (w * ch0) / cw0;
+    // Too much to fit: the ball keeps its place, the rest is pulled in towards it.
+    const b = lead.ballAt(Math.min(lead.durS, Math.max(0, t)));
+    if (sx > w * fw) cx = b.x + ((cx - b.x) * w * fw) / sx;
+    if (sy > h * fh) cy = b.y + ((cy - b.y) * h * fh) / sy;
+    // The seen part's middle sits above the frame's middle: move the frame so the move is in it.
+    cx += (LEAD_TV_SAFE.r - LEAD_TV_SAFE.l) / 2 * w;
+    cy += (LEAD_TV_SAFE.b - LEAD_TV_SAFE.t) / 2 * h;
+    return { cx, cy, sx: w, sy: h };
+  };
+  // The TV camera picks its size from the next LEAD_TV_LOOK_S: out before a long pass, not after it.
+  const target = (t: number) => (tv ? tvTarget(t) : target0(t));
   const rest = (t: number) => ({ t: 0, ...target(t), vx: 0, vy: 0, vsx: 0, vsy: 0 });
-  let st = rest(0);
+  let st: ReturnType<typeof rest> | null = null;
   const advance = (to: number) => {
-    if (to < st.t) st = rest(0);
+    if (!st || to < st.t) st = rest(0);
     while (st.t + STEP <= to + 1e-9) {
       const g = target(st.t + STEP);
       let vx = st.vx + (W_POS * W_POS * (g.cx - st.cx) - 2 * W_POS * st.vx) * STEP;
       let vy = st.vy + (W_POS * W_POS * (g.cy - st.cy) - 2 * W_POS * st.vy) * STEP;
       const sp = Math.hypot(vx, vy);
       if (sp > TOP) { vx *= TOP / sp; vy *= TOP / sp; }
-      const vsx = st.vsx + (W_SIZE * W_SIZE * (g.sx - st.sx) - 2 * W_SIZE * st.vsx) * STEP;
-      const vsy = st.vsy + (W_SIZE * W_SIZE * (g.sy - st.sy) - 2 * W_SIZE * st.vsy) * STEP;
+      const wx = tv && g.sx > st.sx ? LEAD_TV_OMEGA_OUT : W_SIZE, wy = tv && g.sy > st.sy ? LEAD_TV_OMEGA_OUT : W_SIZE;
+      const vsx = st.vsx + (wx * wx * (g.sx - st.sx) - 2 * wx * st.vsx) * STEP;
+      const vsy = st.vsy + (wy * wy * (g.sy - st.sy) - 2 * wy * st.vsy) * STEP;
       st = { t: st.t + STEP, cx: st.cx + vx * STEP, cy: st.cy + vy * STEP, sx: st.sx + vsx * STEP, sy: st.sy + vsy * STEP, vx, vy, vsx, vsy };
+      if (tv) {
+        // A ball faster than the operator (a sped-up long ball): he keeps it on the
+        // screen by panning with it, and holds the zoom while he does (no pan + zoom at once).
+        const w = Math.min(cw0 * LEAD_TV_MAX_RATIO, Math.max(cw0, st.sx)), h = (w * ch0) / cw0;
+        const v = { x1: st.cx - w / 2, x2: st.cx + w / 2, y1: st.cy - h / 2, y2: st.cy + h / 2 };
+        const k = keepSafe(v, lead.ballAt(Math.min(lead.durS, st.t)));
+        if (k.x1 !== v.x1 || k.y1 !== v.y1) {
+          const prev = st.sx - vsx * STEP, prevY = st.sy - vsy * STEP;
+          st = { ...st, cx: st.cx + (k.x1 - v.x1), cy: st.cy + (k.y1 - v.y1), sx: prev, sy: prevY, vsx: 0, vsy: 0 };
+        }
+      }
     }
   };
   const clampC = (c: number, half: number, lo: number, hi: number) => (hi - lo <= 2 * half ? (lo + hi) / 2 : Math.min(hi - half, Math.max(lo + half, c)));
@@ -244,7 +365,7 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
   const lockAt = (t: number, chance: Viewport) => {
     const lt = lockTime(chance);
     if (lt <= 0) return 1;
-    return smooth((t - (lt - LEAD_SETTLE_S)) / LEAD_SETTLE_S);
+    return smooth((t - (lt - SETTLE)) / SETTLE);
   };
   return {
     /** When the camera is fixed (seconds into the lead-in), for this chance frame. */
@@ -255,11 +376,27 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
       const f = lockAt(t, chance);
       if (f >= 1) return { ...chance };
       const cw = chance.x2 - chance.x1, ch = chance.y2 - chance.y1;
+      if (tv && (cw !== cw0 || ch !== ch0)) { cw0 = cw; ch0 = ch; }
       advance(t);
-      const w = Math.min(cw, Math.max(Math.min(cw, LEAD_FRAME_MIN_W), st.sx, st.sy * cw / ch)), h = w * ch / cw;
-      const cx = clampC(st.cx, w / 2, -4, 72), cy = clampC(st.cy, h / 2, -7, 112);
-      const own = keepBall({ x1: cx - w / 2, x2: cx + w / 2, y1: cy - h / 2, y2: cy + h / 2 }, lead.ballAt(t));
+      const s = st!;
+      // The build-ups: never wider than the chance's frame. The TV camera: the chance's scale, up to LEAD_TV_MAX_RATIO wider.
+      const lo = tv ? cw : Math.min(cw, LEAD_FRAME_MIN_W);
+      const hi = tv ? cw * LEAD_TV_MAX_RATIO : cw;
+      const w = Math.min(hi, Math.max(lo, s.sx, s.sy * cw / ch)), h = w * ch / cw;
+      const cx = clampC(s.cx, w / 2, -4, 72), cy = clampC(s.cy, h / 2, -7, 112);
+      const raw = { x1: cx - w / 2, x2: cx + w / 2, y1: cy - h / 2, y2: cy + h / 2 };
+      const own = tv ? keepSafe(raw, lead.ballAt(t)) : keepBall(raw, lead.ballAt(t));
       const mix = (a: number, b: number) => a + (b - a) * f;
+      if (tv) {
+        // The TV camera zooms onto the chance's frame at an even rate (the width
+        // eased in ratio, not in metres), so the zoom-in never rushes at the start.
+        const ow = own.x2 - own.x1, oh = own.y2 - own.y1;
+        const zw = ow * Math.pow(cw / ow, f), zh = oh * Math.pow(ch / oh, f);
+        const zx = mix((own.x1 + own.x2) / 2, (chance.x1 + chance.x2) / 2), zy = mix((own.y1 + own.y2) / 2, (chance.y1 + chance.y2) / 2);
+        const z = { x1: zx - zw / 2, x2: zx + zw / 2, y1: zy - zh / 2, y2: zy + zh / 2 };
+        // The seen-part margin fades to keepBall's as it lands on the chance's frame.
+        return keepSafe(z, lead.ballAt(t), 1 - f);
+      }
       return keepBall({ x1: mix(own.x1, chance.x1), x2: mix(own.x2, chance.x2), y1: mix(own.y1, chance.y1), y2: mix(own.y2, chance.y2) }, lead.ballAt(t));
     },
   };

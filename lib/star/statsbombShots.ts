@@ -759,6 +759,8 @@ export function leadinTrack(s: SbShot, lead: SbLeadin, sc: Scenario): LeadTrack 
   };
   return {
     durS, ballKeys, paths, holders, passStart, passEnd, captionAt, extraMates,
+    // The TV camera (leadIn.ts LEAD_TV_*): both ends of each pass on screen, wider than the shot's frame.
+    camera: "tv",
     ballAt,
     posAt: (key, t) => {
       const path = paths.get(key);
