@@ -9,14 +9,19 @@
  *     LEAD_MAX_S, never backwards;
  *   - the last pass is received by YOU, and you carry it onto the shot's spot;
  *   - continuity: at the end every man, the ball and the camera are exactly
- *     where the chance has them (no jump when it starts).
+ *     where the chance has them (no jump when it starts);
+ *   - the camera (Harry, 14 Oct 2026: "maybe do it on the pass and then fixed
+ *     once in the 6 yard box"): it follows the passes, then is FIXED on the
+ *     shot's own frame once the ball is in the lock box (LEAD_LOCK_AREA), and
+ *     its biggest move in one frame (1/60 s) is measured.
+ * The chance is the page's: the wide Play frame (scenarioForShot wideFrame).
  */
 import { readFileSync } from "node:fs";
 import {
   scenarioForShot, leadinTrack, sbToPitch, LEAD_MAX_S, LEAD_HOLD_S,
   type SbFile, type SbLeadinFile,
 } from "../../lib/star/statsbombShots";
-import { leadInEntities, leadInCamera } from "../../lib/star/leadIn";
+import { leadInEntities, leadInCamera, inLockArea, LEAD_LOCK_AREA } from "../../lib/star/leadIn";
 
 let fails = 0;
 function check(label: string, ok: boolean, got?: unknown) {
@@ -30,10 +35,14 @@ const withLead = shots.filter((s) => (leads[s.id]?.passes.length ?? 0) >= 1);
 check(`shots with a lead-in: ${withLead.length}`, withLead.length > 500);
 
 let n = 0, backwards = 0, tooLong = 0, endBall = 0, endPeople = 0, endCam = 0, youRecv = 0, youEnd = 0;
+// The camera, frame by frame (1/60 s): its biggest step while following, beyond the ball's own move.
+const stepMax: number[] = [];
+let overStep = 0, lockedMoves = 0, entered = 0, lockedOnEntry = 0, lockedLate = 0, lockedAtEnd = 0;
+const FRAME = 1 / 60, STEP_LIMIT = 1.0;
 let camLost = 0, camJump = 0, realTimed = 0, timedPasses = 0, compressed = 0, jumpy = 0, passerOn = 0, passerAll = 0, startBall = 0;
 for (const s of withLead) {
   const lead = leads[s.id];
-  const sc = scenarioForShot(s);
+  const sc = scenarioForShot(s, { wideFrame: true });
   const ends = leadInEntities(sc).map((e) => ({ key: e.key, at: e.get() }));
   const tr = leadinTrack(s, lead, sc);
   n++;
@@ -63,6 +72,28 @@ for (const s of withLead) {
     const ballMove = d(b, tr.ballAt(Math.max(0, t - 1 / 15)));
     if (Math.max(Math.abs(v.x1 - prev.x1), Math.abs(v.y1 - prev.y1), Math.abs(v.x2 - prev.x2), Math.abs(v.y2 - prev.y2)) > Math.max(3, ballMove * 1.15)) { camJump++; break; }
     prev = v;
+  }
+  // Frame by frame: the biggest step; and after the lock, not a millimetre of movement.
+  {
+    const c2 = leadInCamera(tr, keys);
+    const lockT = c2.lockTime(sc.viewport);
+    let pv = c2.at(0, sc.viewport), worst = 0, over = false, moved = false, te = -1;
+    for (let k = 1; k * FRAME <= tr.durS + 1e-9; k++) {
+      const t = k * FRAME;
+      const v = c2.at(t, sc.viewport);
+      const step = Math.max(Math.abs(v.x1 - pv.x1), Math.abs(v.x2 - pv.x2), Math.abs(v.y1 - pv.y1), Math.abs(v.y2 - pv.y2));
+      worst = Math.max(worst, step);
+      // never faster than STEP_LIMIT a frame (60 m/s), unless it is keeping up with the ball itself
+      if (step > Math.max(STEP_LIMIT, d(tr.ballAt(t), tr.ballAt(t - FRAME)) * 1.05 + 0.02)) over = true;
+      if (t >= lockT && Math.abs(v.x1 - sc.viewport.x1) + Math.abs(v.x2 - sc.viewport.x2) + Math.abs(v.y1 - sc.viewport.y1) + Math.abs(v.y2 - sc.viewport.y2) > 1e-9) moved = true;
+      if (te < 0 && inLockArea(tr.ballAt(t))) te = t;
+      pv = v;
+    }
+    stepMax.push(worst);
+    if (over) overStep++;
+    if (moved) lockedMoves++;
+    if (lockT >= tr.durS - 1e-9) lockedAtEnd++;
+    if (te >= 0) { entered++; if (lockT <= te + FRAME + 1e-9) lockedOnEntry++; else lockedLate++; }
   }
   const vp = cam.at(tr.durS, sc.viewport);
   if (Math.abs(vp.x1 - sc.viewport.x1) + Math.abs(vp.y1 - sc.viewport.y1) + Math.abs(vp.x2 - sc.viewport.x2) + Math.abs(vp.y2 - sc.viewport.y2) > 1e-9) endCam++;
@@ -101,6 +132,13 @@ check(`nobody jumps in the last frame (${jumpy} of ${n})`, jumpy === 0);
 check(`the lead-in camera keeps the ball in frame (${camLost} lost)`, camLost === 0);
 check(`the lead-in camera glides: never faster than 45 m/s or the ball itself (${camJump} of ${n} moves have one faster frame; allowed: under 0.5%)`, camJump < n * 0.005);
 check(`the camera ends on the chance's own frame (${endCam} off)`, endCam === 0);
+stepMax.sort((a, b) => a - b);
+const pct = (f: number) => stepMax[Math.floor(f * (stepMax.length - 1))].toFixed(2);
+console.log(`     camera's biggest step in one frame (m): median ${pct(0.5)}, 99th ${pct(0.99)}, worst ${pct(1)} (worst = keeping up with a sped-up ball)`);
+check(`the camera never steps more than ${STEP_LIMIT} m in a frame unless the ball does (${overStep} of ${n})`, overStep === 0);
+check(`after the lock the camera does not move at all (${lockedMoves} of ${n} moved)`, lockedMoves === 0);
+check(`the ball enters the "${LEAD_LOCK_AREA}" box in ${entered} moves: locked on entry ${lockedOnEntry}, later ${lockedLate} (the ball would leave the fixed frame)`, lockedOnEntry > entered * 0.8);
+check(`shots from outside the box lock as the lead-in ends (${lockedAtEnd} of ${n})`, lockedAtEnd + lockedOnEntry + lockedLate >= n && lockedAtEnd > 0);
 check(`YOU receive the last pass (${youRecv}/${n})`, youRecv === n);
 check(`YOU end exactly where the chance has you (${youEnd}/${n})`, youEnd === n);
 const realShare = realTimed / Math.max(1, timedPasses);

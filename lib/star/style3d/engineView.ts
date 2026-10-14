@@ -1381,24 +1381,31 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const sp = (usesSetPieceCam(f.kind) || corner || kindCam) && !!f.ball;
     const key = `${f.kind}|${facing}|${tilt ? tilt.deg : 0}|${Math.round(W)}|${Math.round(H)}`;
     // a new set piece: a new ball spot while aiming (a shootout's next kick from the same spot keeps its camera)
-    const spKey = sp && f.ball && f.phase === "aim" ? `${key}|${f.ball.x.toFixed(1)},${f.ball.y.toFixed(1)}` : m2.spKey;
+    // A lead-in replaying (test pages only: CanvasMatch's `leadIn`): the 2D frame follows the passes
+    // and then is fixed on the chance's own frame (lib/star/leadIn.ts). A camera of the 3D's own (a
+    // tight angle's) is worked out from where the CHANCE has everyone, so it is the camera the chance
+    // keeps, and the follow glides onto it as the 2D's does. Absent (the real game): nothing changes.
+    const lead = f.leadIn ?? null;
+    const spBall = lead ? lead.ball : f.ball;
+    const spKey = sp && spBall && f.phase === "aim" ? `${key}|${spBall.x.toFixed(1)},${spBall.y.toFixed(1)}` : m2.spKey;
     const fr2 = { viewport: vp, facing, tilt, W, H };
     // a penalty / free kick: the closer set-piece camera (match2dCam.ts SET_PIECE_CAM), worked out
     // once when the chance starts and held (the taker walks in inside it); every other kind: the 2D's own frame
-    if (sp && f.ball && (spKey !== m2.spKey || !m2.sp)) {
+    if (sp && f.ball && spBall && (spKey !== m2.spKey || !m2.sp)) {
       m2.spKey = spKey;
-      const kp = f.keeper ? { x: f.keeper.x, y: f.keeper.y } : null;
+      const kp = lead ? lead.keeper : f.keeper ? { x: f.keeper.x, y: f.keeper.y } : null;
+      const spFigs = lead ? f.figures.map((g) => (lead.at[g.sid] ? { ...g, x: lead.at[g.sid].x, y: lead.at[g.sid].y } : g)) : f.figures;
       // a corner: its own closer camera (match2dCam.ts CORNER_CAM), camera only
       // the glide: start on B or C (seeded per corner), and keep the box framing (A) for after the kick
       const glide = CORNER_CAM.pick === "glide";
       m2.cornerStart = corner && glide ? CORNER_CAM.starts[hashOf(spKey) % CORNER_CAM.starts.length] : "";
-      m2.cornerA = corner && glide ? solveCornerCam(fr2, { x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale, "A") : null;
+      m2.cornerA = corner && glide ? solveCornerCam(fr2, { x: spBall.x, y: spBall.y }, spFigs, kp, mScale, "A") : null;
       m2.cornerT0 = -1;
       m2.sp = corner
-        ? solveCornerCam(fr2, { x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale, m2.cornerStart || undefined)
+        ? solveCornerCam(fr2, { x: spBall.x, y: spBall.y }, spFigs, kp, mScale, m2.cornerStart || undefined)
         : kindCam
-        ? solveKindCam(f.kind, fr2, { x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale)
-        : solveSetPieceCam(fr2, setPieceKeep({ x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale), { x: f.ball.x, y: f.ball.y }, mScale, SET_PIECE_CAM, f.kind === "penalty" ? SET_PIECE_CAM.penaltyShare : SET_PIECE_CAM.targetShare);
+        ? solveKindCam(f.kind, fr2, { x: spBall.x, y: spBall.y }, spFigs, kp, mScale)
+        : solveSetPieceCam(fr2, setPieceKeep({ x: spBall.x, y: spBall.y }, spFigs, kp, mScale), { x: spBall.x, y: spBall.y }, mScale, SET_PIECE_CAM, f.kind === "penalty" ? SET_PIECE_CAM.penaltyShare : SET_PIECE_CAM.targetShare);
       // the zoom's far end for a turned camera: the whole scenario, seen from the same side
       m2.spWide = kindCam && m2.sp ? wideFromSide(fr2, m2.sp) : null;
     }
@@ -1411,7 +1418,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // piece's own camera, else the 2D's frame a little closer), 1 = the whole scenario, -1 = closest.
     // It only moves the camera; it keeps between chances.
     const zoom = camZoom();
-    let def: Match2DCamera = sp && m2.sp ? m2.sp : { ...wide, D: wide.D * OPEN_DEFAULT_K, minDepth: wide.minDepth * OPEN_DEFAULT_K };
+    const openDef: Match2DCamera = { ...wide, D: wide.D * OPEN_DEFAULT_K, minDepth: wide.minDepth * OPEN_DEFAULT_K };
+    let def: Match2DCamera = sp && m2.sp ? (lead ? lerpCamera(openDef, m2.sp, lead.lock) : m2.sp) : openDef;
     // the corner glide: from the kick, ease to the box framing (A) in CORNER_CAM.glideS, following where the ball will land
     if (corner && m2.sp && m2.cornerA) {
       const struck = f.phase !== "aim" && f.phase !== "runup" && f.phase !== "contact";
@@ -1428,12 +1436,16 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // room to drag back (match2dCam.ts keepDragRoom): while aiming, the ball's spot stays a full-power
     // drag above the screen's bottom in every framing (default, pinched, a corner's start view); the
     // spot is held through the kick so the camera never jumps when the ball is struck
-    if (f.ball && (f.phase === "aim" || f.phase === "runup" || f.phase === "contact")) m2.aimBall = { x: f.ball.x, y: f.ball.y };
-    const cz = zoomCamera(def, kindCam && m2.spWide ? m2.spWide : wide, zoom);
+    // (a lead-in: the chance's ball, where the drag will start)
+    if (f.ball && (f.phase === "aim" || f.phase === "runup" || f.phase === "contact")) m2.aimBall = lead ? { ...lead.ball } : { x: f.ball.x, y: f.ball.y };
+    const farEnd = kindCam && m2.spWide ? (lead ? lerpCamera(wide, m2.spWide, lead.lock) : m2.spWide) : wide;
+    const cz = zoomCamera(def, farEnd, zoom);
     const elevDeg = cz.elevDeg + camHeightTest(); // the camera-height test slider (0 in the game)
     const c0 = { ...cz, elevDeg, elev: (elevDeg * Math.PI) / 180 };
     // open play at the default zoom IS the 2D frame (it already leaves the 2D's drag room): untouched
-    const cKept = m2.aimBall && (sp || zoom !== 0) ? keepDragRoom(c0, m2.aimBall, W, H) : c0;
+    const kept = m2.aimBall && (sp || zoom !== 0) ? keepDragRoom(c0, m2.aimBall, W, H) : c0;
+    // a lead-in: the drag room comes in as the camera fixes (none while it follows the passes)
+    const cKept = lead && kept !== c0 ? lerpCamera(c0, kept, lead.lock) : kept;
     let turnDt = 0;
     // THE CAMERA SWIPE (match2dCam.ts ORBIT): turned round the ball while the chance lasts; a new chance,
     // or the end of this one, eases it back to 0

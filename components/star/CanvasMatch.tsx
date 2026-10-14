@@ -1401,7 +1401,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** See the `leadIn` prop: the builder, and the lead-in while it plays. */
   const leadInPropRef = useRef(leadIn);
   leadInPropRef.current = leadIn;
-  const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; cam: { at(t: number, chance: Viewport): Viewport } } | null>(null);
+  const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null } | null>(null);
   const leadTriedRef = useRef(false);
   const [leadInOn, setLeadInOn] = useState(false);
   /** See the `onChanceServed` / `neverHooked` props. Held in refs for the
@@ -4755,6 +4755,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         goalInView: goalInView(sc.kind) || goalOnCamera,
         orders: captainOrdersFrame(sc),
         runup: phaseRef.current === "runup" && runupRef.current ? { t: runupRef.current.t, runS: runupRef.current.runS } : null,
+        leadIn: leadRef.current ? {
+          lock: leadRef.current.cam.lockAt(leadRef.current.t, baseViewportRef.current),
+          ball: { ...leadRef.current.ball }, keeper: leadRef.current.endKeeper, at: leadRef.current.endAt,
+        } : null,
       });
     }
     } catch (e) {
@@ -4986,7 +4990,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       sc.teammates.push(m);
       ents.push({ key: `extra${i}`, side: "mate", get: () => ({ x: m.x, y: m.y }), set: (p) => { m.x = p.x; m.y = p.y; } });
     }
-    leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, cam: leadInCamera(lead, ents.map((e) => e.key)) };
+    // Where the chance has each man, by the figure name the frame uses (for a 3D camera of its own).
+    const endAt: Record<string, Vec2> = {};
+    let endKeeper: Vec2 | null = null;
+    ents.forEach((e, i) => {
+      if (i >= ends.length) return;
+      const sid = e.key === "keeper" ? null : e.key === "run" ? "run0" : e.key.startsWith("sec") ? `run${Number(e.key.slice(3)) + 1}` : e.key;
+      if (sid) endAt[sid] = { ...ends[i] }; else endKeeper = { ...ends[i] };
+    });
+    leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, cam: leadInCamera(lead, ents.map((e) => e.key)), endAt, endKeeper };
     setLeadInOn(true);
     applyLeadIn();
   };
