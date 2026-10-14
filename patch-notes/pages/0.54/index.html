@@ -1,0 +1,264 @@
+<title>Knowitball v0.52 + v0.53</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">v0.52 + v0.53</span>
+  <h1>New chances, a better 3D camera, and build-ups that play on</h1>
+  <p class="sub">Everything since the last big notes, on one page. Part A is already in the game. Part B is waiting for your push. Tuning has its own page.</p>
+</header>
+
+<h2 class="fix" style="margin-top:8px"><i></i>PART A · ALREADY LIVE</h2>
+<div class="dt" style="margin-bottom:6px">Pushed this morning, 14 Oct. Pull the game up and these are in.</div>
+
+<h2 class="add"><i></i>A1 · NEW CHANCES FOLLOW THE MATCH</h2>
+<div class="dt" style="margin-bottom:10px">Settings → Chances: New. Each chance comes from what the match is doing right now: your wing, the part of the pitch the ball is in, and the kind of move the radar is playing. The same kind never comes twice in a row. Crosses and cutbacks are capped at 2 in every 8 chances.</div>
+<div class="tw" style="padding:12px">
+<svg viewBox="0 0 360 120" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<defs><marker id="z" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+<g font-size="11" font-weight="700" text-anchor="middle">
+<rect x="4" y="20" width="104" height="44" rx="8" fill="var(--card2)" stroke="var(--line)"/><text x="56" y="39" fill="var(--ink)">The match radar</text><text x="56" y="55" font-size="10" font-weight="400" fill="var(--ink2)">ball on the left wing</text>
+<rect x="128" y="20" width="104" height="44" rx="8" fill="var(--card2)" stroke="var(--line)"/><text x="180" y="39" fill="var(--ink)">Pick a kind</text><text x="180" y="55" font-size="10" font-weight="400" fill="var(--ink2)">not the last one</text>
+<rect x="252" y="20" width="104" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/><text x="304" y="39" fill="#166534">Your chance</text><text x="304" y="55" font-size="10" font-weight="400" fill="#166534">on that wing</text>
+</g>
+<path d="M108 42H126M232 42H250" stroke="var(--ink3)" stroke-width="1.5" marker-end="url(#z)"/>
+<text x="180" y="96" text-anchor="middle" font-size="11" fill="var(--ink2)">some one-on-ones, long shots and crosses get a short build-up first</text>
+</svg></div>
+<div class="shots" style="grid-template-columns:repeat(2,1fr)">
+<figure><img src="img/newchance.jpg" alt=""><figcaption>A New chance, on your side of the pitch.</figcaption></figure>
+<figure><img src="img/buildup.jpg" alt=""><figcaption>A build-up playing before the chance is yours.</figcaption></figure>
+</div>
+
+<h2 class="fix"><i></i>A2 · 3D CAMERA AND CONTROLS</h2>
+<div class="dt" style="margin-bottom:10px">On corners the turn stops softly at 60°, so the goal stays on screen. A turned camera keeps the goal and drops the stand roof. Drag-back and zoom no longer swap after you flick between 2D and 3D. Drag up and down works again.</div>
+<div class="shots" style="grid-template-columns:repeat(2,1fr)">
+<figure><img src="img/corner60.jpg" alt=""><figcaption>Corner, turned as far as it goes (60°).</figcaption></figure>
+<figure><img src="img/ball.jpg" alt=""><figcaption>The new ball (at his feet): classic black and white, 1.6× bigger. In the air it rises with puffs instead of a height line.</figcaption></figure>
+</div>
+
+<h2 class="fix"><i></i>A3 · NO MORE BLACK PLAYERS IN BRIGHT AND LIGHT</h2>
+<div class="dt" style="margin-bottom:10px">Switching to the Bright or Light pack turned every player black. Now they keep their kits.</div>
+<div class="shots" style="grid-template-columns:repeat(2,1fr)">
+<figure><img src="img/black-before.jpg" alt=""><figcaption>Before: Bright, every man black.</figcaption></figure>
+<figure><img src="img/black-after.jpg" alt=""><figcaption>Now: real kits.</figcaption></figure>
+</div>
+
+<h2 class="add"><i></i>A4 · REAL SHOTS AND FULL MATCH TEST PAGES</h2>
+<div class="dt" style="margin-bottom:10px"><b>Real shots:</b> real goals from real matches, replayed on our pitch, and then the shot is yours. The keeper starts where he really stood. The camera follows the passes, then holds still once the ball is in the six-yard box. <b>Full match:</b> a whole 90 minutes to watch at up to 60×, stopping on your chances.</div>
+<figure style="max-width:260px"><img src="img/realshot-pass.jpg" alt=""><figcaption>Real shots: a real pass on its way, before the chance is yours.</figcaption></figure>
+
+<h2 class="chg" style="margin-top:28px"><i></i>PART B · WAITING FOR YOUR PUSH</h2>
+<div class="dt" style="margin-bottom:6px">On the Harry branch. Checked, not live.</div>
+<h2 class="fix"><i></i>B1 · BUILD-UPS PLAY ON, NO CUT</h2>
+<div class="dt" style="margin-bottom:10px">Passing to a team-mate who shoots already played straight through. The cut only happened in build-ups: PASS, a wait, BACK TO YOU, then a new picture from nowhere. Now a build-up carries on. You pass, you run into the box, and he shoots or lays it back into your stride for another kick.</div>
+<div class="tw" style="padding:12px">
+<svg viewBox="0 0 360 200" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+<text x="8" y="16" font-size="12" font-weight="700" fill="var(--ink3)">BEFORE</text>
+<g font-size="11" font-weight="700" text-anchor="middle">
+<rect x="6" y="24" width="80" height="34" rx="7" fill="var(--card2)" stroke="var(--line)"/><text x="46" y="45" fill="var(--ink)">You pass</text>
+<rect x="96" y="24" width="80" height="34" rx="7" fill="#fde2e2" stroke="#ef4444"/><text x="136" y="45" fill="#b91c1c">PASS + wait</text>
+<rect x="186" y="24" width="80" height="34" rx="7" fill="#fde2e2" stroke="#ef4444"/><text x="226" y="45" fill="#b91c1c">Back to you</text>
+<rect x="276" y="24" width="80" height="34" rx="7" fill="#fde2e2" stroke="#ef4444"/><text x="316" y="45" fill="#b91c1c">New picture</text>
+</g>
+<path d="M86 41H94M176 41H184M266 41H274" stroke="var(--ink3)" stroke-width="1.5" marker-end="url(#a)"/>
+<text x="8" y="92" font-size="12" font-weight="700" fill="#16a34a">NOW</text>
+<g font-size="11" font-weight="700" text-anchor="middle">
+<rect x="6" y="100" width="80" height="34" rx="7" fill="var(--card2)" stroke="var(--line)"/><text x="46" y="121" fill="var(--ink)">You pass</text>
+<rect x="96" y="100" width="80" height="34" rx="7" fill="#dcfce7" stroke="#16a34a"/><text x="136" y="121" fill="#166534">You run in</text>
+<rect x="196" y="100" width="160" height="34" rx="7" fill="#dcfce7" stroke="#16a34a"/><text x="276" y="121" fill="#166534">He shoots</text>
+<rect x="196" y="150" width="160" height="34" rx="7" fill="#dcfce7" stroke="#16a34a"/><text x="276" y="166" fill="#166534">or lays it back to you</text><text x="276" y="179" font-size="10" font-weight="400" fill="#166534">your next kick, same picture</text>
+</g>
+<path d="M86 117H94M176 117H194M176 117C186 117 186 167 194 167" fill="none" stroke="var(--ink3)" stroke-width="1.5" marker-end="url(#a)"/>
+</svg></div>
+<div class="shots" style="grid-template-columns:repeat(3,1fr)">
+<figure><img src="img/pass1.jpg" alt=""><figcaption>You pass it back.</figcaption></figure>
+<figure><img src="img/pass2.jpg" alt=""><figcaption>He takes it. No PASS banner, no cut.</figcaption></figure>
+<figure><img src="img/pass3.jpg" alt=""><figcaption>He shoots.</figcaption></figure>
+</div>
+<div class="dt" style="margin-top:8px">Chances: New only. With no goal, the next picture now flows on from where everyone was standing. Seen: a cutback. Not seen yet: a lay-off, and the flow into the next picture (both only measured).</div>
+
+<h2 class="chg"><i></i>B2 · MENUS OPEN ON THE TAP</h2>
+<div class="dt" style="margin-bottom:10px">No more fades, slides or stagger. Tap a menu and it's there. The big moments keep their reveal: awards night, the signing, the cup draw, deadline day, the vote.</div>
+<div class="tw" style="padding:12px">
+<svg viewBox="0 0 360 90" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<text x="4" y="22" font-size="12" font-weight="700" fill="var(--ink)">Home → Settings</text>
+<rect x="4" y="32" width="352" height="16" rx="4" fill="var(--card2)"/><rect x="4" y="32" width="352" height="16" rx="4" fill="#ef4444" opacity=".35"/><text x="350" y="44" text-anchor="end" font-size="11" font-weight="700" fill="#b91c1c">before 3.5 s</text>
+<rect x="4" y="58" width="40" height="16" rx="4" fill="#16a34a"/><text x="52" y="70" font-size="11" font-weight="700" fill="#166534">now 0.4 s</text>
+</svg></div>
+
+<h2 class="add"><i></i>B3 · TEXTURE PACKS: A DROPDOWN WITH PICTURES</h2>
+<div class="dt" style="margin-bottom:10px">Settings and the match's ⚙ show the current pack. Tap it to see a picture of each one and pick. A new pack shows up in the list by itself.</div>
+<figure style="max-width:260px"><img src="img/packs.jpg" alt=""><figcaption>The ✓ marks the pack in use.</figcaption></figure>
+
+<h2 class="chg"><i></i>B4 · DRIBBLES ARE A REAL CHANCE, MORE OF THEM UP THE LEAGUES</h2>
+<div class="dt" style="margin-bottom:10px">On Chances: New, the top-down dribble run is back as one of the chances you get. Better leagues give you more of them.</div>
+<div class="tw" style="padding:12px">
+<svg viewBox="0 0 360 140" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<g font-size="10" text-anchor="middle" fill="var(--ink2)">
+<rect x="10" y="102" width="56" height="12" rx="3" fill="#16a34a" opacity=".45"/><text x="38" y="130">National Lg</text>
+<rect x="80" y="90" width="56" height="24" rx="3" fill="#16a34a" opacity=".55"/><text x="108" y="130">League Two</text>
+<rect x="150" y="78" width="56" height="36" rx="3" fill="#16a34a" opacity=".65"/><text x="178" y="130">League One</text>
+<rect x="220" y="58" width="56" height="56" rx="3" fill="#16a34a" opacity=".8"/><text x="248" y="130">Championship</text>
+<rect x="290" y="34" width="60" height="80" rx="3" fill="#16a34a"/><text x="320" y="130">Prem + Europe</text>
+</g>
+<text x="180" y="18" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">How often you get a dribble chance</text>
+<text x="38" y="96" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ink)">rare</text><text x="320" y="28" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ink)">1 in 10</text>
+</svg></div>
+
+<h2 class="fix"><i></i>B5 · REAL SHOTS: MEN MOVE LIKE THE BUILD-UPS</h2>
+<div class="dt" style="margin-bottom:10px">In the real shots (the replayed real-match goals), players used to chase the ball forever. Now they run the way they do in our build-ups, and the passes play out.</div>
+<figure style="max-width:260px"><img src="img/realshots.jpg" alt=""><figcaption>Mid build-up on a real shot: the defence sits, you have room.</figcaption></figure>
+
+<h2 class="add"><i></i>B6 · TWO TEST PAGES</h2>
+<div class="dt" style="margin-bottom:10px"><b>Full match:</b> one view with a 2D | 3D | Radar switch, played live. It isn't fixed before kick-off any more: your chances feed back into the match, and the ball goes forward more. <b>Dribble on the stick:</b> steer the dribble run with your left thumb, flick to knock it past, tap a team-mate to pass. Neither is in the real game yet.</div>
+<div class="shots" style="grid-template-columns:repeat(3,1fr)">
+<figure><img src="img/full2d.jpg" alt=""><figcaption>Full match, 2D.</figcaption></figure>
+<figure><img src="img/radar.jpg" alt=""><figcaption>Same match, Radar.</figcaption></figure>
+<figure><img src="img/stick.jpg" alt=""><figcaption>Dribble on the stick.</figcaption></figure>
+</div>
+
+<h2 class="nxt"><i></i>BEING BUILT NOW</h2>
+<ul class="n">
+<li><div class="hd">12 texture packs <span class="pill p-blu">building</span></div><div class="dt">8 new ones, including Soft (between Cartoon and Light), each with its picture in the dropdown.</div></li>
+<li><div class="hd">Keep playing after you pass <span class="pill p-blu">building</span></div><div class="dt">A switch: Auto run | Joystick. With Joystick you steer yourself after the pass. The team-mate shoots, passes back if you're open, or plays you through if you're running in behind. As captain you can call for it.</div></li>
+</ul>
+
+<h2 class="fix"><i></i>KNOWN ISSUES</h2>
+<ul class="n">
+<li><div class="hd">Lay-offs mean slightly fewer team-mate goals <span class="pill p-amb">to judge</span></div><div class="dt">On a long shot, about 1 pass in 10 now comes back to you, not to his shot. Your extra kick makes up for it, but that isn't counted yet.</div></li>
+<li><div class="hd">Cameras on 2D and 3D, still broken on some chances <span class="pill p-red">open</span></div><div class="dt">Waiting on your 3D camera video.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>YOUR CALLS</h2>
+<ul class="n">
+<li><div class="hd">Push this live? <span class="pill p-amb">yes / no</span></div><div class="dt">Part B, plus the tuning panel. Or wait for the two builds above and push them all together.</div></li>
+<li><div class="hd">Keep lay-offs? <span class="pill p-amb">yes / no</span></div><div class="dt">My answer: yes. It's the "back to you" you asked for, with no cut.</div></li>
+</ul>
+
+<details><summary>The numbers, if you want them</summary>
+<p><b>Live (Part A):</b> crosses and cutbacks at most 2 in any 8 chances; corner turn ±60°, goal on screen in 4 of 4 turned views; turned camera keeps the goal in 213 of 216 views (was 171); roof on screen when turned 35% → 0%.</p>
+<p><b>Pass flow:</b> passes in build-up and midfield pictures that cut 100% → 0%. Gap to the next picture: 1.6 s pause + jump → about 2 s of play. 90% of lay-offs reach you. A team-mate's long-range goals per pass 32% → 28%.</p>
+<p><b>Menus:</b> Home → Stats 0.9 s → 0.05 s. Phone → League app 0.7 s → 0.16 s.</p>
+<p><b>Dribble share:</b> National League 3%, League Two 4.5%, League One 6%, Championship 8%, Premier League and Europe 10%.</p>
+</details>
+<footer>14 Oct 2026 · Part A live, Part B on the Harry branch.</footer>
+</div>
