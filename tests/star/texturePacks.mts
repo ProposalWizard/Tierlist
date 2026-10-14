@@ -1,18 +1,20 @@
 import { existsSync } from "node:fs";
-import { TEXTURE_PACKS, TEXTURE_PACK_NAMES, TEXTURE_PACK_LINES, TEXTURE_PACK_PREVIEW, parseTexturePack } from "../../lib/star/style3d/texturePack";
+import { TEXTURE_PACKS, TEXTURE_PACK_NAMES, TEXTURE_PACK_LINES, TEXTURE_PACK_PREVIEW, parseTexturePack, bannerStyleOf, soundSetOf, worldPackOf } from "../../lib/star/style3d/texturePack";
 import { PACK_SPECS, packGrade, packGrass } from "../../lib/star/style3d/real/packSpecs";
 import { TODS } from "../../lib/star/style3d/real/tod";
 
 /**
  * Texture packs (Harry, 14 Oct 2026: "go to like 8, 9, 10, 11, 12 texture packs"):
- * twelve, each with a name, one line and a preview still on disk; the eight data
+ * twelve, plus Arcade (Harry, 14 Oct 2026: "make it a texture pack again"): the
+ * default world with the Arcade pop banners and the Arcade sounds. Each has a
+ * name, one line and a preview still on disk; the eight data
  * packs keep the men readable (no picture too dark, too washed out or grey) and
  * keep a green pitch.
  */
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
-check(TEXTURE_PACKS.length === 12, `twelve packs (got ${TEXTURE_PACKS.length})`);
+check(TEXTURE_PACKS.length === 13, `thirteen packs (got ${TEXTURE_PACKS.length})`);
 check(TEXTURE_PACKS[0] === "real", "Realism + cartoon stays first (the default)");
 for (const id of TEXTURE_PACKS) {
   check(!!TEXTURE_PACK_NAMES[id], `${id} has a name`);
@@ -22,7 +24,14 @@ for (const id of TEXTURE_PACKS) {
   check(!!src && existsSync(`public${src}`), `${id} has a preview still on disk (${src})`);
   check(parseTexturePack(id) === id, `${id} parses`);
 }
-check(new Set(Object.values(TEXTURE_PACK_NAMES)).size === 12, "every name is different");
+check(new Set(Object.values(TEXTURE_PACK_NAMES)).size === 13, "every name is different");
+// Arcade: Realism's world, the Arcade banners and sounds. Every other pack: the old ones.
+check(worldPackOf("arcade") === "real", "Arcade wears Realism's world");
+check(bannerStyleOf("arcade") === "arcade" && soundSetOf("arcade") === "arcade", "Arcade picks the Arcade banners and sounds");
+for (const id of TEXTURE_PACKS) if (id !== "arcade") {
+  check(bannerStyleOf(id) === "old" && soundSetOf(id) === "old", `${id} keeps the old banners and sounds`);
+  check(worldPackOf(id) === id, `${id} wears its own world`);
+}
 const extra = Object.keys(PACK_SPECS);
 check(extra.length === 8 && extra.every((k) => (TEXTURE_PACKS as string[]).includes(k)), "the eight data packs are all listed");
 check(!["real", "light", "cartoon", "bright"].some((k) => k in PACK_SPECS), "the first four keep their own code");

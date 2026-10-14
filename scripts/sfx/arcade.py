@@ -9,8 +9,8 @@ Harry picked set A ("Arcade") on the Banners & sounds page, with fixes:
    the same - crowd swell is a bit too loud too - ah use confirm from stadium"
 
 So this makes:
-  ui-tap.mp3      a deeper, rounder menu "thock" (A's was a wooden click)
-  ui-confirm.mp3  the Stadium set's warm chord, as Harry heard it
+  ui-tap-arcade.mp3     a deeper, rounder menu "thock" (A's was a wooden click)
+  ui-confirm-arcade.mp3 the Stadium set's warm chord, as Harry heard it
                   (copied from scripts/sfx/sources/stadium-confirm.mp3)
   match-pass.mp3  a short, low, dry thud: no pitch, no tail
   match-goal.mp3  a bright, rising brass stab: tonal, high, about 0.75 s
@@ -245,7 +245,7 @@ def duration(path):
 
 SET = [
     # name, maker, kbps, purpose
-    ("ui-tap", menu_tap, 96, "Any button tap"),
+    ("ui-tap-arcade", menu_tap, 96, "Any button tap (Arcade pack)"),
     ("match-pass", match_pass, 96, "A pass or a team-mate's kick in the live match"),
     ("match-goal", match_goal, 96, "Goal sting in the live match"),
     ("match-crowd", match_crowd, 64, "Crowd swell in the live match"),
@@ -293,12 +293,12 @@ def main():
             print(f"{name}.mp3  {rows[-1]['duration']} s  {rows[-1]['kb']} KB")
     # The confirm is the Stadium set's warm chord, kept exactly as Harry heard it.
     src = os.path.join(SRC, "stadium-confirm.mp3")
-    dst = os.path.join(OUT, "ui-confirm.mp3")
+    dst = os.path.join(OUT, "ui-confirm-arcade.mp3")
     shutil.copy(src, dst)
-    rows.append({"name": "ui-confirm", "file": "/sfx/ui-confirm.mp3", "duration": duration(dst),
+    rows.append({"name": "ui-confirm-arcade", "file": "/sfx/ui-confirm-arcade.mp3", "duration": duration(dst),
                  "kb": round(os.path.getsize(dst) / 1024, 1), "purpose": "Confirm / continue",
                  "prompt": "Stadium set's warm chord (scripts/sfx/sources/stadium-confirm.mp3, made in code, CC0)."})
-    print(f"ui-confirm.mp3  {rows[-1]['duration']} s  {rows[-1]['kb']} KB (Stadium confirm)")
+    print(f"ui-confirm-arcade.mp3  {rows[-1]['duration']} s  {rows[-1]['kb']} KB (Stadium confirm)")
     update_manifest(rows)
 
 

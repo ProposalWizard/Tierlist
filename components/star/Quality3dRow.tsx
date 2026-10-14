@@ -10,7 +10,10 @@
  * quality is (Settings and the in-match ⚙). A dropdown with a picture of each
  * pack since 14 Oct 2026.
  *
- * Under that: "Chances: Old | New" (Harry, 14 Oct 2026), lib/star/newChances.ts.
+ * Under that: a "Harry changes" dropdown, closed by default (Harry, 14 Oct
+ * 2026: "put all my toggles in a Harry changes dropdown … Leave texture packs
+ * out"). It holds "Chances: Old | New" (lib/star/newChances.ts) and "After you
+ * pass: Auto run | Joystick" (lib/star/afterPass.ts). Each appears only here.
  */
 import { useEffect, useState } from "react";
 import { useQuality3dSetting, setQuality3dSetting, autoQuality3d, type Quality3d } from "@/lib/star/three3d/quality";
@@ -38,8 +41,7 @@ export default function Quality3dRow({ when = "Applies next time one opens." }: 
         Every 3D scene. Lower = smoother on older phones. Auto{auto ? ` picks ${NAME[auto]} here` : " picks for this phone"}. {when}
       </SetNote>
       <TexturePackRow />
-      <ChancesRow />
-      <AfterPassRow />
+      <HarryChanges />
     </>
   );
 }
@@ -137,7 +139,32 @@ function TexturePackRow() {
   );
 }
 
-/** "Chances: Old | New" (Harry, 14 Oct 2026: "the top toggle under textures for now"). */
+/** "Harry changes": Harry's own switches, folded away until opened. Texture packs stay outside it. */
+function HarryChanges() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-3 rounded-xl border border-white/10 bg-white/5" data-harry-changes>
+      <button
+        type="button"
+        data-harry-changes-toggle
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="kib-press flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+      >
+        <span className="text-[14px] font-bold text-white">Harry changes</span>
+        <span aria-hidden className={`text-[12px] text-white/80 transition-transform ${open ? "rotate-180" : ""}`}>▾</span>
+      </button>
+      {open && (
+        <div className="border-t border-white/10 px-3 pb-3 pt-0">
+          <ChancesRow />
+          <AfterPassRow />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** "Chances: Old | New" (Harry, 14 Oct 2026), in "Harry changes". */
 function ChancesRow() {
   const m = useChancesMode();
   return (
@@ -153,7 +180,7 @@ function ChancesRow() {
   );
 }
 
-/** "After you pass: Auto run | Joystick" (Harry, 14 Oct 2026), directly under Chances. */
+/** "After you pass: Auto run | Joystick" (Harry, 14 Oct 2026), in "Harry changes" under Chances. */
 function AfterPassRow() {
   const m = useAfterPassMode();
   return (

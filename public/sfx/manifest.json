@@ -83,18 +83,18 @@
     {
       "name": "ui-tap",
       "file": "/sfx/ui-tap.mp3",
-      "duration": 0.1,
-      "kb": 1.6,
+      "duration": 0.52,
+      "kb": 6.5,
       "purpose": "Any button tap",
-      "prompt": "Made in code: scripts/sfx/arcade.py (Arcade set, CC0)."
+      "prompt": "Tiny soft UI tap click for a mobile game menu."
     },
     {
       "name": "ui-confirm",
       "file": "/sfx/ui-confirm.mp3",
-      "duration": 0.21,
-      "kb": 3.7,
+      "duration": 0.63,
+      "kb": 7.7,
       "purpose": "Confirm / continue",
-      "prompt": "Stadium set's warm chord (scripts/sfx/sources/stadium-confirm.mp3, made in code, CC0)."
+      "prompt": "Short bright positive mobile game UI confirm blip, two rising notes."
     },
     {
       "name": "coin-in",
@@ -799,6 +799,22 @@
       "kb": 25.6,
       "purpose": "Crowd swell in the live match",
       "prompt": "Made in code: scripts/sfx/arcade.py (Arcade set, CC0)."
+    },
+    {
+      "name": "ui-tap-arcade",
+      "file": "/sfx/ui-tap-arcade.mp3",
+      "duration": 0.1,
+      "kb": 1.6,
+      "purpose": "Any button tap (Arcade texture pack)",
+      "prompt": "Made in code: scripts/sfx/arcade.py (Arcade set, CC0)."
+    },
+    {
+      "name": "ui-confirm-arcade",
+      "file": "/sfx/ui-confirm-arcade.mp3",
+      "duration": 0.21,
+      "kb": 3.7,
+      "purpose": "Confirm / continue (Arcade texture pack)",
+      "prompt": "Stadium set's warm chord (scripts/sfx/sources/stadium-confirm.mp3, made in code, CC0)."
     }
   ]
 }

@@ -7,6 +7,7 @@
 import { audioContext } from "./audioOut";
 import { makeSoundGate, nowMs } from "./soundGate";
 import { sfxOn, sfxUrl } from "./sfx";
+import { soundSet } from "./style3d/texturePack";
 
 let ctx: AudioContext | null = null;
 let muted = false;
@@ -36,7 +37,7 @@ export function primeMatchSound() {
   if (!ctx) ctx = audioContext();
   if (!ctx) return;
   if (ctx.state === "suspended") ctx.resume().catch(() => {});
-  MATCH_FILES.forEach(decodeFile);
+  if (soundSet() === "arcade") MATCH_FILES.forEach(decodeFile);
 }
 
 // ── The Arcade set's files (Harry, 14 Oct 2026; scripts/sfx/arcade.py) ──
@@ -44,6 +45,8 @@ export function primeMatchSound() {
 // decoded once on the shared context and kept. A file that has not loaded
 // yet, or failed, falls back to the sound made in code below. sfxUrl() means
 // a Sound Board replacement is used when there is one.
+// Only the Arcade texture pack plays them (texturePack.ts soundSet); every
+// other pack keeps the sounds made in code, exactly as before.
 type MatchFile = "match-pass" | "match-goal" | "match-crowd";
 const MATCH_FILES: MatchFile[] = ["match-pass", "match-goal", "match-crowd"];
 const fileBuffers = new Map<MatchFile, AudioBuffer | null | "loading">();
@@ -65,7 +68,7 @@ function decodeFile(name: MatchFile) {
 
 /** Play a decoded file now. False when it is not ready (the caller makes its own sound instead). */
 function playFile(name: MatchFile, gain: number): boolean {
-  if (!ctx) return false;
+  if (!ctx || soundSet() !== "arcade") return false;
   const b = fileBuffers.get(name);
   if (!b || b === "loading") { decodeFile(name); return false; }
   try {
@@ -148,7 +151,7 @@ export function playNet() {
 
 /** The goal sting (Arcade set): a bright, rising brass stab. Plays with the net and the crowd. */
 export function playGoalSting() {
-  if (!may("goal-sting")) return;
+  if (soundSet() !== "arcade" || !may("goal-sting")) return;
   if (playFile("match-goal", 0.85)) return;
   // Not loaded yet: a rising stab made here, still nothing like the pass.
   tone(392, 0.12, "sawtooth", 0.12, 523);

@@ -53,7 +53,7 @@ import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { bcPose } from "./broadcastCam";
 import { SIZE3D } from "./size3d";
-import { texturePack, onTexturePack } from "./texturePack";
+import { worldPack, onTexturePack } from "./texturePack";
 import { SMALL_MEN } from "./smallMen";
 import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./camZoom";
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
@@ -1238,7 +1238,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       kit.setActive(false);
       const tod = hTod ?? def.real;
       if (h) { h.setTod(tod); return; }
-      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" }, crisp: true, pack: texturePack() }))
+      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" }, crisp: true, pack: worldPack() }))
         .then((made) => {
           if (tk !== hToken || !def.real) { made.dispose(); return; }
           h = made;
@@ -1289,15 +1289,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   if (def.real) {
     // the ball's look H dressing, kept across style changes
     const { dressHBall } = await import("./real/ball");
-    hball = dressHBall(THREE, ball, root, { classic: texturePack() !== "real" });
+    hball = dressHBall(THREE, ball, root, { classic: worldPack() !== "real" });
   }
   /**
    * Settings → Texture pack changed (texturePack.ts): the world (pitch, stadium, sky, light, ball)
    * is built again in the new pack, live, mid-match too. The men, the camera and every size stay.
    */
-  let packNow = texturePack();
+  let packNow = worldPack();
   const offPack = onTexturePack(() => {
-    const pk = texturePack();
+    const pk = worldPack();
     if (pk === packNow) return;
     packNow = pk;
     if (!def.real) return;
@@ -2094,7 +2094,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       def = d;
       restyle();
       if (!!d.real !== wasReal) {
-        if (d.real && !hball) void import("./real/ball").then(({ dressHBall }) => { if (def.real && !hball) hball = dressHBall(THREE, ball, root, { classic: texturePack() !== "real" }); });
+        if (d.real && !hball) void import("./real/ball").then(({ dressHBall }) => { if (def.real && !hball) hball = dressHBall(THREE, ball, root, { classic: worldPack() !== "real" }); });
         if (!d.real && hball) { hball.dispose(); hball = null; }
       }
     },

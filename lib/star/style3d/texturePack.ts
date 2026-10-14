@@ -34,12 +34,14 @@
  */
 import { useSyncExternalStore } from "react";
 
-export type TexturePack = "real" | "light" | "soft" | "cartoon" | "bright" | "broadcast" | "sunset" | "night" | "rain" | "winter" | "retro" | "pastel";
+export type TexturePack = "real" | "arcade" | "light" | "soft" | "cartoon" | "bright" | "broadcast" | "sunset" | "night" | "rain" | "winter" | "retro" | "pastel";
+/** The packs that dress the 3D world. Arcade wears Realism's world (see worldPack). */
+export type WorldPack = Exclude<TexturePack, "arcade">;
 
 export const TEXTURE_PACK_KEY = "star-3d-texture-pack";
 export const TEXTURE_PACK_DEFAULT: TexturePack = "real";
 export const TEXTURE_PACK_NAMES: Record<TexturePack, string> = {
-  real: "Realism + cartoon", light: "Light", soft: "Soft", cartoon: "Cartoon", bright: "Bright",
+  real: "Realism + cartoon", arcade: "Arcade", light: "Light", soft: "Soft", cartoon: "Cartoon", bright: "Bright",
   broadcast: "Broadcast", sunset: "Sunset", night: "Floodlights", rain: "Rain", winter: "Winter", retro: "Retro 90s", pastel: "Pastel",
 };
 /** Every pack, in the order the Settings dropdown lists them (the key order of TEXTURE_PACK_NAMES). */
@@ -48,6 +50,7 @@ const VALUES: readonly TexturePack[] = TEXTURE_PACKS;
 /** One line under each pack's name in the dropdown (Harry, 14 Oct 2026). */
 export const TEXTURE_PACK_LINES: Record<TexturePack, string> = {
   real: "Today's look: real grass, sun and shadows.",
+  arcade: "Today's look, with big arcade banners and arcade sounds.",
   light: "Half way to Bright. Dirt and shadows kept.",
   cartoon: "Flat colours, like the players.",
   bright: "Light green grass, no big shadows.",
@@ -68,6 +71,26 @@ export const TEXTURE_PACK_LINES: Record<TexturePack, string> = {
 export const TEXTURE_PACK_PREVIEW: Partial<Record<TexturePack, string>> = Object.fromEntries(
   TEXTURE_PACKS.map((id) => [id, `/star/texture-packs/${id}.webp`]),
 );
+
+/**
+ * ARCADE (Harry, 14 Oct 2026: "instead of a toggle for the noises/look make it
+ * a texture pack again"). The default pitch look (Realism's world), plus the
+ * "Arcade pop" action banners (components/star/ArcadeBanner.tsx) and the Arcade
+ * sound set (scripts/sfx/arcade.py). Every other pack keeps the old banners and
+ * the old sounds, exactly as before. A pack that does not say gets "old".
+ */
+export type BannerStyle = "arcade" | "old";
+export type SoundSet = "arcade" | "old";
+const PACK_BANNERS: Partial<Record<TexturePack, BannerStyle>> = { arcade: "arcade" };
+const PACK_SOUNDS: Partial<Record<TexturePack, SoundSet>> = { arcade: "arcade" };
+export const bannerStyleOf = (p: TexturePack): BannerStyle => PACK_BANNERS[p] ?? "old";
+export const soundSetOf = (p: TexturePack): SoundSet => PACK_SOUNDS[p] ?? "old";
+/** The 3D world a pack wears: Arcade wears Realism's. */
+export const worldPackOf = (p: TexturePack): WorldPack => (p === "arcade" ? "real" : p);
+/** This phone's pack, as each part sees it. */
+export const bannerStyle = (): BannerStyle => bannerStyleOf(texturePack());
+export const soundSet = (): SoundSet => soundSetOf(texturePack());
+export const worldPack = (): WorldPack => worldPackOf(texturePack());
 
 export function parseTexturePack(v: string | null | undefined): TexturePack | null {
   return v && (VALUES as readonly string[]).includes(v) ? (v as TexturePack) : null;
