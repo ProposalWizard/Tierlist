@@ -10,6 +10,26 @@
 import { simulate90, SIM_FPS, FULL_T } from "../../lib/star/sim90";
 import { frameAt, trackDuration } from "../../lib/star/goalClip/track";
 import { PITCH_W } from "../../lib/star/pitch";
+import { formationForClub } from "../../lib/star/clubFormation";
+
+// ── Shape vs real football ──
+// Targets measured from public tracking data, Oct 2026 (20 + 7 matches; ball zone 0 = own end … 5 = far end).
+const REAL = {
+  backMinusBallIn: [7.7, 2.3, -3.8, -10.3, -17.6, -24.9], // attacking back line vs ball, m (− = behind)
+  backToMidIn: 9.6, backToMidOut: 10.6,                    // back line → midfield gap, m
+  lengthIn: 35.4, lengthOut: 31.7,                          // outfield team length, m
+  gkOffLineIn: [6.0, 10.7, 15.2, 19.4, 23.5, 27.6],        // keeper metres off his line
+  gkOffLineOut: [2.6, 5.0, 9.5, 14.3, 18.8, 22.9],
+  roleSdX: 11.0,                                            // one role's spread along the pitch at a fixed ball zone, m
+};
+const TOL = { backMinusBall: 6, gap: 4, length: 5, gkOffLine: 4, roleSdMin: 0.6 };
+const GROUP: Record<string, string> = { CB: "CB", LB: "FB", RB: "FB", LWB: "FB", RWB: "FB", CDM: "DM", CM: "CM", CAM: "AM", LW: "W", RW: "W", LM: "W", RM: "W", ST: "ST", CF: "ST" };
+const BACK = new Set(["CB", "FB"]), MID = new Set(["DM", "CM", "AM"]);
+const zones = () => [0, 0, 0, 0, 0, 0].map(() => [] as number[]);
+const sh = { bmb: zones(), gkIn: zones(), gkOut: zones(),
+  b2mIn: [] as number[], b2mOut: [] as number[], lenIn: [] as number[], lenOut: [] as number[], role: new Map<string, number[]>() };
+const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
+const sdOf = (a: number[]) => { const m = mean(a); return Math.sqrt(mean(a.map((v) => (v - m) ** 2))); };
 
 const problems: string[] = [];
 const check = (ok: boolean, msg: string) => { if (!ok) problems.push(msg); };
@@ -58,6 +78,26 @@ for (let s = 0; s < 8; s++) {
       else closeRun[k] = 0;
     }
     const c = sim.control[f];
+    if (c > 0 && f % 5 === 0) {
+      for (const T of [0, 1]) {
+        const slots = formationForClub(T === 0 ? home : away).slots;
+        const dep = (y: number) => (T === 0 ? LEN - y : y) - 52.5;
+        const bx = dep(b.y), zx = Math.min(5, Math.max(0, Math.floor((bx + 52.5) / 17.5)));
+        const inP = c === T + 1;
+        const xs: number[] = [], back: number[] = [], mid: number[] = [];
+        for (let k = 1; k < 11; k++) {
+          const g = GROUP[slots[k].role] ?? "CM", x = dep(fr.bodies[T * 11 + k].y);
+          xs.push(x); if (BACK.has(g)) back.push(x); if (MID.has(g)) mid.push(x);
+          const key = `${T}|${s}|${g}|${inP}|${zx}`;
+          if (!sh.role.has(key)) sh.role.set(key, []);
+          sh.role.get(key)!.push(x);
+        }
+        (inP ? sh.gkIn : sh.gkOut)[zx].push(dep(fr.bodies[T * 11].y) + 52.5);
+        const len = Math.max(...xs) - Math.min(...xs);
+        if (inP) { sh.lenIn.push(len); if (back.length) sh.bmb[zx].push(mean(back) - bx); if (back.length && mid.length) sh.b2mIn.push(mean(mid) - mean(back)); }
+        else { sh.lenOut.push(len); if (back.length && mid.length) sh.b2mOut.push(mean(mid) - mean(back)); }
+      }
+    }
     if (c > 0) {
       ctlAll++;
       if (c === 1) ctlHome++;
@@ -104,6 +144,29 @@ for (let s = 0; s < 8; s++) {
   n++; sumPossDiff += Math.abs(tm - hm); sumLine += line; sumAgree += agree / ctlAll;
 }
 console.log(rows.join("\n"));
+{
+  const r1 = (v: number) => v.toFixed(1);
+  const zoneRow = (ours: number[][], real: number[], tol: number, name: string) => {
+    const o = ours.map((a) => (a.length >= 50 ? mean(a) : NaN));
+    o.forEach((v, z) => { if (Number.isFinite(v)) check(Math.abs(v - real[z]) <= tol, `${name} zone ${z}: ours ${r1(v)} vs real ${real[z]} (±${tol})`); });
+    console.log(`${name} by zone: ours ${o.map((v) => (Number.isFinite(v) ? r1(v) : "-")).join(" ")} | real ${real.join(" ")}`);
+  };
+  zoneRow(sh.bmb, REAL.backMinusBallIn, TOL.backMinusBall, "attacking back line minus ball");
+  zoneRow(sh.gkIn, REAL.gkOffLineIn, TOL.gkOffLine, "keeper off his line, in possession");
+  zoneRow(sh.gkOut, REAL.gkOffLineOut, TOL.gkOffLine, "keeper off his line, out of possession");
+  const one = (v: number, real: number, tol: number, name: string) => {
+    check(Math.abs(v - real) <= tol, `${name}: ours ${r1(v)} vs real ${real} (±${tol})`);
+    console.log(`${name}: ours ${r1(v)} | real ${real}`);
+  };
+  one(mean(sh.b2mIn), REAL.backToMidIn, TOL.gap, "back line to midfield, in possession");
+  one(mean(sh.b2mOut), REAL.backToMidOut, TOL.gap, "back line to midfield, out of possession");
+  one(mean(sh.lenIn), REAL.lengthIn, TOL.length, "team length, in possession");
+  one(mean(sh.lenOut), REAL.lengthOut, TOL.length, "team length, out of possession");
+  // Spread: one side's role, state and ball zone within one match.
+  const ms = mean([...sh.role.values()].filter((a) => a.length >= 40).map(sdOf));
+  check(ms >= REAL.roleSdX * TOL.roleSdMin, `role spread along the pitch ${r1(ms)} m vs real ${REAL.roleSdX} (at least ${TOL.roleSdMin * 100}%)`);
+  console.log(`role spread along the pitch at a fixed ball zone: ours ${r1(ms)} | real ${REAL.roleSdX} (pass from ${r1(REAL.roleSdX * TOL.roleSdMin)})`);
+}
 console.log(`mean |possession diff| ${((sumPossDiff / n) * 100).toFixed(1)} pts · mean line ${((sumLine / n) * 100).toFixed(1)}% · mean per-minute agree ${((sumAgree / n) * 100).toFixed(1)}%`);
 if (problems.length) { console.error(problems.join("\n")); process.exit(1); }
 console.log("sim90: ok");

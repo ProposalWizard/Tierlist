@@ -135,14 +135,69 @@ interface Side {
   strength: number;
   /** Per slot (GK first): 0 back line … 1 front line. */
   u: number[];
+  /** Per slot: the role group used by the in-possession rules (SHAPE_IN). */
+  group: ShapeGroup[];
+  /** Per slot: seeded drift — a fixed personal lean plus two slow waves per axis. */
+  drift: { bx: number; by: number; ph: number[]; per: number[] }[];
 }
 
-function sideOf(club: string, strength: number): Side {
+// ── Shape rules, set from public tracking data (Oct 2026) ───────────────────
+// Measured over 20 broadcast-tracked matches and checked against 7 optically
+// tracked ones (the two sets agree within 6 m on 82 of 84 role heights). Pitch x here is ALONG the pitch from the centre spot (own goal
+// at −52.5); "bx" is the ball's x. Each role stands at a + b·bx: real men
+// follow the ball up and down at a bit over half its speed. Straight lines fit
+// the real role averages to within 1.6 m in every ball zone.
+type ShapeGroup = "GK" | "CB" | "FB" | "DM" | "CM" | "AM" | "W" | "ST";
+/** In possession: [a, b] for x = a + b·bx; [side] = |y| of a side player (m off the middle). */
+const SHAPE_IN: Record<ShapeGroup, { a: number; b: number; side: number }> = {
+  GK: { a: -35.4, b: 0.25, side: 0 },
+  CB: { a: -10.7, b: 0.58, side: 9.2 },  // real −12.7; +2 m makes up for the pressing man and drift
+  FB: { a: -0.2, b: 0.6, side: 19.5 },   // real −2.2; +2 m, same reason
+  DM: { a: -0.5, b: 0.59, side: 8.5 },
+  CM: { a: 4.2, b: 0.58, side: 10 },
+  AM: { a: 8.9, b: 0.57, side: 8.6 },
+  W: { a: 8.3, b: 0.57, side: 13.5 },
+  ST: { a: 15.8, b: 0.51, side: 11.8 },
+};
+/** Everyone leans toward the ball's side by this share of its offset. */
+const SHAPE_BALL_PULL = 0.38;
+/** Out of possession the keeper stands 12.2 + 0.24·bx m off his line (real 2.6 m with the ball at his end, 22 m at the far end). */
+const KEEPER_OUT = { a: 12.2, b: 0.24 };
+/** …and stays at least this far behind his own back line. */
+const KEEPER_BEHIND_LINE = 6;
+/** The keeper follows the ball sideways by this share, up to 5 m (real |y| 2–4 m). */
+const KEEPER_FOLLOW = 0.15;
+/** Out of possession: the block's length, front man to back line (real 29–39 m). */
+const blockLength = (bx: number) => 18 + 0.0045 * bx * bx + 0.04 * bx;
+/** Drift: personal lean sd and wave sd per axis, metres (real role spread at a fixed ball zone is 9–13 m along). */
+const DRIFT = { leanIn: 6, waveIn: 6.5, leanOut: 4, waveOut: 5, lateral: 0.6 };
+
+const GROUP_OF: Record<string, ShapeGroup> = {
+  GK: "GK", CB: "CB", LB: "FB", RB: "FB", LWB: "FB", RWB: "FB", CDM: "DM", CM: "CM", CAM: "AM",
+  LW: "W", RW: "W", LM: "W", RM: "W", ST: "ST", CF: "ST",
+};
+
+function sideOf(club: string, strength: number, seed = 0): Side {
   const formation = formationForClub(club);
   const out = formation.slots.slice(1);
   const back = Math.max(...out.map((s) => s.y)), front = Math.min(...out.map((s) => s.y));
   const u = formation.slots.map((s, i) => (i === 0 ? 0 : (back - s.y) / Math.max(0.01, back - front)));
-  return { formation, style: playstyleForClub(club), strength, u };
+  const group = formation.slots.map((s) => GROUP_OF[s.role] ?? "CM");
+  const r = mulberry32((clubNameSeed(club) ^ Math.imul(seed | 0, 0x85ebca6b)) >>> 0);
+  const g = () => { let v = 0; for (let k = 0; k < 4; k++) v += r(); return (v - 2) * 1.732; };
+  const drift = formation.slots.map(() => ({
+    bx: g(), by: g(),
+    ph: [r(), r(), r(), r()].map((v) => v * Math.PI * 2),
+    per: [45 + r() * 50, 16 + r() * 18, 50 + r() * 50, 18 + r() * 18],
+  }));
+  return { formation, style: playstyleForClub(club), strength, u, group, drift };
+}
+
+/** Slot i's drift at time t, metres (along, across), sd ≈ lean and wave. */
+function driftAt(side: Side, i: number, t: number, lean: number, wave: number): V {
+  const d = side.drift[i];
+  const w = (a: number, b: number) => (0.8 * Math.sin((2 * Math.PI * t) / d.per[a] + d.ph[a]) + 0.6 * Math.sin((2 * Math.PI * t) / d.per[b] + d.ph[b])) / 0.707;
+  return { x: d.bx * lean + w(0, 1) * wave, y: (d.by * lean + w(2, 3) * wave) * DRIFT.lateral };
 }
 
 /**
@@ -152,35 +207,46 @@ function sideOf(club: string, strength: number): Side {
  * keeper off his line. In possession: stretched long and wide, the front line
  * held level with the other side's last man so nobody stands offside.
  */
-function shapeOf(T: Team, side: Side, other: Side, inPoss: boolean, ball: V, offsideD: number): V[] {
+function shapeOf(T: Team, side: Side, other: Side, inPoss: boolean, ball: V, offsideD: number, t?: number): V[] {
   const ballD = depthOf(T, ball.y);
+  const bx = ballD - HALF_LEN;
   const mirror = (sx: number) => (T === 0 ? sx : 1 - sx);
-  let back: number, front: number, keeperD: number, widthM: number, slide: number;
-  if (!inPoss) {
-    const input = { formation: side.formation, playstyle: side.style, attackerStrength: other.strength, defenderStrength: side.strength };
-    const near = Math.min(ballD, 45);
-    const blk = targetBlock(input, ball.x, near);
-    back = blk.lineY + Math.max(0, ballD - 45) * 0.6;
-    back = clamp(Math.min(back, ballD - 2.5), 4, 50);
-    keeperD = clamp(blk.keeperY + Math.max(0, ballD - 45) * 0.14, 1, 14);
-    front = Math.max(back + 14, Math.min(back + side.style.compactness, ballD + 3));
-    widthM = clamp(blk.span * 1.9, 34, 48);
-    slide = blk.blockShift;
-  } else {
-    front = Math.min(ballD + 16, offsideD - 0.8, 98);
-    back = clamp(ballD - 30, 9, Math.max(9, front - 22));
-    if (front - back > 46) back = front - 46;
-    keeperD = clamp(back - 24, 3, 22);
-    widthM = 60;
-    slide = clamp((ball.x - CX) * 0.22, -6, 6);
+  const kx = CX + clamp((ball.x - CX) * KEEPER_FOLLOW, -5, 5);
+  const drift = (i: number): V => (t === undefined ? { x: 0, y: 0 }
+    : driftAt(side, i, t, inPoss ? DRIFT.leanIn : DRIFT.leanOut, inPoss ? DRIFT.waveIn : DRIFT.waveOut));
+  if (inPoss) {
+    // Every role at its measured height for this ball, nobody past the offside line.
+    const front = Math.min(offsideD - 0.8, 98);
+    return side.formation.slots.map((s, i) => {
+      const g = SHAPE_IN[side.group[i]];
+      const dr = drift(i);
+      if (i === 0) return { x: clamp(kx + dr.y * 0.3, POST_L - 3, POST_R + 3), y: yAt(T, clamp(HALF_LEN + g.a + g.b * bx + dr.x * 0.3, 3, 32)) };
+      const lat = mirror(s.x) - 0.5;
+      const sgn = Math.abs(lat) < 0.04 ? 0 : Math.sign(lat);
+      const x = CX + sgn * g.side + (ball.x - CX) * SHAPE_BALL_PULL + dr.y;
+      const d = HALF_LEN + g.a + g.b * bx + dr.x;
+      return { x: clamp(x, 2, PITCH_W - 2), y: yAt(T, clamp(Math.min(d, front), 3, LEN - 3)) };
+    });
   }
+  // Out of possession: the measured block (formationShape's targetBlock) — the
+  // back line between the ball and goal, slid toward the ball — stretched to
+  // the real block length.
+  const input = { formation: side.formation, playstyle: side.style, attackerStrength: other.strength, defenderStrength: side.strength };
+  const near = Math.min(ballD, 45);
+  const blk = targetBlock(input, ball.x, near);
+  let back = blk.lineY + Math.max(0, ballD - 45) * 0.6;
+  back = clamp(Math.min(back, ballD - 2.5), 4, 50);
+  const front = Math.min(back + blockLength(bx), 100);
+  const keeperD = clamp(Math.min(KEEPER_OUT.a + KEEPER_OUT.b * bx, back - KEEPER_BEHIND_LINE), 1.5, 24);
+  const widthM = clamp(blk.span * 1.9, 34, 48);
+  const slide = blk.blockShift;
   return side.formation.slots.map((s, i) => {
-    if (i === 0) {
-      const kx = inPoss ? CX : CX + clamp((ball.x - CX) * 0.12, -2.5, 2.5);
-      return { x: kx, y: yAt(T, keeperD) };
-    }
-    const d = back + side.u[i] * (front - back);
-    const x = clamp(CX + slide + (mirror(s.x) - 0.5) * widthM, 2, PITCH_W - 2);
+    const dr = drift(i);
+    if (i === 0) return { x: clamp(kx + dr.y * 0.2, POST_L - 2, POST_R + 2), y: yAt(T, keeperD) };
+    let d = back + side.u[i] * (front - back) + dr.x;
+    // The back line never drifts past the ball.
+    if (side.u[i] < 0.15) d = Math.min(d, ballD - 1.5);
+    const x = clamp(CX + slide + (mirror(s.x) - 0.5) * widthM + dr.y, 2, PITCH_W - 2);
     return { x, y: yAt(T, clamp(d, 1, LEN - 1)) };
   });
 }
@@ -304,7 +370,7 @@ export function simulate90(setup: Sim90Setup): Sim90 {
   const rng = mulberry32((setup.seed ^ 0x9e3779b1) >>> 0);
   const radar = runRadar(setup);
   const { plans, attempts } = planOf(radar, rng);
-  const sides: [Side, Side] = [sideOf(setup.home, setup.homeStrength), sideOf(setup.away, setup.awayStrength)];
+  const sides: [Side, Side] = [sideOf(setup.home, setup.homeStrength, setup.seed), sideOf(setup.away, setup.awayStrength, setup.seed + 1)];
 
   // Who plays: the club's formation filled from a squad (made-up names
   // unless the page passes real ones).
@@ -693,8 +759,8 @@ export function simulate90(setup: Sim90Setup): Sim90 {
       targets = cornerTargets;
     } else {
       const O: Team = inPossTeam === 0 ? 1 : 0;
-      const defShape = shapeOf(O, sides[O], sides[inPossTeam], false, focus, HALF_LEN);
-      const attShape = shapeOf(inPossTeam, sides[inPossTeam], sides[O], true, focus, offsideLineD(inPossTeam));
+      const defShape = shapeOf(O, sides[O], sides[inPossTeam], false, focus, HALF_LEN, t);
+      const attShape = shapeOf(inPossTeam, sides[inPossTeam], sides[O], true, focus, offsideLineD(inPossTeam), t);
       targets = inPossTeam === 0 ? [...attShape, ...defShape] : [...defShape, ...attShape];
       if (!dead) {
         // The nearest defender presses the ball, from the goal side.
