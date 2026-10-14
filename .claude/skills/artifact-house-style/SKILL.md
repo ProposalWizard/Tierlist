@@ -20,6 +20,27 @@ remember how you made this one and build from there."*
 that reaction. Read it before writing anything — copy its structure, its CSS and
 its density, then change the content.
 
+## Pictures, not numbers (Harry, 14 Oct 2026, overrides the rules below where they differ)
+
+*"Over the course of the building cycle, patch notes have decreased in quality
+… writing a bunch of numbers and percentages doesn't do anything. The headline
+and the idea are written so poorly. Diagrams, images, and pictures are better
+for us."*
+
+- **Lead with the idea in one plain sentence**, then a picture of it. The
+  headline says what changes for the player, not a measurement.
+- **Every idea gets a diagram, a still or a drawn pitch** before any words.
+  Draw football things as football: a pitch, men as dots, arrows for runs.
+- **Numbers only where one number tells the story** — at most one or two per
+  section, never tables of percentages. Anything detailed goes in a closed
+  toggle ("The numbers, if you want them").
+- **No stat strip of percentages at the top.** If there is a strip, it is
+  plain-word changes ("chances follow the match"), not figures.
+- **Explain from the player's side** ("you get the ball on your own wing"),
+  never from the code's side ("lane weighting").
+- Plans are explained as **point 1, point 2, point 3**, each a short idea +
+  a picture, not as a specification.
+
 ## The five rules that made it work
 
 ### 1. Game patch notes, not a report
