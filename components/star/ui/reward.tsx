@@ -49,12 +49,16 @@ export function LossFlash({ trigger }: { trigger: number }) {
 /** A notification badge: a red pill that pops in, and pops again whenever
  *  the count changes. Nothing for 0. Put it inside a `relative` box. */
 export function Badge({ count, className = "-right-1.5 -top-1.5", delay = 0 }: { count: number; className?: string; delay?: number }) {
+  // Pops only when the count CHANGES while you look at it; on a screen you
+  // just opened it is simply there (menus open still, 14 Oct 2026).
+  const first = useRef(count);
   if (count <= 0) return null;
+  const pop = count !== first.current;
   return (
     <span
       key={count}
-      className={`kit-badge-pop pointer-events-none absolute z-10 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-gradient-to-b from-red-400 to-red-600 px-1 text-[10.5px] font-black leading-none text-white ${className}`}
-      style={{ animationDelay: `${delay}ms`, boxShadow: "0 0 0 2px rgba(0,0,0,.55), 0 3px 8px -2px rgba(239,68,68,.8)" }}
+      className={`${pop ? "kit-badge-pop " : ""}pointer-events-none absolute z-10 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-gradient-to-b from-red-400 to-red-600 px-1 text-[10.5px] font-black leading-none text-white ${className}`}
+      style={{ animationDelay: pop ? `${delay}ms` : undefined, boxShadow: "0 0 0 2px rgba(0,0,0,.55), 0 3px 8px -2px rgba(239,68,68,.8)" }}
     >
       {count > 99 ? "99+" : count}
     </span>

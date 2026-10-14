@@ -38,6 +38,7 @@ import { forceChancesMode, type ChancesMode } from "../../lib/star/newChances";
 import { withoutSwitchedOff } from "../../lib/star/switchedOffKinds";
 import { guardAllows } from "../../lib/star/kindMix";
 import { mulberry32 } from "../../lib/star/season";
+import { dealDribble, newDribbleDeal, isOpenPlay, DRIBBLE_SHARE_BY_LEVEL, type DribbleLevel } from "../../lib/star/dribbleDeal";
 import { shoot } from "./shotLab";
 import type { ScenarioKind } from "../../lib/star/canvasEngine";
 import { writeFileSync, mkdirSync } from "node:fs";
@@ -78,8 +79,12 @@ function zoneOffers(zone: Zone, lane: "left" | "centre" | "right" | "any"): Set<
   return out;
 }
 
+/** Dribbles served and open-play chances in the last run(). */
+const runCount = { dribbles: 0, open: 0 };
+
 function run(mode: ChancesMode | null, withShots: boolean): Served[] {
   forceChancesMode(mode);
+  runCount.dribbles = 0; runCount.open = 0;
   const memory = new PictureMemory(`judge-${mode ?? "default"}`, false);
   const out: Served[] = [];
   for (let mi = 0; mi < MATCHES; mi++) {
@@ -88,10 +93,17 @@ function run(mode: ChancesMode | null, withShots: boolean): Served[] {
     const m = startRadar(7000 + mi * 13, inputs);
     const rng = mulberry32((0xc4a7ce ^ (mi * 2654435761)) >>> 0);
     const selection = newSelectionMemory();
+    const deal = newDribbleDeal();
+    const dealRng = mulberry32((0xd21bb1e ^ (mi * 40503)) >>> 0);
     let i = 0;
     for (let guard = 0; guard < 400 && !radarOver(m); guard++) {
       if (!m.pending) { stepRadar(m); continue; }
-      const req = m.pending.request!;
+      const raw = m.pending.request!;
+      // New: the deal decides the top-down dribble (lib/star/dribbleDeal.ts),
+      // as CanvasMatch's loadScenario does. Old: the match's own request.
+      const req = mode === "new" ? dealDribble(raw, "premier", deal, dealRng) : raw;
+      if (isOpenPlay(req)) runCount.open++;
+      if (req.dribble) runCount.dribbles++;
       if (!req.dribble) {
         const made = makeChance({
           source: { from: "request", request: req, position }, rng,
@@ -186,6 +198,7 @@ function stats(list: Served[]) {
 
 console.log("\n== Old is byte-identical to before the New work");
 const oldA = run("old", true);
+const oldDrib = { ...runCount };
 const sigOld = signature(oldA);
 const sigDefault = signature(run(null, false));
 console.log(`  Old signature ${sigOld}`);
@@ -193,6 +206,7 @@ ok(sigOld === sigDefault, "forcing Old serves exactly what the default (Old) ser
 ok(sigOld === OLD_SIGNATURE, `Old serves the same ${oldA.length} chances as the code before the New work (${OLD_SIGNATURE})`);
 
 const newA = run("new", true);
+const newDrib = { ...runCount };
 const O = stats(oldA), N = stats(newA);
 
 console.log("\n== THE JUDGE — 40 matches, every chance served through makeChance");
@@ -202,6 +216,8 @@ row("chances served (open play)", `${O.n} (${O.open})`, `${N.n} (${N.open})`);
 row("side match (wide lanes)", `${pct(O.side[0], O.side[1])} of ${O.side[1]}`, `${pct(N.side[0], N.side[1])} of ${N.side[1]}`);
 row("zone match (open play)", pct(O.zone[0], O.zone[1]), pct(N.zone[0], N.zone[1]));
 row("zone + lane match (open play)", pct(O.lane[0], O.lane[1]), pct(N.lane[0], N.lane[1]));
+row("top-down dribbles (a match)", `${oldDrib.dribbles} (${(oldDrib.dribbles / MATCHES).toFixed(2)})`, `${newDrib.dribbles} (${(newDrib.dribbles / MATCHES).toFixed(2)})`);
+row("  … share of open play", pct(oldDrib.dribbles, oldDrib.open), `${pct(newDrib.dribbles, newDrib.open)} (PL)`);
 row("same kind twice in a row", pct(O.twice[0], O.twice[1]), pct(N.twice[0], N.twice[1]));
 row("most of one kind in any 8", String(O.worst8), String(N.worst8));
 row("8-windows with 3+ of one kind", pct(O.over2[0], O.over2[1]), pct(N.over2[0], N.over2[1]));
@@ -233,6 +249,41 @@ ok(N.zone[0] / N.zone[1] >= 0.9, `zone match ≥ 90% (${pct(N.zone[0], N.zone[1]
 ok(N.builder[0] === 0, `no open play made by the builder (${N.builder[0]}, Old ${O.builder[0]})`);
 ok(N.brokenTwice === 0, `open play: never the same kind twice in a row (${N.brokenTwice}, Old ${O.brokenTwice})`);
 ok(N.broken === 0, `open play: never a third of one kind in any 8 (${N.broken} broke the guard, Old ${O.broken})`);
+// The top-down dribble in the New deal (lib/star/dribbleDeal.ts): its share of
+// open play by league, over more matches than the judge (radar + deal only).
+const LEAGUE_MATCHES = 300;
+function dribbleShare(mode: ChancesMode, level: DribbleLevel) {
+  let d = 0, open = 0, twice = 0, unfit = 0;
+  for (let mi = 0; mi < LEAGUE_MATCHES; mi++) {
+    const m = startRadar(91000 + mi * 17, inputsFor(mi));
+    const deal = newDribbleDeal();
+    const dealRng = mulberry32((0xd21bb1e ^ (mi * 40503)) >>> 0);
+    let last = false;
+    for (let guard = 0; guard < 400 && !radarOver(m); guard++) {
+      if (!m.pending) { stepRadar(m); continue; }
+      const raw = m.pending.request!;
+      const req = mode === "new" ? dealDribble(raw, level, deal, dealRng) : raw;
+      if (isOpenPlay(req)) open++;
+      if (req.dribble) {
+        d++; if (last) twice++;
+        if (req.zone !== "middle" && req.zone !== "attacking") unfit++;
+      }
+      if (isOpenPlay(req)) last = !!req.dribble;
+      resolveHighlight(m, "bench-rate");
+    }
+  }
+  return { d, open, twice, unfit };
+}
+console.log(`\n== top-down dribble share of open play by league (${LEAGUE_MATCHES} matches each)`);
+const oldShare = dribbleShare("old", "premier");
+console.log(`  Old (every league): ${pct(oldShare.d, oldShare.open)} — ${(oldShare.d / LEAGUE_MATCHES).toFixed(2)} a match`);
+for (const level of Object.keys(DRIBBLE_SHARE_BY_LEVEL) as DribbleLevel[]) {
+  const s = dribbleShare("new", level), want = DRIBBLE_SHARE_BY_LEVEL[level];
+  const got = s.d / s.open;
+  ok(Math.abs(got - want) <= 0.02 && s.twice === 0 && s.unfit === 0,
+    `New ${level.padEnd(12)} ${pct(s.d, s.open)} (${(s.d / LEAGUE_MATCHES).toFixed(2)} a match; table ${(want * 100).toFixed(1)}%, ±2 points), never twice in a row, only in the middle/attacking third`);
+}
+
 // Per kind, with enough shots to see ±4 points: CONV_CHANCES served chances
 // of each shooting kind, each shot CONV_SHOTS times by the shot lab's thumb.
 // Old serves the kind as the gallery does (the coin-flip mirror); New serves

@@ -60,6 +60,21 @@ const COMMIT_HOW = [
 ];
 const GITHUB_TOKEN_NEEDED =
   "GITHUB_TOKEN set in Vercel's environment variables — without it every Commit button refuses (and says so).";
+/** The Tuning panel (components/star/TuningSessionPanel.tsx) — the same on the
+ *  gallery, Infinite Highlights and Infinite Match. */
+const TUNING_PANEL_GROUP = {
+  group: "Tuning panel",
+  items: [
+    ["Tuning · what you've seen this session", "Folded to one line. Tap to open: what the chances you've seen this session add up to — the mix of chance types, how many start up the pitch, how many come down your wing, chances a match and the longest wait (the last two from Infinite Match only). The count is shared by the gallery, Infinite Highlights and Infinite Match in this browser tab."],
+    ["feels: about right / a lot / a little", "Each line against the DRAFT fun ranges (lib/star/funTargets.ts, first guesses). The green band on the bar is the range, the tick is you. Under 5 chances it says \"too few to tell\"."],
+    ["Start the count again", "Empties this session's count. Notes are not touched."],
+    ["Say what feels off: chips / your own words / Send", "Tap any chips (too many cutbacks, too many crosses, not enough chances, never on my wing, too easy, too hard) and/or write a line, then Send. It is saved with the page, the chance on screen, the league, the seed and the time."],
+  ] as [string, string][],
+};
+const TUNING_NOTES_SAVING =
+  "Tuning panel: the session count stays in this browser tab only. Notes go to the shared table star_tuning_notes; until that table exists they say \"Saved on this device only\" and are sent with the next note that gets through. Read them in the terminal: npx tsx scripts/tuning-notes.mts (also printed by scripts/tuner-proposals.mts). Nothing is committed and nothing in the game changes.";
+const TUNING_NOTES_NEEDED =
+  "For notes to reach the team: run supabase/migrations/star_tuning_notes.sql (PENDING). The terminal needs SUPABASE_SERVICE_ROLE_KEY to read them (admin-read).";
 
 export const ADMIN_GUIDES = {
   // ════════════════════════════════════════════════════════════════════
@@ -747,20 +762,22 @@ export const ADMIN_GUIDES = {
           ["Rules list", "Tap a type to see the hard rules read off its saved drawings."],
         ],
       },
+      { ...TUNING_PANEL_GROUP, group: "Tuning panel (under the 11-a-side grid and under a card)" },
     ],
     saving: [
       "Drags, ✓ / ✕ marks, added versions and removed cards are kept in THIS browser only until you Save.",
       SCENARIO_SAVE_SHARED,
       SCENARIO_NOT_IN_GAME_UNTIL_COMMIT,
       "Tune corrections go to the shared table star_scenario_corrections, so the whole team's corrections add up.",
+      TUNING_NOTES_SAVING,
     ],
     commit: COMMIT_HOW,
     inGame: [
       "Committed 11-a-side scenarios are used by the real game's chance generator in /star-dev matches, for every player, once the deploy finishes.",
       "5-a-side cards are review only — nothing from them reaches the game yet.",
     ],
-    needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
-    dev: "app/star-gallery-dev/page.tsx · components/star/{EditableFrame,ScenarioPlay,EnginePlay,TuningPanel}.tsx · lib/star/{scenarioEdit,scenarioStatus,scenarioCorrections}.ts · /api/star/scenarios, /api/star/scenarios/commit, /api/star/corrections",
+    needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED, TUNING_NOTES_NEEDED],
+    dev: "app/star-gallery-dev/page.tsx · components/star/{EditableFrame,ScenarioPlay,EnginePlay,TuningPanel,TuningSessionPanel}.tsx · lib/star/{tuningSession,tuningNotes}.ts · /api/star/tuning-notes · lib/star/{scenarioEdit,scenarioStatus,scenarioCorrections}.ts · /api/star/scenarios, /api/star/scenarios/commit, /api/star/corrections",
   },
 
   "/star-training-dev": {
@@ -829,12 +846,14 @@ export const ADMIN_GUIDES = {
           ["Amber box", "Saved scenarios of this type that break a rule, so the game isn't using them."],
         ],
       },
+      { ...TUNING_PANEL_GROUP, group: "Tuning panel (bottom of the page)" },
     ],
     saving: [
       "Chosen types, flags and unsaved drags are kept in THIS browser only.",
       "Save / Save this fix: " + SCENARIO_SAVE_SHARED + " It lands in the gallery as a simulated card of its type.",
       SCENARIO_NOT_IN_GAME_UNTIL_COMMIT,
       "Tune corrections go to the shared table star_scenario_corrections.",
+      TUNING_NOTES_SAVING,
     ],
     commit: [
       "Commit puts this one chance straight into the game's code. Saved-but-not-committed ones can also be committed together from Scenario Gallery → Tuning & Commit.",
@@ -844,8 +863,8 @@ export const ADMIN_GUIDES = {
       "The chances are made by the same function as in a real /star-dev match (lib/star/chanceMaker.ts): one of your drawings, nudged, mirrored half the time, the drawing's own players and nobody else, never one of the last five pictures of its type. The Play Area's Chances dial can switch this page (and the gallery's Sim) to the generator; a career always plays the drawings.",
       "Your fixes reach real matches only once they're committed — here, or from the gallery.",
     ],
-    needs: [SCENARIO_TABLE_NEEDED],
-    dev: "app/star-highlights-dev/page.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit}.ts · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
+    needs: [SCENARIO_TABLE_NEEDED, TUNING_NOTES_NEEDED],
+    dev: "app/star-highlights-dev/page.tsx · components/star/TuningSessionPanel.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit,tuningSession,tuningNotes}.ts · /api/star/tuning-notes · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
   },
 
   "/star-play-dev": {
@@ -888,11 +907,13 @@ export const ADMIN_GUIDES = {
           ["Back to the match", "Closes the editor."],
         ],
       },
+      { ...TUNING_PANEL_GROUP, group: "Tuning panel (Infinite Match, under What it served)" },
     ],
     saving: [
       "The dials save the moment you change them, on this device only. There's no Save button.",
       "The Compare old and new switches and the keeper dial save the same way, instantly, on this device only, and stay until you set them back (\"Back to the defaults\" resets them too).",
       "Save as a scenario: " + SCENARIO_SAVE_SHARED,
+      TUNING_NOTES_SAVING,
     ],
     commit: [
       "Commit (on the pinned bar) and \"Commit to the game\" (in the editor) both commit — one scenario, straight onto main.",
@@ -904,8 +925,8 @@ export const ADMIN_GUIDES = {
       "Everything else is the real game: the same engine, the same size on screen, the real squads (real faces, real finishing), and fresh legs every 90 minutes in a long match.",
       "A chance you commit from the editor is used by real /star-dev matches once the deploy finishes.",
     ],
-    needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
-    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure,runupStyles}.ts",
+    needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED, TUNING_NOTES_NEEDED],
+    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor,TuningSessionPanel}.tsx · lib/star/{tuningSession,tuningNotes}.ts · /api/star/tuning-notes · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure,runupStyles}.ts",
   },
 
   "/star-wallet-dev": {
@@ -1552,40 +1573,41 @@ export const ADMIN_GUIDES = {
           ["Momentum strip", "A bar a minute: up is you on top, down is them. ⚽ marks goals, ⭐ your highlights, 🚑 an injury."],
           ["🚑 Injury", "The unseen match doesn't injure anyone minute by minute. A career checks once, at full time, from the energy you finish on — the radar does the same check and shows it at 90' and on the full-time card."],
           ["Change", "Opens the settings: both clubs and how strong they are, home or away, your position, your energy at kick-off (for the injury check), and whether your highlights stop the clock."],
+          ["Fun targets (DRAFT, bottom of the page) · Run it", "Plays the real unseen match 200 times for each position (striker, winger, attacking mid, central mid) at an even game, +20 and −20. Each row shows ours against Harry's target, ✓ in range, ✗ out. The radar has no league input yet, so ours is checked against the National League and the Premier League side by side. A broken guardrail (shots a match 21–28, nobody over 36 season goals) is shown in red. Season goals are not judged: they show what share of chances your shooting would need to score."],
         ],
       },
     ],
-    saving: ["Nothing is saved. Changing a setting starts the match again; leaving the page forgets it."],
+    saving: ["Nothing is saved. Changing a setting starts the match again; leaving the page forgets it. Fun targets only reads the table in lib/star/funTargets.ts; edit that file to change a number."],
     inGame: [
       "Nowhere — it's a window onto the match the career already runs. Every minute is the real match's own function; your highlights are the moments a career would stop and let you play.",
     ],
-    dev: "app/star-radar-dev/page.tsx · components/star/MatchRadar.tsx · lib/star/matchRadar.ts (calls tick/resolveScenario in lib/star/hiddenMatch.ts)",
+    dev: "app/star-radar-dev/page.tsx · components/star/MatchRadar.tsx · lib/star/matchRadar.ts (calls tick/resolveScenario in lib/star/hiddenMatch.ts) · Fun targets: components/star/FunTargetsReport.tsx, lib/star/funTargets.ts (the table), lib/star/funTargetsMeasure.ts, tests/star/funTargets.mts",
   },
 
   "/star-sim90-dev": {
     title: "Full match (test)",
-    what: "A whole simulated ninety minutes you can watch: 22 men and the ball, from the TV camera. The unseen match the career runs decides everything (who has the ball each minute, where, every shot, corner and goal, and the score); this page only stages it in each club's formation and plays it back.",
+    what: "A whole simulated ninety minutes you can watch: 22 men and the ball. It is played live: the unseen match the career runs plays only up to your next chance, you play that chance, and the rest of the match plays on from how it went (score, momentum, who has the ball). This page stages it in each club's formation.",
     buttons: [
       {
         items: [
-          ["▶ / ❚❚", "Starts and pauses the replay. At full time it becomes ↻ and starts from kick-off."],
+          ["▶ / ❚❚", "Starts and pauses the match. At full time it becomes ↻ and plays it again from kick-off."],
           ["1× 4× 16× 60×", "How fast the match plays. 60× plays all ninety minutes in about a minute and a half."],
           ["↻ (right of the speeds)", "A new match: a different roll of the same fixture."],
-          ["The slider", "Drag to any minute of the match."],
-          ["The radar strip", "The unseen match minute by minute: who has it and where — the same strip the real match shows above the commentary."],
-          ["Match events", "Goals, saves and misses (Show all adds corners and every shot). Tap one to jump just before it."],
-          ["Change", "Pick both clubs and how strong they are. The match is built again."],
-          ["Play this chance", "The replay stops just before each of YOUR chances (home is your side). This opens that chance in the real match (2D or 3D, as Settings says). The replay keeps the unseen match's result whatever you do."],
-          ["Skip / Back to the match", "Carries the replay on from the chance."],
-          ["Don't stop for my chances", "Off by default. On: the replay plays straight through your chances."],
+          ["2D | 3D | Radar", "One view, three ways to show it: the TV picture, the 3D picture, or the radar (who has the ball each minute, and where). Only the one you pick is drawn. This device remembers your choice. Default 2D."],
+          ["The slider", "Drag back to any moment already played. You can't jump ahead: the rest hasn't happened yet."],
+          ["Match events", "Goals, saves and misses so far, newest first (Show all adds corners and every shot). Nothing shows before it happens. Tap one to watch it again."],
+          ["Change", "Pick both clubs and how strong they are. The match starts again."],
+          ["Your chance (no button)", "You watch until the ball reaches you. At each of YOUR chances (home is your side) the real match takes over (2D or 3D, as Settings says), with no question. Score it and it's a goal in this match; miss it and it isn't. The rest of the match is played from that score."],
+          ["Back to the match", "Once the chance is over the match carries on by itself after 3 seconds (the button counts down). Tap it to go at once. Leaving a chance early counts as a miss."],
+          ["Watch only (don't play my chances)", "Off by default. On: your chances are settled at the bench rate (how often a chance goes in for whoever plays instead) and the match plays straight on."],
         ],
       },
     ],
-    saving: ["Nothing is saved. Changing a setting builds a new match; leaving the page forgets it. Real squad names come from the league-squads data route; made-up names when it does not answer. The teams swap ends at half-time; keepers dive on saves."],
+    saving: ["Nothing is saved. Changing a setting starts a new match; leaving the page forgets it (the 2D | 3D | Radar choice is the one thing this device keeps). The same match and the same results always play out the same way. Real squad names come from the league-squads data route; made-up names when it does not answer. The teams swap ends at half-time; keepers dive on saves. The side on the ball looks forward first, runs with it into space and switches play only when its side is shut."],
     inGame: [
-      "Nowhere — a test page. The score and the chances are the real unseen match's; the men's positions and passes are made up to show it.",
+      "Nowhere — a test page. The score and the chances are the real unseen match's, with your results fed in the career's way; the men's positions and passes are made up to show it.",
     ],
-    dev: "app/star-sim90-dev/page.tsx · components/star/Sim90View.tsx · lib/star/sim90.ts (runs lib/star/matchRadar.ts, places men with formationShape.ts) · drawn by lib/star/goalClip/render.ts (camera \"match\") · test tests/star/sim90.mts",
+    dev: "app/star-sim90-dev/page.tsx · components/star/Sim90View.tsx, Sim90View3D.tsx · lib/star/sim90.ts (startSim90 / resolveSim90Chance; runs lib/star/matchRadar.ts live, places men with formationShape.ts) · drawn by lib/star/goalClip/render.ts (camera \"match\") · test tests/star/sim90.mts",
   },
 
   "/star-scenario-dev": {
@@ -1745,6 +1767,23 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing is saved. Any change starts a fresh run."],
     inGame: ["Nothing here changes the game. Values that feel right have to be put into the code by hand."],
     dev: "app/star-dribble-dev/page.tsx · components/star/{FirstPersonDribble,FirstPersonRoam}.tsx",
+  },
+
+  "/star-dribble-stick-dev": {
+    title: "Dribble on the stick (test)",
+    what: "The real match, where every chance you get is a dribble run. Try moving with a stick, as in the 3D games, against the game's own swipe.",
+    buttons: [
+      {
+        items: [
+          ["Stick / Swipe", "How you move on the run. Stick: a stick under your left thumb sets your speed and direction. Swipe: the game's own controls. Each press starts a new match."],
+          ["The stick (left half)", "Put your thumb down anywhere on the left. A small push walks, a full push sprints. Let go and you stop. A fast flick sideways knocks the ball past a man."],
+          ["Right half", "Tap a team-mate to pass to him. A fast sideways swipe knocks the ball past a man."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. It is a test match: no career, nothing counted."],
+    inGame: ["Nothing here is in the game yet. The game still uses the swipe."],
+    dev: "app/star-dribble-stick-dev/page.tsx · lib/star/firstPersonDribble.ts (THE STICK) · components/star/CanvasMatch.tsx (dribbleControl, dribbleOnly) · tests/star/dribbleStick.mts",
   },
 
   "/star-attack-dev": {

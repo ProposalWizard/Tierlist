@@ -164,6 +164,7 @@ const SQUAD_WAIT_MS = 4000;
 export default function EnginePlay({
   settings, seed = 1, openOn, bare = false, width,
   onChanceServed, onChanceResolved, onComplete, fitParent = false, onGoalClip, leadIn, scene,
+  dribbleControl, dribbleOnly,
 }: {
   /** The Play Area's dials. Absent: whatever this device has saved there —
    *  one set, shared by every test screen. */
@@ -203,6 +204,10 @@ export default function EnginePlay({
    *  shots page passes `ownFrame` so its real players stay on screen.
    *  Absent: exactly as before. */
   scene?: ScenePicture;
+  /** The stick on the top-down dribble run, and dribble runs only (the
+   *  /star-dribble-stick-dev prototype). See CanvasMatch's own props. */
+  dribbleControl?: "swipe" | "stick";
+  dribbleOnly?: boolean;
 }) {
   // The test area: the shot spread cone is drawn here only (lib/star/testArea.ts).
   useEffect(() => enterTestArea(), []);
@@ -295,6 +300,8 @@ export default function EnginePlay({
         onGoalClip={onGoalClip}
         leadIn={leadIn}
         scene={scene}
+        dribbleControl={dribbleControl}
+        dribbleOnly={dribbleOnly}
         dragReferenceHeightPx={dragReferenceHeightPx}
         pressure={pressureFromDial(s.pressure, s.division)}
         penaltyRunup={s.penaltyRunup}
