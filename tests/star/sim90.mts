@@ -5,7 +5,10 @@
  * nobody stands on a team-mate for long, the teams swap ends at half-time,
  * the keeper dives on saves, the defending side's back line is
  * between the ball and its goal, possession matches the unseen match's within
- * a few points, and no pass goes to a man in an offside position.
+ * a few points, and no pass goes to a man in an offside position. It also
+ * counts how the ball goes up the pitch (forward / sideways / back passes,
+ * metres gained, possessions into the final third), after Harry's "a lot of
+ * passing side to side" (14 Oct 2026).
  */
 import { simulate90, SIM_FPS, FULL_T } from "../../lib/star/sim90";
 import { frameAt, trackDuration } from "../../lib/star/goalClip/track";
@@ -45,6 +48,8 @@ const FIXTURES: [string, number, string, number][] = [
 const rows: string[] = [];
 let n = 0;
 let sumPossDiff = 0, sumLine = 0, sumAgree = 0;
+// How the ball goes up the pitch (Harry, 14 Oct 2026: "a lot of passing side to side").
+const flowAll = { passes: 0, forward: 0, sideways: 0, backward: 0, gain: 0, poss: 0, outside: 0, reach: 0, toFinal: [] as number[] };
 for (let s = 0; s < 8; s++) {
   const [home, hs, away, as] = FIXTURES[s % FIXTURES.length];
   const seed = 1000 + s * 7919;
@@ -143,6 +148,10 @@ for (let s = 0; s < 8; s++) {
   const goals = sim.events.filter((e) => e.kind === "goal").length;
   const shots = sim.events.filter((e) => e.kind === "shot").length;
   rows.push(`${tag}: ${sim.score.join("-")} (unseen ${sim.radar.state.userScore}-${sim.radar.state.oppScore}) · possession ${Math.round(tm * 100)}% vs ${Math.round(hm * 100)}% · per-minute agree ${Math.round((agree / ctlAll) * 100)}% · line ${Math.round(line * 100)}% · close ${longClose} · passes ${sim.stats.passes} offside ${sim.stats.offsidePasses} · snaps ${sim.stats.snaps} · goals ${goals} shots ${shots} · dives ${diveFrames}f · yours ${yours}/${want}`);
+  const fl = sim.stats.flow;
+  flowAll.passes += sim.stats.passes; flowAll.forward += fl.forward; flowAll.sideways += fl.sideways; flowAll.backward += fl.backward;
+  flowAll.gain += fl.gain; flowAll.poss += fl.possessions; flowAll.outside += fl.startedOutside; flowAll.reach += fl.reachFinal; flowAll.toFinal.push(...fl.toFinal);
+  check(fl.forward / Math.max(1, sim.stats.passes) >= 0.5, `${tag}: only ${Math.round((100 * fl.forward) / sim.stats.passes)}% of passes forward`);
   n++; sumPossDiff += Math.abs(tm - hm); sumLine += line; sumAgree += agree / ctlAll;
 }
 console.log(rows.join("\n"));
@@ -168,6 +177,21 @@ console.log(rows.join("\n"));
   const ms = mean([...sh.role.values()].filter((a) => a.length >= 40).map(sdOf));
   check(ms >= REAL.roleSdX * TOL.roleSdMin, `role spread along the pitch ${r1(ms)} m vs real ${REAL.roleSdX} (at least ${TOL.roleSdMin * 100}%)`);
   console.log(`role spread along the pitch at a fixed ball zone: ours ${r1(ms)} | real ${REAL.roleSdX} (pass from ${r1(REAL.roleSdX * TOL.roleSdMin)})`);
+}
+{
+  // Real top-flight football, from general knowledge (no data shipped): about
+  // 50-60% of passes gain ground, about a fifth to a quarter go back, a pass
+  // gains a few metres on average, and something like 35-50% of possessions
+  // get into the final third. The bars here sit a little wide of those.
+  const P = flowAll.passes;
+  const pct = (v: number) => Math.round((100 * v) / Math.max(1, P));
+  const fwd = flowAll.forward / P, back = flowAll.backward / P, gain = flowAll.gain / P, reach = flowAll.reach / Math.max(1, flowAll.outside);
+  const tf = [...flowAll.toFinal].sort((a, b) => a - b);
+  console.log(`passes: forward ${pct(flowAll.forward)}% · sideways ${pct(flowAll.sideways)}% · back ${pct(flowAll.backward)}% · ${gain.toFixed(1)} m gained a pass · possessions into the final third ${Math.round(reach * 100)}% · ball won to final third: median ${(tf[tf.length >> 1] ?? 0).toFixed(1)} s`);
+  check(fwd >= 0.52, `forward passes ${pct(flowAll.forward)}% (want 52%+)`);
+  check(back <= 0.34, `back passes ${pct(flowAll.backward)}% (want 34% or under)`);
+  check(gain >= 3, `metres gained a pass ${gain.toFixed(1)} (want 3+)`);
+  check(reach >= 0.4, `possessions into the final third ${Math.round(reach * 100)}% (want 40%+)`);
 }
 console.log(`mean |possession diff| ${((sumPossDiff / n) * 100).toFixed(1)} pts · mean line ${((sumLine / n) * 100).toFixed(1)}% · mean per-minute agree ${((sumAgree / n) * 100).toFixed(1)}%`);
 if (problems.length) { console.error(problems.join("\n")); process.exit(1); }

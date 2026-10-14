@@ -13,11 +13,15 @@
  * with the goal-video renderer (the game's own figures). It plays no football
  * of its own and touches no career: test page only.
  *
- * When the replay reaches one of YOUR chances (the unseen match's own
- * scenario request), it stops and offers "Play this chance": the chance opens
- * in the real match (EnginePlay, the one engine, inside Match3DLayer), and
- * "Back to the match" carries the replay on. The replay's score is the
- * unseen match's, whatever you do in the chance. Real squad names come from
+ * You watch until the ball reaches you (Harry, 14 Oct 2026: "I also don't
+ * think it should ask if you want to jump in, the default should just be
+ * watch until the ball hits you"). When the replay reaches one of YOUR
+ * chances (the unseen match's own scenario request) it hands straight over to
+ * the real match (EnginePlay, the one engine, inside Match3DLayer) with no
+ * question; once the chance is over the replay carries on by itself a moment
+ * later ("Back to the match" goes at once). "Watch only" (off by default)
+ * plays straight through your chances. The replay's score is the unseen
+ * match's, whatever you do in the chance. Real squad names come from
  * /api/star/league-squads when it answers; made-up names otherwise.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -63,6 +67,8 @@ const MUTED = "#8a97aa";
 const SPEEDS = [1, 4, 16, 60] as const;
 /** The clock ticks this often; the picture is redrawn on each tick. */
 const TICK_MS = 50;
+/** Seconds after your chance ends before the replay carries on by itself. */
+const RESUME_S = 3;
 
 interface Setup { home: string; homeStrength: number; away: string; awayStrength: number }
 const DEFAULT_SETUP: Setup = { home: "Chelsea", homeStrength: 83, away: "Brighton & Hove Albion", awayStrength: 72 };
@@ -83,10 +89,13 @@ export default function FullMatchPage() {
   const [showSetup, setShowSetup] = useState(false);
   const [onlyBig, setOnlyBig] = useState(true);
   const [view3d, setView3d] = useState(false);
-  const [autoSkip, setAutoSkip] = useState(false);
-  /** The chance the replay stopped on, and whether it is being played. */
+  /** Off (default): the replay hands over to the real match at each of your chances. */
+  const [watchOnly, setWatchOnly] = useState(false);
+  /** The chance being played in the real match. */
   const [stopped, setStopped] = useState<Sim90Event | null>(null);
-  const [playing, setPlaying] = useState(false);
+  /** Seconds left before the replay carries on by itself, once the chance is over. */
+  const [resumeIn, setResumeIn] = useState<number | null>(null);
+  const chanceBox = useRef<HTMLDivElement | null>(null);
   const [squads, setSquads] = useState<Record<string, string[] | undefined>>({});
   const handled = useRef(new Set<number>());
   const tRef = useRef(0);
@@ -125,7 +134,7 @@ export default function FullMatchPage() {
     setSim(null);
     setRunning(false);
     setStopped(null);
-    setPlaying(false);
+    setResumeIn(null);
     handled.current.clear();
     if (!namesReady) return;
     const id = window.setTimeout(() => {
@@ -147,7 +156,7 @@ export default function FullMatchPage() {
       const now = performance.now();
       let next = Math.min(FULL_T, tRef.current + ((now - last) / 1000) * speed);
       last = now;
-      if (!autoSkip) {
+      if (!watchOnly) {
         const hit = chances.find((e) => !handled.current.has(e.t) && stopAt(e) > tRef.current - 1e-6 && stopAt(e) <= next);
         if (hit) {
           handled.current.add(hit.t);
@@ -155,6 +164,7 @@ export default function FullMatchPage() {
           tRef.current = next;
           setT(next);
           setRunning(false);
+          setResumeIn(null);
           setStopped(hit);
           return;
         }
@@ -164,7 +174,7 @@ export default function FullMatchPage() {
       if (next >= FULL_T) setRunning(false);
     }, TICK_MS);
     return () => window.clearInterval(id);
-  }, [running, speed, sim, autoSkip, chances]);
+  }, [running, speed, sim, watchOnly, chances]);
 
   const openOn = useMemo(() => {
     if (!stopped?.chance) return undefined;
@@ -172,7 +182,23 @@ export default function FullMatchPage() {
     const s = (seed ^ (stopped.minute * 7919)) >>> 0;
     return (): Scenario => buildScenario(kind, mulberry32(s), setup.awayStrength);
   }, [stopped, seed, setup.awayStrength]);
-  const carryOn = () => { setPlaying(false); setStopped(null); setRunning(true); };
+  const carryOn = () => { setResumeIn(null); setStopped(null); setRunning(true); };
+
+  // The chance is over: count down, then carry on. Another chance served in
+  // the same move (a pass kept it alive) stops the count.
+  const onResolved = () => setResumeIn(RESUME_S);
+  const onServed = () => setResumeIn(null);
+  useEffect(() => {
+    if (resumeIn === null) return;
+    if (resumeIn <= 0) { carryOn(); return; }
+    const id = window.setTimeout(() => setResumeIn((v) => (v === null ? null : v - 1)), 1000);
+    return () => window.clearTimeout(id);
+  }, [resumeIn]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Bring the real match into view when it takes over.
+  useEffect(() => {
+    if (stopped) chanceBox.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [stopped]);
 
   const kits = useMemo(() => kitsFor(setup.home, setup.away), [setup.home, setup.away]);
   const homeCol = kitLabelOnDark(kits.home.shirt, kits.home.trim);
@@ -195,7 +221,7 @@ export default function FullMatchPage() {
     // Going back re-arms the chances after that point.
     for (const e of chances) if (stopAt(e) >= v) handled.current.delete(e.t);
     setStopped(null);
-    setPlaying(false);
+    setResumeIn(null);
     setT(v);
   };
   const minute = t / 60;
@@ -243,40 +269,29 @@ export default function FullMatchPage() {
           )}
         </div>
 
-        {/* One of your chances: play it in the real match, or carry on */}
+        {/* One of your chances: the real match takes over, then the replay carries on */}
         {stopped?.chance && (
-          <div data-sim90-chance style={{ marginTop: 8, padding: 10, borderRadius: 14, background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.45)" }}>
+          <div ref={chanceBox} data-sim90-chance style={{ marginTop: 8, padding: 10, borderRadius: 14, background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.45)" }}>
             <div style={{ fontSize: 13, fontWeight: 900 }}>{stopped.minute}&apos; · Your chance — {stopped.chance.reason.toLowerCase()}</div>
             <div style={{ fontSize: 11.5, fontWeight: 800, color: "#a7f3d0", marginTop: 2 }}>
-              {kindOf(stopped.chance.kinds).replace(/_/g, " ")} · the replay keeps the unseen match&apos;s result ({stopped.chance.result === "goal" ? "a goal" : "no goal"})
+              {kindOf(stopped.chance.kinds).replace(/_/g, " ")} · the score stays the unseen match&apos;s ({stopped.chance.result === "goal" ? "a goal" : "no goal"})
             </div>
-            {!playing ? (
-              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                <button data-sim90-play-chance onClick={() => setPlaying(true)} style={{
-                  flex: 1, height: 42, borderRadius: 12, border: "none", cursor: "pointer", background: "#10b981", color: "#fff", fontSize: 14, fontWeight: 900,
-                }}>Play this chance</button>
-                <button onClick={carryOn} style={{
-                  height: 42, padding: "0 14px", borderRadius: 12, cursor: "pointer", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: INK, fontSize: 13, fontWeight: 900,
-                }}>Skip</button>
-              </div>
-            ) : (
-              <div style={{ marginTop: 8 }}>
-                {openOn && (
-                  <Match3DLayer key={`${seed}-${stopped.t}`}>
-                    <EnginePlay seed={seed % 1000 + 1} openOn={openOn} />
-                  </Match3DLayer>
-                )}
-                <button data-sim90-back onClick={carryOn} style={{
-                  width: "100%", marginTop: 8, height: 42, borderRadius: 12, border: "none", cursor: "pointer", background: "#38bdf8", color: "#04111d", fontSize: 14, fontWeight: 900,
-                }}>Back to the match</button>
-              </div>
-            )}
+            <div style={{ marginTop: 8 }}>
+              {openOn && (
+                <Match3DLayer key={`${seed}-${stopped.t}`}>
+                  <EnginePlay seed={seed % 1000 + 1} openOn={openOn} onChanceResolved={onResolved} onChanceServed={onServed} />
+                </Match3DLayer>
+              )}
+              <button data-sim90-back onClick={carryOn} style={{
+                width: "100%", marginTop: 8, height: 42, borderRadius: 12, border: "none", cursor: "pointer", background: "#38bdf8", color: "#04111d", fontSize: 14, fontWeight: 900,
+              }}>{resumeIn === null ? "Back to the match" : `Back to the match · ${Math.max(0, resumeIn)}`}</button>
+            </div>
           </div>
         )}
 
         {/* Controls */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-          <button onClick={() => { if (t >= FULL_T) setT(0); setStopped(null); setPlaying(false); setRunning((r) => !r); }} disabled={!sim} aria-label={running ? "Pause" : "Play"}
+          <button onClick={() => { if (t >= FULL_T) setT(0); setStopped(null); setResumeIn(null); setRunning((r) => !r); }} disabled={!sim} aria-label={running ? "Pause" : "Play"}
             style={{ width: 48, height: 40, borderRadius: 12, border: "none", cursor: "pointer", flex: "none", background: running ? "#334155" : "#10b981", color: "#fff", fontSize: 17, fontWeight: 900 }}>
             {running ? "❚❚" : t >= FULL_T ? "↻" : "▶"}
           </button>
@@ -299,8 +314,8 @@ export default function FullMatchPage() {
           <span>0&apos;</span><span>45&apos;</span><span>90&apos;</span>
         </div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 12, fontWeight: 800 }}>
-          <input type="checkbox" checked={autoSkip} onChange={(e) => setAutoSkip(e.target.checked)} />
-          Don&apos;t stop for my chances
+          <input data-sim90-watch-only type="checkbox" checked={watchOnly} onChange={(e) => setWatchOnly(e.target.checked)} />
+          Watch only (don&apos;t play my chances)
         </label>
 
         {/* The radar of the unseen match, minute by minute */}

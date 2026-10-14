@@ -29,6 +29,9 @@
  *  - Keepers dive on a save (and on a goal that beats them) toward where the
  *    ball is going; the goal-video renderer draws the dive.
  *  - No cards, fouls or offside calls: the unseen match has none.
+ *  - The side on the ball looks forward first, runs with it into space and
+ *    switches play only when its side is shut (PASS_FLOW, CARRY). The
+ *    unseen match still decides which area each minute is in.
  */
 import { startRadar, stepRadar, resolveHighlight, radarOver, type RadarMatch } from "./matchRadar";
 import type { HiddenMatchInputs, RadarTick, Zone, Lane } from "./hiddenMatch";
@@ -107,7 +110,25 @@ export interface Sim90 {
   /** Passes played, passes played to a man in an offside position, and the
    *  times a shot was due with the other side on the ball so the ball had to
    *  jump to the shooter (should be very rare). */
-  stats: { passes: number; offsidePasses: number; snaps: number };
+  stats: { passes: number; offsidePasses: number; snaps: number; flow: Sim90Flow };
+}
+
+/** How the ball moves up the pitch, counted from the replay's own passes and
+ *  possessions (Harry, 14 Oct 2026: "a lot of passing side to side"). A pass is
+ *  forward when it gains 2 m+ toward the goal being attacked, back when it
+ *  loses 2 m+, sideways otherwise. A possession is one side's unbroken spell on
+ *  the ball (dead balls carry it on); the final third is the last 35 m. */
+export interface Sim90Flow {
+  forward: number; sideways: number; backward: number;
+  /** Metres gained toward goal, summed over completed passes (negative for back passes). */
+  gain: number;
+  possessions: number;
+  /** Possessions in which the side's ball got into the final third. */
+  reachFinal: number;
+  /** For those: seconds from winning the ball to the final third. */
+  toFinal: number[];
+  /** Possessions that started outside the final third (the ones that could "reach" it). */
+  startedOutside: number;
 }
 
 // ── Where the unseen match's areas are, in metres (the radar's own numbers) ──
@@ -251,6 +272,32 @@ function shapeOf(T: Team, side: Side, other: Side, inPoss: boolean, ball: V, off
   });
 }
 
+// ── How the side on the ball moves it up the pitch ─────────────────────────
+// Harry, 14 Oct 2026: "the match radar is a lot of passing side to side".
+// Real sides look forward first, run with the ball into space, and switch
+// play only when the ball's side is shut. Measured in tests/star/sim90.mts.
+const PASS_FLOW = {
+  /** Score per metre a pass gains toward goal: while the play is behind the minute's area, and inside it. */
+  forwardBehind: 1.0, forwardIn: 0.55,
+  /** Score per metre a pass brings the ball nearer the minute's area. */
+  anchorW: 0.35,
+  /** Score per metre of room around the receiver (up to 9 m). */
+  openW: 0.4,
+  /** Score taken off a back pass when nobody is on the man on the ball. */
+  backCost: 5,
+  /** …and when an opponent is tight on him: a back pass is the safe ball then, but still not the first look. */
+  backCostPressed: 3.5,
+  /** …and once the play is well past the minute's area: it may come back, patiently. */
+  backCostPast: 1.5,
+  /** Score taken off a switch while there is an open forward pass on the ball's side. */
+  switchCost: 6,
+  /** The man on the ball counts as pressed with an opponent this close, m. */
+  pressedR: 2.5,
+  noise: 3,
+};
+/** Running with the ball: into space toward goal while nobody is this close ahead (m). */
+const CARRY = { clearAhead: 7, step: 4.5, maxExtra: 2.5, speed: 5.2 };
+
 // ── The plan: what the unseen match says each minute holds ─────────────────
 
 interface Attempt {
@@ -265,7 +312,8 @@ interface Attempt {
   chance?: Sim90Chance;
 }
 
-interface MinutePlan { poss: Team; anchor: V }
+/** The side on the ball, a point in the minute's area, and the area's two ends (y). */
+interface MinutePlan { poss: Team; anchor: V; band: [number, number] }
 
 /** The unseen match's minutes as the live radar draws them. */
 export function radarTicks(m: RadarMatch): Map<number, RadarTick> {
@@ -306,7 +354,7 @@ function planOf(radar: RadarMatch, rng: () => number): { plans: MinutePlan[]; at
     const f = radar.frames[i] ?? radar.frames[radar.frames.length - 1];
     const [d0, d1] = ZONE_D[f.zone], [x0, x1] = LANE_X[f.lane];
     const d = d0 + (d1 - d0) * (0.3 + 0.4 * rng());
-    plans.push({ poss: f.possession === "user" ? 0 : 1, anchor: { x: x0 + (x1 - x0) * (0.25 + 0.5 * rng()), y: LEN - d } });
+    plans.push({ poss: f.possession === "user" ? 0 : 1, anchor: { x: x0 + (x1 - x0) * (0.25 + 0.5 * rng()), y: LEN - d }, band: [LEN - d0, LEN - d1] });
     const here: Omit<Attempt, "t" | "done" | "spot" | "minute">[] = [];
     let cornersUs = 0, cornersThem = 0;
     const hl = f.highlight;
@@ -407,7 +455,10 @@ export function simulate90(setup: Sim90Setup): Sim90 {
   const clipEvents: ClipEvent[] = [];
   const events: Sim90Event[] = [];
   const score: [number, number] = [0, 0];
-  const stats = { passes: 0, offsidePasses: 0, snaps: 0 };
+  const flow: Sim90Flow = { forward: 0, sideways: 0, backward: 0, gain: 0, possessions: 0, reachFinal: 0, toFinal: [], startedOutside: 0 };
+  const stats = { passes: 0, offsidePasses: 0, snaps: 0, flow };
+  /** The possession being counted: its side, start time, whether it began in the final third, and whether it got there. */
+  let possSide = -1, possT0 = 0, possStartFinal = false, possReached = false;
 
   const P: V[] = [], Vel: V[] = [];
   for (let i = 0; i < 22; i++) { P.push({ x: CX, y: HALF_LEN }); Vel.push({ x: 0, y: 0 }); }
@@ -483,6 +534,35 @@ export function simulate90(setup: Sim90Setup): Sim90 {
     return best;
   };
 
+  /** An opponent within r metres of man i. */
+  const pressedOn = (i: number, r: number): boolean => {
+    const O: Team = teamOf(i) === 0 ? 1 : 0;
+    for (let k = 0; k < 11; k++) if (dist(P[O * 11 + k], P[i]) < r) return true;
+    return false;
+  };
+  /** Room to run into: nobody of the other side within r m in front of man i, toward the goal he attacks. */
+  const spaceAhead = (i: number, r: number): boolean => {
+    const T = teamOf(i), O: Team = T === 0 ? 1 : 0;
+    const dy = T === 0 ? -1 : 1;
+    for (let k = 0; k < 11; k++) {
+      const q = P[O * 11 + k];
+      const ax = q.x - P[i].x, ay = (q.y - P[i].y) * dy;
+      if (Math.hypot(ax, ay) < r && ay > -1 && Math.abs(ax) < ay * 1.2 + 2) return false;
+    }
+    return true;
+  };
+
+  /** He runs with it: room in front, and the play not yet well past its area (nor into the box). */
+  const carryRoom = (i: number, anchor: V): boolean => {
+    const T = teamOf(i);
+    const d = depthOf(T, P[i].y);
+    const far = Math.max(depthOf(T, bandNow[0]), depthOf(T, bandNow[1]), depthOf(T, anchor.y));
+    return d < far && d < LEN - 18 && spaceAhead(i, CARRY.clearAhead);
+  };
+  let carryOf = -1, carryCap = 0;
+  /** The ends (y) of the area the play is heading for this moment. */
+  let bandNow: [number, number] = [0, LEN];
+
   const startFlight = (f: Flight) => {
     flight = f;
     carrier = -1;
@@ -498,15 +578,24 @@ export function simulate90(setup: Sim90Setup): Sim90 {
     const T = teamOf(c);
     const O: Team = T === 0 ? 1 : 0;
     const offD = offsideLineD(T);
-    let best = -1, bestS = -Infinity;
+    const ballD = depthOf(T, ball.y);
+    // How far the play still has to go: the minute's area, measured toward
+    // the goal being attacked. Behind it the side looks forward first; in it
+    // the side still prefers forward; only well past it may it drop off.
+    const bd = [depthOf(T, bandNow[0]), depthOf(T, bandNow[1])];
+    const nearD = Math.min(bd[0], bd[1]), farD = Math.max(bd[0], bd[1]);
+    const past = ballD > farD + 4;
+    const fwdW = ballD < nearD ? PASS_FLOW.forwardBehind : past ? 0 : PASS_FLOW.forwardIn;
+    const pressed = pressedOn(c, PASS_FLOW.pressedR);
+    const cands: { j: number; s: number; gain: number; lat: number; ok: boolean }[] = [];
     for (let k = 0; k < 11; k++) {
       const j = T * 11 + k;
       if (j === c) continue;
-      if (k === 0 && (depthOf(T, ball.y) > 30 || rng() > 0.25)) continue;
+      if (k === 0 && (ballD > 30 || rng() > 0.25)) continue;
       const len = dist(P[c], P[j]);
       if (len < 5 || len > 42) continue;
       const jd = depthOf(T, P[j].y);
-      if (jd > offD - 0.3 && jd > depthOf(T, ball.y)) continue;           // offside
+      if (jd > offD - 0.3 && jd > ballD) continue;           // offside
       let open = Infinity, lane = Infinity;
       for (let o = 0; o < 11; o++) {
         const q = P[O * 11 + o];
@@ -517,9 +606,22 @@ export function simulate90(setup: Sim90Setup): Sim90 {
         if (u > 0.08 && u < 0.92) lane = Math.min(lane, Math.hypot(ball.x + ax * u - q.x, ball.y + ay * u - q.y));
       }
       const progress = dist(P[c], anchor) - dist(P[j], anchor);
-      let s = progress * 0.5 + Math.min(open, 9) * 0.7 - Math.abs(len - 16) * 0.12 + rng() * 5;
+      const gain = jd - ballD;
+      const lat = Math.abs(P[j].x - ball.x);
+      let s = progress * PASS_FLOW.anchorW + Math.max(-6, gain) * fwdW + Math.min(open, 9) * PASS_FLOW.openW
+        - Math.abs(len - 16) * 0.1 + rng() * PASS_FLOW.noise;
+      // Back to a free man only when pressed, or once the play is well past its area.
+      if (gain <= -2) s -= past ? PASS_FLOW.backCostPast : pressed ? PASS_FLOW.backCostPressed : PASS_FLOW.backCost;
       if (lane < 1.6) s -= 12;
-      if (s > bestS) { bestS = s; best = j; }
+      cands.push({ j, s, gain, lat, ok: lane >= 1.6 && open >= 2.5 });
+    }
+    // A switch of play (a ball 22 m+ across) only when the ball's side is
+    // shut: no open forward pass on it.
+    const sideOpen = cands.some((q) => q.ok && q.gain >= 3 && q.lat < 18);
+    let best = -1, bestS = -Infinity;
+    for (const q of cands) {
+      const s = q.s - (q.lat >= 22 && sideOpen ? PASS_FLOW.switchCost : 0);
+      if (s > bestS) { bestS = s; best = q.j; }
     }
     if (best < 0) best = nearestOf(T, ball, true, c);
     // Lead the runner a little, never into an offside position.
@@ -535,6 +637,9 @@ export function simulate90(setup: Sim90Setup): Sim90 {
       to = { x: (P[cut].x * 2 + mid.x) / 3, y: (P[cut].y * 2 + mid.y) / 3 };
     } else {
       stats.passes++;
+      const g = depthOf(T, to.y) - depthOf(T, ball.y);
+      flow.gain += g;
+      if (g >= 2) flow.forward++; else if (g <= -2) flow.backward++; else flow.sideways++;
       const rd = depthOf(T, P[best].y);
       if (rd > offsideLineD(T) + 0.3 && rd > depthOf(T, ball.y) && rd > HALF_LEN) stats.offsidePasses++;
     }
@@ -678,6 +783,7 @@ export function simulate90(setup: Sim90Setup): Sim90 {
     const due = nextAttempt(t);
     const wanted = wantedAt(t);
     const anchor: V = due ? { x: due.spot.x, y: yAt(due.side, LEN - due.spot.y) } : plans[mi].anchor;
+    bandNow = due ? [anchor.y - 6, anchor.y + 6] : plans[mi].band;
 
     // ── The ball ──
     if (dead) {
@@ -741,8 +847,13 @@ export function simulate90(setup: Sim90Setup): Sim90 {
           carrier = nearestOf(due.side, ball); stats.snaps++; holdUntil = t;
         }
       } else if (t >= holdUntil) {
-        pass(t, anchor, wanted);
-        if (shotNow) holdUntil = t;  // keep it moving toward the shot
+        // Room in front: run with it a little longer before the pass.
+        if (carryOf !== carrier) { carryOf = carrier; carryCap = holdUntil + CARRY.maxExtra; }
+        const runOn = !shotNow && carrier % 11 !== 0 && t < carryCap && carryRoom(carrier, anchor);
+        if (!runOn) {
+          pass(t, anchor, wanted);
+          if (shotNow) holdUntil = t;  // keep it moving toward the shot
+        }
       }
     } else if (!dead && !flight && carrier < 0) {
       carrier = nearestOf(wanted, ball, false);
@@ -770,10 +881,18 @@ export function simulate90(setup: Sim90Setup): Sim90 {
         targets[pr] = { x: focus.x, y: focus.y + dir * 1.1 };
         if (carrier >= 0 && !flight) {
           // The man on the ball carries it toward where the play is going.
+          // With room in front (and the play not past its area) he runs at
+          // goal, drifting toward the area's side; otherwise he edges toward the area.
           const c = carrier;
-          const dx = anchor.x - P[c].x, dy = anchor.y - P[c].y, dl = Math.hypot(dx, dy) || 1;
-          const step = Math.min(dl, 3.2);
-          targets[c] = { x: P[c].x + (dx / dl) * step, y: P[c].y + (dy / dl) * step };
+          if (c % 11 !== 0 && carryRoom(c, anchor)) {
+            const T = teamOf(c);
+            const gx = clamp((anchor.x - P[c].x) * 0.25, -2, 2);
+            targets[c] = { x: P[c].x + gx, y: P[c].y + (T === 0 ? -CARRY.step : CARRY.step) };
+          } else {
+            const dx = anchor.x - P[c].x, dy = anchor.y - P[c].y, dl = Math.hypot(dx, dy) || 1;
+            const step = Math.min(dl, 3.2);
+            targets[c] = { x: P[c].x + (dx / dl) * step, y: P[c].y + (dy / dl) * step };
+          }
         }
       }
       if (dead && dead.sub === "out") targets[dead.restart * 11] = { x: ball.x, y: ball.y };
@@ -793,7 +912,7 @@ export function simulate90(setup: Sim90Setup): Sim90 {
       const al = Math.hypot(ax, ay), amax = 6 * DT;
       if (al > amax) { ax *= amax / al; ay *= amax / al; }
       Vel[i].x += ax; Vel[i].y += ay;
-      if (i === carrier) { const sl = Math.hypot(Vel[i].x, Vel[i].y); if (sl > 4.2) { Vel[i].x *= 4.2 / sl; Vel[i].y *= 4.2 / sl; } }
+      if (i === carrier) { const sl = Math.hypot(Vel[i].x, Vel[i].y), cap = CARRY.speed; if (sl > cap) { Vel[i].x *= cap / sl; Vel[i].y *= cap / sl; } }
       P[i].x += Vel[i].x * DT; P[i].y += Vel[i].y * DT;
     }
     // Nobody stood on a team-mate.
@@ -834,6 +953,20 @@ export function simulate90(setup: Sim90Setup): Sim90 {
     }
 
     control[f] = dead ? 0 : flight ? ((flight as Flight).kind === "pass" || (flight as Flight).kind === "clear" ? ((flight as Flight).receiver >= 0 ? teamOf((flight as Flight).receiver) + 1 : 0) : (flight as Flight).side + 1) : carrier >= 0 ? teamOf(carrier) + 1 : 0;
+
+    // Counting possessions for the flow numbers.
+    if (control[f] > 0) {
+      const S = control[f] - 1;
+      const inFinal = depthOf(S as Team, ball.y) >= LEN - 35;
+      if (S !== possSide) {
+        possSide = S; possT0 = t; possStartFinal = inFinal; possReached = inFinal;
+        flow.possessions++;
+        if (!inFinal) flow.startedOutside++;
+      } else if (!possReached && inFinal) {
+        possReached = true;
+        if (!possStartFinal) { flow.reachFinal++; flow.toFinal.push(t - possT0); }
+      }
+    }
 
     // Second half: the teams have swapped ends — the same staging, turned round.
     const swap = t >= HALF_T;
