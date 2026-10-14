@@ -846,6 +846,16 @@ export const ADMIN_GUIDES = {
           ["Amber box", "Saved scenarios of this type that break a rule, so the game isn't using them."],
         ],
       },
+      {
+        group: "Hitboxes & jumping (Leo)",
+        items: [
+          ["Hitboxes & jumping", "Tap to open. Shows New or Old and whether the hitboxes are being drawn."],
+          ["New / Old", "New: players are the shape of a man (widest at the feet, narrow at the head, nothing above the head unless they jump) and really jump for a ball in the air. Old: the hitboxes from before 14 Oct 2026. Stored on this phone, so it also changes a real career on this phone."],
+          ["Show / Hide hitboxes", "Draws every body's hitbox on Play: red defenders, blue team-mates (dashed ring: how far he goes for a ball played to him, tick: how high), yellow keeper, bright yellow while in the air, and the ball's height in metres. Test screens only — never in a career match."],
+          ["Sliders", "Standing height, jump height, reach at the feet and at the head, header bonus, block bonus, and how much harder a keeper finds a ball above his standing reach. Kept on this phone; used from the next touch."],
+          ["Reset to defaults", "Puts every slider back."],
+        ],
+      },
       { ...TUNING_PANEL_GROUP, group: "Tuning panel (bottom of the page)" },
     ],
     saving: [
@@ -864,7 +874,7 @@ export const ADMIN_GUIDES = {
       "Your fixes reach real matches only once they're committed — here, or from the gallery.",
     ],
     needs: [SCENARIO_TABLE_NEEDED, TUNING_NOTES_NEEDED],
-    dev: "app/star-highlights-dev/page.tsx · components/star/TuningSessionPanel.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit,tuningSession,tuningNotes}.ts · /api/star/tuning-notes · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
+    dev: "app/star-highlights-dev/page.tsx · components/star/HitboxPanel.tsx, lib/star/hitbox.ts · components/star/TuningSessionPanel.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit,tuningSession,tuningNotes}.ts · /api/star/tuning-notes · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
   },
 
   "/star-play-dev": {
@@ -892,6 +902,16 @@ export const ADMIN_GUIDES = {
           ["Back to the defaults", "Resets every dial, the keeper row and the Compare switches."],
           ["Compare old and new: New / Old", "Two switches: Penalty rules and Shot power. Old puts that one change back to how it was, so the two can be played side by side. Test screens only — a real career, its trial and its shootouts always play New."],
           ["Scenario Gallery →", "Opens the gallery."],
+        ],
+      },
+      {
+        group: "Hitboxes & jumping (Leo)",
+        items: [
+          ["Hitboxes & jumping", "Tap to open. Shows New or Old and whether the hitboxes are being drawn."],
+          ["New / Old", "New: players are the shape of a man (widest at the feet, narrow at the head, nothing above the head unless they jump) and really jump for a ball in the air. Old: the hitboxes from before 14 Oct 2026. Stored on this phone, so it also changes a real career on this phone."],
+          ["Show / Hide hitboxes", "Draws every body's hitbox on Play: red defenders, blue team-mates (dashed ring: how far he goes for a ball played to him, tick: how high), yellow keeper, bright yellow while in the air, and the ball's height in metres. Test screens only — never in a career match."],
+          ["Sliders", "Standing height, jump height, reach at the feet and at the head, header bonus, block bonus, and how much harder a keeper finds a ball above his standing reach. Kept on this phone; used from the next touch."],
+          ["Reset to defaults", "Puts every slider back."],
         ],
       },
       {

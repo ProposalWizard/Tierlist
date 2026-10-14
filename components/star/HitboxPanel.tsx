@@ -9,7 +9,7 @@
  * the dials in lib/star/hitbox.ts. Everything is stored on this phone; a dial
  * takes effect on the next chance (the jump height and keeper at once).
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   HITBOX_DEFAULTS, HITBOX_RANGES, hitboxDials, setHitboxDials, resetHitboxDials,
   showHitboxes, setShowHitboxes, setHitboxes, type HitboxDials,
@@ -21,8 +21,10 @@ const MUTED = "#8a97aa";
 export default function HitboxPanel({ startOpen = false }: { startOpen?: boolean }) {
   const look = useLook();
   const [open, setOpen] = useState(startOpen);
-  const [show, setShow] = useState(() => showHitboxes());
-  const [d, setD] = useState<HitboxDials>(() => ({ ...hitboxDials() }));
+  // Read from this phone after the first paint (the server has no storage).
+  const [show, setShow] = useState(false);
+  const [d, setD] = useState<HitboxDials>(HITBOX_DEFAULTS);
+  useEffect(() => { setShow(showHitboxes()); setD({ ...hitboxDials() }); }, []);
   const isNew = look.hitboxes === "new";
 
   const setDial = (k: keyof HitboxDials, v: number) => {

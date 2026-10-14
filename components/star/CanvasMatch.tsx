@@ -5394,10 +5394,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // the ball in flight, and a way to set it (ball-physics stills: send a
       // real strike at the post, the bar or the net). Dev only, like the rest.
       ballState: () => (ballRef.current ? { ...ballRef.current, pos: { ...ballRef.current.pos }, vel: { ...ballRef.current.vel } } : null),
-      setBall: (b: { x: number; y: number; z: number; vx: number; vy: number; vz: number; spin?: number }) => {
+      setBall: (b: { x: number; y: number; z: number; vx: number; vy: number; vz: number; spin?: number; shot?: boolean }) => {
         const bl = ballRef.current;
         if (!bl || phaseRef.current !== "flight") return false;
         bl.pos = { x: b.x, y: b.y }; bl.z = b.z; bl.vel = { x: b.vx, y: b.vy }; bl.vz = b.vz; bl.spin = b.spin ?? 0;
+        if (b.shot !== undefined) { bl.shot = b.shot; bl.youStruckAtGoal = b.shot; }
         bl.landAt = undefined;
         return true;
       },
