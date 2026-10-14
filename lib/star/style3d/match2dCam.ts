@@ -640,6 +640,24 @@ export const ORBIT = { maxDeg: 180, degPerWidth: 180, easeS: 0.35, startPx: 10, 
 /** Harry, 13 Oct 2026: a full turn round our player is allowed, so ±180° (the same view either end). */
 export function clampOrbit(deg: number): number { return Math.max(-ORBIT.maxDeg, Math.min(ORBIT.maxDeg, deg)); }
 /**
+ * CORNERS TURN LESS (Harry, 14 Oct 2026, option C of the tested comparison). On a corner the camera's
+ * turn stops at `corner` degrees either way (FRAME_TURNED.maxD stays 165 m): the whole goal on screen in
+ * 4 of 4 turned views (at 90°: 3 of 4), men 6–14 px tall (5–12 at 90°). Every other kind keeps the full
+ * turn. A swipe asking for more is a SOFT stop: the turn follows the finger exactly up to `knee` degrees
+ * short of the limit, then eases into it (same slope where the ease starts, so nothing jumps).
+ */
+export const ORBIT_LIMIT = { corner: 60, knee: 15 };
+/** How far the camera may turn on this kind of chance, degrees either way. */
+export function orbitMaxFor(kind?: string | null): number { return kind === "corner" ? ORBIT_LIMIT.corner : ORBIT.maxDeg; }
+/** The turn a swipe asks for, limited for this kind: clampOrbit, and on a corner the eased stop at ±ORBIT_LIMIT.corner. */
+export function limitOrbit(deg: number, kind?: string | null): number {
+  const max = orbitMaxFor(kind);
+  if (max >= ORBIT.maxDeg) return clampOrbit(deg);
+  const a = Math.abs(deg), k = Math.min(ORBIT_LIMIT.knee, max), start = max - k;
+  if (a <= start) return deg;
+  return Math.sign(deg) * Math.min(max, max - k * Math.exp(-(a - start) / k));
+}
+/**
  * ORBIT ROUND OUR PLAYER, CENTRED (Harry, 13 Oct 2026). How far the camera's look point has moved onto the
  * ball (0 = the default framing, 1 = the ball in the middle): full once turned `centreDeg` or tilted
  * `centreTilt`, or while a finger/mouse is turning it.

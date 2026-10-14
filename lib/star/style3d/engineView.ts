@@ -59,7 +59,7 @@ import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./ca
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
 /** Open play's default = the 2D's own frame of the same chance, exactly (Harry, 12 Oct 2026: a 0.85 zoom-in cut the taker off on tight angles and cutbacks). */
 const OPEN_DEFAULT_K = 1;
-import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, orbitCamera, centreShare, frameTurned, solveTurnFit, easeFit, type TurnFit, showsGoal, grabsBall, overheadClipAlong, overStand, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
+import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, limitOrbit, orbitMaxFor, orbitCamera, centreShare, frameTurned, solveTurnFit, easeFit, type TurnFit, showsGoal, grabsBall, overheadClipAlong, overStand, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -1340,7 +1340,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   /** The turned camera's framing, eased frame to frame (match2dCam.ts solveTurnFit / easeFit). */
   const turn = { fit: null as TurnFit | null, want: null as TurnFit | null, key: "", at: 0 };
   const TURN_SOLVE_S = 0.05;
-  const orbit = { deg: 0, target: 0, drag: false, ballKey: "", t: -1, d0: 0, tilt: 0, tiltTarget: 0, tiltDrag: false, t0: 0, centre: 0 };
+  const orbit = { deg: 0, target: 0, drag: false, ballKey: "", kind: "", t: -1, d0: 0, tilt: 0, tiltTarget: 0, tiltDrag: false, t0: 0, centre: 0 };
   (window as unknown as { __cam3dOrbit?: (deg: number) => void }).__cam3dOrbit = (deg: number) => { orbit.target = clampOrbit(deg); orbit.deg = orbit.target; }; // dev/test: stills of a turned view
   // THE CAMERA LOCK (Harry, 13 Oct 2026: "a little floating camera icon that can lock/unlock the camera
   // and maybe a double tap to get back to our default camera angle"). Locked: the angle you left it at is
@@ -1452,8 +1452,11 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     {
       const live = f.phase === "aim" || f.phase === "runup" || f.phase === "contact" || f.phase === "flight";
       const bk = f.ball && f.phase === "aim" ? `${key}|${f.ball.x.toFixed(1)},${f.ball.y.toFixed(1)}` : orbit.ballKey;
-      if (!live || bk !== orbit.ballKey) { orbit.target = camLock.on ? camLock.deg : 0; orbit.tiltTarget = camLock.on ? camLock.tilt : 0; if (!touch.orbit) orbit.drag = false; if (!touch.tilt) orbit.tiltDrag = false; }
+      orbit.kind = f.kind; // the swipe's limit (match2dCam.ts limitOrbit: a corner stops softly at ±60°)
+      if (!live || bk !== orbit.ballKey) { orbit.target = camLock.on ? limitOrbit(camLock.deg, f.kind) : 0; orbit.tiltTarget = camLock.on ? camLock.tilt : 0; if (!touch.orbit) orbit.drag = false; if (!touch.tilt) orbit.tiltDrag = false; }
       orbit.ballKey = bk;
+      // a turn from elsewhere (the lock, a test still) past this kind's limit comes in to the limit, eased like any other
+      if (Math.abs(orbit.target) > orbitMaxFor(f.kind)) orbit.target = limitOrbit(orbit.target, f.kind);
       const dt = orbit.t < 0 ? 0 : Math.max(0, Math.min(0.1, f.t - orbit.t));
       turnDt = dt;
       orbit.t = f.t;
@@ -1709,7 +1712,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     }
     if (touch.orbit) {
       const w = container.getBoundingClientRect().width || 1;
-      orbit.target = clampOrbit(orbit.d0 - (dx / w) * ORBIT.degPerWidth);
+      orbit.target = limitOrbit(orbit.d0 - (dx / w) * ORBIT.degPerWidth, orbit.kind); // a corner: an eased stop at ±60°
       return;
     }
     if (touch.tilt) {
