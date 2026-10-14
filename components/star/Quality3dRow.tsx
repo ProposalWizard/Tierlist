@@ -63,15 +63,17 @@ function TexturePackRow() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-    // fetch every pack's picture now (about 33 KB in all), so the list opens with them shown
+    // fetch every pack's picture now (about 100 KB for the twelve), so the list opens with them shown
     for (const id of TEXTURE_PACKS) { const src = TEXTURE_PACK_PREVIEW[id]; if (src) new Image().src = src; }
   }, []);
   useEffect(() => {
     if (!open) return;
+    // twelve rows: open on the ticked one, not the top of the list
+    requestAnimationFrame(() => document.querySelector(`[data-texture-pack-option="${p}"]`)?.scrollIntoView({ block: "center" }));
     const k = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
-  }, [open]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
       <div className="mt-3 flex items-center justify-between gap-2" data-texture-pack-row>
@@ -96,9 +98,9 @@ function TexturePackRow() {
             role="listbox"
             aria-label="Texture pack"
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[85vh] w-full overflow-y-auto rounded-t-2xl border-t border-white/10 bg-gray-950 px-3 pb-6 pt-3 sm:max-w-[420px] sm:rounded-2xl sm:border sm:pb-3"
+            className="max-h-[85vh] w-full overflow-y-auto overscroll-contain rounded-t-2xl border-t border-white/10 bg-gray-950 px-3 pb-6 pt-3 sm:max-w-[420px] sm:rounded-2xl sm:border sm:pb-3"
           >
-            <div className="mb-2 flex items-center justify-between px-1">
+            <div className="sticky -top-3 z-10 -mx-3 mb-2 flex items-center justify-between bg-gray-950 px-4 pb-2 pt-3">
               <div className="text-[16px] font-black text-white">Texture pack</div>
               <button type="button" onClick={() => setOpen(false)} className="kib-press rounded-lg bg-white/10 px-3 py-1 text-[13px] font-bold text-white">Done</button>
             </div>

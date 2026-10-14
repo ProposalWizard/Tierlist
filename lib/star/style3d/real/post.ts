@@ -169,6 +169,8 @@ export interface HGrade {
   lut?: any; lutAmt?: number;
   /** A multiple of the tier's own sharpening (High only; 1 = as it was). */
   sharpen?: number;
+  /** Film grain (texture pack Retro 90s); as built 0.012. */
+  grain?: number;
   /** Which grade the no-pass tone map uses (toneGrade.ts gradeSlot): Low copies High's colour. */
   slot?: number;
 }
@@ -302,7 +304,7 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
         fu.fxaa.value = msaa ? 0 : 1; fu.sharpen.value = 0; fu.fxSharp.value = fresh && !msaa ? 0.12 : 0; fu.dofOnce.value = 0;
         fu.res.value.set(w, h); fu.cNear.value = camera.near; fu.cFar.value = camera.far;
         fu.exposure.value = g.exposure; fu.bloom.value = g.bloom * 0.6; fu.contrast.value = g.contrast; fu.sat.value = g.sat;
-        fu.vignette.value = g.vignette; fu.time.value = (performance.now() - t0) / 1000;
+        fu.vignette.value = g.vignette; fu.time.value = (performance.now() - t0) / 1000; fu.grain.value = g.grain ?? 0.012;
         fu.tint.value.set(...g.tint); fu.lift.value.set(...g.lift);
         fu.tLut.value = g.lut ?? null; fu.lutAmt.value = g.lut ? (g.lutAmt ?? 1) : 0;
         pass(finalMat, null);
@@ -336,7 +338,7 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
       fu.useDepth.value = depthOk ? 1 : 0;
       fu.res.value.set(w, h); fu.cNear.value = camera.near; fu.cFar.value = camera.far;
       fu.exposure.value = g.exposure; fu.bloom.value = g.bloom * 0.6; fu.contrast.value = g.contrast; fu.sat.value = g.sat;
-      fu.vignette.value = g.vignette; fu.time.value = (performance.now() - t0) / 1000;
+      fu.vignette.value = g.vignette; fu.time.value = (performance.now() - t0) / 1000; fu.grain.value = g.grain ?? 0.012;
       fu.tint.value.set(...g.tint); fu.lift.value.set(...g.lift);
       fu.sharpen.value = (tier === "high" ? 0.22 : 0) * (g.sharpen ?? 1);
       fu.tLut.value = g.lut ?? null; fu.lutAmt.value = g.lut ? (g.lutAmt ?? 1) : 0;
