@@ -51,6 +51,9 @@ export interface RadarHighlight {
   result?: "goal" | "missed";
   /** How it was decided: chosen on screen, or at the bench rate. */
   decidedBy?: "you" | "bench-rate";
+  /** The match's own request, as tick handed it (weights and all). Read by
+   *  tests/star/chanceJudge.mts to serve it through the real chance maker. */
+  request?: ScenarioRequest;
 }
 
 /** One minute of the match, as the radar draws it. */
@@ -243,7 +246,7 @@ function snapshot(s: HiddenMatchState, events: RadarEvent[], highlight: RadarHig
 function fromRequest(minute: number, r: ScenarioRequest): RadarHighlight {
   return {
     minute, zone: r.zone, lane: r.lane ?? "centre", reason: r.reason,
-    kinds: Array.from(new Set(r.kinds)), dribble: !!r.dribble,
+    kinds: Array.from(new Set(r.kinds)), dribble: !!r.dribble, request: r,
   };
 }
 

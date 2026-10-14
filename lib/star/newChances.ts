@@ -34,10 +34,14 @@ function urlOverride(): ChancesMode | null {
 }
 
 let cached: ChancesMode | null = null;
-let forced: ChancesMode | null = null;
 const listeners = new Set<() => void>();
+// The test switch lives on globalThis: tsx can load this file twice (once for
+// the test's own import, once for the game file's), and both must agree.
+const FORCED_KEY = "__starChancesForced";
+const forcedMode = (): ChancesMode | null => (globalThis as Record<string, unknown>)[FORCED_KEY] as ChancesMode | null ?? null;
 
 export function chancesMode(): ChancesMode {
+  const forced = forcedMode();
   if (forced) return forced;
   const u = urlOverride();
   if (u) return u;
@@ -60,7 +64,7 @@ export function setChancesMode(v: ChancesMode) {
 
 /** Tests only: force a mode with no browser (null clears it). */
 export function forceChancesMode(v: ChancesMode | null) {
-  forced = v;
+  (globalThis as Record<string, unknown>)[FORCED_KEY] = v;
   listeners.forEach((f) => f());
 }
 
