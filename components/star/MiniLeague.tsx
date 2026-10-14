@@ -101,8 +101,7 @@ export function LeagueDropdown({ career, glow, onOpen }: { career: CareerState; 
         </span>
       </button>
       {open && (
-        <div className="absolute inset-x-0 top-full" style={{ animation: "kib-drop .18s ease-out", background: "rgba(4,16,10,.86)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" }}>
-          <style>{`@keyframes kib-drop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}`}</style>
+        <div className="absolute inset-x-0 top-full" style={{ background: "rgba(4,16,10,.86)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" }}>
           <MiniLeague career={career} glow={glow} rows={5} onOpen={onOpen} />
         </div>
       )}

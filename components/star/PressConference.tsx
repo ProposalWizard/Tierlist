@@ -29,7 +29,7 @@ export default function PressConference({ question, onAnswer }: {
 
         <div className="text-center">
           <Kicker color="#7dd3fc">{question.headline}</Kicker>
-          <h1 className="kit-drop-in mt-3 text-xl font-black leading-tight" style={{ textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>{question.question}</h1>
+          <h1 className="mt-3 text-xl font-black leading-tight" style={{ textShadow: "0 2px 8px rgba(0,0,0,.6)" }}>{question.question}</h1>
           <div className="mt-2 flex justify-center gap-1.5" aria-hidden>
             {["🎙️", "🎙️", "🎙️"].map((m, i) => <span key={i} className="kit-rise text-lg" style={{ animationDelay: `${300 + i * 90}ms` }}>{m}</span>)}
           </div>

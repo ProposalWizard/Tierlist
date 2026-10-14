@@ -45,7 +45,7 @@ import ClubBadge from "./ClubBadge";
 import type { ChanceResolved } from "./CanvasMatch";
 import type { HubPhase } from "./HomeHub";
 import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
-import { ClubCard, CountUp, RiseIn, Glow, Badge, EmptySlots, glowOf, rgba, prefersReducedMotion, useClubTheme } from "./ui";
+import { ClubCard, CountUp, RiseIn, Glow, Badge, EmptySlots, glowOf, rgba, useClubTheme } from "./ui";
 
 type AppId = "social" | "kickabout" | "league" | "fixtures" | "messages" | "appstore";
 type Leave = HubPhase | "settings";
@@ -89,13 +89,6 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
 }) {
   const theme = useClubTheme(career);
   const [app, setApp] = useState<AppId | null>(null);
-  const [closing, setClosing] = useState(false);
-  /** The app has finished zooming open. The real match sizes its canvas
-   *  once, when it mounts, so Kickabout waits for this (mid-zoom it would
-   *  measure a pitch a seventh of the size). */
-  const [settled, setSettled] = useState(true);
-  /** Where the app zooms out of: the tapped icon's centre, in the screen. */
-  const [origin, setOrigin] = useState("50% 50%");
   const screenRef = useRef<HTMLDivElement>(null);
   const dateLabel = formatDateNumeric(
     fixtureDate(career.player.startYear, career.season, career.week, "saturday", divisionOf(career)),
@@ -151,20 +144,12 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
 
   const open = (id: AppId | Leave, from?: HTMLElement | null) => {
     if (!INSIDE.has(id)) return onLeave(id as Leave);
-    const box = screenRef.current?.getBoundingClientRect();
-    const r = from?.getBoundingClientRect();
-    if (box && r) setOrigin(`${Math.round(r.left + r.width / 2 - box.left)}px ${Math.round(r.top + r.height / 2 - box.top)}px`);
-    setClosing(false);
     markSeen(id as AppId);
-    setSettled(false);
+    // An app opens on the tap's own frame: no zoom out of the icon (Harry,
+    // 14 Oct 2026: "If I click on something, it should just go straight in").
     setApp(id as AppId);
-    setTimeout(() => setSettled(true), prefersReducedMotion() ? 0 : 420);
   };
-  const goHome = () => {
-    if (prefersReducedMotion()) { setApp(null); return; }
-    setClosing(true);
-    setTimeout(() => { setApp(null); setClosing(false); }, 230);
-  };
+  const goHome = () => setApp(null);
 
   return (
     <div ref={boxRef} className="flex h-full w-full items-center justify-center overflow-hidden">
@@ -178,11 +163,11 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
               {app !== null && (
                 <div
                   key={app}
-                  className={`${closing ? "kit-app-close" : "kit-app-open"} flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[22px]`}
-                  style={{ transformOrigin: origin, background: `radial-gradient(110% 38% at 50% 0%, ${rgba(theme.glow, 0.24)} 0%, transparent 70%), linear-gradient(180deg, #0b1220, #05080f)` }}
+                  className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[22px]"
+                  style={{ background: `radial-gradient(110% 38% at 50% 0%, ${rgba(theme.glow, 0.24)} 0%, transparent 70%), linear-gradient(180deg, #0b1220, #05080f)` }}
                 >
                   {app === "social" && <MediaFeed career={career} mode="browse" onToggleLike={onToggleLike} inPhone />}
-                  {app === "kickabout" && <Kickabout ready={settled} />}
+                  {app === "kickabout" && <Kickabout ready />}
                   {app === "league" && (
                     <AppShell app={appOf("league")}>
                       <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2 pb-2 text-[12px]"><LeagueScreen career={career} compact /></div>
@@ -219,7 +204,7 @@ function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true, o
   const ref = useRef<HTMLSpanElement>(null);
   if (off) return (
     <button onClick={() => onOpen("appstore", ref.current)} aria-label="Not installed yet — open the App Store" data-app-off className="kib-press flex min-w-0 flex-col items-center gap-1">
-      <span ref={ref} className="kit-icon-in relative grid aspect-square place-items-center rounded-[28%]" style={{ width: size, animationDelay: `${index * 26}ms`, background: "linear-gradient(160deg, #0b0f17, #020304)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.07), 0 7px 14px -6px rgba(0,0,0,.8)" }}>
+      <span ref={ref} className="relative grid aspect-square place-items-center rounded-[28%]" style={{ width: size, background: "linear-gradient(160deg, #0b0f17, #020304)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.07), 0 7px 14px -6px rgba(0,0,0,.8)" }}>
         <span className="text-white" style={{ fontSize: size * 0.48, filter: "brightness(0) opacity(.55)" }}>{app.icon}</span>
       </span>
       {label && <span className="w-full text-center text-[9.5px] font-bold text-white/25">???</span>}
@@ -229,10 +214,9 @@ function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true, o
     <button onClick={() => onOpen(app.id, ref.current)} className="kib-press flex min-w-0 flex-col items-center gap-1">
       <span
         ref={ref}
-        className="kit-icon-in relative grid aspect-square place-items-center rounded-[28%]"
+        className="relative grid aspect-square place-items-center rounded-[28%]"
         style={{
           width: size,
-          animationDelay: `${index * 26}ms`,
           fontSize: size * 0.48,
           background: `linear-gradient(160deg, ${app.bg[0]}, ${app.bg[1]})`,
           boxShadow: "inset 0 1px 0 rgba(255,255,255,.5), inset 0 -3px 6px rgba(0,0,0,.25), 0 7px 14px -6px rgba(0,0,0,.8)",
@@ -240,7 +224,7 @@ function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true, o
       >
         <span aria-hidden className="pointer-events-none absolute inset-x-[6%] top-[4%] h-[46%] rounded-t-[40%] bg-gradient-to-b from-white/35 to-transparent" />
         <span className="relative" style={{ filter: "drop-shadow(0 2px 2px rgba(0,0,0,.35))" }}>{app.icon}</span>
-        <Badge count={badge} delay={380 + index * 26} />
+        <Badge count={badge} />
       </span>
       {label && <span className="w-full truncate text-center text-[9.5px] font-bold text-white" style={{ textShadow: "0 1px 3px rgba(0,0,0,.9)" }}>{app.label}</span>}
     </button>
