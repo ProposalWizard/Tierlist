@@ -8709,6 +8709,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // pitch (~226 px) a 48 px "DEFLECTED" ran off both edges. Only ever shrinks —
   // a word that already fits keeps its size (useFitWidth.ts).
   useFitWidth(actionBannerTextRef, actionBanner);
+  // The Arcade banner never carries over onto a new screen: half time, full
+  // time (both a `pause`), the scores sheet, the end of the match. It fades out
+  // fast instead (ArcadeBanner.tsx cut). A cut to the commentary is not one.
+  useEffect(() => {
+    if (pause || scoresOpen || phase === "postmatch" || phase === "shootout") arcade.cut();
+  }, [pause, scoresOpen, phase, arcade.item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useFitWidth(offsideBannerTextRef, phase === "result" && outcome === "offside");
 
   // ── The sandbox's live commentary and the situation hint ──

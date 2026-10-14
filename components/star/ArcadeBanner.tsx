@@ -37,7 +37,12 @@ interface Item {
   ms: number;
   side: BannerSide;
   at: number;
+  /** Cut short: a new screen came up (half time, full time, the scores). Fades out fast. */
+  cut?: boolean;
 }
+
+/** How fast a cut-short banner fades (ms). */
+export const CUT_FADE_MS = 180;
 
 /** How long each word is up (ms). Harry's page: PASS 0.7, SAVED 0.9, ASSIST 1.1, GOAL 1.3. */
 export function bannerMs(text: string): number {
@@ -114,12 +119,32 @@ export function useArcadeBanner() {
     put(text, side);
   }, [put]);
 
+  /**
+   * A new screen came up (half time, full time, the scores, the end of the
+   * match): the banner never carries over onto it. Fades out in CUT_FADE_MS,
+   * and anything waiting to show is dropped. A cut to the commentary is NOT a
+   * new screen: the banner finishes its time over it.
+   */
+  const cut = useCallback(() => {
+    pending.current = null;
+    if (waitTimer.current) { window.clearTimeout(waitTimer.current); waitTimer.current = null; }
+    const c = cur.current;
+    if (!c || c.cut) return;
+    const it: Item = { ...c, cut: true };
+    cur.current = it;
+    setItem(it);
+    if (endTimer.current) window.clearTimeout(endTimer.current);
+    endTimer.current = window.setTimeout(() => {
+      if (cur.current?.id === it.id) { cur.current = null; setItem(null); }
+    }, CUT_FADE_MS);
+  }, []);
+
   useEffect(() => () => {
     if (endTimer.current) window.clearTimeout(endTimer.current);
     if (waitTimer.current) window.clearTimeout(waitTimer.current);
   }, []);
 
-  return { item, show };
+  return { item, show, cut };
 }
 
 const FONT = "KibArcade";
@@ -166,7 +191,7 @@ const BURST_IN = starPath(14, 0.7, 0.62, 0.12);
 const TOP: Record<BannerSide, string> = { top: "25%", bottom: "70%", top3d: "16%" };
 
 export default function ArcadeBanner({ item, follow }: {
-  item: { id: number; text: string; ms: number; side: BannerSide } | null;
+  item: { id: number; text: string; ms: number; side: BannerSide; cut?: boolean } | null;
   /** Where the banner should be right now. Polled while it is up, so it keeps
    *  out of the ball's half as the ball moves (a team-mate holding the ball
    *  after your pass is never covered). */
@@ -229,7 +254,11 @@ export default function ArcadeBanner({ item, follow }: {
         data-arcade-banner={item.text}
         data-arcade-id={item.id}
         className="pointer-events-none absolute inset-x-0 z-40 flex items-center justify-center"
-        style={{ top: TOP[side ?? item.side], transform: "translateY(-50%)", transition: "top 220ms ease-out" }}
+        style={{
+          top: TOP[side ?? item.side], transform: "translateY(-50%)",
+          opacity: item.cut ? 0 : 1,
+          transition: `top 220ms ease-out, opacity ${CUT_FADE_MS}ms ease-out`,
+        }}
       >
         <div
           className="kib-arcade-pop relative flex items-center justify-center"
