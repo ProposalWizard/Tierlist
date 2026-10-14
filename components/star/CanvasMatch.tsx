@@ -52,7 +52,8 @@ import {
 } from "@/lib/star/pitch";
 import { mulberry32 } from "@/lib/star/season";
 import { newChancesOn } from "@/lib/star/newChances";
-import { playOnWanted, startPlayOn, stepPlayOn, carryFrom, carryOnLeadIn, MAX_LAY_OFFS, type PlayOn, type CarryFrom } from "@/lib/star/playOn";
+import { playOnWanted, startPlayOn, stepPlayOn, carryFrom, carryOnLeadIn, MAX_LAY_OFFS, playOnStickWanted, startPlayOnStick, steerPlayOn, callForIt, callForItShown, type PlayOn, type CarryFrom } from "@/lib/star/playOn";
+import { afterPassStickOn } from "@/lib/star/afterPass";
 import { dealDribble, dribbleLevelFor, newDribbleDeal, type DribbleDeal } from "@/lib/star/dribbleDeal";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { deflectBlock } from "@/lib/star/deflection";
@@ -1452,6 +1453,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const playOnCaughtRef = useRef(false);
   /** Where everyone was when a pass in a no-goal picture found its man: the next picture is reached from here. */
   const carryOnRef = useRef<CarryFrom | null>(null);
+  /** "After you pass: Joystick" (lib/star/afterPass.ts): the stick is up, your thumb on it, and the captain's call's answer. */
+  const [stickLive, setStickLive] = useState(false);
+  const poStickUiRef = useRef<{ id: number; cx: number; cy: number; fx: number; fy: number; vx: number; vy: number } | null>(null);
+  const [callMsg, setCallMsg] = useState<string | null>(null);
+  const callMsgTimerRef = useRef<number | null>(null);
+  const flashCallMsg = (m: string) => {
+    setCallMsg(m);
+    if (callMsgTimerRef.current !== null) window.clearTimeout(callMsgTimerRef.current);
+    callMsgTimerRef.current = window.setTimeout(() => setCallMsg(null), 1500);
+  };
   const [leadInOn, setLeadInOn] = useState(false);
   /** See the `onChanceServed` / `neverHooked` props. Held in refs for the
    *  same reason `openOn` is — the loop reads them outside React's render. */
@@ -4754,6 +4765,28 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       feelSt.fx = live;
     }
 
+    // "After you pass: Joystick" (lib/star/afterPass.ts): the stick, bottom-left,
+    // in the match's own picture (the same stick the top-down dribble draws).
+    if (phaseRef.current === "flight" && playOnRef.current?.stick) {
+      const st = poStickUiRef.current;
+      const rr = Math.min(W, H) * 0.13;
+      // Resting above the commentary box, which covers the bottom of the pitch.
+      const ox = st ? st.fx * W : Math.max(rr * 1.25, W * 0.27), oy = st ? st.fy * H : H * 0.72;
+      ctx.beginPath(); ctx.arc(ox, oy, rr, 0, Math.PI * 2);
+      ctx.fillStyle = st ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.22)"; ctx.fill();
+      ctx.lineWidth = Math.max(2, rr * 0.06); ctx.strokeStyle = st ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.45)"; ctx.stroke();
+      const kx = ox + (st ? st.vx : 0) * rr, ky = oy + (st ? st.vy : 0) * rr;
+      ctx.beginPath(); ctx.arc(kx, ky, rr * 0.42, 0, Math.PI * 2);
+      ctx.fillStyle = st ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.5)"; ctx.fill();
+      if (!st) {
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.font = `700 ${Math.max(11, Math.round(W * 0.03))}px system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.fillText("Keep running", ox, oy - rr - 8);
+        ctx.textAlign = "left";
+      }
+    }
+
     // --- Curve boots: a live guide line while the swipe is in progress ---
     //
     // Every other drag in this game shows something happening while you're
@@ -5268,6 +5301,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     w.__starMatch = {
       phase: () => phaseRef.current,
       kind: () => scenarioRef.current.kind,
+      // "After you pass: Joystick": is the stick up, your push, what he chose.
+      playOn: () => {
+        const po = playOnRef.current;
+        if (!po) return null;
+        const s = po.stick;
+        return { stick: !!s, layOffLive: po.layOffLive, choice: s?.choice ?? null, push: s ? { ...s.push } : null, you: { ...scenarioRef.current.player }, youOnScreen: pitchToClient(scenarioRef.current.player) };
+      },
       ball: () => pitchToClient(ballRef.current ? ballRef.current.pos : scenarioRef.current.ball),
       goal: () => pitchToClient({ x: CX, y: 0 }),
       // the power a drag of (dx, dy) screen px back from the ball would give
@@ -5643,8 +5683,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             }
             if (po.layOffLive && !wasLive) {
               layOffsLeftRef.current -= 1;
-              pushLine("He lays it back into your run…");
+              pushLine(po.stick?.choice === "through" ? "Through ball, into your run!" : po.stick ? "He plays it back to your feet…" : "He lays it back into your run…");
               playKick();
+            }
+            if (po.stick?.note) {
+              flashCallMsg(po.stick.note === "late" ? "Too late, he's shooting" : "No lane to you");
+              po.stick.note = null;
             }
           }
           let res = stepBall(ballRef.current, scenarioRef.current, rngRef.current, h);
@@ -7605,6 +7649,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const isTouchContinuation = chain !== null && chain.touchTouches !== undefined;
     // A new picture starts a new move (playOn.ts); a re-touch / a lay-off taken back is the same move.
     playOnRef.current = null;
+    poStickUiRef.current = null;
+    setStickLive(false);
     if (!isTouchContinuation) { leadPlayedRef.current = false; layOffsLeftRef.current = MAX_LAY_OFFS; }
     const carry = chain && !isTouchContinuation ? carryOnRef.current : null;
     carryOnRef.current = null;
@@ -7914,6 +7960,61 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (Math.abs(dx) >= 0.08 * rect.width && Math.abs(dx) > Math.abs(dy) && dt < 350) fpBurst(run, dx > 0 ? 1 : -1);
     }
   };
+  /**
+   * "After you pass: Joystick" (lib/star/afterPass.ts): while your pass plays
+   * on, the left of the screen is a floating stick (where your thumb lands; it
+   * follows the thumb past its rim). The push is turned into a pitch direction
+   * through the match's own camera, so up the screen is wherever the picture
+   * has up. Returns true when it used the pointer.
+   */
+  const poStickInput = (kind: "down" | "move" | "up", e: React.PointerEvent): boolean => {
+    const po = playOnRef.current, c = canvasRef.current;
+    if (!po?.stick || !c) { poStickUiRef.current = null; return false; }
+    const rect = c.getBoundingClientRect();
+    const rr = Math.min(rect.width, rect.height) * 0.13;
+    if (kind === "down") {
+      if (poStickUiRef.current) return false;
+      const f = clientToCanvasFrac(e.clientX, e.clientY);
+      if (f.sx >= 0.6) return false;
+      try { c.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      poStickUiRef.current = { id: e.pointerId, cx: e.clientX, cy: e.clientY, fx: f.sx, fy: f.sy, vx: 0, vy: 0 };
+      return true;
+    }
+    const st = poStickUiRef.current;
+    if (!st || st.id !== e.pointerId) return false;
+    if (kind === "up") {
+      poStickUiRef.current = null;
+      steerPlayOn(po, 0, 0);
+      try { c.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      return true;
+    }
+    let dx = (e.clientX - st.cx) / rr, dy = (e.clientY - st.cy) / rr;
+    const m = Math.hypot(dx, dy);
+    if (m > 1.35) {
+      // Past the rim: the stick comes with the thumb.
+      const k = (m - 1.35) / m;
+      st.cx += (e.clientX - st.cx) * k; st.cy += (e.clientY - st.cy) * k;
+      const f = clientToCanvasFrac(st.cx, st.cy); st.fx = f.sx; st.fy = f.sy;
+      dx = (e.clientX - st.cx) / rr; dy = (e.clientY - st.cy) / rr;
+    }
+    const ml = Math.hypot(dx, dy);
+    if (ml > 1) { dx /= ml; dy /= ml; }
+    st.vx = dx; st.vy = dy;
+    const a = pitchFromPointer(st.cx, st.cy), b = pitchFromPointer(st.cx + dx * rr, st.cy + dy * rr);
+    const pvx = b.x - a.x, pvy = b.y - a.y, pl = Math.hypot(pvx, pvy);
+    const mag = Math.min(1, Math.hypot(dx, dy));
+    steerPlayOn(po, pl > 1e-6 ? (pvx / pl) * mag : 0, pl > 1e-6 ? (pvy / pl) * mag : 0);
+    return true;
+  };
+  /** Captain's "Call for it" (playOn.ts callForIt). */
+  const onCallForIt = () => {
+    const po = playOnRef.current;
+    if (!po?.stick || phaseRef.current !== "flight") return;
+    const r = callForIt(po, scenarioRef.current);
+    if (r === "late") flashCallMsg("Too late, he's shooting");
+    else if (r === "coming") flashCallMsg("It's coming!");
+    else { flashCallMsg("Calling for it!"); pushLine(`${playerLabel()} calls for it…`); }
+  };
   const onPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     primeMatchSound();
@@ -7937,6 +8038,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       return;
     }
+    if (phaseRef.current === "flight" && playOnRef.current?.stick && poStickInput("down", e)) return;
     if (phaseRef.current === "flight") {
       if (!canCurve) return;
       curveSwipeStartRef.current = { x: e.clientX, y: e.clientY };
@@ -8017,6 +8119,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   };
   const onPointerMove = (e: React.PointerEvent) => {
+    if (poStickUiRef.current && poStickInput("move", e)) return;
     if (phaseRef.current === "tdDribble" && dribbleControlRef.current === "stick") { tdStickInput("move", e); return; }
     if (phaseRef.current === "tdDribble") {
       // Drag steers (your lane follows your thumb); a fast sideways flick knocks it past.
@@ -8086,6 +8189,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
   };
   const onPointerUp = (e: React.PointerEvent) => {
+    if (poStickUiRef.current && poStickInput("up", e)) return;
     if (phaseRef.current === "tdDribble" && dribbleControlRef.current === "stick") { tdStickInput("up", e); return; }
     if (nudgeDragRef.current) {
       // The swing stays where you left it; another drag carries on from there.
@@ -8458,7 +8562,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     {
       const sc = scenarioRef.current;
       const touchOn = touchModeOnRef.current && canExtraTouch;
-      if (!touchOn && !shootoutKickRef.current && playOnWanted({
+      // "After you pass: Joystick" (lib/star/afterPass.ts): any pass in a chance
+      // with a goal in it gives you the stick (no build-up needed). Auto run
+      // takes the branch below, exactly as before.
+      if (!touchOn && !shootoutKickRef.current && afterPassStickOn() && playOnStickWanted({
+        newChances: newChancesOn(), stick: true,
+        kind: sc.kind, youShotAtGoal: ballRef.current.youStruckAtGoal === true, auto: !!auto,
+      })) {
+        playOnRngRef.current = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x61a7) >>> 0);
+        const bl = ballRef.current;
+        // You are where you struck it (not the stand-off you lined it up from).
+        sc.player = { x: bl.pos.x, y: bl.pos.y };
+        playOnRef.current = startPlayOnStick(sc, playOnRngRef.current, { x: bl.pos.x + bl.vel.x * 0.8, y: bl.pos.y + bl.vel.y * 0.8 });
+        poStickUiRef.current = null;
+        setStickLive(true);
+      } else if (!touchOn && !shootoutKickRef.current && playOnWanted({
         newChances: newChancesOn(),
         hadBuildUp: leadPlayedRef.current || PASS_BUILD_UP_KINDS.has(sc.kind),
         kind: sc.kind, youShotAtGoal: ballRef.current.youStruckAtGoal === true, auto: !!auto,
@@ -8767,6 +8885,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             </svg>
             TOUCH
           </button>
+        )}
+
+        {/* "After you pass: Joystick" — the captain's call (playOn.ts callForIt). */}
+        {phase === "flight" && callForItShown({ captain: isCaptain, stickLive, layOffLive: false }) && (
+          <button
+            type="button"
+            data-call-for-it
+            onPointerDown={(e) => { e.stopPropagation(); }}
+            onClick={onCallForIt}
+            className="absolute bottom-[30%] right-3 z-30 pointer-events-auto rounded-full bg-amber-400 px-4 py-2.5 text-[13px] font-black text-gray-950 shadow-lg active:scale-95"
+          >
+            Call for it
+          </button>
+        )}
+        {callMsg && phase === "flight" && (
+          <div data-call-msg className="absolute bottom-[38%] right-3 z-30 pointer-events-none rounded-full bg-black/70 px-3 py-1 text-[12px] font-black text-white">
+            {callMsg}
+          </div>
         )}
 
         {/* A build-up before the chance (lib/star/leadInGen.ts): a tap skips it. */}

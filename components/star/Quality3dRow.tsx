@@ -17,6 +17,7 @@ import { useQuality3dSetting, setQuality3dSetting, autoQuality3d, type Quality3d
 import { createPortal } from "react-dom";
 import { useTexturePack, setTexturePack, TEXTURE_PACKS, TEXTURE_PACK_NAMES, TEXTURE_PACK_LINES, TEXTURE_PACK_PREVIEW, type TexturePack } from "@/lib/star/style3d/texturePack";
 import { useChancesMode, setChancesMode } from "@/lib/star/newChances";
+import { useAfterPassMode, setAfterPassMode } from "@/lib/star/afterPass";
 import { SegTabs } from "./screenKit";
 import { SetNote } from "./settingsKit";
 
@@ -38,6 +39,7 @@ export default function Quality3dRow({ when = "Applies next time one opens." }: 
       </SetNote>
       <TexturePackRow />
       <ChancesRow />
+      <AfterPassRow />
     </>
   );
 }
@@ -146,6 +148,22 @@ function ChancesRow() {
       </div>
       <SetNote dim className="mt-1 text-[10px]">
         New: chances follow the match (right wing, right kind, build-up on some).
+      </SetNote>
+    </>
+  );
+}
+
+/** "After you pass: Auto run | Joystick" (Harry, 14 Oct 2026), directly under Chances. */
+function AfterPassRow() {
+  const m = useAfterPassMode();
+  return (
+    <>
+      <div className="mt-3 flex items-center justify-between gap-2" data-after-pass-row>
+        <span className="text-[14px] font-bold text-white">After you pass</span>
+        <SegTabs className="w-[170px] shrink-0" value={m} onChange={setAfterPassMode} tabs={[["auto", "Auto run"], ["stick", "Joystick"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        With Chances: New. Joystick: steer your run after a pass; he can pass back or slide you in.
       </SetNote>
     </>
   );
