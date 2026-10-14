@@ -12,6 +12,8 @@ import { buildScenario, goalInView, VIEW_ASPECT, type Scenario, type ScenarioKin
 import { applyOverrideToScenario, type PosOverride } from "./scenarioEdit";
 import { frameFromScenario } from "./scenarioFrame";
 import { mulberry32 } from "./season";
+import { brainSetup, brainAim, brainOptionsHere } from "./keeperBrain";
+import { enforceHardRules } from "./kindRules";
 import { leadInEntities, alongKeys, type LeadIn, type LeadEntity, type KeyPt } from "./leadIn";
 import {
   PITCH_W, HALF_LEN, CX, GOAL_W, POST_L, POST_R, NET_DEPTH, BOX_DEPTH, BOX_L,
@@ -234,8 +236,57 @@ export function meansOf(ms: ShotMeasure[]): MeasureMeans {
 const r2 = (v: number) => Math.round(v * 100) / 100;
 const rv = (v: Vec2): Vec2 => ({ x: r2(v.x), y: r2(v.y) });
 
-/** A 5:8 frame (the game's) holding the goal, the ball and the keeper. */
-function cameraFor(ball: Vec2, keeper: Vec2 | null): Viewport {
+/** Real people this close to the ball are always in the picture (Harry, 14 Oct 2026). */
+export const FRAME_PEOPLE_M = 20;
+/** Grass kept round the outermost man / post, in metres. */
+const FRAME_PAD_M = 3;
+
+/**
+ * A 5:8 frame (the game's) holding the whole goal, the ball, the keeper and
+ * every real player within FRAME_PEOPLE_M of the ball. The page plays it with
+ * `scene.ownFrame`, so this is the camera on screen (the canvas only ever
+ * grows it to its own shape). A wide man used to be cut off by the old
+ * 42 m-tall cap; there is no cap now beyond what the people need.
+ */
+export function cameraFor(ball: Vec2, keeper: Vec2 | null, people: Vec2[] = []): Viewport {
+  const near = people.filter((q) => Math.hypot(q.x - ball.x, q.y - ball.y) <= FRAME_PEOPLE_M);
+  const pts = [ball, ...(keeper ? [keeper] : []), ...near, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }, { x: CX, y: -NET_DEPTH }];
+  const pad = FRAME_PAD_M;
+  const x1 = Math.min(...pts.map((p) => p.x)) - pad, x2 = Math.max(...pts.map((p) => p.x)) + pad;
+  const y1 = Math.min(-NET_DEPTH - 2, Math.min(...pts.map((p) => p.y)) - pad);
+  const yBot = Math.max(...pts.map((p) => p.y)) + pad + 3; // room below the lowest man to pull back into
+  const h = Math.max(28, yBot - y1, (x2 - x1) / VIEW_ASPECT);
+  const w = h * VIEW_ASPECT;
+  // Centred on the people; nudged onto the pitch only while that keeps them all in.
+  let cx = (x1 + x2) / 2;
+  const lo = -3 + w / 2, hi = PITCH_W + 3 - w / 2;
+  const a = Math.max(lo, x2 - w / 2), b = Math.min(hi, x1 + w / 2);
+  if (a <= b) cx = Math.min(Math.max(cx, a), b);
+  return { x1: r2(cx - w / 2), x2: r2(cx + w / 2), y1: r2(y1), y2: r2(y1 + h) };
+}
+
+/** Is `q` on screen in `v` (a man's centre at least `m` metres inside)? */
+export function onScreen(v: Viewport, q: Vec2, m = 0.8): boolean {
+  return q.x > v.x1 + m && q.x < v.x2 - m && q.y > v.y1 + m && q.y < v.y2 - m;
+}
+
+/** Every real player within FRAME_PEOPLE_M of the ball, the keeper and the whole goal on screen in `v`? */
+export function frameHoldsShot(s: SbShot, v: Viewport): boolean {
+  const p = peopleOf(s);
+  const need = [...(p.keeper ? [p.keeper] : []), ...[...p.opps, ...p.mates].filter((q) => Math.hypot(q.x - p.ball.x, q.y - p.ball.y) <= FRAME_PEOPLE_M), p.ball];
+  const goal = [{ x: POST_L, y: 0 }, { x: POST_R, y: 0 }, { x: POST_L, y: -NET_DEPTH }, { x: POST_R, y: -NET_DEPTH }];
+  return need.every((q) => onScreen(v, q)) && goal.every((q) => onScreen(v, q, 0));
+}
+
+export function seedForShot(s: SbShot): number {
+  return Math.abs(s.id.split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7)) % 1_000_000;
+}
+
+/**
+ * The close camera (13 Oct 2026): ball, keeper and goal only, at most 42 m
+ * tall. The Moving highlight keeps it (its lead-in camera glides to it).
+ */
+function closeCameraFor(ball: Vec2, keeper: Vec2 | null): Viewport {
   const pts = [ball, ...(keeper ? [keeper] : []), { x: POST_L, y: 0 }, { x: POST_R, y: 0 }, { x: CX, y: -NET_DEPTH }];
   const pad = 4;
   const x1 = Math.min(...pts.map((p) => p.x)) - pad, x2 = Math.max(...pts.map((p) => p.x)) + pad;
@@ -248,16 +299,13 @@ function cameraFor(ball: Vec2, keeper: Vec2 | null): Viewport {
   return { x1: r2(cx - w / 2), x2: r2(cx + w / 2), y1: r2(y1), y2: r2(y1 + h) };
 }
 
-export function seedForShot(s: SbShot): number {
-  return Math.abs(s.id.split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7)) % 1_000_000;
-}
-
-export function overrideForShot(s: SbShot, kind: ScenarioKind, seed: number): PosOverride {
+/** `wide`: the Play camera (cameraFor: everyone within 20 m). Absent: the close camera. */
+export function overrideForShot(s: SbShot, kind: ScenarioKind, seed: number, wide = false): PosOverride {
   const p = peopleOf(s);
   const sc = buildScenario(kind, mulberry32(seed));
   const frame = frameFromScenario(sc);
   // A penalty keeps the game's own penalty camera (the spot never moves).
-  const camera = goalInView(kind) && kind !== "penalty" ? cameraFor(p.ball, p.keeper) : sc.viewport;
+  const camera = goalInView(kind) && kind !== "penalty" ? (wide ? cameraFor(p.ball, p.keeper, [...p.opps, ...p.mates]) : closeCameraFor(p.ball, p.keeper)) : sc.viewport;
   const inside = (q: Vec2) => !camera || (q.x > camera.x1 + 0.8 && q.x < camera.x2 - 0.8 && q.y > camera.y1 + 0.8 && q.y < camera.y2 - 0.8);
   const ov: PosOverride = { items: {}, removed: [], added: [], ball: rv(p.ball) };
   if (camera) ov.camera = camera;
@@ -279,13 +327,38 @@ export function overrideForShot(s: SbShot, kind: ScenarioKind, seed: number): Po
   return ov;
 }
 
-/** The real shot as one of our scenarios, built fresh every call. */
-export function scenarioForShot(s: SbShot): Scenario {
+/**
+ * The real shot as one of our scenarios, built fresh every call.
+ * `wideFrame`: the Play tab's camera (every real man within 20 m and the whole
+ * goal; played with `scene.ownFrame`). Absent: the close camera.
+ */
+export function scenarioForShot(s: SbShot, opts: { wideFrame?: boolean } = {}): Scenario {
   const kind = playKindForShot(s);
   const seed = seedForShot(s);
   const sc = buildScenario(kind, mulberry32(seed));
-  applyOverrideToScenario(sc, overrideForShot(s, kind, seed));
+  applyOverrideToScenario(sc, overrideForShot(s, kind, seed, !!opts.wideFrame));
+  // The real keeper starts where he really stood (keeperHoldsStart): the keeper
+  // brain would otherwise walk him to OUR set spot while you aim (measured:
+  // 2.15 m off his line real → 1.91 m after 2 s of aiming, all 2,741 shots).
+  if (peopleOf(s).keeper) sc.keeperHoldsStart = true;
   return sc;
+}
+
+/**
+ * Where the real keeper is after `aimS` seconds of you aiming, when the real
+ * shot is played in our engine (the keeper brain's set walk, as CanvasMatch
+ * runs it: hard rules, brainSetup, then brainAim every frame). Metres off his
+ * line. `hold` false = as before the fix (he walks to our set spot).
+ * Null: no keeper in the freeze frame.
+ */
+export function playedKeeperOff(s: SbShot, aimS = 2, hold = true): number | null {
+  if (!peopleOf(s).keeper) return null;
+  const sc = scenarioForShot(s);
+  if (!hold) delete sc.keeperHoldsStart;
+  enforceHardRules(sc);
+  brainSetup(sc, (seedForShot(s) ^ 0x4b7e) >>> 0, sc.keeperStrength, brainOptionsHere());
+  for (let t = 0; t < aimS; t += 1 / 60) brainAim(sc, 1 / 60);
+  return Math.max(0, sc.keeper.y);
 }
 
 // ─────────────────────────────────────────────────────────────────────────

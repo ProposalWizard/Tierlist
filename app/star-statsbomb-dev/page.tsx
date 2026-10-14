@@ -19,12 +19,14 @@ import EnginePlay from "@/components/star/EnginePlay";
 import type { ScenarioKind } from "@/lib/star/canvasEngine";
 import { PITCH_W, CX, POST_L, POST_R, BOX_L, BOX_R, BOX_DEPTH, SIX_L, SIX_R, SIX_DEPTH, PEN_SPOT_Y, NET_DEPTH } from "@/lib/star/pitch";
 import {
-  STATSBOMB_CREDIT, KIND_LABEL, peopleOf, kindForShot, scenarioForShot, measureReal, ourMeasures, meansOf,
+  STATSBOMB_CREDIT, KIND_LABEL, peopleOf, kindForShot, scenarioForShot, measureReal, ourMeasures, meansOf, playedKeeperOff,
   type SbShot, type SbFile, type MeasureMeans, type SbLeadin, type SbLeadinFile,
 } from "@/lib/star/statsbombShots";
 import MovingHighlight from "./MovingHighlight";
 
 const PAGE = 20;
+/** Play with this page's own camera (every real man within 20 m, the whole goal). */
+const OWN_FRAME = { ownFrame: true } as const;
 const OUTCOMES = ["All", "Goal", "Saved", "Off T", "Blocked", "Other"] as const;
 const TYPES = ["All", "Open Play", "Free Kick", "Penalty", "Corner"] as const;
 const BANDS = [
@@ -89,10 +91,16 @@ function Bar({ label, real, ours, unit, max }: { label: string; real: number; ou
 
 function Compare({ shots }: { shots: SbShot[] }) {
   const [kind, setKind] = useState<ScenarioKind>("one_on_one");
-  const { real, ours } = useMemo(() => {
+  const { real, ours, kReal, kPlayed, kN } = useMemo(() => {
     const r = meansOf(shots.filter((s) => kindForShot(s) === kind).map(measureReal));
     const o = meansOf(ourMeasures(kind, 200));
-    return { real: r, ours: o };
+    // The real keeper, played: where he stands after 2 s of you aiming at the
+    // real shot in our engine (he used to walk to our own set spot).
+    const ks = shots.filter((s) => kindForShot(s) === kind && peopleOf(s).keeper);
+    const avg = (v: number[]) => (v.length ? v.reduce((a, b) => a + b, 0) / v.length : NaN);
+    const kReal = avg(ks.map((s) => Math.max(0, peopleOf(s).keeper!.y)));
+    const kPlayed = avg(ks.map((s) => playedKeeperOff(s) ?? 0));
+    return { real: r, ours: o, kReal, kPlayed, kN: ks.length };
   }, [shots, kind]);
   const chip = (on: boolean) => `rounded-full px-3 py-1 text-xs font-black ${on ? "bg-white text-black" : "bg-white/10 text-white"}`;
   const top = (k: keyof MeasureMeans, floor: number) => Math.max(floor, ...[real[k], ours[k]].filter((v) => !Number.isNaN(v))) * 1.1;
@@ -107,6 +115,10 @@ function Compare({ shots }: { shots: SbShot[] }) {
       <Bar label="Defenders between ball and goal" real={real.blockers} ours={ours.blockers} unit="" max={top("blockers", 1)} />
       <Bar label="Nearest defender to the ball" real={real.nearest} ours={ours.nearest} unit=" m" max={top("nearest", 3)} />
       <Bar label="Keeper off his line" real={real.keeperOff} ours={ours.keeperOff} unit=" m" max={top("keeperOff", 2)} />
+      <div data-keeper-start>
+        <Bar label={`The real keeper when you play the shot (after 2 s of aiming, ${kN} shots)`} real={kReal} ours={kPlayed} unit=" m"
+          max={Math.max(2, ...[kReal, kPlayed].filter((v) => !Number.isNaN(v))) * 1.1} />
+      </div>
       <div className="text-[11px] font-bold text-white">
         Real: every opponent StatsBomb froze near the shot. Ours: the game&apos;s own chances of this kind, 200 seeds.
       </div>
@@ -174,7 +186,7 @@ export default function StatsbombShotsDev() {
   }, [shots, comp, outcome, type, band, search, tab, leadins]);
   useEffect(() => setShown(PAGE), [comp, outcome, type, band, search]);
 
-  const openOn = useMemo(() => (playing ? () => scenarioForShot(playing) : undefined), [playing]);
+  const openOn = useMemo(() => (playing ? () => scenarioForShot(playing, { wideFrame: true }) : undefined), [playing]);
   const chip = (on: boolean) => `rounded-full px-3 py-1 text-xs font-black ${on ? "bg-white text-black" : "bg-white/10 text-white"}`;
 
   return (
@@ -220,7 +232,7 @@ export default function StatsbombShotsDev() {
                 </div>
                 <button onClick={() => setPlaying(null)} className="rounded bg-white/15 px-3 py-1 text-xs font-black">■ Stop</button>
               </div>
-              <EnginePlay key={playing.id} seed={7} openOn={openOn} />
+              <EnginePlay key={playing.id} seed={7} openOn={openOn} scene={OWN_FRAME} />
             </div>
           )}
 
