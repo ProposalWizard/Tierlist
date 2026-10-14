@@ -8,10 +8,13 @@
  * Right under it: "Texture pack" (Harry, 13 Oct 2026), how the 3D match's
  * world is dressed (lib/star/style3d/texturePack.ts). Shown wherever 3D
  * quality is (Settings and the in-match ⚙).
+ *
+ * Under that: "Chances: Old | New" (Harry, 14 Oct 2026), lib/star/newChances.ts.
  */
 import { useEffect, useState } from "react";
 import { useQuality3dSetting, setQuality3dSetting, autoQuality3d, type Quality3d } from "@/lib/star/three3d/quality";
 import { useTexturePack, setTexturePack } from "@/lib/star/style3d/texturePack";
+import { useChancesMode, setChancesMode } from "@/lib/star/newChances";
 import { SegTabs } from "./screenKit";
 import { SetNote } from "./settingsKit";
 
@@ -32,6 +35,7 @@ export default function Quality3dRow({ when = "Applies next time one opens." }: 
         Every 3D scene. Lower = smoother on older phones. Auto{auto ? ` picks ${NAME[auto]} here` : " picks for this phone"}. {when}
       </SetNote>
       <TexturePackRow />
+      <ChancesRow />
     </>
   );
 }
@@ -47,6 +51,22 @@ function TexturePackRow() {
       </div>
       <SetNote dim className="mt-1 text-[10px]">
         The 3D match&apos;s pitch, stadium and ball. Real is today&apos;s look. Light is half way to Bright, dirt and shadows kept. Cartoon is flat, like the players. Bright is lighter, with no big shadows.
+      </SetNote>
+    </>
+  );
+}
+
+/** "Chances: Old | New" (Harry, 14 Oct 2026: "the top toggle under textures for now"). */
+function ChancesRow() {
+  const m = useChancesMode();
+  return (
+    <>
+      <div className="mt-3 flex items-center justify-between gap-2" data-chances-row>
+        <span className="text-[14px] font-bold text-white">Chances</span>
+        <SegTabs className="w-[140px] shrink-0" value={m} onChange={setChancesMode} tabs={[["old", "Old"], ["new", "New"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        New: chances follow the match (right wing, right kind, build-up on some).
       </SetNote>
     </>
   );
