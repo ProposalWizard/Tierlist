@@ -22,6 +22,7 @@ import {
   type SbFile, type SbLeadinFile,
 } from "../../lib/star/statsbombShots";
 import { leadInEntities, leadInCamera, inLockArea, LEAD_LOCK_AREA } from "../../lib/star/leadIn";
+import { chaseNumbers } from "./realShotsChase.mts";
 
 let fails = 0;
 function check(label: string, ok: boolean, got?: unknown) {
@@ -145,6 +146,22 @@ const realShare = realTimed / Math.max(1, timedPasses);
 check(`passes start at the real second (${(realShare * 100).toFixed(0)}% of ${timedPasses}; ${compressed} long moves sped up)`, realShare > 0.6);
 const onShare = passerOn / Math.max(1, passerAll);
 check(`the passer is on the ball as he plays it (${(onShare * 100).toFixed(0)}% of ${passerAll})`, onShare > 0.8);
+
+// ── Chasing (Harry, 14 Oct 2026: "they just run after the ball endlessly") ──
+// Before the rebuild on the build-up's way of moving people (14 Oct 2026):
+// 0.77 men not on the ball within 5 m of it while the passes are played,
+// 14.6% of moving man-frames heading at it, 8.4% of man-frames over 9 m/s
+// (fastest 719 m/s: men jumping), 48 m run a man a lead-in.
+{
+  const c = chaseNumbers(withLead, leads);
+  const p1 = (v: number) => `${(v * 100).toFixed(1)}%`;
+  console.log(`     chasing: ${c.nearChasersPasses.toFixed(2)} men (not on it) within 5 m of the ball during the passes, ${c.nearChasers.toFixed(2)} over the whole lead-in; heading at it ${p1(c.towardSharePasses)} of moving man-frames; ${c.closingFast.toFixed(2)} a frame running at it over 3 m/s; ${c.runPerMan.toFixed(1)} m run a man; fastest ${c.maxSpeed.toFixed(1)} m/s, ${p1(c.over9Share)} of man-frames over 9; end vs the real freeze frame ${c.endVsReal.toFixed(3)} m`);
+  check(`nobody chases the ball: under 0.75 men not on it within 5 m during the passes (${c.nearChasersPasses.toFixed(2)}; before 0.77)`, c.nearChasersPasses < 0.75);
+  check(`men hold their shape: under 20% of moving man-frames head at the ball (${p1(c.towardSharePasses)})`, c.towardSharePasses < 0.2);
+  check(`nobody over 9 m/s (${p1(c.over9Share)} of man-frames; under 0.2%; before 8.4%)`, c.over9Share < 0.002);
+  check(`no endless running: under 25 m a man a lead-in (${c.runPerMan.toFixed(1)} m; before 48)`, c.runPerMan < 25);
+  check(`the end frame is the shot's real freeze frame (${c.endVsReal.toFixed(3)} m)`, c.endVsReal < 0.05);
+}
 
 if (fails) { console.log(`\n${fails} FAILED`); process.exit(1); }
 console.log("\nall ok");
