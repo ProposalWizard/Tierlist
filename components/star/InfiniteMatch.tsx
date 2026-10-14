@@ -36,6 +36,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import EnginePlay from "./EnginePlay";
+import HitboxPanel from "./HitboxPanel";
 import { buildTestCareer } from "@/lib/star/engineProfile";
 import LiveChanceEditor from "./LiveChanceEditor";
 import { liveMatchScenario } from "@/lib/star/liveEdit";
@@ -224,6 +225,9 @@ export default function InfiniteMatch({ settings, onBack }: {
           onComplete={() => setDone("Full time.")}
         />
       </div>
+
+      {/* Hitboxes & jumping (Leo, 14 Oct 2026). */}
+      <HitboxPanel />
 
       {/* ── WHAT IT ACTUALLY SERVED ──
           The whole reason this screen exists. Counts, shares and a per-90,

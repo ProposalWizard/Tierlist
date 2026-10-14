@@ -91,6 +91,12 @@ export const GAMEPLAY_SWITCHES = {
     newText: "Builds on Keeper pro (turns it on too). Keepers read a shot better the nearer it gets, take a ball coming at them on their feet instead of lunging, hold more of the soft ones, and fewer parries drop back in front of goal.",
     oldText: "Keepers' dives and hands from before 13 Oct 2026.",
   },
+  hitboxes: {
+    label: "Hitboxes & jumping (Leo)",
+    // Leo, 14 Oct 2026: "hitboxes are too high … I want jumping to actually affect the hitbox".
+    newText: "Players are the shape of a man: widest at the feet, narrow at the head, nothing above the head unless they jump. Men really jump for a ball in the air (a team-mate for a ball played to him gets a little extra). A shot or chip over a team-mate's head goes over him; a chip over a keeper off his line has a real chance.",
+    oldText: "Hitboxes from before 14 Oct 2026: a tall cylinder as wide at the head as at the feet; any team-mate within 2 m took a ball below 2.6 m, whoever it was for.",
+  },
 } as const;
 
 export type GameplaySwitch = keyof typeof GAMEPLAY_SWITCHES;
@@ -126,3 +132,4 @@ export const oldBallPhysics = () => gameplayVersion("ballPhysics") === "old";
 export const oldShots = () => gameplayVersion("shotsPro") === "old";
 export const oldMatchFlow = () => gameplayVersion("matchFlow") === "old";
 export const oldKeeperFeel = () => gameplayVersion("keeperFeel") === "old";
+export const oldHitboxes = () => gameplayVersion("hitboxes") === "old";
