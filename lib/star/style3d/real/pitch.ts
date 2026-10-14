@@ -26,7 +26,7 @@ const FRAG_HEAD = /* glsl */ `
 varying vec2 vH;
 uniform sampler2D tGCol, tGNrm, tGOrh;
 uniform vec3 uGrassA, uGrassB, uLine, uDirt;
-uniform float uWet, uL, uHW, uStripes, uLines, uBlades, uStripeK;
+uniform float uWet, uL, uHW, uStripes, uLines, uBlades, uStripeK, uFrost;
 float hh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(hh(i), hh(i + vec2(1, 0)), f.x), mix(hh(i + vec2(0, 1)), hh(i + vec2(1, 1)), f.x), f.y); }
@@ -110,6 +110,15 @@ const FRAG_MAP = /* glsl */ `
   gPaint = (1.0 - smoothstep(lw - aa * 0.75, lw + aa * 0.75, d)) * uLines;
   float through = mix(1.0, clamp(det.g, 0.55, 1.25), 0.35) * (0.86 + 0.14 * vn(P * 9.0));
   col = mix(col, uLine * through * (1.0 - gWear * 0.35), gPaint);
+  // texture pack Winter: hoar frost on the grass, heaviest along the touchlines, by the goal lines and in
+  // the corners, patchy, never over the white lines (0 in every other pack: one mix, no read)
+  {
+    float side = abs(P.x) - uHW, ends = max(-P.y, P.y - uL);
+    // the touchlines and the corners frost most; the goal lines a little (the box is where they play)
+    float fm = max(smoothstep(-6.0, 1.5, side), smoothstep(-3.0, 1.5, ends) * 0.3);
+    fm = clamp(fm * 0.9 + 0.08, 0.0, 1.0) * smoothstep(0.3, 0.75, fbm3(P * 0.45) + 0.2);
+    col = mix(col, vec3(0.62, 0.7, 0.72) * (0.9 + 0.1 * det.g), uFrost * fm * (1.0 - gPaint));
+  }
 #ifdef H_FLAT
   // texture pack Cartoon: two flat mown shades and clean white lines, nothing else
   {
@@ -148,7 +157,7 @@ export interface RealPitch {
   mesh: any;
   material: any;
   /** blades/stripes: Look H's dials (lib/star/look/params.ts), 1 = as built. */
-  setLook(o: { grass: [string, string]; wet: number; blades?: number; stripes?: number }): void;
+  setLook(o: { grass: [string, string]; wet: number; blades?: number; stripes?: number; frost?: number }): void;
   dispose(): void;
 }
 
@@ -164,7 +173,7 @@ export function buildRealPitch(T: any, maps: GrassMaps, o: { w?: number; l?: num
     uLine: { value: new T.Color("#f2f4ee") }, uDirt: { value: new T.Color("#6b5a3a") },
     uWet: { value: 0 }, uL: { value: PITCH_LEN }, uHW: { value: PITCH_HALF_W },
     uStripes: { value: o.stripes === false ? 0 : 1 }, uLines: { value: o.lines === false ? 0 : 1 },
-    uBlades: { value: 1 }, uStripeK: { value: 1 },
+    uBlades: { value: 1 }, uStripeK: { value: 1 }, uFrost: { value: 0 },
   };
   const mat = new T.MeshStandardMaterial({ color: "#ffffff", roughness: 0.95, metalness: 0 });
   mat.onBeforeCompile = (sh: any) => {
@@ -192,6 +201,7 @@ export function buildRealPitch(T: any, maps: GrassMaps, o: { w?: number; l?: num
       u.uWet.value = lk.wet;
       if (lk.blades !== undefined) u.uBlades.value = lk.blades;
       if (lk.stripes !== undefined) u.uStripeK.value = lk.stripes;
+      if (lk.frost !== undefined) u.uFrost.value = lk.frost;
     },
     dispose() { mesh.geometry.dispose(); mat.dispose(); },
   };
