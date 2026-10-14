@@ -134,6 +134,8 @@ export const TEST_ONLY = {
   dragReferenceHeightPx: "Gallery/highlights: a bigger picture reads the drag against the real match's canvas height, so a kick hits exactly as hard.",
   holdAt: "Trial: a teaching pause as your free-kick run-up starts and as the strike screen opens (Harry, 2 Oct 2026). Freezes only; never changes a kick.",
   leadIn: "Real shots page: the real passes before a real shot, replayed (recorded positions, no physics) in the match's own picture before the chance starts. Off by default.",
+  dribbleControl: "Dribble stick test page: a stick steers your speed and way on the top-down dribble run instead of the swipe (Harry, 14 Oct 2026). Same men, tackle and passes.",
+  dribbleOnly: "Dribble stick test page: every chance you are handed is a dribble run.",
   scene: "Trial/training: what is on the pitch — a drill can leave out the keeper, the goal, team-mates or the GOAL/PASS text. Only takes things off; the ball and the kick are always the match's (Harry: 'different modes... will be COMPLETELY looking different... it has to be allowed').",
 };
 

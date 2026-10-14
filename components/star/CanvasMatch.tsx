@@ -33,7 +33,7 @@ import { conditionsFor, conditionsLine, type Conditions } from "@/lib/star/weath
 import {
   newDribble, stepDribble, flick, dribbleProgress, dribbleViewport, type DribbleState,
 } from "@/lib/star/dribble";
-import { passBand, pickWaveSizes, duelWaveSizes, newRun as newFpRun, stepRun as stepFpRun, applySteer as fpSteer, applyBurst as fpBurst, applyFeint as fpFeint, applyPass as fpPass, wavesBeaten as fpWavesBeaten, carryLead, BURST_T as FP_BURST_T, type FpRunState, type RunPhase as FpRunPhase, type DuelEvent } from "@/lib/star/firstPersonDribble";
+import { passBand, pickWaveSizes, duelWaveSizes, newRun as newFpRun, stepRun as stepFpRun, applySteer as fpSteer, applyBurst as fpBurst, applyFeint as fpFeint, applyPass as fpPass, applyStick as fpStick, stickBallLead, wavesBeaten as fpWavesBeaten, carryLead, BURST_T as FP_BURST_T, type FpRunState, type RunPhase as FpRunPhase, type DuelEvent } from "@/lib/star/firstPersonDribble";
 import { classifyRelease } from "@/lib/star/dribbleGesture";
 import { PASS_RING } from "@/lib/star/firstPersonRender";
 import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
@@ -338,6 +338,16 @@ interface Props {
    * chance the match serves, with the moment the chance came from; null = none.
    */
   leadIn?: (sc: Scenario, moment?: LeadMoment) => LeadIn | null;
+  /**
+   * TEST PAGES ONLY (/star-dribble-stick-dev): how you move on the top-down
+   * dribble run. "swipe" (absent) = the game's own, unchanged. "stick" = a
+   * floating stick under the left thumb steers your speed and way
+   * (firstPersonDribble.ts "THE STICK"); on the right a tap on a team-mate
+   * passes and a sideways swipe knocks it past. Same men, tackle and passes.
+   */
+  dribbleControl?: "swipe" | "stick";
+  /** TEST PAGES ONLY: every chance the match hands you is a dribble run. */
+  dribbleOnly?: boolean;
   /**
    * Strip the match furniture — the scoreboard plate, the live commentary
    * ticker and the situation hint — leaving the pitch and nothing else.
@@ -758,7 +768,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
  *  Most first chances come by 7' (measured); a later one is read out. */
 const QUICK_START_MAX = 12;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell, plannedOffAt, leadIn }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell, plannedOffAt, leadIn, dribbleControl, dribbleOnly = false }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -1373,6 +1383,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** Top-down: the drawn ball's sideways spring, and the thumb. */
   const tdBallRef = useRef<{ x: number; vx: number }>({ x: 0, vx: 0 });
   const tdTouchRef = useRef<{ x: number; y: number; t: number; anchorLane: number; anchorPitchX: number; samples: { x: number; t: number }[] } | null>(null);
+  /** Top-down on the stick (the `dribbleControl` prop): the stick's thumb (client px origin,
+   *  canvas-fraction origin for drawing, its push now, recent x for a flick) and a right-hand tap. */
+  const dribbleControlRef = useRef(dribbleControl);
+  dribbleControlRef.current = dribbleControl;
+  const dribbleOnlyRef = useRef(dribbleOnly);
+  dribbleOnlyRef.current = dribbleOnly;
+  const tdStickRef = useRef<{ id: number; cx: number; cy: number; fx: number; fy: number; vx: number; vy: number; hist: { vx: number; t: number }[] } | null>(null);
+  const tdTapRef = useRef<{ id: number; x: number; y: number; t: number } | null>(null);
+  /** Development only: when a push from rest first moves you (input to moved, ms). */
+  const tdLatRef = useRef<{ t: number; x: number; y: number } | null>(null);
   const [tdNote, setTdNote] = useState<DuelEvent | null>(null);
   const tdNoteCountRef = useRef(0);
   const [tdReady, setTdReady] = useState(false);
@@ -3730,7 +3750,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const feint = td.feint;
       footballer(td.x, td.y, R, ourKit().shirt, ourKit().trim, {
         sid: "you",
-        pose: feint && feint.kind === "stepover" ? "kick" : "run",
+        pose: feint && feint.kind === "stepover" ? "kick" : td.stick && (td.fwd ?? 0) < 0.4 && !td.burst ? "idle" : "run",
         kickFoot: feint ? feint.dir : 1,
         phase: (td.stride / 1.4) * Math.PI * 2,
         facing: feint && feint.kind === "shoulder" ? feint.dir * 0.3 : td.burst ? td.burst.dir * 0.22 : undefined,
@@ -3740,7 +3760,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // The ball: ahead of your feet, touched on once a stride, knocked further on a burst.
       {
         const burst = td.burst ? Math.min(1, td.burst.t / FP_BURST_T) : 0;
-        const lead = 0.55 + 1.5 * (carryLead(td.stride, tdBallRef.current.x >= td.x ? 1 : -1, burst) - 0.42);
+        const lead = td.stick ? stickBallLead(td, tdBallRef.current.x >= td.x ? 1 : -1, burst)
+          : 0.55 + 1.5 * (carryLead(td.stride, tdBallRef.current.x >= td.x ? 1 : -1, burst) - 0.42);
         const bx = tdBallRef.current.x, by = td.y - lead;
         const drawTdBall = () => {
           const { px, py, scale } = toPx(bx, by);
@@ -3760,6 +3781,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         figureQueue.push({ py: toPx(bx, by).py, draw: drawTdBall });
       }
       flushFigures();
+      // The stick (dribbleControl "stick"): where your thumb is, or where to put it.
+      if (td.stick && phaseRef.current === "tdDribble") {
+        const st = tdStickRef.current;
+        const rr = Math.min(W, H) * 0.13;
+        // Resting above the commentary box, which covers the bottom of the pitch.
+        const ox = st ? st.fx * W : W * 0.22, oy = st ? st.fy * H : H * 0.7;
+        ctx.beginPath(); ctx.arc(ox, oy, rr, 0, Math.PI * 2);
+        ctx.fillStyle = st ? "rgba(0,0,0,0.28)" : "rgba(0,0,0,0.18)"; ctx.fill();
+        ctx.lineWidth = Math.max(2, rr * 0.06); ctx.strokeStyle = st ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.35)"; ctx.stroke();
+        const kx = ox + (st ? st.vx : 0) * rr, ky = oy + (st ? st.vy : 0) * rr;
+        ctx.beginPath(); ctx.arc(kx, ky, rr * 0.42, 0, Math.PI * 2);
+        ctx.fillStyle = st ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.4)"; ctx.fill();
+        if (!st) {
+          ctx.fillStyle = "rgba(255,255,255,0.75)";
+          ctx.font = `700 ${Math.max(11, Math.round(W * 0.03))}px system-ui, sans-serif`;
+          ctx.textAlign = "center";
+          ctx.fillText("Move", ox, oy - rr - 8);
+          ctx.fillText("Tap a mate", W * 0.74, oy);
+          ctx.textAlign = "left";
+        }
+      }
       // How far up the pitch you are.
       const prog = Math.max(0, Math.min(1, (td.startY - td.y) / Math.max(1, td.startY - td.clearY)));
       ctx.fillStyle = "rgba(0,0,0,0.45)";
@@ -5055,6 +5097,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (phaseRef.current === "tdDribble" && tdRef.current && !tdReadyRef.current) {
         const run = tdRef.current;
         const out = stepFpRun(run, dt);
+        const lat = tdLatRef.current;
+        if (lat && (run.x !== lat.x || run.y !== lat.y)) {
+          tdLatRef.current = null;
+          if (offlineDevPlayEnabled()) {
+            const w = window as unknown as { __tdStickLat?: number[] };
+            (w.__tdStickLat ??= []).push(performance.now() - lat.t);
+          }
+        }
         if (run.events && run.events.length !== tdNoteCountRef.current) {
           tdNoteCountRef.current = run.events.length;
           setTdNote(run.events[run.events.length - 1] ?? null);
@@ -6131,6 +6181,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       mates: Math.round(getTuning("dribble.mates")),
       ...(fp.duels ? { duels: true, dribbling: car?.skills.technique ?? 55 } : {}),
     });
+    if (dribbleControlRef.current === "stick") fpStick(run, 0, 0);
+    tdStickRef.current = null;
+    tdTapRef.current = null;
     tdRef.current = run;
     tdReadyRef.current = true;
     setTdReady(true);
@@ -6170,6 +6223,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const b = tdBallRef.current;
     let dir = 0;
     if (run.burst) dir = run.burst.dir;
+    else if (run.stick) dir = Math.abs(run.stick.x) > 0.15 ? Math.sign(run.stick.x) : 0;
     else if (run.feint) dir = run.feint.kind === "stepover" ? -run.feint.dir : run.feint.dir;
     else if (Math.abs(run.laneTarget - run.x) > 0.15) dir = Math.sign(run.laneTarget - run.x);
     const want2 = run.x + (dir === 0 ? 0.28 : dir * (run.burst ? 0.9 : 0.55));
@@ -7066,6 +7120,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       request = dealDribble(rawRequest, dribbleLevelFor(car ? divisionOf(car) : undefined, fixture?.competition), d.deal, d.rng);
     }
 
+    // A test page asking for dribble runs only (the `dribbleOnly` prop).
+    if (dribbleOnlyRef.current && !attacking && !chain) {
+      request = { zone: request?.zone ?? "middle", kinds: ["one_on_one"], dribble: true, reason: request?.reason ?? "You pick it up with space to run into" };
+    }
+
     // A foul on you while you pulled back (v0.15 item 22): the next chance is
     // the game's own free kick or penalty.
     const setPiece = chain ? null : setPieceNextRef.current;
@@ -7386,6 +7445,81 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // reported specifically against curving rather than every drag in the
   // game. `preventDefault` on pointerdown, plus `user-select: none` on the
   // wrapper above, stop both.
+  // `dribbleOnly`: the opening chance is built at mount (see scenarioRef), so
+  // swap it for a dribble run straight away; every later one is loadScenario's.
+  useEffect(() => {
+    if (!dribbleOnlyRef.current) return;
+    const gen = sceneGenRef.current;
+    const t = window.setTimeout(() => { if (sceneGenRef.current === gen && phaseRef.current === "aim") loadScenario(false); }, 300);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /**
+   * The top-down dribble on the stick (the `dribbleControl` prop). Left half:
+   * a floating stick where your thumb lands (it follows the thumb past its
+   * rim); a fast flick of it sideways knocks the ball past, as the swipe's
+   * flick does. Right half: a tap on a team-mate passes, a sideways swipe
+   * knocks it past. Several fingers at once, told apart by pointer id.
+   */
+  const tdStickInput = (kind: "down" | "move" | "up", e: React.PointerEvent) => {
+    const run = tdRef.current, c = canvasRef.current;
+    if (!run || !c) return;
+    const rect = c.getBoundingClientRect();
+    const rr = Math.min(rect.width, rect.height) * 0.13;
+    const now = performance.now();
+    if (kind === "down") {
+      try { c.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      if (tdReadyRef.current) { tdReadyRef.current = false; setTdReady(false); }
+      const f = clientToCanvasFrac(e.clientX, e.clientY);
+      if (f.sx < 0.5 && !tdStickRef.current) tdStickRef.current = { id: e.pointerId, cx: e.clientX, cy: e.clientY, fx: f.sx, fy: f.sy, vx: 0, vy: 0, hist: [] };
+      else if (!tdTapRef.current) tdTapRef.current = { id: e.pointerId, x: e.clientX, y: e.clientY, t: now };
+      return;
+    }
+    const st = tdStickRef.current;
+    if (st && st.id === e.pointerId) {
+      if (kind === "up") {
+        tdStickRef.current = null;
+        fpStick(run, 0, 0);
+        try { c.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+        return;
+      }
+      let dx = (e.clientX - st.cx) / rr, dy = (e.clientY - st.cy) / rr;
+      const m = Math.hypot(dx, dy);
+      if (m > 1.35) {
+        // Past the rim: the stick comes with the thumb.
+        const k = (m - 1.35) / m;
+        st.cx += (e.clientX - st.cx) * k; st.cy += (e.clientY - st.cy) * k;
+        const f = clientToCanvasFrac(st.cx, st.cy); st.fx = f.sx; st.fy = f.sy;
+        dx = (e.clientX - st.cx) / rr; dy = (e.clientY - st.cy) / rr;
+      }
+      const ml = Math.hypot(dx, dy);
+      if (ml > 1) { dx /= ml; dy /= ml; }
+      const wasRest = Math.hypot(st.vx, st.vy) < 0.08 && (run.fwd ?? 0) < 0.05;
+      st.vx = dx; st.vy = dy;
+      fpStick(run, dx, -dy);
+      if (wasRest && Math.hypot(dx, dy) >= 0.08) tdLatRef.current = { t: now, x: run.x, y: run.y };
+      st.hist.push({ vx: dx, t: now });
+      while (st.hist.length > 1 && now - st.hist[0].t > 140) st.hist.shift();
+      const o = st.hist[0];
+      if (Math.abs(dx) >= 0.85 && Math.abs(dx - o.vx) >= 1.1 && run.phase === "running" && fpBurst(run, dx > 0 ? 1 : -1)) st.hist = [{ vx: dx, t: now }];
+      return;
+    }
+    const tap = tdTapRef.current;
+    if (tap && tap.id === e.pointerId && kind === "up") {
+      tdTapRef.current = null;
+      try { c.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      if (run.phase !== "running") return;
+      const dx = e.clientX - tap.x, dy = e.clientY - tap.y, dt = now - tap.t;
+      if (Math.hypot(dx, dy) < 14 && dt < 400) {
+        const at = pitchFromPointer(tap.x, tap.y);
+        const mi = run.mates.findIndex((m) => Math.hypot(m.x - at.x, m.y - at.y) < 3);
+        if (mi >= 0) fpPass(run, mi, visionRef.current);
+        return;
+      }
+      if (Math.abs(dx) >= 0.08 * rect.width && Math.abs(dx) > Math.abs(dy) && dt < 350) fpBurst(run, dx > 0 ? 1 : -1);
+    }
+  };
   const onPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     primeMatchSound();
@@ -7393,6 +7527,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (leadRef.current) { if (leadRef.current.lead.skippable) skipLeadIn(); return; }
     // Somebody else's penalty (v0.15 items 6/7): you watch it, you don't take it.
     if (phaseRef.current === "aim" && autoKickOf(scenarioRef.current)) return;
+    if (phaseRef.current === "tdDribble" && dribbleControlRef.current === "stick") { tdStickInput("down", e); return; }
     if (phaseRef.current === "tdDribble") {
       const run = tdRef.current;
       if (!run) return;
@@ -7488,6 +7623,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   };
   const onPointerMove = (e: React.PointerEvent) => {
+    if (phaseRef.current === "tdDribble" && dribbleControlRef.current === "stick") { tdStickInput("move", e); return; }
     if (phaseRef.current === "tdDribble") {
       // Drag steers (your lane follows your thumb); a fast sideways flick knocks it past.
       const run = tdRef.current, tch = tdTouchRef.current, c = canvasRef.current;
@@ -7556,6 +7692,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
   };
   const onPointerUp = (e: React.PointerEvent) => {
+    if (phaseRef.current === "tdDribble" && dribbleControlRef.current === "stick") { tdStickInput("up", e); return; }
     if (nudgeDragRef.current) {
       // The swing stays where you left it; another drag carries on from there.
       nudgeDragRef.current = null;
@@ -8231,14 +8368,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             )}
             {tdReady ? (
               <div className="absolute inset-x-0 top-[10%] flex flex-col items-center gap-1.5 px-6 text-center">
-                <span className="bg-emerald-500 px-6 py-3 text-base font-black uppercase tracking-widest text-emerald-950" style={{ boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,.92)" }}>Tap to start</span>
+                <span className="bg-emerald-500 px-6 py-3 text-base font-black uppercase tracking-widest text-emerald-950" style={{ boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,.92)" }}>{tdRef.current?.stick ? "Push to start" : "Tap to start"}</span>
                 <span className="bg-black/70 px-3 py-1.5 text-[12px] font-bold leading-snug text-white">
-                  {tdRef.current?.duels
+                  {tdRef.current?.stick
+                    ? "Left thumb: push the stick to run with it. Flick it sideways to knock it past him. Right side: tap a team-mate to pass."
+                    : tdRef.current?.duels
                     ? "He backs off and shows you one way. Sell him a step-over or a dropped shoulder, then go the other way — or flick past him the moment he plants."
                     : "Drag to steer. Flick to burst past him."}
                 </span>
               </div>
-            ) : (
+            ) : tdRef.current?.stick ? null : (
               <div className="absolute inset-x-0 bottom-0 px-2 pb-2">
                 <p className="bg-black/70 px-3 py-2 text-center text-[12px] font-bold leading-snug text-white">
                   {tdRef.current?.duels
