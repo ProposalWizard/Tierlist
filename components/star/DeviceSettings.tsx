@@ -197,6 +197,8 @@ function MatchGroup() {
         <LookRow id="matchRadar" look={look} tabs={NEW_OLD} note="New: a live mini-pitch above the commentary between your chances. Old: the commentary on its own." />
       </div>
       <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
+      {/* Leo, 14 Oct 2026 (round 16): default New. */}
+      <LookRow id="keeperFinish" look={look} tabs={NEW_OLD} note={gp("keeperFinish")} />
       {/* The Oct 13 update (shot power, contact field, keepers, team-mates, match feel)
           is one switch on its test page, /star-update-dev (lib/star/oct13Update.ts). */}
       <PrefRow label="Match view 3D" note="On: your match drawn in 3D, in a full stadium. The football is the same; only the picture changes.">

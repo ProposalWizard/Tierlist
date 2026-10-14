@@ -30,7 +30,7 @@ const row = <V extends string>(
 ): LookRow => ({ label, newValue, oldValue, standard, get, set: (v) => set(v as V) });
 
 const gp = (label: string, s: "keepers" | "keeperPro" | "shotsPro" | "knucklePower" | "ballPhysics" | "matchFlow"
-  | "shotPower" | "contactField" | "keeperFeel" | "mateShots") =>
+  | "shotPower" | "contactField" | "keeperFeel" | "mateShots" | "keeperFinish") =>
   row(label, "new", "old", defaultVersion(s), () => gameplayVersion(s), (v) => setGameplayVersion(s, v));
 
 /** Every New | Old row left in Settings, keyed by a short id. */
@@ -48,6 +48,8 @@ export const LOOK_ROWS = {
   contactField: gp("Contact field", "contactField"),
   keeperFeel: gp("Keeper feel", "keeperFeel"),
   mateShots: gp("Team-mate shots", "mateShots"),
+  // Leo, 14 Oct 2026 (round 16): default New, he asked for it directly.
+  keeperFinish: gp("Keeper realism (Leo)", "keeperFinish"),
   matchRadar: row("Match radar (testing)", "new", "old", "old", matchRadarLook, setMatchRadarLook),
   // Leo, 13 Oct 2026: impact, hit-stop, sounds, keeper dives (lib/star/matchFeel.ts). Old while tested.
   matchFeel: row("Match feel (testing)", "new", "old", "old", matchFeelLook, setMatchFeelLook),

@@ -91,6 +91,14 @@ export const GAMEPLAY_SWITCHES = {
     newText: "Builds on Keeper pro (turns it on too). Keepers read a shot better the nearer it gets, take a ball coming at them on their feet instead of lunging, hold more of the soft ones, and fewer parries drop back in front of goal.",
     oldText: "Keepers' dives and hands from before 13 Oct 2026.",
   },
+  keeperFinish: {
+    label: "Keeper realism (Leo)",
+    // Leo, 14 Oct 2026 (round 16): "there are not enough ways to score … the
+    // goalie seems to save almost everything if he's close to it." Default New:
+    // he asked for it directly. keeperBrain.ts KEEPER_FINISH.
+    newText: "A low ball across the keeper to the far post (the Henry finish) beats him far more often, a harder top-corner shot is harder to reach, and the bottom corners from distance go in at real rates. Shots at him stay his.",
+    oldText: "The keeper's reach from before 14 Oct 2026.",
+  },
 } as const;
 
 export type GameplaySwitch = keyof typeof GAMEPLAY_SWITCHES;
@@ -126,3 +134,4 @@ export const oldBallPhysics = () => gameplayVersion("ballPhysics") === "old";
 export const oldShots = () => gameplayVersion("shotsPro") === "old";
 export const oldMatchFlow = () => gameplayVersion("matchFlow") === "old";
 export const oldKeeperFeel = () => gameplayVersion("keeperFeel") === "old";
+export const oldKeeperFinish = () => gameplayVersion("keeperFinish") === "old";
