@@ -27,6 +27,37 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.55",
+      "title": "Harry's patch notes: The Arcade pack, real shots you can follow, calmer passing",
+      "publishedAt": "2026-10-14T23:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/LBmYB7rQBTS6nd4XBq7UsG",
+      "summary": "A new Arcade texture pack: big Arcade pop banners (GOAL! with a starburst, in the half without the ball) and Arcade sounds (deeper menu tap, Stadium's confirm, pass and goal clearly different, quieter crowd); every other pack keeps the old banner and sounds. A Harry changes dropdown in Settings holds Chances and After you pass. Joystick: the team-mate takes a touch and looks up, and shoots first time only when the shot is on. Real shots: a TV-style camera that follows the move with no jumps and glides onto your chance.",
+      "stats": [
+        { "value": "1.09 s → 1.67 s", "label": "your pass → his shot or pass (Joystick)" },
+        { "value": "14% → 0%", "label": "first-time shots when the shot isn't on" },
+        { "value": "27% → 0%", "label": "real shots: time the ball is hidden" },
+        { "value": "98% → 0%", "label": "hiss in the menu tap (Arcade)" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Arcade texture pack", "detail": "Arcade pop banners and Arcade sounds; other packs keep the old ones." },
+          { "title": "Harry changes dropdown", "detail": "Settings and match ⚙: Chances and After you pass." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Real shots camera", "detail": "Follows the move like a TV camera, keeps the ball in view, no jump at your chance." },
+          { "title": "Banners", "detail": "Each pops fresh, one line only, fades out when half time, full time or the scores come up." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Joystick tempo", "detail": "Team-mate takes a touch and looks up (~1 s); first time only when close, clear and unmarked." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Real shots players a little small", "detail": "About 83% of chance size so long passes stay in shot; Harry's call." },
+          { "title": "Not seen yet", "detail": "SAVED! / BACK TO YOU in a real match; a first-time finish in Joystick; sounds on a real phone." }
+        ]}
+      ]
+    },
+    {
       "version": "0.54",
       "title": "Harry's patch notes: New chances, 3D camera, build-ups that play on",
       "publishedAt": "2026-10-14T16:00:00Z",
