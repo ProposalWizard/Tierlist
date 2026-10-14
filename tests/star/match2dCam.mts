@@ -32,6 +32,7 @@ import { zoomCamera } from "../../lib/star/style3d/camZoom";
 import { servedChance, cleanServed, SERVED_KINDS } from "../../scripts/cam3d/served.mts";
 import { usesKindCam, solveKindCam, wideFromSide, orbitCamera, clampOrbit, ORBIT, centreOnPivot, centreShare, keepInBowl, bowlSpot, ORBIT as ORB } from "../../lib/star/style3d/match2dCam";
 import { stanceFor, shotTarget } from "../../lib/star/style3d/setPiece3d";
+import { frameTurned, solveTurnFit, easeFit, goalMouthOnScreen, pitchOnScreen, grabsBall, ballGrabMaxPx, bottomOverStand, overheadClipAlong, BOWL, FRAME_TURNED, showsGoal, type TurnFit } from "../../lib/star/style3d/match2dCam";
 
 let fails = 0;
 const ok = (c: boolean, m: string) => { if (!c) { fails++; console.error("  ✗ " + m); } else console.log("  ✓ " + m); };
@@ -412,6 +413,138 @@ if (isMain) {
     ok(dn.includes("const in2dGrab =") && dn.includes("in2dGrab ||"), "a press inside the 2D ball zone always kicks");
     const tiltBranch = mv.slice(mv.indexOf("if (touch.tilt) {"), mv.indexOf("const at = moveTarget(e);"));
     ok(tiltBranch.length > 0 && !tiltBranch.includes("send(") && tiltBranch.includes("return;"), "camera tilt: an up/down swipe sends nothing to the 2D game");
+  }
+  // A TURNED CAMERA KEEPS THE GOAL AND THE PITCH, SMOOTHLY (Harry, 13 Oct 2026: "the goal should always be
+  // in view even with the ball centred"; "it shld also never be out of play in 3d"; "turning left right isn't
+  // clean anymore"). The game's camera for a turned/tilted view is frameTurned (engineView.ts), on the chance's
+  // own camera exactly as engineView builds it (set pieces, corners and kind cameras: + keepDragRoom).
+  {
+    const ms = matchScale();
+    const baseCam = (c: ReturnType<typeof servedChance>) => {
+      const b = { x: c.sc.ball.x, y: c.sc.ball.y }, kp = { x: c.keeper.x, y: c.keeper.y }, k = c.sc.kind;
+      if (usesCornerCam(k)) return keepDragRoom(solveCornerCam(c.f, b, c.figs, kp, ms), b, W, H);
+      if (usesKindCam(k)) return keepDragRoom(solveKindCam(k, c.f, b, c.figs, kp, ms), b, W, H);
+      if (usesSetPieceCam(k)) return keepDragRoom(solveSetPieceCam(c.f, setPieceKeep(b, c.figs, kp, ms), b, ms, SET_PIECE_CAM, k === "penalty" ? SET_PIECE_CAM.penaltyShare : SET_PIECE_CAM.targetShare), b, W, H);
+      return solveMatch2D(c.f);
+    };
+    const turnedOf = (cam: ReturnType<typeof baseCam>, b: BcPoint, d: number, t: number, sh: number) => {
+      const tu = d ? orbitCamera(cam, b, d) : cam;
+      const ta = t + ORB.autoTilt * sh;
+      return ta ? tiltCamera(tu, b, ta, W, H) : tu;
+    };
+    const limit = 1 - dragRoomShare(W, H);
+    const views = [[45, 0], [90, 0], [-90, 0], [180, 0], [0, 15], [0, -15], [90, 15], [90, -15]] as const;
+    let p70 = 0, roofNew = 0, roofOld = 0, roofBad = 0, nG = 0, goalLost = 0, oldLost = 0, oldShort = 0, overSeats = 0, oldOver = 0, steep = 0, maxElevT = 0, nV = 0, pitchShort = 0, minPitch = 1, ballBad = 0, closer = 0, lens = 0, untouched = 0, grabBig = 0, grabOldMax = 0, grabNewMax = 0, grassGrabs = 0;
+    const short: string[] = [], lostAt: string[] = [], overAt: string[] = [];
+    const grid = (fn: (X: number, Y: number) => boolean) => { let n = 0, y = 0; for (let i = 0; i < 24; i++) for (let j = 0; j < 40; j++) { n++; if (fn(((i + 0.5) / 24) * W, ((j + 0.5) / 40) * H)) y++; } return y / n; };
+    for (const kind of SERVED_KINDS) for (const c of cleanServed(kind, 3)) {
+      const cam0 = baseCam(c), b = c.sc.ball;
+      const goal = showsGoal(cam0, W, H);
+      if (frameTurned(cam0, b, 0, W, H, goal) !== cam0) untouched++;
+      for (const [d, t] of views) {
+        const sh = centreShare(d, t), tl = turnedOf(cam0, b, d, t, sh);
+        const o = frameTurned(tl, b, sh, W, H, goal);
+        nV++;
+        const before = keepInBowl(centreOnPivot(tl, b, sh, W, H), b, sh, W, H); // the camera before this change
+        if (goal) { nG++; if (!goalMouthOnScreen(o, W, H)) { goalLost++; lostAt.push(`${kind}#${c.seed} ${d}°/${t}°`); } if (!goalMouthOnScreen(before, W, H)) oldLost++; }
+        if (pitchOnScreen(before, W, H) < 0.65) oldShort++;
+        // the screen's bottom edge stays on the grass (within 2 m of a stand's front): past it, that stand's roof
+        // is drawn over the picture (the turned stills of 13 Oct 2026 had their bottom 40% under one); and the
+        // camera keeps a real 3D angle (not near top-down)
+        if (bottomOverStand(o, W, H) > 2) { overSeats++; overAt.push(`${kind}#${c.seed} ${d}°/${t}° ${bottomOverStand(o, W, H).toFixed(0)} m`); }
+        if (bottomOverStand(before, W, H) > 2) oldOver++;
+        // (the stadium lifts a turned camera that stands outside it anyway, ball centred and nothing moved: keepInBowl)
+        const eT = (o.elev * 180) / Math.PI, eMin = (Math.max(tl.elev, keepInBowl(centreOnPivot(tl, b, 1, W, H), b, 1, W, H).elev) * 180) / Math.PI;
+        maxElevT = Math.max(maxElevT, eT - Math.max(eMin, FRAME_TURNED.elevCap));
+        if (eT > Math.max(eMin, FRAME_TURNED.elevCap) + 0.5) steep++;
+        // A STAND'S ROOF OVER THE PICTURE (stills, 13 Oct 2026: the bottom 40% of two turned views was the
+        // roof). Roofs (real/arena.ts) sit ~28 m up, from 3.5 m behind each stand's front to its back; the
+        // game draws a roof only where it is no nearer the camera than engineView's clip. Share of the screen
+        // covered by a drawn roof, with the game's clip (stand fronts) and with the old one (the screen's bottom).
+        const roofShare = (x: typeof o, k: number) => {
+          const tV = Math.tan((x.fov * Math.PI) / 360), tH = tV * (W / H), se = Math.sin(x.elev), ce = Math.cos(x.elev);
+          const py = x.D * se, px = x.tx + x.ax * x.D * ce, pz = x.tz + x.az * x.D * ce;
+          if (py <= 28) return 0;
+          return grid((X, Y) => {
+            const nx = (X / W) * 2 - 1, ny = 1 - (Y / H) * 2;
+            const dx = -x.ax * ce + x.az * nx * tH - x.ax * se * ny * tV, dy = -se + ce * ny * tV, dz = -x.az * ce - x.ax * nx * tH - x.az * se * ny * tV;
+            if (dy >= 0) return false;
+            const tt = (py - 28) / -dy, wx = px + dx * tt + CX, wz = pz + dz * tt;
+            const sb = Math.max(BOWL.x0 - wx, wx - BOWL.x1, BOWL.y0 - wz, wz - BOWL.y1);
+            const al = (wx - CX) * x.ax + wz * x.az;
+            return sb >= 3.5 && sb <= BOWL.depth && al <= k;
+          });
+        };
+        let nearG = -Infinity;
+        for (const nx of [-1, 0, 1]) { const gq = groundUnder(o, W, H, nx, -1); if (gq) nearG = Math.max(nearG, (gq.x - CX) * o.ax + gq.y * o.az); }
+        const rNew = roofShare(o, Math.min(nearG + 1.5, overheadClipAlong(o, b, 1))), rOld = roofShare(o, nearG + 1.5);
+        roofNew = Math.max(roofNew, rNew); roofOld = Math.max(roofOld, rOld);
+        if (rNew > 0.01) roofBad++;
+        const p = pitchOnScreen(o, W, H) - rNew;
+        minPitch = Math.min(minPitch, p);
+        if (p < 0.5) p70++;
+        if (p < 0.65) { pitchShort++; short.push(`${kind}#${c.seed} ${d}°/${t}° ${(p * 100).toFixed(0)}%`); }
+        const bp = bcProject(o, W, H, b);
+        if (!(bp.depth > 0.3 && Math.abs(bp.nx) <= 0.9 && bp.fr >= 0.1 && bp.fr <= limit + 1e-3)) ballBad++;
+        if (o.D < tl.D * 0.85 - 1e-6) closer++;
+        if (Math.abs(o.fov - tl.fov) > 1e-9) lens++;
+        // THE GRAB: the old zone (the 2D's zone and 3.2 m, both on the grass) against the new one (bounded on the glass)
+        const bx = ((bp.nx + 1) / 2) * W, by = bp.fr * H, b2 = pitchTo2dScreen(c.f, b);
+        const press = (X: number, Y: number) => {
+          const g = groundUnder(o, W, H, (X / W) * 2 - 1, 1 - (Y / H) * 2);
+          if (!g) return null;
+          const a2 = pitchTo2dScreen(c.f, g);
+          return { glass: Math.hypot(X - bx, Y - by), in2d: Math.hypot(a2.X - b2.X, a2.Y - b2.Y) <= 0.2 * H, m: Math.hypot(g.x - b.x, g.y - b.y) };
+        };
+        const oldShare = grid((X, Y) => { const q = press(X, Y); return !!q && (q.glass <= 48 || q.in2d || q.m < 3.2); });
+        const newShare = grid((X, Y) => { const q = press(X, Y); return !!q && grabsBall(q.glass, q.in2d, q.m); });
+        grabOldMax = Math.max(grabOldMax, oldShare); grabNewMax = Math.max(grabNewMax, newShare);
+        if (newShare > (Math.PI * ballGrabMaxPx() ** 2) / (W * H) + 0.01) grabBig++;
+        // a press clearly on open grass (two grab-radii from the ball) never grabs, so it turns or tilts
+        if (grid((X, Y) => { const q = press(X, Y); return !!q && q.glass > 2 * ballGrabMaxPx() && grabsBall(q.glass, q.in2d, q.m); }) > 0) grassGrabs++;
+      }
+    }
+    ok(untouched === 0, "turned framing: the default camera (no turn, no tilt) is untouched");
+    ok(nG > 0 && goalLost <= Math.ceil(nG * 0.02), `turned framing: the whole goal mouth (both posts, bar and net foot) on screen in the turned/tilted views of a chance whose own camera shows it, all but at most 2% (the rest would need the men at dot size, FRAME_TURNED.maxD) (${nG} views, ${goalLost} lost${lostAt.length ? ": " + lostAt.join(", ") : ""}; before: ${oldLost})`);
+    // Harry, 14 Oct 2026: the pitch is the main thing (fans and boards at an edge are fine, the roof never)
+    ok(pitchShort <= Math.ceil(nV * 0.01) && minPitch >= 0.4, `turned framing: at least 65% of the screen is pitch in ${nV - pitchShort} of ${nV} views (before: ${nV - oldShort}; lowest ${(minPitch * 100).toFixed(0)}%${short.length ? "; under: " + short.join(", ") : ""})`);
+    ok(roofBad === 0 && roofOld > 0.05, `turned framing: no stand roof on the screen (largest ${(roofNew * 100).toFixed(1)}% of it; with the old clip a roof covered up to ${(roofOld * 100).toFixed(0)}%, and counts as off the pitch)`);
+    console.log(`  turned framing: the screen's bottom edge out over a stand's seats in ${overSeats} views (before: ${oldOver}); their roofs are not drawn (above)`);
+    ok(steep === 0, `turned framing: never pushed towards top-down: at most ${FRAME_TURNED.elevCap}° down (or the stadium's own lift) (${steep} steeper; worst ${maxElevT.toFixed(1)}° over)`);
+    ok(ballBad === 0, `turned framing: the ball stays clearly on screen with a full-power drag under it (${ballBad} not)`);
+    ok(closer === 0 && lens === 0, `turned framing: never in (at most the bowl's 85%), lens kept: sizes never change (${closer} closer, ${lens} lens)`);
+    ok(grabBig === 0 && grassGrabs === 0 && grabOldMax > 0.4, `ball grab: on the glass round the ball, at most ${ballGrabMaxPx().toFixed(0)} px: ${(grabNewMax * 100).toFixed(0)}% of a turned screen at most (was ${(grabOldMax * 100).toFixed(0)}%); a press on open grass never grabs (${grassGrabs} views where it did)`);
+    ok(grabsBall(40, false, 99) && !grabsBall(60, false, 99) && grabsBall(60, true, 99) && grabsBall(60, false, 2) && !grabsBall(100, true, 0) && !grabsBall(170, true, 8.4),
+      "ball grab: a fingertip always grabs; out to 1.4x only inside the 2D zone or 3.2 m; never past it (the logged 170 px press inside the 2D zone does not grab)");
+    // SMOOTH: a fast swipe (3° a frame at 60 fps, as the game eases it) and a tilt, sweeping the whole range
+    let worstRatio = 0, worstElev = 0, worstLook = 0, nS = 0;
+    const rep: string[] = [];
+    for (const kind of ["one_on_one", "cutback", "corner", "tight_angle", "byline_cross", "free_kick"]) for (const c of cleanServed(kind, 1)) {
+      const cam0 = baseCam(c), b = c.sc.ball, goal = showsGoal(cam0, W, H);
+      const run = (frames: [number, number][]) => {
+        let fit: TurnFit | null = null;
+        const ps = frames.map(([d, t]) => {
+          const tl = turnedOf(cam0, b, d, t, 1), want = solveTurnFit(tl, b, W, H, goal);
+          fit = fit ? easeFit(fit, want, 1 / 60) : want;
+          const o = frameTurned(tl, b, 1, W, H, goal, fit), ce = Math.cos(o.elev);
+          return { x: o.tx + o.ax * o.D * ce, y: o.D * Math.sin(o.elev), z: o.tz + o.az * o.D * ce, e: (o.elev * 180) / Math.PI, lx: o.tx, lz: o.tz };
+        });
+        const st: number[] = [];
+        for (let i = 1; i < ps.length; i++) {
+          st.push(Math.hypot(ps[i].x - ps[i - 1].x, ps[i].y - ps[i - 1].y, ps[i].z - ps[i - 1].z));
+          worstElev = Math.max(worstElev, Math.abs(ps[i].e - ps[i - 1].e));
+          worstLook = Math.max(worstLook, Math.hypot(ps[i].lx - ps[i - 1].lx, ps[i].lz - ps[i - 1].lz));
+        }
+        const med = [...st].sort((p, q) => p - q)[st.length >> 1], mx = Math.max(...st);
+        worstRatio = Math.max(worstRatio, mx / Math.max(med, 1)); nS++;
+        return `${mx.toFixed(1)}/${med.toFixed(1)} m`;
+      };
+      const a = run(Array.from({ length: 61 }, (_, i) => [i * 3, 0] as [number, number]));
+      const t = run(Array.from({ length: 51 }, (_, i) => [0, -25 + i] as [number, number]));
+      rep.push(`${kind} turn ${a}, tilt ${t}`);
+    }
+    console.log("  smoothness (largest / typical camera step per frame): " + rep.join("; "));
+    ok(nS > 0 && worstRatio <= 4 && worstElev <= 4 && worstLook <= 4, `turned framing is smooth: no frame's camera step over 4x the typical one (worst ${worstRatio.toFixed(1)}x), angle under 4° a frame (worst ${worstElev.toFixed(1)}°), look point under 4 m a frame (worst ${worstLook.toFixed(1)} m)`);
   }
   if (fails) { console.error(`${fails} failed`); process.exit(1); }
 }
