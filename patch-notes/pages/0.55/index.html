@@ -1,0 +1,256 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Knowitball Leo v0.16</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+  .sv{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:12px;margin:8px 0 4px}
+  .ph{max-width:320px;margin:10px auto 2px}
+  .calls li{padding:9px 0;border-bottom:1px solid var(--line)} .calls{list-style:none;padding:0;margin:0}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">LEO v0.16 · SITE 0.55 · 14 OCT 2026</span>
+  <h1>More ways to score, and an Updates tab</h1>
+  <p class="sub">Every New | Old switch now sits in Settings → Updates. Keepers stop saving everything near them. Players have the shape of a man and really jump. A sound lab to pick the match sounds.</p>
+</header>
+
+<h2 class="add"><i></i>1 · SETTINGS → UPDATES</h2>
+<div class="dt">One tab in the game for every update. Open an update, press All new or All old, or flip one row. No more going to a test page to change a setting. It only changes the game on your own phone.</div>
+<figure class="ph"><img src="img/updates.png" alt="Settings Updates tab"><figcaption>Settings → Updates. Newest update on top, with its two new switches.</figcaption></figure>
+
+<h2 class="fix"><i></i>2 · THE HENRY FINISH GOES IN</h2>
+<div class="dt">A low shot curled across the keeper into the far bottom corner now beats him far more often. He dives across his body more slowly and can't stretch as far. Shots straight at him are still his.</div>
+<div class="sv"><svg viewBox="0 0 340 230" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<defs><marker id="m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--amber)"/></marker></defs>
+<rect x="0" y="0" width="340" height="230" rx="10" fill="#1d6b3a"/>
+<g stroke="#e8f5ec" stroke-width="2" fill="none" opacity=".85"><line x1="0" y1="30" x2="340" y2="30"/><rect x="60" y="30" width="220" height="120"/><rect x="120" y="30" width="100" height="42"/><rect x="135" y="14" width="70" height="16" stroke-width="3"/></g>
+<circle cx="170" cy="40" r="9" fill="#f5b942"/><text x="170" y="62" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">keeper</text>
+<circle cx="96" cy="84" r="8" fill="#ff6b6b" stroke="#fff" stroke-width="2"/><text x="96" y="106" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">you</text>
+<path d="M104 80 Q150 70 198 34" stroke="var(--amber)" stroke-width="3" fill="none" stroke-dasharray="6 4" marker-end="url(#m)"/>
+<text x="230" y="50" font-size="12" fill="#fff" font-weight="800">far post, low</text>
+<text x="170" y="190" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">From the corner of the 6-yard box: side-foot it</text>
+<text x="170" y="208" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">across him, curling into the far bottom corner.</text></svg></div>
+<div class="dt">With the Oct 13 update on, the keeper saved this shot about 3 in 4 times. Now he saves about 1 in 2.</div>
+
+<h2 class="fix"><i></i>3 · TOP CORNERS: THE HARDER, THE BETTER</h2>
+<div class="dt">A shot into a top corner is harder to reach the harder you hit it. A near-post top corner from close in is harder too.</div>
+<div class="sv"><svg viewBox="0 0 340 175" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<rect x="30" y="20" width="280" height="110" fill="none" stroke="var(--ink)" stroke-width="5"/>
+<line x1="0" y1="130" x2="340" y2="130" stroke="var(--ink3)" stroke-width="2"/>
+<rect x="30" y="20" width="60" height="40" fill="var(--green)" opacity=".35"/><rect x="250" y="20" width="60" height="40" fill="var(--green)" opacity=".35"/>
+<rect x="30" y="95" width="60" height="35" fill="var(--blue)" opacity=".35"/><rect x="250" y="95" width="60" height="35" fill="var(--blue)" opacity=".35"/>
+<circle cx="170" cy="95" r="12" fill="var(--amber)"/><rect x="160" y="105" width="20" height="25" fill="var(--amber)"/>
+<text x="60" y="44" text-anchor="middle" font-size="11" font-weight="800" fill="var(--ink)">harder</text><text x="280" y="44" text-anchor="middle" font-size="11" font-weight="800" fill="var(--ink)">harder</text>
+<text x="60" y="116" text-anchor="middle" font-size="11" font-weight="800" fill="var(--ink)">Henry</text><text x="280" y="116" text-anchor="middle" font-size="11" font-weight="800" fill="var(--ink)">Henry</text>
+<text x="170" y="150" text-anchor="middle" font-size="12" fill="var(--ink2)">Green: top corners, harder the harder you hit.</text><text x="170" y="166" text-anchor="middle" font-size="12" fill="var(--ink2)">Blue: low far corners (the Henry).</text></svg></div>
+
+<h2 class="chg"><i></i>4 · PLAYERS ARE THE SHAPE OF A MAN</h2>
+<div class="dt">Before, every player touched the ball like a tall box: as wide at the head as at the feet. Now he reaches wide with his feet and narrow at his head, and nothing above his head touches him unless he jumps.</div>
+<div class="sv"><svg viewBox="0 0 340 200" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<text x="85" y="18" text-anchor="middle" font-size="13" font-weight="800" fill="var(--ink2)">Before</text><text x="255" y="18" text-anchor="middle" font-size="13" font-weight="800" fill="var(--green)">Now</text>
+<rect x="50" y="35" width="70" height="140" fill="var(--red)" opacity=".3" stroke="var(--red)"/>
+<path d="M210 175 L300 175 L285 110 L272 60 L238 60 L225 110 Z" fill="var(--green)" opacity=".3" stroke="var(--green)"/>
+<g fill="var(--ink)"><circle cx="85" cy="62" r="9"/><rect x="77" y="72" width="16" height="50" rx="5"/><rect x="77" y="122" width="6" height="53"/><rect x="87" y="122" width="6" height="53"/>
+<circle cx="255" cy="62" r="9"/><rect x="247" y="72" width="16" height="50" rx="5"/><rect x="247" y="122" width="6" height="53"/><rect x="257" y="122" width="6" height="53"/></g>
+<circle cx="150" cy="44" r="6" fill="#fff" stroke="var(--ink3)"/><circle cx="315" cy="44" r="6" fill="#fff" stroke="var(--ink3)"/>
+<text x="85" y="194" text-anchor="middle" font-size="11" fill="var(--ink2)">a tall box</text><text x="255" y="194" text-anchor="middle" font-size="11" fill="var(--ink2)">wide feet, narrow head</text></svg></div>
+
+<h2 class="chg"><i></i>5 · CHIPS GO OVER HEADS</h2>
+<div class="dt">A chip or a lofted shot over a team-mate's head now goes over him, instead of him stopping it. A chip over a keeper who has come off his line has a real chance. Straight over a defender's head still needs about 2 m, because he steps into it.</div>
+<div class="sv"><svg viewBox="0 0 340 215" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<defs><marker id="m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--amber)"/></marker></defs>
+<rect x="0" y="0" width="340" height="215" rx="10" fill="#1d6b3a"/>
+<g stroke="#e8f5ec" stroke-width="2" fill="none" opacity=".85"><line x1="0" y1="30" x2="340" y2="30"/><rect x="60" y="30" width="220" height="120"/><rect x="120" y="30" width="100" height="42"/><rect x="135" y="14" width="70" height="16" stroke-width="3"/></g>
+<circle cx="170" cy="40" r="9" fill="#f5b942"/>
+<circle cx="170" cy="190" r="8" fill="#ff6b6b" stroke="#fff" stroke-width="2"/><text x="190" y="194" font-size="11" fill="#fff" font-weight="700">you</text>
+<circle cx="170" cy="130" r="8" fill="#6fb8ff" stroke="#fff" stroke-width="2"/><text x="190" y="134" font-size="11" fill="#fff" font-weight="700">team-mate</text>
+<circle cx="120" cy="100" r="8" fill="#e53935" stroke="#fff" stroke-width="2"/><text x="100" y="120" font-size="11" fill="#fff" font-weight="700" text-anchor="middle">defender</text>
+<path d="M170 182 Q130 120 182 44" stroke="var(--amber)" stroke-width="3" fill="none" stroke-dasharray="6 4" marker-end="url(#m)"/>
+<text x="290" y="175" font-size="12" fill="#fff" font-weight="800" text-anchor="middle">chip goes</text><text x="290" y="191" font-size="12" fill="#fff" font-weight="800" text-anchor="middle">over heads</text></svg></div>
+
+<h2 class="chg"><i></i>6 · JUMPS ARE REAL</h2>
+<div class="dt">A team-mate now jumps for a cross played to him, and the jump lifts his reach. He gets a little extra reach for a header aimed at him, and a defender gets a little extra for a block. Crosses, headers and blocks did not get worse.</div>
+<div class="sv"><svg viewBox="0 0 340 170" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<line x1="10" y1="150" x2="330" y2="150" stroke="var(--ink3)" stroke-width="2"/>
+<g fill="var(--ink)"><circle cx="90" cy="88" r="9"/><rect x="82" y="98" width="16" height="30" rx="5"/><rect x="82" y="128" width="6" height="22"/><rect x="92" y="128" width="6" height="22"/>
+<circle cx="250" cy="58" r="9"/><rect x="242" y="68" width="16" height="30" rx="5"/><rect x="242" y="98" width="6" height="22"/><rect x="252" y="98" width="6" height="22"/></g>
+<line x1="250" y1="148" x2="250" y2="124" stroke="var(--green)" stroke-width="2" stroke-dasharray="3 3"/>
+<circle cx="90" cy="52" r="6" fill="#fff"/><circle cx="250" cy="40" r="6" fill="#fff"/>
+<text x="90" y="20" text-anchor="middle" font-size="12" font-weight="800" fill="var(--red)">Before: stood still,</text><text x="90" y="36" text-anchor="middle" font-size="12" font-weight="800" fill="var(--red)">ball over his head</text>
+<text x="250" y="16" text-anchor="middle" font-size="12" font-weight="800" fill="var(--green)">Now: he jumps</text><text x="250" y="30" text-anchor="middle" font-size="12" font-weight="800" fill="var(--green)">and heads it</text>
+<text x="170" y="167" text-anchor="middle" font-size="11" fill="var(--ink2)">The jump on screen and the reach are now the same jump.</text></svg></div>
+
+<h2 class="add"><i></i>7 · SEE AND TUNE THE HITBOXES</h2>
+<div class="dt">Infinite Highlights and Infinite Match now have a "Hitboxes &amp; jumping" panel. Show the outlines, flip New | Old, and move 7 sliders: height, jump, reach, header extra, block extra and more. Reset puts them back.</div>
+<div class="shots"><figure><img src="img/hitboxes.png" alt="hitbox outlines"><figcaption>Red: defenders. Blue: team-mates. Yellow: the keeper.</figcaption></figure>
+<figure><img src="img/hitbox-panel.png" alt="hitbox panel"><figcaption>The panel with its sliders.</figcaption></figure></div>
+
+<h2 class="add"><i></i>8 · SOUND LAB</h2>
+<div class="dt">A test page with 12 match sounds: pass, shot, first touch, keeper save, catch, post, net, block, header, whistle, goal roar and the "ooh". Each has 6–8 options plus the sound the game plays today. Play each one, star it, pick one, write a note, and change it with 7 sliders. "Export my picks" gives a short list to send us. Nothing here changes the game yet.</div>
+<div class="shots"><figure><img src="img/sound-edit.png" alt="sound edit card"><figcaption>One option open: play, stars, My pick, the 7 sliders.</figcaption></figure>
+<figure><img src="img/sound-export.png" alt="sound export"><figcaption>Play sounds in a row, then Export my picks.</figcaption></figure></div>
+<div class="dt">Where: Admin menu → Sound Lab (/star-sound-lab-dev).</div>
+
+<h2 class="bug"><i></i>KNOWN ISSUES</h2>
+<ul class="n">
+<li><div class="hd">Headers score a little less</div><div class="dt">More headers are won, but the keeper saves more of the high ones: 43.8% → 41.9% scored.</div></li>
+<li><div class="hd">Not played in a full match</div><div class="dt">Keeper, hitboxes and jumps are measured on the real engine over thousands of shots. Nobody has played a career match with them yet.</div></li>
+<li><div class="hd">The sounds were not heard</div><div class="dt">The build machine has no speakers. Every sound plays and none clips, but nobody listened.</div></li>
+<li><div class="hd">3D match view</div><div class="dt">It doesn't show the jumps or the outlines yet.</div></li>
+<li><div class="hd">Six tests fail on main too</div><div class="dt">Two keeper tests, a 3D minigame and three chance tests. They failed before this round, the same way.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>YOUR CALLS</h2>
+<ul class="calls">
+<li><b>Henry finish:</b> it now goes in about 1 in 2 with the Oct 13 update on. Real ones go in more often. Go further?</li>
+<li><b>Full-power top corner:</b> now saved about 1 in 10. Too easy?</li>
+<li><b>Chip straight over a defender:</b> still needs about 2 m. Lower?</li>
+<li><b>Outlines:</b> drawn at true height (taller than the drawn players), or scaled to the drawings?</li>
+<li><b>Sounds:</b> header, first touch and block have no sound of their own today. Give them one? If the made-up crowd sounds are poor, use recorded crowds? Picks go straight into the game, or as a test first?</li>
+</ul>
+
+<details><summary>The numbers, if you want them</summary>
+<p><b>Keeper, saved % (keeper rated 80, Oct 13 update on, before → now; real Premier League in brackets):</b></p>
+<ul>
+<li>Henry finish, tight-angle chances: 84 → 56 (13)</li>
+<li>Henry finish, one-on-ones: 72 → 29 (13)</li>
+<li>Top corner, medium power: 71 → 48 (38)</li>
+<li>Top corner, full power: 37 → 10 (38)</li>
+<li>Near-post top corner, close: 35 → 25 (44)</li>
+<li>Bottom corner from 18–24 m: 95 → 85 (66)</li>
+<li>Central low and shots at him: unchanged (95, 96)</li>
+</ul>
+<p><b>Hitboxes (Old → New):</b></p>
+<ul>
+<li>Lofted shot over a team-mate, he stops it: 74% → 32%</li>
+<li>Chip over a team-mate to the man behind, first man stops it: 100% → 41%</li>
+<li>Chip from 3 m past a defender's side clears at: 2.36 m → 1.60 m</li>
+<li>Chip over a keeper 3 m off his line clears at: 3.30 m → 2.92 m</li>
+<li>Byline crosses reach their man: 85% → 89%; crosses onto a head: 91% → 93%</li>
+<li>Shots blocked: 25% → 26%; corners scored 28.6% → 27.8%</li>
+</ul>
+<p>Old on either switch is today's game exactly (checked over 264 keeper shots and 1,200 crosses, shots and passes).</p>
+</details>
+
+<details><summary>Previous versions</summary>
+<p><b>Leo v0.15 — 12 Oct 2026 — the gameplay round.</b> Keeper pro, shots, knuckleball and power shot, ball physics, match flow, the match radar, dribble duels, a tournament test page. All as New | Old switches, Old by default.</p>
+</details>
+
+<footer>Leo v0.16 · switches: Keeper realism (Leo), Hitboxes &amp; jumping (Leo), both New. Old is the game before 14 Oct 2026.</footer>
+</div>
