@@ -3,26 +3,30 @@
 /**
  * THE MOVING HIGHLIGHT (test page only) — Harry, 13 Oct 2026: "fit the real
  * shots test page with the match radar and passes 2/3 times before receiving
- * the ball moving highlight".
+ * the ball moving highlight", then: "the 3 shots in real shot and all of it
+ * should be in 3d aswell and needs to be playable in 2d/3d. u need to actually
+ * see the 3 moves before u".
  *
- * The match radar (the same RadarPitch the radar test page and the match use)
- * shows the move coming up the pitch; then the 2-3 real passes before the
- * shot play on our pitch; then the real engine (EnginePlay) takes over at the
- * shot's freeze frame. The lead-in is display only: each pass is one CSS
- * transition between keyframes (lib/star/statsbombShots.ts leadinPlan), timed
- * with setTimeout. No game loop, no ball physics, nothing on a canvas.
+ * The match radar (the same RadarPitch the match uses) follows the move. Under
+ * it is the REAL MATCH (EnginePlay, the one engine), inside the career's own
+ * 3D layer (Match3DLayer), so it is drawn in 2D or 3D exactly as a career
+ * match is (the 3D | 2D button in the match's bar flips it). The match first
+ * replays the 2-3 real passes before the shot in its own picture (CanvasMatch's
+ * `leadIn`: recorded positions, no physics; lib/star/statsbombShots.ts
+ * leadinTrack), with you receiving the last one; then the shot is yours to
+ * play, live, from exactly where the replay ended.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import EnginePlay from "@/components/star/EnginePlay";
+import Match3DLayer from "@/components/star/Match3DLayer";
 import { RadarPitch, describeArea, type RadarSide } from "@/components/star/MatchRadar";
 import type { RadarFrame, RadarHighlight } from "@/lib/star/matchRadar";
 import type { Zone, Lane } from "@/lib/star/hiddenMatch";
-import { PITCH_W, CX, POST_L, POST_R, BOX_L, BOX_R, BOX_DEPTH, SIX_L, SIX_R, SIX_DEPTH, PEN_SPOT_Y, NET_DEPTH, HALF_LEN } from "@/lib/star/pitch";
+import type { Scenario } from "@/lib/star/canvasEngine";
+import type { LeadIn } from "@/lib/star/leadIn";
 import {
-  leadinPlan, lerpVec, scenarioForShot, kindForShot, KIND_LABEL, type SbShot, type SbLeadin,
+  leadinTrack, scenarioForShot, kindForShot, KIND_LABEL, type SbShot, type SbLeadin,
 } from "@/lib/star/statsbombShots";
-
-const COLOUR = { you: "#fde047", mate: "#3b82f6", opp: "#ef4444", keeper: "#a3e635" } as const;
 
 /** The radar's areas, from a StatsBomb point (attacking left → right, as the radar draws it). */
 function areaOf(x: number, y: number): { zone: Zone; lane: Lane } {
@@ -49,50 +53,38 @@ function opponentOf(s: SbShot): string {
 const short = (n: string) => n.slice(0, 3).toUpperCase();
 
 export default function MovingHighlight({ shot, lead, onClose }: { shot: SbShot; lead: SbLeadin; onClose: () => void }) {
-  const plan = useMemo(() => leadinPlan(shot, lead), [shot, lead]);
   const frames = useMemo(() => radarFrames(shot, lead), [shot, lead]);
-  /** -1: the radar alone; 0..n-1: the lead-in keys; n: handed over to the engine. */
-  const [step, setStep] = useState(-1);
   const [run, setRun] = useState(0);
-  const n = plan.keys.length;
+  /** How far through the lead-in (0..1), and its caption; 1 = the shot is yours. */
+  const [prog, setProg] = useState<{ f: number; text: string; done: boolean }>({ f: 0, text: "", done: false });
+  const lastSent = useRef({ at: -1, text: "" });
   const openOn = useMemo(() => () => scenarioForShot(shot), [shot]);
-
-  useEffect(() => {
-    setStep(-1);
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    let t = 1600;                          // the radar shows the move first
-    timers.push(setTimeout(() => setStep(0), t));
-    t += 500;
-    for (let k = 1; k < n; k++) { timers.push(setTimeout(() => setStep(k), t)); t += plan.keys[k].ms; }
-    timers.push(setTimeout(() => setStep(n), t + 700));
-    return () => timers.forEach(clearTimeout);
-  }, [plan, n, run]);
+  const leadIn = useCallback((sc: Scenario): LeadIn => {
+    const track = leadinTrack(shot, lead, sc);
+    lastSent.current = { at: -1, text: "" };
+    return {
+      ...track,
+      // Only re-render the page when the caption changes or a quarter-second has passed.
+      onTick: (t, done) => {
+        const text = track.captionAt?.(t) ?? "";
+        if (!done && text === lastSent.current.text && t - lastSent.current.at < 0.25) return;
+        lastSent.current = { at: t, text };
+        setProg({ f: Math.min(1, t / track.durS), text, done });
+      },
+    };
+  }, [shot, lead]);
 
   const us: RadarSide = { name: shot.team, short: short(shot.team), colour: "#2563eb", ink: "#fff", strength: 70 };
   const them: RadarSide = { name: opponentOf(shot), short: short(opponentOf(shot)), colour: "#dc2626", ink: "#fff", strength: 70 };
   // The radar runs through the move's touches as the lead-in runs.
-  const frac = step < 0 ? 0.35 : step >= n ? 1 : plan.at[step];
+  const frac = prog.done ? 1 : 0.35 + 0.65 * prog.f;
   const shownFrames = frames.slice(0, Math.max(1, Math.round(frac * (frames.length - 1)) + 1));
   const last = shownFrames[shownFrames.length - 1];
   const kind = kindForShot(shot);
-  const pending: RadarHighlight | null = step >= n - 1
+  const pending: RadarHighlight | null = prog.f > 0.7 || prog.done
     ? { minute: last.minute, zone: last.zone, lane: last.lane, reason: "a real shot", kinds: [kind], dribble: false }
     : null;
-
-  const k = Math.max(0, Math.min(step, n - 1));
-  const f = step < 0 ? 0 : plan.at[k];
-  const ms = step <= 0 ? 0 : plan.keys[k].ms;
-  const ball = plan.keys[k].ball;
-  // Tall enough for the whole move (a move from a goal kick shows the whole pitch).
-  const yMax = Math.min(2 * HALF_LEN + 2, Math.max(34, ...plan.keys.map((q) => q.ball.y + 6), ...plan.dots.map((d) => d.from.y + 3)));
-  const y0 = -NET_DEPTH - 1.5;
-  const h = yMax - y0;
-  const line = "rgba(255,255,255,0.55)";
-  const move = (p: { x: number; y: number }) => ({
-    transform: `translate(${p.x}px, ${p.y}px)`,
-    transition: ms ? `transform ${ms}ms linear` : "none",
-  });
-  const caption = step < 0 ? `Radar: ${describeArea(last.zone, last.lane)}` : step >= n ? "Your turn: play the shot" : plan.keys[k].text;
+  const caption = prog.done ? "Your turn: play the shot" : prog.text || "The move…";
 
   return (
     <div data-highlight className="mb-4 rounded-lg border border-emerald-400/50 bg-white/5 p-2">
@@ -103,54 +95,27 @@ export default function MovingHighlight({ shot, lead, onClose }: { shot: SbShot;
           <span className="font-bold">{shot.match} · real: {shot.outcome}, xG {Math.round(shot.xg * 100)}%</span>
         </div>
         <div className="flex gap-1">
-          <button onClick={() => setRun((r) => r + 1)} className="rounded bg-white/15 px-2 py-1 text-xs font-black">↺ Again</button>
+          <button onClick={() => { setProg({ f: 0, text: "", done: false }); setRun((r) => r + 1); }} className="rounded bg-white/15 px-2 py-1 text-xs font-black">↺ Again</button>
           <button onClick={onClose} className="rounded bg-white/15 px-2 py-1 text-xs font-black">■ Stop</button>
         </div>
       </div>
 
       <div data-radar className="mb-2">
-        <RadarPitch frames={shownFrames} us={us} them={them} pending={pending} flashMinute={null} stepMs={step <= 0 ? 600 : Math.max(300, ms)} />
+        <RadarPitch frames={shownFrames} us={us} them={them} pending={pending} flashMinute={null} stepMs={500} />
         <div className="mt-1 text-[11px] font-bold">
           Match radar: {us.short} attacking → · {describeArea(last.zone, last.lane)}
         </div>
       </div>
 
-      <div data-caption className="mb-1 text-sm font-black text-emerald-300">{caption}</div>
-
-      {step < n ? (
-        <svg data-leadin viewBox={`-1 ${y0} ${PITCH_W + 2} ${h}`} width="100%" style={{ background: "#166534", borderRadius: 8, display: "block", maxHeight: "46vh" }}>
-          <rect x={0} y={0} width={PITCH_W} height={yMax + 5} fill="none" stroke={line} strokeWidth={0.25} />
-          <rect x={BOX_L} y={0} width={BOX_R - BOX_L} height={BOX_DEPTH} fill="none" stroke={line} strokeWidth={0.25} />
-          <rect x={SIX_L} y={0} width={SIX_R - SIX_L} height={SIX_DEPTH} fill="none" stroke={line} strokeWidth={0.25} />
-          <circle cx={CX} cy={PEN_SPOT_Y} r={0.3} fill={line} />
-          {yMax > HALF_LEN && <line x1={0} x2={PITCH_W} y1={HALF_LEN} y2={HALF_LEN} stroke={line} strokeWidth={0.25} />}
-          <rect x={POST_L} y={-NET_DEPTH} width={POST_R - POST_L} height={NET_DEPTH} fill="rgba(255,255,255,0.25)" stroke="#fff" strokeWidth={0.3} />
-          {/* The passes already played, as a faint trail. */}
-          {plan.keys.slice(1, k + 1).map((q, i) => (
-            <line key={i} x1={plan.keys[i].ball.x} y1={plan.keys[i].ball.y} x2={q.ball.x} y2={q.ball.y}
-              stroke="#fff" strokeOpacity={0.35} strokeWidth={0.3} strokeDasharray="0.8 0.6" />
-          ))}
-          {plan.dots.map((d) => (
-            <g key={d.id} style={move(lerpVec(d.from, d.to, f))}>
-              <circle r={d.side === "you" ? 1.3 : 1.05} fill={COLOUR[d.side]} stroke="#0b1220" strokeWidth={0.2} />
-            </g>
-          ))}
-          <g style={move(ball)}>
-            <circle r={0.6} fill="#fff" stroke="#0b1220" strokeWidth={0.15} />
-          </g>
-        </svg>
-      ) : (
-        <div data-playing>
-          <div className="mb-1 text-[11px] font-bold">
-            {KIND_LABEL[kind] ?? kind}: the real engine, from the shot&apos;s freeze frame. You are {shot.player}.
-          </div>
-          <EnginePlay key={`${shot.id}-${run}`} seed={7} openOn={openOn} />
-        </div>
-      )}
-      <div className="mt-1 text-[11px] font-bold">
-        Yellow = the shooter, blue = his team-mates, red = opponents, green = keeper.
-        {lead.start ? " Start positions: StatsBomb's 360 frame at the first pass." : " No 360 frame for this move: only the shooter moves."}
+      <div data-caption data-leadin-state={prog.done ? "play" : "leadin"} className="mb-1 text-sm font-black text-emerald-300">{caption}</div>
+      <div className="mb-1 text-[11px] font-bold">
+        {KIND_LABEL[kind] ?? kind} · You are {shot.player}. The real passes first, then it is yours.
+        {lead.start ? " Start positions: StatsBomb's 360 frame at the first pass." : " No 360 frame for this move: the others start from their team's shape."}
+        {" "}3D | 2D: the button in the match bar.
       </div>
+      <Match3DLayer key={`${shot.id}-${run}`}>
+        <EnginePlay seed={7} openOn={openOn} leadIn={leadIn} />
+      </Match3DLayer>
     </div>
   );
 }
