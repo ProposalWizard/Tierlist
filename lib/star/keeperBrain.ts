@@ -65,7 +65,7 @@ import { keeperSaveRadius } from "./canvasEngine";
 import { CX, POST_L, POST_R } from "./pitch";
 import { decidePenaltyRead, penaltyReadFor, type PenaltyReadSettings } from "./penaltyKeeper";
 import { testAreaSetting } from "./compareSwitches";
-import { oldKeepers, oldKeeperPro, oldKeeperFeel } from "./gameplayVersion";
+import { oldKeepers, oldKeeperPro, oldKeeperFeel, oldKeeperFinish } from "./gameplayVersion";
 import { getTuning } from "./tuningStore";
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
@@ -268,6 +268,8 @@ export interface BrainOptions {
   pro?: boolean;
   /** KEEPER FEEL on/off (Oct 13; needs pro). Absent = Settings → Gameplay → Keeper feel. */
   feel?: boolean;
+  /** KEEPER REALISM on/off (round 16). Absent = Settings → Gameplay → Keeper realism (Leo). */
+  finish?: boolean;
 }
 
 /** The options the match sets a chance up with, on this screen. */
@@ -495,6 +497,14 @@ interface State {
   fullR: number;
   // ── KEEPER FEEL (Oct 13) ──
   feel: boolean;
+  // ── KEEPER REALISM (round 16) ──
+  finish: boolean;
+  /** Where the ball was struck from, and how fast (m/s), for this shot. */
+  shotFrom: { x: number; y: number };
+  shotPace: number;
+  /** The reach before this step's realism cut, and the value the cut wrote (to undo it, never compound it). */
+  finishPre: number | undefined;
+  finishSet: number | undefined;
 }
 
 const states = new WeakMap<Scenario, State>();
@@ -557,7 +567,10 @@ export function brainSetup(sc: Scenario, seed: number, rating: number, opts: Bra
     moveAtT: null, stepAtT: null, diveAtT: null, wrongFooted: false,
     pro: sc.kind !== "penalty" && (opts.pro ?? (!oldKeeperPro() || !oldKeeperFeel())), claimRead: false, claimGo: null, fullR: 2.4,
     feel: false,
+    finish: false, shotFrom: { x: k.x, y: k.y }, shotPace: 0, finishPre: undefined, finishSet: undefined,
   };
+  // KEEPER REALISM: penalties keep their own rule set.
+  st.finish = sc.kind !== "penalty" && (opts.finish ?? !oldKeeperFinish());
   // KEEPER FEEL builds on Keeper pro: New plays pro as well.
   st.feel = st.pro && (opts.feel ?? !oldKeeperFeel());
   if (st.feel) sc.keeperFeel = true; else delete sc.keeperFeel;
@@ -777,6 +790,11 @@ function onShot(sc: Scenario, st: State, ball: Ball) {
   k.startX = k.x; k.targetX = k.x; k.adjusting = false; k.committedDir = undefined;
   sc.keeperReach = st.baseReach;
   st.shotX = k.x; st.cutOn = false;
+  if (st.finish) {
+    st.shotFrom = { x: ball.pos.x, y: ball.pos.y };
+    st.shotPace = Math.hypot(ball.vel.x, ball.vel.y, ball.vz);
+    st.finishSet = undefined;
+  }
   if (st.pro) {
     k.claim = null; st.claimGo = null;
     const kr = sc.keeperReach; sc.keeperReach = st.baseReach;
@@ -942,7 +960,10 @@ function windowReach(sc: Scenario, st: State) {
 export function brainStep(sc: Scenario, ball: Ball | null, dt: number): void {
   brainStepInner(sc, ball, dt);
   const st = states.get(sc);
-  if (st) { if (st.pro) applyProReach(sc, st, ball); else applyTopCorner(sc, st, ball); }
+  if (st) {
+    if (st.pro) applyProReach(sc, st, ball); else applyTopCorner(sc, st, ball);
+    if (st.finish) applyFinish(sc, st, ball);
+  }
 }
 
 /**
@@ -1005,7 +1026,11 @@ function brainStepInner(sc: Scenario, ball: Ball | null, dt: number): void {
     // floor and never faster than his top speed. A ball already past him (or
     // gone) — top speed, to land.
     const T = ball && ball.pos.y > k.y ? timeToLine(ball, k.y) : 0;
-    const top = sc.kind === "penalty" ? ab.diveSpeed * KEEPER_BRAIN.penSpeed : ab.diveSpeed;
+    let top = sc.kind === "penalty" ? ab.diveSpeed * KEEPER_BRAIN.penSpeed : ab.diveSpeed;
+    // KEEPER REALISM: a low ball across him is his slowest dive.
+    if (st.finish && ball && st.lastShot && k.saves === 0 && ball.lastTouch === "attack" && !ball.loose) {
+      top *= finishDiveSpeed(sc, ball, st.shotX, st.shotFrom, st.shotPace, st.t);
+    }
     const speed = T > 0.02 && T < 50 ? clamp(Math.abs(dx) / T, top * KEEPER_BRAIN.diveSpeedFloor, top) : top;
     const step = Math.min(Math.abs(dx), speed * dt);
     k.x += Math.sign(dx) * step;
@@ -1095,7 +1120,9 @@ function brainStepInner(sc: Scenario, ball: Ball | null, dt: number): void {
       return;
     }
     const dx = st.target - k.x;
-    const step = Math.min(Math.abs(dx), ab.stepSpeed * dt);
+    // KEEPER REALISM: and so is shuffling across for it.
+    const stepV = st.finish ? ab.stepSpeed * finishDiveSpeed(sc, ball, st.shotX, st.shotFrom, st.shotPace, st.t) : ab.stepSpeed;
+    const step = Math.min(Math.abs(dx), stepV * dt);
     if (step > 1e-6 && st.moveAtT === null) st.moveAtT = st.t;
     k.x += Math.sign(dx) * step;
     st.stepTravelled += step;
@@ -1125,6 +1152,140 @@ export const KEEPER_FEEL_BRAIN = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────
+//  KEEPER REALISM (Leo, round 16) — Settings → Gameplay → Keeper realism (Leo)
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Leo, 14 Oct 2026: "way harder to save top corner shots especially the more
+// power it has … you could shoot far post bottom corner like Henry used to …
+// the goalie seems to save almost everything if he's close to it."
+//
+// Real (StatsBomb PL 2015/16, on-target foot shots, tools/statsbomb/placement.py,
+// docs/gameplay16/keeper.md): a low shot into the FAR corner from a channel of
+// the box is saved 13% of the time (n 55); from under 12 m, 9% (n 33). The
+// near-post low corner from the same spots: 36-66%. Top corners from 12-18 m:
+// 38%. Central shots from 12-18 m: 89-98%. Measured before this, keeper 80:
+// the Henry from the corner of the six-yard box was saved 76% (live) and 90%
+// (Oct 13 update on).
+//
+// Why a real keeper loses these: he is set at his near post, and a low ball
+// across his body to the far post asks for the slowest movement he has —
+// getting down AND across in one go. A ball into the top corner struck hard
+// gives his arms no time to get up there. So, his reach against a shot that
+// is coming (every substep, from where it will cross his line, like the
+// top-corner cut above):
+//  - LOW AND WIDE of where he stood: cut by up to `lowCut`, in full across his
+//    body (the far side from the shooter), `nearShare` of it at the near post,
+//    less the more time the ball gives him (`lowTime`);
+//  - HIGH AND WIDE (the top corner, KEEPER_HUMAN's own measure): cut by up to
+//    `topPaceCut` more as the strike gets harder (`topPace`, m/s).
+// A ball at him or through the middle is never touched. Better keepers lose
+// a little less (`ratingEase`). Only his reach changes: the ball, the shot and
+// the engine's save test are exactly as before.
+export const KEEPER_FINISH = {
+  /** Fully low below lowZ[0] m at his line, not low at all above lowZ[1]. */
+  lowZ: [0.6, 1.2] as [number, number],
+  /** Metres to the side of where he stood: none at lowWide[0], in full by lowWide[1]. */
+  lowWide: [0.9, 2.4] as [number, number],
+  lowCut: 0.2,
+  /** Share of the low cut toward the near post (not across him). */
+  nearShare: 0.6,
+  /** How far off centre the strike must be for "across his body" to count in full: from acrossFrom[0] m to acrossFrom[1]. */
+  acrossFrom: [1.5, 6] as [number, number],
+  /** Seconds from the strike to his line: the whole cut up to lowTime[0], `lowTimeFloor` of it by lowTime[1]. */
+  lowTime: [0.5, 1.15] as [number, number],
+  lowTimeFloor: 0.7,
+  /** Strike pace (m/s) over which the top-corner cut grows from none to `topPaceCut`. */
+  topPace: [14, 26] as [number, number],
+  topPaceCut: 0.35,
+  /** A 95 keeper loses this share less of each cut than a 40. */
+  ratingEase: 0.25,
+  /** His reach never drops below this share. */
+  floor: 0.35,
+  /** Low and across his body, his dive is this much slower at most (down AND across). */
+  lowSlow: 0.12,
+  /**
+   * With Keeper pro on (the Oct 13 update), every cut is this much bigger: that
+   * keeper reads a shot far better (Keeper feel) and holds what reaches him,
+   * so the same cut moves him less.
+   */
+  proScale: 3,
+  /** High, wide and hard: his spring up and across is this much slower at most. */
+  topSlow: 0.15,
+};
+
+/** What KEEPER_FINISH reads off a shot coming at him: how low-and-wide (across his body) and how high-and-wide-and-hard it is, 0..1 each. Pure. */
+export function finishParts(sc: Scenario, ball: Ball, shotX: number, shotFrom: { x: number; y: number }, shotPace: number, tSince: number): { low: number; lowTime: number; top: number; ease: number } | null {
+  const F = KEEPER_FINISH, Hm = KEEPER_HUMAN;
+  const k = sc.keeper;
+  if (!(ball.vel.y < -0.5) || ball.pos.y <= k.y) return null;
+  const t = (ball.pos.y - k.y) / -ball.vel.y;
+  const x = ball.pos.x + ball.vel.x * t;
+  const z = Math.max(0, ball.z + ball.vz * t - 4.9 * t * t);
+  const side = x - shotX;
+  const lat = Math.abs(side);
+  const ease = 1 - F.ratingEase * grow(clamp(Number.isFinite(sc.keeperStrength) ? sc.keeperStrength : 62, 20, 99), 40, 95, 1.0);
+  // Low and wide (in full across his body, `nearShare` of it at the near post).
+  let low = 0, lowTime = 1;
+  const lowness = clamp((F.lowZ[1] - z) / (F.lowZ[1] - F.lowZ[0]), 0, 1);
+  const wideL = clamp((lat - F.lowWide[0]) / (F.lowWide[1] - F.lowWide[0]), 0, 1);
+  if (lowness > 0 && wideL > 0) {
+    const off = shotFrom.x - CX;
+    const across = Math.sign(side) === -Math.sign(off) ? clamp((Math.abs(off) - F.acrossFrom[0]) / (F.acrossFrom[1] - F.acrossFrom[0]), 0, 1) : 0;
+    const share = F.nearShare + (1 - F.nearShare) * across;
+    low = lowness * wideL * share;
+    lowTime = 1 - (1 - F.lowTimeFloor) * clamp((tSince + t - F.lowTime[0]) / (F.lowTime[1] - F.lowTime[0]), 0, 1);
+  }
+  // High and wide, by pace.
+  let top = 0;
+  const high = clamp((z - Hm.topZ[0]) / (Hm.topZ[1] - Hm.topZ[0]), 0, 1);
+  const wideT = clamp((lat - Hm.topWide[0]) / (Hm.topWide[1] - Hm.topWide[0]), 0, 1);
+  if (high > 0 && wideT > 0) top = high * wideT * clamp((shotPace - F.topPace[0]) / (F.topPace[1] - F.topPace[0]), 0, 1);
+  return { low, lowTime, top, ease };
+}
+
+/** The share of his reach he keeps against this shot (1 = all), KEEPER_FINISH. Pure. */
+export function finishReach(sc: Scenario, ball: Ball, shotX: number, shotFrom: { x: number; y: number }, shotPace: number, tSince: number): number {
+  const F = KEEPER_FINISH;
+  const p = finishParts(sc, ball, shotX, shotFrom, shotPace, tSince);
+  if (!p) return 1;
+  const pro = sc.keeperPro ? F.proScale : 1;
+  const low = Math.min(0.9, F.lowCut * pro * p.low * p.lowTime * p.ease);
+  const top = Math.min(0.9, F.topPaceCut * pro * p.top * p.ease);
+  return Math.max(F.floor, (1 - low) * (1 - top));
+}
+
+/** His dive speed against this shot, as a share of his top speed (1 = all): getting down AND across is his slowest dive. */
+export function finishDiveSpeed(sc: Scenario, ball: Ball, shotX: number, shotFrom: { x: number; y: number }, shotPace: number, tSince: number): number {
+  const p = finishParts(sc, ball, shotX, shotFrom, shotPace, tSince);
+  if (!p) return 1;
+  const F = KEEPER_FINISH;
+  const pro = sc.keeperPro ? F.proScale : 1;
+  return Math.max(0.2, 1 - F.lowSlow * pro * p.low * p.lowTime * p.ease - F.topSlow * pro * p.top * p.ease);
+}
+
+/**
+ * KEEPER REALISM, every substep after the reach above is set: his reach times
+ * finishReach. Undone the step after (never compounded): if nothing else has
+ * written his reach since, it goes back to what it was before the cut.
+ */
+function applyFinish(sc: Scenario, st: State, ball: Ball | null): void {
+  const k = sc.keeper;
+  // Undo last step's cut if nobody has rewritten his reach since.
+  if (st.finishSet !== undefined && sc.keeperReach === st.finishSet) sc.keeperReach = st.finishPre;
+  st.finishSet = undefined;
+  const live = !!ball && !k.done
+    && (st.phase === "wait" || st.phase === "step" || st.phase === "dive")
+    && st.lastShot && k.saves === 0 && !k.scrambling
+    && ball.lastTouch === "attack" && !ball.loose && ball.pos.y > k.y;
+  if (!live) return;
+  const f = finishReach(sc, ball!, st.shotX, st.shotFrom, st.shotPace, st.t);
+  if (f >= 0.999) return;
+  st.finishPre = sc.keeperReach;
+  sc.keeperReach = (sc.keeperReach ?? 1) * f;
+  st.finishSet = sc.keeperReach;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 //  GOAL REPLAYS
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -1135,7 +1296,7 @@ export function brainSnapshot(sc: Scenario, strikeSeed: number): KeeperBrainSnap
   return {
     rating: st.ab.rating, kind: st.kind, start: { ...st.start }, setTarget: { ...st.setTarget },
     moving: st.moving, baseReach: st.baseReach ?? null,
-    opts: JSON.parse(JSON.stringify(st.opts)) as BrainOptions, hopSide: st.hopSide, hopFromX: st.hopFromX,
+    opts: { ...(JSON.parse(JSON.stringify(st.opts)) as BrainOptions), ...(st.finish ? { finish: true } : {}) }, hopSide: st.hopSide, hopFromX: st.hopFromX,
     strikeSeed: strikeSeed >>> 0,
   };
 }

@@ -177,6 +177,8 @@ function MatchGroup() {
     <>
       {/* Every New | Old update switch lives in Settings → Updates (Leo, 14 Oct 2026). */}
       <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
+      {/* Leo, 14 Oct 2026 (round 16): default New. Also in Settings → Updates. */}
+      <LookRow id="keeperFinish" look={look} tabs={NEW_OLD} note={gp("keeperFinish")} />
       <PrefRow label="Match view 3D" note="On: your match drawn in 3D, in a full stadium. The football is the same; only the picture changes.">
         <SegTabs className="w-[150px] shrink-0" value={view3d} onChange={(v) => setMatchView3d(v)} tabs={[["on", "On"], ["off", "Off"]] as const} />
       </PrefRow>
