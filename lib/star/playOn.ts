@@ -29,11 +29,12 @@
  * tests/star/playOn.mts measures it.
  */
 import {
-  goalInView, chainReturnChance, logBallAction, orderableRunners,
+  goalInView, chainReturnChance, logBallAction, orderableRunners, acceptsCaptainOrders, offsideAt, passQuality,
   type Ball, type Scenario, type ScenarioKind, type Receiver, type Vec2,
 } from "./canvasEngine";
 import { CX, PEN_SPOT_Y } from "./pitch";
 import { leadInEntities, ballAlong, type LeadIn, type LeadBallKey } from "./leadIn";
+import { stickSpeed, STICK_UP_T, STICK_DOWN_T } from "./firstPersonDribble";
 
 /** Your supporting run, m/s (a team-mate's run is 7.0, canvasEngine RUNNER_SPEED). */
 export const PLAY_ON_RUN_SPEED = 6.6;
@@ -52,6 +53,8 @@ export interface PlayOn {
   layOff: boolean | null;
   /** The lay-off has been played and is on its way to you. */
   layOffLive: boolean;
+  /** "After you pass: Joystick" only (THE JOYSTICK, below). Absent = Auto run, exactly as before. */
+  stick?: PlayOnStick;
 }
 
 /** Whether a kick plays on: New chances, a build-up before it, a goal in the picture, and a pass. */
@@ -107,6 +110,7 @@ function moveToward(p: Vec2, to: Vec2, step: number) {
 export function stepPlayOn(
   st: PlayOn, sc: Scenario, ball: Ball, dt: number, rng: () => number, layOffsLeft: number,
 ): "caught" | null {
+  if (st.stick) return stepPlayOnStick(st, st.stick, sc, ball, dt, rng, layOffsLeft);
   const p = sc.player;
   // The lay-off is coming: run onto it.
   if (st.layOffLive) {
@@ -298,4 +302,270 @@ export function carryOnLeadIn(sc: Scenario, from: CarryFrom): LeadIn {
     passEnd: [arrive],
     skippable: true,
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  THE JOYSTICK — Settings → "After you pass: Joystick" (lib/star/afterPass.ts)
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Harry, 14 Oct 2026: "As soon as you pass the ball off, you should then get a
+// joystick, and you can still continue moving in that play. And if you want,
+// if they want to pass it back to you, they can. Maybe when you're captain, you
+// can call for the ball … running through on goal, they play a through ball to
+// you."
+//
+// Auto run never reaches this code: stepPlayOn hands over only when the play-on
+// was started by startPlayOnStick. Here:
+//   - YOU move only by the stick (lib/star/firstPersonDribble.ts's stickSpeed:
+//     a small push walks, a full push sprints; speed builds over STICK_UP_T);
+//   - the man who takes your pass reads where you REALLY are when he has it:
+//     he shoots; or he plays it to your feet if you are open, onside and the
+//     lane to you is clear; or a through ball into your run if you are running
+//     in toward goal, onside, with space ahead of you. Which he picks is the
+//     better chance of the two of you (shotValue), and how good a passer he is
+//     (canvasEngine passQuality, the number his relay passes use);
+//   - captain only: "Call for it" (stick.called) makes him pass to you on his
+//     touch if a lane exists. Already shooting = too late.
+//   - the pass is a real ball (a speed, a small error by his passing), not a
+//     teleport; if you reach it, the match gives you your kick in the same
+//     picture (CanvasMatch: "caught" → resetForTouchOn), as the lay-off does.
+
+/** Nobody within this of you (m) = open for a ball to feet. */
+export const STICK_OPEN_M = 2.5;
+/** Running in toward goal at least this fast (m/s) = a run worth a through ball. */
+export const THROUGH_RUN_MS = 3.0;
+/** Space: nobody this close (m) to where the through ball meets you. */
+export const THROUGH_SPACE_M = 2.5;
+/** You take it a touch further away than the auto run's catch, steering yourself (m). */
+export const STICK_CATCH_R = PLAY_ON_CATCH_R + 0.3;
+/** A pass shorter / longer than this (m) is not played to you. */
+export const STICK_PASS_MIN_M = 3;
+export const STICK_PASS_MAX_M = 32;
+/** He waits this much longer on it (s) to see your run, when his own chance is no better than STICK_WAIT_BELOW. */
+export const STICK_WAIT_S = 0.35;
+export const STICK_WAIT_BELOW = 0.6;
+
+export type StickChoice = "shoot" | "feet" | "through";
+
+export interface PlayOnStick {
+  /** The push, in pitch directions: unit direction × how far it is pushed (0..1). */
+  push: Vec2;
+  /** Your velocity now, m/s. */
+  vel: Vec2;
+  /** Your run speed, m/s (a full push sprints at STICK_SPRINT × this). */
+  run: number;
+  /** Captain's "Call for it", pressed. */
+  called: boolean;
+  /** What the man on the ball chose, once he has it. */
+  choice: StickChoice | null;
+  /** Where the pass to you was aimed, once played. */
+  passTo: Vec2 | null;
+  /** A line for the screen about the call; the match reads and clears it. */
+  note: "late" | "noLane" | null;
+  /** The read he made (for tests and the dev hook). */
+  read: StickRead | null;
+}
+
+export interface StickRead {
+  his: number;
+  feet: number | null;
+  through: number | null;
+  throughAt: Vec2 | null;
+  pPass: number;
+}
+
+/** Whether a pass gives you the joystick: New chances, "Joystick", a goal in the picture, open play, a pass. No build-up needed. */
+export function playOnStickWanted(o: { newChances: boolean; stick: boolean; kind: ScenarioKind; youShotAtGoal: boolean; auto?: boolean }): boolean {
+  return o.newChances && o.stick && !o.auto && !o.youShotAtGoal && goalInView(o.kind) && acceptsCaptainOrders(o.kind);
+}
+
+export function startPlayOnStick(sc: Scenario, rng: () => number, passTo?: Vec2, run = PLAY_ON_RUN_SPEED): PlayOn {
+  if (!sc.receiver) sc.receiver = playOnReceiver(rng);
+  return {
+    target: supportRunTarget(sc, passTo), layOff: null, layOffLive: false,
+    stick: { push: { x: 0, y: 0 }, vel: { x: 0, y: 0 }, run, called: false, choice: null, passTo: null, note: null, read: null },
+  };
+}
+
+/** Point the stick, in pitch directions (toward goal is y negative). (0,0) stands still. */
+export function steerPlayOn(st: PlayOn, x: number, y: number) {
+  if (!st.stick) return;
+  let mx = Number.isFinite(x) ? x : 0, my = Number.isFinite(y) ? y : 0;
+  const m = Math.hypot(mx, my);
+  if (m > 1) { mx /= m; my /= m; }
+  st.stick.push = { x: mx, y: my };
+}
+
+/** Captain's call. Says whether he is already shooting, it is already coming, or he will look for you. */
+export function callForIt(st: PlayOn, sc: Scenario): "late" | "coming" | "calling" {
+  const stk = st.stick;
+  if (!stk) return "late";
+  if (st.layOffLive) return "coming";
+  if (sc.receiverShot || stk.choice === "shoot" && !(sc.receiverDone)) return "late";
+  stk.called = true;
+  return "calling";
+}
+
+/** You, one substep on the stick: speed builds and eases like the dribble stick, in any direction. */
+export function moveOnStick(stk: PlayOnStick, p: Vec2, dt: number) {
+  const mag = Math.hypot(stk.push.x, stk.push.y);
+  const want = stickSpeed(mag, stk.run);
+  const ux = mag > 1e-6 ? stk.push.x / mag : 0, uy = mag > 1e-6 ? stk.push.y / mag : 0;
+  const tvx = want * ux, tvy = want * uy;
+  const cur = Math.hypot(stk.vel.x, stk.vel.y);
+  const rate = (want > cur ? stk.run / STICK_UP_T : stk.run / STICK_DOWN_T) * dt;
+  let dvx = tvx - stk.vel.x, dvy = tvy - stk.vel.y;
+  const dv = Math.hypot(dvx, dvy);
+  if (dv > rate) { dvx *= rate / dv; dvy *= rate / dv; }
+  stk.vel.x += dvx; stk.vel.y += dvy;
+  p.x = Math.max(-2, Math.min(70, p.x + stk.vel.x * dt));
+  p.y = Math.max(-2, Math.min(106, p.y + stk.vel.y * dt));
+}
+
+/** How good a chance a shot from here is, 0..1: the goal's opening angle, distance, men in the way. A comparison only. */
+export function shotValue(sc: Scenario, p: Vec2): number {
+  if (p.y <= 0.3) return 0;
+  const gx1 = sc.goal.x1, gx2 = sc.goal.x2;
+  const gcx = (gx1 + gx2) / 2 || CX;
+  const open = Math.abs(Math.atan2(gx2 - p.x, p.y) - Math.atan2(gx1 - p.x, p.y));
+  const d = Math.hypot(p.x - gcx, p.y);
+  let v = (open / 0.64) * Math.exp(-Math.max(0, d - 11) / 14);
+  const dx = gcx - p.x, dy = -p.y, L2 = dx * dx + dy * dy;
+  for (const df of sc.defenders) {
+    // A man between him and the goal, close to the line of the shot.
+    const u = ((df.x - p.x) * dx + (df.y - p.y) * dy) / L2;
+    if (u <= 0.03 || u >= 1) continue;
+    if (Math.hypot(df.x - (p.x + dx * u), df.y - (p.y + dy * u)) < 1.4) v *= 0.65;
+  }
+  return Math.max(0, Math.min(1, v));
+}
+
+function passSpeedFor(d: number, through: boolean): number {
+  return through ? Math.max(14, Math.min(23, 12 + d * 0.5)) : Math.max(13, Math.min(21, 11 + d * 0.45));
+}
+
+/** Where a through ball from `at` meets your run: you + your velocity × its travel time, a metre on into your stride. */
+export function throughPoint(at: Vec2, you: Vec2, vel: Vec2): Vec2 {
+  const sp = Math.hypot(vel.x, vel.y) || 1;
+  let lead = { x: you.x, y: you.y };
+  for (let i = 0; i < 4; i++) {
+    const d = Math.hypot(lead.x - at.x, lead.y - at.y);
+    const T = d / passSpeedFor(d, true) + 0.15;
+    lead = { x: you.x + vel.x * T + vel.x / sp, y: you.y + vel.y * T + vel.y / sp };
+  }
+  return lead;
+}
+
+function nobodyNear(sc: Scenario, p: Vec2, r: number): boolean {
+  return sc.defenders.every((d) => Math.hypot(d.x - p.x, d.y - p.y) >= r);
+}
+
+/** What the man on the ball at `at` sees of you: his chance, your feet, your run, and how likely he is to pass. */
+export function stickRead(sc: Scenario, at: Vec2, you: Vec2, vel: Vec2): StickRead {
+  const gcx = (sc.goal.x1 + sc.goal.x2) / 2 || CX;
+  const his = shotValue(sc, at);
+  const dist = (q: Vec2) => Math.hypot(q.x - at.x, q.y - at.y);
+  const inRange = (q: Vec2) => dist(q) >= STICK_PASS_MIN_M && dist(q) <= STICK_PASS_MAX_M;
+  const onside = !offsideAt(sc, you, at);
+  let feet: number | null = null;
+  if (onside && inRange(you) && nobodyNear(sc, you, STICK_OPEN_M) && laneClear(sc, at, you)) {
+    // To feet he has to take a touch with men closing: a little less than the same spot in stride.
+    feet = shotValue(sc, you) * 0.85;
+  }
+  let through: number | null = null, throughAt: Vec2 | null = null;
+  const g = { x: gcx - you.x, y: -you.y }, gl = Math.hypot(g.x, g.y) || 1;
+  const runIn = (vel.x * g.x + vel.y * g.y) / gl;
+  if (onside && runIn >= THROUGH_RUN_MS) {
+    const lead = throughPoint(at, you, vel);
+    const kd = Math.hypot(sc.keeper.x - lead.x, sc.keeper.y - lead.y);
+    if (lead.y > 1.5 && lead.x > 0.5 && lead.x < 67.5 && inRange(lead) && kd > 2.5 && nobodyNear(sc, lead, THROUGH_SPACE_M) && laneClear(sc, at, lead)) {
+      through = shotValue(sc, lead); throughAt = lead;
+    }
+  }
+  const best = Math.max(feet ?? -1, through ?? -1);
+  const q = passQuality(sc);
+  const pPass = best < 0 ? 0 : Math.max(0, Math.min(0.92, ((best - his) / Math.max(0.05, his)) * 0.9 + 0.25)) * (0.55 + 0.45 * q);
+  return { his, feet, through, throughAt, pPass };
+}
+
+function bestPass(r: StickRead): "feet" | "through" | null {
+  if (r.feet === null && r.through === null) return null;
+  return (r.through ?? -1) >= (r.feet ?? -1) ? "through" : "feet";
+}
+
+function gauss(rng: () => number) {
+  const u = Math.max(1e-9, rng()), v = rng();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+/** The pass to you: a real ball at a pass's speed, a small error by how good a passer he is. */
+function playPassTo(st: PlayOn, stk: PlayOnStick, sc: Scenario, ball: Ball, to: Vec2, through: boolean, rng: () => number) {
+  const from = { x: ball.pos.x, y: ball.pos.y };
+  const dx = to.x - from.x, dy = to.y - from.y;
+  const d = Math.hypot(dx, dy) || 1;
+  const q = passQuality(sc);
+  const err = gauss(rng) * (1 - q) * 5 * (Math.PI / 180);
+  const c = Math.cos(err), s = Math.sin(err);
+  const ux = (dx / d) * c - (dy / d) * s, uy = (dx / d) * s + (dy / d) * c;
+  const speed = passSpeedFor(d, through) * (1 + gauss(rng) * (1 - q) * 0.06);
+  ball.receiverControlT = 0;
+  ball.vel = { x: ux * speed, y: uy * speed };
+  ball.vz = 0; ball.z = 0.08; ball.spin = 0;
+  ball.loose = false; ball.resting = false; ball.restT = 0;
+  ball.shot = false;
+  ball.owner = "mate";
+  ball.lastTouch = "attack";
+  ball.contactCd = 0.2;
+  const list = orderableRunners(sc);
+  const i = sc.receivedBy ? list.indexOf(sc.receivedBy) : -1;
+  logBallAction(ball, { kind: "pass", actor: i >= 0 ? `run${i}` : "follower", mode: "ground", at: { x: from.x, y: from.y, z: ball.z } });
+  sc.relayed = true;
+  sc.receiverDone = false;
+  stk.passTo = { ...to };
+  st.layOffLive = true;
+}
+
+function stepPlayOnStick(st: PlayOn, stk: PlayOnStick, sc: Scenario, ball: Ball, dt: number, rng: () => number, layOffsLeft: number): "caught" | null {
+  const p = sc.player;
+  moveOnStick(stk, p, dt);
+  if (st.layOffLive) {
+    if (ball.contactCd <= 0 && ball.z < 1.0 && Math.hypot(ball.pos.x - p.x, ball.pos.y - p.y) < STICK_CATCH_R) return "caught";
+    if (ball.owner !== "mate" || sc.receiverDone || ball.shot) st.layOffLive = false;
+    return null;
+  }
+  // He hit it first time, before he could look up: the call came too late.
+  if (stk.called && sc.receiverShot) { stk.note = "late"; stk.called = false; }
+  if (stk.passTo || !(sc.receiverDone && ball.receiverControlT > 0) || sc.relayTo || sc.relayToFollower) return null;
+  const at = sc.receivedAt ?? ball.pos;
+  if (stk.read === null) {
+    // His first look, the moment he has it. You are making a run he could
+    // find (onside, running in): he takes a beat longer on it to see it.
+    const r = stickRead(sc, at, p, stk.vel);
+    stk.read = r;
+    const gcx = (sc.goal.x1 + sc.goal.x2) / 2 || CX;
+    const g = { x: gcx - p.x, y: -p.y }, gl = Math.hypot(g.x, g.y) || 1;
+    const runIn = (stk.vel.x * g.x + stk.vel.y * g.y) / gl;
+    if (layOffsLeft > 0 && (runIn >= THROUGH_RUN_MS || stk.called) && !offsideAt(sc, p, at) && r.his < STICK_WAIT_BELOW) ball.receiverControlT += STICK_WAIT_S;
+  }
+  if (ball.receiverControlT <= dt + 1e-9) {
+    // He plays it: where you are NOW. One look, one choice.
+    const r = stickRead(sc, ball.pos, p, stk.vel);
+    stk.read = r;
+    const pick = bestPass(r);
+    let go: "feet" | "through" | null = null;
+    if (layOffsLeft > 0 && stk.called) {
+      if (pick) go = pick; else stk.note = "noLane";
+      stk.called = false;
+    } else if (layOffsLeft > 0 && pick && rng() < r.pPass) go = pick;
+    if (go) {
+      stk.choice = go;
+      playPassTo(st, stk, sc, ball, go === "through" ? r.throughAt! : { x: p.x, y: p.y }, go === "through", rng);
+    } else stk.choice = "shoot";
+  }
+  return null;
+}
+
+/** The captain's "Call for it" button: only for the captain, only while the joystick is live and no pass to you is on its way. */
+export function callForItShown(o: { captain: boolean; stickLive: boolean; layOffLive: boolean }): boolean {
+  return o.captain && o.stickLive && !o.layOffLive;
 }

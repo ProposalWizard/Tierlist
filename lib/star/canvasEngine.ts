@@ -3678,6 +3678,20 @@ function wouldBeOffside(scenario: Scenario, p: Vec2, ballAt: Vec2): boolean {
 }
 
 /**
+ * Read-only, for the after-pass joystick (lib/star/playOn.ts, 14 Oct 2026):
+ * would a ball played from `ballAt` to `p` be to a man in an offside
+ * position (the same test as offsideSnapshot), and how good a passer the man
+ * on the ball is (the same number his relay passes use). Nothing here moves
+ * or changes anything.
+ */
+export function offsideAt(scenario: Scenario, p: Vec2, ballAt: Vec2): boolean {
+  return wouldBeOffside(scenario, p, ballAt);
+}
+export function passQuality(scenario: Scenario): number {
+  return passerQuality(scenario);
+}
+
+/**
  * Play the ordered lay-off — unless he is a good passer and the man is
  * already offside: then he does not play the offside ball, he shoots.
  */
