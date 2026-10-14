@@ -739,6 +739,16 @@ export interface Scenario {
    */
   relayToFollower?: boolean;
   /**
+   * "After you pass: Joystick" only (lib/star/playOn.ts, Harry 14 Oct 2026:
+   * "the play needs to slow down a bit … only shoot first time if it's on").
+   * "stick" = the team-mate who takes your pass asks the joystick's reception
+   * rule (setMateReceptionRule) whether to hit it first time, how long his
+   * touch is, and whether to run on with it. Absent (every other caller,
+   * Auto run included) = the engine's own rule, byte-identical to before.
+   * Plain data on purpose: scenarios are structuredClone'd for snapshots.
+   */
+  matePace?: "stick";
+  /**
    * Touch Mode's own chase (Boot.extraTouch) — set true the first time the
    * ball gets away from `player` by more than TOUCH_CHASE_START_R, with
    * `player` genuinely frozen (not moved at all) until that happens. Gates
@@ -3940,6 +3950,20 @@ export type ReceiverStrikeMode = "ground" | "volley" | "header";
  * hasn't landed yet" for a kind that was never built as a cross, and
  * getting that wrong is worse than not having it.
  */
+/**
+ * The joystick's reception rule (Scenario.matePace "stick"). Registered by
+ * lib/star/playOn.ts so this file never imports it. firstTime: hit it now;
+ * else holdT seconds on it (his touch and his look up) and, when carryT > 0,
+ * run on with it toward goal first (MATE_CARRY) for up to carryT seconds.
+ */
+export interface MateReception { firstTime: boolean; holdT: number; carryT: number }
+export type MateReceptionRule = (scenario: Scenario, at: Vec2, mode: ReceiverStrikeMode, scrambled: boolean) => MateReception;
+// On globalThis, not a module variable: the test runner can load this file
+// twice (once per module system), and the rule must reach both copies.
+const MATE_RULE_KEY = "__starMateReceptionRule";
+const mateRule = (): MateReceptionRule | null => ((globalThis as Record<string, unknown>)[MATE_RULE_KEY] as MateReceptionRule | undefined) ?? null;
+export function setMateReceptionRule(rule: MateReceptionRule | null) { (globalThis as Record<string, unknown>)[MATE_RULE_KEY] = rule; }
+
 export function strikeModeForHeight(kind: ScenarioKind, z: number): ReceiverStrikeMode {
   if (!CROSS_DELIVERY_KINDS.includes(kind)) return "ground";
   // Checked first and unconditionally: a ball above HEADER_MAX_REACH_Z is
@@ -7503,7 +7527,23 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
           // and standing over it for half a second while they get there is not a
           // decision anybody would take. It looked like a bug, because it was
           // one — the pause was written for the other case and applied to both.
-          if (scrambled) {
+          // "After you pass: Joystick": the joystick's rule decides (see
+          // MateReception). Only with no lay-off ordered; absent = as before.
+          const rule = scenario.matePace === "stick" ? mateRule() : null;
+          const paced = rule && scenario.receiver && !relay && !followerRelay
+            ? rule(scenario, { x: tgt.x, y: tgt.y }, strikeModeForHeight(scenario.kind, arrivalZ), scrambled)
+            : null;
+          if (paced) {
+            if (paced.firstTime) {
+              if (scrambled) { ball.vz = 0; ball.z = 0.08; } else { ball.z = arrivalZ; ball.vz = 0; }
+              launchReceiverShot(ball, scenario, rng, !scrambled, strikeModeForHeight(scenario.kind, arrivalZ) === "ground");
+            } else {
+              ball.vz = 0; ball.z = 0.08;
+              ball.receiverControlT = paced.holdT;
+              ball.event = "received";
+              ball.carryT = paced.carryT;
+            }
+          } else if (scrambled) {
             ball.vz = 0; ball.z = 0.08;
             if (!playRelay(ball, scenario, relay, !!followerRelay, rng, false)) launchReceiverShot(ball, scenario, rng, false);
           } else {

@@ -8561,6 +8561,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     playOnCaughtRef.current = false;
     {
       const sc = scenarioRef.current;
+      // The joystick's calmer tempo (playOn.ts stickReception) belongs to one
+      // pass; startPlayOnStick below sets it again when this kick earns it.
+      delete sc.matePace;
       const touchOn = touchModeOnRef.current && canExtraTouch;
       // "After you pass: Joystick" (lib/star/afterPass.ts): any pass in a chance
       // with a goal in it gives you the stick (no build-up needed). Auto run

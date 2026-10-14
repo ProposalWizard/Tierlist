@@ -23,7 +23,7 @@ import {
   type Scenario, type Ball, type Outcome, type ScenarioKind, type Vec2,
 } from "../../lib/star/canvasEngine";
 import {
-  startPlayOn, stepPlayOn, startPlayOnStick, steerPlayOn, callForIt, callForItShown, playOnStickWanted, stickRead, shotValue,
+  startPlayOn, stepPlayOn, startPlayOnStick, steerPlayOn, callForIt, callForItShown, playOnStickWanted, stickRead, shotValue, stickShotIsOn, stickReception,
   MAX_LAY_OFFS, PLAY_ON_RUN_SPEED, type PlayOn,
 } from "../../lib/star/playOn";
 import { STICK_SPRINT } from "../../lib/star/firstPersonDribble";
@@ -168,6 +168,74 @@ check("he still shoots most of the time", (["still", "drift", "jog", "sprint"] a
   sc.defenders = [{ ...sc.keeper, x: 36, y: 22 } as unknown as Scenario["defenders"][number]];
   const r2 = stickRead(sc, at, you, { x: 0, y: -6 });
   check("a man in the lane to you: no ball to your feet", r2.feet === null, r2);
+}
+
+// ── 5. The tempo after your pass (Harry, 14 Oct 2026: "the play needs to slow down a bit") ──
+// Auto run is untouched by the tempo change: these are main's hashes on 14 Oct
+// 2026 (the pre-joystick hashes in §1 had already moved on main before this).
+check(`tempo change: Old play-on unchanged (${playOnFingerprint(false)})`, playOnFingerprint(false) === "74f6eaa6");
+check(`tempo change: Auto run unchanged (${playOnFingerprint(true)})`, playOnFingerprint(true) === "e1b57c80");
+{
+  const sc = makeChance({ source: { from: "kind", kind: "one_on_one" }, rng: mulberry32(21) }).sc;
+  sc.defenders = [];
+  const gcx = (sc.goal.x1 + sc.goal.x2) / 2;
+  check("8 m out, central, nobody near: first time", stickShotIsOn(sc, { x: gcx + 1, y: 8 }) && stickReception(sc, { x: gcx + 1, y: 8 }, "ground", false).firstTime);
+  check("25 m out: not first time", !stickShotIsOn(sc, { x: gcx, y: 25 }));
+  check("on the byline, no angle: not first time", !stickShotIsOn(sc, { x: gcx + 14, y: 1 }));
+  sc.defenders = [{ ...sc.keeper, x: gcx + 1.5, y: 8.5 } as unknown as Scenario["defenders"][number]];
+  check("a man on him: not first time", !stickShotIsOn(sc, { x: gcx + 1, y: 8 }));
+  const r = stickReception(sc, { x: gcx + 1, y: 8 }, "ground", false);
+  check(`not on: a real touch and look up (${r.holdT} s, engine's own is 0.45)`, !r.firstTime && r.holdT >= 0.9);
+  check("a loose ball run down: a quicker touch", stickReception(sc, { x: gcx + 1, y: 8 }, "ground", true).holdT < r.holdT);
+}
+{
+  // Measured, the same pass as §2 with you jogging in: from your pass to his
+  // shot or pass, and whether he hit it first time, by where he took it.
+  // Before (main, 14 Oct): on the ball 0.46 s every time; pass→release median
+  // 1.09 s; first time 0% (no names) / 14% with names — 17% when the shot was
+  // on, 20% from outside the box.
+  type T = { on: boolean; first: boolean; hold: number; total: number };
+  const ts: T[] = [];
+  for (const kind of KINDS) for (let i = 0; i < 100; i++) {
+    const rng = mulberry32(9100 + i * 53 + kind.length * 7);
+    const sc: Scenario = makeChance({ source: { from: "kind", kind }, rng }).sc;
+    initDefenders(sc, rng);
+    const mates = orderableRunners(sc);
+    if (!mates.length) continue;
+    for (const m of mates) m.who = { name: "M", overall: 80, shooting: 82, passing: 76 } as never;
+    const to = mates[i % mates.length].pos;
+    const dx = to.x - sc.ball.x, dy = to.y - sc.ball.y, d = Math.hypot(dx, dy) || 1;
+    const ball: Ball = launch(sc, { x: dx, y: dy }, 0.5, { cx: 0, cy: 0 }, { power: 70, technique: 70 }, rng);
+    const sp = Math.max(12, Math.min(22, 10 + d * 0.45));
+    ball.vel = { x: (dx / d) * sp, y: (dy / d) * sp }; ball.vz = 0; ball.z = 0.08; ball.spin = 0; ball.shot = false; ball.youStruckAtGoal = false;
+    sc.player = { x: sc.ball.x, y: sc.ball.y };
+    const st = startPlayOnStick(sc, rng, to);
+    const lr = mulberry32(0x51ab ^ i);
+    const gcx = (sc.goal.x1 + sc.goal.x2) / 2;
+    const runTo: Vec2 = { x: gcx + (to.x < gcx ? 5 : -5), y: 9 };
+    let recvT = -1, relT = -1, on = false, res: Outcome | null = null;
+    for (let t = 0; t < 10 && !res; t += H) {
+      const p = sc.player, ux = runTo.x - p.x, uy = runTo.y - p.y, ul = Math.hypot(ux, uy) || 1;
+      steerPlayOn(st, ul < 1 ? 0 : (ux / ul) * 0.6, ul < 1 ? 0 : (uy / ul) * 0.6);
+      stepDefenders(sc, H, ball.pos, false, ball); stepKeeper(sc, H); stepReactions(sc, ball, H, rng);
+      const wasDone = sc.receiverDone, wasShot = sc.receiverShot, wasPass = st.layOffLive;
+      if (stepPlayOn(st, sc, ball, H, lr, MAX_LAY_OFFS) === "caught") break;
+      if (!wasPass && st.layOffLive && relT < 0) relT = t;
+      res = stepBall(ball, sc, rng, H);
+      if (recvT < 0 && (sc.receiverDone || sc.receiverShot) && !wasDone) { recvT = t; on = stickShotIsOn(sc, sc.receivedAt ?? ball.pos); }
+      if (relT < 0 && sc.receiverShot && !wasShot) relT = t;
+      if (ball.event) ball.event = null;
+    }
+    if (recvT >= 0 && relT >= 0) ts.push({ on, first: relT - recvT < 0.05, hold: relT - recvT, total: relT });
+  }
+  const med = (a: number[]) => [...a].sort((x, y) => x - y)[a.length >> 1] ?? 0;
+  const onS = ts.filter((x) => x.on), notS = ts.filter((x) => !x.on);
+  const ft = (a: T[]) => a.filter((x) => x.first).length;
+  console.log(`\ntempo (${ts.length} passes): shot on ${onS.length} → first time ${pct(ft(onS), onS.length)} · not on ${notS.length} → first time ${pct(ft(notS), notS.length)}, on the ball median ${med(notS.map((x) => x.hold)).toFixed(2)} s · pass→release median ${med(ts.map((x) => x.total)).toFixed(2)} s`);
+  check("shot on: he hits it first time (≥95%)", ft(onS) >= 0.95 * onS.length && onS.length > 10);
+  check("shot not on: never first time (≤2%)", ft(notS) <= 0.02 * notS.length);
+  check("not on: he is on the ball ≥0.9 s (was 0.46)", med(notS.map((x) => x.hold)) >= 0.9);
+  check("your pass → his shot or pass: median ≥1.5 s (was 1.09)", med(ts.map((x) => x.total)) >= 1.5);
 }
 
 console.log(fails ? `\n${fails} FAILED` : "\nall ok");
