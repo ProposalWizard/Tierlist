@@ -124,6 +124,8 @@ export interface LabOptions {
   afterLaunch?: (ball: E.Ball, sc: E.Scenario, thumb: Thumb, rng: () => number) => void;
   /** The Shots model (null = plain launch, today's game). */
   model?: { pro: boolean; knuckle: boolean } | null;
+  /** Shoot THIS served chance (a copy of it) instead of making one of `kind`. */
+  scenario?: E.Scenario;
 }
 
 /** Where a struck ball crosses y = 0 with nobody in the way: the real
@@ -152,7 +154,8 @@ export function cleanCrossing(sc0: E.Scenario, ball0: E.Ball): { x: number; z: n
 export function shoot(kind: E.ScenarioKind, seed: number, o: LabOptions = {}): ShotResult {
   const ks = o.keeper ?? 62;
   const rng = mulberry32(seed);
-  const sc = makeChance({ source: { from: "kind", kind }, rng, strength: { keeper: ks, team: 60, vision: 55 }, memory: null }).sc;
+  const sc = o.scenario ? structuredClone(o.scenario)
+    : makeChance({ source: { from: "kind", kind }, rng, strength: { keeper: ks, team: 60, vision: 55 }, memory: null }).sc;
   E.initDefenders(sc, rng);
   B.brainSetup(sc, (seed ^ 0x4b7e) >>> 0, ks, { openPlay: 0.55 });
   const aimR = mulberry32((seed ^ 0xa11ce) >>> 0);

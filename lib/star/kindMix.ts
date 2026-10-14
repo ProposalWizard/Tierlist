@@ -72,3 +72,52 @@ export function nextEvenKind(bag: KindBag, rng: () => number, real = false): Sce
   bag.last = k;
   return k;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+//  NEW CHANCES (Settings → Chances: New, lib/star/newChances.ts)
+// ─────────────────────────────────────────────────────────────────────────
+
+/** How many served kinds the New deal looks back on: "at most 2 of one kind
+ *  in any 8" needs the last 7. */
+export const GUARD_WINDOW = 8;
+export const GUARD_MAX_IN_WINDOW = 2;
+
+/** May `k` be served next, after `dealt` (oldest first)? Never the kind just
+ *  served, and at most GUARD_MAX_IN_WINDOW of one kind in any GUARD_WINDOW. */
+export function guardAllows(k: ScenarioKind, dealt: readonly ScenarioKind[]): boolean {
+  if (dealt.length && dealt[dealt.length - 1] === k) return false;
+  const last = dealt.slice(-(GUARD_WINDOW - 1));
+  return last.filter((x) => x === k).length < GUARD_MAX_IN_WINDOW;
+}
+
+/** One weighted pick from a list of kinds (copies are the weights), one rng() drawn. */
+function pickCopies(list: readonly ScenarioKind[], rng: () => number): ScenarioKind {
+  return list[Math.min(list.length - 1, Math.floor(rng() * list.length))];
+}
+
+/**
+ * The New deal: the match radar's own weighted kinds (`offered`, copies are
+ * the weights), with the guard. When nothing offered passes the guard, the
+ * `wider` lists are tried in order (the zone's other lane, then the zones
+ * either side), then the guard eases to "just not the same kind twice in a
+ * row", then anything offered. Always exactly one rng() drawn.
+ */
+export function guardedDeal(
+  offered: readonly ScenarioKind[], wider: readonly (readonly ScenarioKind[])[], dealt: readonly ScenarioKind[], rng: () => number,
+): ScenarioKind {
+  const notLast = (k: ScenarioKind) => !(dealt.length && dealt[dealt.length - 1] === k);
+  const tiers: ScenarioKind[][] = [
+    offered.filter((k) => guardAllows(k, dealt)),
+    ...wider.map((w) => w.filter((k) => guardAllows(k, dealt))),
+    offered.filter(notLast),
+    ...wider.map((w) => w.filter(notLast)),
+  ];
+  const pool = tiers.find((t) => t.length) ?? [...offered];
+  return pickCopies(pool, rng);
+}
+
+/** Remember a served kind for the guard (keeps the last GUARD_WINDOW). */
+export function noteDealt(dealt: ScenarioKind[], k: ScenarioKind): void {
+  dealt.push(k);
+  if (dealt.length > GUARD_WINDOW) dealt.splice(0, dealt.length - GUARD_WINDOW);
+}
