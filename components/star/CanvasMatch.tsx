@@ -51,6 +51,8 @@ import {
   PEN_SPOT_Y, ARC_R, CENTRE_R, CORNER_R,
 } from "@/lib/star/pitch";
 import { mulberry32 } from "@/lib/star/season";
+import { newChancesOn } from "@/lib/star/newChances";
+import { dealDribble, dribbleLevelFor, newDribbleDeal, type DribbleDeal } from "@/lib/star/dribbleDeal";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { deflectBlock } from "@/lib/star/deflection";
 import { steerDeflectionFromOwnGoal, clearLooseWin } from "@/lib/star/defenderTouch";
@@ -1315,6 +1317,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // your chances are what it hands you, and their kind is decided by where the
   // ball actually was when it found you.
   const matchStateRef = useRef<HiddenMatchState>(newMatch(mulberry32(seed)));
+  // Chances: New only — the deal that turns a fitting moment into a top-down
+  // dribble (lib/star/dribbleDeal.ts). Its own stream; Old never touches it.
+  const dribbleDealRef = useRef<{ deal: DribbleDeal; rng: () => number } | null>(null);
   /** The live radar (Settings → Look → Match radar): every minute the unseen
    *  match plays, by minute (hiddenMatch.ts's radarTrace). */
   const radarTraceRef = useRef(new Map<number, RadarTick>());
@@ -7045,11 +7050,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // What the match has just handed you, if anything. Its zone narrows the
     // scenario to what makes football sense from there; your position still
     // decides which of those you are likeliest to be the one taking.
-    const request = attacking ? null : pendingRequestRef.current;
+    const rawRequest = attacking ? null : pendingRequestRef.current;
     pendingRequestRef.current = null;
 
     const chain = chainRef.current;
     chainRef.current = null;
+
+    // Chances: New — the deal decides whether this moment is a top-down
+    // dribble, by the league you play in (lib/star/dribbleDeal.ts). Old: the
+    // match's own request, exactly as before.
+    let request = rawRequest;
+    if (rawRequest && !chain && newChancesOn()) {
+      const d = (dribbleDealRef.current ??= { deal: newDribbleDeal(), rng: mulberry32((seed ^ 0xd21bb1e) >>> 0) });
+      const car = careerRef.current;
+      request = dealDribble(rawRequest, dribbleLevelFor(car ? divisionOf(car) : undefined, fixture?.competition), d.deal, d.rng);
+    }
 
     // A foul on you while you pulled back (v0.15 item 22): the next chance is
     // the game's own free kick or penalty.
@@ -7317,6 +7332,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
   const restartSession = () => {
     sceneGenRef.current += 1;
+    dribbleDealRef.current = null;
     attemptsRef.current = 0;
     tallyRef.current = { shots: 0, goals: 0, passes: 0, passesCompleted: 0, chances: 0, assists: 0, misses: 0, lost: 0, dribbles: 0, goalsPen: 0, goalsTap: 0, goalsOut: 0, passesSafe: 0, passesAmb: 0, missesOn: 0, missesPen: 0, misses1v1: 0 };
     chanceLogRef.current = [];
