@@ -53,12 +53,13 @@ import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { bcPose } from "./broadcastCam";
 import { SIZE3D } from "./size3d";
+import { texturePack, onTexturePack } from "./texturePack";
 import { SMALL_MEN } from "./smallMen";
 import { camZoom, setCamZoom, camHeightTest, zoomCamera, lerpCamera } from "./camZoom";
 /** Open play: the default 3D framing sits this much closer than the whole scenario (zoom 0 vs 1). */
 /** Open play's default = the 2D's own frame of the same chance, exactly (Harry, 12 Oct 2026: a 0.85 zoom-in cut the taker off on tight angles and cutbacks). */
 const OPEN_DEFAULT_K = 1;
-import { solveMatch2D, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, orbitCamera, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
+import { solveMatch2D, groundUnder, visibleQuad, leanFor, MATCH2D, matchScale, usesSetPieceCam, solveSetPieceCam, setPieceKeep, usesCornerCam, solveCornerCam, SET_PIECE_CAM, CORNER_CAM, keepDragRoom, usesKindCam, solveKindCam, wideFromSide, ORBIT, clampOrbit, limitOrbit, orbitMaxFor, orbitCamera, centreShare, frameTurned, solveTurnFit, easeFit, type TurnFit, showsGoal, grabsBall, overheadClipAlong, overStand, TILT, clampTilt, tiltCamera, type Match2DCamera } from "./match2dCam";
 import { shotTarget, stanceFor, approachSFor, runClipTime, runBlend } from "./setPiece3d";
 import { hasRunup } from "../penaltyRunup";
 
@@ -188,6 +189,9 @@ type Body = {
   /** Smooth playback (3D camera: New): when his loop last changed (f.t). */
   sw?: number;
 };
+
+/** The keeper's height against his team-mates (Harry, 13 Oct 2026: "a little bit taller"): 1.07 = about 13 cm on 1.8 m. */
+const KEEPER_TALL = 1.07;
 
 export async function createEngineView(container: HTMLElement, o: { def: StyleDef; tier?: Quality3d; tod?: TimeOfDay; faces?: boolean; tilt?: number; canvas2d?: HTMLCanvasElement; onContextLost?: () => void; onContextRestored?: () => void }): Promise<EngineView> {
   const faces = !!o.faces;
@@ -669,6 +673,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (!spare) { built++; cullSkinned(THREE, p.root); matchSizedMap(p); homeLight(p); }
     if (tb) setToonBuild(p, tb);
     if (tb && homeMen) p.root.children[0]?.scale.multiply(new THREE.Vector3(...HOME_MATCH_BUILD.across)).multiply(new THREE.Vector3(1, ml?.height ?? 1, 1));
+    // the keeper a little taller than his team (Harry, 13 Oct 2026). His own build, under the root, so his
+    // root stays SIZE3D.keeper (size3d.ts): one fixed size, the same in every chance and every frame.
+    if (sid === "keeper" && (tb || !spare)) p.root.children[0]?.scale.multiply(new THREE.Vector3(1.03, KEEPER_TALL, 1.03));
     const look: PersonLook = {
       skin: toonOn ? (sid === "you" ? toonYou().skin : ml ? ml.skin : toonSkinFor(sid)) : SKINS[hashOf(sid) % SKINS.length],
       hair: toonOn ? (sid === "you" ? toonYou().hair : ml ? ml.hair : toonHairFor(sid)) : "#1b120c",
@@ -1109,8 +1116,23 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     b.p.root.visible = true;
   };
 
+  /**
+   * The keeper in a really bright kit (Harry, 13 Oct 2026: "make the goalie rlly bright in 3d"): his own
+   * colour's hue, full saturation and lit up, so he never sinks into the stand shadow on the goal line.
+   */
+  const neonKit = (hex: string) => {
+    const c = new THREE.Color(hex), hsl = { h: 0, s: 0, l: 0 };
+    c.getHSL(hsl);
+    // a grey/black/white kit has no hue of its own, and a green one sinks into the grass: neon yellow
+    const deg = hsl.h * 360;
+    if (hsl.s < 0.15 || (deg > 70 && deg < 175)) return "#ffe81a";
+    return `#${c.setHSL(hsl.h, 1, 0.56).getHexString()}`;
+  };
   const placeKeeper = (k: NonNullable<EngineFrame["keeper"]>, f: EngineFrame, dt: number, frameNo: number) => {
-    const b = bodyFor("keeper", k.shirt, k.shorts, faces ? k.face : undefined);
+    const b = bodyFor("keeper", neonKit(k.shirt), neonKit(k.shorts), faces ? k.face : undefined);
+    // never capped below full white by the Home light (its 0.95 cap keeps shorts from blooming; he can glow)
+    const hu = (b.p.u as any).uHome?.value;
+    if (hu) hu.z = 1.6;
     b.seen = frameNo;
     const jump = Math.hypot(k.x - b.x, k.y - b.y);
     const cut = !b.init || jump > 4;
@@ -1216,7 +1238,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       kit.setActive(false);
       const tod = hTod ?? def.real;
       if (h) { h.setTod(tod); return; }
-      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" }, crisp: true }))
+      hReady = import("./real/look").then(({ createRealLook }) => createRealLook(THREE, renderer, scene, tier, { tod, ball, colours: { home: "#d62828", home2: "#f4f4f4", away: "#1d4ed8" }, crisp: true, pack: texturePack() }))
         .then((made) => {
           if (tk !== hToken || !def.real) { made.dispose(); return; }
           h = made;
@@ -1267,8 +1289,27 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   if (def.real) {
     // the ball's look H dressing, kept across style changes
     const { dressHBall } = await import("./real/ball");
-    hball = dressHBall(THREE, ball, root);
+    hball = dressHBall(THREE, ball, root, { classic: texturePack() !== "real" });
   }
+  /**
+   * Settings → Texture pack changed (texturePack.ts): the world (pitch, stadium, sky, light, ball)
+   * is built again in the new pack, live, mid-match too. The men, the camera and every size stay.
+   */
+  let packNow = texturePack();
+  const offPack = onTexturePack(() => {
+    const pk = texturePack();
+    if (pk === packNow) return;
+    packNow = pk;
+    if (!def.real) return;
+    hToken++;
+    h?.dispose(); h = null; // its own ball dressing goes with it
+    hball?.dispose(); hball = null;
+    void import("./real/ball").then(({ dressHBall }) => {
+      if (!def.real) return;
+      if (!hball) hball = dressHBall(THREE, ball, root, { classic: packNow !== "real" });
+      restyle();
+    }).catch(() => {});
+  });
 
   // ── the camera: the 2D canvas's tilt, as a pinhole (see the top of the file) ──
   const tmpV = new THREE.Vector3();
@@ -1296,7 +1337,10 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    */
   const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, aimBall: null as { x: number; y: number } | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1, spWide: null as Match2DCamera | null };
   /** The camera swipe (match2dCam.ts ORBIT): degrees turned round the ball now, where it is heading, a finger on it. */
-  const orbit = { deg: 0, target: 0, drag: false, ballKey: "", t: -1, d0: 0, tilt: 0, tiltTarget: 0, tiltDrag: false, t0: 0 };
+  /** The turned camera's framing, eased frame to frame (match2dCam.ts solveTurnFit / easeFit). */
+  const turn = { fit: null as TurnFit | null, want: null as TurnFit | null, key: "", at: 0 };
+  const TURN_SOLVE_S = 0.05;
+  const orbit = { deg: 0, target: 0, drag: false, ballKey: "", kind: "", t: -1, d0: 0, tilt: 0, tiltTarget: 0, tiltDrag: false, t0: 0, centre: 0 };
   (window as unknown as { __cam3dOrbit?: (deg: number) => void }).__cam3dOrbit = (deg: number) => { orbit.target = clampOrbit(deg); orbit.deg = orbit.target; }; // dev/test: stills of a turned view
   // THE CAMERA LOCK (Harry, 13 Oct 2026: "a little floating camera icon that can lock/unlock the camera
   // and maybe a double tap to get back to our default camera angle"). Locked: the angle you left it at is
@@ -1317,13 +1361,15 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * Only the stadium group, only with 3D camera New; far away (no effect) otherwise.
    */
   const arenaClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e6);
+  /** The same cut for the seats, steps and walls; a turned camera over a stand keeps them (overStand). */
+  const seatClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e6);
   function clipArenaNearSide() {
     const g = scene.getObjectByName("h-arena");
     if (!g) return;
     renderer.localClippingEnabled = true;
     g.traverse((o: { material?: unknown }) => {
       const raw = o.material as { clippingPlanes: unknown[]; clipping?: boolean; needsUpdate: boolean } | { clippingPlanes: unknown[]; clipping?: boolean; needsUpdate: boolean }[] | undefined;
-      for (const m of Array.isArray(raw) ? raw : raw ? [raw] : []) { m.clippingPlanes = [arenaClip]; m.clipping = true; m.needsUpdate = true; }
+      for (const m of Array.isArray(raw) ? raw : raw ? [raw] : []) { m.clippingPlanes = [(m as { userData?: { overhead?: boolean } }).userData?.overhead ? arenaClip : seatClip]; m.clipping = true; m.needsUpdate = true; }
     });
   }
   const placeMatch2D = (f: EngineFrame) => {
@@ -1335,24 +1381,31 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const sp = (usesSetPieceCam(f.kind) || corner || kindCam) && !!f.ball;
     const key = `${f.kind}|${facing}|${tilt ? tilt.deg : 0}|${Math.round(W)}|${Math.round(H)}`;
     // a new set piece: a new ball spot while aiming (a shootout's next kick from the same spot keeps its camera)
-    const spKey = sp && f.ball && f.phase === "aim" ? `${key}|${f.ball.x.toFixed(1)},${f.ball.y.toFixed(1)}` : m2.spKey;
+    // A lead-in replaying (test pages only: CanvasMatch's `leadIn`): the 2D frame follows the passes
+    // and then is fixed on the chance's own frame (lib/star/leadIn.ts). A camera of the 3D's own (a
+    // tight angle's) is worked out from where the CHANCE has everyone, so it is the camera the chance
+    // keeps, and the follow glides onto it as the 2D's does. Absent (the real game): nothing changes.
+    const lead = f.leadIn ?? null;
+    const spBall = lead ? lead.ball : f.ball;
+    const spKey = sp && spBall && f.phase === "aim" ? `${key}|${spBall.x.toFixed(1)},${spBall.y.toFixed(1)}` : m2.spKey;
     const fr2 = { viewport: vp, facing, tilt, W, H };
     // a penalty / free kick: the closer set-piece camera (match2dCam.ts SET_PIECE_CAM), worked out
     // once when the chance starts and held (the taker walks in inside it); every other kind: the 2D's own frame
-    if (sp && f.ball && (spKey !== m2.spKey || !m2.sp)) {
+    if (sp && f.ball && spBall && (spKey !== m2.spKey || !m2.sp)) {
       m2.spKey = spKey;
-      const kp = f.keeper ? { x: f.keeper.x, y: f.keeper.y } : null;
+      const kp = lead ? lead.keeper : f.keeper ? { x: f.keeper.x, y: f.keeper.y } : null;
+      const spFigs = lead ? f.figures.map((g) => (lead.at[g.sid] ? { ...g, x: lead.at[g.sid].x, y: lead.at[g.sid].y } : g)) : f.figures;
       // a corner: its own closer camera (match2dCam.ts CORNER_CAM), camera only
       // the glide: start on B or C (seeded per corner), and keep the box framing (A) for after the kick
       const glide = CORNER_CAM.pick === "glide";
       m2.cornerStart = corner && glide ? CORNER_CAM.starts[hashOf(spKey) % CORNER_CAM.starts.length] : "";
-      m2.cornerA = corner && glide ? solveCornerCam(fr2, { x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale, "A") : null;
+      m2.cornerA = corner && glide ? solveCornerCam(fr2, { x: spBall.x, y: spBall.y }, spFigs, kp, mScale, "A") : null;
       m2.cornerT0 = -1;
       m2.sp = corner
-        ? solveCornerCam(fr2, { x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale, m2.cornerStart || undefined)
+        ? solveCornerCam(fr2, { x: spBall.x, y: spBall.y }, spFigs, kp, mScale, m2.cornerStart || undefined)
         : kindCam
-        ? solveKindCam(f.kind, fr2, { x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale)
-        : solveSetPieceCam(fr2, setPieceKeep({ x: f.ball.x, y: f.ball.y }, f.figures, kp, mScale), { x: f.ball.x, y: f.ball.y }, mScale, SET_PIECE_CAM, f.kind === "penalty" ? SET_PIECE_CAM.penaltyShare : SET_PIECE_CAM.targetShare);
+        ? solveKindCam(f.kind, fr2, { x: spBall.x, y: spBall.y }, spFigs, kp, mScale)
+        : solveSetPieceCam(fr2, setPieceKeep({ x: spBall.x, y: spBall.y }, spFigs, kp, mScale), { x: spBall.x, y: spBall.y }, mScale, SET_PIECE_CAM, f.kind === "penalty" ? SET_PIECE_CAM.penaltyShare : SET_PIECE_CAM.targetShare);
       // the zoom's far end for a turned camera: the whole scenario, seen from the same side
       m2.spWide = kindCam && m2.sp ? wideFromSide(fr2, m2.sp) : null;
     }
@@ -1365,7 +1418,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // piece's own camera, else the 2D's frame a little closer), 1 = the whole scenario, -1 = closest.
     // It only moves the camera; it keeps between chances.
     const zoom = camZoom();
-    let def: Match2DCamera = sp && m2.sp ? m2.sp : { ...wide, D: wide.D * OPEN_DEFAULT_K, minDepth: wide.minDepth * OPEN_DEFAULT_K };
+    const openDef: Match2DCamera = { ...wide, D: wide.D * OPEN_DEFAULT_K, minDepth: wide.minDepth * OPEN_DEFAULT_K };
+    let def: Match2DCamera = sp && m2.sp ? (lead ? lerpCamera(openDef, m2.sp, lead.lock) : m2.sp) : openDef;
     // the corner glide: from the kick, ease to the box framing (A) in CORNER_CAM.glideS, following where the ball will land
     if (corner && m2.sp && m2.cornerA) {
       const struck = f.phase !== "aim" && f.phase !== "runup" && f.phase !== "contact";
@@ -1382,29 +1436,62 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // room to drag back (match2dCam.ts keepDragRoom): while aiming, the ball's spot stays a full-power
     // drag above the screen's bottom in every framing (default, pinched, a corner's start view); the
     // spot is held through the kick so the camera never jumps when the ball is struck
-    if (f.ball && (f.phase === "aim" || f.phase === "runup" || f.phase === "contact")) m2.aimBall = { x: f.ball.x, y: f.ball.y };
-    const cz = zoomCamera(def, kindCam && m2.spWide ? m2.spWide : wide, zoom);
+    // (a lead-in: the chance's ball, where the drag will start)
+    if (f.ball && (f.phase === "aim" || f.phase === "runup" || f.phase === "contact")) m2.aimBall = lead ? { ...lead.ball } : { x: f.ball.x, y: f.ball.y };
+    const farEnd = kindCam && m2.spWide ? (lead ? lerpCamera(wide, m2.spWide, lead.lock) : m2.spWide) : wide;
+    const cz = zoomCamera(def, farEnd, zoom);
     const elevDeg = cz.elevDeg + camHeightTest(); // the camera-height test slider (0 in the game)
     const c0 = { ...cz, elevDeg, elev: (elevDeg * Math.PI) / 180 };
     // open play at the default zoom IS the 2D frame (it already leaves the 2D's drag room): untouched
-    const cKept = m2.aimBall && (sp || zoom !== 0) ? keepDragRoom(c0, m2.aimBall, W, H) : c0;
+    const kept = m2.aimBall && (sp || zoom !== 0) ? keepDragRoom(c0, m2.aimBall, W, H) : c0;
+    // a lead-in: the drag room comes in as the camera fixes (none while it follows the passes)
+    const cKept = lead && kept !== c0 ? lerpCamera(c0, kept, lead.lock) : kept;
+    let turnDt = 0;
     // THE CAMERA SWIPE (match2dCam.ts ORBIT): turned round the ball while the chance lasts; a new chance,
     // or the end of this one, eases it back to 0
     {
       const live = f.phase === "aim" || f.phase === "runup" || f.phase === "contact" || f.phase === "flight";
       const bk = f.ball && f.phase === "aim" ? `${key}|${f.ball.x.toFixed(1)},${f.ball.y.toFixed(1)}` : orbit.ballKey;
-      if (!live || bk !== orbit.ballKey) { orbit.target = camLock.on ? camLock.deg : 0; orbit.tiltTarget = camLock.on ? camLock.tilt : 0; if (!touch.orbit) orbit.drag = false; if (!touch.tilt) orbit.tiltDrag = false; }
+      orbit.kind = f.kind; // the swipe's limit (match2dCam.ts limitOrbit: a corner stops softly at ±60°)
+      if (!live || bk !== orbit.ballKey) { orbit.target = camLock.on ? limitOrbit(camLock.deg, f.kind) : 0; orbit.tiltTarget = camLock.on ? camLock.tilt : 0; if (!touch.orbit) orbit.drag = false; if (!touch.tilt) orbit.tiltDrag = false; }
       orbit.ballKey = bk;
+      // a turn from elsewhere (the lock, a test still) past this kind's limit comes in to the limit, eased like any other
+      if (Math.abs(orbit.target) > orbitMaxFor(f.kind)) orbit.target = limitOrbit(orbit.target, f.kind);
       const dt = orbit.t < 0 ? 0 : Math.max(0, Math.min(0.1, f.t - orbit.t));
+      turnDt = dt;
       orbit.t = f.t;
       orbit.deg = orbit.drag ? orbit.target : orbit.deg + (orbit.target - orbit.deg) * Math.min(1, dt / ORBIT.easeS * 3);
       if (Math.abs(orbit.deg - orbit.target) < 0.05) orbit.deg = orbit.target;
       orbit.tilt = orbit.tiltDrag ? orbit.tiltTarget : orbit.tilt + (orbit.tiltTarget - orbit.tilt) * Math.min(1, dt / ORBIT.easeS * 3);
       if (Math.abs(orbit.tilt - orbit.tiltTarget) < 0.05) orbit.tilt = orbit.tiltTarget;
+      // ROUND OUR PLAYER, CENTRED (match2dCam.ts centreOnPivot): eased over ORBIT.centreS by how far it is turned
+      const want = centreShare(orbit.deg, orbit.tilt, orbit.drag || orbit.tiltDrag);
+      orbit.centre += (want - orbit.centre) * Math.min(1, dt / ORBIT.centreS * 3);
+      if (Math.abs(orbit.centre - want) < 0.002) orbit.centre = want;
     }
     const pivot = m2.aimBall ?? (f.ball ? { x: f.ball.x, y: f.ball.y } : null);
     const cTurned = pivot && orbit.deg ? orbitCamera(cKept, pivot, orbit.deg) : cKept;
-    const c = pivot && orbit.tilt ? tiltCamera(cTurned, pivot, orbit.tilt, W, H) : cTurned;
+    // turned: an automatic extra tilt down (ORBIT.autoTilt x the centring), so the near stand fills less of the screen
+    const tiltAll = orbit.tilt + ORBIT.autoTilt * orbit.centre;
+    const cTilted = pivot && tiltAll ? tiltCamera(cTurned, pivot, tiltAll, W, H) : cTurned;
+    // turned or tilted: framed round our player (match2dCam.ts frameTurned): the ball near the middle with its
+    // drag room, the whole goal mouth when the chance's own camera shows it, mostly pitch on the screen, inside
+    // the stadium. Only ever further back or higher (never in, never a size change), smoothly with the turn.
+    // The framing glides to each frame's answer (match2dCam.ts easeFit), so it never pops even where the
+    // answer moves fast with the turn; the turn itself follows the finger exactly.
+    let c = cTilted;
+    if (pivot && orbit.centre > 0) {
+      // worked out at most every TURN_SOLVE_S (a few ms each on a phone); the glide covers the frames between
+      const same = !!turn.fit && turn.key === orbit.ballKey;
+      if (!same || !turn.want || f.t - turn.at >= TURN_SOLVE_S || f.t < turn.at) {
+        turn.want = solveTurnFit(cTilted, pivot, W, H, showsGoal(cKept, W, H));
+        turn.at = f.t;
+      }
+      const want = turn.want;
+      turn.fit = same && turn.fit ? easeFit(turn.fit, want, turnDt) : want;
+      turn.key = orbit.ballKey;
+      c = frameTurned(cTilted, pivot, orbit.centre, W, H, true, turn.fit);
+    } else { turn.fit = null; turn.want = null; }
     const pose = bcPose(c);
     camera.position.set(pose.pos[0], pose.pos[1], pose.pos[2]);
     camera.up.set(0, 1, 0);
@@ -1427,6 +1514,29 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       const edge = Math.abs(c.ax) > 0.5 ? CX : 105;
       arenaClip.normal.set(-c.ax, 0, -c.az);
       arenaClip.constant = Math.min(far + 1.5, edge + 0.3);
+      // turned or tilted round our player: the 2D's box no longer says what is on the screen. Keep all
+      // the ground the 3D screen shows (to its bottom corners); only what stands nearer the camera than
+      // that (a roof in front of the lens) is not drawn (13 Oct 2026: a 90° turn showed a black band)
+      if (orbit.deg || orbit.tilt) {
+        let near = -Infinity;
+        for (const nx of [-1, 0, 1]) { const g = groundUnder(c, W, H, nx, -1); if (g) near = Math.max(near, (g.x - CX) * c.ax + g.y * c.az); }
+        // blended in with the centring (orbit.centre), so the cut never jumps the moment a turn starts
+        if (near > -Infinity) arenaClip.constant += (near + 1.5 - arenaClip.constant) * Math.min(1, orbit.centre);
+      }
+      // a turned camera standing over a stand (keepInBowl): its seats stay, like a reverse-angle
+      // broadcast shot; only the roof, truss and lamps nearer than the screen's bottom are not drawn
+      seatClip.copy(arenaClip);
+      // ...and turned, no stand roof, truss or lamp (Harry, 14 Oct 2026: "I only mean the top white roof, not
+      // the advertising boards and fans"; from a high camera a roof lay over 40% of the picture, 13 Oct stills)
+      if ((orbit.deg || orbit.tilt) && pivot) {
+        const cap = Math.min(arenaClip.constant, overheadClipAlong(c, pivot, orbit.centre));
+        arenaClip.constant += (cap - arenaClip.constant) * Math.min(1, orbit.centre);
+      }
+      const over = !!(orbit.deg || orbit.tilt) && overStand(c);
+      if (over) seatClip.constant = 1e6;
+      // ...and its crowd, which faces the pitch, is seen from behind: drawn both sides while it is
+      const crowd = scene.getObjectByName("h-crowd") as { material?: { side: number } } | undefined;
+      if (crowd?.material) crowd.material.side = over ? THREE.DoubleSide : THREE.FrontSide;
     }
     (window as unknown as { __tvSolve?: unknown }).__tvSolve = { D: c.D, elevDeg: c.elevDeg, fov: c.fov, extra: c.extra, near: camera.near, facing, fig: SIZE3D.man, man: c.man };
   };
@@ -1468,8 +1578,6 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       button: e.button, buttons: e.buttons, bubbles: true, cancelable: true, composed: true,
     }));
   };
-  /** How near the ball's picture a press grabs it, CSS px (a fingertip either side of a small ball). */
-  const GRAB_PX = 48;
   /** Where the ball is on the glass right now (client px), or null. */
   const ballOnGlass = (): { x: number; y: number } | null => {
     if (!lastFrame?.ball || !ball.visible) return null;
@@ -1520,6 +1628,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   };
   const onDown = (e: PointerEvent) => {
     if (!visible || pinch.on) return;
+    // PC: the left button only (a mouse drag on open grass turns/tilts the camera, as a finger does)
+    if (e.pointerType === "mouse" && e.button !== 0) return;
     // One finger at a time — but a touch that never ended here (its "up" went
     // elsewhere) must never lock the pitch: the same pointer pressing again, or
     // a touch silent for a second, starts afresh. (The bug behind "stuck on
@@ -1547,14 +1657,16 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     // A press on or near the ball AS SEEN (its 3D picture, lifted off the grass
     // and drawn big) grabs the ball: the 2D game is pressed exactly on its own
     // ball, so the aim starts as surely as a press on the 2D ball does.
+    // The grab zone is bounded on the GLASS round the ball as seen (match2dCam.ts grabsBall): a fingertip
+    // always grabs; a little further only if the press is also in the 2D game's own zone (CanvasMatch.tsx
+    // BALL_GRAB_FRACTION) or within 3.2 m on the grass. Those used to grab on their own, as circles on the
+    // GRASS, which a turned camera centred on the ball blew up to most of the screen (measured: ~170 px
+    // radius on a 362 px view): "it's just dragging back from anywhere on the screen".
     const b3 = ballOnGlass();
-    const nearBall = !!b3 && Math.hypot(e.clientX - b3.x, e.clientY - b3.y) <= GRAB_PX;
-    // ...and so does a press inside the 2D game's OWN grab zone round the ball (CanvasMatch.tsx
-    // BALL_GRAB_FRACTION, 18% of its height): those always kicked before the camera swipe existed, so
-    // they must never become a swipe (Harry, 13 Oct 2026: "I can't drag the ball back on many highlights").
     const b2d = f?.ball ? to2dClient(f.ball) : null;
     const in2dGrab = !!b2d && !!f && Math.hypot(at.x - b2d.x, at.y - b2d.y) <= 0.2 * f.cam.H;
-    touch.shot = !!f?.ball && f.phase === "aim" && (nearBall || in2dGrab || Math.hypot(g.x - f.ball.x, g.y - f.ball.y) < 3.2);
+    const glass = b3 ? Math.hypot(e.clientX - b3.x, e.clientY - b3.y) : Infinity;
+    touch.shot = !!f?.ball && f.phase === "aim" && grabsBall(glass, in2dGrab || false, Math.hypot(g.x - f.ball.x, g.y - f.ball.y));
     if (touch.shot && f?.ball) {
       const b2 = to2dClient(f.ball);
       if (b2) { touch.start2 = b2; touch.g0 = { x: f.ball.x, y: f.ball.y }; }
@@ -1586,6 +1698,18 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (dl < 1e-6) return touch.start2;
     return { x: touch.start2.x + (dx / dl) * len, y: touch.start2.y + (dy / dl) * len };
   };
+  /**
+   * A held-back press on the grass handed to the 2D game late (it was neither a turn nor a tilt).
+   * The 2D canvas takes the pointer's capture on its own pointerdown when the press lands in its
+   * grab zone (the ball's, or a team-mate's), so the rest of this touch went to it at the raw finger
+   * spot and its "up" never came back here: this view kept that finger as still down, and every
+   * later one-finger touch became a "pinch" (Harry, 14 Oct 2026: "cant drag the ball back anymore
+   * and zoom/swipes mixed up"). Take the capture back, as onDown does.
+   */
+  const handOver = (e: PointerEvent) => {
+    if (touch.ev0) send("pointerdown", touch.ev0, touch.start2);
+    try { container.setPointerCapture(e.pointerId); } catch { /* fine */ }
+  };
   const onMove = (e: PointerEvent) => {
     if (e.pointerId !== touch.id) return;
     touch.last = performance.now();
@@ -1593,14 +1717,14 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (touch.pend) {
       if (Math.hypot(dx, dy) < ORBIT.startPx) return;
       touch.pend = false; touch.dbl = false;
-      if (camLock.on) { if (touch.ev0) send("pointerdown", touch.ev0, touch.start2); } else
+      if (camLock.on) handOver(e); else
       if (Math.abs(dx) > Math.abs(dy) * ORBIT.sideways) { touch.orbit = true; orbit.drag = true; orbit.d0 = orbit.target; }
       else if (Math.abs(dy) > Math.abs(dx) * TILT.upright) { touch.tilt = true; orbit.tiltDrag = true; orbit.t0 = orbit.tiltTarget; }
-      else if (touch.ev0) send("pointerdown", touch.ev0, touch.start2);
+      else handOver(e);
     }
     if (touch.orbit) {
       const w = container.getBoundingClientRect().width || 1;
-      orbit.target = clampOrbit(orbit.d0 - (dx / w) * ORBIT.degPerWidth);
+      orbit.target = limitOrbit(orbit.d0 - (dx / w) * ORBIT.degPerWidth, orbit.kind); // a corner: an eased stop at ±60°
       return;
     }
     if (touch.tilt) {
@@ -1633,6 +1757,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
   // one-finger touch first by taking it back to where it started and lifting it there: a zero-length
   // drag, which the 2D game ignores (no kick; a team-mate pressed first gets his tap, an order).
   const pinch = { pts: new Map<number, { x: number; y: number }>(), d0: 0, z0: 0, on: false };
+  // dev/test: what the touch handling holds right now (scripts/star-sandbox/switch3d.mjs)
+  (window as unknown as { __cam3dInput?: () => unknown }).__cam3dInput = () => ({ visible, orbit: orbit.target, tilt: orbit.tiltTarget, zoom: camZoom(), pinchOn: pinch.on, pinchPts: pinch.pts.size, touchId: touch.id, pend: touch.pend, shot: touch.shot });
   const pinchDist = () => { const a = Array.from(pinch.pts.values()); return a.length < 2 ? 0 : Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); };
   const onPinchDown = (e: PointerEvent) => {
     if (!visible || e.pointerType !== "touch") return;
@@ -1662,20 +1788,35 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (pinch.pts.size === 0) pinch.on = false;
     e.stopImmediatePropagation();
   };
-  // THE WHEEL (Harry, 13 Oct 2026: "the zoom needs to only be triggered by two fingers and mouse wheel
-  // on pc (or two fingers on track pad)"). A trackpad pinch (ctrlKey) or a real mouse wheel (whole
-  // notches, nothing sideways) zooms; a two-finger trackpad slide moves the camera like a one-finger
-  // swipe (sideways = turn, up/down = tilt). A locked camera ignores all of it.
+  /** Forget the one-finger touch (a camera swipe, a held press, a hand-over) without sending anything. */
+  const endTouch = () => { touch.id = -1; touch.pend = false; touch.orbit = false; touch.tilt = false; touch.dbl = false; touch.shot = false; touch.mate = false; orbit.drag = false; orbit.tiltDrag = false; };
+  /**
+   * A finger lifted ANYWHERE (on this view, on the 2D canvas under it, on the stats bar, or while
+   * the 3D is hidden) is no longer down. Checked once the lift has been handled where it landed, so
+   * this view's own handlers always run first; a finger they never heard lift is dropped here. So a
+   * lost "up" can never leave a stuck finger behind (a one-finger "pinch", or a pitch that ignores
+   * every press). Real events only: the 2D game is sent copies of this view's own.
+   */
+  const onAnyUp = (e: PointerEvent) => {
+    if (!e.isTrusted) return;
+    const id = e.pointerId;
+    setTimeout(() => {
+      pinch.pts.delete(id);
+      if (pinch.pts.size === 0) pinch.on = false;
+      if (touch.id === id) endTouch();
+    }, 0);
+  };
+  // THE WHEEL (Harry, 13 Oct 2026 playtest: every wheel is zoom). A mouse wheel, a precision wheel, a
+  // two-finger trackpad scroll and a trackpad pinch (ctrlKey) all ZOOM, and nothing else: the camera is
+  // turned and tilted on PC by click-and-drag on open grass (onDown/onMove, as a finger on a phone).
+  // A locked camera ignores it.
   const onWheel = (e: WheelEvent) => {
     if (!visible) return;
     e.preventDefault();
     if (camLock.on) return;
-    const mouseWheel = e.deltaMode !== 0 || (e.deltaX === 0 && Math.abs(e.deltaY) >= 40 && Number.isInteger(e.deltaY));
-    if (e.ctrlKey || mouseWheel) { setCamZoom(camZoom() + Math.sign(e.deltaY) * Math.min(0.25, Math.abs(e.deltaY) / 400)); return; }
-    if (lastFrame?.phase !== "aim") return;
-    const r = container.getBoundingClientRect();
-    if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) orbit.target = clampOrbit(orbit.target + (e.deltaX / (r.width || 1)) * ORBIT.degPerWidth);
-    else orbit.tiltTarget = clampTilt(orbit.tiltTarget - (e.deltaY / (r.height || 1)) * TILT.degPerHeight);
+    const px = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY; // lines / pages → pixels
+    if (!px) return;
+    setCamZoom(camZoom() + Math.sign(px) * Math.min(0.25, Math.abs(px) / 400));
   };
   // the floating camera button (THE CAMERA LOCK above): top-left of the pitch, clear of the ball, the commentary and the speed readout
   let camBtn: HTMLButtonElement | null = null;
@@ -1719,6 +1860,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     container.addEventListener("pointermove", onMove);
     container.addEventListener("pointerup", onUp);
     container.addEventListener("pointercancel", onUp);
+    window.addEventListener("pointerup", onAnyUp, true);
+    window.addEventListener("pointercancel", onAnyUp, true);
   }
 
   const leanQ = new THREE.Quaternion(), yawQ = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0), axis = new THREE.Vector3();
@@ -1951,15 +2094,20 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       def = d;
       restyle();
       if (!!d.real !== wasReal) {
-        if (d.real && !hball) void import("./real/ball").then(({ dressHBall }) => { if (def.real && !hball) hball = dressHBall(THREE, ball, root); });
+        if (d.real && !hball) void import("./real/ball").then(({ dressHBall }) => { if (def.real && !hball) hball = dressHBall(THREE, ball, root, { classic: texturePack() !== "real" }); });
         if (!d.real && hball) { hball.dispose(); hball = null; }
       }
     },
     setTod(t) { hTod = t; h?.setTod(t); },
     setTilt() { /* one camera: it takes its tilt from the 2D frame (f.cam.tilt) */ },
-    setVisible(on) { visible = on; gov.setPaused("hidden", !on); if (!on) (window as unknown as { __engineView3dBall?: unknown }).__engineView3dBall = null; container.style.pointerEvents = on && o.canvas2d ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
+    setVisible(on) {
+      // the 2D | 3D switch mid-gesture: a pinch or a camera swipe ends here (a drag already handed to
+      // the 2D game is left to finish, so a pull-back in progress still kicks)
+      if (on !== visible) { pinch.pts.clear(); pinch.on = false; if (touch.pend || touch.orbit || touch.tilt) endTouch(); }
+      visible = on; gov.setPaused("hidden", !on); if (!on) (window as unknown as { __engineView3dBall?: unknown }).__engineView3dBall = null; container.style.pointerEvents = on && o.canvas2d ? "auto" : "none"; canvas3d.style.visibility = on ? "" : "hidden"; svg.style.visibility = on ? "" : "hidden"; },
     dispose() {
       hToken++;
+      offPack();
       gov.dispose();
       hball?.dispose(); hball = null;
       if (homeMen) void import("./real/ball").then(({ setHBallLightRing }) => setHBallLightRing(true)).catch(() => {}); // drills keep their ring
@@ -1983,6 +2131,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       container.removeEventListener("pointermove", onMove);
       container.removeEventListener("pointerup", onUp);
       container.removeEventListener("pointercancel", onUp);
+      window.removeEventListener("pointerup", onAnyUp, true);
+      window.removeEventListener("pointercancel", onAnyUp, true);
       release(root);
     },
   };

@@ -17,7 +17,7 @@
  *      — and reputation, fame, goals and assists beside you;
  *   4. the energy cans under you: Basic / Premium / Elite, each with Use and
  *      a price (v0.24, Harry's picture "A on a small phone").
- * Achievements and Sponsors are small links at the bottom. The 3D / 2D
+ * Achievements, My home and Sponsors are small links at the bottom. The 3D / 2D
  * switch is in Settings.
  *
  * Built from the design kit (components/star/ui). Motion: panels rise in when
@@ -40,6 +40,7 @@ import { nationKits } from "@/lib/star/international";
 import KibCanIcon from "./KibCanIcon";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import { isOpen } from "@/lib/star/unlocks";
+import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
 import { fameOf } from "@/lib/star/fame";
 import { useAvatarStyle } from "./PlayerAvatar";
 import { useFigureSkin } from "./FigureSkinToggle";
@@ -586,15 +587,23 @@ function MiddleLinks({ career, onOpen }: { career: CareerState; onOpen: Props["o
   const offers = brandsOf(career).offers.length;
   const showAch = isOpen(career, "achievements");
   const showSp = isOpen(career, "sponsors");
-  if (!showAch && !showSp) return null;
-  const text = "kib-press flex items-center gap-1 px-1 py-1 text-[11px] font-black uppercase leading-none tracking-wide text-white";
+  // Your house in 3D (Harry, 13 Oct 2026: "How do I actually access my home?"): always here.
+  const showHome = HOME3D_IN_CAREER;
+  if (!showAch && !showSp && !showHome) return null;
+  const text = "kib-press flex items-center gap-1 whitespace-nowrap px-1 py-1 text-[11px] font-black uppercase leading-none tracking-wide text-white";
   const shadow = { textShadow: "0 1px 3px rgba(0,0,0,.95), 0 0 6px rgba(0,0,0,.8)" };
   return (
     <div className="absolute bottom-1 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5">
       {showAch && (
         <button type="button" data-tour="achievements" onClick={() => onOpen("achievements")} aria-label="Achievements" className={text} style={shadow}>
           <span className="text-[14px] leading-none">⭐</span>
-          <span className="max-[379px]:hidden">Achievements</span>
+          <span className="max-[439px]:hidden">Achievements</span>
+        </button>
+      )}
+      {showHome && (
+        <button type="button" data-home-my-home onClick={() => onOpen("home-3d")} aria-label="My home" className={text} style={shadow}>
+          <span className="text-[14px] leading-none">🏠</span>
+          My home
         </button>
       )}
       {showSp && (

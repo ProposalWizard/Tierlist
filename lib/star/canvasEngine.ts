@@ -616,6 +616,13 @@ export interface Scenario {
    * resolveKeeperPro is exactly as before.
    */
   keeperFeel?: boolean;
+  /**
+   * REAL SHOTS TEST PAGE ONLY (/star-statsbomb-dev, lib/star/statsbombShots.ts).
+   * True = the keeper starts where the picture put him (a real StatsBomb
+   * keeper) and does not walk to the brain's set spot while you aim. He still
+   * reacts to the shot. Absent everywhere else, so the real game is unchanged.
+   */
+  keeperHoldsStart?: boolean;
   follower: Follower;
   goal: { x1: number; x2: number };
   crossbar: number;

@@ -272,6 +272,33 @@ export const ADMIN_GUIDES = {
     inGame: ["The striker drawings: in a match when Settings → Match → Kane drawings (testing) is New (Old by default). The file you load: nowhere."],
     dev: "app/star-real-moments-dev/page.tsx; lib/star/realMoments.ts (the moment shape, buildRealMoment); tools/statsbomb/fetch.py, convert.mts, measure.mts and README.md.",
   },
+  "/star-statsbomb-dev": {
+    title: "Real shots (test)",
+    what: "Every shot of the 2022 World Cup and Euro 2024 that StatsBomb's free data has a freeze frame for (where everyone near the shot stood), drawn on our pitch, playable in the real match, and measured against our own chances. Test only: the licence for a paid game is not cleared, so none of it is in the game.",
+    buttons: [
+      { group: "Tabs", items: [
+        ["Shots", "The list of real shots, each with its picture and Play button."],
+        ["Moving highlight", "Only shots with 2–3 real passes before them. ▶ Watch the move: the match radar (the same one as the Match Radar page) shows the move coming up the pitch, then the real match itself replays the real passes in its own picture (2D or 3D: the 3D | 2D button in the match bar, the same as a career match), everyone moving from where StatsBomb's 360 frame had them to where they stood at the shot, and YOU receive the last pass. The camera follows the passes (the passer and the man it goes to), then stops moving once the ball is in the 6-yard box (or, for a shot from further out, as the replay ends) on the shot's wide frame: every real man within 20 m, the keeper, the ball and the whole goal (the same frame as Play this shot). Then the shot is yours, live, from exactly there. ↺ Again replays it; ■ Stop closes it. The replay is recorded positions, not physics; the engine plays only the shot. A team-mate who passed from outside the shot's picture is on the pitch for the replay only."],
+        ["Ours vs real", "Four bars per chance kind: shot distance, defenders between ball and goal, nearest defender, keeper off his line. Real = the real shots of that kind; Ours = 200 of the game's own chances of that kind."],
+      ] },
+      { group: "Filters", items: [
+        ["All / World Cup 2022 / Euro 2024", "Which tournament."],
+        ["All / Goal / Saved / Off T / Blocked / Other", "What really happened to the shot."],
+        ["All / Open Play / Free Kick / Penalty / Corner", "How the shot came about."],
+        ["Any xG / under 8% / 8–30% / over 30%", "How likely the real shot was to go in (StatsBomb's own number)."],
+        ["Search", "A player or team name."],
+        ["More", "Shows 20 more."],
+      ] },
+      { group: "Each shot", items: [
+        ["The picture", "Our pitch from above, goal at the top. Yellow = the shooter, white = ball, red = opponents, green = keeper, blue = team-mates. The dashed line is where the shot went."],
+        ["▶ Play this shot", "Plays the real match on that picture at the top of the page: the shooter is YOU, the real keeper, opponents and team-mates inside the camera are where they stood. Nothing is counted or saved."],
+        ["■ Stop", "Closes the match."],
+      ] },
+    ],
+    saving: ["Nothing saves. The shots are read from data/statsbomb/shots.json each time the page opens."],
+    inGame: ["Nowhere. This is a test page; the real game never reads this data."],
+    dev: "app/star-statsbomb-dev/page.tsx, MovingHighlight.tsx (radar + EnginePlay inside components/star/Match3DLayer.tsx, uses components/star/MatchRadar.tsx RadarPitch); lib/star/statsbombShots.ts (sbToPitch, kindForShot, scenarioForShot, leadinPlan, leadinTrack, the measures); lib/star/leadIn.ts (the lead-in CanvasMatch replays: its `leadIn` prop); tests/star/leadIn.mts; app/api/star/statsbomb-shots/route.ts; data/statsbomb/ (shots.json, leadins.json, README); scripts/statsbomb/fetch_shots.py; tests/star/statsbomb.mts.",
+  },
   "/star-goal-clips-dev": {
     title: "Goal videos",
     what: "Score a chance in the real match and watch the goal back as a video from three cameras, then save it. The same recordings the post-match feed plays.",
@@ -1533,6 +1560,32 @@ export const ADMIN_GUIDES = {
       "Nowhere — it's a window onto the match the career already runs. Every minute is the real match's own function; your highlights are the moments a career would stop and let you play.",
     ],
     dev: "app/star-radar-dev/page.tsx · components/star/MatchRadar.tsx · lib/star/matchRadar.ts (calls tick/resolveScenario in lib/star/hiddenMatch.ts)",
+  },
+
+  "/star-sim90-dev": {
+    title: "Full match (test)",
+    what: "A whole simulated ninety minutes you can watch: 22 men and the ball, from the TV camera. The unseen match the career runs decides everything (who has the ball each minute, where, every shot, corner and goal, and the score); this page only stages it in each club's formation and plays it back.",
+    buttons: [
+      {
+        items: [
+          ["▶ / ❚❚", "Starts and pauses the replay. At full time it becomes ↻ and starts from kick-off."],
+          ["1× 4× 16× 60×", "How fast the match plays. 60× plays all ninety minutes in about a minute and a half."],
+          ["↻ (right of the speeds)", "A new match: a different roll of the same fixture."],
+          ["The slider", "Drag to any minute of the match."],
+          ["The radar strip", "The unseen match minute by minute: who has it and where — the same strip the real match shows above the commentary."],
+          ["Match events", "Goals, saves and misses (Show all adds corners and every shot). Tap one to jump just before it."],
+          ["Change", "Pick both clubs and how strong they are. The match is built again."],
+          ["Play this chance", "The replay stops just before each of YOUR chances (home is your side). This opens that chance in the real match (2D or 3D, as Settings says). The replay keeps the unseen match's result whatever you do."],
+          ["Skip / Back to the match", "Carries the replay on from the chance."],
+          ["Don't stop for my chances", "Off by default. On: the replay plays straight through your chances."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. Changing a setting builds a new match; leaving the page forgets it. Real squad names come from the league-squads data route; made-up names when it does not answer. The teams swap ends at half-time; keepers dive on saves."],
+    inGame: [
+      "Nowhere — a test page. The score and the chances are the real unseen match's; the men's positions and passes are made up to show it.",
+    ],
+    dev: "app/star-sim90-dev/page.tsx · components/star/Sim90View.tsx · lib/star/sim90.ts (runs lib/star/matchRadar.ts, places men with formationShape.ts) · drawn by lib/star/goalClip/render.ts (camera \"match\") · test tests/star/sim90.mts",
   },
 
   "/star-scenario-dev": {

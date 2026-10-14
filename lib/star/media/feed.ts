@@ -411,6 +411,7 @@ function commit(
     if (scope === "league") return { ...state, memory, lastLeagueCycleId: cycleId, seenCycleIds };
     // Nothing to say about it, but a match with goals still gets its videos.
     const extra = record ? highlightPosts(career, record, world(), cycleId, cycleClock) : [];
+    capVideos(extra, cycleId);
     const posts = extra.length ? [...state.posts, ...extra].sort((a, b) => a.at - b.at).slice(-POST_CAP) : state.posts;
     return { ...state, posts, memory, lastCycleId: cycleId, lastCycleClock: cycleClock, seenCycleIds, ...matchCycle };
   }
@@ -446,6 +447,7 @@ function commit(
   }
 
   if (scope === "club" && record) posts.push(...highlightPosts(career, record, accounts, cycleId, cycleClock));
+  capVideos(posts, cycleId);
 
   const trends = buildTrends(events, posts, cycleId, fameOf(career));
   const all = [...state.posts, ...posts]
@@ -464,6 +466,34 @@ function commit(
       ? { lastCycleId: state.lastCycleId, lastCycleClock: state.lastCycleClock, lastLeagueCycleId: cycleId }
       : { lastCycleId: cycleId, lastCycleClock: cycleClock, lastLeagueCycleId: state.lastLeagueCycleId, ...matchCycle }),
   };
+}
+
+/** Most video posts one match makes (Mikey, 13 Oct 2026: "there should be
+ *  less videos … it's fine to just have text"): the match's highlights and
+ *  your goals' video (or, without those, one picked at random). The rest
+ *  keep their words, no video. */
+export const MAX_VIDEOS_PER_MATCH = 2;
+
+const hasVideo = (p: StoredPost) => {
+  const g = p.graphic as { type?: string; clips?: unknown[]; synth?: unknown[] } | undefined;
+  return !!g && (g.type === "goalVideo" || (g.type === "thumbnail" && ((g.clips?.length ?? 0) + (g.synth?.length ?? 0)) > 0));
+};
+
+function capVideos(posts: StoredPost[], cycleId: string): void {
+  const vids = posts.filter(hasVideo);
+  if (vids.length <= MAX_VIDEOS_PER_MATCH) return;
+  const rng = rngFor("videos", cycleId);
+  // The match's highlights and your goals' video stay (Leo, 8 Oct: every
+  // match ALWAYS has them); anything else is the random one.
+  const keep = new Set<StoredPost>([
+    ...vids.filter(p => p.eventId === "match-highlights").slice(0, 1),
+    ...vids.filter(p => p.eventId === "your-highlights").slice(0, 1),
+  ]);
+  const rest = vids.filter(p => !keep.has(p));
+  while (keep.size < MAX_VIDEOS_PER_MATCH && rest.length) keep.add(rest.splice(Math.floor(rng() * rest.length), 1)[0]);
+  for (let i = 0; i < posts.length; i++) {
+    if (hasVideo(posts[i]) && !keep.has(posts[i])) posts[i] = { ...posts[i], graphic: undefined };
+  }
 }
 
 /**
@@ -680,7 +710,15 @@ export function pinHighlights(posts: StoredPost[], cycleId: string): StoredPost[
   const rank = (p: StoredPost) =>
     !p.id.startsWith(`${cycleId}:`) ? 2 : p.eventId === "match-highlights" ? 0 : p.eventId === "your-highlights" ? 1 : 2;
   const top = posts.filter(p => rank(p) < 2).sort((a, b) => rank(a) - rank(b));
-  return top.length ? [...top, ...posts.filter(p => rank(p) === 2)] : posts;
+  if (!top.length) return posts;
+  // Near the top, not AT the top (Mikey, 13 Oct 2026: "it should be kind of
+  // random … no guarantee that there's a specific line … at the top"): each
+  // goes somewhere in the first screenful (one of the first five places),
+  // the same place every time you open this feed.
+  const out = posts.filter(p => rank(p) === 2);
+  const rng = rngFor("pin", cycleId);
+  for (const p of top) out.splice(Math.min(out.length, Math.floor(rng() * 5)), 0, p);
+  return out;
 }
 
 /**

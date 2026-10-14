@@ -34,7 +34,7 @@ const ok = (c: boolean, m: string) => { if (!c) { fails++; console.error("  ✗ 
 const src = (p: string) => fs.readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
 // 1. the numbers
-ok(SIZE3D.man === 1 && SIZE3D.keeper === 1 && SIZE3D.ball === 1 && SIZE3D.goal === 1, `men, keeper, ball and goal are real size (${JSON.stringify(SIZE3D)})`);
+ok(SIZE3D.man === 1 && SIZE3D.keeper === 1 && SIZE3D.ball === 1.6 && SIZE3D.goal === 1, `men, keeper and goal real size, ball one fixed 1.6x (Harry, 13 Oct 2026) (${JSON.stringify(SIZE3D)})`);
 ok(Object.isFrozen(SIZE3D), "SIZE3D cannot be changed at run time");
 ok(MAN_HEIGHT_M === 1.8, `a man at scale 1 is ${MAN_HEIGHT_M} m`);
 

@@ -392,6 +392,23 @@ export function engineFrameOf(sc: Scenario): Viewport {
 export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, tiltDeg = 0): Viewport {
   const f = sc as Framed;
   if (!f.engineFrame) f.engineFrame = { ...sc.viewport };
+  // Framing V2 (Mikey's review, 13 Oct 2026), when switched on.
+  if (framingV2On() && !keepPlayArea) {
+    const v2 = framingV2Camera(sc, hw, tiltDeg);
+    if (v2) {
+      f.playZoom = 1;
+      sc.viewport = playAreaFor(sc, v2, f.engineFrame);
+      return v2;
+    }
+    if ((sc.facing ?? "up") === "up" && goalInView(sc.kind) && framingV2TurnsSideOn(sc)) {
+      sc.facing = sideOnFacing(sc);
+      if (hasRunupFree(sc.kind)) standOff(sc);
+      const side = sideOnCamera(sc, hw);
+      f.playZoom = 1;
+      sc.viewport = playAreaFor(sc, side, f.engineFrame);
+      return side;
+    }
+  }
   const facing = sc.facing ?? "up";
   const base = cameraFor(sc, f.engineFrame, hw);
   const today = fitCameraToTilt(base, facing, hw, tiltDeg, keyPointsOf(sc));
@@ -1077,3 +1094,131 @@ export function fitCameraToTilt(cam: Viewport, facing: Facing, hw: number, tiltD
   }
   return grow(TILT_FIT_MAX);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FRAMING V2 (Mikey's review, 13 Oct 2026) — behind a switch, off by default,
+// so today's game is untouched until it is judged (Developer tools → "New
+// framing", or ?framing=new on the test page).
+//
+//   "there is a huge gap below … that is just completely wasted space"
+//   "more space behind the goal instead of below … a bit more zoomed in"
+//   "the full goal has to be on the screen. That is a hard set rule"
+//   "every chance keeps the ball at least about a quarter of the screen in"
+//   "don't be afraid to just switch the camera angle … the side angle"
+//
+// Facing the goal: the top of the screen sits V2_BEHIND_M behind the goal
+// line; the camera is as tight as it can be (never under V2_MIN_ACROSS_M
+// across) while every man in the chance and the whole goal stay on it, and
+// the ball stays at least a quarter of the screen in from both sides and the
+// bottom. The men grow with the zoom. When no camera up to the widest fits a
+// ball out wide near the box, the chance turns side-on, as a corner is
+// watched; anything else keeps today's camera.
+// ─────────────────────────────────────────────────────────────────────────────
+const FRAMING_V2_KEY = "star-framing-v2";
+let framingV2Override: boolean | null = null;
+const framingV2Listeners = new Set<() => void>();
+export function setFramingV2Override(v: boolean | null): void { framingV2Override = v; framingV2Listeners.forEach((f) => f()); }
+export function framingV2On(): boolean {
+  if (framingV2Override !== null) return framingV2Override;
+  try { return typeof localStorage !== "undefined" && localStorage.getItem(FRAMING_V2_KEY) === "1"; } catch { return false; }
+}
+export function setFramingV2(v: boolean): void {
+  try { localStorage.setItem(FRAMING_V2_KEY, v ? "1" : "0"); } catch { /* in memory only */ }
+  framingV2Listeners.forEach((f) => f());
+}
+export function useFramingV2(): boolean {
+  return useSyncExternalStore(
+    (f) => { framingV2Listeners.add(f); return () => { framingV2Listeners.delete(f); }; },
+    framingV2On, () => false,
+  );
+}
+
+/** Least pitch above the goal line at the top of the screen (the whole net and a little). */
+export const V2_BEHIND_MIN_M = NET_DEPTH + 3;
+/** Most of the screen that may be above the goal line ("a little less behind the goal"). */
+export const V2_BEHIND_MAX_SHARE = 0.25;
+/** The tightest the camera goes, metres across. */
+export const V2_MIN_ACROSS_M = 22;
+/** The ball's room: this share of the screen from each side and the bottom. */
+export const V2_BALL_ROOM = 0.25;
+/** Room round everyone else, metres. */
+const V2_ROOM_M = 2;
+/** A defender this close to the ball, or to the line from it to goal, is in the action. */
+const V2_DEFENDER_NEAR_M = 14;
+/** Turn side-on rather than pull out when the ball is this far off centre… */
+const V2_WIDE_M = 11;
+/** …and no further than this from the goal line. */
+const V2_SIDE_MAX_Y = 30;
+
+/** Who the V2 camera must show: the action, not the men standing out wide
+ *  for decoration (Mikey, 13 Oct 2026: the ball a quarter in "fixes the
+ *  issue … with the camera pulling out a little rather than cutting him off"). */
+export function framingV2Points(sc: Scenario): Vec2[] {
+  const goalC = { x: (POST_L + POST_R) / 2, y: 0 };
+  const near = (d: Vec2) => Math.hypot(d.x - sc.ball.x, d.y - sc.ball.y) <= V2_DEFENDER_NEAR_M
+    || distToSegment(d, sc.ball, goalC) <= V2_DEFENDER_NEAR_M / 2;
+  const pts: Vec2[] = [sc.ball, sc.player, { x: sc.keeper.x, y: sc.keeper.y }, ...sc.defenders.filter(near)];
+  if (sc.runner) pts.push(sc.runner.pos);
+  for (const r of sc.secondaryRunners ?? []) pts.push(r.pos);
+  return [...pts.filter(onThePitch), { x: POST_L, y: -NET_DEPTH }, { x: POST_R, y: -NET_DEPTH }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }];
+}
+
+/**
+ * The V2 camera for a chance facing the goal, or null when it cannot keep
+ * the rules (the caller turns it side-on or keeps today's camera).
+ */
+export function framingV2Camera(sc: Scenario, hw: number, tiltDeg = 0): Viewport | null {
+  if ((sc.facing ?? "up") !== "up" || !goalInView(sc.kind)) return null;
+  const H = Math.max(NEW_VIEW_MIN_HW, hw);
+  const pts = framingV2Points(sc);
+  const minX = Math.min(...pts.map((p) => p.x)) - V2_ROOM_M, maxX = Math.max(...pts.map((p) => p.x)) + V2_ROOM_M;
+  const maxY = Math.max(...pts.map((p) => p.y)) + V2_ROOM_M;
+  const ball = sc.ball;
+  const r = V2_BALL_ROOM;
+  for (let across = V2_MIN_ACROSS_M; across <= NEW_VIEW_WIDTH_M + 1e-9; across += 0.5) {
+    const down = across * H;
+    // Across: everyone in, the ball in the middle half, at most EDGE_M off the pitch.
+    const lo = Math.max(maxX - across, ball.x - (1 - r) * across, -EDGE_M);
+    const hi = Math.min(minX, ball.x - r * across, PITCH_W + EDGE_M - across);
+    if (lo > hi + 1e-9) continue;
+    const want = ((POST_L + POST_R) / 2 + ball.x) / 2 - across / 2;
+    const x1 = Math.max(lo, Math.min(hi, want));
+    // Down: the bottom just under the action (the ball at least a quarter up
+    // from it), the rest of the screen above it — behind the goal, up to a
+    // quarter. The tilt stretches the bottom of the picture, so the ball's
+    // room is raised step by step until it holds on the GLASS.
+    for (let room = r; room <= 0.5 + 1e-9; room += 0.05) {
+      const y2 = Math.max(maxY, ball.y + room * down);
+      let y1 = Math.min(-V2_BEHIND_MIN_M, y2 - down);
+      y1 = Math.max(y1, -Math.max(V2_BEHIND_MIN_M, V2_BEHIND_MAX_SHARE * down));
+      if (y1 + down < maxY) continue;
+      // Tipped back, the near corners crop: pull back only if something must be seen.
+      const cam = fitCameraToTilt({ x1, x2: x1 + across, y1, y2: y1 + down }, "up", hw, tiltDeg, pts);
+      if (v2OnGlass(cam, hw, tiltDeg, ball, pts)) return cam;
+    }
+  }
+  return null;
+}
+
+/** The ball at least V2_BALL_ROOM from both sides and the bottom of the
+ *  screen, and every point in `pts` on it, once the picture is tipped back. */
+function v2OnGlass(cam: Viewport, hw: number, tiltDeg: number, ball: Vec2, pts: Vec2[]): boolean {
+  const t = tiltFor(tiltDeg, 100, 100 * Math.max(NEW_VIEW_MIN_HW, hw));
+  const glass = (p: Vec2) => {
+    const f = fracOf(cam, "up", p);
+    if (!t) return { gx: f.sx, gy: f.sy };
+    const g = canvasToScreen(t, f.sx, f.sy, t.W, t.H);
+    return { gx: g.X / t.W, gy: g.Y / t.H };
+  };
+  const b = glass(ball);
+  if (b.gx < V2_BALL_ROOM || b.gx > 1 - V2_BALL_ROOM || b.gy > 1 - V2_BALL_ROOM) return false;
+  return pts.every((p) => { const g = glass(p); return g.gx >= 0.02 && g.gx <= 0.98 && g.gy >= 0.01 && g.gy <= 0.97; });
+}
+
+/** Should a V2 chance that does not fit be turned side-on? (A ball out wide, near the box.) */
+export function framingV2TurnsSideOn(sc: Scenario): boolean {
+  return Math.abs(sc.ball.x - (POST_L + POST_R) / 2) >= V2_WIDE_M && sc.ball.y <= V2_SIDE_MAX_Y;
+}
+
+/** A penalty's taker stands back for his run-up already; anyone else is stood beside the ball. */
+function hasRunupFree(kind: ScenarioKind): boolean { return kind !== "penalty" && kind !== "free_kick"; }

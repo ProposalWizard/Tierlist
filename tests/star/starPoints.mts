@@ -389,5 +389,20 @@ const zero = { apps: 0, starts: 0, wins: 0, draws: 0, goals: 0, assists: 0, hatT
   check(starTitle(20) === starTitle(29) && starTitle(29) !== starTitle(30) && starTitle(100) === "The Complete Career", "one name per ten");
 }
 
+// ── Achievements level you up on the spot (Mikey, 13 Oct 2026) ──
+// The one-level-a-match cap still holds match and status points back, but
+// what achievements are worth lifts the rating at once, no match needed.
+{
+  const p = { firstName: "T", lastName: "P", age: 20, position: "ST", club: "Arsenal", nationality: "England", startYear: 2027 } as StarPlayer;
+  let c = withStars(makeInitialCareer(p, [...PREMIER_LEAGUE_CLUBS], "premier"));
+  c = withStars({ ...c, achievements: [...c.achievements, ...ACHIEVEMENTS.filter((a) => a.check(c)).map((a) => a.id).filter((id) => !c.achievements.includes(id))] });
+  const before = starStatus(c).stars;
+  const rich = ["rich", "loaded", "millionaire", "rich-list"].filter((id) => !c.achievements.includes(id));
+  const after = starStatus({ ...c, achievements: [...c.achievements, ...rich] });
+  check(after.stars >= before + 2, `four money achievements, no match played: ★${before} → ★${after.stars} at once (more than the one-level-a-match cap)`);
+  const same = starStatus(c);
+  check(same.stars === before, "with nothing new, the rating doesn't move");
+}
+
 console.log(fail ? "FAIL" : "PASS — Star Points, 1-100: matches by stage, a steep curve, gates that open together, old saves ×10, a card that adds up, and a last ten made of tasks");
 if (fail) process.exit(1);

@@ -566,7 +566,10 @@ export function brainSetup(sc: Scenario, seed: number, rating: number, opts: Bra
   // exactly as it was.
   if (st.pro) sc.keeperPro = true; else delete sc.keeperPro;
   k.claim = null;
-  st.setTarget = planSet(sc, st, sc.ball);
+  // A real keeper's own spot (the Real shots test page, keeperHoldsStart):
+  // he is already where he really stood, so he does not walk to ours. Absent
+  // in the real game: planSet exactly as before.
+  st.setTarget = sc.keeperHoldsStart ? { x: k.x, y: k.y } : planSet(sc, st, sc.ball);
   states.set(sc, st);
 }
 

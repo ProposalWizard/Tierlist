@@ -46,6 +46,7 @@ import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import { enterTestArea } from "@/lib/star/testArea";
+import type { LeadIn } from "@/lib/star/leadIn";
 
 /**
  * Real squads, fetched once per club per page — the gallery can press Play a
@@ -162,7 +163,7 @@ const SQUAD_WAIT_MS = 4000;
 
 export default function EnginePlay({
   settings, seed = 1, openOn, bare = false, width,
-  onChanceServed, onChanceResolved, onComplete, fitParent = false, onGoalClip,
+  onChanceServed, onChanceResolved, onComplete, fitParent = false, onGoalClip, leadIn, scene,
 }: {
   /** The Play Area's dials. Absent: whatever this device has saved there —
    *  one set, shared by every test screen. */
@@ -195,6 +196,13 @@ export default function EnginePlay({
   /** Goal videos: every goal scored here, recorded frame by frame (the goal
    *  videos test page). Absent: nothing is recorded. */
   onGoalClip?: (track: GoalTrack) => void;
+  /** The moves before the opening chance, replayed in the match's own
+   *  picture first (the Real shots page). See CanvasMatch's `leadIn`. */
+  leadIn?: (sc: Scenario) => LeadIn | null;
+  /** What is on the pitch / whose camera (CanvasMatch's `scene`). The Real
+   *  shots page passes `ownFrame` so its real players stay on screen.
+   *  Absent: exactly as before. */
+  scene?: ScenePicture;
 }) {
   // The test area: the shot spread cone is drawn here only (lib/star/testArea.ts).
   useEffect(() => enterTestArea(), []);
@@ -285,6 +293,8 @@ export default function EnginePlay({
         onChanceResolved={onChanceResolved}
         onComplete={onComplete}
         onGoalClip={onGoalClip}
+        leadIn={leadIn}
+        scene={scene}
         dragReferenceHeightPx={dragReferenceHeightPx}
         pressure={pressureFromDial(s.pressure, s.division)}
         penaltyRunup={s.penaltyRunup}

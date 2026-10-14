@@ -110,6 +110,15 @@ const FRAG_MAP = /* glsl */ `
   gPaint = (1.0 - smoothstep(lw - aa * 0.75, lw + aa * 0.75, d)) * uLines;
   float through = mix(1.0, clamp(det.g, 0.55, 1.25), 0.35) * (0.86 + 0.14 * vn(P * 9.0));
   col = mix(col, uLine * through * (1.0 - gWear * 0.35), gPaint);
+#ifdef H_FLAT
+  // texture pack Cartoon: two flat mown shades and clean white lines, nothing else
+  {
+    vec3 fg = mix(uGrassA, uGrassB, mix(0.5, gStripe, uStripes * inPitch));
+    fg = mix((uGrassA + uGrassB) * 0.5, fg, uStripeK);
+    col = mix(fg, uLine, gPaint);
+    gWear = 0.0;
+  }
+#endif
   diffuseColor.rgb = col;
 }
 `;
@@ -125,6 +134,9 @@ const FRAG_NORMAL = /* glsl */ `
 {
   vec3 nT = texture2D(tGNrm, vH / 1.55).xyz * 2.0 - 1.0;
   nT.xy *= 0.75 * (1.0 - gPaint * 0.6);
+#ifdef H_FLAT
+  nT = vec3(0.0, 0.0, 1.0);
+#endif
   vec3 Tv = normalize((viewMatrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz);
   vec3 Bv = normalize((viewMatrix * vec4(0.0, 0.0, 1.0, 0.0)).xyz);
   vec3 Nv = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
@@ -144,7 +156,7 @@ export interface RealPitch {
  * The pitch, plus a run-off of the same grass out to `w × l` metres.
  * `lines: false` (a training patch) leaves the grass bare.
  */
-export function buildRealPitch(T: any, maps: GrassMaps, o: { w?: number; l?: number; lines?: boolean; stripes?: boolean } = {}): RealPitch {
+export function buildRealPitch(T: any, maps: GrassMaps, o: { w?: number; l?: number; lines?: boolean; stripes?: boolean; flat?: boolean } = {}): RealPitch {
   const w = o.w ?? 104, l = o.l ?? 141;
   const u: Record<string, { value: any }> = {
     tGCol: { value: maps.col }, tGNrm: { value: maps.nrm }, tGOrh: { value: maps.orh },
@@ -166,7 +178,8 @@ export function buildRealPitch(T: any, maps: GrassMaps, o: { w?: number; l?: num
       .replace("#include <roughnessmap_fragment>", FRAG_ROUGH)
       .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>\n${FRAG_NORMAL}`);
   };
-  mat.customProgramCacheKey = () => "h-pitch-v1";
+  mat.customProgramCacheKey = () => (o.flat ? "h-pitch-v1-flat" : "h-pitch-v1");
+  if (o.flat) mat.defines = { ...(mat.defines ?? {}), H_FLAT: "" };
   const mesh = new T.Mesh(new T.PlaneGeometry(w, l), mat);
   mesh.rotation.x = -Math.PI / 2;
   mesh.position.set(0, 0, PITCH_LEN / 2);

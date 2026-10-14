@@ -17,6 +17,7 @@ import {
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
   type Facing, type Runner, type Vec2,
 } from "@/lib/star/canvasEngine";
+import { leadInEntities, leadInCamera, type LeadIn, type LeadEntity, type LeadMoment } from "@/lib/star/leadIn";
 import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario, lateSubQuota, noteServedKind,
   type HiddenMatchState, type RadarTick, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
@@ -95,6 +96,12 @@ const SHOT_LINES: Partial<Record<ContactRead["grade"], string>> = {
   scuffed: "Scuffed! He's barely caught it.",
 };
 
+/** The strike screen's ball: the airborne test switch's picks when it is on
+ *  (lib/star/airborneChance.ts), today's otherwise. */
+function strikeMotion(kind: string, seed: number): BallMotion {
+  return airborneOn() ? airborneMotion(kind, seed) : contactMotion(kind, seed);
+}
+
 function contactMotion(kind: string, seed: number): BallMotion {
   if (kind === "header") return "float";
   if (kind === "volley") return "bounce";
@@ -127,6 +134,7 @@ import {
   RUNUP_MOTION, type RunupId, type PenaltyRunupId, type FreeKickRunupId, type StyledRunup, type RunupPose,
 } from "@/lib/star/runupStyles";
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
+import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
 import { useFitWidth } from "./useFitWidth";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, assistFor, noteMatePlays, probeMatePlays, type CreditDelta, type MatePlay } from "@/lib/star/credit";
@@ -210,7 +218,9 @@ import { spriteKickStrikeT, keeperDiveClip, spriteClipReady, spriteClipFps, spri
 import { outfieldSpriteClip, keeperDiveClipNew, keeperStandingClip, keeperGetUpT, sideOfDive } from "@/lib/star/sprite3dAnim";
 import { POST_L, POST_R } from "@/lib/star/pitch";
 import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt } from "@/lib/star/cameraTilt";
-import { cam2dSwipeOn, useCam2dSwipe } from "@/lib/star/cam2dSwipe";
+
+/** The net's drawn depth from the side, metres: a real goal's ~2 m. */
+const SIDE_NET_DEPTH = 2.0;
 import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
 
@@ -319,6 +329,21 @@ interface Props {
    * changes. Nothing in canvasEngine.ts is touched.
    */
   openOn?: () => Scenario;
+  /**
+   * A LEAD-IN before the opening chance (the Real shots test page: the real
+   * passes before a real shot). Called once, with the opening chance as the
+   * match has set it up; what it returns is played as a REPLAY of recorded
+   * positions in this picture (and so in the 3D view reading its frames):
+   * the people and the ball are put where it says, nothing is stepped, no
+   * touch is taken. It ends with everyone exactly where the chance has them,
+   * and the chance starts. Absent: nothing changes.
+   * lib/star/leadIn.ts.
+   *
+   * With `openOn` (one picture) it is asked once, for the opening chance. Without
+   * it (the career's build-ups, lib/star/leadInGen.ts) it is asked for every
+   * chance the match serves, with the moment the chance came from; null = none.
+   */
+  leadIn?: (sc: Scenario, moment?: LeadMoment) => LeadIn | null;
   /**
    * Strip the match furniture — the scoreboard plate, the live commentary
    * ticker and the situation hint — leaving the pitch and nothing else.
@@ -739,7 +764,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
  *  Most first chances come by 7' (measured); a later one is read out. */
 const QUICK_START_MAX = 12;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell, plannedOffAt }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell, plannedOffAt, leadIn }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -1385,6 +1410,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  current one without re-creating every callback that touches it. */
   const openOnRef = useRef(openOn);
   openOnRef.current = openOn;
+  /** See the `leadIn` prop: the builder, and the lead-in while it plays. */
+  const leadInPropRef = useRef(leadIn);
+  leadInPropRef.current = leadIn;
+  const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null } | null>(null);
+  const leadTriedRef = useRef(false);
+  const [leadInOn, setLeadInOn] = useState(false);
   /** See the `onChanceServed` / `neverHooked` props. Held in refs for the
    *  same reason `openOn` is — the loop reads them outside React's render. */
   const onChanceServedRef = useRef(onChanceServed);
@@ -2276,45 +2307,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    *  3 Oct 2026: "I don't think the 20 degrees should apply to the
    *  crosses/byline and corners") — they are watched side-on, then cut. */
   const tiltForChance = (sc: Scenario | null | undefined): number =>
-    sc && (sc.kind === "corner" || sc.kind === "byline_cross" || (sc.facing ?? "up") !== "up") ? 0
-      : cam2dSwipeOn() && cam2dLockRef.current.on ? cam2dLockRef.current.tilt : tiltSettingRef.current;
-  /** THE 2D CAMERA SWIPE + LOCK (Harry, 13 Oct 2026, after the 3D one: "carrying the same tech over
-   *  to 2d"). While aiming, a drag up or down on open grass (not the ball, not a team-mate) leans the
-   *  camera: up = more lean (lower, see further up the pitch), down = flatter, 0–CAM2D_MAX_DEG. A double
-   *  tap on open grass puts the angle back to the Settings one. The video-camera button locks it: the
-   *  angle you left it at is kept every chance and swipes leave the camera alone. Flat chances (corners,
-   *  byline crosses, side-on) stay flat. No side-to-side slide in 2D: the frame IS the chance, there is
-   *  nothing outside it to slide to (see "there is nothing out there to pan to" below). Only real
-   *  touches: the 3D view's forwarded ones (isTrusted false) never move the 2D camera. */
-  const CAM2D_MAX_DEG = 35;
-  const cam2dLockRef = useRef<{ on: boolean; tilt: number }>((() => {
-    try { const v = JSON.parse(localStorage.getItem("star-cam2d-lock") || "null"); return v && v.on ? { on: true, tilt: Math.max(0, Math.min(CAM2D_MAX_DEG, +v.tilt || 0)) } : { on: false, tilt: 0 }; } catch { return { on: false, tilt: 0 }; }
-  })());
-  const [cam2dLocked, setCam2dLocked] = useState(() => cam2dLockRef.current.on);
-  const cam2dSwipe = useCam2dSwipe(); // Settings → 2D match camera → Swipe camera (off by default)
-  const cam2dGestRef = useRef<{ id: number; x0: number; y0: number; deg0: number; tilting: boolean } | null>(null);
-  const cam2dTapRef = useRef({ t: 0, x: 0, y: 0 });
-  const cam2dCanTilt = () => tiltForChance(scenarioRef.current) > 0 || (scenarioRef.current && scenarioRef.current.kind !== "corner" && scenarioRef.current.kind !== "byline_cross" && (scenarioRef.current.facing ?? "up") === "up");
-  const startCam2dGesture = (e: React.PointerEvent) => {
-    if (!cam2dSwipeOn() || !e.nativeEvent.isTrusted || !newViewRef.current || !cam2dCanTilt()) return;
-    const now = performance.now(), tp = cam2dTapRef.current;
-    if (now - tp.t < 320 && Math.hypot(e.clientX - tp.x, e.clientY - tp.y) < 40) {
-      // the double tap: back to the Settings angle (a locked camera keeps that from now on)
-      cam2dTapRef.current = { t: 0, x: 0, y: 0 };
-      if (cam2dLockRef.current.on) { cam2dLockRef.current.tilt = tiltSettingRef.current; try { localStorage.setItem("star-cam2d-lock", JSON.stringify(cam2dLockRef.current)); } catch { /* private */ } }
-      applyTilt(tiltForChance(scenarioRef.current));
-      return;
-    }
-    if (cam2dLockRef.current.on) { cam2dTapRef.current = { t: now, x: e.clientX, y: e.clientY }; return; }
-    cam2dGestRef.current = { id: e.pointerId, x0: e.clientX, y0: e.clientY, deg0: tiltDegRef.current, tilting: false };
-    try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
-  };
-  const toggleCam2dLock = () => {
-    const on = !cam2dLockRef.current.on;
-    cam2dLockRef.current = { on, tilt: on ? tiltDegRef.current : 0 };
-    try { if (on) localStorage.setItem("star-cam2d-lock", JSON.stringify(cam2dLockRef.current)); else localStorage.removeItem("star-cam2d-lock"); } catch { /* private */ }
-    setCam2dLocked(on);
-  };
+    sc && (sc.kind === "corner" || sc.kind === "byline_cross" || (sc.facing ?? "up") !== "up") ? 0 : tiltSettingRef.current;
   /** Tip the canvas to `deg` (0 = flat) for its current size. */
   const applyTilt = (deg: number) => {
     tiltDegRef.current = deg;
@@ -2351,6 +2344,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const shakeRef = useRef({ t: 0, dur: 1, mag: 0 });   // camera nudge
   const flashRef = useRef({ t: 0, dur: 1 });            // goal flash
   const seamRef = useRef(0);                            // ball roll angle
+  /** A ball in the air leaves a few puffs of air behind it (Harry, 13 Oct 2026). Screen px, newest last. */
+  const airPuffsRef = useRef<{ x: number; y: number; r: number; t: number }[]>([]);
   /**
    * Match feel: New (lib/star/matchFeel.ts) — the juice on every hit. Looks
    * and sound only: the freeze (`hitStop`) holds the whole loop for a few
@@ -2599,6 +2594,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ballRef.current = r.shot
         ? launchShot(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng, r.shot, r.shot, launch).ball
         : launch(scenarioRef.current, r.dir, r.power, r.contact, r.skills, replayRng);
+      applyAirborne(ballRef.current, scenarioRef.current, (r.contact as StrikeContact).air);
       // The keeper brain, put back exactly as he was at the strike, then the
       // same strike stream — so the replay throws the same dive.
       if (r.keeperBrain) {
@@ -2771,7 +2767,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return;
     }
     applyTilt(tiltForChance(sc));
+    const wasFacing = sc.facing ?? "up";
     const cam = frameForNewView(sc, canvasHW(), replay, tiltDegRef.current);
+    // Framing V2 may turn a wide chance side-on while framing it.
+    if ((sc.facing ?? "up") !== wasFacing) { facingRef.current = sc.facing ?? "up"; applyTilt(tiltForChance(sc)); }
     viewportRef.current = { ...cam };
     baseViewportRef.current = { ...cam };
     playZoomRef.current = playZoomOf(sc);
@@ -3398,7 +3397,23 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     //
     // Drawn by lib/star/matchGoal.ts — moved there unchanged so the gallery,
     // its editor and Infinite Highlights draw exactly this goal too (v0.15).
-    if (sceneRef.current?.goal !== false) drawMatchGoal(ctx, P, unit, heightScale);
+    if (sceneRef.current?.goal !== false) {
+      // Posts stand straight on the tipped-back screen (Mikey, 13 Oct 2026).
+      // The goal is drawn in the canvas's own pixels; the tilt works in
+      // fractions of it. The top keeps its height on screen and moves to
+      // straight above the foot.
+      const tg = tiltGeomRef.current;
+      const cw = canvasRef.current?.width ?? 0, chh = canvasRef.current?.height ?? 0;
+      const upright = tg && cw > 0 && chh > 0 ? (foot: { px: number; py: number }, top: { px: number; py: number }) => {
+        const F = canvasToScreen(tg, foot.px / cw, foot.py / chh, tg.W, tg.H);
+        const T = canvasToScreen(tg, top.px / cw, top.py / chh, tg.W, tg.H);
+        const q = screenToCanvas(tg, F.X, T.Y, tg.W, tg.H);
+        return { px: q.sx * cw, py: q.sy * chh };
+      } : undefined;
+      // From the side the net is drawn a real goal's depth (Mikey, 13 Oct 2026).
+      const sideOn = facingRef.current === "left" || facingRef.current === "right";
+      drawMatchGoal(ctx, P, unit, heightScale, upright, sideOn ? SIDE_NET_DEPTH : undefined);
+    }
 
     // ── What you can SEE ──
     //
@@ -4123,7 +4138,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // queue has not painted anybody yet.
     // Harry, 3 Oct 2026: in open play your own man is not drawn (new view) —
     // the ball, with this ring under it, is "you". lib/star/newLook.ts.
-    const youShown = showYouFigure(sc.kind, { newView: nv, sceneYou: sceneRef.current?.you });
+    // During a lead-in you are a man running onto the last pass, so you are drawn.
+    const youShown = leadRef.current ? sceneRef.current?.you !== false : showYouFigure(sc.kind, { newView: nv, sceneYou: sceneRef.current?.you });
     const ringOnBall = !auto && !youShown && sceneRef.current?.you !== false;
     if (nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)) {
       const f = ringOnBall ? toPx(sc.ball.x, sc.ball.y) : toPx(tx, ty);
@@ -4503,7 +4519,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
       // The ball, lifted off the shadow and grown a little with height.
       const by = py - h * heightScale * scale;
-      const br = bScale * (1 + Math.min(h, 8) * 0.055);
+      // Harry, 13 Oct 2026: "actually the ball rising up in the air": it grows clearly as it climbs (was +5.5%
+      // a metre, now +9%, up to +72% at 8 m), and leaves faint puffs of air behind it while it is up.
+      const br = bScale * (1 + Math.min(h, 8) * 0.09);
+      {
+        const now = performance.now();
+        const puffs = airPuffsRef.current;
+        const last = puffs[puffs.length - 1];
+        if (h > 0.4 && (!last || now - last.t > 45 || Math.hypot(px - last.x, by - last.y) > br * 1.2)) {
+          puffs.push({ x: px, y: by, r: br, t: now });
+          if (puffs.length > 14) puffs.shift();
+        }
+        while (puffs.length && now - puffs[0].t > 420) puffs.shift();
+        for (const q of puffs) {
+          const age = (now - q.t) / 420;
+          if (age <= 0.02) continue;
+          ctx.beginPath();
+          ctx.arc(q.x, q.y, q.r * (0.55 + age * 0.6), 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,255,255,${0.22 * (1 - age)})`;
+          ctx.fill();
+        }
+      }
       // Match feel: New — the ball squashes at a hit and springs back, and
       // stretches along its flight with speed. Drawing only.
       let feelXf = false;
@@ -4597,7 +4633,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // The trail and the landing mark above stay on the grass, under everyone.
     const ball = ballRef.current;
     const ballAt = ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
-      : onTheSpot ? { x: sc.ball.x, y: sc.ball.y, z: 0 } : null;
+      : onTheSpot ? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? 0 } : null;
     if (ballAt) {
       const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
       if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
@@ -4904,6 +4940,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         goalInView: goalInView(sc.kind) || goalOnCamera,
         orders: captainOrdersFrame(sc),
         runup: phaseRef.current === "runup" && runupRef.current ? { t: runupRef.current.t, runS: runupRef.current.runS } : null,
+        leadIn: leadRef.current ? {
+          lock: leadRef.current.cam.lockAt(leadRef.current.t, baseViewportRef.current),
+          ball: { ...leadRef.current.ball }, keeper: leadRef.current.endKeeper, at: leadRef.current.endAt,
+        } : null,
       });
     }
     } catch (e) {
@@ -5226,6 +5266,75 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── A lead-in (the `leadIn` prop, lib/star/leadIn.ts) ──
+  // A replay: the people and the ball are put where it says, and the frame is
+  // carried with the ball. Nothing is stepped. At the end everyone is put back
+  // exactly where the chance has them, and the chance starts.
+  const applyLeadIn = () => {
+    const L = leadRef.current;
+    if (!L) return;
+    const sc = scenarioRef.current;
+    L.ents.forEach((e) => { const p = L.lead.posAt(e.key, L.t); if (p) e.set(p); });
+    const b = L.lead.ballAt(L.t);
+    sc.ball.x = b.x; sc.ball.y = b.y; L.z = b.z;
+    viewportRef.current = L.cam.at(L.t, baseViewportRef.current);
+  };
+  const startLeadIn = (moment?: LeadMoment) => {
+    const build = leadInPropRef.current;
+    if (!build) return;
+    const sc = scenarioRef.current;
+    let lead: LeadIn | null = null;
+    try { lead = build(sc, moment ?? { opening: true, fresh: true, seed: seedRef.current }); } catch (e) { console.error("Lead-in could not be built (the chance plays as normal)", e); }
+    if (!lead || !(lead.durS > 0)) return;
+    const ents = leadInEntities(sc);
+    const ends = ents.map((e) => e.get());
+    // Team-mates in the move but not in the chance: on the pitch for the lead-in only.
+    const mates0 = sc.teammates.length;
+    for (let i = 0; i < (lead.extraMates ?? 0); i++) {
+      const m = { x: sc.ball.x, y: sc.ball.y };
+      sc.teammates.push(m);
+      ents.push({ key: `extra${i}`, side: "mate", get: () => ({ x: m.x, y: m.y }), set: (p) => { m.x = p.x; m.y = p.y; } });
+    }
+    // Where the chance has each man, by the figure name the frame uses (for a 3D camera of its own).
+    const endAt: Record<string, Vec2> = {};
+    let endKeeper: Vec2 | null = null;
+    ents.forEach((e, i) => {
+      if (i >= ends.length) return;
+      const sid = e.key === "keeper" ? null : e.key === "run" ? "run0" : e.key.startsWith("sec") ? `run${Number(e.key.slice(3)) + 1}` : e.key;
+      if (sid) endAt[sid] = { ...ends[i] }; else endKeeper = { ...ends[i] };
+    });
+    leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, cam: leadInCamera(lead, ents.map((e) => e.key)), endAt, endKeeper };
+    setLeadInOn(true);
+    applyLeadIn();
+  };
+  const stepLeadIn = (dt: number) => {
+    const L = leadRef.current;
+    if (!L) return;
+    // The screen's picture (the 3D view) is still loading: hold on the first frame.
+    if (frameObsRef.current?.warming && L.t === 0) { applyLeadIn(); return; }
+    L.t += dt;
+    if (L.t < L.lead.durS) {
+      applyLeadIn();
+      try { L.lead.onTick?.(L.t, false); } catch { /* an observer never breaks the match */ }
+      return;
+    }
+    const sc = scenarioRef.current;
+    L.ents.forEach((e, i) => { if (i < L.ends.length) e.set(L.ends[i]); });
+    sc.teammates.length = L.mates0;
+    sc.ball.x = L.ball.x; sc.ball.y = L.ball.y;
+    viewportRef.current = baseViewportRef.current;
+    leadRef.current = null;
+    setLeadInOn(false);
+    try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
+  };
+  /** A tap on a skippable lead-in (the career's build-ups): straight to the chance. */
+  const skipLeadIn = () => {
+    const L = leadRef.current;
+    if (!L) return;
+    L.t = L.lead.durS;
+    stepLeadIn(0);
+  };
+
   // --- Main animation loop ---
   useEffect(() => {
     const loop = (ts: number) => {
@@ -5271,7 +5380,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       //
       // The keeper is no exception either: he stands on his line, and where he
       // is standing is the thing you are reading. He only breathes.
-      if (phaseRef.current === "aim") {
+      // A lead-in (the `leadIn` prop) on a one-picture screen (openOn): started
+      // on the opening chance, once. Without openOn, loadScenario asks for one
+      // on every chance it serves (the career's build-ups).
+      if (phaseRef.current === "aim" && !leadTriedRef.current && leadInPropRef.current && openOnRef.current) {
+        leadTriedRef.current = true;
+        startLeadIn();
+      }
+      if (phaseRef.current === "aim" && !leadRef.current) {
         stepKeeper(scenarioRef.current, dt);
         // …with the keeper brain he also gets set while you aim: a walk from
         // where he was put toward his spot for this ball. No-op when it's off.
@@ -5661,6 +5777,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         trailRef.current.shift(); // let it dissolve after the play resolves
       }
 
+      if (leadRef.current) stepLeadIn(dt);
       recordGoalFrame(dt);
       render();
       rafRef.current = requestAnimationFrame(loop);
@@ -6342,13 +6459,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     return "tdDribble";
   };
 
-  /** Top-down: the frame follows you up the pitch, about 30 m deep. */
+  /** Top-down: the frame follows you up the pitch, about 30 m deep, and sideways too, centred on
+   *  you (Harry, 13 Oct 2026: "what happened to our top-down dribbling that was actually moving with
+   *  the ball?" — it was fixed sideways at the pitch centre). Same width; never past a touchline.
+   *  The picture only: the run's rules and the hidden match are untouched. */
   const topDownViewport = (run: FpRunState) => {
     const c = canvasRef.current;
     const aspect = c && c.height > 0 ? c.width / c.height : 5 / 8;
     const y1 = run.y - 20, y2 = run.y + 9;
     const w = (y2 - y1) * aspect;
-    const cx = Math.max(w / 2, Math.min(PITCH_W - w / 2, CX));
+    const cx = Math.max(w / 2, Math.min(PITCH_W - w / 2, run.x));
     return { x1: cx - w / 2, x2: cx + w / 2, y1, y2 };
   };
 
@@ -7501,6 +7621,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     } else {
       pushLine(commentaryBuildup(scenarioRef.current.kind, rngRef.current, targetName(scenarioRef.current)));
     }
+    // A build-up before it (the `leadIn` prop without openOn: the career's,
+    // lib/star/leadInGen.ts). Asked for every chance; null = none.
+    if (leadInPropRef.current && !openOnRef.current) {
+      leadTriedRef.current = true;
+      startLeadIn({
+        opening: false,
+        fresh: !attacking && !chain && !setPiece,
+        lane: request?.lane, pattern: request?.pattern,
+        seed: seedRef.current,
+        us: careerRef.current?.player.club, them: fixture?.opponent,
+        themStrength: oppStrengthRef.current,
+        frame: { ...baseViewportRef.current },
+      });
+    }
     playWhistle();
   };
 
@@ -7562,6 +7696,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const onPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     primeMatchSound();
+    // A lead-in is being replayed: it is watched, not played. A build-up skips on a tap.
+    if (leadRef.current) { if (leadRef.current.lead.skippable) skipLeadIn(); return; }
     // Somebody else's penalty (v0.15 items 6/7): you watch it, you don't take it.
     if (phaseRef.current === "aim" && autoKickOf(scenarioRef.current)) return;
     if (phaseRef.current === "tdDribble") {
@@ -7637,7 +7773,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // closer to a team-mate than to the ball never starts an aim-drag now,
     // even when it missed every hit-circle — better a missed order than an
     // accidental, badly-aimed kick.
-    if (ballD >= nearestCaptainCandidateDist(p)) { startCam2dGesture(e); return; }
+    if (ballD >= nearestCaptainCandidateDist(p)) return;
     // The grab zone round the ball: BALL_GRAB_FRACTION of the framed height
     // (28% let a drag start from a third of the screen away — Mikey, 28 Sep
     // 2026: "you're supposed to be able to start dragging only from the
@@ -7646,10 +7782,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // pitch faces (side-on it used to be a share of the width, about 64 px
     // against 100 px top-down — playtest, 3 Oct 2026). Classic is unchanged.
     if (ballD > sameOnScreenM((vp.y2 - vp.y1) * BALL_GRAB_FRACTION, BALL_GRAB_FRACTION, "height")) {
-      // Missed both a player and the ball: the 2D camera swipe / double tap (startCam2dGesture);
-      // otherwise nothing happens, exactly as
+      // Missed both a player and the ball — nothing happens, exactly as
       // before the armband existed.
-      startCam2dGesture(e);
       return;
     }
     draggingRef.current = true;
@@ -7661,16 +7795,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
   };
   const onPointerMove = (e: React.PointerEvent) => {
-    const cg = cam2dGestRef.current;
-    if (cg && e.pointerId === cg.id) {
-      const dx = e.clientX - cg.x0, dy = e.clientY - cg.y0;
-      if (!cg.tilting && Math.hypot(dx, dy) >= 10 && Math.abs(dy) > Math.abs(dx) * 1.2) cg.tilting = true;
-      if (cg.tilting) {
-        const h = canvasRef.current?.getBoundingClientRect().height || 1;
-        applyTilt(Math.max(0, Math.min(CAM2D_MAX_DEG, cg.deg0 - (dy / h) * 60)));
-      }
-      return;
-    }
     if (phaseRef.current === "tdDribble") {
       // Drag steers (your lane follows your thumb); a fast sideways flick knocks it past.
       const run = tdRef.current, tch = tdTouchRef.current, c = canvasRef.current;
@@ -7739,13 +7863,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
   };
   const onPointerUp = (e: React.PointerEvent) => {
-    const cg = cam2dGestRef.current;
-    if (cg && e.pointerId === cg.id) {
-      cam2dGestRef.current = null;
-      try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
-      if (!cg.tilting && Math.hypot(e.clientX - cg.x0, e.clientY - cg.y0) < 10) cam2dTapRef.current = { t: performance.now(), x: e.clientX, y: e.clientY };
-      return;
-    }
     if (nudgeDragRef.current) {
       // The swing stays where you left it; another drag carries on from there.
       nudgeDragRef.current = null;
@@ -7941,12 +8058,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   //     team-mate or an opponent with HIS aim and HIS skills (`skills`) —
   //     the SAME strike as yours from here on.
   const handleContact = (
-    contact: { cx: number; cy: number },
+    tapped: { cx: number; cy: number; lift?: number },
     over?: { dir: { x: number; y: number }; power: number; skills?: KickSkills },
     extras?: ShotExtras,
   ) => {
     const a = over ? { dir: over.dir, power: over.power } : aim;
     if (!a) return;
+    // A ball you hit in the air (airborne test switch): a header or a volley,
+    // started from the height it was at. Kept on the contact so a replay does the same.
+    let contact: StrikeContact = { cx: tapped.cx, cy: tapped.cy };
+    if (!over && tapped.lift !== undefined && airborneOn()) {
+      const m = strikeMotion(scenarioRef.current.kind, seedRef.current);
+      if (m === "float" || m === "bounce") contact = { ...contact, air: { kind: m === "float" ? "header" : "volley", lift: tapped.lift } };
+    }
     const auto = over?.skills ? { skills: over.skills } : null;
     setContactTimerS(null);
     // A dead ball is struck with your free-kick rating, not your general
@@ -8019,6 +8143,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     } else {
       ballRef.current = launch(scenarioRef.current, a.dir, a.power, contact, launchWith, rngRef.current);
     }
+    applyAirborne(ballRef.current, scenarioRef.current, contact.air);
     // ── The keeper brain sees you strike it ── its own seeded stream (built
     // the way the penalty read's is), and a snapshot of him as he stands, so
     // a goal replay throws exactly the same dive. For a penalty the brain
@@ -8345,7 +8470,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          className={`absolute inset-0 w-full h-full ${phase === "aim" ? "cursor-grab" : phase === "runup" ? "cursor-ew-resize" : "cursor-default"}${
+          className={`absolute inset-0 w-full h-full ${phase === "aim" && !leadInOn ? "cursor-grab" : phase === "runup" ? "cursor-ew-resize" : "cursor-default"}${
             // Under the strike screen the pitch is fully covered, so it is
             // taken out of the picture and out of touch altogether: tipped
             // back in 3D, iOS Safari could draw or hit-test its near half
@@ -8401,30 +8526,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           </button>
         )}
 
-        {/* The 2D camera lock (cam2dLockRef above): top-left, clear of the commentary, the power-shot button and the
-            ball's pull room. Hidden while the 3D view is drawing (it has its own). */}
-        {cam2dSwipe && phase === "aim" && newViewRef.current && !replayOf && !(typeof document !== "undefined" && document.querySelector("[data-real3d] [data-cam-lock]")) && (
-          <button
-            type="button"
-            data-cam2d-lock
-            onClick={toggleCam2dLock}
-            aria-label={cam2dLocked ? "Camera locked: tap to unlock" : "Camera free: tap to lock this angle"}
-            className={`absolute top-2 left-2 z-30 pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition ${cam2dLocked ? "bg-yellow-400 border-yellow-200/60" : "bg-gray-950/60 border-white/35"}`}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={cam2dLocked ? "#422006" : "#ffffff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="7" width="13" height="10" rx="2" /><path d="M15 10.5l5-3v9l-5-3z" />
-              {cam2dLocked
-                ? (<><rect x="5" y="10.5" width="6" height="4.5" rx="0.8" fill="#422006" stroke="none" /><path d="M6.3 10.5V9.4a1.7 1.7 0 0 1 3.4 0v1.1" strokeWidth="1.5" /></>)
-                : <circle cx="8.5" cy="12" r="1.6" fill="#ef4444" stroke="none" />}
-            </svg>
-          </button>
+        {/* A build-up before the chance (lib/star/leadInGen.ts): a tap skips it. */}
+        {leadInOn && leadRef.current?.lead.skippable && (
+          <div data-buildup className="absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none rounded-full bg-black/60 px-3 py-1 text-[11px] font-black text-white">
+            Build-up · tap to skip
+          </div>
         )}
-
         {/* ⚡ Power shot (Settings → Gameplay "Knuckleball & power shot",
             lib/star/shotModel.ts). Arms the next shot at goal; bottom-left,
             clear of the ball's own pull room. Its own pointer-events-auto so
             a tap never starts an aim-drag underneath. */}
-        {knucklePowerOn() && phase === "aim" && !windingUp && !replayOf
+        {knucklePowerOn() && phase === "aim" && !leadInOn && !windingUp && !replayOf
           && !["penalty", "free_kick", "corner", "byline_cross"].includes(scenarioRef.current.kind) && (
           <button
             onClick={() => setPowerArmed((v) => !v)}
@@ -8526,7 +8638,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             knuckles={knucklePowerOn()}
             field={contactFieldOn() && fieldApplies(scenarioRef.current.kind)}
             onContact={(c) => handleContact(c)}
-            motion={contactMotion(scenarioRef.current.kind, seedRef.current)}
+            motion={strikeMotion(scenarioRef.current.kind, seedRef.current)}
             technique={skills.technique}
             timeLimitS={contactTimerS ?? undefined}
             onTimeout={contactTimerS ? handleScuff : undefined}

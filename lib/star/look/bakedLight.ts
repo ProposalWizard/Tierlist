@@ -147,6 +147,9 @@ if (uBkOn > 0.5) {
 #endif
 }`;
 
+/** Each baked light's own number (in the patched materials' program keys). */
+let bakeGen = 0;
+
 /** Materials that light per pixel with three's usual light chunks. */
 const LIT = (m: any) => m && (m.isMeshStandardMaterial || m.isMeshLambertMaterial || m.isMeshPhongMaterial) && !m.isShaderMaterial;
 
@@ -181,6 +184,7 @@ export function bakedLightNow(T: any, set: BakeSet, tod: BakeTod, strength: Part
     uBkFloorY: { value: 0.15 }, uBkOff: { value: 0.5 }, uBkAO: { value: 1 }, uBkShade: { value: 1 }, uBkShadePow: { value: 1 },
     uBkOn: { value: 0 }, uBkHasF: { value: 0 }, uBkHasV: { value: 0 },
   };
+  const gen = ++bakeGen;
   const st: BakeStrength = { ao: 1, shade: 1, bounce: 1, ...strength };
   const light = { color: new T.Color(1, 1, 1), intensity: 1 };
   let bounceScale = { v: 0, f: 0 };
@@ -248,26 +252,38 @@ export function bakedLightNow(T: any, set: BakeSet, tod: BakeTod, strength: Part
   };
   const ready = load(tod).catch(() => { /* no pictures: the live light alone, as before */ });
 
+  /**
+   * A material is wrapped ONCE, ever; the wrapper reads whichever baked light owns it now
+   * (m.userData.bakeU / bakeGen). Texture pack switch, 14 Oct 2026 (Harry: "all the players
+   * were black" in Light and Bright): the 3D match builds a new look and a new baked light while
+   * the men stay. Each light used to wrap the men's materials again, so the second wrap ran the
+   * first one too: every bake declaration twice, the shader failed to compile, the men drew black.
+   * The light's own number is in the program key, so the new light's uniforms are the ones bound.
+   */
   const patch = (m: any) => {
     if (patched.has(m) || !LIT(m) || m.userData.noBake) return;
     patched.add(m);
-    const inner = m.onBeforeCompile;
-    const innerKey = m.customProgramCacheKey?.bind(m);
-    m.onBeforeCompile = (sh: any, r: any) => {
-      inner?.call(m, sh, r);
-      if (!m.userData.bakeOn) return;
-      if (m.userData.bakeNeutral) sh.fragmentShader = `#define BK_NEUTRAL\n${sh.fragmentShader}`;
-      Object.assign(sh.uniforms, U);
-      sh.vertexShader = sh.vertexShader
-        .replace("#include <common>", `#include <common>\n${VERT_HEAD}`)
-        .replace("#include <project_vertex>", `#include <project_vertex>\n${VERT_BODY}`);
-      sh.fragmentShader = sh.fragmentShader
-        .replace("#include <common>", `#include <common>\n${FRAG_HEAD}`)
-        .replace("#include <aomap_fragment>", `${FRAG_BODY}\n#include <aomap_fragment>`);
-    };
-    m.customProgramCacheKey = () => `${innerKey ? innerKey() : ""}-bk${m.userData.bakeOn ? 1 : 0}${m.userData.bakeNeutral ? "n" : ""}`;
+    if (!m.userData.bakeWrapped) {
+      m.userData.bakeWrapped = true;
+      const inner = m.onBeforeCompile;
+      const innerKey = m.customProgramCacheKey?.bind(m);
+      m.onBeforeCompile = (sh: any, r: any) => {
+        inner?.call(m, sh, r);
+        if (!m.userData.bakeOn || !m.userData.bakeU) return;
+        if (m.userData.bakeNeutral) sh.fragmentShader = `#define BK_NEUTRAL\n${sh.fragmentShader}`;
+        Object.assign(sh.uniforms, m.userData.bakeU);
+        sh.vertexShader = sh.vertexShader
+          .replace("#include <common>", `#include <common>\n${VERT_HEAD}`)
+          .replace("#include <project_vertex>", `#include <project_vertex>\n${VERT_BODY}`);
+        sh.fragmentShader = sh.fragmentShader
+          .replace("#include <common>", `#include <common>\n${FRAG_HEAD}`)
+          .replace("#include <aomap_fragment>", `${FRAG_BODY}\n#include <aomap_fragment>`);
+      };
+      m.customProgramCacheKey = () => `${innerKey ? innerKey() : ""}-bk${m.userData.bakeOn ? m.userData.bakeGen : 0}${m.userData.bakeNeutral ? "n" : ""}`;
+    }
     m.userData.bakeOn = true;
     m.userData.bakeU = U;
+    m.userData.bakeGen = gen;
     m.needsUpdate = true;
   };
 
@@ -286,7 +302,8 @@ export function bakedLightNow(T: any, set: BakeSet, tod: BakeTod, strength: Part
     dispose() {
       token++;
       U.uBkOn.value = 0;
-      patched.forEach((m) => { m.userData.bakeOn = false; m.needsUpdate = true; });
+      // only the materials still lit by THIS light (a newer one may have taken some over)
+      patched.forEach((m) => { if (m.userData.bakeU === U) { m.userData.bakeOn = false; m.userData.bakeU = null; m.needsUpdate = true; } });
       patched.clear();
       for (const tx of textures.splice(0)) tx.dispose();
     },

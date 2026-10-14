@@ -5,7 +5,7 @@
     "fromCommit": "88c1966",
     "toCommit": "a406c46",
     "url": "https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6",
-    "headline": "Economy, fame and reputation rebuild: Premier League wages to \u00e2\u02dc\u2026100k, fame levels, one reputation number, 50-season careers"
+    "headline": "Economy, fame and reputation rebuild: Premier League wages to â˜…100k, fame levels, one reputation number, 50-season careers"
   },
   {
     "version": "0.2",
@@ -101,7 +101,7 @@
     "fromCommit": "86ee3024",
     "toCommit": "db7bb13c",
     "url": "https://claude.ai/artifact/D2mVBLe6QDF2jqzHnrjiWt",
-    "headline": "Play-off, cup and European round-ups with animated brackets; the real UEFA knockout; two-legged League Cup semis; \u00b125% wage when your club goes down or up; relegation day"
+    "headline": "Play-off, cup and European round-ups with animated brackets; the real UEFA knockout; two-legged League Cup semis; ±25% wage when your club goes down or up; relegation day"
   },
   {
     "version": "0.14",
@@ -118,5 +118,13 @@
     "toCommit": "855bd36a",
     "url": "https://claude.ai/artifact/1VrPsvpikmWNaxcTFzpgGt",
     "headline": "International football: call-ups, duty mode, watching on TV, scorers for every goal; the Ballon d'Or counts club and country (Star Man out); casino scandals"
+  },
+  {
+    "version": "0.16",
+    "date": "2026-10-13",
+    "fromCommit": "855bd36a",
+    "toCommit": "4e0e809d",
+    "url": "https://claude.ai/artifact/S5EvHkuf7wJTaGPeXd3WeM",
+    "headline": "Gameplay review: fewer feed videos that wait for ▶, upright goal posts, achievements unlock and level you up at once; test switches for new framing and headers/volleys"
   }
 ]
