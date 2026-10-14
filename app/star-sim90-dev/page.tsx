@@ -95,7 +95,9 @@ export default function FullMatchPage() {
     let live = true;
     const want = [setup.home, setup.away].filter((c) => !(c in squads));
     if (!want.length) return;
-    fetchLeagueSquads(want).then((list) => {
+    // Never wait long: made-up names after 5 s (the real game's own fallback).
+    const late = new Promise<LeagueSquad[]>((res) => window.setTimeout(() => res([]), 5000));
+    Promise.race([fetchLeagueSquads(want), late]).then((list) => {
       if (!live) return;
       setSquads((cur) => {
         const next = { ...cur };
