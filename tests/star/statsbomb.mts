@@ -3,8 +3,12 @@
  * shot turned into one of our scenarios. Test page only (/star-statsbomb-dev).
  */
 import { existsSync, readFileSync } from "node:fs";
-import { sbToPitch, peopleOf, scenarioForShot, kindForShot, blockersOf, leadinPlan, type SbFile, type SbLeadinFile } from "../../lib/star/statsbombShots";
-import { CX, PITCH_W, HALF_LEN, PEN_SPOT_Y, POST_L, POST_R, BOX_L, BOX_R, BOX_DEPTH, SIX_DEPTH } from "../../lib/star/pitch";
+import { sbToPitch, peopleOf, scenarioForShot, kindForShot, playKindForShot, blockersOf, leadinPlan, playedKeeperOff, frameHoldsShot, type SbFile, type SbLeadinFile } from "../../lib/star/statsbombShots";
+import { buildScenario, goalInView, VIEW_ASPECT, type ScenarioKind, type Vec2, type Viewport } from "../../lib/star/canvasEngine";
+import { brainSetup, brainAim } from "../../lib/star/keeperBrain";
+import { enforceHardRules } from "../../lib/star/kindRules";
+import { mulberry32 } from "../../lib/star/season";
+import { CX, PITCH_W, HALF_LEN, PEN_SPOT_Y, POST_L, POST_R, BOX_L, BOX_R, BOX_DEPTH, SIX_DEPTH, NET_DEPTH } from "../../lib/star/pitch";
 
 let fails = 0;
 const near = (a: number, b: number, eps = 1e-6) => Math.abs(a - b) <= eps;
@@ -70,6 +74,83 @@ if (existsSync(file)) {
   check("every shot builds a scenario", built === n);
   check("the ball is where the real ball was (all)", ballOk === n, ballOk);
   check("the keeper is where the real keeper was (95%+)", keeperOk >= withKeeper * 0.95, `${keeperOk}/${withKeeper}`);
+  // ── The real keeper's start survives into play (keeperHoldsStart) ──
+  // Before: the keeper brain walked him to OUR set spot while you aimed.
+  {
+    let n3 = 0, held = 0, sumReal = 0, sumBefore = 0, sumAfter = 0, sumDrift = 0;
+    for (const s of data.shots) {
+      const p = peopleOf(s);
+      if (!p.keeper) continue;
+      n3++;
+      // The picture as CanvasMatch receives it (openOn), after the kind's hard rules.
+      const sc = scenarioForShot(s);
+      enforceHardRules(sc);
+      const start = { x: sc.keeper.x, y: sc.keeper.y };
+      brainSetup(sc, 99, sc.keeperStrength, {});
+      let maxMove = 0;
+      for (let f = 0; f < 30; f++) { brainAim(sc, 1 / 60); maxMove = Math.max(maxMove, Math.hypot(sc.keeper.x - start.x, sc.keeper.y - start.y)); }
+      if (maxMove < 0.01) held++;
+      sumDrift += maxMove;
+      sumReal += Math.max(0, p.keeper.y);
+      sumBefore += playedKeeperOff(s, 2, false) ?? 0;
+      sumAfter += playedKeeperOff(s, 2, true) ?? 0;
+    }
+    const f2 = (v: number) => (v / n3).toFixed(2);
+    console.log(`keeper start: real ${f2(sumReal)} m off his line · played before ${f2(sumBefore)} m · after ${f2(sumAfter)} m (2 s of aiming, ${n3} shots)`);
+    check("the real keeper stays on his real spot through the first 30 frames (all)", held === n3, `${held}/${n3}, mean drift ${f2(sumDrift)} m`);
+    check("played keeper depth matches the real one within 0.15 m on average", Math.abs(sumAfter - sumReal) / n3 < 0.15, `${f2(sumAfter)} vs ${f2(sumReal)}`);
+  }
+
+  // ── Framing: every real man within 20 m of the ball and the whole goal on screen ──
+  {
+    const r2 = (v: number) => Math.round(v * 100) / 100;
+    // The camera before this change (statsbombShots.ts cameraFor, 13 Oct 2026).
+    const oldCamera = (ball: Vec2, keeper: Vec2 | null): Viewport => {
+      const pts = [ball, ...(keeper ? [keeper] : []), { x: POST_L, y: 0 }, { x: POST_R, y: 0 }, { x: CX, y: -NET_DEPTH }];
+      const pad = 4;
+      const x1 = Math.min(...pts.map((p) => p.x)) - pad, x2 = Math.max(...pts.map((p) => p.x)) + pad;
+      const yTop = Math.min(...pts.map((p) => p.y)) - pad * 0.875, yBot = Math.max(...pts.map((p) => p.y)) + pad * 0.875 + 6;
+      const h = Math.min(42, Math.max(28, yBot - yTop, (x2 - x1) / VIEW_ASPECT));
+      const w = h * VIEW_ASPECT;
+      const cx = Math.min(PITCH_W + 3 - w / 2, Math.max(-3 + w / 2, (x1 + x2) / 2));
+      let y1 = -NET_DEPTH - 2;
+      if (ball.y + pad > y1 + h) y1 = ball.y + pad - h;
+      return { x1: r2(cx - w / 2), x2: r2(cx + w / 2), y1: r2(y1), y2: r2(y1 + h) };
+    };
+    let n4 = 0, before = 0, after = 0, pens = 0, maxH = 0;
+    for (const s of data.shots) {
+      const kind = playKindForShot(s);
+      if (!goalInView(kind) || kind === "penalty") { pens++; continue; }
+      n4++;
+      const p = peopleOf(s);
+      if (frameHoldsShot(s, oldCamera(p.ball, p.keeper))) before++;
+      const sc = scenarioForShot(s, { wideFrame: true });
+      if (frameHoldsShot(s, sc.viewport)) after++;
+      maxH = Math.max(maxH, sc.viewport.y2 - sc.viewport.y1);
+    }
+    const pc = (v: number) => `${((100 * v) / n4).toFixed(1)}%`;
+    console.log(`framing: everyone within 20 m + the whole goal on screen — before ${before}/${n4} (${pc(before)}), after ${after}/${n4} (${pc(after)}); tallest frame ${maxH.toFixed(1)} m; ${pens} penalties keep the game's own camera`);
+    check("every real man within 20 m and the whole goal are on screen (all non-penalty shots)", after === n4, `${after}/${n4}`);
+  }
+
+  // ── The real game is untouched: no game chance ever carries keeperHoldsStart ──
+  {
+    const kinds: ScenarioKind[] = ["one_on_one", "volley", "tight_angle", "long_range", "free_kick", "penalty", "cutback", "through_ball", "corner", "byline_cross"];
+    let built2 = 0, flagged = 0, walked = 0;
+    for (const k of kinds) for (let seed = 1; seed <= 100; seed++) {
+      const sc = buildScenario(k, mulberry32(seed));
+      built2++;
+      if ("keeperHoldsStart" in sc) flagged++;
+      const start = { x: sc.keeper.x, y: sc.keeper.y };
+      brainSetup(sc, seed, sc.keeperStrength, {});
+      for (let f = 0; f < 120; f++) brainAim(sc, 1 / 60);
+      if (Math.hypot(sc.keeper.x - start.x, sc.keeper.y - start.y) > 0.01) walked++;
+    }
+    console.log(`game chances: ${built2} built, ${flagged} carry keeperHoldsStart, ${walked} keepers still take their set walk`);
+    check("no game chance carries keeperHoldsStart", flagged === 0, flagged);
+    check("game keepers still take their set walk (most chances)", walked > built2 * 0.5, `${walked}/${built2}`);
+  }
+
   // The moving lead-in: ends with the ball and the shooter on the shot's spot.
   const lf = "data/statsbomb/leadins.json";
   if (existsSync(lf)) {

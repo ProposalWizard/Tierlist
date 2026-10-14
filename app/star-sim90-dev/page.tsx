@@ -12,16 +12,50 @@
  * and records it all up front as one replay. This page plays the replay back
  * with the goal-video renderer (the game's own figures). It plays no football
  * of its own and touches no career: test page only.
+ *
+ * When the replay reaches one of YOUR chances (the unseen match's own
+ * scenario request), it stops and offers "Play this chance": the chance opens
+ * in the real match (EnginePlay, the one engine, inside Match3DLayer), and
+ * "Back to the match" carries the replay on. The replay's score is the
+ * unseen match's, whatever you do in the chance. Real squad names come from
+ * /api/star/league-squads when it answers; made-up names otherwise.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import PageGuide from "@/components/admin/PageGuide";
 import Sim90View from "@/components/star/Sim90View";
+import Sim90View3D from "@/components/star/Sim90View3D";
 import { LiveRadar } from "@/components/star/MatchRadar";
 import { simulate90, clockOf, FULL_T, type Sim90, type Sim90Event } from "@/lib/star/sim90";
 import { PREMIER_LEAGUE_CLUBS, CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsFor, kitLabelOnDark } from "@/lib/star/kits";
 import { oldMatchFlow } from "@/lib/star/gameplayVersion";
+import EnginePlay from "@/components/star/EnginePlay";
+import Match3DLayer from "@/components/star/Match3DLayer";
+import { buildScenario, SCENARIO_KINDS, type ScenarioKind, type Scenario } from "@/lib/star/canvasEngine";
+import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
+import { mulberry32 } from "@/lib/star/season";
+import { fetchLeagueSquads } from "@/lib/star/leagueSquads";
+import { formationForClub } from "@/lib/star/clubFormation";
+import { autoPick } from "@/lib/star/formations";
+import type { LeagueSquad } from "@/lib/star/types";
+
+/** The chance's kind: the first of the unseen match's kinds the game plays. */
+function kindOf(kinds: string[]): ScenarioKind {
+  const known = kinds.filter((k): k is ScenarioKind => (SCENARIO_KINDS as readonly string[]).includes(k));
+  return withoutSwitchedOff(known)[0] ?? "one_on_one";
+}
+
+/** A real squad's eleven in the club's formation, slot order (GK first), surnames. */
+function namesFrom(sq: LeagueSquad | undefined): string[] | undefined {
+  if (!sq || !sq.players.length || sq.players.every((p) => p.id.startsWith("gen:"))) return undefined;
+  const ids = autoPick(sq.players, formationForClub(sq.club));
+  const out = ids.map((id) => {
+    const p = sq.players.find((q) => q.id === id);
+    return p ? p.name.trim().split(/\s+/).slice(-1)[0] : "";
+  });
+  return out.every(Boolean) ? out : undefined;
+}
 
 const BG = "#05070d";
 const INK = "#f2f5f9";
@@ -48,8 +82,37 @@ export default function FullMatchPage() {
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(16);
   const [showSetup, setShowSetup] = useState(false);
   const [onlyBig, setOnlyBig] = useState(true);
+  const [view3d, setView3d] = useState(false);
+  const [autoSkip, setAutoSkip] = useState(false);
+  /** The chance the replay stopped on, and whether it is being played. */
+  const [stopped, setStopped] = useState<Sim90Event | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [squads, setSquads] = useState<Record<string, string[] | undefined>>({});
+  const handled = useRef(new Set<number>());
   const tRef = useRef(0);
   tRef.current = t;
+
+  // Real names for both clubs, when the data route answers.
+  useEffect(() => {
+    let live = true;
+    const want = [setup.home, setup.away].filter((c) => !(c in squads));
+    if (!want.length) return;
+    // Never wait long: made-up names after 5 s (the real game's own fallback).
+    const late = new Promise<LeagueSquad[]>((res) => window.setTimeout(() => res([]), 5000));
+    Promise.race([fetchLeagueSquads(want), late]).then((list) => {
+      if (!live) return;
+      setSquads((cur) => {
+        const next = { ...cur };
+        for (const c of want) next[c] = namesFrom(list.find((q) => q.club === c));
+        return next;
+      });
+    }).catch(() => {
+      if (live) setSquads((cur) => ({ ...cur, ...Object.fromEntries(want.map((c) => [c, undefined])) }));
+    });
+    return () => { live = false; };
+  }, [setup.home, setup.away, squads]);
+  const namesReady = setup.home in squads && setup.away in squads;
+  const realNames = !!(squads[setup.home] || squads[setup.away]);
 
   useEffect(() => {
     document.body.classList.add("knowitball-immersive");
@@ -57,15 +120,24 @@ export default function FullMatchPage() {
   }, []);
 
   // Build the whole replay up front (about a second), off the first paint.
+  const homeNames = squads[setup.home], awayNames = squads[setup.away];
   useEffect(() => {
     setSim(null);
     setRunning(false);
+    setStopped(null);
+    setPlaying(false);
+    handled.current.clear();
+    if (!namesReady) return;
     const id = window.setTimeout(() => {
-      setSim(simulate90({ ...setup, seed, matchFlow: !oldMatchFlow() }));
+      setSim(simulate90({ ...setup, seed, matchFlow: !oldMatchFlow(), names: { home: homeNames, away: awayNames } }));
       setT(0);
     }, 30);
     return () => window.clearTimeout(id);
-  }, [setup, seed]);
+  }, [setup, seed, namesReady, homeNames, awayNames]);
+
+  /** Your chances, in replay order: the replay stops a moment before each shot. */
+  const chances = useMemo(() => (sim ? sim.events.filter((e) => e.chance) : []), [sim]);
+  const stopAt = (e: Sim90Event) => Math.max(0, e.t - 1.2);
 
   // The clock: replay seconds advance at `speed` × real time.
   useEffect(() => {
@@ -73,13 +145,34 @@ export default function FullMatchPage() {
     let last = performance.now();
     const id = window.setInterval(() => {
       const now = performance.now();
-      const next = Math.min(FULL_T, tRef.current + ((now - last) / 1000) * speed);
+      let next = Math.min(FULL_T, tRef.current + ((now - last) / 1000) * speed);
       last = now;
+      if (!autoSkip) {
+        const hit = chances.find((e) => !handled.current.has(e.t) && stopAt(e) > tRef.current - 1e-6 && stopAt(e) <= next);
+        if (hit) {
+          handled.current.add(hit.t);
+          next = stopAt(hit);
+          tRef.current = next;
+          setT(next);
+          setRunning(false);
+          setStopped(hit);
+          return;
+        }
+      }
+      tRef.current = next;
       setT(next);
       if (next >= FULL_T) setRunning(false);
     }, TICK_MS);
     return () => window.clearInterval(id);
-  }, [running, speed, sim]);
+  }, [running, speed, sim, autoSkip, chances]);
+
+  const openOn = useMemo(() => {
+    if (!stopped?.chance) return undefined;
+    const kind = kindOf(stopped.chance.kinds);
+    const s = (seed ^ (stopped.minute * 7919)) >>> 0;
+    return (): Scenario => buildScenario(kind, mulberry32(s), setup.awayStrength);
+  }, [stopped, seed, setup.awayStrength]);
+  const carryOn = () => { setPlaying(false); setStopped(null); setRunning(true); };
 
   const kits = useMemo(() => kitsFor(setup.home, setup.away), [setup.home, setup.away]);
   const homeCol = kitLabelOnDark(kits.home.shirt, kits.home.trim);
@@ -97,7 +190,14 @@ export default function FullMatchPage() {
     return sim.events.filter((e) => (onlyBig ? e.kind === "goal" || e.kind === "save" || e.kind === "miss" || e.kind === "half" || e.kind === "full" : e.kind !== "kickoff"));
   }, [sim, onlyBig]);
 
-  const jump = (to: number) => setT(Math.max(0, Math.min(FULL_T, to)));
+  const jump = (to: number) => {
+    const v = Math.max(0, Math.min(FULL_T, to));
+    // Going back re-arms the chances after that point.
+    for (const e of chances) if (stopAt(e) >= v) handled.current.delete(e.t);
+    setStopped(null);
+    setPlaying(false);
+    setT(v);
+  };
   const minute = t / 60;
 
   return (
@@ -135,16 +235,48 @@ export default function FullMatchPage() {
 
         {/* The picture */}
         <div style={{ marginTop: 8, position: "relative" }}>
-          {sim ? <Sim90View track={sim.track} t={t} /> : (
+          {sim && <View3DSwitch on={view3d} onChange={setView3d} />}
+          {sim ? (view3d ? <Sim90View3D track={sim.track} t={t} /> : <Sim90View track={sim.track} t={t} />) : (
             <div style={{ height: 220, borderRadius: 12, display: "grid", placeItems: "center", background: "rgba(255,255,255,0.04)", color: MUTED, fontWeight: 800 }}>
               Building the match…
             </div>
           )}
         </div>
 
+        {/* One of your chances: play it in the real match, or carry on */}
+        {stopped?.chance && (
+          <div data-sim90-chance style={{ marginTop: 8, padding: 10, borderRadius: 14, background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.45)" }}>
+            <div style={{ fontSize: 13, fontWeight: 900 }}>{stopped.minute}&apos; · Your chance — {stopped.chance.reason.toLowerCase()}</div>
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: "#a7f3d0", marginTop: 2 }}>
+              {kindOf(stopped.chance.kinds).replace(/_/g, " ")} · the replay keeps the unseen match&apos;s result ({stopped.chance.result === "goal" ? "a goal" : "no goal"})
+            </div>
+            {!playing ? (
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <button data-sim90-play-chance onClick={() => setPlaying(true)} style={{
+                  flex: 1, height: 42, borderRadius: 12, border: "none", cursor: "pointer", background: "#10b981", color: "#fff", fontSize: 14, fontWeight: 900,
+                }}>Play this chance</button>
+                <button onClick={carryOn} style={{
+                  height: 42, padding: "0 14px", borderRadius: 12, cursor: "pointer", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: INK, fontSize: 13, fontWeight: 900,
+                }}>Skip</button>
+              </div>
+            ) : (
+              <div style={{ marginTop: 8 }}>
+                {openOn && (
+                  <Match3DLayer key={`${seed}-${stopped.t}`}>
+                    <EnginePlay seed={seed % 1000 + 1} openOn={openOn} />
+                  </Match3DLayer>
+                )}
+                <button data-sim90-back onClick={carryOn} style={{
+                  width: "100%", marginTop: 8, height: 42, borderRadius: 12, border: "none", cursor: "pointer", background: "#38bdf8", color: "#04111d", fontSize: 14, fontWeight: 900,
+                }}>Back to the match</button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Controls */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-          <button onClick={() => { if (t >= FULL_T) setT(0); setRunning((r) => !r); }} disabled={!sim} aria-label={running ? "Pause" : "Play"}
+          <button onClick={() => { if (t >= FULL_T) setT(0); setStopped(null); setPlaying(false); setRunning((r) => !r); }} disabled={!sim} aria-label={running ? "Pause" : "Play"}
             style={{ width: 48, height: 40, borderRadius: 12, border: "none", cursor: "pointer", flex: "none", background: running ? "#334155" : "#10b981", color: "#fff", fontSize: 17, fontWeight: 900 }}>
             {running ? "❚❚" : t >= FULL_T ? "↻" : "▶"}
           </button>
@@ -166,6 +298,10 @@ export default function FullMatchPage() {
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: MUTED, fontWeight: 800, marginTop: -2 }}>
           <span>0&apos;</span><span>45&apos;</span><span>90&apos;</span>
         </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 12, fontWeight: 800 }}>
+          <input type="checkbox" checked={autoSkip} onChange={(e) => setAutoSkip(e.target.checked)} />
+          Don&apos;t stop for my chances
+        </label>
 
         {/* The radar of the unseen match, minute by minute */}
         {sim && (
@@ -222,7 +358,7 @@ export default function FullMatchPage() {
             <ClubRow label="Away" club={setup.away} strength={setup.awayStrength}
               onClub={(c) => setSetup({ ...setup, away: c })} onStrength={(v) => setSetup({ ...setup, awayStrength: v })} />
             <div style={{ fontSize: 11, fontWeight: 700, color: MUTED }}>
-              Made-up players in each club&apos;s own formation. Home attacks the near goal both halves.
+              {realNames ? "Real squads" : "Made-up players"} in each club&apos;s own formation. Home is your side; the teams swap ends at half-time.
             </div>
           </div>
         )}
@@ -249,6 +385,25 @@ function ClubRow({ label, club, strength, onClub, onStrength }: {
       </select>
       <input type="range" min={50} max={95} value={strength} onChange={(e) => onStrength(Number(e.target.value))}
         style={{ width: "100%", accentColor: "#38bdf8" }} />
+    </div>
+  );
+}
+
+/** 2D | 3D: how the replay is drawn (default 2D). */
+function View3DSwitch({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div data-sim90-view-switch style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
+      <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)" }}>
+        {(["2D", "3D"] as const).map((k) => {
+          const sel = (k === "3D") === on;
+          return (
+            <button key={k} data-sim90-view-mode={k} onClick={() => onChange(k === "3D")} style={{
+              width: 48, height: 30, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 900,
+              background: sel ? "rgba(56,189,248,0.25)" : "rgba(255,255,255,0.03)", color: sel ? "#e0f2fe" : MUTED,
+            }}>{k}</button>
+          );
+        })}
+      </div>
     </div>
   );
 }

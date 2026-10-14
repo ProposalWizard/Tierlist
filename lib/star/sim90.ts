@@ -21,10 +21,13 @@
  * passes and shots the unseen match already decided. No canvas, no React.
  *
  * Simplifications, on purpose:
- *  - Home is always "your side" in the unseen match, and keeps the same end
- *    both halves (the radar draws it that way too).
+ *  - Home is always "your side" in the unseen match. The teams swap ends at
+ *    half-time: the second half is staged exactly like the first and the
+ *    picture is turned round (x and y both mirrored), so home attacks the far
+ *    goal after the break. The radar strip still draws home one way.
  *  - Half-time is a cut: everyone is stood back in kick-off positions.
- *  - Keepers do not dive: a save is the ball arriving in his hands.
+ *  - Keepers dive on a save (and on a goal that beats them) toward where the
+ *    ball is going; the goal-video renderer draws the dive.
  *  - No cards, fouls or offside calls: the unseen match has none.
  */
 import { startRadar, stepRadar, resolveHighlight, radarOver, type RadarMatch } from "./matchRadar";
@@ -65,6 +68,16 @@ export interface Sim90Setup {
   names?: { home?: string[]; away?: string[] };
 }
 
+/** One of YOUR chances: the unseen match handed you a scenario to play
+ *  (its highlight / scenario request). The page can open it in the real match. */
+export interface Sim90Chance {
+  kinds: string[];
+  dribble: boolean;
+  reason: string;
+  /** What the unseen match decided at the bench rate. */
+  result: "goal" | "missed";
+}
+
 export type Sim90EventKind = "goal" | "shot" | "save" | "miss" | "corner" | "kickoff" | "half" | "full";
 
 export interface Sim90Event {
@@ -75,6 +88,8 @@ export interface Sim90Event {
   kind: Sim90EventKind;
   side: Team | -1;
   text: string;
+  /** Set on the shot of one of your own chances. */
+  chance?: Sim90Chance;
 }
 
 export interface Sim90 {
@@ -120,14 +135,69 @@ interface Side {
   strength: number;
   /** Per slot (GK first): 0 back line … 1 front line. */
   u: number[];
+  /** Per slot: the role group used by the in-possession rules (SHAPE_IN). */
+  group: ShapeGroup[];
+  /** Per slot: seeded drift — a fixed personal lean plus two slow waves per axis. */
+  drift: { bx: number; by: number; ph: number[]; per: number[] }[];
 }
 
-function sideOf(club: string, strength: number): Side {
+// ── Shape rules, set from public tracking data (Oct 2026) ───────────────────
+// Measured over 20 broadcast-tracked matches and checked against 7 optically
+// tracked ones (the two sets agree within 6 m on 82 of 84 role heights). Pitch x here is ALONG the pitch from the centre spot (own goal
+// at −52.5); "bx" is the ball's x. Each role stands at a + b·bx: real men
+// follow the ball up and down at a bit over half its speed. Straight lines fit
+// the real role averages to within 1.6 m in every ball zone.
+type ShapeGroup = "GK" | "CB" | "FB" | "DM" | "CM" | "AM" | "W" | "ST";
+/** In possession: [a, b] for x = a + b·bx; [side] = |y| of a side player (m off the middle). */
+const SHAPE_IN: Record<ShapeGroup, { a: number; b: number; side: number }> = {
+  GK: { a: -35.4, b: 0.25, side: 0 },
+  CB: { a: -10.7, b: 0.58, side: 9.2 },  // real −12.7; +2 m makes up for the pressing man and drift
+  FB: { a: -0.2, b: 0.6, side: 19.5 },   // real −2.2; +2 m, same reason
+  DM: { a: -0.5, b: 0.59, side: 8.5 },
+  CM: { a: 4.2, b: 0.58, side: 10 },
+  AM: { a: 8.9, b: 0.57, side: 8.6 },
+  W: { a: 8.3, b: 0.57, side: 13.5 },
+  ST: { a: 15.8, b: 0.51, side: 11.8 },
+};
+/** Everyone leans toward the ball's side by this share of its offset. */
+const SHAPE_BALL_PULL = 0.38;
+/** Out of possession the keeper stands 12.2 + 0.24·bx m off his line (real 2.6 m with the ball at his end, 22 m at the far end). */
+const KEEPER_OUT = { a: 12.2, b: 0.24 };
+/** …and stays at least this far behind his own back line. */
+const KEEPER_BEHIND_LINE = 6;
+/** The keeper follows the ball sideways by this share, up to 5 m (real |y| 2–4 m). */
+const KEEPER_FOLLOW = 0.15;
+/** Out of possession: the block's length, front man to back line (real 29–39 m). */
+const blockLength = (bx: number) => 18 + 0.0045 * bx * bx + 0.04 * bx;
+/** Drift: personal lean sd and wave sd per axis, metres (real role spread at a fixed ball zone is 9–13 m along). */
+const DRIFT = { leanIn: 6, waveIn: 6.5, leanOut: 4, waveOut: 5, lateral: 0.6 };
+
+const GROUP_OF: Record<string, ShapeGroup> = {
+  GK: "GK", CB: "CB", LB: "FB", RB: "FB", LWB: "FB", RWB: "FB", CDM: "DM", CM: "CM", CAM: "AM",
+  LW: "W", RW: "W", LM: "W", RM: "W", ST: "ST", CF: "ST",
+};
+
+function sideOf(club: string, strength: number, seed = 0): Side {
   const formation = formationForClub(club);
   const out = formation.slots.slice(1);
   const back = Math.max(...out.map((s) => s.y)), front = Math.min(...out.map((s) => s.y));
   const u = formation.slots.map((s, i) => (i === 0 ? 0 : (back - s.y) / Math.max(0.01, back - front)));
-  return { formation, style: playstyleForClub(club), strength, u };
+  const group = formation.slots.map((s) => GROUP_OF[s.role] ?? "CM");
+  const r = mulberry32((clubNameSeed(club) ^ Math.imul(seed | 0, 0x85ebca6b)) >>> 0);
+  const g = () => { let v = 0; for (let k = 0; k < 4; k++) v += r(); return (v - 2) * 1.732; };
+  const drift = formation.slots.map(() => ({
+    bx: g(), by: g(),
+    ph: [r(), r(), r(), r()].map((v) => v * Math.PI * 2),
+    per: [45 + r() * 50, 16 + r() * 18, 50 + r() * 50, 18 + r() * 18],
+  }));
+  return { formation, style: playstyleForClub(club), strength, u, group, drift };
+}
+
+/** Slot i's drift at time t, metres (along, across), sd ≈ lean and wave. */
+function driftAt(side: Side, i: number, t: number, lean: number, wave: number): V {
+  const d = side.drift[i];
+  const w = (a: number, b: number) => (0.8 * Math.sin((2 * Math.PI * t) / d.per[a] + d.ph[a]) + 0.6 * Math.sin((2 * Math.PI * t) / d.per[b] + d.ph[b])) / 0.707;
+  return { x: d.bx * lean + w(0, 1) * wave, y: (d.by * lean + w(2, 3) * wave) * DRIFT.lateral };
 }
 
 /**
@@ -137,35 +207,46 @@ function sideOf(club: string, strength: number): Side {
  * keeper off his line. In possession: stretched long and wide, the front line
  * held level with the other side's last man so nobody stands offside.
  */
-function shapeOf(T: Team, side: Side, other: Side, inPoss: boolean, ball: V, offsideD: number): V[] {
+function shapeOf(T: Team, side: Side, other: Side, inPoss: boolean, ball: V, offsideD: number, t?: number): V[] {
   const ballD = depthOf(T, ball.y);
+  const bx = ballD - HALF_LEN;
   const mirror = (sx: number) => (T === 0 ? sx : 1 - sx);
-  let back: number, front: number, keeperD: number, widthM: number, slide: number;
-  if (!inPoss) {
-    const input = { formation: side.formation, playstyle: side.style, attackerStrength: other.strength, defenderStrength: side.strength };
-    const near = Math.min(ballD, 45);
-    const blk = targetBlock(input, ball.x, near);
-    back = blk.lineY + Math.max(0, ballD - 45) * 0.6;
-    back = clamp(Math.min(back, ballD - 2.5), 4, 50);
-    keeperD = clamp(blk.keeperY + Math.max(0, ballD - 45) * 0.14, 1, 14);
-    front = Math.max(back + 14, Math.min(back + side.style.compactness, ballD + 3));
-    widthM = clamp(blk.span * 1.9, 34, 48);
-    slide = blk.blockShift;
-  } else {
-    front = Math.min(ballD + 16, offsideD - 0.8, 98);
-    back = clamp(ballD - 30, 9, Math.max(9, front - 22));
-    if (front - back > 46) back = front - 46;
-    keeperD = clamp(back - 24, 3, 22);
-    widthM = 60;
-    slide = clamp((ball.x - CX) * 0.22, -6, 6);
+  const kx = CX + clamp((ball.x - CX) * KEEPER_FOLLOW, -5, 5);
+  const drift = (i: number): V => (t === undefined ? { x: 0, y: 0 }
+    : driftAt(side, i, t, inPoss ? DRIFT.leanIn : DRIFT.leanOut, inPoss ? DRIFT.waveIn : DRIFT.waveOut));
+  if (inPoss) {
+    // Every role at its measured height for this ball, nobody past the offside line.
+    const front = Math.min(offsideD - 0.8, 98);
+    return side.formation.slots.map((s, i) => {
+      const g = SHAPE_IN[side.group[i]];
+      const dr = drift(i);
+      if (i === 0) return { x: clamp(kx + dr.y * 0.3, POST_L - 3, POST_R + 3), y: yAt(T, clamp(HALF_LEN + g.a + g.b * bx + dr.x * 0.3, 3, 32)) };
+      const lat = mirror(s.x) - 0.5;
+      const sgn = Math.abs(lat) < 0.04 ? 0 : Math.sign(lat);
+      const x = CX + sgn * g.side + (ball.x - CX) * SHAPE_BALL_PULL + dr.y;
+      const d = HALF_LEN + g.a + g.b * bx + dr.x;
+      return { x: clamp(x, 2, PITCH_W - 2), y: yAt(T, clamp(Math.min(d, front), 3, LEN - 3)) };
+    });
   }
+  // Out of possession: the measured block (formationShape's targetBlock) — the
+  // back line between the ball and goal, slid toward the ball — stretched to
+  // the real block length.
+  const input = { formation: side.formation, playstyle: side.style, attackerStrength: other.strength, defenderStrength: side.strength };
+  const near = Math.min(ballD, 45);
+  const blk = targetBlock(input, ball.x, near);
+  let back = blk.lineY + Math.max(0, ballD - 45) * 0.6;
+  back = clamp(Math.min(back, ballD - 2.5), 4, 50);
+  const front = Math.min(back + blockLength(bx), 100);
+  const keeperD = clamp(Math.min(KEEPER_OUT.a + KEEPER_OUT.b * bx, back - KEEPER_BEHIND_LINE), 1.5, 24);
+  const widthM = clamp(blk.span * 1.9, 34, 48);
+  const slide = blk.blockShift;
   return side.formation.slots.map((s, i) => {
-    if (i === 0) {
-      const kx = inPoss ? CX : CX + clamp((ball.x - CX) * 0.12, -2.5, 2.5);
-      return { x: kx, y: yAt(T, keeperD) };
-    }
-    const d = back + side.u[i] * (front - back);
-    const x = clamp(CX + slide + (mirror(s.x) - 0.5) * widthM, 2, PITCH_W - 2);
+    const dr = drift(i);
+    if (i === 0) return { x: clamp(kx + dr.y * 0.2, POST_L - 2, POST_R + 2), y: yAt(T, keeperD) };
+    let d = back + side.u[i] * (front - back) + dr.x;
+    // The back line never drifts past the ball.
+    if (side.u[i] < 0.15) d = Math.min(d, ballD - 1.5);
+    const x = clamp(CX + slide + (mirror(s.x) - 0.5) * widthM + dr.y, 2, PITCH_W - 2);
     return { x, y: yAt(T, clamp(d, 1, LEN - 1)) };
   });
 }
@@ -181,6 +262,7 @@ interface Attempt {
   done: boolean;
   /** Where the shot is struck from: an x and a distance from goal. */
   spot: V;
+  chance?: Sim90Chance;
 }
 
 interface MinutePlan { poss: Team; anchor: V }
@@ -227,10 +309,15 @@ function planOf(radar: RadarMatch, rng: () => number): { plans: MinutePlan[]; at
     plans.push({ poss: f.possession === "user" ? 0 : 1, anchor: { x: x0 + (x1 - x0) * (0.25 + 0.5 * rng()), y: LEN - d } });
     const here: Omit<Attempt, "t" | "done" | "spot" | "minute">[] = [];
     let cornersUs = 0, cornersThem = 0;
+    const hl = f.highlight;
+    const chanceOf = (result: "goal" | "missed"): Sim90Chance | undefined =>
+      hl ? { kinds: [...hl.kinds], dribble: hl.dribble, reason: hl.reason, result } : undefined;
     for (const e of f.events) {
-      if (e.kind === "goal-us" || e.kind === "highlight-goal") here.push({ side: 0, outcome: "goal", text: e.text });
+      if (e.kind === "highlight-goal") here.push({ side: 0, outcome: "goal", text: e.text, chance: chanceOf("goal") });
+      else if (e.kind === "highlight-miss") here.push({ side: 0, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text, chance: chanceOf("missed") });
+      else if (e.kind === "goal-us") here.push({ side: 0, outcome: "goal", text: e.text });
       else if (e.kind === "goal-them") here.push({ side: 1, outcome: "goal", text: e.text });
-      else if (e.kind === "chance-us" || e.kind === "highlight-miss") here.push({ side: 0, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text });
+      else if (e.kind === "chance-us") here.push({ side: 0, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text });
       else if (e.kind === "chance-them") here.push({ side: 1, outcome: rng() < 0.5 ? "saved" : "wide", text: e.text });
       else if (e.kind === "corner-us") cornersUs++;
       else if (e.kind === "corner-them") cornersThem++;
@@ -245,7 +332,8 @@ function planOf(radar: RadarMatch, rng: () => number): { plans: MinutePlan[]; at
       }
     }
     // Goals first: they can never be dropped.
-    here.sort((a, b) => (a.outcome === "goal" ? 0 : 1) - (b.outcome === "goal" ? 0 : 1));
+    const rank = (a: { outcome: string; chance?: Sim90Chance }) => (a.outcome === "goal" || a.chance ? 0 : 1);
+    here.sort((a, b) => rank(a) - rank(b));
     const kept = here.slice(0, 3).sort(() => rng() - 0.5);
     // Goals must stay; if the shuffle pushed one out of the first three, it was kept above anyway.
     const offs = kept.length === 1 ? [40] : kept.length === 2 ? [18, 48] : [12, 32, 52];
@@ -282,7 +370,7 @@ export function simulate90(setup: Sim90Setup): Sim90 {
   const rng = mulberry32((setup.seed ^ 0x9e3779b1) >>> 0);
   const radar = runRadar(setup);
   const { plans, attempts } = planOf(radar, rng);
-  const sides: [Side, Side] = [sideOf(setup.home, setup.homeStrength), sideOf(setup.away, setup.awayStrength)];
+  const sides: [Side, Side] = [sideOf(setup.home, setup.homeStrength, setup.seed), sideOf(setup.away, setup.awayStrength, setup.seed + 1)];
 
   // Who plays: the club's formation filled from a squad (made-up names
   // unless the page passes real ones).
@@ -331,6 +419,8 @@ export function simulate90(setup: Sim90Setup): Sim90 {
   let receiverLock = -1, receiverAt: V = { x: 0, y: 0 };
   const facing: V[] = P.map((_, i) => ({ x: 0, y: teamOf(i) === 0 ? -1 : 1 }));
   let cornerTargets: V[] | null = null;
+  /** The keeper's dive in progress, if any. */
+  let diveNow = null as { k: number; x0: number; tx: number; start: number; end: number; dir: number; high: boolean } | null;
 
   const offsideLineD = (A: Team): number => {
     // In A's depth: the second-last defender of the other side, never inside
@@ -373,7 +463,7 @@ export function simulate90(setup: Sim90Setup): Sim90 {
     const shape = kickoffShape(K);
     if (cut) for (let i = 0; i < 22; i++) { P[i] = { ...shape[i] }; Vel[i] = { x: 0, y: 0 }; }
     ball.x = CX; ball.y = HALF_LEN; ball.z = 0;
-    flight = null; dead = null; cornerTargets = null;
+    flight = null; dead = null; cornerTargets = null; diveNow = null;
     carrier = kickerOf(K);
     if (cut) { P[carrier] = { x: CX, y: HALF_LEN + (K === 0 ? 0.6 : -0.6) }; }
     holdUntil = t + 1.0;
@@ -489,15 +579,26 @@ export function simulate90(setup: Sim90Setup): Sim90 {
       return;
     } else {
       // Saved (and maybe parried behind): into the keeper's hands.
-      to = { x: clamp(keeper.x + (rng() - 0.5) * 1.6, POST_L + 0.4, POST_R - 0.4), y: keeper.y, z: 0.3 + rng() * 1.3 };
+      const off = rng() < 0.3 ? (rng() - 0.5) * 1.0 : (rng() < 0.5 ? -1 : 1) * (1.3 + rng() * 1.7);
+      to = { x: clamp(keeper.x + off, POST_L + 0.4, POST_R - 0.4), y: keeper.y, z: 0.3 + rng() * 1.3 };
     }
     T_ = Math.max(0.35, Math.hypot(to.x - ball.x, to.y - ball.y) / speed);
+    // The keeper goes for it: a dive toward where it is going, starting just
+    // before it gets to him. Beaten by a goal, he gets most of the way.
+    {
+      const k = D * 11;
+      const reach = a.outcome === "goal" ? 0.75 : 1;
+      const tx = clamp(P[k].x + (to.x - P[k].x) * reach, POST_L - 0.8, POST_R + 0.8);
+      if (Math.abs(to.x - P[k].x) > 0.9 && a.outcome !== "wide") {
+        diveNow = { k, x0: P[k].x, tx, start: t + Math.max(0, T_ - 0.45), end: t + T_ + 0.8, dir: Math.sign(to.x - P[k].x), high: to.z > 1.6 };
+      }
+    }
     startFlight({ kind: "shot", from: { ...ball }, to, t0: t, T: T_, peak: Math.min(1.2, fromGoal * 0.03), receiver: -1, kicker: c, side: T, attempt: a });
     kickEvent(t, c, "shot");
     receiverLock = a.outcome === "saved" || a.outcome === "corner" ? D * 11 : -1;
     receiverAt = { x: to.x, y: to.y };
     a.done = true;
-    events.push({ t, minute: a.minute, kind: a.outcome === "goal" ? "shot" : "shot", side: T, text: `${names[c]} shoots${fromGoal > 22 ? " from range" : ""}.` });
+    events.push({ t, minute: a.minute, kind: "shot", side: T, text: `${names[c]} shoots${fromGoal > 22 ? " from range" : ""}${a.chance ? " — your chance" : ""}.`, chance: a.chance });
   };
 
   const goCorner = (t: number, A: Team, x: number) => {
@@ -658,8 +759,8 @@ export function simulate90(setup: Sim90Setup): Sim90 {
       targets = cornerTargets;
     } else {
       const O: Team = inPossTeam === 0 ? 1 : 0;
-      const defShape = shapeOf(O, sides[O], sides[inPossTeam], false, focus, HALF_LEN);
-      const attShape = shapeOf(inPossTeam, sides[inPossTeam], sides[O], true, focus, offsideLineD(inPossTeam));
+      const defShape = shapeOf(O, sides[O], sides[inPossTeam], false, focus, HALF_LEN, t);
+      const attShape = shapeOf(inPossTeam, sides[inPossTeam], sides[O], true, focus, offsideLineD(inPossTeam), t);
       targets = inPossTeam === 0 ? [...attShape, ...defShape] : [...defShape, ...attShape];
       if (!dead) {
         // The nearest defender presses the ball, from the goal side.
@@ -711,6 +812,18 @@ export function simulate90(setup: Sim90Setup): Sim90 {
     }
     for (let i = 0; i < 22; i++) { P[i].x = clamp(P[i].x, 0.6, PITCH_W - 0.6); P[i].y = clamp(P[i].y, 0.4, LEN - 0.4); }
 
+    // The dive: he is thrown across toward the ball, and stays down a moment.
+    let keeperState: FrameState["keeper"] = { dive: 0, lunge: 0, dir: 0, kind: null };
+    if (diveNow && t >= diveNow.end) diveNow = null;
+    if (diveNow && t >= diveNow.start) {
+      const dn = diveNow;
+      const lunge = clamp((t - dn.start) / 0.35, 0, 1);
+      const ease = 1 - (1 - lunge) * (1 - lunge);
+      P[dn.k].x = dn.x0 + (dn.tx - dn.x0) * ease;
+      Vel[dn.k].x = 0; Vel[dn.k].y = 0;
+      keeperState = { dive: (dn.tx - dn.x0) * ease, lunge: Math.max(0.05, lunge), dir: dn.dir, kind: dn.high ? "high" : "low" };
+    }
+
     // The ball at the carrier's feet.
     if (!flight && !dead && carrier >= 0) {
       const v = Vel[carrier], sp = Math.hypot(v.x, v.y);
@@ -722,10 +835,16 @@ export function simulate90(setup: Sim90Setup): Sim90 {
 
     control[f] = dead ? 0 : flight ? ((flight as Flight).kind === "pass" || (flight as Flight).kind === "clear" ? ((flight as Flight).receiver >= 0 ? teamOf((flight as Flight).receiver) + 1 : 0) : (flight as Flight).side + 1) : carrier >= 0 ? teamOf(carrier) + 1 : 0;
 
-    const fs: FrameState = {
+    // Second half: the teams have swapped ends — the same staging, turned round.
+    const swap = t >= HALF_T;
+    const fs: FrameState = swap ? {
+      ball: { x: PITCH_W - ball.x, y: LEN - ball.y, z: ball.z },
+      bodies: P.map((p) => ({ x: PITCH_W - p.x, y: LEN - p.y, z: 0 })),
+      keeper: { ...keeperState, dive: -keeperState.dive, dir: -keeperState.dir },
+    } : {
       ball: { ...ball },
       bodies: P.map((p) => ({ x: p.x, y: p.y, z: 0 })),
-      keeper: { dive: 0, lunge: 0, dir: 0, kind: null },
+      keeper: keeperState,
     };
     packFrame(fs, data, f * stride);
   }

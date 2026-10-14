@@ -97,7 +97,7 @@ export function rigFor(track: GoalTrack, angle: ClipAngle, t: number, W: number,
     return {
       cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: (W * l.dist) / span, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
       roll: 0,
-      skip: ["near", "far", "end", "farEnd"], // no stands on the full-match view (Harry, 14 Oct 2026)
+      skip: ["near"], // the fans and boards stay (Harry, 14 Oct 2026: only the big white roof was unwanted, and this view never shows one)
     };
   }
   if (angle === "net") {
