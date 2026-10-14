@@ -52,7 +52,7 @@ interface Prep {
   keeperIdx: number;
   /** Each dive he made: when it started and ended (clip seconds), where he
    *  landed, and what came of it. A scramble can have three. */
-  dives: { start: number; end: number; landAt: { x: number; y: number } | null; result?: SaveResult; z: number; high: boolean }[];
+  dives: { start: number; end: number; landAt: { x: number; y: number } | null; result?: SaveResult; z: number; high: boolean; who: number }[];
   /** Strikes per man: clip time and how. */
   kicks: Map<string, { t: number; mode?: string }[]>;
   /** Every touch per man (a shot, a pass, a header, a block…): the new 3D moves. */
@@ -98,7 +98,16 @@ function prepOf(track: GoalTrack): Prep {
     const on = k.lunge > 0.04 && k.dir !== 0;
     if (on && (!prevOn || k.dir !== prevDir || k.lunge < prevL - 0.2)) {
       if (dives.length && dives[dives.length - 1].end === Infinity) dives[dives.length - 1].end = t;
-      dives.push({ start: t, end: Infinity, landAt: null, z: 0, high: false });
+      // Whose dive: the keeper nearest the ball (a whole-match replay has
+      // one at each end; a goal video has one).
+      const at = frameAt(track, t);
+      let who = keeperIdx, bd = Infinity;
+      track.bodies.forEach((b, i) => {
+        if (b.role !== "keeper") return;
+        const d = Math.hypot(at.bodies[i].x - at.ball.x, at.bodies[i].y - at.ball.y);
+        if (d < bd) { bd = d; who = i; }
+      });
+      dives.push({ start: t, end: Infinity, landAt: null, z: 0, high: false, who });
     } else if (!on && prevOn && dives.length) {
       dives[dives.length - 1].end = t;
     }
@@ -107,8 +116,8 @@ function prepOf(track: GoalTrack): Prep {
   for (const d of dives) {
     // The match stops him where the dive lands (he does not slide on after
     // the ball), about two-thirds of a second into it.
-    if (keeperIdx >= 0) {
-      const k = frameAt(track, Math.min(trackDuration(track), d.start + 0.67, d.end)).bodies[keeperIdx];
+    if (d.who >= 0) {
+      const k = frameAt(track, Math.min(trackDuration(track), d.start + 0.67, d.end)).bodies[d.who];
       d.landAt = { x: k.x, y: k.y };
     }
   }
@@ -126,7 +135,7 @@ function prepOf(track: GoalTrack): Prep {
       l.push({ t: e.t, kind: e.kind, mode: e.mode as BallActionMode | undefined });
       acts.set(e.who, l);
     }
-    if (e.kind === "save" && e.who === "keeper") {
+    if (e.kind === "save" && (e.who === "keeper" || track.bodies.some(b => b.role === "keeper" && b.id === e.who))) {
       // The save belongs to the dive it happened in.
       const d = [...dives].reverse().find(x => e.t >= x.start - 0.25);
       if (d) {
@@ -273,7 +282,7 @@ function drawMan(
   const keeper = body.role === "keeper";
   // The dive he is in, if any. A keeper who has landed stays where he
   // landed until he goes again.
-  const dive = keeper ? p.dives.find(d => t >= d.start && t < d.end) ?? null : null;
+  const dive = keeper ? p.dives.find(d => d.who === i && t >= d.start && t < d.end) ?? null : null;
   const diving = !!dive;
   const diveT = dive ? Math.min(0.66, (t - dive.start) * 0.75 + 0.05) : 0;
   if (dive && diveT >= 0.55 && dive.landAt) pos = { x: dive.landAt.x, y: dive.landAt.y, z: 0 };
