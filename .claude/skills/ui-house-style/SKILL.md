@@ -39,6 +39,18 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 14 Oct 2026 — texture packs are a picture dropdown (Harry)
+- **"I think texture packs should have its own drop down where you can see a
+  preview image."** Settings → Texture pack is a button showing the current
+  pack's picture and name; tap opens a sheet (bottom on a phone, centred on a
+  wide screen) with one row per pack: picture, name, one line, a tick on the
+  current one. Choosing applies at once. The pictures are the real 3D match
+  (same chance, same camera, golden hour, `?pack=<id>`), 288×201 WebP, 2–13 KB
+  each (`public/star/texture-packs/`). The list reads `TEXTURE_PACKS` +
+  `TEXTURE_PACK_PREVIEW` (lib/star/style3d/texturePack.ts), so a new pack shows
+  up by itself. A choice with a look to it gets a picture, not a word (inferred
+  for other look settings).
+
 ### 13 Oct 2026 — shop playtest (Harry)
 - **A can is about the size of a boot or a watch on its page** ("way too big on this
   page"): the Showroom can went 581 → 348px tall at 390×844.

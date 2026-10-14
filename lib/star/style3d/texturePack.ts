@@ -33,8 +33,28 @@ export type TexturePack = "real" | "light" | "cartoon" | "bright";
 
 export const TEXTURE_PACK_KEY = "star-3d-texture-pack";
 export const TEXTURE_PACK_DEFAULT: TexturePack = "real";
-const VALUES: readonly TexturePack[] = ["real", "light", "cartoon", "bright"];
 export const TEXTURE_PACK_NAMES: Record<TexturePack, string> = { real: "Realism + cartoon", light: "Light", cartoon: "Cartoon", bright: "Bright" };
+/** Every pack, in the order the Settings dropdown lists them (the key order of TEXTURE_PACK_NAMES). */
+export const TEXTURE_PACKS = Object.keys(TEXTURE_PACK_NAMES) as TexturePack[];
+const VALUES: readonly TexturePack[] = TEXTURE_PACKS;
+/** One line under each pack's name in the dropdown (Harry, 14 Oct 2026). */
+export const TEXTURE_PACK_LINES: Record<TexturePack, string> = {
+  real: "Today's look: real grass, sun and shadows.",
+  light: "Half way to Bright. Dirt and shadows kept.",
+  cartoon: "Flat colours, like the players.",
+  bright: "Light green grass, no big shadows.",
+};
+/**
+ * The dropdown's picture of each pack: the same chance, the same camera, golden
+ * hour, rendered from the real 3D match with ?pack=<id> (scripts/cam3d/stills.mjs),
+ * cropped to 288x201 WebP. A new pack with no picture yet shows its name only.
+ */
+export const TEXTURE_PACK_PREVIEW: Partial<Record<TexturePack, string>> = {
+  real: "/star/texture-packs/real.webp",
+  light: "/star/texture-packs/light.webp",
+  cartoon: "/star/texture-packs/cartoon.webp",
+  bright: "/star/texture-packs/bright.webp",
+};
 
 export function parseTexturePack(v: string | null | undefined): TexturePack | null {
   return v && (VALUES as readonly string[]).includes(v) ? (v as TexturePack) : null;
