@@ -10,6 +10,7 @@ import { useFramingV2, setFramingV2 } from "@/lib/star/matchView";
 import { useAirborne, setAirborne } from "@/lib/star/airborneChance";
 import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { SettingsTop, SettingsGroups } from "./DeviceSettings";
+import UpdatesPanel from "./UpdatesPanel";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
@@ -124,8 +125,10 @@ export default function SettingsScreen({
   // (Harry, 8 Oct 2026, the hybrid Settings). Goal Replays inside stays
   // admin-only: it checks for itself.
   const isTester = useIsTester();
-  const [tab, setTab] = useState<"settings" | "dev">("settings");
+  const [tab, setTab] = useState<"settings" | "updates" | "dev">("settings");
   const showDev = isTester && tab === "dev";
+  // Settings → Updates: every New | Old update switch, for everyone (Leo, 14 Oct 2026).
+  const showUpdates = tab === "updates";
   // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
   const [devInfo, setDevInfoState] = useState<boolean>(() => devInfoOn());
   const framingV2 = useFramingV2();
@@ -242,13 +245,16 @@ export default function SettingsScreen({
         )}
       />
 
-      {isTester && (
-        <RiseIn index={next()}>
-          <SegTabs className="mb-1" value={tab} onChange={setTab} tabs={[["settings", "Settings"], ["dev", "🛠 Developer"]] as const} />
-        </RiseIn>
-      )}
+      <RiseIn index={next()}>
+        <SegTabs className="mb-1" value={tab} onChange={setTab}
+          tabs={isTester
+            ? ([["settings", "Settings"], ["updates", "Updates"], ["dev", "🛠 Dev"]] as const)
+            : ([["settings", "Settings"], ["updates", "Updates"]] as const)} />
+      </RiseIn>
 
-      {!showDev && (<>
+      {showUpdates && <RiseIn index={next()}><UpdatesPanel glow={glow} /></RiseIn>}
+
+      {!showDev && !showUpdates && (<>
         {/* the speed readout (lib/star/three3d/frameMeterPref.ts): testers only, off by default */}
         {isTester && <RiseIn index={next()}><SpeedReadoutRow /></RiseIn>}
         <RiseIn index={next()}>
