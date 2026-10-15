@@ -8,7 +8,7 @@ description: Hand a piece of work to a fresh chat — your own next chat, or Mik
 Harry, 15 Oct 2026: *"we definitely need to set up a handoff skill, not only to hand off to
 ourselves but to others. Context bloat is huge now — we need to use a chat after every build."*
 
-**Rule: one build per chat.** When a build is done (pushed, or stopped for a decision), write a
+**Rule: one build per chat.** A "build" = one task done in full, from idea to game/push ready (Harry, 15 Oct 2026). Planning, design and building one task all happen in the same chat; the handoff comes when it is ready to push (or stopped for a decision). When a build is done (pushed, or stopped for a decision), write a
 handoff and tell the person to open a new chat with the starter below. Don't carry on in a chat
 whose context is already long.
 

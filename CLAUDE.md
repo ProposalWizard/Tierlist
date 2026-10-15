@@ -431,7 +431,7 @@ progress skill with the estimated tokens"). Its "auto-deploy" section is
 replaced by "Deploy only when told" below.**
 
 **One build per chat, then a handoff (Harry, 15 Oct 2026).** *"context bloat is huge now — we
-need to use a chat after every build."* End every build with the `handoff` skill: a file in
+need to use a chat after every build."* A "build" = one task done in full, from idea to game/push ready. End every build with the `handoff` skill: a file in
 `docs/handoffs/`, pushed, plus a paste-in starter for the next chat (or for Mikey/Leo).
 
 **Build slowly and correctly (Harry, 15 Oct 2026, for the admin/patch-notes/lag round).** *"instead
