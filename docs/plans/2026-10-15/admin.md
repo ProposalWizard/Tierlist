@@ -1,451 +1,434 @@
-# Admin revamp — the plan (no code yet)
-
-15 Oct 2026. Branch state: `Harry` at 5ca671e. Everything below was read from the code. Nothing has been built.
-"Seen" = I looked at it in a browser. "Read" = I read the code. Most of this is "read".
-
----
-
-## 1. Where we are now (real counts)
-
-| Thing | Count | How I know |
-|---|---|---|
-| Admin and dev pages (page files) | **69** | every `page.tsx` under app/admin, app/star-*-dev, /lineups, /draft-dev, /draft-dev2, /draft-challenge-dev, /draft/preview, /draft/american, /sfx-dev, /ballon-dor, /profile-new, /squad-builder, /star-dev/media-lab |
-| …of which Road to Ballon d'Or | **52** | 43 star-*-dev pages (incl. 3D-area signing/office) + media-lab + /lineups + /ballon-dor + 6 /admin pages (clubs, badges, custom-clubs, star-pass, star-xp, sound-board). Site 7, Tierlists 1, PL Draft 9. |
-| Links in the admin pop-up | **59** | `components/AdminNavPanel.tsx`: Site 4, Admin 12, Star Career 33, Sandboxes 10 |
-| Pages NOT in the pop-up | **13** | /ballon-dor, /draft/american, /sfx-dev, /squad-builder, 3D-area signing + office, /star-bigger-dev, /star-highlights-dev, /star-intl-dev, /star-look-dev, /star-sprites-dev, /star-tournament-dev, /star-zoomgrass-dev |
-| Page guides (the eye) | **64 of 69** have one | missing: /star-tournament-dev, /star-bigger-dev, /star-zoomgrass-dev, /sfx-dev, /squad-builder, /draft/american (6) |
-| Pages with NO lock at all | **28 of 69** | see the gate column below |
-| Pages locked 5 different ways | 41 | server redirect (6), client check admin (7), client check admin-or-tester (2), `AdminOnly` layout (4), `TesterOnly` layout (22) |
-| Dead code | 1 file, 594 lines | `app/draft-dev/DraftDevClient.tsx` is imported by nothing |
-
-### How the pages are locked today (read)
-
-```
- Lock                          Pages  Testers get in?   Where the check runs
- ─────────────────────────────  ─────  ───────────────   ───────────────────────────
- none                             28   anyone does       —
- TesterOnly layout                22   yes               server, before the page
- server redirect in page           6   no                server (admin, app-plan, patch-notes,
-                                                          sound-board, testers, ballon-dor)
- client "admin-check" in page      7   no                browser, AFTER the code ships
- client check admin-or-tester      2   yes               browser (style, training3d)
- AdminOnly layout                  4   no                server (gallery, highlights,
-                                                          lineups, challenge draft)
-```
-
-The 28 open ones include **10 real admin pages** that edit the live database: /admin/xp, /admin/football, /admin/football/players, /admin/football/scrape, /admin/star-pass, /admin/star-xp, /admin/custom-clubs (plus read-only clubs, badges, pl-clubs). Their *saves* are safe: every `/api/admin/*` route and the star-pass, xp-config, scenarios and lineups routes check `isAdmin` on the server (read). But anyone can open the screens and read what they show.
-
-Also open: **/draft-dev and /draft-dev2**, which write to the real Draft save, history, XP and multiplayer rooms. Their only "check" hides one button.
-
-### What testers can actually reach (read)
-
-A tester has no list of test pages anywhere. The admin pop-up is only drawn for admins (`GlobalNav.tsx`, `{userIsAdmin && <AdminNavPanel/>}`). The title screen's "Play Area" link shows only in a local dev build (`showPlayArea={offlineDevPlayEnabled()}`). In the live site a tester must be sent the address by hand.
-
-### Labels that say the wrong thing (read)
-
-| In the pop-up | What the page really is | Proposed name |
-|---|---|---|
-| 3D | The 2D game drawn in the old "3D skin" look, every mode, with a Classic/3D switch | 3D look in every mode (old) |
-| Match Engine | Mikey's separate copy of the engine; its own title says "Shooting Test" | Match engine copy (Mikey) |
-| Animations / 3D Animations | 2D players' New animations vs 3D match moves | 2D animations / 3D animations |
-| Style Testing | Art styles AND the Cut-scene Director | Art styles + cut-scene director |
-| Squad Builder (/lineups) | Every club's XI for the career | Team sheets |
-| (unlisted) /squad-builder | A "build your dream XI" page | Dream XI builder |
-| Ballon d'Or Beta (/ballon-dor, on the admin dashboard) | A separate, older career game, not Road to Ballon d'Or | Ballon d'Or career (old beta) |
-| XP & Rewards vs XP Book | Site level rewards vs career XP amounts | Site XP rewards / Career XP book |
-| Football Data | Wikidata behind Tic Tac Toe | Tic Tac Toe data |
-| Tuning (/star-tuning-dev) | Balance numbers (energy, wages, prices), this browser only | Balance numbers |
-| Oct 13 update | One Old/New switch for Leo's Oct 13 gameplay update | keep, add "(Leo)" in the card |
-
-### Duplicates (read)
-
-- **/draft-dev vs /draft-dev2:** 4 lines differ: the setup screen import (V2 vs Hero), the function name, the room link (draft-dev sends rooms to the REAL /draft, draft-dev2 to itself — a small bug), and the guide key. A switch is trivial.
-- **/star-scenario-dev** is the same editor as the gallery's "Scenario Builder" tab.
-- **3D places**: `/star-3d-area-dev` already IS a hub: `lib/star/area3d.ts` lists signing, office, shop, house, Blender footballer, 3D animations, 3D look, store pictures. So no merge is needed: the 3D Test Area is the group's front page.
-- **Play Area** (`/star-play-dev`) is also a mini hub: it links Highlights, Infinite Match, Oct 13 update, Animations, Radar, Gallery, 3D, Blender, Store. Seen at 390×844 (3,999 px tall page of cards).
-- **Size/camera prototypes**: /star-bigger-dev, /star-zoomgrass-dev, /star-sprites-dev, /star-look-dev. Four separate pages, each a single test. Group them; do not merge.
-
----
-
-## 2. Every page, one row
-
-Owner key — how I guessed: **H** = the page's own header quotes Harry, **M** = Mikey, **L** = Leo; "PW" = git author "Proposal Wizard", which in every case I checked is Mikey's work (Club Data, Star Pass, XP Book, relationships, garden, training levels, spin). "pre-Sep" = made before 3 Sep 2026; this clone's history stops there, so no evidence.
-
-Writes real data: **Y** = changes something other people see (live DB, shared tables, repo). **own** = only your own account. **—** = nothing / this browser only.
-
-Gate now: none / T = TesterOnly / A = AdminOnly layout / S = server redirect (admin) / C = client check admin / Ct = client check admin-or-tester.
-
-Fate: **keep** / **old** = move to "Old tests" (not deleted) / **merge** as stated.
-
-### Site
-
-| URL | What it really does | Owner (evidence) | Used? | Writes | Gate | Proposed name · fate |
-|---|---|---|---|---|---|---|
-| / | Homepage | — | yes | — | — | Homepage · keep |
-| /profile | Your profile | — | yes | own | — | Profile · keep |
-| /admin/patch-notes | Every patch-notes version | shared (H, M, L entries) | yes | — | S | Patch notes · keep, LINK ONLY (another builder owns it) |
-| /admin/app-plan | iPhone/Android app plan + open questions | H (header) | yes | — | S | App plan · keep |
-| /admin/testers | Make/switch off tester links, remove testers | H (header, 5 Oct) | yes | Y | S | Tester access · keep |
-| /admin/xp | Site level-up rewards (frames, titles, trophies) | pre-Sep | yes | Y | **none** | Site XP rewards · keep |
-| /admin/football | Wikidata clubs/players behind Tic Tac Toe; builds grids | pre-Sep | yes | Y | **none** | Tic Tac Toe data · keep |
-| /profile-new | Trial profile redesign; claiming writes your account | pre-Sep | last touched 23 Sep | own | **none** | Profile (new) · **old** |
-| /squad-builder | Dream XI builder, drag players, share | pre-Sep | last real change unknown | — | T | Dream XI builder · **old** (ask) |
-| /admin/team | Team board — another builder is making it | — | — | — | — | Team board · link only |
-
-### Tierlists
-
-| URL | What | Owner | Used? | Writes | Gate | Proposed |
-|---|---|---|---|---|---|---|
-| /admin | Tierlists, votes, blind rankings, Tic Tac Toe, Ten-A-Ball, objectives, cards, feedback | pre-Sep (H's site) | yes | Y | S | Site content dashboard · keep |
-
-### PL Draft
-
-| URL | What | Owner | Used? | Writes | Gate | Proposed |
-|---|---|---|---|---|---|---|
-| /admin/football/players | Edit every SoFIFA player (names, ratings, potential) | pre-Sep | yes | Y | **none** | Players · keep (also listed in RBD Real data) |
-| /admin/football/pl-clubs | Which clubs the Draft has per season, read only | pre-Sep | yes | — | **none** | PL clubs by season · keep |
-| /admin/football/scrape | Import SoFIFA data and logos | pre-Sep | yes | Y | **none** | Scrape / import · keep (also in RBD) |
-| /draft-dev | PL Draft with the V2 setup screen | pre-Sep; H v0.8 notes | 23 Sep | **Y** (real Draft save, history, XP, rooms) | **none** | Draft (test) · keep, gains a V2 / Hero switch |
-| /draft-dev2 | Same, "Hero" setup screen | pre-Sep | 23 Sep | Y | **none** | **merge** into /draft-dev as the switch; old URL redirects |
-| /draft-challenge-dev | Draft where each round is a random brief | pre-Sep | 5 Oct | Y (rooms) | A | Challenge draft · keep |
-| /admin/cl-draft | Champions League draft test game | pre-Sep | 23 Sep | — | C | CL draft (test) · keep (ask) |
-| /draft/preview | Redesigns of Draft table/team screen on sample data | pre-Sep | 23 Sep | — | **none** | Draft design preview · **old** |
-| /draft/american | Standalone American-draft sandbox (real mode now lives in rooms) | pre-Sep | 3 Sep | Y (rooms) | **none** | American draft sandbox · **old** |
-
-### Road to Ballon d'Or — by proposed group
-
-**Career screens**
-
-| URL | What | Owner | Used? | Writes | Gate | Proposed |
-|---|---|---|---|---|---|---|
-| /star-dev | The game itself | all | yes | own | none (it's the game — stays open) | Play the game · keep |
-| /star-retirement-dev | End-of-career screens on made-up careers | L (header 5–6 Oct) | yes | own (Share link makes a real code) | **none** | Retirement preview · keep |
-| /star-relgames-dev | Every relationship game on a test player | M (PW, header) | yes | — | T | Relationship games · keep |
-| /star-goal-clips-dev | Score in the real match, watch the goal video | L (header 7 Oct) | yes | — | **none** | Goal videos · keep |
-| /star-dev/media-lab | Media-feed graphics bench, ?feed, ?trophies | pre-Sep | 12 Oct | — | **none** | Media lab · keep |
-| /star-training-dev | Any of 30 levels of any training game | M (header 25 Sep) | yes | — | T | Training levels · keep |
-
-**Chances**
-
-| URL | What | Owner | Used? | Writes | Gate | Proposed |
-|---|---|---|---|---|---|---|
-| /star-gallery-dev | Every chance as a picture; drag, save, commit | H (patch notes v0.7–v0.10) | yes, 43 commits | **Y + repo** | A | Scenario gallery · keep |
-| /star-highlights-dev | Real chances, Next as fast as you can, fix on the spot | H | yes, 26 commits | Y + repo | A | Infinite highlights · keep (add to nav) |
-| /star-play-dev | Door to Highlights + Infinite Match + dials | H (v0.10) | yes, 19 commits | Y + repo (Infinite Match bar) | T | Play area · keep |
-| /star-scenario-dev | Scenario builder on its own page | M (CLAUDE.md "Mikey's ScenarioEditor") | 23 Sep | Y | C | **merge**: nav points to the gallery's Builder tab; page stays as old |
-
-**Match tests**
-
-| URL | What | Owner | Used? | Writes | Gate | Proposed |
-|---|---|---|---|---|---|---|
-| /star-update-dev | Leo's Oct 13 gameplay update behind one Old/New switch | L (patch notes v0.53) | yes (14 Oct) | — | T | Oct 13 update (Leo) · keep |
-| /star-sim90-dev | A whole 90 minutes to watch, 22 men | H (header 13–14 Oct) | yes | — | **none** | Full match · keep |
-| /star-radar-dev | The unseen match minute by minute | H (header 27 Sep) | yes | — | T | Match radar · keep |
-| /star-dribble-dev | First-person dribble duel (only place it lives now) | L (built in the Leo-branch sessions, 6–16 Sep) — guess | 28 Sep | — | C | First-person dribble · keep |
-| /star-dribble-stick-dev | Dribble runs steered by a stick | H (header 14 Oct) | yes | — | **none** | Dribble on a stick · keep |
-| /star-bigger-dev | Style A players 30% bigger, real match | H (header 12 Oct), M ?framing (13 Oct) | yes | — | **none** | Bigger players · keep |
-| /star-match-dev | Mikey's full copy of the engine (title "Shooting Test") | M (CLAUDE.md "Mikey's fork") | 5 Oct | — | C | Match engine copy (Mikey) · keep (Mikey's call) |
-
-**Real data**
-
-| URL | What | Owner | Used? | Writes | Gate | Proposed |
-|---|---|---|---|---|---|---|
-| /star-real-moments-dev | StatsBomb positions as playable chances | M (header 9 Oct) | yes | — | **none** | Real moments · keep |
-| /star-statsbomb-dev | Every WC 2022 / Euro 2024 shot with a freeze frame | H (header 13 Oct) | yes | — | **none** | Real shots · keep |
-| /star-intl-dev | Every national team's competitions from Aug 2026 | M (header 12 Oct) | yes | — | **none** | International world · keep (add to nav) |
-| /star-tournament-dev | Draw and play a Euros/World Cup in seconds | L (header 12 Oct) | yes | — | T | Tournaments · keep (add to nav, needs a guide) |
-| /lineups | Every club's formation, XI, bench, manager | pre-Sep | yes | Y (star_lineups) | A | Team sheets · keep |
-| /admin/clubs | Every club, every field, green/amber/red | M (header 2 Oct) | yes | — | **none** | Club data · keep |
-| /admin/badges | Every drawn badge; redo one on this device | H (header 7 Oct) | yes | — (this browser) | **none** | Club badges · keep |
-| /admin/custom-clubs | Invent a whole club | M (PW, 16 Sep) | yes | Y | **none** | Custom clubs · keep |
-
-**3D places** (front page = 3D Test Area)
-
-| URL | What | Owner | Used? | Writes | Gate | Proposed |
-|---|---|---|---|---|---|---|
-| /star-3d-area-dev | List of every 3D scene + the 3D file store | H (header 2 Oct) | yes | — | T | 3D places (hub) · keep |
-| /star-3d-area-dev/signing | Live 3D signing scene | H | yes | — | T | Signing scene · keep (in nav under 3D places) |
-| /star-3d-area-dev/office | Manager's office stage | H | yes | — | T | Manager's office · keep |
-| /star-shop3d-dev | Walk-around 3D shop | H (header 1 Oct) | yes | — | T | 3D shop · keep |
-| /star-garden3d-dev | 3D garden | M (header 3 Oct) | yes | — | T | 3D garden · keep |
-| /star-home3d-dev | Your house in 3D | H (header 9 Oct) | yes | — | T | 3D home · keep |
-| /star-training3d-dev | 3D training pitch and drills | H (header 8 Oct) | yes | — | Ct | 3D training · keep |
-| /star-style-dev | Art styles on real chances + Cut-scene Director | H (header 9 Oct) | yes | — | Ct | Art styles + cut-scene director · keep |
-
-**Players + animation**
-
-| URL | What | Owner | Used? | Writes | Gate | Proposed |
-|---|---|---|---|---|---|---|
-| /star-animations-dev | 2D New animations next to Old, with dials | L (header 6 Oct) | yes | — | T | 2D animations · keep |
-| /star-anim3d-dev | Every 3D match move at real match size | H (header 12 Oct) | yes | — | **none** | 3D animations · keep |
-| /star-people-dev | Faces, eyes, hands, handshake for cut scenes | H (Style A / cut-scene work 9 Oct) — guess | yes | — | **none** | Cut-scene people · keep |
-| /star-look-dev | Style A on three bodies + Your look panel | H (Style A, 9 Oct) — guess | decided 12 Oct | — | **none** | Player style (Style A) · keep (ask: old?) |
-| /star-sprites-dev | Baked 3D match figures at real size | L (CLAUDE.md "Leo chat's 3D sprite moves") — guess | decided 12 Oct | — | C | 3D match figures · keep (ask: old?) |
-
-**Money + rewards**
-
-| URL | What | Owner | Used? | Writes | Gate | Proposed |
-|---|---|---|---|---|---|---|
-| /admin/star-pass | Reward catalogue and Star Pass levels | M (header) | yes | Y | **none** | Star Pass · keep |
-| /admin/star-xp | Every amount of career XP | M (header) | yes | Y | **none** | Career XP book · keep |
-| /star-store-dev | Store test: specials, run-ups, boosts, coins | H (header 27 Sep) | 5 Oct | — | T | Store (test) · keep |
-| /star-wallet-dev | Gems on the server; one paid item | H (header 7 Oct) | yes | own (server) | T | Gems (test) · keep |
-| /star-tuning-dev | Balance numbers, this browser only | M or L — no evidence (built 4 Sep) | 23 Sep | — | C | Balance numbers · keep |
-
-**Sound** (new small group)
-
-| URL | What | Owner | Used? | Writes | Gate | Proposed |
-|---|---|---|---|---|---|---|
-| /admin/sound-board | Every game sound; upload a replacement | H (v0.24) | yes | Y | S | Sound board · keep |
-| /star-sound-lab-dev | Hear, edit, rate match sounds | L (header 14 Oct) | yes | — | T | Sound lab · keep |
-
-**Old tests** (still reachable, folded away)
-
-| URL | What | Owner | Last change | Writes | Gate | Why old |
-|---|---|---|---|---|---|---|
-| /star-attack-dev | Moving-attack prototype | L? (6 Sep) | 26 Sep | — | C | prototype, never went further |
-| /star-bicycle-dev | Overhead-kick throwaway | M (PW, 19 Sep) | 5 Oct (lock only) | — | T | header says "throwaway" |
-| /star-zoomgrass-dev | Zoom-to-play camera prototype | H (show-options, 9 Oct) | 11 Oct | — | **none** | "Match camera: Old until the rebuilt camera lands" (12 Oct) |
-| /star-3d-dev | Old "3D skin" in every mode | H (28 Sep) | 5 Oct | — | T | 2D players are now 3D-made sprites (decided 12 Oct) |
-| /star-spin-dev | Spin your player 360° | M + H (28–30 Sep) | 5 Oct | — | T | superseded by the 3D player |
-| /star-blender-dev | Blender footballer recoloured | H (28 Sep) | 5 Oct | — | T | superseded by people3d |
-| /sfx-dev | Audition every sound in manifest.json | H (sound effects, 1 Oct) | 5 Oct | — | T | Sound Board + Sound Lab cover it |
-| /ballon-dor | Older separate Ballon d'Or career game | pre-Sep | 23 Sep | own (XP) | S | not Road to Ballon d'Or; confuses the name |
-| /star-scenario-dev | (see Chances) | M | 23 Sep | Y | C | it's a gallery tab now |
-| /draft/preview, /draft/american, /draft-dev2, /profile-new, /squad-builder | (see above) | | | | | |
-
-Old tests total: 9 RBD + 4 other (draft-dev2 becomes a redirect) = **13 folded away, 0 deleted.**
-
----
-
-## 3. The new structure
-
-### 3a. The pop-up (same look, new top level)
-
-Same slide-out, same colours, same edge tab, same phone menu entry. Only the list changes: four sections. Site, Tierlists and PL Draft open in place (their links fold out under them). Road to Ballon d'Or is one big row that opens `/admin/star`.
-
-```
- Phone, 390 wide (the pop-up)          
- ┌──────────────────────────────┐
- │ ADMIN & DEV               ✕  │
- ├──────────────────────────────┤
- │ ★ ROAD TO BALLON D'OR      › │  ← one big row → /admin/star
- │   52 pages · 9 groups        │
- ├──────────────────────────────┤
- │ ▾ SITE                       │
- │   Homepage                   │
- │   Patch notes                │
- │   Tester access              │
- │   Site XP rewards            │
- │   Tic Tac Toe data   …       │
- │ ▸ TIERLISTS              (1) │
- │ ▸ PL DRAFT               (6) │
- │ ─────────────────────────    │
- │   Team board               › │  ← link to /admin/team
- │ Admin only · not public      │
- └──────────────────────────────┘
-```
-
-On an RBD tool page, the pop-up opens already showing that page's group, with "‹ All of Road to Ballon d'Or" at the top.
-
-### 3b. /admin/star — the Road to Ballon d'Or admin home
-
-Phone (390×844): rail is a drawer behind a "☰ Groups" button. Main area: the "what's what" strip, then one card per group.
-
-```
- ┌──────────────────────────────┐
- │ ☰ Groups   ROAD TO BALLON D'OR│
- │            Admin home     👁 │
- ├──────────────────────────────┤
- │ 43 in use · 9 old · 9 write  │  ← what's what (tap = filter)
- │ H 26 · M 13 · L 9 · ? 4      │
- ├──────────────────────────────┤
- │ CHANCES                  3 › │
- │ ┌──────────────────────────┐ │
- │ │ Scenario gallery         │ │
- │ │ Every chance as a        │ │
- │ │ picture you can fix.     │ │
- │ │ H · in use · ● WRITES    │ │
- │ └──────────────────────────┘ │
- │ ┌──────────────────────────┐ │
- │ │ Infinite highlights   …  │ │
- │ └──────────────────────────┘ │
- │ MATCH TESTS              7 › │
- │  …                           │
- │ ▸ OLD TESTS (9)              │  ← folded
- └──────────────────────────────┘
-```
-
-Desktop (≥1024): the rail is docked on the left; cards are a grid.
-
-```
- ┌───────────────┬───────────────────────────────────────────────────────┐
- │ ROAD TO       │  What's what                                          │
- │ BALLON D'OR   │  [43 in use] [9 old] [9 write shared data]             │
- │               │  Harry 26 · Mikey 13 · Leo 9 · unknown 4              │
- │ ▾ Career      │  Chances 3 · Match 7 · Real data 8 · 3D 8 · …         │
- │   The game    │───────────────────────────────────────────────────────│
- │   Retirement  │  CHANCES                                              │
- │   …           │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐      │
- │ ▾ Chances     │  │ Scenario    │ │ Infinite    │ │ Play area   │      │
- │   Gallery     │  │ gallery     │ │ highlights  │ │             │      │
- │   Highlights  │  │ one line    │ │ one line    │ │ one line    │      │
- │ ▸ Match tests │  │ H · in use  │ │ H · in use  │ │ H · in use  │      │
- │ ▸ Real data   │  │ ● WRITES    │ │ ● WRITES    │ │ ● WRITES    │      │
- │ ▸ 3D places   │  └─────────────┘ └─────────────┘ └─────────────┘      │
- │ ▸ Players…    │  MATCH TESTS                                          │
- │ ▸ Money…      │  …                                                    │
- │ ▸ Sound       │                                                       │
- │ ▸ Old tests   │                                                       │
- │ ───────────── │                                                       │
- │ Team board ›  │                                                       │
- │ Patch notes › │                                                       │
- └───────────────┴───────────────────────────────────────────────────────┘
-```
-
-Card = name (as shown), one plain line, owner letter, "in use" / "old test", a red "WRITES REAL DATA" badge when true, and a small "testers can open" mark. Text is short on purpose (ui-house-style: "text is the enemy").
-
-### 3c. The rail on tool pages
-
-The brief asks for the same left rail on every tool page. **The risk:** many tools size their canvas to the window, not their box (the gallery reads `vp.w`; Play Area, highlights, sim90 and the 3D pages are full screen). A docked column that pushes the page right would shrink or clip them. So:
-
-```
- Tool page, desktop                         Tool page, phone
- ┌──┬──────────────────────────────┐        ┌──────────────────────────┐
- │▌ │ RBD › Chances › Gallery   ←chip       │ (page exactly as today)  │
- │▌ │                              │        │                          │
- │▌ │   page exactly as today      │        │ edge tab only where the  │
- │▌ │                              │        │ page is full screen —    │
- │▌ │                              │        │ today's placeTab logic   │
- └──┴──────────────────────────────┘        └──────────────────────────┘
-  ▲ today's edge tab; opens the rail OVER the page, already on this group.
-```
-
-- The rail is an **overlay** on tool pages (the existing slide-out, opened on the current group). It never changes the page's width.
-- A page marked `railDocked: true` in the registry (simple list pages: Club data, XP book, Star Pass, Testers…) may show it docked on desktop. Default off.
-- A small breadcrumb chip ("RBD › Chances › Gallery") sits in the rail's header, not on the page, so no page gets a new element over its controls.
-
-### 3d. One page registry (`lib/adminRegistry.ts`)
-
-One row per page. The pop-up, `/admin/star`, the what's-what counts and the lock all read it.
-
-```ts
-{ url: "/star-gallery-dev",
-  name: "Scenario gallery",                 // as shown everywhere
-  purpose: "Every chance as a picture you can drag, judge, save and put in the game.",
-  section: "rbd",                           // site | tierlists | draft | rbd
-  group: "chances",
-  owner: "Harry",                           // Harry | Mikey | Leo | unknown
-  ownerWhy: "patch notes v0.7–v0.10",
-  status: "in-use",                         // in-use | old
-  writes: "shared",                         // none | own | shared | repo
-  access: "admin",                          // admin | tester
-  alsoIn?: ["draft"],                       // cross-listing (Players, Scrape)
-  railDocked?: false }
-```
-
-The guides stay in `lib/adminGuides.ts` (1,982 lines; no need to move them). A test checks both files agree.
-
-**The registry test** (`tests/admin/registry.mts`, plain tsx like tests/star):
-1. Every page folder under app/admin, app/star-*-dev and the known list has a registry row, and every row (except /, /profile, /admin/team, /star-dev) has a page folder.
-2. Every row has a guide in ADMIN_GUIDES and the page renders `<PageGuide page=…>`.
-3. Every row's folder (or a parent) has the one gate layout.
-4. No two rows share a name (catches "Squad Builder" twice).
-5. The pop-up has no hard-coded list left (grep for `href:` in AdminNavPanel).
-
----
-
-## 4. The lock plan
-
-**One gate, two levels, chosen by the registry.** A new server component `components/admin/DevGate.tsx`:
-
-```
- DevGate page="/x"  →  registry.access
-                         "admin"  → same as AdminOnly  (admins)
-                         "tester" → same as TesterOnly (admins + testers)
- local dev build (offlineDevPlayEnabled) → everyone, as today
-```
-
-Recommended rule (needs Harry's yes — question 1):
-
-| Page writes… | Who may open it | Pages |
-|---|---|---|
-| shared data or the repo, or anything under /admin/* | admins | 24 (all 16 /admin/* pages, gallery, highlights, lineups, scenario builder, draft-dev, draft-dev2, challenge draft, American sandbox) |
-| only your own account or nothing | admins + testers | 45 (incl. Play Area, profile-new and /ballon-dor, which write only your own account; and the new /admin/star home) |
-
-Play Area is a judgement: it plays the game (tester-worthy) but Infinite Match has Save/Commit. Commit and Save are already refused by the server for non-admins (read), so recommend **tester**, with the buttons showing "admins only".
-
-**Where the gate goes:** one tiny `layout.tsx` per top-level folder (`<DevGate page="/star-x-dev">`). Next 14 layouts can't see the address, so `/admin`'s single shared layout can't pick per page; each `/admin/<x>/` folder gets its own layout instead, and `app/admin/layout.tsx` keeps only its touch CSS. `/star-dev/media-lab` gets a layout of its own; `/star-dev` (the game) stays open.
-
-Then remove the 9 client-side checks (7 admin, 2 admin-or-tester) — the layout already decided, and the client checks block testers who should be in. The 6 server redirects stay (harmless double lock) except `/admin/patch-notes`, which I don't touch.
-
-**The tester flow, kept:** `/tester/[code]` is not under any gated folder and is untouched. A tester claimed via the link gets `is_tester`; `DevGate` "tester" pages use the same `isTester()` as `TesterOnly`. Before `tester_access.sql`… it is RUN (CLAUDE.md), so nothing waits on it.
-
-**New for testers (recommended, question 2):** draw a tester version of the pop-up (same component, only `access: "tester"` rows) for testers. Today they have no way to find any test page on the live site.
-
----
-
-## 5. Risks — what could break
-
-| Risk | How bad | Guard |
-|---|---|---|
-| A page that was open is now locked and someone used it signed out (e.g. Mikey on another device, /admin/clubs, /star-sim90-dev) | annoying | List the 28 newly locked pages in the patch notes; sign-in fixes it |
-| The /admin/* split into per-folder layouts misses one | that page opens to anyone | registry test #3 fails the build |
-| Testers let into pages whose Save then fails | confusing | registry `writes` drives a small "Admins only: saving" line; server already refuses |
-| A docked rail shrinks a canvas page | broken pitch | overlay by default; `railDocked` only on list pages; still taken at 390 and 1280 |
-| Merging draft-dev2 changes the real Draft save | real players' Draft runs | the switch only picks the setup screen; save keys unchanged; fix the room link to /draft-dev (today it jumps to the real /draft) |
-| Removing client checks on a page that also hid features behind `isAdmin` (draft-dev's career button) | feature shows to testers | only remove the *page* gate, keep feature flags |
-| `AdminNavPanel` rewrite breaks the phone "Admin & Dev tools" menu event | no admin menu on phone | keep `OPEN_ADMIN_NAV_EVENT` and the portal exactly |
-| `/admin/star` sits under `/admin` but must let testers in (if Q1 = yes) | testers bounced | per-folder layouts (above) make this possible; one shared /admin gate would not |
-| Middleware gate (the alternative) | site-wide 500 if it throws (Critical Gotcha 5) | not recommended |
-| one-engine guard | none expected | nothing here mounts a match; run the guard anyway |
-| Another builder edits AdminNavPanel/adminGuides at the same time (patch notes, team board) | merge conflicts | registry is a new file; keep AdminNavPanel diff to reading it |
-
----
-
-## 6. Build steps, in order
-
-| # | Step | Size | Depends |
+# Admin revamp: plan, second pass
+
+15 Oct 2026. Planning only; no code. Read from the code at `Harry` 36b3601 unless marked **seen** (in a browser) or **guess**.
+
+## 0. Numbers
+
+| Fact | Number |
+|---|---|
+| Admin/dev pages | 69 (+ /star-dev, the game) |
+| Pages with no lock | 28 |
+| Lock today | none 28 · TesterOnly 22 · server redirect 6 · browser admin check 7 · browser admin-or-tester 2 · AdminOnly 4 |
+| Lock proposed | admins 26 · admins + testers 43 |
+| Testers can open today / proposed | 52 / 43 |
+| Fate | keep 53 · old tests 15 · merge 1 · delete 0 pages (2 dead files) |
+| Pages in today's pop-up / missing | 56 / 13 (pop-up has 59 links incl. /, /profile, /star-dev) |
+| Pages with no guide | 6 |
+| Admin API routes | 49, all check admin on every write |
+| Questions | 153 (Q1–Q9 first pass, Q10–Q153 new: 144) |
+
+Keys. **Lock:** none · T = TesterOnly (admins + testers) · A = AdminOnly / admins · S = server redirect in page (admins) · C = browser admin check · Ct = browser admin-or-tester check · open = everyone. **Owner evidence:** hdr = page header quotes them · PN = patch notes · PW = git author 'Proposal Wizard' (Mikey's work in every case checked) · CM = CLAUDE.md · pre-Sep = this clone's history stops 3 Sep, no evidence.
+
+## 1. Every page
+
+| # | Route | What it does | Owner (evidence) | Writes | Lock now | Testers now | Lock new | Testers new | Home | Fate | Q |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | /admin/patch-notes | Every patch-notes version | Shared (PN) | — | S | N | A | N | Site | Keep, link only | Q43 |
+| 2 | /admin/app-plan | App plan + open questions | Harry (hdr) | — | S | N | A | N | Site | Keep | — |
+| 3 | /admin/testers | Tester links, remove testers | Harry (hdr) | shared | S | N | A | N | Site | Keep | Q89, Q90 |
+| 4 | /admin/xp | Site level-up rewards | ? (pre-Sep) | shared | none | Y | A | N | Site | Keep, rename 'Site XP rewards' | Q10, Q62, Q76 |
+| 5 | /admin/football | Wikidata data behind Tic Tac Toe | ? (pre-Sep) | shared | none | Y | A | N | Site | Keep, rename 'Tic Tac Toe data' | Q11, Q87 |
+| 6 | /profile-new | Trial profile redesign | ? (pre-Sep) | own | none | Y | T | Y | Old tests | Old | Q24, Q85 |
+| 7 | /squad-builder | Dream XI builder | ? (pre-Sep) | — | T | Y | T | Y | Old tests | Old, rename 'Dream XI builder' | Q72, Q73 |
+| 8 | /admin | Tierlists, votes, blind rankings, daily games, objectives, cards, feedback | ? (pre-Sep) | shared | S | N | A | N | Tierlists | Keep, rename 'Site content' | Q40, Q41 |
+| 9 | /admin/football/players | Edit SoFIFA players | ? (pre-Sep) | shared | none | Y | A | N | PL Draft (+RBD Real data) | Keep, rename 'SoFIFA players' | Q12, Q8, Q87 |
+| 10 | /admin/football/pl-clubs | Draft clubs per season (read) | ? (pre-Sep) | — | none | Y | A | N | PL Draft | Keep | Q13 |
+| 11 | /admin/football/scrape | SoFIFA + logo import | ? (pre-Sep) | shared | none | Y | A | N | PL Draft (+RBD Real data) | Keep | Q14, Q8 |
+| 12 | /draft-dev | PL Draft with V2 setup | ? (pre-Sep); Harry v0.8 (PN) | shared | none | Y | A | N | PL Draft | Keep + V2 \| Hero switch | Q20, Q68, Q69, Q70 |
+| 13 | /draft-dev2 | PL Draft with Hero setup | ? (pre-Sep) | shared | none | Y | A | N | — | Merge → /draft-dev (redirect) | Q21, Q68 |
+| 14 | /draft-challenge-dev | Draft with random briefs | ? (pre-Sep) | shared | A | N | A | N | PL Draft | Keep | Q66 |
+| 15 | /admin/cl-draft | Champions League draft test | ? (pre-Sep) | — | C | N | A | N | PL Draft | Keep (ask) | Q42, Q95 |
+| 16 | /draft/preview | Draft screen redesigns, sample data | ? (pre-Sep) | — | none | Y | T | Y | Old tests | Old | Q22 |
+| 17 | /draft/american | Standalone American draft | ? (pre-Sep) | shared | none | Y | A | N | Old tests | Old | Q23, Q86 |
+| 18 | /star-dev | The game | All | own | open | Y | open | Y | RBD › Career screens | Keep (first card) | Q38, Q39 |
+| 19 | /star-retirement-dev | End-of-career screens | Leo (hdr) | own | none | Y | T | Y | RBD › Career screens | Keep | Q26 |
+| 20 | /star-relgames-dev | Relationship games | Mikey (hdr, PW) | — | T | Y | T | Y | RBD › Career screens | Keep | — |
+| 21 | /star-goal-clips-dev | Goal videos | Leo (hdr) | this browser | none | Y | T | Y | RBD › Career screens | Keep | Q27 |
+| 22 | /star-dev/media-lab | Media-feed graphics bench | ? (pre-Sep) | — | none | Y | T | Y | RBD › Career screens | Keep | Q25 |
+| 23 | /star-training-dev | Any training level | Mikey (hdr) | — | T | Y | T | Y | RBD › Career screens | Keep | Q60 |
+| 24 | /star-gallery-dev | Every chance as a picture; save, commit | Harry (PN v0.7–0.10) | shared+repo | A | N | A | N | RBD › Chances | Keep | — |
+| 25 | /star-highlights-dev | Infinite Highlights; fix on the spot | Harry (CM) | shared+repo | A | N | A | N | RBD › Chances | Keep, add to nav | Q64 |
+| 26 | /star-play-dev | Infinite Highlights + Infinite Match + dials | Harry (PN v0.10) | shared+repo (admin only) | T | Y | T | Y | RBD › Chances | Keep, trim link cards | Q56, Q75 |
+| 27 | /star-scenario-dev | Scenario builder page | Mikey (CM) | shared | C | N | A | N | Old tests | Old (gallery tab survives) | Q74 |
+| 28 | /star-update-dev | Leo's Oct 13 update, Old \| New | Leo (PN v0.53) | this browser | T | Y | T | Y | RBD › Match tests | Keep | Q58 |
+| 29 | /star-sim90-dev | Full simulated 90 minutes | Harry (hdr) | — | none | Y | T | Y | RBD › Match tests | Keep | Q28 |
+| 30 | /star-radar-dev | Unseen match, minute by minute | Harry (hdr) | — | T | Y | T | Y | RBD › Match tests | Keep | — |
+| 31 | /star-dribble-dev | First-person dribble duel | Leo? (guess) | — | C | N | T | Y | RBD › Match tests | Keep | Q47, Q81, Q3 |
+| 32 | /star-dribble-stick-dev | Dribble steered by a stick | Harry (hdr) | — | none | Y | T | Y | RBD › Match tests | Keep | Q29, Q81 |
+| 33 | /star-bigger-dev | Style A players 30% bigger | Harry (hdr) | — | none | Y | T | Y | RBD › Match tests | Keep | Q30, Q82 |
+| 34 | /star-match-dev | Mikey's engine copy ('Shooting Test') | Mikey (CM) | — | C | N | T | Y | RBD › Match tests | Keep, rename | Q44, Q84 |
+| 35 | /star-sound-lab-dev | Hear, edit, rate match sounds | Leo (hdr) | this browser | T | Y | T | Y | RBD › Sound | Keep | Q77 |
+| 36 | /star-real-moments-dev | StatsBomb positions, playable | Mikey (hdr) | — | none | Y | A | N | RBD › Real data | Keep | Q31, Q79 |
+| 37 | /star-statsbomb-dev | WC/Euro shots, playable | Harry (hdr) | — | none | Y | A | N | RBD › Real data | Keep | Q32, Q79 |
+| 38 | /star-intl-dev | International world | Mikey (hdr) | — | none | Y | T | Y | RBD › Real data | Keep, add to nav | Q33, Q80 |
+| 39 | /star-tournament-dev | Draw and play a tournament | Leo (hdr) | — | T | Y | T | Y | RBD › Real data | Keep, add to nav, add guide | Q80 |
+| 40 | /lineups | Every club's XI, bench, manager | ? (pre-Sep) | shared | A | N | A | N | RBD › Real data | Keep, rename 'Team sheets' | Q65, Q72 |
+| 41 | /admin/clubs | Club data gaps | Mikey (hdr) | — | none | Y | A | N | RBD › Real data | Keep | Q18 |
+| 42 | /admin/badges | Club badges, redo on device | Harry (hdr) | this browser | none | Y | A | N | RBD › Real data | Keep | Q19 |
+| 43 | /admin/custom-clubs | Invent a club | Mikey (PW) | shared | none | Y | A | N | RBD › Real data | Keep | Q17, Q92 |
+| 44 | /star-3d-area-dev | 3D scenes list + 3D file store | Harry (hdr) | — | T | Y | T | Y | RBD › 3D places | Keep (group front page) | Q75 |
+| 45 | /star-3d-area-dev/signing | Live 3D signing | Harry (CM) | — | T | Y | T | Y | RBD › 3D places | Keep, own rail row | Q57 |
+| 46 | /star-3d-area-dev/office | Manager's office stage | Harry (CM) | — | T | Y | T | Y | RBD › 3D places | Keep, own rail row | Q57 |
+| 47 | /star-shop3d-dev | Walk-around 3D shop | Harry (hdr) | — | T | Y | T | Y | RBD › 3D places | Keep | — |
+| 48 | /star-garden3d-dev | 3D garden | Mikey (hdr) | — | T | Y | T | Y | RBD › 3D places | Keep | — |
+| 49 | /star-home3d-dev | 3D house | Harry (hdr) | — | T | Y | T | Y | RBD › 3D places | Keep | — |
+| 50 | /star-training3d-dev | 3D training pitch | Harry (hdr) | — | Ct | Y | T | Y | RBD › 3D places | Keep | Q67 |
+| 51 | /star-style-dev | Art styles + Cut-scene Director | Harry (hdr) | — | Ct | Y | T | Y | RBD › 3D places | Keep, rename | Q59, Q67 |
+| 52 | /star-animations-dev | 2D New vs Old animations | Leo (hdr) | this browser | T | Y | T | Y | RBD › Players + animation | Keep, rename '2D animations' | — |
+| 53 | /star-anim3d-dev | Every 3D match move | Harry (hdr) | — | none | Y | T | Y | RBD › Players + animation | Keep | Q34, Q83 |
+| 54 | /star-people-dev | Cut-scene faces, hands | Harry? (guess) | — | none | Y | T | Y | RBD › Players + animation | Keep | Q35 |
+| 55 | /star-look-dev | Style A on three bodies | Harry? (guess) | — | none | Y | T | Y | Old tests | Old | Q36, Q82 |
+| 56 | /star-sprites-dev | Baked 3D match figures | Leo? (CM) | — | C | N | T | Y | Old tests | Old | Q49, Q82, Q83 |
+| 57 | /admin/star-pass | Star Pass layout | Mikey (hdr) | shared | none | Y | A | N | RBD › Money + rewards | Keep | Q15 |
+| 58 | /admin/star-xp | Career XP book | Mikey (hdr) | shared | none | Y | A | N | RBD › Money + rewards | Keep, rename 'Career XP book' | Q16, Q76 |
+| 59 | /star-store-dev | Store test | Harry (hdr) | this browser | T | Y | T | Y | RBD › Money + rewards | Keep | Q55 |
+| 60 | /star-wallet-dev | Gems on the server | Harry (hdr) | own (server) | T | Y | T | Y | RBD › Money + rewards | Keep | Q63 |
+| 61 | /star-tuning-dev | Balance numbers, this browser | ? (Mikey or Leo) | this browser | C | N | T | Y | RBD › Money + rewards | Keep, rename 'Balance numbers' | Q48, Q3 |
+| 62 | /admin/sound-board | Swap any game sound | Harry (PN v0.24) | shared | S | N | A | N | RBD › Sound | Keep | Q61, Q77 |
+| 63 | /star-attack-dev | Moving-attack prototype | Leo? (guess) | — | C | N | T | Y | Old tests | Old | Q45, Q3 |
+| 64 | /star-bicycle-dev | Overhead-kick throwaway | Mikey (PW) | — | T | Y | T | Y | Old tests | Old | Q46 |
+| 65 | /star-zoomgrass-dev | Zoom-to-play camera | Harry (CM) | — | none | Y | T | Y | Old tests | Old | Q37, Q82 |
+| 66 | /star-3d-dev | Old 3D skin in every mode | Harry (hdr) | — | T | Y | T | Y | Old tests | Old | Q50, Q83 |
+| 67 | /star-spin-dev | Spin your player | Mikey + Harry (hdr) | — | T | Y | T | Y | Old tests | Old | Q51 |
+| 68 | /star-blender-dev | Blender footballer | Harry (hdr) | — | T | Y | T | Y | Old tests | Old | Q52 |
+| 69 | /sfx-dev | Audition the sound manifest | Harry? (CM 1 Oct) | — | T | Y | T | Y | Old tests | Old | Q53, Q77 |
+| 70 | /ballon-dor | Older Ballon d'Or career game | ? (pre-Sep) | own (XP) | S | N | T | Y | Old tests | Old, rename | Q54, Q78 |
+
+## 2. First-pass questions (kept)
+
+| Q | Question | Recommended | Evidence |
 |---|---|---|---|
-| 1 | `lib/adminRegistry.ts`: 73 rows (69 pages + /, /profile, /star-dev, /admin/team) from the table above | M (≈1 h) | Harry's answers to Q3, Q4 |
-| 2 | Registry test (5 checks) + `npm run` hook beside test:star | S (30 min) | 1 |
-| 3 | 6 missing guides (tournament, bigger, zoomgrass, sfx, squad-builder, american) + PageGuide on those pages; rename guide titles to the new names | M (1 h) | 1 |
-| 4 | `DevGate` + one layout per folder (≈60 small files, many replace an existing AdminOnly/TesterOnly line); remove 9 client checks | M (1–1.5 h) | Q1 |
-| 5 | AdminNavPanel reads the registry: 4 sections, RBD row → /admin/star, opens on current group, tester variant | M (1 h) | 1, Q2 |
-| 6 | `/admin/star` page: what's-what strip, group cards, docked rail (desktop), drawer (phone), Team board + Patch notes links | M–L (1.5–2 h) | 1 |
-| 7 | draft-dev: V2 / Hero switch; /draft-dev2 → redirect; fix room link; delete dead DraftDevClient.tsx (ask) | S (30 min) | Q5 |
-| 8 | Checks: `npx tsc --noEmit`, `node scripts/one-engine-guard.mjs`, registry test; stills at 390×844 + 1280 of pop-up, /admin/star, a tool page | S (45 min) | all |
+| Q1 | Testers on pages that save shared data, sit under /admin, or show unlicensed StatsBomb data? | No: admins only on those 26; testers on the other 43. | Every shared write is refused for non-admins by the server (section 6), so letting testers in only shows buttons that fail. |
+| Q2 | Should testers get the pop-up, showing only their pages? | Yes. | Today a tester has no list anywhere: the pop-up is admin-only (GlobalNav `{userIsAdmin && …}`); the title screen's Play Area link shows only in a local dev build. |
+| Q3 | Owners I could not prove (pre-3 Sep pages): who? | Harry for site/Draft pages; ask Mikey and Leo for Tuning, First-person dribble, Live attack. | This copy's git history stops at 3 Sep; every pre-Sep page has no owner evidence. |
+| Q4 | Is the Old tests list right (bulk answer; per-page questions below)? | Yes, all 15. | Section 1 'Fate' column; each old page also has its own question. |
+| Q5 | Delete the dead file `app/draft-dev/DraftDevClient.tsx`? | Yes (section 5 also covers a second dead file). | 594 lines, imported by nothing (grep). |
+| Q6 | Dock the rail on tool pages? | Overlay on tool pages; docked only on /admin/star and simple list pages. | Gallery sizes its picture from the window width (`vp.w - 28`); a docked column would shrink it. |
+| Q7 | Add a 'Sound' group in Road to Ballon d'Or? | Yes. | Sound Board and Sound Lab fit no other group; /sfx-dev was lost from the menu. |
+| Q8 | Players and Scrape: PL Draft or RBD? | PL Draft, also shown in RBD Real data. | Both games read sofifa_players. |
+| Q9 | Keep a Tierlists section with one link? | Yes. | Harry named four sections; the dashboard covers tierlists today. |
 
-About 7–8 hours of building in total. Steps 1–3 can be one builder; 4 and 5–6 can run in parallel after 1.
+## 3. The 28 unlocked pages — one question each
 
-Not touched: game screens, the match engine, `app/admin/patch-notes`, `/tester/[code]`.
+| Q | Question | Recommended | Evidence |
+|---|---|---|---|
+| Q10 | /admin/xp (Site XP rewards): lock admins only? | Yes, admins only. | Edits the live `rewards` table; API is admin-only (`/api/admin/xp/rewards`), page has no check. |
+| Q11 | /admin/football (Tic Tac Toe data): lock admins only? | Yes. | Writes football_* and tictactoe_puzzles; all its API routes check isAdmin; page has no check. |
+| Q12 | /admin/football/players: lock admins only? | Yes. | Writes sofifa_players (both games read it); page open. |
+| Q13 | /admin/football/pl-clubs (read only): admins only, or testers too? | Admins only. | Under /admin; read-only, but its data route `/api/admin/football/teams` is admin-only, so a tester would see an empty page. |
+| Q14 | /admin/football/scrape: lock admins only? | Yes. | Imports into sofifa_players, club_logos, league_logos. |
+| Q15 | /admin/star-pass: lock admins only? | Yes. | Saves star_pass_config (every career reads it); POST is admin-only, page open. |
+| Q16 | /admin/star-xp (XP Book): lock admins only? | Yes. | Saves star_xp_config; POST admin-only; page open. |
+| Q17 | /admin/custom-clubs: lock admins only? | Yes. | Writes custom_clubs, sofifa_players, club_logos, star_lineups; GET routes are public by design (custom_clubs RLS public-read). |
+| Q18 | /admin/clubs (Club Data, read only): admins only or testers too? | Admins only. | Under /admin; nothing to save, but it lists every gap in the data; testers have no use for it. |
+| Q19 | /admin/badges: admins only or testers too? | Admins only. | Under /admin; saves this browser only, but 'Copy changes' feeds a data change. |
+| Q20 | /draft-dev: lock admins only? | Yes. | Uses the SAME browser save as the real PL Draft and sends finished seasons to real history, XP and rooms (guide). |
+| Q21 | /draft-dev2: lock, or make it a redirect to /draft-dev? | Redirect (after the merge in section 5); admins only until then. | 4 lines differ from /draft-dev; writes the same real data. |
+| Q22 | /draft/preview: lock (testers) and move to Old tests? | Yes. | Sample data only, 'decide whether to make them official' (header); last change 23 Sep. |
+| Q23 | /draft/american: lock admins only and move to Old tests? | Yes. | Writes real american_draft_rooms; real American mode now lives in /draft rooms (CLAUDE.md). |
+| Q24 | /profile-new: lock (testers) and move to Old tests? | Yes. | Trial redesign; 'Claiming writes to your real account' (guide); last change 23 Sep. |
+| Q25 | /star-dev/media-lab: lock admins+testers? | Yes, testers too. | Nothing uploaded or saved (guide); only page under /star-dev that is a tool. |
+| Q26 | /star-retirement-dev: lock admins+testers? | Yes. | Reads saves, never writes; Share link makes a real code for your own account only. |
+| Q27 | /star-goal-clips-dev: lock admins+testers? | Yes. | Recordings stay in this browser (IndexedDB). |
+| Q28 | /star-sim90-dev (Full match): lock admins+testers? | Yes. | Nothing saved (guide). |
+| Q29 | /star-dribble-stick-dev: lock admins+testers? | Yes. | Test match, nothing counted (guide). |
+| Q30 | /star-bigger-dev: lock admins+testers? | Yes. | Sets a size on this page only (`setFigureGrowOverride`); no guide yet. |
+| Q31 | /star-real-moments-dev: lock admins+testers, or admins only? | Admins only. | Loads a StatsBomb file from your device; licence for a paid game not cleared (guide). |
+| Q32 | /star-statsbomb-dev (Real shots): lock admins+testers, or admins only? | Admins only. | Shows StatsBomb data whose licence for a paid game is not cleared (guide). |
+| Q33 | /star-intl-dev: lock admins+testers? | Yes. | Nothing saved (guide). |
+| Q34 | /star-anim3d-dev: lock admins+testers? | Yes. | Nothing saved (guide). |
+| Q35 | /star-people-dev: lock admins+testers? | Yes. | Nothing saved, Settings untouched (guide). |
+| Q36 | /star-look-dev: lock admins+testers, and Old tests? | Lock testers; Old tests (Player style New decided 12 Oct). | CLAUDE.md 'Decided, no toggle': player style New. |
+| Q37 | /star-zoomgrass-dev: lock admins+testers, and Old tests? | Yes to both. | Header: 'Not linked anywhere'; 'Match camera: Old until the rebuilt camera lands' (12 Oct). |
 
----
+## 4. Other per-page choices
 
-## 7. Questions for Harry
+| Q | Question | Recommended | Evidence |
+|---|---|---|---|
+| Q38 | List /star-dev (the game) as the first card on /admin/star? | Yes, 'Play the game'. | It is in today's pop-up as 'Road to Ballon d'Or'. |
+| Q39 | Keep /star-dev itself open to everyone? | Yes, never gated. | It is the live game; CLAUDE.md: no server auth gate, by design. |
+| Q40 | /admin dashboard: put under Tierlists and rename 'Site content'? | Yes. | It runs tierlists, votes, blind rankings, Tic Tac Toe, Ten-A-Ball, objectives, cards, feedback (guide). |
+| Q41 | /admin dashboard top buttons (Ballon d'Or Beta, Scrape Data, Players DB): keep? | Drop 'Ballon d'Or Beta'; keep the other two. | app/admin/page.tsx line 58 links /ballon-dor, which this plan moves to Old tests. |
+| Q42 | /admin/cl-draft: keep under PL Draft or Old tests? | Keep (ask its owner). | Saves nothing; no evidence of who uses it; last change 23 Sep was the page guide. |
+| Q43 | /admin/patch-notes: Site section, link only, not touched by this build? | Yes. | Another builder owns patch notes (brief). |
+| Q44 | /star-match-dev: let testers in, and rename 'Match engine copy (Mikey)'? | Testers yes; rename yes. | Writes nothing (guide); page title says 'Shooting Test' (line 112). |
+| Q45 | /star-attack-dev: Old tests? | Yes. | Prototype from 6 Sep; no change since 26 Sep. |
+| Q46 | /star-bicycle-dev: Old tests? | Yes. | Guide: 'A throwaway test'. |
+| Q47 | /star-dribble-dev: let testers in? | Yes. | Nothing saved (guide); the only home of the first-person duel (CLAUDE.md). |
+| Q48 | /star-tuning-dev: let testers in? | Yes. | Saves this browser only; testers already have god mode. |
+| Q49 | /star-sprites-dev: Old tests? | Yes. | 'players 3D-made sprites' decided 12 Oct (CLAUDE.md). |
+| Q50 | /star-3d-dev: Old tests? | Yes. | Shows the old 3D skin; 2D players are now 3D-made sprites (12 Oct). |
+| Q51 | /star-spin-dev: Old tests? | Yes. | Spin test from 28–30 Sep; the 3D player replaced it. |
+| Q52 | /star-blender-dev: Old tests? | Yes. | Blender footballer superseded by people3d (CLAUDE.md 3D world: '3D people New'). |
+| Q53 | /sfx-dev: Old tests? | Yes. | Sound Board and Sound Lab cover it; not in the pop-up. |
+| Q54 | /ballon-dor: Old tests, renamed 'Ballon d'Or career (old beta)'? | Yes. | Separate older game; same name as Road to Ballon d'Or; last change 23 Sep. |
+| Q55 | /star-store-dev: keep or Old tests? | Keep. | Paid items are coming (PAID_ITEMS.md); the 3D Test Area lists it. |
+| Q56 | /star-play-dev: drop its link cards to other pages? | Yes; keep Infinite Highlights / Infinite Match and the dials. | Seen: 3,999 px tall at 390 wide, mostly link cards the rail will replace. |
+| Q57 | 3D Test Area's signing and office: own rows in the rail? | Yes, under 3D places. | Not in today's pop-up; reachable only from the 3D Test Area. |
+| Q58 | /star-update-dev: mark Old when Leo's update ships? | Yes, the owner flips status in the registry. | It holds Leo's unfinished Oct 13 work (CLAUDE.md test-page rule). |
+| Q59 | Cut-scene Director: own row (a link into /star-style-dev?scene=director)? | Yes. | Today hidden inside 'Style Testing'; CLAUDE.md names it as the way to watch any scene. |
+| Q60 | /star-training-dev: Career screens or Match tests? | Career screens. | It plays training levels, a career screen. |
+| Q61 | /admin/sound-board: RBD Sound or Site? | RBD Sound. | Every sound listed is a game sound (guide). |
+| Q62 | /admin/xp: Site or PL Draft? | Site. | Account-level rewards (frames, titles) across games. |
+| Q63 | /star-wallet-dev: keep testers in? | Yes. | Its '+100 gems' calls an admin-only route; Buy uses your own gems. |
+| Q64 | /star-highlights-dev: admins only (as today)? | Yes. | Save and Commit write star_scenarios and the repo. |
+| Q65 | /lineups: admins only (as today)? | Yes. | Saves star_lineups for every career. |
+| Q66 | /draft-challenge-dev: admins only (as today)? | Yes. | Rooms are real rows in the live multiplayer tables. |
+| Q67 | /star-style-dev and /star-training3d-dev: move their browser-side check into the layout gate? | Yes. | Both check admin-or-tester in the browser after the code ships. |
 
-1. **Testers on pages that save shared data?** Your answer was "admin or tester" for every page. Recommend: **admins only on the 24 pages that write shared data or sit under /admin; testers on the other 45.** Reason: the server already refuses their saves, so letting them in only shows buttons that fail.
-2. **Should testers get the pop-up too (only their pages)?** Recommend **yes**. Reason: on the live site a tester has no way to find a single test page today.
-3. **Owners I couldn't prove** (history before 3 Sep is cut off in this copy): /admin dashboard, Football data, Players, Scrape, PL clubs, Site XP rewards, CL draft, all Draft pages, /lineups, Media lab, Tuning, First-person dribble, Live attack. Recommend: **Harry for the site/Draft ones, ask Mikey and Leo for Tuning and the two dribble/attack sandboxes.** Reason: a wrong name on a card is worse than "unknown".
-4. **Old tests list OK?** (attack, bicycle, zoom-to-play, 3D look, spin, Blender, sfx audition, Ballon d'Or old beta, Scenario Builder page, Draft preview, American sandbox, Profile (new), Dream XI). Recommend **yes; also ask about Player style (Style A) and 3D match figures**, both now decided in the game. Reason: they stay one tap away under "Old tests".
-5. **Delete the dead draft file?** `app/draft-dev/DraftDevClient.tsx`, 594 lines, used by nothing. Recommend **yes**. Reason: it's not a page, nobody can open it, git keeps it.
-6. **Dock the rail on tool pages?** Recommend **overlay on tool pages, docked only on /admin/star and simple list pages.** Reason: a docked column would squeeze the full-screen pitches.
-7. **A "Sound" group in Road to Ballon d'Or** (Sound board + Sound lab)? Recommend **yes**. Reason: neither fits Career or Match tests, and two sound pages sitting apart is what made sfx-dev get lost.
-8. **Where do Players and Scrape live — PL Draft or RBD?** Both games read them. Recommend **PL Draft, also shown in RBD's Real data.** Reason: one page, found from either side.
-9. **Tierlists section has one link** (the dashboard). Recommend **keep it** so the four sections you named are there; it grows when tierlist tools split out. Reason: matches your words.
+## 5. Duplicates and overlaps
 
----
+| Q | Question | Recommended | Evidence |
+|---|---|---|---|
+| Q68 | /draft-dev vs /draft-dev2: which survives? | /draft-dev, with a V2 \| Hero switch; /draft-dev2 redirects. | 4 lines differ: setup import (DraftSetupV2 vs DraftSetupHero), function name, room link, guide key. |
+| Q69 | /draft-dev sends rooms to the real /draft; fix to stay on /draft-dev? | Yes. | draft-dev line 365 `/draft?room=`; draft-dev2 uses `/draft-dev2?room=`. |
+| Q70 | Delete `app/draft-dev/DraftDevClient.tsx` (the file the brief calls DevDraftClient.tsx)? | Yes. | 594 lines; no import anywhere (grep). |
+| Q71 | Delete `components/draft/SquadManager.tsx` and rename SquadManagerDev → SquadManager? | Delete yes; rename later (touches the live /draft). | SquadManager.tsx (372 lines) is imported by nothing; the live /draft imports SquadManagerDev (line 7). |
+| Q72 | Two pages called 'Squad Builder' (/lineups and /squad-builder): names? | /lineups → 'Team sheets'; /squad-builder → 'Dream XI builder'. | AdminNavPanel names /lineups 'Squad Builder'; /squad-builder metadata title 'Squad Builder \| Knowitball'. |
+| Q73 | /squad-builder: keep (a future site game?) or Old tests? | Old tests until a site game is planned. | Not linked anywhere (grep); CLAUDE.md lists 'Combined XI builder' as future work. |
+| Q74 | /star-scenario-dev vs gallery 'Scenario Builder' tab: which survives? | Gallery tab; page stays in Old tests. | Same ScenarioEditor; guide says its 'saved locally' note is out of date. |
+| Q75 | Play Area and 3D Test Area are hubs; the new home is a hub too. Keep three? | Keep 3D Test Area (it also holds the 3D file store); trim Play Area's links (Q above). | area3d.ts lists 11 scenes; Play Area links 9 pages. |
+| Q76 | 'XP & Rewards' vs 'XP Book': names? | 'Site XP rewards' and 'Career XP book'. | Different tables: rewards vs star_xp_config. |
+| Q77 | Sound Board vs Sound Lab vs /sfx-dev: which survive? | Board and Lab; /sfx-dev Old. | Board swaps live sounds; Lab rates match sounds; sfx-dev only plays the manifest. |
+| Q78 | 'Ballon d'Or' (/ballon-dor) vs 'Road to Ballon d'Or' (/star-dev): rename the old one? | Yes: 'Ballon d'Or career (old beta)'. | Two games, one name. |
+| Q79 | Real moments vs Real shots (both StatsBomb): merge? | No; group together in Real data. | Different data (moments file from your device vs shots.json) and different owners (Mikey vs Harry). |
+| Q80 | International world vs Tournaments: merge? | No; group together. | Different owners (Mikey, Leo) and code (intl world vs tournament.ts). |
+| Q81 | First-person dribble vs Dribble on a stick: merge? | No. | Different modes; both live as tests. |
+| Q82 | Bigger players, Zoom-to-play, 3D match figures, Player style: merge into one page? | No; group, and two go Old. | Each sets a different override; merging changes their scenes. |
+| Q83 | 3D look in every mode vs 3D match figures vs 3D animations: overlap? | Keep 3D animations; the other two Old. | Decided 12 Oct: sprites + Style A. |
+| Q84 | /star-match-dev copy of the engine: keep while it's on the guard's copies list? | Yes; Mikey's call to retire it. | CLAUDE.md 'Still copies, to port next: … Mikey's /star-match-dev fork'. |
+| Q85 | /profile vs /profile-new: which survives? | /profile; /profile-new Old. | Trial redesign, no change since 23 Sep. |
+| Q86 | /draft/american vs American mode inside /draft rooms? | Rooms; sandbox Old. | CLAUDE.md: real American mode needs draft_american_mode.sql (RUN); sandbox is standalone. |
+| Q87 | 'Players' (SoFIFA, /admin/football/players) vs players inside 'Football Data' (Wikidata): names? | 'SoFIFA players' and 'Tic Tac Toe data'. | Two different player tables. |
+| Q88 | Five lock mechanisms (TesterOnly, AdminOnly, server redirect, two browser checks): replace with one? | Yes, DevGate (section 8). | Section 0 lock counts. |
+| Q89 | Tester Access guide lists 14 tester pages and says Play Area is admin-only; fix from the registry? | Yes, generate that list from the registry. | adminGuides.ts line 669 vs real: 24 pages on tester locks; Play Area is TesterOnly. |
+| Q90 | Tester Access guide says tester_access.sql must be run; it is RUN. Remove that line? | Yes. | CLAUDE.md: RUN by Mikey, 5 Oct. |
+| Q91 | Guide titles, pop-up names and page headings disagree (e.g. Match Engine / Match Engine (sandbox) / Shooting Test). One name from the registry? | Yes; guide title reads the registry. | AdminNavPanel vs adminGuides vs page h1. |
 
-## 8. Stills (current state, 390×844, signed out, local dev build)
+## 6. API routes
 
-In `/tmp/claude-0/-home-user-Tierlist/36643638-fd75-5950-83da-ee5f6b43df22/scratchpad/plan/img/`:
+Checked per method by reading each route (script, then by eye for helpers). **Gap** = a missing check or a choice.
 
-| File | What | Page height |
-|---|---|---|
-| current-admin-clubs.png | Club Data | 8,014 px |
-| current-admin-clubs-eye.png | Its page guide open | — |
-| current-star-play-dev.png | Play Area — already a hub of cards | 3,999 px |
-| current-star-gallery-dev.png | Scenario gallery | 844 px (full screen) |
-| current-admin-signed-out.png | /admin sends you to sign in | 1,138 px |
+| Route (/api/…) | Methods | Server check | Gap |
+|---|---|---|---|
+| admin/blind-rankings | GET POST | requireAdmin | — |
+| admin/blind-rankings/[id] | PATCH DELETE | requireAdmin | — |
+| admin/blind-rankings/[id]/images | GET POST | requireAdmin | — |
+| admin/blind-rankings/[id]/images/[imageId] | PATCH DELETE | requireAdmin | — |
+| admin/blind-rankings/[id]/import | POST | isAdmin | — |
+| admin/card-library | GET POST PATCH DELETE | checkAdmin | — |
+| admin/categories/[id] | PATCH POST DELETE | isAdmin | — |
+| admin/category-settings | GET POST | requireAdmin | — |
+| admin/custom-clubs | GET POST PATCH DELETE | isAdmin on writes; GET public | GET public by design (Q92) |
+| admin/custom-clubs/players | GET POST PATCH DELETE | isAdmin on writes; GET public | GET public by design (Q92) |
+| admin/export | GET | isAdmin | — |
+| admin/feedback | GET DELETE | isAdmin | — |
+| admin/football/crossclub | GET | isAdmin | — |
+| admin/football/data-stats | GET | isAdmin | — |
+| admin/football/import | GET POST | adminGuard | — |
+| admin/football/import-logos | POST | isAdmin | — |
+| admin/football/import-sofifa | POST | isAdmin | — |
+| admin/football/leagues | GET | isAdmin | — |
+| admin/football/normalize-attributes | POST | isAdmin | — |
+| admin/football/player-search | GET POST PATCH DELETE | isAdmin | — |
+| admin/football/players | GET | isAdmin | — |
+| admin/football/scrape-sofifa | GET POST | checkAdmin | — |
+| admin/football/scrape-sofifa/stats | GET | isAdmin | — |
+| admin/football/teams | GET | isAdmin | — |
+| admin/football/ttt-grid | GET | isAdmin | — |
+| admin/objectives | GET POST PATCH DELETE | checkAdmin | — |
+| admin/objectives/vocab | GET | isAdmin | — |
+| admin/patch-notes/file/[...path] | GET | requireAdmin (lib/patchNotePageServe) | — |
+| admin/patch-notes/page | GET | requireAdmin (lib/patchNotePageServe) | — |
+| admin/season-rewards | GET POST PATCH DELETE | checkAdmin | — |
+| admin/tenable | GET POST | requireAdmin | — |
+| admin/tenable/[id] | GET PATCH DELETE | requireAdmin | — |
+| admin/testers | GET POST | adminId | — |
+| admin/tictactoe | GET POST | requireAdmin | — |
+| admin/tictactoe/[id] | GET PATCH DELETE | requireAdmin | — |
+| admin/tierlists | GET | isAdmin | — |
+| admin/tierlists/[id] | PATCH DELETE | isAdmin | — |
+| admin/tierlists/[id]/images | POST | isAdmin | — |
+| admin/tierlists/[id]/images/[imageId] | PATCH DELETE | isAdmin | — |
+| admin/tierlists/[id]/images/reorder | PATCH | isAdmin | — |
+| admin/upload-image | POST | isAdmin | — |
+| admin/vote-tierlists | GET POST | requireAdmin | — |
+| admin/vote-tierlists/[id] | PATCH DELETE | requireAdmin | — |
+| admin/vote-tierlists/[id]/images | GET POST | isAdmin | — |
+| admin/vote-tierlists/[id]/images/[imageId] | PATCH DELETE | isAdmin | — |
+| admin/vote-tierlists/[id]/images/reorder | PATCH | isAdmin | — |
+| admin/vote-tierlists/[id]/import | POST | isAdmin | — |
+| admin/wallet/grant | POST | isAdmin | — |
+| admin/xp/rewards | GET POST PATCH DELETE | requireAdmin | — |
+| star/scenarios | GET POST DELETE | GET public; writes requireAdmin | — |
+| star/scenarios/commit | POST DELETE | isAdmin | Needs GITHUB_TOKEN |
+| star/lineups | GET POST | GET public; POST isAdmin | — |
+| star/xp-config | GET POST | GET public; POST isAdmin | — |
+| star/star-pass | GET POST | GET public; POST isAdmin | — |
+| star/corrections | GET POST DELETE | GET public; writes requireAdmin | — |
+| star/sfx-overrides | GET POST DELETE | GET public; writes requireAdmin | — |
+| star/tuning-notes | POST GET | POST anyone; GET isAdmin | POST open by design (Q93) |
+| star/career | GET POST DELETE | own account; isTester exempts save guard | — |
+| profile/admin-check | GET | returns isAdmin, isTester | — |
+| draft/debug | GET | isAdmin | — |
+| draft/rooms/[code]/dev-skip | POST | isAdmin + room host | — |
+| draft/rooms/[code]/dev-skip-career | POST | isAdmin + room host | — |
+| ballon-dor/player-search | GET | isAdmin | Blocks testers if /ballon-dor opens to them (Q54) |
+| cl-draft/clubs | GET | isAdmin | — |
 
-**Not captured:** the admin pop-up itself. It is drawn only for a signed-in admin (server check), and this sandbox can't sign in with Google. Every fact about it above is read from `components/AdminNavPanel.tsx`.
+| Q | Question | Recommended | Evidence |
+|---|---|---|---|
+| Q92 | /api/admin/custom-clubs GET and /players GET are public. Keep? | Keep. | custom_clubs is public-read by RLS (custom_clubs.sql line 37); players come from public sofifa_players. |
+| Q93 | /api/star/tuning-notes POST accepts anyone. Keep? | Keep; add a size cap if not there. | By design 'Anyone inserts, admins read' (CLAUDE.md); I did not check for a size cap. |
+| Q94 | Public GETs (scenarios, lineups, xp-config, star-pass, corrections, sfx-overrides) — keep public? | Yes. | The game reads them for every player. |
+| Q95 | /admin/cl-draft reads user_roles from the browser to decide access. Replace with DevGate? | Yes. | Line 141–144; depends on RLS letting users read their own role. |
+| Q96 | Admin routes use 6 helper names (requireAdmin, checkAdmin, adminGuard, adminId, inline isAdmin…). Standardise? | Not in this build; note only. | All 49 already check; renaming is risk with no gain now. |
+
+## 7. Testers
+
+| Fact | Detail |
+|---|---|
+| Pages testers can open today | 52: 24 on tester locks + 28 unlocked. Columns 'Testers now/new' in section 1. |
+| How testers find them today | Typed address only. Pop-up is admin-only; title screen Play Area link is local-dev only (`showPlayArea={offlineDevPlayEnabled()}`). |
+| Proposed | 43 pages, listed in a tester pop-up and a tester view of /admin/star. |
+| Tester Access guide | Stale: lists 14 tester pages and calls Play Area admin-only; says tester_access.sql is pending (it is RUN). |
+
+| Q | Question | Recommended | Evidence |
+|---|---|---|---|
+| Q97 | How do testers find their pages? | The same pop-up, filtered to tester pages, plus /admin/star filtered. | Today: by typed address only. |
+| Q98 | On a phone, where is the tester's way in? | NavMenu 'Test tools' row (the admin row is 'Admin & Dev tools'). | NavMenu shows the admin row only with isAdmin. |
+| Q99 | Also a 'Test pages' button in the game's Settings → Developer tab? | Yes. | Testers already live in that tab (guide: god mode). |
+| Q100 | Should testers see admin-only pages greyed out with a lock? | No; hide them. | Less clutter; nothing they can do there. |
+| Q101 | Show testers the 'writes real data' badge? | No; it only shows on admin-only pages. | Testers never reach shared-write pages under Q1. |
+| Q102 | Tester link flow (/tester/[code]) unchanged? | Yes. | Not under any gated folder; uses roleOf/isTester. |
+| Q103 | After 'Become a tester', where do they land? | /admin/star (tester view). | Today the message says 'Road to Ballon d'Or → Settings'. |
+
+## 8. Design: registry, home, DevGate, rail
+
+### Registry
+
+| Q | Question | Recommended | Evidence |
+|---|---|---|---|
+| Q104 | Registry file: `lib/adminRegistry.ts`, plain data? | Yes. | Same pattern as lib/adminGuides.ts and lib/patchNotesData.ts. |
+| Q105 | Fields: url, name, purpose, section, group, owner, ownerWhy, status, writes, access, alsoIn, railDocked. Add or drop any? | As listed; add 'added' date. | A date lets the home sort 'new this week'. |
+| Q106 | Owner values: Harry \| Mikey \| Leo \| Shared \| Unknown? | Yes. | Patch notes and admin dashboard are shared. |
+| Q107 | Status values: in use \| old test (two only)? | Two only. | Harry's words: 'still used?'. |
+| Q108 | Writes values: none \| this browser \| own account \| shared \| repo? | Yes, five. | Matches the guides' 'Saving' wording. |
+| Q109 | Merge guides into the registry file? | No; keep adminGuides.ts, test that keys match. | adminGuides.ts is 1,982 lines. |
+| Q110 | Run the registry test inside `npm run build` (blocks deploys) or only in the test suite? | Inside the build. | Same as the one-engine guard; a page with no lock must never reach the live site. |
+| Q111 | Which folders must have a registry row? | app/admin/**, app/star-*-dev/**, app/star-dev/media-lab, /lineups, /draft-dev*, /draft-challenge-dev, /draft/preview, /draft/american, /sfx-dev, /ballon-dor, /profile-new, /squad-builder. | The 69 pages in section 1. |
+| Q112 | Who edits the registry when a page is added? | Whoever adds the page; the test fails otherwise. | admin-page-guide skill already asks this for guides. |
+
+### /admin/star home
+
+Sketches (phone 390 / desktop):
+
+```
+ phone 390                       desktop
+ +------------------------+      +------------+-----------------------------+
+ | = Groups  RBD admin  o |      | rail       | [search...]                 |
+ | [search...]            |      | v Career   | 41 in use - 11 old - 9 write|
+ | 41 in use-11 old-9 wr. |      | v Chances  | H 26 - M 13 - L 9 - ? 4     |
+ | H 26-M 13-L 9-? 4      |      | > Match    | CAREER SCREENS              |
+ | CAREER SCREENS      6 >|      | > Real data| [card] [card] [card]        |
+ | [card: name, one line, |      | > 3D       | CHANCES                     |
+ |  H - in use - WRITES]  |      | ...        | [card] [card] [card]        |
+ | > OLD TESTS (11)       |      | Team board | > OLD TESTS (11)            |
+ +------------------------+      +------------+-----------------------------+
+```
+
+| Q | Question | Recommended | Evidence |
+|---|---|---|---|
+| Q113 | Home URL /admin/star? | Yes. | Brief. |
+| Q114 | Pop-up section order? | Road to Ballon d'Or, Site, PL Draft, Tierlists. | RBD has 52 of 69 pages. |
+| Q115 | RBD group order? | Career screens, Chances, Match tests, Real data, 3D places, Players + animation, Money + rewards, Sound, Old tests. | Game first, then most-used (gallery 43 commits, highlights 26). |
+| Q116 | Group names as listed? | Yes. | Harry's suggested groups, plus Sound. |
+| Q117 | Card shows: name, one line, owner letter, status, 'writes' badge. Anything else? | Add last-changed date. | Helps 'what is anyone else doing'. |
+| Q118 | Cards: one per row on a phone, 3 per row on desktop? | Yes. | 390 px leaves ~358 px per card. |
+| Q119 | Search box on the home? | Yes, top, filters cards by name/purpose. | 52 cards. |
+| Q120 | Filter chips (owner, status, writes)? | Yes, the what's-what numbers are the chips. | Same counts, one row. |
+| Q121 | What's-what strip: counts per group, per owner, old? | Yes, one row each. | Brief. |
+| Q122 | Old tests folded by default? | Yes. | 11 RBD old pages. |
+| Q123 | Empty state when a filter matches nothing? | 'No pages match' + a 'Clear' button. | — |
+| Q124 | Team board slot: top card, or rail link? | Rail link at the bottom + one small card at the top. | /admin/team is another builder's page. |
+| Q125 | Patch notes link on the home? | Rail link only. | Site section owns it. |
+| Q126 | Phone: rail as a drawer behind '☰ Groups'? | Yes. | Brief. |
+| Q127 | PageGuide eye on /admin/star? | Yes, its own entry. | Rule: every admin page has one. |
+| Q128 | Signed-out visitor to /admin/star? | Same 'Sign in' screen as other locks. | — |
+| Q129 | Look: same dark/amber as the pop-up? | Yes. | 'The pop-up is fine' (Harry). |
+| Q130 | 'Recently opened' row (this browser)? | No. | More text; search covers it. |
+
+### DevGate (the one lock)
+
+| Q | Question | Recommended | Evidence |
+|---|---|---|---|
+| Q131 | DevGate in one layout per folder (≈60 small files) or in middleware? | Per folder. | A middleware throw is a 500 on every page (Critical Gotcha 5). |
+| Q132 | app/admin/layout.tsx: keep only the touch CSS, gate per sub-folder? | Yes. | Lets /admin/star admit testers while /admin/* stays admin. |
+| Q133 | Locked-out screen: message (today) or redirect to sign-in? | Signed out → sign-in with return; signed in → message. | Server pages already redirect to /auth?next=. |
+| Q134 | Locked message wording? | 'Team only' + 'Back to Knowitball'. | Today two wordings: 'Admins only' / 'Testers only'. |
+| Q135 | Keep the local-dev bypass (offlineDevPlayEnabled)? | Yes. | Playtest and filming agents rely on it. |
+| Q136 | Remove the 9 browser-side checks? | Yes, keep feature flags inside pages. | They block testers the layout lets in. |
+| Q137 | Keep the 6 server redirects inside pages? | Yes, harmless; don't touch patch-notes. | — |
+| Q138 | Any API change in this build? | No. | All 49 admin routes already check (section 6). |
+
+### Tool-page rail
+
+| Q | Question | Recommended | Evidence |
+|---|---|---|---|
+| Q139 | Rail opens on the current page's group? | Yes. | — |
+| Q140 | Breadcrumb ('RBD › Chances › Gallery') in the rail header? | Yes, not on the page. | No new element over page controls. |
+| Q141 | Phone edge tab: keep today's placement logic? | Yes. | placeTab avoids the pitch (26 Sep fix). |
+| Q142 | Search in the rail? | Yes, same as home. | — |
+| Q143 | Which pages get a docked rail on desktop? | Club data, XP book, Star Pass, Testers, Site XP rewards, Sound board. | List pages; no full-width canvas. |
+| Q144 | Keyboard shortcut to open the rail? | No. | — |
+| Q145 | Owner letter in rail rows? | No; only on home cards. | Keep rows short. |
+
+## 9. Build steps — what Harry sees before each
+
+| # | Step | Size | Harry sees / approves first | Q |
+|---|---|---|---|---|
+| 1 | Registry file, 70 rows | ≈1 h | Section 1 table answered (names, homes, fates, owners) | Q146 |
+| 2 | Registry test inside the build | 30 min | One deliberate failing run | Q147 |
+| 3 | 6 missing guides + names from registry | 1 h | The 6 guide texts | Q148 |
+| 4 | DevGate + per-folder layouts; drop 9 browser checks | 1–1.5 h | List of pages whose access changes | Q149 |
+| 5 | Pop-up reads registry; tester pop-up | 1 h | Stills at 390 and 1280 | Q150 |
+| 6 | /admin/star home + rail | 1.5–2 h | Higgsfield design, then stills | Q151 |
+| 7 | Draft V2 \| Hero switch; redirect; dead files | 30 min | Switch working on /draft-dev | Q152 |
+| 8 | Checks: tsc, one-engine guard, registry test, stills | 45 min | Stills: pop-up, home phone + desktop, one tool page | Q153 |
+
+| Q | Question | Recommended | Evidence |
+|---|---|---|---|
+| Q146 | Step 1 (registry): approve the section 1 table first? | Yes. | Names, homes and fates come straight from it. |
+| Q147 | Step 2 (test): see one failing run first? | Yes, with one page left out on purpose. | Proves the test bites. |
+| Q148 | Step 3 (guides): review the 6 new guides as text? | Yes. | — |
+| Q149 | Step 4 (locks): see the list of pages whose access changes? | Yes, before merging. | Some open pages will close. |
+| Q150 | Step 5 (pop-up): stills at 390 and 1280 before building step 6? | Yes. | Harry judges layout by eye. |
+| Q151 | Step 6 (home): a Higgsfield design pass first? | Yes. | CLAUDE.md: 'Deep plan first, iterate, design (Higgsfield), then build'. |
+| Q152 | Step 7 (draft merge): try the switch on /draft-dev before deleting /draft-dev2? | Yes. | — |
+| Q153 | Step 8 (checks): stills of pop-up, home phone+desktop, one tool page? | Yes. | Brief. |
+
+## 10. Risks
+
+| Risk | Guard |
+|---|---|
+| 28 open pages close; someone used one signed out | List them in the patch notes |
+| A per-folder layout is missed | Registry test (build-blocking) |
+| Docked rail squeezes a pitch | Overlay by default; dock list (Q143) |
+| Draft merge touches the real Draft save | Switch picks the setup screen only; save keys unchanged |
+| Removing browser checks also hides features | Remove only the page gate; keep feature flags |
+| Pop-up rewrite breaks the phone menu event | Keep OPEN_ADMIN_NAV_EVENT and the portal |
+| Middleware gate | Not used (Critical Gotcha 5) |
+| Other builders edit AdminNavPanel / adminGuides | Registry is a new file; small diffs elsewhere |
+
+## 11. Not checked
+
+| Item | Why |
+|---|---|
+| The admin pop-up on screen | Drawn only for a signed-in admin; this sandbox can't sign in |
+| Owners of pre-3 Sep pages | Shallow clone (history from 3 Sep) |
+| Who actually still uses each page | No visit logs; 'last change' dates include lock-only commits (5 Oct) |
+| Size cap on tuning-notes POST | Not read |
+| Admin pages that read Supabase from the browser (beyond cl-draft) | Not audited table by table |
+| Tester view on a real tester account | No tester account here |
+
+Stills (current, 390×844, signed out, local dev): `img/current-admin-clubs.png`, `img/current-admin-clubs-eye.png`, `img/current-star-play-dev.png`, `img/current-star-gallery-dev.png`, `img/current-admin-signed-out.png` in the session scratchpad `plan/img/`.
