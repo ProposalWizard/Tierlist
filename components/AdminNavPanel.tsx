@@ -155,6 +155,7 @@ const GROUPS: AdminGroup[] = [
       { name: "3D Animations", href: "/star-anim3d-dev" },
       { name: "Match Radar", href: "/star-radar-dev" },
       { name: "Sound Lab", href: "/star-sound-lab-dev" },
+      { name: "Visual Effects Lab", href: "/star-vfx-lab-dev" },
       { name: "Full match (test)", href: "/star-sim90-dev" },
       { name: "Store (test)", href: "/star-store-dev" },
       { name: "Gems (test)", href: "/star-wallet-dev" },

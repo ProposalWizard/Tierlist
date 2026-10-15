@@ -170,6 +170,7 @@ import {
   keeperSetHop, keeperDiveArc, feelHaptic, type StrikeFeel,
 } from "@/lib/star/matchFeel";
 import { drawImpactBurst, drawDustPuff, drawSpeedStreak, drawGloveSpark, drawClang, drawNetBulge } from "@/lib/star/matchFeelDraw";
+import { drawVfx, drawVfxTrail, vfxShake, vfxZoom, vfxDurS, type VfxEvent, type VfxOverride, type VfxRecipe } from "@/lib/star/vfxLab";
 import PostMatch from "./PostMatch";
 import MatchCommentary from "./MatchCommentary";
 import { LiveRadar } from "./MatchRadar";
@@ -223,7 +224,7 @@ import FigureSkinToggle from "./FigureSkinToggle";
 import type { MatchSpriteHint } from "@/lib/star/matchFigure";
 import { spriteKickStrikeT, keeperDiveClip, spriteClipReady, spriteClipFps, spriteClipFrames, warmSpriteKits, type SpriteClip } from "@/lib/star/sprites";
 import { outfieldSpriteClip, keeperDiveClipNew, keeperStandingClip, keeperGetUpT, sideOfDive } from "@/lib/star/sprite3dAnim";
-import { POST_L, POST_R } from "@/lib/star/pitch";
+import { POST_L, POST_R, GOAL_H as VFX_GOAL_H } from "@/lib/star/pitch";
 import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt } from "@/lib/star/cameraTilt";
 
 /** The net's drawn depth from the side, metres: a real goal's ~2 m. */
@@ -361,6 +362,14 @@ interface Props {
   dribbleControl?: "swipe" | "stick";
   /** TEST PAGES ONLY: every chance the match hands you is a dribble run. */
   dribbleOnly?: boolean;
+  /**
+   * TEST PAGES ONLY (/star-vfx-lab-dev, Leo 15 Oct 2026): the picture to draw
+   * for each moment (a kick, a save, the net...) instead of Match feel's — a
+   * recipe from lib/star/vfxLab.ts. Drawing, camera shake and a short freeze
+   * only: nothing here is read by the ball, the keeper or the outcome.
+   * Absent (the career match): exactly as before.
+   */
+  vfxOverride?: VfxOverride;
   /**
    * Strip the match furniture — the scoreboard plate, the live commentary
    * ticker and the situation hint — leaving the pitch and nothing else.
@@ -782,7 +791,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
  *  Most first chances come by 7' (measured); a later one is read out. */
 const QUICK_START_MAX = 12;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell, plannedOffAt, leadIn, dribbleControl, dribbleOnly = false }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell, plannedOffAt, leadIn, dribbleControl, dribbleOnly = false, vfxOverride }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -1531,6 +1540,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   setPieceSkillRef.current = setPieceSkill;
   const markersRef = useRef(markers);
   markersRef.current = markers;
+  /** See the `vfxOverride` prop: the lab's recipes and the effects they are drawing. */
+  const vfxRef = useRef(vfxOverride);
+  vfxRef.current = vfxOverride;
+  const vfxFxRef = useRef<{ ev: VfxEvent; r: VfxRecipe; at: number; x: number; y: number; z: number; vx: number; vy: number; power: number; salt: number }[]>([]);
   const onBallStepRef = useRef(onBallStep);
   onBallStepRef.current = onBallStep;
   const neverHookedRef = useRef(neverHooked);
@@ -3312,7 +3325,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       oy = Math.cos(sh.t * 57) * m * 0.7;
     }
     // Match feel: New — the camera punch along the hit (lib/star/matchFeel.ts).
-    const feelOn = matchFeelOn();
+    // The lab's own pictures (vfxOverride) replace Match feel's drawing.
+    const feelOn = matchFeelOn() && !vfxRef.current;
     const feelT = performance.now() / 1000;
     const feelSt = feelRef.current;
     /** A pitch direction as a unit screen direction. */
@@ -3326,8 +3340,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const o = punchOffset(feelT - feelSt.punch.at, feelSt.punch.dur, feelSt.punch.px, d.x, d.y);
       ox += o.x; oy += o.y;
     }
+    // The lab (vfxOverride): each live effect's camera shake and punch-in.
+    let vfxZ = 1, vfxZx = 0, vfxZy = 0;
+    if (vfxFxRef.current.length) {
+      for (const e of vfxFxRef.current) {
+        const u = (feelT - e.at) / vfxDurS(e.r);
+        if (u < 0 || u >= 1) continue;
+        if (!reducedMotionRef.current) {
+          const d = screenDir(e.vx, e.vy);
+          const o = vfxShake(e.r, u, d.x, d.y);
+          ox += o.x; oy += o.y;
+        }
+        const z = vfxZoom(e.r, u);
+        if (z > vfxZ) { const f = toPx(e.x, e.y); vfxZ = z; vfxZx = f.px; vfxZy = f.py - Math.max(0, e.z) * heightScale * f.scale; }
+      }
+    }
     ctx.save();
     ctx.translate(ox, oy);
+    if (vfxZ > 1) { ctx.translate(vfxZx, vfxZy); ctx.scale(vfxZ, vfxZ); ctx.translate(-vfxZx, -vfxZy); }
 
     // --- Pitch ---
     //
@@ -4569,7 +4599,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // behind the ball whose length follows how fast it is going.
     const feelBall = ballRef.current;
     const feelSpeed = feelBall ? Math.hypot(feelBall.vel.x, feelBall.vel.y, feelBall.vz) : 0;
-    if (feelOn && feelBall && trail.length > 1) {
+    const vfxTrail = vfxRef.current?.trail;
+    if (vfxTrail) {
+      // The lab's trail (vfxOverride): the same path, the picked picture.
+      if (feelBall && trail.length > 1 && phaseRef.current === "flight") {
+        const toS = (q: { x: number; y: number; z: number }) => { const f = toPx(q.x, q.y); return { x: f.px, y: f.py - q.z * heightScale * f.scale }; };
+        const pts = trail.map(toS);
+        pts.push(toS({ x: feelBall.pos.x, y: feelBall.pos.y, z: Math.max(0, feelBall.z) }));
+        const hb = toPx(feelBall.pos.x, feelBall.pos.y);
+        drawVfxTrail(ctx, vfxTrail, pts, BALL_PX * hb.scale, Math.min(1, Math.max(0, (feelSpeed - 6) / 20)), feelT);
+      }
+    } else if (feelOn && feelBall && trail.length > 1) {
       const want = streakMetres(feelSpeed, feelDials());
       const pts: { x: number; y: number }[] = [];
       const head = { x: feelBall.pos.x, y: feelBall.pos.y, z: Math.max(0, feelBall.z) };
@@ -4837,6 +4877,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         else drawClang(ctx, f.px, sy, sz, u);
       }
       feelSt.fx = live;
+    }
+    // The lab's pictures (vfxOverride, lib/star/vfxLab.ts). Over everything.
+    if (vfxFxRef.current.length) {
+      const vfxFx = vfxFxRef.current;
+      const live = vfxFx.filter((e) => (feelT - e.at) / vfxDurS(e.r) < 1);
+      for (const e of live) {
+        const u = (feelT - e.at) / vfxDurS(e.r);
+        if (u < 0) continue;
+        const f = toPx(e.x, e.y);
+        const d = screenDir(e.vx, e.vy);
+        drawVfx(ctx, e.ev, e.r, u, {
+          x: f.px, y: f.py - Math.max(0, e.z) * heightScale * f.scale, dx: d.x, dy: d.y,
+          s: BALL_PX * f.scale * 4.2, power: e.power, w: W, h: H, salt: e.salt,
+        });
+      }
+      vfxFxRef.current = live;
     }
 
     // "After you pass: Joystick" (lib/star/afterPass.ts): the stick, bottom-left,
@@ -5242,6 +5298,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     feelPunch(D.shakePx * 0.9 * k, 0.4, 1, 0);
     feelFreeze(0.04 * k);
     feelHaptic(Math.round(D.hapticMs * 0.8 * k));
+  };
+
+  /** The lab (vfxOverride): start the picked picture for this moment. Pitch metres. */
+  const vfxEmit = (ev: VfxEvent, x: number, y: number, z: number, vx: number, vy: number, power: number) => {
+    const r = vfxRef.current?.[ev];
+    if (!r) return;
+    if (r.style === "none") return;
+    const now = feelNow();
+    // One of each moment at a time (a post can be named twice in one hit).
+    if (vfxFxRef.current.some((e) => e.ev === ev && now - e.at < 0.25)) return;
+    const salt = (vfxFxRef.current.length * 17 + Math.round(now * 1000)) % 997;
+    vfxFxRef.current.push({ ev, r, at: now, x, y, z, vx, vy, power: Math.max(0, Math.min(1, power)), salt });
+    if (vfxFxRef.current.length > 24) vfxFxRef.current.shift();
+    if (r.params.hitStopMs > 0) feelFreeze(r.params.hitStopMs / 1000);
   };
 
   const spawnGoalFx = () => {
@@ -5828,6 +5898,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               if (onGoalClipRef.current) goalRecRef.current?.event(a.kind, a.actor, { mode: a.mode, save: a.save }, Math.max(0, (bl.clock ?? 0) - a.t));
               // Match feel: New — the ball into the keeper's gloves.
               if (a.kind === "save" && a.actor === "keeper" && a.save && a.save !== "beaten" && a.at && matchFeelOn()) feelGlove(a.at, a.save);
+              // The lab (vfxOverride): the same moments, the picked pictures.
+              if (vfxRef.current && a.at) {
+                const at = a.at, bv = bl.vel;
+                const pw = Math.min(1, Math.hypot(bv.x, bv.y, bl.vz) / 27);
+                if (a.kind === "save") {
+                  const kp = scenarioRef.current.keeper;
+                  vfxEmit("dive", kp.x, kp.y, 0.3, at.x - kp.x || 1, 0, pw);
+                  if (a.save === "catch") vfxEmit("catch", at.x, at.y, at.z, bv.x, bv.y, pw);
+                  else if (a.save !== "beaten") vfxEmit("save", at.x, at.y, at.z, bv.x, bv.y, pw);
+                } else if (a.mode === "header") vfxEmit("header", at.x, at.y, at.z, bv.x, bv.y, pw);
+                else if (a.kind === "block") vfxEmit("block", at.x, at.y, at.z, bv.x, bv.y, pw);
+                else if (a.kind === "touch") vfxEmit("firstTouch", at.x, at.y, at.z, bv.x, bv.y, pw);
+                else if (a.actor !== "you" && (a.kind === "shot" || a.kind === "pass")) vfxEmit(a.kind === "shot" ? "strike" : "pass", at.x, at.y, at.z, bv.x, bv.y, pw);
+              }
               // Your own swing stays on kickPoseRef, as it always was.
               if (a.actor === "you") continue;
               actorAnimRef.current.set(a.actor, animFromAction(a, nowS - Math.max(0, (bl.clock ?? 0) - a.t), scenarioRef.current));
@@ -5856,6 +5940,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           nudge(0.28, 0.25);
           playPost();
           playCrowdSwell("groan");
+          if (vfxRef.current) { const pb = ballRef.current; vfxEmit("woodwork", pb.pos.x, pb.pos.y, pb.z, pb.vel.x, pb.vel.y, 0.8); }
           if (matchFeelOn()) {
             const pb = ballRef.current, pp = feelRef.current.prev;
             feelClang(pb.pos.x, pb.pos.y, pb.z, pp ? Math.max(0.3, Math.min(1, (Math.hypot(pp.vx, pp.vy, pp.vz) - 5) / 20)) : 0.7);
@@ -6264,6 +6349,22 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     // Match feel: New — the net bulges on a goal, the woodwork clangs.
     if (matchFeelOn()) feelOutcome(res, kind === "goal");
+    // The lab (vfxOverride): the net, the goal moment, the frame, a block, a near miss.
+    if (vfxRef.current) {
+      const b = ballRef.current;
+      if (b) {
+        const pw = Math.min(1, Math.hypot(b.vel.x, b.vel.y, b.vz) / 27);
+        if (kind === "goal") {
+          vfxEmit("net", b.pos.x, b.pos.y, b.z, 0, -1, pw);
+          vfxEmit("celebration", b.pos.x, b.pos.y, b.z, 0, -1, 1);
+        } else if (res === "post") vfxEmit("woodwork", b.pos.x, b.pos.y, b.z, b.vel.x, b.vel.y, pw);
+        else if (res === "blocked") vfxEmit("block", b.pos.x, b.pos.y, b.z, b.vel.x, b.vel.y, pw);
+        else if (res === "wide" || res === "over") {
+          const offPost = b.pos.x < POST_L ? POST_L - b.pos.x : b.pos.x > POST_R ? b.pos.x - POST_R : 0;
+          if (offPost < 3 && b.z < VFX_GOAL_H + 2.5) vfxEmit("nearMiss", b.pos.x, Math.max(0, b.pos.y), b.z, b.vel.x, b.vel.y, pw);
+        }
+      }
+    }
 
     // Assign named squad players to goals and update the goal events log.
     // Chain goals → a named attacker from the squad scores; user assisted.
@@ -7414,7 +7515,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     particlesRef.current = [];
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
-    feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null;
+    feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null; vfxFxRef.current = [];
     shootoutKickRef.current = { resolve: submit };
     setPhase("aim");
     logMoment(kick.taker.you ? "Your penalty — up to you." : `${kick.taker.shortName} steps up…`, "you");
@@ -7458,7 +7559,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     particlesRef.current = [];
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
-    feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null;
+    feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null; vfxFxRef.current = [];
     setPhase("aim");
     onChanceServedRef.current?.({ kind: "penalty", minute: matchMinuteRef.current, reason: request.reason, scenario: snapshotScenario(sc) });
     logMoment(`Penalty! ${taker.shortName} to take it.`, "you");
@@ -7602,7 +7703,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       particlesRef.current = [];
       shakeRef.current.t = 0;
       flashRef.current.t = 0;
-      feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null;
+      feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null; vfxFxRef.current = [];
       setPhase("aim");
       playWhistle();
       scheduleAutoKick();
@@ -7855,7 +7956,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     particlesRef.current = [];
     shakeRef.current.t = 0;
     flashRef.current.t = 0;
-    feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null;
+    feelRef.current.fx = []; feelRef.current.net = null; feelRef.current.struck = null; vfxFxRef.current = [];
     setPhase("aim");
     // The kind is final from here: the authored-shape overlay above changes
     // where the bodies are, never which chance this is.
@@ -8695,6 +8796,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // only read here, never changed. A wind-up, then the contact lands (flash,
     // squash, punch, sound, buzz) and the picture holds a beat before the
     // flight starts. Old: the plain kick sound, as before.
+    // The lab (vfxOverride): your kick, at the boot.
+    if (vfxRef.current) {
+      const bl = ballRef.current;
+      const speed = Math.hypot(bl.vel.x, bl.vel.y, bl.vz);
+      const ev: VfxEvent = scenarioRef.current.kind === "header" ? "header" : speed < 16 ? "pass" : "strike";
+      vfxEmit(ev, bl.pos.x, bl.pos.y, bl.z, bl.vel.x, bl.vel.y, Math.min(1, speed / 27));
+    }
     if (matchFeelOn()) {
       const bl = ballRef.current;
       const D = feelDials();
