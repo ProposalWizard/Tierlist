@@ -178,7 +178,7 @@ export default function VfxLabPage() {
   const [eventId, setEventId] = useState<VfxEvent>("strike");
   const [editing, setEditing] = useState<string | null>(null);
   const [live, setLive] = useState(true);
-  const [seed, setSeed] = useState(1);
+  const [seed, setSeed] = useState(0); // 0 = not started (the match loads real squads; start it on a tap)
   const [exported, setExported] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
 
@@ -270,12 +270,20 @@ export default function VfxLabPage() {
             ? inMatch ? `${inMatch} of ${VFX_EVENTS.length} moments use your picks${editing ? " (plus the one you are editing)" : ""}. Moments you have not picked show nothing extra.` : "Nothing picked yet: pick a card (or open one in Edit) to see it here."
             : "Off: the match draws what this phone's game draws."}
         </p>
-        <div className="mt-2 flex gap-2">
-          <button onClick={() => setSeed((s) => s + 1)} className="h-11 flex-1 rounded-xl bg-white/10 text-sm font-black">New match</button>
-        </div>
-        <div className="mt-3 -mx-1">
-          <EnginePlay key={seed} seed={seed} vfxOverride={override} />
-        </div>
+        {seed === 0 ? (
+          <button onClick={() => setSeed(1)} className="mt-2 h-12 w-full rounded-xl bg-emerald-500 text-base font-black text-slate-950">
+            ▶ Start the live match
+          </button>
+        ) : (
+          <>
+            <div className="mt-2 flex gap-2">
+              <button onClick={() => setSeed((s) => s + 1)} className="h-11 flex-1 rounded-xl bg-white/10 text-sm font-black">New match</button>
+            </div>
+            <div className="mt-3 -mx-1">
+              <EnginePlay key={seed} seed={seed} vfxOverride={override} />
+            </div>
+          </>
+        )}
       </section>
 
       <section className="mt-4 rounded-2xl border border-amber-300/40 bg-amber-400/10 p-3">

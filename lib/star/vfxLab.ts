@@ -238,7 +238,7 @@ export const VFX_VARIANTS: Record<VfxEvent, VfxVariant[]> = {
     V("save", "gloves", "Glove print", "Two gloves flash where he met it.", "gloves", { color: "#f8fafc", color2: "#22c55e", durationMs: 420 }),
     V("save", "shards", "Shards", "Bright shards fly off the hands.", "shards", { count: 10, spread: 1, color: "#e0f2fe", color2: "#38bdf8", durationMs: 450 }),
     V("save", "ring", "Ring burst", "Three rings out from the save.", "ring", { count: 3, size: 1.1, color: "#bae6fd", durationMs: 380 }),
-    V("save", "comic", "Comic SAVE!", "A comic burst with the word.", "comic", { text: "SAVE!", color: "#7dd3fc", color2: "#0c4a6e", count: 12, durationMs: 560 }),
+    V("save", "comic", "Comic SAVE!", "A comic burst with the word.", "comic", { text: "SAVE!", color: "#0ea5e9", color2: "#ffffff", count: 12, durationMs: 560 }),
     V("save", "lightning", "Lightning", "Short electric bolts.", "lightning", { count: 5, color: "#e0f2fe", durationMs: 300 }),
     V("save", "chroma", "Chromatic flash", "The save splits red and blue for a blink.", "chroma", { durationMs: 260, shakePx: 4 }),
     V("save", "shake", "Shake + freeze", "No picture: a jolt and a held beat.", "shake", { shakePx: 9, hitStopMs: 90, durationMs: 300 }),
@@ -501,9 +501,10 @@ export function drawVfx(ctx: CanvasRenderingContext2D, event: VfxEvent, r: VfxRe
         const px = -d.y, py = d.x;
         for (let i = 0; i < n; i++) {
           const off = (feelNoise(i, salt + 21) - 0.5) * S * (0.6 + 2.4 * P.spread);
-          const back = S * (0.2 + 0.8 * feelNoise(i, salt + 22)) + S * 1.4 * u;
+          // Thrown forward along the ball's way, streaming with it.
+          const ahead = S * (0.1 + 0.6 * feelNoise(i, salt + 22)) + S * 1.6 * easeOut(u);
           const len = S * (0.6 + 0.8 * feelNoise(i, salt + 23)) * s;
-          const x0 = at.x - d.x * back + px * off, y0 = at.y - d.y * back + py * off;
+          const x0 = at.x + d.x * ahead + px * off, y0 = at.y + d.y * ahead + py * off;
           ctx.strokeStyle = rgba(P.color, 0.85 * I * s);
           ctx.lineWidth = Math.max(1, S * 0.05);
           ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 - d.x * len, y0 - d.y * len); ctx.stroke();
@@ -942,7 +943,7 @@ export function paintThumb(ctx: CanvasRenderingContext2D, event: VfxEvent, r: Vf
     for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.moveTo(w * 0.2 + i * w * 0.075, h * 0.14); ctx.lineTo(w * 0.2 + i * w * 0.075, h * 0.5); ctx.stroke(); }
     for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(w * 0.2, h * 0.14 + i * h * 0.09); ctx.lineTo(w * 0.8, h * 0.14 + i * h * 0.09); ctx.stroke(); }
   }
-  const base = Math.min(w, h) * 0.17;
+  const base = Math.min(w, h) * 0.3;
   const spot: Record<VfxEvent, [number, number, number, number]> = {
     strike: [0.3, 0.72, 1, -0.4], pass: [0.3, 0.7, 1, -0.2], trail: [0.5, 0.6, 1, -0.2], firstTouch: [0.5, 0.66, 0, 1],
     save: [0.36, 0.3, -1, 0.3], catch: [0.5, 0.34, 0, 1], dive: [0.42, 0.42, -1, 0], woodwork: [0.8, 0.3, -1, 0.5],
@@ -951,7 +952,7 @@ export function paintThumb(ctx: CanvasRenderingContext2D, event: VfxEvent, r: Vf
   };
   const [fx, fy, dx, dy] = spot[event];
   const x = w * fx, y = h * fy;
-  const ballR = base / 4.2;
+  const ballR = base / 6.5;
   if (event === "save" || event === "catch" || event === "dive") {
     // A keeper silhouette reaching.
     ctx.fillStyle = "#facc15";
@@ -966,7 +967,12 @@ export function paintThumb(ctx: CanvasRenderingContext2D, event: VfxEvent, r: Vf
   }
   const at: VfxAt = { x, y, dx, dy, s: base, power: 0.9, w, h, salt: 7 };
   drawVfx(ctx, event, r, u, at);
-  if (event !== "trail" && event !== "celebration") {
+  if (event === "trail") {
+    // The ball at the head of the arc drawTrailPreview lays down.
+    const L = base * 2.4, k = 0.25 + 0.75 * u;
+    ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#111111"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(x - L * 0.5 + L * k, y + L * 0.25 - Math.sin(Math.PI * k) * L * 0.35, ballR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  } else if (event !== "celebration") {
     const travel = event === "strike" || event === "pass" || event === "header" ? Math.max(0, u - 0.05) * base * 1.8 : 0;
     ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#111111"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(x + (dx / (Math.hypot(dx, dy) || 1)) * travel, y + (dy / (Math.hypot(dx, dy) || 1)) * travel, ballR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
