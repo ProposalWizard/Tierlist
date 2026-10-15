@@ -31,7 +31,21 @@ rules (short sentences, no coder words in the headings). Sections, in this order
    pending migrations, secrets needed, things the other devs are touching).
 9. **Still running** — any agent or job not finished, and what to do if its result is lost.
 
-Keep it under ~150 lines. Link, don't paste, long material.
+80 lines at most (see "Keeping it small").
+
+## Keeping it small (Harry, 15 Oct 2026: "how do we stop the handoff doc from bloating itself")
+
+- **One file per build, never appended to.** A new build writes a NEW file. Nobody adds to an
+  old one. The next chat reads only the newest handoff for its build, not the whole folder.
+- **Hard cap: 80 lines.** If it's longer, cut prose or move detail into a linked file.
+- **Only what the next chat needs to act.** No history, no story of how we got here, no tour
+  of the code. "Done and live" items are one line each, or left out.
+- **Rules go home, not in the handoff.** A standing rule Harry gives goes into CLAUDE.md or the
+  right skill, and the handoff links to it. Otherwise every handoff re-copies every rule.
+- **Link, don't paste.** Plans, tables, stills: in `docs/handoffs/<name>/` or a skill, linked.
+- **Retire when done.** When a build ships, move its handoff to `docs/handoffs/done/` in the
+  same commit. Files there are never read at the start of a chat.
+- **Check before pushing:** `wc -l` the file; over 80 means cut.
 
 ## 2. Commit and push it
 
