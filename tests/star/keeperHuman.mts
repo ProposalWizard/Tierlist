@@ -186,7 +186,8 @@ console.log("\nTHE TOP CORNER IS THE ONE HE CAN'T REACH");
   let bottomSame = 0, bottomN = 0;
   for (const kind of ["one_on_one", "long_range", "through_ball", "tight_angle"] as E.ScenarioKind[]) for (let s = 1; s <= 300; s++) {
     const seed = s * 7919 + 101;
-    const a = shot(kind, seed, 62, {}, 0, true), b = shot(kind, seed, 62, { topCorner: false }, 0, true);
+    // finish: false: this measures the KEEPER_HUMAN cut on its own (Keeper realism, round 16, is keeperFinish.mts).
+    const a = shot(kind, seed, 62, { finish: false }, 0, true), b = shot(kind, seed, 62, { topCorner: false, finish: false }, 0, true);
     for (const [key, r] of [["on", a], ["off", b]] as const) {
       if (!r.onTarget || (r.zone !== "top" && r.zone !== "bottom")) continue;
       z[key][r.zone][1]++; if (r.goal) z[key][r.zone][0]++;

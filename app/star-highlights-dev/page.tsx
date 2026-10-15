@@ -63,6 +63,7 @@ import {
   FAULT_LABEL, type Correction,
 } from "@/lib/star/scenarioCorrections";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
+import HitboxPanel from "@/components/star/HitboxPanel";
 import ChanceSheet from "@/components/star/ChanceSheet";
 import ShootoutPlay from "@/components/star/ShootoutPlay";
 import { usePlayWidth, useTestKits } from "@/components/star/EnginePlay";
@@ -990,6 +991,10 @@ export default function HighlightsPage() {
               </button>
             )}
           </div>
+
+          {/* Hitboxes & jumping (Leo, 14 Oct 2026): New | Old, show every
+              body's hitbox on Play, and the dials. */}
+          <HitboxPanel />
 
           {/* ── WHERE THIS ONE ACTUALLY IS ──
               Draft / Saved / Committed, and whether it is feeding the

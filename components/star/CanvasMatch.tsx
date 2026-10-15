@@ -8,7 +8,7 @@ import { EngineFrameContext, keeperFrame, frameHasKeeper, type EngineFrameFigure
 import {
   buildWeightedScenario, buildScenario,
   launch, stepBall, stepBallInNet, settleBall, stepBallPastBar, stepBallCleared,
-  stepKeeper, stepDefenders, stepReactions, stepTouchChase, touchChaseSpeed, initDefenders, resetForTouchOn,
+  stepKeeper, settleJumps, hitboxShapes, stepDefenders, stepReactions, stepTouchChase, touchChaseSpeed, initDefenders, resetForTouchOn,
   chainReturnChance, CHAIN_MAX, TOUCH_CHAIN_MAX, applyFirstTouch, goalInView,
   OUTCOME_TEXT, clamp, dragForFullPower, VIEW_ASPECT,
   orderableRunners, acceptsCaptainOrders,
@@ -38,7 +38,8 @@ import { classifyRelease } from "@/lib/star/dribbleGesture";
 import { PASS_RING } from "@/lib/star/firstPersonRender";
 import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
 import { dribbleReward } from "@/lib/star/dribbleReward";
-import { oldBallPhysics, oldMatchFlow } from "@/lib/star/gameplayVersion";
+import { oldBallPhysics, oldMatchFlow, gameplayVersion } from "@/lib/star/gameplayVersion";
+import { setHitboxes, hitboxesOn, showHitboxes } from "@/lib/star/hitbox";
 import { inTestArea } from "@/lib/star/testArea";
 import { setBallPhysics, realBallOn } from "@/lib/star/ballPhysics";
 // Kane drawings (testing): start fetching as the match code loads, so the
@@ -816,6 +817,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     });
     // Ball physics New | Old (lib/star/ballPhysics.ts), read at every chance too.
     setBallPhysics(oldBallPhysics() ? "old" : "new");
+    // Hitboxes & jumping New | Old (lib/star/hitbox.ts), read at every chance too.
+    setHitboxes(gameplayVersion("hitboxes"));
   };
   useEffect(() => { applyClearanceRules(); }, []);
   // Kane drawings (testing): fetch them in good time for the first chance.
@@ -4015,9 +4018,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // from a situation that is not the one on screen.
     figureQueue = [];
     if (goalInView(sc.kind) && sceneRef.current?.teammates !== false) {
-      footballer(sc.follower.x, sc.follower.y, R, ourKit().shirt, ourKit().trim, {
+      const fJump = sc.follower.jump?.z ?? 0;
+      footballer(sc.follower.x, sc.follower.y - fJump * 0.42, R, ourKit().shirt, ourKit().trim, {
         sid: "follower",
-        pose: poseFor("follower", sc.follower.x, sc.follower.y),
+        pose: fJump > 0.15 ? "receive" : poseFor("follower", sc.follower.x, sc.follower.y),
         anim: animOf("follower", sc.follower.x, sc.follower.y),
         phase: runPhase(sc.follower.x),
         face: getFaceImage(sc.follower.who?.face ?? fakeFaceFor("follower")),
@@ -4160,10 +4164,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // Animations: New — he takes a touch and sets himself (actionAnim.ts)
       // instead of standing still with his arms open.
       const anim = animOf(`run${i}`, r.pos.x, r.pos.y);
-      footballer(r.pos.x, r.pos.y, R, ourKit().shirt, ourKit().trim, {
+      // Hitboxes & jumping (New): a man going up for it is drawn in the air,
+      // at the same height the engine tests (r.jump), like a jumping wall.
+      const jumpZ = r.jump?.z ?? 0;
+      footballer(r.pos.x, r.pos.y - jumpZ * 0.42, R, ourKit().shirt, ourKit().trim, {
         sid: `run${i}`,
         anim,
-        pose: receiving ? "receive" : poseFor(`run${i}`, r.pos.x, r.pos.y),
+        pose: receiving || jumpZ > 0.15 ? "receive" : poseFor(`run${i}`, r.pos.x, r.pos.y),
         phase: runPhase(r.pos.x),
         face: getFaceImage(r.who?.face ?? fakeFaceFor(`run${i}`)),
         label: faceStyleRef.current.namesEnabled ? r.who?.shortName : undefined,
@@ -4748,6 +4755,50 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
     }
     flushFigures();
+    // Hitboxes test view (lib/star/hitbox.ts): test screens only, and only
+    // with "Show hitboxes" on in their Hitboxes panel. Each body's outline is
+    // drawn at the scale the ball's height is drawn, so you can see whether
+    // the ball is over his head or inside his reach.
+    if (inTestArea() && showHitboxes()) {
+      ctx.save();
+      for (const hb of hitboxShapes(sc)) {
+        const { px, py } = toPx(hb.x, hb.y);
+        const col = hb.side === "def" ? "#f87171" : hb.side === "keeper" ? "#facc15" : "#60a5fa";
+        // On the grass: his reach at his feet.
+        ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.9;
+        ctx.beginPath(); ctx.arc(px, py, hb.rings[0].r * unit, 0, Math.PI * 2); ctx.stroke();
+        // A ball played to him (team-mates): the ring he goes for it in.
+        if (hb.control) {
+          ctx.setLineDash([4, 4]); ctx.globalAlpha = 0.55;
+          ctx.beginPath(); ctx.arc(px, py, hb.control.r * unit, 0, Math.PI * 2); ctx.stroke();
+          ctx.setLineDash([]);
+          // ...and how high he can meet it (a tick on his outline's centre line).
+          const ty = py - hb.control.top * heightScale;
+          ctx.beginPath(); ctx.moveTo(px - 6, ty); ctx.lineTo(px + 6, ty); ctx.stroke();
+        }
+        // Standing up off the grass: his outline at each height.
+        ctx.globalAlpha = 0.22; ctx.fillStyle = hb.foot > 0.02 ? "#fde047" : col;
+        ctx.beginPath();
+        hb.rings.forEach((g, i) => { const X = px - g.r * unit, Y = py - g.z * heightScale; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); });
+        for (let i = hb.rings.length - 1; i >= 0; i--) ctx.lineTo(px + hb.rings[i].r * unit, py - hb.rings[i].z * heightScale);
+        ctx.closePath(); ctx.fill();
+        ctx.globalAlpha = 0.95; ctx.strokeStyle = hb.foot > 0.02 ? "#fde047" : col; ctx.stroke();
+        if (hb.foot > 0.02) {
+          ctx.fillStyle = "#fde047"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center";
+          ctx.fillText(`jump ${hb.foot.toFixed(2)}m`, px, py - hb.rings[hb.rings.length - 1].z * heightScale - 4);
+        }
+      }
+      // The ball: a line from its shadow up to it, so its height reads against them.
+      const bl = ballRef.current;
+      if (bl) {
+        const { px, py } = toPx(bl.pos.x, bl.pos.y);
+        ctx.globalAlpha = 0.9; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py - Math.max(0, bl.z) * heightScale); ctx.stroke();
+        ctx.fillStyle = "#ffffff"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "left";
+        ctx.fillText(`${Math.max(0, bl.z).toFixed(2)}m`, px + 6, py - Math.max(0, bl.z) * heightScale);
+      }
+      ctx.restore();
+    }
     // The orders go over every man now rather than between the groups — the
     // groups no longer exist as layers. Thin gold lines, so they never hide
     // what you are aiming at.
@@ -5368,10 +5419,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // the ball in flight, and a way to set it (ball-physics stills: send a
       // real strike at the post, the bar or the net). Dev only, like the rest.
       ballState: () => (ballRef.current ? { ...ballRef.current, pos: { ...ballRef.current.pos }, vel: { ...ballRef.current.vel } } : null),
-      setBall: (b: { x: number; y: number; z: number; vx: number; vy: number; vz: number; spin?: number }) => {
+      setBall: (b: { x: number; y: number; z: number; vx: number; vy: number; vz: number; spin?: number; shot?: boolean }) => {
         const bl = ballRef.current;
         if (!bl || phaseRef.current !== "flight") return false;
         bl.pos = { x: b.x, y: b.y }; bl.z = b.z; bl.vel = { x: b.vx, y: b.vy }; bl.vz = b.vz; bl.spin = b.spin ?? 0;
+        if (b.shot !== undefined) { bl.shot = b.shot; bl.youStruckAtGoal = b.shot; }
         bl.landAt = undefined;
         return true;
       },
@@ -5887,6 +5939,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         // A dive still in the air lands, and a beaten keeper stays committed.
         brainStep(scenarioRef.current, ballRef.current, dt);
       }
+      // Hitboxes & jumping (New): a man in the air when the move ended lands.
+      if (phaseRef.current === "result" && hitboxesOn()) settleJumps(scenarioRef.current, dt);
 
       // Match feel: New — watch the live ball land and get hit (looks only).
       if (matchFeelOn() && (phaseRef.current === "flight" || phaseRef.current === "result")) feelWatchBall();

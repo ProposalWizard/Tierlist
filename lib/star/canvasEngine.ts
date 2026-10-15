@@ -24,6 +24,11 @@ import {
 // Re-exported so a test that imports the engine flips the SAME switch the
 // engine reads (a node test can load this file and ballPhysics.ts twice).
 export { setBallPhysics, realBallOn } from "./ballPhysics";
+import {
+  hitboxesOn, hitboxDials, bodyReach, headTop, startJump, stepJump, wantsJump, type JumpState,
+} from "./hitbox";
+// Same reason as setBallPhysics: a test flips the switch the engine reads.
+export { setHitboxes, hitboxesOn, applyHitboxDials, hitboxDials, HITBOX_DEFAULTS, bodyReach, headTop } from "./hitbox";
 import { gameplayVersion } from "./gameplayVersion";
 
 export interface Vec2 { x: number; y: number; }
@@ -429,6 +434,8 @@ export interface Follower {
   heldAt?: Vec2;
   /** v0.15 item 17: he is the one team-mate going for a loose ball. */
   chasing?: boolean;
+  /** Hitboxes & jumping (New): his jump, feet height and vertical speed. */
+  jump?: JumpState;
 }
 
 // The team-mate a pass is aimed at. They are a real moving entity: the renderer
@@ -477,6 +484,8 @@ export interface Runner {
   heldAt?: Vec2;
   /** v0.15 item 17: he is the one team-mate going for a loose ball. */
   chasing?: boolean;
+  /** Hitboxes & jumping (New): his jump, feet height and vertical speed. */
+  jump?: JumpState;
 }
 
 // The kind of match situation the player has been put in. Shooting kinds
@@ -957,6 +966,8 @@ const KEEPER_SHUFFLE_MAX = 2.6;
 // gives you the far one, which is why the far post is a finish at all.
 const KEEPER_SHADE = 0.38;
 const KEEPER_VREACH = 2.5;     // metres — fingertips at full stretch
+/** Hitboxes (New): a keeper's reach standing, arms up, before he has to jump. */
+const KEEPER_STAND_REACH = 2.45;
 
 // ── The two numbers that balance the keeper ──────────────────────────────────
 // Everything else about him is presentation. Widen the save radius or speed up
@@ -3972,7 +3983,8 @@ export function strikeModeForHeight(kind: ScenarioKind, z: number): ReceiverStri
   // straight into "z >= VOLLEY_MIN_Z" below and read as a volley instead,
   // which is exactly backwards (an unreachably high ball is the ONE case
   // this ceiling exists to rule out of a first-time strike altogether).
-  if (z > HEADER_MAX_REACH_Z) return "ground";
+  // Hitboxes (New): the ceiling is the top of his jump plus the header bonus.
+  if (z > (hitboxesOn() ? headTop(hitboxDials().jumpHeight) + hitboxDials().headerBonus : HEADER_MAX_REACH_Z)) return "ground";
   if (z >= HEADER_MIN_Z) return "header";
   if (z >= VOLLEY_MIN_Z) return "volley";
   return "ground";
@@ -5690,6 +5702,16 @@ export function isDriveAtGoal(ball: Ball, scenario: Scenario): boolean {
     const dx = pos.x - ball.pos.x, dy = pos.y - ball.pos.y;
     const t = (dx * ball.vel.x + dy * ball.vel.y) / (speed * speed);
     if (t <= 0 || t * speed > toGoal) continue;   // behind you, or past the goal
+    // Hitboxes (New): a ball going over his head at goal is a shot over him,
+    // not a ball to him (Leo: "shoot … over a teammate's head").
+    // Over his head means struck at shot pace and still rising past him, or out of reach
+    // even jumping; a ball dropping onto him is a header played to him
+    // (support.mts: a ball struck at a team-mate is his).
+    if (hitboxesOn()) {
+      const zAt = ball.z + ball.vz * t - 0.5 * G * t * t;
+      const hb = hitboxDials();
+      if (zAt > headTop(0) && ((speed > SHOT_OVER_SPEED && ball.vz - G * t > 0) || zAt > headTop(hb.jumpHeight) + hb.headerBonus)) continue;
+    }
     const offX = dx - ball.vel.x * t, offY = dy - ball.vel.y * t;
     // ── How near his line a man has to be for it to be a ball TO him ──
     //
@@ -6487,7 +6509,11 @@ export function keeperAttempt(scenario: Scenario, xCross: number, zCross: number
   const k = scenario.keeper;
   const reach = keeperSaveRadius(scenario);
   const dx = xCross - k.x;
-  const dz = (zCross - KEEPER_CENTRE_Z) * KEEPER_SAVE_Z_SCALE;
+  let dz = (zCross - KEEPER_CENTRE_Z) * KEEPER_SAVE_Z_SCALE;
+  // Hitboxes (New): above his standing reach (arms up, KEEPER_STAND_REACH) he
+  // has to jump, so height costs him far more there. Under the bar nothing
+  // changes; a chip over a keeper off his line has a real chance.
+  if (hitboxesOn() && zCross > KEEPER_STAND_REACH) dz += (zCross - KEEPER_STAND_REACH) * KEEPER_SAVE_Z_SCALE * hitboxDials().keeperJump;
   const dist = Math.hypot(dx, dz);
   const margin = clamp((reach - dist) / reach, 0, 1);
   const band = reach * KEEPER_QUALITY_BAND;
@@ -7123,6 +7149,161 @@ export function integrateBallOld(ball: Ball, cond: Scenario["conditions"], dt: n
   return bouncedThisStep;
 }
 
+/**
+ * Hitboxes (New): how much of the header bonus a DEFENDER gets when he goes up
+ * for a cross. The bonus is for your men attacking a ball played to them;
+ * measured with the full bonus for defenders too, they cut out 20.2% of
+ * byline crosses (15.1% before) — crosses got worse, which Leo ruled out.
+ */
+const DEF_HEADER_SHARE = 0;
+
+/** Hitboxes (New): a ball this slow (m/s) he steps to and meets at full reach… */
+const SLOW_BALL_FULL = 10;
+/** Hitboxes (New): a ball rising over a team-mate's head this fast (m/s) is a shot over him;
+ *  slower, it is a lofted ball to him (a 0.55-power pass reaches him at 2.1 m, 14.7 m/s). */
+const SHOT_OVER_SPEED = 18;
+/** …and one this quick goes past his shape (narrow at the head). */
+const SLOW_BALL_SHAPED = 16;
+
+/** Hitboxes (New): no team-mate can take a ball above this, however he jumps. */
+const HITBOX_MAX_Z = 3.4;
+
+/**
+ * Hitboxes (New): is this ball in the air meant for another team-mate? It is
+ * when it drops to head height (on its way down, worked out from where it is
+ * now) clearly nearer one of the others — a chip over a man's head to the
+ * runner behind him is not his to take. Only for a ball above his chest: a
+ * low ball running through to him is his, as ever.
+ *
+ * The first bounce (ball.landAt) was tried first and was wrong for crosses:
+ * a cross carries on past the man it is for, so it "belonged" to whoever
+ * stood further on — byline crosses reached their man 81.6% (84.9% before).
+ */
+function meantForOtherMate(ball: Ball, p: Vec2, mates: { pos: Vec2 }[]): boolean {
+  if (ball.z < MEANT_MIN_Z) return false;
+  const drop = dropPoint(ball);
+  if (!drop) return false;
+  const mine = Math.hypot(p.x - drop.x, p.y - drop.y);
+  return mates.some((m) => m.pos !== p && Math.hypot(m.pos.x - drop.x, m.pos.y - drop.y) + 1.5 < mine);
+}
+const MEANT_MIN_Z = 1.2;
+const DROP_Z = 2.0;
+
+/** Where an airborne ball comes down through head height (no drag, no curl). */
+function dropPoint(ball: Ball): Vec2 | null {
+  // z(t) = z + vz t − ½ g t² = DROP_Z, the later root (on the way down).
+  const a = 0.5 * G, b = -ball.vz, c = DROP_Z - ball.z;
+  const disc = b * b - 4 * a * c;
+  if (disc < 0) return null;   // never gets that low (it is never above it) — n/a
+  const t = Math.max(0, (-b + Math.sqrt(disc)) / (2 * a));
+  return { x: ball.pos.x + ball.vel.x * t, y: ball.pos.y + ball.vel.y * t };
+}
+
+/**
+ * Hitboxes (New): every body's jump for this tick. A defender goes up for a
+ * dropping ball in the air that he could only reach by jumping (never for a
+ * shot — he blocks those standing); a team-mate goes up for a ball played to
+ * him. The free-kick wall keeps its own jump (stepDefenders). The jump is
+ * physical: the feet height here is the height the contact tests read, and
+ * CanvasMatch draws each man at it.
+ */
+function stepHitboxJumps(scenario: Scenario, ball: Ball, dt: number, bodyOnly: boolean): void {
+  const hb = hitboxDials();
+  const live = !ball.resting && !ball.inNet && ball.z > 0.5;
+  for (const d of scenario.defenders) {
+    if (d.baseRole === "hold" && scenario.kind === "free_kick") continue;
+    stepJump(d, dt);
+    if (!live || bodyOnly || (d.z ?? 0) > 0 || (d.vz ?? 0) > 0) continue;
+    const lowR = DEF_BLOCK_R * defenderReachMultiplier(d.who?.defending ?? d.who?.overall);
+    // A slow ball he can step under: his full reach (as in the contact test below).
+    const quick = clamp((Math.hypot(ball.vel.x, ball.vel.y) - SLOW_BALL_FULL) / (SLOW_BALL_SHAPED - SLOW_BALL_FULL), 0, 1);
+    const reach = lowR * hb.reachLow * (1 - quick) + bodyReach(lowR, hb.standHeight, 0) * quick + hb.headerBonus * DEF_HEADER_SHARE;
+    // He reads a ball that will be coming DOWN on him; one still rising as it
+    // passes (a chip from close range) goes over before he can time a jump.
+    const t = Math.max(0, (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y)) / Math.max(1, Math.hypot(ball.vel.x, ball.vel.y)));
+    if (ball.vz - G * t >= 0) continue;
+    if (wantsJump(ball, d, reach, hb.headerBonus * DEF_HEADER_SHARE)) startJump(d);
+  }
+  const mates: { pos: Vec2; j: JumpState }[] = [];
+  for (const r of [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]) {
+    r.jump ??= {};
+    mates.push({ pos: r.pos, j: r.jump });
+  }
+  if (goalInView(scenario.kind) && !scenario.follower.shot) {
+    scenario.follower.jump ??= {};
+    mates.push({ pos: { x: scenario.follower.x, y: scenario.follower.y }, j: scenario.follower.jump });
+  }
+  for (const m of mates) {
+    stepJump(m.j, dt);
+    if (!live || bodyOnly || scenario.receiverDone || (m.j.z ?? 0) > 0 || (m.j.vz ?? 0) > 0) continue;
+    if (meantForOtherMate(ball, m.pos, mates)) continue;
+    if (wantsJump(ball, m.pos, PASS_CONTROL_R, hb.headerBonus)) startJump(m.j);
+  }
+}
+
+/** One body's hitbox, for the test screens' "Show hitboxes" drawing. */
+export interface HitboxShape {
+  x: number; y: number;
+  side: "def" | "mate" | "keeper";
+  /** Feet height (m) — above 0 while he is in the air. */
+  foot: number;
+  /** His outline: reach (m, along the ground) at each height (m), bottom to top. */
+  rings: { z: number; r: number }[];
+  /** A team-mate's reach for a ball played TO him, and how high that goes. */
+  control?: { r: number; top: number };
+}
+
+/**
+ * Every body's hitbox as the engine tests it right now (New or Old, whichever
+ * is on): defenders for a pass (the wider of the two reaches), team-mates for
+ * a shot going over them, plus the reach for a ball played to them.
+ */
+export function hitboxShapes(scenario: Scenario): HitboxShape[] {
+  const out: HitboxShape[] = [];
+  const on = hitboxesOn();
+  const hb = hitboxDials();
+  const prof = (lowR: number, foot: number) => {
+    const zs = [0, 0.5, 0.9, 1.3, 1.6, hb.standHeight, hb.standHeight + BALL_R - 0.005];
+    return zs.map((z) => ({ z: foot + z, r: bodyReach(lowR, foot + z, foot) }));
+  };
+  for (const d of scenario.defenders) {
+    const foot = d.z ?? 0;
+    const lowR = DEF_BLOCK_R * defenderReachMultiplier(d.who?.defending ?? d.who?.overall);
+    const wall = d.baseRole === "hold" && scenario.kind === "free_kick";
+    const top = wall ? Math.min(foot + DEF_BLOCK_H, WALL_TOP) : foot + DEF_BLOCK_H;
+    out.push({
+      x: d.x, y: d.y, side: "def", foot,
+      rings: on && !wall ? prof(lowR, foot) : [{ z: foot, r: lowR }, { z: top, r: lowR }],
+    });
+  }
+  const mates: { x: number; y: number; foot: number }[] = [
+    ...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners,
+  ].map((r) => ({ x: r.pos.x, y: r.pos.y, foot: r.jump?.z ?? 0 }));
+  if (goalInView(scenario.kind) && !scenario.follower.shot) mates.push({ x: scenario.follower.x, y: scenario.follower.y, foot: scenario.follower.jump?.z ?? 0 });
+  for (const m of mates) {
+    out.push({
+      x: m.x, y: m.y, side: "mate", foot: m.foot,
+      rings: on ? prof(BODY_R, m.foot) : [{ z: 0, r: BODY_R }, { z: 2.6, r: BODY_R }],
+      control: { r: PASS_CONTROL_R, top: on ? headTop(m.foot) + hb.headerBonus : 2.6 },
+    });
+  }
+  const k = scenario.keeper;
+  if (goalInView(scenario.kind)) {
+    out.push({ x: k.x, y: k.y, side: "keeper", foot: 0, rings: [{ z: 0, r: KEEPER_BODY_R }, { z: KEEPER_VREACH, r: KEEPER_BODY_R }] });
+  }
+  return out;
+}
+
+/**
+ * Hitboxes (New): a jump still in the air after the move is over lands (the
+ * result screen keeps calling this, as it does stepKeeper). Starts none.
+ */
+export function settleJumps(scenario: Scenario, dt: number): void {
+  for (const d of scenario.defenders) if (!(d.baseRole === "hold" && scenario.kind === "free_kick")) stepJump(d, dt);
+  for (const r of [...(scenario.runner ? [scenario.runner] : []), ...scenario.secondaryRunners]) if (r.jump) stepJump(r.jump, dt);
+  if (scenario.follower.jump) stepJump(scenario.follower.jump, dt);
+}
+
 function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: number): Outcome | null {
   // Animation clock only (BallAction.t). Read by nothing else.
   ball.clock = (ball.clock ?? 0) + dt;
@@ -7181,6 +7362,10 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     return null;
   }
 
+  // Hitboxes (New): bodies jump for a ball in the air — a real jump, the
+  // height the contact tests below read and the picture draws.
+  if (hitboxesOn()) stepHitboxJumps(scenario, ball, dt, ball.shot === true || headedForGoal(ball, scenario));
+
   // --- A defender gets to it ---
   //
   // Blocking a shot, cutting out a pass, or simply arriving at a loose ball
@@ -7196,16 +7381,43 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     // the body reach on passes too, an under-hit pass got through 99% of the
     // time (tests/star/support.mts wants under 70%).
     const bodyOnly = ball.shot === true || headedForGoal(ball, scenario);
+    const shaped = hitboxesOn();
     for (const d of scenario.defenders) {
       const foot = d.z ?? 0;
-      const top = d.baseRole === "hold"
-        ? Math.min(foot + DEF_BLOCK_H, WALL_TOP)
-        : foot + DEF_BLOCK_H;
-      if (ball.z < foot || ball.z > top) continue;
-      // Right on top of a ball travelling at pace; merely near a slow one.
-      const reach = (bodyOnly
-        ? (speed > 12 ? BODY_BLOCK_R : BODY_BLOCK_SLOW_R)
-        : (speed > 12 ? DEF_BLOCK_R : CONTROL_R)) * defenderReachMultiplier(d.who?.defending ?? d.who?.overall);
+      let reach: number;
+      if (shaped && !(d.baseRole === "hold" && scenario.kind === "free_kick")) {
+        // Hitboxes (New): the shape of a man, not a cylinder — see
+        // lib/star/hitbox.ts. A shot: his body plus a stretch (block bonus).
+        // A pass or cross in the air: he goes up for it (header bonus).
+        const hb = hitboxDials();
+        const lowR = (bodyOnly
+          ? (speed > 12 ? BODY_BLOCK_R : BODY_BLOCK_SLOW_R)
+          : (speed > 12 ? DEF_BLOCK_R : CONTROL_R)) * defenderReachMultiplier(d.who?.defending ?? d.who?.overall);
+        // …a ball coming down on him (a cross, a long ball). One still rising
+        // past him (a chip from close in) he can only meet standing.
+        const aerial = !bodyOnly && ball.z > hb.standHeight * 0.7 && ball.vz < 0;
+        const extraUp = aerial ? hb.headerBonus * DEF_HEADER_SHARE : 0;
+        if (ball.z < foot - BALL_R || ball.z > headTop(foot) + extraUp) continue;
+        // A slow ball he can step under and meet with whatever he likes, so
+        // it keeps his full reach up to his head; the shape (narrow at the
+        // head) is for a ball going past him quicker than he can move. Without
+        // this an under-hit pass sailed past at chest height 87% of the time
+        // (tests/star/support.mts wants under 70%).
+        const shapedR = bodyReach(lowR, Math.min(ball.z, headTop(foot) - 0.01), foot);
+        const quick = clamp((speed - SLOW_BALL_FULL) / (SLOW_BALL_SHAPED - SLOW_BALL_FULL), 0, 1);
+        reach = (bodyOnly ? shapedR : lowR * hb.reachLow * (1 - quick) + shapedR * quick)
+          // The block bonus is a leg or body thrown at it: full up to his chest, gone by his head.
+          + (bodyOnly ? hb.blockBonus * clamp((hb.standHeight - (ball.z - foot)) / (hb.standHeight * 0.3), 0, 1) : extraUp);
+      } else {
+        const top = d.baseRole === "hold"
+          ? Math.min(foot + DEF_BLOCK_H, WALL_TOP)
+          : foot + DEF_BLOCK_H;
+        if (ball.z < foot || ball.z > top) continue;
+        // Right on top of a ball travelling at pace; merely near a slow one.
+        reach = (bodyOnly
+          ? (speed > 12 ? BODY_BLOCK_R : BODY_BLOCK_SLOW_R)
+          : (speed > 12 ? DEF_BLOCK_R : CONTROL_R)) * defenderReachMultiplier(d.who?.defending ?? d.who?.overall);
+      }
       if (Math.hypot(d.x - ball.pos.x, d.y - ball.pos.y) < reach) {
         // A defender in the way of a ball going in has BLOCKED it; a defender
         // in the way of anything else has cut it out. Both cost you the ball and
@@ -7336,7 +7548,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   // inside his own two-metre control radius and collected it again — then
   // shot, then collected, then shot. A move either had no team-mate shot at all
   // or ran to the cap: 306 of 1200, and never one, two or three of them.
-  if (!scenario.receiverDone && ball.z < 2.6 && ball.contactCd <= 0) {
+  if (!scenario.receiverDone && ball.z < (hitboxesOn() ? HITBOX_MAX_Z : 2.6) && ball.contactCd <= 0) {
     // Was this played TO him, or has he run it down? It changes what he does
     // with it when he gets there.
     const scrambled = ball.loose || ball.resting || speed < DEAD_BALL_SPEED;
@@ -7360,6 +7572,8 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
       // He is somebody too. A tap-in off a parry is still a goal for the man
       // who put it away.
       who: scenario.follower.who,
+      // His jump (Hitboxes New) — read only.
+      jump: scenario.follower.jump,
     };
     const candidates: Runner[] = scenario.runner
       ? [scenario.runner, ...scenario.secondaryRunners]
@@ -7415,7 +7629,17 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
       // the ball goes anywhere within my player, he should have the ball."
       // v0.15 item 13: the man a chance was built around steps out of a real
       // shot too — it was not played to him, or it would not be a shot.
-      if (shotAtGoal && swept > BODY_R) continue;
+      if (hitboxesOn()) {
+        // Hitboxes (New), lib/star/hitbox.ts. A shot over him, or a ball in
+        // the air played to somebody else, only touches him if it hits his
+        // body (shaped like a man: nothing above his head unless he jumped).
+        // A ball played to HIM he goes for: same 2 m as ever, up to the top
+        // of his jump plus the header bonus.
+        const foot = r.jump?.z ?? 0;
+        if (shotAtGoal || (meantForOtherMate(ball, r.pos, candidates))) {
+          if (swept > bodyReach(BODY_R, ball.z, foot)) continue;
+        } else if (ball.z > headTop(foot) + hitboxDials().headerBonus) continue;
+      } else if (shotAtGoal && swept > BODY_R) continue;
 
       if (swept < PASS_CONTROL_R) {
         // Position plus involvement. He was beyond the second-last opponent

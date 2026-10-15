@@ -4647,83 +4647,83 @@
     },
     "gallery-sim-buildup-1194677198": {
       "id": "gallery-sim-buildup-1194677198",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 37.32,
+        "centerY": 36.53,
+        "viewHeight": 42,
+        "facing": "up"
+      },
       "ball": {
         "x": 39.59,
         "y": 40.46
       },
-      "kind": "open_play",
-      "name": "buildup (sim)",
-      "camera": {
-        "facing": "up",
-        "centerX": 37.32,
-        "centerY": 36.53,
-        "viewHeight": 42
-      },
-      "source": {
-        "kind": "buildup",
-        "seed": 1194677198,
-        "tool": "gallery",
-        "planId": null
-      },
       "players": [
         {
-          "x": 43.38,
-          "y": 33.25,
           "id": "i0",
           "side": "opponent",
+          "x": 42.62,
+          "y": 32.14,
           "label": "D1"
         },
         {
-          "x": 36.43,
-          "y": 30.48,
           "id": "i1",
           "side": "opponent",
+          "x": 36.23,
+          "y": 30.28,
           "label": "D2"
         },
         {
+          "id": "i4",
+          "side": "opponent",
           "x": 34,
           "y": 0.55,
-          "id": "i2",
-          "side": "opponent",
           "label": "GK"
         },
         {
-          "x": 41.83,
-          "y": 29.04,
-          "id": "i3",
+          "id": "i5",
           "side": "teammate",
+          "x": 39.51,
+          "y": 27.53,
           "label": "TARGET"
         },
         {
+          "id": "i6",
+          "side": "teammate",
           "x": 34.72,
           "y": 47.02,
-          "id": "i4",
-          "side": "teammate",
           "label": "R1"
         },
         {
-          "x": 28.74,
-          "y": 35.52,
-          "id": "i5",
+          "id": "i7",
           "side": "teammate",
+          "x": 27.38,
+          "y": 33.8,
           "label": "SUP"
         },
         {
+          "id": "i8",
+          "side": "you",
           "x": 40.89,
           "y": 40.61,
-          "id": "i7",
-          "side": "you",
           "label": "YOU"
         },
         {
-          "x": 30.39,
-          "y": 38.03,
           "id": "iadd1",
           "side": "opponent",
+          "x": 32.26,
+          "y": 34.09,
           "label": "OPP"
         }
       ],
-      "updatedAt": 1790298403584
+      "updatedAt": 1792012115884,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1194677198,
+        "planId": null
+      }
     },
     "gallery-sim-one_on_one-81634676": {
       "id": "gallery-sim-one_on_one-81634676",
@@ -4800,90 +4800,97 @@
     },
     "gallery-sim-buildup-1032559854": {
       "id": "gallery-sim-buildup-1032559854",
-      "ball": {
-        "x": 19.72,
-        "y": 43.01
-      },
-      "kind": "open_play",
       "name": "buildup (sim)",
+      "kind": "open_play",
       "camera": {
-        "facing": "up",
         "centerX": 29.67,
         "centerY": 37.11,
-        "viewHeight": 42
+        "viewHeight": 42,
+        "facing": "up"
       },
-      "source": {
-        "kind": "buildup",
-        "seed": 1032559854,
-        "tool": "gallery",
-        "planId": null
+      "ball": {
+        "x": 22.6,
+        "y": 43.62
       },
       "players": [
         {
-          "x": 36.5,
-          "y": 30.11,
           "id": "i0",
           "side": "opponent",
+          "x": 33.57,
+          "y": 27.23,
           "label": "D1"
         },
         {
-          "x": 33.59,
-          "y": 38.1,
           "id": "i1",
           "side": "opponent",
+          "x": 36.62,
+          "y": 36.89,
           "label": "D2"
         },
         {
+          "id": "i3",
+          "side": "opponent",
           "x": 34,
           "y": 0.55,
-          "id": "i2",
-          "side": "opponent",
           "label": "GK"
         },
         {
-          "x": 40.85,
-          "y": 29.81,
-          "id": "i3",
+          "id": "i4",
           "side": "teammate",
+          "x": 38.48,
+          "y": 21.83,
           "label": "TARGET"
         },
         {
-          "x": 32.04,
-          "y": 54.32,
-          "id": "i4",
+          "id": "i5",
           "side": "teammate",
+          "x": 37.04,
+          "y": 50.58,
           "label": "R1"
         },
         {
-          "x": 20.74,
-          "y": 32.74,
-          "id": "i5",
-          "side": "teammate",
-          "label": "SUP"
-        },
-        {
-          "x": 36.33,
-          "y": 34.25,
           "id": "i6",
           "side": "teammate",
+          "x": 26.7,
+          "y": 35.62,
           "label": "SUP"
         },
         {
-          "x": 21.02,
-          "y": 43.16,
           "id": "i7",
+          "side": "teammate",
+          "x": 35.98,
+          "y": 33.24,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
           "side": "you",
+          "x": 23.85,
+          "y": 44.22,
           "label": "YOU"
         },
         {
-          "x": 20.24,
-          "y": 35.41,
           "id": "iadd1",
           "side": "opponent",
+          "x": 24.13,
+          "y": 36.57,
+          "label": "OPP"
+        },
+        {
+          "id": "iadd2",
+          "side": "opponent",
+          "x": 32.07,
+          "y": 45.05,
           "label": "OPP"
         }
       ],
-      "updatedAt": 1790213250516
+      "updatedAt": 1792012096067,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1032559854,
+        "planId": null
+      }
     },
     "gallery-sim-through_ball-1548805818": {
       "id": "gallery-sim-through_ball-1548805818",
@@ -14153,6 +14160,3058 @@
         "tool": "gallery",
         "kind": "long_range",
         "seed": 1919659665,
+        "planId": null
+      }
+    },
+    "gallery-main-buildup": {
+      "id": "gallery-main-buildup",
+      "name": "buildup",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 31.89,
+        "centerY": 37.5,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 25.88,
+        "y": 46.04
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 26.95,
+          "y": 32.93,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 38.42,
+          "y": 24.29,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 36.19,
+          "y": 21.36,
+          "label": "TARGET"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 37.45,
+          "y": 50.38,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 25.32,
+          "y": 31.2,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 27.18,
+          "y": 46.19,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792010081485,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1012,
+        "planId": null
+      }
+    },
+    "gallery-v-buildup-8201": {
+      "id": "gallery-v-buildup-8201",
+      "name": "buildup",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 31.33,
+        "centerY": 37.5,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 28.73,
+        "y": 43.09
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 36.79,
+          "y": 25.09,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 31.46,
+          "y": 32.83,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 23.12,
+          "y": 21.25,
+          "label": "TARGET"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 27.27,
+          "y": 50.75,
+          "label": "R1"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 36.26,
+          "y": 27.15,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 23.65,
+          "y": 32.06,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 30.03,
+          "y": 43.24,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "opponent",
+          "x": 26.51,
+          "y": 24.87,
+          "label": "OPP"
+        },
+        {
+          "id": "iadd2",
+          "side": "opponent",
+          "x": 23.91,
+          "y": 36.81,
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1792012129577,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 8201,
+        "planId": null
+      }
+    },
+    "gallery-v-buildup-8203": {
+      "id": "gallery-v-buildup-8203",
+      "name": "buildup",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 24.03,
+        "centerY": 37.5,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 16.79,
+        "y": 49.15
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 16.44,
+          "y": 28.92,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 27.53,
+          "y": 27.27,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 26.31,
+          "y": 34.12,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 29.53,
+          "y": 28.03,
+          "label": "TARGET"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 14.91,
+          "y": 20,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "you",
+          "x": 18.09,
+          "y": 49.3,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "teammate",
+          "x": 33.95,
+          "y": 49.94,
+          "label": "MATE"
+        },
+        {
+          "id": "iadd2",
+          "side": "opponent",
+          "x": 30.72,
+          "y": 46.32,
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1792010801500,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 8203,
+        "planId": null
+      }
+    },
+    "gallery-v-buildup-8206": {
+      "id": "gallery-v-buildup-8206",
+      "name": "buildup",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 29.77,
+        "centerY": 37.5,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 20.67,
+        "y": 45.12
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 21.58,
+          "y": 36.89,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 30.26,
+          "y": 34.27,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 33.92,
+          "y": 31.91,
+          "label": "TARGET"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 37.78,
+          "y": 47.91,
+          "label": "R1"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 21.08,
+          "y": 25.95,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 21.97,
+          "y": 45.27,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792011176691,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 8206,
+        "planId": null
+      }
+    },
+    "gallery-v-buildup-8207": {
+      "id": "gallery-v-buildup-8207",
+      "name": "buildup",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 30,
+        "centerY": 35.74,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 22.64,
+        "y": 41.92
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 21.6,
+          "y": 31.23,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 38.74,
+          "y": 30.94,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 36.62,
+          "y": 23.48,
+          "label": "TARGET"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 18.27,
+          "y": 48.98,
+          "label": "R1"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 24.62,
+          "y": 26.6,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 36.43,
+          "y": 27.88,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "you",
+          "x": 23.94,
+          "y": 42.07,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "opponent",
+          "x": 32.32,
+          "y": 27.02,
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1792011277915,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 8207,
+        "planId": null
+      }
+    },
+    "gallery-v-buildup-8209": {
+      "id": "gallery-v-buildup-8209",
+      "name": "buildup",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 23,
+        "centerY": 37.5,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 21.48,
+        "y": 50.1
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 19.27,
+          "y": 40.86,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 26.28,
+          "y": 28.54,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 30.75,
+          "y": 40.2,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 30.88,
+          "y": 34.04,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 17.4,
+          "y": 54.34,
+          "label": "R1"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 25.95,
+          "y": 41.83,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 14.04,
+          "y": 31.74,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 22.78,
+          "y": 50.25,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792011301067,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 8209,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-24498973": {
+      "id": "gallery-sim-buildup-24498973",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 31.15,
+        "centerY": 34.79,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 29.75,
+        "y": 42.47
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 26.24,
+          "y": 25.39,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 40.07,
+          "y": 37.58,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 33.49,
+          "y": 32.08,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 24.92,
+          "y": 36.42,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.54,
+          "label": "GK"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 39.69,
+          "y": 21.21,
+          "label": "TARGET"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 39.07,
+          "y": 39.78,
+          "label": "R1"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 34.22,
+          "y": 32.5,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 24.43,
+          "y": 31.42,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "you",
+          "x": 31.05,
+          "y": 42.62,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012513346,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 24498973,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1337905061": {
+      "id": "gallery-sim-buildup-1337905061",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 44.06,
+        "centerY": 43.6,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 46.82,
+        "y": 51.2
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 38.54,
+          "y": 29.62,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 50.84,
+          "y": 39.72,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 34.93,
+          "y": 45.46,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 36.91,
+          "y": 33.52,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 49.41,
+          "y": 28.52,
+          "label": "R1"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 36.59,
+          "y": 47.06,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 54.68,
+          "y": 37.29,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 45.52,
+          "y": 51.35,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "opponent",
+          "x": 41.32,
+          "y": 43.18,
+          "label": "OPP"
+        },
+        {
+          "id": "iadd2",
+          "side": "opponent",
+          "x": 46.18,
+          "y": 31.6,
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1792012552746,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1337905061,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-413378887": {
+      "id": "gallery-sim-buildup-413378887",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 24.66,
+        "centerY": 42.65,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 16.97,
+        "y": 49.27
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 20.22,
+          "y": 33.2,
+          "label": "D1"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 28.48,
+          "y": 39.86,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 30.16,
+          "y": 46.66,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 18.1,
+          "y": 37.02,
+          "label": "TARGET"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 33.86,
+          "y": 51.45,
+          "label": "R1"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 15.32,
+          "y": 18.9,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 18.27,
+          "y": 49.42,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "teammate",
+          "x": 33.69,
+          "y": 39.12,
+          "label": "MATE"
+        }
+      ],
+      "updatedAt": 1792012602963,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 413378887,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-456369111": {
+      "id": "gallery-sim-buildup-456369111",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 24.23,
+        "centerY": 40.46,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 29.94,
+        "y": 51.45
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 20.91,
+          "y": 46.88,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 17.85,
+          "y": 34.13,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 30.3,
+          "y": 39.77,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 23.21,
+          "y": 37.93,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 16.23,
+          "y": 51,
+          "label": "R1"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 14.45,
+          "y": 33.24,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 32.45,
+          "y": 52.5,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012637130,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 456369111,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1516732285": {
+      "id": "gallery-sim-buildup-1516732285",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 39.15,
+        "centerY": 39.48,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 47.34,
+        "y": 45.96
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 39.69,
+          "y": 37.62,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 47.65,
+          "y": 31.47,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 45.09,
+          "y": 32.39,
+          "label": "TARGET"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 37.7,
+          "y": 47.87,
+          "label": "R1"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 32.66,
+          "y": 35.69,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "you",
+          "x": 48.72,
+          "y": 46.06,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012673363,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1516732285,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-656029079": {
+      "id": "gallery-sim-buildup-656029079",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 43.54,
+        "centerY": 41.93,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 46.56,
+        "y": 51.23
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 39.72,
+          "y": 32.32,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 49.38,
+          "y": 32.73,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 37.69,
+          "y": 44.14,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 37.7,
+          "y": 35.39,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 51.24,
+          "y": 55.62,
+          "label": "R1"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 35.11,
+          "y": 48.36,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 53.07,
+          "y": 30.54,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 45.26,
+          "y": 51.38,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012686859,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 656029079,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1232513499": {
+      "id": "gallery-sim-buildup-1232513499",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 23.75,
+        "centerY": 40.41,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 29.98,
+        "y": 52.38
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 31.16,
+          "y": 38.96,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 16.26,
+          "y": 35.03,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 20.5,
+          "y": 44.94,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 22.82,
+          "y": 37.98,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 16.04,
+          "y": 49.9,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 13.51,
+          "y": 34.21,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "you",
+          "x": 32.49,
+          "y": 53.43,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012689554,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1232513499,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-341950845": {
+      "id": "gallery-sim-buildup-341950845",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 38.73,
+        "centerY": 35.02,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 48.14,
+        "y": 44.36
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 44.48,
+          "y": 37.02,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 36.16,
+          "y": 35.05,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.54,
+          "label": "GK"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 32.21,
+          "y": 31.6,
+          "label": "TARGET"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 47.86,
+          "y": 26.89,
+          "label": "SUP"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 34.27,
+          "y": 52.42,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "you",
+          "x": 46.84,
+          "y": 44.51,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "opponent",
+          "x": 43.18,
+          "y": 26.16,
+          "label": "OPP"
+        },
+        {
+          "id": "iadd2",
+          "side": "opponent",
+          "x": 30.85,
+          "y": 48.41,
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1792012706282,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 341950845,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-361194408": {
+      "id": "gallery-sim-buildup-361194408",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 37.97,
+        "centerY": 37.02,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 44.49,
+        "y": 43.86
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 45.5,
+          "y": 34.01,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 34.06,
+          "y": 26.56,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 33.04,
+          "y": 35.54,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 42.9,
+          "y": 25.62,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 44.26,
+          "y": 26.57,
+          "label": "TARGET"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 31.58,
+          "y": 50.05,
+          "label": "R1"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 47.99,
+          "y": 35.61,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 35.45,
+          "y": 32.16,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "you",
+          "x": 43.24,
+          "y": 44.46,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012727243,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 361194408,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-13983760": {
+      "id": "gallery-sim-buildup-13983760",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 24.49,
+        "centerY": 41.16,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 21.49,
+        "y": 51.51
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 18.55,
+          "y": 30.24,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 27.41,
+          "y": 30.67,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 29.6,
+          "y": 43.97,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 14.98,
+          "y": 28.77,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 16.16,
+          "y": 56.56,
+          "label": "R1"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 18.88,
+          "y": 39.4,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 32.59,
+          "y": 36.65,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 22.79,
+          "y": 51.66,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "opponent",
+          "x": 20.35,
+          "y": 36.9,
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1792012748034,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 13983760,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-990469537": {
+      "id": "gallery-sim-buildup-990469537",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 44.41,
+        "centerY": 45.25,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 37.22,
+        "y": 52.45
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 38.53,
+          "y": 39.59,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 44.82,
+          "y": 43.56,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 51.16,
+          "y": 34.48,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 43.48,
+          "y": 40.21,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 53.01,
+          "y": 51.54,
+          "label": "R1"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 55.22,
+          "y": 36.09,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "you",
+          "x": 34.71,
+          "y": 53.5,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012756483,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 990469537,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1306618576": {
+      "id": "gallery-sim-buildup-1306618576",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 27.72,
+        "centerY": 34.44,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 20.76,
+        "y": 45.75
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 29.33,
+          "y": 37.59,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 20.37,
+          "y": 32.65,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 36.07,
+          "y": 35.27,
+          "label": "TARGET"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 30.83,
+          "y": 48.53,
+          "label": "SUP"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 21.97,
+          "y": 32.46,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "you",
+          "x": 19.38,
+          "y": 45.85,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012765266,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1306618576,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-509900156": {
+      "id": "gallery-sim-buildup-509900156",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 40.81,
+        "centerY": 39.42,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 47.34,
+        "y": 44.35
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 45.64,
+          "y": 35.51,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 34.79,
+          "y": 31.56,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 36.62,
+          "y": 46.57,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 43.6,
+          "y": 25.39,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.54,
+          "label": "GK"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 49.2,
+          "y": 26.08,
+          "label": "TARGET"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 34.52,
+          "y": 54.05,
+          "label": "R1"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 31.17,
+          "y": 26.56,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 46.04,
+          "y": 44.5,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012779418,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 509900156,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-177359192": {
+      "id": "gallery-sim-buildup-177359192",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 24.3,
+        "centerY": 45.52,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 29.5,
+        "y": 52.02
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 19.37,
+          "y": 33.66,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 22.29,
+          "y": 46.49,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 29.33,
+          "y": 41.07,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 15.06,
+          "y": 32.38,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 23.28,
+          "y": 36.93,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 14.6,
+          "y": 51.2,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "you",
+          "x": 32.01,
+          "y": 53.07,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012785395,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 177359192,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-791889098": {
+      "id": "gallery-sim-buildup-791889098",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 24.29,
+        "centerY": 44.31,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 22.05,
+        "y": 49.5
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 20.78,
+          "y": 42.94,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 27.15,
+          "y": 31.63,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 30.14,
+          "y": 43.24,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.54,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 30.09,
+          "y": 33.99,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 17.58,
+          "y": 54.58,
+          "label": "R1"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 14.59,
+          "y": 30.34,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 33.22,
+          "y": 45.98,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 23.35,
+          "y": 49.65,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "opponent",
+          "x": 16.86,
+          "y": 29.63,
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1792012810283,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 791889098,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1740608729": {
+      "id": "gallery-sim-buildup-1740608729",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 37.23,
+        "centerY": 39.43,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 41.17,
+        "y": 45.63
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 30.26,
+          "y": 24.24,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 40.81,
+          "y": 35.35,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 34.81,
+          "y": 23.52,
+          "label": "TARGET"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 47.33,
+          "y": 36.97,
+          "label": "R1"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 29.17,
+          "y": 43.33,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "you",
+          "x": 39.87,
+          "y": 45.78,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012845579,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1740608729,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-866015885": {
+      "id": "gallery-sim-buildup-866015885",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 41.26,
+        "centerY": 40.08,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 48.44,
+        "y": 46.06
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 40.31,
+          "y": 41.4,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 51.51,
+          "y": 29.43,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 41.88,
+          "y": 28.83,
+          "label": "TARGET"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 36.38,
+          "y": 48.64,
+          "label": "R1"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 53.49,
+          "y": 30.74,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "you",
+          "x": 49.82,
+          "y": 46.16,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "opponent",
+          "x": 45.32,
+          "y": 24.77,
+          "label": "OPP"
+        },
+        {
+          "id": "iadd2",
+          "side": "opponent",
+          "x": 35.7,
+          "y": 25.35,
+          "label": "OPP"
+        },
+        {
+          "id": "iadd3",
+          "side": "teammate",
+          "x": 29.17,
+          "y": 33.42,
+          "label": "MATE"
+        },
+        {
+          "id": "iadd4",
+          "side": "opponent",
+          "x": 28.13,
+          "y": 29.87,
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1792012885635,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 866015885,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1171351057": {
+      "id": "gallery-sim-buildup-1171351057",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 23.09,
+        "centerY": 40.63,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 29.61,
+        "y": 52.28
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 30.59,
+          "y": 40.75,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 20.02,
+          "y": 44.86,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 16.85,
+          "y": 34.64,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 21.65,
+          "y": 37.97,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 15.15,
+          "y": 49.18,
+          "label": "R1"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 12.18,
+          "y": 34.98,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "you",
+          "x": 32.12,
+          "y": 53.33,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012888411,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1171351057,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-609850327": {
+      "id": "gallery-sim-buildup-609850327",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 44.54,
+        "centerY": 42.08,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 46.79,
+        "y": 51.89
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 38.54,
+          "y": 30.59,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 52.32,
+          "y": 38.78,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 35.44,
+          "y": 46.48,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 46.05,
+          "y": 42.53,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 47.13,
+          "y": 31.55,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.57,
+          "label": "GK"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 40.05,
+          "y": 35.11,
+          "label": "TARGET"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 55.07,
+          "y": 36.8,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 48.36,
+          "y": 28.94,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "teammate",
+          "x": 37.47,
+          "y": 47.79,
+          "label": "SUP"
+        },
+        {
+          "id": "i10",
+          "side": "you",
+          "x": 45.49,
+          "y": 52.04,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012904434,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 609850327,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1864411037": {
+      "id": "gallery-sim-buildup-1864411037",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 36.13,
+        "centerY": 36.59,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 37.55,
+        "y": 43.38
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 29.7,
+          "y": 40.39,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 30.04,
+          "y": 26.96,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 42.9,
+          "y": 24.57,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 43.62,
+          "y": 36.17,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 27.29,
+          "y": 20.1,
+          "label": "TARGET"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 26.93,
+          "y": 46.88,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 44.97,
+          "y": 31.96,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "you",
+          "x": 36.25,
+          "y": 43.53,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012916586,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1864411037,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1310775898": {
+      "id": "gallery-sim-buildup-1310775898",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 27.96,
+        "centerY": 34.78,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 20.5,
+        "y": 46.6
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 29.1,
+          "y": 36.36,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 21.79,
+          "y": 31.32,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.57,
+          "label": "GK"
+        },
+        {
+          "id": "i3",
+          "side": "teammate",
+          "x": 31.71,
+          "y": 47.89,
+          "label": "TARGET"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 22.77,
+          "y": 33.11,
+          "label": "SUP"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 36.8,
+          "y": 34.68,
+          "label": "SUP"
+        },
+        {
+          "id": "i6",
+          "side": "you",
+          "x": 19.12,
+          "y": 46.7,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012926722,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1310775898,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-786115470": {
+      "id": "gallery-sim-buildup-786115470",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 43.71,
+        "centerY": 42.46,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 37.39,
+        "y": 51.32
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 45.59,
+          "y": 46.54,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 49.55,
+          "y": 35.28,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 38.07,
+          "y": 38.14,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 43.74,
+          "y": 37.87,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 51.83,
+          "y": 52.68,
+          "label": "R1"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 53.42,
+          "y": 33.84,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "you",
+          "x": 34.88,
+          "y": 52.37,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012931714,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 786115470,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1423749708": {
+      "id": "gallery-sim-buildup-1423749708",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 41.6,
+        "centerY": 38.93,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 47.83,
+        "y": 46.98
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 40.75,
+          "y": 39.45,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 51.3,
+          "y": 30.74,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 43.15,
+          "y": 28.07,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 36.84,
+          "y": 24.36,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 29.83,
+          "y": 29.04,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.57,
+          "label": "GK"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 41.07,
+          "y": 30.14,
+          "label": "TARGET"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 32.16,
+          "y": 44.31,
+          "label": "R1"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 29.65,
+          "y": 31.58,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "teammate",
+          "x": 53.56,
+          "y": 30.27,
+          "label": "SUP"
+        },
+        {
+          "id": "i10",
+          "side": "you",
+          "x": 49.21,
+          "y": 47.08,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012949562,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1423749708,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1944730021": {
+      "id": "gallery-sim-buildup-1944730021",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 43.83,
+        "centerY": 44.63,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 46.52,
+        "y": 51.65
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 42.81,
+          "y": 42.01,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 49.59,
+          "y": 32.25,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 39.59,
+          "y": 31.69,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 38.99,
+          "y": 35.5,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 54.49,
+          "y": 51.47,
+          "label": "R1"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 45.57,
+          "y": 43.26,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 53.67,
+          "y": 31.63,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 45.22,
+          "y": 51.8,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012961217,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1944730021,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-476996433": {
+      "id": "gallery-sim-buildup-476996433",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 22.71,
+        "centerY": 40.87,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 20.59,
+        "y": 52.63
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 32.25,
+          "y": 45.17,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 29.26,
+          "y": 29.08,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 15.74,
+          "y": 37.83,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 22.92,
+          "y": 42.8,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 18.97,
+          "y": 28.29,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.58,
+          "label": "GK"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 28.95,
+          "y": 35.4,
+          "label": "TARGET"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 31.78,
+          "y": 46.26,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 18.52,
+          "y": 29,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "teammate",
+          "x": 11.43,
+          "y": 36.26,
+          "label": "SUP"
+        },
+        {
+          "id": "i10",
+          "side": "you",
+          "x": 21.89,
+          "y": 52.78,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012970865,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 476996433,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1694425035": {
+      "id": "gallery-sim-buildup-1694425035",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 43.14,
+        "centerY": 44.87,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 37.87,
+        "y": 51.64
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 49.66,
+          "y": 36.05,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 39.05,
+          "y": 36.51,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 47.12,
+          "y": 46.38,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.55,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 52.28,
+          "y": 33.28,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 50.13,
+          "y": 52.65,
+          "label": "R1"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 44.97,
+          "y": 37.61,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "you",
+          "x": 35.36,
+          "y": 52.69,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012975370,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1694425035,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1428284334": {
+      "id": "gallery-sim-buildup-1428284334",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 24.14,
+        "centerY": 46.94,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 20.5,
+        "y": 51.07
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 29.46,
+          "y": 30.04,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 13.15,
+          "y": 36.86,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 31,
+          "y": 45.77,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 21.27,
+          "y": 41.55,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 19.11,
+          "y": 31.84,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 29.75,
+          "y": 34.33,
+          "label": "TARGET"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 32.37,
+          "y": 59.55,
+          "label": "R1"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 17.21,
+          "y": 37.17,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "teammate",
+          "x": 22.62,
+          "y": 29.49,
+          "label": "SUP"
+        },
+        {
+          "id": "i10",
+          "side": "you",
+          "x": 21.8,
+          "y": 51.22,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792012988402,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1428284334,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-24307391": {
+      "id": "gallery-sim-buildup-24307391",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 41.81,
+        "centerY": 39.56,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 39.64,
+        "y": 50.02
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 44.02,
+          "y": 45.38,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 50.14,
+          "y": 30.87,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 38.21,
+          "y": 32.4,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 40.69,
+          "y": 37.26,
+          "label": "D4"
+        },
+        {
+          "id": "i4",
+          "side": "opponent",
+          "x": 30.51,
+          "y": 27.8,
+          "label": "D5"
+        },
+        {
+          "id": "i5",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 38.63,
+          "y": 34.66,
+          "label": "TARGET"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 47.45,
+          "y": 51.85,
+          "label": "R1"
+        },
+        {
+          "id": "i8",
+          "side": "teammate",
+          "x": 48.43,
+          "y": 34.3,
+          "label": "SUP"
+        },
+        {
+          "id": "i9",
+          "side": "teammate",
+          "x": 47.65,
+          "y": 24.52,
+          "label": "SUP"
+        },
+        {
+          "id": "i10",
+          "side": "you",
+          "x": 38.3,
+          "y": 51.58,
+          "label": "YOU"
+        }
+      ],
+      "updatedAt": 1792013018882,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 24307391,
+        "planId": null
+      }
+    },
+    "gallery-sim-buildup-1942818673": {
+      "id": "gallery-sim-buildup-1942818673",
+      "name": "buildup (sim)",
+      "kind": "open_play",
+      "camera": {
+        "centerX": 43.16,
+        "centerY": 46.03,
+        "viewHeight": 42,
+        "facing": "up"
+      },
+      "ball": {
+        "x": 46.57,
+        "y": 51.18
+      },
+      "players": [
+        {
+          "id": "i0",
+          "side": "opponent",
+          "x": 47.51,
+          "y": 33.39,
+          "label": "D1"
+        },
+        {
+          "id": "i1",
+          "side": "opponent",
+          "x": 40.77,
+          "y": 31.62,
+          "label": "D2"
+        },
+        {
+          "id": "i2",
+          "side": "opponent",
+          "x": 36.25,
+          "y": 43.69,
+          "label": "D3"
+        },
+        {
+          "id": "i3",
+          "side": "opponent",
+          "x": 34,
+          "y": 0.56,
+          "label": "GK"
+        },
+        {
+          "id": "i4",
+          "side": "teammate",
+          "x": 37.97,
+          "y": 34.88,
+          "label": "TARGET"
+        },
+        {
+          "id": "i5",
+          "side": "teammate",
+          "x": 50.58,
+          "y": 54.55,
+          "label": "R1"
+        },
+        {
+          "id": "i6",
+          "side": "teammate",
+          "x": 33.61,
+          "y": 47.92,
+          "label": "SUP"
+        },
+        {
+          "id": "i7",
+          "side": "teammate",
+          "x": 53.48,
+          "y": 33.38,
+          "label": "SUP"
+        },
+        {
+          "id": "i8",
+          "side": "you",
+          "x": 45.27,
+          "y": 51.33,
+          "label": "YOU"
+        },
+        {
+          "id": "iadd1",
+          "side": "opponent",
+          "x": 47.76,
+          "y": 41,
+          "label": "OPP"
+        }
+      ],
+      "updatedAt": 1792013028050,
+      "source": {
+        "tool": "gallery",
+        "kind": "buildup",
+        "seed": 1942818673,
         "planId": null
       }
     }
