@@ -430,6 +430,14 @@ usage block on every update (Harry, 12 Oct 2026: "why aren't we using the
 progress skill with the estimated tokens"). Its "auto-deploy" section is
 replaced by "Deploy only when told" below.**
 
+**One build per chat, then a handoff (Harry, 15 Oct 2026).** *"context bloat is huge now — we
+need to use a chat after every build."* End every build with the `handoff` skill: a file in
+`docs/handoffs/`, pushed, plus a paste-in starter for the next chat (or for Mikey/Leo).
+
+**Build slowly and correctly (Harry, 15 Oct 2026, for the admin/patch-notes/lag round).** *"instead
+of running 5 parallel full builds let's build slowly and CORRECTLY."* Deep plan first, iterate it,
+design (Higgsfield), then build one piece at a time, each checked and signed off before the next.
+
 **Deploy only when told (Harry, 12 Oct 2026; replaces "auto-deploy at every
 major update").** *"what happened to patch notes? What happened to telling me
 if I tell you to push everything currently, push it? Don't just be pushing
