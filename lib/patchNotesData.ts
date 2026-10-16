@@ -30,7 +30,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.50",
       "title": "Mikey's patch notes v0.16: Gameplay review fixes",
       "publishedAt": "2026-10-13T17:00:00Z",
-      "updatedAt": null,
+      "updatedAt": "2026-10-16T12:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/S5EvHkuf7wJTaGPeXd3WeM",
       "summary": "From Mikey's gameplay review video: feed videos play only when pressed (at most 2 a match), goal posts stand straight and the side-view net has depth, achievements unlock and level you up at once. New framing and headers/volleys are built behind test switches, off by default.",
       "stats": [
@@ -92,6 +92,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "kind": "fixed",
           "title": "Fixed",
           "items": [
+            {
+              "title": "A completed pass ends at your team-mate's feet",
+              "detail": "Was: the ball froze about 1.9 m short of him (added 16 Oct)."
+            },
             {
               "title": "Achievements away from a match unlock at once",
               "detail": "Was: only after the next match."
