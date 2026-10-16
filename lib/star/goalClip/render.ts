@@ -15,7 +15,7 @@
  */
 import type { FpCamera } from "../firstPersonView";
 import { project } from "../firstPersonView";
-import { CX, POST_L, POST_R, GOAL_H } from "../pitch";
+import { CX, POST_L, POST_R, GOAL_H, PITCH_W, HALF_LEN } from "../pitch";
 import { kitsOf } from "../kits";
 import { shortClub } from "../media/grammar";
 import {
@@ -32,6 +32,7 @@ import { frameAt, trackDuration, type GoalTrack, type FrameState } from "./track
 import { rigFor, type ClipAngle } from "./cameras";
 import {
   drawSky, drawPitch, drawStadium, drawFloodlights, drawGoalPart, drawCornerFlags, goalPartAnchor, toCam,
+  farCam, drawFarEndLines,
   type GoalPart, type NetBulge, type SceneLook,
 } from "./scene";
 import { momentAt, type ClipMoves, type Edit, type EditMoment } from "./edit";
@@ -51,7 +52,7 @@ interface Prep {
   keeperIdx: number;
   /** Each dive he made: when it started and ended (clip seconds), where he
    *  landed, and what came of it. A scramble can have three. */
-  dives: { start: number; end: number; landAt: { x: number; y: number } | null; result?: SaveResult; z: number; high: boolean }[];
+  dives: { start: number; end: number; landAt: { x: number; y: number } | null; result?: SaveResult; z: number; high: boolean; who: number }[];
   /** Strikes per man: clip time and how. */
   kicks: Map<string, { t: number; mode?: string }[]>;
   /** Every touch per man (a shot, a pass, a header, a block…): the new 3D moves. */
@@ -97,7 +98,16 @@ function prepOf(track: GoalTrack): Prep {
     const on = k.lunge > 0.04 && k.dir !== 0;
     if (on && (!prevOn || k.dir !== prevDir || k.lunge < prevL - 0.2)) {
       if (dives.length && dives[dives.length - 1].end === Infinity) dives[dives.length - 1].end = t;
-      dives.push({ start: t, end: Infinity, landAt: null, z: 0, high: false });
+      // Whose dive: the keeper nearest the ball (a whole-match replay has
+      // one at each end; a goal video has one).
+      const at = frameAt(track, t);
+      let who = keeperIdx, bd = Infinity;
+      track.bodies.forEach((b, i) => {
+        if (b.role !== "keeper") return;
+        const d = Math.hypot(at.bodies[i].x - at.ball.x, at.bodies[i].y - at.ball.y);
+        if (d < bd) { bd = d; who = i; }
+      });
+      dives.push({ start: t, end: Infinity, landAt: null, z: 0, high: false, who });
     } else if (!on && prevOn && dives.length) {
       dives[dives.length - 1].end = t;
     }
@@ -106,8 +116,8 @@ function prepOf(track: GoalTrack): Prep {
   for (const d of dives) {
     // The match stops him where the dive lands (he does not slide on after
     // the ball), about two-thirds of a second into it.
-    if (keeperIdx >= 0) {
-      const k = frameAt(track, Math.min(trackDuration(track), d.start + 0.67, d.end)).bodies[keeperIdx];
+    if (d.who >= 0) {
+      const k = frameAt(track, Math.min(trackDuration(track), d.start + 0.67, d.end)).bodies[d.who];
       d.landAt = { x: k.x, y: k.y };
     }
   }
@@ -125,7 +135,7 @@ function prepOf(track: GoalTrack): Prep {
       l.push({ t: e.t, kind: e.kind, mode: e.mode as BallActionMode | undefined });
       acts.set(e.who, l);
     }
-    if (e.kind === "save" && e.who === "keeper") {
+    if (e.kind === "save" && (e.who === "keeper" || track.bodies.some(b => b.role === "keeper" && b.id === e.who))) {
       // The save belongs to the dive it happened in.
       const d = [...dives].reverse().find(x => e.t >= x.start - 0.25);
       if (d) {
@@ -272,7 +282,7 @@ function drawMan(
   const keeper = body.role === "keeper";
   // The dive he is in, if any. A keeper who has landed stays where he
   // landed until he goes again.
-  const dive = keeper ? p.dives.find(d => t >= d.start && t < d.end) ?? null : null;
+  const dive = keeper ? p.dives.find(d => d.who === i && t >= d.start && t < d.end) ?? null : null;
   const diving = !!dive;
   const diveT = dive ? Math.min(0.66, (t - dive.start) * 0.75 + 0.05) : 0;
   if (dive && diveT >= 0.55 && dive.landAt) pos = { x: dive.landAt.x, y: dive.landAt.y, z: 0 };
@@ -297,7 +307,9 @@ function drawMan(
   let centre = 0;
   let lift = 0;
   if (keeper) {
-    facing = screenFacing(cam, 0, 1);
+    // He faces up the pitch from his goal (a whole-match replay has one at
+    // each end; a goal video only ever has the near one).
+    facing = screenFacing(cam, 0, pos.y > HALF_LEN ? -1 : 1);
     if (diving) {
       const a = project(cam, pos.x, pos.y, 0), b = project(cam, pos.x + (fr.keeper.dir || 1), pos.y, 0);
       // Which side of him the ball is, on screen, part way into the dive: the
@@ -455,6 +467,9 @@ export function drawScene(
   drawStadium(ctx, cam, p.look, rig.skip);
   drawFloodlights(ctx, cam, p.look);
   drawCornerFlags(ctx, cam);
+  // A whole-match camera sees the other end too.
+  const whole = angle === "match";
+  if (whole) drawFarEndLines(ctx, cam, p.look);
 
   const fr = frameAt(track, t);
   const items: Drawable[] = [];
@@ -470,6 +485,17 @@ export function drawScene(
   for (const part of ["back", "left", "right", "roof", "frame"] as GoalPart[]) {
     const a = goalPartAnchor(part);
     items.push({ d: toCam(cam, a[0], a[1], a[2]).d, draw: () => drawGoalPart(ctx, cam, part, bulge) });
+  }
+  if (whole) {
+    // The far goal: the near one drawn with the camera turned half a turn.
+    const fc = farCam(cam);
+    const fb = { x: PITCH_W - fr.ball.x, y: 2 * HALF_LEN - fr.ball.y, z: fr.ball.z };
+    const farIn = fb.y < -0.15 && fb.x > POST_L - 0.3 && fb.x < POST_R + 0.3 && fb.z < GOAL_H + 0.3;
+    const farBulge: NetBulge | null = farIn ? { x: fb.x, z: Math.max(0.25, fb.z), depth: Math.min(0.32, Math.max(0, (-fb.y - 0.5) * 0.45)) } : null;
+    for (const part of ["back", "left", "right", "roof", "frame"] as GoalPart[]) {
+      const a = goalPartAnchor(part);
+      items.push({ d: toCam(fc, a[0], a[1], a[2]).d, draw: () => drawGoalPart(ctx, fc, part, farBulge) });
+    }
   }
   items.sort((x, y) => y.d - x.d);
   for (const it of items) it.draw();

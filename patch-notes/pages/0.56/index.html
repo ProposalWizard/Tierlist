@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Knowitball v0.56</title>
+<style>
+  :root{--bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;--ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;--r:12px}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;--green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff}}
+  :root[data-theme="dark"]{--bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;--ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff}
+  *{box-sizing:border-box}html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 20px}
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix,.fix i{color:var(--green)}.fix i{background:var(--green)}
+  .add,.add i{color:var(--blue)}.add i{background:var(--blue)}
+  .chg,.chg i{color:var(--violet)}.chg i{background:var(--violet)}
+  .nxt,.nxt i{color:var(--ink3)}.nxt i{background:var(--ink3)}
+  .bug,.bug i{color:var(--amber)}.bug i{background:var(--amber)}
+  .dt{color:var(--ink2);font-size:14.5px;margin-top:3px}.dt b{color:var(--ink)}
+  ul.n{list-style:none;margin:0;padding:0}ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700}
+  .tw{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:12px;margin:10px 0}
+  figure{margin:0}figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figcaption{font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0 4px}
+  .one{max-width:300px;margin:12px 0 4px}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-amb{background:rgba(245,185,66,.18);color:var(--amber)}.p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .ck{list-style:none;margin:0;padding:0}.ck li{padding:9px 0 9px 30px;border-bottom:1px solid var(--line);position:relative}.ck li:last-child{border-bottom:0}
+  .ck input{position:absolute;left:2px;top:12px;width:18px;height:18px;accent-color:var(--green)}
+  .ck .w{font-size:12.5px;color:var(--ink3)}
+  .snd{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0}
+  .snd button{font:700 13.5px/1.2 inherit;font-family:inherit;color:var(--ink);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 10px;cursor:pointer;text-align:left}
+  .snd button small{display:block;color:var(--ink3);font-weight:600;font-size:11.5px;margin-top:3px}
+  .snd button.go{border-color:var(--green);color:var(--green)}
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:12px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3)}
+  summary::-webkit-details-marker{display:none}summary::before{content:"▸ "}details[open] summary::before{content:"▾ "}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style></head><body><div class="wrap">
+
+<header>
+  <span class="ver">v0.56</span>
+  <h1>The Arcade pack, real shots you can follow, and calmer passing</h1>
+  <p class="sub">14 Oct 2026 · Everything here is on the Harry branch, checked, and waiting for your merge. Nothing is live yet.</p>
+</header>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<ul class="ck" id="ck">
+  <li><input type="checkbox" data-k="1">Arcade pack: big GOAL! with a starburst<div class="w">Settings → Texture pack → Arcade, then score in a match</div></li>
+  <li><input type="checkbox" data-k="2">Arcade sounds: deeper tap, warm confirm, pass ≠ goal, quieter crowd<div class="w">Arcade pack on: tap menus, pass, score</div></li>
+  <li><input type="checkbox" data-k="3">Other packs still have the old banner and sounds<div class="w">Switch to Realism and score</div></li>
+  <li><input type="checkbox" data-k="4">"Harry changes" dropdown<div class="w">Settings → Harry changes (Chances, After you pass)</div></li>
+  <li><input type="checkbox" data-k="5">Joystick: he takes a touch before shooting<div class="w">Harry changes → Chances: New, After you pass: Joystick</div></li>
+  <li><input type="checkbox" data-k="6">Real shots: the camera follows the move, no jumps<div class="w">Real shots test page, any shot</div></li>
+</ul>
+
+<h2 class="add"><i></i>1 · THE ARCADE PACK</h2>
+<div class="dt">A new texture pack. It has the normal pitch, plus the Arcade pop banners and the Arcade sounds. Every other pack keeps the old banner and old sounds.</div>
+<div class="shots">
+  <figure><img src="img/ar-goal.jpg" alt=""><figcaption>GOAL! in a real match. It goes to the half where the ball isn't.</figcaption></figure>
+  <figure><img src="img/ar-pass.jpg" alt=""><figcaption>PASS. Smaller than GOAL!, so a goal feels bigger.</figcaption></figure>
+  <figure><img src="img/ar-vs-old.jpg" alt=""><figcaption>Same moment: Arcade pack vs another pack.</figcaption></figure>
+  <figure><img src="img/ar-goal3d.jpg" alt=""><figcaption>GOAL! in the 3D view, above the play.</figcaption></figure>
+</div>
+<figure style="margin-top:10px"><img src="img/ar-strip.jpg" alt=""><figcaption>GOAL! frame by frame: it pops up big, settles, floats up and fades.</figcaption></figure>
+<div class="dt" style="margin-top:10px">Also fixed with it: a banner never swaps words in place, never wraps onto two lines, and fades out if half time, full time or the scores come up.</div>
+
+<div class="tw">
+<div class="hd" style="margin-bottom:4px">Listen to the Arcade sounds</div>
+<div class="dt">Your notes, done: menu tap deeper, Stadium's confirm, pass and goal clearly different, crowd turned down.</div>
+<div class="snd">
+  <button data-s="ui-tap">Menu tap<small>deeper, no hiss</small></button>
+  <button data-s="ui-confirm">Confirm<small>Stadium's warm chord</small></button>
+  <button data-s="match-pass">Pass thud<small>low and dry</small></button>
+  <button data-s="match-goal">Goal sting<small>bright, rising</small></button>
+  <button data-s="match-crowd">Crowd swell<small>quieter</small></button>
+  <button class="go" data-seq="1">▶ Play as a goal<small>pass, sting, crowd</small></button>
+</div>
+<svg viewBox="0 0 340 92" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+  <text x="0" y="14" font-size="12" font-weight="700" fill="var(--ink)">How high each sound sits</text>
+  <line x1="0" y1="70" x2="340" y2="70" stroke="var(--line)"/>
+  <circle cx="30" cy="70" r="7" fill="var(--blue)"/><text x="30" y="52" text-anchor="middle" font-size="11" fill="var(--ink2)">Pass</text>
+  <circle cx="200" cy="70" r="7" fill="var(--green)"/><text x="200" y="52" text-anchor="middle" font-size="11" fill="var(--ink2)">Goal</text>
+  <text x="0" y="88" font-size="10" fill="var(--ink3)">low</text><text x="340" y="88" text-anchor="end" font-size="10" fill="var(--ink3)">high</text>
+  <text x="115" y="36" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">about 3 octaves apart</text>
+</svg>
+</div>
+<div class="shots">
+  <figure><img src="img/ar-dropdown.jpg" alt=""><figcaption>The pack list, with Arcade's own picture.</figcaption></figure>
+  <figure><img src="img/harry-changes.jpg" alt=""><figcaption>Settings: "Harry changes" open. (The yellow box is a first-time tip.)</figcaption></figure>
+</div>
+
+<h2 class="chg"><i></i>2 · "HARRY CHANGES" DROPDOWN</h2>
+<div class="dt">Your switches now live in one closed dropdown in Settings and in the match ⚙: <b>Chances</b> (Old | New) and <b>After you pass</b> (Auto run | Joystick). Texture packs stay outside it.</div>
+
+<h2 class="fix"><i></i>3 · JOYSTICK: HE SLOWS DOWN AND THINKS</h2>
+<div class="dt">After your pass, the team-mate takes a touch and looks up for about a second. He only hits it first time if the shot is really on. Otherwise he carries it, passes back to you, or plays you through.</div>
+<div class="tw">
+<svg viewBox="0 0 340 170" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+  <g font-size="11.5" font-weight="700" text-anchor="middle">
+    <rect x="95" y="4" width="150" height="34" rx="8" fill="var(--card2)" stroke="var(--line)"/><text x="170" y="25" fill="var(--ink)">He gets your pass</text>
+    <rect x="4" y="66" width="150" height="46" rx="8" fill="rgba(15,157,88,.12)" stroke="var(--green)"/><text x="79" y="85" fill="var(--green)">Shot is on</text><text x="79" y="102" font-size="10" font-weight="400" fill="var(--ink2)">close, clear, nobody near</text>
+    <rect x="186" y="66" width="150" height="46" rx="8" fill="var(--card2)" stroke="var(--line)"/><text x="261" y="85" fill="var(--ink)">Shot isn't on</text><text x="261" y="102" font-size="10" font-weight="400" fill="var(--ink2)">anything else</text>
+    <text x="79" y="140" fill="var(--green)">First time, every time</text>
+    <text x="261" y="140" fill="var(--ink)">Touch, look up (~1 s)</text>
+    <text x="261" y="158" font-size="10" font-weight="400" fill="var(--ink2)">then carry, pass back, or through ball</text>
+  </g>
+  <path d="M140 38L90 64M200 38L250 64" stroke="var(--ink3)" stroke-width="1.5" fill="none"/>
+</svg>
+</div>
+<div class="shots">
+  <figure><img src="img/js-touch.jpg" alt=""><figcaption>He takes a touch and looks up.</figcaption></figure>
+  <figure><img src="img/js-through.jpg" alt=""><figcaption>No shot on, so he plays you through.</figcaption></figure>
+</div>
+<div class="dt">Auto run plays exactly as before. One side effect: team-mates score a bit more from your passes (35 → 39 in 100).</div>
+
+<h2 class="fix"><i></i>4 · REAL SHOTS: A CAMERA YOU CAN FOLLOW</h2>
+<div class="dt">Before, the camera chased the ball, jumped across the pitch, and sometimes sat on an empty corner. Now it moves like a TV camera: it looks a little ahead, keeps the ball and the next man in view, and glides onto your chance with no jump.</div>
+<div class="shots">
+  <figure><img src="img/rs-before2.jpg" alt=""><figcaption>Before: the camera had just jumped to another part of the pitch.</figcaption></figure>
+  <figure><img src="img/rs-after.jpg" alt=""><figcaption>Now: same shot. The goal, the box and the players are all in view.</figcaption></figure>
+</div>
+<details><summary>Frame by frame, before vs now</summary>
+  <p>Top two rows are before, bottom two are now.</p>
+  <figure><img src="img/rs-sheet.jpg" alt=""></figure>
+  <figure style="margin-top:10px"><img src="img/rs-sheet2.jpg" alt=""></figure>
+</details>
+
+<h2 class="bug"><i></i>KNOWN ISSUES</h2>
+<ul class="n">
+  <li><div class="hd">Real shots: players a little small in the build-up <span class="pill p-amb">your call</span></div><div class="dt">About 83% of their size in your chance, so long passes stay in shot. They can be full size, but long passes would then leave the picture more often.</div></li>
+  <li><div class="hd">Arcade GOAL! in 3D overlaps the camera button</div><div class="dt">Taps still go through it.</div></li>
+  <li><div class="hd">Not seen yet</div><div class="dt">SAVED! and BACK TO YOU in a real match (drawn on the trial screen only). A first-time finish in Joystick (measured only). Any sound on a real phone.</div></li>
+  <li><div class="hd">7 older test failures <span class="pill p-red">not from this round</span></div><div class="dt">They fail the same way on the live game (keepers, chances, Wembley 3D).</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>YOUR CALLS</h2>
+<ul class="n">
+  <li><div class="hd">Merge Harry → main <span class="pill p-amb">your merge</span></div><div class="dt">Everything above, plus the two v0.54 patch-notes pages.</div></li>
+  <li><div class="hd">Real shots players: full size? <span class="pill p-amb">yes / no</span></div><div class="dt">My answer: no, keep long passes in shot.</div></li>
+  <li><div class="hd">Joystick only in some situations? <span class="pill p-amb">open</span></div><div class="dt">Your message cut off at "not every situation calls for the joystick". One option: no joystick when he can shoot first time anyway.</div></li>
+</ul>
+
+<details><summary>The numbers, if you want them</summary>
+  <p><b>Joystick</b> (381 test passes): your pass → his shot or pass 1.09 s → 1.67 s. Time on the ball when no shot is on 0.46 s → 1.01 s. First time when the shot is on 17% → 100%; when it isn't 14% → 0%; from outside the box 20% → 0%.</p>
+  <p><b>Real shots</b> (5 films): player size in the build-up 17–28 px → 21–35 px (your chance 25–41). Biggest slide in one frame 9–21 px → 2–12 px. Ball hidden at the screen edge or behind commentary up to 27% → 0%. Over 2,010 moves: ball out of view 12.7% → 0.3% of frames.</p>
+  <p><b>Arcade banners</b>: GOAL! 74% of the pitch width (92% at its peak); PASS and SAVED! 54–55%. On screen: PASS 0.7 s, SAVED 0.9 s, ASSIST 1.1 s, GOAL 1.3 s. Fades in 0.18 s if the screen changes.</p>
+  <p><b>Arcade sounds</b>: tap centre 10,600 Hz → 348 Hz, 0% hiss (was 98%). Pass 130 Hz, goal 1,243 Hz. Crowd 5.3 dB quieter than option A. Confirm is the Stadium one, unchanged.</p>
+</details>
+
+<details><summary>Previous versions</summary>
+  <p><b>v0.54 — 14 Oct 2026</b> (new chances, 3D camera, build-ups that play on): new chances follow the match; corner camera stops at 60°; no more black players in Bright/Light; real shots and full match test pages; build-ups play on with no cut; menus open on the tap; texture packs dropdown with pictures; dribbles as a chance; 12 texture packs; After you pass: Auto run | Joystick. Still open from it: cameras on some 2D/3D chances.</p>
+</details>
+
+<footer>14 Oct 2026 · On the Harry branch, not live. Banners and sounds are drawn in code (font: Luckiest Guy, Apache 2.0). Sounds measured, not heard.</footer>
+</div>
+<script>
+const A={};const get=s=>A[s]||(A[s]=new Audio("audio/"+s+".mp3"));
+const play=s=>{const a=get(s);a.currentTime=0;a.play().catch(()=>{});};
+document.querySelectorAll("button[data-s]").forEach(b=>b.onclick=()=>play(b.dataset.s));
+document.querySelectorAll("button[data-seq]").forEach(b=>b.onclick=()=>{play("match-pass");setTimeout(()=>play("match-goal"),350);setTimeout(()=>play("match-crowd"),420);});
+document.querySelectorAll("#ck input").forEach(c=>{const k="pn55-"+c.dataset.k;try{c.checked=localStorage.getItem(k)==="1";}catch(e){}c.onchange=()=>{try{localStorage.setItem(k,c.checked?"1":"0");}catch(e){}};});
+</script>
+</body></html>

@@ -775,6 +775,46 @@
       "kb": 22.0,
       "purpose": "Co-commentator: Goals, goals, goals. Brilliant entertainment.",
       "prompt": "(Kokoro bm_fable, speed 1.0) Goals, goals, goals. Brilliant entertainment."
+    },
+    {
+      "name": "match-pass",
+      "file": "/sfx/match-pass.mp3",
+      "duration": 0.18,
+      "kb": 2.5,
+      "purpose": "A pass or a team-mate's kick in the live match",
+      "prompt": "Made in code: scripts/sfx/arcade.py (Arcade set, CC0)."
+    },
+    {
+      "name": "match-goal",
+      "file": "/sfx/match-goal.mp3",
+      "duration": 0.78,
+      "kb": 9.5,
+      "purpose": "Goal sting in the live match",
+      "prompt": "Made in code: scripts/sfx/arcade.py (Arcade set, CC0)."
+    },
+    {
+      "name": "match-crowd",
+      "file": "/sfx/match-crowd.mp3",
+      "duration": 3.24,
+      "kb": 25.6,
+      "purpose": "Crowd swell in the live match",
+      "prompt": "Made in code: scripts/sfx/arcade.py (Arcade set, CC0)."
+    },
+    {
+      "name": "ui-tap-arcade",
+      "file": "/sfx/ui-tap-arcade.mp3",
+      "duration": 0.1,
+      "kb": 1.6,
+      "purpose": "Any button tap (Arcade texture pack)",
+      "prompt": "Made in code: scripts/sfx/arcade.py (Arcade set, CC0)."
+    },
+    {
+      "name": "ui-confirm-arcade",
+      "file": "/sfx/ui-confirm-arcade.mp3",
+      "duration": 0.21,
+      "kb": 3.7,
+      "purpose": "Confirm / continue (Arcade texture pack)",
+      "prompt": "Stadium set's warm chord (scripts/sfx/sources/stadium-confirm.mp3, made in code, CC0)."
     }
   ]
 }

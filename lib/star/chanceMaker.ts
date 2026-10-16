@@ -48,8 +48,9 @@ import {
   buildScenario, buildAttackingScenario, buildWeightedScenario, pickScenarioKindFrom, chainKindFor, goalInView,
   type Scenario, type ScenarioKind, type Vec2,
 } from "./canvasEngine";
-import type { ScenarioRequest } from "./hiddenMatch";
-import { EVEN_KIND_MIX, EVEN_KINDS, newKindBag, nextEvenKind } from "./kindMix";
+import { kindsForZone, type ScenarioRequest, type Zone } from "./hiddenMatch";
+import { EVEN_KIND_MIX, EVEN_KINDS, newKindBag, nextEvenKind, guardedDeal, guardAllows, noteDealt } from "./kindMix";
+import { newChancesOn } from "./newChances";
 import { selectChance, newSelectionMemory, FREQ, type SelectionMemory } from "./scenarioSelect";
 import { applyChancePlan, type ChancePlan } from "./chanceFormula";
 import { fixBaseScenario, scenarioFaults } from "./baseScenario";
@@ -386,8 +387,10 @@ function mirrorSample<T extends ShapeSample>(s: T): T {
   return { ...s, ball: mirrorV(s.ball), you: mirrorV(s.you), keeper: mirrorV(s.keeper), defenders: s.defenders.map(mirrorV), mates: s.mates.map(mirrorV) };
 }
 function onSide<T extends ShapeSample>(s: T, side: -1 | 1): T {
-  return (s.ball.x >= CX ? 1 : -1) === side ? s : mirrorSample(s);
+  return sideOf(s.ball) === side ? s : mirrorSample(s);
 }
+/** Which half of the pitch, across: -1 the left (x < CX, the "left" lane), 1 the right. */
+export const sideOf = (p: Vec2): -1 | 1 => (p.x >= CX ? 1 : -1);
 
 function gauss(rng: () => number): number {
   let u = 0, v = 0;
@@ -441,7 +444,7 @@ const DEFAULT_CAMERA = { centerX: CX, centerY: 17, viewHeight: 42, facing: "up" 
 export type DrawnShape = AuthoredShape & { mirrored: boolean };
 
 export function drawingShape(
-  kind: string, rng: () => number, stableKey?: number, salt = 0,
+  kind: string, rng: () => number, stableKey?: number, salt = 0, side?: -1 | 1,
 ): DrawnShape | null {
   const set = ruleSetFor(kind);
   if (!set || set.n < MIN_SAMPLES_FOR_INVARIANT) return null;
@@ -458,7 +461,10 @@ export function drawingShape(
     const shape = randomiseAuthored(base, set, rng, { fixedBall: FIXED_BALL.has(kind) });
     if (!shape) continue;
     // The visit salt can flip the side too (same one rng() drawn).
-    const mirrored = (rng() < 0.5) !== (((salt >>> 16) & 1) === 1);
+    const coin = (rng() < 0.5) !== (((salt >>> 16) & 1) === 1);
+    // Chances: New — the side the match says the move is on (the same one
+    // rng() is still drawn, so the stream is the same length).
+    const mirrored = side === undefined ? coin : sideOf(shape.ball) !== side;
     return { ...(mirrored ? mirrorShape(shape) : shape), mirrored };
   }
   return null;
@@ -617,6 +623,11 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
   let plan: ChancePlan | null = null;
   let first: Scenario | null = null;
   const src = o.source;
+  // Settings → Chances: New (lib/star/newChances.ts). Off: everything below
+  // runs exactly as before; every New line is behind this one flag.
+  const nc = newChancesOn();
+  // New: the side of the pitch the drawing goes on (undefined = the coin flip).
+  let side: -1 | 1 | undefined;
   // Harry, 3 Oct 2026 — an even mix of highlights for now (lib/star/kindMix.ts):
   // open play and a move that carries on are dealt from a shuffled bag.
   const evenDeal = (): ScenarioKind => {
@@ -624,7 +635,11 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     o.selection.kindBag ??= newKindBag();
     return nextEvenKind(o.selection.kindBag, rng, !!o.realMix);
   };
-  if (src.from === "request") {
+  if (nc && src.from === "request") {
+    const r = newRequestKind(src.request, src.position, rng, o.selection);
+    kind = r.kind;
+    side = r.side;
+  } else if (src.from === "request") {
     const offered = offeredKinds(src.request.kinds, src.request, rng);
     const openPlay = EVEN_KIND_MIX && !src.request.dribble && src.request.pattern !== "set_piece" && src.request.kinds.length > 1;
     const req = openPlay ? { ...src.request, kinds: [evenDeal()] } : { ...src.request, kinds: offered };
@@ -637,6 +652,9 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     // Built from where the pass actually arrived, so playing it into the
     // corner gives you a cutback and finding someone central a shot.
     kind = EVEN_KIND_MIX ? evenDeal() : playableKind(chainKindFor(src.pos, rng, src.ambition), rng);
+    // New: the move carries on on the side the pass went to (the thin-kind
+    // swap below covers the kind).
+    if (nc) side = sideOf(src.pos);
   } else if (src.from === "attacking") {
     first = buildAttackingScenario(rng, ks, tr, vis);
     kind = first.kind;
@@ -652,6 +670,14 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     kind = playableKind(kind, rng);
     plan = null;
     first = null;
+  }
+  // New: no chance of a kind with fewer than 5 drawings is left to the
+  // hand-written builder — it becomes the nearest kind that has drawings.
+  // (A dev tool asking for a kind by name still gets that kind.)
+  if (nc && src.from !== "kind") {
+    const k2 = drawnKindFor(kind);
+    if (k2 !== kind) { kind = k2; plan = null; first = null; }
+    if (o.selection) noteDealt((o.selection.dealt ??= []), kind);
   }
 
   // ── 1a. Kane drawings (testing): one of Kane's real moments of this kind ──
@@ -704,10 +730,16 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
   let best: { sc: Scenario; shape: AuthoredShape; faults: string[]; gap: number; how: "drawing"; separated: number } | null = null;
   let faultRebuilds = 0, memoryRebuilds = 0;
   for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
-    const sc = attempt === 0 && first ? first : build(kind);
+    let sc = attempt === 0 && first ? first : build(kind);
+    // New: a corner or a byline cross is filmed from the builder's flag and
+    // its drawing is laid on that flag (applyAuthoredShape), so the builder
+    // has to pick the flag on the match's side. A few rebuilds, New only.
+    if (side !== undefined && (kind === "corner" || kind === "byline_cross")) {
+      for (let t = 0; t < 8 && sideOf(sc.ball) !== side; t++) sc = build(kind);
+    }
     const how = "drawing" as const;
     let own: string[] = [];
-    const shape = drawingShape(kind, rng, attempt === 0 ? o.stableKey : undefined, saltFor(o));
+    const shape = drawingShape(kind, rng, attempt === 0 ? o.stableKey : undefined, saltFor(o), side);
     if (shape) own = drawingOwnFaults(kind, shape.sourceId, shape.mirrored);
     if (!shape) break;
     // The drawing is the team; the keeper stands, and leans, where drawn.
@@ -744,6 +776,131 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     sc: best.sc, shape: best.shape, how: best.how, appliedPlan: false, appliedAuthored: true, sourceId: best.shape.sourceId,
     faultRebuilds, memoryRebuilds, faults: best.faults, nearestRecent: best.gap, separated: best.separated,
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  CHANCES: NEW (Settings → Chances; lib/star/newChances.ts). Harry, 14 Oct
+//  2026. Reached only when newChancesOn() is true.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** The radar's zones, own goal to theirs (hiddenMatch.ts's ZONE_ORDER). */
+const ZONES: Zone[] = ["own_box", "defensive", "middle", "attacking", "box"];
+
+/** Your position's own side of the pitch: -1 left, 1 right, 0 a centre player. */
+export function positionSide(position: string | undefined): -1 | 0 | 1 {
+  const p = (position ?? "").toUpperCase();
+  if (/^L(W|M|B|WB|F|CM|CB|AM)$/.test(p)) return -1;
+  if (/^R(W|M|B|WB|F|CM|CB|AM)$/.test(p)) return 1;
+  return 0;
+}
+
+/**
+ * The side a request's drawing goes on: the radar's lane; in the centre lane,
+ * your own side (a centre player: undefined, today's coin flip).
+ */
+export function requestSide(req: ScenarioRequest, position: string | undefined): -1 | 1 | undefined {
+  if (req.lane === "left") return -1;
+  if (req.lane === "right") return 1;
+  const own = positionSide(position);
+  return own === 0 ? undefined : own;
+}
+
+/** Open-play kinds with 5+ drawings — what a thin kind can turn into. */
+function drawnOpenKinds(): ScenarioKind[] {
+  return EVEN_KINDS.filter((k) => servesDrawings(k));
+}
+
+/** Where a kind's ball sits: across from the middle and depth from goal,
+ *  averaged over its drawings (side-free: the picture gets mirrored anyway). */
+function kindCentroid(kind: ScenarioKind): { lat: number; depth: number } {
+  const balls = authoredPool(kind).map((ms) => sampleFromAuthored(ms)).filter((x): x is ShapeSample => !!x).map((x) => x.ball);
+  // No drawing at all: the builder's own ball, on a fixed stream of its own.
+  if (!balls.length) balls.push(buildScenario(kind, mulberry32(0x5eed)).ball);
+  return { lat: mean(balls.map((b) => Math.abs(b.x - CX))), depth: mean(balls.map((b) => b.y)) };
+}
+
+const drawnKindCache = new Map<string, ScenarioKind>();
+/**
+ * A kind with fewer than 5 drawings (through ball, build-up) swapped for the
+ * nearest open-play kind that has drawings, by where the ball sits. On the
+ * current drawings: through ball → long range, build-up → midfield pass.
+ * A kind that has drawings comes back as it is. Never a set piece.
+ */
+export function drawnKindFor(kind: ScenarioKind): ScenarioKind {
+  if (servesDrawings(kind)) return kind;
+  const pool = drawnOpenKinds();
+  if (!pool.length) return kind;
+  const key = `${kind}|${pool.map((k) => `${k}:${ruleSetFor(k)?.n ?? 0}`).join(",")}|${ruleSetFor(kind)?.n ?? 0}`;
+  const hit = drawnKindCache.get(key);
+  if (hit) return hit;
+  const c = kindCentroid(kind);
+  let best = pool[0], bestD = Infinity;
+  for (const k of pool) {
+    const d = kindCentroid(k);
+    const dist = Math.hypot(d.lat - c.lat, d.depth - c.depth);
+    if (dist < bestD) { bestD = dist; best = k; }
+  }
+  drawnKindCache.set(key, best);
+  return best;
+}
+
+/**
+ * New only: at most this many crosses and cutbacks TOGETHER in any 8 chances
+ * (on top of the per-kind guard), and a lighter weight. Harry, 14 Oct 2026: "there's probably a bit
+ * too much crossing and cutbacks right now" — New dealt them 32.9% of open
+ * play against Old's 26.8% (tests/star/chanceJudge.mts, 40 matches). While the
+ * cap is reached, a cross is swapped for the zone's other kinds, then the
+ * zones either side (as the guard already does).
+ */
+export const NEW_CROSS_MAX_IN_8 = 2;
+/** Their weight in the deal next to the other kinds (the radar's own = 1),
+ *  so the cap is reached less often and fewer chances have to leave the zone. */
+export const NEW_CROSS_WEIGHT = 0.6;
+const CROSS_KINDS: ReadonlySet<ScenarioKind> = new Set<ScenarioKind>(["byline_cross", "cutback"]);
+/** Copies are the deal's weights: every kind ×10, a cross or cutback ×10·weight. */
+function weighCrosses(ks: readonly ScenarioKind[]): ScenarioKind[] {
+  const n = Math.round(10 * NEW_CROSS_WEIGHT);
+  return ks.flatMap((k) => Array<ScenarioKind>(CROSS_KINDS.has(k) ? n : 10).fill(k));
+}
+function crossesCapped(dealt: readonly ScenarioKind[]): boolean {
+  return dealt.slice(-7).filter((k) => CROSS_KINDS.has(k)).length >= NEW_CROSS_MAX_IN_8;
+}
+
+/**
+ * New: the kind for a request, and the side it goes on. Open play is dealt
+ * from the radar's own weighted kinds (request.kinds: weightKinds' copies)
+ * with the guard (never twice in a row, at most 2 of a kind in any 8); a set
+ * piece or a single-kind request is rolled as before. Thin kinds are swapped
+ * for the nearest kind with drawings first, so their weight carries over.
+ */
+function newRequestKind(
+  req: ScenarioRequest, position: string, rng: () => number, mem: SelectionMemory | undefined,
+): { kind: ScenarioKind; side: -1 | 1 | undefined } {
+  const side = requestSide(req, position);
+  const offered = offeredKinds(req.kinds, req, rng);
+  const openPlay = !req.dribble && req.pattern !== "set_piece" && req.kinds.length > 1;
+  if (!openPlay) return { kind: drawnKindFor(rollKind({ ...req, kinds: offered }, position, rng)), side };
+  const swap = (ks: ScenarioKind[]) => withoutSwitchedOff(ks).map(drawnKindFor);
+  // For when the guard blocks every offered kind: the zone's own kinds (both
+  // lanes), then the zones either side. A one-on-one is never added this way
+  // (it is once a match).
+  const zoneKinds = (z: Zone) => Array.from(new Set(swap([...kindsForZone(z, "centre"), ...kindsForZone(z, "left")])))
+    .filter((k) => k !== "one_on_one");
+  const zi = ZONES.indexOf(req.zone);
+  const near = [ZONES[zi + 1], ZONES[zi - 1]].filter((z): z is Zone => !!z);
+  const wider = [zoneKinds(req.zone), Array.from(new Set(near.flatMap(zoneKinds)))];
+  const dealt = mem?.dealt ?? [];
+  const off = weighCrosses(swap(offered)), wid = wider.map(weighCrosses);
+  if (crossesCapped(dealt)) {
+    const noCross = (ks: ScenarioKind[]) => ks.filter((k) => !CROSS_KINDS.has(k));
+    const offC = noCross(off), widC = wid.map(noCross);
+    // The cap gives way to the kind guard: it bites only while something that
+    // is not a cross still passes the guard.
+    if ([offC, ...widC].some((ks) => ks.some((k) => guardAllows(k, dealt)))) {
+      return { kind: guardedDeal(offC, widC, dealt, rng), side };
+    }
+  }
+  return { kind: guardedDeal(off, wid, dealt, rng), side };
 }
 
 /**

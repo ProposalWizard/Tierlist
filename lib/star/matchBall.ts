@@ -25,14 +25,16 @@ export function drawMatchBall(
 ): void {
   // ── The shadow: soft, offset like the players' (lower right) ──
   const k = 1 / (1 + h * 0.18);
+  // the shadow stays dark however high it goes (it only shrinks), so the ball-to-shadow gap reads as height
+  const dk = Math.max(0.65, k);
   const sx = gx + r * (0.45 + h * 0.08), sy = gy + r * 0.25;
   ctx.save();
   ctx.translate(sx, sy);
   ctx.scale(1, 0.5);
   const sr = r * 1.25 * k;
   const g = ctx.createRadialGradient(0, 0, 0, 0, 0, sr);
-  g.addColorStop(0, `rgba(0,0,0,${0.42 * k})`);
-  g.addColorStop(0.65, `rgba(0,0,0,${0.2 * k})`);
+  g.addColorStop(0, `rgba(0,0,0,${0.42 * dk})`);
+  g.addColorStop(0.65, `rgba(0,0,0,${0.2 * dk})`);
   g.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = g;
   ctx.beginPath();

@@ -22,7 +22,6 @@ import { formatMoney } from "@/lib/star/money";
 import { renewalWage, renewalMultiplier, RENEWAL_RAISE_PER_WIN, RENEWAL_SOURED_CUT } from "@/lib/star/economy";
 import { Burst, CountUp, FloatText, PressButton, Shine, StatBar, clubTheme, useTrigger } from "./ui";
 import { Screen, ScreenHeader, Rays, useLater } from "./ui/Screen";
-import { prefersReducedMotion } from "./ui/motion";
 
 // ---------- SPONSORS ----------
 function ObjectiveRow({ deal }: { deal: import("@/lib/star/types").SponsorDeal }) {
@@ -508,11 +507,12 @@ export function ContractRenewal({ career, offerReason, onComplete }: {
       seasonsRemaining: 3,
       ...offerClauses(career, wage, mulberry32(career.season * 71 + wins * 13 + rounds)),
     };
-    // Signed: the stamp lands and the confetti goes, then the same contract
-    // goes up as always. Straight through for a phone set to reduce motion.
+    // Signed: straight on to the next screen (Harry, 14 Oct 2026: "If I click
+    // on something, it should just go straight in"). It used to hold 1.3 s
+    // for a stamp and confetti first.
     if (signed) return;
     setSigned(true);
-    setTimeout(() => onComplete(newContract), prefersReducedMotion() ? 0 : 1300);
+    onComplete(newContract);
   };
 
   return (

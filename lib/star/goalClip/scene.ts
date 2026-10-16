@@ -468,3 +468,38 @@ export function drawCornerFlags(ctx: CanvasRenderingContext2D, cam: FpCamera): v
     fillPolygon(ctx, cam, [[x, 0, 1.5], [x, 0, 1.15], [x + (x === 0 ? 0.45 : -0.45), 0.25, 1.3]], "#facc15");
   }
 }
+
+// ── The far end (a whole-match camera sees both goals) ──────────────────────
+
+/**
+ * The same camera turned half a turn about the centre spot. Drawing the near
+ * end's lines, flags and goal with it puts them at the far end: a point P
+ * drawn with `farCam(cam)` lands where P turned half a turn about the centre
+ * spot would land with `cam`. Only the full-match replay asks for it.
+ */
+export function farCam(cam: FpCamera): FpCamera {
+  const fwd = cam.forward ?? { x: 0, y: -1 };
+  return { ...cam, x: PITCH_W - cam.x, y: 2 * HALF_LEN - cam.y, forward: { x: -fwd.x, y: -fwd.y } };
+}
+
+/** The far end's goal line, boxes, D, spot and corner flags (drawPitch draws
+ *  the near end's, and the touchlines, halfway line and centre circle). */
+export function drawFarEndLines(ctx: CanvasRenderingContext2D, cam: FpCamera, look: SceneLook): void {
+  const fc = farCam(cam);
+  ctx.strokeStyle = look.night ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.88)";
+  ctx.lineCap = "round";
+  const W12 = 0.12;
+  line(ctx, fc, [0, 0, 0], [PITCH_W, 0, 0], W12);
+  for (const [l, r, d] of [[BOX_L, BOX_R, BOX_DEPTH], [SIX_L, SIX_R, SIX_DEPTH]] as const) {
+    line(ctx, fc, [l, 0, 0], [l, d, 0], W12);
+    line(ctx, fc, [r, 0, 0], [r, d, 0], W12);
+    line(ctx, fc, [l, d, 0], [r, d, 0], W12);
+  }
+  for (const run of arcPts(CX, PEN_SPOT_Y, ARC_R, 0, Math.PI, 28, (_x, y) => y >= BOX_DEPTH)) {
+    for (let i = 1; i < run.length; i++) line(ctx, fc, run[i - 1], run[i], W12);
+  }
+  const spot: P3[] = [];
+  for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; spot.push([CX + Math.cos(a) * 0.14, PEN_SPOT_Y + Math.sin(a) * 0.14, 0]); }
+  fillPolygon(ctx, fc, spot, "rgba(255,255,255,0.9)");
+  drawCornerFlags(ctx, fc);
+}

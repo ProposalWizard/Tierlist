@@ -122,7 +122,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           onNear: (s) => setNear(s),
           onRoom: (id) => setRoomNow(id),
           onFps: (f) => { (window as unknown as { __home3dFps?: number }).__home3dFps = f; },
-          ...(onDoor ? { onDoor: () => { if (dead) return; setLeaving(true); setTimeout(() => doorRef.current?.(), 350); } } : {}),
+          ...(onDoor ? { onDoor: () => { if (dead) return; setLeaving(true); doorRef.current?.(); } } : {}),
           onContextLost: () => {
             if (dead) return;
             console.error("3D home: the phone took the 3D away");
@@ -354,7 +354,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
         </div>
       )}
 
-      <div style={{ position: "absolute", inset: 0, background: "#120e0b", opacity: leaving ? 1 : 0, transition: "opacity 0.35s ease", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", inset: 0, background: "#120e0b", opacity: leaving ? 1 : 0, pointerEvents: "none" }} />
     </div>
   );
 }

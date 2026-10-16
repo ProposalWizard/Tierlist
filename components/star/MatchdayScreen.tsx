@@ -146,7 +146,7 @@ export default function MatchdayScreen(p: Props) {
         .kib-shell-noscroll, .kib-md-noscroll { scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior: contain; }
         .kib-bar-fill { transition: width 1000ms cubic-bezier(.2,.8,.2,1); }
         @keyframes kibRoleFlip { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
-        .kib-role-flip { display: inline-block; animation: kibRoleFlip 0.45s cubic-bezier(0.2,0.9,0.3,1.35) both; }
+        .kib-role-flip { display: inline-block; }
         @media (prefers-reduced-motion: reduce) { .kib-bar-fill { transition: none; } .kib-role-flip { animation: none; } }
       `}</style>
       <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col px-3 pt-2">
@@ -556,8 +556,9 @@ function PositionSelect({ career, playAs, onChange, fixed }: { career: CareerSta
 /** One bar row in a 3-column grid (label · bar · number). */
 function Bar({ label, value, fill, marks = [] }: { label: string; value: number; fill: [string, string]; marks?: number[] }) {
   const shown = useCountUp(value, 900);
-  // Fill from empty on first paint (and to the new value after a can).
-  const [w, setW] = useState(0);
+  // Full on the first frame (menus open still, 14 Oct 2026); it still slides
+  // to the new value when it changes (a can), which is real change, not entry.
+  const [w, setW] = useState(value);
   useEffect(() => {
     const id = requestAnimationFrame(() => setW(value));
     return () => cancelAnimationFrame(id);

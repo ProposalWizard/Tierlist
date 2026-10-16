@@ -64,3 +64,12 @@ the single thing the unit suite cannot see and where this class of bug lives.
 which a production build inlines to `false`, so it cannot reach the deployed
 site. Careers started this way are localStorage-only and never sync to a cloud
 account — correct, since there is no account.
+
+## The 2D | 3D switch (`switch3d.mjs`)
+
+`node scripts/star-sandbox/switch3d.mjs --url http://localhost:3000 --switches 16`
+starts a fresh career, plays into a 3D match at phone size with real touches,
+flips 2D/3D many times (mid ball drag, mid grass press, mid pinch, after a
+diagonal drag near the ball), then checks a swipe turns the camera, a pinch
+zooms, a pull-back kicks, and the listener count did not grow. Exits 1 on a
+failure. `tests/star/switch3dInput.mts` runs it when `STAR_SWITCH3D_URL` is set.

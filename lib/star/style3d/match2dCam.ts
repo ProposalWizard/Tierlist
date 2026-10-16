@@ -629,13 +629,54 @@ export function wideFromSide(f: Frame2D, c: Pick<BcCamera, "ax" | "az" | "fov"> 
 
 /**
  * THE CAMERA SWIPE (Harry, 12 Oct 2026): a one-finger sideways drag that does NOT start on the ball or
- * on a team-mate turns the view round the ball, to find the team-mate you want. At most `maxDeg` either
+ * on a team-mate turns the view round the ball, to find the team-mate you want (13 Oct: a full turn, ±180°;
+ * a drag across the whole screen is half a turn). At most `maxDeg` either
  * way; a drag across the whole screen turns `degPerWidth`; when the chance ends it eases back over about
  * `easeS`. Camera only: the ball keeps its spot on the screen, the distance and angle down are kept.
  * Such a drag never reaches the 2D game, so it can never start a kick (engineView.ts onDown/onMove).
  */
-export const ORBIT = { maxDeg: 45, degPerWidth: 90, easeS: 0.35, startPx: 10, sideways: 1.2 };
+export const ORBIT = { maxDeg: 180, degPerWidth: 180, easeS: 0.35, startPx: 10, sideways: 1.2, centreDeg: 15, centreTilt: 5, centreS: 0.3, autoTilt: 0 };
+/** autoTilt 0 (13 Oct 2026): turned views read as near top-down; the turned framing (frameTurned) now keeps the stands off the screen by backing off and sliding instead. */
+/** Harry, 13 Oct 2026: a full turn round our player is allowed, so ±180° (the same view either end). */
 export function clampOrbit(deg: number): number { return Math.max(-ORBIT.maxDeg, Math.min(ORBIT.maxDeg, deg)); }
+/**
+ * CORNERS TURN LESS (Harry, 14 Oct 2026, option C of the tested comparison). On a corner the camera's
+ * turn stops at `corner` degrees either way (FRAME_TURNED.maxD stays 165 m): the whole goal on screen in
+ * 4 of 4 turned views (at 90°: 3 of 4), men 6–14 px tall (5–12 at 90°). Every other kind keeps the full
+ * turn. A swipe asking for more is a SOFT stop: the turn follows the finger exactly up to `knee` degrees
+ * short of the limit, then eases into it (same slope where the ease starts, so nothing jumps).
+ */
+export const ORBIT_LIMIT = { corner: 60, knee: 15 };
+/** How far the camera may turn on this kind of chance, degrees either way. */
+export function orbitMaxFor(kind?: string | null): number { return kind === "corner" ? ORBIT_LIMIT.corner : ORBIT.maxDeg; }
+/** The turn a swipe asks for, limited for this kind: clampOrbit, and on a corner the eased stop at ±ORBIT_LIMIT.corner. */
+export function limitOrbit(deg: number, kind?: string | null): number {
+  const max = orbitMaxFor(kind);
+  if (max >= ORBIT.maxDeg) return clampOrbit(deg);
+  const a = Math.abs(deg), k = Math.min(ORBIT_LIMIT.knee, max), start = max - k;
+  if (a <= start) return deg;
+  return Math.sign(deg) * Math.min(max, max - k * Math.exp(-(a - start) / k));
+}
+/**
+ * ORBIT ROUND OUR PLAYER, CENTRED (Harry, 13 Oct 2026). How far the camera's look point has moved onto the
+ * ball (0 = the default framing, 1 = the ball in the middle): full once turned `centreDeg` or tilted
+ * `centreTilt`, or while a finger/mouse is turning it.
+ */
+export function centreShare(deg: number, tilt: number, dragging = false): number {
+  if (dragging) return 1;
+  return Math.max(0, Math.min(1, Math.max(Math.abs(deg) / ORBIT.centreDeg, Math.abs(tilt) / ORBIT.centreTilt)));
+}
+/**
+ * The camera with the ball (our player's spot) moved `share` of the way to the middle of the screen:
+ * the look point slides along the grass onto the ball, then back towards the camera only as far as the
+ * room to drag back needs (keepDragRoom). Distance, angle and lens are kept: nothing changes size.
+ */
+export function centreOnPivot<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">>(c: T, ball: BcPoint, share: number, W: number, H: number, S = SET_PIECE_CAM): T {
+  if (share <= 0) return c;
+  const full = keepDragRoom({ ...c, tx: ball.x - CX, tz: ball.y }, ball, W, H, S);
+  const u = Math.min(1, share);
+  return { ...c, tx: c.tx + (full.tx - c.tx) * u, tz: c.tz + (full.tz - c.tz) * u };
+}
 /** The camera turned `deg` round the ball (on the grass): the look point and the camera's side both turn. */
 export function orbitCamera<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az">>(c: T, ball: { x: number; y: number }, deg: number): T {
   if (!deg) return c;
@@ -643,6 +684,328 @@ export function orbitCamera<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az">>
   const bx = ball.x - CX, bz = ball.y;
   const dx = c.tx - bx, dz = c.tz - bz;
   return { ...c, tx: bx + dx * cs - dz * sn, tz: bz + dx * sn + dz * cs, ax: c.ax * cs - c.az * sn, az: c.ax * sn + c.az * cs };
+}
+
+/**
+ * INSIDE THE BOWL (13 Oct 2026: a 90° turn on a cutback put the camera outside the stadium, a black
+ * lower third). The 3D stadium (real/arena.ts), in pitch metres: the stand fronts sit gapSide 6.0 m past
+ * each touchline and gapEnd 4.9 m behind each goal line; each stand runs `depth` back, its seats rising
+ * as `standTop` (two tiers: lower 0.49 m up a metre back, upper from 14.5 m back, 21.7 m high at the
+ * back). A turned or tilted camera stands either over the grass (inside the fronts) or over a stand, at
+ * least `clear` above its seats; never outside the stadium (`margin` inside its back).
+ */
+export const BOWL = { x0: CX - 34 - 6.0, x1: CX + 34 + 6.0, y0: -4.9, y1: 105 + 4.9, depth: 29, margin: 2, clear: 3 };
+/** How high the seats are `s` metres behind a stand's front (real/arena.ts `two` tiers), the step to the upper tier eased over 2 m. */
+export function standTop(s: number): number {
+  if (s <= 0) return 1.1;
+  const lower = 1.1 + Math.min(s, 16.4) * (0.4 / 0.82);
+  const upper = s >= 14.5 ? 12.2 + Math.min(s - 14.5, 14.6) * (0.56 / 0.86) : 0;
+  // the upper tier's front face is a 4 m step: the camera's clearance ramps up over the 2 m before it, so
+  // a camera turned over it rises smoothly instead of jumping (13 Oct 2026, "turning isn't clean")
+  const ramp = s >= 12.5 && s < 14.5 ? lower + (12.2 - lower) * ((s - 12.5) / 2) : 0;
+  return Math.max(lower, upper, ramp);
+}
+/** Where a camera at pitch (x, z), y m up stands: "grass" inside the stand fronts, "stand" over a stand high enough, else "out". */
+export function bowlSpot(x: number, z: number, y: number): "grass" | "stand" | "out" {
+  const m = BOWL.margin;
+  const s = Math.max(BOWL.x0 - x, x - BOWL.x1, BOWL.y0 - z, z - BOWL.y1); // metres behind the nearest front
+  if (s <= -m) return "grass";
+  if (s > BOWL.depth - m) return "out";
+  return y >= standTop(Math.max(0, s)) + BOWL.clear ? "stand" : "out";
+}
+const camSpot = (c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D">) => {
+  const ce = Math.cos(c.elev);
+  return bowlSpot(c.tx + CX + c.ax * c.D * ce, c.tz + c.az * c.D * ce, c.D * Math.sin(c.elev));
+};
+/**
+ * Where a turned camera stops drawing the stands' roofs, trusses and lamps (along its ground direction, the
+ * units engineView.ts clips the stadium with). Harry, 14 Oct 2026: "I only mean the top white roof, not the
+ * advertising boards and fans": turned all the way (`share` 1) no roof is drawn at all; the seats, fans and
+ * boards stay. On the way in (`share` 0..1) the roofs go from the camera's side outwards, so nothing pops.
+ */
+export function overheadClipAlong(c: Pick<BcCamera, "ax" | "az">, ball: BcPoint, share = 1): number {
+  return (ball.x - CX) * c.ax + ball.y * c.az - 300 * Math.max(0, Math.min(1, share));
+}
+/** True when this camera stands over a stand (engineView.ts then draws the near stand's seats and clips only its roof). */
+export function overStand(c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D">): boolean { return camSpot(c) === "stand"; }
+/**
+ * INSIDE THE BOWL, SMOOTHLY. A turned or tilted camera outside the stadium first RISES (Harry, 13 Oct
+ * 2026: "the zoom is too zoomed in": a higher camera at the same distance keeps the framing), by the
+ * least angle that brings it inside; only if even the highest allowed angle is still outside does it
+ * come closer, by the least distance, never under BOWL_MIN_D of its own distance. Both amounts are
+ * found by halving (not in steps), so a camera turned one degree further moves a little, never jumps
+ * (Harry, 13 Oct: "turning left right isn't clean anymore": the old 2° steps popped). The ball keeps
+ * its spot on the screen. `share` (0..1) applies that part of the move; 0 (the default camera): untouched.
+ */
+/** The closest a camera kept inside the bowl may come, as a share of its framing's distance. */
+export const BOWL_MIN_D = 0.85;
+export function keepInBowl<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov"> & { minDepth?: number; elevDeg?: number }>(c: T, ball: BcPoint, share: number, W: number, H: number): T {
+  const fine = (x: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D">) => camSpot(x) !== "out";
+  if (share <= 0 || fine(c)) return c;
+  const u = Math.min(1, share);
+  const at = bcProject(c, W, H, ball);
+  const e0 = (c.elev * 180) / Math.PI;
+  const riseMax = Math.max(0, TILT.maxElev - e0);
+  // the camera raised `r` degrees, the ball held on its screen spot
+  const raised = (r: number) => holdBall(withElev(c, e0 + r), ball, at.nx, at.fr, W, H);
+  let out: T;
+  if (fine(raised(riseMax))) {
+    let lo = 0, hi = riseMax;
+    for (let i = 0; i < 16; i++) { const m = (lo + hi) / 2; if (fine(raised(m))) hi = m; else lo = m; }
+    out = raised(hi * u);
+  } else {
+    const top = raised(riseMax);
+    const closer = (D: number) => holdBall(withD(top, D), ball, at.nx, at.fr, W, H);
+    const Dmin = c.D * BOWL_MIN_D;
+    let D = Dmin;
+    if (fine(closer(Dmin))) {
+      let lo = Dmin, hi = c.D; // lo fine, hi not
+      for (let i = 0; i < 16; i++) { const m = (lo + hi) / 2; if (fine(closer(m))) lo = m; else hi = m; }
+      D = lo;
+    }
+    out = holdBall(withD(withElev(c, e0 + riseMax * u), c.D + (D - c.D) * u), ball, at.nx, at.fr, W, H);
+  }
+  return out;
+}
+const withElev = <T extends Pick<BcCamera, "elev"> & { elevDeg?: number }>(c: T, deg: number): T => ({ ...c, elev: (deg * Math.PI) / 180, ...(c.elevDeg !== undefined ? { elevDeg: deg } : {}) });
+const withD = <T extends Pick<BcCamera, "D"> & { minDepth?: number }>(c: T, D: number): T => ({ ...c, D, ...(c.minDepth !== undefined ? { minDepth: (c.minDepth * D) / c.D } : {}) });
+/** The same camera slid along the grass so `ball` lands at screen (nx, fr): every other number kept. */
+export function holdBall<T extends Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">>(c: T, ball: BcPoint, nx: number, fr: number, W: number, H: number): T {
+  const g = groundUnder(c, W, H, nx, 1 - 2 * fr);
+  if (!g) return c;
+  return { ...c, tx: c.tx + ball.x - g.x, tz: c.tz + ball.y - g.y };
+}
+
+/**
+ * A TURNED CAMERA KEEPS THE GOAL AND THE PITCH (Harry, 13 Oct 2026: "the goal should always be in view
+ * even with the ball centred. it just means the frame has to be moved"; "it shld also never be out of
+ * play in 3d"; "now that the ball is centred in camera the zoom is too zoomed in"; "turning left right
+ * isn't clean anymore").
+ * Turned or tilted round our player, the camera keeps its side and lens and works out where to stand:
+ *   - the ball near the middle, with the room to drag back under it (never off its box);
+ *   - the whole goal mouth (both posts, the bar) on the screen, when the chance's own camera shows it;
+ *   - at least `pitchMin` of the screen is pitch (grass inside the lines, plus the goal);
+ *   - inside the stadium (keepInBowl).
+ * Three moves only, never a size change (SIZE3D) and never closer than the turned camera: BACK (further
+ * away, up to `kMax` x its distance), SLIDE (the ball off the middle) and RISE (higher; off, see riseMax).
+ * Each costs a little (`cost`: backing off is cheapest, then sliding, then rising); missing the goal or
+ * the pitch share costs a lot. The cheapest is found by a fixed run of small downhill steps from the
+ * ball-centred camera, each a smooth function of the turn, so the camera follows the turn smoothly and
+ * never snaps between two answers (tests/star/match2dCam.mts sweeps it degree by degree).
+ */
+export const FRAME_TURNED = {
+  /** Room at the screen's edges round the goal's posts and bar, share of the half-screen. */
+  margin: 0.05,
+  /** Least share of the screen that is pitch (grass inside the lines, the goal): the main thing (Harry, 14 Oct 2026; a strip of fans and boards is fine). */
+  pitchMin: 0.65,
+  /** Where the ball may sit: |nx| at most this, at least `ballTop` down (and the drag room below). */
+  ballNx: 0.88,
+  ballTop: 0.12,
+  /** Furthest back, x the turned camera's distance... */
+  kMax: 3,
+  /** ...and never further than this (m): a man stays about 2% of the screen's height or more, readable (13 Oct 2026: 200 m made dots). */
+  maxD: 165,
+  /** Rising (higher, a steeper look) for the pitch share, at most this many degrees (Harry, 14 Oct 2026: "I don't love
+   *  seeing the stadiums": the pitch, not the stands; raising is preferred). Rising only slowly changes the share, so the
+   *  needed height can move fast with the turn: the game eases the framing (easeFit). */
+  riseMax: 25,
+  /** ...and never steeper than this, so it keeps a real 3D look (not top-down). */
+  elevCap: 70,
+  /** What each move costs (back: per ln of the distance; slide: per screen half-width; rise: per riseMax); a miss costs `miss` per unit squared plus `missLin` per unit; the screen's bottom edge out over the seats costs `stand` per 10 m squared, being lifted by the stadium `lifted` per 10 degrees squared. */
+  cost: { back: 1, slide: 0.6, rise: 1, miss: 400, missLin: 20, stand: 40, lifted: 40 },
+  /** The search: this many downhill steps, each at most stepMax x stepDecay^k (scaled numbers), at `rate` per unit of slope. */
+  iters: 30,
+  stepMax: 0.3,
+  stepDecay: 0.9,
+  rate: 0.02,
+  /** In the game, the framing glides to each frame's answer over about this long (s). */
+  easeS: 0.12,
+};
+/** The goal mouth (posts' feet and tops) and the net's foot 1 m behind the line, which must all be on screen. */
+const GOAL_MOUTH: BcPoint[] = [{ x: CX - 3.66, y: 0 }, { x: CX + 3.66, y: 0 }, { x: CX - 3.66, y: 0, z: 2.44 }, { x: CX + 3.66, y: 0, z: 2.44 },
+  { x: CX - 3.66, y: -1 }, { x: CX + 3.66, y: -1 }];
+/** Both posts (foot and top) and so the bar on the screen, with `margin` (share of the half-screen) to spare. */
+export function goalMouthOnScreen(c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">, W: number, H: number, margin = 0): boolean {
+  for (const p of GOAL_MOUTH) {
+    const s = bcProject(c, W, H, p);
+    if (!(s.depth > 0.5 && Math.abs(s.nx) <= 1 - margin && s.fr >= margin / 2 && s.fr <= 1 - margin / 2)) return false;
+  }
+  return true;
+}
+/** Does this (untouched) camera show the goal at all: both posts, feet and tops, anywhere on screen? Then a turned one keeps the whole mouth. */
+export function showsGoal(c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">, W: number, H: number): boolean {
+  for (const p of GOAL_MOUTH.slice(0, 4)) {
+    const s = bcProject(c, W, H, p);
+    if (!(s.depth > 0.5 && Math.abs(s.nx) <= 1 && s.fr >= 0 && s.fr <= 1)) return false;
+  }
+  return true;
+}
+/** The camera's frame in three.js metres: its position and right / up / forward unit vectors. */
+function camBasis(c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D">) {
+  const se = Math.sin(c.elev), ce = Math.cos(c.elev);
+  return {
+    pos: [c.tx + c.ax * c.D * ce, c.D * se, c.tz + c.az * c.D * ce],
+    fwd: [-c.ax * ce, -se, -c.az * ce], up: [-c.ax * se, ce, -c.az * se], rt: [c.az, 0, -c.ax],
+  };
+}
+/** Share of the screen covered by a flat polygon in the world (pitch points, z up), cut at the near plane. */
+function screenPoly(c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">, W: number, H: number, poly: BcPoint[]): { a: number; cx: number; cy: number } {
+  const b = camBasis(c);
+  const tV = Math.tan((c.fov * Math.PI) / 360), tH = tV * (W / H);
+  const dot = (a: number[], v: number[]) => a[0] * v[0] + a[1] * v[1] + a[2] * v[2];
+  let pts = poly.map((p) => { const r = [p.x - CX - b.pos[0], (p.z ?? 0) - b.pos[1], p.y - b.pos[2]]; return [dot(r, b.rt), dot(r, b.up), dot(r, b.fwd)]; });
+  const NEAR = 0.3;
+  const clip = (arr: number[][], inside: (p: number[]) => number) => {
+    const o: number[][] = [];
+    for (let i = 0; i < arr.length; i++) {
+      const a = arr[i], q = arr[(i + 1) % arr.length], da = inside(a), dq = inside(q);
+      if (da >= 0) o.push(a);
+      if ((da >= 0) !== (dq >= 0)) { const t = da / (da - dq); o.push(a.map((v, k) => v + (q[k] - v) * t)); }
+    }
+    return o;
+  };
+  pts = clip(pts, (p) => p[2] - NEAR);
+  const none = { a: 0, cx: 0, cy: 0 };
+  if (pts.length < 3) return none;
+  let s = pts.map((p) => [p[0] / (p[2] * tH), p[1] / (p[2] * tV), 0]);
+  for (const f of [(p: number[]) => 1 - p[0], (p: number[]) => p[0] + 1, (p: number[]) => 1 - p[1], (p: number[]) => p[1] + 1]) { s = clip(s, f); if (s.length < 3) return none; }
+  let a = 0, cx = 0, cy = 0;
+  for (let i = 0; i < s.length; i++) { const p = s[i], q = s[(i + 1) % s.length], k = p[0] * q[1] - q[0] * p[1]; a += k; cx += (p[0] + q[0]) * k; cy += (p[1] + q[1]) * k; }
+  if (Math.abs(a) < 1e-12) return none;
+  // a: share of the screen; (cx, cy): its middle in screen units (x right, y UP, each −1..1)
+  return { a: Math.abs(a) / 2 / 4, cx: cx / (3 * a), cy: cy / (3 * a) };
+}
+function screenShare(c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">, W: number, H: number, poly: BcPoint[]): number { return screenPoly(c, W, H, poly).a; }
+/** Share of the screen that is in play: the grass inside the lines (half a metre spare) plus the goal's mouth. */
+export function pitchOnScreen(c: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">, W: number, H: number): number {
+  const g = 0.5;
+  const grass: BcPoint[] = [{ x: CX - 34 - g, y: -g }, { x: CX + 34 + g, y: -g }, { x: CX + 34 + g, y: 105 + g }, { x: CX - 34 - g, y: 105 + g }];
+  const mouth: BcPoint[] = [{ x: CX - 3.66, y: 0 }, { x: CX + 3.66, y: 0 }, { x: CX + 3.66, y: 0, z: 2.44 }, { x: CX - 3.66, y: 0, z: 2.44 }];
+  return Math.min(1, screenShare(c, W, H, grass) + screenShare(c, W, H, mouth));
+}
+/**
+ * How far (m) the screen's bottom edge reaches behind a stand's front (0: on the grass). engineView.ts clips
+ * the stadium nearer the camera than that edge, so past the front, that stand's roof lands on the picture.
+ */
+export function bottomOverStand(x: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">, W: number, H: number): number {
+  let over = 0;
+  for (const nx of [-1, 0, 1]) {
+    const g = groundUnder(x, W, H, nx, -1);
+    if (!g) { over = Math.max(over, 30); continue; }
+    over = Math.max(over, BOWL.x0 - g.x, g.x - BOWL.x1, BOWL.y0 - g.y, g.y - BOWL.y1);
+  }
+  return Math.max(0, over);
+}
+/** The framing's own numbers (frameTurned): ln of the distance factor, the rise (degrees), the ball's screen spot. */
+export interface TurnFit { lk: number; rise: number; nx: number; fr: number }
+/** How far a camera misses: the goal mouth off the screen's margins, and the pitch share short of `pitchMin` (0 = fine). */
+function framingMiss(x: Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov">, W: number, H: number, goal: boolean, F = FRAME_TURNED): number {
+  let m = 0;
+  if (goal) for (const p of GOAL_MOUTH) {
+    const s = bcProject(x, W, H, p);
+    if (s.depth < 0.5) { m += 1 + (0.5 - s.depth) * 0.05; continue; }
+    m += Math.max(0, Math.abs(s.nx) - (1 - F.margin)) + Math.max(0, F.margin / 2 - s.fr) + Math.max(0, s.fr - (1 - F.margin / 2));
+  }
+  m += Math.max(0, F.pitchMin - pitchOnScreen(x, W, H)) * 2;
+  return m;
+}
+type TurnCam = Pick<BcCamera, "tx" | "tz" | "ax" | "az" | "elev" | "D" | "fov"> & { minDepth?: number; elevDeg?: number };
+/** The turned camera `c` moved by a framing `fit`: further back, higher, the ball on its spot; kept inside the bowl. */
+export function turnedPose<T extends TurnCam>(c: T, ball: BcPoint, fit: TurnFit, W: number, H: number): T {
+  const e0 = (c.elev * 180) / Math.PI;
+  const placed = holdBall(withD(fit.rise > 0 ? withElev(c, e0 + fit.rise) : c, c.D * Math.exp(fit.lk)), ball, fit.nx, fit.fr, W, H);
+  return keepInBowl(placed, ball, 1, W, H);
+}
+/** The neutral framing (nothing moved): the ball in the middle, drag room kept. */
+export function centredFit(W: number, H: number, S = SET_PIECE_CAM): TurnFit {
+  return { lk: 0, rise: 0, nx: 0, fr: Math.min(0.5, 1 - dragRoomShare(W, H, S)) };
+}
+/**
+ * The framing for the turned/tilted camera `c` (orbitCamera, tiltCamera): a fixed run of small downhill
+ * steps on the cost above from the ball-centred start, every step a smooth function of the turn.
+ */
+export function solveTurnFit(c: TurnCam, ball: BcPoint, W: number, H: number, goal: boolean, F = FRAME_TURNED, S = SET_PIECE_CAM): TurnFit {
+  const limit = 1 - dragRoomShare(W, H, S);
+  const fr0 = Math.min(0.5, limit);
+  const e0 = (c.elev * 180) / Math.PI;
+  const riseTop = Math.min(F.riseMax, Math.max(0, Math.min(TILT.maxElev, F.elevCap) - e0));
+  const lkMax = Math.max(0, Math.log(Math.min(F.kMax, F.maxD / c.D)));
+  const lo = [0, 0, -F.ballNx, F.ballTop], hi = [lkMax, riseTop, F.ballNx, limit];
+  const clampV = (v: number[]) => v.map((x, i) => Math.max(lo[i], Math.min(hi[i], x)));
+  const fitOf = (v: number[]): TurnFit => ({ lk: v[0], rise: v[1], nx: v[2], fr: v[3] });
+  // how far the stadium lifts the camera anyway (ball centred, nothing moved): only lift beyond that costs
+  const lift0 = ((turnedPose(c, ball, { lk: 0, rise: 0, nx: 0, fr: fr0 }, W, H).elev - c.elev) * 180) / Math.PI;
+  const cost = (v: number[]) => {
+    const x = turnedPose(c, ball, fitOf(v), W, H);
+    const miss = framingMiss(x, W, H, goal, F);
+    const sx = v[2], sy = ((v[3] - fr0) * 2 * H) / W; // the slide in half-widths, both ways
+    const r = F.riseMax > 0 ? v[1] / F.riseMax : 0;
+    // the screen's bottom edge out over a stand costs (its roof is then drawn over the picture: the turned
+    // stills of 13 Oct 2026), and so does the stadium lifting the camera (towards a top-down look)
+    const forced = ((x.elev - c.elev) * 180) / Math.PI - v[1];
+    const over = bottomOverStand(x, W, H);
+    return F.cost.back * v[0] * v[0] + F.cost.slide * (sx * sx + sy * sy) + F.cost.rise * r * r + F.cost.miss * miss * miss + F.cost.missLin * miss
+      + F.cost.stand * (over / 10) ** 2 + F.cost.lifted * (Math.max(0, forced - lift0) / 10) ** 2;
+  };
+  // numbers scaled to about 1; each step at most stepMax x stepDecay^k long
+  const sc = [lkMax, Math.max(1, riseTop), F.ballNx, Math.max(0.05, limit - F.ballTop)];
+  let v = clampV([0, 0, 0, fr0]);
+  for (let k = 0; k < F.iters; k++) {
+    const g = [0, 0, 0, 0], c0 = cost(v);
+    for (let i = 0; i < 4; i++) {
+      if (hi[i] - lo[i] < 1e-9) continue;
+      // one-sided slope (inwards at a bound)
+      const h = (v[i] + 1e-3 * sc[i] <= hi[i] ? 1 : -1) * 1e-3 * sc[i];
+      const a = v.map((x, j) => (j === i ? x + h : x));
+      g[i] = ((cost(a) - c0) / h) * sc[i];
+    }
+    const gl = Math.hypot(...g);
+    const cap = F.stepMax * Math.pow(F.stepDecay, k);
+    const m = gl > 1e-12 ? Math.min(F.rate, cap / gl) : 0;
+    v = clampV(v.map((x, i) => x - m * g[i] * sc[i]));
+  }
+  return fitOf(v);
+}
+/**
+ * In the game the framing is eased towards each frame's answer over FRAME_TURNED.easeS (engineView.ts),
+ * so even where the answer moves fast with the turn (a corner turned past the goal), the camera glides.
+ * The ball keeps exactly its eased spot on the screen; the turn itself is never delayed.
+ */
+export function easeFit(cur: TurnFit, want: TurnFit, dt: number, F = FRAME_TURNED): TurnFit {
+  const u = Math.min(1, Math.max(0, dt) / F.easeS);
+  return { lk: cur.lk + (want.lk - cur.lk) * u, rise: cur.rise + (want.rise - cur.rise) * u, nx: cur.nx + (want.nx - cur.nx) * u, fr: cur.fr + (want.fr - cur.fr) * u };
+}
+/**
+ * The turned/tilted camera framed round the ball (see FRAME_TURNED). `share` (centreShare, eased) blends
+ * from `c` (0: untouched, the default camera) to the framed camera (1). `fit`: an already-worked-out (eased)
+ * framing; without one it is solved here.
+ */
+export function frameTurned<T extends TurnCam>(c: T, ball: BcPoint, share: number, W: number, H: number, goal: boolean, fit?: TurnFit | null): T {
+  if (share <= 0) return c;
+  const full = turnedPose(c, ball, fit ?? solveTurnFit(c, ball, W, H, goal), W, H);
+  const u = Math.min(1, share);
+  if (u >= 1) return full;
+  const e = c.elev + (full.elev - c.elev) * u;
+  return { ...c, tx: c.tx + (full.tx - c.tx) * u, tz: c.tz + (full.tz - c.tz) * u, D: c.D + (full.D - c.D) * u, elev: e,
+    ...(c.elevDeg !== undefined ? { elevDeg: (e * 180) / Math.PI } : {}), ...(c.minDepth !== undefined && full.minDepth !== undefined ? { minDepth: c.minDepth + (full.minDepth - c.minDepth) * u } : {}) };
+}
+
+/**
+ * THE BALL GRAB, ON THE GLASS (Harry, 13 Oct 2026: "I cant drag up and down in 3d it's just dragging
+ * back from anywhere on the screen"). Measured cause: the 2D game's own grab zone (0.2 of the box's
+ * height, about 9.6 m of grass) was tested on the GRASS, and a turned camera centred on the ball shows
+ * about 18 px per metre there, so it became a ~170 px circle on a 362 px wide screen: nearly every press
+ * grabbed the ball. Now every grab is bounded on the screen round the ball as seen: within `px` CSS px
+ * it always grabs; out to `px` x `reach` it grabs only if the press is also in the 2D game's own zone or
+ * within `groundM` of the ball on the grass. Never further: zoom and turn cannot grow it.
+ */
+export const BALL_GRAB = { px: 48, reach: 1.4, groundM: 3.2 };
+/** The furthest a press may be from the ball's picture and still grab it, CSS px. */
+export function ballGrabMaxPx(): number { return BALL_GRAB.px * BALL_GRAB.reach; }
+/** Does a press `glassPx` from the ball's picture grab it? `in2dZone`: inside the 2D game's own zone; `groundM`: metres from the ball on the grass. */
+export function grabsBall(glassPx: number, in2dZone: boolean, groundM: number): boolean {
+  if (glassPx <= BALL_GRAB.px) return true;
+  return glassPx <= ballGrabMaxPx() && (in2dZone || groundM < BALL_GRAB.groundM);
 }
 
 /**

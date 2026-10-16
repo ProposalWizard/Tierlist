@@ -9,8 +9,9 @@
  * `wired` says whether the game plays this sound today. The UI sounds play
  * through lib/star/sfx.ts; the kick, net, keeper and stadium-roar files and
  * the commentator lines play in goal videos (lib/star/goalClip/audio.ts). The
- * live match still uses its own synthesised sounds (lib/star/matchSound.ts),
- * and the whistles, the small-ground cheer and the groan are not played yet.
+ * live match makes its own sounds in code; with the Arcade texture pack it plays
+ * the match-pass/-goal/-crowd files instead, and makes the rest in
+ * code (lib/star/matchSound.ts), and the whistles, the small-ground cheer and the groan are not played yet.
  *
  * Pure data — no browser or server imports — so both sides can use it.
  */
@@ -34,6 +35,9 @@ export const SFX_CATALOG: SfxCatalogEntry[] = [
   { name: "kick-hard", label: "A struck shot", group: "The match", wired: true, where: "In goal videos in the feed (and a saved video). The live match still makes its own sound." },
   { name: "goal-net", label: "Ball hits the back of the net", group: "The match", wired: true, where: "In goal videos in the feed (and a saved video). The live match still makes its own sound." },
   { name: "keeper-save", label: "Keeper catches or parries", group: "The match", wired: true, where: "In goal videos in the feed (and a saved video). The live match still makes its own sound." },
+  { name: "match-pass", label: "Live match: a pass or a team-mate's kick", group: "The match", wired: true, where: "In the live match when a team-mate passes, lays it off or shoots. Arcade texture pack only (made by scripts/sfx/arcade.py)." },
+  { name: "match-goal", label: "Live match: goal sting", group: "The match", wired: true, where: "In the live match the moment your team scores, with the net and the crowd. Arcade texture pack only." },
+  { name: "match-crowd", label: "Live match: crowd swell", group: "The crowd", wired: true, where: "In the live match after your goal or their miss, and on Ballon d'Or night. Arcade texture pack only." },
   { name: "crowd-cheer-small", label: "Goal at a small non-league ground", group: "The crowd", wired: false, where: "Not played yet. The match makes its own crowd noise." },
   { name: "crowd-cheer-stadium", label: "Goal in a big stadium", group: "The crowd", wired: true, where: "In goal videos in the feed (and a saved video). The live match still makes its own sound." },
   { name: "crowd-groan", label: "A near miss or a save", group: "The crowd", wired: false, where: "Not played yet. The match makes its own crowd noise." },
@@ -63,6 +67,8 @@ export const SFX_CATALOG: SfxCatalogEntry[] = [
   { name: "achievement-pop", label: "Achievement unlocked", group: "Rewards", wired: true, where: "When an achievement or a record pops up: the pop-up, the post-match list and the unlock screens." },
   { name: "ui-tap", label: "Any button tap", group: "Menus, phone and news", wired: true, where: "Every ordinary button in the New UI." },
   { name: "ui-confirm", label: "Confirm / continue", group: "Menus, phone and news", wired: true, where: "Every green and gold button (Continue, Play Match, Confirm). Also when you switch Sound effects on in Settings." },
+  { name: "ui-tap-arcade", label: "Any button tap (Arcade pack)", group: "Menus, phone and news", wired: true, where: "Every ordinary button in the New UI, with the Arcade texture pack picked. A deeper tap made by scripts/sfx/arcade.py." },
+  { name: "ui-confirm-arcade", label: "Confirm / continue (Arcade pack)", group: "Menus, phone and news", wired: true, where: "Every green and gold button, with the Arcade texture pack picked. The Stadium set's warm chord." },
   { name: "phone-notification", label: "New post on the phone feed", group: "Menus, phone and news", wired: true, where: "When a new post lands on your phone while you are on the home screens." },
   { name: "breaking-news", label: "Breaking news headline", group: "Menus, phone and news", wired: true, where: "When the Breaking News screen opens." },
   { name: "can-open", label: "Opening an energy drink", group: "Menus, phone and news", wired: true, where: "When you use an energy can." },

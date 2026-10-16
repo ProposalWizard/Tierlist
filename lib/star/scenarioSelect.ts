@@ -32,6 +32,9 @@ export interface SelectionMemory {
   recent: string[];
   /** The even-mix bag of highlight kinds (lib/star/kindMix.ts). */
   kindBag?: KindBag;
+  /** Settings → Chances: New only — the last kinds served, oldest first,
+   *  for the deal's guard (kindMix.ts guardedDeal). */
+  dealt?: ScenarioKind[];
 }
 
 export function newSelectionMemory(): SelectionMemory { return { recent: [] }; }

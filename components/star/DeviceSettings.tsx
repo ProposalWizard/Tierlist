@@ -11,7 +11,6 @@ import { LOOK_ROWS, changedFromDefault, setLookRow, useLook, type LookRowId } fr
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetNote, SetSection, SetToggle } from "./settingsKit";
-import { useCam2dSwipe, setCam2dSwipeOn } from "@/lib/star/cam2dSwipe";
 import Quality3dRow from "./Quality3dRow";
 
 /**
@@ -126,11 +125,8 @@ export function QuickSwitches({ glow, fullscreen }: {
   );
 }
 
-/** The v0.15 gameplay round's switches: Old by default, "All new" = how the round finished. */
-const V015_ROWS: LookRowId[] = ["keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "matchRadar"];
-
 /** One New | Old row. A dot marks a row you changed by hand. */
-function LookRow({ id, tabs, note, look }: {
+export function LookRow({ id, tabs, note, look }: {
   id: LookRowId;
   tabs: readonly (readonly [string, string])[];
   note?: React.ReactNode;
@@ -151,7 +147,7 @@ function LookRow({ id, tabs, note, look }: {
   );
 }
 
-const NEW_OLD = [["new", "New"], ["old", "Old"]] as const;
+export const NEW_OLD = [["new", "New"], ["old", "Old"]] as const;
 
 /** A preference row with its own tabs (not part of any version). */
 function PrefRow({ label, children, note }: { label: string; children: React.ReactNode; note?: React.ReactNode }) {
@@ -179,25 +175,10 @@ function MatchGroup() {
   const gp = (k: GameplaySwitch) => (look[k as LookRowId] === "new" ? GAMEPLAY_SWITCHES[k].newText : GAMEPLAY_SWITCHES[k].oldText);
   return (
     <>
-      {/* Leo, 12 Oct 2026: every new thing from the v0.15 gameplay round in one place,
-          Old by default; "All new" = the game exactly as that round finished. */}
-      <div className="my-2 border-2 border-amber-400/70 bg-amber-400/10 px-3 py-3" data-new-round="v0.15">
-        <p className="text-[13px] font-black uppercase tracking-wider text-amber-300">New in v0.15 · testing</p>
-        <p className="mt-1 text-[12px] font-bold text-white">All start on Old (the game as before). All new = the game exactly as the v0.15 round finished.</p>
-        <div className="mt-2 flex gap-2">
-          <button className="flex-1 border-2 border-amber-300 bg-amber-400 px-2 py-1.5 text-[12px] font-black uppercase text-gray-950" data-new-round-all="new"
-            onClick={() => { for (const id of V015_ROWS) setLookRow(id, "new"); }}>All new</button>
-          <button className="flex-1 border-2 border-white/40 px-2 py-1.5 text-[12px] font-black uppercase text-white" data-new-round-all="old"
-            onClick={() => { for (const id of V015_ROWS) setLookRow(id, "old"); }}>All old</button>
-        </div>
-        <LookRow id="keeperPro" look={look} tabs={NEW_OLD} note={gp("keeperPro")} />
-        <LookRow id="shotsPro" look={look} tabs={NEW_OLD} note={gp("shotsPro")} />
-        <LookRow id="knucklePower" look={look} tabs={NEW_OLD} note={gp("knucklePower")} />
-        <LookRow id="ballPhysics" look={look} tabs={NEW_OLD} note={gp("ballPhysics")} />
-        <LookRow id="matchFlow" look={look} tabs={NEW_OLD} note={gp("matchFlow")} />
-        <LookRow id="matchRadar" look={look} tabs={NEW_OLD} note="New: a live mini-pitch above the commentary between your chances. Old: the commentary on its own." />
-      </div>
+      {/* Every New | Old update switch lives in Settings → Updates (Leo, 14 Oct 2026). */}
       <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
+      {/* Leo, 14 Oct 2026 (round 16): default New. Also in Settings → Updates. */}
+      <LookRow id="keeperFinish" look={look} tabs={NEW_OLD} note={gp("keeperFinish")} />
       <PrefRow label="Match view 3D" note="On: your match drawn in 3D, in a full stadium. The football is the same; only the picture changes.">
         <SegTabs className="w-[150px] shrink-0" value={view3d} onChange={(v) => setMatchView3d(v)} tabs={[["on", "On"], ["off", "Off"]] as const} />
       </PrefRow>
@@ -218,17 +199,6 @@ function World3dGroup() {
       <PrefRow label="3D camera height (test)" note={`Testing only. Raises or lowers the 3D match camera (${camH > 0 ? "+" : ""}${camH}°). Leave at 0.`}>
         <input type="range" min={HEIGHT_TEST_MIN} max={HEIGHT_TEST_MAX} step={1} value={camH} onChange={(e) => setCamHeightTest(Number(e.target.value))} className="w-[150px] shrink-0 accent-amber-400" aria-label="3D camera height (test)" data-cam-height-test />
       </PrefRow>
-    </>
-  );
-}
-
-/** The 2D match camera (lib/star/cam2dSwipe.ts): the swipe camera, off by default. */
-function Match2dCamGroup() {
-  const on = useCam2dSwipe();
-  return (
-    <>
-      <SetToggle label="Swipe camera" on={on} onClick={() => setCam2dSwipeOn(!on)} last />
-      <p className="px-3 pb-2 text-[11px] text-white/70">On: in the 2D match, swipe up or down on open grass to lean the camera, double tap to put it back, and the video-camera button to lock your angle. A drag from the ball always kicks.</p>
     </>
   );
 }
@@ -267,9 +237,8 @@ export function SettingsGroups({ glow, extra = [], inMatch = false }: { glow: st
     );
   }
   const groups: (ExtraGroup & { card?: boolean })[] = [
-    { id: "match", title: "Match", sub: "Keepers, testing (v0.15), 2D or 3D, names", count: 9, content: <MatchGroup />, card: true },
+    { id: "match", title: "Match", sub: "Keepers, 2D or 3D, names", count: 3, content: <MatchGroup />, card: true },
     { id: "world", title: "3D match camera", sub: "Zoom and camera height", count: 2, content: <World3dGroup />, card: true },
-    { id: "cam2d", title: "2D match camera", sub: "Swipe camera (off by default)", count: 1, content: <Match2dCamGroup />, card: true },
     { id: "screens", title: "Screens", sub: "Old UI or New UI", count: 1, content: <ScreensGroup />, card: true },
     ...extra,
   ];

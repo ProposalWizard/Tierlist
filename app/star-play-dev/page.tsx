@@ -146,6 +146,14 @@ export default function PlayAreaPage() {
           </div>
         </button>
 
+        <Link href="/star-update-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
+          <div style={tileTitle}>Oct 13 update &#8594;</div>
+          <div style={tileSub}>
+            The whole gameplay update (shot power, contact field, keepers, team-mates, match
+            feel) behind one Old | New switch, on this phone.
+          </div>
+        </Link>
+
         <Link href="/star-animations-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
           <div style={tileTitle}>Animations &#8594;</div>
           <div style={tileSub}>

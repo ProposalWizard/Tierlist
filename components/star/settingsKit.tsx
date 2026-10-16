@@ -70,13 +70,13 @@ function Track({ on }: { on: boolean }) {
   return (
     <span
       aria-hidden
-      className="relative block h-[26px] w-[46px] shrink-0 rounded-full transition-[background,box-shadow] duration-200"
+      className="relative block h-[26px] w-[46px] shrink-0 rounded-full transition-[background,box-shadow] duration-75"
       style={on
         ? { background: "linear-gradient(180deg, #4ade80, #10b981 60%, #047857)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.4), 0 0 14px -2px rgba(16,185,129,.8)" }
         : { background: "linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04))", boxShadow: "inset 0 2px 4px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.12)" }}
     >
       <span
-        className="absolute left-0 top-[3px] h-5 w-5 rounded-full bg-gradient-to-b from-white to-gray-200 transition-transform duration-200 motion-reduce:transition-none"
+        className="absolute left-0 top-[3px] h-5 w-5 rounded-full bg-gradient-to-b from-white to-gray-200 transition-transform duration-75 motion-reduce:transition-none"
         style={{ transform: `translateX(${on ? 23 : 3}px)`, boxShadow: "0 2px 5px rgba(0,0,0,.45), inset 0 -1px 0 rgba(0,0,0,.12)" }}
       />
     </span>
@@ -105,13 +105,13 @@ export function SetToggle({ label, on, onClick, last = false }: { label: string;
       <span className="text-[14px] font-bold leading-tight text-white">{label}</span>
       <span
         aria-hidden
-        className="relative block h-[20px] w-[36px] shrink-0 rounded-full transition-[background,box-shadow] duration-200"
+        className="relative block h-[20px] w-[36px] shrink-0 rounded-full transition-[background,box-shadow] duration-75"
         style={on
           ? { background: "linear-gradient(180deg, #4ade80, #10b981 60%, #047857)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.4), 0 0 10px -2px rgba(16,185,129,.8)" }
           : { background: "linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04))", boxShadow: "inset 0 2px 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.14)" }}
       >
         <span
-          className="absolute left-0 top-[2px] h-4 w-4 rounded-full bg-gradient-to-b from-white to-gray-200 transition-transform duration-200 motion-reduce:transition-none"
+          className="absolute left-0 top-[2px] h-4 w-4 rounded-full bg-gradient-to-b from-white to-gray-200 transition-transform duration-75 motion-reduce:transition-none"
           style={{ transform: `translateX(${on ? 18 : 2}px)`, boxShadow: "0 1px 3px rgba(0,0,0,.45)" }}
         />
       </span>

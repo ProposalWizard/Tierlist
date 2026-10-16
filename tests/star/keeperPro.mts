@@ -28,6 +28,8 @@ const store = new Map<string, string>();
 
 console.log("\nOLD IS THE KEEPER FROM BEFORE");
 store.set("star-gameplay-keeperPro", "old");
+// Keeper realism (round 16, default New) is its own layer, measured in keeperFinish.mts.
+store.set("star-gameplay-keeperFinish", "old");
 {
   const f = keeperFingerprint();
   ok(f.hash === KEEPER_FINGERPRINT_BEFORE, `1,224 seeded shots give the same hash as before Keeper pro (${f.hash})`);
