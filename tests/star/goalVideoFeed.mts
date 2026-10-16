@@ -77,7 +77,8 @@ function newCareer(seed = 1): CareerState {
   let thumbs = 0, withClips = 0, bad = 0, stillsWhenNothingSeen = 0, clipsWhenNothingSeen = 0;
   // The club's own goal post (TV pictures) and a fan's phone video.
   let videos = 0, clubVideos = 0, fanVideos = 0, videoBad = 0, videoWhenNothingSeen = 0, videoNotOneGoal = 0;
-  let noHighlights = 0, highlightsShort = 0, noYours = 0;
+  let noHighlights = 0, highlightsShort = 0, noYours = 0, yoursVideo = 0, yoursText = 0, overCap = 0;
+  const counts: number[] = [];
   for (let m = 0; m < 30; m++) {
     const fixture = c.fixtures.find(f => !f.played && f.week === c.week) ?? c.fixtures.find(f => !f.played);
     if (!fixture) break;
@@ -118,9 +119,17 @@ function newCareer(seed = 1): CareerState {
       else if (g.clips.length + (g.synth?.length ?? 0) !== total) highlightsShort++;
     } else if (hl.length) noHighlights++;
     if (goals > 0) {
+      // 1 or 2 videos a match, at random (Leo, 16 Oct 2026): your goals' post
+      // is always there, with its video about half the time.
       const g = yh[0]?.graphic;
-      if ((yh.length !== 1 || g?.type !== "goalVideo" || !g.priority || g.clips.length + (g.synth?.length ?? 0) !== goals)) noYours++;
+      if (yh.length !== 1) noYours++;
+      else if (!g) yoursText++;
+      else if (g.type !== "goalVideo" || !g.priority || g.clips.length + (g.synth?.length ?? 0) !== goals) noYours++;
+      else yoursVideo++;
     }
+    const nVid = fresh.filter(p => p.graphic?.type === "goalVideo" || (p.graphic?.type === "thumbnail" && (p.graphic.clips?.length ?? 0) + (p.graphic.synth?.length ?? 0) > 0)).length;
+    if (nVid > 2) overCap++;
+    if (total > 0 && seenThisMatch) counts.push(nVid);
     for (const p of fresh) {
       if (p.eventId === "match-highlights" || p.eventId === "your-highlights") continue;
       if (p.graphic?.type === "goalVideo") {
@@ -148,7 +157,10 @@ function newCareer(seed = 1): CareerState {
   }
   check(noHighlights === 0, `every match with a goal gets one HIGHLIGHTS video, made first (${noHighlights} matches missed it)`);
   check(highlightsShort === 0, `the HIGHLIGHTS video holds every goal of the match, both sides (${highlightsShort} short)`);
-  check(noYours === 0, `every match you score in gets a video of your goals, made first (${noYours} missed)`);
+  check(noYours === 0, `every match you score in gets a post of your goals; with a video, it plays them, made first (${noYours} wrong)`);
+  check(yoursVideo > 0 && yoursText > 0, `your goals' post has a video on some matches and not others (${yoursVideo} with, ${yoursText} without)`);
+  check(overCap === 0, `never more than 2 video posts from one match (${overCap} matches over)`);
+  check(counts.includes(1) && counts.includes(2), `some matches make 1 video, some 2 (${counts.join(" ")})`);
   check(thumbs > 0, `video-style posts happen (${thumbs})`);
   check(withClips > 0, `some of them play a real goal (${withClips} of ${thumbs})`);
   check(bad === 0, `a post never plays a goal from another match (${bad})`);
