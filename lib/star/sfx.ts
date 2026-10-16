@@ -17,6 +17,7 @@ import { useSyncExternalStore } from "react";
 import { uiVersion } from "./uiLook";
 import { audioContext, resumeAudio } from "./audioOut";
 import { makeSoundGate, nowMs } from "./soundGate";
+import { soundSet } from "./style3d/texturePack";
 
 export type SfxName =
   | "ui-tap" | "ui-confirm" | "coin-in" | "star-tick" | "level-up" | "achievement-pop"
@@ -29,9 +30,19 @@ const VOLUME: Partial<Record<SfxName, number>> = { "ui-tap": 0.45, "ui-confirm":
 
 let on: boolean | undefined;
 const listeners = new Set<() => void>();
-const cache = new Map<SfxName, HTMLAudioElement>();
+const cache = new Map<string, HTMLAudioElement>();
 /** Decoded copies for the Web Audio path (audioOut.ts): `null` = tried and failed. */
-const buffers = new Map<SfxName, AudioBuffer | null | Promise<void>>();
+const buffers = new Map<string, AudioBuffer | null | Promise<void>>();
+
+/**
+ * The file a sound plays for this phone's texture pack. The Arcade pack has its
+ * own menu tap and confirm (scripts/sfx/arcade.py: ui-tap-arcade, ui-confirm-arcade);
+ * every other pack plays the files as they always were.
+ */
+const ARCADE_FILES: Partial<Record<SfxName, string>> = { "ui-tap": "ui-tap-arcade", "ui-confirm": "ui-confirm-arcade" };
+function fileOf(name: SfxName): string {
+  try { return (soundSet() === "arcade" && ARCADE_FILES[name]) || name; } catch { return name; }
+}
 /** How often each sound may play (soundGate.ts, v0.25 item 6). */
 const gate = makeSoundGate();
 
@@ -82,7 +93,7 @@ function refreshOverrides(): void {
       try { localStorage.setItem(SFX_OVERRIDES_KEY, JSON.stringify(next)); } catch { /* fine */ }
       // Drop any already-loaded copy whose file changed, so the next play uses the new one.
       Object.keys({ ...before, ...next }).forEach((k) => {
-        if (before[k] !== next[k]) { cache.delete(k as SfxName); buffers.delete(k as SfxName); }
+        if (before[k] !== next[k]) { cache.delete(k); buffers.delete(k); }
       });
     })
     .catch(() => { /* keep the bundled sounds */ });
@@ -118,7 +129,7 @@ export function useSfxOn(): boolean {
   return useSyncExternalStore(subscribe, sfxOn, () => true);
 }
 
-function load(name: SfxName): HTMLAudioElement | null {
+function load(name: string): HTMLAudioElement | null {
   if (typeof Audio === "undefined") return null;
   let a = cache.get(name);
   if (!a) {
@@ -131,7 +142,7 @@ function load(name: SfxName): HTMLAudioElement | null {
 }
 
 /** Fetch and decode a sound for the Web Audio path. Never throws. */
-function decode(name: SfxName): void {
+function decode(name: string): void {
   const c = audioContext();
   if (!c || buffers.has(name) || typeof fetch === "undefined") return;
   refreshOverrides();
@@ -150,8 +161,8 @@ function decode(name: SfxName): void {
 /** Fetch the files ahead of the first play, so a tap sounds on the tap. */
 export function preloadSfx(names: SfxName[] = ["ui-tap", "ui-confirm", "coin-in", "star-tick", "level-up", "achievement-pop", "breaking-news", "phone-notification", "can-open"]): void {
   try {
-    if (audioContext()) names.forEach(decode);
-    else names.forEach(load);
+    if (audioContext()) names.forEach((n) => decode(fileOf(n)));
+    else names.forEach((n) => load(fileOf(n)));
   } catch { /* no audio here */ }
 }
 
@@ -165,10 +176,11 @@ export function sfx(name: SfxName): void {
     if (!sfxOn() || uiVersion() !== "new") return;
     if (!gate(name, nowMs())) return;
     const vol = VOLUME[name] ?? 0.85;
+    const file = fileOf(name);
     const c = audioContext();
     if (c) {
-      const b = buffers.get(name);
-      if (b === undefined || b instanceof Promise) { decode(name); return; }   // not ready yet: skip, never stack later
+      const b = buffers.get(file);
+      if (b === undefined || b instanceof Promise) { decode(file); return; }   // not ready yet: skip, never stack later
       if (b === null) return;
       const play = () => {
         const src = c.createBufferSource();
@@ -188,7 +200,7 @@ export function sfx(name: SfxName): void {
       c.resume().then(() => { if (nowMs() - t0 < 250) play(); }).catch(() => { /* still locked */ });
       return;
     }
-    const base = load(name);
+    const base = load(file);
     if (!base) return;
     const a = base.paused || base.currentTime === 0 ? base : (base.cloneNode(true) as HTMLAudioElement);
     a.volume = vol;

@@ -27,6 +27,482 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.56",
+      "title": "Harry's patch notes: The Arcade pack, real shots you can follow, calmer passing",
+      "publishedAt": "2026-10-14T23:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/LBmYB7rQBTS6nd4XBq7UsG",
+      "summary": "A new Arcade texture pack: big Arcade pop banners (GOAL! with a starburst, in the half without the ball) and Arcade sounds (deeper menu tap, Stadium's confirm, pass and goal clearly different, quieter crowd); every other pack keeps the old banner and sounds. A Harry changes dropdown in Settings holds Chances and After you pass. Joystick: the team-mate takes a touch and looks up, and shoots first time only when the shot is on. Real shots: a TV-style camera that follows the move with no jumps and glides onto your chance.",
+      "stats": [
+        { "value": "1.09 s → 1.67 s", "label": "your pass → his shot or pass (Joystick)" },
+        { "value": "14% → 0%", "label": "first-time shots when the shot isn't on" },
+        { "value": "27% → 0%", "label": "real shots: time the ball is hidden" },
+        { "value": "98% → 0%", "label": "hiss in the menu tap (Arcade)" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Arcade texture pack", "detail": "Arcade pop banners and Arcade sounds; other packs keep the old ones." },
+          { "title": "Harry changes dropdown", "detail": "Settings and match ⚙: Chances and After you pass." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Real shots camera", "detail": "Follows the move like a TV camera, keeps the ball in view, no jump at your chance." },
+          { "title": "Banners", "detail": "Each pops fresh, one line only, fades out when half time, full time or the scores come up." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Joystick tempo", "detail": "Team-mate takes a touch and looks up (~1 s); first time only when close, clear and unmarked." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Real shots players a little small", "detail": "About 83% of chance size so long passes stay in shot; Harry's call." },
+          { "title": "Not seen yet", "detail": "SAVED! / BACK TO YOU in a real match; a first-time finish in Joystick; sounds on a real phone." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.55",
+      "title": "Leo's patch notes: Updates tab, Henry finish, hitboxes, sound lab",
+      "publishedAt": "2026-10-14T21:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/As3hzmBBUNwdgdf8DhygZm",
+      "summary": "Leo v0.16. Settings → Updates: every New | Old update switch in the game, by update. Keepers stop saving everything near them: the Henry finish (low across him to the far post) and hard top corners go in far more. Players have the shape of a man and really jump, so chips go over heads and crosses get headed. Hitbox outlines and sliders on Infinite Highlights / Infinite Match. A Sound Lab test page with 12 match sounds to pick from.",
+      "stats": [
+        { "value": "3 in 4 → 1 in 2", "label": "Henry finishes saved (Oct 13 update on)" },
+        { "value": "74% → 32%", "label": "lofted shots over a team-mate that he stops" },
+        { "value": "85% → 89%", "label": "byline crosses that reach their man" },
+        { "value": "12 × 6–8", "label": "match sounds and options in the Sound Lab" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Settings → Updates", "detail": "Each update folds open: All new, All old, or flip one row. Changes this phone only." },
+          { "title": "Hitbox panel", "detail": "Infinite Highlights and Infinite Match: show outlines, New | Old, 7 sliders, Reset." },
+          { "title": "Sound Lab (/star-sound-lab-dev)", "detail": "12 sounds, 6–8 options each plus today's; play, star, pick, note, 7 sliders, export your picks." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "The Henry finish goes in", "detail": "Low across the keeper to the far post: he dives across his body slower and reaches less. Switch: Keeper realism (Leo), New." },
+          { "title": "Top corners", "detail": "Harder to reach the harder you hit; near-post top corner from close harder too." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Players are the shape of a man", "detail": "Wide at the feet, narrow at the head, nothing above the head unless he jumps. Switch: Hitboxes & jumping (Leo), New." },
+          { "title": "Real jumps", "detail": "A team-mate jumps for a ball played to him and the jump lifts his reach; a little extra for headers and blocks." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Headers score a little less", "detail": "43.8% → 41.9%: more won, but the keeper saves more high ones." },
+          { "title": "Not played in a full match; sounds not heard", "detail": "Measured on the real engine only; no speakers on the build machine." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.54",
+      "title": "Harry's patch notes: New chances, 3D camera, build-ups that play on",
+      "publishedAt": "2026-10-14T16:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/1dwJjYucacMcjgxypP342X",
+      "summary": "Everything since v0.52 on one page. New chances follow your wing and the match (crosses and cutbacks at most 2 in 8, a short build-up on some chances); corner camera turn stops at 60°; 3D drag-back fixed after 2D/3D switching; no black players in Bright/Light. Now also: build-ups play on with no PASS / BACK TO YOU cut, menus open on the tap, a texture pack dropdown with pictures, dribble chances by league, real shots move like build-ups, and Full match / Dribble-on-the-stick test pages.",
+      "stats": [
+        { "value": "100% → 0%", "label": "build-up passes that cut to a new picture" },
+        { "value": "3.5 s → 0.4 s", "label": "Home → Settings, tap to fully shown" },
+        { "value": "≤ 2 in 8", "label": "crosses and cutbacks in New chances" },
+        { "value": "±60°", "label": "corner camera turn, goal on screen 4 of 4" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "New chances (Settings → Chances: New)", "detail": "Each chance follows your wing and the match radar; no kind twice in a row; some get a short build-up first." },
+          { "title": "Texture pack dropdown", "detail": "A picture of each pack; tap to pick." },
+          { "title": "Test pages", "detail": "Full match with 2D | 3D | Radar, played live; Dribble on the stick." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Build-ups play on", "detail": "Pass and the move carries on: he shoots or lays it back to you. No PASS / BACK TO YOU cut." },
+          { "title": "3D controls after switching", "detail": "Drag-back and zoom no longer swap after flicking 2D/3D." },
+          { "title": "Black players", "detail": "Bright and Light packs keep the kits." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Menus open on the tap", "detail": "No fades or slides; big moments keep their reveal." },
+          { "title": "Corner camera", "detail": "Turn stops softly at 60°." },
+          { "title": "Dribble chances", "detail": "More of them up the leagues (3% National League → 10% Premier League)." },
+          { "title": "Real shots", "detail": "Players move like the build-ups instead of chasing the ball." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Lay-off not seen live", "detail": "Measured only." },
+          { "title": "Cameras", "detail": "Some 2D/3D camera problems remain; waiting on Harry's 3D video." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.53",
+      "title": "Leo's patch notes",
+      "publishedAt": "2026-10-13T18:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/SqbYRDsV64zyZbAoe43i99",
+      "summary": "The Oct 13 gameplay update, for review (on its own test page, Play Area → Oct 13 update, every part Old by default): shots at goal leave the boot slower, the side of the ball gives a low curler, keepers read shots better, team-mates carry the ball before shooting, and a Match feel layer gives the strike weight. Play Area → Oct 13 update: New tries it all; Old puts the game back exactly.",
+      "stats": [
+        {
+          "value": "15.7% → 0.7%",
+          "label": "power-100 shots that sail over the bar"
+        },
+        {
+          "value": "1% → 75%",
+          "label": "side-of-ball taps that cross the line under 0.5 m"
+        },
+        {
+          "value": "85% → 34%",
+          "label": "team-mate shots struck from 22 m or more"
+        },
+        {
+          "value": "24.8% → 18.5%",
+          "label": "goals per shot against a 70 keeper"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "changed",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The Oct 13 update switch: New / Old",
+              "detail": "Play Area → Oct 13 update (/star-update-dev). One switch for the whole update, per phone; New also plays in your career matches."
+            },
+            {
+              "title": "Shot power",
+              "detail": "Shots at goal leave the boot slower; a 100 rarely goes over the bar."
+            },
+            {
+              "title": "Contact field",
+              "detail": "Tap the side of the ball: label CURLER, curl marks at each edge."
+            },
+            {
+              "title": "Keeper feel",
+              "detail": "Soft shots straight at the keeper are gathered."
+            },
+            {
+              "title": "Team-mate shots",
+              "detail": "A team-mate in space carries it, then shoots from nearer."
+            },
+            {
+              "title": "Match feel",
+              "detail": "Wind-up, freeze, flash, clods, net ripple, clang. Dials: Play Area → Animations → Match feel."
+            },
+            {
+              "title": "Old",
+              "detail": "Puts the game back exactly."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Problems fixed",
+          "items": [
+            {
+              "title": "Shots were too strong at high power",
+              "detail": "A 60 now hits like a 40 did, a 100 like a 70 (96 km/h, not 103). Over the bar at power 100: 15.7% → 0.7%. Penalties at 100 scored: 45% → 73%. Passes, crosses, corners and free kicks keep their pace."
+            },
+            {
+              "title": "The side of the ball could not give a low curler",
+              "detail": "Toward the edges up/down barely matters. Side at mid-height: peak 2.2 m → 1.1 m. The reported left-wing shot crosses the line at 1.71 m → 0.23 m. 300 human-style taps under 0.5 m at the line: 1% → 75%; in the goal 60% → 66%."
+            },
+            {
+              "title": "Keepers misread soft shots",
+              "detail": "Save % of shots on target, all old / v0.15 three on / all new: keeper 40: 50/53/64, 70: 69/72/77, 90: 83/84/89. Goals per shot v a 70: 24.8% → 22.0% → 18.5%. A 70's save % by distance 53/75/97 v the Premier League's 53/77/90 (all old: 53/71/79)."
+            },
+            {
+              "title": "Team-mates shot from far too deep",
+              "detail": "Median strike distance 25.3 m → 15.8 m; from 22 m or more 85% → 34%. Not seen on screen."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added and changed",
+          "items": [
+            {
+              "title": "Match feel: the strike has weight",
+              "detail": "Impact scales with launch speed times contact quality. Wind-up 90 ms, freeze 75 ms, camera punch 7 px, flash, ring, speed lines, clods, ball squash and stretch, layered kick sound, phone buzz 28 ms, net ripple, woodwork clang, keeper glove spark and hop. Look and sound only; every amount is a dial."
+            },
+            {
+              "title": "One pair of buttons for the whole update",
+              "detail": "New / Old on the Oct 13 update page (Play Area → Oct 13 update)."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not felt on a phone yet",
+              "detail": "The numbers are simulations."
+            },
+            {
+              "title": "Team-mates are very accurate (not changed)",
+              "detail": "65–91% on target and 30–48% score, against real football's ~35% and 10–15%."
+            },
+            {
+              "title": "Not seen",
+              "detail": "The team-mate carry (the run may glide), the faint height lines, the keeper's pre-strike hop, any sound."
+            },
+            {
+              "title": "Checks",
+              "detail": "Star tests 340 of 342 (assets3d and wembley3d fail the same on main); build passes."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Questions for you",
+          "items": [
+            {
+              "title": "Shot power at 100",
+              "detail": "Keep 96 km/h, higher (about 100) or lower (about 88)?"
+            },
+            {
+              "title": "Goals drop",
+              "detail": "24.8% → 18.5% of shots against a 70 keeper: OK or too low?"
+            },
+            {
+              "title": "Team-mates",
+              "detail": "Make them miss more? And was this what \"teammates shooting sometimes\" meant?"
+            },
+            {
+              "title": "Feel",
+              "detail": "Freeze plus wind-up punchy or laggy? Flash big enough? Buzz strength?"
+            },
+            {
+              "title": "After review",
+              "detail": "Turn the update on by default: yes, some of it, or not yet?"
+            }
+          ]
+        },
+        {
+          "kind": "history",
+          "title": "Previous versions",
+          "items": [
+            {
+              "title": "0.45 (v0.15) — the gameplay round",
+              "detail": "Tighter match camera (empty grass 39% → 28%); Keeper pro from a full Premier League season; shots whose height follows contact; knuckleball and power shot; believable 90 minutes and a live radar (13 → 24 shots); dribble duels that need timing (take-ons won 76% → 46%); real ball physics (off). Still open: mostly not seen on a phone; tight angles and volleys score too often."
+            },
+            {
+              "title": "0.44 (v0.14) — the big evening: camera, careers that move, a world that ages",
+              "detail": "Find a new club, January moves, international career and tournaments, the world ages, a 3D Ballon d'Or night, 35 → 136 achievements."
+            },
+            {
+              "title": "0.39 — smart passing, highlights first",
+              "detail": "Good passers keep runners onside (14% → 4% offside); HIGHLIGHTS after every match, made first."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.52",
+      "title": "Harry's patch notes: Camera, ball and two test pages",
+      "publishedAt": "2026-10-14T01:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/R5FFG4ugSWNiWxQEMoQjng",
+      "summary": "Night of 13–14 Oct: a readable 3D ball (classic, 1.6×, rises with air puffs), the turned 3D camera keeps the goal and drops the roof, drag up/down fixed, the Real shots test page (real keeper start, wide frame) and the Full match test page (2D/3D, play your chances, real names, ends swap, keeper dives, shape from real tracking). Live 14 Oct 2026.",
+      "stats": [
+        { "value": "213 / 216", "label": "turned 3D views keep the whole goal (was 171)" },
+        { "value": "35% → 0%", "label": "stand roof on screen when turned" },
+        { "value": "16% → 100%", "label": "real shots with every man near the ball on screen" },
+        { "value": "14 → 0", "label": "full-match shape checks failed against real tracking" }
+      ],
+      "sections": [
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            { "title": "Drag up and down in 3D", "detail": "The ball's grab zone covered 60% of a turned screen; now 6% at most. A press on open grass never kicks." },
+            { "title": "Turned camera", "detail": "Keeps the goal (213 of 216 views) and the pitch, never comes closer, turns smoothly. No roof when turned; fans and boards stay." }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            { "title": "Real shots test page", "detail": "Real passes replayed in 2D or 3D before your shot. The keeper starts on his real spot; Play frames every man within 20 m." },
+            { "title": "Full match test page", "detail": "A whole 90 minutes at 1×–60×, 2D or 3D. Stops on your chances to play them. Real names, ends swap, keeper dives, shape set from real tracking data." }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            { "title": "3D ball", "detail": "Classic black-and-white in every pack, bigger patches, one size 1.6×." },
+            { "title": "Ball in the air", "detail": "The height line is gone; the ball rises and grows, with faint air puffs in 2D and 3D." }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            { "title": "Corner turned 90°", "detail": "Goal partly off the edge in 3 views; holding it needs tiny men. Harry to pick." },
+            { "title": "Not seen on a phone", "detail": "Stills only." }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.51",
+      "title": "Harry's patch notes: Camera, 3D look & keeper",
+      "publishedAt": "2026-10-13T21:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/R5FFG4ugSWNiWxQEMoQjng",
+      "summary": "From Harry's 13 Oct playtest: zoom on wheel/pinch, drag turns the 3D camera a full 360° with you kept centred, the 2D swipe removed, smaller cans, For You on PC, a My home button. Then: a Light texture pack, a ball height line, a neon keeper 7% taller, a brighter goal and ball, lighter goal ends, and a time of day for every match. Live 13 Oct 2026.",
+      "stats": [
+        {
+          "value": "108 / 108",
+          "label": "turned camera views with you in the middle"
+        },
+        {
+          "value": "100% → 31%",
+          "label": "matches at golden hour (51% afternoon, 18% night)"
+        },
+        {
+          "value": "+7%",
+          "label": "keeper height"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            { "title": "Texture pack: Light", "detail": "Between Real and Bright; dirt and shadows kept." },
+            { "title": "Ball height line", "detail": "2D and 3D: a faint line to the grass once the ball is in the air." },
+            { "title": "A time of day for every match", "detail": "Afternoon, golden hour or night, seeded per fixture." },
+            { "title": "My home button", "detail": "On the Homes page and the Home screen." }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            { "title": "3D camera controls", "detail": "Wheel, scroll and pinch zoom. Drag turns and tilts, full 360°, you kept centred. A pull from the ball always kicks." },
+            { "title": "Keeper", "detail": "Neon kit (yellow if green or grey), 7% taller." },
+            { "title": "Goal and ball", "detail": "Brighter; the ball has a thin dark edge." },
+            { "title": "Shadows", "detail": "Goal end lighter, live shadows softer." },
+            { "title": "Shop", "detail": "KIB cans 40% smaller, no glow; For You works on PC." },
+            { "title": "2D swipe camera", "detail": "Removed." }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            { "title": "Afternoon goal end", "detail": "A softer stand-shadow band remains." },
+            { "title": "Not seen on a phone", "detail": "Stills only." }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.50",
+      "title": "Mikey's patch notes v0.16: Gameplay review fixes",
+      "publishedAt": "2026-10-13T17:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/S5EvHkuf7wJTaGPeXd3WeM",
+      "summary": "From Mikey's gameplay review video: feed videos play only when pressed (at most 2 a match), goal posts stand straight and the side-view net has depth, achievements unlock and level you up at once. New framing and headers/volleys are built behind test switches, off by default.",
+      "stats": [
+        {
+          "value": "13 → 6",
+          "label": "goal videos in a match's feed"
+        },
+        {
+          "value": "19%",
+          "label": "bigger players with the new framing (test)"
+        },
+        {
+          "value": "1 in 10",
+          "label": "close chances as a header (test)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Feed videos play only when you press ▶",
+              "detail": "At most 2 a match."
+            },
+            {
+              "title": "Off-pitch achievements pop up at once",
+              "detail": "Star bar fills in the pop-up."
+            },
+            {
+              "title": "Corners: net has real depth; posts stand straight",
+              "detail": "Every view."
+            },
+            {
+              "title": "Developer tools → New framing (test)",
+              "detail": "Off by default."
+            },
+            {
+              "title": "Developer tools → Headers & volleys (test)",
+              "detail": "Off by default."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added (test switches)",
+          "items": [
+            {
+              "title": "New chance framing",
+              "detail": "Whole goal always on screen, ball a quarter in from the edges, side-on near the box when wide. Players 19% bigger. Measured over 840 chances."
+            },
+            {
+              "title": "Headers and volleys",
+              "detail": "1 in 10 close chances in the air, 1 in 8 bouncing; the shot starts from that height. Scoring unchanged (82/81/82 of 300)."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Achievements away from a match unlock at once",
+              "detail": "Was: only after the next match."
+            },
+            {
+              "title": "Achievements level you up on the spot",
+              "detail": "They lift the one-level-a-match limit."
+            },
+            {
+              "title": "Goal posts upright; side-view net 2.0 m deep",
+              "detail": "Was a leaning far post and a 1.2 m strip."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Fewer feed videos",
+              "detail": "13 → 6 in a test match; highlights placed at random in the first screenful."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Side view draws players differently",
+              "detail": "Waiting on a decision."
+            },
+            {
+              "title": "Chance builder: team-mates in front, no defenders",
+              "detail": "Not fixed yet."
+            },
+            {
+              "title": "Corner glitch at 11:02 in the review",
+              "detail": "Not reproduced yet."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.49",
       "title": "Mikey's patch notes v0.15: International football",
       "publishedAt": "2026-10-13T09:00:00Z",

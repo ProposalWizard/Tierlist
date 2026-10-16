@@ -7,6 +7,9 @@
  *    replay cuts to.
  *  - "fan": a phone held up in the end stand by the corner flag, portrait,
  *    a little shaky, shakier when it goes in.
+ *  - "match": the main camera for a whole match (the full-match replay,
+ *    /star-sim90-dev) — high in the main stand on the halfway line, panning
+ *    to follow the ball the length of the pitch.
  *
  * Every camera is a function of the recording and the clip time only: no state
  * carried from frame to frame, no random numbers drawn at draw time. The same
@@ -15,11 +18,11 @@
  * over a short window, so the pan is smooth without any memory.
  */
 import type { FpCamera } from "../firstPersonView";
-import { CX, PITCH_W } from "../pitch";
+import { CX, HALF_LEN, PITCH_W } from "../pitch";
 import { frameAt, trackDuration, type GoalTrack } from "./track";
 import type { StandId } from "./scene";
 
-export type ClipAngle = "tv" | "net" | "fan" | "high" | "side" | "tight";
+export type ClipAngle = "tv" | "net" | "fan" | "high" | "side" | "tight" | "match";
 
 export interface Rig {
   cam: FpCamera;
@@ -80,6 +83,21 @@ export function rigFor(track: GoalTrack, angle: ClipAngle, t: number, W: number,
       cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: (W * l.dist) / span, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
       roll: 0,
       skip: ["near"],
+    };
+  }
+  if (angle === "match") {
+    // High and steep beside the play, following the ball along and across (a slow, wide follow so a pass
+    // doesn't whip the picture round). Harry, 14 Oct 2026: "I don't love seeing the stadiums": steep enough
+    // (about 50° down) and moved with the ball so the frame stays on the pitch, never the stands.
+    const ball = smoothBall(track, t, -1.6, 1.0, 10);
+    const target = { x: Math.max(10, Math.min(42, ball.x * 0.7 + CX * 0.3)), y: Math.max(29, Math.min(HALF_LEN * 2 - 29, ball.y)), z: 0 };
+    const pos = { x: target.x - 38, y: target.y, eye: 58 };
+    const l = look(pos, target);
+    const span = 46;
+    return {
+      cam: { x: pos.x, y: pos.y, eye: pos.eye, W, H, focal: (W * l.dist) / span, horizon: H * 0.5, forward: l.forward, pitch: l.pitch },
+      roll: 0,
+      skip: ["near"], // the fans and boards stay (Harry, 14 Oct 2026: only the big white roof was unwanted, and this view never shows one)
     };
   }
   if (angle === "net") {

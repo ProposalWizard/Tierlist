@@ -6,8 +6,11 @@ import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
 import type { SaveSlotSummary } from "@/lib/star/storage";
 import { devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
+import { useFramingV2, setFramingV2 } from "@/lib/star/matchView";
+import { useAirborne, setAirborne } from "@/lib/star/airborneChance";
 import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { SettingsTop, SettingsGroups } from "./DeviceSettings";
+import UpdatesPanel from "./UpdatesPanel";
 import type { FullscreenSupport } from "./ImmersiveToggle";
 import DevSkipPanel from "./DevSkipPanel";
 import DevMoneyPanel from "./DevMoneyPanel";
@@ -122,10 +125,14 @@ export default function SettingsScreen({
   // (Harry, 8 Oct 2026, the hybrid Settings). Goal Replays inside stays
   // admin-only: it checks for itself.
   const isTester = useIsTester();
-  const [tab, setTab] = useState<"settings" | "dev">("settings");
+  const [tab, setTab] = useState<"settings" | "updates" | "dev">("settings");
   const showDev = isTester && tab === "dev";
+  // Settings → Updates: every New | Old update switch, for everyone (Leo, 14 Oct 2026).
+  const showUpdates = tab === "updates";
   // Developer info on screen (v0.15 item 24): the sub's planned minute and ladder.
   const [devInfo, setDevInfoState] = useState<boolean>(() => devInfoOn());
+  const framingV2 = useFramingV2();
+  const airborne = useAirborne();
   const flipDevInfo = () => { const next = !devInfo; setDevInfoState(next); setDevInfo(next); };
 
   let rise = 0;
@@ -238,13 +245,16 @@ export default function SettingsScreen({
         )}
       />
 
-      {isTester && (
-        <RiseIn index={next()}>
-          <SegTabs className="mb-1" value={tab} onChange={setTab} tabs={[["settings", "Settings"], ["dev", "🛠 Developer"]] as const} />
-        </RiseIn>
-      )}
+      <RiseIn index={next()}>
+        <SegTabs className="mb-1" value={tab} onChange={setTab}
+          tabs={isTester
+            ? ([["settings", "Settings"], ["updates", "Updates"], ["dev", "🛠 Dev"]] as const)
+            : ([["settings", "Settings"], ["updates", "Updates"]] as const)} />
+      </RiseIn>
 
-      {!showDev && (<>
+      {showUpdates && <RiseIn index={next()}><UpdatesPanel glow={glow} /></RiseIn>}
+
+      {!showDev && !showUpdates && (<>
         {/* the speed readout (lib/star/three3d/frameMeterPref.ts): testers only, off by default */}
         {isTester && <RiseIn index={next()}><SpeedReadoutRow /></RiseIn>}
         <RiseIn index={next()}>
@@ -279,6 +289,30 @@ export default function SettingsScreen({
               <SetNote className="mt-0.5">On the match-day card: the minute a sub is planned to come on, and his ladder.</SetNote>
             </div>
             <Switch on={devInfo} onClick={flipDevInfo} label="Show developer info" />
+          </div>
+        </SetCard>
+      </RiseIn>
+
+      <RiseIn index={next()}>
+        <SetCard tone={DEV} strength={0.18}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[11px] font-black text-white">New framing (test)</div>
+              <SetNote className="mt-0.5">Chances zoom in with the whole goal in view and the ball a quarter in from the edges; wide chances near the box turn side-on. Off = today&apos;s camera.</SetNote>
+            </div>
+            <Switch on={framingV2} onClick={() => setFramingV2(!framingV2)} label="New framing (test)" />
+          </div>
+        </SetCard>
+      </RiseIn>
+
+      <RiseIn index={next()}>
+        <SetCard tone={DEV} strength={0.18}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[11px] font-black text-white">Headers &amp; volleys (test)</div>
+              <SetNote className="mt-0.5">About 1 close chance in 10 arrives in the air (a header), 1 in 8 bouncing (a volley). The strike screen shows it off the ground with a shadow, and the shot starts from that height. No more random bobbles. Off = today.</SetNote>
+            </div>
+            <Switch on={airborne} onClick={() => setAirborne(!airborne)} label="Headers and volleys (test)" />
           </div>
         </SetCard>
       </RiseIn>

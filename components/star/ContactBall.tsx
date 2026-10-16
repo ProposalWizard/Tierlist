@@ -37,7 +37,9 @@ export function ballMotionAt(motion: BallMotion, t: number, period: number): { x
 
 interface Props {
   power: number;
-  onContact: (contact: { cx: number; cy: number }) => void;
+  /** `lift` (0 grass … 1 top of the arc) only for a ball in the air
+   *  (float/bounce): how high it was when you hit it (lib/star/airborneChance.ts). */
+  onContact: (contact: { cx: number; cy: number; lift?: number }) => void;
   /** The three "how to read the ball" badges and the explanatory line under
    *  them — the tutorial copy, only actually needed the first time anyone
    *  sees this screen. TrialPenalty (the profile-setup trial) passes true;
@@ -65,6 +67,10 @@ interface Props {
   grades?: boolean;
   /** A hard strike through the dead centre knuckles (only with `grades`). */
   knuckles?: boolean;
+  /** Contact field on (lib/star/shotFeel.ts, Oct 13): a faint guide on the
+   *  ball — the up/down lines fade out toward the sides, where a strike is a
+   *  low curler. Absent: exactly the old screen. */
+  field?: boolean;
 }
 
 /** How long "TOO SLOW" shows before the scuffed kick is taken. */
@@ -75,9 +81,11 @@ const TOO_SLOW_MS = 350;
 export const STRIKE_ZONE_R = 1.18;
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, hold = false, grades = false, knuckles = false }: Props) {
+export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, hold = false, grades = false, knuckles = false, field = false }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
+  const shadowRef = useRef<HTMLDivElement>(null);
+  const liftRef = useRef(0);
   const areaRef = useRef<HTMLDivElement>(null);
   // One sweep across takes 2.2s at technique 40, 3.4s at 100.
   const period = 2.2 + Math.max(0, Math.min(100, technique) - 40) / 60 * 1.2;
@@ -92,6 +100,16 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       if (!area || !mover) return;
       const { x, y } = ballMotionAt(motion, (performance.now() - t0) / 1000, period);
       mover.style.transform = `translate(${x * area.clientWidth}px, ${y * area.clientHeight}px)`;
+      // How high it is now, 0..1 of this motion's top (float sits ~0.42-0.5 up).
+      const top = motion === "float" ? 0.5 : motion === "bounce" ? 0.26 : 0.05;
+      liftRef.current = Math.max(0, Math.min(1, -y / top));
+      const sh = shadowRef.current;
+      if (sh) {
+        // The shadow stays on the grass, under the ball, smaller and fainter the higher it is.
+        const k = 1 - 0.45 * Math.min(1, -y / 0.5);
+        sh.style.transform = `translateX(calc(-50% + ${x * area.clientWidth}px)) scale(${k})`;
+        sh.style.opacity = String(0.35 + 0.65 * k);
+      }
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
@@ -167,11 +185,13 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
     locked.current = true;
     setSpark({ left: r + cx * r, top: r + cy * r });
     if (grades) {
-      const g = gradeContact({ cx, cy }, power, knuckles);
-      if (g.label) setGraded({ label: g.label, good: g.grade === "clean" || g.grade === "knuckle" });
+      const g = gradeContact({ cx, cy }, power, knuckles, field);
+      if (g.label) setGraded({ label: g.label, good: g.grade === "clean" || g.grade === "knuckle" || g.label === "CURLER" });
     }
     // A graded strike holds a beat longer so the verdict can be read.
-    setTimeout(() => onContact({ cx, cy }), grades ? 420 : 200);
+    const air = motion === "float" || motion === "bounce";
+    const lift = liftRef.current;
+    setTimeout(() => onContact(air ? { cx, cy, lift } : { cx, cy }), grades ? 420 : 200);
   };
 
   const powerPct = Math.round(power * 100);
@@ -236,7 +256,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
             textShadow: "0 3px 6px rgba(0,0,0,0.6)",
           }}
         >
-          {motion === "float" ? "Head it?" : "Strike it?"}
+          {motion === "float" ? "Head it?" : motion === "bounce" ? "Volley it?" : "Strike it?"}
         </div>
 
         {/* Three ways to read the ball, as chips rather than a run-on line —
@@ -315,6 +335,19 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
           sky with the turf a long way below it, which reads as a ball in the
           air, and this screen is you standing over a ball at your feet. */}
       <div ref={areaRef} className="relative z-30 flex-1 flex items-end justify-center pb-[10%]">
+        {/* A ball in the air (header/volley): its shadow on the grass below it. */}
+        {(motion === "float" || motion === "bounce") && <div
+          ref={shadowRef}
+          className="absolute left-1/2 pointer-events-none"
+          style={{
+            bottom: "calc(10% - 3%)",
+            width: "32%",
+            height: "6%",
+            borderRadius: "50%",
+            transform: "translateX(-50%)",
+            background: "radial-gradient(ellipse, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 72%)",
+          }}
+        />}
         <div ref={moverRef} className="flex w-full items-end justify-center" style={{ willChange: motion === "still" ? undefined : "transform" }}>
         <div
           ref={ballRef}
@@ -350,6 +383,27 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
             draggable={false}
             className="relative w-full h-full object-cover rounded-full select-none pointer-events-none"
           />
+
+          {/* Contact field guide (Oct 13): height lines that fade out toward
+              the sides, and a curl mark at each edge. One faint layer. */}
+          {field && (
+            <svg data-contact-field className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
+              <defs>
+                <linearGradient id="kibFieldFade" x1="0" x2="1" y1="0" y2="0">
+                  <stop offset="0" stopColor="#fff" stopOpacity="0" />
+                  <stop offset="0.3" stopColor="#fff" stopOpacity="0.55" />
+                  <stop offset="0.7" stopColor="#fff" stopOpacity="0.55" />
+                  <stop offset="1" stopColor="#fff" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {[-0.5, 0, 0.5].map((y) => (
+                <line key={y} x1={-Math.sqrt(1 - y * y)} x2={Math.sqrt(1 - y * y)} y1={y} y2={y}
+                  stroke="url(#kibFieldFade)" strokeWidth="0.025" strokeDasharray="0.06 0.05" />
+              ))}
+              <path d="M -0.86 -0.28 Q -0.98 0 -0.86 0.28" fill="none" stroke="#fde047" strokeOpacity="0.7" strokeWidth="0.04" strokeLinecap="round" />
+              <path d="M 0.86 -0.28 Q 0.98 0 0.86 0.28" fill="none" stroke="#fde047" strokeOpacity="0.7" strokeWidth="0.04" strokeLinecap="round" />
+            </svg>
+          )}
 
           {/* The countdown again, as a ring round the ball itself — where
               your eyes (and thumb) already are. Drains clockwise from the top. */}

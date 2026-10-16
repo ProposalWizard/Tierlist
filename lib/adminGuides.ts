@@ -60,6 +60,21 @@ const COMMIT_HOW = [
 ];
 const GITHUB_TOKEN_NEEDED =
   "GITHUB_TOKEN set in Vercel's environment variables — without it every Commit button refuses (and says so).";
+/** The Tuning panel (components/star/TuningSessionPanel.tsx) — the same on the
+ *  gallery, Infinite Highlights and Infinite Match. */
+const TUNING_PANEL_GROUP = {
+  group: "Tuning panel",
+  items: [
+    ["Tuning · what you've seen this session", "Folded to one line. Tap to open: what the chances you've seen this session add up to — the mix of chance types, how many start up the pitch, how many come down your wing, chances a match and the longest wait (the last two from Infinite Match only). The count is shared by the gallery, Infinite Highlights and Infinite Match in this browser tab."],
+    ["feels: about right / a lot / a little", "Each line against the DRAFT fun ranges (lib/star/funTargets.ts, first guesses). The green band on the bar is the range, the tick is you. Under 5 chances it says \"too few to tell\"."],
+    ["Start the count again", "Empties this session's count. Notes are not touched."],
+    ["Say what feels off: chips / your own words / Send", "Tap any chips (too many cutbacks, too many crosses, not enough chances, never on my wing, too easy, too hard) and/or write a line, then Send. It is saved with the page, the chance on screen, the league, the seed and the time."],
+  ] as [string, string][],
+};
+const TUNING_NOTES_SAVING =
+  "Tuning panel: the session count stays in this browser tab only. Notes go to the shared table star_tuning_notes; until that table exists they say \"Saved on this device only\" and are sent with the next note that gets through. Read them in the terminal: npx tsx scripts/tuning-notes.mts (also printed by scripts/tuner-proposals.mts). Nothing is committed and nothing in the game changes.";
+const TUNING_NOTES_NEEDED =
+  "For notes to reach the team: run supabase/migrations/star_tuning_notes.sql (PENDING). The terminal needs SUPABASE_SERVICE_ROLE_KEY to read them (admin-read).";
 
 export const ADMIN_GUIDES = {
   // ════════════════════════════════════════════════════════════════════
@@ -274,6 +289,33 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing saves. The file stays on your device and is read again each time you load it."],
     inGame: ["The striker drawings: in a match when Settings → Match → Kane drawings (testing) is New (Old by default). The file you load: nowhere."],
     dev: "app/star-real-moments-dev/page.tsx; lib/star/realMoments.ts (the moment shape, buildRealMoment); tools/statsbomb/fetch.py, convert.mts, measure.mts and README.md.",
+  },
+  "/star-statsbomb-dev": {
+    title: "Real shots (test)",
+    what: "Every shot of the 2022 World Cup and Euro 2024 that StatsBomb's free data has a freeze frame for (where everyone near the shot stood), drawn on our pitch, playable in the real match, and measured against our own chances. Test only: the licence for a paid game is not cleared, so none of it is in the game.",
+    buttons: [
+      { group: "Tabs", items: [
+        ["Shots", "The list of real shots, each with its picture and Play button."],
+        ["Moving highlight", "Only shots with 2–3 real passes before them. ▶ Watch the move: the match radar (the same one as the Match Radar page) shows the move coming up the pitch, then the real match itself replays the real passes in its own picture (2D or 3D: the 3D | 2D button in the match bar, the same as a career match), everyone moving from where StatsBomb's 360 frame had them to where they stood at the shot, and YOU receive the last pass. The camera follows the passes (the passer and the man it goes to), then stops moving once the ball is in the 6-yard box (or, for a shot from further out, as the replay ends) on the shot's wide frame: every real man within 20 m, the keeper, the ball and the whole goal (the same frame as Play this shot). Then the shot is yours, live, from exactly there. ↺ Again replays it; ■ Stop closes it. The replay is recorded positions, not physics; the engine plays only the shot. A team-mate who passed from outside the shot's picture is on the pitch for the replay only."],
+        ["Ours vs real", "Four bars per chance kind: shot distance, defenders between ball and goal, nearest defender, keeper off his line. Real = the real shots of that kind; Ours = 200 of the game's own chances of that kind."],
+      ] },
+      { group: "Filters", items: [
+        ["All / World Cup 2022 / Euro 2024", "Which tournament."],
+        ["All / Goal / Saved / Off T / Blocked / Other", "What really happened to the shot."],
+        ["All / Open Play / Free Kick / Penalty / Corner", "How the shot came about."],
+        ["Any xG / under 8% / 8–30% / over 30%", "How likely the real shot was to go in (StatsBomb's own number)."],
+        ["Search", "A player or team name."],
+        ["More", "Shows 20 more."],
+      ] },
+      { group: "Each shot", items: [
+        ["The picture", "Our pitch from above, goal at the top. Yellow = the shooter, white = ball, red = opponents, green = keeper, blue = team-mates. The dashed line is where the shot went."],
+        ["▶ Play this shot", "Plays the real match on that picture at the top of the page: the shooter is YOU, the real keeper, opponents and team-mates inside the camera are where they stood. Nothing is counted or saved."],
+        ["■ Stop", "Closes the match."],
+      ] },
+    ],
+    saving: ["Nothing saves. The shots are read from data/statsbomb/shots.json each time the page opens."],
+    inGame: ["Nowhere. This is a test page; the real game never reads this data."],
+    dev: "app/star-statsbomb-dev/page.tsx, MovingHighlight.tsx (radar + EnginePlay inside components/star/Match3DLayer.tsx, uses components/star/MatchRadar.tsx RadarPitch); lib/star/statsbombShots.ts (sbToPitch, kindForShot, scenarioForShot, leadinPlan, leadinTrack, the measures); lib/star/leadIn.ts (the lead-in CanvasMatch replays: its `leadIn` prop); tests/star/leadIn.mts; app/api/star/statsbomb-shots/route.ts; data/statsbomb/ (shots.json, leadins.json, README); scripts/statsbomb/fetch_shots.py; tests/star/statsbomb.mts.",
   },
   "/star-goal-clips-dev": {
     title: "Goal videos",
@@ -723,20 +765,22 @@ export const ADMIN_GUIDES = {
           ["Rules list", "Tap a type to see the hard rules read off its saved drawings."],
         ],
       },
+      { ...TUNING_PANEL_GROUP, group: "Tuning panel (under the 11-a-side grid and under a card)" },
     ],
     saving: [
       "Drags, ✓ / ✕ marks, added versions and removed cards are kept in THIS browser only until you Save.",
       SCENARIO_SAVE_SHARED,
       SCENARIO_NOT_IN_GAME_UNTIL_COMMIT,
       "Tune corrections go to the shared table star_scenario_corrections, so the whole team's corrections add up.",
+      TUNING_NOTES_SAVING,
     ],
     commit: COMMIT_HOW,
     inGame: [
       "Committed 11-a-side scenarios are used by the real game's chance generator in /star-dev matches, for every player, once the deploy finishes.",
       "5-a-side cards are review only — nothing from them reaches the game yet.",
     ],
-    needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
-    dev: "app/star-gallery-dev/page.tsx · components/star/{EditableFrame,ScenarioPlay,EnginePlay,TuningPanel}.tsx · lib/star/{scenarioEdit,scenarioStatus,scenarioCorrections}.ts · /api/star/scenarios, /api/star/scenarios/commit, /api/star/corrections",
+    needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED, TUNING_NOTES_NEEDED],
+    dev: "app/star-gallery-dev/page.tsx · components/star/{EditableFrame,ScenarioPlay,EnginePlay,TuningPanel,TuningSessionPanel}.tsx · lib/star/{tuningSession,tuningNotes}.ts · /api/star/tuning-notes · lib/star/{scenarioEdit,scenarioStatus,scenarioCorrections}.ts · /api/star/scenarios, /api/star/scenarios/commit, /api/star/corrections",
   },
 
   "/star-training-dev": {
@@ -805,12 +849,24 @@ export const ADMIN_GUIDES = {
           ["Amber box", "Saved scenarios of this type that break a rule, so the game isn't using them."],
         ],
       },
+      {
+        group: "Hitboxes & jumping (Leo)",
+        items: [
+          ["Hitboxes & jumping", "Tap to open. Shows New or Old and whether the hitboxes are being drawn."],
+          ["New / Old", "New: players are the shape of a man (widest at the feet, narrow at the head, nothing above the head unless they jump) and really jump for a ball in the air. Old: the hitboxes from before 14 Oct 2026. Stored on this phone, so it also changes a real career on this phone."],
+          ["Show / Hide hitboxes", "Draws every body's hitbox on Play: red defenders, blue team-mates (dashed ring: how far he goes for a ball played to him, tick: how high), yellow keeper, bright yellow while in the air, and the ball's height in metres. Test screens only — never in a career match."],
+          ["Sliders", "Standing height, jump height, reach at the feet and at the head, header bonus, block bonus, and how much harder a keeper finds a ball above his standing reach. Kept on this phone; used from the next touch."],
+          ["Reset to defaults", "Puts every slider back."],
+        ],
+      },
+      { ...TUNING_PANEL_GROUP, group: "Tuning panel (bottom of the page)" },
     ],
     saving: [
       "Chosen types, flags and unsaved drags are kept in THIS browser only.",
       "Save / Save this fix: " + SCENARIO_SAVE_SHARED + " It lands in the gallery as a simulated card of its type.",
       SCENARIO_NOT_IN_GAME_UNTIL_COMMIT,
       "Tune corrections go to the shared table star_scenario_corrections.",
+      TUNING_NOTES_SAVING,
     ],
     commit: [
       "Commit puts this one chance straight into the game's code. Saved-but-not-committed ones can also be committed together from Scenario Gallery → Tuning & Commit.",
@@ -820,8 +876,8 @@ export const ADMIN_GUIDES = {
       "The chances are made by the same function as in a real /star-dev match (lib/star/chanceMaker.ts): one of your drawings, nudged, mirrored half the time, the drawing's own players and nobody else, never one of the last five pictures of its type. The Play Area's Chances dial can switch this page (and the gallery's Sim) to the generator; a career always plays the drawings.",
       "Your fixes reach real matches only once they're committed — here, or from the gallery.",
     ],
-    needs: [SCENARIO_TABLE_NEEDED],
-    dev: "app/star-highlights-dev/page.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit}.ts · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
+    needs: [SCENARIO_TABLE_NEEDED, TUNING_NOTES_NEEDED],
+    dev: "app/star-highlights-dev/page.tsx · components/star/HitboxPanel.tsx, lib/star/hitbox.ts · components/star/TuningSessionPanel.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit,tuningSession,tuningNotes}.ts · /api/star/tuning-notes · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
   },
 
   "/star-play-dev": {
@@ -852,6 +908,16 @@ export const ADMIN_GUIDES = {
         ],
       },
       {
+        group: "Hitboxes & jumping (Leo)",
+        items: [
+          ["Hitboxes & jumping", "Tap to open. Shows New or Old and whether the hitboxes are being drawn."],
+          ["New / Old", "New: players are the shape of a man (widest at the feet, narrow at the head, nothing above the head unless they jump) and really jump for a ball in the air. Old: the hitboxes from before 14 Oct 2026. Stored on this phone, so it also changes a real career on this phone."],
+          ["Show / Hide hitboxes", "Draws every body's hitbox on Play: red defenders, blue team-mates (dashed ring: how far he goes for a ball played to him, tick: how high), yellow keeper, bright yellow while in the air, and the ball's height in metres. Test screens only — never in a career match."],
+          ["Sliders", "Standing height, jump height, reach at the feet and at the head, header bonus, block bonus, and how much harder a keeper finds a ball above his standing reach. Kept on this phone; used from the next touch."],
+          ["Reset to defaults", "Puts every slider back."],
+        ],
+      },
+      {
         group: "Infinite Match",
         items: [
           ["‹ Back", "Back to the Play Area."],
@@ -864,11 +930,13 @@ export const ADMIN_GUIDES = {
           ["Back to the match", "Closes the editor."],
         ],
       },
+      { ...TUNING_PANEL_GROUP, group: "Tuning panel (Infinite Match, under What it served)" },
     ],
     saving: [
       "The dials save the moment you change them, on this device only. There's no Save button.",
       "The Compare old and new switches and the keeper dial save the same way, instantly, on this device only, and stay until you set them back (\"Back to the defaults\" resets them too).",
       "Save as a scenario: " + SCENARIO_SAVE_SHARED,
+      TUNING_NOTES_SAVING,
     ],
     commit: [
       "Commit (on the pinned bar) and \"Commit to the game\" (in the editor) both commit — one scenario, straight onto main.",
@@ -880,8 +948,8 @@ export const ADMIN_GUIDES = {
       "Everything else is the real game: the same engine, the same size on screen, the real squads (real faces, real finishing), and fresh legs every 90 minutes in a long match.",
       "A chance you commit from the editor is used by real /star-dev matches once the deploy finishes.",
     ],
-    needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED],
-    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor}.tsx · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure,runupStyles}.ts",
+    needs: [SCENARIO_TABLE_NEEDED, GITHUB_TOKEN_NEEDED, TUNING_NOTES_NEEDED],
+    dev: "app/star-play-dev/page.tsx · components/star/{InfiniteMatch,EnginePlay,LiveChanceEditor,TuningSessionPanel}.tsx · lib/star/{tuningSession,tuningNotes}.ts · /api/star/tuning-notes · lib/star/{playArea,engineProfile,liveEdit}.ts · lib/star/{goalFrame,pressure,runupStyles}.ts",
   },
 
   "/star-wallet-dev": {
@@ -1165,6 +1233,33 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-anim3d-dev/page.tsx · lib/star/style3d/animGrid3d.ts (the tiles: one WebGL canvas, one tile each via scissor) · the clips: public/star/anims3d/{football,mocap}.glb through lib/star/three3d/footballAnims.ts · the camera numbers: lib/star/style3d/broadcastCam.ts (BROADCAST) · the match drawing: lib/star/style3d/engineView.ts. Filming: window.__frameStep.",
   },
+  "/star-update-dev": {
+    title: "Oct 13 update",
+    what: "The whole Oct 13 gameplay update behind one Old | New switch: shot power, the contact field (strike the side of the ball to curl it low), keepers, team-mates shooting, and match feel. Each part also has its own row.",
+    buttons: [
+      { group: "Top", items: [
+        ["‹ Play Area", "Back to the Play Area."],
+      ] },
+      { group: "The whole update", items: [
+        ["New / Old", "Flips every part at once, on this phone. New also plays in your real career matches on this phone. Starts on Old."],
+        ["Play your career → / Play Area →", "Opens the real game or the Play Area to try it."],
+      ] },
+      { group: "Each part", items: [
+        ["New / Old on each row", "One part on its own. If they don't all match, the big switch shows Mixed. The last three rows are v0.15 parts the update was measured with; they also sit in Settings → Match (New in v0.15)."],
+      ] },
+      { group: "Match feel", items: [
+        ["The feel card", "The Match feel pictures, sounds and sliders, the same as on the Animations page."],
+      ] },
+    ],
+    saving: [
+      "This phone only, instantly. Nobody else's game changes.",
+    ],
+    inGame: [
+      "Every real match on this phone plays the parts set to New.",
+      "There is no row for this in Settings: the switch lives here until the update is decided (Harry, 12 Oct 2026).",
+    ],
+    dev: "app/star-update-dev/page.tsx · lib/star/oct13Update.ts (the switch) · rows in lib/star/lookRows.ts · physics in lib/star/shotFeel.ts, keeperBrain.ts, canvasEngine.ts (KEEPER_FEEL, MATE_CARRY) · feel in lib/star/matchFeel.ts · tests/star/gameplay13.mts, matchFeel.mts.",
+  },
   "/star-animations-dev": {
     title: "Animations",
     what: "Every New player animation (keeper saves, touches, shots, passes, headers, blocks, clearances) looping next to how the Old game drew that moment, with the dials and switches that size them.",
@@ -1179,6 +1274,13 @@ export const ADMIN_GUIDES = {
         ["vs Old game / vs First version", "What the left picture of each card shows: the Old game, or the first New version from before the strikes were made bigger."],
         ["1× / ½× / ¼×", "Playback speed."],
         ["❚❚ Pause / ▶ Play", "Stops every animation. While paused, the slider steps through the frames."],
+      ] },
+      { group: "Match feel", items: [
+        ["New / Old", "The same switch as Match feel on the Oct 13 update page (/star-update-dev), on this phone. New: every hit is felt (wind-up, a short freeze at the contact, flash and turf, camera punch, ball squash and streak, deeper kick sound, phone buzz), plus landing thuds, the net bulging, post clangs, glove sparks and a keeper who hops and arcs his dive. Old: the game as before. Default Old."],
+        ["The six picture rows", "Your strike, a glove save, a landing, the net bulge, a ball off the post and the keeper's hop and dive, each at soft · medium · full power, painted with the match's own drawing at 0.6× speed."],
+        ["▶ Soft kick / Full kick + buzz / Scuff / Thud / Glove / Clang", "Plays that sound once (and the buzz, on a phone that has one)."],
+        ["The sliders", "How big each effect is: freeze ms, wind-up ms, camera punch px, flash, streak length, squash, sound loudness, buzz ms, landing, net bulge, keeper motion, glove spark, team-mate moves. Saved on this phone at once; the match reads them every frame."],
+        ["Reset feel to defaults", "Every feel slider back to the shipped value."],
       ] },
       { group: "3D figures", items: [
         ["→ ↘ ↓ ↙ ← ↖ ↑ ↗", "Which way the men face. Every frame of each New 3D clip (touch, pass, shot, volley, chip, header, block, clearance; the keeper's one-hand stretch, low dive, parry, catch, fumble, getting up) next to the old clip the match showed for that moment. Keepers have 4 facings and use the nearest."],
@@ -1206,7 +1308,7 @@ export const ADMIN_GUIDES = {
       "With Settings → Look → Players: 3D, the same moments play the New 3D clips (a second picture file, fetched only when Animations is New). Old plays the old 3D clips exactly as before.",
       "To take the whole feature out of a phone: set Animations to Old.",
     ],
-    dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · lib/star/animLook.ts (always New since 12 Oct 2026) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
+    dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · Match feel: lib/star/matchFeel.ts (switch key star-match-feel, dials key star-feel-dials), lib/star/matchFeelDraw.ts (the drawing), components/star/FeelPreview.tsx (the Feel card), sounds in lib/star/matchSound.ts · lib/star/animLook.ts (always New since 12 Oct 2026) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
   },
   "/star-look-dev": {
     title: "Player style (Style A)",
@@ -1479,6 +1581,34 @@ export const ADMIN_GUIDES = {
     dev: "app/star-3d-dev/page.tsx · lib/star/{figureSkin,figure3d,heroFigure,faceFit}.ts · lib/star/fiveASide/render.ts (drawFigureAt picks the look) · lib/star/firstPersonRender.ts",
   },
 
+  "/star-sound-lab-dev": {
+    title: "Sound Lab",
+    what: "Hear, edit and rate different sounds for each thing that happens in a match (a pass, a shot, a save, the net, the whistle, the crowd), then send us your favourites.",
+    buttons: [
+      {
+        items: [
+          ["Event buttons (top row)", "Pick what you are listening to: pass, shot, first touch, keeper save, keeper catch, post/bar, net, block, header, whistle, goal roar, near miss. A ✓ means you have picked one for it."],
+          ["▶", "Plays that sound. The first tap also switches sound on (phones keep it off until you tap)."],
+          ["IN GAME NOW / FILE", "\"Current (match)\" is the sound the live match makes today. \"Current file\" is the recorded file the game has (goal videos use it), including any replacement uploaded on the Sound Board."],
+          ["Green picture / blue bars", "The shape of the sound (loud parts tall) and how much low (left) and high (right) it has. The number is its length in seconds."],
+          ["★ ★ ★ ★ ★", "Rate it. Tap the same star again to clear it."],
+          ["Pick this / ✓ My pick", "Your favourite for this event (one per event). Tap again to un-pick."],
+          ["Note", "Write what you like or don't. It goes into the export."],
+          ["Edit ▾", "Opens the sliders: Volume, Pitch, Length, Brightness, Punch, Body (low end), Room (echo). Let go of a slider to hear the change."],
+          ["Reset", "Puts that sound's sliders back to how it was made."],
+          ["Copy recipe", "Copies how that sound is built plus your slider settings, for us."],
+          ["Save WAV", "Downloads that sound, with your sliders, as a .wav file."],
+          ["▶ Pass → shot → GOAL (and the other blue buttons)", "Plays a short run of sounds together, using your pick for each event (or your best rated, or the first one), so you can judge them side by side."],
+          ["Export my picks", "Copies a short plain-text list (each event → your pick, its stars, sliders and note, plus any other sounds you rated) and shows it in a box. Paste it to us."],
+          ["Clear everything", "Wipes your ratings, notes, slider edits and picks on this device."],
+        ],
+      },
+    ],
+    saving: ["This browser only, instantly. Ratings, notes, slider edits and picks stay on this device; nobody else sees them until you send the export."],
+    inGame: ["Nowhere yet. It is for choosing. Once Leo picks, the chosen recipes can be built into the match's sounds."],
+    dev: "app/star-sound-lab-dev/page.tsx · lib/star/sfxLab.ts (recipes, the pure renderer, export) · tests/star/sfxLab.mts · files via lib/star/sfx.ts sfxUrl() · the live match's sounds: lib/star/matchSound.ts",
+  },
+
   "/star-radar-dev": {
     title: "Match Radar",
     what: "Watch the match that runs behind your highlights — all ninety minutes, minute by minute: who has the ball, where it is, the momentum, and the moments that would be yours. It is the real unseen match, not a copy.",
@@ -1494,14 +1624,41 @@ export const ADMIN_GUIDES = {
           ["Momentum strip", "A bar a minute: up is you on top, down is them. ⚽ marks goals, ⭐ your highlights, 🚑 an injury."],
           ["🚑 Injury", "The unseen match doesn't injure anyone minute by minute. A career checks once, at full time, from the energy you finish on — the radar does the same check and shows it at 90' and on the full-time card."],
           ["Change", "Opens the settings: both clubs and how strong they are, home or away, your position, your energy at kick-off (for the injury check), and whether your highlights stop the clock."],
+          ["Fun targets (DRAFT, bottom of the page) · Run it", "Plays the real unseen match 200 times for each position (striker, winger, attacking mid, central mid) at an even game, +20 and −20. Each row shows ours against Harry's target, ✓ in range, ✗ out. The radar has no league input yet, so ours is checked against the National League and the Premier League side by side. A broken guardrail (shots a match 21–28, nobody over 36 season goals) is shown in red. Season goals are not judged: they show what share of chances your shooting would need to score."],
         ],
       },
     ],
-    saving: ["Nothing is saved. Changing a setting starts the match again; leaving the page forgets it."],
+    saving: ["Nothing is saved. Changing a setting starts the match again; leaving the page forgets it. Fun targets only reads the table in lib/star/funTargets.ts; edit that file to change a number."],
     inGame: [
       "Nowhere — it's a window onto the match the career already runs. Every minute is the real match's own function; your highlights are the moments a career would stop and let you play.",
     ],
-    dev: "app/star-radar-dev/page.tsx · components/star/MatchRadar.tsx · lib/star/matchRadar.ts (calls tick/resolveScenario in lib/star/hiddenMatch.ts)",
+    dev: "app/star-radar-dev/page.tsx · components/star/MatchRadar.tsx · lib/star/matchRadar.ts (calls tick/resolveScenario in lib/star/hiddenMatch.ts) · Fun targets: components/star/FunTargetsReport.tsx, lib/star/funTargets.ts (the table), lib/star/funTargetsMeasure.ts, tests/star/funTargets.mts",
+  },
+
+  "/star-sim90-dev": {
+    title: "Full match (test)",
+    what: "A whole simulated ninety minutes you can watch: 22 men and the ball. It is played live: the unseen match the career runs plays only up to your next chance, you play that chance, and the rest of the match plays on from how it went (score, momentum, who has the ball). This page stages it in each club's formation.",
+    buttons: [
+      {
+        items: [
+          ["▶ / ❚❚", "Starts and pauses the match. At full time it becomes ↻ and plays it again from kick-off."],
+          ["1× 4× 16× 60×", "How fast the match plays. 60× plays all ninety minutes in about a minute and a half."],
+          ["↻ (right of the speeds)", "A new match: a different roll of the same fixture."],
+          ["2D | 3D | Radar", "One view, three ways to show it: the TV picture, the 3D picture, or the radar (who has the ball each minute, and where). Only the one you pick is drawn. This device remembers your choice. Default 2D."],
+          ["The slider", "Drag back to any moment already played. You can't jump ahead: the rest hasn't happened yet."],
+          ["Match events", "Goals, saves and misses so far, newest first (Show all adds corners and every shot). Nothing shows before it happens. Tap one to watch it again."],
+          ["Change", "Pick both clubs and how strong they are. The match starts again."],
+          ["Your chance (no button)", "You watch until the ball reaches you. At each of YOUR chances (home is your side) the real match takes over (2D or 3D, as Settings says), with no question. Score it and it's a goal in this match; miss it and it isn't. The rest of the match is played from that score."],
+          ["Back to the match", "Once the chance is over the match carries on by itself after 3 seconds (the button counts down). Tap it to go at once. Leaving a chance early counts as a miss."],
+          ["Watch only (don't play my chances)", "Off by default. On: your chances are settled at the bench rate (how often a chance goes in for whoever plays instead) and the match plays straight on."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. Changing a setting starts a new match; leaving the page forgets it (the 2D | 3D | Radar choice is the one thing this device keeps). The same match and the same results always play out the same way. Real squad names come from the league-squads data route; made-up names when it does not answer. The teams swap ends at half-time; keepers dive on saves. The side on the ball looks forward first, runs with it into space and switches play only when its side is shut."],
+    inGame: [
+      "Nowhere — a test page. The score and the chances are the real unseen match's, with your results fed in the career's way; the men's positions and passes are made up to show it.",
+    ],
+    dev: "app/star-sim90-dev/page.tsx · components/star/Sim90View.tsx, Sim90View3D.tsx · lib/star/sim90.ts (startSim90 / resolveSim90Chance; runs lib/star/matchRadar.ts live, places men with formationShape.ts) · drawn by lib/star/goalClip/render.ts (camera \"match\") · test tests/star/sim90.mts",
   },
 
   "/star-scenario-dev": {
@@ -1661,6 +1818,23 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing is saved. Any change starts a fresh run."],
     inGame: ["Nothing here changes the game. Values that feel right have to be put into the code by hand."],
     dev: "app/star-dribble-dev/page.tsx · components/star/{FirstPersonDribble,FirstPersonRoam}.tsx",
+  },
+
+  "/star-dribble-stick-dev": {
+    title: "Dribble on the stick (test)",
+    what: "The real match, where every chance you get is a dribble run. Try moving with a stick, as in the 3D games, against the game's own swipe.",
+    buttons: [
+      {
+        items: [
+          ["Stick / Swipe", "How you move on the run. Stick: a stick under your left thumb sets your speed and direction. Swipe: the game's own controls. Each press starts a new match."],
+          ["The stick (left half)", "Put your thumb down anywhere on the left. A small push walks, a full push sprints. Let go and you stop. A fast flick sideways knocks the ball past a man."],
+          ["Right half", "Tap a team-mate to pass to him. A fast sideways swipe knocks the ball past a man."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. It is a test match: no career, nothing counted."],
+    inGame: ["Nothing here is in the game yet. The game still uses the swipe."],
+    dev: "app/star-dribble-stick-dev/page.tsx · lib/star/firstPersonDribble.ts (THE STICK) · components/star/CanvasMatch.tsx (dribbleControl, dribbleOnly) · tests/star/dribbleStick.mts",
   },
 
   "/star-attack-dev": {

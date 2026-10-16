@@ -6,7 +6,8 @@
 
 import { audioContext } from "./audioOut";
 import { makeSoundGate, nowMs } from "./soundGate";
-import { sfxOn } from "./sfx";
+import { sfxOn, sfxUrl } from "./sfx";
+import { soundSet } from "./style3d/texturePack";
 
 let ctx: AudioContext | null = null;
 let muted = false;
@@ -36,6 +37,52 @@ export function primeMatchSound() {
   if (!ctx) ctx = audioContext();
   if (!ctx) return;
   if (ctx.state === "suspended") ctx.resume().catch(() => {});
+  if (soundSet() === "arcade") MATCH_FILES.forEach(decodeFile);
+}
+
+// ── The Arcade set's files (Harry, 14 Oct 2026; scripts/sfx/arcade.py) ──
+// The pass thud, the goal sting and the crowd swell play from public/sfx,
+// decoded once on the shared context and kept. A file that has not loaded
+// yet, or failed, falls back to the sound made in code below. sfxUrl() means
+// a Sound Board replacement is used when there is one.
+// Only the Arcade texture pack plays them (texturePack.ts soundSet); every
+// other pack keeps the sounds made in code, exactly as before.
+type MatchFile = "match-pass" | "match-goal" | "match-crowd";
+const MATCH_FILES: MatchFile[] = ["match-pass", "match-goal", "match-crowd"];
+const fileBuffers = new Map<MatchFile, AudioBuffer | null | "loading">();
+
+function decodeFile(name: MatchFile) {
+  const c = ctx;
+  if (!c || fileBuffers.has(name) || typeof fetch === "undefined") return;
+  fileBuffers.set(name, "loading");
+  fetch(sfxUrl(name))
+    .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error("no file"))))
+    .then((data) => new Promise<AudioBuffer>((res, rej) => {
+      // The callback form: old iOS Safari has no promise-returning decodeAudioData.
+      const p = c.decodeAudioData(data, res, rej);
+      if (p && typeof (p as Promise<AudioBuffer>).then === "function") (p as Promise<AudioBuffer>).then(res, rej);
+    }))
+    .then((b) => { fileBuffers.set(name, b); })
+    .catch(() => { fileBuffers.set(name, null); });
+}
+
+/** Play a decoded file now. False when it is not ready (the caller makes its own sound instead). */
+function playFile(name: MatchFile, gain: number): boolean {
+  if (!ctx || soundSet() !== "arcade") return false;
+  const b = fileBuffers.get(name);
+  if (!b || b === "loading") { decodeFile(name); return false; }
+  try {
+    const src = ctx.createBufferSource();
+    src.buffer = b;
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    src.connect(g);
+    g.connect(ctx.destination);
+    src.start(now());
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function now(): number {
@@ -90,6 +137,7 @@ function noiseBurst(duration: number, peak: number, filterFreq: number, filterQ 
 // PLUG-IN (optional asset): boot-on-ball thump, ~0.15s, /public/star/sfx/kick.mp3
 export function playKick() {
   if (!may("kick")) return;
+  if (playFile("match-pass", 0.85)) return; // Arcade pass thud
   tone(120, 0.12, "sine", 0.55, 55);
   noiseBurst(0.08, 0.22, 1800, 0.7, "bandpass");
 }
@@ -99,6 +147,17 @@ export function playNet() {
   if (!may("net")) return;
   noiseBurst(0.32, 0.35, 2600, 0.5, "bandpass");
   noiseBurst(0.22, 0.18, 5200, 0.4, "highpass");
+}
+
+/** The goal sting (Arcade set): a bright, rising brass stab. Plays with the net and the crowd. */
+export function playGoalSting() {
+  if (soundSet() !== "arcade" || !may("goal-sting")) return;
+  if (playFile("match-goal", 0.85)) return;
+  // Not loaded yet: a rising stab made here, still nothing like the pass.
+  tone(392, 0.12, "sawtooth", 0.12, 523);
+  tone(523, 0.6, "sawtooth", 0.1);
+  tone(659, 0.6, "sawtooth", 0.07);
+  tone(784, 0.6, "triangle", 0.08);
 }
 
 // PLUG-IN (optional asset): metallic woodwork clang, ~0.5s, /public/star/sfx/post.mp3
@@ -136,9 +195,60 @@ export function playWhistle() {
 // /public/star/sfx/crowd-cheer.mp3 and /public/star/sfx/crowd-groan.mp3
 export function playCrowdSwell(kind: "cheer" | "groan") {
   if (!may(`crowd-${kind}`) || !ctx) return;
+  // Arcade crowd swell: 5 dB under the options page's set A (Harry: "a bit too loud").
+  if (kind === "cheer" && playFile("match-crowd", 1)) return;
   const dur = kind === "cheer" ? 1.6 : 0.9;
   const peak = kind === "cheer" ? 0.28 : 0.16;
   const freq = kind === "cheer" ? 1400 : 500;
   noiseBurst(dur, peak, freq, 0.6, "bandpass");
   if (kind === "cheer") noiseBurst(dur * 0.8, peak * 0.6, freq * 2.2, 0.4, "highpass");
+}
+
+// ── Match feel: New (lib/star/matchFeel.ts) ── the heavier, layered sounds.
+// Each scales with how hard it was; Old never calls these.
+
+/** A strike: a deep thump (bassier and louder with power), a leather crack on
+ *  top for a clean hit, or a dull lowpassed scuff for a bad one. */
+export function playStrike(power: number, gain: number, bass: number, scuff: boolean) {
+  if (!may("kick") || !(gain > 0)) return;
+  const p = Math.max(0, Math.min(1, power));
+  if (scuff) {
+    tone(150, 0.1, "sine", 0.35 * gain, 80);
+    noiseBurst(0.09, 0.3 * gain, 500, 0.8, "lowpass");
+    return;
+  }
+  // Body: a low sine that drops, longer and deeper the harder it is.
+  tone(95 + 45 * (1 - bass), 0.1 + 0.12 * p, "sine", (0.45 + 0.4 * p) * gain, 38 + 14 * (1 - bass));
+  // Sub thud under it for a big one.
+  if (p > 0.45) tone(60, 0.16 + 0.08 * p, "sine", 0.35 * p * gain, 32);
+  // Leather crack: a bright, very short burst.
+  noiseBurst(0.035 + 0.03 * p, (0.18 + 0.32 * p) * gain, 2600 + 1600 * p, 0.9, "bandpass");
+  // Boot on turf.
+  noiseBurst(0.07, 0.12 * gain, 900, 0.7, "lowpass");
+}
+
+/** The ball landing: a soft thud, heavier from higher up. */
+export function playThud(v: number, gain: number) {
+  if (!may("thud") || !(gain > 0)) return;
+  const k = Math.max(0, Math.min(1, v));
+  tone(110, 0.09 + 0.05 * k, "sine", (0.12 + 0.3 * k) * gain, 55);
+  noiseBurst(0.06, (0.05 + 0.12 * k) * gain, 600, 0.8, "lowpass");
+}
+
+/** Woodwork: a ringing metal clang, louder for a harder shot. */
+export function playClang(v: number, gain: number) {
+  if (!may("clang") || !(gain > 0)) return;
+  const k = Math.max(0.3, Math.min(1, v));
+  tone(640, 0.7, "triangle", 0.35 * k * gain, 600);
+  tone(1710, 0.5, "sine", 0.18 * k * gain, 1650);
+  tone(2930, 0.3, "sine", 0.08 * k * gain, 2900);
+  noiseBurst(0.04, 0.3 * k * gain, 3500, 1.2, "bandpass");
+}
+
+/** The ball smacking into the keeper's gloves. */
+export function playGlove(v: number, gain: number, held: boolean) {
+  if (!may("glove") || !(gain > 0)) return;
+  const k = Math.max(0.25, Math.min(1, v));
+  tone(held ? 140 : 190, held ? 0.16 : 0.1, "sine", (0.3 + 0.3 * k) * gain, held ? 70 : 100);
+  noiseBurst(0.05, (0.22 + 0.25 * k) * gain, held ? 900 : 1800, 1.1, "bandpass");
 }

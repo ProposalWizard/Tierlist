@@ -113,7 +113,7 @@ export default function VoteCeremony({ tally, scope, successOptionId, canOverrul
           <>
             {/* First-person desk view: cameras either side, the proposal
                 announced from your own seat before the room even reacts. */}
-            <div className="kit-card kit-rise relative p-4 mb-3 overflow-hidden">
+            <div className="kit-card kit-reveal relative p-4 mb-3 overflow-hidden">
               <div className="kit-camera-flash absolute left-2 top-3 text-lg">📸</div>
               <div className="kit-camera-flash absolute right-2 top-3 text-lg" style={{ animationDelay: "1.1s" }}>📸</div>
               <div className="text-center pt-2 pb-1">
@@ -133,7 +133,7 @@ export default function VoteCeremony({ tally, scope, successOptionId, canOverrul
 
         {stage === "crowd" && (
           <>
-            <div className="kit-card kit-rise p-4 mb-3">
+            <div className="kit-card kit-reveal p-4 mb-3">
               <div className="text-center text-[10px] font-black uppercase tracking-widest text-white/80 mb-3">
                 The room takes it in
               </div>

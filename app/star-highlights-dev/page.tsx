@@ -53,6 +53,8 @@ import {
 } from "@/lib/star/scenarioFrame";
 import EditableFrame from "@/components/star/EditableFrame";
 import PageGuide from "@/components/admin/PageGuide";
+import TuningSessionPanel from "@/components/star/TuningSessionPanel";
+import { recordSeen } from "@/lib/star/tuningSession";
 import { outliersOf } from "@/lib/star/scenarioRules";
 import { ruleSetFor, showSavedScenarios } from "@/lib/star/authoredChance";
 import { statusOf } from "@/lib/star/scenarioStatus";
@@ -61,6 +63,7 @@ import {
   FAULT_LABEL, type Correction,
 } from "@/lib/star/scenarioCorrections";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
+import HitboxPanel from "@/components/star/HitboxPanel";
 import ChanceSheet from "@/components/star/ChanceSheet";
 import ShootoutPlay from "@/components/star/ShootoutPlay";
 import { usePlayWidth, useTestKits } from "@/components/star/EnginePlay";
@@ -192,11 +195,13 @@ interface Shot {
   base: Frame;
   /** Every body on the pitch to the metre, for the repeat check. */
   picture: string;
+  /** Where the ball starts, for the Tuning panel's "how deep / which wing". */
+  ball: { x: number; y: number };
 }
 
 function buildShot(spec: SimSpec): Shot {
   const sc = buildSimScenario(spec);
-  return { spec, base: frameFromScenario(sc), picture: pictureKey(sc) };
+  return { spec, base: frameFromScenario(sc), picture: pictureKey(sc), ball: { x: sc.ball.x, y: sc.ball.y } };
 }
 
 /** What is wrong with this chance AS IT NOW STANDS — the saved correction and
@@ -393,6 +398,8 @@ export default function HighlightsPage() {
     if (!spec) return null;
     const shot = buildShot(spec);
     st.last = shot.picture;
+    // Counted once per chance drawn, not per step back to it (Tuning panel).
+    recordSeen({ page: "highlights", kind: spec.kind, ball: shot.ball, seed: spec.seed });
     return shot;
   }, [kinds]);
 
@@ -985,6 +992,10 @@ export default function HighlightsPage() {
             )}
           </div>
 
+          {/* Hitboxes & jumping (Leo, 14 Oct 2026): New | Old, show every
+              body's hitbox on Play, and the dials. */}
+          <HitboxPanel />
+
           {/* ── WHERE THIS ONE ACTUALLY IS ──
               Draft / Saved / Committed, and whether it is feeding the
               auto-tuner. The same two pills the gallery card carries, from
@@ -1111,6 +1122,12 @@ export default function HighlightsPage() {
                 : "Saving is off — run supabase/migrations/star_scenarios.sql in the Supabase SQL Editor."}
             </div>
           )}
+
+          {/* What this session's chances add up to, and "Say what feels off". */}
+          <TuningSessionPanel
+            page="highlights"
+            context={() => ({ kind: shot?.spec.kind, seed: shot?.spec.seed })}
+          />
         </div>
       )}
     </>,

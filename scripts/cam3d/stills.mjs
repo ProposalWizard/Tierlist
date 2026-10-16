@@ -22,11 +22,12 @@ const errs = [];
 page.on("pageerror", (e) => errs.push(String(e).slice(0, 200)));
 await page.goto(`http://localhost:${flag("port", "3502")}/index.html?gov=0&fps=0${cam === "old" ? "&cam2d=0" : ""}${flag("q", "") ? "&" + flag("q", "") : ""}`);
 for (const c of list) {
-  await page.evaluate((fr) => {
+  // --tod=day|golden|night: the light (lib/star/style3d/matchTod.ts picks one per career match)
+  await page.evaluate(([fr, tod]) => {
     window.__M.ready = 0;
     try { window.__M.ctrl?.dispose(); } catch { /* first */ }
-    window.__run = window.H.chance({ frame: fr, tier: "medium" }).catch((e) => { window.__err = String(e); });
-  }, c.frame);
+    window.__run = window.H.chance({ frame: fr, tier: "medium", ...(tod ? { tod } : {}) }).catch((e) => { window.__err = String(e); });
+  }, [c.frame, flag("tod", "")]);
   await page.waitForFunction(() => window.__err || window.__M.ready, null, { timeout: 300000 });
   const err = await page.evaluate(() => window.__err);
   if (err) { console.log(c.name, "ERR", err); continue; }

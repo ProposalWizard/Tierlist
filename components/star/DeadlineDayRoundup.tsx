@@ -195,7 +195,7 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
 
         {/* ── Header ── */}
         <div className="relative z-10 flex flex-col items-start px-3 pb-2 pt-9 pl-9">
-          <span className="kit-rise rounded-full border border-amber-400/50 bg-black/50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
+          <span className="kit-reveal rounded-full border border-amber-400/50 bg-black/50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
             Season {career.season} · {windowLabel} Closed
           </span>
           {/*
@@ -280,7 +280,7 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
                 <div className="space-y-1.5">
                   {active.in.length === 0 && <div className="text-xs font-bold text-white/40">No incomings.</div>}
                   {active.in.map((d, i) => (
-                    <div key={`in-${i}`} className="kit-rise rounded-xl px-3 py-2 backdrop-blur-sm" style={{ animationDelay: `${i * 60}ms`, background: "linear-gradient(180deg, rgba(6,78,59,.85), rgba(4,47,36,.9))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(52,211,153,.4), 0 6px 14px -8px rgba(0,0,0,.8)" }}>
+                    <div key={`in-${i}`} className="kit-reveal rounded-xl px-3 py-2 backdrop-blur-sm" style={{ animationDelay: `${i * 60}ms`, background: "linear-gradient(180deg, rgba(6,78,59,.85), rgba(4,47,36,.9))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(52,211,153,.4), 0 6px 14px -8px rgba(0,0,0,.8)" }}>
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="truncate text-sm font-black text-white" style={{ textShadow: NAME_OUTLINE }}>{d.player}</span>
                         <span className="whitespace-nowrap rounded-full bg-emerald-300 px-1.5 text-[10px] font-black tabular-nums text-emerald-950">{d.detail}</span>
@@ -299,7 +299,7 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
                 <div className="space-y-1.5">
                   {active.out.length === 0 && <div className="text-xs font-bold text-white/40">No outgoings.</div>}
                   {active.out.map((d, i) => (
-                    <div key={`out-${i}`} className="kit-rise rounded-xl px-3 py-2 backdrop-blur-sm" style={{ animationDelay: `${120 + i * 60}ms`, background: "linear-gradient(180deg, rgba(136,19,55,.85), rgba(76,5,25,.9))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(251,113,133,.4), 0 6px 14px -8px rgba(0,0,0,.8)" }}>
+                    <div key={`out-${i}`} className="kit-reveal rounded-xl px-3 py-2 backdrop-blur-sm" style={{ animationDelay: `${120 + i * 60}ms`, background: "linear-gradient(180deg, rgba(136,19,55,.85), rgba(76,5,25,.9))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(251,113,133,.4), 0 6px 14px -8px rgba(0,0,0,.8)" }}>
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="truncate text-sm font-black text-white" style={{ textShadow: NAME_OUTLINE }}>{d.player}</span>
                         <span className="whitespace-nowrap rounded-full bg-rose-300 px-1.5 text-[10px] font-black tabular-nums text-rose-950">{d.detail}</span>

@@ -308,8 +308,12 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
   useEffect(() => {
     const v = videoRef.current;
     if (status !== "ready" || !v) return;
-    // Plays while it is on screen (or was tapped); pauses when scrolled away.
-    if (!(onView || wanted || autoStart)) { if (!v.paused) v.pause(); return; }
+    // In the feed a video plays only once you press play (Mikey, 13 Oct
+    // 2026: "they should only start when I press play"); it is still made in
+    // the background so it starts at once. The full-screen viewer (fill)
+    // plays what is on screen. Scrolled away, it pauses.
+    const go = fill ? (onView || wanted || autoStart) : ((wanted && onView) || autoStart);
+    if (!go) { if (!v.paused) v.pause(); return; }
     v.muted = !(clip?.hasAudio && soundOn && !blocked);
     v.play().catch(() => {
       // Sound before a tap is not allowed here: play muted, show it muted.
@@ -409,12 +413,23 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
             playsInline
             muted
             loop
-            onClick={() => { const v = videoRef.current; if (v) { if (v.paused) void v.play(); else v.pause(); } }}
+            onClick={() => { const v = videoRef.current; if (v) { if (v.paused) { setWanted(true); void v.play(); } else v.pause(); } }}
             onPlay={(ev) => { const me = ev.currentTarget; onScreen.forEach(v => { if (v !== me && !v.paused) v.pause(); }); }}
             onPause={(ev) => stopSide(ev.currentTarget)}
             data-goal-video-playing
           />
-        ) : (
+        ) : null}
+        {status === "ready" && url && !wanted && !autoStart && (
+          <button
+            onClick={() => setWanted(true)}
+            className="absolute inset-0 grid place-items-center bg-black/25"
+            aria-label="Play the goal"
+            data-goal-video-press-play
+          >
+            <span className="grid h-14 w-14 place-items-center rounded-full bg-black/60 ring-2 ring-white/80 text-[22px] text-white">▶</span>
+          </button>
+        )}
+        {status === "ready" && url ? null : (
           <>
             <canvas ref={canvasRef} width={edit.w} height={edit.h} className="block h-full w-full" />
             {badge && (

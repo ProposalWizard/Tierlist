@@ -45,7 +45,7 @@ export const SCREEN_CSS = `
   .kit-row { background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.025)); box-shadow: inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 0 1px rgba(255,255,255,.05); }
   .kit-input { background: rgba(3,7,18,.72); box-shadow: inset 0 2px 4px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.10); border: 0 !important; color: #fff; }
   .kit-input:focus { outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,.6), inset 0 0 0 1px color-mix(in srgb, var(--kit-glow, #34d399) 70%, white 10%); }
-  .kit-btn { font-weight: 900; color: #fff; transition: transform 120ms ease, filter 120ms ease; }
+  .kit-btn { font-weight: 900; color: #fff; transition: transform 70ms ease, filter 70ms ease; }
   .kit-btn:active:not(:disabled) { transform: scale(.95); filter: brightness(.92); }
   .kit-btn:disabled { opacity: .42; }
   .kit-btn-green  { background: linear-gradient(180deg, #4ade80, #10b981 55%, #047857); box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 0 rgba(0,0,0,.18), 0 6px 14px -6px rgba(16,185,129,.75); }
@@ -56,7 +56,7 @@ export const SCREEN_CSS = `
   .kit-btn-violet { background: linear-gradient(180deg, #c4b5fd, #8b5cf6 55%, #6d28d9); box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 6px 14px -6px rgba(139,92,246,.7); }
   .kit-btn-glass  { background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05)); box-shadow: inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 1px rgba(255,255,255,.12), 0 6px 14px -10px rgba(0,0,0,.9); }
   .kit-tabs { display: flex; gap: 2px; border-radius: .9rem; padding: 3px; background: rgba(3,7,18,.6); box-shadow: inset 0 1px 3px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.06); }
-  .kit-tab { flex: 1; border-radius: .7rem; padding: .4rem .25rem; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: rgba(255,255,255,.55); transition: color 150ms, background 150ms; }
+  .kit-tab { flex: 1; border-radius: .7rem; padding: .4rem .25rem; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: rgba(255,255,255,.55); }
   .kit-tab-on { color: #fff; background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06)); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), inset 0 -2px 0 color-mix(in srgb, var(--kit-glow, #34d399) 85%, white 10%); }
   @media (prefers-reduced-motion: reduce) { .kit-btn:active:not(:disabled) { transform: none; } }
 `;
