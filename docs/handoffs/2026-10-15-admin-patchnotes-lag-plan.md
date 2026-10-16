@@ -26,7 +26,7 @@ All 399 on the plan page: LAG 39, PN 197, ADM 153, TB 10. Harry pastes his "Copy
 
 ## Next steps
 1. Read Harry's pasted answers; write them into each plan file (one "Answer:" per question); push.
-2. Rebuild the page from the plans: `scratchpad/planpage-gen/build.py` (re-create from the plans if the scratchpad is gone).
+2. Rebuild the page: `docs/plans/2026-10-15/page/` (tiers_seed.py → build2.py; 30 need you / 142 quick / 227 housekeeping).
 3. Design pass with Higgsfield where a plan has a look (admin home, patch-notes archive, team board).
 4. Build piece 0 (CLAUDE.md trim) as its own build; handoff; then piece 1.
 

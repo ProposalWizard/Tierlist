@@ -1,0 +1,12 @@
+import { chromium } from '/home/user/Tierlist/node_modules/playwright/index.mjs';
+const SP='/tmp/claude-0/-home-user-Tierlist/36643638-fd75-5950-83da-ee5f6b43df22/scratchpad/';
+const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+const ctx=await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,colorScheme:'light',isMobile:true,hasTouch:true});
+const p=await ctx.newPage(); await p.goto('file://'+SP+'planpage/_test.html');
+await p.evaluate(()=>document.getElementById('quick').scrollIntoView()); await p.waitForTimeout(100);
+await p.screenshot({path:SP+'planpage-gen/q.png'});
+await p.evaluate(()=>document.getElementById('house').scrollIntoView()); await p.click('details.hl summary'); await p.waitForTimeout(100);
+await p.screenshot({path:SP+'planpage-gen/h.png'});
+await p.evaluate(()=>document.getElementById('next').scrollIntoView()); await p.waitForTimeout(100);
+await p.screenshot({path:SP+'planpage-gen/n.png'});
+await b.close();

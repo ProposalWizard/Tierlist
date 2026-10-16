@@ -1,0 +1,3593 @@
+[
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q1",
+"q": "Build F2a/F2b/F2d (snapshot only when missing, off the tap) first, before the bigger \"keep the Home player alive\" F2c?",
+"rec": "Yes",
+"ev": "Snapshot read-back costs 2.4–3.8 s per return here (profiles).",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q2",
+"q": "Keep the Home 3D player alive for the whole session (F2c), using ~10–20 MB GPU memory while you are in menus?",
+"rec": "Yes",
+"ev": "Rebuild per return is 4–14 s here; kept alive uses ~10–20 MB of graphics memory (plan).",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q3",
+"q": "Turn off shader error checks in the live game (F3), on only with `?debug=1` and on dev pages?",
+"rec": "Yes",
+"ev": "Shader checks are 7.6 s of the 12 s garden open (measured). A broken shader would show black.",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q4",
+"q": "After GET OUT THERE, the commentary runs ~18 s to your minute. Speed it up? A: as now · B: 3× speed · C: jump straight to the chance",
+"rec": "B",
+"ev": "18.5 s of waiting, 0.2 s of work (measured). It is a feel change.",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q5",
+"q": "Home 3D player: idle animation at 30 fps now. Lower to 20 fps, or pause when nothing moves?",
+"rec": "20 fps",
+"ev": "Home idle: 13 fps, 955 ms of blocks per 5 s (measured here).",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q6",
+"q": "Load the match engine only when Play is near (F4a), preloaded right after Home is up?",
+"rec": "Yes",
+"ev": "Match code plus scenarios are ~351 KB raw off Home's first load (measured).",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q7",
+"q": "Leaving full screen by Esc/back/photo picker/keyboard turns the Full screen setting off. OK that the photo picker also turns it off?",
+"rec": "Yes (one switch, no surprises)",
+"ev": "Esc leaves full screen, but the saved \"on\" brings it back on the next tap (reproduced here).",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q8",
+"q": "iPhone in Safari: hide the full-screen look completely (only the \"How?\" tip), even if it was saved on?",
+"rec": "Yes",
+"ev": "Saved \"on\" turns it on with no off switch (reproduced in an iPhone profile, not real Safari).",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q9",
+"q": "iPhone from the Home Screen icon: show \"On ✓\" only (it is always full screen there)?",
+"rec": "Yes",
+"ev": "From the Home Screen icon the page is always full screen (plan).",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q10",
+"q": "Name-bank and club-sheet data fetched on demand (F4b/F4d): accept a one-time ~0.3 s wait the first time a made-up name is needed (new career, internationals)?",
+"rec": "Yes",
+"ev": "Name banks 483 KB, club sheets ~200–300 KB raw (measured / estimate).",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q11",
+"q": "Preload order (F7): Settings, the match, Phone, League, Shop first?",
+"rec": "Yes",
+"ev": "Settings first open fetched 352 KB, Play 413 KB, 2D→3D 95 KB (measured).",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q12",
+"q": "Keep the 3D house scene alive between visits (F8)?",
+"rec": "Yes, after F2c proves out",
+"ev": "House second visit: 3.0 s shown, 2.8 s of blocks (measured here).",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q13",
+"q": "Do the lag fixes as one deploy or one deploy per step (1–5)?",
+"rec": "Steps 1–5 together, then re-measure, then the rest",
+"ev": "Build order, section 5 of the plan.",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Lag, quickness and full screen",
+"id": "LAG-Q14",
+"q": "Who playtests on the phone after step 6: Harry, Mikey or Leo?",
+"rec": "Harry (iPhone) + one Android if anyone has one",
+"ev": "Phone numbers cannot be measured here: no graphics chip.",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB1",
+"q": "`patch-notes/` (125 MB) and `playtest-notes/` (33 MB): move out of the repo (a shared drive / artifacts), keep in Git LFS, or keep as is?",
+"rec": "Move out; keep a README with links",
+"ev": "patch-notes/ 125 MB, playtest-notes/ 33 MB; .git is 614 MB (measured).",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB2",
+"q": "`tools/modeltest/` (39 MB of test renders): delete?",
+"rec": "Yes",
+"ev": "tools/modeltest is 39 MB of test renders (measured).",
+"tier": "house"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB3",
+"q": "Move all 67 session entries out of CLAUDE.md to SESSION_LOG.md now (−88k tokens a turn)?",
+"rec": "Yes",
+"ev": "67 entries = ~88k tokens on every turn (bytes ÷ 4, estimate).",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB4",
+"q": "New rule: CLAUDE.md gets no session entries at all; every session adds to SESSION_LOG.md only?",
+"rec": "Yes",
+"ev": "Same cause: session entries are 345 KB of the 429 KB file.",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB5",
+"q": "Review `ui-house-style` (32 KB) for stale rulings in the same pass?",
+"rec": "Yes",
+"ev": "Biggest skill, 32 KB; not read line by line.",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB6",
+"q": "Delete frozen old 3D scenes that can no longer be reached (garden `sceneOld.ts`, `cutscenesOld.ts`)? CLAUDE.md says \"Old versions live in git\"",
+"rec": "Yes",
+"ev": "Getters return a fixed value since 12 Oct; old scenes are 64 KB and 28 KB.",
+"tier": "house"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB7",
+"q": "3D body \"Human\" (12 MB in `public/star/human3d/`, never shown in the game): delete, or keep for a test page?",
+"rec": "Delete; git has it",
+"ev": "12 MB in public/star/human3d/, never shown in the game (code read).",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB8",
+"q": "Old shop drawings `public/star/shop2d/items/` (8.4 MB): delete?",
+"rec": "Yes",
+"ev": "8.4 MB; the new pictures are the fixed value.",
+"tier": "house"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB9",
+"q": "`/draft-dev` and `/draft-dev2` differ by one import (DraftSetupV2 vs DraftSetupHero): keep one?",
+"rec": "Keep `/draft-dev2`",
+"ev": "16 differing lines, both pages 54 KB.",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB10",
+"q": "`/star-match-dev` engine fork (418 KB of copied engine): port what is wanted and delete?",
+"rec": "Yes",
+"ev": "418 KB of copied engine; CLAUDE.md says \"to port next\".",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB11",
+"q": "`/star-bigger-dev`, `/star-zoomgrass-dev`, `/star-tournament-dev`: not in the admin menu. Delete or list?",
+"rec": "Delete the first two; list the tournament page",
+"ev": "Not in the menu, not linked; first load 913, 912 and 445 KB.",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB12",
+"q": "One-off dev pages marked \"Ask\" in 8f (bicycle, spin, dribble, attack, tuning, sfx-dev, star-3d-dev, draft/american, profile-new, draft/preview): Harry/Mikey/Leo to tick keep or delete",
+"rec": "One owner answers per page",
+"ev": "Last change 26 Sep – 5 Oct; no visit logs, so only owners know.",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB13",
+"q": "`/star-scenario-dev` duplicates the gallery's Scenario Builder tab: delete the page?",
+"rec": "Yes",
+"ev": "Same Scenario Builder as the gallery tab (see also ADM-Q74).",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB14",
+"q": "`/manager` (manager mode): still a live game mode?",
+"rec": "Ask Mikey",
+"ev": "Not in guides or links; last change 2 Sep.",
+"tier": "need"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB15",
+"q": "Sprite masks: keep PNG (lossless) or use the WebP twins?",
+"rec": "Keep PNG until a still compares them",
+"ev": "Masks may need lossless pixels; not compared yet.",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB16",
+"q": "`STAR_ROADMAP.md`: keep at the top level (Mikey's list) or move to `docs/star/`?",
+"rec": "Keep at top level",
+"ev": "It is Mikey's own list; your standing rule says you set your own order.",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB17",
+"q": "Commit `scripts/perf/` (the measuring tools) with the first lag fix?",
+"rec": "Yes",
+"ev": "The measuring scripts are uncommitted in the worktree.",
+"tier": "house"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB18",
+"q": "Move the 6 SoFIFA scripts into `scripts/sofifa/`?",
+"rec": "Yes",
+"ev": "Six loose SoFIFA scripts sit at the top of scripts/.",
+"tier": "house"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB19",
+"q": "Delete the 18 unused source files in 8d (except `lib/supabase/middleware.ts`)?",
+"rec": "Yes, one commit, after tsc + build",
+"ev": "Import graph plus a grep; the list has 18, one (middleware) is a false alarm.",
+"tier": "house"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB20",
+"q": "Delete the dead branches of the 26 \"Delete branch\" getters in 8e?",
+"rec": "Yes, in 3 batches with a playtest each",
+"ev": "Table 8e; callers not opened one by one.",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB21",
+"q": "Root-level site pictures: move to `public/site/` and WebP them?",
+"rec": "Yes",
+"ev": "10 pictures at the site root; WebP cut 20.6 → 1.4 MB on 20 earlier files.",
+"tier": "quick"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB22",
+"q": "Handbook history (§7, handovers, ~690 lines) to `docs/3D_HISTORY.md`?",
+"rec": "Yes",
+"ev": "Handbook is 1,041 lines, ~690 are history.",
+"tier": "house"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB23",
+"q": "Fix the handbook and the 3d-building skill to \"Decide, don't toggle\"?",
+"rec": "Yes",
+"ev": "Handbook rule 1 and the 3d-building skill still say \"every new look gets a toggle\".",
+"tier": "house"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB24",
+"q": "Delete the \"Auto-deploy\" section of the progress-update skill?",
+"rec": "Yes",
+"ev": "Overruled by \"Deploy only when told\".",
+"tier": "house"
+},
+{
+"plan": "LAG",
+"group": "Bloat and organisation",
+"id": "LAG-QB25",
+"q": "Order: CLAUDE.md trim first (cheapest, every turn), then lag steps 1–5, then code/asset deletions?",
+"rec": "Yes",
+"ev": "CLAUDE.md is the cheapest fix and costs tokens on every turn.",
+"tier": "need"
+},
+{
+"plan": "PN",
+"group": "Main questions",
+"id": "PN-Q1",
+"q": "Keep your numbers as on your pages, gaps included?",
+"rec": "Yes; next is v0.57",
+"ev": "Pages, links and messages already say them",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Main questions",
+"id": "PN-Q2",
+"q": "Keep v0.29 and v0.56 (published as v0.28 / v0.55)?",
+"rec": "Yes; show \"first published as\"",
+"ev": "C 33177ee, 5ca671e",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Main questions",
+"id": "PN-Q3",
+"q": "Leo's second v0.16 → Leo v0.17?",
+"rec": "Yes; needs Leo's nod",
+"ev": "C15",
+"tier": "need"
+},
+{
+"plan": "PN",
+"group": "Main questions",
+"id": "PN-Q4",
+"q": "Split merged entries (Leo v0.2–v0.4; Mikey v0.1–v0.2)?",
+"rec": "Yes",
+"ev": "pages exist for all 5",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Main questions",
+"id": "PN-Q5",
+"q": "V1 and v1.1 as Harry roll-ups; restore v1.1?",
+"rec": "Yes",
+"ev": "K35 orphaned",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Main questions",
+"id": "PN-Q6",
+"q": "\"Live since <date>\" instead of the deploy-date rule?",
+"rec": "Yes",
+"ev": "archive is main itself",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Main questions",
+"id": "PN-Q7",
+"q": "Clash check blocks deploy?",
+"rec": "Yes",
+"ev": "15 clashes",
+"tier": "need"
+},
+{
+"plan": "PN",
+"group": "Main questions",
+"id": "PN-Q8",
+"q": "One notes file per person?",
+"rec": "Yes",
+"ev": "every clash began at the top of one list",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Main questions",
+"id": "PN-Q9",
+"q": "Pull the missing pages from claude.ai, stills only?",
+"rec": "Yes",
+"ev": "L40 read: page + 79 files",
+"tier": "need"
+},
+{
+"plan": "PN",
+"group": "Main questions",
+"id": "PN-Q10",
+"q": "Add a Harry patch-notes skill?",
+"rec": "Yes",
+"ev": "Leo and Mikey have one",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Main questions",
+"id": "PN-Q11",
+"q": "Colours: Harry green, Leo blue, Mikey violet, plus letter?",
+"rec": "Yes",
+"ev": "letter means colour is never the only signal",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q12",
+"q": "C1: alias 0.2 → Leo v0.2?",
+"rec": "Yes",
+"ev": "data 0.2 link = HD5y (Leo v0.2)",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q13",
+"q": "C2: alias 0.4 → Harry v0.4, 0.6 → Mikey v0.2?",
+"rec": "Yes",
+"ev": "today's meaning",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q14",
+"q": "C3: Mikey v0.1 gets no alias?",
+"rec": "Yes",
+"ev": "it never had its own number",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q15",
+"q": "C4: alias 0.14 → Harry v0.14 (Mikey v0.6 only briefly used it)?",
+"rec": "Yes",
+"ev": "V1 lists \"v0.14 Harry\"",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q16",
+"q": "C5: 0.19 → Mikey v0.6; 1.1 not his alias?",
+"rec": "Yes",
+"ev": "1.1 now means Harry v1.1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q17",
+"q": "C6: alias 1.2 → Mikey v0.7?",
+"rec": "Yes",
+"ev": "unused since 30 Sep",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q18",
+"q": "C7: 0.22 → Harry v0.22, 0.26 → Mikey v0.9?",
+"rec": "Yes",
+"ev": "today's meaning",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q19",
+"q": "C8: add Harry v0.26 and v0.27 as notes, no alias?",
+"rec": "Yes",
+"ev": "links L51, L52 exist",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q20",
+"q": "C9: alias 0.28 → Leo v0.6?",
+"rec": "Yes",
+"ev": "today's meaning",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q21",
+"q": "C10: alias 1.1 → Harry v1.1?",
+"rec": "Yes",
+"ev": "`?v=1.1` opens pages/1.1 today",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q22",
+"q": "C11: alias 0.50 → Mikey v0.16?",
+"rec": "Yes",
+"ev": "today's meaning",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q23",
+"q": "C12: alias 0.53 → Leo v0.16; no \"v0.53\" for Harry?",
+"rec": "Yes",
+"ev": "Harry published as v0.54",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q24",
+"q": "C13: alias 0.55 → Leo v0.17?",
+"rec": "Yes",
+"ev": "today's meaning",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q25",
+"q": "C14: all new pages under `patch-notes/<author>/`?",
+"rec": "Yes",
+"ev": "the same folder can't be made twice",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q26",
+"q": "C15: 14 Oct Leo round = v0.17; 13 Oct keeps v0.16?",
+"rec": "Yes",
+"ev": "ref v0.16 = 13 Oct page",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q27",
+"q": "Show old site numbers on rows at all?",
+"rec": "Only in search and on the open note",
+"ev": "rows stay short",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q28",
+"q": "Show `formerly` history (\"was 1.1, then 0.19\") on the note?",
+"rec": "Yes, one line",
+"ev": "explains old links",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q29",
+"q": "Leo has no v0.1: leave the gap?",
+"rec": "Yes",
+"ev": "his v0.1 was Harry's page",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Clashes: which note keeps the number",
+"id": "PN-Q30",
+"q": "Harry's skipped numbers (v0.2, v0.5, v0.6, v0.11–0.13, v0.19–0.21, v0.28, v0.31–0.33, v0.35–0.41, v0.43–0.45, v0.49, v0.50, v0.53, v0.55): leave as gaps?",
+"rec": "Yes",
+"ev": "nothing was published under them",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q31",
+"q": "Leo v0.15: wire `pages/0.45`?",
+"rec": "Yes",
+"ev": "page = ref v0.15",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q32",
+"q": "Harry v1.1: wire `pages/1.1`; pull L59 only if newer?",
+"rec": "Wire now; read L59 to compare",
+"ev": "page added 12 Oct with the entry",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q33",
+"q": "Mikey v0.1: wire `mikey/v0.1.html`?",
+"rec": "Yes",
+"ev": "J",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q34",
+"q": "Leo v0.3: copy ref into `patch-notes/leo/v0.3/`?",
+"rec": "Yes",
+"ev": "self-contained, no images",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q35",
+"q": "Leo v0.4: copy ref into `patch-notes/leo/v0.4/`?",
+"rec": "Yes",
+"ev": "same",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q36",
+"q": "Harry v0.14: pull L38 if its `<h1>` says v0.14?",
+"rec": "Yes",
+"ev": "republished in place for v0.10 → v0.14 (reasoned)",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q37",
+"q": "If L38 shows v0.10, mark v0.14 lost?",
+"rec": "Yes; text from V1's v0.14 section",
+"ev": "V1 has its items",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q38",
+"q": "Harry v0.14 text: copy V1's v0.14 items into the note's Text?",
+"rec": "Yes",
+"ev": "no other text exists",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q39",
+"q": "Harry v0.51: mark lost, text only?",
+"rec": "Yes, unless claude.ai history has it",
+"ev": "read returns current only",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q40",
+"q": "Will you look in claude.ai's version history for v0.51?",
+"rec": "Optional",
+"ev": "can't be done from a session",
+"tier": "need"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q41",
+"q": "Harry v0.15: pull L39?",
+"rec": "Yes",
+"ev": "V1 \"the plan\" link",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q42",
+"q": "Leo v0.7: set data link to L20?",
+"rec": "Yes",
+"ev": "S",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q43",
+"q": "Harry v0.22: ignore duplicate L46?",
+"rec": "Yes",
+"ev": "Leo skill: \"use the first link\"",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q44",
+"q": "Pull Harry v0.16, v0.17, v0.18, v0.26, v0.27, v0.46, v0.47, v0.48, v0.52?",
+"rec": "Yes, one commit each",
+"ev": "L40 read worked",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q45",
+"q": "Swap every pulled video for its poster still plus a \"watch on the artifact\" link?",
+"rec": "Yes",
+"ev": "rule: never commit .mp4",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q46",
+"q": "Cap per pulled page (e.g. 5 MB) given 125 MB already?",
+"rec": "Yes, 5 MB; recompress over that",
+"ev": "v0.16 has 79 files",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Missing or wrong pages: pull, rebuild, or lost",
+"id": "PN-Q47",
+"q": "Text-only notes: show \"Full page not kept\" plus the link?",
+"rec": "Yes",
+"ev": "honest, one tap to the original",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q48",
+"q": "L31 Leo's plans page: list it under Leo as \"plan\", or leave it only in the note text?",
+"rec": "Leave in text",
+"ev": "not a note",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q49",
+"q": "L32 Leo's retirement proposal: same?",
+"rec": "Leave in text",
+"ev": "not a note",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q50",
+"q": "L43 Harry's review: put the link on the \"Harry's notes\" tab?",
+"rec": "Yes",
+"ev": "the tab is that review",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q51",
+"q": "L44 playtest recording page: link from Harry v0.15?",
+"rec": "Yes",
+"ev": "V1: \"behind v0.15's decisions\"",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q52",
+"q": "L56 look-and-style plan: leave in v0.34 text?",
+"rec": "Yes",
+"ev": "not a note",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q53",
+"q": "L66 sound page: leave in v0.23 pages?",
+"rec": "Yes",
+"ev": "not a note",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q54",
+"q": "L67 shop levels page: leave in v0.23 page?",
+"rec": "Yes",
+"ev": "not a note",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q55",
+"q": "L68 international page: leave in Mikey v0.15 page?",
+"rec": "Yes",
+"ev": "not a note",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q56",
+"q": "L69 Ballon d'Or page: leave?",
+"rec": "Yes",
+"ev": "not a note",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q57",
+"q": "Will you check your claude.ai artifact list for notes no file mentions?",
+"rec": "Yes, once",
+"ev": "I can only see links written in the repo",
+"tier": "need"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q58",
+"q": "v0.9 row: hide \"Open the original artifact\" and say \"link now shows a later version\"?",
+"rec": "Yes",
+"ev": "L38 republished",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q59",
+"q": "v0.10 row: same?",
+"rec": "Yes",
+"ev": "L38",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q60",
+"q": "Harry v0.4: archive copy wins over Leo-skill copy (370 B apart)?",
+"rec": "Yes",
+"ev": "archive copy is what's shown today; diff not inspected",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q61",
+"q": "Kept pages for v0.29 and v0.56 had their titles edited after publishing: leave as is?",
+"rec": "Yes",
+"ev": "reverting = another renumber",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q62",
+"q": "Leo v0.9: kept copy wins over ref (98 B apart)?",
+"rec": "Yes",
+"ev": "diff not inspected",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q63",
+"q": "Leo v0.11: kept copy wins (73 B)?",
+"rec": "Yes",
+"ev": "same",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q64",
+"q": "Leo v0.12: kept copy wins (337 B)?",
+"rec": "Yes",
+"ev": "same",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q65",
+"q": "Leo v0.13: kept copy wins (same size, bytes differ)?",
+"rec": "Yes",
+"ev": "same",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q66",
+"q": "Leo v0.16: kept copy wins (133 B)?",
+"rec": "Yes",
+"ev": "same",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q67",
+"q": "Leo v0.17 page says \"v0.16\": leave the page, note header says \"page says v0.16\"?",
+"rec": "Yes",
+"ev": "pages stay as published",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q68",
+"q": "App Plan: keep on /admin/app-plan, out of the list?",
+"rec": "Yes",
+"ev": "not a note",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q69",
+"q": "Harry's review of Mikey v0.7: key by `mikey-v0.7`?",
+"rec": "Yes",
+"ev": "site key \"0.20\" goes",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q70",
+"q": "Mikey's casino-scandals page: add an \"Other pages\" list at the bottom of the archive?",
+"rec": "Yes, one list for all plan pages",
+"ev": "otherwise unreachable from the archive",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q71",
+"q": "Mikey's international-plan page: in that list?",
+"rec": "Yes",
+"ev": "same",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q72",
+"q": "Mikey's relationships plan: in that list?",
+"rec": "Yes",
+"ev": "same",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q73",
+"q": "Leo skill's v0.1 ref: relabel as \"Harry v0.1, seed copy\"?",
+"rec": "Yes",
+"ev": "K57",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Other links, later content, page copies",
+"id": "PN-Q74",
+"q": "Leo skill's `patch-notes-harry-v0.4.html`: delete or keep?",
+"rec": "Keep, note it is Harry's",
+"ev": "harmless history",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q75",
+"q": "Title for Harry v0.1: \"Keeper beaten, cutbacks, camera framing\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P sub \"branch Harry\", \"Harry picked…\"; D",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q76",
+"q": "Title for Harry v0.3: \"Scenario saving made clear, auto-tuner added\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q77",
+"q": "Title for Harry v0.3.5: \"Gallery fixes and decisions from the call\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q78",
+"q": "Title for Harry v0.4: \"Play keeps your drawing; Infinite Match\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q79",
+"q": "Title for Harry v0.7: \"Gallery Play matches the picture\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q80",
+"q": "Title for Harry v0.8: \"Save from matches, scenario guide, admin help\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q81",
+"q": "Title for Harry v0.9: \"Test screens play the real match\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q82",
+"q": "Title for Harry v0.10: \"The guard; trial and training on the real match\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q83",
+"q": "Title for Harry v0.14: \"Penalties and free kicks to real numbers\"?",
+"rec": "Yes, as written",
+"ev": "Evidence V1 \"v0.14 · Harry\"",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q84",
+"q": "Title for Harry v0.15: \"The plan from the 40-minute playtest\"?",
+"rec": "Yes, as written",
+"ev": "Evidence D, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q85",
+"q": "Title for Harry v0.16: \"The v0.15 plan, built: the drawing is the team\"?",
+"rec": "Yes, as written",
+"ev": "Evidence D; claude.ai read `<title>Knowitball v0.16`",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q86",
+"q": "Title for Harry v0.17: \"Whole game reskinned, 3D players, the Store\"?",
+"rec": "Yes, as written",
+"ev": "Evidence D, V1, C 225bf56",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q87",
+"q": "Title for Harry v0.18: \"The road to the App Store, a smoother match\"?",
+"rec": "Yes, as written",
+"ev": "Evidence D, V1, C 225bf56",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q88",
+"q": "Title for Harry v0.22: \"UI & Home review\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q89",
+"q": "Title for Harry v0.23: \"Huge updates review: app look, North and South\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q90",
+"q": "Title for Harry v0.23.1: \"Fixes from v0.23: liquid bars, sounds\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q91",
+"q": "Title for Harry v0.24: \"Winnable highlights, trial rework, top bars\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q92",
+"q": "Title for Harry v0.25: \"Live 3D scenes\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q93",
+"q": "Title for Harry v0.26: \"A new-looking match that rarely repeats\"?",
+"rec": "Yes, as written",
+"ev": "Evidence H: pages 0.29/0.30/0.34/0.42 \"v0.26 — 3 Oct — a new-looking match that rarely repeats\"",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q94",
+"q": "Title for Harry v0.27: \"A tipped-back camera, a keeper who behaves\"?",
+"rec": "Yes, as written",
+"ev": "Evidence H: \"v0.27 — 3 Oct — a tipped-back camera, a keeper who behaves\"",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q95",
+"q": "Title for Harry v0.29 (published as v0.28): \"Cheat menus locked, a harder Ballon d'Or\"?",
+"rec": "Yes, as written",
+"ev": "Evidence C 1fa4563, 33177ee",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q96",
+"q": "Title for Harry v0.30: \"One body, manager's office, garden, tester access\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, C 6711aaf",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q97",
+"q": "Title for Harry v0.34: \"Save safety: Gems wallet and Save guard\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, C c777fc4",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q98",
+"q": "Title for Harry v0.42: \"3D casino and training pitch, rebuilt Settings\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, C 65d9e37",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q99",
+"q": "Title for Harry V1 (roll-up): \"V1: every problem and its fix (v0.1–v0.25)\"?",
+"rec": "Yes, as written",
+"ev": "Evidence D, P \"Knowitball v1\"",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q100",
+"q": "Title for Harry v1.1 (roll-up): \"8–12 Oct round (split into v0.46–v0.48)\"?",
+"rec": "Yes, as written",
+"ev": "Evidence C 2910b43, f6a14c7",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q101",
+"q": "Title for Harry v0.46: \"Shop update\"?",
+"rec": "Yes, as written",
+"ev": "Evidence C f6a14c7",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q102",
+"q": "Title for Harry v0.47: \"3D match and cameras\"?",
+"rec": "Yes, as written",
+"ev": "Evidence C f6a14c7",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q103",
+"q": "Title for Harry v0.48: \"Gameplay and settings: 45 toggles removed\"?",
+"rec": "Yes, as written",
+"ev": "Evidence C f6a14c7",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q104",
+"q": "Title for Harry v0.51: \"Camera, 3D look and keeper\"?",
+"rec": "Yes, as written",
+"ev": "Evidence C 635a792",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q105",
+"q": "Title for Harry v0.52: \"Camera, ball and two test pages\"?",
+"rec": "Yes, as written",
+"ev": "Evidence C 88f2487",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q106",
+"q": "Title for Harry v0.54: \"New chances, 3D camera, build-ups that play on\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, C d63150a",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Harry (33)",
+"id": "PN-Q107",
+"q": "Title for Harry v0.56 (published as v0.55): \"Arcade pack, real shots, calmer passing\"?",
+"rec": "Yes, as written",
+"ev": "Evidence C 5194451, 5ca671e",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q108",
+"q": "Title for Leo v0.2: \"Goalie Mode, rounds 1–2\"?",
+"rec": "Yes, as written",
+"ev": "Evidence D \"rounds 1-4 combined\"; ref sub \"PRs #550, #554, #555\"",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q109",
+"q": "Title for Leo v0.3: \"Goalie Mode, round 3: cursor fix, shot variety\"?",
+"rec": "Yes, as written",
+"ev": "Evidence ref sub \"Goalie Mode round 3 · PR #558\"",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q110",
+"q": "Title for Leo v0.4: \"Goalie Mode, round 4: grass, extras, penalty, free kick\"?",
+"rec": "Yes, as written",
+"ev": "Evidence ref sub \"round 4 · PR #561\"",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q111",
+"q": "Title for Leo v0.5: \"Five-a-side freeze fixed; owner powers\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, V1, C e8772d5",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q112",
+"q": "Title for Leo v0.6: \"Keepers made human, dribble passes\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, S",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q113",
+"q": "Title for Leo v0.7: \"Retirement 2: 20 seasons, Hall of Fame\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, S, C 3718b69",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q114",
+"q": "Title for Leo v0.8: \"New animations\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, S",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q115",
+"q": "Title for Leo v0.9: \"Retirement 3: records, farewell match, share\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, S, C a3a73de",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q116",
+"q": "Title for Leo v0.10: \"Goal videos in the feed\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, S",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q117",
+"q": "Title for Leo v0.11: \"Goal videos get sound\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, S",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q118",
+"q": "Title for Leo v0.12: \"Goal videos, round 3\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, S, C c4e01ef",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q119",
+"q": "Title for Leo v0.13: \"Smart passing and highlights\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, S, C a2b32f9",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q120",
+"q": "Title for Leo v0.14: \"The big evening: camera, careers that move\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, S, C dc5c7b4",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q121",
+"q": "Title for Leo v0.15: \"The gameplay round\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, S, C 3a284d0",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q122",
+"q": "Title for Leo v0.16: \"The Oct 13 gameplay update\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P, S, C 2b2701e, 45ed0bb",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Leo (16)",
+"id": "PN-Q123",
+"q": "Title for Leo v0.17 (page says v0.16): \"Updates tab, Henry finish, hitboxes, sound lab\"?",
+"rec": "Yes, as written",
+"ev": "Evidence P \"LEO v0.16 · SITE 0.55\", C dc50575",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q124",
+"q": "Title for Mikey v0.1: \"Economy, fame and reputation rebuild\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J; D 0.6 summary covers it",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q125",
+"q": "Title for Mikey v0.2: \"Energy master plan\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q126",
+"q": "Title for Mikey v0.3: \"The pitch matches where people stand\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q127",
+"q": "Title for Mikey v0.4: \"Training rebuilt the New Star Soccer way\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q128",
+"q": "Title for Mikey v0.5: \"How you get picked: win your shirt\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q129",
+"q": "Title for Mikey v0.6: \"Five levels of every shop item\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, V1 \"first published as 1.1\"",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q130",
+"q": "Title for Mikey v0.7: \"A 1–10★ star rating\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, V1 \"Mikey's own v0.7\"",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q131",
+"q": "Title for Mikey v0.8: \"Sponsors revamp\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, V1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q132",
+"q": "Title for Mikey v0.9: \"XP rebuilt and the XP Book\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, C 41d20ef",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q133",
+"q": "Title for Mikey v0.10: \"Relationships\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q134",
+"q": "Title for Mikey v0.11: \"The standing ovation\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, C 5304e53",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q135",
+"q": "Title for Mikey v0.12: \"Ovation greetings made in Blender\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, C d0cff36",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q136",
+"q": "Title for Mikey v0.13: \"Brackets, the real UEFA knockout, relegation\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, C c8bcec2",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q137",
+"q": "Title for Mikey v0.14: \"Real moments from StatsBomb\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, C f1729e1",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q138",
+"q": "Title for Mikey v0.15: \"International football\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, C 27ae578",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Note titles · Mikey (16)",
+"id": "PN-Q139",
+"q": "Title for Mikey v0.16: \"Gameplay review fixes\"?",
+"rec": "Yes, as written",
+"ev": "Evidence J, C 82ddfde",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Placeholder dates",
+"id": "PN-Q140",
+"q": "Date for Harry v0.1: 21 Sep 00:00 → 21 Sep 16:39 UTC?",
+"rec": "Yes",
+"ev": "C b360013 (entry added)",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Placeholder dates",
+"id": "PN-Q141",
+"q": "Date for Leo v0.2: 22 Sep 00:00 → 21 Sep 17:50 UTC (v0.2 round)?",
+"rec": "Yes, after the split",
+"ev": "C 473b444 (ref v0.2 saved)",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Placeholder dates",
+"id": "PN-Q142",
+"q": "Date for Harry v0.3: 22 Sep 00:00 → 22 Sep 11:09 UTC?",
+"rec": "Yes",
+"ev": "C 78e306b",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Placeholder dates",
+"id": "PN-Q143",
+"q": "Date for Harry v0.3.5: 22 Sep 00:00 → 22 Sep 14:15 UTC?",
+"rec": "Yes",
+"ev": "C 86d18fe",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Placeholder dates",
+"id": "PN-Q144",
+"q": "Date for Mikey v0.2: 22 Sep 00:00 → 22 Sep 13:50 UTC?",
+"rec": "Yes",
+"ev": "C 7566a88",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Placeholder dates",
+"id": "PN-Q145",
+"q": "Date for Harry v0.7: 23 Sep 00:00 → 23 Sep 14:54 UTC?",
+"rec": "Yes",
+"ev": "C 06f172b",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Placeholder dates",
+"id": "PN-Q146",
+"q": "Date for Harry v0.8: 23 Sep 00:00 → 23 Sep 16:07 UTC?",
+"rec": "Yes",
+"ev": "C daf30d8",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Placeholder dates",
+"id": "PN-Q147",
+"q": "Date for Harry v0.9: 24 Sep 00:00 → 24 Sep 10:17 UTC?",
+"rec": "Yes",
+"ev": "C 3f91940",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Placeholder dates",
+"id": "PN-Q148",
+"q": "New notes' dates: Leo v0.3 21 Sep 20:14 UTC (C 18442d4); Leo v0.4 22 Sep 01:55 UTC (C 85fbe7d); Mikey v0.1 21 Sep 21:45 UTC (C a406c46); Harry v0.14 26 Sep (V1, no time); Harry v0.26/v0.27 3 Oct (H, no time); Harry v1.1 12 Oct 18:00 (old entry)?",
+"rec": "Yes",
+"ev": "listed",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Placeholder dates",
+"id": "PN-Q149",
+"q": "Dates later than the note reached main (Leo v0.5, v0.13; Mikey v0.5, v0.11, v0.13, v0.14, v0.15, v0.16; Harry v0.46–v0.48, v0.52): set the date to the first commit time?",
+"rec": "Yes",
+"ev": "a note can't publish after it went live",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Placeholder dates",
+"id": "PN-Q150",
+"q": "Leo v0.5 shows on main 22 Sep 03:14 +01 but was \"shipped\" 23 Sep (C e8772d5): check by hand?",
+"rec": "Yes",
+"ev": "-S may have matched early text",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Placeholder dates",
+"id": "PN-Q151",
+"q": "Harry v0.26/v0.27 live dates unknown: show date only?",
+"rec": "Yes",
+"ev": "never had an entry to trace",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Splits: titles of the resulting notes",
+"id": "PN-Q152",
+"q": "Leo v0.2 → \"Goalie Mode, rounds 1–2\"?",
+"rec": "Yes (same as Q108)",
+"ev": "Split: pages exist for all five (Q4).",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Splits: titles of the resulting notes",
+"id": "PN-Q153",
+"q": "Leo v0.3 → \"Goalie Mode, round 3\"?",
+"rec": "Yes",
+"ev": "Split: page is a copy in Leo's skill.",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Splits: titles of the resulting notes",
+"id": "PN-Q154",
+"q": "Leo v0.4 → \"Goalie Mode, round 4\"?",
+"rec": "Yes",
+"ev": "Split: page is a copy in Leo's skill.",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Splits: titles of the resulting notes",
+"id": "PN-Q155",
+"q": "Leo v0.2's combined text stays on v0.2; v0.3/v0.4 get a line and their page?",
+"rec": "Yes",
+"ev": "Keeps the old merged text on the first note.",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Splits: titles of the resulting notes",
+"id": "PN-Q156",
+"q": "Mikey v0.1 → \"Economy, fame and reputation rebuild\"?",
+"rec": "Yes",
+"ev": "Split: Mikey's page v0.1 exists (unwired).",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Splits: titles of the resulting notes",
+"id": "PN-Q157",
+"q": "Mikey v0.2 → \"Energy master plan\"; combined text stays on v0.2?",
+"rec": "Yes",
+"ev": "Split: merged text stays on v0.2.",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q158",
+"q": "Default filter on open: All?",
+"rec": "All",
+"ev": "one view of everything",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q159",
+"q": "Remember your last filter on this device?",
+"rec": "Yes",
+"ev": "per-viewer convenience",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q160",
+"q": "Group rows by day (\"Tue 14 Oct\")?",
+"rec": "Yes",
+"ev": "4 notes on 14 Oct",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q161",
+"q": "Within a day, newest first by time?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q162",
+"q": "Row shows: letter badge, \"Harry v0.56\", date, live chip, title, one line, \"Full page\" or \"Text only\"?",
+"rec": "Yes",
+"ev": "sketch",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q163",
+"q": "Row title: the new short title (Q75–Q139), not \"Harry's patch notes\"?",
+"rec": "Yes",
+"ev": "25 titles are just a name today",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q164",
+"q": "One-line summary: hand-written `line` (≤ 90 chars) rather than the first sentence of the summary?",
+"rec": "Hand-written",
+"ev": "summaries run 300+ chars",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q165",
+"q": "Date format on rows: \"14 Oct\"? Year only when not 2026?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q166",
+"q": "Live chip text: \"Live 14 Oct\"?",
+"rec": "Yes",
+"ev": "V1 already says \"now live (since 3 Oct)\"",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q167",
+"q": "On a preview build: amber \"Not on main yet\"?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q168",
+"q": "Search covers: title, line, summary, item headlines, version, old site number?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q169",
+"q": "Search: type-as-you-go, every word must match, any order, case and accents ignored?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q170",
+"q": "\"16\", \"v0.16\", \"leo 16\" all find Leo v0.16?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q171",
+"q": "Search respects the person filter?",
+"rec": "Yes, with \"Search all people\" when empty",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q172",
+"q": "Empty search state: \"No notes match 'x'\" + Clear button?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q173",
+"q": "Empty person filter (can't happen today): \"No notes yet from Leo\"?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q174",
+"q": "Missing page: Text tab opens by default, grey \"Full page not kept\" chip, link to original if it works?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q175",
+"q": "Roll-ups (V1, v1.1): grey \"Roll-up\" tag and listed under Harry?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q176",
+"q": "Open note: Back keeps list scroll and filter?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q177",
+"q": "Prev/next arrows move within the filter?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q178",
+"q": "Note URL `?note=harry-v0.56`; old `?v=0.56` redirects?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q179",
+"q": "Desktop: list left, note right?",
+"rec": "Yes",
+"ev": "today's rail",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q180",
+"q": "Header counts (\"65 notes · Harry 33 …\") shown?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q181",
+"q": "Keep Page / Text / \"Harry's notes\" tabs as today?",
+"rec": "Yes",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q182",
+"q": "\"Other pages\" list (plans, App Plan) at the bottom?",
+"rec": "Yes (Q70)",
+"ev": "Archive design, section 7.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Archive design choices",
+"id": "PN-Q183",
+"q": "Show a sticky search + filter bar while scrolling?",
+"rec": "Yes",
+"ev": "65 rows",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q184",
+"q": "Step 0: OK to tell Leo's and Mikey's sessions before the cut-over?",
+"rec": "Yes",
+"ev": "Step 0 of the move.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q185",
+"q": "Step 1: no approval needed (type change)?",
+"rec": "Yes",
+"ev": "Step 1: a type change only.",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q186",
+"q": "Step 2: see the object-for-object diff result (58 = 58) before going on?",
+"rec": "Yes, one line",
+"ev": "Step 2: a pure move; 58 notes in, 58 out.",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q187",
+"q": "Step 3: approve the full author/version table (section 2) first?",
+"rec": "Yes, this plan",
+"ev": "Step 3: the author/version table in section 2.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q188",
+"q": "Step 4: approve split titles (Q152–Q157) first?",
+"rec": "Yes",
+"ev": "Step 4: split titles Q152–Q157.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q189",
+"q": "Step 5: no approval needed?",
+"rec": "Yes",
+"ev": "Step 5: copy and wiring only.",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q190",
+"q": "Step 6: test old links (`?v=0.53`, `?v=1.1`) and send the result?",
+"rec": "Yes",
+"ev": "Step 6: old links like ?v=0.53 must still open.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q191",
+"q": "Step 7: approve date fixes (Q140–Q151) first?",
+"rec": "Yes",
+"ev": "Step 7: date fixes Q140–Q151.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q192",
+"q": "Step 8: see all 65 `line`s as one list before they go in?",
+"rec": "Yes",
+"ev": "Step 8: 65 one-line summaries.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q193",
+"q": "Step 9: no approval needed?",
+"rec": "Yes",
+"ev": "Step 9: a test plus a build hook.",
+"tier": "house"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q194",
+"q": "Step 10: design stills first (list, filter, search, empty, missing page, note open) at 390 px?",
+"rec": "Yes",
+"ev": "Step 10: the new archive screen.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q195",
+"q": "Step 11: see the new skill text before it lands?",
+"rec": "Yes",
+"ev": "Step 11: skills text.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q196",
+"q": "Step 12: a still of each pulled page as it lands?",
+"rec": "Yes",
+"ev": "Step 12: pages pulled from claude.ai, one note per commit.",
+"tier": "quick"
+},
+{
+"plan": "PN",
+"group": "Migration steps: what you see or approve first",
+"id": "PN-Q197",
+"q": "Leo and Mikey: who asks them to agree to Q3 and the rule?",
+"rec": "Harry, one message each",
+"ev": "Q3 and the rule need Leo and Mikey to agree.",
+"tier": "need"
+},
+{
+"plan": "ADM",
+"group": "First pass (kept)",
+"id": "ADM-Q1",
+"q": "Testers on pages that save shared data, sit under /admin, or show unlicensed StatsBomb data?",
+"rec": "No: admins only on those 26; testers on the other 43.",
+"ev": "Every shared write is refused for non-admins by the server (section 6), so letting testers in only shows buttons that fail.",
+"tier": "need"
+},
+{
+"plan": "ADM",
+"group": "First pass (kept)",
+"id": "ADM-Q2",
+"q": "Should testers get the pop-up, showing only their pages?",
+"rec": "Yes.",
+"ev": "Today a tester has no list anywhere: the pop-up is admin-only (GlobalNav `{userIsAdmin && …}`); the title screen's Play Area link shows only in a local dev build.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "First pass (kept)",
+"id": "ADM-Q3",
+"q": "Owners I could not prove (pre-3 Sep pages): who?",
+"rec": "Harry for site/Draft pages; ask Mikey and Leo for Tuning, First-person dribble, Live attack.",
+"ev": "This copy's git history stops at 3 Sep; every pre-Sep page has no owner evidence.",
+"tier": "need"
+},
+{
+"plan": "ADM",
+"group": "First pass (kept)",
+"id": "ADM-Q4",
+"q": "Is the Old tests list right (bulk answer; per-page questions below)?",
+"rec": "Yes, all 15.",
+"ev": "Section 1 'Fate' column; each old page also has its own question.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "First pass (kept)",
+"id": "ADM-Q5",
+"q": "Delete the dead file `app/draft-dev/DraftDevClient.tsx`?",
+"rec": "Yes (section 5 also covers a second dead file).",
+"ev": "594 lines, imported by nothing (grep).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "First pass (kept)",
+"id": "ADM-Q6",
+"q": "Dock the rail on tool pages?",
+"rec": "Overlay on tool pages; docked only on /admin/star and simple list pages.",
+"ev": "Gallery sizes its picture from the window width (`vp.w - 28`); a docked column would shrink it.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "First pass (kept)",
+"id": "ADM-Q7",
+"q": "Add a 'Sound' group in Road to Ballon d'Or?",
+"rec": "Yes.",
+"ev": "Sound Board and Sound Lab fit no other group; /sfx-dev was lost from the menu.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "First pass (kept)",
+"id": "ADM-Q8",
+"q": "Players and Scrape: PL Draft or RBD?",
+"rec": "PL Draft, also shown in RBD Real data.",
+"ev": "Both games read sofifa_players.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "First pass (kept)",
+"id": "ADM-Q9",
+"q": "Keep a Tierlists section with one link?",
+"rec": "Yes.",
+"ev": "Harry named four sections; the dashboard covers tierlists today.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q10",
+"q": "/admin/xp (Site XP rewards): lock admins only?",
+"rec": "Yes, admins only.",
+"ev": "Edits the live `rewards` table; API is admin-only (`/api/admin/xp/rewards`), page has no check.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q11",
+"q": "/admin/football (Tic Tac Toe data): lock admins only?",
+"rec": "Yes.",
+"ev": "Writes football_* and tictactoe_puzzles; all its API routes check isAdmin; page has no check.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q12",
+"q": "/admin/football/players: lock admins only?",
+"rec": "Yes.",
+"ev": "Writes sofifa_players (both games read it); page open.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q13",
+"q": "/admin/football/pl-clubs (read only): admins only, or testers too?",
+"rec": "Admins only.",
+"ev": "Under /admin; read-only, but its data route `/api/admin/football/teams` is admin-only, so a tester would see an empty page.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q14",
+"q": "/admin/football/scrape: lock admins only?",
+"rec": "Yes.",
+"ev": "Imports into sofifa_players, club_logos, league_logos.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q15",
+"q": "/admin/star-pass: lock admins only?",
+"rec": "Yes.",
+"ev": "Saves star_pass_config (every career reads it); POST is admin-only, page open.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q16",
+"q": "/admin/star-xp (XP Book): lock admins only?",
+"rec": "Yes.",
+"ev": "Saves star_xp_config; POST admin-only; page open.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q17",
+"q": "/admin/custom-clubs: lock admins only?",
+"rec": "Yes.",
+"ev": "Writes custom_clubs, sofifa_players, club_logos, star_lineups; GET routes are public by design (custom_clubs RLS public-read).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q18",
+"q": "/admin/clubs (Club Data, read only): admins only or testers too?",
+"rec": "Admins only.",
+"ev": "Under /admin; nothing to save, but it lists every gap in the data; testers have no use for it.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q19",
+"q": "/admin/badges: admins only or testers too?",
+"rec": "Admins only.",
+"ev": "Under /admin; saves this browser only, but 'Copy changes' feeds a data change.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q20",
+"q": "/draft-dev: lock admins only?",
+"rec": "Yes.",
+"ev": "Uses the SAME browser save as the real PL Draft and sends finished seasons to real history, XP and rooms (guide).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q21",
+"q": "/draft-dev2: lock, or make it a redirect to /draft-dev?",
+"rec": "Redirect (after the merge in section 5); admins only until then.",
+"ev": "4 lines differ from /draft-dev; writes the same real data.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q22",
+"q": "/draft/preview: lock (testers) and move to Old tests?",
+"rec": "Yes.",
+"ev": "Sample data only, 'decide whether to make them official' (header); last change 23 Sep.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q23",
+"q": "/draft/american: lock admins only and move to Old tests?",
+"rec": "Yes.",
+"ev": "Writes real american_draft_rooms; real American mode now lives in /draft rooms (CLAUDE.md).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q24",
+"q": "/profile-new: lock (testers) and move to Old tests?",
+"rec": "Yes.",
+"ev": "Trial redesign; 'Claiming writes to your real account' (guide); last change 23 Sep.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q25",
+"q": "/star-dev/media-lab: lock admins+testers?",
+"rec": "Yes, testers too.",
+"ev": "Nothing uploaded or saved (guide); only page under /star-dev that is a tool.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q26",
+"q": "/star-retirement-dev: lock admins+testers?",
+"rec": "Yes.",
+"ev": "Reads saves, never writes; Share link makes a real code for your own account only.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q27",
+"q": "/star-goal-clips-dev: lock admins+testers?",
+"rec": "Yes.",
+"ev": "Recordings stay in this browser (IndexedDB).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q28",
+"q": "/star-sim90-dev (Full match): lock admins+testers?",
+"rec": "Yes.",
+"ev": "Nothing saved (guide).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q29",
+"q": "/star-dribble-stick-dev: lock admins+testers?",
+"rec": "Yes.",
+"ev": "Test match, nothing counted (guide).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q30",
+"q": "/star-bigger-dev: lock admins+testers?",
+"rec": "Yes.",
+"ev": "Sets a size on this page only (`setFigureGrowOverride`); no guide yet.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q31",
+"q": "/star-real-moments-dev: lock admins+testers, or admins only?",
+"rec": "Admins only.",
+"ev": "Loads a StatsBomb file from your device; licence for a paid game not cleared (guide).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q32",
+"q": "/star-statsbomb-dev (Real shots): lock admins+testers, or admins only?",
+"rec": "Admins only.",
+"ev": "Shows StatsBomb data whose licence for a paid game is not cleared (guide).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q33",
+"q": "/star-intl-dev: lock admins+testers?",
+"rec": "Yes.",
+"ev": "Nothing saved (guide).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q34",
+"q": "/star-anim3d-dev: lock admins+testers?",
+"rec": "Yes.",
+"ev": "Nothing saved (guide).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q35",
+"q": "/star-people-dev: lock admins+testers?",
+"rec": "Yes.",
+"ev": "Nothing saved, Settings untouched (guide).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q36",
+"q": "/star-look-dev: lock admins+testers, and Old tests?",
+"rec": "Lock testers; Old tests (Player style New decided 12 Oct).",
+"ev": "CLAUDE.md 'Decided, no toggle': player style New.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The 28 unlocked pages",
+"id": "ADM-Q37",
+"q": "/star-zoomgrass-dev: lock admins+testers, and Old tests?",
+"rec": "Yes to both.",
+"ev": "Header: 'Not linked anywhere'; 'Match camera: Old until the rebuilt camera lands' (12 Oct).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q38",
+"q": "List /star-dev (the game) as the first card on /admin/star?",
+"rec": "Yes, 'Play the game'.",
+"ev": "It is in today's pop-up as 'Road to Ballon d'Or'.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q39",
+"q": "Keep /star-dev itself open to everyone?",
+"rec": "Yes, never gated.",
+"ev": "It is the live game; CLAUDE.md: no server auth gate, by design.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q40",
+"q": "/admin dashboard: put under Tierlists and rename 'Site content'?",
+"rec": "Yes.",
+"ev": "It runs tierlists, votes, blind rankings, Tic Tac Toe, Ten-A-Ball, objectives, cards, feedback (guide).",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q41",
+"q": "/admin dashboard top buttons (Ballon d'Or Beta, Scrape Data, Players DB): keep?",
+"rec": "Drop 'Ballon d'Or Beta'; keep the other two.",
+"ev": "app/admin/page.tsx line 58 links /ballon-dor, which this plan moves to Old tests.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q42",
+"q": "/admin/cl-draft: keep under PL Draft or Old tests?",
+"rec": "Keep (ask its owner).",
+"ev": "Saves nothing; no evidence of who uses it; last change 23 Sep was the page guide.",
+"tier": "need"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q43",
+"q": "/admin/patch-notes: Site section, link only, not touched by this build?",
+"rec": "Yes.",
+"ev": "Another builder owns patch notes (brief).",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q44",
+"q": "/star-match-dev: let testers in, and rename 'Match engine copy (Mikey)'?",
+"rec": "Testers yes; rename yes.",
+"ev": "Writes nothing (guide); page title says 'Shooting Test' (line 112).",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q45",
+"q": "/star-attack-dev: Old tests?",
+"rec": "Yes.",
+"ev": "Prototype from 6 Sep; no change since 26 Sep.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q46",
+"q": "/star-bicycle-dev: Old tests?",
+"rec": "Yes.",
+"ev": "Guide: 'A throwaway test'.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q47",
+"q": "/star-dribble-dev: let testers in?",
+"rec": "Yes.",
+"ev": "Nothing saved (guide); the only home of the first-person duel (CLAUDE.md).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q48",
+"q": "/star-tuning-dev: let testers in?",
+"rec": "Yes.",
+"ev": "Saves this browser only; testers already have god mode.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q49",
+"q": "/star-sprites-dev: Old tests?",
+"rec": "Yes.",
+"ev": "'players 3D-made sprites' decided 12 Oct (CLAUDE.md).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q50",
+"q": "/star-3d-dev: Old tests?",
+"rec": "Yes.",
+"ev": "Shows the old 3D skin; 2D players are now 3D-made sprites (12 Oct).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q51",
+"q": "/star-spin-dev: Old tests?",
+"rec": "Yes.",
+"ev": "Spin test from 28–30 Sep; the 3D player replaced it.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q52",
+"q": "/star-blender-dev: Old tests?",
+"rec": "Yes.",
+"ev": "Blender footballer superseded by people3d (CLAUDE.md 3D world: '3D people New').",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q53",
+"q": "/sfx-dev: Old tests?",
+"rec": "Yes.",
+"ev": "Sound Board and Sound Lab cover it; not in the pop-up.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q54",
+"q": "/ballon-dor: Old tests, renamed 'Ballon d'Or career (old beta)'?",
+"rec": "Yes.",
+"ev": "Separate older game; same name as Road to Ballon d'Or; last change 23 Sep.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q55",
+"q": "/star-store-dev: keep or Old tests?",
+"rec": "Keep.",
+"ev": "Paid items are coming (PAID_ITEMS.md); the 3D Test Area lists it.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q56",
+"q": "/star-play-dev: drop its link cards to other pages?",
+"rec": "Yes; keep Infinite Highlights / Infinite Match and the dials.",
+"ev": "Seen: 3,999 px tall at 390 wide, mostly link cards the rail will replace.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q57",
+"q": "3D Test Area's signing and office: own rows in the rail?",
+"rec": "Yes, under 3D places.",
+"ev": "Not in today's pop-up; reachable only from the 3D Test Area.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q58",
+"q": "/star-update-dev: mark Old when Leo's update ships?",
+"rec": "Yes, the owner flips status in the registry.",
+"ev": "It holds Leo's unfinished Oct 13 work (CLAUDE.md test-page rule).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q59",
+"q": "Cut-scene Director: own row (a link into /star-style-dev?scene=director)?",
+"rec": "Yes.",
+"ev": "Today hidden inside 'Style Testing'; CLAUDE.md names it as the way to watch any scene.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q60",
+"q": "/star-training-dev: Career screens or Match tests?",
+"rec": "Career screens.",
+"ev": "It plays training levels, a career screen.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q61",
+"q": "/admin/sound-board: RBD Sound or Site?",
+"rec": "RBD Sound.",
+"ev": "Every sound listed is a game sound (guide).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q62",
+"q": "/admin/xp: Site or PL Draft?",
+"rec": "Site.",
+"ev": "Account-level rewards (frames, titles) across games.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q63",
+"q": "/star-wallet-dev: keep testers in?",
+"rec": "Yes.",
+"ev": "Its '+100 gems' calls an admin-only route; Buy uses your own gems.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q64",
+"q": "/star-highlights-dev: admins only (as today)?",
+"rec": "Yes.",
+"ev": "Save and Commit write star_scenarios and the repo.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q65",
+"q": "/lineups: admins only (as today)?",
+"rec": "Yes.",
+"ev": "Saves star_lineups for every career.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q66",
+"q": "/draft-challenge-dev: admins only (as today)?",
+"rec": "Yes.",
+"ev": "Rooms are real rows in the live multiplayer tables.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Other per-page choices",
+"id": "ADM-Q67",
+"q": "/star-style-dev and /star-training3d-dev: move their browser-side check into the layout gate?",
+"rec": "Yes.",
+"ev": "Both check admin-or-tester in the browser after the code ships.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q68",
+"q": "/draft-dev vs /draft-dev2: which survives?",
+"rec": "/draft-dev, with a V2 | Hero switch; /draft-dev2 redirects.",
+"ev": "4 lines differ: setup import (DraftSetupV2 vs DraftSetupHero), function name, room link, guide key.",
+"tier": "need"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q69",
+"q": "/draft-dev sends rooms to the real /draft; fix to stay on /draft-dev?",
+"rec": "Yes.",
+"ev": "draft-dev line 365 `/draft?room=`; draft-dev2 uses `/draft-dev2?room=`.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q70",
+"q": "Delete `app/draft-dev/DraftDevClient.tsx` (the file the brief calls DevDraftClient.tsx)?",
+"rec": "Yes.",
+"ev": "594 lines; no import anywhere (grep).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q71",
+"q": "Delete `components/draft/SquadManager.tsx` and rename SquadManagerDev → SquadManager?",
+"rec": "Delete yes; rename later (touches the live /draft).",
+"ev": "SquadManager.tsx (372 lines) is imported by nothing; the live /draft imports SquadManagerDev (line 7).",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q72",
+"q": "Two pages called 'Squad Builder' (/lineups and /squad-builder): names?",
+"rec": "/lineups → 'Team sheets'; /squad-builder → 'Dream XI builder'.",
+"ev": "AdminNavPanel names /lineups 'Squad Builder'; /squad-builder metadata title 'Squad Builder | Knowitball'.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q73",
+"q": "/squad-builder: keep (a future site game?) or Old tests?",
+"rec": "Old tests until a site game is planned.",
+"ev": "Not linked anywhere (grep); CLAUDE.md lists 'Combined XI builder' as future work.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q74",
+"q": "/star-scenario-dev vs gallery 'Scenario Builder' tab: which survives?",
+"rec": "Gallery tab; page stays in Old tests.",
+"ev": "Same ScenarioEditor; guide says its 'saved locally' note is out of date.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q75",
+"q": "Play Area and 3D Test Area are hubs; the new home is a hub too. Keep three?",
+"rec": "Keep 3D Test Area (it also holds the 3D file store); trim Play Area's links (Q above).",
+"ev": "area3d.ts lists 11 scenes; Play Area links 9 pages.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q76",
+"q": "'XP & Rewards' vs 'XP Book': names?",
+"rec": "'Site XP rewards' and 'Career XP book'.",
+"ev": "Different tables: rewards vs star_xp_config.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q77",
+"q": "Sound Board vs Sound Lab vs /sfx-dev: which survive?",
+"rec": "Board and Lab; /sfx-dev Old.",
+"ev": "Board swaps live sounds; Lab rates match sounds; sfx-dev only plays the manifest.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q78",
+"q": "'Ballon d'Or' (/ballon-dor) vs 'Road to Ballon d'Or' (/star-dev): rename the old one?",
+"rec": "Yes: 'Ballon d'Or career (old beta)'.",
+"ev": "Two games, one name.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q79",
+"q": "Real moments vs Real shots (both StatsBomb): merge?",
+"rec": "No; group together in Real data.",
+"ev": "Different data (moments file from your device vs shots.json) and different owners (Mikey vs Harry).",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q80",
+"q": "International world vs Tournaments: merge?",
+"rec": "No; group together.",
+"ev": "Different owners (Mikey, Leo) and code (intl world vs tournament.ts).",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q81",
+"q": "First-person dribble vs Dribble on a stick: merge?",
+"rec": "No.",
+"ev": "Different modes; both live as tests.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q82",
+"q": "Bigger players, Zoom-to-play, 3D match figures, Player style: merge into one page?",
+"rec": "No; group, and two go Old.",
+"ev": "Each sets a different override; merging changes their scenes.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q83",
+"q": "3D look in every mode vs 3D match figures vs 3D animations: overlap?",
+"rec": "Keep 3D animations; the other two Old.",
+"ev": "Decided 12 Oct: sprites + Style A.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q84",
+"q": "/star-match-dev copy of the engine: keep while it's on the guard's copies list?",
+"rec": "Yes; Mikey's call to retire it.",
+"ev": "CLAUDE.md 'Still copies, to port next: … Mikey's /star-match-dev fork'.",
+"tier": "need"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q85",
+"q": "/profile vs /profile-new: which survives?",
+"rec": "/profile; /profile-new Old.",
+"ev": "Trial redesign, no change since 23 Sep.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q86",
+"q": "/draft/american vs American mode inside /draft rooms?",
+"rec": "Rooms; sandbox Old.",
+"ev": "CLAUDE.md: real American mode needs draft_american_mode.sql (RUN); sandbox is standalone.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q87",
+"q": "'Players' (SoFIFA, /admin/football/players) vs players inside 'Football Data' (Wikidata): names?",
+"rec": "'SoFIFA players' and 'Tic Tac Toe data'.",
+"ev": "Two different player tables.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q88",
+"q": "Five lock mechanisms (TesterOnly, AdminOnly, server redirect, two browser checks): replace with one?",
+"rec": "Yes, DevGate (section 8).",
+"ev": "Section 0 lock counts.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q89",
+"q": "Tester Access guide lists 14 tester pages and says Play Area is admin-only; fix from the registry?",
+"rec": "Yes, generate that list from the registry.",
+"ev": "adminGuides.ts line 669 vs real: 24 pages on tester locks; Play Area is TesterOnly.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q90",
+"q": "Tester Access guide says tester_access.sql must be run; it is RUN. Remove that line?",
+"rec": "Yes.",
+"ev": "CLAUDE.md: RUN by Mikey, 5 Oct.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Duplicates and overlaps",
+"id": "ADM-Q91",
+"q": "Guide titles, pop-up names and page headings disagree (e.g. Match Engine / Match Engine (sandbox) / Shooting Test). One name from the registry?",
+"rec": "Yes; guide title reads the registry.",
+"ev": "AdminNavPanel vs adminGuides vs page h1.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "API routes",
+"id": "ADM-Q92",
+"q": "/api/admin/custom-clubs GET and /players GET are public. Keep?",
+"rec": "Keep.",
+"ev": "custom_clubs is public-read by RLS (custom_clubs.sql line 37); players come from public sofifa_players.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "API routes",
+"id": "ADM-Q93",
+"q": "/api/star/tuning-notes POST accepts anyone. Keep?",
+"rec": "Keep; add a size cap if not there.",
+"ev": "By design 'Anyone inserts, admins read' (CLAUDE.md); I did not check for a size cap.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "API routes",
+"id": "ADM-Q94",
+"q": "Public GETs (scenarios, lineups, xp-config, star-pass, corrections, sfx-overrides) — keep public?",
+"rec": "Yes.",
+"ev": "The game reads them for every player.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "API routes",
+"id": "ADM-Q95",
+"q": "/admin/cl-draft reads user_roles from the browser to decide access. Replace with DevGate?",
+"rec": "Yes.",
+"ev": "Line 141–144; depends on RLS letting users read their own role.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "API routes",
+"id": "ADM-Q96",
+"q": "Admin routes use 6 helper names (requireAdmin, checkAdmin, adminGuard, adminId, inline isAdmin…). Standardise?",
+"rec": "Not in this build; note only.",
+"ev": "All 49 already check; renaming is risk with no gain now.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Testers",
+"id": "ADM-Q97",
+"q": "How do testers find their pages?",
+"rec": "The same pop-up, filtered to tester pages, plus /admin/star filtered.",
+"ev": "Today: by typed address only.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Testers",
+"id": "ADM-Q98",
+"q": "On a phone, where is the tester's way in?",
+"rec": "NavMenu 'Test tools' row (the admin row is 'Admin & Dev tools').",
+"ev": "NavMenu shows the admin row only with isAdmin.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Testers",
+"id": "ADM-Q99",
+"q": "Also a 'Test pages' button in the game's Settings → Developer tab?",
+"rec": "Yes.",
+"ev": "Testers already live in that tab (guide: god mode).",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Testers",
+"id": "ADM-Q100",
+"q": "Should testers see admin-only pages greyed out with a lock?",
+"rec": "No; hide them.",
+"ev": "Less clutter; nothing they can do there.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Testers",
+"id": "ADM-Q101",
+"q": "Show testers the 'writes real data' badge?",
+"rec": "No; it only shows on admin-only pages.",
+"ev": "Testers never reach shared-write pages under Q1.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Testers",
+"id": "ADM-Q102",
+"q": "Tester link flow (/tester/[code]) unchanged?",
+"rec": "Yes.",
+"ev": "Not under any gated folder; uses roleOf/isTester.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Testers",
+"id": "ADM-Q103",
+"q": "After 'Become a tester', where do they land?",
+"rec": "/admin/star (tester view).",
+"ev": "Today the message says 'Road to Ballon d'Or → Settings'.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Registry",
+"id": "ADM-Q104",
+"q": "Registry file: `lib/adminRegistry.ts`, plain data?",
+"rec": "Yes.",
+"ev": "Same pattern as lib/adminGuides.ts and lib/patchNotesData.ts.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Registry",
+"id": "ADM-Q105",
+"q": "Fields: url, name, purpose, section, group, owner, ownerWhy, status, writes, access, alsoIn, railDocked. Add or drop any?",
+"rec": "As listed; add 'added' date.",
+"ev": "A date lets the home sort 'new this week'.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Registry",
+"id": "ADM-Q106",
+"q": "Owner values: Harry | Mikey | Leo | Shared | Unknown?",
+"rec": "Yes.",
+"ev": "Patch notes and admin dashboard are shared.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Registry",
+"id": "ADM-Q107",
+"q": "Status values: in use | old test (two only)?",
+"rec": "Two only.",
+"ev": "Harry's words: 'still used?'.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Registry",
+"id": "ADM-Q108",
+"q": "Writes values: none | this browser | own account | shared | repo?",
+"rec": "Yes, five.",
+"ev": "Matches the guides' 'Saving' wording.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Registry",
+"id": "ADM-Q109",
+"q": "Merge guides into the registry file?",
+"rec": "No; keep adminGuides.ts, test that keys match.",
+"ev": "adminGuides.ts is 1,982 lines.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Registry",
+"id": "ADM-Q110",
+"q": "Run the registry test inside `npm run build` (blocks deploys) or only in the test suite?",
+"rec": "Inside the build.",
+"ev": "Same as the one-engine guard; a page with no lock must never reach the live site.",
+"tier": "need"
+},
+{
+"plan": "ADM",
+"group": "Registry",
+"id": "ADM-Q111",
+"q": "Which folders must have a registry row?",
+"rec": "app/admin/**, app/star-*-dev/**, app/star-dev/media-lab, /lineups, /draft-dev*, /draft-challenge-dev, /draft/preview, /draft/american, /sfx-dev, /ballon-dor, /profile-new, /squad-builder.",
+"ev": "The 69 pages in section 1.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Registry",
+"id": "ADM-Q112",
+"q": "Who edits the registry when a page is added?",
+"rec": "Whoever adds the page; the test fails otherwise.",
+"ev": "admin-page-guide skill already asks this for guides.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q113",
+"q": "Home URL /admin/star?",
+"rec": "Yes.",
+"ev": "Brief.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q114",
+"q": "Pop-up section order?",
+"rec": "Road to Ballon d'Or, Site, PL Draft, Tierlists.",
+"ev": "RBD has 52 of 69 pages.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q115",
+"q": "RBD group order?",
+"rec": "Career screens, Chances, Match tests, Real data, 3D places, Players + animation, Money + rewards, Sound, Old tests.",
+"ev": "Game first, then most-used (gallery 43 commits, highlights 26).",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q116",
+"q": "Group names as listed?",
+"rec": "Yes.",
+"ev": "Harry's suggested groups, plus Sound.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q117",
+"q": "Card shows: name, one line, owner letter, status, 'writes' badge. Anything else?",
+"rec": "Add last-changed date.",
+"ev": "Helps 'what is anyone else doing'.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q118",
+"q": "Cards: one per row on a phone, 3 per row on desktop?",
+"rec": "Yes.",
+"ev": "390 px leaves ~358 px per card.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q119",
+"q": "Search box on the home?",
+"rec": "Yes, top, filters cards by name/purpose.",
+"ev": "52 cards.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q120",
+"q": "Filter chips (owner, status, writes)?",
+"rec": "Yes, the what's-what numbers are the chips.",
+"ev": "Same counts, one row.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q121",
+"q": "What's-what strip: counts per group, per owner, old?",
+"rec": "Yes, one row each.",
+"ev": "Brief.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q122",
+"q": "Old tests folded by default?",
+"rec": "Yes.",
+"ev": "11 RBD old pages.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q123",
+"q": "Empty state when a filter matches nothing?",
+"rec": "'No pages match' + a 'Clear' button.",
+"ev": "—",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q124",
+"q": "Team board slot: top card, or rail link?",
+"rec": "Rail link at the bottom + one small card at the top.",
+"ev": "/admin/team is another builder's page.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q125",
+"q": "Patch notes link on the home?",
+"rec": "Rail link only.",
+"ev": "Site section owns it.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q126",
+"q": "Phone: rail as a drawer behind '☰ Groups'?",
+"rec": "Yes.",
+"ev": "Brief.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q127",
+"q": "PageGuide eye on /admin/star?",
+"rec": "Yes, its own entry.",
+"ev": "Rule: every admin page has one.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q128",
+"q": "Signed-out visitor to /admin/star?",
+"rec": "Same 'Sign in' screen as other locks.",
+"ev": "—",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q129",
+"q": "Look: same dark/amber as the pop-up?",
+"rec": "Yes.",
+"ev": "'The pop-up is fine' (Harry).",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "The new admin home",
+"id": "ADM-Q130",
+"q": "'Recently opened' row (this browser)?",
+"rec": "No.",
+"ev": "More text; search covers it.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "One lock for every page",
+"id": "ADM-Q131",
+"q": "DevGate in one layout per folder (≈60 small files) or in middleware?",
+"rec": "Per folder.",
+"ev": "A middleware throw is a 500 on every page (Critical Gotcha 5).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "One lock for every page",
+"id": "ADM-Q132",
+"q": "app/admin/layout.tsx: keep only the touch CSS, gate per sub-folder?",
+"rec": "Yes.",
+"ev": "Lets /admin/star admit testers while /admin/* stays admin.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "One lock for every page",
+"id": "ADM-Q133",
+"q": "Locked-out screen: message (today) or redirect to sign-in?",
+"rec": "Signed out → sign-in with return; signed in → message.",
+"ev": "Server pages already redirect to /auth?next=.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "One lock for every page",
+"id": "ADM-Q134",
+"q": "Locked message wording?",
+"rec": "'Team only' + 'Back to Knowitball'.",
+"ev": "Today two wordings: 'Admins only' / 'Testers only'.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "One lock for every page",
+"id": "ADM-Q135",
+"q": "Keep the local-dev bypass (offlineDevPlayEnabled)?",
+"rec": "Yes.",
+"ev": "Playtest and filming agents rely on it.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "One lock for every page",
+"id": "ADM-Q136",
+"q": "Remove the 9 browser-side checks?",
+"rec": "Yes, keep feature flags inside pages.",
+"ev": "They block testers the layout lets in.",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "One lock for every page",
+"id": "ADM-Q137",
+"q": "Keep the 6 server redirects inside pages?",
+"rec": "Yes, harmless; don't touch patch-notes.",
+"ev": "—",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "One lock for every page",
+"id": "ADM-Q138",
+"q": "Any API change in this build?",
+"rec": "No.",
+"ev": "All 49 admin routes already check (section 6).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Tool-page side list",
+"id": "ADM-Q139",
+"q": "Rail opens on the current page's group?",
+"rec": "Yes.",
+"ev": "—",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Tool-page side list",
+"id": "ADM-Q140",
+"q": "Breadcrumb ('RBD › Chances › Gallery') in the rail header?",
+"rec": "Yes, not on the page.",
+"ev": "No new element over page controls.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Tool-page side list",
+"id": "ADM-Q141",
+"q": "Phone edge tab: keep today's placement logic?",
+"rec": "Yes.",
+"ev": "placeTab avoids the pitch (26 Sep fix).",
+"tier": "house"
+},
+{
+"plan": "ADM",
+"group": "Tool-page side list",
+"id": "ADM-Q142",
+"q": "Search in the rail?",
+"rec": "Yes, same as home.",
+"ev": "—",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Tool-page side list",
+"id": "ADM-Q143",
+"q": "Which pages get a docked rail on desktop?",
+"rec": "Club data, XP book, Star Pass, Testers, Site XP rewards, Sound board.",
+"ev": "List pages; no full-width canvas.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Tool-page side list",
+"id": "ADM-Q144",
+"q": "Keyboard shortcut to open the rail?",
+"rec": "No.",
+"ev": "—",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Tool-page side list",
+"id": "ADM-Q145",
+"q": "Owner letter in rail rows?",
+"rec": "No; only on home cards.",
+"ev": "Keep rows short.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Build steps: what you see first",
+"id": "ADM-Q146",
+"q": "Step 1 (registry): approve the section 1 table first?",
+"rec": "Yes.",
+"ev": "Names, homes and fates come straight from it.",
+"tier": "need"
+},
+{
+"plan": "ADM",
+"group": "Build steps: what you see first",
+"id": "ADM-Q147",
+"q": "Step 2 (test): see one failing run first?",
+"rec": "Yes, with one page left out on purpose.",
+"ev": "Proves the test bites.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Build steps: what you see first",
+"id": "ADM-Q148",
+"q": "Step 3 (guides): review the 6 new guides as text?",
+"rec": "Yes.",
+"ev": "—",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Build steps: what you see first",
+"id": "ADM-Q149",
+"q": "Step 4 (locks): see the list of pages whose access changes?",
+"rec": "Yes, before merging.",
+"ev": "Some open pages will close.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Build steps: what you see first",
+"id": "ADM-Q150",
+"q": "Step 5 (pop-up): stills at 390 and 1280 before building step 6?",
+"rec": "Yes.",
+"ev": "Harry judges layout by eye.",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Build steps: what you see first",
+"id": "ADM-Q151",
+"q": "Step 6 (home): a Higgsfield design pass first?",
+"rec": "Yes.",
+"ev": "CLAUDE.md: 'Deep plan first, iterate, design (Higgsfield), then build'.",
+"tier": "need"
+},
+{
+"plan": "ADM",
+"group": "Build steps: what you see first",
+"id": "ADM-Q152",
+"q": "Step 7 (draft merge): try the switch on /draft-dev before deleting /draft-dev2?",
+"rec": "Yes.",
+"ev": "—",
+"tier": "quick"
+},
+{
+"plan": "ADM",
+"group": "Build steps: what you see first",
+"id": "ADM-Q153",
+"q": "Step 8 (checks): stills of pop-up, home phone+desktop, one tool page?",
+"rec": "Yes.",
+"ev": "Brief.",
+"tier": "quick"
+},
+{
+"plan": "TB",
+"group": "Questions for you",
+"id": "TB-Q1",
+"q": "Automatic (hook) or Claude runs a command each update?",
+"rec": "Automatic: no extra tokens, can't be forgotten.",
+"ev": "Claude forgot the progress skill twice; a hook adds 0 tokens, a command ~50k a day per person (reasoned).",
+"tier": "need"
+},
+{
+"plan": "TB",
+"group": "Questions for you",
+"id": "TB-Q2",
+"q": "Ship pushes first, live bars second?",
+"rec": "Yes: pushes work the same day with no setup.",
+"ev": "Pushes need no setup; live bars need SQL and a secret (about 2.5 h, then 3 h more).",
+"tier": "quick"
+},
+{
+"plan": "TB",
+"group": "Questions for you",
+"id": "TB-Q3",
+"q": "Watch only the Harry / Mikey / Leo / main branches, or also other branches with an open PR?",
+"rec": "Also open PRs — Leo's v0.16 came from a `claude/…` branch and would otherwise be invisible.",
+"ev": "Leo's v0.16 pull request came from a claude/ branch (measured).",
+"tier": "quick"
+},
+{
+"plan": "TB",
+"group": "Questions for you",
+"id": "TB-Q4",
+"q": "Who can see the page?",
+"rec": "Admins only. Not testers.",
+"ev": "Admin-only page, admin-only rows; live updates follow the same rule.",
+"tier": "quick"
+},
+{
+"plan": "TB",
+"group": "Questions for you",
+"id": "TB-Q5",
+"q": "Send every 5-minute update, or only when a bar changes stage?",
+"rec": "Every update, skipping exact repeats: the card shows \"2 min ago\", which is what tells you it's alive.",
+"ev": "The hook skips exact repeats; the site limits to one a minute per person.",
+"tier": "quick"
+},
+{
+"plan": "TB",
+"group": "Questions for you",
+"id": "TB-Q6",
+"q": "Does anyone actually run Claude Code on their own computer?",
+"rec": "Cloud only for now; local works only if that copy of the repo is current (local pull doesn't work for you).",
+"ev": "Local pull does not work for you (CLAUDE.md); the hook only runs if that copy is current.",
+"tier": "need"
+},
+{
+"plan": "TB",
+"group": "Questions for you",
+"id": "TB-Q7",
+"q": "How long before a card goes \"quiet\"?",
+"rec": "Grey dot after 30 min with no update, \"offline\" after 3 h.",
+"ev": "Sketch shows a live dot under 10 min and grey over 30.",
+"tier": "quick"
+},
+{
+"plan": "TB",
+"group": "Questions for you",
+"id": "TB-Q8",
+"q": "Show the token-usage block?",
+"rec": "Folded under a toggle.",
+"ev": "The usage block is long; folded it stays out of the way.",
+"tier": "quick"
+},
+{
+"plan": "TB",
+"group": "Questions for you",
+"id": "TB-Q9",
+"q": "Show each update's session link?",
+"rec": "Yes — only the owner can open it, but it says which session sent it.",
+"ev": "Only the owner can open a session link; it still shows which session sent it.",
+"tier": "quick"
+},
+{
+"plan": "TB",
+"group": "Questions for you",
+"id": "TB-Q10",
+"q": "History length?",
+"rec": "Last 50 kept, last 10 shown.",
+"ev": "50 rows × 3 people ≈ 0.2 MB, no effect on the 500 MB limit.",
+"tier": "quick"
+}
+]
