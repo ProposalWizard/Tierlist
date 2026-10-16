@@ -1606,6 +1606,33 @@ export const ADMIN_GUIDES = {
     dev: "app/star-sound-lab-dev/page.tsx · lib/star/sfxLab.ts (recipes, the pure renderer, export) · tests/star/sfxLab.mts · files via lib/star/sfx.ts sfxUrl() · the live match's sounds: lib/star/matchSound.ts",
   },
 
+  "/star-vfx-lab-dev": {
+    title: "Visual Effects Lab",
+    what: "See, edit and rate different pictures for each big moment in a match (a hard shot, a soft pass, the ball's trail, a save, a catch, a dive, the post, the net, a block, a header, a near miss, the goal moment), try your picks in a real match on the same page, then send us your favourites.",
+    buttons: [
+      {
+        items: [
+          ["Event buttons (top row)", "Pick which moment you are looking at. A ✓ means you have picked one for it."],
+          ["Filmstrip (4 small pictures)", "The effect at four moments of its life, start to end, left to right. Drawn once each time you change something; nothing animates here."],
+          ["IN GAME NOW", "\"Current (match feel)\" is what Settings → Match → Match feel: New draws today. Some moments draw nothing today; the card says so."],
+          ["★ ★ ★ ★ ★", "Rate it. Tap the same star again to clear it."],
+          ["Pick this / ✓ My pick", "Your favourite for this moment (one per moment). Tap again to un-pick."],
+          ["Note", "Write what you like or don't. It goes into the export."],
+          ["Edit ▾", "Opens the dials that style uses: size, length, strength, colours, how many, spread, camera shake, freeze at the hit, camera punch-in, and the word on comic bursts."],
+          ["Reset", "Puts that variant's dials back to how it was made."],
+          ["Copy recipe", "Copies how that variant is built plus your dials, for us."],
+          ["Use my picks in the live match below", "On: the real match at the bottom draws your picks (and the variant you have open in Edit) on real kicks, saves and goals. Off: the match draws what this phone's game draws."],
+          ["Live match", "The real engine (the same one a career plays) with the Play Area's settings. Play chances to see your picks in motion."],
+          ["Export my picks", "Copies a short plain-text list (each moment → your pick, its stars, changed dials, the full recipe and your note, plus anything else you rated) and shows it in a box. Paste it to us."],
+          ["Clear everything", "Wipes your ratings, notes, edits and picks on this device."],
+        ],
+      },
+    ],
+    saving: ["This browser only, instantly. Nobody else sees your picks until you send the export."],
+    inGame: ["Nowhere yet. It is for choosing. The live match on this page is the only place the picks are drawn; the career match never uses them. Once Leo picks, the chosen recipes can be built into the match."],
+    dev: "app/star-vfx-lab-dev/page.tsx · lib/star/vfxLab.ts (variants, the pure drawing, export) · CanvasMatch `vfxOverride` (TEST_ONLY in scripts/one-engine-guard.mjs) via EnginePlay · tests/star/vfxLab.mts · today's feel: lib/star/matchFeel.ts + matchFeelDraw.ts",
+  },
+
   "/star-radar-dev": {
     title: "Match Radar",
     what: "Watch the match that runs behind your highlights — all ninety minutes, minute by minute: who has the ball, where it is, the momentum, and the moments that would be yours. It is the real unseen match, not a copy.",

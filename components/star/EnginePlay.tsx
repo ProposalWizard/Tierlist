@@ -32,6 +32,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { revealOnScreen } from "@/lib/revealOnScreen";
 import CanvasMatch, { type ChanceResolved } from "./CanvasMatch";
 import type { ScenePicture } from "@/lib/star/scenePicture";
+import type { VfxOverride } from "@/lib/star/vfxLab";
 import {
   buildTestCareer, withRealSquads, testConditions, conditionsLabel,
   realMatchWidth, realMatchHeight, testPlayWidth, testMatchKits,
@@ -164,7 +165,7 @@ const SQUAD_WAIT_MS = 4000;
 export default function EnginePlay({
   settings, seed = 1, openOn, bare = false, width,
   onChanceServed, onChanceResolved, onComplete, fitParent = false, onGoalClip, leadIn, scene,
-  dribbleControl, dribbleOnly,
+  dribbleControl, dribbleOnly, vfxOverride,
 }: {
   /** The Play Area's dials. Absent: whatever this device has saved there —
    *  one set, shared by every test screen. */
@@ -208,6 +209,9 @@ export default function EnginePlay({
    *  /star-dribble-stick-dev prototype). See CanvasMatch's own props. */
   dribbleControl?: "swipe" | "stick";
   dribbleOnly?: boolean;
+  /** The Visual Effects Lab's picked pictures for kicks, saves, goals…
+   *  (CanvasMatch's `vfxOverride`). Absent: the match's own. */
+  vfxOverride?: VfxOverride;
 }) {
   // The test area: the shot spread cone is drawn here only (lib/star/testArea.ts).
   useEffect(() => enterTestArea(), []);
@@ -302,6 +306,7 @@ export default function EnginePlay({
         scene={scene}
         dribbleControl={dribbleControl}
         dribbleOnly={dribbleOnly}
+        vfxOverride={vfxOverride}
         dragReferenceHeightPx={dragReferenceHeightPx}
         pressure={pressureFromDial(s.pressure, s.division)}
         penaltyRunup={s.penaltyRunup}
