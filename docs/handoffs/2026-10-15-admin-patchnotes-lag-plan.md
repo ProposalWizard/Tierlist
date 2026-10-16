@@ -23,6 +23,8 @@ Harry: "build slowly and CORRECTLY"; "even if there's 1000 questions … it will
 
 - Harry 16 Oct (comment on LAG-Q5): pause the Home player when off screen / nothing moves (option C). He also wants the Home model remade or re-posed ("looks too zesty") — add to the Higgsfield design pass.
 
+- Harry 16 Oct (comment on LAG-QB12): deal with ALL test pages in one go — one pass where every dev/test page gets keep / merge / delete with its owner (covers LAG-QB9–QB13, ADM-Q42, ADM-Q68, ADM-Q84 and the admin plan's per-page fates). Do it inside the admin build, not piecemeal.
+
 ## Open questions
 All 399 on the plan page: LAG 39, PN 197, ADM 153, TB 10. Harry pastes his "Copy my answers" text into the chat.
 
