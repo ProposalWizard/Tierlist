@@ -37,6 +37,7 @@ import { divisionOf, fixtureTimestamp, leagueNameFor } from "@/lib/star/calendar
 import { kitsOf } from "@/lib/star/kits";
 import { hasDrawnFlag } from "@/lib/star/nationFlags";
 import { nationKits } from "@/lib/star/international";
+import { nationFor } from "@/lib/star/intl/nations";
 import KibCanIcon from "./KibCanIcon";
 import { brandsOf } from "@/lib/star/sponsorDeals";
 import { isOpen } from "@/lib/star/unlocks";
@@ -227,7 +228,7 @@ function NextMatch({ career, nextFixture, nextMatchDate, myTeam, glow }: Props &
   const home = nextFixture.home ? myTeam : nextFixture.opponent;
   const away = nextFixture.home ? nextFixture.opponent : myTeam;
   // A nation wears its own colours (international.ts), not the neutral kit.
-  const kitFor = (t: string) => (hasDrawnFlag(t) ? nationKits(t) : kitsOf(t, career.clubKits?.[t])).home;
+  const kitFor = (t: string) => (hasDrawnFlag(t) || nationFor(t) ? nationKits(t) : kitsOf(t, career.clubKits?.[t])).home;
   const homeKit = kitFor(home);
   const awayKit = kitFor(away);
   const comp = nextFixture.competition ?? leagueNameFor(divisionOf(career));

@@ -182,6 +182,16 @@ Every men's winner 1956–2025, from ballondor.com only, for a future game
 mode: `data/ballondor/` (read its README). Page:
 https://claude.ai/artifact/11KW1FQ1dKfbg68xSpjcmC
 
+## Nation kits: every nation's real home and away kit (Leo, 13 Oct 2026)
+
+`lib/star/data/nationKits.ts` reads `lib/star/data/sources/nation_kits_2026-10.json`:
+211 nations, shirt / second colour / pattern words / sleeves / shorts / socks,
+from each national team's Wikipedia kit box, every kit checked by eye.
+`international.ts`'s `nationKits` wears them in every international match.
+Shown on `/admin/clubs` → International. Redo next season with
+`scripts/nation-kits/` (read its README). Only 86 of 211 nations have a drawn
+flag (`lib/star/nationFlags.ts`); the rest show two bands in their kit colours.
+
 ## Blender runs in the cloud sessions (Mikey, 8 Oct 2026)
 
 The cloud environment's setup script installs Blender (`apt-get install -y
