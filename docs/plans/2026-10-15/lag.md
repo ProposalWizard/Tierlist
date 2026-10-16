@@ -1108,3 +1108,22 @@ From `run-cold2`, `run-menus`, `run-match`, `run-cold` (places only).
 | S107 | `/sfx/whistle-full.mp3` | 28 |
 | S108 | `/sfx/whistle-half.mp3` | 19 |
 | S109 | `/sfx/whistle-start.mp3` | 12 |
+
+## Harry's answers (16 Oct 2026)
+
+| Q | Answer | What it means for the build |
+|---|---|---|
+| Q2 | ✓ | Keep the Home 3D player loaded while in menus (no rebuild on return) |
+| Q4 | B | Commentary before your first chance runs 3× faster (~18.5 s → ~6 s) |
+| Q5 | B | Home idle at 20 fps. Also pause him when off screen (comment, 16 Oct: "idm pausing him when off screen too") |
+| Q8 | ✓ | iPhone Safari: drop the full-screen look, show only the "How?" tip |
+| Q13 | A | First five lag fixes go live together, then re-measure |
+| Q14 | ✓ | Harry tests on his iPhone (+ one Android if anyone has one) |
+| Q-B1 | D | Keep `patch-notes/pages/` (archive needs it); move `patch-notes/reviews/` + `playtest-notes/` out with a README of links |
+| Q-B9 | B | Keep only the newer Draft test page |
+| Q-B11 | ✓ | Delete "Bigger players" + "Zoom-to-play"; add Tournaments to the admin menu |
+| Q-B12 | ✗ | Don't ask owners page by page; settled in the one test-page pass (admin build) |
+| Q-B13 | ✗ | Keep the separate Scenario Builder page for now |
+| Q-B14 | ✎ | Manager mode is not a live game → treat as an old test in the test-page pass |
+| Q-B25 | ✓ | Trim CLAUDE.md first (piece 0) |
+| Q-B10 | — | Not answered yet (Mikey's engine copy) |

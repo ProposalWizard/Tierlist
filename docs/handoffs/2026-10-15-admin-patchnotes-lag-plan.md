@@ -21,12 +21,12 @@ Harry: "build slowly and CORRECTLY"; "even if there's 1000 questions … it will
 - Proposed build order (on the page): 0 CLAUDE.md trim → 1 full-screen fix → 2 lag quick wins →
   3 patch notes → 4 admin → 5 team board → 6 code/asset clean-up → 7 lag re-check: same script, every screen, nothing slower than piece 2's "after" (Harry, 16 Oct) → later: bigger lag steps.
 
-- Harry 16 Oct (comment on LAG-Q5): pause the Home player when off screen / nothing moves (option C). He also wants the Home model remade or re-posed ("looks too zesty") — add to the Higgsfield design pass.
+- Harry 16 Oct: LAG "needs you" answers are in lag.md → "Harry's answers" (13 of 14; LAG-QB10 open). LAG-Q5 = B (20 fps) plus pause when off screen. He also wants the Home model remade or re-posed ("looks too zesty") — add to the Higgsfield design pass.
 
 - Harry 16 Oct (comment on LAG-QB12): deal with ALL test pages in one go — one pass where every dev/test page gets keep / merge / delete with its owner (covers LAG-QB9–QB13, ADM-Q42, ADM-Q68, ADM-Q84 and the admin plan's per-page fates). Do it inside the admin build, not piecemeal.
 
 ## Open questions
-All 399 on the plan page: LAG 39, PN 197, ADM 153, TB 10. Harry pastes his "Copy my answers" text into the chat.
+Answered so far: 13 LAG. Still open: LAG-QB10, LAG quick (16) + housekeeping (9), and all of PN, ADM, TB. All 399 on the plan page: LAG 39, PN 197, ADM 153, TB 10. Harry pastes his "Copy my answers" text into the chat.
 
 ## Next steps
 1. Read Harry's pasted answers; write them into each plan file (one "Answer:" per question); push.
