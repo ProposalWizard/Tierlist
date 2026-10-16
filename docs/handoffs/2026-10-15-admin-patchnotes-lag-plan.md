@@ -19,7 +19,7 @@ Harry: "build slowly and CORRECTLY"; "even if there's 1000 questions … it will
 - Planning first, answers next, then design with Higgsfield (Harry connects his own), then build.
 - One build per chat, then a handoff (skill `handoff`).
 - Proposed build order (on the page): 0 CLAUDE.md trim → 1 full-screen fix → 2 lag quick wins →
-  3 patch notes → 4 admin → 5 team board → 6 code/asset clean-up → later: bigger lag steps.
+  3 patch notes → 4 admin → 5 team board → 6 code/asset clean-up → 7 lag re-check: same script, every screen, nothing slower than piece 2's "after" (Harry, 16 Oct) → later: bigger lag steps.
 
 ## Open questions
 All 399 on the plan page: LAG 39, PN 197, ADM 153, TB 10. Harry pastes his "Copy my answers" text into the chat.
