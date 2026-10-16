@@ -803,7 +803,7 @@ Top level:
 
 | # | Question | Recommended |
 |---|---|---|
-| Q-B1 | `patch-notes/` (125 MB) and `playtest-notes/` (33 MB): move out of the repo (a shared drive / artifacts), keep in Git LFS, or keep as is? | Move out; keep a README with links |
+| Q-B1 | `patch-notes/` (125 MB) and `playtest-notes/` (33 MB): move out of the repo (a shared drive / artifacts), keep in Git LFS, or keep as is? | **Updated 16 Oct:** split — keep `patch-notes/pages/` (62 MB; the admin archive serves full pages from it via `lib/patchNotePageServe.ts`), move `patch-notes/reviews/` (59 MB) + `playtest-notes/` (33 MB) out with a README of links. Chats never auto-read these folders, so no context is lost. LFS = option B (Vercel must be set to fetch LFS). |
 | Q-B2 | `tools/modeltest/` (39 MB of test renders): delete? | Yes |
 | Q-B3 | Move all 67 session entries out of CLAUDE.md to SESSION_LOG.md now (−88k tokens a turn)? | Yes |
 | Q-B4 | New rule: CLAUDE.md gets no session entries at all; every session adds to SESSION_LOG.md only? | Yes |
