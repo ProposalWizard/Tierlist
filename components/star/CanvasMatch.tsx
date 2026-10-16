@@ -78,6 +78,11 @@ import { GOAL_LINES, ASSIST_LINES } from "@/lib/star/commentaryExtra";
  *  does not add power. */
 const BALL_GRAB_FRACTION = 0.18;
 
+/** A completed pass: how long the ball takes to roll the last bit into the
+ *  receiver's feet, and how far in front of his middle it stops. */
+const RECEIVE_GLIDE_S = 0.32;
+const RECEIVE_LEAD_M = 0.45;
+
 /**
  * How the ball moves on the contact screen for this chance (Mikey, 27 Sep
  * 2026): a header floats across in the air, a volley bounces across, and a
@@ -1433,6 +1438,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * (clearance.handOverAfterStop), or clearance.handOverMax runs out.
    */
   const bootRef = useRef<{ t: number; stopT: number | null; then: (() => void) | null } | null>(null);
+  /** A completed pass rolls the last metre or two into the receiver's feet
+   *  during the PASS banner (Mikey, 16 Oct 2026: it froze ~1.9 m short of him,
+   *  because a pass counts from 2.0 m). Picture only: the outcome is decided. */
+  const receiveGlideRef = useRef<{ from: { x: number; y: number }; to: { x: number; y: number }; z0: number; t0: number } | null>(null);
   /** Every team-mate lay-off and shot since your strike, in order — who the
    *  assist belongs to (lib/star/credit.ts assistFor). Reset at each strike. */
   const matePlaysRef = useRef<MatePlay[]>([]);
@@ -5286,6 +5295,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
       // …and a ball the keeper has pushed clear keeps going, so you watch it go
       // rather than finding it already there.
+      // …and a completed pass rolls on into his feet (receiveGlideRef).
+      if (phaseRef.current === "result" && ballRef.current && receiveGlideRef.current) {
+        const g = receiveGlideRef.current, bg = ballRef.current;
+        const t = Math.min(1, (performance.now() - g.t0) / (RECEIVE_GLIDE_S * 1000));
+        const e = 1 - (1 - t) * (1 - t);   // eases out, as a ball slowing into a touch
+        bg.pos = { x: g.from.x + (g.to.x - g.from.x) * e, y: g.from.y + (g.to.y - g.from.y) * e };
+        bg.z = g.z0 * (1 - e);
+        bg.vel = { x: 0, y: 0 }; bg.vz = 0;
+        if (t >= 1) receiveGlideRef.current = null;
+      }
       if (phaseRef.current === "result" && ballRef.current?.settling) {
         settleBall(ballRef.current, dt, scenarioRef.current);
       }
@@ -5428,6 +5447,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     {
       const b = ballRef.current;
       bootRef.current = b?.cleared && !b.inNet ? { t: performance.now(), stopT: null, then: null } : null;
+    }
+    receiveGlideRef.current = null;
+    {
+      const b = ballRef.current, at = scenarioRef.current.receivedAt;
+      if (res === "delivered" && b && at) {
+        // Stop just in front of him, on the side the ball came from.
+        const dx = b.pos.x - at.x, dy = b.pos.y - at.y, d = Math.hypot(dx, dy);
+        const lead = Math.min(RECEIVE_LEAD_M, d);
+        const to = d > 1e-6 ? { x: at.x + (dx / d) * lead, y: at.y + (dy / d) * lead } : { x: at.x, y: at.y };
+        receiveGlideRef.current = { from: { x: b.pos.x, y: b.pos.y }, to, z0: b.z, t0: performance.now() };
+      }
     }
     const sc = scenarioRef.current;
     goalSideRef.current = res === "goal" ? (autoKickOf(sc)?.side === "them" ? "them" : "us") : null;
