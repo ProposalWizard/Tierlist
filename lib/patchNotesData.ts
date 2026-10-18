@@ -29,7 +29,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.57",
       "title": "Harry's patch notes: The admin room and the team board",
-      "publishedAt": "2026-10-18T18:00:00Z",
+      "publishedAt": "2026-10-18T20:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/SdmpakSaerhCuwYrUT2PCV",
       "summary": "One page list now runs every admin and test page: a new admin home (12 groups, search, owner chips, Ops room or Clean light), a team board with a card each for Harry, Mikey and Leo (status, activity, recent pushes, patch notes drop-down, pull requests, what is live), every push linked to the patch note it went out in, patch notes as a side-menu tab, admin mode (the right tools on any page), a Videos tab for screen recordings that saves each breakdown to Drive, 17 old pages deleted and one lock on every admin and test page.",
@@ -429,7 +429,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.50",
       "title": "Mikey's patch notes v0.16: Gameplay review fixes",
       "publishedAt": "2026-10-13T17:00:00Z",
-      "updatedAt": null,
+      "updatedAt": "2026-10-16T12:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/S5EvHkuf7wJTaGPeXd3WeM",
       "summary": "From Mikey's gameplay review video: feed videos play only when pressed (at most 2 a match), goal posts stand straight and the side-view net has depth, achievements unlock and level you up at once. New framing and headers/volleys are built behind test switches, off by default.",
       "stats": [
@@ -491,6 +491,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "kind": "fixed",
           "title": "Fixed",
           "items": [
+            {
+              "title": "A completed pass ends at your team-mate's feet",
+              "detail": "Was: the ball froze about 1.9 m short of him (added 16 Oct)."
+            },
             {
               "title": "Achievements away from a match unlock at once",
               "detail": "Was: only after the next match."

@@ -90,6 +90,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-radar-dev", "Match radar", "Unseen match, minute by minute", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-dribble-dev", "First-person dribble", "First-person dribble duel", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-dribble-stick-dev", "Dribble on a stick", "Dribble steered by a stick", "rbd", "match", "Harry", "live", "none", "team"),
+  P("/star-vfx-lab-dev", "Visual effects lab", "Pick and edit the effect for each match moment", "rbd", "players", "Leo", "live", "browser", "team"),
   P("/star-sound-lab-dev", "Sound lab", "Hear, edit, rate match sounds", "rbd", "sound", "Leo", "live", "browser", "team"),
   P("/star-real-moments-dev", "Real moments", "StatsBomb positions, playable", "rbd", "data", "Mikey", "live", "none", "admin"),
   P("/star-statsbomb-dev", "Real shots", "WC/Euro shots, playable", "rbd", "data", "Harry", "live", "none", "admin"),
