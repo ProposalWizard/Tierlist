@@ -1,0 +1,14 @@
+{
+ "LAG-Q2": {"a": "✓", "note": ""},
+ "LAG-Q4": {"a": "B", "note": ""},
+ "LAG-Q5": {"a": "B", "note": "also pause when off screen"},
+ "LAG-Q8": {"a": "✓", "note": ""},
+ "LAG-Q13": {"a": "A", "note": ""},
+ "LAG-Q14": {"a": "✓", "note": ""},
+ "LAG-QB9": {"a": "B", "note": ""},
+ "LAG-QB11": {"a": "✓", "note": ""},
+ "LAG-QB12": {"a": "✎", "note": "Harry decides all test pages himself in the full admin redesign"},
+ "LAG-QB13": {"a": "✓", "note": ""},
+ "LAG-QB14": {"a": "✎", "note": "manager mode is not live any more"},
+ "LAG-QB25": {"a": "✓", "note": ""}
+}
