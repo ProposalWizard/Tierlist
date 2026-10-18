@@ -610,7 +610,7 @@ function nearestSlots(ends: Vec2[], slots: Vec2[]): (Vec2 | null)[] {
 export function leadinTrack(
   s: SbShot, lead: SbLeadin, sc: Scenario,
   /** The Real Goals page: the ball's own timeline (every pass and carry at the real timing). Absent: leadinBallKeys. */
-  opts: { ballKeys?: (end: Vec2) => LeadBallKey[] } = {},
+  opts: { ballKeys?: (end: Vec2) => LeadBallKey[]; isNamed?: (key: string, passer: string) => boolean | undefined } = {},
 ): LeadTrack {
   const plan = leadinPlan(s, lead);
   const end = { x: sc.ball.x, y: sc.ball.y };
@@ -718,8 +718,13 @@ export function leadinTrack(
       const pth = pathThrough(base.get(e.key)!, endOf.get(e.key)!, spells, true);
       if (!pth) continue;
       const cap = guessed.has(e.key) ? MOVE_GUESS_M : MOVE_360_M;
-      if (pth.moved > cap) continue;
-      const cost = pth.moved + (guessed.has(e.key) ? 2 : 0);
+      // The Real Goals page: the man wearing the passer's real name plays his pass, if he can get there;
+      // a man wearing ANOTHER real name never does (undefined: he has no name).
+      const match = opts.isNamed?.(e.key, name);
+      if (match === false) continue;
+      const named = match === true;
+      if (pth.moved > cap && !named) continue;
+      const cost = pth.moved + (guessed.has(e.key) ? 2 : 0) - (named ? 1000 : 0);
       if (!best || cost < best.cost) best = { key: e.key, keys: pth.keys, cost };
     }
     if (best) {

@@ -322,6 +322,25 @@ export function dressFor(g: RealGoal): (sc: Scenario) => void {
   };
 }
 
+/**
+ * For the build-up (leadinTrack's `isNamed`): is the man with this lead-in key
+ * wearing the passer's real name? So the man who plays a pass is the man whose
+ * name is over his head (seen on the page: "Bellingham on the ball" while the
+ * ball was at the feet of the man labelled Foden).
+ */
+export function isNamedFor(g: RealGoal, sc: Scenario): (key: string, passer: string) => boolean | undefined {
+  const whoOf = (key: string) => {
+    if (key === "run") return sc.runner?.who;
+    if (key === "follower") return sc.follower.who;
+    const m = /^(def|mate|sec)(\d+)$/.exec(key);
+    if (!m) return undefined;
+    const i = Number(m[2]);
+    return m[1] === "def" ? sc.defenders[i]?.who : m[1] === "mate" ? sc.teammates[i]?.who : sc.secondaryRunners[i]?.who;
+  };
+  // true: he IS the passer; false: he is somebody else (never plays it); undefined: nameless.
+  return (key, passer) => { const w = whoOf(key); return w?.name ? w.name === knownAs(g, passer) : undefined; };
+}
+
 /** Everything the match is handed for this goal (CanvasMatch's `realGoal`). */
 export function viewForGoal(g: RealGoal, ghostOn: boolean): RealGoalView {
   const kits = kitsForGoal(g);

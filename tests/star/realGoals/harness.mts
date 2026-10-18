@@ -143,3 +143,10 @@ export function playStrike(g: RealGoal, aim: Aim, lane: boolean, seed: number, w
   }
   return { goal: out === "goal" || out === "rebound", outcome: String(out), inLane: ball.realLane === true, x, z };
 }
+
+/** The ball the instant the found aim is struck (for a test page still: hand it to the match's setBall). */
+export function launchState(g: RealGoal, aim = aimAtReal(g), seed = 9001) {
+  const sc = setUp(g, true, seed);
+  const b = strike(sc, aim.angle, aim.power, aim.cy, seed);
+  return { x: b.pos.x, y: b.pos.y, z: b.z, vx: b.vel.x, vy: b.vel.y, vz: b.vz, spin: b.spin, shot: true };
+}

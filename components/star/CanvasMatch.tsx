@@ -5560,6 +5560,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         bl.pos = { x: b.x, y: b.y }; bl.z = b.z; bl.vel = { x: b.vx, y: b.vy }; bl.vz = b.vz; bl.spin = b.spin ?? 0;
         if (b.shot !== undefined) { bl.shot = b.shot; bl.youStruckAtGoal = b.shot; }
         bl.landAt = undefined;
+        bl.realLane = undefined;   // the Real Goals page's lane is decided again on the next step
         return true;
       },
       // a dribble run now, while a chance is waiting to be taken (test bots:

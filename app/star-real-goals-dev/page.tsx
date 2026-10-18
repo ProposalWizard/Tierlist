@@ -31,7 +31,7 @@ import { CX, POST_L, POST_R } from "@/lib/star/pitch";
 import { STATSBOMB_CREDIT, leadinTrack, type SbFile, type SbLeadinFile, type SbLeadin } from "@/lib/star/statsbombShots";
 import {
   joinGoals, buildLevels, levelOpen, totalStars, recordResult, loadProgress, saveProgress,
-  accuracyPct, starsFor, realEnd, scenarioForGoal, viewForGoal, realMoveLeadin, moveWindow, realBallKeys,
+  accuracyPct, starsFor, realEnd, scenarioForGoal, viewForGoal, realMoveLeadin, moveWindow, realBallKeys, isNamedFor,
   scorerShort, concededBy, minuteOf, knownAs, NATION_KITS, FEATURED, STAR_TWO, STAR_THREE,
   type RealGoal, type RgFile, type Progress, type Stage, type Level,
 } from "@/lib/star/realGoals";
@@ -70,9 +70,9 @@ function Swatch({ team, size = 14 }: { team: string; size?: number }) {
 
 /** The goal mouth, from the front: where the real one went (green) and yours (blue). */
 function GoalMouth({ real, you }: { real: { x: number; z: number }; you: { x: number; z: number } | null }) {
-  const W = 320, pad = 18, s = (W - 2 * pad) / (POST_R - POST_L + 1.6), H = 2.44 * s + pad + 14;
+  const W = 320, pad = 18, s = (W - 2 * pad) / (POST_R - POST_L + 1.6), H = 2.44 * s + pad + 30;
   const px = (x: number) => pad + (x - (POST_L - 0.8)) * s;
-  const py = (z: number) => H - 14 - z * s;
+  const py = (z: number) => H - 30 - z * s;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", background: "#14532d", borderRadius: 10 }}>
       <rect x={px(POST_L)} y={py(2.44)} width={(POST_R - POST_L) * s} height={2.44 * s} fill="rgba(255,255,255,0.08)" stroke="#fff" strokeWidth={3} />
@@ -83,7 +83,7 @@ function GoalMouth({ real, you }: { real: { x: number; z: number }; you: { x: nu
       <text x={px(real.x)} y={py(real.z) - 13} fill="#bbf7d0" fontSize={12} fontWeight={900} textAnchor="middle">REAL</text>
       {you && <>
         <circle cx={px(you.x)} cy={py(Math.max(0, you.z))} r={9} fill="#38bdf8" stroke="#082f49" strokeWidth={2} />
-        <text x={px(you.x)} y={py(Math.max(0, you.z)) + 22} fill="#e0f2fe" fontSize={12} fontWeight={900} textAnchor="middle">YOU</text>
+        <text x={px(you.x) + (Math.abs(you.x - real.x) < 0.5 && Math.abs(you.z - real.z) < 0.5 ? 26 : 0)} y={py(Math.max(0, you.z)) + 22} fill="#e0f2fe" fontSize={12} fontWeight={900} textAnchor="middle">YOU</text>
       </>}
     </svg>
   );
@@ -126,7 +126,7 @@ function PlayGoal({ goal, lead, level, onClose, onResult, onNext }: {
   const win = useMemo(() => moveWindow(goal, lead), [goal, lead]);
   const leadIn = useCallback((sc: Scenario): LeadIn | null => {
     if (!realLead) return null;
-    const track = leadinTrack(goal.shot, realLead, sc, { ballKeys: (end) => realBallKeys(goal, win, end) });
+    const track = leadinTrack(goal.shot, realLead, sc, { ballKeys: (end) => realBallKeys(goal, win, end), isNamed: isNamedFor(goal, sc) });
     let last = "";
     return {
       ...track,
@@ -267,9 +267,9 @@ function LevelMap({ stages, progress, onPick }: { stages: Stage[]; progress: Pro
               {st.levels.map((lv, i) => {
                 const ok = levelOpen(stages, progress, lv);
                 const p = progress[lv.goal.id];
-                const left = i % 4 === 0 ? 4 : i % 4 === 1 ? 34 : i % 4 === 2 ? 64 : 34;
+                const left = i % 4 === 0 ? 2 : i % 4 === 1 ? 29 : i % 4 === 2 ? 56 : 29;
                 return (
-                  <div key={lv.n} style={{ marginLeft: `${left}%`, width: "34%" }} className="mb-1.5">
+                  <div key={lv.n} style={{ marginLeft: `${left}%`, width: "42%" }} className="mb-1.5">
                     <button
                       data-level={lv.n}
                       disabled={!ok}
@@ -310,7 +310,7 @@ function GoalList({ goals, progress, onPick }: { goals: RealGoal[]; progress: Pr
     <div data-goal-list>
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search a player, team or match (Mbappé, Güler…)" data-search
         className="mb-2 w-full rounded-xl bg-white/10 px-3 py-3 text-base font-bold text-white placeholder:text-white/60" />
-      <div className="mb-2 text-xs font-bold">{list.length} goals</div>
+      <div className="mb-2 text-xs font-bold">{list.length} {list.length === 1 ? "goal" : "goals"}</div>
       {list.slice(0, shown).map((g) => {
         const f = FEATURED.find((x) => x.id === g.id);
         return (
