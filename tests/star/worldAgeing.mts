@@ -1,5 +1,6 @@
 import { buildLeagueSquad, growWonderkids, averageStartingXIRating, type RosterRow } from "../../lib/star/leagueSquads";
 import { makeInitialCareer, advanceSeason } from "../../lib/star/careerFlow";
+import { runTransferWindow } from "../../lib/star/leagueTransfers";
 import {
   ageLeagueSquads, ageOwnSquad, catchUpFetchedSquads, isRegenId, ageFetchedForCareer, ageOwnFetchedForCareer, retirementAgeFor, makeRegen, startingAgeFor, ageingProfileOf, AGEING_PROFILES, NEAR_POSITIONS,
 } from "../../lib/star/worldAgeing";
@@ -344,6 +345,16 @@ for (const [label, r] of [["BEFORE", before], ["AFTER", after]] as const) {
   if (career.player.club === you && ownNow) {
     const ids = new Set(ownNow.players.map(p => p.id));
     check(career.squad.every(p => ids.has(p.sofifaId ?? p.id)), "your team-mates are the same men as your club's copy");
+  }
+  // The transfer window rebuilds every player: the ageing marks must survive
+  // it, or a 40+ man is handed two more seasons every summer and never
+  // retires (seen in the playtest, 18 Oct 2026: Modric 45 with retireAt 46).
+  {
+    const marked = new Map(worldNow.flatMap(s => s.players).filter(p => p.retireAt !== undefined || p.peak !== undefined).map(p => [p.id, p] as const));
+    const afterWindow = runTransferWindow(career, "summer", mulberry32(9)).career;
+    const kept = [...(afterWindow.leagueSquads ?? []), ...(afterWindow.externalSquads ?? [])].flatMap(s => s.players).filter(p => marked.has(p.id));
+    check(marked.size > 0 && kept.length > 0 && kept.every(p => p.retireAt === marked.get(p.id)!.retireAt && p.peak === marked.get(p.id)!.peak),
+      `the transfer window keeps peak and retireAt (${kept.length} of ${marked.size} marked men checked)`);
   }
   check(career.squad.length === day1.squad.length, "your squad is the same size");
   check(career.squad.filter(p => !isRegenId(p.id)).every(p => p.careerGoals === 2 && p.seasonGoals === 0),
