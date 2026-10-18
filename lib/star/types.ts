@@ -1291,7 +1291,7 @@ export interface CareerState {
    */
   playAs?: SquadPlayer["position"] | null;
   /** Every move you made, for the legacy screen. */
-  transfers?: { season: number; from: string; to: string; fee: number; /** The wage at the club left (see TransferRecord, transfers.ts). */ fromWage?: number }[];
+  transfers?: { season: number; from: string; to: string; fee: number; /** The wage at the club left (see TransferRecord, transfers.ts). */ fromWage?: number; window?: "january"; transferFee?: number }[];
   /** Hung up. The career is over and only the legacy screen remains. */
   retired?: boolean;
   /** How the board saw last season. Shown on the dashboard. */
@@ -1624,6 +1624,12 @@ export interface CareerState {
    */
   transferRequest?: import("./transferRequest").TransferRequestState;
   /**
+   * The transfer window on now (lib/star/transferInterest.ts): which window
+   * (`season-summer` / `season-january`) and the clubs that walked away in
+   * talks, so they stay off the list until the next window.
+   */
+  transferWindow?: { key: string; walkedAway: string[] };
+  /**
    * Cups you are cup-tied in this season after a January move
    * (lib/star/januaryTransfer.ts): you played in them for your old club, so
    * the new club plays on in them without you. Only read when `season`
@@ -1730,11 +1736,13 @@ export type StarPhase =
   | "dilemma"
   | "relationship-game"
   | "advert-shoot"
+  /** The summer transfer window: every club interested in you
+   *  (TransferHub.tsx, lib/star/transferInterest.ts). */
   | "season-transfer"
-  /** Asking for a move: pick a league or a club, get answers
-   *  (TransferRequest.tsx, lib/star/transferRequest.ts). */
+  /** The January window's list, opened from Home (same screen). The name
+   *  is older than the screen: it was "Find a new club" until 18 Oct 2026. */
   | "transfer-request"
-  /** Talking terms with a club that said yes (NegotiationScreen). */
+  /** Talking terms with a club from the list (NegotiationScreen). */
   | "transfer-request-talk"
   | "retirement"
   /** After the Ballon d'Or night of the second-last season: "this is your

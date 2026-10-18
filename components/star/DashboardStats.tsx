@@ -22,8 +22,6 @@ import { SegTabs, CardTitle } from "./screenKit";
 interface Props {
   career: CareerState;
   onRenew: () => void;
-  /** Opens "Find a new club" (TransferRequest.tsx). Absent: no button. */
-  onFindClub?: () => void;
   /** Controlled by the Stats page's arrows (no tab row of its own). */
   view?: StatsTab;
 }
@@ -46,7 +44,7 @@ const ord = (n: number) => (n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "
 type StatsTab = "stats" | "contract" | "status";
 let lastTab: StatsTab = "stats";
 
-export default function DashboardStats({ career, onRenew, onFindClub, view }: Props) {
+export default function DashboardStats({ career, onRenew, view }: Props) {
   const { glow } = useClubTheme(career);
   // Remembered across screens, so coming back from a contract renewal lands
   // on Contract, not Stats (Mikey, 29 Sep 2026).
@@ -139,11 +137,6 @@ export default function DashboardStats({ career, onRenew, onFindClub, view }: Pr
           <PressButton variant="primary" onClick={onRenew} className="mt-2 w-full">
             Propose renewal
           </PressButton>
-          {onFindClub && (
-            <PressButton variant="secondary" onClick={onFindClub} className="mt-2 w-full" data-find-club>
-              Find a new club
-            </PressButton>
-          )}
         </RiseIn>
       )}
 

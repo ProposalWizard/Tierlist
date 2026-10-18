@@ -39,6 +39,18 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 18 Oct 2026 — the transfer window is New Star Soccer's screen
+- **"Just use the New Star Soccer system for now. And create that perfectly
+  with the same design style that we've been using for most of the stuff on
+  the home pages."** From a screenshot of NSS's "Desired Transfer": three big
+  rows, Nation → League → Club, each opening its list, then "Negotiate
+  contract with …", ✕ / ✓ at the bottom. My first drawing (every club in one
+  long scrolling page, grouped by league) was "quite messy … requires you to
+  scroll, probably, a lot". The main screen does not scroll; only a list
+  opened from a chooser may (`components/star/TransferHub.tsx`).
+- A league chooser only lists leagues where a club is interested; a club
+  list shows a European tag (NSS's "(CHAMPS)").
+
 ### 14 Oct 2026 — menus open on the tap's own frame (Harry)
 - **"There are too many animations in the menus. If I click on something, it
   should just go straight in."** A tap shows the next screen at once: no fade,

@@ -176,6 +176,20 @@ Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as co
 
 ---
 
+## Transfers for your own player: the window list (18 Oct 2026)
+
+Only in the windows: the summer (end of season) and January (a button on
+Home while it is open). One screen, New Star Soccer's: Nation → League → Club
+→ Negotiate (`components/star/TransferHub.tsx`). Who is interested:
+`lib/star/transferInterest.ts` — your season's grade sets how high clubs can
+come from (good +1, great +2, crazy +3, never more; January +1 at most);
+inside that, a club's aim rises with its size and where it finished, and a
+gap in your position helps. Talks are the usual NegotiationScreen; a club
+that walks away is off the list until the next window. Your club is shown a
+fee (no club budgets yet: future work). "Find a new club" (Stats → Contract,
+ask any week) is gone. Not built on purpose: transfer request, scouts
+watching, agents, loans, promises, moves abroad.
+
 ## Ballon d'Or winners data (Mikey, 8 Oct 2026)
 
 Every men's winner 1956–2025, from ballondor.com only, for a future game
