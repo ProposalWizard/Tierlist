@@ -25,7 +25,7 @@ Harry: "build slowly and CORRECTLY"; "even if there's 1000 questions … it will
 
 - Harry 16 Oct (comment on LAG-QB12): deal with ALL test pages in one go — one pass where every dev/test page gets keep / merge / delete with its owner (covers LAG-QB9–QB13, ADM-Q42, ADM-Q68, ADM-Q84 and the admin plan's per-page fates). Do it inside the admin build, not piecemeal.
 
-- Harry 18 Oct: 397 of 399 answered (all in `docs/plans/2026-10-15/page/answers.json`). Open: LAG-QB10, PN-Q197 (new question: auto date-order numbering, A recommended — replaces PN-Q1's per-person numbers if A).
+- Harry 18 Oct: ALL 399 answered (LAG-QB10 ✗ = delete Match Dev now, overriding ADM-Q84; match highlights must carry the full dev mode. PN-Q197 A = one shared auto date-ordered number list, replacing PN-Q1). Earlier: 397 of 399 answered (all in `docs/plans/2026-10-15/page/answers.json`). Open: LAG-QB10, PN-Q197 (new question: auto date-order numbering, A recommended — replaces PN-Q1's per-person numbers if A).
 - Extra deliverables Harry asked for: (1) a full in-depth admin overview after all answers, covering admin + UI + team board revamp (ADM-Q84 note); (2) a how-to teaching Leo and Mikey the new system (TB-Q6 note); (3) a deploy block must say clearly WHY it blocked (PN-Q7 note); (4) ADM-Q3: Harry owns all those features.
 - PN-Q57 done by Claude: only "Knowitball v0.1" (21 Sep, https://claude.ai/artifact/SLZaq4EhFBoKBt9TabVRWF) is missing from the repo.
 
@@ -33,6 +33,8 @@ Harry: "build slowly and CORRECTLY"; "even if there's 1000 questions … it will
 Answered so far: 13 LAG. Still open: LAG-QB10, LAG quick (16) + housekeeping (9), and all of PN, ADM, TB. All 399 on the plan page: LAG 39, PN 197, ADM 153, TB 10. Harry pastes his "Copy my answers" text into the chat.
 
 ## Next steps
+0. FIRST: the in-depth admin overview page Harry asked for (admin + UI + team board revamp, all decisions folded in) — before any build. Tell Mikey Match Dev is being removed.
+
 1. Read Harry's pasted answers; write them into each plan file (one "Answer:" per question); push.
 2. Rebuild the page: `docs/plans/2026-10-15/page/` (tiers_seed.py → build2.py; 30 need you / 142 quick / 227 housekeeping).
 3. Design pass with Higgsfield where a plan has a look (admin home, patch-notes archive, team board).

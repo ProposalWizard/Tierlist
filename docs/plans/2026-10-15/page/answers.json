@@ -1586,5 +1586,13 @@
  "PN-Q57": {
   "a": "✓",
   "note": "done by Claude 18 Oct: checked all 141 artifacts; only Knowitball v0.1 (21 Sep, SLZaq4EhFBoKBt9TabVRWF) is missing from the repo"
+ },
+ "LAG-QB10": {
+  "a": "✗",
+  "note": "remove Match Dev (Mikey's engine copy) now; it can come back from git. Match highlights should have the full dev mode anyway. Overrides ADM-Q84."
+ },
+ "PN-Q197": {
+  "a": "A",
+  "note": "one shared list, numbered automatically by go-live date; replaces PN-Q1 per-person numbers"
  }
 }
