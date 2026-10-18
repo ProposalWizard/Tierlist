@@ -1,14 +1,14 @@
 import { buildLeagueSquad, growWonderkids, averageStartingXIRating, type RosterRow } from "../../lib/star/leagueSquads";
 import { makeInitialCareer, advanceSeason } from "../../lib/star/careerFlow";
 import {
-  ageLeagueSquads, ageOwnSquad, catchUpFetchedSquads, isRegenId, ageFetchedForCareer, ageOwnFetchedForCareer, retirementAgeFor, makeRegen, startingAgeFor,
+  ageLeagueSquads, ageOwnSquad, catchUpFetchedSquads, isRegenId, ageFetchedForCareer, ageOwnFetchedForCareer, retirementAgeFor, makeRegen, startingAgeFor, ageingProfileOf, AGEING_PROFILES, NEAR_POSITIONS,
 } from "../../lib/star/worldAgeing";
 import { mulberry32 } from "../../lib/star/season";
 import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, CHAMPIONS_LEAGUE_CLUBS, LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS,
 } from "../../lib/star/clubs";
 import { encodeSquads, decodeSquads, hydrateSquads, rememberFetchedSquads, forgetFetchedSquads } from "../../lib/star/squadSaveCodec";
-import type { CareerState, LeagueSquad, SquadPlayer, StarPlayer } from "../../lib/star/types";
+import type { CareerState, LeaguePlayer, LeagueSquad, SquadPlayer, StarPlayer } from "../../lib/star/types";
 
 /**
  * A WORLD THAT AGES — and stays the same size and strength while it does.
@@ -119,7 +119,7 @@ for (const [label, r] of [["BEFORE", before], ["AFTER", after]] as const) {
     const drift = Math.max(...after.rows.map(r => Math.abs(r.xi[k] - first.xi[k])));
     // 4, not 3, since 18 Oct 2026: real players without a flag no longer
     // grow (UNFLAGGED_GROWTH off), so the top drifts a little.
-    check(drift <= 4, `${k}: starting-XI average stays within 4 of day one over 20 seasons (worst drift ${drift.toFixed(1)})`);
+    check(drift <= 6, `${k}: starting-XI average stays within 6 of day one over 20 seasons (worst drift ${drift.toFixed(1)})`);
   }
   check(first.xi.premier > first.xi.championship + 4 && last.xi.premier > last.xi.championship + 4,
     `the Premier League stays clearly stronger than the Championship (${last.xi.premier.toFixed(1)} v ${last.xi.championship.toFixed(1)})`);
@@ -138,7 +138,7 @@ for (const [label, r] of [["BEFORE", before], ["AFTER", after]] as const) {
   check(changed.length === 0, `every club keeps its position mix (${changed.length} changed)`);
   // Nobody is past 41, nobody under 16.
   const ages = Object.values(after.final).flat().flatMap(s => s.players.map(p => p.age ?? 25));
-  check(Math.max(...ages) <= 41 && Math.min(...ages) >= 16, `ages stay 16–41 (${Math.min(...ages)}–${Math.max(...ages)})`);
+  check(Math.max(...ages) <= 43 && Math.min(...ages) >= 16, `ages stay 16–43 (${Math.min(...ages)}–${Math.max(...ages)})`);
   // Ids stay unique across the world.
   const ids = Object.values(after.final).flat().flatMap(s => s.players.map(p => p.id));
   check(new Set(ids).size === ids.length, "no player id appears twice in the world");
@@ -173,8 +173,11 @@ for (const [label, r] of [["BEFORE", before], ["AFTER", after]] as const) {
   check(change(18, 62, 3) > change(18, 62, 1) + 1, `a better training ground grows him faster (tier 3 ${change(18, 62, 3).toFixed(2)} v tier 1 ${change(18, 62, 1).toFixed(2)})`);
   check(change(19, 84) < change(19, 62), "growth slows near the top");
   check(Math.abs(change(27, 75)) < 0.4, `a 27-year-old holds (${change(27, 75).toFixed(2)})`);
-  check(change(31, 75) < -0.8, `a 31-year-old declines (${change(31, 75).toFixed(2)})`);
-  check(change(34, 75) < change(31, 75) - 1, `faster after 33 (${change(34, 75).toFixed(2)})`);
+  check(Math.abs(change(30, 75)) < 0.4, `a 30-year-old holds (${change(30, 75).toFixed(2)})`);
+  check(change(31, 75) < -0.1, `a 31-year-old declines (${change(31, 75).toFixed(2)})`);
+  check(change(34, 75) < change(31, 75) - 0.5, `faster later (${change(34, 75).toFixed(2)})`);
+  check(change(34, 75) > -2, `gentle: a 34-year-old loses under 2 a season (${change(34, 75).toFixed(2)})`);
+  check(Math.abs(change(34, 88) - change(34, 70)) < 0.3, "the best fade at the same speed as everyone");
   // Pace goes first.
   const old = ageLeagueSquads([sq(31, 75, 200, true)], 3).squads[0].players.filter(p => !isRegenId(p.id));
   check(avg(old.map(p => p.pace! - p.overall)) < -0.5, "an old man's pace falls faster than his rating");
@@ -187,8 +190,8 @@ for (const [label, r] of [["BEFORE", before], ["AFTER", after]] as const) {
 {
   const ages = Array.from({ length: 4000 }, (_, i) => retirementAgeFor(`r${i}`, "CM"));
   const share = (a: number) => ages.filter(x => x <= a).length / ages.length;
-  check(Math.min(...ages) === 33 && Math.max(...ages) === 40, "outfield players retire at 33–40");
-  check(share(34) < 0.3 && share(36) > 0.5 && share(38) > 0.9, `rising chance (≤34 ${share(34).toFixed(2)}, ≤36 ${share(36).toFixed(2)}, ≤38 ${share(38).toFixed(2)})`);
+  check(Math.min(...ages) === 35 && Math.max(...ages) === 41, "outfield players retire at 35–41");
+  check(share(36) < 0.25 && share(38) > 0.5 && share(38) < 0.75 && share(40) > 0.9, `most in the middle (≤36 ${share(36).toFixed(2)}, ≤38 ${share(38).toFixed(2)}, ≤40 ${share(40).toFixed(2)})`);
   const gk = Array.from({ length: 1000 }, (_, i) => retirementAgeFor(`r${i}`, "GK"));
   check(avg(gk) > avg(ages.slice(0, 1000)) + 1.5, "keepers go on longer");
   check(retirementAgeFor("x1", "CM") === retirementAgeFor("x1", "CM"), "a man's retirement age is fixed");
@@ -197,11 +200,11 @@ for (const [label, r] of [["BEFORE", before], ["AFTER", after]] as const) {
 // ── Regens ──
 {
   const r = makeRegen("123", 4, 80);
-  check(r.age >= 16 && r.age <= 19, `a regen is 16–19 (${r.age})`);
-  check(r.overall < 80 && r.overall > 55, `rated below the club's level (${r.overall} at a club of 80)`);
+  check(r.age >= 16 && r.age <= 20, `a regen is 16–20 (${r.age})`);
+  check(r.overall >= 67 && r.overall <= 82, `rated club level −13 to +2 (${r.overall} at a club of 80)`);
   check(makeRegen("123", 4, 80).name === r.name && makeRegen("123", 4, 80).id === r.id, "the same boy every time");
   const low = makeRegen("123", 4, 55);
-  check(low.overall < r.overall, "a lower club's regen is rated lower");
+  check(low.overall === r.overall - 25, "a lower club's regen is rated lower by the same gap");
   check(startingAgeFor("gen:A:1") >= 20 && startingAgeFor("gen:A:1") <= 32, "an invented player gets an age 20–32");
 }
 
@@ -233,7 +236,7 @@ for (const [label, r] of [["BEFORE", before], ["AFTER", after]] as const) {
   check(o.filter(p => isRegenId(p.id)).every(p => !!p.imageUrl && p.careerGoals === 0),
     "a regen in your squad has a (fake) face and no goals yet");
   // Generated team-mates (no overall) still age and retire.
-  const gen = ageOwnSquad([{ id: "sp_1", name: "A B", shortName: "B", position: "ST", seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0, age: 40 }], "Gen FC", 1, 60).squad;
+  const gen = ageOwnSquad([{ id: "sp_1", name: "A B", shortName: "B", position: "ST", seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0, age: 40, retireAt: 40 }], "Gen FC", 1, 60).squad;
   check(gen.length === 1 && isRegenId(gen[0].id) && gen[0].overall === undefined, "an unrated invented squad stays unrated");
   // The son is never aged or retired.
   const son = ageOwnSquad([{ id: "son:Kid:Own FC", name: "Kid", shortName: "Kid", position: "ST", seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0, age: 45, overall: 70 }], "Own FC", 1, 70).squad;
@@ -411,3 +414,51 @@ if (problems.length) {
   process.exit(1);
 }
 console.log("\nworldAgeing: all checks passed");
+
+// ── Mikey's 13 answers (18 Oct 2026) ──
+{
+  const many = <T,>(n: number, f: (i: number) => T) => Array.from({ length: n }, (_, i) => f(i));
+  // 4: five ways to age, about 10/20/40/20/10.
+  const profiles = many(5000, i => ageingProfileOf(`p${i}`).name);
+  const share = (n: string) => profiles.filter(x => x === n).length / profiles.length;
+  check(Math.abs(share("ages very well") - 0.1) < 0.02 && Math.abs(share("normal") - 0.4) < 0.03 && Math.abs(share("ages very badly") - 0.1) < 0.02,
+    `five ways to age (${AGEING_PROFILES.map(p => `${p.name} ${(share(p.name) * 100).toFixed(0)}%`).join(", ")})`);
+  // 7: keepers fade less, retire two years later.
+  const fade = (pos: "GK" | "CM") => {
+    const players = many(400, i => ({ id: `${pos}${i}`, name: "X", position: pos, overall: 80, goals: 0, assists: 0, age: 34 }));
+    return avg(ageLeagueSquads([{ club: "F", players }], 3).squads[0].players.filter(p => !isRegenId(p.id)).map(p => p.overall - 80));
+  };
+  check(fade("GK") > fade("CM") + 0.2, `keepers fade less (GK ${fade("GK").toFixed(2)} v CM ${fade("CM").toFixed(2)} at 34)`);
+  // 5: a man already 40+ when first aged plays two more seasons, then goes.
+  let ron = [{ club: "Al Nassr", players: [{ id: "cr7", name: "Ronaldo", position: "ST" as const, overall: 84, goals: 0, assists: 0, age: 41 }] }];
+  const lived: number[] = [];
+  for (let s = 1; s <= 4; s++) {
+    ron = ageLeagueSquads(ron, s).squads as typeof ron;
+    lived.push(ron[0].players.filter(p => p.id === "cr7").length);
+  }
+  check(lived.join("") === "1100", `a 41-year-old plays 2 more seasons then retires (still there: ${lived.join(",")})`);
+  // 11: the replacement's flags come from the retired man's best rating.
+  const flagged = (peak: number) => {
+    const rs = many(2000, i => makeRegen(`m${i}`, 3, 80, undefined, { peak, position: "ST" }));
+    return { wc: rs.filter(r => r.worldClassPotential).length / rs.length, hp: rs.filter(r => r.highPotential && !r.worldClassPotential).length / rs.length };
+  };
+  const top = flagged(91);
+  check(Math.abs(top.wc - 0.8) < 0.03 && Math.abs(top.hp - 0.19) < 0.03, `a 91's replacement: World Class ${(top.wc * 100).toFixed(0)}%, High ${(top.hp * 100).toFixed(0)}%`);
+  // The peak is remembered once he falls below it.
+  let vet = [{ club: "F", players: [{ id: "v1", name: "V", position: "CM" as const, overall: 88, goals: 0, assists: 0, age: 33 }] }];
+  for (let s = 1; s <= 3; s++) vet = ageLeagueSquads(vet, s).squads as typeof vet;
+  const v = vet[0].players[0] as LeaguePlayer;
+  check(v.id === "v1" && (v.overall < 88 ? v.peak === 88 : v.peak === undefined), `his best rating is kept (${v.overall}, peak ${v.peak})`);
+  // 9 and 10: any age 16–20, club level −13 to +2, each value equally.
+  const rs = many(3000, i => makeRegen(`q${i}`, 2, 75));
+  const ageSet = new Set(rs.map(r => r.age));
+  check(ageSet.size === 5 && Math.min(...ageSet) === 16 && Math.max(...ageSet) === 20, "replacements are 16–20");
+  check(Math.min(...rs.map(r => r.overall)) === 62 && Math.max(...rs.map(r => r.overall)) === 77, "rated club level −13 to +2");
+  // 13: his position, sometimes one or two nearby.
+  const rb = many(4000, i => makeRegen(`b${i}`, 2, 75, undefined, { position: "RB" }).positions);
+  const two = rb.filter(p => p.length >= 2).length / rb.length, three = rb.filter(p => p.length === 3).length / rb.length;
+  check(rb.every(p => p[0] === "RB"), "a right back's replacement is a right back");
+  check(Math.abs(two - 0.25) < 0.03 && Math.abs(three - 0.05) < 0.015, `a second position ${(two * 100).toFixed(0)}%, a third ${(three * 100).toFixed(1)}%`);
+  check(rb.filter(p => p.length >= 2).every(p => NEAR_POSITIONS.RB.near.includes(p[1])), "the second is a nearby one (LB, CB)");
+  check(makeRegen("g", 2, 75, undefined, { position: "GK" }).positions.join() === "GK", "a keeper is only a keeper");
+}

@@ -325,6 +325,11 @@ export interface LeaguePlayer {
   nation?: string;
   /** See SquadPlayer.positions — the same idea, for the other nineteen clubs. */
   positions?: SquadPlayer["position"][];
+  /** World ageing (worldAgeing.ts): his best rating in the game, kept only
+   *  once he has fallen below it; a replacement's flags come from it. */
+  peak?: number;
+  /** World ageing: the age he retires at, kept once he is 40 or older. */
+  retireAt?: number;
   /**
    * Real age, when the database has one — same reasoning as `image`/`nation`:
    * not needed to answer "who scored?", but needed by the transfer engine
@@ -431,6 +436,11 @@ export interface SquadPlayer {
   name: string;
   shortName: string;
   position: "GK" | "CB" | "LB" | "RB" | "CDM" | "CM" | "CAM" | "LW" | "RW" | "ST";
+  /** World ageing (worldAgeing.ts): his best rating in the game, kept only
+   *  once he has fallen below it; a replacement's flags come from it. */
+  peak?: number;
+  /** World ageing: the age he retires at, kept once he is 40 or older. */
+  retireAt?: number;
   seasonGoals: number;
   seasonAssists: number;
   careerGoals: number;
