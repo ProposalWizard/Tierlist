@@ -1,0 +1,173 @@
+/*
+ * The admin look (Harry, 18 Oct 2026): "Ops room" from the Higgsfield
+ * designs (docs/plans/2026-10-15/designs/B-*), and "Clean light" (D-*), one
+ * switch. Everything inside .ash reads these tokens, so both looks are the
+ * same layout with different paint.
+ */
+.ash {
+  --ash-bg: #070b09;
+  --ash-bg2: #0b120e;
+  --ash-panel: rgba(18, 30, 24, 0.72);
+  --ash-panel-solid: #101a15;
+  --ash-panel2: rgba(28, 44, 36, 0.6);
+  --ash-line: rgba(120, 200, 160, 0.14);
+  --ash-line2: rgba(120, 200, 160, 0.26);
+  --ash-ink: #eef6f1;
+  --ash-ink2: #a9c2b5;
+  --ash-ink3: #6f8a7c;
+  --ash-accent: #34e08b;
+  --ash-accent-ink: #04180d;
+  --ash-accent-soft: rgba(52, 224, 139, 0.14);
+  --ash-amber: #f5b942;
+  --ash-amber-soft: rgba(245, 185, 66, 0.14);
+  --ash-red: #ff6b6b;
+  --ash-red-soft: rgba(255, 107, 107, 0.14);
+  --ash-blue: #6fb8ff;
+  --ash-violet: #b18cff;
+  --ash-harry: #34e08b;
+  --ash-mikey: #6fb8ff;
+  --ash-leo: #b18cff;
+  --ash-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --ash-grid: rgba(120, 200, 160, 0.05);
+  --ash-blur: blur(14px);
+  color-scheme: dark;
+  min-height: 100vh;
+  background:
+    radial-gradient(80% 50% at 70% -10%, rgba(52, 224, 139, 0.10), transparent 70%),
+    linear-gradient(var(--ash-grid) 1px, transparent 1px) 0 0 / 64px 64px,
+    linear-gradient(90deg, var(--ash-grid) 1px, transparent 1px) 0 0 / 64px 64px,
+    var(--ash-bg);
+  color: var(--ash-ink);
+  font-feature-settings: "tnum" 1;
+}
+.ash[data-look="light"] {
+  --ash-bg: #f6f8f7;
+  --ash-bg2: #ffffff;
+  --ash-panel: #ffffff;
+  --ash-panel-solid: #ffffff;
+  --ash-panel2: #f2f5f3;
+  --ash-line: #e3e9e5;
+  --ash-line2: #d2dbd5;
+  --ash-ink: #0f1713;
+  --ash-ink2: #4b5e54;
+  --ash-ink3: #7a8b82;
+  --ash-accent: #12a150;
+  --ash-accent-ink: #ffffff;
+  --ash-accent-soft: rgba(18, 161, 80, 0.10);
+  --ash-amber: #b7790b;
+  --ash-amber-soft: rgba(183, 121, 11, 0.10);
+  --ash-red: #d03434;
+  --ash-red-soft: rgba(208, 52, 52, 0.08);
+  --ash-blue: #1f6fd1;
+  --ash-violet: #6f42c1;
+  --ash-harry: #12a150;
+  --ash-mikey: #1f6fd1;
+  --ash-leo: #6f42c1;
+  --ash-shadow: 0 1px 2px rgba(15, 23, 19, 0.06);
+  --ash-grid: transparent;
+  --ash-blur: none;
+  color-scheme: light;
+  background: var(--ash-bg);
+}
+
+.ash-layout { display: flex; min-height: 100vh; }
+.ash-side {
+  position: sticky; top: 0; height: 100vh; width: 248px; flex: 0 0 248px;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 18px 12px; border-right: 1px solid var(--ash-line);
+  background: var(--ash-bg2); overflow-y: auto; overscroll-behavior: contain;
+}
+.ash[data-look="ops"] .ash-side { background: rgba(7, 12, 9, 0.85); backdrop-filter: var(--ash-blur); }
+.ash-main { flex: 1 1 auto; min-width: 0; padding: 22px clamp(16px, 3vw, 36px) 80px; }
+.ash-top { display: none; }
+
+@media (max-width: 1023px) {
+  .ash-side {
+    position: fixed; inset: 0 auto 0 0; z-index: 70; transform: translateX(-100%);
+    transition: transform .15s ease; box-shadow: var(--ash-shadow); width: 280px; max-width: 86vw;
+  }
+  .ash-side[data-open="true"] { transform: none; }
+  .ash-scrim { position: fixed; inset: 0; z-index: 65; background: rgba(0,0,0,.5); }
+  .ash-top {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    position: sticky; top: 0; z-index: 40; padding: 10px 16px;
+    background: var(--ash-bg2); border-bottom: 1px solid var(--ash-line);
+  }
+  .ash[data-look="ops"] .ash-top { background: rgba(7, 12, 9, 0.9); backdrop-filter: var(--ash-blur); }
+  .ash-main { padding: 16px 16px 80px; }
+}
+
+.ash-brand { display: flex; align-items: center; gap: 9px; padding: 4px 8px 14px; }
+.ash-mark {
+  width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+  background: var(--ash-accent); color: var(--ash-accent-ink); font-weight: 900; font-size: 16px;
+}
+.ash-brand b { display: block; font-weight: 900; letter-spacing: .06em; font-size: 14px; }
+.ash-brand small { display: block; color: var(--ash-ink3); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; }
+
+.ash-navh { margin: 14px 10px 4px; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--ash-ink3); }
+.ash-nav {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 10px; border-radius: 9px; color: var(--ash-ink2); font-size: 13.5px; font-weight: 600;
+  text-decoration: none; border: 1px solid transparent; background: none; width: 100%; text-align: left; cursor: pointer;
+}
+.ash-nav:hover { background: var(--ash-panel2); color: var(--ash-ink); }
+.ash-nav[aria-current="page"] { background: var(--ash-accent-soft); color: var(--ash-ink); border-color: var(--ash-line2); }
+.ash-nav .n { font-size: 11px; color: var(--ash-ink3); font-weight: 700; }
+.ash-nav svg { flex: 0 0 auto; opacity: .8; }
+.ash-navl { display: flex; align-items: center; gap: 9px; min-width: 0; }
+
+.ash-switch { display: flex; padding: 3px; border-radius: 10px; background: var(--ash-panel2); border: 1px solid var(--ash-line); }
+.ash-switch button {
+  flex: 1; border: 0; background: none; padding: 6px 8px; border-radius: 7px; font-size: 12px; font-weight: 700;
+  color: var(--ash-ink2); cursor: pointer;
+}
+.ash-switch button[aria-pressed="true"] { background: var(--ash-accent); color: var(--ash-accent-ink); }
+.ash-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; font-size: 12.5px; font-weight: 700; color: var(--ash-ink2); }
+.ash-pill-sw { position: relative; width: 38px; height: 22px; border-radius: 99px; background: var(--ash-line2); border: 0; cursor: pointer; flex: 0 0 auto; }
+.ash-pill-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .08s; }
+.ash-pill-sw[aria-checked="true"] { background: var(--ash-accent); }
+.ash-pill-sw[aria-checked="true"]::after { left: 19px; }
+
+.ash-panel {
+  background: var(--ash-panel); border: 1px solid var(--ash-line); border-radius: 16px;
+  backdrop-filter: var(--ash-blur); box-shadow: var(--ash-shadow);
+}
+.ash-h1 { font-size: clamp(24px, 3.2vw, 34px); font-weight: 900; letter-spacing: -.02em; margin: 0; line-height: 1.1; text-wrap: balance; }
+.ash-sub { color: var(--ash-ink2); font-size: 14px; margin: 6px 0 0; }
+.ash-h2 { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ash-ink3); margin: 0 0 10px; }
+.ash-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 99px; font-size: 12.5px; font-weight: 700;
+  border: 1px solid var(--ash-line); background: var(--ash-panel2); color: var(--ash-ink2); cursor: pointer; white-space: nowrap;
+}
+.ash-chip[aria-pressed="true"] { background: var(--ash-accent); color: var(--ash-accent-ink); border-color: transparent; }
+.ash-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.ash-tag.red { background: var(--ash-red-soft); color: var(--ash-red); }
+.ash-tag.amber { background: var(--ash-amber-soft); color: var(--ash-amber); }
+.ash-tag.green { background: var(--ash-accent-soft); color: var(--ash-accent); }
+.ash-tag.grey { background: var(--ash-panel2); color: var(--ash-ink3); }
+.ash-av { width: 28px; height: 28px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; font-weight: 900; color: #04180d; flex: 0 0 auto; }
+.ash-av.Harry { background: var(--ash-harry); } .ash-av.Mikey { background: var(--ash-mikey); } .ash-av.Leo { background: var(--ash-leo); color: #fff; }
+.ash-av.Shared { background: var(--ash-ink3); color: #fff; }
+.ash-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ash-ink3); display: inline-block; flex: 0 0 auto; }
+.ash-dot.live { background: var(--ash-accent); box-shadow: 0 0 0 0 rgba(52,224,139,.6); animation: ash-pulse 2s infinite; }
+.ash-dot.bad { background: var(--ash-red); } .ash-dot.wait { background: var(--ash-amber); }
+@keyframes ash-pulse { 0% { box-shadow: 0 0 0 0 rgba(52,224,139,.55); } 70% { box-shadow: 0 0 0 8px rgba(52,224,139,0); } 100% { box-shadow: 0 0 0 0 rgba(52,224,139,0); } }
+@media (prefers-reduced-motion: reduce) { .ash-dot.live { animation: none; } .ash-side { transition: none; } }
+.ash-search {
+  display: flex; align-items: center; gap: 9px; padding: 10px 14px; border-radius: 12px;
+  border: 1px solid var(--ash-line); background: var(--ash-panel); color: var(--ash-ink);
+}
+.ash-search input { flex: 1; min-width: 0; background: none; border: 0; outline: none; color: var(--ash-ink); font-size: 14.5px; }
+.ash-search input::placeholder { color: var(--ash-ink3); }
+.ash a:focus-visible, .ash button:focus-visible, .ash input:focus-visible { outline: 2px solid var(--ash-accent); outline-offset: 2px; }
+.ash-btn {
+  display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 10px; border: 0; cursor: pointer;
+  background: var(--ash-accent); color: var(--ash-accent-ink); font-weight: 800; font-size: 13.5px; text-decoration: none;
+}
+.ash-btn.ghost { background: var(--ash-panel2); color: var(--ash-ink); border: 1px solid var(--ash-line); }
+.ash-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+
+/* The admin pages are their own app: the site's top menu and footer hide
+ * while the shell is on the page (same trick as the career game). */
+body:has([data-admin-shell]) [data-global-chrome] { display: none !important; }

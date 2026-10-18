@@ -642,6 +642,107 @@ export const ADMIN_GUIDES = {
     dev: "app/admin/sound-board/SoundBoard.tsx · app/api/star/sfx-overrides/route.ts · lib/star/sfxCatalog.ts (the list of sounds) · lib/star/sfx.ts (reads the overrides) · public/sfx/",
   },
 
+  "/admin/star": {
+    title: "Admin home",
+    what: "Every admin and test page in one place, grouped the way you asked (Career screens, Chances, Match tests…), with search and filters. Testers see only the pages they can open.",
+    buttons: [
+      { group: "Top", items: [
+        ["Search pages", "Type part of a name or what a page does; the cards filter as you type."],
+        ["All / H / M / L", "Show everyone's pages, or only Harry's, Mikey's or Leo's."],
+        ["Saves real data", "Only pages whose buttons change things other players see."],
+        ["Play the game", "Opens Road to Ballon d'Or, the real game."],
+      ] },
+      { group: "Cards", items: [
+        ["A card", "Opens that page. The letter is its owner. \"Saves real data\" / \"This browser\" / \"Writes the code\" say what its buttons save."],
+        ["Old tests (n)", "Folded at the bottom. Old test pages that are kept but not used day to day."],
+        ["Clear", "Shows when a search or filter matches nothing; puts everything back."],
+      ] },
+      { group: "Side menu", items: [
+        ["Home / Team board / Patch notes", "This page, the team board, and every patch note (Team board and Patch notes are admins only)."],
+        ["Groups", "Jumps to that group on this page."],
+        ["Ops room / Clean light", "The admin look, dark or light. Kept on this device."],
+        ["Admin mode", "On: the admin side menu sits on every page of the site, opened on the admin pages for the page you are on. Off: it hides. Kept on this device."],
+      ] },
+    ],
+    saving: ["Nothing here saves anything shared. The look and Admin mode are kept in this browser only."],
+    inGame: ["Nowhere. This is the front door to the tools."],
+    dev: "app/admin/star/page.tsx · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (the one list of pages) · components/admin/shell/* · lib/adminLook.ts",
+  },
+  "/star-tournament-dev": {
+    title: "Tournaments",
+    what: "Draw and play a whole Euros or World Cup in seconds, on the real tournament code.",
+    buttons: [
+      { group: "Page", items: [
+        ["European Championship / World Cup", "Which tournament to draw."],
+        ["Your nation (box)", "The nation you play for; it says if they did not qualify."],
+        ["New draw", "A fresh draw of the groups."],
+        ["Play matchday 1–3", "Plays the next round of group games."],
+        ["Play to the final", "Plays every match left, through the knockouts, to a winner."],
+        ["Reset", "Back to the draw."],
+      ] },
+    ],
+    saving: ["Nothing. It reads and writes only this screen."],
+    inGame: ["The same tournaments a career plays in international football."],
+    dev: "app/star-tournament-dev/page.tsx · lib/star/tournament.ts",
+  },
+  "/squad-builder": {
+    title: "Dream XI builder",
+    what: "Build a dream XI in any formation. An old test: no game uses it yet.",
+    buttons: [
+      { group: "Page", items: [
+        ["Formation", "Picks the shape of the team."],
+        ["Drag a player", "Puts him in a position."],
+      ] },
+    ],
+    saving: ["This browser only."],
+    inGame: ["Nowhere yet. Kept for a possible Dream XI game."],
+    dev: "app/squad-builder/page.tsx · components/SquadBuilder.tsx",
+  },
+  "/admin/videos": {
+    title: "Videos",
+    what: "How to hand Claude a screen recording or any video to break down.",
+    buttons: [
+      { group: "Page", items: [
+        ["Copy", "Copies the line to paste into a Claude chat with your video link."],
+        ["Open the Breakdowns folder ↗", "Harry's Drive folder where every breakdown is saved, named by date, who and what it is about."],
+      ] },
+    ],
+    saving: ["Nothing on the site. The breakdown runs inside the Claude chat, which saves a copy to Drive (Knowitball playtest recordings → Breakdowns) by itself."],
+    inGame: ["Nowhere."],
+    dev: "app/admin/videos/* · the tool: scripts/screen-video/ (README inside) · the method: .claude/skills/screen-video/SKILL.md",
+  },
+  "/admin/team": {
+    title: "Team board",
+    what: "What Harry, Mikey and Leo are doing: each person's pushes, the pull requests, whether the site is live, and which patch notes each push went out in.",
+    buttons: [
+      { group: "Team tab", items: [
+        ["Live on knowitball.co.uk", "Whether the newest version of main finished deploying, how long ago, and what it was."],
+        ["A push", "Opens it: the full message, when, which branch, and the patch note it went out in."],
+        ["v0.55 (green tag)", "The patch note that push went out in. Grey \"no notes yet\" = not in any patch notes yet."],
+        ["Show all", "Shows every push on that branch (up to 20)."],
+        ["A pull request", "Opens it on GitHub."],
+      ] },
+      { group: "Inside a push", items: [
+        ["Open in Patch notes", "Switches to the Patch notes tab on that version."],
+        ["Open the full page ↗", "Opens that version's patch notes page on claude.ai."],
+        ["See it on GitHub ↗", "The push itself on GitHub."],
+        ["The chat that made it ↗", "The Claude chat that made the push. Only its owner can open it."],
+      ] },
+      { group: "Patch notes tab", items: [
+        ["Version list", "Every patch note, newest first. Same as /admin/patch-notes."],
+      ] },
+    ],
+    saving: [
+      "Nothing. The board only reads from GitHub, through the site, and refreshes every minute.",
+      "How a push is matched to a patch note: if the push names a version (\"v0.55\"), that one; otherwise the same person's next patch note that went live after the push, up to 4 days later.",
+    ],
+    inGame: ["Nowhere. Admins only."],
+    needs: [
+      "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it GitHub only answers a few times an hour and the board says so.",
+      "The live progress bars (\"Now working on\") are step 2: one database file for Mikey to run and a shared password. Until then each card says so.",
+    ],
+    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md",
+  },
   "/admin/testers": {
     title: "Tester Access",
     what: "Make links that turn a signed-in person into a tester, switch links off, and remove testers. A tester gets the Star Career developer tools and the test pages that only play the game.",

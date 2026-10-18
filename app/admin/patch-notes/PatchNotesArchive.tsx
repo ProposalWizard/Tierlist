@@ -50,7 +50,7 @@ const BAR_FILL: Record<PatchBar["state"], string> = {
   bad: "bg-[#ff6b6b]/85",
 };
 
-export default function PatchNotesArchive() {
+export default function PatchNotesArchive({ initialVersion }: { initialVersion?: string } = {}) {
   // The notes that ship WITH the build. The page works from these alone —
   // see lib/patchNotesData.ts for why they are a file rather than a table.
   // ── WHERE THE NOTES COME FROM ──
@@ -65,7 +65,13 @@ export default function PatchNotesArchive() {
   // So there is no request here, no loading state and nothing to fail. The
   // page renders the moment it opens, offline included.
   const notes = BUILT_IN_PATCH_NOTES;
-  const [selected, setSelected] = useState<string | null>(notes[0]?.version ?? null);
+  // The team board opens a push's patch note here (initialVersion).
+  const [selected, setSelected] = useState<string | null>(
+    (initialVersion && notes.some((n) => n.version === initialVersion) ? initialVersion : null) ?? notes[0]?.version ?? null,
+  );
+  useEffect(() => {
+    if (initialVersion && notes.some((n) => n.version === initialVersion)) setSelected(initialVersion);
+  }, [initialVersion, notes]);
 
   const note = notes.find((n) => n.version === selected) ?? null;
 

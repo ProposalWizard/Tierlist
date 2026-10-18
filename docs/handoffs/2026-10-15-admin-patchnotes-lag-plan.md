@@ -33,6 +33,17 @@ Harry: "build slowly and CORRECTLY"; "even if there's 1000 questions … it will
 Answered so far: 13 LAG. Still open: LAG-QB10, LAG quick (16) + housekeeping (9), and all of PN, ADM, TB. All 399 on the plan page: LAG 39, PN 197, ADM 153, TB 10. Harry pastes his "Copy my answers" text into the chat.
 
 ## Next steps
+BUILT 18 Oct (this chat, Harry's call, ahead of the piece order):
+- /admin/star — admin home, Ops room look (Higgsfield design B) + Clean light switch, groups, search, owner/writes filters,
+  one flat Higgsfield icon per group (public/admin/icons), hover labels everywhere. Reads lib/adminRegistry.ts (the one page list).
+- /admin/team — team board, its own page: pushes per person (GitHub), PRs named by opener, live deploy, each push linked to
+  the patch note it went out in (lib/teamBoard.ts patchFor; tests/star/teamBoard.mts). Side menu: Team / Patch notes / Videos.
+  Live progress bars (Stop hook + dev_status table) NOT built yet = ship 2.
+- /admin/videos — how to hand Claude a video. Tool: scripts/screen-video/ + skill screen-video (15/15 tests).
+- Admin mode — switch in the admin side menu, the admin pages' menu and game Settings → Developer. On: admin tab on every page
+  (phone too), opened on "Admin for <this page>" first (lib/adminRegistry.ts relatedFor). lib/adminLook.ts.
+- NOT done from the admin plan: DevGate one lock, deleting the 17 pages, Draft merge, Highlights gaining Match Dev's controls,
+  tester pop-up filtering, restyling the older admin pages in the new look.
 Harry 18 Oct: "let's go through all the build pieces in order" — one piece per chat, handoff after each.
 Page list DONE (admin.md §12: 17 delete, 2 old, 52 keep). Admin looks page (pick A/B/C/D, Higgsfield):
 https://claude.ai/artifact/Ayr6rmZQorsmjoUY6ZQpyj — pictures in `docs/plans/2026-10-15/designs/`.

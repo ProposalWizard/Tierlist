@@ -12,6 +12,7 @@ import NavMenu from "./NavMenu";
 import GameSidebar from "./GameSidebar";
 import NavGameLinks from "./NavGameLinks";
 import AdminNavPanel from "./AdminNavPanel";
+import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 
 export default async function GlobalNav() {
   const supabase = await createClient();
@@ -42,7 +43,8 @@ export default async function GlobalNav() {
           here because this is where the server-side isAdmin() answer already
           lives — but it portals everything into <body>, so it stays reachable
           on immersive pages where this <nav> itself is display:none. */}
-      {userIsAdmin && <AdminNavPanel />}
+      {/* A local dev build shows it to everyone, like AdminOnly (never the live site). */}
+      {(userIsAdmin || offlineDevPlayEnabled()) && <AdminNavPanel />}
     </nav>
   );
 }

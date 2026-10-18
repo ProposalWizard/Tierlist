@@ -63,3 +63,6 @@ scripts/tmp/
 # Videos are hundreds of MB; the frames and sheets are rebuilt from them.
 .playtests/
 .cache/statsbomb/
+
+# Video breakdowns (scripts/screen-video). Never committed.
+.recordings/
