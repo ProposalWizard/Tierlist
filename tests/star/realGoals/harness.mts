@@ -68,8 +68,14 @@ function crossing(g: RealGoal, angle: number, power: number, cy: number): { x: n
   sc.goal = { ...sc.goal, x1: -200, x2: 300 };
   sc.crossbar = 99;
   const ball = strike(sc, angle, power, cy, 7);
-  const c = E.realLaneCross(ball, sc);
-  if (c) return c;
+  // Flown by the step itself (no bodies, no frame), so this file also runs on an engine without the real lane.
+  const rng = mulberry32(0xbee);
+  for (let i = 0; i < 180 * 5; i++) {
+    const px = ball.pos.x, py = ball.pos.y, pz = ball.z;
+    const out = E.stepBall(ball, sc, rng, H);
+    if (py > 0 && ball.pos.y <= 0) { const f = py / (py - ball.pos.y || 1); return { x: px + (ball.pos.x - px) * f, z: pz + (ball.z - pz) * f }; }
+    if (out) break;
+  }
   const t = ball.vel.y < -0.1 ? ball.pos.y / -ball.vel.y : 99;
   return { x: ball.pos.x + ball.vel.x * t, z: 0 };
 }

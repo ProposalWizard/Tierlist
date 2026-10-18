@@ -510,17 +510,17 @@ export function realBallKeys(g: RealGoal, win: RgMoveEv[], end: Vec2): LeadBallK
     const last = keys[keys.length - 1];
     if (Math.hypot(last.p.x - from.x, last.p.y - from.y) > 0.3 || t0 > last.t + 0.05) push(Math.max(t0, last.t + 0.05), from);
     const nextT = i + 1 < win.length ? at(win[i + 1][0]) : T;
-    if (e[1] === "P" && e[3]) {
+    if (e[1] === "P" && e[3] && e[5]) {
       const to = sbToPitch(e[3]);
       const d = Math.hypot(to.x - from.x, to.y - from.y);
       // It arrives as the next action starts (the receiver's touch), never quicker than a ball can travel.
       const start = keys[keys.length - 1].t;
       push(Math.max(nextT, start + Math.min(flightS(d), 0.6)), to, { h: e[6] === 2 ? Math.min(5, d * 0.1) : e[6] === 1 ? Math.min(1.5, d * 0.05) : 0 });
-    } else if (e[1] === "C" && e[3]) {
+    } else if (e[3]) {
       push(Math.max(nextT - 0.05, keys[keys.length - 1].t + 0.1), sbToPitch(e[3]));
     }
   });
-  push(Math.max(T, keys[keys.length - 1].t + 0.3), { ...end });
+  push(Math.max(T, keys[keys.length - 1].t + 0.05), { ...end });
   return keys;
 }
 
