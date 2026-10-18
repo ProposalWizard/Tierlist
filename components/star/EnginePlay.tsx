@@ -48,6 +48,7 @@ import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import { enterTestArea } from "@/lib/star/testArea";
 import type { LeadIn } from "@/lib/star/leadIn";
+import type { RealGoalView } from "@/lib/star/realGoalView";
 
 /**
  * Real squads, fetched once per club per page — the gallery can press Play a
@@ -165,7 +166,7 @@ const SQUAD_WAIT_MS = 4000;
 export default function EnginePlay({
   settings, seed = 1, openOn, bare = false, width,
   onChanceServed, onChanceResolved, onComplete, fitParent = false, onGoalClip, leadIn, scene,
-  dribbleControl, dribbleOnly, vfxOverride,
+  dribbleControl, dribbleOnly, vfxOverride, realGoal, onBallStep,
 }: {
   /** The Play Area's dials. Absent: whatever this device has saved there —
    *  one set, shared by every test screen. */
@@ -212,6 +213,11 @@ export default function EnginePlay({
   /** The Visual Effects Lab's picked pictures for kicks, saves, goals…
    *  (CanvasMatch's `vfxOverride`). Absent: the match's own. */
   vfxOverride?: VfxOverride;
+  /** The Real Goals page: the real sides, names and the real goal's ghost
+   *  (CanvasMatch's `realGoal`, drawing only). Absent: exactly as before. */
+  realGoal?: RealGoalView;
+  /** Watches the ball each physics step (read-only; CanvasMatch's `onBallStep`). */
+  onBallStep?: (ball: { x: number; y: number; z: number }) => void;
 }) {
   // The test area: the shot spread cone is drawn here only (lib/star/testArea.ts).
   useEffect(() => enterTestArea(), []);
@@ -307,6 +313,8 @@ export default function EnginePlay({
         dribbleControl={dribbleControl}
         dribbleOnly={dribbleOnly}
         vfxOverride={vfxOverride}
+        realGoal={realGoal}
+        onBallStep={onBallStep}
         dragReferenceHeightPx={dragReferenceHeightPx}
         pressure={pressureFromDial(s.pressure, s.division)}
         penaltyRunup={s.penaltyRunup}

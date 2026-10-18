@@ -18,6 +18,7 @@ import {
   type Facing, type Runner, type Vec2,
 } from "@/lib/star/canvasEngine";
 import { leadInEntities, leadInCamera, type LeadIn, type LeadEntity, type LeadMoment } from "@/lib/star/leadIn";
+import type { RealGoalView } from "@/lib/star/realGoalView";
 import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario, lateSubQuota, noteServedKind,
   type HiddenMatchState, type RadarTick, type HiddenMatchInputs, type ScenarioRequest, type ScenarioResult, type HiddenMatchEvent,
@@ -483,6 +484,15 @@ interface Props {
    *  so a drill can judge "did it go through the gate" off the real flight. */
   onBallStep?: (ball: { x: number; y: number; z: number }) => void;
   /**
+   * REAL GOALS TEST PAGE ONLY (/star-real-goals-dev; Leo, 18 Oct 2026: "make
+   * the teams and players actually accurate ... rn its always city vs
+   * brighton", and his dad's "ghost thing like mariokart"). The real match's
+   * sides and names instead of the test club's, and the real goal's ball as a
+   * ghost on the grass. Drawing and labels only: nothing here is read by the
+   * ball, the keeper or an outcome. Absent: exactly as before.
+   */
+  realGoal?: RealGoalView;
+  /**
    * Read a drag against a canvas THIS many CSS pixels tall, instead of this
    * canvas's own height. A drag is a fraction of the canvas height, so the
    * same finger movement kicks softer on a bigger canvas; a test screen that
@@ -796,7 +806,7 @@ function snapshotScenario(sc: Scenario): Scenario | undefined {
  *  Most first chances come by 7' (measured); a later one is read out. */
 const QUICK_START_MAX = 12;
 
-export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell, plannedOffAt, leadIn, dribbleControl, dribbleOnly = false, vfxOverride }: Props) {
+export default function CanvasMatch({ skills = { power: 55, technique: 55 }, canCurve = false, canExtraTouch = false, keeperStrength = 62, position = "ST", teamRelationship = 60, career = null, seed = 12345, fixture, oppStrength, onComplete, startMinute = 0, duties, conditions, replayOf, onGoalScored, onGoalClip, onChanceServed, neverHooked = false, openOn, bare = false, forceKeeperStrength = false, fatigueResetEvery, onChanceResolved, penaltyRead, setPieceSkill, markers, onBallStep, dragReferenceHeightPx, scene, pressure = 0, penaltyRunup, freeKickRunup, holdAt, preferredFoot, farewell, plannedOffAt, leadIn, dribbleControl, dribbleOnly = false, vfxOverride, realGoal }: Props) {
   // Phase 4 of STAR_POWER_POLITICS.md's match-length rule — see this file's
   // own note by DEFAULT_MATCH_DURATION. Deliberately scoped: this changes
   // when the match ends and how fast in-match energy drains, NOT
@@ -1549,6 +1559,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   setPieceSkillRef.current = setPieceSkill;
   const markersRef = useRef(markers);
   markersRef.current = markers;
+  // The Real Goals page's real sides, names and ghost (drawing only).
+  const realGoalRef = useRef(realGoal);
+  realGoalRef.current = realGoal;
+  /** When the ghost started running alongside your strike (null: looping). */
+  const ghostRaceRef = useRef<number | null>(null);
+  /** Names over heads: the Settings row, or the Real Goals page (the real names). */
+  const namesOn = () => faceStyleRef.current.namesEnabled || !!realGoalRef.current?.showNames;
   /** See the `vfxOverride` prop: the lab's recipes and the effects they are drawing. */
   const vfxRef = useRef(vfxOverride);
   vfxRef.current = vfxOverride;
@@ -1852,7 +1869,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * pair rather than pretending to be a game between two teams.
    */
   const kitsRef = useRef<MatchKits>(
-    fixture && career
+    realGoal && fixture
+      // The Real Goals page: the two real national sides.
+      ? (fixture.home
+        ? { home: realGoal.us.kit, away: realGoal.them.kit, keeper: realGoal.keeperKit ?? { shirt: C.gk, trim: C.gkRim } }
+        : { home: realGoal.them.kit, away: realGoal.us.kit, keeper: realGoal.keeperKit ?? { shirt: C.gk, trim: C.gkRim } })
+      : fixture && career
       ? (fixture.home
         ? kitsFor(career.player.club, fixture.opponent, career.clubKits?.[career.player.club], career.clubKits?.[fixture.opponent])
         : kitsFor(fixture.opponent, career.player.club, career.clubKits?.[fixture.opponent], career.clubKits?.[career.player.club]))
@@ -2150,7 +2172,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** Your own name, the way the commentary says everybody else's — a surname,
    *  never the second person. The sandbox has no career and so no name; "you"
    *  is right there, since there is nobody else it could mean. */
-  const playerLabel = () => careerRef.current?.player.lastName || "you";
+  const playerLabel = () => realGoalRef.current?.youName || careerRef.current?.player.lastName || "you";
 
   /**
    * The ball reaching you — one line, once per chance, and it used to be the
@@ -2704,6 +2726,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     castScenario(scenarioRef.current, onPitch(careerRef.current?.squad ?? []));
     initDefenders(scenarioRef.current, rngRef.current);
     castDefence(scenarioRef.current, oppXIForCast);
+    realGoalRef.current?.dress?.(scenarioRef.current);
     dressAutoKeeper(scenarioRef.current);
     standBackForRunup(scenarioRef.current);
     setUpKeeper(scenarioRef.current, (seed ^ 0x4b7e) >>> 0);
@@ -3893,7 +3916,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           phase: runPhase(d.x + i),
           facing: lean || undefined,
           face: getFaceImage(d.who?.face ?? fakeFaceFor(d.who?.id ?? `td${i}`)),
-          label: faceStyleRef.current.namesEnabled ? d.who?.shortName : undefined,
+          label: namesOn() ? d.who?.shortName : undefined,
         });
         ctx.globalAlpha = 1;
       });
@@ -4064,7 +4087,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         anim: animOf("follower", sc.follower.x, sc.follower.y),
         phase: runPhase(sc.follower.x),
         face: getFaceImage(sc.follower.who?.face ?? fakeFaceFor("follower")),
-        label: faceStyleRef.current.namesEnabled ? sc.follower.who?.shortName : undefined,
+        label: namesOn() ? sc.follower.who?.shortName : undefined,
       });
     }
 
@@ -4189,7 +4212,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         pose: poseFor(`mate${i}`, t.x, t.y),
         phase: runPhase(t.x),
         face: getFaceImage(t.who?.face ?? fakeFaceFor(`mate${i}`)),
-        label: faceStyleRef.current.namesEnabled ? t.who?.shortName : undefined,
+        label: namesOn() ? t.who?.shortName : undefined,
       });
     });
 
@@ -4212,7 +4235,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         pose: receiving || jumpZ > 0.15 ? "receive" : poseFor(`run${i}`, r.pos.x, r.pos.y),
         phase: runPhase(r.pos.x),
         face: getFaceImage(r.who?.face ?? fakeFaceFor(`run${i}`)),
-        label: faceStyleRef.current.namesEnabled ? r.who?.shortName : undefined,
+        label: namesOn() ? r.who?.shortName : undefined,
       });
     });
 
@@ -4252,7 +4275,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         anim: animOf(`def${i}`, d.x, d.y),
         phase: runPhase(d.x),
         face: getFaceImage(d.who?.face ?? fakeFaceFor(`def${i}`)),
-        label: faceStyleRef.current.namesEnabled ? d.who?.shortName : undefined,
+        label: namesOn() ? d.who?.shortName : undefined,
       });
     });
     // An automatic kick (v0.15 items 6/7): the man over the ball is the taker —
@@ -4352,7 +4375,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // of the Month/Ballon d'Or cards still fall back to the back of your
       // shirt unless you've actually set something.
       face: getFaceImage(careerRef.current?.player.portrait ?? DEFAULT_FAKE_FACE),
-      label: faceStyleRef.current.namesEnabled ? playerLabel() : undefined,
+      label: namesOn() ? playerLabel() : undefined,
     });
     // A frame reader gets you even where the 2D picture lets the ball stand for you.
     if (rec && !auto && !youShown && sceneRef.current?.you !== false) {
@@ -4560,7 +4583,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             ...(kAnim && (kAnim.trailDrop > 0 || kAnim.handsIn > 0) ? { trailDrop: kAnim.trailDrop, handsIn: kAnim.handsIn } : {}),
           },
           // A kick you are watching names both men: who is taking it, who is in goal.
-          label: faceStyleRef.current.namesEnabled || autoKickOf(sc) ? kk.who?.shortName : undefined,
+          label: namesOn() || autoKickOf(sc) ? kk.who?.shortName : undefined,
         },
       });
 
@@ -4600,6 +4623,39 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // further down, exactly as before.)
     if (keeperInView && !ballBehindKeeper && figureQueue) {
       figureQueue.push({ py: toPx(sc.keeper.x, sc.keeper.y).py, draw: drawKeeper });
+    }
+
+    // --- Real Goals (test page): the real goal's ball, a ghost ---
+    // Leo's dad: "ghost thing like mariokart where u see the real goal". The
+    // real flight as a faint dashed line (and its shadow on the grass), and a
+    // pale ball running it: on a loop while you aim, and from your strike
+    // while your own ball flies, so the two race. Drawing only.
+    const ghost = realGoalRef.current?.ghost;
+    const ghostPhase = phaseRef.current;
+    if (ghostPhase === "flight") { if (ghostRaceRef.current === null) ghostRaceRef.current = performance.now(); }
+    else ghostRaceRef.current = null;
+    if (ghost && ghost.pts.length > 1 && !leadRef.current && (ghostPhase === "aim" || ghostPhase === "contact" || ghostPhase === "flight" || ghostPhase === "result")) {
+      const S = ghost.pts.map((q) => { const f = toPx(q.x, q.y); return { gx: f.px, gy: f.py, x: f.px, y: f.py - q.z * heightScale * f.scale }; });
+      ctx.save();
+      ctx.lineWidth = Math.max(1.5, BALL_PX * 0.45);
+      ctx.setLineDash([BALL_PX * 1.4, BALL_PX * 1.1]);
+      ctx.strokeStyle = "rgba(0,0,0,0.28)";
+      ctx.beginPath(); S.forEach((q, i) => (i ? ctx.lineTo(q.gx, q.gy) : ctx.moveTo(q.gx, q.gy))); ctx.stroke();
+      ctx.strokeStyle = "rgba(125,211,252,0.85)";
+      ctx.beginPath(); S.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y))); ctx.stroke();
+      ctx.setLineDash([]);
+      const dur = Math.max(0.3, ghost.durS);
+      const now = performance.now();
+      const tt = ghostRaceRef.current !== null ? (now - ghostRaceRef.current) / 1000 : ((now / 1000) % (dur + 1.2));
+      const f = Math.min(1, tt / dur);
+      const at = f * (S.length - 1), i0 = Math.min(S.length - 2, Math.floor(at)), w = at - i0;
+      const gxp = S[i0].x + (S[i0 + 1].x - S[i0].x) * w, gyp = S[i0].y + (S[i0 + 1].y - S[i0].y) * w;
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = "#e0f2fe";
+      ctx.strokeStyle = "#0284c7";
+      ctx.lineWidth = Math.max(1, BALL_PX * 0.25);
+      ctx.beginPath(); ctx.arc(gxp, gyp, BALL_PX * 1.05, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.restore();
     }
 
     // --- Ball trail (fades along the flight; curl makes it sing) ---
@@ -7712,6 +7768,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       initDefenders(scenarioRef.current, rng);
       castDefence(scenarioRef.current, oppXIForCast);
       stageScene(scenarioRef.current, sceneRef.current);
+      realGoalRef.current?.dress?.(scenarioRef.current);
       // A feature's automatic kick (the Shootout on Infinite Highlights)
       // names its own keeper — castDefence has just put theirs in goal.
       dressAutoKeeper(scenarioRef.current);
@@ -8874,8 +8931,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const scenarioLabel = SCENARIO_LABEL[scenarioRef.current.kind];
 
   // Match-mode scoreboard (user's club vs opponent, mapped to home/away)
-  const homeTeam = matchMode ? (fixture!.home ? career?.player.club ?? "You" : fixture!.opponent) : "";
-  const awayTeam = matchMode ? (fixture!.home ? fixture!.opponent : career?.player.club ?? "You") : "";
+  const usName = realGoal?.us.name ?? career?.player.club ?? "You";
+  const themName = realGoal?.them.name ?? fixture?.opponent ?? "";
+  const homeTeam = matchMode ? (fixture!.home ? usName : themName) : "";
+  const awayTeam = matchMode ? (fixture!.home ? themName : usName) : "";
   const homeScore = matchMode ? (fixture!.home ? displayScore.user : displayScore.opp) : 0;
   const awayScore = matchMode ? (fixture!.home ? displayScore.opp : displayScore.user) : 0;
 
@@ -8995,7 +9054,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       <div className="mb-2 rounded-lg overflow-hidden border border-emerald-800/70 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 shadow-lg">
         <div className="flex items-stretch">
           <div className="px-2.5 flex items-center border-r border-white/5 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-300/90">
-            {matchMode && career ? (farewell ? "Farewell" : competitionAbbrev(fixture!, divisionOf(career))) : "Match Lab"}
+            {matchMode && career ? (farewell ? "Farewell" : realGoal?.badge ?? competitionAbbrev(fixture!, divisionOf(career))) : "Match Lab"}
           </div>
           <div className="flex-1 grid grid-cols-4 divide-x divide-white/5">
             {statCell("Goals", `${stats.goals}`, "text-amber-300")}

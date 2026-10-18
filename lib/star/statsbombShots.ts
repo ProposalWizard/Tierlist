@@ -607,10 +607,14 @@ function nearestSlots(ends: Vec2[], slots: Vec2[]): (Vec2 | null)[] {
  * walking or jogging from his start (360 frame, else team shape) to exactly
  * where the chance has him. See "WHO MOVES, AND HOW" above.
  */
-export function leadinTrack(s: SbShot, lead: SbLeadin, sc: Scenario): LeadTrack {
+export function leadinTrack(
+  s: SbShot, lead: SbLeadin, sc: Scenario,
+  /** The Real Goals page: the ball's own timeline (every pass and carry at the real timing). Absent: leadinBallKeys. */
+  opts: { ballKeys?: (end: Vec2) => LeadBallKey[] } = {},
+): LeadTrack {
   const plan = leadinPlan(s, lead);
   const end = { x: sc.ball.x, y: sc.ball.y };
-  const ballKeys = leadinBallKeys(s, lead, end);
+  const ballKeys = opts.ballKeys ? opts.ballKeys(end) : leadinBallKeys(s, lead, end);
   const durS = ballKeys[ballKeys.length - 1].t;
   const ballAt = (t: number) => ballAlong(ballKeys, t);
   const ents = leadInEntities(sc);
