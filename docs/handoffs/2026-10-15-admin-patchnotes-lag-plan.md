@@ -33,7 +33,14 @@ Harry: "build slowly and CORRECTLY"; "even if there's 1000 questions … it will
 Answered so far: 13 LAG. Still open: LAG-QB10, LAG quick (16) + housekeeping (9), and all of PN, ADM, TB. All 399 on the plan page: LAG 39, PN 197, ADM 153, TB 10. Harry pastes his "Copy my answers" text into the chat.
 
 ## Next steps
-0. FIRST: the in-depth admin overview page Harry asked for (admin + UI + team board revamp, all decisions folded in) — before any build. Tell Mikey Match Dev is being removed.
+0. ✓ DONE 18 Oct: admin overview page https://claude.ai/artifact/J2XfoqQCG9LZWe9ZsERXKR
+   (source `docs/plans/2026-10-15/admin-overview.html`, generator `page/overview/gen.py`).
+   Waiting on Harry: C1 (Draft: A switch / B newer only, rec B — his ADM-Q68 and LAG-QB9 answers disagree),
+   C2 (page check: test run only (his ADM-Q110) vs block deploy, rec block), C3 (paste the point-8 page list:
+   keep/old/delete for all 71 pages). Message for Mikey about Match Dev is on the page (point 7) for Harry to send.
+   Found: Match Dev's only unique parts are "force one chance kind" + shot-height sliders → move into
+   Infinite Highlights before deleting (Harry: highlights carries the full dev mode). Knuckleball/power shot
+   are already in the real CanvasMatch (read, not seen).
 
 1. Read Harry's pasted answers; write them into each plan file (one "Answer:" per question); push.
 2. Rebuild the page: `docs/plans/2026-10-15/page/` (tiers_seed.py → build2.py; 30 need you / 142 quick / 227 housekeeping).
