@@ -9,7 +9,6 @@ import { offerClauses, rescaleClauses } from "./contracts";
 import { offerWageFor, offerStanding, weeklyWageFor, goalBonusFor, assistBonusFor, signingOnFee } from "./economy";
 import { playerMarketValue } from "./marketValue";
 import { playerOverall, squadNeed, positionGroup, CROWDED_AT, AFFORD_SHARE } from "./transferRequest";
-import { januaryWindowOpen } from "./januaryTransfer";
 
 /**
  * THE CLUBS INTERESTED IN YOU (rebuilt 18 Oct 2026, replacing "Find a new club").
@@ -25,11 +24,14 @@ import { januaryWindowOpen } from "./januaryTransfer";
  * a forward, match rating for everyone, a little for Star Man awards. Its
  * whole part is the hard ceiling, in divisions above yours:
  *
- *   Poor    (reach < 0)  your division and below, smaller clubs only
- *   Steady  (0)          your division
- *   Good    (1)          + the division above
- *   Great   (2)          + two above
- *   Crazy   (3)          + three above (about 2 goals a game for a striker)
+ *   D  (reach < 0)  your division and below, smaller clubs only
+ *   C  (0)          your division
+ *   B  (1)          + the division above
+ *   A  (2)          + two above
+ *   S  (3)          + three above (about 2 goals a game for a striker)
+ *
+ * Shown as a letter, S best (18 Oct 2026: "a classic lettering system …
+ * makes you think, okay, I need to get an A next season instead of a B").
  *
  * ── Which clubs, inside that ceiling ──
  *
@@ -47,10 +49,12 @@ import { januaryWindowOpen } from "./januaryTransfer";
  * The levels: National League North/South 0, National League 1, League Two 2,
  * League One 3, Championship 4, Premier League 5.
  *
- * ── January ──
+ * ── January (not in the game) ──
  *
- * Same rules, on the season so far, with reach capped at 1 (one division up)
- * and 6 games needed. Climbing big happens in the summer.
+ * Switched off 18 Oct 2026: "the only way you should be able to transfer is
+ * from the summer window". The rules stay here for when it comes back: the
+ * season so far, reach capped at 1 and 6 games needed. Nothing in the game
+ * asks for a "january" list now.
  *
  * Everything is seeded by season and window, so the list is the same each
  * time you open it. A club that walks away in talks is gone for the window.
@@ -82,7 +86,7 @@ export const EDGE = 0.5;
 
 export type WindowKind = "summer" | "january";
 
-export type SeasonGrade = "Poor" | "Steady" | "Good" | "Great" | "Crazy";
+export type SeasonGrade = "S" | "A" | "B" | "C" | "D";
 
 // ── Levels ──────────────────────────────────────────────────────────────────
 
@@ -139,7 +143,7 @@ export interface SeasonReport {
 }
 
 export function gradeOf(reach: number): SeasonGrade {
-  return reach < 0 ? "Poor" : reach < 1 ? "Steady" : reach < 2 ? "Good" : reach < 3 ? "Great" : "Crazy";
+  return reach < 0 ? "D" : reach < 1 ? "C" : reach < 2 ? "B" : reach < 3 ? "A" : "S";
 }
 
 /** Your season (or, in January, your season so far), as a reach. */
@@ -358,12 +362,6 @@ export function windowInterest(career: CareerState, window: WindowKind): WindowI
     if (clubs.length) leagues.push({ division, clubs: clubs.sort(sortClubs) });
   }
   return { window, key: windowKey(career, window), report, leagues };
-}
-
-/** Is the January list open right now (the window is open and you haven't moved this January)? */
-export function januaryListOpen(career: CareerState): boolean {
-  if (!januaryWindowOpen(career)) return false;
-  return !(career.transfers ?? []).some(t => t.season === career.season && t.window === "january");
 }
 
 /**

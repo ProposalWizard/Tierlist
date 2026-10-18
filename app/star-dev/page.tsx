@@ -60,8 +60,7 @@ import { spendAction, rest, canAct, projectedEnergy, startNewWeek, trainingLeft,
 import { acceptOffer, type TransferOffer } from "@/lib/star/transfers";
 import { formatMoneyPrecise } from "@/lib/star/money";
 import { clearAfterWindow, requestOf } from "@/lib/star/transferRequest";
-import { completeJanuaryMove } from "@/lib/star/januaryTransfer";
-import { windowInterest, withRecall, withAgreedWage, markWalkedAway, januaryListOpen, type WindowKind } from "@/lib/star/transferInterest";
+import { windowInterest, withRecall, withAgreedWage, markWalkedAway } from "@/lib/star/transferInterest";
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
@@ -583,8 +582,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [transferOffers, setTransferOffers] = useState<TransferOffer[]>([]);
   // A club from the transfer window's list, while you talk terms with it.
   const [talkOffer, setTalkOffer] = useState<TransferOffer | null>(null);
-  /** Which window the transfer screen and its talks belong to. */
-  const [transferKind, setTransferKind] = useState<WindowKind>("summer");
   /** The week the loan brief was last read. A loan target shown before
    *  every single fixture would be a toll gate; shown once a week it is a
    *  reminder. See the LoanBrief block further down. */
@@ -890,11 +887,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // the career retires).
       // Talks in the SUMMER window go back to the window's list: the season
       // is over, so the dashboard would have no way on.
-      const summerDeal = phase === "transfer-request-talk" && transferKind === "summer";
+      const summerDeal = phase === "transfer-request-talk";
       const resumable = phase.startsWith("farewell-") ? "retirement" : summerDeal ? "season-transfer" : phase;
       saveStarPhase(resumable, slotScope(scopeRef.current, activeSlotRef.current), contractOfferReason ?? undefined, wonBallonDor);
     }
-  }, [hydrated, phase, contractOfferReason, wonBallonDor, transferKind]);
+  }, [hydrated, phase, contractOfferReason, wonBallonDor]);
 
   // The fixture the post-match screen is reporting on. Held in state because
   // crediting the result marks it played, so re-deriving "first unplayed" would
@@ -2054,7 +2051,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // brings the parent club in too.
     const interest = withRecall(windowInterest(from, "summer"), loanRecallOffer(from), from);
     if (interest.leagues.length > 0) {
-      setTransferKind("summer");
       setPhase("season-transfer");
       return;
     }
@@ -2132,9 +2128,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // then `phase` is "transfer-signing", not "relegation-move", so reading it
   // fresh there would always read false and silently drop the forced-move
   // handling for a relegated player.
-  // `january`: a deal from a transfer request signed mid-season in the
-  // January window (januaryTransfer.ts) — no season rollover after it.
-  const [pendingSignOffer, setPendingSignOffer] = useState<{ offer: TransferOffer; wasRelegationMove: boolean; january?: boolean } | null>(null);
+  const [pendingSignOffer, setPendingSignOffer] = useState<{ offer: TransferOffer; wasRelegationMove: boolean } | null>(null);
 
   // Choosing a club used to complete the move immediately — no contract, no
   // signature, nothing that looked like the moment your very first pro deal
@@ -2152,21 +2146,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleSigningDone = useCallback(() => {
     if (!career || !pendingSignOffer) return;
     const { offer, wasRelegationMove } = pendingSignOffer;
-    // ── The January move: you join now, mid-season, and play on ──
-    if (pendingSignOffer.january) {
-      const joined = completeJanuaryMove(career, offer);
-      setPendingSignOffer(null);
-      if (joined === career) { setPhase("dashboard"); return; }
-      fetchRealSquad(offer.club).then((squad) => {
-        setCareer(c => (c && c.player.club === offer.club ? { ...c, squad: ageOwnFetchedForCareer(c, offer.club, squad) } : c));
-      });
-      joined.media = generateForCareer(joined,
-        { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.transferFee ?? offer.signingFee }, "transfer");
-      pushNews(signingNews(joined, offer.club));
-      setCareer(joined);
-      setPhase("dashboard");
-      return;
-    }
     // The summer window has happened: any deal from a transfer request is done with.
     const moved = clearAfterWindow(acceptOffer(career, offer));
     // A club from another division (a request, or a good season's extra
@@ -2200,23 +2179,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, [career, wonBallonDor, rollOverSeason]);
 
   // ── The transfer window (transferInterest.ts) ──
+  // Only the summer window: no January moves for your player (18 Oct 2026,
+  // "the only way you should be able to transfer is from the summer window").
   // A club picked on the window's list: talk terms (NegotiationScreen).
-  const handleTransferNegotiate = useCallback((offer: TransferOffer, kind: WindowKind) => {
-    setTransferKind(kind);
+  const handleTransferNegotiate = useCallback((offer: TransferOffer) => {
     setTalkOffer(offer);
     setPhase("transfer-request-talk");
   }, []);
-  // January: the list opens from Home while the window is open.
-  const handleOpenJanuaryWindow = useCallback(() => {
-    if (!career || !januaryListOpen(career)) return;
-    setTransferKind("january");
-    setPhase("transfer-request");
-  }, [career]);
-
-  // How many clubs want you while the January window is open (Home's button).
-  const januaryClubs = useMemo(() => (career && januaryListOpen(career)
-    ? windowInterest(career, "january").leagues.reduce((n, l) => n + l.clubs.length, 0)
-    : null), [career]);
 
   // Testing tool only — see lib/star/devSkip.ts. Runs the fast-forward and
   // drops the result straight on the dashboard; a season boundary crossed
@@ -2620,7 +2589,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // so it is the same clubs that were on screen (minus any that walked
       // away, which the save remembers).
       setWonBallonDor(!!pending.wonBallonDor);
-      setTransferKind("summer");
       setPhase("season-transfer");
       return;
     }
@@ -3406,7 +3374,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       || (phase === "draw" && !pendingDraw)
       || (phase === "press" && !pressQuestion)
       || (phase === "dilemma" && !currentDilemma)
-      || (phase === "transfer-request" && !januaryListOpen(career))
+      || phase === "transfer-request"
       || (phase === "transfer-signing" && !pendingSignOffer)
       || (phase === "transfer-request-talk" && !talkOffer)
       || (phase === "relationship-game" && !relationshipGameKind)
@@ -4366,20 +4334,15 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   // The transfer window: every club interested in you, New Star Soccer's
-  // way (TransferHub.tsx). Summer at the end of the season; January from Home.
-  if (phase === "season-transfer" || phase === "transfer-request") {
-    const kind: WindowKind = phase === "season-transfer" ? "summer" : "january";
-    const interest = kind === "summer"
-      ? withRecall(windowInterest(career, "summer"), loanRecallOffer(career), career)
-      : windowInterest(career, "january");
+  // way (TransferHub.tsx). The summer only, at the end of the season.
+  if (phase === "season-transfer") {
+    const interest = withRecall(windowInterest(career, "summer"), loanRecallOffer(career), career);
     return (
       <TransferHub
-        key={kind}
         career={career}
         interest={interest}
-        onNegotiate={(c) => handleTransferNegotiate(c.offer, kind)}
-        onStay={kind === "summer" ? handleStayPut : () => setPhase("dashboard")}
-        stayLabel={kind === "summer" ? "Stay" : "Close"}
+        onNegotiate={(c) => handleTransferNegotiate(c.offer)}
+        onStay={handleStayPut}
       />
     );
   }
@@ -4389,7 +4352,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // club is off the list until the next window.
   if (phase === "transfer-request-talk" && talkOffer) {
     const talkDivision = talkOffer.division ?? divisionOf(career);
-    const back = transferKind === "summer" ? "season-transfer" : "transfer-request";
     return (
       <NegotiationScreen
         mode="selling"
@@ -4403,11 +4365,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           const weekly = agreedWeeklyWage(finalSeasonPrice, talkOffer.club, talkDivision);
           setTalkOffer(null);
           if (weekly === null) {
-            setCareer(markWalkedAway(career, transferKind, talkOffer.club));
-            setPhase(back);
+            setCareer(markWalkedAway(career, "summer", talkOffer.club));
+            setPhase("season-transfer");
             return;
           }
-          setPendingSignOffer({ offer: withAgreedWage(talkOffer, weekly), wasRelegationMove: false, january: transferKind === "january" });
+          setPendingSignOffer({ offer: withAgreedWage(talkOffer, weekly), wasRelegationMove: false });
           setPhase("transfer-signing");
         }}
         onSettings={() => setPhase("settings")}
@@ -5275,7 +5237,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               nextMatchDate={nextMatchDate ?? undefined}
               myTeam={nextFixture ? myTeam(nextFixture) : career.player.club}
               hallChase={hallChaseLine(career, hallRecords)?.text ?? null}
-              transferWindow={januaryClubs === null ? null : { clubs: januaryClubs, onOpen: handleOpenJanuaryWindow }}
               onUseCan={handleUseCan}
               onBuyCan={handleBuyKib}
               onOpen={openHub}

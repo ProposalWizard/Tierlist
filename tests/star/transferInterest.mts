@@ -61,12 +61,12 @@ console.log("National League North striker, age 19:\n  " + out.join("\n  "));
 
 // The brief's anchors.
 const good = windowInterest(seasons[2][1], "summer");
-check(good.report.grade === "Good", `24 in 40 is a good season (${good.report.grade})`);
+check(good.report.grade === "B", `24 in 40 is a B season (${good.report.grade})`);
 check(good.leagues.some(l => l.division === "national_league"), "a good season brings National League interest");
 const ownList = good.leagues.find(l => l.division === "national_league_north");
 check(!!ownList && ownList.clubs.length >= 15, `a good season: most of your own division wants you (${ownList?.clubs.length})`);
 const crazy = windowInterest(seasons[4][1], "summer");
-check(crazy.report.grade === "Crazy", `100 goals is a crazy season (${crazy.report.grade})`);
+check(crazy.report.grade === "S", `100 goals is an S season (${crazy.report.grade})`);
 check(crazy.leagues.some(l => l.division === "league_one"), "a crazy season can bring League One");
 check(!crazy.leagues.some(l => levelOf(l.division) > own + 3), "…but never the Championship or above");
 const poor = windowInterest(seasons[0][1], "summer");

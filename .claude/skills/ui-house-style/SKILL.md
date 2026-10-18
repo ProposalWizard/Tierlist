@@ -39,6 +39,20 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 18 Oct 2026 (later) — the transfer window, second pass
+- **A chooser's list is a full-screen page, never a sheet.** The bottom
+  sheets for League and Club were "very horrible to look at … it should be a
+  pop-up that covers the whole page". ✕ goes back with nothing changed; a
+  pick goes back with the pick shown.
+- **Don't show a number the next screen is about** (the offered wage in the
+  club list: "should be hidden from the user until they actually start the
+  negotiation").
+- **Too black and white is dull**: "a bit more colour … the vibe of the
+  deadline day screen" (dark ground, diagonal gold slab, gold italic title,
+  club-colour rows).
+- **A season grade is a letter** (S, A, B, C, D), not "Great"/"Crazy": "a
+  classic lettering system … makes you think, I need to get an A next season".
+
 ### 18 Oct 2026 — the transfer window is New Star Soccer's screen
 - **"Just use the New Star Soccer system for now. And create that perfectly
   with the same design style that we've been using for most of the stuff on

@@ -78,9 +78,6 @@ interface Props {
   /** "3 goals off Calloway's record": the closest Hall of Fame record within
    *  reach (lib/star/hallRecords.ts), or null. */
   hallChase?: string | null;
-  /** The January transfer window is open: how many clubs want you, and the
-   *  way into the list (TransferHub.tsx). Null outside the window. */
-  transferWindow?: { clubs: number; onOpen: () => void } | null;
 }
 
 export const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
@@ -374,7 +371,7 @@ export function goalBoxFor(figW: number, figH: number, rowW: number) {
   return { left, bottom, width, height, hoardings: bottom + Math.round(height * HOARDING_IN_GOAL) };
 }
 
-function Hero({ career, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan, hallChase, transferWindow }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
+function Hero({ career, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan, hallChase }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
   // 2D is A1, the game's own flat figure (drawFigureAt), lit for the hero.
   // The 3D / 2D switch itself lives in Settings (Harry, 1 Oct 2026).
   const [skin] = useFigureSkin();
@@ -446,7 +443,6 @@ function Hero({ career, kitShirt, kitTrim, figW, figH, onUseCan, onBuyCan, hallC
           <div className="-mt-0.5 text-center text-[8.5px] font-black uppercase tracking-[0.18em] text-white/70" style={{ textShadow: "0 1px 2px rgba(0,0,0,.8)" }}>this season</div>
           {/* Your legend lives on: a record from one of your own retired
               careers, within reach (Leo, 6 Oct 2026). */}
-          {transferWindow && <WindowButton w={transferWindow} />}
           {hallChase && (
             <div data-hall-chase className="mt-0.5 flex items-start justify-center gap-1 px-1 py-1 text-center text-[10px] font-black leading-tight text-amber-200" style={{ background: "rgba(5,8,15,.55)", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.45)", borderRadius: 2, textShadow: "0 1px 2px rgba(0,0,0,.8)" }}>
               <span aria-hidden>🏛️</span><span>{hallChase}</span>
@@ -539,7 +535,7 @@ function StatTile({ t }: { t: Tile }) {
   );
 }
 
-function HeroNew({ career, kitShirt, kitTrim, glow, figW, figH, onUseCan, onBuyCan, hallChase, transferWindow }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
+function HeroNew({ career, kitShirt, kitTrim, glow, figW, figH, onUseCan, onBuyCan, hallChase }: Props & { glow: string; kitShirt: string; kitTrim: string; figW: number; figH: number }) {
   const [skin] = useFigureSkin();
   const style = useAvatarStyle();
   const look = skin === "classic" ? "A1" : style;
@@ -568,9 +564,6 @@ function HeroNew({ career, kitShirt, kitTrim, glow, figW, figH, onUseCan, onBuyC
         <div data-tour="player" data-home-player className="relative z-10 shrink-0" style={{ width: figW }}>
           <HomePlayer career={career} width={figW} height={figH} where="home" look={look} kitShirt={kitShirt} kitTrim={kitTrim} glow={glow} celebrate={celebrate} />
         </div>
-        {transferWindow && (
-          <div className="absolute left-0 top-1 z-20 max-w-[50%]"><WindowButton w={transferWindow} /></div>
-        )}
         {hallChase && (
           <div data-hall-chase className="absolute right-0 top-1 z-10 flex max-w-[44%] items-start gap-1 px-1.5 py-1 text-[10px] font-black leading-tight text-amber-200" style={{ background: "rgba(5,8,15,.6)", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.45)", borderRadius: 4, textShadow: "0 1px 2px rgba(0,0,0,.8)" }}>
             <span aria-hidden>🏛️</span><span>{hallChase}</span>
@@ -581,23 +574,6 @@ function HeroNew({ career, kitShirt, kitTrim, glow, figW, figH, onUseCan, onBuyC
         {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={career.energy ?? 100} onUse={onUseCan} onBuy={onBuyCan} mini bold />)}
       </div>
     </div>
-  );
-}
-
-/** "January window · 9 clubs want you": the way into the list while the
- *  window is open (transfers happen only in the windows, 18 Oct 2026). */
-function WindowButton({ w }: { w: { clubs: number; onOpen: () => void } }) {
-  return (
-    <button
-      type="button"
-      data-january-window
-      onClick={w.onOpen}
-      className="kib-press flex items-center gap-1.5 px-2 py-1.5 text-left text-[11px] font-black uppercase leading-tight tracking-wide text-gray-950"
-      style={{ background: "linear-gradient(180deg, #fde047, #f59e0b)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.5), 0 2px 8px rgba(0,0,0,.5)", borderRadius: 3 }}
-    >
-      <span aria-hidden className="text-[14px] leading-none">✍️</span>
-      <span>January window<br /><span className="normal-case tracking-normal">{w.clubs === 0 ? "No clubs in for you" : `${w.clubs} ${w.clubs === 1 ? "club wants" : "clubs want"} you`}</span></span>
-    </button>
   );
 }
 
