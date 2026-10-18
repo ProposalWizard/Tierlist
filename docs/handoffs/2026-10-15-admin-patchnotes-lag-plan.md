@@ -33,6 +33,12 @@ Harry: "build slowly and CORRECTLY"; "even if there's 1000 questions … it will
 Answered so far: 13 LAG. Still open: LAG-QB10, LAG quick (16) + housekeeping (9), and all of PN, ADM, TB. All 399 on the plan page: LAG 39, PN 197, ADM 153, TB 10. Harry pastes his "Copy my answers" text into the chat.
 
 ## Next steps
+Harry 18 Oct: "let's go through all the build pieces in order" — one piece per chat, handoff after each.
+Page list DONE (admin.md §12: 17 delete, 2 old, 52 keep). Admin looks page (pick A/B/C/D, Higgsfield):
+https://claude.ai/artifact/Ayr6rmZQorsmjoUY6ZQpyj — pictures in `docs/plans/2026-10-15/designs/`.
+Ruling saved in ui-house-style: admin pages get real design; team board is its own full designed page.
+Still open: C1 Draft A/B, C2 page check, admin look pick. None of these block pieces 0–3.
+NEXT CHAT = piece 0, CLAUDE.md trim (lag.md §8b + LAG-QB1–QB25 answers in page/answers.json).
 0. ✓ DONE 18 Oct: admin overview page https://claude.ai/artifact/J2XfoqQCG9LZWe9ZsERXKR
    (source `docs/plans/2026-10-15/admin-overview.html`, generator `page/overview/gen.py`).
    Waiting on Harry: C1 (Draft: A switch / B newer only, rec B — his ADM-Q68 and LAG-QB9 answers disagree),

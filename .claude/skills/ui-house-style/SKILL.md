@@ -39,6 +39,17 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 18 Oct 2026 — admin pages get real design (Harry)
+- **"I like the idea of the grouped admin … but it's not the UI I was
+  imagining."** Said of the overview page's drawn phone mock (dark/amber
+  cards, search, chips). The grouping stays; the look does not.
+- **"The team board has to be its own full page with fully made UI."** Not a
+  card on the admin home and not a plain list: its own designed page.
+- **"Make a bunch of UI on Higgsfield — I want it to look and feel really good
+  even inside the admin pages."** Admin and dev pages get the same design care
+  as player screens. Design on Higgsfield first, show the options, build the
+  chosen one. "Admin is just for us" is no longer a reason to skip design.
+
 ### 14 Oct 2026 — menus open on the tap's own frame (Harry)
 - **"There are too many animations in the menus. If I click on something, it
   should just go straight in."** A tap shows the next screen at once: no fade,

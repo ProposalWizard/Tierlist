@@ -432,3 +432,16 @@ Sketches (phone 390 / desktop):
 | Tester view on a real tester account | No tester account here |
 
 Stills (current, 390×844, signed out, local dev): `img/current-admin-clubs.png`, `img/current-admin-clubs-eye.png`, `img/current-star-play-dev.png`, `img/current-star-gallery-dev.png`, `img/current-admin-signed-out.png` in the session scratchpad `plan/img/`.
+
+## 12. Harry's page list (18 Oct 2026, final — from the overview page, point 8)
+
+Pasted by Harry; 6 changes from the recommendation (profile-new, cl-draft, draft/american, ballon-dor, manager → Delete; star-sprites-dev → Keep).
+
+- **DELETE (17):** /profile-new, /draft-dev2 (becomes a redirect), /admin/cl-draft, /draft/american, /star-scenario-dev, /star-bigger-dev, /star-match-dev, /star-look-dev, /star-attack-dev, /star-bicycle-dev, /star-zoomgrass-dev, /star-3d-dev, /star-spin-dev, /star-blender-dev, /sfx-dev, /ballon-dor, /manager
+- **OLD TESTS (2):** /squad-builder, /draft/preview
+- **KEEP:** everything else (52), incl. /star-sprites-dev.
+- Before deleting /star-match-dev: Infinite Highlights gains "force one chance kind" + the shot-height sliders.
+- /ballon-dor delete: also check /api/ballon-dor/* and the /admin dashboard's "Ballon d'Or Beta" button (Q41) go with it.
+- Full per-page data: `page/overview/pages.json` (field `harry`).
+- Still open: C1 (Draft A/B), C2 (page check in deploy or test run).
+- Design: 4 Higgsfield looks in `designs/` (A broadcast, B ops room, C game menu, D clean light) — Harry to pick.

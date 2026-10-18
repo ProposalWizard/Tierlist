@@ -10,7 +10,9 @@
 "g": "",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/app-plan",
@@ -23,7 +25,9 @@
 "g": "",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/testers",
@@ -36,7 +40,9 @@
 "g": "",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/xp",
@@ -49,7 +55,9 @@
 "g": "",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/football",
@@ -62,7 +70,9 @@
 "g": "",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/profile-new",
@@ -73,9 +83,11 @@
 "l": "Admins + testers",
 "s": "Old",
 "g": "Old tests",
-"f": "old",
+"f": "del",
 "why": "A profile redesign nobody has finished deciding on.",
-"you": false
+"you": false,
+"rec": "old",
+"harry": "del"
 },
 {
 "u": "/squad-builder",
@@ -88,7 +100,9 @@
 "g": "Old tests",
 "f": "old",
 "why": "A Dream XI game is on the future list.",
-"you": false
+"you": false,
+"rec": "old",
+"harry": "old"
 },
 {
 "u": "/admin",
@@ -101,7 +115,9 @@
 "g": "",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/football/players",
@@ -114,7 +130,9 @@
 "g": "",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/football/pl-clubs",
@@ -127,7 +145,9 @@
 "g": "",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/football/scrape",
@@ -140,7 +160,9 @@
 "g": "",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/draft-dev",
@@ -153,7 +175,9 @@
 "g": "",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/draft-dev2",
@@ -166,7 +190,9 @@
 "g": "Old tests",
 "f": "del",
 "why": "Becomes a redirect to Draft test (ADM-Q68 / LAG-QB9).",
-"you": true
+"you": true,
+"rec": "del",
+"harry": "del"
 },
 {
 "u": "/draft-challenge-dev",
@@ -179,7 +205,9 @@
 "g": "",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/cl-draft",
@@ -190,9 +218,11 @@
 "l": "Admins",
 "s": "Old",
 "g": "Old tests",
-"f": "old",
+"f": "del",
 "why": "You said no to keeping it (ADM-Q42).",
-"you": true
+"you": true,
+"rec": "old",
+"harry": "del"
 },
 {
 "u": "/draft/preview",
@@ -205,7 +235,9 @@
 "g": "Old tests",
 "f": "old",
 "why": "Draft screen redesigns, sample data only.",
-"you": false
+"you": false,
+"rec": "old",
+"harry": "old"
 },
 {
 "u": "/draft/american",
@@ -216,9 +248,11 @@
 "l": "Admins",
 "s": "Old",
 "g": "Old tests",
-"f": "old",
+"f": "del",
 "why": "The real American mode is inside Draft rooms now.",
-"you": false
+"you": false,
+"rec": "old",
+"harry": "del"
 },
 {
 "u": "/star-dev",
@@ -231,7 +265,9 @@
 "g": "Career screens",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-retirement-dev",
@@ -244,7 +280,9 @@
 "g": "Career screens",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-relgames-dev",
@@ -257,7 +295,9 @@
 "g": "Career screens",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-goal-clips-dev",
@@ -270,7 +310,9 @@
 "g": "Career screens",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-dev/media-lab",
@@ -283,7 +325,9 @@
 "g": "Career screens",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-training-dev",
@@ -296,7 +340,9 @@
 "g": "Career screens",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-gallery-dev",
@@ -309,7 +355,9 @@
 "g": "Chances",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-highlights-dev",
@@ -322,7 +370,9 @@
 "g": "Chances",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-play-dev",
@@ -335,7 +385,9 @@
 "g": "Chances",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-scenario-dev",
@@ -348,7 +400,9 @@
 "g": "Old tests",
 "f": "del",
 "why": "You said: delete; the same tool is a gallery tab (LAG-QB13).",
-"you": true
+"you": true,
+"rec": "del",
+"harry": "del"
 },
 {
 "u": "/star-update-dev",
@@ -361,7 +415,9 @@
 "g": "Match tests",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-sim90-dev",
@@ -374,7 +430,9 @@
 "g": "Match tests",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-radar-dev",
@@ -387,7 +445,9 @@
 "g": "Match tests",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-dribble-dev",
@@ -400,7 +460,9 @@
 "g": "Match tests",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-dribble-stick-dev",
@@ -413,7 +475,9 @@
 "g": "Match tests",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-bigger-dev",
@@ -426,7 +490,9 @@
 "g": "Old tests",
 "f": "del",
 "why": "You said: delete; the look was decided 12 Oct (LAG-QB11).",
-"you": true
+"you": true,
+"rec": "del",
+"harry": "del"
 },
 {
 "u": "/star-match-dev",
@@ -439,7 +505,9 @@
 "g": "Old tests",
 "f": "del",
 "why": "You said: remove it now; git keeps it (LAG-QB10).",
-"you": true
+"you": true,
+"rec": "del",
+"harry": "del"
 },
 {
 "u": "/star-sound-lab-dev",
@@ -452,7 +520,9 @@
 "g": "Sound",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-real-moments-dev",
@@ -465,7 +535,9 @@
 "g": "Real data",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-statsbomb-dev",
@@ -478,7 +550,9 @@
 "g": "Real data",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-intl-dev",
@@ -491,7 +565,9 @@
 "g": "Real data",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-tournament-dev",
@@ -504,7 +580,9 @@
 "g": "Real data",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/lineups",
@@ -517,7 +595,9 @@
 "g": "Real data",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/clubs",
@@ -530,7 +610,9 @@
 "g": "Real data",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/badges",
@@ -543,7 +625,9 @@
 "g": "Real data",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/custom-clubs",
@@ -556,7 +640,9 @@
 "g": "Real data",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-3d-area-dev",
@@ -569,7 +655,9 @@
 "g": "3D places",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-3d-area-dev/signing",
@@ -582,7 +670,9 @@
 "g": "3D places",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-3d-area-dev/office",
@@ -595,7 +685,9 @@
 "g": "3D places",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-shop3d-dev",
@@ -608,7 +700,9 @@
 "g": "3D places",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-garden3d-dev",
@@ -621,7 +715,9 @@
 "g": "3D places",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-home3d-dev",
@@ -634,7 +730,9 @@
 "g": "3D places",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-training3d-dev",
@@ -647,7 +745,9 @@
 "g": "3D places",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-style-dev",
@@ -660,7 +760,9 @@
 "g": "3D places",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-animations-dev",
@@ -673,7 +775,9 @@
 "g": "Players + animation",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-anim3d-dev",
@@ -686,7 +790,9 @@
 "g": "Players + animation",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-people-dev",
@@ -699,7 +805,9 @@
 "g": "Players + animation",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-look-dev",
@@ -712,7 +820,9 @@
 "g": "Old tests",
 "f": "del",
 "why": "Player style New was decided 12 Oct.",
-"you": false
+"you": false,
+"rec": "del",
+"harry": "del"
 },
 {
 "u": "/star-sprites-dev",
@@ -723,9 +833,11 @@
 "l": "Admins + testers",
 "s": "Old",
 "g": "Old tests",
-"f": "old",
+"f": "keep",
 "why": "Still the only page that shows every baked match figure.",
-"you": false
+"you": false,
+"rec": "old",
+"harry": "keep"
 },
 {
 "u": "/admin/star-pass",
@@ -738,7 +850,9 @@
 "g": "Money + rewards",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/star-xp",
@@ -751,7 +865,9 @@
 "g": "Money + rewards",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-store-dev",
@@ -764,7 +880,9 @@
 "g": "Money + rewards",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-wallet-dev",
@@ -777,7 +895,9 @@
 "g": "Money + rewards",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-tuning-dev",
@@ -790,7 +910,9 @@
 "g": "Money + rewards",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/admin/sound-board",
@@ -803,7 +925,9 @@
 "g": "Sound",
 "f": "keep",
 "why": "",
-"you": false
+"you": false,
+"rec": "keep",
+"harry": "keep"
 },
 {
 "u": "/star-attack-dev",
@@ -816,7 +940,9 @@
 "g": "Old tests",
 "f": "del",
 "why": "A 6 Sep prototype. It is also one of the 4 engine copies the build guard lists.",
-"you": false
+"you": false,
+"rec": "del",
+"harry": "del"
 },
 {
 "u": "/star-bicycle-dev",
@@ -829,7 +955,9 @@
 "g": "Old tests",
 "f": "del",
 "why": "A throwaway test. It is also one of the 4 engine copies the build guard lists.",
-"you": false
+"you": false,
+"rec": "del",
+"harry": "del"
 },
 {
 "u": "/star-zoomgrass-dev",
@@ -842,7 +970,9 @@
 "g": "Old tests",
 "f": "del",
 "why": "You said: delete; the look was decided 12 Oct (LAG-QB11).",
-"you": true
+"you": true,
+"rec": "del",
+"harry": "del"
 },
 {
 "u": "/star-3d-dev",
@@ -855,7 +985,9 @@
 "g": "Old tests",
 "f": "del",
 "why": "The old 3D skin. Players are 3D-made sprites now (12 Oct).",
-"you": false
+"you": false,
+"rec": "del",
+"harry": "del"
 },
 {
 "u": "/star-spin-dev",
@@ -868,7 +1000,9 @@
 "g": "Old tests",
 "f": "del",
 "why": "The 3D player in the shop replaced it.",
-"you": false
+"you": false,
+"rec": "del",
+"harry": "del"
 },
 {
 "u": "/star-blender-dev",
@@ -881,7 +1015,9 @@
 "g": "Old tests",
 "f": "del",
 "why": "3D people replaced it.",
-"you": false
+"you": false,
+"rec": "del",
+"harry": "del"
 },
 {
 "u": "/sfx-dev",
@@ -894,7 +1030,9 @@
 "g": "Old tests",
 "f": "del",
 "why": "Sound board and Sound lab do this and more.",
-"you": false
+"you": false,
+"rec": "del",
+"harry": "del"
 },
 {
 "u": "/ballon-dor",
@@ -905,9 +1043,11 @@
 "l": "Admins + testers",
 "s": "Old",
 "g": "Old tests",
-"f": "old",
+"f": "del",
 "why": "An older separate game. Same name as the real one, so it is renamed.",
-"you": false
+"you": false,
+"rec": "old",
+"harry": "del"
 },
 {
 "u": "/manager",
@@ -918,8 +1058,10 @@
 "l": "Admins + testers",
 "s": "Old",
 "g": "Old tests",
-"f": "old",
+"f": "del",
 "why": "You said manager mode is not live any more (LAG-QB14).",
-"you": true
+"you": true,
+"rec": "old",
+"harry": "del"
 }
 ]
