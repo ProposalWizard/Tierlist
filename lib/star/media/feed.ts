@@ -469,9 +469,11 @@ function commit(
 }
 
 /** Most video posts one match makes (Mikey, 13 Oct 2026: "there should be
- *  less videos … it's fine to just have text"): the match's highlights and
- *  your goals' video (or, without those, one picked at random). The rest
- *  keep their words, no video. */
+ *  less videos … it's fine to just have text"). Each match picks 1 or 2 at
+ *  random (Leo, 16 Oct 2026): the highlights always, then your goals' video
+ *  (or, without it, one picked at random) about half the time. The rest keep
+ *  their words, no video. Other matches' goal videos (the England tab) are
+ *  their own batch, and never show on the post-match screen (feedFor). */
 export const MAX_VIDEOS_PER_MATCH = 2;
 
 const hasVideo = (p: StoredPost) => {
@@ -481,8 +483,12 @@ const hasVideo = (p: StoredPost) => {
 
 function capVideos(posts: StoredPost[], cycleId: string): void {
   const vids = posts.filter(hasVideo);
-  if (vids.length <= MAX_VIDEOS_PER_MATCH) return;
+  if (!vids.length) return;
   const rng = rngFor("videos", cycleId);
+  // 1 or 2, at random (Leo, 16 Oct 2026: "we wanted to make it random"):
+  // the match's highlights always, a second video about half the time.
+  const max = rng() < 0.5 ? 1 : MAX_VIDEOS_PER_MATCH;
+  if (vids.length <= max) return;
   // The match's highlights and your goals' video stay (Leo, 8 Oct: every
   // match ALWAYS has them); anything else is the random one.
   const keep = new Set<StoredPost>([
@@ -490,7 +496,8 @@ function capVideos(posts: StoredPost[], cycleId: string): void {
     ...vids.filter(p => p.eventId === "your-highlights").slice(0, 1),
   ]);
   const rest = vids.filter(p => !keep.has(p));
-  while (keep.size < MAX_VIDEOS_PER_MATCH && rest.length) keep.add(rest.splice(Math.floor(rng() * rest.length), 1)[0]);
+  for (const p of Array.from(keep).reverse()) if (keep.size > max) keep.delete(p);
+  while (keep.size < max && rest.length) keep.add(rest.splice(Math.floor(rng() * rest.length), 1)[0]);
   for (let i = 0; i < posts.length; i++) {
     if (hasVideo(posts[i]) && !keep.has(posts[i])) posts[i] = { ...posts[i], graphic: undefined };
   }
@@ -691,7 +698,12 @@ export function feedFor(
   const since = match !== undefined && match <= state.lastCycleClock && state.lastCycleClock - match <= WEEK_SPAN
     ? match : state.lastCycleClock;
   const now = state.lastCycleClock + FIRST_WAVE;
-  return { posts: pinHighlights(visible(state.posts, now, since).filter(p => p.at >= state.lastCycleClock || p.at <= since + FIRST_WAVE), state.lastMatchCycleId ?? state.lastCycleId), trends: state.trends, now };
+  const shown = visible(state.posts, now, since)
+    .filter(p => p.at >= state.lastCycleClock || p.at <= since + FIRST_WAVE)
+    // Other matches' goal videos stay on the England tab of the Feed, never on
+    // the post-match screen (Leo, 16 Oct 2026): this screen is your match's.
+    .map(p => (p.scope === "league" && hasVideo(p) ? { ...p, graphic: undefined } : p));
+  return { posts: pinHighlights(shown, state.lastMatchCycleId ?? state.lastCycleId), trends: state.trends, now };
 }
 
 /**
