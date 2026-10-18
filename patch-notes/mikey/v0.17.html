@@ -1,0 +1,234 @@
+<title>Knowitball Patch Notes Mikey v0.17</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));align-items:start;gap:10px;margin:12px 0 4px}
+  .shots figure{margin:0}.shots img{width:100%;border-radius:10px;border:1px solid var(--line);display:block}
+  .shots figcaption{font-size:12px;color:var(--ink3);margin-top:5px}
+  .tbl{overflow-x:auto;margin:9px 0 2px}.tbl table{border-collapse:collapse;font-size:13px;width:100%}
+  .tbl th,.tbl td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left}.tbl th{color:var(--ink3);font-weight:700}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  h2.sec{font-size:clamp(20px,5vw,24px);letter-spacing:-.01em;text-transform:none;color:var(--ink);margin:44px 0 6px;padding-top:18px;border-top:2px solid var(--line)}
+  .lead{color:var(--ink2);font-size:14.5px;margin:0 0 6px}
+  .yes{color:var(--green);font-weight:800}.no{color:var(--red);font-weight:800}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="ver">v0.17</span>
+  <h1>Knowitball Patch Notes Mikey v0.17</h1>
+  <p class="sub">18 October 2026 · branch Mikey, merged to main (live) · since v0.16: the new transfer window, the world ageing system, real nation kits, fewer post-match videos · tests: TESTLINE</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>S A B C D</b><span>your season's grade decides which clubs want you</span></div>
+  <div class="s"><b>3 leagues</b><span>the furthest up a club can come from, after an S season</span></div>
+  <div class="s"><b>35–41</b><span>retirement ages (keepers 37–43)</span></div>
+  <div class="s"><b>211</b><span>nations in their real home and away kits (was 15)</span></div>
+</div>
+
+<h2 class="bug"><i></i>Check these</h2>
+<ul class="n">
+  <li><div class="hd">End of a season: the transfer window opens with your season's letter (S to D) and the clubs that want you</div></li>
+  <li><div class="hd">In the window: League → Club → Negotiate. Each list is a full-screen page, clubs A to Z</div></li>
+  <li><div class="hd">Talks: the numbers say a season's wages, with the week's figure beside it</div></li>
+  <li><div class="hd">A career below the Championship: only your own club's players get older</div></li>
+  <li><div class="hd">After a season in the Championship or Premier League: old players retire and young replacements arrive</div></li>
+  <li><div class="hd">An international match: both nations wear their real kit</div></li>
+  <li><div class="hd">After a match: 1 or 2 videos, never more</div></li>
+</ul>
+
+<h2 class="sec">1 · The new transfer window</h2>
+<p class="lead">Before: "Find a new club" let you ask a league or club for a move in any week. Now clubs come to you, only in the summer window, the New Star Soccer way.</p>
+<ul class="n">
+  <li><div class="hd">Clubs come to you, only at the end of a season</div>
+    <div class="dt">Before: you could ask for a move any week. Now: when the season ends, a list of clubs that want you opens. "Find a new club" is gone. The January window is switched off for now; its rules are kept for later. <span class="tag">measured</span></div>
+    <div class="shots" id="shot-window"></div></li>
+  <li><div class="hd">Your season gets a letter: S, A, B, C or D</div>
+    <div class="dt">The letter comes from goals and assists a game (forwards), your match rating (everyone) and a little for Star Man awards. It sets how many leagues up a club can come from: <b>D</b> your league and below, small clubs only · <b>C</b> your league · <b>B</b> one up · <b>A</b> two up · <b>S</b> three up. Fewer than 10 games: C at best. <span class="tag">measured</span></div>
+    <div class="tbl"><table>
+      <tr><th>A 19-year-old striker in the National League North</th><th>Letter</th><th>Highest league that wants him</th><th class="num">Clubs</th></tr>
+      <tr><td>4 goals in 40, rating 6.3</td><td>D</td><td>National League South</td><td class="num">1</td></tr>
+      <tr><td>12 in 40, 6.8</td><td>C</td><td>National League North</td><td class="num">21</td></tr>
+      <tr><td>24 in 40, 7.3</td><td>B</td><td>National League</td><td class="num">59</td></tr>
+      <tr><td>45 in 40, 7.9</td><td>A</td><td>League Two</td><td class="num">86</td></tr>
+      <tr><td>100 in 44, 8.9</td><td>S</td><td>League One</td><td class="num">97</td></tr>
+    </table></div></li>
+  <li><div class="hd">Which clubs: size, finish and a gap in your position</div>
+    <div class="dt">Every club has an aim: its league's level, plus a little for being a big club and for finishing high. So Man United after 16th still aim higher than West Ham after 15th. A club wants you more if nobody there is better than you in your position, and almost never if three or more already are. <span class="tag">measured</span></div></li>
+  <li><div class="hd">How keen each club is, not a promised role</div>
+    <div class="dt">The club list shows Desperate, Very keen, Keen or Interested with a four-step bar (was "Star man / First team", which the game never kept to). The offered wage is hidden until talks start. A European club gets a tag. <span class="tag">measured</span></div>
+    <div class="shots" id="shot-lists"></div></li>
+  <li><div class="hd">Talks: a club that walks away is gone for the window</div>
+    <div class="dt">The talks screen now says the numbers are a <b>season's wages</b>, with the week's figure beside them. The fee to your club is shown and kept in your history. Settings no longer covers the talks heading. <span class="tag">measured</span></div>
+    <div class="shots" id="shot-talks"></div></li>
+  <li><div class="hd">In the Home screen's look</div>
+    <div class="dt">Home's tiles and bottom bar, with Deadline Day's gold title and ticker on top. Letters are coloured green (S) to red (D). It opens at once, with no animation.</div></li>
+  <li><div class="hd">Transfers keep each player's ageing record</div>
+    <div class="dt">Found in a playtest: every summer the window rebuilt each player and dropped his retirement age and best rating. Players aged 40+ then never retired (Modrić was still playing at 45 after 5 seasons). Fixed; a test fails without the fix. <span class="tag">measured</span></div></li>
+</ul>
+
+<h2 class="sec">2 · The world ages</h2>
+<p class="lead">Before: only you got older. Now every player in the world ages, fades and retires, and a young replacement takes his place. Built to Mikey's 13 answers.</p>
+<ul class="n">
+  <li><div class="hd">The top waits for you</div>
+    <div class="dt">Until you've played a season in the Championship or Premier League, only <b>your own club</b> ages. Everyone else (rest of the world, national teams, Ballon d'Or rivals) stays frozen. Then the whole world ages from that point. Saves whose world had already started ageing keep going as before. <span class="tag seen">seen</span></div>
+    <div class="tbl"><table>
+      <tr><th></th><th>Your club</th><th>Everyone else</th></tr>
+      <tr><td>Before your first Championship / Premier League season</td><td class="yes">ages</td><td class="no">frozen</td></tr>
+      <tr><td>After it</td><td class="yes">ages</td><td class="yes">ages</td></tr>
+    </table></div>
+    <details><summary>What the playtest saw</summary><p>Barrow, National League, 3 seasons: all 3,312 players at other clubs had the same age and rating; your team-mates got a year older each season (Rose 63 → 60 → 57 → 55). Then Derby, Championship, 5 seasons: the world woke and 142 replacements arrived.</p></details></li>
+  <li><div class="hd">Decline starts at 31 and is gentle</div>
+    <div class="dt">Players hold their rating up to 31, then fade at <b>0.6×</b> Leo's speed. The best players fade at the same speed as everyone. A fading player never goes up. Keepers fade at 0.6× of an outfielder's speed. A player without a High or World Class flag no longer grows (Leo's growth is kept in the code for later). <span class="tag">measured</span></div></li>
+  <li><div class="hd">Five ways to age, rolled once per career</div>
+    <div class="dt">Ages very well 10% · well 20% · normal 40% · badly 20% · very badly 10%. A 91-rated 28-year-old at 38: <span class="tag">measured</span></div>
+    <div class="bars"><div class="bar"><span class="lb">ages very well</span><div class="track"><div class="fill now" style="width:90%"></div></div><span class="vv">88</span></div><div class="bar"><span class="lb">ages well</span><div class="track"><div class="fill now" style="width:81%"></div></div><span class="vv">85</span></div><div class="bar"><span class="lb">normal</span><div class="track"><div class="fill now" style="width:74%"></div></div><span class="vv">83</span></div><div class="bar"><span class="lb">ages badly</span><div class="track"><div class="fill now warn" style="width:61%"></div></div><span class="vv">79</span></div><div class="bar"><span class="lb">ages very badly</span><div class="track"><div class="fill now bad" style="width:52%"></div></div><span class="vv">76</span></div><div class="bar"><span class="lb">Leo's (before)</span><div class="track"><div class="fill was" style="width:32%"></div></div><span class="vv">70</span></div></div></li>
+  <li><div class="hd">Retirement at 35–41, most around 38</div>
+    <div class="dt">Keepers go 2 years later. Nobody retires because his rating fell. A player who is already 40+ when he first ages (Ronaldo, 41) plays <b>two more seasons</b>, then retires. A younger player already past his age plays that first season, then retires. <span class="tag">measured</span></div>
+    <div class="bars"><div class="bar"><span class="lb">age 35</span><div class="track"><div class="fill now" style="width:25%"></div></div><span class="vv">6%</span></div><div class="bar"><span class="lb">age 36</span><div class="track"><div class="fill now" style="width:50%"></div></div><span class="vv">12%</span></div><div class="bar"><span class="lb">age 37</span><div class="track"><div class="fill now" style="width:83%"></div></div><span class="vv">20%</span></div><div class="bar"><span class="lb">age 38</span><div class="track"><div class="fill now" style="width:100%"></div></div><span class="vv">24%</span></div><div class="bar"><span class="lb">age 39</span><div class="track"><div class="fill now" style="width:83%"></div></div><span class="vv">20%</span></div><div class="bar"><span class="lb">age 40</span><div class="track"><div class="fill now" style="width:50%"></div></div><span class="vv">12%</span></div><div class="bar"><span class="lb">age 41</span><div class="track"><div class="fill now" style="width:25%"></div></div><span class="vv">6%</span></div></div></li>
+  <li><div class="hd">The replacement</div>
+    <div class="dt">Every retired player is replaced at his club by a new player:
+      <ul style="margin:6px 0 0;padding-left:18px">
+        <li>aged <b>16–20</b>, any age equally likely;</li>
+        <li>rated his club's level <b>−13 to +2</b>, any value equally likely;</li>
+        <li>from the retired man's country, with a name from that country;</li>
+        <li>in the retired man's position, with a 25% chance of a second nearby one and 5% of a third (a right back may also play left back or centre back);</li>
+        <li>flags from the retired man's <b>best rating in the game</b>: 87+ → World Class 80%, High 19%; 83–86 → World Class 10%, High 60%; below 83 → World Class 1%, High 5%;</li>
+        <li>without a flag he still grows on Leo's numbers, for now.</li>
+      </ul> <span class="tag seen">seen</span></div>
+    <details><summary>Sample replacements from the playtest</summary><ul><li>Solomon Okonkwo, Hull City, 18, CB, 74, Nigeria, World Class</li><li>Bojan Režić, Hoffenheim, 21, CAM/CM, 76, Croatia</li><li>Kenneth Seys, Napoli, 16, CM, 83, Belgium</li></ul></details></li>
+  <li><div class="hd">Each career has its own history</div>
+    <div class="dt">Different careers retire different players and bring in different replacements. It costs nothing on the servers and does not grow the save: replacements take the retirees' places one for one (squads in a save: 194 KB on day one, 247 KB by season 21).</div></li>
+</ul>
+
+<h2 class="sec">3 · Other</h2>
+<ul class="n">
+  <li><div class="hd">Real kits for all 211 nations</div>
+    <div class="dt">Before: 15 nations had a kit and the rest wore grey. Now every nation wears its real home and away kit (shirt, second colour, pattern, sleeves, shorts, socks), taken from Wikipedia's kit pictures and checked by eye. The Club Data page has a Clubs | International switch. <span class="tag">measured</span></div></li>
+  <li><div class="hd">Post-match: 1 or 2 videos, never more</div>
+    <div class="dt">Before: the limit was per batch, so your match got 2 and the round-up of other matches 2 more (2–4 real videos plus 1–2 grey look-alike cards). Now each match has 1 or 2 at random (the highlights always). Other matches' goals stay on the Feed's England tab only. A post whose goal wasn't recorded is text only. Over 30 test matches: 1 video on 19, 2 on 11. <span class="tag">measured</span></div></li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li><div class="hd">The leagues slowly get stronger<span class="pill p-amb">LOW</span></div>
+    <div class="dt">Replacements grow on Leo's numbers, so by season 21 the average first team rises: Premier League <b>78.8 → 83.1</b>, Championship 69.3 → 74.4, League Two 57.6 → 62.0. Without that growth the leagues would weaken instead (78.8 → 77.9). To be fixed with the new replacement growth plan. <span class="tag">measured</span></div></li>
+  <li><div class="hd">No squad screen for other clubs<span class="pill p-amb">LOW</span></div>
+    <div class="dt">Tapping a club in the League table does nothing, so other clubs' replacements can only be seen on team sheets. <span class="tag seen">seen</span></div></li>
+  <li><div class="hd">The manager-sacked screen's CONTINUE did not close in the test browser<span class="pill p-amb">LOW</span></div>
+    <div class="dt">Possibly only in a browser without graphics. Not seen on a phone.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Next</h2>
+<ul class="n">
+  <li><div class="hd">How replacements grow (Mikey's own plan, to replace Leo's numbers)</div></li>
+  <li><div class="hd">January window back on, when wanted</div></li>
+  <li><div class="hd">Decide whether new framing and headers/volleys become the game (still test switches)</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li><a href="https://claude.ai/artifact/S5EvHkuf7wJTaGPeXd3WeM">v0.16</a> · 2026-10-13 · Gameplay review: fewer feed videos that wait for ▶, upright goal posts, achievements unlock and level you up at once; test switches for new framing and headers/volleys</li>
+  <li><a href="https://claude.ai/artifact/1VrPsvpikmWNaxcTFzpgGt">v0.15</a> · 2026-10-13 · International football: call-ups, duty mode, watching on TV, scorers for every goal; the Ballon d'Or counts club and country (Star Man out); casino scandals; name banks for 211 nations</li>
+  <li><a href="https://claude.ai/artifact/843j4zo8tXx2CKCzYceAFh">v0.14</a> · 2026-10-09 · Real Premier League shots playable as test chances; Chances (testing): about 9 Kane-style highlights a match, Old still the default</li>
+  <li><a href="https://claude.ai/artifact/D2mVBLe6QDF2jqzHnrjiWt">v0.13</a> · 2026-10-08 · Play-off, cup and European round-ups with animated brackets; the real UEFA knockout; two-legged League Cup semis; ±25% wage when your club goes down or up; relegation day</li>
+  <li><a href="https://claude.ai/artifact/6tgaVydhSjEeQea6tkA3oX">v0.12</a> · 2026-10-08 · The ovation's hugs, dap-ups, pat and claps made in Blender; the farewell's 3D ovation checked in a real match</li>
+  <li><a href="https://claude.ai/artifact/23eP6tYuyTjuvAbBisnkCj">v0.11</a> · 2026-10-08 · 3D standing ovation; centre-back Golden Boot and day-one line-ups fixed; more assists; clearances, negotiations and Relations reworked</li>
+  <li><a href="https://claude.ai/artifact/26Lh4jWsraDKYSaZZpqWWk">v0.10</a> · 2026-10-04 · Relationships rebuilt: bars that move slowly, one game per relationship, happiness decides recovery, no Sponsors bar; injuries switched off</li>
+  <li><a href="https://claude.ai/artifact/UTFsvaBcLbYJjWmnYtXLHg">v0.9</a> · 2026-10-03 · XP rebuilt (slower start, XP by the minute, no double pay) and the XP Book to edit every amount; 3D garden, North/South 2026/27, Club Data</li>
+  <li><a href="https://claude.ai/artifact/6degCbK833CTu3YAZtoyCz">v0.8</a> · 2026-09-30 · Sponsors Revamp: brands send offers, deal slots by fame, weekly fees, targets, brand happiness, bidding wars, buy-outs and scandals</li>
+  <li><a href="https://claude.ai/artifact/YYDBCrSHUiCb8kKSe9vVfo">v0.7</a> · 2026-09-30 · A new 1-10 star career rating separate from overall, 7 boots, dearer Style, 2 training sessions a week, restyled training, contract terms</li>
+  <li><a href="https://claude.ai/artifact/XCqpEXqtnZ7Dp4yf4vyTue">v0.6</a> · 2026-09-27 · Five levels of every boot and lifestyle item, a moving ball on the strike screen, commentary that barely repeats, new chants</li>
+  <li><a href="https://claude.ai/artifact/Q681hvwMs83X9895Aevav7">v0.5</a> · 2026-09-26 · How you get picked: win your shirt from a better-rated rival, form over 3 games, subs when the score says, cup rotation</li>
+  <li><a href="https://claude.ai/artifact/FYpjCv5GQ4NPTN9qv4BhwQ">v0.4</a> · 2026-09-25 · Training rebuilt the New Star Soccer way: 30 fixed levels, three tries, stars raise the skill; pace, vision and free kick matter in matches</li>
+  <li><a href="https://claude.ai/artifact/SoBMWDhZGj58LXwP4CFARm">v0.3</a> · 2026-09-25 · What you see on the pitch matches where people stand: nearer players and the ball drawn right, corners from the flag; trophy pictures, instant energy modes, feed likes</li>
+  <li><a href="https://claude.ai/artifact/4fuKfUh73WvRmxLdiU9tPu">v0.2</a> · 2026-09-22 · Energy master plan: in-match energy modes, a real ticking clock, half-time KIB cans, rest days, tougher fatigue rules</li>
+  <li><a href="https://claude.ai/artifact/C4jvnN4Xc3qZG58T2cRHE6">v0.1</a> · 2026-09-21 · Economy, fame and reputation rebuild: Premier League wages to ★100k, fame levels, one reputation number, 50-season careers</li>
+</ul>
+</div>
