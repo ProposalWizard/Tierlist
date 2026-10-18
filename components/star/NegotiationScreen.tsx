@@ -174,7 +174,7 @@ const MOOD_LABEL: Record<CounterpartMood, string> = {
 };
 
 export default function NegotiationScreen({
-  mode, playerName, marketValue, counterpartLabel, initialState, onStepAway, onDone, onSettings,
+  mode, playerName, marketValue, counterpartLabel, initialState, onStepAway, onDone, onSettings, kicker, valueLabel, note,
 }: {
   mode: NegotiationMode;
   playerName: string;
@@ -208,6 +208,13 @@ export default function NegotiationScreen({
    *  undo into), so this gets the exact same Settings button its sibling
    *  phases (free-agent, youth) already have, not a false "back". */
   onSettings?: () => void;
+  /** The small line on top, in place of "Negotiating a Sale/Signing". */
+  kicker?: string;
+  /** In place of "Estimated value". */
+  valueLabel?: string;
+  /** One more line under the value (the transfer window's talks say the
+   *  numbers are a season's wages and what that is a week). */
+  note?: string;
 }) {
   const [state, setState] = useState<NegotiationState>(() => initialState ?? startNegotiation(marketValue, mode, Math.random));
   const [amount, setAmount] = useState(() => state.yourPosition);
@@ -255,12 +262,13 @@ export default function NegotiationScreen({
             Settings
           </button>
         )}
-        <div className="text-center mb-4">
+        <div className={`text-center mb-4 ${onSettings ? "px-20" : ""}`}>
           <div className="text-[10px] font-black uppercase tracking-[0.25em] text-sky-300/90">
-            {mode === "buying" ? "Negotiating a Signing" : "Negotiating a Sale"}
+            {kicker ?? (mode === "buying" ? "Negotiating a Signing" : "Negotiating a Sale")}
           </div>
           <div className="mt-1 font-black uppercase text-white text-2xl leading-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">{playerName}</div>
-          <div className="text-[11px] font-bold text-white/70">Estimated value: <span className="text-amber-300">★{money(marketValue)}</span></div>
+          <div className="text-[11px] font-bold text-white/70">{valueLabel ?? "Estimated value"}: <span className="text-amber-300">★{money(marketValue)}</span></div>
+          {note && <div className="mt-0.5 text-[11px] font-bold text-white">{note}</div>}
         </div>
 
         {/* ── Counterpart card — a real drawn agent portrait whose mood

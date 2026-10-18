@@ -58,6 +58,7 @@ import { refreshXpConfig } from "@/lib/star/xpStore";
 import { DEFAULT_FORMATION, formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct, projectedEnergy, startNewWeek, trainingLeft, spendTrainingSession } from "@/lib/star/week";
 import { acceptOffer, type TransferOffer } from "@/lib/star/transfers";
+import { formatMoneyPrecise } from "@/lib/star/money";
 import { clearAfterWindow, requestOf } from "@/lib/star/transferRequest";
 import { completeJanuaryMove } from "@/lib/star/januaryTransfer";
 import { windowInterest, withRecall, withAgreedWage, markWalkedAway, januaryListOpen, type WindowKind } from "@/lib/star/transferInterest";
@@ -4395,6 +4396,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         playerName={`${career.player.firstName} ${career.player.lastName} — terms with ${talkOffer.club}`}
         marketValue={weeklyToSeason(talkOffer.wage, talkDivision)}
         counterpartLabel={talkOffer.club}
+        kicker="Contract talks"
+        valueLabel="Their wage offer, for the season"
+        note={`Every number here is a season's wages. ★${formatMoneyPrecise(talkOffer.wage)} a week = ★${formatMoneyPrecise(weeklyToSeason(talkOffer.wage, talkDivision))} a season.`}
         onDone={(finalSeasonPrice) => {
           const weekly = agreedWeeklyWage(finalSeasonPrice, talkOffer.club, talkDivision);
           setTalkOffer(null);
