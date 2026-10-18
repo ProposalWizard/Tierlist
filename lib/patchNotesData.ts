@@ -52,7 +52,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "17 old pages deleted", "detail": "Match Dev, Scenario Builder, Bigger, Look, Attack, Bicycle, Zoom grass, 3D, Spin, Blender, Sound dev, old Ballon d'Or and Manager, Profile (new), CL Draft, American draft; Draft dev 2 opens Draft dev." }
         ]},
         { "kind": "known", "title": "Known issues", "items": [
-          { "title": "Live progress bars are off", "detail": "Mikey: run dev_status.sql, set DEV_STATUS_TOKEN in Vercel and each cloud setup, plus DEV_NAME.", "pill": { "text": "needs Mikey", "tone": "amber" } },
+          { "title": "Live progress bars are off", "detail": "Mikey: run dev_status.sql. Each of us: add DEV_NAME to our cloud setup and merge main. No password.", "pill": { "text": "needs Mikey", "tone": "amber" } },
           { "title": "Drive saving is off until one Google setting is done", "detail": "Harry: switch on the Drive API, add knowitball.co.uk and the drive.file scope to the Google sign-in id, set NEXT_PUBLIC_GOOGLE_CLIENT_ID in Vercel. Until then recordings download.", "pill": { "text": "needs Harry", "tone": "amber" } },
           { "title": "Two Match Dev controls need a new home", "detail": "Force a chance kind and the shot-height sliders; Infinite Highlights is the plan." },
           { "title": "The lock check runs in the tests, not the build", "detail": "Harry's answer: tests only." }

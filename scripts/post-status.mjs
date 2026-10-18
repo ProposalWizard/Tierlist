@@ -5,23 +5,20 @@
  *   node scripts/post-status.mjs --dev Harry --file update.txt
  *   echo "<bars>" | node scripts/post-status.mjs --dev Harry
  *
- * Needs DEV_STATUS_TOKEN in the environment; without it this exits quietly.
- * Person: --dev, else DEV_NAME, else the git branch if it is Harry/Mikey/Leo.
- * Never prints the token. 5 s timeout. Never fails its caller (exit 0).
+ * No password (Harry, 18 Oct 2026). Person: --dev, else DEV_NAME, else the git
+ * branch if it is Harry/Mikey/Leo; no name = nothing sent. 5 s timeout. Never fails its caller (exit 0).
  */
 import { readFileSync, unlinkSync } from "node:fs";
 import { execSync } from "node:child_process";
 
 const args = process.argv.slice(2);
 const arg = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : undefined; };
-const token = (process.env.DEV_STATUS_TOKEN || "").trim();
-if (!token) process.exit(0);
 
 let branch = "";
 try { branch = execSync("git rev-parse --abbrev-ref HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); } catch { /* not a repo */ }
 const PEOPLE = ["Harry", "Mikey", "Leo"];
 const who = arg("--dev") || process.env.DEV_NAME || PEOPLE.find((p) => p.toLowerCase() === branch.toLowerCase());
-if (!who) { console.error("status not sent: set DEV_NAME (Harry, Mikey or Leo)"); process.exit(0); }
+if (!who) process.exit(0);
 
 let body = "";
 const file = arg("--file");
@@ -34,7 +31,7 @@ const session = arg("--session") || process.env.CLAUDE_CODE_REMOTE_SESSION_ID ||
 try {
   const r = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-dev-status-token": token },
+    headers: { "content-type": "application/json" },
     body: JSON.stringify({ person: who, body, branch, session }),
     signal: AbortSignal.timeout(5000),
   });
