@@ -25,6 +25,10 @@ Harry: "build slowly and CORRECTLY"; "even if there's 1000 questions … it will
 
 - Harry 16 Oct (comment on LAG-QB12): deal with ALL test pages in one go — one pass where every dev/test page gets keep / merge / delete with its owner (covers LAG-QB9–QB13, ADM-Q42, ADM-Q68, ADM-Q84 and the admin plan's per-page fates). Do it inside the admin build, not piecemeal.
 
+- Harry 18 Oct: 397 of 399 answered (all in `docs/plans/2026-10-15/page/answers.json`). Open: LAG-QB10, PN-Q197 (new question: auto date-order numbering, A recommended — replaces PN-Q1's per-person numbers if A).
+- Extra deliverables Harry asked for: (1) a full in-depth admin overview after all answers, covering admin + UI + team board revamp (ADM-Q84 note); (2) a how-to teaching Leo and Mikey the new system (TB-Q6 note); (3) a deploy block must say clearly WHY it blocked (PN-Q7 note); (4) ADM-Q3: Harry owns all those features.
+- PN-Q57 done by Claude: only "Knowitball v0.1" (21 Sep, https://claude.ai/artifact/SLZaq4EhFBoKBt9TabVRWF) is missing from the repo.
+
 ## Open questions
 Answered so far: 13 LAG. Still open: LAG-QB10, LAG quick (16) + housekeeping (9), and all of PN, ADM, TB. All 399 on the plan page: LAG 39, PN 197, ADM 153, TB 10. Harry pastes his "Copy my answers" text into the chat.
 

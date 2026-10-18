@@ -5,6 +5,8 @@ here = __file__.rsplit('/', 1)[0] or '.'
 s = open(f'{here}/base.html').read()
 ans = json.load(open(f'{here}/answers.json'))
 extra = json.load(open(f'{here}/extra.json'))
+import os
+repl = json.load(open(f'{here}/replace.json')) if os.path.exists(f'{here}/replace.json') else {}
 lines = s.split('\n')
 answered = []  # (id, question text, answer)
 out = []
@@ -15,6 +17,8 @@ for ln in lines:
         q = re.search(r'class="(?:qt|sq)">(.*?)</(?:div|span)>', ln)
         answered.append((qid, re.sub('<[^>]+>', '', q.group(1)) if q else qid, ans[qid]))
         continue
+    if m and m.group(2) in repl:
+        ln = repl[m.group(2)]
     if m and m.group(2) in extra:
         ln = re.sub(r'(<div class="why">.*?)(</div>)', lambda mm: mm.group(1) + extra[m.group(2)] + mm.group(2), ln, count=1)
     out.append(ln)
@@ -44,5 +48,14 @@ rows = ''.join('<li><span class="qid">%s</span> %s <b>→ %s%s</b></li>' % (i, h
 block = ('<h2 class="hx" id="answered"><i></i>Answered so far <span class="pc">%d</span></h2>'
          '<details class="hl"><summary>Show your %d answers</summary><ul class="pts" style="list-style:none;padding:0">%s</ul></details>\n' % (len(answered), len(answered), rows))
 s = s.replace('<p class="foot">', block + '<p class="foot">', 1)
+if quick == 0:
+    i = s.find('<h2 id="quick"'); j = s.find('<h2 id="house"')
+    if i > 0 and j > i: s = s[:i] + s[j:]
+if house == 0:
+    i = s.find('<h2 id="house"'); j = s.find('<h2 id="next"')
+    if i > 0 and j > i: s = s[:i] + s[j:]
+if quick == 0 and house == 0:
+    s = re.sub(r'<a href="#quick" class="ct quick">.*?</a><a href="#house" class="ct house">.*?</a>', '', s, flags=re.S)
+    s = re.sub(r'<p class="hint">.*?</p>', '<p class="hint">Only these are left. Answer them and paste them into the chat.</p>', s, count=1, flags=re.S)
 open(sys.argv[1], 'w').write(s)
 print('left', total, 'need', need, 'quick', quick, 'house', house, 'answered', len(answered))
