@@ -57,5 +57,11 @@ if house == 0:
 if quick == 0 and house == 0:
     s = re.sub(r'<a href="#quick" class="ct quick">.*?</a><a href="#house" class="ct house">.*?</a>', '', s, flags=re.S)
     s = re.sub(r'<p class="hint">.*?</p>', '<p class="hint">Only these are left. Answer them and paste them into the chat.</p>', s, count=1, flags=re.S)
+# open questions first: move the 'Needs you' block straight under the title
+i = s.find('<h2 id="need"'); j = s.find('<h2 ', i + 5)
+if i > 0 and j > i:
+    blk = s[i:j]; s = s[:i] + s[j:]
+    k = s.find('</header>') + len('</header>')
+    s = s[:k] + blk + s[k:]
 open(sys.argv[1], 'w').write(s)
 print('left', total, 'need', need, 'quick', quick, 'house', house, 'answered', len(answered))
