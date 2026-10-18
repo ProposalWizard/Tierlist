@@ -136,6 +136,7 @@ export const TEST_ONLY = {
   leadIn: "Real shots page: the real passes before a real shot, replayed (recorded positions, no physics) in the match's own picture before the chance starts. Off by default.",
   dribbleControl: "Dribble stick test page: a stick steers your speed and way on the top-down dribble run instead of the swipe (Harry, 14 Oct 2026). Same men, tackle and passes.",
   dribbleOnly: "Dribble stick test page: every chance you are handed is a dribble run.",
+  vfxOverride: "Visual Effects Lab (Leo, 15 Oct 2026): the picked picture for each moment (kick, save, net…) instead of Match feel's. Drawing, camera shake and a short freeze only; never read by the ball, keeper or outcome.",
   scene: "Trial/training: what is on the pitch — a drill can leave out the keeper, the goal, team-mates or the GOAL/PASS text. Only takes things off; the ball and the kick are always the match's (Harry: 'different modes... will be COMPLETELY looking different... it has to be allowed').",
 };
 
