@@ -94,7 +94,7 @@ export default function StarSpritesDevPage() {
       try {
         const res = await fetch("/api/profile/admin-check");
         const d = res.ok ? await res.json() : { isAdmin: false };
-        setGate(d.isAdmin ? "ok" : "denied");
+        setGate(d.isAdmin || d.isTester ? "ok" : "denied");
       } catch { setGate("denied"); }
     });
   }, []);

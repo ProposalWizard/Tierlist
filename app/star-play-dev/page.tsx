@@ -146,53 +146,7 @@ export default function PlayAreaPage() {
           </div>
         </button>
 
-        <Link href="/star-update-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
-          <div style={tileTitle}>Oct 13 update &#8594;</div>
-          <div style={tileSub}>
-            The whole gameplay update (shot power, contact field, keepers, team-mates, match
-            feel) behind one Old | New switch, on this phone.
-          </div>
-        </Link>
-
-        <Link href="/star-animations-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
-          <div style={tileTitle}>Animations &#8594;</div>
-          <div style={tileSub}>
-            Every player animation (saves, touches, shots, headers, blocks) looping next to the
-            Old look, with the dials and on/off switches the real match reads.
-          </div>
-        </Link>
-
-        <Link href="/star-radar-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
-          <div style={tileTitle}>Match Radar &#8594;</div>
-          <div style={tileSub}>
-            Watch the match that runs behind your highlights — all ninety minutes,
-            up to 20× speed, with every moment that would have been yours.
-          </div>
-        </Link>
-
-        <Link href="/star-store-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
-          <div style={tileTitle}>Store (test) &#8594;</div>
-          <div style={tileSub}>
-            Daily specials, run-ups, accessories, boosts and Coins — a test store with
-            its own wallet. Nothing reaches a career and no real money is taken.
-          </div>
-        </Link>
-
-        <Link href="/star-blender-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
-          <div style={tileTitle}>Blender 3D &#8594;</div>
-          <div style={tileSub}>
-            The 3D footballer rendered in Blender: pick any club and he is recoloured
-            into its kit, plus the stills, hair, animations and the home-screen mock-up.
-          </div>
-        </Link>
-
-        <Link href="/star-3d-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
-          <div style={tileTitle}>3D &#8594;</div>
-          <div style={tileSub}>
-            One of every mode with the players in the new 3D look, and a Classic / 3D
-            switch to compare the same moment. The real game stays Classic.
-          </div>
-        </Link>
+        {/* The link cards to other test pages went (Harry, ADM-Q56): the admin side menu has every page. */}
 
         {/* ── THE DIALS ── */}
         <section style={{ ...tile, cursor: "default" }}>
@@ -302,13 +256,6 @@ export default function PlayAreaPage() {
           </section>
         )}
 
-        <Link href="/star-gallery-dev" style={{ ...tile, textDecoration: "none", display: "block", color: INK }}>
-          <div style={tileTitle}>Scenario Gallery &#8594;</div>
-          <div style={tileSub}>
-            Where the drawings live, and Tuning &amp; Commit with the rule set, the
-            proposals and the last check before anything goes into the code.
-          </div>
-        </Link>
       </div>
     </>,
   );

@@ -326,8 +326,8 @@ used the base engine … extra stuff built on top of the base engine."*
   drills and the gauntlet. They mount `EngineFeature` (EnginePlay.tsx) and only
   build each rep's picture and score it. A trial/training difference is a
   named dial (`TEST_ONLY` in the guard), never a copy.
-- **Still copies, to port next:** five-a-side, Mikey's `/star-match-dev` fork,
-  and 2 dev prototypes. The live list is in the guard.
+- **Still copies, to port next:** five-a-side only. Mikey's `/star-match-dev` fork and
+  the 2 dev prototypes were deleted with their pages (Harry, 18 Oct 2026). The live list is in the guard.
 
 **3D games are the exception (Harry, 8 Oct 2026):** *"the match engine rule has
 got to be changed for 3D — surely it would be a completely different set of

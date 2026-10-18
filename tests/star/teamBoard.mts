@@ -112,5 +112,20 @@ ok(scrub("key ghp_abcdefghijklmnop1234 and eyJaaaaaaaaaaaa.bbbbbbbbbbbbb.c") ===
 ok(hookExtract(upd) === ex, "the hook keeps exactly what the site's rules keep");
 ok(tokenMatches("abc", "abc") && !tokenMatches("abd", "abc") && !tokenMatches("", "abc") && !tokenMatches("abc", undefined), "password check");
 
+console.log("The one lock (test run only: Harry, ADM-Q110 B)");
+{
+  const fs = await import("node:fs");
+  const own = new Set(["/star-dev", "/admin", "/admin/patch-notes"]); // open game; /admin and patch notes check inside the page
+  const gated = (url: string) => {
+    for (let u = url; u.length > 1; u = u.slice(0, u.lastIndexOf("/")) || "/") {
+      const f = `app${u}/layout.tsx`;
+      if (fs.existsSync(f) && fs.readFileSync(f, "utf8").includes("DevGate")) return true;
+    }
+    return false;
+  };
+  const missing = ADMIN_PAGES.filter((p) => !own.has(p.url) && !gated(p.url)).map((p) => p.url);
+  ok(missing.length === 0, `every admin/test page has the lock${missing.length ? ` (missing: ${missing.join(", ")})` : ""}`);
+}
+
 if (failed) { console.error(`\n${failed} failed`); process.exit(1); }
 console.log("\nteamBoard: all passed");

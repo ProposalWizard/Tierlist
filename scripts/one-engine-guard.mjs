@@ -56,8 +56,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const rel = (f) => relative(ROOT, f).split(sep).join("/");
 
-/** The engine, and Mikey's deliberate fork of it for /star-match-dev. */
-const ENGINE_FILES = new Set(["lib/star/canvasEngine.ts", "lib/star/canvasEngineTest.ts"]);
+/** The engine. (Mikey's fork, canvasEngineTest.ts, was deleted 18 Oct 2026 with /star-match-dev.) */
+const ENGINE_FILES = new Set(["lib/star/canvasEngine.ts"]);
 const ENGINE = "lib/star/canvasEngine.ts";
 
 /** Using any of these IS running a match loop. */
@@ -82,14 +82,10 @@ export const KNOWN_COPIES = {
   // penalties + free kicks) and TrainingMinigame.tsx (strike drills + gauntlet).
   "components/star/FiveASide.tsx":
     "Trial five-a-side: a different game (5 v 5, small goal) on the engine's own functions.",
-  "components/star/BicycleKickTrial.tsx":
-    "Dev-only prototype (/star-bicycle-dev), not in the game. Port or delete before it ships.",
-  "components/star/LiveAttack.tsx":
-    "Dev-only prototype (/star-attack-dev), not in the game. Port or delete before it ships.",
-  "components/star/CanvasMatchTest.tsx":
-    "Mikey's physics fork for /star-match-dev (runs canvasEngineTest.ts). Reaches the game only by being ported by hand.",
+  // Deleted 18 Oct 2026 with their pages (Harry's admin page list): BicycleKickTrial.tsx
+  // (/star-bicycle-dev), LiveAttack.tsx (/star-attack-dev), CanvasMatchTest.tsx (/star-match-dev).
 };
-export const CEILING = 4;
+export const CEILING = 1;
 
 /**
  * Every file with its own canvas animation loop, other than the real match.
@@ -98,15 +94,12 @@ export const CEILING = 4;
  */
 export const KNOWN_CANVASES = {
   "components/star/FiveASide.tsx": "Known copy (above).",
-  "components/star/BicycleKickTrial.tsx": "Known copy (above).",
-  "components/star/LiveAttack.tsx": "Known copy (above).",
-  "components/star/CanvasMatchTest.tsx": "Known copy (above).",
   "components/star/GoalieMode.tsx":
     "Casino Goalie Mode: first-person keeper, its OWN scripted ball flight (lib/star/goalieMode.ts), no engine at all. A different game by design — or a copy? Decision for Harry, see the patch notes.",
   "components/star/stages/TrialVision.tsx":
     "Trial vision drill: a still picture you read and tap. Draws, never simulates.",
 };
-export const CANVAS_CEILING = 6;
+export const CANVAS_CEILING = 3;
 
 /** Settings the real match passes that a test screen deliberately does not. */
 export const CAREER_ONLY = {
