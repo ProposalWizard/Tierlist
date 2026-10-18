@@ -30,6 +30,11 @@
             "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/hooks/guard-stop.mjs",
             "timeout": 120,
             "statusMessage": "One-engine guard: checking this turn's code"
+          },
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/hooks/post-status-hook.mjs",
+            "timeout": 5
           }
         ]
       }

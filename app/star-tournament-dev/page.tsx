@@ -11,6 +11,7 @@
  */
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import PageGuide from "@/components/admin/PageGuide";
 import {
   tournamentField, drawGroups, playMatchday, finishTournament, groupTable, tournamentStrength,
   type TournamentCompetition, type TournamentState,
@@ -39,6 +40,7 @@ export default function TournamentDev() {
 
   return (
     <main className="min-h-screen bg-[#0b100e] px-4 pb-16 pt-4 text-white" data-tournament-dev>
+      <PageGuide page="/star-tournament-dev" />
       <div className="flex items-center justify-between">
         <Link href="/star-play-dev" className="text-[13px] font-bold text-emerald-300">‹ Play Area</Link>
         <h1 className="text-lg font-black">Tournament test</h1>

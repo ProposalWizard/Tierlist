@@ -1,6 +1,7 @@
 "use client";
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import DraftSetup from "@/components/draft/DraftSetupV2";
+// The newer Hero setup screen (Harry, 18 Oct 2026: one Draft test page, the newer look — /draft-dev2 now redirects here).
+import DraftSetup from "@/components/draft/DraftSetupHero";
 import DraftPick from "@/components/draft/DraftPick";
 import DraftResult from "@/components/draft/DraftResult";
 import Season2Overview from "@/components/draft/Season2Overview";
@@ -362,7 +363,8 @@ export default function DraftPage() {
 
   // Update URL to reflect room code when playing online (so it's shareable/bookmarkable)
   useEffect(() => {
-    const url = roomCode ? `/draft?room=${roomCode}` : '/draft';
+    // Stays on the test page (ADM-Q69: it used to send rooms to the real /draft).
+    const url = roomCode ? `/draft-dev?room=${roomCode}` : '/draft-dev';
     window.history.replaceState(null, '', url);
   }, [roomCode]);
 

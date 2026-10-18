@@ -55,6 +55,7 @@ SENTRY_ORG=                        # optional, enables source-map upload at buil
 SENTRY_PROJECT=                    # optional, enables source-map upload at build time
 SENTRY_AUTH_TOKEN=                 # optional, enables source-map upload at build time
 STAR_SAVE_GUARD=observe            # observe (default) | enforce | off — Star Career save checks, lib/star/saveGuard.ts
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=      # Google sign-in id for the admin Videos recorder's Drive upload (lib/recording.ts); unset = recordings only download
 ```
 
 Both PostHog and Sentry are wired to no-op cleanly when their env vars are unset — missing `NEXT_PUBLIC_POSTHOG_KEY` disables analytics entirely, missing `NEXT_PUBLIC_SENTRY_DSN` disables error reporting entirely, neither throws or blocks the build. `NEXT_PUBLIC_POSTHOG_KEY` is safe to commit/expose client-side by design (same class of value as a GA measurement ID) but kept in env vars here for consistency with everything else in this table.
@@ -326,8 +327,8 @@ used the base engine … extra stuff built on top of the base engine."*
   drills and the gauntlet. They mount `EngineFeature` (EnginePlay.tsx) and only
   build each rep's picture and score it. A trial/training difference is a
   named dial (`TEST_ONLY` in the guard), never a copy.
-- **Still copies, to port next:** five-a-side, Mikey's `/star-match-dev` fork,
-  and 2 dev prototypes. The live list is in the guard.
+- **Still copies, to port next:** five-a-side only. Mikey's `/star-match-dev` fork and
+  the 2 dev prototypes were deleted with their pages (Harry, 18 Oct 2026). The live list is in the guard.
 
 **3D games are the exception (Harry, 8 Oct 2026):** *"the match engine rule has
 got to be changed for 3D — surely it would be a completely different set of
@@ -429,6 +430,14 @@ minutes on every task, with % + time left on every bar and the token/weekly
 usage block on every update (Harry, 12 Oct 2026: "why aren't we using the
 progress skill with the estimated tokens"). Its "auto-deploy" section is
 replaced by "Deploy only when told" below.**
+
+**One build per chat, then a handoff (Harry, 15 Oct 2026).** *"context bloat is huge now — we
+need to use a chat after every build."* A "build" = one task done in full, from idea to game/push ready. End every build with the `handoff` skill: a file in
+`docs/handoffs/`, pushed, plus a paste-in starter for the next chat (or for Mikey/Leo).
+
+**Build slowly and correctly (Harry, 15 Oct 2026, for the admin/patch-notes/lag round).** *"instead
+of running 5 parallel full builds let's build slowly and CORRECTLY."* Deep plan first, iterate it,
+design (Higgsfield), then build one piece at a time, each checked and signed off before the next.
 
 **Deploy only when told (Harry, 12 Oct 2026; replaces "auto-deploy at every
 major update").** *"what happened to patch notes? What happened to telling me

@@ -1,0 +1,300 @@
+<div class="wrap">
+<header>
+  <span class="ver">ADMIN PLAN · ALL 399 ANSWERED</span>
+  <h1>The new admin</h1>
+  <p class="sub">Every admin answer, the UI and the team board in one place. Nothing is built yet. Read this, set the test-page list in point 8, answer the 3 calls at the bottom, then the build starts. 18 Oct 2026.</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>1 home</b><span>for every admin and test page</span></div>
+  <div class="s"><b>1 lock</b><span>instead of 5 different ones</span></div>
+  <div class="s"><b>Testers</b><span>get their own menu</span></div>
+  <div class="s"><b>Team board</b><span>who is doing what, live</span></div>
+</div>
+
+<h2 class="bug"><i></i>1 · WHAT IS WRONG TODAY</h2>
+<p class="lead">The admin grew one page at a time. Nobody can see what is there, who made it, or who can open it.</p>
+<div class="box svgw">
+<svg viewBox="0 0 560 250" width="100%" style="display:block;min-width:320px" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<text x="140" y="20" text-anchor="middle" font-size="13" font-weight="800" fill="var(--red)">TODAY</text>
+<text x="420" y="20" text-anchor="middle" font-size="13" font-weight="800" fill="var(--green)">AFTER</text>
+<g fill="var(--card2)" stroke="var(--line)">
+<rect x="10" y="34" width="260" height="44" rx="10"/><rect x="10" y="88" width="260" height="44" rx="10"/><rect x="10" y="142" width="260" height="44" rx="10"/><rect x="10" y="196" width="260" height="44" rx="10"/>
+</g>
+<g fill="rgba(61,220,132,.10)" stroke="var(--green)">
+<rect x="290" y="34" width="260" height="44" rx="10"/><rect x="290" y="88" width="260" height="44" rx="10"/><rect x="290" y="142" width="260" height="44" rx="10"/><rect x="290" y="196" width="260" height="44" rx="10"/>
+</g>
+<g font-size="12.5" fill="var(--ink)" font-weight="700">
+<text x="22" y="54">71 pages, spread over 4 menus</text><text x="22" y="108">5 kinds of lock</text><text x="22" y="162">28 pages with no lock at all</text><text x="22" y="216">Testers find pages only by typing</text>
+<text x="302" y="54">One home, grouped, searchable</text><text x="302" y="108">One lock: "Team only"</text><text x="302" y="162">Every page locked by its folder</text><text x="302" y="216">Testers get a menu of their pages</text>
+</g>
+<g font-size="11" fill="var(--ink3)">
+<text x="22" y="70">13 pages are in no menu</text><text x="22" y="124">some pages check after they load</text><text x="22" y="178">anyone with the address gets in</text><text x="22" y="232">the admin pop-up is admins only</text>
+<text x="302" y="70">owner, status and "saves real data" on each</text><text x="302" y="124">admins only, or admins + testers</text><text x="302" y="178">a check catches a page left out</text><text x="302" y="232">phone menu + game Settings</text>
+</g>
+</svg></div>
+
+<h2 class="add"><i></i>2 · ONE LIST RUNS EVERYTHING</h2>
+<p class="lead">One file lists every page: its name, what it does, its owner, its lock and where it lives.</p>
+<div class="dt" style="margin-bottom:10px">Today the same page has up to three names (menu, help eye, page heading). After this, the home, the pop-up, the tester menu and the help eye all read the name from the one list. Add a page, add one line.</div>
+<div class="box svgw">
+<svg viewBox="0 0 560 230" width="100%" style="display:block;min-width:320px" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+<rect x="190" y="85" width="180" height="62" rx="12" fill="rgba(61,220,132,.12)" stroke="var(--green)"/>
+<text x="280" y="112" text-anchor="middle" font-size="14" font-weight="800" fill="var(--green)">The page list</text>
+<text x="280" y="131" text-anchor="middle" font-size="11.5" fill="var(--ink2)">one line per page</text>
+<g fill="var(--card2)" stroke="var(--line)">
+<rect x="10" y="10" width="150" height="40" rx="9"/><rect x="400" y="10" width="150" height="40" rx="9"/>
+<rect x="10" y="180" width="150" height="40" rx="9"/><rect x="400" y="180" width="150" height="40" rx="9"/><rect x="205" y="180" width="150" height="40" rx="9"/>
+</g>
+<g font-size="12.5" font-weight="700" fill="var(--ink)" text-anchor="middle">
+<text x="85" y="35">The new home</text><text x="475" y="35">The pop-up menu</text>
+<text x="85" y="205">Tester menu</text><text x="280" y="205">Help eye names</text><text x="475" y="205">The page check</text>
+</g>
+<g stroke="var(--ink3)" stroke-width="1.6" fill="none" marker-end="url(#a)">
+<path d="M220 85L140 52"/><path d="M340 85L420 52"/><path d="M220 147L120 178"/><path d="M280 147V178"/><path d="M340 147L440 178"/>
+</g>
+</svg></div>
+<div class="st">
+<div class="k">Each line holds</div>
+<div class="v">Name · one-line purpose · section and group · owner (Harry, Mikey, Leo, Shared) · status (in use or old test) · what it saves (nothing, this browser, your own account, real shared data, the code) · who can open it · date added.</div>
+<div class="k">The page check (your answer: test run only)</div>
+<div class="v">A check fails if a page is missing from the list or has no lock. You chose to run it with the tests, <b>not</b> inside every deploy. See call C2.</div>
+</div>
+
+<h2 class="chg"><i></i>3 · ONE LOCK: "TEAM ONLY"</h2>
+<p class="lead">Every page has one of two locks. The lock sits on the page's folder, so a page can never load first and check later.</p>
+<div class="tw"><table class="acc">
+<tr><th>Page kind</th><th>Admin</th><th>Tester</th><th>Signed in</th><th>Signed out</th></tr>
+<tr><td>Saves real shared data, sits under /admin, or shows StatsBomb data (24 pages)</td><td class="y">✓</td><td class="x">✗ hidden</td><td class="x">✗</td><td class="x">sign in</td></tr>
+<tr><td>Test pages that save nothing shared (34 pages)</td><td class="y">✓</td><td class="y">✓</td><td class="x">✗</td><td class="x">sign in</td></tr>
+<tr><td>The game itself (/star-dev)</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
+</table></div>
+<div class="cap">Counts are after the deletes in point 8. Testers never see admin-only pages, not even greyed out.</div>
+<div class="st">
+<div class="k">Signed out</div><div class="v">Goes to sign in, then straight back to the page.</div>
+<div class="k">Signed in, not allowed</div><div class="v">"Team only" and a "Back to Knowitball" button.</div>
+<div class="k">Kept</div><div class="v">The local test bypass the playtest agents use. The 6 server checks that already exist. Every write on the server still checks "admin" (all 49 routes already do).</div>
+<div class="k">Closes</div><div class="v">28 pages that anyone could open today. They go in the patch notes so nobody is surprised.</div>
+</div>
+
+<h2 class="add"><i></i>4 · THE NEW HOME: /admin/star</h2>
+<p class="lead">One page with every test and admin page as a card, grouped, with search.</p>
+<div class="dt" style="margin-bottom:12px">Drawing of the phone layout, not a screenshot. The real look gets a Higgsfield design pass before it is built (your answer). Same dark and amber as today's pop-up.</div>
+<div class="phone" role="img" aria-label="Drawing of the new admin home on a phone">
+  <div class="bar"><span>☰ Groups</span><span>Admin</span><small>ⓘ</small></div>
+  <div class="in">
+    <div class="team"><b><span class="dot"></span>Team board</b><div class="m dim">Harry · 2 min ago · Keeper dive fix 80%</div></div>
+    <div class="search">Search pages…</div>
+    <div class="chips"><span class="chip on">All 59</span><span class="chip">H 40</span><span class="chip">M 10</span><span class="chip">L 7</span><span class="chip">Saves real data</span></div>
+    <div class="cd"><b>▶ Play the game</b><span class="m">Road to Ballon d'Or, as players see it</span></div>
+    <div class="gh"><span>Career screens</span><span>6</span></div>
+    <div class="cd"><b>Retirement screens</b><span class="m">End-of-career screens with any save</span><div style="margin-top:5px"><span class="tg">L</span><span class="tg o">in use</span><span class="tg">11 Oct</span></div></div>
+    <div class="gh"><span>Chances</span><span>3</span></div>
+    <div class="cd"><b>Scenario gallery</b><span class="m">Every chance as a picture; save, commit</span><div style="margin-top:5px"><span class="tg">H</span><span class="tg o">in use</span><span class="tg w">saves real data</span></div></div>
+    <div class="fold">▸ Old tests (8)</div>
+  </div>
+</div>
+<div class="cap">Order of groups: Career screens · Chances · Match tests · Real data · 3D places · Players + animation · Money + rewards · Sound · Old tests (folded). Then Site, PL Draft, Tierlists.</div>
+<details><summary>Every home choice you made</summary>
+<ul>
+<li>Address /admin/star. "Play the game" is the first card. The game stays open to everyone.</li>
+<li>Card: name, one line, owner letter, in use / old, "saves real data", last changed date.</li>
+<li>One card per row on a phone, three on a laptop.</li>
+<li>Search at the top. The count chips are the filters. "No pages match" + Clear when empty.</li>
+<li>Old tests folded. No "recently opened" row.</li>
+<li>Team board: one small card at the top and a link at the bottom of the side menu. Patch notes: side-menu link only.</li>
+<li>A help eye of its own. Signed out gets the same sign-in screen as every lock.</li>
+</ul></details>
+
+<h2 class="add"><i></i>5 · THE SIDE MENU ON TOOL PAGES</h2>
+<p class="lead">Every tool page gets the same side menu, so you can jump between pages without going home.</p>
+<div class="box svgw">
+<svg viewBox="0 0 560 210" width="100%" style="display:block;min-width:320px" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<rect x="10" y="10" width="250" height="190" rx="12" fill="var(--card2)" stroke="var(--line)"/>
+<rect x="20" y="40" width="230" height="150" rx="8" fill="#1f6b3a"/>
+<rect x="10" y="10" width="140" height="190" rx="12" fill="var(--card)" stroke="var(--amber)" opacity=".97"/>
+<g font-size="11" fill="var(--ink)"><text x="22" y="32" font-weight="800" fill="var(--amber)">RBD › Chances</text><text x="22" y="56">▾ Chances</text><text x="34" y="74" font-weight="800">Scenario gallery</text><text x="34" y="92">Infinite Highlights</text><text x="34" y="110">Play Area</text><text x="22" y="132">▸ Match tests</text><text x="22" y="150">▸ Real data</text><text x="22" y="186" fill="var(--ink3)">Team board · Patch notes</text></g>
+<text x="135" y="206" text-anchor="middle" font-size="11" fill="var(--ink3)"></text>
+<rect x="300" y="10" width="250" height="190" rx="12" fill="var(--card2)" stroke="var(--line)"/>
+<rect x="300" y="10" width="80" height="190" rx="12" fill="var(--card)" stroke="var(--line)"/>
+<g font-size="10.5" fill="var(--ink)"><text x="310" y="32" font-weight="800" fill="var(--amber)">Groups</text><text x="310" y="54">Career</text><text x="310" y="72">Chances</text><text x="310" y="90">Money</text></g>
+<g fill="var(--card)" stroke="var(--line)"><rect x="392" y="24" width="146" height="22" rx="5"/><rect x="392" y="54" width="146" height="22" rx="5"/><rect x="392" y="84" width="146" height="22" rx="5"/><rect x="392" y="114" width="146" height="22" rx="5"/></g>
+<g font-size="10" fill="var(--ink2)"><text x="400" y="39">Star Pass level 1</text><text x="400" y="69">Star Pass level 2</text><text x="400" y="99">Star Pass level 3</text><text x="400" y="129">…</text></g>
+</svg></div>
+<div class="cap">Left: on a pitch or 3D page the menu slides over the top, so the picture keeps its full width. Right: on a laptop, simple list pages keep it docked at the side.</div>
+<div class="st">
+<div class="k">Docked on a laptop</div><div class="v">Club data, Career XP book, Star Pass, Tester access, Site XP rewards, Sound board.</div>
+<div class="k">Everywhere else</div><div class="v">It slides over the page. On a phone it opens from today's edge tab, which already keeps clear of the pitch. It opens on the page's own group, shows "RBD › Chances › Gallery" at its top, and has the same search as the home. No keyboard shortcut.</div>
+</div>
+
+<h2 class="fix"><i></i>6 · HOW TESTERS GET IN</h2>
+<p class="lead">Today a tester gets god mode but no list of pages. After this, three doors lead to the same filtered list.</p>
+<ol class="steps">
+<li><b>Tester link</b> (/tester/K7Q2XM): unchanged.<div class="see">Then "Become a tester".</div></li>
+<li><b>Lands on the home, tester view</b>: only the 34 tester pages + the game.<div class="see">Today it says "go to Road to Ballon d'Or → Settings".</div></li>
+<li><b>Phone menu</b>: a "Test tools" row (admins keep "Admin &amp; Dev tools").</li>
+<li><b>Game → Settings → Developer</b>: a "Test pages" button next to god mode.</li>
+<li><b>The pop-up</b>: the same pop-up admins use, filtered to tester pages.</li>
+</ol>
+<div class="dt">The Tester access help page is rebuilt from the page list. Today it lists 14 pages (the real number is 24) and says a database step is still to run (it ran on 5 Oct).</div>
+
+<h2 class="chg"><i></i>7 · MATCH DEV, EXPLAINED</h2>
+<p class="lead">Match Dev is a full copy of the match, made so Mikey could try physics without any risk to real careers. You said remove it now.</p>
+<div class="box svgw">
+<svg viewBox="0 0 560 220" width="100%" style="display:block;min-width:320px" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+<rect x="10" y="20" width="200" height="70" rx="12" fill="rgba(61,220,132,.12)" stroke="var(--green)"/>
+<text x="110" y="50" text-anchor="middle" font-size="14" font-weight="800" fill="var(--green)">The real match</text>
+<text x="110" y="70" text-anchor="middle" font-size="11.5" fill="var(--ink2)">one engine</text>
+<rect x="290" y="10" width="260" height="34" rx="9" fill="var(--card2)" stroke="var(--line)"/><text x="420" y="32" text-anchor="middle" font-size="12" fill="var(--ink)">The game</text>
+<rect x="290" y="54" width="260" height="34" rx="9" fill="var(--card2)" stroke="var(--line)"/><text x="420" y="76" text-anchor="middle" font-size="12" fill="var(--ink)">Highlights, Play Area, trial, training</text>
+<rect x="10" y="135" width="200" height="70" rx="12" fill="rgba(255,107,107,.10)" stroke="var(--red)"/>
+<text x="110" y="165" text-anchor="middle" font-size="14" font-weight="800" fill="var(--red)">The copy (418 KB)</text>
+<text x="110" y="185" text-anchor="middle" font-size="11.5" fill="var(--ink2)">frozen on 5 Oct</text>
+<rect x="290" y="150" width="260" height="40" rx="9" fill="var(--card2)" stroke="var(--line)"/><text x="420" y="175" text-anchor="middle" font-size="12" fill="var(--ink)">Match Dev ("Shooting Test") only</text>
+<g stroke="var(--ink3)" stroke-width="1.6" fill="none" marker-end="url(#b)"><path d="M210 45L288 27"/><path d="M210 62L288 71"/><path d="M210 170H288"/></g>
+<path d="M110 133V94" stroke="var(--amber)" stroke-width="2" stroke-dasharray="5 4" fill="none" marker-end="url(#b)"/>
+<text x="122" y="118" font-size="11" fill="var(--amber)" font-weight="700">only by copying code by hand</text>
+</svg></div>
+<div class="cap">Anything tried in the copy reaches the game only if someone copies it across by hand. Every change to the real match makes the copy more out of date.</div>
+<div class="st">
+<div class="k">Why it existed</div><div class="v">Before the build guard, a test page was the only safe place to change shots, curl or the keeper. Now the real match has a warning on every change and the Play Area dials, so the copy is no longer needed.</div>
+<div class="k">What is already in the real game</div><div class="v">Leo's knuckleball and power shot (both were sandbox-only on 5 Oct; I read the real match file and both are in it now).</div>
+<div class="k">What only the copy has</div><div class="v"><b>Force one chance kind</b> for every chance, and <b>shot-height sliders</b> (how much a soft kick lifts). Power, technique, keeper and curve-boot dials already exist on the Play Area.</div>
+<div class="k">Your rule: Highlights carries the full dev mode</div><div class="v">So Infinite Highlights gains "force a chance kind" and the shot-height sliders before the copy goes. Then the build guard's list of copies drops from 4 to 1 if you also delete Live attack and Bicycle kick (point 8).</div>
+<div class="k">Seen, measured or reasoned</div><div class="v">Read in the code. I have not opened Match Dev or Highlights on a screen for this.</div>
+</div>
+<details><summary>Message for Mikey (copy and send)</summary>
+<p id="mikeyMsg">Hi Mikey. Heads-up: Match Dev (/star-match-dev, the "Shooting Test" copy of the match engine) is being removed in the admin rebuild. Leo's knuckleball and power shot are already in the real game. The two things only the copy has, "force one chance kind" and the shot-height sliders, move into Infinite Highlights first. If there is anything else in it you still use, tell Harry before the build. Git keeps the old copy if it is ever needed.</p>
+<button class="btn sec" data-copy="mikeyMsg">Copy message</button>
+</details>
+
+<h2 class="bug"><i></i>8 · EVERY PAGE AND ITS FATE — YOU DECIDE</h2>
+<p class="lead">You said you decide every test page yourself in this rebuild. Each page is set to my recommendation. Change any, then press Copy and paste it back.</p>
+<div class="dt">Keep = in its group. Old = in the folded Old tests list. Delete = gone from the code (git keeps it). Blue "you said" = already your answer.</div>
+<div class="tot" id="tot"></div>
+<div id="fates"></div>
+<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="copyFates">Copy my page list</button><button class="btn sec" id="resetFates">Reset to recommended</button></div>
+<textarea id="fateOut" readonly aria-label="Your page list, as text" hidden></textarea>
+<div class="cap" id="copyMsg"></div>
+<details><summary>Also deleted (files, not pages)</summary>
+<ul>
+<li>The unused copy of the Draft test screen (594 lines, nothing uses it).</li>
+<li>The unused old Squad Manager (372 lines). Renaming the one in use waits; it touches the live Draft.</li>
+<li>Draft test sends rooms to the real /draft. Fixed to stay on the test page.</li>
+<li>Play Area loses its link cards (the side menu replaces them). Infinite Highlights / Infinite Match and the dials stay.</li>
+</ul></details>
+
+<h2 class="add"><i></i>9 · THE TEAM BOARD: /admin/team</h2>
+<p class="lead">One page that shows what each of you is doing now: your progress bars, your pushes, and what is live.</p>
+<div class="phone" role="img" aria-label="Drawing of the team board on a phone">
+  <div class="bar"><span>Team</span><small>↻ 12s</small></div>
+  <div class="in">
+    <div class="cd"><b><span class="dot"></span>LIVE · main deployed 10:23</b><span class="m">"Merge main into Harry…"</span></div>
+    <div class="team"><b><span class="dot"></span>HARRY · 2 min ago</b>
+<div class="mono">Keeper dive fix  ████████░░ 80%
+Patch notes      ███░░░░░░░ 30%</div><div class="m dim">Waiting on: you, to merge</div><div class="m dim">▸ last 10 updates · ▸ Usage</div></div>
+    <div class="cd"><b><span class="dot g"></span>MIKEY · 2 days ago</b><span class="m">No live updates yet · 3 pushes</span></div>
+    <div class="cd"><b><span class="dot g"></span>LEO · 1 day ago</b><span class="m">#740 merged 23:07</span></div>
+  </div>
+</div>
+<div class="cap">Drawing, not a screenshot. Green dot: an update in the last 30 min. Grey: quiet. "Offline" after 3 hours.</div>
+<div class="box svgw" style="margin-top:12px">
+<svg viewBox="0 0 560 110" width="100%" style="display:block;min-width:320px" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<defs><marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink3)"/></marker></defs>
+<g fill="var(--card2)" stroke="var(--line)"><rect x="5" y="30" width="120" height="50" rx="10"/><rect x="148" y="30" width="120" height="50" rx="10"/><rect x="291" y="30" width="120" height="50" rx="10"/></g>
+<rect x="434" y="30" width="120" height="50" rx="10" fill="rgba(61,220,132,.12)" stroke="var(--green)"/>
+<g font-size="12.5" font-weight="700" fill="var(--ink)" text-anchor="middle"><text x="65" y="52">Your chat</text><text x="208" y="52">End of turn</text><text x="351" y="52">Knowitball</text><text x="494" y="52" fill="var(--green)">Team board</text></g>
+<g font-size="10.5" fill="var(--ink3)" text-anchor="middle"><text x="65" y="69">writes bars</text><text x="208" y="69">sends only the bars</text><text x="351" y="69">checks the secret</text><text x="494" y="69">updates live</text></g>
+<g stroke="var(--ink3)" stroke-width="1.6" fill="none" marker-end="url(#c)"><path d="M125 55H146"/><path d="M268 55H289"/><path d="M411 55H432"/></g>
+<text x="280" y="102" text-anchor="middle" font-size="11" fill="var(--ink3)">Automatic (your answer): Claude never has to remember, and it costs no extra tokens.</text>
+</svg></div>
+<div class="st">
+<div class="k">Ship 1: pushes (no setup)</div><div class="v">Each person's branch, every open pull request named by who opened it, and whether main is live. Works the day it ships.</div>
+<div class="k">Ship 2: live bars</div><div class="v">Needs Mikey to run one database file, and one shared password added to Vercel and to each person's cloud setup.</div>
+<div class="k">Your answers</div><div class="v">Admins only. Every update, skipping exact repeats. Usage block folded. Session link shown. Last 50 kept, 10 shown. Cloud chats only for now.</div>
+<div class="k">Not checked</div><div class="v">The site's GitHub key reading branches and pull requests. This session cannot hold the real key.</div>
+</div>
+<details><summary>Setup steps for Mikey, after ship 2</summary>
+<ol>
+<li>Supabase → SQL Editor → run <code>dev_status.sql</code>, then its check query.</li>
+<li>Make a long random password. Do not paste it into any chat.</li>
+<li>Vercel → Settings → Environment Variables → <code>DEV_STATUS_TOKEN</code> = the password → Redeploy.</li>
+<li>Give the password to Harry and Leo privately.</li>
+<li>Each person: claude.ai/code → environment → Edit → environment variables: <code>DEV_STATUS_TOKEN</code> and <code>DEV_NAME</code> (your name). Start a new chat.</li>
+</ol></details>
+
+<h2 class="chg"><i></i>10 · PATCH NOTES IN THE ADMIN</h2>
+<p class="lead">The archive stays a Site link and this build does not touch it. Two answers from the patch-notes plan change what the admin shows.</p>
+<div class="st">
+<div class="k">One list, numbered by go-live date</div><div class="v">Every patch note from all three of you goes in one list, numbered automatically in the order it went live. No more per-person numbers, so no more two notes called "v0.16".</div>
+<div class="k">A clash blocks the deploy, and says why</div><div class="v">If two notes clash, the deploy stops with a plain message naming both notes and the fix. Drawing of the message:</div>
+</div>
+<div class="block" style="margin-top:10px">✗ DEPLOY STOPPED — patch notes clash
+
+Two notes say they went live as number 58:
+  · "Keeper dive fix" (Harry, 18 Oct)
+  · "Goal videos round 4" (Leo, 18 Oct)
+
+Fix: renumber them by go-live date, then push again.
+(Claude does this; nothing to do by hand.)</div>
+<div class="cap">Wording is a draft; the real numbering is built in piece 3, before the admin.</div>
+
+<h2 class="add"><i></i>11 · TEACHING LEO AND MIKEY</h2>
+<p class="lead">After the build, one short how-to page for Leo and Mikey (your answer on the team board).</p>
+<ul class="n">
+<li><div class="hd">Where everything is now</div><div class="dt">The home, the side menu, the tester menu.</div></li>
+<li><div class="hd">Adding a page</div><div class="dt">One line in the page list, or the check fails.</div></li>
+<li><div class="hd">Getting on the team board</div><div class="dt">The two setup values for their cloud chats, in plain steps.</div></li>
+<li><div class="hd">Patch notes numbering</div><div class="dt">Numbers are automatic now, and what a deploy block means.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>12 · BUILD ORDER</h2>
+<p class="lead">The admin is piece 4 of 8, and the team board piece 5. One piece per chat. You sign off each step before the next.</p>
+<details open><summary>All pieces</summary>
+<ol>
+<li>CLAUDE.md trim</li><li>Full-screen fix</li><li>Lag quick wins</li><li>Patch notes (one list, numbering, clash check)</li>
+<li><b>Admin</b> (below)</li><li><b>Team board</b> (pushes first, then live bars)</li><li>Code and file clean-up</li><li>Lag re-check on every screen</li>
+</ol></details>
+<ol class="steps" style="margin-top:12px">
+<li><b>The page list</b> (about 1 h)<div class="see">You see first: your answers from point 8 written into it.</div></li>
+<li><b>The page check</b> (30 min)<div class="see">You see first: one run where it fails on purpose, to prove it works.</div></li>
+<li><b>6 missing help pages + one name per page</b> (1 h)<div class="see">You see first: the 6 help texts.</div></li>
+<li><b>One lock</b> (1–1.5 h)<div class="see">You see first: the list of pages whose access changes.</div></li>
+<li><b>Pop-up + tester menu</b> (1 h)<div class="see">You see first: stills on a phone and a laptop.</div></li>
+<li><b>Home + side menu</b> (1.5–2 h)<div class="see">You see first: the Higgsfield design, then stills.</div></li>
+<li><b>Draft merge, Highlights gains the dev controls, deletes</b> (1–1.5 h)<div class="see">You see first: the Draft test working, and the new Highlights controls.</div></li>
+<li><b>Final checks</b> (45 min)<div class="see">You see: stills of the pop-up, the home on phone and laptop, one tool page.</div></li>
+</ol>
+
+<h2 class="bug"><i></i>YOUR CALLS</h2>
+<div class="call"><div class="q">C1 · Draft test pages: your two answers disagree.</div>
+<div class="r">Admin plan: one page with a switch between the two setup screens (A). Lag plan: keep only the newer Hero setup (B). Both end with one address, /draft-dev. The difference: does the older setup screen survive behind a switch?</div>
+<div class="r"><b>Recommend B</b>: less code, and the newer screen is the one the Draft links to. Answer "A" or "B".</div></div>
+<div class="call"><div class="q">C2 · The page check: test run only (your answer) — sure?</div>
+<div class="r">With "test run only", a new page that misses its lock can reach the live site if nobody runs the tests. The one-engine guard is inside the deploy for the same reason. The cost of blocking: a deploy stops until one line is added to the list, with a message saying which page.</div>
+<div class="r"><b>Recommend block the deploy.</b> Answer "keep test run" or "block".</div></div>
+<div class="call"><div class="q">C3 · The page list in point 8.</div>
+<div class="r">Press "Copy my page list" and paste it back, even if you changed nothing.</div></div>
+
+<h2 class="nxt"><i></i>KNOWN GAPS</h2>
+<ul class="n">
+<li><div class="hd">The admin pop-up has not been seen signed in.</div><div class="dt">This sandbox cannot sign in as an admin. Its layout comes from the code.</div></li>
+<li><div class="hd">No visit records.</div><div class="dt">Nobody can say which pages are still opened. That is why point 8 is yours to decide.</div></li>
+<li><div class="hd">The tester view has not been seen.</div><div class="dt">There is no tester account here. The build checks it with the local bypass.</div></li>
+<li><div class="hd">Owners: you said you made every page with no proven owner.</div><div class="dt">So those 22 pages show "H". Mikey and Leo can correct any line later.</div></li>
+</ul>
+
+<details><summary>The numbers, if you want them</summary>
+<ul>
+<li>Pages: 71 (70 in the admin plan + Manager mode). With the recommendations: keep <span data-k="keep"></span>, old <span data-k="old"></span>, delete <span data-k="del"></span>.</li>
+<li>Locks today: none 28 · tester lock 22 · server check 6 · browser check 9 · admin lock 4.</li>
+<li>Admin routes on the server: 49, and every one already checks admin on writes. No route changes in this build.</li>
+<li>Engine copies on the build guard's list: 4 today (five-a-side, Bicycle kick, Live attack, Match Dev). 1 after the recommended deletes (five-a-side).</li>
+<li>Answers folded in: ADM 153, TB 10, plus LAG-QB9–QB14 and PN-Q7/Q197 where they touch the admin.</li>
+<li>Plans: <code>docs/plans/2026-10-15/admin.md</code>, <code>teamboard.md</code>; answers in <code>page/answers.json</code>.</li>
+</ul></details>
+
+<footer>Knowitball · admin overview · 18 Oct 2026 · planning only, nothing built</footer>
+</div>

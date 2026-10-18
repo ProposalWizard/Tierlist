@@ -1,0 +1,38 @@
+/* The Videos tab recorder (Harry, 18 Oct 2026). Same tokens as the admin shell. */
+.vt { max-width: 640px; display: flex; flex-direction: column; gap: 16px; }
+.vt-card { padding: 18px; display: flex; flex-direction: column; gap: 10px; border-radius: 14px; }
+.vt-label { margin: 6px 0 0; font-size: 11.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ash-accent); }
+.vt-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.vt-input { width: 100%; padding: 11px 13px; border-radius: 11px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); font-size: 15px; outline: none; }
+.vt-input:focus { border-color: var(--ash-accent); }
+.vt-go, .vt-live { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.vt-record, .vt-stop { display: inline-flex; align-items: center; gap: 10px; border: 0; cursor: pointer; border-radius: 14px; padding: 15px 22px; font-size: 16px; font-weight: 800; }
+.vt-record { background: var(--ash-red); color: #fff; }
+.vt-record i { width: 14px; height: 14px; border-radius: 50%; background: #fff; display: inline-block; }
+.vt-stop { background: var(--ash-ink); color: var(--ash-bg); }
+.vt-rec { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; color: var(--ash-red); font-variant-numeric: tabular-nums; }
+.vt-rec i { width: 12px; height: 12px; border-radius: 50%; background: var(--ash-red); animation: vt-blink 1s infinite; }
+@keyframes vt-blink { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .vt-rec i { animation: none; } }
+.vt-mic { padding: 0; gap: 10px; }
+.vt-drive { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--ash-line); margin-top: 6px; }
+.vt-ok { color: var(--ash-accent); font-size: 13.5px; font-weight: 700; }
+.vt-hint { color: var(--ash-ink2); font-size: 13px; }
+.vt-link { align-self: flex-start; background: none; border: 0; padding: 0; color: var(--ash-ink2); font-size: 13.5px; text-decoration: underline; cursor: pointer; }
+.vt-note { margin: 6px 0 0; color: var(--ash-ink2); font-size: 14px; }
+.vt-err { margin: 0; color: var(--ash-red); font-size: 13.5px; font-weight: 700; }
+.vt-video { width: 100%; border-radius: 10px; background: #000; max-height: 360px; }
+.vt-name { margin: 0; font-weight: 700; font-size: 14.5px; word-break: break-word; }
+.vt-meta { margin: 0; color: var(--ash-ink3); font-size: 12.5px; }
+.vt-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.vt-progress { display: flex; flex-direction: column; gap: 6px; }
+.vt-progress span { height: 8px; border-radius: 99px; background: var(--ash-line); overflow: hidden; }
+.vt-progress i { display: block; height: 100%; background: var(--ash-accent); transition: width .2s; }
+.vt-progress b { font-size: 13px; color: var(--ash-ink2); }
+.vt-done { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; border: 1px solid rgba(52, 224, 139, .35); background: var(--ash-accent-soft); }
+.vt-done b { color: var(--ash-accent); }
+.vt-done code { word-break: break-all; }
+.vt-else summary { cursor: pointer; font-weight: 700; font-size: 14px; }
+.vt-else ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: var(--ash-ink2); }
+.vt-small { font-size: 12.5px; }
+.vt-self { align-self: flex-start; }

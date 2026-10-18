@@ -21,7 +21,7 @@ export default function StarTuningDevPage() {
       try {
         const res = await fetch("/api/profile/admin-check");
         const d = res.ok ? await res.json() : { isAdmin: false };
-        setState(d.isAdmin ? "ok" : "denied");
+        setState(d.isAdmin || d.isTester ? "ok" : "denied");
       } catch {
         setState("denied");
       }

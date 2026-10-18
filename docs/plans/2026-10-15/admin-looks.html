@@ -1,0 +1,256 @@
+<title>Admin Looks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+
+  :root{color-scheme:dark}
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;color-scheme:light}
+  @media (prefers-color-scheme: light){:root:not([data-theme="dark"]){color-scheme:light}}
+  .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 70px}
+  h1,h2{text-wrap:balance}
+  .lead{font-weight:700;font-size:16.5px;margin:0 0 8px}
+  .box{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:14px}
+  .svgw{overflow-x:auto}
+  .cap{font-size:12px;color:var(--ink3);margin-top:8px}
+  /* stacked labelled rows */
+  .st{margin:10px 0 0}
+  .st .k{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-top:10px}
+  .st .v{color:var(--ink2);font-size:14.5px}
+  .st .v b{color:var(--ink)}
+  /* vertical steps */
+  ol.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+  ol.steps>li{counter-increment:s;position:relative;padding:10px 0 10px 40px;border-bottom:1px solid var(--line)}
+  ol.steps>li:last-child{border-bottom:0}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:10px;width:27px;height:27px;border-radius:50%;
+    background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:13px;color:var(--ink)}
+  ol.steps .see{font-size:13px;color:var(--ink3);margin-top:3px}
+  /* access table */
+  .acc{min-width:0;width:100%}
+  .acc td,.acc th{text-align:center;padding:9px 6px}
+  .acc td:first-child,.acc th:first-child{text-align:left;white-space:normal}
+  .y{color:var(--green);font-weight:800}.x{color:var(--red);font-weight:800}
+  /* phone mocks (a picture of the app, which is always dark) */
+  .phone{width:100%;max-width:340px;margin:0 auto;border-radius:26px;border:8px solid #2a2f2c;background:#0c0e0d;color:#f3f1ea;
+    font:13px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+  .phone .bar{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #26231b;font-weight:800}
+  .phone .bar small{color:#f5b942;font-weight:800}
+  .phone .in{padding:10px 12px}
+  .phone .search{border:1px solid #3a3424;border-radius:9px;padding:7px 9px;color:#8b8577;margin-bottom:8px}
+  .phone .chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+  .phone .chip{border:1px solid #3a3424;border-radius:999px;padding:2px 8px;font-size:11px;color:#c9c2b0}
+  .phone .chip.on{background:#f5b942;color:#1b1406;border-color:#f5b942;font-weight:800}
+  .phone .gh{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#f5b942;font-weight:800;margin:10px 0 6px;display:flex;justify-content:space-between}
+  .phone .cd{border:1px solid #2c2a22;background:#15140f;border-radius:10px;padding:8px 9px;margin-bottom:6px}
+  .phone .cd b{display:block}
+  .phone .cd .m{color:#9b9584;font-size:11.5px}
+  .phone .tg{display:inline-block;font-size:9.5px;font-weight:800;border-radius:4px;padding:1px 5px;margin-right:4px;background:#24221a;color:#c9c2b0}
+  .phone .tg.w{background:#3a1717;color:#ff8a8a}
+  .phone .tg.o{background:#1b2a3a;color:#8cc4ff}
+  .phone .fold{color:#9b9584;border-top:1px dashed #33301f;padding-top:8px;margin-top:8px}
+  .phone .team{border:1px solid #2f4a3a;background:#0f1a14;border-radius:10px;padding:8px 9px;margin-bottom:6px}
+  .phone .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;white-space:pre;color:#cfe8d6;overflow:hidden}
+  .phone .dim{color:#7e786a}
+  .phone .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3ddc84;margin-right:5px}
+  .phone .dot.g{background:#5d5a50}
+  /* fate list */
+  .fl{list-style:none;margin:0;padding:0}
+  .fl li{padding:10px 0;border-bottom:1px solid var(--line)}
+  .fl li:last-child{border-bottom:0}
+  .fl .top{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+  .fl .nm{min-width:0;flex:1 1 170px}
+  .fl .nm b{color:var(--ink)}
+  .fl .nm .u{font-size:12px;color:var(--ink3);word-break:break-all}
+  .fl .why{font-size:13px;color:var(--ink2);margin-top:4px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:0 0 auto}
+  .seg button{font:inherit;font-size:12px;font-weight:700;border:0;background:var(--card2);color:var(--ink3);padding:6px 9px;cursor:pointer}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"].k{background:var(--green);color:#06170e}
+  .seg button[aria-pressed="true"].o{background:var(--amber);color:#1b1406}
+  .seg button[aria-pressed="true"].d{background:var(--red);color:#fff}
+  .seg button:focus-visible,.btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;margin-left:5px;vertical-align:1px}
+  .t-you{background:rgba(111,184,255,.15);color:var(--blue)}
+  .t-chg{background:rgba(245,185,66,.18);color:var(--amber)}
+  .meta{font-size:12px;color:var(--ink3);margin-top:3px}
+  .tot{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .tot span{font-size:13px;font-weight:800;border-radius:999px;padding:4px 10px;background:var(--card2);border:1px solid var(--line)}
+  .tot .k{color:var(--green)}.tot .o{color:var(--amber)}.tot .d{color:var(--red)}
+  .btn{font:inherit;font-weight:800;font-size:14px;border:0;border-radius:10px;padding:10px 14px;background:var(--green);color:#06170e;cursor:pointer}
+  .btn.sec{background:var(--card2);color:var(--ink);border:1px solid var(--line)}
+  textarea{width:100%;min-height:120px;margin-top:10px;font:12.5px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .call{border:1px solid var(--line);border-left:3px solid var(--amber);background:var(--card);border-radius:var(--r);padding:12px 14px;margin:10px 0}
+  .call .q{font-weight:800}
+  .call .r{font-size:13.5px;color:var(--ink2);margin-top:4px}
+  .block{border:1px solid rgba(255,107,107,.5);background:rgba(255,107,107,.07);border-radius:10px;padding:11px 13px;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;color:var(--ink);white-space:pre-wrap}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+  [hidden]{display:none!important}
+
+.look{margin-top:34px}
+.look h2{margin-top:0}
+.imgs figure{margin:12px 0 0}
+.imgs figure.ph img{max-width:300px;margin:0 auto}
+.pick{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.pick button[aria-pressed="true"]{background:var(--green);color:#06170e}
+</style>
+<div class="wrap">
+<header><span class="ver">DESIGN · PICK ONE</span>
+<h1>Four looks for the admin</h1>
+<p class="sub">Made on Higgsfield, 18 Oct 2026. Each look is shown three ways: the admin home on a laptop, the team board on a laptop, and the team board on a phone. These are pictures, not built pages: the words and numbers in them are made-up examples. Pick a look, or mix (e.g. "B home, A team board").</p></header>
+<section class="look"><h2 class="add"><i></i>A · BROADCAST</h2>
+<p class="lead">Sky Sports on match night: navy, electric cyan, slanted bars, a live ticker along the bottom.</p><div class="imgs">
+<figure><img src="img/A-broadcast-home.webp" alt="Broadcast look: admin home on a laptop" loading="lazy"><figcaption>Admin home, laptop.</figcaption></figure>
+<figure><img src="img/A-broadcast-board.webp" alt="Broadcast look: team board on a laptop" loading="lazy"><figcaption>Team board, its own full page, laptop.</figcaption></figure>
+<figure class="ph"><img src="img/A-broadcast-board-phone.webp" alt="Broadcast look: team board on a phone" loading="lazy"><figcaption>Team board, phone.</figcaption></figure>
+</div><div class="pick"><button class="btn sec" data-p="A" aria-pressed="false">Pick A</button></div></section>
+<section class="look"><h2 class="add"><i></i>B · OPS ROOM</h2>
+<p class="lead">A pro club's analytics room: near-black and deep green, glass panels, a faint pitch grid, every card shows a live preview of its tool.</p><div class="imgs">
+<figure><img src="img/B-opsroom-home.webp" alt="Ops room look: admin home on a laptop" loading="lazy"><figcaption>Admin home, laptop.</figcaption></figure>
+<figure><img src="img/B-opsroom-board.webp" alt="Ops room look: team board on a laptop" loading="lazy"><figcaption>Team board, its own full page, laptop.</figcaption></figure>
+<figure class="ph"><img src="img/B-opsroom-board-phone.webp" alt="Ops room look: team board on a phone" loading="lazy"><figcaption>Team board, phone.</figcaption></figure>
+</div><div class="pick"><button class="btn sec" data-p="B" aria-pressed="false">Pick B</button></div></section>
+<section class="look"><h2 class="add"><i></i>C · GAME MENU</h2>
+<p class="lead">An EA FC menu: big artwork tiles, purple and gold light, heavy type. Note: it drew real players (Mbappé, Vinícius); the built version would use our own art.</p><div class="imgs">
+<figure><img src="img/C-gamemenu-home.webp" alt="Game menu look: admin home on a laptop" loading="lazy"><figcaption>Admin home, laptop.</figcaption></figure>
+<figure><img src="img/C-gamemenu-board.webp" alt="Game menu look: team board on a laptop" loading="lazy"><figcaption>Team board, its own full page, laptop.</figcaption></figure>
+<figure class="ph"><img src="img/C-gamemenu-board-phone.webp" alt="Game menu look: team board on a phone" loading="lazy"><figcaption>Team board, phone.</figcaption></figure>
+</div><div class="pick"><button class="btn sec" data-p="C" aria-pressed="false">Pick C</button></div></section>
+<section class="look"><h2 class="add"><i></i>D · CLEAN LIGHT</h2>
+<p class="lead">Linear / Vercel style: white, one grass-green accent, a tidy list with small previews. Fastest to read, least 'football'.</p><div class="imgs">
+<figure><img src="img/D-clean-home.webp" alt="Clean light look: admin home on a laptop" loading="lazy"><figcaption>Admin home, laptop.</figcaption></figure>
+<figure><img src="img/D-clean-board.webp" alt="Clean light look: team board on a laptop" loading="lazy"><figcaption>Team board, its own full page, laptop.</figcaption></figure>
+<figure class="ph"><img src="img/D-clean-board-phone.webp" alt="Clean light look: team board on a phone" loading="lazy"><figcaption>Team board, phone.</figcaption></figure>
+</div><div class="pick"><button class="btn sec" data-p="D" aria-pressed="false">Pick D</button></div></section>
+<h2 class="nxt"><i></i>MY READ</h2>
+<ul class="n">
+<li><div class="hd">B fits a tool you use every day.</div><div class="dt">Every card shows a live picture of what the tool does, so you find a page by its look, not its name. It sits closest to the game's own green.</div></li>
+<li><div class="hd">C looks the most exciting, and is the hardest to keep up.</div><div class="dt">Every new page would need its own artwork, and 52 pages is a lot of art.</div></li>
+<li><div class="hd">A's ticker suits the team board best.</div><div class="dt">"Main deployed · Harry pushed 2 min ago" scrolling along the bottom reads at a glance.</div></li>
+</ul>
+<div class="call"><div class="q">Your pick</div><div class="r" id="pk">Nothing picked yet.</div><button class="btn" id="cp" style="margin-top:10px">Copy my pick</button></div>
+<footer>Knowitball · admin looks · Higgsfield, GPT Image 2.5</footer></div>
+<script>
+(function(){var p=null;var bs=document.querySelectorAll("[data-p]");
+bs.forEach(function(b){b.addEventListener("click",function(){p=b.dataset.p;bs.forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false")});document.getElementById("pk").textContent="Look "+p+" for the admin home and the team board."})});
+document.getElementById("cp").addEventListener("click",function(){var t=p?"ADMIN LOOK: "+p:"ADMIN LOOK: none picked";try{navigator.clipboard.writeText(t).then(function(){document.getElementById("pk").textContent="Copied: "+t},function(){document.getElementById("pk").textContent=t+" (copy blocked; type it in)"})}catch(e){document.getElementById("pk").textContent=t}});})();
+</script>

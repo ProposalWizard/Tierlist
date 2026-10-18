@@ -484,24 +484,6 @@ export const ADMIN_GUIDES = {
     dev: "app/admin/custom-clubs/page.tsx · /api/admin/custom-clubs, /api/admin/custom-clubs/players",
   },
 
-  "/admin/cl-draft": {
-    title: "CL Draft",
-    what: "An admin-only test version of a Champions League draft game: draft a squad, then play up to five seasons.",
-    buttons: [
-      {
-        items: [
-          ["Setup screen", "Pick the settings and start."],
-          ["Draft screen", "Pick your players."],
-          ["Next Match → / Into Knockout Stage → / See Season Results →", "Plays the season one match at a time."],
-          ["Play Again", "Back to the start after the final season."],
-        ],
-      },
-    ],
-    saving: ["Nothing is saved. Refreshing the page loses the run."],
-    inGame: ["Nowhere yet — this is a test mode, not linked from the site."],
-    dev: "app/admin/cl-draft/page.tsx · components/draft/cl/*",
-  },
-
   "/admin/football": {
     title: "Football Data",
     what: "The Wikidata football database behind the Tic Tac Toe game — browse clubs and players, build and save grids, and import data.",
@@ -642,6 +624,123 @@ export const ADMIN_GUIDES = {
     dev: "app/admin/sound-board/SoundBoard.tsx · app/api/star/sfx-overrides/route.ts · lib/star/sfxCatalog.ts (the list of sounds) · lib/star/sfx.ts (reads the overrides) · public/sfx/",
   },
 
+  "/admin/star": {
+    title: "Admin home",
+    what: "Every admin and test page in one place, grouped the way you asked (Career screens, Chances, Match tests…), with search and filters. Testers see only the pages they can open.",
+    buttons: [
+      { group: "Top", items: [
+        ["Search pages", "Type part of a name or what a page does; the cards filter as you type."],
+        ["All / H / M / L", "Show everyone's pages, or only Harry's, Mikey's or Leo's."],
+        ["Saves real data", "Only pages whose buttons change things other players see."],
+        ["Play the game", "Opens Road to Ballon d'Or, the real game."],
+      ] },
+      { group: "Cards", items: [
+        ["A card", "Opens that page. The letter is its owner. \"Saves real data\" / \"This browser\" / \"Writes the code\" say what its buttons save."],
+        ["Old tests (n)", "Folded at the bottom. Old test pages that are kept but not used day to day."],
+        ["Clear", "Shows when a search or filter matches nothing; puts everything back."],
+      ] },
+      { group: "Side menu", items: [
+        ["Home / Team board / Patch notes", "This page, the team board, and every patch note (Team board and Patch notes are admins only)."],
+        ["Groups", "Jumps to that group on this page."],
+        ["Ops room / Clean light", "The admin look, dark or light. Kept on this device."],
+        ["Admin mode", "On: the admin side menu sits on every page of the site, opened on the admin pages for the page you are on. Off: it hides. Kept on this device."],
+      ] },
+    ],
+    saving: ["Nothing here saves anything shared. The look and Admin mode are kept in this browser only."],
+    inGame: ["Nowhere. This is the front door to the tools."],
+    dev: "app/admin/star/page.tsx · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (the one list of pages) · components/admin/shell/* · lib/adminLook.ts",
+  },
+  "/star-tournament-dev": {
+    title: "Tournaments",
+    what: "Draw and play a whole Euros or World Cup in seconds, on the real tournament code.",
+    buttons: [
+      { group: "Page", items: [
+        ["European Championship / World Cup", "Which tournament to draw."],
+        ["Your nation (box)", "The nation you play for; it says if they did not qualify."],
+        ["New draw", "A fresh draw of the groups."],
+        ["Play matchday 1–3", "Plays the next round of group games."],
+        ["Play to the final", "Plays every match left, through the knockouts, to a winner."],
+        ["Reset", "Back to the draw."],
+      ] },
+    ],
+    saving: ["Nothing. It reads and writes only this screen."],
+    inGame: ["The same tournaments a career plays in international football."],
+    dev: "app/star-tournament-dev/page.tsx · lib/star/tournament.ts",
+  },
+  "/squad-builder": {
+    title: "Dream XI builder",
+    what: "Build a dream XI in any formation. An old test: no game uses it yet.",
+    buttons: [
+      { group: "Page", items: [
+        ["Formation", "Picks the shape of the team."],
+        ["Drag a player", "Puts him in a position."],
+      ] },
+    ],
+    saving: ["This browser only."],
+    inGame: ["Nowhere yet. Kept for a possible Dream XI game."],
+    dev: "app/squad-builder/page.tsx · components/SquadBuilder.tsx",
+  },
+  "/admin/videos": {
+    title: "Videos",
+    what: "Record your screen and voice here, and the recording goes to your Drive with a clear name and a line to paste to Claude.",
+    buttons: [
+      { group: "Record", items: [
+        ["Harry / Mikey / Leo", "Who is recording. Goes in the file name. Remembered on this device."],
+        ["What is it about?", "A few words for the file name, e.g. keeper dive feels slow."],
+        ["Record screen", "The browser asks which screen, window or tab to share. Pick the game. Your voice records too if the microphone is on."],
+        ["Microphone", "On = your voice is in the recording. The browser asks once."],
+        ["Stop", "Ends the recording. The browser's own Stop sharing bar does the same."],
+        ["Connect Drive", "Google asks once to let the site add files to your Drive. After that, each recording saves itself."],
+        ["Recorded on your phone? Upload the file", "Pick a video from this device; it goes to Drive the same way."],
+      ] },
+      { group: "After a recording", items: [
+        ["Save to Drive", "Sends it to Drive (only shown if it didn't send by itself)."],
+        ["Copy for Claude", "Copies \"Watch this recording: <link>\" to paste into a Claude chat."],
+        ["Open in Drive ↗", "The video in your Drive."],
+        ["Download", "Saves the video to this device instead."],
+        ["Open the Breakdowns folder ↗", "Harry's Drive folder where every breakdown is saved."],
+      ] },
+    ],
+    saving: [
+      "Your own Google Drive, folder \"Knowitball screen recordings\" (the site makes it the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it.",
+      "The site keeps nothing. The video goes from your browser straight to Google.",
+      "Drive needs NEXT_PUBLIC_GOOGLE_CLIENT_ID on the site. Until it is set, recordings only download.",
+    ],
+    inGame: ["Nowhere."],
+    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md",
+  },
+  "/admin/team": {
+    title: "Team board",
+    what: "What Harry, Mikey and Leo are doing: each person's pushes, the pull requests, whether the site is live, and which patch notes each push went out in.",
+    buttons: [
+      { group: "Team tab", items: [
+        ["Live on knowitball.co.uk", "Whether the newest version of main finished deploying, how long ago, and what it was."],
+        ["A push", "Opens it: the full message, when, which branch, and the patch note it went out in."],
+        ["v0.55 (green tag)", "The patch note that push went out in. Grey \"no notes yet\" = not in any patch notes yet."],
+        ["Show all", "Shows every push on that branch (up to 20)."],
+        ["A pull request", "Opens it on GitHub."],
+      ] },
+      { group: "Inside a push", items: [
+        ["Open in Patch notes", "Switches to the Patch notes tab on that version."],
+        ["Open the full page ↗", "Opens that version's patch notes page on claude.ai."],
+        ["See it on GitHub ↗", "The push itself on GitHub."],
+        ["The chat that made it ↗", "The Claude chat that made the push. Only its owner can open it."],
+      ] },
+      { group: "Patch notes tab", items: [
+        ["Version list", "Every patch note, newest first. Same as /admin/patch-notes."],
+      ] },
+    ],
+    saving: [
+      "Nothing. The board only reads from GitHub, through the site, and refreshes every minute.",
+      "How a push is matched to a patch note: if the push names a version (\"v0.55\"), that one; otherwise the same person's next patch note that went live after the push, up to 4 days later.",
+    ],
+    inGame: ["Nowhere. Admins only."],
+    needs: [
+      "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it GitHub only answers a few times an hour and the board says so.",
+      "The live progress bars (\"Now working on\") are step 2: one database file for Mikey to run and a shared password. Until then each card says so.",
+    ],
+    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md",
+  },
   "/admin/testers": {
     title: "Tester Access",
     what: "Make links that turn a signed-in person into a tester, switch links off, and remove testers. A tester gets the Star Career developer tools and the test pages that only play the game.",
@@ -666,12 +765,12 @@ export const ADMIN_GUIDES = {
     ],
     inGame: [
       "A tester sees Road to Ballon d'Or → Settings → Developer tab (add money and coins, max skills, skip ahead, switch club, captain, reputation, fame, happiness, unlock training). Goal Replays stays admins only.",
-      "A tester can open these test pages: 3D, 3D Test Area, 3D Shop, 3D Garden, Blender 3D, Spin your player, Training Levels, Relationship games, Match Radar, Animations, Store (test), Bicycle Kick, the sound test page (/sfx-dev) and the dream-team builder (/squad-builder). The pages that save or commit shared things stay admins only: Play Area, Scenario Gallery, Infinite Highlights, the menu's Squad Builder (/lineups) and Challenge Draft.",
+      "A tester can open every page marked for testers on the admin home (/admin/star), which shows a tester only those pages. Pages that save or commit shared things stay admins only.",
       "Any career a developer tool is used on is marked \"Tester save\" in its Settings, for good.",
       "Testers never get admin pages or anything that changes what other players see.",
     ],
     needs: [
-      "supabase/migrations/tester_access.sql must be run in the Supabase SQL Editor. Until then this page shows a red line, \"New tester link\" is off, nobody is a tester, tester links say they aren't switched on yet, and everything else works as before.",
+      "Nothing: tester_access.sql has been run (5 Oct 2026).",
     ],
     dev: "app/admin/testers/ · app/api/admin/testers/route.ts · app/tester/[code]/ · app/api/tester/claim/route.ts · lib/testerLinks.ts · lib/roles.ts · lib/admin.ts (roleOf, isTester) · lib/useIsAdmin.ts (useIsTester) · components/TesterOnly.tsx · lib/star/godMode.ts",
   },
@@ -1055,59 +1154,6 @@ export const ADMIN_GUIDES = {
     dev: "app/star-store-dev/page.tsx · components/star/store/{StoreView,CareerStore,RunupPreview,AccessoryFigure}.tsx · lib/star/store/{catalogue,coins,daily,purchase,career,testArea,runupPreview}.ts · tests/star/store{Coins,Daily,Purchase,Career}.mts",
   },
 
-  "/star-spin-dev": {
-    title: "Spin your player",
-    what: "A test of spinning your player round 360° by dragging, before it goes on the Home screen and in the store. Nothing here reaches a career.",
-    buttons: [
-      {
-        items: [
-          ["‹ Play Area", "Back to the Play Area."],
-          ["Drag on the player", "Turns him. About 300px of drag is one full turn."],
-          ["Flick and let go", "He keeps turning, slows down, then turns back to face you."],
-          ["Club", "Every club with kit colours. Changes the kit, front and back."],
-          ["Number", "The number on his back."],
-        ],
-      },
-    ],
-    saving: ["Nothing is saved."],
-    inGame: [
-      "Not in the game yet. If it is kept, it goes on the Home screen and in the store when trying on accessories.",
-      "Front and back are both the real home-screen player (the back: surname and number on the shirt, the back of his head in his photo's hair colour). Side-on he narrows (body to 42%, head to 80%) and fades from front to back, so he never collapses to a line. A true side view still needs the Blender player rendered from about 24 angles.",
-    ],
-    dev: "app/star-spin-dev/page.tsx · components/star/PlayerAvatar.tsx · lib/star/heroBack.ts · tools/blender-footballer/",
-  },
-
-  "/star-blender-dev": {
-    title: "Blender 3D",
-    what: "The 3D footballer built in Blender, to judge by eye. He was rendered once with a grey kit; this page recolours that render into any club's kit, in your browser, when you pick the club. Nothing here reaches a career.",
-    buttons: [
-      {
-        items: [
-          ["‹", "Back to the Play Area."],
-          ["Club", "Every club the game has kit colours for. Pick one and the hero and all five stills are recoloured into its kit, with its crest on the chest and 19 on the shorts."],
-          ["Home / Away", "Switches to that club's change strip."],
-          ["The coloured square", "The two kit colours the game uses: shirt, and trim (the trim is also the shorts)."],
-          ["Home screen: A2 vs 3D", "Left is the real A2 avatar from the home screen; right is the 3D player, both in the kit you picked."],
-          ["Stills", "Idle, arms up, knee slide, pointing at the badge, hands on hips."],
-          ["Hair: style and colour chips", "Show that hair render. Only the crop was rendered in every colour; the other styles are brown only, and the box says so."],
-          ["Animations", "Three short loops (idle, jump, knee slide). These are videos, so they stay in Chelsea's kit."],
-          ["In the home screen", "The 3D hero pasted into the home screen (Chelsea, made offline) next to the live A2."],
-        ],
-      },
-    ],
-    saving: [
-      "Nothing is saved. The club you pick is forgotten when you leave.",
-    ],
-    commit: [
-      "Nothing commits from this page. The renders are files in public/star/blender/, and the Blender scripts that made them are in tools/blender-footballer/.",
-    ],
-    inGame: [
-      "Not in the game yet. This page is here so the look can be judged; the notes at the bottom list what is left and the two ways it could go in.",
-      "The crest is the club's real badge when it loads here, otherwise the same initials disc the game uses; the line under the hero says which.",
-    ],
-    dev: "app/star-blender-dev/page.tsx · lib/star/blenderRecolour.ts · tests/star/blenderRecolour.mts · public/star/blender/ · tools/blender-footballer/ (NOTES.md, scripts, footballer.blend)",
-  },
-
   "/star-3d-area-dev": {
     title: "3D Test Area",
     what: "Every cutscene and 3D area being built, in one list, plus a store of every 3D and Blender file the site has. Nothing here touches a career.",
@@ -1306,20 +1352,6 @@ export const ADMIN_GUIDES = {
       "To take the whole feature out of a phone: set Animations to Old.",
     ],
     dev: "app/star-animations-dev/page.tsx · lib/star/animGallery.ts (draws one frame) · lib/star/actionAnim.ts (the poses) · lib/star/animDials.ts (dials + switches, key star-anim-dials) · Match feel: lib/star/matchFeel.ts (switch key star-match-feel, dials key star-feel-dials), lib/star/matchFeelDraw.ts (the drawing), components/star/FeelPreview.tsx (the Feel card), sounds in lib/star/matchSound.ts · lib/star/animLook.ts (always New since 12 Oct 2026) · lib/star/actionAnimDraw.ts (the flash) · lib/star/keeperSaveKinds.ts · components/star/Sprite3dSheet.tsx + lib/star/sprite3dAnim.ts (the 3D clips: public/star/sprites/atlas-1.webp, baked by tools/sprites/new/). Strips are painted once and stepped with CSS: no animation loop, so the one-engine guard has nothing to flag.",
-  },
-  "/star-look-dev": {
-    title: "Player style (Style A)",
-    what: "The Knowitball look for every 3D person (Harry, 9 Oct 2026: Style A, painted cel shading with an ink outline) on the three new bodies. Your player in a club kit turns slowly in golden-hour light, with a team-mate (his body picked from his name) and a manager in his suit behind. Under it is the same Your look panel as in Settings.",
-    buttons: [
-      { items: [
-        ["Slim / Strong / Tall", "Your player's body: C1, C2 or C3."],
-        ["The coloured dots", "Your skin tone (the game's eight)."],
-        ["Black / Brown / Fair / Blond", "Your hair colour. Each body's haircut is part of the body, so only the colour changes."],
-      ] },
-    ],
-    saving: ["Nothing here is saved, and your phone's Settings are not changed. Add ?pstyle=old to the address to see the same three people in today's bodies (Settings → Look → Player style: Old)."],
-    inGame: ["Every 3D person: the real game in 3D, Free Roam and the 3D drills, the dribble runs, the shop, garden and casino, the signing, the walk-out and ovation, and the cut scenes. In a career, Settings → Your look saves your choice on the career."],
-    dev: "lib/star/style3d/toon/ (shader.ts the material, bodies.ts the seeded picks and kit colours, look.ts the switch); lib/star/people3d.ts loadPeople3d/makePerson3d (who, you, suit, toonBody, toonHead); the heads public/star/people3d/toon-p1..p6.glb and toon-mgr/mgr2.glb from scripts/people3d/build_toon_bodies.py. Stills: window.__lookReady, window.__lookStats (draws and triangles for one person).",
   },
   "/star-people-dev": {
     title: "Cut-scene people",
@@ -1539,45 +1571,6 @@ export const ADMIN_GUIDES = {
     dev: "app/star-sprites-dev/page.tsx · lib/star/sprites.ts · public/star/sprites/ (made by tools/sprites/bake.mjs from the rigged models, which are not in the repo)",
   },
 
-  "/star-3d-dev": {
-    title: "3D",
-    what: "One of every mode in the game, with the players drawn in the new \"3D\" look (shaded kit, folds, socks and boots, a soft shadow, the fitted face) — and a switch to see the same moment in today's look.",
-    buttons: [
-      {
-        group: "Top of the page",
-        items: [
-          ["‹", "Back to the Play Area."],
-          ["Classic / 3D", "Which look the players are drawn in, on this page only. The mode below restarts in that look."],
-          ["Match chance … Home avatar", "The ten modes: a real match chance, a penalty shootout, trial penalties, trial free kicks, a training strike drill, the training gauntlet, five-a-side, the first-person dribble, Goalie Mode and the home-screen avatar."],
-        ],
-      },
-      {
-        group: "Match chance",
-        items: [
-          ["Cutback / One-on-one / Corner", "Which kind of chance to play. It is the real match, at the real size."],
-          ["Next chance ›", "A different chance of the same kind."],
-        ],
-      },
-      {
-        group: "Everything else",
-        items: [
-          ["(the mode itself)", "Plays exactly as it does in the game — same controls, same rules. Finishing one starts it again."],
-          ["Home avatar", "3D shows the home screen's avatar (A2). Classic shows the game's own figure, lit (A1)."],
-          ["Today / C1 Skill cam / C2 Broadcast / C3 Dynamic (Dribble)", "Which camera the dribble is seen through. Today is the game's camera. C1 is low over the shoulder, C2 is high behind, C3 closes in when a defender is near. The run itself — defenders, timing, controls — is identical in all four; switching takes effect straight away."],
-          ["Defenders: real / easy (Dribble)", "Real is the game's defenders. Easy makes them slow so a run lasts long enough to watch the camera — this page only."],
-        ],
-      },
-    ],
-    saving: [
-      "Nothing is saved. No career is touched, Goalie Mode's bank here is pretend, and the Classic / 3D switch is forgotten when you leave.",
-    ],
-    inGame: [
-      "Nowhere yet — the real game still draws everyone in the Classic look.",
-      "To try 3D in a real career on one phone: Settings → Look → Drawn-player style → Shaded (that phone only). Harry decides when it becomes everyone's look.",
-    ],
-    dev: "app/star-3d-dev/page.tsx · lib/star/{figureSkin,figure3d,heroFigure,faceFit}.ts · lib/star/fiveASide/render.ts (drawFigureAt picks the look) · lib/star/firstPersonRender.ts",
-  },
-
   "/star-sound-lab-dev": {
     title: "Sound Lab",
     what: "Hear, edit and rate different sounds for each thing that happens in a match (a pass, a shot, a save, the net, the whistle, the crowd), then send us your favourites.",
@@ -1604,6 +1597,33 @@ export const ADMIN_GUIDES = {
     saving: ["This browser only, instantly. Ratings, notes, slider edits and picks stay on this device; nobody else sees them until you send the export."],
     inGame: ["Nowhere yet. It is for choosing. Once Leo picks, the chosen recipes can be built into the match's sounds."],
     dev: "app/star-sound-lab-dev/page.tsx · lib/star/sfxLab.ts (recipes, the pure renderer, export) · tests/star/sfxLab.mts · files via lib/star/sfx.ts sfxUrl() · the live match's sounds: lib/star/matchSound.ts",
+  },
+
+  "/star-vfx-lab-dev": {
+    title: "Visual Effects Lab",
+    what: "See, edit and rate different pictures for each big moment in a match (a hard shot, a soft pass, the ball's trail, a save, a catch, a dive, the post, the net, a block, a header, a near miss, the goal moment), try your picks in a real match on the same page, then send us your favourites.",
+    buttons: [
+      {
+        items: [
+          ["Event buttons (top row)", "Pick which moment you are looking at. A ✓ means you have picked one for it."],
+          ["Filmstrip (4 small pictures)", "The effect at four moments of its life, start to end, left to right. Drawn once each time you change something; nothing animates here."],
+          ["IN GAME NOW", "\"Current (match feel)\" is what Settings → Match → Match feel: New draws today. Some moments draw nothing today; the card says so."],
+          ["★ ★ ★ ★ ★", "Rate it. Tap the same star again to clear it."],
+          ["Pick this / ✓ My pick", "Your favourite for this moment (one per moment). Tap again to un-pick."],
+          ["Note", "Write what you like or don't. It goes into the export."],
+          ["Edit ▾", "Opens the dials that style uses: size, length, strength, colours, how many, spread, camera shake, freeze at the hit, camera punch-in, and the word on comic bursts."],
+          ["Reset", "Puts that variant's dials back to how it was made."],
+          ["Copy recipe", "Copies how that variant is built plus your dials, for us."],
+          ["Use my picks in the live match below", "On: the real match at the bottom draws your picks (and the variant you have open in Edit) on real kicks, saves and goals. Off: the match draws what this phone's game draws."],
+          ["Live match", "The real engine (the same one a career plays) with the Play Area's settings. Play chances to see your picks in motion."],
+          ["Export my picks", "Copies a short plain-text list (each moment → your pick, its stars, changed dials, the full recipe and your note, plus anything else you rated) and shows it in a box. Paste it to us."],
+          ["Clear everything", "Wipes your ratings, notes, edits and picks on this device."],
+        ],
+      },
+    ],
+    saving: ["This browser only, instantly. Nobody else sees your picks until you send the export."],
+    inGame: ["Nowhere yet. It is for choosing. The live match on this page is the only place the picks are drawn; the career match never uses them. Once Leo picks, the chosen recipes can be built into the match."],
+    dev: "app/star-vfx-lab-dev/page.tsx · lib/star/vfxLab.ts (variants, the pure drawing, export) · CanvasMatch `vfxOverride` (TEST_ONLY in scripts/one-engine-guard.mjs) via EnginePlay · tests/star/vfxLab.mts · today's feel: lib/star/matchFeel.ts + matchFeelDraw.ts",
   },
 
   "/star-radar-dev": {
@@ -1656,37 +1676,6 @@ export const ADMIN_GUIDES = {
       "Nowhere — a test page. The score and the chances are the real unseen match's, with your results fed in the career's way; the men's positions and passes are made up to show it.",
     ],
     dev: "app/star-sim90-dev/page.tsx · components/star/Sim90View.tsx, Sim90View3D.tsx · lib/star/sim90.ts (startSim90 / resolveSim90Chance; runs lib/star/matchRadar.ts live, places men with formationShape.ts) · drawn by lib/star/goalClip/render.ts (camera \"match\") · test tests/star/sim90.mts",
-  },
-
-  "/star-scenario-dev": {
-    title: "Scenario Builder",
-    what: "Build a match moment by hand: place team-mates, opponents and the ball, and frame the camera.",
-    buttons: [
-      {
-        items: [
-          ["+ Teammate / + Opponent", "Adds a player where the camera can see him."],
-          ["Remove / ✕ over a player", "Tap a player, then Remove (or the red ✕, or Delete key) to take him off."],
-          ["Drag", "Move any player or the ball."],
-          ["Name", "What the scenario is called."],
-          ["Moment", "Corner, Free Kick, Throw-In, Kickoff or Open Play."],
-          ["Pick on the whole pitch", "Zooms out to the whole pitch; drag the dashed frame to where the camera should be. \"Done — back to editing\" returns."],
-          ["Centre X / Centre Y", "Slide the camera across and up the pitch."],
-          ["Angle", "Straight on / From the left / From the right — the only three the real match films from."],
-          ["Save scenario", "Saves it for the team."],
-          ["New", "Starts a blank one."],
-          ["Saved list", "Tap a name to load it; ✕ deletes it everywhere — it asks you to confirm first."],
-        ],
-      },
-    ],
-    saving: [
-      "Save scenario writes to the team's shared scenario list (Supabase table star_scenarios) — every device sees it. The note at the top of the page saying \"saved locally in this browser\" is out of date.",
-      "If the table is missing, a red box says so and saves stay on this device only (\"Saved on this device ONLY\").",
-    ],
-    inGame: [
-      "Nothing built here plays in a real match — there's no commit from this tool. It's for trying out how a scenario gets built.",
-    ],
-    needs: [SCENARIO_TABLE_NEEDED],
-    dev: "app/star-scenario-dev/page.tsx · components/star/ScenarioEditor.tsx · lib/star/{scenarios,scenarioStore}.ts · /api/star/scenarios",
   },
 
   "/lineups": {
@@ -1773,28 +1762,6 @@ export const ADMIN_GUIDES = {
   //  SANDBOXES
   // ════════════════════════════════════════════════════════════════════
 
-  "/star-match-dev": {
-    title: "Match Engine (sandbox)",
-    what: "A separate copy of the match engine for trying shooting physics without touching the real game.",
-    buttons: [
-      {
-        items: [
-          ["Scenario — Random / a type", "Forces every chance to be that type."],
-          ["Curve boots", "Tick to pretend you own curving boots."],
-          ["Knuckleball (two fingers up, in flight)", "With curve boots on, swipe two fingers up the screen while your shot flies. It wobbles late and the keeper guesses wrong more often than right."],
-          ["Knuckle every shot (for mouse)", "Makes every shot at goal a knuckleball, so it can be tried without a touch screen."],
-          ["⚡ Power shot / Power shot button", "Tap ⚡ before aiming. After the drag the pitch keeps moving for a short wind-up, then tap the green circle fast: up to 1.5x pace; slow or missed taps drift off your aim."],
-          ["Power / Technique / Keeper Strength", "Your skills and their keeper."],
-          ["Position / Team Relationship", "Start from your career's own values if one is saved in this browser."],
-          ["Height at 0% power / Extra height from full power / Overall lift", "How high shots fly — this copy only."],
-        ],
-      },
-    ],
-    saving: ["Nothing is saved. It reads your career in this browser (if any) but never changes it."],
-    inGame: ["Nothing reaches the real game. A physics change found here has to be copied into the real engine by hand."],
-    dev: "app/star-match-dev/page.tsx · components/star/CanvasMatchTest.tsx · lib/star/{canvasEngineTest,hiddenMatchTest}.ts",
-  },
-
   "/star-dribble-dev": {
     title: "Dribble (sandbox)",
     what: "The first-person dribbling modes, with dials for feel.",
@@ -1834,40 +1801,6 @@ export const ADMIN_GUIDES = {
     dev: "app/star-dribble-stick-dev/page.tsx · lib/star/firstPersonDribble.ts (THE STICK) · components/star/CanvasMatch.tsx (dribbleControl, dribbleOnly) · tests/star/dribbleStick.mts",
   },
 
-  "/star-attack-dev": {
-    title: "Live Attack (sandbox)",
-    what: "A prototype of a moving attack: the ball is delivered, you have to get there in time and aim the finish.",
-    buttons: [
-      {
-        items: [
-          ["Delivery — Random / a type", "Which kind of ball comes in."],
-          ["Power / Technique / Keeper strength / Team relationship", "Your skills, their keeper, and how well your team plays for you."],
-          ["Fixed seed", "Replay the same situation."],
-          ["Go Again", "After a result, try another."],
-        ],
-      },
-    ],
-    saving: ["Nothing is saved. Any change starts a fresh situation."],
-    inGame: ["Not in the game — a mechanic prototype."],
-    dev: "app/star-attack-dev/page.tsx · components/star/LiveAttack.tsx · lib/star/liveAttack.ts",
-  },
-
-  "/star-bicycle-dev": {
-    title: "Bicycle Kick (sandbox)",
-    what: "A throwaway test of an overhead-kick mechanic from the edge of the box.",
-    buttons: [
-      {
-        items: [
-          ["Press and hold on the pitch", "Winds up the kick; drag left / right while holding to lean it; let go to strike."],
-          ["Power / Technique / Keeper Strength", "Sandbox dials."],
-        ],
-      },
-    ],
-    saving: ["Nothing is saved or read — no sign-in needed."],
-    inGame: ["Not in the game."],
-    dev: "app/star-bicycle-dev/page.tsx · components/star/BicycleKickTrial.tsx",
-  },
-
   "/draft-dev": {
     title: "Draft (dev)",
     what: "A copy of the PL Draft game with the V2 setup screen, for trying a new look.",
@@ -1885,27 +1818,7 @@ export const ADMIN_GUIDES = {
       "Multiplayer rooms are real rooms in the live database, and finished seasons are sent to your real Draft history, XP and records.",
     ],
     inGame: ["The results count on your real profile. The setup screen itself isn't live."],
-    dev: "app/draft-dev/page.tsx · components/draft/DraftSetupV2.tsx",
-  },
-
-  "/draft-dev2": {
-    title: "Draft (dev 2)",
-    what: "A copy of the PL Draft game with the \"Hero\" setup screen, for trying a new look.",
-    buttons: [
-      {
-        items: [
-          ["Setup screen", "Formation, era, mode, respins — then start, or create / join a multiplayer room."],
-          ["[test] skip draft → auto-fill squad", "Admins only: skips the draft with an auto-picked squad."],
-          ["The rest", "Plays exactly like the real PL Draft."],
-        ],
-      },
-    ],
-    saving: [
-      "It uses the SAME browser save as the real PL Draft, so a run here replaces (or resumes) your real Draft run on this device.",
-      "Multiplayer rooms are real rooms in the live database, and finished seasons are sent to your real Draft history, XP and records.",
-    ],
-    inGame: ["The results count on your real profile. The setup screen itself isn't live."],
-    dev: "app/draft-dev2/page.tsx · components/draft/DraftSetupHero.tsx",
+    dev: "app/draft-dev/page.tsx · components/draft/DraftSetupHero.tsx",
   },
 
   "/draft-challenge-dev": {
@@ -1941,42 +1854,6 @@ export const ADMIN_GUIDES = {
     dev: "app/draft/preview/page.tsx · components/draft/preview/*",
   },
 
-  "/profile-new": {
-    title: "Profile (new)",
-    what: "A trial redesign of the profile page, showing your real level, XP, trophies, streak and objectives.",
-    buttons: [
-      {
-        items: [
-          ["Objective tabs", "Objectives, Foundation, GOAT Manager, Record Breakers."],
-          ["An objective", "Shows its details on the right."],
-          ["Claim", "Claims a finished objective's reward — this is real and counts on your account."],
-        ],
-      },
-    ],
-    saving: ["Reads your real profile. Claiming writes to your real account."],
-    inGame: ["Not linked from the site yet — the live profile is /profile."],
-    dev: "app/profile-new/ProfileNewClient.tsx · /api/profile/progression, /api/objectives",
-  },
-
-  "/ballon-dor": {
-    title: "Ballon d'Or (beta)",
-    what: "An admin-only career game: create a player, play seasons, and chase the Ballon d'Or.",
-    buttons: [
-      {
-        items: [
-          ["Setup", "Pick an archetype and position, or a real player to start from."],
-          ["Continue Season N → / Start Season N →", "Plays on."],
-          ["Review offers →", "Transfer offers waiting in the summer."],
-        ],
-      },
-    ],
-    saving: [
-      "Your career is saved in THIS browser only — another device starts fresh.",
-      "XP you earn is sent to your real account.",
-    ],
-    inGame: ["Admin only for now — not linked for players."],
-    dev: "app/ballon-dor/page.tsx · components/ballon-dor/*",
-  },
 } satisfies Record<string, AdminGuide>;
 
 export type GuidePage = keyof typeof ADMIN_GUIDES;

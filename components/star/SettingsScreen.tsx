@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useIsTester } from "@/lib/useIsAdmin";
+import { useIsAdmin, useIsTester } from "@/lib/useIsAdmin";
+import { setAdminMode, useAdminMode } from "@/lib/adminLook";
 import { frameMeterOn, setFrameMeterOn } from "@/lib/star/three3d/frameMeterPref";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
@@ -125,6 +126,8 @@ export default function SettingsScreen({
   // (Harry, 8 Oct 2026, the hybrid Settings). Goal Replays inside stays
   // admin-only: it checks for itself.
   const isTester = useIsTester();
+  const isAdmin = useIsAdmin();
+  const adminMode = useAdminMode();
   const [tab, setTab] = useState<"settings" | "updates" | "dev">("settings");
   const showDev = isTester && tab === "dev";
   // Settings → Updates: every New | Old update switch, for everyone (Leo, 14 Oct 2026).
@@ -280,6 +283,24 @@ export default function SettingsScreen({
           the doors", then tester access; 8 Oct 2026: its own tab). */}
       {showDev && (<>
       <p className="mt-2 px-0.5 text-[11px] font-semibold text-white">Testing and tuning options — not needed for normal play. A save that uses them is marked as a tester save.</p>
+
+      {/* Admin mode + the way into the admin pages (Harry, 18 Oct 2026). */}
+      <RiseIn index={next()} className="mt-2">
+        <SetCard tone={DEV} strength={0.18}>
+          {isAdmin && (
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[11px] font-black text-white">Admin mode</div>
+                <SetNote className="mt-0.5">The admin tab on every page, opened on the tools for the screen you are on.</SetNote>
+              </div>
+              <Switch on={adminMode} onClick={() => setAdminMode(!adminMode)} label="Admin mode" />
+            </div>
+          )}
+          <a href="/admin/star" className="block rounded-lg bg-black/30 px-3 py-2 text-[12px] font-black text-white">
+            {isAdmin ? "Admin pages →" : "Test pages →"}
+          </a>
+        </SetCard>
+      </RiseIn>
 
       <RiseIn index={next()} className="mt-2">
         <SetCard tone={DEV} strength={0.18}>

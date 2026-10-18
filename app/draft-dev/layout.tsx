@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import DevGate from "@/components/admin/DevGate";
 
 export const metadata: Metadata = {
   title: "Draft Dev Preview — Admin Only",
@@ -6,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function DraftDevLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <DevGate url="/draft-dev">{children}</DevGate>;
 }

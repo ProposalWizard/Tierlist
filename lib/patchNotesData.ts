@@ -27,6 +27,39 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.57",
+      "title": "Harry's patch notes: The admin room and the team board",
+      "publishedAt": "2026-10-18T20:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/SdmpakSaerhCuwYrUT2PCV",
+      "summary": "One page list now runs every admin and test page: a new admin home (12 groups, search, owner chips, Ops room or Clean light), a team board with a card each for Harry, Mikey and Leo (status, activity, recent pushes, patch notes drop-down, pull requests, what is live), every push linked to the patch note it went out in, patch notes as a side-menu tab, admin mode (the right tools on any page), a Videos tab for screen recordings that saves each breakdown to Drive, 17 old pages deleted and one lock on every admin and test page.",
+      "stats": [
+        { "value": "57", "label": "admin and test pages in one list" },
+        { "value": "17", "label": "old pages deleted" },
+        { "value": "4 → 1", "label": "copies of the match" },
+        { "value": "5 → 0", "label": "test pages with no lock" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Admin home", "detail": "Settings → Developer → Admin pages, or /admin/star." },
+          { "title": "Team board", "detail": "Admin side menu → Team board. Tap a push to see its patch note." },
+          { "title": "Patch notes tab", "detail": "Admin side menu → Patch notes." },
+          { "title": "Admin mode", "detail": "Settings → Developer → Admin mode, then the green Admin tab on any page." },
+          { "title": "Record your screen", "detail": "Admin side menu → Videos → Record screen. Voice on; saves to your Drive once Drive is connected." },
+          { "title": "One lock", "detail": "Open a test page signed out: it asks you to sign in." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "17 old pages deleted", "detail": "Match Dev, Scenario Builder, Bigger, Look, Attack, Bicycle, Zoom grass, 3D, Spin, Blender, Sound dev, old Ballon d'Or and Manager, Profile (new), CL Draft, American draft; Draft dev 2 opens Draft dev." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Live progress bars are off", "detail": "Mikey: run dev_status.sql, set DEV_STATUS_TOKEN in Vercel and each cloud setup, plus DEV_NAME.", "pill": { "text": "needs Mikey", "tone": "amber" } },
+          { "title": "Drive saving is off until one Google setting is done", "detail": "Harry: switch on the Drive API, add knowitball.co.uk and the drive.file scope to the Google sign-in id, set NEXT_PUBLIC_GOOGLE_CLIENT_ID in Vercel. Until then recordings download.", "pill": { "text": "needs Harry", "tone": "amber" } },
+          { "title": "Two Match Dev controls need a new home", "detail": "Force a chance kind and the shot-height sliders; Infinite Highlights is the plan." },
+          { "title": "The lock check runs in the tests, not the build", "detail": "Harry's answer: tests only." }
+        ]}
+      ]
+    },
+    {
       "version": "0.56",
       "title": "Harry's patch notes: The Arcade pack, real shots you can follow, calmer passing",
       "publishedAt": "2026-10-14T23:30:00Z",

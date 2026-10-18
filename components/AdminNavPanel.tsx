@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ADMIN_PAGES, GROUPS as REG_GROUPS, SECTIONS, relatedFor } from "@/lib/adminRegistry";
+import { setAdminMode, useAdminMode } from "@/lib/adminLook";
 
 /**
  * ADMIN NAV — every admin page and every dev sandbox, one slide-out panel.
@@ -31,7 +33,10 @@ import { usePathname } from "next/navigation";
  *     parent, so the panel survives — which is the point, since the gallery
  *     is exactly the page you want to navigate away from.
  *
- *  3. THE EDGE TAB IS DESKTOP ONLY, EXCEPT ON FULL-SCREEN PAGES. "Have that
+ *  3. (Changed 18 Oct 2026: with Admin mode on, lib/adminLook.ts, the tab
+ *     shows on every page, phone included, placed by placeTab; with it off,
+ *     there is no tab at all. The history below is why placeTab exists.)
+ *     THE EDGE TAB IS DESKTOP ONLY, EXCEPT ON FULL-SCREEN PAGES. "Have that
  *     somewhere on the screen on PC, more so than mobile." On a phone the
  *     same list opens from the menu ("Admin & Dev tools", NavMenu.tsx, via
  *     OPEN_ADMIN_NAV_EVENT) — before that, a phone reached /admin and
@@ -109,88 +114,14 @@ interface AdminGroup {
   links: AdminLink[];
 }
 
-/* Every route below is a real page under app/. Nothing invented. */
-const GROUPS: AdminGroup[] = [
-  {
-    label: "Site",
-    links: [
-      { name: "Homepage", href: "/" },
-      { name: "Profile", href: "/profile" },
-      { name: "Patch Notes", href: "/admin/patch-notes" },
-      { name: "App Plan", href: "/admin/app-plan" },
-    ],
-  },
-  {
-    label: "Admin",
-    links: [
-      { name: "Admin Dashboard", href: "/admin" },
-      { name: "XP & Rewards", href: "/admin/xp" },
-      { name: "Club Data", href: "/admin/clubs" },
-      { name: "Club Badges", href: "/admin/badges" },
-      { name: "Custom Clubs", href: "/admin/custom-clubs" },
-      { name: "CL Draft", href: "/admin/cl-draft" },
-      { name: "Football Data", href: "/admin/football" },
-      { name: "Players", href: "/admin/football/players" },
-      { name: "PL Clubs", href: "/admin/football/pl-clubs" },
-      { name: "Scrape / Import", href: "/admin/football/scrape" },
-      { name: "Sound Board", href: "/admin/sound-board" },
-      { name: "Tester Access", href: "/admin/testers" },
-    ],
-  },
-  {
-    label: "Star Career",
-    links: [
-      { name: "Road to Ballon d'Or", href: "/star-dev" },
-      { name: "Star Pass Rewards", href: "/admin/star-pass" },
-      { name: "XP Book", href: "/admin/star-xp" },
-      { name: "Relationship games", href: "/star-relgames-dev" },
-      { name: "Retirement preview", href: "/star-retirement-dev" },
-      { name: "Goal videos", href: "/star-goal-clips-dev" },
-      { name: "Real moments", href: "/star-real-moments-dev" },
-      { name: "Real shots (test)", href: "/star-statsbomb-dev" },
-      { name: "Scenario Gallery", href: "/star-gallery-dev" },
-      { name: "Play Area", href: "/star-play-dev" },
-      { name: "Oct 13 update", href: "/star-update-dev" },
-      { name: "Animations", href: "/star-animations-dev" },
-      { name: "3D Animations", href: "/star-anim3d-dev" },
-      { name: "Match Radar", href: "/star-radar-dev" },
-      { name: "Sound Lab", href: "/star-sound-lab-dev" },
-      { name: "Full match (test)", href: "/star-sim90-dev" },
-      { name: "Store (test)", href: "/star-store-dev" },
-      { name: "Gems (test)", href: "/star-wallet-dev" },
-      { name: "Blender 3D", href: "/star-blender-dev" },
-      { name: "Spin your player", href: "/star-spin-dev" },
-      { name: "3D", href: "/star-3d-dev" },
-      { name: "3D Test Area", href: "/star-3d-area-dev" },
-      { name: "3D Shop", href: "/star-shop3d-dev" },
-      { name: "3D Garden", href: "/star-garden3d-dev" },
-      { name: "3D Home", href: "/star-home3d-dev" },
-      { name: "Cut-scene people", href: "/star-people-dev" },
-      { name: "3D Training", href: "/star-training3d-dev" },
-      { name: "Style Testing", href: "/star-style-dev" },
-      { name: "Scenario Builder", href: "/star-scenario-dev" },
-      { name: "Training Levels", href: "/star-training-dev" },
-      { name: "Squad Builder", href: "/lineups" },
-      { name: "Tuning", href: "/star-tuning-dev" },
-      { name: "Media Lab", href: "/star-dev/media-lab" },
-    ],
-  },
-  {
-    label: "Sandboxes",
-    links: [
-      { name: "Match Engine", href: "/star-match-dev" },
-      { name: "Dribble", href: "/star-dribble-dev" },
-      { name: "Dribble (stick)", href: "/star-dribble-stick-dev" },
-      { name: "Live Attack", href: "/star-attack-dev" },
-      { name: "Bicycle Kick", href: "/star-bicycle-dev" },
-      { name: "Draft (dev)", href: "/draft-dev" },
-      { name: "Draft (dev 2)", href: "/draft-dev2" },
-      { name: "Challenge Draft", href: "/draft-challenge-dev" },
-      { name: "Draft Design Preview", href: "/draft/preview" },
-      { name: "Profile (new)", href: "/profile-new" },
-    ],
-  },
-];
+/* Every page comes from the one list (lib/adminRegistry.ts, Harry 18 Oct 2026).
+ * "Site" also keeps the two everyday links that are not admin pages. */
+const EVERYDAY: AdminLink[] = [{ name: "Homepage", href: "/" }, { name: "Profile", href: "/profile" }];
+const GROUPS: AdminGroup[] = REG_GROUPS.map((g) => {
+  const sec = SECTIONS.find((x) => x.key === g.section)?.name;
+  const links = ADMIN_PAGES.filter((p) => p.group === g.key).map((p) => ({ name: p.name, href: p.url }));
+  return { label: g.section === "rbd" ? `${sec} · ${g.name}` : g.name, links: g.key === "site" ? [...EVERYDAY, ...links] : links };
+}).filter((g) => g.links.length);
 
 /** Longest matching href wins, so /admin/football/players doesn't also light up /admin. */
 function activeHref(pathname: string): string | null {
@@ -210,9 +141,15 @@ export default function AdminNavPanel() {
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const current = activeHref(pathname);
+  // Admin mode (Harry, 18 Oct 2026): on = the tab sits on every page, phone
+  // too, and the menu opens on the admin pages for the page you are on.
+  // Off = no tab; the phone menu's "Admin & Dev tools" still opens it.
+  const mode = useAdminMode();
+  const related = relatedFor(pathname);
+  // The admin pages' own side menu already does this job there.
+  const inShell = ["/admin/star", "/admin/team", "/admin/videos"].some((u) => pathname === u || pathname.startsWith(u + "/"));
+  const showTab = mode && !inShell;
 
-  // A full-screen page hides the menu, so the tab is the only way out there.
-  const [immersive, setImmersive] = useState(false);
   const [spot, setSpot] = useState<TabSpot | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
@@ -222,17 +159,10 @@ export default function AdminNavPanel() {
     window.addEventListener(OPEN_ADMIN_NAV_EVENT, onOpen);
     return () => window.removeEventListener(OPEN_ADMIN_NAV_EVENT, onOpen);
   }, []);
-  useEffect(() => {
-    const read = () => setImmersive(document.body.classList.contains("knowitball-immersive"));
-    read();
-    const mo = new MutationObserver(read);
-    mo.observe(document.body, { attributes: true, attributeFilter: ["class"] });
-    return () => mo.disconnect();
-  }, []);
   // Re-place the phone tab as the page moves under it (a new picture, a
   // scroll, an opened editor) — a few times a second, like the page guide.
   useEffect(() => {
-    if (!immersive) { setSpot(null); return; }
+    if (!showTab) { setSpot(null); return; }
     const place = () => {
       if (window.innerWidth >= 1024) { setSpot(null); return; }
       const next = placeTab();
@@ -247,7 +177,7 @@ export default function AdminNavPanel() {
       window.removeEventListener("scroll", place);
       window.removeEventListener("resize", place);
     };
-  }, [immersive]);
+  }, [showTab]);
 
   const onKey = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") setOpen(false);
@@ -266,22 +196,22 @@ export default function AdminNavPanel() {
       {/* Edge tab — left edge, vertically centred so it clears the top-left
           hamburger and any game UI pinned to the corners. Desktop always; a
           phone only on a full-screen page, where the menu is hidden. */}
-      <button
+      {showTab && <button
         onClick={() => setOpen(true)}
         aria-label="Open admin menu"
         style={spot ? { top: spot.top, height: TAB_H, width: spot.slim ? SLIM_W : FULL_W, transform: "none" } : undefined}
-        className={`fixed left-0 top-1/2 z-[80] -translate-y-1/2 items-center justify-center gap-1.5 overflow-hidden rounded-r-lg border border-l-0 border-amber-500/40 bg-gray-950/80 py-4 text-amber-400 shadow-lg backdrop-blur transition-all hover:bg-gray-900 hover:text-amber-300 lg:flex lg:pl-1.5 lg:pr-2 ${immersive ? "flex" : "hidden"} ${
+        className={`fixed left-0 top-1/2 z-[80] -translate-y-1/2 items-center justify-center gap-1.5 overflow-hidden rounded-r-lg border border-l-0 border-emerald-400/40 bg-gray-950/80 py-4 text-emerald-300 shadow-lg backdrop-blur transition-all hover:bg-gray-900 hover:text-emerald-200 flex lg:pl-1.5 lg:pr-2 ${
           open ? "pointer-events-none opacity-0" : "opacity-70 hover:opacity-100"
         }`}
       >
         {spot?.slim ? (
-          <span className="h-full w-[3px] rounded-full bg-amber-400" />
+          <span className="h-full w-[3px] rounded-full bg-emerald-400" />
         ) : (
           <span className="text-[10px] font-black uppercase tracking-[0.2em] [writing-mode:vertical-rl]">
             Admin
           </span>
         )}
-      </button>
+      </button>}
 
       {/* Overlay */}
       <div
@@ -293,14 +223,14 @@ export default function AdminNavPanel() {
 
       {/* Panel */}
       <div
-        className={`fixed left-0 top-0 z-[90] flex h-full w-80 max-w-[85vw] flex-col border-r border-amber-500/30 bg-gray-950 shadow-2xl transition-transform duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 z-[90] flex h-full w-80 max-w-[85vw] flex-col border-r border-emerald-400/25 bg-[#070b09] shadow-2xl transition-transform duration-300 ease-in-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between border-b border-gray-800 px-5 py-4">
-          <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
-            Admin &amp; Dev
-          </span>
+          <Link href="/admin/star" className="text-xs font-bold uppercase tracking-wider text-emerald-300 hover:text-emerald-200">
+            Admin &amp; Dev · Home
+          </Link>
           <button
             onClick={() => setOpen(false)}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-white transition-colors hover:bg-gray-900"
@@ -312,7 +242,37 @@ export default function AdminNavPanel() {
           </button>
         </div>
 
+        <div className="flex items-center justify-between gap-3 border-b border-gray-800 px-5 py-2.5">
+          <span className="text-[12px] font-bold text-white">Admin mode<span className="block text-[10px] font-normal text-gray-500">The admin tab on every page</span></span>
+          <button
+            role="switch"
+            aria-checked={mode}
+            aria-label="Admin mode"
+            onClick={() => setAdminMode(!mode)}
+            className={`relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors ${mode ? "bg-emerald-400" : "bg-gray-700"}`}
+          >
+            <span className={`absolute top-[3px] h-4 w-4 rounded-full bg-white transition-all ${mode ? "left-[19px]" : "left-[3px]"}`} />
+          </button>
+        </div>
+
         <nav className="flex-1 overflow-y-auto overscroll-contain py-2">
+          {related && related.pages.length > 0 && (
+            <div className="mb-2 border-b border-gray-800 pb-2">
+              <p className="mx-4 mb-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                {related.label}
+              </p>
+              {related.pages.map((p) => (
+                <Link
+                  key={`for-${p.url}`}
+                  href={p.url}
+                  className="mx-3 my-0.5 flex min-h-[40px] flex-col justify-center rounded-lg px-3 py-1.5 text-white transition-colors hover:bg-gray-900 lg:min-h-0"
+                >
+                  <span className="text-sm font-bold">{p.name}</span>
+                  <span className="text-[11px] text-gray-500">{p.purpose}</span>
+                </Link>
+              ))}
+            </div>
+          )}
           {GROUPS.map((group) => (
             <div key={group.label} className="mb-2">
               <p className="mx-4 mb-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-gray-600">
@@ -326,14 +286,14 @@ export default function AdminNavPanel() {
                     href={link.href}
                     className={`group mx-3 my-0.5 flex min-h-[40px] items-center justify-between gap-3 rounded-lg px-3 py-1.5 transition-colors lg:min-h-0 ${
                       isActive
-                        ? "bg-amber-500/15 text-white"
+                        ? "bg-emerald-400/15 text-white"
                         : "text-white hover:bg-gray-900"
                     }`}
                   >
                     <span className="text-sm font-bold lg:whitespace-nowrap">{link.name}</span>
                     <span
                       className={`hidden shrink-0 whitespace-nowrap font-mono text-[9px] sm:inline ${
-                        isActive ? "text-amber-400" : "text-gray-600 group-hover:text-gray-500"
+                        isActive ? "text-emerald-300" : "text-gray-600 group-hover:text-gray-500"
                       }`}
                     >
                       {link.href}

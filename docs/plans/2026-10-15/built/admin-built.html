@@ -1,0 +1,218 @@
+<title>New Admin Look</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+
+  :root{color-scheme:dark}
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+    --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;color-scheme:light}
+  @media (prefers-color-scheme: light){:root:not([data-theme="dark"]){color-scheme:light}}
+  .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 70px}
+  h1,h2{text-wrap:balance}
+  .lead{font-weight:700;font-size:16.5px;margin:0 0 8px}
+  .box{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:14px}
+  .svgw{overflow-x:auto}
+  .cap{font-size:12px;color:var(--ink3);margin-top:8px}
+  /* stacked labelled rows */
+  .st{margin:10px 0 0}
+  .st .k{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-top:10px}
+  .st .v{color:var(--ink2);font-size:14.5px}
+  .st .v b{color:var(--ink)}
+  /* vertical steps */
+  ol.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+  ol.steps>li{counter-increment:s;position:relative;padding:10px 0 10px 40px;border-bottom:1px solid var(--line)}
+  ol.steps>li:last-child{border-bottom:0}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:10px;width:27px;height:27px;border-radius:50%;
+    background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:13px;color:var(--ink)}
+  ol.steps .see{font-size:13px;color:var(--ink3);margin-top:3px}
+  /* access table */
+  .acc{min-width:0;width:100%}
+  .acc td,.acc th{text-align:center;padding:9px 6px}
+  .acc td:first-child,.acc th:first-child{text-align:left;white-space:normal}
+  .y{color:var(--green);font-weight:800}.x{color:var(--red);font-weight:800}
+  /* phone mocks (a picture of the app, which is always dark) */
+  .phone{width:100%;max-width:340px;margin:0 auto;border-radius:26px;border:8px solid #2a2f2c;background:#0c0e0d;color:#f3f1ea;
+    font:13px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+  .phone .bar{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #26231b;font-weight:800}
+  .phone .bar small{color:#f5b942;font-weight:800}
+  .phone .in{padding:10px 12px}
+  .phone .search{border:1px solid #3a3424;border-radius:9px;padding:7px 9px;color:#8b8577;margin-bottom:8px}
+  .phone .chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+  .phone .chip{border:1px solid #3a3424;border-radius:999px;padding:2px 8px;font-size:11px;color:#c9c2b0}
+  .phone .chip.on{background:#f5b942;color:#1b1406;border-color:#f5b942;font-weight:800}
+  .phone .gh{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#f5b942;font-weight:800;margin:10px 0 6px;display:flex;justify-content:space-between}
+  .phone .cd{border:1px solid #2c2a22;background:#15140f;border-radius:10px;padding:8px 9px;margin-bottom:6px}
+  .phone .cd b{display:block}
+  .phone .cd .m{color:#9b9584;font-size:11.5px}
+  .phone .tg{display:inline-block;font-size:9.5px;font-weight:800;border-radius:4px;padding:1px 5px;margin-right:4px;background:#24221a;color:#c9c2b0}
+  .phone .tg.w{background:#3a1717;color:#ff8a8a}
+  .phone .tg.o{background:#1b2a3a;color:#8cc4ff}
+  .phone .fold{color:#9b9584;border-top:1px dashed #33301f;padding-top:8px;margin-top:8px}
+  .phone .team{border:1px solid #2f4a3a;background:#0f1a14;border-radius:10px;padding:8px 9px;margin-bottom:6px}
+  .phone .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;white-space:pre;color:#cfe8d6;overflow:hidden}
+  .phone .dim{color:#7e786a}
+  .phone .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3ddc84;margin-right:5px}
+  .phone .dot.g{background:#5d5a50}
+  /* fate list */
+  .fl{list-style:none;margin:0;padding:0}
+  .fl li{padding:10px 0;border-bottom:1px solid var(--line)}
+  .fl li:last-child{border-bottom:0}
+  .fl .top{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+  .fl .nm{min-width:0;flex:1 1 170px}
+  .fl .nm b{color:var(--ink)}
+  .fl .nm .u{font-size:12px;color:var(--ink3);word-break:break-all}
+  .fl .why{font-size:13px;color:var(--ink2);margin-top:4px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:0 0 auto}
+  .seg button{font:inherit;font-size:12px;font-weight:700;border:0;background:var(--card2);color:var(--ink3);padding:6px 9px;cursor:pointer}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"].k{background:var(--green);color:#06170e}
+  .seg button[aria-pressed="true"].o{background:var(--amber);color:#1b1406}
+  .seg button[aria-pressed="true"].d{background:var(--red);color:#fff}
+  .seg button:focus-visible,.btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;margin-left:5px;vertical-align:1px}
+  .t-you{background:rgba(111,184,255,.15);color:var(--blue)}
+  .t-chg{background:rgba(245,185,66,.18);color:var(--amber)}
+  .meta{font-size:12px;color:var(--ink3);margin-top:3px}
+  .tot{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .tot span{font-size:13px;font-weight:800;border-radius:999px;padding:4px 10px;background:var(--card2);border:1px solid var(--line)}
+  .tot .k{color:var(--green)}.tot .o{color:var(--amber)}.tot .d{color:var(--red)}
+  .btn{font:inherit;font-weight:800;font-size:14px;border:0;border-radius:10px;padding:10px 14px;background:var(--green);color:#06170e;cursor:pointer}
+  .btn.sec{background:var(--card2);color:var(--ink);border:1px solid var(--line)}
+  textarea{width:100%;min-height:120px;margin-top:10px;font:12.5px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .call{border:1px solid var(--line);border-left:3px solid var(--amber);background:var(--card);border-radius:var(--r);padding:12px 14px;margin:10px 0}
+  .call .q{font-weight:800}
+  .call .r{font-size:13.5px;color:var(--ink2);margin-top:4px}
+  .block{border:1px solid rgba(255,107,107,.5);background:rgba(255,107,107,.07);border-radius:10px;padding:11px 13px;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;color:var(--ink);white-space:pre-wrap}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+  [hidden]{display:none!important}
+</style>
+<div class="wrap"><header><span class="ver">BUILT · NOT LIVE YET</span><h1>The new admin</h1>
+<p class="sub">Stills from the real pages (local test copy, real GitHub data). On the Harry branch; not deployed. 18 Oct 2026.</p></header>
+<h2 class="add"><i></i>1 · THE ADMIN HOME</h2><p class="lead">Every admin and test page as a card, in your groups. Search, filter by owner, and one simple icon per group. Hover any icon, tag or letter to see what it means.</p><figure><img src="img/home-ops.webp" alt="Ops room look, laptop." loading="lazy"><figcaption>Ops room look, laptop.</figcaption></figure><figure><img src="img/home-light.webp" alt="Clean light, same page. Switch at the bottom of the side menu." loading="lazy"><figcaption>Clean light, same page. Switch at the bottom of the side menu.</figcaption></figure><figure style="max-width:360px;margin-left:auto;margin-right:auto"><img src="img/home-phone.webp" alt="Phone: the side menu sits behind ☰ Menu." loading="lazy"><figcaption>Phone: the side menu sits behind ☰ Menu.</figcaption></figure><h2 class="add"><i></i>2 · THE TEAM BOARD</h2><p class="lead">Its own page, almost no words. Each of you: a dot, how long ago, a 7-day activity bar, your live progress bars, then your pushes inside one drop-down per patch note. Merges are left off.</p><figure><img src="img/team-ops.webp" alt="Ops room, laptop. Real data from GitHub." loading="lazy"><figcaption>Ops room, laptop. Real data from GitHub. Live bars say "off" until Mikey switches them on.</figcaption></figure><figure><img src="img/team-light.webp" alt="Clean light." loading="lazy"><figcaption>Clean light.</figcaption></figure><figure style="max-width:360px;margin-left:auto;margin-right:auto"><img src="img/team-phone.webp" alt="Phone." loading="lazy"><figcaption>Phone.</figcaption></figure><h2 class="add"><i></i>3 · TAP A PUSH</h2><p class="lead">It opens with the patch note it went out in. Open in Patch notes jumps to that version on the Patch notes tab.</p><figure><img src="img/push.webp" alt="Mikey's push, linked to v0.50 because it names v0.16." loading="lazy"><figcaption>Mikey's push, linked to v0.50 because it names v0.16.</figcaption></figure><figure><img src="img/notes.webp" alt="The Patch notes tab, now in the team board's side menu." loading="lazy"><figcaption>The Patch notes tab, now in the team board's side menu.</figcaption></figure><h2 class="add"><i></i>4 · ADMIN MODE</h2><p class="lead">On: the admin tab sits on every page, and opens first on the admin pages for the page you are on. Switch it off in the menu, or in the game's Settings → Developer.</p><figure><img src="img/adminmode.webp" alt="On Tic Tac Toe: Admin for Tic Tac Toe comes first." loading="lazy"><figcaption>On Tic Tac Toe: Admin for Tic Tac Toe comes first.</figcaption></figure><figure style="max-width:360px;margin-left:auto;margin-right:auto"><img src="img/adminmode-phone.webp" alt="Same on a phone." loading="lazy"><figcaption>Same on a phone.</figcaption></figure><h2 class="add"><i></i>5 · VIDEOS TAB</h2><p class="lead">Three steps and one line to copy, for handing Claude a recording.</p><figure><img src="img/videos.webp" alt="Videos tab." loading="lazy"><figcaption>Videos tab.</figcaption></figure>
+<h2 class="bug"><i></i>NOT DONE YET</h2>
+<ul class="n">
+<li><div class="hd">Live progress bars: built, switched off</div><div class="dt">Mikey runs dev_status.sql and adds DEV_STATUS_TOKEN in Vercel and in each cloud setup. Then every progress update shows up by itself.</div></li>
+<li><div class="hd">Done since: your 17 pages are deleted, and every admin and test page has the one lock</div><div class="dt">Signed out → sign in and come back. Not allowed → "Team only". The older admin pages keep their old look inside for now.</div></li><li><div class="hd">Match Dev's two extra controls are not in Infinite Highlights yet</div><div class="dt">"Force one chance kind" and the shot-height sliders. Match Dev is deleted; git keeps it.</div></li>
+<li><div class="hd">Not seen signed in as a real admin or tester</div><div class="dt">This sandbox can't sign in; the stills come from the local test copy, which lets everyone in.</div></li>
+</ul>
+<footer>Knowitball · new admin · 18 Oct 2026</footer></div>

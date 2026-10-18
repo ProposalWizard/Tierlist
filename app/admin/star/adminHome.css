@@ -1,0 +1,44 @@
+.ah { display: flex; flex-direction: column; gap: 22px; max-width: 1400px; }
+.ah-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.ah-search { flex: 1 1 320px; min-width: 0; }
+.ah-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.ah-n { opacity: .65; font-variant-numeric: tabular-nums; }
+.ah-team { display: flex; align-items: center; gap: 10px; padding: 7px 12px; text-decoration: none; color: var(--ash-ink); margin-left: auto; }
+.ah-team-t b { display: block; font-size: 12.5px; }
+.ah-team-t small { display: block; font-size: 11px; color: var(--ash-ink3); }
+.ah-team-p { position: relative; display: inline-flex; }
+.ah-team-p .ash-dot { position: absolute; right: -1px; bottom: -1px; border: 2px solid var(--ash-panel-solid); width: 11px; height: 11px; }
+
+.ah-play { display: flex; align-items: center; gap: 14px; padding: 14px 16px; text-decoration: none; color: var(--ash-ink); }
+.ah-play:hover { border-color: var(--ash-accent); }
+.ah-play b { display: block; font-size: 16px; font-weight: 800; }
+.ah-play small { display: block; font-size: 12.5px; color: var(--ash-ink2); }
+
+.ah-group { scroll-margin-top: 70px; }
+.ah-ghead { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
+.ah-ghead h2 { margin: 0; font-size: 17px; font-weight: 800; }
+.ah-ghead span { font-size: 12px; color: var(--ash-ink3); }
+.ah-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 1200px) { .ah-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .ah-grid { grid-template-columns: 1fr; } }
+.ah-card { display: flex; flex-direction: column; gap: 8px; padding: 14px 15px; text-decoration: none; color: var(--ash-ink); transition: border-color .08s; min-width: 0; }
+.ah-card:hover { border-color: var(--ash-accent); }
+.ah-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ah-card-top b { font-size: 15px; font-weight: 800; }
+.ah-lock { color: var(--ash-amber); font-size: 9px; }
+.ah-card p { margin: 0; font-size: 13px; color: var(--ash-ink2); line-height: 1.4; flex: 1; }
+.ah-card-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ah-card-foot .ash-av { width: 24px; height: 24px; font-size: 11px; }
+.ah-owner { font-size: 12px; color: var(--ash-ink3); margin-right: auto; }
+.ah-old summary { cursor: pointer; list-style: none; padding: 10px 0; }
+.ah-old summary::-webkit-details-marker { display: none; }
+.ah-old summary::before { content: "▸ "; color: var(--ash-ink3); }
+.ah-old[open] summary::before { content: "▾ "; }
+.ah-empty { padding: 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+/* The group icons (Higgsfield, flat line art on deep green). The corners of the
+ * picture are cropped so it sits cleanly on either look. */
+.ah-ic { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; transform: scale(1.0); flex: 0 0 auto; clip-path: inset(4% round 9px); }
+.ah-ic-lg { width: 46px; height: 46px; border-radius: 12px; clip-path: inset(4% round 11px); }
+.ah-ic-sm { width: 26px; height: 26px; border-radius: 7px; clip-path: inset(4% round 6px); }
+.ah-card-top b { flex: 1; min-width: 0; }

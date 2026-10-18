@@ -1,5 +1,6 @@
 import ClientErrorBoundary from "@/components/ClientErrorBoundary";
 import SquadBuilder from "@/components/SquadBuilder";
+import PageGuide from "@/components/admin/PageGuide";
 
 export const metadata = {
   title: "Squad Builder | Knowitball",
@@ -10,6 +11,7 @@ export default function SquadBuilderPage() {
   return (
     <ClientErrorBoundary>
       <SquadBuilder />
+      <PageGuide page="/squad-builder" />
     </ClientErrorBoundary>
   );
 }
