@@ -682,16 +682,32 @@ export const ADMIN_GUIDES = {
   },
   "/admin/videos": {
     title: "Videos",
-    what: "How to hand Claude a screen recording or any video to break down.",
+    what: "Record your screen and voice here, and the recording goes to your Drive with a clear name and a line to paste to Claude.",
     buttons: [
-      { group: "Page", items: [
-        ["Copy", "Copies the line to paste into a Claude chat with your video link."],
-        ["Open the Breakdowns folder ↗", "Harry's Drive folder where every breakdown is saved, named by date, who and what it is about."],
+      { group: "Record", items: [
+        ["Harry / Mikey / Leo", "Who is recording. Goes in the file name. Remembered on this device."],
+        ["What is it about?", "A few words for the file name, e.g. keeper dive feels slow."],
+        ["Record screen", "The browser asks which screen, window or tab to share. Pick the game. Your voice records too if the microphone is on."],
+        ["Microphone", "On = your voice is in the recording. The browser asks once."],
+        ["Stop", "Ends the recording. The browser's own Stop sharing bar does the same."],
+        ["Connect Drive", "Google asks once to let the site add files to your Drive. After that, each recording saves itself."],
+        ["Recorded on your phone? Upload the file", "Pick a video from this device; it goes to Drive the same way."],
+      ] },
+      { group: "After a recording", items: [
+        ["Save to Drive", "Sends it to Drive (only shown if it didn't send by itself)."],
+        ["Copy for Claude", "Copies \"Watch this recording: <link>\" to paste into a Claude chat."],
+        ["Open in Drive ↗", "The video in your Drive."],
+        ["Download", "Saves the video to this device instead."],
+        ["Open the Breakdowns folder ↗", "Harry's Drive folder where every breakdown is saved."],
       ] },
     ],
-    saving: ["Nothing on the site. The breakdown runs inside the Claude chat, which saves a copy to Drive (Knowitball playtest recordings → Breakdowns) by itself."],
+    saving: [
+      "Your own Google Drive, folder \"Knowitball screen recordings\" (the site makes it the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it.",
+      "The site keeps nothing. The video goes from your browser straight to Google.",
+      "Drive needs NEXT_PUBLIC_GOOGLE_CLIENT_ID on the site. Until it is set, recordings only download.",
+    ],
     inGame: ["Nowhere."],
-    dev: "app/admin/videos/* · the tool: scripts/screen-video/ (README inside) · the method: .claude/skills/screen-video/SKILL.md",
+    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md",
   },
   "/admin/team": {
     title: "Team board",

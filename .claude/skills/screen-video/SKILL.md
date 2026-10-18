@@ -48,6 +48,13 @@ skip to step 2. A file anywhere else: copy it to `.recordings/<name>/video.mp4`.
 | Knowitball playtest recordings | `1w_AJFndensiBWMicxiSReM9ZDlyQfBik` | recordings to break down |
 | Breakdowns (Claude writes here) | `18Gn5Q-pluXr_FjBTqtvADLOwq-oMAq87` | every breakdown goes here, automatically (step 5) |
 
+**Recorded on the site (18 Oct 2026).** Admin → Videos records the screen and
+voice in the browser and saves the file into the recorder's OWN Drive, folder
+"Knowitball screen recordings", already set to "anyone with the link" and
+named `date · who · what (length).webm`. The person pastes
+"Watch this recording: <link>"; pass that link straight to `fetch.py`. Use the
+file's name for the breakdown's name (it already follows the rule in step 5).
+
 To pick up the newest video, use the Google Drive connector (`search_files`,
 `parentId = '<folder id>' and mimeType contains 'video/'`) and pass the file id
 to `fetch.py`. **Never download a video through the connector itself:** it

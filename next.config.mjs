@@ -57,7 +57,9 @@ const nextConfig = {
       // camera on this origin (webcam via getUserMedia, phone camera via a
       // capture input). `camera=()` blocked both outright, on every page —
       // still denied to any embedded third-party frame.
-      { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
+      // microphone/display-capture=(self): the admin Videos tab records your
+      // screen and voice (Harry, 18 Oct 2026). Still denied to other frames.
+      { key: "Permissions-Policy", value: "camera=(self), microphone=(self), display-capture=(self), geolocation=()" },
     ];
 
     // The game's own files in public/ (3D models, sprite sheets, sounds,

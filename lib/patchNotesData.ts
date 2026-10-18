@@ -45,7 +45,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Team board", "detail": "Admin side menu → Team board. Tap a push to see its patch note." },
           { "title": "Patch notes tab", "detail": "Admin side menu → Patch notes." },
           { "title": "Admin mode", "detail": "Settings → Developer → Admin mode, then the green Admin tab on any page." },
-          { "title": "Videos tab", "detail": "Admin side menu → Videos." },
+          { "title": "Record your screen", "detail": "Admin side menu → Videos → Record screen. Voice on; saves to your Drive once Drive is connected." },
           { "title": "One lock", "detail": "Open a test page signed out: it asks you to sign in." }
         ]},
         { "kind": "changed", "title": "Changed", "items": [
@@ -53,6 +53,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         ]},
         { "kind": "known", "title": "Known issues", "items": [
           { "title": "Live progress bars are off", "detail": "Mikey: run dev_status.sql, set DEV_STATUS_TOKEN in Vercel and each cloud setup, plus DEV_NAME.", "pill": { "text": "needs Mikey", "tone": "amber" } },
+          { "title": "Drive saving is off until one Google setting is done", "detail": "Harry: switch on the Drive API, add knowitball.co.uk and the drive.file scope to the Google sign-in id, set NEXT_PUBLIC_GOOGLE_CLIENT_ID in Vercel. Until then recordings download.", "pill": { "text": "needs Harry", "tone": "amber" } },
           { "title": "Two Match Dev controls need a new home", "detail": "Force a chance kind and the shot-height sliders; Infinite Highlights is the plan." },
           { "title": "The lock check runs in the tests, not the build", "detail": "Harry's answer: tests only." }
         ]}
