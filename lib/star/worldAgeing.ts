@@ -52,7 +52,8 @@ import { madeUpName } from "./nationNames";
  *    badly, very badly (AGEING_PROFILES).
  *  - Retirement 35–41, most in the middle; keepers two years later. Never
  *    because his rating fell. A man already 40+ when he first ages (Ronaldo)
- *    plays two more seasons, then goes.
+ *    plays two more seasons, then goes. A younger man already past his
+ *    rolled age plays that first season and retires at its end (Mikey).
  *  - A replacement is 16–20 (any age equally), rated his club's level −13 to
  *    +2 (any value equally), plays the retired man's position (sometimes a
  *    second or third nearby one), and his flags come from the retired man's
@@ -258,13 +259,12 @@ function regenName(rng: () => number): string {
 /**
  * A replacement's flags, from the retired man's best rating in the game
  * (question 11). Out of 100: World Class, High Potential, the rest none.
- * The 87+ band is Mikey's; the other two are stand-ins until he finishes
- * his answer (it was cut off at "Sixty-").
+ * All three bands confirmed by Mikey (18 Oct 2026).
  */
 export const REGEN_FLAG_BANDS: { minPeak: number; worldClass: number; high: number }[] = [
   { minPeak: 87, worldClass: 80, high: 19 },
-  { minPeak: 83, worldClass: 10, high: 60 }, // stand-in
-  { minPeak: 0, worldClass: 1, high: 5 },    // stand-in
+  { minPeak: 83, worldClass: 10, high: 60 },
+  { minPeak: 0, worldClass: 1, high: 5 },
 ];
 
 /** A replacement starts at his club's level plus a value from this range,
