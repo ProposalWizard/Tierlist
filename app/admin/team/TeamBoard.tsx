@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/admin/shell/AdminShell";
 import PatchNotesArchive from "@/app/admin/patch-notes/PatchNotesArchive";
-import { perDay, type Person, type Push, type TeamBoardData } from "@/lib/teamBoard";
+import { perDay, type Person, type PullRequest, type Push, type TeamBoardData } from "@/lib/teamBoard";
 import type { DevStatus } from "@/lib/devStatus";
 import "./teamBoard.css";
 
@@ -66,43 +66,35 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
     return [...data.people].sort((a, b) => Date.parse(b.pushes[0]?.at ?? "0") - Date.parse(a.pushes[0]?.at ?? "0"));
   }, [data]);
 
+  const pulls = data?.pulls ?? [];
   return (
     <AdminShell tab={tab} role="admin" onTab={(t) => { setTab(t); if (t === "team") setVersion(undefined); }}>
       {tab === "notes" ? (
         <div className="tb-notes"><PatchNotesArchive key={version ?? "latest"} initialVersion={version} /></div>
       ) : (
         <div className="tb">
+          <PitchLines />
           <header className="tb-head">
-            <h1 className="ash-h1">Team</h1>
+            <div>
+              <p className="tb-eyebrow">Team board</p>
+              <h1 className="ash-h1">Team</h1>
+              <p className="ash-sub">Three of us. One game.</p>
+            </div>
             <DeployPill data={data} now={now} />
           </header>
 
           {error && <div className="tb-alert">{error}</div>}
           {data?.problems.map((p) => <div key={p} className="tb-alert">{p}</div>)}
 
-          <div className="tb-people">
-            {(data ? people : (["Harry", "Mikey", "Leo"] as Person[]).map((person) => ({ person, branch: person, pushes: [] as Push[], status: null }))).map((c) => (
-              <PersonCard key={c.person} person={c.person} pushes={c.pushes} status={"status" in c ? c.status ?? null : null}
-                statusOn={!!data?.statusOn} now={now} loading={!data} onOpen={setOpen} onNote={openNote} />
-            ))}
+          <div className="tb-grid">
+            <div className="tb-people">
+              {(data ? people : (["Harry", "Mikey", "Leo"] as Person[]).map((person) => ({ person, branch: person, pushes: [] as Push[], status: null }))).map((c) => (
+                <PersonCard key={c.person} person={c.person} pushes={c.pushes} status={"status" in c ? c.status ?? null : null}
+                  statusOn={!!data?.statusOn} now={now} loading={!data} onOpen={setOpen} onNote={openNote} />
+              ))}
+            </div>
+            <PullPanel pulls={pulls} now={now} loading={!data} />
           </div>
-
-          {data && data.pulls.length > 0 && (
-            <details className="ash-panel tb-drop">
-              <summary><span>Pull requests</span><span className="tb-count">{data.pulls.length}</span></summary>
-              <ul>
-                {data.pulls.slice(0, 12).map((p) => (
-                  <li key={p.number}>
-                    <a href={p.url} target="_blank" rel="noreferrer" className="tb-row" title={`${p.title} — ${p.branch} → main`}>
-                      <span className={`ash-av ${p.person ?? "Shared"} tb-av-sm`}>{(p.person ?? "?")[0]}</span>
-                      <span className="tb-row-t">#{p.number} {p.title}</span>
-                      <span className={`ash-tag ${p.state === "merged" ? "green" : p.state === "open" ? "amber" : "grey"}`}>{p.state}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
         </div>
       )}
       {open && <PushSheet push={open} now={now} onClose={() => setOpen(null)} onNote={openNote} />}
@@ -110,120 +102,214 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
   );
 }
 
+/** The faint pitch behind the board, as in the Ops room design. */
+function PitchLines() {
+  return (
+    <svg className="tb-pitch" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMin slice" aria-hidden>
+      <g fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="40" y="40" width="1120" height="620" rx="4" />
+        <line x1="600" y1="40" x2="600" y2="660" />
+        <circle cx="600" cy="350" r="95" />
+        <rect x="40" y="200" width="150" height="300" /><rect x="1010" y="200" width="150" height="300" />
+      </g>
+    </svg>
+  );
+}
+
 function DeployPill({ data, now }: { data: TeamBoardData | null; now: number }) {
   const d = data?.deploy;
   const state = d?.state ?? "unknown";
-  const word = state === "success" ? "Live" : state === "pending" ? "Deploying" : state === "failure" ? "Deploy failed" : "…";
-  const tip = d ? `${word} on knowitball.co.uk${d.title ? ` — ${d.title}` : ""}${d.sha ? ` (${d.sha.slice(0, 7)})` : ""}` : "Checking the live site";
+  const word = state === "success" ? "Live on knowitball.co.uk" : state === "pending" ? "Going live now" : state === "failure" ? "Last deploy failed" : "Checking the live site";
+  const tip = d?.title ? `Last change to go live: ${d.title}` : undefined;
   return (
-    <span className={`ash-panel tb-pill ${state}`} title={tip}>
-      <span className={`ash-dot ${state === "success" ? "live" : state === "pending" ? "wait" : state === "failure" ? "bad" : ""}`} />
-      <b>{word}</b>{d?.at && <small>{ago(d.at, now)}</small>}
-    </span>
+    <a className={`ash-panel tb-pill ${state}`} title={tip} href={d?.url ?? undefined} target="_blank" rel="noreferrer">
+      <span className={`ash-dot big ${state === "success" ? "live" : state === "pending" ? "wait" : state === "failure" ? "bad" : ""}`} />
+      <span><b>{word}</b>{d?.at && <small>deployed {ago(d.at, now)}{d.sha ? ` · ${d.sha.slice(0, 7)}` : ""}</small>}</span>
+    </a>
   );
 }
 
 /** "Harry's patch notes: The Arcade pack" → "The Arcade pack". */
 const shortTitle = (t: string) => t.replace(/^(Harry|Mikey|Leo)['’]s patch notes\s*(v[\d.]+)?\s*[:—-]?\s*/i, "").trim() || "Patch notes";
 
-/** A person's pushes, grouped by the patch note they went out in; "not in notes yet" first. */
-function groupByNote(pushes: Push[]) {
-  const groups = new Map<string, { version: string | null; title: string; url: string | null; pushes: Push[] }>();
+/** The patch notes a person's pushes went out in, newest first. */
+function notesOf(pushes: Push[]) {
+  const m = new Map<string, { version: string; title: string; url: string | null; n: number }>();
   for (const p of pushes) {
-    const k = p.patch?.version ?? "new";
-    if (!groups.has(k)) groups.set(k, { version: p.patch?.version ?? null, title: p.patch ? shortTitle(p.patch.title) : "Not in patch notes yet", url: p.patch?.artifactUrl ?? null, pushes: [] });
-    groups.get(k)!.pushes.push(p);
+    if (!p.patch) continue;
+    const g = m.get(p.patch.version) ?? { version: p.patch.version, title: shortTitle(p.patch.title), url: p.patch.artifactUrl ?? null, n: 0 };
+    g.n++; m.set(p.patch.version, g);
   }
-  return Array.from(groups.values()).sort((a, b) => (a.version === null ? -1 : b.version === null ? 1 : parseFloat(b.version) - parseFloat(a.version)));
+  return Array.from(m.values()).sort((a, b) => parseFloat(b.version) - parseFloat(a.version));
 }
+
+const STATUS_WORD = { live: "Live", quiet: "Active", off: "Quiet" } as const;
 
 function PersonCard({ person, pushes, status, statusOn, now, loading, onOpen, onNote }: {
   person: Person; pushes: Push[]; status: DevStatus | null; statusOn: boolean; now: number; loading: boolean;
   onOpen: (p: Push) => void; onNote: (v: string) => void;
 }) {
-  const last = status?.at && (!pushes[0] || Date.parse(status.at) > Date.parse(pushes[0].at)) ? status.at : pushes[0]?.at ?? null;
-  const live = liveness(last, now);
-  const days = perDay(pushes, now, 7);
-  const max = Math.max(1, ...days);
+  const [all, setAll] = useState(false);
   // Merges aren't work, they are bookkeeping: left off the board.
   const work = pushes.filter((p) => !/^Merge\b/i.test(p.title));
-  const groups = groupByNote(work);
+  const last = status?.at && (!work[0] || Date.parse(status.at) > Date.parse(work[0].at)) ? status.at : work[0]?.at ?? null;
+  const live = liveness(last, now);
+  const week = work.filter((p) => now - Date.parse(p.at) < 7 * 86400_000).length;
+  const notes = notesOf(work);
+  const unsent = work.filter((p) => !p.patch).length;
+  const hasBars = !!status && status.bars.length > 0;
+  const asleep = !loading && (!last || now - Date.parse(last) > 2 * 86400_000);
+  const shown = all ? work.slice(0, 30) : work.slice(0, 5);
+
   return (
     <section className={`ash-panel tb-person ${person}`}>
       <div className="tb-person-top">
-        <span className={`ash-av ${person} tb-big`}>{person[0]}</span>
+        <span className={`tb-ring ${person}`}>{person[0]}</span>
         <div className="tb-who">
           <b>{person}</b>
-          <small title={last ? clock(last) : ""}><span className={`ash-dot ${live === "live" ? "live" : ""}`} /> {loading ? "…" : last ? ago(last, now) : "—"}</small>
+          <small>{loading ? "…" : `${week} push${week === 1 ? "" : "es"} this week`}</small>
         </div>
-        <div className="tb-spark" title={`Pushes per day, last 7 days: ${days.join(", ")}`}>
-          {days.map((n, i) => <i key={i} style={{ height: `${6 + (n / max) * 24}px`, opacity: n ? 1 : 0.25 }} />)}
+        <div className={`tb-state ${live}`} title={last ? clock(last) : ""}>
+          <b><span className={`ash-dot ${live === "live" ? "live" : live === "quiet" ? "on" : ""}`} /> {loading ? "…" : STATUS_WORD[live]}</b>
+          <small>{loading ? "" : last ? ago(last, now) : "—"}</small>
         </div>
       </div>
 
-      {status && status.bars.length > 0 ? (
-        <div className="tb-bars">
-          {status.bars.map((b, i) => (
-            <div key={i} className="tb-bar" title={b.note || undefined}>
-              <span className="tb-bar-l">{b.label}</span>
-              <span className="tb-bar-t"><i style={{ width: `${b.pct}%` }} className={b.pct >= 100 ? "done" : ""} /></span>
-              <span className="tb-bar-p">{b.pct}%</span>
+      {hasBars ? (
+        <div className="tb-sec">
+          <p className="tb-label">Current work</p>
+          {status!.bars.map((b, i) => (
+            <div key={i} className="tb-work">
+              <div className="tb-work-h"><b>{b.label}</b><span>{b.pct}%</span></div>
+              {b.note && <small>{b.note}</small>}
+              <span className="tb-track"><i style={{ width: `${b.pct}%` }} /></span>
             </div>
           ))}
-          {status.waiting && <div className="tb-wait" title="Waiting on">⏳ {status.waiting}</div>}
+          {status!.waiting && (
+            <div className="tb-waiting"><ClockIcon /><span><small>Waiting on</small><b>{status!.waiting}</b></span></div>
+          )}
         </div>
-      ) : (
-        <div className="tb-bars empty" title={statusOn ? "Bars show here after this person's next progress update." : "Live bars need one database file and a shared password (Mikey). Pushes work already."}>
-          <span className="tb-bar-t" /><small>{statusOn ? "No update yet" : "Live bars: off"}</small>
+      ) : asleep ? (
+        <div className="tb-empty">
+          <PitchIcon />
+          <b>No live updates yet</b>
+          <small>{last ? `${person} hasn't pushed for ${ago(last, now).replace(" ago", "")}.` : `${person} hasn't pushed yet.`}</small>
         </div>
-      )}
+      ) : work[0] ? (
+        <button className="tb-latest" onClick={() => onOpen(work[0])} title={statusOn ? "Live bars show here after the next progress update." : "Live bars are off until Mikey switches them on."}>
+          <BranchIcon />
+          <span><small>Latest push · {ago(work[0].at, now)}</small><b>{work[0].title}</b>
+            {work[0].patch ? <em>In v{work[0].patch.version}</em> : <em className="new">Not in patch notes yet</em>}</span>
+          <span className="tb-chev">›</span>
+        </button>
+      ) : null}
 
-      <div className="tb-groups">
-        {loading ? <p className="tb-muted">Loading…</p> : groups.length === 0 ? <p className="tb-muted">No pushes yet</p> : groups.map((g, gi) => (
-          <Drop key={g.version ?? "new"} open={gi === 0}>
-            <summary key="s">
-              {g.version ? <span className="ash-tag green">v{g.version}</span> : <span className="ash-tag grey">new</span>}
-              <span className="tb-drop-t" title={g.title}>{g.title}</span>
-              <span className="tb-count">{g.pushes.length}</span>
-            </summary>
-            {g.version && (
-              <div className="tb-drop-act">
-                <button className="ash-chip" onClick={() => onNote(g.version!)}>Open notes</button>
-                {g.url && <a className="ash-chip" href={g.url} target="_blank" rel="noreferrer">Full page ↗</a>}
-              </div>
-            )}
-            <Rows pushes={g.pushes} now={now} onOpen={onOpen} />
-          </Drop>
-        ))}
+      <Activity pushes={work} now={now} />
+
+      <div className="tb-sec">
+        <div className="tb-label-row">
+          <p className="tb-label"><BranchIcon /> Recent pushes</p>
+          {work.length > 5 && <button className="tb-link" onClick={() => setAll(!all)}>{all ? "Fewer" : "View all"} →</button>}
+        </div>
+        {loading ? <p className="tb-muted">Loading…</p> : work.length === 0 ? <p className="tb-muted">No pushes yet</p> : (
+          <ul className="tb-pushes">
+            {shown.map((p) => (
+              <li key={p.sha}>
+                <button onClick={() => onOpen(p)} title={p.title}>
+                  <span className={`tb-pdot ${p.patch ? "in" : ""}`} />
+                  <span className="tb-sha">{p.sha.slice(0, 7)}</span>
+                  <span className="tb-msg">{p.title}</span>
+                  <span className="tb-time">{ago(p.at, now).replace(" ago", "")}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
+
+      {!loading && (notes.length > 0 || unsent > 0) && (
+        <details className="tb-notesdrop">
+          <summary><DocIcon /> Patch notes <span className="tb-count">{[notes.length ? `${notes.length} out` : "", unsent ? `${unsent} pushes not in yet` : ""].filter(Boolean).join(" · ")}</span></summary>
+          <ul>
+            {notes.map((n) => (
+              <li key={n.version}>
+                <button onClick={() => onNote(n.version)} title={`Open v${n.version} in Patch notes`}>
+                  <span className="ash-tag green">v{n.version}</span>
+                  <span className="tb-msg">{n.title}</span>
+                  <span className="tb-time">{n.n} push{n.n === 1 ? "" : "es"}</span>
+                </button>
+              </li>
+            ))}
+            {unsent > 0 && <li className="tb-unsent"><span className="ash-tag grey">next</span><span className="tb-msg">{unsent} push{unsent === 1 ? "" : "es"} waiting for the next patch notes</span></li>}
+          </ul>
+        </details>
+      )}
     </section>
   );
 }
 
-function Drop({ open, children }: { open: boolean; children: React.ReactNode }) {
-  return <details className="tb-drop" open={open}>{children}</details>;
-}
-
-/** Five pushes, then "+ n more". */
-function Rows({ pushes, now, onOpen }: { pushes: Push[]; now: number; onOpen: (p: Push) => void }) {
-  const [all, setAll] = useState(false);
-  const shown = all ? pushes : pushes.slice(0, 5);
+/** Pushes per day over two weeks, with a scale. */
+function Activity({ pushes, now }: { pushes: Push[]; now: number }) {
+  const days = perDay(pushes, now, 14);
+  const max = Math.max(2, ...days);
+  const top = Math.ceil(max / 2) * 2;
   return (
-    <ul>
-      {shown.map((p) => (
-        <li key={p.sha}>
-          <button className="tb-row" onClick={() => onOpen(p)} title={p.title}>
-            <span className="tb-row-t">{p.title}</span>
-            <span className="tb-row-m">{ago(p.at, now)}</span>
-          </button>
-        </li>
-      ))}
-      {pushes.length > 5 && (
-        <li><button className="tb-row tb-more-row" onClick={() => setAll(!all)}>{all ? "Fewer" : `+ ${pushes.length - 5} more`}</button></li>
-      )}
-    </ul>
+    <div className="tb-sec">
+      <p className="tb-label">Activity · pushes a day</p>
+      <div className="tb-chart" title={days.map((n, i) => `${13 - i === 0 ? "today" : `${13 - i}d ago`}: ${n}`).join(" · ")}>
+        <div className="tb-y"><span>{top}</span><span>{top / 2}</span><span>0</span></div>
+        <div className="tb-bars14">
+          {days.map((n, i) => <i key={i} style={{ height: `${Math.max(3, (n / top) * 100)}%` }} className={n ? "" : "zero"} />)}
+        </div>
+      </div>
+      <div className="tb-x"><span>2 weeks ago</span><span>1 week</span><span>today</span></div>
+    </div>
   );
 }
+
+function PullPanel({ pulls, now, loading }: { pulls: PullRequest[]; now: number; loading: boolean }) {
+  const open = pulls.filter((p) => p.state === "open").length;
+  const merged = pulls.filter((p) => p.state === "merged").length;
+  return (
+    <aside className="ash-panel tb-prs">
+      <div className="tb-prs-h">
+        <h2><BranchIcon /> Pull requests</h2>
+        <span className="tb-prs-c"><span className="on">{open} open</span><span>{merged} merged</span></span>
+      </div>
+      {loading ? <p className="tb-muted">Loading…</p> : pulls.length === 0 ? <p className="tb-muted">None right now</p> : (
+        <ul>
+          {pulls.slice(0, 10).map((p) => (
+            <li key={p.number}>
+              <a href={p.url} target="_blank" rel="noreferrer" title={p.title}>
+                <span className="tb-pr-t"><b>#{p.number}</b> {p.title}</span>
+                <span className="tb-pr-b">main ← {p.branch}</span>
+                <span className="tb-pr-m">
+                  <span className={`ash-av ${p.person ?? "Shared"} tb-av-sm`}>{(p.person ?? "?")[0]}</span>
+                  <span>{p.person ?? p.login}</span>
+                  <span className="tb-time">{ago(p.at, now)}</span>
+                  <span className={`tb-st ${p.state}`}>{p.state === "merged" ? "Merged" : p.state === "open" ? "Open" : "Closed"}</span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </aside>
+  );
+}
+
+const ClockIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>;
+const BranchIcon = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><circle cx="6" cy="5" r="2.2" /><circle cx="6" cy="19" r="2.2" /><circle cx="18" cy="8" r="2.2" /><path d="M6 7.2v9.6M18 10.2c0 4-6 3-11 7" /></svg>;
+const DocIcon = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v4h4M9 12h6M9 16h6" /></svg>;
+const PitchIcon = () => (
+  <svg width="120" height="84" viewBox="0 0 120 84" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden className="tb-pitchicon">
+    <rect x="6" y="20" width="108" height="60" rx="3" /><line x1="60" y1="20" x2="60" y2="80" /><circle cx="60" cy="50" r="11" />
+    <path d="M6 38h10v24H6M114 38h-10v24h10" />
+    <text x="78" y="16" fontSize="13" fill="currentColor" stroke="none" fontWeight="700">z</text>
+    <text x="88" y="10" fontSize="11" fill="currentColor" stroke="none" fontWeight="700">z</text>
+    <text x="96" y="5" fontSize="9" fill="currentColor" stroke="none" fontWeight="700">z</text>
+  </svg>
+);
 
 function PushSheet({ push, now, onClose, onNote }: { push: Push; now: number; onClose: () => void; onNote: (v: string) => void }) {
   useEffect(() => {
