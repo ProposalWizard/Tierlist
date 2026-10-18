@@ -213,14 +213,25 @@ export function clubAim(career: CareerState, division: CareerDivision, club: str
 
 // ── The list ────────────────────────────────────────────────────────────────
 
-export type InterestRole = "Star man" | "First team" | "Rotation" | "Squad player";
+/**
+ * How much a club wants you, strongest first (18 Oct 2026). It replaced
+ * "Star man / First team / Rotation / Squad player", which read like a
+ * promise of a place the game never kept: "keep the ability to understand
+ * how much the club wants you by just changing the wording". It changes
+ * nothing after you sign.
+ */
+export type InterestLevel = "Desperate" | "Very keen" | "Keen" | "Interested";
+
+/** 4 for Desperate down to 1 for Interested (the bar on the screen). */
+export const INTEREST_STEPS: Record<InterestLevel, number> = { Desperate: 4, "Very keen": 3, Keen: 2, Interested: 1 };
 
 export interface InterestedClub {
   club: string;
   division: CareerDivision;
   position: number;
   of: number;
-  role: InterestRole;
+  /** How much they want you. */
+  interest: InterestLevel;
   /** One plain sentence from the club. */
   why: string;
   /** What your club gets for you. */
@@ -260,19 +271,19 @@ export function markWalkedAway(career: CareerState, window: WindowKind, club: st
   return { ...career, transferWindow: { key, walkedAway: [...prev.filter(c => c !== club), club] } };
 }
 
-function roleFor(margin: number): InterestRole {
-  return margin >= 0.9 ? "Star man" : margin >= 0.45 ? "First team" : margin >= 0.15 ? "Rotation" : "Squad player";
+function interestFor(margin: number): InterestLevel {
+  return margin >= 0.9 ? "Desperate" : margin >= 0.45 ? "Very keen" : margin >= 0.15 ? "Keen" : "Interested";
 }
 
 const GROUP_WORD = { GK: "keeper", DEF: "defender", MID: "midfielder", WIDE: "winger", ATT: "striker" } as const;
 
-function whyLine(role: InterestRole, gap: boolean, group: keyof typeof GROUP_WORD, step: number): string {
-  if (gap) return `We need a ${GROUP_WORD[group]}. You'd walk into the side.`;
+function whyLine(level: InterestLevel, gap: boolean, group: keyof typeof GROUP_WORD, step: number): string {
+  if (gap) return `We need a ${GROUP_WORD[group]}, and we want you.`;
   if (step >= 2) return "Nobody's had a season like yours. We want you up here.";
-  if (role === "Star man") return "You'd be the player we build around.";
-  if (role === "First team") return "You'd start most weeks.";
-  if (role === "Rotation") return "You'd be in the rotation and play your way in.";
-  return "You'd have to fight for a place.";
+  if (level === "Desperate") return "We've wanted you all season.";
+  if (level === "Very keen") return "You're top of our list.";
+  if (level === "Keen") return "We like what we've seen.";
+  return "We'd like to talk.";
 }
 
 /** The club's European competition this season, if the game knows it. */
@@ -282,9 +293,14 @@ function europeOf(career: CareerState, club: string): string | undefined {
   return undefined;
 }
 
-/** The order the NSS screen lists them in: biggest first. */
+/** A league's list is A to Z (18 Oct 2026: "it should be ordered alphabetically"). */
 function sortClubs(a: InterestedClub, b: InterestedClub): number {
-  return clubReputation(b.club) - clubReputation(a.club) || a.position - b.position;
+  return a.club.localeCompare(b.club);
+}
+
+/** The keenest club in a league: the one the screen opens on. */
+export function keenest(clubs: InterestedClub[]): InterestedClub | undefined {
+  return [...clubs].sort((a, b) => INTEREST_STEPS[b.interest] - INTEREST_STEPS[a.interest] || clubReputation(b.club) - clubReputation(a.club))[0];
 }
 
 /**
@@ -339,9 +355,9 @@ export function windowInterest(career: CareerState, window: WindowKind): WindowI
         : offerWageFor(club, division, rep, step, career.contract.wage, career);
       let s = Math.floor(seeded(career, window, club, 19) * 2 ** 31) || 1;
       const dealRng = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
-      const role = roleFor(margin);
+      const level = interestFor(margin);
       const { position, of } = finishOf(career, division, club, window);
-      const why = whyLine(role, gap, group, levelOf(division) - yourLevel);
+      const why = whyLine(level, gap, group, levelOf(division) - yourLevel);
       const fee = Math.max(1, playerMarketValue({ overall, age }, career.player.club, career));
       const offer: TransferOffer = {
         club,
@@ -357,7 +373,7 @@ export function windowInterest(career: CareerState, window: WindowKind): WindowI
         pitch: why,
         transferFee: fee,
       };
-      clubs.push({ club, division, position, of, role, why, fee, offer, europe: europeOf(career, club) });
+      clubs.push({ club, division, position, of, interest: level, why, fee, offer, europe: europeOf(career, club) });
     }
     if (clubs.length) leagues.push({ division, clubs: clubs.sort(sortClubs) });
   }
@@ -365,20 +381,20 @@ export function windowInterest(career: CareerState, window: WindowKind): WindowI
 }
 
 /**
- * A loan that hit its number: the parent club wants you back. It goes at the
- * top of its league's list (and brings the league in if nobody else there did).
+ * A loan that hit its number: the parent club wants you back. It goes into
+ * its league's list (and brings the league in if nobody else there did).
  */
 export function withRecall(interest: WindowInterest, recall: TransferOffer | null, career: CareerState): WindowInterest {
   if (!recall?.division || recall.club === career.player.club) return interest;
   const division = recall.division;
   const { position, of } = finishOf(career, division, recall.club, interest.window);
   const entry: InterestedClub = {
-    club: recall.club, division, position, of, role: "First team", why: recall.pitch, fee: 0,
+    club: recall.club, division, position, of, interest: "Desperate", why: recall.pitch, fee: 0,
     offer: { ...recall, position },
   };
   const leagues = interest.leagues.map(l => ({ ...l, clubs: l.clubs.filter(c => c.club !== recall.club) }));
   const at = leagues.find(l => l.division === division);
-  if (at) at.clubs = [entry, ...at.clubs];
+  if (at) at.clubs = [entry, ...at.clubs].sort(sortClubs);
   else leagues.push({ division, clubs: [entry] });
   return { ...interest, leagues: leagues.filter(l => l.clubs.length).sort((a, b) => levelOf(b.division) - levelOf(a.division)) };
 }

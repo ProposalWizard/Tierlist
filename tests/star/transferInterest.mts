@@ -95,6 +95,13 @@ check(walkedAway(after, "summer").includes(firstClub), "walked away is remembere
 check(!windowInterest(after, "summer").leagues.some(l => l.clubs.some(k => k.club === firstClub)), "a club that walked away is off the list");
 check(windowInterest({ ...after, transferWindow: { key: "0-january", walkedAway: [firstClub] } }, "summer").leagues.some(l => l.clubs.some(k => k.club === firstClub)), "…and back next window");
 
+// A league's list is A to Z, and every club says how keen it is.
+for (const l of good.leagues) {
+  const names = l.clubs.map(k => k.club);
+  check(names.join("|") === [...names].sort((a, b) => a.localeCompare(b)).join("|"), `${l.division}: A to Z`);
+  for (const k of l.clubs) check(["Desperate", "Very keen", "Keen", "Interested"].includes(k.interest), `${k.club}: an interest word`);
+}
+
 // Every offer carries a fee for your club and sensible terms.
 for (const l of good.leagues) for (const k of l.clubs) {
   check(k.fee > 0 && k.offer.transferFee === k.fee, `${k.club}: a fee for your club`);

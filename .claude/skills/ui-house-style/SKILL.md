@@ -39,6 +39,20 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 18 Oct 2026 (third pass) — the transfer window keeps the Home look
+- **Colour, but in the Home screen's style, not another screen's.** The
+  Deadline Day version: "you did not really stick with the design style of
+  the homepage … it should be more of the same type of design style as the
+  home page". Use Home's tiles (dark glass lit from the top in one colour,
+  coloured edge), ScreenShell and the bottom bar. A special screen's look
+  (Deadline Day) stays on that screen.
+- **A grade's colour says how good it is**: S a strong positive green, A a
+  lighter green, B yellow, C orange, D red.
+- **A list you pick from is A to Z**, unless asked otherwise.
+- **Don't show a label that promises something the game doesn't do.** "Star
+  man / First team" became how keen the club is (Desperate, Very keen, Keen,
+  Interested) with a four-step bar.
+
 ### 18 Oct 2026 (later) — the transfer window, second pass
 - **A chooser's list is a full-screen page, never a sheet.** The bottom
   sheets for League and Club were "very horrible to look at … it should be a
@@ -47,9 +61,9 @@ Newest first. Each is something that was actually said.
 - **Don't show a number the next screen is about** (the offered wage in the
   club list: "should be hidden from the user until they actually start the
   negotiation").
-- **Too black and white is dull**: "a bit more colour … the vibe of the
-  deadline day screen" (dark ground, diagonal gold slab, gold italic title,
-  club-colour rows).
+- ~~**Too black and white is dull**: "a bit more colour … the vibe of the
+  deadline day screen".~~ Replaced by the third pass above: colour in the
+  Home style.
 - **A season grade is a letter** (S, A, B, C, D), not "Great"/"Crazy": "a
   classic lettering system … makes you think, I need to get an A next season".
 

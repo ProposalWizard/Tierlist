@@ -180,11 +180,13 @@ Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as co
 
 Only in the summer window (end of season). No January moves for your player
 ("the only way you should be able to transfer is from the summer window";
-`januaryTransfer.ts` stays in the files, unused). One screen in the Deadline
-Day colours (`components/star/TransferHub.tsx`): League → Club → Negotiate,
-each list a full-screen page (✕ goes back unchanged). No Nation row (England
-only). No wage in the club list; you see their offer in the talks. Your
-season is a letter, S best then A, B, C, D. Who is interested:
+`januaryTransfer.ts` stays in the files, unused). One screen in the Home
+screen's look (`components/star/TransferHub.tsx`): League → Club → Negotiate,
+each list a full-screen page (✕ goes back unchanged), clubs A to Z. No Nation
+row (England only). No wage in the club list; you see their offer in the
+talks. Your season is a letter, S best then A, B, C, D, green to red. Each
+club says how keen it is (Desperate, Very keen, Keen, Interested, with a
+bar); it changes nothing after you sign. Who is interested:
 `lib/star/transferInterest.ts` — the letter sets how high clubs can come
 from (B +1, A +2, S +3, never more); inside that, a club's aim rises with its
 size and where it finished, and a gap in your position helps. Talks are the
