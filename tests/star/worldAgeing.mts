@@ -117,7 +117,9 @@ for (const [label, r] of [["BEFORE", before], ["AFTER", after]] as const) {
   const first = after.rows[0], last = after.rows[after.rows.length - 1];
   for (const k of Object.keys(first.xi)) {
     const drift = Math.max(...after.rows.map(r => Math.abs(r.xi[k] - first.xi[k])));
-    check(drift <= 3, `${k}: starting-XI average stays within 3 of day one over 20 seasons (worst drift ${drift.toFixed(1)})`);
+    // 4, not 3, since 18 Oct 2026: real players without a flag no longer
+    // grow (UNFLAGGED_GROWTH off), so the top drifts a little.
+    check(drift <= 4, `${k}: starting-XI average stays within 4 of day one over 20 seasons (worst drift ${drift.toFixed(1)})`);
   }
   check(first.xi.premier > first.xi.championship + 4 && last.xi.premier > last.xi.championship + 4,
     `the Premier League stays clearly stronger than the Championship (${last.xi.premier.toFixed(1)} v ${last.xi.championship.toFixed(1)})`);
@@ -150,15 +152,23 @@ for (const [label, r] of [["BEFORE", before], ["AFTER", after]] as const) {
 
 // ── The age curve, one man at a time ──
 {
-  const sq = (age: number, overall: number, n: number): LeagueSquad => ({ club: "Test FC", players: Array.from({ length: n }, (_, i) => ({
-    id: `t${age}_${i}`, name: `T ${i}`, position: "CM", overall, goals: 0, assists: 0, age,
+  // Replacement boys ("rg" ids) still grow on Leo's curve; real men
+  // without a flag hold (checked below).
+  const sq = (age: number, overall: number, n: number, real = false): LeagueSquad => ({ club: "Test FC", players: Array.from({ length: n }, (_, i) => ({
+    id: real ? `t${age}_${i}` : `rg0.t${age}_${i}`, name: `T ${i}`, position: "CM", overall, goals: 0, assists: 0, age,
     pace: overall, shooting: overall, passing: overall, dribbling: overall, defending: overall, physical: overall,
   })) });
   const change = (age: number, overall: number, tier: 1 | 2 | 3 = 2) => {
     const s = sq(age, overall, 400);
-    const out = ageLeagueSquads([s], 3, () => tier, { "Test FC": 76 }).squads[0].players.filter(p => !isRegenId(p.id));
+    const ids = new Set(s.players.map(p => p.id));
+    const out = ageLeagueSquads([s], 3, () => tier, { "Test FC": 76 }).squads[0].players.filter(p => ids.has(p.id));
     return avg(out.map(p => p.overall - overall));
   };
+  {
+    const s = sq(18, 62, 400, true);
+    const out = ageLeagueSquads([s], 3, undefined, { "Test FC": 76 }).squads[0].players;
+    check(out.every(p => p.overall === 62), "a real 18-year-old with no flag holds his rating (no unflagged growth)");
+  }
   check(change(18, 62) > 2.5, `an 18-year-old 62 grows (${change(18, 62).toFixed(2)})`);
   check(change(18, 62, 3) > change(18, 62, 1) + 1, `a better training ground grows him faster (tier 3 ${change(18, 62, 3).toFixed(2)} v tier 1 ${change(18, 62, 1).toFixed(2)})`);
   check(change(19, 84) < change(19, 62), "growth slows near the top");
@@ -166,7 +176,7 @@ for (const [label, r] of [["BEFORE", before], ["AFTER", after]] as const) {
   check(change(31, 75) < -0.8, `a 31-year-old declines (${change(31, 75).toFixed(2)})`);
   check(change(34, 75) < change(31, 75) - 1, `faster after 33 (${change(34, 75).toFixed(2)})`);
   // Pace goes first.
-  const old = ageLeagueSquads([sq(31, 75, 200)], 3).squads[0].players.filter(p => !isRegenId(p.id));
+  const old = ageLeagueSquads([sq(31, 75, 200, true)], 3).squads[0].players.filter(p => !isRegenId(p.id));
   check(avg(old.map(p => p.pace! - p.overall)) < -0.5, "an old man's pace falls faster than his rating");
   check(Math.abs(avg(old.map(p => p.passing! - p.overall))) < 0.01, "his passing moves with his rating");
   // Everyone a year older.
@@ -336,6 +346,63 @@ for (const [label, r] of [["BEFORE", before], ["AFTER", after]] as const) {
   check(career.squad.filter(p => !isRegenId(p.id)).every(p => p.careerGoals === 2 && p.seasonGoals === 0),
     "team-mates keep their career goals; season tallies reset");
   console.log(`\nadvanceSeason ×5 with ${players(worldNow)} players: ${ms} ms`);
+}
+
+// ── The top waits for you (Mikey, 18 Oct 2026) ──
+{
+  const playerAt = (club: string): StarPlayer => ({
+    firstName: "Low", lastName: "Start", age: 16, skinTone: "light",
+    club, clubBadge: null, position: "ST", nationality: "England", startYear: 2027,
+  } as StarPlayer);
+  const you = LEAGUE_TWO_CLUBS[3];
+  let career: CareerState = makeInitialCareer(playerAt(you), [...LEAGUE_TWO_CLUBS], "league_two");
+  const w = world();
+  const ownLeague = w.league_two.find(s => s.club === you)!;
+  career = {
+    ...career,
+    leagueSquads: w.league_two,
+    externalSquads: [...w.premier, ...w.championship, ...w.europe],
+    squad: ownLeague.players.map((p, i) => ({
+      id: `sp_${i}`, name: p.name, shortName: p.name, position: p.position,
+      seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0, overall: p.overall,
+    })),
+  };
+  const day1 = career;
+  for (let s = 1; s <= 3; s++) career = advanceSeason(career, false).career;
+  check(career.worldAgedSince === undefined, "frozen: below the Championship the world has not started ageing");
+  check(typeof career.worldSeed === "number", "frozen: the career gets its own world seed");
+  const was = new Map([...(day1.leagueSquads ?? []), ...(day1.externalSquads ?? [])].filter(s => s.club !== you).flatMap(s => s.players.map(p => [p.id, p] as const)));
+  const others = [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])].filter(s => s.club !== you).flatMap(s => s.players);
+  check(others.every(p => was.has(p.id) && was.get(p.id)!.age === p.age && was.get(p.id)!.overall === p.overall),
+    "frozen: every other club's players keep their age and rating");
+  check(!others.some(p => isRegenId(p.id)), "frozen: nobody else retires");
+  const mine = career.squad;
+  check(mine.some(p => typeof p.age === "number"), "your own team-mates age while the world waits");
+  const ownCopy = (career.leagueSquads ?? []).find(s => s.club === you);
+  if (ownCopy) {
+    const copyIds = ownCopy.players.map(p => p.id).filter(isRegenId).sort();
+    const squadIds = mine.map(p => p.id).filter(isRegenId).sort();
+    check(JSON.stringify(copyIds) === JSON.stringify(squadIds), `both copies of your club retire the same men (${squadIds.length} replacements)`);
+  }
+  // A different career (another name) gets a different history.
+  let other: CareerState = { ...day1, player: { ...day1.player, firstName: "Other" } };
+  for (let s = 1; s <= 3; s++) other = advanceSeason(other, false).career;
+  check(other.worldSeed !== career.worldSeed, "another career has another world seed");
+  // Wake up: a season played in the Championship.
+  career = { ...career, division: "championship" };
+  career = advanceSeason(career, false).career;
+  check(typeof career.worldAgedSince === "number", "a season in the Championship wakes the world");
+  const woke = [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])].filter(s => s.club !== you).flatMap(s => s.players);
+  check(woke.some(p => was.has(p.id) && typeof was.get(p.id)!.age === "number" && p.age === was.get(p.id)!.age! + 1),
+    "after waking, the rest of the world is a year older");
+}
+
+// ── Replacements take the retired man's country ──
+{
+  const r = makeRegen("someone", 4, 75, "Brazil");
+  check(r.nation === "Brazil", "a replacement for a Brazilian is Brazilian");
+  const r2 = makeRegen("someone", 4, 75);
+  check(r2.nation === undefined, "no country on record: none invented");
 }
 
 if (problems.length) {

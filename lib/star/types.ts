@@ -1642,6 +1642,13 @@ export interface CareerState {
    */
   clubLevels?: Record<string, number>;
   /**
+   * This career's own world history (worldAgeing.ts `seeded`): who retires
+   * when, and which boy replaces him, differ from one career to the next.
+   * Set at the first rollover of a career whose world had not aged yet;
+   * absent on older saves, which keep the history they already had.
+   */
+  worldSeed?: number;
+  /**
    * The retirements worth a post from the last rollover (lib/star/
    * retirementNews.ts): your team-mates and a few famous names. Replaced
    * every rollover; read once by the media pass in page.tsx.

@@ -4,6 +4,7 @@ import { FIRST_NAMES, LAST_NAMES } from "./squadData";
 import { averageStartingXIRating, TRAINING_TIER_MULTIPLIER, FREE_AGENTS_CLUB } from "./leagueSquads";
 import { shortNameOf } from "./realSquad";
 import { fakeFaceFor } from "./fakeFaces";
+import { madeUpName } from "./nationNames";
 
 /**
  * A WORLD THAT AGES.
@@ -29,7 +30,36 @@ import { fakeFaceFor } from "./fakeFaces";
  * squad fetched fresh from the database in season 9 can be brought up to
  * date (catchUpFetchedSquads) to the same answer it would have reached by
  * living through those eight rollovers.
+ *
+ * MIKEY'S RULES (18 Oct 2026, "the top waits for you"):
+ *  - Until you have played a season for a Championship or Premier League
+ *    club, only YOUR club ages. Every other player in the world is frozen:
+ *    no age, no growth, no decline, no retirement (careerFlow.ts decides,
+ *    `worldAwake`). National teams and Ballon d'Or rivals come from those
+ *    frozen squads, so they wait too. Then the whole world ages.
+ *  - Unflagged players no longer grow (UNFLAGGED_GROWTH, kept for later);
+ *    High / World Class players grow as before (growWonderkids).
+ *  - A replacement takes the retired man's nationality and a name from that
+ *    country's name bank.
+ *  - Each career has its own history: every roll mixes in the career's
+ *    `worldSeed` (absent on saves whose world already aged before this, so
+ *    those keep exactly the history they had).
+ *  - Decline, retirement ages and how replacements start are Leo's numbers
+ *    until Mikey sets his own.
  */
+
+/**
+ * Leo's growth for players with no High / World Class flag (a young man
+ * grows by age, a random talent roll and his club's training ground).
+ * Off since 18 Oct 2026 (Mikey: "remove it for now, but still remember
+ * it"); a player then holds his rating until his decline starts.
+ */
+export const UNFLAGGED_GROWTH = false;
+
+/** A roll's key, made this career's own by its world seed. */
+function seeded(key: string, worldSeed?: number): string {
+  return worldSeed ? `${worldSeed}~${key}` : key;
+}
 
 /** Seasons are aged from this age onward if the player has no age at all
  *  (an invented squad): a stable 20–32, off his id. An invented squad's
@@ -98,9 +128,11 @@ export const TALENT_SPREAD = 8;
  */
 export function ratingChange(
   age: number, overall: number, rng: () => number, talent: number, trainingMultiplier: number,
-  clubLevel?: number,
+  clubLevel?: number, canGrow = true,
 ): number {
   let mean = meanAgeChange(age);
+  // Unflagged growth switched off: up to his decline, he holds.
+  if (mean >= 0 && !canGrow) return 0;
   if (mean > 0) {
     const nearTop = Math.max(0.1, Math.min(1, (90 - overall) / 14));
     const ceiling = clubLevel === undefined ? 99 : clubLevel + CEILING_ABOVE_LEVEL + (talent - 1) * 2 * TALENT_SPREAD;
@@ -138,6 +170,11 @@ function exempt(id: string): boolean {
 
 /** A player's key for every roll: the database id, whichever copy he is. */
 function keyOfLeague(p: LeaguePlayer, club: string): string {
+  // An invented club's league copy ("gen:<club>:<i>") is the same man as
+  // squad entry "sp_<i>": keyed alike, so both copies of your club retire
+  // the same men and get the same boys.
+  const gen = /^gen:.+:(\d+)$/.exec(p.id);
+  if (gen) return `${club}:sp_${gen[1]}`;
   return p.id.startsWith("sp_") ? `${club}:${p.id}` : p.id;
 }
 function keyOfSquad(p: SquadPlayer, club: string): string {
@@ -175,6 +212,7 @@ export const REGEN_BELOW_LEVEL = 11;
 
 interface Regen {
   id: string; name: string; age: number; overall: number;
+  nation?: string;
   highPotential?: true; worldClassPotential?: true;
 }
 
@@ -188,16 +226,18 @@ export function isRegenId(id: string): boolean {
  * The boy who replaces a retiring man. Same id, name and rating in every
  * copy of the squad (keyed off the season and the man he replaces).
  */
-export function makeRegen(retireeKey: string, season: number, clubLevel: number): Regen {
+export function makeRegen(retireeKey: string, season: number, clubLevel: number, nation?: string): Regen {
   const id = `rg${season}.${hashInt(retireeKey).toString(36)}${hashInt(`${retireeKey}~`).toString(36).slice(0, 4)}`;
   const rng = mulberry32(hashInt(id));
   const r = rng();
   const age = r < 0.1 ? 16 : r < 0.4 ? 17 : r < 0.75 ? 18 : 19;
   const overall = clamp(Math.round(clubLevel - REGEN_BELOW_LEVEL - (19 - age) * 2 + (rng() * 6 - 3)), 35, 85);
-  const name = regenName(rng);
+  // From the retired man's country when known, so a Brazilian club gets a
+  // Brazilian boy who can play for Brazil.
+  const name = nation ? madeUpName(nation, id) : regenName(rng);
   const hp = rng() < REGEN_HIGH_POTENTIAL;
   const wc = hp && rng() < REGEN_WORLD_CLASS;
-  return { id, name, age, overall, ...(hp ? { highPotential: true as const } : {}), ...(wc ? { worldClassPotential: true as const } : {}) };
+  return { id, name, age, overall, ...(nation ? { nation } : {}), ...(hp ? { highPotential: true as const } : {}), ...(wc ? { worldClassPotential: true as const } : {}) };
 }
 
 /** One man retired at the rollover — for anyone who wants to tell the story. */
@@ -218,7 +258,12 @@ function ageOne<T extends { id: string; age?: number; overall?: number; position
   if (age >= retirementAgeFor(key, p.position)) return { player: null, retired: true, age };
   if (typeof p.overall !== "number") return { player: { ...p, age: age + 1 }, retired: false };
   const rng = mulberry32(hashInt(`${key}|${season}`));
-  const delta = ratingChange(age, p.overall, rng, talentOf(key), trainingMultiplier, clubLevel);
+  // A real man without a flag holds his rating until his decline
+  // (UNFLAGGED_GROWTH off). A replacement boy still grows on Leo's curve
+  // until Mikey's own plan for replacements: frozen at his starting rating,
+  // every league would sink by about 12 points over 20 seasons.
+  const canGrow = UNFLAGGED_GROWTH || isRegenId(p.id);
+  const delta = ratingChange(age, p.overall, rng, talentOf(key), trainingMultiplier, clubLevel, canGrow);
   const overall = clamp(p.overall + delta, 30, 99);
   return {
     player: { ...p, ...shiftedStats(p as StatBag, overall - p.overall, age), age: age + 1, overall },
@@ -248,6 +293,7 @@ export function ageLeagueSquads(
   squads: LeagueSquad[], season: number,
   trainingTierFor?: (club: string) => 1 | 2 | 3,
   clubLevels: Record<string, number> = {},
+  worldSeed?: number,
 ): { squads: LeagueSquad[]; retired: RetiredPlayer[]; clubLevels: Record<string, number> } {
   const retired: RetiredPlayer[] = [];
   const levels = { ...clubLevels };
@@ -259,15 +305,16 @@ export function ageLeagueSquads(
     const players: LeaguePlayer[] = [];
     for (const p of s.players) {
       if (exempt(p.id)) { players.push(p); continue; }
-      const key = keyOfLeague(p, s.club);
+      const key = seeded(keyOfLeague(p, s.club), worldSeed);
       const res = ageOne(p, key, season, tierMult, level);
       if (!res.retired) { players.push(res.player); continue; }
       retired.push({ club: s.club, id: p.id, name: p.name, age: res.age, position: p.position });
       if (!regens) continue;
-      const r = makeRegen(key, season, level);
+      const r = makeRegen(key, season, level, p.nation ?? squadNation(s.players));
       players.push({
         id: r.id, name: r.name, position: p.position, overall: r.overall, goals: 0, assists: 0,
         age: r.age,
+        ...(r.nation ? { nation: r.nation } : {}),
         ...(r.highPotential ? { highPotential: true } : {}),
         ...(r.worldClassPotential ? { worldClassPotential: true } : {}),
         // No `image`: every screen draws fakeFaceFor(id) for a man with no
@@ -304,6 +351,7 @@ export function clubLevelOf(levels: Record<string, number>, squad: LeagueSquad):
 export function ageOwnSquad(
   squad: SquadPlayer[], club: string, season: number, clubLevel: number,
   trainingTier: 1 | 2 | 3 = 2,
+  worldSeed?: number,
 ): { squad: SquadPlayer[]; retired: RetiredPlayer[] } {
   const tierMult = TRAINING_TIER_MULTIPLIER[trainingTier];
   const rated = squad.some(p => typeof p.overall === "number");
@@ -311,15 +359,16 @@ export function ageOwnSquad(
   const out: SquadPlayer[] = [];
   for (const p of squad) {
     if (exempt(p.id)) { out.push(p); continue; }
-    const key = keyOfSquad(p, club);
+    const key = seeded(keyOfSquad(p, club), worldSeed);
     const res = ageOne(p, key, season, tierMult, clubLevel);
     if (!res.retired) { out.push(res.player); continue; }
     retired.push({ club, id: p.id, name: p.name, age: res.age, position: p.position });
-    const r = makeRegen(key, season, clubLevel);
+    const r = makeRegen(key, season, clubLevel, p.nationality ?? squadNationality(squad));
     out.push({
       id: r.id, name: r.name, shortName: shortNameOf(r.name), position: p.position,
       seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0, leagueGoals: 0, leagueAssists: 0,
       age: r.age, positions: [p.position], imageUrl: fakeFaceFor(r.id),
+      ...(r.nation ? { nationality: r.nation } : {}),
       ...(rated ? { overall: r.overall } : {}),
       ...(r.highPotential ? { highPotential: true } : {}),
       ...(r.worldClassPotential ? { worldClassPotential: true } : {}),
@@ -338,11 +387,12 @@ export function catchUpFetchedSquads(
   fresh: LeagueSquad[], from: number, to: number,
   trainingTierFor?: (club: string) => 1 | 2 | 3,
   clubLevels: Record<string, number> = {},
+  worldSeed?: number,
 ): LeagueSquad[] {
   let out = fresh;
   let levels = clubLevels;
   for (let s = from; s <= to; s++) {
-    const r = ageLeagueSquads(out, s, trainingTierFor, levels);
+    const r = ageLeagueSquads(out, s, trainingTierFor, levels, worldSeed);
     out = r.squads;
     levels = r.clubLevels;
   }
@@ -355,6 +405,8 @@ export interface WorldClock {
   /** The season whose rollover first aged the world (absent: never yet). */
   worldAgedSince?: number;
   clubLevels?: Record<string, number>;
+  /** This career's own history (see `seeded`); absent on older saves. */
+  worldSeed?: number;
 }
 
 /** The rollovers this career's world has already lived through. */
@@ -368,7 +420,7 @@ function agedSeasons(c: WorldClock): [number, number] | null {
 export function ageFetchedForCareer(c: WorldClock, fresh: LeagueSquad[]): LeagueSquad[] {
   const span = agedSeasons(c);
   if (!span) return fresh;
-  return catchUpFetchedSquads(fresh, span[0], span[1], undefined, c.clubLevels ?? {});
+  return catchUpFetchedSquads(fresh, span[0], span[1], undefined, c.clubLevels ?? {}, c.worldSeed);
 }
 
 /** Your new club's dressing room from a fresh fetch (a transfer, a reload),
@@ -380,9 +432,33 @@ export function ageOwnFetchedForCareer(c: WorldClock, club: string, squad: Squad
   const level = c.clubLevels?.[club]
     ?? (rated.length ? Math.round(rated.reduce((n, p) => n + (p.overall ?? 0), 0) / rated.length) : 65);
   let out = squad;
-  for (let s = span[0]; s <= span[1]; s++) out = ageOwnSquad(out, club, s, level).squad;
+  for (let s = span[0]; s <= span[1]; s++) out = ageOwnSquad(out, club, s, level, 2, c.worldSeed).squad;
   return out;
 }
+
+/** The country most of a squad comes from, for a replacement whose man had
+ *  none on record (an invented player at a real club). */
+function squadNation(players: { nation?: string }[]): string | undefined {
+  return mostCommon(players.map(p => p.nation));
+}
+function squadNationality(players: { nationality?: string }[]): string | undefined {
+  return mostCommon(players.map(p => p.nationality));
+}
+function mostCommon(xs: (string | undefined)[]): string | undefined {
+  const n = new Map<string, number>();
+  for (const x of xs) if (x) n.set(x, (n.get(x) ?? 0) + 1);
+  let best: string | undefined; let top = 0;
+  n.forEach((c, x) => { if (c > top) { top = c; best = x; } });
+  return best;
+}
+
+/** A career's own world seed, from who you are (never 0). */
+export function worldSeedFor(player: { firstName: string; lastName: string; startYear: number; nationality: string; position: string }): number {
+  return (hashInt(`${player.firstName} ${player.lastName}|${player.startYear}|${player.nationality}|${player.position}|world`) % 2147483646) + 1;
+}
+
+/** Leagues where you have "arrived": a season played here wakes the world. */
+export const AWAKE_DIVISIONS: readonly string[] = ["premier", "championship"];
 
 // ── hashing ──
 
