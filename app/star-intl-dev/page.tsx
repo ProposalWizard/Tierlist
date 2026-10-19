@@ -8,7 +8,7 @@
  * squad-announcement screen exactly as the game draws it.
  * Nothing is saved.
  */
-import { useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import "@/components/star/ui/flat.css";
 import { pitchFont } from "@/components/star/ui/pitchFont";
 import IntlWorldPanel from "@/components/star/IntlWorldPanel";
@@ -126,49 +126,25 @@ import NationFlag from "@/components/star/NationFlag";
 import { newWorld } from "@/lib/star/intl/replay";
 import { NATIONS } from "@/lib/star/intl/nations";
 import { table, played } from "@/lib/star/intl/engine";
+import type { WorldMatch as IntlMatch } from "@/lib/star/intl/world";
 import type { IntlDecision, Period } from "@/lib/star/intl/career";
 
 type Shot = "called" | "out" | "country" | "duty" | "watched" | "season" | "tournament" | "ballon";
 const YEARS = Array.from({ length: 20 }, (_, i) => 2027 + i);
-const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
-export default function IntlDevPage() {
-  const [year, setYear] = useState(2028);
-  const [nation, setNation] = useState("England");
-  const [search, setSearch] = useState("");
-  const [shot, setShot] = useState<null | Shot>(null);
-  const nations = useMemo(() => NATIONS.map((n) => n.name).sort(), []);
-  const w = useMemo(() => {
-    const world = newWorld({ xi: {}, played: {}, firstYear: 2026 });
-    world.run(Date.UTC(year, 7, 1));
-    return world;
-  }, [year]);
-  const mine = w.matches.filter((m) => (m.home === nation || m.away === nation)).sort((a, b) => a.date - b.date);
-  const done = mine.filter(played);
-  const groups = useMemo(() => {
-    const seen = new Set<string>();
-    const out: { title: string; rows: ReturnType<typeof table> }[] = [];
-    for (const m of [...done].reverse()) {
-      if (!m.group || seen.has(`${m.edition}|${m.group}`)) continue;
-      seen.add(`${m.edition}|${m.group}`);
-      const ms = w.edition(m.edition).filter((x) => x.group === m.group);
-      const teams = Array.from(new Set(ms.flatMap((x) => [x.home, x.away])));
-      out.push({ title: `${m.comp} · ${m.stage.split(" · ")[0]}`, rows: table(teams, ms, "h2h", w.rankOf) });
-      if (out.length >= 3) break;
-    }
-    return out;
-  }, [done, w]);
-
+/** One game screen for `nation`, exactly as Play opens it. Used full size
+ *  by Play and shrunk on each card. */
+const Screen = memo(function Screen({ shot, nation, done, onBack }: { shot: Shot; nation: string; done: IntlMatch[]; onBack: () => void }) {
   if (shot === "duty" || shot === "watched") {
     const { career: c, watched } = careerAtBreak(nation, shot === "duty");
     const duty = dutyNow(c);
     return (
       <div className={`star-root ${pitchFont.variable} min-h-screen bg-[#05080f] text-white`}>
         {shot === "watched" && watched
-          ? <WatchedScreen career={c} fixture={watched} onContinue={() => setShot(null)} />
+          ? <WatchedScreen career={c} fixture={watched} onContinue={() => onBack()} />
           : (
             <div className="px-3 py-4">
-              <button onClick={() => setShot(null)} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
+              <button onClick={() => onBack()} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
               {duty ? <NationalLeague career={c} duty={duty} /> : <div className="text-[13px] font-bold">{nation} has no break match to show yet.</div>}
             </div>
           )}
@@ -183,9 +159,9 @@ export default function IntlDevPage() {
     const duty = dutyNow(c);
     return (
       <div className={`star-root ${pitchFont.variable} min-h-screen bg-[#05080f] text-white`}>
-        {shot === "ballon" ? <BallonDor career={c} startAt="result" onContinue={() => setShot(null)} /> : (
+        {shot === "ballon" ? <BallonDor career={c} startAt="result" onContinue={() => onBack()} /> : (
           <div className="px-3 py-4">
-            <button onClick={() => setShot(null)} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
+            <button onClick={() => onBack()} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
             {shot === "tournament"
               ? (duty ? <NationalLeague career={c} duty={duty} /> : <div className="text-[13px] font-bold">{nation} didn&apos;t reach a tournament in 2027/28 (try another nation).</div>)
               : <IntlWorldPanel career={c} />}
@@ -203,13 +179,13 @@ export default function IntlDevPage() {
     c = { ...c, intl: { ...intlOf(c), manager: 62 } };
     return (
       <div className={`star-root ${pitchFont.variable} min-h-screen bg-[#05080f] px-3 py-4 text-white`}>
-        <button onClick={() => setShot(null)} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
+        <button onClick={() => onBack()} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
         <IntlWorldPanel career={c} />
       </div>
     );
   }
 
-  if (shot) {
+  {
     const lastWindow = done.filter((m) => m.comp !== "World Cup").slice(-2);
     const period: Period = {
       key: "sample", kind: "window", label: "September–October 2026", matches: lastWindow,
@@ -218,8 +194,80 @@ export default function IntlDevPage() {
     const d: IntlDecision = shot === "called"
       ? { period, nation, called: true, chance: 0.9, starter: true, reason: "You're one of his first names on the team sheet.", manager: 62, line: `${nation}'s manager sees you as a starter.` }
       : { period, nation, called: false, chance: 0.1, starter: false, reason: `${nation}'s manager isn't looking at you yet.`, manager: 12, line: `${nation}'s manager doesn't know your name yet. Their squad is picked at about 81.` };
-    return <div className={`star-root ${pitchFont.variable}`}><CallUpScreen decision={d} onContinue={() => setShot(null)} /></div>;
+    return <div className={`star-root ${pitchFont.variable}`}><CallUpScreen decision={d} onContinue={() => onBack()} /></div>;
   }
+
+});
+const NOOP = () => {};
+
+/** A card picture: the live screen for the picked nation, drawn at phone
+ *  size and shrunk to fit. Light screens draw once the card is on view;
+ *  the slow ones (a whole season played first) only while the card is
+ *  hovered or focused, else the nation's flag. */
+const SLOW: Shot[] = ["season", "tournament", "ballon"];
+const PHONE_W = 390;
+function CardPicture({ shot, nation, label, done, hot }: { shot: Shot; nation: string; label: string; done: IntlMatch[]; hot: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [seen, setSeen] = useState(false);
+  const [scale, setScale] = useState(0.5);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) setSeen(true); }, { rootMargin: "200px" });
+    io.observe(el);
+    const ro = new ResizeObserver(() => setScale(el.clientWidth / PHONE_W));
+    ro.observe(el);
+    return () => { io.disconnect(); ro.disconnect(); };
+  }, []);
+  const slow = SLOW.includes(shot);
+  const live = seen && (!slow || hot);
+  return (
+    <div ref={ref} className="iw-pic" aria-hidden>
+      {live ? (
+        <div className="iw-live" style={{ width: PHONE_W, transform: `scale(${scale})` }}>
+          <Screen shot={shot} nation={nation} done={done} onBack={NOOP} />
+        </div>
+      ) : (
+        <div className="iw-ph">
+          <NationFlag nation={nation} width={96} rounded={3} />
+          <span>{label}</span>
+          {slow && <em>Point at it to see it</em>}
+        </div>
+      )}
+    </div>
+  );
+}
+const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+
+export default function IntlDevPage() {
+  const [year, setYear] = useState(2028);
+  const [nation, setNation] = useState("England");
+  const [search, setSearch] = useState("");
+  const [shot, setShot] = useState<null | Shot>(null);
+  const [hot, setHot] = useState<null | Shot>(null);
+  const nations = useMemo(() => NATIONS.map((n) => n.name).sort(), []);
+  const w = useMemo(() => {
+    const world = newWorld({ xi: {}, played: {}, firstYear: 2026 });
+    world.run(Date.UTC(year, 7, 1));
+    return world;
+  }, [year]);
+  const mine = useMemo(() => w.matches.filter((m) => (m.home === nation || m.away === nation)).sort((a, b) => a.date - b.date), [w, nation]);
+  const done = useMemo(() => mine.filter(played), [mine]);
+  const groups = useMemo(() => {
+    const seen = new Set<string>();
+    const out: { title: string; rows: ReturnType<typeof table> }[] = [];
+    for (const m of [...done].reverse()) {
+      if (!m.group || seen.has(`${m.edition}|${m.group}`)) continue;
+      seen.add(`${m.edition}|${m.group}`);
+      const ms = w.edition(m.edition).filter((x) => x.group === m.group);
+      const teams = Array.from(new Set(ms.flatMap((x) => [x.home, x.away])));
+      out.push({ title: `${m.comp} · ${m.stage.split(" · ")[0]}`, rows: table(teams, ms, "h2h", w.rankOf) });
+      if (out.length >= 3) break;
+    }
+    return out;
+  }, [done, w]);
+
+  if (shot) return <Screen shot={shot} nation={nation} done={done} onBack={() => setShot(null)} />;
 
   const info = NATIONS.find((n) => n.name === nation);
   const codeOf = (n: string) => NATIONS.find((x) => x.name === n)?.code ?? n.slice(0, 3).toUpperCase();
@@ -227,9 +275,9 @@ export default function IntlDevPage() {
   const profile = nationKitProfile(nation);
   const shown = nations.filter((n) => n.toLowerCase().includes(search.trim().toLowerCase()));
   const card = (label: string, v: Shot, line: string, main = false) => (
-    <div className="iw-card">
+    <div className="iw-card" tabIndex={0} onMouseEnter={() => setHot(v)} onFocus={() => setHot(v)}>
       <div className="iw-ct">{label}</div>
-      <div className="iw-pic" style={{ backgroundImage: `url(/admin/intl-world/${v}.webp)` }} />
+      <CardPicture key={`${v}-${nation}-${year}`} shot={v} nation={nation} label={label} done={done} hot={hot === v} />
       <div className="iw-cl">{line}</div>
       <div className="iw-cf"><Btn main={main} onClick={() => setShot(v)}>▶ Play</Btn></div>
     </div>
@@ -292,7 +340,7 @@ export default function IntlDevPage() {
             </Panel>
           </div>
 
-          <Panel title="The screens" note={`as the game draws them, for ${nation}`}>
+          <Panel title="The screens">
             <div className="iw-cards">
               {card("Called up", "called", "The squad announcement: you're in.", true)}
               {card("Left out", "out", "The squad announcement: not picked.")}
