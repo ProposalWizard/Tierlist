@@ -1,0 +1,121 @@
+/* Full match (Harry, 19 Oct 2026: "full match opt 1 and 2 as toggles").
+   "wide" = option 1 (match + events beside it); "tv" = option 2 (match full
+   width, a momentum graph, the controls under it). The match pictures
+   themselves (Sim90View, Sim90View3D, LiveRadar, EnginePlay) are untouched. */
+.fm { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+/* The picture: never taller than the screen leaves room for. */
+.fm-stagebox { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+.fm-stage { width: 100%; max-width: max(320px, calc((100dvh - 330px) / 0.62)); margin: 0 auto; min-width: 0; }
+.fm-stage-top { display: flex; justify-content: flex-end; }
+.fm-radar { border-radius: 12px; overflow: hidden; }
+.fm-building { height: 240px; border-radius: 12px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.04); color: var(--bc-ink2); font-weight: 800; }
+.fm-views { display: flex; gap: 4px; }
+.fm-views .bc-pill { min-width: 52px; }
+
+/* Score, option 1: a slanted TV bar. */
+.fm-score { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; align-self: flex-start; max-width: 100%; }
+.fm-score > * { display: flex; align-items: center; padding: 7px 16px; clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.fm-side { gap: 8px; background: var(--bc-blue2); font-size: 16px; font-weight: 900; font-style: italic; text-transform: uppercase; white-space: nowrap; }
+.fm-side i { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.fm-score b { background: #0b1d48; color: var(--bc-amber); font-size: 22px; font-weight: 900; font-family: ui-monospace, monospace; }
+.fm-score em { background: var(--bc-amber); color: #1a1300; font-style: normal; font-weight: 900; font-size: 16px; font-family: ui-monospace, monospace; }
+
+.fm-wide-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+.fm-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.fm-side-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; position: sticky; top: 12px; }
+
+/* Controls under the picture. */
+.fm-under { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px 14px; }
+.fm-under .fm-transport { grid-column: 1; }
+.fm-under .fm-scrub { grid-column: 2; }
+.fm-under .fm-watch { grid-column: 1 / -1; }
+.fm-transport { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fm-play { width: 48px; height: 48px; border-radius: 999px; flex: none; border: 2px solid var(--bc-accent); background: #0b2a66; color: #fff;
+  font-size: 18px; font-weight: 900; cursor: pointer; display: grid; place-items: center; box-shadow: 0 0 16px rgba(47, 140, 255, 0.45); }
+.fm-play:not([data-running]) { background: var(--bc-amber); color: #1a1300; border-color: transparent; }
+.fm-play:disabled { opacity: .4; cursor: not-allowed; }
+.fm-speeds { display: flex; gap: 4px; }
+.fm-new { width: 38px; height: 34px; border-radius: 3px; border: 1px solid var(--bc-line); background: rgba(255, 255, 255, 0.04); color: var(--bc-ink); font-size: 17px; font-weight: 900; cursor: pointer; }
+.fm-scrub input { width: 100%; accent-color: var(--bc-accent); }
+.fm-ticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--bc-ink3); font-weight: 800; }
+.fm-watch { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: var(--bc-ink2); }
+.fm-link { background: none; border: 0; cursor: pointer; color: #fff; font-size: 12.5px; font-weight: 900; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Your chance (the real match takes over). */
+.fm-chance { padding: 10px; border-radius: 4px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.5); display: flex; flex-direction: column; gap: 8px; }
+.fm-chance-head b { display: block; font-size: 14px; font-weight: 900; }
+.fm-chance-head span { font-size: 12.5px; font-weight: 800; color: #a7f3d0; }
+.fm-back { width: 100%; height: 44px; border: 0; cursor: pointer; background: var(--bc-amber); color: #1a1300; font-size: 14px; font-weight: 900; font-style: italic; text-transform: uppercase;
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+
+/* Events. */
+.fm-events { display: flex; flex-direction: column; gap: 4px; max-height: 420px; overflow-y: auto; }
+.fm-ev { display: flex; align-items: center; gap: 8px; text-align: left; padding: 8px 10px; cursor: pointer; color: var(--bc-ink); border: 1px solid var(--bc-line);
+  background: rgba(4, 14, 40, 0.6); border-radius: 3px; }
+.fm-ev:hover { background: rgba(47, 140, 255, 0.16); }
+.fm-ev[data-goal] { background: linear-gradient(100deg, rgba(27, 95, 214, 0.55), rgba(4, 14, 40, 0.6)); }
+.fm-ev-min { font-family: ui-monospace, monospace; font-size: 12.5px; font-weight: 900; width: 32px; flex: none; color: var(--bc-amber); }
+.fm-ev-bar { width: 4px; align-self: stretch; border-radius: 2px; flex: none; }
+.fm-ev-icon { font-size: 14px; flex: none; }
+.fm-ev-text { flex: 1; min-width: 0; font-size: 13px; font-weight: 800; }
+.fm-ev-watch { flex: none; font-size: 12px; font-weight: 900; font-style: italic; text-transform: uppercase; color: var(--bc-amber); }
+
+/* Teams. */
+.fm-teamline { font-size: 15px; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.fm-setup { display: grid; gap: 12px; }
+.fm-club-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.fm-club-top b { font-family: ui-monospace, monospace; color: var(--bc-amber); font-size: 14px; }
+.fm-club select { width: 100%; height: 38px; border-radius: 3px; padding: 0 10px; margin-bottom: 6px; background: #0b1d48; color: var(--bc-ink); border: 1px solid var(--bc-line); font-size: 14px; font-weight: 700; }
+.fm-club input[type="range"] { width: 100%; accent-color: var(--bc-accent); }
+
+/* Option 2: the TV broadcast. */
+.fm-tvbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.fm-tvscore { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+.fm-tvscore > * { padding: 6px 12px; font-weight: 900; }
+.fm-tvscore span { background: #dfe9ff; color: #071a45; font-size: 15px; text-transform: uppercase; border-bottom: 4px solid; white-space: nowrap; }
+.fm-tvscore b { background: #0b1d48; color: #fff; font-size: 20px; font-family: ui-monospace, monospace; padding: 4px 12px; }
+.fm-tvscore em { background: #475569; color: #fff; font-style: normal; font-size: 13px; letter-spacing: .06em; }
+.fm-tvscore em[data-live] { background: var(--bc-red); }
+.fm-tvscore small { background: #071a45; color: var(--bc-amber); font-size: 15px; font-family: ui-monospace, monospace; }
+.fm-under-tv { grid-template-columns: auto minmax(0, 1fr) auto; }
+.fm-under-tv .fm-watch { grid-column: 3; }
+
+/* Momentum graph. */
+.fm-mom { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding-top: 20px; }
+.fm-mom svg { width: 100%; height: 130px; display: block; cursor: pointer; background: rgba(4, 14, 40, 0.6); border: 1px solid var(--bc-line); border-radius: 3px; }
+.fm-mom-side { font-size: 12px; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.fm-mom-goals { position: absolute; left: 0; right: 0; top: 0; height: 20px; }
+.fm-mom-goal { position: absolute; top: 0; transform: translateX(-50%); width: 22px; height: 22px; border-radius: 999px; border: 2px solid; background: #fff; font-size: 12px;
+  line-height: 1; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.fm-mom .fm-mom-home { position: absolute; top: 26px; left: 8px; pointer-events: none; }
+.fm-mom .fm-mom-away { position: absolute; top: 130px; left: 8px; pointer-events: none; }
+
+@media (max-width: 1000px) {
+  .fm-wide-grid { grid-template-columns: minmax(0, 1fr); }
+  .fm-side-col { position: static; }
+}
+@media (max-width: 640px) {
+  .fm-stagebox { padding: 6px; }
+  .fm-under, .fm-under-tv { grid-template-columns: minmax(0, 1fr); }
+  .fm-under .fm-transport, .fm-under .fm-scrub, .fm-under .fm-watch, .fm-under-tv .fm-watch { grid-column: 1; }
+  .fm-speeds { flex: 1; }
+  .fm-speeds .bc-pill { flex: 1; padding: 6px 4px; }
+  .fm-score { align-self: stretch; justify-content: center; }
+  .fm-score > * { padding: 6px 12px; }
+  .fm-side { font-size: 14px; }
+  .fm-score em { flex-basis: 100%; justify-content: center; clip-path: none; }
+  .fm-mom svg { height: 100px; }
+  .fm-mom .fm-mom-away { top: 100px; }
+  .fm-events { max-height: 360px; }
+}
+
+/* The layout switch: beside the title on a computer, its own row on a phone. */
+.fm-layout { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fm-layout-phone { display: none; }
+@media (max-width: 640px) {
+  .fm-layout-pc { display: none; }
+  .fm-layout-phone { display: flex; margin-top: -6px; }
+  .fm-layout-phone .bc-pill { flex: 1; }
+}
+.fm .bc-ph span { font-size: 12px; }

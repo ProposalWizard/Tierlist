@@ -1708,11 +1708,13 @@ export const ADMIN_GUIDES = {
   },
 
   "/star-sim90-dev": {
-    title: "Full match (test)",
+    title: "Full match",
     what: "A whole simulated ninety minutes you can watch: 22 men and the ball. It is played live: the unseen match the career runs plays only up to your next chance, you play that chance, and the rest of the match plays on from how it went (score, momentum, who has the ball). This page stages it in each club's formation.",
     buttons: [
       {
         items: [
+          ["Match + events | TV broadcast", "Two layouts of the same page (top right; its own row on a phone). Match + events: the match with the events list beside it. TV broadcast: the match full width, then a momentum graph, the controls, and the events and teams under it. This device remembers your choice."],
+          ["Momentum (TV broadcast only)", "How the match has swung so far, minute by minute: above the line the home side is on top, below it the away side. ⚽ marks each goal (tap one to watch it). Tap the graph to jump back to that moment."],
           ["▶ / ❚❚", "Starts and pauses the match. At full time it becomes ↻ and plays it again from kick-off."],
           ["1× 4× 16× 60×", "How fast the match plays. 60× plays all ninety minutes in about a minute and a half."],
           ["↻ (right of the speeds)", "A new match: a different roll of the same fixture."],
