@@ -878,6 +878,7 @@ export const ADMIN_GUIDES = {
           ["11-a-side", "The chance types from real matches (one-on-one, corner, free kick…)."],
           ["5-a-side", "The five-a-side shapes. Review only: you can drag and mark them, but not save them."],
           ["Tuning & Commit", "Everything saved but not yet in the game, and any rules proposed from Tune corrections."],
+          ["Number on each tile", "11-a-side: how many chance types. 5-a-side: how many shapes. Tuning & Commit: how many things are waiting."],
           ["Red dot (top right)", "Saving or committing is switched off. Tap it to read why."],
           ["\"… saved, not committed\" bar", "A shortcut to Tuning & Commit when something is waiting."],
         ],
