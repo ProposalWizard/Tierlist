@@ -65,7 +65,7 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
     setUpload({ state: "sending", share: 0 });
     try {
       const n = recordingName({ at: t.at, ...latest.current, seconds: t.seconds, ext: t.ext });
-      const { link } = await uploadToDrive(token, t.blob, n, (share) => setUpload({ state: "sending", share }));
+      const { link } = await uploadToDrive(token, t.blob, n, (share) => setUpload({ state: "sending", share }), latest.current.who);
       setUpload({ state: "done", link });
     } catch (e) {
       setUpload({ state: "failed", why: (e as Error).message });
@@ -163,7 +163,7 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
 
           <div className="vt-drive">
             {DRIVE_CLIENT_ID ? (
-              driveOk ? <span className="vt-ok">● Drive connected. Each recording goes into “{DRIVE_FOLDER_NAME}” by itself.</span>
+              driveOk ? <span className="vt-ok">● Drive connected. Each recording goes into “{DRIVE_FOLDER_NAME}” → {who} by itself.</span>
                 : <><button className="ash-btn ghost" onClick={connect}>Connect Drive</button><span className="vt-hint">Do this first, and each recording saves itself.</span></>
             ) : (
               <span className="vt-hint">Drive isn't switched on yet. Recordings download to this device for now.</span>

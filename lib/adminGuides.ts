@@ -728,7 +728,7 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: [
-      "Your own Google Drive, folder \"Knowitball screen recordings\" (the site makes it the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it.",
+      "Your own Google Drive, folder \"Knowitball screen recordings\" → a folder for whoever is picked under Who is recording (the site makes them the first time; you can move the main folder anywhere in Drive), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it.",
       "The site keeps nothing. The video goes from your browser straight to Google.",
       "Drive needs NEXT_PUBLIC_GOOGLE_CLIENT_ID on the site. Until it is set, recordings only download.",
     ],
