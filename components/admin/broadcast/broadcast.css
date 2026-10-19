@@ -5,13 +5,13 @@
  */
 .bc { --bc-bg: #040b1f; --bc-panel: rgba(10, 30, 74, 0.72); --bc-line: rgba(90, 150, 255, 0.22); --bc-ink: #eef4ff; --bc-ink2: #a9bde2;
   --bc-ink3: #6f86b3; --bc-blue: #1b5fd6; --bc-blue2: #123f9c; --bc-accent: #2f8cff; --bc-amber: #ffc24a; --bc-red: #ff4d5e;
-  color-scheme: dark; min-height: 100dvh; color: var(--bc-ink); background-color: #03091a;
+  color-scheme: dark; min-height: 100dvh; color: var(--bc-ink);
   background:
     radial-gradient(28% 22% at 18% -4%, rgba(170, 205, 255, 0.24), transparent 70%),
     radial-gradient(28% 22% at 82% -4%, rgba(170, 205, 255, 0.2), transparent 70%),
     radial-gradient(90% 40% at 50% 112%, rgba(20, 120, 70, 0.28), transparent 70%),
     linear-gradient(180deg, #071a45 0%, #040b1f 55%, #03091a 100%);
-  background-attachment: fixed; }
+  background-color: #03091a; background-attachment: fixed; }
 .bc-inner { margin: 0 auto; padding: 18px clamp(14px, 2.5vw, 32px) 80px; display: flex; flex-direction: column; gap: 16px; }
 .bc-head { display: flex; align-items: stretch; gap: 8px; }
 .bc-back { display: grid; place-items: center; width: 46px; flex: 0 0 auto; font-size: 22px; font-weight: 900; color: #fff; text-decoration: none; border: 0; cursor: pointer;
