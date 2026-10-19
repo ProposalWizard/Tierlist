@@ -51,3 +51,4 @@ Every page keeps all of its key functions ("every page needs to keep the key fun
 | 3D area hub | round 3: A |
 | 3D scene editor (camera, lighting) | round 3: A |
 | Tournaments, Sound board | not picked yet: Broadcast frame only |
+| Star Pass: one tier (20 levels) at a time | kept (Harry, 19 Oct) |
