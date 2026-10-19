@@ -39,6 +39,16 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 19 Oct 2026 — key controls never below the fold (Harry)
+- **"I heavily dislike when ui is off the screen that could be very easy to
+  press on the screen."** On Infinite Highlights at 1440×900 the Next button
+  and the chance name sat under the tall pitch. The main controls (chance
+  name, flag, Prev / Play / Next, and Save / Commit on a phone) now sit in a
+  dock ABOVE the pitch, pinned to the top while you scroll. Pin at the TOP,
+  not the bottom: the match counts top bars and sizes the live pitch under
+  them, so a top dock never covers the ball. A sticky SIDE column must carry
+  `data-side-column`, or the match mistakes it for a top bar.
+
 ### 19 Oct 2026 — the Team room and the admin side menu (Harry)
 - **"We need to be able to close the side tab."** On a computer, « at the top
   of the admin side menu folds it to a 64 px strip of icons (remembered per
