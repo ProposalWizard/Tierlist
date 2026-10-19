@@ -1233,6 +1233,43 @@ export const ADMIN_GUIDES = {
     dev: "app/star-store-dev/page.tsx · components/star/store/{StoreView,CareerStore,RunupPreview,AccessoryFigure}.tsx · lib/star/store/{catalogue,coins,daily,purchase,career,testArea,runupPreview}.ts · tests/star/store{Coins,Daily,Purchase,Career}.mts",
   },
 
+  "/star-scene-editor-dev": {
+    title: "3D Scene Editor",
+    what: "Step 1 of the one editor for every 3D scene. It works on the Cut-scene Director: pick a scene, then change the camera and lighting and watch the real director play it. Nothing is saved yet and nothing touches a career.",
+    buttons: [
+      {
+        group: "3D Preview",
+        items: [
+          ["Place tabs (3D Signing … Cut-scene Director)", "Only Cut-scene Director works today. The others say \"coming next\"."],
+          ["Scene buttons (Contract signing, Goal celebration …)", "Load that hand-made cut scene into the preview. Your edits are cleared."],
+          ["The badge top-left", "The shot under the playhead, its name and its lens."],
+        ],
+      },
+      {
+        group: "Settings (Camera / Lighting / Cast / Scene tabs on a phone)",
+        items: [
+          ["Shot preset buttons and list", "Change the framing of the shot under the playhead (18 framings)."],
+          ["Lens, Turn, Rise, Move, Move amount, Handheld shake", "Change the shot under the playhead. Each shot keeps its own edits."],
+          ["Mood", "Time of day and colour of the whole scene."],
+          ["Exposure, Key light strength", "Brightness of the scene and of the sun / key light."],
+          ["Spotlight on a person", "Puts a spotlight on one person; Spot strength sets how bright."],
+          ["Greyed rows with \"coming next\"", "PART and NEW dials from the drawing. Not built yet."],
+        ],
+      },
+      {
+        group: "Timeline",
+        items: [
+          ["▶ Play / ❚❚ Pause, ↺ Replay", "Play the scene, stop it, start again."],
+          ["The scrub bar, or a click on a lane", "Jump to that moment (director.seek)."],
+          ["Lanes", "The scene's real tracks, read-only: camera shots, light and effects, each person's moves, speech and captions."],
+          ["SAVE SHOT (greyed)", "Coming next. Today edits live in the preview only."],
+        ],
+      },
+    ],
+    saving: ["Nothing. Edits live in the preview only and are gone on reload. Saving comes next."],
+    inGame: ["Nowhere yet. It plays the same director the game's cut scenes use, but your edits never reach the game."],
+    dev: "app/star-scene-editor-dev/page.tsx (+ editor.css) · lib/star/cutscene/director.ts (optional setEdit / cameras hooks; no edit = the game's behaviour) · fixtures from lib/star/cutscene/fixtures.ts · drawing: docs/handoffs/2026-10-19-ui-lookover/scene-editor/.",
+  },
   "/star-3d-area-dev": {
     title: "3D Area",
     what: "Every 3D place, cutscene and 3D area being built, in one list, plus a store of every 3D and Blender file the site has. Nothing here touches a career.",
@@ -1247,7 +1284,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Places",
         items: [
-          ["A place card (Signing, Manager's office, Shop, Garden, House, Training)", "Opens that 3D place's own test page. The picture is a real still of that page."],
+          ["A place card (Signing, Manager's office, Shop, Garden, House, Training, 3D scene editor)", "Opens that 3D place's own test page. The picture is a real still of that page."],
         ],
       },
       {
