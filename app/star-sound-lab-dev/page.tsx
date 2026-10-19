@@ -283,7 +283,7 @@ export default function SoundLabPage() {
       </p>
 
       <div className="sticky top-0 z-10 -mx-4 mt-3 border-b border-white/10 bg-slate-950/95 px-4 py-2 backdrop-blur">
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible">
           {LAB_EVENTS.map((e) => (
             <button key={e.id} onClick={() => pickEvent(e.id)}
               className={`h-11 shrink-0 rounded-full px-3 text-sm font-black ${e.id === ev.id ? "bg-emerald-500 text-slate-950" : "bg-white/10 text-white"}`}>

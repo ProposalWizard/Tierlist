@@ -25,7 +25,9 @@ const ADMIN_URLS = ADMIN_PAGES.map((p) => p.url);
 const OPEN_KEY = "kib-team-pop";
 const SIZE = 50;
 const TRY = [16, 80, 144, 208, 272];
-const BUSY = "button, a, input, select, textarea, canvas, [role='button'], [data-tour]";
+// Never on a control, and never on words or pictures either (UI lookover, 19 Oct
+// 2026: it covered titles, table rows and notes on eight admin pages).
+const BUSY = "button, a, input, select, textarea, canvas, img, svg, video, h1, h2, h3, h4, p, label, li, td, th, [role='button'], [data-tour]";
 
 export default function ChatBubble() {
   const path = usePathname() ?? "/";
@@ -53,9 +55,11 @@ function Bubble({ path }: { path: string }) {
     // The admin side menu fills the left edge on a computer: start just right of it.
     const side = document.querySelector(".ash-side")?.getBoundingClientRect();
     const xs = side && side.right > 0 && side.left >= 0 && side.width < window.innerWidth / 2 ? [side.right + 16, 16] : [16];
+    // Then the right edge, above the page guide's eye (bottom-right).
+    xs.push(window.innerWidth - SIZE - 16);
     let spot = { x: xs[0], b: TRY[0] };
     search: for (const lx of xs) {
-      for (const b of TRY) {
+      for (const b of (lx > window.innerWidth / 2 ? TRY.slice(1) : TRY)) {
         const cx = lx + SIZE / 2, cy = window.innerHeight - b - SIZE / 2;
         const hits = [-14, 0, 14].flatMap((d) => document.elementsFromPoint(cx + d, cy + d));
         if (!hits.some((h) => h.closest(BUSY) && !h.closest(".tr-vars"))) { spot = { x: lx, b }; break search; }
