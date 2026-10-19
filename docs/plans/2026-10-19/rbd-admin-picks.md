@@ -1,6 +1,6 @@
 # Road to Ballon d'Or admin pages: Harry's picks (19 Oct 2026)
 
-Options page: https://claude.ai/artifact/AM271hrdJEP56voyAoZ6zW · look C (Broadcast) on a computer.
+Options pages: https://claude.ai/artifact/AM271hrdJEP56voyAoZ6zW · round 3: https://claude.ai/artifact/4g1u1XiYyi3vVtode3VkNn · look C (Broadcast) on a computer.
 Every page keeps all of its key functions ("every page needs to keep the key functionalities").
 
 **The style to aim for: Retirement option 2** ("in general retirement screens looked the best").
@@ -38,14 +38,16 @@ Every page keeps all of its key functions ("every page needs to keep the key fun
 | Match radar | both as a toggle |
 | Media lab | option 2 with every current function |
 | Real shots | options 1 and 2 |
-| International world | neither — needs new options |
+| International world | round 3: C |
 | Team sheets | keep, or option 1 as a toggle |
 | Club data | keep as now |
-| Star Pass | needs better options |
+| Star Pass | round 3: B |
 | Career XP book | leave |
 | Store test | option 2 |
 | Gems test | option 2 |
-| Balance numbers | neither — new options (round 3) |
+| Balance numbers | round 3: A |
 | Visual effects lab | option 1 |
 | Sound lab | options 1 and 2 |
-| Tournaments, Sound board | not picked yet |
+| 3D area hub | round 3: A |
+| 3D scene editor (camera, lighting) | round 3: A |
+| Tournaments, Sound board | not picked yet: Broadcast frame only |
