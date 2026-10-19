@@ -338,7 +338,7 @@ export default function FullMatchPage() {
               <span className="fm-ev-min">{e.minute}&apos;</span>
               <span className="fm-ev-bar" style={{ background: col }} />
               <span className="fm-ev-icon">{ICON[e.kind]}</span>
-              <span className="fm-ev-text">{e.text}</span>
+              <span className="fm-ev-text">{e.text.replaceAll("{club}", short(e.side === 1 ? setup.away : setup.home))}</span>
               <span className="fm-ev-watch">Watch</span>
             </button>
           );
