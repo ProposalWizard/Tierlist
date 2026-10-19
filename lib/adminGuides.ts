@@ -1807,19 +1807,24 @@ export const ADMIN_GUIDES = {
 
   "/star-dev/media-lab": {
     title: "Media Lab",
-    what: "A test bench for the media-feed graphics: drop in a pose and a face and see every template in every club's colours.",
+    what: "A test bench for the media-feed graphics, laid out as a post wall: drop in a pose and a face and see every template in every club's colours, plus every screen it can open.",
     buttons: [
       {
         items: [
+          ["Pills along the top (All, Transfer graphic, Player of the Month, Screens, Shop, Training)", "Show only that part of the wall. This device remembers the last one."],
+          ["Preview team sheets (top right)", "Opens the team sheets with sample data, with the play-as picker above them."],
+          ["Pose, face and sliders (left; on a phone, tap the bar to open it)", "The tools for the transfer graphic. Only there when All or Transfer graphic is picked."],
           ["Pose image / Face image — Choose file (or drop)", "Load a picture. \"remove\" clears it."],
           ["Club colours", "Re-colour the templates in that club's kit."],
           ["Treatment / Face X / Face Y / Face size / Neck line / Face brightness / Figure size / Figure up / down", "Line the face up on the pose."],
           ["Anchor", "The numbers to copy into the template once it looks right."],
-          ["Preview the \"you won it\" modal / team sheets / match commentary", "Opens that screen with sample data."],
+          ["Player of the Month tiles", "The post cards (shortlist, someone else wins, you win with and without a photo) and the photo picker (try only, nothing saved)."],
+          ["Screens: Preview on \"You won it\" / Team sheets / Match commentary", "Opens that screen with sample data."],
+          ["Screens, Shop and Training tiles with Open / New / Old / Play / still-float-bounce-bobble", "Open the same views as the addresses below (the page loads again). Training: pick the level with ◀ ▶ first."],
         ],
       },
       {
-        group: "Feed preview (add ?feed to the address)",
+        group: "The same views by address (add to the address)",
         items: [
           ["/star-dev/media-lab?trophies", "Shows the Trophy Cabinet filled with every trophy that has a picture, for judging the trophy art."],
           ["/star-dev/media-lab?contact=float (or bounce, bobble, still)", "Shows the strike screen with the ball moving that way (float = header, bounce = volley, bobble = a ball at your feet). Tap the ball to try it; it starts again a moment later."],
