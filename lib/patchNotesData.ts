@@ -30,7 +30,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.59",
       "title": "Mikey's patch notes v0.17: The transfer window and the world that ages",
       "publishedAt": "2026-10-18T22:00:00Z",
-      "updatedAt": null,
+      "updatedAt": "2026-10-19T12:00:00Z",
       "artifactUrl": "https://claude.ai/artifact/1A6Wc8XFM2pu2ftCZcymQU",
       "summary": "Transfers: clubs come to you at the end of a season, your season gets a letter (S to D) that decides how many leagues up a club can come from, League → Club → Negotiate in the Home look. The world ages: only your club until you reach the Championship, then everyone; decline from 31 (gentle), five ways to age, retirement 35–41, young replacements from the same country with flags from the retired man's best rating. Also real kits for 211 nations and 1–2 post-match videos.",
       "stats": [
@@ -49,7 +49,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Clubs come to you, summer only", "detail": "\"Find a new club\" is gone; January is off for now." },
           { "title": "Season letter S to D", "detail": "D your league and below · C your league · B +1 · A +2 · S +3." },
           { "title": "How keen, not a promised role", "detail": "Desperate, Very keen, Keen or Interested. Wage hidden until talks." },
-          { "title": "Deadline Day total fixed", "detail": "Was \"£15300000m\", now \"★15.3m\"." }
+          { "title": "Deadline Day total fixed", "detail": "Was \"£15300000m\", now \"★15.3m\"." },
+          { "title": "Transfer fees sized to your league (19 Oct)", "detail": "Was ★406m for a non-league striker; now a 4.5-star 19-year-old is ★200k–310k in the National League, ★120m–140m in the Premier League." }
         ]},
         { "kind": "added", "title": "The world ages", "items": [
           { "title": "The top waits for you", "detail": "Only your club ages until you play a Championship or Premier League season." },
@@ -63,7 +64,6 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "1 or 2 post-match videos", "detail": "Was 2–4 plus grey look-alike cards." }
         ]},
         { "kind": "known", "title": "Known issues", "items": [
-          { "title": "Transfer fees look far too big", "detail": "A National League striker on ★30 a week showed ★406m to his club.", "pill": { "text": "HIGH", "tone": "red" } },
           { "title": "Leagues slowly get stronger", "detail": "Premier League first-team average 78.8 → 83.1 by season 21 (replacements grow on Leo's numbers)." }
         ]}
       ]
