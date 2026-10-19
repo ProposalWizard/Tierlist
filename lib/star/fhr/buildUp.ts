@@ -79,9 +79,9 @@ export const FHR_TAIL_S = 0.25;
 /** Nobody runs faster than this (m/s), whatever his pace. */
 export const FHR_TOP_SPEED = LEAD_MAX_RUN;
 /** Two men never closer than this while the build-up plays (m): they are eased apart. */
-export const FHR_SPACE_M = 1.15;
+export const FHR_SPACE_M = 1.6;
 /** The checks call two men "through each other" below this (m). */
-export const FHR_OVERLAP_M = 0.75;
+export const FHR_OVERLAP_M = 1.0;
 /** Tries with the next seed before the best one is kept. */
 export const FHR_TRIES = 24;
 /** How often each man's path is stored, per second. */
@@ -482,7 +482,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
   const lagBall: Vec2[] = [];
   {
     let q: Vec2 = { ...acts[0].from };
-    const k = 1 - Math.exp(-1 / HZ / 0.7);
+    const k = 1 - Math.exp(-1 / HZ / 0.9);
     for (let i = 0; i <= N; i++) { const b = ballAt(tOf(i)); q = { x: q.x + (b.x - q.x) * k, y: q.y + (b.y - q.y) * k }; lagBall.push(q); }
   }
 
@@ -517,41 +517,57 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
   const teamShift = { us: gauss(r) * 3.5, them: gauss(r) * 3.5 };
 
   // Base path: the role's spot for where the ball is (a little behind it), plus
-  // his own offset, which grows into exactly his place in the chance.
-  const baseOf = (p: Person, spotAt: (i: number) => Vec2, shiftY: number, jitter: Vec2): Vec2[] => {
-    const offEnd = { x: p.end.x - spotAt(N).x, y: p.end.y - spotAt(N).y };
-    let offStart = { x: jitter.x, y: jitter.y + shiftY };
-    // Too fast? The start offset moves toward the end one until he can make it.
-    for (let tries = 0; tries < 8; tries++) {
-      const path: Vec2[] = [];
+  // his own small offset, which grows (evenly) into exactly his place in the
+  // chance. If that is faster than he can run, the whole shape he follows is
+  // taken as already part-way toward the chance's ball at the start (as if the
+  // team read where the move was going), a quarter more each time — never his
+  // own offset dragged back, which would pull a whole line across the pitch.
+  const baseOf = (p: Person, spotOf: (b: Vec2) => Vec2, shiftY: number, jitter: Vec2): Vec2[] => {
+    const endSpot = spotOf(lagBall[N]);
+    const offEnd = { x: p.end.x - endSpot.x, y: p.end.y - endSpot.y };
+    const offStart = { x: jitter.x, y: jitter.y + shiftY };
+    let path: Vec2[] = [];
+    for (let k = 0; k <= 4; k++) {
+      const a0 = k / 4;
+      const raw: Vec2[] = [];
       for (let i = 0; i <= N; i++) {
-        const g = smooth(i / N);
-        const s = spotAt(i);
-        const q = { x: s.x + offStart.x + (offEnd.x - offStart.x) * g, y: s.y + offStart.y + (offEnd.y - offStart.y) * g };
-        // On the pitch (the end may be on the goal line: a keeper's is).
-        path.push({ x: clamp(q.x, Math.min(0.5, p.end.x), Math.max(PITCH_W - 0.5, p.end.x)), y: clamp(q.y, Math.min(0.5, p.end.y), Math.max(LEN - 0.5, p.end.y)) });
+        const f = i / N, g = 0.5 * f + 0.5 * smooth(f);
+        const s = spotOf(lerp(lagBall[i], lagBall[N], a0 * (1 - f)));
+        raw.push({ x: s.x + offStart.x + (offEnd.x - offStart.x) * g, y: s.y + offStart.y + (offEnd.y - offStart.y) * g });
       }
+      // Smoothed over ±0.33 s (a man does not twitch with every pass), still ending exactly on his place.
+      path = raw.map((_, i) => {
+        let sx = 0, sy = 0, w = 0;
+        for (let j = Math.max(0, i - 5); j <= Math.min(N, i + 5); j++) { const wj = 6 - Math.abs(j - i); sx += raw[j].x * wj; sy += raw[j].y * wj; w += wj; }
+        return { x: sx / w, y: sy / w };
+      });
+      const fix = { x: p.end.x - path[N].x, y: p.end.y - path[N].y };
+      path = path.map((q, i) => {
+        const g = (i / N) ** 2;
+        const v = { x: q.x + fix.x * g, y: q.y + fix.y * g };
+        // On the pitch (the end may be on the goal line: a keeper's is).
+        return { x: clamp(v.x, Math.min(0.5, p.end.x), Math.max(PITCH_W - 0.5, p.end.x)), y: clamp(v.y, Math.min(0.5, p.end.y), Math.max(LEN - 0.5, p.end.y)) };
+      });
       path[N] = { ...p.end };
-      if (maxSpeed(path) <= p.vmax * 0.8 || tries === 7) return path;
-      offStart = lerp(offStart, offEnd, 0.4);
+      if (maxSpeed(path) <= p.vmax * 0.82) break;
     }
-    return [];
+    return path;
   };
   for (const [group, slots, side] of [[ours, slotOurs, "us"], [theirs, slotTheirs, "them"]] as const) {
     group.forEach((p, i) => {
       const slot = slots.get(i);
       p.role = slot === undefined ? "CM" : SHAPE[slot].role;
       p.vmax = topSpeedOf(p.role, p.who);
-      const spotAt = (k: number) => (slot === undefined ? p.end : shapeSpot(side, slot, toData(lagBall[k])));
+      const spotOf = (b: Vec2) => (slot === undefined ? p.end : shapeSpot(side, slot, toData(b)));
       const [, , sdx, sdy] = roleSpot(side === "us" ? "in" : "out", p.role, endBall.X, endBall.Y);
       const jit = { x: clamp(gauss(r) * sdy * 0.68 * 0.3, -4, 4), y: clamp(gauss(r) * sdx * 1.05 * 0.3, -4, 4) };
-      p.path = baseOf(p, spotAt, side === "us" ? teamShift.us : -teamShift.them, jit);
+      p.path = baseOf(p, spotOf, side === "us" ? teamShift.us : -teamShift.them, jit);
       p.pin = new Array(N + 1).fill(0);
     });
   }
   keeper.role = "GK";
   keeper.vmax = topSpeedOf("GK", keeper.who);
-  keeper.path = baseOf(keeper, (k) => { const bd = toData(lagBall[k]); const [mx, my] = roleSpot("out", "GK", 100 - bd.X, 100 - bd.Y); return fromDataDef(mx, my); }, 0, { x: 0, y: 0 });
+  keeper.path = baseOf(keeper, (b) => { const bd = toData(b); const [mx, my] = roleSpot("out", "GK", 100 - bd.X, 100 - bd.Y); return fromDataDef(mx, my); }, 0, { x: 0, y: 0 });
   keeper.pin = new Array(N + 1).fill(0);
 
   // The man nearest the ball as the move starts presses it, from a real distance.
@@ -620,8 +636,8 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     return raw.map((b, k) => {
       let sx = 0, sy = 0, w = 0;
       for (let j = Math.max(0, k - K); j <= Math.min(off.length - 1, k + K); j++) { const wj = K + 1 - Math.abs(j - k); sx += off[j].x * wj; sy += off[j].y * wj; w += wj; }
-      const o = { x: sx / w, y: sy / w }, n = Math.hypot(o.x, o.y), want = Math.hypot(off[k].x, off[k].y);
-      return n > 1e-6 ? { x: b.x + (o.x / n) * want, y: b.y + (o.y / n) * want } : { x: b.x + off[k].x, y: b.y + off[k].y };
+      // (Turning right round — a carry, then a pass back — he steps over the ball rather than jumping round it.)
+      return { x: b.x + sx / w, y: b.y + sy / w };
     });
   };
   const spotFor = (key: string, s: Spell) => (t: number): Vec2 => {
@@ -695,7 +711,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
       { x: frame.x1 - 3, y: pOut.y }, { x: frame.x2 + 3, y: pOut.y }, { x: pOut.x, y: frame.y2 + 3 },
     ].filter((e) => e.x > 0.5 && e.x < PITCH_W - 0.5 && e.y < LEN - 1);
     let best: Vec2 | null = null;
-    for (const e of exits) if (dist(e, pOut) <= 6 * time && (!best || dist(e, pOut) < dist(best, pOut))) best = e;
+    for (const e of exits) if (dist(e, pOut) <= 5 * time && (!best || dist(e, pOut) < dist(best, pOut))) best = e;
     return best ? { after: best } : null;
   };
   const extrasAt: { spell: number }[] = [];
@@ -737,7 +753,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     // Where the next pass goes: he jogs on after it a little, then holds.
     const after = (extraPlan(s) ?? { after: pOut }).after;
     // He comes onto the ball from 6 m further back (as far as he can run in time).
-    const from = s.tIn <= 0 ? pIn : (() => { const back = { x: pIn.x + (pIn.x - CX) * 0.05, y: pIn.y + 6 }; const d = dist(back, pIn), m = 5.5 * s.tIn; return d <= m ? back : lerp(pIn, back, m / d); })();
+    const from = s.tIn <= 0 ? pIn : (() => { const back = { x: pIn.x + (pIn.x - CX) * 0.05, y: pIn.y + 6 }; const d = dist(back, pIn), m = 5 * s.tIn; return d <= m ? back : lerp(pIn, back, m / d); })();
     const path: Vec2[] = [], pin: number[] = [];
     const iA = idx(s.tIn);
     const held = heldSpots(iA, idx(s.tOut), (t) => ownerSpot(t, nextOf(s, t)));
@@ -747,12 +763,14 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
       else if (i - iA < held.length && i >= iA) { path.push(held[i - iA]); pin.push(1); }
       else { path.push(lerp(pOut, after, smooth((t - s.tOut) / Math.max(0.3, durS - s.tOut)))); pin.push(0); }
     }
-    return { key: `extra${n}`, side: "extra", end: path[N], role: "CM", vmax: FHR_TOP_SPEED, path, pin };
+    return { key: `extra${n}`, side: "extra", end: path[N], role: "CM", vmax: 8.5, path, pin };
   });
   const all = [...people, ...extras];
 
   // ── Ease everybody apart ──
   separate(all, N, durS);
+  // …which can leave a short burst too quick: smoothed out where it is (never a held sample, nor the end).
+  for (const p of all) calmBursts(p.path, p.pin, p.vmax, N);
 
   // ── The checks ──
   for (const p of all) {
@@ -827,6 +845,21 @@ export function maxSpeed(path: Vec2[]): number {
   return v;
 }
 
+/** Smooths a path where it is briefly faster than `vmax` (held samples and the two ends stay put). */
+function calmBursts(path: Vec2[], pin: number[], vmax: number, N: number) {
+  const w = 3;
+  for (let it = 0; it < 40; it++) {
+    const bad: number[] = [];
+    for (let i = w; i <= N; i++) if ((dist(path[i], path[i - w]) * HZ) / w > vmax * 0.985) bad.push(i);
+    if (!bad.length) return;
+    const touch = new Set<number>();
+    for (const i of bad) for (let k = i - w - 3; k <= i + 3; k++) if (k > 0 && k < N && !pin[k]) touch.add(k);
+    if (!touch.size) return;
+    const old = path.slice();
+    for (const k of touch) path[k] = { x: 0.5 * old[k].x + 0.25 * (old[k - 1].x + old[k + 1].x), y: 0.5 * old[k].y + 0.25 * (old[k - 1].y + old[k + 1].y) };
+  }
+}
+
 /** The closest two men come (not counting the last 0.6 s, where the drawing decides). */
 function minGap(all: { key: string; path: Vec2[] }[], N: number, durS: number) {
   let best = { d: Infinity, a: "", b: "", i: 0 };
@@ -851,7 +884,7 @@ function separate(all: { path: Vec2[]; pin: number[] }[], N: number, durS: numbe
   for (let it = 0; it < 6; it++) {
     const push: Vec2[][] = all.map(() => Array.from({ length: N + 1 }, () => ({ x: 0, y: 0 })));
     let any = false;
-    for (let i = 1; i < N; i++) {
+    for (let i = 0; i < N; i++) {
       const f = fade(i);
       if (f <= 0) continue;
       for (let a = 0; a < all.length; a++) for (let b = a + 1; b < all.length; b++) {
@@ -884,7 +917,7 @@ function separate(all: { path: Vec2[]; pin: number[] }[], N: number, durS: numbe
         }
         sm.push({ x: (sx / w) * 2.2, y: (sy / w) * 2.2 });
       }
-      for (let i = 1; i < N; i++) {
+      for (let i = 0; i < N; i++) {
         if (p.pin[i]) continue;
         const f = fade(i);
         p.path[i] = { x: clamp(p.path[i].x + sm[i].x * f, 0.3, PITCH_W - 0.3), y: clamp(p.path[i].y + sm[i].y * f, 0.3, LEN - 0.3) };
