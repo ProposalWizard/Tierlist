@@ -51,6 +51,10 @@ Newest first. Each is something that was actually said.
 - **"Use Higgsfield wherever needed for all UI"**, and he wants to try a third
   admin look beyond Ops room / Clean light because "even the groups on the
   side, it's a bit hard to see everything".
+- **Picked from 8 Higgsfield looks: "D and F are my picks"** — D Broadcast
+  (midnight blue, floodlights, slanted TV bars) and F Bento (a soft colour per
+  group, friendly icons). Both go on the admin Look switch; every group visible
+  at once. Pictures: docs/handoffs/2026-10-19-admin-looks/.
 
 ### 18 Oct 2026 — admin pages get real design (Harry)
 - **"I like the idea of the grouped admin … but it's not the UI I was
