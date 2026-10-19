@@ -18,6 +18,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Btn, Panel } from "@/components/admin/broadcast/BroadcastPage";
+import "./gems.css";
 import { useWallet } from "@/lib/star/useWallet";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import {
@@ -30,11 +32,36 @@ const EXAMPLE_ITEM = "test-golden-boots";
 /** The browser keys the "Try to cheat" button writes. Nothing reads them. */
 const CHEAT_KEYS = ["star-wallet", "star-gems", "star-paid-owned"];
 
+/** The big gem in the "Your gems" banner. */
+function Gem() {
+  return (
+    <svg viewBox="0 0 120 100" className="gm-gem" aria-hidden="true">
+      <defs>
+        <linearGradient id="gmA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#c9f3ff" /><stop offset="1" stopColor="#3aa8ff" /></linearGradient>
+        <linearGradient id="gmB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#5fd8ff" /><stop offset="1" stopColor="#1a4fd6" /></linearGradient>
+      </defs>
+      <path d="M30 8 H90 L114 36 L60 96 L6 36 Z" fill="url(#gmB)" stroke="#e6faff" strokeWidth="2.5" />
+      <path d="M6 36 H114 M30 8 L44 36 L60 8 L76 36 L90 8 M44 36 L60 96 L76 36" fill="none" stroke="#e6faff" strokeWidth="1.6" opacity="0.8" />
+      <path d="M30 8 H90 L76 36 H44 Z" fill="url(#gmA)" opacity="0.85" />
+    </svg>
+  );
+}
+
+/** A small gem, the picture on a paid item that has no drawing of its own. */
+function SmallGem() {
+  return (
+    <svg viewBox="0 0 120 100" aria-hidden="true">
+      <path d="M30 8 H90 L114 36 L60 96 L6 36 Z" fill="#2fa9ff" stroke="#e6faff" strokeWidth="3" />
+      <path d="M6 36 H114 M44 36 L60 96 L76 36" fill="none" stroke="#e6faff" strokeWidth="2" opacity="0.8" />
+    </svg>
+  );
+}
+
 function Boot({ gold }: { gold: boolean }) {
   const body = gold ? "#f5c542" : "#4b5563";
   const edge = gold ? "#a8761a" : "#1f2937";
   return (
-    <svg viewBox="0 0 120 70" className="h-20 w-auto" aria-label={gold ? "Golden boots" : "Locked boots"}>
+    <svg viewBox="0 0 120 70" aria-label={gold ? "Golden boots" : "Locked boots"}>
       <path d="M12 18 L52 14 L58 34 L104 40 Q114 42 112 52 L110 56 L14 56 Q8 56 8 48 Z" fill={body} stroke={edge} strokeWidth="3" />
       <path d="M14 56 L110 56 L108 62 L16 62 Z" fill={edge} />
       {[24, 44, 64, 84, 100].map(x => <circle key={x} cx={x} cy={65} r="3" fill={edge} />)}
@@ -50,6 +77,8 @@ export default function WalletTestPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [cheatNote, setCheatNote] = useState<string | null>(null);
+  /** What the cheat check found, shown as a ledger: this browser vs the server. */
+  const [cheatRows, setCheatRows] = useState<{ gems: string; boots: string } | null>(null);
 
   const refresh = () => loadWallet({ force: true });
 
@@ -86,6 +115,9 @@ export default function WalletTestPage() {
       window.localStorage.setItem("star-paid-owned", JSON.stringify([EXAMPLE_ITEM]));
     } catch { /* private window: the point still stands */ }
     const after = await refresh();
+    setCheatRows(after.status === "ok"
+      ? { gems: after.gems.toLocaleString("en-GB"), boots: owns(after, EXAMPLE_ITEM) ? "Owned (really bought)" : "Locked" }
+      : { gems: after.message ?? after.status, boots: "Locked" });
     setCheatNote(
       after.status === "ok"
         ? `Wrote 99,999 gems and the boots into this browser. The server still says ${after.gems} gems (was ${before}), and the boots are ${owns(after, EXAMPLE_ITEM) ? "owned because you really bought them" : "still locked"}.`
@@ -95,88 +127,108 @@ export default function WalletTestPage() {
 
   function clearCheat() {
     try { CHEAT_KEYS.forEach(k => window.localStorage.removeItem(k)); } catch { /* nothing to clear */ }
+    setCheatRows(null);
     setCheatNote("Cleared the fake values from this browser.");
   }
 
   const example = w.catalogue.find(i => i.id === EXAMPLE_ITEM);
   const gold = owns(w, EXAMPLE_ITEM);
+  const ownedOthers = w.catalogue.filter(i => i.id !== EXAMPLE_ITEM && owns(w, i.id));
 
   return (
-    <main className="mx-auto min-h-screen max-w-md bg-[#0b1220] px-4 pb-24 pt-6 text-white">
-      <h1 className="text-2xl font-black">Gems (test)</h1>
-      <p className="mt-1 text-sm font-bold">Paid things live on the server, not in the save. This page proves it.</p>
-
-      <section className="mt-5 rounded-2xl bg-white/10 p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-3xl font-black tabular-nums">💎 {w.status === "ok" ? w.gems.toLocaleString("en-GB") : "—"}</div>
-          <button onClick={refresh} className="rounded-lg bg-white/15 px-3 py-2 text-sm font-bold">Refresh</button>
+    <BroadcastPage
+      title="Gems test"
+      sub="Paid things live on the server, not in the save. This page proves it."
+      width={1200}
+      actions={<Btn onClick={refresh}>Refresh</Btn>}
+    >
+      <section className="gm-hero">
+        <Gem />
+        <div className="gm-hero-text">
+          <span className="gm-your">Your gems</span>
+          <div className="gm-count">{w.status === "ok" ? w.gems.toLocaleString("en-GB") : "—"}<small>gems</small></div>
+          {w.status === "loading" && <p className="gm-msg">Asking the server…</p>}
+          {w.status === "signed-out" && (
+            <p className="gm-msg">{w.message} <Link href="/auth?next=/star-wallet-dev">Sign in</Link></p>
+          )}
+          {(w.status === "off" || w.status === "error") && <p className="gm-msg" data-warn="true">{w.message}</p>}
         </div>
-        {w.status === "loading" && <p className="mt-2 text-sm font-bold">Asking the server…</p>}
-        {w.status === "signed-out" && (
-          <p className="mt-2 text-sm font-bold">{w.message} <Link href="/auth?next=/star-wallet-dev" className="underline">Sign in</Link></p>
-        )}
-        {(w.status === "off" || w.status === "error") && <p className="mt-2 text-sm font-bold text-amber-300">{w.message}</p>}
         {admin && w.status === "ok" && (
-          <button onClick={giveGems} disabled={busy !== null} className="mt-3 w-full rounded-lg bg-emerald-600 px-3 py-2 font-black disabled:opacity-50">
-            +100 gems (admin test)
-          </button>
+          <div className="gm-hero-side">
+            <Btn main onClick={giveGems} disabled={busy !== null}>+100 gems (admin test)</Btn>
+          </div>
         )}
       </section>
 
-      <section className="mt-4 rounded-2xl bg-white/10 p-4">
-        <h2 className="text-lg font-black">The example paid item</h2>
-        <div className="mt-2 flex items-center gap-4">
-          <Boot gold={gold} />
-          <div className="text-sm font-bold">
-            {gold ? "Golden boots: owned. The server's list says so." : "Golden boots: locked."}
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-4 rounded-2xl bg-white/10 p-4">
-        <h2 className="text-lg font-black">Paid items</h2>
-        {w.catalogue.length === 0 && <p className="mt-2 text-sm font-bold">{w.status === "ok" || w.status === "signed-out" ? "Nothing for sale." : "—"}</p>}
-        <ul className="mt-2 space-y-2">
+      <h2 className="gm-h">Paid items</h2>
+      {w.catalogue.length === 0 && <p className="gm-line">{w.status === "ok" || w.status === "signed-out" ? "Nothing for sale." : "—"}</p>}
+      {w.catalogue.length > 0 && (
+        <div className="gm-cards">
           {w.catalogue.map(item => {
             const have = owns(w, item.id);
             return (
-              <li key={item.id} className="flex items-center justify-between rounded-xl bg-black/30 px-3 py-2">
-                <div>
-                  <div className="font-black">{item.name}</div>
-                  <div className="text-sm font-bold">💎 {item.price}</div>
+              <div key={item.id} className="gm-card">
+                <div className="gm-card-pic">{item.id === EXAMPLE_ITEM ? <Boot gold={have} /> : <SmallGem />}</div>
+                <b>{item.name}</b>
+                <span>💎 {item.price}</span>
+                <div className="gm-buy">
+                  {have ? (
+                    <span className="gm-buy-own">Owned</span>
+                  ) : (
+                    <button
+                      className="gm-buy-btn"
+                      onClick={() => buy(item)}
+                      disabled={busy !== null || w.status !== "ok" || !canAfford(w, item)}
+                    >
+                      {busy === item.id ? "Buying…" : "Buy"}
+                    </button>
+                  )}
                 </div>
-                {have ? (
-                  <span className="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-black">Owned</span>
-                ) : (
-                  <button
-                    onClick={() => buy(item)}
-                    disabled={busy !== null || w.status !== "ok" || !canAfford(w, item)}
-                    className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-black disabled:opacity-40"
-                  >
-                    {busy === item.id ? "Buying…" : "Buy"}
-                  </button>
-                )}
-              </li>
+              </div>
             );
           })}
-        </ul>
-        {note && <p className="mt-3 text-sm font-bold">{note}</p>}
-        {example && w.status === "ok" && !gold && !canAfford(w, example) && (
-          <p className="mt-2 text-sm font-bold">Not enough gems for {example.name} ({example.price}).</p>
-        )}
-      </section>
-
-      <section className="mt-4 rounded-2xl bg-white/10 p-4">
-        <h2 className="text-lg font-black">Try to cheat</h2>
-        <p className="mt-1 text-sm font-bold">Writes 99,999 gems and the boots into this browser, the way someone with dev tools would, then asks the server again.</p>
-        <div className="mt-3 flex gap-2">
-          <button onClick={tryToCheat} className="flex-1 rounded-lg bg-rose-600 px-3 py-2 text-sm font-black">Try to cheat</button>
-          <button onClick={clearCheat} className="rounded-lg bg-white/15 px-3 py-2 text-sm font-bold">Clear it</button>
         </div>
-        {cheatNote && <p className="mt-3 text-sm font-bold">{cheatNote}</p>}
-      </section>
+      )}
+      {note && <p className="gm-line">{note}</p>}
+      {example && w.status === "ok" && !gold && !canAfford(w, example) && (
+        <p className="gm-line">Not enough gems for {example.name} ({example.price}).</p>
+      )}
+
+      <h2 className="gm-h">Owned items</h2>
+      <div className="gm-owned">
+        <div className="gm-tile" data-locked={gold ? undefined : "true"}>
+          <Boot gold={gold} />
+          <b>Golden boots</b>
+          <span>{gold ? "Owned. The server's list says so." : "Locked."}</span>
+        </div>
+        {ownedOthers.map(item => (
+          <div key={item.id} className="gm-tile">
+            <SmallGem />
+            <b>{item.name}</b>
+            <span>Owned.</span>
+          </div>
+        ))}
+      </div>
+
+      <Panel title="Try to cheat" note="this browser vs the server">
+        <p className="gm-line">Writes 99,999 gems and the boots into this browser, the way someone with dev tools would, then asks the server again.</p>
+        <div className="gm-row">
+          <Btn onClick={tryToCheat}>Try to cheat</Btn>
+          <Btn onClick={clearCheat}>Clear it</Btn>
+        </div>
+        {cheatRows && (
+          <table className="gm-ledger">
+            <thead><tr><th>Where</th><th>Gems</th><th>Golden boots</th></tr></thead>
+            <tbody>
+              <tr><td>This browser (fake)</td><td className="gm-down">99,999</td><td className="gm-down">Owned</td></tr>
+              <tr><td>The server</td><td className="gm-up">{cheatRows.gems}</td><td className="gm-up">{cheatRows.boots}</td></tr>
+            </tbody>
+          </table>
+        )}
+        {cheatNote && <p className="gm-line">{cheatNote}</p>}
+      </Panel>
 
       <PageGuide page="/star-wallet-dev" />
-    </main>
+    </BroadcastPage>
   );
 }
