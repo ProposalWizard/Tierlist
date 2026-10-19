@@ -5,7 +5,7 @@
  */
 .bc { --bc-bg: #040b1f; --bc-panel: rgba(10, 30, 74, 0.72); --bc-line: rgba(90, 150, 255, 0.22); --bc-ink: #eef4ff; --bc-ink2: #a9bde2;
   --bc-ink3: #6f86b3; --bc-blue: #1b5fd6; --bc-blue2: #123f9c; --bc-accent: #2f8cff; --bc-amber: #ffc24a; --bc-red: #ff4d5e;
-  color-scheme: dark; min-height: 100dvh; color: var(--bc-ink);
+  color-scheme: dark; min-height: 100dvh; color: var(--bc-ink); background-color: #03091a;
   background:
     radial-gradient(28% 22% at 18% -4%, rgba(170, 205, 255, 0.24), transparent 70%),
     radial-gradient(28% 22% at 82% -4%, rgba(170, 205, 255, 0.2), transparent 70%),
