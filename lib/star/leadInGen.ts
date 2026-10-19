@@ -5,7 +5,9 @@
  * Like one on ones. Some long shots. Crosses where ur in the middle etc."
  *
  * Only with Settings → Chances: New (newChancesOn()). Old: no build-up, the
- * game exactly as before.
+ * game exactly as before. With Full highlights rebuild: On (test), every fresh
+ * open-play chance gets the rebuild's generated build-up instead
+ * (lib/star/fhr/buildUp.ts, phase 2); this file's own builder is then unused.
  *
  * Before some fresh open-play chances in the real match, 2-3 seconds of play
  * come first, then the chance is yours exactly as its drawing places it:
@@ -36,6 +38,8 @@ import {
 import { teamShapesAt } from "./sim90";
 import { mulberry32 } from "./season";
 import { newChancesOn } from "./newChances";
+import { fhrOn } from "./fhr/toggle";
+import { fhrBuildUpFor, fhrWantsBuildUp } from "./fhr/buildUp";
 import { PITCH_W, CX, HALF_LEN } from "./pitch";
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -399,7 +403,11 @@ export const buildUpKeys = (sc: Scenario, b: BuildUp): string[] => [
  * unless Chances is New and this chance is one the table lists.
  */
 export function careerBuildUp(sc: Scenario, moment?: LeadMoment): LeadIn | null {
-  if (!moment || moment.opening || !newChancesOn()) return null;
+  if (!moment || moment.opening) return null;
+  // Full highlights rebuild: On (test) — phase 2: every fresh open-play chance
+  // gets a GENERATED 4–8 s build-up (lib/star/fhr/buildUp.ts). Off: below, as before.
+  if (fhrOn()) return fhrWantsBuildUp(sc.kind, moment) ? fhrBuildUpFor(sc, moment) : null;
+  if (!newChancesOn()) return null;
   if (!wantsBuildUp(sc.kind, moment)) return null;
   return buildUpFor(sc, moment);
 }
