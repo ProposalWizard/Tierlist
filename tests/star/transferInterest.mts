@@ -5,6 +5,8 @@ import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { NATIONAL_LEAGUE_NORTH_CLUBS, LEAGUE_TWO_CLUBS, PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import { leagueNameFor, type CareerDivision } from "../../lib/star/calendar";
 import { weeklyWageFor } from "../../lib/star/economy";
+import { seasonLadder } from "../../lib/star/promotion";
+import { NATIONAL_LEAGUE_CLUBS, LEAGUE_ONE_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, StarPlayer, SeasonStats } from "../../lib/star/types";
 
 /**
@@ -126,6 +128,33 @@ for (const l of good.leagues) for (const k of l.clubs) {
   const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
   check(levels.length < 2 || avg(byLevel.get(levels[levels.length - 1])!) > avg(byLevel.get(levels[0])!), "a club from a bigger league pays more");
   console.log(`Fees for a 5-star striker: National League North ★${Math.min(...nlFees)}–★${Math.max(...nlFees)}, Premier League ★${Math.min(...plFees)}–★${Math.max(...plFees)}`);
+}
+
+// ── The summer list is next season's leagues, and one league below is always there (Mikey, 19 Oct 2026) ──
+{
+  const c = withSeason({ ...careerAt("national_league", NATIONAL_LEAGUE_CLUBS), starRating: 4 }, 45, 43, 50, 8.0);
+  const i = windowInterest(c, "summer");
+  const ladder = seasonLadder(c);
+  const key: Record<string, keyof typeof ladder.divisions> = {
+    premier: "premier", championship: "championship", league_one: "leagueOne", league_two: "leagueTwo",
+    national_league: "nationalLeague", national_league_north: "nationalLeagueNorth", national_league_south: "nationalLeagueSouth",
+  };
+  check(i.ownDivision === ladder.division, `your league is next season's (${i.ownDivision} v ${ladder.division})`);
+  const wrong = i.leagues.flatMap(l => l.clubs.filter(x => {
+    const list = l.division === ladder.division ? ladder.clubs : ladder.divisions[key[l.division]];
+    return !list.includes(x.club);
+  }).map(x => `${x.club} in ${l.division}`));
+  check(wrong.length === 0, `every listed club plays in that league next season (${wrong.slice(0, 3).join(", ")})`);
+  const movers = i.leagues.flatMap(l => l.clubs.filter(x => x.moved));
+  const relegatedFromL1 = ladder.relegatedFromLeagueOne;
+  check(movers.every(x => x.moved === "promoted" || x.moved === "relegated"), "movers are marked promoted or relegated");
+  const l2 = i.leagues.find(l => l.division === "league_two");
+  check(!l2 || l2.clubs.filter(x => relegatedFromL1.includes(x.club)).every(x => x.moved === "relegated"), "a club relegated from League One shows in League Two, marked Relegated");
+  check(!i.leagues.some(l => l.division === "league_one" && l.clubs.some(x => relegatedFromL1.includes(x.club))), "no relegated club is left in League One");
+  const lower = i.leagues.map(l => l.division).filter(d => levelOf(d) === levelOf(i.ownDivision) - 1);
+  check(lower.length > 0, `a league below yours is listed after a great season (${i.leagues.map(l => l.division).join(", ")})`);
+  console.log(`Summer list after an A season in the National League: ${i.leagues.map(l => `${leagueNameFor(l.division)} ${l.clubs.length}${l.clubs.some(x => x.moved) ? ` (${l.clubs.filter(x => x.moved).length} moved)` : ""}`).join(", ")}`);
+  void LEAGUE_ONE_CLUBS;
 }
 
 if (problems.length) { console.error("FAIL\n  - " + problems.slice(0, 30).join("\n  - ")); process.exit(1); }

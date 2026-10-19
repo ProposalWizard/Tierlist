@@ -59,7 +59,7 @@ import { dayFor, transferWindowFor, divisionOf, divisionRank, leagueNameFor, fix
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { wageForFixture } from "./wages";
 import { signingOnFee, typicalWeeklyWage, goalBonusFor, assistBonusFor } from "./economy";
-import { resolveLadder, membershipOf, estimateClubStrength, type LadderOutcome } from "./promotion";
+import { resolveLadder, seasonLadder, membershipOf, estimateClubStrength, type LadderOutcome } from "./promotion";
 import { englishTopFlightTable } from "./englishTopFlight";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids, moveSquadsWithLadder } from "./leagueSquads";
@@ -1523,7 +1523,7 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
  * (closeFinalSeason), so both read the same play-offs for the same season.
  */
 function ladderFor(career: CareerState): LadderOutcome {
-  return resolveLadder(career, mulberry32(career.season * 90247 + career.league.length * 13));
+  return seasonLadder(career);
 }
 
 /**
