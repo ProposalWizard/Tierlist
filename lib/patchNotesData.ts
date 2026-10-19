@@ -27,6 +27,44 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.60",
+      "title": "Mikey's patch notes v0.18: The world season",
+      "publishedAt": "2026-10-19T21:00:00Z",
+      "updatedAt": "2026-10-19T21:00:00Z",
+      "artifactUrl": "https://claude.ai/artifact/6Gz5vvm7PVwXUrJ3ZMBB7V",
+      "summary": "Every English league, the FA Cup, the League Cup, both shields, the Champions League and the Europa League are now played match by match on their real dates, with real club ratings. Promotion and relegation come from the tables. A new All leagues screen shows every table, result and scorer. Also two transfer talk fixes.",
+      "stats": [
+        { "value": "7 leagues", "label": "played week by week, not only yours" },
+        { "value": "58%", "label": "Arsenal's title chance; relegated 0 in 2,000 seasons" },
+        { "value": "34% → 8%", "label": "League Two beating a Premier League club in a cup" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "League → 🌍 All leagues", "detail": "Every table, results, top scorers and assists." },
+          { "title": "All leagues → Change", "detail": "FA Cup, League Cup, Community Shield, Super Cup, Champions League, Europa League." },
+          { "title": "Season Awards → Every league and cup", "detail": "The whole season just finished." },
+          { "title": "Season 1 pre-season", "detail": "Arsenal v Man City and PSG v Aston Villa." },
+          { "title": "End of a season", "detail": "Who goes up and down matches the final tables." }
+        ]},
+        { "kind": "added", "title": "The world season", "items": [
+          { "title": "Real club ratings", "detail": "Best eleven of a real squad; otherwise the league's level ± up to 4 for reputation, history and spending." },
+          { "title": "Every league played by date", "detail": "Was one dice roll at season end; now every round on its real date, with scorers." },
+          { "title": "Promotion and relegation from the tables", "detail": "Plus real play-offs. Was a weighted draw." },
+          { "title": "Cups on real ratings", "detail": "League Two beating a Premier League club 34% → 8%. The League Cup is played even without you." },
+          { "title": "Champions League and Europa League in full", "detail": "36 clubs, 8 matchdays, UEFA bracket. Fixed: a club not in the field could win (17.5% of Europa League winners)." },
+          { "title": "Community Shield and Super Cup", "detail": "Season 1 fixed pairs, then last season's winners." },
+          { "title": "Lag", "detail": "About 2 ms a week; a whole season about 95 ms; save +85 KB." }
+        ]},
+        { "kind": "fixed", "title": "Transfer talks", "items": [
+          { "title": "A smaller club offers its own wage", "detail": "It no longer drops out for being below your wage." },
+          { "title": "+/- steps fit the amount", "detail": "★10 a step around ★400 (was ★500)." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Not yet seen on a phone", "detail": "End-of-season screen and phone speed not checked." }
+        ]}
+      ]
+    },
+    {
       "version": "0.59",
       "title": "Mikey's patch notes v0.17: The transfer window and the world that ages",
       "publishedAt": "2026-10-18T22:00:00Z",
