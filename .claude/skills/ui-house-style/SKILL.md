@@ -72,6 +72,15 @@ Newest first. Each is something that was actually said.
   is fine."** Reverted. The Play Area's inside is NOT the standard; the bold
   game-style Retirement page (big caps title, yellow labels, chunky coloured
   buttons) is fine as it is. Ask what the bar is before restyling an admin page.
+- **Look C (Broadcast) for the RBD admin pages on a computer**: "C for pc cos it
+  takes up the screen and looks cool"; "each screen should fit what it's about
+  and scale perfectly on pc and phone". Two Higgsfield options per page:
+  https://claude.ai/artifact/AM271hrdJEP56voyAoZ6zW ("these are starting to look
+  a lot better").
+- **One full page per group, not one jumbled home**: "we could just have a
+  separate page in full for each sub set of admin pages — I like that idea
+  rather than a jumbled home page." Admin home shows the groups; each group
+  opens its own full page of its admin pages.
 
 ### 18 Oct 2026 — admin pages get real design (Harry)
 - **"I like the idea of the grouped admin … but it's not the UI I was
