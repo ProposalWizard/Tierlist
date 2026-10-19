@@ -1340,8 +1340,10 @@ export const ADMIN_GUIDES = {
     what: "Every move the 3D match plays (outfield and keeper), each looping on its own tile, seen through the real 3D match camera at the real match size: a man is 6% of a phone screen, the men 1.35 × life, the realistic players.",
     buttons: [
       { group: "Top", items: [
-        ["‹ 3D test area", "Back to the list of 3D test pages."],
-        ["❚❚ Pause / ▶ Play", "Stops or starts every tile. Play also lets go of any tile you held with its slider."],
+        ["← and 3D test area (left list)", "Back to the list of 3D test pages."],
+        ["Outfield / Keeper (left list)", "Jumps to that group of tiles."],
+        ["2D animations (left list)", "Opens the 2D animation page."],
+        ["❚❚ / ▶ (player bar)", "Stops or starts every tile. Play also lets go of any tile you held with its slider."],
         ["1× / ½× / ¼×", "Playback speed."],
         ["Match size / 3× closer", "Match size is exactly how big a man is in a real 3D match. 3× closer brings the camera in to judge hands and feet."],
         ["As you shoot / Side on", "Which way the men face: away from the camera (as you face the goal when you shoot), or side on."],
