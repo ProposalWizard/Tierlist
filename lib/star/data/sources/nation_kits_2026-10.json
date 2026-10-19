@@ -1,0 +1,6257 @@
+{
+ "_about": "Every nation's current home and away kit, 13 Oct 2026. Source: each national team's Wikipedia page kit box (colours per sleeve, shirt, shorts, socks, and the kit design pictures from Wikimedia Commons). Read by scripts/nation-kits/analyze.py (shirt colour, second colour, pattern), then every kit checked by eye against the real picture; corrections carry a 'checked' note. Read through lib/star/data/nationKits.ts.",
+ "nations": {
+  "Afghanistan": {
+   "source": "https://en.wikipedia.org/wiki/Afghanistan_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "pattern": "White",
+    "shirtHex": "#FFFFFF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Albania": {
+   "source": "https://en.wikipedia.org/wiki/Albania_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with black trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#141414",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFDF5",
+    "trimHex": "#FF0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFDF5",
+    "shorts": "White",
+    "shortsHex": "#FFFDF5",
+    "socks": "White",
+    "socksHex": "#FFFDF5"
+   }
+  },
+  "Algeria": {
+   "source": "https://en.wikipedia.org/wiki/Algeria_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with green trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#038668",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#F3F3F3"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "trim": "White",
+    "pattern": "Green with white trim",
+    "shirtHex": "#037D61",
+    "trimHex": "#FAFBFB",
+    "sleeves": "Dark Green",
+    "sleevesHex": "#1B4531",
+    "shorts": "Dark Green",
+    "shortsHex": "#1B4531",
+    "socks": "Teal",
+    "socksHex": "#005441"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "American Samoa": {
+   "source": "https://en.wikipedia.org/wiki/American_Samoa_national_football_team",
+   "homeKit": {
+    "shirt": "Navy",
+    "trim": "Grey",
+    "pattern": "Navy with grey trim",
+    "shirtHex": "#001C4C",
+    "trimHex": "#909CB1",
+    "sleeves": "Navy",
+    "sleevesHex": "#001C4C",
+    "shorts": "Navy",
+    "shortsHex": "#001C4C",
+    "socks": "Navy",
+    "socksHex": "#001C4C"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white hoops across the chest",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Andorra": {
+   "source": "https://en.wikipedia.org/wiki/Andorra_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Royal Blue",
+    "pattern": "Red with royal blue trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#0000FB",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red, yellow and blue stripe down one side",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#FF0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Angola": {
+   "source": "https://en.wikipedia.org/wiki/Angola_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with a black and yellow band across the chest",
+    "shirtHex": "#FF0000",
+    "trimHex": "#17181A",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Black",
+    "trim": "Red",
+    "pattern": "Black with red trim",
+    "shirtHex": "#000000",
+    "trimHex": "#D71920",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Anguilla": {
+   "source": "https://en.wikipedia.org/wiki/Anguilla_national_football_team",
+   "homeKit": {
+    "shirt": "Orange",
+    "trim": "Blue",
+    "pattern": "Orange with blue trim",
+    "shirtHex": "#FF8B00",
+    "trimHex": "#0D0C6B",
+    "sleeves": "Orange",
+    "sleevesHex": "#FF8B00",
+    "shorts": "Blue",
+    "shortsHex": "#0D0C6B",
+    "socks": "Blue",
+    "socksHex": "#0D0C6B"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Orange",
+    "pattern": "White with a multicoloured pattern across the chest",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#FF8B00",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Blue",
+    "shortsHex": "#15B1C7",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Antigua and Barbuda": {
+   "source": "https://en.wikipedia.org/wiki/Antigua_and_Barbuda_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Black",
+    "pattern": "Yellow fading to black at the shoulders",
+    "shirtHex": "#F1F100",
+    "trimHex": "#17181A",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Yellow",
+    "shortsHex": "#FFFF00",
+    "socks": "Yellow",
+    "socksHex": "#FFFF00"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red fading to black at the shoulders",
+    "shirtHex": "#DF0101",
+    "trimHex": "#17181A",
+    "sleeves": "Red",
+    "sleevesHex": "#DF0101",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Argentina": {
+   "source": "https://en.wikipedia.org/wiki/Argentina_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Sky Blue",
+    "pattern": "White and sky blue stripes",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#75AADB",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Black",
+    "trim": "Blue",
+    "pattern": "Black with a purple and blue graphic pattern",
+    "shirtHex": "#030304",
+    "trimHex": "#4235BC",
+    "sleeves": "Black",
+    "sleevesHex": "#09090A",
+    "shorts": "Black",
+    "shortsHex": "#020202",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Armenia": {
+   "source": "https://en.wikipedia.org/wiki/Armenia_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Gold",
+    "pattern": "Red with gold trim",
+    "shirtHex": "#B70000",
+    "trimHex": "#D4A72C",
+    "sleeves": "Red",
+    "sleevesHex": "#B70000",
+    "shorts": "Dark Red",
+    "shortsHex": "#6F0000",
+    "socks": "Red",
+    "socksHex": "#B70000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Orange",
+    "pattern": "White with an orange and blue stripe down one side",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#F2A800",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Aruba": {
+   "source": "https://en.wikipedia.org/wiki/Aruba_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Blue",
+    "pattern": "Yellow with blue sleeves",
+    "shirtHex": "#FFF200",
+    "trimHex": "#2085FF",
+    "sleeves": "Blue",
+    "sleevesHex": "#1A86FF",
+    "shorts": "Yellow",
+    "shortsHex": "#FFF200",
+    "socks": "Yellow",
+    "socksHex": "#FFF200"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Royal blue with a white graphic pattern",
+    "shirtHex": "#0000FF",
+    "trimHex": "#FFFFFF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   }
+  },
+  "Australia": {
+   "source": "https://en.wikipedia.org/wiki/Australia_men's_national_soccer_team",
+   "homeKit": {
+    "shirt": "Gold",
+    "trim": "Dark Green",
+    "pattern": "Gold with green trim",
+    "shirtHex": "#FEB600",
+    "trimHex": "#0B5A32",
+    "sleeves": "Gold",
+    "sleevesHex": "#FCB500",
+    "shorts": "Teal",
+    "shortsHex": "#07563E",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Teal",
+    "trim": "Red",
+    "pattern": "Dark green with a salmon pink band across the shoulders",
+    "shirtHex": "#07563E",
+    "trimHex": "#F88274",
+    "sleeves": "Teal",
+    "sleevesHex": "#07563E",
+    "shorts": "Teal",
+    "shortsHex": "#07563E",
+    "socks": "Teal",
+    "socksHex": "#07563E"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Austria": {
+   "source": "https://en.wikipedia.org/wiki/Austria_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with black sleeves",
+    "shirtHex": "#FF0000",
+    "trimHex": "#030303",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Gold",
+    "pattern": "White with a gold graphic pattern",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D4A72C",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Teal",
+    "shortsHex": "#003A41",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Azerbaijan": {
+   "source": "https://en.wikipedia.org/wiki/Azerbaijan_national_football_team",
+   "homeKit": {
+    "shirt": "Blue",
+    "pattern": "Blue",
+    "shirtHex": "#007FFF",
+    "sleeves": "Blue",
+    "sleevesHex": "#0048BA",
+    "shorts": "Blue",
+    "shortsHex": "#007FFF",
+    "socks": "Blue",
+    "socksHex": "#007FFF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "pattern": "White",
+    "shirtHex": "#FFFFFF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Bahamas": {
+   "source": "https://en.wikipedia.org/wiki/Bahamas_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Aquamarine",
+    "pattern": "Gold with a black and aquamarine sash",
+    "shirtHex": "#FFCC00",
+    "trimHex": "#00778B",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFCC00",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "awayKit": {
+    "shirt": "Aquamarine",
+    "trim": "Gold",
+    "pattern": "Aquamarine with a gold and black sash",
+    "shirtHex": "#00879E",
+    "trimHex": "#FFC72C",
+    "sleeves": "Blue",
+    "sleevesHex": "#00879E",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Bahrain": {
+   "source": "https://en.wikipedia.org/wiki/Bahrain_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#EF0000",
+    "trimHex": "#FDFDFD",
+    "sleeves": "Red",
+    "sleevesHex": "#EF0000",
+    "shorts": "Red",
+    "shortsHex": "#EF0000",
+    "socks": "Red",
+    "socksHex": "#EF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#EC0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Bangladesh": {
+   "source": "https://en.wikipedia.org/wiki/Bangladesh_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with a black and green pattern on the sleeves",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#006A4E",
+    "sleeves": "Black",
+    "sleevesHex": "#111111",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FCFDFD"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with a dark red graphic pattern",
+    "shirtHex": "#DC2A1D",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#DA291C",
+    "shorts": "Red",
+    "shortsHex": "#DA291C",
+    "socks": "Red",
+    "socksHex": "#DA291C"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Barbados": {
+   "source": "https://en.wikipedia.org/wiki/Barbados_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Blue",
+    "pattern": "Yellow with a blue band across the chest",
+    "shirtHex": "#FFD000",
+    "trimHex": "#000099",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFD000",
+    "shorts": "Yellow",
+    "shortsHex": "#FFD000",
+    "socks": "Yellow",
+    "socksHex": "#FFD000"
+   },
+   "awayKit": {
+    "shirt": "Blue",
+    "trim": "Gold",
+    "pattern": "Blue with a gold dotted pattern",
+    "shirtHex": "#000099",
+    "trimHex": "#FCD402",
+    "sleeves": "Blue",
+    "sleevesHex": "#000099",
+    "shorts": "Blue",
+    "shortsHex": "#000099",
+    "socks": "Blue",
+    "socksHex": "#000099"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Belarus": {
+   "source": "https://en.wikipedia.org/wiki/Belarus_national_football_team",
+   "homeKit": {
+    "shirt": "Claret",
+    "trim": "Dark Red",
+    "pattern": "Claret with a red graphic pattern and lime trim",
+    "shirtHex": "#600020",
+    "trimHex": "#9A000A",
+    "sleeves": "Claret",
+    "sleevesHex": "#600020",
+    "shorts": "Claret",
+    "shortsHex": "#600020",
+    "socks": "Claret",
+    "socksHex": "#600020"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Lime",
+    "pattern": "White with a grey diagonal pattern and lime trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D9FF00",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Belgium": {
+   "source": "https://en.wikipedia.org/wiki/Belgium_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Gold",
+    "pattern": "Red with gold trim",
+    "shirtHex": "#F60C0E",
+    "trimHex": "#F9D301",
+    "sleeves": "Red",
+    "sleevesHex": "#F70C0E",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "awayKit": {
+    "shirt": "Sky Blue",
+    "trim": "Pink",
+    "pattern": "Sky blue with a pink graphic pattern",
+    "shirtHex": "#8BDDF5",
+    "trimHex": "#F0B8C6",
+    "sleeves": "Sky Blue",
+    "sleevesHex": "#8BDDF5",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Belize": {
+   "source": "https://en.wikipedia.org/wiki/Belize_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with blue sleeves and red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#1F3FD9",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Royal blue with white trim",
+    "shirtHex": "#0000FF",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Benin": {
+   "source": "https://en.wikipedia.org/wiki/Benin_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Green",
+    "pattern": "Yellow with a green, red and yellow triangle pattern",
+    "shirtHex": "#FFF200",
+    "trimHex": "#008751",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFF200",
+    "shorts": "Yellow",
+    "shortsHex": "#FFF200",
+    "socks": "Yellow",
+    "socksHex": "#FFF200"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with green and yellow triangles on one shoulder",
+    "shirtHex": "#FEFEFE",
+    "trimHex": "#008000",
+    "sleeves": "White",
+    "sleevesHex": "#FEFEFE",
+    "shorts": "White",
+    "shortsHex": "#FEFEFE",
+    "socks": "White",
+    "socksHex": "#FEFEFE"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Bermuda": {
+   "source": "https://en.wikipedia.org/wiki/Bermuda_national_football_team",
+   "homeKit": {
+    "shirt": "Navy",
+    "trim": "Red",
+    "pattern": "Navy with thin blue stripes",
+    "shirtHex": "#000060",
+    "trimHex": "#D71920",
+    "sleeves": "Navy",
+    "sleevesHex": "#000060",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Navy",
+    "socksHex": "#000060"
+   },
+   "awayKit": {
+    "shirt": "Pink",
+    "trim": "Navy",
+    "pattern": "Pink with navy trim",
+    "shirtHex": "#FFE1E1",
+    "trimHex": "#001F5B",
+    "sleeves": "Pink",
+    "sleevesHex": "#FEE0E1",
+    "shorts": "Navy",
+    "shortsHex": "#000060",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Bhutan": {
+   "source": "https://en.wikipedia.org/wiki/Bhutan_national_football_team",
+   "homeKit": {
+    "shirt": "Orange",
+    "trim": "Grey",
+    "pattern": "Orange with a dragon graphic",
+    "shirtHex": "#FC7802",
+    "trimHex": "#7A7A7A",
+    "sleeves": "Orange",
+    "sleevesHex": "#FC7802",
+    "shorts": "Orange",
+    "shortsHex": "#F66E02",
+    "socks": "Orange",
+    "socksHex": "#FC7802"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Orange",
+    "pattern": "White with an orange dragon graphic",
+    "shirtHex": "#E8F8F6",
+    "trimHex": "#F28C28",
+    "sleeves": "White",
+    "sleevesHex": "#E8F8F6",
+    "shorts": "Turquoise",
+    "shortsHex": "#D8F4EC",
+    "socks": "White",
+    "socksHex": "#E8F8F6"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Bolivia": {
+   "source": "https://en.wikipedia.org/wiki/Bolivia_national_football_team",
+   "homeKit": {
+    "shirt": "Dark Green",
+    "trim": "Gold",
+    "pattern": "Dark green with gold trim",
+    "shirtHex": "#0C352D",
+    "trimHex": "#D4A72C",
+    "sleeves": "Black",
+    "sleevesHex": "#0A2C24",
+    "shorts": "Dark Green",
+    "shortsHex": "#004B1C",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with green and gold trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0B5A32",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Dark Green",
+    "shortsHex": "#00652A",
+    "socks": "Dark Green",
+    "socksHex": "#004B1C"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Bosnia and Herzegovina": {
+   "source": "https://en.wikipedia.org/wiki/Bosnia_and_Herzegovina_national_football_team",
+   "homeKit": {
+    "shirt": "Navy",
+    "trim": "Gold",
+    "pattern": "Navy with thin gold stripes",
+    "shirtHex": "#001970",
+    "trimHex": "#D4A72C",
+    "sleeves": "Navy",
+    "sleevesHex": "#001970",
+    "shorts": "Navy",
+    "shortsHex": "#001970",
+    "socks": "Navy",
+    "socksHex": "#001970"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with thin blue stripes and navy sleeves",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#001A75",
+    "sleeves": "Navy",
+    "sleevesHex": "#001970",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Botswana": {
+   "source": "https://en.wikipedia.org/wiki/Botswana_national_football_team",
+   "homeKit": {
+    "shirt": "Blue",
+    "trim": "White",
+    "pattern": "Sky blue with thin white stripes",
+    "shirtHex": "#00A2E8",
+    "trimHex": "#FCFDFD",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Sky Blue",
+    "shortsHex": "#5FB1FF",
+    "socks": "Sky Blue",
+    "socksHex": "#5FB1FF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black stripes across the chest",
+    "shirtHex": "#FEFEFE",
+    "trimHex": "#17181A",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Brazil": {
+   "source": "https://en.wikipedia.org/wiki/Brazil_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Green",
+    "pattern": "Yellow with green trim",
+    "shirtHex": "#FFE540",
+    "trimHex": "#006060",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFE540",
+    "shorts": "Blue",
+    "shortsHex": "#4080FF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Navy",
+    "trim": "Blue",
+    "pattern": "Navy with a blue graphic pattern",
+    "shirtHex": "#1B2A5C",
+    "trimHex": "#4A7BD0",
+    "sleeves": "Black",
+    "sleevesHex": "#070707",
+    "shorts": "Black",
+    "shortsHex": "#000001",
+    "socks": "Black",
+    "socksHex": "#0F0F0F"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "British Virgin Islands": {
+   "source": "https://en.wikipedia.org/wiki/British_Virgin_Islands_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "Black",
+    "pattern": "Green with black trim",
+    "shirtHex": "#167A42",
+    "trimHex": "#000000",
+    "sleeves": "Green",
+    "sleevesHex": "#167A42",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "awayKit": {
+    "shirt": "Yellow",
+    "pattern": "Yellow",
+    "shirtHex": "#FFF200",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFF200",
+    "shorts": "Yellow",
+    "shortsHex": "#FFF200",
+    "socks": "Yellow",
+    "socksHex": "#FFF200"
+   }
+  },
+  "Brunei": {
+   "source": "https://en.wikipedia.org/wiki/Brunei_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Black",
+    "pattern": "Yellow with a darker yellow graphic pattern",
+    "shirtHex": "#FBF320",
+    "trimHex": "#17181A",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFF720",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Navy",
+    "pattern": "Navy",
+    "shirtHex": "#081D43",
+    "sleeves": "Navy",
+    "sleevesHex": "#081D43",
+    "shorts": "Navy",
+    "shortsHex": "#081D43",
+    "socks": "White",
+    "socksHex": "#FEFEFE"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Bulgaria": {
+   "source": "https://en.wikipedia.org/wiki/Bulgaria_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with green trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#008800",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Green",
+    "shortsHex": "#008800",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Burkina Faso": {
+   "source": "https://en.wikipedia.org/wiki/Burkina_Faso_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "Red",
+    "pattern": "Green with a red band across the shoulders",
+    "shirtHex": "#1C8F3E",
+    "trimHex": "#FF0000",
+    "sleeves": "Green",
+    "sleevesHex": "#1C9340",
+    "shorts": "Green",
+    "shortsHex": "#1C9340",
+    "socks": "Green",
+    "socksHex": "#1C9340"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red and green sash",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#FF0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Red",
+    "socksHex": "#FA0000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Burundi": {
+   "source": "https://en.wikipedia.org/wiki/Burundi_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "Red",
+    "pattern": "Green with a white graphic pattern and red trim",
+    "shirtHex": "#1EC019",
+    "trimHex": "#FF0000",
+    "sleeves": "Green",
+    "sleevesHex": "#1EC019",
+    "shorts": "Green",
+    "shortsHex": "#1EC019",
+    "socks": "Green",
+    "socksHex": "#1EC019"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "Green",
+    "pattern": "Red with green trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#1EC019",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Cambodia": {
+   "source": "https://en.wikipedia.org/wiki/Cambodia_national_football_team",
+   "homeKit": {
+    "shirt": "Blue",
+    "trim": "Black",
+    "pattern": "Blue with a black diagonal band",
+    "shirtHex": "#0E36BC",
+    "trimHex": "#080F27",
+    "sleeves": "Blue",
+    "sleevesHex": "#0E36BC",
+    "shorts": "Black",
+    "shortsHex": "#0E1422",
+    "socks": "Black",
+    "socksHex": "#0E1422"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "Blue",
+    "pattern": "Red with a blue graphic pattern",
+    "shirtHex": "#B61426",
+    "trimHex": "#032EA1",
+    "sleeves": "Red",
+    "sleevesHex": "#B61426",
+    "shorts": "Silver",
+    "shortsHex": "#CFCFCF",
+    "socks": "Royal Blue",
+    "socksHex": "#1200FC"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Cameroon": {
+   "source": "https://en.wikipedia.org/wiki/Cameroon_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "Yellow",
+    "pattern": "Green with a dark green graphic pattern and yellow trim",
+    "shirtHex": "#006B36",
+    "trimHex": "#FCD116",
+    "sleeves": "Teal",
+    "sleevesHex": "#007A5D",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Yellow",
+    "socksHex": "#FFE000"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "Dark Green",
+    "pattern": "Red with green trim",
+    "shirtHex": "#F80000",
+    "trimHex": "#00723A",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Green",
+    "shortsHex": "#00811A",
+    "socks": "Yellow",
+    "socksHex": "#FFE000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Canada": {
+   "source": "https://en.wikipedia.org/wiki/Canada_men's_national_soccer_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with black trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#000000",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Black",
+    "trim": "Charcoal",
+    "pattern": "Black with a grey graphic pattern",
+    "shirtHex": "#000000",
+    "trimHex": "#404040",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Cape Verde": {
+   "source": "https://en.wikipedia.org/wiki/Cape_Verde_national_football_team",
+   "homeKit": {
+    "shirt": "Blue",
+    "trim": "Royal Blue",
+    "pattern": "Blue with a royal blue graphic pattern",
+    "shirtHex": "#000095",
+    "trimHex": "#0000DD",
+    "sleeves": "Blue",
+    "sleevesHex": "#00008D",
+    "shorts": "Blue",
+    "shortsHex": "#1A3CB0",
+    "socks": "Blue",
+    "socksHex": "#1A3CB0"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with blue and red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#1C3FAA",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Cayman Islands": {
+   "source": "https://en.wikipedia.org/wiki/Cayman_Islands_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with a dark red graphic pattern",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#C40000"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Blue with a dark blue graphic pattern",
+    "shirtHex": "#0000FF",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Central African Republic": {
+   "source": "https://en.wikipedia.org/wiki/Central_African_Republic_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Blue with a white pattern on the sleeves",
+    "shirtHex": "#0000F4",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Sky Blue",
+    "sleevesHex": "#9090FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with a blue pattern on the sleeves",
+    "shirtHex": "#FCFCFC",
+    "trimHex": "#3B5BD9",
+    "sleeves": "Sky Blue",
+    "sleevesHex": "#6F6FFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Chad": {
+   "source": "https://en.wikipedia.org/wiki/Chad_national_football_team",
+   "homeKit": {
+    "shirt": "Navy",
+    "trim": "Blue",
+    "pattern": "Navy with a blue band across the shoulders",
+    "shirtHex": "#021421",
+    "trimHex": "#0A60B8",
+    "sleeves": "Blue",
+    "sleevesHex": "#0A64BE",
+    "shorts": "Gold",
+    "shortsHex": "#D2C803",
+    "socks": "Blue",
+    "socksHex": "#0A64BE"
+   },
+   "awayKit": {
+    "shirt": "Yellow",
+    "trim": "Red",
+    "pattern": "Yellow with a white band across the shoulders",
+    "shirtHex": "#E6BE14",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#F8F8F8",
+    "shorts": "Red",
+    "shortsHex": "#D4160C",
+    "socks": "Gold",
+    "socksHex": "#E6BE14"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Chile": {
+   "source": "https://en.wikipedia.org/wiki/Chile_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FCFCFC",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Blue",
+    "shortsHex": "#0055FD",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Cream",
+    "trim": "Pink",
+    "pattern": "Cream with a pink graphic pattern",
+    "shirtHex": "#E0D7CD",
+    "trimHex": "#D799BA",
+    "sleeves": "Silver",
+    "sleevesHex": "#E0D7CD",
+    "shorts": "Charcoal",
+    "shortsHex": "#504243",
+    "socks": "Charcoal",
+    "socksHex": "#504243"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "China PR": {
+   "source": "https://en.wikipedia.org/wiki/China_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with black trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#000000",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Yellow",
+    "trim": "Red",
+    "pattern": "Yellow with a red graphic pattern",
+    "shirtHex": "#FFE900",
+    "trimHex": "#D71920",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFE900",
+    "shorts": "Yellow",
+    "shortsHex": "#FFE900",
+    "socks": "Yellow",
+    "socksHex": "#FFE900"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Chinese Taipei": {
+   "source": "https://en.wikipedia.org/wiki/Chinese_Taipei_national_football_team",
+   "homeKit": {
+    "shirt": "Blue",
+    "trim": "White",
+    "pattern": "Blue with a dark blue graphic pattern",
+    "shirtHex": "#0000BD",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Blue",
+    "sleevesHex": "#0000BD",
+    "shorts": "Blue",
+    "shortsHex": "#0000BD",
+    "socks": "Blue",
+    "socksHex": "#0000BD"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "pattern": "White",
+    "shirtHex": "#FFFFFF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Colombia": {
+   "source": "https://en.wikipedia.org/wiki/Colombia_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Blue",
+    "pattern": "Yellow with blue trim",
+    "shirtHex": "#F4E201",
+    "trimHex": "#005DA4",
+    "sleeves": "Gold",
+    "sleevesHex": "#F4E201",
+    "shorts": "Blue",
+    "shortsHex": "#005DA4",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Navy",
+    "trim": "Lime",
+    "pattern": "Navy with thin lime stripes",
+    "shirtHex": "#243561",
+    "trimHex": "#CCFF2F",
+    "sleeves": "Blue",
+    "sleevesHex": "#243561",
+    "shorts": "Blue",
+    "shortsHex": "#243561",
+    "socks": "Blue",
+    "socksHex": "#243561"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Comoros": {
+   "source": "https://en.wikipedia.org/wiki/Comoros_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "White",
+    "pattern": "Green with a dark green graphic pattern",
+    "shirtHex": "#20AA49",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Green",
+    "sleevesHex": "#116F37",
+    "shorts": "Green",
+    "shortsHex": "#1FAA48",
+    "socks": "Green",
+    "socksHex": "#1FAA48"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with green and gold trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#3A9D23",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Congo": {
+   "source": "https://en.wikipedia.org/wiki/Congo_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Yellow",
+    "pattern": "Red with a green, yellow and red stripe down the front",
+    "shirtHex": "#ED0000",
+    "trimHex": "#FBDE4A",
+    "sleeves": "Red",
+    "sleevesHex": "#ED0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with a green, yellow and red stripe down the front",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#009543",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Cook Islands": {
+   "source": "https://en.wikipedia.org/wiki/Cook_Islands_national_football_team",
+   "homeKit": {
+    "shirt": "Dark Green",
+    "pattern": "Dark green",
+    "shirtHex": "#007B47",
+    "sleeves": "Dark Green",
+    "sleevesHex": "#006F41",
+    "shorts": "Dark Green",
+    "shortsHex": "#007C48",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Dark Green",
+    "pattern": "White with dark green sleeves",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#006F41",
+    "sleeves": "Dark Green",
+    "sleevesHex": "#006F41",
+    "shorts": "Dark Green",
+    "shortsHex": "#007C48",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Costa Rica": {
+   "source": "https://en.wikipedia.org/wiki/Costa_Rica_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Navy",
+    "pattern": "Red with a blue graphic pattern",
+    "shirtHex": "#E42023",
+    "trimHex": "#001F5B",
+    "sleeves": "Red",
+    "sleevesHex": "#E11F22",
+    "shorts": "Navy",
+    "shortsHex": "#000066",
+    "socks": "Red",
+    "socksHex": "#EF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Sky Blue",
+    "pattern": "White with a sky blue and lilac graphic pattern",
+    "shirtHex": "#F4F6FA",
+    "trimHex": "#8FB8E8",
+    "sleeves": "Sky Blue",
+    "sleevesHex": "#C2D5F1",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Croatia": {
+   "source": "https://en.wikipedia.org/wiki/Croatia_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "Red and white checks",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Blue",
+    "trim": "Red",
+    "pattern": "Blue with red trim",
+    "shirtHex": "#0000B6",
+    "trimHex": "#FF0000",
+    "sleeves": "Blue",
+    "sleevesHex": "#0000BB",
+    "shorts": "Blue",
+    "shortsHex": "#000076",
+    "socks": "Blue",
+    "socksHex": "#000077"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Cuba": {
+   "source": "https://en.wikipedia.org/wiki/Cuba_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Navy",
+    "pattern": "Red with a navy band across the shoulders",
+    "shirtHex": "#FF0000",
+    "trimHex": "#181145",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Navy",
+    "shortsHex": "#181146",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Navy",
+    "pattern": "White with a navy and red band across the chest",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#161040",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Curacao": {
+   "source": "https://en.wikipedia.org/wiki/Curaçao_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "Yellow",
+    "pattern": "Royal blue with yellow trim",
+    "shirtHex": "#0531F1",
+    "trimHex": "#FBE300",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0431F0",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0532F3",
+    "socks": "Blue",
+    "socksHex": "#344FC0"
+   },
+   "awayKit": {
+    "shirt": "Cream",
+    "trim": "Blue",
+    "pattern": "Cream with blue trim",
+    "shirtHex": "#F2EFD4",
+    "trimHex": "#0064E4",
+    "sleeves": "Cream",
+    "sleevesHex": "#F2EFD4",
+    "shorts": "Cream",
+    "shortsHex": "#F2EFD4",
+    "socks": "Cream",
+    "socksHex": "#F2EFD4"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Cyprus": {
+   "source": "https://en.wikipedia.org/wiki/Cyprus_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "Blue",
+    "pattern": "Royal blue with a blue graphic pattern",
+    "shirtHex": "#0000FF",
+    "trimHex": "#0000BC",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Gold",
+    "pattern": "White with gold trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D4A72C",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Czech Republic": {
+   "source": "https://en.wikipedia.org/wiki/Czech_Republic_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#F6090F",
+    "trimHex": "#FCFCFC",
+    "sleeves": "Red",
+    "sleevesHex": "#F6090F",
+    "shorts": "Navy",
+    "shortsHex": "#001553",
+    "socks": "Navy",
+    "socksHex": "#001553"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with blue trim",
+    "shirtHex": "#E9E9E9",
+    "trimHex": "#212D50",
+    "sleeves": "White",
+    "sleevesHex": "#E9E9E9",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Blue",
+    "socksHex": "#222F52"
+   }
+  },
+  "DR Congo": {
+   "source": "https://en.wikipedia.org/wiki/DR_Congo_national_football_team",
+   "homeKit": {
+    "shirt": "Sky Blue",
+    "trim": "White",
+    "pattern": "Sky blue with a white graphic pattern",
+    "shirtHex": "#00B7EF",
+    "trimHex": "#E5F7FE",
+    "sleeves": "Blue",
+    "sleevesHex": "#00B7EF",
+    "shorts": "Blue",
+    "shortsHex": "#00B7EF",
+    "socks": "Blue",
+    "socksHex": "#00B7EF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with a blue graphic pattern",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0DB5E9",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Denmark": {
+   "source": "https://en.wikipedia.org/wiki/Denmark_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FEFEFE",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with thin red stripes",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Djibouti": {
+   "source": "https://en.wikipedia.org/wiki/Djibouti_national_football_team",
+   "homeKit": {
+    "shirt": "Sky Blue",
+    "trim": "White",
+    "pattern": "Sky blue with a green and white pattern down the front",
+    "shirtHex": "#7CE3F9",
+    "trimHex": "#FFFFFF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Sky Blue",
+    "shortsHex": "#87E5F9",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "trim": "Sky Blue",
+    "pattern": "Green with a white graphic pattern and sky blue trim",
+    "shirtHex": "#22AC4B",
+    "trimHex": "#89E6F7",
+    "sleeves": "Green",
+    "sleevesHex": "#21AD4B",
+    "shorts": "Green",
+    "shortsHex": "#22B04C",
+    "socks": "Green",
+    "socksHex": "#45D23E"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Dominica": {
+   "source": "https://en.wikipedia.org/wiki/Dominica_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "Yellow",
+    "pattern": "Green with yellow sleeves",
+    "shirtHex": "#1CB34B",
+    "trimHex": "#FFF200",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFEE00",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Green",
+    "socksHex": "#1CB34B"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with green stripes fading down the front",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#006B3F",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Dominican Republic": {
+   "source": "https://en.wikipedia.org/wiki/Dominican_Republic_national_football_team",
+   "homeKit": {
+    "shirt": "Black",
+    "pattern": "Black",
+    "shirtHex": "#000000",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "pattern": "White",
+    "shirtHex": "#FFFFFF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Ecuador": {
+   "source": "https://en.wikipedia.org/wiki/Ecuador_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Navy",
+    "pattern": "Yellow with navy trim",
+    "shirtHex": "#FFE80B",
+    "trimHex": "#001F5B",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFE80B",
+    "shorts": "Black",
+    "shortsHex": "#00102B",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "awayKit": {
+    "shirt": "Navy",
+    "trim": "Gold",
+    "pattern": "Navy with gold trim",
+    "shirtHex": "#0D183B",
+    "trimHex": "#D4A72C",
+    "sleeves": "Navy",
+    "sleevesHex": "#0D183B",
+    "shorts": "Black",
+    "shortsHex": "#00102B",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Egypt": {
+   "source": "https://en.wikipedia.org/wiki/Egypt_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with black trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#171717",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with a grey graphic pattern and black trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0F0F0F",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "El Salvador": {
+   "source": "https://en.wikipedia.org/wiki/El_Salvador_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Blue with white trim",
+    "shirtHex": "#0044FF",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0044FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0044FF",
+    "socks": "White",
+    "socksHex": "#FEFEFF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Royal Blue",
+    "pattern": "White with royal blue trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0044FF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "England": {
+   "source": "https://en.wikipedia.org/wiki/England_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Navy",
+    "pattern": "White with navy trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#00003E",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FBFBFB",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "Navy",
+    "pattern": "Red with navy trim",
+    "shirtHex": "#FE080A",
+    "trimHex": "#000040",
+    "sleeves": "Red",
+    "sleevesHex": "#FE080A",
+    "shorts": "Navy",
+    "shortsHex": "#000040",
+    "socks": "Red",
+    "socksHex": "#FE080A"
+   }
+  },
+  "Equatorial Guinea": {
+   "source": "https://en.wikipedia.org/wiki/Equatorial_Guinea_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "pattern": "Red",
+    "shirtHex": "#FF0000",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Blue with a light blue graphic pattern",
+    "shirtHex": "#0000FF",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Eritrea": {
+   "source": "https://en.wikipedia.org/wiki/Eritrea_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a green, red and blue stripe down the front",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Blue",
+    "trim": "Red",
+    "pattern": "Blue with a green and red stripe down the front",
+    "shirtHex": "#3C96FF",
+    "trimHex": "#D71920",
+    "sleeves": "Blue",
+    "sleevesHex": "#3C96FF",
+    "shorts": "Blue",
+    "shortsHex": "#3C96FF",
+    "socks": "Blue",
+    "socksHex": "#3C96FF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Estonia": {
+   "source": "https://en.wikipedia.org/wiki/Estonia_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Royal blue with white trim",
+    "shirtHex": "#0000FF",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with a grey zigzag pattern and black trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#000000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Eswatini": {
+   "source": "https://en.wikipedia.org/wiki/Eswatini_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "pattern": "Blue with a light blue graphic pattern",
+    "shirtHex": "#0000FF",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0200FB",
+    "socks": "Yellow",
+    "socksHex": "#FFCC00"
+   },
+   "awayKit": {
+    "shirt": "Gold",
+    "trim": "Blue",
+    "pattern": "Gold with a light graphic pattern and blue trim",
+    "shirtHex": "#FDCB01",
+    "trimHex": "#3E5EB9",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFCC00",
+    "shorts": "Gold",
+    "shortsHex": "#FDCA00",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Ethiopia": {
+   "source": "https://en.wikipedia.org/wiki/Ethiopia_national_football_team",
+   "homeKit": {
+    "shirt": "Dark Green",
+    "trim": "Yellow",
+    "pattern": "Dark green with yellow trim",
+    "shirtHex": "#006533",
+    "trimHex": "#FFD700",
+    "sleeves": "Dark Green",
+    "sleevesHex": "#006331",
+    "shorts": "Yellow",
+    "shortsHex": "#FFD700",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Yellow",
+    "trim": "Dark Green",
+    "pattern": "Yellow with dark green trim",
+    "shirtHex": "#FFD700",
+    "trimHex": "#006000",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFD700",
+    "shorts": "Dark Green",
+    "shortsHex": "#006000",
+    "socks": "Yellow",
+    "socksHex": "#FFD700"
+   }
+  },
+  "Faroe Islands": {
+   "source": "https://en.wikipedia.org/wiki/Faroe_Islands_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Royal Blue",
+    "pattern": "White with royal blue trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0202E0",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000E0",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Navy",
+    "trim": "Royal Blue",
+    "pattern": "Navy with a royal blue graphic pattern",
+    "shirtHex": "#000055",
+    "trimHex": "#0000D8",
+    "sleeves": "Navy",
+    "sleevesHex": "#000055",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Royal Blue",
+    "socksHex": "#0000E0"
+   }
+  },
+  "Fiji": {
+   "source": "https://en.wikipedia.org/wiki/Fiji_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black trim",
+    "shirtHex": "#FDFDFD",
+    "trimHex": "#000000",
+    "sleeves": "White",
+    "sleevesHex": "#FBFBFB",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "Black",
+    "pattern": "Royal blue with black trim",
+    "shirtHex": "#0000FE",
+    "trimHex": "#000000",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   }
+  },
+  "Finland": {
+   "source": "https://en.wikipedia.org/wiki/Finland_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with a blue cross on the chest",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#1F3FBF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Royal blue with white trim",
+    "shirtHex": "#0000FF",
+    "trimHex": "#FBFBFB",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "France": {
+   "source": "https://en.wikipedia.org/wiki/France_national_football_team",
+   "homeKit": {
+    "shirt": "Blue",
+    "trim": "White",
+    "pattern": "Blue with white trim",
+    "shirtHex": "#17367F",
+    "trimHex": "#FBFBFB",
+    "sleeves": "Blue",
+    "sleevesHex": "#17367F",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Pale Green",
+    "trim": "Orange",
+    "pattern": "Pale green with orange trim",
+    "shirtHex": "#BDE4D7",
+    "trimHex": "#98550E",
+    "sleeves": "Turquoise",
+    "sleevesHex": "#BDE4D7",
+    "shorts": "Turquoise",
+    "shortsHex": "#BDE4D7",
+    "socks": "Turquoise",
+    "socksHex": "#BDE4D7"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Gabon": {
+   "source": "https://en.wikipedia.org/wiki/Gabon_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Royal Blue",
+    "pattern": "Yellow with blue trim",
+    "shirtHex": "#FED900",
+    "trimHex": "#0042FF",
+    "sleeves": "Gold",
+    "sleevesHex": "#FDD600",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0042FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0042FF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with blue, yellow and green trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#3A75C4",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Gambia": {
+   "source": "https://en.wikipedia.org/wiki/Gambia_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with a blue, white and green sash",
+    "shirtHex": "#E40000",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Green",
+    "socksHex": "#22B14C"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red, blue and green sash",
+    "shirtHex": "#F3F3F3",
+    "trimHex": "#FF0101",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Georgia": {
+   "source": "https://en.wikipedia.org/wiki/Georgia_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red stripe down one side",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Black",
+    "trim": "Red",
+    "pattern": "Black with a dark graphic pattern and red trim",
+    "shirtHex": "#000000",
+    "trimHex": "#D71920",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Germany": {
+   "source": "https://en.wikipedia.org/wiki/Germany_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with a black, red and gold chevron across the chest",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#17181A",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Navy",
+    "trim": "Turquoise",
+    "pattern": "Navy with small turquoise motifs and turquoise trim",
+    "shirtHex": "#0A1A2E",
+    "trimHex": "#69EEDF",
+    "sleeves": "Black",
+    "sleevesHex": "#00112E",
+    "shorts": "Turquoise",
+    "shortsHex": "#6BF2E3",
+    "socks": "Turquoise",
+    "socksHex": "#6CF3E4"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Ghana": {
+   "source": "https://en.wikipedia.org/wiki/Ghana_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with a multicoloured graphic pattern and black trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#17181A",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Yellow",
+    "trim": "Teal",
+    "pattern": "Gold with teal trim and a black star",
+    "shirtHex": "#F8CD5C",
+    "trimHex": "#007569",
+    "sleeves": "Yellow",
+    "sleevesHex": "#F8CD5C",
+    "shorts": "Yellow",
+    "shortsHex": "#F8CD5C",
+    "socks": "Yellow",
+    "socksHex": "#F8CD5C"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Gibraltar": {
+   "source": "https://en.wikipedia.org/wiki/Gibraltar_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#EF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#EF0000",
+    "shorts": "Red",
+    "shortsHex": "#EF0000",
+    "socks": "Red",
+    "socksHex": "#EF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red graphic pattern",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#EB0101",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Greece": {
+   "source": "https://en.wikipedia.org/wiki/Greece_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with blue trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#2A4F9F",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Blue",
+    "trim": "White",
+    "pattern": "Navy with thin blue stripes",
+    "shirtHex": "#032F70",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Blue",
+    "sleevesHex": "#032F70",
+    "shorts": "Navy",
+    "shortsHex": "#151F3A",
+    "socks": "Navy",
+    "socksHex": "#151F3A"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Grenada": {
+   "source": "https://en.wikipedia.org/wiki/Grenada_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Green",
+    "pattern": "Red with green and yellow trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#007A5E",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "trim": "Red",
+    "pattern": "Green with red and yellow trim",
+    "shirtHex": "#008000",
+    "trimHex": "#D71920",
+    "sleeves": "Green",
+    "sleevesHex": "#008000",
+    "shorts": "Green",
+    "shortsHex": "#008000",
+    "socks": "Green",
+    "socksHex": "#008000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Guam": {
+   "source": "https://en.wikipedia.org/wiki/Guam_national_football_team",
+   "homeKit": {
+    "shirt": "Navy",
+    "trim": "Dark Red",
+    "pattern": "Navy with dark red trim",
+    "shirtHex": "#110D59",
+    "trimHex": "#800000",
+    "sleeves": "Navy",
+    "sleevesHex": "#110D59",
+    "shorts": "Navy",
+    "shortsHex": "#110D59",
+    "socks": "Dark Red",
+    "socksHex": "#800000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Dark Red",
+    "pattern": "White with dark red trim",
+    "shirtHex": "#FBFBFB",
+    "trimHex": "#800000",
+    "sleeves": "White",
+    "sleevesHex": "#FEFEFE",
+    "shorts": "Dark Red",
+    "shortsHex": "#800000",
+    "socks": "Dark Red",
+    "socksHex": "#800000"
+   }
+  },
+  "Guatemala": {
+   "source": "https://en.wikipedia.org/wiki/Guatemala_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Navy",
+    "pattern": "White with a blue and navy sash",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#191B3B",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Navy",
+    "trim": "Light Blue",
+    "pattern": "Navy with a light blue sash",
+    "shirtHex": "#181A38",
+    "trimHex": "#9EC5E8",
+    "sleeves": "Navy",
+    "sleevesHex": "#181A38",
+    "shorts": "Navy",
+    "shortsHex": "#181A38",
+    "socks": "Navy",
+    "socksHex": "#181A38"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Guinea": {
+   "source": "https://en.wikipedia.org/wiki/Guinea_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Yellow",
+    "pattern": "Red with thin yellow stripes",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FCD116",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Gold",
+    "shortsHex": "#EEEE00",
+    "socks": "Green",
+    "socksHex": "#489866"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with green and yellow diagonal stripes",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#008040",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Guinea-Bissau": {
+   "source": "https://en.wikipedia.org/wiki/Guinea-Bissau_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Dark Green",
+    "pattern": "Red with a green and yellow stripe down the front",
+    "shirtHex": "#FF0000",
+    "trimHex": "#125F29",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "trim": "Dark Green",
+    "pattern": "Green with a dark green graphic pattern",
+    "shirtHex": "#03AB68",
+    "trimHex": "#125F29",
+    "sleeves": "Green",
+    "sleevesHex": "#03AB68",
+    "shorts": "Green",
+    "shortsHex": "#03AB68",
+    "socks": "Green",
+    "socksHex": "#03AB68"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Guyana": {
+   "source": "https://en.wikipedia.org/wiki/Guyana_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Red",
+    "pattern": "Yellow with red and green trim",
+    "shirtHex": "#FFC80D",
+    "trimHex": "#FF0000",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFC90D",
+    "shorts": "Green",
+    "shortsHex": "#27B14C",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "trim": "White",
+    "pattern": "Green with white trim",
+    "shirtHex": "#27B14C",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Green",
+    "sleevesHex": "#27B14C",
+    "shorts": "Green",
+    "shortsHex": "#27B14C",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Haiti": {
+   "source": "https://en.wikipedia.org/wiki/Haiti_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "Red",
+    "pattern": "Blue with red trim",
+    "shirtHex": "#0000FF",
+    "trimHex": "#D71920",
+    "sleeves": "Blue",
+    "sleevesHex": "#0000AA",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with blue and red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#1F3FBF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Honduras": {
+   "source": "https://en.wikipedia.org/wiki/Honduras_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Sky Blue",
+    "pattern": "White with a blue stripe down the front",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#3BB5E8",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Sky Blue",
+    "trim": "White",
+    "pattern": "Sky blue and white stripes",
+    "shirtHex": "#3CC9FF",
+    "trimHex": "#FCFCFC",
+    "sleeves": "Sky Blue",
+    "sleevesHex": "#3CC9FF",
+    "shorts": "Sky Blue",
+    "shortsHex": "#3CC9FF",
+    "socks": "Sky Blue",
+    "socksHex": "#3CC9FF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Hong Kong": {
+   "source": "https://en.wikipedia.org/wiki/Hong_Kong_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with black trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#0E0E0E",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0D0D0D",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Hungary": {
+   "source": "https://en.wikipedia.org/wiki/Hungary_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#C80F39",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#C90F3A",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Green",
+    "socksHex": "#446F4B"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#C80F39",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Red",
+    "socksHex": "#CA0F3A"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Iceland": {
+   "source": "https://en.wikipedia.org/wiki/Iceland_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "Blue",
+    "pattern": "Royal blue with blue trim",
+    "shirtHex": "#0044FF",
+    "trimHex": "#0029A0",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0044FF",
+    "shorts": "Blue",
+    "shortsHex": "#002BA4",
+    "socks": "Royal Blue",
+    "socksHex": "#0044FF"
+   },
+   "awayKit": {
+    "shirt": "Silver",
+    "trim": "Orange",
+    "pattern": "Silver with orange trim",
+    "shirtHex": "#D9D9D9",
+    "trimHex": "#F28C28",
+    "sleeves": "Silver",
+    "sleevesHex": "#D9D9D9",
+    "shorts": "Silver",
+    "shortsHex": "#D9D9D9",
+    "socks": "Silver",
+    "socksHex": "#D9D9D9"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "India": {
+   "source": "https://en.wikipedia.org/wiki/India_national_football_team",
+   "homeKit": {
+    "shirt": "Sky Blue",
+    "trim": "White",
+    "pattern": "Sky blue with a blue graphic pattern",
+    "shirtHex": "#00A9FF",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Blue",
+    "sleevesHex": "#00A9FF",
+    "shorts": "Blue",
+    "shortsHex": "#00A9FF",
+    "socks": "Blue",
+    "socksHex": "#00A9FF"
+   },
+   "awayKit": {
+    "shirt": "Orange",
+    "trim": "White",
+    "pattern": "Orange with a darker orange graphic pattern",
+    "shirtHex": "#FF6607",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Orange",
+    "sleevesHex": "#FF6607",
+    "shorts": "Orange",
+    "shortsHex": "#FF6607",
+    "socks": "Orange",
+    "socksHex": "#FF6607"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Indonesia": {
+   "source": "https://en.wikipedia.org/wiki/Indonesia_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white stripes across the chest",
+    "shirtHex": "#E60A06",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#E30A04",
+    "shorts": "Red",
+    "shortsHex": "#E60A06",
+    "socks": "Red",
+    "socksHex": "#E60A06"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#F4F4F4",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Iran": {
+   "source": "https://en.wikipedia.org/wiki/Iran_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red and green trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#F7F7F7",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#EC0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#EC0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Iraq": {
+   "source": "https://en.wikipedia.org/wiki/Iraq_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#000000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "trim": "White",
+    "pattern": "Green with white trim",
+    "shirtHex": "#228A59",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Green",
+    "sleevesHex": "#228A59",
+    "shorts": "Green",
+    "shortsHex": "#228A59",
+    "socks": "Green",
+    "socksHex": "#228A59"
+   }
+  },
+  "Israel": {
+   "source": "https://en.wikipedia.org/wiki/Israel_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with a light blue graphic pattern and navy trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#1A1A60",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "Sky Blue",
+    "pattern": "Royal blue with sky blue trim",
+    "shirtHex": "#0000FF",
+    "trimHex": "#7AC4D3",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Italy": {
+   "source": "https://en.wikipedia.org/wiki/Italy_national_football_team",
+   "homeKit": {
+    "shirt": "Blue",
+    "trim": "Gold",
+    "pattern": "Blue with gold trim",
+    "shirtHex": "#0362B6",
+    "trimHex": "#D4A72C",
+    "sleeves": "Blue",
+    "sleevesHex": "#0363B9",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Blue",
+    "socksHex": "#0048BA"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Navy",
+    "pattern": "White with navy trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#001F5B",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Ivory Coast": {
+   "source": "https://en.wikipedia.org/wiki/Ivory_Coast_national_football_team",
+   "homeKit": {
+    "shirt": "Orange",
+    "trim": "Green",
+    "pattern": "Orange with green trim",
+    "shirtHex": "#EE6D13",
+    "trimHex": "#008001",
+    "sleeves": "Orange",
+    "sleevesHex": "#EE6D13",
+    "shorts": "Orange",
+    "shortsHex": "#EE6D13",
+    "socks": "Orange",
+    "socksHex": "#EE6D13"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Orange",
+    "pattern": "White with an orange floral graphic pattern",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#F07A1E",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Jamaica": {
+   "source": "https://en.wikipedia.org/wiki/Jamaica_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Black",
+    "pattern": "Yellow with a black and green pattern across the chest",
+    "shirtHex": "#FFDD00",
+    "trimHex": "#020202",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFDD00",
+    "shorts": "Yellow",
+    "shortsHex": "#FFDD00",
+    "socks": "Yellow",
+    "socksHex": "#FFDD00"
+   },
+   "awayKit": {
+    "shirt": "Black",
+    "trim": "Dark Green",
+    "pattern": "Black with a green and gold graphic pattern",
+    "shirtHex": "#150B00",
+    "trimHex": "#1D5527",
+    "sleeves": "Black",
+    "sleevesHex": "#150B00",
+    "shorts": "Black",
+    "shortsHex": "#150B00",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Japan": {
+   "source": "https://en.wikipedia.org/wiki/Japan_national_football_team",
+   "homeKit": {
+    "shirt": "Navy",
+    "trim": "Blue",
+    "pattern": "Navy with thin blue lines",
+    "shirtHex": "#00007F",
+    "trimHex": "#6A73B8",
+    "sleeves": "Blue",
+    "sleevesHex": "#00007F",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Navy",
+    "socksHex": "#001040"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#2F2D32",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Black",
+    "shortsHex": "#2F2D32",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Jordan": {
+   "source": "https://en.wikipedia.org/wiki/Jordan_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#FA3A3A",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Kazakhstan": {
+   "source": "https://en.wikipedia.org/wiki/Kazakhstan_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Blue",
+    "pattern": "Yellow with thin yellow stripes and blue trim",
+    "shirtHex": "#FFEE00",
+    "trimHex": "#00AFCA",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFEE00",
+    "shorts": "Yellow",
+    "shortsHex": "#FFEE00",
+    "socks": "Yellow",
+    "socksHex": "#FFEE00"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "Yellow",
+    "pattern": "Blue with yellow trim",
+    "shirtHex": "#0000DD",
+    "trimHex": "#FEC50C",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000DD",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000DD",
+    "socks": "Royal Blue",
+    "socksHex": "#0000DD"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Kenya": {
+   "source": "https://en.wikipedia.org/wiki/Kenya_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white and green trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Korea DPR": {
+   "source": "https://en.wikipedia.org/wiki/North_Korea_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "pattern": "Red",
+    "shirtHex": "#FF0000",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#FF0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Korea Republic": {
+   "source": "https://en.wikipedia.org/wiki/South_Korea_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#D20010",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Red",
+    "sleevesHex": "#D20010",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Red",
+    "socksHex": "#D20010"
+   },
+   "awayKit": {
+    "shirt": "Lilac",
+    "trim": "Purple",
+    "pattern": "Lilac with a purple graphic pattern",
+    "shirtHex": "#BAADDD",
+    "trimHex": "#8E6BD0",
+    "sleeves": "Lilac",
+    "sleevesHex": "#C9BFE5",
+    "shorts": "Lilac",
+    "shortsHex": "#8F74CD",
+    "socks": "Lilac",
+    "socksHex": "#8F74CD"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Kosovo": {
+   "source": "https://en.wikipedia.org/wiki/Kosovo_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "Gold",
+    "pattern": "Blue with a light blue diagonal pattern and gold trim",
+    "shirtHex": "#0000DD",
+    "trimHex": "#F2C500",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000DD",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000DD",
+    "socks": "Royal Blue",
+    "socksHex": "#0000DD"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Gold",
+    "pattern": "White with gold trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D4A72C",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Kuwait": {
+   "source": "https://en.wikipedia.org/wiki/Kuwait_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Royal blue with white trim",
+    "shirtHex": "#0000FF",
+    "trimHex": "#FEFEFE",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "awayKit": {
+    "shirt": "Cream",
+    "trim": "Navy",
+    "pattern": "Cream with navy trim",
+    "shirtHex": "#FDE098",
+    "trimHex": "#00093A",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FDE098",
+    "shorts": "Navy",
+    "shortsHex": "#00093A",
+    "socks": "Navy",
+    "socksHex": "#00093A"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Kyrgyzstan": {
+   "source": "https://en.wikipedia.org/wiki/Kyrgyzstan_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Yellow",
+    "pattern": "Red with yellow trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FFF200",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Navy",
+    "pattern": "White with navy trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#000040",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Laos": {
+   "source": "https://en.wikipedia.org/wiki/Laos_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "pattern": "Red",
+    "shirtHex": "#DC241F",
+    "sleeves": "Red",
+    "sleevesHex": "#DC241F",
+    "shorts": "Red",
+    "shortsHex": "#DC241F",
+    "socks": "Red",
+    "socksHex": "#DC241F"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with blue trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#00488B",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Blue",
+    "shortsHex": "#00488B",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Latvia": {
+   "source": "https://en.wikipedia.org/wiki/Latvia_national_football_team",
+   "homeKit": {
+    "shirt": "Black",
+    "trim": "White",
+    "pattern": "Black with white trim",
+    "shirtHex": "#000000",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#000000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Lebanon": {
+   "source": "https://en.wikipedia.org/wiki/Lebanon_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red band across the chest",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#FF0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Lesotho": {
+   "source": "https://en.wikipedia.org/wiki/Lesotho_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with blue sleeves and a green band across the chest",
+    "shirtHex": "#F5F5F5",
+    "trimHex": "#1F3FD9",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FB",
+    "shorts": "Green",
+    "shortsHex": "#177D36",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "trim": "White",
+    "pattern": "Green with a blue and white band across the chest",
+    "shirtHex": "#009259",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Green",
+    "sleevesHex": "#008D55",
+    "shorts": "Green",
+    "shortsHex": "#008C54",
+    "socks": "Green",
+    "socksHex": "#008C54"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Liberia": {
+   "source": "https://en.wikipedia.org/wiki/Liberia_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "Red",
+    "pattern": "Blue with red and white trim",
+    "shirtHex": "#0000FF",
+    "trimHex": "#D71920",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Libya": {
+   "source": "https://en.wikipedia.org/wiki/Libya_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#000000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Liechtenstein": {
+   "source": "https://en.wikipedia.org/wiki/Liechtenstein_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "Red",
+    "pattern": "Blue with red and white trim",
+    "shirtHex": "#0000E0",
+    "trimHex": "#D71920",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000E0",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Royal Blue",
+    "socksHex": "#0000E0"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with thin blue stripes",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0B2FC0",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Lithuania": {
+   "source": "https://en.wikipedia.org/wiki/Lithuania_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Dark Green",
+    "pattern": "Yellow with green trim",
+    "shirtHex": "#FFDD00",
+    "trimHex": "#006E19",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFDD00",
+    "shorts": "Yellow",
+    "shortsHex": "#FFDD00",
+    "socks": "Yellow",
+    "socksHex": "#FFDD00"
+   },
+   "awayKit": {
+    "shirt": "Dark Green",
+    "trim": "White",
+    "pattern": "Dark green with white trim",
+    "shirtHex": "#00711A",
+    "trimHex": "#F9F9F9",
+    "sleeves": "Dark Green",
+    "sleevesHex": "#00711A",
+    "shorts": "Dark Green",
+    "shortsHex": "#00711A",
+    "socks": "Dark Green",
+    "socksHex": "#00711A"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Luxembourg": {
+   "source": "https://en.wikipedia.org/wiki/Luxembourg_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Dark Red",
+    "pattern": "Red with a dark red graphic pattern",
+    "shirtHex": "#FF0000",
+    "trimHex": "#930000",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Blue",
+    "trim": "White",
+    "pattern": "Sky blue with white trim",
+    "shirtHex": "#3DA7E9",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Blue",
+    "sleevesHex": "#3DA7E9",
+    "shorts": "Blue",
+    "shortsHex": "#3DA7E9",
+    "socks": "Blue",
+    "socksHex": "#3DA7E9"
+   }
+  },
+  "Macau": {
+   "source": "https://en.wikipedia.org/wiki/Macau_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "Green",
+    "pattern": "Green with a light green graphic pattern",
+    "shirtHex": "#007711",
+    "trimHex": "#80E000",
+    "sleeves": "Dark Green",
+    "sleevesHex": "#007711",
+    "shorts": "Dark Green",
+    "shortsHex": "#007711",
+    "socks": "Dark Green",
+    "socksHex": "#007711"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "pattern": "White",
+    "shirtHex": "#FFFFFF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Madagascar": {
+   "source": "https://en.wikipedia.org/wiki/Madagascar_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "White",
+    "pattern": "Green with a white graphic pattern",
+    "shirtHex": "#0C970C",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Green",
+    "sleevesHex": "#0C970C",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FCFAFA"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with a white graphic pattern",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FDF1F1",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Malawi": {
+   "source": "https://en.wikipedia.org/wiki/Malawi_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Green",
+    "pattern": "Red with green trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#22B14C",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Green",
+    "socksHex": "#22B04B"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "trim": "Red",
+    "pattern": "Green with red trim",
+    "shirtHex": "#22B14C",
+    "trimHex": "#D71920",
+    "sleeves": "Green",
+    "sleevesHex": "#22B14C",
+    "shorts": "Green",
+    "shortsHex": "#209E46",
+    "socks": "Green",
+    "socksHex": "#22B04B"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Malaysia": {
+   "source": "https://en.wikipedia.org/wiki/Malaysia_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Black",
+    "pattern": "Yellow with black trim",
+    "shirtHex": "#FFFF00",
+    "trimHex": "#000000",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFFF00",
+    "shorts": "Yellow",
+    "shortsHex": "#FFFF00",
+    "socks": "Yellow",
+    "socksHex": "#FFFF00"
+   },
+   "awayKit": {
+    "shirt": "Black",
+    "trim": "White",
+    "pattern": "Black with a dark graphic pattern and white trim",
+    "shirtHex": "#000000",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Maldives": {
+   "source": "https://en.wikipedia.org/wiki/Maldives_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Green",
+    "pattern": "Red with green trim",
+    "shirtHex": "#E60A1E",
+    "trimHex": "#50D264",
+    "sleeves": "Orange",
+    "sleevesHex": "#D83414",
+    "shorts": "Dark Red",
+    "shortsHex": "#A00812",
+    "socks": "Red",
+    "socksHex": "#E60A1E"
+   },
+   "awayKit": {
+    "shirt": "Turquoise",
+    "trim": "Blue",
+    "pattern": "Turquoise with a blue band across the chest and blue sleeves",
+    "shirtHex": "#32B6AC",
+    "trimHex": "#3998D1",
+    "sleeves": "Blue",
+    "sleevesHex": "#0039CC",
+    "shorts": "Blue",
+    "shortsHex": "#00319A",
+    "socks": "Turquoise",
+    "socksHex": "#32B6AC"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Mali": {
+   "source": "https://en.wikipedia.org/wiki/Mali_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with a green, yellow and red pattern on the chest",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#14B53A",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Dark Green",
+    "trim": "Yellow",
+    "pattern": "Dark green with a yellow pattern on the chest",
+    "shirtHex": "#104D0D",
+    "trimHex": "#FCD116",
+    "sleeves": "Dark Green",
+    "sleevesHex": "#0F4D0D",
+    "shorts": "Yellow",
+    "shortsHex": "#FFF200",
+    "socks": "Yellow",
+    "socksHex": "#FFF200"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Malta": {
+   "source": "https://en.wikipedia.org/wiki/Malta_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#EF0000",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Red",
+    "sleevesHex": "#EF0000",
+    "shorts": "Red",
+    "shortsHex": "#EF0000",
+    "socks": "Red",
+    "socksHex": "#EF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#EF0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Mauritania": {
+   "source": "https://en.wikipedia.org/wiki/Mauritania_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "Gold",
+    "pattern": "Green with gold trim",
+    "shirtHex": "#01924D",
+    "trimHex": "#D4A72C",
+    "sleeves": "Green",
+    "sleevesHex": "#01924D",
+    "shorts": "Green",
+    "shortsHex": "#01924D",
+    "socks": "Green",
+    "socksHex": "#01924D"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with green and red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#FF0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Mauritius": {
+   "source": "https://en.wikipedia.org/wiki/Mauritius_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with a red graphic pattern",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a grey graphic pattern",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Mexico": {
+   "source": "https://en.wikipedia.org/wiki/Mexico_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "White",
+    "pattern": "Dark green with a green Aztec-style graphic and white trim",
+    "shirtHex": "#3A7257",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Green",
+    "sleevesHex": "#118855",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Red",
+    "socksHex": "#DE0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Teal",
+    "pattern": "White with dark green and red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0C372B",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Teal",
+    "shortsHex": "#0D392D",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Moldova": {
+   "source": "https://en.wikipedia.org/wiki/Moldova_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Royal blue with white trim",
+    "shirtHex": "#0000DD",
+    "trimHex": "#FDFDFF",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000DD",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000DD",
+    "socks": "Royal Blue",
+    "socksHex": "#0000DD"
+   },
+   "awayKit": {
+    "shirt": "Yellow",
+    "trim": "White",
+    "pattern": "Yellow with white sleeves",
+    "shirtHex": "#FFBB00",
+    "trimHex": "#FEFEFE",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Yellow",
+    "shortsHex": "#FFBB00",
+    "socks": "Yellow",
+    "socksHex": "#FFBB00"
+   }
+  },
+  "Mongolia": {
+   "source": "https://en.wikipedia.org/wiki/Mongolia_national_football_team",
+   "homeKit": {
+    "shirt": "Blue",
+    "trim": "White",
+    "pattern": "Blue with a light blue graphic pattern",
+    "shirtHex": "#0878F3",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Blue",
+    "sleevesHex": "#0877F1",
+    "shorts": "Blue",
+    "shortsHex": "#0066B3",
+    "socks": "Blue",
+    "socksHex": "#0066B3"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "pattern": "White",
+    "shirtHex": "#FFFFFF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Montenegro": {
+   "source": "https://en.wikipedia.org/wiki/Montenegro_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Yellow",
+    "pattern": "Red with gold trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FFF200",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red centre stripe",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#EF0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Montserrat": {
+   "source": "https://en.wikipedia.org/wiki/Montserrat_national_football_team",
+   "homeKit": {
+    "shirt": "Mint Green",
+    "trim": "Turquoise",
+    "pattern": "Mint green with a green graphic pattern",
+    "shirtHex": "#00AA88",
+    "trimHex": "#54FFDB",
+    "sleeves": "Turquoise",
+    "sleevesHex": "#55FFDB",
+    "shorts": "Turquoise",
+    "shortsHex": "#55FFDB",
+    "socks": "Turquoise",
+    "socksHex": "#55FFDB"
+   },
+   "awayKit": {
+    "shirt": "Orange",
+    "trim": "Red",
+    "pattern": "Red with an orange graphic pattern",
+    "shirtHex": "#FA9A5F",
+    "trimHex": "#FE0101",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Morocco": {
+   "source": "https://en.wikipedia.org/wiki/Morocco_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Green",
+    "pattern": "Red with green trim",
+    "shirtHex": "#E01824",
+    "trimHex": "#008547",
+    "sleeves": "Red",
+    "sleevesHex": "#E01824",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Gold",
+    "pattern": "White with a gold graphic pattern",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D4A72C",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Mozambique": {
+   "source": "https://en.wikipedia.org/wiki/Mozambique_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with black trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#000000",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#000000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Myanmar": {
+   "source": "https://en.wikipedia.org/wiki/Myanmar_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Gold",
+    "pattern": "Red with gold trim",
+    "shirtHex": "#DF1010",
+    "trimHex": "#D4A72C",
+    "sleeves": "Red",
+    "sleevesHex": "#DF1010",
+    "shorts": "Red",
+    "shortsHex": "#DF1010",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D60F0F",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Namibia": {
+   "source": "https://en.wikipedia.org/wiki/Namibia_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Green",
+    "pattern": "Red with a green graphic pattern",
+    "shirtHex": "#FF0000",
+    "trimHex": "#22B14C",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "Blue",
+    "pattern": "Royal blue with a blue graphic pattern",
+    "shirtHex": "#1651FE",
+    "trimHex": "#009EEA",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#1651FE",
+    "shorts": "Royal Blue",
+    "shortsHex": "#1651FE",
+    "socks": "Royal Blue",
+    "socksHex": "#1651FE"
+   }
+  },
+  "Nepal": {
+   "source": "https://en.wikipedia.org/wiki/Nepal_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with thin white stripes and a mountain graphic",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Blue with thin white stripes and a mountain graphic",
+    "shirtHex": "#0000FF",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Netherlands": {
+   "source": "https://en.wikipedia.org/wiki/Netherlands_national_football_team",
+   "homeKit": {
+    "shirt": "Orange",
+    "trim": "Black",
+    "pattern": "Orange with black trim",
+    "shirtHex": "#FF5533",
+    "trimHex": "#060606",
+    "sleeves": "Orange",
+    "sleevesHex": "#FF5533",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Orange",
+    "socksHex": "#FF5533"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Orange",
+    "pattern": "White with a orange chest band",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#FE5736",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Orange",
+    "shortsHex": "#FE5533",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "New Caledonia": {
+   "source": "https://en.wikipedia.org/wiki/New_Caledonia_national_football_team",
+   "homeKit": {
+    "shirt": "Grey",
+    "trim": "Red",
+    "pattern": "Grey with a red graphic pattern",
+    "shirtHex": "#555555",
+    "trimHex": "#774343",
+    "sleeves": "Charcoal",
+    "sleevesHex": "#555555",
+    "shorts": "Charcoal",
+    "shortsHex": "#555555",
+    "socks": "Charcoal",
+    "socksHex": "#555555"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Charcoal",
+    "pattern": "White with charcoal trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#555555",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "New Zealand": {
+   "source": "https://en.wikipedia.org/wiki/New_Zealand_men's_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0E0E0E",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Black",
+    "trim": "White",
+    "pattern": "Black with a dark graphic pattern",
+    "shirtHex": "#000000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Nicaragua": {
+   "source": "https://en.wikipedia.org/wiki/Nicaragua_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with blue trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0000BF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Blue",
+    "shortsHex": "#0B0FA8",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Navy",
+    "trim": "Royal Blue",
+    "pattern": "Navy with a blue stripe across the chest",
+    "shirtHex": "#000080",
+    "trimHex": "#0000D3",
+    "sleeves": "Blue",
+    "sleevesHex": "#000080",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Blue",
+    "socksHex": "#000080"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Niger": {
+   "source": "https://en.wikipedia.org/wiki/Niger_national_football_team",
+   "homeKit": {
+    "shirt": "Orange",
+    "trim": "White",
+    "pattern": "Orange with a white and green band across the chest",
+    "shirtHex": "#FF5500",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Orange",
+    "sleevesHex": "#FF5500",
+    "shorts": "Orange",
+    "shortsHex": "#FF5500",
+    "socks": "Orange",
+    "socksHex": "#FF5500"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Orange",
+    "pattern": "White with an orange and green band across the chest",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#E05206",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Nigeria": {
+   "source": "https://en.wikipedia.org/wiki/Nigeria_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "Green",
+    "pattern": "Green with a light green graphic pattern",
+    "shirtHex": "#9FE773",
+    "trimHex": "#18A069",
+    "sleeves": "Black",
+    "sleevesHex": "#23372D",
+    "shorts": "Teal",
+    "shortsHex": "#009B68",
+    "socks": "Teal",
+    "socksHex": "#009B68"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Light Green",
+    "pattern": "White with a light green graphic pattern",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#59E5AE",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "North Macedonia": {
+   "source": "https://en.wikipedia.org/wiki/North_Macedonia_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Yellow",
+    "pattern": "Red with a yellow sunburst pattern",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F8D100",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#F7F7F7",
+    "trimHex": "#FA0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Northern Ireland": {
+   "source": "https://en.wikipedia.org/wiki/Northern_Ireland_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "Teal",
+    "pattern": "Green with a teal graphic pattern",
+    "shirtHex": "#38846D",
+    "trimHex": "#20524D",
+    "sleeves": "Teal",
+    "sleevesHex": "#1F504C",
+    "shorts": "Turquoise",
+    "shortsHex": "#3B8B72",
+    "socks": "Teal",
+    "socksHex": "#1F504C"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Teal",
+    "pattern": "White with teal trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#346258",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Teal",
+    "socksHex": "#36655B"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Norway": {
+   "source": "https://en.wikipedia.org/wiki/Norway_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Navy",
+    "pattern": "Red with a navy and white cross pattern on the chest",
+    "shirtHex": "#FB0002",
+    "trimHex": "#001F5B",
+    "sleeves": "Red",
+    "sleevesHex": "#F90003",
+    "shorts": "Red",
+    "shortsHex": "#BA0003",
+    "socks": "Navy",
+    "socksHex": "#202747"
+   },
+   "awayKit": {
+    "shirt": "Black",
+    "trim": "White",
+    "pattern": "Black with white trim",
+    "shirtHex": "#020202",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Black",
+    "sleevesHex": "#050505",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Oman": {
+   "source": "https://en.wikipedia.org/wiki/Oman_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Green",
+    "pattern": "Red with green trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#008000",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with green trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#008000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Pakistan": {
+   "source": "https://en.wikipedia.org/wiki/Pakistan_national_football_team",
+   "homeKit": {
+    "shirt": "Dark Green",
+    "trim": "Gold",
+    "pattern": "Dark green with gold trim",
+    "shirtHex": "#104F27",
+    "trimHex": "#B49233",
+    "sleeves": "Dark Green",
+    "sleevesHex": "#0E4E27",
+    "shorts": "Dark Green",
+    "shortsHex": "#0E4E27",
+    "socks": "Dark Green",
+    "socksHex": "#0E4E27"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Dark Green",
+    "pattern": "White with dark green trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0D4623",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Palestine": {
+   "source": "https://en.wikipedia.org/wiki/Palestine_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Panama": {
+   "source": "https://en.wikipedia.org/wiki/Panama_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with blue and red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#00007C",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Papua New Guinea": {
+   "source": "https://en.wikipedia.org/wiki/Papua_New_Guinea_national_soccer_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with black sleeves",
+    "shirtHex": "#FF0000",
+    "trimHex": "#000000",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Yellow",
+    "trim": "Black",
+    "pattern": "Yellow with black sleeves",
+    "shirtHex": "#FFC90E",
+    "trimHex": "#000000",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Yellow",
+    "shortsHex": "#FFC90E",
+    "socks": "Yellow",
+    "socksHex": "#FFC90E"
+   }
+  },
+  "Paraguay": {
+   "source": "https://en.wikipedia.org/wiki/Paraguay_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "Red and white stripes",
+    "shirtHex": "#FDFDFD",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FCFCFC",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "awayKit": {
+    "shirt": "Navy",
+    "trim": "Blue",
+    "pattern": "Navy with a teal graphic pattern",
+    "shirtHex": "#11133C",
+    "trimHex": "#2E3E59",
+    "sleeves": "Navy",
+    "sleevesHex": "#13123C",
+    "shorts": "Navy",
+    "shortsHex": "#000060",
+    "socks": "Black",
+    "socksHex": "#232532"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Peru": {
+   "source": "https://en.wikipedia.org/wiki/Peru_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red sash",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Red",
+    "socksHex": "#EA0B1C"
+   },
+   "awayKit": {
+    "shirt": "Black",
+    "trim": "Gold",
+    "pattern": "Black with gold trim",
+    "shirtHex": "#000000",
+    "trimHex": "#D4A72C",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Philippines": {
+   "source": "https://en.wikipedia.org/wiki/Philippines_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Blue with a red and white graphic band across the chest",
+    "shirtHex": "#0044FF",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0044FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0044FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0044FF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Navy",
+    "pattern": "White with thin blue stripes and navy trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#001F5B",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Poland": {
+   "source": "https://en.wikipedia.org/wiki/Poland_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#FC0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "Red",
+    "pattern": "Red with a dark red graphic pattern",
+    "shirtHex": "#FF0000",
+    "trimHex": "#E86767",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#C60000",
+    "socks": "Red",
+    "socksHex": "#C60000"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Portugal": {
+   "source": "https://en.wikipedia.org/wiki/Portugal_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Green",
+    "pattern": "Red with green trim",
+    "shirtHex": "#D50B1E",
+    "trimHex": "#006600",
+    "sleeves": "Red",
+    "sleevesHex": "#D30B1D",
+    "shorts": "Red",
+    "shortsHex": "#D50B1E",
+    "socks": "Red",
+    "socksHex": "#D10B1D"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Turquoise",
+    "pattern": "White with a turquoise graphic pattern",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#82D9CB",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Turquoise",
+    "shortsHex": "#1B9FAB",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Puerto Rico": {
+   "source": "https://en.wikipedia.org/wiki/Puerto_Rico_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "Red and white stripes",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Blue",
+    "shortsHex": "#0020B5",
+    "socks": "Blue",
+    "socksHex": "#0020B5"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with thin blue stripes",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0050F0",
+    "sleeves": "Sky Blue",
+    "sleevesHex": "#E1E1FF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Qatar": {
+   "source": "https://en.wikipedia.org/wiki/Qatar_national_football_team",
+   "homeKit": {
+    "shirt": "Dark Red",
+    "trim": "White",
+    "pattern": "Claret with white trim",
+    "shirtHex": "#7C202B",
+    "trimHex": "#FBFBFB",
+    "sleeves": "Dark Red",
+    "sleevesHex": "#7C202B",
+    "shorts": "Dark Red",
+    "shortsHex": "#7C202B",
+    "socks": "Dark Red",
+    "socksHex": "#7C202B"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Maroon",
+    "pattern": "White with maroon trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#7A1E36",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Dark Red",
+    "socksHex": "#7C202B"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Republic of Ireland": {
+   "source": "https://en.wikipedia.org/wiki/Republic_of_Ireland_national_football_team",
+   "homeKit": {
+    "shirt": "Dark Green",
+    "trim": "White",
+    "pattern": "Dark green with white trim",
+    "shirtHex": "#005F31",
+    "trimHex": "#F6F6F6",
+    "sleeves": "Dark Green",
+    "sleevesHex": "#005F31",
+    "shorts": "Dark Green",
+    "shortsHex": "#005F31",
+    "socks": "Dark Green",
+    "socksHex": "#005F31"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with a green graphic pattern",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#2E8B57",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Navy",
+    "shortsHex": "#001F4E",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Romania": {
+   "source": "https://en.wikipedia.org/wiki/Romania_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Blue",
+    "pattern": "Yellow with blue trim",
+    "shirtHex": "#FEEE00",
+    "trimHex": "#0000B3",
+    "sleeves": "Gold",
+    "sleevesHex": "#FEEE00",
+    "shorts": "Gold",
+    "shortsHex": "#FEEE00",
+    "socks": "Gold",
+    "socksHex": "#FEEE00"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "Blue",
+    "pattern": "Red with blue trim",
+    "shirtHex": "#F90000",
+    "trimHex": "#0000AE",
+    "sleeves": "Red",
+    "sleevesHex": "#F90000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Russia": {
+   "source": "https://en.wikipedia.org/wiki/Russia_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "pattern": "Red",
+    "shirtHex": "#D62718",
+    "sleeves": "Red",
+    "sleevesHex": "#D62718",
+    "shorts": "Red",
+    "shortsHex": "#D62718",
+    "socks": "Red",
+    "socksHex": "#D62718"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with blue trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#15466F",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Blue",
+    "shortsHex": "#15466F",
+    "socks": "Blue",
+    "socksHex": "#15466F"
+   }
+  },
+  "Rwanda": {
+   "source": "https://en.wikipedia.org/wiki/Rwanda_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Green",
+    "pattern": "Yellow with green and blue hoops",
+    "shirtHex": "#FCBE0A",
+    "trimHex": "#20603D",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FCBE0A",
+    "shorts": "Green",
+    "shortsHex": "#2E8A26",
+    "socks": "Black",
+    "socksHex": "#0E260E"
+   },
+   "awayKit": {
+    "shirt": "Blue",
+    "trim": "Yellow",
+    "pattern": "Blue with thin yellow and green stripes",
+    "shirtHex": "#0A5AAE",
+    "trimHex": "#FAD201",
+    "sleeves": "Blue",
+    "sleevesHex": "#0A5AAE",
+    "shorts": "White",
+    "shortsHex": "#FEFEFE",
+    "socks": "Blue",
+    "socksHex": "#0A5AAE"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Saint Kitts and Nevis": {
+   "source": "https://en.wikipedia.org/wiki/Saint_Kitts_and_Nevis_national_football_team",
+   "homeKit": {
+    "shirt": "Dark Green",
+    "trim": "Red",
+    "pattern": "Green with red shoulders and a yellow sash",
+    "shirtHex": "#007800",
+    "trimHex": "#D71920",
+    "sleeves": "Green",
+    "sleevesHex": "#008000",
+    "shorts": "Green",
+    "shortsHex": "#008000",
+    "socks": "Green",
+    "socksHex": "#008000"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with green sleeves and a yellow sash",
+    "shirtHex": "#F70000",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Saint Lucia": {
+   "source": "https://en.wikipedia.org/wiki/Saint_Lucia_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "Yellow",
+    "pattern": "Blue with yellow trim",
+    "shirtHex": "#0000FF",
+    "trimHex": "#FCD116",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "awayKit": {
+    "shirt": "Yellow",
+    "trim": "Blue",
+    "pattern": "Yellow with thin gold stripes and blue trim",
+    "shirtHex": "#FFE600",
+    "trimHex": "#3E5EB9",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFE600",
+    "shorts": "Yellow",
+    "shortsHex": "#FFE600",
+    "socks": "Yellow",
+    "socksHex": "#FFE600"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Saint Vincent and the Grenadines": {
+   "source": "https://en.wikipedia.org/wiki/Saint_Vincent_and_the_Grenadines_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Blue",
+    "pattern": "Yellow with blue and green patterned shoulders",
+    "shirtHex": "#FFC90E",
+    "trimHex": "#0000B8",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFC90E",
+    "shorts": "Yellow",
+    "shortsHex": "#FFC90E",
+    "socks": "Yellow",
+    "socksHex": "#FFC90E"
+   },
+   "awayKit": {
+    "shirt": "Blue",
+    "trim": "Yellow",
+    "pattern": "Blue with yellow and green patterned shoulders",
+    "shirtHex": "#0000B8",
+    "trimHex": "#FFC90E",
+    "sleeves": "Blue",
+    "sleevesHex": "#0000B8",
+    "shorts": "Blue",
+    "shortsHex": "#0000B8",
+    "socks": "Blue",
+    "socksHex": "#0000B8"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Samoa": {
+   "source": "https://en.wikipedia.org/wiki/Samoa_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "pattern": "Royal blue",
+    "shirtHex": "#0000FF",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "pattern": "White",
+    "shirtHex": "#FFFFFF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "San Marino": {
+   "source": "https://en.wikipedia.org/wiki/San_Marino_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Sky Blue",
+    "pattern": "White with a sky blue graphic pattern",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#87D8FE",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Navy",
+    "trim": "Light Blue",
+    "pattern": "Navy with a light blue graphic band across the chest",
+    "shirtHex": "#000055",
+    "trimHex": "#7FC8F0",
+    "sleeves": "Navy",
+    "sleevesHex": "#000055",
+    "shorts": "Navy",
+    "shortsHex": "#000055",
+    "socks": "Navy",
+    "socksHex": "#000055"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Saudi Arabia": {
+   "source": "https://en.wikipedia.org/wiki/Saudi_Arabia_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "Dark Green",
+    "pattern": "Green with dark green sleeves",
+    "shirtHex": "#43B88B",
+    "trimHex": "#0B4F45",
+    "sleeves": "Teal",
+    "sleevesHex": "#004534",
+    "shorts": "Green",
+    "shortsHex": "#43B88B",
+    "socks": "Teal",
+    "socksHex": "#004B49"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Teal",
+    "pattern": "White with a faint green graphic pattern and green trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#295753",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Scotland": {
+   "source": "https://en.wikipedia.org/wiki/Scotland_national_football_team",
+   "homeKit": {
+    "shirt": "Navy",
+    "trim": "White",
+    "pattern": "Navy",
+    "shirtHex": "#000040",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Navy",
+    "sleevesHex": "#000040",
+    "shorts": "Navy",
+    "shortsHex": "#000040",
+    "socks": "Navy",
+    "socksHex": "#000040"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "Red",
+    "pattern": "Red with thin claret stripes",
+    "shirtHex": "#FA4D4F",
+    "trimHex": "#852F4A",
+    "sleeves": "Red",
+    "sleevesHex": "#FA4D4F",
+    "shorts": "Purple",
+    "shortsHex": "#4C2882",
+    "socks": "Red",
+    "socksHex": "#FA4D4F"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Senegal": {
+   "source": "https://en.wikipedia.org/wiki/Senegal_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with green trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#008A45",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "trim": "Gold",
+    "pattern": "Green with a dark green graphic pattern and gold trim",
+    "shirtHex": "#036450",
+    "trimHex": "#D4A72C",
+    "sleeves": "Teal",
+    "sleevesHex": "#036950",
+    "shorts": "Green",
+    "shortsHex": "#00924F",
+    "socks": "Teal",
+    "socksHex": "#036950"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Serbia": {
+   "source": "https://en.wikipedia.org/wiki/Serbia_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Blue with a dark blue graphic pattern",
+    "shirtHex": "#0000D2",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Royal Blue",
+    "pattern": "White with royal blue trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0000DD",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Seychelles": {
+   "source": "https://en.wikipedia.org/wiki/Seychelles_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Blue with multicoloured trim",
+    "shirtHex": "#0000FF",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Sierra Leone": {
+   "source": "https://en.wikipedia.org/wiki/Sierra_Leone_national_football_team",
+   "homeKit": {
+    "shirt": "Blue",
+    "trim": "Royal Blue",
+    "pattern": "Blue with a royal blue graphic pattern",
+    "shirtHex": "#1414AB",
+    "trimHex": "#0000EA",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000EA",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000EA",
+    "socks": "Royal Blue",
+    "socksHex": "#0000EA"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with green and blue trim",
+    "shirtHex": "#FBFBFB",
+    "trimHex": "#1EB53A",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Singapore": {
+   "source": "https://en.wikipedia.org/wiki/Singapore_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Sky Blue",
+    "trim": "White",
+    "pattern": "Sky blue with white trim",
+    "shirtHex": "#87CEEB",
+    "trimHex": "#FBFCFC",
+    "sleeves": "Sky Blue",
+    "sleevesHex": "#87CEEB",
+    "shorts": "Sky Blue",
+    "shortsHex": "#87CEEB",
+    "socks": "Sky Blue",
+    "socksHex": "#87CEEB"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Slovakia": {
+   "source": "https://en.wikipedia.org/wiki/Slovakia_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "Navy",
+    "pattern": "Royal blue with navy sleeves",
+    "shirtHex": "#0000FF",
+    "trimHex": "#00005D",
+    "sleeves": "Navy",
+    "sleevesHex": "#00005D",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with blue trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#0B4EA2",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Slovenia": {
+   "source": "https://en.wikipedia.org/wiki/Slovenia_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with a blue zigzag across the chest",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#3E7BE0",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "Navy",
+    "pattern": "Blue with a navy zigzag across the chest",
+    "shirtHex": "#0044FF",
+    "trimHex": "#000040",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0044FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0044FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0044FF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Solomon Islands": {
+   "source": "https://en.wikipedia.org/wiki/Solomon_Islands_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Royal Blue",
+    "pattern": "Yellow with royal blue trim",
+    "shirtHex": "#FFF200",
+    "trimHex": "#0000FF",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFF200",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Yellow",
+    "socksHex": "#FFF200"
+   },
+   "awayKit": {
+    "shirt": "Teal",
+    "trim": "White",
+    "pattern": "Teal with thin white stripes",
+    "shirtHex": "#157D65",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Teal",
+    "sleevesHex": "#157D65",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Somalia": {
+   "source": "https://en.wikipedia.org/wiki/Somalia_national_football_team",
+   "homeKit": {
+    "shirt": "Sky Blue",
+    "trim": "White",
+    "pattern": "Sky blue with white trim",
+    "shirtHex": "#55D9FF",
+    "trimHex": "#FDFFFF",
+    "sleeves": "Sky Blue",
+    "sleevesHex": "#73C2FB",
+    "shorts": "Sky Blue",
+    "shortsHex": "#73C2FB",
+    "socks": "Sky Blue",
+    "socksHex": "#73C2FB"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Sky Blue",
+    "pattern": "White with sky blue trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#48D6FF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "South Africa": {
+   "source": "https://en.wikipedia.org/wiki/South_Africa_national_soccer_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Green",
+    "pattern": "Yellow with green trim",
+    "shirtHex": "#FCE53D",
+    "trimHex": "#008140",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FCE53D",
+    "shorts": "Green",
+    "shortsHex": "#008341",
+    "socks": "Yellow",
+    "socksHex": "#FFF000"
+   },
+   "awayKit": {
+    "shirt": "Maroon",
+    "trim": "Dark Green",
+    "pattern": "Maroon with dark green sleeves",
+    "shirtHex": "#400000",
+    "trimHex": "#1F4637",
+    "sleeves": "Dark Green",
+    "sleevesHex": "#1F4637",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Orange",
+    "socksHex": "#DCB687"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "South Sudan": {
+   "source": "https://en.wikipedia.org/wiki/South_Sudan_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black trim",
+    "shirtHex": "#F6F6F6",
+    "trimHex": "#000000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Dark Green",
+    "trim": "White",
+    "pattern": "Green with a white graphic pattern",
+    "shirtHex": "#146A2D",
+    "trimHex": "#FFFFFF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Green",
+    "shortsHex": "#167934",
+    "socks": "Green",
+    "socksHex": "#167934"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Spain": {
+   "source": "https://en.wikipedia.org/wiki/Spain_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Navy",
+    "pattern": "Red with navy sleeves and thin gold stripes",
+    "shirtHex": "#D71726",
+    "trimHex": "#001F5B",
+    "sleeves": "Navy",
+    "sleevesHex": "#001451",
+    "shorts": "Navy",
+    "shortsHex": "#001551",
+    "socks": "Navy",
+    "socksHex": "#001553"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Claret",
+    "pattern": "White with claret trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#6F041B",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Claret",
+    "shortsHex": "#73041C",
+    "socks": "Claret",
+    "socksHex": "#74041C"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Sri Lanka": {
+   "source": "https://en.wikipedia.org/wiki/Sri_Lanka_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Blue",
+    "pattern": "White with a yellow and blue graphic pattern",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#1F3FBF",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Blue",
+    "trim": "Gold",
+    "pattern": "Blue with a gold graphic pattern",
+    "shirtHex": "#0000AA",
+    "trimHex": "#D4A72C",
+    "sleeves": "Blue",
+    "sleevesHex": "#0000AA",
+    "shorts": "Blue",
+    "shortsHex": "#0000AA",
+    "socks": "Blue",
+    "socksHex": "#0000AA"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Sudan": {
+   "source": "https://en.wikipedia.org/wiki/Sudan_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with a black and green stripe across the chest",
+    "shirtHex": "#FF0000",
+    "trimHex": "#17181A",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Green",
+    "pattern": "White with green and red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#1D991A",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Suriname": {
+   "source": "https://en.wikipedia.org/wiki/Suriname_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red, green and gold band across the chest",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#FF0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with a green and white pattern and a gold star",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Sweden": {
+   "source": "https://en.wikipedia.org/wiki/Sweden_men's_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Royal Blue",
+    "pattern": "Yellow with blue trim",
+    "shirtHex": "#FFF200",
+    "trimHex": "#0000DA",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFF200",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000DC",
+    "socks": "Yellow",
+    "socksHex": "#FFF200"
+   },
+   "awayKit": {
+    "shirt": "Blue",
+    "trim": "Yellow",
+    "pattern": "Blue with yellow trim",
+    "shirtHex": "#104496",
+    "trimHex": "#F2E55B",
+    "sleeves": "Blue",
+    "sleevesHex": "#0D3F92",
+    "shorts": "Yellow",
+    "shortsHex": "#FFF200",
+    "socks": "Navy",
+    "socksHex": "#000040"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Switzerland": {
+   "source": "https://en.wikipedia.org/wiki/Switzerland_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FEFEFE",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Pale Green",
+    "trim": "Lime",
+    "pattern": "Pale green with a lime graphic pattern",
+    "shirtHex": "#BCEDC1",
+    "trimHex": "#A6F06A",
+    "sleeves": "Silver",
+    "sleevesHex": "#D6E6E5",
+    "shorts": "Silver",
+    "shortsHex": "#D6E6E5",
+    "socks": "Silver",
+    "socksHex": "#D6E6E5"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Syria": {
+   "source": "https://en.wikipedia.org/wiki/Syria_national_football_team",
+   "homeKit": {
+    "shirt": "Dark Green",
+    "trim": "White",
+    "pattern": "Dark green with white trim",
+    "shirtHex": "#007A3D",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Dark Green",
+    "sleevesHex": "#007A3D",
+    "shorts": "Dark Green",
+    "shortsHex": "#007A3D",
+    "socks": "Dark Green",
+    "socksHex": "#007A3D"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#000000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "São Tomé and Príncipe": {
+   "source": "https://en.wikipedia.org/wiki/São_Tomé_and_Príncipe_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Red",
+    "pattern": "Yellow with a red and green graphic pattern",
+    "shirtHex": "#FFFF00",
+    "trimHex": "#FF0000",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFFF00",
+    "shorts": "Green",
+    "shortsHex": "#008000",
+    "socks": "Yellow",
+    "socksHex": "#FFFF00"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "trim": "Red",
+    "pattern": "Green with a red and yellow graphic pattern",
+    "shirtHex": "#008000",
+    "trimHex": "#FF0000",
+    "sleeves": "Green",
+    "sleevesHex": "#008000",
+    "shorts": "Yellow",
+    "shortsHex": "#FFFF00",
+    "socks": "Green",
+    "socksHex": "#008000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Tahiti": {
+   "source": "https://en.wikipedia.org/wiki/Tahiti_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with a white pattern on the sleeves",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Pink",
+    "sleevesHex": "#FFA3A3",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red pattern on the sleeves",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "Red",
+    "sleevesHex": "#FF5B5B",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Tajikistan": {
+   "source": "https://en.wikipedia.org/wiki/Tajikistan_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#FFFFFF",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Green",
+    "socksHex": "#008000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#FF0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Tanzania": {
+   "source": "https://en.wikipedia.org/wiki/Tanzania_national_football_team",
+   "homeKit": {
+    "shirt": "Royal Blue",
+    "trim": "Black",
+    "pattern": "Blue with a light blue graphic pattern and black trim",
+    "shirtHex": "#0000FF",
+    "trimHex": "#000000",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "Yellow",
+    "pattern": "Blue and yellow stripes",
+    "shirtHex": "#0000FD",
+    "trimHex": "#FFF200",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0E0EFF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Thailand": {
+   "source": "https://en.wikipedia.org/wiki/Thailand_national_football_team",
+   "homeKit": {
+    "shirt": "Blue",
+    "trim": "White",
+    "pattern": "Blue with white trim",
+    "shirtHex": "#0043B0",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Blue",
+    "sleevesHex": "#0043B0",
+    "shorts": "Blue",
+    "shortsHex": "#0043B0",
+    "socks": "Blue",
+    "socksHex": "#0043B0"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "Gold",
+    "pattern": "Red with gold trim",
+    "shirtHex": "#D20C0C",
+    "trimHex": "#D4A72C",
+    "sleeves": "Red",
+    "sleevesHex": "#D20C0C",
+    "shorts": "Red",
+    "shortsHex": "#D20C0C",
+    "socks": "Red",
+    "socksHex": "#D20C0C"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Timor-Leste": {
+   "source": "https://en.wikipedia.org/wiki/Timor-Leste_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Yellow",
+    "pattern": "Red with a dark red graphic and yellow trim",
+    "shirtHex": "#B50A04",
+    "trimHex": "#F0C940",
+    "sleeves": "Red",
+    "sleevesHex": "#B40A04",
+    "shorts": "Black",
+    "shortsHex": "#161412",
+    "socks": "Red",
+    "socksHex": "#C81412"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black trim",
+    "shirtHex": "#F8F6F2",
+    "trimHex": "#1D1D1D",
+    "sleeves": "White",
+    "sleevesHex": "#F8F6F2",
+    "shorts": "White",
+    "shortsHex": "#F8F6F2",
+    "socks": "White",
+    "socksHex": "#F8F6F2"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Togo": {
+   "source": "https://en.wikipedia.org/wiki/Togo_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Green",
+    "pattern": "Yellow with green trim",
+    "shirtHex": "#FFB900",
+    "trimHex": "#006A4E",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFEE00",
+    "shorts": "Yellow",
+    "shortsHex": "#FFEE00",
+    "socks": "Yellow",
+    "socksHex": "#FFEE00"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "trim": "Yellow",
+    "pattern": "Green with yellow trim",
+    "shirtHex": "#009150",
+    "trimHex": "#FFCE00",
+    "sleeves": "Green",
+    "sleevesHex": "#009150",
+    "shorts": "Green",
+    "shortsHex": "#009150",
+    "socks": "Green",
+    "socksHex": "#009150"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Tonga": {
+   "source": "https://en.wikipedia.org/wiki/Tonga_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with a dark red graphic pattern",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red and black pattern on the shoulders",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Trinidad and Tobago": {
+   "source": "https://en.wikipedia.org/wiki/Trinidad_and_Tobago_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with black bands across the chest and black sleeves",
+    "shirtHex": "#FF0013",
+    "trimHex": "#000000",
+    "sleeves": "Black",
+    "sleevesHex": "#000000",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red graphic pattern and black sleeves",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Tunisia": {
+   "source": "https://en.wikipedia.org/wiki/Tunisia_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#D71920",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with a white graphic on the sleeves",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#D80119",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Turkey": {
+   "source": "https://en.wikipedia.org/wiki/Turkey_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a red chest band",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#E10B02",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Turkmenistan": {
+   "source": "https://en.wikipedia.org/wiki/Turkmenistan_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "Dark Red",
+    "pattern": "Green with red patterned sleeves",
+    "shirtHex": "#287834",
+    "trimHex": "#A40215",
+    "sleeves": "Dark Red",
+    "sleevesHex": "#A00014",
+    "shorts": "Green",
+    "shortsHex": "#287834",
+    "socks": "Green",
+    "socksHex": "#287834"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Black",
+    "pattern": "White with black trim",
+    "shirtHex": "#F4F4F4",
+    "trimHex": "#191919",
+    "sleeves": "White",
+    "sleevesHex": "#EDE9DA",
+    "shorts": "Black",
+    "shortsHex": "#141414",
+    "socks": "White",
+    "socksHex": "#F4F4F4"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Turks and Caicos Islands": {
+   "source": "https://en.wikipedia.org/wiki/Turks_and_Caicos_Islands_national_football_team",
+   "homeKit": {
+    "shirt": "Navy",
+    "trim": "Yellow",
+    "pattern": "Navy with yellow trim",
+    "shirtHex": "#000080",
+    "trimHex": "#F6D300",
+    "sleeves": "Blue",
+    "sleevesHex": "#00007E",
+    "shorts": "Blue",
+    "shortsHex": "#000080",
+    "socks": "Blue",
+    "socksHex": "#000080"
+   },
+   "awayKit": {
+    "shirt": "Yellow",
+    "trim": "Navy",
+    "pattern": "Yellow with a gold graphic pattern",
+    "shirtHex": "#F3E500",
+    "trimHex": "#001F5B",
+    "sleeves": "Gold",
+    "sleevesHex": "#FEF000",
+    "shorts": "Yellow",
+    "shortsHex": "#FFFF00",
+    "socks": "Yellow",
+    "socksHex": "#FFF000"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "US Virgin Islands": {
+   "source": "https://en.wikipedia.org/wiki/United_States_Virgin_Islands_national_soccer_team",
+   "homeKit": {
+    "shirt": "Blue",
+    "trim": "Yellow",
+    "pattern": "Sky blue with a yellow pattern across the chest",
+    "shirtHex": "#0CB8FC",
+    "trimHex": "#FFF200",
+    "sleeves": "Blue",
+    "sleevesHex": "#0CB8FC",
+    "shorts": "Blue",
+    "shortsHex": "#0CB8FC",
+    "socks": "Blue",
+    "socksHex": "#0CB8FC"
+   },
+   "awayKit": {
+    "shirt": "Yellow",
+    "trim": "Blue",
+    "pattern": "Yellow with a sky blue pattern across the chest",
+    "shirtHex": "#FFF200",
+    "trimHex": "#11B6F8",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFF200",
+    "shorts": "Yellow",
+    "shortsHex": "#FFF200",
+    "socks": "Yellow",
+    "socksHex": "#FFF200"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Uganda": {
+   "source": "https://en.wikipedia.org/wiki/Uganda_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with black diagonal stripes down one side",
+    "shirtHex": "#FF0000",
+    "trimHex": "#010000",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "Yellow",
+    "trim": "Black",
+    "pattern": "Yellow with black and red trim",
+    "shirtHex": "#FCDC04",
+    "trimHex": "#17181A",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FCDC04",
+    "shorts": "Black",
+    "shortsHex": "#17181A",
+    "socks": "Yellow",
+    "socksHex": "#FCDC04"
+   },
+   "checked": "Fixed by eye: home and away. Away: Wikipedia shows no away kit: a change kit in the flag's colours, picked, not researched"
+  },
+  "Ukraine": {
+   "source": "https://en.wikipedia.org/wiki/Ukraine_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Blue",
+    "pattern": "Yellow with blue trim",
+    "shirtHex": "#F9E733",
+    "trimHex": "#085AB6",
+    "sleeves": "Yellow",
+    "sleevesHex": "#F9E733",
+    "shorts": "Yellow",
+    "shortsHex": "#F9E733",
+    "socks": "Yellow",
+    "socksHex": "#F9E733"
+   },
+   "awayKit": {
+    "shirt": "Blue",
+    "trim": "Yellow",
+    "pattern": "Blue with yellow trim",
+    "shirtHex": "#085CB9",
+    "trimHex": "#F6E432",
+    "sleeves": "Blue",
+    "sleevesHex": "#085CB9",
+    "shorts": "Blue",
+    "shortsHex": "#085CB9",
+    "socks": "Blue",
+    "socksHex": "#085CB9"
+   }
+  },
+  "United Arab Emirates": {
+   "source": "https://en.wikipedia.org/wiki/United_Arab_Emirates_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#B7001C",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Red",
+    "shortsHex": "#BA001D",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with white trim",
+    "shirtHex": "#BA001D",
+    "trimHex": "#F9F9F9",
+    "sleeves": "Red",
+    "sleevesHex": "#BA001D",
+    "shorts": "White",
+    "shortsHex": "#FEFEFE",
+    "socks": "Red",
+    "socksHex": "#BA001D"
+   }
+  },
+  "United States": {
+   "source": "https://en.wikipedia.org/wiki/United_States_men's_national_soccer_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red wavy stripes",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#E90000",
+    "sleeves": "Red",
+    "sleevesHex": "#EF0000",
+    "shorts": "Navy",
+    "shortsHex": "#212D45",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Black",
+    "trim": "Red",
+    "pattern": "Black with red trim",
+    "shirtHex": "#090B02",
+    "trimHex": "#F30000",
+    "sleeves": "Black",
+    "sleevesHex": "#090B02",
+    "shorts": "Black",
+    "shortsHex": "#090B02",
+    "socks": "Black",
+    "socksHex": "#090B02"
+   },
+   "checked": "Fixed by eye: home"
+  },
+  "Uruguay": {
+   "source": "https://en.wikipedia.org/wiki/Uruguay_national_football_team",
+   "homeKit": {
+    "shirt": "Sky Blue",
+    "trim": "Black",
+    "pattern": "Sky blue with black trim",
+    "shirtHex": "#A0C5ED",
+    "trimHex": "#090213",
+    "sleeves": "Sky Blue",
+    "sleevesHex": "#9FC4EC",
+    "shorts": "Black",
+    "shortsHex": "#0A0216",
+    "socks": "Black",
+    "socksHex": "#0A0216"
+   },
+   "awayKit": {
+    "shirt": "Navy",
+    "trim": "Royal Blue",
+    "pattern": "Navy with a blue graphic pattern on the chest",
+    "shirtHex": "#0A0216",
+    "trimHex": "#4357D1",
+    "sleeves": "Black",
+    "sleevesHex": "#0A0216",
+    "shorts": "Black",
+    "shortsHex": "#0A0216",
+    "socks": "Black",
+    "socksHex": "#0A0216"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Uzbekistan": {
+   "source": "https://en.wikipedia.org/wiki/Uzbekistan_national_football_team",
+   "homeKit": {
+    "shirt": "White",
+    "trim": "Royal Blue",
+    "pattern": "White with royal blue trim",
+    "shirtHex": "#FBFBFB",
+    "trimHex": "#0000F3",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "awayKit": {
+    "shirt": "Royal Blue",
+    "trim": "White",
+    "pattern": "Royal blue with a darker blue diamond pattern",
+    "shirtHex": "#0404FD",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Royal Blue",
+    "sleevesHex": "#0000FF",
+    "shorts": "Royal Blue",
+    "shortsHex": "#0000FF",
+    "socks": "Royal Blue",
+    "socksHex": "#0000FF"
+   },
+   "checked": "Fixed by eye: away"
+  },
+  "Vanuatu": {
+   "source": "https://en.wikipedia.org/wiki/Vanuatu_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Black",
+    "pattern": "Yellow with black trim",
+    "shirtHex": "#FFFF00",
+    "trimHex": "#000000",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFFF00",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Yellow",
+    "socksHex": "#FFFF00"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "pattern": "Green",
+    "shirtHex": "#1B9E5E",
+    "sleeves": "Green",
+    "sleevesHex": "#1B9E5E",
+    "shorts": "Green",
+    "shortsHex": "#1B9E5E",
+    "socks": "Green",
+    "socksHex": "#1B9E5E"
+   }
+  },
+  "Venezuela": {
+   "source": "https://en.wikipedia.org/wiki/Venezuela_national_football_team",
+   "homeKit": {
+    "shirt": "Claret",
+    "trim": "Red",
+    "pattern": "Burgundy with a red graphic pattern",
+    "shirtHex": "#5B0F25",
+    "trimHex": "#AA0000",
+    "sleeves": "Claret",
+    "sleevesHex": "#5B0F25",
+    "shorts": "Red",
+    "shortsHex": "#AA0000",
+    "socks": "Dark Red",
+    "socksHex": "#8B0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Yellow",
+    "pattern": "White with yellow, blue and red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#F2C500",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Vietnam": {
+   "source": "https://en.wikipedia.org/wiki/Vietnam_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Gold",
+    "pattern": "Red with a dark red graphic pattern and gold trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#D4A72C",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "Red",
+    "socksHex": "#FF0000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with a grey zigzag pattern and red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#E20012",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Wales": {
+   "source": "https://en.wikipedia.org/wiki/Wales_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "White",
+    "pattern": "Red with a dark red graphic pattern",
+    "shirtHex": "#EF0000",
+    "trimHex": "#F2F4F7",
+    "sleeves": "Red",
+    "sleevesHex": "#EF0000",
+    "shorts": "Red",
+    "shortsHex": "#EF0000",
+    "socks": "Red",
+    "socksHex": "#EF0000"
+   },
+   "awayKit": {
+    "shirt": "Amber",
+    "trim": "Green",
+    "pattern": "Gold with green trim",
+    "shirtHex": "#F3B628",
+    "trimHex": "#159C56",
+    "sleeves": "Yellow",
+    "sleevesHex": "#F3B728",
+    "shorts": "Green",
+    "shortsHex": "#08963D",
+    "socks": "Amber",
+    "socksHex": "#F2B129"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Yemen": {
+   "source": "https://en.wikipedia.org/wiki/Yemen_national_football_team",
+   "homeKit": {
+    "shirt": "Red",
+    "trim": "Black",
+    "pattern": "Red with black trim",
+    "shirtHex": "#FF0000",
+    "trimHex": "#000000",
+    "sleeves": "Red",
+    "sleevesHex": "#FF0000",
+    "shorts": "White",
+    "shortsHex": "#FFFFFF",
+    "socks": "Black",
+    "socksHex": "#000000"
+   },
+   "awayKit": {
+    "shirt": "White",
+    "trim": "Red",
+    "pattern": "White with red trim",
+    "shirtHex": "#FFFFFF",
+    "trimHex": "#FF0000",
+    "sleeves": "White",
+    "sleevesHex": "#FFFFFF",
+    "shorts": "Red",
+    "shortsHex": "#FF0000",
+    "socks": "White",
+    "socksHex": "#FFFFFF"
+   }
+  },
+  "Zambia": {
+   "source": "https://en.wikipedia.org/wiki/Zambia_national_football_team",
+   "homeKit": {
+    "shirt": "Green",
+    "trim": "Orange",
+    "pattern": "Green with orange trim and a red and black stripe down one side",
+    "shirtHex": "#02892B",
+    "trimHex": "#EF7D00",
+    "sleeves": "Green",
+    "sleevesHex": "#02882A",
+    "shorts": "Black",
+    "shortsHex": "#000000",
+    "socks": "Green",
+    "socksHex": "#008A2B"
+   },
+   "awayKit": {
+    "shirt": "Orange",
+    "trim": "Black",
+    "pattern": "Orange with black trim",
+    "shirtHex": "#FF9900",
+    "trimHex": "#030202",
+    "sleeves": "Amber",
+    "sleevesHex": "#FF9900",
+    "shorts": "Green",
+    "shortsHex": "#008A2B",
+    "socks": "Amber",
+    "socksHex": "#FF9900"
+   },
+   "checked": "Fixed by eye: home and away"
+  },
+  "Zimbabwe": {
+   "source": "https://en.wikipedia.org/wiki/Zimbabwe_national_football_team",
+   "homeKit": {
+    "shirt": "Yellow",
+    "trim": "Red",
+    "pattern": "Yellow with a red, green and black graphic pattern",
+    "shirtHex": "#FFFF00",
+    "trimHex": "#FF0000",
+    "sleeves": "Yellow",
+    "sleevesHex": "#FFF200",
+    "shorts": "Yellow",
+    "shortsHex": "#FFF200",
+    "socks": "Yellow",
+    "socksHex": "#FFF200"
+   },
+   "awayKit": {
+    "shirt": "Green",
+    "trim": "Dark Green",
+    "pattern": "Green with a dark green graphic pattern",
+    "shirtHex": "#03A162",
+    "trimHex": "#00642D",
+    "sleeves": "Green",
+    "sleevesHex": "#02AB67",
+    "shorts": "Green",
+    "shortsHex": "#008000",
+    "socks": "Green",
+    "socksHex": "#02AB67"
+   },
+   "checked": "Fixed by eye: home and away"
+  }
+ }
+}

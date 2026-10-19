@@ -12,7 +12,7 @@ import { featsAfterMatch } from "./feats";
 import { brandsAfterMatch, brandsAfterSeason, sponsorPayFor } from "./sponsorDeals";
 import { withStars, ledgerAfterMatch, ledgerOf } from "./starPoints";
 import { computeBallonDorShortlist } from "./ballonDor";
-import type { CareerState, StarPlayer, Skills, Boot, Fixture, MatchStats, CupRun, Trophy, SeasonHistoryRow } from "./types";
+import type { CareerState, StarPlayer, Skills, Boot, Fixture, MatchStats, CupRun, Trophy, SeasonHistoryRow, LeagueSquad } from "./types";
 import {
   buildLeague, buildFixtures, playLeagueWeek, updateLeagueWithUserResult, sortLeague, mulberry32,
   simulateFixtureScore,
@@ -63,7 +63,7 @@ import { resolveLadder, membershipOf, estimateClubStrength, type LadderOutcome }
 import { englishTopFlightTable } from "./englishTopFlight";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids, moveSquadsWithLadder } from "./leagueSquads";
-import { ageLeagueSquads, ageOwnSquad, clubLevelOf } from "./worldAgeing";
+import { ageLeagueSquads, ageOwnSquad, clubLevelOf, worldSeedFor, AWAKE_DIVISIONS } from "./worldAgeing";
 import { notableRetirements } from "./retirementNews";
 import { advanceIncumbencyWeek } from "./incumbency";
 import {
@@ -1835,21 +1835,39 @@ export function advanceSeason(
     ...(() => {
       const moved = moveSquadsWithLadder(career.leagueSquads ?? [], career.externalSquads ?? [], clubs);
       const tier = (club: string) => facilitiesFor(career, club).trainingGroundTier;
-      const grownLeague = growWonderkids(
-        resetLeagueSquads(moved.leagueSquads), mulberry32(career.season * 71923 + 5), tier,
-      );
-      const grownExternal = growWonderkids(moved.externalSquads, mulberry32(career.season * 71923 + 7), tier);
-      const agedLeague = ageLeagueSquads(grownLeague, career.season, tier, career.clubLevels ?? {});
-      const agedExternal = ageLeagueSquads(grownExternal, career.season, tier, agedLeague.clubLevels);
-      const levels = agedExternal.clubLevels;
       const own = career.player.club;
+      // "The top waits for you" (Mikey, 18 Oct 2026): until you have played
+      // a season for a Championship or Premier League club, nobody but your
+      // own club ages or grows. A world that has already aged (an older
+      // save) keeps ageing.
+      const worldAwake = career.worldAgedSince !== undefined || AWAKE_DIVISIONS.includes(divisionOf(career));
+      // This career's own history, fixed from its first frozen summer on.
+      const worldSeed = career.worldSeed
+        ?? (career.worldAgedSince === undefined ? worldSeedFor(career.player) : undefined);
+      const resetLeague = resetLeagueSquads(moved.leagueSquads);
+      const isOwn = (s: { club: string }) => s.club === own;
+      const grownLeague = worldAwake
+        ? growWonderkids(resetLeague, mulberry32(career.season * 71923 + 5), tier) : resetLeague;
+      const grownExternal = worldAwake
+        ? growWonderkids(moved.externalSquads, mulberry32(career.season * 71923 + 7), tier) : moved.externalSquads;
+      // Frozen: only your club's copy in the league lists is aged.
+      const ageSome = (squads: LeagueSquad[], levels: Record<string, number>) => {
+        if (worldAwake) return ageLeagueSquads(squads, career.season, tier, levels, worldSeed);
+        const mine = squads.filter(isOwn);
+        if (!mine.length) return { squads, retired: [], clubLevels: levels };
+        const aged = ageLeagueSquads(mine, career.season, tier, levels, worldSeed);
+        return { squads: squads.map(s => (isOwn(s) ? aged.squads[0] : s)), retired: aged.retired, clubLevels: aged.clubLevels };
+      };
+      const agedLeague = ageSome(grownLeague, career.clubLevels ?? {});
+      const agedExternal = ageSome(grownExternal, agedLeague.clubLevels);
+      const levels = agedExternal.clubLevels;
       const ownCopy = (career.leagueSquads ?? []).find(s => s.club === own)
         ?? (career.externalSquads ?? []).find(s => s.club === own);
       const ownLevel = levels[own] ?? (ownCopy ? clubLevelOf(levels, ownCopy) : undefined)
         ?? career.league.find(t => t.name === own)?.strength ?? 65;
       const agedOwn = ageOwnSquad(
         (career.squad ?? []).map(p => ({ ...p, seasonGoals: 0, seasonAssists: 0, leagueGoals: 0, leagueAssists: 0 })),
-        own, career.season, ownLevel, tier(own),
+        own, career.season, ownLevel, tier(own), worldSeed,
       );
       const squad = agedOwn.squad;
       // The few retirements worth a post (media at the rollover, page.tsx):
@@ -1865,7 +1883,8 @@ export function advanceSeason(
         squad,
         lastRetirements,
         clubLevels: levels,
-        worldAgedSince: career.worldAgedSince ?? career.season,
+        ...(worldAwake ? { worldAgedSince: career.worldAgedSince ?? career.season } : {}),
+        ...(worldSeed !== undefined ? { worldSeed } : {}),
       };
     })(),
     // A fresh season — a rivalry's grace tracking is keyed off cumulative

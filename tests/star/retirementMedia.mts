@@ -59,13 +59,13 @@ const europe = make(CHAMPIONS_LEAGUE_CLUBS.filter(c => !PREMIER_LEAGUE_CLUBS.inc
 const outfield = (sq: LeagueSquad) => sq.players.map((p, i) => ({ p, i })).filter(x => x.p.position !== "GK").map(x => x.i);
 const abroad = europe[0];
 const [fi, ui] = outfield(abroad).slice(-2);
-abroad.players[fi] = { ...abroad.players[fi], age: 40, overall: 95 };
-abroad.players[ui] = { ...abroad.players[ui], age: 40, overall: 60 };
+abroad.players[fi] = { ...abroad.players[fi], age: 40, retireAt: 40, overall: 95 };
+abroad.players[ui] = { ...abroad.players[ui], age: 40, retireAt: 40, overall: 60 };
 const ownLeague = premier.find(s => s.club === you)!;
 // Two of your team-mates are certain to retire (40, outfield).
 const [o1, o2] = outfield(ownLeague).slice(-2);
-ownLeague.players[o1] = { ...ownLeague.players[o1], age: 40 };
-ownLeague.players[o2] = { ...ownLeague.players[o2], age: 40 };
+ownLeague.players[o1] = { ...ownLeague.players[o1], age: 40, retireAt: 40 };
+ownLeague.players[o2] = { ...ownLeague.players[o2], age: 40, retireAt: 40 };
 const famousName = abroad.players[fi].name;
 const unknownName = abroad.players[ui].name;
 const ownRetirees = [ownLeague.players[o1].name, ownLeague.players[o2].name];
@@ -77,7 +77,7 @@ career = {
   squad: ownLeague.players.map((p, i) => ({
     id: `sf_${p.id}`, sofifaId: p.id, name: p.name, shortName: p.name.split(" ").pop()!, position: p.position,
     seasonGoals: 0, seasonAssists: 0, careerGoals: i === o1 ? 12 : 0, careerAssists: i === o1 ? 4 : 0,
-    overall: p.overall, age: p.age,
+    overall: p.overall, age: p.age, ...(p.retireAt ? { retireAt: p.retireAt } : {}),
   })),
 };
 

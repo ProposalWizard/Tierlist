@@ -325,6 +325,11 @@ export interface LeaguePlayer {
   nation?: string;
   /** See SquadPlayer.positions — the same idea, for the other nineteen clubs. */
   positions?: SquadPlayer["position"][];
+  /** World ageing (worldAgeing.ts): his best rating in the game, kept only
+   *  once he has fallen below it; a replacement's flags come from it. */
+  peak?: number;
+  /** World ageing: the age he retires at, kept once he is 40 or older. */
+  retireAt?: number;
   /**
    * Real age, when the database has one — same reasoning as `image`/`nation`:
    * not needed to answer "who scored?", but needed by the transfer engine
@@ -431,6 +436,11 @@ export interface SquadPlayer {
   name: string;
   shortName: string;
   position: "GK" | "CB" | "LB" | "RB" | "CDM" | "CM" | "CAM" | "LW" | "RW" | "ST";
+  /** World ageing (worldAgeing.ts): his best rating in the game, kept only
+   *  once he has fallen below it; a replacement's flags come from it. */
+  peak?: number;
+  /** World ageing: the age he retires at, kept once he is 40 or older. */
+  retireAt?: number;
   seasonGoals: number;
   seasonAssists: number;
   careerGoals: number;
@@ -1291,7 +1301,7 @@ export interface CareerState {
    */
   playAs?: SquadPlayer["position"] | null;
   /** Every move you made, for the legacy screen. */
-  transfers?: { season: number; from: string; to: string; fee: number; /** The wage at the club left (see TransferRecord, transfers.ts). */ fromWage?: number }[];
+  transfers?: { season: number; from: string; to: string; fee: number; /** The wage at the club left (see TransferRecord, transfers.ts). */ fromWage?: number; window?: "january"; transferFee?: number }[];
   /** Hung up. The career is over and only the legacy screen remains. */
   retired?: boolean;
   /** How the board saw last season. Shown on the dashboard. */
@@ -1624,6 +1634,12 @@ export interface CareerState {
    */
   transferRequest?: import("./transferRequest").TransferRequestState;
   /**
+   * The transfer window on now (lib/star/transferInterest.ts): which window
+   * (`season-summer` / `season-january`) and the clubs that walked away in
+   * talks, so they stay off the list until the next window.
+   */
+  transferWindow?: { key: string; walkedAway: string[] };
+  /**
    * Cups you are cup-tied in this season after a January move
    * (lib/star/januaryTransfer.ts): you played in them for your old club, so
    * the new club plays on in them without you. Only read when `season`
@@ -1641,6 +1657,13 @@ export interface CareerState {
    * the first time the world aged it, then fixed (worldAgeing.ts clubLevelOf).
    */
   clubLevels?: Record<string, number>;
+  /**
+   * This career's own world history (worldAgeing.ts `seeded`): who retires
+   * when, and which boy replaces him, differ from one career to the next.
+   * Set at the first rollover of a career whose world had not aged yet;
+   * absent on older saves, which keep the history they already had.
+   */
+  worldSeed?: number;
   /**
    * The retirements worth a post from the last rollover (lib/star/
    * retirementNews.ts): your team-mates and a few famous names. Replaced
@@ -1730,11 +1753,13 @@ export type StarPhase =
   | "dilemma"
   | "relationship-game"
   | "advert-shoot"
+  /** The summer transfer window: every club interested in you
+   *  (TransferHub.tsx, lib/star/transferInterest.ts). */
   | "season-transfer"
-  /** Asking for a move: pick a league or a club, get answers
-   *  (TransferRequest.tsx, lib/star/transferRequest.ts). */
+  /** The January window's list, opened from Home (same screen). The name
+   *  is older than the screen: it was "Find a new club" until 18 Oct 2026. */
   | "transfer-request"
-  /** Talking terms with a club that said yes (NegotiationScreen). */
+  /** Talking terms with a club from the list (NegotiationScreen). */
   | "transfer-request-talk"
   | "retirement"
   /** After the Ballon d'Or night of the second-last season: "this is your

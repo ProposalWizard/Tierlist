@@ -145,6 +145,11 @@ interface Candidate {
   imageUrl?: string;
   nationality?: string;
   age?: number;
+  /** World ageing's marks (worldAgeing.ts), carried through the rebuild:
+   *  dropped, a 40+ man was handed "two more seasons" every summer and
+   *  never retired, and a fading star's best rating was forgotten. */
+  peak?: number;
+  retireAt?: number;
   seasonGoals: number;
   seasonAssists: number;
   careerGoals: number;
@@ -203,6 +208,7 @@ function fromSquadPlayer(p: SquadPlayer, club: string): Candidate {
     careerGoals: p.careerGoals, careerAssists: p.careerAssists,
     leagueGoals: p.leagueGoals, leagueAssists: p.leagueAssists,
     highPotential: p.highPotential, worldClassPotential: p.worldClassPotential,
+    peak: p.peak, retireAt: p.retireAt,
   };
 }
 
@@ -214,6 +220,7 @@ function fromLeaguePlayer(p: LeaguePlayer, club: string): Candidate {
     sofifaId: p.id, imageUrl: p.image, nationality: p.nation, age: p.age,
     seasonGoals: p.goals, seasonAssists: p.assists, careerGoals: 0, careerAssists: 0,
     highPotential: p.highPotential, worldClassPotential: p.worldClassPotential,
+    peak: p.peak, retireAt: p.retireAt,
   };
 }
 
@@ -234,6 +241,8 @@ function toSquadPlayer(c: Candidate): SquadPlayer {
     ...(c.leagueAssists !== undefined ? { leagueAssists: c.leagueAssists } : {}),
     ...(c.highPotential ? { highPotential: true } : {}),
     ...(c.worldClassPotential ? { worldClassPotential: true } : {}),
+    ...(c.peak !== undefined ? { peak: c.peak } : {}),
+    ...(c.retireAt !== undefined ? { retireAt: c.retireAt } : {}),
   };
 }
 
@@ -246,6 +255,8 @@ function toLeaguePlayer(c: Candidate): LeaguePlayer {
     ...(c.age ? { age: c.age } : {}),
     ...(c.highPotential ? { highPotential: true } : {}),
     ...(c.worldClassPotential ? { worldClassPotential: true } : {}),
+    ...(c.peak !== undefined ? { peak: c.peak } : {}),
+    ...(c.retireAt !== undefined ? { retireAt: c.retireAt } : {}),
   };
 }
 

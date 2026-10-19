@@ -4,6 +4,7 @@ import { FIRST_NAMES, LAST_NAMES } from "./squadData";
 import { averageStartingXIRating, TRAINING_TIER_MULTIPLIER, FREE_AGENTS_CLUB } from "./leagueSquads";
 import { shortNameOf } from "./realSquad";
 import { fakeFaceFor } from "./fakeFaces";
+import { madeUpName } from "./nationNames";
 
 /**
  * A WORLD THAT AGES.
@@ -29,7 +30,49 @@ import { fakeFaceFor } from "./fakeFaces";
  * squad fetched fresh from the database in season 9 can be brought up to
  * date (catchUpFetchedSquads) to the same answer it would have reached by
  * living through those eight rollovers.
+ *
+ * MIKEY'S RULES (18 Oct 2026, "the top waits for you"):
+ *  - Until you have played a season for a Championship or Premier League
+ *    club, only YOUR club ages. Every other player in the world is frozen:
+ *    no age, no growth, no decline, no retirement (careerFlow.ts decides,
+ *    `worldAwake`). National teams and Ballon d'Or rivals come from those
+ *    frozen squads, so they wait too. Then the whole world ages.
+ *  - Unflagged players no longer grow (UNFLAGGED_GROWTH, kept for later);
+ *    High / World Class players grow as before (growWonderkids).
+ *  - A replacement takes the retired man's nationality and a name from that
+ *    country's name bank.
+ *  - Each career has its own history: every roll mixes in the career's
+ *    `worldSeed` (absent on saves whose world already aged before this, so
+ *    those keep exactly the history they had).
+ *
+ * MIKEY'S AGEING RULES (18 Oct 2026, the 13 answers):
+ *  - Decline starts at 31 and is gentle (0.6× Leo's curve). Everyone the
+ *    same, whatever his rating; keepers fade at 0.6× of that again.
+ *  - Each man rolls once per career how he ages: very well, well, normal,
+ *    badly, very badly (AGEING_PROFILES).
+ *  - Retirement 35–41, most in the middle; keepers two years later. Never
+ *    because his rating fell. A man already 40+ when he first ages (Ronaldo)
+ *    plays two more seasons, then goes. A younger man already past his
+ *    rolled age plays that first season and retires at its end (Mikey).
+ *  - A replacement is 16–20 (any age equally), rated his club's level −13 to
+ *    +2 (any value equally), plays the retired man's position (sometimes a
+ *    second or third nearby one), and his flags come from the retired man's
+ *    best rating in the game (REGEN_FLAG_BANDS).
+ *  - Unflagged replacements still grow on Leo's curve, for now.
  */
+
+/**
+ * Leo's growth for players with no High / World Class flag (a young man
+ * grows by age, a random talent roll and his club's training ground).
+ * Off since 18 Oct 2026 (Mikey: "remove it for now, but still remember
+ * it"); a player then holds his rating until his decline starts.
+ */
+export const UNFLAGGED_GROWTH = false;
+
+/** A roll's key, made this career's own by its world seed. */
+function seeded(key: string, worldSeed?: number): string {
+  return worldSeed ? `${worldSeed}~${key}` : key;
+}
 
 /** Seasons are aged from this age onward if the player has no age at all
  *  (an invented squad): a stable 20–32, off his id. An invented squad's
@@ -39,18 +82,23 @@ export function startingAgeFor(key: string): number {
   return 20 + Math.floor(hash01(`${key}|age`) * 13);
 }
 
-/** How likely each retirement age is, 33 to 40 (sums to 1). Rising from 33,
- *  nearly everyone gone by 38, nobody past 40. Keepers two years later. */
+/** How likely each retirement age is, 35 to 41 (sums to 1): most in the
+ *  middle, fewer early and late (Mikey, questions 5 and 6). Keepers two
+ *  years later (question 7). */
 export const RETIREMENT_AGE_WEIGHTS: [number, number][] = [
-  [33, 0.08], [34, 0.14], [35, 0.22], [36, 0.22], [37, 0.16], [38, 0.10], [39, 0.06], [40, 0.02],
+  [35, 0.06], [36, 0.12], [37, 0.20], [38, 0.24], [39, 0.20], [40, 0.12], [41, 0.06],
 ];
 export const KEEPER_EXTRA_YEARS = 2;
+/** A man this old or older the first time he ages (Ronaldo, 41) is given
+ *  OLD_STARTER_SEASONS more seasons before he must retire. */
+export const OLD_STARTER_AGE = 40;
+export const OLD_STARTER_SEASONS = 2;
 
 /** The age at which this man plays his last season. Fixed for life. */
 export function retirementAgeFor(key: string, position: string): number {
   const s = hash01(`${key}|retire`);
   let acc = 0;
-  let age = 40;
+  let age = 41;
   for (const [a, w] of RETIREMENT_AGE_WEIGHTS) {
     acc += w;
     if (s < acc) { age = a; break; }
@@ -58,8 +106,23 @@ export function retirementAgeFor(key: string, position: string): number {
   return position === "GK" ? age + KEEPER_EXTRA_YEARS : age;
 }
 
+/** Decline starts in the season he turns 32 (Mikey: "decline starts at 31")
+ *  and is gentle: Leo's drops, two years later, at DECLINE_SCALE. */
+export const DECLINE_START = 31;
+export const DECLINE_SCALE = 0.6;
+/** Keepers fade less than outfield players (question 7). */
+export const KEEPER_DECLINE_SCALE = 0.6;
+const LEO_DECLINE = [-0.4, -0.9, -1.4, -1.9, -2.6, -3.1, -3.6];
+
 /** Mean rating change in the season he turns `age + 1`. */
 export function meanAgeChange(age: number): number {
+  if (age >= DECLINE_START) return LEO_DECLINE[Math.min(LEO_DECLINE.length - 1, age - DECLINE_START)] * DECLINE_SCALE;
+  if (age > 25) return 0;
+  return leoMeanAgeChange(age);
+}
+
+/** Leo's own curve, for growth (and kept as it was for reference). */
+export function leoMeanAgeChange(age: number): number {
   if (age <= 17) return 4.5;
   if (age === 18) return 4;
   if (age === 19) return 3.5;
@@ -77,6 +140,21 @@ export function meanAgeChange(age: number): number {
   if (age === 33) return -2.6;
   if (age === 34) return -3.1;
   return -3.6;
+}
+
+/** How a man ages, rolled once per career (question 4): his decline is
+ *  scaled by `decline`. `share` out of 100. */
+export const AGEING_PROFILES = [
+  { name: "ages very well", share: 10, decline: 0.4 },
+  { name: "ages well", share: 20, decline: 0.7 },
+  { name: "normal", share: 40, decline: 1 },
+  { name: "ages badly", share: 20, decline: 1.4 },
+  { name: "ages very badly", share: 10, decline: 1.8 },
+] as const;
+export function ageingProfileOf(key: string): (typeof AGEING_PROFILES)[number] {
+  let r = hash01(`${key}|profile`) * 100;
+  for (const p of AGEING_PROFILES) { if (r < p.share) return p; r -= p.share; }
+  return AGEING_PROFILES[2];
 }
 
 /** Talent: how much of the young-player growth this man gets, 0.5–1.5. */
@@ -98,9 +176,16 @@ export const TALENT_SPREAD = 8;
  */
 export function ratingChange(
   age: number, overall: number, rng: () => number, talent: number, trainingMultiplier: number,
-  clubLevel?: number,
+  clubLevel?: number, canGrow = true, declineScale = 1,
 ): number {
   let mean = meanAgeChange(age);
+  // Unflagged growth switched off: up to his decline, he holds.
+  if (mean >= 0 && !canGrow) return 0;
+  if (mean < 0) {
+    // In decline nobody goes up (noise included); how fast is his profile.
+    const noise = (rng() + rng() - 1) * 1.5;
+    return Math.min(0, Math.round(mean * declineScale + noise));
+  }
   if (mean > 0) {
     const nearTop = Math.max(0.1, Math.min(1, (90 - overall) / 14));
     const ceiling = clubLevel === undefined ? 99 : clubLevel + CEILING_ABOVE_LEVEL + (talent - 1) * 2 * TALENT_SPREAD;
@@ -138,6 +223,11 @@ function exempt(id: string): boolean {
 
 /** A player's key for every roll: the database id, whichever copy he is. */
 function keyOfLeague(p: LeaguePlayer, club: string): string {
+  // An invented club's league copy ("gen:<club>:<i>") is the same man as
+  // squad entry "sp_<i>": keyed alike, so both copies of your club retire
+  // the same men and get the same boys.
+  const gen = /^gen:.+:(\d+)$/.exec(p.id);
+  if (gen) return `${club}:sp_${gen[1]}`;
   return p.id.startsWith("sp_") ? `${club}:${p.id}` : p.id;
 }
 function keyOfSquad(p: SquadPlayer, club: string): string {
@@ -166,15 +256,58 @@ function regenName(rng: () => number): string {
   return `${REGEN_FIRST[Math.floor(rng() * REGEN_FIRST.length)]} ${REGEN_LAST[Math.floor(rng() * REGEN_LAST.length)]}`;
 }
 
-/** Chance a regen is scouted High Potential, and of those World Class. */
-export const REGEN_HIGH_POTENTIAL = 0.06;
-export const REGEN_WORLD_CLASS = 0.15;
+/**
+ * A replacement's flags, from the retired man's best rating in the game
+ * (question 11). Out of 100: World Class, High Potential, the rest none.
+ * All three bands confirmed by Mikey (18 Oct 2026).
+ */
+export const REGEN_FLAG_BANDS: { minPeak: number; worldClass: number; high: number }[] = [
+  { minPeak: 87, worldClass: 80, high: 19 },
+  { minPeak: 83, worldClass: 10, high: 60 },
+  { minPeak: 0, worldClass: 1, high: 5 },
+];
 
-/** What a regen comes in at, relative to the club's starting XI average. */
-export const REGEN_BELOW_LEVEL = 11;
+/** A replacement starts at his club's level plus a value from this range,
+ *  every value equally likely (question 10). */
+export const REGEN_LEVEL_RANGE: [number, number] = [-13, 2];
+/** His age, every age equally likely (question 9). */
+export const REGEN_AGE_RANGE: [number, number] = [16, 20];
+
+/**
+ * Positions near each one (question 13): a replacement plays the retired
+ * man's position, has a REGEN_SECOND_POSITION chance of a second from
+ * `near`, and REGEN_THIRD_POSITION of a third from `near` + `wide`. The
+ * game has no wing-backs or wide midfielders, so those are left out.
+ */
+type Pos = SquadPlayer["position"];
+export const NEAR_POSITIONS: Record<Pos, { near: Pos[]; wide: Pos[] }> = {
+  GK: { near: [], wide: [] },
+  RB: { near: ["LB", "CB"], wide: ["RW", "CDM", "CM", "CAM"] },
+  LB: { near: ["RB", "CB"], wide: ["LW", "CDM", "CM", "CAM"] },
+  CB: { near: ["CDM", "LB", "RB"], wide: ["CM"] },
+  CDM: { near: ["CM", "CB"], wide: ["CAM", "LB", "RB"] },
+  CM: { near: ["CDM", "CAM"], wide: ["LW", "RW", "CB"] },
+  CAM: { near: ["CM", "ST"], wide: ["LW", "RW", "CDM"] },
+  LW: { near: ["RW", "ST", "CAM"], wide: ["CM", "LB"] },
+  RW: { near: ["LW", "ST", "CAM"], wide: ["CM", "RB"] },
+  ST: { near: ["LW", "RW", "CAM"], wide: ["CM"] },
+};
+export const REGEN_SECOND_POSITION = 0.25;
+export const REGEN_THIRD_POSITION = 0.05;
+
+export function regenPositions(position: Pos, rng: () => number): Pos[] {
+  const opts = NEAR_POSITIONS[position] ?? { near: [], wide: [] };
+  const r = rng();
+  if (!opts.near.length || r >= REGEN_SECOND_POSITION) return [position];
+  const second = opts.near[Math.floor(rng() * opts.near.length)];
+  if (r >= REGEN_THIRD_POSITION) return [position, second];
+  const pool = [...opts.near, ...opts.wide].filter(x => x !== second);
+  return [position, second, pool[Math.floor(rng() * pool.length)]];
+}
 
 interface Regen {
   id: string; name: string; age: number; overall: number;
+  nation?: string; positions: Pos[];
   highPotential?: true; worldClassPotential?: true;
 }
 
@@ -188,16 +321,29 @@ export function isRegenId(id: string): boolean {
  * The boy who replaces a retiring man. Same id, name and rating in every
  * copy of the squad (keyed off the season and the man he replaces).
  */
-export function makeRegen(retireeKey: string, season: number, clubLevel: number): Regen {
+export function makeRegen(
+  retireeKey: string, season: number, clubLevel: number, nation?: string,
+  retiree: { peak?: number; position?: Pos } = {},
+): Regen {
   const id = `rg${season}.${hashInt(retireeKey).toString(36)}${hashInt(`${retireeKey}~`).toString(36).slice(0, 4)}`;
   const rng = mulberry32(hashInt(id));
-  const r = rng();
-  const age = r < 0.1 ? 16 : r < 0.4 ? 17 : r < 0.75 ? 18 : 19;
-  const overall = clamp(Math.round(clubLevel - REGEN_BELOW_LEVEL - (19 - age) * 2 + (rng() * 6 - 3)), 35, 85);
-  const name = regenName(rng);
-  const hp = rng() < REGEN_HIGH_POTENTIAL;
-  const wc = hp && rng() < REGEN_WORLD_CLASS;
-  return { id, name, age, overall, ...(hp ? { highPotential: true as const } : {}), ...(wc ? { worldClassPotential: true as const } : {}) };
+  const [a0, a1] = REGEN_AGE_RANGE;
+  const age = a0 + Math.floor(rng() * (a1 - a0 + 1));
+  const [l0, l1] = REGEN_LEVEL_RANGE;
+  const overall = clamp(Math.round(clubLevel) + l0 + Math.floor(rng() * (l1 - l0 + 1)), 35, 85);
+  // From the retired man's country when known, so a Brazilian club gets a
+  // Brazilian boy who can play for Brazil.
+  const name = nation ? madeUpName(nation, id) : regenName(rng);
+  const peak = retiree.peak ?? 0;
+  const band = REGEN_FLAG_BANDS.find(b => peak >= b.minPeak) ?? REGEN_FLAG_BANDS[REGEN_FLAG_BANDS.length - 1];
+  const f = rng() * 100;
+  const wc = f < band.worldClass;
+  const hp = wc || f < band.worldClass + band.high;
+  const positions = regenPositions(retiree.position ?? "CM", rng);
+  return {
+    id, name, age, overall, positions, ...(nation ? { nation } : {}),
+    ...(hp ? { highPotential: true as const } : {}), ...(wc ? { worldClassPotential: true as const } : {}),
+  };
 }
 
 /** One man retired at the rollover — for anyone who wants to tell the story. */
@@ -211,17 +357,46 @@ export interface RetiredPlayer {
 
 type Aged<T> = { player: T; retired: false } | { player: null; retired: true; age: number };
 
-function ageOne<T extends { id: string; age?: number; overall?: number; position: string; highPotential?: boolean }>(
+/** The fields ageing keeps on a player. */
+interface AgeingMarks {
+  /** Best rating he has had in the game; only kept once he is below it. */
+  peak?: number;
+  /** The age he retires at, kept once he is 40+ (see retireAgeOf). */
+  retireAt?: number;
+}
+
+/**
+ * The age this man retires at. A man of OLD_STARTER_AGE+ with no `retireAt`
+ * is being aged for the first time (everyone who ages INTO that age has it
+ * stamped on the way, below), so he gets OLD_STARTER_SEASONS more seasons.
+ */
+function retireAgeOf(p: { retireAt?: number; position: string }, key: string, age: number): number {
+  if (typeof p.retireAt === "number") return p.retireAt;
+  const rolled = retirementAgeFor(key, p.position);
+  return age >= OLD_STARTER_AGE ? Math.max(rolled, age + OLD_STARTER_SEASONS) : rolled;
+}
+
+function ageOne<T extends { id: string; age?: number; overall?: number; position: string; highPotential?: boolean } & AgeingMarks>(
   p: T, key: string, season: number, trainingMultiplier: number, clubLevel?: number,
 ): Aged<T> {
   const age = p.age ?? startingAgeFor(key);
-  if (age >= retirementAgeFor(key, p.position)) return { player: null, retired: true, age };
-  if (typeof p.overall !== "number") return { player: { ...p, age: age + 1 }, retired: false };
+  const retireAt = retireAgeOf(p, key, age);
+  if (age >= retireAt) return { player: null, retired: true, age };
+  const marks: AgeingMarks = age + 1 >= OLD_STARTER_AGE ? { retireAt } : {};
+  if (typeof p.overall !== "number") return { player: { ...p, ...marks, age: age + 1 }, retired: false };
   const rng = mulberry32(hashInt(`${key}|${season}`));
-  const delta = ratingChange(age, p.overall, rng, talentOf(key), trainingMultiplier, clubLevel);
+  // A real man without a flag holds his rating until his decline
+  // (UNFLAGGED_GROWTH off). A replacement boy still grows on Leo's curve
+  // until Mikey's own plan for replacements: frozen at his starting rating,
+  // every league would sink by about 12 points over 20 seasons.
+  const canGrow = UNFLAGGED_GROWTH || isRegenId(p.id);
+  const declineScale = ageingProfileOf(key).decline * (p.position === "GK" ? KEEPER_DECLINE_SCALE : 1);
+  const delta = ratingChange(age, p.overall, rng, talentOf(key), trainingMultiplier, clubLevel, canGrow, declineScale);
   const overall = clamp(p.overall + delta, 30, 99);
+  const best = Math.max(p.peak ?? p.overall, p.overall);
+  if (overall < best) marks.peak = best;
   return {
-    player: { ...p, ...shiftedStats(p as StatBag, overall - p.overall, age), age: age + 1, overall },
+    player: { ...p, ...shiftedStats(p as StatBag, overall - p.overall, age), ...marks, age: age + 1, overall },
     retired: false,
   };
 }
@@ -248,6 +423,7 @@ export function ageLeagueSquads(
   squads: LeagueSquad[], season: number,
   trainingTierFor?: (club: string) => 1 | 2 | 3,
   clubLevels: Record<string, number> = {},
+  worldSeed?: number,
 ): { squads: LeagueSquad[]; retired: RetiredPlayer[]; clubLevels: Record<string, number> } {
   const retired: RetiredPlayer[] = [];
   const levels = { ...clubLevels };
@@ -259,15 +435,17 @@ export function ageLeagueSquads(
     const players: LeaguePlayer[] = [];
     for (const p of s.players) {
       if (exempt(p.id)) { players.push(p); continue; }
-      const key = keyOfLeague(p, s.club);
+      const key = seeded(keyOfLeague(p, s.club), worldSeed);
       const res = ageOne(p, key, season, tierMult, level);
       if (!res.retired) { players.push(res.player); continue; }
       retired.push({ club: s.club, id: p.id, name: p.name, age: res.age, position: p.position });
       if (!regens) continue;
-      const r = makeRegen(key, season, level);
+      const r = makeRegen(key, season, level, p.nation ?? squadNation(s.players), { peak: p.peak ?? p.overall, position: p.position });
       players.push({
         id: r.id, name: r.name, position: p.position, overall: r.overall, goals: 0, assists: 0,
         age: r.age,
+        ...(r.positions.length > 1 ? { positions: r.positions } : {}),
+        ...(r.nation ? { nation: r.nation } : {}),
         ...(r.highPotential ? { highPotential: true } : {}),
         ...(r.worldClassPotential ? { worldClassPotential: true } : {}),
         // No `image`: every screen draws fakeFaceFor(id) for a man with no
@@ -304,6 +482,7 @@ export function clubLevelOf(levels: Record<string, number>, squad: LeagueSquad):
 export function ageOwnSquad(
   squad: SquadPlayer[], club: string, season: number, clubLevel: number,
   trainingTier: 1 | 2 | 3 = 2,
+  worldSeed?: number,
 ): { squad: SquadPlayer[]; retired: RetiredPlayer[] } {
   const tierMult = TRAINING_TIER_MULTIPLIER[trainingTier];
   const rated = squad.some(p => typeof p.overall === "number");
@@ -311,15 +490,16 @@ export function ageOwnSquad(
   const out: SquadPlayer[] = [];
   for (const p of squad) {
     if (exempt(p.id)) { out.push(p); continue; }
-    const key = keyOfSquad(p, club);
+    const key = seeded(keyOfSquad(p, club), worldSeed);
     const res = ageOne(p, key, season, tierMult, clubLevel);
     if (!res.retired) { out.push(res.player); continue; }
     retired.push({ club, id: p.id, name: p.name, age: res.age, position: p.position });
-    const r = makeRegen(key, season, clubLevel);
+    const r = makeRegen(key, season, clubLevel, p.nationality ?? squadNationality(squad), { peak: p.peak ?? p.overall, position: p.position });
     out.push({
       id: r.id, name: r.name, shortName: shortNameOf(r.name), position: p.position,
       seasonGoals: 0, seasonAssists: 0, careerGoals: 0, careerAssists: 0, leagueGoals: 0, leagueAssists: 0,
-      age: r.age, positions: [p.position], imageUrl: fakeFaceFor(r.id),
+      age: r.age, positions: r.positions, imageUrl: fakeFaceFor(r.id),
+      ...(r.nation ? { nationality: r.nation } : {}),
       ...(rated ? { overall: r.overall } : {}),
       ...(r.highPotential ? { highPotential: true } : {}),
       ...(r.worldClassPotential ? { worldClassPotential: true } : {}),
@@ -338,11 +518,12 @@ export function catchUpFetchedSquads(
   fresh: LeagueSquad[], from: number, to: number,
   trainingTierFor?: (club: string) => 1 | 2 | 3,
   clubLevels: Record<string, number> = {},
+  worldSeed?: number,
 ): LeagueSquad[] {
   let out = fresh;
   let levels = clubLevels;
   for (let s = from; s <= to; s++) {
-    const r = ageLeagueSquads(out, s, trainingTierFor, levels);
+    const r = ageLeagueSquads(out, s, trainingTierFor, levels, worldSeed);
     out = r.squads;
     levels = r.clubLevels;
   }
@@ -355,6 +536,8 @@ export interface WorldClock {
   /** The season whose rollover first aged the world (absent: never yet). */
   worldAgedSince?: number;
   clubLevels?: Record<string, number>;
+  /** This career's own history (see `seeded`); absent on older saves. */
+  worldSeed?: number;
 }
 
 /** The rollovers this career's world has already lived through. */
@@ -368,7 +551,7 @@ function agedSeasons(c: WorldClock): [number, number] | null {
 export function ageFetchedForCareer(c: WorldClock, fresh: LeagueSquad[]): LeagueSquad[] {
   const span = agedSeasons(c);
   if (!span) return fresh;
-  return catchUpFetchedSquads(fresh, span[0], span[1], undefined, c.clubLevels ?? {});
+  return catchUpFetchedSquads(fresh, span[0], span[1], undefined, c.clubLevels ?? {}, c.worldSeed);
 }
 
 /** Your new club's dressing room from a fresh fetch (a transfer, a reload),
@@ -380,9 +563,33 @@ export function ageOwnFetchedForCareer(c: WorldClock, club: string, squad: Squad
   const level = c.clubLevels?.[club]
     ?? (rated.length ? Math.round(rated.reduce((n, p) => n + (p.overall ?? 0), 0) / rated.length) : 65);
   let out = squad;
-  for (let s = span[0]; s <= span[1]; s++) out = ageOwnSquad(out, club, s, level).squad;
+  for (let s = span[0]; s <= span[1]; s++) out = ageOwnSquad(out, club, s, level, 2, c.worldSeed).squad;
   return out;
 }
+
+/** The country most of a squad comes from, for a replacement whose man had
+ *  none on record (an invented player at a real club). */
+function squadNation(players: { nation?: string }[]): string | undefined {
+  return mostCommon(players.map(p => p.nation));
+}
+function squadNationality(players: { nationality?: string }[]): string | undefined {
+  return mostCommon(players.map(p => p.nationality));
+}
+function mostCommon(xs: (string | undefined)[]): string | undefined {
+  const n = new Map<string, number>();
+  for (const x of xs) if (x) n.set(x, (n.get(x) ?? 0) + 1);
+  let best: string | undefined; let top = 0;
+  n.forEach((c, x) => { if (c > top) { top = c; best = x; } });
+  return best;
+}
+
+/** A career's own world seed, from who you are (never 0). */
+export function worldSeedFor(player: { firstName: string; lastName: string; startYear: number; nationality: string; position: string }): number {
+  return (hashInt(`${player.firstName} ${player.lastName}|${player.startYear}|${player.nationality}|${player.position}|world`) % 2147483646) + 1;
+}
+
+/** Leagues where you have "arrived": a season played here wakes the world. */
+export const AWAKE_DIVISIONS: readonly string[] = ["premier", "championship"];
 
 // ── hashing ──
 

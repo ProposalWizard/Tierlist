@@ -14,7 +14,7 @@ import { Screen, Kicker } from "./ui/Screen";
  * Reached when your club finishes in the bottom four of National League
  * North or South: they drop to Step 3, which has no fixtures (Mikey, 2 Oct
  * 2026) — every other boundary is a real division, so the ordinary transfer
- * window (TransferWindow.tsx) handles it.
+ * window (TransferHub.tsx) handles it.
  * Otherwise built the same way: real offers, priced off the same reputation
  * and the same move-cost numbers, so a relegation does not feel like a
  * different game from a normal transfer.
