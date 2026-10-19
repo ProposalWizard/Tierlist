@@ -73,6 +73,10 @@ export interface Director {
   setEdit(e: DirectorEdit | null): void;
   /** The camera tracks as played (after conditions), in the order `DirectorEdit.shots` keys them. */
   cameras(): CameraTrack[];
+  /** Where the camera stands and looks at the last drawn frame (the editor's free camera reads it). */
+  cameraPose(): { pos: Vec3; look: Vec3; fov: number };
+  /** An overhead read of the set for the editor's mini-map: people at the last frame, the key light's direction. */
+  layout(): { people: { id: string; x: number; z: number }[]; sunDir: Vec3; bounds?: { min: Vec3; max: Vec3 } };
   dispose(): void;
 }
 
@@ -87,6 +91,12 @@ export interface DirectorEdit {
   keyLight?: number;
   /** A spotlight on one person (cast id), on top of the script's own. */
   spot?: { actor: string; intensity: number } | null;
+  /** Free camera per shot (keyed like `shots`): stand here and look there, lens kept. Absent = the shot as written. */
+  free?: Record<number, { pos: Vec3; look: Vec3 }>;
+  /** Turns the key light (sun) round the set, degrees about the vertical (0 = as written). */
+  keyAngle?: number;
+  /** The key light's colour (absent = as written). */
+  keyColor?: string;
 }
 
 interface Cast { id: string; role: string; body: string; actor: CutsceneActor; clipSet: Set<string> }
@@ -535,7 +545,10 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       if (cs.prev) p = mixPose(camPose(cs.prev.track, cs.prev.k, t), p, cs.prev.mix);
       camera.position.set(...p.pos);
       camera.up.set(Math.sin((p.roll * Math.PI) / 180), Math.cos((p.roll * Math.PI) / 180), 0);
+      const fr = edit?.free?.[C.cameras.indexOf(cs.cur)];
+      if (fr) { p = { ...p, pos: fr.pos, look: fr.look, roll: 0 }; camera.position.set(...p.pos); camera.up.set(0, 1, 0); }
       camera.lookAt(...p.look);
+      lastPose = { pos: p.pos, look: p.look, fov: p.fov };
       if (Math.abs(camera.fov - p.fov) > 1e-3) { camera.fov = p.fov; camera.updateProjectionMatrix(); }
     }
     const { flash } = fx.update(act, camera, def.sunDir);
@@ -582,6 +595,14 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       keyEdited = edit?.keyLight !== undefined;
       for (const l of castLights) { if (!keyBase.has(l)) keyBase.set(l, l.intensity); l.intensity = keyBase.get(l)! * (edit?.keyLight ?? 1); }
     }
+    // the editor's key light angle and colour (untouched with no edit)
+    if (!baseSun) baseSun = [...def.sunDir] as Vec3;
+    const ang = ((edit?.keyAngle ?? 0) * Math.PI) / 180, ca = Math.cos(ang), sa = Math.sin(ang);
+    def.sunDir = edit?.keyAngle ? [baseSun[0] * ca - baseSun[2] * sa, baseSun[1], baseSun[0] * sa + baseSun[2] * ca] : baseSun;
+    if (edit?.keyColor || keyColEdited) {
+      keyColEdited = !!edit?.keyColor;
+      for (const l of castLights) { if (!keyCol.has(l)) keyCol.set(l, l.color.getHex()); if (edit?.keyColor) l.color.set(edit.keyColor); else l.color.setHex(keyCol.get(l)!); }
+    }
     // overlay
     const ov = overlayAt(C, t);
     const lb = ov.letterbox;
@@ -595,7 +616,10 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     focus.x = camera.position.x; focus.z = camera.position.z;
   };
   const focus = { x: 0, y: 0, z: 0 };
-  let keyEdited = false;
+  let keyEdited = false, keyColEdited = false;
+  let baseSun: Vec3 | null = null;
+  const keyCol = new Map<any, number>();
+  let lastPose: { pos: Vec3; look: Vec3; fov: number } = { pos: [0, 1.6, 5], look: [0, 1.4, 0], fov: 40 };
   const keyBase = new Map<any, number>();
   let baseExposure = def.post.exposure;
   let basePoster = def.post.posterMix;
@@ -605,7 +629,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     baseExposure = def.post.exposure; basePoster = def.post.posterMix;
     mood = MOODS[edit?.mood ?? script.set.mood];
     kit.apply(def);
-    keyBase.clear();
+    keyBase.clear(); keyCol.clear(); baseSun = null;
     root.remove(set.group); set.dispose();
     set = buildSet(T, kit, tier, script.set.location, { shirt: club.shirt, trim: club.trim, club: club.name, lamps: mood.lamps, seed: script.seed ?? 1, night: (edit?.mood ?? script.set.mood).includes("night") });
     root.add(set.group);
@@ -673,6 +697,12 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     setStyle(id) { styleId = id; given = null; restyle(); },
     setStyleDef(d) { given = d; restyle(); },
     cameras: () => C.cameras,
+    cameraPose: () => ({ pos: [...lastPose.pos] as Vec3, look: [...lastPose.look] as Vec3, fov: lastPose.fov }),
+    layout: () => ({
+      people: Array.from(cast.values()).map((c) => { const p = c.actor.point("head"); return { id: c.id, x: p.x, z: p.z }; }),
+      sunDir: [...def.sunDir] as Vec3,
+      bounds: C.loc.bounds,
+    }),
     setEdit(e) {
       const moodChanged = (e?.mood ?? script.set.mood) !== (edit?.mood ?? script.set.mood);
       edit = e;
