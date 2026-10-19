@@ -60,8 +60,11 @@ Newest first. Each is something that was actually said.
 - **D and F are for the admin pages only.** "It's not every screen in D and
   F (that is just for the admin page). I meant the actual UI of every game
   like how the play area looks good — the inside of every area needs work."
-  The Play Area is the standard the inside of every game is brought up to
-  (inferred: "like how the play area looks good").
+  ~~The Play Area is the standard the inside of every game is brought up to.~~
+  Narrowed the same day: **"forget about the site games and everything JUST
+  the admin for road to ballon dor."** The pass is the inside of every Road to
+  Ballon d'Or admin/test page (lib/adminRegistry.ts, section rbd), brought up
+  to the Play Area (/star-play-dev). Not the game screens, not other games.
 
 ### 18 Oct 2026 — admin pages get real design (Harry)
 - **"I like the idea of the grouped admin … but it's not the UI I was
