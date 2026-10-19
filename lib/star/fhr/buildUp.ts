@@ -856,7 +856,7 @@ function calmBursts(path: Vec2[], pin: number[], vmax: number, N: number) {
     for (const i of bad) for (let k = i - w - 3; k <= i + 3; k++) if (k > 0 && k < N && !pin[k]) touch.add(k);
     if (!touch.size) return;
     const old = path.slice();
-    for (const k of touch) path[k] = { x: 0.5 * old[k].x + 0.25 * (old[k - 1].x + old[k + 1].x), y: 0.5 * old[k].y + 0.25 * (old[k - 1].y + old[k + 1].y) };
+    for (const k of Array.from(touch)) path[k] = { x: 0.5 * old[k].x + 0.25 * (old[k - 1].x + old[k + 1].x), y: 0.5 * old[k].y + 0.25 * (old[k - 1].y + old[k + 1].y) };
   }
 }
 
