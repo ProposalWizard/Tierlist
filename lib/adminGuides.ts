@@ -989,13 +989,14 @@ export const ADMIN_GUIDES = {
     what: "Real chances straight off the match's own generator, as fast as you can press Next — flag the bad ones and fix them on the spot.",
     buttons: [
       {
-        group: "Top bar",
+        group: "Top of the page",
         items: [
-          ["‹", "Back to the Scenario Gallery."],
-          ["N/13", "Choose which chance types to show: All, None, tap types on or off, then \"Watch these\"."],
-          ["▦ 24", "Sheet of 24: twenty-four chances of one type served in a row, on one screen, to check by eye. Under each: which drawing it came from, the nearest drawing, and in colour anything wrong (red: added by the serving; amber: already in the drawing, or \"like #n\" — looks like one of the five before it). New sheet serves another 24. It uses the Play Area's Chances dial."],
+          ["←", "Back to the Scenario Gallery."],
+          ["Highlights N/11", "Choose which chance types to show: All, None, tap types on or off, then \"Watch these\"."],
+          ["▦ Sheet of 24", "Sheet of 24: twenty-four chances of one type served in a row, on one screen, to check by eye. Under each: which drawing it came from, the nearest drawing, and in colour anything wrong (red: added by the serving; amber: already in the drawing, or \"like #n\" — looks like one of the five before it). New sheet serves another 24. It uses the Play Area's Chances dial."],
           ["⚽ Play a penalty shootout", "On the chance-types screen. A whole shootout on the real match, with the Play Area's test sides: every kick live — team-mates at their keeper, their takers at yours (from the same end), yours to take when your turn comes. Nothing is saved; \"Another shootout\" starts again."],
-          ["⚑ N", "Your flagged list. Tap one to jump back to it; Clear empties the list."],
+          ["⚑ Flagged N", "Your flagged list. Tap one to jump back to it; Clear empties the list."],
+          ["Next →", "A second Next, at the top of the page."],
         ],
       },
       {
@@ -1004,6 +1005,7 @@ export const ADMIN_GUIDES = {
           ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game."],
           ["A penalty", "Harry's penalty rules: the keeper stays dead centre on his line, the ball on the spot, you straight behind it and the camera fixed — none of them drag. Anyone else only slides along the edge of the box."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
+          ["Fix this chance", "The panel on the right (under the picture on a phone): the buttons below, Save and Commit."],
           ["+ Mate / + Opp", "Add a team-mate or an opponent."],
           ["Remove", "Takes out the player you tapped."],
           ["▶ Play / ◼ Stop", "Plays this exact chance, your drags included, at the picture's size — a drag still hits exactly as hard as in a career. Real squads and faces, the real weather, and the Play Area's dials."],
@@ -1011,7 +1013,9 @@ export const ADMIN_GUIDES = {
           ["PNG", "Downloads the picture (without the fault rings)."],
           ["Delete", "Only for a saved chance: deletes it from the shared list AND the code."],
           ["Tune", "Only after a drag: records what was wrong as a correction. Not a save."],
-          ["‹  ⚑  Next →", "Previous, flag / unflag this one, next. Keys: ← →, space, F to flag. A second Next → sits in the top bar, so it is always on screen on a phone."],
+          ["Caption under the picture", "The chance type and its number. The ⚑ next to it flags / unflags this one (key F)."],
+          ["‹  Next →", "Previous, next. Keys: ← →, space. A second Next → sits in the row at the top of the page."],
+          ["Previous chances", "The last 24 chances you have seen this visit, as small pictures. Tap one to go back to it."],
           ["Save / Save this fix", "Always there until it's saved. Puts this chance (with your drags, if any) into its type's scenarios in the shared list — no drag needed."],
           ["Commit", "Always there. Saves it AND commits it into the game's code in one go."],
           ["Discard", "After a drag: throws the drags away."],
