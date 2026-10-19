@@ -1149,10 +1149,11 @@ export const ADMIN_GUIDES = {
       {
         group: "Top of the page",
         items: [
-          ["‹", "Back to the Play Area."],
-          ["★ (wallet)", "Your test stars — the money you earn by playing."],
+          ["← (blue, top left) / ‹ (in the store)", "Back to the Play Area."],
+          ["★ and Coins (top right)", "Your test wallet, shown at a glance."],
+          ["★ (wallet, in the store)", "Your test stars — the money you earn by playing."],
           ["Coins +", "Your test Coins — the money you would buy with real money. Tapping it opens the Coins tab."],
-          ["⚙ Test controls", "Opens and closes the test panel below."],
+          ["⚙ Test controls", "The panel on the left (on top on a phone). Opens and closes it; open on a computer, folded on a phone."],
           ["Your level", "National League … Premier League. Sets which level of boots you see and puts in a typical wage for that league."],
           ["Weekly wage ★", "Type any wage. Every scaled price, and what a Coin is worth, follows it."],
           ["Wallet ★ / Wallet Coins", "Set either balance to anything."],
