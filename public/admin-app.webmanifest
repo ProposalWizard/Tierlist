@@ -1,0 +1,17 @@
+{
+  "name": "KIB Admin",
+  "short_name": "KIB Admin",
+  "description": "The Knowitball admin room for Harry, Mikey and Leo.",
+  "id": "/admin-app",
+  "start_url": "/admin/star",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070b09",
+  "theme_color": "#070b09",
+  "icons": [
+    { "src": "/admin/app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/admin/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/admin/app-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

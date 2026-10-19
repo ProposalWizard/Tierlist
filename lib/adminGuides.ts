@@ -725,12 +725,12 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: [
-      "Your own Google Drive, folder \"Knowitball screen recordings\" (the site makes it the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it.",
-      "The site keeps nothing. The video goes from your browser straight to Google.",
+      "Your own Google Drive, folder \"Knowitball screen recordings\" → a folder for whoever is picked under Who is recording (the site makes them the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it. You can move the main folder anywhere in Drive; the site still finds it.",
+      "The video goes from your browser straight to Google. The site keeps only its name and link (dev_recordings table), so that person's Claude chats break it down the next time they are messaged (scripts/hooks/recordings-hook.mjs). Needs dev_recordings.sql run once.",
       "Drive needs NEXT_PUBLIC_GOOGLE_CLIENT_ID on the site. Until it is set, recordings only download.",
     ],
     inGame: ["Nowhere."],
-    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md",
+    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · /api/dev-recordings + scripts/hooks/recordings-hook.mjs (auto-read) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md",
   },
   "/admin/team": {
     title: "Team board",
