@@ -9,21 +9,29 @@
  * Every level plays through the same TrainingMinigame a career uses, so what
  * you see here is the level a player gets. Nothing is saved: no career is
  * touched, no stars are banked.
+ *
+ * Broadcast look, option 1 (Harry, 19 Oct 2026: "training levels opt 1
+ * functional"): the games as tabs, the 30 levels as a grid, the picked level
+ * on the right with LET'S GO. Pictures: public/admin/training-levels/<skill>.webp
+ * (real stills of each game at level 15). Only this menu changed; the games
+ * themselves are untouched.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TrainingMinigame from "@/components/star/TrainingMinigame";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, Btn, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "./training-levels.css";
 import type { Skills } from "@/lib/star/types";
 import { TRAINING_LEVELS, levelDifficulty } from "@/lib/star/trainingLevels";
 import { powerDrill, techniqueDrill, freeKickDrill, paceDrill, visionDrill } from "@/lib/star/trainingDrills";
 
-const SKILLS: { key: keyof Skills; label: string }[] = [
-  { key: "power", label: "Power" },
-  { key: "technique", label: "Technique" },
-  { key: "freeKick", label: "Free Kick" },
-  { key: "pace", label: "Pace" },
-  { key: "vision", label: "Vision" },
+const SKILLS: { key: keyof Skills; label: string; game: string }[] = [
+  { key: "power", label: "Power", game: "Long Range" },
+  { key: "technique", label: "Technique", game: "Through the Gate" },
+  { key: "freeKick", label: "Free Kick", game: "Over the Wall" },
+  { key: "pace", label: "Pace", game: "The Gauntlet" },
+  { key: "vision", label: "Vision", game: "Read the Run" },
 ];
 
 /** One short line saying what a level asks for — the numbers that change. */
@@ -39,31 +47,46 @@ function levelLine(skill: keyof Skills, level: number): string {
 
 const SKILL_VALUES = [40, 70, 100];
 
+function Stars({ n }: { n: number }) {
+  return (
+    <span className="tr-stars" aria-label={`${n} of 3 stars`}>
+      {[0, 1, 2].map(k => <span key={k} data-on={k < n ? "true" : undefined}>★</span>)}
+    </span>
+  );
+}
+
 export default function TrainingDev() {
   const [skill, setSkill] = useState<keyof Skills>("power");
   const [level, setLevel] = useState<number | null>(null);
+  // The level picked in the grid (LET'S GO plays it).
+  const [picked, setPicked] = useState(1);
   const [run, setRun] = useState(0);
   const [lastStars, setLastStars] = useState<Record<string, number>>({});
   // The player's own skills: they decide how hard you can hit it and how
   // much it bends, so a level plays differently at 40 and at 100.
   const [you, setYou] = useState(40);
 
+  // Pinned panels stay pinned (app/globals.css: sticky needs overflow clip).
+  useEffect(() => {
+    document.body.classList.add("knowitball-immersive");
+    return () => document.body.classList.remove("knowitball-immersive");
+  }, []);
+
+  const info = SKILLS.find(s => s.key === skill)!;
+  // A level opens at the top of the page, with its bar in view.
+  const play = (n: number) => { setPicked(n); setLevel(n); setRun(r => r + 1); window.scrollTo(0, 0); };
+
   if (level !== null) {
-    const go = (n: number) => { setLevel(Math.max(1, Math.min(TRAINING_LEVELS, n))); setRun(r => r + 1); };
+    const go = (n: number) => { const m = Math.max(1, Math.min(TRAINING_LEVELS, n)); setLevel(m); setPicked(m); setRun(r => r + 1); };
     return (
-      <>
-        <div className="flex items-center justify-between gap-2 bg-gray-950 px-3 py-2">
-          <button
-            onClick={() => setLevel(null)}
-            className="min-h-[40px] rounded-full border border-gray-500 bg-gray-800 px-4 py-1.5 text-sm font-black text-white"
-          >
-            ‹ All levels
-          </button>
-          <span className="text-xs font-black text-white">{SKILLS.find(s => s.key === skill)?.label} · skills {you}</span>
-          <div className="flex items-center rounded-full border border-gray-500 bg-gray-800">
-            <button onClick={() => go(level - 1)} disabled={level <= 1} className="min-h-[40px] min-w-[40px] px-3 py-1.5 text-sm font-black text-white disabled:opacity-40" aria-label="Previous level">◀</button>
-            <span className="text-sm font-black text-amber-300 tabular-nums">L{level}</span>
-            <button onClick={() => go(level + 1)} disabled={level >= TRAINING_LEVELS} className="min-h-[40px] min-w-[40px] px-3 py-1.5 text-sm font-black text-white disabled:opacity-40" aria-label="Next level">▶</button>
+      <div className="tr-play">
+        <div className="tr-bar">
+          <button onClick={() => setLevel(null)} className="tr-bar-back">‹ All levels</button>
+          <span className="tr-bar-mid">{info.label} · skills {you}</span>
+          <div className="tr-bar-step">
+            <button onClick={() => go(level - 1)} disabled={level <= 1} aria-label="Previous level">◀</button>
+            <b>L{level}</b>
+            <button onClick={() => go(level + 1)} disabled={level >= TRAINING_LEVELS} aria-label="Next level">▶</button>
           </div>
         </div>
         <TrainingMinigame
@@ -78,68 +101,68 @@ export default function TrainingDev() {
           }}
         />
         <PageGuide page="/star-training-dev" />
-      </>
+      </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-gray-950 px-4 py-4 text-white">
-      <div className="mx-auto w-full max-w-md">
-        <h1 className="text-xl font-black">Training Levels</h1>
+  const pickedStars = lastStars[`${skill}-${picked}`];
 
-        <div className="mt-3 grid grid-cols-5 gap-1.5">
+  return (
+    <BroadcastPage title="Training levels" sub="Play any level of any training game. Nothing is saved.">
+      <div className="tr-top">
+        <div className="tr-tabs" role="tablist">
           {SKILLS.map(s => (
-            <button
-              key={s.key}
-              onClick={() => setSkill(s.key)}
-              className={`min-h-[40px] rounded-lg px-1 py-2 text-[11px] font-black ${
-                skill === s.key ? "bg-emerald-400 text-emerald-950" : "border border-gray-600 bg-gray-800 text-white"
-              }`}
-            >
+            <button key={s.key} role="tab" aria-selected={skill === s.key} onClick={() => setSkill(s.key)} className="tr-tab">
               {s.label}
             </button>
           ))}
         </div>
-
-        <div className="mt-3 flex items-center gap-2">
-          <span className="text-xs font-black text-white">Your skills</span>
-          {SKILL_VALUES.map(v => (
-            <button
-              key={v}
-              onClick={() => setYou(v)}
-              className={`min-h-[40px] min-w-[48px] rounded-full px-3 py-1 text-sm font-black ${
-                you === v ? "bg-amber-300 text-gray-950" : "border border-gray-600 bg-gray-800 text-white"
-              }`}
-            >
-              {v}
-            </button>
-          ))}
+        <div className="tr-you">
+          <Label>Your skills</Label>
+          {SKILL_VALUES.map(v => <Pill key={v} on={you === v} onClick={() => setYou(v)}>{v}</Pill>)}
         </div>
+      </div>
 
-        <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="tr-layout">
+        <div className="tr-grid">
           {Array.from({ length: TRAINING_LEVELS }, (_, i) => i + 1).map(n => {
             const played = lastStars[`${skill}-${n}`];
             return (
               <button
                 key={n}
-                onClick={() => { setLevel(n); setRun(r => r + 1); }}
-                className="rounded-lg border border-gray-600 bg-gray-800 px-2 py-2 text-left active:scale-95"
+                data-level={n}
+                aria-pressed={picked === n}
+                onClick={() => (picked === n ? play(n) : setPicked(n))}
+                className="tr-tile"
+                title={picked === n ? "Tap again to play" : `Pick level ${n}`}
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-black text-white">{n}</span>
-                  {played !== undefined && (
-                    <span className="text-[11px] tracking-tight">
-                      {[0, 1, 2].map(k => <span key={k} className={k < played ? "text-amber-300" : "text-white/25"}>★</span>)}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-0.5 text-[11px] font-bold text-white">{levelLine(skill, n)}</div>
+                <span className="tr-num">{String(n).padStart(2, "0")}</span>
+                <span className="tr-line">{levelLine(skill, n)}</span>
+                {played !== undefined && <Stars n={played} />}
               </button>
             );
           })}
         </div>
+
+        <aside className="tr-side">
+          <Panel title={`Level ${picked}: ${info.game}`} note={info.label}>
+            <div className="tr-detail">
+              <div className="tr-pic" style={{ backgroundImage: `url(/admin/training-levels/${skill}.webp)` }} role="img" aria-label={`${info.label} training, picture from level 15`} />
+              <div className="tr-facts">
+                <Label>It asks for</Label>
+                <div className="tr-ask">{levelLine(skill, picked)}</div>
+                <Label>Your stars here</Label>
+                <div className="tr-ask">{pickedStars !== undefined ? <Stars n={pickedStars} /> : "Not played yet"}</div>
+                <Note>Picture: {info.label} at level 15. Plays at skills {you}.</Note>
+              </div>
+            </div>
+            <div className="tr-go">
+              <Btn main onClick={() => play(picked)}>Let&apos;s go ›</Btn>
+            </div>
+          </Panel>
+        </aside>
       </div>
       <PageGuide page="/star-training-dev" />
-    </div>
+    </BroadcastPage>
   );
 }
