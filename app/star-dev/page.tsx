@@ -36,7 +36,7 @@ import {
   playYouthMatch, applyYouthWeek, readyForPromotion, promoteFromYouth,
   formHasCollapsed, dropToYouth, loanRecallOffer, endLoan,
 } from "@/lib/star/youth";
-import { managerTalkFor, agreedWeeklyWage, weeklyToSeason } from "@/lib/star/signingTalk";
+import { managerTalkFor, agreedWeeklyWage, weeklyToSeason, wageFloorFor } from "@/lib/star/signingTalk";
 import { goalBonusFor, assistBonusFor } from "@/lib/star/economy";
 import { makeIdentity, attachClub, makeInitialCareer, hasClub, creditMatchResult, simulateMissedFixture, awardLeagueTrophyIfWon, advanceSeason, checkForContractOffer, markContractOfferUsed } from "@/lib/star/careerFlow";
 import { brandsOf, signOffer, declineOffer, askLonger, askEasier, counterPoach, walkAway, settleNegotiation, } from "@/lib/star/sponsorDeals";
@@ -58,7 +58,6 @@ import { refreshXpConfig } from "@/lib/star/xpStore";
 import { DEFAULT_FORMATION, formationOf, type Role } from "@/lib/star/formations";
 import { spendAction, rest, canAct, projectedEnergy, startNewWeek, trainingLeft, spendTrainingSession } from "@/lib/star/week";
 import { acceptOffer, type TransferOffer } from "@/lib/star/transfers";
-import { formatMoneyPrecise } from "@/lib/star/money";
 import { clearAfterWindow, requestOf } from "@/lib/star/transferRequest";
 import { windowInterest, withRecall, withAgreedWage, markWalkedAway } from "@/lib/star/transferInterest";
 import { retirementCheck, retire } from "@/lib/star/retirement";
@@ -4348,7 +4347,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   // Talking terms with a club from the list: the same negotiation as a first
-  // contract, in a season's wages (see signingTalk.ts). Walk away and the
+  // contract, in a WEEKLY wage (Mikey, 19 Oct 2026: "in the football world,
+  // it's done per week"). Season totals were only needed while the haggle
+  // rounded to ★100 steps; it now rounds to ★1 under ★100. Walk away and the
   // club is off the list until the next window.
   if (phase === "transfer-request-talk" && talkOffer) {
     const talkDivision = talkOffer.division ?? divisionOf(career);
@@ -4356,13 +4357,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <NegotiationScreen
         mode="selling"
         playerName={`${career.player.firstName} ${career.player.lastName} — terms with ${talkOffer.club}`}
-        marketValue={weeklyToSeason(talkOffer.wage, talkDivision)}
+        marketValue={talkOffer.wage}
         counterpartLabel={talkOffer.club}
         kicker="Contract talks"
-        valueLabel="Their wage offer, for the season"
-        note={`Every number here is a season's wages. ★${formatMoneyPrecise(talkOffer.wage)} a week = ★${formatMoneyPrecise(weeklyToSeason(talkOffer.wage, talkDivision))} a season.`}
-        onDone={(finalSeasonPrice) => {
-          const weekly = agreedWeeklyWage(finalSeasonPrice, talkOffer.club, talkDivision);
+        valueLabel="Their wage offer, per week"
+        note="Every number here is a weekly wage."
+        onDone={(finalWeekly) => {
+          const weekly = finalWeekly === null ? null : Math.max(wageFloorFor(talkOffer.club, talkDivision), Math.round(finalWeekly));
           setTalkOffer(null);
           if (weekly === null) {
             setCareer(markWalkedAway(career, "summer", talkOffer.club));

@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { CongratulationsBanner, SignaturePad, type ContractTerms } from "./TrialReward";
 import ClubBadge from "./ClubBadge";
 import { Burst, PressButton, Shine, clubTheme } from "./ui";
@@ -80,6 +80,7 @@ export default function TransferSigning({
 
   if (career && signing3d && !failed3d) {
     return (
+      <Fallback onError={() => setFailed3d(true)}>
       <SigningScene3DCareer
         career={career}
         club={club}
@@ -90,6 +91,7 @@ export default function TransferSigning({
         onDone={finish}
         onFail={() => setFailed3d(true)}
       />
+      </Fallback>
     );
   }
 
@@ -145,4 +147,19 @@ export default function TransferSigning({
       </div>
     </Screen>
   );
+}
+
+/**
+ * If the 3D signing throws while drawing (Mikey, 19 Oct 2026: an older save
+ * hit "Something went wrong" right after agreeing a move, twice; a fresh
+ * career did not), drop to the drawn signing instead of the error page.
+ */
+class Fallback extends Component<{ onError: () => void; children: ReactNode }, { broken: boolean }> {
+  state = { broken: false };
+  static getDerivedStateFromError() { return { broken: true }; }
+  componentDidCatch(error: Error) {
+    console.error("3D signing failed, using the drawn signing:", error);
+    this.props.onError();
+  }
+  render() { return this.state.broken ? null : this.props.children; }
 }

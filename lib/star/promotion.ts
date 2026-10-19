@@ -1,5 +1,5 @@
 import type { CareerState, LeagueTeam } from "./types";
-import { sortLeague, simulateFixtureScore } from "./season";
+import { sortLeague, simulateFixtureScore, mulberry32 } from "./season";
 import { divisionOf, divisionRank, type CareerDivision } from "./calendar";
 import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS,
@@ -616,6 +616,15 @@ const BOUNDARIES: { above: TierKey; below: TierKey; count: number }[] = [
   { above: "leagueOne", below: "leagueTwo", count: LEAGUE_ONE_TWO_COUNT },
   { above: "leagueTwo", below: "nationalLeague", count: LEAGUE_TWO_NATIONAL_COUNT },
 ];
+
+/**
+ * Up and down for the season just played, with the one seed the rollover
+ * uses (careerFlow.ts), so the summer transfer window can show next season's
+ * leagues and they match what the rollover then does.
+ */
+export function seasonLadder(career: CareerState): LadderOutcome {
+  return resolveLadder(career, mulberry32(career.season * 90247 + career.league.length * 13));
+}
 
 export function resolveLadder(career: CareerState, rng: () => number): LadderOutcome {
   const members = membershipOf(career);

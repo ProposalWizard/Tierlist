@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import type React from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { InterestLevel, InterestedClub, SeasonGrade, WindowInterest } from "@/lib/star/transferInterest";
-import { INTEREST_STEPS, keenest, levelOf } from "@/lib/star/transferInterest";
+import { INTEREST_STEPS, levelOf } from "@/lib/star/transferInterest";
 import { leagueNameFor, divisionOf, type CareerDivision } from "@/lib/star/calendar";
 import { formatMoney, formatMoneyPrecise } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
@@ -57,10 +57,8 @@ export const INTEREST_COLOUR: Record<InterestLevel, string> = {
   Desperate: "#16d466", "Very keen": "#8fe33a", Keen: "#facc15", Interested: "#f97316",
 };
 
-function stepWord(division: CareerDivision, own: CareerDivision): string {
-  const d = levelOf(division) - levelOf(own);
-  return d > 0 ? `${d} up` : d < 0 ? `${-d} down` : division === own ? "Your league" : "Same level";
-}
+/** "Promoted" / "Relegated" for a club that changed league this summer. */
+const MOVED_WORD = { promoted: "Promoted", relegated: "Relegated" } as const;
 
 /** The Home screen's tile: dark glass lit from the top in one colour. Nearly
  *  solid, so it still reads where it crosses the gold slab. */
@@ -140,12 +138,15 @@ function WindowFrame({ glow, kicker, title, sub, right, ticker, bottom, children
 
 export default function TransferHub({ career, interest, onNegotiate, onStay }: Props) {
   const theme = useClubTheme(career);
-  const own = divisionOf(career);
+  // Your league next season (the list shows next season's leagues).
+  const own = interest.ownDivision ?? divisionOf(career);
   const leagues = interest.leagues;
   const [division, setDivision] = useState<CareerDivision | null>(leagues[0]?.division ?? null);
   const league = leagues.find(l => l.division === division) ?? leagues[0];
-  const [clubName, setClubName] = useState<string | null>(() => (leagues[0] ? keenest(leagues[0].clubs)?.club ?? null : null));
-  const club = league?.clubs.find(c => c.club === clubName) ?? (league ? keenest(league.clubs) : undefined);
+  // No club picked until you pick one (Mikey, 19 Oct 2026: "it should just
+  // start with no club selected … it should say choose").
+  const [clubName, setClubName] = useState<string | null>(null);
+  const club = league?.clubs.find(c => c.club === clubName);
   const [page, setPage] = useState<Page>("hub");
   const [browsing, setBrowsing] = useState<CareerDivision | null>(null);
   const browseLeague = leagues.find(l => l.division === browsing) ?? league;
@@ -171,6 +172,7 @@ export default function TransferHub({ career, interest, onNegotiate, onStay }: P
             const on = l.division === league?.division;
             const up = levelOf(l.division) - levelOf(own);
             const accent = up > 0 ? "#34d399" : up < 0 ? "#f97316" : theme.glow;
+            const yours = l.division === own;
             return (
               <button key={l.division} data-league={l.division}
                 onClick={() => { setBrowsing(l.division); setPage("club"); }}
@@ -183,7 +185,7 @@ export default function TransferHub({ career, interest, onNegotiate, onStay }: P
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[17px] font-black uppercase tracking-wide text-white">{leagueNameFor(l.division)}</span>
-                  <span className="block text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: accent === theme.glow ? "#ffffff" : accent }}>{stepWord(l.division, own)}</span>
+                  {yours && <span className="block text-[11px] font-black uppercase tracking-[0.14em] text-white">Your league</span>}
                 </span>
                 {on && <span className="shrink-0 text-[18px] font-black text-emerald-300">✓</span>}
                 <span aria-hidden className="shrink-0 text-[20px] font-black text-white/80">›</span>
@@ -197,7 +199,6 @@ export default function TransferHub({ career, interest, onNegotiate, onStay }: P
 
   // ── Full-screen: every interested club in one league, A to Z ──
   if (page === "club" && browseLeague) {
-    const ownLeague = browseLeague.division === own;
     return (
       <WindowFrame page="club" glow={theme.glow} kicker={kicker} title={leagueNameFor(browseLeague.division)} right={closeBtn} ticker={ticker}
         sub={`${browseLeague.clubs.length} ${browseLeague.clubs.length === 1 ? "club is" : "clubs are"} interested · A to Z`}>
@@ -216,7 +217,7 @@ export default function TransferHub({ career, interest, onNegotiate, onStay }: P
                     {c.europe && <EuroTag comp={c.europe} />}
                   </span>
                   <InterestBar level={c.interest} />
-                  {ownLeague && <span className="block text-[11px] font-bold text-white/85">Finished {ordinal(c.position)}</span>}
+                  <span className="block text-[11px] font-bold text-white/85">{c.moved ? MOVED_WORD[c.moved] : `Finished ${ordinal(c.position)}`}</span>
                 </span>
                 {picked && <span className="shrink-0 text-[18px] font-black text-emerald-300">✓</span>}
               </button>
@@ -260,7 +261,7 @@ export default function TransferHub({ career, interest, onNegotiate, onStay }: P
           </span>
         </div>
 
-        {league && club ? (
+        {league ? (
           <>
             <div className="mt-3 space-y-2">
               <Chooser label="League" glow="#f5c518" onClick={() => setPage("league")} data-chooser="league">
@@ -268,14 +269,22 @@ export default function TransferHub({ career, interest, onNegotiate, onStay }: P
                 <span className="shrink-0 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-black text-black">{league.clubs.length}</span>
               </Chooser>
               <Chooser label="Club" glow={clubGlow} onClick={() => { setBrowsing(league.division); setPage("club"); }} data-chooser="club">
-                <ClubBadge club={club.club} size={30} />
-                <span className="min-w-0 flex-1 truncate">{club.club}</span>
-                {club.europe && <EuroTag comp={club.europe} />}
+                {club ? (
+                  <>
+                    <ClubBadge club={club.club} size={30} />
+                    <span className="min-w-0 flex-1 truncate">{club.club}</span>
+                    {club.europe && <EuroTag comp={club.europe} />}
+                  </>
+                ) : (
+                  <span className="min-w-0 flex-1 truncate text-white/70">Choose</span>
+                )}
               </Chooser>
             </div>
 
+            {!club && <p className="mt-4 text-[14px] font-bold text-white" style={{ textShadow: SMALL_OUTLINE }}>Pick a club to see what they offer.</p>}
+
             {/* The club you picked, lit in its own colours. */}
-            <div data-picked-club className="relative mt-3 overflow-hidden rounded-xl px-3 pb-3 pt-3" style={tile(clubGlow, 0.6)}>
+            {club && <div data-picked-club className="relative mt-3 overflow-hidden rounded-xl px-3 pb-3 pt-3" style={tile(clubGlow, 0.6)}>
               <div className="flex items-center gap-3">
                 <ClubBadge club={club.club} size={52} />
                 <div className="min-w-0 flex-1">
@@ -288,11 +297,13 @@ export default function TransferHub({ career, interest, onNegotiate, onStay }: P
                 <Fact k="Contract" v={`${club.offer.seasons} seasons`} />
                 <Fact k="Your club gets" v={`★${formatMoney(club.fee)}`} gold />
                 <Fact k="Your wage now" v={`${wageText(career.contract.wage)}/wk`} />
-                {club.division === own
-                  ? <Fact k="Finished" v={`${ordinal(club.position)} of ${club.of}`} />
-                  : <Fact k="League" v={stepWord(club.division, own)} />}
+                {club.moved
+                  ? <Fact k="Last season" v={MOVED_WORD[club.moved]} />
+                  : club.division === own
+                    ? <Fact k="Finished" v={`${ordinal(club.position)} of ${club.of}`} />
+                    : <Fact k="League" v={leagueNameFor(club.division)} />}
               </div>
-            </div>
+            </div>}
           </>
         ) : (
           <p className="mt-6 text-[14px] font-bold text-white">Have a better season and the clubs will come.</p>
