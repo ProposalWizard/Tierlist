@@ -150,6 +150,53 @@ function dragReferenceFor(shown: number, realW: number, vpW: number, force = fal
   return undefined;
 }
 
+/**
+ * LET THE MATCH BE THE REAL MATCH'S WIDTH EVEN WHEN ITS PAGE IS NARROWER.
+ *
+ * Found 19 Oct 2026 (drift audit, Harry: "work to fix any drifts across the
+ * game"): on a 390 px phone the real match is 366 px wide, but every test
+ * page that puts the match in its own panel gave it less — Goal videos 332,
+ * Real moments 318, Visual effects lab 340, Real shots 344, Real goals 360,
+ * Dribble on a stick 362. Same finger movement, same kick (the drag is read
+ * against the real canvas, see `dragReferenceFor`), but a smaller pitch with
+ * smaller men: not the game a career plays.
+ *
+ * So the box measures the room its page gives it and, when that is less than
+ * the width it asked for, steps out into the page's side gutters (negative
+ * margins) by exactly the missing amount — never past 4 px from the screen's
+ * edge, so a phone never scrolls sideways. On a page with room, nothing moves.
+ */
+function useBleed(boxRef: React.RefObject<HTMLDivElement>, want: number, off: boolean): { side: number; width: number } | null {
+  const [bleed, setBleed] = useState<{ side: number; width: number } | null>(null);
+  useEffect(() => {
+    const el = boxRef.current, parent = el?.parentElement;
+    if (off || !el || !parent) { if (bleed) setBleed(null); return; }
+    const measure = () => {
+      const pr = parent.getBoundingClientRect();
+      const cs = getComputedStyle(parent);
+      const padL = parseFloat(cs.paddingLeft) || 0, padR = parseFloat(cs.paddingRight) || 0;
+      const avail = pr.width - padL - padR;
+      const left = pr.left + padL, right = left + avail;
+      const vw = document.documentElement.clientWidth;
+      let next: { side: number; width: number } | null = null;
+      // `want` is the width asked for; the box's own `maxWidth: 100%` is what
+      // squeezed it, so `avail` is what it really got.
+      if (avail > 0 && avail < want - 0.5) {
+        const side = Math.floor(Math.min((want - avail) / 2, left - 4, vw - right - 4));
+        if (side > 0) next = { side, width: Math.round(avail + 2 * side) };
+      }
+      setBleed((b) => (b && next && b.side === next.side && b.width === next.width) || (!b && !next) ? b : next);
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(parent);
+    window.addEventListener("resize", measure);
+    return () => { ro.disconnect(); window.removeEventListener("resize", measure); };
+  });
+  return bleed;
+}
+
 type ServedInfo = { kind: ScenarioKind | "dribble"; minute: number; reason?: string; scenario?: Scenario };
 
 /**
@@ -289,6 +336,7 @@ export default function EnginePlay({
   const w = width && width > 0 ? Math.round(Math.max(realW, Math.min(maxW, width))) : realW;
   const { boxRef, served } = useRevealPitch(onChanceServed);
   const shown = useShownWidth(boxRef);
+  const bleed = useBleed(boxRef, w, fitParent);
   const dragReferenceHeightPx = dragReferenceFor(shown, realW, vpW, w !== realW || fitParent);
 
   if (!built) {
@@ -313,7 +361,9 @@ export default function EnginePlay({
     <div
       ref={boxRef}
       className={w > realW ? "[&>div]:!max-w-none" : undefined}
-      style={{ width: w, maxWidth: "100%", margin: "0 auto" }}
+      style={bleed
+        ? { width: bleed.width, maxWidth: "none", margin: `0 ${-bleed.side}px` }
+        : { width: w, maxWidth: "100%", margin: "0 auto" }}
     >
       {weather && (
         <div style={{ fontSize: 11.5, fontWeight: 800, color: "#fde68a", textAlign: "center", padding: "2px 0 4px" }}>
@@ -402,11 +452,14 @@ export function EngineFeature({
   const w = useRealMatchWidth();
   const { boxRef, served } = useRevealPitch(onChanceServed);
   const shown = useShownWidth(boxRef);
+  const bleed = useBleed(boxRef, w, false);
   const [vpW, setVpW] = useState(0);
   useEffect(() => { setVpW(window.innerWidth); }, [w]);
   const dragReferenceHeightPx = dragReferenceFor(shown, w, vpW);
   return (
-    <div ref={boxRef} style={{ width: w, maxWidth: "100%", margin: "0 auto" }}>
+    <div ref={boxRef} style={bleed
+      ? { width: bleed.width, maxWidth: "none", margin: `0 ${-bleed.side}px` }
+      : { width: w, maxWidth: "100%", margin: "0 auto" }}>
       <CanvasMatch
         seed={seed}
         skills={skills}
