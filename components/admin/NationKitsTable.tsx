@@ -16,7 +16,7 @@ import NationFlag from "@/components/star/NationFlag";
 const CONFEDS = ["All", "UEFA", "CONMEBOL", "CONCACAF", "CAF", "AFC", "OFC"] as const;
 
 /** A small drawn kit: sleeves, shirt with its second colour, shorts, socks. */
-function KitPicture({ kit, worn }: { kit?: NationKitInfo; worn: { shirt: string; trim: string } }) {
+export function KitPicture({ kit, worn }: { kit?: NationKitInfo; worn: { shirt: string; trim: string } }) {
   if (!kit?.shirtHex) return <span className="text-red-300">Missing</span>;
   const shirt = kit.shirtHex, sleeves = kit.sleevesHex ?? shirt, second = worn.trim;
   const p = (kit.pattern ?? "").toLowerCase();
