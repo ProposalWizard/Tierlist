@@ -1231,14 +1231,20 @@ export const ADMIN_GUIDES = {
   },
 
   "/star-3d-area-dev": {
-    title: "3D Test Area",
-    what: "Every cutscene and 3D area being built, in one list, plus a store of every 3D and Blender file the site has. Nothing here touches a career.",
+    title: "3D Area",
+    what: "Every 3D place, cutscene and 3D area being built, in one list, plus a store of every 3D and Blender file the site has. Nothing here touches a career.",
     buttons: [
       {
         group: "Top of the page",
         items: [
-          ["‹", "Back to the Play Area."],
-          ["Scenes / Assets", "Switch between the list of scenes and the asset store."],
+          ["←", "Back to the Play Area."],
+          ["Places / All scenes / 3D files (left, or along the top on a phone)", "Switch between the 3D places, the full list of scenes and the 3D file store. The page remembers which one you had open."],
+        ],
+      },
+      {
+        group: "Places",
+        items: [
+          ["A place card (Signing, Manager's office, Shop, Garden, House, Training)", "Opens that 3D place's own test page. The picture is a real still of that page."],
         ],
       },
       {

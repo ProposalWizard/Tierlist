@@ -14,6 +14,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage } from "@/components/admin/broadcast/BroadcastPage";
+import "./area.css";
 import { SCENES_3D, type Scene3d, type Scene3dStatus } from "@/lib/star/area3d";
 import { ASSETS_3D, type Asset3dFile, type Asset3dFolder } from "@/lib/star/assets3dManifest";
 
@@ -126,7 +128,7 @@ function AssetStore() {
           ))}
         </div>
       )}
-      <div style={{ padding: "4px 12px 90px", fontSize: 11, color: MUTED }}>{total} files in {ASSETS_3D.length} folders.</div>
+      <div style={{ padding: "4px 12px 14px", fontSize: 11, color: MUTED }}>{total} files in {ASSETS_3D.length} folders.</div>
 
       {big && (
         <div onClick={() => setBig(null)} style={{ position: "fixed", inset: 0, background: "rgba(2,4,8,.92)", zIndex: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16 }}>
@@ -151,36 +153,51 @@ function AssetStore() {
   );
 }
 
+/** The places Harry wants inside this one 3D area (19 Oct 2026). Each opens its
+ *  own page, unchanged. Pictures are real stills of each page. */
+const PLACES = [
+  { id: "signing", title: "Signing", href: "/star-3d-area-dev/signing" },
+  { id: "office", title: "Manager's office", href: "/star-3d-area-dev/office" },
+  { id: "shop", title: "Shop", href: "/star-shop3d-dev" },
+  { id: "garden", title: "Garden", href: "/star-garden3d-dev" },
+  { id: "house", title: "House", href: "/star-home3d-dev" },
+  { id: "training", title: "Training", href: "/star-training3d-dev" },
+];
+
+type Tab = "places" | "scenes" | "assets";
+const TAB_KEY = "star-3d-area-tab";
+
 export default function Area3dPage() {
-  const [tab, setTab] = useState<"scenes" | "assets">("scenes");
+  const [tab, setTabState] = useState<Tab>("places");
+  useEffect(() => {
+    try { const t = localStorage.getItem(TAB_KEY); if (t === "places" || t === "scenes" || t === "assets") setTabState(t); } catch { /* no storage */ }
+  }, []);
+  const setTab = (t: Tab) => { setTabState(t); try { localStorage.setItem(TAB_KEY, t); } catch { /* no storage */ } };
+  const tabs: [Tab, string][] = [["places", `Places (${PLACES.length})`], ["scenes", `All scenes (${SCENES_3D.length})`], ["assets", "3D files"]];
   return (
-    <main style={{ minHeight: "100vh", background: BG, color: INK, fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif" }}>
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <header style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 12px 0" }}>
-          <Link href="/star-play-dev" aria-label="Back" style={{ color: INK, textDecoration: "none", fontSize: 22, width: 32 }}>‹</Link>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>3D Test Area</h1>
-        </header>
-        <div style={{ display: "flex", margin: "12px 12px 0", border: `1px solid ${LINE}` }}>
-          {(["scenes", "assets"] as const).map((t) => (
-            <button
-              key={t}
-              data-tab={t}
-              onClick={() => setTab(t)}
-              style={{ flex: 1, padding: "10px 0", fontSize: 14, fontWeight: 800, cursor: "pointer", border: "none", background: tab === t ? "#f2f5f9" : "transparent", color: tab === t ? "#05070d" : INK }}
-            >
-              {t === "scenes" ? `Scenes (${SCENES_3D.length})` : "Assets"}
-            </button>
+    <BroadcastPage title="3D Area" sub="Every 3D place and scene in one list, plus the 3D file store." back="/star-play-dev">
+      <div className="a3-layout">
+        <nav className="a3-rail">
+          {tabs.map(([t, label]) => (
+            <button key={t} data-tab={t} aria-pressed={tab === t} className="a3-tab" onClick={() => setTab(t)}>{label}</button>
           ))}
-        </div>
-        <div style={{ marginTop: 12 }}>
-          {tab === "scenes" ? (
-            <div style={{ paddingBottom: 80 }}>{SCENES_3D.map((s) => <SceneCard key={s.id} s={s} />)}</div>
-          ) : (
-            <AssetStore />
+        </nav>
+        <div className="a3-main">
+          {tab === "places" && (
+            <div className="a3-cards">
+              {PLACES.map((pl) => (
+                <Link key={pl.id} href={pl.href} data-place={pl.id} className="a3-card">
+                  <div className="a3-pic" style={{ backgroundImage: `url(/admin/3d-area/${pl.id}.webp)` }} />
+                  <div className="a3-cf"><b>{pl.title}</b><span className="a3-play">PLAY</span></div>
+                </Link>
+              ))}
+            </div>
           )}
+          {tab === "scenes" && <div className="a3-panel a3-scenes">{SCENES_3D.map((s) => <SceneCard key={s.id} s={s} />)}</div>}
+          {tab === "assets" && <div className="a3-panel"><AssetStore /></div>}
         </div>
       </div>
       <PageGuide page="/star-3d-area-dev" />
-    </main>
+    </BroadcastPage>
   );
 }
