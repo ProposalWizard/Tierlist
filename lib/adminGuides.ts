@@ -432,15 +432,21 @@ export const ADMIN_GUIDES = {
     title: "Star Pass Rewards",
     what: "Every reward in one catalogue, by type, and which reward sits at which Star Pass level. A reward can go on any level from 1 to 100.",
     buttons: [
-      { group: "Levels (left)", items: [
-        ["1 to 100 grid", "Picks a level. Gold squares already have a reward. The next card you tap goes on the picked level."],
-        ["On the road", "Every level that has a reward, plus the one you picked. Tap a row to pick it."],
+      { group: "Reward types (left)", items: [
+        ["Penalty run-ups / Free-kick run-ups / Celebrations / Wearables / Boots / Balls / Vehicles / Other", "Shows that type of card in the catalogue. The number is how many cards it has. On a phone they sit at the top of the catalogue."],
+      ] },
+      { group: "Tiers", items: [
+        ["Rookie / Pro / Star / Legend / Icon", "The 100 levels in five tiers of 20. Each card shows some of its rewards and how many of its levels have one."],
+        ["Edit tier", "Opens that tier's levels below. \"Editing\" marks the open one."],
+      ] },
+      { group: "The open tier", items: [
+        ["Level squares", "Picks a level. Gold squares already have a reward. The next card you tap goes on the picked level."],
+        ["On the road", "Every level in this tier that has a reward, plus the one you picked. Tap a row to pick it."],
         ["↑", "Moves this reward up one level (swaps if that level has one)."],
         ["↓", "Moves this reward down one level (swaps if that level has one)."],
         ["✕", "Empties the level."],
       ] },
-      { group: "Catalogue (right)", items: [
-        ["Penalty run-ups / Free-kick run-ups / Celebrations / Wearables / Boots / Balls / Vehicles / Other", "Shows that type of card. The number is how many cards it has."],
+      { group: "Catalogue", items: [
         ["Tap a card's picture", "Puts it at the picked level (taking it off any level it was on). Tapping another card replaces it."],
         ["👁", "A big preview. 3D ones can be dragged to spin and tapped to zoom."],
         ["Idea / Designed / In game", "The card's status. Tap to move it on: idea, then designed, then in game."],
