@@ -1484,7 +1484,7 @@ export const ADMIN_GUIDES = {
     what: "The 3D training pitch, on a made-up career: the drill picker a career opens from the garden's training-pitch gate, and every drill on it. Crossbar Challenge plays your shot on the real match; Two Touch, Free Roam, Headers & Volleys, Wembley and Pace Sprint are fully 3D, on the shared 3D engine.",
     buttons: [
       { items: [
-        ["Picker / Crossbar / Two Touch / Free Roam / Head/Volley / Wembley / Pace (top)", "Open the picker, or one drill straight away. ?drill=two-touch (or free-roam, crossbar, headers-volleys, wembley, pace) in the address does the same; add &mode=doubles for Wembley Doubles, and &pace=85 to give the test player that pace."],
+        ["Drill switcher: Picker / Crossbar / Two Touch / Free Roam / Head/Volley / Wembley / Pace (picture cards under the pitch; ‹ › scroll them on a computer)", "Open the picker, or one drill straight away. ?drill=two-touch (or free-roam, crossbar, headers-volleys, wembley, pace) in the address does the same; add &mode=doubles for Wembley Doubles, and &pace=85 to give the test player that pace."],
         ["Pace Sprint", "3, 2, 1, GO: 30 m flat out to the yellow line with a defender just behind you. Your time and top speed (km/h) show as you run; 3, 2 or 1 stars by time against your next pace level, none if he catches you. In a career the stars go on the pace ladder like a 2D pace drill. Your speed comes from your pace: sprint 20 km/h at pace 0 up to 30 km/h at 100."],
         ["🎲 Random drill", "On the picker: one of the ready drills, picked for you (Wembley picked this way is Normal)."],
         ["A drill row", "Opens that drill."],
@@ -1499,8 +1499,9 @@ export const ADMIN_GUIDES = {
         ["3D drills: left thumb", "A stick: how far you push it sets the speed (walk, jog, run); all the way sprints. With a mouse: WASD or arrows run, hold Shift to sprint. The hint at the bottom follows your pointer (finger or mouse), not the screen size."],
         ["3D drills: tap on the right", "Free Roam: pass to the team-mate you face if you have the ball, take a touch if it's at your feet, tackle, or call for it. Two Touch: your keepy-up touch (1st controls it up, 2nd sends it back). Space bar does the same."],
         ["‹ Back (top left)", "On the picker, the pre-screen, Crossbar and every 3D drill, at any moment: back to the picker (or, opened straight from the top row, the 3D Test Area). The drill ends there: no reward, nothing asked."],
-        ["Restart", "Starts again with a different team-mate."],
-        ["Continue →", "On the result card. Here it just starts again and shows the result in the \"Last\" pill."],
+        ["↻ Restart (top right)", "Starts again with a different team-mate."],
+        ["Last (top right)", "The last result: score, won or lost, and the Team bar change, with the drill under it. A dash until you finish one."],
+        ["Continue →", "On the result card. Here it just starts again and shows the result in the \"Last\" box at the top."],
       ] },
     ],
     saving: ["Nothing is saved. The career is made up, and the result (and the Team bar change it shows) goes nowhere."],
