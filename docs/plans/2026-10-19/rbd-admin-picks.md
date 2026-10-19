@@ -3,13 +3,15 @@
 Options page: https://claude.ai/artifact/AM271hrdJEP56voyAoZ6zW · look C (Broadcast) on a computer.
 Every page keeps all of its key functions ("every page needs to keep the key functionalities").
 
+**The style to aim for: Retirement option 2** ("in general retirement screens looked the best").
+
 ## Structure
 - Admin home: groups only, Grid | List toggle — BUILT.
 - Group page: picture cards (option 1) — BUILT.
 - Split **test pages** (trying new features) from **admin pages** (features we have and tune). Harry: "we need to differentiate".
 - A new admin page must keep the look by itself: one shared Broadcast frame + a build check.
 - Remove from the admin list: First-person dribble. Leo's Oct 13 update: "don't care".
-- Dribble on a stick (joystick): "I don't get these" — explain, then keep or remove.
+- Dribble on a stick (top-down joystick dribble): keep as a test page (Harry, 19 Oct).
 
 ## 3D: one area
 - 3D signing, Manager's office, 3D shop, 3D garden, 3D house go inside the **3D test area** (option 1).
@@ -43,4 +45,7 @@ Every page keeps all of its key functions ("every page needs to keep the key fun
 | Career XP book | leave |
 | Store test | option 2 |
 | Gems test | option 2 |
-| Tournaments, VFX lab, Sound lab, Sound board, Balance numbers | not picked yet |
+| Balance numbers | neither — new options (round 3) |
+| Visual effects lab | option 1 |
+| Sound lab | options 1 and 2 |
+| Tournaments, Sound board | not picked yet |
