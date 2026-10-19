@@ -66,7 +66,7 @@ export default function FhrDev() {
             <Pill on={fhr === "off"} onClick={() => setLookRow("fhr", "off")}>Off</Pill>
             <Pill on={fhr === "on"} onClick={() => setLookRow("fhr", "on")}>On (test)</Pill>
           </div>
-          <Note>Off: the game as it is today. On: Chances turns New, and Infinite Highlights draws its still with the match&apos;s own camera. Stored on this phone only.</Note>
+          <Note>Off: the game as it is today. On: Chances turns New. Stored on this phone only. Infinite Highlights now draws its still with the match&apos;s own camera whatever this says (?still=builder for the old frame).</Note>
           <Btn href="/star-highlights-dev">Infinite Highlights →</Btn>
         </Panel>
         <Panel title="Measure" note={busy ? "Measuring…" : res ? `${res.off.matches} matches each, ${((res.off.ms + res.on.ms) / 1000).toFixed(1)} s` : ""}>
@@ -125,7 +125,7 @@ export default function FhrDev() {
         <Note>Each match runs the real unseen match minute by minute. Every chance it hands you is made by the real chance maker, then struck once in the real engine: a firm low shot at the middle of the goal, or a firm pass to the runner when there is no goal in view.</Note>
         <Note>Reacting: a man (not you, not the keeper) who moves {REACT_MOVE_M} m or more before the chance ends. The plan&apos;s 1.17 used another count, so compare this table with itself.</Note>
         <Note>Your finishing is a stand-in rate (24% in the box), so goals follow the stand-in, not your feet. Not in here: the dribble deal, team-mates&apos; penalties, the build-up, real squads. Same numbers in the terminal: <code>npx tsx scripts/fhr/ruler.mts 200</code>.</Note>
-        <Note><Link href="/star-highlights-dev">Infinite Highlights</Link> with the switch On: the still is framed by the match&apos;s camera. Checked press by press with <code>node scripts/fhr/still-vs-play.mjs 100 on</code>.</Note>
+        <Note><Link href="/star-highlights-dev">Infinite Highlights</Link>: the still is framed by the match&apos;s camera. Checked press by press with <code>node scripts/fhr/still-vs-play.mjs 100 on</code>.</Note>
       </Panel>
       <PageGuide page="/star-fhr-dev" />
     </BroadcastPage>

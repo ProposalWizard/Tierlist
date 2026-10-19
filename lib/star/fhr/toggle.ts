@@ -7,7 +7,7 @@
  *   · Phase 0: On also turns on "Chances: New" (lib/star/newChances.ts reads
  *     this switch), so the two switches never fight (Harry's answer 3).
  *   · Phase 1: Infinite Highlights' still is drawn with the real match's
- *     camera (lib/star/fhr/stillCamera.ts).
+ *     camera (lib/star/fhr/stillCamera.ts) — that test page's default, switch or not.
  *
  * A setting per phone, never in a save. Default Off. `?fhr=on|off` on any page
  * overrides it for that page only. Test page: /star-fhr-dev.

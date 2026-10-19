@@ -9,7 +9,7 @@
  * angle (cameraTilt.ts), you hidden on a shooting chance (`showYouFigure`) and
  * smaller men. So everything jumped the moment you pressed Play.
  *
- * With Full highlights rebuild: On, the still is framed by THIS function,
+ * On Infinite Highlights (its default since phase 1) the still is framed by THIS function,
  * which runs the same steps, in the same order, that CanvasMatch runs on an
  * opening picture before its first frame (see CanvasMatch: "The opening
  * scenario is built before this component mounts" → frameScenario):
@@ -18,7 +18,7 @@
  *   3. the angle for this chance (corners, crosses and anything turned: flat);
  *   4. frameForNewView with that canvas shape and angle.
  * Nothing here is new framing: every function is the match's own, imported.
- * Off: never called; the still is exactly today's.
+ * ?still=builder on that page: never called, the old builder frame.
  *
  * Checked by a browser run of 100 presses (scripts/fhr/still-vs-play.mjs):
  * the still's camera against `window.__starMatch.frame()` on Play.

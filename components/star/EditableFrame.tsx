@@ -96,12 +96,13 @@ export default function EditableFrame({
     // the instant the drag commits. The selection ring stays — it is the thing
     // under your finger.
     paintMarked(ref.current, frame, live ? ring : [...marks, ...ring], size, kits ?? undefined);
-    if (tilt > 0 && ref.current) {
+    if ((tilt > 0 || matchCamera) && ref.current) {
       // Tipped back inside a clipping box the picture's own size, as the
       // match's canvas sits in its pitch box.
       const c = ref.current, box = boxRef.current;
       const r = box?.getBoundingClientRect();
       const w = r && r.width > 0 ? r.width : cssW, h = r && r.height > 0 ? r.height : cssH;
+      c.style.boxSizing = "border-box";
       c.style.width = "100%";
       c.style.height = "100%";
       c.style.transform = tiltCss(tiltFor(tilt, w, h));
@@ -123,7 +124,7 @@ export default function EditableFrame({
   // corner is drawn turned like the match draws it, so a drag across the
   // screen there is a drag along pitch Y (scenarioFrame.ts's `frameScreen`).
   function pointerToWorld(e: React.PointerEvent<HTMLCanvasElement>): Vec2 {
-    if (tilt > 0 && boxRef.current) {
+    if ((tilt > 0 || matchCamera) && boxRef.current) {
       // The tipped picture: the box's own pixels back through the tilt's
       // exact inverse (screenToCanvas), as CanvasMatch's pitchFromPointer.
       const rect = boxRef.current.getBoundingClientRect();
@@ -266,7 +267,7 @@ export default function EditableFrame({
       }}
     />
   );
-  if (tilt > 0) {
+  if (tilt > 0 || matchCamera) {
     return (
       <div
         ref={boxRef}

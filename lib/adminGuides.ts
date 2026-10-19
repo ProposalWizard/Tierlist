@@ -1014,7 +1014,7 @@ export const ADMIN_GUIDES = {
       {
         group: "The picture",
         items: [
-          ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game. With Settings → Harry changes → Full highlights rebuild: On, it is framed by the match's own camera instead: the match's zoom, the same canvas shape, tipped back by the camera angle, you not drawn on a shooting chance (the ball is you) and the men at the match's size — so nothing moves when you press Play. Dragging still works on the tipped picture."],
+          ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game. Framed by the match's own camera (Full highlights rebuild, phase 1): the match's zoom, the same canvas shape, tipped back by the camera angle, you not drawn on a shooting chance (the ball is you) and the men at the match's size — so nothing moves when you press Play. Dragging still works on the tipped picture. Add ?still=builder to the address to see the old builder's frame instead."],
           ["A penalty", "Harry's penalty rules: the keeper stays dead centre on his line, the ball on the spot, you straight behind it and the camera fixed — none of them drag. Anyone else only slides along the edge of the box."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
           ["Fix this chance", "The panel on the right (under the picture on a phone): the buttons below, Save and Commit."],
@@ -1074,7 +1074,7 @@ export const ADMIN_GUIDES = {
       {
         group: "The switch",
         items: [
-          ["Off / On (test)", "The same switch as Settings → Harry changes → Full highlights rebuild. Off is the game as it is today. On also turns Chances to New, and Infinite Highlights draws its still with the real match's camera. Stored on this phone only."],
+          ["Off / On (test)", "The same switch as Settings → Harry changes → Full highlights rebuild. Off is the game as it is today. On also turns Chances to New. (Infinite Highlights draws its still with the real match's camera either way: that test page's default since phase 1.) Stored on this phone only."],
           ["Infinite Highlights →", "Opens Infinite Highlights, to see the still with the switch On."],
         ],
       },

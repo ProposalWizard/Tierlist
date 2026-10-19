@@ -2,7 +2,8 @@
  * Full Highlights Rebuild, phase 1 check: Infinite Highlights' still against
  * the first frame the real match plays, press after press.
  *
- *   node scripts/fhr/still-vs-play.mjs [presses=100] [on|off] [phone|desktop] [port=3051] [stillsDir]
+ *   node scripts/fhr/still-vs-play.mjs [presses=100] [on|off|builder] [phone|desktop] [port=3051] [stillsDir]
+ *   (builder = the old builder frame, ?still=builder: the "before")
  *
  * For each chance: read the still's framing off the stage (data-still-*: the
  * camera in pitch metres, the turn, the angle, the canvas shape), press ▶ Play,
@@ -27,7 +28,7 @@ const ctx = await b.newContext(form === "phone" ? { ...devices["iPhone 13"] } : 
 const pg = await ctx.newPage();
 const errors = [];
 pg.on("pageerror", (e) => errors.push(String(e)));
-await pg.goto(`http://localhost:${port}/star-highlights-dev?fhr=${mode}`, { waitUntil: "domcontentloaded", timeout: 600000 });
+await pg.goto(`http://localhost:${port}/star-highlights-dev${mode === "builder" ? "?fhr=off&still=builder" : `?fhr=${mode}`}`, { waitUntil: "domcontentloaded", timeout: 600000 });
 await pg.waitForSelector(".ih-stage[data-still-cam]", { timeout: 600000 });
 await pg.waitForTimeout(1500);
 

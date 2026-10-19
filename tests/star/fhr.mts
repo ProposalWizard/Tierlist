@@ -112,7 +112,7 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
     check(shown.items.every((it) => base.items.some((b) => b.id === it.id)), `${kind}: the still invented a figure`);
   }
   const page = readFileSync(new URL("app/star-highlights-dev/page.tsx", root), "utf8");
-  check(/if \(!fhrOnHere \|\| !shot\) return null;/.test(page), "Infinite Highlights uses the match camera without the switch On");
+  check(/if \(!fhrOnHere \|\| !shot\) return null;/.test(page) && /get\("still"\) === "builder"/.test(page), "Infinite Highlights lost its builder-frame escape (?still=builder)");
 }
 
 // 6.

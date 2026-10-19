@@ -493,12 +493,22 @@ export default function HighlightsPage() {
   );
   const liveFrame = baseFrame ? applyOverride(baseFrame, override) : null;
 
-  // ── Full highlights rebuild: On — the still is the match's camera ──
+  // ── The still is the match's camera (Full highlights rebuild, phase 1) ──
   // (lib/star/fhr/stillCamera.ts). Framed from the scenario Play will build
   // (the same build + edits), at the canvas shape the match will measure
   // (the room under the pinned bars, CanvasMatch's newViewCanvasHeight), so
-  // pressing Play moves nothing. Off: today's still, untouched.
-  const fhrOnHere = useFhrMode() === "on";
+  // pressing Play moves nothing.
+  // The default on this test page whatever the switch says, decided on the
+  // numbers (19 Oct 2026, iPhone 13, 100 presses each): the builder's frame
+  // differed from Play's first frame in 100 of 100 (camera, angle, size); the
+  // match camera in 0. And it leaves fewer men off the picture: 66 of 300
+  // stills with someone off it, against 98 (scripts/fhr/still-crop.mts).
+  // `?still=builder` shows the old builder's frame. This page is not the game:
+  // the switch Off still leaves every match exactly as today.
+  const fhrSwitch = useFhrMode() === "on";
+  const [builderStill, setBuilderStill] = useState(false);
+  useEffect(() => { setBuilderStill(new URLSearchParams(window.location.search).get("still") === "builder"); }, []);
+  const fhrOnHere = fhrSwitch || !builderStill;
   const [room, setRoom] = useState(0);
   useEffect(() => {
     const on = () => setRoom(window.innerHeight - pinnedTopHeight(pictureRef.current) - 12);
