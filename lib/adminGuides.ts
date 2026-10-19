@@ -646,6 +646,8 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
+          ["Group pills (top)", "Jump to that group of sounds."],
+          ["Sound name / Edit", "Opens the Edit sound panel for that sound: on the right on a computer, under the row on a phone. Replace, ▶ Original and Put the original back are there."],
           ["▶", "Plays the sound as the game plays it now. If you replaced it, this plays your upload. Tap again (■) to stop."],
           ["Replace / Replace again", "Choose a sound file from your phone or computer (mp3, wav, ogg, m4a or webm, under 2 MB). It uploads at once. Players hear it from the next time they load the game."],
           ["▶ Original", "Only on a replaced sound. Plays the sound that came with the game, so you can compare."],

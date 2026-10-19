@@ -1,15 +1,34 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SFX_CATALOG, SFX_GROUPS, cleanOverrideMap, type SfxOverrideMap } from "@/lib/star/sfxCatalog";
+import { Panel, Pill, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "./soundboard.css";
 
 /**
  * The Sound Board. Every sound in public/sfx with: what it is, where the game
  * plays it, a play button, and an upload to replace it. A replaced sound is
  * stored in Supabase Storage (tierlist-images/sfx-overrides) and the game
  * picks it up the next time it loads (lib/star/sfx.ts).
+ * Look: the Broadcast frame, laid out like the Sound Lab's "All sounds"
+ * (compact rows, an edit panel on the right; under the row on a phone).
  */
 
 interface Meta { duration?: number; kb?: number }
+type Sfx = (typeof SFX_CATALOG)[number];
+
+function useNarrow() {
+  const [n, setN] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia("(max-width: 900px)");
+    const f = () => setN(m.matches);
+    f();
+    m.addEventListener("change", f);
+    return () => m.removeEventListener("change", f);
+  }, []);
+  return n;
+}
+
+const groupId = (g: string) => `sb-g-${g.replace(/\W+/g, "-")}`;
 
 export default function SoundBoard() {
   const [overrides, setOverrides] = useState<SfxOverrideMap | null>(null);
@@ -17,7 +36,10 @@ export default function SoundBoard() {
   const [playing, setPlaying] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ name: string; text: string; bad: boolean } | null>(null);
+  const [openName, setOpenName] = useState<string | null>(null);
+  const [group, setGroup] = useState<string>(SFX_GROUPS[0]);
   const audio = useRef<HTMLAudioElement | null>(null);
+  const narrow = useNarrow();
 
   const load = useCallback(() => {
     fetch("/api/star/sfx-overrides", { cache: "no-store" })
@@ -83,100 +105,129 @@ export default function SoundBoard() {
     }
   }
 
+  function jump(g: string) {
+    setGroup(g);
+    document.getElementById(groupId(g))?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   const changed = overrides ? Object.keys(overrides).length : 0;
+  const curKey = (s: Sfx) => (overrides?.[s.name] ? `cur:${s.name}` : `orig:${s.name}`);
+  const curUrl = (s: Sfx) => overrides?.[s.name]?.url ?? `/sfx/${s.name}.mp3`;
+
+  const tags = (s: Sfx) => (
+    <>
+      {overrides?.[s.name] && <span className="sb-tag" data-kind="rep">Replaced</span>}
+      {!s.wired && <span className="sb-tag" data-kind="off">Not in the game yet</span>}
+    </>
+  );
+
+  const edit = (s: Sfx) => {
+    const ov = overrides?.[s.name];
+    const m = meta[s.name];
+    const isBusy = busy === s.name;
+    return (
+      <div className="sb-edit" data-sound-open={s.name}>
+        <div className="sb-edit-head">
+          <button
+            className="sb-play"
+            onClick={() => play(curKey(s), curUrl(s))}
+            aria-label={`Play ${s.label}`}
+            data-on={playing === curKey(s) ? "true" : undefined}
+          >
+            {playing === curKey(s) ? "■" : "▶"}
+          </button>
+          <div className="sb-edit-name">
+            <b>{s.label}</b> {tags(s)}
+            <p>
+              {s.name}
+              {m?.duration != null ? ` · original ${m.duration.toFixed(1)}s` : ""}
+              {m?.kb != null ? ` · ${m.kb} KB` : ""}
+            </p>
+          </div>
+          <button className="sb-x" onClick={() => setOpenName(null)} aria-label="Close">✕</button>
+        </div>
+        <p className="sb-where">{s.where}</p>
+        {ov && <p className="sb-now">Now playing your upload{ov.original ? ` (${ov.original})` : ""}.</p>}
+        <div className="sb-btns">
+          <label className="bc-btn sb-file" data-main="true" aria-disabled={isBusy || undefined}>
+            {isBusy ? "Working…" : ov ? "Replace again" : "Replace"}
+            <input
+              type="file"
+              accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.webm"
+              disabled={isBusy}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (f) void upload(s.name, f);
+              }}
+            />
+          </label>
+          {ov && (
+            <>
+              <button className="bc-btn" onClick={() => play(`orig:${s.name}`, `/sfx/${s.name}.mp3`)}>
+                {playing === `orig:${s.name}` ? "■ Original" : "▶ Original"}
+              </button>
+              <button className="bc-btn sb-danger" disabled={isBusy} onClick={() => void revert(s.name)}>
+                Put the original back
+              </button>
+            </>
+          )}
+        </div>
+        {msg?.name === s.name && <p className="sb-msg" data-bad={msg.bad ? "true" : undefined}>{msg.text}</p>}
+      </div>
+    );
+  };
+
+  const open = SFX_CATALOG.find((s) => s.name === openName);
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-6 pb-24 text-white">
-      <div className="mx-auto max-w-3xl">
-        <h1 className="text-2xl font-black">Sound Board</h1>
-        <p className="mt-1 text-sm font-bold text-white">
-          Every game sound. Tap ▶ to listen. Tap Replace to upload a new one. The game uses it from the next load.
-        </p>
-        <p className="mt-1 text-xs font-bold text-white/70">
-          {overrides === null ? "Loading…" : changed === 0 ? "All sounds are the original ones." : `${changed} replaced.`}
-        </p>
-
+    <>
+      <div className="sb-jump">
+        <span className="sb-count">{overrides === null ? "Loading…" : changed === 0 ? "All original" : `${changed} replaced`}</span>
         {SFX_GROUPS.map((g) => (
-          <section key={g} className="mt-6">
-            <h2 className="text-sm font-black uppercase tracking-wider text-amber-300">{g}</h2>
-            <ul className="mt-2 space-y-2">
-              {SFX_CATALOG.filter((s) => s.group === g).map((s) => {
-                const ov = overrides?.[s.name];
-                const cur = ov ? `cur:${s.name}` : `orig:${s.name}`;
-                const m = meta[s.name];
-                const isBusy = busy === s.name;
-                return (
-                  <li key={s.name} className={`rounded-xl border p-3 ${ov ? "border-amber-400/70 bg-amber-400/10" : "border-white/15 bg-white/5"}`}>
-                    <div className="flex items-start gap-3">
-                      <button
-                        onClick={() => play(cur, ov ? ov.url : `/sfx/${s.name}.mp3`)}
-                        aria-label={`Play ${s.label}`}
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-black text-slate-950 ${playing === cur ? "bg-white" : "bg-emerald-400"}`}
-                      >
-                        {playing === cur ? "■" : "▶"}
-                      </button>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-x-2">
-                          <span className="font-black">{s.label}</span>
-                          {ov && <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-black uppercase text-slate-950">Replaced</span>}
-                          {!s.wired && <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-black uppercase">Not in the game yet</span>}
-                        </div>
-                        <div className="text-xs font-bold text-white/70">
-                          {s.name}
-                          {m?.duration != null ? ` · original ${m.duration.toFixed(1)}s` : ""}
-                          {m?.kb != null ? ` · ${m.kb} KB` : ""}
-                        </div>
-                        <p className="mt-1 text-sm font-bold text-white">{s.where}</p>
-                        {ov && (
-                          <p className="mt-1 text-xs font-bold text-amber-200">
-                            Now playing your upload{ov.original ? ` (${ov.original})` : ""}.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <label className={`cursor-pointer rounded-lg border border-white/30 px-3 py-2 text-xs font-black ${isBusy ? "opacity-50" : ""}`}>
-                        {isBusy ? "Working…" : ov ? "Replace again" : "Replace"}
-                        <input
-                          type="file"
-                          accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.webm"
-                          className="hidden"
-                          disabled={isBusy}
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            e.target.value = "";
-                            if (f) void upload(s.name, f);
-                          }}
-                        />
-                      </label>
-                      {ov && (
-                        <>
-                          <button
-                            onClick={() => play(`orig:${s.name}`, `/sfx/${s.name}.mp3`)}
-                            className="rounded-lg border border-white/30 px-3 py-2 text-xs font-black"
-                          >
-                            {playing === `orig:${s.name}` ? "■ Original" : "▶ Original"}
-                          </button>
-                          <button
-                            disabled={isBusy}
-                            onClick={() => void revert(s.name)}
-                            className="rounded-lg border border-rose-300/60 px-3 py-2 text-xs font-black text-rose-200 disabled:opacity-50"
-                          >
-                            Put the original back
-                          </button>
-                        </>
-                      )}
-                    </div>
-                    {msg?.name === s.name && (
-                      <p className={`mt-2 text-xs font-black ${msg.bad ? "text-rose-300" : "text-emerald-300"}`}>{msg.text}</p>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
+          <Pill key={g} on={g === group} onClick={() => jump(g)}>{g}</Pill>
         ))}
       </div>
-    </main>
+      <div className="sb-layout">
+        <div className="sb-rows">
+          {SFX_GROUPS.map((g) => {
+            const list = SFX_CATALOG.filter((s) => s.group === g);
+            return (
+              <section key={g} id={groupId(g)} className="sb-group" data-current={g === group ? "true" : undefined}>
+                <div className="sb-group-head"><h3>{g}</h3><span>{list.length} sounds</span></div>
+                {list.map((s) => {
+                  const isOpen = openName === s.name;
+                  const toggle = () => setOpenName((o) => (o === s.name ? null : s.name));
+                  return (
+                    <div key={s.name}>
+                      <div className="sb-row" data-sound={s.name} data-open={isOpen ? "true" : undefined} data-replaced={overrides?.[s.name] ? "true" : undefined}>
+                        <button className="sb-row-play" onClick={() => play(curKey(s), curUrl(s))} aria-label={`Play ${s.label}`}>
+                          {playing === curKey(s) ? "■" : "▶"}
+                        </button>
+                        <button className="sb-row-name" onClick={toggle}>
+                          <b>{s.label}</b>
+                          <span>{tags(s)}<i>{s.where}</i></span>
+                        </button>
+                        <button className="sb-row-edit" onClick={toggle} aria-expanded={isOpen} title="Replace or compare">
+                          ≡<span>{isOpen ? "Close" : "Edit"}</span>
+                        </button>
+                      </div>
+                      {narrow && isOpen && <div className="sb-inline">{edit(s)}</div>}
+                    </div>
+                  );
+                })}
+              </section>
+            );
+          })}
+        </div>
+        {!narrow && (
+          <aside className="sb-aside">
+            <Panel title="Edit sound">
+              {open ? edit(open) : <Note>Tap a sound&apos;s name or Edit to replace it, hear the original or put the original back.</Note>}
+            </Panel>
+          </aside>
+        )}
+      </div>
+    </>
   );
 }
