@@ -416,6 +416,8 @@ export interface FhrBuildUp extends LeadIn {
   acts: FhrAction[];
   /** Who plays each touch (person keys; extraN = only in the build-up). */
   owners: string[];
+  /** Who plays each touch, one per touch in `acts`. */
+  actOwners: string[];
   /** Each person's role in the shape. */
   roles: Record<string, string>;
   /** Everyone's stored path (HZ a second), for the checks and the sheet. */
@@ -828,6 +830,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     skippable: true,
     captionAt: () => (brk ? "On the break…" : "Build-up…"),
     acts, owners, roles,
+    actOwners: acts.map((_, k) => owners[spells.findIndex((s) => k >= s.first && k <= s.last)] ?? "you"),
     people: all.map((p) => ({ key: p.key, side: p.side, role: roles[p.key], vmax: p.vmax, path: p.path })),
     problems, tries: tryNo, signature, frame,
   };

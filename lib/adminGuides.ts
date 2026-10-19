@@ -1092,14 +1092,24 @@ export const ADMIN_GUIDES = {
           ["Your chances by kind", "For each kind of chance: how many a match, where it starts (metres from the middle of the goal line), and how many players react, Off and On side by side."],
         ],
       },
+      {
+        group: "Phase 2: a generated build-up",
+        items: [
+          ["The match", "The real match plays a chance the real match served, starting with its generated 4–8 second build-up (the moves before it, made from real football patterns). Tap the match to skip to the chance. It always ends exactly on the chance's own picture."],
+          ["Generate another", "The next chance the match serves, with a new build-up. Every chance gets its own; the same chance always gets the same one."],
+          ["↺ Watch again", "Plays the same build-up and chance again."],
+          ["The three small pitches", "The same build-up from above: the first frame, the middle and the last (= the chance). White is you, blue the chance's team-mates, pale blue team-mates who are only in the build-up (off the screen when the chance starts), red defenders, yellow the keeper; dashed is the chance's frame."],
+          ["The list", "Each touch: a pass, a ball in the air or a carry, how long, who plays it, and whether it came from a real route into this kind of chance."],
+        ],
+      },
     ],
     saving: [
       "The switch is stored in this browser only (localStorage star-fhr). The numbers are worked out on the page and kept nowhere. No career is touched.",
     ],
     inGame: [
-      "Off: nothing in the game changes. On: Chances: New is on in every match on this phone (the same as setting Chances: New by hand), and Infinite Highlights' still uses the match camera. Later phases of the rebuild arrive here first.",
+      "Off: nothing in the game changes. On: Chances: New is on in every match on this phone (the same as setting Chances: New by hand), Infinite Highlights' still uses the match camera, and every open-play chance in a match starts with a generated 4–8 s build-up (never penalties, free kicks or corners). Later phases of the rebuild arrive here first.",
     ],
-    dev: "app/star-fhr-dev/page.tsx · lib/star/fhr/{toggle,ruler,stillCamera}.ts · terminal: npx tsx scripts/fhr/ruler.mts 200 · browser check: node scripts/fhr/still-vs-play.mjs 100 on · tests/star/fhr.mts",
+    dev: "app/star-fhr-dev/{page,BuildUpPanel}.tsx · lib/star/fhr/{toggle,ruler,stillCamera,buildUp,servedChances}.ts · lib/star/fhr/patterns.json (scripts/fhr/make-patterns.mts) · terminal: npx tsx scripts/fhr/ruler.mts 200 · npx tsx scripts/fhr/buildup-measure.mts 500 · sheet: npx tsx scripts/fhr/buildup-sheet.mts 48 · browser check: node scripts/fhr/still-vs-play.mjs 100 on · tests/star/fhr.mts",
   },
   "/star-play-dev": {
     title: "Play Area",
