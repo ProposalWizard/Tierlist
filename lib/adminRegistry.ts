@@ -108,6 +108,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-garden3d-dev", "3D garden", "Walk round the 3D garden", "rbd", "places3d", "Mikey", "live", "none", "team"),
   P("/star-home3d-dev", "3D house", "Walk round the 3D house", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-training3d-dev", "3D training", "3D training pitch", "rbd", "places3d", "Harry", "live", "none", "team"),
+  P("/star-scene-editor-dev", "3D scene editor", "Camera, lighting and timeline over the Cut-scene Director (step 1)", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-style-dev", "Art styles + cut-scene director", "Art styles + Cut-scene Director", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-animations-dev", "2D animations", "2D New vs Old animations", "rbd", "players", "Leo", "live", "browser", "team"),
   P("/star-anim3d-dev", "3D animations", "Every 3D match move", "rbd", "players", "Harry", "live", "none", "team"),

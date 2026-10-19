@@ -162,6 +162,7 @@ const PLACES = [
   { id: "garden", title: "Garden", href: "/star-garden3d-dev" },
   { id: "house", title: "House", href: "/star-home3d-dev" },
   { id: "training", title: "Training", href: "/star-training3d-dev" },
+  { id: "scene-editor", title: "3D scene editor", href: "/star-scene-editor-dev" },
 ];
 
 type Tab = "places" | "scenes" | "assets";
