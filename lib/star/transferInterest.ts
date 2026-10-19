@@ -6,8 +6,8 @@ import { sortLeague } from "./season";
 import { ALL_DIVISIONS, divisionOf, divisionRank, DIVISION_ORDER, type CareerDivision } from "./calendar";
 import { clubReputation, clubStanding } from "./clubReputation";
 import { offerClauses, rescaleClauses } from "./contracts";
-import { offerWageFor, offerStanding, weeklyWageFor, goalBonusFor, assistBonusFor, signingOnFee } from "./economy";
-import { playerOverall, squadNeed, positionGroup, CROWDED_AT, AFFORD_SHARE } from "./transferRequest";
+import { offerStanding, weeklyWageFor, goalBonusFor, assistBonusFor, signingOnFee } from "./economy";
+import { playerOverall, squadNeed, positionGroup, CROWDED_AT } from "./transferRequest";
 
 /**
  * THE CLUBS INTERESTED IN YOU (rebuilt 18 Oct 2026, replacing "Find a new club").
@@ -419,11 +419,12 @@ export function windowInterest(career: CareerState, window: WindowKind): WindowI
       // Terms: the same wage rules as every other offer in the game.
       const strength = estimateClubStrength(career, club);
       const step = strength - ownStrength;
-      const theirPay = weeklyWageFor(club, division, offerStanding(rep, step), career);
-      if (career.contract.wage > 0 && theirPay < career.contract.wage * AFFORD_SHARE) continue;
-      const wage = theirPay < career.contract.wage
-        ? Math.max(1, Math.round(theirPay))
-        : offerWageFor(club, division, rep, step, career.contract.wage, career);
+      // What THIS club pays a player it values like you: its own money
+      // (bigger clubs pay more within a league) times how much it wants you.
+      // Never dropped for being below your wage (Mikey, 19 Oct 2026: a
+      // National League North side offers what it can afford, ★15–25 a week,
+      // to a Championship player on ★1,000; it doesn't pull out).
+      const wage = Math.max(1, Math.round(weeklyWageFor(club, division, offerStanding(rep, step), career)));
       let s = Math.floor(seeded(career, window, club, 19) * 2 ** 31) || 1;
       const dealRng = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
       const level = interestFor(margin);

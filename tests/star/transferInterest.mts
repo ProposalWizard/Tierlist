@@ -157,5 +157,18 @@ for (const l of good.leagues) for (const k of l.clubs) {
   void LEAGUE_ONE_CLUBS;
 }
 
+// ── A club below offers what it can afford, never pulls out (Mikey, 19 Oct 2026) ──
+{
+  const base = careerAt("national_league", NATIONAL_LEAGUE_CLUBS);
+  const rich = withSeason({ ...base, starRating: 4, contract: { ...base.contract, wage: 1000 } }, 45, 40, 20, 8.0);
+  const i = windowInterest(rich, "summer");
+  const below = i.leagues.filter(l => levelOf(l.division) < levelOf(i.ownDivision));
+  const clubs = below.flatMap(l => l.clubs);
+  check(clubs.length > 20, `a player on ★1,000 a week still sees the league below (${clubs.length} clubs)`);
+  check(clubs.every(c => c.offer.wage < 1000), "they offer their own wages, not yours");
+  const w = clubs.map(c => c.offer.wage);
+  console.log(`League below for a ★1,000-a-week player: ${clubs.length} clubs offering ★${Math.min(...w)}–★${Math.max(...w)} a week`);
+}
+
 if (problems.length) { console.error("FAIL\n  - " + problems.slice(0, 30).join("\n  - ")); process.exit(1); }
 console.log("PASS — the clubs interested in you follow your season");
