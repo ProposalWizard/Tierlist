@@ -94,6 +94,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-sound-lab-dev", "Sound lab", "Hear, edit, rate match sounds", "rbd", "sound", "Leo", "live", "browser", "team"),
   P("/star-real-moments-dev", "Real moments", "StatsBomb positions, playable", "rbd", "data", "Mikey", "live", "none", "admin"),
   P("/star-statsbomb-dev", "Real shots", "WC/Euro shots, playable", "rbd", "data", "Harry", "live", "none", "admin"),
+  P("/star-real-goals-dev", "Real Goals", "Recreate real WC/Euro goals: levels, stars, accuracy, ghost", "rbd", "data", "Leo", "live", "browser", "admin"),
   P("/star-intl-dev", "International world", "Call-ups, national managers and every international competition", "rbd", "data", "Mikey", "live", "none", "team"),
   P("/star-tournament-dev", "Tournaments", "Draw and play a whole Euros or World Cup in seconds", "rbd", "data", "Leo", "live", "none", "team"),
   P("/lineups", "Team sheets", "Every club's XI, bench, manager", "rbd", "data", "Harry", "live", "shared", "admin"),

@@ -1,22 +1,20 @@
 /**
  * POST /api/dev-status — a chat's progress bars, for the team board.
  *
- * Sent by scripts/post-status.mjs (the Stop hook calls it). Needs the shared
- * password in the x-dev-status-token header (env DEV_STATUS_TOKEN). Writes
- * with the service key; no browser can write the table (dev_status.sql has no
- * insert policy). At most one update a minute per person; 6,000 characters.
+ * Sent by scripts/post-status.mjs (the Stop hook calls it). No password
+ * (Harry, 18 Oct 2026: "id rather no passwords"): the worst a stranger can do
+ * is post fake bars on an admin-only page. Guards: Harry/Mikey/Leo only, the
+ * text must have bars, 6,000 characters, one update a minute per person, and
+ * the table keeps 50 rows a person (dev_status.sql). Writes with the service
+ * key; no browser can write the table (no insert policy).
  */
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { MAX_STATUS_CHARS, STATUS_PEOPLE, parseBars, scrub, tokenMatches } from "@/lib/devStatus";
+import { MAX_STATUS_CHARS, STATUS_PEOPLE, parseBars, scrub } from "@/lib/devStatus";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const expected = process.env.DEV_STATUS_TOKEN?.trim();
-  if (!expected) return NextResponse.json({ error: "Live bars aren't switched on yet (DEV_STATUS_TOKEN not set in Vercel)." }, { status: 503 });
-  if (!tokenMatches(req.headers.get("x-dev-status-token")?.trim(), expected)) return NextResponse.json({ error: "Wrong token." }, { status: 401 });
-
   let j: { person?: string; body?: string; session?: string; branch?: string };
   try { j = await req.json(); } catch { return NextResponse.json({ error: "Send JSON." }, { status: 400 }); }
   const person = STATUS_PEOPLE.find((p) => p.toLowerCase() === (j.person ?? "").trim().toLowerCase());

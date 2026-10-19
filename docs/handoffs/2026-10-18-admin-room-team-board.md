@@ -15,7 +15,7 @@ and "add the recording to the admin as in a screen recorded" (Harry, 18 Oct).
 | Patch notes tab + v0.57 notes | ✓ on main; artifact https://claude.ai/artifact/SdmpakSaerhCuwYrUT2PCV |
 | Screen recorder (Admin → Videos) | ✓ on main; records and downloads (seen with fake camera) |
 | Recorder → Google Drive upload | ✗ needs `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in Vercel (Harry's Google setup) |
-| Live progress bars on the team board | ✗ needs Mikey: run `dev_status.sql`, set `DEV_STATUS_TOKEN` |
+| Live progress bars on the team board | ✗ needs Mikey to run `dev_status.sql`; each of us adds `DEV_NAME` (no password, Harry 18 Oct) |
 | Harry's 17 old pages deleted | ✓ on main |
 
 ## Decisions already made
@@ -32,7 +32,7 @@ and "add the recording to the admin as in a screen recorded" (Harry, 18 Oct).
 
 ## Next steps
 1. When Harry has the Google id: add it in Vercel, redeploy, record a 10 s test, check it lands in Drive.
-2. Ask Mikey to run `dev_status.sql` and set `DEV_STATUS_TOKEN`; check the bars move.
+2. Ask Mikey to run `dev_status.sql`; each of us adds `DEV_NAME`; check the bars move. Steps: https://claude.ai/artifact/53rj1cUZ1aKsu4uaEVbQcC
 3. Trim CLAUDE.md (it is long and loads every chat).
 
 ## Where things are

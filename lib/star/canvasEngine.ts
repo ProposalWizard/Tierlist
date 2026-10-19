@@ -179,6 +179,12 @@ export interface Ball {
    * "it counted as a team goal" came from this one line.
    */
   youStruckAtGoal?: boolean;
+  /**
+   * REAL GOALS TEST PAGE ONLY (Scenario.realLane). Decided on this ball's first
+   * step: true = you struck it along the real goal's line, so the bodies that
+   * did not stop the real one do not stop it. Absent everywhere else.
+   */
+  realLane?: boolean;
   loose: boolean;      // true once the ball has been parried/deflected and is a live rebound
   contactCd: number;   // seconds of immunity from another deflection/save (prevents same-frame re-trigger)
   receiverControlT: number; // seconds a teammate spends controlling a received pass before shooting
@@ -632,6 +638,17 @@ export interface Scenario {
    * reacts to the shot. Absent everywhere else, so the real game is unchanged.
    */
   keeperHoldsStart?: boolean;
+  /**
+   * REAL GOALS TEST PAGE ONLY (/star-real-goals-dev, lib/star/realGoals.ts;
+   * Leo, 18 Oct 2026: "shots needs to be ALWAYS scoreable as the real goal").
+   * Where the real goal crossed the goal line (x across, z height, metres)
+   * and how close to it a strike must be heading. A shot of YOURS whose
+   * flight (no bodies) would cross within tolX / tolZ of it, inside the
+   * posts, is in the real lane: no defender blocks it and the keeper does not
+   * save it (in real life none of them did). A shot off the line plays
+   * exactly as normal. Absent everywhere else, so the real game is unchanged.
+   */
+  realLane?: { x: number; z: number; tolX: number; tolZ: number };
   follower: Follower;
   goal: { x1: number; x2: number };
   crossbar: number;
@@ -7304,9 +7321,51 @@ export function settleJumps(scenario: Scenario, dt: number): void {
   if (scenario.follower.jump) stepJump(scenario.follower.jump, dt);
 }
 
+/**
+ * REAL GOALS (test page only): where this ball would cross the goal line if
+ * nobody touched it — the same integrator the step uses, on a copy. Null: it
+ * never gets there (stops, or flies back). Pure on the real ball.
+ */
+export function realLaneCross(ball: Ball, scenario: Scenario): { x: number; z: number } | null {
+  const b: Ball = { ...ball, pos: { ...ball.pos }, vel: { ...ball.vel } };
+  const real = realBallOn();
+  const h = 1 / 180;
+  for (let i = 0; i < 180 * 5; i++) {
+    const px = b.pos.x, py = b.pos.y, pz = b.z;
+    if (real) integrateBallReal(b, scenario.conditions, h); else integrateBallOld(b, scenario.conditions, h);
+    if (py > 0 && b.pos.y <= 0) {
+      const f = py / (py - b.pos.y || 1);
+      return { x: px + (b.pos.x - px) * f, z: pz + (b.z - pz) * f };
+    }
+    if (b.resting || b.vel.y > 0.5) return null;
+  }
+  return null;
+}
+
+/** Is this strike in the real goal's lane (Scenario.realLane)? Inside the posts and under the bar with room for the ball. */
+export function inRealLane(ball: Ball, scenario: Scenario): boolean {
+  const lane = scenario.realLane;
+  // Your own clean strike (a ball you aimed through a team-mate's feet still counts: on the real line it is a shot).
+  if (!lane || ball.lastTouch !== "attack" || ball.loose || ball.receiverControlT > 0) return false;
+  const c = realLaneCross(ball, scenario);
+  if (!c) return false;
+  const room = BALL_R + 0.06;
+  if (c.x < scenario.goal.x1 + room || c.x > scenario.goal.x2 - room || c.z > scenario.crossbar - room) return false;
+  return Math.abs(c.x - lane.x) <= lane.tolX && Math.abs(c.z - lane.z) <= lane.tolZ;
+}
+
+/** The lane is open while the ball is still your clean strike (nobody, not even the frame, has touched it). */
+const laneOpen = (ball: Ball) => ball.realLane === true && ball.lastTouch === "attack" && !ball.loose;
+
 function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: number): Outcome | null {
   // Animation clock only (BallAction.t). Read by nothing else.
   ball.clock = (ball.clock ?? 0) + dt;
+  // Real Goals test page only: decided once, on the strike's first step.
+  if (scenario.realLane && ball.realLane === undefined) {
+    ball.realLane = inRealLane(ball, scenario);
+    // On the real line it is a shot at goal, whoever it passes.
+    if (ball.realLane) { ball.shot = true; ball.youStruckAtGoal = true; }
+  }
   // An offside offence was committed on a previous tick (the poacher playing a
   // ball he was flagged for). The move is dead.
   if (scenario.offsideAgainst) return "offside";
@@ -7375,7 +7434,8 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   //
   // This replaced a damped deflection that left the ball live, which turned
   // every block into a scramble the attack usually still won.
-  if (ball.contactCd <= 0) {
+  // (Real Goals test page: nobody blocks a strike on the real goal's line.)
+  if (ball.contactCd <= 0 && !laneOpen(ball)) {
     // v0.15 item 14: a SHOT is blocked by his body, not a metre round it (see
     // BODY_BLOCK_R). A pass is still cut out exactly as today — measured: with
     // the body reach on passes too, an under-hit pass got through 99% of the
@@ -7513,7 +7573,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   // for a ball rolling or dribbled into the keeper himself — a smother — so it
   // uses his real body width and nothing else.
   const k = scenario.keeper;
-  if (!k.done && ball.contactCd <= 0 && ball.z < KEEPER_VREACH && ball.pos.y > 0.1) {
+  if (!k.done && ball.contactCd <= 0 && ball.z < KEEPER_VREACH && ball.pos.y > 0.1 && !laneOpen(ball)) {
     const dist = Math.hypot(k.x - ball.pos.x, k.y - ball.pos.y);
     if (dist < KEEPER_BODY_R) {
       // One dive (v0.15 item 3) — see THE KEEPER'S OWN LINE below: a keeper
@@ -7531,7 +7591,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   }
 
   // --- KEEPER PRO: he has come for it (a cross, a through ball) ---
-  if (scenario.keeperPro && k.claim) {
+  if (scenario.keeperPro && k.claim && !laneOpen(ball)) {
     const c = keeperClaimTouch(ball, scenario);
     if (c !== undefined) return c;
   }
@@ -7548,7 +7608,7 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
   // inside his own two-metre control radius and collected it again — then
   // shot, then collected, then shot. A move either had no team-mate shot at all
   // or ran to the cap: 306 of 1200, and never one, two or three of them.
-  if (!scenario.receiverDone && ball.z < (hitboxesOn() ? HITBOX_MAX_Z : 2.6) && ball.contactCd <= 0) {
+  if (!scenario.receiverDone && ball.z < (hitboxesOn() ? HITBOX_MAX_Z : 2.6) && ball.contactCd <= 0 && !laneOpen(ball)) {
     // Was this played TO him, or has he run it down? It changes what he does
     // with it when he gets there.
     const scrambled = ball.loose || ball.resting || speed < DEAD_BALL_SPEED;
@@ -7869,6 +7929,9 @@ function stepBallRaw(ball: Ball, scenario: Scenario, rng: () => number, dt: numb
     const xAt = prevX + (ball.pos.x - prevX) * f;
     const zAt = prevZ + (ball.z - prevZ) * f;
     const attempt = keeperAttempt(scenario, xAt, zAt, rng);
+    // Real Goals test page: the real keeper did not save it, so on the real
+    // line ours does not either (he still dives — the "beaten" branch below).
+    if (laneOpen(ball)) attempt.reaches = false;
     // ── He throws himself at it — for real, every time ──
     //
     // No distance gate here anymore — see the note above KEEPER_QUALITY_BAND

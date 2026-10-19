@@ -317,6 +317,29 @@ export const ADMIN_GUIDES = {
     inGame: ["Nowhere. This is a test page; the real game never reads this data."],
     dev: "app/star-statsbomb-dev/page.tsx, MovingHighlight.tsx (radar + EnginePlay inside components/star/Match3DLayer.tsx, uses components/star/MatchRadar.tsx RadarPitch); lib/star/statsbombShots.ts (sbToPitch, kindForShot, scenarioForShot, leadinPlan, leadinTrack, the measures); lib/star/leadIn.ts (the lead-in CanvasMatch replays: its `leadIn` prop); tests/star/leadIn.mts; app/api/star/statsbomb-shots/route.ts; data/statsbomb/ (shots.json, leadins.json, README); scripts/statsbomb/fetch_shots.py; tests/star/statsbomb.mts.",
   },
+  "/star-real-goals-dev": {
+    title: "Real Goals (test)",
+    what: "A little game of real goals (Leo, 18 Oct 2026). Every non-penalty goal of the 2022 World Cup and Euro 2024 that StatsBomb's free data has a freeze frame for (250), played in the real match: the real move is replayed first, then the shot is yours. Score it, and the closer your ball crosses the line to where the real one went, the more stars. Test only: the licence for a paid game is not cleared, so none of it is in the game.",
+    buttons: [
+      { group: "Top", items: [
+        ["★ total", "Every star you have, out of 150 (50 levels × 3)."],
+        ["🗺️ Levels", "The level map: 5 stages (Group stage → The final) of 10 goals, easiest first (difficulty: StatsBomb's xG, bodies in the way, distance, a top corner, a volley or overhead). A level opens when the one before it has a star; a stage opens at 6 / 15 / 26 / 38 stars in all."],
+        ["🔎 All 250 goals", "Every goal, searchable by player (real or known name), team, match or stage. The famous ones (Mbappé's volley in the final, Neymar v Croatia, Saka v Switzerland, Güler v Georgia…) are first."],
+      ] },
+      { group: "Playing a goal", items: [
+        ["The header", "The real score just before the goal, the minute, who you are and how the real one was struck."],
+        ["👻 Ghost on/off", "The real goal's ball, drawn faint on the pitch: a dashed line along its flight and its shadow, and a pale ball running it on a loop while you aim. Once you strike, it races your ball. StatsBomb has only where the real ball started and crossed the line, so the line is straight and the arc is drawn the shape the strike suggests."],
+        ["▶ Build-up on/off", "On: the real move is replayed first (every pass, carry and dribble at the real time, up to 14 s), then the shot is yours. Off: straight to the shot."],
+        ["🎥 TV / Behind him / Side-on", "The 3D camera (3D | 2D button in the match bar): the TV view, low behind the shooter, or turned side-on. Kept only while this page is open; your own camera lock comes back when you leave."],
+        ["The match", "The real match. The real nations' names, kits and players' names (StatsBomb's freeze frame): never the test club. You strike as an elite finisher (power 85, technique 95, curl boots), clear weather, nobody closes you down. Strike it along the real goal's line (within 60 cm across, 55 cm up, inside the posts) and nobody blocks it and the keeper does not save it, because in real life none of them did. Off the line it plays as normal."],
+        ["The result", "Goal or not, the % like the real goal (100% on the spot, 85% at 45 cm off, 60% at 80 cm), the stars (★ a goal, ★★ 60%+, ★★★ 85%+), and a picture of the goal mouth with the real spot (green) and yours (blue). ↺ Again: the same chance comes back, just shoot. Next level → once you have a star."],
+        ["✕", "Closes the goal."],
+      ] },
+    ],
+    saving: ["Your stars and best % per goal are kept in this browser only (localStorage, star-real-goals-progress-v1). Nothing goes to the database or the repo."],
+    inGame: ["Nowhere. This is a test page; the real game never reads this data."],
+    dev: "app/star-real-goals-dev/page.tsx; lib/star/realGoals.ts (levels, stars, accuracy, kits, names, ghost, build-up) and lib/star/realGoalView.ts (what the match is handed); CanvasMatch's `realGoal` prop (drawing only, TEST_ONLY in scripts/one-engine-guard.mjs); canvasEngine.ts Scenario.realLane (the real lane, off by default); data/statsbomb/goals.json (scripts/statsbomb/fetch_real_goals.py); tests/star/realGoals.mts and tests/star/realGoals/ (harness, measure, buildup).",
+  },
   "/star-goal-clips-dev": {
     title: "Goal videos",
     what: "Score a chance in the real match and watch the goal back as a video from three cameras, then save it. The same recordings the post-match feed plays.",

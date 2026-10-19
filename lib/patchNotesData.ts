@@ -27,7 +27,7 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
-      "version": "0.58",
+      "version": "0.59",
       "title": "Mikey's patch notes v0.17: The transfer window and the world that ages",
       "publishedAt": "2026-10-18T22:00:00Z",
       "updatedAt": null,
@@ -69,6 +69,34 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       ]
     },
     {
+      "version": "0.58",
+      "title": "Leo's patch notes: Real Goals mode and the Visual Effects Lab",
+      "publishedAt": "2026-10-18T21:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/U77ee6tn8cJa7p8LD61Zss",
+      "summary": "Leo v0.17. Real Goals (test page /star-real-goals-dev): 50 real WC 2022 / Euro 2024 goals on a 5-stage level map with 1-3 stars, a search of all 250, the real move replayed with real names and kits, a ghost of the real shot, an accuracy % against the real goal, and the real goal always scoreable along its real line. Plus the Visual Effects Lab (/star-vfx-lab-dev): 13 moments, 7-9 editable effects each. Both test pages; the career is unchanged.",
+      "stats": [
+        { "value": "32% → 100%", "label": "real goals that go in when struck on their real line" },
+        { "value": "6.2 m → 0.6 m", "label": "build-up ball off the real ball" },
+        { "value": "44 of 44", "label": "countries with their own kit" },
+        { "value": "123", "label": "effect cards in the Visual Effects Lab" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Real Goals level map", "detail": "5 stages x 10 real goals, 1-3 stars, search all 250." },
+          { "title": "Ghost and accuracy", "detail": "See the real shot's line; score how close you went in (85%+ for three stars)." },
+          { "title": "Visual Effects Lab", "detail": "13 moments, 7-9 effects each, sliders, try them in a real match, export picks." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Real goals always scoreable", "detail": "Along the real line, men who didn't stop it for real don't now (Saka v Switzerland)." },
+          { "title": "Real teams and players", "detail": "Real names, national kits, real score and minute instead of City v Brighton." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "3D and finger-played goals not seen", "detail": "Stills were steered onto the real line; cameras and the 3D view not checked." }
+        ]}
+      ]
+    },
+    {
       "version": "0.57",
       "title": "Harry's patch notes: The admin room and the team board",
       "publishedAt": "2026-10-18T20:00:00Z",
@@ -94,7 +122,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "17 old pages deleted", "detail": "Match Dev, Scenario Builder, Bigger, Look, Attack, Bicycle, Zoom grass, 3D, Spin, Blender, Sound dev, old Ballon d'Or and Manager, Profile (new), CL Draft, American draft; Draft dev 2 opens Draft dev." }
         ]},
         { "kind": "known", "title": "Known issues", "items": [
-          { "title": "Live progress bars are off", "detail": "Mikey: run dev_status.sql, set DEV_STATUS_TOKEN in Vercel and each cloud setup, plus DEV_NAME.", "pill": { "text": "needs Mikey", "tone": "amber" } },
+          { "title": "Live progress bars are off", "detail": "Mikey: run dev_status.sql. Each of us: add DEV_NAME to our cloud setup and merge main. No password.", "pill": { "text": "needs Mikey", "tone": "amber" } },
           { "title": "Drive saving is off until one Google setting is done", "detail": "Harry: switch on the Drive API, add knowitball.co.uk and the drive.file scope to the Google sign-in id, set NEXT_PUBLIC_GOOGLE_CLIENT_ID in Vercel. Until then recordings download.", "pill": { "text": "needs Harry", "tone": "amber" } },
           { "title": "Two Match Dev controls need a new home", "detail": "Force a chance kind and the shot-height sliders; Infinite Highlights is the plan." },
           { "title": "The lock check runs in the tests, not the build", "detail": "Harry's answer: tests only." }

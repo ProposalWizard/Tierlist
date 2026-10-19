@@ -319,6 +319,11 @@ yes"), not as a file's name.
 ## Mechanics
 
 - Author as `.html`, phone-first, 16px side gutter, no horizontal scroll.
+  Give every grid or flex child `min-width: 0` (a long no-wrap line or a wide
+  table otherwise widens the whole page: the live-bars page was 564px wide on a
+  390px phone, Harry 18 Oct 2026: "how comes artifacts like these don't scale to
+  phone"). Before publishing, load the page at 390px and check the page width is
+  390, not just that it looks fine on a laptop.
 - Colour tokens on `:root`, redefined for dark mode under
   `@media (prefers-color-scheme: dark)` guarded by `:root:not([data-theme="light"])`
   and again under `:root[data-theme="dark"]`. Explicit `background` on `body`.
