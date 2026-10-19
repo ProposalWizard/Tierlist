@@ -1380,19 +1380,23 @@ export const ADMIN_GUIDES = {
     dev: "app/star-update-dev/page.tsx · lib/star/oct13Update.ts (the switch) · rows in lib/star/lookRows.ts · physics in lib/star/shotFeel.ts, keeperBrain.ts, canvasEngine.ts (KEEPER_FEEL, MATE_CARRY) · feel in lib/star/matchFeel.ts · tests/star/gameplay13.mts, matchFeel.mts.",
   },
   "/star-animations-dev": {
-    title: "Animations",
+    title: "2D Animations",
     what: "Every New player animation (keeper saves, touches, shots, passes, headers, blocks, clearances) looping next to how the Old game drew that moment, with the dials and switches that size them.",
     buttons: [
       { group: "Top", items: [
-        ["‹ Play Area", "Back to the Play Area."],
+        ["←", "Back to the Play Area."],
+      ] },
+      { group: "The list on the left (a row of tabs on a phone)", items: [
+        ["Keeper / Touches / Shots / Passes & headers / Defenders / All", "Which animations to show. All shows every group under its own title; it is heavy on an older phone."],
+        ["Match feel / 3D figures / Which are on / Dials / Real chance", "Jumps down the page to that part."],
       ] },
       { group: "The gallery", items: [
-        ["Keeper / Touches / Shots / Passes & headers / Defenders / All", "Which animations to show. All is heavy on an older phone."],
-        ["Flat / Shaded", "The two drawn player looks. The 3D players have their own New clips: see the 3D figures card below."],
-        ["Right foot / Left foot", "Mirrors every animation: a left-footer, a keeper diving the other way."],
-        ["vs Old game / vs First version", "What the left picture of each card shows: the Old game, or the first New version from before the strikes were made bigger."],
-        ["1× / ½× / ¼×", "Playback speed."],
-        ["❚❚ Pause / ▶ Play", "Stops every animation. While paused, the slider steps through the frames."],
+        ["❚❚ / ▶", "Pauses or plays every animation."],
+        ["The yellow slider", "Steps through the frames. Moving it pauses the animations."],
+        ["1× / ½× / ¼×", "Playback speed (and plays again if paused)."],
+        ["Look: Flat / Shaded", "The two drawn player looks. The 3D players have their own New clips: see 3D figures below."],
+        ["Foot: Right foot / Left foot", "Mirrors every animation: a left-footer, a keeper diving the other way."],
+        ["Left picture: vs Old game / vs First version", "What the left picture of each card shows: the Old game, or the first New version from before the strikes were made bigger."],
       ] },
       { group: "Match feel", items: [
         ["New / Old", "The same switch as Match feel on the Oct 13 update page (/star-update-dev), on this phone. New: every hit is felt (wind-up, a short freeze at the contact, flash and turf, camera punch, ball squash and streak, deeper kick sound, phone buzz), plus landing thuds, the net bulging, post clangs, glove sparks and a keeper who hops and arcs his dive. Old: the game as before. Default Old."],
