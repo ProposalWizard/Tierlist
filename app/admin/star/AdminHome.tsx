@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/admin/shell/AdminShell";
 import { GROUPS, visibleTo, type AdminOwner, type AdminPage } from "@/lib/adminRegistry";
 import type { TeamBoardData } from "@/lib/teamBoard";
+import { isBoardLook, useAdminLook } from "@/lib/adminLook";
 import "./adminHome.css";
 
 const WRITES: Record<AdminPage["writes"], { text: string; tone: string } | null> = {
@@ -44,6 +45,8 @@ export default function AdminHome({ role }: { role: "admin" | "tester" }) {
   const shown = all.filter(match);
   const count = (o: AdminOwner) => all.filter((p) => p.owner === o).length;
   const filtering = !!(q.trim() || owner || realOnly);
+  const look = useAdminLook();
+  const board = isBoardLook(look);
 
   return (
     <AdminShell tab="home" role={role}>
@@ -63,7 +66,9 @@ export default function AdminHome({ role }: { role: "admin" | "tester" }) {
           {role === "admin" && <TeamWidget />}
         </div>
 
-        {!filtering && (
+        {board && <Board shown={shown} filtering={filtering} />}
+
+        {!board && !filtering && (
           <Link href="/star-dev" className="ash-panel ah-play">
             <img src="/admin/icons/play.webp" alt="Play the game" title="Play the game" className="ah-ic ah-ic-lg" />
             <span><b>Play the game</b><small>Road to Ballon d&apos;Or, as players see it</small></span>
@@ -77,7 +82,7 @@ export default function AdminHome({ role }: { role: "admin" | "tester" }) {
           </div>
         )}
 
-        {GROUPS.map((g) => {
+        {!board && GROUPS.map((g) => {
           const pages = shown.filter((p) => p.group === g.key && p.url !== "/star-dev");
           if (!pages.length) return null;
           const body = (
@@ -100,6 +105,60 @@ export default function AdminHome({ role }: { role: "admin" | "tester" }) {
         })}
       </div>
     </AdminShell>
+  );
+}
+
+/** Broadcast (D) and Bento (F): every group on one board, one short row per
+ * page (Harry, 19 Oct 2026: "even the groups on the side, it's a bit hard to
+ * see everything"). Hovering a row says what the page is for. */
+const TAGLINE: Record<string, string> = {
+  career: "Your journey, your story.", chances: "Moments that change everything.", match: "Play, analyse, improve.",
+  data: "Real teams. Real numbers.", places3d: "Explore. Shop. Work.", players: "Bring the team to life.",
+  money: "Play. Earn. Upgrade.", sound: "Hear the difference.", site: "Keep it fresh.",
+  draft: "The draft game.", tierlists: "Rank what matters.", old: "Kept for reference.",
+};
+function Board({ shown, filtering }: { shown: AdminPage[]; filtering: boolean }) {
+  const groups = GROUPS.map((g) => ({ g, pages: shown.filter((p) => p.group === g.key) }))
+    .filter((x) => x.pages.length)
+    // "Play the game" leads Career screens, as in both pictures.
+    .map((x) => ({ ...x, pages: [...x.pages].sort((a, b) => Number(b.url === "/star-dev") - Number(a.url === "/star-dev")) }));
+  return (
+    <div className="ahb">
+      {groups.map(({ g, pages }) => {
+        const rows = <ul className="ahb-rows">{pages.map((p) => <Row key={p.url} p={p} />)}</ul>;
+        const head = (
+          <div className="ahb-head">
+            <img src={`/admin/icons/${g.key === "old" ? "site" : g.key}.webp`} alt="" className="ahb-ic" />
+            <span className="ahb-t"><b>{g.name}</b><small>{TAGLINE[g.key]}</small></span>
+            <span className="ahb-n" title={`${pages.length} pages`}>{pages.length}</span>
+          </div>
+        );
+        if (g.key === "old") {
+          return (
+            <details key={g.key} id={g.key} className="ahb-g ahb-old" data-g={g.key} open={filtering}>
+              <summary>{head}</summary>
+              {rows}
+            </details>
+          );
+        }
+        return <section key={g.key} id={g.key} className="ahb-g" data-g={g.key}>{head}{rows}</section>;
+      })}
+    </div>
+  );
+}
+
+function Row({ p }: { p: AdminPage }) {
+  const w = WRITES[p.writes];
+  return (
+    <li>
+      <Link href={p.url} className="ahb-row" title={`${p.name}: ${p.purpose}${w ? ` · ${WRITE_HELP[p.writes]}` : ""}`}>
+        <svg className="ahb-doc" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v4h4" /></svg>
+        <span className="ahb-name">{p.name}</span>
+        {w && w.tone !== "grey" && <span className={`ahb-w ${w.tone}`} title={WRITE_HELP[p.writes]} aria-label={WRITE_HELP[p.writes]} />}
+        <span className={`ahb-o ${p.owner}`} title={`Owner: ${p.owner}`}>{OWNER_LETTER[p.owner]}</span>
+        <svg className="ahb-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="m9 6 6 6-6 6" /></svg>
+      </Link>
+    </li>
   );
 }
 

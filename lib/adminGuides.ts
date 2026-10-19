@@ -667,8 +667,8 @@ export const ADMIN_GUIDES = {
       ] },
       { group: "Side menu", items: [
         ["Home / Team board / Patch notes", "This page, the team board, and every patch note (Team board and Patch notes are admins only)."],
-        ["Groups", "Jumps to that group on this page."],
-        ["Ops room / Clean light", "The admin look, dark or light. Kept on this device."],
+        ["Groups", "Ops room and Clean light only: jumps to that group on this page. Broadcast and Bento show every group on the page instead."],
+        ["Broadcast / Bento / Ops room / Clean light", "The admin look. Broadcast (dark blue) and Bento (a colour per group) show every group on one board. Kept on this device."],
         ["Admin mode", "On: the admin side menu sits on every page of the site, opened on the admin pages for the page you are on. Off: it hides. Kept on this device."],
       ] },
     ],

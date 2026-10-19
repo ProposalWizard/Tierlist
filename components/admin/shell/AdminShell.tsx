@@ -1,7 +1,8 @@
 "use client";
 /**
  * The admin pages' frame: a side menu (Home, the Team room's four parts,
- * Patch notes, the groups) and the Ops room | Clean light switch. Used by
+ * Patch notes, the groups) and the Look switch (Broadcast, Bento, Ops room,
+ * Clean light). Used by
  * /admin/star and /admin/team. On a phone the menu hides behind "☰ Menu";
  * on a computer « folds it to a thin strip of icons (Harry, 19 Oct 2026:
  * "we need to be able to close the side tab").
@@ -10,7 +11,7 @@ import "./adminShell.css";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { ADMIN_PAGES, GROUPS, visibleTo } from "@/lib/adminRegistry";
-import { setAdminLook, setAdminMode, useAdminLook, useAdminMode } from "@/lib/adminLook";
+import { ADMIN_LOOKS, isBoardLook, setAdminLook, setAdminMode, useAdminLook, useAdminMode } from "@/lib/adminLook";
 
 export type ShellTab = "home" | "team" | "notes" | "videos" | "ideas" | "chat" | "todo";
 export type RoomTab = "team" | "ideas" | "chat" | "todo" | "notes";
@@ -73,7 +74,7 @@ export default function AdminShell({ tab, role, children, onTab, badges }: {
     <div className="ash" data-look={look} data-folded={folded} data-admin-shell>
       <div className="ash-top">
         <button className="ash-btn ghost" onClick={() => setOpen(true)} aria-label="Open the admin menu"><Icon name="menu" /> Menu</button>
-        <b style={{ fontWeight: 900, letterSpacing: ".06em" }}>KNOWITBALL</b>
+        <b className="ash-word">KNOWITBALL</b>
         <span style={{ width: 70 }} />
       </div>
       <div className="ash-layout">
@@ -100,8 +101,9 @@ export default function AdminShell({ tab, role, children, onTab, badges }: {
             <span className="ash-navl"><Icon name="video" /><span className="ash-navt">Videos</span></span>
           </Link>
 
-          <div className="ash-navh">Groups</div>
-          {GROUPS.filter((g) => count(g.key)).map((g) => (
+          {/* Broadcast and Bento show every group on the home board, so the side keeps only the rooms. */}
+          {!isBoardLook(look) && <div className="ash-navh">Groups</div>}
+          {!isBoardLook(look) && GROUPS.filter((g) => count(g.key)).map((g) => (
             <Link key={g.key} className="ash-nav" href={`/admin/star#${g.key}`}>
               <span className="ash-navl">{g.name}</span><span className="n">{count(g.key)}</span>
             </Link>
@@ -110,8 +112,9 @@ export default function AdminShell({ tab, role, children, onTab, badges }: {
           <div style={{ flex: 1 }} />
           <div className="ash-navh">Look</div>
           <div className="ash-switch" role="group" aria-label="Admin look">
-            <button aria-pressed={look === "ops"} onClick={() => setAdminLook("ops")}>Ops room</button>
-            <button aria-pressed={look === "light"} onClick={() => setAdminLook("light")}>Clean light</button>
+            {ADMIN_LOOKS.map((l) => (
+              <button key={l.id} aria-pressed={look === l.id} onClick={() => setAdminLook(l.id)}>{l.name}</button>
+            ))}
           </div>
           <div className="ash-toggle">
             <span>Admin mode<br /><small style={{ fontWeight: 500, color: "var(--ash-ink3)" }}>Admin menu on every page</small></span>

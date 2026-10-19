@@ -5,6 +5,9 @@
  *  - The look: "ops" (Ops room: near-black, deep green, glass) or "light"
  *    (Clean light: white, one grass-green accent). Harry, 18 Oct 2026:
  *    "let's build ops board and clean light with a toggle".
+ *    19 Oct 2026, two more from 8 Higgsfield looks ("D and F are my picks"):
+ *    "broadcast" (D: midnight blue, floodlights, slanted TV bars) and
+ *    "bento" (F: a soft colour per group). Both show every group at once.
  *  - Admin mode: on = the admin side menu shows on every page, opened on the
  *    admin pages for the page you are on. Off = it hides until you turn it
  *    back on (Settings → Developer, or the menu's "Admin & Dev tools").
@@ -16,7 +19,17 @@
  */
 import { useEffect, useState } from "react";
 
-export type AdminLook = "ops" | "light";
+export type AdminLook = "ops" | "light" | "broadcast" | "bento";
+export const ADMIN_LOOKS: { id: AdminLook; name: string }[] = [
+  { id: "broadcast", name: "Broadcast" },
+  { id: "bento", name: "Bento" },
+  { id: "ops", name: "Ops room" },
+  { id: "light", name: "Clean light" },
+];
+/** D and F lay the home out as one board with every group on it. */
+export const isBoardLook = (l: AdminLook) => l === "broadcast" || l === "bento";
+/** The two light looks (for anything that paints itself dark or light). */
+export const isLightLook = (l: AdminLook) => l === "light" || l === "bento";
 const LOOK_KEY = "kib-admin-look";
 const MODE_KEY = "kib-admin-mode";
 const EVENT = "knowitball:admin-prefs";
@@ -29,7 +42,11 @@ function write(key: string, v: string) {
   try { window.dispatchEvent(new Event(EVENT)); } catch { /* server */ }
 }
 
-export const getAdminLook = (): AdminLook => (read(LOOK_KEY) === "light" ? "light" : "ops");
+/** Never chosen = Broadcast, the newest pick (Harry, 19 Oct 2026). */
+export const getAdminLook = (): AdminLook => {
+  const v = read(LOOK_KEY);
+  return v === "ops" || v === "light" || v === "bento" ? v : "broadcast";
+};
 export const setAdminLook = (l: AdminLook) => write(LOOK_KEY, l);
 /** On unless switched off: today's admin tab was always there for admins. */
 export const getAdminMode = (): boolean => read(MODE_KEY) !== "off";
@@ -47,5 +64,5 @@ function usePref<T>(get: () => T, fallback: T): T {
   return v;
 }
 
-export const useAdminLook = () => usePref(getAdminLook, "ops" as AdminLook);
+export const useAdminLook = () => usePref(getAdminLook, "broadcast" as AdminLook);
 export const useAdminMode = () => usePref(getAdminMode, true);
