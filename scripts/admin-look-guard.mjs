@@ -18,7 +18,7 @@ const NOT_YET = new Set([
   "/star-goal-clips-dev",
   "/star-update-dev",
   "/star-dribble-stick-dev",
-  "/star-tournament-dev", "/lineups", "/admin/clubs",
+  "/lineups", "/admin/clubs",
   "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev",
   "/star-garden3d-dev", "/star-home3d-dev", "/star-style-dev",
   "/star-people-dev", "/admin/star-xp",
