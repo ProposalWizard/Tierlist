@@ -7,7 +7,6 @@ import { ALL_DIVISIONS, divisionOf, divisionRank, DIVISION_ORDER, type CareerDiv
 import { clubReputation, clubStanding } from "./clubReputation";
 import { offerClauses, rescaleClauses } from "./contracts";
 import { offerWageFor, offerStanding, weeklyWageFor, goalBonusFor, assistBonusFor, signingOnFee } from "./economy";
-import { playerMarketValue } from "./marketValue";
 import { playerOverall, squadNeed, positionGroup, CROWDED_AT, AFFORD_SHARE } from "./transferRequest";
 
 /**
@@ -177,6 +176,56 @@ export function seasonReport(career: CareerState, window: WindowKind = "summer")
 // ── A club's aim ────────────────────────────────────────────────────────────
 
 /** A seeded 0-1 number for (season, window, club, salt). */
+// ── What your club is paid ──────────────────────────────────────────────────
+
+/**
+ * YOUR TRANSFER VALUE, by the league you play in (fixed 19 Oct 2026).
+ *
+ * Before: the fee ran your star-rating overall through playerMarketValue,
+ * which is tuned for FIFA ratings (100 = the best player in the world). The
+ * star overall reaches 100 at about 5 stars, so a National League striker on
+ * ★30 a week showed "Your club gets ★406m", and every club offered the same.
+ *
+ * Now: each league has a band of what its players fetch, in the same money
+ * as market values (real-world sized: a National League striker tens of
+ * thousands, a Premier League one millions). Your star rating places you in
+ * your league's band (low stars the bottom, 4.5+ stars near the top); youth
+ * adds a little, age past 29 takes it away.
+ */
+export const FEE_BANDS: Record<number, [number, number]> = {
+  0: [5_000, 75_000],          // National League North / South
+  1: [10_000, 200_000],        // National League
+  2: [25_000, 600_000],        // League Two
+  3: [75_000, 2_500_000],      // League One
+  4: [300_000, 15_000_000],    // Championship
+  5: [3_000_000, 120_000_000], // Premier League
+};
+/** Each league a buyer sits above yours adds this share to the fee. */
+export const FEE_PER_LEVEL_UP = 0.3;
+
+/** Two significant figures: ★187,412 reads ★190k. */
+function roundFee(v: number): number {
+  if (v <= 0) return 0;
+  const mag = Math.pow(10, Math.max(0, Math.floor(Math.log10(v)) - 1));
+  return Math.round(v / mag) * mag;
+}
+
+/** What you are worth in your own league, before any club's offer. */
+export function yourTransferValue(career: CareerState): number {
+  const [lo, hi] = FEE_BANDS[levelOf(divisionOf(career))] ?? FEE_BANDS[0];
+  const t = Math.max(0, Math.min(1, (playerOverall(career) - 45) / 50));
+  const age = career.player.age;
+  const ageMult = age < 22 ? 1 + (22 - age) * 0.08 : age <= 29 ? 1 : Math.max(0.2, 1 - (age - 29) * 0.12);
+  return roundFee(lo * Math.pow(hi / lo, t) * ageMult);
+}
+
+/** The fee one club pays your club: your value, more from a bigger league, a little either way per club. */
+export function feeFrom(career: CareerState, division: CareerDivision, club: string, window: WindowKind): number {
+  const up = Math.max(0, levelOf(division) - levelOf(divisionOf(career)));
+  const wobble = 0.9 + seeded(career, window, club, 23) * 0.2;
+  return Math.max(1, roundFee(yourTransferValue(career) * (1 + up * FEE_PER_LEVEL_UP) * wobble));
+}
+
 function seeded(career: CareerState, window: WindowKind, club: string, salt: number): number {
   let h = 2166136261 ^ (career.season * 2654435761) ^ (window === "january" ? 977 : 31) ^ salt;
   for (let i = 0; i < club.length; i++) { h ^= club.charCodeAt(i); h = Math.imul(h, 16777619); }
@@ -358,7 +407,7 @@ export function windowInterest(career: CareerState, window: WindowKind): WindowI
       const level = interestFor(margin);
       const { position, of } = finishOf(career, division, club, window);
       const why = whyLine(level, gap, group, levelOf(division) - yourLevel);
-      const fee = Math.max(1, playerMarketValue({ overall, age }, career.player.club, career));
+      const fee = feeFrom(career, division, club, window);
       const offer: TransferOffer = {
         club,
         strength,

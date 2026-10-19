@@ -21,6 +21,7 @@ import { ClubCard, RiseIn, Shine, PressButton, prefersReducedMotion, rgba, useCl
 import { SegTabs, ChipTabs, CardTitle, seenScope, youRowStyle } from "./screenKit";
 import { dutyNow } from "@/lib/star/intl/career";
 import { NationalLeague } from "./IntlKit";
+import { yourTransferValue } from "@/lib/star/transferInterest";
 
 /**
  * THE LEAGUE — table, results, fixtures, awards, squad, cups and Europe.
@@ -849,7 +850,9 @@ function ClubLeagueScreen({ career, compact = false, view: forcedView, hideTabs 
                   seasonAssists: career.seasonStats.assists,
                   imageUrl: undefined as string | undefined,
                   age: career.player.age,
-                  marketValue: playerMarketValue({ overall: yourOverall, age: career.player.age }, career.player.club, career),
+                  // Your own value by your league (transferInterest.ts), not the FIFA-scale
+                  // curve the team-mates use: your star overall hits 100 at ~5 stars.
+                  marketValue: yourTransferValue(career),
                 };
                 const rows = [you, ...squad.map(p => ({
                   ...p, isYou: false,

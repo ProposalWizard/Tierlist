@@ -109,5 +109,24 @@ for (const l of good.leagues) for (const k of l.clubs) {
   check(k.offer.division === l.division, `${k.club}: division on the offer`);
 }
 
+
+// ── The fee your club is paid (19 Oct 2026: a National League striker on ★30 a week showed ★406m) ──
+{
+  const strong = (c: CareerState) => withSeason({ ...c, starRating: 5 }, 40, 30, 10, 7.8);
+  const nl = summary(strong(careerAt("national_league_north", NATIONAL_LEAGUE_NORTH_CLUBS))).i;
+  const pl = summary(strong(careerAt("premier", PREMIER_LEAGUE_CLUBS))).i;
+  const fees = (i: typeof nl) => i.leagues.flatMap(l => l.clubs.map(c => c.fee));
+  const nlFees = fees(nl), plFees = fees(pl);
+  check(nlFees.length > 0 && Math.max(...nlFees) < 500_000, `a 5-star non-league striker fetches under ★500k (max ${Math.max(...nlFees)})`);
+  check(plFees.length > 0 && Math.min(...plFees) > 10 * Math.max(...nlFees), "a Premier League player is worth far more than a non-league one");
+  check(new Set(nlFees).size > 1, "clubs don't all offer the same fee");
+  const byLevel = new Map<number, number[]>();
+  for (const l of nl.leagues) byLevel.set(levelOf(l.division), l.clubs.map(c => c.fee));
+  const levels = [...byLevel.keys()].sort((a, b) => a - b);
+  const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  check(levels.length < 2 || avg(byLevel.get(levels[levels.length - 1])!) > avg(byLevel.get(levels[0])!), "a club from a bigger league pays more");
+  console.log(`Fees for a 5-star striker: National League North ★${Math.min(...nlFees)}–★${Math.max(...nlFees)}, Premier League ★${Math.min(...plFees)}–★${Math.max(...plFees)}`);
+}
+
 if (problems.length) { console.error("FAIL\n  - " + problems.slice(0, 30).join("\n  - ")); process.exit(1); }
 console.log("PASS — the clubs interested in you follow your season");
