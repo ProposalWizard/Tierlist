@@ -69,3 +69,11 @@
 .se-vec label { display: flex; align-items: center; gap: 2px; font-size: 11px; color: #cbd5e1; }
 .se-vec input { width: 58px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 4px; }
 @media (max-width: 700px) { .se-map { width: 104px; height: 104px; } .se-vec input { width: 48px; } }
+
+/* step 3: live places, the shot strip of a fixed-shot place, the play bar under the preview */
+.se-place { cursor: pointer; }
+.se-place.se-idle { background: rgba(29, 79, 184, .35); color: #dbe7ff; }
+.se-view + .se-play { margin: 8px 0 0; }
+.se-shots { display: flex; flex-wrap: wrap; gap: 4px; width: 100%; }
+.se-shotbtn { padding: 6px 10px; font-weight: 900; font-size: 12px; color: #fff; background: rgba(37, 99, 235, .35); border: 2px solid transparent; cursor: pointer; }
+.se-shotbtn[aria-pressed="true"] { background: #2563eb; border-color: #f5b21b; }
