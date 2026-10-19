@@ -1112,19 +1112,19 @@ export const ADMIN_GUIDES = {
     what: "Proves that paid things can't be faked: gems and paid items live on the server, not in the career save. One example paid item (Golden boots) goes through the whole path.",
     buttons: [
       { group: "Your gems", items: [
-        ["💎 (the number)", "This account's gems, as the server says. Signed out it shows — and \"Sign in to use gems\"."],
-        ["Refresh", "Asks the server again."],
+        ["Your gems (the big number)", "This account's gems, as the server says. Signed out it shows — and \"Sign in to use gems\". Before gems are switched on it says \"Gems aren't switched on yet\"."],
+        ["Refresh (top right)", "Asks the server again."],
         ["+100 gems (admin test)", "Admins only. Gives your own account 100 gems. Each press is one line in the gem history. This is the only way to get gems until real payments exist."],
       ] },
-      { group: "The example paid item", items: [
-        ["Golden boots (picture)", "Gold when the server says this account owns them; grey with a lock otherwise."],
-      ] },
-      { group: "Paid items", items: [
-        ["Buy", "Spends gems on that item. The server reads the price itself, checks you have enough, takes the gems and records that you own it, all in one go. Pressing twice never charges twice. Greyed out when you can't afford it."],
+      { group: "Paid items (cards)", items: [
+        ["Buy (bar under each card)", "Spends gems on that item. The server reads the price itself, checks you have enough, takes the gems and records that you own it, all in one go. Pressing twice never charges twice. Greyed out when you can't afford it."],
         ["Owned", "You own it. Nothing to press."],
       ] },
+      { group: "Owned items", items: [
+        ["Golden boots (tile)", "The example paid item. Gold when the server says this account owns them; grey with a lock otherwise. Anything else you own shows next to it."],
+      ] },
       { group: "Try to cheat", items: [
-        ["Try to cheat", "Writes 99,999 gems and the boots into this browser, the way someone with dev tools would, then asks the server again. The line under it shows nothing changed."],
+        ["Try to cheat", "Writes 99,999 gems and the boots into this browser, the way someone with dev tools would, then asks the server again. A small table shows this browser's fake values next to what the server says, and the line under it shows nothing changed."],
         ["Clear it", "Takes those fake values back out of this browser."],
       ] },
     ],

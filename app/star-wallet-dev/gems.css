@@ -1,0 +1,68 @@
+/* Gems test, option 2 (Harry, 19 Oct 2026): a big "Your gems" banner, the paid
+   items as shop cards with a slanted BUY bar, owned items as tiles, and the
+   cheat check as a ledger. Uses the Broadcast tokens (--bc-*). */
+.gm-hero { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px;
+  padding: 14px 22px 14px 14px; border: 2px solid rgba(80, 200, 255, 0.55); border-radius: 4px;
+  background: linear-gradient(100deg, rgba(20, 70, 170, 0.85), rgba(8, 26, 70, 0.9) 60%), var(--bc-panel);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%); box-shadow: 0 12px 34px rgba(0, 4, 20, 0.5); }
+.gm-gem { width: 120px; height: 100px; filter: drop-shadow(0 0 18px rgba(90, 200, 255, 0.7)); }
+.gm-hero-text { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.gm-your { align-self: flex-start; padding: 3px 26px 3px 10px; font-size: 13px; font-weight: 900; font-style: italic; text-transform: uppercase;
+  letter-spacing: .04em; color: #04122e; background: linear-gradient(90deg, #5fd8ff, #2fa9ff); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+.gm-count { font-size: clamp(34px, 5vw, 56px); font-weight: 900; font-style: italic; line-height: 1; font-variant-numeric: tabular-nums; color: #fff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4); overflow-wrap: anywhere; }
+.gm-count small { font-size: .5em; margin-left: 8px; text-transform: uppercase; }
+.gm-msg { font-size: 14px; font-weight: 800; color: var(--bc-ink); }
+.gm-msg[data-warn="true"] { color: var(--bc-amber); }
+.gm-msg a { color: #7fd0ff; text-decoration: underline; }
+.gm-hero-side { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+
+.gm-h { margin: 6px 0 -6px; font-size: 20px; font-weight: 900; font-style: italic; text-transform: uppercase; color: #fff; letter-spacing: .02em; }
+.gm-cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.gm-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 12px 0; text-align: center; overflow: hidden;
+  border: 2px solid rgba(80, 200, 255, 0.5); border-radius: 6px; background: linear-gradient(180deg, rgba(16, 48, 112, 0.85), rgba(6, 20, 54, 0.9));
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px)); }
+.gm-card-pic { height: 84px; display: grid; place-items: center; }
+.gm-card-pic svg { height: 76px; width: auto; }
+.gm-card b { font-size: 16px; font-weight: 900; font-style: italic; text-transform: uppercase; line-height: 1.1; }
+.gm-card span { font-size: 13px; color: var(--bc-ink2); font-weight: 700; }
+.gm-buy { margin: 8px -12px 0; align-self: stretch; display: flex; justify-content: flex-end; padding: 0 0 12px 30px; }
+.gm-buy-btn { width: 78%; padding: 8px 14px; border: 0; cursor: pointer; font-size: 15px; font-weight: 900; font-style: italic; text-transform: uppercase;
+  color: #04122e; background: linear-gradient(90deg, #5fd8ff, #2fa9ff); clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+.gm-buy-btn:hover { background: #8be3ff; }
+.gm-buy-btn:disabled { opacity: .4; cursor: not-allowed; }
+.gm-buy-own { width: 78%; padding: 8px 14px; font-size: 15px; font-weight: 900; font-style: italic; text-transform: uppercase; color: #fff;
+  background: #138a52; clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+
+.gm-owned { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.gm-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 10px; text-align: center;
+  border: 2px solid rgba(80, 200, 255, 0.45); border-radius: 6px; background: rgba(4, 14, 40, 0.7); }
+.gm-tile[data-locked="true"] { border-color: var(--bc-line); }
+.gm-tile svg { height: 64px; width: auto; }
+.gm-tile b { font-size: 14px; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.gm-tile span { font-size: 12.5px; color: var(--bc-ink2); font-weight: 700; line-height: 1.3; }
+
+.gm-ledger { width: 100%; border-collapse: collapse; font-size: 14px; }
+.gm-ledger th { padding: 6px 10px; text-align: left; font-size: 12px; font-weight: 900; font-style: italic; text-transform: uppercase; color: #fff;
+  background: linear-gradient(90deg, var(--bc-blue), #2fa9ff); }
+.gm-ledger td { padding: 7px 10px; font-weight: 800; border-bottom: 1px solid var(--bc-line); }
+.gm-ledger tr:nth-child(even) td { background: rgba(255, 255, 255, 0.04); }
+.gm-up { color: #4ade80; } .gm-down { color: var(--bc-red); }
+.gm-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.gm-line { font-size: 14px; font-weight: 800; color: var(--bc-ink); line-height: 1.4; }
+
+@media (max-width: 640px) {
+  .gm-hero { grid-template-columns: auto minmax(0, 1fr); padding: 10px 18px 10px 8px; gap: 10px; }
+  .gm-hero-side { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
+  .gm-gem { width: 78px; height: 66px; }
+  .gm-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .gm-card { padding: 10px 8px 0; }
+  .gm-card-pic { height: 60px; } .gm-card-pic svg { height: 54px; }
+  .gm-card b { font-size: 13.5px; }
+  .gm-buy { margin: 6px -8px 0; padding: 0 0 10px 12px; }
+  .gm-buy-btn, .gm-buy-own { width: 92%; font-size: 13px; padding: 7px 10px; }
+  .gm-owned { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .gm-tile { padding: 8px 6px; } .gm-tile svg { height: 44px; }
+  .gm-tile b { font-size: 12px; } .gm-tile span { font-size: 12px; }
+  .gm-ledger { font-size: 12.5px; } .gm-ledger td, .gm-ledger th { padding: 6px 6px; }
+}
