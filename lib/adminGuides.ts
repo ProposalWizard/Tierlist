@@ -302,20 +302,25 @@ export const ADMIN_GUIDES = {
     title: "Real shots (test)",
     what: "Every shot of the 2022 World Cup and Euro 2024 that StatsBomb's free data has a freeze frame for (where everyone near the shot stood), drawn on our pitch, playable in the real match, and measured against our own chances. Test only: the licence for a paid game is not cleared, so none of it is in the game.",
     buttons: [
+      { group: "Layout (top right)", items: [
+        ["🗺️ Shot map", "Filters on the left, a map of every shot that passes them in the middle (tap a dot), and the picked shot big on the right with its Play button. Every shot is listed below as rows. On a phone the filters fold into a Filters (n) button."],
+        ["▦ Cards", "A total of the shots and a goals bar, the filters as a row of drop-downs, then a grid of shot cards. Same shots, same buttons. The page remembers which layout you used last (on this device)."],
+      ] },
       { group: "Tabs", items: [
         ["Shots", "The list of real shots, each with its picture and Play button."],
         ["Moving highlight", "Only shots with 2–3 real passes before them. ▶ Watch the move: the match radar (the same one as the Match Radar page) shows the move coming up the pitch, then the real match itself replays the real passes in its own picture (2D or 3D: the 3D | 2D button in the match bar, the same as a career match), everyone moving from where StatsBomb's 360 frame had them to where they stood at the shot, and YOU receive the last pass. The camera follows the passes (the passer and the man it goes to), then stops moving once the ball is in the 6-yard box (or, for a shot from further out, as the replay ends) on the shot's wide frame: every real man within 20 m, the keeper, the ball and the whole goal (the same frame as Play this shot). Then the shot is yours, live, from exactly there. ↺ Again replays it; ■ Stop closes it. The replay is recorded positions, not physics; the engine plays only the shot. A team-mate who passed from outside the shot's picture is on the pitch for the replay only."],
         ["Ours vs real", "Four bars per chance kind: shot distance, defenders between ball and goal, nearest defender, keeper off his line. Real = the real shots of that kind; Ours = 200 of the game's own chances of that kind."],
       ] },
       { group: "Filters", items: [
-        ["All / World Cup 2022 / Euro 2024", "Which tournament."],
-        ["All / Goal / Saved / Off T / Blocked / Other", "What really happened to the shot."],
-        ["All / Open Play / Free Kick / Penalty / Corner", "How the shot came about."],
-        ["Any xG / under 8% / 8–30% / over 30%", "How likely the real shot was to go in (StatsBomb's own number)."],
+        ["Competition", "Which tournament: all, World Cup 2022 or Euro 2024."],
+        ["What happened", "Every shot, Goal, Saved, Off target, Blocked or Other: what really happened to the shot (a coloured list in Shot map, a drop-down in Cards)."],
+        ["How it came", "Any way, Open Play, Free Kick, Penalty or Corner."],
+        ["Chance of a goal (xG)", "Any xG, under 8%, 8–30% or over 30%: how likely the real shot was to go in (StatsBomb's own number)."],
         ["Search", "A player or team name."],
         ["More", "Shows 20 more."],
       ] },
       { group: "Each shot", items: [
+        ["The map (Shot map)", "Each dot is a shot, where it was struck, coloured by what happened (green goal, yellow saved, orange blocked, grey off target, white other). Tap one to show it in Shot details."],
         ["The picture", "Our pitch from above, goal at the top. Yellow = the shooter, white = ball, red = opponents, green = keeper, blue = team-mates. The dashed line is where the shot went."],
         ["▶ Play this shot", "Plays the real match on that picture at the top of the page: the shooter is YOU, the real keeper, opponents and team-mates inside the camera are where they stood. Nothing is counted or saved."],
         ["■ Stop", "Closes the match."],
