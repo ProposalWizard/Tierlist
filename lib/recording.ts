@@ -178,26 +178,38 @@ async function driveJson(token: string, url: string, init: RequestInit = {}): Pr
   return r.status === 204 ? {} : r.json();
 }
 
-/** The site's folder in your Drive, made the first time. */
-async function folderId(token: string): Promise<string> {
-  const q = encodeURIComponent(`name='${DRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+/** A folder by name under `parent` (or anywhere when none), made the first time. */
+async function folderNamed(token: string, name: string, parent?: string): Promise<string> {
+  const inside = parent ? ` and '${parent}' in parents` : "";
+  const q = encodeURIComponent(`name='${name.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false${inside}`);
   const found = await driveJson(token, `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&spaces=drive`);
   const files = (found.files as { id: string }[] | undefined) ?? [];
   if (files[0]) return files[0].id;
   const made = await driveJson(token, "https://www.googleapis.com/drive/v3/files?fields=id", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: DRIVE_FOLDER_NAME, mimeType: "application/vnd.google-apps.folder" }),
+    body: JSON.stringify({ name, mimeType: "application/vnd.google-apps.folder", ...(parent ? { parents: [parent] } : {}) }),
   });
   return made.id as string;
+}
+
+/**
+ * The site's folder in your Drive, then one folder per person inside it
+ * (Harry, 19 Oct 2026: "different files organised"). The app can only see
+ * folders it made, so moving the main folder somewhere else in Drive is fine:
+ * it is found by name wherever it sits.
+ */
+async function folderId(token: string, who?: string): Promise<string> {
+  const main = await folderNamed(token, DRIVE_FOLDER_NAME);
+  return who ? folderNamed(token, who, main) : main;
 }
 
 /**
  * Puts the video in the site's Drive folder, opens it to "anyone with the
  * link" (so Claude can fetch it) and returns the link.
  */
-export async function uploadToDrive(token: string, file: Blob, name: string, onProgress: (share: number) => void): Promise<{ link: string; id: string }> {
-  const parent = await folderId(token);
+export async function uploadToDrive(token: string, file: Blob, name: string, onProgress: (share: number) => void, who?: string): Promise<{ link: string; id: string }> {
+  const parent = await folderId(token, who);
   const start = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,webViewLink", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "X-Upload-Content-Type": file.type || "video/webm", "X-Upload-Content-Length": String(file.size) },

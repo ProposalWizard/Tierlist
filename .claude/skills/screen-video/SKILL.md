@@ -50,7 +50,8 @@ skip to step 2. A file anywhere else: copy it to `.recordings/<name>/video.mp4`.
 
 **Recorded on the site (18 Oct 2026).** Admin → Videos records the screen and
 voice in the browser and saves the file into the recorder's OWN Drive, folder
-"Knowitball screen recordings", already set to "anyone with the link" and
+"Knowitball screen recordings" → <who> (in Harry's Drive that folder sits
+inside "Knowitball playtest recordings"), already set to "anyone with the link" and
 named `date · who · what (length).webm`. The person pastes
 "Watch this recording: <link>"; pass that link straight to `fetch.py`. Use the
 file's name for the breakdown's name (it already follows the rule in step 5).
@@ -206,10 +207,19 @@ A frame shows what happened, not why. Before any claim about the cause:
    recorder tool should auto update to the drive with a relevant name"). Don't
    ask; do it every time, right after publishing the report.
    - `create_file` with `parentId = 18Gn5Q-pluXr_FjBTqtvADLOwq-oMAq87`,
-     `contentMimeType = text/markdown`, `textContent` = the findings you pasted
-     in chat, then the report link, then `index.md`.
+     `contentMimeType = text/markdown`, `textContent` = **first the video's own
+     Drive link** (and the folder it sits in), then the report link, then the
+     findings you pasted in chat, then `index.md`.
+   - **Link them both ways (Harry, 19 Oct 2026: "the breakdown went in, but
+     not the actual video").** When the video is in Drive, `update_file` its
+     `description` to "Claude's breakdown: <doc link> · report page: <artifact
+     link>". A video that came from elsewhere (TikTok, a pasted mp4): put the
+     source link at the top instead.
+   - The report page (artifact) is private to the account that made it: a
+     chat on the same account can read it (Artifact `read`), others can't
+     until it is shared. The Drive doc is the copy everyone can open.
    - **Name it so it can be found by name alone:**
-     `YYYY-MM-DD · <who> · <what it is about, 3–6 plain words> (<length>)`,
+     `YYYY-MM-DD · <who> · <what it is about, 3–6 plain words> (<length>) — breakdown`,
      e.g. `2026-10-18 · Harry · keeper dive feels slow (4m12s)`. The date is the
      day it was recorded if known, else today. "What it is about" comes from
      what was said, never the file name ("video.mp4", "Screen Recording 2…").
