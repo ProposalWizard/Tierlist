@@ -29,6 +29,10 @@ export function pinnedTopHeight(ignore?: Element | null): number {
     if (cs.position !== "sticky" && cs.position !== "fixed") continue;
     if (ignore && (el === ignore || el.contains(ignore) || ignore.contains(el))) continue;
     if (el.closest("[data-page-guide]")) continue;
+    // A sticky SIDE column (a page's tools beside the pitch) is not a bar
+    // across the top. Counted, it shrank Full match's pitch from 839 to
+    // 614 px tall on a 1440×900 screen (19 Oct 2026).
+    if (el.closest("[data-side-column]")) continue;
     const r = el.getBoundingClientRect();
     if (r.height <= 0 || r.width <= 0 || cs.visibility === "hidden" || cs.display === "none") continue;
     // Only bars along the TOP: a full-screen fixed overlay or a bottom bar

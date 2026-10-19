@@ -807,9 +807,6 @@ export default function HighlightsPage() {
       </Btn>
       <Btn onClick={() => setScreen("sheet")} title="Sheet of 24: 24 of one kind on one screen">&#9638; Sheet of 24</Btn>
       <Btn onClick={() => setScreen("flags")} title="Flagged list">&#9873; Flagged <span className="ih-count">{flags.length}</span></Btn>
-      <span className="ih-grow" />
-      {/* A second Next, always at the top of the page. */}
-      {kinds.length > 0 && <Btn main onClick={next}>Next &#8594;</Btn>}
     </div>
   );
 
@@ -829,6 +826,49 @@ export default function HighlightsPage() {
       ) : (
         <div className="ih-run">
           <section className="bc-panel ih-stagebox">
+            {/* THE DOCK: the controls that must never sit below the fold
+                (Harry, 19 Oct 2026: "I heavily dislike when ui is off the
+                screen"). Pinned to the top of the screen once you scroll, so
+                it counts as a pinned bar: the match measures the room under
+                it and reveals the pitch below it, never under it. */}
+            <div className="ih-dock" data-ih-dock>
+              <div className="ih-lower">
+                <div className="ih-lower-text">
+                  <b>{shot ? kindLabel(shot.spec.kind) : "…"}</b>
+                  {shot && <span>#{shot.spec.seed}</span>}
+                </div>
+                <button
+                  className="ih-flag"
+                  onClick={toggleFlag}
+                  aria-label="Flag this one"
+                  aria-pressed={flaggedNow}
+                  title={flaggedNow ? "Flagged — tap to unflag (F)" : "Flag this one (F)"}
+                >
+                  &#9873;
+                </button>
+              </div>
+              <div className="ih-transport">
+                <button className="ih-prev" onClick={prev} disabled={idx <= 0} aria-label="Previous">&#8249;</button>
+                {/* Play this exact chance, edits and all — see ScenarioPlay. */}
+                <button className="ih-play" data-tone={playing ? "stop" : "play"} onClick={togglePlay}>
+                  {playing ? "◼ Stop" : "▶ Play"}
+                </button>
+                <button className="ih-next" onClick={next}>Next &#8594;</button>
+              </div>
+              {/* Save and Commit live here on a phone, where the fix panel sits
+                  below the pitch; on a computer they stay in the fix panel. */}
+              <div className="ih-dock-save">
+                {(edited || !savedScenario) && (
+                  <button className="ih-sbtn" data-tone="save" disabled={!!busy} onClick={() => void saveShot()}>
+                    {busy === "saving" ? "Saving…" : edited ? "Save this fix" : "Save"}
+                  </button>
+                )}
+                <button className="ih-sbtn" data-tone="commit" disabled={!!busy} onClick={() => void commitShot()}>
+                  {busy === "committing" ? "Committing…" : "Commit"}
+                </button>
+              </div>
+            </div>
+
             {/* The chance: the real game's own picture, or — on Play — the real
                 match at the same size. Playing swaps only the picture, so a
                 chance can be played, corrected and saved without moving. */}
@@ -861,29 +901,6 @@ export default function HighlightsPage() {
                   kits={kits}
                 />
               )}
-            </div>
-
-            {/* The TV caption: which chance this is, and the flag. */}
-            <div className="ih-lower">
-              <div className="ih-lower-text">
-                <b>{shot ? kindLabel(shot.spec.kind) : "…"}</b>
-                {shot && <span>#{shot.spec.seed}</span>}
-              </div>
-              <button
-                className="ih-flag"
-                onClick={toggleFlag}
-                aria-label="Flag this one"
-                aria-pressed={flaggedNow}
-                title={flaggedNow ? "Flagged — tap to unflag (F)" : "Flag this one (F)"}
-              >
-                &#9873;
-              </button>
-            </div>
-            {shot && analysis.faults.length > 0 && <div className="ih-fault">{analysis.faults[0]}</div>}
-
-            <div className="ih-transport">
-              <button className="ih-prev" onClick={prev} disabled={idx <= 0} aria-label="Previous">&#8249;</button>
-              <button className="ih-next" onClick={next}>Next &#8594;</button>
             </div>
 
             {hist.length > 1 && (
@@ -920,7 +937,7 @@ export default function HighlightsPage() {
             </div>
           </section>
 
-          <div className="ih-side">
+          <div className="ih-side" data-side-column>
             <Panel title="Fix this chance" note="tap a player, drag to move">
               {/* The editor tools. Same as the gallery's version screen, in the
                   same order, doing the same thing. */}
@@ -928,10 +945,6 @@ export default function HighlightsPage() {
                 <button className="ih-ebtn" onClick={() => addFigure("teammate")}>+ Mate</button>
                 <button className="ih-ebtn" title="Add an opponent" onClick={() => addFigure("opponent")}>+ Opp</button>
                 <button className="ih-ebtn" disabled={!canRemove} onClick={() => selectedId && removeFigure(selectedId)}>Remove</button>
-                {/* Play this exact chance, edits and all — see ScenarioPlay. */}
-                <button className="ih-ebtn" data-tone={playing ? "stop" : "play"} onClick={togglePlay}>
-                  {playing ? "◼ Stop" : "▶ Play"}
-                </button>
                 <button className="ih-ebtn" data-tone="dim" title="Save this picture as a PNG" onClick={downloadShot}>PNG</button>
                 {/* A saved scenario can be taken out of the database AND the code. */}
                 <button
@@ -984,11 +997,11 @@ export default function HighlightsPage() {
               {/* Save and Commit are always here, edited or not — see commitShot. */}
               <div className="ih-save">
                 {(edited || !savedScenario) && (
-                  <button className="ih-sbtn" data-tone="save" disabled={!!busy} onClick={() => void saveShot()}>
+                  <button className="ih-sbtn ih-pc-only" data-tone="save" disabled={!!busy} onClick={() => void saveShot()}>
                     {busy === "saving" ? "Saving…" : edited ? "Save this fix" : "Save"}
                   </button>
                 )}
-                <button className="ih-sbtn" data-tone="commit" disabled={!!busy} onClick={() => void commitShot()}>
+                <button className="ih-sbtn ih-pc-only" data-tone="commit" disabled={!!busy} onClick={() => void commitShot()}>
                   {busy === "committing" ? "Committing…" : "Commit"}
                 </button>
                 {edited ? (

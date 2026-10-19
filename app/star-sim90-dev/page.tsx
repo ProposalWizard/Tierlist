@@ -388,7 +388,7 @@ export default function FullMatchPage() {
               </section>
               {chance}
             </div>
-            <div className="fm-side-col">
+            <div className="fm-side-col" data-side-column>
               <Panel title="Events" note={eventsToggle}>
                 <Label>Newest first · tap to watch</Label>
                 {events}
