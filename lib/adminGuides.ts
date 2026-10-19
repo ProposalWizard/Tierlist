@@ -259,7 +259,7 @@ export const ADMIN_GUIDES = {
         ["Country page after a season", "Stats → Country after a whole 2026/27 season, always picked, so Tables, Matches, Scorers, Ranking and Who won are full. Takes a few seconds to play."],
         ["On duty at a tournament", "Two seasons on, two group games into the summer 2028 tournament (Euro for England): the League tab at the tournament. Says so if that nation didn't qualify."],
         ["Ballon d'Or after a season", "The Ballon d'Or result after 2027/28, with your international goals counted. The other clubs' players are made up, with big nations' nationalities."],
-        ["The card pictures", "Stills of each screen for England, taken once (public/admin/intl-world). Play shows the nation you picked."],
+        ["The card pictures", "Each card draws the real screen for the nation you picked, shrunk. The three slow ones (a season played first) show the flag until you point at the card."],
       ] },
     ],
     saving: ["Nothing is saved. The world here has no career in it (no player results, no real-player strengths)."],

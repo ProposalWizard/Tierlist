@@ -1,7 +1,7 @@
 /* International world, round 3 option C (Harry, 19 Oct 2026): a nations list
    on the left, the picked nation as a big country page (flag, ranking, kits,
    last results), then every screen as a picture card with PLAY.
-   Pictures: public/admin/intl-world/<screen>.webp. */
+   Card pictures: the real screens for the picked nation, drawn live and shrunk. */
 .iw-select { width: 100%; padding: 8px 10px; font-size: 13px; font-weight: 800; color: var(--bc-ink); background: var(--bc-blue2); border: 1px solid var(--bc-line); border-radius: 3px; }
 .iw-select option { background: #0a1a3d; }
 .iw-layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -51,7 +51,11 @@
 .iw-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
 .iw-card { display: flex; flex-direction: column; background: rgba(4, 14, 40, 0.7); border: 1px solid var(--bc-line); border-radius: 4px; overflow: hidden; }
 .iw-ct { padding: 8px 10px 6px; font-size: 13.5px; font-weight: 900; font-style: italic; text-transform: uppercase; line-height: 1.15; min-height: 2.6em; }
-.iw-pic { aspect-ratio: 4 / 5; max-width: 100%; background: #0b1a3d center top / cover no-repeat; }
+.iw-pic { position: relative; aspect-ratio: 4 / 5; max-width: 100%; overflow: hidden; background: #05080f; }
+.iw-live { position: absolute; top: 0; left: 0; height: 975px; transform-origin: top left; pointer-events: none; overflow: hidden; }
+.iw-ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 12px; text-align: center; background: radial-gradient(circle at 50% 40%, #12306e, #05080f 75%); }
+.iw-ph span { font-size: 13px; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.iw-ph em { font-style: normal; font-size: 12px; color: var(--bc-ink2); }
 .iw-cl { padding: 6px 10px 0; font-size: 12px; color: var(--bc-ink2); }
 .iw-cf { padding: 8px 10px 10px; display: flex; justify-content: flex-end; margin-top: auto; }
 
