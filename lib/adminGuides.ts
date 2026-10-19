@@ -326,9 +326,10 @@ export const ADMIN_GUIDES = {
     what: "A little game of real goals (Leo, 18 Oct 2026). Every non-penalty goal of the 2022 World Cup and Euro 2024 that StatsBomb's free data has a freeze frame for (250), played in the real match: the real move is replayed first, then the shot is yours. Score it, and the closer your ball crosses the line to where the real one went, the more stars. Test only: the licence for a paid game is not cleared, so none of it is in the game.",
     buttons: [
       { group: "Top", items: [
-        ["★ total", "Every star you have, out of 150 (50 levels × 3)."],
-        ["🗺️ Levels", "The level map: 5 stages (Group stage → The final) of 10 goals, easiest first (difficulty: StatsBomb's xG, bodies in the way, distance, a top corner, a volley or overhead). A level opens when the one before it has a star; a stage opens at 6 / 15 / 26 / 38 stars in all."],
-        ["🔎 All 250 goals", "Every goal, searchable by player (real or known name), team, match or stage. The famous ones (Mbappé's volley in the final, Neymar v Croatia, Saka v Switzerland, Güler v Georgia…) are first."],
+        ["★ total (top right)", "Every star you have, out of 150 (50 levels × 3)."],
+        ["The big card · PLAY IT", "The next level to play: the first open level without three stars. Its picture shows where the real goal went in (green dot). PLAY IT opens it."],
+        ["🗺️ Levels", "The levels as rows, one row per stage (Group stage → The final), 10 goals each, easiest first (difficulty: StatsBomb's xG, bodies in the way, distance, a top corner, a volley or overhead). ‹ › move a row along (on a phone, swipe it). Each card: level number, where the real goal went in, scorer and minute, who it was against, your stars, ▶ to play. A level opens when the one before it has a star; a stage opens at 6 / 15 / 26 / 38 stars in all."],
+        ["🔎 All 250 goals", "Every goal, searchable by player (real or known name), team, match or stage. The famous ones (Mbappé's volley in the final, Neymar v Croatia, Saka v Switzerland, Güler v Georgia…) are first. More shows 20 more. The page remembers which of the two you had open."],
       ] },
       { group: "Playing a goal", items: [
         ["The header", "The real score just before the goal, the minute, who you are and how the real one was struck."],
