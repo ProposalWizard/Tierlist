@@ -40,7 +40,8 @@ console.log("\n1. THE DATA");
   console.log(`  fully real: ${tShots.length} shots, ${corners.length} corners (DFL ${tracked.filter((m) => m.src === "dfl").length}, SkillCorner ${tracked.filter((m) => m.src === "skillcorner").length}); placed: ${wy.length} Wyscout shots`);
   ok(tShots.length + corners.length >= 500, `hundreds of fully real moments (${tShots.length + corners.length})`);
   ok(wy.length >= 2500, `thousands of real shots with placed defenders (${wy.length})`);
-  ok(tracked.every((m) => tracks[m.id]), "every fully real moment has its track");
+  ok(tracked.every((m) => tracks[m.id]) && Object.keys(tracks).length === tracked.length, "every fully real moment has its own track");
+  ok(new Set([...tracked, ...wy].map((m) => m.id)).size === tracked.length + wy.length, "every moment id is unique");
   ok(wy.every((s) => !isFullyReal(s) && !s.ff) && tracked.every((m) => isFullyReal(m)), "the two kinds are told apart (src)");
   // Real men stand a few metres off the pitch at times (behind the goal line at a corner).
   const onPitch = (p: number[]) => p[0] >= -5 && p[0] <= PITCH_W + 5 && p[1] >= -5 && p[1] <= 110;

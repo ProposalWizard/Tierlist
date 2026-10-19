@@ -4,8 +4,8 @@
  * the real names and the real goal's ball as a ghost. Drawing and labels
  * only — nothing here is read by the ball, the keeper or an outcome.
  *
- * Holds no data: the StatsBomb goals stay in lib/star/realGoals.ts, which the
- * real game never imports.
+ * Holds no data: the real goals (Wyscout, free-licensed) are in lib/star/realGoals.ts,
+ * which the real game does not import yet.
  */
 import type { Scenario } from "./canvasEngine";
 import type { Kit } from "./kits";

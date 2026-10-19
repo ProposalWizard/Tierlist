@@ -1159,7 +1159,7 @@ export const KEEPER_FEEL_BRAIN = {
 // power it has … you could shoot far post bottom corner like Henry used to …
 // the goalie seems to save almost everything if he's close to it."
 //
-// Real (StatsBomb PL 2015/16, on-target foot shots, tools/statsbomb/placement.py,
+// Real (StatsBomb PL 2015/16, on-target foot shots, tools/statsbomb/placement.py (deleted 19 Oct 2026),
 // docs/gameplay16/keeper.md): a low shot into the FAR corner from a channel of
 // the box is saved 13% of the time (n 55); from under 12 m, 9% (n 33). The
 // near-post low corner from the same spots: 36-66%. Top corners from 12-18 m:

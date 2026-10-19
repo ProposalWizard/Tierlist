@@ -26,7 +26,7 @@ export {
 } from "./types";
 export {
   P, peopleOf, blockersOf, kindForShot, playKindForShot, KIND_LABEL, measureOf, measureReal, measureScenario, ourMeasures, meansOf,
-  FRAME_PEOPLE_M, cameraFor, onScreen, frameHoldsShot, seedForShot, overrideForShot, scenarioForShot, scenarioForCorner, scenarioForMoment,
+  FRAME_PEOPLE_M, cameraFor, onScreen, frameHoldsShot, seedForShot, seedForPlaced, PLACED_TRIES, overrideForShot, scenarioForShot, scenarioForCorner, scenarioForMoment,
   playedKeeperOff,
   type ShotPeople, type ShotMeasure, type MeasureMeans,
 } from "./shots";

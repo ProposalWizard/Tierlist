@@ -243,7 +243,14 @@ function placedOverride(s: RealShot, kind: ScenarioKind, seed: number): PosOverr
   const mirror = Math.abs(real.x - CX) > 2 && Math.sign(sc.ball.x - CX) * Math.sign(real.x - CX) < 0;
   const mx = (x: number) => (mirror ? 2 * CX - x : x);
   const dx = real.x - mx(sc.ball.x), dy = real.y - sc.ball.y;
-  const move = (q: Vec2): Vec2 => ({ x: Math.min(PITCH_W - 0.5, Math.max(0.5, mx(q.x) + dx)), y: Math.max(0.6, q.y + dy) });
+  // Men between the ball and the goal keep their share of that gap (a shot
+  // nearer goal squeezes them, never through the goal line); men behind the
+  // ball move with it.
+  const k = sc.ball.y > 0.5 ? real.y / sc.ball.y : 1;
+  const move = (q: Vec2): Vec2 => ({
+    x: Math.min(PITCH_W - 0.5, Math.max(0.5, mx(q.x) + dx)),
+    y: Math.max(0.6, q.y < sc.ball.y ? q.y * k : q.y + dy),
+  });
   const ov: PosOverride = { items: {}, ball: rv(real) };
   const people: Vec2[] = [];
   let keeper: Vec2 | null = null;
@@ -273,6 +280,30 @@ export function overrideForShot(s: RealShot, kind: ScenarioKind, seed: number, w
   return isFullyReal(s) ? realOverride(s, kind, seed, wide) : placedOverride(s, kind, seed);
 }
 
+/** How many of the game's own chances a placed shot looks through for its picture. */
+export const PLACED_TRIES = 40;
+
+/**
+ * The seed a shot's scenario is built from. A placed shot takes, of
+ * PLACED_TRIES of the game's own chances of its kind, the one whose ball is
+ * nearest the real ball (mirrored to its side), so the game's people are
+ * moved as little as possible (a one-on-one built 16 m out and moved to 2 m
+ * would stand its defenders on the goal line). Deterministic.
+ */
+export function seedForPlaced(s: RealShot, kind: ScenarioKind): number {
+  const base = seedForShot(s);
+  if (isFullyReal(s) || kind === "penalty") return base;
+  const real = P(s.ball);
+  let best = base, bd = Infinity;
+  for (let k = 0; k < PLACED_TRIES; k++) {
+    const seed = (base + k * 7919) % 1_000_000;
+    const b = buildScenario(kind, mulberry32(seed)).ball;
+    const d = Math.hypot(Math.abs(b.x - CX) - Math.abs(real.x - CX), b.y - real.y);
+    if (d < bd) { bd = d; best = seed; }
+  }
+  return best;
+}
+
 /**
  * The real shot as one of our scenarios, built fresh every call.
  * `wideFrame`: the Play camera (every real man within 20 m and the whole goal;
@@ -280,7 +311,7 @@ export function overrideForShot(s: RealShot, kind: ScenarioKind, seed: number, w
  */
 export function scenarioForShot(s: RealShot, opts: { wideFrame?: boolean } = {}): Scenario {
   const kind = playKindForShot(s);
-  const seed = seedForShot(s);
+  const seed = seedForPlaced(s, kind);
   const sc = buildScenario(kind, mulberry32(seed));
   applyOverrideToScenario(sc, overrideForShot(s, kind, seed, !!opts.wideFrame));
   // The real keeper starts where he really stood (the keeper brain would walk him to OUR set spot while you aim).
@@ -308,8 +339,8 @@ export function scenarioForCorner(c: RealCorner): Scenario {
   const v = sc.viewport;
   let x1 = flip ? PITCH_W - v.x2 : v.x1, x2 = flip ? PITCH_W - v.x1 : v.x2;
   const box = [...p.opps, ...p.mates, ...(p.keeper ? [p.keeper] : [])].filter((q) => q.y < 22);
-  if (flagRight) x1 = Math.min(x1, ...box.map((q) => q.x - 3));
-  else x2 = Math.max(x2, ...box.map((q) => q.x + 3));
+  if (flagRight) x1 = Math.min(x1, ...box.map((q) => q.x - 4));
+  else x2 = Math.max(x2, ...box.map((q) => q.x + 4));
   const h = (x2 - x1) * ((v.y2 - v.y1) / (v.x2 - v.x1));
   const cam = { x1: r2(x1), x2: r2(x2), y1: v.y1, y2: r2(v.y1 + h) };
   ov.camera = cam;

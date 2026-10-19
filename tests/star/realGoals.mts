@@ -147,9 +147,10 @@ console.log("\n6. THE BUILD-UP FOLLOWS THE REAL MOVE");
 // ── 7. Fingerprint ───────────────────────────────────────────────────────
 console.log("\n7. THE REAL MATCH IS UNCHANGED WITH THE LANE ABSENT");
 {
-  /** Retaken on Harry 66ce9cf1 with the Wyscout goals (19 Oct 2026). The StatsBomb
+  /** Retaken on Harry 66ce9cf1 with the Wyscout goals and their placed pictures
+   *  (19 Oct 2026; it moves if the placing rule in lib/star/realMoments changes). The StatsBomb
    *  goals' one (c7ad8836) was taken on origin/main 0beabcbf, before the real lane. */
-  const OLD_HASH = "eda3c5cb";
+  const OLD_HASH = "c0175259";
   let h = 2166136261 >>> 0;
   const mix = (v: number | string) => { const s = typeof v === "number" ? (Number.isNaN(v) ? "nan" : v.toFixed(4)) : v; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } };
   for (const g of goals.slice(0, 40)) {

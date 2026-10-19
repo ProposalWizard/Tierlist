@@ -432,7 +432,7 @@ def run_sc():
                 f = refine_shot(m, nearest_frame(int(r["frame_end"]), 2), actor, 2, 6)
                 if f is not None:
                     goal = r["game_interruption_after"] == "goal_for"
-                    meta = dict(base, id=f"sc{r['event_id']}", outcome="Goal" if goal else "Shot", xg=None, body="Foot",
+                    meta = dict(base, id=f"sc{mid}_{r['event_id']}", outcome="Goal" if goal else "Shot", xg=None, body="Foot",
                                 type="Corner" if is_corner else "Open Play")
                     got.append(moment(m, f, team, actor, flip, meta, "shot", 2))
             if is_corner:
@@ -441,7 +441,7 @@ def run_sc():
                 taker_id = taker(m, f, team) if f is not None else None
                 if taker_id is not None:
                     led = "goal" if r["game_interruption_after"] == "goal_for" else "shot" if is_shot else "no shot"
-                    meta = dict(base, id=f"scc{r['event_id']}", type="Corner", player=m.name.get(taker_id, "?"), led=led)
+                    meta = dict(base, id=f"scc{mid}_{r['event_id']}", type="Corner", player=m.name.get(taker_id, "?"), led=led)
                     got.append(moment(m, f, team, taker_id, flip, meta, "corner", 2))
             for rec, tr in got:
                 if rec:

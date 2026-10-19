@@ -75,7 +75,7 @@ function fromCorner(c: RealCorner): Moment {
   return {
     id: c.id, set: "corners", kind: "corner", full: true, build: () => scenarioForCorner(c),
     player: c.player, match: c.match, comp: c.comp, minute: c.minute,
-    what: `corner${c.delivery ? ` · ${c.delivery.replace(/([A-Z])/g, " $1").toLowerCase()}` : ""}${c.led ? ` · led to: ${c.led}` : ""}`,
+    what: [c.delivery ? c.delivery.replace(/([A-Z])/g, " $1").toLowerCase() : "", c.led ? `led to: ${c.led}` : ""].filter(Boolean).join(" · ") || "corner",
   };
 }
 
