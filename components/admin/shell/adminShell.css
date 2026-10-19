@@ -354,3 +354,13 @@ body:has([data-admin-shell]) [data-global-chrome] { display: none !important; }
 .ash[data-look="bento"] .ash-gnav:hover { background: color-mix(in srgb, var(--g) 9%, #fff); }
 .ash[data-look="bento"] .ash-gic { border-radius: 50%; }
 .ash[data-look="bento"] .ash-game[aria-current="page"] { border-bottom-color: var(--ash-accent); }
+
+/* Phone: a slimmer top bar and game tabs (Harry, 19 Oct 2026). */
+@media (max-width: 640px) {
+  .ash-top { padding: 6px 12px; }
+  .ash-top .ash-btn { padding: 5px 10px; font-size: 12.5px; border-radius: 8px; min-height: 32px; }
+  .ash-main { padding-top: 10px; }
+  .ash-games { margin: -2px -16px 8px; }
+  .ash[data-look="broadcast"] .ash-game { padding: 6px 13px 6px 9px; font-size: 11px; gap: 4px; }
+  .ash[data-look="broadcast"] .ash-game[aria-current="page"] { box-shadow: inset 0 -2px 0 var(--bc-amber); }
+}

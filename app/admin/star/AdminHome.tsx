@@ -67,7 +67,7 @@ export default function AdminHome({ role, game = GAMES[0].key }: { role: "admin"
             {(["Harry", "Mikey", "Leo"] as AdminOwner[]).map((o) => (
               <button key={o} className="ash-chip" aria-pressed={owner === o} onClick={() => setOwner(owner === o ? null : o)}>{o} <span className="ah-n">{count(o)}</span></button>
             ))}
-            <button className="ash-chip" aria-pressed={realOnly} onClick={() => setRealOnly(!realOnly)}>Saves real data</button>
+            <button className="ash-chip" aria-pressed={realOnly} onClick={() => setRealOnly(!realOnly)}><span className="ah-full">Saves real data</span><span className="ah-short">Real data</span></button>
           </div>
           {role === "admin" && <TeamWidget />}
         </div>
