@@ -79,6 +79,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Season letter S to D", "detail": "D your league and below · C your league · B +1 · A +2 · S +3." },
           { "title": "How keen, not a promised role", "detail": "Desperate, Very keen, Keen or Interested. Wage hidden until talks." },
           { "title": "Deadline Day total fixed", "detail": "Was \"£15300000m\", now \"★15.3m\"." },
+          { "title": "Next season's leagues in the window (19 Oct)", "detail": "Promoted and relegated clubs moved and marked; the league below yours always listed." },
+          { "title": "No club picked until you pick (19 Oct)", "detail": "Club row says Choose; no \"2 up\" labels." },
+          { "title": "Talks in weekly wages (19 Oct)", "detail": "Was a season's wages (★17.6k); now per week (★382)." },
+          { "title": "Signing crash safety net (19 Oct)", "detail": "A broken 3D signing falls back to the drawn one; the error page shows what broke." },
           { "title": "Transfer fees sized to your league (19 Oct)", "detail": "Was ★406m for a non-league striker; now a 4.5-star 19-year-old is ★200k–310k in the National League, ★120m–140m in the Premier League." }
         ]},
         { "kind": "added", "title": "The world ages", "items": [

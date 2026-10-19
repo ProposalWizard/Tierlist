@@ -1,0 +1,54 @@
+/* 3D training, option 2 (Harry, 19 Oct 2026: "3D training opt 2 cool"): the
+   title bar with the drill and the last result, the training screen in the
+   middle, a drill switcher of picture cards under it.
+   Pictures: public/admin/3d-training/<drill>.webp. The training screen itself
+   is not restyled; only its page background is let through. */
+
+/* The game's own ‹ Back sits fixed at the top left: the title bar starts after it. */
+.t3 .bc-head { padding-left: 96px; align-items: center; }
+.t3 .bc-inner { gap: 10px; padding-bottom: 96px; }
+.t3-sub { font-style: normal; font-weight: 900; text-transform: uppercase; letter-spacing: .02em; color: #fff; }
+
+.t3-score { display: flex; flex-direction: column; justify-content: center; min-width: 170px; padding: 6px 22px 6px 18px;
+  background: rgba(4, 11, 31, 0.75); box-shadow: inset 0 0 0 2px var(--bc-accent); clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.t3-score span { font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: var(--bc-ink3); }
+.t3-score b { font-size: 18px; font-weight: 900; font-style: italic; text-transform: uppercase; color: var(--bc-amber); line-height: 1.1; }
+.t3-score i { font-size: 12px; font-weight: 800; color: var(--bc-ink2); text-transform: uppercase; }
+.t3 .bc-actions .bc-btn { font-size: 16px; padding: 10px 20px; }
+
+/* The training screen: its dark page colour gives way to the frame's. */
+.t3-stage { min-width: 0; }
+.t3-stage [data-relgame] { background: transparent; min-height: 0; }
+
+.t3-switch { border-top: 2px solid var(--bc-accent); background: linear-gradient(180deg, rgba(14, 40, 98, 0.85), rgba(6, 20, 54, 0.92));
+  box-shadow: 0 12px 34px rgba(0, 4, 20, 0.5); }
+.t3-switch-h { display: flex; align-items: baseline; gap: 14px; }
+.t3-switch-h h2 { margin: 0; padding: 6px 40px 6px 14px; font-size: 15px; font-weight: 900; font-style: italic; text-transform: uppercase; color: #fff;
+  background: linear-gradient(100deg, var(--bc-blue), var(--bc-blue2)); clip-path: polygon(0 0, 100% 0, calc(100% - 16px) 100%, 0 100%); }
+.t3-switch-h span { font-size: 12px; font-style: italic; color: var(--bc-ink2); }
+.t3-switch-row { display: flex; align-items: center; gap: 6px; padding: 10px 8px 12px; }
+.t3-arrow { flex: 0 0 auto; width: 34px; height: 60px; border: 0; background: none; color: #fff; font-size: 34px; font-weight: 900; cursor: pointer; opacity: .75; }
+.t3-arrow:hover { opacity: 1; }
+.t3-cards { flex: 1; min-width: 0; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.t3-cards::-webkit-scrollbar { display: none; }
+.t3-card { flex: 0 0 auto; width: max(132px, min(210px, calc((100% - 72px) / 7))); scroll-snap-align: start; padding: 0; border: 0; cursor: pointer; text-align: left;
+  background: #0b1a3d; box-shadow: inset 0 0 0 2px rgba(90, 150, 255, 0.45); border-radius: 2px; overflow: hidden; color: #fff; }
+.t3-card:hover { box-shadow: inset 0 0 0 2px #7fb0ff; }
+.t3-card[aria-pressed="true"] { box-shadow: inset 0 0 0 3px #fff, 0 0 18px rgba(95, 227, 255, 0.45); }
+.t3-pic { display: block; aspect-ratio: 16 / 9; background: #0b1a3d center 40% / cover no-repeat; }
+.t3-name { display: block; padding: 6px 10px 7px; font-size: 14px; font-weight: 900; font-style: italic; text-transform: uppercase; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; background: linear-gradient(180deg, rgba(10, 30, 74, 0.9), rgba(4, 11, 31, 0.95)); }
+.t3-card[aria-pressed="true"] .t3-name { color: var(--bc-amber); }
+
+@media (max-width: 640px) {
+  .t3 .bc-head { padding-left: 92px; flex-wrap: wrap; }
+  .t3 .bc-banner { flex: 1 1 200px; }
+  .t3 .bc-actions { width: 100%; justify-content: space-between; flex-wrap: nowrap; }
+  .t3-score { flex: 1; min-width: 0; }
+  .t3-score b { font-size: 15px; }
+  .t3 .bc-actions .bc-btn { font-size: 14px; padding: 10px 16px; }
+  .t3-card { width: 132px; }
+  .t3-name { font-size: 12px; padding: 5px 8px 6px; }
+  .t3-arrow { display: none; }
+  .t3-switch-row { padding: 8px 10px 10px; }
+}

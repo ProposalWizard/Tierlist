@@ -1,7 +1,7 @@
 import type { CareerState } from "./types";
 import type { TransferOffer } from "./transfers";
 import { reputation, rivalInterestOdds } from "./transfers";
-import { membershipOf, estimateClubStrength, type DivisionMembership } from "./promotion";
+import { membershipOf, estimateClubStrength, seasonLadder, type DivisionMembership, type LadderOutcome } from "./promotion";
 import { sortLeague } from "./season";
 import { ALL_DIVISIONS, divisionOf, divisionRank, DIVISION_ORDER, type CareerDivision } from "./calendar";
 import { clubReputation, clubStanding } from "./clubReputation";
@@ -288,6 +288,8 @@ export interface InterestedClub {
   offer: TransferOffer;
   /** In the Champions/Europa/Conference League this season (the NSS "CHAMPS" tag). */
   europe?: string;
+  /** It changed league at the end of the season (the summer list is next season's leagues). */
+  moved?: "promoted" | "relegated";
 }
 
 export interface InterestLeague {
@@ -301,6 +303,8 @@ export interface WindowInterest {
   report: SeasonReport;
   /** Leagues with at least one club in, highest first. */
   leagues: InterestLeague[];
+  /** Your league next season if you stay (after promotion or relegation). */
+  ownDivision: CareerDivision;
 }
 
 export function windowKey(career: CareerState, window: WindowKind): string {
@@ -370,27 +374,45 @@ export function windowInterest(career: CareerState, window: WindowKind): WindowI
   const ownStrength = estimateClubStrength(career, career.player.club);
   const leagues: InterestLeague[] = [];
 
-  // Up to the ceiling above. A division down only after a poor or steady
-  // season: after a good one nobody steps down, and 24 clubs below would
-  // bury the clubs that matter.
-  const lowest = report.reach < 1 ? yourLevel - 1 : yourLevel;
+  // The summer list is NEXT season's leagues (Mikey, 19 Oct 2026: "whoever
+  // got relegated from the Championship should be in the League One area").
+  // The window opens before the rollover, so the clubs are moved here with
+  // the rollover's own seed (seasonLadder): what you see is what happens.
+  const next = window === "summer" ? safeLadder(career) : null;
+  const ownNext = next?.division ?? own;
+  const nextMembers = (d: CareerDivision): string[] => {
+    if (!next) return membersOf(career, d);
+    return d === ownNext ? next.clubs : [...next.divisions[MEMBERSHIP_KEY[d]]];
+  };
+  const before = previousDivisions(career);
+
+  // Up to the ceiling above (always including your own league next season),
+  // and always one league below yours: a player clubs above want is wanted
+  // below too (Mikey, 19 Oct 2026).
+  const lowest = levelOf(ownNext) - 1;
+  const highest = Math.max(yourLevel + report.ceiling, levelOf(ownNext));
   const divisions = ALL_DIVISIONS
     .filter(d => {
       const lv = levelOf(d);
-      return lv >= lowest && lv <= yourLevel + report.ceiling;
+      return lv >= lowest && lv <= highest;
     })
     .sort((a, b) => levelOf(b) - levelOf(a));
 
   for (const division of divisions) {
     const clubs: InterestedClub[] = [];
-    for (const club of membersOf(career, division)) {
+    for (const club of nextMembers(division)) {
       if (club === career.player.club || gone.has(club)) continue;
+      const was = before.get(club);
+      const moved: InterestedClub["moved"] = was && was !== division
+        ? (levelOf(division) > levelOf(was) ? "promoted" : "relegated") : undefined;
       if (seeded(career, window, club, 3) > rivalInterestOdds(career.player.club, club)) continue;
       const need = squadNeed(career, club, overall);
       const gap = need.known && need.better === 0;
       const crowded = need.known && need.better >= CROWDED_AT;
       const wobble = (seeded(career, window, club, 11) - 0.5) * 2 * WOBBLE;
-      const aim = clubAim(career, division, club, window);
+      // A club that changed league is judged by its new league alone: where
+      // it finished in the old one says nothing about its place in the new.
+      const aim = moved ? levelOf(division) + (clubStanding(club, division) - 0.5) * 2 * AIM_REPUTATION : clubAim(career, was ?? division, club, window) - levelOf(was ?? division) + levelOf(division);
       const margin = you + wobble + (gap ? NEED_BONUS : 0) - (crowded ? CROWDED_PENALTY : 0) - aim;
       if (margin < 0) continue;
 
@@ -405,7 +427,8 @@ export function windowInterest(career: CareerState, window: WindowKind): WindowI
       let s = Math.floor(seeded(career, window, club, 19) * 2 ** 31) || 1;
       const dealRng = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
       const level = interestFor(margin);
-      const { position, of } = finishOf(career, division, club, window);
+      // Where it finished last season, in the league it played in.
+      const { position, of } = finishOf(career, was ?? division, club, window);
       const why = whyLine(level, gap, group, levelOf(division) - yourLevel);
       const fee = feeFrom(career, division, club, window);
       const offer: TransferOffer = {
@@ -422,11 +445,25 @@ export function windowInterest(career: CareerState, window: WindowKind): WindowI
         pitch: why,
         transferFee: fee,
       };
-      clubs.push({ club, division, position, of, interest: level, why, fee, offer, europe: europeOf(career, club) });
+      clubs.push({ club, division, position, of, interest: level, why, fee, offer, europe: europeOf(career, club), ...(moved ? { moved } : {}) });
     }
     if (clubs.length) leagues.push({ division, clubs: clubs.sort(sortClubs) });
   }
-  return { window, key: windowKey(career, window), report, leagues };
+  return { window, key: windowKey(career, window), report, leagues, ownDivision: ownNext };
+}
+
+/** Next season's ladder, or null if it can't be worked out (an odd old save). */
+function safeLadder(career: CareerState): LadderOutcome | null {
+  try { return seasonLadder(career); } catch { return null; }
+}
+
+/** The league each club played in this season. */
+function previousDivisions(career: CareerState): Map<string, CareerDivision> {
+  const out = new Map<string, CareerDivision>();
+  const m = membershipOf(career);
+  for (const d of ALL_DIVISIONS) for (const c of m[MEMBERSHIP_KEY[d]]) out.set(c, d);
+  for (const t of career.league) out.set(t.name, divisionOf(career));
+  return out;
 }
 
 /**

@@ -921,24 +921,25 @@ export default function TierlistBoard({
                 }}
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-white">
-                  {playerMap[tapSelectedId].name}
+                <p className="truncate text-sm font-semibold text-white">
+                  {readableName(playerMap[tapSelectedId].name)}
                 </p>
               </div>
               <button
                 onClick={() => setTapSelectedId(null)}
-                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-gray-700 text-white hover:text-white"
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-gray-700 text-white hover:text-white"
               >
                 ✕
               </button>
             </div>
             {/* Tier buttons grid */}
-            <div className="grid grid-cols-4 gap-1.5">
+            {/* One row for up to six tiers (D used to wrap onto a line of its own). */}
+            <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(tiers.length, 6)}, minmax(0, 1fr))` }}>
               {tiers.map((tier) => (
                 <button
                   key={tier.id}
                   onClick={() => handleMobilePlace(tier.id)}
-                  className="h-9 rounded-lg text-xs font-black text-gray-900 transition-all truncate px-1 active:scale-95"
+                  className="h-11 rounded-lg text-xs font-black text-gray-900 transition-all truncate px-1 active:scale-95"
                   style={{ backgroundColor: tier.color }}
                 >
                   {tier.label}
@@ -949,7 +950,7 @@ export default function TierlistBoard({
         )}
 
         {/* Spacer for mobile bottom bar */}
-        {isMobile && tapSelectedId && <div className="h-28 md:hidden" />}
+        {isMobile && tapSelectedId && <div className="h-32 md:hidden" />}
 
         {/* Error / info banner */}
         {boardError && (
@@ -1151,4 +1152,10 @@ export default function TierlistBoard({
       )}
     </>
   );
+}
+
+/** An uploaded picture's file name ("Arsenal-FC-logo") read as words ("Arsenal FC"). */
+function readableName(name: string): string {
+  const t = name.replace(/\.(png|jpe?g|webp|gif|svg)$/i, "").replace(/[-_]+/g, " ").replace(/\s+logo$/i, "").trim();
+  return t || name;
 }

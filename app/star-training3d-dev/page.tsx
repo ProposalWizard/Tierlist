@@ -9,10 +9,18 @@
  * (components/star/Training3D.tsx), here on a made-up career. Nothing is
  * saved: the result shows on screen and goes nowhere.
  * Testers and admins only.
+ *
+ * Broadcast look, option 2 (Harry, 19 Oct 2026: "3D training opt 2 cool"):
+ * the title bar with the drill and the last result at the top, the training
+ * screen untouched in the middle, and a drill switcher of picture cards under
+ * it. Pictures: public/admin/3d-training/<drill>.webp (real stills of each
+ * drill). Only the menu around the 3D view changed.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Btn } from "@/components/admin/broadcast/BroadcastPage";
+import "./training3d.css";
 import Training3D, { type TrainingGateResult } from "@/components/star/Training3D";
 import type { DrillId } from "@/lib/star/play3d/drills";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
@@ -36,12 +44,12 @@ export default function StarTraining3DDevPage() {
     });
   }, []);
 
-  if (gate === "loading") return <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center text-sm">Loading…</div>;
+  if (gate === "loading") return <BroadcastPage title="3D training" back={null}><div className="bc-note">Loading…</div></BroadcastPage>;
   if (gate === "denied") {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center text-center px-4">
-        <div><div className="text-lg font-black mb-1">Testers only</div><div className="text-sm text-gray-400">This is a development sandbox.</div></div>
-      </div>
+      <BroadcastPage title="Testers only" sub="This is a test page." back={null}>
+        <div className="bc-note">Sign in as a tester or an admin to use it.</div>
+      </BroadcastPage>
     );
   }
   return <Body />;
@@ -79,26 +87,63 @@ function Body() {
     return c;
   }, [key, pace]);
 
+  const strip = useRef<HTMLDivElement>(null);
+  const slide = (dir: number) => strip.current?.scrollBy({ left: dir * strip.current.clientWidth * 0.8, behavior: "smooth" });
+  const nowIdx = OPEN.findIndex((o) => o.id === drill);
+  const now = OPEN[nowIdx];
+
   return (
-    <>
-      <Training3D
-        key={`${drill}-${mode}-${key}`}
-        career={career}
-        startDrill={drill === "picker" ? undefined : drill}
-        startMode={mode}
-        onExit={() => { window.location.href = "/star-3d-area-dev"; }}
-        onFinish={(r) => { setLast(r); setKey((k) => k + 1); }}
-      />
-      <div className="fixed left-1/2 top-1 z-[90] flex -translate-x-1/2 gap-1" data-dev-drills>
-        {OPEN.map((o) => (
-          <button key={o.id} onClick={() => { setDrill(o.id); setKey((k) => k + 1); }} className={`h-[26px] rounded-full border px-2 text-[11px] font-extrabold ${drill === o.id ? "border-sky-300 bg-sky-500 text-white" : "border-white/20 bg-black/60 text-white"}`}>{o.label}</button>
-        ))}
-      </div>
-      <div className="fixed bottom-3 right-3 z-[90] flex gap-1.5">
-        <button onClick={() => setKey((k) => k + 1)} className="h-[30px] rounded-full border border-white/20 bg-black/60 px-2.5 text-[12px] font-extrabold text-white">Restart</button>
-        {last && <div className="h-[30px] rounded-full bg-black/60 px-2.5 text-[12px] font-extrabold leading-[30px] text-white">Last: {last.you !== undefined ? `${last.you}-${last.him} ` : ""}({last.drill ?? "crossbar"}, {last.won ? "won" : "lost"}, Team {last.gain >= 0 ? "+" : ""}{last.gain})</div>}
-      </div>
+    <div className="t3">
+      <BroadcastPage
+        title="3D training"
+        sub={<span className="t3-sub">{String(nowIdx + 1).padStart(2, "0")}: {now.id === "picker" ? "The drill picker" : now.label}</span>}
+        back={null}
+        width={1440}
+        actions={
+          <>
+            <div className="t3-score" data-last-result>
+              <span>Last</span>
+              <b>{last ? `${last.you !== undefined ? `${last.you}-${last.him} · ` : ""}${last.won ? "Won" : "Lost"} · Team ${last.gain >= 0 ? "+" : ""}${last.gain}` : "None yet"}</b>
+              {last && <i>{last.drill ?? "crossbar"}</i>}
+            </div>
+            <Btn onClick={() => setKey((k) => k + 1)} title="Start again with a different team-mate">↻ Restart</Btn>
+          </>
+        }
+      >
+        <div className="t3-stage">
+          <Training3D
+            key={`${drill}-${mode}-${key}`}
+            career={career}
+            startDrill={drill === "picker" ? undefined : drill}
+            startMode={mode}
+            onExit={() => { window.location.href = "/star-3d-area-dev"; }}
+            onFinish={(r) => { setLast(r); setKey((k) => k + 1); }}
+          />
+        </div>
+
+        <section className="t3-switch">
+          <div className="t3-switch-h"><h2>Drill switcher</h2><span>Tap one to open it</span></div>
+          <div className="t3-switch-row">
+            <button className="t3-arrow" onClick={() => slide(-1)} aria-label="Scroll left">‹</button>
+            <div className="t3-cards" ref={strip} data-dev-drills>
+              {OPEN.map((o, i) => (
+                <button
+                  key={o.id}
+                  onClick={() => { setDrill(o.id); setKey((k) => k + 1); }}
+                  aria-pressed={drill === o.id}
+                  className="t3-card"
+                  title={o.id === "picker" ? "Open the drill picker" : `Open ${o.label}`}
+                >
+                  <span className="t3-pic" style={{ backgroundImage: `url(/admin/3d-training/${o.id}.webp)` }} role="img" aria-label={`${o.label}: a still from this page`} />
+                  <span className="t3-name">{String(i + 1).padStart(2, "0")}: {o.label}</span>
+                </button>
+              ))}
+            </div>
+            <button className="t3-arrow" onClick={() => slide(1)} aria-label="Scroll right">›</button>
+          </div>
+        </section>
+      </BroadcastPage>
       <PageGuide page="/star-training3d-dev" corner="bottom-left" />
-    </>
+    </div>
   );
 }

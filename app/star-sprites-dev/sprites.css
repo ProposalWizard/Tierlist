@@ -1,0 +1,4 @@
+/* /star-sprites-dev: the pitch keeps its real 390 px width (the men's size). */
+.spr-pitchwrap { width: 390px; max-width: 100%; overflow: hidden; border: 1px solid var(--bc-line); border-radius: 4px; }
+.spr-zoom { background: #3a9a3f; }
+@media (max-width: 520px) { .spr-pitchwrap { max-width: none; margin-inline: -14px; border-radius: 0; border-inline: 0; } }

@@ -76,7 +76,10 @@
   display: flex; flex-direction: column; gap: 4px;
   padding: 18px 12px; border-right: 1px solid var(--ash-line);
   background: var(--ash-bg2); overflow-y: auto; overscroll-behavior: contain;
+  /* No thick dark scrollbar between the menu and the page (Harry, 19 Oct). */
+  scrollbar-width: none;
 }
+.ash-side::-webkit-scrollbar { display: none; }
 .ash[data-look="ops"] .ash-side { background: rgba(7, 12, 9, 0.85); backdrop-filter: var(--ash-blur); }
 .ash-main { flex: 1 1 auto; min-width: 0; padding: 22px clamp(16px, 3vw, 36px) 80px; }
 .ash-top { display: none; }
@@ -171,3 +174,104 @@
 /* The admin pages are their own app: the site's top menu and footer hide
  * while the shell is on the page (same trick as the career game). */
 body:has([data-admin-shell]) [data-global-chrome] { display: none !important; }
+
+/* Folding the side menu (Harry, 19 Oct 2026): « on a computer leaves a strip of icons. */
+.ash-fold { margin-left: auto; width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--ash-line); background: none; color: var(--ash-ink3); cursor: pointer; display: grid; place-items: center; flex: 0 0 auto; }
+.ash-fold:hover { color: var(--ash-ink); background: var(--ash-panel2); }
+.ash-nbadge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--ash-red); color: #fff; font-size: 10.5px; font-weight: 900; display: grid; place-items: center; }
+.ash-nav { position: relative; }
+@media (max-width: 1023px) { .ash-fold { display: none; } }
+@media (min-width: 1024px) {
+  .ash[data-folded="true"] .ash-side { width: 64px; flex-basis: 64px; padding: 18px 8px; align-items: center; }
+  .ash[data-folded="true"] .ash-navt,
+  .ash[data-folded="true"] .ash-navh,
+  .ash[data-folded="true"] .ash-side > :not(.ash-brand):not(.ash-nav) { display: none; }
+  .ash[data-folded="true"] .ash-brand { flex-direction: column; padding: 4px 0 12px; gap: 10px; }
+  .ash[data-folded="true"] .ash-fold { margin: 0; }
+  .ash[data-folded="true"] .ash-nav { justify-content: center; padding: 9px; width: 44px; }
+  .ash[data-folded="true"] .ash-nav[href^="/admin/star#"] { display: none; }
+  .ash[data-folded="true"] .ash-nbadge { position: absolute; top: 1px; right: 1px; min-width: 14px; height: 14px; font-size: 8.5px; padding: 0 3px; }
+}
+
+/* ── Broadcast (look D, Harry 19 Oct 2026): midnight blue, floodlights, slanted TV bars. ── */
+.ash[data-look="broadcast"] {
+  --ash-bg: #040b1f;
+  --ash-bg2: #061230;
+  --ash-panel: rgba(10, 30, 74, 0.72);
+  --ash-panel-solid: #0a1d47;
+  --ash-panel2: rgba(22, 52, 112, 0.55);
+  --ash-line: rgba(90, 150, 255, 0.18);
+  --ash-line2: rgba(90, 150, 255, 0.34);
+  --ash-ink: #eef4ff;
+  --ash-ink2: #a9bde2;
+  --ash-ink3: #6f86b3;
+  --ash-accent: #2f8cff;
+  --ash-accent-ink: #ffffff;
+  --ash-accent-soft: rgba(47, 140, 255, 0.18);
+  --ash-amber: #ffc24a;
+  --ash-amber-soft: rgba(255, 194, 74, 0.14);
+  --ash-red: #ff4d5e;
+  --ash-red-soft: rgba(255, 77, 94, 0.16);
+  --ash-blue: #2f8cff;
+  --ash-violet: #9b6bff;
+  --ash-harry: #2fd27a;
+  --ash-mikey: #2f8cff;
+  --ash-leo: #9b6bff;
+  --ash-shadow: 0 12px 34px rgba(0, 4, 20, 0.5);
+  --ash-grid: transparent;
+  --ash-blur: blur(12px);
+  color-scheme: dark;
+  background:
+    radial-gradient(28% 22% at 18% -4%, rgba(170, 205, 255, 0.28), transparent 70%),
+    radial-gradient(28% 22% at 82% -4%, rgba(170, 205, 255, 0.24), transparent 70%),
+    radial-gradient(90% 40% at 50% 112%, rgba(20, 120, 70, 0.32), transparent 70%),
+    linear-gradient(180deg, #071a45 0%, #040b1f 55%, #03091a 100%);
+  background-attachment: fixed;
+}
+.ash[data-look="broadcast"] .ash-side,
+.ash[data-look="broadcast"] .ash-top { background: rgba(4, 12, 34, 0.86); backdrop-filter: var(--ash-blur); }
+.ash[data-look="broadcast"] .ash-mark { background: linear-gradient(135deg, #5aa8ff, #1f6fe0); transform: skewX(-10deg); border-radius: 5px; }
+.ash[data-look="broadcast"] .ash-brand b,
+.ash[data-look="broadcast"] .ash-word { font-style: italic; font-weight: 900; letter-spacing: .02em; font-size: 15px; }
+.ash[data-look="broadcast"] .ash-nav[aria-current="page"] { background: linear-gradient(90deg, rgba(47,140,255,.32), rgba(47,140,255,.06)); border-color: transparent; box-shadow: inset 3px 0 0 var(--ash-accent); }
+.ash[data-look="broadcast"] .ash-h1 { font-style: italic; text-transform: uppercase; letter-spacing: -.01em; }
+.ash[data-look="broadcast"] .ash-panel { border-radius: 6px; }
+
+/* ── Bento (look F, Harry 19 Oct 2026): white, a soft colour per group, friendly. ── */
+.ash[data-look="bento"] {
+  --ash-bg: #f3f5fa;
+  --ash-bg2: #ffffff;
+  --ash-panel: #ffffff;
+  --ash-panel-solid: #ffffff;
+  --ash-panel2: #eef1f7;
+  --ash-line: #e4e8f0;
+  --ash-line2: #d3d9e6;
+  --ash-ink: #151a2d;
+  --ash-ink2: #4f5874;
+  --ash-ink3: #8790a8;
+  --ash-accent: #2f6bff;
+  --ash-accent-ink: #ffffff;
+  --ash-accent-soft: rgba(47, 107, 255, 0.10);
+  --ash-amber: #b7790b;
+  --ash-amber-soft: rgba(183, 121, 11, 0.10);
+  --ash-red: #e5484d;
+  --ash-red-soft: rgba(229, 72, 77, 0.09);
+  --ash-blue: #2f6bff;
+  --ash-violet: #7c4dff;
+  --ash-harry: #1fb85a;
+  --ash-mikey: #2f6bff;
+  --ash-leo: #8a4dff;
+  --ash-shadow: 0 1px 2px rgba(21, 26, 45, 0.05), 0 6px 18px rgba(21, 26, 45, 0.04);
+  --ash-grid: transparent;
+  --ash-blur: none;
+  color-scheme: light;
+  background: var(--ash-bg);
+}
+.ash[data-look="bento"] .ash-panel { border-radius: 18px; }
+.ash[data-look="bento"] .ash-mark { border-radius: 50%; }
+.ash[data-look="bento"] .ash-av { color: #fff; }
+.ash[data-look="bento"] .ash-av.Harry, .ash[data-look="bento"] .ash-av.Mikey { color: #fff; }
+
+/* Four looks: the switch is two by two. */
+.ash-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.ash-switch button { white-space: nowrap; }

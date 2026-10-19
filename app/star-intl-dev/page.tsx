@@ -8,7 +8,7 @@
  * squad-announcement screen exactly as the game draws it.
  * Nothing is saved.
  */
-import { useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import "@/components/star/ui/flat.css";
 import { pitchFont } from "@/components/star/ui/pitchFont";
 import IntlWorldPanel from "@/components/star/IntlWorldPanel";
@@ -115,53 +115,36 @@ function careerSeason(nation: string, seasons = 1, stopAtTournament = false): Ca
   return c;
 }
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, PanelGrid, Btn, Note } from "@/components/admin/broadcast/BroadcastPage";
+import { KitPicture } from "@/components/admin/NationKitsTable";
+import { nationKits } from "@/lib/star/international";
+import { nationKitProfile } from "@/lib/star/data/nationKits";
+import "./intl.css";
 import BallonDor from "@/components/star/BallonDor";
 import CallUpScreen from "@/components/star/CallUpScreen";
 import NationFlag from "@/components/star/NationFlag";
 import { newWorld } from "@/lib/star/intl/replay";
 import { NATIONS } from "@/lib/star/intl/nations";
 import { table, played } from "@/lib/star/intl/engine";
+import type { WorldMatch as IntlMatch } from "@/lib/star/intl/world";
 import type { IntlDecision, Period } from "@/lib/star/intl/career";
 
+type Shot = "called" | "out" | "country" | "duty" | "watched" | "season" | "tournament" | "ballon";
 const YEARS = Array.from({ length: 20 }, (_, i) => 2027 + i);
-const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
-export default function IntlDevPage() {
-  const [year, setYear] = useState(2028);
-  const [nation, setNation] = useState("England");
-  const [shot, setShot] = useState<null | "called" | "out" | "country" | "duty" | "watched" | "season" | "tournament" | "ballon">(null);
-  const nations = useMemo(() => NATIONS.map((n) => n.name).sort(), []);
-  const w = useMemo(() => {
-    const world = newWorld({ xi: {}, played: {}, firstYear: 2026 });
-    world.run(Date.UTC(year, 7, 1));
-    return world;
-  }, [year]);
-  const mine = w.matches.filter((m) => (m.home === nation || m.away === nation)).sort((a, b) => a.date - b.date);
-  const done = mine.filter(played);
-  const groups = useMemo(() => {
-    const seen = new Set<string>();
-    const out: { title: string; rows: ReturnType<typeof table> }[] = [];
-    for (const m of [...done].reverse()) {
-      if (!m.group || seen.has(`${m.edition}|${m.group}`)) continue;
-      seen.add(`${m.edition}|${m.group}`);
-      const ms = w.edition(m.edition).filter((x) => x.group === m.group);
-      const teams = Array.from(new Set(ms.flatMap((x) => [x.home, x.away])));
-      out.push({ title: `${m.comp} · ${m.stage.split(" · ")[0]}`, rows: table(teams, ms, "h2h", w.rankOf) });
-      if (out.length >= 3) break;
-    }
-    return out;
-  }, [done, w]);
-
+/** One game screen for `nation`, exactly as Play opens it. Used full size
+ *  by Play and shrunk on each card. */
+const Screen = memo(function Screen({ shot, nation, done, onBack }: { shot: Shot; nation: string; done: IntlMatch[]; onBack: () => void }) {
   if (shot === "duty" || shot === "watched") {
     const { career: c, watched } = careerAtBreak(nation, shot === "duty");
     const duty = dutyNow(c);
     return (
       <div className={`star-root ${pitchFont.variable} min-h-screen bg-[#05080f] text-white`}>
         {shot === "watched" && watched
-          ? <WatchedScreen career={c} fixture={watched} onContinue={() => setShot(null)} />
+          ? <WatchedScreen career={c} fixture={watched} onContinue={() => onBack()} />
           : (
             <div className="px-3 py-4">
-              <button onClick={() => setShot(null)} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
+              <button onClick={() => onBack()} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
               {duty ? <NationalLeague career={c} duty={duty} /> : <div className="text-[13px] font-bold">{nation} has no break match to show yet.</div>}
             </div>
           )}
@@ -176,9 +159,9 @@ export default function IntlDevPage() {
     const duty = dutyNow(c);
     return (
       <div className={`star-root ${pitchFont.variable} min-h-screen bg-[#05080f] text-white`}>
-        {shot === "ballon" ? <BallonDor career={c} startAt="result" onContinue={() => setShot(null)} /> : (
+        {shot === "ballon" ? <BallonDor career={c} startAt="result" onContinue={() => onBack()} /> : (
           <div className="px-3 py-4">
-            <button onClick={() => setShot(null)} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
+            <button onClick={() => onBack()} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
             {shot === "tournament"
               ? (duty ? <NationalLeague career={c} duty={duty} /> : <div className="text-[13px] font-bold">{nation} didn&apos;t reach a tournament in 2027/28 (try another nation).</div>)
               : <IntlWorldPanel career={c} />}
@@ -196,13 +179,13 @@ export default function IntlDevPage() {
     c = { ...c, intl: { ...intlOf(c), manager: 62 } };
     return (
       <div className={`star-root ${pitchFont.variable} min-h-screen bg-[#05080f] px-3 py-4 text-white`}>
-        <button onClick={() => setShot(null)} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
+        <button onClick={() => onBack()} className="mb-2 text-[13px] font-bold text-sky-300">← Back</button>
         <IntlWorldPanel career={c} />
       </div>
     );
   }
 
-  if (shot) {
+  {
     const lastWindow = done.filter((m) => m.comp !== "World Cup").slice(-2);
     const period: Period = {
       key: "sample", kind: "window", label: "September–October 2026", matches: lastWindow,
@@ -211,74 +194,215 @@ export default function IntlDevPage() {
     const d: IntlDecision = shot === "called"
       ? { period, nation, called: true, chance: 0.9, starter: true, reason: "You're one of his first names on the team sheet.", manager: 62, line: `${nation}'s manager sees you as a starter.` }
       : { period, nation, called: false, chance: 0.1, starter: false, reason: `${nation}'s manager isn't looking at you yet.`, manager: 12, line: `${nation}'s manager doesn't know your name yet. Their squad is picked at about 81.` };
-    return <div className={`star-root ${pitchFont.variable}`}><CallUpScreen decision={d} onContinue={() => setShot(null)} /></div>;
+    return <div className={`star-root ${pitchFont.variable}`}><CallUpScreen decision={d} onContinue={() => onBack()} /></div>;
   }
 
-  return (
-    <div className="min-h-screen bg-gray-950 px-4 py-5 text-white">
-      <h1 className="text-[20px] font-black">International world</h1>
-      <div className="mt-1 text-[12px] font-bold text-white/80">Every competition played from August 2026 to 1 August of the year picked. Nothing is saved.</div>
-      <div className="mt-3 flex flex-wrap gap-2 text-[13px] font-bold">
-        <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="rounded bg-white/10 px-2 py-1">
-          {YEARS.map((y) => <option key={y} value={y} className="bg-gray-900">Up to Aug {y}</option>)}
-        </select>
-        <select value={nation} onChange={(e) => setNation(e.target.value)} className="rounded bg-white/10 px-2 py-1">
-          {nations.map((n) => <option key={n} value={n} className="bg-gray-900">{n}</option>)}
-        </select>
-        <button onClick={() => setShot("called")} className="rounded bg-sky-600 px-2 py-1">▶ Called up screen</button>
-        <button onClick={() => setShot("out")} className="rounded bg-slate-600 px-2 py-1">▶ Left out screen</button>
-        <button onClick={() => setShot("country")} className="rounded bg-emerald-700 px-2 py-1">▶ Country page</button>
-        <button onClick={() => setShot("duty")} className="rounded bg-amber-700 px-2 py-1">▶ On duty (League)</button>
-        <button onClick={() => setShot("watched")} className="rounded bg-indigo-700 px-2 py-1">▶ Watched on TV</button>
-        <button onClick={() => setShot("season")} className="rounded bg-emerald-800 px-2 py-1">▶ Country page after a season</button>
-        <button onClick={() => setShot("tournament")} className="rounded bg-amber-800 px-2 py-1">▶ On duty at a tournament</button>
-        <button onClick={() => setShot("ballon")} className="rounded bg-yellow-700 px-2 py-1">▶ Ballon d&apos;Or after a season</button>
-      </div>
+});
+const NOOP = () => {};
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <section className="min-w-0 overflow-hidden rounded-xl bg-white/5 p-3">
-          <h2 className="text-[12px] font-black uppercase tracking-wider">Who won ({w.finals.length})</h2>
-          {[...w.finals].reverse().map((f) => (
-            <div key={f.edition} className="flex items-center gap-1.5 border-t border-white/5 py-1 text-[12px] font-bold">
-              <span className="w-9 text-white/70">{f.year}</span><span className="min-w-0 flex-1 truncate">{f.comp}</span>
-              <NationFlag nation={f.winner} width={16} /><span className="max-w-[6rem] truncate font-black">{f.winner}</span>
-              <span className="shrink-0 text-white/70">{f.hs}–{f.as}{f.pens ? ` (${f.pens.hs}–${f.pens.as} p)` : ""}</span>
-              <span className="max-w-[5rem] truncate text-white/80">{f.runnerUp}</span>
+/** A card picture: the live screen for the picked nation, drawn at phone
+ *  size and shrunk to fit. Light screens draw once the card is on view;
+ *  the slow ones (a whole season played first) only while the card is
+ *  hovered or focused, else the nation's flag. */
+const SLOW: Shot[] = ["season", "tournament", "ballon"];
+const PHONE_W = 390;
+function CardPicture({ shot, nation, label, done, hot }: { shot: Shot; nation: string; label: string; done: IntlMatch[]; hot: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [seen, setSeen] = useState(false);
+  const [scale, setScale] = useState(0.5);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) setSeen(true); }, { rootMargin: "200px" });
+    io.observe(el);
+    const ro = new ResizeObserver(() => setScale(el.clientWidth / PHONE_W));
+    ro.observe(el);
+    return () => { io.disconnect(); ro.disconnect(); };
+  }, []);
+  const slow = SLOW.includes(shot);
+  const live = seen && (!slow || hot);
+  return (
+    <div ref={ref} className="iw-pic" aria-hidden>
+      {live ? (
+        <div className="iw-live" style={{ width: PHONE_W, transform: `scale(${scale})` }}>
+          <Screen shot={shot} nation={nation} done={done} onBack={NOOP} />
+        </div>
+      ) : (
+        <div className="iw-ph">
+          <NationFlag nation={nation} width={96} rounded={3} />
+          <span>{label}</span>
+          {slow && <em>Point at it to see it</em>}
+        </div>
+      )}
+    </div>
+  );
+}
+const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+
+export default function IntlDevPage() {
+  const [year, setYear] = useState(2028);
+  const [nation, setNation] = useState("England");
+  const [search, setSearch] = useState("");
+  const [shot, setShot] = useState<null | Shot>(null);
+  const [hot, setHot] = useState<null | Shot>(null);
+  const nations = useMemo(() => NATIONS.map((n) => n.name).sort(), []);
+  const w = useMemo(() => {
+    const world = newWorld({ xi: {}, played: {}, firstYear: 2026 });
+    world.run(Date.UTC(year, 7, 1));
+    return world;
+  }, [year]);
+  const mine = useMemo(() => w.matches.filter((m) => (m.home === nation || m.away === nation)).sort((a, b) => a.date - b.date), [w, nation]);
+  const done = useMemo(() => mine.filter(played), [mine]);
+  const groups = useMemo(() => {
+    const seen = new Set<string>();
+    const out: { title: string; rows: ReturnType<typeof table> }[] = [];
+    for (const m of [...done].reverse()) {
+      if (!m.group || seen.has(`${m.edition}|${m.group}`)) continue;
+      seen.add(`${m.edition}|${m.group}`);
+      const ms = w.edition(m.edition).filter((x) => x.group === m.group);
+      const teams = Array.from(new Set(ms.flatMap((x) => [x.home, x.away])));
+      out.push({ title: `${m.comp} · ${m.stage.split(" · ")[0]}`, rows: table(teams, ms, "h2h", w.rankOf) });
+      if (out.length >= 3) break;
+    }
+    return out;
+  }, [done, w]);
+
+  if (shot) return <Screen shot={shot} nation={nation} done={done} onBack={() => setShot(null)} />;
+
+  const info = NATIONS.find((n) => n.name === nation);
+  const codeOf = (n: string) => NATIONS.find((x) => x.name === n)?.code ?? n.slice(0, 3).toUpperCase();
+  const kits = nationKits(nation);
+  const profile = nationKitProfile(nation);
+  const shown = nations.filter((n) => n.toLowerCase().includes(search.trim().toLowerCase()));
+  const card = (label: string, v: Shot, line: string, main = false) => (
+    <div className="iw-card" tabIndex={0} onMouseEnter={() => setHot(v)} onFocus={() => setHot(v)}>
+      <div className="iw-ct">{label}</div>
+      <CardPicture key={`${v}-${nation}-${year}`} shot={v} nation={nation} label={label} done={done} hot={hot === v} />
+      <div className="iw-cl">{line}</div>
+      <div className="iw-cf"><Btn main={main} onClick={() => setShot(v)}>▶ Play</Btn></div>
+    </div>
+  );
+
+  return (
+    <BroadcastPage
+      title="International world"
+      sub="Every competition from August 2026 to 1 August of the year picked. Nothing is saved."
+    >
+      <div className="iw-layout">
+        <aside className="iw-rail">
+          <Panel title="Nations" note={`${nations.length}`}>
+            <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="iw-select" aria-label="Year">
+              {YEARS.map((y) => <option key={y} value={y}>Played up to Aug {y}</option>)}
+            </select>
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search nations" className="iw-search" aria-label="Search nations" />
+            <div className="iw-list">
+              {shown.map((n) => (
+                <button key={n} className="iw-nation" aria-pressed={n === nation} onClick={() => setNation(n)}>
+                  <NationFlag nation={n} width={22} /><span>{n}</span><i>#{w.rankOf(n)}</i>
+                </button>
+              ))}
+              {shown.length === 0 && <Note>No nation by that name.</Note>}
             </div>
-          ))}
-        </section>
-        <section className="min-w-0 overflow-hidden rounded-xl bg-white/5 p-3">
-          <h2 className="text-[12px] font-black uppercase tracking-wider">FIFA ranking</h2>
-          {w.ranking().slice(0, 20).map((n, i) => (
-            <div key={n} className={`flex items-center gap-1.5 py-0.5 text-[12px] font-bold ${n === nation ? "text-amber-300" : ""}`}>
-              <span className="w-5 text-right text-white/70">{i + 1}</span><NationFlag nation={n} width={16} /><span className="flex-1">{n}</span>
-              <span className="text-white/70">{Math.round(w.points.get(n) ?? 0)}</span>
-            </div>
-          ))}
-          <div className="mt-1 text-[12px] font-bold">{nation}: #{w.rankOf(nation)}</div>
-        </section>
-        {groups.map((g) => (
-          <section key={g.title} className="min-w-0 overflow-hidden rounded-xl bg-white/5 p-3">
-            <h2 className="text-[12px] font-black uppercase tracking-wider">{g.title}</h2>
-            {g.rows.map((r, i) => (
-              <div key={r.name} className={`grid grid-cols-[1fr_repeat(5,2rem)] py-0.5 text-[12px] font-bold ${r.name === nation ? "text-amber-300" : ""}`}>
-                <span>{i + 1}. {r.name}</span><span>{r.p}</span><span>{r.w}</span><span>{r.d}</span><span>{r.gf - r.ga}</span><span className="font-black">{r.pts}</span>
+          </Panel>
+        </aside>
+
+        <div className="iw-main">
+          <div className="iw-hero" style={{ ["--iw-a" as string]: kits.home.shirt, ["--iw-b" as string]: kits.home.trim }}>
+            <div className="iw-flag"><NationFlag nation={nation} width={150} rounded={4} /></div>
+            <div className="iw-name">
+              <h2>{nation}</h2>
+              <div className="iw-tags">
+                <span className="iw-rank">FIFA ranking #{w.rankOf(nation)}</span>
+                <span className="iw-sub">{Math.round(w.points.get(nation) ?? 0)} pts{info ? ` · ${info.confederation}` : ""}</span>
               </div>
-            ))}
-          </section>
-        ))}
-        <section className="min-w-0 overflow-hidden rounded-xl bg-white/5 p-3 md:col-span-2">
-          <h2 className="text-[12px] font-black uppercase tracking-wider">{nation}: last 20 matches</h2>
-          {done.slice(-20).reverse().map((m) => (
-            <div key={m.id} className="flex flex-wrap gap-x-2 border-t border-white/5 py-1 text-[12px] font-bold">
-              <span className="w-24 text-white/70">{day(m.date)}</span>
-              <span className="min-w-0 flex-1">{m.home} {m.hs}–{m.as} {m.away}{m.pens ? ` (${m.pens.hs}–${m.pens.as} p)` : ""}</span>
-              <span className="w-full text-[10.5px] text-white/70">{m.comp} · {m.stage}</span>
             </div>
-          ))}
-        </section>
+          </div>
+
+          <div className="iw-row">
+            <Panel title="Home & away" note={profile ? "real kits" : "no kit data: grey"}>
+              <div className="iw-kits">
+                <div className="iw-kit"><KitPicture kit={profile?.homeKit} worn={kits.home} /><span>Home</span></div>
+                <div className="iw-kit"><KitPicture kit={profile?.awayKit} worn={kits.away} /><span>Away</span></div>
+              </div>
+            </Panel>
+            <Panel title="Last results" note={`${done.length} played`}>
+              <div className="iw-results">
+                {done.slice(-4).reverse().map((m) => (
+                  <div key={m.id} className="iw-res" title={`${m.comp} · ${m.stage} · ${day(m.date)}`}>
+                    <NationFlag nation={m.home} width={20} /><b>{codeOf(m.home)}</b>
+                    <span className="iw-score">{m.hs}–{m.as}{m.pens ? "*" : ""}</span>
+                    <b>{codeOf(m.away)}</b><NationFlag nation={m.away} width={20} />
+                    <em>{m.comp}</em>
+                  </div>
+                ))}
+                {done.length === 0 && <Note>No matches played yet.</Note>}
+              </div>
+            </Panel>
+          </div>
+
+          <Panel title="The screens">
+            <div className="iw-cards">
+              {card("Called up", "called", "The squad announcement: you're in.", true)}
+              {card("Left out", "out", "The squad announcement: not picked.")}
+              {card("Country page", "country", "Stats → Country, new career.")}
+              {card("On duty (League)", "duty", "The League tab on a break.")}
+              {card("Watched on TV", "watched", "Not picked: after the match.")}
+              {card("Country page after a season", "season", "Full tables. Takes a few seconds.")}
+              {card("On duty at a tournament", "tournament", "Two group games into summer 2028.")}
+              {card("Ballon d'Or after a season", "ballon", "With your international goals.")}
+            </div>
+          </Panel>
+
+          <PanelGrid min={340}>
+            <Panel title={`Who won (${w.finals.length})`}>
+              <div className="iw-rows">
+                {[...w.finals].reverse().map((f) => (
+                  <div key={f.edition} className="iw-final">
+                    <span className="iw-dim">{f.year}</span><span className="iw-grow">{f.comp}</span>
+                    <NationFlag nation={f.winner} width={18} /><b>{f.winner}</b>
+                    <span className="iw-dim">{f.hs}–{f.as}{f.pens ? ` (${f.pens.hs}–${f.pens.as} p)` : ""} {f.runnerUp}</span>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+            <Panel title="FIFA ranking" note={`${nation}: #${w.rankOf(nation)}`}>
+              <div className="iw-rows">
+                {w.ranking().slice(0, 20).map((n, i) => (
+                  <button key={n} className="iw-rk" data-me={n === nation ? "true" : undefined} onClick={() => setNation(n)}>
+                    <span className="iw-dim">{i + 1}</span><NationFlag nation={n} width={18} /><span className="iw-grow">{n}</span>
+                    <span className="iw-dim">{Math.round(w.points.get(n) ?? 0)}</span>
+                  </button>
+                ))}
+              </div>
+            </Panel>
+            {groups.map((g) => (
+              <Panel key={g.title} title={g.title}>
+                <div className="iw-table">
+                  <div className="iw-tr iw-th"><span>Team</span><span>P</span><span>W</span><span>D</span><span>GD</span><span>Pts</span></div>
+                  {g.rows.map((r, i) => (
+                    <div key={r.name} className="iw-tr" data-me={r.name === nation ? "true" : undefined}>
+                      <span className="iw-team">{i + 1}. <NationFlag nation={r.name} width={16} /> {r.name}</span><span>{r.p}</span><span>{r.w}</span><span>{r.d}</span><span>{r.gf - r.ga}</span><b>{r.pts}</b>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            ))}
+          </PanelGrid>
+
+          <Panel title={`${nation}: last 20 matches`}>
+            <div className="iw-rows">
+              {done.slice(-20).reverse().map((m) => (
+                <div key={m.id} className="iw-match">
+                  <span className="iw-dim iw-date">{day(m.date)}</span>
+                  <span className="iw-grow">{m.home} <b>{m.hs}–{m.as}</b> {m.away}{m.pens ? ` (${m.pens.hs}–${m.pens.as} p)` : ""}</span>
+                  <span className="iw-comp">{m.comp} · {m.stage}</span>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        </div>
       </div>
       <PageGuide page="/star-intl-dev" corner="bottom-left" />
-    </div>
+    </BroadcastPage>
   );
 }

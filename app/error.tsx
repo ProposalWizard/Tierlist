@@ -22,6 +22,16 @@ export default function Error({
           An unexpected error occurred. You can try again, or head back to the
           homepage.
         </p>
+        {/* What broke, small, so a screenshot tells us (Mikey, 19 Oct 2026:
+            a crash we could not reproduce on a fresh career). */}
+        <details className="mb-5 text-left">
+          <summary className="cursor-pointer text-xs font-bold text-white/70">What went wrong (for the developers)</summary>
+          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-black/50 p-3 text-[11px] text-amber-200">
+            {error.message}
+            {error.digest ? `\n(digest ${error.digest})` : ""}
+            {error.stack ? `\n\n${error.stack.split("\n").slice(0, 8).join("\n")}` : ""}
+          </pre>
+        </details>
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={reset}

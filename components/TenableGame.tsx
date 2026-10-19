@@ -122,7 +122,8 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
 
   useEffect(() => {
     if (!anim && !gameOver) {
-      setTimeout(() => inputRef.current?.focus(), 0);
+      // Only with a mouse: on a phone focusing opens the keyboard and jumps the page.
+      if (window.matchMedia?.("(pointer: fine)").matches) setTimeout(() => inputRef.current?.focus(), 0);
     }
   }, [anim, gameOver]);
 
@@ -263,13 +264,21 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <div className="mx-auto max-w-lg px-4 py-6">
+      <div className="mx-auto max-w-lg px-4 pt-5 pb-28">
+        {/* The question. It was never shown, so the game opened on ten blank
+            bars with nothing to answer (UI lookover, 19 Oct 2026). */}
+        <div className="mb-3 text-center">
+          {puzzle.category && (
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-indigo-300">{puzzle.category}</p>
+          )}
+          <h1 className="mt-1 text-xl font-black leading-tight text-white text-balance">{puzzle.title}</h1>
+        </div>
         {/* Lives */}
-        <div className="flex justify-center gap-1 mb-4">
+        <div className="flex justify-center gap-1 mb-2">
           {[0, 1, 2].map((i) => (
             <svg
               key={i}
-              className={`h-8 w-8 transition-colors ${
+              className={`h-7 w-7 transition-colors ${
                 i < lives ? "text-red-500" : "text-white"
               }`}
               fill="currentColor"
@@ -342,7 +351,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
             return (
               <div
                 key={pos}
-                className={`flex h-14 items-center justify-center rounded-lg transition-all duration-200 ${bgClass}`}
+                className={`flex h-11 items-center justify-center rounded-lg transition-all duration-200 ${bgClass}`}
               >
                 {textContent}
               </div>
@@ -399,7 +408,8 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
             </button>
           </div>
         ) : (
-          <div>
+          <div className="fixed inset-x-0 bottom-0 z-20 border-t border-gray-800 bg-gray-950/95 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
+          <div className="mx-auto max-w-lg">
           {duplicateMsg && (
             <div className="mb-2 text-center text-xs font-bold text-amber-400">{duplicateMsg}</div>
           )}
@@ -412,7 +422,6 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
               onKeyDown={(e) => { if (e.key === "Enter") handleGuess(); }}
               placeholder="Type your answer..."
               disabled={!!anim}
-              autoFocus
               className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
             />
             <button
@@ -422,6 +431,7 @@ export default function TenableGame({ puzzle }: { puzzle: TenablePuzzle }) {
             >
               Guess
             </button>
+          </div>
           </div>
           </div>
         )}

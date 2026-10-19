@@ -11,11 +11,18 @@
  * move it along (idea → designed → in game). + Idea adds a card for
  * something not built yet. 👁 opens a big preview (spin the 3D ones).
  *
+ * Look (Harry, 19 Oct 2026, round 3 option B "Tiers"): the Broadcast frame,
+ * reward types down the left, the 100 levels as five tiers of 20 (one card
+ * each, with the rewards in it), and "Edit tier" opens that tier's levels
+ * beside the catalogue.
+ *
  * Save writes the layout to the shared star_pass_config row
  * (lib/star/starPassStore.ts); every career's Star Pass reads it.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, Btn, Label } from "@/components/admin/broadcast/BroadcastPage";
+import "./star-pass.css";
 import RewardArt from "@/components/star/RewardArt";
 import { CATEGORIES, fullCatalogue, findCard, type CatalogueItem, type RewardCategory, type RewardStatus } from "@/lib/star/rewardCatalogue";
 import { ALL_PASS_LEVELS, PASS_TOP } from "@/lib/star/starPassRewards";
@@ -28,6 +35,14 @@ const STATUS_LOOK: Record<RewardStatus, { label: string; bg: string; fg: string 
   "in-game": { label: "In game", bg: "#16a34a", fg: "#ffffff" },
 };
 
+/** The 100 levels as five tiers of 20 (the picked look's cards). */
+const TIER_SIZE = 20;
+const TIER_NAMES = ["Rookie", "Pro", "Star", "Legend", "Icon"];
+const TIERS = Array.from({ length: Math.ceil(PASS_TOP / TIER_SIZE) }, (_, i) => ({
+  i, name: TIER_NAMES[i] ?? `Tier ${i + 1}`, from: i * TIER_SIZE + 1, to: Math.min(PASS_TOP, (i + 1) * TIER_SIZE),
+}));
+const tierOf = (lv: number) => Math.min(TIERS.length - 1, Math.floor((lv - 1) / TIER_SIZE));
+
 export default function StarPassAdmin() {
   const [layout, setLayout] = useState<StarPassLayout>(defaultLayout);
   const [dirty, setDirty] = useState(false);
@@ -37,6 +52,7 @@ export default function StarPassAdmin() {
   const [cat, setCat] = useState<RewardCategory>("penalty-runup");
   const [preview, setPreview] = useState<CatalogueItem | null>(null);
   const [idea, setIdea] = useState<{ name: string; note: string } | null>(null);
+  const editRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLayout(loadPassLayout());
@@ -95,128 +111,155 @@ export default function StarPassAdmin() {
   const cards = catalogue.filter((c) => c.category === cat);
   const filledLevels = ALL_PASS_LEVELS.filter((n) => layout.levels[n]);
   const filled = filledLevels.length;
-  // The rows: every level with a card, plus the one you've picked.
-  const rowLevels = Array.from(new Set([...filledLevels, level])).sort((a, b) => a - b);
+  const tier = TIERS[tierOf(level)];
+  // The rows: every level in the open tier with a card, plus the one you've picked.
+  const rowLevels = Array.from(new Set([...filledLevels.filter((n) => n >= tier.from && n <= tier.to), level])).sort((a, b) => a - b);
+  const openTier = (t: (typeof TIERS)[number]) => {
+    if (tierOf(level) !== t.i) setLevel(t.from);
+    // On a phone the tier's levels sit below the cards: bring them up.
+    requestAnimationFrame(() => editRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
+
+  const catButtons = (cls: string) => CATEGORIES.map((k) => (
+    <button key={k.id} onClick={() => setCat(k.id)} aria-pressed={k.id === cat} className={cls}>
+      <span>{k.label}</span> <b>{catalogue.filter((c) => c.category === k.id).length}</b>
+    </button>
+  ));
 
   return (
-    <div className="min-h-screen bg-[#0b0f1a] pb-28 text-white">
-      <div className="sticky top-0 z-20 border-b border-white/10 bg-[#0b0f1a]/95 px-4 py-3 backdrop-blur">
-       <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1 truncate text-[18px] font-black uppercase tracking-wide">Star Pass rewards</div>
-        <button onClick={() => { change(defaultLayout()); setLevel(5); }} className="rounded px-3 py-2 text-[12px] font-black uppercase text-white ring-1 ring-white/25">Reset</button>
-        <button onClick={save} disabled={!dirty} className="rounded px-4 py-2 text-[13px] font-black uppercase text-gray-950 disabled:opacity-40" style={{ background: "linear-gradient(180deg, #fde047, #f59e0b)" }}>Save</button>
-       </div>
-       <div className="mt-1 text-[12px] font-bold text-white">
+    <BroadcastPage
+      title="Star Pass"
+      sub={<>
         {filled} {filled === 1 ? "reward" : "rewards"} on the road
-        {shared === "missing" && <span className="text-red-400"> · shared save not set up</span>}
-        {msg && <span className={`font-black ${msg.ok ? "text-green-400" : "text-amber-300"}`}> · {msg.text}</span>}
-       </div>
-      </div>
+        {shared === "missing" && <span className="sp-warn"> · shared save not set up</span>}
+        {msg && <span className={msg.ok ? "sp-ok" : "sp-warn"}> · {msg.text}</span>}
+      </>}
+      actions={<>
+        <Btn onClick={() => { change(defaultLayout()); setLevel(5); }}>Reset</Btn>
+        <Btn main onClick={save} disabled={!dirty}>Save</Btn>
+      </>}
+    >
+      <div className="sp-layout">
+        {/* Reward types (the catalogue's tabs), down the left on a computer. */}
+        <aside className="sp-rail">
+          <Label>Reward types</Label>
+          <div className="sp-types">{catButtons("sp-type")}</div>
+        </aside>
 
-      <div className="mx-auto grid max-w-6xl gap-4 px-4 pt-4 md:grid-cols-[360px_1fr]">
-        {/* The levels. */}
-        <div>
-          <div className="mb-2 text-[12px] font-black uppercase tracking-widest text-amber-300">Levels · tap one to pick it</div>
-          {/* All 100 levels. Gold: has a reward. Ringed: picked. */}
-          <div className="mb-3 grid grid-cols-10 gap-1" data-level-grid>
-            {ALL_PASS_LEVELS.map((n) => {
-              const has = !!layout.levels[n], on = n === level;
+        <div className="sp-main">
+          {/* The five tiers. */}
+          <div className="sp-tiers">
+            {TIERS.map((t) => {
+              const lvls = ALL_PASS_LEVELS.filter((n) => n >= t.from && n <= t.to);
+              const inTier = lvls.filter((n) => layout.levels[n]);
+              const shown = inTier.slice(0, 3).map((n) => findCard(layout.levels[n], catalogue)).filter((c): c is CatalogueItem => !!c);
+              const open = tierOf(level) === t.i;
               return (
-                <button key={n} onClick={() => setLevel(n)} data-pick-level={n} aria-label={`Level ${n}`}
-                  className="h-8 rounded text-[12px] font-black tabular-nums"
-                  style={{
-                    background: has ? "linear-gradient(180deg, #fde047, #f59e0b)" : "rgba(255,255,255,.06)",
-                    color: has ? "#111827" : "#ffffff",
-                    boxShadow: on ? "0 0 0 2px #ffffff, 0 0 0 4px #f59e0b" : undefined,
-                  }}>{n}</button>
+                <section key={t.i} className="sp-tier" data-open={open ? "true" : undefined} data-tier={t.i + 1}>
+                  <h3>{t.name} <span>(levels {t.from}–{t.to})</span></h3>
+                  <div className="sp-tier-pic">
+                    {shown.length ? shown.map((c) => (
+                      <span key={c.id} className="sp-tier-art"><RewardArt card={c} w={92} h={92} live={false} /></span>
+                    )) : <span className="sp-tier-empty">No rewards yet</span>}
+                  </div>
+                  <div className="sp-tier-foot">
+                    <div className="sp-tier-count">
+                      <b>{inTier.length}/{lvls.length}</b> levels filled
+                      <span className="sp-bar"><i style={{ width: `${(inTier.length / lvls.length) * 100}%` }} /></span>
+                    </div>
+                    <button className="sp-edit" aria-pressed={open} onClick={() => openTier(t)}>{open ? "Editing" : "Edit tier"}</button>
+                  </div>
+                </section>
               );
             })}
           </div>
-          <div className="mb-2 text-[12px] font-black uppercase tracking-widest text-amber-300">On the road</div>
-          <div className="space-y-1.5">
-            {rowLevels.map((n) => {
-              const card = findCard(layout.levels[n], catalogue);
-              const on = n === level;
-              return (
-                <div key={n} onClick={() => setLevel(n)} data-level={n} className="flex cursor-pointer items-center gap-2 rounded p-1.5" style={{
-                  background: on ? "rgba(253,224,71,.14)" : "rgba(255,255,255,.04)", boxShadow: on ? "inset 0 0 0 2px #fde047" : "inset 0 0 0 1px rgba(255,255,255,.08)",
-                }}>
-                  <span className="w-9 text-center text-[16px] font-black tabular-nums" style={{ color: n % 10 === 0 ? "#fde047" : "#ffffff" }}>{n}</span>
-                  <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded bg-black/40">
-                    {card && <RewardArt card={card} w={48} h={48} live={false} />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-black">{card ? card.name : on ? "Tap a card →" : "Empty"}</span>
-                    {card && <span className="text-[11px] font-bold text-white">{CATEGORIES.find((k) => k.id === card.category)?.label}</span>}
-                  </span>
-                  <button onClick={(e) => { e.stopPropagation(); move(n, 1); }} className="h-8 w-7 rounded text-[14px] font-black ring-1 ring-white/15" aria-label="Move up a level">↑</button>
-                  <button onClick={(e) => { e.stopPropagation(); move(n, -1); }} className="h-8 w-7 rounded text-[14px] font-black ring-1 ring-white/15" aria-label="Move down a level">↓</button>
-                  <button onClick={(e) => { e.stopPropagation(); clear(n); }} disabled={!card} className="h-8 w-7 rounded text-[13px] font-black ring-1 ring-white/15 disabled:opacity-30" aria-label="Empty this level">✕</button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
 
-        {/* The catalogue. */}
-        <div>
-          <div className="mb-2 text-[12px] font-black uppercase tracking-widest text-amber-300">Catalogue · tap a card to put it at level {level}</div>
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {CATEGORIES.map((k) => (
-              <button key={k.id} onClick={() => setCat(k.id)} className="rounded px-3 py-1.5 text-[12px] font-black uppercase" style={{
-                background: k.id === cat ? "linear-gradient(180deg, #fde047, #f59e0b)" : "rgba(255,255,255,.08)", color: k.id === cat ? "#111827" : "#ffffff",
-              }}>{k.label} <span className="tabular-nums">{catalogue.filter((c) => c.category === k.id).length}</span></button>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-            {cards.map((c) => {
-              const look = STATUS_LOOK[c.status];
-              const at = usedAt[c.id];
-              return (
-                <div key={c.id} data-card={c.id} className="relative flex flex-col overflow-hidden rounded bg-white/[0.05] ring-1 ring-white/10">
-                  <button onClick={() => assign(c)} className="grid h-[120px] place-items-center bg-black/30" aria-label={`Put ${c.name} at level ${level}`}>
-                    <RewardArt card={c} w={130} h={115} live={false} />
-                  </button>
-                  <div className="flex items-center gap-1 px-2 pt-1.5">
-                    <span className="min-w-0 flex-1 truncate text-[13px] font-black">{c.name}</span>
-                    <button onClick={() => setPreview(c)} className="text-[15px]" aria-label="Preview">👁</button>
-                  </div>
-                  <div className="flex items-center gap-1 px-2 pb-2 pt-1">
-                    <button onClick={() => cycleStatus(c)} className="rounded px-1.5 py-0.5 text-[10px] font-black uppercase" style={{ background: look.bg, color: look.fg }}>{look.label}</button>
-                    {at != null && <span className="rounded bg-amber-300 px-1.5 py-0.5 text-[10px] font-black text-gray-950">Lv {at}</span>}
-                    {!c.builtIn && <button onClick={() => removeIdea(c)} className="ml-auto text-[11px] font-black text-red-400">Delete</button>}
-                  </div>
-                </div>
-              );
-            })}
-            {/* + Idea: a card for something not built yet. */}
-            {idea ? (
-              <div className="flex flex-col gap-1.5 rounded bg-white/[0.05] p-2 ring-1 ring-amber-300/50">
-                <input autoFocus value={idea.name} onChange={(e) => setIdea({ ...idea, name: e.target.value })} placeholder="Name" className="rounded bg-black/40 px-2 py-1.5 text-[13px] font-bold text-white placeholder:text-white/60" />
-                <textarea value={idea.note} onChange={(e) => setIdea({ ...idea, note: e.target.value })} placeholder="What it is (optional)" rows={3} className="rounded bg-black/40 px-2 py-1.5 text-[12px] font-bold text-white placeholder:text-white/60" />
-                <div className="flex gap-1.5">
-                  <button onClick={addIdea} className="flex-1 rounded py-1.5 text-[12px] font-black uppercase text-gray-950" style={{ background: "linear-gradient(180deg, #fde047, #f59e0b)" }}>Add</button>
-                  <button onClick={() => setIdea(null)} className="rounded px-2 text-[12px] font-black uppercase ring-1 ring-white/25">Cancel</button>
-                </div>
+          {/* The open tier: its levels and the catalogue. */}
+          <div className="sp-edit-grid" ref={editRef}>
+            <Panel title={`${tier.name} · levels ${tier.from}–${tier.to}`} note="tap a level to pick it">
+              {/* This tier's 20 levels. Gold: has a reward. Ringed: picked. */}
+              <div className="sp-levels" data-level-grid>
+                {ALL_PASS_LEVELS.filter((n) => n >= tier.from && n <= tier.to).map((n) => (
+                  <button key={n} onClick={() => setLevel(n)} data-pick-level={n} aria-label={`Level ${n}`}
+                    className="sp-lv" data-has={layout.levels[n] ? "true" : undefined} aria-pressed={n === level}>{n}</button>
+                ))}
               </div>
-            ) : (
-              <button onClick={() => setIdea({ name: "", note: "" })} className="grid min-h-[170px] place-items-center rounded text-[14px] font-black uppercase text-white ring-1 ring-dashed ring-white/30">+ Idea</button>
-            )}
+              <Label>On the road</Label>
+              <div className="sp-rows">
+                {rowLevels.map((n) => {
+                  const card = findCard(layout.levels[n], catalogue);
+                  const on = n === level;
+                  return (
+                    <div key={n} onClick={() => setLevel(n)} data-level={n} className="sp-row" data-on={on ? "true" : undefined}>
+                      <span className="sp-row-n" data-ten={n % 10 === 0 ? "true" : undefined}>{n}</span>
+                      <span className="sp-row-art">{card && <RewardArt card={card} w={48} h={48} live={false} />}</span>
+                      <span className="sp-row-txt">
+                        <b>{card ? card.name : on ? "Tap a card →" : "Empty"}</b>
+                        {card && <span>{CATEGORIES.find((k) => k.id === card.category)?.label}</span>}
+                      </span>
+                      <button onClick={(e) => { e.stopPropagation(); move(n, 1); }} className="sp-sq" aria-label="Move up a level">↑</button>
+                      <button onClick={(e) => { e.stopPropagation(); move(n, -1); }} className="sp-sq" aria-label="Move down a level">↓</button>
+                      <button onClick={(e) => { e.stopPropagation(); clear(n); }} disabled={!card} className="sp-sq" aria-label="Empty this level">✕</button>
+                    </div>
+                  );
+                })}
+              </div>
+            </Panel>
+
+            <Panel title="Catalogue" note={`tap a card to put it at level ${level}`}>
+              {/* On a phone the reward types sit here (the left rail is hidden). */}
+              <div className="sp-chips">{catButtons("sp-chip")}</div>
+              <div className="sp-cards">
+                {cards.map((c) => {
+                  const look = STATUS_LOOK[c.status];
+                  const at = usedAt[c.id];
+                  return (
+                    <div key={c.id} data-card={c.id} className="sp-card">
+                      <button onClick={() => assign(c)} className="sp-card-pic" aria-label={`Put ${c.name} at level ${level}`}>
+                        <RewardArt card={c} w={130} h={115} live={false} />
+                      </button>
+                      <div className="sp-card-name">
+                        <b>{c.name}</b>
+                        <button onClick={() => setPreview(c)} className="sp-eye" aria-label="Preview">👁</button>
+                      </div>
+                      <div className="sp-card-tags">
+                        <button onClick={() => cycleStatus(c)} className="sp-tag" style={{ background: look.bg, color: look.fg }}>{look.label}</button>
+                        {at != null && <span className="sp-tag sp-lvtag">Lv {at}</span>}
+                        {!c.builtIn && <button onClick={() => removeIdea(c)} className="sp-del">Delete</button>}
+                      </div>
+                    </div>
+                  );
+                })}
+                {/* + Idea: a card for something not built yet. */}
+                {idea ? (
+                  <div className="sp-idea">
+                    <input autoFocus value={idea.name} onChange={(e) => setIdea({ ...idea, name: e.target.value })} placeholder="Name" />
+                    <textarea value={idea.note} onChange={(e) => setIdea({ ...idea, note: e.target.value })} placeholder="What it is (optional)" rows={3} />
+                    <div className="sp-idea-btns">
+                      <Btn main onClick={addIdea}>Add</Btn>
+                      <Btn onClick={() => setIdea(null)}>Cancel</Btn>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setIdea({ name: "", note: "" })} className="sp-add">+ Idea</button>
+                )}
+              </div>
+            </Panel>
           </div>
         </div>
       </div>
 
       {preview && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 p-4" onClick={() => setPreview(null)}>
-          <div className="max-w-sm rounded bg-[#111827] p-4 text-center ring-1 ring-white/15" onClick={(e) => e.stopPropagation()}>
-            <div className="mx-auto grid place-items-center"><RewardArt card={preview} w={300} h={320} /></div>
-            <div className="mt-2 text-[18px] font-black uppercase">{preview.name}</div>
-            {preview.note && <div className="mt-1 text-[13px] font-bold text-white">{preview.note}</div>}
-            <button onClick={() => setPreview(null)} className="mt-3 rounded px-4 py-2 text-[12px] font-black uppercase ring-1 ring-white/25">Close</button>
+        <div className="sp-modal" onClick={() => setPreview(null)}>
+          <div className="sp-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="sp-modal-art"><RewardArt card={preview} w={300} h={320} /></div>
+            <h3>{preview.name}</h3>
+            {preview.note && <p>{preview.note}</p>}
+            <Btn onClick={() => setPreview(null)}>Close</Btn>
           </div>
         </div>
       )}
       <PageGuide page="/admin/star-pass" />
-    </div>
+    </BroadcastPage>
   );
 }

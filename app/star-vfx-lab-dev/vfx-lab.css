@@ -1,0 +1,79 @@
+/* Visual effects lab, option 1 "single effect" (Harry, 19 Oct 2026): the
+   moments on the left, one effect big in the middle with every version as a
+   tile under it, rate and edit on the right. Stacks on a phone. */
+.vx-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.vx-rail, .vx-side { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.vx-main { min-width: 0; }
+.vx-moments { display: flex; flex-direction: column; gap: 4px; }
+.vx-moment { text-align: left; padding: 9px 10px; border: 0; cursor: pointer; color: var(--bc-ink); background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid transparent; font-size: 14px; font-weight: 900; font-style: italic; text-transform: uppercase; white-space: nowrap; }
+.vx-moment span { font-style: normal; }
+.vx-moment:hover { background: rgba(255, 255, 255, 0.08); }
+.vx-moment[aria-pressed="true"] { background: linear-gradient(100deg, var(--bc-blue), rgba(18, 63, 156, 0.4)); border-left-color: var(--bc-amber); }
+
+.vx-stage { background: rgba(4, 14, 40, 0.7); border: 1px solid var(--bc-line); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.vx-stage-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.vx-stage-head > b { font-size: 18px; font-weight: 900; font-style: italic; text-transform: uppercase; margin-right: 4px; }
+.vx-about { margin: 0; font-size: 13px; color: var(--bc-ink2); }
+.vx-film { display: block; width: 100%; border-radius: 4px; background: #0b1a3d; }
+.vx-offbig { padding: 30px 10px; text-align: center; font-weight: 800; color: var(--bc-ink3); background: #0b1a3d; border-radius: 4px; }
+.vx-tag { padding: 2px 6px; border-radius: 3px; font-size: 12px; font-weight: 900; text-transform: uppercase; }
+.vx-tag[data-c="now"] { background: rgba(56, 189, 248, 0.3); color: #e0f2fe; }
+.vx-tag[data-c="edit"] { background: rgba(217, 70, 239, 0.3); color: #fae8ff; }
+.vx-tag[data-c="live"] { background: rgba(16, 185, 129, 0.3); color: #d1fae5; }
+
+.vx-tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); }
+.vx-tile { display: flex; flex-direction: column; gap: 4px; padding: 6px; text-align: left; cursor: pointer; color: var(--bc-ink);
+  background: rgba(4, 14, 40, 0.7); border: 2px solid var(--bc-line); border-radius: 4px; min-width: 0; }
+.vx-tile:hover { border-color: rgba(90, 160, 255, 0.6); }
+.vx-tile[aria-pressed="true"] { border-color: var(--bc-amber); box-shadow: 0 0 14px rgba(255, 194, 74, 0.35); }
+.vx-tile-pic { display: block; width: 100%; border-radius: 3px; background: #0b1a3d; }
+.vx-tile-off { aspect-ratio: 84 / 104; display: grid; place-items: center; border-radius: 3px; background: #0b1a3d; color: var(--bc-ink3); font-weight: 800; font-size: 13px; }
+.vx-tile-name { font-size: 12.5px; font-weight: 900; font-style: italic; text-transform: uppercase; line-height: 1.15; }
+.vx-tile-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 16px; font-size: 12px; }
+.vx-pickmark { color: var(--bc-amber); font-weight: 900; }
+.vx-stars-mini { color: var(--bc-amber); letter-spacing: -1px; }
+
+.vx-stars { display: flex; justify-content: center; gap: 2px; }
+.vx-stars button { width: 40px; height: 42px; border: 0; background: none; cursor: pointer; font-size: 30px; line-height: 1; color: rgba(255, 255, 255, 0.25); }
+.vx-stars button[data-on="true"] { color: var(--bc-amber); }
+.vx-pick { height: 44px; border: 0; background: rgba(255, 194, 74, 0.16); box-shadow: inset 0 0 0 2px rgba(255, 194, 74, 0.55); color: var(--bc-amber); cursor: pointer;
+  font-size: 15px; font-weight: 900; font-style: italic; text-transform: uppercase; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+.vx-pick[data-on="true"] { background: var(--bc-amber); color: #1a1300; box-shadow: none; }
+.vx-input { width: 100%; box-sizing: border-box; padding: 9px 10px; border: 1px solid var(--bc-line); border-radius: 3px; background: rgba(0, 0, 0, 0.35);
+  color: var(--bc-ink); font-size: 14px; font-weight: 700; margin-top: 4px; }
+.vx-input::placeholder { color: var(--bc-ink3); }
+.vx-wide { width: 100%; height: 40px; border: 1px solid var(--bc-line); border-radius: 3px; background: rgba(255, 255, 255, 0.06); color: var(--bc-ink);
+  cursor: pointer; font-size: 13px; font-weight: 900; text-transform: uppercase; font-style: italic; }
+.vx-wide:hover { background: rgba(255, 255, 255, 0.12); }
+.vx-dials { display: flex; flex-direction: column; gap: 10px; }
+.vx-dial { display: block; font-size: 13px; font-weight: 800; }
+.vx-dial > span { display: flex; justify-content: space-between; gap: 8px; }
+.vx-dial > span b { color: #cfe0ff; }
+.vx-dial input[type="range"] { width: 100%; height: 28px; accent-color: var(--bc-accent); }
+.vx-colours { display: flex; gap: 14px; flex-wrap: wrap; }
+.vx-colours label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; }
+.vx-colours input { width: 46px; height: 36px; border: 1px solid var(--bc-line); border-radius: 3px; background: transparent; padding: 0; }
+.vx-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.vx-ok { margin: 0; font-size: 13px; font-weight: 900; color: #6ee7b7; }
+
+.vx-check { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 12px; background: rgba(0, 0, 0, 0.3); border-radius: 3px; cursor: pointer; }
+.vx-check input { width: 22px; height: 22px; accent-color: var(--bc-accent); }
+.vx-check span { font-size: 14px; font-weight: 900; }
+.vx-match { margin: 0 -4px; }
+.vx-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.vx-export { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid var(--bc-line); border-radius: 3px; background: rgba(0, 0, 0, 0.4);
+  color: var(--bc-ink); font-family: ui-monospace, monospace; font-size: 12px; }
+
+@media (max-width: 1180px) {
+  .vx-layout { grid-template-columns: minmax(0, 1fr) 300px; }
+  .vx-rail { grid-column: 1 / -1; position: static; }
+  .vx-moments { flex-direction: row; overflow-x: auto; padding-bottom: 2px; }
+  .vx-moment { flex: 0 0 auto; }
+}
+@media (max-width: 760px) {
+  .vx-layout { grid-template-columns: minmax(0, 1fr); }
+  .vx-side { position: static; }
+  .vx-tiles { display: flex; overflow-x: auto; padding-bottom: 4px; }
+  .vx-tile { flex: 0 0 104px; }
+}

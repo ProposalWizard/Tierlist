@@ -13,7 +13,8 @@
  * Filming: window.__frameStep (seek(t) puts every tile at t).
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { BroadcastPage, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "../star-animations-dev/animations.css";
 import PageGuide from "@/components/admin/PageGuide";
 import { ANIM_TILES, type AnimGrid } from "@/lib/star/style3d/animGrid3d";
 
@@ -31,6 +32,7 @@ export default function Anim3dDevPage() {
   const [speed, setSpeed] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [facing, setFacing] = useState(0);
+  const [group, setGroup] = useState(ANIM_TILES[0].group);
   /** Each tile's own frame (0..1 of its clip) while paused or scrubbed; null = follows the clock. */
   const [scrub, setScrub] = useState<(number | null)[]>(() => tiles.map(() => null));
   const clock = useRef(0);
@@ -83,43 +85,52 @@ export default function Anim3dDevPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  const chip = (on: boolean) => `rounded-full px-3 py-1 text-xs font-bold ${on ? "bg-amber-400 text-black" : "bg-white/10 text-white"}`;
+  const jump = (g: string) => { setGroup(g); document.querySelector(`[data-anim3d-group="${g}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }); };
   return (
-    <div className="min-h-screen bg-[#05070d] px-4 pb-24 pt-4 text-white">
-      <div className="mb-3 flex items-center gap-3">
-        <Link href="/star-3d-area-dev" className="text-sm font-bold text-white/80">‹ 3D test area</Link>
-        <h1 className="text-lg font-black">3D animations</h1>
-      </div>
-      <p className="mb-3 text-sm font-bold">Every move the 3D match plays, at the match camera and the match size (a man is 6% of a phone screen). Each tile loops; the slider under it holds one frame.</p>
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        <button className={chip(playing)} onClick={() => { setPlaying((p) => !p); setScrub(tiles.map(() => null)); }}>{playing ? "❚❚ Pause" : "▶ Play"}</button>
-        {[1, 0.5, 0.25].map((s) => <button key={s} className={chip(speed === s)} onClick={() => setSpeed(s)}>{s === 1 ? "1×" : s === 0.5 ? "½×" : "¼×"}</button>)}
-        <button className={chip(zoom === 1)} onClick={() => setZoom(1)}>Match size</button>
-        <button className={chip(zoom === 3)} onClick={() => setZoom(3)}>3× closer</button>
-        <button className={chip(facing === 0)} onClick={() => setFacing(0)}>As you shoot</button>
-        <button className={chip(facing === Math.PI / 2)} onClick={() => setFacing(Math.PI / 2)}>Side on</button>
-      </div>
-      {status === "loading" && <p className="mb-2 text-sm font-bold text-amber-300">Loading the players and moves…</p>}
-      {status === "off" && <p className="mb-2 text-sm font-bold text-red-400">This device could not load the 3D.</p>}
-      <div ref={box} className="relative w-full">
-        <canvas ref={canvas} className="absolute left-0 top-0" style={{ pointerEvents: "none" }} />
-        <div className="grid" style={{ gridTemplateColumns: `repeat(${cols}, ${TILE_W}px)` }}>
-          {ANIM_TILES.flatMap((g) => g.tiles.map((t) => ({ g: g.group, t }))).map(({ g, t }, i) => {
-            const inf = info[i];
-            return (
-              <div key={`${g}-${t.label}`} data-anim3d-tile={t.label} style={{ width: TILE_W, height: TILE_H }} className="relative border border-black/40">
-                <div className="absolute inset-x-0 top-0 bg-black/45 px-1 text-[10px] font-bold leading-4">{g === "Keeper" ? "GK · " : ""}{t.label}</div>
-                <div className="absolute inset-x-0 bottom-0 bg-black/45 px-1 pb-0.5">
-                  <input type="range" min={0} max={1} step={0.01} value={scrub[i] ?? 0} className="w-full" aria-label={`${t.label} frame`}
-                    onChange={(e) => { const v = Number(e.target.value); setScrub((s) => s.map((x, j) => (j === i ? v : x))); }} />
-                  <div className="text-[9px] text-white/80">{inf?.clip ?? (status === "ready" ? "no clip" : "")}{scrub[i] !== null && inf ? ` · ${(scrub[i]! * inf.duration).toFixed(2)} s` : ""}</div>
-                </div>
-              </div>
-            );
-          })}
+    <BroadcastPage title="3D Animations" sub="Every move the 3D match plays, at the match camera and the match size" back="/star-3d-area-dev">
+      <div className="anim-layout">
+        <nav className="anim-rail" aria-label="Sections">
+          <div className="anim-rail-label">Moves</div>
+          {ANIM_TILES.map((g) => <button key={g.group} className="anim-railitem" aria-pressed={group === g.group} onClick={() => jump(g.group)}>{g.group}</button>)}
+          <div className="anim-rail-label">Pages</div>
+          <a className="anim-railitem" href="/star-3d-area-dev">3D test area</a>
+          <a className="anim-railitem" href="/star-animations-dev">2D animations</a>
+        </nav>
+        <div className="anim-main">
+          <div className="anim-bar">
+            <button className="anim-play" aria-pressed={!playing} title={playing ? "Pause" : "Play"}
+              onClick={() => { setPlaying((p) => !p); setScrub(tiles.map(() => null)); }}>{playing ? "❚❚" : "▶"}</button>
+            <div className="anim-row"><Label>Speed</Label>{[1, 0.5, 0.25].map((s) => <Pill key={s} on={speed === s} onClick={() => setSpeed(s)}>{s === 1 ? "1×" : s === 0.5 ? "½×" : "¼×"}</Pill>)}</div>
+            <span className="anim-sep" />
+            <div className="anim-row"><Label>Size</Label><Pill on={zoom === 1} onClick={() => setZoom(1)}>Match size</Pill><Pill on={zoom === 3} onClick={() => setZoom(3)}>3× closer</Pill></div>
+            <span className="anim-sep" />
+            <div className="anim-row"><Label>Camera</Label><Pill on={facing === 0} onClick={() => setFacing(0)}>As you shoot</Pill><Pill on={facing === Math.PI / 2} onClick={() => setFacing(Math.PI / 2)}>Side on</Pill></div>
+          </div>
+          <Note>A man is 6% of a phone screen here, as in a real match. Each tile loops; its slider holds one frame.</Note>
+          {status === "loading" && <Note>Loading the players and moves…</Note>}
+          {status === "off" && <Note>This device could not load the 3D.</Note>}
+          <div className="anim-sec"><h2>Every move</h2><i /><i /><i /></div>
+          <div ref={box} className="relative w-full">
+            <canvas ref={canvas} className="absolute left-0 top-0" style={{ pointerEvents: "none" }} />
+            <div className="grid" style={{ gridTemplateColumns: `repeat(${cols}, ${TILE_W}px)` }}>
+              {ANIM_TILES.flatMap((g) => g.tiles.map((t, k) => ({ g: g.group, t, first: k === 0 }))).map(({ g, t, first }, i) => {
+                const inf = info[i];
+                return (
+                  <div key={`${g}-${t.label}`} data-anim3d-tile={t.label} data-anim3d-group={first ? g : undefined} style={{ width: TILE_W, height: TILE_H, scrollMarginTop: 60 }} className="relative border border-black/40">
+                    <div className="absolute inset-x-0 top-0 bg-black/55 px-1 text-[12px] font-black italic uppercase leading-4">{g === "Keeper" ? "GK · " : ""}{t.label}</div>
+                    <div className="absolute inset-x-0 bottom-0 bg-black/55 px-1 pb-0.5">
+                      <input type="range" min={0} max={1} step={0.01} value={scrub[i] ?? 0} className="w-full" style={{ accentColor: "#d8ff3c" }} aria-label={`${t.label} frame`}
+                        onChange={(e) => { const v = Number(e.target.value); setScrub((s) => s.map((x, j) => (j === i ? v : x))); }} />
+                      <div className="text-[9px] text-white/80">{inf?.clip ?? (status === "ready" ? "no clip" : "")}{scrub[i] !== null && inf ? ` · ${(scrub[i]! * inf.duration).toFixed(2)} s` : ""}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
       <PageGuide page="/star-anim3d-dev" corner="bottom-left" />
-    </div>
+    </BroadcastPage>
   );
 }

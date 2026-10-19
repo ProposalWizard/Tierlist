@@ -20,6 +20,8 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, Btn, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "./retirement.css";
 import { pitchFont } from "@/components/star/ui/pitchFont";
 import "@/components/star/ui/flat.css";
 import CareerOverview from "@/components/star/CareerOverview";
@@ -252,103 +254,104 @@ export default function RetirementPreviewPage() {
     );
   }
 
-  const chip = (on: boolean): React.CSSProperties => ({
-    padding: "10px 12px", borderRadius: 4, fontWeight: 900, fontSize: 14, textAlign: "left",
-    background: on ? "#facc15" : "rgba(255,255,255,.08)", color: on ? "#111" : "#fff",
-    boxShadow: on ? "none" : "inset 0 0 0 1px rgba(255,255,255,.12)",
-  });
   const isShape = source.kind === "shape";
-  const button = (label: string, v: View, enabled: boolean, colour: string, dark = false) => (
-    <button disabled={!enabled} onClick={() => go(v)} className={`kib-press block w-full px-3 py-3 text-left text-[15px] font-black uppercase disabled:opacity-40 ${dark ? "text-gray-950" : ""}`} style={{ borderRadius: 4, background: colour }}>
-      {label}
-    </button>
+  const card = (label: string, v: View, enabled: boolean, img?: string, main = false) => (
+    <div className="rt-card" data-off={enabled ? undefined : "true"}>
+      <div className="rt-ct">{label}</div>
+      <div className="rt-pic" style={img ? { backgroundImage: `url(/admin/retirement/${img}.webp)` } : undefined}>{!img && <span>{label.slice(0, 1)}</span>}</div>
+      <div className="rt-cf"><Btn main={main || enabled} disabled={!enabled} onClick={() => go(v)}>▶ Play</Btn></div>
+    </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0b1220] px-4 py-5 text-white">
-      <div className="mx-auto max-w-sm space-y-4 pb-16">
-        <div>
-          <div className="text-[20px] font-black uppercase">Retirement preview</div>
-          <div className="text-[14px] font-bold text-white/85">The end of a career, without playing one. Nothing is saved.</div>
-        </div>
+    <BroadcastPage title="Retirement screens" sub="The end of a career, without playing one. Nothing is saved.">
+      <div className="rt-layout">
+        <aside className="rt-rail">
+          <Panel title="Careers" note={`made up · ${LAST} seasons`}>
+            <div className="rt-careers">
+              {PREVIEW_SHAPES.map(s => (
+                <button key={s.id} className="rt-career" aria-pressed={isShape && source.shape === s.id} onClick={() => setSource({ kind: "shape", shape: s.id })}>
+                  <b>{s.label}</b><span>{s.line}</span>
+                </button>
+              ))}
+            </div>
+            <div className="rt-version">
+              <Label>Version</Label>
+              <Pill on={false} onClick={() => setSeed(s => Math.max(1, s - 1))} title="Previous version">◀</Pill>
+              <b>{seed}</b>
+              <Pill on={false} onClick={() => setSeed(s => s + 1)} title="Next version">▶</Pill>
+              <Note>same shape, other numbers</Note>
+            </div>
+            <Label>Your saves on this device</Label>
+            {saves.length === 0 && <Note>None on this browser.</Note>}
+            <div className="rt-careers">
+              {saves.map(s => {
+                const c = s.career;
+                return (
+                  <button key={s.key} className="rt-career" aria-pressed={source.kind === "save" && source.key === s.key} onClick={() => setSource({ kind: "save", key: s.key })}>
+                    <b>{c.player.firstName} {c.player.lastName}</b>
+                    <span>{c.player.club || "No club yet"} · season {c.season} · age {c.player.age}{c.retired ? " · retired" : ""}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </Panel>
+        </aside>
 
-        <div className="space-y-1.5">
-          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">A made-up career · {LAST} seasons</div>
-          {PREVIEW_SHAPES.map(s => (
-            <button key={s.id} onClick={() => setSource({ kind: "shape", shape: s.id })} style={chip(isShape && source.shape === s.id)} className="kib-press block w-full">
-              <div className="text-[15px] font-black uppercase">{s.label}</div>
-              <div className="text-[12px] font-bold opacity-80">{s.line}</div>
-            </button>
-          ))}
-          <div className="flex items-center gap-2 pt-1">
-            <span className="text-[13px] font-black uppercase text-white/80">Version</span>
-            <button onClick={() => setSeed(s => Math.max(1, s - 1))} style={chip(false)} aria-label="Previous version">◀</button>
-            <span className="w-8 text-center text-[18px] font-black tabular-nums">{seed}</span>
-            <button onClick={() => setSeed(s => s + 1)} style={chip(false)} aria-label="Next version">▶</button>
-            <span className="text-[12px] font-bold text-white/60">same shape, other numbers</span>
+        <div className="rt-main">
+          <Panel title="The screens, in order" note="the journey">
+            <div className="rt-cards">
+              {card(`1. Final season (after ${LAST - 1})`, "notice", !!beforeLast, "notice")}
+              {card(`2. Final whistle (after ${LAST})`, "whistle", !!lastSeason, "whistle")}
+              {card("3. Career overview", "overview", !!finished, "overview")}
+              {card("4. Hall of Fame", "hall", true, "hall")}
+              {card("The share card", "card", !!finished, "card")}
+            </div>
+          </Panel>
+
+          <div data-farewell-tests>
+            <Panel title="Farewell match" note={`the match itself: in the game, Dev Skip to the end of season ${LAST}, then Hang them up`}>
+              <div className="rt-cards">
+                {card("Invite (Play or Skip)", "fw-invite", !!farewell, "fw-invite")}
+                {card("Team sheets", "fw-sheets", !!farewell, "fw-sheets")}
+                {card("Guard of honour · 3D", "fw-walkout", !!farewell, "fw-walkout")}
+                {card("Guard of honour · drawn", "fw-walkout-drawn", !!farewell, "fw-walkout-drawn")}
+                {card("Standing ovation · 3D", "fw-ovation", !!farewell, "fw-ovation")}
+                {card("Standing ovation · drawn", "fw-ovation-drawn", !!farewell, "fw-ovation-drawn")}
+                {card("Full time (made-up 4–3)", "fw-result", !!farewell, "fw-result")}
+                {card("The overview after it", "fw-overview", !!farewell && !!finished, "fw-overview")}
+              </div>
+            </Panel>
           </div>
-        </div>
 
-        <div className="space-y-1.5">
-          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">Your saves on this device</div>
-          {saves.length === 0 && <div className="text-[13px] font-bold text-white/60">None on this browser.</div>}
-          {saves.map(s => {
-            const c = s.career;
-            const on = source.kind === "save" && source.key === s.key;
-            return (
-              <button key={s.key} onClick={() => setSource({ kind: "save", key: s.key })} style={chip(on)} className="kib-press block w-full">
-                <div className="text-[15px] font-black uppercase">{c.player.firstName} {c.player.lastName}</div>
-                <div className="text-[12px] font-bold opacity-80">{c.player.club || "No club yet"} · season {c.season} · age {c.player.age}{c.retired ? " · retired" : ""}</div>
-              </button>
-            );
-          })}
-        </div>
+          <div data-ballon-dor-tests>
+            <Panel title="Ballon d'Or night" note="made-up rivals fill the list where this career has fewer than ten">
+              <div className="rt-cards">
+                {card("You win · 3D", "bd-win", !!lastSeason, "bd-win")}
+                {card("You come 2nd · 3D", "bd-second", !!lastSeason, "bd-second")}
+                {card("Not in the top three (7th) · 3D", "bd-out", !!lastSeason, "bd-out")}
+                {card("You come 2nd · drawn", "bd-second-drawn", !!lastSeason, "bd-second-drawn")}
+                {card("Not in the top three · drawn", "bd-out-drawn", !!lastSeason, "bd-out-drawn")}
+                {card("The result page after it", "bd-result", !!lastSeason, "bd-result")}
+                {card("Old (the countdown cards)", "bd-old", !!lastSeason, "bd-old")}
+              </div>
+            </Panel>
+          </div>
 
-        <div className="space-y-2">
-          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">The screens, in order</div>
-          {button(`▶ 1. After season ${LAST - 1}: final season`, "notice", !!beforeLast, "#f59e0b", true)}
-          {button(`▶ 2. After season ${LAST}: the final whistle`, "whistle", !!lastSeason, "#fbbf24", true)}
-          {button("▶ 3. The career overview", "overview", !!finished, "#059669")}
-          {button("▶ 4. The Hall of Fame", "hall", true, "rgba(251,191,36,.25)")}
-          {button("▶ The share card (the picture)", "card", !!finished, "rgba(251,191,36,.18)")}
-        </div>
-
-        <div className="space-y-2" data-farewell-tests>
-          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">The farewell match</div>
-          {button("▶ Invite (Play or Skip)", "fw-invite", !!farewell, "#fbbf24", true)}
-          {button("▶ Team sheets", "fw-sheets", !!farewell, "rgba(251,191,36,.25)")}
-          {button("▶ Guard of honour · 3D", "fw-walkout", !!farewell, "rgba(251,191,36,.25)")}
-          {button("▶ Guard of honour · drawn", "fw-walkout-drawn", !!farewell, "rgba(255,255,255,.1)")}
-          {button("▶ Standing ovation · 3D", "fw-ovation", !!farewell, "rgba(251,191,36,.25)")}
-          {button("▶ Standing ovation · drawn", "fw-ovation-drawn", !!farewell, "rgba(255,255,255,.1)")}
-          {button("▶ Full time (made-up 4–3)", "fw-result", !!farewell, "rgba(255,255,255,.1)")}
-          {button("▶ The overview after it", "fw-overview", !!farewell && !!finished, "rgba(255,255,255,.1)")}
-          <div className="text-[12px] font-bold text-white/60">The match itself: in the game, Dev Skip to the end of season {LAST}, then Hang them up.</div>
-        </div>
-
-        <div className="space-y-2" data-ballon-dor-tests>
-          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">The Ballon d&apos;Or night</div>
-          {button("▶ You win · 3D", "bd-win", !!lastSeason, "#fbbf24", true)}
-          {button("▶ You come 2nd · 3D", "bd-second", !!lastSeason, "rgba(251,191,36,.25)")}
-          {button("▶ Not in the top three (7th) · 3D", "bd-out", !!lastSeason, "rgba(251,191,36,.25)")}
-          {button("▶ You come 2nd · drawn", "bd-second-drawn", !!lastSeason, "rgba(255,255,255,.1)")}
-          {button("▶ Not in the top three · drawn", "bd-out-drawn", !!lastSeason, "rgba(255,255,255,.1)")}
-          {button("▶ The result page after it", "bd-result", !!lastSeason, "rgba(255,255,255,.1)")}
-          {button("▶ Old (the countdown cards)", "bd-old", !!lastSeason, "rgba(255,255,255,.1)")}
-          <div className="text-[12px] font-bold text-white/60">In the game: Settings → Look → Ballon d&apos;Or night. Made-up rivals fill the list where this career has fewer than ten.</div>
-        </div>
-
-        <div className="space-y-2" data-online-tests>
-          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">Online</div>
-          {button("▶ Head to head (made-up legend v this one)", "compare", !!finished, "rgba(56,189,248,.25)")}
-          {button("▶ Compare with a friend (type a code)", "compare-flow", true, "rgba(56,189,248,.15)")}
-          {button("▶ Share link sheet", "share-link", !!finished, "rgba(255,255,255,.1)")}
-          <div className="text-[12px] font-bold text-white/60">A shared career opens at /legend/CODE. Codes need the star_legend_shares table (pending).</div>
-          {button("▶ In the game: All seasons page", "seasons", !!midway, "rgba(255,255,255,.1)")}
+          <div data-online-tests>
+            <Panel title="Online" note="a shared career opens at /legend/CODE; codes need the star_legend_shares table (pending)">
+              <div className="rt-cards">
+                {card("Head to head (made-up legend v this one)", "compare", !!finished, "compare")}
+                {card("Compare with a friend (type a code)", "compare-flow", true, "compare-flow")}
+                {card("Share link sheet", "share-link", !!finished, "share-link")}
+                {card("In the game: All seasons page", "seasons", !!midway, "seasons")}
+              </div>
+            </Panel>
+          </div>
         </div>
       </div>
       <PageGuide page="/star-retirement-dev" corner="bottom-left" />
-    </div>
+    </BroadcastPage>
   );
 }
 

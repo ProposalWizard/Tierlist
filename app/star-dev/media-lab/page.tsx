@@ -22,6 +22,8 @@ import { matchdayFor } from "@/lib/star/teamsheet";
 import type { Role } from "@/lib/star/formations";
 import type { GraphicSpec } from "@/lib/star/media/types";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, Btn, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "./media-lab.css";
 
 /**
  * THE MEDIA LAB
@@ -45,7 +47,27 @@ const CLUBS = [
   { name: "Tottenham Hotspur", primary: "#ffffff", secondary: "#132257" },
 ];
 
+/** The filter pills along the top of the wall (option 2, "Post wall"). */
+type Wall = "all" | "transfer" | "potm" | "screens" | "shop" | "training";
+const WALLS: { id: Wall; label: string }[] = [
+  { id: "all", label: "All" }, { id: "transfer", label: "Transfer graphic" }, { id: "potm", label: "Player of the Month" },
+  { id: "screens", label: "Screens" }, { id: "shop", label: "Shop" }, { id: "training", label: "Training" },
+];
+const WALL_KEY = "media-lab-wall";
+const TRAIN_SKILLS: { id: keyof Skills; label: string }[] = [
+  { id: "pace", label: "Pace" }, { id: "power", label: "Power" }, { id: "technique", label: "Technique" },
+  { id: "vision", label: "Vision" }, { id: "freeKick", label: "Free kick" },
+];
+
 export default function MediaLab() {
+  // Which part of the wall shows (remembered on this device).
+  const [wall, setWall] = useState<Wall>("all");
+  const [ctlOpen, setCtlOpen] = useState(false);
+  const [trainLevel, setTrainLevel] = useState(1);
+  useEffect(() => {
+    try { const w = localStorage.getItem(WALL_KEY); if (w && WALLS.some(x => x.id === w)) setWall(w as Wall); } catch { /* no storage */ }
+  }, []);
+  const pickWall = (w: Wall) => { setWall(w); try { localStorage.setItem(WALL_KEY, w); } catch { /* no storage */ } };
   // `?feed` shows just the feed preview, at phone width, for judging posts.
   const [feedOnly, setFeedOnly] = useState(false);
   // `?trophies` shows the Trophy Cabinet with every pictured trophy, for judging the art.
@@ -167,142 +189,212 @@ export default function MediaLab() {
     </>;
   }
 
+  const showGroup = (g: Wall) => wall === "all" || wall === g;
+  const railOn = showGroup("transfer");
+  const pic = (name: string) => ({ backgroundImage: `url(/admin/media-lab/${name}.webp)` });
+  /** A screen tile: a still of the real screen and the button that opens it.
+   *  Address modes (?feed, ?shop=…) load the page again, as typing them did. */
+  const screen = (key: string, title: string, note: string, img: string | null, btns: React.ReactNode) => (
+    <div className="ml-tile" key={key} data-screen={key}>
+      <div className="ml-tt"><b>{title}</b>{note && <span>{note}</span>}</div>
+      <div className="ml-pic" style={img ? pic(img) : undefined}>
+        {!img && <span className="ml-letter">{title.slice(0, 1)}</span>}
+        <div className="ml-pic-btns">{btns}</div>
+      </div>
+    </div>
+  );
+  const go = (href: string, label: string, main = false) => <a key={href} className="ml-go" data-main={main ? "true" : undefined} href={href}>{label}</a>;
+
   return (
-    <div className="min-h-screen bg-gray-900 px-4 py-6 text-white">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="text-xl font-black uppercase tracking-wide">Media Lab</h1>
-        <p className="mt-1 text-[12px] font-bold text-white/70">
-          Drop your pose PNG below. Nothing is uploaded — it stays in this browser tab.
-        </p>
+    <div className="ml">
+    <BroadcastPage
+      title="Media lab"
+      sub="Post wall: every feed graphic and screen on one wall. Nothing is uploaded."
+      actions={<span className="ml-head-btn"><Btn main onClick={() => setShowTeams(true)}>👁 Preview team sheets</Btn></span>}
+    >
+      <div className="ml-filters" role="tablist">
+        {WALLS.map(w => (
+          <Pill key={w.id} on={wall === w.id} onClick={() => pickWall(w.id)}>{w.label}</Pill>
+        ))}
+      </div>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-[280px_1fr]">
-          {/* ── Controls ── */}
-          <div className="space-y-3">
-            <Drop label="Pose image" src={pose} onDrop={e => onDrop(e, setPose)}
-              onPick={f => read(f, setPose)} onClear={() => setPose(null)} />
-            <Drop label="Face image (optional)" src={face} onDrop={e => onDrop(e, setFace)}
-              onPick={f => read(f, setFace)} onClear={() => setFace(null)} />
+      <div className="ml-layout" data-rail={railOn ? "true" : "false"}>
+        {railOn && (
+          <aside className="ml-rail" data-open={ctlOpen ? "true" : "false"}>
+            <button className="ml-ctl-toggle" onClick={() => setCtlOpen(o => !o)} aria-expanded={ctlOpen}>
+              <span>Pose, face and sliders</span><span>{ctlOpen ? "▲" : "▼"}</span>
+            </button>
+            <div className="ml-ctl-body">
+              <Panel title="Pictures" note="stays in this tab">
+                <Drop label="Pose image" src={pose} onDrop={e => onDrop(e, setPose)}
+                  onPick={f => read(f, setPose)} onClear={() => setPose(null)} />
+                <Drop label="Face image (optional)" src={face} onDrop={e => onDrop(e, setFace)}
+                  onPick={f => read(f, setFace)} onClear={() => setFace(null)} />
+              </Panel>
+              <Panel title="Club colours">
+                <div className="ml-clubs">
+                  {CLUBS.map((k, i) => (
+                    <button
+                      key={k.name}
+                      onClick={() => setClub(i)}
+                      aria-pressed={i === club}
+                      className="ml-club"
+                      style={{ background: k.primary, color: k.primary === "#ffffff" || k.primary === "#fff200" ? "#111" : "#fff" }}
+                    >
+                      {k.name.split(" ")[0]}
+                    </button>
+                  ))}
+                </div>
+              </Panel>
+              <Panel title="Line up the face">
+                <Slider label="Treatment" value={treatment} onChange={setTreatment}
+                  hint="0 = raw photo · 1 = full duotone" />
+                <Slider label="Face X" value={anchor.x} onChange={x => setAnchor(a => ({ ...a, x }))} />
+                <Slider label="Face Y" value={anchor.y} onChange={y => setAnchor(a => ({ ...a, y }))} />
+                <Slider label="Face size" value={anchor.size} max={0.4} onChange={size => setAnchor(a => ({ ...a, size }))} />
+                <Slider label="Neck line" value={neckY} max={0.6} onChange={setNeckY}
+                  hint="everything above this is cut off the pose" />
+                <Slider label="Face brightness" value={faceLift} max={2} onChange={setFaceLift}
+                  hint="match the face's exposure to the arms" />
+                <Slider label="Figure size" value={figureScale} max={2.2} onChange={setFigureScale}
+                  hint="fill the frame — crop him around the thigh" />
+                <Slider label="Figure up / down" value={figureY} min={-0.4} max={0.4} onChange={setFigureY} />
+              </Panel>
+              <Panel title="Anchor" note="copy into the template">
+                <code className="ml-anchor">
+                  {`{ x: ${anchor.x.toFixed(3)}, y: ${anchor.y.toFixed(3)}, size: ${anchor.size.toFixed(3)}, `
+                    + `neckY: ${neckY.toFixed(3)}, faceLift: ${faceLift.toFixed(2)}, `
+                    + `figureScale: ${figureScale.toFixed(2)}, figureY: ${figureY.toFixed(3)} }`}
+                </code>
+              </Panel>
+            </div>
+          </aside>
+        )}
 
-            <div className="rounded-lg border border-white/15 bg-gray-800 p-3">
-              <div className="text-[10px] font-black uppercase tracking-widest text-white/70">Club colours</div>
-              <div className="mt-2 grid grid-cols-3 gap-1.5">
-                {CLUBS.map((k, i) => (
-                  <button
-                    key={k.name}
-                    onClick={() => setClub(i)}
-                    className={`rounded px-1.5 py-2 text-[10px] font-black leading-tight transition ${
-                      i === club ? "ring-2 ring-white" : "opacity-70 hover:opacity-100"}`}
-                    style={{ background: k.primary, color: k.primary === "#ffffff" || k.primary === "#fff200" ? "#111" : "#fff" }}
-                  >
-                    {k.name.split(" ")[0]}
-                  </button>
-                ))}
+        <div className="flex min-w-0 flex-col gap-4">
+          {showGroup("transfer") && (
+            <section>
+              <div className="ml-group"><h2>Transfer graphic</h2><span>“Here we go”, with your pose and face</span></div>
+              <div className="ml-wall">
+                <div className="ml-tile" data-tile="transfer-main">
+                  <div className="ml-tt"><b>Here we go</b><span>{c.name}</span></div>
+                  <div className="ml-tb ml-tb-center">
+                    <div className="w-full max-w-[340px]">
+                      <TransferHereWeGo01
+                        playerName="Michael Sancho"
+                        fromClub={CLUBS[(club + 3) % CLUBS.length].name}
+                        toClub={c.name}
+                        fee="£65m"
+                        poseSrc={pose ?? undefined}
+                        faceSrc={face ?? undefined}
+                        faceAnchor={anchor}
+                        neckY={neckY}
+                        faceLift={faceLift}
+                        figureScale={figureScale}
+                        figureY={figureY}
+                        kitPrimary={c.primary}
+                        kitSecondary={c.secondary}
+                        treatment={treatment}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="ml-tile" data-span="2" data-tile="transfer-every-club">
+                  <div className="ml-tt"><b>Same template, every club</b></div>
+                  <div className="ml-tb">
+                    <div className="ml-six">
+                      {CLUBS.map(k => (
+                        <div key={k.name}>
+                          <div className="ml-six-name">{k.name}</div>
+                          <TransferHereWeGo01
+                            playerName="Michael Sancho"
+                            toClub={k.name}
+                            fee="£65m"
+                            poseSrc={pose ?? undefined}
+                            faceSrc={face ?? undefined}
+                            faceAnchor={anchor}
+                            neckY={neckY}
+                            faceLift={faceLift}
+                            figureScale={figureScale}
+                            figureY={figureY}
+                            kitPrimary={k.primary}
+                            kitSecondary={k.secondary}
+                            treatment={treatment}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            </section>
+          )}
 
-            <Slider label="Treatment" value={treatment} onChange={setTreatment}
-              hint="0 = raw photo · 1 = full duotone" />
-            <Slider label="Face X" value={anchor.x} onChange={x => setAnchor(a => ({ ...a, x }))} />
-            <Slider label="Face Y" value={anchor.y} onChange={y => setAnchor(a => ({ ...a, y }))} />
-            <Slider label="Face size" value={anchor.size} max={0.4} onChange={size => setAnchor(a => ({ ...a, size }))} />
-            <Slider label="Neck line" value={neckY} max={0.6} onChange={setNeckY}
-              hint="everything above this is cut off the pose" />
-            <Slider label="Face brightness" value={faceLift} max={2} onChange={setFaceLift}
-              hint="match the face's exposure to the arms" />
-            <Slider label="Figure size" value={figureScale} max={2.2} onChange={setFigureScale}
-              hint="fill the frame — crop him around the thigh" />
-            <Slider label="Figure up / down" value={figureY} min={-0.4} max={0.4} onChange={setFigureY} />
+          {showGroup("potm") && (
+            <section>
+              <div className="ml-group"><h2>Player of the Month</h2><span>post cards at the width a post draws at</span></div>
+              <div className="ml-wall">
+                <div className="ml-tile"><div className="ml-tt"><b>The shortlist</b><span>a busy August</span></div><div className="ml-tb"><Graphic spec={SAMPLE_NOMINEES} /></div></div>
+                <div className="ml-tile"><div className="ml-tt"><b>Someone else wins</b><span>nine months in ten</span></div><div className="ml-tb"><Graphic spec={SAMPLE_WINNER} /></div></div>
+                <div className="ml-tile"><div className="ml-tt"><b>You win</b><span>no photo</span></div><div className="ml-tb"><Graphic spec={SAMPLE_WINNER_YOU} /></div></div>
+                <div className="ml-tile"><div className="ml-tt"><b>You win</b><span>with your photo</span></div><div className="ml-tb"><Graphic spec={SAMPLE_WINNER_PHOTO} /></div></div>
+                <div className="ml-tile"><div className="ml-tt"><b>Your photo picker</b><span>try only, not saved</span></div><div className="ml-tb"><PortraitPicker value={undefined} onChange={() => {}} club="Liverpool" number={19} /></div></div>
+              </div>
+            </section>
+          )}
 
-            <div className="rounded-lg border border-white/15 bg-gray-800 p-3">
-              <div className="text-[10px] font-black uppercase tracking-widest text-white/70">Anchor</div>
-              <code className="mt-1 block break-all text-[11px] font-bold text-emerald-300">
-                {`{ x: ${anchor.x.toFixed(3)}, y: ${anchor.y.toFixed(3)}, size: ${anchor.size.toFixed(3)}, `
-                  + `neckY: ${neckY.toFixed(3)}, faceLift: ${faceLift.toFixed(2)}, `
-                  + `figureScale: ${figureScale.toFixed(2)}, figureY: ${figureY.toFixed(3)} }`}
-              </code>
-            </div>
-          </div>
+          {showGroup("screens") && (
+            <section>
+              <div className="ml-group"><h2>Screens</h2><span>each opens with sample data</span></div>
+              <div className="ml-wall" data-screens="true">
+                {screen("won", "“You won it” pop-up", "Player of the Month", "won",
+                  <button className="ml-go" data-main="true" onClick={() => setShowWin(true)}>Preview</button>)}
+                {screen("sheets", "Team sheets", "with play-as", "sheets",
+                  <button className="ml-go" data-main="true" onClick={() => setShowTeams(true)}>Preview</button>)}
+                {screen("commentary", "Match commentary", "68th minute", "commentary",
+                  <button className="ml-go" data-main="true" onClick={() => setShowFeed(true)}>Preview</button>)}
+                {screen("feed", "Feed preview", "seven sample posts", "feed", go("?feed", "Open", true))}
+                {screen("trophies", "Trophy cabinet", "every trophy picture", "trophies", go("?trophies", "Open", true))}
+                {screen("strike", "Strike screen", "how the ball moves", "strike",
+                  <>{(["still", "float", "bounce", "bobble"] as const).map(m => go(`?contact=${m}`, m))}</>)}
+              </div>
+            </section>
+          )}
 
-          {/* ── Output ── */}
-          <div>
-            <div className="mx-auto w-full max-w-[340px]">
-              <TransferHereWeGo01
-                playerName="Michael Sancho"
-                fromClub={CLUBS[(club + 3) % CLUBS.length].name}
-                toClub={c.name}
-                fee="£65m"
-                poseSrc={pose ?? undefined}
-                faceSrc={face ?? undefined}
-                faceAnchor={anchor}
-                neckY={neckY}
-                faceLift={faceLift}
-                figureScale={figureScale}
-                figureY={figureY}
-                kitPrimary={c.primary}
-                kitSecondary={c.secondary}
-                treatment={treatment}
-              />
-            </div>
+          {showGroup("shop") && (
+            <section>
+              <div className="ml-group"><h2>Shop</h2><span>sample National League career, ★1,000,000 · nothing is bought</span></div>
+              <div className="ml-wall" data-screens="true">
+                {screen("shop-landing", "Shop · first page", "", "shop-landing", <>{go("?shop=landing", "New", true)}{go("?shop=landing&look=old", "Old")}</>)}
+                {screen("shop-kib", "Shop · KIB cans", "", "shop-kib", <>{go("?shop=kib", "New", true)}{go("?shop=kib&look=old", "Old")}</>)}
+                {screen("shop-boots", "Shop · boots", "", "shop-boots", <>{go("?shop=boots", "New", true)}{go("?shop=boots&look=old", "Old")}</>)}
+                {screen("shop-lifestyle", "Shop · lifestyle", "", "shop-lifestyle", <>{go("?shop=lifestyle", "New", true)}{go("?shop=lifestyle&look=old", "Old")}</>)}
+                {screen("shopmock-A", "Idea A", "swipe one big item", "shopmock-A", go("?shopmock=A", "Open", true))}
+                {screen("shopmock-B", "Idea B", "dense grid", "shopmock-B", go("?shopmock=B", "Open", true))}
+                {screen("shopmock-C", "Idea C", "shelves on a wall", "shopmock-C", go("?shopmock=C", "Open", true))}
+                {screen("shopmock-D", "Idea D", "one item per screen", "shopmock-D", go("?shopmock=D", "Open", true))}
+              </div>
+              <Note>More shop options by address: &amp;bar=B or C, &amp;democlips, &amp;locks, &amp;mark=none, &amp;buy=A or B, &amp;cat= (see ⓘ).</Note>
+            </section>
+          )}
 
-            <div className="mt-6 text-[10px] font-black uppercase tracking-widest text-white/70">
-              Same template, every club
-            </div>
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              {CLUBS.map(k => (
-                <TransferHereWeGo01
-                  key={k.name}
-                  playerName="Michael Sancho"
-                  toClub={k.name}
-                  fee="£65m"
-                  poseSrc={pose ?? undefined}
-                  faceSrc={face ?? undefined}
-                  faceAnchor={anchor}
-                  neckY={neckY}
-                  faceLift={faceLift}
-                  figureScale={figureScale}
-                  figureY={figureY}
-                  kitPrimary={k.primary}
-                  kitSecondary={k.secondary}
-                  treatment={treatment}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ── The typed cards ──
-            The templates above need assets; these need nothing but data, so
-            they belong on the same bench where they can be judged at the width
-            a post actually renders at rather than full-screen. */}
-        <div className="mt-8">
-          <h2 className="text-[11px] font-black uppercase tracking-widest text-white/70">Post cards</h2>
-          <div className="mt-3 flex max-w-3xl flex-wrap items-start gap-4">
-            <div className="w-full max-w-sm space-y-4">
-              <Graphic spec={SAMPLE_NOMINEES} />
-              <Graphic spec={SAMPLE_WINNER} />
-              <Graphic spec={SAMPLE_WINNER_YOU} />
-              <Graphic spec={SAMPLE_WINNER_PHOTO} />
-              <PortraitPicker value={undefined} onChange={() => {}} club="Liverpool" number={19} />
-              <button
-                onClick={() => setShowWin(true)}
-                className="w-full rounded-lg bg-amber-400 py-2 text-[12px] font-black uppercase text-gray-950"
-              >
-                Preview the "you won it" modal
-              </button>
-              <button
-                onClick={() => setShowTeams(true)}
-                className="w-full rounded-lg bg-emerald-500 py-2 text-[12px] font-black uppercase text-white"
-              >
-                Preview the team sheets
-              </button>
-              <button
-                onClick={() => setShowFeed(true)}
-                className="w-full rounded-lg bg-sky-500 py-2 text-[12px] font-black uppercase text-white"
-              >
-                Preview the match commentary
-              </button>
-            </div>
-          </div>
+          {showGroup("training") && (
+            <section>
+              <div className="ml-group">
+                <h2>Training</h2><span>every skill at 40 · nothing saved</span>
+                <span className="ml-step">
+                  <Label>Level</Label>
+                  <Pill on={false} onClick={() => setTrainLevel(l => Math.max(1, l - 1))} title="Lower level">◀</Pill>
+                  <b>{trainLevel}</b>
+                  <Pill on={false} onClick={() => setTrainLevel(l => Math.min(30, l + 1))} title="Higher level">▶</Pill>
+                </span>
+              </div>
+              <div className="ml-wall" data-screens="true">
+                {TRAIN_SKILLS.map(s => screen(`train-${s.id}`, s.label, trainLevel === 1 ? "level 1 card" : `level ${trainLevel}`,
+                  trainLevel === 1 ? `train-${s.id}` : null, go(`?training=${s.id}&level=${trainLevel}`, "Play", true)))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
 
@@ -370,7 +462,8 @@ export default function MediaLab() {
           onClose={() => setShowWin(false)}
         />
       )}
-      <PageGuide page="/star-dev/media-lab" />
+      <PageGuide page="/star-dev/media-lab" corner="bottom-left" />
+    </BroadcastPage>
     </div>
   );
 }
@@ -486,25 +579,19 @@ function Drop({ label, src, onDrop, onPick, onClear }: {
   onClear: () => void;
 }) {
   return (
-    <div
-      onDrop={onDrop}
-      onDragOver={e => e.preventDefault()}
-      className="rounded-lg border-2 border-dashed border-white/25 bg-gray-800 p-3 text-center"
-    >
-      <div className="text-[10px] font-black uppercase tracking-widest text-white/70">{label}</div>
+    <div onDrop={onDrop} onDragOver={e => e.preventDefault()} className="ml-drop">
+      <Label>{label}</Label>
       {src ? (
         <>
-          <img src={src} alt="" className="mx-auto mt-2 h-24 object-contain" />
-          <button onClick={onClear} className="mt-1 text-[10px] font-bold text-red-400 hover:text-red-300">
-            remove
-          </button>
+          <img src={src} alt="" />
+          <button onClick={onClear} className="ml-remove">remove</button>
         </>
       ) : (
-        <p className="mt-2 text-[11px] font-bold text-white/60">Drag a PNG here</p>
+        <p>Drag a PNG here</p>
       )}
-      <label className="mt-2 inline-block cursor-pointer rounded bg-white/10 px-2 py-1 text-[10px] font-black text-white hover:bg-white/20">
+      <label className="ml-file">
         Choose file
-        <input type="file" accept="image/*" className="hidden"
+        <input type="file" accept="image/*"
           onChange={e => { const f = e.target.files?.[0]; if (f) onPick(f); }} />
       </label>
     </div>
@@ -515,17 +602,14 @@ function Slider({ label, value, onChange, min = 0, max = 1, hint }: {
   label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; hint?: string;
 }) {
   return (
-    <div className="rounded-lg border border-white/15 bg-gray-800 p-3">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[10px] font-black uppercase tracking-widest text-white/70">{label}</span>
-        <span className="text-[11px] font-black tabular-nums text-white">{value.toFixed(2)}</span>
-      </div>
+    <div className="ml-slider">
+      <div className="ml-slider-top"><span>{label}</span><b>{value.toFixed(2)}</b></div>
       <input
         type="range" min={min} max={max} step={0.005} value={value}
         onChange={e => onChange(Number(e.target.value))}
-        className="mt-1.5 w-full accent-emerald-500"
+        aria-label={label}
       />
-      {hint && <p className="mt-1 text-[9px] font-bold text-white/55">{hint}</p>}
+      {hint && <small>{hint}</small>}
     </div>
   );
 }

@@ -39,6 +39,69 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 19 Oct 2026 — the Team room and the admin side menu (Harry)
+- **"We need to be able to close the side tab."** On a computer, « at the top
+  of the admin side menu folds it to a 64 px strip of icons (remembered per
+  browser); » opens it again.
+- **"Don't like this big block between them."** The thick dark scrollbar
+  between the side menu and the page is gone; the menu scrolls without one.
+- **Team room parts sit in a top toggle AND in the side menu**: "this top
+  toggle happens when u enter the team board from the side menu - actually
+  all of these could be on the side menu too". Board | Ideas | Chat | To-do.
+- **"Use Higgsfield wherever needed for all UI"**, and he wants to try a third
+  admin look beyond Ops room / Clean light because "even the groups on the
+  side, it's a bit hard to see everything".
+- **Picked from 8 Higgsfield looks: "D and F are my picks"** — D Broadcast
+  (midnight blue, floodlights, slanted TV bars) and F Bento (a soft colour per
+  group, friendly icons). Both go on the admin Look switch; every group visible
+  at once. Pictures: docs/handoffs/2026-10-19-admin-looks/.
+  Built 19 Oct: Broadcast is the default; both show all 12 groups on one
+  computer screen (page 934 px tall in a 900 px window).
+- **D and F are for the admin pages only.** "It's not every screen in D and
+  F (that is just for the admin page). I meant the actual UI of every game
+  like how the play area looks good — the inside of every area needs work."
+  ~~The Play Area is the standard the inside of every game is brought up to.~~
+  Narrowed the same day: **"forget about the site games and everything JUST
+  the admin for road to ballon dor."** The pass is the inside of every Road to
+  Ballon d'Or admin/test page (lib/adminRegistry.ts, section rbd), brought up
+  to the Play Area (/star-play-dev). Not the game screens, not other games.
+  ~~Built that way: Retirement screens rebuilt in the Play Area's dark-card
+  look.~~ Harry, same day: **"the before looks way better — I don't know why
+  we are basing inside pages on the play area when that's one of the pages
+  that needed re doing — I just meant the entrance to it was good, this page
+  is fine."** Reverted. The Play Area's inside is NOT the standard; the bold
+  game-style Retirement page (big caps title, yellow labels, chunky coloured
+  buttons) is fine as it is. Ask what the bar is before restyling an admin page.
+- **Look C (Broadcast) for the RBD admin pages on a computer**: "C for pc cos it
+  takes up the screen and looks cool"; "each screen should fit what it's about
+  and scale perfectly on pc and phone". Two Higgsfield options per page:
+  https://claude.ai/artifact/AM271hrdJEP56voyAoZ6zW ("these are starting to look
+  a lot better").
+- **One full page per group, not one jumbled home**: "we could just have a
+  separate page in full for each sub set of admin pages — I like that idea
+  rather than a jumbled home page." Admin home shows the groups; each group
+  opens its own full page of its admin pages.
+- **Picks from the options page (19 Oct)**: admin home = option 1 (tile grid)
+  AND option 2 (channel-guide list) behind a grid/list toggle; a group's own
+  page = option 1 (picture cards); Retirement screens = option 2 ("I like this
+  style a lot": careers rail + journey cards with pictures and PLAY); Real
+  moments = option 2 (list + big replay, "sickkk"); Goal videos = option 2 only
+  "if it can actually edit the highlights in some way functionally", else leave.
+  Real Goals = option 2 (featured goal + rails).
+- **Admin pages are functional first** (Harry, 19 Oct): "how are these admin
+  pages — remember these are functional first". A restyle keeps every control
+  and what it does; a mock-up that drops or fakes a function is wrong. And a
+  new admin page must be quick to make: one registry line puts it on the home,
+  its group page and the side menu; the shared Broadcast frame gives it the look.
+  **How:** one line in lib/adminRegistry.ts + wrap the page in `<BroadcastPage>`
+  (components/admin/broadcast/BroadcastPage.tsx: Panel, PanelGrid, Btn, Pill).
+  scripts/admin-look-guard.mjs runs in `npm run build` and fails a new RBD
+  admin page that skips the frame; its NOT_YET list only shrinks.
+- **Test pages vs admin tools** (Harry, 19 Oct): "we need to differentiate what
+  are test pages for us to test new features and what are admin pages for
+  features we have and like and are tuning." `TEST_PAGES` in
+  lib/adminRegistry.ts; group pages show Admin tools first, then Test pages.
+
 ### 18 Oct 2026 — admin pages get real design (Harry)
 - **"I like the idea of the grouped admin … but it's not the UI I was
   imagining."** Said of the overview page's drawn phone mock (dark/amber

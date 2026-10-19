@@ -194,8 +194,8 @@ export const ADMIN_GUIDES = {
     dev: "lib/star/badgeSymbols.ts (drawings + the word table + SYMBOL_OVERRIDES), lib/star/clubBadge.ts (the badge), lib/star/badgeOverrides.ts (device changes, key star-badge-overrides), components/star/ClubBadge.tsx.",
   },
   "/star-retirement-dev": {
-    title: "Retirement preview",
-    what: "The end of a career without playing one: the final-season warning, the final whistle, the career overview, the Hall of Fame and the new All seasons page, on made-up careers or a save from this browser.",
+    title: "Retirement screens",
+    what: "The end of a career without playing one: the final-season warning, the final whistle, the career overview, the Hall of Fame and the new All seasons page, on made-up careers or a save from this browser. Pick a career on the left (top on a phone); every screen is a picture card, and its ▶ Play button opens it. A greyed card has nothing to show for that career.",
     buttons: [
       { group: "Pick a career", items: [
         ["Legend / One club / Journeyman / Lower leagues / Quiet one", "A made-up 20-season career of that shape: every season's numbers, who won what, trophies, transfers, money and things bought."],
@@ -203,33 +203,33 @@ export const ADMIN_GUIDES = {
         ["Your saves on this device", "A real save from this browser. It is only read: retiring here retires a copy, never the save."],
       ] },
       { group: "The screens, in order", items: [
-        ["▶ 1. After season 19: final season", "The warning after the season-19 Ballon d'Or night, before the transfer window. Continue comes back here."],
-        ["▶ 2. After season 20: the final whistle", "The end after the season-20 Ballon d'Or night. Hang them up opens the career overview."],
-        ["▶ 3. The career overview", "The end-of-career screen, as in the game. Flip its seven pages with the arrows at the top, or swipe."],
+        ["1. After season 19: final season", "The warning after the season-19 Ballon d'Or night, before the transfer window. Continue comes back here."],
+        ["2. After season 20: the final whistle", "The end after the season-20 Ballon d'Or night. Hang them up opens the career overview."],
+        ["3. The career overview", "The end-of-career screen, as in the game. Flip its seven pages with the arrows at the top, or swipe."],
         ["Hall of Fame / New career / Menu", "The bar under the overview, as in the game. Here: Hall of Fame opens the made-up Hall; the other two come back here."],
-        ["▶ 4. The Hall of Fame", "One made-up career of each shape. Tap one for its overview. Remove here only goes back: nothing is stored."],
-        ["▶ The share card (the picture)", "The picture Share picture makes, at the size it is shared. Make the picture opens the real share sheet."],
-        ["▶ In the game: All seasons page", "The Stats page's All seasons view (New look) on a career 12 seasons in."],
+        ["4. The Hall of Fame", "One made-up career of each shape. Tap one for its overview. Remove here only goes back: nothing is stored."],
+        ["The share card (the picture)", "The picture Share picture makes, at the size it is shared. Make the picture opens the real share sheet."],
+        ["In the game: All seasons page", "The Stats page's All seasons view (New look) on a career 12 seasons in."],
       ] },
       { group: "The farewell match", items: [
-        ["▶ Invite (Play or Skip)", "The farewell after the final whistle: your XI, the Rivals XI and why they are there. Play it opens the team sheets; Skip goes to the overview."],
-        ["▶ Team sheets", "The two elevens, as before any match. Kick Off opens the guard of honour."],
-        ["▶ Guard of honour · 3D / · drawn", "The walk-out: both teams in two lines clapping. 3D as the game shows it; drawn is what a phone that can't run 3D sees. Kick off › skips it."],
-        ["▶ Standing ovation · 3D / · drawn", "Off at 85': the camera circles you, the ground stands, two team-mates and two rivals stop you for a hug, a dap-up or a pat, the substitute hugs you on the line. 3D as the game shows it (Settings → Look → Standing ovation: New); drawn is what a phone that can't run 3D sees. Skip › ends it."],
-        ["▶ Full time (made-up 4–3)", "The farewell's last screen, with a made-up score. Hang them up opens the overview with the farewell line on it."],
+        ["Invite (Play or Skip)", "The farewell after the final whistle: your XI, the Rivals XI and why they are there. Play it opens the team sheets; Skip goes to the overview."],
+        ["Team sheets", "The two elevens, as before any match. Kick Off opens the guard of honour."],
+        ["Guard of honour · 3D / · drawn", "The walk-out: both teams in two lines clapping. 3D as the game shows it; drawn is what a phone that can't run 3D sees. Kick off › skips it."],
+        ["Standing ovation · 3D / · drawn", "Off at 85': the camera circles you, the ground stands, two team-mates and two rivals stop you for a hug, a dap-up or a pat, the substitute hugs you on the line. 3D as the game shows it (Settings → Look → Standing ovation: New); drawn is what a phone that can't run 3D sees. Skip › ends it."],
+        ["Full time (made-up 4–3)", "The farewell's last screen, with a made-up score. Hang them up opens the overview with the farewell line on it."],
         ["The match itself", "Not here: it is the real match. In the game, Dev Skip to the end of season 20, then Hang them up."],
       ] },
       { group: "The Ballon d'Or night", items: [
-        ["▶ You win · 3D / You come 2nd · 3D", "The ceremony as the game shows it (Settings → Look → Ballon d'Or night: New): the host at his lectern, the final three walk up one by one as he calls each name, \"And the winner is…\", the name, the golden ball over him, confetti, then your place. Skip › goes to the result page."],
-        ["▶ Not in the top three (7th) · 3D", "The shorter night: the three walk up together, the winner is named, then \"You finished 7th\"."],
-        ["▶ … · drawn", "What a phone that can't run 3D sees: the same night on a drawn stage."],
-        ["▶ The result page after it", "Your season, the winner and the top ten, as after the ceremony. Continue comes back here."],
-        ["▶ Old (the countdown cards)", "The Ballon d'Or screen as it was (Settings → Look → Ballon d'Or night: Old)."],
+        ["You win · 3D / You come 2nd · 3D", "The ceremony as the game shows it (Settings → Look → Ballon d'Or night: New): the host at his lectern, the final three walk up one by one as he calls each name, \"And the winner is…\", the name, the golden ball over him, confetti, then your place. Skip › goes to the result page."],
+        ["Not in the top three (7th) · 3D", "The shorter night: the three walk up together, the winner is named, then \"You finished 7th\"."],
+        ["… · drawn", "What a phone that can't run 3D sees: the same night on a drawn stage."],
+        ["The result page after it", "Your season, the winner and the top ten, as after the ceremony. Continue comes back here."],
+        ["Old (the countdown cards)", "The Ballon d'Or screen as it was (Settings → Look → Ballon d'Or night: Old)."],
       ] },
       { group: "Online", items: [
-        ["▶ Head to head", "The made-up legend (left, yours) against the career picked above (right): one bar per number."],
-        ["▶ Compare with a friend", "Type a friend's code or paste their link, pick one of your careers. Needs the database (the code is looked up)."],
-        ["▶ Share link sheet", "The Share link sheet over the overview. Signed out it says to sign in; signed in it makes the code."],
+        ["Head to head", "The made-up legend (left, yours) against the career picked above (right): one bar per number."],
+        ["Compare with a friend", "Type a friend's code or paste their link, pick one of your careers. Needs the database (the code is looked up)."],
+        ["Share link sheet", "The Share link sheet over the overview. Signed out it says to sign in; signed in it makes the code."],
       ] },
     ],
     saving: ["Nothing is saved. A real save is read, never written, and the Hall here is made up. Share link (signed in) does make a real code in the database."],
@@ -247,15 +247,19 @@ export const ADMIN_GUIDES = {
     what: "Every national team's competitions played out from August 2026 — Nations Leagues, qualifiers, the Euro, World Cup, Copa América, AFCON, Asian Cup, Gold Cup, OFC Nations Cup, friendlies — without playing a career.",
     buttons: [
       { items: [
-        ["Up to Aug (year)", "Plays the world from August 2026 to 1 August of that year."],
-        ["(nation)", "Whose tables and matches are shown, and whose flag the squad screens use."],
-        ["▶ Called up screen / ▶ Left out screen", "The squad announcement as the game shows it, with that nation's last two matches as the sample. Continue comes back here."],
-        ["▶ Country page", "Stats → Country as the game draws it, for a new Arsenal career of the chosen nation with the national manager's bar at 62. Back comes here."],
-        ["▶ On duty (League)", "The League tab while you're away with your country (picked for its first break, one international played): its group table, results, fixtures and squad."],
-        ["▶ Watched on TV", "Not picked for the first break, Premier League: the screen after watching your nation's first match of it."],
-        ["▶ Country page after a season", "Stats → Country after a whole 2026/27 season, always picked, so Tables, Matches, Scorers, Ranking and Who won are full. Takes a few seconds to play."],
-        ["▶ On duty at a tournament", "Two seasons on, two group games into the summer 2028 tournament (Euro for England): the League tab at the tournament. Says so if that nation didn't qualify."],
-        ["▶ Ballon d'Or after a season", "The Ballon d'Or result after 2027/28, with your international goals counted. The other clubs' players are made up, with big nations' nationalities."],
+        ["Played up to Aug (year) (top of the Nations list)", "Plays the world from August 2026 to 1 August of that year."],
+        ["Search nations / a nation in the list", "Picks whose page is shown: flag, FIFA ranking, real home and away kits, last results, tables and matches. The screens below use that nation too. On a phone the list sits above the page."],
+        ["A row in FIFA ranking", "Picks that nation, the same as the list."],
+      ] },
+      { group: "The screens (picture cards, ▶ Play)", items: [
+        ["Called up / Left out", "The squad announcement as the game shows it, with that nation's last two matches as the sample. Continue comes back here."],
+        ["Country page", "Stats → Country as the game draws it, for a new Arsenal career of the chosen nation with the national manager's bar at 62. Back comes here."],
+        ["On duty (League)", "The League tab while you're away with your country (picked for its first break, one international played): its group table, results, fixtures and squad."],
+        ["Watched on TV", "Not picked for the first break, Premier League: the screen after watching your nation's first match of it."],
+        ["Country page after a season", "Stats → Country after a whole 2026/27 season, always picked, so Tables, Matches, Scorers, Ranking and Who won are full. Takes a few seconds to play."],
+        ["On duty at a tournament", "Two seasons on, two group games into the summer 2028 tournament (Euro for England): the League tab at the tournament. Says so if that nation didn't qualify."],
+        ["Ballon d'Or after a season", "The Ballon d'Or result after 2027/28, with your international goals counted. The other clubs' players are made up, with big nations' nationalities."],
+        ["The card pictures", "Each card draws the real screen for the nation you picked, shrunk. The three slow ones (a season played first) show the flag until you point at the card."],
       ] },
     ],
     saving: ["Nothing is saved. The world here has no career in it (no player results, no real-player strengths)."],
@@ -277,12 +281,16 @@ export const ADMIN_GUIDES = {
         ["Every kind / One-on-one / In the box / Tight angle / Long range / Midfield", "Which chance kind the moment was put in. \"In the box\" is a close shot with defenders in the way."],
         ["All / xG under 8% / 8–50% / Over 50%", "How likely the real shot was to go in (StatsBomb's own number). 8–50% is the band worth playing."],
         ["Goals only", "Only shots that went in for real."],
-        ["Next to the game's own", "Puts a chance the game made of the same kind beside each real one."],
+        ["Search players, matches", "Only moments whose player or match has these words."],
+      ] },
+      { group: "The list (left; under the picture on a phone)", items: [
+        ["A row", "Picks that moment: it shows big on the right. A small picture, the player and minute, the match, the kind and xG."],
         ["More", "Shows 24 more."],
       ] },
-      { group: "Each card", items: [
+      { group: "The picked moment", items: [
         ["The picture", "Red = defenders, green = keeper, blue = team-mates, YOU = the real shooter, with the ball at his feet. Only people inside the camera are kept."],
         ["▶ Play / ■ Stop", "Plays the real match on that picture, or goes back to it. Nothing is counted or saved."],
+        ["Next to the game's own", "Puts a chance the game made of the same kind beside the real one, with its own Play."],
         ["Amber text", "What the gallery's fault rules say about the picture. Real football breaks some of them (a defender on the line behind his keeper)."],
       ] },
     ],
@@ -294,20 +302,25 @@ export const ADMIN_GUIDES = {
     title: "Real shots (test)",
     what: "Every shot of the 2022 World Cup and Euro 2024 that StatsBomb's free data has a freeze frame for (where everyone near the shot stood), drawn on our pitch, playable in the real match, and measured against our own chances. Test only: the licence for a paid game is not cleared, so none of it is in the game.",
     buttons: [
+      { group: "Layout (top right)", items: [
+        ["🗺️ Shot map", "Filters on the left, a map of every shot that passes them in the middle (tap a dot), and the picked shot big on the right with its Play button. Every shot is listed below as rows. On a phone the filters fold into a Filters (n) button."],
+        ["▦ Cards", "A total of the shots and a goals bar, the filters as a row of drop-downs, then a grid of shot cards. Same shots, same buttons. The page remembers which layout you used last (on this device)."],
+      ] },
       { group: "Tabs", items: [
         ["Shots", "The list of real shots, each with its picture and Play button."],
         ["Moving highlight", "Only shots with 2–3 real passes before them. ▶ Watch the move: the match radar (the same one as the Match Radar page) shows the move coming up the pitch, then the real match itself replays the real passes in its own picture (2D or 3D: the 3D | 2D button in the match bar, the same as a career match), everyone moving from where StatsBomb's 360 frame had them to where they stood at the shot, and YOU receive the last pass. The camera follows the passes (the passer and the man it goes to), then stops moving once the ball is in the 6-yard box (or, for a shot from further out, as the replay ends) on the shot's wide frame: every real man within 20 m, the keeper, the ball and the whole goal (the same frame as Play this shot). Then the shot is yours, live, from exactly there. ↺ Again replays it; ■ Stop closes it. The replay is recorded positions, not physics; the engine plays only the shot. A team-mate who passed from outside the shot's picture is on the pitch for the replay only."],
         ["Ours vs real", "Four bars per chance kind: shot distance, defenders between ball and goal, nearest defender, keeper off his line. Real = the real shots of that kind; Ours = 200 of the game's own chances of that kind."],
       ] },
       { group: "Filters", items: [
-        ["All / World Cup 2022 / Euro 2024", "Which tournament."],
-        ["All / Goal / Saved / Off T / Blocked / Other", "What really happened to the shot."],
-        ["All / Open Play / Free Kick / Penalty / Corner", "How the shot came about."],
-        ["Any xG / under 8% / 8–30% / over 30%", "How likely the real shot was to go in (StatsBomb's own number)."],
+        ["Competition", "Which tournament: all, World Cup 2022 or Euro 2024."],
+        ["What happened", "Every shot, Goal, Saved, Off target, Blocked or Other: what really happened to the shot (a coloured list in Shot map, a drop-down in Cards)."],
+        ["How it came", "Any way, Open Play, Free Kick, Penalty or Corner."],
+        ["Chance of a goal (xG)", "Any xG, under 8%, 8–30% or over 30%: how likely the real shot was to go in (StatsBomb's own number)."],
         ["Search", "A player or team name."],
         ["More", "Shows 20 more."],
       ] },
       { group: "Each shot", items: [
+        ["The map (Shot map)", "Each dot is a shot, where it was struck, coloured by what happened (green goal, yellow saved, orange blocked, grey off target, white other). Tap one to show it in Shot details."],
         ["The picture", "Our pitch from above, goal at the top. Yellow = the shooter, white = ball, red = opponents, green = keeper, blue = team-mates. The dashed line is where the shot went."],
         ["▶ Play this shot", "Plays the real match on that picture at the top of the page: the shooter is YOU, the real keeper, opponents and team-mates inside the camera are where they stood. Nothing is counted or saved."],
         ["■ Stop", "Closes the match."],
@@ -387,12 +400,14 @@ export const ADMIN_GUIDES = {
     what: "Every relationship game from the relationships revamp, on a made-up player, so you can try each one without playing a career up to it.",
     buttons: [
       { items: [
-        ["▶ The manager / Woodwork challenge / Signing session / Shoot an advert", "Opens that game. The manager opens a picker of 3: Penalties, Office talk, Extra session. Back or Continue returns here. (Day off is gone: happiness is now the average of boss, team and fans.)"],
-        ["▶ Moment: made captain / Moment: dropped to the bench", "Shows what the manager says when he gives you the armband, or drops you to the bench (in his office; the same words on a plain card if Settings → Look → Talk to your manager is Old). Continue returns here. The bench reason follows the bar level and form: 20 = he is not happy with you, Out of form = your form."],
-        ["20 / 50 / 75 / 90", "The level of every bar before the game, so you can see what a win pays at each level."],
-        ["In form / Ordinary / Out of form", "Your last match rating. Office talk uses it: out of form, one question tests how you take a bad game; in form, whether it went to your head."],
-        ["Starting / On the bench, trusting / demanding / rotational", "Only used by the old manager talk, which is no longer in the game. Office talk reads the manager's playing style off his name instead."],
-        ["Last game", "What the last game returned: won or lost, and the change."],
+        ["Games list (left)", "Each game with a picture of its first screen and the bar it moves. Tap a row to see it in Preview; tap ▶ on the row to play it straight away."],
+        ["▶ Start (Preview)", "Opens the picked game. The manager opens a picker of 3: Penalties, Office talk, Extra session. Back or Continue returns here. (Day off is gone: happiness is now the average of boss, team and fans.)"],
+        ["Moment: made captain / Moment: dropped to the bench", "Shows what the manager says when he gives you the armband, or drops you to the bench (in his office; the same words on a plain card if Settings → Look → Talk to your manager is Old). Continue returns here. The bench reason follows the bar level and form: 20 = he is not happy with you, Out of form = your form."],
+        ["Before the game → 20 / 50 / 75 / 90", "The level of every bar before the game, so you can see what a win pays at each level. The bars on the list show it."],
+        ["Before the game → In form / Ordinary / Out of form", "Your last match rating. Office talk uses it: out of form, one question tests how you take a bad game; in form, whether it went to your head."],
+        ["Before the game → Starting / On the bench, trusting / demanding / rotational", "Only used by the old manager talk, which is no longer in the game. Office talk reads the manager's playing style off his name instead."],
+        ["Fixed in the game", "The games' own numbers (kicks, questions, shots, fans, what a win pays), read from the game's files. Shown only: change them in the code."],
+        ["Last game (Preview)", "What the last game returned: won or lost, and the change."],
       ] },
     ],
     saving: ["Nothing is saved. It is a test player that resets when you leave."],
@@ -433,15 +448,21 @@ export const ADMIN_GUIDES = {
     title: "Star Pass Rewards",
     what: "Every reward in one catalogue, by type, and which reward sits at which Star Pass level. A reward can go on any level from 1 to 100.",
     buttons: [
-      { group: "Levels (left)", items: [
-        ["1 to 100 grid", "Picks a level. Gold squares already have a reward. The next card you tap goes on the picked level."],
-        ["On the road", "Every level that has a reward, plus the one you picked. Tap a row to pick it."],
+      { group: "Reward types (left)", items: [
+        ["Penalty run-ups / Free-kick run-ups / Celebrations / Wearables / Boots / Balls / Vehicles / Other", "Shows that type of card in the catalogue. The number is how many cards it has. On a phone they sit at the top of the catalogue."],
+      ] },
+      { group: "Tiers", items: [
+        ["Rookie / Pro / Star / Legend / Icon", "The 100 levels in five tiers of 20. Each card shows some of its rewards and how many of its levels have one."],
+        ["Edit tier", "Opens that tier's levels below. \"Editing\" marks the open one."],
+      ] },
+      { group: "The open tier", items: [
+        ["Level squares", "Picks a level. Gold squares already have a reward. The next card you tap goes on the picked level."],
+        ["On the road", "Every level in this tier that has a reward, plus the one you picked. Tap a row to pick it."],
         ["↑", "Moves this reward up one level (swaps if that level has one)."],
         ["↓", "Moves this reward down one level (swaps if that level has one)."],
         ["✕", "Empties the level."],
       ] },
-      { group: "Catalogue (right)", items: [
-        ["Penalty run-ups / Free-kick run-ups / Celebrations / Wearables / Boots / Balls / Vehicles / Other", "Shows that type of card. The number is how many cards it has."],
+      { group: "Catalogue", items: [
         ["Tap a card's picture", "Puts it at the picked level (taking it off any level it was on). Tapping another card replaces it."],
         ["👁", "A big preview. 3D ones can be dragged to spin and tapped to zoom."],
         ["Idea / Designed / In game", "The card's status. Tap to move it on: idea, then designed, then in game."],
@@ -496,10 +517,10 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["New club name… + Add", "Creates a new club."],
-          ["Club list", "Tap a club to edit it."],
-          ["Delete club", "Deletes the club (and its badge link)."],
-          ["Kit & badge", "Home and away colours, stadium name, and upload a badge. Save saves it."],
+          ["Clubs list: New club name… + Add", "Creates a new club."],
+          ["Clubs list", "Tap a club to edit it on the right (below on a phone)."],
+          ["Delete club", "Top right of the Edit club panel. Deletes the club (and its badge link)."],
+          ["Kit & badge", "Stadium name, home and away colours, and Upload badge. Save changes saves it."],
           ["squad", "Its players. \"+ Create a new player\" or tap one to edit: name, rating, positions, age, nationality, face, and potential (Ordinary / High Potential / World Class). Save saves him."],
           ["lineup", "The same squad builder as the Squad Builder page: tap a player, tap where he goes."],
         ],
@@ -632,6 +653,8 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
+          ["Group pills (top)", "Jump to that group of sounds."],
+          ["Sound name / Edit", "Opens the Edit sound panel for that sound: on the right on a computer, under the row on a phone. Replace, ▶ Original and Put the original back are there."],
           ["▶", "Plays the sound as the game plays it now. If you replaced it, this plays your upload. Tap again (■) to stop."],
           ["Replace / Replace again", "Choose a sound file from your phone or computer (mp3, wav, ogg, m4a or webm, under 2 MB). It uploads at once. Players hear it from the next time they load the game."],
           ["▶ Original", "Only on a replaced sound. Plays the sound that came with the game, so you can compare."],
@@ -675,8 +698,8 @@ export const ADMIN_GUIDES = {
       ] },
       { group: "Side menu", items: [
         ["Home / Team board / Patch notes", "This page, the team board, and every patch note (Team board and Patch notes are admins only)."],
-        ["Groups", "Jumps to that group on this page."],
-        ["Ops room / Clean light", "The admin look, dark or light. Kept on this device."],
+        ["Groups", "Ops room and Clean light only: jumps to that group on this page. Broadcast and Bento show every group on the page instead."],
+        ["Broadcast / Bento / Ops room / Clean light", "The admin look. Broadcast (dark blue) and Bento (a colour per group) show every group on one board. Kept on this device."],
         ["Admin mode", "On: the admin side menu sits on every page of the site, opened on the admin pages for the page you are on. Off: it hides. Kept on this device."],
       ] },
     ],
@@ -690,11 +713,12 @@ export const ADMIN_GUIDES = {
     buttons: [
       { group: "Page", items: [
         ["European Championship / World Cup", "Which tournament to draw."],
-        ["Your nation (box)", "The nation you play for; it says if they did not qualify."],
+        ["Your nation (box, with its flag)", "The nation you play for; it says if they did not qualify."],
         ["New draw", "A fresh draw of the groups."],
         ["Play matchday 1–3", "Plays the next round of group games."],
         ["Play to the final", "Plays every match left, through the knockouts, to a winner."],
         ["Reset", "Back to the draw."],
+        ["← (top left)", "Back to the Play Area."],
       ] },
     ],
     saving: ["Nothing. It reads and writes only this screen."],
@@ -736,17 +760,37 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: [
-      "Your own Google Drive, folder \"Knowitball screen recordings\" → a folder for whoever is picked under Who is recording (the site makes them the first time; you can move the main folder anywhere in Drive), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it.",
-      "The site keeps nothing. The video goes from your browser straight to Google.",
+      "Your own Google Drive, folder \"Knowitball screen recordings\" → a folder for whoever is picked under Who is recording (the site makes them the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it. You can move the main folder anywhere in Drive; the site still finds it.",
+      "The video goes from your browser straight to Google. The site keeps only its name and link (dev_recordings table), so that person's Claude chats break it down the next time they are messaged (scripts/hooks/recordings-hook.mjs). Needs dev_recordings.sql run once.",
       "Drive needs NEXT_PUBLIC_GOOGLE_CLIENT_ID on the site. Until it is set, recordings only download.",
     ],
     inGame: ["Nowhere."],
-    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md",
+    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · /api/dev-recordings + scripts/hooks/recordings-hook.mjs (auto-read) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md",
   },
   "/admin/team": {
     title: "Team board",
-    what: "What Harry, Mikey and Leo are doing: each person's pushes, the pull requests, whether the site is live, and which patch notes each push went out in.",
+    what: "The Team room. Board: what Harry, Mikey and Leo are doing (pushes, pull requests, live bars, patch notes). Ideas, Chat and To-do: the team's idea board, live chat and each person's jobs. The toggle along the top switches between them.",
     buttons: [
+      { group: "Team room toggle", items: [
+        ["Board | Ideas | Chat | To-do", "Switches part. A red number = new chat or new notes on your things; amber = a new job given to you. The same four are in the side menu."],
+        ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again."],
+      ] },
+      { group: "Ideas", items: [
+        ["By stage | By person", "Idea · Doing · Done columns, or a lane per person. Remembered in this browser."],
+        ["+ Add idea", "Adds a one-line idea under your name."],
+        ["The three dots", "One per person. Tap to say you want it; tap again to take it back."],
+        ["An idea", "Opens it: move it to Idea / Doing / Done, delete it (yours only), and read or add notes."],
+      ] },
+      { group: "Chat (and the round button on every admin page)", items: [
+        ["Message the team…", "Enter sends; Shift+Enter is a new line. Paste or 🖼 adds a picture."],
+        ["A message", "Tap: 📌 Pin (anyone) or Delete (your own). The green tag is the page it was sent from — tap to go there."],
+        ["Pinned", "Pinned messages, on the right (folded above the chat on a phone)."],
+        ["Round chat button", "Bottom-left on every admin and test page: Chat | To-do in a box. Open ↗ goes to the full tab."],
+      ] },
+      { group: "To-do", items: [
+        ["Add a job · for me ▾", "Your own job, or pick Mikey or Leo to give them one."],
+        ["Tick box", "Done. Ticked jobs fade and leave after a day. ✕ deletes."],
+      ] },
       { group: "Team tab", items: [
         ["Live on knowitball.co.uk", "Whether the newest version of main finished deploying, how long ago, and what it was."],
         ["A push", "Opens it: the full message, when, which branch, and the patch note it went out in."],
@@ -759,21 +803,25 @@ export const ADMIN_GUIDES = {
         ["Open the full page ↗", "Opens that version's patch notes page on claude.ai."],
         ["See it on GitHub ↗", "The push itself on GitHub."],
         ["The chat that made it ↗", "The Claude chat that made the push. Only its owner can open it."],
+        ["Notes", "Leave a note on the push. Its owner gets a red number on Board."],
       ] },
       { group: "Patch notes tab", items: [
         ["Version list", "Every patch note, newest first. Same as /admin/patch-notes."],
       ] },
     ],
     saving: [
-      "Nothing. The board only reads from GitHub, through the site, and refreshes every minute.",
+      "Board: nothing. It only reads from GitHub, through the site, and refreshes every minute.",
+      "Ideas, chat, to-dos, notes and pins save to the shared database at once and show for the other two within about a second. Admins only.",
+      "First visit asks \"Which one are you?\" once and saves it to your account.",
       "How a push is matched to a patch note: if the push names a version (\"v0.55\"), that one; otherwise the same person's next patch note that went live after the push, up to 4 days later.",
     ],
     inGame: ["Nowhere. Admins only."],
     needs: [
       "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it GitHub only answers a few times an hour and the board says so.",
       "The live progress bars (\"Now working on\") are step 2: one database file for Mikey to run and a shared password. Until then each card says so.",
+      "Ideas, Chat and To-do need supabase/migrations/team_room.sql run once in Supabase. Until then they say so.",
     ],
-    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md",
+    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md · Team room kit: lib/teamRoom/ (config.ts = settings), components/teamRoom/, supabase/migrations/team_room.sql, tests/star/teamRoom.mts",
   },
   "/admin/testers": {
     title: "Tester Access",
@@ -840,6 +888,7 @@ export const ADMIN_GUIDES = {
           ["11-a-side", "The chance types from real matches (one-on-one, corner, free kick…)."],
           ["5-a-side", "The five-a-side shapes. Review only: you can drag and mark them, but not save them."],
           ["Tuning & Commit", "Everything saved but not yet in the game, and any rules proposed from Tune corrections."],
+          ["Number on each tile", "11-a-side: how many chance types. 5-a-side: how many shapes. Tuning & Commit: how many things are waiting."],
           ["Red dot (top right)", "Saving or committing is switched off. Tap it to read why."],
           ["\"… saved, not committed\" bar", "A shortcut to Tuning & Commit when something is waiting."],
         ],
@@ -920,9 +969,11 @@ export const ADMIN_GUIDES = {
       {
         group: "The level list",
         items: [
-          ["Power / Technique / Free Kick / Pace / Vision", "Which training game's levels to show."],
+          ["Power / Technique / Free Kick / Pace / Vision", "The tabs at the top: which training game's levels to show."],
           ["Your skills 40 / 70 / 100", "The player's skills while you play. They change how hard you can hit the ball and how much it bends, so a level plays differently at 40 and at 100."],
-          ["A level tile", "Plays that level. The line under the number is what it asks for (distance and blockers, gate size, wall, chasers, options and time). Stars appear on a tile after you've played it here."],
+          ["A level tile", "Picks that level; tap it again to play it. The line under the number is what it asks for (distance and blockers, gate size, wall, chasers, options and time). Stars appear on a tile after you've played it here."],
+          ["The level panel (right; pinned to the bottom on a phone)", "The picked level: its game, what it asks for, your stars here, and a real picture of that game (taken at level 15)."],
+          ["Let's go ›", "Plays the picked level."],
         ],
       },
       {
@@ -948,13 +999,14 @@ export const ADMIN_GUIDES = {
     what: "Real chances straight off the match's own generator, as fast as you can press Next — flag the bad ones and fix them on the spot.",
     buttons: [
       {
-        group: "Top bar",
+        group: "Top of the page",
         items: [
-          ["‹", "Back to the Scenario Gallery."],
-          ["N/13", "Choose which chance types to show: All, None, tap types on or off, then \"Watch these\"."],
-          ["▦ 24", "Sheet of 24: twenty-four chances of one type served in a row, on one screen, to check by eye. Under each: which drawing it came from, the nearest drawing, and in colour anything wrong (red: added by the serving; amber: already in the drawing, or \"like #n\" — looks like one of the five before it). New sheet serves another 24. It uses the Play Area's Chances dial."],
+          ["←", "Back to the Scenario Gallery."],
+          ["Highlights N/11", "Choose which chance types to show: All, None, tap types on or off, then \"Watch these\"."],
+          ["▦ Sheet of 24", "Sheet of 24: twenty-four chances of one type served in a row, on one screen, to check by eye. Under each: which drawing it came from, the nearest drawing, and in colour anything wrong (red: added by the serving; amber: already in the drawing, or \"like #n\" — looks like one of the five before it). New sheet serves another 24. It uses the Play Area's Chances dial."],
           ["⚽ Play a penalty shootout", "On the chance-types screen. A whole shootout on the real match, with the Play Area's test sides: every kick live — team-mates at their keeper, their takers at yours (from the same end), yours to take when your turn comes. Nothing is saved; \"Another shootout\" starts again."],
-          ["⚑ N", "Your flagged list. Tap one to jump back to it; Clear empties the list."],
+          ["⚑ Flagged N", "Your flagged list. Tap one to jump back to it; Clear empties the list."],
+          ["Next →", "A second Next, at the top of the page."],
         ],
       },
       {
@@ -963,6 +1015,7 @@ export const ADMIN_GUIDES = {
           ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game."],
           ["A penalty", "Harry's penalty rules: the keeper stays dead centre on his line, the ball on the spot, you straight behind it and the camera fixed — none of them drag. Anyone else only slides along the edge of the box."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
+          ["Fix this chance", "The panel on the right (under the picture on a phone): the buttons below, Save and Commit."],
           ["+ Mate / + Opp", "Add a team-mate or an opponent."],
           ["Remove", "Takes out the player you tapped."],
           ["▶ Play / ◼ Stop", "Plays this exact chance, your drags included, at the picture's size — a drag still hits exactly as hard as in a career. Real squads and faces, the real weather, and the Play Area's dials."],
@@ -970,7 +1023,9 @@ export const ADMIN_GUIDES = {
           ["PNG", "Downloads the picture (without the fault rings)."],
           ["Delete", "Only for a saved chance: deletes it from the shared list AND the code."],
           ["Tune", "Only after a drag: records what was wrong as a correction. Not a save."],
-          ["‹  ⚑  Next →", "Previous, flag / unflag this one, next. Keys: ← →, space, F to flag. A second Next → sits in the top bar, so it is always on screen on a phone."],
+          ["Caption under the picture", "The chance type and its number. The ⚑ next to it flags / unflags this one (key F)."],
+          ["‹  Next →", "Previous, next. Keys: ← →, space. A second Next → sits in the row at the top of the page."],
+          ["Previous chances", "The last 24 chances you have seen this visit, as small pictures. Tap one to go back to it."],
           ["Save / Save this fix", "Always there until it's saved. Puts this chance (with your drags, if any) into its type's scenarios in the shared list — no drag needed."],
           ["Commit", "Always there. Saves it AND commits it into the game's code in one go."],
           ["Discard", "After a drag: throws the drags away."],
@@ -1017,12 +1072,9 @@ export const ADMIN_GUIDES = {
       {
         group: "Home",
         items: [
-          ["Infinite Highlights →", "Opens Infinite Highlights."],
-          ["Infinite Match →", "A real match that runs for the length you set, counting every chance it serves you."],
-          ["Animations →", "Every player animation looping next to the Old look, with the dials and on/off switches the real match reads."],
-          ["Match Radar →", "Watch the unseen match behind your highlights, all ninety minutes, up to 20× speed."],
-          ["Store (test) →", "Opens the test store: daily specials, run-ups, accessories, boosts and Coins, with its own wallet."],
-          ["Blender 3D →", "Opens the Blender 3D footballer test page: any club's kit on the 3D player, stills, hair, animations and the home-screen mock-up."],
+          ["← (top left)", "Back to the admin home."],
+          ["Infinite Highlights → (first picture card)", "Opens Infinite Highlights."],
+          ["Infinite Match → (second picture card)", "A real match that runs for the length you set, counting every chance it serves you."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
@@ -1034,7 +1086,6 @@ export const ADMIN_GUIDES = {
           ["Free-kick run-up", "A separate set for direct free kicks, each modelled on an elite taker: Standard, Power Stance (Ronaldo), Stance and Sprint (Bale), The Calm Curl (Messi), Stutter Curl (Neymar), The Whip (Maddison), Long Diagonal (Trent). Looks only — the strike is still yours. Test screens only."],
           ["Back to the defaults", "Resets every dial, the keeper row and the Compare switches."],
           ["Compare old and new: New / Old", "Two switches: Penalty rules and Shot power. Old puts that one change back to how it was, so the two can be played side by side. Test screens only — a real career, its trial and its shootouts always play New."],
-          ["Scenario Gallery →", "Opens the gallery."],
         ],
       },
       {
@@ -1050,7 +1101,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Infinite Match",
         items: [
-          ["‹ Back", "Back to the Play Area."],
+          ["← (top left) / ‹ Back", "Back to the Play Area."],
           ["What it served", "Live count of each chance type the match has given you, with shares and a per-90."],
           ["This chance: …", "The bar pinned to the top of the screen for the whole match: which chance you are on and the minute."],
           ["✎ Edit", "Opens the chance on screen in an editor: drag, + Mate, + Opp, Remove. On a penalty only the other players move, along the edge of the box."],
@@ -1087,19 +1138,19 @@ export const ADMIN_GUIDES = {
     what: "Proves that paid things can't be faked: gems and paid items live on the server, not in the career save. One example paid item (Golden boots) goes through the whole path.",
     buttons: [
       { group: "Your gems", items: [
-        ["💎 (the number)", "This account's gems, as the server says. Signed out it shows — and \"Sign in to use gems\"."],
-        ["Refresh", "Asks the server again."],
+        ["Your gems (the big number)", "This account's gems, as the server says. Signed out it shows — and \"Sign in to use gems\". Before gems are switched on it says \"Gems aren't switched on yet\"."],
+        ["Refresh (top right)", "Asks the server again."],
         ["+100 gems (admin test)", "Admins only. Gives your own account 100 gems. Each press is one line in the gem history. This is the only way to get gems until real payments exist."],
       ] },
-      { group: "The example paid item", items: [
-        ["Golden boots (picture)", "Gold when the server says this account owns them; grey with a lock otherwise."],
-      ] },
-      { group: "Paid items", items: [
-        ["Buy", "Spends gems on that item. The server reads the price itself, checks you have enough, takes the gems and records that you own it, all in one go. Pressing twice never charges twice. Greyed out when you can't afford it."],
+      { group: "Paid items (cards)", items: [
+        ["Buy (bar under each card)", "Spends gems on that item. The server reads the price itself, checks you have enough, takes the gems and records that you own it, all in one go. Pressing twice never charges twice. Greyed out when you can't afford it."],
         ["Owned", "You own it. Nothing to press."],
       ] },
+      { group: "Owned items", items: [
+        ["Golden boots (tile)", "The example paid item. Gold when the server says this account owns them; grey with a lock otherwise. Anything else you own shows next to it."],
+      ] },
       { group: "Try to cheat", items: [
-        ["Try to cheat", "Writes 99,999 gems and the boots into this browser, the way someone with dev tools would, then asks the server again. The line under it shows nothing changed."],
+        ["Try to cheat", "Writes 99,999 gems and the boots into this browser, the way someone with dev tools would, then asks the server again. A small table shows this browser's fake values next to what the server says, and the line under it shows nothing changed."],
         ["Clear it", "Takes those fake values back out of this browser."],
       ] },
     ],
@@ -1124,10 +1175,11 @@ export const ADMIN_GUIDES = {
       {
         group: "Top of the page",
         items: [
-          ["‹", "Back to the Play Area."],
-          ["★ (wallet)", "Your test stars — the money you earn by playing."],
+          ["← (blue, top left) / ‹ (in the store)", "Back to the Play Area."],
+          ["★ and Coins (top right)", "Your test wallet, shown at a glance."],
+          ["★ (wallet, in the store)", "Your test stars — the money you earn by playing."],
           ["Coins +", "Your test Coins — the money you would buy with real money. Tapping it opens the Coins tab."],
-          ["⚙ Test controls", "Opens and closes the test panel below."],
+          ["⚙ Test controls", "The panel on the left (on top on a phone). Opens and closes it; open on a computer, folded on a phone."],
           ["Your level", "National League … Premier League. Sets which level of boots you see and puts in a typical wage for that league."],
           ["Weekly wage ★", "Type any wage. Every scaled price, and what a Coin is worth, follows it."],
           ["Wallet ★ / Wallet Coins", "Set either balance to anything."],
@@ -1188,15 +1240,69 @@ export const ADMIN_GUIDES = {
     dev: "app/star-store-dev/page.tsx · components/star/store/{StoreView,CareerStore,RunupPreview,AccessoryFigure}.tsx · lib/star/store/{catalogue,coins,daily,purchase,career,testArea,runupPreview}.ts · tests/star/store{Coins,Daily,Purchase,Career}.mts",
   },
 
+  "/star-scene-editor-dev": {
+    title: "3D Scene Editor",
+    what: "Steps 1–2 of the one editor for every 3D scene. It works on the Cut-scene Director: pick a scene, change the camera (or fly a free camera) and the lighting, and watch the real director play it. Edits save per scene and per shot. Nothing touches a career, and the game's own cut scenes don't read these edits yet.",
+    buttons: [
+      {
+        group: "3D Preview",
+        items: [
+          ["Place tabs (3D Signing … Cut-scene Director)", "Only Cut-scene Director works today. The others say \"coming next\"."],
+          ["Scene buttons (Contract signing, Goal celebration …)", "Load that hand-made cut scene into the preview. Your edits are cleared."],
+          ["The badge top-left", "The shot under the playhead, its name and its lens."],
+          ["Drag on the preview", "Free camera: orbit and tilt round the look point. Wheel or pinch moves in and out. Only the shot under the playhead changes."],
+          ["The map, bottom-right", "The set seen from above. Drag the blue box (camera), the white dot (look point) or the yellow sun (key light, round the ring)."],
+        ],
+      },
+      {
+        group: "Settings (Camera / Lighting / Cast / Scene tabs on a phone)",
+        items: [
+          ["Shot preset buttons and list", "Change the framing of the shot under the playhead (18 framings)."],
+          ["Lens, Turn, Rise, Move, Move amount, Handheld shake", "Change the shot under the playhead. Each shot keeps its own edits."],
+          ["Mood", "Time of day and colour of the whole scene."],
+          ["Exposure, Key light strength", "Brightness of the scene and of the sun / key light."],
+          ["Spotlight on a person", "Puts a spotlight on one person; Spot strength sets how bright."],
+          ["Position X/Y/Z, Look at", "Show where the camera stands and looks now. Type a number to take over with a free camera."],
+          ["Back to the shot", "Drops the free camera for this shot; the shot plays as written."],
+          ["Key light angle, Key light colour", "Turn the sun round the set and change its colour. \"As written\" puts the colour back."],
+          ["Greyed rows with \"coming next\"", "PART and NEW dials from the drawing. Not built yet."],
+        ],
+      },
+      {
+        group: "Timeline",
+        items: [
+          ["▶ Play / ❚❚ Pause, ↺ Replay", "Play the scene, stop it, start again."],
+          ["The scrub bar, or a click on a lane", "Jump to that moment (director.seek)."],
+          ["Lanes", "The scene's real tracks, read-only: camera shots, light and effects, each person's moves, speech and captions."],
+          ["SAVE FOR EVERYONE", "Copies this scene's edits to the shared table (admin only). If the table isn't switched on yet, it says so and the edits stay on this device."],
+          ["Copy edits", "Copies this scene's edits as JSON."],
+          ["Reset this shot / Reset all", "Clears the edits of the shot under the playhead / of the whole scene."],
+        ],
+      },
+    ],
+    saving: [
+      "This device: every change saves at once (localStorage), per scene and per shot, and comes back when you reopen it.",
+      "Shared: SAVE FOR EVERYONE writes to the star_cutscene_edits table through /api/star/cutscene-edits (admins only). Needs supabase/migrations/star_cutscene_edits.sql run; until then it says \"Saved on this device only\".",
+      "Nothing commits to the repo.",
+    ],
+    inGame: ["Nowhere yet. It plays the same director the game's cut scenes use, but the game's cut scenes do not read these edits (a later step)."],
+    dev: "app/star-scene-editor-dev/page.tsx (+ editor.css) · lib/star/cutscene/director.ts (optional setEdit / cameras / cameraPose / layout hooks; no edit = the game's behaviour) · store.ts (saves) · app/api/star/cutscene-edits/route.ts · fixtures from lib/star/cutscene/fixtures.ts · drawing: docs/handoffs/2026-10-19-ui-lookover/scene-editor/.",
+  },
   "/star-3d-area-dev": {
-    title: "3D Test Area",
-    what: "Every cutscene and 3D area being built, in one list, plus a store of every 3D and Blender file the site has. Nothing here touches a career.",
+    title: "3D Area",
+    what: "Every 3D place, cutscene and 3D area being built, in one list, plus a store of every 3D and Blender file the site has. Nothing here touches a career.",
     buttons: [
       {
         group: "Top of the page",
         items: [
-          ["‹", "Back to the Play Area."],
-          ["Scenes / Assets", "Switch between the list of scenes and the asset store."],
+          ["←", "Back to the Play Area."],
+          ["Places / All scenes / 3D files (left, or along the top on a phone)", "Switch between the 3D places, the full list of scenes and the 3D file store. The page remembers which one you had open."],
+        ],
+      },
+      {
+        group: "Places",
+        items: [
+          ["A place card (Signing, Manager's office, Shop, Garden, House, Training, 3D scene editor)", "Opens that 3D place's own test page. The picture is a real still of that page."],
         ],
       },
       {
@@ -1292,8 +1398,10 @@ export const ADMIN_GUIDES = {
     what: "Every move the 3D match plays (outfield and keeper), each looping on its own tile, seen through the real 3D match camera at the real match size: a man is 6% of a phone screen, the men 1.35 × life, the realistic players.",
     buttons: [
       { group: "Top", items: [
-        ["‹ 3D test area", "Back to the list of 3D test pages."],
-        ["❚❚ Pause / ▶ Play", "Stops or starts every tile. Play also lets go of any tile you held with its slider."],
+        ["← and 3D test area (left list)", "Back to the list of 3D test pages."],
+        ["Outfield / Keeper (left list)", "Jumps to that group of tiles."],
+        ["2D animations (left list)", "Opens the 2D animation page."],
+        ["❚❚ / ▶ (player bar)", "Stops or starts every tile. Play also lets go of any tile you held with its slider."],
         ["1× / ½× / ¼×", "Playback speed."],
         ["Match size / 3× closer", "Match size is exactly how big a man is in a real 3D match. 3× closer brings the camera in to judge hands and feet."],
         ["As you shoot / Side on", "Which way the men face: away from the camera (as you face the goal when you shoot), or side on."],
@@ -1338,19 +1446,23 @@ export const ADMIN_GUIDES = {
     dev: "app/star-update-dev/page.tsx · lib/star/oct13Update.ts (the switch) · rows in lib/star/lookRows.ts · physics in lib/star/shotFeel.ts, keeperBrain.ts, canvasEngine.ts (KEEPER_FEEL, MATE_CARRY) · feel in lib/star/matchFeel.ts · tests/star/gameplay13.mts, matchFeel.mts.",
   },
   "/star-animations-dev": {
-    title: "Animations",
+    title: "2D Animations",
     what: "Every New player animation (keeper saves, touches, shots, passes, headers, blocks, clearances) looping next to how the Old game drew that moment, with the dials and switches that size them.",
     buttons: [
       { group: "Top", items: [
-        ["‹ Play Area", "Back to the Play Area."],
+        ["←", "Back to the Play Area."],
+      ] },
+      { group: "The list on the left (a row of tabs on a phone)", items: [
+        ["Keeper / Touches / Shots / Passes & headers / Defenders / All", "Which animations to show. All shows every group under its own title; it is heavy on an older phone."],
+        ["Match feel / 3D figures / Which are on / Dials / Real chance", "Jumps down the page to that part."],
       ] },
       { group: "The gallery", items: [
-        ["Keeper / Touches / Shots / Passes & headers / Defenders / All", "Which animations to show. All is heavy on an older phone."],
-        ["Flat / Shaded", "The two drawn player looks. The 3D players have their own New clips: see the 3D figures card below."],
-        ["Right foot / Left foot", "Mirrors every animation: a left-footer, a keeper diving the other way."],
-        ["vs Old game / vs First version", "What the left picture of each card shows: the Old game, or the first New version from before the strikes were made bigger."],
-        ["1× / ½× / ¼×", "Playback speed."],
-        ["❚❚ Pause / ▶ Play", "Stops every animation. While paused, the slider steps through the frames."],
+        ["❚❚ / ▶", "Pauses or plays every animation."],
+        ["The yellow slider", "Steps through the frames. Moving it pauses the animations."],
+        ["1× / ½× / ¼×", "Playback speed (and plays again if paused)."],
+        ["Look: Flat / Shaded", "The two drawn player looks. The 3D players have their own New clips: see 3D figures below."],
+        ["Foot: Right foot / Left foot", "Mirrors every animation: a left-footer, a keeper diving the other way."],
+        ["Left picture: vs Old game / vs First version", "What the left picture of each card shows: the Old game, or the first New version from before the strikes were made bigger."],
       ] },
       { group: "Match feel", items: [
         ["New / Old", "The same switch as Match feel on the Oct 13 update page (/star-update-dev), on this phone. New: every hit is felt (wind-up, a short freeze at the contact, flash and turf, camera punch, ball squash and streak, deeper kick sound, phone buzz), plus landing thuds, the net bulging, post clangs, glove sparks and a keeper who hops and arcs his dive. Old: the game as before. Default Old."],
@@ -1393,6 +1505,9 @@ export const ADMIN_GUIDES = {
     buttons: [
       { items: [
         ["Face / Hands / Pen signing / Handshake / Shirt / Trophy / Knee slide / Line-up / Builds / Heads / Rest", "Picks the proof. Line-up: eight managers, chairmen and fans made from the same body. Builds: one player at eight heights and builds. Heads: the hair styles. Rest: the body standing still, for checking its shape. Face: a close-up. Hands: a hand held up in each pose. Pen signing: sat at a desk, writes his name on the contract and looks up. Handshake: you and the manager shake and pump, then both look at the camera. Shirt: holds the club shirt up by its shoulders. Trophy: lifts the cup over his head. Knee slide: down on his knees, arms wide."],
+        ["Studio / Contact sheet (top right)", "Two layouts of the same controls. Studio: the picture on the left, every control on the right. Contact sheet: drop-down picks on top (Proof, Head, Hair, Reset) and the expressions as cards. The page remembers which one you used last."],
+        ["Reset (Contact sheet)", "Puts every pick back to the start: Face, Short, the middle skin, brown hair, neutral."],
+        ["↺ Play again (under the picture)", "Plays the current proof again from the start."],
         ["Short / Buzz / Long / Manager", "Which head: the three player hair styles (each a different man, as in the game) or the manager."],
         ["The coloured dots", "The 8 skin tones a player can pick."],
         ["Black hair / Brown hair / Fair hair", "Hair colour."],
@@ -1446,7 +1561,7 @@ export const ADMIN_GUIDES = {
     what: "The 3D training pitch, on a made-up career: the drill picker a career opens from the garden's training-pitch gate, and every drill on it. Crossbar Challenge plays your shot on the real match; Two Touch, Free Roam, Headers & Volleys, Wembley and Pace Sprint are fully 3D, on the shared 3D engine.",
     buttons: [
       { items: [
-        ["Picker / Crossbar / Two Touch / Free Roam / Head/Volley / Wembley / Pace (top)", "Open the picker, or one drill straight away. ?drill=two-touch (or free-roam, crossbar, headers-volleys, wembley, pace) in the address does the same; add &mode=doubles for Wembley Doubles, and &pace=85 to give the test player that pace."],
+        ["Drill switcher: Picker / Crossbar / Two Touch / Free Roam / Head/Volley / Wembley / Pace (picture cards under the pitch; ‹ › scroll them on a computer)", "Open the picker, or one drill straight away. ?drill=two-touch (or free-roam, crossbar, headers-volleys, wembley, pace) in the address does the same; add &mode=doubles for Wembley Doubles, and &pace=85 to give the test player that pace."],
         ["Pace Sprint", "3, 2, 1, GO: 30 m flat out to the yellow line with a defender just behind you. Your time and top speed (km/h) show as you run; 3, 2 or 1 stars by time against your next pace level, none if he catches you. In a career the stars go on the pace ladder like a 2D pace drill. Your speed comes from your pace: sprint 20 km/h at pace 0 up to 30 km/h at 100."],
         ["🎲 Random drill", "On the picker: one of the ready drills, picked for you (Wembley picked this way is Normal)."],
         ["A drill row", "Opens that drill."],
@@ -1461,8 +1576,9 @@ export const ADMIN_GUIDES = {
         ["3D drills: left thumb", "A stick: how far you push it sets the speed (walk, jog, run); all the way sprints. With a mouse: WASD or arrows run, hold Shift to sprint. The hint at the bottom follows your pointer (finger or mouse), not the screen size."],
         ["3D drills: tap on the right", "Free Roam: pass to the team-mate you face if you have the ball, take a touch if it's at your feet, tackle, or call for it. Two Touch: your keepy-up touch (1st controls it up, 2nd sends it back). Space bar does the same."],
         ["‹ Back (top left)", "On the picker, the pre-screen, Crossbar and every 3D drill, at any moment: back to the picker (or, opened straight from the top row, the 3D Test Area). The drill ends there: no reward, nothing asked."],
-        ["Restart", "Starts again with a different team-mate."],
-        ["Continue →", "On the result card. Here it just starts again and shows the result in the \"Last\" pill."],
+        ["↻ Restart (top right)", "Starts again with a different team-mate."],
+        ["Last (top right)", "The last result: score, won or lost, and the Team bar change, with the drill under it. A dash until you finish one."],
+        ["Continue →", "On the result card. Here it just starts again and shows the result in the \"Last\" box at the top."],
       ] },
     ],
     saving: ["Nothing is saved. The career is made up, and the result (and the Team bar change it shows) goes nowhere."],
@@ -1596,7 +1712,8 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["Pause / Play", "Stops and starts the men moving, so one frame can be looked at closely."],
+          ["❚❚ / ▶ (top bar)", "Stops and starts the men moving, so one frame can be looked at closely."],
+          ["On the pitch / 4× zoom (left list, top row on a phone)", "Jumps to that part of the page. Pages: 3D animations, 2D animations."],
         ],
       },
     ],
@@ -1611,14 +1728,17 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["Event buttons (top row)", "Pick what you are listening to: pass, shot, first touch, keeper save, keeper catch, post/bar, net, block, header, whistle, goal roar, near miss. A ✓ means you have picked one for it."],
+          ["Layout: One sound | All sounds", "Two ways to see the same sounds. One sound: the events down the left (a drop-down on a phone), one sound open at a time with a big picture. All sounds: every sound as a short row; tap its name or Edit to open it in the Edit sound panel (under the row on a phone). This device remembers your choice."],
+          ["Events (left list, drop-down or top pills)", "Pick what you are listening to: pass, shot, first touch, keeper save, keeper catch, post/bar, net, block, header, whistle, goal roar, near miss. A ✓ means you have picked one for it. In All sounds the pills jump to that event."],
+          ["Sound tabs (One sound)", "The sounds for that event. Tap one to open it. ✓ marks your pick, ★ your stars."],
           ["▶", "Plays that sound. The first tap also switches sound on (phones keep it off until you tap)."],
+          ["Pick circle (All sounds rows)", "Same as Pick this: your favourite for that event."],
           ["IN GAME NOW / FILE", "\"Current (match)\" is the sound the live match makes today. \"Current file\" is the recorded file the game has (goal videos use it), including any replacement uploaded on the Sound Board."],
           ["Green picture / blue bars", "The shape of the sound (loud parts tall) and how much low (left) and high (right) it has. The number is its length in seconds."],
-          ["★ ★ ★ ★ ★", "Rate it. Tap the same star again to clear it."],
+          ["★ ★ ★ ★ ★ (Rate this effect)", "Rate it. Tap the same star again to clear it."],
           ["Pick this / ✓ My pick", "Your favourite for this event (one per event). Tap again to un-pick."],
           ["Note", "Write what you like or don't. It goes into the export."],
-          ["Edit ▾", "Opens the sliders: Volume, Pitch, Length, Brightness, Punch, Body (low end), Room (echo). Let go of a slider to hear the change."],
+          ["Edit ▾ (or Edit on a row)", "Opens the sliders: Volume, Pitch, Length, Brightness, Punch, Body (low end), Room (echo). Let go of a slider to hear the change."],
           ["Reset", "Puts that sound's sliders back to how it was made."],
           ["Copy recipe", "Copies how that sound is built plus your slider settings, for us."],
           ["Save WAV", "Downloads that sound, with your sliders, as a .wav file."],
@@ -1639,13 +1759,14 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["Event buttons (top row)", "Pick which moment you are looking at. A ✓ means you have picked one for it."],
-          ["Filmstrip (4 small pictures)", "The effect at four moments of its life, start to end, left to right. Drawn once each time you change something; nothing animates here."],
+          ["Moments (left list; a row along the top on a phone)", "Pick which moment you are looking at. A ✓ means you have picked one for it."],
+          ["Version tiles (under the big picture)", "Every version of this moment. Tap one to show it big and to rate, pick, note or edit it on the right. A tile shows ✓ pick, its stars, and LIVE while it is open in Edit."],
+          ["Big picture (4 small pictures)", "The effect at four moments of its life, start to end, left to right. Drawn once each time you change something; nothing animates here."],
           ["IN GAME NOW", "\"Current (match feel)\" is what Settings → Match → Match feel: New draws today. Some moments draw nothing today; the card says so."],
           ["★ ★ ★ ★ ★", "Rate it. Tap the same star again to clear it."],
           ["Pick this / ✓ My pick", "Your favourite for this moment (one per moment). Tap again to un-pick."],
           ["Note", "Write what you like or don't. It goes into the export."],
-          ["Edit ▾", "Opens the dials that style uses: size, length, strength, colours, how many, spread, camera shake, freeze at the hit, camera punch-in, and the word on comic bursts."],
+          ["Edit ▾ (Edit panel, right)", "Opens the dials that style uses: size, length, strength, colours, how many, spread, camera shake, freeze at the hit, camera punch-in, and the word on comic bursts."],
           ["Reset", "Puts that variant's dials back to how it was made."],
           ["Copy recipe", "Copies how that variant is built plus your dials, for us."],
           ["Use my picks in the live match below", "On: the real match at the bottom draws your picks (and the variant you have open in Edit) on real kicks, saves and goals. Off: the match draws what this phone's game draws."],
@@ -1666,6 +1787,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
+          ["Layout: Three columns | Big pitch", "Two layouts of the same page. Three columns: live radar and momentum on the left, the pitch in the middle, the match settings and minute-by-minute on the right. Big pitch: a big pitch with the radar and minute-by-minute beside it, the momentum (Events) under it. This device remembers your choice."],
           ["▶ / ❚❚", "Starts and pauses the clock. At full time it becomes ↻ and plays the same match again."],
           ["1× 2× 5× 10× 20×", "Match minutes per second. 20× plays a whole match in about 4½ seconds."],
           ["↻ (right of the speeds)", "A new match — a different roll of the same fixture."],
@@ -1674,8 +1796,8 @@ export const ADMIN_GUIDES = {
           ["⚽ You score / ✕ You miss / Bench odds", "Only with \"Stop and ask me\" on: decides how your highlight went. Bench odds is the rate the game uses when you're not on the pitch."],
           ["Momentum strip", "A bar a minute: up is you on top, down is them. ⚽ marks goals, ⭐ your highlights, 🚑 an injury."],
           ["🚑 Injury", "The unseen match doesn't injure anyone minute by minute. A career checks once, at full time, from the energy you finish on — the radar does the same check and shows it at 90' and on the full-time card."],
-          ["Change", "Opens the settings: both clubs and how strong they are, home or away, your position, your energy at kick-off (for the injury check), and whether your highlights stop the clock."],
-          ["Fun targets (DRAFT, bottom of the page) · Run it", "Plays the real unseen match 200 times for each position (striker, winger, attacking mid, central mid) at an even game, +20 and −20. Each row shows ours against Harry's target, ✓ in range, ✗ out. The radar has no league input yet, so ours is checked against the National League and the Premier League side by side. A broken guardrail (shots a match 21–28, nobody over 36 season goals) is shown in red. Season goals are not judged: they show what share of chances your shooting would need to score."],
+          ["Change (The match panel)", "Opens the settings: both clubs and how strong they are, home or away, your position, your energy at kick-off (for the injury check), and whether your highlights stop the clock."],
+          ["Fun targets (DRAFT, the 200 matches panel) · Run it", "Plays the real unseen match 200 times for each position (striker, winger, attacking mid, central mid) at an even game, +20 and −20. Each row shows ours against Harry's target, ✓ in range, ✗ out. The radar has no league input yet, so ours is checked against the National League and the Premier League side by side. A broken guardrail (shots a match 21–28, nobody over 36 season goals) is shown in red. Season goals are not judged: they show what share of chances your shooting would need to score."],
         ],
       },
     ],
@@ -1687,11 +1809,13 @@ export const ADMIN_GUIDES = {
   },
 
   "/star-sim90-dev": {
-    title: "Full match (test)",
+    title: "Full match",
     what: "A whole simulated ninety minutes you can watch: 22 men and the ball. It is played live: the unseen match the career runs plays only up to your next chance, you play that chance, and the rest of the match plays on from how it went (score, momentum, who has the ball). This page stages it in each club's formation.",
     buttons: [
       {
         items: [
+          ["Match + events | TV broadcast", "Two layouts of the same page (top right; its own row on a phone). Match + events: the match with the events list beside it. TV broadcast: the match full width, then a momentum graph, the controls, and the events and teams under it. This device remembers your choice."],
+          ["Momentum (TV broadcast only)", "How the match has swung so far, minute by minute: above the line the home side is on top, below it the away side. ⚽ marks each goal (tap one to watch it). Tap the graph to jump back to that moment."],
           ["▶ / ❚❚", "Starts and pauses the match. At full time it becomes ↻ and plays it again from kick-off."],
           ["1× 4× 16× 60×", "How fast the match plays. 60× plays all ninety minutes in about a minute and a half."],
           ["↻ (right of the speeds)", "A new match: a different roll of the same fixture."],
@@ -1740,15 +1864,16 @@ export const ADMIN_GUIDES = {
   },
 
   "/star-tuning-dev": {
-    title: "Tuning",
+    title: "Balance numbers",
     what: "Every game-balance number in the Star Career game — energy, training, ratings, sponsors, contracts, transfers — plus shop prices.",
     buttons: [
       {
         items: [
-          ["Number boxes", "Type a new value. An \"edited\" tag shows it's changed from the default."],
+          ["Groups (left; along the top on a phone)", "Pick a group of numbers. Shop prices holds the shop; Everything shows all of them at once. A yellow count shows how many you've edited."],
+          ["Number boxes and sliders", "Type a new value or drag the slider. An \"edited\" tag shows it's changed from the default."],
           ["Reset (on a row)", "Puts that one number back to its default."],
           ["Shop prices", "KIB cans (price and energy), boots and lifestyle items."],
-          ["Reset everything to default", "Puts every number and price back. Asks first."],
+          ["Reset everything to default (bottom bar)", "Puts every number and price back. Asks first."],
         ],
       },
     ],
@@ -1759,24 +1884,29 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Only your own /star-dev game, on this device. To change the real game for everyone, ask for the number to be changed in the code.",
     ],
-    dev: "app/star-tuning-dev/page.tsx · components/star/TuningEditor.tsx · lib/star/{tuning,tuningStore}.ts",
+    dev: "app/star-tuning-dev/page.tsx · lib/star/{tuning,tuningStore}.ts",
   },
 
   "/star-dev/media-lab": {
     title: "Media Lab",
-    what: "A test bench for the media-feed graphics: drop in a pose and a face and see every template in every club's colours.",
+    what: "A test bench for the media-feed graphics, laid out as a post wall: drop in a pose and a face and see every template in every club's colours, plus every screen it can open.",
     buttons: [
       {
         items: [
+          ["Pills along the top (All, Transfer graphic, Player of the Month, Screens, Shop, Training)", "Show only that part of the wall. This device remembers the last one."],
+          ["Preview team sheets (top right)", "Opens the team sheets with sample data, with the play-as picker above them."],
+          ["Pose, face and sliders (left; on a phone, tap the bar to open it)", "The tools for the transfer graphic. Only there when All or Transfer graphic is picked."],
           ["Pose image / Face image — Choose file (or drop)", "Load a picture. \"remove\" clears it."],
           ["Club colours", "Re-colour the templates in that club's kit."],
           ["Treatment / Face X / Face Y / Face size / Neck line / Face brightness / Figure size / Figure up / down", "Line the face up on the pose."],
           ["Anchor", "The numbers to copy into the template once it looks right."],
-          ["Preview the \"you won it\" modal / team sheets / match commentary", "Opens that screen with sample data."],
+          ["Player of the Month tiles", "The post cards (shortlist, someone else wins, you win with and without a photo) and the photo picker (try only, nothing saved)."],
+          ["Screens: Preview on \"You won it\" / Team sheets / Match commentary", "Opens that screen with sample data."],
+          ["Screens, Shop and Training tiles with Open / New / Old / Play / still-float-bounce-bobble", "Open the same views as the addresses below (the page loads again). Training: pick the level with ◀ ▶ first."],
         ],
       },
       {
-        group: "Feed preview (add ?feed to the address)",
+        group: "The same views by address (add to the address)",
         items: [
           ["/star-dev/media-lab?trophies", "Shows the Trophy Cabinet filled with every trophy that has a picture, for judging the trophy art."],
           ["/star-dev/media-lab?contact=float (or bounce, bobble, still)", "Shows the strike screen with the ball moving that way (float = header, bounce = volley, bobble = a ball at your feet). Tap the ball to try it; it starts again a moment later."],
