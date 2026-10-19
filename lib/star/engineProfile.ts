@@ -39,6 +39,7 @@ import { DEFAULT_RULE_BOOK } from "./ruleBook";
 import { conditionsFor, type Conditions } from "./weather";
 import { fetchRealSquad, mergeSquadStats } from "./realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, syncLeagueStrengthFromSquads } from "./leagueSquads";
+import { divisionOf } from "./calendar";
 import { kitsFor, type Kit } from "./kits";
 import { VIEW_ASPECT } from "./canvasEngine";
 import type { CareerState, Fixture, StarPlayer } from "./types";
@@ -171,7 +172,7 @@ export async function withRealSquads(career: CareerState): Promise<CareerState> 
     ]);
     const squad = mergeSquadStats(freshSquad, career.squad ?? []);
     const leagueSquads = mergeLeagueSquadStats(freshLeague, career.leagueSquads ?? []);
-    return { ...career, squad, leagueSquads, league: syncLeagueStrengthFromSquads(career.league, leagueSquads) };
+    return { ...career, squad, leagueSquads, league: syncLeagueStrengthFromSquads(career.league, leagueSquads, divisionOf(career)) };
   } catch {
     return career;
   }

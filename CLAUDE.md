@@ -196,6 +196,23 @@ summer. Your club is shown a fee (no club budgets yet: future work). "Find a
 new club" (Stats → Contract) is gone. Not built on purpose: transfer
 request, scouts watching, agents, loans, promises, moves abroad.
 
+## The world season: every league and cup is played (Mikey, 19 Oct 2026)
+
+Read `docs/WORLD_SEASON.md` before touching it. `lib/star/world/`:
+- Club rating (`clubRating.ts`): a real squad's best XI; no real squad, its
+  division level moved by club data (reputation, history, spending), ±4.
+  Used by the ladder, cups, Europe and your own league's invented squads.
+- `career.world`: every league you're not in, the CL/EL you're not in, the
+  League Cup when you're not entered, both shields. Played round by round on
+  each round's real date after every match (`worldAfterMatch`), finished at
+  season end (`finishWorld`, pure, cached). Same result live or at the end.
+- Promotion/relegation read the world tables (+ real play-offs). Cups use the
+  league's match model. Season 1 shields: Arsenal v Man City, PSG v Aston Villa.
+- Viewer: League → 🌍 All leagues; Season Awards → Every league and cup
+  (`career.lastWorld`).
+- **Fallback if it lags:** set `WORLD_LIVE = false` (`lib/star/world/index.ts`):
+  nothing plays during the season, everything plays at the end, same tables.
+
 ## Ballon d'Or winners data (Mikey, 8 Oct 2026)
 
 Every men's winner 1956–2025, from ballondor.com only, for a future game

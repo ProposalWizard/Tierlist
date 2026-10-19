@@ -1343,6 +1343,13 @@ export interface CareerState {
     league?: string;
     /** Only needed for the Community Shield's Double case — see seedPreSeason. */
     leagueRunnerUp?: string;
+    /** The Premier League's champions and runners-up, whatever division you
+     *  were in (world season, 19 Oct 2026) — the Community Shield's side.
+     *  `league` is YOUR league's winner. Absent on a save from before. */
+    premierLeague?: string;
+    premierLeagueRunnerUp?: string;
+    communityShield?: string;
+    superCup?: string;
     faCup?: string;
     leagueCup?: string;
     championsLeague?: string;
@@ -1358,6 +1365,20 @@ export interface CareerState {
    * you did not win.
    */
   potm?: import("./potm").MonthAward[];
+  /**
+   * The rest of the world's season: every league you are not in, the
+   * European competitions you are not in, the League Cup when you are not
+   * entered, and both shields — played on their real dates (lib/star/world,
+   * docs/WORLD_SEASON.md). Absent on a save from before 19 Oct 2026: it is
+   * opened and caught up at the next match.
+   */
+  world?: import("./world/types").WorldState;
+  /** Last season's final tables, top scorers, winners and play-offs, kept
+   *  through the rollover for the "Last season" view. */
+  lastWorld?: import("./world/types").WorldSummary;
+  /** Last season's final Premier League table, best first (names) — who
+   *  England sends to Europe this season (euro.ts seasonField). */
+  lastTopFlight?: string[];
   /**
    * PROTOTYPE (home-screen proto, 27 Sep 2026) — the Stats page's "All seasons"
    * and "Records" tabs. One row per finished season, pushed by advanceSeason.

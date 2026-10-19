@@ -1,5 +1,7 @@
 "use client";
+import { useState } from "react";
 import TrophyImage from "./TrophyImage";
+import WorldPane from "./WorldPane";
 import type { CareerState } from "@/lib/star/types";
 import { trophyWinners, type AwardWinner } from "@/lib/star/seasonAwards";
 import { kitsOf, labelInk } from "@/lib/star/kits";
@@ -198,6 +200,7 @@ function TeamOfSeasonPitch({ career }: { career: CareerState }) {
 }
 
 export default function SeasonAwardsScreen({ career, onContinue }: Props) {
+  const [world, setWorld] = useState(false);
   const stats = career.lastSeasonAwardStats;
   if (!stats) return null;
   const trophies = trophyWinners(career, stats);
@@ -261,11 +264,30 @@ export default function SeasonAwardsScreen({ career, onContinue }: Props) {
           </div>
         )}
 
-        <PressButton variant="primary" size="lg" pulse onClick={onContinue} className="relative mt-4 w-full overflow-hidden">
+        {/* Every league, cup and European competition of the season just
+            played (Mikey, 19 Oct 2026; lib/star/world). */}
+        {career.lastWorld && (
+          <PressButton variant="secondary" size="lg" onClick={() => setWorld(true)} className="relative mt-4 w-full" data-season-world>
+            🌍 Every league and cup
+          </PressButton>
+        )}
+
+        <PressButton variant="primary" size="lg" pulse onClick={onContinue} className="relative mt-2 w-full overflow-hidden">
           <Shine loop every={5} />
           Continue
         </PressButton>
       </div>
+      {world && (
+        <div className="fixed inset-0 z-[70] overflow-y-auto bg-[#07110c] px-3 pb-8 pt-3" data-season-world-sheet>
+          <div className="mx-auto max-w-md">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[18px] font-black text-white">Season {stats.season}</span>
+              <button type="button" onClick={() => setWorld(false)} className="grid h-9 w-9 place-items-center rounded-full bg-white/15 text-lg font-black text-white" aria-label="Close">✕</button>
+            </div>
+            <WorldPane career={career} last />
+          </div>
+        </div>
+      )}
     </Screen>
   );
 }

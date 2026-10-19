@@ -2,6 +2,7 @@ import type { CareerState, LeagueTeam } from "./types";
 import { mulberry32, simulateFixtureScore } from "./season";
 import { divisionOf } from "./calendar";
 import { membershipOf, estimateClubStrength } from "./promotion";
+import { finishWorld } from "./world";
 
 /**
  * THIS SEASON'S PREMIER LEAGUE TABLE, WHATEVER DIVISION YOU PLAY IN.
@@ -18,6 +19,23 @@ import { membershipOf, estimateClubStrength } from "./promotion";
  * a Championship club won the Champions League.
  */
 export function englishTopFlightTable(career: CareerState): LeagueTeam[] {
+  if (divisionOf(career) === "premier") return career.league;
+  // The world season plays the Premier League for real (lib/star/world,
+  // 19 Oct 2026): its final table. The stand-in below is only for a save
+  // whose world can't be played.
+  try {
+    const played = finishWorld(career).leagues.find(l => l.division === "premier");
+    if (played && played.played >= played.rounds) return played.teams;
+  } catch { /* fall through to the stand-in */ }
+  return standInTopFlight(career);
+}
+
+/**
+ * The old stand-in: the Premier League's 380 matches played once, seeded by
+ * the season. Only for a save without a world, and for euro.ts seasonField
+ * on such a save (it must not ask the world, which is built from it).
+ */
+export function standInTopFlight(career: CareerState): LeagueTeam[] {
   if (divisionOf(career) === "premier") return career.league;
   const clubs = membershipOf(career).premier;
   const teams: LeagueTeam[] = clubs.map(name => ({

@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { followedClubs, followedFixtures, toggleFollowedClub, setLiveScoreWeek } from "@/lib/star/matchDayPrefs";
 import LeagueScreen from "./LeagueScreen";
+import WorldPane from "./WorldPane";
 import ClubBadge from "./ClubBadge";
 import { FixturesPane, ScoutPane } from "./MatchWeekPanes";
 import { short } from "./HomeHub";
@@ -26,6 +27,8 @@ export const WEEK_VIEWS = [
   { id: "results", label: "Results", icon: "📋" },
   { id: "fixtures", label: "Fixtures", icon: "📅" },
   { id: "table", label: "Table", icon: "🏆" },
+  // Every other league, cup and European competition (Mikey, 19 Oct 2026).
+  { id: "world", label: "All leagues", icon: "🌍" },
   { id: "scout", label: "Scout", icon: "🔍" },
   { id: "awards", label: "Awards", icon: "🥇" },
   { id: "squad", label: "Squad", icon: "👥" },
@@ -89,6 +92,7 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
 
         {view === "fixtures" ? <FixturesPane career={career} next={nextFixture} />
           : view === "scout" ? <ScoutPane career={career} fixture={nextFixture} />
+          : view === "world" ? <WorldPane career={career} />
           : <LeagueScreen career={career} view={view} hideTabs />}
       </div>
 

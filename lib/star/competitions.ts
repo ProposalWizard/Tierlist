@@ -7,6 +7,8 @@ import {
   roundNamesFor, stillIn, isTwoLeggedRound, type CupState, type CupId,
 } from "./cups";
 import { mulberry32, sortLeague } from "./season";
+import { ratedTeams } from "./world";
+import { SEASON_ONE_HOLDERS } from "./world/holders";
 import {
   PRE_SEASON_WEEK, EURO_LEAGUE_PHASE_WEEKS, EURO_KO_SLOTS_WITH_R32,
   LEAGUE_CUP_SLOTS, FA_CUP_SLOTS,
@@ -114,9 +116,10 @@ function roundWeeks(
  * that are decided by looking backwards.
  */
 export function seedPreSeason(career: CareerState): Fixture[] {
-  const last = career.season - 1;
-  if (last < 1) return [];
-  const w = career.lastSeasonWinners;
+  // Season 1's holders are fixed (Mikey, 19 Oct 2026): Arsenal v Man City,
+  // and Paris Saint-Germain v Aston Villa — see world/holders.ts.
+  const w: NonNullable<CareerState["lastSeasonWinners"]> | undefined =
+    career.season <= 1 ? { ...SEASON_ONE_HOLDERS } : career.lastSeasonWinners;
   if (!w) return [];
 
   const rng = mulberry32(career.season * 3301 + career.league.length);
@@ -131,7 +134,7 @@ export function seedPreSeason(career: CareerState): Fixture[] {
     if (inLeague) return inLeague.strength;
     const inEurope = [...poolFor("Champions League"), ...poolFor("Europa League")]
       .find(c => c.name === name);
-    return inEurope?.strength ?? cupStrength(name, career.league);
+    return Math.round(inEurope?.strength ?? cupStrength(name, ratedTeams(career)));
   };
 
   // ── Community Shield: champions v FA Cup holders ──
@@ -142,8 +145,13 @@ export function seedPreSeason(career: CareerState): Fixture[] {
   // other eighteen clubs' pre-season is not your calendar to fill in. When
   // the same club did both — a Double — the champions' slot goes to the
   // league runner-up, which is what the real competition does.
-  if (w.league && w.faCup) {
-    const champion = w.league === w.faCup ? (w.leagueRunnerUp ?? w.league) : w.league;
+  // The PREMIER LEAGUE's champions, whatever division you play in (until 19
+  // Oct 2026 this read your own league's winner — a Championship champion
+  // in the Community Shield). An old save without it keeps `league`.
+  const plChampion = w.premierLeague ?? w.league;
+  const plRunnerUp = w.premierLeague ? w.premierLeagueRunnerUp : w.leagueRunnerUp;
+  if (plChampion && w.faCup) {
+    const champion = plChampion === w.faCup ? (plRunnerUp ?? plChampion) : plChampion;
     const cupHolder = w.faCup;
     if (champion === club || cupHolder === club) {
       const opponent = champion === club ? cupHolder : champion;
@@ -666,7 +674,7 @@ export function cupFixtureFor(state: CupState, career: CareerState, roundIndex: 
     kind: "cup",
     round,
     ...(round && isTwoLeggedRound(state.competition, round) ? { leg: 1 as const } : {}),
-    opponentStrength: cupStrength(opponent, career.league),
+    opponentStrength: Math.round(cupStrength(opponent, ratedTeams(career))),
   };
 }
 
@@ -760,7 +768,7 @@ export function settleCupTie(
   // `livePens` is already in home/away terms (it comes straight off
   // CanvasMatch's own shootout, which tracks the real fixture's home/away
   // sides) — no flip needed the way hs/as needed one above.
-  const after = playCupRound(before, career.league, club, { hs, as, pens, wentToExtraTime, legs }, rng);
+  const after = playCupRound(before, ratedTeams(career), club, { hs, as, pens, wentToExtraTime, legs }, rng);
   const next = states.map((st, i) => (i === idx ? after : st));
 
   const tie = before.rounds[before.rounds.length - 1]?.ties
@@ -881,7 +889,7 @@ export function advanceEliminatedCups(
       const roundWeek = cupRoundWeek(s.competition, roundIndex, career.league.length, division, false);
       const roundTs = fixtureTimestamp(career.player.startYear, career.season, roundWeek, "cup", division);
       if (roundTs > uptoTimestamp) break;
-      const played = playCupRound(s, career.league, club, null, rng);
+      const played = playCupRound(s, ratedTeams(career), club, null, rng);
       if (played === s) break; // nothing left to play — already resolved
       s = played;
       changed = true;

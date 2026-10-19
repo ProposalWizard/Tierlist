@@ -305,8 +305,10 @@ export function trophyWinners(career: CareerState, stats: SeasonAwardStats): Tro
     winnerOf("League Cup", w?.leagueCup),
     winnerOf("Champions League", w?.championsLeague),
     winnerOf("Europa League", w?.europaLeague),
-    guessedWinnerOf("Community Shield", stats.communityShieldGuess),
-    guessedWinnerOf("Super Cup", stats.superCupGuess),
+    // Played for real now (world season, 19 Oct 2026); the old guess is
+    // only for a save from before.
+    w?.communityShield ? winnerOf("Community Shield", w.communityShield) : guessedWinnerOf("Community Shield", stats.communityShieldGuess),
+    w?.superCup ? winnerOf("Super Cup", w.superCup) : guessedWinnerOf("Super Cup", stats.superCupGuess),
   ];
 }
 

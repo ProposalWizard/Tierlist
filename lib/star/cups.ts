@@ -5,6 +5,7 @@ import {
   LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS,
 } from "./clubs";
 import { hasExtraTime, extraTimeScore, simulateShootout } from "./shootout";
+import { simulateFixtureScore } from "./season";
 
 /**
  * THE CUPS.
@@ -391,20 +392,18 @@ export function cupStrength(club: string, league: LeagueTeam[]): number {
 
 // ── Playing a round ─────────────────────────────────────────────────────────
 
-function poisson(lambda: number, rng: () => number): number {
-  const L = Math.exp(-lambda);
-  let k = 0, p = 1;
-  do { k++; p *= rng(); } while (p > L);
-  return k - 1;
-}
 
-/** A scoreline between two clubs, from the same model the league uses. */
+/**
+ * A scoreline between two clubs: the league's own model (season.ts
+ * simulateFixtureScore), home advantage included. Until 19 Oct 2026 this was
+ * a ratio of the two strengths, which squeezed every gap: a League Two side
+ * got past a Premier League one 34% of the time (measured, 40,000 ties). The
+ * league's model gives 8% — near the real FA Cup — and a Championship side
+ * 28%.
+ */
 function tieScore(homeStr: number, awayStr: number, rng: () => number): { hs: number; as: number } {
-  const h = homeStr + 3;   // the same home advantage the division gets
-  return {
-    hs: poisson(Math.max(0.3, (h / awayStr) * 1.4), rng),
-    as: poisson(Math.max(0.2, (awayStr / h) * 1.1), rng),
-  };
+  const s = simulateFixtureScore(homeStr, awayStr, rng);
+  return { hs: s.home, as: s.away };
 }
 
 /**

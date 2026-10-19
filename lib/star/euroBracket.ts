@@ -150,6 +150,9 @@ function ordered(br: EuroBracket, x: string, y: string): [string, string] {
  */
 export function advanceEuroBracket(
   br: EuroBracket, you: string, str: (c: string) => number, sim: Sim, rng: () => number,
+  /** Play no tie beyond this round (0 = Round of 32). The world season plays
+   *  a round only once its date has come (world/europe.ts). Default: all. */
+  upToRound = Infinity,
 ): EuroBracket {
   const rounds = br.rounds.map(r => ({ ...r, ties: r.ties.map(t => ({ ...t, legs: [...t.legs] })) }));
   let winner = br.winner;
@@ -157,7 +160,7 @@ export function advanceEuroBracket(
     let changed = false;
     rounds.forEach((r, ri) => {
       r.ties.forEach((t, ti) => {
-        if (t.a && t.b && !t.winner && t.a !== you && t.b !== you) {
+        if (ri <= upToRound && t.a && t.b && !t.winner && t.a !== you && t.b !== you) {
           r.ties[ti] = playTie(t, r.name === "Final", str, sim, rng);
           changed = true;
         }

@@ -31,7 +31,13 @@ const PLAYER: StarPlayer = {
 } as StarPlayer;
 
 const CLUBS = ["Arsenal", "Chelsea", "Liverpool", "Man City", "Man Utd", "Spurs", "Newcastle", "Aston Villa", "Brighton", "West Ham"];
-const base = () => makeInitialCareer(PLAYER, CLUBS);
+// Arsenal open season 1 with the Community Shield (v Man City — world
+// season, 19 Oct 2026). These checks are about the cups and Europe, so the
+// shield is taken off the calendar; tests/star/world.mts covers it.
+const base = () => {
+  const c = makeInitialCareer(PLAYER, CLUBS);
+  return { ...c, fixtures: c.fixtures.filter(f => f.competition !== "Community Shield") };
+};
 
 const result = (userGoals: number, oppGoals: number): MatchStats => ({
   minutes: 90, chances: 5, goals: userGoals, assists: 0, passes: 12,
@@ -508,7 +514,11 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
 {
   let c = base();
   let guard = 0;
-  while (nextFixtureFor(c)?.kind !== "cup" && guard++ < 40) c = play(c, 1, 0);
+  // A domestic cup tie, not season 1's Community Shield (Arsenal v Man City
+  // since 19 Oct 2026), which is a one-off match with no cup state.
+  const isCupTie = (f: ReturnType<typeof nextFixtureFor>) =>
+    f?.kind === "cup" && (f.competition === "FA Cup" || f.competition === "League Cup");
+  while (!isCupTie(nextFixtureFor(c)) && guard++ < 40) c = play(c, 1, 0);
   const tie = nextFixtureFor(c)!;
   const missed = simulateMissedFixture(c, tie).career;
   const st = (missed.cupState ?? []).find(x => x.competition === tie.competition)!;

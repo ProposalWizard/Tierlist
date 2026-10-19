@@ -34,7 +34,7 @@ import {
   qualificationFor, leaguePosition, seasonQualifiers, advanceEliminatedCups, nextFixtureFor,
 } from "./competitions";
 import { STARTING_EUROPEAN_QUALIFICATION } from "./clubs";
-import { finishCupToWinner } from "./cups";
+import { finishCupToWinner, type CupState } from "./cups";
 import { simulateShootout } from "./shootout";
 import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
@@ -61,6 +61,8 @@ import { wageForFixture } from "./wages";
 import { signingOnFee, typicalWeeklyWage, goalBonusFor, assistBonusFor } from "./economy";
 import { resolveLadder, seasonLadder, membershipOf, estimateClubStrength, type LadderOutcome } from "./promotion";
 import { englishTopFlightTable } from "./englishTopFlight";
+import { worldAfterMatch, finishWorld, ratedTeams } from "./world";
+import { summariseWorld } from "./world/summary";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids, moveSquadsWithLadder } from "./leagueSquads";
 import { ageLeagueSquads, ageOwnSquad, clubLevelOf, worldSeedFor, AWAKE_DIVISIONS } from "./worldAgeing";
@@ -1025,10 +1027,15 @@ export function creditMatchResult(
   // exactly as far as this fixture's own real calendar date allows. See
   // advanceEliminatedCups's own doc for why this replaced an instant
   // resolve-to-a-winner the moment the player was eliminated.
+  // …and the rest of the world's season (lib/star/world, docs/WORLD_SEASON.md):
+  // every league round, European matchday and cup round whose date this
+  // match has reached. A replay changes nothing.
+  let world = career.world;
   if (!alreadyPlayed) {
     const clock = fixtureTimestamp(career.player.startYear, career.season, fixture.week, fixture.kind, divisionOf(career));
     const cupsRng = mulberry32(career.season * 60013 + fixture.week * 7 + 41);
     cupState = advanceEliminatedCups({ ...career, cupState }, clock, cupsRng);
+    world = worldAfterMatch(career, clock);
   }
 
   // International football is its own record. Caps and international goals do
@@ -1149,6 +1156,7 @@ export function creditMatchResult(
     knockoutMessage,
     cupState,
     euroState,
+    world,
     league,
     results: weekResults,
     leagueSquads,
@@ -1448,6 +1456,25 @@ export function awardLeagueTrophyIfWon(career: CareerState): { career: CareerSta
 
 export type SeasonWinners = NonNullable<CareerState["lastSeasonWinners"]>;
 
+/** Every trophy of the season, for the "Last season" view. */
+function winnersList(
+  career: CareerState, w: SeasonWinners, world: import("./world/types").WorldState | null, ladder: LadderOutcome | null,
+): { competition: string; club: string }[] {
+  const out: { competition: string; club: string }[] = [];
+  const add = (competition: string, club?: string) => { if (club) out.push({ competition, club }); };
+  add(leagueNameFor(divisionOf(career)), w.league);
+  for (const lg of world?.leagues ?? []) add(leagueNameFor(lg.division), sortLeague(lg.teams)[0]?.name);
+  add("FA Cup", w.faCup);
+  add("League Cup", w.leagueCup);
+  add("Champions League", w.championsLeague);
+  add("Europa League", w.europaLeague);
+  add("Community Shield", w.communityShield);
+  add("Super Cup", w.superCup);
+  for (const p of ladder?.worldPlayOffs ?? []) add(`${leagueNameFor(p.division)} play-off final`, p.result.promoted);
+  if (ladder?.playOffs) add(`${leagueNameFor(divisionOf(career))} play-off final`, ladder.playOffs.promoted);
+  return out;
+}
+
 /**
  * Who actually won everything this season, whether or not it was you.
  *
@@ -1464,12 +1491,26 @@ export type SeasonWinners = NonNullable<CareerState["lastSeasonWinners"]>;
  * calendar slot moved, a save loaded mid-cup) rather than trusting every
  * earlier code path got it right.
  */
-export function resolveSeasonWinners(career: CareerState): SeasonWinners {
+/** Your two cups played to their finals — the same seed every time, so the
+ *  season-end screens and the rollover agree. */
+export function finishedCupsOf(career: CareerState): CupState[] {
   const rngWinners = mulberry32(career.season * 7247 + career.league.length * 11);
-  const finishedCups = (career.cupState ?? []).map(st =>
-    st.winner ? st : finishCupToWinner(st, career.league, career.player.club, rngWinners));
+  // The cups are played with every club's real rating (world/clubRating.ts),
+  // not the old fixed list per tier.
+  const rated = ratedTeams(career);
+  return (career.cupState ?? []).map(st =>
+    st.winner ? st : finishCupToWinner(st, rated, career.player.club, rngWinners));
+}
+
+export function resolveSeasonWinners(career: CareerState): SeasonWinners {
+  const finishedCups = finishedCupsOf(career);
+  // The world season (lib/star/world), played to its end: every league you
+  // were not in, the European competitions you were not in, the League Cup
+  // when you were not entered, and the shields.
+  const world = (() => { try { return finishWorld(career); } catch { return null; } })();
   const faCupWinner = finishedCups.find(st => st.competition === "FA Cup")?.winner ?? null;
-  const leagueCupWinner = finishedCups.find(st => st.competition === "League Cup")?.winner ?? null;
+  const leagueCupWinner = finishedCups.find(st => st.competition === "League Cup")?.winner
+    ?? world?.leagueCup?.winner ?? null;
   const finalTable = sortLeague(career.league);
   const leagueWinner = finalTable[0]?.name;
   const leagueRunnerUp = finalTable[1]?.name;
@@ -1477,42 +1518,49 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
   // Phase 6 of STAR_POWER_POLITICS.md, rule §4.4 #11 — any extra European
   // places UEFA has granted this country, read off UEFA's own rule book.
   const uefaRules = ruleBookFor(career, "UEFA");
-  // No european-trophy-winner argument here: this is computing THIS season's
-  // own qualifying field, before anyone has actually played it out to know
-  // who (if anyone) wins Europe this season — that's exactly what
-  // crownWithoutYou below uses this very field to determine.
   // England's places come from the PREMIER LEAGUE, whatever division you
-  // play in (englishTopFlight.ts). Before 11 Oct 2026 this read your own
-  // table, so a Championship club could win the Champions League.
+  // play in (englishTopFlight.ts) — now its real, played table.
   const topFlight = englishTopFlightTable(career);
-  const qualifiers = seasonQualifiers(topFlight, faCupWinner, leagueCupWinner, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
+  const topSorted = sortLeague(topFlight);
   const strengthOf = (name: string) =>
     topFlight.find(t => t.name === name)?.strength
     ?? career.league.find(t => t.name === name)?.strength
     ?? estimateClubStrength(career, name);
   const inYourCompetition = (id: "Champions League" | "Europa League") =>
     career.euroState?.competition === id ? career.euroState : null;
+  // Fallback only: a save whose world could not be played. Never reached in
+  // a normal season — the world plays the whole competition (world/europe.ts).
+  const fallbackCrown = (id: "Champions League" | "Europa League", salt: number) => {
+    const q = seasonQualifiers(topFlight, faCupWinner, leagueCupWinner, null, uefaRules.extraChampionsLeagueSlots, uefaRules.extraEuropaLeagueSlots);
+    const entrants = (id === "Champions League" ? q.champions : q.europa).map(name => ({ name, strength: strengthOf(name) }));
+    return crownWithoutYou(id, entrants, career.season * 5209 + salt);
+  };
+  const worldWinner = (id: "Champions League" | "Europa League") => world?.europe.find(e => e.competition === id)?.winner;
 
-  const yourChampions = inYourCompetition("Champions League");
-  const championsLeagueWinner = yourChampions?.winner ?? crownWithoutYou(
-    "Champions League",
-    qualifiers.champions.map(name => ({ name, strength: strengthOf(name) })),
-    career.season * 5209 + 3,
-  );
-  const yourEuropa = inYourCompetition("Europa League");
-  const europaLeagueWinner = yourEuropa?.winner ?? crownWithoutYou(
-    "Europa League",
-    qualifiers.europa.map(name => ({ name, strength: strengthOf(name) })),
-    career.season * 5209 + 7,
-  );
+  const championsLeagueWinner = inYourCompetition("Champions League")?.winner
+    ?? worldWinner("Champions League") ?? fallbackCrown("Champions League", 3);
+  const europaLeagueWinner = inYourCompetition("Europa League")?.winner
+    ?? worldWinner("Europa League") ?? fallbackCrown("Europa League", 7);
+
+  // The two shields: yours if you played it, else the world's.
+  const shieldWinner = (id: "Community Shield" | "Super Cup"): string | undefined => {
+    if (career.trophies.some(t => t.season === career.season && t.competition === id)) return career.player.club;
+    const played = career.fixtures.find(f => f.competition === id && f.played);
+    if (played) return played.opponent;
+    return world?.shields.find(x => x.competition === id)?.winner;
+  };
 
   return {
     league: leagueWinner,
     leagueRunnerUp,
+    ...(topSorted[0] ? { premierLeague: topSorted[0].name } : {}),
+    ...(topSorted[1] ? { premierLeagueRunnerUp: topSorted[1].name } : {}),
     faCup: faCupWinner ?? undefined,
     leagueCup: leagueCupWinner ?? undefined,
     championsLeague: championsLeagueWinner,
     europaLeague: europaLeagueWinner,
+    ...(shieldWinner("Community Shield") ? { communityShield: shieldWinner("Community Shield") } : {}),
+    ...(shieldWinner("Super Cup") ? { superCup: shieldWinner("Super Cup") } : {}),
     ...(career.tournament?.season === career.season && career.tournament.winner
       ? { tournament: { competition: career.tournament.competition, winner: career.tournament.winner } } : {}),
   };
@@ -1736,6 +1784,16 @@ export function advanceSeason(
 
   const lastSeasonWinners = resolveSeasonWinners(career);
 
+  // The world season just finished (lib/star/world), kept whole for the
+  // "Last season" view, and the Premier League's final order for who
+  // England sends to Europe next season (euro.ts seasonField).
+  const finishedWorld = (() => { try { return finishWorld(career); } catch { return null; } })();
+  const lastTopFlight = sortLeague(englishTopFlightTable(career)).map(t => t.name);
+  const lastWorld = (() => {
+    try { return summariseWorld(career, finishedWorld, ladder, winnersList(career, lastSeasonWinners, finishedWorld, ladder), finishedCupsOf(career)); }
+    catch { return career.lastWorld; }
+  })();
+
   // The season as the world saw it, for the retirement overview (see
   // SeasonHistoryRow). Extra, never essential: if anything in it throws, the
   // season still rolls over and this one row is simply missing.
@@ -1783,6 +1841,10 @@ export function advanceSeason(
       ...(ladder.playOffs ? { playOffFinal: ladder.playOffs.final } : {}),
     },
     week: 1,
+    // A new season's world opens at its first match (lib/star/world).
+    world: undefined,
+    lastWorld,
+    lastTopFlight,
     fixtures: buildFixtures(clubs, career.player.club),
     league: buildLeague(clubs, career.player.club),
     // Last season's results belong to last season.
@@ -1972,7 +2034,7 @@ export function advanceSeason(
   // the strengths back off them before anything downstream (the cup draw,
   // Europe, the fixture list itself) uses a number that direct playtesting
   // has already been compared against a real one.
-  next.league = syncLeagueStrengthFromSquads(next.league, next.leagueSquads ?? []);
+  next.league = syncLeagueStrengthFromSquads(next.league, next.leagueSquads ?? [], divisionOf(next));
 
   // A new manager has never picked you. Everything you built with the last one
   // goes with him, which is how a settled player becomes a squad player without
@@ -2197,10 +2259,14 @@ export function simulateMissedFixture(
   // between) is exactly as much a tick of the career's clock as one you
   // actually played, so every cup you are no longer part of gets the same
   // chance to move forward here too.
+  // …and the rest of the world's season (lib/star/world): every round whose
+  // date this match has reached.
+  let world = career.world;
   {
     const clock = fixtureTimestamp(career.player.startYear, career.season, fixture.week, fixture.kind, divisionOf(career));
     const cupsRng = mulberry32(career.season * 60013 + fixture.week * 7 + 41);
     cupState = advanceEliminatedCups({ ...career, cupState }, clock, cupsRng);
+    world = worldAfterMatch(career, clock);
   }
 
   const fixtures = career.fixtures.map((f) =>
@@ -2222,6 +2288,7 @@ export function simulateMissedFixture(
     results: weekResults,
     leagueSquads,
     externalSquads,
+    world,
     fixtures: [...fixtures, ...extraFixtures],
     cups,
     tournament,
