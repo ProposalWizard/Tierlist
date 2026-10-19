@@ -166,7 +166,7 @@ function PlayGoal({ goal, lead, level, onClose, onResult, onNext }: {
   const passers = Array.from(new Set(win.filter((e) => e[1] === "P").map((e) => knownAs(goal, e[4])))).slice(-4);
 
   return (
-    <div data-playing={goal.id} className="mb-4 overflow-hidden rounded-2xl border border-emerald-400/40 bg-[#0f1a2e]">
+    <div data-playing={goal.id} className="mb-4 rounded-2xl border border-emerald-400/40 bg-[#0f1a2e]">
       <div className="flex items-start justify-between gap-2 px-3 pt-3">
         <div className="min-w-0">
           <div className="text-[11px] font-black uppercase tracking-wider text-emerald-300">
