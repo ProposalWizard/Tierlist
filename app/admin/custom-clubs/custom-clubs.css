@@ -1,0 +1,86 @@
+/* Custom clubs, option 1 (19 Oct 2026 lookover): clubs list on the left, the
+   picked club's editor on the right; stacked on a phone. Broadcast tokens only. */
+.cc-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
+.cc-error { padding: 8px 12px; border-left: 3px solid var(--bc-red); background: rgba(255, 77, 94, 0.12); color: #ffd3d8; font-size: 13px; font-weight: 700; }
+.cc-input { width: 100%; min-width: 0; padding: 8px 10px; font-size: 14px; color: var(--bc-ink); background: rgba(3, 12, 34, 0.7);
+  border: 1px solid var(--bc-line); border-radius: 3px; }
+.cc-input::placeholder { color: var(--bc-ink3); }
+.cc-add { display: flex; gap: 8px; align-items: stretch; }
+.cc-add .bc-btn { flex: 0 0 auto; }
+.cc-clubs { display: flex; flex-direction: column; gap: 6px; max-height: 62vh; overflow-y: auto; }
+.cc-club { display: flex; align-items: center; gap: 10px; padding: 8px 10px; text-align: left; cursor: pointer; color: var(--bc-ink);
+  background: rgba(255, 255, 255, 0.04); border: 1px solid var(--bc-line); border-radius: 3px; min-width: 0; }
+.cc-club span { flex: 1; min-width: 0; font-size: 14px; font-weight: 900; font-style: italic; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cc-club i { font-style: normal; font-weight: 900; color: var(--bc-amber); }
+.cc-club:hover { background: rgba(255, 255, 255, 0.08); }
+.cc-club[aria-pressed="true"] { background: linear-gradient(100deg, rgba(27, 95, 214, 0.55), rgba(18, 63, 156, 0.25));
+  border-color: rgba(120, 180, 255, 0.7); box-shadow: 0 0 14px rgba(47, 140, 255, 0.35); }
+.cc-del { border: 0; background: none; cursor: pointer; font-size: 12px; font-weight: 900; font-style: normal; text-transform: uppercase;
+  letter-spacing: .06em; color: #ffb3bc; }
+.cc-del:hover { color: #fff; }
+.cc-empty { padding: 36px 8px; text-align: center; font-size: 14px; color: var(--bc-ink2); }
+.cc-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.cc-tabs .bc-pill { text-transform: uppercase; }
+.cc-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+
+/* Kit & badge */
+.cc-kit { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 14px 18px; }
+.cc-kit-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.cc-kits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cc-kitcard { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; background: rgba(3, 12, 34, 0.5);
+  border: 1px solid var(--bc-line); border-radius: 3px; }
+.cc-kitcard b { align-self: flex-start; font-size: 13px; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.cc-swatches { display: flex; gap: 12px; }
+.cc-swatch { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; color: var(--bc-ink2); }
+.cc-swatch input { width: 30px; height: 30px; padding: 0; border: 1px solid var(--bc-line); border-radius: 3px; background: none; cursor: pointer; }
+.cc-badge { align-self: start; }
+.cc-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 170px; padding: 12px; cursor: pointer;
+  border: 1.5px dashed rgba(120, 170, 255, 0.5); border-radius: 4px; background: rgba(3, 12, 34, 0.5); color: var(--bc-ink2);
+  font-size: 13px; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.cc-drop:hover { border-color: var(--bc-accent); color: #fff; }
+.cc-drop img { width: 92px; height: 92px; object-fit: contain; }
+.cc-drop-icon { font-size: 34px; line-height: 1; color: var(--bc-accent); font-style: normal; }
+.cc-foot { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; padding-top: 4px; }
+.cc-foot .bc-btn[data-main="true"] { padding: 10px 26px; font-size: 15px; }
+.cc-msg { margin-right: auto; font-size: 13px; font-weight: 800; color: #9ff0c4; }
+
+/* Squad */
+.cc-squad { display: flex; flex-direction: column; gap: 10px; }
+.cc-squad-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.cc-rows { display: flex; flex-direction: column; gap: 4px; }
+.cc-row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; background: rgba(3, 12, 34, 0.55); border: 1px solid var(--bc-line); border-radius: 3px; min-width: 0; }
+.cc-row-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cc-row-txt b { font-size: 14px; font-weight: 900; font-style: italic; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cc-row-txt span { font-size: 12px; color: var(--bc-ink2); }
+.cc-face { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: #0b1a3d; border: 1px solid var(--bc-line); }
+.cc-face-big { width: 64px; height: 64px; }
+.cc-mini { flex: 0 0 auto; padding: 5px 10px; border: 1px solid var(--bc-line); border-radius: 3px; cursor: pointer; background: rgba(47, 140, 255, 0.16);
+  color: #dbe8ff; font-size: 12px; font-weight: 900; text-transform: uppercase; }
+.cc-mini:hover { background: rgba(47, 140, 255, 0.32); }
+.cc-mini[data-danger="true"] { background: rgba(255, 77, 94, 0.16); color: #ffc9cf; }
+.cc-mini[data-danger="true"]:hover { background: rgba(255, 77, 94, 0.32); }
+
+/* Player form */
+.cc-form { display: flex; flex-direction: column; gap: 12px; }
+.cc-form-title { font-size: 16px; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.cc-face-row { display: flex; align-items: center; gap: 12px; }
+.cc-upload { display: inline-flex; align-items: center; }
+.cc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cc-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.cc-form .cc-foot { justify-content: flex-end; }
+.cc-lineup { min-width: 0; overflow-x: auto; }
+
+@media (max-width: 900px) {
+  .cc-layout { grid-template-columns: minmax(0, 1fr); }
+  .cc-clubs { max-height: 240px; }
+  .cc-kit { grid-template-columns: minmax(0, 1fr); }
+  .cc-drop { min-height: 120px; flex-direction: row; }
+}
+@media (max-width: 520px) {
+  .cc-foot .bc-btn[data-main="true"] { flex: 1; justify-content: center; }
+  .cc-row { flex-wrap: wrap; }
+  .cc-row-txt { flex-basis: calc(100% - 50px); }
+  .cc-row .cc-mini { margin-left: 48px; }
+  .cc-row .cc-mini + .cc-mini { margin-left: 0; }
+}

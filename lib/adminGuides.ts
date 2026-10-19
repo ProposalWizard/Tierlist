@@ -493,10 +493,10 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["New club name… + Add", "Creates a new club."],
-          ["Club list", "Tap a club to edit it."],
-          ["Delete club", "Deletes the club (and its badge link)."],
-          ["Kit & badge", "Home and away colours, stadium name, and upload a badge. Save saves it."],
+          ["Clubs list: New club name… + Add", "Creates a new club."],
+          ["Clubs list", "Tap a club to edit it on the right (below on a phone)."],
+          ["Delete club", "Top right of the Edit club panel. Deletes the club (and its badge link)."],
+          ["Kit & badge", "Stadium name, home and away colours, and Upload badge. Save changes saves it."],
           ["squad", "Its players. \"+ Create a new player\" or tap one to edit: name, rating, positions, age, nationality, face, and potential (Ordinary / High Potential / World Class). Save saves him."],
           ["lineup", "The same squad builder as the Squad Builder page: tap a player, tap where he goes."],
         ],

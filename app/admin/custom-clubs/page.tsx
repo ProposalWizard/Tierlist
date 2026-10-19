@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ACCEPT_IMAGE_TYPES, compressImage } from "@/lib/imageUtils";
 import { fetchLeagueSquads } from "@/lib/star/leagueSquads";
@@ -9,6 +8,8 @@ import { KitSwatch } from "@/components/star/Investments";
 import LineupBuilder from "@/components/star/LineupBuilder";
 import type { LeagueSquad } from "@/lib/star/types";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, Btn, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "./custom-clubs.css";
 
 /**
  * CUSTOM CLUBS — CREATE A WHOLE FAKE CLUB FROM SCRATCH.
@@ -25,6 +26,10 @@ import PageGuide from "@/components/admin/PageGuide";
  * `sofifa_players` row (only a `custom:`-prefixed id marks it as invented),
  * so `fetchLeagueSquads` — the exact function real career squads use — just
  * works for it, and so does the shared `LineupBuilder` component below.
+ *
+ * Layout: option 1 of the 19 Oct 2026 lookover, on the Broadcast frame — the
+ * clubs list on the left, the picked club's editor on the right (stacked on a
+ * phone). Page-only styling: custom-clubs.css.
  */
 
 const VALID_POSITIONS = ["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"];
@@ -129,102 +134,67 @@ export default function CustomClubsAdminPage() {
   const selectedClub = clubs.find(c => c.name === selected) ?? null;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-xs text-white/60 mb-3">
-          <Link href="/admin" className="hover:text-white transition-colors">Admin</Link>
-          <span className="mx-1.5">/</span>
-          <span className="text-white/85">Custom Clubs</span>
-        </div>
-        <h1 className="text-2xl font-black mb-1">Custom Clubs</h1>
-        <p className="text-sm text-white/70 mb-4">
-          Invent a fake club — kit, badge, stadium, and a full roster built from scratch. Vote it into a real
-          competition from the Rule Book once it&apos;s ready.
-        </p>
+    <BroadcastPage title="Custom clubs" sub="Invent a club: kit, badge, stadium and a squad. Vote it into a real competition from the Rule Book." back="/admin" width={1280}>
+      {error && <div className="cc-error">{error}</div>}
 
-        {error && (
-          <div className="mb-3 rounded-lg bg-red-950/60 border border-red-700 px-3 py-2 text-sm text-red-200">{error}</div>
-        )}
-
-        <div className="grid md:grid-cols-[240px_1fr] gap-4">
-          {/* ── Club list ── */}
-          {/* min-w-0 on both columns: a long player name was stretching the
-              single phone column to 440 px and pushing + Add / Delete off. */}
-          <div className="min-w-0">
-            <div className="flex gap-1.5 mb-2">
-              <input
-                value={newClubName}
-                onChange={e => setNewClubName(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && createClub()}
-                placeholder="New club name…"
-                className="flex-1 min-w-0 rounded-lg bg-gray-800 border border-gray-700 px-2.5 py-2 text-sm"
-              />
+      <div className="cc-layout">
+        {/* ── Club list ── */}
+        <Panel title="Clubs list" note={loading ? "Loading…" : `${clubs.length}`}>
+          <div className="cc-add">
+            <input
+              value={newClubName}
+              onChange={e => setNewClubName(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && createClub()}
+              placeholder="New club name…"
+              className="cc-input"
+            />
+            <Btn main onClick={createClub} disabled={creating || !newClubName.trim()}>+ Add</Btn>
+          </div>
+          <div className="cc-clubs">
+            {loading && <Note>Loading…</Note>}
+            {!loading && clubs.length === 0 && <Note>No custom clubs yet. Add one above.</Note>}
+            {clubs.map(c => (
               <button
-                onClick={createClub}
-                disabled={creating || !newClubName.trim()}
-                className="shrink-0 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 font-black text-xs"
+                key={c.name}
+                onClick={() => { setSelected(c.name); setTab("kit"); }}
+                className="cc-club"
+                aria-pressed={selected === c.name}
               >
-                + Add
+                <KitSwatch kit={{ shirt: c.home_shirt, trim: c.home_trim }} size={34} />
+                <span>{c.name}</span>
+                {selected === c.name && <i aria-hidden>✓</i>}
               </button>
-            </div>
-            <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-              {loading && <div className="px-3 py-4 text-xs text-white/60">Loading…</div>}
-              {!loading && clubs.length === 0 && (
-                <div className="px-3 py-4 text-xs text-white/60">No custom clubs yet — add one above.</div>
-              )}
-              {clubs.map(c => (
-                <button
-                  key={c.name}
-                  onClick={() => { setSelected(c.name); setTab("kit"); }}
-                  className={`w-full flex items-center gap-2 px-3 py-2.5 text-left border-b border-black/30 last:border-b-0 ${
-                    selected === c.name ? "bg-emerald-900/40" : "hover:bg-gray-800"
-                  }`}
-                >
-                  <KitSwatch kit={{ shirt: c.home_shirt, trim: c.home_trim }} size={24} />
-                  <span className="text-sm font-bold truncate">{c.name}</span>
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
+        </Panel>
 
-          {/* ── Selected club editor ── */}
-          <div className="min-w-0">
-            {!selectedClub && (
-              <div className="text-sm text-white/60 py-10 text-center">Pick a club on the left, or create a new one.</div>
-            )}
-            {selectedClub && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-black">{selectedClub.name}</h2>
-                  <button
-                    onClick={() => deleteClub(selectedClub.name)}
-                    className="text-[12px] font-black text-red-400 hover:text-red-300 uppercase tracking-widest sm:text-[10px]"
-                  >
-                    Delete club
-                  </button>
-                </div>
-                <div className="flex gap-1 mb-3">
-                  {(["kit", "squad", "lineup"] as const).map(t => (
-                    <button
-                      key={t}
-                      onClick={() => setTab(t)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase ${tab === t ? "bg-emerald-600" : "bg-gray-800 text-white/70"}`}
-                    >
-                      {t === "kit" ? "Kit & badge" : t}
-                    </button>
-                  ))}
-                </div>
-
-                {tab === "kit" && <KitAndBadgeEditor club={selectedClub} onSaved={loadClubs} />}
-                {tab === "squad" && <SquadEditor club={selectedClub.name} />}
-                {tab === "lineup" && <LineupTab club={selectedClub.name} />}
+        {/* ── Selected club editor ── */}
+        <Panel
+          title={selectedClub ? `Edit club: ${selectedClub.name}` : "Edit club"}
+          note={selectedClub ? (
+            <button onClick={() => deleteClub(selectedClub.name)} className="cc-del">Delete club</button>
+          ) : undefined}
+        >
+          {!selectedClub && <div className="cc-empty">Pick a club on the left, or add a new one.</div>}
+          {selectedClub && (
+            <>
+              <div className="cc-tabs">
+                {(["kit", "squad", "lineup"] as const).map(t => (
+                  <Pill key={t} on={tab === t} onClick={() => setTab(t)}>
+                    {t === "kit" ? "Kit & badge" : t}
+                  </Pill>
+                ))}
               </div>
-            )}
-          </div>
-        </div>
+
+              {tab === "kit" && <KitAndBadgeEditor club={selectedClub} onSaved={loadClubs} />}
+              {tab === "squad" && <SquadEditor club={selectedClub.name} />}
+              {tab === "lineup" && <LineupTab club={selectedClub.name} />}
+            </>
+          )}
+        </Panel>
       </div>
       <PageGuide page="/admin/custom-clubs" />
-    </div>
+    </BroadcastPage>
   );
 }
 
@@ -295,65 +265,60 @@ function KitAndBadgeEditor({ club, onSaved }: { club: CustomClub; onSaved: () =>
   };
 
   return (
-    <div className="space-y-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-3">
-        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-2">Badge</div>
-        <div className="flex items-center gap-3">
-          {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt="" className="w-14 h-14 object-contain bg-gray-800 rounded" />
-          ) : (
-            <div className="w-14 h-14 rounded bg-gray-800 grid place-items-center text-[9px] text-white/50">None</div>
-          )}
-          <label className="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-xs font-black cursor-pointer">
-            {uploading ? "Uploading…" : "Upload badge"}
-            <input
-              type="file" accept={ACCEPT_IMAGE_TYPES} className="hidden" disabled={uploading}
-              onChange={e => e.target.files?.[0] && uploadLogo(e.target.files[0])}
-            />
-          </label>
+    <div className="cc-kit">
+      <div className="cc-kit-main">
+        <div className="cc-field">
+          <Label>Stadium</Label>
+          <input value={stadiumName} onChange={e => setStadiumName(e.target.value)} className="cc-input" />
         </div>
-      </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-3">
-        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-2">Stadium</div>
-        <input
-          value={stadiumName} onChange={e => setStadiumName(e.target.value)}
-          className="w-full rounded-lg bg-gray-800 border border-gray-700 px-2.5 py-2 text-sm"
-        />
-      </div>
-
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-3">
-        <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-2">Kit — home &amp; away</div>
-        <div className="grid grid-cols-2 gap-3">
-          {([
-            ["Home", homeShirt, setHomeShirt, homeTrim, setHomeTrim],
-            ["Away", awayShirt, setAwayShirt, awayTrim, setAwayTrim],
-          ] as const).map(([label, shirt, setShirt, trim, setTrim]) => (
-            <div key={label}>
-              <div className="text-[9px] font-bold text-white/70 mb-1">{label}</div>
-              <div className="flex items-center gap-2">
-                <KitSwatch kit={{ shirt, trim }} size={40} />
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <input type="color" value={shirt} onChange={e => setShirt(e.target.value)} className="w-6 h-6 rounded" />
-                    <span className="text-[9px] text-white/60">Shirt</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <input type="color" value={trim} onChange={e => setTrim(e.target.value)} className="w-6 h-6 rounded" />
-                    <span className="text-[9px] text-white/60">Trim</span>
-                  </div>
+        <div className="cc-field">
+          <Label>Kit colours: home &amp; away</Label>
+          <div className="cc-kits">
+            {([
+              ["Home", homeShirt, setHomeShirt, homeTrim, setHomeTrim],
+              ["Away", awayShirt, setAwayShirt, awayTrim, setAwayTrim],
+            ] as const).map(([label, shirt, setShirt, trim, setTrim]) => (
+              <div key={label} className="cc-kitcard">
+                <b>{label}</b>
+                <KitSwatch kit={{ shirt, trim }} size={72} />
+                <div className="cc-swatches">
+                  <label className="cc-swatch">
+                    <input type="color" value={shirt} onChange={e => setShirt(e.target.value)} />
+                    <span>Shirt</span>
+                  </label>
+                  <label className="cc-swatch">
+                    <input type="color" value={trim} onChange={e => setTrim(e.target.value)} />
+                    <span>Trim</span>
+                  </label>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
-      {message && <div className="text-xs text-emerald-300 font-bold">{message}</div>}
-      <button onClick={save} disabled={saving} className="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 font-black text-sm">
-        {saving ? "Saving…" : "Save"}
-      </button>
+      <div className="cc-field cc-badge">
+        <Label>Badge</Label>
+        <label className="cc-drop">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="" />
+          ) : (
+            <span className="cc-drop-icon" aria-hidden>⇪</span>
+          )}
+          <span>{uploading ? "Uploading…" : "Upload badge"}</span>
+          <input
+            type="file" accept={ACCEPT_IMAGE_TYPES} className="hidden" disabled={uploading}
+            onChange={e => e.target.files?.[0] && uploadLogo(e.target.files[0])}
+          />
+        </label>
+      </div>
+
+      <div className="cc-foot">
+        {message && <div className="cc-msg">{message}</div>}
+        <Btn main onClick={save} disabled={saving}>{saving ? "Saving…" : "Save changes"}</Btn>
+      </div>
     </div>
   );
 }
@@ -400,31 +365,32 @@ function SquadEditor({ club }: { club: string }) {
   }
 
   return (
-    <div>
-      {error && <div className="mb-2 text-xs text-red-300">{error}</div>}
-      <button onClick={() => setEditing("new")} className="w-full mb-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 font-black text-sm">
-        + Create a new player
-      </button>
-      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-        {loading && <div className="px-3 py-4 text-xs text-white/60">Loading…</div>}
-        {!loading && players.length === 0 && <div className="px-3 py-4 text-xs text-white/60">No players yet.</div>}
+    <div className="cc-squad">
+      {error && <div className="cc-error">{error}</div>}
+      <div className="cc-squad-head">
+        <Label>Squad list</Label>
+        <Btn main onClick={() => setEditing("new")}>+ Create a new player</Btn>
+      </div>
+      <div className="cc-rows">
+        {loading && <Note>Loading…</Note>}
+        {!loading && players.length === 0 && <Note>No players yet.</Note>}
         {players.map(p => (
-          <div key={p.sofifa_id} className="flex items-center gap-2 px-3 py-2 border-b border-black/30 last:border-b-0">
+          <div key={p.sofifa_id} className="cc-row">
             {p.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.image_url} alt="" className="w-9 h-9 rounded-full object-cover bg-gray-800" />
+              <img src={p.image_url} alt="" className="cc-face" />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-gray-800" />
+              <div className="cc-face" />
             )}
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-bold truncate">{p.name}</div>
-              <div className="text-[11px] text-white/60 sm:text-[10px]">
+            <div className="cc-row-txt">
+              <b>{p.name}</b>
+              <span>
                 {p.positions} · OVR {p.overall} · Age {p.age} · {p.nationality || "—"}
                 {p.world_class_potential ? " · World Class" : p.high_potential ? " · High Potential" : ""}
-              </div>
+              </span>
             </div>
-            <button onClick={() => setEditing(p.sofifa_id)} className="shrink-0 px-2.5 py-1 rounded-md bg-gray-700 hover:bg-gray-600 text-[12px] font-black sm:text-[10px]">Edit</button>
-            <button onClick={() => deletePlayer(p.sofifa_id)} className="shrink-0 px-2.5 py-1 rounded-md bg-red-700/80 hover:bg-red-600 text-[12px] font-black sm:text-[10px]">Delete</button>
+            <button onClick={() => setEditing(p.sofifa_id)} className="cc-mini">Edit</button>
+            <button onClick={() => deletePlayer(p.sofifa_id)} className="cc-mini" data-danger="true">Delete</button>
           </div>
         ))}
       </div>
@@ -490,77 +456,67 @@ function PlayerForm({ club, player, onDone, onCancel }: {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="text-sm font-black">{player ? "Edit player" : "New player"}</div>
-      {error && <div className="text-xs text-red-300">{error}</div>}
+    <div className="cc-form">
+      <div className="cc-form-title">{player ? "Edit player" : "New player"}</div>
+      {error && <div className="cc-error">{error}</div>}
 
-      <div className="flex items-center gap-3">
+      <div className="cc-face-row">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt="" className="w-16 h-16 rounded-full object-cover bg-gray-800" />
+          <img src={imageUrl} alt="" className="cc-face cc-face-big" />
         ) : (
-          <div className="w-16 h-16 rounded-full bg-gray-800" />
+          <div className="cc-face cc-face-big" />
         )}
-        <label className="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-xs font-black cursor-pointer">
+        <label className="cc-mini cc-upload">
           {uploading ? "Uploading…" : "Upload face"}
           <input type="file" accept={ACCEPT_IMAGE_TYPES} className="hidden" disabled={uploading} onChange={e => e.target.files?.[0] && uploadFace(e.target.files[0])} />
         </label>
       </div>
 
-      <div>
-        <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Name</div>
-        <input value={name} onChange={e => setName(e.target.value)} className="w-full rounded-lg bg-gray-800 border border-gray-700 px-2.5 py-2 text-sm" />
+      <div className="cc-field">
+        <Label>Name</Label>
+        <input value={name} onChange={e => setName(e.target.value)} className="cc-input" />
       </div>
 
-      <div>
-        <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Position(s) — every one he can play</div>
-        <div className="flex flex-wrap gap-1">
+      <div className="cc-field">
+        <Label>Position(s): every one he can play</Label>
+        <div className="cc-chips">
           {VALID_POSITIONS.map(pos => (
-            <button
-              key={pos} onClick={() => togglePos(pos)}
-              className={`px-2 py-1 rounded text-[10px] font-black ${positions.includes(pos) ? "bg-emerald-500 text-emerald-950" : "bg-gray-700 text-white/80"}`}
-            >
-              {pos}
-            </button>
+            <Pill key={pos} on={positions.includes(pos)} onClick={() => togglePos(pos)}>{pos}</Pill>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Overall (40-99)</div>
-          <input type="number" min={40} max={99} value={overall} onChange={e => setOverall(e.target.value)} className="w-full rounded-lg bg-gray-800 border border-gray-700 px-2.5 py-2 text-sm" />
+      <div className="cc-two">
+        <div className="cc-field">
+          <Label>Overall (40-99)</Label>
+          <input type="number" min={40} max={99} value={overall} onChange={e => setOverall(e.target.value)} className="cc-input" />
         </div>
-        <div>
-          <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Age</div>
-          <input type="number" min={15} max={45} value={age} onChange={e => setAge(e.target.value)} className="w-full rounded-lg bg-gray-800 border border-gray-700 px-2.5 py-2 text-sm" />
+        <div className="cc-field">
+          <Label>Age</Label>
+          <input type="number" min={15} max={45} value={age} onChange={e => setAge(e.target.value)} className="cc-input" />
         </div>
       </div>
 
-      <div>
-        <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Nationality</div>
-        <input value={nationality} onChange={e => setNationality(e.target.value)} placeholder="e.g. England" className="w-full rounded-lg bg-gray-800 border border-gray-700 px-2.5 py-2 text-sm" />
+      <div className="cc-field">
+        <Label>Nationality</Label>
+        <input value={nationality} onChange={e => setNationality(e.target.value)} placeholder="e.g. England" className="cc-input" />
       </div>
 
-      <div>
-        <div className="text-[9px] font-black uppercase tracking-widest text-white/60 mb-1">Potential</div>
-        <div className="flex gap-1">
+      <div className="cc-field">
+        <Label>Potential</Label>
+        <div className="cc-chips">
           {(["none", "high", "worldClass"] as const).map(t => (
-            <button
-              key={t} onClick={() => setPotential(t)}
-              className={`flex-1 py-1.5 rounded-md text-[10px] font-black uppercase ${potential === t ? "bg-emerald-600 text-white" : "bg-gray-700 text-white/80"}`}
-            >
+            <Pill key={t} on={potential === t} onClick={() => setPotential(t)}>
               {t === "none" ? "Ordinary" : t === "high" ? "High Potential" : "World Class"}
-            </button>
+            </Pill>
           ))}
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <button onClick={onCancel} className="flex-1 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 font-black text-sm">Cancel</button>
-        <button onClick={save} disabled={saving} className="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 font-black text-sm">
-          {saving ? "Saving…" : "Save"}
-        </button>
+      <div className="cc-foot">
+        <Btn onClick={onCancel}>Cancel</Btn>
+        <Btn main onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Btn>
       </div>
     </div>
   );
@@ -575,9 +531,9 @@ function LineupTab({ club }: { club: string }) {
     fetchLeagueSquads([club]).then(squads => setSquad(squads[0] ?? { club, players: [] }));
   }, [club]);
 
-  if (!squad) return <div className="text-xs text-white/60 py-6 text-center">Loading squad…</div>;
+  if (!squad) return <div className="cc-empty">Loading squad…</div>;
   if (squad.players.length === 0) {
-    return <div className="text-xs text-white/60 py-6 text-center">Create some players in the Squad tab first — a lineup needs a real roster to pick from.</div>;
+    return <div className="cc-empty">Add some players in the Squad tab first. A lineup needs a squad to pick from.</div>;
   }
-  return <LineupBuilder clubs={[club]} squads={[squad]} initialClub={club} />;
+  return <div className="cc-lineup"><LineupBuilder clubs={[club]} squads={[squad]} initialClub={club} /></div>;
 }
