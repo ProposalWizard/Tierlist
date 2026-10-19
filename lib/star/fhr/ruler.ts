@@ -40,6 +40,8 @@ import { CX } from "../pitch";
 import { makeChance, PictureMemory } from "../chanceMaker";
 import { newSelectionMemory } from "../scenarioSelect";
 import { forceChancesMode, type ChancesMode } from "../newChances";
+import type { LeadIn, LeadMoment } from "../leadIn";
+import { matchStill, matchCanvasHW } from "./stillCamera";
 
 /** Deterministic RNG, the one the hidden-match tests use. */
 export function mulberry32(a: number) {
@@ -110,8 +112,13 @@ export interface Ruler {
   /** One-on-ones only (the plan quotes 11.9 m drawn vs 16.3 m real). */
   oneOnOneStartM: number | null;
   oneOnOneReacting: number | null;
+  /** Phase 2: build-ups made (when a builder was given), their length, how many distinct. */
+  buildUps?: { made: number; of: number; lenS: { min: number; p10: number; p50: number; p90: number; max: number }; distinct: number };
   ms: number;
 }
+
+/** A build-up builder for the ruler (phase 2: lib/star/fhr/buildUp.ts's fhrBuildUpFor); `signature` names its route. */
+export type BuildUpFn = (sc: Scenario, moment: LeadMoment) => (LeadIn & { signature?: string }) | null;
 
 const median = (xs: number[]) => {
   if (!xs.length) return NaN;
@@ -125,7 +132,7 @@ const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.l
  * run ("old" = today's game; "new" = what Full highlights rebuild: On turns
  * on), restored afterwards.
  */
-export function measureRuler(o: { matches: number; seed?: number; chances?: ChancesMode; inputs?: HiddenMatchInputs; react?: ReactFn }): Ruler {
+export function measureRuler(o: { matches: number; seed?: number; chances?: ChancesMode; inputs?: HiddenMatchInputs; react?: ReactFn; buildUp?: BuildUpFn }): Ruler {
   const t0 = Date.now();
   const mode: ChancesMode = o.chances ?? "old";
   const inputs = o.inputs ?? RULER_INPUTS;
@@ -137,6 +144,8 @@ export function measureRuler(o: { matches: number; seed?: number; chances?: Chan
     const kinds = new Map<string, { n: number; start: number[]; react: number[]; early: number[] }>();
     const starts: number[] = [];
     const reacts: number[] = [], mates: number[] = [], earlies: number[] = [];
+    const buLens: number[] = [], buSigs = new Set<string>();
+    let buOf = 0;
     for (let i = 0; i < o.matches; i++) {
       const seed = (o.seed ?? 1) + i * 7919;
       const rng = mulberry32(seed);
@@ -158,6 +167,19 @@ export function measureRuler(o: { matches: number; seed?: number; chances?: Chan
           const row = kinds.get(sc.kind) ?? { n: 0, start: [], react: [], early: [] };
           row.n++; row.start.push(d); kinds.set(sc.kind, row);
           starts.push(d);
+          // A build-up before it (phase 2), with the moment the match hands one.
+          // Built from a copy and its own seed: it never moves what is served.
+          if (o.buildUp) {
+            buOf++;
+            const setPiece = sc.kind === "penalty" || sc.kind === "free_kick" || sc.kind === "corner";
+            const cam = matchStill(sc, matchCanvasHW(390, 700)).frame.camera;
+            const b = o.buildUp(JSON.parse(JSON.stringify(sc)), {
+              opening: false, fresh: !setPiece, lane: req.lane, pattern: req.pattern, seed,
+              usStrength: inputs.teamStrength, themStrength: inputs.oppStrength,
+              frame: { x1: cam.x1, x2: cam.x2, y1: cam.y1, y2: cam.y2 },
+            });
+            if (b) { buLens.push(b.durS); buSigs.add(b.signature ?? String(buLens.length)); }
+          }
           // Its own seed, so counting reactions never moves the chances served.
           const r = o.react?.(sc, (seed * 31 + chances) >>> 0);
           if (r) { row.react.push(r.all); row.early.push(r.early); reacts.push(r.all); mates.push(r.mates); earlies.push(r.early); }
@@ -183,6 +205,10 @@ export function measureRuler(o: { matches: number; seed?: number; chances?: Chan
       startMedianM: median(starts), startMeanM: mean(starts),
       oneOnOneStartM: oo?.start.length ? median(oo.start) : null,
       oneOnOneReacting: oo?.react.length ? mean(oo.react) : null,
+      buildUps: o.buildUp ? (() => {
+        const q = (p: number) => { const s = [...buLens].sort((a, b) => a - b); return s.length ? s[Math.min(s.length - 1, Math.floor(p * s.length))] : NaN; };
+        return { made: buLens.length, of: buOf, lenS: { min: q(0), p10: q(0.1), p50: q(0.5), p90: q(0.9), max: q(1) }, distinct: buSigs.size };
+      })() : undefined,
       ms: Date.now() - t0,
     };
   } finally {

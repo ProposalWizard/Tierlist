@@ -24,6 +24,10 @@ import { frameFromScenario } from "../../lib/star/scenarioFrame";
 import { matchStill, withMatchCamera, matchCanvasHW } from "../../lib/star/fhr/stillCamera";
 import { measureRuler, mulberry32, standInResult, RULER_INPUTS } from "../../lib/star/fhr/ruler";
 import { reactingAfterStrike } from "../../scripts/fhr/react";
+import { careerBuildUp, wantsBuildUp, buildUpFor } from "../../lib/star/leadInGen";
+import { leadInEntities, type LeadIn } from "../../lib/star/leadIn";
+import { fhrBuildUpFor, fhrWantsBuildUp, maxSpeed, FHR_MIN_S, FHR_MAX_S, FHR_TOP_SPEED, type FhrBuildUp } from "../../lib/star/fhr/buildUp";
+import { servedChances } from "../../lib/star/fhr/servedChances";
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -128,9 +132,70 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
   check(Number.isFinite(withReact.reactingPerChance) && withReact.reactingPerChance > 0, "reactions not counted");
 }
 
+// 7. Phase 2: the generated build-ups (lib/star/fhr/buildUp.ts).
+{
+  const leadSig = (l: LeadIn | null) => {
+    if (!l) return "none";
+    const out: string[] = [l.durS.toFixed(4)];
+    for (let t = 0; t <= l.durS + 1e-9; t += l.durS / 12) { const b = l.ballAt(t); out.push(`${b.x.toFixed(3)},${b.y.toFixed(3)}`); }
+    return out.join(";");
+  };
+  const cs = servedChances({ count: 160, seed: 9 });
+  // Off: careerBuildUp is exactly today's — none with Chances: Old, leadInGen's own with Chances: New.
+  clearForces();
+  check(cs.every((c) => careerBuildUp(c.sc, c.moment) === null), "Off + Chances Old: a build-up appeared");
+  forceChancesMode("new");
+  const offNew = cs.map((c) => leadSig(careerBuildUp(c.sc, c.moment)));
+  const today = cs.map((c) => leadSig(wantsBuildUp(c.sc.kind, c.moment) ? buildUpFor(c.sc, c.moment) : null));
+  check(offNew.join("|") === today.join("|"), "Off + Chances New: careerBuildUp is not today's build-up");
+  check(cs.every((c) => !(careerBuildUp(c.sc, c.moment) as { signature?: string } | null)?.signature), "Off: a generated build-up appeared");
+  clearForces();
+  // On: every fresh open-play chance gets one; set pieces and moves carrying on never do.
+  forceFhrMode("on");
+  const durs: number[] = [], sigs = new Set<string>();
+  let open = 0, withProblems = 0;
+  for (const c of cs) {
+    const sp = c.sc.kind === "penalty" || c.sc.kind === "free_kick" || c.sc.kind === "corner";
+    const before = JSON.stringify(c.sc);
+    const l = careerBuildUp(c.sc, c.moment) as FhrBuildUp | null;
+    check(JSON.stringify(c.sc) === before, `${c.sc.kind}: the build-up changed the chance`);
+    check(careerBuildUp(c.sc, { ...c.moment, fresh: false }) === null, `${c.sc.kind}: a move carrying on got a build-up`);
+    check(careerBuildUp(c.sc, { ...c.moment, opening: true }) === null, `${c.sc.kind}: an opening chance got a build-up`);
+    if (sp) { check(l === null, `${c.sc.kind}: a set piece got a build-up`); continue; }
+    open++;
+    if (!l) { check(false, `${c.sc.kind}: no build-up`); continue; }
+    durs.push(l.durS); sigs.add(l.signature);
+    if (l.problems.length) withProblems++;
+    check(l.durS >= FHR_MIN_S - 1e-9 && l.durS <= FHR_MAX_S + 1e-9, `${c.sc.kind}: build-up ${l.durS.toFixed(2)} s, not 4–8`);
+    // Ends exactly on the drawing: the ball, and every man on the pitch.
+    const b = l.ballAt(l.durS);
+    check(Math.abs(b.x - c.sc.ball.x) < 1e-9 && Math.abs(b.y - c.sc.ball.y) < 1e-9 && b.z === 0, `${c.sc.kind}: the ball does not end on the drawing's`);
+    for (const e of leadInEntities(c.sc)) {
+      const p = l.posAt(e.key, l.durS), want = e.get();
+      if (p) check(Math.abs(p.x - want.x) < 1e-9 && Math.abs(p.y - want.y) < 1e-9, `${c.sc.kind}: ${e.key} does not end where the drawing has him`);
+      else check(want.x < -3 || want.x > 71 || want.y < -3 || want.y > 108, `${c.sc.kind}: ${e.key} on the pitch but not in the build-up`);
+    }
+    // Nobody faster than a man can run; every extra off the chance's frame at the end.
+    for (const p of l.people) check(maxSpeed(p.path) <= FHR_TOP_SPEED + 1e-6, `${c.sc.kind}: ${p.key} runs ${maxSpeed(p.path).toFixed(1)} m/s`);
+    // The same chance always gets the same build-up.
+    check(leadSig(careerBuildUp(c.sc, c.moment)) === leadSig(l), `${c.sc.kind}: the same chance got a different build-up`);
+  }
+  check(open > 100, `only ${open} open-play chances served`);
+  check(withProblems <= Math.ceil(open * 0.01), `${withProblems} of ${open} build-ups failed their own checks`);
+  check(sigs.size >= open * 0.85, `only ${sigs.size} distinct routes in ${open} build-ups`);
+  durs.sort((a, b) => a - b);
+  check(durs[Math.floor(durs.length / 2)] > 5 && durs[Math.floor(durs.length / 2)] < 7.5, `median build-up ${durs[Math.floor(durs.length / 2)].toFixed(2)} s`);
+  clearForces();
+  // The ruler: build-ups never move the chances or goals served.
+  const plain = measureRuler({ matches: 30, chances: "new" });
+  const withBU = measureRuler({ matches: 30, chances: "new", buildUp: (sc, m) => (fhrWantsBuildUp(sc.kind, m) ? fhrBuildUpFor(sc, m) : null) });
+  check(plain.chancesPerMatch === withBU.chancesPerMatch && plain.goalsPerMatch === withBU.goalsPerMatch && plain.startMedianM === withBU.startMedianM, "build-ups moved the chances or goals the match serves");
+  check((withBU.buildUps?.made ?? 0) > 100, "the ruler made no build-ups");
+}
+
 if (problems.length) {
   console.log(`FAIL — ${problems.length} problem(s):`);
   for (const p of problems) console.log("  " + p);
   process.exit(1);
 }
-console.log("fhr: Off serves exactly today's chances (40 matches), On = Chances: New, still camera pure, ruler measures — all checks pass");
+console.log("fhr: Off serves exactly today's chances (40 matches) and today's build-ups, On = Chances: New + a generated 4–8 s build-up on every fresh open-play chance ending exactly on the drawing, still camera pure, ruler measures — all checks pass");

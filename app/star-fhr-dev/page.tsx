@@ -2,9 +2,9 @@
 
 /**
  * FULL HIGHLIGHTS REBUILD — the test page (Harry, 19 Oct 2026; plan page
- * "The Full Highlights Rebuild", phases 0–1).
+ * "The Full Highlights Rebuild", phases 0–2).
  *
- * Two things on it:
+ * Three things on it:
  *   · the switch (Settings → Harry changes → "Full highlights rebuild:
  *     Off | On (test)"), so it can be flipped here too;
  *   · THE RULER: today's numbers, measured here and now from the real unseen
@@ -13,7 +13,10 @@
  *     today (Chances: Old); On is what the switch turns on (Chances: New).
  *     "Players reacting" needs the engine's physics, which only the real match
  *     may run in shipped code (one-engine guard), so it is measured in the
- *     terminal (scripts/fhr/ruler.mts --write) and shown from that snapshot.
+ *     terminal (scripts/fhr/ruler.mts --write) and shown from that snapshot;
+ *   · PHASE 2: a generated build-up (lib/star/fhr/buildUp.ts) played by the
+ *     real match (EnginePlay's leadIn replay), drawn from above beside it,
+ *     with "Generate another" (BuildUpPanel.tsx).
  *
  * Nothing here is saved, and nothing reaches a career.
  */
@@ -27,6 +30,7 @@ import { setLookRow } from "@/lib/star/lookRows";
 import { setVisitSalt } from "@/lib/star/chanceMaker";
 import { measureRuler, PLAN_REFERENCE, REACT_MOVE_M, REACT_EARLY_S, type Ruler } from "@/lib/star/fhr/ruler";
 import snap from "@/lib/star/fhr/reactSnapshot.json";
+import BuildUpPanel from "./BuildUpPanel";
 import "./fhr.css";
 
 const SIZES = [50, 200, 500];
@@ -70,7 +74,7 @@ export default function FhrDev() {
             <Pill on={fhr === "off"} onClick={() => setLookRow("fhr", "off")}>Off</Pill>
             <Pill on={fhr === "on"} onClick={() => setLookRow("fhr", "on")}>On (test)</Pill>
           </div>
-          <Note>Off: the game as it is today. On: Chances turns New. Stored on this phone only. Infinite Highlights now draws its still with the match&apos;s own camera whatever this says (?still=builder for the old frame).</Note>
+          <Note>Off: the game as it is today. On: Chances turns New, and every open-play chance in a match starts with a generated 4–8 s build-up (phase 2, below). Stored on this phone only. Infinite Highlights now draws its still with the match&apos;s own camera whatever this says (?still=builder for the old frame).</Note>
           <Btn href="/star-highlights-dev">Infinite Highlights →</Btn>
         </Panel>
         <Panel title="Measure" note={busy ? "Measuring…" : res ? `${res.off.matches} matches each, ${((res.off.ms + res.on.ms) / 1000).toFixed(1)} s` : ""}>
@@ -123,6 +127,10 @@ export default function FhrDev() {
             </table>
           </div>
         )}
+      </Panel>
+
+      <Panel title="Phase 2: a generated build-up" note="the real match plays it · with the switch On, every open-play chance gets one">
+        <BuildUpPanel />
       </Panel>
 
       <Panel title="How it is measured">
