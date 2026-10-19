@@ -277,12 +277,16 @@ export const ADMIN_GUIDES = {
         ["Every kind / One-on-one / In the box / Tight angle / Long range / Midfield", "Which chance kind the moment was put in. \"In the box\" is a close shot with defenders in the way."],
         ["All / xG under 8% / 8–50% / Over 50%", "How likely the real shot was to go in (StatsBomb's own number). 8–50% is the band worth playing."],
         ["Goals only", "Only shots that went in for real."],
-        ["Next to the game's own", "Puts a chance the game made of the same kind beside each real one."],
+        ["Search players, matches", "Only moments whose player or match has these words."],
+      ] },
+      { group: "The list (left; under the picture on a phone)", items: [
+        ["A row", "Picks that moment: it shows big on the right. A small picture, the player and minute, the match, the kind and xG."],
         ["More", "Shows 24 more."],
       ] },
-      { group: "Each card", items: [
+      { group: "The picked moment", items: [
         ["The picture", "Red = defenders, green = keeper, blue = team-mates, YOU = the real shooter, with the ball at his feet. Only people inside the camera are kept."],
         ["▶ Play / ■ Stop", "Plays the real match on that picture, or goes back to it. Nothing is counted or saved."],
+        ["Next to the game's own", "Puts a chance the game made of the same kind beside the real one, with its own Play."],
         ["Amber text", "What the gallery's fault rules say about the picture. Real football breaks some of them (a defender on the line behind his keeper)."],
       ] },
     ],
