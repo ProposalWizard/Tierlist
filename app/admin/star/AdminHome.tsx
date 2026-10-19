@@ -66,7 +66,10 @@ export default function AdminHome({ role }: { role: "admin" | "tester" }) {
           {role === "admin" && <TeamWidget />}
         </div>
 
-        {board && <Board shown={shown} filtering={filtering} />}
+        {/* Broadcast / Bento: the home is just the groups, each opens its own
+            page (Harry, 19 Oct 2026). A search or filter lists matching pages. */}
+        {board && !filtering && <GroupHome pages={all} />}
+        {board && filtering && <Board shown={shown} filtering={filtering} />}
 
         {!board && !filtering && (
           <Link href="/star-dev" className="ash-panel ah-play">
@@ -111,7 +114,7 @@ export default function AdminHome({ role }: { role: "admin" | "tester" }) {
 /** Broadcast (D) and Bento (F): every group on one board, one short row per
  * page (Harry, 19 Oct 2026: "even the groups on the side, it's a bit hard to
  * see everything"). Hovering a row says what the page is for. */
-const TAGLINE: Record<string, string> = {
+export const TAGLINE: Record<string, string> = {
   career: "Your journey, your story.", chances: "Moments that change everything.", match: "Play, analyse, improve.",
   data: "Real teams. Real numbers.", places3d: "Explore. Shop. Work.", players: "Bring the team to life.",
   money: "Play. Earn. Upgrade.", sound: "Hear the difference.", site: "Keep it fresh.",
@@ -143,6 +146,37 @@ function Board({ shown, filtering }: { shown: AdminPage[]; filtering: boolean })
         }
         return <section key={g.key} id={g.key} className="ahb-g" data-g={g.key}>{head}{rows}</section>;
       })}
+    </div>
+  );
+}
+
+/** The groups, as big picture tiles or wide banner rows (Harry: "option 1 and 2
+ *  for admin home as a grid/list toggle"). Remembered per browser. */
+const VIEW_KEY = "kib-admin-home-view";
+function GroupHome({ pages }: { pages: AdminPage[] }) {
+  const [view, setView] = useState<"grid" | "list">("grid");
+  useEffect(() => { try { if (localStorage.getItem(VIEW_KEY) === "list") setView("list"); } catch { /* private */ } }, []);
+  const pick = (v: "grid" | "list") => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* private */ } };
+  const groups = GROUPS.map((g) => ({ g, n: pages.filter((p) => p.group === g.key).length })).filter((x) => x.n > 0);
+  return (
+    <div className="agh" data-view={view}>
+      <div className="agh-bar">
+        <h1 className="agh-title">Admin</h1>
+        <div className="agh-toggle" role="group" aria-label="Show groups as">
+          <button aria-pressed={view === "grid"} onClick={() => pick("grid")} title="Big tiles">Grid</button>
+          <button aria-pressed={view === "list"} onClick={() => pick("list")} title="One row per group">List</button>
+        </div>
+      </div>
+      <div className="agh-groups">
+        {groups.map(({ g, n }) => (
+          <Link key={g.key} href={`/admin/star/g/${g.key}`} className="agh-g" data-g={g.key} title={`${g.name}: ${TAGLINE[g.key] ?? ""}`}>
+            <img src={`/admin/icons/${g.key === "old" ? "site" : g.key}.webp`} alt="" className="agh-art" />
+            <span className="agh-name">{g.name}</span>
+            <span className="agh-line">{TAGLINE[g.key]}</span>
+            <span className="agh-n">{n} page{n === 1 ? "" : "s"}</span>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

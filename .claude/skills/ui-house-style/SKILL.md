@@ -81,6 +81,18 @@ Newest first. Each is something that was actually said.
   separate page in full for each sub set of admin pages — I like that idea
   rather than a jumbled home page." Admin home shows the groups; each group
   opens its own full page of its admin pages.
+- **Picks from the options page (19 Oct)**: admin home = option 1 (tile grid)
+  AND option 2 (channel-guide list) behind a grid/list toggle; a group's own
+  page = option 1 (picture cards); Retirement screens = option 2 ("I like this
+  style a lot": careers rail + journey cards with pictures and PLAY); Real
+  moments = option 2 (list + big replay, "sickkk"); Goal videos = option 2 only
+  "if it can actually edit the highlights in some way functionally", else leave.
+  Real Goals = option 2 (featured goal + rails).
+- **Admin pages are functional first** (Harry, 19 Oct): "how are these admin
+  pages — remember these are functional first". A restyle keeps every control
+  and what it does; a mock-up that drops or fakes a function is wrong. And a
+  new admin page must be quick to make: one registry line puts it on the home,
+  its group page and the side menu; the shared Broadcast frame gives it the look.
 
 ### 18 Oct 2026 — admin pages get real design (Harry)
 - **"I like the idea of the grouped admin … but it's not the UI I was
