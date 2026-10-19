@@ -609,3 +609,14 @@ Newest first. Each is something that was actually said.
 - **Every main page has a "?"** (P62). Settings: small one-line on/off rows (P61).
   The line-up skips on any tap, or never shows with Settings → Skip the line-up.
 
+
+## Play areas: the important buttons stay on screen (Harry, 19 Oct 2026)
+On Infinite Highlights he had to scroll to reach NEXT and the chance name, below a tall pitch.
+*"I heavily dislike when ui is off the screen that could be very easy to press on the screen."*
+On any play/test screen with a pitch, the main controls (Next, Prev, Play/Stop, Save/Commit,
+flag) must be visible without scrolling at 1440×900 and on a phone: size the pitch to the screen
+height, or pin the controls. Check with a screenshot at 1440×900 that nothing key is below the fold.
+
+## Broadcast admin home keeps side tabs (Harry, 19 Oct 2026)
+"the home ui needs work on broadcast as there should still be side tabs". The Broadcast look's
+admin home must keep the side list of groups (it was hidden on board looks). Not built yet.
