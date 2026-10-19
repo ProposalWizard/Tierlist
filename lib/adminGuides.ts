@@ -704,11 +704,12 @@ export const ADMIN_GUIDES = {
     buttons: [
       { group: "Page", items: [
         ["European Championship / World Cup", "Which tournament to draw."],
-        ["Your nation (box)", "The nation you play for; it says if they did not qualify."],
+        ["Your nation (box, with its flag)", "The nation you play for; it says if they did not qualify."],
         ["New draw", "A fresh draw of the groups."],
         ["Play matchday 1–3", "Plays the next round of group games."],
         ["Play to the final", "Plays every match left, through the knockouts, to a winner."],
         ["Reset", "Back to the draw."],
+        ["← (top left)", "Back to the Play Area."],
       ] },
     ],
     saving: ["Nothing. It reads and writes only this screen."],
