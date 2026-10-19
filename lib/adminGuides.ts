@@ -1014,7 +1014,7 @@ export const ADMIN_GUIDES = {
       {
         group: "The picture",
         items: [
-          ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game."],
+          ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game. With Settings → Harry changes → Full highlights rebuild: On, it is framed by the match's own camera instead: the match's zoom, the same canvas shape, tipped back by the camera angle, you not drawn on a shooting chance (the ball is you) and the men at the match's size — so nothing moves when you press Play. Dragging still works on the tipped picture."],
           ["A penalty", "Harry's penalty rules: the keeper stays dead centre on his line, the ball on the spot, you straight behind it and the camera fixed — none of them drag. Anyone else only slides along the edge of the box."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
           ["Fix this chance", "The panel on the right (under the picture on a phone): the buttons below, Save and Commit."],
@@ -1067,6 +1067,40 @@ export const ADMIN_GUIDES = {
     dev: "app/star-highlights-dev/page.tsx · components/star/HitboxPanel.tsx, lib/star/hitbox.ts · components/star/TuningSessionPanel.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit,tuningSession,tuningNotes}.ts · /api/star/tuning-notes · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
   },
 
+  "/star-fhr-dev": {
+    title: "Full highlights rebuild",
+    what: "The Full Highlights Rebuild's switch, and the ruler: today's numbers (chances, goals, players reacting, start distance) that every phase of the rebuild is held to.",
+    buttons: [
+      {
+        group: "The switch",
+        items: [
+          ["Off / On (test)", "The same switch as Settings → Harry changes → Full highlights rebuild. Off is the game as it is today. On also turns Chances to New, and Infinite Highlights draws its still with the real match's camera. Stored on this phone only."],
+          ["Infinite Highlights →", "Opens Infinite Highlights, to see the still with the switch On."],
+        ],
+      },
+      {
+        group: "Measure",
+        items: [
+          ["50 / 200 / 500", "How many whole matches to play for the ruler. More is steadier and slower (200 takes a few seconds)."],
+          ["Measure again", "Plays that many matches twice — once as today (Off: Chances Old), once as On (Chances New) — and fills the tables. It also runs once by itself when the page opens."],
+        ],
+      },
+      {
+        group: "The tables",
+        items: [
+          ["The ruler", "Chances a match, goals a match, players reacting to each chance (and how many are team-mates, and how many move within 1 second), and how far from goal chances start. The right column is what the plan page quoted from earlier measurements."],
+          ["Your chances by kind", "For each kind of chance: how many a match, where it starts (metres from the middle of the goal line), and how many players react, Off and On side by side."],
+        ],
+      },
+    ],
+    saving: [
+      "The switch is stored in this browser only (localStorage star-fhr). The numbers are worked out on the page and kept nowhere. No career is touched.",
+    ],
+    inGame: [
+      "Off: nothing in the game changes. On: Chances: New is on in every match on this phone (the same as setting Chances: New by hand), and Infinite Highlights' still uses the match camera. Later phases of the rebuild arrive here first.",
+    ],
+    dev: "app/star-fhr-dev/page.tsx · lib/star/fhr/{toggle,ruler,stillCamera}.ts · terminal: npx tsx scripts/fhr/ruler.mts 200 · browser check: node scripts/fhr/still-vs-play.mjs 100 on · tests/star/fhr.mts",
+  },
   "/star-play-dev": {
     title: "Play Area",
     what: "One door to Infinite Highlights and Infinite Match, with the dials they — and the gallery's Play — run on. Every dial starts on the real game.",
