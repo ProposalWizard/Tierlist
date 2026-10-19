@@ -140,7 +140,7 @@ export function TrialPitchBox({ children, className = "", style, boxRef }: {
     <div style={{ width: w, maxWidth: "100%", margin: "0 auto" }}>
       <div
         ref={boxRef}
-        className={`relative w-full overflow-hidden rounded-xl border-2 border-emerald-800/80 shadow-2xl shadow-emerald-950/60 ${className}`}
+        className={`relative w-full overflow-hidden rounded-xl ring-2 ring-emerald-800/80 shadow-2xl shadow-emerald-950/60 ${className}`}
         style={style}
       >
         {children}
