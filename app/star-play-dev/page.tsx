@@ -27,6 +27,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import InfiniteMatch from "@/components/star/InfiniteMatch";
 import PageGuide from "@/components/admin/PageGuide";
+// The look every Road to Ballon d'Or admin page shares (UI lookover, 19 Oct 2026).
+import { Row, Slider, Toggle, tile, tileTitle, tileSub } from "@/components/admin/playKit";
 import {
   loadPlaySettings, savePlaySettings,
   PLAY_RANGES, PLAY_POSITIONS, PLAY_DIVISIONS, DEFAULT_PLAY_SETTINGS,
@@ -297,64 +299,8 @@ function KeeperBrainRows() {
 
 /* ── Bits ─────────────────────────────────────────────────────────────── */
 
-function Slider({ label, hint, value, range, step = 1, onChange }: {
-  label: string; hint: string; value: number;
-  range: readonly [number, number]; step?: number; onChange: (v: number) => void;
-}) {
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <span style={{ fontSize: 13, fontWeight: 800, color: INK }}>{label}</span>
-        <span style={{ fontSize: 12, fontWeight: 800, color: "#7dd3fc", fontFamily: "ui-monospace, monospace" }}>
-          {value.toLocaleString()}
-        </span>
-      </div>
-      <div style={{ fontSize: 11.5, fontWeight: 600, color: MUTED, marginBottom: 5 }}>{hint}</div>
-      <input
-        type="range"
-        min={range[0]} max={range[1]} step={step} value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        style={{ width: "100%", accentColor: "#38bdf8" }}
-      />
-    </div>
-  );
-}
 
-function Row({ label, hint, children }: { label: string; hint: string; children: React.ReactNode }) {
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 13, fontWeight: 800, color: INK }}>{label}</div>
-      <div style={{ fontSize: 11.5, fontWeight: 600, color: MUTED, marginBottom: 6 }}>{hint}</div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{children}</div>
-    </div>
-  );
-}
 
-function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "7px 12px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap",
-        border: `1px solid ${on ? "rgba(56,189,248,0.75)" : "rgba(255,255,255,0.09)"}`,
-        background: on ? "rgba(14,116,144,0.4)" : "rgba(255,255,255,0.045)",
-        color: on ? "#e0f2fe" : MUTED, fontSize: 12.5, fontWeight: 800,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
 
-const tile: React.CSSProperties = {
-  width: "100%", padding: "14px 15px", borderRadius: 16,
-  background: CARD, border: "1px solid rgba(255,255,255,0.08)",
-};
 
-const tileTitle: React.CSSProperties = {
-  fontSize: 15.5, fontWeight: 900, color: INK, letterSpacing: "-0.01em",
-};
 
-const tileSub: React.CSSProperties = {
-  fontSize: 12.5, fontWeight: 600, color: MUTED, lineHeight: 1.55, marginTop: 4,
-};
