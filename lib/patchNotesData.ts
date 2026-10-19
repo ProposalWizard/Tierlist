@@ -27,6 +27,35 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.60",
+      "title": "Leo's patch notes v0.18: Real Goals 2 — every goal, a game",
+      "publishedAt": "2026-10-19T14:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/LBiZVmQDLKzWpNgpuDWxgW",
+      "summary": "Leo v0.18. Real Goals (test page /star-real-goals-dev) becomes a game mode: 908 real goals (every goal but own goals of WC 2022, Euro 2024, WC 2018, Euro 2020, Copa América 2024 and AFCON 2023, plus 60 Legends and 100 club worldies), played round by round with stars. The build-up follows StatsBomb's 360 camera (men 7.3 m → 3.2 m from where it saw them, no ball blinks, no snaps). A strike 70%+ like the real one can't be blocked or saved (109 of 109 in tests). Real shirts for all 160 teams. Test page only; the career is unchanged.",
+      "stats": [
+        { "value": "250 → 908", "label": "real goals to play" },
+        { "value": "109 / 109", "label": "strikes 70%+ like the real one that went in" },
+        { "value": "7.3 → 3.2 m", "label": "men from where the real camera saw them" },
+        { "value": "1,061 → 0", "label": "frames where the build-up ball blinked" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Every goal, and more: 250 → 908", "detail": "Every goal but own goals of World Cup 2022 (169), Euro 2024 (107), World Cup 2018 (157), Euro 2020 (131), Copa América 2024 (69) and AFCON 2023 (115), plus 60 Legends (Maradona v England, Bale's overhead kick, Dele Alli v Palace…) and 100 club worldies picked by the numbers." },
+          { "title": "A game mode", "detail": "Home with collection tiles; each tournament played round by round (Matchday 1-3 → The final), a round opening at half the round before starred; a goal card; a full-screen play screen; a result sheet with an accuracy dial." },
+          { "title": "Real shirts for all 160 teams", "detail": "No two alike in any goal." }
+        ] },
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Copy the real shot and it goes in", "detail": "The unstoppable lane now uses the page's own %: 70%+ like the real one can't be blocked or saved (109 of 109 in tests). Real matches unchanged (same fingerprint)." },
+          { "title": "The build-up follows the real camera", "detail": "Men 7.3 m → 3.2 m from where StatsBomb's 360 camera saw them; ball blinks 1,061 → 0; snaps at the shot 234 → 6." }
+        ] },
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Not played by a finger yet; 3D not checked", "detail": "Measured by tests and seen in stills at phone size." },
+          { "title": "No real camera for some collections", "detail": "World Cup 2018, Copa, AFCON and the club classics move the men with their team's shape." }
+        ] }
+      ]
+    },
+    {
       "version": "0.59",
       "title": "Mikey's patch notes v0.17: The transfer window and the world that ages",
       "publishedAt": "2026-10-18T22:00:00Z",
