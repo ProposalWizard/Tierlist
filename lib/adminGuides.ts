@@ -941,9 +941,11 @@ export const ADMIN_GUIDES = {
       {
         group: "The level list",
         items: [
-          ["Power / Technique / Free Kick / Pace / Vision", "Which training game's levels to show."],
+          ["Power / Technique / Free Kick / Pace / Vision", "The tabs at the top: which training game's levels to show."],
           ["Your skills 40 / 70 / 100", "The player's skills while you play. They change how hard you can hit the ball and how much it bends, so a level plays differently at 40 and at 100."],
-          ["A level tile", "Plays that level. The line under the number is what it asks for (distance and blockers, gate size, wall, chasers, options and time). Stars appear on a tile after you've played it here."],
+          ["A level tile", "Picks that level; tap it again to play it. The line under the number is what it asks for (distance and blockers, gate size, wall, chasers, options and time). Stars appear on a tile after you've played it here."],
+          ["The level panel (right; pinned to the bottom on a phone)", "The picked level: its game, what it asks for, your stars here, and a real picture of that game (taken at level 15)."],
+          ["Let's go ›", "Plays the picked level."],
         ],
       },
       {
