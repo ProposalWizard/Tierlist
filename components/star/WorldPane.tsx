@@ -319,6 +319,17 @@ function CupView({ cup, glow, you }: { cup?: CupState; glow: string; you: string
   return (
     <div className="space-y-2">
       {cup.winner && <WinnerBar club={cup.winner} glow={glow} />}
+      {Object.keys(cup.entries ?? {}).length > 0 && (
+        <ClubCard glow={glow} className="p-2">
+          <CardTitle className="px-1 pb-1" tone="text-amber-300">Still to join</CardTitle>
+          {Object.entries(cup.entries ?? {}).map(([round, clubs]) => (
+            <div key={round} className="flex justify-between px-1 py-0.5 text-[11px] font-bold text-white">
+              <span>{round}</span>
+              <span className="tabular-nums">{clubs.includes(you) ? `${clubs.length} clubs · you join here` : `${clubs.length} clubs`}</span>
+            </div>
+          ))}
+        </ClubCard>
+      )}
       {[...cup.rounds].reverse().map(r => (
         <ClubCard key={r.name} glow={glow} className="p-1.5">
           <CardTitle className="px-1 pb-1" tone="text-amber-300">{r.name}</CardTitle>
@@ -336,6 +347,12 @@ function CupView({ cup, glow, you }: { cup?: CupState; glow: string; you: string
               );
             })}
           </div>
+          {r.byes && r.byes.length > 0 && (
+            <p className="px-1 pt-1.5 text-[10.5px] font-bold leading-snug text-white">
+              <span className="text-amber-300">Through on a bye ({r.byes.length}): </span>
+              {r.byes.map(shortClub).join(" · ")}
+            </p>
+          )}
         </ClubCard>
       ))}
     </div>

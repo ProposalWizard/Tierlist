@@ -159,7 +159,7 @@ export interface RotationPlan {
 /** How likely a given fixture is to see the opponent rotate at all. */
 function rotationChanceFor(fixture: Fixture): number {
   const isDomesticCup = fixture.competition === "FA Cup" || fixture.competition === "League Cup";
-  const isEarlyRound = fixture.round === "Round of 32" || fixture.round === "Round of 16";
+  const isEarlyRound = ["Round of 64", "Round of 32", "Round of 16", "Third Round", "Fourth Round"].includes(fixture.round ?? "");
   if (isDomesticCup && isEarlyRound) return 0.28;
   if (isDomesticCup) return 0.14; // still a cup, but the rounds a club actually wants to win
   if (!fixture.kind || fixture.kind === "league") return 0.06;

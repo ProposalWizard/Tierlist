@@ -213,6 +213,18 @@ Read `docs/WORLD_SEASON.md` before touching it. `lib/star/world/`:
 - **Fallback if it lags:** set `WORLD_LIVE = false` (`lib/star/world/index.ts`):
   nothing plays during the season, everything plays at the end, same tables.
 
+## The FA Cup: ten rounds, each league joins at its real round (Mikey, 19 Oct 2026)
+
+`cups.ts openFaCup`, entrants from `competitions.ts faCupEntrantsFor`, dates in
+`calendar.ts FA_CUP_SLOTS` (the game's own calendar, real order). 3rd Qualifying:
+NL North + South + Step 3 = 56, 32 play (drawn North/South), 24 byes to the 12
+best of each region by last season's finish. **Never your club** ("Your club
+must play in every round that you get to"): the next club down takes it.
+4th Q +National League (64) · R1 +League One/Two (80) · R2 40 · R3 +PL/Championship
+(64) · 32 · 16 · 8 · 4 · 2. A club joining later gets its tie on the calendar the
+moment it is drawn (`newCupFixtures`). An old save's six-round cup keeps its
+own rounds (`cupRoundNames`, `FA_CUP_SLOTS_V1`). Test: `tests/star/faCupRounds.mts`.
+
 ## Ballon d'Or winners data (Mikey, 8 Oct 2026)
 
 Every men's winner 1956–2025, from ballondor.com only, for a future game

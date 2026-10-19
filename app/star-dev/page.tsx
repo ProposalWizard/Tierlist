@@ -47,7 +47,7 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { devInfoOn } from "@/lib/star/matchDayPrefs";
 import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
-import { currentRound, roundNamesFor, type CupId } from "@/lib/star/cups";
+import { currentRound, lastSixteenIndex } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
 import { type RoundupStage } from "@/components/star/KnockoutRoundup";
 import { knockoutRoundupFor } from "@/lib/star/knockoutView";
@@ -1680,7 +1680,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         // round is drawn without you and the game moves straight on.
         const youreIn = !!round && round.ties.some((t) => t.home === from.player.club || t.away === from.player.club);
         // From the quarter-finals the bracket has already shown the draw.
-        const r16 = roundNamesFor(cupCompetition as CupId).indexOf("Round of 16");
+        const r16 = state ? lastSixteenIndex(state) : -1;
         const shownInBracket = !!state && state.rounds.length - 1 > r16;
         if (freshlyDrawn && round && youreIn && !shownInBracket) {
           setPendingDraw({ competition: cupCompetition, round });

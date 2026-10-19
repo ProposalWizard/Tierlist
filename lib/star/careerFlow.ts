@@ -31,7 +31,7 @@ import { progressObjectives, rollSponsorSeason } from "./sponsors";
 import { appearanceMoney, loyaltyMoney, contractForClubMove } from "./contracts";
 import {
   seedSeasonKnockouts, seedCups, seedEurope, settleEuro, settleCupTie, resolveKnockout,
-  qualificationFor, leaguePosition, seasonQualifiers, advanceEliminatedCups, nextFixtureFor,
+  qualificationFor, leaguePosition, seasonQualifiers, advanceEliminatedCups, newCupFixtures, nextFixtureFor,
 } from "./competitions";
 import { STARTING_EUROPEAN_QUALIFICATION } from "./clubs";
 import { finishCupToWinner, type CupState } from "./cups";
@@ -1035,6 +1035,9 @@ export function creditMatchResult(
     const clock = fixtureTimestamp(career.player.startYear, career.season, fixture.week, fixture.kind, divisionOf(career));
     const cupsRng = mulberry32(career.season * 60013 + fixture.week * 7 + 41);
     cupState = advanceEliminatedCups({ ...career, cupState }, clock, cupsRng);
+    // A cup that has just drawn your club in (the round you join the FA Cup
+    // in) puts your tie on the calendar.
+    extraFixtures = [...extraFixtures, ...newCupFixtures({ ...career, cupState, fixtures: [...career.fixtures, ...extraFixtures] }, cupState ?? [])];
     world = worldAfterMatch(career, clock);
   }
 
@@ -2266,6 +2269,9 @@ export function simulateMissedFixture(
     const clock = fixtureTimestamp(career.player.startYear, career.season, fixture.week, fixture.kind, divisionOf(career));
     const cupsRng = mulberry32(career.season * 60013 + fixture.week * 7 + 41);
     cupState = advanceEliminatedCups({ ...career, cupState }, clock, cupsRng);
+    // A cup that has just drawn your club in (the round you join the FA Cup
+    // in) puts your tie on the calendar.
+    extraFixtures = [...extraFixtures, ...newCupFixtures({ ...career, cupState, fixtures: [...career.fixtures, ...extraFixtures] }, cupState ?? [])];
     world = worldAfterMatch(career, clock);
   }
 

@@ -67,12 +67,39 @@ export const LEAGUE_CUP_SLOTS: CupSlot[] = [
  * EURO_LEAGUE_PHASE_WEEKS/EURO_KO_SLOTS_WITH_R32 entry — so every existing
  * round below keeps its own week number unchanged.
  */
-export const FA_CUP_SLOTS: CupSlot[] = [
+export const FA_CUP_SLOTS_V1: CupSlot[] = [
   { round: "Round of 64", week: 2 },
   { round: "Round of 32", week: 5 },
   { round: "Round of 16", week: 12 },
   { round: "Quarter-Final", week: 22 },
   { round: "Semi-Final", week: 30 },
+  { round: "Final", week: POST_SEASON(2) },
+];
+
+/**
+ * The FA Cup the real way (Mikey, 19 Oct 2026): ten rounds, each league
+ * joining at its real round (cups.ts openFaCup). This game's Premier League
+ * season ends in early April, so the rounds keep the real ORDER and spacing
+ * rather than the real dates. Weeks chosen so that:
+ *  - the 3rd Qualifying to the Second Round (no Premier League or
+ *    Championship club in them) avoid the lower leagues' midweek rounds;
+ *  - from the Third Round every week is clear of the League Cup and of every
+ *    league's midweek round; the Fourth Round, Fifth Round and semi-final
+ *    share a week with Europe, and a club in Europe has its own tie moved a
+ *    week on (competitions.ts clearOfEurope), as before.
+ * The old six rounds stay above (FA_CUP_SLOTS_V1) for a save whose cup was
+ * drawn before this.
+ */
+export const FA_CUP_SLOTS: CupSlot[] = [
+  { round: "Third Qualifying Round", week: 4 },
+  { round: "Fourth Qualifying Round", week: 7 },
+  { round: "First Round", week: 9 },
+  { round: "Second Round", week: 12 },
+  { round: "Third Round", week: 18 },
+  { round: "Fourth Round", week: 22 },
+  { round: "Fifth Round", week: 26 },
+  { round: "Quarter-Final", week: 30 },
+  { round: "Semi-Final", week: 32 },
   { round: "Final", week: POST_SEASON(2) },
 ];
 
@@ -652,7 +679,7 @@ export const CHAMPIONSHIP_LEAGUE_CUP_SLOTS: CupSlot[] = [
  * slot (FA_CUP_SLOTS above), matching this file's own existing convention
  * that every round mirrors the same real weekend in both divisions.
  */
-export const CHAMPIONSHIP_FA_CUP_SLOTS: CupSlot[] = [
+export const CHAMPIONSHIP_FA_CUP_SLOTS_V1: CupSlot[] = [
   { round: "Round of 64", week: 2 },        // weekend 2
   { round: "Round of 32", week: 6 },        // weekend 5
   { round: "Round of 16", week: 15 },       // weekend 12
@@ -660,6 +687,12 @@ export const CHAMPIONSHIP_FA_CUP_SLOTS: CupSlot[] = [
   { round: "Semi-Final", week: 37 },        // weekend 30
   { round: "Final", week: CHAMPIONSHIP_POST_SEASON(2) },
 ];
+
+/** The ten-round FA Cup on the weekends of a division without breaks: each
+ *  Premier League cup week as that division's round on the same weekend. */
+export const CHAMPIONSHIP_FA_CUP_SLOTS: CupSlot[] = FA_CUP_SLOTS.map(s => (
+  s.week > MATCHWEEKS ? { ...s, week: CHAMPIONSHIP_POST_SEASON(2) } : { ...s, week: weekOnWeekend("league_one", s.week) }
+));
 
 /**
  * THE PLAY-OFFS.
@@ -711,6 +744,11 @@ function asRounds(premier: CupSlot[], fallback: CupSlot[], division: CareerDivis
 /** Every one of the five divisions enters the FA Cup (real life). */
 export function faCupSlotsFor(division: CareerDivision): CupSlot[] {
   return division === "premier" ? FA_CUP_SLOTS : asRounds(FA_CUP_SLOTS, CHAMPIONSHIP_FA_CUP_SLOTS, division);
+}
+
+/** The old six-round FA Cup's weeks, for a cup drawn before the ten-round one. */
+export function faCupSlotsV1For(division: CareerDivision): CupSlot[] {
+  return division === "premier" ? FA_CUP_SLOTS_V1 : asRounds(FA_CUP_SLOTS_V1, CHAMPIONSHIP_FA_CUP_SLOTS_V1, division);
 }
 
 // ── Months, for the award ───────────────────────────────────────────────────
