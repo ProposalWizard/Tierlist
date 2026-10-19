@@ -126,5 +126,13 @@
     "toCommit": "4e0e809d",
     "url": "https://claude.ai/artifact/S5EvHkuf7wJTaGPeXd3WeM",
     "headline": "Gameplay review: fewer feed videos that wait for ▶, upright goal posts, achievements unlock and level you up at once; test switches for new framing and headers/volleys"
+  },
+  {
+    "version": "0.17",
+    "date": "2026-10-18",
+    "fromCommit": "4e0e809d",
+    "toCommit": "38ebe9c4",
+    "url": "https://claude.ai/artifact/1A6Wc8XFM2pu2ftCZcymQU",
+    "headline": "The new transfer window (clubs come to you, season letters S to D), the world ages (decline from 31, retire 35–41, replacements), real kits for 211 nations, 1–2 post-match videos"
   }
 ]

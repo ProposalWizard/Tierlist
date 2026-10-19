@@ -6,11 +6,9 @@
  *     Keeper dive fix        ████████░░  80%  filming to check · ~10 min left
  *     Waiting on: you, to merge Harry → main
  * Each chat's Stop hook (scripts/hooks/post-status-hook.mjs) keeps only those
- * lines and POSTs them to /api/dev-status with DEV_STATUS_TOKEN. This file
+ * lines and POSTs them to /api/dev-status (no password, Harry 18 Oct). This file
  * reads them back into bars. Pure; tests in tests/star/teamBoard.mts.
  */
-import { timingSafeEqual } from "crypto";
-
 export interface DevBar { label: string; pct: number; note: string }
 export interface DevStatus { at: string; bars: DevBar[]; waiting: string | null; session: string | null }
 
@@ -59,13 +57,6 @@ export function scrub(text: string): string {
   return text
     .replace(/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]*/g, "[key]")
     .replace(/\b(ghp|gho|ghs|github_pat|sk|phc|sk-ant)[-_][A-Za-z0-9_-]{12,}/g, "[key]");
-}
-
-/** Constant-time check of the shared password. */
-export function tokenMatches(given: string | null | undefined, expected: string | null | undefined): boolean {
-  if (!given || !expected) return false;
-  const a = Buffer.from(given), b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 export function statusFromRow(row: { created_at: string; body: string; session?: string | null }): DevStatus {

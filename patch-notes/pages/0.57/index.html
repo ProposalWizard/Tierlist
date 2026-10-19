@@ -257,8 +257,8 @@
 <li><div class="hd">Live progress bars are off<span class="pill p-amb">needs Mikey</span></div><div class="dt">Everything else on the board works now. The bars need 3 steps.</div>
 <details><summary>Mikey's 3 steps</summary><ul>
 <li>Run <code>dev_status.sql</code> in the Supabase SQL Editor.</li>
-<li>Pick a long password. Add it in Vercel as <code>DEV_STATUS_TOKEN</code>.</li>
-<li>Add the same <code>DEV_STATUS_TOKEN</code> to each cloud setup, and <code>DEV_NAME</code> (Harry, Mikey or Leo).</li>
+<li>Add <code>DEV_NAME</code> (Harry, Mikey or Leo) to each cloud setup's environment variables.</li>
+<li>Merge main into each branch, so the hook that sends the bars is there. No password needed (Harry, 18 Oct).</li>
 </ul><p>Until then each card shows the latest push. Nothing breaks.</p></details></li>
 <li><div class="hd">Drive saving is off until one Google setting is done<span class="pill p-amb">needs Harry</span></div><div class="dt">Recording works now; until then each video downloads instead.</div>
 <details><summary>The 3 steps (Google Cloud, about 5 minutes)</summary><ul>

@@ -27,6 +27,48 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.59",
+      "title": "Mikey's patch notes v0.17: The transfer window and the world that ages",
+      "publishedAt": "2026-10-18T22:00:00Z",
+      "updatedAt": "2026-10-19T12:00:00Z",
+      "artifactUrl": "https://claude.ai/artifact/1A6Wc8XFM2pu2ftCZcymQU",
+      "summary": "Transfers: clubs come to you at the end of a season, your season gets a letter (S to D) that decides how many leagues up a club can come from, League → Club → Negotiate in the Home look. The world ages: only your club until you reach the Championship, then everyone; decline from 31 (gentle), five ways to age, retirement 35–41, young replacements from the same country with flags from the retired man's best rating. Also real kits for 211 nations and 1–2 post-match videos.",
+      "stats": [
+        { "value": "S A B C D", "label": "your season's letter decides who wants you" },
+        { "value": "35–41", "label": "retirement ages (keepers 37–43)" },
+        { "value": "211", "label": "nations in their real kits (was 15)" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "End of a season: the transfer window", "detail": "Your letter, then League → Club → Negotiate." },
+          { "title": "Below the Championship only your club ages", "detail": "After a Championship or Premier League season, everyone ages, retires and is replaced." },
+          { "title": "International match", "detail": "Both nations wear their real kit." },
+          { "title": "After a match", "detail": "1 or 2 videos, never more." }
+        ]},
+        { "kind": "added", "title": "Transfers", "items": [
+          { "title": "Clubs come to you, summer only", "detail": "\"Find a new club\" is gone; January is off for now." },
+          { "title": "Season letter S to D", "detail": "D your league and below · C your league · B +1 · A +2 · S +3." },
+          { "title": "How keen, not a promised role", "detail": "Desperate, Very keen, Keen or Interested. Wage hidden until talks." },
+          { "title": "Deadline Day total fixed", "detail": "Was \"£15300000m\", now \"★15.3m\"." },
+          { "title": "Transfer fees sized to your league (19 Oct)", "detail": "Was ★406m for a non-league striker; now a 4.5-star 19-year-old is ★200k–310k in the National League, ★120m–140m in the Premier League." }
+        ]},
+        { "kind": "added", "title": "The world ages", "items": [
+          { "title": "The top waits for you", "detail": "Only your club ages until you play a Championship or Premier League season." },
+          { "title": "Decline from 31, gentle", "detail": "0.6× Leo's speed; keepers less; five ways to age (10/20/40/20/10)." },
+          { "title": "Retirement 35–41", "detail": "Most at 38; keepers two years later; 40+ on day one gets two more seasons." },
+          { "title": "Replacements", "detail": "16–20, club level −13 to +2, same country and position, flags from the retired man's best rating." },
+          { "title": "Transfers keep each player's ageing record", "detail": "Fixed: 40+ players never retired (Modrić at 45)." }
+        ]},
+        { "kind": "changed", "title": "Other", "items": [
+          { "title": "Real kits for 211 nations", "detail": "Was 15; the rest wore grey." },
+          { "title": "1 or 2 post-match videos", "detail": "Was 2–4 plus grey look-alike cards." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Leagues slowly get stronger", "detail": "Premier League first-team average 78.8 → 83.1 by season 21 (replacements grow on Leo's numbers)." }
+        ]}
+      ]
+    },
+    {
       "version": "0.58",
       "title": "Leo's patch notes: Real Goals mode and the Visual Effects Lab",
       "publishedAt": "2026-10-18T21:00:00Z",
@@ -80,7 +122,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "17 old pages deleted", "detail": "Match Dev, Scenario Builder, Bigger, Look, Attack, Bicycle, Zoom grass, 3D, Spin, Blender, Sound dev, old Ballon d'Or and Manager, Profile (new), CL Draft, American draft; Draft dev 2 opens Draft dev." }
         ]},
         { "kind": "known", "title": "Known issues", "items": [
-          { "title": "Live progress bars are off", "detail": "Mikey: run dev_status.sql, set DEV_STATUS_TOKEN in Vercel and each cloud setup, plus DEV_NAME.", "pill": { "text": "needs Mikey", "tone": "amber" } },
+          { "title": "Live progress bars are off", "detail": "Mikey: run dev_status.sql. Each of us: add DEV_NAME to our cloud setup and merge main. No password.", "pill": { "text": "needs Mikey", "tone": "amber" } },
           { "title": "Drive saving is off until one Google setting is done", "detail": "Harry: switch on the Drive API, add knowitball.co.uk and the drive.file scope to the Google sign-in id, set NEXT_PUBLIC_GOOGLE_CLIENT_ID in Vercel. Until then recordings download.", "pill": { "text": "needs Harry", "tone": "amber" } },
           { "title": "Two Match Dev controls need a new home", "detail": "Force a chance kind and the shot-height sliders; Infinite Highlights is the plan." },
           { "title": "The lock check runs in the tests, not the build", "detail": "Harry's answer: tests only." }

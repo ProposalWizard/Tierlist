@@ -8,7 +8,7 @@ import { fetchTeamBoard, noteOwner, patchFor, perDay, personFor, splitMessage, N
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import { ADMIN_PAGES, relatedFor, currentPage, visibleTo } from "@/lib/adminRegistry";
 import { ADMIN_GUIDES } from "@/lib/adminGuides";
-import { extractUpdate, parseBars, parseWaiting, scrub, tokenMatches } from "@/lib/devStatus";
+import { extractUpdate, parseBars, parseWaiting, scrub } from "@/lib/devStatus";
 // @ts-expect-error plain .mjs hook, no types
 import { extractUpdate as hookExtract } from "../../scripts/hooks/post-status-hook.mjs";
 
@@ -110,7 +110,6 @@ ok(!ex.includes("chatter") && !ex.includes("Here is where") && ex.includes("Keep
 ok(extractUpdate("No bars in this message at all.") === "", "no bars → nothing sent");
 ok(scrub("key ghp_abcdefghijklmnop1234 and eyJaaaaaaaaaaaa.bbbbbbbbbbbbb.c") === "key [key] and [key]", "key-shaped text blanked");
 ok(hookExtract(upd) === ex, "the hook keeps exactly what the site's rules keep");
-ok(tokenMatches("abc", "abc") && !tokenMatches("abd", "abc") && !tokenMatches("", "abc") && !tokenMatches("abc", undefined), "password check");
 
 console.log("The one lock (test run only: Harry, ADM-Q110 B)");
 {

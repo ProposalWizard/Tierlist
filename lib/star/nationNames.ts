@@ -85,3 +85,14 @@ export function madeUpNames(nation: string, count: number): string[] {
   }
   return out;
 }
+
+/**
+ * One made-up name for `nation`, the same every time for the same `key`
+ * (a replacement player in a world that ages: worldAgeing.ts makeRegen).
+ * Falls back to the game's own lists for a nation with no bank.
+ */
+export function madeUpName(nation: string, key: string): string {
+  const pool = namePoolFor(nation);
+  const rng = mulberry32(clubNameSeed(`regen|${nation}|${key}`));
+  return `${pick(pool.first, rng)} ${pick(pool.last, rng)}`;
+}

@@ -321,7 +321,7 @@ function Poll({ s }: { s: Extract<GraphicSpec, { type: "poll" }> }) {
  * Leo, 7 Oct 2026: "it makes it look like theres videos but you cant play
  * them." When the goal was seen, the post plays its real recording
  * (GoalVideo). When nothing was seen — a manager meme, a missed penalty, a
- * simulated match — it is a picture: the headline on a card, no play button.
+ * simulated match — nothing: the post is its words (Leo, 16 Oct 2026).
  */
 function Thumbnail({ s, author }: { s: Extract<GraphicSpec, { type: "thumbnail" }>; author?: PostAuthor }) {
   const still = (
@@ -336,7 +336,9 @@ function Thumbnail({ s, author }: { s: Extract<GraphicSpec, { type: "thumbnail" 
       </div>
     </div>
   );
-  if (!s.clips?.length && !s.synth?.length) return still;
+  // No recording: text only (Leo, 16 Oct 2026). A headline card with a red
+  // GOAL/HIGHLIGHTS tag read as a video that wouldn't play.
+  if (!s.clips?.length && !s.synth?.length) return null;
   return (
     <GoalVideo
       clipIds={s.clips ?? []}

@@ -40,6 +40,9 @@ export interface TransferOffer {
   seasons: number;
   /** Paid on signing. */
   signingFee: number;
+  /** What the buying club pays YOUR club for you (transferInterest.ts). Absent
+   *  on offers from before 18 Oct 2026 and on a free move. */
+  transferFee?: number;
   /** Clauses this club is willing to write in. */
   clauses: Partial<import("./types").Contract>;
   /** True when they met your release clause rather than being talked into it. */
@@ -74,6 +77,8 @@ export interface TransferRecord {
   /** "january" when signed mid-season in the January window (januaryTransfer.ts).
    *  Absent on a summer move. */
   window?: "january";
+  /** What the buying club paid your old club (transferInterest.ts). */
+  transferFee?: number;
 }
 
 /**
@@ -236,6 +241,7 @@ export function acceptOffer(
     to: offer.club,
     fee: offer.signingFee,
     fromWage: career.contract.wage,
+    ...(offer.transferFee ? { transferFee: offer.transferFee } : {}),
   };
 
   const manager = makeManager(career, offer.club, career.season + 1);

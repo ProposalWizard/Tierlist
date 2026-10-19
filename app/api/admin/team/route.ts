@@ -38,7 +38,7 @@ export async function GET() {
     const { data: rows, error } = await sb.from("dev_status").select("person, body, session, created_at")
       .order("created_at", { ascending: false }).limit(60);
     if (!error) {
-      statusOn = !!process.env.DEV_STATUS_TOKEN;
+      statusOn = true;
       for (const p of data.people) {
         const r = (rows ?? []).find((x) => x.person === p.person);
         p.status = r ? statusFromRow(r) : null;

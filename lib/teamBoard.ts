@@ -75,7 +75,7 @@ export interface TeamBoardData {
   fetchedAt: string;
   deploy: Deploy;
   people: { person: Person; branch: string; pushes: Push[]; status?: DevStatus | null }[];
-  /** Live bars switched on (dev_status table there and DEV_STATUS_TOKEN set). */
+  /** Live bars switched on (the dev_status table is there). */
   statusOn?: boolean;
   pulls: PullRequest[];
   /** Plain-English problems (GitHub down, rate limit). Empty when all is well. */

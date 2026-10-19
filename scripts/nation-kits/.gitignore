@@ -1,0 +1,10 @@
+raw.json
+img/
+mirror/
+kitimg/
+analysed.json
+corrections.json
+final.json
+sheet_*.png
+final_*.png
+*.log

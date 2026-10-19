@@ -33,7 +33,7 @@ interface Deal {
   player: string;
   counterpart: string;
   overall: number;
-  detail: string; // "£28m" / "Free Transfer" / "Loan, back 2028/29"
+  detail: string; // "★28m" / "Free Transfer" / "Loan, back 2028/29"
   loan: boolean;
   unhappy: boolean;
 }
@@ -82,7 +82,7 @@ function buildBusiness(career: CareerState): ClubBusiness[] {
   for (const t of career.league) get(t.name);
 
   for (const m of career.leagueTransferNews ?? []) {
-    const detail = m.fee > 0 ? `£${formatMoneyPrecise(m.fee)}` : "Free Transfer";
+    const detail = m.fee > 0 ? `★${formatMoneyPrecise(m.fee)}` : "Free Transfer";
     if (m.to !== FREE_AGENTS_CLUB) get(m.to)?.in.push({ player: m.player, counterpart: m.from, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
     if (m.from !== FREE_AGENTS_CLUB) get(m.from)?.out.push({ player: m.player, counterpart: m.to, overall: m.overall, detail, loan: false, unhappy: m.unhappy });
   }
@@ -131,7 +131,9 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
   // Individual fees are already one-decimal (see feeFor in leagueTransfers.ts),
   // but summing several of them hits ordinary float noise — a real window
   // reproduced this as literally "£31.700000000000003m changed hands."
-  const totalSpend = Math.round((career.leagueTransferNews ?? []).reduce((sum, m) => sum + m.fee, 0) * 10) / 10;
+  // Fees are whole stars now; the total is written by the same money formatter
+  // as each fee (it read "£15300000m": the old "£…m" wording around a raw number).
+  const totalSpend = Math.round((career.leagueTransferNews ?? []).reduce((sum, m) => sum + m.fee, 0));
   const windowKind = (career.lastTransferWindowKey ?? "").split("-")[1];
   const windowLabel = WINDOW_LABEL[windowKind] ?? "Transfer Window";
   const countIn = useLater(500);
@@ -216,7 +218,7 @@ export default function DeadlineDayRoundup({ career, onContinue }: { career: Car
           </h1>
           <p className="mt-1.5 text-[11px] font-bold text-white/80" style={{ textShadow: NAME_OUTLINE }}>
             <span className="font-black text-amber-300"><CountUp value={countIn ? totalDeals : 0} ms={700} /></span> deal{totalDeals === 1 ? "" : "s"} done across the division
-            {totalSpend > 0 ? ` · £${totalSpend}m changed hands` : ""}.
+            {totalSpend > 0 ? ` · ★${formatMoneyPrecise(totalSpend)} changed hands` : ""}.
           </p>
         </div>
 

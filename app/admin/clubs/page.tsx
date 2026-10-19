@@ -15,6 +15,7 @@ import PageGuide from "@/components/admin/PageGuide";
 import { AUDIT_COLUMNS, AUDIT_GROUPS, auditAll, type AuditCell, type AuditRow, type AuditStatus, type LineupInfo } from "@/lib/star/data/clubAudit";
 import { fetchSharedLineups, loadLineup } from "@/lib/star/lineupStore";
 import { getClubLogoMap, lookupClubLogo } from "@/lib/star/clubLogos";
+import NationKitsTable from "@/components/admin/NationKitsTable";
 
 const LOOK: Record<AuditStatus, { bg: string; fg: string; label: string }> = {
   given: { bg: "#14532d", fg: "#ffffff", label: "Given" },
@@ -33,6 +34,7 @@ export default function ClubDataPage() {
   const [search, setSearch] = useState("");
   const [gapsOnly, setGapsOnly] = useState(false);
   const [column, setColumn] = useState<string>("");
+  const [section, setSection] = useState<"clubs" | "international">("clubs");
 
   useEffect(() => {
     const allClubs = AUDIT_GROUPS.flatMap(g => g.clubs);
@@ -105,6 +107,15 @@ export default function ClubDataPage() {
     <main className="min-h-screen bg-slate-950 px-3 py-4 text-white">
       <div className="mx-auto max-w-[1600px]">
         <h1 className="text-2xl font-black">Club Data</h1>
+        <div className="mt-2 flex gap-2">
+          {(["clubs", "international"] as const).map(s => (
+            <button key={s} onClick={() => setSection(s)}
+              className={`rounded px-3 py-2 text-sm font-black ${section === s ? "bg-white text-slate-950" : "bg-slate-800 text-white"}`}>
+              {s === "clubs" ? "Clubs" : "International"}
+            </button>
+          ))}
+        </div>
+        {section === "international" ? <NationKitsTable /> : (<>
         <p className="mt-1 text-sm font-bold text-white">
           Every club in the game and everything the game knows about it. {total.have} of {total.of} boxes filled
           {group !== "All" ? ` in ${group}` : ""} ({total.of ? Math.round((total.have / total.of) * 100) : 0}%).
@@ -175,6 +186,7 @@ export default function ClubDataPage() {
             </tbody>
           </table>
         </div>
+        </>)}
       </div>
       <PageGuide page="/admin/clubs" />
     </main>
