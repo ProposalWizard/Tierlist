@@ -1794,15 +1794,16 @@ export const ADMIN_GUIDES = {
   },
 
   "/star-tuning-dev": {
-    title: "Tuning",
+    title: "Balance numbers",
     what: "Every game-balance number in the Star Career game — energy, training, ratings, sponsors, contracts, transfers — plus shop prices.",
     buttons: [
       {
         items: [
-          ["Number boxes", "Type a new value. An \"edited\" tag shows it's changed from the default."],
+          ["Groups (left; along the top on a phone)", "Pick a group of numbers. Shop prices holds the shop; Everything shows all of them at once. A yellow count shows how many you've edited."],
+          ["Number boxes and sliders", "Type a new value or drag the slider. An \"edited\" tag shows it's changed from the default."],
           ["Reset (on a row)", "Puts that one number back to its default."],
           ["Shop prices", "KIB cans (price and energy), boots and lifestyle items."],
-          ["Reset everything to default", "Puts every number and price back. Asks first."],
+          ["Reset everything to default (bottom bar)", "Puts every number and price back. Asks first."],
         ],
       },
     ],
@@ -1813,7 +1814,7 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Only your own /star-dev game, on this device. To change the real game for everyone, ask for the number to be changed in the code.",
     ],
-    dev: "app/star-tuning-dev/page.tsx · components/star/TuningEditor.tsx · lib/star/{tuning,tuningStore}.ts",
+    dev: "app/star-tuning-dev/page.tsx · lib/star/{tuning,tuningStore}.ts",
   },
 
   "/star-dev/media-lab": {
