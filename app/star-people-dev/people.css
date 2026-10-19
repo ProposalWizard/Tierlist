@@ -1,0 +1,39 @@
+/* Cut-scene people page, on the Broadcast frame (--bc-* tokens). */
+.pp-wrap { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
+.pp-wrap[data-layout="sheet"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+.pp-view { position: relative; border: 1px solid var(--bc-line); border-top: 2px solid rgba(90, 160, 255, 0.55); background: #000; border-radius: 4px; overflow: hidden; }
+.pp-canvas { position: relative; width: 100%; height: min(72vh, 680px); }
+.pp-wrap[data-layout="sheet"] .pp-canvas { height: min(68vh, 640px); }
+.pp-viewbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; background: rgba(6, 20, 54, 0.92);
+  font-size: 13px; font-weight: 800; font-style: italic; text-transform: uppercase; color: var(--bc-ink2); }
+.pp-ctrl { display: flex; flex-direction: column; gap: 12px; }
+.pp-ctrl > div > .bc-label { margin-bottom: 6px; }
+.pp-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pp-skin { width: 30px; height: 30px; border-radius: 3px; border: 2px solid rgba(255, 255, 255, 0.25); cursor: pointer; }
+.pp-skin[aria-pressed="true"] { border-color: var(--bc-amber); box-shadow: 0 0 0 2px rgba(255, 194, 74, 0.35); }
+.pp-turn { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--bc-ink2); }
+.pp-turn input { flex: 1; accent-color: var(--bc-accent); }
+.pp-look { gap: 8px; }
+.pp-err { background: rgba(255, 77, 94, 0.8); padding: 8px; font-size: 13px; border-radius: 3px; }
+.pp-sheet { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.pp-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; padding: 10px; background: var(--bc-panel); border: 1px solid var(--bc-line); border-radius: 4px; }
+.pp-pick { display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: var(--bc-ink3); }
+.pp-pick select { font-size: 13px; font-weight: 800; font-style: italic; padding: 7px 10px; color: #fff; background: #0d2a66; border: 1px solid var(--bc-accent); border-radius: 3px; min-width: 104px; }
+.pp-side { display: flex; flex-direction: column; gap: 10px; }
+.pp-cards { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+.pp-card { padding: 18px 8px 8px; text-align: left; font-size: 12.5px; font-weight: 900; font-style: italic; text-transform: uppercase; color: var(--bc-ink);
+  background: linear-gradient(180deg, rgba(27, 95, 214, 0.25), rgba(6, 20, 54, 0.9)); border: 1px solid var(--bc-line); cursor: pointer;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%); }
+.pp-card[aria-pressed="true"] { border-color: #3ee6ff; box-shadow: inset 0 0 0 2px #3ee6ff; background: linear-gradient(180deg, rgba(62, 230, 255, 0.25), rgba(6, 20, 54, 0.9)); }
+@media (max-width: 640px) {
+  .bc:has(.pp-wrap) .bc-head { flex-wrap: wrap; }
+  .bc:has(.pp-wrap) .bc-banner { flex: 1 1 calc(100% - 60px); }
+  .bc:has(.pp-wrap) .bc-actions { width: 100%; }
+}
+@media (max-width: 860px) {
+  .pp-wrap, .pp-wrap[data-layout="sheet"] { grid-template-columns: minmax(0, 1fr); }
+  .pp-canvas, .pp-wrap[data-layout="sheet"] .pp-canvas { height: 46vh; }
+  .pp-cards { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+  .pp-pick select { min-width: 0; width: 100%; }
+  .pp-bar .pp-pick { flex: 1 1 40%; }
+}

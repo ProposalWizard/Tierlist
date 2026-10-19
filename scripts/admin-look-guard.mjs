@@ -21,7 +21,7 @@ const NOT_YET = new Set([
   "/star-tournament-dev", "/lineups", "/admin/clubs",
   "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev",
   "/star-garden3d-dev", "/star-home3d-dev", "/star-style-dev",
-  "/star-people-dev", "/admin/star-xp",
+  "/admin/star-xp",
   "/admin/sound-board",
 ]);
 const SKIP = new Set(["/star-dev"]); // the game itself, not an admin page
