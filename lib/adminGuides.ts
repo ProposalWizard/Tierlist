@@ -676,29 +676,38 @@ export const ADMIN_GUIDES = {
 
   "/admin/star": {
     title: "Admin home",
-    what: "Every admin and test page in one place, grouped the way you asked (Career screens, Chances, Match tests…), with search and filters. Testers see only the pages they can open.",
+    what: "Every admin and test page, split by game: one tab per game across the top (Road to Ballon d'Or, Website games, Studio). Inside a tab you only see that game's groups and pages. Testers see only the pages they can open.",
     buttons: [
+      { group: "Game tabs (across the top of every admin page)", items: [
+        ["Road to Ballon d'Or", "The career game's groups and pages. This is /admin/star."],
+        ["Website games", "PL Draft, Tierlists, Site XP + Tic Tac Toe and the old tests. Opens /admin/star/game/web."],
+        ["Studio", "The team: Team board, Patch notes, Videos, App plan, Tester access. Opens /admin/star/game/studio."],
+        ["The number on a tab", "How many pages that game has (that you can open)."],
+      ] },
       { group: "Top", items: [
-        ["Search pages", "Type part of a name or what a page does; the cards filter as you type."],
-        ["All / H / M / L", "Show everyone's pages, or only Harry's, Mikey's or Leo's."],
+        ["Search … pages in (game)", "Type part of a name or what a page does. Searches this game only."],
+        ["All / Harry / Mikey / Leo", "Show everyone's pages, or only one person's, in this game."],
         ["Saves real data", "Only pages whose buttons change things other players see."],
-        ["Play the game", "Opens Road to Ballon d'Or, the real game."],
+        ["Grid / List", "Broadcast and Bento: the game's groups as big tiles or one row each. Kept on this device."],
+        ["Play the game", "Ops room and Clean light: opens the game as players see it."],
       ] },
       { group: "Cards", items: [
+        ["A group tile", "Broadcast and Bento: opens that group's own page (its admin tools first, then its test pages)."],
         ["A card", "Opens that page. The letter is its owner. \"Saves real data\" / \"This browser\" / \"Writes the code\" say what its buttons save."],
-        ["Old tests (n)", "Folded at the bottom. Old test pages that are kept but not used day to day."],
+        ["Old tests (n)", "Website games tab. Old test pages that are kept but not used day to day."],
         ["Clear", "Shows when a search or filter matches nothing; puts everything back."],
       ] },
       { group: "Side menu", items: [
-        ["Home / Team board / Patch notes", "This page, the team board, and every patch note (Team board and Patch notes are admins only)."],
-        ["Groups", "Ops room and Clean light only: jumps to that group on this page. Broadcast and Bento show every group on the page instead."],
+        ["(Game) home", "This game's home page."],
+        ["The game's groups (slanted bars on Broadcast)", "Every group of the game you are in, the one you are on lit up. Broadcast and Bento open the group's own page; Ops room and Clean light jump to it on the home. On a phone they are in ☰ Menu; on a computer « folds them to icons."],
+        ["Team board / Ideas / Team chat / My to-do / Patch notes / Videos", "The team's own pages, the same in every game (Team room and Patch notes are admins only)."],
         ["Broadcast / Bento / Ops room / Clean light", "The admin look. Broadcast (dark blue) and Bento (a colour per group) show every group on one board. Kept on this device."],
         ["Admin mode", "On: the admin side menu sits on every page of the site, opened on the admin pages for the page you are on. Off: it hides. Kept on this device."],
       ] },
     ],
     saving: ["Nothing here saves anything shared. The look and Admin mode are kept in this browser only."],
     inGame: ["Nowhere. This is the front door to the tools."],
-    dev: "app/admin/star/page.tsx · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (the one list of pages) · components/admin/shell/* · lib/adminLook.ts",
+    dev: "app/admin/star/page.tsx (first game) · app/admin/star/game/[game]/page.tsx (other games) · app/admin/star/g/[group] (a group's page) · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (GAMES = the tabs: a new game is one line there, then its groups say game: \"<key>\"; GROUPS; ADMIN_PAGES) · components/admin/shell/* · components/AdminNavPanel.tsx (the side menu on other pages, also one game at a time) · lib/adminLook.ts",
   },
   "/star-tournament-dev": {
     title: "Tournaments",

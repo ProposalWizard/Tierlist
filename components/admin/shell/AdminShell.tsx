@@ -67,7 +67,8 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
   const game = gameProp ?? (group ? groupGame(group) : gameForPath(path));
   const G = gameOf(game) ?? GAMES[0];
   const pages = visibleTo(role);
-  const count = (g: string) => pages.filter((p) => p.group === g && p.url !== "/star-dev" && p.url !== "/admin/star").length;
+  // Same count as the home's tiles and search (the admin home itself is not a page to open).
+  const count = (g: string) => pages.filter((p) => p.group === g && p.url !== "/admin/star").length;
   const gameCount = (k: AdminGameKey) => groupsOf(k).reduce((n, g) => n + count(g.key), 0);
   // Broadcast/Bento open a group's own page; Ops room / Clean light jump down the game's home.
   const groupHref = (k: AdminGroup) => (isBoardLook(look) ? `/admin/star/g/${k}` : `${G.home}#${k}`);

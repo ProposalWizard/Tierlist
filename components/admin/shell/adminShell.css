@@ -344,6 +344,10 @@ body:has([data-admin-shell]) [data-global-chrome] { display: none !important; }
 @media (min-width: 1024px) {
   .ash[data-look="broadcast"][data-folded="true"] .ash-gnav { padding: 6px; clip-path: none; }
 }
+/* On a phone all the game tabs fit on one line. */
+@media (max-width: 640px) {
+  .ash[data-look="broadcast"] .ash-game { padding: 8px 15px 8px 11px; font-size: 12px; gap: 5px; }
+}
 
 /* Bento: each group in its own soft colour. */
 .ash[data-look="bento"] .ash-gnav[aria-current="page"] { background: color-mix(in srgb, var(--g) 16%, #fff); border-color: color-mix(in srgb, var(--g) 30%, #fff); }
