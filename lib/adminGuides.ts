@@ -1641,7 +1641,7 @@ export const ADMIN_GUIDES = {
           ["▶", "Plays that sound. The first tap also switches sound on (phones keep it off until you tap)."],
           ["IN GAME NOW / FILE", "\"Current (match)\" is the sound the live match makes today. \"Current file\" is the recorded file the game has (goal videos use it), including any replacement uploaded on the Sound Board."],
           ["Green picture / blue bars", "The shape of the sound (loud parts tall) and how much low (left) and high (right) it has. The number is its length in seconds."],
-          ["★ ★ ★ ★ ★", "Rate it. Tap the same star again to clear it."],
+          ["★ ★ ★ ★ ★ (Rate this effect)", "Rate it. Tap the same star again to clear it."],
           ["Pick this / ✓ My pick", "Your favourite for this event (one per event). Tap again to un-pick."],
           ["Note", "Write what you like or don't. It goes into the export."],
           ["Edit ▾", "Opens the sliders: Volume, Pitch, Length, Brightness, Punch, Body (low end), Room (echo). Let go of a slider to hear the change."],
@@ -1665,13 +1665,14 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["Event buttons (top row)", "Pick which moment you are looking at. A ✓ means you have picked one for it."],
-          ["Filmstrip (4 small pictures)", "The effect at four moments of its life, start to end, left to right. Drawn once each time you change something; nothing animates here."],
+          ["Moments (left list; a row along the top on a phone)", "Pick which moment you are looking at. A ✓ means you have picked one for it."],
+          ["Version tiles (under the big picture)", "Every version of this moment. Tap one to show it big and to rate, pick, note or edit it on the right. A tile shows ✓ pick, its stars, and LIVE while it is open in Edit."],
+          ["Big picture (4 small pictures)", "The effect at four moments of its life, start to end, left to right. Drawn once each time you change something; nothing animates here."],
           ["IN GAME NOW", "\"Current (match feel)\" is what Settings → Match → Match feel: New draws today. Some moments draw nothing today; the card says so."],
           ["★ ★ ★ ★ ★", "Rate it. Tap the same star again to clear it."],
           ["Pick this / ✓ My pick", "Your favourite for this moment (one per moment). Tap again to un-pick."],
           ["Note", "Write what you like or don't. It goes into the export."],
-          ["Edit ▾", "Opens the dials that style uses: size, length, strength, colours, how many, spread, camera shake, freeze at the hit, camera punch-in, and the word on comic bursts."],
+          ["Edit ▾ (Edit panel, right)", "Opens the dials that style uses: size, length, strength, colours, how many, spread, camera shake, freeze at the hit, camera punch-in, and the word on comic bursts."],
           ["Reset", "Puts that variant's dials back to how it was made."],
           ["Copy recipe", "Copies how that variant is built plus your dials, for us."],
           ["Use my picks in the live match below", "On: the real match at the bottom draws your picks (and the variant you have open in Edit) on real kicks, saves and goals. Off: the match draws what this phone's game draws."],
