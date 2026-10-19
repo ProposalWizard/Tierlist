@@ -34,7 +34,6 @@ class TrackAcc:
         self.sprints = D(lambda: [0, 0.0])                          # role -> sprints, minutes
         self.top_speed = D(list)                                    # role -> per player-match max (1 s smoothed)
         self.dist_per_min = D(list)                                 # role -> metres per minute per player-match
-        self.ball_fwd = collections.Counter()                       # forward ball speed (m/s, 1 m/s bins) in possession
 
     # one frame: players = [(team, role, x, y)], ball=(x,y) or None, poss = team or None
     def frame(self, players, ball, poss, flip_of, in_play=True):
