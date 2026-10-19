@@ -43,8 +43,6 @@ import { oldBallPhysics, oldMatchFlow, gameplayVersion } from "@/lib/star/gamepl
 import { setHitboxes, hitboxesOn, showHitboxes } from "@/lib/star/hitbox";
 import { inTestArea } from "@/lib/star/testArea";
 import { setBallPhysics, realBallOn } from "@/lib/star/ballPhysics";
-// Kane drawings (testing): start fetching as the match code loads, so the
-// first chance of a match can already be one.
 import { getTuning } from "@/lib/star/tuningStore";
 import type { FpIdentity } from "@/lib/star/firstPersonDribble";
 import {
@@ -845,7 +843,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setHitboxes(gameplayVersion("hitboxes"));
   };
   useEffect(() => { applyClearanceRules(); }, []);
-  // Kane drawings (testing): fetch them in good time for the first chance.
 
   // ── Who else is actually out there ──
   //

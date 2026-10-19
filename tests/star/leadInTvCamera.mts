@@ -14,15 +14,15 @@
  *   - at the end it IS the shot's frame (no jump when the chance starts).
  */
 import { readFileSync } from "node:fs";
-import { scenarioForShot, leadinTrack, type SbFile, type SbLeadinFile } from "../../lib/star/statsbombShots";
+import { scenarioForShot, leadinTrack, type WyscoutShotFile, type RealLead } from "../../lib/star/realMoments";
 import { leadInEntities, leadInCamera, type LeadIn } from "../../lib/star/leadIn";
 import type { Viewport, Vec2 } from "../../lib/star/canvasEngine";
 
 let fails = 0;
 function check(label: string, ok: boolean) { if (!ok) { fails++; console.log(`FAIL ${label}`); } else console.log(`ok   ${label}`); }
 
-const shots = (JSON.parse(readFileSync("data/statsbomb/shots.json", "utf8")) as SbFile).shots;
-const leads = (JSON.parse(readFileSync("data/statsbomb/leadins.json", "utf8")) as SbLeadinFile).leadins;
+const shots = (JSON.parse(readFileSync("data/realmoments/wyscout_shots.json", "utf8")) as WyscoutShotFile).shots;
+const leads: Record<string, RealLead> = Object.fromEntries(shots.filter((s) => s.lead).map((s) => [s.id, s.lead!]));
 const list = shots.filter((s) => (leads[s.id]?.passes.length ?? 0) >= 2);
 // The phone's frame: the match gives the shot's frame the canvas's shape (taller), as CanvasMatch frameScenario does.
 const HW = 1.95;

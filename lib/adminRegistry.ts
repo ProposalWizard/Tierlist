@@ -114,8 +114,8 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-dribble-stick-dev", "Dribble on a stick", "Dribble steered by a stick", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-vfx-lab-dev", "Visual effects lab", "Pick and edit the effect for each match moment", "rbd", "players", "Leo", "live", "browser", "team"),
   P("/star-sound-lab-dev", "Sound lab", "Hear, edit, rate match sounds", "rbd", "sound", "Leo", "live", "browser", "team"),
-  P("/star-real-moments-dev", "Real moments", "StatsBomb positions, playable", "rbd", "data", "Mikey", "live", "none", "admin"),
-  P("/star-statsbomb-dev", "Real shots", "WC/Euro shots, playable", "rbd", "data", "Harry", "live", "none", "admin"),
+  P("/star-real-moments-dev", "Real moments", "Real positions (DFL, SkillCorner, Wyscout), playable", "rbd", "data", "Mikey", "live", "none", "admin"),
+  P("/star-real-shots-dev", "Real shots", "WC 2018 / Euro 2016 + tracked shots, playable", "rbd", "data", "Harry", "live", "none", "admin"),
   P("/star-real-goals-dev", "Real Goals", "Recreate real WC/Euro goals: levels, stars, accuracy, ghost", "rbd", "data", "Leo", "live", "browser", "admin"),
   P("/star-intl-dev", "International world", "Call-ups, national managers and every international competition", "rbd", "data", "Mikey", "live", "none", "team"),
   P("/star-tournament-dev", "Tournaments", "Draw and play a whole Euros or World Cup in seconds", "rbd", "data", "Leo", "live", "none", "team"),
@@ -225,7 +225,7 @@ export function relatedFor(path: string): { label: string; pages: AdminPage[] } 
  */
 export const TEST_PAGES = new Set<string>([
   "/star-goal-clips-dev", "/star-update-dev", "/star-dribble-stick-dev", "/star-vfx-lab-dev", "/star-sound-lab-dev",
-  "/star-real-moments-dev", "/star-statsbomb-dev", "/star-real-goals-dev", "/star-intl-dev", "/star-tournament-dev",
+  "/star-real-moments-dev", "/star-real-shots-dev", "/star-real-goals-dev", "/star-intl-dev", "/star-tournament-dev",
   "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev", "/star-garden3d-dev",
   "/star-home3d-dev", "/star-training3d-dev", "/star-style-dev", "/star-anim3d-dev", "/star-people-dev", "/star-sprites-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev",

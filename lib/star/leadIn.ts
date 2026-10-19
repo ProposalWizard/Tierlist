@@ -417,7 +417,7 @@ export function alongKeys(keys: KeyPt[], t: number, ease = true): Vec2 {
   return { ...keys[keys.length - 1].p };
 }
 
-// ── Shared with the Real shots lead-in (statsbombShots.ts) and the build-ups (leadInGen.ts) ──
+// ── Shared with the Real shots lead-in (lib/star/realMoments/leadin.ts) and the build-ups (leadInGen.ts) ──
 
 /** The ball's keyframes: when it is where, and whether it got there by a pass (lofted or not). */
 export interface LeadBallKey { t: number; p: Vec2; pass?: { h: number } }

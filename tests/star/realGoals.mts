@@ -1,15 +1,18 @@
 /**
  * REAL GOALS (Leo, 18 Oct 2026) — the test page /star-real-goals-dev.
  *
- *   1. The data never reaches the real game (nothing outside the test pages imports it).
+ *   1. No StatsBomb data or code is left anywhere (its licence forbids a paid
+ *      game; rebuilt on Wyscout's CC BY data, 19 Oct 2026).
  *   2. The level map: 5 stages of 10, easiest first, every featured goal in, stars unlock.
  *   3. Accuracy: the real spot is 100%, far off is near 0; the stars.
  *   4. Always scoreable as the real goal: every featured goal struck along its real
  *      line scores at least 95% with the real lane on (and far less without it).
- *   5. The real sides: a kit for every nation in the data, no clashes, real names on the men.
+ *   5. The real sides: a kit for every nation in the data, no clashes, the real
+ *      keeper's name, and no made-up names on the placed men.
  *   6. The build-up follows the real move closer than the Real shots lead-in.
  *   7. The real match is unchanged with the lane absent: a fingerprint of real goals struck
- *      with no lane equals the one taken on the engine before the lane existed.
+ *      with no lane (retaken on the Wyscout goals, 19 Oct 2026; the StatsBomb one
+ *      was taken on the engine before the lane existed).
  *
  * Run: npx tsx tests/star/realGoals.mts
  */
@@ -26,27 +29,26 @@ import {
 let failed = 0;
 const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  FAIL ${what}`); } else console.log(`  ✓ ${what}`); };
 
-// ── 1. The data guard ─────────────────────────────────────────────────────
-console.log("\n1. THE DATA NEVER REACHES THE REAL GAME");
+// ── 1. No StatsBomb anywhere ──────────────────────────────────────────────
+console.log("\n1. NO STATSBOMB DATA OR CODE");
 {
-  const ALLOWED = [/^app\/star-statsbomb-dev\//, /^app\/star-real-goals-dev\//, /^app\/api\/star\/statsbomb-shots\//, /^lib\/star\/statsbombShots\.ts$/, /^lib\/star\/realGoals\.ts$/];
   const bad: string[] = [];
   const walk = (d: string) => {
     for (const f of readdirSync(d)) {
       const p = join(d, f);
+      if (/statsbomb|kane-moments/i.test(f)) bad.push(p);
       if (statSync(p).isDirectory()) { if (f !== "node_modules" && !f.startsWith(".")) walk(p); continue; }
-      if (!/\.(ts|tsx|mts|js|mjs)$/.test(f)) continue;
+      if (!/\.(ts|tsx|mts|js|mjs|py|json)$/.test(f)) continue;
       const src = readFileSync(p, "utf8");
-      const imports = /(from\s+|import\(\s*|require\(\s*)["'][^"']*(statsbombShots|realGoals|data\/statsbomb)["']|["']statsbomb["']\s*,/.test(src);
-      if (imports && !ALLOWED.some((r) => r.test(p))) bad.push(p);
+      if (/statsbombShots|data\/statsbomb|statsbomb\/open-data|statsbomb-shots|kane-moments\.json/.test(src) && !p.endsWith("realGoals.mts")) bad.push(p);
     }
   };
-  for (const d of ["app", "components", "lib"]) walk(d);
-  ok(bad.length === 0, `only the test pages read the StatsBomb data${bad.length ? ` (found: ${bad.join(", ")})` : ""}`);
+  for (const d of ["app", "components", "lib", "public", "data", "scripts", "tools"]) walk(d);
+  ok(bad.length === 0, `no StatsBomb file, import or data path left${bad.length ? ` (found: ${bad.join(", ")})` : ""}`);
 }
 
 const goals = loadGoals();
-ok(goals.length === 250, `250 real goals (open play + free kicks) joined with their facts (${goals.length})`);
+ok(goals.length === 232, `232 real goals (World Cup 2018 + Euro 2016, not penalties) joined with their facts (${goals.length})`);
 
 // ── 2. Levels ─────────────────────────────────────────────────────────────
 console.log("\n2. THE LEVEL MAP");
@@ -105,7 +107,7 @@ console.log("\n4. ALWAYS SCOREABLE AS THE REAL GOAL (struck exactly along the re
   ok(on / n >= 0.95, `the real line scores at least 95% (${(100 * on / n).toFixed(1)}%)`);
   ok(off < on, "and the lane is what does it (fewer without it)");
   // A strike well off the real line plays normally: never in the lane.
-  const g = goals.find((q) => q.id === "03fb2918")!;
+  const g = goals.find((q) => q.id === FEATURED[0].id)!;
   const aim = aimAtReal(g);
   const wide = playStrike(g, { ...aim, angle: aim.angle + 0.12 }, true, 4242, false);
   ok(!wide.inLane, "a strike 7° off the real line is not in the lane");
@@ -120,22 +122,17 @@ console.log("\n5. THE REAL SIDES");
   const clash = goals.filter((g) => { const k = kitsForGoal(g); return colourGap(k.us.shirt, k.them.shirt) < KIT_CLASH || colourGap(k.keeper.shirt, k.us.shirt) < KIT_CLASH || colourGap(k.keeper.shirt, k.them.shirt) < KIT_CLASH; });
   ok(clash.length === 0, `no two shirts alike in any of the ${goals.length} goals (${clash.length})`);
   ok(shortNameOf("Kylian Mbappé") === "Mbappé" && shortNameOf("Ángel Di María") === "Di María" && shortNameOf("Neymar") === "Neymar", "short names: Mbappé, Di María, Neymar");
-  ok(knownAs(goals.find((q) => q.id === "03fb2918")!, "Kylian Mbappé Lottin") === "Kylian Mbappé", "known names from the line-ups (Kylian Mbappé, not Mbappé Lottin)");
-  let named = 0, men = 0, keeperNamed = 0, foreign = 0;
+  ok(knownAs(goals[0], "  Dimitri  Payet ") === "Dimitri Payet", "known names come tidied from the data (Dimitri Payet)");
+  let keeperNamed = 0, foreign = 0;
   for (const f of FEATURED) {
     const gg = goals.find((q) => q.id === f.id)!;
     const sc = scenarioForGoal(gg);
     dressFor(gg)(sc);
-    const real = new Set(gg.x.names.map((nm) => knownAs(gg, nm)));
-    if (sc.keeper.who?.name && real.has(sc.keeper.who.name)) keeperNamed++;
-    for (const w of [...sc.defenders.map((d) => d.who), ...sc.secondaryRunners.map((r) => r.who), ...(sc.runner ? [sc.runner.who] : [])]) {
-      men++;
-      if (w?.name) { if (real.has(w.name)) named++; else foreign++; }
-    }
+    if (sc.keeper.who?.name && sc.keeper.who.name === gg.x.keeper) keeperNamed++;
+    for (const w of [...sc.defenders.map((d) => d.who), ...sc.secondaryRunners.map((r) => r.who), ...(sc.runner ? [sc.runner.who] : [])]) if (w?.name) foreign++;
   }
-  ok(keeperNamed === FEATURED.length, `the real keeper named in every featured goal (${keeperNamed}/${FEATURED.length})`);
-  ok(named / Math.max(1, men) >= 0.9, `real names on ${named} of ${men} outfield men`);
-  ok(foreign === 0, "never a name from outside the real match");
+  ok(keeperNamed === FEATURED.length, `the conceding keeper's real name in every featured goal (${keeperNamed}/${FEATURED.length})`);
+  ok(foreign === 0, "the placed men carry no name (never a name from outside the real match)");
 }
 
 // ── 6. Build-up ──────────────────────────────────────────────────────────
@@ -150,8 +147,10 @@ console.log("\n6. THE BUILD-UP FOLLOWS THE REAL MOVE");
 // ── 7. Fingerprint ───────────────────────────────────────────────────────
 console.log("\n7. THE REAL MATCH IS UNCHANGED WITH THE LANE ABSENT");
 {
-  /** Taken with lib/star/canvasEngine.ts from origin/main 0beabcbf (before the real lane). */
-  const OLD_HASH = "c7ad8836";
+  /** Retaken on Harry 66ce9cf1 with the Wyscout goals and their placed pictures
+   *  (19 Oct 2026; it moves if the placing rule in lib/star/realMoments changes). The StatsBomb
+   *  goals' one (c7ad8836) was taken on origin/main 0beabcbf, before the real lane. */
+  const OLD_HASH = "c0175259";
   let h = 2166136261 >>> 0;
   const mix = (v: number | string) => { const s = typeof v === "number" ? (Number.isNaN(v) ? "nan" : v.toFixed(4)) : v; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } };
   for (const g of goals.slice(0, 40)) {

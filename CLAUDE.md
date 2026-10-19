@@ -567,7 +567,7 @@ unreachable (the getter returns the kept value), marked "Decided, no toggle".
 - **Chances:** the team's drawn chances only, everywhere (match, highlights,
   Play Area). The New chance library, its drawings, script, tests and test
   page, and the Play Area's "Generator", were DELETED ("they're wrong").
-- **Chance mix:** the basic even mix. **Kane drawings:** the game's own.
+- **Chance mix:** the basic even mix. **Kane drawings:** deleted with the StatsBomb data (19 Oct 2026; real moments now come from free data, `lib/star/realMoments`).
 - **Animations:** New. **Clearances:** always on. (Keepers left this list:
   "Keepers: New | Old row kept, default New, Harry 12 Oct".)
 - **Dribble:** top-down in every match, with team-mates to pass to; Dribble
