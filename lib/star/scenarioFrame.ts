@@ -106,6 +106,12 @@ export interface Frame {
    * pressing Play spins the whole scene a quarter turn. Absent = "up".
    */
   facing?: Facing;
+  /**
+   * Full highlights rebuild: On (lib/star/fhr/stillCamera.ts): draw the men,
+   * the keeper and the ball at the match's own new-view size, against the
+   * still's usual size. Absent (every frame today): 1, exactly as before.
+   */
+  sizes?: { figure: number; keeper: number; ball: number };
 }
 
 export const idLabel = (who: Identity | undefined, fallback: string): string =>
@@ -200,10 +206,17 @@ export interface FrameSizing {
   baseW?: number;
   maxW?: number;
   maxH?: number;
+  /**
+   * Full highlights rebuild: On — the match's own box, exactly `baseW` × `h`
+   * whatever the camera's shape (the match stretches its camera to its canvas
+   * the same way). Absent: the camera's own aspect, exactly as before.
+   */
+  h?: number;
 }
 
 export function frameCssSize(frame: Frame, size: FrameSizing = {}): { cssW: number; cssH: number } {
   const { baseW = 340, maxW = 460, maxH = 560 } = size;
+  if (size.h && size.h > 0) return { cssW: baseW, cssH: size.h };
   // A turned frame shows the pitch's Y span across the screen and its X span
   // down it — the same quarter turn the real match makes.
   const turned = frameFacing(frame) !== "up";
@@ -401,11 +414,11 @@ export function paint(canvas: HTMLCanvasElement, frame: Frame, size: FrameSizing
     y: scr.toScreen(it.at).y,
     draw: () => {
       const look = lookInKit(it, kits);
-      if (it.keeper) drawKeeper(ctx, at(it.at), it.at, look, { dive: 0, lunge: 0 }, FACE, FAKE, { scale: PICTURE_KEEPER_SCALE });
-      else drawFigure(ctx, at(it.at), it.at, look, FACE, FAKE, { scale: PICTURE_SCALE });
+      if (it.keeper) drawKeeper(ctx, at(it.at), it.at, look, { dive: 0, lunge: 0 }, FACE, FAKE, { scale: PICTURE_KEEPER_SCALE * (frame.sizes?.keeper ?? 1) });
+      else drawFigure(ctx, at(it.at), it.at, look, FACE, FAKE, { scale: PICTURE_SCALE * (frame.sizes?.figure ?? 1) });
     },
   }));
-  layers.push({ y: scr.toScreen(frame.ball).y, draw: () => drawBall(ctx, at(frame.ball), frame.ball, 0, PICTURE_SCALE) });
+  layers.push({ y: scr.toScreen(frame.ball).y, draw: () => drawBall(ctx, at(frame.ball), frame.ball, 0, PICTURE_SCALE * (frame.sizes?.ball ?? 1)) });
   layers.map((l, i) => ({ l, i })).sort((a, b) => a.l.y - b.l.y || a.i - b.i).forEach(({ l }) => l.draw());
 }
 

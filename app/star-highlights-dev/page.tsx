@@ -68,7 +68,9 @@ import HitboxPanel from "@/components/star/HitboxPanel";
 import ChanceSheet from "@/components/star/ChanceSheet";
 import ShootoutPlay from "@/components/star/ShootoutPlay";
 import { usePlayWidth, useTestKits } from "@/components/star/EnginePlay";
-import { revealOnScreen } from "@/lib/revealOnScreen";
+import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
+import { useFhrMode } from "@/lib/star/fhr/toggle";
+import { matchStill, matchCanvasHW, withMatchCamera } from "@/lib/star/fhr/stillCamera";
 import {
   addFigureTo,
   analyseEdited,
@@ -491,6 +493,38 @@ export default function HighlightsPage() {
   );
   const liveFrame = baseFrame ? applyOverride(baseFrame, override) : null;
 
+  // ── The still is the match's camera (Full highlights rebuild, phase 1) ──
+  // (lib/star/fhr/stillCamera.ts). Framed from the scenario Play will build
+  // (the same build + edits), at the canvas shape the match will measure
+  // (the room under the pinned bars, CanvasMatch's newViewCanvasHeight), so
+  // pressing Play moves nothing.
+  // The default on this test page whatever the switch says, decided on the
+  // numbers (19 Oct 2026, iPhone 13, 100 presses each): the builder's frame
+  // differed from Play's first frame in 100 of 100 (camera, angle, size); the
+  // match camera in 0. And it leaves fewer men off the picture: 66 of 300
+  // stills with someone off it, against 98 (scripts/fhr/still-crop.mts).
+  // `?still=builder` shows the old builder's frame. This page is not the game:
+  // the switch Off still leaves every match exactly as today.
+  const fhrSwitch = useFhrMode() === "on";
+  const [builderStill, setBuilderStill] = useState(false);
+  useEffect(() => { setBuilderStill(new URLSearchParams(window.location.search).get("still") === "builder"); }, []);
+  const fhrOnHere = fhrSwitch || !builderStill;
+  const [room, setRoom] = useState(0);
+  useEffect(() => {
+    const on = () => setRoom(window.innerHeight - pinnedTopHeight(pictureRef.current) - 12);
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, [shot]);
+  const still = useMemo(() => {
+    if (!fhrOnHere || !shot) return null;
+    const sc = buildSimScenario(shot.spec);
+    applyOverrideToScenario(sc, mergeOverrides([savedOv, override]));
+    return matchStill(sc, matchCanvasHW(pictureW, room));
+  }, [fhrOnHere, shot, savedOv, override, pictureW, room]);
+  const shownBase = baseFrame && still ? withMatchCamera(baseFrame, still) : baseFrame;
+  const shownCam = shownBase?.camera;
+
 
   /** A PNG of exactly what is on screen, for sharing a bad picture without
    *  needing anybody to reproduce it. */
@@ -872,7 +906,18 @@ export default function HighlightsPage() {
             {/* The chance: the real game's own picture, or — on Play — the real
                 match at the same size. Playing swaps only the picture, so a
                 chance can be played, corrected and saved without moving. */}
-            <div ref={pictureRef} className="ih-stage">
+            <div
+              ref={pictureRef}
+              className="ih-stage"
+              // Read by scripts/fhr/still-vs-play.mjs: the still's framing.
+              data-still-cam={shownCam ? JSON.stringify(shownCam) : undefined}
+              data-still-facing={shownBase?.facing ?? "up"}
+              data-still-tilt={still?.tilt ?? 0}
+              data-still-hw={still?.hw ?? ""}
+              data-still-you={still ? (still.youHidden ? "hidden" : "shown") : "shown"}
+              data-still-kind={shot?.spec.kind}
+              data-fhr={fhrOnHere ? "on" : "off"}
+            >
               {playing && shot ? (
                 <ScenarioPlay
                   build={() => {
@@ -883,10 +928,12 @@ export default function HighlightsPage() {
                   onStop={() => setPlaying(false)}
                   width={pictureW}
                 />
-              ) : shot && baseFrame && (
+              ) : shot && shownBase && (
                 <EditableFrame
                   editKey={editKey}
-                  baseFrame={baseFrame}
+                  baseFrame={shownBase}
+                  tilt={still?.tilt ?? 0}
+                  matchCamera={!!still}
                   override={override}
                   marks={analysis.marks}
                   onCommit={setOverride}
@@ -897,7 +944,7 @@ export default function HighlightsPage() {
                   fit
                   // Play runs at exactly this size, so the picture and the match
                   // are the same size, in the same kits (one engine, 24 Sep).
-                  size={{ baseW: pictureW, maxW: pictureW, maxH: 4000 }}
+                  size={still ? { baseW: pictureW, maxW: pictureW, maxH: 4000, h: Math.round(pictureW * still.hw) } : { baseW: pictureW, maxW: pictureW, maxH: 4000 }}
                   kits={kits}
                 />
               )}
