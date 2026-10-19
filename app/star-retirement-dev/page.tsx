@@ -19,7 +19,6 @@
  * to the end of season 20, then "Hang them up").
  */
 import { useEffect, useMemo, useState } from "react";
-import { PlayPage, Card, Row, Toggle, Btn, Note } from "@/components/admin/playKit";
 import PageGuide from "@/components/admin/PageGuide";
 import { pitchFont } from "@/components/star/ui/pitchFont";
 import "@/components/star/ui/flat.css";
@@ -253,87 +252,103 @@ export default function RetirementPreviewPage() {
     );
   }
 
-  // The Play Area's look (components/admin/playKit.tsx; UI lookover, 19 Oct
-  // 2026): the 25 coloured bars became one card per group of small buttons.
+  const chip = (on: boolean): React.CSSProperties => ({
+    padding: "10px 12px", borderRadius: 4, fontWeight: 900, fontSize: 14, textAlign: "left",
+    background: on ? "#facc15" : "rgba(255,255,255,.08)", color: on ? "#111" : "#fff",
+    boxShadow: on ? "none" : "inset 0 0 0 1px rgba(255,255,255,.12)",
+  });
   const isShape = source.kind === "shape";
-  const screen = (label: string, v: View, enabled: boolean) => (
-    <Btn key={v} onClick={() => go(v)} disabled={!enabled}>{label}</Btn>
+  const button = (label: string, v: View, enabled: boolean, colour: string, dark = false) => (
+    <button disabled={!enabled} onClick={() => go(v)} className={`kib-press block w-full px-3 py-3 text-left text-[15px] font-black uppercase disabled:opacity-40 ${dark ? "text-gray-950" : ""}`} style={{ borderRadius: 4, background: colour }}>
+      {label}
+    </button>
   );
-  const shapeNow = PREVIEW_SHAPES.find(x => isShape && source.shape === x.id);
-  const groups: { title: string; note?: string; test?: string; items: [string, View, boolean][] }[] = [
-    { title: "The screens, in order", items: [
-      [`1 · After season ${LAST - 1}: final season`, "notice", !!beforeLast],
-      [`2 · After season ${LAST}: the final whistle`, "whistle", !!lastSeason],
-      ["3 · The career overview", "overview", !!finished],
-      ["4 · The Hall of Fame", "hall", true],
-      ["The share card", "card", !!finished],
-    ] },
-    { title: "The farewell match", test: "farewell", note: `The match itself: in the game, Dev Skip to the end of season ${LAST}, then Hang them up.`, items: [
-      ["Invite", "fw-invite", !!farewell],
-      ["Team sheets", "fw-sheets", !!farewell],
-      ["Guard of honour · 3D", "fw-walkout", !!farewell],
-      ["Guard of honour · drawn", "fw-walkout-drawn", !!farewell],
-      ["Ovation · 3D", "fw-ovation", !!farewell],
-      ["Ovation · drawn", "fw-ovation-drawn", !!farewell],
-      ["Full time (4–3)", "fw-result", !!farewell],
-      ["Overview after it", "fw-overview", !!farewell && !!finished],
-    ] },
-    { title: "The Ballon d'Or night", test: "ballon-dor", note: "In the game: Settings → Look → Ballon d'Or night. Made-up rivals fill the list where this career has fewer than ten.", items: [
-      ["You win · 3D", "bd-win", !!lastSeason],
-      ["2nd · 3D", "bd-second", !!lastSeason],
-      ["7th · 3D", "bd-out", !!lastSeason],
-      ["2nd · drawn", "bd-second-drawn", !!lastSeason],
-      ["Not top three · drawn", "bd-out-drawn", !!lastSeason],
-      ["Result page", "bd-result", !!lastSeason],
-      ["Old countdown cards", "bd-old", !!lastSeason],
-    ] },
-    { title: "Online", test: "online", note: "A shared career opens at /legend/CODE. Codes need the star_legend_shares table.", items: [
-      ["Head to head", "compare", !!finished],
-      ["Compare with a friend", "compare-flow", true],
-      ["Share link sheet", "share-link", !!finished],
-      ["In the game: All seasons", "seasons", !!midway],
-    ] },
-  ];
 
   return (
-    <>
-      <PlayPage title="Retirement screens" intro="The end of a career, without playing one. Pick a career, then open any screen. Nothing is saved.">
-        <Card title="Which career" sub={`A made-up ${LAST}-season career, or one of your saves on this device.`}>
-          <Row label="Made up" hint={shapeNow ? shapeNow.line : "Pick a shape."}>
-            {PREVIEW_SHAPES.map(x => (
-              <Toggle key={x.id} on={isShape && source.shape === x.id} onClick={() => setSource({ kind: "shape", shape: x.id })}>{x.label}</Toggle>
-            ))}
-          </Row>
-          <Row label="Version" hint="Same shape, other numbers.">
-            <Btn onClick={() => setSeed(v => Math.max(1, v - 1))} title="Previous version">‹</Btn>
-            <span style={{ minWidth: 32, textAlign: "center", fontSize: 16, fontWeight: 900, alignSelf: "center" }}>{seed}</span>
-            <Btn onClick={() => setSeed(v => v + 1)} title="Next version">›</Btn>
-          </Row>
-          <Row label="Your saves" hint={saves.length ? "On this browser." : "None on this browser."}>
-            {saves.map(sv => {
-              const c = sv.career;
-              return (
-                <Toggle key={sv.key} on={source.kind === "save" && source.key === sv.key} onClick={() => setSource({ kind: "save", key: sv.key })}
-                  title={`${c.player.club || "No club yet"} · season ${c.season} · age ${c.player.age}${c.retired ? " · retired" : ""}`}>
-                  {c.player.firstName} {c.player.lastName} · S{c.season}
-                </Toggle>
-              );
-            })}
-          </Row>
-        </Card>
-        {groups.map(g => (
-          <div key={g.title} {...(g.test ? { [`data-${g.test}-tests`]: true } : {})}>
-            <Card title={g.title}>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10, marginBottom: g.note ? 10 : 0 }}>
-                {g.items.map(([label, v, en]) => screen(label, v, en))}
-              </div>
-              {g.note && <Note>{g.note}</Note>}
-            </Card>
+    <div className="min-h-screen bg-[#0b1220] px-4 py-5 text-white">
+      <div className="mx-auto max-w-sm space-y-4 pb-16">
+        <div>
+          <div className="text-[20px] font-black uppercase">Retirement preview</div>
+          <div className="text-[14px] font-bold text-white/85">The end of a career, without playing one. Nothing is saved.</div>
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">A made-up career · {LAST} seasons</div>
+          {PREVIEW_SHAPES.map(s => (
+            <button key={s.id} onClick={() => setSource({ kind: "shape", shape: s.id })} style={chip(isShape && source.shape === s.id)} className="kib-press block w-full">
+              <div className="text-[15px] font-black uppercase">{s.label}</div>
+              <div className="text-[12px] font-bold opacity-80">{s.line}</div>
+            </button>
+          ))}
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-[13px] font-black uppercase text-white/80">Version</span>
+            <button onClick={() => setSeed(s => Math.max(1, s - 1))} style={chip(false)} aria-label="Previous version">◀</button>
+            <span className="w-8 text-center text-[18px] font-black tabular-nums">{seed}</span>
+            <button onClick={() => setSeed(s => s + 1)} style={chip(false)} aria-label="Next version">▶</button>
+            <span className="text-[12px] font-bold text-white/60">same shape, other numbers</span>
           </div>
-        ))}
-      </PlayPage>
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">Your saves on this device</div>
+          {saves.length === 0 && <div className="text-[13px] font-bold text-white/60">None on this browser.</div>}
+          {saves.map(s => {
+            const c = s.career;
+            const on = source.kind === "save" && source.key === s.key;
+            return (
+              <button key={s.key} onClick={() => setSource({ kind: "save", key: s.key })} style={chip(on)} className="kib-press block w-full">
+                <div className="text-[15px] font-black uppercase">{c.player.firstName} {c.player.lastName}</div>
+                <div className="text-[12px] font-bold opacity-80">{c.player.club || "No club yet"} · season {c.season} · age {c.player.age}{c.retired ? " · retired" : ""}</div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="space-y-2">
+          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">The screens, in order</div>
+          {button(`▶ 1. After season ${LAST - 1}: final season`, "notice", !!beforeLast, "#f59e0b", true)}
+          {button(`▶ 2. After season ${LAST}: the final whistle`, "whistle", !!lastSeason, "#fbbf24", true)}
+          {button("▶ 3. The career overview", "overview", !!finished, "#059669")}
+          {button("▶ 4. The Hall of Fame", "hall", true, "rgba(251,191,36,.25)")}
+          {button("▶ The share card (the picture)", "card", !!finished, "rgba(251,191,36,.18)")}
+        </div>
+
+        <div className="space-y-2" data-farewell-tests>
+          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">The farewell match</div>
+          {button("▶ Invite (Play or Skip)", "fw-invite", !!farewell, "#fbbf24", true)}
+          {button("▶ Team sheets", "fw-sheets", !!farewell, "rgba(251,191,36,.25)")}
+          {button("▶ Guard of honour · 3D", "fw-walkout", !!farewell, "rgba(251,191,36,.25)")}
+          {button("▶ Guard of honour · drawn", "fw-walkout-drawn", !!farewell, "rgba(255,255,255,.1)")}
+          {button("▶ Standing ovation · 3D", "fw-ovation", !!farewell, "rgba(251,191,36,.25)")}
+          {button("▶ Standing ovation · drawn", "fw-ovation-drawn", !!farewell, "rgba(255,255,255,.1)")}
+          {button("▶ Full time (made-up 4–3)", "fw-result", !!farewell, "rgba(255,255,255,.1)")}
+          {button("▶ The overview after it", "fw-overview", !!farewell && !!finished, "rgba(255,255,255,.1)")}
+          <div className="text-[12px] font-bold text-white/60">The match itself: in the game, Dev Skip to the end of season {LAST}, then Hang them up.</div>
+        </div>
+
+        <div className="space-y-2" data-ballon-dor-tests>
+          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">The Ballon d&apos;Or night</div>
+          {button("▶ You win · 3D", "bd-win", !!lastSeason, "#fbbf24", true)}
+          {button("▶ You come 2nd · 3D", "bd-second", !!lastSeason, "rgba(251,191,36,.25)")}
+          {button("▶ Not in the top three (7th) · 3D", "bd-out", !!lastSeason, "rgba(251,191,36,.25)")}
+          {button("▶ You come 2nd · drawn", "bd-second-drawn", !!lastSeason, "rgba(255,255,255,.1)")}
+          {button("▶ Not in the top three · drawn", "bd-out-drawn", !!lastSeason, "rgba(255,255,255,.1)")}
+          {button("▶ The result page after it", "bd-result", !!lastSeason, "rgba(255,255,255,.1)")}
+          {button("▶ Old (the countdown cards)", "bd-old", !!lastSeason, "rgba(255,255,255,.1)")}
+          <div className="text-[12px] font-bold text-white/60">In the game: Settings → Look → Ballon d&apos;Or night. Made-up rivals fill the list where this career has fewer than ten.</div>
+        </div>
+
+        <div className="space-y-2" data-online-tests>
+          <div className="text-[12px] font-black uppercase tracking-widest text-amber-300">Online</div>
+          {button("▶ Head to head (made-up legend v this one)", "compare", !!finished, "rgba(56,189,248,.25)")}
+          {button("▶ Compare with a friend (type a code)", "compare-flow", true, "rgba(56,189,248,.15)")}
+          {button("▶ Share link sheet", "share-link", !!finished, "rgba(255,255,255,.1)")}
+          <div className="text-[12px] font-bold text-white/60">A shared career opens at /legend/CODE. Codes need the star_legend_shares table (pending).</div>
+          {button("▶ In the game: All seasons page", "seasons", !!midway, "rgba(255,255,255,.1)")}
+        </div>
+      </div>
       <PageGuide page="/star-retirement-dev" corner="bottom-left" />
-    </>
+    </div>
   );
 }
 
