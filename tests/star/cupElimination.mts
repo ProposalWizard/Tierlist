@@ -1,6 +1,6 @@
 import { makeInitialCareer, creditMatchResult, resolveSeasonWinners } from "../../lib/star/careerFlow";
 import { nextFixtureFor, advanceEliminatedCups } from "../../lib/star/competitions";
-import { stillIn, currentRound } from "../../lib/star/cups";
+import { stillIn, currentRound, yourTie } from "../../lib/star/cups";
 import { fixtureTimestamp, divisionOf } from "../../lib/star/calendar";
 import { mulberry32 } from "../../lib/star/season";
 import type { CareerState } from "../../lib/star/types";
@@ -68,7 +68,9 @@ function playUntilTieAndLose(c: CareerState, competition: string): CareerState {
   const st = c.cupState!.find(s => s.competition === "FA Cup")!;
   check(!stillIn(st, "Liverpool"), "Liverpool is genuinely out of the FA Cup");
   check(!st.winner, "…but the FA Cup does NOT already have a winner the instant you're eliminated");
-  check(st.rounds.length === 2, `the next round is drawn but not yet played (${st.rounds.length} rounds so far)`);
+  // Liverpool join in the Third Round (round 5 of 10) and lose it: the Fourth
+  // Round is drawn, not played.
+  check(st.rounds.length === 6, `the next round is drawn but not yet played (${st.rounds.length} rounds so far)`);
   check(!!currentRound(st) && currentRound(st)!.ties.some(t => t.hs === undefined),
     "the open round has real, unplayed ties in it");
 }
@@ -108,7 +110,7 @@ function playUntilTieAndLose(c: CareerState, competition: string): CareerState {
   const finished = advanceEliminatedCups(c, lateClock, mulberry32(2));
   const finishedSt = finished.find(s => s.competition === "FA Cup")!;
   check(!!finishedSt.winner, "given enough real time, the competition genuinely reaches a winner");
-  check(finishedSt.rounds.length === 6, `all six FA Cup rounds are there (${finishedSt.rounds.length})`);
+  check(finishedSt.rounds.length === 10, `all ten FA Cup rounds are there (${finishedSt.rounds.length})`);
   check(finishedSt.rounds.every(r => r.ties.every(t => t.hs !== undefined)),
     "every tie in every round is actually played, not skipped");
 }
@@ -138,13 +140,13 @@ function playUntilTieAndLose(c: CareerState, competition: string): CareerState {
     roundCounts.push(st.rounds.length);
     if (st.winner) break;
   }
-  check(st.rounds.length === 6, `by the end of the season's fixtures, the FA Cup has reached its Final round (${st.rounds.length})`);
-  // The round count should climb gradually (1 -> 6), never skip straight
+  check(st.rounds.length === 10, `by the end of the season's fixtures, the FA Cup has reached its Final round (${st.rounds.length})`);
+  // The round count should climb gradually (6 -> 10), never skip straight
   // from its post-elimination value to the final round count in one fixture.
   const distinctCounts = new Set(roundCounts);
   check(distinctCounts.size > 2,
     `the competition passed through several distinct round counts on the way to a winner, not one instant jump (${roundCounts.join(",")})`);
-  check(roundCounts[0] === 2 && roundCounts[1] === 2,
+  check(roundCounts[0] === 6 && roundCounts[1] === 6,
     "the very next fixture played right after elimination does not itself finish the competition");
 }
 
@@ -160,14 +162,18 @@ function playUntilTieAndLose(c: CareerState, competition: string): CareerState {
   check(!!winners.leagueCup, "…and a real League Cup winner too");
 }
 
-// ── A cup you are still in is left alone by advanceEliminatedCups ───────────
+// ── A cup waiting on your tie is left alone; one you have not joined yet
+// plays on until it draws you in ────────────────────────────────────────────
 {
-  let c: CareerState = makeInitialCareer(player(), CLUBS);
-  const before = JSON.stringify(c.cupState);
+  const c: CareerState = makeInitialCareer(player(), CLUBS);
+  const lcBefore = JSON.stringify(c.cupState!.find(s => s.competition === "League Cup"));
   const clock = fixtureTimestamp(c.player.startYear, c.season, 60, "cup", divisionOf(c));
   const after = advanceEliminatedCups(c, clock, mulberry32(3));
-  check(JSON.stringify(after) === before,
-    "a cup the player is still in is never touched by advanceEliminatedCups — settleCupTie owns it");
+  check(JSON.stringify(after.find(s => s.competition === "League Cup")) === lcBefore,
+    "the League Cup, waiting on your tie, is never touched by advanceEliminatedCups — settleCupTie owns it");
+  const fa = after.find(s => s.competition === "FA Cup")!;
+  check(currentRound(fa)?.name === "Third Round" && !!yourTie(fa, "Liverpool"),
+    `the FA Cup plays its four early rounds, then stops at Liverpool's Third Round tie (${currentRound(fa)?.name})`);
 }
 
 if (problems.length) {

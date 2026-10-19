@@ -398,9 +398,13 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     // clubs open with that fixture. Who is drawn is unchanged.
     if (Array.isArray(rest.fixtures)) {
       rest.fixtures = (rest.fixtures as { competition?: string; opponentStrength?: number }[])
-        .filter(f => f.competition !== "Community Shield" && f.competition !== "Super Cup")
+        // The FA Cup is ten rounds from 19 Oct 2026 (Mikey): a club joins at
+        // its league's round, so the old Round of 64 tie is not on day one.
+        .filter(f => f.competition !== "Community Shield" && f.competition !== "Super Cup" && f.competition !== "FA Cup")
         .map(f => ({ ...f, opponentStrength: undefined }));
     }
+    // …and its draw (cupState) is a different, ten-round one.
+    delete rest.cupState;
     return JSON.stringify(rest);
   };
 

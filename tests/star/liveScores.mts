@@ -75,7 +75,7 @@ const st = (us: number, them: number) => ({
   check(half.reduce((a, r) => a + r.hs + r.as, 0) === goalsByHalf, "at half time the panel shows exactly the goals scored so far");
 }
 
-// ── 31: out in the Round of 16, the list is the quarter-finals ──
+// ── 31: out in the Fifth Round (the last 16), the list is the quarter-finals ──
 {
   let c: CareerState = makeInitialCareer(PLAYER, CLUBS);
   let out = false;
@@ -84,7 +84,7 @@ const st = (us: number, them: number) => ({
     if (!fx) break;
     const fa = c.cupState?.find(s => s.competition === "FA Cup");
     if (fx.competition === "FA Cup" && fa) {
-      const lose = fa.rounds[fa.rounds.length - 1].name === "Round of 16";
+      const lose = fa.rounds[fa.rounds.length - 1].name === "Fifth Round";
       c = creditMatchResult(c, fx, lose ? st(0, 2) : st(2, 0)).career;
       out = lose;
     } else c = creditMatchResult(c, fx, fx.kind === "cup" ? st(2, 0) : st(1, 1)).career;
@@ -92,7 +92,7 @@ const st = (us: number, them: number) => ({
   const fa = c.cupState?.find(s => s.competition === "FA Cup");
   const latest = fa?.rounds[fa.rounds.length - 1];
   check(out && !!fa && !stillIn(fa, "Chelsea"), "the career is knocked out of the FA Cup");
-  check(!!fa && exitRound(fa, "Chelsea") === "Round of 16", "the heading's round is the Round of 16");
+  check(!!fa && exitRound(fa, "Chelsea") === "Fifth Round", "the heading's round is the Fifth Round");
   check(latest?.name === "Quarter-Final" && latest.ties.length === 4, `the list under it is the quarter-finals, 4 ties (${latest?.name}, ${latest?.ties.length})`);
 }
 
