@@ -21,6 +21,8 @@ import { createPortal } from "react-dom";
 import { useTexturePack, setTexturePack, TEXTURE_PACKS, TEXTURE_PACK_NAMES, TEXTURE_PACK_LINES, TEXTURE_PACK_PREVIEW, type TexturePack } from "@/lib/star/style3d/texturePack";
 import { useChancesMode, setChancesMode } from "@/lib/star/newChances";
 import { useAfterPassMode, setAfterPassMode } from "@/lib/star/afterPass";
+import { useFhrMode } from "@/lib/star/fhr/toggle";
+import { setLookRow } from "@/lib/star/lookRows";
 import { SegTabs } from "./screenKit";
 import { SetNote } from "./settingsKit";
 
@@ -156,6 +158,7 @@ function HarryChanges() {
       </button>
       {open && (
         <div className="border-t border-white/10 px-3 pb-3 pt-0">
+          <FhrRow />
           <ChancesRow />
           <AfterPassRow />
         </div>
@@ -164,9 +167,26 @@ function HarryChanges() {
   );
 }
 
+/** "Full highlights rebuild: Off | On (test)" (Harry, 19 Oct 2026), in "Harry changes". */
+function FhrRow() {
+  const m = useFhrMode();
+  return (
+    <>
+      <div className="mt-3 flex items-center justify-between gap-2" data-fhr-row>
+        <span className="text-[14px] font-bold text-white">Full highlights rebuild</span>
+        <SegTabs className="w-[150px] shrink-0" value={m} onChange={(v) => setLookRow("fhr", v)} tabs={[["off", "Off"], ["on", "On (test)"]] as const} />
+      </div>
+      <SetNote dim className="mt-1 text-[10px]">
+        Testing. On also turns Chances to New. Off is the game as it is.
+      </SetNote>
+    </>
+  );
+}
+
 /** "Chances: Old | New" (Harry, 14 Oct 2026), in "Harry changes". */
 function ChancesRow() {
   const m = useChancesMode();
+  const fhr = useFhrMode() === "on";
   return (
     <>
       <div className="mt-3 flex items-center justify-between gap-2" data-chances-row>
@@ -174,7 +194,7 @@ function ChancesRow() {
         <SegTabs className="w-[140px] shrink-0" value={m} onChange={setChancesMode} tabs={[["old", "Old"], ["new", "New"]] as const} />
       </div>
       <SetNote dim className="mt-1 text-[10px]">
-        New: chances follow the match (right wing, right kind, build-up on some).
+        {fhr ? "New while Full highlights rebuild is On." : "New: chances follow the match (right wing, right kind, build-up on some)."}
       </SetNote>
     </>
   );
