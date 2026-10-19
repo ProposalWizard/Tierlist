@@ -1244,12 +1244,14 @@ export const ADMIN_GUIDES = {
 
   "/star-scene-editor-dev": {
     title: "3D Scene Editor",
-    what: "Steps 1–2 of the one editor for every 3D scene. It works on the Cut-scene Director: pick a scene, change the camera (or fly a free camera) and the lighting, and watch the real director play it. Edits save per scene and per shot. Nothing touches a career, and the game's own cut scenes don't read these edits yet.",
+    what: "The one editor for every 3D scene. Three places work: the Cut-scene Director, 3D Signing and the Manager's Office. Pick a scene or a shot, change the camera (or fly a free camera) and the lighting, and watch the real scene play it. Edits save per scene and per shot. Nothing touches a career, and the game does not read these edits yet: the real signing, office and cut scenes play exactly as before.",
     buttons: [
       {
         group: "3D Preview",
         items: [
-          ["Place tabs (3D Signing … Cut-scene Director)", "Only Cut-scene Director works today. The others say \"coming next\"."],
+          ["Place tabs (3D Signing … Cut-scene Director)", "3D Signing, Manager's Office and Cut-scene Director work. Shop, Garden and House say \"coming next\" (hidden on a phone)."],
+          ["Shot buttons (3D Signing / Manager's Office: 1. He talks … 5. The handshake)", "Play that fixed shot from its start; the settings then change that shot. The office has only He talks and You reply. A • marks a shot you have edited."],
+          ["▶ PLAY SHOT (3D Signing / Manager's Office)", "Play the shot on screen again from its start."],
           ["Scene buttons (Contract signing, Goal celebration …)", "Load that hand-made cut scene into the preview. Your edits are cleared."],
           ["The badge top-left", "The shot under the playhead, its name and its lens."],
           ["Drag on the preview", "Free camera: orbit and tilt round the look point. Wheel or pinch moves in and out. Only the shot under the playhead changes."],
@@ -1268,6 +1270,7 @@ export const ADMIN_GUIDES = {
           ["Back to the shot", "Drops the free camera for this shot; the shot plays as written."],
           ["Key light angle, Key light colour", "Turn the sun round the set and change its colour. \"As written\" puts the colour back."],
           ["Greyed rows with \"coming next\"", "PART and NEW dials from the drawing. Not built yet."],
+          ["3D Signing / Manager's Office settings", "Only what those scenes have: Position, Look at, Lens per shot (drag the preview to orbit; Back to the shot undoes it), Exposure, Key light strength, angle and colour (the low sun through the window). No mood, spotlight, presets, cast or timeline there."],
         ],
       },
       {
@@ -1284,11 +1287,12 @@ export const ADMIN_GUIDES = {
     ],
     saving: [
       "This device: every change saves at once (localStorage), per scene and per shot, and comes back when you reopen it.",
+      "Save ids: 3D Signing saves as \"signing\", the Manager's Office as \"office\", each director scene under its own name, except Contract signing, which now saves as \"director:signing\" (an older save of it is still read back).",
       "Shared: SAVE FOR EVERYONE writes to the star_cutscene_edits table through /api/star/cutscene-edits (admins only). Needs supabase/migrations/star_cutscene_edits.sql run; until then it says \"Saved on this device only\".",
       "Nothing commits to the repo.",
     ],
-    inGame: ["Nowhere yet. It plays the same director the game's cut scenes use, but the game's cut scenes do not read these edits (a later step)."],
-    dev: "app/star-scene-editor-dev/page.tsx (+ editor.css) · lib/star/cutscene/director.ts (optional setEdit / cameras / cameraPose / layout hooks; no edit = the game's behaviour) · store.ts (saves) · app/api/star/cutscene-edits/route.ts · fixtures from lib/star/cutscene/fixtures.ts · drawing: docs/handoffs/2026-10-19-ui-lookover/scene-editor/.",
+    inGame: ["Nowhere yet. It plays the same director and the same signing/office scene the game uses, but the game does not read these edits (Harry wants to see them first)."],
+    dev: "app/star-scene-editor-dev/page.tsx (+ editor.css, parts.tsx, PlaceEditor.tsx for Signing/Office) · lib/star/signing3dScene.ts (optional edit / setEdit / playShot / shotDefaults / cameraPose / layout; no edit = today's scene, the career never passes one) · lib/star/cutscene/director.ts (optional setEdit / cameras / cameraPose / layout hooks; no edit = the game's behaviour) · store.ts (saves) · app/api/star/cutscene-edits/route.ts · fixtures from lib/star/cutscene/fixtures.ts · drawing: docs/handoffs/2026-10-19-ui-lookover/scene-editor/.",
   },
   "/star-3d-area-dev": {
     title: "3D Area",

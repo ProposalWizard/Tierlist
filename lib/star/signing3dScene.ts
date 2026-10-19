@@ -107,7 +107,37 @@ export interface SigningSceneOptions {
   stage?: "signing" | "office";
   /** Settings → Look → "3D quality" (lib/star/three3d/quality.ts). Unset: the setting, else Auto. */
   quality?: Quality3d;
+  /** The 3D Scene Editor's live edits (/star-scene-editor-dev). Optional: with none,
+   *  every shot, light and the exposure are exactly as before. The career never passes one. */
+  edit?: SigningSceneEdit | null;
 }
+
+/** The scene's fixed camera shots, in the order they play (office: talk and reply only). */
+export type SigningCamShot = "talk" | "reply" | "contract" | "sign" | "shake";
+export const SIGNING_CAM_SHOTS: { id: SigningCamShot; name: string; office: boolean }[] = [
+  { id: "talk", name: "He talks", office: true },
+  { id: "reply", name: "You reply", office: true },
+  { id: "contract", name: "The contract", office: false },
+  { id: "sign", name: "Signing at the desk", office: false },
+  { id: "shake", name: "The handshake", office: false },
+];
+type V3 = [number, number, number];
+/** Editor edits: per shot where the camera stands, looks and its lens (mm); the
+ *  key light (the low sun through the window) and the exposure. Absent = as written. */
+export interface SigningSceneEdit {
+  shots?: Partial<Record<SigningCamShot, { pos?: V3; look?: V3; lens?: number }>>;
+  /** Multiplies the exposure (1 = as written). */
+  exposure?: number;
+  /** Multiplies the key light (1 = as written). */
+  keyLight?: number;
+  /** Turns the key light round the room, degrees about the vertical (0 = as written). */
+  keyAngle?: number;
+  /** The key light's colour, "#rrggbb" (absent = as written). */
+  keyColor?: string;
+}
+/** A shot's vertical field of view (degrees) as a full-frame lens (mm), and back. */
+export const fovToLens = (fov: number) => 12 / Math.tan((fov * Math.PI) / 360);
+export const lensToFovDeg = (mm: number) => (2 * Math.atan(12 / mm) * 180) / Math.PI;
 
 export interface SigningSceneHandle {
   setShot(shot: SigningShot): void;
@@ -119,6 +149,18 @@ export interface SigningSceneHandle {
   /** For stills: hold one moment. */
   debugSeek(what: SigningShot | "sign", t: number): void;
   debugCamera(pos: [number, number, number] | null, look: [number, number, number] | null, fov?: number): void;
+  /** Editor only: live edits (null = as written). */
+  setEdit(e: SigningSceneEdit | null): void;
+  /** Editor only: play one shot from its start (talk / reply / contract / the signing / the handshake). */
+  playShot(shot: SigningCamShot): void;
+  /** Editor only: the shot playing now. */
+  currentShot(): SigningCamShot;
+  /** Editor only: each shot as written (today's values). */
+  shotDefaults(): Record<SigningCamShot, { pos: V3; look: V3; fov: number }>;
+  /** Editor only: where the camera stands and looks at the last frame. */
+  cameraPose(): { pos: V3; look: V3; fov: number };
+  /** Editor only: the room from above for the mini-map. */
+  layout(): { people: { id: string; x: number; z: number }[]; sunDir: V3; bounds: { min: V3; max: V3 } };
   debugInfo(): Record<string, unknown>;
   /** Tuning only: hold your (or his) right hand's fingers at these angles (degrees), or null. */
   debugFingers(who: "you" | "boss", deg: Parameters<typeof fingersDeg>[0] | null): void;
@@ -676,7 +718,9 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   const restore = (p: Person, s: (readonly [THREE.Bone, THREE.Quaternion])[]) => { for (const [b, q] of s) b.quaternion.copy(q); p.root.updateMatrixWorld(true); };
 
   // ── The camera shots ──
-  const SHOTS: Record<string, { pos: THREE.Vector3; look: THREE.Vector3; fov: number }> = {
+  type Shot = { pos: THREE.Vector3; look: THREE.Vector3; fov: number };
+  /** The shots as written. The editor's edits (opts.edit / setEdit) replace SHOTS[k] by a copy; none = these. */
+  const BASE_SHOTS: Record<SigningCamShot, Shot> = {
     talk: { pos: v3(0.22, 1.42, 1.42), look: v3(-0.05, 1.12, -0.6), fov: 44 },
     reply: { pos: v3(-0.22, 1.42, -1.42), look: v3(0.05, 1.12, 0.6), fov: 44 },
     contract: { pos: v3(0.26, 1.62, 0.98), look: v3(-0.02, DESK.top, 0.12), fov: 40 },
@@ -686,6 +730,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     // side cut you off at the left edge).
     shake: { pos: v3(2.3, 1.5, -1.45), look: v3(0, 1.05, 0.0), fov: 58 },
   };
+  const SHOTS: Record<SigningCamShot, Shot> = { ...BASE_SHOTS };
   let camFrom = SHOTS.talk, camTo = SHOTS.talk;
   let camA = 0, camB = 0;
   let debugCam: { pos: THREE.Vector3; look: THREE.Vector3; fov: number } | null = null;
@@ -696,7 +741,7 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   let heldFov = 46;
   const setCam = (t: number) => {
     held = false;
-    if (debugCam) { camera.position.copy(debugCam.pos); camera.fov = debugCam.fov; camera.lookAt(debugCam.look); camera.updateProjectionMatrix(); return; }
+    if (debugCam) { camera.position.copy(debugCam.pos); camera.fov = debugCam.fov; camera.lookAt(debugCam.look); camera.updateProjectionMatrix(); lastLook.copy(debugCam.look); return; }
     const k = camB > camA ? ease((t - camA) / (camB - camA)) : 1;
     held = FAST && k >= 1 && (mode === "talk" || mode === "reply");
     const pos = camFrom.pos.clone().lerp(camTo.pos, k);
@@ -716,7 +761,9 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     if (held && drift > 0) camera.fov = (2 * Math.atan(Math.tan((camera.fov * Math.PI) / 360) * (1 - 0.035 * drift)) * 180) / Math.PI;
     camera.lookAt(look);
     camera.updateProjectionMatrix();
+    lastLook.copy(look);
   };
+  const lastLook = new T.Vector3();
 
   // ── The room, drawn once per camera (New look) ──
   // talk and reply hold a fixed camera on a room where nothing moves (the
@@ -786,6 +833,33 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
     }
     renderer.render(scene, camera);
   };
+
+  // ── The editor's edits (/star-scene-editor-dev). None = everything as written. ──
+  const SUN_BASE = { pos: sun.position.clone(), color: sun.color.clone(), intensity: sun.intensity };
+  const EXPOSURE_BASE = renderer.toneMappingExposure;
+  let edit: SigningSceneEdit | null = null;
+  const applyEdit = (e: SigningSceneEdit | null) => {
+    edit = e;
+    for (const k of SIGNING_CAM_SHOTS.map((x) => x.id)) {
+      const b = BASE_SHOTS[k], se = e?.shots?.[k];
+      const next: Shot = se && (se.pos || se.look || se.lens)
+        ? { pos: se.pos ? v3(...se.pos) : b.pos, look: se.look ? v3(...se.look) : b.look, fov: se.lens ? lensToFovDeg(se.lens) : b.fov }
+        : b;
+      if (camFrom === SHOTS[k]) camFrom = next;
+      if (camTo === SHOTS[k]) camTo = next;
+      SHOTS[k] = next;
+    }
+    const ang = ((e?.keyAngle ?? 0) * Math.PI) / 180, ca = Math.cos(ang), sa = Math.sin(ang);
+    const p0 = SUN_BASE.pos;
+    sun.position.set(p0.x * ca - p0.z * sa, p0.y, p0.x * sa + p0.z * ca);
+    sun.intensity = SUN_BASE.intensity * (e?.keyLight ?? 1);
+    if (e?.keyColor) sun.color.set(e.keyColor); else sun.color.copy(SUN_BASE.color);
+    renderer.toneMappingExposure = EXPOSURE_BASE * (e?.exposure ?? 1);
+    // The held shots' room pictures were drawn with the old camera and light: draw them again.
+    bakedBack.forEach((b) => { b.rt.depthTexture?.dispose(); b.rt.dispose(); });
+    bakedBack.clear();
+  };
+  if (opts.edit) applyEdit(opts.edit);
 
   // ── The timeline ──
   type Mode = SigningShot | "sign";
@@ -1259,6 +1333,47 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
       frozen = true;
       for (let i = 0; i < n; i++) { stepClock(dt); frame(clock); }
       draw();
+    },
+    setEdit(e) {
+      applyEdit(e);
+      if (frozen) { frame(clock); draw(); }
+    },
+    playShot(shot) {
+      if (STAGE === "office" && shot !== "talk" && shot !== "reply") return;
+      frozen = false; debugCam = null;
+      fired.clear(); inkUpTo = 0; stamped = false;
+      if (shot === "sign" || shot === "shake") {
+        mode = "sign";
+        modeStart = shot === "shake" ? clock - SIGN_T.standA : clock;
+        talking = null;
+      } else {
+        mode = shot; modeStart = clock;
+        cutTo(shot, clock, shot === "contract" ? 0.7 : 0);
+        if (shot === "contract") camFrom = { pos: camera.position.clone(), look: SHOTS.talk.look.clone(), fov: camera.fov };
+        talking = shot === "talk" ? "boss" : shot === "reply" ? "you" : null;
+      }
+      drawPaper();
+    },
+    currentShot() {
+      if (mode !== "sign") return mode;
+      return clock - modeStart < SIGN_T.standA ? "sign" : "shake";
+    },
+    shotDefaults() {
+      const r = (v: THREE.Vector3) => [v.x, v.y, v.z] as V3;
+      return Object.fromEntries(SIGNING_CAM_SHOTS.map(({ id }) => [id, { pos: r(BASE_SHOTS[id].pos), look: r(BASE_SHOTS[id].look), fov: BASE_SHOTS[id].fov }])) as Record<SigningCamShot, { pos: V3; look: V3; fov: number }>;
+    },
+    cameraPose() {
+      return { pos: [camera.position.x, camera.position.y, camera.position.z], look: [lastLook.x, lastLook.y, lastLook.z], fov: camera.fov };
+    },
+    layout() {
+      const h = (p: Person) => wpos(p.bones.Head);
+      const y = h(you), b = h(boss);
+      const sd = sun.position.clone().normalize();
+      return {
+        people: [{ id: "you", x: y.x, z: y.z }, { id: "manager", x: b.x, z: b.z }],
+        sunDir: [sd.x, sd.y, sd.z],
+        bounds: { min: [-2.4, 0, -2.2], max: [2.4, 3.3, 2.5] },
+      };
     },
     debugCamera(pos, look, fov = 40) {
       debugCam = pos && look ? { pos: v3(...pos), look: v3(...look), fov } : null;
