@@ -12,6 +12,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Pill, Btn } from "@/components/admin/broadcast/BroadcastPage";
 import { AUDIT_COLUMNS, AUDIT_GROUPS, auditAll, type AuditCell, type AuditRow, type AuditStatus, type LineupInfo } from "@/lib/star/data/clubAudit";
 import { fetchSharedLineups, loadLineup } from "@/lib/star/lineupStore";
 import { getClubLogoMap, lookupClubLogo } from "@/lib/star/clubLogos";
@@ -104,15 +105,13 @@ export default function ClubDataPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 px-3 py-4 text-white">
-      <div className="mx-auto max-w-[1600px]">
-        <h1 className="text-2xl font-black">Club Data</h1>
-        <div className="mt-2 flex gap-2">
+    <BroadcastPage title="Club data" sub="Every club and everything the game knows about it" width={1600}>
+      <div>
+        <div className="flex gap-2">
           {(["clubs", "international"] as const).map(s => (
-            <button key={s} onClick={() => setSection(s)}
-              className={`rounded px-3 py-2 text-sm font-black ${section === s ? "bg-white text-slate-950" : "bg-slate-800 text-white"}`}>
+            <Pill key={s} on={section === s} onClick={() => setSection(s)}>
               {s === "clubs" ? "Clubs" : "International"}
-            </button>
+            </Pill>
           ))}
         </div>
         {section === "international" ? <NationKitsTable /> : (<>
@@ -129,31 +128,31 @@ export default function ClubDataPage() {
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <select value={group} onChange={e => setGroup(e.target.value)} className="rounded bg-slate-800 px-2 py-2 font-bold text-white">
+          <select value={group} onChange={e => setGroup(e.target.value)} className="rounded border border-[var(--bc-line)] bg-[#0a1e4a] px-2 py-2 font-bold text-white">
             <option value="All">All divisions</option>
             {AUDIT_GROUPS.map(g => <option key={g.name} value={g.name}>{g.name}</option>)}
           </select>
-          <select value={column} onChange={e => setColumn(e.target.value)} className="rounded bg-slate-800 px-2 py-2 font-bold text-white">
+          <select value={column} onChange={e => setColumn(e.target.value)} className="rounded border border-[var(--bc-line)] bg-[#0a1e4a] px-2 py-2 font-bold text-white">
             <option value="">All information</option>
             {AUDIT_COLUMNS.map(c => <option key={c.key} value={c.key}>Gaps in: {c.label}</option>)}
           </select>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search a club"
-            className="rounded bg-slate-800 px-2 py-2 font-bold text-white placeholder:text-white/70" />
+            className="rounded border border-[var(--bc-line)] bg-[#0a1e4a] px-2 py-2 font-bold text-white placeholder:text-white/70" />
           <label className="flex items-center gap-2 font-bold">
             <input type="checkbox" checked={gapsOnly} onChange={e => setGapsOnly(e.target.checked)} /> Only clubs with gaps
           </label>
           <label className="flex items-center gap-2 font-bold">
             <input type="checkbox" checked={researchedOnly} onChange={e => setResearchedOnly(e.target.checked)} /> Only researched values
           </label>
-          <button onClick={downloadCsv} className="rounded bg-emerald-600 px-3 py-2 font-black text-white">Download spreadsheet</button>
+          <Btn main onClick={downloadCsv}>Download spreadsheet</Btn>
           <span className="font-bold">{shown.length} clubs</span>
         </div>
 
-        <div className="mt-3 overflow-x-auto rounded border border-white/15">
+        <div className="mt-3 overflow-x-auto rounded border border-[var(--bc-line)]">
           <table className="border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-900">
-                <th className="sticky left-0 z-10 bg-slate-900 px-2 py-2 text-left font-black">Club</th>
+              <tr className="bg-[#123f9c]">
+                <th className="sticky left-0 z-10 bg-[#123f9c] px-2 py-2 text-left font-black">Club</th>
                 <th className="px-2 py-2 text-left font-black">Division</th>
                 {cols.map(c => (
                   <th key={c.key} className="whitespace-nowrap px-2 py-2 text-left font-black">
@@ -166,7 +165,7 @@ export default function ClubDataPage() {
             <tbody>
               {shown.map(r => (
                 <tr key={r.club} className="border-t border-white/10">
-                  <td className="sticky left-0 z-10 whitespace-nowrap bg-slate-950 px-2 py-1.5 font-black">{r.club}</td>
+                  <td className="sticky left-0 z-10 whitespace-nowrap bg-[#071a45] px-2 py-1.5 font-black">{r.club}</td>
                   <td className="whitespace-nowrap px-2 py-1.5 font-bold">{r.group}</td>
                   {cols.map(c => {
                     const cell = r.cells[c.key];
@@ -189,7 +188,7 @@ export default function ClubDataPage() {
         </>)}
       </div>
       <PageGuide page="/admin/clubs" />
-    </main>
+    </BroadcastPage>
   );
 }
 
