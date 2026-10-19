@@ -1445,6 +1445,9 @@ export const ADMIN_GUIDES = {
     buttons: [
       { items: [
         ["Face / Hands / Pen signing / Handshake / Shirt / Trophy / Knee slide / Line-up / Builds / Heads / Rest", "Picks the proof. Line-up: eight managers, chairmen and fans made from the same body. Builds: one player at eight heights and builds. Heads: the hair styles. Rest: the body standing still, for checking its shape. Face: a close-up. Hands: a hand held up in each pose. Pen signing: sat at a desk, writes his name on the contract and looks up. Handshake: you and the manager shake and pump, then both look at the camera. Shirt: holds the club shirt up by its shoulders. Trophy: lifts the cup over his head. Knee slide: down on his knees, arms wide."],
+        ["Studio / Contact sheet (top right)", "Two layouts of the same controls. Studio: the picture on the left, every control on the right. Contact sheet: drop-down picks on top (Proof, Head, Hair, Reset) and the expressions as cards. The page remembers which one you used last."],
+        ["Reset (Contact sheet)", "Puts every pick back to the start: Face, Short, the middle skin, brown hair, neutral."],
+        ["↺ Play again (under the picture)", "Plays the current proof again from the start."],
         ["Short / Buzz / Long / Manager", "Which head: the three player hair styles (each a different man, as in the game) or the manager."],
         ["The coloured dots", "The 8 skin tones a player can pick."],
         ["Black hair / Brown hair / Fair hair", "Hair colour."],
