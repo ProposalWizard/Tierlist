@@ -1,7 +1,7 @@
 /* Real Goals, option 2 (Harry, 19 Oct 2026: "option 2 … these are functional
    first"): a featured hero (the next level) with PLAY IT, then each stage as a
    TV rail of level cards. The playing screen itself is unchanged.
-   Hero picture: public/admin/real-goals/featured.webp (a real still of the match). */
+   Hero picture: this goal's own goal-mouth drawing, big (a fixed still showed the wrong match). */
 .rg { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .rg-total { display: flex; align-items: baseline; gap: 6px; padding: 6px 14px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--bc-line); }
 .rg-total b { font-size: 24px; font-weight: 900; font-style: italic; }
@@ -15,7 +15,8 @@
 .rg-hpic::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 55%, rgba(6, 20, 54, 0.95)); }
 .rg-hbadge { position: absolute; z-index: 1; top: 12px; left: 12px; padding: 4px 10px; font-size: 12px; font-weight: 900; font-style: italic; text-transform: uppercase;
   color: #fff; background: var(--bc-blue); clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
-.rg-hpic .rg-mouth { position: absolute; z-index: 1; left: 12px; bottom: 12px; width: 150px; background: rgba(4, 30, 16, 0.85); border: 1px solid rgba(255, 255, 255, 0.2); }
+.rg-hpic { display: grid; place-items: center; }
+.rg-hpic .rg-mouth { position: relative; z-index: 1; width: min(78%, 420px); background: rgba(4, 30, 16, 0.85); border: 1px solid rgba(255, 255, 255, 0.2); }
 .rg-hinfo { padding: 22px 24px; display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0; }
 .rg-hlabel { align-self: flex-start; padding: 5px 14px 5px 10px; font-size: 13px; font-weight: 900; font-style: italic; text-transform: uppercase; color: #fff;
   background: linear-gradient(100deg, var(--bc-blue), var(--bc-blue2)); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
@@ -85,7 +86,7 @@
 
 @media (max-width: 760px) {
   .rg-hero { grid-template-columns: minmax(0, 1fr); }
-  .rg-hpic { min-height: 220px; background-size: cover; background-position: center 20%; }
+  .rg-hpic { min-height: 200px; }
   .rg-hpic::after { background: linear-gradient(180deg, transparent 60%, rgba(6, 20, 54, 0.95)); }
   .rg-hinfo { padding: 14px 14px 16px; }
   .rg-playit { align-self: stretch; justify-content: center; }

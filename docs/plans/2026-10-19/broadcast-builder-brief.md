@@ -23,7 +23,8 @@ Rebuild ONE Road to Ballon d'Or admin/test page in the picked layout, on the sha
 3. "Toggle" picks (e.g. options 1 and 2 as a toggle) = a `Pill` pair at the top that switches between two layouts
    of the same functions. Remember the choice in localStorage (try/catch).
 4. Fits a computer (1440×900) and a phone (390×844); no sideways scroll; text ≥ 12px on a phone.
-5. No Higgsfield or any image generation. Pictures on cards come from real screenshots you take, as small
+5. No Higgsfield or any image generation. A picture must show the exact thing it is labelled with (a fixed still of one
+   match on a card that changes is wrong). Pictures on cards come from real screenshots you take, as small
    webp files in `public/admin/<page-key>/`.
 6. Keep `PageGuide` (the ⓘ). Update that page's entry in `lib/adminGuides.ts` if a button's name or place changed.
 7. Delete the page's url from `NOT_YET` in `scripts/admin-look-guard.mjs`.

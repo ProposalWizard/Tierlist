@@ -357,7 +357,7 @@ function Hero({ level, progress, onPlay }: { level: Level; progress: Progress; o
   const p = progress[g.id];
   return (
     <section className="rg-hero" data-hero={g.id}>
-      <div className="rg-hpic" style={{ backgroundImage: "url(/admin/real-goals/featured.webp)" }}>
+      <div className="rg-hpic">
         <span className="rg-hbadge">{g.x.comp} · {g.x.stage}</span>
         <MiniMouth goal={g} />
       </div>
