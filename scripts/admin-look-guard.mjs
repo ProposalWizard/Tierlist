@@ -17,7 +17,6 @@ const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..")
 const NOT_YET = new Set([
   "/star-goal-clips-dev",
   "/star-update-dev",
-  "/star-dribble-stick-dev",
   "/lineups", "/admin/clubs",
   "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev",
   "/star-garden3d-dev", "/star-home3d-dev", "/star-style-dev",
