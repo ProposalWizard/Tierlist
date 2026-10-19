@@ -168,3 +168,6 @@
 .agp-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 .agp-open { margin-left: auto; font-size: 12.5px; font-weight: 900; font-style: italic; text-transform: uppercase; color: #1a1300; background: var(--ash-amber); padding: 6px 14px; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
 @media (max-width: 640px) { .agp-grid { grid-template-columns: 1fr; } }
+.agp-sec { display: flex; flex-direction: column; gap: 10px; }
+.agp-h2 { margin: 6px 0 0; font-size: 14px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: .06em; color: var(--ash-amber); }
+.agp-h2 span { color: var(--ash-ink3); margin-left: 4px; }

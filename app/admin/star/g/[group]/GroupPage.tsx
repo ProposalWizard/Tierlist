@@ -7,7 +7,7 @@
  */
 import Link from "next/link";
 import AdminShell from "@/components/admin/shell/AdminShell";
-import { GROUPS, visibleTo, type AdminGroup, type AdminOwner } from "@/lib/adminRegistry";
+import { GROUPS, isTestPage, visibleTo, type AdminGroup, type AdminOwner, type AdminPage } from "@/lib/adminRegistry";
 import { ADMIN_PREVIEW } from "@/lib/adminPreviews";
 import { TAGLINE } from "../../AdminHome";
 import "../../adminHome.css";
@@ -35,30 +35,38 @@ export default function GroupPage({ group, role }: { group: AdminGroup; role: "a
         <nav className="agp-jump" aria-label="Other groups">
           {others.map((o) => <Link key={o.key} href={`/admin/star/g/${o.key}`}>{o.name}</Link>)}
         </nav>
-        <div className="agp-grid">
-          {pages.map((p) => {
-            const w = WRITE_TAG[p.writes];
-            const pic = ADMIN_PREVIEW[p.url];
-            return (
-              <Link key={p.url} href={p.url} className="agp-card" title={`${p.name}: ${p.purpose}`}>
-                <span className="agp-pic">
-                  {pic ? <img src={pic} alt="" loading="lazy" /> : <img src={`/admin/icons/${group === "old" ? "site" : group}.webp`} alt="" className="agp-icon" />}
-                </span>
-                <span className="agp-body">
-                  <b>{p.name}</b>
-                  <span className="agp-purpose">{p.purpose}</span>
-                  <span className="agp-foot">
-                    <span className={`ahb-o ${p.owner}`} title={`Owner: ${p.owner}`}>{OWNER_LETTER[p.owner]}</span>
-                    {w && <span className={`ash-tag ${w.tone}`} title={w.help}>{w.text}</span>}
-                    {p.access === "admin" && <span className="ash-tag grey" title="Only admins can open this page">Admins</span>}
-                    <span className="agp-open">Open</span>
-                  </span>
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+        {/* Tools (features we have and tune) first, then tests (new features being tried). */}
+        {([["Admin tools", pages.filter((p) => !isTestPage(p.url))], ["Test pages", pages.filter((p) => isTestPage(p.url))]] as [string, AdminPage[]][])
+          .filter(([, list]) => list.length)
+          .map(([title, list]) => (
+            <section key={title} className="agp-sec">
+              <h2 className="agp-h2">{title} <span>{list.length}</span></h2>
+              <div className="agp-grid">{list.map((p) => <Card key={p.url} p={p} group={group} />)}</div>
+            </section>
+          ))}
       </div>
     </AdminShell>
+  );
+}
+
+function Card({ p, group }: { p: AdminPage; group: AdminGroup }) {
+  const w = WRITE_TAG[p.writes];
+  const pic = ADMIN_PREVIEW[p.url];
+  return (
+    <Link href={p.url} className="agp-card" title={`${p.name}: ${p.purpose}`}>
+      <span className="agp-pic">
+        {pic ? <img src={pic} alt="" loading="lazy" /> : <img src={`/admin/icons/${group === "old" ? "site" : group}.webp`} alt="" className="agp-icon" />}
+      </span>
+      <span className="agp-body">
+        <b>{p.name}</b>
+        <span className="agp-purpose">{p.purpose}</span>
+        <span className="agp-foot">
+          <span className={`ahb-o ${p.owner}`} title={`Owner: ${p.owner}`}>{OWNER_LETTER[p.owner]}</span>
+          {w && <span className={`ash-tag ${w.tone}`} title={w.help}>{w.text}</span>}
+          {p.access === "admin" && <span className="ash-tag grey" title="Only admins can open this page">Admins</span>}
+          <span className="agp-open">Open</span>
+        </span>
+      </span>
+    </Link>
   );
 }

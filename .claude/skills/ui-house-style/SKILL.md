@@ -93,6 +93,14 @@ Newest first. Each is something that was actually said.
   and what it does; a mock-up that drops or fakes a function is wrong. And a
   new admin page must be quick to make: one registry line puts it on the home,
   its group page and the side menu; the shared Broadcast frame gives it the look.
+  **How:** one line in lib/adminRegistry.ts + wrap the page in `<BroadcastPage>`
+  (components/admin/broadcast/BroadcastPage.tsx: Panel, PanelGrid, Btn, Pill).
+  scripts/admin-look-guard.mjs runs in `npm run build` and fails a new RBD
+  admin page that skips the frame; its NOT_YET list only shrinks.
+- **Test pages vs admin tools** (Harry, 19 Oct): "we need to differentiate what
+  are test pages for us to test new features and what are admin pages for
+  features we have and like and are tuning." `TEST_PAGES` in
+  lib/adminRegistry.ts; group pages show Admin tools first, then Test pages.
 
 ### 18 Oct 2026 — admin pages get real design (Harry)
 - **"I like the idea of the grouped admin … but it's not the UI I was

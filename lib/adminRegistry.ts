@@ -88,7 +88,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-update-dev", "Leo's Oct 13 update", "Leo's Oct 13 gameplay update, Old or New", "rbd", "match", "Leo", "live", "browser", "team"),
   P("/star-sim90-dev", "Full match", "Full simulated 90 minutes", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-radar-dev", "Match radar", "Unseen match, minute by minute", "rbd", "match", "Harry", "live", "none", "team"),
-  P("/star-dribble-dev", "First-person dribble", "First-person dribble duel", "rbd", "match", "Harry", "live", "none", "team"),
+  // "/star-dribble-dev" (First-person dribble): taken off the list (Harry, 19 Oct 2026: "remove as an admin page").
   P("/star-dribble-stick-dev", "Dribble on a stick", "Dribble steered by a stick", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-vfx-lab-dev", "Visual effects lab", "Pick and edit the effect for each match moment", "rbd", "players", "Leo", "live", "browser", "team"),
   P("/star-sound-lab-dev", "Sound lab", "Hear, edit, rate match sounds", "rbd", "sound", "Leo", "live", "browser", "team"),
@@ -171,6 +171,22 @@ export function relatedFor(path: string): { label: string; pages: AdminPage[] } 
   if (!best) return null;
   return { label: `Admin for ${best.label}`, pages: best.urls.map(pageFor).filter((p): p is AdminPage => !!p) };
 }
+
+/**
+ * Test pages vs admin tools (Harry, 19 Oct 2026: "we need to differentiate what
+ * are test pages for us to test new features and what are admin pages for
+ * features we have and like and are tuning"). A page here is a TEST; every
+ * other page is a TOOL. First sort by Claude, for Harry to correct.
+ */
+export const TEST_PAGES = new Set<string>([
+  "/star-goal-clips-dev", "/star-update-dev", "/star-dribble-stick-dev", "/star-vfx-lab-dev", "/star-sound-lab-dev",
+  "/star-real-moments-dev", "/star-statsbomb-dev", "/star-real-goals-dev", "/star-intl-dev", "/star-tournament-dev",
+  "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev", "/star-garden3d-dev",
+  "/star-home3d-dev", "/star-training3d-dev", "/star-style-dev", "/star-anim3d-dev", "/star-people-dev", "/star-sprites-dev",
+  "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev",
+  "/star-animations-dev",
+]);
+export const isTestPage = (url: string) => TEST_PAGES.has(url);
 
 /** Pages a person may open: testers see "team" and "open" pages only. */
 export function visibleTo(role: "admin" | "tester"): AdminPage[] {
