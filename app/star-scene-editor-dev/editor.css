@@ -77,3 +77,15 @@
 .se-shots { display: flex; flex-wrap: wrap; gap: 4px; width: 100%; }
 .se-shotbtn { padding: 6px 10px; font-weight: 900; font-size: 12px; color: #fff; background: rgba(37, 99, 235, .35); border: 2px solid transparent; cursor: pointer; }
 .se-shotbtn[aria-pressed="true"] { background: #2563eb; border-color: #f5b21b; }
+/* Harry, 19 Oct 2026: key buttons (Play, Save, the shots) on screen without scrolling at 1440×900 and on a phone */
+.se-view { max-height: calc(100svh - 470px); min-height: 200px; }
+@media (max-width: 820px) {
+  .se-view { max-height: none; min-height: 0; }
+  .se-key { display: none; }
+  .se-place.se-off { display: none; }
+  .se-place { padding: 5px 10px; font-size: 12px; }
+  .se-unsaved { font-size: 11px; padding: 4px 8px; }
+  .se-play { gap: 6px; }
+  .se-shotbtn { padding: 4px 7px; font-size: 11px; }
+  .se-big { font-size: 14px; padding: 6px 12px; }
+}

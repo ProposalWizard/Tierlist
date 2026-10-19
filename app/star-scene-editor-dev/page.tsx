@@ -50,7 +50,7 @@ export default function SceneEditorPage() {
     </div>
   );
   return (
-    <BroadcastPage title="3D Scene Editor" sub="One editor for every 3D scene: the Cut-scene Director, 3D Signing and the Manager's Office." back="/star-3d-area-dev" width={1500}>
+    <BroadcastPage title="3D Scene Editor" sub="One editor for every 3D scene." back="/star-3d-area-dev" width={1500}>
       {key}
       {place === "signing" || place === "office"
         ? <PlaceEditor key={place} place={place} tabs={<PlaceTabs place={place} onPick={setPlace} />} />
