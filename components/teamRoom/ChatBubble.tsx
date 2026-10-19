@@ -27,7 +27,7 @@ const SIZE = 50;
 const TRY = [16, 80, 144, 208, 272];
 // Never on a control, and never on words or pictures either (UI lookover, 19 Oct
 // 2026: it covered titles, table rows and notes on eight admin pages).
-const BUSY = "button, a, input, select, textarea, canvas, img, svg, video, h1, h2, h3, h4, p, label, li, td, th, [role='button'], [data-tour]";
+const BUSY = "button, a, input, select, textarea, canvas, img, svg, video, h1, h2, h3, h4, p, label, li, td, th, .ash-side, [role='button'], [data-tour]";
 
 export default function ChatBubble() {
   const path = usePathname() ?? "/";
