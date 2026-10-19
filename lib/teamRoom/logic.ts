@@ -7,7 +7,7 @@ import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "./config";
 
 export interface TeamMessage { id: number; person: TeamPerson; body: string; image_url: string | null; page: string | null; pinned: boolean; created_at: string }
 export type IdeaStage = "idea" | "doing" | "done";
-export interface TeamIdea { id: number; person: TeamPerson; title: string; stage: IdeaStage; created_at: string; updated_at: string; /** Posted by a Claude chat for this person (team_room_claude.sql). */ from_claude?: boolean }
+export interface TeamIdea { id: number; person: TeamPerson; title: string; stage: IdeaStage; created_at: string; updated_at: string }
 export interface TeamVote { idea_id: number; person: TeamPerson }
 export interface TeamTask { id: number; owner: TeamPerson; made_by: TeamPerson; title: string; done_at: string | null; created_at: string }
 export type NoteKind = "idea" | "push";

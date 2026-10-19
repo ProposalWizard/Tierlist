@@ -102,7 +102,6 @@ function IdeaCard({ idea, showStage, onOpen }: { idea: TeamIdea; showStage?: boo
       <b>{idea.title}</b>
       <span className="tr-meta">
         {showStage ? <span className={`tr-tag ${idea.stage}`}>{idea.stage.toUpperCase()}</span> : <><Av p={idea.person} sm />{idea.person}</>}
-        {idea.from_claude && <span className="tr-tag" title={`Added by Claude for ${idea.person}`}>CLAUDE</span>}
         <NoteCount kind="idea" id={idea.id} />
         <Dots ideaId={idea.id} />
       </span>
@@ -120,7 +119,7 @@ function IdeaSheet({ idea, me, onClose }: { idea: TeamIdea; me: TeamPerson | nul
     <div className="tr-sheet-wrap tr" onClick={onClose}>
       <div className="tr-sheet" role="dialog" aria-label="Idea" onClick={(e) => e.stopPropagation()}>
         <div className="tr-meta">
-          <Av p={idea.person} sm />{idea.person}{idea.from_claude ? " (from Claude)" : ""} · {new Date(idea.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+          <Av p={idea.person} sm />{idea.person} · {new Date(idea.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
           <Dots ideaId={idea.id} />
           <button className="tr-x" onClick={onClose} aria-label="Close">✕</button>
         </div>
