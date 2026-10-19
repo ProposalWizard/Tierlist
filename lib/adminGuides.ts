@@ -1637,14 +1637,17 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["Event buttons (top row)", "Pick what you are listening to: pass, shot, first touch, keeper save, keeper catch, post/bar, net, block, header, whistle, goal roar, near miss. A ✓ means you have picked one for it."],
+          ["Layout: One sound | All sounds", "Two ways to see the same sounds. One sound: the events down the left (a drop-down on a phone), one sound open at a time with a big picture. All sounds: every sound as a short row; tap its name or Edit to open it in the Edit sound panel (under the row on a phone). This device remembers your choice."],
+          ["Events (left list, drop-down or top pills)", "Pick what you are listening to: pass, shot, first touch, keeper save, keeper catch, post/bar, net, block, header, whistle, goal roar, near miss. A ✓ means you have picked one for it. In All sounds the pills jump to that event."],
+          ["Sound tabs (One sound)", "The sounds for that event. Tap one to open it. ✓ marks your pick, ★ your stars."],
           ["▶", "Plays that sound. The first tap also switches sound on (phones keep it off until you tap)."],
+          ["Pick circle (All sounds rows)", "Same as Pick this: your favourite for that event."],
           ["IN GAME NOW / FILE", "\"Current (match)\" is the sound the live match makes today. \"Current file\" is the recorded file the game has (goal videos use it), including any replacement uploaded on the Sound Board."],
           ["Green picture / blue bars", "The shape of the sound (loud parts tall) and how much low (left) and high (right) it has. The number is its length in seconds."],
           ["★ ★ ★ ★ ★", "Rate it. Tap the same star again to clear it."],
           ["Pick this / ✓ My pick", "Your favourite for this event (one per event). Tap again to un-pick."],
           ["Note", "Write what you like or don't. It goes into the export."],
-          ["Edit ▾", "Opens the sliders: Volume, Pitch, Length, Brightness, Punch, Body (low end), Room (echo). Let go of a slider to hear the change."],
+          ["Edit ▾ (or Edit on a row)", "Opens the sliders: Volume, Pitch, Length, Brightness, Punch, Body (low end), Room (echo). Let go of a slider to hear the change."],
           ["Reset", "Puts that sound's sliders back to how it was made."],
           ["Copy recipe", "Copies how that sound is built plus your slider settings, for us."],
           ["Save WAV", "Downloads that sound, with your sliders, as a .wav file."],
