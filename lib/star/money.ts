@@ -68,7 +68,14 @@ export const MONEY_SCALE = 2000;
  */
 export function niceMoneyStep(amount: number): number {
   const a = Math.abs(amount);
-  if (a < 10_000) return 500;
+  // Small amounts step small (Mikey, 19 Oct 2026: a weekly wage of ★470
+  // moved ★500 a press, so one press down from ★501 landed on ★1). Around
+  // ★400 a press is ★10, a few presses make a real counter-offer.
+  if (a < 50) return 1;
+  if (a < 200) return 5;
+  if (a < 1_000) return 10;
+  if (a < 2_500) return 25;
+  if (a < 10_000) return 100;
   if (a < 100_000) return 5_000;
   if (a < 1_000_000) return 25_000;
   if (a < 10_000_000) return 250_000;

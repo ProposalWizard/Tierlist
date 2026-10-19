@@ -31,7 +31,9 @@ check(formatMoney(1_000_000_000) === "1b", `an exact billion (${formatMoney(1_00
 check(niceMoneyStep(2_000_000) === 250_000, `~2M steps by 250K (${niceMoneyStep(2_000_000)})`);
 check(niceMoneyStep(50_000_000) === 1_000_000, `~50M steps by 1M (${niceMoneyStep(50_000_000)})`);
 check(niceMoneyStep(100_000_000) === 5_000_000, `~100M steps by 5M (${niceMoneyStep(100_000_000)})`);
-check(niceMoneyStep(500) === 500, `a small amount still steps by a real, non-trivial amount (${niceMoneyStep(500)})`);
+check(niceMoneyStep(470) === 10, `a weekly wage around ★470 steps by ★10 (${niceMoneyStep(470)})`);
+check(niceMoneyStep(20) === 1 && niceMoneyStep(5_000) === 100, `small sums step small (${niceMoneyStep(20)}, ${niceMoneyStep(5_000)})`);
+check([30, 150, 470, 2_000, 9_000].every(v => v - niceMoneyStep(v) >= v * 0.5), "one press down never more than halves the amount");
 {
   let prev = niceMoneyStep(100);
   for (const v of [1_000, 50_000, 500_000, 5_000_000, 50_000_000, 500_000_000, 5_000_000_000]) {
