@@ -1885,7 +1885,8 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                     <span className="w-6 text-center shrink-0">#</span>
                     <span className="flex-1 min-w-0">Club</span>
                     <span className="flex items-center gap-1 tabular-nums shrink-0">
-                      <span className="w-5 text-center">MP</span>
+                      {/* Played is the same for everyone at full time; on a phone its room goes to club names. */}
+                      <span className="hidden w-5 text-center sm:inline-block">MP</span>
                       <span className="w-5 text-center">W</span>
                       <span className="w-5 text-center">D</span>
                       <span className="w-5 text-center">L</span>
@@ -1925,7 +1926,7 @@ export default function DraftResult({ players, onNewRun, onPlayNextSeason, seaso
                                   {pos === 1 && <span className="text-xs shrink-0">🏆</span>}
                                 </span>
                                 <span className="flex items-center gap-1 tabular-nums shrink-0">
-                                  <span className="w-5 text-center text-xs font-semibold text-white/55">{team.played}</span>
+                                  <span className="hidden w-5 text-center text-xs font-semibold text-white/55 sm:inline-block">{team.played}</span>
                                   <span className="w-5 text-center text-xs font-semibold text-white/80">{team.won}</span>
                                   <span className="w-5 text-center text-xs font-semibold text-white/80">{team.drawn}</span>
                                   <span className="w-5 text-center text-xs font-semibold text-white/80">{team.lost}</span>
