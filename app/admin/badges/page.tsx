@@ -11,6 +11,8 @@
  */
 import { useMemo, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Btn, Pill } from "@/components/admin/broadcast/BroadcastPage";
+import "./badges.css";
 import ClubBadge from "@/components/star/ClubBadge";
 import { AUDIT_GROUPS } from "@/lib/star/data/clubAudit";
 import { badgeDesign, badgeSvg, PATTERNS, type BadgeOverride } from "@/lib/star/clubBadge";
@@ -60,57 +62,46 @@ export default function ClubBadgesPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 px-3 py-4 text-white">
-      <div className="mx-auto max-w-[1400px]">
-        <h1 className="text-2xl font-black">Club Badges</h1>
-        <p className="mt-1 text-sm font-bold">
-          {WITH_SYMBOL} of {CLUBS.length} clubs get a symbol from their own data. The rest keep a ball or a star.
-        </p>
-        <p className="mt-1 text-sm font-bold text-amber-300">
-          Changes here are saved on this device only. The game on this device shows them too.
-        </p>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <select value={group} onChange={(e) => setGroup(e.target.value)} className="rounded bg-slate-800 px-2 py-2 font-bold text-white">
-            <option value="All">All divisions</option>
-            {AUDIT_GROUPS.map((g) => <option key={g.name} value={g.name}>{g.name}</option>)}
-          </select>
-          <select value={show} onChange={(e) => setShow(e.target.value as Show)} className="rounded bg-slate-800 px-2 py-2 font-bold text-white">
-            <option value="all">Every badge</option>
-            <option value="symbol">With a symbol</option>
-            <option value="plain">Ball or star</option>
-            <option value="changed">Changed here</option>
-          </select>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search a club"
-            className="w-40 rounded bg-slate-800 px-2 py-2 font-bold text-white placeholder:text-white/70" />
-          <div className="flex overflow-hidden rounded border border-white/30 font-black">
-            {(["new", "old"] as const).map((l) => (
-              <button key={l} onClick={() => setLook(l)}
-                className={`px-3 py-2 ${look === l ? "bg-white text-slate-950" : "text-white"}`}>
-                {l === "new" ? "New" : "Old"}
-              </button>
-            ))}
-          </div>
-          {changed > 0 && (
-            <>
-              <button onClick={copyChanges} className="rounded bg-emerald-600 px-3 py-2 font-black text-white">
-                {copied ? "Copied" : `Copy changes (${changed})`}
-              </button>
-              <button onClick={() => { if (confirm("Undo every change on this device?")) clearBadgeOverrides(); }}
-                className="rounded border border-white/30 px-3 py-2 font-black text-white">Undo all</button>
-            </>
-          )}
-          <span className="font-bold">{shown.length} clubs</span>
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {shown.map(({ club }) => (
-            <BadgeCard key={club} club={club} look={look} override={overrides[club]} />
-          ))}
+    <BroadcastPage
+      title="Club badges"
+      sub={`${WITH_SYMBOL} of ${CLUBS.length} clubs get a symbol from their own data. The rest keep a ball or a star.`}
+    >
+      <div className="cb-tools">
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search a club"
+          className="cb-field cb-search" aria-label="Search a club" />
+        <select value={group} onChange={(e) => setGroup(e.target.value)} className="cb-field cb-gold" aria-label="Division">
+          <option value="All">All divisions</option>
+          {AUDIT_GROUPS.map((g) => <option key={g.name} value={g.name}>{g.name}</option>)}
+        </select>
+        <select value={show} onChange={(e) => setShow(e.target.value as Show)} className="cb-field" aria-label="Which badges">
+          <option value="all">Every badge</option>
+          <option value="symbol">With a symbol</option>
+          <option value="plain">Ball or star</option>
+          <option value="changed">Changed here</option>
+        </select>
+        <div className="cb-look">
+          <Pill on={look === "new"} onClick={() => setLook("new")}>New</Pill>
+          <Pill on={look === "old"} onClick={() => setLook("old")}>Old</Pill>
         </div>
       </div>
+      <div className="cb-status">
+        <span className="cb-count">{shown.length} clubs found</span>
+        <span className="cb-device">Changes save on this device only. The game on this device shows them too.</span>
+        {changed > 0 && (
+          <span className="cb-changes">
+            <Btn main onClick={copyChanges}>{copied ? "Copied" : `Copy changes (${changed})`}</Btn>
+            <Btn onClick={() => { if (confirm("Undo every change on this device?")) clearBadgeOverrides(); }}>Undo all</Btn>
+          </span>
+        )}
+      </div>
+
+      <div className="cb-grid">
+        {shown.map(({ club }) => (
+          <BadgeCard key={club} club={club} look={look} override={overrides[club]} />
+        ))}
+      </div>
       <PageGuide page="/admin/badges" />
-    </main>
+    </BroadcastPage>
   );
 }
 
@@ -145,39 +136,36 @@ function BadgeCard({ club, look, override }: { club: string; look: "new" | "old"
   };
 
   return (
-    <div className={`rounded border p-2 ${override ? "border-amber-400" : "border-white/15"} bg-slate-900`}>
-      <div className="flex items-center gap-2">
-        <div className="grid h-14 w-14 shrink-0 place-items-center">
-          {look === "new"
-            // eslint-disable-next-line @next/next/no-img-element
-            ? <img src={src} alt="" width={56} height={56} />
-            : <ClubBadge club={club} size={56} look="old" />}
-        </div>
-        <div className="min-w-0">
-          <div className="truncate text-sm font-black" title={club}>{club}</div>
-          <div className="text-xs font-black capitalize text-sky-300">{name}</div>
-        </div>
+    <div className="cb-card" data-changed={override ? "true" : undefined}>
+      <div className="cb-disc">
+        {look === "new"
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={src} alt="" width={64} height={64} />
+          : <ClubBadge club={club} size={64} look="old" />}
       </div>
-      <div className="mt-1 line-clamp-2 text-[11px] font-bold text-white/80" title={why}>{why}</div>
+      <div className="cb-text">
+        <div className="cb-name" title={club}>{club}</div>
+        <div className="cb-sym">{name}</div>
+        <div className="cb-why" title={why}>{why}</div>
+      </div>
       {look === "new" ? (
-        <div className="mt-2 space-y-1">
-          <select value={emblemValue} onChange={(e) => setEmblem(e.target.value)} aria-label="Emblem"
-            className="w-full rounded bg-slate-700 px-1 py-1 text-xs font-black text-white">
+        <div className="cb-ctl">
+          <select value={emblemValue} onChange={(e) => setEmblem(e.target.value)} aria-label="Emblem" className="cb-field cb-small">
             <option value="">{`Data: ${pick ? pick.symbol : base.emblem}`}</option>
             <option value="ball">Ball</option>
             <option value="star">Star</option>
             <option value="none">Nothing</option>
             {SYMBOL_IDS.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
-          <div className="flex gap-1">
-            <button onClick={nextPattern} className="flex-1 rounded bg-slate-700 px-2 py-1 text-xs font-black">↻ Pattern</button>
+          <div className="cb-row">
+            <button onClick={nextPattern} className="cb-mini">↻ Pattern</button>
             {override && (
-              <button onClick={() => setBadgeOverride(club, null)} className="rounded border border-white/30 px-2 py-1 text-xs font-black">Undo</button>
+              <button onClick={() => setBadgeOverride(club, null)} className="cb-mini cb-undo">Undo</button>
             )}
           </div>
         </div>
       ) : (
-        <div className="mt-2 text-[11px] font-bold text-white/70">Old: real crest if saved, else initials.</div>
+        <div className="cb-ctl cb-oldnote">Old: real crest if saved, else initials.</div>
       )}
     </div>
   );

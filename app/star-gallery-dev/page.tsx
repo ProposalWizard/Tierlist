@@ -95,6 +95,8 @@ import ScenarioPlay from "@/components/star/ScenarioPlay";
 import { testPlayWidth } from "@/lib/star/engineProfile";
 import { useTestKits } from "@/components/star/EnginePlay";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage } from "@/components/admin/broadcast/BroadcastPage";
+import "./gallery.css";
 import { revealOnScreen } from "@/lib/revealOnScreen";
 import {
   applyOverride,
@@ -594,8 +596,8 @@ function focusCanvas(c: HTMLCanvasElement, frame: Frame): void {
 // ─────────────────────────────────────────────────────────────────────────
 
 function HomeTile({
-  frame, word, onOpen,
-}: { frame: Frame; word: string; onOpen: () => void }) {
+  frame, word, count, unit, onOpen,
+}: { frame: Frame; word: string; count: number; unit: string; onOpen: () => void }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     if (!ref.current) return;
@@ -604,81 +606,48 @@ function HomeTile({
     focusCanvas(ref.current, frame);
   }, [frame]);
   return (
-    <button
-      onClick={onOpen}
-      style={{
-        position: "relative", flex: 1, minHeight: 0, width: "100%",
-        borderRadius: 26, overflow: "hidden", border: "none", padding: 0,
-        background: "#0a2a17", cursor: "pointer", display: "block",
-        boxShadow: "0 12px 34px rgba(0,0,0,0.55)",
-      }}
-    >
-      <canvas ref={ref} style={{ position: "absolute", inset: 0 }} />
-      <div
-        style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(180deg, rgba(3,6,14,0.30) 0%, rgba(3,6,14,0.05) 38%, rgba(3,6,14,0.72) 78%, rgba(3,6,14,0.95) 100%)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute", left: 20, right: 20, bottom: 18,
-          textAlign: "left", color: INK, fontSize: 30, fontWeight: 800,
-          letterSpacing: "-0.02em", lineHeight: 1.05,
-          textShadow: "0 2px 14px rgba(0,0,0,0.7)",
-        }}
-      >
-        {word}
-      </div>
+    <button onClick={onOpen} className="sg-tile" data-gallery-tile={word}>
+      <span className="sg-pic"><canvas ref={ref} style={{ position: "absolute", inset: 0 }} /></span>
+      <span className="sg-shade" />
+      <span className="sg-count"><b>{count}</b><small>{unit}</small></span>
+      <span className="sg-word">{word}</span>
     </button>
   );
 }
 
+/**
+ * The first screen (Harry, 19 Oct 2026: "scenario gallery fine, pre screen
+ * like opt 2"): three entrance tiles in the Broadcast frame. Each picture is
+ * a real chance drawn live, and each number is real: chance types, five-a-side
+ * shapes, things waiting in Tuning & Commit.
+ */
 function HomeScreen({
-  onOpen, warning, wide,
-}: { onOpen: (s: "eleven" | "five" | "tuning") => void; warning: string | null; wide: boolean }) {
+  onOpen, warning, waiting,
+}: { onOpen: (s: "eleven" | "five" | "tuning") => void; warning: string | null; waiting: number }) {
   const [noteOpen, setNoteOpen] = useState(false);
   const tiles = useMemo(
     () => [
-      { word: "11-a-side", frame: elevenVersions("one_on_one")[0].frame, go: "eleven" as const },
-      { word: "5-a-side", frame: fiveVersions("defensive")[0].frame, go: "five" as const },
-      { word: "Tuning & Commit", frame: elevenVersions("free_kick")[0].frame, go: "tuning" as const },
+      { word: "11-a-side", frame: elevenVersions("one_on_one")[0].frame, go: "eleven" as const, count: KIND_ORDER.length, unit: "types" },
+      { word: "5-a-side", frame: fiveVersions("defensive")[0].frame, go: "five" as const, count: FIVE_GROUPS.length, unit: "shapes" },
+      { word: "Tuning & Commit", frame: elevenVersions("free_kick")[0].frame, go: "tuning" as const, count: waiting, unit: "waiting" },
     ],
-    [],
+    [waiting],
   );
   return (
-    <div
-      style={{
-        position: "relative", height: "100%", display: "flex",
-        flexDirection: wide ? "row" : "column", gap: wide ? 18 : 12, padding: wide ? 24 : 14,
-      }}
-    >
+    <div className="sg-home">
       {warning && (
         <button
           onClick={() => setNoteOpen((v) => !v)}
           aria-label="Something is unavailable"
-          style={{
-            position: "absolute", top: 20, right: 22, zIndex: 5,
-            width: 14, height: 14, borderRadius: 999, border: "2px solid rgba(3,6,14,0.7)",
-            background: "#ef4444", padding: 0, cursor: "pointer",
-            boxShadow: "0 0 0 4px rgba(239,68,68,0.18)",
-          }}
+          className="sg-dot"
         />
       )}
-      {warning && noteOpen && (
-        <div
-          style={{
-            position: "absolute", top: 44, right: 16, left: 16, zIndex: 6,
-            background: "#2a0d0d", border: "1px solid #ef4444", borderRadius: 14,
-            padding: "10px 12px", color: "#fecaca", fontSize: 13, fontWeight: 600, lineHeight: 1.45,
-          }}
-        >
-          {warning}
-        </div>
-      )}
-      {tiles.map((t) => (
-        <HomeTile key={t.word} frame={t.frame} word={t.word} onOpen={() => onOpen(t.go)} />
-      ))}
+      {warning && noteOpen && <div className="sg-warn">{warning}</div>}
+      <div className="sg-tiles">
+        {tiles.map((t) => (
+          <HomeTile key={t.word} frame={t.frame} word={t.word} count={t.count} unit={t.unit} onOpen={() => onOpen(t.go)} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -1554,14 +1523,14 @@ export default function StarGalleryDevPage() {
     </main>
   );
 
-  // ── HOME ──
+  // ── HOME ── (the Broadcast frame; every other screen keeps its own look)
   if (screen === "home") {
-    return shell(
-      <>
+    return (
+      <BroadcastPage title="Scenario gallery" sub="Every chance as a picture." width={1500}>
         <HomeScreen
           onOpen={(s) => (s === "tuning" ? setScreen("tuning") : openGroup(s))}
           warning={warning}
-          wide={wide}
+          waiting={pending.length + (proposals.length > 0 ? proposals.length : corrections.length)}
         />
         {/* ── ONE POINTER, NOT TWO PANELS ──
             The proposals list and the commit box both used to sit on this
@@ -1569,15 +1538,7 @@ export default function StarGalleryDevPage() {
             Reported as not being findable. They have their own page now;
             this is a one-line nudge so nobody has to remember to look. */}
         {(pending.length > 0 || corrections.length > 0) && (
-          <button
-            onClick={() => setScreen("tuning")}
-            style={{
-              margin: "0 14px 14px", padding: "11px 14px", borderRadius: 14, width: "calc(100% - 28px)",
-              textAlign: "left", cursor: "pointer",
-              background: "rgba(56,189,248,0.10)", border: "1px solid rgba(56,189,248,0.35)",
-              color: "#e0f2fe", fontSize: 13, fontWeight: 800,
-            }}
-          >
+          <button onClick={() => setScreen("tuning")} className="sg-nudge">
             {[
               pending.length > 0
                 ? `${pending.length} saved, not committed`
@@ -1588,11 +1549,11 @@ export default function StarGalleryDevPage() {
                   ? `${corrections.length} ${corrections.length === 1 ? "correction" : "corrections"}`
                   : null,
             ].filter(Boolean).join(" · ")}
-            <span style={{ fontWeight: 600, opacity: 0.75 }}> — open Tuning &amp; Commit ›</span>
+            <span> — open Tuning &amp; Commit ›</span>
           </button>
         )}
-      </>,
-      true,
+        <PageGuide page="/star-gallery-dev" />
+      </BroadcastPage>
     );
   }
 

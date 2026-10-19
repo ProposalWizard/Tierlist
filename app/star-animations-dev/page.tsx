@@ -15,8 +15,9 @@
  * match (Infinite Highlights / Infinite Match), which reads the same dials.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, Btn, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "./animations.css";
 import {
   GALLERY, GALLERY_GROUPS, loopSeconds, drawGalleryFrame,
   type GalleryItem, type GalleryVersion,
@@ -33,7 +34,6 @@ import Sprite3dSheet from "@/components/star/Sprite3dSheet";
 import FeelPreview from "@/components/star/FeelPreview";
 
 const CELL_W = 84, CELL_H = 120, FPS = 24;
-const BG = "#05070d", INK = "#f2f5f9", MUTED = "#8a97aa", CARD = "rgba(255,255,255,0.05)";
 
 type Group = (typeof GALLERY_GROUPS)[number] | "All";
 
@@ -88,6 +88,27 @@ function Strip({ item, version, skin, foot, settings, speed, paused, scrub }: {
   );
 }
 
+
+const GROUP_TABS: Group[] = ["Keeper", "Touches", "Shots", "Passes & headers", "Defenders", "All"];
+const JUMPS: [string, string][] = [
+  ["#feel", "Match feel"], ["#figures3d", "3D figures"], ["#switches", "Which are on"], ["#dials", "Dials"], ["#real", "Real chance"],
+];
+
+/** The Broadcast pill, for the two shared cards that take a style (FeelPreview, Sprite3dSheet). */
+const pill = (on: boolean): React.CSSProperties => ({
+  padding: "6px 12px", borderRadius: 3, border: "1px solid var(--bc-line)", whiteSpace: "nowrap",
+  background: on ? "var(--bc-accent)" : "rgba(255,255,255,0.04)", color: on ? "#fff" : "var(--bc-ink2)",
+  fontWeight: 800, fontSize: 12.5, cursor: "pointer",
+});
+const card: React.CSSProperties = {
+  background: "linear-gradient(180deg, rgba(14,40,98,0.78), rgba(6,20,54,0.82))", border: "1px solid var(--bc-line)",
+  borderTop: "2px solid rgba(90,160,255,0.55)", borderRadius: 4, padding: 14, boxShadow: "0 12px 34px rgba(0,4,20,0.5)", minWidth: 0,
+};
+
+function SecTitle({ children }: { children: React.ReactNode }) {
+  return <div className="anim-sec"><h2>{children}</h2><i /><i /><i /></div>;
+}
+
 export default function AnimationsTestPage() {
   const settings = useAnimSettings();
   const [group, setGroup] = useState<Group>("Shots");
@@ -107,6 +128,11 @@ export default function AnimationsTestPage() {
   }, []);
 
   const items = useMemo(() => (group === "All" ? GALLERY : GALLERY.filter((g) => g.group === group)), [group]);
+  // "All" shows each group under its own title, as in the picked picture.
+  const sections = useMemo(() => {
+    const names: string[] = group === "All" ? [...GALLERY_GROUPS] : [group];
+    return names.map((n) => ({ name: n, list: items.filter((it) => it.group === n) })).filter((s) => s.list.length);
+  }, [group, items]);
   const groups = useMemo(() => {
     const out: { name: string; keys: (keyof typeof DIAL_INFO)[] }[] = [];
     for (const k of DIAL_KEYS) {
@@ -118,154 +144,170 @@ export default function AnimationsTestPage() {
     return out;
   }, []);
 
-  const pill = (on: boolean): React.CSSProperties => ({
-    height: 30, padding: "0 11px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.18)",
-    background: on ? "#facc15" : "rgba(255,255,255,0.06)", color: on ? "#111" : INK, fontWeight: 800, fontSize: 12, cursor: "pointer",
-  });
-  const card: React.CSSProperties = { background: CARD, borderRadius: 14, padding: 12, border: "1px solid rgba(255,255,255,0.08)" };
-
   const copy = async () => {
     const text = exportAnimSettings(settings);
     setCopied(text);
     try { await navigator.clipboard.writeText(text); } catch { /* the text box below still shows it */ }
   };
+  const pickGroup = (g: Group) => {
+    setGroup(g);
+    document.getElementById("gallery")?.scrollIntoView({ block: "start" });
+  };
 
   return (
-    <main style={{ minHeight: "100vh", background: BG, color: INK, padding: "14px 14px 90px", fontFamily: "inherit" }}>
+    <BroadcastPage title="2D Animations" sub="Every New animation next to the Old game, with the dials that size them" back="/star-play-dev">
       <style>{`@keyframes kibAnimStrip { from { transform: translateX(0) } to { transform: translateX(-100%) } }`}</style>
-      <div style={{ maxWidth: 760, margin: "0 auto", display: "grid", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Link href="/star-play-dev" style={{ color: MUTED, fontWeight: 800, fontSize: 13, textDecoration: "none" }}>‹ Play Area</Link>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 900 }}>Animations</h1>
-        </div>
+      <div className="anim-layout">
+        {/* ── Sections ── */}
+        <nav className="anim-rail" aria-label="Sections">
+          <div className="anim-rail-label">Animations</div>
+          {GROUP_TABS.map((g) => (
+            <button key={g} className="anim-railitem" aria-pressed={group === g} onClick={() => pickGroup(g)}>{g}</button>
+          ))}
+          <div className="anim-rail-label">On this page</div>
+          {JUMPS.map(([href, label]) => <a key={href} className="anim-railitem" href={href}>{label}</a>)}
+        </nav>
 
+        <div className="anim-main">
+          {/* ── The player bar ── */}
+          <div className="anim-bar" id="gallery">
+            <button className="anim-play" aria-pressed={paused} onClick={() => setPaused((p) => !p)} title={paused ? "Play" : "Pause"}
+              aria-label={paused ? "Play" : "Pause"}>{paused ? "▶" : "❚❚"}</button>
+            <input className="anim-track" aria-label="Scrub" type="range" min={0} max={1} step={0.005} value={scrub}
+              onChange={(e) => { setScrub(Number(e.target.value)); setPaused(true); }} />
+            <div className="anim-row">
+              {[1, 0.5, 0.25].map((s) => (
+                <Pill key={s} on={speed === s && !paused} onClick={() => { setSpeed(s); setPaused(false); }}>{s === 1 ? "1×" : s === 0.5 ? "½×" : "¼×"}</Pill>
+              ))}
+            </div>
+          </div>
+          <div className="anim-bar">
+            <div className="anim-row">
+              <Label>Look</Label>
+              <Pill on={skin === "classic"} onClick={() => setSkin("classic")}>Flat</Pill>
+              <Pill on={skin === "3d"} onClick={() => setSkin("3d")}>Shaded</Pill>
+            </div>
+            <span className="anim-sep" />
+            <div className="anim-row">
+              <Label>Foot</Label>
+              <Pill on={foot === 1} onClick={() => setFoot(1)}>Right foot</Pill>
+              <Pill on={foot === -1} onClick={() => setFoot(-1)}>Left foot</Pill>
+            </div>
+            <span className="anim-sep" />
+            <div className="anim-row">
+              <Label>Left picture</Label>
+              <Pill on={compare === "old"} onClick={() => setCompare("old")}>vs Old game</Pill>
+              <Pill on={compare === "first"} onClick={() => setCompare("first")}>vs First version</Pill>
+            </div>
+          </div>
 
-        {/* ── Gallery controls ── */}
-        <div style={{ ...card, display: "grid", gap: 8 }}>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {(["Keeper", "Touches", "Shots", "Passes & headers", "Defenders", "All"] as Group[]).map((g) => (
-              <button key={g} style={pill(group === g)} onClick={() => setGroup(g)}>{g}</button>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <button style={pill(skin === "classic")} onClick={() => setSkin("classic")}>Flat</button>
-            <button style={pill(skin === "3d")} onClick={() => setSkin("3d")}>Shaded</button>
-            <span style={{ width: 6 }} />
-            <button style={pill(foot === 1)} onClick={() => setFoot(1)}>Right foot</button>
-            <button style={pill(foot === -1)} onClick={() => setFoot(-1)}>Left foot</button>
-            <span style={{ width: 6 }} />
-            <button style={pill(compare === "old")} onClick={() => setCompare("old")}>vs Old game</button>
-            <button style={pill(compare === "first")} onClick={() => setCompare("first")}>vs First version</button>
-          </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            {[1, 0.5, 0.25].map((s) => (
-              <button key={s} style={pill(speed === s && !paused)} onClick={() => { setSpeed(s); setPaused(false); }}>{s === 1 ? "1×" : s === 0.5 ? "½×" : "¼×"}</button>
-            ))}
-            <button style={pill(paused)} onClick={() => setPaused((p) => !p)}>{paused ? "▶ Play" : "❚❚ Pause"}</button>
-            {paused && (
-              <input aria-label="Scrub" type="range" min={0} max={1} step={0.005} value={scrub}
-                onChange={(e) => setScrub(Number(e.target.value))} style={{ flex: 1, minWidth: 120 }} />
-            )}
-          </div>
-        </div>
-
-        {/* ── The gallery ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(178px, 1fr))", gap: 10 }}>
-          {items.map((it) => (
-            <div key={it.id} style={{ ...card, padding: 8 }}>
-              <div style={{ fontWeight: 900, fontSize: 12, marginBottom: 6 }}>{it.label}</div>
-              <div style={{ display: "flex", gap: 6 }}>
-                <div>
-                  <Strip item={it} version={compare} skin={skin} foot={foot} settings={settings} speed={speed} paused={paused} scrub={scrub} />
-                  <div style={{ fontSize: 10, fontWeight: 800, color: MUTED, marginTop: 3 }}>{compare === "old" ? "OLD" : "FIRST VERSION"}</div>
-                </div>
-                <div>
-                  <Strip item={it} version="new" skin={skin} foot={foot} settings={settings} speed={speed} paused={paused} scrub={scrub} />
-                  <div style={{ fontSize: 10, fontWeight: 800, color: settings.on[it.family] ? "#facc15" : MUTED, marginTop: 3 }}>
-                    {settings.on[it.family] ? "NEW" : "NEW (off → Old)"}
+          {/* ── The gallery ── */}
+          {sections.map((sec) => (
+            <section key={sec.name}>
+              <SecTitle>{sec.name}</SecTitle>
+              <div className="anim-cards">
+                {sec.list.map((it) => (
+                  <div key={it.id} className="anim-card">
+                    <div className="anim-ct">{it.label}</div>
+                    <div className="anim-pics">
+                      <div className="anim-pic">
+                        <div className="anim-scale">
+                          <Strip item={it} version={compare} skin={skin} foot={foot} settings={settings} speed={speed} paused={paused} scrub={scrub} />
+                        </div>
+                        <span className="anim-tag">{compare === "old" ? "Old" : "First version"}</span>
+                      </div>
+                      <div className="anim-pic">
+                        <div className="anim-scale">
+                          <Strip item={it} version="new" skin={skin} foot={foot} settings={settings} speed={speed} paused={paused} scrub={scrub} />
+                        </div>
+                        <span className="anim-tag" data-new={settings.on[it.family] ? "true" : "off"}>
+                          {settings.on[it.family] ? "New" : "New (off → Old)"}
+                        </span>
+                      </div>
+                    </div>
+                    {compare === "old" && <div className="anim-cf">Old: {it.oldNote}</div>}
                   </div>
-                </div>
+                ))}
               </div>
-              {compare === "old" && <div style={{ fontSize: 10, color: MUTED, marginTop: 4, fontWeight: 600 }}>Old: {it.oldNote}</div>}
-            </div>
+            </section>
           ))}
-        </div>
 
-        {/* ── Match feel (lib/star/matchFeel.ts) ── */}
-        <FeelPreview pill={pill} card={card} />
+          {/* ── Match feel (lib/star/matchFeel.ts) ── */}
+          <section>
+            <SecTitle>Match feel</SecTitle>
+            <FeelPreview pill={pill} card={card} />
+          </section>
 
-        {/* ── The 3D figures' New clips ── */}
-        <Sprite3dSheet pill={pill} card={card} />
+          {/* ── The 3D figures' New clips ── */}
+          <section id="figures3d">
+            <SecTitle>3D figures</SecTitle>
+            <Sprite3dSheet pill={pill} card={card} />
+          </section>
 
-        {/* ── Switches ── */}
-        <div style={{ ...card, display: "grid", gap: 8 }}>
-          <div style={{ fontWeight: 900, fontSize: 14 }}>Which animations are on</div>
-          <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>Off = that one is drawn the Old way, here and in the game, on this phone.</div>
-          {ANIM_FAMILIES.map((f) => (
-            <label key={f.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-              <span>
-                <span style={{ fontWeight: 800, fontSize: 13 }}>{f.label}</span>
-                <span style={{ display: "block", fontSize: 10, color: MUTED, fontWeight: 600 }}>{f.note}</span>
-              </span>
-              <input type="checkbox" checked={settings.on[f.id]} onChange={(e) => setAnimFamily(f.id, e.target.checked)} style={{ width: 22, height: 22 }} />
-            </label>
-          ))}
-        </div>
+          {/* ── Switches ── */}
+          <section id="switches">
+            <SecTitle>Which are on</SecTitle>
+            <Panel title="Which animations are on" note="Off = drawn the Old way, here and in the game, on this phone">
+              {ANIM_FAMILIES.map((f) => (
+                <label key={f.id} className="anim-switch">
+                  <span><b>{f.label}</b><span>{f.note}</span></span>
+                  <input type="checkbox" checked={settings.on[f.id]} onChange={(e) => setAnimFamily(f.id, e.target.checked)} />
+                </label>
+              ))}
+            </Panel>
+          </section>
 
-        {/* ── Dials ── */}
-        <div id="dials" style={{ ...card, display: "grid", gap: 10 }}>
-          <div style={{ fontWeight: 900, fontSize: 14 }}>Dials</div>
-          <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>
-            Looks only — the ball, the saves and the results never read these. Saved on this phone at once.
-          </div>
-          {groups.map((g) => (
-            <div key={g.name} style={{ display: "grid", gap: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 900, color: "#facc15", textTransform: "uppercase", letterSpacing: 0.5 }}>{g.name}</div>
-              {g.keys.map((k) => {
-                const info = DIAL_INFO[k];
-                const v = settings.dials[k];
-                return (
-                  <div key={k} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 2 }}>
-                    <span style={{ fontSize: 12, fontWeight: 800 }}>{info.label}</span>
-                    <span style={{ fontSize: 12, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
-                      {v.toFixed(2)}
-                      <span style={{ color: MUTED, fontWeight: 600 }}> · default {DEFAULT_ANIM_DIALS[k]} · first {FIRST_VERSION_DIALS[k]}</span>
-                    </span>
-                    <input aria-label={info.label} type="range" min={info.min} max={info.max} step={info.step} value={v}
-                      onChange={(e) => setAnimDial(k, Number(e.target.value))} style={{ gridColumn: "1 / -1", width: "100%" }} />
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <button style={pill(false)} onClick={() => resetAnimSettings()}>Reset to defaults</button>
-            <button style={pill(false)} onClick={() => setAnimSettings({ ...settings, dials: FIRST_VERSION_DIALS })}>First version sizes</button>
-            <button style={pill(false)} onClick={copy}>Copy settings</button>
-          </div>
-          {copied && (
-            <textarea readOnly value={copied} rows={3} onFocus={(e) => e.currentTarget.select()}
-              style={{ width: "100%", fontSize: 10, background: "rgba(0,0,0,0.4)", color: INK, borderRadius: 8, padding: 6 }} />
-          )}
-          <div style={{ display: "flex", gap: 6 }}>
-            <input value={paste} onChange={(e) => setPaste(e.target.value)} placeholder="Paste settings here"
-              style={{ flex: 1, fontSize: 12, background: "rgba(0,0,0,0.4)", color: INK, borderRadius: 8, padding: "6px 8px", border: "1px solid rgba(255,255,255,0.15)" }} />
-            <button style={pill(false)} onClick={() => setPasteMsg(importAnimSettings(paste) ? "Applied." : "That isn't animation settings.")}>Apply</button>
-          </div>
-          {pasteMsg && <div style={{ fontSize: 11, color: MUTED, fontWeight: 700 }}>{pasteMsg}</div>}
-        </div>
+          {/* ── Dials ── */}
+          <section id="dials">
+            <SecTitle>Dials</SecTitle>
+            <Panel title="Dials" note="Looks only. Saved on this phone at once">
+              <Note>The ball, the saves and the results never read these.</Note>
+              {groups.map((g) => (
+                <div key={g.name} style={{ display: "grid", gap: 8 }}>
+                  <div className="anim-dialgroup">{g.name}</div>
+                  {g.keys.map((k) => {
+                    const info = DIAL_INFO[k];
+                    const v = settings.dials[k];
+                    return (
+                      <div key={k} className="anim-dial">
+                        <b>{info.label}</b>
+                        <em>{v.toFixed(2)}<small> · default {DEFAULT_ANIM_DIALS[k]} · first {FIRST_VERSION_DIALS[k]}</small></em>
+                        <input aria-label={info.label} type="range" min={info.min} max={info.max} step={info.step} value={v}
+                          onChange={(e) => setAnimDial(k, Number(e.target.value))} />
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+              <div className="anim-row">
+                <Btn onClick={() => resetAnimSettings()}>Reset to defaults</Btn>
+                <Btn onClick={() => setAnimSettings({ ...settings, dials: FIRST_VERSION_DIALS })}>First version sizes</Btn>
+                <Btn main onClick={copy}>Copy settings</Btn>
+              </div>
+              {copied && (
+                <textarea className="anim-text" readOnly value={copied} rows={3} onFocus={(e) => e.currentTarget.select()} />
+              )}
+              <div className="anim-row" style={{ flexWrap: "nowrap" }}>
+                <input className="anim-text" value={paste} onChange={(e) => setPaste(e.target.value)} placeholder="Paste settings here" style={{ flex: 1, minWidth: 0 }} />
+                <Btn onClick={() => setPasteMsg(importAnimSettings(paste) ? "Applied." : "That isn't animation settings.")}>Apply</Btn>
+              </div>
+              {pasteMsg && <Note>{pasteMsg}</Note>}
+            </Panel>
+          </section>
 
-        {/* ── The real match ── */}
-        <div style={{ ...card, display: "grid", gap: 8 }}>
-          <div style={{ fontWeight: 900, fontSize: 14 }}>See it in a real chance</div>
-          <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>The real match reads these same dials and switches.</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <Link href="/star-highlights-dev" style={{ ...pill(false), display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Infinite Highlights →</Link>
-            <Link href="/star-play-dev" style={{ ...pill(false), display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Play Area (Infinite Match) →</Link>
-          </div>
+          {/* ── The real match ── */}
+          <section id="real">
+            <SecTitle>Real chance</SecTitle>
+            <Panel title="See it in a real chance" note="The real match reads these same dials and switches">
+              <div className="anim-row">
+                <Btn href="/star-highlights-dev">Infinite Highlights →</Btn>
+                <Btn href="/star-play-dev">Play Area (Infinite Match) →</Btn>
+              </div>
+            </Panel>
+          </section>
         </div>
       </div>
       <PageGuide page="/star-animations-dev" corner="bottom-left" />
-    </main>
+    </BroadcastPage>
   );
 }

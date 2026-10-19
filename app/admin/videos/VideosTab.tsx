@@ -65,8 +65,12 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
     setUpload({ state: "sending", share: 0 });
     try {
       const n = recordingName({ at: t.at, ...latest.current, seconds: t.seconds, ext: t.ext });
-      const { link } = await uploadToDrive(token, t.blob, n, (share) => setUpload({ state: "sending", share }), latest.current.who);
+      const who = latest.current.who;
+      const { link } = await uploadToDrive(token, t.blob, n, (share) => setUpload({ state: "sending", share }), who);
       setUpload({ state: "done", link });
+      // The recorder's own chats pick it up next time they're messaged (recordings-hook.mjs).
+      fetch("/api/dev-recordings", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ person: who, title: n.replace(/\.[a-z0-9]+$/, ""), link }) }).catch(() => {});
     } catch (e) {
       setUpload({ state: "failed", why: (e as Error).message });
     }
@@ -163,7 +167,7 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
 
           <div className="vt-drive">
             {DRIVE_CLIENT_ID ? (
-              driveOk ? <span className="vt-ok">● Drive connected. Each recording goes into “{DRIVE_FOLDER_NAME}” → {who} by itself.</span>
+              driveOk ? <span className="vt-ok">● Drive connected. Each recording goes into “{DRIVE_FOLDER_NAME}” → {who}, and {who}’s Claude chats read it next time you message them.</span>
                 : <><button className="ash-btn ghost" onClick={connect}>Connect Drive</button><span className="vt-hint">Do this first, and each recording saves itself.</span></>
             ) : (
               <span className="vt-hint">Drive isn't switched on yet. Recordings download to this device for now.</span>

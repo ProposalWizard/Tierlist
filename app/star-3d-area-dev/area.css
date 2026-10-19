@@ -1,0 +1,27 @@
+/* 3D Area, round 3 hub option A (Harry, 19 Oct 2026): a rail on the left, the
+   3D places as picture cards with PLAY, every scene and the 3D file store. */
+.a3-layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 16px; align-items: start; }
+.a3-rail { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 4px; }
+.a3-tab { text-align: left; padding: 10px 12px; border: 0; border-left: 3px solid transparent; cursor: pointer; color: var(--bc-ink2);
+  background: rgba(255, 255, 255, 0.04); font-size: 14px; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.a3-tab:hover { background: rgba(255, 255, 255, 0.08); }
+.a3-tab[aria-pressed="true"] { color: #fff; background: linear-gradient(100deg, var(--bc-blue), rgba(18, 63, 156, 0.4)); border-left-color: var(--bc-amber); }
+.a3-main { min-width: 0; }
+.a3-cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.a3-card { display: flex; flex-direction: column; text-decoration: none; color: var(--bc-ink); background: rgba(4, 14, 40, 0.7);
+  border: 1px solid var(--bc-line); border-radius: 4px; overflow: hidden; }
+.a3-card:hover { border-color: var(--bc-accent); }
+.a3-pic { aspect-ratio: 16 / 10; background: #0b1a3d center / cover no-repeat; }
+.a3-cf { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0 10px 12px; }
+.a3-cf b { font-size: 15px; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.a3-play { padding: 6px 18px 6px 22px; background: var(--bc-amber); color: #0a1430; font-size: 14px; font-weight: 900; font-style: italic;
+  clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%); }
+.a3-panel { background: var(--bc-panel); border: 1px solid var(--bc-line); border-radius: 4px; overflow: hidden; }
+.a3-scenes { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+@media (max-width: 900px) {
+  .a3-layout { grid-template-columns: minmax(0, 1fr); }
+  .a3-rail { position: static; flex-direction: row; overflow-x: auto; }
+  .a3-tab { flex: 1 0 auto; text-align: center; border-left: 0; border-bottom: 3px solid transparent; font-size: 13px; padding: 9px 10px; }
+  .a3-tab[aria-pressed="true"] { border-bottom-color: var(--bc-amber); }
+  .a3-scenes { grid-template-columns: minmax(0, 1fr); }
+}

@@ -128,8 +128,12 @@ export default function LineupBuilder({ clubs, squads, initialClub, persistence,
   // before the shared-table sync above has landed, or a device with an
   // empty local cache would build a side from scratch and never see the
   // real one that's already on the server.
+  // Set when a side is loaded or auto-picked, so the save below skips it:
+  // opening a club must never write anything, only an edit does.
+  const loadedRef = useRef(false);
   useEffect(() => {
     if (!synced || squad.length === 0) return;
+    loadedRef.current = true;
     const saved = load(club);
     const known = new Set(squad.map(p => p.id));
     if (saved && saved.xi.some(id => id && known.has(id))) {
@@ -170,6 +174,7 @@ export default function LineupBuilder({ clubs, squads, initialClub, persistence,
   const [saveError, setSaveError] = useState<string | null>(null);
   useEffect(() => {
     if (!sheet.club || sheet.xi.length === 0) return;
+    if (loadedRef.current) { loadedRef.current = false; return; }
     const t = window.setTimeout(async () => {
       const lineup = { formation: sheet.formationId, xi: sheet.xi, bench: sheet.bench7, manager: sheet.manager };
       if (persistence) {

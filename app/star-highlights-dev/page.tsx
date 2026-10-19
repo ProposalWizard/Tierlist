@@ -34,7 +34,8 @@
 
 import { isSwitchedOff } from "@/lib/star/switchedOffKinds";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import "./highlights.css";
+import { BroadcastPage, Panel, Pill, Btn, Note } from "@/components/admin/broadcast/BroadcastPage";
 import { SCENARIO_KINDS, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { mulberry32 } from "@/lib/star/season";
 import {
@@ -98,12 +99,6 @@ import {
   nextRun, seedForRun,
   type FlaggedChance,
 } from "@/lib/star/highlightStore";
-
-const BG = "#05070d";
-const INK = "#f2f5f9";
-const MUTED = "#8a97aa";
-const ACCENT = "#38bdf8";
-const FLAG = "#f59e0b";
 
 const kindLabel = (k: string) => k.replace(/_/g, " ");
 
@@ -216,16 +211,65 @@ function analysisFor(spec: SimSpec, overrides: (PosOverride | undefined)[]): Ana
 }
 
 /** The flagged list's small picture. Same paint, scaled down by the browser. */
-function FlagThumb({ frame, marks }: { frame: Frame; marks: Mark[] }) {
+function FlagThumb({ frame, marks, width = 72 }: { frame: Frame; marks: Mark[]; width?: number }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     if (!ref.current) return;
     paintMarked(ref.current, frame, marks);
-    ref.current.style.width = "72px";
+    ref.current.style.width = `${width}px`;
     ref.current.style.height = "auto";
     ref.current.style.display = "block";
-  }, [frame, marks]);
-  return <canvas ref={ref} style={{ borderRadius: 10, flex: "none" }} />;
+  }, [frame, marks, width]);
+  return <canvas ref={ref} />;
+}
+
+/** One chance in the "Previous chances" strip: the chance itself as it now
+ *  stands (saved fix and unsaved drag on top), painted by the same paint. */
+function StripThumb({
+  shot, saved, override, n, current, onPick, kits,
+}: {
+  shot: Shot;
+  kits: ReturnType<typeof useTestKits>;
+  saved: MatchScenario | undefined;
+  override: PosOverride | undefined;
+  n: number;
+  current: boolean;
+  onPick: () => void;
+}) {
+  const frame = useMemo(() => {
+    const savedOv = saved ? overrideFromMatchScenario(saved, shot.base.items, shot.base.camera, shot.base.facing) : undefined;
+    return applyOverride(applyOverride(shot.base, savedOv), override);
+  }, [shot, saved, override]);
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    // Small, in the kits the big picture wears; the browser scales it to fit.
+    paintMarked(ref.current, frame, [], { baseW: 168, maxW: 168, maxH: 2000 }, kits ?? undefined);
+    ref.current.style.width = "100%";
+    ref.current.style.height = "auto";
+  }, [frame, kits]);
+  // The one on screen slides into view along the strip — sideways only, so
+  // the page itself never jumps down to the strip.
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    const el = btnRef.current;
+    const box = el?.parentElement;
+    if (!el || !box || !current) return;
+    box.scrollLeft = el.offsetLeft - box.clientWidth / 2 + el.offsetWidth / 2;
+  }, [current]);
+  return (
+    <button
+      className="ih-thumb"
+      aria-current={current ? "true" : undefined}
+      aria-label={`Chance ${n}: ${kindLabel(shot.spec.kind)}`}
+      title={`#${shot.spec.seed}`}
+      onClick={onPick}
+      ref={btnRef}
+    >
+      <canvas ref={ref} />
+      <span><i>{n}</i>{kindLabel(shot.spec.kind)}</span>
+    </button>
+  );
 }
 
 /** One row of the flagged list — its own component so each rebuilds and
@@ -248,39 +292,15 @@ function FlagRow({
     [flag.id, saved, override],
   );
   return (
-    <div
-      style={{
-        display: "flex", gap: 12, alignItems: "center", padding: 10,
-        borderRadius: 16, background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden",
-      }}
-    >
+    <div className="ih-frow">
       <FlagThumb frame={frame} marks={analysis.marks} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 15.5, fontWeight: 800, textTransform: "capitalize" }}>
-          {kindLabel(flag.kind)}
-        </div>
-        <div
-          style={{
-            fontFamily: "ui-monospace, monospace", fontSize: 11, color: MUTED, marginTop: 2,
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          }}
-          title={flag.planId ?? "base"}
-        >
-          #{flag.seed} · {flag.planId ?? "base"}
-        </div>
-        {analysis.faults.length > 0 && (
-          <div style={{ color: "#f87171", fontSize: 12.5, fontWeight: 700, marginTop: 3 }}>
-            {analysis.faults[0]}
-          </div>
-        )}
-        {saved && (
-          <div style={{ color: "#4ade80", fontSize: 12, fontWeight: 800, marginTop: 3 }}>Saved</div>
-        )}
+      <div className="ih-frow-txt">
+        <b>{kindLabel(flag.kind)}</b>
+        <small title={flag.planId ?? "base"}>#{flag.seed} · {flag.planId ?? "base"}</small>
+        {analysis.faults.length > 0 && <em>{analysis.faults[0]}</em>}
+        {saved && <strong>Saved</strong>}
       </div>
-      <button style={{ ...roundBtn, flex: "none" }} aria-label="Show this one" onClick={() => onShow(shot)}>
-        &#8250;
-      </button>
+      <button aria-label="Show this one" onClick={() => onShow(shot)}>&#8250;</button>
     </div>
   );
 }
@@ -677,10 +697,6 @@ export default function HighlightsPage() {
 
   const shell = (children: React.ReactNode) => (
     <main
-      style={{
-        background: BG, color: INK, minHeight: "100dvh",
-        fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif",
-      }}
       data-hl-kind={shot?.spec.kind ?? ""}
       data-hl-seed={shot?.spec.seed ?? ""}
       data-hl-plan={shot?.spec.planId ?? ""}
@@ -697,80 +713,28 @@ export default function HighlightsPage() {
     </main>
   );
 
-  const bar = (title: React.ReactNode, back: (() => void) | null, right?: React.ReactNode) => (
-    <div
-      style={{
-        display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        position: "sticky", top: 0, zIndex: 6,
-        background: "rgba(5,7,13,0.94)", backdropFilter: "blur(10px)",
-      }}
-    >
-      {back ? (
-        <button onClick={back} aria-label="Back" style={roundBtn}>&#8249;</button>
-      ) : (
-        <Link href="/star-gallery-dev" aria-label="Back to the gallery" style={{ ...roundBtn, display: "grid", placeItems: "center", textDecoration: "none" }}>
-          &#8249;
-        </Link>
-      )}
-      <div style={{ fontSize: 18, fontWeight: 800, flex: 1, minWidth: 0, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
-      {right}
-    </div>
-  );
-
   // ── KINDS ──
   if (screen === "kinds") {
     return shell(
-      <>
-        {bar("Which highlights", () => setScreen("run"))}
+      <BroadcastPage title="Which highlights" sub="Tap the kinds of chance to show." back={() => setScreen("run")} width={1100}>
         {/* v0.15 item 7: a whole penalty shootout on the real match — every
             kick live, yours to take when your turn comes. */}
-        <div style={{ padding: "12px 14px 2px" }}>
-          <button
-            onClick={() => setScreen("shootout")}
-            style={{ ...bigBtn, height: 52, fontSize: 16, background: "rgba(245,158,11,0.16)", border: "1px solid rgba(245,158,11,0.55)", color: "#fde68a" }}
-          >
-            ⚽ Play a penalty shootout
-          </button>
+        <button className="ih-shootout" onClick={() => setScreen("shootout")}>⚽ Play a penalty shootout</button>
+        <Panel title="Chance types" note={<span className="ih-count">{kinds.length}/{allKinds().length}</span>}>
+          <div className="ih-tools">
+            <Btn onClick={() => setKindsAnd(allKinds())}>All</Btn>
+            <Btn onClick={() => setKindsAnd([])}>None</Btn>
+          </div>
+          <div className="ih-chips">
+            {KIND_ORDER.map((k) => (
+              <Pill key={k} on={selected.has(k)} onClick={() => toggleKind(k)}>{kindLabel(k)}</Pill>
+            ))}
+          </div>
+        </Panel>
+        <div className="ih-watch">
+          <button className="ih-next" onClick={() => setScreen("run")} disabled={kinds.length === 0}>Watch these</button>
         </div>
-        <div style={{ display: "flex", gap: 8, padding: "12px 14px 4px" }}>
-          <button style={smallBtn} onClick={() => setKindsAnd(allKinds())}>All</button>
-          <button style={smallBtn} onClick={() => setKindsAnd([])}>None</button>
-          <div style={{ flex: 1 }} />
-          <span style={{ color: MUTED, fontSize: 13, fontWeight: 700, alignSelf: "center" }}>
-            {kinds.length}/{allKinds().length}
-          </span>
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "10px 14px 100px" }}>
-          {KIND_ORDER.map((k) => {
-            const on = selected.has(k);
-            return (
-              <button
-                key={k}
-                onClick={() => toggleKind(k)}
-                style={{
-                  padding: "11px 15px", borderRadius: 999, cursor: "pointer",
-                  border: `1px solid ${on ? "rgba(56,189,248,0.6)" : "rgba(255,255,255,0.1)"}`,
-                  background: on ? "rgba(14,116,144,0.4)" : "rgba(255,255,255,0.04)",
-                  color: on ? "#e0f2fe" : MUTED,
-                  fontSize: 14.5, fontWeight: 800, textTransform: "capitalize",
-                }}
-              >
-                {kindLabel(k)}
-              </button>
-            );
-          })}
-        </div>
-        <div style={{ position: "fixed", left: 12, right: 12, bottom: 12 }}>
-          <button
-            onClick={() => setScreen("run")}
-            disabled={kinds.length === 0}
-            style={{ ...bigBtn, opacity: kinds.length === 0 ? 0.4 : 1 }}
-          >
-            Watch these
-          </button>
-        </div>
-      </>,
+      </BroadcastPage>,
     );
   }
 
@@ -778,47 +742,36 @@ export default function HighlightsPage() {
   // picture is checked by eye; this puts 24 of one kind on one screen.
   if (screen === "sheet") {
     return shell(
-      <>
-        {bar("Sheet of 24", () => setScreen("run"))}
+      <BroadcastPage title="Sheet of 24" sub="Twenty-four chances of one kind, to check by eye." back={() => setScreen("run")}>
         <ChanceSheet kinds={kinds.length ? kinds : allKinds()} kits={kits} onBack={() => setScreen("run")} />
-      </>,
+      </BroadcastPage>,
     );
   }
 
   // ── SHOOTOUT (v0.15 item 7) ──
   if (screen === "shootout") {
     return shell(
-      <>
-        {bar("Penalty shootout", () => setScreen("kinds"))}
-        <div style={{ padding: "10px 12px 24px", display: "grid", justifyItems: "center" }}>
+      <BroadcastPage title="Penalty shootout" sub="Every kick live. Yours to take when your turn comes." back={() => setScreen("kinds")}>
+        <div style={{ display: "grid", justifyItems: "center" }}>
           <ShootoutPlay width={pictureW} onExit={() => setScreen("run")} />
         </div>
-      </>,
+      </BroadcastPage>,
     );
   }
 
   // ── FLAGS ──
   if (screen === "flags") {
     return shell(
-      <>
-        {bar(
-          `Flagged (${flags.length})`,
-          () => setScreen("run"),
-          flags.length ? (
-            <button
-              style={{ ...smallBtn, color: "#fca5a5", borderColor: "rgba(239,68,68,0.35)" }}
-              onClick={() => { setFlags([]); saveFlags([]); }}
-            >
-              Clear
-            </button>
-          ) : undefined,
-        )}
+      <BroadcastPage
+        title={`Flagged (${flags.length})`}
+        sub="The chances you marked. Tap one to see it again."
+        back={() => setScreen("run")}
+        actions={flags.length ? <Btn onClick={() => { setFlags([]); saveFlags([]); }}>Clear</Btn> : undefined}
+      >
         {flags.length === 0 ? (
-          <p style={{ color: MUTED, fontSize: 14.5, fontWeight: 700, padding: "26px 16px", textAlign: "center" }}>
-            Nothing flagged yet.
-          </p>
+          <Panel><div className="ih-empty">Nothing flagged yet.</div></Panel>
         ) : (
-          <div style={{ display: "grid", gap: 10, padding: "12px 14px 24px" }}>
+          <div className="ih-flags">
             {flags.map((f) => (
               <FlagRow
                 key={f.id}
@@ -835,330 +788,242 @@ export default function HighlightsPage() {
             ))}
           </div>
         )}
-      </>,
+      </BroadcastPage>,
     );
   }
 
   // ── RUN ──
+  const status = shot ? statusOf(savedScenario ?? null) : null;
+  const statusTone = !status ? undefined : edited || status.state === "draft" ? "amber" : status.state === "committed" ? "green" : "blue";
+  const tunes = status ? (edited ? false : status.tuning) : false;
+  /** The strip shows the last 24 chances of this visit, oldest first. */
+  const STRIP = 24;
+  const stripFrom = Math.max(0, hist.length - STRIP);
+
+  const tools = (
+    <div className="ih-tools">
+      <Btn onClick={() => setScreen("kinds")} title="Choose highlights">
+        Highlights <span className="ih-count">{kinds.length}/{allKinds().length}</span>
+      </Btn>
+      <Btn onClick={() => setScreen("sheet")} title="Sheet of 24: 24 of one kind on one screen">&#9638; Sheet of 24</Btn>
+      <Btn onClick={() => setScreen("flags")} title="Flagged list">&#9873; Flagged <span className="ih-count">{flags.length}</span></Btn>
+      <span className="ih-grow" />
+      {/* A second Next, always at the top of the page. */}
+      {kinds.length > 0 && <Btn main onClick={next}>Next &#8594;</Btn>}
+    </div>
+  );
+
   return shell(
-    <>
-      {bar(
-        // Shorter on a narrow phone so Next fits in the bar: "Highlights"
-        // under 420 px, nothing under 360 (it read "H…" at 320).
-        <span className="max-[359px]:hidden"><span className="max-[419px]:hidden">Infinite </span>Highlights</span>,
-        null,
-        <div style={{ display: "flex", gap: 8 }}>
-          <button style={smallBtn} aria-label="Choose highlights" onClick={() => setScreen("kinds")}>
-            {kinds.length}/{allKinds().length}
-          </button>
-          <button style={smallBtn} aria-label="Sheet of 24" title="Sheet of 24: 24 of one kind on one screen" onClick={() => setScreen("sheet")}>
-            &#9638; 24
-          </button>
-          <button
-            aria-label="Flagged list"
-            style={{ ...smallBtn, color: flags.length ? FLAG : MUTED, borderColor: flags.length ? "rgba(245,158,11,0.4)" : "rgba(255,255,255,0.1)" }}
-            onClick={() => setScreen("flags")}
-          >
-            &#9873; {flags.length}
-          </button>
-          {/* Next, pinned in the sticky bar: the big one under the picture is
-              below the fold on a phone (picture 586 px on a 664 px screen). */}
-          {kinds.length > 0 && (
-            <button
-              onClick={next}
-              style={{ ...smallBtn, minHeight: 40, color: "#e0f2fe", borderColor: "rgba(56,189,248,0.55)", background: "rgba(14,116,144,0.38)" }}
-            >
-              Next &#8594;
-            </button>
-          )}
-        </div>,
-      )}
+    <BroadcastPage
+      title="Infinite Highlights"
+      sub="Flick through real chances. Fix a bad one on the spot."
+      back="/star-gallery-dev"
+    >
+      {tools}
 
       {kinds.length === 0 ? (
-        <div style={{ padding: "40px 20px", textAlign: "center" }}>
-          <p style={{ color: MUTED, fontSize: 15, fontWeight: 700, marginBottom: 16 }}>
-            Nothing selected.
-          </p>
-          <button style={{ ...bigBtn, maxWidth: 260, margin: "0 auto" }} onClick={() => setScreen("kinds")}>
-            Pick highlights
-          </button>
-        </div>
+        <Panel>
+          <div className="ih-empty">Nothing selected.</div>
+          <Btn main onClick={() => setScreen("kinds")}>Pick highlights</Btn>
+        </Panel>
       ) : (
-        <div ref={pictureRef} style={{ padding: "10px 12px 14px", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", justifyItems: "center", gap: 8 }}>
-          {/* minmax(0, 1fr): without it the column grew to the button row's
-              full width (433px on a 390px phone), so the picture sat
-              off-centre and Delete was cut off the right edge. */}
-          {/* Playing swaps the PICTURE for the live match and leaves every
-              control below it exactly where it was, so a chance can be
-              played, corrected and saved without changing screen. */}
-          {playing && shot ? (
-            <ScenarioPlay
-              build={() => {
-                const sc = buildSimScenario(shot.spec);
-                applyOverrideToScenario(sc, mergeOverrides([savedOv, override]));
-                return sc;
-              }}
-              onStop={() => setPlaying(false)}
-              width={pictureW}
+        <div className="ih-run">
+          <section className="bc-panel ih-stagebox">
+            {/* The chance: the real game's own picture, or — on Play — the real
+                match at the same size. Playing swaps only the picture, so a
+                chance can be played, corrected and saved without moving. */}
+            <div ref={pictureRef} className="ih-stage">
+              {playing && shot ? (
+                <ScenarioPlay
+                  build={() => {
+                    const sc = buildSimScenario(shot.spec);
+                    applyOverrideToScenario(sc, mergeOverrides([savedOv, override]));
+                    return sc;
+                  }}
+                  onStop={() => setPlaying(false)}
+                  width={pictureW}
+                />
+              ) : shot && baseFrame && (
+                <EditableFrame
+                  editKey={editKey}
+                  baseFrame={baseFrame}
+                  override={override}
+                  marks={analysis.marks}
+                  onCommit={setOverride}
+                  edited={edited}
+                  selectedId={selectedId}
+                  onSelect={setSelectedId}
+                  onSwipe={(d) => (d === 1 ? next() : prev())}
+                  fit
+                  // Play runs at exactly this size, so the picture and the match
+                  // are the same size, in the same kits (one engine, 24 Sep).
+                  size={{ baseW: pictureW, maxW: pictureW, maxH: 4000 }}
+                  kits={kits}
+                />
+              )}
+            </div>
+
+            {/* The TV caption: which chance this is, and the flag. */}
+            <div className="ih-lower">
+              <div className="ih-lower-text">
+                <b>{shot ? kindLabel(shot.spec.kind) : "…"}</b>
+                {shot && <span>#{shot.spec.seed}</span>}
+              </div>
+              <button
+                className="ih-flag"
+                onClick={toggleFlag}
+                aria-label="Flag this one"
+                aria-pressed={flaggedNow}
+                title={flaggedNow ? "Flagged — tap to unflag (F)" : "Flag this one (F)"}
+              >
+                &#9873;
+              </button>
+            </div>
+            {shot && analysis.faults.length > 0 && <div className="ih-fault">{analysis.faults[0]}</div>}
+
+            <div className="ih-transport">
+              <button className="ih-prev" onClick={prev} disabled={idx <= 0} aria-label="Previous">&#8249;</button>
+              <button className="ih-next" onClick={next}>Next &#8594;</button>
+            </div>
+
+            {hist.length > 1 && (
+              <div>
+                <div className="ih-strip-head">
+                  <b>Previous chances</b>
+                  <span className="ih-seen">{hist.length} seen</span>
+                </div>
+                <div className="ih-strip">
+                  {hist.slice(stripFrom).map((h, i) => {
+                    const at = stripFrom + i;
+                    return (
+                      <StripThumb
+                        key={`${at}-${flagId(h.spec)}`}
+                        shot={h}
+                        saved={saved[highlightSlug(h.spec)]}
+                        override={edits[flagId(h.spec)]}
+                        n={at + 1}
+                        current={at === idx}
+                        kits={kits}
+                        onPick={() => { setSelectedId(null); setIdx(at); }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="ih-keys">
+              <span><kbd>[←]</kbd>Prev</span>
+              <span><kbd>[→] [Space]</kbd>Next</span>
+              <span><kbd>[F]</kbd>Flag</span>
+              <span>Swipe the grass: next / prev</span>
+            </div>
+          </section>
+
+          <div className="ih-side">
+            <Panel title="Fix this chance" note="tap a player, drag to move">
+              {/* The editor tools. Same as the gallery's version screen, in the
+                  same order, doing the same thing. */}
+              <div className="ih-edit">
+                <button className="ih-ebtn" onClick={() => addFigure("teammate")}>+ Mate</button>
+                <button className="ih-ebtn" title="Add an opponent" onClick={() => addFigure("opponent")}>+ Opp</button>
+                <button className="ih-ebtn" disabled={!canRemove} onClick={() => selectedId && removeFigure(selectedId)}>Remove</button>
+                {/* Play this exact chance, edits and all — see ScenarioPlay. */}
+                <button className="ih-ebtn" data-tone={playing ? "stop" : "play"} onClick={togglePlay}>
+                  {playing ? "◼ Stop" : "▶ Play"}
+                </button>
+                <button className="ih-ebtn" data-tone="dim" title="Save this picture as a PNG" onClick={downloadShot}>PNG</button>
+                {/* A saved scenario can be taken out of the database AND the code. */}
+                <button
+                  className="ih-ebtn"
+                  data-tone={savedScenario ? "red" : undefined}
+                  disabled={!savedScenario || !!busy}
+                  title={savedScenario ? "Delete this scenario everywhere — database and code" : "Nothing saved for this chance"}
+                  onClick={() => void deleteShot()}
+                >
+                  {busy === "deleting" ? "Deleting…" : "Delete"}
+                </button>
+                {/* Tune: record WHY this generation was bad, without saving it.
+                    Only offered when there is a drag to learn from. */}
+                {edited && (
+                  <button
+                    className="ih-ebtn"
+                    data-tone="tune"
+                    title="Record what was wrong with this generation — not saved as a base scenario"
+                    onClick={tuneShot}
+                  >
+                    Tune
+                  </button>
+                )}
+              </div>
+
+              {/* Where this one is: Draft / Saved / Committed, and whether the
+                  game uses it — the gallery card's two pills, from `statusOf`. */}
+              {shot && status && (
+                <div className="ih-pills">
+                  <span data-tone={statusTone}>
+                    {edited
+                      ? "Unsaved changes — this browser only"
+                      // `statusOf(null)` is "draft": right for a card somebody
+                      // started on, wrong for a chance nobody has touched.
+                      : savedScenario ? status.label : "Straight from the generator"}
+                  </span>
+                  <span data-tone={tunes ? "violet" : undefined}>{tunes ? "In the game" : "Not in the game yet"}</span>
+                </div>
+              )}
+
+              {/* A drawing that breaks one of its own kind's laws, named. */}
+              {ruleOutliers.length > 0 && (
+                <div className="ih-warn">
+                  {ruleOutliers.length} saved {ruleOutliers.length === 1 ? "scenario breaks" : "scenarios break"} a rule
+                  of {shot ? kindLabel(shot.spec.kind) : "this kind"} and {ruleOutliers.length === 1 ? "is" : "are"} not
+                  being used: {ruleOutliers.slice(0, 3).map((o) => o.breaks.toLowerCase()).join("; ")}
+                </div>
+              )}
+
+              {/* Save and Commit are always here, edited or not — see commitShot. */}
+              <div className="ih-save">
+                {(edited || !savedScenario) && (
+                  <button className="ih-sbtn" data-tone="save" disabled={!!busy} onClick={() => void saveShot()}>
+                    {busy === "saving" ? "Saving…" : edited ? "Save this fix" : "Save"}
+                  </button>
+                )}
+                <button className="ih-sbtn" data-tone="commit" disabled={!!busy} onClick={() => void commitShot()}>
+                  {busy === "committing" ? "Committing…" : "Commit"}
+                </button>
+                {edited ? (
+                  <button className="ih-sbtn" data-tone="quiet" onClick={() => { clearOverride(editKey); setSelectedId(null); }}>
+                    Discard
+                  </button>
+                ) : savedScenario ? (
+                  <button className="ih-sbtn" data-tone="quiet" disabled={!!busy} onClick={() => void revertShot()}>
+                    {busy === "reverting" ? "Reverting…" : "Saved — revert"}
+                  </button>
+                ) : null}
+              </div>
+
+              {(flash || migrationMissing) && (
+                <div className="ih-flash" data-bad={flash ? (flash.ok ? undefined : "true") : "true"}>
+                  {flash
+                    ? flash.text
+                    : "Saving is off — run supabase/migrations/star_scenarios.sql in the Supabase SQL Editor."}
+                </div>
+              )}
+              <Note>Save puts it in the gallery for the team. Commit puts it in the game.</Note>
+            </Panel>
+
+            {/* Hitboxes & jumping (Leo, 14 Oct 2026): New | Old, show every
+                body's hitbox on Play, and the dials. */}
+            <HitboxPanel />
+
+            {/* What this session's chances add up to, and "Say what feels off". */}
+            <TuningSessionPanel
+              page="highlights"
+              context={() => ({ kind: shot?.spec.kind, seed: shot?.spec.seed })}
             />
-          ) : shot && baseFrame && (
-            <EditableFrame
-              editKey={editKey}
-              baseFrame={baseFrame}
-              override={override}
-              marks={analysis.marks}
-              onCommit={setOverride}
-              edited={edited}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              onSwipe={(d) => (d === 1 ? next() : prev())}
-              fit
-              // Play runs at exactly this size, so the picture and the match
-              // are the same size, in the same kits (one engine, 24 Sep).
-              size={{ baseW: pictureW, maxW: pictureW, maxH: 4000 }}
-              kits={kits}
-            />
-          )}
-
-          <div style={{ textAlign: "center", minHeight: 42 }}>
-            <div style={{ fontSize: 17, fontWeight: 800, textTransform: "capitalize", letterSpacing: "-0.01em" }}>
-              {shot ? kindLabel(shot.spec.kind) : "…"}
-            </div>
-            {shot && analysis.faults.length > 0 && (
-              <div style={{ color: "#f87171", fontSize: 13.5, fontWeight: 800, marginTop: 2, lineHeight: 1.35 }}>
-                {analysis.faults[0]}
-              </div>
-            )}
-            {shot && analysis.faults.length === 0 && (
-              <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: MUTED, marginTop: 3 }}>
-                #{shot.spec.seed}
-              </div>
-            )}
           </div>
-
-          {/* The editor tools. Same three the gallery's version screen has, in
-              the same order, doing the same thing — tap a figure on the
-              picture, then take him out; or put a new one in. */}
-          {/* Wraps onto a second row rather than cutting words: at 360 px
-              "Remove" was cut, at 320 px "+ Mate", "Remove" and "Delete". */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, width: "100%", maxWidth: 460 }} className="[&>button]:!basis-[54px] [&>button]:!grow">
-            <button style={editBtn(false)} onClick={() => addFigure("teammate")}>+ Mate</button>
-            <button style={editBtn(false)} title="Add an opponent" onClick={() => addFigure("opponent")}>+ Opp</button>
-            <button
-              style={editBtn(!canRemove)}
-              disabled={!canRemove}
-              onClick={() => selectedId && removeFigure(selectedId)}
-            >
-              Remove
-            </button>
-            {/* Play this exact chance, edits and all — see ScenarioPlay. */}
-            <button
-              style={{ ...editBtn(false), color: playing ? "#7dd3fc" : "#4ade80" }}
-              onClick={togglePlay}
-            >
-              {playing ? "\u25FC Stop" : "\u25B6 Play"}
-            </button>
-            <button
-              style={{ ...editBtn(false), color: MUTED }}
-              title="Save this picture as a PNG"
-              onClick={downloadShot}
-            >
-              PNG
-            </button>
-            {/* Everywhere everything else is, a saved scenario can be taken
-                out of the database AND the code. This screen only had Revert,
-                which leaves a committed copy still being served. */}
-            <button
-              style={{ ...editBtn(!savedScenario), color: savedScenario ? "#f87171" : undefined }}
-              disabled={!savedScenario || !!busy}
-              title={savedScenario
-                ? "Delete this scenario everywhere — database and code"
-                : "Nothing saved for this chance"}
-              onClick={() => void deleteShot()}
-            >
-              {busy === "deleting" ? "Deleting…" : "Delete"}
-            </button>
-            {/* Tune: record WHY this generation was bad, without saving it as
-                a drawing. Only offered when there is a drag to learn from —
-                the same condition the gallery uses. */}
-            {edited && (
-              <button
-                style={{ ...editBtn(false), color: "#c4b5fd" }}
-                title="Record what was wrong with this generation — not saved as a base scenario"
-                onClick={tuneShot}
-              >
-                Tune
-              </button>
-            )}
-          </div>
-
-          {/* Hitboxes & jumping (Leo, 14 Oct 2026): New | Old, show every
-              body's hitbox on Play, and the dials. */}
-          <HitboxPanel />
-
-          {/* ── WHERE THIS ONE ACTUALLY IS ──
-              Draft / Saved / Committed, and whether it is feeding the
-              auto-tuner. The same two pills the gallery card carries, from
-              the same `statusOf` — it was possible to save a fix here and
-              have no idea whether it was in the code or only in a database. */}
-          {shot && (() => {
-            const st = statusOf(savedScenario ?? null);
-            const tone = edited || st.state === "draft"
-              ? { fg: "#fcd34d", bg: "rgba(245,158,11,0.15)", br: "rgba(245,158,11,0.45)" }
-              : st.state === "committed"
-                ? { fg: "#86efac", bg: "rgba(34,197,94,0.14)", br: "rgba(34,197,94,0.45)" }
-                : { fg: "#7dd3fc", bg: "rgba(56,189,248,0.14)", br: "rgba(56,189,248,0.45)" };
-            const tunes = edited ? false : st.tuning;
-            return (
-              <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
-                <span style={{
-                  fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 999,
-                  color: tone.fg, background: tone.bg, border: `1px solid ${tone.br}`,
-                }}>
-                  {edited
-                    ? "Unsaved changes — this browser only"
-                    // `statusOf(null)` is "draft", which is right for a card
-                    // somebody has started on and wrong for a chance the
-                    // generator just rolled and nobody has touched.
-                    : savedScenario ? st.label : "Straight from the generator"}
-                </span>
-                <span style={{
-                  fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 999,
-                  color: tunes ? "#c4b5fd" : MUTED,
-                  background: tunes ? "rgba(167,139,250,0.14)" : "rgba(255,255,255,0.05)",
-                  border: `1px solid ${tunes ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.09)"}`,
-                }}>
-                  {tunes ? "In the game" : "Not in the game yet"}
-                </span>
-              </div>
-            );
-          })()}
-
-          {/* A drawing that disagrees with one of its own kind's laws. Named
-              rather than silently absorbed — the rules survive one slip, but
-              nobody should have to guess that a slip happened. */}
-
-          {ruleOutliers.length > 0 && (
-            <div style={{
-              width: "100%", maxWidth: 460, borderRadius: 12, padding: "9px 12px",
-              background: "rgba(245,158,11,0.13)", border: "1px solid rgba(245,158,11,0.4)",
-              color: "#fcd34d", fontSize: 12.5, fontWeight: 700, lineHeight: 1.4,
-            }}>
-              {ruleOutliers.length} saved {ruleOutliers.length === 1 ? "scenario breaks" : "scenarios break"} a rule
-              of {shot ? kindLabel(shot.spec.kind) : "this kind"} and {ruleOutliers.length === 1 ? "is" : "are"} not
-              being used: {ruleOutliers.slice(0, 3).map((o) => o.breaks.toLowerCase()).join("; ")}
-            </div>
-          )}
-
-
-          <div style={{ display: "flex", gap: 10, width: "100%", maxWidth: 460 }}>
-            <button
-              onClick={prev}
-              disabled={idx <= 0}
-              aria-label="Previous"
-              style={{
-                ...bigBtn, flex: "none", width: 60, fontSize: 22,
-                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)",
-                color: idx <= 0 ? "rgba(138,151,170,0.4)" : INK,
-                cursor: idx <= 0 ? "default" : "pointer",
-              }}
-            >
-              &#8249;
-            </button>
-            <button
-              onClick={toggleFlag}
-              aria-label="Flag this one"
-              style={{
-                ...bigBtn, flex: "none", width: 74, fontSize: 20,
-                background: flaggedNow ? "rgba(245,158,11,0.22)" : "rgba(255,255,255,0.05)",
-                border: `1px solid ${flaggedNow ? FLAG : "rgba(255,255,255,0.09)"}`,
-                color: flaggedNow ? FLAG : MUTED,
-              }}
-            >
-              &#9873;
-            </button>
-            <button onClick={next} style={{ ...bigBtn, flex: 1 }}>
-              Next &#8594;
-            </button>
-          </div>
-
-          {/* Save and Commit are always here, edited or not — see commitShot. */}
-          <div style={{ display: "flex", gap: 8, width: "100%", maxWidth: 460 }}>
-            {(edited || !savedScenario) && (
-              <button
-                style={{ ...editBtn(false), flex: 2, height: 48, background: "rgba(22,163,74,0.24)", border: "1px solid rgba(34,197,94,0.55)", color: "#bbf7d0", fontSize: 15 }}
-                disabled={!!busy}
-                onClick={() => void saveShot()}
-              >
-                {busy === "saving" ? "Saving…" : edited ? "Save this fix" : "Save"}
-              </button>
-            )}
-            <button
-              style={{ ...editBtn(false), flex: 1.4, height: 48, background: "rgba(14,116,144,0.3)", border: "1px solid rgba(56,189,248,0.55)", color: "#e0f2fe", fontSize: 15 }}
-              disabled={!!busy}
-              onClick={() => void commitShot()}
-            >
-              {busy === "committing" ? "Committing…" : "Commit"}
-            </button>
-            {edited ? (
-              <button style={{ ...editBtn(false), height: 48 }} onClick={() => { clearOverride(editKey); setSelectedId(null); }}>
-                Discard
-              </button>
-            ) : savedScenario ? (
-              <button
-                style={{ ...editBtn(false), flex: 2, height: 48, color: MUTED }}
-                disabled={!!busy}
-                onClick={() => void revertShot()}
-              >
-                {busy === "reverting" ? "Reverting…" : "Saved — revert"}
-              </button>
-            ) : null}
-          </div>
-
-          {(flash || migrationMissing) && (
-            <div style={{ fontSize: 12.5, fontWeight: 700, textAlign: "center", maxWidth: 460, lineHeight: 1.4, color: flash ? (flash.ok ? "#4ade80" : "#fca5a5") : "#fca5a5" }}>
-              {flash
-                ? flash.text
-                : "Saving is off — run supabase/migrations/star_scenarios.sql in the Supabase SQL Editor."}
-            </div>
-          )}
-
-          {/* What this session's chances add up to, and "Say what feels off". */}
-          <TuningSessionPanel
-            page="highlights"
-            context={() => ({ kind: shot?.spec.kind, seed: shot?.spec.seed })}
-          />
         </div>
       )}
-    </>,
+    </BroadcastPage>,
   );
 }
-
-const roundBtn: React.CSSProperties = {
-  width: 34, height: 34, borderRadius: 999, flex: "none",
-  border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.06)",
-  color: INK, fontSize: 17, fontWeight: 800, cursor: "pointer", lineHeight: 1,
-};
-
-const smallBtn: React.CSSProperties = {
-  padding: "7px 12px", borderRadius: 999, cursor: "pointer",
-  border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)",
-  color: MUTED, fontSize: 13, fontWeight: 800,
-};
-
-const bigBtn: React.CSSProperties = {
-  width: "100%", height: 56, borderRadius: 16, cursor: "pointer",
-  border: `1px solid ${ACCENT}55`, background: "rgba(14,116,144,0.38)",
-  color: "#e0f2fe", fontSize: 17, fontWeight: 800,
-  display: "grid", placeItems: "center",
-};
-
-/** The gallery's own edit-row button, same size and same disabled look. */
-const editBtn = (off: boolean): React.CSSProperties => ({
-  // Up to seven of these share one row since Delete and Tune joined it, so
-  // they shrink rather than wrap onto a second line.
-  flex: 1, minWidth: 0, height: 42, borderRadius: 13, cursor: off ? "default" : "pointer",
-  padding: "0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-  border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.05)",
-  color: off ? "rgba(138,151,170,0.45)" : INK, fontSize: 11, fontWeight: 700,
-});

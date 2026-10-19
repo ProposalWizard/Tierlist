@@ -14,6 +14,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel } from "@/components/admin/broadcast/BroadcastPage";
 import EnginePlay from "@/components/star/EnginePlay";
 import GoalVideo from "@/components/star/media/GoalVideo";
 import { buildScenario, initDefenders, type Scenario, type ScenarioKind } from "@/lib/star/canvasEngine";
@@ -40,6 +41,10 @@ const ANGLES: { style: ClipStyle; label: string; who: string }[] = [
 
 /** A weak keeper and clear weather, so a goal comes quickly. */
 const SETTINGS: PlaySettings = { ...DEFAULT_PLAY_SETTINGS, realKeeper: false, keeperStrength: 25, weather: "clear" };
+
+/** A Broadcast pill: blue when picked. */
+const pick = (on: boolean) =>
+  `bc-pill !text-[12px] font-black uppercase tracking-wide ${on ? "" : "!text-white"}`;
 
 export default function GoalClipsDevPage() {
   const [kind, setKind] = useState<ScenarioKind>("penalty");
@@ -75,46 +80,41 @@ export default function GoalClipsDevPage() {
   const chosenRow = useMemo(() => list.find(l => l.id === chosen) ?? null, [list, chosen]);
 
   return (
-    <div className="min-h-screen bg-gray-950 px-3 py-4 text-white" data-goal-clips-dev>
-      <div className="mx-auto max-w-md">
-        <h1 className="text-[20px] font-black uppercase tracking-wide">Goal videos</h1>
-        <p className="mt-1 text-[13px] font-bold text-white/80">
-          Score below. Every goal is recorded frame by frame, the same way a real match records it. Pick one to watch it from each camera and save it.
-        </p>
+    <div data-goal-clips-dev>
+    <BroadcastPage title="Goal videos" sub="Score below. Every goal is recorded frame by frame, the same way a real match records it. Pick one to watch it from each camera and save it." width={480}>
+      <div className="flex flex-col gap-4">
 
-        <section className="mt-4">
-          <div className="text-[11px] font-black uppercase tracking-widest text-amber-200">1 · Score one</div>
-          <div className="mt-2 flex flex-wrap gap-1.5">
+        <Panel title="1 · Score one">
+          <div className="flex flex-wrap gap-1.5">
             {CHANCES.map(c => (
               <button
                 key={c.kind}
                 onClick={() => { setKind(c.kind); setRound(r => r + 1); }}
-                className={`rounded px-2.5 py-1.5 text-[12px] font-black uppercase tracking-wide ${kind === c.kind ? "bg-white text-gray-950" : "bg-white/10 text-white"}`}
+                className={pick(kind === c.kind)} aria-pressed={kind === c.kind}
                 data-clip-chance={c.kind}
               >
                 {c.label}
               </button>
             ))}
-            <button onClick={() => setRound(r => r + 1)} className="rounded bg-white/10 px-2.5 py-1.5 text-[12px] font-black uppercase tracking-wide text-white" data-clip-restart>
+            <button onClick={() => setRound(r => r + 1)} className="bc-btn" data-clip-restart>
               New chance
             </button>
           </div>
-          <div className="mt-2">
+          <div>
             <EnginePlay key={`${kind}-${round}`} seed={round} settings={SETTINGS} openOn={openOn} bare onGoalClip={onGoalClip} />
           </div>
-        </section>
+        </Panel>
 
-        <section className="mt-5">
-          <div className="text-[11px] font-black uppercase tracking-widest text-amber-200">2 · Recordings on this device ({list.length})</div>
+        <Panel title={`2 · Recordings on this device (${list.length})`}>
           {list.length === 0 ? (
-            <div className="mt-1 text-[13px] text-white/80">None yet. Score above, or score in a real match.</div>
+            <div className="bc-note">None yet. Score above, or score in a real match.</div>
           ) : (
-            <div className="mt-2 max-h-56 space-y-1 overflow-y-auto pr-1">
+            <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
               {list.map(l => (
                 <button
                   key={l.id}
                   onClick={() => setChosen(l.id)}
-                  className={`block w-full rounded px-2.5 py-2 text-left text-[12.5px] font-bold ${chosen === l.id ? "bg-white text-gray-950" : "bg-white/10 text-white"}`}
+                  className={`block w-full rounded-[3px] border px-2.5 py-2 text-left text-[12.5px] font-bold ${chosen === l.id ? "border-transparent bg-[var(--bc-accent)] text-white" : "border-[var(--bc-line)] bg-white/5 text-[var(--bc-ink)]"}`}
                   data-clip-row={l.id}
                 >
                   {l.scorer} · {l.minuteLabel}&apos; · {l.home} v {l.away}
@@ -123,41 +123,41 @@ export default function GoalClipsDevPage() {
               ))}
             </div>
           )}
-        </section>
+        </Panel>
 
         {chosenRow && (
-          <section className="mt-5" data-clip-chosen={chosenRow.id}>
-            <div className="text-[11px] font-black uppercase tracking-widest text-amber-200">3 · Watch it</div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
+          <div data-clip-chosen={chosenRow.id}>
+          <Panel title="3 · Watch it">
+            <div className="flex flex-wrap gap-1.5">
               {ANGLES.map(a => (
                 <button
                   key={a.style}
                   onClick={() => setStyle(a.style)}
-                  className={`rounded px-2.5 py-1.5 text-[12px] font-black uppercase tracking-wide ${style === a.style ? "bg-white text-gray-950" : "bg-white/10 text-white"}`}
+                  className={pick(style === a.style)} aria-pressed={style === a.style}
                   data-goal-clip-angle={a.style}
                 >
                   {a.label}
                 </button>
               ))}
             </div>
-            <div className="mt-1 text-[12px] font-bold text-white/70">
+            <div className="bc-note">
               In the feed this one is posted by {ANGLES.find(a => a.style === style)?.who}.
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-black uppercase tracking-widest text-white/60">Cut</span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="bc-label">Cut</span>
               {[0, 1, 2].map(v => (
                 <button
                   key={v}
                   onClick={() => setVariant(v)}
-                  className={`rounded px-2.5 py-1.5 text-[12px] font-black uppercase tracking-wide ${variant === v ? "bg-white text-gray-950" : "bg-white/10 text-white"}`}
+                  className={pick(variant === v)} aria-pressed={variant === v}
                   data-goal-clip-variant={v}
                 >
                   {v + 1}
                 </button>
               ))}
-              <span className="text-[11px] font-bold text-white/60">each account always uses one of these</span>
+              <span className="text-[12px] font-bold text-[var(--bc-ink2)]">each account always uses one of these</span>
             </div>
-            <div className="mt-2 flex justify-center">
+            <div className="flex justify-center">
               <GoalVideo
                 key={`${chosenRow.id}-${style}-${variant}`}
                 clipIds={[chosenRow.id]}
@@ -167,13 +167,15 @@ export default function GoalClipsDevPage() {
                 title={`${chosenRow.scorer} ${chosenRow.minuteLabel}'`}
                 badge="GOAL"
                 autoStart
-                fallback={<div className="text-[13px] text-amber-200">That recording is no longer on this device.</div>}
+                fallback={<div className="text-[13px] text-[var(--bc-amber)]">That recording is no longer on this device.</div>}
               />
             </div>
-          </section>
+          </Panel>
+          </div>
         )}
       </div>
       <PageGuide page="/star-goal-clips-dev" />
+    </BroadcastPage>
     </div>
   );
 }

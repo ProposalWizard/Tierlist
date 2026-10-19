@@ -14,9 +14,17 @@
  * recorded file (with any Sound Board replacement). Pictures are drawn once
  * per change as SVG — no animation loop. Ratings, notes, dial settings and
  * picks are kept in this browser only.
+ *
+ * Broadcast look (Harry, 19 Oct 2026: "sound lab - option 1 and 2"): two
+ * layouts of the same tools, switched by the pills at the top and remembered
+ * on this device. "One sound" = an events list, one sound open at a time with
+ * a big picture. "All sounds" = every sound as a compact row, with an edit
+ * panel for the one you tap.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, PanelGrid, Btn, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "./soundlab.css";
 import { audioContext } from "@/lib/star/audioOut";
 import { sfxUrl } from "@/lib/star/sfx";
 import {
@@ -27,6 +35,9 @@ import {
 
 const SR = 44100;
 const STORE = "star-sound-lab-v1";
+const LAYOUT_KEY = "star-sound-lab-layout";
+type Layout = "one" | "rows";
+type SetNotes = (f: (n: LabNotes) => LabNotes) => void;
 
 function loadNotes(): LabNotes {
   try {
@@ -97,36 +108,64 @@ function playSamples(s: Float32Array, at = 0, keep = false): number {
   lastSources.push(src);
   return s.length / SR;
 }
+/** Play a candidate straight from a row tap (no picture made first). */
+async function playCandidate(c: Candidate, tweak?: Partial<Tweak>) {
+  const ctx = audioContext();
+  if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
+  const s = await samplesFor(c, tweak);
+  if (s) playSamples(s);
+}
 
-function Waveform({ s }: { s: Float32Array }) {
-  const cols = useMemo(() => waveformColumns(s, 96), [s]);
+/** True on a phone-width screen. */
+function useNarrow(px = 900): boolean {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia(`(max-width: ${px}px)`);
+    const on = () => setNarrow(m.matches);
+    on();
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, [px]);
+  return narrow;
+}
+
+function Waveform({ s, big }: { s: Float32Array; big?: boolean }) {
+  const cols = useMemo(() => waveformColumns(s, big ? 160 : 96), [s, big]);
   const bands = useMemo(() => spectrumBands(s, SR, 20), [s]);
+  const N = cols.length - 1;
   const W = 240, H = 44;
-  const top = cols.map((c, i) => `${i === 0 ? "M" : "L"}${(i / 95) * W},${H / 2 - c.max * (H / 2)}`).join(" ");
-  const bot = [...cols].reverse().map((c, i) => `L${((95 - i) / 95) * W},${H / 2 - c.min * (H / 2)}`).join(" ");
+  const top = cols.map((c, i) => `${i === 0 ? "M" : "L"}${(i / N) * W},${H / 2 - c.max * (H / 2)}`).join(" ");
+  const bot = [...cols].reverse().map((c, i) => `L${((N - i) / N) * W},${H / 2 - c.min * (H / 2)}`).join(" ");
   return (
-    <div className="mt-2 flex items-end gap-2">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-11 min-w-0 flex-1 rounded bg-black/40" preserveAspectRatio="none" aria-label="waveform">
-        <line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke="#ffffff22" />
-        <path d={`${top} ${bot} Z`} fill="#34d399" />
+    <div className="sl-wave" data-big={big ? "true" : undefined}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="sl-wave-main" preserveAspectRatio="none" aria-label="waveform">
+        {big && [1, 2, 3, 4, 5].map((k) => <line key={k} x1={(k / 6) * W} x2={(k / 6) * W} y1="0" y2={H} stroke="#5a96ff22" strokeWidth="0.4" />)}
+        <line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke="#5a96ff44" strokeWidth="0.4" />
+        <path d={`${top} ${bot} Z`} fill="url(#sl-grad)" />
+        <defs>
+          <linearGradient id="sl-grad" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stopColor="#7fe3ff" /><stop offset="0.5" stopColor="#2f8cff" /><stop offset="1" stopColor="#7fe3ff" />
+          </linearGradient>
+        </defs>
       </svg>
-      <svg viewBox="0 0 60 44" className="h-11 w-16 shrink-0 rounded bg-black/40" aria-label="low to high">
-        {bands.map((v, i) => <rect key={i} x={i * 3} y={44 - v * 42} width={2.4} height={v * 42} fill="#60a5fa" />)}
+      <svg viewBox="0 0 60 44" className="sl-wave-bands" aria-label="low to high">
+        {bands.map((v, i) => <rect key={i} x={i * 3} y={44 - v * 42} width={2.4} height={v * 42} fill="#ffc24a" />)}
       </svg>
-      <span className="w-10 shrink-0 text-right text-[11px] font-bold text-white/80">{(s.length / SR).toFixed(2)}s</span>
+      <span className="sl-wave-len">{(s.length / SR).toFixed(2)}s</span>
     </div>
   );
 }
 
-function CandidateCard({ c, notes, setNotes, eventId }: { c: Candidate; notes: LabNotes; setNotes: (f: (n: LabNotes) => LabNotes) => void; eventId: string }) {
+/** Everything one sound can do, shared by both layouts. */
+function useCandidate(c: Candidate, notes: LabNotes, setNotes: SetNotes, eventId: string) {
   const tweak = notes.tweaks[c.id];
   const [samples, setSamples] = useState<Float32Array | null>(null);
   const [failed, setFailed] = useState(false);
-  const [open, setOpen] = useState(false);
   const [msg, setMsg] = useState("");
   const tweakKey = JSON.stringify(tweak ?? {});
   useEffect(() => {
     let live = true;
+    setSamples(null); setFailed(false);
     samplesFor(c, tweak).then((s) => { if (!live) return; setSamples(s); setFailed(!s); });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -135,6 +174,7 @@ function CandidateCard({ c, notes, setNotes, eventId }: { c: Candidate; notes: L
   const picked = notes.picks[eventId] === c.id;
   const rating = notes.ratings[c.id] ?? 0;
   const tw = fullTweak(tweak);
+  const edited = !!tweak && describeTweak(tweak) !== "no changes";
   const setTweak = (k: keyof Tweak, v: number) =>
     setNotes((n) => ({ ...n, tweaks: { ...n.tweaks, [c.id]: { ...(n.tweaks[c.id] ?? {}), [k]: v } } }));
 
@@ -155,76 +195,245 @@ function CandidateCard({ c, notes, setNotes, eventId }: { c: Candidate; notes: L
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }
+  const rate = (k: number) => setNotes((n) => ({ ...n, ratings: { ...n.ratings, [c.id]: n.ratings[c.id] === k ? 0 : k } }));
+  const togglePick = () => setNotes((n) => {
+    const picks = { ...n.picks };
+    if (picks[eventId] === c.id) delete picks[eventId]; else picks[eventId] = c.id;
+    return { ...n, picks };
+  });
+  const setNote = (v: string) => setNotes((n) => ({ ...n, notes: { ...n.notes, [c.id]: v } }));
+  const reset = () => setNotes((n) => { const tweaks = { ...n.tweaks }; delete tweaks[c.id]; return { ...n, tweaks }; });
+  const copyRecipe = () => copy(JSON.stringify({ id: c.id, file: c.file, recipe: c.recipe, dials: tw }), "Recipe copied");
+  return { c, samples, failed, msg, picked, rating, tw, edited, note: notes.notes[c.id] ?? "", setTweak, play, saveWav, rate, togglePick, setNote, reset, copyRecipe };
+}
+type Cand = ReturnType<typeof useCandidate>;
 
+function Tags({ c, edited }: { c: Candidate; edited: boolean }) {
   return (
-    <li className={`rounded-2xl border p-3 ${picked ? "border-amber-300 bg-amber-400/10" : "border-white/15 bg-white/5"}`} data-candidate={c.id}>
-      <div className="flex items-center gap-3">
-        <button onClick={play} aria-label={`Play ${c.name}`}
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-2xl font-black text-slate-950 active:scale-95">▶</button>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-base font-black">{c.name}</span>
-            {c.current && <span className="rounded bg-sky-500/30 px-1.5 py-0.5 text-[10px] font-black uppercase text-sky-100">{c.current === "match" ? "in game now" : "file"}</span>}
-            {tweak && describeTweak(tweak) !== "no changes" && <span className="rounded bg-fuchsia-500/30 px-1.5 py-0.5 text-[10px] font-black uppercase text-fuchsia-100">edited</span>}
-          </div>
-          <p className="text-sm font-bold text-white/90">{c.about}</p>
-        </div>
-      </div>
+    <>
+      {c.current && <span className="sl-tag" data-kind="now">{c.current === "match" ? "in game now" : "file"}</span>}
+      {edited && <span className="sl-tag" data-kind="edit">edited</span>}
+    </>
+  );
+}
 
-      {samples ? <Waveform s={samples} /> : <p className="mt-2 text-sm font-bold text-white/80">{failed ? "Couldn't load this file." : "Loading…"}</p>}
+function Stars({ k }: { k: Cand }) {
+  return (
+    <div className="sl-stars">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <button key={s} aria-label={`${s} stars`} onClick={() => k.rate(s)} data-on={s <= k.rating ? "true" : undefined}>★</button>
+      ))}
+    </div>
+  );
+}
 
-      <div className="mt-2 flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((k) => (
-          <button key={k} aria-label={`${k} stars`}
-            onClick={() => setNotes((n) => ({ ...n, ratings: { ...n.ratings, [c.id]: n.ratings[c.id] === k ? 0 : k } }))}
-            className={`h-10 w-9 text-2xl leading-none ${k <= rating ? "text-amber-300" : "text-white/30"}`}>★</button>
+function PickButton({ k }: { k: Cand }) {
+  return <button className="sl-pick" data-on={k.picked ? "true" : undefined} onClick={k.togglePick}>{k.picked ? "✓ My pick" : "Pick this"}</button>;
+}
+
+function NoteBox({ k, rows }: { k: Cand; rows?: number }) {
+  return rows
+    ? <textarea className="sl-input" rows={rows} value={k.note} onChange={(e) => k.setNote(e.target.value)} placeholder="Note (what you like or don't)" />
+    : <input className="sl-input" value={k.note} onChange={(e) => k.setNote(e.target.value)} placeholder="Note (what you like or don't)" />;
+}
+
+function WaveOrLoading({ k, big }: { k: Cand; big?: boolean }) {
+  return k.samples ? <Waveform s={k.samples} big={big} /> : <Note>{k.failed ? "Couldn't load this file." : "Loading…"}</Note>;
+}
+
+/** The sliders plus Reset / Copy recipe / Save WAV. */
+function Dials({ k }: { k: Cand }) {
+  return (
+    <div className="sl-dials">
+      <div className="sl-dial-grid">
+        {TWEAK_DIALS.map((d) => (
+          <label key={d.key} className="sl-dial">
+            <span><span>{d.label}</span><b>{d.key === "pitch" ? `${k.tw.pitch > 0 ? "+" : ""}${k.tw.pitch}` : k.tw[d.key].toFixed(2)}</b></span>
+            <input type="range" min={d.min} max={d.max} step={d.step} value={k.tw[d.key]}
+              onChange={(e) => k.setTweak(d.key, Number(e.target.value))}
+              onPointerUp={k.play} />
+          </label>
         ))}
-        <button onClick={() => setNotes((n) => {
-          const picks = { ...n.picks };
-          if (picks[eventId] === c.id) delete picks[eventId]; else picks[eventId] = c.id;
-          return { ...n, picks };
-        })}
-          className={`ml-auto h-10 rounded-xl px-3 text-sm font-black ${picked ? "bg-amber-300 text-slate-950" : "border border-amber-300/60 text-amber-200"}`}>
-          {picked ? "✓ My pick" : "Pick this"}
+      </div>
+      <Note>Let go of a slider to hear it.{k.c.file ? " A file's Length moves its pitch too; Punch adds a hit at the start." : ""}</Note>
+      <div className="sl-row-btns">
+        <Btn onClick={k.reset}>Reset</Btn>
+        <Btn onClick={k.copyRecipe}>Copy recipe</Btn>
+        <Btn onClick={k.saveWav} disabled={!k.samples}>Save WAV</Btn>
+      </div>
+    </div>
+  );
+}
+
+function Msg({ k }: { k: Cand }) {
+  return k.msg ? <p className="sl-msg">{k.msg}</p> : null;
+}
+
+// ── Option 1: one sound at a time ────────────────────────────────────────────
+function OneSound({ c, notes, setNotes, eventId }: { c: Candidate; notes: LabNotes; setNotes: SetNotes; eventId: string }) {
+  const k = useCandidate(c, notes, setNotes, eventId);
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <div className="sl-player" data-candidate-open={c.id}>
+        <div className="sl-player-top">
+          <button className="sl-play" onClick={k.play} aria-label={`Play ${c.name}`}>▶</button>
+          <div className="sl-player-name">
+            <div><b>{c.name}</b> <Tags c={c} edited={k.edited} /></div>
+            <p>{c.about}</p>
+          </div>
+        </div>
+        <WaveOrLoading k={k} big />
+      </div>
+      <div className="sl-side">
+        <div className="sl-glow">
+          <Label>Rating and pick</Label>
+          <Stars k={k} />
+          <PickButton k={k} />
+          <Label>Note</Label>
+          <NoteBox k={k} rows={3} />
+          <Msg k={k} />
+        </div>
+        <button className="sl-edit-toggle" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          <span>Edit</span><span>{open ? "▴" : "▾"}</span>
         </button>
       </div>
+      {open && <div className="sl-edit-wide"><Dials k={k} /></div>}
+    </>
+  );
+}
 
-      <input
-        value={notes.notes[c.id] ?? ""}
-        onChange={(e) => { const v = e.target.value; setNotes((n) => ({ ...n, notes: { ...n.notes, [c.id]: v } })); }}
-        placeholder="Note (what you like or don't)"
-        className="mt-2 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm font-bold text-white placeholder:text-white/50"
-      />
-
-      <button onClick={() => setOpen((o) => !o)} className="mt-2 h-10 w-full rounded-xl bg-white/10 text-sm font-black">
-        {open ? "Close edit ▴" : "Edit ▾"}
-      </button>
-      {open && (
-        <div className="mt-2 space-y-2">
-          {TWEAK_DIALS.map((d) => (
-            <label key={d.key} className="block">
-              <span className="flex justify-between text-sm font-bold">
-                <span>{d.label}</span>
-                <span className="text-white/90">{d.key === "pitch" ? `${tw.pitch > 0 ? "+" : ""}${tw.pitch}` : tw[d.key].toFixed(2)}</span>
-              </span>
-              <input type="range" min={d.min} max={d.max} step={d.step} value={tw[d.key]}
-                onChange={(e) => setTweak(d.key, Number(e.target.value))}
-                onPointerUp={play}
-                className="h-8 w-full accent-emerald-400" />
-            </label>
+function LayoutOne({ notes, setNotes, eventId, pickEvent }: { notes: LabNotes; setNotes: SetNotes; eventId: string; pickEvent: (id: string) => void }) {
+  const ev = LAB_EVENTS.find((e) => e.id === eventId) ?? LAB_EVENTS[0];
+  const [sel, setSel] = useState<Record<string, string>>({});
+  const cid = sel[ev.id] && ev.candidates.some((c) => c.id === sel[ev.id]) ? sel[ev.id] : ev.candidates[0].id;
+  const c = ev.candidates.find((x) => x.id === cid) ?? ev.candidates[0];
+  return (
+    <div className="sl-one">
+      <aside className="sl-events">
+        <Label>Sound events</Label>
+        <select className="sl-select" value={ev.id} onChange={(e) => pickEvent(e.target.value)} aria-label="Event">
+          {LAB_EVENTS.map((e) => <option key={e.id} value={e.id}>{e.emoji} {e.label}{notes.picks[e.id] ? " ✓" : ""}</option>)}
+        </select>
+        <div className="sl-event-list">
+          {LAB_EVENTS.map((e) => (
+            <button key={e.id} className="sl-event" aria-pressed={e.id === ev.id} onClick={() => pickEvent(e.id)}>
+              <span>{e.emoji}</span><b>{e.label}</b>{notes.picks[e.id] && <i>✓</i>}
+            </button>
           ))}
-          <p className="text-xs font-bold text-white/80">Let go of a slider to hear it.{c.file ? " A file's Length moves its pitch too; Punch adds a hit at the start." : ""}</p>
-          <div className="grid grid-cols-3 gap-2">
-            <button onClick={() => setNotes((n) => { const tweaks = { ...n.tweaks }; delete tweaks[c.id]; return { ...n, tweaks }; })}
-              className="h-11 rounded-xl bg-white/10 text-sm font-black">Reset</button>
-            <button onClick={() => copy(JSON.stringify({ id: c.id, file: c.file, recipe: c.recipe, dials: tw }), "Recipe copied")}
-              className="h-11 rounded-xl bg-white/10 text-sm font-black">Copy recipe</button>
-            <button onClick={saveWav} disabled={!samples} className="h-11 rounded-xl bg-white/10 text-sm font-black disabled:opacity-40">Save WAV</button>
-          </div>
         </div>
-      )}
-      {msg && <p className="mt-2 text-sm font-black text-emerald-300">{msg}</p>}
-    </li>
+      </aside>
+      <Panel title={`${ev.emoji} ${ev.label}`} note={`${ev.candidates.length} sounds to try`}>
+        <div className="sl-tabs">
+          {ev.candidates.map((x) => (
+            <button key={x.id} data-candidate={x.id} aria-pressed={x.id === c.id} onClick={() => setSel((s) => ({ ...s, [ev.id]: x.id }))}>
+              {notes.picks[ev.id] === x.id && "✓ "}{x.name}{(notes.ratings[x.id] ?? 0) > 0 && <em> {"★".repeat(notes.ratings[x.id])}</em>}
+            </button>
+          ))}
+        </div>
+        <div className="sl-one-body">
+          <OneSound key={c.id} c={c} notes={notes} setNotes={setNotes} eventId={ev.id} />
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+// ── Option 2: every sound as a compact row ───────────────────────────────────
+function EditPanel({ c, notes, setNotes, eventId, onClose }: { c: Candidate; notes: LabNotes; setNotes: SetNotes; eventId: string; onClose: () => void }) {
+  const k = useCandidate(c, notes, setNotes, eventId);
+  return (
+    <div className="sl-editp" data-candidate-open={c.id}>
+      <div className="sl-editp-head">
+        <button className="sl-play sl-play-sm" onClick={k.play} aria-label={`Play ${c.name}`}>▶</button>
+        <div className="sl-player-name"><div><b>{c.name}</b> <Tags c={c} edited={k.edited} /></div><p>{c.about}</p></div>
+        <button className="sl-x" onClick={onClose} aria-label="Close">✕</button>
+      </div>
+      <WaveOrLoading k={k} />
+      <div className="sl-editp-rate"><Stars k={k} /><PickButton k={k} /></div>
+      <NoteBox k={k} />
+      <Dials k={k} />
+      <Msg k={k} />
+    </div>
+  );
+}
+
+function SoundRow({ c, notes, setNotes, eventId, open, onOpen }: {
+  c: Candidate; notes: LabNotes; setNotes: SetNotes; eventId: string; open: boolean; onOpen: () => void;
+}) {
+  const picked = notes.picks[eventId] === c.id;
+  const rating = notes.ratings[c.id] ?? 0;
+  const tweak = notes.tweaks[c.id];
+  const edited = !!tweak && describeTweak(tweak) !== "no changes";
+  const hasNote = !!notes.notes[c.id];
+  const togglePick = () => setNotes((n) => {
+    const picks = { ...n.picks };
+    if (picks[eventId] === c.id) delete picks[eventId]; else picks[eventId] = c.id;
+    return { ...n, picks };
+  });
+  return (
+    <div className="sl-row" data-candidate={c.id} data-open={open ? "true" : undefined} data-picked={picked ? "true" : undefined}>
+      <button className="sl-row-play" onClick={() => playCandidate(c, tweak)} aria-label={`Play ${c.name}`}>▶</button>
+      <button className="sl-row-name" onClick={onOpen}>
+        <b>{c.name}</b>
+        <span><Tags c={c} edited={edited} />{rating > 0 && <em className="sl-row-stars">{"★".repeat(rating)}</em>}</span>
+      </button>
+      <button className="sl-radio" aria-pressed={picked} onClick={togglePick} aria-label={picked ? `Un-pick ${c.name}` : `Pick ${c.name}`}>
+        <i />
+        <span>Pick</span>
+      </button>
+      <button className="sl-row-edit" onClick={onOpen} aria-expanded={open} title="Rate, note and edit">
+        {hasNote ? "✎" : "≡"}<span>{open ? "Close" : "Edit"}</span>
+      </button>
+    </div>
+  );
+}
+
+function LayoutRows({ notes, setNotes, eventId, pickEvent }: { notes: LabNotes; setNotes: SetNotes; eventId: string; pickEvent: (id: string) => void }) {
+  const narrow = useNarrow();
+  const [openId, setOpenId] = useState<{ ev: string; c: string } | null>(null);
+  const openEv = openId ? LAB_EVENTS.find((e) => e.id === openId.ev) : undefined;
+  const openC = openEv?.candidates.find((c) => c.id === openId?.c);
+  function jump(id: string) {
+    pickEvent(id);
+    document.getElementById(`sl-ev-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  const toggle = (ev: string, c: string) => setOpenId((o) => (o && o.ev === ev && o.c === c ? null : { ev, c }));
+  return (
+    <>
+      <div className="sl-jump">
+        {LAB_EVENTS.map((e) => (
+          <Pill key={e.id} on={e.id === eventId} onClick={() => jump(e.id)}>{e.emoji} {e.label}{notes.picks[e.id] ? " ✓" : ""}</Pill>
+        ))}
+      </div>
+      <div className="sl-rows-layout">
+        <div className="sl-rows">
+          {LAB_EVENTS.map((ev) => (
+            <section key={ev.id} id={`sl-ev-${ev.id}`} className="sl-group" data-current={ev.id === eventId ? "true" : undefined}>
+              <div className="sl-group-head"><h3>{ev.emoji} {ev.label}</h3><span>{ev.candidates.length} sounds · pick</span></div>
+              {ev.candidates.map((c) => {
+                const isOpen = openId?.ev === ev.id && openId.c === c.id;
+                return (
+                  <div key={c.id}>
+                    <SoundRow c={c} notes={notes} setNotes={setNotes} eventId={ev.id} open={isOpen} onOpen={() => toggle(ev.id, c.id)} />
+                    {narrow && isOpen && <div className="sl-inline-edit"><EditPanel c={c} notes={notes} setNotes={setNotes} eventId={ev.id} onClose={() => setOpenId(null)} /></div>}
+                  </div>
+                );
+              })}
+            </section>
+          ))}
+        </div>
+        {!narrow && (
+          <aside className="sl-aside">
+            <Panel title="Edit sound">
+              {openC && openEv
+                ? <EditPanel key={openC.id} c={openC} notes={notes} setNotes={setNotes} eventId={openEv.id} onClose={() => setOpenId(null)} />
+                : <Note>Tap a sound&apos;s name or Edit to see its picture, rate it, write a note and change it with sliders.</Note>}
+            </Panel>
+          </aside>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -233,10 +442,12 @@ export default function SoundLabPage() {
   const [eventId, setEventId] = useState(LAB_EVENTS[0].id);
   const [exported, setExported] = useState<string | null>(null);
   const [seqMsg, setSeqMsg] = useState("");
+  const [layout, setLayoutRaw] = useState<Layout>("one");
 
   useEffect(() => {
     setNotesRaw(loadNotes());
     try { const e = localStorage.getItem(`${STORE}-event`); if (e && LAB_EVENTS.some((x) => x.id === e)) setEventId(e); } catch { /* fine */ }
+    try { const l = localStorage.getItem(LAYOUT_KEY); if (l === "one" || l === "rows") setLayoutRaw(l); } catch { /* fine */ }
   }, []);
   const setNotes = useCallback((f: (n: LabNotes) => LabNotes) => {
     setNotesRaw((n) => {
@@ -249,8 +460,10 @@ export default function SoundLabPage() {
     setEventId(id);
     try { localStorage.setItem(`${STORE}-event`, id); } catch { /* fine */ }
   }
-
-  const ev = LAB_EVENTS.find((e) => e.id === eventId) ?? LAB_EVENTS[0];
+  function setLayout(l: Layout) {
+    setLayoutRaw(l);
+    try { localStorage.setItem(LAYOUT_KEY, l); } catch { /* fine */ }
+  }
 
   async function playSequence(id: string) {
     const seq = SEQUENCES.find((s) => s.id === id);
@@ -276,61 +489,40 @@ export default function SoundLabPage() {
   const pickedCount = Object.keys(notes.picks).length;
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 pb-24 pt-5 text-white">
-      <h1 className="text-2xl font-black">Sound Lab</h1>
-      <p className="mt-1 text-sm font-bold text-white/90">
-        Tap ▶ to hear. Rate with stars, pick your favourite for each event, edit with the sliders, then Export my picks and send it to us.
-      </p>
-
-      <div className="sticky top-0 z-10 -mx-4 mt-3 border-b border-white/10 bg-slate-950/95 px-4 py-2 backdrop-blur">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {LAB_EVENTS.map((e) => (
-            <button key={e.id} onClick={() => pickEvent(e.id)}
-              className={`h-11 shrink-0 rounded-full px-3 text-sm font-black ${e.id === ev.id ? "bg-emerald-500 text-slate-950" : "bg-white/10 text-white"}`}>
-              {e.emoji} {e.label}{notes.picks[e.id] ? " ✓" : ""}
-            </button>
-          ))}
-        </div>
+    <BroadcastPage
+      title="Sound Lab"
+      sub="Hear, rate, pick and change each match sound, then export your picks."
+      actions={<span className="sl-count">{pickedCount} / {LAB_EVENTS.length} picked</span>}
+    >
+      <div className="sl-switch">
+        <Label>Layout</Label>
+        <Pill on={layout === "one"} onClick={() => setLayout("one")}>One sound</Pill>
+        <Pill on={layout === "rows"} onClick={() => setLayout("rows")}>All sounds</Pill>
       </div>
 
-      <section className="mt-4">
-        <h2 className="text-lg font-black">{ev.emoji} {ev.label}</h2>
-        <p className="text-sm font-bold text-white/90">{ev.candidates.length} sounds to try.</p>
-        <ul className="mt-2 space-y-3">
-          {ev.candidates.map((c) => <CandidateCard key={c.id} c={c} notes={notes} setNotes={setNotes} eventId={ev.id} />)}
-        </ul>
-      </section>
+      {layout === "one"
+        ? <LayoutOne notes={notes} setNotes={setNotes} eventId={eventId} pickEvent={pickEvent} />
+        : <LayoutRows notes={notes} setNotes={setNotes} eventId={eventId} pickEvent={pickEvent} />}
 
-      <section className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-3">
-        <h2 className="text-lg font-black">Hear them together</h2>
-        <p className="text-sm font-bold text-white/90">Plays your pick for each event (or your best rated, or the first one).</p>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          {SEQUENCES.map((s) => (
-            <button key={s.id} onClick={() => playSequence(s.id)} className="min-h-[48px] rounded-xl bg-sky-500/80 px-2 text-sm font-black text-white active:scale-95">
-              ▶ {s.label}
-            </button>
-          ))}
-        </div>
-        {seqMsg && <p className="mt-2 text-xs font-bold text-white/90">{seqMsg}</p>}
-      </section>
+      <PanelGrid min={360}>
+        <Panel title="Hear them together" note="your pick, or best rated, or the first">
+          <div className="sl-seq">
+            {SEQUENCES.map((s) => <Btn key={s.id} onClick={() => playSequence(s.id)}>▶ {s.label}</Btn>)}
+          </div>
+          {seqMsg && <Note>{seqMsg}</Note>}
+        </Panel>
+        <Panel title="Export my picks" note={`${pickedCount} of ${LAB_EVENTS.length} events picked`}>
+          <Note>Copies a short summary to paste to us.</Note>
+          <div className="sl-row-btns">
+            <Btn main onClick={doExport}>Export my picks</Btn>
+            <Btn onClick={() => { if (confirm("Clear every rating, note, edit and pick on this device?")) { setNotes(() => EMPTY_NOTES); setExported(null); } }}>Clear everything</Btn>
+          </div>
+          {exported && <textarea readOnly value={exported} rows={10} className="sl-input sl-export" />}
+        </Panel>
+      </PanelGrid>
 
-      <section className="mt-4 rounded-2xl border border-amber-300/40 bg-amber-400/10 p-3">
-        <h2 className="text-lg font-black">Export my picks</h2>
-        <p className="text-sm font-bold text-white/90">{pickedCount} of {LAB_EVENTS.length} events picked. Copies a short summary to paste to us.</p>
-        <button onClick={doExport} className="mt-2 h-12 w-full rounded-xl bg-amber-300 text-base font-black text-slate-950">Export my picks</button>
-        {exported && (
-          <textarea readOnly value={exported} rows={10}
-            className="mt-2 w-full rounded-lg border border-white/15 bg-black/40 p-2 font-mono text-xs text-white" />
-        )}
-        <button
-          onClick={() => { if (confirm("Clear every rating, note, edit and pick on this device?")) { setNotes(() => EMPTY_NOTES); setExported(null); } }}
-          className="mt-2 h-10 w-full rounded-xl border border-white/20 text-sm font-black text-white/90">Clear everything</button>
-      </section>
-
-      <p className="mt-4 text-xs font-bold text-white/80">
-        Saved on this device only. Nothing here changes the game yet.
-      </p>
+      <Note>Saved on this device only. Nothing here changes the game yet.</Note>
       <PageGuide page="/star-sound-lab-dev" />
-    </main>
+    </BroadcastPage>
   );
 }

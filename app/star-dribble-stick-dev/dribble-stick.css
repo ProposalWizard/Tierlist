@@ -1,0 +1,8 @@
+.ds .ds-pills { display: flex; gap: 6px; }
+.ds .ds-layout { display: grid; grid-template-columns: minmax(0, 448px) minmax(0, 320px); gap: 16px; justify-content: center; align-items: start; }
+.ds .ds-stage { width: 100%; min-width: 0; }
+.ds .ds-help { font-size: 14px; font-weight: 700; color: var(--bc-ink, #fff); margin: 0 0 8px; line-height: 1.4; }
+.ds .ds-dim { opacity: .75; font-size: 13px; }
+@media (max-width: 820px) {
+  .ds .ds-layout { grid-template-columns: minmax(0, 1fr); }
+}

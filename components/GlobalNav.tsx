@@ -12,6 +12,7 @@ import NavMenu from "./NavMenu";
 import GameSidebar from "./GameSidebar";
 import NavGameLinks from "./NavGameLinks";
 import AdminNavPanel from "./AdminNavPanel";
+import ChatBubble from "./teamRoom/ChatBubble";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 
 export default async function GlobalNav() {
@@ -45,6 +46,8 @@ export default async function GlobalNav() {
           on immersive pages where this <nav> itself is display:none. */}
       {/* A local dev build shows it to everyone, like AdminOnly (never the live site). */}
       {(userIsAdmin || offlineDevPlayEnabled()) && <AdminNavPanel />}
+      {/* The Team room's chat bubble (Harry, 19 Oct 2026): admin and test pages only, portaled the same way. */}
+      {(userIsAdmin || offlineDevPlayEnabled()) && <ChatBubble />}
     </nav>
   );
 }

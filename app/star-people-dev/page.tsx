@@ -6,10 +6,17 @@
  * hand poses, props in the hands, reaches, the handshake. Each proof drives
  * the layer the way a scene script does.
  *
+ * Two layouts of the same controls (Harry, 19 Oct 2026: "cut scene people opt 1
+ * and 2"): Studio (picture left, controls right) and Contact sheet (pick bar,
+ * picture, a sheet of cards). The 3D view is ONE element in both, so switching
+ * layouts never restarts it.
+ *
  * Stills/films: window.__people (hold(t), camera(…), set(…)); __peopleReady.
  */
 import { useEffect, useRef, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, Btn, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "./people.css";
 import { SKIN_TONES } from "@/lib/star/playerIdentity";
 import { previewHumanBodyLook } from "@/lib/star/human3d/look";
 import type { BenchHandle, BenchProof, BenchState } from "@/lib/star/cutscene/peopleBench";
@@ -23,14 +30,30 @@ const PROOFS: [BenchProof, string][] = [
 ];
 const MODELS: [PersonModel, string][] = [["player", "Short"], ["player-buzz", "Buzz"], ["player-long", "Long"], ["manager", "Manager"]];
 const HAIRS = [["#17110d", "Black"], ["#3d2616", "Brown"], ["#b88a4a", "Fair"]] as const;
+const EXPR = Object.keys(EXPRESSIONS) as ExpressionName[];
+const DEFAULTS: BenchState = {
+  proof: "faces", model: "player", skin: SKIN_TONES[2].hex, hair: "#3d2616", expression: "neutral", hand: "relaxed", turn: 0, look: "new",
+};
 
-function Chips<V extends string>({ value, options, onPick }: { value: V; options: [V, string][]; onPick: (v: V) => void }) {
+const LAYOUT_KEY = "star-people-layout";
+type Layout = "studio" | "sheet";
+
+function Pills<V extends string>({ value, options, onPick }: { value: V; options: [V, string][]; onPick: (v: V) => void }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {options.map(([v, label]) => (
-        <button key={v} onClick={() => onPick(v)} className={`rounded-full px-3 py-1 text-xs font-bold ${v === value ? "bg-amber-400 text-black" : "bg-white/10 text-white"}`}>{label}</button>
-      ))}
+    <div className="pp-row">
+      {options.map(([v, label]) => <Pill key={v} on={v === value} onClick={() => onPick(v)}>{label}</Pill>)}
     </div>
+  );
+}
+
+function Pick<V extends string>({ label, value, options, onPick }: { label: string; value: V; options: [V, string][]; onPick: (v: V) => void }) {
+  return (
+    <label className="pp-pick">
+      <span>{label}</span>
+      <select value={value} onChange={(e) => onPick(e.target.value as V)}>
+        {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+    </label>
   );
 }
 
@@ -38,16 +61,23 @@ export default function PeopleDevPage() {
   const wrap = useRef<HTMLDivElement>(null);
   const handle = useRef<BenchHandle | null>(null);
 
-  const [state, setState] = useState<BenchState>({
-    proof: "faces", model: "player", skin: SKIN_TONES[2].hex, hair: "#3d2616", expression: "neutral", hand: "relaxed", turn: 0, look: "new",
-  });
+  const [state, setState] = useState<BenchState>(DEFAULTS);
   const [err, setErr] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [layout, setLayoutRaw] = useState<Layout>("studio");
 
   useEffect(() => {
-    document.body.classList.add("knowitball-immersive");
-    return () => document.body.classList.remove("knowitball-immersive");
+    try { if (localStorage.getItem(LAYOUT_KEY) === "sheet") setLayoutRaw("sheet"); } catch { /* no storage */ }
   }, []);
+  const setLayout = (l: Layout) => {
+    setLayoutRaw(l);
+    try { localStorage.setItem(LAYOUT_KEY, l); } catch { /* no storage */ }
+  };
+  // The 3D view sizes itself on window resize; a layout change moves its box.
+  useEffect(() => {
+    const id = window.setTimeout(() => window.dispatchEvent(new Event("resize")), 30);
+    return () => window.clearTimeout(id);
+  }, [layout, ready]);
 
   useEffect(() => {
     const el = wrap.current;
@@ -80,36 +110,108 @@ export default function PeopleDevPage() {
     setState((o) => ({ ...o, ...s }));
     handle.current?.set(s);
   };
+  const reset = () => set({ ...DEFAULTS });
+  const playAgain = () => handle.current?.play(0);
+
+  const skins = (
+    <div className="pp-row">
+      {SKIN_TONES.map((t) => (
+        <button key={t.id} aria-label={t.label} title={t.label} onClick={() => set({ skin: t.hex })} className="pp-skin" aria-pressed={state.skin === t.hex} style={{ background: t.hex }} />
+      ))}
+    </div>
+  );
+  const hairs = <Pills value={state.hair} options={HAIRS.map(([h, l]) => [h, `${l} hair`] as [string, string])} onPick={(hair) => set({ hair })} />;
+  const turn = state.proof === "faces" && (
+    <div className="pp-turn">
+      <Label>Turn</Label>
+      <input type="range" min={-60} max={60} value={state.turn} onChange={(e) => set({ turn: Number(e.target.value) })} aria-label="Turn" />
+      <span>{state.turn}°</span>
+    </div>
+  );
+  const look = (
+    <div className="pp-row pp-look">
+      <Label>Cut-scene people</Label>
+      <Pill on={state.look === "new"} onClick={() => set({ look: "new" })}>New</Pill>
+      <Pill on={state.look === "old"} onClick={() => set({ look: "old" })}>Old</Pill>
+    </div>
+  );
+  const status = (
+    <>
+      {err && <div className="pp-err">The 3D didn&apos;t start: {err}</div>}
+      {!ready && !err && <Note>Loading the people…</Note>}
+    </>
+  );
 
   return (
-    <div className="fixed inset-0 bg-black text-white">
-      <div ref={wrap} className="absolute inset-0" />
-      <div className="absolute inset-x-0 top-0 h-[6%] bg-black" />
-      <div className="absolute inset-x-0 bottom-0 max-h-[46%] overflow-y-auto bg-gradient-to-t from-black/90 to-black/50 p-3 space-y-2" data-controls>
-        {err && <div className="rounded bg-red-600/80 p-2 text-xs">The 3D didn&apos;t start: {err}</div>}
-        {!ready && !err && <div className="text-xs text-white/80">Loading the people…</div>}
-        <Chips value={state.proof} options={PROOFS} onPick={(proof) => set({ proof })} />
-        <Chips value={state.model} options={MODELS} onPick={(model) => set({ model })} />
-        <div className="flex flex-wrap gap-1.5">
-          {SKIN_TONES.map((t) => (
-            <button key={t.id} aria-label={t.label} onClick={() => set({ skin: t.hex })} className={`h-6 w-6 rounded-full border-2 ${state.skin === t.hex ? "border-amber-400" : "border-white/30"}`} style={{ background: t.hex }} />
-          ))}
-          {HAIRS.map(([hex, label]) => (
-            <button key={hex} onClick={() => set({ hair: hex })} className={`rounded-full px-2 text-[11px] font-bold ${state.hair === hex ? "bg-amber-400 text-black" : "bg-white/10"}`}>{label} hair</button>
-          ))}
+    <BroadcastPage
+      title="Cut-scene people"
+      sub="Faces, hands and the moves every cut scene uses."
+      back="/star-play-dev"
+      actions={
+        <div className="pp-row">
+          <Pill on={layout === "studio"} onClick={() => setLayout("studio")}>Studio</Pill>
+          <Pill on={layout === "sheet"} onClick={() => setLayout("sheet")}>Contact sheet</Pill>
         </div>
-        <Chips value={state.expression} options={(Object.keys(EXPRESSIONS) as ExpressionName[]).map((e) => [e, e])} onPick={(expression) => set({ expression })} />
-        {state.proof === "hands" && <Chips value={state.hand} options={HAND_POSE_NAMES.map((h) => [h, h] as [HandPoseName, string])} onPick={(hand) => set({ hand })} />}
-        {state.proof === "faces" && (
-          <div className="flex items-center gap-2 text-xs">Turn <input type="range" min={-60} max={60} value={state.turn} onChange={(e) => set({ turn: Number(e.target.value) })} className="flex-1" /> {state.turn}°</div>
+      }
+    >
+      <div className="pp-wrap" data-layout={layout}>
+        <div className="pp-view">
+          <div ref={wrap} className="pp-canvas" />
+          <div className="pp-viewbar">
+            <span>{PROOFS.find(([p]) => p === state.proof)?.[1]} · {state.expression}</span>
+            <Btn onClick={playAgain}>↺ Play again</Btn>
+          </div>
+        </div>
+
+        {layout === "studio" ? (
+          <Panel title="Controls" note="Pick a proof, then change him">
+            <div className="pp-ctrl" data-controls>
+              {status}
+              <div><Label>Proof</Label><Pills value={state.proof} options={PROOFS} onPick={(proof) => set({ proof })} /></div>
+              <div><Label>Head</Label><Pills value={state.model} options={MODELS} onPick={(model) => set({ model })} /></div>
+              <div><Label>Skin</Label>{skins}</div>
+              <div><Label>Hair</Label>{hairs}</div>
+              <div><Label>Expression</Label><Pills value={state.expression} options={EXPR.map((e) => [e, e])} onPick={(expression) => set({ expression })} /></div>
+              {state.proof === "hands" && <div><Label>Hand pose</Label><Pills value={state.hand} options={HAND_POSE_NAMES.map((h) => [h, h] as [HandPoseName, string])} onPick={(hand) => set({ hand })} /></div>}
+              {turn}
+              {look}
+            </div>
+          </Panel>
+        ) : (
+          <div className="pp-sheet" data-controls>
+            <div className="pp-bar">
+              <Pick label="Proof" value={state.proof} options={PROOFS} onPick={(proof) => set({ proof })} />
+              <Pick label="Head" value={state.model} options={MODELS} onPick={(model) => set({ model })} />
+              <Pick label="Hair" value={state.hair} options={HAIRS.map(([h, l]) => [h, l] as [string, string])} onPick={(hair) => set({ hair })} />
+              <Btn onClick={reset}>Reset</Btn>
+            </div>
+            {status}
+            <div className="pp-side">
+              <Label>Skin</Label>
+              {skins}
+              {turn}
+              {look}
+            </div>
+            <Label>Expression</Label>
+            <div className="pp-cards">
+              {EXPR.map((e) => (
+                <button key={e} className="pp-card" aria-pressed={state.expression === e} onClick={() => set({ expression: e })}>{e}</button>
+              ))}
+            </div>
+            {state.proof === "hands" && (
+              <>
+                <Label>Hand pose</Label>
+                <div className="pp-cards">
+                  {HAND_POSE_NAMES.map((h) => (
+                    <button key={h} className="pp-card" aria-pressed={state.hand === h} onClick={() => set({ hand: h })}>{h}</button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         )}
-        <div className="flex items-center gap-2 text-xs">
-          <span className="font-bold">Cut-scene people:</span>
-          <Chips value={state.look} options={[["new", "New"], ["old", "Old"]]} onPick={(v) => set({ look: v })} />
-          <button onClick={() => handle.current?.play(0)} className="ml-auto rounded-full bg-white/15 px-3 py-1 font-bold">↺ Play again</button>
-        </div>
       </div>
       <PageGuide page="/star-people-dev" corner="top-right" />
-    </div>
+    </BroadcastPage>
   );
 }

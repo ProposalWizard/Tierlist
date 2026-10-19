@@ -3,7 +3,8 @@
 .tb { position: relative; display: flex; flex-direction: column; gap: 20px; max-width: 1560px; }
 .tb > * { position: relative; }
 .tb-pitch { position: absolute !important; inset: -40px -20px auto -20px; width: calc(100% + 40px); height: 900px; color: var(--ash-accent); opacity: .05; pointer-events: none; z-index: 0; }
-.ash[data-look="light"] .tb-pitch { display: none; }
+.ash[data-look="light"] .tb-pitch, .ash[data-look="bento"] .tb-pitch { display: none; }
+.ash[data-look="broadcast"] .tb-pitch { opacity: .07; color: #5aa8ff; }
 
 .tb-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
 .tb-eyebrow { margin: 0 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--ash-accent); }
@@ -158,3 +159,10 @@
 .tb-notes { margin: -22px clamp(-36px, -3vw, -16px) 0; }
 @media (max-width: 1023px) { .tb-notes { margin: -16px -16px 0; } }
 .tb-notesdrop > summary svg, .tb-label svg { width: 15px; height: 15px; flex: 0 0 auto; }
+
+/* The Team room toggle (Harry, 19 Oct 2026) and its tabs. */
+.tb-roomtabs { max-width: 520px; width: 100%; }
+.tb-roomtabs button { font-size: 14px; padding: 9px 10px; }
+.tb-todo { max-width: 720px; display: flex; flex-direction: column; }
+.tb-pushnotes { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--ash-line); }
+.tb-pushes .tr-ncount { flex: 0 0 auto; font-size: 11px; }

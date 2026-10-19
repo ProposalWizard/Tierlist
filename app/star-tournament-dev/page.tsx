@@ -10,8 +10,10 @@
  * nothing but this screen.
  */
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, Btn, Note } from "@/components/admin/broadcast/BroadcastPage";
+import NationFlag from "@/components/star/NationFlag";
+import "./tournament.css";
 import {
   tournamentField, drawGroups, playMatchday, finishTournament, groupTable, tournamentStrength,
   type TournamentCompetition, type TournamentState,
@@ -36,53 +38,76 @@ export default function TournamentDev() {
   const [state, setState] = useState<TournamentState | null>(null);
   const s = state && state.competition === competition && state.season === seed * 2 && state.nation === nation ? state : start;
   const rng = () => mulberry32(clubNameSeed(`dev|${competition}|${seed}|${s.matchday}|${s.ko.length}`));
-  const btn = "border-2 border-white/30 px-3 py-2 text-[12px] font-black uppercase text-white";
+  const stage = s.winner ? "Finished" : s.ko.length ? s.ko[s.ko.length - 1].name : s.matchday ? `After matchday ${s.matchday}` : "The draw";
 
   return (
-    <main className="min-h-screen bg-[#0b100e] px-4 pb-16 pt-4 text-white" data-tournament-dev>
-      <PageGuide page="/star-tournament-dev" />
-      <div className="flex items-center justify-between">
-        <Link href="/star-play-dev" className="text-[13px] font-bold text-emerald-300">‹ Play Area</Link>
-        <h1 className="text-lg font-black">Tournament test</h1>
+    <BroadcastPage title="Tournaments" sub="The real tournament code: draw, groups, knockouts with extra time and penalties. Nothing is saved." back="/star-play-dev">
+      <div className="tn" data-tournament-dev>
+        <Panel title="Set up" note={stage}>
+          <div className="tn-controls">
+            <select className="tn-field" value={competition} onChange={e => { setCompetition(e.target.value as TournamentCompetition); setState(null); }} aria-label="Tournament">
+              <option>European Championship</option><option>World Cup</option>
+            </select>
+            <label className="tn-nation">
+              <NationFlag nation={nation} width={30} />
+              <input className="tn-field" value={nation} onChange={e => { setNation(e.target.value); setState(null); }} aria-label="Your nation" />
+            </label>
+            <Btn onClick={() => { setSeed(x => x + 1); setState(null); }}>New draw</Btn>
+          </div>
+          <div className="tn-controls">
+            <Btn disabled={s.matchday >= 3} onClick={() => setState(playMatchday(s, s.matchday + 1, rng()))}>Play matchday {Math.min(3, s.matchday + 1)}</Btn>
+            <Btn main onClick={() => setState(finishTournament(s, rng()))}>Play to the final</Btn>
+            <Btn onClick={() => setState(null)}>Reset</Btn>
+          </div>
+          {!s.entered && <p className="tn-warn">{nation} did not qualify for this one.</p>}
+        </Panel>
+
+        {s.winner && (
+          <div className="tn-hero" data-winner>
+            <NationFlag nation={s.winner} width={110} rounded={4} />
+            <div><div className="tn-hero-k">🏆 Winners</div><h2>{s.winner} win the {competition}</h2></div>
+          </div>
+        )}
+
+        <Panel title="Groups" note={`after matchday ${s.matchday}`}>
+          <div className="tn-groups">
+            {s.groups.map(g => (
+              <div key={g.name} className="tn-table">
+                <div className="tn-tr tn-th"><span>Group {g.name}</span><span>P</span><span>GD</span><span>Pts</span></div>
+                {groupTable(g).map((r, i) => (
+                  <div key={r.name} className="tn-tr" data-me={r.name === nation ? "true" : undefined} data-through={i < 2 ? "true" : undefined}>
+                    <span className="tn-team"><NationFlag nation={r.name} width={18} /> {r.name}</span><span>{r.p}</span><span>{r.gf - r.ga}</span><b>{r.pts}</b>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        {s.ko.length > 0 && (
+          <Panel title="Knockouts">
+            <div className="tn-bracket">
+              {s.ko.map(round => (
+                <div key={round.name} className="tn-round">
+                  <div className="bc-label">{round.name}</div>
+                  {round.ties.map((t, i) => {
+                    const hw = t.hs != null && t.as != null && (t.hs > t.as || (t.hs === t.as && !!t.pens && t.pens.home > t.pens.away));
+                    return (
+                      <div key={i} className="tn-tie" data-me={t.home === nation || t.away === nation ? "true" : undefined}>
+                        <div className="tn-side" data-won={hw ? "true" : undefined}><NationFlag nation={t.home} width={18} /><span>{t.home}</span><b>{t.hs ?? "–"}</b></div>
+                        <div className="tn-side" data-won={!hw && t.hs != null ? "true" : undefined}><NationFlag nation={t.away} width={18} /><span>{t.away}</span><b>{t.as ?? "–"}</b></div>
+                        {(t.wentToExtraTime || t.pens) && <div className="tn-extra">{t.wentToExtraTime ? "after extra time" : ""}{t.pens ? ` · pens ${t.pens.home}–${t.pens.away}` : ""}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </Panel>
+        )}
+        {s.ko.length === 0 && <Note>The knockouts show here once the groups are played.</Note>}
       </div>
-      <p className="mt-1 text-[12px] font-bold text-white/80">The real tournament code: draw, groups, knockouts with extra time and penalties. Nothing is saved.</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <select className="bg-gray-900 px-2 py-2 text-[13px] font-bold" value={competition} onChange={e => { setCompetition(e.target.value as TournamentCompetition); setState(null); }}>
-          <option>European Championship</option><option>World Cup</option>
-        </select>
-        <input className="w-32 bg-gray-900 px-2 py-2 text-[13px] font-bold" value={nation} onChange={e => { setNation(e.target.value); setState(null); }} aria-label="Your nation" />
-        <button className={btn} onClick={() => { setSeed(x => x + 1); setState(null); }}>New draw</button>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-2">
-        <button className={btn} disabled={s.matchday >= 3} onClick={() => setState(playMatchday(s, s.matchday + 1, rng()))}>Play matchday {Math.min(3, s.matchday + 1)}</button>
-        <button className="border-2 border-amber-300 bg-amber-400 px-3 py-2 text-[12px] font-black uppercase text-gray-950" onClick={() => setState(finishTournament(s, rng()))}>Play to the final</button>
-        <button className={btn} onClick={() => setState(null)}>Reset</button>
-      </div>
-      {!s.entered && <p className="mt-2 text-[12px] font-bold text-red-300">{nation} did not qualify for this one.</p>}
-      {s.winner && <p className="mt-3 text-xl font-black text-amber-300" data-winner>🏆 {s.winner} win the {competition}</p>}
-      <h2 className="mt-4 text-[13px] font-black uppercase tracking-wider text-emerald-300">Groups (after matchday {s.matchday})</h2>
-      <div className="mt-1 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {s.groups.map(g => (
-          <table key={g.name} className="w-full text-[12px]">
-            <thead><tr className="text-white/70"><th className="text-left">Group {g.name}</th><th>P</th><th>GD</th><th>Pts</th></tr></thead>
-            <tbody>{groupTable(g).map((r, i) => (
-              <tr key={r.name} className={r.name === nation ? "font-black text-amber-300" : i < 2 ? "text-emerald-200" : ""}>
-                <td>{r.name}</td><td className="text-center">{r.p}</td><td className="text-center">{r.gf - r.ga}</td><td className="text-center">{r.pts}</td>
-              </tr>))}</tbody>
-          </table>
-        ))}
-      </div>
-      {s.ko.map(round => (
-        <div key={round.name} className="mt-4">
-          <h2 className="text-[13px] font-black uppercase tracking-wider text-emerald-300">{round.name}</h2>
-          {round.ties.map((t, i) => (
-            <p key={i} className={`text-[13px] font-bold ${t.home === nation || t.away === nation ? "text-amber-300" : ""}`}>
-              {t.home} {t.hs ?? "–"}–{t.as ?? "–"} {t.away}
-              {t.wentToExtraTime ? " (a.e.t.)" : ""}{t.pens ? ` · pens ${t.pens.home}–${t.pens.away}` : ""}
-            </p>
-          ))}
-        </div>
-      ))}
-    </main>
+      <PageGuide page="/star-tournament-dev" corner="bottom-left" />
+    </BroadcastPage>
   );
 }

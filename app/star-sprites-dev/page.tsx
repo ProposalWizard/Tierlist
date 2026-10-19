@@ -17,6 +17,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "../star-animations-dev/animations.css";
+import "./sprites.css";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { kitsOf, keeperKit } from "@/lib/star/kits";
 import {
@@ -85,6 +88,7 @@ export default function StarSpritesDevPage() {
   const [ready, setReady] = useState(false);
   const [t, setT] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [sec, setSec] = useState("pitch");
 
   useEffect(() => {
     if (offlineDevPlayEnabled()) { setGate("ok"); return; }
@@ -153,14 +157,15 @@ export default function StarSpritesDevPage() {
     return out;
   }, []);
 
-  if (gate === "loading") return <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center text-sm">Loading…</div>;
-  if (gate === "denied") {
-    return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center text-center px-4">
-        <div><div className="text-lg font-black mb-1">Admin only</div><div className="text-sm text-gray-400">This is a development sandbox.</div></div>
-      </div>
-    );
-  }
+  const jump = (k: string) => { setSec(k); document.querySelector(`[data-spr-sec="${k}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  const shell = (body: React.ReactNode) => (
+    <BroadcastPage title="3D Match Figures" sub="Every baked 3D match figure, at the real match size" back="/star-3d-area-dev">
+      {body}
+      <PageGuide page="/star-sprites-dev" corner="bottom-left" />
+    </BroadcastPage>
+  );
+  if (gate === "loading") return shell(<Note>Loading…</Note>);
+  if (gate === "denied") return shell(<Note><b>Admin only.</b> This is a test page.</Note>);
 
   const drawn = men.map((m) => ({ m, s: m.at(t) })).sort((a, b) => a.s.y - b.s.y);
   const zoomRow: { char: SpriteChar; clip: SpriteClip; kit: SpriteKit; facing: number; label: string }[] = [
@@ -171,48 +176,62 @@ export default function StarSpritesDevPage() {
     { char: "keeper", clip: (Math.floor(t / 1.2) % 2 ? "diveL" : "diveR"), kit: men[0].kit, facing: Math.PI / 2, label: "dive" },
   ];
 
-  return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <div className="mx-auto" style={{ width: W }}>
-        <div className="flex items-center justify-between px-3 py-2">
-          <div className="text-sm font-black">3D match figures</div>
-          <button onClick={() => setPaused((p) => !p)} className="min-h-[36px] rounded-md bg-white/10 px-3 text-sm font-bold">
-            {paused ? "Play" : "Pause"}
-          </button>
+  return shell(
+    <div className="anim-layout">
+      <nav className="anim-rail" aria-label="Sections">
+        <div className="anim-rail-label">Views</div>
+        <button className="anim-railitem" aria-pressed={sec === "pitch"} onClick={() => jump("pitch")}>On the pitch</button>
+        <button className="anim-railitem" aria-pressed={sec === "zoom"} onClick={() => jump("zoom")}>4× zoom</button>
+        <div className="anim-rail-label">Pages</div>
+        <a className="anim-railitem" href="/star-anim3d-dev">3D animations</a>
+        <a className="anim-railitem" href="/star-animations-dev">2D animations</a>
+      </nav>
+      <div className="anim-main">
+        <div className="anim-bar">
+          <button className="anim-play" aria-pressed={paused} title={paused ? "Play" : "Pause"} aria-label={paused ? "Play" : "Pause"}
+            onClick={() => setPaused((p) => !p)}>{paused ? "▶" : "❚❚"}</button>
+          <Label>{paused ? "Paused" : "Playing"}</Label>
         </div>
+        <Note>22 men at the real match size (22 px tall on a phone). Two clubs in their real kits; a keeper at each end dives left, then right.</Note>
         {!ready ? (
-          <div className="p-6 text-center text-sm text-white/80">Loading the figures…</div>
+          <Note>Loading the figures…</Note>
         ) : (
           <>
-            <div
-              data-testid="sprite-pitch"
-              className="relative overflow-hidden"
-              style={{
-                width: W, height: H,
-                backgroundColor: "#3a9a3f",
-                backgroundImage: "repeating-conic-gradient(#3fa344 0% 25%, #379139 0% 50%)",
-                backgroundSize: "56px 56px",
-              }}
-            >
-              <div className="absolute left-0 right-0 border-t-2 border-white/70" style={{ top: H / 2 }} />
-              <div className="absolute rounded-full border-2 border-white/70" style={{ left: W / 2 - 46, top: H / 2 - 46, width: 92, height: 92 }} />
-              {drawn.map(({ m, s }) => (
-                <Figure key={m.id} char={m.char} clip={s.clip} t={s.ct} facing={s.facing} kit={m.kit} x={s.x} y={s.y} height={FIG} shadow />
-              ))}
+            <div className="anim-sec" data-spr-sec="pitch"><h2>On the pitch</h2><i /><i /><i /></div>
+            <div className="spr-pitchwrap">
+              <div
+                data-testid="sprite-pitch"
+                className="relative overflow-hidden"
+                style={{
+                  width: W, height: H,
+                  backgroundColor: "#3a9a3f",
+                  backgroundImage: "repeating-conic-gradient(#3fa344 0% 25%, #379139 0% 50%)",
+                  backgroundSize: "56px 56px",
+                }}
+              >
+                <div className="absolute left-0 right-0 border-t-2 border-white/70" style={{ top: H / 2 }} />
+                <div className="absolute rounded-full border-2 border-white/70" style={{ left: W / 2 - 46, top: H / 2 - 46, width: 92, height: 92 }} />
+                {drawn.map(({ m, s }) => (
+                  <Figure key={m.id} char={m.char} clip={s.clip} t={s.ct} facing={s.facing} kit={m.kit} x={s.x} y={s.y} height={FIG} shadow />
+                ))}
+              </div>
             </div>
-            <div className="px-3 pt-3 text-xs font-bold text-white/80">4x zoom</div>
-            <div className="flex flex-wrap items-end gap-2 px-3 py-2" style={{ background: "#3a9a3f" }}>
+            <div className="anim-sec" data-spr-sec="zoom"><h2>4× zoom</h2><i /><i /><i /></div>
+            <div className="anim-cards">
               {zoomRow.map((z) => (
-                <div key={z.label} className="relative" style={{ width: 92, height: 140 }}>
-                  <Figure char={z.char} clip={z.clip} t={t % 1.2} facing={z.facing} kit={z.kit} x={46} y={118} height={FIG * 4} pixelated />
-                  <div className="absolute bottom-0 left-0 right-0 text-center text-[10px] font-bold">{z.label}</div>
+                <div key={z.label} className="anim-card">
+                  <div className="anim-ct">{z.char === "keeper" ? "GK · " : ""}{z.label}</div>
+                  <div className="anim-pics spr-zoom">
+                    <div className="relative" style={{ width: 92, height: 140 }}>
+                      <Figure char={z.char} clip={z.clip} t={t % 1.2} facing={z.facing} kit={z.kit} x={46} y={118} height={FIG * 4} pixelated />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           </>
         )}
       </div>
-      <PageGuide page="/star-sprites-dev" />
     </div>
   );
 }

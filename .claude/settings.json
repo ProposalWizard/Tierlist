@@ -38,6 +38,17 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && node scripts/hooks/recordings-hook.mjs",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }

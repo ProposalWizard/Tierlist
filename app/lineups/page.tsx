@@ -12,6 +12,7 @@ import {
 } from "@/lib/star/clubs";
 import type { LeagueSquad } from "@/lib/star/types";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Pill } from "@/components/admin/broadcast/BroadcastPage";
 
 /**
  * SQUAD BUILDER.
@@ -95,23 +96,17 @@ export default function LineupsPage() {
   }, [division]);
 
   return (
-    <main className="w-full py-2">
+    <BroadcastPage title="Team sheets" sub="Every club's squad and shape" width={1100}>
+    <div className="w-full">
       {/* Five tabs now, not three — a phone-width row of equal flex-1 tiles
           crushed "Champions League"/"Europa League" onto multiple lines.
           A scrollable row keeps every label on one line at a readable size
           instead. */}
       <div className="mx-auto mb-2 flex max-w-5xl gap-1.5 overflow-x-auto px-2 pb-0.5">
         {TABS.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setDivision(t.key)}
-            className={`shrink-0 whitespace-nowrap rounded-lg border px-3 py-1.5 text-[12px] font-black uppercase tracking-wide transition ${
-              division === t.key
-                ? "border-emerald-500 bg-emerald-600 text-white"
-                : "border-gray-700 bg-gray-900 text-white/70 hover:bg-gray-800"}`}
-          >
+          <Pill key={t.key} on={division === t.key} onClick={() => setDivision(t.key)}>
             {t.label}
-          </button>
+          </Pill>
         ))}
       </div>
 
@@ -120,7 +115,7 @@ export default function LineupsPage() {
           {error}
         </div>
       ) : loading ? (
-        <div className="mx-auto max-w-md p-8 text-center text-sm font-bold text-emerald-300">
+        <div className="mx-auto max-w-md p-8 text-center text-sm font-bold text-[var(--bc-ink2)]">
           Loading the division…
         </div>
       ) : (
@@ -128,6 +123,7 @@ export default function LineupsPage() {
       )}
       {/* Bottom-left: the builder's own "Saved ✓ / ⚠" status sits bottom-right. */}
       <PageGuide page="/lineups" corner="bottom-left" />
-    </main>
+    </div>
+    </BroadcastPage>
   );
 }

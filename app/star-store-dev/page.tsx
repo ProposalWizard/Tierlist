@@ -11,9 +11,15 @@
  * Coins and says so. Every rule lives in lib/star/store/*.ts; the screen is
  * components/star/store/StoreView.tsx, the same one the career's Store uses
  * (28 Sep 2026) — this page only adds the test wallet and test controls.
+ *
+ * Broadcast look, option 2 (19 Oct 2026): the test controls are a slanted
+ * menu rail on the left, the store itself sits on a lit stage beside it
+ * (store.css). StoreView is untouched; only the frame around it is this page's.
  */
 import { useEffect, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, Btn, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "./store.css";
 import StoreView from "@/components/star/store/StoreView";
 import { dateKeyFor } from "@/lib/star/store/daily";
 import {
@@ -53,6 +59,8 @@ export default function StoreTestPage() {
     setState(load(STATE_KEY, sanitizeStoreState, START_STATE));
     setSettings(load(SETTINGS_KEY, sanitizeTestSettings, DEFAULT_TEST_SETTINGS));
     setNow(Date.now());
+    // The controls start open on a computer (the left rail), folded on a phone.
+    try { setControlsOpen(window.matchMedia("(min-width: 900px)").matches); } catch { /* folded */ }
     setReady(true);
     const t = window.setInterval(() => setNow(Date.now()), 1000);
     document.body.classList.add("knowitball-immersive");
@@ -67,81 +75,85 @@ export default function StoreTestPage() {
   const dateKey = dateKeyFor(now || Date.UTC(2026, 8, 27), settings.dayOffset);
 
   if (!ready) {
-    return <div className="min-h-[100dvh] bg-[#05070d]" />;
+    return <div className="min-h-[100dvh] bg-[#03091a]" />;
   }
 
   // Every action: run the pure rule, keep the new state, report ok/reason.
   const run = (r: { ok: boolean; state: StoreState; reason?: string }) => { setState(r.state); return { ok: r.ok, reason: r.reason }; };
 
-  // The test controls (collapsible), under the store's header.
-  const controls = (
-        <div className="px-4 pb-2">
-          <button
-            onClick={() => setControlsOpen((o) => !o)}
-            className="flex w-full items-center justify-between rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-left text-[12px] font-bold text-slate-300"
-          >
-            <span>⚙ Test controls · {STORE_DIVISIONS.find((d) => d.id === settings.division)?.label} · <Stars v={settings.weeklyWage} />/wk{settings.dayOffset > 0 ? ` · +${settings.dayOffset} day${settings.dayOffset > 1 ? "s" : ""}` : ""}</span>
-            <span className="text-slate-400">{controlsOpen ? "▲" : "▼"}</span>
-          </button>
-          {controlsOpen && (
-            <div className="mt-2 grid gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-[12px]">
-              <div>
-                <div className="mb-1 font-black text-slate-200">Your level</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {STORE_DIVISIONS.map((d) => (
-                    <button key={d.id}
-                      onClick={() => setSettings((s) => ({ ...s, division: d.id, weeklyWage: typicalWageFor(d.id) }))}
-                      className={`rounded-full px-2.5 py-1 font-bold ${settings.division === d.id ? "bg-sky-500/30 text-sky-100 ring-1 ring-sky-400/70" : "bg-white/5 text-slate-400"}`}
-                    >{d.label}</button>
-                  ))}
-                </div>
-              </div>
-              <label className="flex items-center justify-between gap-2">
-                <span className="font-black text-slate-200">Weekly wage ★</span>
-                <input type="number" min={1} value={settings.weeklyWage}
-                  onChange={(e) => setSettings((s) => ({ ...s, weeklyWage: Math.max(1, Math.round(Number(e.target.value) || 1)) }))}
-                  className="w-28 rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-right font-bold" />
-              </label>
-              <label className="flex items-center justify-between gap-2">
-                <span className="font-black text-slate-200">Wallet ★</span>
-                <input type="number" min={0} value={state.stars}
-                  onChange={(e) => setState((s) => ({ ...s, stars: Math.max(0, Math.round(Number(e.target.value) || 0)) }))}
-                  className="w-28 rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-right font-bold" />
-              </label>
-              <label className="flex items-center justify-between gap-2">
-                <span className="font-black text-slate-200">Wallet Coins</span>
-                <input type="number" min={0} value={state.coins}
-                  onChange={(e) => setState((s) => ({ ...s, coins: Math.max(0, Math.round(Number(e.target.value) || 0)) }))}
-                  className="w-28 rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-right font-bold" />
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                <button onClick={() => setSettings((s) => ({ ...s, dayOffset: s.dayOffset + 1 }))} className="rounded-lg bg-white/10 px-3 py-1.5 font-black">Skip a day ›</button>
-                {settings.dayOffset > 0 && (
-                  <button onClick={() => setSettings((s) => ({ ...s, dayOffset: 0 }))} className="rounded-lg bg-white/5 px-3 py-1.5 font-bold text-slate-300">Back to today</button>
-                )}
-                <button
-                  onClick={() => { if (window.confirm("Reset purchases? Wallet goes back to ★5,000 and 300 Coins.")) setState(START_STATE); }}
-                  className="ml-auto rounded-lg bg-rose-500/15 px-3 py-1.5 font-black text-rose-200"
-                >Reset purchases</button>
-              </div>
-            </div>
-          )}
-        </div>
+  const divisionLabel = STORE_DIVISIONS.find((d) => d.id === settings.division)?.label;
 
+  // The test controls: a rail on the left on a computer, a fold-out panel on a phone.
+  const controls = (
+    <Panel>
+      <button onClick={() => setControlsOpen((o) => !o)} className="st-toggle" aria-expanded={controlsOpen}>
+        <span>⚙ Test controls · {divisionLabel} · <Stars v={settings.weeklyWage} />/wk{settings.dayOffset > 0 ? ` · +${settings.dayOffset} day${settings.dayOffset > 1 ? "s" : ""}` : ""}</span>
+        <span aria-hidden>{controlsOpen ? "▲" : "▼"}</span>
+      </button>
+      {controlsOpen && (
+        <div className="st-controls">
+          <div>
+            <Label>Your level</Label>
+            <div className="st-levels">
+              {STORE_DIVISIONS.map((d) => (
+                <button key={d.id} className="st-level" aria-pressed={settings.division === d.id}
+                  onClick={() => setSettings((s) => ({ ...s, division: d.id, weeklyWage: typicalWageFor(d.id) }))}
+                >{d.label}</button>
+              ))}
+            </div>
+          </div>
+          <label className="st-field">
+            <span>Weekly wage ★</span>
+            <input type="number" min={1} value={settings.weeklyWage}
+              onChange={(e) => setSettings((s) => ({ ...s, weeklyWage: Math.max(1, Math.round(Number(e.target.value) || 1)) }))} />
+          </label>
+          <label className="st-field">
+            <span>Wallet ★</span>
+            <input type="number" min={0} value={state.stars}
+              onChange={(e) => setState((s) => ({ ...s, stars: Math.max(0, Math.round(Number(e.target.value) || 0)) }))} />
+          </label>
+          <label className="st-field">
+            <span>Wallet Coins</span>
+            <input type="number" min={0} value={state.coins}
+              onChange={(e) => setState((s) => ({ ...s, coins: Math.max(0, Math.round(Number(e.target.value) || 0)) }))} />
+          </label>
+          <div className="st-row">
+            <Btn main onClick={() => setSettings((s) => ({ ...s, dayOffset: s.dayOffset + 1 }))}>Skip a day ›</Btn>
+            {settings.dayOffset > 0 && (
+              <Btn onClick={() => setSettings((s) => ({ ...s, dayOffset: 0 }))}>Back to today</Btn>
+            )}
+          </div>
+          <button
+            onClick={() => { if (window.confirm("Reset purchases? Wallet goes back to ★5,000 and 300 Coins.")) setState(START_STATE); }}
+            className="st-reset"
+          >Reset purchases</button>
+          <Note>A test wallet on this device only. Buying Coins adds them free; no real money is taken.</Note>
+        </div>
+      )}
+    </Panel>
   );
 
   return (
-    <StoreView
-      state={state} ctx={ctx} dateKey={dateKey} now={now} dayOffset={settings.dayOffset}
-      testArea back={{ href: "/star-play-dev" }} controls={controls} packs="test"
-      onBuy={(id, cur) => run(buy(state, id, cur, ctx, dateKey))}
-      onEquip={(id) => run(equip(state, id))}
-      onUnequip={(slot) => setState((s) => unequip(s, slot))}
-      onUse={(id) => run(spendBoost(state, id))}
-      onPack={(id) => run(buyCoinPack(state, id))}
-      onSwap={(c) => run(convertCoins(state, c, settings.weeklyWage))}
-    >
+    <BroadcastPage title="Store test" sub="Try the store and paid items. Nothing here reaches a career." back="/star-play-dev"
+      actions={<div className="st-wallet"><Stars v={state.stars} /><span>{state.coins.toLocaleString("en-GB")} Coins</span></div>}>
+      <div className="st-layout">
+        <aside className="st-rail">{controls}</aside>
+        <div className="st-stage">
+          <div className="st-screen">
+            <StoreView
+              state={state} ctx={ctx} dateKey={dateKey} now={now} dayOffset={settings.dayOffset}
+              testArea back={{ href: "/star-play-dev" }} packs="test"
+              onBuy={(id, cur) => run(buy(state, id, cur, ctx, dateKey))}
+              onEquip={(id) => run(equip(state, id))}
+              onUnequip={(slot) => setState((s) => unequip(s, slot))}
+              onUse={(id) => run(spendBoost(state, id))}
+              onPack={(id) => run(buyCoinPack(state, id))}
+              onSwap={(c) => run(convertCoins(state, c, settings.weeklyWage))}
+            />
+          </div>
+        </div>
+      </div>
       <PageGuide page="/star-store-dev" />
-    </StoreView>
+    </BroadcastPage>
   );
 }

@@ -26,7 +26,8 @@
  * when it answers; made-up names otherwise.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { BroadcastPage, Panel, PanelGrid, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "./full-match.css";
 import PageGuide from "@/components/admin/PageGuide";
 import Sim90View from "@/components/star/Sim90View";
 import Sim90View3D from "@/components/star/Sim90View3D";
@@ -62,9 +63,6 @@ function namesFrom(sq: LeagueSquad | undefined): string[] | undefined {
   return out.every(Boolean) ? out : undefined;
 }
 
-const BG = "#05070d";
-const INK = "#f2f5f9";
-const MUTED = "#8a97aa";
 const SPEEDS = [1, 4, 16, 60] as const;
 /** The clock ticks this often; the picture is redrawn on each tick. */
 const TICK_MS = 50;
@@ -79,6 +77,13 @@ function loadView(): ViewMode {
 }
 function saveView(v: ViewMode) {
   try { window.localStorage.setItem(VIEW_KEY, v); } catch { /* this device keeps no settings */ }
+}
+
+/** The page's two layouts (Harry, 19 Oct 2026: "full match opt 1 and 2 as toggles"). */
+type Layout = "wide" | "tv";
+const LAYOUT_KEY = "star-sim90-layout";
+function loadLayout(): Layout {
+  try { return window.localStorage.getItem(LAYOUT_KEY) === "tv" ? "tv" : "wide"; } catch { return "wide"; }
 }
 
 interface Setup { home: string; homeStrength: number; away: string; awayStrength: number }
@@ -105,6 +110,9 @@ export default function FullMatchPage() {
   const [view, setViewState] = useState<ViewMode>("2D");
   useEffect(() => { setViewState(loadView()); }, []);
   const setView = (v: ViewMode) => { setViewState(v); saveView(v); };
+  const [layout, setLayoutState] = useState<Layout>("wide");
+  useEffect(() => { setLayoutState(loadLayout()); }, []);
+  const setLayout = (l: Layout) => { setLayoutState(l); try { window.localStorage.setItem(LAYOUT_KEY, l); } catch { /* this device keeps no settings */ } };
   /** Off (default): the match hands over to the real match at each of your chances. */
   const [watchOnly, setWatchOnly] = useState(false);
   /** The chance being played in the real match. */
@@ -251,160 +259,225 @@ export default function FullMatchPage() {
     setT(v);
   };
   const minute = t / 60;
+  const over = t >= FULL_T;
+  const clock = `${over ? "FT" : clockOf(t)}${t >= 45 * 60 - 0.5 && t < 45 * 60 + 8 ? " · HT" : ""}`;
+  const playPause = () => { if (t >= FULL_T) setT(0); if (stopped) { carryOn(); return; } setRunning((r) => !r); };
+  const eventJump = (e: Sim90Event) => jump(e.t - (e.kind === "goal" ? 9 : e.kind === "full" || e.kind === "half" ? 0 : 6));
+
+  // ── The pieces both layouts share (only one layout is ever mounted) ──
+  const viewSwitch = sim ? <ViewSwitch mode={view} onChange={setView} /> : null;
+
+  const picture = sim ? (
+    view === "3D" ? <Sim90View3D track={sim.track} t={t} />
+    : view === "Radar" ? (
+      <div data-sim90-radar className="fm-radar">
+        <LiveRadar trace={sim.ticks} minute={Math.min(90, Math.max(0, minute))}
+          us={{ short: short(setup.home), colour: homeCol }} them={{ short: short(setup.away), colour: awayCol }}
+          stepMs={60000 / speed} />
+      </div>
+    )
+    : <Sim90View track={sim.track} t={t} />
+  ) : (
+    <div className="fm-building">Building the match…</div>
+  );
+
+  const chance = stopped && (
+    <div ref={chanceBox} data-sim90-chance className="fm-chance">
+      <div className="fm-chance-head">
+        <b>{stopped.minute}&apos; · Your chance — {stopped.chance.reason.toLowerCase()}</b>
+        <span>{kindOf(stopped.chance.kinds).replace(/_/g, " ")} · how it goes is how the match goes on</span>
+      </div>
+      {openOn && (
+        <Match3DLayer key={`${seed}-${stopped.minute}-${stopped.t}`}>
+          <EnginePlay seed={seed % 1000 + 1} openOn={openOn} onChanceResolved={onResolved} onChanceServed={onServed} />
+        </Match3DLayer>
+      )}
+      <button data-sim90-back className="fm-back" onClick={carryOn}>
+        {resumeIn === null ? "Back to the match" : `Back to the match · ${Math.max(0, resumeIn)}`}
+      </button>
+    </div>
+  );
+
+  const transport = (
+    <div className="fm-transport">
+      <button className="fm-play" data-running={running ? "true" : undefined} onClick={playPause} disabled={!sim} aria-label={running ? "Pause" : "Play"}>
+        {running ? "❚❚" : over ? "↻" : "▶"}
+      </button>
+      <div className="fm-speeds" role="group" aria-label="Speed">
+        {SPEEDS.map((s) => <Pill key={s} on={speed === s} onClick={() => setSpeed(s)}>{s}×</Pill>)}
+      </div>
+      <button className="fm-new" onClick={() => setSeed(Math.floor(Math.random() * 1e9))} aria-label="New match" title="New match">↻</button>
+    </div>
+  );
+
+  const scrub = (
+    <div className="fm-scrub">
+      <input data-sim90-scrub type="range" min={0} max={FULL_T} step={1} value={Math.round(t)} onChange={(e) => jump(Number(e.target.value))} aria-label="Back to an earlier moment" />
+      <div className="fm-ticks"><span>0&apos;</span><span>45&apos;</span><span>90&apos;</span></div>
+    </div>
+  );
+
+  const watch = (
+    <label className="fm-watch">
+      <input data-sim90-watch-only type="checkbox" checked={watchOnly} onChange={(e) => setWatchOnly(e.target.checked)} />
+      Watch only (don&apos;t play my chances)
+    </label>
+  );
+
+  const eventsToggle = (
+    <button className="fm-link" onClick={() => setOnlyBig((v) => !v)}>{onlyBig ? "Show all" : "Goals and shots only"}</button>
+  );
+  const events = (
+    <div className="fm-events">
+      {!sim ? <Note>The match is being built.</Note>
+        : list.length === 0 ? <Note>Nothing yet. Press ▶ and events show here as they happen.</Note>
+        : list.map((e, k) => {
+          const col = e.side === 0 ? homeCol : e.side === 1 ? awayCol : "#64748b";
+          return (
+            <button key={k} data-sim90-event={e.kind} className="fm-ev" data-goal={e.kind === "goal" ? "true" : undefined} onClick={() => eventJump(e)}>
+              <span className="fm-ev-min">{e.minute}&apos;</span>
+              <span className="fm-ev-bar" style={{ background: col }} />
+              <span className="fm-ev-icon">{ICON[e.kind]}</span>
+              <span className="fm-ev-text">{e.text.replaceAll("{club}", short(e.side === 1 ? setup.away : setup.home))}</span>
+              <span className="fm-ev-watch">Watch</span>
+            </button>
+          );
+        })}
+    </div>
+  );
+
+  const teams = (
+    <Panel title="Teams" note={<button className="fm-link" onClick={() => setShowSetup((v) => !v)}>{showSetup ? "Done" : "Change"}</button>}>
+      <div className="fm-teamline">{short(setup.home)} {setup.homeStrength} v {short(setup.away)} {setup.awayStrength}</div>
+      {showSetup && (
+        <div className="fm-setup">
+          <ClubRow label="Home" club={setup.home} strength={setup.homeStrength}
+            onClub={(c) => setSetup({ ...setup, home: c })} onStrength={(v) => setSetup({ ...setup, homeStrength: v })} />
+          <ClubRow label="Away" club={setup.away} strength={setup.awayStrength}
+            onClub={(c) => setSetup({ ...setup, away: c })} onStrength={(v) => setSetup({ ...setup, awayStrength: v })} />
+        </div>
+      )}
+      <Note>{realNames ? "Real squads" : "Made-up players"} in each club&apos;s own formation. Home is your side; the teams swap ends at half-time.</Note>
+    </Panel>
+  );
+
+  const layoutPills = (
+    <>
+      <Pill on={layout === "wide"} onClick={() => setLayout("wide")} title="The match with the events beside it">Match + events</Pill>
+      <Pill on={layout === "tv"} onClick={() => setLayout("tv")} title="The match full width, with a momentum graph">TV broadcast</Pill>
+    </>
+  );
 
   return (
-    <div style={{ minHeight: "100dvh", background: BG, color: INK }}>
-      <div style={{ maxWidth: 560, margin: "0 auto", padding: "0 12px 60px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 2px 8px" }}>
-          <Link href="/star-play-dev" aria-label="Back" style={{
-            width: 34, height: 34, borderRadius: 999, flex: "none", display: "grid", placeItems: "center",
-            border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.06)", color: INK,
-            fontSize: 17, fontWeight: 800, textDecoration: "none",
-          }}>&#8249;</Link>
-          <h1 style={{ margin: 0, fontSize: 19, fontWeight: 900 }}>Full match (test)</h1>
-        </div>
-
-        {/* Scoreboard + clock */}
-        <div data-sim90-score style={{
-          display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8,
-          padding: "8px 10px", borderRadius: 14, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-            <span style={{ width: 10, height: 10, borderRadius: 3, background: homeCol, flex: "none" }} />
-            <span style={{ fontWeight: 900, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{short(setup.home)}</span>
+    <BroadcastPage title="Full match" sub="A whole simulated 90 minutes. You play your own chances." back="/star-play-dev" actions={<div className="fm-layout fm-layout-pc">{layoutPills}</div>}>
+      <div className="fm-layout fm-layout-phone"><Label>Layout</Label>{layoutPills}</div>
+      {layout === "wide" ? (
+        <div className="fm fm-wide">
+          <div data-sim90-score className="fm-score">
+            <span className="fm-side"><i style={{ background: homeCol }} />{short(setup.home)}</span>
+            <b>{scoreAt[0]} – {scoreAt[1]}</b>
+            <span className="fm-side"><i style={{ background: awayCol }} />{short(setup.away)}</span>
+            <em>{clock}</em>
           </div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "ui-monospace, monospace" }}>{scoreAt[0]} – {scoreAt[1]}</div>
-            <div style={{ fontSize: 11.5, fontWeight: 800, color: "#7dd3fc", fontFamily: "ui-monospace, monospace" }}>
-              {t >= FULL_T ? "FT" : clockOf(t)}{t >= 45 * 60 - 0.5 && t < 45 * 60 + 8 ? " · HT" : ""}
+          <div className="fm-wide-grid">
+            <div className="fm-main">
+              <section className="bc-panel fm-stagebox">
+                <div className="fm-stage-top">{viewSwitch}</div>
+                <div className="fm-stage">{picture}</div>
+                <div className="fm-under">{transport}{scrub}{watch}</div>
+              </section>
+              {chance}
+            </div>
+            <div className="fm-side-col">
+              <Panel title="Events" note={eventsToggle}>
+                <Label>Newest first · tap to watch</Label>
+                {events}
+              </Panel>
+              {teams}
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end", minWidth: 0 }}>
-            <span style={{ fontWeight: 900, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{short(setup.away)}</span>
-            <span style={{ width: 10, height: 10, borderRadius: 3, background: awayCol, flex: "none" }} />
-          </div>
         </div>
-
-        {/* The picture: one area, 2D | 3D | Radar (only the chosen one is mounted) */}
-        <div style={{ marginTop: 8, position: "relative" }}>
-          {sim && <ViewSwitch mode={view} onChange={setView} />}
-          {sim ? (
-            view === "3D" ? <Sim90View3D track={sim.track} t={t} />
-            : view === "Radar" ? (
-              <div data-sim90-radar style={{ borderRadius: 12, overflow: "hidden" }}>
-                <LiveRadar trace={sim.ticks} minute={Math.min(90, Math.max(0, minute))}
-                  us={{ short: short(setup.home), colour: homeCol }} them={{ short: short(setup.away), colour: awayCol }}
-                  stepMs={60000 / speed} />
+      ) : (
+        <div className="fm fm-tv">
+          <section className="bc-panel fm-stagebox">
+            <div className="fm-tvbar">
+              <div data-sim90-score className="fm-tvscore">
+                <span style={{ borderColor: homeCol }}>{short(setup.home)}</span>
+                <b>{scoreAt[0]} – {scoreAt[1]}</b>
+                <span style={{ borderColor: awayCol }}>{short(setup.away)}</span>
+                <em data-live={running ? "true" : undefined}>{over ? "FT" : running ? "LIVE" : "PAUSED"}</em>
+                <small>{clock}</small>
               </div>
-            )
-            : <Sim90View track={sim.track} t={t} />
-          ) : (
-            <div style={{ height: 220, borderRadius: 12, display: "grid", placeItems: "center", background: "rgba(255,255,255,0.04)", color: MUTED, fontWeight: 800 }}>
-              Building the match…
+              {viewSwitch}
             </div>
-          )}
+            <div className="fm-stage">{picture}</div>
+          </section>
+          {chance}
+          <Panel title="Momentum" note="above the line: home on top · tap to jump">
+            {sim ? <Momentum sim={sim} t={t} homeCol={homeCol} awayCol={awayCol} homeName={short(setup.home)} awayName={short(setup.away)} onJump={jump} onEvent={eventJump} />
+              : <Note>The match is being built.</Note>}
+          </Panel>
+          <Panel title="Simulator controls">
+            <div className="fm-under fm-under-tv">{transport}{scrub}{watch}</div>
+          </Panel>
+          <PanelGrid min={340}>
+            <Panel title="Events" note={eventsToggle}>
+              <Label>Newest first · tap to watch</Label>
+              {events}
+            </Panel>
+            {teams}
+          </PanelGrid>
         </div>
-
-        {/* One of your chances: the real match takes over, then the replay carries on */}
-        {stopped && (
-          <div ref={chanceBox} data-sim90-chance style={{ marginTop: 8, padding: 10, borderRadius: 14, background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.45)" }}>
-            <div style={{ fontSize: 13, fontWeight: 900 }}>{stopped.minute}&apos; · Your chance — {stopped.chance.reason.toLowerCase()}</div>
-            <div style={{ fontSize: 11.5, fontWeight: 800, color: "#a7f3d0", marginTop: 2 }}>
-              {kindOf(stopped.chance.kinds).replace(/_/g, " ")} · how it goes is how the match goes on
-            </div>
-            <div style={{ marginTop: 8 }}>
-              {openOn && (
-                <Match3DLayer key={`${seed}-${stopped.minute}-${stopped.t}`}>
-                  <EnginePlay seed={seed % 1000 + 1} openOn={openOn} onChanceResolved={onResolved} onChanceServed={onServed} />
-                </Match3DLayer>
-              )}
-              <button data-sim90-back onClick={carryOn} style={{
-                width: "100%", marginTop: 8, height: 42, borderRadius: 12, border: "none", cursor: "pointer", background: "#38bdf8", color: "#04111d", fontSize: 14, fontWeight: 900,
-              }}>{resumeIn === null ? "Back to the match" : `Back to the match · ${Math.max(0, resumeIn)}`}</button>
-            </div>
-          </div>
-        )}
-
-        {/* Controls */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-          <button onClick={() => { if (t >= FULL_T) setT(0); if (stopped) { carryOn(); return; } setRunning((r) => !r); }} disabled={!sim} aria-label={running ? "Pause" : "Play"}
-            style={{ width: 48, height: 40, borderRadius: 12, border: "none", cursor: "pointer", flex: "none", background: running ? "#334155" : "#10b981", color: "#fff", fontSize: 17, fontWeight: 900 }}>
-            {running ? "❚❚" : t >= FULL_T ? "↻" : "▶"}
-          </button>
-          <div style={{ display: "flex", flex: 1, borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.09)" }}>
-            {SPEEDS.map((s) => (
-              <button key={s} onClick={() => setSpeed(s)} style={{
-                flex: 1, height: 38, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 900,
-                background: speed === s ? "rgba(56,189,248,0.25)" : "rgba(255,255,255,0.03)", color: speed === s ? "#e0f2fe" : MUTED,
-              }}>{s}×</button>
-            ))}
-          </div>
-          <button onClick={() => setSeed(Math.floor(Math.random() * 1e9))} aria-label="New match" style={{
-            width: 40, height: 40, borderRadius: 12, cursor: "pointer", flex: "none",
-            border: "1px solid rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.04)", color: INK, fontSize: 17, fontWeight: 900,
-          }}>↻</button>
-        </div>
-        <input data-sim90-scrub type="range" min={0} max={FULL_T} step={1} value={Math.round(t)} onChange={(e) => jump(Number(e.target.value))} aria-label="Back to an earlier moment"
-          style={{ width: "100%", marginTop: 8, accentColor: "#38bdf8" }} />
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: MUTED, fontWeight: 800, marginTop: -2 }}>
-          <span>0&apos;</span><span>45&apos;</span><span>90&apos;</span>
-        </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 12, fontWeight: 800 }}>
-          <input data-sim90-watch-only type="checkbox" checked={watchOnly} onChange={(e) => setWatchOnly(e.target.checked)} />
-          Watch only (don&apos;t play my chances)
-        </label>
-
-        {/* Events: tap to jump */}
-        {sim && (
-          <div style={{ marginTop: 10, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <span style={{ fontSize: 12.5, fontWeight: 900 }}>Match events · newest first · tap to watch</span>
-              <button onClick={() => setOnlyBig((v) => !v)} style={{
-                fontSize: 11.5, fontWeight: 800, color: "#7dd3fc", background: "none", border: "none", cursor: "pointer",
-              }}>{onlyBig ? "Show all" : "Goals and shots only"}</button>
-            </div>
-            <div style={{ display: "grid", gap: 4, maxHeight: 280, overflowY: "auto" }}>
-              {list.map((e, k) => {
-                const col = e.side === 0 ? homeCol : e.side === 1 ? awayCol : "#64748b";
-                return (
-                  <button key={k} data-sim90-event={e.kind} onClick={() => jump(e.t - (e.kind === "goal" ? 9 : e.kind === "full" || e.kind === "half" ? 0 : 6))} style={{
-                    display: "flex", alignItems: "center", gap: 8, textAlign: "left", padding: "7px 9px", borderRadius: 10, cursor: "pointer",
-                    border: "1px solid rgba(255,255,255,0.06)", background: e.kind === "goal" ? "rgba(16,185,129,0.14)" : "rgba(255,255,255,0.03)",
-                    color: INK,
-                  }}>
-                    <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11.5, fontWeight: 900, width: 30, color: "#7dd3fc" }}>{e.minute}&apos;</span>
-                    <span style={{ width: 4, alignSelf: "stretch", borderRadius: 2, background: col }} />
-                    <span style={{ fontSize: 13 }}>{ICON[e.kind]}</span>
-                    <span style={{ fontSize: 12.5, fontWeight: 800 }}>{e.text}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Setup */}
-        <button onClick={() => setShowSetup((v) => !v)} style={{
-          marginTop: 12, width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "11px 13px", borderRadius: 13, cursor: "pointer", color: INK,
-          background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-        }}>
-          <span style={{ fontSize: 12.5, fontWeight: 800 }}>{short(setup.home)} {setup.homeStrength} v {short(setup.away)} {setup.awayStrength}</span>
-          <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>{showSetup ? "Done" : "Change"}</span>
-        </button>
-        {showSetup && (
-          <div style={{ marginTop: 8, display: "grid", gap: 12, padding: 13, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <ClubRow label="Home" club={setup.home} strength={setup.homeStrength}
-              onClub={(c) => setSetup({ ...setup, home: c })} onStrength={(v) => setSetup({ ...setup, homeStrength: v })} />
-            <ClubRow label="Away" club={setup.away} strength={setup.awayStrength}
-              onClub={(c) => setSetup({ ...setup, away: c })} onStrength={(v) => setSetup({ ...setup, awayStrength: v })} />
-            <div style={{ fontSize: 11, fontWeight: 700, color: MUTED }}>
-              {realNames ? "Real squads" : "Made-up players"} in each club&apos;s own formation. Home is your side; the teams swap ends at half-time.
-            </div>
-          </div>
-        )}
-      </div>
+      )}
       <PageGuide page="/star-sim90-dev" />
+    </BroadcastPage>
+  );
+}
+
+/** The real unseen match's momentum, minute by minute, up to now; goals as dots. */
+function Momentum({ sim, t, homeCol, awayCol, homeName, awayName, onJump, onEvent }: {
+  sim: Sim90Live; t: number; homeCol: string; awayCol: string; homeName: string; awayName: string;
+  onJump: (t: number) => void; onEvent: (e: Sim90Event) => void;
+}) {
+  const W = 900, H = 120, MID = 60, AMP = 50;
+  const x = (m: number) => (m / 90) * W;
+  const now = Math.min(90, t / 60);
+  const pts: [number, number][] = [[0, MID]];
+  for (let m = 1; m <= Math.floor(now); m++) {
+    const k = sim.ticks.get(m);
+    if (k) pts.push([x(m), MID - Math.max(-1, Math.min(1, k.momentum)) * AMP]);
+  }
+  const line = pts.map(([a, b], i) => `${i ? "L" : "M"}${a.toFixed(1)},${b.toFixed(1)}`).join(" ");
+  const last = pts[pts.length - 1][0];
+  const area = `${line} L${last.toFixed(1)},${MID} Z`;
+  const goals = sim.events.filter((e) => e.kind === "goal" && e.t <= t + 1e-6);
+  const onClick = (ev: React.MouseEvent<SVGSVGElement>) => {
+    const r = ev.currentTarget.getBoundingClientRect();
+    onJump(((ev.clientX - r.left) / r.width) * 90 * 60);
+  };
+  return (
+    <div className="fm-mom">
+      <div className="fm-mom-side fm-mom-home" style={{ color: homeCol }}>{homeName}</div>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" onClick={onClick} role="img" aria-label="Momentum so far">
+        <defs>
+          <clipPath id="fm-top"><rect x="0" y="0" width={W} height={MID} /></clipPath>
+          <clipPath id="fm-bot"><rect x="0" y={MID} width={W} height={H - MID} /></clipPath>
+        </defs>
+        {[15, 30, 45, 60, 75].map((m) => <line key={m} x1={x(m)} x2={x(m)} y1={0} y2={H} stroke="rgba(150,180,255,0.12)" strokeWidth={m === 45 ? 2 : 1} />)}
+        <path d={area} fill={homeCol} opacity={0.45} clipPath="url(#fm-top)" />
+        <path d={area} fill={awayCol} opacity={0.45} clipPath="url(#fm-bot)" />
+        <line x1={0} x2={W} y1={MID} y2={MID} stroke="rgba(255,255,255,0.35)" strokeWidth={1} />
+        <path d={line} fill="none" stroke="#cfe0ff" strokeWidth={1.6} vectorEffect="non-scaling-stroke" />
+        <line x1={x(now)} x2={x(now)} y1={0} y2={H} stroke="var(--bc-amber)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+      </svg>
+      <div className="fm-mom-side fm-mom-away" style={{ color: awayCol }}>{awayName}</div>
+      <div className="fm-mom-goals">
+        {goals.map((e, k) => (
+          <button key={k} className="fm-mom-goal" style={{ left: `${(e.minute / 90) * 100}%`, borderColor: e.side === 0 ? homeCol : awayCol }}
+            onClick={() => onEvent(e)} title={`${e.minute}' ${e.text}`} aria-label={`Watch ${e.minute}' goal`}>⚽</button>
+        ))}
+      </div>
+      <div className="fm-ticks"><span>0&apos;</span><span>15&apos;</span><span>30&apos;</span><span>45&apos;</span><span>60&apos;</span><span>75&apos;</span><span>90&apos;</span></div>
     </div>
   );
 }
@@ -413,19 +486,12 @@ function ClubRow({ label, club, strength, onClub, onStrength }: {
   label: string; club: string; strength: number; onClub: (c: string) => void; onStrength: (v: number) => void;
 }) {
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
-        <span style={{ fontSize: 12.5, fontWeight: 800 }}>{label}</span>
-        <span style={{ fontSize: 12, fontWeight: 900, color: "#7dd3fc", fontFamily: "ui-monospace, monospace" }}>{strength}</span>
-      </div>
-      <select value={club} onChange={(e) => onClub(e.target.value)} style={{
-        width: "100%", height: 36, borderRadius: 10, padding: "0 10px", marginBottom: 6,
-        background: "#0f172a", color: INK, border: "1px solid rgba(255,255,255,0.12)", fontSize: 13, fontWeight: 700,
-      }}>
+    <div className="fm-club">
+      <div className="fm-club-top"><Label>{label}</Label><b>{strength}</b></div>
+      <select value={club} onChange={(e) => onClub(e.target.value)}>
         {PREMIER_LEAGUE_CLUBS.map((c) => <option key={c} value={c}>{c}</option>)}
       </select>
-      <input type="range" min={50} max={95} value={strength} onChange={(e) => onStrength(Number(e.target.value))}
-        style={{ width: "100%", accentColor: "#38bdf8" }} />
+      <input type="range" min={50} max={95} value={strength} onChange={(e) => onStrength(Number(e.target.value))} aria-label={`${label} strength`} />
     </div>
   );
 }
@@ -433,18 +499,10 @@ function ClubRow({ label, club, strength, onClub, onStrength }: {
 /** 2D | 3D | Radar: how the match is shown (default 2D, remembered per device). */
 function ViewSwitch({ mode, onChange }: { mode: ViewMode; onChange: (v: ViewMode) => void }) {
   return (
-    <div data-sim90-view-switch style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
-      <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)" }}>
-        {VIEW_MODES.map((k) => {
-          const sel = k === mode;
-          return (
-            <button key={k} data-sim90-view-mode={k} onClick={() => onChange(k)} style={{
-              width: 58, height: 30, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 900,
-              background: sel ? "rgba(56,189,248,0.25)" : "rgba(255,255,255,0.03)", color: sel ? "#e0f2fe" : MUTED,
-            }}>{k}</button>
-          );
-        })}
-      </div>
+    <div data-sim90-view-switch className="fm-views">
+      {VIEW_MODES.map((k) => (
+        <button key={k} data-sim90-view-mode={k} className="bc-pill" aria-pressed={k === mode} onClick={() => onChange(k)}>{k}</button>
+      ))}
     </div>
   );
 }

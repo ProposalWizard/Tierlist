@@ -13,6 +13,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Btn, Pill } from "@/components/admin/broadcast/BroadcastPage";
 import { ACHIEVEMENTS } from "@/lib/star/achievements";
 import { RECORDS } from "@/lib/star/records";
 import { FIRST_STEPS } from "@/lib/star/unlocks";
@@ -65,7 +66,7 @@ const STATUS_LOOK: Record<ItemStatus, { label: string; bg: string; fg: string }>
   idea: { label: "Idea", bg: "#2563eb", fg: "#ffffff" },
 };
 const fmt = (n: number) => n.toLocaleString("en-GB");
-const gold = { background: "linear-gradient(180deg, #fde047, #f59e0b)" };
+const gold = { background: "var(--bc-amber)" };
 
 export default function XpBook() {
   const [cfg, setCfg] = useState<XpConfig>(DEFAULT_XP);
@@ -112,14 +113,13 @@ export default function XpBook() {
   const setMatch = (f: keyof XpConfig["match"], n: number) => change({ ...cfg, match: { ...cfg.match, [f]: n } });
 
   return (
-    <div className="min-h-screen bg-[#0b0f1a] pb-28 text-white">
-      <div className="sticky top-0 z-20 border-b border-white/10 bg-[#0b0f1a]/95 px-4 py-3 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <div className="min-w-0 flex-1 truncate text-[18px] font-black uppercase tracking-wide">XP Book</div>
-          <button onClick={() => change({ ...DEFAULT_XP, notes: cfg.notes, ideas: cfg.ideas })} className="rounded px-3 py-2 text-[12px] font-black uppercase text-white ring-1 ring-white/25">Reset amounts</button>
-          <button onClick={save} disabled={!dirty} className="rounded px-4 py-2 text-[13px] font-black uppercase text-gray-950 disabled:opacity-40" style={gold}>Save</button>
+    <BroadcastPage title="Career XP book" sub="Every XP amount the career gives" width={900}>
+      <div className="sticky top-0 z-20 -mx-1 rounded border border-[var(--bc-line)] bg-[#071a45]/95 px-3 py-2 backdrop-blur">
+        <div className="mb-1 flex items-center justify-end gap-2">
+          <Btn onClick={() => change({ ...DEFAULT_XP, notes: cfg.notes, ideas: cfg.ideas })}>Reset amounts</Btn>
+          <Btn main onClick={save} disabled={!dirty}>Save</Btn>
         </div>
-        <div className="mt-1 text-[12px] font-bold text-white">
+        <div className="text-[12px] font-bold text-white">
           Every XP amount in the career. Match XP is × the competition multiplier; everything else is flat.
           {shared === "missing" && <span className="text-red-400"> · shared save not set up (run star_xp_config.sql)</span>}
           {msg && <span className={`font-black ${msg.ok ? "text-green-400" : "text-amber-300"}`}> · {msg.text}</span>}
@@ -127,17 +127,15 @@ export default function XpBook() {
         </div>
         <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
           {TABS.map((t) => (
-            <button key={t.id} onClick={() => setTab(t.id)} className="shrink-0 rounded px-3 py-1.5 text-[12px] font-black uppercase" style={{
-              background: t.id === tab ? "linear-gradient(180deg, #fde047, #f59e0b)" : "rgba(255,255,255,.08)", color: t.id === tab ? "#111827" : "#ffffff",
-            }}>
+            <Pill key={t.id} on={t.id === tab} onClick={() => setTab(t.id)}>
               {t.label}
               {t.id === "ideas" ? <span className="tabular-nums"> {cfg.ideas.length}</span> : unchecked[t.id] > 0 && <span className="tabular-nums"> · {unchecked[t.id]} to check</span>}
-            </button>
+            </Pill>
           ))}
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl space-y-2 px-4 pt-4">
+      <div className="w-full space-y-2 pb-16">
         {tab === "match" && (<>
           {MATCH_ROWS.map(([f, label, desc]) => (
             <Row book={book} key={f} k={`match:${f}`} label={label} desc={desc} value={cfg.match[f]} def={DEFAULT_XP.match[f]} onValue={(n) => setMatch(f, n)} step={f === "perMinute" ? 1 : 10} />
@@ -262,7 +260,7 @@ export default function XpBook() {
         </>)}
       </div>
       <PageGuide page="/admin/star-xp" />
-    </div>
+    </BroadcastPage>
   );
 }
 
@@ -282,7 +280,7 @@ function Row({ book, k, label, desc, value, def, onValue, step = 100, suffix = "
     const st = statusOf(k);
     const look = STATUS_LOOK[st];
     return (
-      <div className="rounded bg-white/[0.05] p-2.5 ring-1 ring-white/10" data-row={k}>
+      <div className="rounded bg-[rgba(14,40,98,0.7)] p-2.5 ring-1 ring-[rgba(90,150,255,0.22)]" data-row={k}>
         <div className="flex flex-wrap items-center gap-2">
           <div className="w-full min-w-0 sm:w-auto sm:flex-1">
             <div className="text-[14px] font-black">{label}</div>
@@ -317,7 +315,7 @@ function Example({ cfg }: { cfg: XpConfig }) {
     ["24 minutes off the bench, a draw, rating 6.5", 24 * m.perMinute + m.draw + 0.5 * m.ratingPerPoint],
   ];
   return (
-    <div className="rounded bg-black/40 p-3 ring-1 ring-white/10">
+    <div className="rounded bg-[rgba(6,20,54,0.82)] p-3 ring-1 ring-[rgba(90,150,255,0.22)]">
       <div className="mb-1.5 text-[12px] font-black uppercase tracking-widest text-amber-300">What that makes a match worth (× the multiplier)</div>
       {rows.map(([label, n]) => (
         <div key={label} className="flex justify-between gap-2 py-0.5 text-[13px] font-bold">

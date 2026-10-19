@@ -910,7 +910,7 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
                       }`}
                     >
                       <p
-                        className={`text-[8px] font-bold leading-tight md:text-[10px] ${
+                        className={`line-clamp-2 text-[8px] font-bold leading-tight md:line-clamp-none md:text-[10px] ${
                           isFilled ? filledTextDark : "text-gray-900"
                         }`}
                       >
@@ -921,7 +921,7 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
                     </div>
                   )}
 
-                  <div className="flex-1 flex flex-col items-center justify-center w-full overflow-hidden">
+                  <div className="min-h-0 flex-1 flex flex-col items-center justify-center w-full overflow-hidden">
                     {isFilled ? (
                       <div className="w-full space-y-0.5 overflow-hidden text-center">
                         {found.slice(0, 5).map((a) => (
@@ -941,10 +941,10 @@ export default function TicTacToeGame({ puzzle, isDaily }: Props) {
                       </div>
                     ) : (
                       <div className="text-center">
-                        <p className="font-display text-base font-black text-gray-900 md:text-2xl">
+                        <p className={`font-display font-black text-gray-900 md:text-2xl ${isCustom ? "text-sm leading-none" : "text-base"}`}>
                           {availableCount}
                         </p>
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-gray-500 md:text-[11px]">
+                        <p className={`text-[9px] font-bold uppercase tracking-wider text-gray-500 md:block md:text-[11px] ${isCustom ? "hidden" : ""}`}>
                           Player{availableCount !== 1 ? "s" : ""}
                         </p>
                       </div>
@@ -1151,11 +1151,11 @@ function SquareModal({
               if (e.key === "Enter") onGuess();
             }}
             placeholder="Type a player name..."
-            className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
           />
           <button
             onClick={onGuess}
-            className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-bold uppercase tracking-wider text-white hover:bg-indigo-500"
+            className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold uppercase tracking-wider text-white hover:bg-indigo-500"
           >
             Guess
           </button>

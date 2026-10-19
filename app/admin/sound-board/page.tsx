@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
 import SoundBoard from "./SoundBoard";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage } from "@/components/admin/broadcast/BroadcastPage";
 
 export const metadata: Metadata = {
   title: "Sound Board",
@@ -27,9 +28,9 @@ export default async function SoundBoardPage() {
   if (!(await isAdmin(user.id))) redirect("/");
 
   return (
-    <>
+    <BroadcastPage title="Sound Board" sub="Every game sound. Tap ▶ to listen. Replace uploads a new one; the game uses it from the next load.">
       <SoundBoard />
       <PageGuide page="/admin/sound-board" />
-    </>
+    </BroadcastPage>
   );
 }

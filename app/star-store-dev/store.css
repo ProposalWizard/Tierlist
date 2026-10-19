@@ -1,0 +1,45 @@
+/* Store test, option 2 (Harry, 19 Oct 2026): the test controls as a slanted
+   menu rail on the left, the real store on a lit stage beside it. The store
+   screen (components/star/store/StoreView.tsx) is the game's own; not restyled. */
+.st-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
+.st-rail { position: sticky; top: 12px; }
+.st-toggle { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 0; cursor: pointer;
+  text-align: left; font-size: 13px; font-weight: 900; font-style: italic; color: #fff;
+  background: linear-gradient(100deg, var(--bc-blue), var(--bc-blue2) 75%, rgba(18, 63, 156, 0.3)); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.st-toggle > span:last-child { color: #cfe0ff; padding-right: 8px; }
+.st-controls { display: flex; flex-direction: column; gap: 12px; }
+.st-levels { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.st-level { text-align: left; padding: 9px 14px; border: 1px solid rgba(90, 150, 255, 0.45); cursor: pointer; background: rgba(6, 20, 54, 0.6);
+  color: var(--bc-ink); font-size: 14px; font-weight: 900; font-style: italic; text-transform: uppercase;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+.st-level:hover { background: rgba(47, 140, 255, 0.18); }
+.st-level[aria-pressed="true"] { background: linear-gradient(100deg, #38d6ff, #1fa8ff); color: #031432; border-color: transparent; box-shadow: inset 6px 0 0 #ff7a1a; }
+.st-field { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; font-weight: 900; color: var(--bc-ink); }
+.st-field input { width: 120px; padding: 6px 8px; text-align: right; font-weight: 800; font-size: 14px; color: #fff;
+  background: rgba(0, 6, 24, 0.7); border: 1px solid var(--bc-line); border-radius: 3px; }
+.st-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.st-reset { align-self: flex-start; padding: 7px 14px; border: 1px solid rgba(255, 77, 94, 0.5); border-radius: 3px; cursor: pointer;
+  background: rgba(255, 77, 94, 0.14); color: #ffc9cf; font-size: 13px; font-weight: 900; }
+.st-reset:hover { background: rgba(255, 77, 94, 0.24); }
+.st-wallet { display: flex; gap: 6px; flex-wrap: wrap; }
+.st-wallet > * { padding: 6px 12px; background: rgba(0, 6, 24, 0.55); border: 1px solid var(--bc-line); font-size: 14px; font-weight: 900; }
+/* The stage: blue showroom light behind the store. */
+.st-stage { position: relative; padding: 14px; border: 1px solid var(--bc-line); border-top: 2px solid rgba(90, 160, 255, 0.55); border-radius: 4px;
+  background:
+    linear-gradient(115deg, transparent 0 30%, rgba(56, 214, 255, 0.10) 30% 34%, transparent 34% 62%, rgba(56, 214, 255, 0.08) 62% 65%, transparent 65%),
+    radial-gradient(60% 50% at 50% 40%, rgba(47, 140, 255, 0.28), transparent 75%),
+    linear-gradient(180deg, rgba(14, 40, 98, 0.8), rgba(4, 14, 40, 0.9));
+  box-shadow: 0 12px 34px rgba(0, 4, 20, 0.5); min-width: 0; }
+/* The store keeps its own look; transform keeps its full-screen glow and pop-ups inside the stage. */
+.st-screen { position: relative; transform: translateZ(0); overflow-x: hidden; overflow-y: auto; height: calc(100dvh - 190px); min-height: 520px;
+  border: 1px solid rgba(56, 214, 255, 0.35); border-radius: 6px; box-shadow: 0 0 40px rgba(47, 140, 255, 0.35); }
+@media (max-width: 900px) {
+  .st-layout { grid-template-columns: minmax(0, 1fr); }
+  .st-rail { position: static; }
+  .st-wallet { display: none; }
+  .st-levels { flex-direction: row; flex-wrap: wrap; }
+  .st-level { padding: 8px 18px 8px 12px; font-size: 13px; }
+  .st-stage { padding: 6px; }
+  /* One phone screen tall, so the store's item sheet and pop-ups always land in view. */
+  .st-screen { height: calc(100dvh - 28px); min-height: 0; scroll-margin-top: 8px; }
+}

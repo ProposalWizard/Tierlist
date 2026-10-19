@@ -1,0 +1,120 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3D Scene Editor — drawing</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#eef4ff;min-height:100vh;
+background:radial-gradient(28% 22% at 18% -4%,rgba(170,205,255,.24),transparent 70%),radial-gradient(28% 22% at 82% -4%,rgba(170,205,255,.2),transparent 70%),radial-gradient(90% 40% at 50% 112%,rgba(20,120,70,.28),transparent 70%),linear-gradient(180deg,#071a45 0%,#040b1f 55%,#03091a 100%);background-color:#03091a}
+.wrap{padding:14px 20px;display:flex;flex-direction:column;gap:10px;height:100vh}
+.head{display:flex;gap:8px;align-items:stretch}
+.back{width:46px;display:grid;place-items:center;font-weight:900;font-size:22px;background:#123f9c;clip-path:polygon(14px 0,100% 0,calc(100% - 14px) 100%,0 100%)}
+.banner{flex:1;padding:8px 44px 8px 18px;background:linear-gradient(100deg,#1b5fd6,#123f9c 70%,rgba(18,63,156,0));clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%)}
+.banner h1{margin:0;font-size:28px;font-weight:900;font-style:italic;text-transform:uppercase}
+.banner p{margin:0;font-size:12.5px;color:#cfe0ff;font-style:italic}
+.key{display:flex;gap:10px;align-items:center;font-size:12px;color:#a9bde2}
+.t{display:inline-block;font-size:9.5px;font-weight:900;letter-spacing:.06em;padding:1px 5px;border-radius:2px;vertical-align:middle;margin-left:6px;font-style:normal}
+.t.ok{background:#1f8f5a;color:#fff}.t.nw{background:#ffc24a;color:#1a1200}.t.pt{background:#2f8cff;color:#fff}
+.panel{min-height:0;overflow:hidden;background:linear-gradient(180deg,rgba(14,40,98,.78),rgba(6,20,54,.82));border:1px solid rgba(90,150,255,.22);border-top:2px solid rgba(90,160,255,.55);border-radius:4px;min-width:0;display:flex;flex-direction:column}
+.ph{display:flex;justify-content:space-between;align-items:center;padding:6px 14px 6px 12px;background:linear-gradient(100deg,#1b5fd6,#123f9c 60%,rgba(18,63,156,0));clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%)}
+.ph h2{margin:0;font-size:13px;font-weight:900;font-style:italic;text-transform:uppercase}.ph span{font-size:11px;color:#cfe2ff;font-style:italic}
+.main{flex:1;display:grid;grid-template-columns:1fr 370px;gap:12px;min-height:0}
+.vp{position:relative;flex:1;margin:8px;overflow:hidden;border:1px solid rgba(90,150,255,.3);background:#000}
+.vp img{width:100%;height:100%;object-fit:cover;object-position:50% 0;display:block;transform:scale(1.14);transform-origin:50% 0}
+.hud{position:absolute;font-size:11px;font-weight:800;background:rgba(3,9,26,.78);padding:4px 7px;border-left:3px solid #2f8cff}
+.gizmo{position:absolute;left:62%;top:30%;width:70px;height:70px}
+.lamp{position:absolute;left:84%;top:18%;font-size:26px}
+.scenes{display:flex;gap:4px;padding:0 8px 8px;flex-wrap:wrap}
+.chip{font-size:11px;font-weight:800;padding:5px 9px;background:rgba(27,95,214,.25);border:1px solid rgba(90,150,255,.3);clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.chip.on{background:#1b5fd6;color:#fff}
+.side{overflow:hidden}.side{overflow-y:auto}.sec{padding:5px 12px;border-bottom:1px solid rgba(90,150,255,.15)}
+.sec h3{margin:0 0 6px;font-size:12px;font-weight:900;font-style:italic;text-transform:uppercase;color:#cfe2ff}
+.row{display:grid;grid-template-columns:150px 1fr 40px;gap:6px;align-items:center;font-size:11px;margin:2px 0}
+.row .what{grid-column:1/-1;font-size:10.5px;color:#6f86b3;margin-top:-3px}
+.sl{height:4px;background:rgba(90,150,255,.25);position:relative;border-radius:2px}.sl i{position:absolute;top:-4px;width:12px;height:12px;border-radius:50%;background:#2f8cff;box-shadow:0 0 0 2px #fff}
+.val{font-size:11px;font-weight:800;text-align:right;background:rgba(0,0,0,.3);padding:2px 4px}
+.btns{display:flex;flex-wrap:wrap;gap:4px}.b{font-size:10.5px;font-weight:800;padding:4px 7px;border:1px solid rgba(90,150,255,.35)}.b.on{background:#1b5fd6}
+.sw{width:30px;height:16px;border-radius:9px;background:#1b5fd6;position:relative}.sw::after{content:"";position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#fff}
+.col{width:40px;height:16px;border:1px solid #fff}
+.save{margin:10px 12px;padding:10px;text-align:center;font-weight:900;font-style:italic;font-size:18px;color:#1a1200;background:#ffc24a;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
+.tl{height:196px;flex:none}.tlb{display:grid;grid-template-columns:150px 1fr;gap:0;padding:6px 10px;font-size:11px;position:relative}
+.ctrl{display:flex;gap:6px;align-items:center;padding:6px 10px}
+.play{background:#ffc24a;color:#1a1200;font-weight:900;padding:6px 14px;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+.lane{height:20px;display:flex;align-items:center;border-bottom:1px solid rgba(90,150,255,.1);position:relative}
+.lab{font-weight:800;color:#a9bde2;height:20px;display:flex;align-items:center;border-bottom:1px solid rgba(90,150,255,.1)}
+.blk{position:absolute;height:14px;top:3px;font-size:9.5px;font-weight:800;padding:0 4px;overflow:hidden;white-space:nowrap;border-radius:2px}
+.cam{background:#1b5fd6}.lt{background:#b8860b}.ac{background:#1f6f4a}.sp{background:#6b3fa0}.cap{background:#555}
+.head2{position:absolute;top:0;bottom:0;width:2px;background:#ff4d5e;left:38%}
+.ruler{display:flex;justify-content:space-between;color:#6f86b3;font-size:10px}
+/* phone */
+body.ph390 .wrap{padding:10px;gap:8px}
+body.ph390 .banner h1{font-size:20px}body.ph390 .banner p{display:none}
+body.ph390 .main{grid-template-columns:1fr;overflow:hidden}
+body.ph390 .vp{height:215px;flex:none}body.ph390 .hud{font-size:9.5px}body.ph390 .hide-ph{display:none}
+body.ph390 .key{flex-wrap:wrap;font-size:10.5px}
+.tabs{display:flex}.tab{flex:1;text-align:center;padding:7px 0;font-size:11.5px;font-weight:900;font-style:italic;border-bottom:2px solid transparent;color:#a9bde2}.tab.on{color:#fff;border-color:#2f8cff;background:rgba(27,95,214,.25)}
+.pc-only{}.ph-only{display:none}body.ph390 .pc-only{display:none}body.ph390 .ph-only{display:block}
+</style></head><body>
+<div class="wrap">
+ <div class="head"><div class="back">‹</div><div class="banner"><h1>3D Scene Editor</h1><p>One editor for every 3D scene: signing, manager's office, shop, garden, house, cut-scene director</p></div></div>
+ <div class="key"><span><b class="t ok">IN CODE</b> the dial already exists in the code; the editor only shows it</span><span><b class="t pt">PART</b> exists in one scene, must be opened up for the others</span><span><b class="t nw">NEW</b> new work</span></div>
+ <div class="main">
+  <div class="panel">
+   <div class="ph"><h2>3D Preview</h2><span>real still: Manager's office, /star-3d-area-dev/office</span></div>
+   <div class="scenes pc-only" style="padding-top:8px"><span class="chip">3D Signing</span><span class="chip on">Manager's Office</span><span class="chip">3D Shop</span><span class="chip">3D Garden</span><span class="chip">3D House</span><span class="chip">Cut-scene Director</span><span style="font-size:10.5px;color:#a9bde2;align-self:center">Scene picker <b class="t pt">PART</b> (each scene is its own page today)</span></div>
+   <div class="vp"><img src="still-office.png">
+    <div class="hud" style="left:8px;top:8px">● SHOT 02 · "talk" · 44° FOV</div>
+    <div class="hud hide-ph" style="right:8px;top:8px">Free camera (drag to orbit) <b class="t nw">NEW</b></div>
+    <svg class="gizmo" viewBox="0 0 70 70"><circle cx="35" cy="35" r="30" fill="none" stroke="#fff" stroke-dasharray="4 4"/><line x1="35" y1="35" x2="35" y2="6" stroke="#2fd06a" stroke-width="3"/><line x1="35" y1="35" x2="64" y2="44" stroke="#ff4d5e" stroke-width="3"/><line x1="35" y1="35" x2="10" y2="52" stroke="#2f8cff" stroke-width="3"/></svg>
+    <div class="hud hide-ph" style="left:calc(62% + 74px);top:34%">Drag handles: move look point <b class="t nw">NEW</b></div>
+    <div class="lamp">💡</div><div class="hud" style="left:70%;top:9%;top:auto;bottom:10px;left:auto;right:8px">Key light marker: drag to move <b class="t nw">NEW</b></div>
+   </div>
+  </div>
+  <div class="panel side">
+   <div class="tabs ph-only" style="display:none"></div>
+   <div class="ph"><h2>Settings</h2><span>live in the preview · scrolls ▾</span></div>
+   <div class="sec"><h3>Camera</h3>
+    <div class="btns"><span class="b">Wide</span><span class="b on">Over the shoulder</span><span class="b">Close</span><span class="b">Two-shot</span><span class="b">Low hero</span><span class="b">+13</span></div>
+    <div class="row"><span>Shot preset<b class="t ok">IN CODE</b></span><span></span><span></span><span class="what">18 framings in presets/camera.ts (director). Office/signing use their own 6 fixed shots</span></div>
+    <div class="row"><span>Position X/Y/Z<b class="t pt">PART</b></span><div class="sl"><i style="left:48%"></i></div><span class="val">0.22</span><span class="what">where the camera stands. Signing/office: debugCamera() exists; director: shot "fixed"</span></div>
+    <div class="row"><span>Look at (target)<b class="t pt">PART</b></span><div class="sl"><i style="left:40%"></i></div><span class="val">Mgr</span><span class="what">what it points at: a person or a point</span></div>
+    <div class="row"><span>Lens (mm)<b class="t ok">IN CODE</b></span><div class="sl"><i style="left:35%"></i></div><span class="val">45</span><span class="what">zoom: wide 22 ↔ close 90 (ShotSpec.lens / fov)</span></div>
+    <div class="row"><span>Turn / rise<b class="t ok">IN CODE</b></span><div class="sl"><i style="left:55%"></i></div><span class="val">+12°</span><span class="what">swing round the subject, lift up (yaw, rise)</span></div>
+    <div class="row"><span>Move<b class="t ok">IN CODE</b></span><div class="btns"><span class="b on">Push</span><span class="b">Orbit</span><span class="b">Crane</span></div><span class="val">0.4</span><span class="what">how the shot moves while held (13 moves; director only)</span></div>
+    <div class="row"><span>Handheld shake<b class="t ok">IN CODE</b></span><div class="sl"><i style="left:15%"></i></div><span class="val">0.1</span></div>
+   </div>
+   <div class="sec"><h3>Lighting</h3>
+    <div class="row"><span>Mood / time of day<b class="t ok">IN CODE</b></span><div class="btns"><span class="b on">Golden hour</span><span class="b">Dawn</span><span class="b">Night</span></div><span></span><span class="what">sky, sun, colour grade (presets/moods.ts; director only)</span></div>
+    <div class="row"><span>Exposure<b class="t ok">IN CODE</b></span><div class="sl"><i style="left:50%"></i></div><span class="val">1.0</span><span class="what">overall brightness (light track)</span></div>
+    <div class="row"><span>Key light strength<b class="t ok">IN CODE</b></span><div class="sl"><i style="left:60%"></i></div><span class="val">2.4</span><span class="what">sun/key intensity (light track "sun")</span></div>
+    <div class="row"><span>Key light angle<b class="t nw">NEW</b></span><div class="sl"><i style="left:30%"></i></div><span class="val">-20°</span><span class="what">direction it comes from; fixed in code today</span></div>
+    <div class="row"><span>Key light colour<b class="t nw">NEW</b></span><span class="col" style="background:#ffc488"></span><span></span></div>
+    <div class="row"><span>Spotlight on a person<b class="t ok">IN CODE</b></span><span class="sw"></span><span></span><span class="what">light track "spot" (director only)</span></div>
+    <div class="row"><span>Lamps on / off<b class="t nw">NEW</b></span><span class="sw"></span><span></span></div>
+   </div>
+   <div class="sec pc-only"><h3>Cast</h3>
+    <div class="row"><span>Who stands where<b class="t ok">IN CODE</b></span><div class="btns"><span class="b">Manager: desk</span><span class="b">You: chair</span></div><span></span><span class="what">place track + named marks (director); office/signing fixed</span></div>
+   </div>
+   <div class="save">SAVE SHOT <b class="t nw">NEW</b></div>
+   <div style="font-size:10.5px;color:#6f86b3;padding:0 12px 8px" class="pc-only">Writes the change back to the scene's script / shot table. Scripts live in code today (fixtures.ts), so saving needs a store.</div>
+  </div>
+ </div>
+ <div class="panel tl pc-only">
+  <div class="ph"><h2>Timeline</h2><span>cut-scene director scripts: every track is real data (types.ts). Office/signing: shot list only</span></div>
+  <div class="ctrl"><span class="play">▶ PLAY</span><b class="t ok">IN CODE</b><span class="b">❚❚</span><span class="b">⟲ Replay</span><span style="font-size:11px;margin-left:8px">3.2 s / 8.4 s · scrub = director.seek(t) <b class="t ok">IN CODE</b></span><span class="play" style="margin-left:12px;background:#ffc24a">SAVE SHOT</span><b class="t nw">NEW</b><span style="font-size:10.5px;color:#a9bde2">writes back to the script / shot table (needs a store)</span><span style="margin-left:auto;font-size:11px">Drag blocks to retime / add a track <b class="t nw">NEW</b></span></div>
+  <div class="tlb"><div><div class="lab"></div><div class="lab">Camera</div><div class="lab">Light</div><div class="lab">Manager</div><div class="lab">You</div><div class="lab">Speech / captions</div></div>
+   <div style="position:relative"><div class="ruler lane"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
+    <div class="lane"><span class="blk cam" style="left:0;width:18%">Wide</span><span class="blk cam" style="left:19%;width:24%">OTS · talk</span><span class="blk cam" style="left:44%;width:20%">Close · contract</span><span class="blk cam" style="left:65%;width:34%">Two-shot · shake</span></div>
+    <div class="lane"><span class="blk lt" style="left:0;width:99%">golden hour · exposure 1.0</span></div>
+    <div class="lane"><span class="blk ac" style="left:2%;width:40%">sit · talk</span><span class="blk ac" style="left:66%;width:30%">stand · handshake</span></div>
+    <div class="lane"><span class="blk ac" style="left:30%;width:30%">sign with the pen</span><span class="blk ac" style="left:66%;width:30%">handshake</span></div>
+    <div class="lane"><span class="blk sp" style="left:5%;width:25%">"Sit down…"</span><span class="blk cap" style="left:70%;width:25%">caption</span></div>
+    <div class="head2"></div></div></div>
+ </div>
+ <div class="panel ph-only" style="padding:6px 8px">
+  <div class="ctrl" style="padding:2px"><span class="play">▶</span><div class="sl" style="flex:1"><i style="left:38%"></i></div><span style="font-size:10.5px">3.2/8.4s</span></div>
+  <div style="display:flex;gap:3px;margin-top:4px"><span class="blk cam" style="position:static;width:18%">Wide</span><span class="blk cam" style="position:static;width:26%;outline:2px solid #ffc24a">OTS</span><span class="blk cam" style="position:static;width:22%">Close</span><span class="blk cam" style="position:static;width:32%">Two</span></div>
+  <div style="font-size:10px;color:#6f86b3;margin-top:3px">Phone: shot strip only; full track lanes on PC</div>
+ </div>
+</div>
+<script>if(location.hash=="#phone"){document.body.classList.add("ph390");
+const s=document.querySelector(".side");const t=document.createElement("div");t.className="tabs";t.innerHTML='<div class="tab on">Camera</div><div class="tab">Lighting</div><div class="tab">Cast</div><div class="tab">Scene</div>';s.prepend(t);
+s.querySelectorAll(".sec")[1].style.display="none";document.querySelector(".side .ph").style.display="none";}</script>
+</body></html>

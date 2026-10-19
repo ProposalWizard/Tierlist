@@ -14,7 +14,7 @@
  * `window.__frameStep = { duration, seek(t) }` lets the frame-by-frame
  * filming tool (scripts/film/frames3d.mjs) step through any cut scene.
  */
-import type { CameraTrack, CareerContext, CutsceneActor, CutsceneScript, FxTrack, LightTrack, PoseTrack, PropTrack, ReachTrack, Target, TraceTrack, Vec3, HandTrack, LookTrack, FaceTrack, SpeakTrack } from "./types";
+import type { MoodId, ShotSpec, CameraTrack, CareerContext, CutsceneActor, CutsceneScript, FxTrack, LightTrack, PoseTrack, PropTrack, ReachTrack, Target, TraceTrack, Vec3, HandTrack, LookTrack, FaceTrack, SpeakTrack } from "./types";
 import { TIER_PROFILES, quality3dTier, type Quality3d } from "../three3d/quality";
 import { governScene } from "../three3d/governThree";
 import { acquireRenderer } from "../three3d/perf";
@@ -69,7 +69,34 @@ export interface Director {
   setStyleDef(def: StyleDef): void;
   /** Frame stepping: stop the real-time loop and draw exactly t. */
   frameSeek(t: number): void;
+  /** The 3D scene editor's live edits (preview only, never saved). null = play the script as written. */
+  setEdit(e: DirectorEdit | null): void;
+  /** The camera tracks as played (after conditions), in the order `DirectorEdit.shots` keys them. */
+  cameras(): CameraTrack[];
+  /** Where the camera stands and looks at the last drawn frame (the editor's free camera reads it). */
+  cameraPose(): { pos: Vec3; look: Vec3; fov: number };
+  /** An overhead read of the set for the editor's mini-map: people at the last frame, the key light's direction. */
+  layout(): { people: { id: string; x: number; z: number }[]; sunDir: Vec3; bounds?: { min: Vec3; max: Vec3 } };
   dispose(): void;
+}
+
+/** Live edits from the 3D scene editor (/star-scene-editor-dev). Optional: with none, the
+ *  director plays exactly as before. `shots` is keyed by the camera track's index in the script. */
+export interface DirectorEdit {
+  shots?: Record<number, Partial<Pick<ShotSpec, "preset" | "lens" | "yaw" | "rise" | "move" | "moveAmount" | "shake">>>;
+  mood?: MoodId;
+  /** Multiplies the whole scene's exposure (1 = as written). */
+  exposure?: number;
+  /** Multiplies the sun / key light (1 = as written). */
+  keyLight?: number;
+  /** A spotlight on one person (cast id), on top of the script's own. */
+  spot?: { actor: string; intensity: number } | null;
+  /** Free camera per shot (keyed like `shots`): stand here and look there, lens kept. Absent = the shot as written. */
+  free?: Record<number, { pos: Vec3; look: Vec3 }>;
+  /** Turns the key light (sun) round the set, degrees about the vertical (0 = as written). */
+  keyAngle?: number;
+  /** The key light's colour (absent = as written). */
+  keyColor?: string;
 }
 
 interface Cast { id: string; role: string; body: string; actor: CutsceneActor; clipSet: Set<string> }
@@ -98,16 +125,17 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   let styleId: StyleId = o.style ?? script.set.look ?? "golden";
   let given: StyleDef | null = o.def ?? null;
   const resolveDef = () => {
-    const d = structuredClone(applyMood(given ?? resolveStyle(styleId, "cut"), script.set.mood));
+    const d = structuredClone(applyMood(given ?? resolveStyle(styleId, "cut"), edit?.mood ?? script.set.mood));
     // Cut-scene camera New: a much softer bloom (it drew a red-orange halo round every body edge)
     if (newCam) { d.post.bloom *= 0.35; d.post.bloomThresh = Math.max(d.post.bloomThresh, 0.95); }
     // indoors the sky's fill is mostly walled off: the set's own lamps and the window do the lighting
     if (C.loc.indoor) d.hemi = { ...d.hemi, intensity: d.hemi.intensity * 0.6 };
     return d;
   };
+  let edit: DirectorEdit | null = null;
   let def: StyleDef = resolveDef();
   const kit: StyleKit = createStyleKit(T, renderer, scene, tier, def);
-  const mood = MOODS[script.set.mood];
+  let mood = MOODS[script.set.mood];
 
   // ── the set ──
   let set: BuiltSet = buildSet(T, kit, tier, script.set.location, { shirt: club.shirt, trim: club.trim, club: club.name, lamps: mood.lamps, seed: script.seed ?? 1, night: script.set.mood.includes("night") });
@@ -483,7 +511,8 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const a = anchorOf(cam.shot.subject, t), b = cam.shot.subject2 ? anchorOf(cam.shot.subject2, t) : null;
       return shotPose(clearShot(cam.shot, a, b, t), a, b, { aspect: camera.aspect, k, t, seed: script.seed ?? 1, bounds: C.loc.bounds });
     }
-    const p = shotPose(st.shot, st.a, st.b, { aspect: camera.aspect, k, t, seed: script.seed ?? 1, bounds: C.loc.bounds });
+    const ed = edit?.shots?.[C.cameras.indexOf(cam)];
+    const p = shotPose(ed ? { ...st.shot, ...ed } : st.shot, st.a, st.b, { aspect: camera.aspect, k, t, seed: script.seed ?? 1, bounds: C.loc.bounds });
     // the camera stands still; its eye keeps on the subject as he moves a little
     if ("actor" in cam.shot.subject && !cam.shot.fixed && !cam.shot.subject.local) {
       const now = anchorOf(cam.shot.subject, t);
@@ -516,7 +545,10 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       if (cs.prev) p = mixPose(camPose(cs.prev.track, cs.prev.k, t), p, cs.prev.mix);
       camera.position.set(...p.pos);
       camera.up.set(Math.sin((p.roll * Math.PI) / 180), Math.cos((p.roll * Math.PI) / 180), 0);
+      const fr = edit?.free?.[C.cameras.indexOf(cs.cur)];
+      if (fr) { p = { ...p, pos: fr.pos, look: fr.look, roll: 0 }; camera.position.set(...p.pos); camera.up.set(0, 1, 0); }
       camera.lookAt(...p.look);
+      lastPose = { pos: p.pos, look: p.look, fov: p.fov };
       if (Math.abs(camera.fov - p.fov) > 1e-3) { camera.fov = p.fov; camera.updateProjectionMatrix(); }
     }
     const { flash } = fx.update(act, camera, def.sunDir);
@@ -552,8 +584,25 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       if (x.sun) sunK *= 1 + (x.sun - 1) * w;
       if (x.spot) { const p = targetPoint(x.spot.target, t); spot.intensity = x.spot.intensity * w * 40; spot.color.set(x.spot.color ?? "#fff1dc"); spot.position.set(p.x + 1.5, p.y + 5, p.z + 3); spot.target.position.copy(p); }
     }
-    def.post.exposure = baseExposure * expo * (1 + flash);
+    if (edit?.spot && cast.has(edit.spot.actor)) {
+      const p = cast.get(edit.spot.actor)!.actor.point("head");
+      spot.intensity = edit.spot.intensity * 40; spot.color.set("#fff1dc"); spot.position.set(p.x + 1.5, p.y + 5, p.z + 3); spot.target.position.copy(p);
+    }
+    def.post.exposure = baseExposure * expo * (1 + flash) * (edit?.exposure ?? 1);
     void sunK;
+    // the editor's key light: the sun(s) scaled from their styled strength (untouched with no edit)
+    if (edit?.keyLight !== undefined || keyEdited) {
+      keyEdited = edit?.keyLight !== undefined;
+      for (const l of castLights) { if (!keyBase.has(l)) keyBase.set(l, l.intensity); l.intensity = keyBase.get(l)! * (edit?.keyLight ?? 1); }
+    }
+    // the editor's key light angle and colour (untouched with no edit)
+    if (!baseSun) baseSun = [...def.sunDir] as Vec3;
+    const ang = ((edit?.keyAngle ?? 0) * Math.PI) / 180, ca = Math.cos(ang), sa = Math.sin(ang);
+    def.sunDir = edit?.keyAngle ? [baseSun[0] * ca - baseSun[2] * sa, baseSun[1], baseSun[0] * sa + baseSun[2] * ca] : baseSun;
+    if (edit?.keyColor || keyColEdited) {
+      keyColEdited = !!edit?.keyColor;
+      for (const l of castLights) { if (!keyCol.has(l)) keyCol.set(l, l.color.getHex()); if (edit?.keyColor) l.color.set(edit.keyColor); else l.color.setHex(keyCol.get(l)!); }
+    }
     // overlay
     const ov = overlayAt(C, t);
     const lb = ov.letterbox;
@@ -567,15 +616,22 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     focus.x = camera.position.x; focus.z = camera.position.z;
   };
   const focus = { x: 0, y: 0, z: 0 };
+  let keyEdited = false, keyColEdited = false;
+  let baseSun: Vec3 | null = null;
+  const keyCol = new Map<any, number>();
+  let lastPose: { pos: Vec3; look: Vec3; fov: number } = { pos: [0, 1.6, 5], look: [0, 1.4, 0], fov: 40 };
+  const keyBase = new Map<any, number>();
   let baseExposure = def.post.exposure;
   let basePoster = def.post.posterMix;
 
   const restyle = () => {
     def = resolveDef();
     baseExposure = def.post.exposure; basePoster = def.post.posterMix;
+    mood = MOODS[edit?.mood ?? script.set.mood];
     kit.apply(def);
+    keyBase.clear(); keyCol.clear(); baseSun = null;
     root.remove(set.group); set.dispose();
-    set = buildSet(T, kit, tier, script.set.location, { shirt: club.shirt, trim: club.trim, club: club.name, lamps: mood.lamps, seed: script.seed ?? 1, night: script.set.mood.includes("night") });
+    set = buildSet(T, kit, tier, script.set.location, { shirt: club.shirt, trim: club.trim, club: club.name, lamps: mood.lamps, seed: script.seed ?? 1, night: (edit?.mood ?? script.set.mood).includes("night") });
     root.add(set.group);
     buildProps();
     kit.stylePeople(persons());
@@ -640,6 +696,18 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     skip() { t = duration; held = null; if (!ended) { ended = true; o.onEnd?.(); } },
     setStyle(id) { styleId = id; given = null; restyle(); },
     setStyleDef(d) { given = d; restyle(); },
+    cameras: () => C.cameras,
+    cameraPose: () => ({ pos: [...lastPose.pos] as Vec3, look: [...lastPose.look] as Vec3, fov: lastPose.fov }),
+    layout: () => ({
+      people: Array.from(cast.values()).map((c) => { const p = c.actor.point("head"); return { id: c.id, x: p.x, z: p.z }; }),
+      sunDir: [...def.sunDir] as Vec3,
+      bounds: C.loc.bounds,
+    }),
+    setEdit(e) {
+      const moodChanged = (e?.mood ?? script.set.mood) !== (edit?.mood ?? script.set.mood);
+      edit = e;
+      if (moodChanged) restyle();
+    },
     frameSeek(s) { renderer.setAnimationLoop(null); held = clamp(s, 0, duration); draw(held); },
     dispose() {
       ro?.disconnect();

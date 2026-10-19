@@ -21,33 +21,32 @@
  * here: it is a real screen with its own flag list, its own chance picker and
  * its own editor, and copying it in would mean two of it. The hub links to
  * it — one door, not one file.
+ *
+ * Look (Harry, 19 Oct 2026, UI lookover, option 1): the Broadcast frame. The
+ * two doors are picture cards (real stills in public/admin/play-area/), the
+ * dials sit in two columns on a computer. Infinite Match itself is untouched.
  */
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import InfiniteMatch from "@/components/star/InfiniteMatch";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, Btn, Pill, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "./play-area.css";
 import {
   loadPlaySettings, savePlaySettings,
   PLAY_RANGES, PLAY_POSITIONS, PLAY_DIVISIONS, DEFAULT_PLAY_SETTINGS,
   type PlaySettings,
 } from "@/lib/star/playArea";
-import { usePinnedTop } from "@/lib/pinnedTop";
 import { COMPARE_SWITCHES, switchOn, setSwitch, resetSwitches, type CompareSwitch } from "@/lib/star/compareSwitches";
 import { BRAIN_DIAL_FLAG, type OpenPlayDial } from "@/lib/star/keeperBrain";
 import { PRESSURE_DIALS } from "@/lib/star/pressure";
 import { PENALTY_RUNUPS, FREE_KICK_RUNUPS } from "@/lib/star/runupStyles";
 
-const BG = "#05070d";
-const INK = "#f2f5f9";
-const MUTED = "#8a97aa";
-const CARD = "rgba(255,255,255,0.04)";
-
 type Screen = "home" | "match";
 
 export default function PlayAreaPage() {
   const [screen, setScreen] = useState<Screen>("home");
-  const pinnedRef = usePinnedTop();
   // Read once on mount rather than at first render: localStorage does not
   // exist on the server, and reading it during render is what makes a page
   // hydrate to something different from what it rendered.
@@ -78,151 +77,140 @@ export default function PlayAreaPage() {
     setSettings((s) => savePlaySettings({ ...s, [k]: v }));
   };
 
-  const shell = (body: React.ReactNode) => (
-    <div style={{ minHeight: "100dvh", background: BG, color: INK }}>
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>{body}</div>
+  if (!ready) return (
+    <BroadcastPage title="Play Area">
       <PageGuide page="/star-play-dev" />
-    </div>
+    </BroadcastPage>
   );
 
-  // `pin: false` on Infinite Match: there its Edit / Save / Commit bar is the
-  // one that stays, and a second pinned bar above it would push the goal end
-  // of the pitch under the bars on a phone (59 px of it on an iPhone 13).
-  const header = (title: string, back?: () => void, pin = true) => (
-    <div ref={pin ? pinnedRef : undefined} style={{
-      display: "flex", alignItems: "center", gap: 10, padding: "14px 14px 10px",
-      position: pin ? "sticky" : "relative", top: 0, background: BG, zIndex: 5,
-    }}>
-      {back && (
-        <button onClick={back} aria-label="Back" style={{
-          width: 34, height: 34, borderRadius: 999, flex: "none", cursor: "pointer",
-          border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.06)",
-          color: INK, fontSize: 17, fontWeight: 800, lineHeight: 1,
-        }}>&#8249;</button>
-      )}
-      <h1 style={{ margin: 0, fontSize: 19, fontWeight: 900, letterSpacing: "-0.01em" }}>{title}</h1>
-    </div>
-  );
-
-  if (!ready) return shell(header("Play Area"));
-
+  // The match screen: the frame's bar on top, Infinite Match itself untouched
+  // underneath. The bar is not pinned: Infinite Match's own Edit / Save /
+  // Commit bar is the one that stays, and a second pinned bar would push the
+  // goal end of the pitch under the bars on a phone.
   if (screen === "match") {
-    return shell(
-      <>
-        {header("Infinite Match", () => setScreen("home"), false)}
-        <InfiniteMatch settings={settings} onBack={() => setScreen("home")} />
-      </>,
+    return (
+      <BroadcastPage title="Infinite Match" back={() => setScreen("home")} width={900}>
+        <div className="pa-match">
+          <InfiniteMatch settings={settings} onBack={() => setScreen("home")} />
+        </div>
+        <PageGuide page="/star-play-dev" />
+      </BroadcastPage>
     );
   }
 
-  return shell(
-    <>
-      {header("Play Area")}
-      <div style={{ padding: "0 14px 40px", display: "grid", gap: 12 }}>
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: MUTED, lineHeight: 1.55 }}>
-          Two ways of looking at the game, and the dials both of them run on.
-          Change a number here and it applies to whichever you open next.
-        </p>
-
-        <Link
-          href="/star-highlights-dev"
-          style={{ ...tile, textDecoration: "none", display: "block", color: INK }}
-        >
-          <div style={tileTitle}>Infinite Highlights &#8594;</div>
-          <div style={tileSub}>
+  return (
+    <BroadcastPage
+      title="Play Area"
+      sub="Two ways of looking at the game, and the dials both run on. Change a number and it applies to whichever you open next."
+      width={1180}
+    >
+      {/* The entrance (Harry: "the entrance to it was good"): the two doors, as picture cards. */}
+      <div className="pa-doors">
+        <Link href="/star-highlights-dev" className="pa-door">
+          <div className="pa-pic" style={{ backgroundImage: "url(/admin/play-area/highlights.webp)" }}>
+            <b>Infinite Highlights &#8594;</b>
+          </div>
+          <p>
             Every chance the generator can make, one after another, as fast as you
             can press Next. Flag a bad one, drag a defender, save the fix, or record
             a correction with Tune.
-          </div>
+          </p>
         </Link>
 
-        <button onClick={() => setScreen("match")} style={{ ...tile, cursor: "pointer", textAlign: "left" }}>
-          <div style={tileTitle}>Infinite Match &#8594;</div>
-          <div style={tileSub}>
+        <button onClick={() => setScreen("match")} className="pa-door">
+          <div className="pa-pic" style={{ backgroundImage: "url(/admin/play-area/match.webp)", backgroundPosition: "center 12%" }}>
+            <b>Infinite Match &#8594;</b>
+          </div>
+          <p>
             A real match that runs for {settings.matchMinutes.toLocaleString()} minutes, with a
             running count of what it actually served you. This is the one that answers
             &ldquo;why am I never getting one-on-ones&rdquo; — the generator and the match
             are different questions.
-          </div>
+          </p>
         </button>
+      </div>
 
-        {/* The link cards to other test pages went (Harry, ADM-Q56): the admin side menu has every page. */}
+      {/* The link cards to other test pages went (Harry, ADM-Q56): the admin side menu has every page. */}
 
-        {/* ── THE DIALS ── */}
-        <section style={{ ...tile, cursor: "default" }}>
-          <div style={tileTitle}>Tuning</div>
-          <div style={{ ...tileSub, marginBottom: 12 }}>
-            You, your boots and who you are playing. Every dial starts on the real
-            game, and a change here only reaches the test screens — Infinite
-            Highlights, Infinite Match and the gallery&apos;s Play — never a career.
-            Saved on this device.
+      {/* ── THE DIALS ── */}
+      <Panel title="Tuning" note="Saved on this device">
+        <Note>
+          You, your boots and who you are playing. Every dial starts on the real
+          game, and a change here only reaches the test screens — Infinite
+          Highlights, Infinite Match and the gallery&apos;s Play — never a career.
+        </Note>
+        <div className="pa-dials">
+          <div className="pa-col">
+            <Slider label="Power" hint="How hard the same drag hits."
+              value={settings.power} range={PLAY_RANGES.power} onChange={(v) => set("power", v)} />
+            <Slider label="Technique" hint="Placement, and how much you can bend it at all."
+              value={settings.technique} range={PLAY_RANGES.technique} onChange={(v) => set("technique", v)} />
+            <Slider label="Opposition" hint="How good the side you are playing is."
+              value={settings.oppStrength} range={PLAY_RANGES.oppStrength} onChange={(v) => set("oppStrength", v)} />
+            <Row label="Keeper" hint="Real: the opposition's own starting keeper, as in a career. Set: the slider below decides.">
+              <Toggle on={settings.realKeeper} onClick={() => set("realKeeper", true)}>Real</Toggle>
+              <Toggle on={!settings.realKeeper} onClick={() => set("realKeeper", false)}>Set</Toggle>
+            </Row>
+            {!settings.realKeeper && (
+              <Slider label="Keeper rating" hint="The one number his reach scales off."
+                value={settings.keeperStrength} range={PLAY_RANGES.keeperStrength} onChange={(v) => set("keeperStrength", v)} />
+            )}
+            <KeeperBrainRows />
+            <Row label="Weather" hint="Real: the game's own weather, windy or wet about 4 matches in 10. Clear: still air, perfect pitch.">
+              <Toggle on={settings.weather === "real"} onClick={() => set("weather", "real")}>Real</Toggle>
+              <Toggle on={settings.weather === "clear"} onClick={() => set("weather", "clear")}>Clear</Toggle>
+            </Row>
+            <Slider label="Match length" hint="Minutes an Infinite Match runs for." step={10}
+              value={settings.matchMinutes} range={PLAY_RANGES.matchMinutes} onChange={(v) => set("matchMinutes", v)} />
           </div>
 
-          <Slider label="Power" hint="How hard the same drag hits."
-            value={settings.power} range={PLAY_RANGES.power} onChange={(v) => set("power", v)} />
-          <Slider label="Technique" hint="Placement, and how much you can bend it at all."
-            value={settings.technique} range={PLAY_RANGES.technique} onChange={(v) => set("technique", v)} />
-          <Slider label="Opposition" hint="How good the side you are playing is."
-            value={settings.oppStrength} range={PLAY_RANGES.oppStrength} onChange={(v) => set("oppStrength", v)} />
-          <Row label="Keeper" hint="Real: the opposition's own starting keeper, as in a career. Set: the slider below decides.">
-            <Toggle on={settings.realKeeper} onClick={() => set("realKeeper", true)}>Real</Toggle>
-            <Toggle on={!settings.realKeeper} onClick={() => set("realKeeper", false)}>Set</Toggle>
-          </Row>
-          {!settings.realKeeper && (
-            <Slider label="Keeper rating" hint="The one number his reach scales off."
-              value={settings.keeperStrength} range={PLAY_RANGES.keeperStrength} onChange={(v) => set("keeperStrength", v)} />
-          )}
-          <KeeperBrainRows />
-          <Row label="Weather" hint="Real: the game's own weather, windy or wet about 4 matches in 10. Clear: still air, perfect pitch.">
-            <Toggle on={settings.weather === "real"} onClick={() => set("weather", "real")}>Real</Toggle>
-            <Toggle on={settings.weather === "clear"} onClick={() => set("weather", "clear")}>Clear</Toggle>
-          </Row>
-          <Slider label="Match length" hint="Minutes an Infinite Match runs for." step={10}
-            value={settings.matchMinutes} range={PLAY_RANGES.matchMinutes} onChange={(v) => set("matchMinutes", v)} />
+          <div className="pa-col">
+            <Row label="Boots" hint="Curving boots bend it; touch boots give you a second go from where it settles.">
+              <Toggle on={settings.curve} onClick={() => set("curve", !settings.curve)}>Curve</Toggle>
+              <Toggle on={settings.extraTouch} onClick={() => set("extraTouch", !settings.extraTouch)}>Extra touch</Toggle>
+            </Row>
 
-          <Row label="Boots" hint="Curving boots bend it; touch boots give you a second go from where it settles.">
-            <Toggle on={settings.curve} onClick={() => set("curve", !settings.curve)}>Curve</Toggle>
-            <Toggle on={settings.extraTouch} onClick={() => set("extraTouch", !settings.extraTouch)}>Extra touch</Toggle>
-          </Row>
+            <Row label="Position" hint="Tilts which chances you are likeliest to be the one taking.">
+              {PLAY_POSITIONS.map((p) => (
+                <Toggle key={p} on={settings.position === p} onClick={() => set("position", p)}>{p}</Toggle>
+              ))}
+            </Row>
 
-          <Row label="Position" hint="Tilts which chances you are likeliest to be the one taking.">
-            {PLAY_POSITIONS.map((p) => (
-              <Toggle key={p} on={settings.position === p} onClick={() => set("position", p)}>{p}</Toggle>
-            ))}
-          </Row>
+            <Row label="Division" hint="The standard of club around you, and so how strong your own side is.">
+              {PLAY_DIVISIONS.map((d) => (
+                <Toggle key={d.id} on={settings.division === d.id} onClick={() => set("division", d.id)}>
+                  {d.label}
+                </Toggle>
+              ))}
+            </Row>
 
-          <Row label="Division" hint="The standard of club around you, and so how strong your own side is.">
-            {PLAY_DIVISIONS.map((d) => (
-              <Toggle key={d.id} on={settings.division === d.id} onClick={() => set("division", d.id)}>
-                {d.label}
-              </Toggle>
-            ))}
-          </Row>
+            <Row label="Pressure" hint="While you pull back, the nearest opponent closes you down; if he gets there you're tackled, or fouled about 1 time in 3 (2 in 3 if he comes from behind you — he goes round you, never through) — a free kick, or a penalty in the box. Real: Premier League full, Championship light, lower none.">
+              {PRESSURE_DIALS.map((d) => (
+                <Toggle key={d.id} on={settings.pressure === d.id} onClick={() => set("pressure", d.id)}>
+                  {d.label}
+                </Toggle>
+              ))}
+            </Row>
 
-          <Row label="Pressure" hint="While you pull back, the nearest opponent closes you down; if he gets there you're tackled, or fouled about 1 time in 3 (2 in 3 if he comes from behind you — he goes round you, never through) — a free kick, or a penalty in the box. Real: Premier League full, Championship light, lower none.">
-            {PRESSURE_DIALS.map((d) => (
-              <Toggle key={d.id} on={settings.pressure === d.id} onClick={() => set("pressure", d.id)}>
-                {d.label}
-              </Toggle>
-            ))}
-          </Row>
+            <Row label="Penalty run-up" hint="How you run up to a penalty — every style, owned or not, to see each one on the real pitch. Looks only: the kick is the same. Test screens only; a career uses the one it has equipped in Settings.">
+              {PENALTY_RUNUPS.map((r) => (
+                <Toggle key={r.id} on={settings.penaltyRunup === r.id} onClick={() => set("penaltyRunup", r.id)}>
+                  {r.name}
+                </Toggle>
+              ))}
+            </Row>
+            <Row label="Free-kick run-up" hint="How you run up to a direct free kick — a separate set, each modelled on an elite free-kick taker. Looks only: the kick is the same. Test screens only.">
+              {FREE_KICK_RUNUPS.map((r) => (
+                <Toggle key={r.id} on={settings.freeKickRunup === r.id} onClick={() => set("freeKickRunup", r.id)}>
+                  {r.name}
+                </Toggle>
+              ))}
+            </Row>
+          </div>
+        </div>
 
-          <Row label="Penalty run-up" hint="How you run up to a penalty — every style, owned or not, to see each one on the real pitch. Looks only: the kick is the same. Test screens only; a career uses the one it has equipped in Settings.">
-            {PENALTY_RUNUPS.map((r) => (
-              <Toggle key={r.id} on={settings.penaltyRunup === r.id} onClick={() => set("penaltyRunup", r.id)}>
-                {r.name}
-              </Toggle>
-            ))}
-          </Row>
-          <Row label="Free-kick run-up" hint="How you run up to a direct free kick — a separate set, each modelled on an elite free-kick taker. Looks only: the kick is the same. Test screens only.">
-            {FREE_KICK_RUNUPS.map((r) => (
-              <Toggle key={r.id} on={settings.freeKickRunup === r.id} onClick={() => set("freeKickRunup", r.id)}>
-                {r.name}
-              </Toggle>
-            ))}
-          </Row>
-
-          <button
+        <div className="pa-reset">
+          <Btn
             onClick={() => {
               setSettings(savePlaySettings({ ...DEFAULT_PLAY_SETTINGS }));
               try { localStorage.removeItem(BRAIN_DIAL_FLAG); } catch { /* private mode */ }
@@ -230,34 +218,31 @@ export default function PlayAreaPage() {
               setCompare(Object.fromEntries(COMPARE_SWITCHES.map((c) => [c.id, true])) as Record<CompareSwitch, boolean>);
               window.dispatchEvent(new Event("keeper-brain-reset"));
             }}
-            style={{
-              marginTop: 12, width: "100%", height: 38, borderRadius: 11, cursor: "pointer",
-              border: "1px solid rgba(255,255,255,0.09)", background: "transparent",
-              color: MUTED, fontSize: 12.5, fontWeight: 700,
-            }}
           >
             Back to the defaults
-          </button>
-        </section>
+          </Btn>
+        </div>
+      </Panel>
 
-        {/* ── COMPARE OLD AND NEW (v0.15) ── */}
-        {compare && (
-          <section style={{ ...tile, cursor: "default" }}>
-            <div style={tileTitle}>Compare old and new</div>
-            <div style={{ ...tileSub, marginBottom: 12 }}>
-              This device's test screens only (the gallery, highlights, Infinite Match) — never a real career match or the trial. Each starts on New.
-            </div>
+      {/* ── COMPARE OLD AND NEW (v0.15) ── */}
+      {compare && (
+        <Panel title="Compare old and new" note="Each starts on New">
+          <Note>
+            This device&apos;s test screens only (the gallery, highlights, Infinite Match) — never a real career match or the trial.
+          </Note>
+          <div className="pa-dials">
             {COMPARE_SWITCHES.map((c) => (
               <Row key={c.id} label={c.label} hint={c.hint}>
                 <Toggle on={compare[c.id]} onClick={() => flip(c.id, true)}>New</Toggle>
                 <Toggle on={!compare[c.id]} onClick={() => flip(c.id, false)}>Old</Toggle>
               </Row>
             ))}
-          </section>
-        )}
+          </div>
+        </Panel>
+      )}
 
-      </div>
-    </>,
+      <PageGuide page="/star-play-dev" />
+    </BroadcastPage>
   );
 }
 
@@ -301,20 +286,16 @@ function Slider({ label, hint, value, range, step = 1, onChange }: {
   label: string; hint: string; value: number;
   range: readonly [number, number]; step?: number; onChange: (v: number) => void;
 }) {
+  const pct = ((value - range[0]) / Math.max(1, range[1] - range[0])) * 100;
   return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <span style={{ fontSize: 13, fontWeight: 800, color: INK }}>{label}</span>
-        <span style={{ fontSize: 12, fontWeight: 800, color: "#7dd3fc", fontFamily: "ui-monospace, monospace" }}>
-          {value.toLocaleString()}
-        </span>
-      </div>
-      <div style={{ fontSize: 11.5, fontWeight: 600, color: MUTED, marginBottom: 5 }}>{hint}</div>
+    <div className="pa-dial">
+      <div className="pa-dh"><span>{label}</span><b>{value.toLocaleString()}</b></div>
+      <div className="pa-hint">{hint}</div>
       <input
-        type="range"
+        type="range" className="pa-range" aria-label={label}
         min={range[0]} max={range[1]} step={step} value={value}
+        style={{ ["--pa-fill" as string]: `${pct}%` }}
         onChange={(e) => onChange(Number(e.target.value))}
-        style={{ width: "100%", accentColor: "#38bdf8" }}
       />
     </div>
   );
@@ -322,39 +303,14 @@ function Slider({ label, hint, value, range, step = 1, onChange }: {
 
 function Row({ label, hint, children }: { label: string; hint: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 13, fontWeight: 800, color: INK }}>{label}</div>
-      <div style={{ fontSize: 11.5, fontWeight: 600, color: MUTED, marginBottom: 6 }}>{hint}</div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{children}</div>
+    <div className="pa-dial">
+      <div className="pa-dh"><span>{label}</span></div>
+      <div className="pa-hint">{hint}</div>
+      <div className="pa-pills">{children}</div>
     </div>
   );
 }
 
 function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "7px 12px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap",
-        border: `1px solid ${on ? "rgba(56,189,248,0.75)" : "rgba(255,255,255,0.09)"}`,
-        background: on ? "rgba(14,116,144,0.4)" : "rgba(255,255,255,0.045)",
-        color: on ? "#e0f2fe" : MUTED, fontSize: 12.5, fontWeight: 800,
-      }}
-    >
-      {children}
-    </button>
-  );
+  return <Pill on={on} onClick={onClick}>{children}</Pill>;
 }
-
-const tile: React.CSSProperties = {
-  width: "100%", padding: "14px 15px", borderRadius: 16,
-  background: CARD, border: "1px solid rgba(255,255,255,0.08)",
-};
-
-const tileTitle: React.CSSProperties = {
-  fontSize: 15.5, fontWeight: 900, color: INK, letterSpacing: "-0.01em",
-};
-
-const tileSub: React.CSSProperties = {
-  fontSize: 12.5, fontWeight: 600, color: MUTED, lineHeight: 1.55, marginTop: 4,
-};

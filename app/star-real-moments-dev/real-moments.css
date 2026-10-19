@@ -1,0 +1,43 @@
+/* Real moments, option 2 (Harry, 19 Oct 2026: "real moments - option 2 is
+   sickkk"): the moments as a list on the left, the picked one big on the
+   right with Play under it. On a phone the picked one comes first. */
+.rm-file { position: relative; }
+.rm-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.rm-error { font-size: 13px; font-weight: 800; color: var(--bc-red); }
+.rm-layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; align-items: start; }
+.rm-rail { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.rm-main { position: sticky; top: 12px; min-width: 0; }
+.rm-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.rm-search { width: 100%; padding: 8px 10px; border-radius: 3px; border: 1px solid var(--bc-line); background: rgba(0, 0, 0, 0.3);
+  color: var(--bc-ink); font-size: 14px; }
+.rm-search::placeholder { color: var(--bc-ink3); }
+.rm-count { font-size: 12.5px; font-weight: 800; color: var(--bc-ink2); }
+.rm-list { display: flex; flex-direction: column; gap: 6px; max-height: 70vh; overflow-y: auto; padding-right: 2px; }
+.rm-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: center; text-align: left; padding: 6px; border: 1px solid transparent;
+  border-radius: 4px; cursor: pointer; color: var(--bc-ink); background: rgba(255, 255, 255, 0.04); }
+.rm-row:hover { background: rgba(255, 255, 255, 0.08); }
+.rm-row[aria-pressed="true"] { background: linear-gradient(100deg, rgba(27, 95, 214, 0.55), rgba(18, 63, 156, 0.25)); border-color: #39d7ff;
+  box-shadow: 0 0 0 1px rgba(57, 215, 255, 0.35), 0 0 14px rgba(57, 215, 255, 0.25); }
+.rm-thumb { width: 64px; height: 80px; border-radius: 3px; overflow: hidden; background: #0b1a3d; display: grid; place-items: center; }
+.rm-thumb canvas { display: block; }
+.rm-row b { display: block; font-size: 14px; font-weight: 900; font-style: italic; text-transform: uppercase; line-height: 1.15; }
+.rm-row span { display: block; font-size: 12px; color: var(--bc-ink2); line-height: 1.35; }
+.rm-row .rm-goal { color: #5ef0a0; font-weight: 800; }
+.rm-stage { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; align-items: flex-start; }
+.rm-pic { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.rm-pic canvas { border-radius: 4px; box-shadow: 0 10px 30px rgba(0, 4, 20, 0.55); }
+.rm-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--bc-line); }
+.rm-facts { font-size: 13px; font-weight: 800; color: var(--bc-ink2); }
+.rm-faults { font-size: 12px; font-weight: 800; color: var(--bc-amber); }
+@media (max-width: 760px) {
+  /* The two load buttons go on their own row under the title on a phone. */
+  .bc-head:has(.rm-file) { flex-wrap: wrap; }
+  .bc-head:has(.rm-file) .bc-banner { flex-basis: calc(100% - 54px); }
+  .bc-head:has(.rm-file) .bc-actions { flex-basis: 100%; }
+}
+@media (max-width: 900px) {
+  .rm-layout { grid-template-columns: minmax(0, 1fr); }
+  .rm-main { position: static; order: -1; }
+  .rm-list { max-height: none; overflow: visible; }
+}
+.bc:has(.rm-file) .bc-ph span { font-size: 12px; }

@@ -53,7 +53,11 @@ voice in the browser and saves the file into the recorder's OWN Drive, folder
 "Knowitball screen recordings" → <who> (in Harry's Drive that folder sits
 inside "Knowitball playtest recordings"), already set to "anyone with the link" and
 named `date · who · what (length).webm`. The person pastes
-"Watch this recording: <link>"; pass that link straight to `fetch.py`. Use the
+"Watch this recording: <link>"; pass that link straight to `fetch.py`.
+Since 19 Oct 2026 nobody has to paste it: the recorder also stores the link
+(/api/dev-recordings) and the UserPromptSubmit hook
+(`scripts/hooks/recordings-hook.mjs`) adds it to that person's next message
+with "break it down first". Treat that note exactly like a pasted link. Use the
 file's name for the breakdown's name (it already follows the rule in step 5).
 
 To pick up the newest video, use the Google Drive connector (`search_files`,
