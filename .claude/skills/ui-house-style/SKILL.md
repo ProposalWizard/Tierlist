@@ -71,6 +71,46 @@ Newest first. Each is something that was actually said.
 - **"As long as when you hover over it, it says what it is."** Every icon,
   tag and owner letter carries a hover label (`title`).
 
+### 18 Oct 2026 (third pass) — the transfer window keeps the Home look
+- **Colour, but in the Home screen's style, not another screen's.** The
+  Deadline Day version: "you did not really stick with the design style of
+  the homepage … it should be more of the same type of design style as the
+  home page". Use Home's tiles (dark glass lit from the top in one colour,
+  coloured edge), ScreenShell and the bottom bar. A special screen's look
+  (Deadline Day) stays on that screen.
+- **A grade's colour says how good it is**: S a strong positive green, A a
+  lighter green, B yellow, C orange, D red.
+- **A list you pick from is A to Z**, unless asked otherwise.
+- **Don't show a label that promises something the game doesn't do.** "Star
+  man / First team" became how keen the club is (Desperate, Very keen, Keen,
+  Interested) with a four-step bar.
+
+### 18 Oct 2026 (later) — the transfer window, second pass
+- **A chooser's list is a full-screen page, never a sheet.** The bottom
+  sheets for League and Club were "very horrible to look at … it should be a
+  pop-up that covers the whole page". ✕ goes back with nothing changed; a
+  pick goes back with the pick shown.
+- **Don't show a number the next screen is about** (the offered wage in the
+  club list: "should be hidden from the user until they actually start the
+  negotiation").
+- ~~**Too black and white is dull**: "a bit more colour … the vibe of the
+  deadline day screen".~~ Replaced by the third pass above: colour in the
+  Home style.
+- **A season grade is a letter** (S, A, B, C, D), not "Great"/"Crazy": "a
+  classic lettering system … makes you think, I need to get an A next season".
+
+### 18 Oct 2026 — the transfer window is New Star Soccer's screen
+- **"Just use the New Star Soccer system for now. And create that perfectly
+  with the same design style that we've been using for most of the stuff on
+  the home pages."** From a screenshot of NSS's "Desired Transfer": three big
+  rows, Nation → League → Club, each opening its list, then "Negotiate
+  contract with …", ✕ / ✓ at the bottom. My first drawing (every club in one
+  long scrolling page, grouped by league) was "quite messy … requires you to
+  scroll, probably, a lot". The main screen does not scroll; only a list
+  opened from a chooser may (`components/star/TransferHub.tsx`).
+- A league chooser only lists leagues where a club is interested; a club
+  list shows a European tag (NSS's "(CHAMPS)").
+
 ### 14 Oct 2026 — menus open on the tap's own frame (Harry)
 - **"There are too many animations in the menus. If I click on something, it
   should just go straight in."** A tap shows the next screen at once: no fade,

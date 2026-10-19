@@ -11,6 +11,7 @@
  */
 import { CLUB_KITS } from "../../kits";
 import { CLUB_PROFILES, COLOUR_WORDS } from "../../data/clubProfiles";
+import { NATION_KIT_PROFILES, nationWornKits } from "../../data/nationKits";
 
 export type KitPatternKind = "stripes" | "hoops" | "halves" | "sleeves";
 export interface KitPattern { kind: KitPatternKind; /** the second colour (the shirt is the first) */ colour: string }
@@ -61,6 +62,21 @@ function table(): Map<string, KitPattern | null> {
       else {
         const was = m.get(id);
         // two clubs with these colours that disagree: no pattern at all
+        if (!was || !pat || was.kind !== pat.kind || was.colour !== pat.colour) m.set(id, null);
+      }
+    }
+  }
+  // The nations too (data/nationKits.ts), by the colours they wear on the pitch.
+  for (const prof of Object.values(NATION_KIT_PROFILES)) {
+    const kits = nationWornKits(prof.nation);
+    if (!kits) continue;
+    for (const side of ["home", "away"] as const) {
+      const k = kits[side];
+      const pat = parseKitPattern(side === "home" ? prof.homeKit.pattern : prof.awayKit.pattern, k.shirt, k.trim);
+      const id = key(k.shirt, k.trim);
+      if (!m.has(id)) m.set(id, pat);
+      else {
+        const was = m.get(id);
         if (!was || !pat || was.kind !== pat.kind || was.colour !== pat.colour) m.set(id, null);
       }
     }

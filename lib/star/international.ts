@@ -34,6 +34,7 @@ import { displayOverall } from "./rating";
 import { divisionOf, fixtureTimestamp, weekOnWeekend, type CareerDivision } from "./calendar";
 import { nationOf, nextFixtureFor, tournamentFor } from "./competitions";
 import type { ClubKits } from "./kits";
+import { nationWornKits } from "./data/nationKits";
 import { myNation, squadFor, squadAsLeague, nationStrengthNow } from "./intl/career";
 import { rankingStrength, nationFor } from "./intl/nations";
 
@@ -113,27 +114,17 @@ export function callUpBar(nation: string): number {
   return nationStrength(nation) - 8;
 }
 
-/** A few national colours; everyone else wears the neutral kit pair. */
-const NATION_KITS: Record<string, ClubKits> = {
-  England: { home: { shirt: "#f8fafc", trim: "#1e3a8a" }, away: { shirt: "#b91c1c", trim: "#f8fafc" } },
-  Scotland: { home: { shirt: "#1e3a8a", trim: "#f8fafc" }, away: { shirt: "#f8fafc", trim: "#1e3a8a" } },
-  Wales: { home: { shirt: "#dc2626", trim: "#16a34a" }, away: { shirt: "#f8fafc", trim: "#dc2626" } },
-  France: { home: { shirt: "#1e3a8a", trim: "#f8fafc" }, away: { shirt: "#f8fafc", trim: "#1e3a8a" } },
-  Brazil: { home: { shirt: "#facc15", trim: "#15803d" }, away: { shirt: "#1d4ed8", trim: "#f8fafc" } },
-  Argentina: { home: { shirt: "#7dd3fc", trim: "#f8fafc" }, away: { shirt: "#1e293b", trim: "#7dd3fc" } },
-  Spain: { home: { shirt: "#b91c1c", trim: "#facc15" }, away: { shirt: "#f8fafc", trim: "#b91c1c" } },
-  Germany: { home: { shirt: "#f8fafc", trim: "#111827" }, away: { shirt: "#111827", trim: "#f8fafc" } },
-  Portugal: { home: { shirt: "#991b1b", trim: "#15803d" }, away: { shirt: "#f8fafc", trim: "#991b1b" } },
-  Netherlands: { home: { shirt: "#f97316", trim: "#f8fafc" }, away: { shirt: "#1e3a8a", trim: "#f97316" } },
-  Italy: { home: { shirt: "#1d4ed8", trim: "#f8fafc" }, away: { shirt: "#f8fafc", trim: "#1d4ed8" } },
-  Belgium: { home: { shirt: "#b91c1c", trim: "#111827" }, away: { shirt: "#f8fafc", trim: "#b91c1c" } },
-  Croatia: { home: { shirt: "#f8fafc", trim: "#dc2626" }, away: { shirt: "#1e3a8a", trim: "#f8fafc" } },
-  "Republic of Ireland": { home: { shirt: "#15803d", trim: "#f8fafc" }, away: { shirt: "#f8fafc", trim: "#15803d" } },
-  USA: { home: { shirt: "#f8fafc", trim: "#1e3a8a" }, away: { shirt: "#1e3a8a", trim: "#dc2626" } },
-};
-
+/**
+ * Every nation's real home and away kit (data/nationKits.ts: each national
+ * team's current Wikipedia kit, every one checked by eye). Before 13 Oct
+ * 2026 only 15 nations had colours and the other 196 wore grey.
+ *
+ * Shirt and trim are the game's two kit colours; a trim the eye can't tell
+ * from its shirt is swapped for white or black (the real words stay on
+ * /admin/clubs). A nation the data doesn't know still gets the neutral pair.
+ */
 export function nationKits(nation: string): ClubKits {
-  return NATION_KITS[nation] ?? {
+  return nationWornKits(nation) ?? {
     home: { shirt: "#e5e7eb", trim: "#374151" }, away: { shirt: "#374151", trim: "#e5e7eb" },
   };
 }

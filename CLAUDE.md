@@ -177,11 +177,40 @@ Full session-by-session history moved to `SESSION_LOG.md` (not auto-loaded as co
 
 ---
 
+## Transfers for your own player: the window list (18 Oct 2026)
+
+Only in the summer window (end of season). No January moves for your player
+("the only way you should be able to transfer is from the summer window";
+`januaryTransfer.ts` stays in the files, unused). One screen in the Home
+screen's look (`components/star/TransferHub.tsx`): League → Club → Negotiate,
+each list a full-screen page (✕ goes back unchanged), clubs A to Z. No Nation
+row (England only). No wage in the club list; you see their offer in the
+talks. Your season is a letter, S best then A, B, C, D, green to red. Each
+club says how keen it is (Desperate, Very keen, Keen, Interested, with a
+bar); it changes nothing after you sign. Who is interested:
+`lib/star/transferInterest.ts` — the letter sets how high clubs can come
+from (B +1, A +2, S +3, never more); inside that, a club's aim rises with its
+size and where it finished, and a gap in your position helps. Talks are the
+usual NegotiationScreen; a club that walks away is off the list until next
+summer. Your club is shown a fee (no club budgets yet: future work). "Find a
+new club" (Stats → Contract) is gone. Not built on purpose: transfer
+request, scouts watching, agents, loans, promises, moves abroad.
+
 ## Ballon d'Or winners data (Mikey, 8 Oct 2026)
 
 Every men's winner 1956–2025, from ballondor.com only, for a future game
 mode: `data/ballondor/` (read its README). Page:
 https://claude.ai/artifact/11KW1FQ1dKfbg68xSpjcmC
+
+## Nation kits: every nation's real home and away kit (Leo, 13 Oct 2026)
+
+`lib/star/data/nationKits.ts` reads `lib/star/data/sources/nation_kits_2026-10.json`:
+211 nations, shirt / second colour / pattern words / sleeves / shorts / socks,
+from each national team's Wikipedia kit box, every kit checked by eye.
+`international.ts`'s `nationKits` wears them in every international match.
+Shown on `/admin/clubs` → International. Redo next season with
+`scripts/nation-kits/` (read its README). Only 86 of 211 nations have a drawn
+flag (`lib/star/nationFlags.ts`); the rest show two bands in their kit colours.
 
 ## Blender runs in the cloud sessions (Mikey, 8 Oct 2026)
 

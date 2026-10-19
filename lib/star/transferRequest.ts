@@ -12,6 +12,14 @@ import {
 } from "./economy";
 
 /**
+ * ── 18 Oct 2026: the asking screen is gone ──
+ * "Find a new club" (ask a league any week) was replaced by the transfer
+ * window's list of interested clubs: lib/star/transferInterest.ts and
+ * components/star/TransferHub.tsx ("It should only be in the transfer
+ * windows, which are January and the summer"). Nothing in the game calls
+ * askForMove/summerWindowOffers any more; squadNeed, positionGroup,
+ * playerOverall and the constants below are still used by transferInterest.ts.
+ *
  * ASKING FOR A MOVE (roadmap #2, Leo 11 Oct 2026).
  *
  * Before this, a move was something that happened TO you: up to three clubs
