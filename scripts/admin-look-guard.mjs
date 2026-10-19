@@ -16,7 +16,7 @@ import path from "node:path";
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const NOT_YET = new Set([
   "/star-goal-clips-dev",
-  "/star-highlights-dev", "/star-play-dev", "/star-update-dev",
+  "/star-play-dev", "/star-update-dev",
   "/star-dribble-stick-dev",
   "/star-tournament-dev", "/lineups", "/admin/clubs",
   "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev",

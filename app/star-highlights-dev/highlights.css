@@ -1,0 +1,123 @@
+/* Infinite Highlights (Harry, 19 Oct 2026: option 2, "this just isn't what it
+   looks like in game but option 2"). The chance itself is the real game's
+   picture and the real match (EditableFrame / ScenarioPlay), untouched; this
+   file only styles what sits around it: the TV caption, Next, the strip of
+   chances already seen, and the fix tools. */
+
+.ih-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ih-tools .ih-grow { flex: 1; }
+.ih-count { font-family: ui-monospace, monospace; color: var(--bc-amber); }
+.ih-tools .bc-btn[data-flagged] { background: #8a5a00; }
+
+/* Computer: the chance on the left, the fix tools on the right. */
+.ih-run { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; align-items: start; }
+.ih-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+@media (min-width: 981px) { .ih-side { position: sticky; top: 12px; } }
+@media (max-width: 980px) { .ih-run { grid-template-columns: minmax(0, 1fr); } }
+
+/* The stage: the real picture, with a TV caption under it. */
+.ih-stagebox { padding: 12px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ih-stage { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; min-width: 0; }
+.ih-lower { display: flex; align-items: stretch; justify-content: center; max-width: 100%; margin-top: -2px; }
+.ih-lower-text { display: flex; align-items: baseline; gap: 10px; min-width: 0; padding: 9px 22px 9px 18px; background: #07142f;
+  border-bottom: 4px solid var(--bc-amber); clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+.ih-lower-text b { font-size: clamp(20px, 2.4vw, 28px); font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: .01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ih-lower-text span { font-size: clamp(16px, 2vw, 22px); font-weight: 900; font-style: italic; color: var(--bc-amber); font-family: ui-monospace, monospace; white-space: nowrap; }
+.ih-flag { width: 52px; flex: none; border: 0; cursor: pointer; display: grid; place-items: center; font-size: 22px; color: #fff;
+  background: var(--bc-blue2); clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); margin-left: -6px; }
+.ih-flag[aria-pressed="true"] { background: var(--bc-amber); color: #1a1300; }
+.ih-fault { text-align: center; color: #ff8a95; font-size: 14px; font-weight: 800; line-height: 1.35; }
+.ih-plan { text-align: center; color: var(--bc-ink3); font-size: 12px; font-family: ui-monospace, monospace; overflow-wrap: anywhere; }
+
+/* Previous / Next. */
+.ih-transport { display: flex; gap: 10px; width: 100%; max-width: 560px; margin: 0 auto; }
+.ih-prev { width: 64px; flex: none; height: 58px; border: 0; cursor: pointer; font-size: 26px; font-weight: 900; color: #fff;
+  background: var(--bc-blue2); clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.ih-prev:disabled { opacity: .35; cursor: default; }
+.ih-next { flex: 1; height: 58px; border: 0; cursor: pointer; font-size: 26px; font-weight: 900; font-style: italic; text-transform: uppercase; color: #fff;
+  background: linear-gradient(100deg, var(--bc-accent), var(--bc-blue)); clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+.ih-next:hover { filter: brightness(1.12); }
+
+/* The chances already seen this visit. */
+.ih-strip-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ih-strip-head b { font-size: 15px; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.ih-strip { position: relative; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+.ih-thumb { flex: none; width: 104px; padding: 0; border: 2px solid transparent; border-radius: 4px; cursor: pointer; background: #07142f; color: var(--bc-ink);
+  display: flex; flex-direction: column; overflow: hidden; }
+.ih-thumb[aria-current="true"] { border-color: #fff; }
+.ih-thumb canvas { display: block; width: 100%; height: auto; }
+.ih-thumb span { padding: 4px 5px; font-size: 12px; font-weight: 900; font-style: italic; text-transform: uppercase; text-align: left;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ih-thumb span i { font-style: normal; color: var(--bc-amber); font-family: ui-monospace, monospace; margin-right: 4px; }
+
+.ih-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px; padding-top: 4px; border-top: 1px solid var(--bc-line);
+  font-size: 13px; font-weight: 900; font-style: italic; text-transform: uppercase; color: var(--bc-ink2); }
+.ih-keys kbd { font-family: ui-monospace, monospace; font-style: normal; color: var(--bc-amber); margin-right: 5px; }
+
+/* Small labels stay readable on a phone (12 px at least). */
+.ih-seen { font-size: 12px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: var(--bc-ink3); }
+.ih-side .bc-ph span { font-size: 12px; }
+
+/* Fix tools. */
+.ih-edit { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.ih-ebtn { height: 44px; min-width: 0; padding: 0 4px; border-radius: 3px; border: 1px solid var(--bc-line); background: rgba(255, 255, 255, 0.05);
+  color: var(--bc-ink); font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ih-ebtn:hover:not(:disabled) { background: rgba(47, 140, 255, 0.18); }
+.ih-ebtn:disabled { color: var(--bc-ink3); opacity: .55; cursor: default; }
+.ih-ebtn[data-tone="play"] { color: #4ade80; }
+.ih-ebtn[data-tone="stop"] { color: #7dd3fc; }
+.ih-ebtn[data-tone="red"] { color: #ff8a95; }
+.ih-ebtn[data-tone="tune"] { color: #c4b5fd; }
+.ih-ebtn[data-tone="dim"] { color: var(--bc-ink2); }
+
+.ih-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.ih-pills span { font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 3px; border: 1px solid var(--bc-line); color: var(--bc-ink2); background: rgba(255, 255, 255, 0.04); }
+.ih-pills span[data-tone="amber"] { color: #fcd34d; background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.45); }
+.ih-pills span[data-tone="green"] { color: #86efac; background: rgba(34, 197, 94, 0.14); border-color: rgba(34, 197, 94, 0.45); }
+.ih-pills span[data-tone="blue"] { color: #7dd3fc; background: rgba(56, 189, 248, 0.14); border-color: rgba(56, 189, 248, 0.45); }
+.ih-pills span[data-tone="violet"] { color: #c4b5fd; background: rgba(167, 139, 250, 0.14); border-color: rgba(167, 139, 250, 0.4); }
+
+.ih-save { display: flex; gap: 8px; }
+.ih-sbtn { flex: 1; height: 50px; min-width: 0; border: 0; cursor: pointer; font-size: 16px; font-weight: 900; font-style: italic; text-transform: uppercase;
+  color: #fff; background: #1d4fae; clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ih-sbtn[data-tone="save"] { flex: 1.4; background: #15803d; }
+.ih-sbtn[data-tone="commit"] { background: var(--bc-amber); color: #1a1300; }
+.ih-sbtn[data-tone="quiet"] { background: rgba(255, 255, 255, 0.08); color: var(--bc-ink2); }
+.ih-sbtn:disabled { opacity: .45; cursor: default; }
+.ih-warn { border-radius: 3px; padding: 9px 12px; background: rgba(245, 158, 11, 0.13); border: 1px solid rgba(245, 158, 11, 0.4); color: #fcd34d;
+  font-size: 13px; font-weight: 700; line-height: 1.4; }
+.ih-flash { font-size: 13px; font-weight: 800; line-height: 1.4; color: #4ade80; }
+.ih-flash[data-bad] { color: #ff8a95; }
+
+/* Which highlights. */
+.ih-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ih-chips .bc-pill { font-size: 14px; padding: 10px 14px; text-transform: capitalize; }
+.ih-shootout { width: 100%; height: 52px; border: 0; cursor: pointer; font-size: 17px; font-weight: 900; font-style: italic; text-transform: uppercase;
+  color: #1a1300; background: var(--bc-amber); clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+.ih-watch { position: sticky; bottom: 12px; z-index: 5; }
+.ih-watch .ih-next { width: 100%; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); }
+.ih-watch .ih-next:disabled { opacity: .4; cursor: default; }
+.ih-empty { text-align: center; color: var(--bc-ink2); font-size: 15px; font-weight: 800; padding: 20px 0; }
+
+/* Flagged list. */
+.ih-flags { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+.ih-frow { display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: 4px; background: rgba(4, 14, 40, 0.6); border: 1px solid var(--bc-line); min-width: 0; }
+.ih-frow canvas { border-radius: 3px; flex: none; }
+.ih-frow-txt { flex: 1; min-width: 0; }
+.ih-frow-txt b { display: block; font-size: 16px; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.ih-frow-txt small { display: block; font-family: ui-monospace, monospace; font-size: 12px; color: var(--bc-ink3); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ih-frow-txt em { display: block; font-style: normal; color: #ff8a95; font-size: 13px; font-weight: 700; margin-top: 3px; }
+.ih-frow-txt strong { display: block; color: #4ade80; font-size: 12px; font-weight: 800; margin-top: 3px; }
+.ih-frow button { width: 44px; height: 44px; flex: none; border: 0; cursor: pointer; font-size: 22px; font-weight: 900; color: #fff; background: var(--bc-blue);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+
+@media (max-width: 640px) {
+  /* The real match is the screen's width less 24 px; the frame's 14 px side
+     margins would shrink it, so the stage reaches nearer the edges. */
+  .ih-stagebox { margin: 0 -10px; padding: 4px 4px 12px; }
+  .ih-keys { display: none; }
+  .ih-lower-text { padding: 8px 18px 8px 14px; }
+  .ih-prev, .ih-next { height: 60px; }
+}
