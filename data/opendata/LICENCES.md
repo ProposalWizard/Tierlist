@@ -81,11 +81,37 @@ their notices to travel with copies (kept in `licences/`).
 
 ---
 
+## Real moments (`data/realmoments/`, 19 Oct 2026)
+
+Harry: "We aren't getting licensing, so rebuild Real moments and Real shots
+(and Real Goals) with free-licensed data." Unlike the pattern files above,
+these files DO keep single real moments: every shot and corner of the 7 IDSSE
+and 20 SkillCorner matches with all 22 positions and 4 s of movement, and every
+World Cup 2018 / Euro 2016 shot from Wyscout with the passes before it. All
+three licences allow that (CC BY 4.0 and MIT allow copying and adapting, with
+credit; nothing in them limits it to aggregates). Made by
+`scripts/realmoments/` (read `data/realmoments/README.md`).
+
+**Credit lines to show** on any page or screen that uses them (the pages show
+the lines for the sources they draw on; `lib/star/realMoments` `REAL_CREDIT`
+holds them):
+> Real shots and goals from the Wyscout public dataset (Pappalardo et al., Scientific Data 2019), CC BY 4.0. Changes made.
+
+> Real player positions from data of the Deutsche Fußball Liga (DFL), published by Bassek et al., Scientific Data 2025, CC BY 4.0. Changes made.
+
+> Real player positions from SkillCorner Open Data (MIT licence, © 2020 SkillCorner).
+
+Changes made: positions turned into our pitch frame and rounded to 0.1 m,
+sampled every 0.2 s; Wyscout positions mapped so the markings land on ours;
+a chance-of-a-goal number from our own model where the source has none.
+
+---
+
 ## Checked and NOT used
 
 | Source | Why not | Licence line |
 |---|---|---|
-| StatsBomb Open Data (3,961 matches, 426 with 360 freeze frames) | Forbids commercial use | User Agreement §1.2.2: "The User may not … commercially exploit the data or any analysis derived from the use of the Service" (https://github.com/statsbomb/open-data/blob/master/LICENSE.pdf, 8 Sep 2023). Already in the repo for the test page only (`data/statsbomb/`). |
+| StatsBomb Open Data (3,961 matches, 426 with 360 freeze frames) | Forbids commercial use | User Agreement §1.2.2: "The User may not … commercially exploit the data or any analysis derived from the use of the Service" (https://github.com/statsbomb/open-data/blob/master/LICENSE.pdf, 8 Sep 2023). Deleted from the repo on 19 Oct 2026 (it was `data/statsbomb/`, test pages only). |
 | IMPECT Open Data (Bundesliga 2023/24, 306 matches) | Forbids commercial use | Terms §2.2: "The User may not: … Use the data for any commercial purposes." (https://github.com/ImpectAPI/open-data/blob/main/LICENSE.pdf) |
 | Metrica Sports sample data (3 matches, tracking + events) | No licence granted | README "Legal stuff": "Please be responsible with the use of this data. If you use it for anything public, please aknowledge the source." No licence file. Ask Metrica in writing before use. |
 | PFF FC World Cup 2022 (64 matches, tracking + events) | Behind a sign-up form; terms not public | Blog: "fill out the form below to gain instant access" — no licence shown. Ask PFF (fchelp@pff.com). |

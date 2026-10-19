@@ -289,33 +289,39 @@ export function scenarioForShot(s: RealShot, opts: { wideFrame?: boolean } = {})
 }
 
 /**
- * A real corner as our corner chance: YOU take it from the real flag, and
- * every real man inside the corner's camera stands where he stood.
+ * A real corner as our corner chance: YOU take it from the real flag (the
+ * ball on the corner arc), and every real man stands where he stood. The
+ * camera is the corner's own (the side-on picture), widened along the goal
+ * line until every real man in and around the box is on it.
  */
 export function scenarioForCorner(c: RealCorner): Scenario {
   const seed = seedForShot(c);
   const sc = buildScenario("corner", mulberry32(seed));
   const p = peopleOf(c);
   const flagRight = p.ball.x > CX;
-  const builtRight = sc.ball.x > CX;
+  const flip = flagRight !== sc.ball.x > CX;
+  const ball = { x: flagRight ? PITCH_W - 0.6 : 0.6, y: 0.6 };
   const frame = frameFromScenario(sc);
-  const ov: PosOverride = { items: {}, removed: [], added: [], ball: rv(p.ball) };
-  if (flagRight !== builtRight) ov.facing = sc.facing === "left" ? "right" : sc.facing === "right" ? "left" : flagRight ? "right" : "left";
-  // The camera: the corner's own, mirrored to the real flag when it was built on the other one.
+  const ov: PosOverride = { items: {}, removed: [], added: [], ball: rv(ball) };
+  if (flip) ov.facing = flagRight ? "right" : "left";
+  // The corner's own camera, on the real flag's side, widened to the far real man near the box.
   const v = sc.viewport;
-  const cam = flagRight !== builtRight ? { x1: r2(PITCH_W - v.x2), x2: r2(PITCH_W - v.x1), y1: v.y1, y2: v.y2 } : { ...v };
+  let x1 = flip ? PITCH_W - v.x2 : v.x1, x2 = flip ? PITCH_W - v.x1 : v.x2;
+  const box = [...p.opps, ...p.mates, ...(p.keeper ? [p.keeper] : [])].filter((q) => q.y < 22);
+  if (flagRight) x1 = Math.min(x1, ...box.map((q) => q.x - 3));
+  else x2 = Math.max(x2, ...box.map((q) => q.x + 3));
+  const h = (x2 - x1) * ((v.y2 - v.y1) / (v.x2 - v.x1));
+  const cam = { x1: r2(x1), x2: r2(x2), y1: v.y1, y2: r2(v.y1 + h) };
   ov.camera = cam;
   for (const it of frame.items) if (it.removable) ov.removed!.push(it.id);
   const keeperItem = frame.items.find((it) => it.keeper);
   const youItem = frame.items.find((it) => it.side === "you");
   if (keeperItem && p.keeper) ov.items[keeperItem.id] = rv(p.keeper);
-  if (youItem) {
-    // Just behind the ball, off the pitch side of the flag.
-    ov.items[youItem.id] = rv({ x: p.ball.x + (flagRight ? 0.8 : -0.8), y: p.ball.y + 0.6 });
-  }
+  // YOU stand where the game's own taker stands from the ball (mirrored to the real flag).
+  if (youItem) ov.items[youItem.id] = rv({ x: ball.x + (sc.player.x - sc.ball.x) * (flip ? -1 : 1), y: ball.y + (sc.player.y - sc.ball.y) });
   let n = 0;
   for (const [q, mate] of [...p.opps.map((o) => [o, false] as const), ...p.mates.map((m) => [m, true] as const)]) {
-    if (!onScreen(cam, q) || Math.hypot(q.x - p.ball.x, q.y - p.ball.y) < 0.6) continue;
+    if (!onScreen(cam, q) || Math.hypot(q.x - ball.x, q.y - ball.y) < 1.5) continue;
     const aid = `add${++n}`;
     ov.added!.push({ id: aid, side: mate ? "teammate" : "opponent" });
     ov.items[aid] = rv(q);

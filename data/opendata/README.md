@@ -9,8 +9,11 @@ is stored, and the game must never replay one. Every source allows commercial
 use; the exact licence lines and the credit lines the game must show are in
 [`LICENCES.md`](LICENCES.md). Read that before shipping anything built on it.
 
-Not to be confused with `data/statsbomb/` (StatsBomb, test page only — its
-licence forbids commercial use).
+Single real moments (real shots and corners with everyone's positions, for
+the Real moments / Real shots / Real Goals pages and the highlights rebuild)
+are in `data/realmoments/`, from the same cleared sources. The StatsBomb data
+that used to sit in `data/statsbomb/` was deleted on 19 Oct 2026 (its licence
+forbids commercial use).
 
 ## What went in
 

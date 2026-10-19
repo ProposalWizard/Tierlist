@@ -107,10 +107,11 @@ def refine_shot(m, f0, actor, step, span):
 
 
 def refine_corner(m, f0, step, span, after=None, latest=False):
-    """The kick: the frame the ball sits by a corner flag before it flies off
-    (nearest f0; `latest`: the last one up to f0 + after)."""
+    """The kick: of the frames the ball sits by a corner flag and then flies
+    off, the one it is nearest the flag (the latest of those within 0.3 m of
+    that). `after`: how far past f0 to look (default span)."""
     k = int(round(0.6 / STEP_S)) * step
-    best = None
+    cands = []
     for f in range(f0 - span, f0 + (span if after is None else after) + 1, step):
         a, b = m.at(f), m.at(f + k)
         if not a or not a[0] or not b or not b[0]:
@@ -119,8 +120,12 @@ def refine_corner(m, f0, step, span, after=None, latest=False):
         if abs(abs(bx) - m.length / 2) > 3 or abs(by) < 26:
             continue
         if math.hypot(b[0][0] - bx, b[0][1] - by) > 4:
-            best = f if best is None or (f > best if latest else abs(f - f0) < abs(best - f0)) else best
-    return best
+            cands.append((math.hypot(abs(bx) - m.length / 2, abs(by) - 34), f))
+    if not cands:
+        return None
+    best = min(c[0] for c in cands)
+    near = [f for dd, f in cands if dd <= best + 0.3]
+    return max(near) if latest else min(near, key=lambda f: abs(f - f0))
 
 
 def taker(m, f, team):
@@ -186,6 +191,12 @@ def moment(m, f, team, actor, flip, meta, kind, step):
     pic = picture(m, f, team, actor, flip)
     if not pic:
         return None, None
+    # The attacked goal is the one THEIR keeper stands in: a wrong period
+    # direction (a keeper change, a mislabelled half) is caught here.
+    gk = [xy for _, sd, xy in pic[2] if sd == "keeper"]
+    if gk and gk[0][1] > 52.5:
+        flip = not flip
+        pic = picture(m, f, team, actor, flip)
     ball, bz, people = pic
     if not any(s == "you" for _, s, _ in people):
         return None, None

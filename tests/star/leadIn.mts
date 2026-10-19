@@ -1,5 +1,5 @@
 /**
- * The Real shots lead-in (lib/star/statsbombShots.ts leadinTrack, played by
+ * The Real shots lead-in (lib/star/realMoments leadinTrack, played by
  * CanvasMatch's `leadIn` through lib/star/leadIn.ts): the real passes before
  * a real shot, replayed in the match's own picture, then the chance.
  *
@@ -15,12 +15,16 @@
  *     shot's own frame once the ball is in the lock box (LEAD_LOCK_AREA), and
  *     its biggest move in one frame (1/60 s) is measured.
  * The chance is the page's: the wide Play frame (scenarioForShot wideFrame).
+ * The shots: Wyscout's World Cup 2018 / Euro 2016 (data/realmoments; placed
+ * defenders, real passes). Until 19 Oct 2026 these were 2022/24 shots from a source
+ * shots with a 360 start frame; Wyscout has none, so every man here starts
+ * from his team's shape.
  */
 import { readFileSync } from "node:fs";
 import {
-  scenarioForShot, leadinTrack, sbToPitch, LEAD_MAX_S, LEAD_HOLD_S,
-  type SbFile, type SbLeadinFile,
-} from "../../lib/star/statsbombShots";
+  scenarioForShot, leadinTrack, P, LEAD_MAX_S, LEAD_HOLD_S,
+  type WyscoutShotFile, type RealLead,
+} from "../../lib/star/realMoments";
 import { leadInEntities, leadInCamera, inLockArea, LEAD_LOCK_AREA } from "../../lib/star/leadIn";
 import { chaseNumbers } from "./realShotsChase.mts";
 
@@ -30,8 +34,8 @@ function check(label: string, ok: boolean, got?: unknown) {
 }
 const d = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 
-const shots = (JSON.parse(readFileSync("data/statsbomb/shots.json", "utf8")) as SbFile).shots;
-const leads = (JSON.parse(readFileSync("data/statsbomb/leadins.json", "utf8")) as SbLeadinFile).leadins;
+const shots = (JSON.parse(readFileSync("data/realmoments/wyscout_shots.json", "utf8")) as WyscoutShotFile).shots;
+const leads: Record<string, RealLead> = Object.fromEntries(shots.filter((s) => s.lead).map((s) => [s.id, s.lead!]));
 const withLead = shots.filter((s) => (leads[s.id]?.passes.length ?? 0) >= 1);
 check(`shots with a lead-in: ${withLead.length}`, withLead.length > 500);
 
@@ -50,7 +54,7 @@ for (const s of withLead) {
   const ts = tr.ballKeys.map((k) => k.t);
   if (ts.some((t, i) => i > 0 && t < ts[i - 1] - 1e-9)) backwards++;
   if (tr.durS > LEAD_MAX_S + 1e-6) tooLong++;
-  if (d(tr.ballAt(0), sbToPitch(lead.passes[0][1])) > 1e-6) startBall++;
+  if (d(tr.ballAt(0), P(lead.passes[0][1])) > 1e-6) startBall++;
   const be = tr.ballAt(tr.durS);
   if (d(be, sc.ball) > 1e-6 || be.z !== 0) endBall++;
   // Everyone ends exactly where the chance has him; nobody jumps in the last frame.

@@ -69,7 +69,6 @@ import {
 import { separateBodies } from "./spacing";
 import { finishServedFrame } from "./goalFrame";
 import { CX, PITCH_W } from "./pitch";
-import { buildKaneMoment, dealKaneMoment, type KaneMoment } from "./kaneMoments";
 import { mulberry32 } from "./season";
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -583,16 +582,13 @@ export interface MakeChanceOptions {
   /** Deal open play from the real mix, not the even one (kindMix.ts's
    *  REAL_MIX; Settings → Match → Chance mix). Absent: the even mix. */
   realMix?: boolean;
-  /** Real Kane drawings to deal from (kaneMoments.ts; Settings → Match →
-   *  Kane drawings). Absent or null: the game's own, exactly as before. */
-  kaneDrawings?: KaneMoment[] | null;
 }
 
 export interface MadeChance {
   sc: Scenario;
   /** The drawn/generated shape laid on (null for a plan or the builder). */
   shape: AuthoredShape | null;
-  how: "drawing" | "plan" | "builder" | "kane";
+  how: "drawing" | "plan" | "builder";
   appliedPlan: boolean;
   appliedAuthored: boolean;
   sourceId: string | null;
@@ -678,18 +674,6 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     const k2 = drawnKindFor(kind);
     if (k2 !== kind) { kind = k2; plan = null; first = null; }
     if (o.selection) noteDealt((o.selection.dealt ??= []), kind);
-  }
-
-  // ── 1a. Kane drawings (testing): one of Kane's real moments of this kind ──
-  if (o.kaneDrawings?.length) {
-    const km = dealKaneMoment(kind, rng, o.kaneDrawings);
-    if (km) {
-      const sc = buildKaneMoment(km);
-      return {
-        sc, shape: null, how: "kane", appliedPlan: false, appliedAuthored: true, sourceId: km.id,
-        faultRebuilds: 0, memoryRebuilds: 0, faults: km.faults, nearestRecent: Infinity, separated: 0,
-      };
-    }
   }
 
   // ── 2. A kind with fewer than 5 drawings: the formula's plan or the builder ──

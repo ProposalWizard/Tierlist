@@ -6,8 +6,8 @@
  * maybe like score hero system of going up the levels getting harder and
  * stars". His dad: "ghost thing like mariokart where u see the real goal".
  *
- * A level map of real World Cup 2022 / Euro 2024 goals (5 stages × 10, easiest
- * first, stars unlock the next), and a search of all 250. Each goal is played
+ * A level map of real World Cup 2018 / Euro 2016 goals (5 stages × 10, easiest
+ * first, stars unlock the next), and a search of all 232. Each goal is played
  * in the real match (EnginePlay, the one engine): the real move replayed first,
  * then the shot is yours, with the real goal's ball as a ghost. Score it, and
  * the closer it crosses the line to where the real one did, the more stars.
@@ -16,8 +16,11 @@
  * (Scenario.realLane: a strike on the real line is not blocked or saved, as the
  * real one was not) are test-only, off everywhere else.
  *
- * Data: StatsBomb open data (https://github.com/statsbomb/open-data). Test only:
- * the licence for a paid game is not cleared, so none of this is in the game.
+ * Data (Harry, 19 Oct 2026: rebuilt on free-licensed data): the Wyscout public
+ * dataset, CC BY 4.0 — the scorer, minute, sides, score, where it was struck,
+ * where it went in and the real passes before it. Wyscout has nobody's
+ * position off the ball, so the defenders and keeper are placed by the game's
+ * own rules (lib/star/realMoments, "placed"). Credit: REAL_CREDIT.wyscout.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
@@ -30,10 +33,10 @@ import type { Scenario } from "@/lib/star/canvasEngine";
 import type { LeadIn } from "@/lib/star/leadIn";
 import { DEFAULT_PLAY_SETTINGS, type PlaySettings } from "@/lib/star/playArea";
 import { CX, POST_L, POST_R } from "@/lib/star/pitch";
-import { STATSBOMB_CREDIT, leadinTrack, type SbFile, type SbLeadinFile, type SbLeadin } from "@/lib/star/statsbombShots";
+import { REAL_CREDIT, PICTURE_WORDS, leadinTrack, fetchRealFile, type WyscoutShotFile } from "@/lib/star/realMoments";
 import {
   joinGoals, buildLevels, levelOpen, totalStars, recordResult, loadProgress, saveProgress,
-  accuracyPct, starsFor, realEnd, scenarioForGoal, viewForGoal, realMoveLeadin, moveWindow, realBallKeys, isNamedFor,
+  accuracyPct, starsFor, realEnd, scenarioForGoal, viewForGoal, realMoveLeadin, moveWindow, realBallKeys,
   scorerShort, concededBy, minuteOf, knownAs, NATION_KITS, FEATURED, STAR_TWO, STAR_THREE,
   type RealGoal, type RgFile, type Progress, type Stage, type Level,
 } from "@/lib/star/realGoals";
@@ -93,8 +96,8 @@ function GoalMouth({ real, you }: { real: { x: number; z: number }; you: { x: nu
 
 interface Attempt { scored: boolean; pct: number; stars: number; you: { x: number; z: number } | null; outcome: string; best: boolean }
 
-function PlayGoal({ goal, lead, level, onClose, onResult, onNext }: {
-  goal: RealGoal; lead?: SbLeadin; level: Level | null;
+function PlayGoal({ goal, level, onClose, onResult, onNext }: {
+  goal: RealGoal; level: Level | null;
   onClose: () => void; onResult: (stars: number, pct: number) => void; onNext?: () => void;
 }) {
   const [ghostOn, setGhostOn] = useState(true);
@@ -124,11 +127,11 @@ function PlayGoal({ goal, lead, level, onClose, onResult, onNext }: {
 
   const view = useMemo(() => viewForGoal(goal, ghostOn), [goal, ghostOn]);
   const openOn = useMemo(() => () => scenarioForGoal(goal), [goal]);
-  const realLead = useMemo(() => (lead ? realMoveLeadin(goal, lead) : realMoveLeadin(goal)), [goal, lead]);
-  const win = useMemo(() => moveWindow(goal, lead), [goal, lead]);
+  const realLead = useMemo(() => realMoveLeadin(goal), [goal]);
+  const win = useMemo(() => moveWindow(goal), [goal]);
   const leadIn = useCallback((sc: Scenario): LeadIn | null => {
     if (!realLead) return null;
-    const track = leadinTrack(goal.shot, realLead, sc, { ballKeys: (end) => realBallKeys(goal, win, end), isNamed: isNamedFor(goal, sc) });
+    const track = leadinTrack(goal.shot, realLead, sc, { ballKeys: (end) => realBallKeys(goal, win, end) });
     let last = "";
     return {
       ...track,
@@ -176,7 +179,7 @@ function PlayGoal({ goal, lead, level, onClose, onResult, onNext }: {
             <Swatch team={x.home} /> {x.home} {x.score[0]}–{x.score[1]} {x.away} <Swatch team={x.away} /> <span className="text-emerald-300">· {minuteOf(goal)}&apos;</span>
           </div>
           <div className="mt-0.5 text-sm font-bold">
-            You are <b className="text-yellow-300">{knownAs(goal, s.player)}</b> ({s.team}) · {s.technique === "Normal" ? s.body : s.technique} · xG {Math.round(s.xg * 100)}%
+            You are <b className="text-yellow-300">{knownAs(goal, s.player)}</b> ({s.team}) · {s.body} · xG {Math.round(s.xg * 100)}%
           </div>
           {featured && <div className="text-xs font-bold text-sky-300">{featured.label}</div>}
         </div>
@@ -377,7 +380,6 @@ const TAB_KEY = "star-real-goals-tab";
 
 export default function RealGoalsDev() {
   const [goals, setGoals] = useState<RealGoal[] | null>(null);
-  const [leads, setLeads] = useState<Record<string, SbLeadin>>({});
   const [error, setError] = useState("");
   const [tab, setTabState] = useState<"levels" | "all">("levels");
   const [progress, setProgress] = useState<Progress>({});
@@ -386,11 +388,9 @@ export default function RealGoalsDev() {
 
   useEffect(() => {
     setProgress(loadProgress());
-    const get = <T,>(q: string) => fetch(`/api/star/statsbomb-shots${q}`).then((r) => (r.ok ? r.json() as Promise<T> : Promise.reject(new Error(`HTTP ${r.status}`))));
-    Promise.all([get<SbFile>(""), get<RgFile>("?file=goals")])
+    Promise.all([fetchRealFile<WyscoutShotFile>("shots"), fetchRealFile<RgFile>("goals")])
       .then(([s, g]) => setGoals(joinGoals(s.shots, g.goals)))
       .catch((e) => setError(String(e)));
-    get<SbLeadinFile>("?file=leadins").then((l) => setLeads(l.leadins)).catch(() => { /* build-ups fall back to goals.json's own move */ });
     const q = new URLSearchParams(window.location.search);
     let saved: string | null = null;
     try { saved = localStorage.getItem(TAB_KEY); } catch { /* private */ }
@@ -424,7 +424,7 @@ export default function RealGoalsDev() {
   return (
     <BroadcastPage
       title="Real Goals"
-      sub="Score the real World Cup and Euro goals — the way they really went in."
+      sub="Score the real World Cup 2018 and Euro 2016 goals — the way they really went in."
       actions={<div className="rg-total" data-total-stars>{STAR(1, 1, 22)} <b>{totalStars(progress)}</b><span>/ {allLevels.length * 3 || 150}</span></div>}
     >
       <PageGuide page="/star-real-goals-dev" />
@@ -436,7 +436,6 @@ export default function RealGoalsDev() {
           <PlayGoal
             key={playing.goal.id}
             goal={playing.goal}
-            lead={leads[playing.goal.id]}
             level={playing.level}
             onClose={() => setPlaying(null)}
             onResult={onResult}
@@ -457,7 +456,7 @@ export default function RealGoalsDev() {
               : <GoalList goals={goals} progress={progress} onPick={(g) => play(g, allLevels.find((l) => l.goal.id === g.id) ?? null)} />}
           </>
         )}
-        <div data-credit className="rg-credit">{STATSBOMB_CREDIT} · test only, not in the game</div>
+        <div data-credit className="rg-credit">{REAL_CREDIT.wyscout} {PICTURE_WORDS.placed}.</div>
       </div>
     </BroadcastPage>
   );

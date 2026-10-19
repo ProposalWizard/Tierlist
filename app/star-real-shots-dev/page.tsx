@@ -1,23 +1,25 @@
 "use client";
 
 /**
- * REAL SHOTS (TEST) — Harry, 13 Oct 2026: "use StatsBomb's free open data to
- * see REAL football shots in our game, on a test page only."
+ * REAL SHOTS (TEST) — Harry, 13 Oct 2026: "see REAL football shots in our
+ * game, on a test page only"; 19 Oct 2026: "We aren't getting licensing, so
+ * rebuild Real moments and Real shots (and Real Goals) with free-licensed data".
  *
- * Every shot of the 2022 World Cup and Euro 2024 that has a freeze frame
- * (where every player near it stood), drawn top-down on our pitch, playable
- * in the real match engine (EnginePlay, the one engine), and measured against
- * our own chances of the same kind. Test only: the licence for a paid game is
- * not cleared, so nothing here reaches the real game.
+ * Two kinds of real shot, both cleared for commercial use (lib/star/realMoments):
+ *  - FULLY REAL: every shot of 7 Bundesliga / 2. Bundesliga 2022/23 matches
+ *    (IDSSE / DFL tracking) and 20 A-League 2024/25 matches (SkillCorner
+ *    tracking): all 22 men where they really stood, and the real movement of
+ *    the 4 seconds before (the Moving highlight replays it).
+ *  - REAL SHOT, PLACED DEFENDERS: every shot of the 2018 World Cup and Euro
+ *    2016 (Wyscout events): the real spot, who, how, what happened and the
+ *    real passes before it; the others are placed by the game's own rules.
+ * Each is drawn top-down on our pitch, playable in the real match engine
+ * (EnginePlay, the one engine), and the fully real ones are measured against
+ * our own chances of the same kind.
  *
  * Look (Harry, 19 Oct 2026: "real shots opt 2 and 1"): the Broadcast frame, two
- * layouts of the same functions behind a Pill pair at the top — Shot map
- * (option 2: filters | map of every shot | the picked shot) and Cards
- * (option 1: a total, filter row, a grid of shot cards). The playing screen
+ * layouts behind a Pill pair — Shot map and Cards. The playing screen
  * (EnginePlay, MovingHighlight) is unchanged.
- *
- * Data: StatsBomb open data (https://github.com/statsbomb/open-data),
- * data/statsbomb/shots.json (scripts/statsbomb/fetch_shots.py).
  */
 import { useEffect, useMemo, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
@@ -27,9 +29,9 @@ import EnginePlay from "@/components/star/EnginePlay";
 import type { ScenarioKind } from "@/lib/star/canvasEngine";
 import { PITCH_W, CX, POST_L, POST_R, BOX_L, BOX_R, BOX_DEPTH, SIX_L, SIX_R, SIX_DEPTH, PEN_SPOT_Y, NET_DEPTH } from "@/lib/star/pitch";
 import {
-  STATSBOMB_CREDIT, KIND_LABEL, peopleOf, kindForShot, scenarioForShot, measureReal, ourMeasures, meansOf, playedKeeperOff,
-  type SbShot, type SbFile, type MeasureMeans, type SbLeadin, type SbLeadinFile,
-} from "@/lib/star/statsbombShots";
+  REAL_CREDIT, PICTURE_WORDS, KIND_LABEL, isFullyReal, peopleOf, kindForShot, scenarioForShot, measureReal, ourMeasures, meansOf, playedKeeperOff, fetchRealFile,
+  type RealShot, type MeasureMeans, type WyscoutShotFile, type TrackedFile, type TrackFile, type RealTrack,
+} from "@/lib/star/realMoments";
 import MovingHighlight from "./MovingHighlight";
 
 const PAGE = 20;
@@ -37,6 +39,8 @@ const PAGE = 20;
 const OWN_FRAME = { ownFrame: true } as const;
 const OUTCOMES = ["All", "Goal", "Saved", "Off T", "Blocked", "Other"] as const;
 const TYPES = ["All", "Open Play", "Free Kick", "Penalty", "Corner"] as const;
+const PICS = [{ v: "all", t: "Both kinds" }, { v: "full", t: "Fully real (tracking)" }, { v: "placed", t: "Real shot, placed defenders" }] as const;
+type Pic = (typeof PICS)[number]["v"];
 const BANDS = [
   { label: "Any xG", lo: 0, hi: 2 },
   { label: "under 8%", lo: 0, hi: 0.08 },
@@ -46,20 +50,45 @@ const BANDS = [
 const COMPARE_KINDS: ScenarioKind[] = ["one_on_one", "volley", "tight_angle", "long_range", "free_kick", "penalty"];
 const MAIN_OUTCOMES = new Set(["Goal", "Saved", "Off T", "Blocked"]);
 const LINE_COLOUR: Record<string, string> = { Goal: "#22c55e", Saved: "#facc15", Blocked: "#f97316", "Off T": "#94a3b8" };
-const OUTCOME_WORD: Record<string, string> = { "Off T": "Off target" };
+const OUTCOME_WORD: Record<string, string> = { "Off T": "Off target", Shot: "Shot (no detail)" };
 const colourOf = (o: string) => LINE_COLOUR[o] ?? "#e2e8f0";
 const LAYOUT_KEY = "star-real-shots-layout";
 type Layout = "map" | "cards";
 type Tab = "shots" | "move" | "compare";
 
-/** The shot, top-down on our pitch: goal at the top, as in our own view. */
-function ShotPicture({ s, width }: { s: SbShot; width: number }) {
-  const p = peopleOf(s);
+/** The tag on every shot: which kind of picture it is. */
+function PicTag({ s }: { s: RealShot }) {
+  const full = isFullyReal(s);
+  return (
+    <span data-pic={full ? "full" : "placed"} title={full ? PICTURE_WORDS.full : PICTURE_WORDS.placed}
+      style={{ display: "inline-block", padding: "1px 6px", borderRadius: 3, fontSize: 11, fontWeight: 900, fontStyle: "italic", textTransform: "uppercase",
+        color: "#06140a", background: full ? "#34d399" : "#fbbf24" }}>
+      {full ? "Fully real" : "Placed defenders"}
+    </span>
+  );
+}
+
+/** The shot, top-down on our pitch: goal at the top. A placed shot shows the game's placed men as hollow rings. */
+function ShotPicture({ s, width }: { s: RealShot; width: number }) {
+  const full = isFullyReal(s);
+  const p = useMemo(() => {
+    const real = peopleOf(s);
+    if (full) return real;
+    const sc = scenarioForShot(s, { wideFrame: true });
+    return {
+      ...real,
+      keeper: { x: sc.keeper.x, y: sc.keeper.y },
+      opps: sc.defenders.map((d) => ({ x: d.x, y: d.y })),
+      mates: [...(sc.runner ? [sc.runner.pos] : []), ...sc.secondaryRunners.map((r) => r.pos), ...sc.teammates].filter((q) => q.x > -50 && q.y > -50),
+    };
+  }, [s, full]);
   const yMax = Math.max(34, p.ball.y + 6);
   const y0 = -NET_DEPTH - 1.5;
   const h = yMax - y0;
   const line = "rgba(255,255,255,0.55)";
   const R = 1.05;
+  const fillOr = (c: string) => (full ? c : "none");
+  const sw = full ? 0.2 : 0.35;
   return (
     <svg viewBox={`-1 ${y0} ${PITCH_W + 2} ${h}`} width={width} height={(width * h) / (PITCH_W + 2)}
       className="rs-pic" style={{ background: "#166534", borderRadius: 3, display: "block" }}>
@@ -72,9 +101,9 @@ function ShotPicture({ s, width }: { s: SbShot; width: number }) {
         <line x1={p.ball.x} y1={p.ball.y} x2={p.end.x} y2={Math.max(p.end.y, -NET_DEPTH)}
           stroke={colourOf(s.outcome)} strokeWidth={0.45} strokeDasharray="1.2 0.7" />
       )}
-      {p.mates.map((m, i) => <circle key={`m${i}`} cx={m.x} cy={m.y} r={R} fill="#3b82f6" stroke="#0b1220" strokeWidth={0.2} />)}
-      {p.opps.map((o, i) => <circle key={`o${i}`} cx={o.x} cy={o.y} r={R} fill="#ef4444" stroke="#0b1220" strokeWidth={0.2} />)}
-      {p.keeper && <circle cx={p.keeper.x} cy={p.keeper.y} r={R} fill="#a3e635" stroke="#0b1220" strokeWidth={0.2} />}
+      {p.mates.map((m, i) => <circle key={`m${i}`} cx={m.x} cy={m.y} r={R} fill={fillOr("#3b82f6")} stroke={full ? "#0b1220" : "#3b82f6"} strokeWidth={sw} />)}
+      {p.opps.map((o, i) => <circle key={`o${i}`} cx={o.x} cy={o.y} r={R} fill={fillOr("#ef4444")} stroke={full ? "#0b1220" : "#ef4444"} strokeWidth={sw} />)}
+      {p.keeper && <circle cx={p.keeper.x} cy={p.keeper.y} r={R} fill={fillOr("#a3e635")} stroke={full ? "#0b1220" : "#a3e635"} strokeWidth={sw} />}
       <circle cx={p.ball.x} cy={p.ball.y + 1.3} r={R * 1.1} fill="#fde047" stroke="#0b1220" strokeWidth={0.2} />
       <circle cx={p.ball.x} cy={p.ball.y} r={0.55} fill="#fff" stroke="#0b1220" strokeWidth={0.15} />
     </svg>
@@ -82,11 +111,10 @@ function ShotPicture({ s, width }: { s: SbShot; width: number }) {
 }
 
 /** Option 2's big map: every shot that passes the filters, where it was struck, coloured by what happened. */
-function ShotMap({ shots, sel, onPick }: { shots: SbShot[]; sel: SbShot | null; onPick: (s: SbShot) => void }) {
+function ShotMap({ shots, sel, onPick }: { shots: RealShot[]; sel: RealShot | null; onPick: (s: RealShot) => void }) {
   const Y0 = -NET_DEPTH - 1.5, YMAX = 42;
   const line = "rgba(255,255,255,0.4)";
-  const at = (s: SbShot) => { const b = peopleOf(s).ball; return { x: b.x, y: Math.min(YMAX - 1, b.y) }; };
-  // Goals last, so they sit on top of the misses.
+  const at = (s: RealShot) => ({ x: s.ball[0], y: Math.min(YMAX - 1, s.ball[1]) });
   const order = useMemo(() => [...shots].sort((a, b) => (a.outcome === "Goal" ? 1 : 0) - (b.outcome === "Goal" ? 1 : 0)), [shots]);
   const s0 = sel ? at(sel) : null;
   return (
@@ -129,22 +157,22 @@ function Bar({ label, real, ours, unit, max }: { label: string; real: number; ou
   );
 }
 
-function Compare({ shots }: { shots: SbShot[] }) {
+/** Ours vs real: only the fully real shots have real defenders to measure. */
+function Compare({ shots }: { shots: RealShot[] }) {
   const [kind, setKind] = useState<ScenarioKind>("one_on_one");
+  const full = useMemo(() => shots.filter(isFullyReal), [shots]);
   const { real, ours, kReal, kPlayed, kN } = useMemo(() => {
-    const r = meansOf(shots.filter((s) => kindForShot(s) === kind).map(measureReal));
+    const r = meansOf(full.filter((s) => kindForShot(s) === kind).map(measureReal));
     const o = meansOf(ourMeasures(kind, 200));
-    // The real keeper, played: where he stands after 2 s of you aiming at the
-    // real shot in our engine (he used to walk to our own set spot).
-    const ks = shots.filter((s) => kindForShot(s) === kind && peopleOf(s).keeper);
+    const ks = full.filter((s) => kindForShot(s) === kind && peopleOf(s).keeper);
     const avg = (v: number[]) => (v.length ? v.reduce((a, b) => a + b, 0) / v.length : NaN);
     const kReal = avg(ks.map((s) => Math.max(0, peopleOf(s).keeper!.y)));
     const kPlayed = avg(ks.map((s) => playedKeeperOff(s) ?? 0));
     return { real: r, ours: o, kReal, kPlayed, kN: ks.length };
-  }, [shots, kind]);
+  }, [full, kind]);
   const top = (k: keyof MeasureMeans, floor: number) => Math.max(floor, ...[real[k], ours[k]].filter((v) => !Number.isNaN(v))) * 1.1;
   return (
-    <Panel title="Ours vs real" note={`${real.n} real shots · ${ours.n} of our own chances`}>
+    <Panel title="Ours vs real" note={`${real.n} fully real shots · ${ours.n} of our own chances`}>
       <div data-compare className="rs-compare">
         <div className="rs-pills">
           {COMPARE_KINDS.map((k) => <Pill key={k} on={kind === k} onClick={() => setKind(k)}>{KIND_LABEL[k]}</Pill>)}
@@ -159,7 +187,7 @@ function Compare({ shots }: { shots: SbShot[] }) {
               max={Math.max(2, ...[kReal, kPlayed].filter((v) => !Number.isNaN(v))) * 1.1} />
           </div>
         </div>
-        <Note>Real: every opponent StatsBomb froze near the shot. Ours: the game&apos;s own chances of this kind, 200 seeds.</Note>
+        <Note>Real: every opponent the tracking saw at the shot (Bundesliga and A-League, fully real only). Ours: the game&apos;s own chances of this kind, 200 seeds.</Note>
       </div>
     </Panel>
   );
@@ -171,9 +199,10 @@ interface Filters {
   outcome: (typeof OUTCOMES)[number]; setOutcome: (v: (typeof OUTCOMES)[number]) => void;
   type: (typeof TYPES)[number]; setType: (v: (typeof TYPES)[number]) => void;
   band: number; setBand: (v: number) => void;
+  pic: Pic; setPic: (v: Pic) => void;
   search: string; setSearch: (v: string) => void;
 }
-const activeCount = (f: Filters) => [f.comp !== "All", f.outcome !== "All", f.type !== "All", f.band !== 0, !!f.search.trim()].filter(Boolean).length;
+const activeCount = (f: Filters) => [f.comp !== "All", f.outcome !== "All", f.type !== "All", f.band !== 0, f.pic !== "all", !!f.search.trim()].filter(Boolean).length;
 
 function Select({ label, value, options, onChange, data }: { label: string; value: string; options: { v: string; t: string }[]; onChange: (v: string) => void; data: string }) {
   return (
@@ -185,6 +214,7 @@ function Select({ label, value, options, onChange, data }: { label: string; valu
     </label>
   );
 }
+const picSel = (f: Filters) => <Select label="Picture" data="data-filter-pic" value={f.pic} options={PICS.map((p) => ({ v: p.v, t: p.t }))} onChange={(v) => f.setPic(v as Pic)} />;
 const compSel = (f: Filters) => <Select label="Competition" data="data-filter-comp" value={f.comp} options={f.comps.map((c) => ({ v: c, t: c === "All" ? "All competitions" : c }))} onChange={f.setComp} />;
 const typeSel = (f: Filters) => <Select label="How it came" data="data-filter-type" value={f.type} options={TYPES.map((t) => ({ v: t, t: t === "All" ? "Any way" : t }))} onChange={(v) => f.setType(v as Filters["type"])} />;
 const bandSel = (f: Filters) => <Select label="Chance of a goal (xG)" data="data-filter-xg" value={String(f.band)} options={BANDS.map((b, i) => ({ v: String(i), t: b.label }))} onChange={(v) => f.setBand(Number(v))} />;
@@ -204,6 +234,7 @@ function FilterPanel({ f }: { f: Filters }) {
       <button className="rs-ftoggle" onClick={() => setOpen((o) => !o)} aria-expanded={open}>Filters ({n}) <span aria-hidden>{open ? "▲" : "▼"}</span></button>
       <div className="bc-ph rs-fhead"><h2>Filters</h2>{n > 0 && <span>{n} on</span>}</div>
       <div className="bc-pb rs-fbody">
+        {picSel(f)}
         {compSel(f)}
         <div className="rs-field">
           <span className="bc-label">What happened</span>
@@ -228,6 +259,7 @@ function FilterPanel({ f }: { f: Filters }) {
 function FilterRow({ f }: { f: Filters }) {
   return (
     <div className="rs-frow" data-filter-row>
+      {picSel(f)}
       {compSel(f)}
       <Select label="What happened" data="data-filter-outcome-select" value={f.outcome}
         options={OUTCOMES.map((o) => ({ v: o, t: o === "All" ? "Every shot" : OUTCOME_WORD[o] ?? o }))} onChange={(v) => f.setOutcome(v as Filters["outcome"])} />
@@ -247,22 +279,26 @@ function Legend() {
   );
 }
 
+/** How many seconds of real build-up a shot has (passes or tracking). */
+const buildUpWord = (s: RealShot) => (isFullyReal(s) ? "4 s of real movement" : `${s.lead?.passes.length ?? 0} real passes`);
+const hasBuildUp = (s: RealShot) => isFullyReal(s) || (s.lead?.passes.length ?? 0) >= 2;
+
 /** The ▶ on a shot: Play it (Shots), or Watch the move (Moving highlight). */
-function ShotAction({ s, tab, passes, onPlay, onWatch, big }: { s: SbShot; tab: Tab; passes?: number; onPlay: (s: SbShot) => void; onWatch: (s: SbShot) => void; big?: boolean }) {
+function ShotAction({ s, tab, onPlay, onWatch, big }: { s: RealShot; tab: Tab; onPlay: (s: RealShot) => void; onWatch: (s: RealShot) => void; big?: boolean }) {
   return tab === "move"
-    ? <button className="rs-play" data-big={big ? "true" : undefined} onClick={() => onWatch(s)}>▶ Watch the move ({passes} passes)</button>
+    ? <button className="rs-play" data-big={big ? "true" : undefined} onClick={() => onWatch(s)}>▶ Watch the move ({buildUpWord(s)})</button>
     : <button className="rs-play" data-big={big ? "true" : undefined} onClick={() => onPlay(s)}>▶ Play this shot</button>;
 }
 
 /** Option 2's right panel: the picked shot, big. */
-function Details({ s, tab, passes, onPlay, onWatch }: { s: SbShot | null; tab: Tab; passes?: number; onPlay: (s: SbShot) => void; onWatch: (s: SbShot) => void }) {
+function Details({ s, tab, onPlay, onWatch }: { s: RealShot | null; tab: Tab; onPlay: (s: RealShot) => void; onWatch: (s: RealShot) => void }) {
   return (
     <Panel title="Shot details">
       {!s ? <Note>No shot matches the filters.</Note> : (
         <div className="rs-det" data-shot-details={s.id}>
           <div className="rs-dname">{s.player}</div>
-          <div className="rs-dsub">{s.team} · {s.minute}&apos;</div>
-          <div className="rs-dsub">{s.match}</div>
+          <div className="rs-dsub">{s.team} · {s.minute}&apos; · <PicTag s={s} /></div>
+          <div className="rs-dsub">{s.comp} · {s.match}</div>
           <ShotPicture s={s} width={280} />
           <div className="rs-dxg">
             <b>xG {Math.round(s.xg * 100)}%</b>
@@ -273,15 +309,15 @@ function Details({ s, tab, passes, onPlay, onWatch }: { s: SbShot | null; tab: T
             <div><b>{s.body}</b><span>body part</span></div>
             <div><b>{KIND_LABEL[kindForShot(s)] ?? kindForShot(s)}</b><span>our chance kind</span></div>
           </div>
-          <ShotAction s={s} tab={tab} passes={passes} onPlay={onPlay} onWatch={onWatch} big />
+          <ShotAction s={s} tab={tab} onPlay={onPlay} onWatch={onWatch} big />
         </div>
       )}
     </Panel>
   );
 }
 
-export default function StatsbombShotsDev() {
-  const [shots, setShots] = useState<SbShot[] | null>(null);
+export default function RealShotsDev() {
+  const [shots, setShots] = useState<RealShot[] | null>(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<Tab>("shots");
   const [layout, setLayoutState] = useState<Layout>("map");
@@ -289,18 +325,18 @@ export default function StatsbombShotsDev() {
   const [outcome, setOutcome] = useState<(typeof OUTCOMES)[number]>("All");
   const [type, setType] = useState<(typeof TYPES)[number]>("All");
   const [band, setBand] = useState(0);
+  const [pic, setPic] = useState<Pic>("all");
   const [search, setSearch] = useState("");
   const [shown, setShown] = useState(PAGE);
-  const [playing, setPlaying] = useState<SbShot | null>(null);
-  const [leadins, setLeadins] = useState<Record<string, SbLeadin> | null>(null);
-  const [watching, setWatching] = useState<SbShot | null>(null);
+  const [playing, setPlaying] = useState<RealShot | null>(null);
+  const [tracks, setTracks] = useState<Record<string, RealTrack> | null>(null);
+  const [watching, setWatching] = useState<RealShot | null>(null);
   const [selId, setSelId] = useState<string | null>(null);
   const setLayout = (l: Layout) => { setLayoutState(l); try { localStorage.setItem(LAYOUT_KEY, l); } catch { /* private */ } };
 
   useEffect(() => {
-    fetch("/api/star/statsbomb-shots")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((d: SbFile) => setShots(d.shots))
+    Promise.all([fetchRealFile<WyscoutShotFile>("shots"), fetchRealFile<TrackedFile>("tracked")])
+      .then(([w, t]) => setShots([...t.moments.filter((m): m is RealShot & { what: "shot" } => m.what === "shot"), ...w.shots]))
       .catch((e) => setError(String(e)));
     const q = new URLSearchParams(window.location.search);
     if (q.get("tab") === "compare") setTab("compare");
@@ -311,14 +347,11 @@ export default function StatsbombShotsDev() {
     if (want === "cards" || want === "map") setLayoutState(want);
   }, []);
 
-  // The passes before each shot, fetched the first time the Moving highlight tab opens.
+  // The real movement of the tracked shots, fetched the first time the Moving highlight tab opens.
   useEffect(() => {
-    if (tab !== "move" || leadins) return;
-    fetch("/api/star/statsbomb-shots?file=leadins")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((d: SbLeadinFile) => setLeadins(d.leadins))
-      .catch((e) => setError(String(e)));
-  }, [tab, leadins]);
+    if (tab !== "move" || tracks) return;
+    fetchRealFile<TrackFile>("tracks").then((d) => setTracks(d.tracks)).catch((e) => setError(String(e)));
+  }, [tab, tracks]);
 
   // ?play=<id> opens a shot straight away (handy for checking one by eye).
   useEffect(() => {
@@ -328,10 +361,10 @@ export default function StatsbombShotsDev() {
   }, [shots]);
   // ?watch=<id> (with ?tab=move) opens a moving highlight straight away.
   useEffect(() => {
-    if (!shots || !leadins) return;
+    if (!shots || !tracks) return;
     const id = new URLSearchParams(window.location.search).get("watch");
     if (id) setWatching(shots.find((s) => s.id === id) ?? null);
-  }, [shots, leadins]);
+  }, [shots, tracks]);
 
   const comps = useMemo(() => ["All", ...Array.from(new Set((shots ?? []).map((s) => s.comp)))], [shots]);
   const list = useMemo(() => {
@@ -339,27 +372,28 @@ export default function StatsbombShotsDev() {
     const b = BANDS[band];
     const q = search.trim().toLowerCase();
     return shots.filter((s) => (comp === "All" || s.comp === comp)
+      && (pic === "all" || (pic === "full") === isFullyReal(s))
       && (outcome === "All" || (outcome === "Other" ? !MAIN_OUTCOMES.has(s.outcome) : s.outcome === outcome))
       && (type === "All" || s.type === type)
       && s.xg >= b.lo && s.xg < b.hi
       && (!q || s.player.toLowerCase().includes(q) || s.team.toLowerCase().includes(q))
-      && (tab !== "move" || (leadins?.[s.id]?.passes.length ?? 0) >= 2));
-  }, [shots, comp, outcome, type, band, search, tab, leadins]);
-  useEffect(() => setShown(PAGE), [comp, outcome, type, band, search]);
-  // The picked shot (option 2's details): the one clicked, else the first that passes the filters.
+      && (tab !== "move" || hasBuildUp(s)));
+  }, [shots, comp, pic, outcome, type, band, search, tab]);
+  useEffect(() => setShown(PAGE), [comp, pic, outcome, type, band, search]);
   const sel = useMemo(() => list.find((s) => s.id === selId) ?? list[0] ?? null, [list, selId]);
   const goals = useMemo(() => list.filter((s) => s.outcome === "Goal").length, [list]);
+  const nFull = useMemo(() => (shots ?? []).filter(isFullyReal).length, [shots]);
 
   const openOn = useMemo(() => (playing ? () => scenarioForShot(playing, { wideFrame: true }) : undefined), [playing]);
-  const f: Filters = { comps, comp, setComp, outcome, setOutcome, type, setType, band, setBand, search, setSearch };
-  const onPlay = (s: SbShot) => { setPlaying(s); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const onWatch = (s: SbShot) => { setWatching(s); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const passesOf = (s: SbShot) => leadins?.[s.id]?.passes.length;
-  const countLine = `${list.length} shots${tab === "move" ? " with 2+ passes before them" : ""}`;
+  const f: Filters = { comps, comp, setComp, outcome, setOutcome, type, setType, band, setBand, pic, setPic, search, setSearch };
+  const onPlay = (s: RealShot) => { setPlaying(s); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const onWatch = (s: RealShot) => { setWatching(s); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const countLine = `${list.length} shots${tab === "move" ? " with a real build-up" : ""}`;
   const more = shown < list.length && <Btn onClick={() => setShown((n) => n + PAGE)}>More</Btn>;
   const key = (
     <Note>
       Picture: yellow = the shooter (YOU in Play), white = ball, red = opponents, green = keeper, blue = team-mates.
+      Filled = where they really stood (fully real); rings = placed by the game&apos;s rules (the shot is real, the others are not).
       The dashed line is where the shot went (green goal, yellow saved, orange blocked, grey off target).
     </Note>
   );
@@ -367,9 +401,9 @@ export default function StatsbombShotsDev() {
   return (
     <BroadcastPage
       title="Real Shots"
-      sub="Real World Cup 2022 and Euro 2024 shots, with where everyone stood. Test only: none of this is in the game."
+      sub="Real shots in our game. Fully real: Bundesliga and A-League, every player where he stood. Placed: World Cup 2018 and Euro 2016, the real shot with the defenders placed by our rules."
     >
-      <PageGuide page="/star-statsbomb-dev" />
+      <PageGuide page="/star-real-shots-dev" />
       <div className="rs">
         <div className="rs-top">
         <div className="rs-tabs">
@@ -385,26 +419,27 @@ export default function StatsbombShotsDev() {
 
         {error && <Note>Could not load the shots: {error}</Note>}
         {!shots && !error && <Note>Loading the shots…</Note>}
+        {shots && <div className="rs-count" data-counts>{nFull.toLocaleString("en-GB")} fully real shots · {(shots.length - nFull).toLocaleString("en-GB")} real shots with placed defenders</div>}
 
         {shots && tab === "compare" && <Compare shots={shots} />}
 
-        {shots && tab === "move" && !leadins && !error && <Note>Loading the moves…</Note>}
-        {shots && (tab === "shots" || (tab === "move" && leadins)) && (
+        {shots && tab === "move" && !tracks && !error && <Note>Loading the moves…</Note>}
+        {shots && (tab === "shots" || (tab === "move" && tracks)) && (
           <>
             {tab === "move" && (
               <Note>
-                The match radar follows the move; the real match replays the last 2–3 real passes in its own picture (2D or 3D), you receive the last one, then the shot is yours.
+                Fully real: the match replays where the ball and every player really were for the 4 seconds before the shot. Placed: it replays the last real passes (the others start from their team&apos;s shape). Then the shot is yours.
               </Note>
             )}
-            {tab === "move" && watching && leadins?.[watching.id] && (
-              <MovingHighlight key={watching.id} shot={watching} lead={leadins[watching.id]} onClose={() => setWatching(null)} />
+            {tab === "move" && watching && (
+              <MovingHighlight key={watching.id} shot={watching} track={tracks?.[watching.id] ?? null} onClose={() => setWatching(null)} />
             )}
             {tab === "shots" && playing && openOn && (
               <section data-playing className="bc-panel rs-playing">
                 <div className="rs-phead">
                   <div>
                     <b>{playing.player} · {playing.minute}&apos; · {KIND_LABEL[kindForShot(playing)] ?? kindForShot(playing)}</b>
-                    <span>Real: {playing.outcome}, xG {Math.round(playing.xg * 100)}%</span>
+                    <span>Real: {OUTCOME_WORD[playing.outcome] ?? playing.outcome}, xG {Math.round(playing.xg * 100)}% · <PicTag s={playing} /></span>
                   </div>
                   <Btn onClick={() => setPlaying(null)}>■ Stop</Btn>
                 </div>
@@ -421,7 +456,7 @@ export default function StatsbombShotsDev() {
                     <Legend />
                     <Note>Tap a dot to see that shot.</Note>
                   </Panel>
-                  <Details s={sel} tab={tab} passes={sel ? passesOf(sel) : undefined} onPlay={onPlay} onWatch={onWatch} />
+                  <Details s={sel} tab={tab} onPlay={onPlay} onWatch={onWatch} />
                 </div>
                 <Panel title="Every shot" note={countLine}>
                   <div className="rs-rows">
@@ -431,10 +466,10 @@ export default function StatsbombShotsDev() {
                           <ShotPicture s={s} width={110} />
                         </button>
                         <div className="rs-rtext">
-                          <b>{s.player}</b>
+                          <b>{s.player} <PicTag s={s} /></b>
                           <span>{s.team} · {s.minute}&apos; · {s.match}</span>
                           <span><i style={{ color: colourOf(s.outcome) }}>{OUTCOME_WORD[s.outcome] ?? s.outcome}</i> · xG {Math.round(s.xg * 100)}% · {s.type} · {s.body}</span>
-                          <ShotAction s={s} tab={tab} passes={passesOf(s)} onPlay={onPlay} onWatch={onWatch} />
+                          <ShotAction s={s} tab={tab} onPlay={onPlay} onWatch={onWatch} />
                         </div>
                       </div>
                     ))}
@@ -462,9 +497,9 @@ export default function StatsbombShotsDev() {
                         <ShotPicture s={s} width={240} />
                         <span className="rs-xg">{Math.round(s.xg * 100)}% xG</span>
                       </div>
-                      <div className="rs-cline"><i style={{ color: colourOf(s.outcome) }}>{OUTCOME_WORD[s.outcome] ?? s.outcome}</i> · {s.minute}&apos; · {s.type}</div>
+                      <div className="rs-cline"><i style={{ color: colourOf(s.outcome) }}>{OUTCOME_WORD[s.outcome] ?? s.outcome}</i> · {s.minute}&apos; · {s.type} · <PicTag s={s} /></div>
                       <div className="rs-cline rs-dim">{s.match}</div>
-                      <ShotAction s={s} tab={tab} passes={passesOf(s)} onPlay={onPlay} onWatch={onWatch} />
+                      <ShotAction s={s} tab={tab} onPlay={onPlay} onWatch={onWatch} />
                     </div>
                   ))}
                 </div>
@@ -474,7 +509,9 @@ export default function StatsbombShotsDev() {
             )}
           </>
         )}
-        <div data-credit className="rs-credit">{STATSBOMB_CREDIT}</div>
+        <div data-credit className="rs-credit">
+          {REAL_CREDIT.dfl}<br />{REAL_CREDIT.skillcorner}<br />{REAL_CREDIT.wyscout}
+        </div>
       </div>
     </BroadcastPage>
   );
