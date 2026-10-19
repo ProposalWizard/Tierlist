@@ -107,6 +107,7 @@ class Acc:
         self.tier_team = D(lambda: D(list))                    # tier -> metric -> per team-match vals
         self.matchup = D(lambda: D(list))                      # "tierA_v_tierB" -> metric -> vals
         self.role_on = D(lambda: zeros(N_FINE)); self.role_def = D(lambda: zeros(N_FINE))
+        self.chains = D(lambda: [0, 0])                        # "action@zone>...>shot@zone" -> [shots, goals]
 
 
 A = Acc()
@@ -311,6 +312,16 @@ def do_match(m, evs, tier_of, comp):
                 if a and metres(x - a[0], y - a[1]) > 5:
                     at += "+carry"
             A.assist[at] += 1; A.assist_goal[at] += g
+            steps = []
+            for pe in ev[max(0, i - 2):i]:
+                pp = pos(pe)
+                if not pp:
+                    continue
+                nm = (PASS_TYPES.get(pe["subEventId"]) or FK_TYPES.get(pe["subEventId"]) or
+                      ("dribble" if pe["subEventId"] == 70 else "touch"))
+                steps.append(f"{nm}@{coarse(*pp)}")
+            key = ">".join([st] + steps + [f"shot@{coarse(x, y)}"])
+            A.chains[key][0] += 1; A.chains[key][1] += g
             if prev is not None and pos(prev):
                 A.assist_zone[at][coarse(*pos(prev))] += 1
         # ---- set pieces
@@ -524,7 +535,11 @@ def save(meta):
         "body": {k: {"shots": v, "goals": A.goal_body[k]} for k, v in A.shot_body.items()},
         "before_shot": {k: {"shots": v, "goals": A.assist_goal[k], "from_zone": A.assist_zone[k]} for k, v in A.assist.items()},
         "placement": {k: {"on_target_or_post": v, "goals": A.placement[1][k]} for k, v in A.placement[0].items()},
-        "penalties": {"taken": A.pen[0], "scored": A.pen[1]}})
+        "penalties": {"taken": A.pen[0], "scored": A.pen[1]},
+        "chains_top": {"what": "the possession's start type, then up to 2 actions before a non-penalty, non-direct-FK "
+                               "shot as type@coarse-zone, then shot@zone; the 500 most common chains with shots and goals",
+                       "total_shots": sum(v[0] for v in A.chains.values()),
+                       "chains": {k: v for k, v in sorted(A.chains.items(), key=lambda kv: -kv[1][0])[:500]}}})
     write(os.path.join(OUT, "wyscout_set_pieces.json"), {
         "meta": meta, "what": "Corners (where the delivery lands on the fine grid, and whether that possession got a "
         "shot), free kicks by coarse zone (shot / cross / pass and outcome), direct free-kick goal rate by "
