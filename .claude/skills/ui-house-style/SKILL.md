@@ -65,6 +65,13 @@ Newest first. Each is something that was actually said.
   the admin for road to ballon dor."** The pass is the inside of every Road to
   Ballon d'Or admin/test page (lib/adminRegistry.ts, section rbd), brought up
   to the Play Area (/star-play-dev). Not the game screens, not other games.
+  ~~Built that way: Retirement screens rebuilt in the Play Area's dark-card
+  look.~~ Harry, same day: **"the before looks way better — I don't know why
+  we are basing inside pages on the play area when that's one of the pages
+  that needed re doing — I just meant the entrance to it was good, this page
+  is fine."** Reverted. The Play Area's inside is NOT the standard; the bold
+  game-style Retirement page (big caps title, yellow labels, chunky coloured
+  buttons) is fine as it is. Ask what the bar is before restyling an admin page.
 
 ### 18 Oct 2026 — admin pages get real design (Harry)
 - **"I like the idea of the grouped admin … but it's not the UI I was
