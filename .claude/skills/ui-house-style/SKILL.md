@@ -619,4 +619,12 @@ height, or pin the controls. Check with a screenshot at 1440×900 that nothing k
 
 ## Broadcast admin home keeps side tabs (Harry, 19 Oct 2026)
 "the home ui needs work on broadcast as there should still be side tabs". The Broadcast look's
-admin home must keep the side list of groups (it was hidden on board looks). Not built yet.
+admin home must keep the side list of groups (it was hidden on board looks). Built 19 Oct: every
+look shows the current game's groups in the side menu (slanted bars on Broadcast, the current one
+lit with an amber edge); on a phone they sit behind ☰ Menu, on a computer « folds them to icons.
+
+## The admin is split by game (Harry, 19 Oct 2026)
+"stuff on the wider website should be on a completely different tab than road to ballon dor stuff
+— remember we may be a production company that makes a lot of games". One tab per game across the
+top of every admin page (Road to Ballon d'Or | Website games | Studio); inside a tab you only see
+that game's groups, pages and search. A new game = one line in GAMES (lib/adminRegistry.ts).
