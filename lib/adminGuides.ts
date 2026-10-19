@@ -734,8 +734,28 @@ export const ADMIN_GUIDES = {
   },
   "/admin/team": {
     title: "Team board",
-    what: "What Harry, Mikey and Leo are doing: each person's pushes, the pull requests, whether the site is live, and which patch notes each push went out in.",
+    what: "The Team room. Board: what Harry, Mikey and Leo are doing (pushes, pull requests, live bars, patch notes). Ideas, Chat and To-do: the team's idea board, live chat and each person's jobs. The toggle along the top switches between them.",
     buttons: [
+      { group: "Team room toggle", items: [
+        ["Board | Ideas | Chat | To-do", "Switches part. A red number = new chat or new notes on your things; amber = a new job given to you. The same four are in the side menu."],
+        ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again."],
+      ] },
+      { group: "Ideas", items: [
+        ["By stage | By person", "Idea · Doing · Done columns, or a lane per person. Remembered in this browser."],
+        ["+ Add idea", "Adds a one-line idea under your name."],
+        ["The three dots", "One per person. Tap to say you want it; tap again to take it back."],
+        ["An idea", "Opens it: move it to Idea / Doing / Done, delete it (yours only), and read or add notes."],
+      ] },
+      { group: "Chat (and the round button on every admin page)", items: [
+        ["Message the team…", "Enter sends; Shift+Enter is a new line. Paste or 🖼 adds a picture."],
+        ["A message", "Tap: 📌 Pin (anyone) or Delete (your own). The green tag is the page it was sent from — tap to go there."],
+        ["Pinned", "Pinned messages, on the right (folded above the chat on a phone)."],
+        ["Round chat button", "Bottom-left on every admin and test page: Chat | To-do in a box. Open ↗ goes to the full tab."],
+      ] },
+      { group: "To-do", items: [
+        ["Add a job · for me ▾", "Your own job, or pick Mikey or Leo to give them one."],
+        ["Tick box", "Done. Ticked jobs fade and leave after a day. ✕ deletes."],
+      ] },
       { group: "Team tab", items: [
         ["Live on knowitball.co.uk", "Whether the newest version of main finished deploying, how long ago, and what it was."],
         ["A push", "Opens it: the full message, when, which branch, and the patch note it went out in."],
@@ -748,21 +768,25 @@ export const ADMIN_GUIDES = {
         ["Open the full page ↗", "Opens that version's patch notes page on claude.ai."],
         ["See it on GitHub ↗", "The push itself on GitHub."],
         ["The chat that made it ↗", "The Claude chat that made the push. Only its owner can open it."],
+        ["Notes", "Leave a note on the push. Its owner gets a red number on Board."],
       ] },
       { group: "Patch notes tab", items: [
         ["Version list", "Every patch note, newest first. Same as /admin/patch-notes."],
       ] },
     ],
     saving: [
-      "Nothing. The board only reads from GitHub, through the site, and refreshes every minute.",
+      "Board: nothing. It only reads from GitHub, through the site, and refreshes every minute.",
+      "Ideas, chat, to-dos, notes and pins save to the shared database at once and show for the other two within about a second. Admins only.",
+      "First visit asks \"Which one are you?\" once and saves it to your account.",
       "How a push is matched to a patch note: if the push names a version (\"v0.55\"), that one; otherwise the same person's next patch note that went live after the push, up to 4 days later.",
     ],
     inGame: ["Nowhere. Admins only."],
     needs: [
       "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it GitHub only answers a few times an hour and the board says so.",
       "The live progress bars (\"Now working on\") are step 2: one database file for Mikey to run and a shared password. Until then each card says so.",
+      "Ideas, Chat and To-do need supabase/migrations/team_room.sql run once in Supabase. Until then they say so.",
     ],
-    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md",
+    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md · Team room kit: lib/teamRoom/ (config.ts = settings), components/teamRoom/, supabase/migrations/team_room.sql, tests/star/teamRoom.mts",
   },
   "/admin/testers": {
     title: "Tester Access",

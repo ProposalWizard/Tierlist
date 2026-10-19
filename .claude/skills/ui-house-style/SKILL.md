@@ -39,6 +39,19 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 19 Oct 2026 — the Team room and the admin side menu (Harry)
+- **"We need to be able to close the side tab."** On a computer, « at the top
+  of the admin side menu folds it to a 64 px strip of icons (remembered per
+  browser); » opens it again.
+- **"Don't like this big block between them."** The thick dark scrollbar
+  between the side menu and the page is gone; the menu scrolls without one.
+- **Team room parts sit in a top toggle AND in the side menu**: "this top
+  toggle happens when u enter the team board from the side menu - actually
+  all of these could be on the side menu too". Board | Ideas | Chat | To-do.
+- **"Use Higgsfield wherever needed for all UI"**, and he wants to try a third
+  admin look beyond Ops room / Clean light because "even the groups on the
+  side, it's a bit hard to see everything".
+
 ### 18 Oct 2026 — admin pages get real design (Harry)
 - **"I like the idea of the grouped admin … but it's not the UI I was
   imagining."** Said of the overview page's drawn phone mock (dark/amber

@@ -2,7 +2,7 @@
  * app/admin/team/page.tsx — the team board (Harry, 18 Oct 2026).
  *
  * Admins only (TB-Q4). ?tab=notes opens the Patch notes tab; &v=0.55 opens
- * that version. A local dev build lets everyone in, like AdminOnly.
+ * that version. ?tab=ideas | chat | todo opens that part of the Team room. A local dev build lets everyone in, like AdminOnly.
  */
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -22,7 +22,8 @@ export default async function TeamPage({ searchParams }: { searchParams?: { tab?
     if (!user) redirect("/auth?next=/admin/team");
     if (!(await isAdmin(user.id))) redirect("/");
   }
-  const tab = searchParams?.tab === "notes" ? "notes" : "team";
+  const t = searchParams?.tab;
+  const tab = t === "notes" || t === "ideas" || t === "chat" || t === "todo" ? t : "team";
   return (
     <>
       <TeamBoard initialTab={tab} initialVersion={searchParams?.v} />

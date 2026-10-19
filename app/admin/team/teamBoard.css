@@ -158,3 +158,10 @@
 .tb-notes { margin: -22px clamp(-36px, -3vw, -16px) 0; }
 @media (max-width: 1023px) { .tb-notes { margin: -16px -16px 0; } }
 .tb-notesdrop > summary svg, .tb-label svg { width: 15px; height: 15px; flex: 0 0 auto; }
+
+/* The Team room toggle (Harry, 19 Oct 2026) and its tabs. */
+.tb-roomtabs { max-width: 520px; width: 100%; }
+.tb-roomtabs button { font-size: 14px; padding: 9px 10px; }
+.tb-todo { max-width: 720px; display: flex; flex-direction: column; }
+.tb-pushnotes { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--ash-line); }
+.tb-pushes .tr-ncount { flex: 0 0 auto; font-size: 11px; }

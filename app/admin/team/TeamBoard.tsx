@@ -3,9 +3,20 @@
  * The team board (Harry, 18 Oct 2026): what Harry, Mikey and Leo are doing,
  * as its own full page. Ops room look (or Clean light), side menu with Team
  * and Patch notes. Tap a push to see it, and the patch note it went out in.
+ *
+ * The Team room (Harry, 19 Oct 2026): a toggle along the top switches
+ * Board | Ideas | Chat | To-do in place (also lines in the side menu).
+ * Pushes take notes (components/teamRoom).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import AdminShell from "@/components/admin/shell/AdminShell";
+import AdminShell, { type RoomTab } from "@/components/admin/shell/AdminShell";
+import IdeasBoard from "@/components/teamRoom/IdeasBoard";
+import ChatPage from "@/components/teamRoom/ChatPage";
+import { NoteCount, NotesThread, RoomGate, TodoList } from "@/components/teamRoom/parts";
+import { newGivenTasks, unreadChat, unreadNotes } from "@/lib/teamRoom/logic";
+import { useTeamRoom } from "@/lib/teamRoom/store";
+import { isTeamPerson } from "@/lib/teamRoom/config";
+import "@/components/teamRoom/teamRoom.css";
 import PatchNotesArchive from "@/app/admin/patch-notes/PatchNotesArchive";
 import { perDay, type Person, type PullRequest, type Push, type TeamBoardData } from "@/lib/teamBoard";
 import type { DevStatus } from "@/lib/devStatus";
@@ -31,8 +42,16 @@ const clock = (iso: string) =>
 const liveness = (iso: string | null, now: number) =>
   !iso ? "off" : now - Date.parse(iso) < 30 * 60_000 ? "live" : now - Date.parse(iso) < 3 * 3600_000 ? "quiet" : "off";
 
-export default function TeamBoard({ initialTab, initialVersion }: { initialTab: "team" | "notes"; initialVersion?: string }) {
-  const [tab, setTab] = useState<"team" | "notes">(initialTab);
+const ROOM: { key: Exclude<RoomTab, "notes">; name: string; title: string }[] = [
+  { key: "team", name: "Board", title: "Team" },
+  { key: "ideas", name: "Ideas", title: "Ideas" },
+  { key: "chat", name: "Chat", title: "Team chat" },
+  { key: "todo", name: "To-do", title: "My to-do" },
+];
+
+export default function TeamBoard({ initialTab, initialVersion }: { initialTab: RoomTab; initialVersion?: string }) {
+  const [tab, setTab] = useState<RoomTab>(initialTab);
+  const room = useTeamRoom();
   const [version, setVersion] = useState<string | undefined>(initialVersion);
   const [data, setData] = useState<TeamBoardData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +74,7 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
 
   // The address follows the tab, so a link to a patch note can be shared.
   useEffect(() => {
-    const q = tab === "notes" ? `?tab=notes${version ? `&v=${encodeURIComponent(version)}` : ""}` : "";
+    const q = tab === "notes" ? `?tab=notes${version ? `&v=${encodeURIComponent(version)}` : ""}` : tab === "team" ? "" : `?tab=${tab}`;
     try { window.history.replaceState(null, "", `/admin/team${q}`); } catch { /* old browser */ }
   }, [tab, version]);
 
@@ -67,21 +86,43 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
   }, [data]);
 
   const pulls = data?.pulls ?? [];
+  const badges: Partial<Record<RoomTab, number>> = {
+    team: unreadNotes(room.notes, room.me, room.read.pushNotes, "push"),
+    ideas: unreadNotes(room.notes, room.me, room.read.notes, "idea"),
+    chat: tab === "chat" ? 0 : unreadChat(room.messages, room.me, room.read.chat),
+    todo: tab === "todo" ? 0 : newGivenTasks(room.tasks, room.me, room.read.tasks),
+  };
+  const title = ROOM.find((r) => r.key === tab)?.title ?? "Team";
   return (
-    <AdminShell tab={tab} role="admin" onTab={(t) => { setTab(t); if (t === "team") setVersion(undefined); }}>
+    <AdminShell tab={tab} role="admin" badges={badges} onTab={(t) => { setTab(t); if (t !== "notes") setVersion(undefined); }}>
       {tab === "notes" ? (
         <div className="tb-notes"><PatchNotesArchive key={version ?? "latest"} initialVersion={version} /></div>
       ) : (
         <div className="tb">
-          <PitchLines />
+          {tab === "team" && <PitchLines />}
           <header className="tb-head">
             <div>
-              <p className="tb-eyebrow">Team board</p>
-              <h1 className="ash-h1">Team</h1>
-              <p className="ash-sub">Three of us. One game.</p>
+              <p className="tb-eyebrow">Team room</p>
+              <h1 className="ash-h1">{title}</h1>
+              {tab === "team" && <p className="ash-sub">Three of us. One game.</p>}
             </div>
-            <DeployPill data={data} now={now} />
+            {tab === "team" && <DeployPill data={data} now={now} />}
           </header>
+          <nav className="tr tr-seg tb-roomtabs" aria-label="Team room">
+            {ROOM.map((r) => {
+              const n = badges[r.key] ?? 0;
+              return (
+                <button key={r.key} aria-pressed={tab === r.key} onClick={() => setTab(r.key)}>
+                  {r.name}{n > 0 && <span className={`tr-badge${r.key === "todo" ? " amber" : ""}`}>{n > 99 ? "99+" : n}</span>}
+                </button>
+              );
+            })}
+          </nav>
+
+          {tab === "ideas" && <IdeasBoard />}
+          {tab === "chat" && <ChatPage />}
+          {tab === "todo" && <div className="tr ash-panel tb-todo"><RoomGate><TodoList /></RoomGate></div>}
+          {tab === "team" && (<>
 
           {error && <div className="tb-alert">{error}</div>}
           {data?.problems.map((p) => <div key={p} className="tb-alert">{p}</div>)}
@@ -95,6 +136,7 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
             </div>
             <PullPanel pulls={pulls} now={now} loading={!data} />
           </div>
+          </>)}
         </div>
       )}
       {open && <PushSheet push={open} now={now} onClose={() => setOpen(null)} onNote={openNote} />}
@@ -219,6 +261,7 @@ function PersonCard({ person, pushes, status, statusOn, now, loading, onOpen, on
                   <span className={`tb-pdot ${p.patch ? "in" : ""}`} />
                   <span className="tb-sha">{p.sha.slice(0, 7)}</span>
                   <span className="tb-msg">{p.title}</span>
+                  <NoteCount kind="push" id={p.sha} />
                   <span className="tb-time">{ago(p.at, now).replace(" ago", "")}</span>
                 </button>
               </li>
@@ -349,6 +392,7 @@ function PushSheet({ push, now, onClose, onNote }: { push: Push; now: number; on
           {push.session && <a className="ash-btn ghost" href={push.session} target="_blank" rel="noreferrer">The chat that made it ↗</a>}
         </div>
         <p className="tb-muted ash-mono" style={{ marginTop: 10 }}>{push.sha.slice(0, 7)}</p>
+        <div className="tr tb-pushnotes"><NotesThread kind="push" id={push.sha} owner={isTeamPerson(push.person) ? push.person : null} /></div>
       </div>
     </div>
   );
