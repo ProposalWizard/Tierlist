@@ -1,0 +1,91 @@
+# Harry's answers to the round questions (19 Oct 2026, evening)
+
+Source: patch notes https://claude.ai/artifact/1gVoLFwG57QCn7xiU8Tudk
+(question ids are that page's). Harry's words in quotes. Each line ends with
+the BUILD it belongs to (list at the bottom).
+
+## Admin
+- **A-1 two rows or mixed:** asked for a better explanation with pictures. Not decided. → explained with stills; re-ask.
+- **A-2 Bento → redo ALL looks:** "Redo all of the other looks … they need to all look the same … They can't just click Clean light and suddenly I'm on a different admin page with a different layout." Every admin look = the SAME layout (Broadcast's), only a different skin (colours, type, corners). → B4
+- **A-3 chat bubble:** fixed bottom left is fine "as long as, if it is covering something, I can still press it" (the thing underneath must stay pressable). Check every page on mobile. → B4
+- **A-4 back arrow:** "Always top left … always the same", on every admin/test page. → B4
+- **A-5 training levels two taps:** keep. NEW: training levels can't be edited like the scenario gallery. Add editing of the training drills (in the training area or the gallery). "The final training of, say, vision isn't hard enough." → B7
+- **A-8 last 6 admin pages:** with the scene editor work. → B6
+- **A-9 phone group boxes:** three per row stays. "Looks a lot better with the key button staying on screen."
+
+## Play screens
+- **Drift guard (answer 9):** make the engine/drift warning impossible to miss. DONE 19 Oct: `scripts/hooks/engine-warn.mjs` now ASKS with a red "THIS IS A MATCH ENGINE CHANGE / SOMETHING MAY DRIFT" notice in the Allow box, and covers the drift files too (CanvasMatch, EnginePlay, ScenarioPlay, InfiniteMatch, hiddenMatch, engineProfile, playArea, scenePicture, matchView).
+- **T-1 touch pass:** fix everything the check found, show stills. → B1
+- **A-7 five-a-side:** bring it back as its own TEST AREA with tabs: Scenarios, Data, Full match + match radar. "Give things tabs. I think tabs are the way to go. Even in the scenario gallery, whatever tab is useful for that mode." → B8
+
+## Full highlights rebuild (FHR)
+- **The switch (answer 12):** no own admin page and no "ruler" card in the Chances row. It is just a toggle: Settings in game AND the settings before a match. A small "?" next to it with a plain rundown of everything it turns on and what each is trying. Show it to EVERYONE for now (P-2 answer, answer 18). The ruler can live in a test area with tabs if useful. → B2
+- **Build-up in the test areas (answer 13):** Infinite Highlights and Infinite Match must play build-ups. Prefer automatic and natural, with some adjusting. Wanted: in a final, a longer build-up in the 90th minute; a 90th-minute winner keeps going — you wheel off, celebrate, a celebration cut scene, then the trophy lift. → B2 (build-ups in test areas), B5 (winner → celebration → trophy cut scene)
+- **Scenario gallery (answer 14):** generated build-ups must NOT write over Mikey's hand-checked scenarios. "We need to make sure we do this in the right way." Generated = a separate layer; the gallery's saved scenarios stay the source and untouched. → B2
+- **FHR-1 phase 3:** GO (players already moving; engine change behind the switch; the red guard will ask). → B2
+- **FHR-2 22-player model:** decide later — re-ask after phase 3.
+- **FHR-3 extra defenders:** yes, if it makes sense for one to come in from off screen. → B2
+- **FHR-4:** every open-play chance gets a build-up. Some set pieces and penalties can show the foul that won them. → B2
+
+## Free data
+- **More matches (answer 19):** there must be more than 2,104. Remove Afriskaut ("no one's heard of them"). Find more tracking data (every player's position) and condense it into more knowledge. → B3
+- **DATA-1 credits:** Settings is fine. → B3
+- **DATA-2 real moments in the game:** try it. Inside the highlights toggle, another toggle "Real moment highlights". Think through how it works, how we keep track of it, and how we edit it later. → B3
+- **A-6 one Play button:** keep. Real shots shot map: "pretty cool".
+
+## 3D
+- **Plan:** liked. "Fixing skin and light is very big." Go on phases 1–5. → B5
+- **Home player (answer 30):** natural, energetic poses; eyes blink and look around; lips move when talking; holds things properly. → B5
+- **Blender:** install whenever needed.
+- **3D-3 editor saves:** "I would love it to commit straight into the game" — database now is fine IF it can then be pushed into the repo (a Commit to game step). → B6
+- **3D-4:** an Approve button. Approved edits are used in the game; still editable; choose when and where they're used. → B6
+- **3D-5:** step 3b first (shop, garden, house). → B6
+- **3D-6 Higgsfield:** ON for now. Always say what is being made there, and delete the images/videos after use.
+
+## Generated cut scenes
+- **GEN-1:** build the Scene generator as its own admin page, in the **Studio** tab. → B6
+- **When they play (answer 31):** "I just don't know when they play and why, but we need to fix that." Decide and show when a generated scene plays in the game. → B6
+- **GEN-3:** they can go in the game if they're good, for the moments that suit them. → B6 (after B5's fixes)
+
+## FM ideas (research, answers 33–45)
+- Make a **Research area** in the admin (the FM top 10 and the other research pages). → B4
+- Liked, to plan as features (not started):
+  - Hidden traits that change with how you play — an honour system "like Red Dead Redemption" (gambling, leading on the pitch, captain/dressing-room groups), for NPCs and you.
+  - Personalities that change reactions.
+  - Position familiarity, and roles inside a position; familiarity changes with the highlights.
+  - Agents as people in the game: find one, personalities, some do you wrong or steal money.
+  - Mentoring. Weekly training plan. Small steady gains on a focus (maybe an unlock).
+  - Full-time summary with shot map and chance quality for you; post-match stats for everyone.
+  - "Your match in 20 seconds".
+- Not wanted: the manager stuff (maybe a short post-match analysis you can ask for). "Extra stuff": skip. World simulation is Mikey's area.
+
+## Mikey's asks
+- **M-1** name: **Lower League Trophy**. → B9
+- **M-2** early rounds: a draw goes straight to penalties; from the quarter-finals: extra time, then penalties. → B9
+- **M-3** byes: top 8 of last season's League One. → B9
+- **M-4** midweek dates. → B9
+- **M-5** prize: trophy in the cabinet, money and XP well below the League Cup; doing well can impress scouts in those leagues. → B9
+- **M-6** hold to speed up post-match; also a skip (double-tap to skip). → B9
+- **M-7/M-8** headers AND volleys back on, with the ball-in-the-air + shadow signal and build-ups lofting it to your head. Idea: bicycle kicks; a "flair" stat that grows with fame; trying them, and hitting the centre of the ball matters more. → B10
+
+## Old bugs
+- **B-1:** fix the 3 old failures (keeperPro, keeperBrain, chanceJudge "Chances Old"; Player of the Month photos) AND the failing Wembley test (`tests/star/wembley3d.mts`): fix it or remove it. → B1
+
+## Still to ask
+- **P-1 push to live:** not answered.
+- **Answer 1 "3D scene editor."** — unclear which question it answers.
+- **A-1** after the pictures.
+
+## The builds (one chat each, in this order unless Harry changes it)
+| # | Build | Size |
+|---|---|---|
+| B1 | Touch fixes (all 27) + the old failing tests + Wembley test | medium |
+| B2 | FHR: switch in Settings + pre-match with "?", build-ups in Infinite Highlights/Match, phase 3 (players moving), extra defender, fouls before set pieces, gallery kept safe | large |
+| B3 | Free data: more tracking matches, drop Afriskaut, credits in Settings, "Real moment highlights" toggle | large |
+| B4 | Admin: every look = one layout, different skin; back arrow top left everywhere; chat bubble bottom left and see-through to taps; Research area | medium |
+| B5 | 3D phases 1–5: bench, skin and light, phone cameras, moving faces, home player alive; 90th-minute winner → celebration → trophy | large |
+| B6 | Scene editor 3b + Approve + Commit to game; Scene generator page in Studio; when generated scenes play; last 6 admin pages | large |
+| B7 | Training drills editable (like the gallery); harder final levels (vision first) | medium |
+| B8 | Five-a-side test area with tabs (Scenarios, Data, Full match + radar) | medium |
+| B9 | Lower League Trophy + hold/double-tap to speed up post-match | medium |
+| B10 | Headers and volleys back with the air-ball signal; flair idea | medium–large |

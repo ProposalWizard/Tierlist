@@ -706,7 +706,7 @@ Mikeys never change the match engine rule and make it a general guard - instead
 of a rule that warns when it's happening."* Mikey's old rule (never modify
 `lib/star/canvasEngine.ts`) is gone. Any session may change the engine, but
 `scripts/hooks/engine-warn.mjs` (a PreToolUse hook in `.claude/settings.json`)
-flags every edit as it happens. When it fires: say so plainly in the reply and
+flags every edit as it happens. Since 19 Oct 2026 (Harry: "put it in bright red … I'm just clicking Allow, allow, allow") it ASKS every time with a red "THIS IS A MATCH ENGINE CHANGE" notice, and also asks, as "SOMETHING MAY DRIFT", on the files that decide what a play screen hands the engine (CanvasMatch, EnginePlay, ScenarioPlay, InfiniteMatch, hiddenMatch, engineProfile, playArea, scenePicture, matchView). When it fires: say so plainly in the reply and
 the patch notes (what changed, why, before/after numbers), run the match tests
 (`node scripts/run-star-tests.mjs finishing keeper aiming outcomes`) and
 playtest before pushing.
