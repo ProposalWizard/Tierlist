@@ -16,7 +16,7 @@
  * Data: StatsBomb open data (https://github.com/statsbomb/open-data)
  */
 import type { Scenario, Vec2 } from "./canvasEngine";
-import type { Kit } from "./kits";
+import { CLUB_KITS, type Kit } from "./kits";
 import type { LeadBallKey } from "./leadIn";
 import { ballAlong } from "./leadIn";
 import type { RealGoalView, RealGoalGhost } from "./realGoalView";
@@ -25,13 +25,14 @@ import {
   type SbShot, type SbLeadin, type SbPass,
 } from "./statsbombShots";
 import { CX, POST_L, POST_R } from "./pitch";
+import { realTrack, type TrackFrame, type RealTrack } from "./realGoalTrack";
 
 // ─────────────────────────────────────────────────────────────────────────
 //  THE DATA
 // ─────────────────────────────────────────────────────────────────────────
 
-/** One action of the move: [seconds before the shot, P/C/D, from, to | null, player, recipient | null, height 0-2]. */
-export type RgMoveEv = [number, "P" | "C" | "D", [number, number], [number, number] | null, string, string | null, number];
+/** One action of the move: [seconds before the shot, P pass / C carry / D dribble / R ball received, from, to | null, player, recipient | null, height 0-2]. */
+export type RgMoveEv = [number, "P" | "C" | "D" | "R", [number, number], [number, number] | null, string, string | null, number];
 
 /** The extra facts for one goal (goals.json). */
 export interface RgExtra {
@@ -60,30 +61,48 @@ export interface RgExtra {
   known?: Record<string, [string, number | null]>;
 }
 
-export interface RgFile { credit: string; goals: RgExtra[] }
+/**
+ * One goal as data/statsbomb/realgoals/<collection>.json stores it
+ * (scripts/statsbomb/fetch_real_goals.py): the Real shots shape plus the facts.
+ */
+export interface RgRow extends Omit<RgExtra, "comp"> {
+  shot: SbShot;
+  /** StatsBomb 360 frames during the move (see realGoalTrack.ts). */
+  frames?: TrackFrame[];
+  /** A one-line name for a famous goal (Legends). */
+  label?: string | null;
+  /** What kind of goal it is (Club worldies): "volley", "free kick", "from range"… */
+  what?: string;
+}
+
+/** One collection file. */
+export interface RgCollection { credit: string; key: string; name: string; badge: string; goals: RgRow[] }
+/** index.json: the collections and their sizes. */
+export interface RgIndexEntry { key: string; name: string; badge: string; count: number; kb: number; tracked: number }
+export interface RgIndex { credit: string; collections: RgIndexEntry[] }
 
 export interface RealGoal {
   id: string;
   shot: SbShot;
-  x: RgExtra;
+  x: RgExtra & { frames?: TrackFrame[]; label?: string | null; what?: string };
+  /** The collection it is in (wc2022, euro2024, … legends, worldies), and its scoreboard badge. */
+  col: string;
+  badge: string;
 }
 
-/** The goals the page plays: open play and free kicks, with their extra facts. */
-export function joinGoals(shots: SbShot[], extras: RgExtra[]): RealGoal[] {
-  const by = new Map(extras.map((e) => [e.id, e]));
-  const out: RealGoal[] = [];
-  for (const s of shots) {
-    if (s.outcome !== "Goal" || s.type === "Penalty") continue;
-    const x = by.get(s.id);
-    if (x) out.push({ id: s.id, shot: s, x });
-  }
-  return out;
+/** The goals of one collection file, ready to play. */
+export function goalsOf(file: RgCollection): RealGoal[] {
+  return file.goals.map((r) => ({
+    id: r.id, shot: r.shot, col: file.key, badge: file.badge,
+    x: { ...r, comp: r.shot.comp },
+  }));
 }
 
 // ─────────────────────────────────────────────────────────────────────────
 //  NAMES
 // ─────────────────────────────────────────────────────────────────────────
 
+const WHOLE_NAMES = new Set(["Carlos Alberto", "Dani Olmo", "Nico Williams", "Lamine Yamal", "Gabriel Jesus", "Bruno Fernandes"]);
 const PARTICLES = new Set(["di", "de", "van", "von", "da", "dos", "das", "mac", "el", "al", "ter", "le", "la", "del", "der"]);
 
 /** The name he is known by ("Kylian Mbappé Lottin" → "Kylian Mbappé"). */
@@ -95,6 +114,10 @@ export function knownAs(g: RealGoal, full: string): string {
 export function shortNameOf(known: string): string {
   const w = known.trim().split(/\s+/);
   if (w.length <= 1) return w[0] ?? "";
+  // Names a shirt keeps whole ("Carlos Alberto", not "Alberto").
+  if (WHOLE_NAMES.has(known.trim())) return known.trim();
+  // "Vinícius José Paixão de Oliveira Júnior" → "Vinícius Jr", not "Júnior".
+  if (/^(J[uú]nior|Jr\.?)$/i.test(w[w.length - 1])) return `${w[0]} Jr`;
   const prev = w[w.length - 2];
   if (PARTICLES.has(prev.toLowerCase())) return `${prev[0].toUpperCase()}${prev.slice(1)} ${w[w.length - 1]}`;
   return w[w.length - 1];
@@ -114,8 +137,14 @@ export function scoreBefore(g: RealGoal): string {
 export const minuteOf = (g: RealGoal) => g.shot.minute + 1;
 
 export function compBadge(g: RealGoal): string {
-  return g.x.comp.startsWith("World Cup") ? "WC" : "EURO";
+  if (g.badge && g.badge !== "LEGEND" && g.badge !== "CLUB") return g.badge;
+  const c = g.x.comp;
+  return c.startsWith("World Cup") ? "WC" : c.startsWith("Euro") ? "EURO" : c.includes("Champions") || c.includes("European Cup") ? "UCL"
+    : c.startsWith("Premier") ? "PL" : c.startsWith("La Liga") ? "LIGA" : c.startsWith("Serie") ? "SERIE A" : c.startsWith("Bundes") ? "BUNDES" : c.startsWith("Ligue") ? "L1" : "CLUB";
 }
+
+/** Is this goal played with the real camera's tracking (360 frames) for every man in the build-up? */
+export const isTracked = (g: RealGoal) => (g.x.frames?.length ?? 0) >= 2;
 
 // ─────────────────────────────────────────────────────────────────────────
 //  THE NATIONAL KITS — the ~44 sides in the data (home, change)
@@ -168,6 +197,118 @@ export const NATION_KITS: Record<string, { home: Kit; away: Kit }> = {
   Uruguay: { home: k("#5cbfeb", "#111111"), away: k("#ffffff", "#5cbfeb") },
   Wales: { home: k("#c8102e", "#00b140"), away: k("#111111", "#c8102e") },
 };
+/**
+ * The other sides in the 888 goals (World Cup 2018, Euro 2020, Copa América
+ * 2024, AFCON 2023, the club classics): their real home and change colours.
+ * English clubs come from the game's own CLUB_KITS first.
+ */
+const MORE_KITS: Record<string, { home: Kit; away: Kit }> = {
+  "AC Milan": { home: k("#d40000", "#111111"), away: k("#ffffff", "#d40000") },
+  "AS Monaco": { home: k("#d4021d", "#ffffff"), away: k("#ffffff", "#d4021d") },
+  "AS Roma": { home: k("#8e1f2f", "#f0bc42"), away: k("#ffffff", "#8e1f2f") },
+  "Ajax": { home: k("#ffffff", "#d2122e"), away: k("#111111", "#d2122e") },
+  "Algeria": { home: k("#ffffff", "#006233"), away: k("#006233", "#ffffff") },
+  "Almería": { home: k("#d40c1c", "#ffffff"), away: k("#111111", "#d40c1c") },
+  "Angola": { home: k("#cc092f", "#111111"), away: k("#111111", "#cc092f") },
+  "Atalanta": { home: k("#1e3e8f", "#111111"), away: k("#ffffff", "#1e3e8f") },
+  "Athletic Club": { home: k("#ee2523", "#ffffff"), away: k("#111111", "#ee2523") },
+  "Atlético Madrid": { home: k("#cb3524", "#ffffff"), away: k("#272e61", "#cb3524") },
+  "Barcelona": { home: k("#a50044", "#004d98"), away: k("#f6c445", "#a50044") },
+  "Bastia": { home: k("#0047ab", "#ffffff"), away: k("#ffffff", "#0047ab") },
+  "Bayer Leverkusen": { home: k("#e32221", "#111111"), away: k("#111111", "#e32221") },
+  "Bayern Munich": { home: k("#dc052d", "#ffffff"), away: k("#ffffff", "#dc052d") },
+  "Bolivia": { home: k("#007a3d", "#ffffff"), away: k("#ffffff", "#007a3d") },
+  "Borussia Dortmund": { home: k("#fde100", "#111111"), away: k("#111111", "#fde100") },
+  "Burkina Faso": { home: k("#ffffff", "#009e49"), away: k("#ef2b2d", "#fcd116") },
+  "Cape Verde Islands": { home: k("#003893", "#ffffff"), away: k("#ffffff", "#003893") },
+  "Carpi": { home: k("#ffffff", "#d40000"), away: k("#d40000", "#ffffff") },
+  "Chievo": { home: k("#ffd700", "#002d72"), away: k("#002d72", "#ffd700") },
+  "Chile": { home: k("#d52b1e", "#0039a6"), away: k("#ffffff", "#d52b1e") },
+  "Colombia": { home: k("#fcd116", "#003893"), away: k("#003893", "#fcd116") },
+  "Congo DR": { home: k("#007fff", "#f7d618"), away: k("#ce1021", "#007fff") },
+  "Côte d'Ivoire": { home: k("#f77f00", "#009e60"), away: k("#ffffff", "#f77f00") },
+  "Deportivo Alavés": { home: k("#1e5fa8", "#ffffff"), away: k("#ffffff", "#1e5fa8") },
+  "Egypt": { home: k("#c8102e", "#ffffff"), away: k("#ffffff", "#c8102e") },
+  "Eibar": { home: k("#a00c30", "#004b93"), away: k("#ffffff", "#a00c30") },
+  "Eintracht Frankfurt": { home: k("#e1000f", "#111111"), away: k("#111111", "#e1000f") },
+  "Equatorial Guinea": { home: k("#e32118", "#3e9a00"), away: k("#ffffff", "#e32118") },
+  "Espanyol": { home: k("#007fc8", "#ffffff"), away: k("#111111", "#007fc8") },
+  "FC Porto": { home: k("#003c8f", "#ffffff"), away: k("#ffd700", "#003c8f") },
+  "FSV Mainz 05": { home: k("#c3141e", "#ffffff"), away: k("#ffffff", "#c3141e") },
+  "Finland": { home: k("#ffffff", "#002f6c"), away: k("#002f6c", "#ffffff") },
+  "Frosinone": { home: k("#ffd700", "#0050a0"), away: k("#0050a0", "#ffd700") },
+  "Gambia": { home: k("#ce1126", "#0c1c8c"), away: k("#ffffff", "#3a7728") },
+  "Gazélec Ajaccio": { home: k("#e30613", "#0a3d91"), away: k("#ffffff", "#e30613") },
+  "Genoa": { home: k("#a41e34", "#0a2240"), away: k("#ffffff", "#a41e34") },
+  "Getafe": { home: k("#005999", "#ffffff"), away: k("#d40c1c", "#ffffff") },
+  "Girona": { home: k("#d40c1c", "#ffffff"), away: k("#111111", "#d40c1c") },
+  "Guinea": { home: k("#ce1126", "#fcd116"), away: k("#ffffff", "#009460") },
+  "Guinea-Bissau": { home: k("#ce1126", "#fcd116"), away: k("#009e49", "#ffffff") },
+  "Guingamp": { home: k("#d40c1c", "#111111"), away: k("#ffffff", "#d40c1c") },
+  "Hoffenheim": { home: k("#1961b5", "#ffffff"), away: k("#ffffff", "#1961b5") },
+  "Huesca": { home: k("#003b7a", "#a00c30"), away: k("#ffffff", "#003b7a") },
+  "Iceland": { home: k("#02529c", "#ffffff"), away: k("#ffffff", "#02529c") },
+  "Inter Milan": { home: k("#0068a8", "#111111"), away: k("#ffffff", "#0068a8") },
+  "Jamaica": { home: k("#fed100", "#009b3a"), away: k("#111111", "#fed100") },
+  "Juventus": { home: k("#ffffff", "#111111"), away: k("#111111", "#ffffff") },
+  "Leeds United": { home: k("#ffffff", "#1d428a"), away: k("#1d428a", "#ffcd00") },
+  "Leganés": { home: k("#ffffff", "#003da5"), away: k("#003da5", "#ffffff") },
+  "Leicester City": { home: k("#003090", "#fdbe11"), away: k("#ffffff", "#003090") },
+  "Lens": { home: k("#ffd700", "#d40c1c"), away: k("#d40c1c", "#ffd700") },
+  "Levante UD": { home: k("#004b93", "#a00c30"), away: k("#ffffff", "#004b93") },
+  "Lille": { home: k("#e01e13", "#20325f"), away: k("#ffffff", "#e01e13") },
+  "Lyon": { home: k("#ffffff", "#1e3e8f"), away: k("#1e3e8f", "#e01e13") },
+  "Mali": { home: k("#14b53a", "#fcd116"), away: k("#fcd116", "#ce1126") },
+  "Mallorca": { home: k("#e20613", "#111111"), away: k("#111111", "#e20613") },
+  "Mauritania": { home: k("#00a95c", "#ffd700"), away: k("#ffffff", "#00a95c") },
+  "Mozambique": { home: k("#d21034", "#111111"), away: k("#ffffff", "#d21034") },
+  "Málaga": { home: k("#3399ff", "#ffffff"), away: k("#111111", "#3399ff") },
+  "Namibia": { home: k("#003580", "#ffce00"), away: k("#ffffff", "#003580") },
+  "Nantes": { home: k("#fcd405", "#00764b"), away: k("#00764b", "#fcd405") },
+  "Napoli": { home: k("#12a0d7", "#ffffff"), away: k("#ffffff", "#12a0d7") },
+  "Nigeria": { home: k("#008751", "#ffffff"), away: k("#ffffff", "#008751") },
+  "North Macedonia": { home: k("#d20000", "#ffe600"), away: k("#ffffff", "#d20000") },
+  "Palermo": { home: k("#f4a8c4", "#111111"), away: k("#111111", "#f4a8c4") },
+  "Panama": { home: k("#da121a", "#ffffff"), away: k("#ffffff", "#072357") },
+  "Paraguay": { home: k("#d52b1e", "#ffffff"), away: k("#0038a8", "#ffffff") },
+  "Paris Saint-Germain": { home: k("#004170", "#da291c"), away: k("#ffffff", "#004170") },
+  "Peru": { home: k("#ffffff", "#d91023"), away: k("#d91023", "#ffffff") },
+  "RC Deportivo La Coruña": { home: k("#0067b1", "#ffffff"), away: k("#111111", "#0067b1") },
+  "Racing Santander": { home: k("#ffffff", "#00703c"), away: k("#00703c", "#ffffff") },
+  "Rayo Vallecano": { home: k("#ffffff", "#e30613"), away: k("#111111", "#e30613") },
+  "Real Betis": { home: k("#00954c", "#ffffff"), away: k("#111111", "#00954c") },
+  "Real Madrid": { home: k("#ffffff", "#febe10"), away: k("#1d2a58", "#ffffff") },
+  "Real Sociedad": { home: k("#0067b1", "#ffffff"), away: k("#ff6a00", "#111111") },
+  "Real Valladolid": { home: k("#5b2a86", "#ffffff"), away: k("#ffffff", "#5b2a86") },
+  "Real Zaragoza": { home: k("#ffffff", "#003a8c"), away: k("#003a8c", "#ffffff") },
+  "Recreativo Huelva": { home: k("#ffffff", "#0055a5"), away: k("#0055a5", "#ffffff") },
+  "Rennes": { home: k("#e13327", "#111111"), away: k("#ffffff", "#e13327") },
+  "Russia": { home: k("#d52b1e", "#ffffff"), away: k("#ffffff", "#0039a6") },
+  "Sassuolo": { home: k("#00a752", "#111111"), away: k("#ffffff", "#00a752") },
+  "Schalke 04": { home: k("#004d9d", "#ffffff"), away: k("#ffffff", "#004d9d") },
+  "Sevilla": { home: k("#ffffff", "#d40c1c"), away: k("#d40c1c", "#ffffff") },
+  "South Africa": { home: k("#ffb612", "#007749"), away: k("#007749", "#ffb612") },
+  "Stade Malherbe Caen": { home: k("#1a3e84", "#e30613"), away: k("#ffffff", "#1a3e84") },
+  "Stade de Reims": { home: k("#e30613", "#ffffff"), away: k("#ffffff", "#e30613") },
+  "Sweden": { home: k("#fecc02", "#006aa7"), away: k("#006aa7", "#fecc02") },
+  "Tanzania": { home: k("#1eb53a", "#00a3dd"), away: k("#00a3dd", "#fcd116") },
+  "Torino": { home: k("#8a1e03", "#ffffff"), away: k("#ffffff", "#8a1e03") },
+  "Toulouse": { home: k("#5b2a86", "#ffffff"), away: k("#ffffff", "#5b2a86") },
+  "Troyes": { home: k("#0a4ca3", "#ffffff"), away: k("#ffffff", "#0a4ca3") },
+  "Udinese": { home: k("#ffffff", "#111111"), away: k("#111111", "#ffffff") },
+  "Union Berlin": { home: k("#eb1923", "#ffffff"), away: k("#ffffff", "#eb1923") },
+  "Valencia": { home: k("#ffffff", "#ee3524"), away: k("#111111", "#ff7f00") },
+  "Venezuela": { home: k("#7a1b2e", "#fcd116"), away: k("#ffffff", "#7a1b2e") },
+  "Villarreal": { home: k("#ffe667", "#005187"), away: k("#005187", "#ffe667") },
+  "Werder Bremen": { home: k("#1d9053", "#ffffff"), away: k("#ffffff", "#1d9053") },
+  "Wolfsburg": { home: k("#65b32e", "#ffffff"), away: k("#ffffff", "#65b32e") },
+  "Zambia": { home: k("#198a00", "#ef7d00"), away: k("#ffffff", "#198a00") },
+};
+for (const [team, kits] of Object.entries(MORE_KITS)) if (!NATION_KITS[team]) NATION_KITS[team] = kits;
+for (const team of ["Arsenal", "Aston Villa", "AFC Bournemouth", "Chelsea", "Crystal Palace", "Liverpool", "Manchester City", "Manchester United", "Newcastle United", "Southampton", "Stoke City", "Sunderland", "Swansea City", "Tottenham Hotspur", "West Bromwich Albion", "West Ham United", "Leicester City", "Leeds United"]) {
+  const c = CLUB_KITS[team];
+  if (c && !NATION_KITS[team]) NATION_KITS[team] = { home: k(c.home.shirt.toLowerCase(), c.home.trim.toLowerCase()), away: k(c.away.shirt.toLowerCase(), c.away.trim.toLowerCase()) };
+}
 const FALLBACK: { home: Kit; away: Kit } = { home: k("#64748b", "#ffffff"), away: k("#ffffff", "#64748b") };
 
 const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -263,14 +404,34 @@ export function starsFor(scored: boolean, pct: number): 0 | 1 | 2 | 3 {
 //  ALWAYS SCOREABLE AS THE REAL GOAL (the engine's Scenario.realLane)
 // ─────────────────────────────────────────────────────────────────────────
 
-/** How close to the real crossing a strike must be heading to be in the real lane (m). */
+/**
+ * Leo, 19 Oct 2026: "make sure that if the shot is almost exactly like the
+ * real shot then it WILL go in no matter what, if a player didnt block it irl
+ * they cant block the IDENTICAL same shot in game".
+ *
+ * A strike heading LANE_PCT% or more like the real one (the page's own
+ * accuracy %, worked out at the moment you strike it) is in the real lane:
+ * nobody blocks it, the keeper does not save it. Before (v0.17) the lane was a
+ * separate box (0.6 m across, 0.55 m up), so a shot the page called 77% could
+ * still be saved. Now the two use the same distance.
+ */
+export const LANE_PCT = 70;
+/** The lane's radius (m): where the accuracy curve reaches LANE_PCT. */
+export const LANE_R = ACC_SIGMA * Math.sqrt(-Math.log(LANE_PCT / 100));
+/** The old box, kept for the measurements' before. */
 export const LANE_TOL_X = 0.6;
 export const LANE_TOL_Z = 0.55;
 
 /** The real goal as one of our chances, with its real lane switched on. */
-export function scenarioForGoal(g: RealGoal, lane = true): Scenario {
-  const sc = scenarioForShot(g.shot, { wideFrame: true });
-  if (lane) { const e = realEnd(g); sc.realLane = { x: e.x, z: e.z, tolX: LANE_TOL_X, tolZ: LANE_TOL_Z }; }
+export function scenarioForGoal(g: RealGoal, lane: boolean | "box" = true): Scenario {
+  // Every real man in the freeze frame is in the chance (the build-up never makes one vanish).
+  const sc = scenarioForShot(g.shot, { wideFrame: true, allPeople: true });
+  if (lane) {
+    const e = realEnd(g);
+    sc.realLane = lane === "box"
+      ? { x: e.x, z: e.z, tolX: LANE_TOL_X, tolZ: LANE_TOL_Z }
+      : { x: e.x, z: e.z, tolX: LANE_TOL_X, tolZ: LANE_TOL_Z, r: LANE_R, hw: ACC_HEIGHT_WEIGHT };
+  }
   return sc;
 }
 
@@ -376,6 +537,32 @@ export const FEATURED: { id: string; label: string }[] = [
   { id: "bf03dfcf", label: "Nico Williams v England — Euro 2024 final" },
   { id: "07c658a2", label: "Al Dawsari v Argentina — the shock" },
   { id: "d71bc1d5", label: "Asano v Germany — the near-post finish" },
+  { id: "61d6d669", label: "Musiala v Scotland — Euro 2024's opener" },
+  { id: "f3b86342", label: "Merino v Germany — the 119th-minute header" },
+  { id: "dc16ea8a", label: "Watkins v Netherlands — the late winner" },
+  { id: "7d0b37dd", label: "Pavard v Argentina — the half-volley" },
+  { id: "a1da3a4b", label: "Quaresma v Iran — the outside of the boot" },
+  { id: "526c3ca4", label: "Ronaldo's free kick v Spain — hat-trick" },
+  { id: "c7b79eb5", label: "Messi v Nigeria — thigh, foot, finish" },
+  { id: "989f9092", label: "Kroos v Sweden — 95th minute" },
+  { id: "59cd7437", label: "Modrić v Argentina — from 25 m" },
+  { id: "63b6b995", label: "Mbappé v Argentina — the 19-year-old" },
+  { id: "6946589d", label: "Di María v France — the screamer" },
+  { id: "ae7860e0", label: "Golovin's free kick v Saudi Arabia" },
+  { id: "8023b6b6", label: "Mandžukić v England — into the final" },
+  { id: "8b8479e0", label: "Pogba — World Cup final 2018" },
+  { id: "8b3b883a", label: "Mbappé — World Cup final 2018" },
+  { id: "02add02f", label: "Coutinho v Switzerland — the curler" },
+  { id: "26ef739f", label: "Schick v Scotland — from the halfway line" },
+  { id: "731a6026", label: "Pogba v Switzerland — the curler" },
+  { id: "3b50aa84", label: "Damsgaard's free kick v England" },
+  { id: "6605af47", label: "Shaw — Euro 2020 final, 2nd minute" },
+  { id: "eb8df622", label: "Insigne v Belgium — the trademark" },
+  { id: "51e7dde0", label: "Chiesa v Spain — the semi-final" },
+  { id: "edc62055", label: "Modrić v Scotland — the outside of the boot" },
+  { id: "b8aaa89d", label: "Messi's volley — Copa América 2024" },
+  { id: "231b12e4", label: "Lautaro — Copa América 2024 final winner" },
+  { id: "c406e643", label: "Haller — the AFCON 2023 final winner" },
 ];
 const FEATURED_IDS = new Set(FEATURED.map((f) => f.id));
 
@@ -394,56 +581,89 @@ export function difficultyOf(g: RealGoal): number {
   return -Math.log(xg) + 0.3 * blockersOf(p.ball, p.opps) + 0.04 * Math.max(0, dist - 11) + corner + special;
 }
 
-export interface Level { n: number; stage: number; goal: RealGoal; difficulty: number }
-export interface Stage { n: number; name: string; levels: Level[]; gate: number }
-
-export const STAGE_NAMES = ["Group stage", "Round of 16", "Quarter-finals", "Semi-finals", "The final"];
-export const LEVELS_PER_STAGE = 10;
-/** Stars needed in all to open each stage. */
-export const STAGE_GATES = [0, 6, 15, 26, 38];
-
 /**
- * The level map: 5 stages of 10, easiest first. The goals are split into five
- * bands by difficulty; each stage takes its band's featured goals first, then
- * the rest of the band spread evenly. Deterministic.
+ * THE GAME (Leo, 19 Oct 2026: "score hero system of going up the levels").
+ * Each collection is played as itself: a tournament round by round (group
+ * stage, round of 16 … the final, in the order they were scored); Legends
+ * and Club worldies by where they were scored. Every goal is a level with 1-3
+ * stars. A chapter opens when half the goals of the chapter before it have a
+ * star — so a whole tournament can be played, but it is earned.
  */
-export function buildLevels(goals: RealGoal[]): Stage[] {
-  const ok = goals.filter((g) => peopleOf(g.shot).keeper);
-  const sorted = ok.map((g) => ({ g, d: difficultyOf(g) })).sort((a, b) => a.d - b.d || a.g.id.localeCompare(b.g.id));
-  const stages: Stage[] = [];
-  const band = sorted.length / STAGE_NAMES.length;
-  let n = 0;
-  for (let s = 0; s < STAGE_NAMES.length; s++) {
-    const pool = sorted.slice(Math.round(s * band), Math.round((s + 1) * band));
-    const feat = pool.filter((q) => FEATURED_IDS.has(q.g.id));
-    const rest = pool.filter((q) => !FEATURED_IDS.has(q.g.id));
-    const want = Math.max(0, LEVELS_PER_STAGE - feat.length);
-    const step = rest.length / Math.max(1, want);
-    const picked = [...feat.slice(0, LEVELS_PER_STAGE)];
-    for (let i = 0; i < want && i < rest.length; i++) picked.push(rest[Math.floor(i * step + step / 2)]);
-    picked.sort((a, b) => a.d - b.d);
-    stages.push({
-      n: s, name: STAGE_NAMES[s], gate: STAGE_GATES[s],
-      levels: picked.map((q) => ({ n: n++, stage: s, goal: q.g, difficulty: q.d })),
-    });
+export interface Chapter { n: number; name: string; goals: RealGoal[] }
+
+const ROUND_ORDER = ["Group Stage", "Round of 16", "Quarter-finals", "Semi-finals", "3rd Place Final", "Final"];
+const ROUND_NAME: Record<string, string> = {
+  "Group Stage": "Group stage", "Round of 16": "Round of 16", "Quarter-finals": "Quarter-finals",
+  "Semi-finals": "Semi-finals", "3rd Place Final": "Third place", Final: "The final",
+};
+
+/** Where a club goal was scored, as a chapter name. */
+export function placeOf(g: RealGoal): string {
+  const c = g.x.comp;
+  if (/^World Cup 19/.test(c)) return "World Cup classics";
+  if (/Champions League|European Cup/.test(c)) return "European nights";
+  if (c.startsWith("Premier League")) return "Premier League";
+  if (c.startsWith("La Liga")) return "La Liga";
+  if (c.startsWith("Serie A")) return "Serie A";
+  if (c.startsWith("Bundesliga")) return "Bundesliga";
+  if (c.startsWith("Ligue 1")) return "Ligue 1";
+  return "More";
+}
+const PLACE_ORDER = ["World Cup classics", "European nights", "Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1", "More"];
+
+/** The chapters of one collection, in the order they are played. */
+export function chaptersFor(goals: RealGoal[]): Chapter[] {
+  const club = goals.length > 0 && (goals[0].col === "legends" || goals[0].col === "worldies");
+  const by = new Map<string, RealGoal[]>();
+  for (const g of goals) {
+    const key = club ? placeOf(g) : (ROUND_ORDER.includes(g.x.stage) ? g.x.stage : "Group Stage");
+    by.set(key, [...(by.get(key) ?? []), g]);
   }
-  return stages;
+  const order = club ? PLACE_ORDER : ROUND_ORDER;
+  const out: Chapter[] = [];
+  for (const key of order) {
+    const list = by.get(key);
+    if (!list?.length) continue;
+    // In the order they happened (club chapters: oldest first; a tournament: by date and minute).
+    list.sort((a, b) => a.x.date.localeCompare(b.x.date) || a.x.matchId - b.x.matchId || a.x.period - b.x.period || a.shot.minute - b.shot.minute || a.x.second - b.x.second);
+    if (!club && key === "Group Stage") {
+      // The group stage is three matchdays: its matches split in three by date.
+      const matches = Array.from(new Set(list.map((g) => `${g.x.date}|${g.x.matchId}`))).sort();
+      const day = (g: RealGoal) => Math.min(2, Math.floor((matches.indexOf(`${g.x.date}|${g.x.matchId}`) * 3) / matches.length));
+      for (let d = 0; d < 3; d++) {
+        const part = list.filter((g) => day(g) === d);
+        if (part.length) out.push({ n: out.length, name: `Matchday ${d + 1}`, goals: part });
+      }
+      continue;
+    }
+    out.push({ n: out.length, name: club ? key : ROUND_NAME[key] ?? key, goals: list });
+  }
+  return out;
+}
+
+/** Half the goals of the chapter before need a star to open a chapter. */
+export const CHAPTER_OPEN_SHARE = 0.5;
+export const starredIn = (ch: Chapter, p: Progress) => ch.goals.filter((g) => (p[g.id]?.stars ?? 0) > 0).length;
+export const starsIn = (goals: RealGoal[], p: Progress) => goals.reduce((a, g) => a + (p[g.id]?.stars ?? 0), 0);
+/** How many stars of the chapter before it a chapter still needs, 0 = open. */
+export function chapterNeeds(chs: Chapter[], i: number, p: Progress): number {
+  if (i <= 0) return 0;
+  const prev = chs[i - 1];
+  return Math.max(0, Math.ceil(prev.goals.length * CHAPTER_OPEN_SHARE) - starredIn(prev, p));
+}
+export const chapterOpen = (chs: Chapter[], i: number, p: Progress) => chapterNeeds(chs, i, p) === 0 && (i === 0 || chapterOpen(chs, i - 1, p));
+
+/** 1 (easy) to 5 (a worldie): difficultyOf in five bands, measured over all 888 goals (tests/star/realGoals.mts). */
+export const DIFFICULTY_CUTS = [0.92, 1.75, 2.63, 4.02];
+export function difficultyTier(g: RealGoal): 1 | 2 | 3 | 4 | 5 {
+  const d = difficultyOf(g);
+  return (1 + DIFFICULTY_CUTS.filter((c) => d >= c).length) as 1 | 2 | 3 | 4 | 5;
 }
 
 /** Per level id: the best stars and the best accuracy. */
 export type Progress = Record<string, { stars: number; best: number }>;
 
 export const totalStars = (p: Progress) => Object.values(p).reduce((a, v) => a + v.stars, 0);
-
-/** Is level `lv` open? Stage gate (total stars) and the level before it passed (★1+). */
-export function levelOpen(stages: Stage[], p: Progress, lv: Level): boolean {
-  if (totalStars(p) < stages[lv.stage].gate) return false;
-  if (lv.n === 0) return true;
-  const all = stages.flatMap((s) => s.levels);
-  const prev = all[lv.n - 1];
-  if (prev.stage !== lv.stage) return true;   // the first level of an open stage
-  return (p[prev.goal.id]?.stars ?? 0) > 0;
-}
 
 /** A result in: keeps the best stars and the best accuracy. */
 export function recordResult(p: Progress, id: string, stars: number, pct: number): Progress {
@@ -564,4 +784,17 @@ export function replayError(keys: LeadBallKey[], touches: { back: number; p: Vec
     sum += Math.hypot(b.x - t.p.x, b.y - t.p.y);
   }
   return sum / touches.length;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  THE BUILD-UP (Leo, 19 Oct 2026: "almost identical to the real goal")
+// ─────────────────────────────────────────────────────────────────────────
+
+/** The real move, played before the chance (realGoalTrack.ts). Null: no move (a penalty, a free kick taken first). */
+export function trackForGoal(g: RealGoal, sc: Scenario): RealTrack | null {
+  if (g.shot.type === "Penalty") return null;
+  return realTrack({
+    shooter: g.shot.player, move: g.x.move, frames: g.x.frames, ff: g.shot.ff, names: g.x.names,
+    short: (full) => shortNameOf(knownAs(g, full)),
+  }, sc);
 }

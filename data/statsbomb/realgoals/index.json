@@ -1,0 +1,69 @@
+{
+ "credit": "Data: StatsBomb open data (https://github.com/statsbomb/open-data)",
+ "collections": [
+  {
+   "key": "wc2022",
+   "name": "World Cup 2022",
+   "badge": "WC",
+   "count": 169,
+   "kb": 899,
+   "tracked": 169
+  },
+  {
+   "key": "euro2024",
+   "name": "Euro 2024",
+   "badge": "EURO",
+   "count": 107,
+   "kb": 591,
+   "tracked": 107
+  },
+  {
+   "key": "wc2018",
+   "name": "World Cup 2018",
+   "badge": "WC",
+   "count": 157,
+   "kb": 373,
+   "tracked": 0
+  },
+  {
+   "key": "euro2020",
+   "name": "Euro 2020",
+   "badge": "EURO",
+   "count": 131,
+   "kb": 691,
+   "tracked": 129
+  },
+  {
+   "key": "copa2024",
+   "name": "Copa Am\u00e9rica 2024",
+   "badge": "COPA",
+   "count": 69,
+   "kb": 203,
+   "tracked": 0
+  },
+  {
+   "key": "afcon2023",
+   "name": "AFCON 2023",
+   "badge": "AFCON",
+   "count": 115,
+   "kb": 260,
+   "tracked": 0
+  },
+  {
+   "key": "legends",
+   "name": "Legends",
+   "badge": "LEGEND",
+   "count": 60,
+   "kb": 172,
+   "tracked": 6
+  },
+  {
+   "key": "worldies",
+   "name": "Club worldies",
+   "badge": "CLUB",
+   "count": 100,
+   "kb": 347,
+   "tracked": 17
+  }
+ ]
+}

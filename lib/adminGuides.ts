@@ -316,26 +316,34 @@ export const ADMIN_GUIDES = {
   },
   "/star-real-goals-dev": {
     title: "Real Goals (test)",
-    what: "A little game of real goals (Leo, 18 Oct 2026). Every non-penalty goal of the 2022 World Cup and Euro 2024 that StatsBomb's free data has a freeze frame for (250), played in the real match: the real move is replayed first, then the shot is yours. Score it, and the closer your ball crosses the line to where the real one went, the more stars. Test only: the licence for a paid game is not cleared, so none of it is in the game.",
+    what: "A game mode of real goals (Leo, 18-19 Oct 2026): 908 of them in 8 collections — every goal (penalties too, own goals not) of World Cup 2022, Euro 2024, World Cup 2018, Euro 2020, Copa América 2024 and AFCON 2023, plus Legends (famous goals in the free data: Maradona v England, Bale's overhead kick, Dele Alli v Palace…) and Club worldies (the best club goals in the data, picked by the numbers). Each is played in the real match: the real move first, then the shot is yours. Score it like the real one for 3 stars. Test only: the licence for a paid game is not cleared, so none of it is in the game.",
     buttons: [
-      { group: "Top", items: [
-        ["★ total", "Every star you have, out of 150 (50 levels × 3)."],
-        ["🗺️ Levels", "The level map: 5 stages (Group stage → The final) of 10 goals, easiest first (difficulty: StatsBomb's xG, bodies in the way, distance, a top corner, a volley or overhead). A level opens when the one before it has a star; a stage opens at 6 / 15 / 26 / 38 stars in all."],
-        ["🔎 All 250 goals", "Every goal, searchable by player (real or known name), team, match or stage. The famous ones (Mbappé's volley in the final, Neymar v Croatia, Saka v Switzerland, Güler v Georgia…) are first."],
+      { group: "Home", items: [
+        ["★ total", "Every star you have, out of 3 a goal."],
+        ["Carry on", "The last goal you opened."],
+        ["A collection tile", "Opens its map. REAL TRACKING: the build-ups move every man where StatsBomb's 360 camera saw him (World Cup 2022, Euro 2024, Euro 2020). The others have no camera data: the men move with their team's shape."],
+        ["🔎", "Every goal: search by player, team, match or a famous goal's name, and filter by collection."],
       ] },
-      { group: "Playing a goal", items: [
-        ["The header", "The real score just before the goal, the minute, who you are and how the real one was struck."],
-        ["👻 Ghost on/off", "The real goal's ball, drawn faint on the pitch: a dashed line along its flight and its shadow, and a pale ball running it on a loop while you aim. Once you strike, it races your ball. StatsBomb has only where the real ball started and crossed the line, so the line is straight and the arc is drawn the shape the strike suggests."],
-        ["▶ Build-up on/off", "On: the real move is replayed first (every pass, carry and dribble at the real time, up to 14 s), then the shot is yours. Off: straight to the shot."],
-        ["🎥 TV / Behind him / Side-on", "The 3D camera (3D | 2D button in the match bar): the TV view, low behind the shooter, or turned side-on. Kept only while this page is open; your own camera lock comes back when you leave."],
-        ["The match", "The real match. The real nations' names, kits and players' names (StatsBomb's freeze frame): never the test club. You strike as an elite finisher (power 85, technique 95, curl boots), clear weather, nobody closes you down. Strike it along the real goal's line (within 60 cm across, 55 cm up, inside the posts) and nobody blocks it and the keeper does not save it, because in real life none of them did. Off the line it plays as normal."],
-        ["The result", "Goal or not, the % like the real goal (100% on the spot, 85% at 45 cm off, 60% at 80 cm), the stars (★ a goal, ★★ 60%+, ★★★ 85%+), and a picture of the goal mouth with the real spot (green) and yours (blue). ↺ Again: the same chance comes back, just shoot. Next level → once you have a star."],
-        ["✕", "Closes the goal."],
+      { group: "A collection's map", items: [
+        ["Chapters", "A tournament is played round by round (Matchday 1-3, Round of 16 … The final), its goals in the order they were scored; Legends and Club worldies by where they were scored. A chapter opens when half the goals of the one before it have a star."],
+        ["A level", "One real goal: number, stars, the scorer and who it was against. The glowing one is the next to play."],
+      ] },
+      { group: "The goal card", items: [
+        ["Scoreboard", "The real score just before the goal and the minute."],
+        ["Chips", "How it was scored, how far out, StatsBomb's xG (the chance's own odds), how hard it is to recreate (1-5 balls) and REAL TRACKING when its build-up has the 360 camera's men."],
+        ["▶ Build-up / 👻 Ghost", "Remembered on this phone. Build-up: the real move first. Ghost: the real goal's ball drawn on the pitch."],
+        ["PLAY", "Plays it."],
+      ] },
+      { group: "Playing", items: [
+        ["The top bar", "✕ back to the map; the real scoreboard; the line under it says who has the ball in the real move, then \"your shot\"."],
+        ["The match", "The real match. Real names, kits and men. You strike as an elite finisher (power 85, technique 95, curl boots), clear weather, nobody closes you down. A strike heading 70%+ like the real one (the result's own %, worked out as you hit it) is in the real lane: nobody blocks it and the keeper does not save it, because in real life none of them did. Anything else plays as normal."],
+        ["👻 Ghost · ▶ Build-up · 2D/3D · 🎥 · ⟲ Restart", "Ghost on/off; the real move on/off; the 3D view on/off (this phone); the 3D camera (TV, behind, side-on: put back when you leave); Restart plays the build-up again."],
+        ["The result", "GOAL! or what stopped it, the % like the real goal (100% on the spot, 85% at 45 cm, 70% at 67 cm, 60% at 80 cm), the stars (★ a goal, ★★ 60%+, ★★★ 85%+) and the goal mouth with the real spot (gold) and yours (blue). ↺ Again: the same chance. Next: the next goal of the collection, when its chapter is open."],
       ] },
     ],
-    saving: ["Your stars and best % per goal are kept in this browser only (localStorage, star-real-goals-progress-v1). Nothing goes to the database or the repo."],
+    saving: ["Stars and best % per goal, the last goal and the Build-up/Ghost choice are kept in this browser only (localStorage star-real-goals-progress-v1, star-real-goals-last, star-real-goals-opts). Nothing goes to the database or the repo."],
     inGame: ["Nowhere. This is a test page; the real game never reads this data."],
-    dev: "app/star-real-goals-dev/page.tsx; lib/star/realGoals.ts (levels, stars, accuracy, kits, names, ghost, build-up) and lib/star/realGoalView.ts (what the match is handed); CanvasMatch's `realGoal` prop (drawing only, TEST_ONLY in scripts/one-engine-guard.mjs); canvasEngine.ts Scenario.realLane (the real lane, off by default); data/statsbomb/goals.json (scripts/statsbomb/fetch_real_goals.py); tests/star/realGoals.mts and tests/star/realGoals/ (harness, measure, buildup).",
+    dev: "app/star-real-goals-dev/page.tsx + _ui/look.tsx; lib/star/realGoals.ts (collections, chapters, stars, accuracy, the round lane, kits, names, ghost) and lib/star/realGoalTrack.ts (the build-up: every touch at its real time, the 360 frames matched man to man, no jumps); lib/star/realGoalView.ts; CanvasMatch's `realGoal` prop (drawing only, TEST_ONLY); canvasEngine.ts Scenario.realLane (r/hw: the round lane; off by default); data/statsbomb/realgoals/*.json (scripts/statsbomb/fetch_real_goals.py) served by /api/star/statsbomb-shots?rg=…; tests/star/realGoals.mts and tests/star/realGoals/ (harness, lane, track, measure).",
   },
   "/star-goal-clips-dev": {
     title: "Goal videos",

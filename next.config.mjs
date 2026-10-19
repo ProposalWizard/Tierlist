@@ -30,7 +30,8 @@ const nextConfig = {
       "/api/admin/patch-notes/page": ["./patch-notes/**/*"],
       "/api/admin/patch-notes/file/[...path]": ["./patch-notes/**/*"],
       // The real-shots test page's data (/star-statsbomb-dev).
-      "/api/star/statsbomb-shots": ["./data/statsbomb/shots.json", "./data/statsbomb/leadins.json"],
+      // …and the Real Goals page's (/star-real-goals-dev; scripts/statsbomb/fetch_real_goals.py).
+      "/api/star/statsbomb-shots": ["./data/statsbomb/shots.json", "./data/statsbomb/leadins.json", "./data/statsbomb/realgoals/*.json"],
     },
   },
   // face-api.js depends on node-fetch (which needs 'encoding') and

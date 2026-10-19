@@ -303,13 +303,14 @@ function closeCameraFor(ball: Vec2, keeper: Vec2 | null): Viewport {
 }
 
 /** `wide`: the Play camera (cameraFor: everyone within 20 m). Absent: the close camera. */
-export function overrideForShot(s: SbShot, kind: ScenarioKind, seed: number, wide = false): PosOverride {
+export function overrideForShot(s: SbShot, kind: ScenarioKind, seed: number, wide = false, allPeople = false): PosOverride {
   const p = peopleOf(s);
   const sc = buildScenario(kind, mulberry32(seed));
   const frame = frameFromScenario(sc);
   // A penalty keeps the game's own penalty camera (the spot never moves).
   const camera = goalInView(kind) && kind !== "penalty" ? (wide ? cameraFor(p.ball, p.keeper, [...p.opps, ...p.mates]) : closeCameraFor(p.ball, p.keeper)) : sc.viewport;
-  const inside = (q: Vec2) => !camera || (q.x > camera.x1 + 0.8 && q.x < camera.x2 - 0.8 && q.y > camera.y1 + 0.8 && q.y < camera.y2 - 0.8);
+  // allPeople (the Real Goals page): every real man in the frame, on screen or not, so the build-up never has to make one vanish.
+  const inside = (q: Vec2) => allPeople || !camera || (q.x > camera.x1 + 0.8 && q.x < camera.x2 - 0.8 && q.y > camera.y1 + 0.8 && q.y < camera.y2 - 0.8);
   const ov: PosOverride = { items: {}, removed: [], added: [], ball: rv(p.ball) };
   if (camera) ov.camera = camera;
   for (const it of frame.items) if (it.removable) ov.removed!.push(it.id);
@@ -335,11 +336,11 @@ export function overrideForShot(s: SbShot, kind: ScenarioKind, seed: number, wid
  * `wideFrame`: the Play tab's camera (every real man within 20 m and the whole
  * goal; played with `scene.ownFrame`). Absent: the close camera.
  */
-export function scenarioForShot(s: SbShot, opts: { wideFrame?: boolean } = {}): Scenario {
+export function scenarioForShot(s: SbShot, opts: { wideFrame?: boolean; allPeople?: boolean } = {}): Scenario {
   const kind = playKindForShot(s);
   const seed = seedForShot(s);
   const sc = buildScenario(kind, mulberry32(seed));
-  applyOverrideToScenario(sc, overrideForShot(s, kind, seed, !!opts.wideFrame));
+  applyOverrideToScenario(sc, overrideForShot(s, kind, seed, !!opts.wideFrame, !!opts.allPeople));
   // The real keeper starts where he really stood (keeperHoldsStart): the keeper
   // brain would otherwise walk him to OUR set spot while you aim (measured:
   // 2.15 m off his line real → 1.91 m after 2 s of aiming, all 2,741 shots).
