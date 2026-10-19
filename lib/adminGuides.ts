@@ -1052,12 +1052,9 @@ export const ADMIN_GUIDES = {
       {
         group: "Home",
         items: [
-          ["Infinite Highlights →", "Opens Infinite Highlights."],
-          ["Infinite Match →", "A real match that runs for the length you set, counting every chance it serves you."],
-          ["Animations →", "Every player animation looping next to the Old look, with the dials and on/off switches the real match reads."],
-          ["Match Radar →", "Watch the unseen match behind your highlights, all ninety minutes, up to 20× speed."],
-          ["Store (test) →", "Opens the test store: daily specials, run-ups, accessories, boosts and Coins, with its own wallet."],
-          ["Blender 3D →", "Opens the Blender 3D footballer test page: any club's kit on the 3D player, stills, hair, animations and the home-screen mock-up."],
+          ["← (top left)", "Back to the admin home."],
+          ["Infinite Highlights → (first picture card)", "Opens Infinite Highlights."],
+          ["Infinite Match → (second picture card)", "A real match that runs for the length you set, counting every chance it serves you."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
@@ -1069,7 +1066,6 @@ export const ADMIN_GUIDES = {
           ["Free-kick run-up", "A separate set for direct free kicks, each modelled on an elite taker: Standard, Power Stance (Ronaldo), Stance and Sprint (Bale), The Calm Curl (Messi), Stutter Curl (Neymar), The Whip (Maddison), Long Diagonal (Trent). Looks only — the strike is still yours. Test screens only."],
           ["Back to the defaults", "Resets every dial, the keeper row and the Compare switches."],
           ["Compare old and new: New / Old", "Two switches: Penalty rules and Shot power. Old puts that one change back to how it was, so the two can be played side by side. Test screens only — a real career, its trial and its shootouts always play New."],
-          ["Scenario Gallery →", "Opens the gallery."],
         ],
       },
       {
@@ -1085,7 +1081,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Infinite Match",
         items: [
-          ["‹ Back", "Back to the Play Area."],
+          ["← (top left) / ‹ Back", "Back to the Play Area."],
           ["What it served", "Live count of each chance type the match has given you, with shares and a per-90."],
           ["This chance: …", "The bar pinned to the top of the screen for the whole match: which chance you are on and the minute."],
           ["✎ Edit", "Opens the chance on screen in an editor: drag, + Mate, + Opp, Remove. On a penalty only the other players move, along the edge of the box."],
