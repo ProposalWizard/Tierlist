@@ -90,10 +90,6 @@
 .ash[data-look="broadcast"] .ahb-doc { color: #8fb2e6; }
 
 /* Bento: one soft colour per group, white rows inside. */
-.ahb-g[data-g="career"] { --g: #22c55e; } .ahb-g[data-g="chances"] { --g: #3b82f6; } .ahb-g[data-g="match"] { --g: #8b5cf6; }
-.ahb-g[data-g="data"] { --g: #f97316; } .ahb-g[data-g="places3d"] { --g: #eab308; } .ahb-g[data-g="players"] { --g: #a855f7; }
-.ahb-g[data-g="money"] { --g: #10b981; } .ahb-g[data-g="sound"] { --g: #0ea5e9; } .ahb-g[data-g="site"] { --g: #6366f1; }
-.ahb-g[data-g="draft"] { --g: #fb7185; } .ahb-g[data-g="tierlists"] { --g: #f59e0b; } .ahb-g[data-g="old"] { --g: #94a3b8; }
 .ash[data-look="bento"] .ahb-g {
   background: color-mix(in srgb, var(--g) 13%, #fff); border: 1px solid color-mix(in srgb, var(--g) 22%, #fff);
   border-radius: 20px; padding: 14px 12px 12px;

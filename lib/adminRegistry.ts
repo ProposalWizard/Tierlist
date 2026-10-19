@@ -11,10 +11,10 @@
  * real shared data, or the code itself (repo).
  */
 
-export type AdminSection = "rbd" | "site" | "draft" | "tierlists" | "old";
+export type AdminSection = "rbd" | "site" | "draft" | "tierlists" | "old" | "studio";
 export type AdminGroup =
   | "career" | "chances" | "match" | "data" | "places3d" | "players" | "money" | "sound"
-  | "site" | "draft" | "tierlists" | "old";
+  | "site" | "draft" | "tierlists" | "old" | "studio";
 export type AdminOwner = "Harry" | "Mikey" | "Leo" | "Shared";
 export type AdminWrites = "none" | "browser" | "own" | "shared" | "repo";
 export type AdminAccess = "admin" | "team" | "open";
@@ -31,28 +31,49 @@ export interface AdminPage {
   access: AdminAccess;
 }
 
+/**
+ * THE GAMES — one top-level tab each across the admin (Harry, 19 Oct 2026:
+ * "stuff on the wider website should be on a completely different tab than
+ * road to ballon dor stuff — remember we may be a production company that
+ * makes a lot of games"). Inside a game's tab you only ever see its own
+ * groups and pages. A NEW GAME = one line here (its tab, home page and side
+ * list appear by themselves); then its groups below say `game: "<key>"`.
+ * `home` is where the game's tab opens; `play` is the game as players see it.
+ */
+export const GAMES = [
+  { key: "rbd", name: "Road to Ballon d'Or", short: "Ballon d'Or", home: "/admin/star", play: "/star-dev" },
+  { key: "web", name: "Website games", short: "Website", home: "/admin/star/game/web", play: "/" },
+  { key: "studio", name: "Studio", short: "Studio", home: "/admin/star/game/studio", play: null },
+] as const satisfies readonly { key: string; name: string; short: string; home: string; play: string | null }[];
+export type AdminGameKey = (typeof GAMES)[number]["key"];
+export type AdminGame = (typeof GAMES)[number];
+export const DEFAULT_GAME: AdminGameKey = GAMES[0].key;
+
 export const SECTIONS: { key: AdminSection; name: string }[] = [
   { key: "rbd", name: "Road to Ballon d'Or" },
   { key: "site", name: "Site" },
   { key: "draft", name: "PL Draft" },
   { key: "tierlists", name: "Tierlists" },
   { key: "old", name: "Old tests" },
+  { key: "studio", name: "Studio" },
 ];
 
-/** Group order (Harry's answer ADM-Q115), and the section each sits in. */
-export const GROUPS: { key: AdminGroup; name: string; section: AdminSection }[] = [
-  { key: "career", name: "Career screens", section: "rbd" },
-  { key: "chances", name: "Chances", section: "rbd" },
-  { key: "match", name: "Match tests", section: "rbd" },
-  { key: "data", name: "Real data", section: "rbd" },
-  { key: "places3d", name: "3D places", section: "rbd" },
-  { key: "players", name: "Players + animation", section: "rbd" },
-  { key: "money", name: "Money + rewards", section: "rbd" },
-  { key: "sound", name: "Sound", section: "rbd" },
-  { key: "site", name: "Site", section: "site" },
-  { key: "draft", name: "PL Draft", section: "draft" },
-  { key: "tierlists", name: "Tierlists", section: "tierlists" },
-  { key: "old", name: "Old tests", section: "old" },
+/** Group order (Harry's answer ADM-Q115), the section each sits in, and its game.
+ *  `icon` names the picture in public/admin/icons (defaults to the group key). */
+export const GROUPS: { key: AdminGroup; name: string; section: AdminSection; game: AdminGameKey; icon?: string }[] = [
+  { key: "career", name: "Career screens", section: "rbd", game: "rbd" },
+  { key: "chances", name: "Chances", section: "rbd", game: "rbd" },
+  { key: "match", name: "Match tests", section: "rbd", game: "rbd" },
+  { key: "data", name: "Real data", section: "rbd", game: "rbd" },
+  { key: "places3d", name: "3D places", section: "rbd", game: "rbd" },
+  { key: "players", name: "Players + animation", section: "rbd", game: "rbd" },
+  { key: "money", name: "Money + rewards", section: "rbd", game: "rbd" },
+  { key: "sound", name: "Sound", section: "rbd", game: "rbd" },
+  { key: "draft", name: "PL Draft", section: "draft", game: "web" },
+  { key: "tierlists", name: "Tierlists", section: "tierlists", game: "web" },
+  { key: "site", name: "Site XP + Tic Tac Toe", section: "site", game: "web" },
+  { key: "old", name: "Old tests", section: "old", game: "web", icon: "site" },
+  { key: "studio", name: "Team + notes", section: "studio", game: "studio", icon: "site" },
 ];
 
 const P = (url: string, name: string, purpose: string, section: AdminSection, group: AdminGroup,
@@ -60,12 +81,12 @@ const P = (url: string, name: string, purpose: string, section: AdminSection, gr
   ({ url, name, purpose, section, group, owner, status, writes, access });
 
 export const ADMIN_PAGES: AdminPage[] = [
-  P("/admin/star", "Admin home", "Every admin and test page, grouped and searchable", "site", "site", "Harry", "live", "none", "team"),
-  P("/admin/videos", "Videos", "How to hand Claude a screen recording to break down", "site", "site", "Harry", "live", "none", "team"),
-  P("/admin/team", "Team board", "What Harry, Mikey and Leo are doing: pushes, pull requests, live deploy, patch notes", "site", "site", "Harry", "live", "none", "admin"),
-  P("/admin/patch-notes", "Patch notes", "Every patch note, newest first", "site", "site", "Shared", "live", "none", "admin"),
-  P("/admin/app-plan", "App plan", "The app plan and its open questions", "site", "site", "Harry", "live", "none", "admin"),
-  P("/admin/testers", "Tester access", "Tester links, remove testers", "site", "site", "Harry", "live", "shared", "admin"),
+  P("/admin/star", "Admin home", "Every admin and test page, grouped and searchable", "studio", "studio", "Harry", "live", "none", "team"),
+  P("/admin/videos", "Videos", "How to hand Claude a screen recording to break down", "studio", "studio", "Harry", "live", "none", "team"),
+  P("/admin/team", "Team board", "What Harry, Mikey and Leo are doing: pushes, pull requests, live deploy, patch notes", "studio", "studio", "Harry", "live", "none", "admin"),
+  P("/admin/patch-notes", "Patch notes", "Every patch note, newest first", "studio", "studio", "Shared", "live", "none", "admin"),
+  P("/admin/app-plan", "App plan", "The app plan and its open questions", "studio", "studio", "Harry", "live", "none", "admin"),
+  P("/admin/testers", "Tester access", "Tester links, remove testers", "studio", "studio", "Harry", "live", "shared", "admin"),
   P("/admin/xp", "Site XP rewards", "Level-up rewards across the whole site (frames, titles)", "site", "site", "Harry", "live", "shared", "admin"),
   P("/admin/football", "Tic Tac Toe data", "Wikidata data behind Tic Tac Toe", "site", "site", "Harry", "live", "shared", "admin"),
   P("/squad-builder", "Dream XI builder", "Pick a formation and drag players into a dream XI", "old", "old", "Harry", "old", "none", "team"),
@@ -145,6 +166,28 @@ export const RELATED: { prefix: string; label: string; urls: string[] }[] = [
 ];
 
 export const pageFor = (url: string) => ADMIN_PAGES.find((p) => p.url === url);
+
+/* ── Games: which game a group, page or path belongs to ───────────────── */
+export const gameOf = (key: string): AdminGame | undefined => GAMES.find((g) => g.key === key);
+export const groupGame = (group: AdminGroup): AdminGameKey => GROUPS.find((g) => g.key === group)?.game ?? DEFAULT_GAME;
+export const groupIcon = (group: AdminGroup) => `/admin/icons/${GROUPS.find((g) => g.key === group)?.icon ?? group}.webp`;
+/** The game's groups, in order. */
+export const groupsOf = (game: AdminGameKey) => GROUPS.filter((g) => g.game === game);
+/** The game a path sits in: a game or group page says so; else its registry
+ *  page's group; else the RELATED list; else the first game. */
+export function gameForPath(path: string): AdminGameKey {
+  const m = path.match(/^\/admin\/star\/(?:game|g)\/([^/?#]+)/);
+  if (m) {
+    if (gameOf(m[1])) return m[1] as AdminGameKey;
+    const g = GROUPS.find((x) => x.key === m[1]);
+    if (g) return g.game;
+  }
+  if (path === "/admin/star") return DEFAULT_GAME;
+  const own = currentPage(path);
+  if (own) return groupGame(own.group);
+  const first = relatedFor(path)?.pages[0];
+  return first ? groupGame(first.group) : DEFAULT_GAME;
+}
 
 /** The registry page a path is on (longest match), if any. */
 export function currentPage(path: string): AdminPage | undefined {

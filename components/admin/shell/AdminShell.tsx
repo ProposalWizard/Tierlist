@@ -1,16 +1,20 @@
 "use client";
 /**
- * The admin pages' frame: a side menu (Home, the Team room's four parts,
- * Patch notes, the groups) and the Look switch (Broadcast, Bento, Ops room,
- * Clean light). Used by
- * /admin/star and /admin/team. On a phone the menu hides behind "☰ Menu";
- * on a computer « folds it to a thin strip of icons (Harry, 19 Oct 2026:
- * "we need to be able to close the side tab").
+ * The admin pages' frame: one tab per GAME across the top (Harry, 19 Oct
+ * 2026: "stuff on the wider website should be on a completely different tab
+ * than road to ballon dor stuff"), a side menu (the game's home and its
+ * groups, then the Team room, Patch notes, Videos) and the Look switch
+ * (Broadcast, Bento, Ops room, Clean light). Games and groups come from
+ * lib/adminRegistry.ts (GAMES, GROUPS). Used by /admin/star (and its game
+ * and group pages), /admin/team and /admin/videos. On a phone the menu hides
+ * behind "☰ Menu"; on a computer « folds it to a thin strip of icons
+ * (Harry, 19 Oct 2026: "we need to be able to close the side tab").
  */
 import "./adminShell.css";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { ADMIN_PAGES, GROUPS, visibleTo } from "@/lib/adminRegistry";
+import { ADMIN_PAGES, GAMES, gameForPath, gameOf, groupGame, groupIcon, groupsOf, visibleTo, type AdminGameKey, type AdminGroup } from "@/lib/adminRegistry";
 import { ADMIN_LOOKS, isBoardLook, setAdminLook, setAdminMode, useAdminLook, useAdminMode } from "@/lib/adminLook";
 
 export type ShellTab = "home" | "team" | "notes" | "videos" | "ideas" | "chat" | "todo";
@@ -38,9 +42,13 @@ export function Icon({ name, size = 17 }: { name: keyof typeof I; size?: number 
   );
 }
 
-export default function AdminShell({ tab, role, children, onTab, badges }: {
+export default function AdminShell({ tab, role, children, onTab, badges, game: gameProp, group }: {
   tab: ShellTab;
   role: "admin" | "tester";
+  /** Which game's tab is open. Default: worked out from the page's address. */
+  game?: AdminGameKey;
+  /** The group page being shown, lit in the side list. */
+  group?: AdminGroup;
   children: ReactNode;
   /** On the team board, the Team room's parts and Patch notes switch in place. */
   onTab?: (t: RoomTab) => void;
@@ -55,8 +63,14 @@ export default function AdminShell({ tab, role, children, onTab, badges }: {
   useEffect(() => { try { setFolded(localStorage.getItem(FOLD_KEY) === "1"); } catch { /* private */ } }, []);
   const fold = (f: boolean) => { setFolded(f); try { localStorage.setItem(FOLD_KEY, f ? "1" : "0"); } catch { /* private */ } };
 
+  const path = usePathname() ?? "/admin/star";
+  const game = gameProp ?? (group ? groupGame(group) : gameForPath(path));
+  const G = gameOf(game) ?? GAMES[0];
   const pages = visibleTo(role);
   const count = (g: string) => pages.filter((p) => p.group === g && p.url !== "/star-dev" && p.url !== "/admin/star").length;
+  const gameCount = (k: AdminGameKey) => groupsOf(k).reduce((n, g) => n + count(g.key), 0);
+  // Broadcast/Bento open a group's own page; Ops room / Clean light jump down the game's home.
+  const groupHref = (k: AdminGroup) => (isBoardLook(look) ? `/admin/star/g/${k}` : `${G.home}#${k}`);
 
   const navTab = (t: RoomTab, label: string, icon: keyof typeof I) => {
     const href = t === "team" ? "/admin/team" : `/admin/team?tab=${t}`;
@@ -87,9 +101,23 @@ export default function AdminShell({ tab, role, children, onTab, badges }: {
               <Icon name={folded ? "unfold" : "fold"} size={15} />
             </button>
           </div>
-          <Link className="ash-nav" aria-current={tab === "home" ? "page" : undefined} href="/admin/star" title="Home">
-            <span className="ash-navl"><Icon name="home" /><span className="ash-navt">Home</span></span><span className="n ash-navt">{pages.length}</span>
+          <Link className="ash-nav" aria-current={tab === "home" && !group ? "page" : undefined} href={G.home} title={`${G.name}: home`}>
+            <span className="ash-navl"><Icon name="home" /><span className="ash-navt">{G.short} home</span></span><span className="n ash-navt">{gameCount(game)}</span>
           </Link>
+
+          {/* The game's groups, one slanted bar each (Harry, 19 Oct 2026: "on
+              broadcast there should still be side tabs"). */}
+          <div className="ash-navh">{G.name}</div>
+          <div className="ash-glist">
+            {groupsOf(game).filter((g) => count(g.key)).map((g) => (
+              <Link key={g.key} className="ash-gnav" data-g={g.key} aria-current={group === g.key ? "page" : undefined}
+                href={groupHref(g.key)} title={`${g.name}: ${count(g.key)} page${count(g.key) === 1 ? "" : "s"}`}>
+                <img src={groupIcon(g.key)} alt="" className="ash-gic" />
+                <span className="ash-navt ash-gname">{g.name}</span><span className="n ash-navt">{count(g.key)}</span>
+              </Link>
+            ))}
+          </div>
+
           {role === "admin" && <div className="ash-navh">Team room</div>}
           {role === "admin" && navTab("team", "Team board", "team")}
           {role === "admin" && navTab("ideas", "Ideas", "ideas")}
@@ -101,13 +129,6 @@ export default function AdminShell({ tab, role, children, onTab, badges }: {
             <span className="ash-navl"><Icon name="video" /><span className="ash-navt">Videos</span></span>
           </Link>
 
-          {/* Broadcast and Bento show every group on the home board, so the side keeps only the rooms. */}
-          {!isBoardLook(look) && <div className="ash-navh">Groups</div>}
-          {!isBoardLook(look) && GROUPS.filter((g) => count(g.key)).map((g) => (
-            <Link key={g.key} className="ash-nav" href={`/admin/star#${g.key}`}>
-              <span className="ash-navl">{g.name}</span><span className="n">{count(g.key)}</span>
-            </Link>
-          ))}
 
           <div style={{ flex: 1 }} />
           <div className="ash-navh">Look</div>
@@ -123,7 +144,18 @@ export default function AdminShell({ tab, role, children, onTab, badges }: {
           <Link className="ash-nav" href="/" title="Back to Knowitball"><span className="ash-navl"><Icon name="back" /><span className="ash-navt">Back to Knowitball</span></span></Link>
           <p style={{ margin: "6px 10px 0", fontSize: 10.5, color: "var(--ash-ink3)" }}>{ADMIN_PAGES.length} pages in the list</p>
         </aside>
-        <main className="ash-main">{children}</main>
+        <main className="ash-main">
+          {/* One tab per game; inside a tab you only see that game's pages. */}
+          <nav className="ash-games" aria-label="Games">
+            {GAMES.map((g) => (
+              <Link key={g.key} href={g.home} className="ash-game" aria-current={g.key === game ? "page" : undefined} title={`${g.name}: ${gameCount(g.key)} pages`}>
+                <span className="ash-game-full">{g.name}</span><span className="ash-game-short">{g.short}</span>
+                <span className="ash-game-n">{gameCount(g.key)}</span>
+              </Link>
+            ))}
+          </nav>
+          {children}
+        </main>
       </div>
     </div>
   );

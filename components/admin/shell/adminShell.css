@@ -185,11 +185,10 @@ body:has([data-admin-shell]) [data-global-chrome] { display: none !important; }
   .ash[data-folded="true"] .ash-side { width: 64px; flex-basis: 64px; padding: 18px 8px; align-items: center; }
   .ash[data-folded="true"] .ash-navt,
   .ash[data-folded="true"] .ash-navh,
-  .ash[data-folded="true"] .ash-side > :not(.ash-brand):not(.ash-nav) { display: none; }
+  .ash[data-folded="true"] .ash-side > :not(.ash-brand):not(.ash-nav):not(.ash-glist) { display: none; }
   .ash[data-folded="true"] .ash-brand { flex-direction: column; padding: 4px 0 12px; gap: 10px; }
   .ash[data-folded="true"] .ash-fold { margin: 0; }
   .ash[data-folded="true"] .ash-nav { justify-content: center; padding: 9px; width: 44px; }
-  .ash[data-folded="true"] .ash-nav[href^="/admin/star#"] { display: none; }
   .ash[data-folded="true"] .ash-nbadge { position: absolute; top: 1px; right: 1px; min-width: 14px; height: 14px; font-size: 8.5px; padding: 0 3px; }
 }
 
@@ -275,3 +274,79 @@ body:has([data-admin-shell]) [data-global-chrome] { display: none !important; }
 /* Four looks: the switch is two by two. */
 .ash-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
 .ash-switch button { white-space: nowrap; }
+
+/* One soft colour per group (Bento paints with it; the side list's icons edge with it). */
+[data-g="career"] { --g: #22c55e; } [data-g="chances"] { --g: #3b82f6; } [data-g="match"] { --g: #8b5cf6; }
+[data-g="data"] { --g: #f97316; } [data-g="places3d"] { --g: #eab308; } [data-g="players"] { --g: #a855f7; }
+[data-g="money"] { --g: #10b981; } [data-g="sound"] { --g: #0ea5e9; } [data-g="site"] { --g: #6366f1; }
+[data-g="draft"] { --g: #fb7185; } [data-g="tierlists"] { --g: #f59e0b; } [data-g="old"] { --g: #94a3b8; } [data-g="studio"] { --g: #64748b; }
+
+/* ── The game tabs (Harry, 19 Oct 2026): one per game, across the top of every admin page. ── */
+.ash-games { display: flex; gap: 6px; margin: 0 0 18px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--ash-line); }
+.ash-games::-webkit-scrollbar { display: none; }
+.ash-game {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; white-space: nowrap; flex: 0 0 auto;
+  font-size: 13.5px; font-weight: 800; color: var(--ash-ink2); text-decoration: none;
+  border-bottom: 3px solid transparent; margin-bottom: -1px;
+}
+.ash-game:hover { color: var(--ash-ink); }
+.ash-game[aria-current="page"] { color: var(--ash-ink); border-bottom-color: var(--ash-accent); }
+.ash-game-n { font-size: 11px; font-weight: 800; color: var(--ash-ink3); }
+.ash-game-short { display: none; }
+@media (max-width: 640px) {
+  .ash-games { margin: -4px -16px 14px; padding: 0 16px; }
+  .ash-game { padding: 9px 11px; font-size: 13px; }
+  .ash-game-full { display: none; }
+  .ash-game-short { display: inline; }
+}
+
+/* ── The game's groups in the side menu ── */
+.ash-glist { display: flex; flex-direction: column; gap: 3px; }
+.ash-gnav {
+  position: relative; display: flex; align-items: center; gap: 9px; padding: 5px 10px 5px 6px; border-radius: 9px;
+  color: var(--ash-ink2); font-size: 13px; font-weight: 700; text-decoration: none; border: 1px solid transparent;
+}
+.ash-gnav:hover { background: var(--ash-panel2); color: var(--ash-ink); }
+.ash-gnav[aria-current="page"] { background: var(--ash-accent-soft); color: var(--ash-ink); border-color: var(--ash-line2); }
+.ash-gnav .n { margin-left: auto; font-size: 11px; color: var(--ash-ink3); font-weight: 700; }
+.ash-gname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ash-gic { width: 24px; height: 24px; flex: 0 0 auto; border-radius: 6px; object-fit: cover; box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--g, #888) 60%, transparent); }
+@media (min-width: 1024px) {
+  .ash[data-folded="true"] .ash-glist { align-items: center; }
+  .ash[data-folded="true"] .ash-gnav { padding: 6px; width: 44px; justify-content: center; }
+  .ash[data-folded="true"] .ash-gic { width: 28px; height: 28px; }
+}
+
+/* Broadcast: the tabs and the group list are slanted TV bars in the frame's colours (--bc-*). */
+.ash[data-look="broadcast"] {
+  --bc-blue: #1b5fd6; --bc-blue2: #123f9c; --bc-amber: #ffc24a; --bc-ink2: #a9bde2; --bc-line: rgba(90, 150, 255, 0.22);
+}
+.ash[data-look="broadcast"] .ash-games { border-bottom: 0; gap: 4px; }
+.ash[data-look="broadcast"] .ash-game {
+  margin: 0; border: 0; padding: 9px 26px 9px 18px; font-style: italic; text-transform: uppercase; letter-spacing: .02em; font-weight: 900;
+  color: var(--bc-ink2); background: rgba(18, 63, 156, 0.38);
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+.ash[data-look="broadcast"] .ash-game:hover { color: #fff; background: rgba(27, 95, 214, 0.55); }
+.ash[data-look="broadcast"] .ash-game[aria-current="page"] { color: #fff; background: linear-gradient(100deg, var(--bc-blue), var(--bc-blue2)); box-shadow: inset 0 -3px 0 var(--bc-amber); }
+.ash[data-look="broadcast"] .ash-game[aria-current="page"] .ash-game-n { color: #1a1300; background: var(--bc-amber); padding: 1px 6px; transform: skewX(-10deg); }
+.ash[data-look="broadcast"] .ash-gnav {
+  border: 0; border-radius: 0; padding: 6px 18px 6px 8px; font-style: italic; text-transform: uppercase; font-weight: 900; font-size: 12px; letter-spacing: .02em;
+  background: rgba(18, 63, 156, 0.30); color: var(--bc-ink2);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+.ash[data-look="broadcast"] .ash-gnav:hover { background: rgba(27, 95, 214, 0.5); color: #fff; }
+.ash[data-look="broadcast"] .ash-gnav[aria-current="page"] {
+  background: linear-gradient(100deg, var(--bc-blue), var(--bc-blue2) 80%); color: #fff; box-shadow: inset 4px 0 0 var(--bc-amber);
+}
+.ash[data-look="broadcast"] .ash-gnav[aria-current="page"] .n { color: #1a1300; background: var(--bc-amber); padding: 1px 6px; transform: skewX(-10deg); }
+.ash[data-look="broadcast"] .ash-gic { border-radius: 3px; }
+@media (min-width: 1024px) {
+  .ash[data-look="broadcast"][data-folded="true"] .ash-gnav { padding: 6px; clip-path: none; }
+}
+
+/* Bento: each group in its own soft colour. */
+.ash[data-look="bento"] .ash-gnav[aria-current="page"] { background: color-mix(in srgb, var(--g) 16%, #fff); border-color: color-mix(in srgb, var(--g) 30%, #fff); }
+.ash[data-look="bento"] .ash-gnav:hover { background: color-mix(in srgb, var(--g) 9%, #fff); }
+.ash[data-look="bento"] .ash-gic { border-radius: 50%; }
+.ash[data-look="bento"] .ash-game[aria-current="page"] { border-bottom-color: var(--ash-accent); }
