@@ -21,6 +21,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Panel, Btn, Pill, Note } from "@/components/admin/broadcast/BroadcastPage";
+import "./real-goals.css";
 import EnginePlay from "@/components/star/EnginePlay";
 import Match3DLayer from "@/components/star/Match3DLayer";
 import type { ChanceResolved } from "@/components/star/CanvasMatch";
@@ -245,53 +247,69 @@ function PlayGoal({ goal, lead, level, onClose, onResult, onNext }: {
   );
 }
 
-function LevelMap({ stages, progress, onPick }: { stages: Stage[]; progress: Progress; onPick: (lv: Level) => void }) {
-  const stars = totalStars(progress);
+/** A small goal mouth with the real goal's spot: the card's picture (drawn from the real data). */
+function MiniMouth({ goal }: { goal: RealGoal }) {
+  const e = realEnd(goal);
+  const W = 160, H = 74, l = 14, r = W - 14, top = 16, line = H - 10;
+  const s = (r - l) / (POST_R - POST_L);
+  const x = Math.max(l - 6, Math.min(r + 6, l + (e.x - POST_L) * s));
+  const y = Math.max(top - 6, line - e.z * ((line - top) / 2.44));
   return (
-    <div data-level-map>
-      {stages.map((st) => {
-        const open = stars >= st.gate;
-        const got = st.levels.reduce((a, l) => a + (progress[l.goal.id]?.stars ?? 0), 0);
-        return (
-          <div key={st.n} className="mb-4 rounded-2xl p-3" style={{ background: open ? "linear-gradient(180deg,#14532d,#0b2a1a)" : "#1e293b" }}>
-            <div className="mb-2 flex items-center justify-between">
-              <div>
-                <div className="text-[11px] font-black uppercase tracking-wider text-emerald-200">Stage {st.n + 1}</div>
-                <div className="text-lg font-black">{st.name}</div>
-              </div>
-              <div className="text-right text-sm font-black">
-                {open ? <>{STAR(1, 1, 16)} {got}/{st.levels.length * 3}</> : <>🔒 {st.gate} ★ to open</>}
-              </div>
-            </div>
-            <div className="relative">
-              {st.levels.map((lv, i) => {
-                const ok = levelOpen(stages, progress, lv);
-                const p = progress[lv.goal.id];
-                const left = i % 4 === 0 ? 2 : i % 4 === 1 ? 29 : i % 4 === 2 ? 56 : 29;
-                return (
-                  <div key={lv.n} style={{ marginLeft: `${left}%`, width: "42%" }} className="mb-1.5">
-                    <button
-                      data-level={lv.n}
-                      disabled={!ok}
-                      onClick={() => onPick(lv)}
-                      className={`w-full rounded-2xl border-2 px-2 py-2 text-left ${ok ? "border-yellow-300/80 bg-black/35 active:scale-95" : "border-white/10 bg-black/20 opacity-50"}`}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-black ${ok ? "bg-yellow-300 text-black" : "bg-white/15"}`}>{ok ? lv.n + 1 : "🔒"}</div>
-                        <div className="min-w-0">
-                          <div className="truncate text-xs font-black"><Swatch team={lv.goal.shot.team} size={10} /> {scorerShort(lv.goal)}</div>
-                          <div className="truncate text-[10px] font-bold text-white/80">v {concededBy(lv.goal)}</div>
-                        </div>
-                      </div>
-                      <div className="mt-0.5 text-center">{STAR(p?.stars ?? 0, 3, 13)}</div>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
+    <svg viewBox={`0 0 ${W} ${H}`} className="rg-mouth" aria-hidden>
+      <rect x={l} y={top} width={r - l} height={line - top} fill="rgba(255,255,255,0.07)" stroke="#fff" strokeWidth={2.5} />
+      {Array.from({ length: 7 }, (_, i) => <line key={i} x1={l + ((i + 1) * (r - l)) / 8} y1={top} x2={l + ((i + 1) * (r - l)) / 8} y2={line} stroke="rgba(255,255,255,0.13)" />)}
+      <line x1={0} y1={line} x2={W} y2={line} stroke="rgba(255,255,255,0.55)" strokeWidth={1.5} />
+      <circle cx={x} cy={y} r={6} fill="#22c55e" stroke="#052e16" strokeWidth={2} />
+    </svg>
+  );
+}
+
+/** One goal as a card: tag, picture of where it went in, scorer, stars, ▶. */
+function GoalCard({ goal, tag, open, stars, sub, onClick, data }: {
+  goal: RealGoal; tag: string; open: boolean; stars: number; sub: string; onClick: () => void;
+  data: Record<string, string | number>;
+}) {
+  return (
+    <button {...data} disabled={!open} onClick={onClick} className="rg-card" data-open={open ? "true" : "false"}>
+      <span className="rg-tag">{open ? tag : "🔒"}</span>
+      <MiniMouth goal={goal} />
+      <span className="rg-cname"><Swatch team={goal.shot.team} size={10} /> {scorerShort(goal)} <i>{minuteOf(goal)}&apos;</i></span>
+      <span className="rg-csub">{sub}</span>
+      <span className="rg-cfoot">{STAR(stars, 3, 13)}{open && <span className="rg-play" aria-hidden>▶</span>}</span>
+    </button>
+  );
+}
+
+/** A stage as a TV rail: a row of level cards, scrolled sideways with ‹ ›. */
+function StageRail({ st, stages, progress, onPick }: { st: Stage; stages: Stage[]; progress: Progress; onPick: (lv: Level) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const open = totalStars(progress) >= st.gate;
+  const got = st.levels.reduce((a, l) => a + (progress[l.goal.id]?.stars ?? 0), 0);
+  const nudge = (d: number) => ref.current?.scrollBy({ left: d * ref.current.clientWidth * 0.8, behavior: "smooth" });
+  return (
+    <section className="rg-rail" data-stage={st.n} data-open={open ? "true" : "false"}>
+      <div className="rg-rh">
+        <h2><span>Stage {st.n + 1}</span> {st.name}</h2>
+        <div className="rg-rstat">{open ? <>{STAR(1, 1, 15)} {got}/{st.levels.length * 3}</> : <>🔒 {st.gate} ★ to open</>}</div>
+        <div className="rg-arrows">
+          <button onClick={() => nudge(-1)} aria-label="Scroll back">‹</button>
+          <button onClick={() => nudge(1)} aria-label="Scroll on">›</button>
+        </div>
+      </div>
+      <div className="rg-row" ref={ref}>
+        {st.levels.map((lv) => (
+          <GoalCard key={lv.n} goal={lv.goal} tag={`Level ${lv.n + 1}`} open={levelOpen(stages, progress, lv)}
+            stars={progress[lv.goal.id]?.stars ?? 0} sub={`v ${concededBy(lv.goal)}`} onClick={() => onPick(lv)} data={{ "data-level": lv.n }} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function LevelMap({ stages, progress, onPick }: { stages: Stage[]; progress: Progress; onPick: (lv: Level) => void }) {
+  return (
+    <div data-level-map className="rg-rails">
+      {stages.map((st) => <StageRail key={st.n} st={st} stages={stages} progress={progress} onPick={onPick} />)}
     </div>
   );
 }
@@ -307,39 +325,64 @@ function GoalList({ goals, progress, onPick }: { goals: RealGoal[]; progress: Pr
   }, [goals, q]);
   useEffect(() => setShown(20), [q]);
   return (
-    <div data-goal-list>
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search a player, team or match (Mbappé, Güler…)" data-search
-        className="mb-2 w-full rounded-xl bg-white/10 px-3 py-3 text-base font-bold text-white placeholder:text-white/60" />
-      <div className="mb-2 text-xs font-bold">{list.length} {list.length === 1 ? "goal" : "goals"}</div>
-      {list.slice(0, shown).map((g) => {
-        const f = FEATURED.find((x) => x.id === g.id);
-        return (
-          <button key={g.id} data-goal={g.id} onClick={() => onPick(g)} className="mb-2 flex w-full items-center gap-2 rounded-xl border border-white/15 bg-white/5 p-2 text-left active:scale-[0.98]">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-xl" style={{ background: NATION_KITS[g.shot.team]?.home.shirt ?? "#64748b", border: `3px solid ${NATION_KITS[g.shot.team]?.home.trim ?? "#fff"}` }}>⚽</div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-black">{knownAs(g, g.shot.player)} <span className="font-bold text-white/80">· {g.shot.team}</span></div>
-              <div className="truncate text-xs font-bold">{g.x.home} {g.x.score[0]}–{g.x.score[1]} {g.x.away} · {minuteOf(g)}&apos; · {g.x.stage}</div>
-              {f && <div className="truncate text-[11px] font-bold text-sky-300">★ {f.label}</div>}
-            </div>
-            <div className="shrink-0 text-right">
-              {STAR(progress[g.id]?.stars ?? 0, 3, 12)}
-              <div className="text-[10px] font-bold text-white/80">xG {Math.round(g.shot.xg * 100)}%</div>
-            </div>
-          </button>
-        );
-      })}
-      {shown < list.length && <button onClick={() => setShown((n) => n + 20)} className="w-full rounded-xl bg-white/10 py-2 text-sm font-black">More</button>}
-    </div>
+    <Panel title="Every goal" note={`${list.length} ${list.length === 1 ? "goal" : "goals"}`}>
+      <div data-goal-list className="rg-list">
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search a player, team or match (Mbappé, Güler…)" data-search className="rg-search" />
+        <div className="rg-grid">
+          {list.slice(0, shown).map((g) => {
+            const f = FEATURED.find((x) => x.id === g.id);
+            return (
+              <button key={g.id} data-goal={g.id} onClick={() => onPick(g)} className="rg-item">
+                <MiniMouth goal={g} />
+                <span className="rg-itext">
+                  <b>{knownAs(g, g.shot.player)} <em>· {g.shot.team}</em></b>
+                  <span>{g.x.home} {g.x.score[0]}–{g.x.score[1]} {g.x.away} · {minuteOf(g)}&apos; · {g.x.stage}</span>
+                  {f && <span className="rg-feat">★ {f.label}</span>}
+                </span>
+                <span className="rg-iright">{STAR(progress[g.id]?.stars ?? 0, 3, 12)}<span>xG {Math.round(g.shot.xg * 100)}%</span></span>
+              </button>
+            );
+          })}
+        </div>
+        {shown < list.length && <Btn onClick={() => setShown((n) => n + 20)}>More</Btn>}
+      </div>
+    </Panel>
   );
 }
+
+/** The big card at the top: the next level to play (or the one you are on), with PLAY IT. */
+function Hero({ level, progress, onPlay }: { level: Level; progress: Progress; onPlay: () => void }) {
+  const g = level.goal;
+  const f = FEATURED.find((x) => x.id === g.id);
+  const p = progress[g.id];
+  return (
+    <section className="rg-hero" data-hero={g.id}>
+      <div className="rg-hpic" style={{ backgroundImage: "url(/admin/real-goals/featured.webp)" }}>
+        <span className="rg-hbadge">{g.x.comp} · {g.x.stage}</span>
+        <MiniMouth goal={g} />
+      </div>
+      <div className="rg-hinfo">
+        <div className="rg-hlabel">{p?.stars ? "Keep going" : "Next level"} · Level {level.n + 1}</div>
+        <div className="rg-hname"><Swatch team={g.shot.team} size={16} /> {knownAs(g, g.shot.player)} {minuteOf(g)}&apos;</div>
+        <div className="rg-hscore">{g.x.home} <b>{g.x.score[0]} – {g.x.score[1]}</b> {g.x.away}</div>
+        {f && <div className="rg-hfeat">★ {f.label}</div>}
+        <div className="rg-hstars">{STAR(p?.stars ?? 0, 3, 22)}{p?.best ? <span>best {Math.round(p.best)}%</span> : null}</div>
+        <button className="rg-playit" onClick={onPlay} data-play-hero>Play it <span aria-hidden>▶</span></button>
+      </div>
+    </section>
+  );
+}
+
+const TAB_KEY = "star-real-goals-tab";
 
 export default function RealGoalsDev() {
   const [goals, setGoals] = useState<RealGoal[] | null>(null);
   const [leads, setLeads] = useState<Record<string, SbLeadin>>({});
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<"levels" | "all">("levels");
+  const [tab, setTabState] = useState<"levels" | "all">("levels");
   const [progress, setProgress] = useState<Progress>({});
   const [playing, setPlaying] = useState<{ goal: RealGoal; level: Level | null } | null>(null);
+  const setTab = (t: "levels" | "all") => { setTabState(t); try { localStorage.setItem(TAB_KEY, t); } catch { /* private */ } };
 
   useEffect(() => {
     setProgress(loadProgress());
@@ -349,7 +392,9 @@ export default function RealGoalsDev() {
       .catch((e) => setError(String(e)));
     get<SbLeadinFile>("?file=leadins").then((l) => setLeads(l.leadins)).catch(() => { /* build-ups fall back to goals.json's own move */ });
     const q = new URLSearchParams(window.location.search);
-    if (q.get("tab") === "all") setTab("all");
+    let saved: string | null = null;
+    try { saved = localStorage.getItem(TAB_KEY); } catch { /* private */ }
+    if (q.get("tab") === "all" || (!q.get("tab") && saved === "all")) setTabState("all");
   }, []);
 
   const stages = useMemo(() => (goals ? buildLevels(goals) : []), [goals]);
@@ -369,44 +414,51 @@ export default function RealGoalsDev() {
   }, [playing]);
 
   const nextLevel = playing?.level ? allLevels[playing.level.n + 1] : undefined;
+  // The hero: the first open level without three stars (else the first level).
+  const heroLevel = useMemo(
+    () => allLevels.find((l) => levelOpen(stages, progress, l) && (progress[l.goal.id]?.stars ?? 0) < 3) ?? allLevels[0],
+    [allLevels, stages, progress],
+  );
+  const play = (goal: RealGoal, level: Level | null) => { setPlaying({ goal, level }); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   return (
-    <div className="min-h-screen bg-[#0b1220] px-3 py-3 text-white">
+    <BroadcastPage
+      title="Real Goals"
+      sub="Score the real World Cup and Euro goals — the way they really went in."
+      actions={<div className="rg-total" data-total-stars>{STAR(1, 1, 22)} <b>{totalStars(progress)}</b><span>/ {allLevels.length * 3 || 150}</span></div>}
+    >
       <PageGuide page="/star-real-goals-dev" />
-      <div className="mb-3 rounded-2xl p-3" style={{ background: "linear-gradient(135deg,#065f46,#0b1220 70%)" }}>
-        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-300">Test page</div>
-        <div className="text-3xl font-black italic leading-none">REAL GOALS</div>
-        <div className="mt-1 text-sm font-bold">Score the real World Cup and Euro goals — the way they really went in.</div>
-        <div className="mt-2 flex items-center gap-2 text-lg font-black">{STAR(1, 1, 22)} {totalStars(progress)} <span className="text-sm text-white/70">/ {allLevels.length * 3}</span></div>
+      <div className="rg">
+        {error && <Note>Could not load the goals: {error}</Note>}
+        {!goals && !error && <Note>Loading the goals…</Note>}
+
+        {goals && playing && (
+          <PlayGoal
+            key={playing.goal.id}
+            goal={playing.goal}
+            lead={leads[playing.goal.id]}
+            level={playing.level}
+            onClose={() => setPlaying(null)}
+            onResult={onResult}
+            onNext={nextLevel && levelOpen(stages, progress, nextLevel) ? () => { setPlaying({ goal: nextLevel.goal, level: nextLevel }); window.scrollTo({ top: 0 }); } : undefined}
+          />
+        )}
+
+        {goals && !playing && heroLevel && <Hero level={heroLevel} progress={progress} onPlay={() => play(heroLevel.goal, heroLevel)} />}
+
+        {goals && (
+          <>
+            <div className="rg-tabs">
+              <Pill on={tab === "levels"} onClick={() => setTab("levels")}>🗺️ Levels</Pill>
+              <Pill on={tab === "all"} onClick={() => setTab("all")}>🔎 All {goals.length} goals</Pill>
+            </div>
+            {tab === "levels"
+              ? <LevelMap stages={stages} progress={progress} onPick={(lv) => play(lv.goal, lv)} />
+              : <GoalList goals={goals} progress={progress} onPick={(g) => play(g, allLevels.find((l) => l.goal.id === g.id) ?? null)} />}
+          </>
+        )}
+        <div data-credit className="rg-credit">{STATSBOMB_CREDIT} · test only, not in the game</div>
       </div>
-      <div data-credit className="mb-3 rounded bg-white/10 px-2 py-1 text-[11px] font-bold">{STATSBOMB_CREDIT} · test only, not in the game</div>
-
-      {error && <div className="mb-3 rounded bg-red-900/60 p-2 text-sm font-bold">Could not load the goals: {error}</div>}
-      {!goals && !error && <div className="text-sm font-bold">Loading the goals…</div>}
-
-      {goals && playing && (
-        <PlayGoal
-          key={playing.goal.id}
-          goal={playing.goal}
-          lead={leads[playing.goal.id]}
-          level={playing.level}
-          onClose={() => setPlaying(null)}
-          onResult={onResult}
-          onNext={nextLevel && levelOpen(stages, progress, nextLevel) ? () => { setPlaying({ goal: nextLevel.goal, level: nextLevel }); window.scrollTo({ top: 0 }); } : undefined}
-        />
-      )}
-
-      {goals && (
-        <>
-          <div className="mb-3 grid grid-cols-2 gap-2">
-            <button onClick={() => setTab("levels")} className={`rounded-xl py-2.5 text-sm font-black ${tab === "levels" ? "bg-yellow-300 text-black" : "bg-white/10"}`}>🗺️ Levels</button>
-            <button onClick={() => setTab("all")} className={`rounded-xl py-2.5 text-sm font-black ${tab === "all" ? "bg-yellow-300 text-black" : "bg-white/10"}`}>🔎 All {goals.length} goals</button>
-          </div>
-          {tab === "levels"
-            ? <LevelMap stages={stages} progress={progress} onPick={(lv) => { setPlaying({ goal: lv.goal, level: lv }); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
-            : <GoalList goals={goals} progress={progress} onPick={(g) => { setPlaying({ goal: g, level: allLevels.find((l) => l.goal.id === g.id) ?? null }); window.scrollTo({ top: 0, behavior: "smooth" }); }} />}
-        </>
-      )}
-    </div>
+    </BroadcastPage>
   );
 }
