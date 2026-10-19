@@ -24,6 +24,7 @@ import { BroadcastPage, Panel, PanelGrid, Btn, Pill, Label, Note } from "@/compo
 import PageGuide from "@/components/admin/PageGuide";
 import { useFhrMode } from "@/lib/star/fhr/toggle";
 import { setLookRow } from "@/lib/star/lookRows";
+import { setVisitSalt } from "@/lib/star/chanceMaker";
 import { measureRuler, PLAN_REFERENCE, REACT_MOVE_M, REACT_EARLY_S, type Ruler } from "@/lib/star/fhr/ruler";
 import snap from "@/lib/star/fhr/reactSnapshot.json";
 import "./fhr.css";
@@ -41,6 +42,9 @@ export default function FhrDev() {
 
   const run = useCallback((matches: number) => {
     setBusy(true);
+    // No per-visit drawing offset (chanceMaker.ts visit salt): the same seeds
+    // give the same numbers here as in the terminal, every visit.
+    setVisitSalt(0);
     // A tick first, so "Measuring…" is on screen before the work starts.
     window.setTimeout(() => {
       const off = measureRuler({ matches, chances: "old" });
