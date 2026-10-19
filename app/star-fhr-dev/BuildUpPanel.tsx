@@ -7,13 +7,14 @@
  * three frames beside it. "Generate another" takes the next chance the real
  * match serves. Nothing is saved.
  */
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import EnginePlay from "@/components/star/EnginePlay";
 import { Btn, Note } from "@/components/admin/broadcast/BroadcastPage";
 import type { Scenario } from "@/lib/star/canvasEngine";
 import type { LeadIn } from "@/lib/star/leadIn";
 import { fhrBuildUpFor, fhrWantsBuildUp, FHR_DATA_CREDIT, type FhrBuildUp } from "@/lib/star/fhr/buildUp";
 import { servedChances, type ServedChance } from "@/lib/star/fhr/servedChances";
+import { setVisitSalt } from "@/lib/star/chanceMaker";
 import { PITCH_W, HALF_LEN, CX, BOX_L, BOX_R, BOX_DEPTH, SIX_L, SIX_R, SIX_DEPTH, POST_L, POST_R } from "@/lib/star/pitch";
 
 const LEN = 2 * HALF_LEN;
@@ -37,8 +38,8 @@ function Frame({ b, t, title }: { b: FhrBuildUp; t: number; title: string }) {
   for (let u = 0; u <= b.durS; u += 0.1) { const q = b.ballAt(u); route.push(`${X(q.x).toFixed(1)},${Y(q.y).toFixed(1)}`); }
   const ball = b.ballAt(t), r = Math.max(2.4, 0.5 * s);
   return (
-    <div style={{ width: W }}>
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", borderRadius: 4 }}>
+    <div style={{ flex: "1 1 0", minWidth: 0, maxWidth: W }}>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block", borderRadius: 4 }}>
         <rect width={W} height={H} fill="#14532d" />
         <rect x={X(0)} y={Y(0)} width={PITCH_W * s} height={LEN * s} fill="#2f7d32" stroke="#e5e7eb" strokeWidth={0.8} />
         <line x1={X(0)} y1={Y(HALF_LEN)} x2={X(PITCH_W)} y2={Y(HALF_LEN)} stroke="#e5e7eb" strokeWidth={0.8} />
@@ -62,16 +63,22 @@ function Frame({ b, t, title }: { b: FhrBuildUp; t: number; title: string }) {
 
 export default function BuildUpPanel() {
   // The chances the real match serves (Chances: New, an even game), open play only.
-  const pool = useMemo<ServedChance[]>(() => servedChances({ count: 120, seed: 21 }).filter((c) => fhrWantsBuildUp(c.sc.kind, c.moment)), []);
+  // Made in the browser only (the chance maker reads this phone's settings), with no per-visit offset, so the same chances every visit.
+  const [pool, setPool] = useState<ServedChance[]>([]);
+  useEffect(() => { setVisitSalt(0); setPool(servedChances({ count: 120, seed: 21 }).filter((c) => fhrWantsBuildUp(c.sc.kind, c.moment))); }, []);
   const [at, setAt] = useState(0);
   const [run, setRun] = useState(0);
   const [prog, setProg] = useState<{ t: number; done: boolean }>({ t: 0, done: false });
   const lastSent = useRef(-1);
   const chance = pool[at % Math.max(1, pool.length)];
-  const shown = useMemo(() => (chance ? fhrBuildUpFor(copy(chance.sc), chance.moment) : null), [chance]);
+  // What the match plays (it casts your squad onto the chance first, so who plays each touch can differ from a bare build): shown once the match has built it.
+  const [played, setPlayed] = useState<{ at: number; b: FhrBuildUp } | null>(null);
+  const bare = useMemo(() => (chance ? fhrBuildUpFor(copy(chance.sc), chance.moment) : null), [chance]);
+  const shown = played && played.at === at ? played.b : bare;
   const openOn = useMemo(() => () => copy(chance.sc), [chance]);
   const leadIn = useCallback((sc: Scenario): LeadIn => {
     const b = fhrBuildUpFor(sc, chance.moment);
+    setPlayed({ at, b });
     lastSent.current = -1;
     return {
       ...b,
@@ -81,7 +88,7 @@ export default function BuildUpPanel() {
         setProg({ t, done });
       },
     };
-  }, [chance]);
+  }, [chance, at]);
   if (!chance || !shown) return <Note>No open-play chance served.</Note>;
   const another = () => { setProg({ t: 0, done: false }); setAt((a) => a + 1); };
   const again = () => { setProg({ t: 0, done: false }); setRun((r) => r + 1); };
@@ -102,7 +109,7 @@ export default function BuildUpPanel() {
         <div style={{ width: "min(100%, 390px)" }}>
           <EnginePlay key={`${at}-${run}`} seed={7} openOn={openOn} leadIn={leadIn} />
         </div>
-        <div>
+        <div style={{ flex: "1 1 300px", minWidth: 0, maxWidth: 480 }}>
           <div style={{ display: "flex", gap: 6 }}>
             <Frame b={shown} t={0} title="first (0 s)" />
             <Frame b={shown} t={shown.durS / 2} title={`middle (${(shown.durS / 2).toFixed(1)} s)`} />
