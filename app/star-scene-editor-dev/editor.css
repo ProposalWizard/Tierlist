@@ -61,5 +61,11 @@
   .se-tabs button { flex: 1; padding: 10px 0; background: none; border: 0; border-bottom: 3px solid transparent; color: var(--bc-ink2); font-weight: 900; font-style: italic; font-size: 15px; }
   .se-tabs button[aria-pressed="true"] { color: #fff; border-color: #2f80ed; background: rgba(47, 128, 237, .15); }
   .se-scroll { max-height: 420px; }
-  .se-save, .se-play .se-dim { display: none; }
+  .se-save { font-size: 14px; padding: 6px 12px; } .se-play .se-dim { width: 100%; font-size: 11px; }
 }
+
+.se-map { position: absolute; right: 8px; bottom: 8px; width: 140px; height: 140px; touch-action: none; z-index: 5; }
+.se-vec { display: flex; gap: 6px; flex-wrap: wrap; }
+.se-vec label { display: flex; align-items: center; gap: 2px; font-size: 11px; color: #cbd5e1; }
+.se-vec input { width: 58px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 4px; }
+@media (max-width: 700px) { .se-map { width: 104px; height: 104px; } .se-vec input { width: 48px; } }

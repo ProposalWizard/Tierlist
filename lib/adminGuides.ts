@@ -1235,7 +1235,7 @@ export const ADMIN_GUIDES = {
 
   "/star-scene-editor-dev": {
     title: "3D Scene Editor",
-    what: "Step 1 of the one editor for every 3D scene. It works on the Cut-scene Director: pick a scene, then change the camera and lighting and watch the real director play it. Nothing is saved yet and nothing touches a career.",
+    what: "Steps 1–2 of the one editor for every 3D scene. It works on the Cut-scene Director: pick a scene, change the camera (or fly a free camera) and the lighting, and watch the real director play it. Edits save per scene and per shot. Nothing touches a career, and the game's own cut scenes don't read these edits yet.",
     buttons: [
       {
         group: "3D Preview",
@@ -1243,6 +1243,8 @@ export const ADMIN_GUIDES = {
           ["Place tabs (3D Signing … Cut-scene Director)", "Only Cut-scene Director works today. The others say \"coming next\"."],
           ["Scene buttons (Contract signing, Goal celebration …)", "Load that hand-made cut scene into the preview. Your edits are cleared."],
           ["The badge top-left", "The shot under the playhead, its name and its lens."],
+          ["Drag on the preview", "Free camera: orbit and tilt round the look point. Wheel or pinch moves in and out. Only the shot under the playhead changes."],
+          ["The map, bottom-right", "The set seen from above. Drag the blue box (camera), the white dot (look point) or the yellow sun (key light, round the ring)."],
         ],
       },
       {
@@ -1253,6 +1255,9 @@ export const ADMIN_GUIDES = {
           ["Mood", "Time of day and colour of the whole scene."],
           ["Exposure, Key light strength", "Brightness of the scene and of the sun / key light."],
           ["Spotlight on a person", "Puts a spotlight on one person; Spot strength sets how bright."],
+          ["Position X/Y/Z, Look at", "Show where the camera stands and looks now. Type a number to take over with a free camera."],
+          ["Back to the shot", "Drops the free camera for this shot; the shot plays as written."],
+          ["Key light angle, Key light colour", "Turn the sun round the set and change its colour. \"As written\" puts the colour back."],
           ["Greyed rows with \"coming next\"", "PART and NEW dials from the drawing. Not built yet."],
         ],
       },
@@ -1262,13 +1267,19 @@ export const ADMIN_GUIDES = {
           ["▶ Play / ❚❚ Pause, ↺ Replay", "Play the scene, stop it, start again."],
           ["The scrub bar, or a click on a lane", "Jump to that moment (director.seek)."],
           ["Lanes", "The scene's real tracks, read-only: camera shots, light and effects, each person's moves, speech and captions."],
-          ["SAVE SHOT (greyed)", "Coming next. Today edits live in the preview only."],
+          ["SAVE FOR EVERYONE", "Copies this scene's edits to the shared table (admin only). If the table isn't switched on yet, it says so and the edits stay on this device."],
+          ["Copy edits", "Copies this scene's edits as JSON."],
+          ["Reset this shot / Reset all", "Clears the edits of the shot under the playhead / of the whole scene."],
         ],
       },
     ],
-    saving: ["Nothing. Edits live in the preview only and are gone on reload. Saving comes next."],
-    inGame: ["Nowhere yet. It plays the same director the game's cut scenes use, but your edits never reach the game."],
-    dev: "app/star-scene-editor-dev/page.tsx (+ editor.css) · lib/star/cutscene/director.ts (optional setEdit / cameras hooks; no edit = the game's behaviour) · fixtures from lib/star/cutscene/fixtures.ts · drawing: docs/handoffs/2026-10-19-ui-lookover/scene-editor/.",
+    saving: [
+      "This device: every change saves at once (localStorage), per scene and per shot, and comes back when you reopen it.",
+      "Shared: SAVE FOR EVERYONE writes to the star_cutscene_edits table through /api/star/cutscene-edits (admins only). Needs supabase/migrations/star_cutscene_edits.sql run; until then it says \"Saved on this device only\".",
+      "Nothing commits to the repo.",
+    ],
+    inGame: ["Nowhere yet. It plays the same director the game's cut scenes use, but the game's cut scenes do not read these edits (a later step)."],
+    dev: "app/star-scene-editor-dev/page.tsx (+ editor.css) · lib/star/cutscene/director.ts (optional setEdit / cameras / cameraPose / layout hooks; no edit = the game's behaviour) · store.ts (saves) · app/api/star/cutscene-edits/route.ts · fixtures from lib/star/cutscene/fixtures.ts · drawing: docs/handoffs/2026-10-19-ui-lookover/scene-editor/.",
   },
   "/star-3d-area-dev": {
     title: "3D Area",
