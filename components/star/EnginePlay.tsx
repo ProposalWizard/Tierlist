@@ -118,6 +118,38 @@ export function useTestKits(settings?: PlaySettings, seed = 1): FrameKits | null
   return kits;
 }
 
+/**
+ * HOW WIDE THE MATCH REALLY IS ON SCREEN — not how wide it was asked to be.
+ *
+ * Found 19 Oct 2026 (Harry: "the game has definitely drifted when I press
+ * play"): the box is `maxWidth: 100%`, so a page whose column is narrower
+ * than the real match squeezes the canvas. Full match's chance box on a
+ * 390 px phone drew the pitch 340 px wide (asked 366): the drag was then read
+ * against that smaller canvas, so the same finger movement kicked 7.6% harder
+ * than in a career. Measured here, the drag goes back to the real match's
+ * canvas whenever the two differ.
+ */
+function useShownWidth(boxRef: React.RefObject<HTMLDivElement>): number {
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const on = () => setShown(Math.round(el.getBoundingClientRect().width));
+    on();
+    const ro = new ResizeObserver(on);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
+  return shown;
+}
+
+/** The drag's reference: the real match's canvas height whenever this canvas
+ *  is not the real match's width (bigger by request, or squeezed by its page). */
+function dragReferenceFor(shown: number, realW: number, vpW: number, force = false): number | undefined {
+  if (force || (shown > 0 && Math.abs(shown - realW) >= 1)) return realMatchHeight(vpW);
+  return undefined;
+}
+
 type ServedInfo = { kind: ScenarioKind | "dribble"; minute: number; reason?: string; scenario?: Scenario };
 
 /**
@@ -255,8 +287,9 @@ export default function EnginePlay({
   }, []);
   const maxW = vpW > 0 ? Math.min(TEST_PLAY_MAX_W, Math.max(realW, vpW - 24)) : realW;
   const w = width && width > 0 ? Math.round(Math.max(realW, Math.min(maxW, width))) : realW;
-  const dragReferenceHeightPx = w !== realW || fitParent ? realMatchHeight(vpW) : undefined;
   const { boxRef, served } = useRevealPitch(onChanceServed);
+  const shown = useShownWidth(boxRef);
+  const dragReferenceHeightPx = dragReferenceFor(shown, realW, vpW, w !== realW || fitParent);
 
   if (!built) {
     return <div style={{ padding: 20, textAlign: "center", fontSize: 13, color: "#8a97aa" }}>No clubs in that division.</div>;
@@ -368,6 +401,10 @@ export function EngineFeature({
 }) {
   const w = useRealMatchWidth();
   const { boxRef, served } = useRevealPitch(onChanceServed);
+  const shown = useShownWidth(boxRef);
+  const [vpW, setVpW] = useState(0);
+  useEffect(() => { setVpW(window.innerWidth); }, [w]);
+  const dragReferenceHeightPx = dragReferenceFor(shown, w, vpW);
   return (
     <div ref={boxRef} style={{ width: w, maxWidth: "100%", margin: "0 auto" }}>
       <CanvasMatch
@@ -387,6 +424,7 @@ export function EngineFeature({
         penaltyRunup={penaltyRunup}
         freeKickRunup={freeKickRunup}
         holdAt={holdAt}
+        dragReferenceHeightPx={dragReferenceHeightPx}
       />
     </div>
   );
