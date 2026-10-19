@@ -57,7 +57,9 @@ function Bubble({ path }: { path: string }) {
     const xs = side && side.right > 0 && side.left >= 0 && side.width < window.innerWidth / 2 ? [side.right + 16, 16] : [16];
     // Then the right edge, above the page guide's eye (bottom-right).
     xs.push(window.innerWidth - SIZE - 16);
-    let spot = { x: xs[0], b: TRY[0] };
+    // Nowhere free (a full-screen 3D page is all canvas): tuck half of it
+    // behind the right edge, above the middle, clear of joysticks and bars.
+    let spot = { x: window.innerWidth - SIZE / 2 - 2, b: Math.round(window.innerHeight * 0.55) };
     search: for (const lx of xs) {
       for (const b of (lx > window.innerWidth / 2 ? TRY.slice(1) : TRY)) {
         const cx = lx + SIZE / 2, cy = window.innerHeight - b - SIZE / 2;
@@ -99,7 +101,7 @@ function Bubble({ path }: { path: string }) {
     <div className="tr-vars tr" data-look={look}>
       {open && <div className="tr-scrim" onClick={() => setOpen(false)} />}
       {open && (
-        <div className="tr-pop" style={{ bottom: bottom + SIZE + 10, left }} role="dialog" aria-label="Team room">
+        <div className="tr-pop" style={{ bottom: Math.min(bottom + SIZE + 10, Math.max(8, window.innerHeight - 590)), left: Math.max(8, Math.min(left, window.innerWidth - 392)) }} role="dialog" aria-label="Team room">
           <div className="tr-pop-h">
             <span className={`tr-live${s.live ? " on" : ""}`} title={s.live ? "Live" : "Not live — checking once a minute"} />
             <div className="tr-seg" role="group" aria-label="Team room part">
