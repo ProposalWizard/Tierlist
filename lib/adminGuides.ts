@@ -1651,7 +1651,8 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["Pause / Play", "Stops and starts the men moving, so one frame can be looked at closely."],
+          ["❚❚ / ▶ (top bar)", "Stops and starts the men moving, so one frame can be looked at closely."],
+          ["On the pitch / 4× zoom (left list, top row on a phone)", "Jumps to that part of the page. Pages: 3D animations, 2D animations."],
         ],
       },
     ],
