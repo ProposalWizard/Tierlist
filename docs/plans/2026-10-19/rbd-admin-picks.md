@@ -57,3 +57,4 @@ Every page keeps all of its key functions ("every page needs to keep the key fun
 1. **The game has drifted on Play** in Infinite Highlights, Full match and the trial: what Play runs no longer matches the picture/the real game. Needs measuring against the real match (one-engine) before any fix.
 2. **Key buttons below the fold** (Infinite Highlights NEXT, chance name): keep play controls on screen. Rule in ui-house-style.
 3. **Broadcast admin home: bring back the side tabs** (group list).
+4. **Split the admin by game, fully** (Harry, 19 Oct): the wider website's games (tierlists, draft, tic-tac-toe…) live on a completely separate tab from Road to Ballon d'Or. "we may be a production company that makes alot of games" — so each game is its own top-level area in the admin, and adding a new game adds a new tab, not more pages in a shared list.
