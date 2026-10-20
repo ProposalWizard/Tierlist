@@ -98,7 +98,9 @@ def b3():
             ('Fix', 'Settings → Full highlights rebuild → <b>Real moment highlights: Off | On</b>. It shows only while the rebuild is On. With it on, <b>1 in 4</b> open-play one-on-ones, tight angles and long-range chances becomes a real moment of the same kind, with the real 4 s build-up. 652 moments are allowed in the game.'
                     '<ul><li>Tested over 120 matches: 24.5% served, right kind 100%.</li><li>A moment marked “Don’t use” was served 0 times in 400.</li></ul>')],
             p.figs([f('b3-02-settings-two-switches-390.jpg', '<b>Look at:</b> Real moment highlights, Off | On, under Full highlights rebuild.'),
-                    f('b3-03-real-moment-in-the-match-390.jpg', '<b>Look at:</b> Infinite Match, a Long range chance at 32′. The report says a real moment was served here. Nothing on this still marks it as real.')])),
+                    f('b3-03-real-moment-in-the-match-390.jpg', '<b>Look at:</b> Infinite Match, a Long range chance at 32′. The report says a real moment was served here. Nothing on this still marks it as real.')]) +
+            p.video('real-moment-switches-and-match.mp4', 'b3-switches-both-on.jpg', 'both switches going On in Settings (Full highlights rebuild, then Real moment highlights), then Infinite Match serving a Tight Angle chance at 4′ where the men start moving in the real build-up. The clip is 9 seconds long, on a phone-size screen. The testing flag that makes every chance a real one was used so one shows at once.',
+                    'Settings, then Infinite Match (9 s, no sound). Nothing on screen labels the chance as real, so the clip uses the testing flag ?realmoments=every.', phone=True)),
         item('A Real moments page: choose which moments the game may use', [tag('seen')], [
             ('Fix', 'For each moment: Use in game, Don’t use or Automatic. There is a filter, a count, and a “Commit marks to the game” button. A README explains how to add, remove and edit moments.')],
             p.figs([f('b3-04-real-moments-dont-use-390.jpg', '<b>Look at:</b> a long-range moment marked “Don’t use” (blue). The amber note says: saved on this device only; marking for everyone needs an admin sign-in.'),
@@ -136,10 +138,10 @@ def b3():
             ('A SoccerTrack moment', 'On the Real moments page, search “Tsukuba”. Open No. 40 (9′).'),
             ('A real moment in Infinite Match', 'With Real moment highlights On, about 1 in 4 one-on-ones, tight angles and long-range chances is a real one.')],
         sections=[chg, add, bugs], numbers=numbers,
-        videos_coming=True,
-        videos='<b>Videos coming.</b><p>Clips are filmed after the push and added to this page.</p><ul><li>A real moment playing in a match.</li></ul>',
+        videos_coming=False, videos_here=True,
+        videos='<b>One clip is on this page.</b><p>The two switches going On, then Infinite Match serving a real moment. 9 seconds, on a phone-size screen. It is under &ldquo;Real moment highlights (a new switch)&rdquo; above.</p>',
         seen=dict(
-            seen=['Settings credits and the two switches', 'The Real moments page marks, filter and count', 'A SoccerTrack moment', 'A real moment served in Infinite Match'],
+            seen=['Settings credits and the two switches', 'The Real moments page marks, filter and count', 'A SoccerTrack moment', 'A real moment served in Infinite Match', 'A 9-second clip of the two switches and Infinite Match (filmed 20 Oct on the built Harry branch, with the testing flag)'],
             meas=['Matches 2,104 → 1,983. Tracked 27 → 42. Fully real moments 702 → 926. Real goals 67 → 93', '120 matches: 24.5% served, right kind 100%, “Don’t use” served 0 of 400'],
             no=['Inside a career match', 'A count that does not match: the report says 652 moments are allowed; the still says 653, with “1 mark not in the code yet”']),
         ok=[

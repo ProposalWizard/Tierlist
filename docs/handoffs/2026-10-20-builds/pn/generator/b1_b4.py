@@ -57,7 +57,7 @@ def b1():
         item('Wembley minigame: the stronger striker no longer hits the bar', [tag('meas'), '<span class="tag t-no">real game change</span>'], [
             ('Problem', 'The stronger striker’s rising shot crossed at 2.2–2.3 m and hit the bar <b>17 times in 124 shots</b>. This test never passed in the visible history.'),
             ('Why', 'The shot was still rising too high when it reached the bar. <span class="nr">(Reasoned from the report’s numbers.)</span>'),
-            ('Fix', 'Shots are aimed lower. Keeper 36 → 70. Valve drop 6 → 10 (the report gives no units). The 80-rated striker now wins 40% of the time. A fair share is 25%.')],
+            ('Fix', 'Shots are aimed lower. Keeper 36 → 70. Valve drop 6 → 10 (the report gives no units). The 80-rated striker now wins 40% of the time. A fair share is 25%. <b>Update (B16, v0.81):</b> Wembley&rsquo;s keeper is now 66, like the other two 3D games, and the 80 wins 30%.')],
             bars(bar('80-rated striker’s win share (fair share: 25%)', 23, 40, 50, '23%', '40%'))),
     ])
     bugs = section('bug', 'KNOWN ISSUES', [
@@ -89,8 +89,10 @@ def b1():
             ('Profile: the ✕ on your tierlists', 'Profile → My Tierlists on a touch phone. The red ✕ shows. A tap asks before it deletes.'),
             ('Zoom: − and + and pinch', 'Open the image zoom view. Use − and +, or pinch.')],
         sections=[fixed, chg, bugs], numbers=numbers,
-        videos_coming=True,
-        videos='<b>Videos coming.</b><p>Clips are filmed after the push and added to this page.</p><ul><li>Wembley minigame: a round of shots.</li><li>Negotiation − and +: a tap, a hold, and a slide off the button.</li></ul>',
+        videos_coming=False, videos_label='not filmed',
+        videos='<b>No clips on this page.</b><p>Two clips were planned. Neither was filmed on 20 Oct.</p><ul>'
+               '<li><b>Wembley, a round of shots:</b> the keeper was changed again after B1 (B16, v0.81: 70 → 66, see that page). B16&rsquo;s page has stills of Wembley, and a Free Roam clip of the same 3D keepers.</li>'
+               '<li><b>Negotiation − and +:</b> a tap, a hold and a slide off the button. It needs a summer transfer talk or a club signing, and reaching one in the test copy took more than 15 minutes of set-up. The still above shows the buttons.</li></ul>',
         seen=dict(
             seen=['The six touch fixes above, on a touch phone screen', 'Player of the Month cards: 11 drawn heads, 0 broken images'],
             meas=['The 4 old tests: keeper errors, rebound goals and “moves early” (see The numbers)', 'Wembley: 17 bar hits in 124 shots before; win share 23% → 40%', 'Full suite: 365 passed, 3 failed (the same 3 fail on the base)'],

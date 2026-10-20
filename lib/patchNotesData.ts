@@ -27,23 +27,229 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
-      "version": "0.75",
-      "title": "Harry's patch notes: Last 2 Days Patch Notes",
-      "publishedAt": "2026-10-20T12:00:00Z",
+      "version": "0.81",
+      "title": "Harry's patch notes: B16 Fairer 3D Keepers",
+      "publishedAt": "2026-10-20T12:30:00Z",
       "updatedAt": null,
-      "artifactUrl": "https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN",
-      "summary": "Last 2 Days Patch Notes (index, 19 to 20 Oct). One page per build in three tabs (Overnight, 19 Oct, Still building), how these patch notes work, every open question in one list and Harry's decided answers. Press Read and understood on each page.",
+      "artifactUrl": "https://claude.ai/artifact/NCvXEnE1cihMHCNnV1o1SD",
+      "summary": "B16 Fairer 3D Keepers (20 Oct). The keepers in Free Roam, Headers & Volleys and Wembley now save about 1 shot in 3 for a decent player (it was 52 to 70%). His cover had a hard edge; it is now a slope. Wembley's keeper 70 to 66, sessions 146 s to 83 s, Headers & Volleys win bar 6 to 8. Known: high-skill players blaze over in 3D (about 78% from 12 to 20 m). One clip.",
       "stats": [
-        { "value": "15", "label": "pages of patch notes" },
-        { "value": "8", "label": "questions still open" },
-        { "value": "11", "label": "answers already decided" },
-        { "value": "v0.60 to v0.74", "label": "the pages, one version each" }
+        { "value": "70% to 33%", "label": "Free Roam: decent player saved (600 shots)" },
+        { "value": "69% to 33%", "label": "Wembley: decent player saved" },
+        { "value": "146 s to 83 s", "label": "Wembley session length" },
+        { "value": "78%", "label": "of firm 3D shots from 12 to 20 m go over (not fixed)" }
       ],
       "sections": [
         { "kind": "added", "title": "Check these", "items": [
-          { "title": "Open the three tabs", "detail": "Overnight 20 Oct (9 pages), 19 Oct (6 pages), Still building." },
+          { "title": "Free Roam", "detail": "Take a few shots that are on target. About 1 in 3 should be saved, not most of them." },
+          { "title": "Headers and Volleys", "detail": "The same: about 1 in 3 saved. A win now needs 8 points." },
+          { "title": "Wembley", "detail": "Shots go in more often. A session is shorter, about 83 s." },
+          { "title": "A better keeper", "detail": "A better keeper still saves more than a weaker one." },
+          { "title": "Sizes", "detail": "The keeper, the goal and the men are the same size as before." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "A decent player is now saved about 1 shot in 3", "detail": "The edge is now a slope. Reaction 0.30 → 0.33 s. Read error for a 66 keeper 0.39 → 0.77 m. Body reach 1.36 → 1.17 m. Hands past the body 0.8 → 0.66 m. The stretch varies ±30% from dive to dive." },
+          { "title": "Wembley: keeper 70 → 66, and sessions are shorter", "detail": "Wembley’s keeper is 66, the same as the other two games. The test floor for the session length moved from 100 s to 75 s, and the test says why. The 80-rated striker still wins more than his fair quarter (30%, was 40%)." },
+          { "title": "Headers and Volleys: the win bar moves from 6 to 8 points", "detail": "The win bar is 8 points. At 8 the average bot wins 53% of its sessions, the same as before. Free Roam’s win bar (10) is unchanged. It was never measured, and goals now come easier. See Needs your OK." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "High-skill players blaze over in 3D", "detail": "Found, not fixed. See Needs your OK." },
+          { "title": "Wembley AI men all aim tight to the post", "detail": "Found, not fixed." },
+          { "title": "The dive picture is the same, but his reach is shorter", "detail": "Reasoned from the code. Not seen." },
+          { "title": "Seen once per game, on a test screen", "detail": "Play a few shots in each game and see if it feels fair." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.80",
+      "title": "Harry's patch notes: B9b Cup Screens",
+      "publishedAt": "2026-10-20T12:25:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/Rdj6FwzNKmu78NTgb9rS1w",
+      "summary": "B9b Cup Screens (20 Oct). The Lower League Trophy tab fits one screen (it was a 56-row list), with the cup's own screen for your road, the bracket and every round. The FA Cup and League Cup work the same way. Open: a Premier League career still sees the Trophy tab as Not in it; the cup shows a trophy emoji for now.",
+      "stats": [
+        { "value": "56 rows to 1", "label": "screens for the Trophy tab" },
+        { "value": "3", "label": "domestic cups on one screen" },
+        { "value": "7", "label": "rounds on the road" },
+        { "value": "1-1, 4-3 pens", "label": "Round 1 played in the real game" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "The Trophy tab", "detail": "In a lower-league career: League → Table → Lower League Trophy. One card with the headline, your next tie and a road. It fits one screen." },
+          { "title": "Open the Trophy", "detail": "The cup screen: headline, your road, the bracket from the last 16, every round with ‹ › arrows, Still in it." },
+          { "title": "The bottom bar", "detail": "Back · The draw · Play. The draw shows the draw again." },
+          { "title": "FA Cup and League Cup", "detail": "Their tabs work the same way, each in its own colour." },
+          { "title": "After a match", "detail": "The results board and the draw look the same as the FA Cup’s." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "The Trophy tab fits one screen. It was a 56-row list.", "detail": "The Trophy tab now shows the cup’s colour, a headline (“Round 1”), your next tie (“Wed 9 Sep · away at Walsall”), a road with a segment for every round, and one button: Open the Trophy. It fits one 844 px screen." },
+          { "title": "The cup’s own screen", "detail": "Open the Trophy and you get its own screen. Headline: Winners, Out, Not in it, Cup-tied, or bye. Your road: each round, the club, home or away, and the score. The bracket from the last 16 (Mikey’s)." },
+          { "title": "After a match: the results board and the draw", "detail": "The Trophy uses the same round-up and draw as the FA Cup. Mikey’s Board, Bracket and CupDrawReveal are reused, not copied." },
+          { "title": "The FA Cup and League Cup work the same way", "detail": "One screen for all three domestic cups. The FA Cup and League Cup tabs work like the Trophy tab, each in its own colour. The list of every tie is one tap away." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "A Premier League career still shows the Trophy tab as “Not in it”", "detail": "Open. See Needs your OK: hide it?" },
+          { "title": "No Trophy picture yet", "detail": "The emoji stays for now. See Needs your OK." },
+          { "title": "A tie you only watched goes straight back to Home", "detail": "Not fixed. Same as the FA Cup." },
+          { "title": "After a Round 1 bye no draw pops up", "detail": "You can see the draw with “The draw” on the cup screen." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.79",
+      "title": "Harry's patch notes: B15 3D Headshots",
+      "publishedAt": "2026-10-20T12:20:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/Kti6Jor9jnUAGwbuZ6gnVx",
+      "summary": "B15 3D Headshots (20 Oct). Player of the Month, the season awards and the Ballon d'Or show a head-and-shoulders picture from our 3D model in the player's club kit, instead of drawn heads and made-up photo faces. Made once and kept on the device. Known: blond hair also colours eyebrows and beard on dark skin; team sheets still drawn.",
+      "stats": [
+        { "value": "3", "label": "award screens with 3D headshots" },
+        { "value": "13", "label": "faces in 0.5 s on the second visit (~6 s first)" },
+        { "value": "~10 KB", "label": "per picture, kept on the device" },
+        { "value": "0", "label": "blank circles when 3D is missing" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Player of the Month", "detail": "The shortlist, the winner card and the “You won it” pop-up show 3D headshots in club kits." },
+          { "title": "Season awards", "detail": "Each award and Team of the Season show 3D headshots." },
+          { "title": "Ballon d’Or", "detail": "The result page, top ten, countdown, winner and runner-up show 3D headshots." },
+          { "title": "Your own face", "detail": "Settings → Your look changes your own headshot." },
+          { "title": "Second visit", "detail": "Open the same cards again. The pictures should be there at once." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Award cards show a 3D head-and-shoulders picture", "detail": "Player of the Month (the shortlist, the winner card and the “You won it” pop-up), the season awards (each award and Team of the Season) and the Ballon d’Or (result page, top ten, countdown, winner, runner-up) now show a…" },
+          { "title": "The Ballon d’Or and the season awards too", "detail": "Same 3D pictures. A player has the same seeded look as the 3D match men (keyed to his squad id). You get your own look from Settings → Your look." },
+          { "title": "Made once, kept on the device", "detail": "One hidden renderer, one fixed lens, pose and studio light. Heads are never resized. A picture is made only when its card comes near the screen, one at a time. It is kept on the device (about 10 KB each, the newest 400)." },
+          { "title": "If 3D is missing, the card shows the drawn head", "detail": "A card shows the drawn head until the picture is ready, and keeps it if the picture cannot be made. Seen: with WebGL missing, 10 pictures failed and 10 cards showed drawn heads. No blank circles." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Blond hair colour also goes on the eyebrows and beard", "detail": "Not changed. See Needs your OK." },
+          { "title": "Team sheets and other screens still show the old heads", "detail": "Team sheets are a one-line swap, if you want them. See Needs your OK." },
+          { "title": "Not seen in a real career or on a phone", "detail": "Check the cards in a real career." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.78",
+      "title": "Harry's patch notes: B13 Fixtures + Admin Fixes",
+      "publishedAt": "2026-10-20T12:15:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/9SPUygrStL9T6qF9LjcwzW",
+      "summary": "B13 Fixtures + Admin Fixes (20 Oct). A checker played 5 seasons in every division and found 170 fixture clashes; now 0. XP Rewards loads on a test build with a read-only note, the chat bubble no longer covers 'Next line', and the Team board counts real pushes (Harry 166, Mikey 34, Leo 21). Limit left: a Championship club in Europe winning everything needs 38 midweeks, a season has 34.",
+      "stats": [
+        { "value": "170 to 0", "label": "fixture clashes over 45 seasons" },
+        { "value": "9", "label": "division setups checked" },
+        { "value": "132 px", "label": "bubble moves up in the Manager office" },
+        { "value": "166 / 34 / 21", "label": "pushes this week: Harry, Mikey, Leo" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Play a season", "detail": "No two games on the same day or on days in a row. No game inside an international break. The season ends by 31 May." },
+          { "title": "Play-offs", "detail": "They are all in May, after the league." },
+          { "title": "Admin: XP Rewards", "detail": "Admin → XP & Rewards. It loads. On a test build a note says it is read-only." },
+          { "title": "Admin: Manager’s office on a phone", "detail": "The chat bubble sits above “Next line ›”. It does not cover it." },
+          { "title": "Admin: Team board", "detail": "Harry 166, Mikey 34, Leo 21 pushes in the last 7 days. No amber “GitHub refused the site’s key” lines." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Every fixture date was checked: 170 clashes are now 0", "detail": "Championship-and-below Tuesday rounds moved. A midweek game inside a FIFA window moves to the Wednesday after. Premier League clubs in Europe play both domestic cups on their own fixed weekends." },
+          { "title": "XP Rewards no longer says “Failed to fetch”", "detail": "It now loads, read-only, with a note: saving needs the site’s database key, which the live site has and the test build does not. Every failure is said in plain words." },
+          { "title": "The chat bubble no longer covers “Next line ›”", "detail": "A page marks its own bottom-left controls. The bubble sits above them. In the Manager’s office it moves up 132 px." },
+          { "title": "Team board push counts are real now", "detail": "It now counts real pushes from GitHub’s push log: any branch, the last 7 days, own work only." },
+          { "title": "“GitHub refused the site’s key” line", "detail": "A refused key is tried once. Then the board reads without it. One line says whose key it was." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "A Championship club in Europe that wins everything still clashes", "detail": "Not counted in the 0. Clashes in that case went from 56 to 20, all from deep runs. None come before 1 January. See Needs your OK." },
+          { "title": "Mikey’s ten-round FA Cup is not merged yet", "detail": "Run the checker again after it merges. See Needs your OK." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.77",
+      "title": "Harry's patch notes: B7b Training Editor",
+      "publishedAt": "2026-10-20T12:10:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/8WTKPhi3pNJ8RBd6FvYsrr",
+      "summary": "B7b Training Editor (20 Oct). Drag the ball, cones and men on the level's picture like the gallery (Undo, Undo all, Play uses the dragged picture). No 'your skills' slider: a level plays with the skills you would have after the levels before it. Pace now has a knock-on: one man comes for the ball, flick past him when his ring turns green. Known: the Training levels page freezes on the second tab switch. One clip.",
+      "stats": [
+        { "value": "4", "label": "drills with drag and drop (not Vision)" },
+        { "value": "0", "label": "skills sliders (a level works its own out)" },
+        { "value": "0.30 to 0.05 s", "label": "Pace ring window, weak man to best" },
+        { "value": "56% to 29%", "label": "hasty bot clears, levels 11 to 20" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Drag on the picture", "detail": "Training levels → pick a drill → Edit level. Drag the ball, a cone or a man on the picture. The numbers follow, with a dot and “was …”." },
+          { "title": "Undo", "detail": "↶ Undo takes back one step. Undo all takes back everything." },
+          { "title": "▶ Play", "detail": "It plays the dragged picture, even before you Save." },
+          { "title": "Plays with", "detail": "The level box says what skills it plays with, for example Power 65 · Technique 65 — what you’d have after levels 1–19. There is no slider." },
+          { "title": "Pace: the ring", "detail": "Pace level 8. A man comes for the ball with an amber ring. Flick the other way when it turns green. Too early, and he goes with you." },
+          { "title": "The freeze", "detail": "Switch the drill tab twice after picking a level. This freezes in the test browser. See Known issues." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Drag and drop in the training editor", "detail": "The level’s picture from above sits beside the sliders. Drag on it. Power: the ball and each man. Technique: the ball, either cone, or the gate’s middle. Free kick: the ball and each wall man." },
+          { "title": "No “your skills” slider: a level plays with the skills you would have", "detail": "No slider. A level plays with the skills you would have after the levels before it, by the career’s own rule. It takes 2 of 3 stars on each earlier level. One line says so, and shows the range." },
+          { "title": "Pace: one man comes for the ball. Flick past him when his ring turns green.", "detail": "One man per wave comes for the ball and wears a ring. The ring is amber, then green for a short window. Flick the other way when it is green. Too early, and he goes with you." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "The Training levels page freezes on the second tab switch", "detail": "Found, not fixed. Not checked on a phone." },
+          { "title": "Vision cannot be dragged yet", "detail": "One entry to add in the layout file. Not done." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.76",
+      "title": "Harry's patch notes: B12 Pick the Pass",
+      "publishedAt": "2026-10-20T12:05:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/MewEumQW9Wr9dt84kGaPuF",
+      "summary": "B12 Pick the Pass (20 Oct). Vision training is rebuilt: each try is a real moment from a tracked match (263 real passes plus the team's drawn chances), you pick who gets the pass, and from level 10 you kick it yourself, starting inside 1.8 s down to 0.3 s. After each try a one-line reason (RIGHT MAN, OFFSIDE, CUT OUT, MARKED, TOO SLOW). A modelled good player passes it first time 99% at level 1 down to 21% at level 30. One clip.",
+      "stats": [
+        { "value": "263", "label": "real passes in Vision pictures" },
+        { "value": "99% to 21%", "label": "first-try pass rate, level 1 to 30 (modelled)" },
+        { "value": "0.3 s", "label": "time to start the kick from level 28" },
+        { "value": "45", "label": "different pictures in 90 tries (was 32)" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Level 1: tap the man", "detail": "Training → Vision → level 1. No line on the pitch. Tap the team-mate you would pass to." },
+          { "title": "Level 4: an offside man", "detail": "Tap the offside man. OFFSIDE shows, with one line saying why. The right man gets a green ✓." },
+          { "title": "Level 10 and up: kick the pass", "detail": "Drag back from the ball to aim at him, then strike. You must start inside the time on the hint." },
+          { "title": "Level 30: TOO SLOW", "detail": "Wait too long. TOO SLOW shows, and the right man is ringed green." },
+          { "title": "A real picture names its match", "detail": "Under the pitch: the match, the minute and the data credit." },
+          { "title": "Pictures do not repeat much", "detail": "Go through levels 1 to 30. An ordinary picture should come back on 3 levels at most." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Vision is now “Pick the Pass”: real pictures, real passes", "detail": "Vision is rebuilt from the start. Each try is a real moment from a tracked match. 263 real passes (DFL, SkillCorner and SoccerTrack), plus the team’s own drawn chances on levels 1, 2 and 10." },
+          { "title": "The question: who gets the pass?", "detail": "Three traps: a man who is offside, a lane that is cut, a man who is marked. The right man is worked out with the engine’s own rules." },
+          { "title": "Levels 1 to 9: tap the man. From level 10: kick the pass.", "detail": "Levels 1 to 9 are a tap, and the time gets shorter. From level 10 you kick the pass: the real drag and strike, and you must start the kick in time. The engine judges the kick." },
+          { "title": "After each try you are told why", "detail": "One word, then one line. RIGHT MAN, OFFSIDE, CUT OUT, MARKED, NOT THE BALL, MISPLACED or TOO SLOW. The right man gets a green ✓ ring. Your pick gets a red ✗. A real picture names its match and minute." },
+          { "title": "Fewer repeats across the 30 levels", "detail": "Going through levels 1 to 30 now shows more different pictures. An ordinary picture comes back on at most 3 levels." },
+          { "title": "How hard it gets", "detail": "The pass rate now falls the whole way. The steepest step is level 14 (87%) to level 16 (51%). Every level’s numbers can be softened in the training editor." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Only 5 real offside pictures for 13 offside levels", "detail": "Open. See Needs your OK: add drawn offside pictures?" },
+          { "title": "Not tried on a real phone at 0.3 s", "detail": "Harry to try on his phone. Every level’s numbers can be softened in the editor." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.75",
+      "title": "Harry's patch notes: Last 2 Days Patch Notes",
+      "publishedAt": "2026-10-20T12:00:00Z",
+      "updatedAt": "2026-10-20T12:35:00Z",
+      "artifactUrl": "https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN",
+      "summary": "Last 2 Days Patch Notes (index, 19 to 20 Oct). One page per build in three tabs (Overnight, 19 Oct, Still building), how these patch notes work, every open question in one list and Harry's decided answers. Press Read and understood on each page.",
+      "stats": [
+        { "value": "21", "label": "pages of patch notes" },
+        { "value": "18", "label": "questions still open" },
+        { "value": "14", "label": "answers already decided" },
+        { "value": "v0.60 to v0.81", "label": "the pages, one version each (v0.75 is this index)" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Open the three tabs", "detail": "Overnight 20 Oct (15 pages), 19 Oct (6 pages), Still building." },
           { "title": "Read how these patch notes work", "detail": "One page per build: Check these, Problem, Why, Fix, the seen / measured / reasoned tag, Needs your OK." },
-          { "title": "Press Read and understood on each version", "detail": "Admin, Patch notes, pick v0.60 to v0.74, press the button. The Team board counts what is left." }
+          { "title": "Press Read and understood on each version", "detail": "Admin, Patch notes, pick v0.60 to v0.81 (not v0.75, the index), press the button. The Team board counts what is left." }
         ]},
         { "kind": "added", "title": "The pages", "items": [
           { "title": "Admin Split + Looks (v0.65)", "detail": "The admin is split by game, group pages show picture cards, four looks share one layout, the phone admin is tidier." },
@@ -53,14 +259,20 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Free Data v1 (v0.64)", "detail": "2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. StatsBomb deleted." },
           { "title": "Scene Editor 3a (v0.61)", "detail": "The 3D Signing and Office edit live in the scene editor. Also: how generated cut scenes work, and the 3D audit." },
           { "title": "B1 Touch Fixes (v0.66)", "detail": "All 27 touch fixes are built. The 4 old failing tests pass. Wembley is fairer." },
-          { "title": "B3 Real Data (v0.67)", "detail": "Afriskaut is out, two free sources are in, data credits are in Settings, and real moments can appear in your matches." },
+          { "title": "B3 Real Data (v0.67)", "detail": "Afriskaut is out, two free sources are in, data credits are in Settings, and real moments can appear in your matches. Has a clip." },
           { "title": "B4 Admin Skins (v0.68)", "detail": "The admin has one layout in four looks, one back arrow, a smaller chat bubble and a Research area. Clean light is the default." },
           { "title": "B5 3D Looks (v0.69)", "detail": "Natural skin in the 3D cut scenes, phone cameras that fit, faces that move, and a Home player that is alive. Has two clips." },
           { "title": "B6 Scene Studio (v0.70)", "detail": "Edit the 3D shop, garden and house live. Approve and commit edits. Make cut scenes from a game event." },
           { "title": "B7 Training Levels (v0.71)", "detail": "All 150 training levels are editable. Vision level 30 and Pace are harder." },
           { "title": "B8 Five-a-side (v0.72)", "detail": "A test area with Scenarios, a Full match with a live radar, and Data. Two things in it are broken. Has a clip." },
-          { "title": "B9 Lower League Trophy (v0.73)", "detail": "A new cup for 120 lower-league clubs. Hold to speed up and double-tap to skip after a match." },
-          { "title": "B11 Team Room (v0.74)", "detail": "Seen faces, quoted replies, @ and # tags, Shift+X pointing and patch-note read receipts." }
+          { "title": "B9 Lower League Trophy (v0.73)", "detail": "A new cup for 120 lower-league clubs. Hold to speed up and double-tap to skip after a match. Has a clip." },
+          { "title": "B11 Team Room (v0.74)", "detail": "Seen faces, quoted replies, @ and # tags, Shift+X pointing and patch-note read receipts." },
+          { "title": "B12 Pick the Pass (v0.76)", "detail": "Vision training rebuilt: look at a real moment, work out who gets the pass, and from level 10 kick it yourself. Has a clip." },
+          { "title": "B7b Training Editor (v0.77)", "detail": "Drag and drop in the training editor, no “your skills” slider, and Pace needs the right moment. Has a clip." },
+          { "title": "B13 Fixtures + Admin Fixes (v0.78)", "detail": "Every fixture date was checked: 170 clashes are now 0. XP Rewards loads, the chat bubble clears page buttons, and the Team board counts real pushes." },
+          { "title": "B15 3D Headshots (v0.79)", "detail": "Award cards show a 3D head-and-shoulders picture of the player in his club kit: Player of the Month, the season awards and the Ballon d’Or." },
+          { "title": "B9b Cup Screens (v0.80)", "detail": "Each cup has its own screen: a one-screen tab, then your road, the bracket and every round. The FA Cup and League Cup work the same way." },
+          { "title": "B16 Fairer 3D Keepers (v0.81)", "detail": "The keepers in the 3D games (Free Roam, Headers & Volleys, Wembley) now save about 1 shot in 3 for a decent player. Has a clip." }
         ]}
       ]
     },
@@ -126,7 +338,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Hold to speed up. Double-tap to skip.", "detail": "After a match, hold anywhere: the screen runs at 4×. Double-tap: it skips to the end of that screen. Crediting is unchanged. A hint shows the first 3 times." }
         ]},
         { "kind": "known", "title": "Known issues", "items": [
-          { "title": "FA Cup Round of 64 lands the day after a league game", "detail": "Found, not fixed. Queued for B13 Fixes, which will check every fixture date, not only this one (Harry, 20 Oct)." }
+          { "title": "FA Cup Round of 64 lands the day after a league game", "detail": "Fixed in B13 (Fixtures + Admin Fixes, v0.78). A new checker played 5 seasons in every division and found 170 clashes, this one among them. Now 0." }
         ]}
       ]
     },
