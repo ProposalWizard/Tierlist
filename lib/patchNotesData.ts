@@ -27,6 +27,152 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.94",
+      "title": "Harry's patch notes: 3D Bodies & Smoother Movement",
+      "publishedAt": "2026-10-21T00:10:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "3D bodies and movement, 20-21 Oct (B5b, B5c, B5d). The game's clips: shoulders are down (collarbone lift 13° and 26° → 0; 49 of 73 clips were above 3°), the press desk is lower (neck ÷ shoulder width 0.36 → 0.55), arms stay off the body (clips and scenes with an arm inside it 50 → 20; walk hand 8.8 cm into the hip in 92% of frames → clear), a body-overlap check now exists, wrists are less frozen (trophy 0.49 → 0.14), and posture leans back over the feet (hips ahead of ankles 0.24 → 0.13-0.14; real about 0.05). Props: the pen is held at 50° (was 9°) and the trophy is held by both handles, clear of the head. The realistic B5b bodies were dropped. Three cartoon bodies, A, B and C, are on test pages (?bodies=d1|d2|d3) and wait for Harry's pick; the head is 16-22% smaller on each. Not done: breathing, the 1° back-lean of the chest, the 27° relaxed knee, the pelvis tilt.",
+      "stats": [
+        {
+          "value": "50 → 20",
+          "label": "clips and scenes with an arm inside the body"
+        },
+        {
+          "value": "13° → 0",
+          "label": "collarbone lift in idle (handshake 26° → 0)"
+        },
+        {
+          "value": "0.49 → 0.14",
+          "label": "share of time the wrist is frozen, trophy lift"
+        },
+        {
+          "value": "0.24 → 0.13",
+          "label": "hips ahead of the ankles, side on (real: about 0.05)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Shoulders",
+              "detail": "Watch idle, handshake and applause. The shoulders should sit low, not shrugged."
+            },
+            {
+              "title": "Press answer",
+              "detail": "The shoulders should no longer sit at his ears."
+            },
+            {
+              "title": "Arms in a walk",
+              "detail": "The hands should swing clear of the hips."
+            },
+            {
+              "title": "Posture",
+              "detail": "Standing, side on: he should lean back over his feet, not onto his toes."
+            },
+            {
+              "title": "Trophy lift and signing pen",
+              "detail": "The cup should be held in both hands and clear of his head. The pen should be held to write."
+            },
+            {
+              "title": "Pick a body",
+              "detail": "Try ?bodies=d1 (A), d2 (B) and d3 (C) on the test pages. The face is 16 to 22% smaller on each. Pick one."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: the game's clips (B5c)",
+          "items": [
+            {
+              "title": "Shoulders are down, not shrugged",
+              "detail": "49 of 73 clips lifted the collarbones more than 3° (idle, applause, talk 13°; handshake, wave, point, celebrations 23 to 26°). Every body is built level, so the clips did it. Now level unless an arm goes up (up to 22° with an arm straight up). Neck base above the shoulder joints: idle 4.0 → 8.5 cm, handshake −0.1 → 8.5 cm. Baked by tools/motionref/settle_clips.mts. Test: shoulderSet.mts."
+            },
+            {
+              "title": "The press desk was too high",
+              "detail": "Desk top 0.765 → 0.665 m. It was only 11 cm under his seated shoulders. Neck ÷ shoulder width in the shot 0.36 → 0.55. That the desk pushed the shoulders up is reasoned."
+            },
+            {
+              "title": "Arms no longer go through the body",
+              "detail": "Walk: a hand 8.8 cm into the hip in 92% of frames. Each arm now turns about the shoulder to clear the torso, legs and head. Clips and scenes with an arm inside the body, today's body: 50 → 20. Goal scene 10.5 → 3.1 cm, signing 11.6 → 2.5 cm."
+            },
+            {
+              "title": "A check for one body part inside another",
+              "detail": "tools/motionref/body_overlap.mts: 14 parts, every pair, every frame, with a gate and the test bodyOverlap.mts. Named exceptions: legs, upper arm against the lat, keeper dives, sitting (3 to 6 cm)."
+            },
+            {
+              "title": "Arms move like a person's",
+              "detail": "Share of time the wrist is frozen: trophy 0.49 → 0.14, goal 0.18 → 0.05, press 0.87 → 0.37, farewell 0.28 → 0.09. Real people: 0.00 to 0.02."
+            },
+            {
+              "title": "Posture: he no longer leans onto his toes",
+              "detail": "Side on, against 28 reference videos (ours before → after; real): hips ahead of ankles 0.24 → 0.13-0.14 (about 0.05); knee bend 18-21° → 8-12° (about 7°); head ahead 0.12-0.18 → 0.10-0.14 (0.02-0.17); arms out 7-9° → 17-18° (19-20°); elbow 11-13° → 15-16° (19-22°). Front on the change is small."
+            },
+            {
+              "title": "A broken bake is now refused",
+              "detail": "The first posture bake broke keys in clips it should not touch. tools/motionref/clip_check.mts now refuses to write a broken file."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: props held properly (B5b)",
+          "items": [
+            {
+              "title": "The pen is held to write",
+              "detail": "Pen angle 9° → 50°. Hand slip on the pen 2.5 → 0.5 cm."
+            },
+            {
+              "title": "The trophy is held by both handles, clear of the head",
+              "detail": "Before, it hung low, sat on his head in the lift and was black. Now held by both handles and lifted clear. With B5c's grips: slip 0.4 cm or less, cup 2.6 cm clear of the head."
+            },
+            {
+              "title": "The face lines no longer land 3 cm low",
+              "detail": "On a new body the moving face used Curls eye positions about 3 cm too low. Each body file now keeps its own name (lib/star/people3d.ts)."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "New test options: cartoon bodies (B5d)",
+          "items": [
+            {
+              "title": "Why today's body looks short",
+              "detail": "5.1 heads tall (guide 7.7); head 0.37 m (0.24); crotch 0.66 m (0.88); arms 0.68 m (0.78). The realistic B5b bodies were dropped: with today's face they did not fit our cartoon faces."
+            },
+            {
+              "title": "Three cartoon bodies, same face: A, B, C",
+              "detail": "Today's own Style A bodies reshaped in Blender: no new body, no head swap, one mesh, 1.86 m, same skeleton. Heads tall 6.0 / 6.5 / 6.3 (today 5.1). Shoulders 0.49 / 0.48 / 0.53 m. Legs 51 / 53 / 52% of height (today 47%). A is today's body grown up, B a slim athlete, C hero V (the builder's pick). See them with ?bodies=d1|d2|d3 on test pages. Waiting on Harry: pick A, B or C. Not changed in the game."
+            },
+            {
+              "title": "What the three bodies cost",
+              "detail": "Head 16 to 22% smaller than today. Idle, boot into boot: 2.9 → 5.1 to 5.9 cm. Walk, hand into thigh: 10.0 → 7.7 / 7.0 / 5.1 cm."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Posture is not yet real",
+              "detail": "No breathing; chest leans about 1° back; relaxed knee still 27° bent; pelvis tilts 5 to 6° sideways (real 3 to 4°). Hips are still about 2.5 times the real number, side on."
+            },
+            {
+              "title": "The press answer is still the stillest scene",
+              "detail": "Frozen-wrist share 0.37, against 0.00 to 0.02 for real people."
+            },
+            {
+              "title": "Some leftovers from B5b",
+              "detail": "Hands go into the shins in the sitting clip. The rejected first code (proportions.ts, ?prop) is still in the files. A pale line at the neck on the dropped B2 and B3 bodies."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.93",
       "title": "Harry's patch notes: B2b Build-ups, Round Two",
       "publishedAt": "2026-10-20T19:40:00Z",

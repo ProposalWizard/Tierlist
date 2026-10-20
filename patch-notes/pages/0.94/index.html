@@ -1,0 +1,248 @@
+<title>3D Bodies &amp; Smoother Movement</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one column, stacked cards, stills under their text. Tokens first, then components. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  a{color:var(--blue)}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+  .chip{display:inline-block;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink2);text-decoration:none}
+  .chip.hot{color:var(--amber);border-color:var(--amber)}
+  .back{display:inline-block;font-size:13px;font-weight:700;margin:0 0 4px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b,.row li b{color:var(--ink)}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:4px}
+  .nr{color:var(--ink3);font-style:italic}
+  .tile{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+  .tile>b{display:block;font-size:15px}
+  .tile>p{margin:3px 0 0;color:var(--ink2);font-size:14.5px}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .track.solo{height:14px}
+  .track.solo .fill.now{top:0;bottom:0;height:auto}
+  .fill.now.warn{background:var(--amber)}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.blue{background:var(--blue)}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+  .bnote{color:var(--ink3);font-size:12.5px;margin:2px 0 0}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px 14px;margin:10px 0 0}
+  .figs.wide{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+  .figs figure{margin:0}
+  .figs.pair{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .figs.pair figure.ph{max-width:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details .figs{margin-top:2px}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .sbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px 12px}
+  .sbox h3{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 4px}
+  .sbox h3.g{color:var(--green)} .sbox h3.b{color:var(--blue)} .sbox h3.a{color:var(--amber)} .sbox h3.r{color:var(--red)}
+  .sbox ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+  .sbox li{margin-bottom:4px}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox .q{font-weight:700}
+  .okbox .opts{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+  .okbox .who{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-right:6px}
+
+  .vid{border:2px dashed var(--line);border-radius:var(--r);padding:12px 14px;background:var(--card)}
+  .vid b{color:var(--amber)}
+  .vid p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .vid ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  .cards{display:grid;gap:10px;margin:0}
+  .bcard{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;min-width:0}
+  .bcard .n{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 4px}
+  .bcard .n b{font-size:17px}
+  .bcard p{margin:0;color:var(--ink2);font-size:14.5px}
+  .bcard .go{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:var(--blue)}
+  .bcard.soon{border-style:dashed;opacity:.85}
+
+  /* --- how these patch notes work --- */
+  .how{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 14px 10px;min-width:0}
+  .how svg{display:block;width:100%;max-width:340px;height:auto;margin:2px auto 10px}
+  .how ol{margin:0;padding-left:20px;color:var(--ink2);font-size:14.5px}
+  .how li{margin:0 0 6px}
+  .how li b{color:var(--ink)}
+  .how .mini{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;vertical-align:1px}
+  .how .btn{display:inline-block;font-size:12.5px;font-weight:800;background:var(--pill);color:var(--pillink);padding:2px 9px;border-radius:999px;vertical-align:1px}
+  .how .where{margin:8px 0 0;font-size:13px;color:var(--ink3)}
+  /* --- already decided --- */
+  .donebox{border:1px solid var(--line);border-left:4px solid var(--green);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .donebox ul{margin:0;padding:0;list-style:none}
+  .donebox li{padding:11px 0 11px 28px;border-bottom:1px solid var(--line);position:relative}
+  .donebox li:last-child{border-bottom:0}
+  .donebox li::before{content:"\2713";position:absolute;left:2px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--pillink);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .donebox .q{font-weight:700}
+  .donebox .d{color:var(--ink2);font-size:14px;margin-top:3px}
+  .donebox .by{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-right:6px}
+  /* --- video --- */
+  .clip{margin:12px 0 2px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .look{font-size:13px;color:var(--ink2);margin:0 0 7px}
+  .clip .look b{color:var(--ink)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px}
+  .clip.ph{max-width:390px;margin-left:auto;margin-right:auto}
+  /* --- tabs (index) --- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink2);font:inherit;font-size:13.5px;font-weight:800;padding:8px 13px;border-radius:999px;cursor:pointer;min-height:40px}
+  .tab[aria-selected="true"]{background:var(--pill);color:var(--pillink);border-color:var(--pill)}
+  .tab small{font-weight:700;opacity:.8;margin-left:4px}
+  .js .panel[hidden]{display:none}
+  .panel h3.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px}
+  .bcard .vtag{font-size:11px;font-weight:800;color:var(--ink3);letter-spacing:.04em}
+  .qlist{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px}
+  .qlist ul{margin:0;padding:0;list-style:none}
+  .qlist li{padding:10px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14px}
+  .qlist li:last-child{border-bottom:0}
+  .qlist li b{color:var(--ink)}
+
+  /* --- steps (vertical list) --- */
+  .steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  .steps li{position:relative;padding:9px 0 9px 36px;border-bottom:1px solid var(--line);counter-increment:st;color:var(--ink2);font-size:14.5px;min-width:0}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(st);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .steps li b{color:var(--ink)}
+  .steps li.done::before{background:var(--green);border-color:var(--green);color:var(--pillink);content:"\2713"}
+  .steps li.next::before{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+  .mock{border:2px solid var(--red);border-radius:var(--r);background:var(--rbg);padding:12px 14px;margin:10px 0 2px}
+  .mock b{display:block;color:var(--red);font-size:15px;letter-spacing:.02em}
+  .mock p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .mock .mb{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .mock .mb span{font-size:13px;font-weight:800;padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink2)}
+  .mock .mb span.go{background:var(--card2)}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+<div class="wrap">
+<header>
+  <br>
+  <span class="ver">3D &middot; BODIES &middot; SMOOTHER MOVEMENT</span>
+  <h1>Shoulders are down, arms stay off the body, and three cartoon bodies wait for a pick.</h1>
+  <p class="status"><i></i>On the Harry branch, not live yet.</p>
+  <p class="sub">Overnight round, 20 Oct 2026 (B5b, B5c, B5d). The clip fixes are merged. The cartoon bodies are on test pages only. In Admin &rarr; Patch notes this is <b>v0.94</b>.</p>
+  <div class="chips"><a class="chip" href="#vid">Videos here &darr;</a></div>
+</header>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<ul class="ck"><li><label><input type="checkbox" data-k="c0"><span><span class="q">Shoulders</span><span class="a">Watch idle, handshake and applause. The shoulders should sit low, not shrugged.</span></span></label></li><li><label><input type="checkbox" data-k="c1"><span><span class="q">Press answer</span><span class="a">The shoulders should no longer sit at his ears.</span></span></label></li><li><label><input type="checkbox" data-k="c2"><span><span class="q">Arms in a walk</span><span class="a">The hands should swing clear of the hips.</span></span></label></li><li><label><input type="checkbox" data-k="c3"><span><span class="q">Posture</span><span class="a">Standing, side on: he should lean back over his feet, not onto his toes.</span></span></label></li><li><label><input type="checkbox" data-k="c4"><span><span class="q">Trophy lift and signing pen</span><span class="a">The cup should be held in both hands and clear of his head. The pen should be held to write.</span></span></label></li><li><label><input type="checkbox" data-k="c5"><span><span class="q">Pick a body</span><span class="a">Try ?bodies=d1 (A), d2 (B) and d3 (C) on the test pages. The face is 16 to 22% smaller on each. Pick one.</span></span></label></li></ul>
+
+<h2 class="chg"><i></i>CHANGED: THE GAME&rsquo;S CLIPS (B5c)</h2><div class="item"><div class="ih"><b>Shoulders are down, not shrugged</b><span class="tag t-meas">measured</span><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>The clips lifted the collarbones: about 13&deg; in idle, applause and talk, and 23 to 26&deg; in handshake, wave, point and the celebrations. <b>49 of 73 clips</b> were above 3&deg;. He looked shrugged, even standing still.</p></div><div class="row"><div class="rl w">Why</div><p>Every body is built with level collarbones. The clips raised them. So the fix is in the clips, not the bodies.</p></div><div class="row"><div class="rl f">Fix</div><p>Collarbones are now level unless an arm goes up. With an arm straight up they rise up to 22&deg;, as a real shoulder does. The neck base now sits clear above the shoulder joints. It is baked into the clip files by <b>tools/motionref/settle_clips.mts</b> (<b>lib/star/three3d/shoulderSet.ts</b>). Test: <b>shoulderSet.mts</b>.</p></div><div class="bars"><div class="bar"><span class="bl">Idle: how far the collarbone is lifted (&deg;)</span><span class="track"><span class="fill was" style="width:46.4%"></span><span class="fill now " style="width:0.0%"></span></span><span class="vv"><s>13&deg;</s> &rarr; 0&deg;</span></div><div class="bar"><span class="bl">Handshake: how far the collarbone is lifted (&deg;)</span><span class="track"><span class="fill was" style="width:92.9%"></span><span class="fill now " style="width:0.0%"></span></span><span class="vv"><s>26&deg;</s> &rarr; 0&deg;</span></div></div><div class="bars"><div class="bar"><span class="bl"><b>Neck base above the shoulder joints (cm)</b></span></div></div><div class="bars"><div class="bar"><span class="bl">Idle</span><span class="track"><span class="fill was" style="width:40.0%"></span><span class="fill now " style="width:85.0%"></span></span><span class="vv"><s>4.0</s> &rarr; 8.5</span></div><div class="bar"><span class="bl">Handshake</span><span class="track"><span class="fill was" style="width:0.0%"></span><span class="fill now " style="width:85.0%"></span></span><span class="vv"><s>&minus;0.1</s> &rarr; 8.5</span></div></div><div class="figs wide"><figure class="wd"><img src="img/b5c-shoulders-before-after.jpg" alt="Look at: four pairs, before then after: idle from the front and the side, walk from the front and the side. Top row is today&amp;rsquo;s body. Bottom row is the B5b body. In every &amp;ldquo;after&amp;rdquo; the shoulders sit lower." width="900" height="398" loading="lazy"><figcaption><b>Look at:</b> four pairs, before then after: idle from the front and the side, walk from the front and the side. Top row is today&rsquo;s body. Bottom row is the B5b body. In every &ldquo;after&rdquo; the shoulders sit lower.</figcaption></figure></div></div><div class="item"><div class="ih"><b>The press desk was too high</b><span class="tag t-meas">measured</span><span class="tag t-seen">seen</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>In the press answer the desk top was <b>0.765 m</b>. That was only 11 cm under his seated shoulders. His shoulders sat up at his ears.</p></div><div class="row"><div class="rl w">Why</div><p>Reasoned: with hands on a desk that close, the arms push the shoulders up. The report gives the 11 cm, not the push.</p></div><div class="row"><div class="rl f">Fix</div><p>The desk top is now <b>0.665 m</b>. In the shot, neck &divide; shoulder width went from <b>0.36 to 0.55</b>.</p></div><div class="bars"><div class="bar"><span class="bl">Desk top (m)</span><span class="track"><span class="fill was" style="width:95.6%"></span><span class="fill now " style="width:83.1%"></span></span><span class="vv"><s>0.765</s> &rarr; 0.665</span></div><div class="bar"><span class="bl">Neck &divide; shoulder width in the shot</span><span class="track"><span class="fill was" style="width:51.4%"></span><span class="fill now " style="width:78.6%"></span></span><span class="vv"><s>0.36</s> &rarr; 0.55</span></div></div><div class="figs wide"><figure class="wd"><img src="img/b5c-press-shoulders-before-after.jpg" alt="Look at: two moments, 5.5 s and 6.7 s, each before then after. After: the shoulders are lower and more neck shows." width="900" height="365" loading="lazy"><figcaption><b>Look at:</b> two moments, 5.5 s and 6.7 s, each before then after. After: the shoulders are lower and more neck shows.</figcaption></figure></div></div><div class="item"><div class="ih"><b>Arms no longer go through the body</b><span class="tag t-meas">measured</span><span class="tag t-seen">seen</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>In the walk, a hand went <b>8.8 cm into the hip</b> in <b>92% of frames</b>.</p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>Each arm now turns about the shoulder just enough to clear the torso, the legs and the head. This is for free-hanging arms, not a hand gripping a prop. On today&rsquo;s body, clips and scenes with a forearm or hand inside the body: <b>50 &rarr; 20</b>. The goal scene went from 10.5 to 3.1 cm, and the signing from 11.6 to 2.5 cm.</p></div><div class="bars"><div class="bar"><span class="bl">Clips and scenes with an arm inside the body</span><span class="track"><span class="fill was" style="width:90.9%"></span><span class="fill now " style="width:36.4%"></span></span><span class="vv"><s>50</s> &rarr; 20</span></div><div class="bar"><span class="bl">Goal scene, deepest arm overlap (cm)</span><span class="track"><span class="fill was" style="width:87.5%"></span><span class="fill now " style="width:25.8%"></span></span><span class="vv"><s>10.5</s> &rarr; 3.1</span></div><div class="bar"><span class="bl">Signing scene, deepest arm overlap (cm)</span><span class="track"><span class="fill was" style="width:96.7%"></span><span class="fill now " style="width:20.8%"></span></span><span class="vv"><s>11.6</s> &rarr; 2.5</span></div></div><div class="figs wide"><figure class="wd"><img src="img/b5c-arms-before-after.jpg" alt="Look at: a side-on walk. Left pair is today&amp;rsquo;s body, before then after. Right pair is the B5b body, before then after. Look at the hands near the hip in each pair." width="900" height="518" loading="lazy"><figcaption><b>Look at:</b> a side-on walk. Left pair is today&rsquo;s body, before then after. Right pair is the B5b body, before then after. Look at the hands near the hip in each pair.</figcaption></figure></div><figure class="clip"><p class="look"><b>Look for:</b> the same walk, before then after, for both bodies. 7 seconds.</p><video controls playsinline muted preload="metadata" poster="img/b5c-arms-before-after-poster.jpg" src="clips/b5c-arms-before-after.mp4"></video><figcaption>Side-on walk. Today&rsquo;s body and the B5b body, each before then after.</figcaption></figure></div><div class="item"><div class="ih"><b>A check for one body part inside another</b><span class="tag t-meas">measured</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>Reasoned: nothing checked whether a body part sat inside another one. The report does not say what existed before.</p></div><div class="row"><div class="rl f">Fix</div><p>New check: <b>tools/motionref/body_overlap.mts</b>. It splits the body into <b>14 parts</b> and tests every pair on every frame. It has a gate (<b>--gate</b>, with <b>overlap_exceptions.json</b>), and the test <b>bodyOverlap.mts</b> runs it. A new or deeper overlap fails the test.</p></div><div class="row"><div class="rl s">Status</div><p>Not zero. Named exceptions: <b>legs</b> (hip fold, inner thighs, knees); <b>upper arm against the lat</b> (needs a body fix); <b>keeper dives</b>; <b>sitting</b> (hands into the shins, 3 to 6 cm).</p></div></div><div class="item"><div class="ih"><b>Arms move like a person&rsquo;s</b><span class="tag t-meas">measured</span><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>The wrists were frozen for too much of each scene. The bars show the share of time the wrist is frozen. Real people: 0.00 to 0.02.</p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>The arms now follow the five HQ reference clips. Frozen-wrist share dropped in all four scenes below. The press answer is still the stillest.</p></div><div class="bars"><div class="bar"><span class="bl"><b>Share of time the wrist is frozen</b></span></div></div><div class="bars"><div class="bar"><span class="bl">Trophy lift</span><span class="track"><span class="fill was" style="width:54.4%"></span><span class="fill now " style="width:15.6%"></span></span><span class="vv"><s>0.49</s> &rarr; 0.14</span></div><div class="bar"><span class="bl">Goal celebration</span><span class="track"><span class="fill was" style="width:20.0%"></span><span class="fill now " style="width:5.6%"></span></span><span class="vv"><s>0.18</s> &rarr; 0.05</span></div><div class="bar"><span class="bl">Press answer</span><span class="track"><span class="fill was" style="width:96.7%"></span><span class="fill now warn" style="width:41.1%"></span></span><span class="vv"><s>0.87</s> &rarr; 0.37</span></div><div class="bar"><span class="bl">Farewell</span><span class="track"><span class="fill was" style="width:31.1%"></span><span class="fill now " style="width:10.0%"></span></span><span class="vv"><s>0.28</s> &rarr; 0.09</span></div></div><p class="bnote">Real people: 0.00 to 0.02.</p><figure class="clip ph"><p class="look"><b>Look for:</b> the trophy lift three ways: before, after, and a real-looking person made on Higgsfield. 7 seconds.</p><video controls playsinline muted preload="metadata" poster="img/b5c-compare-trophy-lift-poster.jpg" src="clips/b5c-compare-trophy-lift.mp4"></video><figcaption>Trophy lift. Left to right: before, after, real people (Higgsfield).</figcaption></figure></div><div class="item"><div class="ih"><b>Posture: he no longer leans onto his toes</b><span class="tag t-meas">measured</span><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>The capture idle leaned onto its toes. Side on, it read as a slouch.</p></div><div class="row"><div class="rl w">Why</div><p>Measured side on against the 28 reference videos with a pose detector.</p></div><div class="row"><div class="rl f">Fix</div><p>A posture step in the same bake, on standing and walking clips only. Side on it is better on every body. Front on the change is small.</p></div><div class="bars"><div class="bar"><span class="bl"><b>Hips ahead of the ankles, side on (torso lengths)</b></span></div></div><div class="bars"><div class="bar"><span class="bl">Ours</span><span class="track"><span class="fill was" style="width:80.0%"></span><span class="fill now " style="width:45.0%"></span></span><span class="vv"><s>0.24</s> &rarr; 0.13&ndash;0.14</span></div></div><p class="bnote">Real people: about 0.05.</p><div class="bars"><div class="bar"><span class="bl"><b>Standing knee bend, side on (&deg;)</b></span></div></div><div class="bars"><div class="bar"><span class="bl">Ours</span><span class="track"><span class="fill was" style="width:81.2%"></span><span class="fill now " style="width:41.7%"></span></span><span class="vv"><s>18&ndash;21</s> &rarr; 8&ndash;12</span></div></div><p class="bnote">Real people: about 7.</p><div class="bars"><div class="bar"><span class="bl"><b>Arms out from the side, front on (&deg;)</b></span></div></div><div class="bars"><div class="bar"><span class="bl">Ours</span><span class="track"><span class="fill was" style="width:33.3%"></span><span class="fill now blue" style="width:72.9%"></span></span><span class="vv"><s>7&ndash;9</s> &rarr; 17&ndash;18</span></div></div><p class="bnote">Real people: 19 to 20.</p><div class="figs"><figure class="ph"><img src="img/b5c-posture-before-after.jpg" alt="Look at: top row before, bottom row after. Columns: today, then three test bodies (d1, d2, d3). After: he stands more upright." width="880" height="885" loading="lazy"><figcaption><b>Look at:</b> top row before, bottom row after. Columns: today, then three test bodies (d1, d2, d3). After: he stands more upright.</figcaption></figure></div><figure class="clip ph"><p class="look"><b>Look for:</b> the 4-second idle, before on top, after below. Four bodies side by side.</p><video controls playsinline muted preload="metadata" poster="img/b5c-posture-before-after-poster.jpg" src="clips/b5c-posture-before-after.mp4"></video><figcaption>Standing idle, side on. Before above, after below.</figcaption></figure></div><div class="item"><div class="ih"><b>A broken bake is now refused</b></div><div class="row"><div class="rl p">Problem</div><p>The first posture bake broke keys in clips it should not have touched.</p></div><div class="row"><div class="rl f">Fix</div><p>It was caught. <b>tools/motionref/clip_check.mts</b> now refuses to write a broken file.</p></div></div><h2 class="chg"><i></i>CHANGED: PROPS HELD PROPERLY (B5b)</h2><div class="item"><div class="ih"><b>The pen is held to write</b><span class="tag t-meas">measured</span><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>The pen lay flat on the paper, at <b>9&deg;</b>.</p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>It is held at <b>50&deg;</b>. The hand slips <b>0.5 cm</b> on the pen, down from 2.5 cm.</p></div><div class="bars"><div class="bar"><span class="bl">Pen angle (&deg;)</span><span class="track"><span class="fill was" style="width:15.0%"></span><span class="fill now " style="width:83.3%"></span></span><span class="vv"><s>9&deg;</s> &rarr; 50&deg;</span></div><div class="bar"><span class="bl">Hand slip on the pen (cm)</span><span class="track"><span class="fill was" style="width:83.3%"></span><span class="fill now " style="width:16.7%"></span></span><span class="vv"><s>2.5</s> &rarr; 0.5</span></div></div><div class="figs wide"><figure class="wd"><img src="img/b5b-signing-pen-before-after.jpg" alt="Look at: the signing, two views, before then after. After: the pen points down at the paper like a writer&amp;rsquo;s pen." width="900" height="515" loading="lazy"><figcaption><b>Look at:</b> the signing, two views, before then after. After: the pen points down at the paper like a writer&rsquo;s pen.</figcaption></figure></div></div><div class="item"><div class="ih"><b>The trophy is held by both handles, clear of the head</b><span class="tag t-meas">measured</span><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>The trophy hung low, and in the lift the cup sat on his head. It was also black.</p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>He holds it by both handles. It is held at the chest, then lifted clear. It is no longer black. With B5c&rsquo;s grips, the slip is <b>0.4 cm or less</b> and the cup is <b>2.6 cm</b> clear of the head.</p></div><div class="figs wide"><figure class="wd"><img src="img/b5b-trophy-lift-before-after.jpg" alt="Look at: three moments of the lift. Left set is before: the cup hangs low, then sits on his head. Right set is after: held at the chest, then lifted clear in both hands." width="900" height="344" loading="lazy"><figcaption><b>Look at:</b> three moments of the lift. Left set is before: the cup hangs low, then sits on his head. Right set is after: held at the chest, then lifted clear in both hands.</figcaption></figure></div></div><div class="item"><div class="ih"><b>The face lines no longer land 3 cm low</b><span class="tag t-meas">measured</span></div><div class="row"><div class="rl p">Problem</div><p>On a new body the moving face used the Curls eye positions, about <b>3 cm too low</b>. That drew a ring on the cheek.</p></div><div class="row"><div class="rl f">Fix</div><p>The body file&rsquo;s own name was being overwritten when the person was built (<b>lib/star/people3d.ts</b>). Each file now keeps its own name.</p></div></div><h2 class="add"><i></i>NEW TEST OPTIONS: CARTOON BODIES (B5d)</h2><div class="item"><div class="ih"><b>Why today&rsquo;s body looks short</b><span class="tag t-meas">measured</span><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>Today&rsquo;s body is <b>5.1 heads tall</b> (guide 7.7). Head 0.37 m (guide 0.24). Crotch 0.66 m (0.88). Arms 0.68 m (0.78).</p></div><div class="row"><div class="rl w">Why</div><p>Big-headed concept pictures, and a fit that aimed at the boxy shorts hem.</p></div><div class="row"><div class="rl f">Fix</div><p>No change to the game. This is the diagnosis. The realistic B5b bodies were dropped: Harry said the new body with today&rsquo;s face &ldquo;is ass, gotta keep our cartoon like faces&rdquo;. Next: three cartoon bodies below.</p></div><div class="figs wide"><figure class="wd"><img src="img/b5b-diagnosis-today.jpg" alt="Look at: today&amp;rsquo;s body from the front, the side and three-quarters, with a measures box. The last panel is a realistic body for comparison. Red numbers are far from the guide." width="900" height="487" loading="lazy"><figcaption><b>Look at:</b> today&rsquo;s body from the front, the side and three-quarters, with a measures box. The last panel is a realistic body for comparison. Red numbers are far from the guide.</figcaption></figure></div></div><div class="item"><div class="ih"><b>Three cartoon bodies, same face: A, B, C</b><span class="tag t-meas">measured</span><span class="tag t-seen">seen</span><span class="tag t-no">waiting on Harry</span></div><div class="row"><div class="rl p">Problem</div><p>We want a body that fits our cartoon faces.</p></div><div class="row"><div class="rl w">Why</div><p>Method: today&rsquo;s own Style A bodies (Curls, and Buzz &amp; beard) were reshaped in Blender. There is <b>no new body and no head swap</b>. The face, paint and shading are today&rsquo;s. It is one mesh, so no neck seam. He is still 1.86 m and has the same skeleton, so every clip plays.</p></div><div class="row"><div class="rl f">Fix</div><p><b>A</b> today&rsquo;s body grown up. <b>B</b> slim athlete. <b>C</b> hero V (the builder&rsquo;s pick). See them on the test pages with <b>?bodies=d1</b>, <b>d2</b> or <b>d3</b>. Six new body files, about 220 KB each.</p></div><div class="row"><div class="rl s">Status</div><p><b>Waiting on Harry: pick A, B or C.</b> Not changed in the game.</p></div><div class="bars"><div class="bar"><span class="bl"><b>Heads tall (Curls)</b></span></div></div><div class="bars"><div class="bar"><span class="bl">Today</span><span class="track solo"><span class="fill now warn" style="width:72.9%"></span></span><span class="vv">5.1</span></div><div class="bar"><span class="bl">A</span><span class="track solo"><span class="fill now " style="width:85.7%"></span></span><span class="vv">6.0</span></div><div class="bar"><span class="bl">B</span><span class="track solo"><span class="fill now " style="width:92.9%"></span></span><span class="vv">6.5</span></div><div class="bar"><span class="bl">C</span><span class="track solo"><span class="fill now " style="width:90.0%"></span></span><span class="vv">6.3</span></div></div><p class="bnote">Guide: 7.7. Buzz: 5.7 / 6.1 / 6.6 / 6.4.</p><div class="bars"><div class="bar"><span class="bl"><b>Legs, share of height (%)</b></span></div></div><div class="bars"><div class="bar"><span class="bl">Today</span><span class="track solo"><span class="fill now warn" style="width:78.3%"></span></span><span class="vv">47%</span></div><div class="bar"><span class="bl">A</span><span class="track solo"><span class="fill now " style="width:85.0%"></span></span><span class="vv">51%</span></div><div class="bar"><span class="bl">B</span><span class="track solo"><span class="fill now " style="width:88.3%"></span></span><span class="vv">53%</span></div><div class="bar"><span class="bl">C</span><span class="track solo"><span class="fill now " style="width:86.7%"></span></span><span class="vv">52%</span></div></div><p class="bnote">Shoulders: 0.53 / 0.49 / 0.48 / 0.53 m. Hip joint: 0.88 / 0.95 / 0.98 / 0.96 m. Hands: 0.17 to 0.18 / 0.18 / 0.21 / 0.20 m. All in the order today, A, B, C.</p><div class="figs"><figure class="ph"><img src="img/b5d-options-sheet.jpg" alt="Look at: one column each: today, A, B, C. Rows: Home, walk-out tunnel, farewell close-up, signing, a match moment, and standing relaxed (Curls and Buzz)." width="700" height="2056" loading="lazy"><figcaption><b>Look at:</b> one column each: today, A, B, C. Rows: Home, walk-out tunnel, farewell close-up, signing, a match moment, and standing relaxed (Curls and Buzz).</figcaption></figure><figure class="wd"><img src="img/b5d-body-fronts-curls.jpg" alt="Look at: front view with the measures box: today, then d1 (A), d2 (B), d3 (C)." width="900" height="481" loading="lazy"><figcaption><b>Look at:</b> front view with the measures box: today, then d1 (A), d2 (B), d3 (C).</figcaption></figure></div><figure class="clip"><p class="look"><b>Look for:</b> the same walk, side on: today, A, B, C. 4 seconds.</p><video controls playsinline muted preload="metadata" poster="img/b5d-walk-options-poster.jpg" src="clips/b5d-walk-options.mp4"></video><figcaption>Walk, three-quarter view. Left to right: today, A, B, C.</figcaption></figure></div><div class="item"><div class="ih"><b>What the three bodies cost</b><span class="tag t-meas">measured</span></div><div class="row"><div class="rl p">Problem</div><p>Three things are worse or smaller.</p></div><div class="row"><div class="rl f">Fix</div><ul><li><b>The head is 16 to 22% smaller</b> than today, so the face is smaller on screen.</li><li><b>Idle, boot into boot:</b> <b>2.9 cm &rarr; 5.1 to 5.9 cm</b>. The legs are longer in the same stance.</li><li><b>Walk, hand into thigh:</b> <b>10.0 cm &rarr; 7.7 / 7.0 / 5.1 cm</b> for A / B / C. Better, not zero.</li></ul></div><div class="row"><div class="rl s">Status</div><p>Collarbones are level and no body part is inside another in the bind pose on all 8 bodies, measured with B5c&rsquo;s checker.</p></div><div class="bars"><div class="bar"><span class="bl">Walk, deepest hand into thigh (cm)</span><span class="track solo"><span class="fill now warn" style="width:90.9%"></span></span><span class="vv">10.0 today</span></div><div class="bar"><span class="bl">A</span><span class="track solo"><span class="fill now " style="width:70.0%"></span></span><span class="vv">7.7</span></div><div class="bar"><span class="bl">B</span><span class="track solo"><span class="fill now " style="width:63.6%"></span></span><span class="vv">7.0</span></div><div class="bar"><span class="bl">C</span><span class="track solo"><span class="fill now " style="width:46.4%"></span></span><span class="vv">5.1</span></div></div></div><h2 class="bug"><i></i>KNOWN ISSUES</h2><div class="item"><div class="ih"><b>Posture is not yet real</b><span class="tag t-meas">measured</span></div><div class="row"><div class="rl p">Problem</div><p>Still off from real people: no breathing; the chest leans about 1&deg; back (real men lean a little forward); the relaxed knee is still 27&deg; bent; the pelvis tilts sideways 5 to 6&deg; (real 3 to 4&deg;).</p></div><div class="row"><div class="rl s">Status</div><p>Hips are still about 2.5 times the real number, side on.</p></div></div><div class="item"><div class="ih"><b>The press answer is still the stillest scene</b><span class="tag t-meas">measured</span></div><div class="row"><div class="rl p">Problem</div><p>Frozen-wrist share is still <b>0.37</b>, against 0.00 for real people.</p></div><div class="row"><div class="rl s">Status</div><p>Check the press answer.</p></div></div><div class="item"><div class="ih"><b>Some leftovers from B5b</b></div><div class="row"><div class="rl p">Problem</div><p>Hands go into the shins in the sitting clip. The rejected first code (<b>proportions.ts</b>, <b>?prop</b>) is still in the files. A pale line shows at the neck on the dropped B2 and B3 bodies.</p></div><div class="row"><div class="rl s">Status</div><p>None of this blocks the pick between A, B and C.</p></div></div>
+
+<h2 class="nxt"><i></i>THE NUMBERS</h2><details><summary>The numbers, if you want them</summary><p><b>Shoulders.</b> Collarbone lift: idle and applause 13&deg; &rarr; 0, handshake 26&deg; &rarr; 0. 49 of 73 clips were above 3&deg;. Neck base above the joints: idle 4.0 &rarr; 8.5 cm, handshake &minus;0.1 &rarr; 8.5 cm. Press desk 0.765 &rarr; 0.665 m; neck &divide; shoulder width 0.36 &rarr; 0.55.</p><p><b>Arms.</b> Walk: 8.8 cm into the hip in 92% of frames. Clips or scenes with an arm inside the body 50 &rarr; 20. Goal 10.5 &rarr; 3.1 cm, signing 11.6 &rarr; 2.5 cm.</p><p><b>Overlap check.</b> 14 parts, every pair, every frame. Exceptions: legs, upper arm against the lat, keeper dives, sitting 3 to 6 cm.</p><p><b>Frozen wrist.</b> Trophy 0.49 &rarr; 0.14, goal 0.18 &rarr; 0.05, press 0.87 &rarr; 0.37, farewell 0.28 &rarr; 0.09. Real 0.00 to 0.02.</p><p><b>Posture (ours before &rarr; after, real).</b> Hips ahead of ankles 0.24 &rarr; 0.13&ndash;0.14 (about 0.05). Knee bend 18&ndash;21&deg; &rarr; 8&ndash;12&deg; (about 7&deg;). Head ahead 0.12&ndash;0.18 &rarr; 0.10&ndash;0.14 (0.02&ndash;0.17). Arms out 7&ndash;9&deg; &rarr; 17&ndash;18&deg; (19&ndash;20&deg;). Elbow 11&ndash;13&deg; &rarr; 15&ndash;16&deg; (19&ndash;22&deg;).</p><p><b>Props.</b> Pen 9&deg; &rarr; 50&deg;, slip 2.5 &rarr; 0.5 cm. Trophy slip 0.4 cm or less, cup 2.6 cm clear of the head.</p><p><b>Today&rsquo;s body.</b> 5.1 heads (guide 7.7), head 0.37 m (0.24), crotch 0.66 m (0.88), arms 0.68 m (0.78).</p><p><b>A / B / C.</b> Heads tall 6.0 / 6.5 / 6.3. Shoulders 0.49 / 0.48 / 0.53 m. Legs 51 / 53 / 52%. Hip joint 0.95 / 0.98 / 0.96 m. Head 16 to 22% smaller than today.</p><p><b>Higgsfield.</b> 125 credits for the B5c rounds, none after 18:25.</p></details>
+
+<h2 class="nxt" id="vid"><i></i>VIDEOS</h2>
+<div class="vid"><b>Four clips are on this page.</b><ul><li>A side-on walk, before and after, for two bodies. 7 seconds. Under &ldquo;Arms no longer go through the body&rdquo;.</li><li>The trophy lift: before, after, real people. 7 seconds. Under &ldquo;Arms move like a person&rsquo;s&rdquo;.</li><li>Standing idle, side on, before and after. 4 seconds. Under &ldquo;Posture&rdquo;.</li><li>The walk in today&rsquo;s body and A, B, C. 4 seconds. Under &ldquo;Three cartoon bodies&rdquo;.</li></ul><p>The real-people clip is made on Higgsfield. It is a reference, not game art.</p></div>
+
+<h2 class="bug"><i></i>SEEN / NOT SEEN</h2>
+<div class="sbox"><h3 class="g">Seen on a screen</h3><ul><li>Nine stills: shoulders, the press desk, arms in a walk, posture, the trophy lift, the signing pen, today&rsquo;s body measures, the A, B, C sheet and their front views</li><li>Four clips: the arms walk, the trophy lift three ways, the posture idle, and the A, B, C walk</li></ul><h3 class="b">Measured (numbers)</h3><ul><li>Collarbone lift 13&deg; and 26&deg; &rarr; 0; neck base 4.0 and &minus;0.1 &rarr; 8.5 cm; 49 of 73 clips were above 3&deg;</li><li>Press desk 0.765 &rarr; 0.665 m; neck &divide; shoulder width 0.36 &rarr; 0.55</li><li>Arm inside the body: walk 8.8 cm in 92% of frames; clips and scenes 50 &rarr; 20; goal 10.5 &rarr; 3.1 cm; signing 11.6 &rarr; 2.5 cm</li><li>Frozen wrist: trophy 0.49 &rarr; 0.14, goal 0.18 &rarr; 0.05, press 0.87 &rarr; 0.37, farewell 0.28 &rarr; 0.09</li><li>Posture side on against 28 reference videos: hips 0.24 &rarr; 0.13&ndash;0.14, knee 18&ndash;21&deg; &rarr; 8&ndash;12&deg;</li><li>Pen 9&deg; &rarr; 50&deg;, slip 2.5 &rarr; 0.5 cm; trophy slip 0.4 cm or less</li><li>Body A, B, C: heads tall, shoulders, legs, hip joint, hand; walk hand into thigh 10.0 &rarr; 7.7 / 7.0 / 5.1 cm</li></ul><h3 class="a">Reasoned, not seen</h3><ul><li>Why the press desk pushed the shoulders up (the report gives the 11 cm, not the push)</li><li>That nothing checked body overlap before (the report does not say)</li><li>The &ldquo;Why&rdquo; of the arms, the frozen wrists, the pen and the trophy: the report does not say, so each says &ldquo;Not in the report&rdquo;</li><li>What each picture shows: my own reading of the stills, not from the report</li></ul><h3 class="r">Not seen / not done</h3><ul><li>Which of A, B or C is picked: waiting on Harry</li><li>Breathing; the chest 1&deg; back; the relaxed knee at 27&deg;; the pelvis tilt of 5 to 6&deg;</li><li>Whether the clips were played in a career match on a phone (the report does not say)</li><li>Whether the pen and trophy fixes are live in the game or only behind the test flag (the report does not say)</li></ul></div>
+
+<footer>20 Oct 2026. Built overnight on the Harry branch. Nothing here is live. Every fact comes from the builders&rsquo; reports. Pictures are stills taken while checking the work.</footer>
+</div>
+<script>
+(function(){
+  var K='kib-overnight-b5-checks', s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>
