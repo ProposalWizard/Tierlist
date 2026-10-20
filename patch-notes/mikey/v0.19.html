@@ -1,0 +1,227 @@
+<title>Knowitball Patch Notes Mikey v0.19</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#2c3f36;--ink3:#44594e;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#d3e2da;--ink3:#aec3b7;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em;text-wrap:balance}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--ink3)}
+  .tag.seen{color:var(--green);border-color:var(--green)}
+
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr auto;gap:9px;align-items:center;padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .prev{list-style:none;margin:0;padding:0}
+  .prev li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+  .prev a{color:var(--green);font-weight:700}
+  @media (prefers-reduced-motion: reduce){summary::before{transition:none}}
+</style>
+
+<style>
+  .check{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin:0 0 8px}
+  .check ol{margin:6px 0 0;padding-left:20px;color:var(--ink2);font-size:14px}
+  .check li{padding:3px 0}
+  .shot{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line);margin:10px 0 4px}
+  .cap{font-size:12.5px;color:var(--ink3)}
+  .tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin:8px 0 2px}
+  .tbl td,.tbl th{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;color:var(--ink2)}
+  .tbl th{color:var(--ink);font-weight:800}
+</style><div class="wrap">
+<header>
+  <span class="ver">v0.19</span>
+  <h1>Knowitball Patch Notes Mikey v0.19</h1>
+  <p class="sub">20 October 2026 · branch Mikey · 8 commits · tests: same as before this round, plus a new soak (see the bottom)</p>
+</header>
+
+<div class="check">
+  <div class="hd">Check these</div>
+  <ol>
+    <li>Settings → Match → <b>Mikey's new pop-ups: New</b>, then score a goal and make a pass.</li>
+    <li>Start a National League North or South career: the FA Cup starts in the 3rd Qualifying Round.</li>
+    <li>Reload a save at a club with no real players: team-mates keep their goals.</li>
+    <li>Your own player stands on every chance, never on the ball or the arrow.</li>
+    <li>A weak player (power under ~60) is no longer given corners.</li>
+    <li>PL Draft → FC 27: exactly 20 clubs.</li>
+  </ol>
+</div>
+
+<div class="strip">
+  <div class="s"><b>10</b><span>FA Cup rounds (was 6), each league joins at its real round</span></div>
+  <div class="s"><b>1.5 s</b><span>New GOAL scoreboard pop-up (old GOAL: 1.3 s)</span></div>
+  <div class="s"><b>177 → 20</b><span>Clubs offered in PL Draft FC 27</span></div>
+  <div class="s"><b>20,029</b><span>Matches in the new career soak, 0 broken states</span></div>
+</div>
+
+<h2 class="add"><i></i>Added</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Mikey's new pop-ups (a switch, Old by default)</div>
+    <div class="dt">On: a goal shows a scoreboard at the top. The score rolls over (1–0 → 2–0), with the scorer and the assist under it. Every other pop-up (PASS, OFFSIDE, INTERCEPTED, SAVED, WIDE…) is a short TV caption with an icon, in the half the ball is not in. Same speed as today. Off: exactly as before. <span class="tag seen">seen in a real match</span></div>
+    <img class="shot" src="v0.19-img/popups-match.jpg" alt="In a real match: the goal scoreboard rolling 1–0 to 1–1, then PASS, OFFSIDE and a WIDE caption">
+    <div class="cap">Real match, King's Lynn away. Left to right: GOAL (score rolls to 1–1), PASS, OFFSIDE, a real wide shot (caption still wiping in).</div>
+    <img class="shot" src="v0.19-img/popups-all.jpg" alt="Every caption style and the scoreboard with scorer and assist">
+    <div class="cap">Test page: every caption colour, and the scoreboard with GOAL Saka · ASSIST Ødegaard.</div>
+    <details><summary>Where it lives</summary><p>Settings → Match, and Settings → Updates. Drawn in code with a TV-style font (Oswald, free licence). Adobe and Blender could not be reached from this session, so no outside art yet. <code>components/star/MikeyPopup.tsx</code>, <code>lib/star/mikeyPopups.ts</code>.</p><p>This is a new New | Old row. Harry's 12 Oct rule says new work gets no switch; Mikey asked for this one by name.</p></details>
+  </li>
+  <li>
+    <div class="hd">The FA Cup has its real 10 rounds</div>
+    <div class="dt">Each league joins at its real round. Your club is never given a bye. <span class="tag">measured</span></div>
+    <table class="tbl">
+      <tr><th>Round</th><th>Who joins</th><th>Clubs in it</th></tr>
+      <tr><td>3rd Qualifying</td><td>NL North, NL South, Step 3</td><td>56 (32 play, 24 byes)</td></tr>
+      <tr><td>4th Qualifying</td><td>National League</td><td>64</td></tr>
+      <tr><td>First Round</td><td>League One, League Two</td><td>80</td></tr>
+      <tr><td>Second Round</td><td>—</td><td>40</td></tr>
+      <tr><td>Third Round</td><td>Premier League, Championship</td><td>64</td></tr>
+      <tr><td>Then</td><td>—</td><td>32 · 16 · 8 · 4 · 2</td></tr>
+    </table>
+    <details><summary>Details</summary><p>The 24 byes go to the 12 best of North and of South by last season's finish, never to your club (the next club down takes it). An old save keeps its six-round cup until the season ends. Seen in a real save's data after a season skip: entries 24 / 48 / 44 at the right rounds. The cup screen itself was not opened by the test script.</p></details>
+  </li>
+</ul>
+
+<h2 class="fix"><i></i>Fixed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Team-mates' goals were wiped on every reload</div>
+    <div class="dt">At a club with no real players, every reload replaced the squad, so team-mates showed 5 goals between 4 players against your 40. Now the squad and its tallies are kept. <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">PL Draft FC 27 offered 177 clubs</div>
+    <div class="dt">The live club list for FC 27 had AC Milan, Real Madrid, Accrington and junk names like "espa". It now has the game's 20. Bad two-digit years (26, 22, 19) are gone too. <span class="tag">measured on the live answer</span></div>
+  </li>
+  <li>
+    <div class="hd">Player search failed for common names</div>
+    <div class="dt">Settings → Dev → Squad: "kane" returned an error (database time limit). Now it finds Harry Kane in about 1 s, and accented names work (Ødegaard, Müller, Mbappé). <span class="tag">measured</span></div>
+  </li>
+  <li>
+    <div class="hd">The build would have stopped every deploy</div>
+    <div class="dt">The corner rule below flew the ball outside the match engine, which the one-engine guard blocks. The measurement now lives in the engine as a read-only helper. Engine behaviour is unchanged (finishing, aiming and outcomes tests pass). Production build passes. <span class="tag">measured</span></div>
+  </li>
+</ul>
+
+<h2 class="chg"><i></i>Changed</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Your player is shown on every chance</div>
+    <div class="dt">He was hidden on shooting chances (Harry's 12 Oct call). He now stands on every chance, moved clear of the ball and the aim arrow when the chance opens. To be agreed with Harry. <span class="tag">not yet seen</span></div>
+  </li>
+  <li>
+    <div class="hd">Corners only if you can reach the box</div>
+    <div class="dt">Your best corner must carry 34.4 m in the air to the middle of the box, measured with the real ball. Today that is about power 60. If power is retuned, the line moves by itself. <span class="tag">measured</span></div>
+    <div class="bars">
+      <div class="bar"><span class="lb">Power 50</span><span class="track"><span class="fill now bad" style="width:70%"></span></span><span class="vv">31.8 m · no</span></div>
+      <div class="bar"><span class="lb">Power 65</span><span class="track"><span class="fill now" style="width:79%"></span></span><span class="vv">35.9 m · yes</span></div>
+      <div class="bar"><span class="lb">Power 100</span><span class="track"><span class="fill now" style="width:100%"></span></span><span class="vv">45.7 m · yes</span></div>
+    </div>
+  </li>
+</ul>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li>
+    <div class="hd">Six test files fail in Leo's keeper and long-shot areas <span class="pill p-amb">Low</span></div>
+    <div class="dt">keeperPro (keeper errors and rebound goals above their caps), keeperBrain, longRangeRules (36 of 300 long shots break a drawing rule), chanceJudge, chanceMaker, match2dCam. All failed before this round too; left for Leo.</div>
+  </li>
+  <li>
+    <div class="hd">Wembley 3D test <span class="pill p-amb">Low</span></div>
+    <div class="dt">The 80-rated man wins 23% of sessions (fair share 25%), and a 4-man session lasts 89 s. Failed before this round too.</div>
+  </li>
+  <li>
+    <div class="hd">PL Draft: a few old seasons have a stray club <span class="pill p-amb">Low</span></div>
+    <div class="dt">Mislabelled database rows: FIFA 13 lists Bournemouth, FIFA 22 Sunderland, FIFA 24 Strasbourg as Premier League. A data clean-up, not code.</div>
+  </li>
+  <li>
+    <div class="hd">Database files not yet run <span class="pill p-amb">Low</span></div>
+    <div class="dt"><code>star_xp_config.sql</code> (XP amounts set by admins; the game uses its built-in amounts until then). It is not in CLAUDE.md's list.</div>
+  </li>
+</ul>
+
+<h2 class="nxt"><i></i>Questions</h2>
+<ul class="n">
+  <li><div class="hd">KIB cans: Basic costs more than Premium</div><div class="dt">Basic ★66, Premium ★33, Elite ★66 on a ★33 wage (2, 1 and 2 weeks' wage). Basic went to 2 weeks on 6 Oct. Intended?</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>How it was checked</h2>
+<ul class="n">
+  <li><div class="hd">A new career soak</div><div class="dt">21 careers (every division × win, lose, mixed), 20 seasons each: 420 seasons, 20,029 matches. Checked every match: tables add up, no club twice, league sizes right, your club never plays itself, one FA Cup tie per round, never a bye for you, no fixture left behind in the calendar. All held. <span class="tag">measured</span></div></li>
+  <li><div class="hd">Screens</div><div class="dt">Home, Settings, Sponsors, Achievements, Training, Relations and a real match opened with no page errors.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Previous versions</h2>
+<ul class="prev">
+  <li><a href="https://claude.ai/artifact/6Gz5vvm7PVwXUrJ3ZMBB7V">v0.18</a> · 19 October 2026 · The world season</li>
+  <li><a href="https://claude.ai/artifact/1A6Wc8XFM2pu2ftCZcymQU">v0.17</a> · The new transfer window, the world ages, nation kits</li>
+</ul>
+</div>

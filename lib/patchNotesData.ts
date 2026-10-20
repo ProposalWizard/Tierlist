@@ -27,6 +27,45 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.61",
+      "title": "Mikey's patch notes v0.19: New pop-ups and the real FA Cup",
+      "publishedAt": "2026-10-20T16:00:00Z",
+      "updatedAt": "2026-10-20T16:00:00Z",
+      "artifactUrl": "https://claude.ai/artifact/QsxGeWuEK6C7GwcCQJSD3r",
+      "summary": "Mikey's new pop-ups (a switch, Old by default): a goal scoreboard whose score rolls over, with scorer and assist, and TV captions for every other action. The FA Cup has its real ten rounds, each league joining at its real round. Team-mate goals are kept on reload, your player stands on every chance, corners need a taker who can reach the box, PL Draft FC 27 offers 20 clubs again, and player search no longer times out.",
+      "stats": [
+        { "value": "10", "label": "FA Cup rounds (was 6)" },
+        { "value": "177 → 20", "label": "clubs in PL Draft FC 27" },
+        { "value": "20,029", "label": "matches in the career soak, 0 broken states" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Settings → Match → Mikey's new pop-ups: New", "detail": "Score a goal and make a pass." },
+          { "title": "A National League North or South career", "detail": "The FA Cup starts in the 3rd Qualifying Round." },
+          { "title": "Reload at a club with no real players", "detail": "Team-mates keep their goals." },
+          { "title": "PL Draft → FC 27", "detail": "Exactly 20 clubs." }
+        ]},
+        { "kind": "added", "title": "New", "items": [
+          { "title": "Mikey's new pop-ups", "detail": "Goal: a scoreboard at the top, score rolls over, scorer and assist. Others: a short TV caption. Same speed as before." },
+          { "title": "The real FA Cup", "detail": "3rd Qualifying (NL North, South, Step 3; 24 byes, never you) → 4th Q (+National League) → R1 (+League One, Two) → R2 → R3 (+PL, Championship) → 32 → 16 → 8 → 4 → 2." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Team-mate goals wiped on reload", "detail": "At a club with no real players the squad was replaced on every load." },
+          { "title": "PL Draft FC 27 offered 177 clubs", "detail": "AC Milan, Real Madrid and junk names; now the game's 20." },
+          { "title": "Player search timed out", "detail": "\"kane\" failed; now about 1 s, accents work." },
+          { "title": "The build guard would have stopped deploys", "detail": "The corner check now measures through the engine. No change to matches." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Your player on every chance", "detail": "Moved clear of the ball and the arrow. To be agreed with Harry." },
+          { "title": "Corners need reach", "detail": "Your best corner must carry 34.4 m to the middle of the box: about power 60 today." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Six old test failures in keepers and long shots", "detail": "Left for Leo; they failed before this round." },
+          { "title": "star_xp_config.sql not run", "detail": "The game uses its built-in XP amounts until then." }
+        ]}
+      ]
+    },
+    {
       "version": "0.60",
       "title": "Mikey's patch notes v0.18: The world season",
       "publishedAt": "2026-10-19T21:00:00Z",

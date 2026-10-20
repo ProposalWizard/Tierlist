@@ -142,5 +142,13 @@
     "toCommit": "8d730e61",
     "url": "https://claude.ai/artifact/6Gz5vvm7PVwXUrJ3ZMBB7V",
     "headline": "The world season: every league, cup and European competition played for real, week by week, with a screen to see them all; transfer talk fixes"
+  },
+  {
+    "version": "0.19",
+    "date": "2026-10-20",
+    "fromCommit": "8d730e61",
+    "toCommit": "d6fe204d",
+    "url": "https://claude.ai/artifact/QsxGeWuEK6C7GwcCQJSD3r",
+    "headline": "Mikey's new pop-ups (scoreboard goals, TV captions), the real 10-round FA Cup, team-mate goals kept on reload, PL Draft FC 27 back to 20 clubs"
   }
 ]
