@@ -131,5 +131,22 @@ console.log("\n== which way each side attacks (labels match the pitch)");
   ok(!/short\.toUpperCase\(\)\} [←→]|[←→] \{(us|them)\.short/.test(src), "no hand-written arrow labels left");
 }
 
+console.log("\n== the ball dot stays inside the area it names");
+{
+  // 20 Oct 2026: jitter's last step went signed, so the dot left its lit area
+  // 220 of 455 minutes (50 off the pitch). The radar is a .tsx file, so this
+  // reads its jitter and area tables from the source and runs them here.
+  const src = readFileSync(new URL("../../components/star/MatchRadar.tsx", import.meta.url), "utf8");
+  const body = src.match(/function jitter\(minute: number, salt: number\): number \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const jitter = new Function("minute", "salt", body.replace(/^\s*\/\/.*$/gm, "")) as (m: number, s: number) => number;
+  let outside = 0, n = 0;
+  for (const seed of [11, 4242, 9001, 123, 777]) {
+    for (const f of playRadarMatch(seed, inputs).frames) {
+      for (const salt of [1, 2]) { n++; const j = jitter(f.minute, salt); if (j < -0.5 || j >= 0.5) outside++; }
+    }
+  }
+  ok(body.length > 0 && outside === 0, `the dot's nudge stays inside its area: ${outside} of ${n} outside`);
+}
+
 if (failed) { console.log(`\n${failed} FAILED`); process.exit(1); }
 console.log("\nall passed");
