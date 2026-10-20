@@ -341,7 +341,9 @@ function SpotCard({ spot, career, info, visitors, onClose, onShop, onCasino, onT
             {shelf.slice(0, 12).map((t) => (
               <div key={t.name} title={t.name} style={{ display: "grid", placeItems: "center", position: "relative" }}>
                 {t.art ? <img src={t.art} alt={t.name} style={{ width: 42, height: 42, objectFit: "contain" }} /> : <span style={{ fontSize: 30 }}>🏆</span>}
-                {t.count > 1 && <span style={{ position: "absolute", right: -2, bottom: -2, fontSize: 11, fontWeight: 900, color: "#111", background: GOLD, borderRadius: 999, padding: "1px 5px" }}>×{t.count}</span>}
+                {t.count > 1 && <span style={{ position: "absolute", right: -2, top: 26, fontSize: 11, fontWeight: 900, color: "#111", background: GOLD, borderRadius: 999, padding: "1px 5px" }}>×{t.count}</span>}
+                {/* Phone fix: the name was only in title= (hover). */}
+                <span style={{ marginTop: 2, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 9, fontWeight: 800, opacity: 0.8, lineHeight: 1.1 }}>{t.name}</span>
               </div>
             ))}
           </div>

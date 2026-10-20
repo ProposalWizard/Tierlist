@@ -277,7 +277,7 @@ export default function StyleTest3D({ header }: { header?: React.ReactNode } = {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene]);
 
-  const chip = (on: boolean) => `h-[28px] shrink-0 rounded-full border px-2.5 text-[12px] font-extrabold ${on ? "border-amber-300 bg-amber-400 text-black" : "border-white/20 bg-white/5 text-white"}`;
+  const chip = (on: boolean) => `h-[36px] shrink-0 rounded-full border px-2.5 text-[12px] font-extrabold ${on ? "border-amber-300 bg-amber-400 text-black" : "border-white/20 bg-white/5 text-white"}`;
   const styleName = STYLE_CHIPS.find((c) => c.id === style)?.name ?? "";
   const mins = hud?.timeLeft !== undefined ? `${Math.floor(hud.timeLeft / 60)}:${String(Math.floor(hud.timeLeft % 60)).padStart(2, "0")}` : "";
   const cutScene = scene === "goal" || scene === "signing" || scene === "walkout";

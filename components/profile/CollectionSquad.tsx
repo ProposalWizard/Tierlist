@@ -743,11 +743,12 @@ function DraggablePitchCard({
           ? "hover:scale-105 cursor-pointer"
           : "cursor-grab active:cursor-grabbing"
       } ${isDragging ? "opacity-20 scale-95" : isSelected ? "scale-105" : ""}`}
-      style={
-        transform && !isDragging
-          ? { transform: `translate3d(${transform.x}px,${transform.y}px,0)` }
-          : undefined
-      }
+      style={{
+        // Phone fix (20 Oct 2026): without touch-action:none a finger drag
+        // scrolled the page instead of moving the card.
+        touchAction: anySelection ? undefined : "none",
+        ...(transform && !isDragging ? { transform: `translate3d(${transform.x}px,${transform.y}px,0)` } : {}),
+      }}
     >
       {/* Card image — transparent bg so card art shows clean on the pitch */}
       {frameStyle.image ? (
@@ -778,9 +779,13 @@ function DraggablePitchCard({
       {!anySelection && !isDragging && (
         <button
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          onPointerDown={(e) => e.stopPropagation()}
           title="Remove"
-          className="absolute top-0 right-0 translate-x-1 -translate-y-1 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30 hover:bg-red-600"
+          aria-label={`Remove ${card.name}`}
+          className="absolute top-0 right-0 translate-x-1 -translate-y-1 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity z-30 hover:bg-red-600"
         >
+          {/* A 32px finger target around the 18px dot. */}
+          <span aria-hidden className="absolute -inset-[7px] rounded-full" />
           <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -927,11 +932,11 @@ function BenchCard({
       className={`flex-shrink-0 flex flex-col items-center gap-1 cursor-grab active:cursor-grabbing select-none transition-all duration-150 ${
         isDragging ? "opacity-20 scale-95" : selected ? "scale-110" : "hover:scale-105"
       }`}
-      style={
-        transform && !isDragging
-          ? { transform: `translate3d(${transform.x}px,${transform.y}px,0)` }
-          : undefined
-      }
+      style={{
+        // Phone fix: sideways still scrolls the bench; up/down drags the card.
+        touchAction: "pan-x",
+        ...(transform && !isDragging ? { transform: `translate3d(${transform.x}px,${transform.y}px,0)` } : {}),
+      }}
     >
       <div
         className="relative w-14 h-[72px] sm:w-16 sm:h-[84px] overflow-hidden"

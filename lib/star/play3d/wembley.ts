@@ -20,7 +20,7 @@
  * brains (./brains.ts), the keeper is the shared keeper. This file is only
  * the rules: who is safe, who is out, the restarts and the places.
  */
-import { CX, POST_L, POST_R, PITCH_W, clamp, skill01 } from "./constants";
+import { BALL_R, CX, G, POST_L, POST_R, PITCH_W, clamp, skill01, strikeNumbers } from "./constants";
 import { makePlayer, skillsOf, stepMover, towards, type P3 } from "./player";
 import { BRAINS } from "./brains";
 import { crossTo } from "./actions";
@@ -37,13 +37,19 @@ export type WembleyMode = "normal" | "doubles";
  * minutes at 45 (tests/star/wembley3d.mts). 9 Oct 2026: 36, and the valve floor 18, since the
  * keeper stopped diving at dribbles (he used to be on the floor when the real
  * shot came): 4.8 min a session, 22% of shots in, no stalls. Your career's keeper rating is not used.
+ * 20 Oct 2026 (B1): 70. By then 36 let 53% of shots in, a session lasted
+ * 89 s and the 80 won 23% (less than his fair 25%: his rising shots cleared
+ * the bar, fixed in wembleyShot). Measured on 200 sessions at 70, with that
+ * fix: 38% of shots in, 146 s a session, the 80 wins 42%, no stalls.
  */
-export const WEMBLEY_KEEPER = 36;
+export const WEMBLEY_KEEPER = 70;
 
 /** No goal for this long in a round → the keeper tires (rating drops). */
 export const VALVE_SECONDS = 60;
-/** How much his rating drops each time. */
-export const VALVE_DROP = 6;
+/** How much his rating drops each time. 10 (was 6) since the keeper went to
+ *  70: with 6 the longest goalless spell in 200 sessions was 417 s, with 10
+ *  it is 321 s (B1, 20 Oct 2026). */
+export const VALVE_DROP = 10;
 /** He never drops below this. */
 export const VALVE_FLOOR = 18;
 /** How long play stops after a goal / the ball going out. */
@@ -125,6 +131,8 @@ export interface WembleyOptions {
  * to the post the better the finisher (0.12 m in for a 100, 0.8 m for a 0),
  * low or rising, struck firmly. The 2D launch maths decides how true it goes.
  */
+/** The highest a Wembley finish is meant to cross the line (m; the bar is 2.44). */
+export const SHOT_CEILING = 2.0;
 export const SHOT_MARGIN_BEST = 0.12;
 export const SHOT_MARGIN_WORST = 0.8;
 export function wembleyShot(w: World, p: P3) {
@@ -137,7 +145,19 @@ export function wembleyShot(w: World, p: P3) {
   const d = Math.hypot(b.x - CX, b.y);
   const power = clamp(0.62 + d / 45, 0.66, 0.97);
   const low = w.rng() < 0.6;
-  const cy = low ? clamp(-0.55 + d / 60, -0.55, 0) : clamp(-0.4 + d / 45, -0.35, 0.15);
+  let cy = low ? clamp(-0.55 + d / 60, -0.55, 0) : clamp(-0.4 + d / 45, -0.35, 0.15);
+  // A stronger striker sends the same contact faster AND higher, so an 80's
+  // rising finish crossed the line at 2.2-2.3 m (a 60's: 1.9-2.0) and kept
+  // hitting the bar: 17 of 124 shots against 1 of 330 for the 60s (B1,
+  // 20 Oct 2026). He gets under it less: the contact comes down until HIS
+  // OWN strike crosses the line under SHOT_CEILING (air drag left out, so
+  // it errs low).
+  for (let k = 0; k < 8 && cy > -0.55; k++) {
+    const n = strikeNumbers(power, { cx: 0, cy }, p.skills.power, p.skills.technique);
+    const t = d / Math.max(1, n.Sh);
+    if (BALL_R + n.vz * t - 0.5 * G * t * t <= SHOT_CEILING) break;
+    cy = Math.max(-0.55, cy - 0.05);
+  }
   w.strike(p, { x: aimX - b.x, y: -b.y }, power, { cx: (w.rng() - 0.5) * 0.3, cy });
 }
 

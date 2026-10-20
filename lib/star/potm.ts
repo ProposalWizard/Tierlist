@@ -318,7 +318,7 @@ function lastWord(s: string): string {
 }
 
 /** What a squad knows about a man a goal record only names. */
-export interface KnownPlayer { name: string; image?: string }
+export interface KnownPlayer { name: string; image?: string; id?: string }
 
 export function playerOf(career: CareerState, name: string, club: string): KnownPlayer | undefined {
   const want = nameKey(name);
@@ -329,7 +329,7 @@ export function playerOf(career: CareerState, name: string, club: string): Known
   if (club === career.player.club) {
     const mine = (career.squad ?? []).find(p =>
       nameKey(p.shortName ?? "") === want || nameKey(p.name) === want || nameKey(lastWord(p.name)) === want);
-    if (mine) return { name: mine.name, image: mine.imageUrl };
+    if (mine) return { name: mine.name, image: mine.imageUrl, id: mine.id };
   }
 
   const squad = (career.leagueSquads ?? []).find(s => s.club === club);
@@ -340,7 +340,7 @@ export function playerOf(career: CareerState, name: string, club: string): Known
     nameKey(p.name) === want
     || nameKey(shortNameOf(p.name)) === want
     || nameKey(lastWord(p.name)) === want);
-  return him ? { name: him.name, image: him.image } : undefined;
+  return him ? { name: him.name, image: him.image, id: him.id } : undefined;
 }
 
 export function faceOf(career: CareerState, name: string, club: string): string | undefined {

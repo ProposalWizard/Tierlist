@@ -40,6 +40,8 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
   const [time, setTime] = useState(0);
   const [ov, setOv] = useState<Overlay | null>(null);
   const [inited, setInited] = useState(false);
+  // Phone fix: a beat name is cut short on the bar; a tap shows it whole.
+  const [beatTip, setBeatTip] = useState<number | null>(null);
   const styleRef = useRef(style); styleRef.current = style;
   const lookCam = useCutsceneCameraLook();
   const [camOverride, setCamOverride] = useState<CutsceneCameraLook | null>(null);
@@ -129,11 +131,14 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
           </div>
           <div className="relative">
             <input type="range" min={0} max={script.duration} step={1 / 30} value={time} onChange={(e) => d?.seek(Number(e.target.value))} className="w-full accent-amber-400" data-scrub />
-            <div className="relative h-3">
+            <div className="relative h-6">
               {(script.beats ?? []).map((b, i) => (
-                <div key={i} title={b.name} className="absolute top-0 h-3 truncate border-l border-amber-300/70 pl-0.5 text-[8px] leading-3 text-white/60" style={{ left: `${(b.at / script.duration) * 100}%`, width: `${(b.dur / script.duration) * 100}%` }}>{b.name}</div>
+                <button type="button" key={i} title={b.name} data-beat={i} onClick={() => setBeatTip(beatTip === i ? null : i)} className={`absolute top-0 h-6 truncate border-l border-amber-300/70 pl-0.5 text-left text-[8px] leading-6 ${beatTip === i ? "bg-amber-300/20 text-white" : "text-white/60"}`} style={{ left: `${(b.at / script.duration) * 100}%`, width: `${(b.dur / script.duration) * 100}%` }}>{b.name}</button>
               ))}
             </div>
+            {beatTip !== null && script.beats?.[beatTip] && (
+              <div className="text-[11px] font-bold text-amber-200" data-beat-name>{script.beats[beatTip].name} · {script.beats[beatTip].at.toFixed(1)} s</div>
+            )}
           </div>
           <div className="flex items-center gap-1.5 overflow-x-auto">
             <button className={`${btn} ${mode === "fixture" ? on : ""}`} onClick={() => setMode("fixture")}>Hand-made</button>

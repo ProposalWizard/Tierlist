@@ -149,9 +149,19 @@ function SortableImageCard({
     opacity: isDragging ? 0.5 : 1,
     cursor: "grab",
   };
+  // Phone fix (20 Oct 2026): a visible grip (on the picture's bottom-left
+  // corner; both picture kinds are 80 px tall) shows the card can be moved.
+  // The whole card still drags (mouse: after 5 px; touch: hold ¼ s first).
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={{ ...style, position: "relative" }} {...attributes} {...listeners}>
       {children}
+      <span
+        aria-hidden
+        data-drag-handle
+        className="pointer-events-none absolute left-1 top-[52px] z-10 grid h-6 w-6 place-items-center rounded-md bg-black/70 text-[13px] font-black leading-none text-white ring-1 ring-white/30"
+      >
+        ⠿
+      </span>
     </div>
   );
 }
@@ -2277,7 +2287,7 @@ export default function AdminPanel({
                             </SortableContext>
                           </DndContext>
                           <p className="mt-1.5 text-xs text-white">
-                            Drag to reorder · click to set as cover · hover × to remove
+                            ⠿ Drag to reorder (phone: hold an image, then drag) · tap to set as cover · × to remove
                           </p>
                         </>
                       )}
@@ -2639,7 +2649,7 @@ export default function AdminPanel({
                         title="Click to rename"
                       >
                         <p className="min-w-0 break-words text-sm font-semibold sm:truncate text-white group-hover:text-purple-300">{vl.title}</p>
-                        <span className="text-[10px] text-white opacity-0 group-hover:opacity-100">✏️</span>
+                        <span className="text-[10px] text-white opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100">✏️</span>
                       </button>
                     )}
                     <div className="mt-0.5 flex flex-wrap items-center gap-x-2">
@@ -2987,7 +2997,7 @@ export default function AdminPanel({
                               </SortableContext>
                             </DndContext>
                             <p className="mt-1.5 text-xs text-white">
-                              Drag to reorder · hover × to remove · ✂ to crop · green border = new, amber = cropped
+                              ⠿ Drag to reorder (phone: hold an image, then drag) · × to remove · ✂ to crop · green border = new, amber = cropped
                             </p>
                           </>
                         )}

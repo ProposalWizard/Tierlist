@@ -322,11 +322,14 @@ export default function ProfileClient({ userEmail, profile, created, liked, save
                       {img.tierlist_title && <p className="truncate text-[10px] font-semibold text-white">{img.tierlist_title}</p>}
                       <p className="text-[9px] text-white">{new Date(img.created_at).toLocaleDateString()}</p>
                     </div>
+                    {/* Phone fix (20 Oct 2026): hover-only, so a phone never saw it. */}
                     <button
-                      onClick={e => { e.stopPropagation(); setConfirmDeleteImageId(img.id); }}
-                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={e => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteImageId(img.id); }}
+                      aria-label="Delete saved image"
+                      data-delete-x
+                      className="absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 shadow transition-opacity group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
                     >
-                      x
+                      ✕
                     </button>
                   </div>
                 ))}
@@ -978,10 +981,12 @@ function TierlistGrid({ items, showDelete = false, emptyMsg, onDelete }: {
           </Link>
           {showDelete && onDelete && (
             <button
-              onClick={() => onDelete(tl.id)}
-              className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100"
+              onClick={e => { e.preventDefault(); e.stopPropagation(); onDelete(tl.id); }}
+              aria-label={`Delete ${tl.title}`}
+              data-delete-x
+              className="absolute right-1 top-1 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 shadow transition-opacity group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
             >
-              x
+              ✕
             </button>
           )}
         </div>

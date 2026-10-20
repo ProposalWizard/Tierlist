@@ -24,8 +24,12 @@ export function keeperFingerprint(): { hash: string; n: number } {
 /** The hash of the keeper from before Keeper pro. Recorded 11 Oct 2026 as
  *  d8dc5b7d on the New chance library; re-recorded 12 Oct 2026 on the drawn
  *  chances when the library was deleted (the harness now serves drawn ones).
- *  The keeper code it fingerprints did not change. */
-export const KEEPER_FINGERPRINT_BEFORE = "c808f663";
+ *  Re-recorded 20 Oct 2026 (was c808f663): the drawings were redrawn and some
+ *  deleted on 14-15 Oct (lib/star/authoredScenarios.json, merges a474ed8f and
+ *  b56b8641). Checked: today's code fed the 14 Oct drawings still gives
+ *  c808f663, so the keeper code it fingerprints did not change; only the shots
+ *  it is fed did. Re-record only for that reason. */
+export const KEEPER_FINGERPRINT_BEFORE = "1ef8579f";
 
 if (process.argv[1]?.endsWith("fingerprint.mts")) {
   const store = new Map<string, string>();

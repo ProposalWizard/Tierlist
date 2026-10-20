@@ -6,6 +6,7 @@ import type { CareerState } from "@/lib/star/types";
 import type { MonthAward } from "@/lib/star/potm";
 import { KitStyles, Burst, Shine, PressButton, clubTheme, rgba } from "./ui";
 import { Rays } from "./ui/Screen";
+import { yourFace } from "@/lib/star/media/graphics";
 
 /**
  * WINNING IT.
@@ -53,11 +54,11 @@ export default function PotmWinModal({ award, career, onClose }: Props) {
     goals: award.goals,
     assists: award.assists,
     isYou: true,
-    // The same rule as everywhere else: your photograph if you took one, the
-    // back of your shirt if you did not.
-    ...(career.player.portrait
-      ? { face: career.player.portrait, own: true as const }
-      : { number: career.squadNumber ?? 0 }),
+    id: "you",
+    // The same rule as the feed's card (yourFace): your photograph if you took
+    // one, the back of your shirt if you did not. It used to mark a picked
+    // fake face as your own photo too, and wash it in the club's colours.
+    ...yourFace(career),
   };
 
   const theme = clubTheme(career.player.club, career);

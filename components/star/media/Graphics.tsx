@@ -1,5 +1,8 @@
 "use client";
+import { useState, type ReactNode } from "react";
 import OwnPortraitImg from "../OwnPortraitImg";
+import DrawnHeadChip from "../DrawnHeadChip";
+import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import TrophyImage from "../TrophyImage";
 import type { GraphicSpec, PotmNominee } from "@/lib/star/media/types";
 import { kitsOf, labelInk } from "@/lib/star/kits";
@@ -424,8 +427,10 @@ function NomineeTile({ n, won }: { n: PotmNominee; won: boolean }) {
             the back of your shirt. Failing that, a monogram, which is where a
             generated squad or a career whose division has not been refreshed
             ends up. Never somebody else's face. */}
-        {n.face ? (
-          <Face src={n.face} own={n.own} kit={kit} />
+        {!PHOTO_FACES ? (
+          <TileHead id={n.id ?? `${n.club}|${n.name}`} kit={kit} size={64} />
+        ) : n.face ? (
+          <Face src={n.face} own={n.own} kit={kit} fallback={<TileHead id={n.id ?? `${n.club}|${n.name}`} kit={kit} size={64} />} />
         ) : n.number !== undefined ? (
           <div
             className="absolute inset-0 grid place-items-center text-2xl font-black tabular-nums"
@@ -484,8 +489,10 @@ function PotmWinner({ s }: { s: Extract<GraphicSpec, { type: "potmWinner" }> }) 
             className="absolute inset-y-0 left-2 w-9 -skew-x-[14deg]"
             style={{ backgroundColor: kit.trim }}
           />
-          {s.face ? (
-            <Face src={s.face} own={s.own} kit={kit} />
+          {!PHOTO_FACES ? (
+            <TileHead id={s.id ?? `${s.club}|${s.lastName}`} kit={kit} size={112} />
+          ) : s.face ? (
+            <Face src={s.face} own={s.own} kit={kit} fallback={<TileHead id={s.id ?? `${s.club}|${s.lastName}`} kit={kit} size={112} />} />
           ) : s.number !== undefined ? (
             <div
               className="absolute inset-0 grid place-items-center text-4xl font-black tabular-nums"
@@ -565,14 +572,20 @@ function PotmWinner({ s }: { s: Extract<GraphicSpec, { type: "potmWinner" }> }) 
  * `isolate` matters: mix-blend-mode composites against the nearest stacking
  * context, and without it the two layers reach past the tile and tint the card.
  */
-function Face({ src, own, kit }: { src: string; own?: boolean; kit: { shirt: string; trim: string } }) {
+function Face({ src, own, kit, fallback }: { src: string; own?: boolean; kit: { shirt: string; trim: string }; fallback?: ReactNode }) {
+  // A link that does not load (an old cdn.sofifa.net one: that CDN now wants
+  // a signed-in session) showed the browser's broken-picture box. It falls
+  // back to his drawn head instead (B1, 20 Oct 2026).
+  const [dead, setDead] = useState(false);
   if (!own) {
+    if (dead && fallback) return <>{fallback}</>;
     return (
       <img
         src={src}
         alt=""
         referrerPolicy="no-referrer"
         loading="lazy"
+        onError={() => setDead(true)}
         className="absolute inset-0 h-full w-full object-contain object-bottom"
       />
     );
@@ -589,6 +602,23 @@ function Face({ src, own, kit }: { src: string; own?: boolean; kit: { shirt: str
         <div className="absolute inset-0" style={{ background: c.duoLight, mixBlendMode: "multiply", opacity: TREATMENT }} />
         <div className="absolute inset-0" style={{ background: kit.shirt, mixBlendMode: "color", opacity: 0.7 }} />
       </OwnPortraitImg>
+    </div>
+  );
+}
+
+/**
+ * HIS DRAWN HEAD IN A TILE (B1, 20 Oct 2026). Photo faces are off for
+ * everyone (PHOTO_FACES, faceStyle.ts; Harry, 12 Oct 2026: "every head is the
+ * drawn one"), but these cards still put up photos: a real player's raw
+ * cdn.sofifa.net link (dead without a SoFIFA sign-in) came out as a broken
+ * picture, and your own photo or picked face was still shown. Now each tile
+ * shows the drawn head the team sheets show (DrawnHeadChip), in his kit,
+ * stood on the bottom edge like the cut-outs were.
+ */
+function TileHead({ id, kit, size }: { id: string; kit: { shirt: string; trim: string }; size: number }) {
+  return (
+    <div className="absolute inset-x-0 bottom-0 flex justify-center" data-potm-head={id}>
+      <DrawnHeadChip id={id} shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={size} />
     </div>
   );
 }
