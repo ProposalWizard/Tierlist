@@ -1,0 +1,4 @@
+Oswald (Bold, Latin subset) — used by "Mikey's new pop-ups" (components/star/MikeyPopup.tsx).
+Copyright 2016 The Oswald Project Authors (https://github.com/googlefonts/OswaldFont).
+Licensed under the SIL Open Font License, Version 1.1: https://openfontlicense.org
+Downloaded from Google Fonts, 20 Oct 2026.

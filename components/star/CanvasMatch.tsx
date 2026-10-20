@@ -151,6 +151,8 @@ import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@
 import { useFitWidth } from "./useFitWidth";
 import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
 import { bannerStyle, soundSet } from "@/lib/star/style3d/texturePack";
+import MikeyPopup, { useMikeyPopup, type PopupGoal } from "./MikeyPopup";
+import { mikeyPopupsLook, popupName, useMikeyPopupsLook } from "@/lib/star/mikeyPopups";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, assistFor, noteMatePlays, probeMatePlays, type CreditDelta, type MatePlay } from "@/lib/star/credit";
 import { matchTeamStrength } from "@/lib/star/matchday";
@@ -1304,6 +1306,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     user: log.filter(l => l.tone === "goal").length,
     opp: log.filter(l => l.tone === "oppGoal").length,
   }), [log]);
+  // The score as shown, for Mikey's pop-ups' scoreboard (the "before" of a goal).
+  const scoreForPopupRef = useRef(displayScore);
+  scoreForPopupRef.current = displayScore;
   // Commentary speed — reported directly: it reset to the slowest setting
   // at the start of every single match, which is real friction across a
   // session where you might play ten or fifteen games in a row on your
@@ -2439,8 +2444,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const actionBannerTextRef = useRef<HTMLDivElement>(null);
   const offsideBannerTextRef = useRef<HTMLDivElement>(null);
   const bannerTimerRef = useRef<number | null>(null);
+  // Mikey's new pop-ups (Settings, default Old): TV graphics instead
+  // (MikeyPopup.tsx). Old leaves everything below exactly as it was.
+  const mikey = useMikeyPopup();
+  const mikeyLook = useMikeyPopupsLook();
   const showAction = useCallback((text: string) => {
     if (sceneRef.current?.banners === false) return;
+    if (mikeyPopupsLook() === "new") { showMikeyPopup(text); return; }
     if (bannerStyle() === "arcade") { arcade.show(text, bannerSideNow()); return; }
     setActionBanner(text);
     if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
@@ -2993,6 +3003,43 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if ((cur === "top" || cur === "bottom") && fy > 0.4 && fy < 0.6) return cur;
       return fy < 0.5 ? "bottom" : "top";
     } catch { return cur ?? "top"; }
+  };
+  /**
+   * Mikey's new pop-ups: a GOAL (yours, a team-mate's, or theirs from the
+   * spot) is a scoreboard whose number rolls over, with the scorer and the
+   * assist; any other word is a caption strip. The names are read a moment
+   * later, once the goal has been written down (goalEventsRef, just below the
+   * banner call in resolveOutcome). Picture only.
+   */
+  const showMikeyPopup = (text: string) => {
+    const side = () => (bannerSideNow() === "bottom" ? "bottom" : "top") as "top" | "bottom";
+    const isGoal = text === "GOAL" || text === "SCORED";
+    if (!isGoal) { mikey.show({ text, side: side() }); return; }
+    const before = { ...scoreForPopupRef.current };
+    const eventsBefore = goalEventsRef.current.length;
+    const theirs = text === "SCORED";
+    window.setTimeout(() => {
+      const ev = goalEventsRef.current.length > eventsBefore ? goalEventsRef.current[goalEventsRef.current.length - 1] : undefined;
+      let goal: PopupGoal | undefined;
+      if (matchModeRef.current) {
+        const car = careerRef.current;
+        const us = realGoalRef.current?.us.name ?? car?.player.club ?? "You";
+        const them = realGoalRef.current?.them.name ?? fixtureOpponentRef.current ?? "";
+        const home = fixtureHomeRef.current;
+        const after = theirs ? { user: before.user, opp: before.opp + 1 } : { user: before.user + 1, opp: before.opp };
+        const team = (name: string, k: { shirt: string; trim: string }) => ({ name: shortClub(name), shirt: k.shirt, trim: k.trim, ink: "#ffffff" });
+        goal = {
+          home: team(home ? us : them, kitsRef.current.home),
+          away: team(home ? them : us, kitsRef.current.away),
+          from: home ? [before.user, before.opp] : [before.opp, before.user],
+          to: home ? [after.user, after.opp] : [after.opp, after.user],
+          scorer: theirs ? undefined : popupName(ev?.scorer),
+          assist: theirs ? undefined : popupName(ev?.assist),
+          theirs,
+        };
+      }
+      mikey.show({ text, side: "top", goal });
+    }, 0);
   };
   /** A pitch point -> where it is on the glass (client px). The inverse of
    *  pitchFromPointer, turn and tilt and all. */
@@ -8984,8 +9031,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // time (both a `pause`), the scores sheet, the end of the match. It fades out
   // fast instead (ArcadeBanner.tsx cut). A cut to the commentary is not one.
   useEffect(() => {
-    if (pause || scoresOpen || phase === "postmatch" || phase === "shootout") arcade.cut();
-  }, [pause, scoresOpen, phase, arcade.item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (pause || scoresOpen || phase === "postmatch" || phase === "shootout") { arcade.cut(); mikey.cut(); }
+  }, [pause, scoresOpen, phase, arcade.item?.id, mikey.item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useFitWidth(offsideBannerTextRef, phase === "result" && outcome === "offside");
 
   // ── The sandbox's live commentary and the situation hint ──
@@ -9363,6 +9410,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         {/* Action banner — Arcade pop (ArcadeBanner.tsx). Over the commentary
             too, so a cut away never cuts it short. */}
         <ArcadeBanner item={arcade.item} follow={bannerSideNow} />
+        {/* Mikey's new pop-ups (Settings, default Old): MikeyPopup.tsx. */}
+        <MikeyPopup item={mikey.item} follow={() => (bannerSideNow() === "bottom" ? "bottom" : "top")} />
 
         {/* The old action banner (every pack but Arcade): the moment an action
             completes. "PASS" when a team-mate brings your ball under control,
@@ -9383,7 +9432,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         {/* Outcome. Deliberately NOT announced for anything the pitch already
             shows you — the ball in the net, off the post, wide, in the keeper's
             hands. The only banner is the referee's call, which has no visual. */}
-        {phase === "result" && outcome === "offside" && scene?.banners !== false && (
+        {phase === "result" && outcome === "offside" && scene?.banners !== false && mikeyLook !== "new" && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div ref={offsideBannerTextRef} className="kib-pop text-4xl font-black tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] px-6 py-3 rounded-xl text-yellow-200 bg-gray-950/70 ring-1 ring-yellow-400/50">
               OFFSIDE
