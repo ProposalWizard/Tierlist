@@ -209,3 +209,12 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 
 ## Motion references page
 - /admin/motion-refs (Players + animation, admins only): HQ 18 | First round 9 | All 27; base-standard 5 first; each card = real clip (loop, pause, ½×) + our game still + an "Ours" slot that plays public/admin/motion-refs/ours/<scene>.mp4 once it exists. List in lib/motionRefs.ts. ~21 MB added. HQ clips re-encoded 10-bit HEVC → H.264 (originals untouched). First-round handshake left out (logo-like mark). Seen at 390 and 1440; no clip seen playing (no H.264 in this Chromium).
+
+## B5b — bodies (merged behind a test flag; the game still uses today's files)
+- Diagnosis: today's body 5.1 heads (guide 7.7), head 0.37 m (0.24), crotch 0.66 m (0.88), arms 0.68 m (0.78); cause: big-headed concept pictures + fit.py aiming at the boxy shorts hem.
+- A/B/C bone-scaled options rejected (16:29); method A (MakeHuman + Style A head) and C (mesh re-shape) built, dropped. Kept B2 and B3 (new Higgsfield-made body, leaner, flatter chest, today's Curls head + neck): 6.7 / 6.5 heads, shoulders 0.47 / 0.48 m (guide 0.47). See with ?bodies=b|f2|f3.
+- Chest (B2): depth 0.217 → 0.177 m (guide 0.231, today 0.260); chest in front of the chin +1.7 → −1.0 cm (guide +5).
+- Face rings fixed: the body file's own name was overwritten (people3d.ts) so the face used Curls eye positions ~3 cm low; each file keeps its own name (meta.file).
+- Shoulders: bind pose is level on every body (0°, joint 7.5–8.7 cm below the neck base); the CLIPS raise the collarbones (+13–14° idle/nod/talk/shirt_hold, +26° handshake, +37–39° sitting; 0° walk/jog/knee slide) → B5c's job.
+- Props: pen held at 50° (was 9° flat); trophy by both handles, clear of the head, no longer black; grip slip 0.5 cm (was 2.5).
+- Left: pale line at the neck/collar join on B2/B3; the other 5 player heads + 2 suit heads; the new body files not packed yet; rejected v1 code (proportions.ts, ?prop) still in the files; hands into shins in the sitting clip.
