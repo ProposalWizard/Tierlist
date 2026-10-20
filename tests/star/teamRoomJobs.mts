@@ -48,7 +48,7 @@ console.log("The jobs file in the repo");
   ok(parseJobs(BUNDLED_JOBS).length === jobs.length, "the copy built into the site is the same file");
   const lag = jobs.find((j) => j.id === "lag-test-2026-10-20");
   ok(!!lag && lag.owner === "all" && lag.from === "Harry", "the lag test job: for all three, from Harry");
-  ok(lag?.title === "Lag test on your phone, 10 min, after the next push: Settings → Developer tools → Lag test. Copy the prompt into your Claude chat first.", "its title as asked");
+  ok(lag?.title === "Lag test on your phone, 10 min, after the next push: ⚙ (top right of Home) → 🛠 Dev → Start lag test. Copy the prompt into your Claude chat first.", "its title as asked");
   const md = fs.readFileSync("docs/handoffs/2026-10-20-builds/lag-test-todos.md", "utf8");
   const block = md.split("## The prompt")[1].split("```")[1].replace(/^\n/, "").replace(/\n$/, "");
   ok(lag?.prompt === block, "its prompt is exactly the handoff's prompt block");

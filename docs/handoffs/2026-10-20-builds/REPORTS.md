@@ -186,3 +186,9 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Tests: new airChances.mts; switchedOffKinds rewritten; keeper fingerprint d2725947 and chanceJudge Old 239:e7c688f6 re-pinned on purpose. 3 suites fail on the base too (chanceMaker counts, longRangeRules, match2dCam 372×704).
 - Seen at 390×844 in Infinite Highlights; not seen in a career match. Plan (not built): docs/plans/2026-10-20-flair-bicycle.md.
 - Open for Harry: play off the cross drawings until 5 real ones exist, or stay off? 1 in 10 right? Kane mix (Mikey)?
+
+## B18 step 0 — the in-game Lag test
+- ⚙ (top right of Home) → 🛠 Dev → Start lag test (testers/admins only; also /star-dev?lagtest=1). Device + person picker, a pill at the top (⇅ moves it), 10 steps (~5 min recording): Home, Stats/Relations, Shop, 3D shop, Garden, Phone feed, 2D match, 3D game, Settings, cut scene.
+- Records frame gaps (p50/p95/p99/worst, over 33/50/100), long tasks/LoAF (Chrome), a 20 ms timer's lateness (iPhone too), 3D counters, memory, hidden time; refresh rate from the idle median. Bars in lib/star/lagTest.ts incl. the low-tier 30 fps rule, 0.5 ms jitter allowance.
+- Runs committed to branch lag-runs (lag/runs/<time>-<person>-<tier>.json) by /api/star/lag-runs via commitScenarios' helper (+ ensureBranch); vercel.json stops builds of lag-runs. Device-only + Copy results when it can't send. `npx tsx scripts/lag-runs.mts`.
+- Seen signed out at 390×844: Home and a 2D match recorded (2,370 frames); 401 "Sign in to send" as expected. Not seen: a real save to GitHub, the cut-scene hand-off, steps 2–6 and 8–10.
