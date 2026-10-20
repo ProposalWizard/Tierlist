@@ -1,0 +1,47 @@
+/* Motion references: cards painted with the frame's skin tokens (--bc-*), so every admin look works without its own rules. */
+.mr-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.mr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 560px), 1fr)); gap: 16px; }
+.mr-card {
+  display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 12px; min-width: 0; color: var(--bc-ink);
+  background: var(--bc-panel); border: 1px solid var(--bc-line); border-top: 3px solid var(--bc-accent); border-radius: 6px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+.mr-card[data-base="true"] { border-top-color: var(--bc-amber); }
+.bc[data-look="ops"] .mr-card { border-radius: 16px; }
+.bc[data-look="light"] .mr-card { border-radius: 14px; box-shadow: 0 1px 2px rgba(15, 23, 19, 0.06); }
+.bc[data-look="bento"] .mr-card { border-radius: 20px; border-top-width: 1px; box-shadow: none; }
+.mr-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.mr-head h2 { margin: 0; font-size: 18px; font-weight: 900; line-height: 1.2; }
+.bc[data-look="broadcast"] .mr-head h2 { font-style: italic; text-transform: uppercase; font-size: 17px; }
+.mr-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.mr-tag { font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px;
+  color: var(--bc-ink); background: color-mix(in srgb, var(--bc-accent) 30%, transparent); }
+.mr-tag.mr-base { color: #1a1300; background: var(--bc-amber); }
+.mr-what { margin: 0; font-size: 14px; line-height: 1.45; color: var(--bc-ink2); }
+.mr-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.mr-ref, .mr-side { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.mr-clip { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.mr-frame { position: relative; width: 100%; aspect-ratio: 9 / 16; border-radius: 8px; overflow: hidden; background: #000; }
+.mr-frame video { display: block; width: 100%; height: 100%; max-width: 100%; object-fit: cover; cursor: pointer; }
+.mr-paused { position: absolute; left: 8px; bottom: 8px; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 900; color: #fff; background: rgba(0, 0, 0, .65); pointer-events: none; }
+.mr-ctrl { display: flex; gap: 6px; flex-wrap: wrap; }
+.mr-btn { flex: 1 1 auto; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--bc-line); background: rgba(255, 255, 255, 0.04); color: var(--bc-ink2);
+  font-size: 12px; font-weight: 800; cursor: pointer; }
+.mr-btn[aria-pressed="true"] { background: var(--bc-accent); border-color: transparent; color: #fff; }
+@media (pointer: coarse) { .mr-btn { min-height: 40px; } }
+.mr-still { width: 100%; aspect-ratio: 9 / 16; border-radius: 8px; overflow: hidden; background: rgba(0, 0, 0, .35); }
+.mr-still img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.mr-cap { font-size: 11.5px; line-height: 1.35; color: var(--bc-ink3); }
+.mr-empty { width: 100%; aspect-ratio: 9 / 16; border-radius: 8px; border: 2px dashed var(--bc-line); display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; padding: 10px; text-align: center; color: var(--bc-ink3); }
+.mr-empty b { font-size: 14px; color: var(--bc-ink2); }
+.mr-empty span { font-size: 12px; line-height: 1.35; }
+.mr-empty[data-pending="true"] { opacity: .6; }
+.mr-foot { font-size: 11.5px; color: var(--bc-ink3); }
+/* Phone: the real clip fills the width (never wider than the screen); the game still and ours sit side by side under it. */
+@media (max-width: 640px) {
+  .mr-card { padding: 12px 12px 10px; }
+  .mr-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mr-ref { grid-column: 1 / -1; }
+  .mr-ref .mr-clip { width: min(100%, 300px); margin: 0 auto; }
+}
