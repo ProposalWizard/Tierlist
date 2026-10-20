@@ -81,3 +81,23 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Left: the 90th-minute winner → celebration → trophy cut scene; props held in hands; one stadium for cut scenes. Walk-out wide shot still has away players passing ~1 m from the lens (same as before) — Harry to judge on his phone.
 - Old looks: ?skinfix=0, ?framing=old, ?face=old on the test pages.
 - Stills/clips: docs/handoffs/2026-10-20-builds/b5/ (home-idling.mp4, cutscene-mentor-talking.mp4).
+
+## B12 — Vision rebuilt as "Pick the Pass"
+- Pictures: 263 real passes from tracked matches (DFL, SkillCorner, SoccerTrack) plus the team's drawn chances on levels 1, 2 and 10. Drawn in the real match's new view through EngineFeature. No guide line. Only the men who matter are drawn; the two deepest defenders always stay, so the offside line is exact.
+- The question: who gets the pass? Traps: a man offside, a cut lane, a marked man. The right man is checked with the engine's own rules; every pass in every picture was played 24 times on the engine (right man reached ≥ 80%, cut lane < 40%).
+- Levels 1–9: tap the man (4.0 s down to 1.3 s). From level 10: kick the pass with the real drag and strike. Time to start the kick: 1.8 s at L10 → 0.3 s from L28. The engine judges the kick.
+- After each try: RIGHT MAN / OFFSIDE / CUT OUT / MARKED / NOT THE BALL / MISPLACED / TOO SLOW, one line why ("Gnabry was beyond the last man. Coman was the ball."), right man ringed green ✓, your pick red ✗. A real picture names its match and minute.
+- Fewer repeats: 1 → 30 shows 45 different pictures in 90 tries (32 before); an ordinary picture comes back on 3 levels at most (7 before).
+- Curve, modelled good player, kicks played on the engine (first try): L1 99%, L10 93%, L20 36%, L25 28%, L30 21%. Steepest step L14 87% → L16 51%. Every level's numbers can be softened in the editor.
+- Measured on the engine: 30/30 passes to an offside man ended OFFSIDE; 240/240 good passes found the right man; 119/120 passes into a cut lane were lost.
+- Seen at 390×844 (stills + 9 s clip in b12/). Not tried on a real phone at 0.3 s.
+- Open: only 5 real offside pictures for 13 offside levels (one comes back on 6 levels). No engine or drift file changed.
+
+## B7b — Training editor drag and drop, auto skill, Pace skill
+- Drag and drop like the gallery: the level's picture from above beside the sliders. Power: ball and each man; Technique: ball, either cone, or the gate's middle; Free kick: ball and each wall man; Pace: each man along his wave's line. ↶ Undo per step, Undo all, dots unchanged, ▶ Play uses the dragged picture. Vision can't be dragged yet (one entry to add in lib/star/trainingLayout.ts).
+- No "your skills" slider: a level plays with the skills you'd have after the levels before it, by the career's own rule (40 + stars × 60 / 90), taking 2 of 3 stars on each earlier level. One line: "Plays with: Power 65 · Technique 65 — what you'd have after levels 1–19". Range shown (level 20: 53 with 1 star each, 65 with 2, 78 with 3).
+- Pace "knock-on": one man per wave comes for the ball and wears a ring; amber, then green for a short window (0.30 s v weak men → 0.05 s v the best): flick the other way then. Too early: he goes with you. Training drill only; the real match and trial unchanged (tested).
+- Cleared runs, before → after (L1–10 / L11–20 / L21–30): good bot 75→85 / 64→75 / 61→37%; decent 68→65 / 60→52 / 52→22%; hasty 45→20 / 56→29 / 27→8%; careless 16→8 / 17→15 / 5→3%. Before, waiting for the right moment made no difference.
+- Seen at 390×844 and 1440: drags (mouse and finger), Undo, Play, Save ("this device only"), reload kept it, the rings, "Knocked it past him!". Stills + 7 s clip in b7b/.
+- Found, not fixed: the Training levels page freezes on the second tab switch after picking a level, then crashes, in the test browser (the old page does the same). Not checked on a phone.
+- Decision for Harry: at 2 stars a level, a career player is always behind on Power levels, so they always get eased (level 20: 26 m drawn, 22 m played). That's how the career already works; it's now visible.
