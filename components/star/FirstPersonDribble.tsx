@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   newRun, applySteer, applyBurst, stepRun, BURST_T, CALM_CAMERA, LIVELY_CAMERA, stepCameraLean,
-  CARRY, carryLead, applyPass, wavesBeaten, applyFeint, type DuelEvent,
+  CARRY, carryLead, applyPass, wavesBeaten, applyFeint, knockTaker, knockRing, type DuelEvent,
   type FpRunState, type RunPhase, type FpIdentity,
 } from "@/lib/star/firstPersonDribble";
 import { cameraFor, project, type FpCamera } from "@/lib/star/firstPersonView";
@@ -14,6 +14,7 @@ import { revealOnScreen } from "@/lib/revealOnScreen";
 import { loadFaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 import { classifyRelease } from "@/lib/star/dribbleGesture";
+import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 
 /**
  * THE ONE-ON-ONE DUEL — THE COMPONENT.
@@ -345,6 +346,9 @@ export interface FirstPersonDribbleProps {
    * as before (the real match and the trial never set it).
    */
   knockOn?: boolean;
+  /** Men placed by hand, per wave, metres across from the centre (the Training
+   *  levels page's drag). Absent = the seed places them, as before. */
+  lanes?: number[][];
 }
 
 /** The New UI's top-bar edge (components/star/ui/TopHud.tsx): a dark glass
@@ -365,7 +369,7 @@ const PIP_FILL: Record<DuelPip, string> = {
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, rounds = 3, waveSizes, roster, seed, assist = false, onComplete, embedded = false,
   hideHint = false, hold = false, camera = "C1", hideYou = false, calmCamera = false, kits,
-  passOptions = 0, vision = 55, mateRoster, duels = false, dribbling = 55, knockOn = false,
+  passOptions = 0, vision = 55, mateRoster, duels = false, dribbling = 55, knockOn = false, lanes,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -473,7 +477,7 @@ export default function FirstPersonDribble({
   const reset = useCallback((startNow = false) => {
     const rng = newRng();
     rngRef.current = rng;
-    const run = newRun({ pace, oppStrength, rounds, waveSizes, roster, rng, mates: passOptions, mateRoster, ...(duels ? { duels: true, dribbling } : knockOn ? { knockOn: true } : {}) });
+    const run = newRun({ pace, oppStrength, rounds, waveSizes, roster, rng, mates: passOptions, mateRoster, ...(duels ? { duels: true, dribbling } : knockOn ? { knockOn: true } : {}), ...(lanes ? { lanes } : {}) });
     runRef.current = run;
     camXRef.current = run.x;
     ballXRef.current = run.x + sideDirRef.current * CARRY.restFootX;
@@ -487,7 +491,7 @@ export default function FirstPersonDribble({
     // A fresh run waits for its tap; "Go Again" IS a tap, so it goes straight in.
     setPhase(startNow ? "run" : "ready");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pace, oppStrength, rounds, newRng, JSON.stringify(waveSizes), passOptions, duels, dribbling, knockOn]);
+  }, [pace, oppStrength, rounds, newRng, JSON.stringify(waveSizes), passOptions, duels, dribbling, knockOn, JSON.stringify(lanes)]);
 
   useEffect(() => { reset(); }, [reset]);
 
@@ -504,6 +508,27 @@ export default function FirstPersonDribble({
     const id = requestAnimationFrame(() => revealOnScreen(wrapRef.current));
     return () => cancelAnimationFrame(id);
   }, [phase, hold]);
+
+  // Development only — compiled out of the live site (devMode.ts): the knock-on
+  // ring and your lane, so a playtest bot can time a real flick (the training
+  // Pace drill). Read-only: it changes nothing in the run.
+  useEffect(() => {
+    if (!knockOn || !offlineDevPlayEnabled() || typeof window === "undefined") return;
+    const w = window as unknown as { __fpKnock?: unknown };
+    w.__fpKnock = () => {
+      const run = runRef.current;
+      if (!run) return null;
+      const d = knockTaker(run);
+      return {
+        phase: phaseRef.current,
+        stage: d ? knockRing(d, run.elapsed).stage : null,
+        /** The way to flick: away from where his lunge lands. */
+        away: d ? (run.x >= d.x + d.commitSide * 1.1 ? 1 : -1) : 0,
+        grades: (run.knocks ?? []).map(k => k.grade),
+      };
+    };
+    return () => { delete w.__fpKnock; };
+  }, [knockOn]);
 
   // ── Canvas sizing — raw backing-store pixels, no separate DPR transform:
   // firstPersonView's project() already produces true pixel coordinates,

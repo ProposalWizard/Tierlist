@@ -3,6 +3,7 @@ import { TRAINING_LEVELS, levelDifficulty, levelSeed } from "./trainingLevels";
 import { techniqueDrill, freeKickDrill, paceDrill, visionDrill, powerDrillForLevel } from "./trainingDrills";
 import { VISION_DEFAULTS } from "./visionRound";
 import TABLE_JSON from "./data/trainingLevels.json";
+import { PITCH_W } from "./pitch";
 
 /**
  * TRAINING LEVELS AS DATA (Harry, 19 Oct 2026: "training levels have no way
@@ -42,6 +43,9 @@ export interface PowerLevel {
   /** Score a try needs (0.5 = any goal; higher = nearer a post). */
   pass: number;
   seed?: number;
+  /** Where the men in the way stand, pitch metres — set by dragging them on
+   *  the Training levels page. Absent: strung across the lane as before. */
+  men?: Spot[];
 }
 export interface TechniqueLevel {
   gateDistance: number;
@@ -53,6 +57,9 @@ export interface TechniqueLevel {
   /** Score a try needs (0.25 = anywhere between the cones; 0.6 = near the middle). */
   pass: number;
   seed?: number;
+  /** Where the ball sits, pitch metres — set by dragging it. Absent: centred,
+   *  six metres behind the gate's distance, as before. */
+  ball?: Spot;
 }
 export interface FreeKickLevel {
   distance: number;
@@ -61,6 +68,9 @@ export interface FreeKickLevel {
   keeperStrength: number;
   pass: number;
   seed?: number;
+  /** Where the men in the wall stand, pitch metres — set by dragging them.
+   *  Absent: a wall 9.15 m from the ball, square to goal, as before. */
+  men?: Spot[];
 }
 export interface PaceLevel {
   /** Men between you and the line, in waves of up to `waveMax`. */
@@ -71,6 +81,9 @@ export interface PaceLevel {
   /** How quick YOU run in this level, 0-100. */
   runPace: number;
   seed?: number;
+  /** Each wave's men, metres across from the centre line — set by dragging
+   *  them. Absent (or a wave missing): placed by the level's own seed. */
+  lanes?: number[][];
 }
 export interface VisionLevel {
   options: number;
@@ -88,6 +101,9 @@ export interface VisionLevel {
   tapRadius: number;
   seed?: number;
 }
+
+/** A spot on the pitch, metres (x across, y from the goal line). */
+export interface Spot { x: number; y: number }
 
 export interface LevelBySkill {
   power: PowerLevel;
@@ -172,7 +188,57 @@ export function sanitizeLevel<S extends TrainingSkill>(skill: S, level: number, 
     out[f.key] = f.int ? Math.round(n) : round2(n);
   }
   if (typeof src.seed === "number" && Number.isFinite(src.seed)) out.seed = Math.abs(Math.round(src.seed)) >>> 0;
-  return out as unknown as LevelBySkill[S];
+  return withPositions(skill, out, src) as unknown as LevelBySkill[S];
+}
+
+// ── Hand-placed positions (dragged on the Training levels page) ─────────────
+
+/** A spot kept on the pitch (and rounded to the centimetre), or null. */
+function cleanSpot(v: unknown): Spot | null {
+  if (!v || typeof v !== "object") return null;
+  const { x, y } = v as { x?: unknown; y?: unknown };
+  if (typeof x !== "number" || typeof y !== "number" || !Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return { x: round2(Math.max(0.5, Math.min(PITCH_W - 0.5, x))), y: round2(Math.max(0.5, Math.min(52, y))) };
+}
+
+/** Most men any drill can place (the wall and the lane top out at 7 and 6). */
+const MAX_MEN = 8;
+/** Pace: how far across from the centre a man may stand (the run's corridor). */
+export const PACE_LANE_HALF = 9;
+
+/** Copy the hand-placed positions a skill understands; drop anything broken. */
+function withPositions(skill: TrainingSkill, out: Record<string, unknown>, src: Record<string, unknown>): Record<string, unknown> {
+  if (skill === "power" || skill === "freeKick") {
+    if (Array.isArray(src.men)) {
+      const men = src.men.map(cleanSpot).filter((m): m is Spot => !!m).slice(0, MAX_MEN);
+      if (men.length) out.men = men;
+    }
+  } else if (skill === "technique") {
+    const ball = cleanSpot(src.ball);
+    if (ball) out.ball = ball;
+  } else if (skill === "pace") {
+    if (Array.isArray(src.lanes)) {
+      const lanes = src.lanes.slice(0, 12).map(w => (Array.isArray(w) ? w : [])
+        .filter((x): x is number => typeof x === "number" && Number.isFinite(x))
+        .slice(0, 4)
+        .map(x => round2(Math.max(-PACE_LANE_HALF, Math.min(PACE_LANE_HALF, x)))));
+      if (lanes.some(w => w.length)) out.lanes = lanes;
+    }
+  }
+  return out;
+}
+
+/** The same row with every hand-placed position taken off (Shuffle, Level's own). */
+export function withoutPositions<T extends AnyLevel>(row: T): T {
+  const r = { ...(row as unknown as Record<string, unknown>) };
+  delete r.men; delete r.ball; delete r.lanes;
+  return r as unknown as T;
+}
+
+/** True when this row carries any dragged position. */
+export function hasPositions(row: AnyLevel): boolean {
+  const r = row as unknown as Record<string, unknown>;
+  return r.men !== undefined || r.ball !== undefined || r.lanes !== undefined;
 }
 
 // ── The built-in curve ──────────────────────────────────────────────────────
@@ -387,13 +453,33 @@ export function easePowerLevel(level: number, power: number | undefined, rowAt: 
   const a = rowAt(lo), b = rowAt(hi);
   const mix = (x: number, y: number) => x + (y - x) * f;
   const easedBlockers = Math.round(mix(a.blockers, b.blockers));
-  return {
+  const eased: PowerLevel = {
     ...own,
     distance: round2(mix(a.distance, b.distance)),
     offset: round2(mix(a.offset, b.offset)),
     blockers: own.blockers > 0 ? Math.max(1, Math.min(own.blockers, easedBlockers)) : 0,
     keeperStrength: round2(Math.min(own.keeperStrength, mix(a.keeperStrength, b.keeperStrength))),
   };
+  // Men placed by hand move with the ball: the same spots in the lane, the
+  // lane shortened (and turned) about the middle of the goal.
+  if (own.men?.length) eased.men = carryMen(own.men, own, eased);
+  return eased;
+}
+
+/** Hand-placed men, carried from one ball spot to another: scaled and turned
+ *  about the middle of the goal line, so each keeps his place in the lane. */
+function carryMen(men: Spot[], from: { distance: number; offset: number }, to: { distance: number; offset: number }): Spot[] {
+  const fx = from.offset, fy = Math.max(6, from.distance);
+  const tx = to.offset, ty = Math.max(6, to.distance);
+  const fl = Math.hypot(fx, fy) || 1, tl = Math.hypot(tx, ty) || 1;
+  const k = tl / fl;
+  const ang = Math.atan2(ty, tx) - Math.atan2(fy, fx);
+  const c = Math.cos(ang), sn = Math.sin(ang);
+  const goalX = PITCH_W / 2;
+  return men.map(m => {
+    const rx = m.x - goalX, ry = m.y;
+    return { x: round2(goalX + k * (c * rx - sn * ry)), y: round2(Math.max(0.5, k * (sn * rx + c * ry))) };
+  });
 }
 
 export { levelDifficulty };

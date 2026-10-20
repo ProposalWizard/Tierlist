@@ -607,6 +607,9 @@ export function newRun(opts: {
    * run exactly as before (the real match and the trial never set it).
    */
   knockOn?: boolean;
+  /** Men placed by hand, per wave, metres across from the centre line (the
+   *  Training levels page). Absent = placed by the seed, as before. */
+  lanes?: number[][];
   rng: () => number;
 }): FpRunState {
   const { rng } = opts;
@@ -625,6 +628,10 @@ export function newRun(opts: {
     const factor = roundCount > 1 ? 0.85 + (classic ? 0.15 : 0.23) * (r / (roundCount - 1)) : 1.0;
     const y = START_Y - FIRST_DUEL_DEPTH - DUEL_GAP * r;
     const xs = placeWave(size, rng);
+    // Men placed by hand on the Training levels page (metres across from the
+    // centre). placeWave still ran, so every later roll is the seed's own.
+    const placed = opts.lanes?.[r];
+    if (placed) placed.forEach((off, i) => { if (i < xs.length && Number.isFinite(off)) xs[i] = clamp(CX + off, CX - CORRIDOR_HALF, CX + CORRIDOR_HALF); });
     // Rank this wave's men by distance from your fixed starting lane —
     // nearest presses hardest (see PRESS_STEPS / the file header). Ranking
     // at construction, off the same fixed CX placement already uses, keeps
