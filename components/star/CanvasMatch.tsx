@@ -18,6 +18,7 @@ import {
   type Facing, type Runner, type Vec2,
 } from "@/lib/star/canvasEngine";
 import { leadInEntities, leadInCamera, stakesOf, type LeadIn, type LeadEntity, type LeadMoment } from "@/lib/star/leadIn";
+import { fhrOn } from "@/lib/star/fhr/toggle";
 import type { RealGoalView } from "@/lib/star/realGoalView";
 import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario, lateSubQuota, noteServedKind,
@@ -576,6 +577,9 @@ export interface ChanceResolved {
   /** Set when the match struck it for somebody else (a team-mate's or an
    *  opponent's penalty — see lib/star/penaltyTaking.ts). */
   autoKick?: "us" | "them";
+  /** The move ended in its build-up (a called offside, Full highlights
+   *  rebuild): no kick was taken and nothing is yours. */
+  buildUp?: boolean;
 }
 
 // Only the fields finaliseMatch reads — lets the standalone sandbox produce a
@@ -1468,7 +1472,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** See the `leadIn` prop: the builder, and the lead-in while it plays. */
   const leadInPropRef = useRef(leadIn);
   leadInPropRef.current = leadIn;
-  const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null } | null>(null);
+  const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; defs0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null } | null>(null);
   // B10: when a header or volley chance became yours (for the ball hanging /
   // bouncing while you aim — lib/star/airDrawings.ts airWaitZ). Drawing only.
   const airT0Ref = useRef<{ sc: Scenario; t0: number } | null>(null);
@@ -2634,8 +2638,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       tiltSettingRef.current = newViewRef.current ? cameraTilt() : 0;
       applyTilt(tiltForChance(scenarioRef.current));
       // New view: the camera holds the canvas's own shape, so a new shape
-      // means a new frame — never while a ball is in flight.
-      if (newViewRef.current && !ballRef.current && scenarioRef.current) frameScenario(scenarioRef.current);
+      // means a new frame — never while a ball is in flight. Framed on the
+      // chance's own spots (frameOnChance): a resize during a build-up (a
+      // phone's address bar sliding away) used to frame the chance on the
+      // build-up's men and play it there — measured 20 px off and 38% out.
+      if (newViewRef.current && !ballRef.current && scenarioRef.current) frameOnChance();
     };
     resize();
     window.addEventListener("resize", resize);
@@ -5660,6 +5667,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       sc.teammates.push(m);
       ents.push({ key: `extra${i}`, side: "mate", get: () => ({ x: m.x, y: m.y }), set: (p) => { m.x = p.x; m.y = p.y; } });
     }
+    // …and opponents (the man your side wins the ball from): the same, after the chance's own.
+    const defs0 = sc.defenders.length;
+    for (let i = 0; i < (lead.extraOpps ?? 0); i++) {
+      const at = lead.posAt(`oppx${i}`, 0) ?? { x: sc.ball.x, y: sc.ball.y };
+      const d: Scenario["defenders"][number] = { x: at.x, y: at.y, homeX: at.x, homeY: at.y, containT: 0, speed: 1, role: "cover", baseRole: "cover" };
+      sc.defenders.push(d);
+      ents.push({ key: `oppx${i}`, side: "opp", get: () => ({ x: d.x, y: d.y }), set: (p) => { d.x = p.x; d.y = p.y; } });
+    }
     // Where the chance has each man, by the figure name the frame uses (for a 3D camera of its own).
     const endAt: Record<string, Vec2> = {};
     let endKeeper: Vec2 | null = null;
@@ -5668,7 +5683,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const sid = e.key === "keeper" ? null : e.key === "run" ? "run0" : e.key.startsWith("sec") ? `run${Number(e.key.slice(3)) + 1}` : e.key;
       if (sid) endAt[sid] = { ...ends[i] }; else endKeeper = { ...ends[i] };
     });
-    leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, cam: leadInCamera(lead, ents.map((e) => e.key)), endAt, endKeeper };
+    leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, defs0, cam: leadInCamera(lead, ents.map((e) => e.key)), endAt, endKeeper };
     leadPlayedRef.current = true;
     setLeadInOn(true);
     applyLeadIn();
@@ -5691,6 +5706,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       try { L.lead.onTick?.(L.t, false); } catch { /* an observer never breaks the match */ }
       return;
     }
+    // The move ended in a called offside: no chance follows (endInOffside).
+    if (L.lead.offside) { endInOffside(L); return; }
     const sc = scenarioRef.current;
     // Still running at the hand-over (runOnS): those men stay where the lead-in
     // has them at durS and carry on (stepRunOn); everyone else is on his spot.
@@ -5703,6 +5720,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       else e.set(L.ends[i]);
     });
     sc.teammates.length = L.mates0;
+    sc.defenders.length = L.defs0;
     sc.ball.x = L.ball.x; sc.ball.y = L.ball.y;
     viewportRef.current = baseViewportRef.current;
     leadRef.current = null;
@@ -5741,6 +5759,61 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * engine itself is unchanged.
    */
   const handOverRunOn = () => { runOnRef.current = null; };
+  /**
+   * A BUILD-UP THAT ENDS IN A CALLED OFFSIDE (Full highlights rebuild: On,
+   * lib/star/fhr/buildUp.ts; Harry, 20 Oct 2026: "Offsides can happen but
+   * they must be called"). The flag went up (the whistle at the lead-in's
+   * whistleAt): it is called the way a chance's offside is (OFFSIDE), the
+   * free kick is theirs, and the move ends — no chance from it, in the
+   * match's own count too (handed back as the match hands back an offside).
+   * Nothing is credited to you. The men, the ball and the camera stay where
+   * the build-up left them; then the match goes on as after any chance.
+   */
+  const endInOffside = (L: NonNullable<typeof leadRef.current>) => {
+    leadRef.current = null;
+    runOnRef.current = null;
+    setLeadInOn(false);
+    if (leadCapRef.current !== null) { leadCapRef.current = null; setLeadCap(null); }
+    baseViewportRef.current = { ...viewportRef.current };
+    try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
+    const sc = scenarioRef.current;
+    setOutcome("offside");
+    setPhase("result");
+    showAction("OFFSIDE");
+    pushLine(L.lead.offside?.by === "you" ? `Flag up — ${playerLabel()} went too early. Free kick to them.` : "Flag up — the run was too early. Offside, free kick to them.");
+    try { onChanceResolvedRef.current?.({ outcome: "offside", kind: sc.kind, youShot: false, teammateShot: false, ball: null, buildUp: true }); } catch { /* an observer never breaks the match */ }
+    if (matchModeRef.current) {
+      resolveScenario(matchStateRef.current, matchResultFor("offside"));
+      handOver(() => startSimulation(), 1800);
+    } else if (!replayOfRef.current) handOver(() => loadScenario(false), 1800);
+  };
+  /**
+   * Frame the chance from the chance's own spots. While a build-up (or its
+   * run-on) plays, the scenario holds the build-up's positions; framing on
+   * those gave the chance a camera of their own (B2b, Harry: "end on the
+   * actual camera we have been using in game"). So its men and the ball are
+   * put on the chance's spots for the framing — the build-up's own extras
+   * out of it — and straight back. Outside a build-up: frameScenario as ever.
+   */
+  const frameOnChance = () => {
+    const sc = scenarioRef.current;
+    const L = leadRef.current, R = runOnRef.current;
+    if (!L && !R) { frameScenario(sc); return; }
+    const ents = L ? L.ents : R!.ents, ends = L ? L.ends : R!.ends;
+    const now = ents.map((e) => e.get());
+    const ball = { x: sc.ball.x, y: sc.ball.y };
+    const mates = L ? sc.teammates.splice(L.mates0) : [];
+    const opps = L ? sc.defenders.splice(L.defs0) : [];
+    ents.forEach((e, i) => { if (i < ends.length) e.set(ends[i]); });
+    if (L) { sc.ball.x = L.ball.x; sc.ball.y = L.ball.y; }
+    try { frameScenario(sc); } finally {
+      sc.teammates.push(...mates);
+      sc.defenders.push(...opps);
+      ents.forEach((e, i) => e.set(now[i]));
+      sc.ball.x = ball.x; sc.ball.y = ball.y;
+    }
+    if (L) viewportRef.current = L.cam.at(L.t, baseViewportRef.current);
+  };
   /** A tap on a skippable lead-in (the career's build-ups): straight to the chance. */
   const skipLeadIn = () => {
     const L = leadRef.current;
@@ -8198,6 +8271,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         seed: seedRef.current,
         us: careerRef.current?.player.club, them: fixture?.opponent,
         themStrength: oppStrengthRef.current,
+        // B2b (Full highlights rebuild: On only — Off hands over exactly what
+        // it always did): your side's strength (the match's own number), how
+        // your side won the ball this move as the match had it, and whether
+        // the offside law is on.
+        ...(fhrOn() ? {
+          usStrength: hiddenInputs().teamStrength,
+          regain: request?.regain,
+          offsideOff: careerRef.current ? ruleBookFor(careerRef.current, "FA").offsideAbolished : false,
+        } : {}),
         frame: { ...baseViewportRef.current },
         // How big the moment is (a build-up runs longer late in a close final).
         minute: matchMinuteRef.current,

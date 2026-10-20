@@ -1,0 +1,25 @@
+#1 85 v 65 · long range · settled · 7.13 s · problems: none
+#2 85 v 65 · tight angle · WON BACK 26 m out, after 1.1 s · 5.17 s · problems: none
+#3 85 v 65 · one on one · settled · 5.75 s · problems: none
+#4 85 v 65 · one on one · transition · 4.28 s · problems: none
+#5 85 v 65 · byline cross · WON BACK 36 m out, after 0.9 s · EXTRA DEFENDER · 4.80 s · problems: none
+#6 85 v 65 · tight angle · WON BACK 10 m out, after 1.5 s · 5.43 s · problems: none
+#7 85 v 65 · tight angle · OFFSIDE CALLED (you) · 6.41 s · problems: none
+#8 85 v 65 · long range · OFFSIDE CALLED (sec0) · 5.83 s · problems: none
+#9 75 v 75 · long range · settled · 6.96 s · problems: none
+#10 75 v 75 · cutback · settled · 7.67 s · problems: none
+#11 75 v 75 · tight angle · OFFSIDE CALLED (you) · 7.38 s · problems: none
+#12 75 v 75 · long range · WON BACK 66 m out, after 1.7 s · 5.33 s · problems: none
+#13 75 v 75 · tight angle · WON BACK 29 m out, after 1.5 s · 7.67 s · problems: none
+#14 75 v 75 · byline cross · WON BACK 35 m out, after 2.1 s · EXTRA DEFENDER · 5.04 s · problems: none
+#15 65 v 85 · long range · settled · 6.83 s · problems: none
+#16 65 v 85 · tight angle · WON BACK 54 m out, after 2.9 s · 9.19 s · problems: none
+#17 65 v 85 · midfield pass · settled · 6.54 s · problems: none
+#18 65 v 85 · tight angle · WON BACK 9 m out, after 3.3 s · 7.41 s · problems: none
+#19 65 v 85 · cutback · WON BACK (scrappy) 11 m out, after 3.1 s · 7.49 s · problems: none
+#20 65 v 85 · tight angle · OFFSIDE CALLED (you) · 8.93 s · problems: none
+#21 65 v 85 · cutback · OFFSIDE CALLED (you) · 8.33 s · problems: none
+#22 75 v 75 · free kick · THE FOUL FIRST · 4.92 s · problems: none
+#23 75 v 75 · penalty · THE FOUL FIRST · 5.84 s · problems: none
+#24 75 v 75 · free kick · THE FOUL FIRST · 4.62 s · problems: none
+#25 75 v 75 · penalty · THE FOUL FIRST · 5.14 s · problems: none

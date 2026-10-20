@@ -87,17 +87,19 @@ for (const kind of AIR) {
 console.log("\n3. THE BUILD-UP LOFTS IT TO YOU (Full highlights rebuild On)");
 {
   const pool = servedChances({ count: 400, seed: 202 }).filter((c) => AIR.includes(c.sc.kind as "header") && fhrWantsBuildUp(c.sc.kind, c.moment)).slice(0, 40);
-  let lofted = 0, byCrosser = 0, arrives = 0, clean = 0;
+  let lofted = 0, byCrosser = 0, arrives = 0, clean = 0, flagged = 0;
   for (const c of pool) {
     const b = fhrBuildUpFor(c.sc, c.moment);
+    // B2b: a run caught offside on the way ends the move with the flag (no cross, no chance).
+    if (b.offside) { flagged++; ok(b.whistleAt === b.offside.at, `${c.sc.kind}: flagged offside without its whistle`); continue; }
     const last = b.acts[b.acts.length - 1];
     if (last.type === "pass" && last.h >= 3 && last.endZ === arriveZ(c.sc.kind)) lofted++;
     if (b.actOwners[b.acts.length - 1] === "mate0") byCrosser++;
     if (b.ballAt(b.durS).z === arriveZ(c.sc.kind) && b.ballAt(last.t0 + (last.t1 - last.t0) / 2).z > 2) arrives++;
     if (!b.problems.length) clean++;
   }
-  const n = pool.length;
-  ok(n >= 30, `${n} header and volley build-ups`);
+  const n = pool.length - flagged;
+  ok(n >= 30 && flagged <= pool.length * 0.25, `${n} header and volley build-ups reach the chance (${flagged} flagged offside on the way)`);
   ok(lofted === n, `the last pass is a ball in the air (top ≥ 3 m) that arrives at your head / knee (${lofted}/${n})`);
   ok(byCrosser === n, `the crosser plays it (${byCrosser}/${n})`);
   ok(arrives === n, `the ball is up in the air mid-cross and still in the air when the chance is yours (${arrives}/${n})`);
