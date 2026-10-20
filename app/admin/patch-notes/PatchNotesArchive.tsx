@@ -107,6 +107,12 @@ export default function PatchNotesArchive({ initialVersion }: { initialVersion?:
     </main>
   );
 }
+/** "Harry's patch notes: B6 Scene Studio" → "B6 Scene Studio" (the name after the author), so the rail says which version is which. */
+function railName(title: string): string {
+  const m = /^(?:harry|mikey|leo)['’]s patch notes\s*(?:v[\d.]+)?\s*:\s*(.+)$/i.exec(title.trim());
+  return m ? m[1] : "";
+}
+
 function VersionRail({
   notes, selected, onSelect,
 }: { notes: PatchNote[]; selected: string | null; onSelect: (v: string) => void }) {
@@ -153,6 +159,7 @@ function VersionRail({
                   v{n.version}
                 </span>
                 <span className={`flex items-center justify-between gap-2 text-[11px] ${INK3}`}>{formatPatchDate(n.publishedAt)}<PatchRailFaces note={n} /></span>
+                {railName(n.title) && <span className={`mt-0.5 block truncate text-[11.5px] ${INK2}`}>{railName(n.title)}</span>}
               </button>
             );
           })}

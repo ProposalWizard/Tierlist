@@ -9,6 +9,9 @@ import {
   type TeamIdea, type TeamMessage, type TeamNote, type TeamTask, type TeamVote,
 } from "@/lib/teamRoom/logic";
 import { ADMIN_PAGES } from "@/lib/adminRegistry";
+import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
+import { PATCH_NOTE_PAGES } from "@/lib/patchNotePages";
+import { TEAM_ROOM } from "@/lib/teamRoom/config";
 import {
   ackedBy, composeBody, decodePoint, mentionsIn, parseMessage, patchAuthor, patchReaders, patchUnread, pointUrl, pointsWaiting,
   quoteLine, seenBy, typingToken, unseenMentions, waitingOnMe, withAck,
@@ -147,6 +150,17 @@ ok(patchAuthor("Mikey's patch notes v0.17") === "Mikey" && patchAuthor("Knowitba
 ok(patchUnread(pn, "Harry", pa, "2026-10-18").map((n) => n.version).join() === "0.59", "Harry: 0.58 read, 0.56 before receipts started");
 ok(patchUnread(pn, "Mikey", pa, "2026-10-18").map((n) => n.version).join() === "0.58", "your own patch notes never wait on you");
 ok(patchReaders(pn[0], pa).join() === "Mikey" && patchReaders(pn[1], pa).join() === "Harry,Leo", "faces: the author plus who pressed Read");
+
+console.log("The last two days' patch notes (19-20 Oct): one page each, all counted");
+const last2 = BUILT_IN_PATCH_NOTES.filter((n) => /^0\.(6\d|7[0-5])$/.test(n.version)); // not the old 0.6 and 0.7
+ok(last2.length === 16 && last2.map((n) => n.version).sort().join() === Array.from({ length: 16 }, (_, i) => "0." + (60 + i)).join(), "16 entries, v0.60 to v0.75");
+ok(new Set(BUILT_IN_PATCH_NOTES.map((n) => n.version)).size === BUILT_IN_PATCH_NOTES.length, "every patch-note version is unique (receipts are keyed by it)");
+ok(last2.every((n) => Date.parse(n.publishedAt) >= Date.parse(TEAM_ROOM.patchReceiptsFrom)), "all dated on or after patchReceiptsFrom, so they count");
+const metaLast2: PatchMeta[] = last2.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
+ok(patchUnread(metaLast2, "Mikey", [], TEAM_ROOM.patchReceiptsFrom).length === 16 && patchUnread(metaLast2, "Leo", [], TEAM_ROOM.patchReceiptsFrom).length === 16, "Mikey and Leo each have 16 to read");
+ok(patchUnread(metaLast2, "Harry", [], TEAM_ROOM.patchReceiptsFrom).length === 0, "Harry wrote them, so none wait on him");
+ok(last2.every((n) => !!n.artifactUrl && !!PATCH_NOTE_PAGES[n.version]), "each links its artifact page and has a kept page in the archive");
+ok(last2.every((n) => n.sections.length > 0 && n.stats.length === 4 && !!n.summary), "each has a summary, 4 stats and sections");
 
 console.log("Typing @ and #");
 ok(JSON.stringify(typingToken("hey @mi", 7)) === JSON.stringify({ kind: "@", query: "mi", start: 4 }), "@ partway through a name");
