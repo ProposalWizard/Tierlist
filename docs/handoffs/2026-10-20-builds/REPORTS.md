@@ -206,3 +206,6 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Claude: `npx tsx scripts/live-watch.mts <code>` (background), every 2 s: SAID lines with the picture on screen then; SCREEN lines on a new/part-changed screen (small changes at most every 30 s); latest.jpg; ENDED.
 - Measured locally: picture 1.2–2.5 s, speech 0.5–2.5 s to the watcher (+ Claude's reply). Computer: Chrome/Edge pictures + voice, Firefox pictures only; Android can't share the screen; iPhone Safari reportedly from iOS 27 (not tried).
 - Seen in headless Chromium with a fake screen and fake speech end to end. Not seen: real Supabase writes, real voice, Safari, background tab. Full `npm run build` was killed for memory 3 times (tsc alone passes).
+
+## Motion references page
+- /admin/motion-refs (Players + animation, admins only): HQ 18 | First round 9 | All 27; base-standard 5 first; each card = real clip (loop, pause, ½×) + our game still + an "Ours" slot that plays public/admin/motion-refs/ours/<scene>.mp4 once it exists. List in lib/motionRefs.ts. ~21 MB added. HQ clips re-encoded 10-bit HEVC → H.264 (originals untouched). First-round handshake left out (logo-like mark). Seen at 390 and 1440; no clip seen playing (no H.264 in this Chromium).
