@@ -52,8 +52,10 @@ export const REAL_MIX: Partial<Record<ScenarioKind, number>> = {
   midfield_pass: 3, buildup: 2, through_ball: 3,
   long_range: 2, cutback: 2, byline_cross: 2,
   tight_angle: 2, one_on_one: 1,
-  // B10 (20 Oct 2026): not in the StatsBomb count; one each, like a one-on-one.
-  header: 1, volley: 1,
+  // B10 (20 Oct 2026): headers and volleys are not in this StatsBomb count, so
+  // the real mix stays exactly as measured (17 deals, half of them deep) until
+  // someone re-measures it with them in. The even mix (the default) deals them.
+  header: 0, volley: 0,
 };
 
 /** One round of the real-mix bag: each kind as many times as its weight. */
