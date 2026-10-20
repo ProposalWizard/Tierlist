@@ -270,7 +270,7 @@ export const ADMIN_GUIDES = {
   },
   "/star-real-moments-dev": {
     title: "Real moments",
-    what: "Real match positions in our engine, from free-licensed data (cleared for a paid game, with credit). Fully real: every shot and corner of 7 Bundesliga / 2. Bundesliga 2022/23 matches (DFL tracking) and 20 A-League 2024/25 matches (SkillCorner tracking), all 22 players where they really stood. Real shot, placed defenders: every World Cup 2018 / Euro 2016 shot (Wyscout): the shot is real, the other players are placed by the game's own rules. Each is drawn as a chance in the game's camera and playable in the real match. Testing only.",
+    what: "Real match positions in our engine, from free-licensed data (cleared for a paid game, with credit). Fully real: every shot and corner of 7 Bundesliga / 2. Bundesliga 2022/23 matches (DFL tracking), 20 A-League 2024/25 matches (SkillCorner tracking) and 10 university matches in Japan (SoccerTrack v2 tracking), all 22 players where they really stood. Real shot, placed defenders: every World Cup 2018 / Euro 2016 shot (Wyscout): the shot is real, the other players are placed by the game's own rules. Each is drawn as a chance in the game's camera and playable in the real match. It is also where you choose which real moments the game may serve (Settings → Full highlights rebuild → Real moment highlights).",
     buttons: [
       { group: "Filters", items: [
         ["Fully real shots / Fully real corners / Real shots, placed defenders", "Which set to show, with how many there are. Every row says Fully real or Real shot, placed defenders."],
@@ -278,20 +278,34 @@ export const ADMIN_GUIDES = {
         ["All / xG under 8% / 8–50% / Over 50%", "How likely the real shot was to go in (DFL's own number for DFL shots; our model fitted on 45,287 Wyscout shots for the rest). Not shown for corners."],
         ["Goals only / Led to a goal", "Only shots that went in for real (corners: only corners whose move ended in a goal)."],
         ["Search players, matches", "Only moments whose player, match or competition has these words."],
+        ["In the game: All / In game / Left out", "Fully real shots only: every one, only those the game may serve now, or only those it may not."],
+      ] },
+      { group: "In the game (left)", items: [
+        ["The count", "How many fully real open-play shots the game may serve, by kind (one-on-one, tight angle, long range). With Real moment highlights On, about 1 in 4 open-play chances of those kinds is one of them."],
+        ["Commit marks to the game", "Writes every mark not yet in the code into data/realmoments/picks.json on main (a real git commit; needs GITHUB_TOKEN). Greyed out when every mark is already in the code."],
       ] },
       { group: "The list (left; under the picture on a phone)", items: [
-        ["A row", "Picks that moment: it shows big on the right. A small picture, the player and minute, the match, the kind and xG, and which kind of picture it is."],
+        ["A row", "Picks that moment: it shows big on the right. A small picture, the player and minute, the match, the kind and xG, which kind of picture it is, and (fully real shots) In game or Left out, with \"(by hand)\" when someone marked it."],
         ["More", "Shows 24 more."],
       ] },
       { group: "The picked moment", items: [
         ["The picture", "Red = defenders, green = keeper, blue = team-mates, YOU = the real shooter (or corner taker), with the ball at his feet. Only people inside the camera are kept."],
         ["▶ Play / ■ Stop", "Plays the real match on that picture, or goes back to it. Nothing is counted or saved."],
         ["Next to the game's own", "Puts a chance the game made of the same kind beside the real one, with its own Play."],
+        ["In the game: yes / no", "Whether the game may serve this moment, and why: in automatically (passes every check), left out automatically (and the check it fails: a header, a set piece, not all 22 on the pitch …), or marked by hand. Corners and placed shots are never served."],
+        ["Use in game / Don't use / Automatic", "Marks this moment. Use in game: the game may serve it even if a check left it out. Don't use: never. Automatic: back to the checks. Saves at once, for everyone (or on this device only until the table exists; it says which)."],
       ] },
     ],
-    saving: ["Nothing saves. The moments are read from data/realmoments/ (tracked.json, wyscout_shots.json) each time the page opens."],
-    inGame: ["Nowhere yet. The moments (with where everyone was over the seconds before, lib/star/realMoments buildUpOf) are ready for the Full Highlights Rebuild's build-ups."],
-    dev: "app/star-real-moments-dev/page.tsx; lib/star/realMoments/ (types, shots.ts scenarioForShot / scenarioForCorner, track.ts buildUpOf / trackLeadIn); app/api/star/real-moments/route.ts; data/realmoments/ (README); scripts/realmoments/ (extract_tracking.py, extract_wyscout.py); credit lines in data/opendata/LICENCES.md; tests/star/realMoments.mts.",
+    saving: [
+      "The moments are read from data/realmoments/ (tracked.json, tracks.json, wyscout_shots.json) each time the page opens.",
+      "A mark saves at once to the shared table star_real_moments_picks, which every game reads on top of the committed file, with no deploy. It also keeps a copy on this device. Until the table exists, a mark stays on this device only (and counts in the game on this device), and the page says so.",
+      "Commit marks to the game writes them into data/realmoments/picks.json on main (a real commit) and into the table.",
+    ],
+    inGame: [
+      "Settings → Harry changes → Full highlights rebuild: On (test) → Real moment highlights: On. Then about 1 in 4 open-play chances of a kind the real moments have (one-on-one, tight angle, long range) is a real moment marked In game here: the ball and every man where they really stood, with the real 4 seconds before it as the build-up (a tap skips it). Off: the game is exactly as before.",
+    ],
+    needs: ["The star_real_moments_picks table (supabase/migrations/star_real_moments_picks.sql). Until it is run, marks stay on this device only. Commit needs GITHUB_TOKEN."],
+    dev: "app/star-real-moments-dev/page.tsx, GamePicks.tsx; lib/star/realMoments/ (types, shots.ts scenarioForShot / scenarioForCorner, track.ts buildUpOf / trackLeadIn, picks.ts, pickStore.ts); lib/star/fhr/realMomentHighlights.ts (which moments, serving, the build-up), realMomentToggle.ts; lib/star/chanceMaker.ts (step 1b); lib/star/leadInGen.ts careerBuildUp; app/api/star/real-moments/route.ts, app/api/star/real-moment-picks/ (+ /commit); data/realmoments/ (README, picks.json); scripts/realmoments/ (extract_tracking.py, extract_wyscout.py, soccertrack_compact.py, extract_soccertrack.py); credit lines in data/opendata/LICENCES.md and lib/star/dataCredits.ts; tests/star/realMoments.mts, realMomentHighlights.mts.",
   },
   "/star-real-shots-dev": {
     title: "Real shots (test)",
@@ -1154,6 +1168,7 @@ export const ADMIN_GUIDES = {
     ],
     inGame: [
       "Off: nothing in the game changes. On: Chances: New is on in every match on this phone (the same as setting Chances: New by hand), Infinite Highlights' still uses the match camera, and every open-play chance in a match starts with a generated 4–8 s build-up (never penalties, free kicks or corners). Later phases of the rebuild arrive here first.",
+      "Under the switch in Settings, while it is On: \"Real moment highlights: Off | On\". On: about 1 in 4 open-play chances of a kind the real moments have is a REAL moment (every man where he really stood) with the real 4 s before it as its build-up. Which moments: the Real moments page (/star-real-moments-dev).",
     ],
     dev: "app/star-fhr-dev/{page,BuildUpPanel}.tsx · lib/star/fhr/{toggle,ruler,stillCamera,buildUp,servedChances}.ts · lib/star/fhr/patterns.json (scripts/fhr/make-patterns.mts) · terminal: npx tsx scripts/fhr/ruler.mts 200 · npx tsx scripts/fhr/buildup-measure.mts 500 · sheet: npx tsx scripts/fhr/buildup-sheet.mts 48 · browser check: node scripts/fhr/still-vs-play.mjs 100 on · tests/star/fhr.mts",
   },

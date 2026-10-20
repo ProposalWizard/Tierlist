@@ -16,16 +16,19 @@
  *    the rest of the picture is placed by the game's own scenario rules.
  */
 
+import { creditLine } from "../dataCredits";
+
 /** [x, y] in our pitch metres. */
 export type XY = [number, number];
 
-export type RealSource = "dfl" | "skillcorner" | "wyscout";
+export type RealSource = "dfl" | "skillcorner" | "soccertrack" | "wyscout";
 
-/** The credit lines (data/opendata/LICENCES.md, "Real moments"): show the ones a page uses. */
+/** The credit lines (data/opendata/LICENCES.md, "Real moments"; one list in lib/star/dataCredits.ts): show the ones a page uses. */
 export const REAL_CREDIT: Record<RealSource, string> = {
-  wyscout: "Real shots and goals from the Wyscout public dataset (Pappalardo et al., Scientific Data 2019), CC BY 4.0. Changes made.",
-  dfl: "Real player positions from data of the Deutsche Fußball Liga (DFL), published by Bassek et al., Scientific Data 2025, CC BY 4.0. Changes made.",
-  skillcorner: "Real player positions from SkillCorner Open Data (MIT licence, © 2020 SkillCorner).",
+  wyscout: creditLine("wyscout-moments"),
+  dfl: creditLine("dfl-moments"),
+  skillcorner: creditLine("skillcorner-moments"),
+  soccertrack: creditLine("soccertrack-moments"),
 };
 
 /** One real pass of the move: [seconds before the shot, from, to, passer, recipient]. */

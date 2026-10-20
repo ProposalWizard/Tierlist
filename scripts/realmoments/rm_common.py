@@ -21,6 +21,7 @@ CREDIT = {
     "wyscout": "Real shots and goals from the Wyscout public dataset (Pappalardo et al., Scientific Data 2019), CC BY 4.0. Changes made.",
     "dfl": "Real player positions from data of the Deutsche Fußball Liga (DFL), published by Bassek et al., Scientific Data 2025, CC BY 4.0. Changes made.",
     "skillcorner": "Real player positions from SkillCorner Open Data (MIT licence, © 2020 SkillCorner).",
+    "soccertrack": "Real player positions from SoccerTrack v2 (Scott et al., arXiv 2025), CC BY 4.0. Changes made.",
 }
 
 

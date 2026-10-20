@@ -26,6 +26,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Panel, Btn, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
 import "./real-moments.css";
+import { useGamePool, GameTag, GamePickPanel, GamePicksPanel } from "./GamePicks";
+import { gameStatus, type RealMomentPool } from "@/lib/star/fhr/realMomentHighlights";
 import ScenarioPlay from "@/components/star/ScenarioPlay";
 import { buildScenario, type Scenario, type ScenarioKind } from "@/lib/star/canvasEngine";
 import { frameFromScenario, paint } from "@/lib/star/scenarioFrame";
@@ -125,7 +127,7 @@ function Facts({ m }: { m: Moment }) {
 }
 
 /** One row of the list: a small picture, who, when, which match. */
-function Row({ m, on, onPick }: { m: Moment; on: boolean; onPick: () => void }) {
+function Row({ m, on, onPick, pool }: { m: Moment; on: boolean; onPick: () => void; pool: RealMomentPool | null }) {
   return (
     <button className="rm-row" aria-pressed={on} onClick={onPick} data-moment={m.id}>
       <Thumb build={m.build} />
@@ -134,13 +136,16 @@ function Row({ m, on, onPick }: { m: Moment; on: boolean; onPick: () => void }) 
         <span>{m.match}</span>
         <span><Facts m={m} /></span>
         <span><Tag full={m.full} /></span>
+        {m.full && m.what === "shot" && <span><GameTag pool={pool} id={m.id} /></span>}
       </div>
     </button>
   );
 }
 
 /** The picked moment, big: the real picture (and the game's own beside it). */
-function Stage({ m, index, withGame, onToggleGame }: { m: Moment; index: number; withGame: boolean; onToggleGame: () => void }) {
+function Stage({ m, index, withGame, onToggleGame, pool, onPick }: {
+  m: Moment; index: number; withGame: boolean; onToggleGame: () => void; pool: RealMomentPool | null; onPick: () => void;
+}) {
   const game = useMemo(() => () => buildScenario(m.kind, mulberry32(50_000 + index)), [m.kind, index]);
   const [w, setW] = useState(PLAY_W);
   useEffect(() => {
@@ -159,6 +164,7 @@ function Stage({ m, index, withGame, onToggleGame }: { m: Moment; index: number;
         <Pill on={withGame} onClick={onToggleGame}>Next to the game&apos;s own</Pill>
       </div>
       <Note>{m.full ? PICTURE_WORDS.full : PICTURE_WORDS.placed}.</Note>
+      {m.full && <GamePickPanel pool={pool} id={m.id} kind={m.what === "shot" ? m.kind : "corner"} onChange={onPick} />}
     </Panel>
   );
 }
@@ -174,6 +180,9 @@ export default function RealMomentsDev() {
   const [shown, setShown] = useState(PAGE);
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState<string | null>(null);
+  /** Real moment highlights: which moments the game may serve (GamePicks.tsx). */
+  const game = useGamePool();
+  const [gameFilter, setGameFilter] = useState<"all" | "in" | "out">("all");
 
   useEffect(() => {
     Promise.all([fetchRealFile<TrackedFile>("tracked"), fetchRealFile<WyscoutShotFile>("shots")])
@@ -197,16 +206,17 @@ export default function RealMomentsDev() {
       && (kind === "all" || m.kind === kind)
       && (m.what !== "shot" || ((m.xg ?? 0) >= b.lo && (m.xg ?? 0) < b.hi))
       && (!goalsOnly || m.outcome === "Goal" || /led to: goal/.test(m.what))
-      && (!q || `${m.player} ${m.match} ${m.comp}`.toLowerCase().includes(q)));
-  }, [all, set, kind, band, goalsOnly, search]);
-  useEffect(() => setShown(PAGE), [set, kind, band, goalsOnly, search]);
+      && (!q || `${m.player} ${m.match} ${m.comp}`.toLowerCase().includes(q))
+      && (gameFilter === "all" || set !== "shots" || !game.pool || (gameStatus(game.pool, m.id).inGame === (gameFilter === "in"))));
+  }, [all, set, kind, band, goalsOnly, search, gameFilter, game.pool, game.rev]);
+  useEffect(() => setShown(PAGE), [set, kind, band, goalsOnly, search, gameFilter]);
 
   const kinds = useMemo(() => Array.from(new Set((all ?? []).filter((m) => m.set === set).map((m) => m.kind))), [all, set]);
   const pickedIndex = Math.max(0, list.findIndex((m) => m.id === picked));
   const current = list[pickedIndex];
 
   return (
-    <BroadcastPage title="Real moments" sub="Real match positions in our engine: fully real from tracking (Bundesliga, A-League), or the real shot with placed defenders (World Cup 2018, Euro 2016).">
+    <BroadcastPage title="Real moments" sub="Real match positions in our engine: fully real from tracking (Bundesliga, A-League, Japanese university football), or the real shot with placed defenders (World Cup 2018, Euro 2016). Mark which ones the game may use.">
       {error && <div className="rm-error">{error}</div>}
       {!all && !error && <Panel title="Loading"><Note>Loading the real moments…</Note></Panel>}
 
@@ -234,12 +244,21 @@ export default function RealMomentsDev() {
               <div className="rm-pills" style={{ marginTop: 8 }}>
                 <Pill on={goalsOnly} onClick={() => setGoalsOnly((g) => !g)}>{set === "corners" ? "Led to a goal" : "Goals only"}</Pill>
               </div>
+              {set === "shots" && <>
+                <Label>In the game (Real moment highlights)</Label>
+                <div className="rm-pills" data-game-filter>
+                  <Pill on={gameFilter === "all"} onClick={() => setGameFilter("all")}>All</Pill>
+                  <Pill on={gameFilter === "in"} onClick={() => setGameFilter("in")}>In game</Pill>
+                  <Pill on={gameFilter === "out"} onClick={() => setGameFilter("out")}>Left out</Pill>
+                </div>
+              </>}
             </Panel>
+            <GamePicksPanel pool={game.pool} sync={game.sync} rev={game.rev} />
             <Panel title="Moments" note={`${list.length.toLocaleString()} moments`}>
               <input className="rm-search" type="search" placeholder="Search players, matches…" aria-label="Search players, matches"
                 value={search} onChange={(e) => setSearch(e.target.value)} />
               <div className="rm-list">
-                {list.slice(0, shown).map((m) => <Row key={m.id} m={m} on={m.id === current?.id} onPick={() => setPicked(m.id)} />)}
+                {list.slice(0, shown).map((m) => <Row key={m.id} m={m} on={m.id === current?.id} onPick={() => setPicked(m.id)} pool={game.pool} />)}
                 {!list.length && <Note>No moments match these filters.</Note>}
               </div>
               {shown < list.length && <Btn onClick={() => setShown((s) => s + PAGE)}>More</Btn>}
@@ -247,13 +266,13 @@ export default function RealMomentsDev() {
           </div>
           <div className="rm-main">
             {current
-              ? <Stage m={current} index={pickedIndex} withGame={withGame} onToggleGame={() => setWithGame((g) => !g)} />
+              ? <Stage m={current} index={pickedIndex} withGame={withGame} onToggleGame={() => setWithGame((g) => !g)} pool={game.pool} onPick={game.bump} />
               : <Panel title="No moment picked"><Note>Change the filters to see moments.</Note></Panel>}
           </div>
         </div>
       )}
       <div data-credit className="rm-count" style={{ marginTop: 16 }}>
-        {REAL_CREDIT.dfl}<br />{REAL_CREDIT.skillcorner}<br />{REAL_CREDIT.wyscout}
+        {REAL_CREDIT.dfl}<br />{REAL_CREDIT.skillcorner}<br />{REAL_CREDIT.soccertrack}<br />{REAL_CREDIT.wyscout}
       </div>
       <PageGuide page="/star-real-moments-dev" />
     </BroadcastPage>

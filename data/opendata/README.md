@@ -21,9 +21,16 @@ forbids commercial use).
 |---|---:|---|---|---|
 | Wyscout public dataset (Pappalardo et al. 2019): Premier League, La Liga, Serie A, Bundesliga, Ligue 1 2017/18, World Cup 2018, Euro 2016 | 1,941 (3.25 M events) | event x/y (start + end) | CC BY 4.0 | `wyscout_*.json` |
 | IDSSE (Bassek et al. 2025): DFL Bundesliga + 2. Bundesliga 2022/23 | 7 | full TRACAB tracking, 25 Hz, all 22 + ball, plus DFL events | CC BY 4.0 | `idsse_tracking.json` |
-| SkillCorner Open Data: A-League 2024/25 | 20 | broadcast tracking 10 Hz, dynamic events, phases of play | MIT | `skillcorner_tracking.json`, `skillcorner_phases.json` |
-| Afriskaut Dynasty Scouting League 2024 (Nigeria, grassroots/academy) | 136 | event x/y | Apache 2.0 | `dsl_patterns.json` |
-| **Total** | **2,104** | | | |
+| SkillCorner Open Data: A-League 2024/25 | 20 | broadcast tracking 10 Hz (off-camera players extrapolated), dynamic events, phases of play | MIT | `skillcorner_tracking.json`, `skillcorner_phases.json` |
+| SkillCorner Open Data, first release (2020): 2019/20 champions v runners-up in the Premier League, LaLiga, Serie A, Bundesliga, Ligue 1 | 9 | broadcast tracking 10 Hz, only the players on camera (~14 of 22) | MIT | `skillcorner2020_tracking.json` |
+| SoccerTrack v2 (Scott et al. 2025): university-level matches in Japan | 6 (of 10; the other 4 are waiting on a download limit) | whole-pitch panoramic tracking, every player + ball, 25 fps (rounded to 1 % of the pitch) | CC BY 4.0 | `soccertrack_tracking.json` |
+| **Total** | **1,983** (42 with player tracking: 33 of every player, 9 of those on camera) | | | |
+
+Afriskaut (136 Nigerian grassroots matches) was removed on 20 Oct 2026 (Harry:
+"no one's heard of them"), so the total fell from 2,104 before the new
+tracking came in. Every larger free source found was either non-commercial,
+unlicensed, or scraped from somewhere else (`LICENCES.md`, "Checked and NOT
+used", says which and why).
 
 ## The pitch frame (all files)
 
@@ -54,7 +61,8 @@ forbids commercial use).
 | `idsse_tracking.json` | Team shape by phase and ball zone (back line, front line, length, width), each role's average spot per ball zone, pressure on the ball, back-line height, running speeds and sprints by role, everyone's spot at corner kicks, defenders and keeper at the moment of each shot |
 | `skillcorner_tracking.json` | Same layout as IDSSE, from 20 more matches |
 | `skillcorner_phases.json` | Phase-of-play shares (build-up / create / finish / direct / transition / quick break / set play v high / medium / low block), how each phase ends, off-ball run types by role, pressing actions and what they achieve, one player's time on the ball, back-line height per block |
-| `dsl_patterns.json` | The same kind of numbers from a lower level of football — the low end of a quality scale |
+| `skillcorner2020_tracking.json` | Same layout, from 9 elite 2019/20 matches (Liverpool, Man City, Bayern, Dortmund, Barcelona, Real Madrid, Juventus, Inter, PSG, Marseille), but only the players on camera: shapes from frames with 9+ of a team's outfielders in view (they favour a compact team: ~6 m shorter than IDSSE; widths match), pressure on the ball from every frame; no speeds |
+| `soccertrack_tracking.json` | Same layout (shapes, pressure, back line), whole-pitch tracking of every player at university level in Japan — the low end of a quality scale; no role spots or speeds (the data names no positions) |
 
 Every file starts with `meta` (source, credit, licence, match count, grid)
 and a `what` line that explains its fields.
@@ -105,8 +113,12 @@ python3 -I scripts/opendata/reduce_idsse.py RAW/idsse . [--delete-positions]   #
 # SkillCorner: data/matches/{id}/{id}_match.json, _dynamic_events.csv, _phases_of_play.csv
 #   into META; {id}_tracking_extrapolated.jsonl (Git LFS) saved as TRK/{id}.jsonl
 python3 -I scripts/opendata/reduce_skillcorner.py META TRK          # ~5 min
-# Afriskaut: Datasets.zip (Git LFS) unzipped
-python3 -I scripts/opendata/reduce_dsl.py RAW/dsl/Datasets          # seconds
+# SkillCorner first release: commit 1b99d401ddc82e366c5c20d6860878668fd5858f of the same repository,
+#   data/matches/{id}/structured_data.json -> DIR/{id}.json, match_data.json -> DIR/{id}_match.json (9 x ~60 MB)
+python3 -I scripts/opendata/reduce_skillcorner2020.py DIR           # ~2 min
+# SoccerTrack v2: download + shrink every half (2.7 GB each, one at a time; needs pip install gdown ijson numpy)
+python3 -I scripts/realmoments/soccertrack_download.py STV2          # ~1 min a half
+python3 -I scripts/opendata/reduce_soccertrack.py STV2              # ~30 s
 ```
 
 `scripts/opendata/common.py` holds the frame and grids;
@@ -118,9 +130,16 @@ python3 -I scripts/opendata/reduce_dsl.py RAW/dsl/Datasets          # seconds
   (including clearances and blocks), so many "possessions" are one-touch
   scraps; use `sustained` (3+ actions) for real attacks. Its 5-minute bin 9
   (45–50) also holds first-half stoppage time.
-- Tracking comes from 27 matches only (7 Bundesliga, 20 A-League): good for
-  shapes and distances, thin for set-piece snapshots (50 corners, ~140 shots).
-- SkillCorner players off camera are extrapolated by SkillCorner.
-- The Afriskaut data is hand-tagged at a lower level; 47 of 136 matches have
-  only one team tagged (left out of per-match totals), and its own direction
-  fields were wrong in about a third of matches (repaired from forward passes).
+- Tracking of every player comes from 33 matches (7 Bundesliga, 20 A-League,
+  6 Japanese university), plus 9 elite matches with only the players on
+  camera: good for shapes and distances, thin for set-piece snapshots.
+- SkillCorner A-League players off camera are extrapolated by SkillCorner;
+  the 2020 release has no extrapolation (off camera = missing).
+- SoccerTrack rounds positions to 1 % of the pitch (1.05 m × 0.68 m); they
+  are averaged over 0.36 s. Its ball has no height. 4 of its 10 matches could
+  not be downloaded on 20 Oct 2026 (Google Drive: "too many accesses"); re-run
+  `soccertrack_download.py` and both SoccerTrack scripts to add them.
+- The FHR build-up patterns (`lib/star/fhr/patterns.json`) still read only
+  Wyscout, IDSSE and the A-League SkillCorner files; the two new tracking files
+  are not in them yet (a different level of football and a camera-biased
+  shape: a choice for whoever tunes the build-ups).

@@ -70,6 +70,7 @@ import { separateBodies } from "./spacing";
 import { finishServedFrame } from "./goalFrame";
 import { CX, PITCH_W } from "./pitch";
 import { mulberry32 } from "./season";
+import { serveRealMoment } from "./fhr/realMomentHighlights";
 
 // ─────────────────────────────────────────────────────────────────────────
 //  THE ONE DIAL
@@ -588,7 +589,8 @@ export interface MadeChance {
   sc: Scenario;
   /** The drawn/generated shape laid on (null for a plan or the builder). */
   shape: AuthoredShape | null;
-  how: "drawing" | "plan" | "builder";
+  /** "real": a real moment (Settings → Full highlights rebuild → Real moment highlights). */
+  how: "drawing" | "plan" | "builder" | "real";
   appliedPlan: boolean;
   appliedAuthored: boolean;
   sourceId: string | null;
@@ -674,6 +676,25 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     const k2 = drawnKindFor(kind);
     if (k2 !== kind) { kind = k2; plan = null; first = null; }
     if (o.selection) noteDealt((o.selection.dealt ??= []), kind);
+  }
+
+  // ── 1b. Real moment highlights (lib/star/fhr/realMomentHighlights.ts) ──
+  // Settings → Full highlights rebuild: On → Real moment highlights: On. Some
+  // OPEN-PLAY chances of a kind the real moments have are a real moment of that
+  // kind: the ball and every man where they really stood (its real build-up is
+  // leadInGen.ts careerBuildUp's). Off: serveRealMoment returns null at once and
+  // draws no random number, so nothing here changes.
+  if (src.from === "request" && !src.request.dribble && src.request.pattern !== "set_piece") {
+    const real = serveRealMoment(kind, rng);
+    if (real) {
+      const separated = separateBodies(real.sc);
+      finishServedFrame(real.sc);
+      o.memory?.remember(pictureOf(real.sc));
+      return {
+        sc: real.sc, shape: null, how: "real", appliedPlan: false, appliedAuthored: false, sourceId: real.id,
+        faultRebuilds: 0, memoryRebuilds: 0, faults: [], nearestRecent: Infinity, separated,
+      };
+    }
   }
 
   // ── 2. A kind with fewer than 5 drawings: the formula's plan or the builder ──
