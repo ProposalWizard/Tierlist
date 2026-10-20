@@ -40,6 +40,7 @@ import { mulberry32 } from "./season";
 import { newChancesOn } from "./newChances";
 import { fhrOn } from "./fhr/toggle";
 import { fhrBuildUpFor, fhrWantsBuildUp } from "./fhr/buildUp";
+import { realMomentLeadIn } from "./fhr/realMomentHighlights";
 import { PITCH_W, CX, HALF_LEN } from "./pitch";
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -404,6 +405,10 @@ export const buildUpKeys = (sc: Scenario, b: BuildUp): string[] => [
  */
 export function careerBuildUp(sc: Scenario, moment?: LeadMoment): LeadIn | null {
   if (!moment || moment.opening) return null;
+  // A real moment (Real moment highlights, lib/star/fhr/realMomentHighlights.ts):
+  // its build-up is the real 4 s before the shot, everyone where he really ran.
+  const real = realMomentLeadIn(sc, moment);
+  if (real) return real;
   // Full highlights rebuild: On (test) — phase 2: every fresh open-play chance
   // gets a GENERATED 4–8 s build-up (lib/star/fhr/buildUp.ts). Off: below, as before.
   if (fhrOn()) return fhrWantsBuildUp(sc.kind, moment) ? fhrBuildUpFor(sc, moment) : null;

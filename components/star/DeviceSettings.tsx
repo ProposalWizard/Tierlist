@@ -12,6 +12,7 @@ import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetNote, SetSection, SetToggle } from "./settingsKit";
 import Quality3dRow from "./Quality3dRow";
+import DataCredits, { DATA_CREDIT_SOURCES } from "./DataCredits";
 
 /**
  * THE SETTINGS THAT BELONG TO THIS DEVICE, NOT TO A SAVE.
@@ -241,6 +242,8 @@ export function SettingsGroups({ glow, extra = [], inMatch = false }: { glow: st
     { id: "world", title: "3D match camera", sub: "Zoom and camera height", count: 2, content: <World3dGroup />, card: true },
     { id: "screens", title: "Screens", sub: "Old UI or New UI", count: 1, content: <ScreensGroup />, card: true },
     ...extra,
+    // Harry, 20 Oct 2026: the free data's credit lines live in Settings (components/star/DataCredits.tsx).
+    { id: "credits", title: "Data credits", sub: "Where the real football data comes from", count: DATA_CREDIT_SOURCES, content: <DataCredits />, card: true },
   ];
   return (
     <>

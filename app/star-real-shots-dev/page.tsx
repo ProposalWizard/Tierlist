@@ -187,7 +187,7 @@ function Compare({ shots }: { shots: RealShot[] }) {
               max={Math.max(2, ...[kReal, kPlayed].filter((v) => !Number.isNaN(v))) * 1.1} />
           </div>
         </div>
-        <Note>Real: every opponent the tracking saw at the shot (Bundesliga and A-League, fully real only). Ours: the game&apos;s own chances of this kind, 200 seeds.</Note>
+        <Note>Real: every opponent the tracking saw at the shot (Bundesliga, A-League and Japanese university football, fully real only). Ours: the game&apos;s own chances of this kind, 200 seeds.</Note>
       </div>
     </Panel>
   );
@@ -401,7 +401,7 @@ export default function RealShotsDev() {
   return (
     <BroadcastPage
       title="Real Shots"
-      sub="Real shots in our game. Fully real: Bundesliga and A-League, every player where he stood. Placed: World Cup 2018 and Euro 2016, the real shot with the defenders placed by our rules."
+      sub="Real shots in our game. Fully real: Bundesliga, A-League and Japanese university football, every player where he stood. Placed: World Cup 2018 and Euro 2016, the real shot with the defenders placed by our rules."
     >
       <PageGuide page="/star-real-shots-dev" />
       <div className="rs">
@@ -510,7 +510,7 @@ export default function RealShotsDev() {
           </>
         )}
         <div data-credit className="rs-credit">
-          {REAL_CREDIT.dfl}<br />{REAL_CREDIT.skillcorner}<br />{REAL_CREDIT.wyscout}
+          {REAL_CREDIT.dfl}<br />{REAL_CREDIT.skillcorner}<br />{REAL_CREDIT.soccertrack}<br />{REAL_CREDIT.wyscout}
         </div>
       </div>
     </BroadcastPage>

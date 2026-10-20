@@ -25,6 +25,7 @@ import { useFhrMode } from "@/lib/star/fhr/toggle";
 import { setLookRow } from "@/lib/star/lookRows";
 import { SegTabs } from "./screenKit";
 import { SetNote } from "./settingsKit";
+import RealMomentsRow from "./RealMomentsRow";
 
 const NAME = { low: "Low", medium: "Medium", high: "High" } as const;
 
@@ -179,6 +180,7 @@ function FhrRow() {
       <SetNote dim className="mt-1 text-[10px]">
         Testing. On also turns Chances to New. Off is the game as it is.
       </SetNote>
+      <RealMomentsRow />
     </>
   );
 }
