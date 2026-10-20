@@ -6,18 +6,16 @@
  * passes, squeezed into 12 s, carries guessed); after = the Real Goals one.
  * Run: npx tsx tests/star/realGoals/buildup.mts
  */
-import { readFileSync } from "node:fs";
 import { loadGoals } from "./harness.mts";
-import { leadinBallKeys, type SbLeadinFile } from "../../../lib/star/statsbombShots";
+import { leadinBallKeys } from "../../../lib/star/realMoments";
 import { moveWindow, realBallKeys, realTouches, replayError, scenarioForGoal } from "../../../lib/star/realGoals";
 
 export function measureBuildup() {
-  const leads = (JSON.parse(readFileSync("data/statsbomb/leadins.json", "utf8")) as SbLeadinFile).leadins;
   let nb = 0, sb = 0, sa = 0, touches = 0, oldCover = 0, newCover = 0, worse = 0;
   for (const g of loadGoals()) {
-    const lead = leads[g.id];
+    const lead = g.shot.lead;
     if (!lead || !lead.passes.length) continue;
-    const win = moveWindow(g, lead);
+    const win = moveWindow(g);
     if (!win.length) continue;
     const end = scenarioForGoal(g, false).ball;
     const t = realTouches(win);
@@ -34,5 +32,5 @@ export function measureBuildup() {
 if (process.argv[1]?.endsWith("buildup.mts")) {
   const r = measureBuildup();
   console.log(`${r.goals} goals, ${r.touches} real touches: replayed ball off the real ball by ${r.before.toFixed(2)} m before -> ${r.after.toFixed(2)} m after (average per goal)`);
-  console.log(`actions replayed per goal: ${r.oldActions.toFixed(1)} passes before -> ${r.newActions.toFixed(1)} passes, carries and dribbles after; worse on ${r.worse} goals`);
+  console.log(`actions replayed per goal: ${r.oldActions.toFixed(1)} passes before -> ${r.newActions.toFixed(1)} passes and carries after; worse on ${r.worse} goals`);
 }

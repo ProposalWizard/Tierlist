@@ -1,0 +1,104 @@
+{
+  "measured": "2026-10-19",
+  "matches": 500,
+  "off": {
+    "reactingPerChance": 4.491407678244973,
+    "matesReactingPerChance": 1.7477148080438756,
+    "reactingEarlyPerChance": 3.4723948811700183,
+    "oneOnOneReacting": 4.134375,
+    "byKind": {
+      "tight_angle": {
+        "reacting": 5.2782874617737,
+        "reactingEarly": 5.113149847094801
+      },
+      "midfield_pass": {
+        "reacting": 3.0092879256965945,
+        "reactingEarly": 2.5356037151702786
+      },
+      "through_ball": {
+        "reacting": 6.607476635514018,
+        "reactingEarly": 5.607476635514018
+      },
+      "one_on_one": {
+        "reacting": 4.134375,
+        "reactingEarly": 3.678125
+      },
+      "byline_cross": {
+        "reacting": 5.015974440894569,
+        "reactingEarly": 1.523961661341853
+      },
+      "long_range": {
+        "reacting": 6.987179487179487,
+        "reactingEarly": 4.891025641025641
+      },
+      "cutback": {
+        "reacting": 3.2977346278317152,
+        "reactingEarly": 3.161812297734628
+      },
+      "buildup": {
+        "reacting": 3.877483443708609,
+        "reactingEarly": 3.1953642384105962
+      },
+      "corner": {
+        "reacting": 1.1527777777777777,
+        "reactingEarly": 0.2361111111111111
+      },
+      "penalty": {
+        "reacting": 1.391304347826087,
+        "reactingEarly": 0.8115942028985508
+      },
+      "free_kick": {
+        "reacting": 0.34328358208955223,
+        "reactingEarly": 0.16417910447761194
+      }
+    }
+  },
+  "on": {
+    "reactingPerChance": 4.661791590493602,
+    "matesReactingPerChance": 1.623400365630713,
+    "reactingEarlyPerChance": 3.6449725776965267,
+    "oneOnOneReacting": 4.124183006535947,
+    "byKind": {
+      "long_range": {
+        "reacting": 6.950980392156863,
+        "reactingEarly": 4.882352941176471
+      },
+      "tight_angle": {
+        "reacting": 5.349376114081997,
+        "reactingEarly": 5.163992869875223
+      },
+      "cutback": {
+        "reacting": 3.317073170731707,
+        "reactingEarly": 3.1574279379157426
+      },
+      "byline_cross": {
+        "reacting": 4.50199203187251,
+        "reactingEarly": 1.4820717131474104
+      },
+      "midfield_pass": {
+        "reacting": 2.9485981308411215,
+        "reactingEarly": 2.5046728971962615
+      },
+      "buildup": {
+        "reacting": 3.9344262295081966,
+        "reactingEarly": 3.360655737704918
+      },
+      "one_on_one": {
+        "reacting": 4.124183006535947,
+        "reactingEarly": 3.6209150326797386
+      },
+      "corner": {
+        "reacting": 1,
+        "reactingEarly": 0.2777777777777778
+      },
+      "penalty": {
+        "reacting": 1.3768115942028984,
+        "reactingEarly": 0.8115942028985508
+      },
+      "free_kick": {
+        "reacting": 0.16417910447761194,
+        "reactingEarly": 0.13432835820895522
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 /**
  * KEEPER PRO (Leo v0.15, 11 Oct 2026; Settings → Gameplay → Keeper pro).
- * Real reference (StatsBomb, Premier League 2015/16, tools/statsbomb/keeper.py)
+ * Real reference (StatsBomb, Premier League 2015/16, tools/statsbomb/keeper.py, deleted 19 Oct 2026)
  * and the before/after numbers: docs/gameplay15/keeper.md.
  *
  * 1. Old is exactly the keeper from before (a hash of 1,224 seeded shots).

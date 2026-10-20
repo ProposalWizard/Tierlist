@@ -632,8 +632,8 @@ export interface Scenario {
    */
   keeperFeel?: boolean;
   /**
-   * REAL SHOTS TEST PAGE ONLY (/star-statsbomb-dev, lib/star/statsbombShots.ts).
-   * True = the keeper starts where the picture put him (a real StatsBomb
+   * REAL SHOTS TEST PAGES ONLY (/star-real-shots-dev, lib/star/realMoments).
+   * True = the keeper starts where the picture put him (a real, tracked
    * keeper) and does not walk to the brain's set spot while you aim. He still
    * reacts to the shot. Absent everywhere else, so the real game is unchanged.
    */

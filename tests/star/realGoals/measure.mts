@@ -29,7 +29,7 @@ for (const g of goals) {
   }
   tot.off += off; tot.on += on; tot.n += N; tot.lane += lane;
   if (featured.has(g.id)) { feat.off += off; feat.on += on; feat.n += N; }
-  if (on < N) worst.push(`${g.id} ${g.shot.player.slice(0, 22)} on ${on}/${N} lane ${lane} aimErr ${aimErr.toFixed(2)} (${g.shot.technique}/${g.shot.body})`);
+  if (on < N) worst.push(`${g.id} ${g.shot.player.slice(0, 22)} on ${on}/${N} lane ${lane} aimErr ${aimErr.toFixed(2)} (${g.shot.type}/${g.shot.body})`);
   if (only.length || featured.has(g.id)) console.log(`${g.id} ${g.shot.player.slice(0, 24).padEnd(24)} before ${off}/${N}  after ${on}/${N}  in lane ${lane}/${N}  aim err ${aimErr.toFixed(2)} m`);
 }
 const pc = (a: number, b: number) => (b ? (100 * a / b).toFixed(1) : "-");

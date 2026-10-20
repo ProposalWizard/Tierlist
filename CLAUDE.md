@@ -460,9 +460,12 @@ usage block on every update (Harry, 12 Oct 2026: "why aren't we using the
 progress skill with the estimated tokens"). Its "auto-deploy" section is
 replaced by "Deploy only when told" below.**
 
-**One build per chat, then a handoff (Harry, 15 Oct 2026).** *"context bloat is huge now — we
-need to use a chat after every build."* A "build" = one task done in full, from idea to game/push ready. End every build with the `handoff` skill: a file in
-`docs/handoffs/`, pushed, plus a paste-in starter for the next chat (or for Mikey/Leo).
+**No forced new chats; a nudge every 3 hours instead (Harry, 20 Oct 2026). Replaces "one build per
+chat, then a handoff" (15 Oct).** *"completely disregard this - instead every 3 hours of chat give a
+prompt that it could be a good time to restart the chat."* Keep building in the same chat. Once a chat
+has run about 3 hours (check the first and latest message times), add one line to a reply: "It's been
+about 3 hours in this chat: a good time to restart it if things feel slow. Say 'handoff' and I'll
+write the starter." Then again every 3 hours. Write a handoff only when someone asks for one.
 
 **Build slowly and correctly (Harry, 15 Oct 2026, for the admin/patch-notes/lag round).** *"instead
 of running 5 parallel full builds let's build slowly and CORRECTLY."* Deep plan first, iterate it,
@@ -567,7 +570,7 @@ unreachable (the getter returns the kept value), marked "Decided, no toggle".
 - **Chances:** the team's drawn chances only, everywhere (match, highlights,
   Play Area). The New chance library, its drawings, script, tests and test
   page, and the Play Area's "Generator", were DELETED ("they're wrong").
-- **Chance mix:** the basic even mix. **Kane drawings:** the game's own.
+- **Chance mix:** the basic even mix. **Kane drawings:** deleted with the StatsBomb data (19 Oct 2026; real moments now come from free data, `lib/star/realMoments`).
 - **Animations:** New. **Clearances:** always on. (Keepers left this list:
   "Keepers: New | Old row kept, default New, Harry 12 Oct".)
 - **Dribble:** top-down in every match, with team-mates to pass to; Dribble
@@ -706,7 +709,7 @@ Mikeys never change the match engine rule and make it a general guard - instead
 of a rule that warns when it's happening."* Mikey's old rule (never modify
 `lib/star/canvasEngine.ts`) is gone. Any session may change the engine, but
 `scripts/hooks/engine-warn.mjs` (a PreToolUse hook in `.claude/settings.json`)
-flags every edit as it happens. When it fires: say so plainly in the reply and
+flags every edit as it happens. Since 19 Oct 2026 (Harry: "put it in bright red … I'm just clicking Allow, allow, allow") it ASKS every time with a red "THIS IS A MATCH ENGINE CHANGE" notice, and also asks, as "SOMETHING MAY DRIFT", on the files that decide what a play screen hands the engine (CanvasMatch, EnginePlay, ScenarioPlay, InfiniteMatch, hiddenMatch, engineProfile, playArea, scenePicture, matchView). When it fires: say so plainly in the reply and
 the patch notes (what changed, why, before/after numbers), run the match tests
 (`node scripts/run-star-tests.mjs finishing keeper aiming outcomes`) and
 playtest before pushing.
