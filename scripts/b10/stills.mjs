@@ -1,20 +1,19 @@
 // B10 (headers and volleys back on, 20 Oct 2026): stills and a clip at phone
 // size (390x844) on Infinite Highlights, which plays the real match.
 //
-//   node scripts/b10/stills.mjs [--url=http://localhost:3041] [--out=docs/handoffs/2026-10-20-builds/b10] [--only=signal,contact,buildup,clip,sheet]
+//   node scripts/b10/stills.mjs [--url=http://localhost:3041] [--out=docs/handoffs/2026-10-20-builds/b10] [--only=signal,contact,buildup,clip]
 //
 // signal  — a header and a volley chance as you aim: the ball in the air, its shadow on the grass
 // contact — the strike screen for each ("Head it?" / "Volley it?")
 // buildup — Full highlights rebuild On: the cross in the air on its way to you
 // clip    — ≤8 s MP4: the lofted build-up, then the header
-// sheet   — 16 served header and volley chances as you aim them (8 each), on one sheet, to check by eye
 import fs from "node:fs";
 import { phone, startRec, stopRec } from "../film/rec.mjs";
 
 const arg = (k, d) => process.argv.slice(2).find((a) => a.startsWith(`--${k}=`))?.slice(k.length + 3) ?? d;
 const URL0 = arg("url", "http://localhost:3041");
 const OUT = arg("out", "docs/handoffs/2026-10-20-builds/b10");
-const ONLY = new Set(arg("only", "signal,contact,buildup,clip,sheet").split(","));
+const ONLY = new Set(arg("only", "signal,contact,buildup,clip").split(","));
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -159,30 +158,4 @@ if (ONLY.has("buildup") || ONLY.has("clip")) {
   await browser.close();
 }
 
-if (ONLY.has("sheet")) {
-  const cells = [];
-  for (const kind of ["header", "volley"]) {
-    const { browser, page, errors } = await open([kind], false);
-    for (let i = 0; i < 8; i++) {
-      if (i) { await next(page); }
-      await playToAim(page);
-      if (kind === "volley") await wait(850);
-      const canvas = page.locator(".ih-stage canvas").first();
-      const buf = await canvas.screenshot({ type: "jpeg", quality: 68 });
-      const seed = await page.evaluate(() => document.querySelector(".ih-lower-text span")?.textContent ?? "");
-      cells.push({ kind, seed, src: `data:image/jpeg;base64,${buf.toString("base64")}`, k: await kindNow(page) });
-      await stop(page);
-    }
-    console.log(kind, "sheet errors:", errors.length ? errors.slice(0, 3) : "none");
-    await browser.close();
-  }
-  const { browser, page } = await phone({ deviceScaleFactor: 1, viewport: { width: 1240, height: 900 }, isMobile: false, hasTouch: false });
-  const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#0b0f14;color:#e5e7eb;font:13px system-ui}
-  .g{display:grid;grid-template-columns:repeat(8,150px);gap:6px;padding:8px}.c img{width:150px;display:block;border-radius:4px}.c div{font-size:11px;padding:2px 0}</style></head><body>
-  <div style="padding:8px 8px 0;font-weight:700">B10 — 8 headers (top) and 8 volleys (bottom), served by the real chance maker, as you aim them (the ball in the air, its shadow under it)</div>
-  <div class="g">${cells.map((c, i) => `<div class="c"><img src="${c.src}"/><div>${i + 1}. ${c.k} ${c.seed}</div></div>`).join("")}</div></body></html>`;
-  await page.setContent(html);
-  await page.screenshot({ path: `${OUT}/b10-air-chances-sheet.jpg`, type: "jpeg", quality: 72, fullPage: true });
-  await browser.close();
-  console.log("sheet:", cells.map((c) => `${c.k}${c.seed}`).join(" "));
-}
+// The sheet of served chances to check by eye: scripts/b10/sheet.mts (drawn from the data, every body visible).
