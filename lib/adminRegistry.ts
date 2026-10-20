@@ -14,7 +14,7 @@
 export type AdminSection = "rbd" | "site" | "draft" | "tierlists" | "old" | "studio";
 export type AdminGroup =
   | "career" | "chances" | "match" | "data" | "places3d" | "players" | "money" | "sound"
-  | "site" | "draft" | "tierlists" | "old" | "studio";
+  | "site" | "draft" | "tierlists" | "old" | "studio" | "research";
 export type AdminOwner = "Harry" | "Mikey" | "Leo" | "Shared";
 export type AdminWrites = "none" | "browser" | "own" | "shared" | "repo";
 export type AdminAccess = "admin" | "team" | "open";
@@ -74,6 +74,8 @@ export const GROUPS: { key: AdminGroup; name: string; section: AdminSection; gam
   { key: "site", name: "Site XP + Tic Tac Toe", section: "site", game: "web" },
   { key: "old", name: "Old tests", section: "old", game: "web", icon: "site" },
   { key: "studio", name: "Team + notes", section: "studio", game: "studio", icon: "site" },
+  // Research write-ups (Harry, 20 Oct 2026). The list itself is lib/research.ts.
+  { key: "research", name: "Research", section: "studio", game: "studio", icon: "research" },
 ];
 
 const P = (url: string, name: string, purpose: string, section: AdminSection, group: AdminGroup,
@@ -86,6 +88,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/admin/team", "Team board", "What Harry, Mikey and Leo are doing: pushes, pull requests, live deploy, patch notes", "studio", "studio", "Harry", "live", "none", "admin"),
   P("/admin/patch-notes", "Patch notes", "Every patch note, newest first", "studio", "studio", "Shared", "live", "none", "admin"),
   P("/admin/app-plan", "App plan", "The app plan and its open questions", "studio", "studio", "Harry", "live", "none", "admin"),
+  P("/admin/research", "Research", "Every research write-up we have made, one card each", "studio", "research", "Harry", "live", "none", "team"),
   P("/admin/testers", "Tester access", "Tester links, remove testers", "studio", "studio", "Harry", "live", "shared", "admin"),
   P("/admin/xp", "Site XP rewards", "Level-up rewards across the whole site (frames, titles)", "site", "site", "Harry", "live", "shared", "admin"),
   P("/admin/football", "Tic Tac Toe data", "Wikidata data behind Tic Tac Toe", "site", "site", "Harry", "live", "shared", "admin"),
@@ -197,6 +200,29 @@ export function currentPage(path: string): AdminPage | undefined {
     if (path === p.url || path.startsWith(p.url + "/")) if (!best || p.url.length > best.url.length) best = p;
   }
   return best;
+}
+
+/**
+ * Where the one back arrow goes (Harry, 20 Oct 2026: "Always top left … always
+ * the same"). A page in the list → its group's page; a group page → its
+ * game's home; another game's home → the first game's home; the admin home →
+ * the site. Anything else → the admin home.
+ */
+export function backFor(path: string): { href: string; label: string } {
+  const p = path.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
+  const g = p.match(/^\/admin\/star\/g\/([^/]+)$/);
+  if (g) {
+    const game = gameOf(GROUPS.find((x) => x.key === g[1])?.game ?? DEFAULT_GAME) ?? GAMES[0];
+    return { href: game.home, label: game.name };
+  }
+  if (GAMES.some((x) => x.home === p && x.key !== DEFAULT_GAME)) return { href: GAMES[0].home, label: GAMES[0].name };
+  if (p === GAMES[0].home) return { href: "/", label: "Knowitball" };
+  const own = currentPage(p);
+  if (own && own.url !== "/admin/star") {
+    const grp = GROUPS.find((x) => x.key === own.group);
+    if (grp) return { href: `/admin/star/g/${grp.key}`, label: grp.name };
+  }
+  return { href: GAMES[0].home, label: "Admin home" };
 }
 
 /** What admin mode lists first on this path: a label and the pages. */

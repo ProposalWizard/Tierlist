@@ -78,12 +78,12 @@ function Garden3DTest() {
       <>
         <Casino3D
           career={career}
-          onBack={() => router.push("/star-3d-area-dev")}
+          onBack={() => router.push("/admin/star/g/places3d")}
           onDoor={() => { setArrive("casino"); setPlace("garden"); }}
           onBank={(bank) => setMoney(Math.max(0, Math.round(bank)))}
           renderGame={(game, done) => (
             <Casino bankStart={career.money} career={career} startGame={game}
-              onExit={(bank) => { setMoney(Math.max(0, Math.round(bank))); if (game) done(); else router.push("/star-3d-area-dev"); }}
+              onExit={(bank) => { setMoney(Math.max(0, Math.round(bank))); if (game) done(); else router.push("/admin/star/g/places3d"); }}
               onHorseRace={() => {}} onBuyHorse={() => {}} onRenameHorse={() => {}} onPlaceBet={() => {}} />
           )}
         />
@@ -95,7 +95,7 @@ function Garden3DTest() {
 
   return (
     <>
-      <Garden3D key={`${key}-${sky}-${full}-${arrive}`} career={career} sky={sky} arrive={arrive} onBack={() => router.push("/star-3d-area-dev")} onShop={() => router.push("/star-shop3d-dev?door=1")} onCasino={() => setPlace("casino")} onTraining={() => setPlace("training")} onHouse={() => router.push("/star-home3d-dev")} />
+      <Garden3D key={`${key}-${sky}-${full}-${arrive}`} career={career} sky={sky} arrive={arrive} onBack={() => router.push("/admin/star/g/places3d")} onShop={() => router.push("/star-shop3d-dev?door=1")} onCasino={() => setPlace("casino")} onTraining={() => setPlace("training")} onHouse={() => router.push("/star-home3d-dev")} />
       <div style={{ position: "fixed", top: 58, left: 12, zIndex: 90, display: "flex", gap: 6, flexWrap: "wrap" }}>
         {(["day", "sunset", "night"] as Sky[]).map((s) => (
           <button key={s} onClick={() => setSky(s)} style={{ ...btn, background: sky === s ? "#facc15" : btn.background, color: sky === s ? "#111" : "#fff" }}>{s}</button>

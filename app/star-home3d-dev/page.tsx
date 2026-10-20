@@ -78,8 +78,8 @@ function Home3DTest() {
         tier={tier}
         lookH={lookH}
         house={house}
-        backLabel="3D area"
-        onBack={() => router.push("/star-3d-area-dev")}
+        backLabel="3D places"
+        onBack={() => router.push("/admin/star/g/places3d")}
         onDoor={() => router.push("/star-garden3d-dev?arrive=house")}
         onOutfit={setOutfit}
       />

@@ -56,6 +56,8 @@ export interface SigningScene3DProps {
   doneLabel?: string;
   /** Extra controls on the top bar (the test area's picker button). */
   topRight?: React.ReactNode;
+  /** Something at the very left of the top bar (the test area's back arrow). */
+  topLeft?: React.ReactNode;
   /** Something to open the 3D failing with (the drawn signing). */
   onFail?: () => void;
   /** A key that, when it changes, plays the scene from the start again. */
@@ -63,7 +65,7 @@ export interface SigningScene3DProps {
 }
 
 export default function SigningScene3D(props: SigningScene3DProps) {
-  const { you, manager, contract, lines, title, onDone, doneLabel = "Continue", topRight, onFail, replayKey = 0 } = props;
+  const { you, manager, contract, lines, title, onDone, doneLabel = "Continue", topRight, topLeft, onFail, replayKey = 0 } = props;
   const wrap = useRef<HTMLDivElement>(null);
   const handle = useRef<SigningSceneHandle | null>(null);
   const [stage, setStage] = useState<Stage>("loading");
@@ -181,6 +183,7 @@ export default function SigningScene3D(props: SigningScene3DProps) {
 
       {/* Top bar: title, Skip, extras. A soft shade so the words read over any shot. */}
       <div style={{ position: "absolute", left: 0, right: 0, top: 0, padding: "max(10px, env(safe-area-inset-top)) 12px 26px", background: "linear-gradient(180deg, rgba(0,0,0,.6), rgba(0,0,0,0))", display: "flex", alignItems: "center", gap: 8, pointerEvents: "none" }}>
+        {topLeft && <div style={{ display: "flex", pointerEvents: "auto" }}>{topLeft}</div>}
         <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.4, color: "#fbbf24", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1, textShadow: "0 1px 3px #000" }}>{title}</div>
         <div style={{ display: "flex", gap: 6, pointerEvents: "auto" }}>
           {topRight}

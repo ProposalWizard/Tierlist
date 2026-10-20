@@ -848,7 +848,6 @@ export default function HighlightsPage() {
     <BroadcastPage
       title="Infinite Highlights"
       sub="Flick through real chances. Fix a bad one on the spot."
-      back="/star-gallery-dev"
     >
       {tools}
 

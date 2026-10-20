@@ -9,29 +9,46 @@
  * the look").
  */
 import "./broadcast.css";
+import "./skins.css";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
+import { useInkGuard } from "./inkGuard";
+import BackArrow from "@/components/admin/BackArrow";
+import { useAdminLook } from "@/lib/adminLook";
 
-export function BroadcastPage({ title, sub, back = "/admin/star", actions, width = 1400, children }: {
+/**
+ * The frame follows the admin Look (Harry, 20 Oct 2026: "everything to look
+ * the same, but with a different kind of skin"): same layout in every look,
+ * only colours, fonts, corners and surfaces change (skins.css). The title bar
+ * runs the full width so the back arrow is always in the top-left corner.
+ */
+export function BroadcastPage({ title, sub, back, actions, width = 1400, children }: {
   title: string;
   /** One short line under the title. */
   sub?: ReactNode;
-  /** Where ← goes: a link, a function, or null for none. Default: the admin home. */
+  /** Where the back arrow goes: a link, or a function for a screen inside the
+   *  page. Default: the page's group (lib/adminRegistry.ts backFor). null =
+   *  none (only for a game screen that draws its own back in that corner). */
   back?: string | (() => void) | null;
   /** Buttons at the right of the title. */
   actions?: ReactNode;
   width?: number;
   children: ReactNode;
 }) {
+  const look = useAdminLook();
+  const root = useRef<HTMLDivElement>(null);
+  // Light looks: keep every page's own dark tiles and white words readable (inkGuard.ts).
+  useInkGuard(root, look === "light" || look === "bento");
   return (
-    <div className="bc" data-broadcast-page>
-      <div className="bc-inner" style={{ maxWidth: width }}>
+    <div className="bc" data-broadcast-page data-look={look} ref={root}>
+      <div className="bc-top">
         <div className="bc-head">
-          {typeof back === "string" && <Link href={back} className="bc-back" aria-label="Back" title="Back">←</Link>}
-          {typeof back === "function" && <button onClick={back} className="bc-back" aria-label="Back" title="Back">←</button>}
+          {back !== null && (typeof back === "function" ? <BackArrow onClick={back} /> : <BackArrow to={back} />)}
           <div className="bc-banner"><h1>{title}</h1>{sub && <p>{sub}</p>}</div>
           {actions && <div className="bc-actions">{actions}</div>}
         </div>
+      </div>
+      <div className="bc-inner" style={{ maxWidth: width }}>
         {children}
       </div>
     </div>

@@ -39,6 +39,36 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 20 Oct 2026 — one layout, four skins; one back arrow; the chat bubble (Harry)
+- **"Redo all of the other looks … right now it's like they're different skins.
+  In reality, I want everything to look the same, but with a different kind of
+  skin … They can't just click Clean light and suddenly I'm on a different admin
+  page with a different layout."** The admin Look (Broadcast, Bento, Ops room,
+  Clean light) changes paint only: colours, fonts, corners, surfaces. Every look
+  has Broadcast's layout (group tiles home, group pages of picture cards, side
+  menu, game tabs). Paint lives in tokens: `--sk-*`
+  (components/admin/shell/skin.css) for the home and group pages, `--bc-*` +
+  components/admin/broadcast/skins.css for every BroadcastPage. **Never add a
+  look-specific layout.** In the light looks a page's own dark tiles stay
+  dark and stay readable: the ink guard (broadcast/inkGuard.ts) gives dark
+  boxes light words and fixes words that vanish. Measured with a contrast
+  audit at 390 px in Clean light: about 320 words under 2.6:1 on 12 pages
+  before the guard → 0 to 3 a page after (most of those are clipped rows).
+- **Bento group cards must read** (Harry: hard to read): dark words on a pale
+  tint of the group's colour, the count in a white pill.
+- **Back arrow: "Always top left … always the same."** One component
+  (components/admin/BackArrow.tsx), 16 px in on a computer, 12 px on a phone,
+  skinned per look. It goes to the page's group (a group page → its game's
+  home). BroadcastPage, the admin shell and the slim AdminTopBar (pages with no
+  frame) carry it; never draw a page's own back link. A screen inside a page
+  may pass `back={() => …}` to step back one screen.
+- **Team chat bubble: "fixed at bottom left on every page … as long as, if it
+  is covering something, I can still press it."** 40 px, bottom left (right of
+  the side menu on a computer), only the round button takes taps, fades to 40%
+  and lets taps through while you scroll or drag, half see-through over a
+  control. The page guide's eye never takes top left (the arrow) and sits
+  above the bubble when a page puts it bottom left.
+
 ### 19 Oct 2026 — key controls never below the fold (Harry)
 - **"I heavily dislike when ui is off the screen that could be very easy to
   press on the screen."** On Infinite Highlights at 1440×900 the Next button

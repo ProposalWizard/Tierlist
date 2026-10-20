@@ -176,7 +176,7 @@ export default function Area3dPage() {
   const setTab = (t: Tab) => { setTabState(t); try { localStorage.setItem(TAB_KEY, t); } catch { /* no storage */ } };
   const tabs: [Tab, string][] = [["places", `Places (${PLACES.length})`], ["scenes", `All scenes (${SCENES_3D.length})`], ["assets", "3D files"]];
   return (
-    <BroadcastPage title="3D Area" sub="Every 3D place and scene in one list, plus the 3D file store." back="/star-play-dev">
+    <BroadcastPage title="3D Area" sub="Every 3D place and scene in one list, plus the 3D file store.">
       <div className="a3-layout">
         <nav className="a3-rail">
           {tabs.map(([t, label]) => (

@@ -1,0 +1,48 @@
+/* The one back arrow (components/admin/BackArrow.tsx). Same size and place on
+ * every admin and test page; only the skin changes with the admin look. */
+.kb-back {
+  display: grid; place-items: center; flex: 0 0 auto; align-self: flex-start;
+  width: 44px; height: 40px; padding: 0; margin: 0; cursor: pointer; text-decoration: none;
+  border: 1px solid transparent; box-sizing: border-box;
+  /* Broadcast (default): a slanted TV block. */
+  background: #123f9c; color: #fff; clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); width: 50px;
+}
+.kb-back:hover { background: #1b5fd6; }
+.kb-back:focus-visible { outline: 2px solid #ffc24a; outline-offset: 2px; }
+.kb-back[data-look="ops"] { clip-path: none; width: 44px; border-radius: 10px; background: rgba(18, 30, 24, 0.9); border-color: rgba(120, 200, 160, 0.3); color: #34e08b; }
+.kb-back[data-look="ops"]:hover { background: rgba(52, 224, 139, 0.16); }
+.kb-back[data-look="light"] { clip-path: none; width: 44px; border-radius: 10px; background: #fff; border-color: #d2dbd5; color: #0f1713; box-shadow: 0 1px 2px rgba(15, 23, 19, 0.06); }
+.kb-back[data-look="light"]:hover { border-color: #12a150; color: #12a150; }
+.kb-back[data-look="bento"] { clip-path: none; width: 44px; border-radius: 14px; background: #fff; border-color: #e4e8f0; color: #2f6bff; box-shadow: 0 1px 2px rgba(21, 26, 45, 0.06), 0 6px 18px rgba(21, 26, 45, 0.06); }
+.kb-back[data-look="bento"]:hover { background: #eef3ff; }
+.kb-back[data-look="light"]:focus-visible, .kb-back[data-look="ops"]:focus-visible, .kb-back[data-look="bento"]:focus-visible { outline-color: currentColor; }
+
+/* Full-screen pages: pinned in the corner, over the scene. */
+.kb-back[data-floating="true"] {
+  position: fixed; z-index: 2147481000; align-self: auto;
+  top: calc(12px + env(safe-area-inset-top, 0px)); left: calc(12px + env(safe-area-inset-left, 0px));
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* The top bar on admin pages with no frame of their own (AdminTopBar.tsx). */
+.kb-topbar { display: flex; align-items: center; gap: 12px; padding: 16px 16px 12px; background: #061230; color: #eef4ff; border-bottom: 1px solid rgba(90, 150, 255, 0.22); }
+.kb-topbar-t { font-size: 17px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: .01em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kb-topbar-k { margin-left: auto; font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; opacity: .6; }
+.kb-topbar[data-look="ops"] { background: #0b120e; color: #eef6f1; border-bottom-color: rgba(120, 200, 160, 0.18); }
+.kb-topbar[data-look="light"] { background: #ffffff; color: #0f1713; border-bottom-color: #dfe6e1; }
+.kb-topbar[data-look="bento"] { background: #ffffff; color: #151a2d; border-bottom-color: #e4e8f0; }
+.kb-topbar:not([data-look="broadcast"]) .kb-topbar-t { font-style: normal; text-transform: none; }
+/* Nested locks (/admin/football → /admin/football/players): only the inner page's bar. */
+.kb-topbar:has(+ .kb-topbar) { display: none; }
+/* Pages with the Broadcast frame or the admin shell carry the arrow themselves. */
+body:has([data-broadcast-page], [data-admin-shell]) .kb-topbar { display: none; }
+/* The site's menu hides on every admin page: the arrow is the top-left. */
+body:has([data-admin-topbar]) [data-global-chrome] { display: none !important; }
+
+@media (max-width: 640px) {
+  .kb-topbar { padding: 8px 12px; gap: 10px; }
+  .kb-topbar-t { font-size: 15px; }
+  .kb-back { height: 36px; width: 46px; }
+  .kb-back[data-look="ops"], .kb-back[data-look="light"], .kb-back[data-look="bento"] { width: 40px; }
+  .kb-back[data-floating="true"] { top: calc(8px + env(safe-area-inset-top, 0px)); left: calc(12px + env(safe-area-inset-left, 0px)); }
+}

@@ -65,7 +65,7 @@ function HMinimap({ dots }: { dots: Dot[] }) {
   );
 }
 
-export default function StyleTest3D() {
+export default function StyleTest3D({ header }: { header?: React.ReactNode } = {}) {
   const [style, setStyle] = useState<StyleId>("real");
   const [scene, setScene] = useState<StyleScene>("real");
   /** The real game: the 3D view, or the 2D game it is drawn from. */
@@ -285,6 +285,7 @@ export default function StyleTest3D() {
   return (
     <div className="fixed inset-0 flex flex-col bg-black text-white" data-style-test={`${style}-${scene}`}>
       <div className={`z-20 flex-col gap-1.5 bg-gray-950/95 px-2 pb-2 pt-2 ${clean ? "hidden" : "flex"}`}>
+        {header}
         <div className="flex items-center gap-1.5 overflow-x-auto" data-style-chips>
           <span className="mr-0.5 shrink-0 text-[11px] font-black uppercase text-white/60">Style</span>
           {STYLE_CHIPS.map((c) => (

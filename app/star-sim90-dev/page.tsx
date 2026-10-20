@@ -369,7 +369,7 @@ export default function FullMatchPage() {
   );
 
   return (
-    <BroadcastPage title="Full match" sub="A whole simulated 90 minutes. You play your own chances." back="/star-play-dev" actions={<div className="fm-layout fm-layout-pc">{layoutPills}</div>}>
+    <BroadcastPage title="Full match" sub="A whole simulated 90 minutes. You play your own chances." actions={<div className="fm-layout fm-layout-pc">{layoutPills}</div>}>
       <div className="fm-layout fm-layout-phone"><Label>Layout</Label>{layoutPills}</div>
       {layout === "wide" ? (
         <div className="fm fm-wide">

@@ -87,7 +87,7 @@ export default function Anim3dDevPage() {
 
   const jump = (g: string) => { setGroup(g); document.querySelector(`[data-anim3d-group="${g}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }); };
   return (
-    <BroadcastPage title="3D Animations" sub="Every move the 3D match plays, at the match camera and the match size" back="/star-3d-area-dev">
+    <BroadcastPage title="3D Animations" sub="Every move the 3D match plays, at the match camera and the match size">
       <div className="anim-layout">
         <nav className="anim-rail" aria-label="Sections">
           <div className="anim-rail-label">Moves</div>

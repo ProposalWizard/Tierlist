@@ -6,7 +6,7 @@
  * conversations"). Sample player and lines; the real chat mounts the same
  * stage (components/star/Office3D.tsx) from BossChat.tsx.
  */
-import Link from "next/link";
+import BackArrow from "@/components/admin/BackArrow";
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import PageGuide from "@/components/admin/PageGuide";
@@ -62,7 +62,7 @@ export default function OfficePage() {
           speaker={speaker} style={{ position: "absolute", inset: 0 }} />
       )}
       <div style={{ position: "absolute", top: 10, left: 10, right: 10, display: "flex", gap: 6, alignItems: "center" }}>
-        <Link href="/star-3d-area-dev" aria-label="Back" style={{ ...chip(false), textDecoration: "none" }}>‹</Link>
+        <BackArrow />
         <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: "#fbbf24" }}>MANAGER&apos;S OFFICE</span>
         <span style={{ flex: 1 }} />
         <button data-boss onClick={() => setSpeaker("boss")} style={chip(speaker === "boss")}>He talks</button>

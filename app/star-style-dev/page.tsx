@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageGuide from "@/components/admin/PageGuide";
 import StyleTest3D from "@/components/star/StyleTest3D";
+import BackArrow from "@/components/admin/BackArrow";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 
 export default function StarStyleDevPage() {
@@ -38,7 +39,12 @@ export default function StarStyleDevPage() {
   }
   return (
     <>
-      <StyleTest3D />
+      <StyleTest3D header={
+        <div className="flex items-center gap-2">
+          <BackArrow />
+          <b className="text-[15px] font-black uppercase italic">Art styles + cut-scene director</b>
+        </div>
+      } />
       <PageGuide page="/star-style-dev" corner="bottom-left" />
     </>
   );

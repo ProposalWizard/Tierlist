@@ -159,7 +159,7 @@ export default function StarSpritesDevPage() {
 
   const jump = (k: string) => { setSec(k); document.querySelector(`[data-spr-sec="${k}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }); };
   const shell = (body: React.ReactNode) => (
-    <BroadcastPage title="3D Match Figures" sub="Every baked 3D match figure, at the real match size" back="/star-3d-area-dev">
+    <BroadcastPage title="3D Match Figures" sub="Every baked 3D match figure, at the real match size">
       {body}
       <PageGuide page="/star-sprites-dev" corner="bottom-left" />
     </BroadcastPage>

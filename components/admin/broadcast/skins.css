@@ -1,0 +1,107 @@
+/*
+ * The Broadcast frame's four skins (Harry, 20 Oct 2026: "I want everything to
+ * look the same, but with a different kind of skin … They can't just click
+ * Clean light and suddenly I'm on a different admin page with a different
+ * layout"). BroadcastPage sets data-look from the admin Look switch. Layout is
+ * broadcast.css and never changes here; this file only repaints: colours,
+ * fonts, corners, surfaces. Pages that paint with var(--bc-*) follow along.
+ */
+
+/* The title bar runs the full width, so the back arrow sits in the same
+ * top-left corner on every page (and where the admin shell puts it). */
+.bc-top { padding: 16px 16px 0; }
+.bc-top .bc-head { align-items: flex-start; }
+.bc .bc-inner { padding-top: 16px; }
+@media (max-width: 640px) {
+  .bc-top { padding: 8px 12px 0; }
+  .bc .bc-inner { padding-top: 12px; }
+}
+/* No site menu over an admin page: the back arrow is the top-left. */
+body:has([data-broadcast-page]) [data-global-chrome] { display: none !important; }
+
+/* ── Ops room: near-black, deep green, glass. ── */
+.bc[data-look="ops"] {
+  --bc-bg: #070b09; --bc-panel: rgba(18, 30, 24, 0.78); --bc-line: rgba(120, 200, 160, 0.18); --bc-ink: #eef6f1; --bc-ink2: #a9c2b5;
+  --bc-ink3: #7d9a8b; --bc-blue: #1f7a4d; --bc-blue2: #155a38; --bc-accent: #34e08b; --bc-amber: #f5b942; --bc-red: #ff6b6b;
+  color-scheme: dark;
+  background:
+    radial-gradient(80% 50% at 70% -10%, rgba(52, 224, 139, 0.10), transparent 70%),
+    linear-gradient(rgba(120, 200, 160, 0.05) 1px, transparent 1px) 0 0 / 64px 64px,
+    linear-gradient(90deg, rgba(120, 200, 160, 0.05) 1px, transparent 1px) 0 0 / 64px 64px,
+    #070b09;
+  background-attachment: fixed;
+}
+/* ── Clean light: white, one grass-green accent. ── */
+.bc[data-look="light"] {
+  --bc-bg: #f6f8f7; --bc-panel: #ffffff; --bc-line: #dfe6e1; --bc-ink: #0f1713; --bc-ink2: #44574d;
+  --bc-ink3: #6a7d73; --bc-blue: #12a150; --bc-blue2: #0d8442; --bc-accent: #12a150; --bc-amber: #b7790b; --bc-red: #d03434;
+  color-scheme: light; background: #f6f8f7;
+}
+/* ── Bento: soft white, friendly blue, round corners. ── */
+.bc[data-look="bento"] {
+  --bc-bg: #f3f5fa; --bc-panel: #ffffff; --bc-line: #e1e6ef; --bc-ink: #151a2d; --bc-ink2: #4a5370;
+  --bc-ink3: #737c96; --bc-blue: #2f6bff; --bc-blue2: #2457d6; --bc-accent: #2f6bff; --bc-amber: #b7790b; --bc-red: #e5484d;
+  color-scheme: light; background: #f3f5fa;
+}
+
+/* The ink guard (inkGuard.ts) marks each page's own painted boxes: dark ones
+   get the light ink back, light ones inside them the dark ink; words that still
+   vanish into what is behind them get the opposite ink. Light looks only. */
+.bc:is([data-look="light"], [data-look="bento"]) [data-ink="dark"] {
+  --bc-ink: #eef4ff; --bc-ink2: #b9c9e6; --bc-ink3: #93a8cc; --bc-line: rgba(160, 190, 240, 0.24); color: var(--bc-ink); color-scheme: dark;
+}
+.bc[data-look="light"] [data-ink="dark"] [data-ink="light"] { --bc-ink: #0f1713; --bc-ink2: #44574d; --bc-ink3: #6a7d73; --bc-line: #dfe6e1; color: var(--bc-ink); color-scheme: light; }
+.bc[data-look="bento"] [data-ink="dark"] [data-ink="light"] { --bc-ink: #151a2d; --bc-ink2: #4a5370; --bc-ink3: #737c96; --bc-line: #e1e6ef; color: var(--bc-ink); color-scheme: light; }
+.bc:is([data-look="light"], [data-look="bento"]) [data-ink-fix="dark"] { color: #151a2d !important; }
+.bc:is([data-look="light"], [data-look="bento"]) [data-ink-fix="light"] { color: #eef4ff !important; }
+
+/* Shapes: Broadcast keeps its slants; the others are straight with corners. */
+.bc:not([data-look="broadcast"]) .bc-banner,
+.bc:not([data-look="broadcast"]) .bc-ph,
+.bc:not([data-look="broadcast"]) .bc-btn { clip-path: none; }
+.bc:not([data-look="broadcast"]) .bc-banner h1,
+.bc:not([data-look="broadcast"]) .bc-ph h2,
+.bc:not([data-look="broadcast"]) .bc-btn { font-style: normal; }
+.bc:not([data-look="broadcast"]) .bc-banner h1 { text-transform: none; letter-spacing: -.02em; }
+.bc:not([data-look="broadcast"]) .bc-banner p { font-style: normal; }
+.bc:not([data-look="broadcast"]) .bc-ph span { font-style: normal; }
+.bc:not([data-look="broadcast"]) .bc-btn { text-transform: none; letter-spacing: 0; font-weight: 800; }
+
+/* Ops room */
+.bc[data-look="ops"] .bc-banner { padding: 9px 16px; border-radius: 12px; color: var(--bc-ink); border: 1px solid rgba(120, 200, 160, 0.26);
+  background: linear-gradient(100deg, rgba(52, 224, 139, 0.20), rgba(52, 224, 139, 0.04) 70%), rgba(10, 18, 14, 0.7); backdrop-filter: blur(12px); }
+.bc[data-look="ops"] .bc-banner p { color: var(--bc-ink2); }
+.bc[data-look="ops"] .bc-panel { border-radius: 16px; border: 1px solid var(--bc-line); background: rgba(18, 30, 24, 0.72); backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
+.bc[data-look="ops"] .bc-ph { background: none; border-bottom: 1px solid var(--bc-line); padding: 10px 14px; margin: 0; }
+.bc[data-look="ops"] .bc-ph h2 { color: var(--bc-ink2); font-size: 12px; letter-spacing: .14em; }
+.bc[data-look="ops"] .bc-ph span { color: var(--bc-ink3); }
+.bc[data-look="ops"] .bc-btn { border-radius: 10px; background: rgba(52, 224, 139, 0.12); color: var(--bc-ink); border: 1px solid rgba(120, 200, 160, 0.26); }
+.bc[data-look="ops"] .bc-btn:hover { background: rgba(52, 224, 139, 0.22); }
+.bc[data-look="ops"] .bc-btn[data-main="true"] { background: #34e08b; color: #04180d; border-color: transparent; }
+.bc[data-look="ops"] .bc-pill { border-radius: 99px; }
+.bc[data-look="ops"] .bc-pill[aria-pressed="true"] { background: #34e08b; color: #04180d; }
+
+/* Clean light and Bento share the light surfaces. */
+.bc[data-look="light"] .bc-banner, .bc[data-look="bento"] .bc-banner { padding: 9px 16px; color: var(--bc-ink); border: 1px solid var(--bc-line); background: #fff; }
+.bc[data-look="light"] .bc-banner { border-radius: 12px; box-shadow: inset 4px 0 0 #12a150, 0 1px 2px rgba(15, 23, 19, 0.06); }
+.bc[data-look="bento"] .bc-banner { border-radius: 18px; background: #e9efff; border-color: #d6e1ff; }
+.bc[data-look="light"] .bc-banner p, .bc[data-look="bento"] .bc-banner p { color: var(--bc-ink2); }
+.bc[data-look="light"] .bc-panel, .bc[data-look="bento"] .bc-panel { background: #fff; border: 1px solid var(--bc-line); }
+.bc[data-look="light"] .bc-panel { border-radius: 14px; box-shadow: 0 1px 2px rgba(15, 23, 19, 0.06); }
+.bc[data-look="bento"] .bc-panel { border-radius: 20px; box-shadow: 0 1px 2px rgba(21, 26, 45, 0.05), 0 6px 18px rgba(21, 26, 45, 0.05); }
+.bc[data-look="light"] .bc-ph, .bc[data-look="bento"] .bc-ph { background: none; border-bottom: 1px solid var(--bc-line); padding: 10px 14px; margin: 0; }
+.bc[data-look="light"] .bc-ph h2, .bc[data-look="bento"] .bc-ph h2 { color: var(--bc-ink); font-size: 13px; letter-spacing: .06em; }
+.bc[data-look="light"] .bc-ph span, .bc[data-look="bento"] .bc-ph span { color: var(--bc-ink3); }
+.bc[data-look="light"] .bc-btn, .bc[data-look="bento"] .bc-btn { color: var(--bc-ink); background: #fff; border: 1px solid #cfd8d3; }
+.bc[data-look="light"] .bc-btn { border-radius: 10px; }
+.bc[data-look="bento"] .bc-btn { border-radius: 12px; border-color: #d3d9e6; }
+.bc[data-look="light"] .bc-btn:hover { border-color: #12a150; color: #0d8442; background: #f4faf6; }
+.bc[data-look="bento"] .bc-btn:hover { border-color: #2f6bff; color: #2457d6; background: #f3f6ff; }
+.bc[data-look="light"] .bc-btn[data-main="true"] { background: #12a150; color: #fff; border-color: transparent; }
+.bc[data-look="bento"] .bc-btn[data-main="true"] { background: #2f6bff; color: #fff; border-color: transparent; }
+.bc[data-look="light"] .bc-pill, .bc[data-look="bento"] .bc-pill { background: #fff; color: var(--bc-ink2); border-color: var(--bc-line); border-radius: 99px; }
+.bc[data-look="light"] .bc-pill[aria-pressed="true"] { background: #12a150; color: #fff; }
+.bc[data-look="bento"] .bc-pill[aria-pressed="true"] { background: #2f6bff; color: #fff; }
+.bc[data-look="light"] .bc-label, .bc[data-look="bento"] .bc-label { color: var(--bc-ink3); }
+.bc[data-look="light"] a:focus-visible, .bc[data-look="light"] button:focus-visible,
+.bc[data-look="bento"] a:focus-visible, .bc[data-look="bento"] button:focus-visible { outline-color: var(--bc-accent); }

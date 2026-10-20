@@ -99,9 +99,21 @@
 .tr-zoom img { max-width: 94vw; max-height: 90vh; border-radius: 8px; }
 
 /* Bubble + pop-up */
-.tr-fab { position: fixed; left: calc(16px + env(safe-area-inset-left, 0px)); z-index: 2147482000; width: 50px; height: 50px; border-radius: 50%; border: 0;
-  background: var(--ash-accent); color: var(--ash-accent-ink); display: grid; place-items: center; cursor: pointer; box-shadow: var(--ash-shadow); }
-.tr-fab .tr-badge { border-color: var(--ash-accent); }
+/* The bubble (Harry, 20 Oct 2026): small, fixed bottom left, and only the
+   round button takes taps. Fades to 40% (and lets taps through) while you
+   scroll or drag; half see-through while it sits over a control. */
+.tr-vars.tr { pointer-events: none; }
+.tr-vars.tr .tr-fab, .tr-vars.tr .tr-pop, .tr-vars.tr .tr-scrim { pointer-events: auto; }
+.tr-fab { position: fixed; z-index: 2147482000; width: 40px; height: 40px; padding: 0; border-radius: 50%; border: 0;
+  margin-left: env(safe-area-inset-left, 0px);
+  background: var(--ash-accent); color: var(--ash-accent-ink); display: grid; place-items: center; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); transition: opacity .15s; }
+.tr-fab[data-over="true"] { opacity: .62; }
+.tr-fab[data-quiet="true"] { opacity: .4; pointer-events: none !important; }
+.tr-fab:hover, .tr-fab:focus-visible { opacity: 1; }
+.tr-fab .tr-badge { border-color: var(--ash-accent); top: -5px; right: -5px; min-width: 15px; height: 15px; font-size: 9px; padding: 0 3px; }
+.tr-fab .tr-badge.dot { min-width: 9px; width: 9px; height: 9px; top: -2px; right: -2px; }
+.tr-fab .tr-badge.at { top: auto; bottom: -4px; right: -5px; }
 .tr-pop { position: fixed; z-index: 2147482001; display: flex; flex-direction: column; background: var(--ash-panel-solid); border: 1px solid var(--ash-line2); box-shadow: var(--ash-shadow); overflow: hidden;
   left: calc(16px + env(safe-area-inset-left, 0px)); width: 384px; height: min(580px, calc(100vh - 110px)); border-radius: 16px; }
 .tr-pop-h { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--ash-line); }
