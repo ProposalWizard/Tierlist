@@ -67,7 +67,7 @@ export const shoulderBodyFor = (b: NodeBody): ShoulderBody | null => shoulderBod
 /**
  * The reference bodies the shipped clips are settled against (settle_clips.mts):
  * today's Style A body at its broadest and slimmest builds, and B5b's new body
- * (toon-b4, the narrowest shoulders) once it is in the repo. The 20 Oct 2026
- * bake used all three (b4 from B5b's worktree, passed with --ref).
+ * (toon-f2 leaner, toon-f3 bigger head) once they are in the repo. The 20 Oct 2026
+ * bake used all four (f2 and f3 from B5b's branch, de417b5f, passed with --ref).
  */
-export const SETTLE_REFS = ["public/star/people3d/toon-p1.glb@c2", "public/star/people3d/toon-p1.glb@c1", "public/star/people3d/toon-b4.glb"].filter((r) => existsSync(r.split("@")[0]));
+export const SETTLE_REFS = ["public/star/people3d/toon-p1.glb@c2", "public/star/people3d/toon-p1.glb@c1", "public/star/people3d/toon-f2.glb", "public/star/people3d/toon-f3.glb"].filter((r) => existsSync(r.split("@")[0]));

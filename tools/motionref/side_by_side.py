@@ -32,8 +32,12 @@ fc = (
     f"trim=duration={dur},{label('REAL PEOPLE (Higgsfield)')}[c];"
     f"[a][b][c]hstack=inputs=3,pad=iw:ih+40:0:40:black,drawtext=fontfile={font}:text='{title}':x=10:y=10:fontsize=20:fontcolor=white[v]"
 )
-subprocess.run(["ffmpeg", "-v", "error", "-y", "-framerate", str(fps), "-i", os.path.join(before, "frame_%05d.jpg"),
-                "-framerate", str(fps), "-i", os.path.join(after, "frame_%05d.jpg"), "-i", ref,
+def first(d):  # a part-filmed folder (--from N) starts at frame N
+    return str(min(int(f[6:11]) for f in os.listdir(d) if f.startswith("frame_")))
+
+
+subprocess.run(["ffmpeg", "-v", "error", "-y", "-framerate", str(fps), "-start_number", first(before), "-i", os.path.join(before, "frame_%05d.jpg"),
+                "-framerate", str(fps), "-start_number", first(after), "-i", os.path.join(after, "frame_%05d.jpg"), "-i", ref,
                 "-filter_complex", fc, "-map", "[v]", "-c:v", "libx264", "-crf", "26", "-preset", "slow", "-pix_fmt", "yuv420p",
                 "-movflags", "+faststart", out], check=True)
 print("ok", out, round(dur, 1), "s")

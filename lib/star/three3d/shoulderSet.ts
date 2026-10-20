@@ -68,6 +68,11 @@ export interface ShoulderBody {
   hipY: number; neckY: number;
   /** The arm's skin rings (see shoulderBodyOf): on which bone, how far to the next, the ring's middle off the bone (bone frame), its radius. */
   rings: Record<"L" | "R", { bone: string; to: string; t: number; off: THREE.Vector3; r: number }[]>;
+  /** The legs as tubes (thigh, shin: rings of skin round each bone) and the head as an ellipsoid, at the bind pose: the arms keep off these too (Harry: "any body part can't overlap inside another"). */
+  tubes: { bone: string; A: THREE.Vector3; u: THREE.Vector3; len: number; rings: { t: number; c: THREE.Vector3; r: number }[] }[];
+  head: { c: THREE.Vector3; ax: THREE.Vector3 } | null;
+  /** Bind world matrices of the bones the tubes and the head ride on. */
+  bindM: Record<string, THREE.Matrix4>;
   /** Each collarbone's bind elevation against the chest's up, radians. */
   clav0: { L: number; R: number };
 }
@@ -80,11 +85,12 @@ export function shoulderBodyOf(T: Three, inner: THREE.Object3D, bones: Record<st
   const need = [NAMES.hips, NAMES.chest, NAMES.neck, ...Object.values(NAMES.L), ...Object.values(NAMES.R)];
   // the middle finger's root, when the body has fingers: the hand's own line (a fist or a bent wrist)
   const mid = { L: bones.LeftHandMiddle1 ? "LeftHandMiddle1" : null, R: bones.RightHandMiddle1 ? "RightHandMiddle1" : null };
+  const LEGS = ["LeftUpLeg", "LeftLeg", "LeftFoot", "RightUpLeg", "RightLeg", "RightFoot", "Head"].filter((n) => bones[n]);
   if (need.some((n) => !bones[n])) return null;
   inner.updateMatrixWorld(true);
   // the chain: every ancestor of the needed bones up to the hips
   const set = new Set<string>();
-  for (const n of [...need, ...[mid.L, mid.R].filter((x): x is string => !!x)]) { let b: THREE.Object3D | null = bones[n]; while (b && (b as THREE.Bone).isBone) { set.add(b.name); if (b.name === NAMES.hips) break; b = b.parent; } }
+  for (const n of [...need, ...LEGS, ...[mid.L, mid.R].filter((x): x is string => !!x)]) { let b: THREE.Object3D | null = bones[n]; while (b && (b as THREE.Bone).isBone) { set.add(b.name); if (b.name === NAMES.hips) break; b = b.parent; } }
   const order: string[] = [];
   const visit = (o: THREE.Object3D) => { if (set.has(o.name) && (o as THREE.Bone).isBone) order.push(o.name); o.children.forEach(visit); };
   visit(bones[NAMES.hips]);
@@ -100,22 +106,25 @@ export function shoulderBodyOf(T: Three, inner: THREE.Object3D, bones: Record<st
   const pos = geo.getAttribute("position"), si = geo.getAttribute("skinIndex"), sw = geo.getAttribute("skinWeight");
   const names = body.skeleton.bones.map((b) => b.name);
   const torso: THREE.Vector3[] = [], cap: boolean[] = [];
+  const other: Record<string, THREE.Vector3[]> = {};
+  const tcat: string[] = [];
   const arm: Record<string, THREE.Vector3[]> = {};
   const v = new T.Vector3();
   for (let i = 0; i < pos.count; i++) {
     let best = 0, bw = -1;
     for (let k = 0; k < 4; k++) { const w = sw.getComponent(i, k); if (w > bw) { bw = w; best = si.getComponent(i, k); } }
     const d = names[best];
+    if (d === "LeftLeg" || d === "RightLeg" || d === "Head") { body.getVertexPosition(i, v).applyMatrix4(body.matrixWorld); (other[d] ??= []).push(v.clone()); }
     if (!TORSO_BONES.has(d) && !ARM_BONES.has(d)) continue;
     body.getVertexPosition(i, v).applyMatrix4(body.matrixWorld);
-    if (TORSO_BONES.has(d)) { torso.push(v.clone()); cap.push(d === "LeftShoulder" || d === "RightShoulder"); } else (arm[d] ??= []).push(v.clone());
+    if (TORSO_BONES.has(d)) { torso.push(v.clone()); cap.push(d === "LeftShoulder" || d === "RightShoulder"); tcat.push(d); } else (arm[d] ??= []).push(v.clone());
   }
   const hip = W(NAMES.hips), neck = W(NAMES.neck);
   const armY = (W(NAMES.L.arm).y + W(NAMES.R.arm).y) / 2;
-  // slices every 2 cm from the top of the thigh to just under the armpit
+  // slices every 2 cm from the hip joint to the neck (the thighs are tubes of their own, below)
   const slices: ShoulderBody["slices"] = [];
   // above the armpit only the chest itself (front and back), not the shoulder caps the arms hang from
-  const yTop = neck.y - 0.05, yLow = hip.y - 0.2, yPit = armY - 0.09;
+  const yTop = neck.y - 0.05, yLow = hip.y - 0.08, yPit = armY - 0.09;
   for (let y = yLow; y <= yTop; y += 0.02) {
     const sl = torso.filter((p, i) => Math.abs(p.y - y) < 0.012 && Math.abs(p.x - hip.x) < 0.45 && (y < yPit || (!cap[i] && Math.abs(p.x - hip.x) < 0.12)));
     if (sl.length < 12) continue;
@@ -162,12 +171,40 @@ export function shoulderBodyOf(T: Three, inner: THREE.Object3D, bones: Record<st
       rings[s].push({ bone: nm.hand, to: m, t: 1.4, off: new T.Vector3(), r: 0.015 });
     }
   }
+  // the legs and the head
+  const tubes: ShoulderBody["tubes"] = [];
+  for (const [bone, to, skinOf] of [["LeftUpLeg", "LeftLeg", "LeftUpLeg"], ["LeftLeg", "LeftFoot", "LeftLeg"], ["RightUpLeg", "RightLeg", "RightUpLeg"], ["RightLeg", "RightFoot", "RightLeg"]] as const) {
+    if (!bones[bone] || !bones[to]) continue;
+    const pts = skinOf.endsWith("UpLeg") ? torso.filter((_, i) => tcat[i] === skinOf) : (other[skinOf] ?? []);
+    const A = W(bone), u = W(to).sub(A); const len = u.length(); u.divideScalar(len);
+    const rr: ShoulderBody["tubes"][number]["rings"] = [];
+    for (let t = 0.15; t < 0.95; t += 0.1) {
+      const at = A.clone().addScaledVector(u, t * len);
+      const ring = pts.filter((q) => Math.abs(q.clone().sub(at).dot(u)) < 0.012);
+      if (ring.length < 5) continue;
+      const c = ring.reduce((m, q) => m.add(q), new T.Vector3()).divideScalar(ring.length);
+      c.addScaledVector(u, -c.clone().sub(at).dot(u));
+      const ds = ring.map((q) => { const d = q.clone().sub(c); return d.addScaledVector(u, -d.dot(u)).length(); }).sort((a, b) => a - b);
+      rr.push({ t, c, r: ds[Math.floor(ds.length / 2)] });
+    }
+    if (rr.length) tubes.push({ bone, A, u, len, rings: rr });
+  }
+  let head: ShoulderBody["head"] = null;
+  const hp = other.Head ?? [];
+  if (hp.length) {
+    const c = hp.reduce((m, q) => m.add(q), new T.Vector3()).divideScalar(hp.length);
+    const ax = new T.Vector3();
+    for (const q of hp) { ax.x = Math.max(ax.x, Math.abs(q.x - c.x)); ax.y = Math.max(ax.y, Math.abs(q.y - c.y)); ax.z = Math.max(ax.z, Math.abs(q.z - c.z)); }
+    head = { c, ax: ax.multiplyScalar(0.85) };
+  }
+  const bindM: Record<string, THREE.Matrix4> = {};
+  for (const n of LEGS) bindM[n] = bones[n].matrixWorld.clone();
   const up = neck.clone().sub(W(NAMES.chest)).normalize();
   const elev = (c: string, a: string) => Math.asin(Math.max(-1, Math.min(1, W(a).sub(W(c)).normalize().dot(up))));
   return {
     key, order, parent, top, restPos, restQ, scale,
     hipsBind: bones[NAMES.hips].matrixWorld.clone(), chestBind: bones[NAMES.chest].matrixWorld.clone(),
-    slices, hipY: hip.y, neckY: neck.y, rings,
+    slices, hipY: hip.y, neckY: neck.y, rings, tubes, head, bindM,
     clav0: { L: elev(NAMES.L.clav, NAMES.L.arm), R: elev(NAMES.R.clav, NAMES.R.arm) },
   };
 }
@@ -233,7 +270,14 @@ export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip
 
   // how deep a world point goes into the torso (0: outside), and the outward way, on this pose
   const toBindH = new T.Matrix4(), toBindC = new T.Matrix4(), fromBindH = new T.Matrix4(), fromBindC = new T.Matrix4();
+  const legTo: Record<string, { to: THREE.Matrix4; from: THREE.Matrix4 }> = {};
+  const boneToBind = (b: string) => legTo[b];
   const framePose = () => {
+    for (const [b, M] of Object.entries(sb.bindM)) {
+      const i = idx(b); if (i < 0) continue;
+      const to = new T.Matrix4().multiplyMatrices(M, new T.Matrix4().copy(Wm[i]).invert());
+      legTo[b] = { to, from: to.clone().invert() };
+    }
     toBindH.multiplyMatrices(sb.hipsBind, new T.Matrix4().copy(Wm[iH]).invert());
     toBindC.multiplyMatrices(sb.chestBind, new T.Matrix4().copy(Wm[iC]).invert());
     fromBindH.copy(toBindH).invert(); fromBindC.copy(toBindC).invert();
@@ -265,6 +309,42 @@ export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip
         const nb = rho > 1e-4 ? new T.Vector3(dx / rho, 0, dz / rho) : new T.Vector3(1, 0, 0);
         const o = pb.clone().applyMatrix4(from), t = pb.clone().add(nb).applyMatrix4(from);
         best = { d, n: t.sub(o).normalize() };
+      }
+    }
+    // the legs and the head (each mapped back onto its bind pose by its own bone)
+    for (const tb of sb.tubes) {
+      const M = boneToBind(tb.bone); if (!M) continue;
+      const pb = pw.clone().applyMatrix4(M.to);
+      const t = pb.clone().sub(tb.A).dot(tb.u) / tb.len;
+      const rs = tb.rings;
+      if (t < rs[0].t || t > rs[rs.length - 1].t) continue;
+      let k = 0; while (k < rs.length - 1 && rs[k + 1].t < t) k++;
+      const r0 = rs[k], r1 = rs[Math.min(k + 1, rs.length - 1)];
+      const f = r1.t > r0.t ? (t - r0.t) / (r1.t - r0.t) : 0;
+      const c = r0.c.clone().lerp(r1.c, f);
+      const off = pb.clone().sub(c); off.addScaledVector(tb.u, -off.dot(tb.u));
+      const rho = off.length();
+      const d = r0.r + (r1.r - r0.r) * f + r + CLEARANCE - rho;
+      if (d > best.d) {
+        const nb = rho > 1e-4 ? off.divideScalar(rho) : new T.Vector3(1, 0, 0);
+        const o = pb.clone().applyMatrix4(M.from), tt = pb.clone().add(nb).applyMatrix4(M.from);
+        best = { d, n: tt.sub(o).normalize() };
+      }
+    }
+    if (sb.head) {
+      const M = boneToBind("Head");
+      if (M) {
+        const pb = pw.clone().applyMatrix4(M.to), dv = pb.clone().sub(sb.head.c);
+        const ax = sb.head.ax.clone().addScalar(r + CLEARANCE);
+        const sc = Math.hypot(dv.x / ax.x, dv.y / ax.y, dv.z / ax.z);
+        if (sc < 1) {
+          const d = (1 - sc) * dv.length() / Math.max(sc, 0.2);
+          if (d > best.d) {
+            const nb = dv.lengthSq() > 1e-8 ? dv.clone().normalize() : new T.Vector3(0, 0, 1);
+            const o = pb.clone().applyMatrix4(M.from), tt = pb.clone().add(nb).applyMatrix4(M.from);
+            best = { d, n: tt.sub(o).normalize() };
+          }
+        }
       }
     }
     return best;

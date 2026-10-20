@@ -53,6 +53,9 @@ function armOf(a: CutsceneActor, T: any, side: "L" | "R") {
   return { sh, len: Math.max(0.3, sh.distanceTo(el) + el.distanceTo(wr)) };
 }
 
+/** The press desk's top, m above the player's feet (beats.ts pressQuestion rests his hands on it). */
+export const PRESS_DESK_TOP = 0.775;
+
 export interface RefHoldOpts {
   /** Seconds into the reference at local 0. */
   from?: number;
@@ -67,6 +70,8 @@ export interface RefHoldOpts {
   grip?: Parameters<CutsceneActor["hand"]>[1];
   /** Turn the palms: in (towards each other), to the front, or leave the hand on the forearm. */
   palms?: "in" | "front" | null;
+  /** The hands never lower than this (m above his feet): a desk top his hands rest on, not sink into. */
+  floor?: number;
 }
 
 /**
@@ -115,6 +120,12 @@ export function refHold(a: CutsceneActor, c: PoseCtx, w: number, clip: RefArmCli
     const across = left.clone().multiplyScalar(Math.cos(tilt)).add(new T.Vector3(0, Math.sin(tilt), 0));
     across.normalize().multiplyScalar(o.span / 2);
     L.wr.copy(mid).add(across); R.wr.copy(mid).sub(across);
+  }
+  if (o.floor !== undefined) {
+    // (the real man sat lower to his table than ours does to the press desk: his hands, put on our
+    // man as they were, went under the desk top)
+    const fl = c.root[1] + o.floor;
+    for (const p of [L, R]) if (p.wr.y < fl) { const dy = fl - p.wr.y; p.wr.y = fl; p.el.y += dy * 0.5; }
   }
   for (const [side, p] of [["L", L], ["R", R]] as const) {
     const mid = p.sh.clone().add(p.wr).multiplyScalar(0.5);
@@ -220,7 +231,7 @@ export function applyPose(a: CutsceneActor, pose: PoseHold, w: number, c: PoseCt
       break;
     }
     case "ref-roar": refHold(a, c, w, "roar", { lean: 0.6 }); a.hand("L", "fist", w); a.hand("R", "fist", w); break;
-    case "ref-talk-hands": refHold(a, c, w, "talk-hands", { loop: true, lean: 0.5, grip: "open" }); break;
+    case "ref-talk-hands": refHold(a, c, w, "talk-hands", { loop: true, lean: 0.5, grip: "open", floor: PRESS_DESK_TOP + 0.06 }); break;
     case "ref-trophy-lift": refHold(a, c, w, "trophy-lift", { span: 0.42, lead: "L", lean: 0.5, grip: "grip", palms: "in" }); break;
     case "ref-wave-clap": refHold(a, c, w, "wave-clap", { lean: 0.4, grip: "open" }); break;
     case "ref-shirt-up": refHold(a, c, w, "shirt-up", { span: 0.42, lean: 0.3, grip: "pinch", palms: "front" }); break;
