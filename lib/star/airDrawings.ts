@@ -52,7 +52,7 @@ import { CX } from "./pitch";
 /** Which drawn kinds each air kind is taken from. */
 export const AIR_FROM: Readonly<Record<string, readonly string[]>> = {
   header: ["byline_cross", "corner"],
-  volley: ["byline_cross", "corner"],
+  volley: ["byline_cross", "corner", "cutback"],
 };
 
 /** The kinds served this way while they have fewer than 5 drawings of their own. */
