@@ -239,6 +239,7 @@ export function buildGraphic(
           // A photograph for the real footballers. For you: the one you took if
           // you took one, and the back of your shirt if you did not.
           ...(c.isYou ? yourFace(career) : { face: faceOf(career, c.name, c.club) }),
+          id: c.isYou ? "you" : (playerOf(career, c.name, c.club)?.id ?? `${c.club}|${c.name}`),
         })),
       };
     }
@@ -270,6 +271,7 @@ export function buildGraphic(
         assists: Number(f.assists ?? 0),
         isYou,
         ...(isYou ? yourFace(career) : { face: known?.image }),
+        id: isYou ? "you" : (known?.id ?? `${club}|${filed}`),
         ...(!isYou && f.place !== undefined ? { yourPlace: Number(f.place) } : {}),
       };
     }
@@ -372,7 +374,7 @@ export function buildGraphic(
  * photograph. `own` is what tells the renderer this is a picture with a room
  * behind it rather than a cut-out on transparent.
  */
-function yourFace(career: CareerState): { face: string; own: true } | { face: string } | { number: number } {
+export function yourFace(career: CareerState): { face: string; own: true } | { face: string } | { number: number } {
   const portrait = career.player.portrait;
   if (!portrait) return { number: career.squadNumber ?? 0 };
   // A fake face is composed the exact same stylised, game-render way every

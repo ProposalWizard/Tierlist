@@ -505,6 +505,8 @@ export type GraphicSpec =
       number?: number;
       /** See PotmNominee.own. */
       own?: boolean;
+      /** See PotmNominee.id. */
+      id?: string;
       /** Where you came, when the winner was somebody else and you were on it. */
       yourPlace?: number;
     };
@@ -517,6 +519,9 @@ export interface PotmNominee {
   isYou: boolean;
   /** His portrait, when the database has one for him. */
   face?: string;
+  /** Who he is (his squad id, "you" for you), so his drawn head is the same
+   *  man the team sheets and the match draw. Photo faces are off (PHOTO_FACES). */
+  id?: string;
   /**
    * Your squad number, and only ever yours.
    *
