@@ -7,9 +7,17 @@
  * and goal (components/star/LiveMatchRadar.tsx). Old: no radar, the
  * commentary exactly as it was. One phone at a time.
  */
-import { useSyncExternalStore } from "react";
+import { createContext, useContext, useSyncExternalStore } from "react";
 
 export type MatchRadarLook = "new" | "old";
+
+/**
+ * A test page's own answer for the match it mounts (the PC match + radar
+ * page reads the live radar's minutes, so its match always draws one). Only
+ * inside the page's own wrapper, and never written to this phone's setting:
+ * every real match, and every other screen, reads the setting as before.
+ */
+export const MatchRadarLookOverride = createContext<MatchRadarLook | null>(null);
 export const MATCH_RADAR_KEY = "star-match-radar";
 export const MATCH_RADAR_DEFAULT: MatchRadarLook = "old";
 let stored: MatchRadarLook | undefined;
@@ -42,8 +50,10 @@ export function setMatchRadarLook(v: MatchRadarLook): void {
 }
 
 export function useMatchRadarLook(): MatchRadarLook {
-  return useSyncExternalStore(
+  const forced = useContext(MatchRadarLookOverride);
+  const saved = useSyncExternalStore(
     (f) => { listeners.add(f); return () => { listeners.delete(f); }; },
     matchRadarLook, () => MATCH_RADAR_DEFAULT,
   );
+  return forced ?? saved;
 }

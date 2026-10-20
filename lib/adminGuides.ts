@@ -2094,6 +2094,35 @@ export const ADMIN_GUIDES = {
     dev: "app/star-fiveaside-dev/{page,FiveRadar}.tsx · components/star/FiveASide.tsx (test-only props autoStart, stopAfterChance, onChance, onFrame) · lib/star/fiveASide/scenarios.ts (shared with the gallery) · numbers: npx tsx scripts/fiveaside-data/run.mts → lib/star/fiveASide/simData.json (lib/star/fiveASide/simSummary.ts) · tests/star/fiveASideData.mts",
   },
 
+  "/star-pc-match-dev": {
+    title: "PC match + radar",
+    what: "The real eleven-a-side match on the left and the whole pitch from above on the right, the five-a-side test area's layout tried on the real game. On a phone the radar folds under the match.",
+    buttons: [
+      {
+        items: [
+          ["↻ New match / ↻ Play another", "A different match (the next seed), from kick-off."],
+          ["View: 2D | 3D", "The match screen's picture. 3D is the career's Match view 3D picture, switched on this page only: it does not change your Settings. On a slow computer 3D can take a while to build; the 2D match plays until it is ready."],
+          ["Club and dials: Play Area ›", "Who you play for, your position and the other dials come from the Play Area's settings on this device, read when the match starts. Only its match length is not used: here it is always ninety minutes."],
+          ["The match", "The real match, exactly as in a career: commentary between your chances, then you play each chance. Ninety minutes, then Full time with ↻ Play another."],
+        ],
+      },
+      {
+        group: "Radar",
+        items: [
+          ["Between chances", "The match nobody sees, minute by minute: the lit area is where the ball is, in the colour of whoever has it (blue your side, orange them). It moves as the commentary clock moves. GOAL!, SHOT, CORNER and YOUR CHANCE flash on the minute they happen. There are no players here: the unseen match has none."],
+          ["During a chance", "Every man on the match screen and the ball, where the match has just drawn them, with the ball's trail. You are ringed in yellow, keepers have a white edge. The dashed box is the part of the pitch the match screen shows."],
+          ["The bar under the radar", "Momentum, one bar a minute (up for your side, down for them), with each side's share of the ball at the ends."],
+          ["This match", "Goals, shots and corners from the unseen match, and every chance you were handed with how it ended, newest first."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. Playing here touches no career and no shared data."],
+    inGame: [
+      "Nowhere yet: a test area. The career match is unchanged. Its own small radar at the top of the commentary (Settings → Match radar) is left out on this page, so there is only one radar here.",
+    ],
+    dev: "app/star-pc-match-dev/{page,ElevenRadar}.tsx · reads only: EnginePlay's onChanceServed / onChanceResolved / onComplete, EngineFrameContext (lib/star/engineFrame.ts) during chances, and the live radar's minutes through LiveRadarTap (components/star/MatchRadar.tsx) between chances; MatchRadarLookOverride (lib/star/matchRadarLook.ts) turns the live radar on for this mount only · 3D: lib/star/style3d/engineView.ts, as components/star/Match3DLayer.tsx builds it",
+  },
+
   "/star-sim90-dev": {
     title: "Full match",
     what: "A whole simulated ninety minutes you can watch: 22 men and the ball. It is played live: the unseen match the career runs plays only up to your next chance, you play that chance, and the rest of the match plays on from how it went (score, momentum, who has the ball). This page stages it in each club's formation.",
