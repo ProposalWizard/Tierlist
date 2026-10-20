@@ -18,7 +18,13 @@ import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { pageFor } from "@/lib/adminRegistry";
 import AdminTopBar from "./AdminTopBar";
 
-export default async function DevGate({ url, children: page }: { url: string; children: React.ReactNode }) {
+export default async function DevGate({ url, children: page, testerTo }: {
+  url: string;
+  children: React.ReactNode;
+  /** An admins-only page a tester may still be sent to (the Team area, the
+   *  admin's home): send a tester here instead of showing "Team only". */
+  testerTo?: string;
+}) {
   const entry = pageFor(url);
   const access = entry?.access ?? "admin"; // a page missing from the list is admins only
   // Road to Ballon d'Or admin pages fill the screen like the Play Area: the
@@ -38,6 +44,9 @@ export default async function DevGate({ url, children: page }: { url: string; ch
   let ok = false;
   try { ok = access === "admin" ? await isAdmin(userId) : await isTester(userId); } catch { ok = false; }
   if (ok) return <>{children}</>;
+  let tester = false;
+  if (testerTo) { try { tester = await isTester(userId); } catch { tester = false; } }
+  if (tester && testerTo) redirect(testerTo);
   return (
     <main className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center">
       <h1 className="text-xl font-black">Team only</h1>

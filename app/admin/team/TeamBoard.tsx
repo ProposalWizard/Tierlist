@@ -5,8 +5,12 @@
  * and Patch notes. Tap a push to see it, and the patch note it went out in.
  *
  * The Team room (Harry, 19 Oct 2026): a toggle along the top switches
- * Board | Ideas | Chat | To-do in place (also lines in the side menu).
+ * Board | Chat | Ideas | To-do in place (also lines in the side menu).
  * Pushes take notes (components/teamRoom).
+ *
+ * The Team area is the admin's home (Harry, 20 Oct 2026): every way into the
+ * admin lands here, on Board. "Team" is the first tab of the side menu
+ * (components/admin/shell/AdminShell.tsx).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminShell, { type RoomTab } from "@/components/admin/shell/AdminShell";
@@ -45,10 +49,11 @@ const clock = (iso: string) =>
 const liveness = (iso: string | null, now: number) =>
   !iso ? "off" : now - Date.parse(iso) < 30 * 60_000 ? "live" : now - Date.parse(iso) < 3 * 3600_000 ? "quiet" : "off";
 
+// Same order as the Team area's side menu (Team board, Team chat, Ideas, My to-do).
 const ROOM: { key: Exclude<RoomTab, "notes">; name: string; title: string }[] = [
   { key: "team", name: "Board", title: "Team" },
-  { key: "ideas", name: "Ideas", title: "Ideas" },
   { key: "chat", name: "Chat", title: "Team chat" },
+  { key: "ideas", name: "Ideas", title: "Ideas" },
   { key: "todo", name: "To-do", title: "My to-do" },
 ];
 

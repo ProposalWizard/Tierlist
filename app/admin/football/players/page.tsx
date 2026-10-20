@@ -594,7 +594,8 @@ export default function PlayerSearchPage() {
       <div className="mx-auto max-w-7xl px-4 py-8">
         {/* Back link */}
         <div className="mb-6 flex items-center gap-2 text-sm text-white">
-          <Link href="/admin" className="hover:text-white transition-colors">
+          {/* "Admin" = the admin's home, the Team board (Harry, 20 Oct 2026). */}
+          <Link href="/admin/team" className="hover:text-white transition-colors">
             Admin
           </Link>
           <span>/</span>
