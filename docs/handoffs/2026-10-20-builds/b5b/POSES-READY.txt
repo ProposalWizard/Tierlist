@@ -28,3 +28,9 @@ SHOULDERS (Harry 18:35), measured on every tile (numbers under each):
 Wrong vs real (also on the tiles): shoulders lifted in standing clips; arms held away from the hips in
 idle; no gestures in the talk clip; the sitting clip hunches. Our celebration clip is arms-up, the real
 one arms-wide.
+
+Overlap check by eye (Harry 19:45 rule; B5c's automatic check not used yet):
+- Sitting: the hands sink into the shins at the knees (the sit_idle clip, same on today's body).
+- Talk to camera: no part inside another, but a pale line shows where the new neck meets the collar (the head join).
+- The other seven tiles: no part sinking into another seen.
+Clip: trophy-lift-B2.mp4 (5 s, B2 lifting the cup by its handles).
