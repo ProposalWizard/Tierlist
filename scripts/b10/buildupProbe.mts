@@ -14,8 +14,7 @@ for (const c of pool) {
   t.n++; t.dur += b.durS;
   const last = b.acts[b.acts.length - 1];
   if (last.type === "pass" && last.h > 0 && (last.endZ ?? 0) > 0) t.lofted++;
-  const cr = c.sc.teammates[0];
-  if (cr && Math.hypot(last.from.x - cr.x, last.from.y - cr.y) < 0.01) t.byCrosser++;
+  if (b.actOwners[b.acts.length - 1] === "mate0") t.byCrosser++;
   const z = b.ballAt(b.durS).z;
   if (Math.abs(z - arriveZ(c.sc.kind)) < 0.01) t.endOk++;
   if (!b.problems.length) t.clean++;

@@ -28,8 +28,14 @@ export function keeperFingerprint(): { hash: string; n: number } {
  *  deleted on 14-15 Oct (lib/star/authoredScenarios.json, merges a474ed8f and
  *  b56b8641). Checked: today's code fed the 14 Oct drawings still gives
  *  c808f663, so the keeper code it fingerprints did not change; only the shots
- *  it is fed did. Re-record only for that reason. */
-export const KEEPER_FINGERPRINT_BEFORE = "1ef8579f";
+ *  it is fed did. Re-record only for that reason.
+ *  Re-recorded 20 Oct 2026 (was 1ef8579f), B10: "header" and "volley" were
+ *  switched off, so the harness's header and volley shots were really
+ *  cutbacks and tight angles; now they are real headers and volleys (played
+ *  off the team's cross drawings, lib/star/airDrawings.ts). Checked: the same
+ *  shots over every OTHER kind give 4284c48 on the code before and after
+ *  (scripts/b10/fingerprintNoAir.mts), so the keeper code did not change. */
+export const KEEPER_FINGERPRINT_BEFORE = "348e3dce";
 
 if (process.argv[1]?.endsWith("fingerprint.mts")) {
   const store = new Map<string, string>();

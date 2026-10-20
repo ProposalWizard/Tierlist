@@ -38,7 +38,7 @@ import { CX, GOAL_W, PITCH_W } from "./pitch";
 import { AUTHORED_SCENARIOS } from "./authoredScenarios";
 import type { MatchScenario } from "./scenarios";
 import { listScenarios } from "./scenarioStore";
-import { derivedAirDrawings, isAirKind, CROSSER_MATE_INDEX } from "./airDrawings";
+import { derivedAirDrawings, isAirKind, CROSSER_MATE_INDEX, CROSSER_IN_M } from "./airDrawings";
 import {
   deriveRuleSet, sampleFromAuthored, violations, MIN_SAMPLES_FOR_INVARIANT,
   type RuleSet, type ShapeSample,
@@ -749,7 +749,23 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   const bodies = mateBodiesOf(sc);
   const takenM = new Set<number>();
   let matesPlaced = 0;
-  for (const spot of shape.mates) {
+  // A header or volley played off a cross drawing (airDrawings.ts): the
+  // builder's crosser (teammates[0], who is credited with the assist) takes
+  // the drawing's crosser spot (its mates[0]) before anyone else is matched —
+  // measured, nearest-first left him out (and so off the picture) in 26 of
+  // 1,200 served, the builder's support runners being nearer his spot.
+  let firstSpot = 0;
+  if (isAirKind(sc.kind) && shape.mates.length && sc.teammates.length) {
+    const c = sc.teammates[0], spot = shape.mates[CROSSER_MATE_INDEX];
+    // In open play he crosses it from ON the pitch: a corner drawing's taker
+    // stands on (or a nudge past) the flag.
+    c.x = clamp(spot.x, CROSSER_IN_M, PITCH_W - CROSSER_IN_M);
+    c.y = Math.max(CROSSER_IN_M, spot.y);
+    takenM.add(bodies.indexOf(c));
+    matesPlaced++;
+    firstSpot = CROSSER_MATE_INDEX + 1;
+  }
+  for (const spot of shape.mates.slice(firstSpot)) {
     let best = -1, bestD = Infinity;
     bodies.forEach((m, i) => {
       if (takenM.has(i)) return;
@@ -772,16 +788,6 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   const r = drawnHeadcount(sc, shape, takenD, takenM, bodies);
   defendersPlaced = r.defendersPlaced; matesPlaced = r.matesPlaced;
   const removed = r.removed;
-  // A header or volley played off a cross drawing (airDrawings.ts): the
-  // builder's crosser (teammates[0], who is credited with the assist) stands
-  // on the drawing's crosser spot (its mates[0]), whoever the nearest-first
-  // matching put there.
-  if (isAirKind(sc.kind) && shape.mates.length && sc.teammates.length) {
-    const spot = shape.mates[CROSSER_MATE_INDEX];
-    const c = sc.teammates[0];
-    const on = mateBodiesOf(sc).find((b) => Math.abs(b.x - spot.x) < 1e-6 && Math.abs(b.y - spot.y) < 1e-6);
-    if (on && on !== c) { const x = c.x, y = c.y; c.x = on.x; c.y = on.y; on.x = x; on.y = y; }
-  }
 
   // A runner's `to` is where he is RUNNING, not where he stands — left
   // alone, he would sprint back to a spot from the procedural build the

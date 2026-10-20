@@ -52,7 +52,7 @@ import { CX } from "./pitch";
 /** Which drawn kinds each air kind is taken from. */
 export const AIR_FROM: Readonly<Record<string, readonly string[]>> = {
   header: ["byline_cross", "corner"],
-  volley: ["byline_cross", "corner", "cutback"],
+  volley: ["byline_cross", "corner"],
 };
 
 /** The kinds served this way while they have fewer than 5 drawings of their own. */
@@ -119,7 +119,7 @@ export function derivedAirDrawings(kind: string, source: (kind: string) => Match
         // crosser there), then everyone else as drawn.
         const players: ScenarioPlayer[] = [
           { id: "you", side: "you", x: man.x, y: man.y, label: "YOU" },
-          { id: "crosser", side: "teammate", x: crosser.x, y: crosser.y, label: "CROSSER" },
+          { id: "crosser", side: "teammate", x: Math.min(Math.max(crosser.x, CROSSER_IN_M), 68 - CROSSER_IN_M), y: Math.max(crosser.y, CROSSER_IN_M), label: "CROSSER" },
           ...others.map((m) => ({ ...m })),
           ...defs.map((d) => ({ ...d })),
           { ...gk },
@@ -142,6 +142,9 @@ export function derivedAirDrawings(kind: string, source: (kind: string) => Match
 
 /** The crosser's spot in a derived drawing's shape: mates[0] (see the order above). */
 export const CROSSER_MATE_INDEX = 0;
+/** In open play the crosser stands at least this far inside the lines (m): a
+ *  corner drawing's taker is drawn on the flag, and a nudge can take him off it. */
+export const CROSSER_IN_M = 0.6;
 
 // ─────────────────────────────────────────────────────────────────────────
 //  HOW HIGH THE BALL IS WHEN IT REACHES YOU
