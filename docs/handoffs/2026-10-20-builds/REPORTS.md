@@ -167,3 +167,11 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Left menu: Team first (people icon); inside it Team board, Team chat, Ideas, My to-do, Patch notes; then Games; then Videos. Patch notes moved into the Team area. Folded/phone: Team first. All four skins, same layout.
 - Seen at 1440×900 and 390×844 locally. Reasoned: the site menu's Admin link (needs real admin sign-in), testers' view, live database path.
 - Left over: phones that added the KIB Admin app may open the old home until re-added; Site content (/admin) is now at Website games → Tierlists.
+
+## Team jobs by push (Harry: "just use pushes")
+- Jobs live in team/jobs.json (id, owner Harry/Mikey/Leo/all, title ≤ 200, prompt ≤ 4000, from, added). A Claude chat adds one by editing the file and pushing its own branch; no SQL, no deploy (team/README.md).
+- The board reads main, Harry, Mikey and Leo from GitHub (GITHUB_TOKEN), cached 60 s, newest `added` wins; built-in copy when GitHub can't be reached.
+- To-do: "Given to me", tag "from a push · Harry", Copy prompt (871 characters copied; fallback box selected), no ✕, counts in the amber badge.
+- Ticks: the person's own team_tasks row "[job:<id>] <title>", hidden from the normal lists; each person ticks their own.
+- First job: the lag test, for all, with the prompt. Seen in demo mode only (not against the real database, no live GitHub read: rate-limited). Reaches the live board only after the next merge to main.
+- Found, not fixed: tick boxes look stretched tall at phone width (older jobs too).
