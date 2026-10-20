@@ -11,7 +11,7 @@
  * Depths (eyes, mouth, nose tip) by a ray from the front onto the head.
  * Everything is in rest-pose metres, his left at +x (as faceLandmarks.ts).
  */
-import type { ToonHead } from "./bodies";
+import { TOON_HEADS, type ToonHead } from "./bodies";
 import type { ToonFaceLandmarks } from "./faceLandmarks";
 
 export interface ToonFaceMeasure extends ToonFaceLandmarks {
@@ -22,14 +22,16 @@ export interface ToonFaceMeasure extends ToonFaceLandmarks {
 const W = 880, H = 960;
 const BOX = { half: 0.11, up: 0.1, down: 0.14 };
 
-export async function measureToonFace(head: ToonHead): Promise<{ m: ToonFaceMeasure; pic: string }> {
+/** `file`: measure a body file being judged (bodies.ts TOON_BODY_SETS) worn as `head`. */
+export async function measureToonFace(head: ToonHead, file?: string): Promise<{ m: ToonFaceMeasure; pic: string }> {
   const T: any = await import("three");
   const { GLTFLoader }: any = await import("three/examples/jsm/loaders/GLTFLoader.js");
   const SkU: any = await import("three/examples/jsm/utils/SkeletonUtils.js");
   const { withMeshopt } = await import("../../three3d/meshopt");
   const { loadToonHead, loadPeople3d, makePerson3d } = await import("../../people3d");
   const loader = await withMeshopt(new GLTFLoader());
-  const [g, anims] = await Promise.all([loadToonHead(loader, head), loadPeople3d(loader, "anims", "new")]);
+  const one = async () => { const f = await loader.loadAsync(file); const set: unknown[] = []; set[TOON_HEADS.indexOf(head)] = f; return { ...f, toonBodies: set, toonWhich: "player" }; };
+  const [g, anims] = await Promise.all([file ? one() : loadToonHead(loader, head), loadPeople3d(loader, "anims", "new")]);
   const p = makePerson3d(T, SkU.default ?? SkU, g, anims, { toonHead: head, outline: 0, who: "measure" });
   const geo = p.body.geometry;
   const map = (p.body.material as any).map;

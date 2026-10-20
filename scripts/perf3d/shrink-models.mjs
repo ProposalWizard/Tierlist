@@ -104,6 +104,10 @@ const POLICY = {
   "star/people3d/toon-p6.glb": PEOPLE.old,
   "star/people3d/toon-mgr.glb": PEOPLE.old,
   "star/people3d/toon-mgr2.glb": PEOPLE.old,
+  // Bodies being judged (B5b, 20 Oct 2026; tools/bodies, ?bodies= on a test page): B and B2/B3 with today's face
+  "star/people3d/toon-q1.glb": PEOPLE.old,
+  "star/people3d/toon-f2.glb": PEOPLE.old,
+  "star/people3d/toon-f3.glb": PEOPLE.old,
   // The old shop/garden player: dressInKit (shop3d/scene.ts) reads positions
   // in metres and skinWeight.array as 0..1 floats, so those two stay float.
   "star/shop3d/character.glb": { q: /^(NORMAL|TEXCOORD_\d+|COLOR_\d+)$/, keepWeights: true, webp: true },

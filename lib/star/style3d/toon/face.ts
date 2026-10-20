@@ -20,6 +20,7 @@ import type * as THREE from "three";
 import type { Person3D } from "../../people3d";
 import { buildFaceShapes, blendExpressions, NEUTRAL_FACE, type FaceLandmarks, type FaceParams, type ExpressionName } from "../../cutscene/face";
 import { TOON_FACE_LANDMARKS, type ToonFaceLandmarks } from "./faceLandmarks";
+import { TOON_FACE_FILE_LANDMARKS } from "./faceFileLandmarks";
 
 type Three = typeof import("three");
 
@@ -65,7 +66,8 @@ export const TOON_EXPRESSIONS: Record<string, Partial<Record<ExpressionName, num
 
 /** A face for this person, or null (not a Style A head, or no measured face for it). */
 export function addToonFace(T: Three, p: Person3D): ToonFaceRig | null {
-  const lm = p.toonHead ? TOON_FACE_LANDMARKS[p.toonHead] : undefined;
+  // a body file being judged (bodies.ts TOON_BODY_SETS) has its own face; else the head's
+  const lm = TOON_FACE_FILE_LANDMARKS[p.meta.file ?? ""] ?? (p.toonHead ? TOON_FACE_LANDMARKS[p.toonHead] : undefined);
   if (!lm || !p.u.uTfOn || !TOON_FACE_ON.on) return null;
   const body = p.body;
   const shared = body.geometry;

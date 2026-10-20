@@ -40,7 +40,7 @@ import { withMocapOwn } from "./three3d/footballAnims";
 import { motionLook } from "./motionLook";
 import { playerStyleLook, type PlayerStyleLook } from "./style3d/toon/look";
 import { matchPlayerStyle } from "./style3d/toon/matchLook";
-import { TOON_HEADS, TOON_FILES, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
+import { TOON_HEADS, toonFileFor, toonFileIsJudged, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
 import { patchToonBody, toonUniforms, toonShirtLayout } from "./style3d/toon/shader";
 import { toonProportions, warpToonBody, type ToonPropId } from "./style3d/toon/proportions";
 import { SMALL_INK } from "./style3d/smallMen";
@@ -105,6 +105,11 @@ export interface PersonMeta {
   quant?: { scale: number; offset: V3 };
   /** A Style A body (style3d/toon): its kit lines also carry the collar, shorts hem and sleeve end. */
   toon?: boolean;
+  /** A Style A body drawn at real proportions carries its own head, neck and hand scales
+   *  (1, 1, 1: the file is already right), over TOON_LOOK_DEFAULT's cartoon ones. */
+  look?: Partial<Pick<ToonLook, "head" | "neck" | "hands">>;
+  /** A Style A body: the file's own model name (toon-p1, toon-f2 …); `model` becomes player or manager. */
+  file?: string;
 }
 
 export type FingerName = "thumb" | "index" | "middle" | "ring" | "little";
@@ -204,7 +209,7 @@ const cache = new Map<string, Promise<GLTF>>();
  * never fetch the other heads). makePerson3d reads it like loadPeople3d's set.
  */
 export function loadToonHead(loader: { loadAsync(url: string): Promise<unknown> }, head: ToonHead): Promise<GLTF> {
-  const url = TOON_FILES[head];
+  const url = toonFileFor(head);
   let g = cache.get(url);
   if (!g) {
     g = loadPersonFile(loader, url);
@@ -242,7 +247,7 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
     const want = heads ?? (which === "manager" ? TOON_SUIT_HEADS : TOON_HEADS);
     const all = Promise.all(TOON_HEADS.map((b) => {
       if (!want.includes(b)) return Promise.resolve(undefined as unknown as GLTF);
-      const url = TOON_FILES[b];
+      const url = toonFileFor(b);
       let g = cache.get(url);
       if (!g) {
         g = loadPersonFile(loader, url);
@@ -297,7 +302,7 @@ function people3dPlainFiles(): string[] {
   const anims = (body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES).anims;
   const plain = body === "new" && humanBodyLook() === "human" ? HUMAN3D_FILE : (body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES).player;
   // the 3D match draws realistic players (toon/matchLook.ts) while the rest of the game is Style A: fetch both
-  if (playerStyleLook() === "new") return [...TOON_HEADS.map((h) => TOON_FILES[h]), ...(matchPlayerStyle() === "old" ? [plain] : []), anims];
+  if (playerStyleLook() === "new") return [...TOON_HEADS.map((h) => toonFileFor(h)), ...(matchPlayerStyle() === "old" ? [plain] : []), anims];
   return [plain, anims];
 }
 let warming: Promise<void> | null = null;
@@ -665,8 +670,8 @@ export function makePerson3d(
   if (meta.quant) dequantize(T, model, meta.quant);
   // the suit heads are modelled in their suits; a player head is in a kit
   const suit = !!toonHead && TOON_SUIT_HEADS.includes(toonHead);
-  if (toon) meta = { ...meta, model: suit ? "manager" : "player" };
-  if (toon && toonHead && TOON_HEM_FIX[toonHead]) meta = { ...meta, kit: { ...meta.kit, hemY: TOON_HEM_FIX[toonHead]! } };
+  if (toon) meta = { ...meta, file: String(meta.model), model: suit ? "manager" : "player" };
+  if (toon && toonHead && TOON_HEM_FIX[toonHead] && !toonFileIsJudged(toonHead)) meta = { ...meta, kit: { ...meta.kit, hemY: TOON_HEM_FIX[toonHead]! } };
   const root = new T.Group();
   const inner = SkeletonUtils.clone(model.scene);
   root.add(inner);
@@ -715,7 +720,7 @@ export function makePerson3d(
   body.frustumCulled = false;
   body.castShadow = !!opts.castShadow;
   // Style A's ink line is a little bolder (the look test's 7 mm against the old 4.5).
-  const tlk = toon ? { ...TOON_LOOK_DEFAULT, ...(prop && prop.id !== "a" ? { head: prop.head } : {}), ...opts.toonLook } : null;
+  const tlk = toon ? { ...TOON_LOOK_DEFAULT, ...meta.look, ...(prop && prop.id !== "a" ? { head: prop.head } : {}), ...opts.toonLook } : null;
   const thin = tlk && tlk.outlineThin < 1 ? { chinY: meta.face.chinY - 0.03, handX: Math.abs(meta.joints.LeftHand?.[0] ?? 0.4) - 0.01, k: tlk.outlineThin } : undefined;
   const outline = new T.SkinnedMesh(body.geometry, opts.outlinePx ? outlinePxMaterial(T, opts.outlinePx) : outlineMaterial(T, (opts.outline ?? 0.0045) * (toon ? 1.3 : 1), opts.outlineNear, thin));
   outline.name = "Outline";

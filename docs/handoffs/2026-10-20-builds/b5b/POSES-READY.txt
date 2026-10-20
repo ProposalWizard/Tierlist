@@ -1,0 +1,30 @@
+B5b poses vs real: poses-vs-real.jpg (20 Oct 2026)
+
+Each tile: a frame from the reference video (b5c-hq/hq-*.mp4, 2 s in) | B2 with today's Curls face |
+B3 with today's Curls face | today's body (small). Our body is posed with the clips we already have
+(idle, jog, walk, knee_slide, handshake, nod, shirt_hold, talk, sit_idle), from a similar camera.
+Body only: no bench, shirt or manager drawn.
+
+What changed since the scenes sheet (Harry 18:41):
+- FACE: B2 and B3 now wear today's Style A head (the Curls face: same eyes, brows, shading, moving face),
+  put on the new body in Blender (tools/bodies/graft.py on the B body). Side by side: faces-today-vs-B.jpg.
+- STRAY FACE LINES: found and fixed. Cause: the body file's own name was overwritten when the person was
+  built, so the moving face used today's Curls eye positions on the new head (3 cm lower: a ring on the
+  cheek). Now each file keeps its own (lib/star/people3d.ts meta.file). Seen gone in the tunnel and
+  farewell close-ups.
+- CHEST: flatter. Chest depth at the nipples (side view): B2 0.217 m -> 0.177 m (guide 0.231 m,
+  today 0.260 m). Chest in front of the chin: B2 +1.7 cm -> -1.0 cm (guide +5 cm, today -4.0 cm).
+  So B2's chest was never deeper than a real man's; it read as "out" from its shape (pecs) and the head
+  set back. Flattened anyway, as asked; it is now thinner than the guide. B3: 0.187 m.
+- Heads tall: B2 6.7, B3 6.5 (guide 7.7, today 5.1). Shoulders 0.47 / 0.48 m (guide 0.47).
+
+SHOULDERS (Harry 18:35), measured on every tile (numbers under each):
+- In the bind pose every body has level collarbones (0°) and the shoulder joint 7.5–8.7 cm BELOW the
+  neck base: today, B, B2, B3, A and the MakeHuman body alike. The fit does not raise them.
+- In the clips the collarbones rise: idle, nod, talk, shirt_hold +13–14°; handshake +26°; sitting +37–39°;
+  walk, jog and knee slide 0°. Today's body does exactly the same. So the high shoulders come from the
+  clips (clavicle turns), not from any body: B5c's lane. Nothing changed in fit.py for it.
+
+Wrong vs real (also on the tiles): shoulders lifted in standing clips; arms held away from the hips in
+idle; no gestures in the talk clip; the sitting clip hunches. Our celebration clip is arms-up, the real
+one arms-wide.
