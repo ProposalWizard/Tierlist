@@ -31,6 +31,8 @@ import { garden3dLook } from "@/lib/star/garden3d/look";
 import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
 import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
 import { wornAt } from "@/lib/star/home3d/outfits";
+import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
+import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import GardenScreen from "./GardenScreen";
 import { Stick, pill } from "./Shop3D";
 
@@ -58,9 +60,13 @@ export interface Garden3DProps {
   arrive?: GardenData["arrive"];
   /** Test page only: force the time of day. */
   sky?: GardenData["sky"];
+  /** Which screen this is, for approved 3D Scene Editor edits (lib/star/sceneEdits): the career (default) or the test page. */
+  where?: "career" | "test";
+  /** Test page: fill its box on the admin frame instead of the whole screen. */
+  embedded?: boolean;
 }
 
-export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, arrive = "gate", sky }: Garden3DProps) {
+export default function Garden3D({ career, onBack, onShop, onCasino, onTraining, onHouse, arrive = "gate", sky, where = "career", embedded = false }: Garden3DProps) {
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<GardenController | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -84,34 +90,15 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
   const info = useMemo(() => gardenData(career), [career]);
 
   const data: GardenData = useMemo(() => {
-    const yours = career.squadNumber ?? 10;
-    const numbers = [7, 4, 9, 11, 6, 8].filter((n) => n !== yours).slice(0, 3);
-    const owned = new Set(career.ownedItems.map((it) => baseIdOf(it)));
-    return {
-      kit: kitsOf(career.player.club).home,
-      number: yours,
-      tier: info.tier,
-      stable: info.stable,
-      horse: career.horse ? { name: career.horse.name } : null,
-      trophies: info.shelf,
-      cars: CAR_MODELS.filter((id) => owned.has(id)).map((id) => `/star/shop3d/items/${id.startsWith("car-") ? id : `car-${id}`}.glb`),
-      sky: sky ?? homeSkyFor(career, nextFixtureFor(career)),
-      mates: numbers,
-      arrive,
-      // the 3D shop's own player (Settings → "3D shop player"), so you are
-      // the same person in the garden as in the shop (?player=old|new here too)
-      player: {
-        look: q0("player") === "old" || q0("player") === "new" ? (q0("player") as "old" | "new") : shop3dPlayerLook(),
-        skin: skinToneHex(career.player.skinTone),
-        hair: hairColourHex(career.player.hairColour),
-        hairStyle: resolveHairStyle(career.player.hairStyle),
-      },
-      // the clothes from your home's wardrobe (lib/star/home3d/outfits.ts); back from training: the kit
-      worn: wornAt(career, arrive === "training" ? "training" : "garden"),
-    };
+    return gardenSceneData(career, arrive, sky);
     // the garden is built once per visit
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // an approved 3D Scene Editor edit for the garden here and at this time of day (none = as built)
+  const approved = useApprovedEdit<WalkSceneEdit>("garden", where, [data.sky]);
+  const approvedRef = useRef(approved);
+  approvedRef.current = approved;
+  useEffect(() => { if (approved) ctrlRef.current?.setEdit?.(approved); }, [approved, status]);
 
   useEffect(() => {
     document.body.classList.add("knowitball-immersive");
@@ -172,7 +159,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
         const fixedStep = q.get("film") === "1" ? 1 / 30 : undefined;
         // the Old garden knows only "high" | "low" (sceneOld.ts is frozen)
         const start = (): Promise<GardenController> => newMod
-          ? newMod.startGarden(el, cbs, data, { quality: tier, fixedStep })
+          ? newMod.startGarden(el, cbs, data, { quality: tier, fixedStep, edit: approvedRef.current })
           // (the Old garden has no casino or pitch: it starts at the gate)
           : oldMod!.startGarden(el, cbs, { ...data, arrive: data.arrive === "shop" ? "shop" : "gate" }, { quality: tier === "low" ? "low" : "high", fixedStep });
         let c: GardenController;
@@ -219,7 +206,7 @@ export default function Garden3D({ career, onBack, onShop, onCasino, onTraining,
   if (status === "error") return <GardenScreen career={career} onBack={onBack} />;
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "#0d1420", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-garden3d>
+    <div style={{ position: embedded ? "absolute" : "fixed", inset: 0, zIndex: embedded ? 1 : 80, background: "#0d1420", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-garden3d>
       <div
         ref={holder}
         style={{ position: "absolute", inset: 0 }}
@@ -412,4 +399,38 @@ function Bar({ icon, v }: { icon: string; v: number }) {
       <b style={{ fontSize: 12, width: 22, textAlign: "right" }}>{v}</b>
     </div>
   );
+}
+
+/**
+ * What the 3D garden is built from, off a career (the screen above, and the
+ * 3D Scene Editor's garden on /star-scene-editor-dev). `sky` unset: the
+ * time of day of your next match.
+ */
+export function gardenSceneData(career: CareerState, arrive: GardenData["arrive"], sky?: GardenData["sky"]): GardenData {
+  const info = gardenData(career);
+  const yours = career.squadNumber ?? 10;
+  const numbers = [7, 4, 9, 11, 6, 8].filter((n) => n !== yours).slice(0, 3);
+  const owned = new Set(career.ownedItems.map((it) => baseIdOf(it)));
+  return {
+    kit: kitsOf(career.player.club).home,
+    number: yours,
+    tier: info.tier,
+    stable: info.stable,
+    horse: career.horse ? { name: career.horse.name } : null,
+    trophies: info.shelf,
+    cars: CAR_MODELS.filter((id) => owned.has(id)).map((id) => `/star/shop3d/items/${id.startsWith("car-") ? id : `car-${id}`}.glb`),
+    sky: sky ?? homeSkyFor(career, nextFixtureFor(career)),
+    mates: numbers,
+    arrive,
+    // the 3D shop's own player (Settings → "3D shop player"), so you are
+    // the same person in the garden as in the shop (?player=old|new here too)
+    player: {
+      look: q0("player") === "old" || q0("player") === "new" ? (q0("player") as "old" | "new") : shop3dPlayerLook(),
+      skin: skinToneHex(career.player.skinTone),
+      hair: hairColourHex(career.player.hairColour),
+      hairStyle: resolveHairStyle(career.player.hairStyle),
+    },
+    // the clothes from your home's wardrobe (lib/star/home3d/outfits.ts); back from training: the kit
+    worn: wornAt(career, arrive === "training" ? "training" : "garden"),
+  };
 }

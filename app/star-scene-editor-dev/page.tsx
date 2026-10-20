@@ -13,7 +13,13 @@
  * Step 3 (part 1): 3D Signing and the Manager's Office are live places too
  * (PlaceEditor.tsx): their fixed shots, each shot's camera and lens, the key
  * light and the exposure, through signing3dScene.ts's optional edit hook.
- * The game's own scenes do NOT read these edits yet.
+ * Step 3b (20 Oct 2026, Harry: "3B first"): the 3D Shop, Garden and House
+ * (WalkPlaceEditor.tsx): per view turn / rise / distance / lens, key light,
+ * exposure, through each scene's optional edit hook (sceneEdits/walkEdit.ts).
+ * Approve + where/when + Commit to game (UsePanel.tsx, answers 3D-3, 3D-4):
+ * the game uses an edit only once it is approved.
+ * Kept scenes from the Scene generator (/admin/scene-generator) open here as
+ * director scenes too ("Kept: …" pills).
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
@@ -26,6 +32,10 @@ import type { CameraMove, CameraTrack, CutsceneScript, MoodId, ShotPreset, Track
 import { directorId, emptySaved, fetchShared, loadDirectorLocal, pushShared, saveLocal, sharedDirector, type SavedEdits } from "./store";
 import { MiniMap, PlaceTabs, Row, T, Vec, orbitPose, useOrbit, type PlaceId } from "./parts";
 import PlaceEditor from "./PlaceEditor";
+import WalkPlaceEditor from "./WalkPlaceEditor";
+import UsePanel from "./UsePanel";
+import { keptScenes, loadKeptLocal, type KeptScene } from "@/lib/star/sceneEdits/kept";
+import type { SceneApproval } from "@/lib/star/sceneEdits/approval";
 import type { Director, DirectorEdit } from "@/lib/star/cutscene/director";
 
 const TOP_PRESETS: [ShotPreset, string][] = [["wide", "Wide"], ["ots", "Over the shoulder"], ["close", "Close"], ["two-shot", "Two-shot"], ["low-hero", "Low hero"]];
@@ -37,10 +47,10 @@ type MobTab = "camera" | "lighting" | "cast" | "scene";
 
 export default function SceneEditorPage() {
   const [place, setPlace] = useState<PlaceId>("director");
-  // ?place=signing|office|director opens that place (links and test stills).
+  // ?place=signing|office|shop|garden|house|director opens that place (links and test stills).
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get("place");
-    if (q === "signing" || q === "office" || q === "director") setPlace(q);
+    if (q === "signing" || q === "office" || q === "shop" || q === "garden" || q === "house" || q === "director") setPlace(q);
   }, []);
   const key = (
     <div className="se-key">
@@ -54,7 +64,9 @@ export default function SceneEditorPage() {
       {key}
       {place === "signing" || place === "office"
         ? <PlaceEditor key={place} place={place} tabs={<PlaceTabs place={place} onPick={setPlace} />} />
-        : <DirectorEditor tabs={<PlaceTabs place={place} onPick={setPlace} />} />}
+        : place === "shop" || place === "garden" || place === "house"
+          ? <WalkPlaceEditor key={place} place={place} tabs={<PlaceTabs place={place} onPick={setPlace} />} />
+          : <DirectorEditor tabs={<PlaceTabs place={place} onPick={setPlace} />} />}
       <PageGuide page="/star-scene-editor-dev" />
     </BroadcastPage>
   );
@@ -62,7 +74,12 @@ export default function SceneEditorPage() {
 
 function DirectorEditor({ tabs }: { tabs: React.ReactNode }) {
   const [fixture, setFixture] = useState("signing");
-  const script: CutsceneScript = useMemo(() => FIXTURES[fixture](), [fixture]);
+  // kept scenes from the Scene generator (this device + the shared table); ?kept=<id> opens one
+  const [kept, setKept] = useState<KeptScene[]>([]);
+  const keptHit = kept.find((k) => k.id === fixture);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const script: CutsceneScript = useMemo(() => keptHit?.script ?? (FIXTURES[fixture] ?? FIXTURES.signing)(), [fixture, keptHit?.at]);
+  const [approval, setApproval] = useState<SceneApproval | undefined>();
   const holder = useRef<HTMLDivElement>(null);
   const dir = useRef<Director | null>(null);
   const building = useRef<Promise<void>>(Promise.resolve());
@@ -125,13 +142,21 @@ function DirectorEditor({ tabs }: { tabs: React.ReactNode }) {
     const sc = sv.scene ?? {};
     setMood(sc.mood); setExposure(sc.exposure ?? 1); setKeyLight(sc.keyLight ?? 1); setSpot(sc.spot ?? null);
     setKeyAngle(sc.keyAngle ?? 0); setKeyColor(sc.keyColor);
+    setApproval(sv.approval);
   }
-  const current = (): SavedEdits => ({ shots, free, scene: { mood, exposure, keyLight, keyAngle, keyColor, spot } });
+  const current = (): SavedEdits => ({ shots, free, scene: { mood, exposure, keyLight, keyAngle, keyColor, spot }, ...(approval ? { approval } : {}) });
 
   // the shared copies, once (never blocks the page)
   useEffect(() => {
+    const k0 = new URLSearchParams(window.location.search).get("kept");
+    const local = loadKeptLocal();
+    setKept(local);
+    if (k0 && local.some((k) => k.id === k0)) setFixture(k0);
     fetchShared().then((sh) => {
       setShared(sh);
+      const all = keptScenes(sh.edits, local);
+      setKept(all);
+      if (k0 && all.some((k) => k.id === k0)) setFixture(k0);
       // nothing on this device for the open script: take the shared copy
       const sv = sharedDirector(sh.edits, fixture);
       if (!loadDirectorLocal(fixture) && sv) applySaved(sv);
@@ -312,13 +337,14 @@ function DirectorEditor({ tabs }: { tabs: React.ReactNode }) {
     <>
       <div className="se-unsaved" data-unsaved>
         Edits save on this device as you change them{shared?.missing ? " — the shared table isn't switched on yet, so SAVE FOR EVERYONE keeps them on this device only" : ""}.
-        {" "}The game&apos;s own cut scenes do not read these edits yet (a later step).
+        {" "}Cut scenes do not play in a career yet (see the Scene generator&apos;s &quot;When does this play?&quot;), so an approved edit here is used on the cut-scene test pages for now.
       </div>
       <div className="se-grid">
         <Panel title="3D PREVIEW" note="live: the real cut-scene director">
           {tabs}
           <div className="se-pills se-scripts">
             {FIXTURE_LIST.map((f) => <Pill key={f.id} on={fixture === f.id} onClick={() => setFixture(f.id)}>{f.name}</Pill>)}
+            {kept.map((k) => <Pill key={k.id} on={fixture === k.id} onClick={() => setFixture(k.id)} title="Kept from the Scene generator">Kept: {k.name}</Pill>)}
           </div>
           <div className="se-view">
             <div ref={holder} className="se-canvas" data-editor={status} {...orbitHandlers} style={{ touchAction: "none", cursor: "grab" }} />
@@ -347,6 +373,8 @@ function DirectorEditor({ tabs }: { tabs: React.ReactNode }) {
       <Panel title="TIMELINE" note="the script's real tracks (read-only)">
         <Timeline script={script} cams={cams} dur={dur} time={time} onSeek={seek} />
       </Panel>
+      <UsePanel place="director" scriptId={directorId(fixture)} edits={current()} onChange={(e) => { setApproval(e.approval); lastSaved.current = JSON.stringify(e); }}
+        gameNote="Cut scenes play only on test pages today. When the game plays one, it will use the approved edit for that scene, at the moment you pick under When." />
     </>
   );
 }

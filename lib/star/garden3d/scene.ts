@@ -65,6 +65,7 @@ import { addClips, clipInfo, loadAnims3d, withMocapOwn } from "../three3d/footba
 import { strideFor, type GaitBlend } from "../three3d/gaitBlend";
 import { STROLL_SPEEDS, approach, stickTarget } from "../three3d/gait";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
+import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 import { cullSkinned } from "../three3d/cullPeople";
 import {
   gravelCanvas, pavingCanvas, strawCanvas, boardsCanvas, skyCanvas, countCanvas, glowCanvas,
@@ -140,6 +141,14 @@ export interface GardenController {
   debugCamera?: (pos: [number, number, number] | null, look?: [number, number, number]) => void;
   /** For checking: where the horse and the bird are, and how big they draw. */
   debug: () => Record<string, unknown>;
+  /** 3D Scene Editor (and approved edits in the game): the edit to play with (null = as written). */
+  setEdit?: (e: WalkSceneEdit | null) => void;
+  /** Editor only: stand him somewhere to look at the walking camera (gate, fountain, shop, casino, training, house). */
+  showView?: (stand: string) => void;
+  /** Editor only: where the camera stands and looks at the last frame. */
+  cameraPose?: () => { pos: [number, number, number]; look: [number, number, number]; fov: number };
+  /** Editor only: the garden from above for the mini-map. */
+  layout?: () => { people: { id: string; x: number; z: number }[]; sunDir: [number, number, number]; bounds: { min: [number, number, number]; max: [number, number, number] } };
   dispose: () => void;
 }
 
@@ -147,6 +156,9 @@ export interface GardenOptions {
   /** Settings → Look → "3D quality" (lib/star/three3d/quality.ts). Unset: the setting, else Auto. */
   quality?: Quality3d;
   fixedStep?: number;
+  /** The 3D Scene Editor's edit (/star-scene-editor-dev), or an approved one in the
+   *  game (lib/star/sceneEdits). Absent = the garden exactly as before. */
+  edit?: WalkSceneEdit | null;
 }
 
 // ── The plan of the garden (metres; north is -z, the gate is south) ──
@@ -2317,11 +2329,15 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   const ku = (e: KeyboardEvent) => onKey(e, false);
   window.addEventListener("keydown", kd);
   window.addEventListener("keyup", ku);
+  /** The editor's edit (none = as written), and the screen's own lens it starts from. */
+  let edit: WalkSceneEdit | null = opts.edit ?? null;
+  let baseFov = 54;
   const resize = () => {
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.fov = w / h < 0.7 ? 62 : 54;
+    baseFov = camera.fov;
     camera.updateProjectionMatrix();
   };
   const ro = new ResizeObserver(resize);
@@ -2748,6 +2764,12 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     const [camUp, camBack] = orb.lift(CAM_UP, CAM_BACK, 1.3); // the drag's tilt, same distance from him
     want.set(player.position.x - cfx * camBack, camUp, player.position.z - cfz * camBack);
     wantLook.set(player.position.x + cfx * 2.4, 1.3, player.position.z + cfz * 2.4);
+    // the editor's walking-camera edit (none = as written); the boom below still keeps it clear of walls
+    if (edit?.views?.follow) {
+      want.set(...editCamera([want.x, want.y, want.z], [wantLook.x, wantLook.y, wantLook.z], edit.views.follow));
+      const fov = editFov(baseFov, edit, null, 0);
+      if (Math.abs(fov - camera.fov) > 1e-3) { camera.fov = fov; camera.updateProjectionMatrix(); }
+    }
     {
       // Things the camera must not end up inside or behind, in plan:
       const hx = player.position.x, hz = player.position.z;
@@ -2885,7 +2907,26 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
     }
     return null;
   };
+  // the editor's key light (the low sun) and exposure; none = as written
+  const lightEdit = makeLightEditor({ key: sun, renderer, lookH: !!hEnh, scene });
+  if (edit) { lightEdit(edit); shadowDirty = true; }
+  /** Where the editor stands him to look at the walking camera. */
+  const EDIT_STANDS: Record<string, { x: number; z: number; yaw: number }> = {
+    gate: START_GATE, fountain: { x: 0, z: 1.6, yaw: Math.PI }, shop: START_SHOP, casino: START_CASINO, training: START_TRAINING, house: START_HOUSE,
+  };
   const ctrl: GardenController = {
+    setEdit: (e) => {
+      edit = e;
+      lightEdit(e);
+      shadowDirty = true;
+      if (!e?.views?.follow) { camera.fov = baseFov; camera.updateProjectionMatrix(); }
+    },
+    showView: (stand) => { const s = EDIT_STANDS[stand] ?? START_GATE; ctrl.place(s.x, s.z, s.yaw); },
+    cameraPose: () => ({ pos: [camera.position.x, camera.position.y, camera.position.z], look: [camLook.x, camLook.y, camLook.z], fov: camera.fov }),
+    layout: () => {
+      const d = sun.position.clone().normalize();
+      return { people: [{ id: "you", x: player.position.x, z: player.position.z }], sunDir: [d.x, d.y, d.z], bounds: { min: [-LIMIT, 0, -LIMIT], max: [LIMIT, 6, LIMIT] } };
+    },
     setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
     orbit: (dx, dy = 0) => { orb.drag(dx, dy); orbitHold = 1.5; },
     pick: (px, py) => { aim(px, py); return pickSpot(); },

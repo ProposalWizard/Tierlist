@@ -16,7 +16,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { StyleId } from "@/lib/star/style3d/styles";
 import type { CutsceneScript, Emotion, EventKind, StoryEvent } from "@/lib/star/cutscene/types";
-import type { Director } from "@/lib/star/cutscene/director";
+import type { Director, DirectorEdit } from "@/lib/star/cutscene/director";
+import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
+import { directorScriptId } from "@/lib/star/sceneEdits/approval";
 import type { Overlay } from "@/lib/star/cutscene/timeline";
 import { FIXTURES, FIXTURE_LIST } from "@/lib/star/cutscene/fixtures";
 import { generateScript, scoreScript } from "@/lib/star/cutscene/generate";
@@ -101,6 +103,11 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
   }, [script, inited, camLook]);
 
   useEffect(() => { dir.current?.setStyle(style); }, [style]);
+
+  // a hand-made scene's approved 3D Scene Editor edit, on this test page (lib/star/sceneEdits; none = as written)
+  const evKind = script.source?.event?.kind;
+  const approved = useApprovedEdit<DirectorEdit>(mode === "fixture" ? directorScriptId(fixture) : "", "test", evKind ? [evKind] : []);
+  useEffect(() => { if (approved && mode === "fixture" && status === "ready") dir.current?.setEdit(approved); }, [approved, status, mode]);
 
   const d = dir.current;
   const set = <K extends keyof StoryEvent>(k: K, v: StoryEvent[K]) => setEv((e) => ({ ...e, [k]: v }));

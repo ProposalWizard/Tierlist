@@ -89,3 +89,14 @@
   .se-shotbtn { padding: 4px 7px; font-size: 11px; }
   .se-big { font-size: 14px; padding: 6px 12px; }
 }
+
+/* step 3b + Approve (20 Oct 2026): the "Use in the game" panel, the view buttons of a walk-around place */
+.se-use { display: flex; flex-direction: column; gap: 8px; }
+.se-use-state { padding: 6px 10px; font-weight: 900; font-size: 13px; letter-spacing: .02em; background: rgba(245, 178, 27, .14); border-left: 4px solid #f5b21b; color: #ffe4a3; }
+.se-use-state.se-use-on { background: rgba(22, 163, 74, .18); border-color: #16a34a; color: #bbf7d0; }
+.se-use-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.se-use-row .se-big:disabled { opacity: .45; cursor: not-allowed; }
+.se-use-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px 18px; }
+.se-use-check { display: flex; gap: 6px; align-items: center; color: #fff; font-weight: 700; font-size: 13px; padding: 3px 0; }
+.se-use-check input { width: 18px; height: 18px; accent-color: #16a34a; }
+.se-stands { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }

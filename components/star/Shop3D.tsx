@@ -31,6 +31,8 @@ import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerI
 import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
 import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
 import { wornAt } from "@/lib/star/home3d/outfits";
+import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
+import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 
 const INK = "#f7f1e8";
 const MUTED = "#c9bba8";
@@ -51,9 +53,17 @@ export interface Shop3DProps {
   onDoor?: () => void;
   /** Start just inside the front doors (arriving from the garden). */
   atDoor?: boolean;
+  /** Which screen this is, for approved 3D Scene Editor edits (lib/star/sceneEdits): the career (default) or the test page. */
+  where?: "career" | "test";
+  /** Test page: fill its box on the admin frame instead of the whole screen. */
+  embedded?: boolean;
 }
 
-export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop", onGoToItem, onDoor, atDoor = false }: Shop3DProps) {
+export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop", onGoToItem, onDoor, atDoor = false, where = "career", embedded = false }: Shop3DProps) {
+  // an approved 3D Scene Editor edit for the shop here, walking in from the garden or opened from the Shop page (none = as built)
+  const approved = useApprovedEdit<WalkSceneEdit>("shop", where, [atDoor ? "door" : "page"]);
+  const approvedRef = useRef(approved);
+  approvedRef.current = approved;
   const doorRef = useRef(onDoor);
   doorRef.current = onDoor;
   const holder = useRef<HTMLDivElement>(null);
@@ -132,6 +142,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
           },
         }, kit, displays, {
           atDoor,
+          edit: approvedRef.current,
           number: career?.squadNumber ?? 10,
           // Settings → Look → "3D quality" (Auto, else the player's pick; ?q=
           // on the test page). After the phone took the 3D away: Low.
@@ -183,6 +194,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
 
   useEffect(() => { ctrlRef.current?.setKit(kit); }, [kit.shirt, kit.trim, status]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { ctrlRef.current?.setOwned(owned); }, [owned, status]);
+  useEffect(() => { if (approved) ctrlRef.current?.setEdit(approved); }, [approved, status]);
 
   // Arriving at a display: pick the item you're standing at.
   useEffect(() => {
@@ -247,7 +259,7 @@ export default function Shop3D({ career, dev = false, onBack, backLabel = "Shop"
   const isModel = !!item?.model;
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "#120e0b", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-shop3d>
+    <div style={{ position: embedded ? "absolute" : "fixed", inset: 0, zIndex: embedded ? 1 : 80, background: "#120e0b", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-shop3d>
       <div
         ref={holder}
         style={{ position: "absolute", inset: 0 }}
