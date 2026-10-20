@@ -927,6 +927,10 @@ export function cupFixturesOwed(career: CareerState, states: CupState[]): Fixtur
     const tied = !!career.cupTied && career.cupTied.season === career.season
       && career.cupTied.competitions.includes(st.competition);
     if (tied) continue;
+    // Only the round straight after a bye of yours: every other tie is put
+    // on the calendar by the tie before it, and must not be put there twice.
+    const before = st.rounds[st.rounds.length - 2];
+    if (!before?.byes?.includes(club)) continue;
     const tie = yourTie(st, club);
     if (!tie || tie.hs !== undefined) continue;
     const pending = career.fixtures.some(f => !f.played && f.kind === "cup" && f.competition === st.competition);
