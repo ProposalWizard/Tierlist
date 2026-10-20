@@ -68,7 +68,7 @@ export function attributeOverall(skills: Skills): number {
 export const TROPHY_FAME: Record<string, number> = {
   "Premier League": 25, "Championship": 20,
   "Champions League": 22, "Europa League": 12, "Conference League": 8,
-  "FA Cup": 14, "League Cup": 9,
+  "FA Cup": 14, "League Cup": 9, "Lower League Trophy": 3,
   "Community Shield": 2.5, "Super Cup": 2.5,
 };
 

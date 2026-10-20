@@ -136,6 +136,7 @@ export const FAME_FOR_TROPHY: Record<string, number> = {
   "Play-Offs": 3,
   "FA Cup": 8,
   "League Cup": 4,
+  "Lower League Trophy": 2,
   "Champions League": 15,
   "Europa League": 8,
   "Conference League": 5,

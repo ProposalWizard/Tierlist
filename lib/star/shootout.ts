@@ -18,7 +18,7 @@
 // ── Per-competition extra-time rules ────────────────────────────────────────
 
 export type ExtraTimeCompetition =
-  | "League Cup" | "FA Cup" | "Champions League" | "Europa League" | "Conference League"
+  | "League Cup" | "FA Cup" | "Lower League Trophy" | "Champions League" | "Europa League" | "Conference League"
   | "Super Cup" | "Community Shield" | "Charity Shield";
 
 /**
@@ -35,6 +35,9 @@ export function hasExtraTime(competition: ExtraTimeCompetition, round: string): 
   switch (competition) {
     case "League Cup": return round === "Final";
     case "FA Cup": return true;
+    // Lower League Trophy: penalties straight away before the quarter-finals,
+    // extra time then penalties from the quarter-finals on (Harry, 20 Oct 2026).
+    case "Lower League Trophy": return round === "Quarter-Final" || round === "Semi-Final" || round === "Final";
     case "Champions League": return true;
     case "Europa League": return true;
     case "Conference League": return true;

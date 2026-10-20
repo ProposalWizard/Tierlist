@@ -93,7 +93,7 @@ export function energyFactorFor(
   if (comp === "Champions League" || comp === "Super Cup") return CHAMPIONS_ENERGY_FACTOR;
   if (comp === "Europa League" || comp === "Conference League") return EUROPA_ENERGY_FACTOR;
   if (fixture.kind === "international") return INTERNATIONAL_ENERGY_FACTOR;
-  if (comp === "FA Cup" || comp === "League Cup" || comp === "Community Shield") {
+  if (comp === "FA Cup" || comp === "League Cup" || comp === "Lower League Trophy" || comp === "Community Shield") {
     const theirs = clubDivision(career, fixture.opponent);
     return theirs ? DIVISION_ENERGY_FACTOR[theirs] : own;
   }

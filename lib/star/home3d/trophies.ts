@@ -36,6 +36,7 @@ export const CABINET_TARGETS = [
 const OTHERS = [
   "Conference League", "Super Cup", "European Championship", "Assist King", "Golden Glove",
   "Young Player of the Season", "League One", "League Two", "National League", "Play-Offs",
+  "Lower League Trophy",
 ];
 
 const SHAPE: Record<string, TrophyShape> = {
@@ -52,7 +53,7 @@ const SHAPE: Record<string, TrophyShape> = {
   "Assist King": "plaque",
 };
 /** Silver pieces; everything else is gold. */
-const SILVER = new Set(["Champions League", "Europa League", "Conference League", "FA Cup", "League Cup", "Premier League", "Championship", "League One", "League Two", "National League", "Community Shield", "Super Cup", "Play-Offs"]);
+const SILVER = new Set(["Champions League", "Europa League", "Conference League", "FA Cup", "League Cup", "Premier League", "Championship", "League One", "League Two", "National League", "Community Shield", "Super Cup", "Play-Offs", "Lower League Trophy"]);
 
 export function trophyShape(name: string): TrophyShape {
   return SHAPE[name] ?? "cup";

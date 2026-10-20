@@ -1,6 +1,6 @@
 import type { CareerState } from "./types";
 import { formationOf, fitness, type Role, type Slot } from "./formations";
-import { divisionOf, leagueNameFor } from "./calendar";
+import { divisionOf, leagueNameFor, inLowerLeagueTrophy } from "./calendar";
 import { mulberry32 } from "./season";
 import { displayOverall } from "./rating";
 
@@ -303,6 +303,10 @@ export function trophyWinners(career: CareerState, stats: SeasonAwardStats): Tro
     winnerOf(stats.leagueName, w?.league),
     winnerOf("FA Cup", w?.faCup),
     winnerOf("League Cup", w?.leagueCup),
+    // The Lower League Trophy: only for a career down there, or one that won it.
+    ...((w?.lowerLeagueTrophy && inLowerLeagueTrophy(divisionOf(career)))
+      || mine.some(t => t.competition === "Lower League Trophy")
+      ? [winnerOf("Lower League Trophy", w?.lowerLeagueTrophy)] : []),
     winnerOf("Champions League", w?.championsLeague),
     winnerOf("Europa League", w?.europaLeague),
     guessedWinnerOf("Community Shield", stats.communityShieldGuess),

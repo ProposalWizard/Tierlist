@@ -713,6 +713,55 @@ export function faCupSlotsFor(division: CareerDivision): CupSlot[] {
   return division === "premier" ? FA_CUP_SLOTS : asRounds(FA_CUP_SLOTS, CHAMPIONSHIP_FA_CUP_SLOTS, division);
 }
 
+// ── The Lower League Trophy ─────────────────────────────────────────────────
+
+/** The five divisions whose clubs play the Lower League Trophy. */
+export const LOWER_LEAGUE_TROPHY_DIVISIONS: readonly CareerDivision[] = [
+  "league_one", "league_two", "national_league", "national_league_north", "national_league_south",
+];
+
+export function inLowerLeagueTrophy(division: CareerDivision): boolean {
+  return LOWER_LEAGUE_TROPHY_DIVISIONS.includes(division);
+}
+
+/**
+ * The Lower League Trophy's seven midweeks (20 Oct 2026), as playing
+ * weekends: the tie is on that weekend's Wednesday.
+ *
+ * All five divisions play the same 46-round table (38 Saturdays, 8 Tuesdays
+ * on weekends 2, 6, 10, 14, 19, 24, 27, 33) and the FA Cup on the Wednesdays
+ * of weekends 2, 5, 12, 22 and 30. These seven weekends are none of those,
+ * so a Trophy tie never shares a day with a league or FA Cup game, and is
+ * never the day after a Tuesday league round:
+ *
+ *   Round 1 early Sep · Round of 64 early Oct · Round of 32 late Nov ·
+ *   Round of 16 early Jan · Quarter-final late Jan · Semi-final late Feb ·
+ *   Final early Apr (a midweek too, still inside the season)
+ */
+export const LOWER_LEAGUE_TROPHY_WEEKENDS: { round: string; weekend: number }[] = [
+  { round: "Round 1", weekend: 4 },
+  { round: "Round of 64", weekend: 8 },
+  { round: "Round of 32", weekend: 16 },
+  { round: "Round of 16", weekend: 21 },
+  { round: "Quarter-Final", weekend: 25 },
+  { round: "Semi-Final", weekend: 29 },
+  { round: "Final", weekend: 34 },
+];
+
+/**
+ * The Trophy's slots in this division's own week numbers: a round number for
+ * every division but the Premier League (whose cup weeks are plain weekends).
+ * Every division gets slots, not only the five that play it: a career in the
+ * Premier League or the Championship still sees the Trophy played out round
+ * by round on the same real dates (competitions.ts advanceEliminatedCups).
+ */
+export function lowerLeagueTrophySlotsFor(division: CareerDivision): CupSlot[] {
+  return LOWER_LEAGUE_TROPHY_WEEKENDS.map(({ round, weekend }) => ({
+    round,
+    week: division === "premier" ? weekend : weekOnWeekend(division, weekend),
+  }));
+}
+
 // ── Months, for the award ───────────────────────────────────────────────────
 
 /**

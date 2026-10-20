@@ -163,10 +163,13 @@ function playUntilTieAndLose(c: CareerState, competition: string): CareerState {
 // ── A cup you are still in is left alone by advanceEliminatedCups ───────────
 {
   let c: CareerState = makeInitialCareer(player(), CLUBS);
-  const before = JSON.stringify(c.cupState);
+  // Only the cups a Premier League club is in: the Lower League Trophy
+  // (20 Oct 2026) is opened in every career and plays on without you.
+  const yours = (s: CareerState["cupState"]) => JSON.stringify((s ?? []).filter(st => st.competition !== "Lower League Trophy"));
+  const before = yours(c.cupState);
   const clock = fixtureTimestamp(c.player.startYear, c.season, 60, "cup", divisionOf(c));
   const after = advanceEliminatedCups(c, clock, mulberry32(3));
-  check(JSON.stringify(after) === before,
+  check(yours(after) === before,
     "a cup the player is still in is never touched by advanceEliminatedCups — settleCupTie owns it");
 }
 

@@ -213,6 +213,8 @@ export interface SeasonStats {
 export type Competition =
   | "FA Cup"
   | "League Cup"
+  /** League One down to National League North/South: 120 clubs, midweek (lib/star/lowerLeagueTrophy.ts). */
+  | "Lower League Trophy"
   | "Champions League"
   | "Europa League"
   | "Conference League"
@@ -1345,6 +1347,8 @@ export interface CareerState {
     leagueRunnerUp?: string;
     faCup?: string;
     leagueCup?: string;
+    /** The Lower League Trophy (League One down to North/South, lib/star/lowerLeagueTrophy.ts). */
+    lowerLeagueTrophy?: string;
     championsLeague?: string;
     europaLeague?: string;
     /** The summer tournament and its winner, in a season that had one. */
