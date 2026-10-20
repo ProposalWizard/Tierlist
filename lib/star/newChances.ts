@@ -14,6 +14,7 @@
  * `?chances=old|new` on any page overrides it for that page only.
  */
 import { useSyncExternalStore } from "react";
+import { fhrOn, onFhrMode } from "./fhr/toggle";
 
 export type ChancesMode = "old" | "new";
 
@@ -43,6 +44,9 @@ const forcedMode = (): ChancesMode | null => (globalThis as Record<string, unkno
 export function chancesMode(): ChancesMode {
   const forced = forcedMode();
   if (forced) return forced;
+  // Full highlights rebuild: On (lib/star/fhr/toggle.ts) includes Chances: New,
+  // so the two switches never fight (Harry, 19 Oct 2026). Off: untouched.
+  if (fhrOn()) return "new";
   const u = urlOverride();
   if (u) return u;
   if (cached === null) {
@@ -73,5 +77,7 @@ if (typeof window !== "undefined") {
     if (e.key === CHANCES_KEY) { cached = null; listeners.forEach((f) => f()); }
   });
 }
+// The rebuild switch moves this one too, so anything showing Chances re-reads.
+onFhrMode(() => listeners.forEach((f) => f()));
 export const onChancesMode = (f: () => void) => { listeners.add(f); return () => { listeners.delete(f); }; };
 export const useChancesMode = () => useSyncExternalStore(onChancesMode, chancesMode, () => CHANCES_DEFAULT);

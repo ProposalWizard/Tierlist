@@ -226,7 +226,10 @@ function Shell({
               </div>
             </div>
           </div>
-          <div ref={pitchRef} className="relative overflow-hidden rounded-xl"
+          {/* -mx-2.5 undoes the card's own 10 px padding for the pitch alone, so the
+              drill plays at the real match's width (366 px on a phone, was 346; 384
+              on a computer, was 364 — drift audit, 19 Oct 2026). */}
+          <div ref={pitchRef} className="relative -mx-2.5 overflow-hidden rounded-xl"
             style={{ boxShadow: `0 0 0 1px ${rgba(glow, 0.45)}, 0 0 18px -4px ${rgba(glow, 0.6)}` }}>
             {children}
           </div>

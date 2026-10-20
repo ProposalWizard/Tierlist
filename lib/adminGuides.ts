@@ -270,37 +270,32 @@ export const ADMIN_GUIDES = {
   },
   "/star-real-moments-dev": {
     title: "Real moments",
-    what: "Real match positions from StatsBomb's free data (every Premier League 2015/16 shot, every Kane touch at the 2022 World Cup and Euro 2024), each drawn as a chance in the game's camera and playable in the real match. Testing only.",
+    what: "Real match positions in our engine, from free-licensed data (cleared for a paid game, with credit). Fully real: every shot and corner of 7 Bundesliga / 2. Bundesliga 2022/23 matches (DFL tracking) and 20 A-League 2024/25 matches (SkillCorner tracking), all 22 players where they really stood. Real shot, placed defenders: every World Cup 2018 / Euro 2016 shot (Wyscout): the shot is real, the other players are placed by the game's own rules. Each is drawn as a chance in the game's camera and playable in the real match. Testing only.",
     buttons: [
-      { group: "Loading", items: [
-        ["Load moments file", "Pick real-moments.json from your device. A developer makes it with tools/statsbomb (fetch, then convert)."],
-        ["Striker drawings (in the game)", "The drawings the game uses when Settings → Match → Kane drawings (testing) is New: real strikers' passes and shots from every free StatsBomb set with positions (Kane's marked ★ and dealt 3× as often). Each card says easy / normal / hard; the game deals 50 / 35 / 15. No file needed."],
-      ] },
       { group: "Filters", items: [
-        ["Premier League 15/16 shots / Striker drawings", "Which set to show."],
-        ["Every kind / One-on-one / In the box / Tight angle / Long range / Midfield", "Which chance kind the moment was put in. \"In the box\" is a close shot with defenders in the way."],
-        ["All / xG under 8% / 8–50% / Over 50%", "How likely the real shot was to go in (StatsBomb's own number). 8–50% is the band worth playing."],
-        ["Goals only", "Only shots that went in for real."],
-        ["Search players, matches", "Only moments whose player or match has these words."],
+        ["Fully real shots / Fully real corners / Real shots, placed defenders", "Which set to show, with how many there are. Every row says Fully real or Real shot, placed defenders."],
+        ["Every kind / One-on-one / In the box / Tight angle / Long range / Free kick / Corner", "Which chance kind the moment was put in. \"In the box\" is a close shot with defenders in the way."],
+        ["All / xG under 8% / 8–50% / Over 50%", "How likely the real shot was to go in (DFL's own number for DFL shots; our model fitted on 45,287 Wyscout shots for the rest). Not shown for corners."],
+        ["Goals only / Led to a goal", "Only shots that went in for real (corners: only corners whose move ended in a goal)."],
+        ["Search players, matches", "Only moments whose player, match or competition has these words."],
       ] },
       { group: "The list (left; under the picture on a phone)", items: [
-        ["A row", "Picks that moment: it shows big on the right. A small picture, the player and minute, the match, the kind and xG."],
+        ["A row", "Picks that moment: it shows big on the right. A small picture, the player and minute, the match, the kind and xG, and which kind of picture it is."],
         ["More", "Shows 24 more."],
       ] },
       { group: "The picked moment", items: [
-        ["The picture", "Red = defenders, green = keeper, blue = team-mates, YOU = the real shooter, with the ball at his feet. Only people inside the camera are kept."],
+        ["The picture", "Red = defenders, green = keeper, blue = team-mates, YOU = the real shooter (or corner taker), with the ball at his feet. Only people inside the camera are kept."],
         ["▶ Play / ■ Stop", "Plays the real match on that picture, or goes back to it. Nothing is counted or saved."],
         ["Next to the game's own", "Puts a chance the game made of the same kind beside the real one, with its own Play."],
-        ["Amber text", "What the gallery's fault rules say about the picture. Real football breaks some of them (a defender on the line behind his keeper)."],
       ] },
     ],
-    saving: ["Nothing saves. The file stays on your device and is read again each time you load it."],
-    inGame: ["The striker drawings: in a match when Settings → Match → Kane drawings (testing) is New (Old by default). The file you load: nowhere."],
-    dev: "app/star-real-moments-dev/page.tsx; lib/star/realMoments.ts (the moment shape, buildRealMoment); tools/statsbomb/fetch.py, convert.mts, measure.mts and README.md.",
+    saving: ["Nothing saves. The moments are read from data/realmoments/ (tracked.json, wyscout_shots.json) each time the page opens."],
+    inGame: ["Nowhere yet. The moments (with where everyone was over the seconds before, lib/star/realMoments buildUpOf) are ready for the Full Highlights Rebuild's build-ups."],
+    dev: "app/star-real-moments-dev/page.tsx; lib/star/realMoments/ (types, shots.ts scenarioForShot / scenarioForCorner, track.ts buildUpOf / trackLeadIn); app/api/star/real-moments/route.ts; data/realmoments/ (README); scripts/realmoments/ (extract_tracking.py, extract_wyscout.py); credit lines in data/opendata/LICENCES.md; tests/star/realMoments.mts.",
   },
-  "/star-statsbomb-dev": {
+  "/star-real-shots-dev": {
     title: "Real shots (test)",
-    what: "Every shot of the 2022 World Cup and Euro 2024 that StatsBomb's free data has a freeze frame for (where everyone near the shot stood), drawn on our pitch, playable in the real match, and measured against our own chances. Test only: the licence for a paid game is not cleared, so none of it is in the game.",
+    what: "Real shots on our pitch, playable in the real match, from free-licensed data. Fully real (581): every shot of 7 Bundesliga / 2. Bundesliga matches (DFL tracking) and 20 A-League matches (SkillCorner tracking), every player where he stood. Real shot, placed defenders (2,905): every shot of the 2018 World Cup and Euro 2016 (Wyscout): the spot, who, how and what happened are real; the other players are placed by the game's own rules. Each card says which it is.",
     buttons: [
       { group: "Layout (top right)", items: [
         ["🗺️ Shot map", "Filters on the left, a map of every shot that passes them in the middle (tap a dot), and the picked shot big on the right with its Play button. Every shot is listed below as rows. On a phone the filters fold into a Filters (n) button."],
@@ -308,51 +303,53 @@ export const ADMIN_GUIDES = {
       ] },
       { group: "Tabs", items: [
         ["Shots", "The list of real shots, each with its picture and Play button."],
-        ["Moving highlight", "Only shots with 2–3 real passes before them. ▶ Watch the move: the match radar (the same one as the Match Radar page) shows the move coming up the pitch, then the real match itself replays the real passes in its own picture (2D or 3D: the 3D | 2D button in the match bar, the same as a career match), everyone moving from where StatsBomb's 360 frame had them to where they stood at the shot, and YOU receive the last pass. The camera follows the passes (the passer and the man it goes to), then stops moving once the ball is in the 6-yard box (or, for a shot from further out, as the replay ends) on the shot's wide frame: every real man within 20 m, the keeper, the ball and the whole goal (the same frame as Play this shot). Then the shot is yours, live, from exactly there. ↺ Again replays it; ■ Stop closes it. The replay is recorded positions, not physics; the engine plays only the shot. A team-mate who passed from outside the shot's picture is on the pitch for the replay only."],
-        ["Ours vs real", "Four bars per chance kind: shot distance, defenders between ball and goal, nearest defender, keeper off his line. Real = the real shots of that kind; Ours = 200 of the game's own chances of that kind."],
+        ["Moving highlight", "Only shots with a real build-up. ▶ Watch the move: the match radar follows the move, then the real match replays it in its own picture (2D or 3D: the 3D | 2D button in the match bar). Fully real: the ball and every player move where they really moved for the 4 seconds before the shot. Placed: the last real passes at the real timing, the others moving from their team's shape. Then the shot is yours, live, from exactly there. ↺ Again replays it; ■ Stop closes it. The replay is recorded positions, not physics."],
+        ["Ours vs real", "Four bars per chance kind: shot distance, defenders between ball and goal, nearest defender, keeper off his line. Real = the fully real shots of that kind (tracking); Ours = 200 of the game's own chances of that kind."],
       ] },
       { group: "Filters", items: [
-        ["Competition", "Which tournament: all, World Cup 2022 or Euro 2024."],
-        ["What happened", "Every shot, Goal, Saved, Off target, Blocked or Other: what really happened to the shot (a coloured list in Shot map, a drop-down in Cards)."],
+        ["Picture", "Both kinds, Fully real (tracking) or Real shot, placed defenders."],
+        ["Competition", "Bundesliga 2022/23, 2. Bundesliga 2022/23, A-League 2024/25, World Cup 2018 or Euro 2016."],
+        ["What happened", "Every shot, Goal, Saved, Off target, Blocked or Other (A-League shots only say goal or not: they are Other unless they went in)."],
         ["How it came", "Any way, Open Play, Free Kick, Penalty or Corner."],
-        ["Chance of a goal (xG)", "Any xG, under 8%, 8–30% or over 30%: how likely the real shot was to go in (StatsBomb's own number)."],
+        ["Chance of a goal (xG)", "Any xG, under 8%, 8–30% or over 30% (DFL's own number for DFL shots; our model fitted on 45,287 Wyscout shots for the rest)."],
         ["Search", "A player or team name."],
         ["More", "Shows 20 more."],
       ] },
       { group: "Each shot", items: [
         ["The map (Shot map)", "Each dot is a shot, where it was struck, coloured by what happened (green goal, yellow saved, orange blocked, grey off target, white other). Tap one to show it in Shot details."],
-        ["The picture", "Our pitch from above, goal at the top. Yellow = the shooter, white = ball, red = opponents, green = keeper, blue = team-mates. The dashed line is where the shot went."],
-        ["▶ Play this shot", "Plays the real match on that picture at the top of the page: the shooter is YOU, the real keeper, opponents and team-mates inside the camera are where they stood. Nothing is counted or saved."],
+        ["The picture", "Our pitch from above, goal at the top. Yellow = the shooter, white = ball, red = opponents, green = keeper, blue = team-mates. Filled = where they really stood; rings = placed by the game's rules. The dashed line is where the shot went."],
+        ["Fully real / Placed defenders tag", "Which kind of picture it is."],
+        ["▶ Play this shot", "Plays the real match on that picture at the top of the page: the shooter is YOU. Nothing is counted or saved."],
         ["■ Stop", "Closes the match."],
       ] },
     ],
-    saving: ["Nothing saves. The shots are read from data/statsbomb/shots.json each time the page opens."],
-    inGame: ["Nowhere. This is a test page; the real game never reads this data."],
-    dev: "app/star-statsbomb-dev/page.tsx, MovingHighlight.tsx (radar + EnginePlay inside components/star/Match3DLayer.tsx, uses components/star/MatchRadar.tsx RadarPitch); lib/star/statsbombShots.ts (sbToPitch, kindForShot, scenarioForShot, leadinPlan, leadinTrack, the measures); lib/star/leadIn.ts (the lead-in CanvasMatch replays: its `leadIn` prop); tests/star/leadIn.mts; app/api/star/statsbomb-shots/route.ts; data/statsbomb/ (shots.json, leadins.json, README); scripts/statsbomb/fetch_shots.py; tests/star/statsbomb.mts.",
+    saving: ["Nothing saves. The shots are read from data/realmoments/ each time the page opens."],
+    inGame: ["Nowhere yet. The data is cleared for the game (with the credit lines at the bottom of the page); the Full Highlights Rebuild is meant to use it."],
+    dev: "app/star-real-shots-dev/page.tsx, MovingHighlight.tsx (radar + EnginePlay inside components/star/Match3DLayer.tsx); lib/star/realMoments/ (shots.ts kindForShot / scenarioForShot / the measures, leadin.ts leadinTrack for passes, track.ts trackLeadIn for tracking); lib/star/leadIn.ts (the lead-in CanvasMatch replays); app/api/star/real-moments/route.ts; data/realmoments/; scripts/realmoments/; tests/star/realMoments.mts, leadIn.mts, leadInTvCamera.mts.",
   },
   "/star-real-goals-dev": {
     title: "Real Goals (test)",
-    what: "A little game of real goals (Leo, 18 Oct 2026). Every non-penalty goal of the 2022 World Cup and Euro 2024 that StatsBomb's free data has a freeze frame for (250), played in the real match: the real move is replayed first, then the shot is yours. Score it, and the closer your ball crosses the line to where the real one went, the more stars. Test only: the licence for a paid game is not cleared, so none of it is in the game.",
+    what: "A little game of real goals (Leo, 18 Oct 2026). Every non-penalty goal of the 2018 World Cup and Euro 2016 (232, Wyscout's free data), played in the real match: the real move is replayed first, then the shot is yours. Score it, and the closer your ball crosses the line to where the real one went, the more stars. Wyscout has nobody's position off the ball, so the defenders and keeper are placed by the game's own rules.",
     buttons: [
       { group: "Top", items: [
         ["★ total (top right)", "Every star you have, out of 150 (50 levels × 3)."],
         ["The big card · PLAY IT", "The next level to play: the first open level without three stars. Its picture shows where the real goal went in (green dot). PLAY IT opens it."],
-        ["🗺️ Levels", "The levels as rows, one row per stage (Group stage → The final), 10 goals each, easiest first (difficulty: StatsBomb's xG, bodies in the way, distance, a top corner, a volley or overhead). ‹ › move a row along (on a phone, swipe it). Each card: level number, where the real goal went in, scorer and minute, who it was against, your stars, ▶ to play. A level opens when the one before it has a star; a stage opens at 6 / 15 / 26 / 38 stars in all."],
-        ["🔎 All 250 goals", "Every goal, searchable by player (real or known name), team, match or stage. The famous ones (Mbappé's volley in the final, Neymar v Croatia, Saka v Switzerland, Güler v Georgia…) are first. More shows 20 more. The page remembers which of the two you had open."],
+        ["🗺️ Levels", "The levels as rows, one row per stage (Group stage → The final), 10 goals each, easiest first (difficulty: the chance of a goal from our model, distance, a top corner, a header). ‹ › move a row along (on a phone, swipe it). Each card: level number, where the real goal went in, scorer and minute, who it was against, your stars, ▶ to play. A level opens when the one before it has a star; a stage opens at 6 / 15 / 26 / 38 stars in all."],
+        ["🔎 All 232 goals", "Every goal, searchable by player, team, match or stage. The famous ones (Pavard v Argentina, Ronaldo's free kick v Spain, Kroos v Sweden, Shaqiri's overhead kick, Bale v Slovakia…) are first. More shows 20 more. The page remembers which of the two you had open."],
       ] },
       { group: "Playing a goal", items: [
-        ["The header", "The real score just before the goal, the minute, who you are and how the real one was struck."],
-        ["👻 Ghost on/off", "The real goal's ball, drawn faint on the pitch: a dashed line along its flight and its shadow, and a pale ball running it on a loop while you aim. Once you strike, it races your ball. StatsBomb has only where the real ball started and crossed the line, so the line is straight and the arc is drawn the shape the strike suggests."],
-        ["▶ Build-up on/off", "On: the real move is replayed first (every pass, carry and dribble at the real time, up to 14 s), then the shot is yours. Off: straight to the shot."],
+        ["The header", "The real score just before the goal, the minute, who you are and the body part."],
+        ["👻 Ghost on/off", "The real goal's ball, drawn faint on the pitch: a dashed line along its flight and its shadow, and a pale ball running it on a loop while you aim. Once you strike, it races your ball. Wyscout has where the ball was struck and which part of the goal it went in (low / middle / high × left / centre / right), so the ghost aims at that part's middle and the arc is drawn the shape the strike suggests."],
+        ["▶ Build-up on/off", "On: the real move is replayed first (every pass and carry at the real time, up to 14 s), then the shot is yours. Off: straight to the shot."],
         ["🎥 TV / Behind him / Side-on", "The 3D camera (3D | 2D button in the match bar): the TV view, low behind the shooter, or turned side-on. Kept only while this page is open; your own camera lock comes back when you leave."],
-        ["The match", "The real match. The real nations' names, kits and players' names (StatsBomb's freeze frame): never the test club. You strike as an elite finisher (power 85, technique 95, curl boots), clear weather, nobody closes you down. Strike it along the real goal's line (within 60 cm across, 55 cm up, inside the posts) and nobody blocks it and the keeper does not save it, because in real life none of them did. Off the line it plays as normal."],
+        ["The match", "The real match. The real nations' names and kits, the scorer's and the conceding keeper's real names: never the test club. You strike as an elite finisher (power 85, technique 95, curl boots), clear weather, nobody closes you down. Strike it along the real goal's line (within 60 cm across, 55 cm up, inside the posts) and nobody blocks it and the keeper does not save it. Off the line it plays as normal."],
         ["The result", "Goal or not, the % like the real goal (100% on the spot, 85% at 45 cm off, 60% at 80 cm), the stars (★ a goal, ★★ 60%+, ★★★ 85%+), and a picture of the goal mouth with the real spot (green) and yours (blue). ↺ Again: the same chance comes back, just shoot. Next level → once you have a star."],
         ["✕", "Closes the goal."],
       ] },
     ],
-    saving: ["Your stars and best % per goal are kept in this browser only (localStorage, star-real-goals-progress-v1). Nothing goes to the database or the repo."],
-    inGame: ["Nowhere. This is a test page; the real game never reads this data."],
-    dev: "app/star-real-goals-dev/page.tsx; lib/star/realGoals.ts (levels, stars, accuracy, kits, names, ghost, build-up) and lib/star/realGoalView.ts (what the match is handed); CanvasMatch's `realGoal` prop (drawing only, TEST_ONLY in scripts/one-engine-guard.mjs); canvasEngine.ts Scenario.realLane (the real lane, off by default); data/statsbomb/goals.json (scripts/statsbomb/fetch_real_goals.py); tests/star/realGoals.mts and tests/star/realGoals/ (harness, measure, buildup).",
+    saving: ["Your stars and best % per goal are kept in this browser only (localStorage, star-real-goals-progress-v2; the old v1 stars were for the StatsBomb goals and are not carried over). Nothing goes to the database or the repo."],
+    inGame: ["Nowhere yet. This is a test page."],
+    dev: "app/star-real-goals-dev/page.tsx; lib/star/realGoals.ts (levels, stars, accuracy, kits, names, ghost, build-up) and lib/star/realGoalView.ts (what the match is handed); CanvasMatch's `realGoal` prop (drawing only, TEST_ONLY in scripts/one-engine-guard.mjs); canvasEngine.ts Scenario.realLane (the real lane, off by default); data/realmoments/wyscout_shots.json + wyscout_goals.json (scripts/realmoments/extract_wyscout.py); tests/star/realGoals.mts and tests/star/realGoals/ (harness, measure, buildup).",
   },
   "/star-goal-clips-dev": {
     title: "Goal videos",
@@ -676,29 +673,38 @@ export const ADMIN_GUIDES = {
 
   "/admin/star": {
     title: "Admin home",
-    what: "Every admin and test page in one place, grouped the way you asked (Career screens, Chances, Match tests…), with search and filters. Testers see only the pages they can open.",
+    what: "Every admin and test page, split by game: one tab per game across the top (Road to Ballon d'Or, Website games, Studio). Inside a tab you only see that game's groups and pages. Testers see only the pages they can open.",
     buttons: [
+      { group: "Game tabs (across the top of every admin page)", items: [
+        ["Road to Ballon d'Or", "The career game's groups and pages. This is /admin/star."],
+        ["Website games", "PL Draft, Tierlists, Site XP + Tic Tac Toe and the old tests. Opens /admin/star/game/web."],
+        ["Studio", "The team: Team board, Patch notes, Videos, App plan, Tester access. Opens /admin/star/game/studio."],
+        ["The number on a tab", "How many pages that game has (that you can open)."],
+      ] },
       { group: "Top", items: [
-        ["Search pages", "Type part of a name or what a page does; the cards filter as you type."],
-        ["All / H / M / L", "Show everyone's pages, or only Harry's, Mikey's or Leo's."],
+        ["Search … pages in (game)", "Type part of a name or what a page does. Searches this game only."],
+        ["All / Harry / Mikey / Leo", "Show everyone's pages, or only one person's, in this game."],
         ["Saves real data", "Only pages whose buttons change things other players see."],
-        ["Play the game", "Opens Road to Ballon d'Or, the real game."],
+        ["Grid / List", "Broadcast and Bento: the game's groups as big tiles or one row each. Kept on this device."],
+        ["Play the game", "Ops room and Clean light: opens the game as players see it."],
       ] },
       { group: "Cards", items: [
+        ["A group tile", "Broadcast and Bento: opens that group's own page (its admin tools first, then its test pages)."],
         ["A card", "Opens that page. The letter is its owner. \"Saves real data\" / \"This browser\" / \"Writes the code\" say what its buttons save."],
-        ["Old tests (n)", "Folded at the bottom. Old test pages that are kept but not used day to day."],
+        ["Old tests (n)", "Website games tab. Old test pages that are kept but not used day to day."],
         ["Clear", "Shows when a search or filter matches nothing; puts everything back."],
       ] },
       { group: "Side menu", items: [
-        ["Home / Team board / Patch notes", "This page, the team board, and every patch note (Team board and Patch notes are admins only)."],
-        ["Groups", "Ops room and Clean light only: jumps to that group on this page. Broadcast and Bento show every group on the page instead."],
+        ["(Game) home", "This game's home page."],
+        ["The game's groups (slanted bars on Broadcast)", "Every group of the game you are in, the one you are on lit up. Broadcast and Bento open the group's own page; Ops room and Clean light jump to it on the home. On a phone they are in ☰ Menu; on a computer « folds them to icons."],
+        ["Team board / Ideas / Team chat / My to-do / Patch notes / Videos", "The team's own pages, the same in every game (Team room and Patch notes are admins only)."],
         ["Broadcast / Bento / Ops room / Clean light", "The admin look. Broadcast (dark blue) and Bento (a colour per group) show every group on one board. Kept on this device."],
         ["Admin mode", "On: the admin side menu sits on every page of the site, opened on the admin pages for the page you are on. Off: it hides. Kept on this device."],
       ] },
     ],
     saving: ["Nothing here saves anything shared. The look and Admin mode are kept in this browser only."],
     inGame: ["Nowhere. This is the front door to the tools."],
-    dev: "app/admin/star/page.tsx · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (the one list of pages) · components/admin/shell/* · lib/adminLook.ts",
+    dev: "app/admin/star/page.tsx (first game) · app/admin/star/game/[game]/page.tsx (other games) · app/admin/star/g/[group] (a group's page) · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (GAMES = the tabs: a new game is one line there, then its groups say game: \"<key>\"; GROUPS; ADMIN_PAGES) · components/admin/shell/* · components/AdminNavPanel.tsx (the side menu on other pages, also one game at a time) · lib/adminLook.ts",
   },
   "/star-tournament-dev": {
     title: "Tournaments",
@@ -1005,7 +1011,7 @@ export const ADMIN_GUIDES = {
       {
         group: "The picture",
         items: [
-          ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game."],
+          ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game. Framed by the match's own camera (Full highlights rebuild, phase 1): the match's zoom, the same canvas shape, tipped back by the camera angle, you not drawn on a shooting chance (the ball is you) and the men at the match's size — so nothing moves when you press Play. Dragging still works on the tipped picture. Add ?still=builder to the address to see the old builder's frame instead."],
           ["A penalty", "Harry's penalty rules: the keeper stays dead centre on his line, the ball on the spot, you straight behind it and the camera fixed — none of them drag. Anyone else only slides along the edge of the box."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
           ["Fix this chance", "The panel on the right (under the picture on a phone): the buttons below, Save and Commit."],
@@ -1058,6 +1064,50 @@ export const ADMIN_GUIDES = {
     dev: "app/star-highlights-dev/page.tsx · components/star/HitboxPanel.tsx, lib/star/hitbox.ts · components/star/TuningSessionPanel.tsx · lib/star/{gallerySim,highlightStore,scenarioEdit,tuningSession,tuningNotes}.ts · /api/star/tuning-notes · /api/star/scenarios, /api/star/scenarios/commit · Shootout: components/star/ShootoutPlay.tsx, lib/star/penaltyTaking.ts",
   },
 
+  "/star-fhr-dev": {
+    title: "Full highlights rebuild",
+    what: "The Full Highlights Rebuild's switch, and the ruler: today's numbers (chances, goals, players reacting, start distance) that every phase of the rebuild is held to.",
+    buttons: [
+      {
+        group: "The switch",
+        items: [
+          ["Off / On (test)", "The same switch as Settings → Harry changes → Full highlights rebuild. Off is the game as it is today. On also turns Chances to New. (Infinite Highlights draws its still with the real match's camera either way: that test page's default since phase 1.) Stored on this phone only."],
+          ["Infinite Highlights →", "Opens Infinite Highlights, to see the still with the switch On."],
+        ],
+      },
+      {
+        group: "Measure",
+        items: [
+          ["50 / 200 / 500", "How many whole matches to play for the ruler. More is steadier and slower (200 takes a few seconds)."],
+          ["Measure again", "Plays that many matches twice — once as today (Off: Chances Old), once as On (Chances New) — and fills the tables. It also runs once by itself when the page opens."],
+        ],
+      },
+      {
+        group: "The tables",
+        items: [
+          ["The ruler", "Chances a match, goals a match, players reacting to each chance (and how many are team-mates, and how many move within 1 second), and how far from goal chances start. The right column is what the plan page quoted from earlier measurements."],
+          ["Your chances by kind", "For each kind of chance: how many a match, where it starts (metres from the middle of the goal line), and how many players react, Off and On side by side."],
+        ],
+      },
+      {
+        group: "Phase 2: a generated build-up",
+        items: [
+          ["The match", "The real match plays a chance the real match served, starting with its generated 4–8 second build-up (the moves before it, made from real football patterns). Tap the match to skip to the chance. It always ends exactly on the chance's own picture."],
+          ["Generate another", "The next chance the match serves, with a new build-up. Every chance gets its own; the same chance always gets the same one."],
+          ["↺ Watch again", "Plays the same build-up and chance again."],
+          ["The three small pitches", "The same build-up from above: the first frame, the middle and the last (= the chance). White is you, blue the chance's team-mates, pale blue team-mates who are only in the build-up (off the screen when the chance starts), red defenders, yellow the keeper; dashed is the chance's frame."],
+          ["The list", "Each touch: a pass, a ball in the air or a carry, how long, who plays it, and whether it came from a real route into this kind of chance."],
+        ],
+      },
+    ],
+    saving: [
+      "The switch is stored in this browser only (localStorage star-fhr). The numbers are worked out on the page and kept nowhere. No career is touched.",
+    ],
+    inGame: [
+      "Off: nothing in the game changes. On: Chances: New is on in every match on this phone (the same as setting Chances: New by hand), Infinite Highlights' still uses the match camera, and every open-play chance in a match starts with a generated 4–8 s build-up (never penalties, free kicks or corners). Later phases of the rebuild arrive here first.",
+    ],
+    dev: "app/star-fhr-dev/{page,BuildUpPanel}.tsx · lib/star/fhr/{toggle,ruler,stillCamera,buildUp,servedChances}.ts · lib/star/fhr/patterns.json (scripts/fhr/make-patterns.mts) · terminal: npx tsx scripts/fhr/ruler.mts 200 · npx tsx scripts/fhr/buildup-measure.mts 500 · sheet: npx tsx scripts/fhr/buildup-sheet.mts 48 · browser check: node scripts/fhr/still-vs-play.mjs 100 on · tests/star/fhr.mts",
+  },
   "/star-play-dev": {
     title: "Play Area",
     what: "One door to Infinite Highlights and Infinite Match, with the dials they — and the gallery's Play — run on. Every dial starts on the real game.",
@@ -1235,12 +1285,14 @@ export const ADMIN_GUIDES = {
 
   "/star-scene-editor-dev": {
     title: "3D Scene Editor",
-    what: "Steps 1–2 of the one editor for every 3D scene. It works on the Cut-scene Director: pick a scene, change the camera (or fly a free camera) and the lighting, and watch the real director play it. Edits save per scene and per shot. Nothing touches a career, and the game's own cut scenes don't read these edits yet.",
+    what: "The one editor for every 3D scene. Three places work: the Cut-scene Director, 3D Signing and the Manager's Office. Pick a scene or a shot, change the camera (or fly a free camera) and the lighting, and watch the real scene play it. Edits save per scene and per shot. Nothing touches a career, and the game does not read these edits yet: the real signing, office and cut scenes play exactly as before.",
     buttons: [
       {
         group: "3D Preview",
         items: [
-          ["Place tabs (3D Signing … Cut-scene Director)", "Only Cut-scene Director works today. The others say \"coming next\"."],
+          ["Place tabs (3D Signing … Cut-scene Director)", "3D Signing, Manager's Office and Cut-scene Director work. Shop, Garden and House say \"coming next\" (hidden on a phone)."],
+          ["Shot buttons (3D Signing / Manager's Office: 1. He talks … 5. The handshake)", "Play that fixed shot from its start; the settings then change that shot. The office has only He talks and You reply. A • marks a shot you have edited."],
+          ["▶ PLAY SHOT (3D Signing / Manager's Office)", "Play the shot on screen again from its start."],
           ["Scene buttons (Contract signing, Goal celebration …)", "Load that hand-made cut scene into the preview. Your edits are cleared."],
           ["The badge top-left", "The shot under the playhead, its name and its lens."],
           ["Drag on the preview", "Free camera: orbit and tilt round the look point. Wheel or pinch moves in and out. Only the shot under the playhead changes."],
@@ -1259,6 +1311,7 @@ export const ADMIN_GUIDES = {
           ["Back to the shot", "Drops the free camera for this shot; the shot plays as written."],
           ["Key light angle, Key light colour", "Turn the sun round the set and change its colour. \"As written\" puts the colour back."],
           ["Greyed rows with \"coming next\"", "PART and NEW dials from the drawing. Not built yet."],
+          ["3D Signing / Manager's Office settings", "Only what those scenes have: Position, Look at, Lens per shot (drag the preview to orbit; Back to the shot undoes it), Exposure, Key light strength, angle and colour (the low sun through the window). No mood, spotlight, presets, cast or timeline there."],
         ],
       },
       {
@@ -1275,11 +1328,12 @@ export const ADMIN_GUIDES = {
     ],
     saving: [
       "This device: every change saves at once (localStorage), per scene and per shot, and comes back when you reopen it.",
+      "Save ids: 3D Signing saves as \"signing\", the Manager's Office as \"office\", each director scene under its own name, except Contract signing, which now saves as \"director:signing\" (an older save of it is still read back).",
       "Shared: SAVE FOR EVERYONE writes to the star_cutscene_edits table through /api/star/cutscene-edits (admins only). Needs supabase/migrations/star_cutscene_edits.sql run; until then it says \"Saved on this device only\".",
       "Nothing commits to the repo.",
     ],
-    inGame: ["Nowhere yet. It plays the same director the game's cut scenes use, but the game's cut scenes do not read these edits (a later step)."],
-    dev: "app/star-scene-editor-dev/page.tsx (+ editor.css) · lib/star/cutscene/director.ts (optional setEdit / cameras / cameraPose / layout hooks; no edit = the game's behaviour) · store.ts (saves) · app/api/star/cutscene-edits/route.ts · fixtures from lib/star/cutscene/fixtures.ts · drawing: docs/handoffs/2026-10-19-ui-lookover/scene-editor/.",
+    inGame: ["Nowhere yet. It plays the same director and the same signing/office scene the game uses, but the game does not read these edits (Harry wants to see them first)."],
+    dev: "app/star-scene-editor-dev/page.tsx (+ editor.css, parts.tsx, PlaceEditor.tsx for Signing/Office) · lib/star/signing3dScene.ts (optional edit / setEdit / playShot / shotDefaults / cameraPose / layout; no edit = today's scene, the career never passes one) · lib/star/cutscene/director.ts (optional setEdit / cameras / cameraPose / layout hooks; no edit = the game's behaviour) · store.ts (saves) · app/api/star/cutscene-edits/route.ts · fixtures from lib/star/cutscene/fixtures.ts · drawing: docs/handoffs/2026-10-19-ui-lookover/scene-editor/.",
   },
   "/star-3d-area-dev": {
     title: "3D Area",

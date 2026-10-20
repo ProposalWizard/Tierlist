@@ -2,7 +2,7 @@
  * The Real shots lead-in: do the men chase the ball, or hold their shape?
  * (Harry, 14 Oct 2026: "in real shots they don't pass, they just run after the
  * ball endlessly.") Measured over every shot with a lead-in
- * (lib/star/statsbombShots.ts leadinTrack), frame by frame at 1/30 s:
+ * (lib/star/realMoments leadinTrack), frame by frame at 1/30 s:
  *   - men within 5 m of the ball (all, and the ones not on it: chasers);
  *   - of the man-frames moving (> 1 m/s, not on the ball), the share heading
  *     at the ball (within 45°) vs holding shape (not);
@@ -12,7 +12,7 @@
  * Run alone it prints the numbers; tests/star/leadIn.mts checks the limits.
  */
 import { readFileSync } from "node:fs";
-import { scenarioForShot, leadinTrack, peopleOf, type SbFile, type SbLeadinFile, type SbShot, type SbLeadin } from "../../lib/star/statsbombShots";
+import { scenarioForShot, leadinTrack, peopleOf, type WyscoutShotFile, type RealShot, type RealLead } from "../../lib/star/realMoments";
 import { leadInEntities } from "../../lib/star/leadIn";
 
 export interface ChaseNumbers {
@@ -39,7 +39,7 @@ export interface ChaseNumbers {
 const d = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 
 type Track = ReturnType<typeof leadinTrack>;
-export function chaseNumbers(shots: SbShot[], leads: Record<string, SbLeadin>, track: (s: SbShot, l: SbLeadin, sc: ReturnType<typeof scenarioForShot>) => Track = leadinTrack): ChaseNumbers {
+export function chaseNumbers(shots: RealShot[], leads: Record<string, RealLead>, track: (s: RealShot, l: RealLead, sc: ReturnType<typeof scenarioForShot>) => Track = leadinTrack): ChaseNumbers {
   let closing = 0, runM = 0, runMen = 0;
   let pFrames = 0, pNear = 0, pMoving = 0, pToward = 0;
   let n = 0, frames = 0, nearAll = 0, nearCh = 0, moving = 0, toward = 0, maxSp = 0, manFrames = 0, over9 = 0, endSum = 0, endN = 0;
@@ -126,7 +126,7 @@ export function chaseNumbers(shots: SbShot[], leads: Record<string, SbLeadin>, t
 }
 
 if (process.argv[1]?.endsWith("realShotsChase.mts")) {
-  const shots = (JSON.parse(readFileSync("data/statsbomb/shots.json", "utf8")) as SbFile).shots;
-  const leads = (JSON.parse(readFileSync("data/statsbomb/leadins.json", "utf8")) as SbLeadinFile).leadins;
+  const shots = (JSON.parse(readFileSync("data/realmoments/wyscout_shots.json", "utf8")) as WyscoutShotFile).shots;
+  const leads: Record<string, RealLead> = Object.fromEntries(shots.filter((s) => s.lead).map((s) => [s.id, s.lead!]));
   console.log(JSON.stringify(chaseNumbers(shots, leads), null, 1));
 }

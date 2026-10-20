@@ -121,3 +121,38 @@
   .ih-lower-text { padding: 8px 18px 8px 14px; }
   .ih-prev, .ih-next { height: 60px; }
 }
+
+/* The dock (Harry, 19 Oct 2026: "I heavily dislike when ui is off the screen
+   that could be very easy to press on the screen"). The chance's name, the
+   flag, Prev / Play / Next — and on a phone Save and Commit — sit ABOVE the
+   pitch and stay pinned to the top while you scroll. A bar pinned at the top
+   is one the match already makes room for (lib/revealOnScreen.ts): the live
+   pitch is sized to the room under it and revealed below it, so the dock
+   never covers the ball. Nothing about the pitch's width changes. */
+.ih-dock { position: sticky; top: 0; z-index: 20; display: flex; flex-direction: column; gap: 6px;
+  margin: -12px -12px 0; padding: 8px 12px; background: rgba(6, 16, 40, 0.96); border-bottom: 1px solid var(--bc-line);
+  backdrop-filter: blur(6px); }
+.ih-dock .ih-lower { margin-top: 0; }
+.ih-dock .ih-lower-text { padding: 6px 18px 6px 14px; }
+.ih-dock .ih-lower-text b { font-size: clamp(17px, 2vw, 22px); }
+.ih-dock .ih-lower-text span { font-size: clamp(14px, 1.6vw, 18px); }
+.ih-dock .ih-transport { max-width: 640px; gap: 8px; }
+.ih-dock .ih-prev { height: 46px; width: 52px; }
+.ih-dock .ih-next { height: 46px; font-size: 21px; }
+.ih-play { flex: none; width: 112px; height: 46px; border: 0; cursor: pointer; font-size: 17px; font-weight: 900; font-style: italic; text-transform: uppercase;
+  color: #04210f; background: #4ade80; clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.ih-play[data-tone="stop"] { background: #7dd3fc; color: #04111d; }
+.ih-dock-save { display: none; gap: 8px; }
+.ih-dock-save .ih-sbtn { height: 42px; font-size: 15px; }
+@media (max-width: 980px) {
+  .ih-dock-save { display: flex; }
+  .ih-pc-only { display: none; }
+}
+@media (max-width: 480px) {
+  .ih-dock { gap: 5px; padding: 6px 10px; margin: -12px -12px 0; }
+  .ih-dock .ih-prev, .ih-dock .ih-next, .ih-play { height: 40px; }
+  .ih-play { width: 96px; font-size: 15px; }
+  .ih-dock .ih-next { font-size: 18px; }
+  .ih-dock .ih-lower-text { padding: 4px 16px 4px 12px; }
+  .ih-dock-save .ih-sbtn { height: 38px; font-size: 14px; }
+}

@@ -39,6 +39,16 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 19 Oct 2026 — key controls never below the fold (Harry)
+- **"I heavily dislike when ui is off the screen that could be very easy to
+  press on the screen."** On Infinite Highlights at 1440×900 the Next button
+  and the chance name sat under the tall pitch. The main controls (chance
+  name, flag, Prev / Play / Next, and Save / Commit on a phone) now sit in a
+  dock ABOVE the pitch, pinned to the top while you scroll. Pin at the TOP,
+  not the bottom: the match counts top bars and sizes the live pitch under
+  them, so a top dock never covers the ball. A sticky SIDE column must carry
+  `data-side-column`, or the match mistakes it for a top bar.
+
 ### 19 Oct 2026 — the Team room and the admin side menu (Harry)
 - **"We need to be able to close the side tab."** On a computer, « at the top
   of the admin side menu folds it to a 64 px strip of icons (remembered per
@@ -609,3 +619,22 @@ Newest first. Each is something that was actually said.
 - **Every main page has a "?"** (P62). Settings: small one-line on/off rows (P61).
   The line-up skips on any tap, or never shows with Settings → Skip the line-up.
 
+
+## Play areas: the important buttons stay on screen (Harry, 19 Oct 2026)
+On Infinite Highlights he had to scroll to reach NEXT and the chance name, below a tall pitch.
+*"I heavily dislike when ui is off the screen that could be very easy to press on the screen."*
+On any play/test screen with a pitch, the main controls (Next, Prev, Play/Stop, Save/Commit,
+flag) must be visible without scrolling at 1440×900 and on a phone: size the pitch to the screen
+height, or pin the controls. Check with a screenshot at 1440×900 that nothing key is below the fold.
+
+## Broadcast admin home keeps side tabs (Harry, 19 Oct 2026)
+"the home ui needs work on broadcast as there should still be side tabs". The Broadcast look's
+admin home must keep the side list of groups (it was hidden on board looks). Built 19 Oct: every
+look shows the current game's groups in the side menu (slanted bars on Broadcast, the current one
+lit with an amber edge); on a phone they sit behind ☰ Menu, on a computer « folds them to icons.
+
+## The admin is split by game (Harry, 19 Oct 2026)
+"stuff on the wider website should be on a completely different tab than road to ballon dor stuff
+— remember we may be a production company that makes a lot of games". One tab per game across the
+top of every admin page (Road to Ballon d'Or | Website games | Studio); inside a tab you only see
+that game's groups, pages and search. A new game = one line in GAMES (lib/adminRegistry.ts).

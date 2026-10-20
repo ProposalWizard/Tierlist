@@ -108,6 +108,10 @@
   .fm-mom svg { height: 100px; }
   .fm-mom .fm-mom-away { top: 100px; }
   .fm-events { max-height: 360px; }
+  /* Your chance plays at the real match's own width on a phone (366 px on a
+     390 px screen, like a career). Inside the page's gutter and this box's
+     padding it was squeezed to 340 px (19 Oct 2026). */
+  .fm-chance { margin: 0 -14px; padding: 8px 12px; border-left: 0; border-right: 0; border-radius: 0; }
 }
 
 /* The layout switch: beside the title on a computer, its own row on a phone. */

@@ -13,6 +13,7 @@ import { uiVersion, setUiVersion, UI_VERSION_DEFAULT } from "./uiLook";
 import { gameplayVersion, setGameplayVersion, defaultVersion } from "./gameplayVersion";
 import { matchRadarLook, setMatchRadarLook } from "./matchRadarLook";
 import { matchFeelLook, setMatchFeelLook } from "./matchFeel";
+import { fhrMode, setFhrMode } from "./fhr/toggle";
 
 /** One New | Old switch: how to read it, how to set it, and its default. */
 export interface LookRow {
@@ -55,6 +56,10 @@ export const LOOK_ROWS = {
   matchRadar: row("Match radar (testing)", "new", "old", "old", matchRadarLook, setMatchRadarLook),
   // Leo, 13 Oct 2026: impact, hit-stop, sounds, keeper dives (lib/star/matchFeel.ts). Old while tested.
   matchFeel: row("Match feel (testing)", "new", "old", "old", matchFeelLook, setMatchFeelLook),
+  // Harry, 19 Oct 2026: the Full Highlights Rebuild's test switch, Off by
+  // default; On includes Chances: New (lib/star/fhr/toggle.ts). Shown in
+  // Settings → Harry changes as "Off | On (test)".
+  fhr: row("Full highlights rebuild", "on", "off", "off", fhrMode, setFhrMode),
   ui: row("UI", "new", "old", UI_VERSION_DEFAULT, uiVersion, setUiVersion),
 } as const satisfies Record<string, LookRow>;
 

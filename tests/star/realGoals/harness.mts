@@ -7,8 +7,9 @@
  * The aim is FOUND, not guessed (as tests/star/keeperFinish/harness.mts does):
  * the arrow and the tap height are searched with every body out of the way
  * until the ball crosses within a few centimetres of where the real goal did.
- * Then the same strike (plus a small human wobble) is played against the real
- * defenders and keeper, with the real lane on (the page) or off (before).
+ * Then the same strike (plus a small human wobble) is played against the
+ * defenders and keeper (placed by the game's rules: Wyscout has only the
+ * shot), with the real lane on (the page) or off (before).
  */
 const store = new Map<string, string>();
 if (typeof (globalThis as { localStorage?: unknown }).localStorage === "undefined") {
@@ -28,15 +29,15 @@ import { launchShot, shotsPro } from "../../../lib/star/shotModel";
 import { shotPowerOn, contactFieldOn, feelPower, feelLift } from "../../../lib/star/shotFeel";
 import { strikingPower } from "../../../lib/star/strikePower";
 import { joinGoals, scenarioForGoal, realEnd, type RealGoal, type RgFile } from "../../../lib/star/realGoals";
-import type { SbFile } from "../../../lib/star/statsbombShots";
+import type { WyscoutShotFile } from "../../../lib/star/realMoments";
 
 export const H = 1 / 180;
 /** The page's striker (EnginePlay settings on the Real Goals page). */
 export const SKILL = Number(process.env.RG_SKILL ?? 95);
 
 export function loadGoals(): RealGoal[] {
-  const shots = (JSON.parse(readFileSync("data/statsbomb/shots.json", "utf8")) as SbFile).shots;
-  const extras = (JSON.parse(readFileSync("data/statsbomb/goals.json", "utf8")) as RgFile).goals;
+  const shots = (JSON.parse(readFileSync("data/realmoments/wyscout_shots.json", "utf8")) as WyscoutShotFile).shots;
+  const extras = (JSON.parse(readFileSync("data/realmoments/wyscout_goals.json", "utf8")) as RgFile).goals;
   return joinGoals(shots, extras);
 }
 
