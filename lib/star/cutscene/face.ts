@@ -649,7 +649,7 @@ export function faceShapeDeltas(lm: FaceLandmarks, x: number, y: number, z: numb
   }
 }
 
-function buildFaceShapes(T: Three, geo: THREE.BufferGeometry, lm: FaceLandmarks) {
+export function buildFaceShapes(T: Three, geo: THREE.BufferGeometry, lm: FaceLandmarks) {
   const pos = geo.getAttribute("position");
   const n = pos.count;
   const D = SHAPES.map(() => new Float32Array(n * 3));

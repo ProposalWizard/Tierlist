@@ -24,7 +24,7 @@ import { createStyleKit, type StyleKit } from "../style3d/kit";
 import { resolveStyle, type StyleDef, type StyleId } from "../style3d/styles";
 import { applyMood, MOODS } from "./presets/moods";
 import { compileScript, rootAt, clipsAt, trackWeight, cameraAt, overlayAt, soundsBetween, type Compiled, type Overlay } from "./timeline";
-import { shotPose, mixPose, type Anchor, type ShotPose } from "./presets/camera";
+import { shotPose, mixPose, keepInside, type Anchor, type ShotPose } from "./presets/camera";
 import { resolvePoint } from "./presets/locations";
 import { createCutscenePeople } from "./peopleAdapter";
 import { castLook, DEFAULT_CLUB } from "./casting";
@@ -36,6 +36,7 @@ import { makeSignature, signatureAt } from "./signature";
 import { VOICE_LINES } from "./voiceLines";
 import { clamp, lerpAngle, noise1, smooth } from "./math";
 import { filmPass } from "./cinema";
+import { blinkAt, wanderGaze } from "../style3d/toon/face";
 import { cutsceneCameraLook, type CutsceneCameraLook } from "./look";
 
 export interface DirectorOptions {
@@ -102,6 +103,8 @@ export interface DirectorEdit {
 interface Cast { id: string; role: string; body: string; actor: CutsceneActor; clipSet: Set<string> }
 
 const SITS = new Set(["sitidle", "boss-sit", "sitdown", "slot_sit"]);
+/** How near the camera may come to a person (metres from his head point, body line, arm line). */
+export const PERSONAL_SPACE = { head: 0.34, body: 0.32, arm: 0.24 } as const;
 const IN_PLACE = new Set(["sitdown", "sitidle", "boss-sit", "slump_walk", "jog", "sprint", "dribble_run", "celebrate_safe"]);
 
 export async function createDirector(container: HTMLElement, written: CutsceneScript, o: DirectorOptions = {}): Promise<Director> {
@@ -322,8 +325,12 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const vl = sp?.cue ? VOICE_LINES[sp.cue] : null;
       // a recorded line: the mouth follows its loudness; otherwise a talking rhythm
       a.setMouth(!sp ? 0 : vl ? vl.env[Math.min(vl.env.length - 1, Math.max(0, Math.floor((t - sp.at) * 30)))] ?? 0 : 0.5 + 0.5 * noise1(t * 9, c.id.length));
-      const bp = (t + c.id.length * 0.77) % 3.6;
-      a.setBlink(bp < 0.12 ? Math.sin((bp / 0.12) * Math.PI) : 0);
+      // blinks at uneven times, and the eyes wander a little between looks (less while he talks or looks at someone)
+      const seed = (script.seed ?? 1) * 31 + c.id.length * 7 + c.id.charCodeAt(0);
+      a.setBlink(blinkAt(t, seed));
+      const looking = (tracksOf(c.id, "look") as LookTrack[]).some((lt) => trackWeight(lt, t, 0.35, 0.35) > 0.3);
+      const [gx, gy] = wanderGaze(t, seed);
+      a.setGaze?.(gx, gy, sp || looking ? 0.3 : 0.75);
       a.endFrame();
     }
     // 5. props in hands
@@ -458,9 +465,21 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       return { pos: [a.root.position.x, a.root.position.y, a.root.position.z], yaw: r.yaw, head: toV(head), chest: toV(chest), hips: toV(hips), height: head.y - a.root.position.y + 0.1 };
     }
     const p = targetPoint(tg, t);
-    const q: Vec3 = [p.x, p.y, p.z];
+    let q: Vec3 = [p.x, p.y, p.z];
     const yaw = "actor" in tg ? rootAt(C, tg.actor, t).yaw : 0;
-    return { pos: [q[0], 0, q[2]], yaw, head: q, chest: q, hips: q, height: 0.4, thing: true };
+    // a prop: its own size, so an insert shows all of it (B5: the trophy insert was a 0.25 m slice)
+    let height = 0.4, width: number | undefined;
+    if ("prop" in tg && props.get(tg.prop)?.group) {
+      const box = new T.Box3().setFromObject(props.get(tg.prop)!.group);
+      if (!box.isEmpty()) {
+        const sz = box.getSize(new T.Vector3()), c = box.getCenter(new T.Vector3());
+        if (Math.max(sz.x, sz.y, sz.z) < 2.5) {
+          height = Math.max(0.12, sz.y); width = Math.max(0.12, sz.x, sz.z);
+          if (!tg.handle) q = [c.x, c.y, c.z];
+        }
+      }
+    }
+    return { pos: [q[0], 0, q[2]], yaw, head: q, chest: q, hips: q, height, width, thing: true };
   };
   /** Where everyone (but the subject) stands at t: things the camera must not sit inside or behind. */
   const bodiesAt = (t: number, except: Set<string>): Vec3[] => C.cast.filter((m) => !except.has(m.id)).map((m) => { const r = rootAt(C, m.id, t); return [r.pos[0], r.pos[1] + 1.15, r.pos[2]] as Vec3; });
@@ -522,6 +541,44 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     return p;
   };
 
+  /**
+   * The camera is never inside a person or a held prop (B5: the trophy lift's camera sat inside his
+   * arms). Measured on the bodies as posed this frame: a camera nearer than PERSONAL_SPACE to anyone's
+   * head, body or arms, or inside a prop's box, backs away along its own line from what it looks at
+   * (the framing gets a little wider, never cut off).
+   */
+  const clearOfPeople = (p: ShotPose): ShotPose => {
+    const look = v(p.look);
+    const out = v(p.pos).sub(look);
+    const d0 = out.length();
+    if (d0 < 1e-4) return p;
+    out.normalize();
+    const segD = (x: any, a: any, b: any) => { const ab = b.clone().sub(a); const k = clamp(x.clone().sub(a).dot(ab) / Math.max(1e-9, ab.lengthSq()), 0, 1); return x.distanceTo(a.clone().addScaledVector(ab, k)); };
+    const parts = Array.from(cast.values()).map((c) => {
+      const A = c.actor;
+      return { head: A.point("head"), chest: A.point("chest"), hips: A.point("hips"), sl: A.point("shoulder.L"), hl: A.point("hand.L"), sr: A.point("shoulder.R"), hr: A.point("hand.R") };
+    });
+    const boxes: any[] = [];
+    for (const pr of Array.from(props.values())) {
+      if (!pr.group?.visible) continue;
+      const b = new T.Box3().setFromObject(pr.group);
+      if (!b.isEmpty() && Math.max(...b.getSize(new T.Vector3()).toArray()) < 2.5) boxes.push(b.expandByScalar(0.06));
+    }
+    const S = PERSONAL_SPACE;
+    const clear = (c: any) => parts.every((q) => c.distanceTo(q.head) > S.head && segD(c, q.chest, q.hips) > S.body && segD(c, q.sl, q.hl) > S.arm && segD(c, q.sr, q.hr) > S.arm)
+      && boxes.every((b) => !b.containsPoint(c));
+    const at = (k: number) => look.clone().addScaledVector(out, d0 * k);
+    if (clear(at(1))) return p;
+    for (let k = 1.06; k <= 4.01; k *= 1.06) {
+      if (clear(at(k))) {
+        let q: ShotPose = { ...p, pos: at(k).toArray() as Vec3 };
+        if (C.loc.bounds) q = keepInside(q, C.loc.bounds);
+        return q;
+      }
+    }
+    return p;
+  };
+
   // ── one frame at t ──
   let lastT = -1;
   const evaluate = (t: number) => {
@@ -543,6 +600,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     if (cs) {
       let p = camPose(cs.cur, cs.k, t);
       if (cs.prev) p = mixPose(camPose(cs.prev.track, cs.prev.k, t), p, cs.prev.mix);
+      p = clearOfPeople(p);
       camera.position.set(...p.pos);
       camera.up.set(Math.sin((p.roll * Math.PI) / 180), Math.cos((p.roll * Math.PI) / 180), 0);
       const fr = edit?.free?.[C.cameras.indexOf(cs.cur)];

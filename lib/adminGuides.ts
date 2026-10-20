@@ -1398,6 +1398,20 @@ export const ADMIN_GUIDES = {
     inGame: ["Nowhere yet. It plays the same director and the same signing/office scene the game uses, but the game does not read these edits (Harry wants to see them first)."],
     dev: "app/star-scene-editor-dev/page.tsx (+ editor.css, parts.tsx, PlaceEditor.tsx for Signing/Office) · lib/star/signing3dScene.ts (optional edit / setEdit / playShot / shotDefaults / cameraPose / layout; no edit = today's scene, the career never passes one) · lib/star/cutscene/director.ts (optional setEdit / cameras / cameraPose / layout hooks; no edit = the game's behaviour) · store.ts (saves) · app/api/star/cutscene-edits/route.ts · fixtures from lib/star/cutscene/fixtures.ts · drawing: docs/handoffs/2026-10-19-ui-lookover/scene-editor/.",
   },
+  "/star-3d-bench-dev": {
+    title: "3D bench",
+    what: "The same ten 3D shots, every time, at the size of a phone: the Home player, the signing close-up, the manager's office, the press conference, the trophy lift, the walk-out, the garden, a training drill and two made-up cut scenes. Each shows its frame numbers. Every 3D change is judged here, before and after, on the same pictures.",
+    buttons: [
+      { items: [
+        ["Home player … Made-up scene: a trophy", "Picks the shot. A cut scene stops at the same second every time; a 3D place (garden, office, drill) keeps moving."],
+        ["Skin now / Skin before (19 Oct)", "Skin before shows the shot with the old skin and light (the yellow and orange skin), so the two can be compared on the same shot."],
+        ["Show the skin it measures", "Paints every bit of bare skin bright pink in the shot: what the skin numbers are measured from."],
+      ] },
+    ],
+    saving: ["Nothing here is saved. The page only shows other test pages at fixed moments."],
+    inGame: ["Nothing changes in the game from this page. It is a measuring tool for the 3D changes."],
+    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/home/page.tsx (the Home shot), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old-skin for the before). Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; ?skinfix=0 on any 3D page shows the old skin.",
+  },
   "/star-3d-area-dev": {
     title: "3D Area",
     what: "Every 3D place, cutscene and 3D area being built, in one list, plus a store of every 3D and Blender file the site has. Nothing here touches a career.",

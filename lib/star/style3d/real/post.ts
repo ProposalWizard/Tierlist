@@ -17,6 +17,7 @@
 import type { Quality3d } from "../../three3d/quality";
 import { tierLookNew } from "../../three3d/tierLook";
 import { gradeExposure, gradeToneMapGlsl } from "./toneGrade";
+import { setToonSkinMark, toonSkinFixOn, TOON_SKIN_MARK, TOON_SKIN } from "../toon/shader";
 
 const VERT = /* glsl */ `
 varying vec2 vUv;
@@ -58,7 +59,7 @@ const FINAL = /* glsl */ `
 precision highp float;
 uniform sampler2D tColor, tDepth, tSoft, tBloom;
 uniform vec2 res;
-uniform float cNear, cFar, exposure, bloom, contrast, sat, vignette, grain, time, sharpen, fxaa, fxSharp, dofOnce, dof, dofNear, dofFar, useDepth, lite, bloomThresh, menClean;
+uniform float cNear, cFar, exposure, bloom, contrast, sat, vignette, grain, time, sharpen, fxaa, fxSharp, dofOnce, dof, dofNear, dofFar, useDepth, lite, bloomThresh, menClean, skinFix;
 uniform vec3 tint, lift, shadowTint, lightTint;
 uniform sampler2D tLut;
 uniform float lutAmt;
@@ -80,6 +81,9 @@ float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.545
 // the alpha of the last scene() read: 0.5 marks a Style A match man (toon/shader.ts, MEN_MARK)
 float gA;
 bool isMan(float a) { return abs(a - 0.5) < 0.12; }
+// bare skin (toon/shader.ts TOON_SKIN): its alpha mark, and the curve by brightness only (hue kept)
+float skinOf(float a) { return skinFix > 0.5 ? 1.0 - smoothstep(0.03, 0.09, abs(a - ${TOON_SKIN_MARK.toFixed(2)})) : 0.0; }
+vec3 acesHue(vec3 x) { float m = max(max(x.r, x.g), x.b); return x * (aces(vec3(m)).r / max(m, 1e-5)); }
 vec3 scene(vec2 uv) {
   vec4 t4 = texture2D(tColor, uv);
   gA = t4.a;
@@ -90,7 +94,8 @@ vec3 scene(vec2 uv) {
     c = mix(c, texture2D(tSoft, uv).rgb, k);
   }
   if (lite < 0.5 && dofOnce < 0.5) c += texture2D(tBloom, uv).rgb * bloom;
-  return toSRGB(aces(c));
+  float sk = skinOf(gA);
+  return toSRGB(sk > 0.0 ? mix(aces(c), acesHue(c), sk) : aces(c));
 }
 void main() {
   vec2 px = 1.0 / res;
@@ -148,16 +153,18 @@ void main() {
     c = max(c + toSRGB(aces(lin + texture2D(tBloom, vUv).rgb * bloom)) - toSRGB(aces(raw)), 0.0);
   }
   c += glow;
-  // the grade: S-curve, split tone, saturation
-  c = c * tint + lift;
+  // the grade: S-curve, split tone, saturation (bare skin is spared most of the tint, split tone and
+  // colour cube and all of the extra colour: the place keeps its light, his face keeps its tone)
+  float skS = skinOf(aM), skK = skS * ${TOON_SKIN.gradeOff.toFixed(2)};
+  c = c * mix(tint, vec3(1.0), skK) + lift * (1.0 - skK);
   vec3 s = c * c * (3.0 - 2.0 * c);
   c = mix(c, s, clamp(contrast - 1.0, 0.0, 1.0) * 2.0);
   float l = luma(c);
-  c *= mix(shadowTint, lightTint, smoothstep(0.15, 0.75, l));
-  c = mix(vec3(luma(c)), c, sat);
+  c *= mix(mix(shadowTint, lightTint, smoothstep(0.15, 0.75, l)), vec3(1.0), skK);
+  c = mix(vec3(luma(c)), c, mix(sat, ${TOON_SKIN.sat.toFixed(2)}, skS));
   vec2 v = vUv - 0.5;
   c *= 1.0 - vignette * dot(v, v) * 1.5;
-  if (lutAmt > 0.0) c = mix(c, lut32(c), lutAmt);
+  if (lutAmt > 0.0) c = mix(c, lut32(c), lutAmt * (1.0 - skK));
   c += (hash(gl_FragCoord.xy + fract(time) * 91.0) - 0.5) * grain;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
 }`;
@@ -257,7 +264,7 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
     dof: { value: tier === "high" ? 0.75 : 0 }, dofNear: { value: 58 }, dofFar: { value: 95 }, useDepth: { value: 1 },
     tint: { value: new T.Vector3(1, 1, 1) }, lift: { value: new T.Vector3() },
     shadowTint: { value: new T.Vector3(0.97, 1.0, 1.04) }, lightTint: { value: new T.Vector3(1.03, 1.0, 0.97) },
-    tLut: { value: null }, lutAmt: { value: 0 }, lite: { value: 0 }, bloomThresh: { value: 1 }, menClean: { value: 0 },
+    tLut: { value: null }, lutAmt: { value: 0 }, lite: { value: 0 }, bloomThresh: { value: 1 }, menClean: { value: 0 }, skinFix: { value: 0 },
   };
   const finalMat = new T.ShaderMaterial({ uniforms: fu, vertexShader: VERT, fragmentShader: FINAL, depthTest: false, depthWrite: false });
   const size = new T.Vector2();
@@ -297,7 +304,10 @@ export function makeHPost(T: any, renderer: any, tier: Quality3d, o: { msaa?: nu
       const auto = renderer.autoClear;
       renderer.autoClear = true;
       renderer.setRenderTarget(main);
+      setToonSkinMark(true);
       renderer.render(scene, camera);
+      setToonSkinMark(false);
+      fu.skinFix.value = toonSkinFixOn() ? 1 : 0;
       if (mode === "lite") {
         fu.tColor.value = main.texture; fu.tDepth.value = main.depthTexture; fu.tSoft.value = main.texture; fu.tBloom.value = main.texture;
         fu.useDepth.value = 0; fu.lite.value = 1; fu.dof.value = 0; fu.bloomThresh.value = g.bloomThresh;

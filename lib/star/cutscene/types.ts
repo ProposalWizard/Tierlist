@@ -451,6 +451,8 @@ export interface CutsceneActor {
   setExpression(expr: Expression, amount: number): void;
   setBlink(closed: number): void;
   setMouth(open: number): void;
+  /** Small eye movements on top of where he looks (−1..1 across and up), `w` of the way. Optional: a body with no eyes ignores it. */
+  setGaze?(x: number, y: number, w?: number): void;
   /** After everything: world matrices up to date. */
   endFrame(): void;
   /** Style kit hooks (outline, materials). */
