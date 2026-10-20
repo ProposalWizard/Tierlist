@@ -11,7 +11,7 @@ import { pageLabel } from "@/lib/teamRoom/logic";
 
 export const PAGE_NAMES: Record<string, string> = Object.fromEntries([
   ...ADMIN_PAGES.map((p) => [p.url.split("?")[0], p.name]),
-  ["/admin/team", "Team board"], ["/admin/star", "Admin home"], ["/admin/videos", "Videos"], ["/admin/patch-notes", "Patch notes"],
+  ["/admin/team", "Team board"], ["/admin/star", "Ballon d'Or home"], ["/admin/videos", "Videos"], ["/admin/patch-notes", "Patch notes"],
 ]);
 
 /** The page's name as the admin menu calls it ("Scenario gallery"), else a tidy guess. */

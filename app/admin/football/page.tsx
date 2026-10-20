@@ -684,7 +684,8 @@ export default function FootballDataPage() {
   /* ── Breadcrumb ── */
   const crumbs = (
     <div className="flex items-center gap-2 text-sm text-white mb-6 flex-wrap">
-      <Link href="/admin" className="hover:text-white transition-colors">Admin</Link>
+      {/* "Admin" = the admin's home, the Team board (Harry, 20 Oct 2026). */}
+      <Link href="/admin/team" className="hover:text-white transition-colors">Admin</Link>
       <span>/</span>
       <button onClick={() => { setView("home"); setSquadClub(null); setPlayerProfile(null); }}
         className={`transition-colors ${view === "home" ? "text-white font-bold" : "hover:text-white"}`}>

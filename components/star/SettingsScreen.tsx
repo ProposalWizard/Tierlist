@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useIsAdmin, useIsTester } from "@/lib/useIsAdmin";
 import { setAdminMode, useAdminMode } from "@/lib/adminLook";
+import { adminHomeFor } from "@/lib/adminRegistry";
 import { frameMeterOn, setFrameMeterOn } from "@/lib/star/three3d/frameMeterPref";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
@@ -296,7 +297,8 @@ export default function SettingsScreen({
               <Switch on={adminMode} onClick={() => setAdminMode(!adminMode)} label="Admin mode" />
             </div>
           )}
-          <a href="/admin/star" className="block rounded-lg bg-black/30 px-3 py-2 text-[12px] font-black text-white">
+          {/* An admin lands on the Team board, a tester on the game home (Harry, 20 Oct 2026). */}
+          <a href={adminHomeFor(isAdmin ? "admin" : "tester")} className="block rounded-lg bg-black/30 px-3 py-2 text-[12px] font-black text-white">
             {isAdmin ? "Admin pages →" : "Test pages →"}
           </a>
         </SetCard>

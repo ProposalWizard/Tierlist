@@ -49,6 +49,19 @@ export type AdminGameKey = (typeof GAMES)[number]["key"];
 export type AdminGame = (typeof GAMES)[number];
 export const DEFAULT_GAME: AdminGameKey = GAMES[0].key;
 
+/**
+ * THE ADMIN'S HOME is the Team area, open on the Team board (Harry, 20 Oct
+ * 2026: "the team area should be the default home area, and it should open on
+ * Team board, and have its own tab on the left"). Every way into the admin
+ * lands there for an admin. Testers cannot see the Team room, so they keep the
+ * first game's home. ADMIN_FRONT_DOOR (app/admin/home) sends each person to
+ * theirs, for links that do not know who is opening them (the KIB Admin app).
+ */
+export type AdminRole = "admin" | "tester";
+export const TEAM_HOME = "/admin/team";
+export const ADMIN_FRONT_DOOR = "/admin/home";
+export const adminHomeFor = (role: AdminRole): string => (role === "admin" ? TEAM_HOME : GAMES[0].home);
+
 export const SECTIONS: { key: AdminSection; name: string }[] = [
   { key: "rbd", name: "Road to Ballon d'Or" },
   { key: "site", name: "Site" },
@@ -83,7 +96,7 @@ const P = (url: string, name: string, purpose: string, section: AdminSection, gr
   ({ url, name, purpose, section, group, owner, status, writes, access });
 
 export const ADMIN_PAGES: AdminPage[] = [
-  P("/admin/star", "Admin home", "Every admin and test page, grouped and searchable", "studio", "studio", "Harry", "live", "none", "team"),
+  P("/admin/star", "Game home", "Every admin and test page of a game, grouped and searchable", "studio", "studio", "Harry", "live", "none", "team"),
   P("/admin/videos", "Videos", "How to hand Claude a screen recording to break down", "studio", "studio", "Harry", "live", "none", "team"),
   P("/admin/team", "Team board", "What Harry, Mikey and Leo are doing: pushes, pull requests, live deploy, patch notes", "studio", "studio", "Harry", "live", "none", "admin"),
   P("/admin/patch-notes", "Patch notes", "Every patch note, newest first", "studio", "studio", "Shared", "live", "none", "admin"),
@@ -205,27 +218,37 @@ export function currentPage(path: string): AdminPage | undefined {
   return best;
 }
 
+/** True on the Team area's own address (any of its views: ?tab=chat …). */
+export const isTeamPath = (path: string) => (path.split(/[?#]/)[0].replace(/\/+$/, "") || "/") === TEAM_HOME;
+
 /**
  * Where the one back arrow goes (Harry, 20 Oct 2026: "Always top left … always
  * the same"). A page in the list → its group's page; a group page → its
- * game's home; another game's home → the first game's home; the admin home →
- * the site. Anything else → the admin home.
+ * game's home; a game's home → the Team area (the admin's home); the Team
+ * area → the site. Anything else → the admin's home.
+ * A tester has no Team area: the first game's home is their top (→ the site),
+ * and the other games' homes go back to it.
  */
-export function backFor(path: string): { href: string; label: string } {
+export function backFor(path: string, role: AdminRole = "admin"): { href: string; label: string } {
   const p = path.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
+  const team = { href: TEAM_HOME, label: "Team" };
+  const first = { href: GAMES[0].home, label: GAMES[0].name };
+  if (p === TEAM_HOME) return { href: "/", label: "Knowitball" };
   const g = p.match(/^\/admin\/star\/g\/([^/]+)$/);
   if (g) {
     const game = gameOf(GROUPS.find((x) => x.key === g[1])?.game ?? DEFAULT_GAME) ?? GAMES[0];
     return { href: game.home, label: game.name };
   }
-  if (GAMES.some((x) => x.home === p && x.key !== DEFAULT_GAME)) return { href: GAMES[0].home, label: GAMES[0].name };
-  if (p === GAMES[0].home) return { href: "/", label: "Knowitball" };
+  if (GAMES.some((x) => x.home === p)) {
+    if (role === "admin") return team;
+    return p === GAMES[0].home ? { href: "/", label: "Knowitball" } : first;
+  }
   const own = currentPage(p);
   if (own && own.url !== "/admin/star") {
     const grp = GROUPS.find((x) => x.key === own.group);
     if (grp) return { href: `/admin/star/g/${grp.key}`, label: grp.name };
   }
-  return { href: GAMES[0].home, label: "Admin home" };
+  return role === "admin" ? team : first;
 }
 
 /** What admin mode lists first on this path: a label and the pages. */

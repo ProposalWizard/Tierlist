@@ -10,15 +10,17 @@
  *    in the top-left corner over the scene.
  *
  * Where it goes: `to` / `onClick` if the page says; else lib/adminRegistry.ts
- * `backFor` (a page → its group's page; a group → its game's home).
+ * `backFor` (a page → its group's page; a group → its game's home; a game's
+ * home → the Team area, the admin's home; the Team area → the site). The
+ * admin shell passes `role`, so a tester's game home goes to the site instead.
  */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { backFor } from "@/lib/adminRegistry";
+import { backFor, type AdminRole } from "@/lib/adminRegistry";
 import { useAdminLook } from "@/lib/adminLook";
 import "./backArrow.css";
 
-export default function BackArrow({ to, onClick, label, floating }: {
+export default function BackArrow({ to, onClick, label, floating, role }: {
   /** Where it goes. Default: the page's group (backFor). */
   to?: string;
   /** For a page with screens inside it: go back one screen instead of leaving. */
@@ -27,10 +29,12 @@ export default function BackArrow({ to, onClick, label, floating }: {
   label?: string;
   /** Fixed in the top-left corner, for full-screen pages with no frame. */
   floating?: boolean;
+  /** Who is looking (a tester has no Team area). Default: an admin. */
+  role?: AdminRole;
 }) {
   const look = useAdminLook();
   const path = usePathname() ?? "/admin/star";
-  const auto = backFor(path);
+  const auto = backFor(path, role);
   const title = `Back to ${label ?? (onClick ? "the last screen" : auto.label)}`;
   const icon = (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

@@ -185,7 +185,7 @@ body:has([data-admin-shell]) [data-global-chrome] { display: none !important; }
   .ash[data-folded="true"] .ash-side { width: 64px; flex-basis: 64px; padding: 18px 8px; align-items: center; }
   .ash[data-folded="true"] .ash-navt,
   .ash[data-folded="true"] .ash-navh,
-  .ash[data-folded="true"] .ash-side > :not(.ash-brand):not(.ash-nav):not(.ash-glist) { display: none; }
+  .ash[data-folded="true"] .ash-side > :not(.ash-brand):not(.ash-nav):not(.ash-glist):not(.ash-subs) { display: none; }
   .ash[data-folded="true"] .ash-brand { flex-direction: column; padding: 4px 0 12px; gap: 10px; }
   .ash[data-folded="true"] .ash-fold { margin: 0; }
   .ash[data-folded="true"] .ash-nav { justify-content: center; padding: 9px; width: 44px; }
@@ -364,3 +364,29 @@ body:has([data-admin-shell]) [data-global-chrome] { display: none !important; }
   .ash[data-look="broadcast"] .ash-game { padding: 6px 13px 6px 9px; font-size: 11px; gap: 4px; }
   .ash[data-look="broadcast"] .ash-game[aria-current="page"] { box-shadow: inset 0 -2px 0 var(--bc-amber); }
 }
+
+/* ── The Team area (Harry, 20 Oct 2026: "the team area should be the default
+   home area … and have its own tab on the left"). "Team" is the first line of
+   the side menu, a solid bar while you are in it; its views sit under it on a
+   thin rail. Same layout in every look, only the paint changes. ── */
+.ash-area { color: var(--ash-ink); font-weight: 800; margin-bottom: 2px; }
+.ash-area svg { opacity: 1; }
+.ash-area[data-on="true"],
+.ash-area[data-on="true"]:hover { background: var(--ash-accent); color: var(--ash-accent-ink); border-color: transparent; }
+.ash-subs { display: flex; flex-direction: column; gap: 2px; margin: 2px 0 4px 18px; padding-left: 8px; border-left: 2px solid var(--ash-line2); }
+.ash-subs .ash-nav { padding: 7px 10px; font-size: 13px; }
+@media (min-width: 1024px) {
+  .ash[data-folded="true"] .ash-subs { margin: 2px 0 4px; padding: 0; border-left: 0; align-items: center; }
+  .ash[data-folded="true"] .ash-area { justify-content: center; padding: 9px; width: 44px; }
+}
+.ash[data-look="broadcast"] .ash-area { font-style: italic; text-transform: uppercase; letter-spacing: .02em; font-weight: 900; }
+.ash[data-look="broadcast"] .ash-area[data-on="true"],
+.ash[data-look="broadcast"] .ash-area[data-on="true"]:hover {
+  background: linear-gradient(100deg, var(--bc-blue), var(--bc-blue2) 80%); color: #fff; border-radius: 0;
+  box-shadow: inset 4px 0 0 var(--bc-amber); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+.ash[data-look="broadcast"] .ash-subs { border-left-color: rgba(90, 150, 255, 0.34); }
+@media (min-width: 1024px) {
+  .ash[data-look="broadcast"][data-folded="true"] .ash-area[data-on="true"] { clip-path: none; }
+}
+.ash[data-look="bento"] .ash-area[data-on="true"] { border-radius: 12px; }

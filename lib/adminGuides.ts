@@ -83,7 +83,7 @@ export const ADMIN_GUIDES = {
 
   "/admin": {
     title: "Admin Dashboard",
-    what: "Run the live site's content: tierlists, categories, vote tierlists, blind rankings, the daily games, objectives, cards and feedback.",
+    what: "Run the live site's content: tierlists, categories, vote tierlists, blind rankings, the daily games, objectives, cards and feedback. Since 20 Oct 2026 Admin in the site's top menu opens the Team board (the admin's home), not this page; reach this one from Website games → Tierlists.",
     buttons: [
       {
         group: "Top of the page",
@@ -508,6 +508,7 @@ export const ADMIN_GUIDES = {
           ["Edit / Delete", "On each reward. Edit opens it; Save Changes saves it."],
           ["XP Curve", "Read-only table of how much XP each level (1–50) needs."],
           ["XP Awards", "Read-only list of how much XP each action gives (winning a draft, creating a tierlist, login streaks…)."],
+          ["Admin (top line)", "Opens the Team board, the admin's home."],
         ],
       },
     ],
@@ -557,6 +558,7 @@ export const ADMIN_GUIDES = {
           ["Browse", "Search clubs and players; tap a club for its squad (Show All-Time for everyone who ever played there), tap a player for his career. \"Re-fetch from Wikidata\" refreshes one player's career."],
           ["TTT Helper", "Type 3 row and 3 column clubs/countries, then Generate Grid to find the answers. Give it a title and difficulty and press Save Puzzle to add it to the Tic Tac Toe puzzles. Check tests whether one player fits."],
           ["Database", "Refresh Stats, \"Import from Wikidata\" (or Resume from a year), Import one player by his Wikidata id, Fix Missing Careers, and Clear All Data (wipes the whole football database — careful)."],
+          ["Admin (top line)", "Opens the Team board, the admin's home."],
         ],
       },
     ],
@@ -580,6 +582,7 @@ export const ADMIN_GUIDES = {
           ["Edit (per edition)", "Club, league, potential, age and attributes. Save Changes saves; Close closes."],
           ["Clone", "Copies the player into another year, optionally with a new rating, club or positions. Move does the same and deletes the old year."],
           ["Delete", "Deletes that one edition."],
+          ["Admin / Football Data (top line)", "Admin opens the Team board, the admin's home. Football Data opens the football data page."],
         ],
       },
     ],
@@ -698,8 +701,8 @@ export const ADMIN_GUIDES = {
   },
 
   "/admin/star": {
-    title: "Admin home",
-    what: "Every admin and test page, split by game: one tab per game across the top (Road to Ballon d'Or, Website games, Studio). Inside a tab you only see that game's groups and pages. Testers see only the pages they can open.",
+    title: "Game home",
+    what: "Every admin and test page, split by game: one tab per game across the top (Road to Ballon d'Or, Website games, Studio). Inside a tab you only see that game's groups and pages. The admin itself opens on the Team area (Team, first in the side menu); the games sit under it. Testers have no Team area: this is their home, and they see only the pages they can open.",
     buttons: [
       { group: "Game tabs (across the top of every admin page)", items: [
         ["Road to Ballon d'Or", "The career game's groups and pages. This is /admin/star."],
@@ -708,7 +711,7 @@ export const ADMIN_GUIDES = {
         ["The number on a tab", "How many pages that game has (that you can open)."],
       ] },
       { group: "Top", items: [
-        ["← (top left)", "The one back arrow, in the same corner on every admin and test page. Here it goes back to the site; on a group page to the game's home; on any other admin page to that page's group."],
+        ["← (top left)", "The one back arrow, in the same corner on every admin and test page. Here (a game's home) it goes to the Team area, the admin's home; for a tester to the site (Road to Ballon d'Or) or to the Road to Ballon d'Or home (the other games). On a group page it goes to the game's home; on any other admin page to that page's group."],
         ["Search … pages in (game)", "Type part of a name or what a page does. Searches this game only. While you search, the matching pages show as rows under their group."],
         ["All / Harry / Mikey / Leo", "Show everyone's pages, or only one person's, in this game."],
         ["Saves real data", "Only pages whose buttons change things other players see."],
@@ -721,16 +724,17 @@ export const ADMIN_GUIDES = {
         ["Clear", "Shows when a search or filter matches nothing; puts everything back."],
       ] },
       { group: "Side menu", items: [
+        ["Team (first line)", "The Team area, the admin's home: Team board, Team chat, Ideas, My to-do, Patch notes. Opens on the Team board. Admins only."],
         ["(Game) home", "This game's home page."],
-        ["The game's groups", "Every group of the game you are in, the one you are on lit up. Each opens the group's own page. On a phone they are in ☰ Menu; on a computer « folds them to icons."],
-        ["Team board / Ideas / Team chat / My to-do / Patch notes / Videos", "The team's own pages, the same in every game (Team room and Patch notes are admins only)."],
+        ["The game's groups", "Every group of the game you are in, the one you are on lit up. Each opens the group's own page. On a phone they are in ☰ Menu (Team first); on a computer « folds them to icons."],
+        ["Videos", "How to hand Claude a screen recording. The same in every game."],
         ["Broadcast / Bento / Ops room / Clean light", "The admin look: the same pages and the same layout in all four, only the paint changes (Broadcast dark blue, Bento a soft colour per group, Ops room near-black and green, Clean light white). Every admin and test page follows it. Kept on this device."],
         ["Admin mode", "On: the admin side menu sits on every page of the site, opened on the admin pages for the page you are on. Off: it hides. Kept on this device."],
       ] },
     ],
     saving: ["Nothing here saves anything shared. The look and Admin mode are kept in this browser only."],
     inGame: ["Nowhere. This is the front door to the tools."],
-    dev: "app/admin/star/page.tsx (first game) · app/admin/star/game/[game]/page.tsx (other games) · app/admin/star/g/[group] (a group's page) · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (GAMES = the tabs: a new game is one line there, then its groups say game: \"<key>\"; GROUPS; ADMIN_PAGES) · components/admin/shell/* · components/AdminNavPanel.tsx (the side menu on other pages, also one game at a time) · lib/adminLook.ts",
+    dev: "app/admin/home/page.tsx (the front door: admin → /admin/team, tester → /admin/star; the KIB Admin app opens there) · lib/adminRegistry.ts TEAM_HOME, adminHomeFor, backFor · app/admin/star/page.tsx (first game) · app/admin/star/game/[game]/page.tsx (other games) · app/admin/star/g/[group] (a group's page) · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (GAMES = the tabs: a new game is one line there, then its groups say game: \"<key>\"; GROUPS; ADMIN_PAGES) · components/admin/shell/* · components/AdminNavPanel.tsx (the side menu on other pages, also one game at a time) · lib/adminLook.ts",
   },
   "/admin/research": {
     title: "Research",
@@ -808,11 +812,18 @@ export const ADMIN_GUIDES = {
   },
   "/admin/team": {
     title: "Team board",
-    what: "The Team room. Board: what Harry, Mikey and Leo are doing (pushes, pull requests, live bars, patch notes). Ideas, Chat and To-do: the team's idea board, live chat and each person's jobs. The toggle along the top switches between them.",
+    what: "The Team area: the admin's home. Every way into the admin opens here, on the Team board. Board: what Harry, Mikey and Leo are doing (pushes, pull requests, live bars, patch notes). Chat, Ideas and To-do: the team's live chat, idea board and each person's jobs. Patch notes: every version. Testers have no Team area; they go to the game home instead.",
     buttons: [
+      { group: "Side menu (Team area)", items: [
+        ["Team (first line, lit)", "The Team area, the admin's home. It is the first line of the side menu on every admin page. These all open here, on the Team board: Admin in the site's top menu, Settings → Developer → Admin pages, Admin & Dev · Team in the admin slide-out, the KIB Admin home-screen app, and ← on a game's home."],
+        ["Team board / Team chat / Ideas / My to-do / Patch notes", "The Team area's views, under Team. Each switches in place, the one you are on lit. A red number = something new for you there; amber = a new job given to you."],
+        ["Games: Ballon d'Or / Website / Studio", "Each game's home (its groups and pages). The game tabs across the top do the same; in the Team area none of them is lit."],
+        ["Videos", "How to hand Claude a screen recording."],
+        ["← (top left)", "Back to the site. The Team area is the top of the admin: a game's home goes back to here."],
+        ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again. On a phone the menu is ☰ Menu, Team first."],
+      ] },
       { group: "Team room toggle", items: [
-        ["Board | Ideas | Chat | To-do", "Switches part. A red number = new chat or new notes on your things; amber = a new job given to you. The same four are in the side menu."],
-        ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again."],
+        ["Board | Chat | Ideas | To-do", "Switches part, the same as the lines under Team in the side menu. A red number = new chat or new notes on your things; amber = a new job given to you."],
       ] },
       { group: "Ideas", items: [
         ["By stage | By person", "Idea · Doing · Done columns, or a lane per person. Remembered in this browser."],

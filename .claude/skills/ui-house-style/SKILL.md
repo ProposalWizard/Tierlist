@@ -39,6 +39,18 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 20 Oct 2026 — the Team area is the admin's home (Harry)
+- **"The team area should be the default home area, and it should open on
+  Team board, and have its own tab on the left."** Every way into the admin
+  (Admin in the site menu, Settings → Admin pages, the admin slide-out, the KIB
+  Admin app via /admin/home, ← on a game's home) lands an admin on
+  /admin/team, Team board. "Team" is the FIRST line of the side menu, a solid
+  bar while you are in it; inside it the menu lists Team board, Team chat,
+  Ideas, My to-do, Patch notes, then one line per game; no game tab is lit.
+  In a game the menu is Team, the game's home, its groups, as before. Testers
+  have no Team area and keep the game home. `TEAM_HOME`, `adminHomeFor`,
+  `backFor(path, role)` in lib/adminRegistry.ts. Same layout in all four skins.
+
 ### 20 Oct 2026 — every domestic cup gets its own screen (Harry)
 - **"The Lower League Trophy needs its own screen like Mikey's FA Cup one (and
   the international ones)."** A cup is not a long list on the League page.

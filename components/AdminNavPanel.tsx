@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ADMIN_PAGES, GAMES, GROUPS as REG_GROUPS, gameForPath, gameOf, relatedFor, type AdminGameKey } from "@/lib/adminRegistry";
+import { ADMIN_PAGES, GAMES, GROUPS as REG_GROUPS, TEAM_HOME, gameForPath, gameOf, relatedFor, type AdminGameKey } from "@/lib/adminRegistry";
 import { setAdminMode, useAdminMode } from "@/lib/adminLook";
 
 /**
@@ -234,8 +234,9 @@ export default function AdminNavPanel() {
         }`}
       >
         <div className="flex items-center justify-between border-b border-gray-800 px-5 py-4">
-          <Link href="/admin/star" className="text-xs font-bold uppercase tracking-wider text-emerald-300 hover:text-emerald-200">
-            Admin &amp; Dev · Home
+          {/* The admin's home is the Team board (Harry, 20 Oct 2026). */}
+          <Link href={TEAM_HOME} className="text-xs font-bold uppercase tracking-wider text-emerald-300 hover:text-emerald-200">
+            Admin &amp; Dev · Team
           </Link>
           <button
             onClick={() => setOpen(false)}
