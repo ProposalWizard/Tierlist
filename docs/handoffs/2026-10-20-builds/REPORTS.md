@@ -101,3 +101,15 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Seen at 390×844 and 1440: drags (mouse and finger), Undo, Play, Save ("this device only"), reload kept it, the rings, "Knocked it past him!". Stills + 7 s clip in b7b/.
 - Found, not fixed: the Training levels page freezes on the second tab switch after picking a level, then crashes, in the test browser (the old page does the same). Not checked on a phone.
 - Decision for Harry: at 2 stars a level, a career player is always behind on Power levels, so they always get eased (level 20: 26 m drawn, 22 m played). That's how the career already works; it's now visible.
+
+## B13 — Every fixture date checked, plus admin fixes
+- New checker tests/star/fixtureClashes.mts: 5 seasons (2026/27–2030/31) through the real career code in every division, every cup/Europe tie won, play-offs reached, called up every window. Rules: no two games a day, none on days in a row, two clear days between games, rounds in order, season over by 31 May and before the June window, PL and Championship stop for FIFA windows.
+- Clashes over 45 seasons: 170 → 0 (PL Leeds 5→0, PL+CL 31→0, PL+EL 31→0, Championship 23→0, League One/Two/National/North/South 16→0 each).
+- Main causes before: play-off games after the season (48), games inside an international break (42), FA Cup R64 the day after a Tuesday league round (30), a game 1–2 days from an international (22), FA Cup QF the day after a PL Tuesday (10), the European final on Tue 1 June (10), Community Shield the day after the Super Cup (8).
+- Changes: Championship-and-below Tuesday rounds moved; midweek games inside a FIFA window move to the Wednesday after; PL clubs in Europe play both domestic cups on their own fixed weekends; European final week 38 → 36; play-offs all in May; Community Shield the Saturday a week before the league; squad named 3 days before internationals, and a club game up to 2 days after the last international is missed.
+- Still clashes (not counted): a Championship club in Europe that wins everything needs ~38 midweeks; a season has 34. 56 → 20, none before 1 January.
+- XP Rewards "Failed to fetch": now loads on a test build (read-only note); every failure said in plain words.
+- Chat bubble: pages mark their own bottom-left controls; the bubble sits above them (Office: up 132 px, "Next line ›" clear).
+- Team board push count: now real pushes from GitHub's push log, any branch, last 7 days, own work only. Seen: Harry 166, Mikey 34, Leo 21 (before: capped at the newest 20 commits, and main's merged work counted as his).
+- "GitHub refused the site's key": came from the local test computer's key, not Vercel's; a refused key is tried once then the board reads without it; one line says whose key.
+- Watch: Mikey's unmerged "FA Cup: ten rounds" touches the same calendar — run tests/star/fixtureClashes.mts after it merges.
