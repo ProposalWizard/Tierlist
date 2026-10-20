@@ -483,3 +483,94 @@ export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip
   void tmpQ;
   return { clip: clip.name, clavBefore: clavB / d2r, clavAfter: clavA / d2r, inBefore: Math.max(0, inB) * 100, inAfter: Math.max(0, inA) * 100, turned };
 }
+
+/**
+ * THE SAME CLEARANCE, LIVE, for a pose the clips did not make (cut-scene IK:
+ * a hand reached to a desk, a pen, a cup; a "ref-…" hold). After the reaches,
+ * each arm whose elbow, forearm, wrist, palm or finger ends would be inside his
+ * torso, legs or head turns about the shoulder just enough to come out (at
+ * most PUSH_LIVE_MAX). Stateless (a function of the pose alone), so a seekable
+ * cut scene stays seekable; the push is proportional to the depth, so it grows
+ * and fades smoothly as the pose moves. `w` scales it (0 = off).
+ */
+export const PUSH_LIVE_MAX = 25;
+export function clearArmsLive(T: Three, sb: ShoulderBody, bones: Record<string, THREE.Bone>, w = 1): number {
+  if (w <= 0) return 0;
+  const need = ["Hips", "Spine", NAMES.L.arm, NAMES.R.arm, NAMES.L.fore, NAMES.R.fore, NAMES.L.hand, NAMES.R.hand];
+  if (need.some((n) => !bones[n])) return 0;
+  const P = (n: string) => new T.Vector3().setFromMatrixPosition(bones[n].matrixWorld);
+  const WQ = (n: string) => { const q = new T.Quaternion(); bones[n].matrixWorld.decompose(new T.Vector3(), q, new T.Vector3()); return q; };
+  const to = (bind: THREE.Matrix4, n: string) => { const m = new T.Matrix4().multiplyMatrices(bind, bones[n].matrixWorld.clone().invert()); return { to: m, from: m.clone().invert() }; };
+  let mH = to(sb.hipsBind, "Hips"), mC = to(sb.chestBind, "Spine");
+  const legs: Record<string, { to: THREE.Matrix4; from: THREE.Matrix4 }> = {};
+  const refresh = () => {
+    mH = to(sb.hipsBind, "Hips"); mC = to(sb.chestBind, "Spine");
+    for (const b of Object.keys(sb.bindM)) if (bones[b]) legs[b] = to(sb.bindM[b], b);
+  };
+  refresh();
+  const mid = sb.hipY + (sb.neckY - sb.hipY) * 0.35;
+  const depthOf = (pw: THREE.Vector3, r: number): { d: number; n: THREE.Vector3 } => {
+    let best = { d: 0, n: new T.Vector3() };
+    const out = (pb: THREE.Vector3, nb: THREE.Vector3, from: THREE.Matrix4, d: number) => {
+      if (d <= best.d) return;
+      const o = pb.clone().applyMatrix4(from), t = pb.clone().add(nb).applyMatrix4(from);
+      best = { d, n: t.sub(o).normalize() };
+    };
+    for (const [m, lo, hi] of [[mH, -1, mid + 0.06], [mC, mid - 0.06, 9]] as const) {
+      const pb = pw.clone().applyMatrix4(m.to);
+      if (pb.y < lo || pb.y > hi) continue;
+      const s = sb.slices;
+      if (!s.length || pb.y < s[0].y - 0.01 || pb.y > s[s.length - 1].y + 0.01) continue;
+      let k = 0; while (k < s.length - 1 && s[k + 1].y < pb.y) k++;
+      const sl = s[k];
+      const dx = pb.x - sl.cx, dz = pb.z - sl.cz, rho = Math.hypot(dx, dz);
+      const f = (((Math.atan2(dz, dx) / (2 * Math.PI)) * BINS) + BINS) % BINS, kk = Math.floor(f), u = f - kk;
+      const R = sl.r[kk % BINS] * (1 - u) + sl.r[(kk + 1) % BINS] * u;
+      out(pb, rho > 1e-4 ? new T.Vector3(dx / rho, 0, dz / rho) : new T.Vector3(1, 0, 0), m.from, R + r + CLEARANCE - rho);
+    }
+    for (const tb of sb.tubes) {
+      const M = legs[tb.bone]; if (!M) continue;
+      const pb = pw.clone().applyMatrix4(M.to);
+      const t = pb.clone().sub(tb.A).dot(tb.u) / tb.len, rs = tb.rings;
+      if (t < rs[0].t || t > rs[rs.length - 1].t) continue;
+      let k = 0; while (k < rs.length - 1 && rs[k + 1].t < t) k++;
+      const r0 = rs[k], r1 = rs[Math.min(k + 1, rs.length - 1)];
+      const f = r1.t > r0.t ? (t - r0.t) / (r1.t - r0.t) : 0;
+      const off = pb.clone().sub(r0.c.clone().lerp(r1.c, f)); off.addScaledVector(tb.u, -off.dot(tb.u));
+      const rho = off.length();
+      out(pb, rho > 1e-4 ? off.divideScalar(rho) : new T.Vector3(1, 0, 0), M.from, r0.r + (r1.r - r0.r) * f + r + CLEARANCE - rho);
+    }
+    if (sb.head && legs.Head) {
+      const pb = pw.clone().applyMatrix4(legs.Head.to), dv = pb.clone().sub(sb.head.c);
+      const ax = sb.head.ax.clone().addScalar(r + CLEARANCE);
+      const sc = Math.hypot(dv.x / ax.x, dv.y / ax.y, dv.z / ax.z);
+      if (sc < 1) out(pb, dv.lengthSq() > 1e-8 ? dv.clone().normalize() : new T.Vector3(0, 0, 1), legs.Head.from, (1 - sc) * dv.length() / Math.max(sc, 0.2));
+    }
+    return best;
+  };
+  let turned = 0;
+  for (const s of ["L", "R"] as const) {
+    const arm = NAMES[s].arm;
+    const pts = () => sb.rings[s].filter((g) => bones[g.bone] && bones[g.to]).map((g) => [P(g.bone).lerp(P(g.to), g.t).add(g.off.clone().applyQuaternion(WQ(g.bone))), g.r] as const);
+    let total = 0;
+    for (let it = 0; it < 4; it++) {
+      let worst = { d: 0, n: new T.Vector3(), p: new T.Vector3() };
+      for (const [p, r] of pts()) { const x = depthOf(p, r); if (x.d > worst.d) worst = { ...x, p }; }
+      if (worst.d <= 0.002) break;
+      const lever = worst.p.clone().sub(P(arm));
+      const ax = lever.clone().cross(worst.n); const len = ax.length();
+      if (len < 1e-5) break;
+      const ang = Math.min(0.15, (worst.d + 0.002) / Math.max(0.05, len)) * w;
+      if (total + ang > (PUSH_LIVE_MAX * Math.PI) / 180) break;
+      total += ang;
+      const b = bones[arm];
+      const pq = new T.Quaternion(); b.parent!.matrixWorld.decompose(new T.Vector3(), pq, new T.Vector3());
+      const wq = pq.clone().multiply(b.quaternion);
+      b.quaternion.copy(pq.invert().multiply(new T.Quaternion().setFromAxisAngle(ax.divideScalar(len), ang).multiply(wq))).normalize();
+      b.updateMatrixWorld(true);
+      refresh();
+    }
+    turned = Math.max(turned, (total * 180) / Math.PI);
+  }
+  return turned;
+}

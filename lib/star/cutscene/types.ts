@@ -446,6 +446,8 @@ export interface CutsceneActor {
   plantFeet(weight: number): void;
   /** Arm IK: the wrist to `wrist` with the hand's fingers along `along`, palm to `palm` (world). */
   reach(hand: "L" | "R", wrist: THREE.Vector3, along: THREE.Vector3 | null, palm: THREE.Vector3 | null, weight: number, pole?: THREE.Vector3, lag?: ReachLag): void;
+  /** B5c: turn any arm that went inside his own body (torso, legs, head) back out about the shoulder. Optional. */
+  clearArms?(weight: number): void;
   /** Leg IK: the ankle to `ankle`, the knee bending towards `pole`. */
   reachFoot(foot: "L" | "R", ankle: THREE.Vector3, weight: number, pole?: THREE.Vector3): void;
   /** Finger shape (a name, or the people layer's own numbers). */

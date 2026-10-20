@@ -78,6 +78,8 @@ for (const [s, n] of [["L", "Left"], ["R", "Right"]] as const) {
 }
 
 interface Exception { clip: string; pair: string; body?: string; maxCm: number; reason: string }
+/** "*" matches anything, "a|b" either. */
+const glob = (g: string) => new RegExp(`^(?:${g.split("|").map((x) => x.replace(/[.+?^${}()[\]\\]/g, "\\$&").replace(/\*/g, ".*")).join("|")})$`);
 const exFile = opt.exceptions ?? "tools/motionref/overlap_exceptions.json";
 const EXC: Exception[] = existsSync(exFile) ? JSON.parse(readFileSync(exFile, "utf8")).exceptions : [];
 
@@ -258,7 +260,7 @@ for (const spec of files) {
     const list = Object.entries(pairs).sort((x, y) => y[1].cm - x[1].cm);
     console.log(`  ${name.padEnd(26)} ${list.length ? list.map(([k, p]) => `${k} ${p.cm.toFixed(1)} cm (${(p.share * 100).toFixed(0)}%)`).join(" · ") : "clear"}`);
     for (const [k, p] of list) {
-      const e = EXC.find((x) => (x.clip === name || x.clip === "*") && x.pair === k && (!x.body || label.startsWith(x.body)));
+      const e = EXC.find((x) => glob(x.clip).test(name) && glob(x.pair).test(k) && (!x.body || glob(x.body).test(label)));
       if (!e || p.cm > e.maxCm + 0.3) fails.push(`${label} ${name}: ${k} ${p.cm.toFixed(1)} cm${e ? ` (exception allows ${e.maxCm} cm: ${e.reason})` : ""}`);
     }
   };

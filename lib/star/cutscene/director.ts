@@ -323,6 +323,8 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         if (ht.hand === "both" || ht.hand === "R") a.hand("R", ht.pose, w);
       }
     }
+    // 3b. no arm inside his own body (B5c, Harry: "any body part can't overlap inside another")
+    if (FLUID_ON.on) for (const c of Array.from(cast.values())) c.actor.clearArms?.(1);
     // 4. look, face, talk; blinks
     for (const c of Array.from(cast.values())) {
       const a = c.actor;

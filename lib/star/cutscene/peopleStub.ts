@@ -16,6 +16,10 @@ import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { ActorSpec, BodyPart, CutsceneActor, CutscenePeople, CutscenePeopleInit, Expression, HandPose, ReachLag, Vec3 } from "./types";
 import { FLUID_ON, shoulderFollow } from "./fluid";
+import { shoulderBodyOf, clearArmsLive, type ShoulderBody } from "../three3d/shoulderSet";
+
+/** Each body's measures for the arm clearance, once per body file and build (B5c). */
+const clearCache = new Map<string, ShoulderBody | null>();
 import { loadPeople3d, makePerson3d, dressPerson3d, poseFingers, fingersDeg, fingerTip, hasFingers, toonHeadsFor, type FingerPose, type Person3D, type PersonModel } from "../people3d";
 import { addClips, loadAnims3d } from "../three3d/footballAnims";
 import { solveArm, handWorldQuat, setBoneWorldQuat, rotateBoneWorld, type HandAxes } from "../signing3dRig";
@@ -158,6 +162,21 @@ class StubActor implements CutsceneActor {
       return { along: h.along, palm: h.palm, side: new T.Vector3().crossVectors(h.along, h.palm).normalize() };
     };
     this.axes = { L: ax("L"), R: ax("R") };
+    // the body's own torso, legs, head and arm thickness, measured at the bind pose (B5c, shoulderSet.ts)
+    const key = person.toonKey ?? (person.body.geometry as { uuid?: string }).uuid ?? id;
+    if (!clearCache.has(key)) {
+      let sb: ShoulderBody | null = null;
+      try { sb = shoulderBodyOf(T, person.root.children[0] ?? person.root, person.bones as Record<string, THREE.Bone>, person.body, key); } catch { sb = null; }
+      clearCache.set(key, sb);
+    }
+    this.clear = clearCache.get(key) ?? null;
+  }
+  private clear: ShoulderBody | null = null;
+
+  clearArms(w: number) {
+    if (!this.clear || w <= 0) return;
+    this.root.updateMatrixWorld(true);
+    clearArmsLive(this.T, this.clear, this.person.bones as Record<string, THREE.Bone>, w);
   }
 
   clips() { return Object.keys(this.person.actions); }
