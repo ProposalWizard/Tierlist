@@ -1,0 +1,24 @@
+#1 byline cross · transition right · EXTRA DEFENDER · 5.07 s · problems: none
+#2 byline cross · settled right · EXTRA DEFENDER · 5.72 s · problems: none
+#3 long range · open play  · EXTRA DEFENDER · 7.51 s · problems: none
+#4 long range · open play  · EXTRA DEFENDER · 6.03 s · problems: none
+#5 one on one · transition centre · EXTRA DEFENDER · 5.23 s · problems: none
+#6 one on one · open play  · EXTRA DEFENDER · 6.14 s · problems: none
+#7 tight angle · settled centre · 5.75 s · problems: none
+#8 cutback · settled centre · 6.44 s · problems: none
+#9 tight angle · settled left · 7.90 s · problems: none
+#10 cutback · settled left · 7.02 s · problems: none
+#11 buildup · open play  · 6.33 s · problems: none
+#12 long range · settled centre · 6.59 s · problems: none
+#13 penalty · THE FOUL FIRST · 6.13 s · problems: none
+#14 free kick · THE FOUL FIRST · 4.59 s · problems: none
+#15 free kick · THE FOUL FIRST · 4.50 s · problems: none
+#16 free kick · THE FOUL FIRST · 4.84 s · problems: none
+#17 free kick · THE FOUL FIRST · 4.42 s · problems: none
+#18 penalty · THE FOUL FIRST · 6.08 s · problems: none
+#19 free kick · THE FOUL FIRST · 4.48 s · problems: none
+#20 penalty · THE FOUL FIRST · 6.23 s · problems: none
+#21 penalty · THE FOUL FIRST · 6.05 s · problems: none
+#22 free kick · THE FOUL FIRST · 4.54 s · problems: none
+#23 long range · BIG MOMENT (final, 90', level) · 9.97 s · problems: none
+#24 byline cross · BIG MOMENT (final, 90', level) · 6.37 s · problems: none

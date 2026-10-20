@@ -42,11 +42,14 @@ import { COMPARE_SWITCHES, switchOn, setSwitch, resetSwitches, type CompareSwitc
 import { BRAIN_DIAL_FLAG, type OpenPlayDial } from "@/lib/star/keeperBrain";
 import { PRESSURE_DIALS } from "@/lib/star/pressure";
 import { PENALTY_RUNUPS, FREE_KICK_RUNUPS } from "@/lib/star/runupStyles";
+import { useFhrMode } from "@/lib/star/fhr/toggle";
+import { setLookRow } from "@/lib/star/lookRows";
 
 type Screen = "home" | "match";
 
 export default function PlayAreaPage() {
   const [screen, setScreen] = useState<Screen>("home");
+  const fhr = useFhrMode();
   // Read once on mount rather than at first render: localStorage does not
   // exist on the server, and reading it during render is what makes a page
   // hydrate to something different from what it rendered.
@@ -131,6 +134,17 @@ export default function PlayAreaPage() {
       </div>
 
       {/* The link cards to other test pages went (Harry, ADM-Q56): the admin side menu has every page. */}
+
+      {/* Full highlights rebuild (Harry, 20 Oct 2026): a Settings switch, not an admin card. With it
+          On, both doors play the build-ups; its test area (Ruler / Build-ups) is reached from here. */}
+      <Panel title="Full highlights rebuild" note="this phone · also in Settings">
+        <Note>On: both doors above play a build-up before each chance, as a career match does. Each door has its own Moment / Length / Intensity dials.</Note>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+          <Pill on={fhr === "off"} onClick={() => setLookRow("fhr", "off")}>Off</Pill>
+          <Pill on={fhr === "on"} onClick={() => setLookRow("fhr", "on")}>On</Pill>
+          <Btn href="/star-fhr-dev">Ruler and build-ups &#8594;</Btn>
+        </div>
+      </Panel>
 
       {/* ── THE DIALS ── */}
       <Panel title="Tuning" note="Saved on this device">

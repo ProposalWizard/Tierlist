@@ -109,7 +109,9 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-training-dev", "Training levels", "Play any training game at any level", "rbd", "career", "Mikey", "live", "none", "team"),
   P("/star-gallery-dev", "Scenario gallery", "Every chance as a picture; save, commit", "rbd", "chances", "Harry", "live", "repo", "admin"),
   P("/star-highlights-dev", "Infinite Highlights", "Flick through chances and fix a bad one on the spot", "rbd", "chances", "Harry", "live", "repo", "admin"),
-  P("/star-fhr-dev", "Full highlights rebuild", "The rebuild's switch and today's numbers: chances, goals, reactions, start distance", "rbd", "chances", "Harry", "live", "browser", "team"),
+  // "/star-fhr-dev" (Full highlights rebuild): taken off the list (Harry, 20 Oct 2026: "It doesn't
+  // need its whole own page"). The switch is in Settings; the page stays as a test area (Ruler /
+  // Build-ups tabs), reached from the Play Area.
   P("/star-play-dev", "Play Area", "Play chances or a full match with every dial to hand", "rbd", "chances", "Harry", "live", "repo", "team"),
   P("/star-update-dev", "Leo's Oct 13 update", "Leo's Oct 13 gameplay update, Old or New", "rbd", "match", "Leo", "live", "browser", "team"),
   P("/star-sim90-dev", "Full match", "Full simulated 90 minutes", "rbd", "match", "Harry", "live", "none", "team"),

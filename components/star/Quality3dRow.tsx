@@ -14,6 +14,8 @@
  * 2026: "put all my toggles in a Harry changes dropdown … Leave texture packs
  * out"). It holds "Chances: Old | New" (lib/star/newChances.ts) and "After you
  * pass: Auto run | Joystick" (lib/star/afterPass.ts). Each appears only here.
+ * "Full highlights rebuild" left it on 20 Oct 2026 for a row of its own with a
+ * "?" (FhrSwitchRow.tsx), in Settings, the match's ⚙ and before kick-off.
  */
 import { useEffect, useState } from "react";
 import { useQuality3dSetting, setQuality3dSetting, autoQuality3d, type Quality3d } from "@/lib/star/three3d/quality";
@@ -22,10 +24,8 @@ import { useTexturePack, setTexturePack, TEXTURE_PACKS, TEXTURE_PACK_NAMES, TEXT
 import { useChancesMode, setChancesMode } from "@/lib/star/newChances";
 import { useAfterPassMode, setAfterPassMode } from "@/lib/star/afterPass";
 import { useFhrMode } from "@/lib/star/fhr/toggle";
-import { setLookRow } from "@/lib/star/lookRows";
 import { SegTabs } from "./screenKit";
 import { SetNote } from "./settingsKit";
-import RealMomentsRow from "./RealMomentsRow";
 
 const NAME = { low: "Low", medium: "Medium", high: "High" } as const;
 
@@ -159,29 +159,11 @@ function HarryChanges() {
       </button>
       {open && (
         <div className="border-t border-white/10 px-3 pb-3 pt-0">
-          <FhrRow />
           <ChancesRow />
           <AfterPassRow />
         </div>
       )}
     </div>
-  );
-}
-
-/** "Full highlights rebuild: Off | On (test)" (Harry, 19 Oct 2026), in "Harry changes". */
-function FhrRow() {
-  const m = useFhrMode();
-  return (
-    <>
-      <div className="mt-3 flex items-center justify-between gap-2" data-fhr-row>
-        <span className="text-[14px] font-bold text-white">Full highlights rebuild</span>
-        <SegTabs className="w-[150px] shrink-0" value={m} onChange={(v) => setLookRow("fhr", v)} tabs={[["off", "Off"], ["on", "On (test)"]] as const} />
-      </div>
-      <SetNote dim className="mt-1 text-[10px]">
-        Testing. On also turns Chances to New. Off is the game as it is.
-      </SetNote>
-      <RealMomentsRow />
-    </>
   );
 }
 
