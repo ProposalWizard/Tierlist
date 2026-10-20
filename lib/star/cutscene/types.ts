@@ -127,7 +127,9 @@ export type PoseHold =
   | "sit" | "stand" | "kneel" | "knee-slide" | "arms-wide" | "arms-up" | "fist-pump"
   | "hold-shirt-up" | "trophy-overhead" | "trophy-chest" | "point-sky" | "badge-kiss"
   | "hands-on-head" | "head-down" | "applaud" | "lean-desk" | "hands-on-hips"
-  | "arms-folded" | "salute-crowd" | "kneel-pray" | "lean-in" | "lean-back" | "nod" | "hand-on-shoulder";
+  | "arms-folded" | "salute-crowd" | "kneel-pray" | "lean-in" | "lean-back" | "nod" | "hand-on-shoulder"
+  // arms copied from real people (refMotion.ts, B5c): the wrist and elbow paths of a reference video
+  | "ref-talk-hands" | "ref-trophy-lift" | "ref-roar" | "ref-wave-clap" | "ref-shirt-up";
 
 /** The camera's framing presets (presets/camera.ts turns these into a lens and a place). */
 export type ShotPreset =
@@ -415,6 +417,13 @@ export interface ActorSpec {
  * Nothing here may keep state between frames that t does not decide
  * (seek(t) must give the same picture whichever frame came before).
  */
+/**
+ * Overlap (B5c): while an arm blends onto or off an IK target, the lower arm
+ * and the hand follow the upper arm a beat later (their own, later weights),
+ * so the shoulder leads and the hand trails, as in a real arm.
+ */
+export interface ReachLag { lower: number; hand: number }
+
 export interface CutsceneActor {
   readonly id: string;
   readonly root: THREE.Object3D;
@@ -436,7 +445,7 @@ export interface CutsceneActor {
   /** Keep the lowest foot on the floor (clips' legs differ from bodies'). */
   plantFeet(weight: number): void;
   /** Arm IK: the wrist to `wrist` with the hand's fingers along `along`, palm to `palm` (world). */
-  reach(hand: "L" | "R", wrist: THREE.Vector3, along: THREE.Vector3 | null, palm: THREE.Vector3 | null, weight: number, pole?: THREE.Vector3): void;
+  reach(hand: "L" | "R", wrist: THREE.Vector3, along: THREE.Vector3 | null, palm: THREE.Vector3 | null, weight: number, pole?: THREE.Vector3, lag?: ReachLag): void;
   /** Leg IK: the ankle to `ankle`, the knee bending towards `pole`. */
   reachFoot(foot: "L" | "R", ankle: THREE.Vector3, weight: number, pole?: THREE.Vector3): void;
   /** Finger shape (a name, or the people layer's own numbers). */

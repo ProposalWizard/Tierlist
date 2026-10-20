@@ -14,7 +14,8 @@
  */
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
-import type { ActorSpec, BodyPart, CutsceneActor, CutscenePeople, CutscenePeopleInit, Expression, HandPose, Vec3 } from "./types";
+import type { ActorSpec, BodyPart, CutsceneActor, CutscenePeople, CutscenePeopleInit, Expression, HandPose, ReachLag, Vec3 } from "./types";
+import { FLUID_ON, shoulderFollow } from "./fluid";
 import { loadPeople3d, makePerson3d, dressPerson3d, poseFingers, fingersDeg, fingerTip, hasFingers, toonHeadsFor, type FingerPose, type Person3D, type PersonModel } from "../people3d";
 import { addClips, loadAnims3d } from "../three3d/footballAnims";
 import { solveArm, handWorldQuat, setBoneWorldQuat, rotateBoneWorld, type HandAxes } from "../signing3dRig";
@@ -250,19 +251,31 @@ class StubActor implements CutsceneActor {
     this.root.updateMatrixWorld(true);
   }
 
-  reach(hand: "L" | "R", wrist: THREE.Vector3, along: THREE.Vector3 | null, palm: THREE.Vector3 | null, w: number, pole?: THREE.Vector3) {
-    if (w <= 0) return;
+  reach(hand: "L" | "R", wrist: THREE.Vector3, along: THREE.Vector3 | null, palm: THREE.Vector3 | null, w: number, pole?: THREE.Vector3, lag?: ReachLag) {
+    const wl = lag?.lower ?? w, wh = lag?.hand ?? w;
+    if (w <= 0 && wl <= 0 && wh <= 0) return;
     const S = hand === "R" ? "Right" : "Left";
     const B = this.person.bones;
     const ha = B[`${S}Hand`];
-    const q0 = ha.quaternion.clone();
+    // the collarbone goes with the arm (up for a hand above the shoulder, forward for a reach): a real
+    // shoulder is never a fixed socket (fluid.ts, B5c)
+    const sh = B[`${S}Shoulder`];
+    if (sh && w > 0 && FLUID_ON.on) {
+      const sp = this.wp(B[`${S}Arm`]);
+      const len = sp.distanceTo(this.wp(B[`${S}ForeArm`])) + this.wp(B[`${S}ForeArm`]).distanceTo(this.wp(ha));
+      const d = wrist.clone().sub(sp);
+      const f = shoulderFollow(d.y / len, d.dot(this.dirOf(0, 0, 1)) / len);
+      const sg = hand === "L" ? 1 : -1;
+      if (f.raise) rotateBoneWorld(this.T, sh, new this.T.Quaternion().setFromAxisAngle(this.dirOf(0, 0, 1), sg * f.raise * w));
+      if (f.forward) rotateBoneWorld(this.T, sh, new this.T.Quaternion().setFromAxisAngle(new this.T.Vector3(0, 1, 0), -sg * f.forward * w));
+    }
     const pl = pole ?? this.dirOf(hand === "R" ? -0.8 : 0.8, -0.55, -0.3);
-    solveArm(this.T, B[`${S}Arm`], B[`${S}ForeArm`], ha, wrist, pl, w);
-    if (along && palm) {
+    solveArm(this.T, B[`${S}Arm`], B[`${S}ForeArm`], ha, wrist, pl, w, wl);
+    if (along && palm && wh > 0) {
       const qa = ha.quaternion.clone();
       setBoneWorldQuat(this.T, ha, handWorldQuat(this.T, this.axes[hand], along, palm));
-      if (w < 1) { ha.quaternion.copy(qa.slerp(ha.quaternion.clone(), w)); ha.updateMatrixWorld(true); }
-    } else void q0;
+      if (wh < 1) { ha.quaternion.copy(qa.slerp(ha.quaternion.clone(), wh)); ha.updateMatrixWorld(true); }
+    }
   }
 
   reachFoot(foot: "L" | "R", ankle: THREE.Vector3, w: number, pole?: THREE.Vector3) {

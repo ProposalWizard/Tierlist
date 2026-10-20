@@ -57,6 +57,22 @@ Prompts asked for a locked-off camera and natural, fluid movement at real speed.
 Total: pictures 5 + videos 99 = **104 credits**. The repo keeps 540-wide copies (150–930 KB);
 the 1076 × 1924 originals are not committed.
 
+## Logo fixes (20 Oct, after the coordinator's check)
+
+- **ref-handshake.mp4**: the video model put a real sportswear brand's swoosh on the player's shirt and shorts
+  (from ~2 s). Our copy is blurred: both marks tracked frame by frame (`tools/motionref/blur_track.py`).
+  A remake with "no logos" was tried (job `b4c165c2-ebe6-4e9e-b009-2f6639d01703`, 12 credits, from upload
+  `135dbfcf-44cc-484d-8a03-1121d96866ec`) but it was gone from the account before it could be downloaded.
+- **ref-home-idle.mp4**: a small triangle mark on the shorts hem; blurred in our copy (`tools/motionref/blur_mark.py`).
+- **ref-greeting.mp4**: an invented round patch on one shirt hem for a few frames (not a real brand). A remake
+  (job `918a9638-3657-40e7-8f60-89f90c817c04`, 9 credits, upload `312b6b24-f70a-40c4-ae04-3d6bddfdbc98`) came
+  back with a different small chest mark, so it was not used; the first one is kept.
+- Checked frame by frame (6 frames each, full size): farewell, goal celebration, mentor, press answer, shirt
+  photo, trophy lift, walk-out: no logos, badges or crests on the kit. Trophy lift: a blurry made-up word on a
+  far advertising board.
+
+Extra credits for the fixes: 21 (round total **125**).
+
 ## Checks
 
 - No real logos, badges or crests were asked for, and none show. The trophy-lift video has a
@@ -66,8 +82,12 @@ the 1076 × 1924 originals are not committed.
 
 ## Clean-up
 
-Harry's standing rule (19 Oct): delete the pictures and videos after use. The Higgsfield tools
-here can delete a project or a project file but not a loose generation, and these were made
-without a project, so they could not be deleted from this session. **Harry: delete the 10
-pictures and 10 videos above (and the 9 uploads) in the Higgsfield library when you have seen
-them.** Everything needed is in this folder.
+Harry (17:50): "I'll delete stuff for you." Nothing is deleted from this session (the Higgsfield
+tools here can delete a project or a project file, not a loose generation; these were made
+without a project). Every item to delete, in one list:
+
+- Pictures (10): 0bb040ee-ed61-4b74-af4d-4c1eba309226, 8a520295-1dfa-4a2b-a51f-8bc8f84019bd, 2a57d521-8d03-48a0-a187-067541fb81a5, 99ac8272-753c-44db-8874-ced671d01ba0, c56cea13-6a18-40bd-89f8-6b9afa1058a6, f8e27339-136e-4c50-bd91-80e6a356720c, cc59faa1-0368-4e2d-b790-b1e10dc157bc, 52892df0-ef86-4b7f-962f-a1b1fee7cbb7, 21171692-a252-437b-b629-0d27859089c9, ba73b148-1976-4042-be1f-4a2d84d19e3c
+- Videos (12): 02dd7114-caa2-461f-9803-db24848c515f, 1202c7a4-8dcd-4a1b-888a-02676dbedd6d, 5735842e-efbb-46f8-9545-3640f2fc2387, 9413fe43-05e8-4fd3-92ae-9ec4d7744aee, 8555453c-6c0d-4d24-bd24-ab5e728766e7, de74d99f-a722-4086-9f6b-72556b1f093d, c3aaf37d-793c-4983-885a-4d7ca91ba6ba, a1db07a7-059a-4472-8b24-5324039601d4, cb05a826-ff63-42bd-8dbe-7df190e81140, 414f26d5-452b-4c7c-8cf8-78a22bb969f8, 918a9638-3657-40e7-8f60-89f90c817c04, (b4c165c2-ebe6-4e9e-b009-2f6639d01703: already gone)
+- Uploads (11): the 9 in the table above, plus 135dbfcf-44cc-484d-8a03-1121d96866ec and 312b6b24-f70a-40c4-ae04-3d6bddfdbc98
+
+Everything needed is in this folder.

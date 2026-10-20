@@ -118,6 +118,8 @@ export const POSE_QUALITY: Partial<Record<string, MoveQuality>> = {
   "trophy-overhead": "weak", "trophy-chest": "weak", "hold-shirt-up": "weak", "hand-on-shoulder": "weak",
   applaud: "weak", "salute-crowd": "weak", "badge-kiss": "weak", "arms-up": "ok", "knee-slide": "good",
   "lean-in": "ok", "lean-back": "ok", sit: "ok", stand: "ok", nod: "ok",
+  // B5c: arms copied from real people in reference videos (refMotion.ts)
+  "ref-trophy-lift": "good", "ref-roar": "good", "ref-wave-clap": "good", "ref-shirt-up": "ok", "ref-talk-hands": "ok",
 };
 
 /** Walking gaits on a move track are weak (the feet slide); running ones hold up. */

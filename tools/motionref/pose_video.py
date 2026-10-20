@@ -65,22 +65,30 @@ for t in tracks:
     t["W"] = np.zeros((n, 33, 3))
     t["I"] = np.zeros((n, 33, 3))
     t["ok"] = np.zeros(n, bool)
+from itertools import permutations  # noqa: E402
+
 for f, people in enumerate(frames):
-    used = set()
-    for t in tracks:
-        best, bd = None, 0.25
-        for j, (W, I) in enumerate(people):
-            if j in used:
-                continue
-            c = (I[23, :2] + I[24, :2]) / 2
-            d = np.linalg.norm(c - t["last"])
-            if d < bd:
-                best, bd = j, d
-        if best is not None:
-            used.add(best)
-            W, I = people[best]
+    # the assignment of found people to tracks with the least total hip travel (two people side by side
+    # swap order in a hug: a per-track greedy pick loses one of them)
+    cs = [(I[23, :2] + I[24, :2]) / 2 for _, I in people]
+    best, bcost = None, 1e9
+    k = len(tracks)
+    for perm in permutations(range(max(k, len(people))), k):
+        cost = 0.0
+        for ti, pj in enumerate(perm):
+            if pj < len(people):
+                d = float(np.linalg.norm(cs[pj] - tracks[ti]["last"]))
+                cost += d if d < 0.5 else 5.0
+            else:
+                cost += 0.6  # this track found nobody this frame
+        if cost < bcost:
+            best, bcost = perm, cost
+    for ti, pj in enumerate(best or []):
+        if pj < len(people) and np.linalg.norm(cs[pj] - tracks[ti]["last"]) < 0.5:
+            t = tracks[ti]
+            W, I = people[pj]
             t["W"][f], t["I"][f], t["ok"][f] = W, I, True
-            t["last"] = (I[23, :2] + I[24, :2]) / 2
+            t["last"] = cs[pj]
 # fill short gaps by holding the last good frame
 for t in tracks:
     for f in range(1, n):

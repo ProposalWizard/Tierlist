@@ -31,7 +31,8 @@ import { castLook, DEFAULT_CLUB } from "./casting";
 import { buildSet, type BuiltSet } from "./locations3d";
 import { buildProp, type PropObj, type PropText } from "./props3d";
 import { createFx, type FxActive } from "./fx3d";
-import { applyPose, actorDir, type PoseCtx } from "./perform3d";
+import { applyPose, actorDir, liveArms, type PoseCtx } from "./perform3d";
+import { FLUID_ON, OVERLAP, actorSeed, liveDrift } from "./fluid";
 import { makeSignature, signatureAt } from "./signature";
 import { VOICE_LINES } from "./voiceLines";
 import { clamp, lerpAngle, noise1, smooth } from "./math";
@@ -277,10 +278,16 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
           a.root.updateMatrixWorld(true);
         }
       }
-      const ctx: PoseCtx = { T, t, local: 0, yaw: r.yaw, root: [a.root.position.x, a.root.position.y, a.root.position.z] };
+      const seed = actorSeed(c.id);
+      const ctx: PoseCtx = { T, t, local: 0, yaw: r.yaw, root: [a.root.position.x, a.root.position.y, a.root.position.z], seed };
+      // a few degrees of sway with overlap on every arm, so nobody stands with dead arms (fluid.ts)
+      liveArms(a, ctx);
       for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) {
-        const w = trackWeight(pt, t, 0.3, 0.35) * (pt.amount ?? 1);
-        if (w > 0) applyPose(a, pt.pose, w, { ...ctx, local: t - pt.at });
+        const amt = pt.amount ?? 1;
+        const w = trackWeight(pt, t, 0.3, 0.35) * amt;
+        // overlap (fluid.ts): the forearm and the hand blend on and off a beat after the upper arm
+        const lag = FLUID_ON.on ? { lower: trackWeight(pt, t - OVERLAP.lower, 0.3, 0.35) * amt, hand: trackWeight(pt, t - OVERLAP.hand, 0.3, 0.35) * amt } : undefined;
+        if (w > 0 || (lag && lag.lower > 0)) applyPose(a, pt.pose, w, { ...ctx, local: t - pt.at, lag });
       }
       if (cs.upright > 0) a.lookAt(actorLocal(c.id, t, [0, 1.62, 6]), 0.8 * cs.upright);
     }
@@ -291,16 +298,22 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const a = c.actor;
       for (const rt of tracksOf(c.id, "reach") as ReachTrack[]) {
         const w = trackWeight(rt, t, 0.35, 0.35);
-        if (w <= 0) continue;
+        const lag = FLUID_ON.on && !rt.toolGrip ? { lower: trackWeight(rt, t - OVERLAP.lower, 0.35, 0.35), hand: trackWeight(rt, t - OVERLAP.hand, 0.35, 0.35) } : undefined;
+        if (w <= 0 && !(lag && lag.lower > 0)) continue;
         let p = targetPoint(rt.target, t);
         if (rt.offset) p = p.clone().add(v(rt.offset));
+        // a hand held to a spot on his own body (on the desk, on a knee) breathes and sways with him (fluid.ts)
+        if (FLUID_ON.on && "actor" in rt.target && rt.target.actor === c.id && rt.target.local) {
+          const d = liveDrift(t, actorSeed(c.id) + (rt.hand === "L" ? 0.3 : 0.47));
+          p = p.clone().add(localDir(c.id, t, [d[0], 0, d[2]]).multiplyScalar(Math.hypot(d[0], d[2]))).add(new T.Vector3(0, d[1], 0));
+        }
         if (rt.pump) p = p.clone().add(new T.Vector3(0, Math.sin((t - rt.at) * Math.PI * 2 * rt.pump[1]) * rt.pump[0] * smooth((t - rt.at) / 0.4), 0));
         const along = rt.along ? localDir(c.id, t, rt.along) : null;
         const palm = rt.palm ? localDir(c.id, t, rt.palm) : null;
         const pole = rt.pole ? localDir(c.id, t, rt.pole) : undefined;
         if (rt.grip) a.hand(rt.hand, rt.grip, w);
         if (rt.toolGrip && rt.grip) toolTo(a, rt.hand, rt.grip, p, along, palm, pole, w);
-        else a.reach(rt.hand, p, along, palm, w, pole);
+        else a.reach(rt.hand, p, along, palm, w, pole, lag);
       }
       for (const tr of tracksOf(c.id, "trace") as TraceTrack[]) traceOne(c, tr, t);
       for (const ht of tracksOf(c.id, "hand") as HandTrack[]) {

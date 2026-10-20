@@ -98,6 +98,10 @@ def side_metrics(S, E, W, F, fps):
     om_u = np.degrees(np.arccos(np.clip(np.sum(up[1:] * up[:-1], axis=1), -1, 1))) * fps
     om_b = np.abs(np.diff(bend)) * fps
     still = spd < 0.02
+    run = best = 0
+    for x in still:
+        run = run + 1 if x else 0
+        best = max(best, run)
     # lag: elbow speed behind the upper arm's swing
     lag = 0.0
     a, b = om_u - om_u.mean(), om_b - om_b.mean()
@@ -105,7 +109,7 @@ def side_metrics(S, E, W, F, fps):
         L = int(0.3 * fps)
         cs = [np.dot(a[max(0, -k): len(a) - max(0, k)], b[max(0, k): len(b) - max(0, -k)]) for k in range(-L, L + 1)]
         lag = (int(np.argmax(cs)) - L) / fps * 1000
-    return dict(frozen=float(still.mean()), sparc=sparc(spd, fps), jerk=float(np.percentile(jerk, 95)),
+    return dict(frozen=float(still.mean()), still_max=best / fps, sparc=sparc(spd, fps), jerk=float(np.percentile(jerk, 95)),
                 lag_ms=lag, rest=float(bend[still].mean()) if still.any() else float("nan"),
                 speed=float(spd.mean()), swing=float(om_u.mean()))
 
@@ -117,7 +121,8 @@ def report(name, P, fps):
     for s in "LR":
         out[s] = side_metrics(P[s + "s"], P[s + "e"], P[s + "w"], F, fps)
     m = {k: (out["L"][k] + out["R"][k]) / 2 for k in out["L"]}
-    print(f"{name:28s} frozen {m['frozen']:.2f}  sparc {m['sparc']:6.2f}  jerk95 {m['jerk']:6.1f}  lag {m['lag_ms']:6.0f} ms  "
+    m["still_max"] = max(out["L"]["still_max"], out["R"]["still_max"])
+    print(f"{name:28s} frozen {m['frozen']:.2f}  longest-still {m['still_max']:4.1f} s  sparc {m['sparc']:6.2f}  jerk95 {m['jerk']:6.1f}  lag {m['lag_ms']:6.0f} ms  "
           f"rest-bend {m['rest']:5.1f}  wrist {m['speed']:.2f} m/s  swing {m['swing']:5.1f} deg/s")
     return m
 
