@@ -5,7 +5,7 @@ Source: patch notes https://claude.ai/artifact/1gVoLFwG57QCn7xiU8Tudk
 the BUILD it belongs to (list at the bottom).
 
 ## Admin
-- **A-1 two rows or mixed:** asked for a better explanation with pictures. Not decided. → explained with stills; re-ask.
+- **A-1:** keep the two headings (Admin tools, Test pages). Harry, 20 Oct.
 - **A-2 Bento → redo ALL looks:** "Redo all of the other looks … they need to all look the same … They can't just click Clean light and suddenly I'm on a different admin page with a different layout." Every admin look = the SAME layout (Broadcast's), only a different skin (colours, type, corners). → B4
 - **A-3 chat bubble:** fixed bottom left is fine "as long as, if it is covering something, I can still press it" (the thing underneath must stay pressable). Check every page on mobile. → B4
 - **A-4 back arrow:** "Always top left … always the same", on every admin/test page. → B4
@@ -72,11 +72,9 @@ the BUILD it belongs to (list at the bottom).
 - **B-1:** fix the 3 old failures (keeperPro, keeperBrain, chanceJudge "Chances Old"; Player of the Month photos) AND the failing Wembley test (`tests/star/wembley3d.mts`): fix it or remove it. → B1
 
 ## Still to ask
-- **P-1 push to live:** not answered.
-- **Answer 1 "3D scene editor."** — unclear which question it answers.
-- **A-1** after the pictures.
+- P-1: PUSH everything (Harry, 20 Oct). Answer "1": ignore. A-1: two headings.
 
-## The builds (one chat each, in this order unless Harry changes it)
+## The builds (same chat, one after another; B1, B9, B11 side by side)
 | # | Build | Size |
 |---|---|---|
 | B1 | Touch fixes (all 27) + the old failing tests + Wembley test | medium |
@@ -89,3 +87,7 @@ the BUILD it belongs to (list at the bottom).
 | B8 | Five-a-side test area with tabs (Scenarios, Data, Full match + radar) | medium |
 | B9 | Lower League Trophy + hold/double-tap to speed up post-match | medium |
 | B10 | Headers and volleys back with the air-ball signal; flair idea | medium–large |
+| B11 | Team room: read receipts and replies in chat, @mentions, linking admin pages into chat, Shift+X to highlight part of a page and @ someone with a note; patch notes with read receipts and notes | large |
+
+### B11, Harry's words (20 Oct)
+"read receipts in chat, and reply to current chats - also working @ ing and linking other pages directly into chat with some new feature or to be able to almost point someone towards something on a page through a shortcut (like say shift + x means i CAN highlight part of a page and it @'s them to look at it and they see my note.) … the patch notes system could have like a read receipts and notes so we know when everyone has read and understood patch notes"

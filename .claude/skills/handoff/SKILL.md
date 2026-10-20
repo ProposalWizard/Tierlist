@@ -1,9 +1,11 @@
 ---
 name: handoff
-description: Hand a piece of work to a fresh chat — your own next chat, or Mikey/Leo's. Load when someone says "handoff", "hand this over", "new chat", "start a fresh chat", "context is too big", or at the END OF EVERY BUILD (Harry, 15 Oct 2026: "context bloat is huge now — we need to use a new chat after every build"). Writes one handoff file in the repo and gives a short paste-in starter for the new chat.
+description: Hand a piece of work to a fresh chat — your own next chat, or Mikey/Leo's. Load ONLY when someone asks: "handoff", "hand this over", "new chat", "start a fresh chat", "context is too big". Not at the end of every build any more (Harry, 20 Oct 2026: "completely disregard this"; instead a one-line nudge every 3 hours of chat, see CLAUDE.md). Writes one handoff file in the repo and gives a short paste-in starter for the new chat.
 ---
 
-# Handoff — end every build with one, start the next chat from it
+# Handoff — only when asked, start the next chat from it
+
+**Changed 20 Oct 2026 (Harry): no handoff after every build.** *"completely disregard this - instead every 3 hours of chat give a prompt that it could be a good time to restart the chat."* Keep working in the same chat; write a handoff only when someone asks. The rules below still say HOW to write one.
 
 Harry, 15 Oct 2026: *"we definitely need to set up a handoff skill, not only to hand off to
 ourselves but to others. Context bloat is huge now — we need to use a chat after every build."*

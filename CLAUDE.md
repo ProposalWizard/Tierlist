@@ -460,9 +460,12 @@ usage block on every update (Harry, 12 Oct 2026: "why aren't we using the
 progress skill with the estimated tokens"). Its "auto-deploy" section is
 replaced by "Deploy only when told" below.**
 
-**One build per chat, then a handoff (Harry, 15 Oct 2026).** *"context bloat is huge now — we
-need to use a chat after every build."* A "build" = one task done in full, from idea to game/push ready. End every build with the `handoff` skill: a file in
-`docs/handoffs/`, pushed, plus a paste-in starter for the next chat (or for Mikey/Leo).
+**No forced new chats; a nudge every 3 hours instead (Harry, 20 Oct 2026). Replaces "one build per
+chat, then a handoff" (15 Oct).** *"completely disregard this - instead every 3 hours of chat give a
+prompt that it could be a good time to restart the chat."* Keep building in the same chat. Once a chat
+has run about 3 hours (check the first and latest message times), add one line to a reply: "It's been
+about 3 hours in this chat: a good time to restart it if things feel slow. Say 'handoff' and I'll
+write the starter." Then again every 3 hours. Write a handoff only when someone asks for one.
 
 **Build slowly and correctly (Harry, 15 Oct 2026, for the admin/patch-notes/lag round).** *"instead
 of running 5 parallel full builds let's build slowly and CORRECTLY."* Deep plan first, iterate it,
