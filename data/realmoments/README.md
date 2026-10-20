@@ -15,7 +15,7 @@ pages by `/api/star/real-moments?file=shots|tracked|tracks|goals`.
 | Kind | What is real | Source | Count |
 |---|---|---|---:|
 | **Fully real** | the ball and all 22 players where they really stood, and where everyone was for the 4 s before (shots) / from 1 s before to 3 s after (corners) | IDSSE / DFL tracking (7 Bundesliga + 2. Bundesliga 2022/23 matches, CC BY 4.0), SkillCorner tracking (20 A-League 2024/25 matches, MIT; players off camera extrapolated by SkillCorner) | 581 shots, 121 corners |
-| **Real shot, placed defenders** | where the shot was struck, who, when, body part, situation, what happened, which part of the goal it went in, the real passes before it | Wyscout events (2018 World Cup + Euro 2016, CC BY 4.0) | 2,875 shots, 232 goals for Real Goals |
+| **Real shot, placed defenders** | where the shot was struck, who, when, body part, situation, what happened, which part of the goal it went in, the real passes before it | Wyscout events (2018 World Cup + Euro 2016, and the five big leagues 2017/18 for goals only; CC BY 4.0) | 2,875 shots; 232 + 4,393 goals for Real Goals |
 
 Placed: Wyscout has nobody's position off the ball, so the game's own chance
 of the closest kind is moved onto the real ball and its keeper re-placed by
@@ -33,6 +33,7 @@ the pitch. Shapes: `lib/star/realMoments/types.ts`.
 | `tracked.json` | Every shot and corner of the 27 tracked matches: facts, `ball`, `ff` (everyone else: `[x, y, team-mate, their keeper]`), and for shots `end`/`endZ` (where the ball crossed the goal line, from the tracking), `xg` (DFL's own; our model for SkillCorner), `outcome` (SkillCorner says only Goal / Shot) |
 | `tracks.json` | Per moment id: `t0` (s from the event), `dt` (0.2 s), `ball` `[x, y, z, …]`, `men` `[[side, name, x, y, x, y, …]]` (side: you / mate / opp / keeper). `buildUpOf` decodes it |
 | `wyscout_shots.json` | Every World Cup 2018 / Euro 2016 shot (30 "shots" from a player's own half dropped: Wyscout's frame is flipped on those): facts, `ball`, `end`/`endZ` (the middle of Wyscout's 3 × 3 goal-mouth zone), `xg` (our model, below), `lead` (the last 3 real passes `[s before, from, to, passer, recipient]` and up to 12 earlier touches) |
+| `wyscout_league_<england\|spain\|italy\|germany\|france>.json` | Real Goals from the 2017/18 Premier League (931), La Liga (911), Serie A (889), Bundesliga (763) and Ligue 1 (899): 4,393 goals, no penalties or own goals. Each file holds the goal shot rows (as `wyscout_shots.json`, same xG model) and their match facts (as `wyscout_goals.json`; `stage` is empty, the page shows the date). Only goals: the leagues' 43,000 other shots are not kept |
 | `wyscout_goals.json` | Real Goals' match facts per goal: stage, date, final score (after extra time), score before, the conceding keeper's name, the whole move (passes and carries with their real times) |
 
 **xG:** DFL shots carry DFL's own. For the rest, a logistic model fitted on
@@ -48,6 +49,11 @@ download sources; ~5 GB). Run Python with `-I`.
 ```bash
 # Wyscout: events.zip, matches.zip, players.json, teams.json in one folder (~2 min)
 python3 -I scripts/realmoments/extract_wyscout.py RAW/wyscout
+# League goals (needs wyscout_shots.json first: it reads the xG model). figshare is
+# blocked in the cloud sessions; the GitHub copy has the same events per match:
+#   RAW/wy/index.md  = raw.githubusercontent.com/koenvo/wyscout-soccer-match-event-dataset/main/processed/README.md
+#   RAW/wy/files/<id>.json = .../processed/files/<id>.json for each league match in the index (1,826, ~900 MB)
+python3 -I scripts/realmoments/extract_wyscout_leagues.py RAW/wy
 # Tracking (needs wyscout_shots.json first: it reads the xG model). IDSSE_DIR holds
 # DFL_02_01_matchinformation_*, DFL_03_02_events_raw_*, DFL_04_03_positions_raw_observed_*;
 # SC_META: {id}_match.json + {id}_dynamic_events.csv; SC_TRK: {id}.jsonl (~4 min)
