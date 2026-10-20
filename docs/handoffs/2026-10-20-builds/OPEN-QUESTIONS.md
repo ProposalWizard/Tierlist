@@ -10,3 +10,4 @@
 - B2b: "OFFSIDE" shows twice (boxed overlay + banner) — the real match does this too (read in code, not seen). Show it once everywhere?
 - B2b: making a build-up now takes 169–232 ms for the slowest 1 in 100 (was 83–149 ms). OK, or speed it up?
 - B2b: a winger's run is flagged offside on 16% of volley build-ups at even strength (23% when weaker); the 0.4 wide-run rate is the builder's guess. About right?
+- B5d: pick the cartoon body: A (today grown up, 6.0 heads), B (slim athlete, 6.5), C (hero V, 6.3, builder's pick) — or none.

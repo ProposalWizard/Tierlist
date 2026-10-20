@@ -226,3 +226,10 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Merge with B10: every header/volley build-up ends in the lofted cross; crosser's run played into space, wide-run mistime ×0.4 (builder's guess) → volley build-ups flagged 29% → 16% at even; men no longer run through each other at the hand-over (10 → 2 of 257).
 - Drift files: CanvasMatch.tsx (frame on the chance during a resize, regain extra opponent, end-on-offside hand-back), hiddenMatch.ts (hands over regain info, no new random draws). canvasEngine untouched.
 - Not seen: a career match with the switch On at 390×844; a real-match offside still. Full npm run build not run (memory).
+
+## B5d — cartoon bodies for our cartoon faces (test flag only)
+- Harry 20:15: B2 + today's face "is ass, gotta keep our cartoon like faces". B5d reshaped TODAY'S own Style A bodies (Curls, Buzz & beard) in Blender — no new body, no head swap: same face, paint, shading, one mesh (no neck seam), 1.86 m, same skeleton. ?bodies=d1|d2|d3.
+- Today 5.1 heads (Buzz 5.7), shoulders 0.53 m, legs 47%, hip joint 0.88 m. A (grown up) 6.0 / 0.49 / 51% / 0.95; B (slim athlete) 6.5 / 0.48 / 53% / 0.98, hands 0.21; C (hero V, builder's pick) 6.3 / 0.53 / 52% / 0.96, hands 0.20.
+- Collarbones level and no overlaps in the bind pose on all 8 bodies (measured with B5c's checker). In clips: walk hand-into-thigh 10.0 → 7.7 / 7.0 / 5.1 cm; idle boot-into-boot worse 2.9 → 5.1–5.9 cm (longer legs, same stance).
+- Head 16–22% smaller than today, so the face is smaller on screen. Six new GLBs packed (~220 KB each).
+- Waiting on Harry: pick A, B or C.
