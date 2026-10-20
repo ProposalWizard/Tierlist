@@ -123,15 +123,13 @@ function Garden3DTest() {
   // On the Broadcast frame (A-8, 20 Oct 2026): the garden in the stage, its switches in the title bar
   return (
     <>
-      <BroadcastPage title="3D garden" sub="Walk the garden: its doors open the shop, the casino, the pitch and your house." width={1440}
-        actions={
-          <div className="s3-bar" data-garden3d-dev>
-            {(["day", "sunset", "night"] as Sky[]).map((s) => <Pill key={s} on={sky === s} onClick={() => setSky(s)}>{s[0].toUpperCase() + s.slice(1)}</Pill>)}
-            <Btn onClick={() => setFull((f) => !f)} title="A career with trophies, a horse and cars, or a brand-new one">{full ? "Full career" : "New career"}</Btn>
-            <Btn onClick={() => setKey((k) => k + 1)}>↻ Restart</Btn>
-            <Btn href="/star-scene-editor-dev?place=garden" title="Camera and light for the garden">Scene editor ›</Btn>
-          </div>
-        }>
+      <BroadcastPage title="3D garden" sub="Walk the garden: its doors open the shop, the casino, the pitch and your house." width={1440}>
+        <div className="s3-bar" data-garden3d-dev>
+          {(["day", "sunset", "night"] as Sky[]).map((s) => <Pill key={s} on={sky === s} onClick={() => setSky(s)}>{s[0].toUpperCase() + s.slice(1)}</Pill>)}
+          <Btn onClick={() => setFull((f) => !f)} title="A career with trophies, a horse and cars, or a brand-new one">{full ? "Full career" : "New career"}</Btn>
+          <Btn onClick={() => setKey((k) => k + 1)}>↻ Restart</Btn>
+          <Btn href="/star-scene-editor-dev?place=garden" title="Camera and light for the garden">Scene editor ›</Btn>
+        </div>
         <div className="s3-stage">{garden}</div>
       </BroadcastPage>
       <PageGuide page="/star-garden3d-dev" corner="bottom-left" />

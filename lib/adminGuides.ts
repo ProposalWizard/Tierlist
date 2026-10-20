@@ -1511,8 +1511,8 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["← (top left)", "Back to the 3D places group page."],
-          ["↺ Replay (title bar)", "Starts the scene again from the first line."],
-          ["Your player (title bar)", "Opens the picker under the scene: skin tone, face picture, hair, every store accessory and the Star Pass Gold Aviators. A change rebuilds your player straight away."],
+          ["↺ Replay (above the scene)", "Starts the scene again from the first line."],
+          ["Your player (above the scene)", "Opens the picker under the scene: skin tone, face picture, hair, every store accessory and the Star Pass Gold Aviators. A change rebuilds your player straight away."],
           ["Scene editor ›", "Opens the 3D Scene Editor on the signing: camera, lens and light per shot, Approve, Commit to game."],
           ["?bare=1 on the address", "The scene full screen, as before the admin frame (↺ and Your player at its top right)."],
           ["Skip", "Leaves the scene. In a career this goes straight on to the next screen."],
@@ -1550,7 +1550,7 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["← (top left)", "Back to the 3D places group page."],
-          ["He talks / You talk (title bar)", "Moves the camera: over your shoulder at him, or over his at you."],
+          ["He talks / You talk (above the scene)", "Moves the camera: over your shoulder at him, or over his at you."],
           ["Next line ›", "Steps through four sample lines, switching who talks."],
           ["Scene editor ›", "Opens the 3D Scene Editor on the office: camera, lens and light per shot, Approve, Commit to game."],
           ["?bare=1 on the address", "The office full screen, as before the admin frame."],
@@ -1705,10 +1705,10 @@ export const ADMIN_GUIDES = {
     buttons: [
       { items: [
         ["‹ Home", "Back to the 3D places group page."],
-        ["Day / Sunset / Night (title bar)", "Changes the time of day. In a career it follows the time of your next kick-off."],
-        ["Full career / New career (title bar)", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
-        ["↻ Restart (title bar)", "Builds the garden again from the start."],
-        ["Scene editor › (title bar)", "Opens the 3D Scene Editor on the garden: the walking camera (turn, rise, distance, lens) and the sun, Approve, Commit to game."],
+        ["Day / Sunset / Night (above the scene)", "Changes the time of day. In a career it follows the time of your next kick-off."],
+        ["Full career / New career (above the scene)", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
+        ["↻ Restart (above the scene)", "Builds the garden again from the start."],
+        ["Scene editor › (above the scene)", "Opens the 3D Scene Editor on the garden: the walking camera (turn, rise, distance, lens) and the sun, Approve, Commit to game."],
         ["?bare=1 (in the address)", "The garden full screen, as before the admin frame (its switches float top left). ?film=1 does the same for the film tools."],
         ["?outfit=coat (in the address)", "He walks the garden in that casual set, as if picked at your house's wardrobe: hoodie, tee, shirt, tracksuit or coat. Without it: the club kit."],
         ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
@@ -1767,7 +1767,7 @@ export const ADMIN_GUIDES = {
     title: "Style Testing",
     what: "Try the shortlisted art styles (and Mix) on the REAL game (the match engine's own chances, drawn in 3D), the 3D free roam and cut scenes, switching live. A test area: nothing here changes the game.",
     buttons: [
-      { group: "The page (title bar)", items: [
+      { group: "The page (above the scene)", items: [
         ["Scene generator ›", "Opens the Scene generator (Studio): a cut scene made from a game moment, its recipe, Good/Bad, keep it."],
         ["Scene editor ›", "Opens the 3D Scene Editor on the Cut-scene Director."],
         ["The stage", "Everything below plays in this box on the admin frame. ?clean=1 (the stills and film tools) or ?bare=1 opens it full screen, as before."],
@@ -1806,8 +1806,8 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["‹ 3D places", "Back to the 3D places group page."],
-          ["Start at the doors / Start in the middle (title bar)", "Open the shop just inside its front doors (as when you walk in from the garden), or in the middle."],
-          ["Edit in the scene editor › (title bar)", "Opens the 3D Scene Editor on the shop: walking and card views (turn, rise, distance, lens), the light, Approve, Commit to game."],
+          ["Start at the doors / Start in the middle (above the scene)", "Open the shop just inside its front doors (as when you walk in from the garden), or in the middle."],
+          ["Edit in the scene editor › (above the scene)", "Opens the 3D Scene Editor on the shop: walking and card views (turn, rise, distance, lens), the light, Approve, Commit to game."],
           ["?bare=1 (in the address)", "The shop full screen, as before the admin frame. ?film=1 does the same for the film tools."],
           ["The club button (top right)", "Changes the kit he's wearing. Tap again for the next club."],
           ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
@@ -1850,9 +1850,9 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["‹ 3D places", "Back to the 3D places group page."],
-          ["Scene editor › (title bar)", "Opens the 3D Scene Editor on the house: walking and card views (turn, rise, distance, lens), the sun, Approve, Commit to game."],
+          ["Scene editor › (above the scene)", "Opens the 3D Scene Editor on the house: walking and card views (turn, rise, distance, lens), the sun, Approve, Commit to game."],
           ["?bare=1 (in the address)", "The house full screen, as before the admin frame. ?film=1 does the same for the film tools."],
-          ["starter … estate (title bar)", "Which home you are in. In a career it is the best home you own: Studio Flat or City Apartment = flat, Penthouse, Suburban House = house, Beach Villa or Mansion = villa, Country Estate or Private Island = estate."],
+          ["starter … estate (above the scene)", "Which home you are in. In a career it is the best home you own: Studio Flat or City Apartment = flat, Penthouse, Suburban House = house, Beach Villa or Mansion = villa, Country Estate or Private Island = estate."],
           ["Full cabinet / Empty cabinet", "The made-up career with trophies, awards, cars, watches, jewellery and cans, or with none."],
           ["House: New / Old", "New: the home's rooms. Old: the one room, as it was. The same as Settings → Look → \"House\" (this button does not change that setting)."],
           ["Room name and dots (top middle)", "Which room you are in. Tap a dot to jump to that room."],

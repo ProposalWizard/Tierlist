@@ -95,15 +95,13 @@ function Home3DTest() {
   if (!bare) {
     return (
       <>
-        <BroadcastPage title="3D house" sub="Your house: the wardrobe and mirror, the trophy cabinet, your cars on the drive." width={1440}
-          actions={
-            <div className="s3-bar" data-home3d-dev>
-              {HOME_TIERS.map((t) => <Pill key={t} on={tier === t} onClick={() => setTier(t)}>{t}</Pill>)}
-              <Btn onClick={() => setFull((f) => !f)}>{full ? "Full cabinet" : "Empty cabinet"}</Btn>
-              <Btn onClick={() => setHouse((h) => (h === "new" ? "old" : "new"))} title="Rooms you walk through (New), or the one room (Old)">House: {house === "new" ? "New" : "Old"}</Btn>
-              <Btn href="/star-scene-editor-dev?place=house" title="Camera and light for the house">Scene editor ›</Btn>
-            </div>
-          }>
+        <BroadcastPage title="3D house" sub="Your house: the wardrobe and mirror, the trophy cabinet, your cars on the drive." width={1440}>
+          <div className="s3-bar" data-home3d-dev>
+            {HOME_TIERS.map((t) => <Pill key={t} on={tier === t} onClick={() => setTier(t)}>{t}</Pill>)}
+            <Btn onClick={() => setFull((f) => !f)}>{full ? "Full cabinet" : "Empty cabinet"}</Btn>
+            <Btn onClick={() => setHouse((h) => (h === "new" ? "old" : "new"))} title="Rooms you walk through (New), or the one room (Old)">House: {house === "new" ? "New" : "Old"}</Btn>
+            <Btn href="/star-scene-editor-dev?place=house" title="Camera and light for the house">Scene editor ›</Btn>
+          </div>
           <div className="s3-stage" data-house-look={house}>{home}</div>
         </BroadcastPage>
         <PageGuide page="/star-home3d-dev" corner="bottom-left" />

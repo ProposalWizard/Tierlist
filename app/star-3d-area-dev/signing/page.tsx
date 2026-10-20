@@ -141,12 +141,12 @@ export default function Signing3dPage() {
   if (!bare) {
     return (
       <>
-        <BroadcastPage title="3D signing" sub={`Signing for ${club}: the career's own scene, with sample terms.`} width={1440}
-          actions={<>
+        <BroadcastPage title="3D signing" sub={`Signing for ${club}: the career's own scene, with sample terms.`} width={1440}>
+          <div className="s3-bar">
             <Btn onClick={() => setReplay((r) => r + 1)} title="Play it again from the start">↺ Replay</Btn>
             <button data-picker className="bc-btn" data-main={open ? "true" : undefined} onClick={() => setOpen((o) => !o)}>Your player</button>
             <Btn href="/star-scene-editor-dev?place=signing" title="Camera and light for the signing">Scene editor ›</Btn>
-          </>}>
+          </div>
           <div className="s3-stage s3-tall">{scene}</div>
           {open && <Panel title="YOUR PLAYER" note="the look the career would pass in">{pickerBody}</Panel>}
         </BroadcastPage>

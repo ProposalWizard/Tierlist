@@ -40,11 +40,11 @@ function Shop3DTest() {
   if (bare) return <>{shop}<PageGuide page="/star-shop3d-dev" corner="bottom-left" /></>;
   return (
     <>
-      <BroadcastPage title="3D shop" sub="Walk the shop: stick or tap to move, drag to look. Its doors lead to the garden." width={1440}
-        actions={<>
+      <BroadcastPage title="3D shop" sub="Walk the shop: stick or tap to move, drag to look. Its doors lead to the garden." width={1440}>
+        <div className="s3-bar">
           <Btn href={atDoor ? "/star-shop3d-dev" : "/star-shop3d-dev?door=1"} title="Start inside the front doors, as from the garden">{atDoor ? "Start in the middle" : "Start at the doors"}</Btn>
           <Btn href="/star-scene-editor-dev?place=shop" title="Camera and light for the shop">Edit in the scene editor ›</Btn>
-        </>}>
+        </div>
         <div className="s3-stage">{shop}</div>
       </BroadcastPage>
       <PageGuide page="/star-shop3d-dev" corner="bottom-left" />

@@ -67,12 +67,12 @@ export default function OfficePage() {
     // On the Broadcast frame (A-8, 20 Oct 2026): the office in the stage, who talks in the title bar
     return (
       <>
-        <BroadcastPage title="Manager's office" sub="The 3D stage for every talk with your manager. Sample player and lines." width={1440}
-          actions={<>
+        <BroadcastPage title="Manager's office" sub="The 3D stage for every talk with your manager. Sample player and lines." width={1440}>
+          <div className="s3-bar">
             <Pill on={speaker === "boss"} onClick={() => setSpeaker("boss")}><span data-boss>He talks</span></Pill>
             <Pill on={speaker === "you"} onClick={() => setSpeaker("you")}><span data-you>You talk</span></Pill>
             <Btn href="/star-scene-editor-dev?place=office" title="Camera and light for the office">Scene editor ›</Btn>
-          </>}>
+          </div>
           <div className="s3-stage" style={{ background: "#0b0d12" }}>
             {fitted !== undefined && (
               <Office3D you={you} manager={managerFor(SAMPLE_TERMS.manager)} managerName={SAMPLE_TERMS.manager} club={SAMPLE_TERMS.club}

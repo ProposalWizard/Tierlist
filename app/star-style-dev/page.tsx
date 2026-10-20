@@ -60,11 +60,11 @@ export default function StarStyleDevPage() {
   }
   return (
     <>
-      <BroadcastPage title="Art styles + cut-scene director" sub="Five art looks on real 3D play, the goal / signing / walk-out cut scenes, the Cut-scene Director." width={1440}
-        actions={<>
+      <BroadcastPage title="Art styles + cut-scene director" sub="Five art looks on real 3D play, the goal / signing / walk-out cut scenes, the Cut-scene Director." width={1440}>
+        <div className="s3-bar">
           <Btn href="/admin/scene-generator" title="Make a cut scene from a game moment">Scene generator ›</Btn>
           <Btn href="/star-scene-editor-dev?place=director" title="Camera and light for a cut scene">Scene editor ›</Btn>
-        </>}>
+        </div>
         <div className="s3-stage s3-tall"><StyleTest3D embedded /></div>
       </BroadcastPage>
       <PageGuide page="/star-style-dev" corner="bottom-left" />
