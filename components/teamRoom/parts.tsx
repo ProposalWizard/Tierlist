@@ -7,11 +7,13 @@
  */
 import { useEffect, useState, type ReactNode } from "react";
 import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "@/lib/teamRoom/config";
-import { notesFor, stamp, tasksFor, tasksGivenBy, type NoteKind } from "@/lib/teamRoom/logic";
+import { notesFor, stamp, tasksFor, tasksGivenBy, type NoteKind, type TeamTask } from "@/lib/teamRoom/logic";
+import { pushedFor, type PushedJob } from "@/lib/teamRoom/jobs";
 import {
-  addNote, addTask, claimName, deleteNote, deleteTask, markRead, tickTask, useTeamRoom,
+  addNote, addTask, claimName, deleteNote, deleteTask, markJobsSeen, markRead, tickTask, useTeamRoom,
 } from "@/lib/teamRoom/store";
 import { Av, Linked } from "./bits";
+import PushedJobRow from "./PushedJob";
 import { ChatThread, WaitingOnMe } from "./chat";
 
 export { Av, ChatThread, WaitingOnMe };
@@ -52,7 +54,10 @@ function WhoAreYou({ taken }: { taken: TeamPerson[] }) {
   );
 }
 
-/** Your to-do list: yours, given to you, jobs you gave, ticked today. */
+/**
+ * Your to-do list: yours, given to you, jobs you gave, ticked today.
+ * Jobs that arrived by push (team/jobs.json) sit under "Given to me" too.
+ */
 export function TodoList({ visible = true }: { visible?: boolean }) {
   const s = useTeamRoom();
   const [now, setNow] = useState(() => Date.now());
@@ -63,6 +68,16 @@ export function TodoList({ visible = true }: { visible?: boolean }) {
   useEffect(() => { if (visible && s.me) markRead("tasks"); }, [visible, s.me, s.tasks.length]);
   const l = tasksFor(s.tasks, s.me, now);
   const gave = tasksGivenBy(s.tasks, s.me);
+  const pj = pushedFor(s.jobs, s.tasks, s.me, now);
+  const openIds = pj.open.map((j) => j.id).join(",");
+  useEffect(() => { if (visible && s.me && openIds) markJobsSeen(openIds.split(",")); }, [visible, s.me, openIds]);
+  // Given to me: typed and pushed, newest first. Done today: both, latest ticked first.
+  type Item = { at: string; task?: TeamTask; job?: PushedJob };
+  const byTime = (key: (x: Item) => string) => (a: Item, b: Item) => (Date.parse(key(b)) || 0) - (Date.parse(key(a)) || 0);
+  const given: Item[] = [...l.given.map((x) => ({ at: x.created_at, task: x })), ...pj.open.map((j) => ({ at: j.added, job: j }))].sort(byTime((x) => x.at));
+  const done: Item[] = [...l.done.map((x) => ({ at: x.done_at!, task: x })), ...pj.done.map((j) => ({ at: j.done_at!, job: j }))].sort(byTime((x) => x.at));
+  const item = (x: Item, who?: (t: TeamTask) => ReactNode) =>
+    x.job ? <PushedJobRow key={`job-${x.job.id}`} j={x.job} now={now} /> : row(x.task!, who?.(x.task!));
   const add = async () => {
     const r = await addTask(title, owner === "me" ? s.me : owner);
     if (r.ok) setTitle(""); else setErr(r.error);
@@ -88,11 +103,11 @@ export function TodoList({ visible = true }: { visible?: boolean }) {
         <button className="tr-btn" onClick={add} disabled={!title.trim()}>Add</button>
       </div>
       {err && <p className="tr-err">{err}</p>}
-      {l.open === 0 && l.done.length === 0 && gave.length === 0 && <p className="tr-muted">Nothing to do. Add a job, or give one to Mikey or Leo.</p>}
-      {l.given.length > 0 && <div><p className="tr-lbl">Given to me</p>{l.given.map((x) => row(x, <small>from {x.made_by} · {stamp(x.created_at, now)}</small>))}</div>}
+      {l.open === 0 && done.length === 0 && gave.length === 0 && pj.open.length === 0 && <p className="tr-muted">Nothing to do. Add a job, or give one to Mikey or Leo.</p>}
+      {given.length > 0 && <div><p className="tr-lbl">Given to me</p>{given.map((x) => item(x, (t) => <small>from {t.made_by} · {stamp(t.created_at, now)}</small>))}</div>}
       {l.mine.length > 0 && <div><p className="tr-lbl">Mine</p>{l.mine.map((x) => row(x))}</div>}
       {gave.length > 0 && <div><p className="tr-lbl">Jobs I gave</p>{gave.map((x) => row(x, <small>for {x.owner}</small>))}</div>}
-      {l.done.length > 0 && <div><p className="tr-lbl">Done today</p>{l.done.map((x) => row(x))}</div>}
+      {done.length > 0 && <div><p className="tr-lbl">Done today</p>{done.map((x) => item(x))}</div>}
     </div>
   );
 }

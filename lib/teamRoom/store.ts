@@ -14,11 +14,12 @@ import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/imageUtils";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { demoRoom } from "./demo";
-import { TEAM_ROOM, isTeamPerson, type TeamPerson } from "./config";
+import { BUNDLED_JOBS, TEAM_ROOM, isTeamPerson, type TeamPerson } from "./config";
 import {
   upsertById, type IdeaStage, type NoteKind, type TeamIdea, type TeamMessage, type TeamNote, type TeamTask, type TeamVote,
 } from "./logic";
 import { withAck, type AckKind, type ReadMarks, type TeamAck } from "./extras";
+import { markerJobId, markerTitle, parseJobs, type JobsRead, type TeamJob } from "./jobs";
 
 export interface TeamRoomState {
   status: "idle" | "loading" | "ready" | "missing" | "signedOut" | "error";
@@ -45,6 +46,12 @@ export interface TeamRoomState {
   acks: TeamAck[];
   /** Point mode is on: drag a box over the page (Shift+X or the Point button). */
   pointing: boolean;
+  /** Jobs that arrived by push (team/jobs.json on GitHub; lib/teamRoom/jobs.ts). */
+  jobs: TeamJob[];
+  /** Where they came from: read live, or the copy built into the site (null = not loaded yet). */
+  jobsFrom: "github" | "bundled" | null;
+  /** Pushed jobs you have had on screen in the To-do (this browser): the badge leaves them out. */
+  seenJobs: string[];
 }
 
 const READ_KEY = "kib-team-read";
@@ -58,6 +65,7 @@ function loadRead(): TeamRoomState["read"] {
 // Until team_room_v2.sql runs, your own seen mark, your own acks and your
 // patch-note notes are kept in this browser, and the screens say so.
 const SEEN_KEY = "kib-team-seen";
+const SEEN_JOBS_KEY = "kib-team-jobs-seen";
 const ACKS_KEY = "kib-team-acks";
 const LOCAL_NOTES_KEY = "kib-team-local-notes";
 function readJson<T>(key: string, fallback: T): T {
@@ -70,7 +78,7 @@ function writeJson(key: string, v: unknown) {
 let state: TeamRoomState = {
   status: "idle", error: null, me: null, taken: [], messages: [], ideas: [], votes: [], tasks: [], notes: [],
   online: [], live: false, read: { chat: 0, tasks: 0, notes: 0, pushNotes: 0, patchNotes: 0 }, pageOpen: false,
-  v2: "unknown", marks: {}, acks: [], pointing: false,
+  v2: "unknown", marks: {}, acks: [], pointing: false, jobs: [], jobsFrom: null, seenJobs: [],
 };
 const listeners = new Set<() => void>();
 function set(patch: Partial<TeamRoomState> | ((s: TeamRoomState) => Partial<TeamRoomState>)) {
@@ -83,6 +91,25 @@ let userId: string | null = null;
 let started = false;
 let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null = null;
 let poll: ReturnType<typeof setInterval> | null = null;
+let jobsPoll: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Pushed jobs, from the site's route (which reads GitHub). If the route
+ * can't be reached, the copy built into the site, unless a live list is
+ * already here (a passing fault keeps it). Not an admin: stop asking.
+ */
+async function loadJobs() {
+  try {
+    const r = await fetch(TEAM_ROOM.jobs.api, { cache: "no-store" });
+    if (r.status === 401 || r.status === 403) { if (jobsPoll) clearInterval(jobsPoll); jobsPoll = null; }
+    if (!r.ok) throw new Error(String(r.status));
+    const j = (await r.json()) as JobsRead;
+    if (j.problems?.length) console.warn("Team jobs:", j.problems.join(" "));
+    set({ jobs: parseJobs(j.jobs), jobsFrom: j.from === "github" ? "github" : "bundled" });
+  } catch {
+    set((s) => (s.jobsFrom === "github" ? {} : { jobs: parseJobs(BUNDLED_JOBS), jobsFrom: "bundled" }));
+  }
+}
 
 const isMissing = (e: { code?: string; message?: string } | null) =>
   !!e && (e.code === "42P01" || e.code === "PGRST205" || /does not exist|schema cache/i.test(e.message ?? ""));
@@ -216,7 +243,9 @@ function startDemo() {
 export function startTeamRoom() {
   if (started || typeof window === "undefined") return;
   started = true;
-  set({ status: "loading", read: loadRead() });
+  set({ status: "loading", read: loadRead(), seenJobs: readJson<string[]>(SEEN_JOBS_KEY, []) });
+  loadJobs();
+  jobsPoll = setInterval(loadJobs, TEAM_ROOM.jobs.refreshMs);
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) { if (offlineDevPlayEnabled()) startDemo(); else set({ status: "error", error: "No database address set." }); return; }
   sb = createClient();
   sb.auth.getUser().then(async ({ data }) => {
@@ -231,7 +260,8 @@ export function startTeamRoom() {
 export function stopTeamRoom() {
   if (channel && sb) sb.removeChannel(channel);
   if (poll) clearInterval(poll);
-  channel = null; poll = null; started = false;
+  if (jobsPoll) clearInterval(jobsPoll);
+  channel = null; poll = null; jobsPoll = null; started = false;
 }
 
 export function useTeamRoom(): TeamRoomState {
@@ -361,6 +391,52 @@ export async function tickTask(id: number, done: boolean): Promise<Result> {
   return { ok: true };
 }
 export const deleteTask = (id: number) => remove("team_tasks", "tasks", id, "Could not delete it.");
+
+/**
+ * Tick (or untick) a pushed job. The job lives in the repo; the tick is your
+ * own team_tasks row "[job:<id>] <title>", made on the first tick (the table's
+ * rules want a new row not done, so it is made, then ticked). Unticking
+ * clears its done_at. No new table, no SQL.
+ */
+export async function tickJob(job: Pick<TeamJob, "id" | "title">, done: boolean): Promise<Result> {
+  const me = state.me;
+  if (!me) return { ok: false, error: "Pick your name first." };
+  if (!sb && !demo) return { ok: false, error: "Not connected yet." };
+  const done_at = done ? new Date().toISOString() : null;
+  const ids = state.tasks.filter((x) => x.owner === me && x.made_by === me && markerJobId(x) === job.id).map((x) => x.id);
+  const mark = (id: number[]) => set((s) => ({ tasks: s.tasks.map((x) => (id.includes(x.id) ? { ...x, done_at } : x)) }));
+  if (ids.length) {
+    if (!demo) {
+      const { error } = await sb!.from("team_tasks").update({ done_at }).in("id", ids);
+      if (error) return fail(error, done ? "Could not tick it." : "Could not untick it.");
+    }
+    mark(ids);
+    return { ok: true };
+  }
+  if (!done) return { ok: true };
+  const row = { owner: me, made_by: me, title: markerTitle(job) };
+  if (demo) {
+    set((s) => ({ tasks: upsertById(s.tasks, { id: ++demoId, ...row, done_at, created_at: new Date().toISOString() }) }));
+    return { ok: true };
+  }
+  const made = await sb!.from("team_tasks").insert(row).select().single();
+  if (made.error) return fail(made.error, "Could not tick it.");
+  const id = (made.data as TeamTask).id;
+  set((s) => ({ tasks: upsertById(s.tasks, made.data as TeamTask) }));
+  const { error } = await sb!.from("team_tasks").update({ done_at }).eq("id", id);
+  if (error) return fail(error, "Could not tick it.");
+  mark([id]);
+  return { ok: true };
+}
+
+/** The To-do had these pushed jobs on screen: they stop counting in the badge (this browser). */
+export function markJobsSeen(ids: string[]) {
+  const fresh = ids.filter((id) => !state.seenJobs.includes(id));
+  if (!fresh.length) return;
+  const seenJobs = [...state.seenJobs, ...fresh].slice(-500);
+  writeJson(SEEN_JOBS_KEY, seenJobs);
+  set({ seenJobs });
+}
 
 export async function addNote(kind: NoteKind, targetId: string | number, owner: TeamPerson | null, body: string): Promise<Result> {
   const b = body.trim().slice(0, 1000);

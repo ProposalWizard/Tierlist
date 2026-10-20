@@ -6,6 +6,8 @@
  *
  * The names must match the CHECK lists in team_room.sql.
  */
+import bundledJobs from "@/team/jobs.json";
+
 export const TEAM_PEOPLE = ["Harry", "Mikey", "Leo"] as const;
 export type TeamPerson = (typeof TEAM_PEOPLE)[number];
 
@@ -33,7 +35,28 @@ export const TEAM_ROOM = {
   bubblePrefixes: ["/admin"],
   /** …but never on these (the game itself, the home page). */
   bubbleNever: ["/", "/star-dev"],
+  /**
+   * Jobs that arrive by push (Harry, 20 Oct 2026: "just use pushes"). The
+   * site reads `path` from GitHub on each of `branches`, about once a minute,
+   * so a push to any of them shows with no deploy. lib/teamRoom/jobs.ts.
+   */
+  jobs: {
+    repo: "ProposalWizard/Tierlist",
+    path: "team/jobs.json",
+    branches: ["main", "Harry", "Mikey", "Leo"],
+    /** The site's own route that reads them (admins only). */
+    api: "/api/admin/team/jobs",
+    /** How long the site keeps one read, and how often the board asks again. */
+    refreshMs: 60_000,
+  },
 } as const;
+
+/**
+ * The jobs file as it was when the site was built. Used when GitHub can't
+ * be reached, and in place of main's copy if main has none yet. When moving
+ * the kit to another site, point this at that site's jobs file.
+ */
+export const BUNDLED_JOBS: unknown = bundledJobs;
 
 export const isTeamPerson = (s: unknown): s is TeamPerson =>
   typeof s === "string" && (TEAM_PEOPLE as readonly string[]).includes(s);
