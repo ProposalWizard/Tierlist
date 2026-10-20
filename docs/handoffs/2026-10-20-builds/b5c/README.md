@@ -160,3 +160,45 @@ drops 7.6 cm when his feet are planted; the desk does not).
 Neck ÷ shoulder width in that shot: **0.36 → 0.55** (frames 5.5 s and 6.7 s).
 Still: `press-shoulders-before-after.jpg`. The short Style A neck (B5b: 0.09 m vs 0.13 real)
 still hides more neck than a real man would show.
+
+## 6. Posture (Harry 23:21: "whyyyy is the posture so weird")
+
+**Cause (measured on our skeleton, `tools/motionref/sagittal.mts`):** the capture idle stands like
+a man leaning onto his toes: hips 6.3 cm ahead of the ankles, shoulders 5.6 cm ahead of the hips,
+head 7.6 cm ahead of the shoulders, the hands 14.6 cm ahead of the hips, the standing knee soft but
+the whole body tipped forward. From the side it reads as a slouch with the knees bent.
+**How measured against real people:** the same detector (MediaPipe Pose, `tools/motionref/posture.py`)
+on the 28 reference videos and on our renders. Front-on it guesses depth, so the forward/back
+numbers are read side-on, in the picture (5 side-on reference clips stand still long enough).
+**Fix:** a posture layer in the same bake (`shoulderSet.ts` POSTURE, `settle_clips.mts`), on the
+standing and walking clips only (never dives, sits, kicks, hugs, the slump walk): hips back over
+the feet and over the standing leg, both legs solved back onto their own feet (the feet do not
+move); chest up and head back over the shoulders (the head keeps where it looks); collarbones
+not rolled forward; a standing man's hanging arms a little out from his side, by the thigh not in
+front of it, elbows softer. Set once, on the first reference body.
+
+| Measure (same detector) | Ours before | Ours after | Real people |
+|---|---|---|---|
+| Hips ahead of the ankles, side on (torso lengths) | 0.24 (d2: not read) | 0.13–0.14 | −0.07 to 0.09 (≈0.05) |
+| Standing knee bend, side on | 18–21° | 8–12° | −4 to 9° (≈7) |
+| Head ahead of the shoulders, side on | 0.12–0.18 | 0.10–0.14 | 0.02–0.17 |
+| Chest lean, side on | 2–4° forward | 0–2° back | 0.5–7° forward |
+| Arms out from the side, front on (Home idle) | 7–9° | 17–18° | 19–20° |
+| Hands out past the hips, front on (shoulder widths) | 0.46–0.47 | 0.64–0.69 | 0.59–0.61 |
+| Elbow bend, front on (Home idle) | 11–13° | 15–16° | 19–22° |
+| Palms (thumb side turned in) | 41–48° | 41–45° | 52° (already close: not changed) |
+| Pelvis tilt sideways, front on (idle) | 5–7° | 5–6° | 3–4° |
+| Walk-out tunnel: pelvis tilt / arms out | 13° / 10° | 12° / 22° | 5–7° / 10–17° |
+
+On our skeleton, idle: hips 6.3 → 0.8 cm ahead of the ankles, head 7.6 → 5.8 cm ahead of the
+shoulders, hands 14.6 → 6.1 cm ahead of the hips, hips over the standing leg 0.3 → 1.8 cm.
+
+**Harsh:** side on it is clearly better on every body. Front on (Home, walk-out, farewell) the
+change is small, because the fix is mostly forward/back. Still not real: hips still ~2.5× real
+side on; the chest now leans ~1° back where real men lean ~1° forward; the relaxed knee stays bent
+27° (the capture's foot placement); the pelvis tilts sideways more than real; the walk-out arms now
+hang out a bit wider than the real walk-out (22° vs 10–17°). The walks (farewell) only get the upper
+body (head, chest, shoulders): their legs are left as captured, so the farewell close-up barely
+changes. No breathing was added (not measured).
+Pictures: `posture-before-after.jpg` (Home, walk-out, farewell close-up, side on; today, d1, d2, d3),
+`posture-before-after.mp4` (the 4 s idle, before above, after below).

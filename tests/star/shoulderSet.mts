@@ -10,6 +10,11 @@
  * into the torso. If a clip file is rebuilt (tools/mocap3d, tools/anims3d)
  * without the settle step, this fails: run settle_clips.mts again.
  * The full skin-on-skin check: tools/motionref/arm_clearance.mts.
+ *
+ * POSTURE (Harry 23:21, "whyyyy is the posture so weird"): standing still, the
+ * hips over the feet (the capture idle had them 6.3 cm ahead of the ankles),
+ * the head over the shoulders (7.6 cm ahead), the standing knee soft, not bent.
+ * Measured on the shipped idle, talk and nod (tools/motionref/sagittal.mts).
  */
 import * as THREE from "three";
 import { settleClip, shoulderBodyOf } from "../../lib/star/three3d/shoulderSet";
@@ -37,6 +42,34 @@ if (sb) {
   }
 }
 check(seen >= 12, `the standing and moving clips were checked (${seen})`);
+
+// posture, from the side (the shipped clips as they play)
+{
+  const B = body.bones, P = (n: string) => new THREE.Vector3().setFromMatrixPosition(B[n].matrixWorld);
+  const g = await parse(stripped("public/star/anims3d/mocap.glb"));
+  for (const name of ["idle", "talk", "nod"]) {
+    const clip = (g.animations as THREE.AnimationClip[]).find((c) => c.name === name);
+    if (!clip) { check(false, `${name}: in mocap.glb`); continue; }
+    const mixer = new THREE.AnimationMixer(body.inner); mixer.clipAction(clip).play();
+    let hip = 0, head = 0, stance = 0;
+    const N = 20;
+    for (let i = 0; i < N; i++) {
+      mixer.setTime((i / N) * clip.duration); body.root.updateMatrixWorld(true);
+      const across = P("LeftUpLeg").sub(P("RightUpLeg")); across.y = 0; across.normalize();
+      const fwd = new THREE.Vector3().crossVectors(across, new THREE.Vector3(0, 1, 0)).normalize();
+      if (P("headfront").sub(P("Head")).dot(fwd) < 0) fwd.negate();
+      const mid = (a: string, b: string) => P(a).add(P(b)).multiplyScalar(0.5);
+      hip += mid("LeftUpLeg", "RightUpLeg").sub(mid("LeftFoot", "RightFoot")).dot(fwd) / N;
+      head += mid("Head", "head_end").sub(mid("LeftArm", "RightArm")).dot(fwd) / N;
+      const knee = (s: string) => 180 - P(`${s}UpLeg`).sub(P(`${s}Leg`)).angleTo(P(`${s}Foot`).sub(P(`${s}Leg`))) * 180 / Math.PI;
+      stance += Math.min(knee("Left"), knee("Right")) / N;
+    }
+    mixer.stopAllAction(); mixer.uncacheRoot(body.inner);
+    check(hip < 0.025, `${name}: hips over the feet (${(hip * 100).toFixed(1)} cm ahead of the ankles)`);
+    check(head < 0.065, `${name}: head over the shoulders (${(head * 100).toFixed(1)} cm ahead)`);
+    check(stance < 8, `${name}: the standing knee soft, not bent (${stance.toFixed(1)}°)`);
+  }
+}
 
 if (problems.length) { console.error(`✗ ${problems.length} problem(s):\n  ` + problems.join("\n  ")); process.exit(1); }
 console.log(`✓ shoulders down, arms off the body: ${seen} clips settled on today's body`);
