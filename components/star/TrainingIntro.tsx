@@ -42,8 +42,8 @@ const INTRO: Record<keyof Skills, { title: string; steps: string[] }> = {
     steps: ["Drag or tap left and right to move", "Wait for each man to commit", "Flick the other way to burst past, and reach the line"],
   },
   vision: {
-    title: "Read the Run",
-    steps: ["Watch the countdown: 3, 2, 1, GO", "Find the free team-mate who is onside", "Tap him before the bar runs out"],
+    title: "Pick the Pass",
+    steps: ["3, 2, 1, GO: a real moment from a match", "Who gets the pass? Not offside, not marked, nobody in the way", "Tap him before the bar runs out (later: kick it to him)"],
   },
 };
 
@@ -95,12 +95,12 @@ function Picture({ skill }: { skill: keyof Skills }) {
         <path d="M100 90 L 70 70 L 104 30" fill="none" stroke="#fbbf24" strokeWidth={2.5} strokeDasharray="5 4" strokeLinecap="round" />
       </>)}
       {skill === "vision" && (<>
-        <line x1={10} y1={46} x2={190} y2={46} stroke="#facc15" strokeWidth={2} strokeDasharray="6 4" />
-        <Figure x={50} y={36} c={G} />
-        <Figure x={60} y={62} c={R} /><Figure x={150} y={60} c={R} /><Figure x={170} y={88} c={R} />
-        <Figure x={70} y={70} c={G} />
-        <Figure x={110} y={84} c={G} />
-        <circle cx={110} cy={80} r={12} fill="none" stroke="#fbbf24" strokeWidth={2.5} />
+        {/* No line on the pitch (Harry, 20 Oct 2026): one man free, one marked, one behind a defender. */}
+        <Figure x={56} y={52} c={G} /><Figure x={64} y={50} c={R} />
+        <Figure x={100} y={30} c={G} /><Figure x={100} y={70} c={R} />
+        <Figure x={148} y={54} c={G} />
+        <circle cx={148} cy={50} r={13} fill="none" stroke="#fbbf24" strokeWidth={2.5} />
+        {arrow(100, 108, 144, 60, 10)}
         {ball(100, 112)}
       </>)}
     </svg>
