@@ -2014,6 +2014,61 @@ export const ADMIN_GUIDES = {
     dev: "app/star-radar-dev/page.tsx · components/star/MatchRadar.tsx · lib/star/matchRadar.ts (calls tick/resolveScenario in lib/star/hiddenMatch.ts) · Fun targets: components/star/FunTargetsReport.tsx, lib/star/funTargets.ts (the table), lib/star/funTargetsMeasure.ts, tests/star/funTargets.mts",
   },
 
+  "/star-fiveaside-dev": {
+    title: "Five-a-side",
+    what: "The five-a-side game on its own, in three tabs: play its chances one at a time, play a whole match with a radar beside it, and see what 500 simulated matches add up to. Every kick is the five-a-side screen the trial uses.",
+    buttons: [
+      {
+        items: [
+          ["Scenarios | Full match | Data", "The three tabs. This device remembers the last one you were on."],
+          ["Settings: Opposition Easy | Even | Hard", "How good the other side is (Scenarios and Full match; beside the pitch, under it on a phone). Changing it starts the chance or the match again."],
+          ["Settings: Your skill 40 | 70 | 100", "Your power and technique for every kick you take. Changing it starts again."],
+        ],
+      },
+      {
+        group: "Scenarios",
+        items: [
+          ["Yours | Team-mate's | Theirs", "Which way to play the picture. Yours: the ball is at your feet. Team-mate's: the same picture with a team-mate on the ball; you watch him. Theirs: the same picture turned round; they shoot at your goal and you get one tap."],
+          ["◀ Prev / Next ▶ (◀ / ▶ on a phone)", "The ten five-a-side chance pictures (the same ten as the Scenario gallery's Five-a-side tab). This bar stays pinned at the top while you scroll, and shows how the last roll ended."],
+          ["The pitch", "Your ball: tap a team-mate to pass, or drag back from the ball to shoot. Their ball: tap a man to throw a body at the shot, or tap the goal to send your keeper. The chance stops once it is over."],
+          ["↻ Again (↻ on a phone)", "The same picture with the next roll of the dice (Roll 2, 3…). Turns yellow once a roll has ended."],
+          ["This chance", "What to do, how the last roll ended, and your own goals here since you opened the page."],
+          ["The bot, 200 tries", "How often this picture goes in when the bot plays it, from the Data tab's numbers (at Even, skill 70). Roll 1 on screen uses the same dice as the bot's try 1, but the screen's timing can still make it end differently."],
+        ],
+      },
+      {
+        group: "Full match",
+        items: [
+          ["Kick off", "Starts the match (45 minutes). Between your touches the match plays itself; your touches, your team-mates' chances near goal and theirs are played through the real kicks."],
+          ["↻ New match / ↻ Play another", "A different match (a new roll), from kick-off."],
+          ["Match radar", "The match from above: your goal on the left, theirs on the right. Blue dots are your side (you are ringed in yellow), orange are theirs, the white dot is the ball. The lit area is where the ball is, in the colour of whoever has it."],
+          ["This match", "Chances so far for you, your team-mates and them, and how each ended, newest first. Team-mates' goals the match rolls between chances show on the score only."],
+          ["Time on the ball (screen time)", "Who had the ball for how long on screen. Not the match's own count: the flow between chances is played fast."],
+          ["Full time", "The score, your goals and touches, and the trial score this match would have earned."],
+        ],
+      },
+      {
+        group: "Data",
+        items: [
+          ["What looks broken", "Checks on the 500 matches: every match finishes, no kick freezes, nobody leaves the pitch, both sides score, the goals add up, a pass in the last third can become a shot, every chance picture can be scored. A ✗ is something to look at."],
+          ["The numbers tiles", "Goals a match, results, shots, your side's share of the ball, and your touches a match."],
+          ["Goals in a match / Who scores / Chance kinds / How chances end", "What the 500 matches add up to. Hover a bar for its number."],
+          ["Each scenario, 200 tries", "Every chance picture played 200 times each way. Tap a cell to open that scenario in the Scenarios tab."],
+          ["The ball / Harder opposition", "Each side's share of the ball and its longest spell on it; and the same bot against Easy and Hard sides."],
+          ["How the bot plays", "The bot's rules: it stands in for your thumb in every number on this tab."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. Playing here touches no career and no shared data. Leaving the page forgets your scenario tries; only the tab you were on is remembered, in this browser.",
+      "The Data tab's numbers are a file in the code, made by a script and committed like any other change. They only change when someone re-makes them.",
+    ],
+    inGame: [
+      "The trial's five-a-side stage plays this same screen. Nothing here changes it: the test area only starts it, stops it after one chance, and reads what happened.",
+    ],
+    dev: "app/star-fiveaside-dev/{page,FiveRadar}.tsx · components/star/FiveASide.tsx (test-only props autoStart, stopAfterChance, onChance, onFrame) · lib/star/fiveASide/scenarios.ts (shared with the gallery) · numbers: npx tsx scripts/fiveaside-data/run.mts → lib/star/fiveASide/simData.json (lib/star/fiveASide/simSummary.ts) · tests/star/fiveASideData.mts",
+  },
+
   "/star-sim90-dev": {
     title: "Full match",
     what: "A whole simulated ninety minutes you can watch: 22 men and the ball. It is played live: the unseen match the career runs plays only up to your next chance, you play that chance, and the rest of the match plays on from how it went (score, momentum, who has the ball). This page stages it in each club's formation.",

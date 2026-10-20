@@ -114,6 +114,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-update-dev", "Leo's Oct 13 update", "Leo's Oct 13 gameplay update, Old or New", "rbd", "match", "Leo", "live", "browser", "team"),
   P("/star-sim90-dev", "Full match", "Full simulated 90 minutes", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-radar-dev", "Match radar", "Unseen match, minute by minute", "rbd", "match", "Harry", "live", "none", "team"),
+  P("/star-fiveaside-dev", "Five-a-side", "Five-a-side chances, a full match with a radar, and 500 matches' numbers", "rbd", "match", "Harry", "live", "none", "team"),
   // "/star-dribble-dev" (First-person dribble): taken off the list (Harry, 19 Oct 2026: "remove as an admin page").
   P("/star-dribble-stick-dev", "Dribble on a stick", "Dribble steered by a stick", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-vfx-lab-dev", "Visual effects lab", "Pick and edit the effect for each match moment", "rbd", "players", "Leo", "live", "browser", "team"),
@@ -256,7 +257,7 @@ export const TEST_PAGES = new Set<string>([
   "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev", "/star-garden3d-dev",
   "/star-home3d-dev", "/star-training3d-dev", "/star-style-dev", "/star-anim3d-dev", "/star-people-dev", "/star-sprites-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev",
-  "/star-animations-dev",
+  "/star-animations-dev", "/star-fiveaside-dev",
 ]);
 export const isTestPage = (url: string) => TEST_PAGES.has(url);
 
