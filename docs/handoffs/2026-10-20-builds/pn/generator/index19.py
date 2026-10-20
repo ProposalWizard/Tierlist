@@ -11,6 +11,9 @@ PAGES = {
  'b8':  ('B8 Five-a-side', '0.72', 'A test area with Scenarios, a Full match with a live radar, and Data. Two things in it are broken. Has a clip.', 'night'),
  'b9':  ('B9 Lower League Trophy', '0.73', 'A new cup for 120 lower-league clubs. Hold to speed up and double-tap to skip after a match.', 'night'),
  'b11': ('B11 Team Room', '0.74', 'Seen faces, quoted replies, @ and # tags, Shift+X pointing and patch-note read receipts.', 'night'),
+ 'b12': ('B12 Pick the Pass', '0.76', 'Vision training rebuilt: look at a real moment, work out who gets the pass, and from level 10 kick it yourself. Has a clip.', 'night'),
+ 'b7b': ('B7b Training Editor', '0.77', 'Drag and drop in the training editor, no &ldquo;your skills&rdquo; slider, and Pace needs the right moment. Has a clip.', 'night'),
+ 'b13': ('B13 Fixtures + Admin Fixes', '0.78', 'Every fixture date was checked: 170 clashes are now 0. XP Rewards loads, the chat bubble clears page buttons, and the Team board counts real pushes.', 'night'),
  'a19admin': ('Admin Split + Looks', '0.65', 'The admin is split by game, group pages show picture cards, four looks share one layout, the phone admin is tidier.', 'd19'),
  'a19team':  ('Team Room v1', '0.60', 'A chat bubble on every admin page, an Ideas board, Team chat and a To-do list.', 'd19'),
  'a19drift': ('Drift + Play Screens', '0.62', 'Eight screens now draw the pitch at the real match&rsquo;s size, play buttons stay on screen, and the engine warning is red.', 'd19'),
@@ -18,7 +21,7 @@ PAGES = {
  'a19data':  ('Free Data v1', '0.64', '2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. StatsBomb deleted.', 'd19'),
  'a19scene': ('Scene Editor 3a', '0.61', 'The 3D Signing and Office edit live in the scene editor. Also: how generated cut scenes work, and the 3D audit.', 'd19'),
 }
-ORDER_NIGHT = ['b1', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b11']
+ORDER_NIGHT = ['b1', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b11', 'b12', 'b7b', 'b13']
 ORDER_19 = ['a19admin', 'a19team', 'a19drift', 'a19fhr', 'a19data', 'a19scene']
 
 def card(key, urls, nopen):
@@ -46,15 +49,23 @@ def ok_blocks(urls, scope):
     open_items = [
         okline('Run 3 database files', [('database files', 'p-amb')],
                'Until they run, saves stay on the device and the screen says so. B11: team_room_v2.sql. B7: star_training_levels.sql. B3: star_real_moments_picks.sql.',
-               urls, [('b11', 'B11'), ('b7', 'B7'), ('b3', 'B3')], who='For Mikey'),
+               urls, [('b11', 'B11'), ('b7', 'B7'), ('b7b', 'B7b'), ('b3', 'B3')], who='For Mikey'),
         okline('Judge the walk-out wide shot on your phone.', [('fine', 'p-grn'), ('fix it', 'p-amb')],
                'Away players still pass about 1 m from the lens in the walk-out wide shot. It is the same as before B5. Harry to judge on his phone.', urls, [('b5', 'B5 page')], who='Your call'),
         okline('Five-a-side: a pass to a team-mate in the last third never becomes his shot. Fix it?', [('fix it', 'p-amb'), ('leave it', 'p-blu')],
                '0 of 1,000 passes became a shot, so you can never get an assist.', urls, [('b8', 'B8 page')], who='Gameplay call'),
         okline('Five-a-side: chance pictures 1 and 6 never score for the bot. Redraw them?', [('redraw', 'p-amb'), ('leave', 'p-blu')],
                '0 goals in 200 tries on each. 66% and 99.5% of shots are blocked.', urls, [('b8', 'B8 page')], who='Gameplay call'),
-        okline('Is Vision level 30 about right?', [('keep', 'p-grn'), ('easier', 'p-blu'), ('harder', 'p-amb')],
-               'A modelled player passes it first time 41% of the time. It was 67%.', urls, [('b7', 'B7 page')], who='Your call'),
+        okline('Vision level 30: about right? (A good player passes it 21% first try.)', [('keep', 'p-grn'), ('easier', 'p-blu'), ('harder', 'p-amb')],
+               'Vision was rebuilt as Pick the Pass. A modelled good player picks and kicks the right man first time 21% of the time at level 30.', urls, [('b12', 'B12 page')], who='Your call'),
+        okline('Only 5 real offside pictures for 13 offside levels. Add drawn ones?', [('add drawn ones', 'p-amb'), ('leave it', 'p-blu')],
+               'One real offside picture comes back on 6 levels.', urls, [('b12', 'B12 page')], who='Your call'),
+        okline('Power levels are always eased in a career. OK as it is?', [('fine', 'p-grn'), ('play as drawn', 'p-amb')],
+               'At 2 stars a level a career player is always behind on Power levels. Level 20 draws 26 m and plays at 22 m. It is only visible now.', urls, [('b7b', 'B7b page')], who='Your call'),
+        okline('A Championship club in Europe that wins everything needs 38 midweeks. A season has 34. Leave it?', [('leave it', 'p-grn'), ('fix it', 'p-amb')],
+               '56 clashes became 20, all from deep runs, none before 1 January. Not counted in the 0.', urls, [('b13', 'B13 page')], who='Your call'),
+        okline('Run the fixture checker again after Mikey&rsquo;s ten-round FA Cup merges?', [('yes', 'p-grn'), ('skip', 'p-blu')],
+               'His change touches the same calendar. The 0 clashes is for today&rsquo;s calendar.', urls, [('b13', 'B13 page')], who='For Mikey'),
         okline('Which generated cut scenes should play in the career first, and is GITHUB_TOKEN set on the live site?', [('pick rows', 'p-amb')],
                'All 18 rows say Not wired. Commit to game needs the token. Each commit rebuilds the live site.', urls, [('b6', 'B6 page')], who='Your call'),
         okline('Try the team room with two people on real phones once team_room_v2.sql has run.', [('yes', 'p-grn'), ('later', 'p-blu')],
@@ -71,9 +82,10 @@ def ok_blocks(urls, scope):
         donel('Wembley change: keep?', 'Harry, 20 Oct', 'Keep. B16 will measure keepers in the 3D minigames with it in mind.'),
         donel('3D garden, house, shop and 3D training: own back button?', 'Harry, 20 Oct', 'They keep their own. Everything else uses the one arrow.'),
         donel('Which admin look opens by default?', 'Harry, 20 Oct', 'Clean light (&ldquo;he preferred that&rdquo;). Done.'),
-        donel('FA Cup Round of 64 date', 'Harry, 20 Oct', 'Fix it, and more: B13 will check every fixture date.'),
+        donel('FA Cup Round of 64 date', 'Harry, 20 Oct', 'Fix it, and more: check every fixture date. Done in B13 (v0.78): 170 clashes became 0.'),
         donel('Engine OK for B2 (highlights phase 3) and B10 (headers and volleys)?', 'Harry, 20 Oct', 'Yes. Run one at a time; B14 after. The red warning still asks on every edit.'),
-        donel('Training &ldquo;your skills&rdquo; sliders?', 'Harry, 20 Oct', 'No slider. A level plays with the skill you would have after finishing the levels before it (B7b).'),
+        donel('Training &ldquo;your skills&rdquo; sliders?', 'Harry, 20 Oct', 'No slider. A level plays with the skill you would have after finishing the levels before it. Done in B7b (v0.77).'),
+        donel('Vision training: how should it work?', 'Harry, 20 Oct', 'Real scenarios: who should I pass to, someone offside, less time, a real kick inside 0.3 s. Done in B12 (v0.76).'),
         donel('How strong should keepers be in the 3D minigames?', 'Harry, 20 Oct', 'Fair is about 1 shot in 3 saved (B16).'),
         donel('Real moment highlights toggle inside the rebuild switch?', 'Harry, 19 Oct', 'Keep. He asked for it (DATA-2).'),
         donel('Delete raw downloaded data after use?', 'Harry, 20 Oct', 'Done for B3&rsquo;s 1.2 GB. The rule is in data/opendata/README.md.'),
@@ -96,12 +108,9 @@ def build_index(urls, nopen):
             '<li><a href="https://claude.ai/artifact/1gVoLFwG57QCn7xiU8Tudk" target="_blank" rel="noopener">Everything in this round</a> (the big page with every question).</li>'
             '<li><a href="https://claude.ai/artifact/H9wzT9zXjACDLM1uCtzQwd" target="_blank" rel="noopener">Admin home and Team board</a>.</li>'
             '<li><a href="https://claude.ai/artifact/CcMzZbGf3G4fYVervtMV48" target="_blank" rel="noopener">New-look admin pages</a> (30 pages, before and after).</li></ul></div>')
-    still = (soon('B12 Vision training', 'Rebuilt as real pass decisions: &ldquo;Who should I pass to?&rdquo;, someone offside, less time, and a real kick inside 0.3 seconds.', 'still building') +
-             soon('B2 Highlights phase 3', 'Players already moving when your chance starts, behind the switch. Engine OK given (20 Oct). No report yet.', 'next', 'p-amb') +
+    still = (soon('B2 Highlights phase 3', 'Players already moving when your chance starts, behind the switch. Engine OK given (20 Oct). No report yet.', 'next', 'p-amb') +
              soon('B10 Headers and volleys', 'Back on, with the ball in the air and a shadow signal. Engine OK given (20 Oct). No report yet. Run one at a time.', 'next', 'p-amb'))
     queued = ('<h3 class="grp">Queued from your 20 Oct feedback</h3><div class="qlist"><ul>'
-              '<li><b>B13 Fixes.</b> A pass over all fixture dates; XP Rewards &ldquo;Failed to fetch&rdquo;; the chat bubble over &ldquo;Next line &rsaquo;&rdquo;; the Team board push count; the &ldquo;GitHub refused the site&rsquo;s key&rdquo; line.</li>'
-              '<li><b>B7b Training editor.</b> Drag and drop like the gallery. No &ldquo;your skills&rdquo; slider: a level plays with the skill you would have after the levels before it. Pace needs a real skill element.</li>'
               '<li><b>B9b.</b> The Lower League Trophy gets its own screen.</li>'
               '<li><b>B14 Running after a chance</b> (after B2 and B10). WASD and Shift on a PC, a stamina bar, auto run, and team-mates passing back to you.</li>'
               '<li><b>B15 Player of the Month cards.</b> Headshots from our 3D model, not the old drawn heads.</li>'
@@ -113,9 +122,9 @@ def build_index(urls, nopen):
 <div class="wrap">
 <header>
   <span class="ver">LAST 2 DAYS · 19&ndash;20 OCT 2026</span>
-  <h1>15 pages of patch notes. Read each one, then press Read and understood.</h1>
+  <h1>18 pages of patch notes. Read each one, then press Read and understood.</h1>
   <p class="status"><i></i>The 19 Oct pages are on main. The overnight pages are on the Harry branch, not live.</p>
-  <p class="sub">One page per build, in three tabs. Each page is its own version in Admin &rarr; Patch notes: v0.60 to v0.74. This index is v0.75.</p>
+  <p class="sub">One page per build, in three tabs. Each page is its own version in Admin &rarr; Patch notes: v0.60 to v0.74, then v0.76 to v0.78. This index is v0.75.</p>
   <div class="chips"><a class="chip hot" href="#ok">{n_open} open &darr;</a><a class="chip" href="#ok">{n_done} decided</a><a class="chip" href="#how">How this works</a></div>
 </header>
 
@@ -125,13 +134,13 @@ def build_index(urls, nopen):
 
 <h2 class="nxt"><i></i>THE PAGES</h2>
 <div class="tabs" role="tablist" aria-label="Patch notes">
-  <button class="tab" role="tab" data-p="p-night" aria-selected="true">Overnight 20 Oct <small>9</small></button>
+  <button class="tab" role="tab" data-p="p-night" aria-selected="true">Overnight 20 Oct <small>12</small></button>
   <button class="tab" role="tab" data-p="p-19" aria-selected="false">19 Oct <small>6</small></button>
-  <button class="tab" role="tab" data-p="p-still" aria-selected="false">Still building <small>3</small></button>
+  <button class="tab" role="tab" data-p="p-still" aria-selected="false">Still building <small>2</small></button>
 </div>
 <section class="panel" id="p-night" role="tabpanel"><p class="snote">Built overnight on the Harry branch. Not live.</p><div class="cards">{night}</div></section>
 <section class="panel" id="p-19" role="tabpanel"><p class="snote">The 19 Oct round. On main since 20 Oct (PR #744), except where a page says otherwise.</p><div class="cards">{d19}</div>{also}</section>
-<section class="panel" id="p-still" role="tabpanel"><p class="snote">No page yet. Each appears here when its build is done.</p><div class="cards">{still}</div>{queued}</section>
+<section class="panel" id="p-still" role="tabpanel"><p class="snote">No page yet. Each appears here when its build is done. B12, B7b and B13 are done and moved to the Overnight tab.</p><div class="cards">{still}</div>{queued}</section>
 
 <footer>20 Oct 2026. Every fact comes from the builders&rsquo; reports, the 19 Oct patch notes, and Harry&rsquo;s answers file. Pictures are stills taken while checking the work.</footer>
 </div>

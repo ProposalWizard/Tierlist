@@ -3,9 +3,12 @@
 import html, os, shutil, json
 from PIL import Image
 
-BASE = '/home/user/Tierlist/.claude/worktrees/agent-a15a091b696101da6/docs/handoffs/2026-10-20-builds'
-SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src')
-OUT = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.abspath(__file__))
+# docs/handoffs/2026-10-20-builds (this file lives in .../pn/generator). Paths fixed 20 Oct: they used to point at an old scratchpad.
+BASE = os.path.normpath(os.path.join(HERE, '..', '..'))
+SRC = os.path.join(HERE, 'src')
+# Built pages go here. Set PN_OUT to write somewhere else (the scratchpad), so no built pages land in the repo by accident.
+OUT = os.environ.get('PN_OUT') or HERE
 
 CSS = """
   /* Layout: one column, stacked cards, stills under their text. Tokens first, then components. */
@@ -185,6 +188,7 @@ CSS = """
   .clip .look{font-size:13px;color:var(--ink2);margin:0 0 7px}
   .clip .look b{color:var(--ink)}
   .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px}
+  .clip.ph{max-width:390px;margin-left:auto;margin-right:auto}
   /* --- tabs (index) --- */
   .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
   .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink2);font:inherit;font-size:13.5px;font-weight:800;padding:8px 13px;border-radius:999px;cursor:pointer;min-height:40px}
@@ -245,15 +249,15 @@ class Page:
         return ('<figure class="%s"><img src="img/%s" alt="%s" width="%d" height="%d" loading="lazy">'
                 '<figcaption>%s</figcaption></figure>') % (cls, pub, esc(plain), w, h, cap)
 
-    def video(self, name, poster, look, cap):
-        """A short clip: <video controls playsinline muted>, with a still as the poster."""
+    def video(self, name, poster, look, cap, phone=False):
+        """A short clip: <video controls playsinline muted>, with a still as the poster. phone=True caps the width at 390 px on a wide screen."""
         src = self._find(name)
         psrc = self._find(poster)
         if all(poster != u[0] for u in self.used): self.used.append((poster, psrc))
         if all(name != c[0] for c in self.clips): self.clips.append((name, src))
-        return ('<figure class="clip"><p class="look"><b>Look for:</b> %s</p>'
+        return ('<figure class="clip%s"><p class="look"><b>Look for:</b> %s</p>'
                 '<video controls playsinline muted preload="metadata" poster="img/%s" src="clips/%s"></video>'
-                '<figcaption>%s</figcaption></figure>') % (look, poster, name, cap)
+                '<figcaption>%s</figcaption></figure>') % (' ph' if phone else '', look, poster, name, cap)
 
     @staticmethod
     def figs(items, wide=False, pair=False):
