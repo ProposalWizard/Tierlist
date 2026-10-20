@@ -76,6 +76,8 @@ export const AIR_LATERAL: Readonly<Record<string, number>> = { header: 10, volle
 
 /** Nobody drawn stands on the ball (m). */
 export const BALL_CLEAR_M = 1.0;
+/** Two drawn men closer than this are the same man drawn twice (m): corner 8107 has two defenders 0.1 m apart. */
+export const SAME_SPOT_M = 0.3;
 
 const hyp = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 
@@ -117,13 +119,17 @@ export function derivedAirDrawings(kind: string, source: (kind: string) => Match
         if (others.some((m) => m.y < line - 0.01 && m.y < ball.y - 0.01)) continue;
         // You first, the crosser second (chanceMaker puts the builder's own
         // crosser there), then everyone else as drawn.
-        const players: ScenarioPlayer[] = [
+        const listed: ScenarioPlayer[] = [
           { id: "you", side: "you", x: man.x, y: man.y, label: "YOU" },
           { id: "crosser", side: "teammate", x: Math.min(Math.max(crosser.x, CROSSER_IN_M), 68 - CROSSER_IN_M), y: Math.max(crosser.y, CROSSER_IN_M), label: "CROSSER" },
           ...others.map((m) => ({ ...m })),
           ...defs.map((d) => ({ ...d })),
           { ...gk },
         ];
+        // Two men drawn on the very same spot are one man (a slip in the
+        // drawing: byline cross 7605 has SUP at (45.6, 6.5) twice). Kept once,
+        // so the picture never shows two bodies on top of each other.
+        const players = listed.filter((p, i) => !listed.slice(0, i).some((q) => hyp(p, q) < SAME_SPOT_M));
         out.push({
           id: `air-${kind}-${ms.id}-${man.id}`,
           name: `${kind} off ${ms.name || ms.id}`,

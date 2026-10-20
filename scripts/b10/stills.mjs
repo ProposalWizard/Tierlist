@@ -107,9 +107,11 @@ if (ONLY.has("buildup") || ONLY.has("clip")) {
   }
   console.log("build-up:", JSON.stringify(built));
   if (built && ONLY.has("buildup")) {
-    // The cross is the last ~1.5 s of the build-up: catch it in the air.
+    // The cross is the build-up's last pass: catch it at the top of its flight.
+    const t0 = Date.now();
     await until(page, async () => !!(await label(page)), 5000);
-    await wait(Math.max(300, (built.durS - 1.0) * 1000));
+    const top = built.last ? (built.last.t0 + built.last.t1) / 2 : built.durS - 1.0;
+    await wait(Math.max(200, top * 1000 - (Date.now() - t0)));
     await shot(page, "b10-buildup-cross");
     await until(page, async () => !(await label(page)), 8000);
     await wait(300);
@@ -117,6 +119,26 @@ if (ONLY.has("buildup") || ONLY.has("clip")) {
   }
   if (built && ONLY.has("clip")) {
     await stop(page);
+    // A header that goes at goal (the marker wins some headers and heads it
+    // clear: that is the engine's aerial duel). Each chance replays exactly,
+    // so try it once off camera, and move on until one goes goalward.
+    for (let i = 0; i < 8; i++) {
+      await page.locator(".ih-play").first().click();
+      await until(page, async () => (await phase(page)) === "aim" && !(await label(page)), 15000);
+      await wait(300);
+      await aimAndRelease(page, 75);
+      await wait(250);
+      await tapBall(page, -0.35);
+      const g = await page.evaluate(() => globalThis.__starMatch?.goal?.());
+      const b0 = await page.evaluate(() => globalThis.__starMatch?.ball?.());
+      await wait(500);
+      const b1 = await page.evaluate(() => globalThis.__starMatch?.ball?.());
+      const goalward = g && b0 && b1 && Math.hypot(b1.x - g.x, b1.y - g.y) < Math.hypot(b0.x - g.x, b0.y - g.y) - 5;
+      console.log("try", i, goalward ? "at goal" : "away from goal");
+      await stop(page);
+      if (goalward) break;
+      await next(page);
+    }
     const t0 = Date.now();
     await page.evaluate(() => { globalThis.__starLastBuildUp = null; });
     await page.locator(".ih-play").first().click();
@@ -129,8 +151,9 @@ if (ONLY.has("buildup") || ONLY.has("clip")) {
     await aimAndRelease(page, 75);
     await wait(250);
     await tapBall(page, -0.35);
-    await wait(1700);
+    await wait(1900);
     await stopRec(r, `${OUT}/b10-header-from-buildup.mp4`, { holdEnd: 0.2 });
+    console.log("clip: after the header the screen says:", await page.evaluate(() => document.querySelector(".kib-pop")?.textContent ?? "(nothing)"));
   }
   console.log("build-up errors:", errors.length ? errors.slice(0, 3) : "none");
   await browser.close();
