@@ -20,6 +20,7 @@ import {
 } from "./logic";
 import { withAck, type AckKind, type ReadMarks, type TeamAck } from "./extras";
 import { markerJobId, markerTitle, parseJobs, type JobsRead, type TeamJob } from "./jobs";
+import { ringAfter, ringNewJobs } from "./push";
 
 export interface TeamRoomState {
   status: "idle" | "loading" | "ready" | "missing" | "signedOut" | "error";
@@ -105,7 +106,10 @@ async function loadJobs() {
     if (!r.ok) throw new Error(String(r.status));
     const j = (await r.json()) as JobsRead;
     if (j.problems?.length) console.warn("Team jobs:", j.problems.join(" "));
-    set({ jobs: parseJobs(j.jobs), jobsFrom: j.from === "github" ? "github" : "bundled" });
+    const jobs = parseJobs(j.jobs);
+    set({ jobs, jobsFrom: j.from === "github" ? "github" : "bundled" });
+    // New pushed jobs ring their owners' phones (once each; the site checks).
+    if (!demo) ringNewJobs(jobs);
   } catch {
     set((s) => (s.jobsFrom === "github" ? {} : { jobs: parseJobs(BUNDLED_JOBS), jobsFrom: "bundled" }));
   }
@@ -294,6 +298,8 @@ async function insert<T extends { id: number }>(table: string, key: "messages" |
   const { data, error } = await sb.from(table).insert(row).select().single();
   if (error) return fail(error, plain);
   set((s) => ({ [key]: upsertById(s[key] as unknown as T[], data as T) }) as Partial<TeamRoomState>);
+  // An @name, a reply, a point or a job given: ring their phone (lib/teamRoom/push.ts).
+  if (table === "team_messages" || table === "team_tasks") ringAfter(table, data as Record<string, unknown>);
   return { ok: true };
 }
 

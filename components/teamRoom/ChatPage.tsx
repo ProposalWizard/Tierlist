@@ -5,6 +5,9 @@
  * right. On a phone it is just the chat, with "Waiting on me" and the pins
  * folded above it. While it is on screen the corner bubble hides (it would
  * open the same chat).
+ *
+ * The phone notifications switch sits on top (PushToggle). A buzz opens this
+ * tab on its message (?tab=chat&m=<id> → `jumpTo`).
  */
 import { useEffect, useState } from "react";
 import { TEAM_PEOPLE } from "@/lib/teamRoom/config";
@@ -12,15 +15,16 @@ import { stamp } from "@/lib/teamRoom/logic";
 import { quoteLine, waitingOnMe } from "@/lib/teamRoom/extras";
 import { setChatPageOpen, setPinned, useTeamRoom } from "@/lib/teamRoom/store";
 import { Av, ChatThread, RoomGate, WaitingOnMe } from "./parts";
+import PushToggle from "./PushToggle";
 
-export default function ChatPage() {
+export default function ChatPage({ jumpTo }: { jumpTo?: number | null }) {
   useEffect(() => { setChatPageOpen(true); return () => setChatPageOpen(false); }, []);
-  return <div className="tr"><RoomGate><Room /></RoomGate></div>;
+  return <div className="tr"><RoomGate><Room first={jumpTo ?? null} /></RoomGate></div>;
 }
 
-function Room() {
+function Room({ first }: { first: number | null }) {
   const s = useTeamRoom();
-  const [jump, setJump] = useState<number | null>(null);
+  const [jump, setJump] = useState<number | null>(first);
   const goTo = (id: number) => { setJump(null); setTimeout(() => setJump(id), 0); };
   const pins = s.messages.filter((m) => m.pinned).reverse();
   const waiting = waitingOnMe(s.messages, s.me, s.marks, s.acks).length;
@@ -35,6 +39,7 @@ function Room() {
     ));
   return (
     <>
+      <div className="tr-pushbar"><PushToggle /></div>
       {waiting > 0 && <details className="tr-mobile-pins" open><summary>@ Waiting on me · {waiting}</summary><div style={{ marginTop: 6 }}><WaitingOnMe onJump={goTo} /></div></details>}
       <details className="tr-mobile-pins"><summary>📌 Pinned · {pins.length}</summary><div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>{pinList}</div></details>
       <div className="tr-page">

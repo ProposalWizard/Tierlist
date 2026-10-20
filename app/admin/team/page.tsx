@@ -2,7 +2,9 @@
  * app/admin/team/page.tsx — the team board (Harry, 18 Oct 2026).
  *
  * Admins only (TB-Q4). ?tab=notes opens the Patch notes tab; &v=0.55 opens
- * that version. ?tab=ideas | chat | todo opens that part of the Team room. A local dev build lets everyone in, like AdminOnly.
+ * that version. ?tab=ideas | chat | todo opens that part of the Team room;
+ * ?tab=chat&m=<id> opens the chat on that message (where a phone notification
+ * lands). A local dev build lets everyone in, like AdminOnly.
  *
  * The Team area is the admin's home (Harry, 20 Oct 2026): every way into the
  * admin lands here, on the Team board. A tester has no Team room and goes to
@@ -20,7 +22,7 @@ import TeamBoard from "./TeamBoard";
 export const metadata: Metadata = { title: "Team board", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-export default async function TeamPage({ searchParams }: { searchParams?: { tab?: string; v?: string } }) {
+export default async function TeamPage({ searchParams }: { searchParams?: { tab?: string; v?: string; m?: string } }) {
   if (!offlineDevPlayEnabled()) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -33,7 +35,7 @@ export default async function TeamPage({ searchParams }: { searchParams?: { tab?
   const tab = t === "notes" || t === "ideas" || t === "chat" || t === "todo" ? t : "team";
   return (
     <>
-      <TeamBoard initialTab={tab} initialVersion={searchParams?.v} />
+      <TeamBoard initialTab={tab} initialVersion={searchParams?.v} initialMessage={Number(searchParams?.m) > 0 ? Number(searchParams?.m) : null} />
       <PageGuide page="/admin/team" />
     </>
   );

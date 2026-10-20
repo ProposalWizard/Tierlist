@@ -56,6 +56,8 @@ SENTRY_PROJECT=                    # optional, enables source-map upload at buil
 SENTRY_AUTH_TOKEN=                 # optional, enables source-map upload at build time
 STAR_SAVE_GUARD=observe            # observe (default) | enforce | off — Star Career save checks, lib/star/saveGuard.ts
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=      # Google sign-in id for the admin Videos recorder's Drive upload (lib/recording.ts); unset = recordings only download
+TEAM_PUSH_PRIVATE_KEY=             # Team room phone notifications: the private half of the key pair, Vercel only, never in git; unset = notifications off (lib/teamRoom/notifyServer.ts)
+NEXT_PUBLIC_TEAM_PUSH_KEY=         # optional: the public half; leave unset (lib/teamRoom/config.ts has it built in). Set only with a new private key, as a pair
 ```
 
 Both PostHog and Sentry are wired to no-op cleanly when their env vars are unset — missing `NEXT_PUBLIC_POSTHOG_KEY` disables analytics entirely, missing `NEXT_PUBLIC_SENTRY_DSN` disables error reporting entirely, neither throws or blocks the build. `NEXT_PUBLIC_POSTHOG_KEY` is safe to commit/expose client-side by design (same class of value as a GA measurement ID) but kept in env vars here for consistency with everything else in this table.
