@@ -6,3 +6,6 @@
 - Lag test: the pill sits on the scoreboard during a 2D match (score hidden while it's at the top; ⇅ moves it). OK?
 - Team jobs: the tick boxes look stretched tall on a phone (older jobs too) — fix in the next round?
 - Patch notes: the 0.90 page notes the job line in older screenshots says "Settings → Developer tools → Lag test"; the job now says ⚙ → 🛠 Dev → Start lag test (fixed in the merged copy) — no question, just a note.
+- B2b: offsides called in build-ups: 0.37 a match at even strength (costs ~0.5 chances and 0.09 goals a match; real football ~0.6 per side a match, only some in a chance). Keep, or lower?
+- B2b: "OFFSIDE" shows twice (boxed overlay + banner) — the real match does this too (read in code, not seen). Show it once everywhere?
+- B2b: making a build-up now takes 169–232 ms for the slowest 1 in 100 (was 83–149 ms). OK, or speed it up?
