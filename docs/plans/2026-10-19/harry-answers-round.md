@@ -98,3 +98,15 @@ the BUILD it belongs to (list at the bottom).
 ## B12 — Vision training rebuilt (Harry, 20 Oct, morning)
 "the vision skill is horrendous. It's cluttered, and the skill gap doesn't increase. I don't like the line on the pitch. Instead, what would be an actual good vision skill would be real scenarios: Who should I pass to in this scenario? Have someone offside. Lessen the time. Maybe even make them actually kick the ball. Why are we just tapping? Maybe … early on you tap, then you actually have to kick the ball inside 0.3 seconds. You have to actually aim and kick the ball. We can do better with vision. That doesn't look interesting at all."
 Note (not a build yet): "I also don't like how it's in the old 2D style. All of these images in the training." → every training drill should move to the new match look later.
+
+## Harry's answers + feedback on the overnight pages (20 Oct, morning)
+Decided: Lower League Trophy cash prize KEEP ("pretty cool"). In-match mute/Touch/Power button sizes: YES (done). Wembley change: KEEP. 3D garden/house/shop/3D training keep their own back button; everything else on the one arrow. The bubble covering 11 px of "Let's go" (admin/test page only): fine. Default admin look = Clean light ("he [Mikey] preferred that") — done. Google Drive / downloaded data: delete raw downloads after use (done for B3's 1.2 GB; rule in data/opendata/README.md).
+New builds from the feedback:
+- PN: patch notes for the last 2 days, split into tabs (overnight B1/B4/B7/B9/B11/B3 + yesterday's admin round + everything else), a section explaining this patch-notes style, and each one in the admin patch-notes archive so everyone acknowledges every tab ("push this all through into that new admin build").
+- B13 Fixes: full pass over ALL fixture dates for clashes (not only the FA Cup Round of 64); admin fixes seen in the stills (XP Rewards "Failed to fetch"; chat bubble over "Next line ›" in the Manager's Office); Team board "Harry's push count looks wrong"; the "GitHub refused the site's key" line.
+- B7b Training editor: drag and drop like the gallery (move the ball, cones, men; Save); explain/replace the "your skills" sliders; Pace needs a real skill element.
+- B9b Lower League Trophy gets its own screen like Mikey's FA Cup / international ones.
+- B14 Running after a chance: WASD + Shift to sprint on PC, a stamina bar on PC and phone, auto run (Harry likes it), and team-mates sometimes pass back to you even before you're captain. (Match/dribble files → red guard asks.)
+- B15 Player of the Month and similar cards: headshots shot from our 3D model, not the old 2D drawn heads ("looks unprofessional").
+- B16 Keepers in the 3D minigames (Wembley, 3D training) feel overpowered — measure and rebalance. NOTE: B1 raised Wembley's keeper 36 → 70; check against this.
+- B17 A PC match layout like the five-a-side test area (pitch + live radar beside it), as a test area first, ideally in 3D ("the way the ball's moving across the pitch is very cool").

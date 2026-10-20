@@ -39,9 +39,13 @@ if (["Edit", "Write", "MultiEdit", "NotebookEdit"].includes(tool)) {
   hit = ENGINE.test(f);
   drift = !hit && DRIFT.test(f);
 } else if (tool === "Bash") {
-  // Quoted text (a commit message, an echo) only mentions the file; ignore it.
-  const cmd = (ti.command ?? "").replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, "\"\"");
-  const writes = /(sed\s+-i|perl\s+-i|>\s*[^&]|\btee\b|\brm\b|\bmv\b|\bcp\b|python|git\s+(checkout|restore|rm|apply|am)|truncate|patch\b)/;
+  // Quoted text in a commit message or an echo only MENTIONS the file, so it
+  // is ignored there. Anywhere else (a python/node script, a heredoc) a quoted
+  // path is a real edit target (20 Oct 2026: a python heredoc slipped past).
+  const raw = ti.command ?? "";
+  const onlyMentions = /^\s*(git\s+commit|echo|printf)\b/.test(raw);
+  const cmd = onlyMentions ? raw.replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, "\"\"") : raw;
+  const writes = /(sed\s+-i|perl\s+-i|>\s*[^&]|\btee\b|\brm\b|\bmv\b|\bcp\b|python|node\s+-e|<<|\.write|writeFile|git\s+(checkout|restore|rm|apply|am)|truncate|patch\b)/;
   hit = ENGINE.test(cmd) && writes.test(cmd);
   drift = !hit && DRIFT.test(cmd) && writes.test(cmd);
 }

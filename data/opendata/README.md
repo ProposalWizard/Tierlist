@@ -143,3 +143,6 @@ python3 -I scripts/opendata/reduce_soccertrack.py STV2              # ~30 s
   Wyscout, IDSSE and the A-League SkillCorner files; the two new tracking files
   are not in them yet (a different level of football and a camera-biased
   shape: a choice for whoever tunes the build-ups).
+
+## Delete raw downloads after use (Harry, 20 Oct 2026)
+"When we're pulling things in through Google Drive data sources, we need to make sure that we're then clearing that data afterwards, because we're then eating up our data." Raw downloads go outside the repo (e.g. /tmp/claude-0/<name>raw) and are DELETED as soon as the reduced pattern files are committed. Note the source URLs in LICENCES.md so they can be fetched again.

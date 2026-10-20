@@ -44,10 +44,12 @@ function write(key: string, v: string) {
   try { window.dispatchEvent(new Event(EVENT)); } catch { /* server */ }
 }
 
-/** Never chosen = Broadcast, the newest pick (Harry, 19 Oct 2026). */
+/** Never chosen = Clean light (Harry, 20 Oct 2026: "the default look on the
+ *  admin should be the clean light, because I think he [Mikey] preferred
+ *  that"). Anyone who picked a look keeps it. */
 export const getAdminLook = (): AdminLook => {
   const v = read(LOOK_KEY);
-  return v === "ops" || v === "light" || v === "bento" ? v : "broadcast";
+  return v === "ops" || v === "broadcast" || v === "bento" ? v : "light";
 };
 export const setAdminLook = (l: AdminLook) => write(LOOK_KEY, l);
 /** On unless switched off: today's admin tab was always there for admins. */
@@ -66,5 +68,5 @@ function usePref<T>(get: () => T, fallback: T): T {
   return v;
 }
 
-export const useAdminLook = () => usePref(getAdminLook, "broadcast" as AdminLook);
+export const useAdminLook = () => usePref(getAdminLook, "light" as AdminLook);
 export const useAdminMode = () => usePref(getAdminMode, true);
