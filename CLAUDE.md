@@ -487,6 +487,8 @@ merge. Every deploy comes with patch notes. "Preview" (game version) is used
 only when someone asks for it in those words; otherwise a change goes straight
 into the game when it is deployed.
 
+**No body part inside another (Harry, 20 Oct 2026).** *"as a rule something like a chin or any body part can't overlap inside another body part."* In 3D, no part of a person may pass into another part (chin into chest, arms into the torso, hands into hips, knees or feet through each other), in any clip or pose. Measure it with the self-overlap check, not by eye alone.
+
 **3D sizes never change (Harry, 12 Oct 2026).** *"no changes in size for any
 player or goalie or goal should ever occur."* In 3D, every man, the keeper and
 the goal each have ONE fixed scale, the same in every chance and every frame.
