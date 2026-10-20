@@ -38,7 +38,9 @@
  *   one-on-one is offered when the match says the move is a break ("They
  *   lose it — you break on them"), and in settled play only 1 time in 10
  *   (SETTLED_ONE_ON_ONE); otherwise the middle of the box is a tight angle. A pass that comes back to you can still put you through.
- *   Volleys and headers stay switched off (switchedOffKinds.ts).
+ *   Volleys and headers are back on (B10, 20 Oct 2026): with no drawings of
+ *   their own they are played off the team's cross drawings (airDrawings.ts,
+ *   through authoredChance's playPool).
  *
  * canvasEngine.ts is not touched. Kinds with fewer than 5 drawings are made
  * by the builder and the chance formula, as before.
@@ -526,7 +528,7 @@ function stableIndex(ids: string[], key: number): number {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The kinds a request offers. Volleys and headers stay switched off, and a
+ * The kinds a request offers. Switched-off kinds come out (none today), and a
  * one-on-one is on offer when the move is a break (the hidden match's
  * "transition" pattern) — and, in settled play, only SETTLED_ONE_ON_ONE of
  * the time. A dribble's own request is separate: it becomes the first-person
@@ -663,7 +665,8 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     kind = src.kind;
     plan = src.plan ?? null;
   }
-  // A switched-off kind (volley, header) is swapped before it is ever shown.
+  // A switched-off kind is swapped before it is ever shown (none today: B10
+  // switched headers and volleys back on).
   if (isSwitchedOff(kind)) {
     kind = playableKind(kind, rng);
     plan = null;

@@ -56,8 +56,9 @@ import { PITCH_W, CX, HALF_LEN } from "./pitch";
 // Note on crosses: in every drawn cross and cutback YOU are the man on the
 // ball at the byline (measured: 0 of 200 drawn crosses, 2 of 200 cutbacks
 // have you in the middle). So their build-up ends with the ball reaching YOU
-// out wide. A cross with you in the middle would be the header / volley
-// kinds, which are switched off (switchedOffKinds.ts).
+// out wide. A cross with you in the middle is the header / volley kinds (back
+// on, B10): their build-up is the Full highlights rebuild's, ending with the
+// cross in the air to you (fhr/buildUp.ts).
 export const BUILD_UP_KINDS: Partial<Record<ScenarioKind, number>> = {
   one_on_one: 1,
   long_range: 0.5,
