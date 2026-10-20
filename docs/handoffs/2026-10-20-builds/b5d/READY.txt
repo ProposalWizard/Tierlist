@@ -1,0 +1,32 @@
+B5d: a cartoon body for our cartoon faces (20 Oct 2026)
+
+Sheet: options-sheet.jpg (phone-size tiles). Clip: walk-options.mp4 (3.6 s, all four side by side).
+Body views with the measures: body-fronts-curls.jpg, body-fronts-buzz.jpg.
+
+How: no new body and no head graft. Today's own Style A bodies (Curls and Buzz & beard) re-shaped in
+Blender. The head is today's head, moved and scaled as one piece, so the face, its paint and shading
+are today's. One mesh, so no neck seam. The man stays 1.86 m (one fixed size).
+
+Columns: TODAY | A today's body grown up | B slim athlete | C hero V (my pick).
+                     today   A      B      C
+Heads tall (Curls)   5.1     6.0    6.5    6.3
+Heads tall (Buzz)    5.7     6.1    6.6    6.4
+Shoulders (Curls)    0.53 m  0.49   0.48   0.53
+Legs, share of height 47%    51%    53%    52%
+Hip joint            0.88 m  0.95   0.98   0.96
+Hand                 0.18 m  0.18   0.21   0.20
+Chest depth          0.26 m  0.24   0.21   0.22
+
+Checked:
+- Collarbones level in the bind pose: 0 degrees on all of them.
+- No body part inside another in the bind pose: clear on all 8 bodies (measured, B5c's overlap check).
+- In the clips every body, today's too, has arms into the hips and feet touching: that comes from the
+  clips (B5c's job). Curls, deepest: walk, hand into thigh 10.0 cm today -> 7.7 / 7.0 / 5.1 (A / B / C);
+  idle, arm into side 5.1 -> 4.8 / 3.5 / 4.2. Worse: idle, boot into boot 2.9 -> 5.1 / 5.9 / 5.5 cm
+  (longer legs in the same stance; Buzz: 0 -> 0 / 1.1 / 0).
+- Same skeleton, so every clip plays (10 clips run in the overlap check; idle, walk and the cut scenes seen).
+  Kit paint and skin tones work (seen). The moving face uses today's measured face, carried exactly.
+Not changed in the game: test pages only, with ?bodies=d1 / d2 / d3.
+Honest: the head is 16-22% smaller than today on screen, so in full-body shots (Home) the face is
+smaller too. Close-ups frame the man the same way, so the face is a little smaller there as well.
+A pale line behind the jaw (today has it too) shows a little more on the longer neck.

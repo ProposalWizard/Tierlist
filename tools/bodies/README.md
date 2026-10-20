@@ -56,3 +56,44 @@ Notes
   writes what each triangle reads and `paint_atlas.py` paints the picture in numpy.
 - `tools/modeltest/fit.py` takes `FIT_CROTCH` when the ray would find a shorts hem, not the crotch.
 - Higgsfield items made for B: `docs/handoffs/2026-10-20-builds/b5b/higgsfield.md`.
+
+## B5d: a cartoon body for our cartoon faces (20 Oct 2026)
+
+Harry (20:15): "nah the b2 + today's face is ass, gotta try and keep our cartoon like faces." So no new
+body and no head graft: TODAY's own Style A bodies (Curls `p1`, Buzz & beard `p3`), re-shaped in Blender
+by `reshape.py` into a stylised cartoon athlete. One mesh, so no neck seam; the head is today's head moved
+and scaled as one piece (`RS_RIGIDHEAD=1`), so the face, its paint and its shading are today's.
+See them with `?bodies=d1|d2|d3` (test pages only). Sheet: `docs/handoffs/2026-10-20-builds/b5d/`.
+
+| Set | What | Heads tall (bench) |
+|-----|------|-----|
+| `d1` | A: today's body grown up: same chunky shapes, longer thighs, a less boxy chest | ~6.0 |
+| `d2` | B: slim stylised athlete: slimmer limbs and trunk, narrow hips, longer arms | ~6.5 |
+| `d3` | C: hero V: broad natural shoulders, narrow hips, long legs, hands a touch bigger | ~6.3 |
+
+New reshape.py dials (all default "no change", so B5b's commands still remake B5b's bodies):
+`RS_RIGIDHEAD=1` the head moves as one piece; `RS_SHIN` the shin's own stretch (then `legs` is the
+thigh's: today's bodies are short in the thigh, not the shin); `RS_CHESTD_FROM` where the chest
+flattening starts above the hip joint. Today's runtime dials (head 1.1, neck 1.25, hands 0.88) are BAKED
+into these files (head factor x1.1, `RS_NECK=1.25`, `RS_HANDS` x0.88) and the file says `look: 1,1,1`,
+as bodyGuide.mts asks of a judged body. `TOON_HEIGHT` (build_toon_bodies.py) keeps the man today's height (bench: 1.863 m Curls, 1.861 m Buzz).
+
+```bash
+S=<scratch>   # human_s.glb as tools/modeltest/README.md says; p1/fit.glb, p3/fit.glb = fit.py on tools/modeltest/pN/gen.glb, yaw -90
+export RS_RIGIDHEAD=1 RS_CHESTD_FROM=0.07 RS_NECK=1.25
+# d1 (Curls; the Buzz head takes head 1.1 / 1.056 / 1.078 so every head lands at the same heads-tall)
+RS_SHIN=1.13 RS_HANDS=0.88 RS_CHESTD=0.94 blender -b --python tools/bodies/reshape.py -- $S/p1/fit.glb $S/d1/fit.glb 0.99 1.6 1.12 0.006 0.97 0.98 1.06 1.04
+# d2
+RS_SHIN=1.2 RS_FOREARM=0.86 RS_HANDS=0.968 RS_CHESTD=0.86 … reshape.py -- $S/p1/fit.glb $S/d2/fit.glb 0.946 1.9 1.2 0.012 1.0 0.92 0.9 0.88
+# d3
+RS_SHIN=1.16 RS_FOREARM=0.94 RS_HANDS=0.95 RS_CHESTD=0.9 RS_HEADBACK=0.01 … reshape.py -- $S/p1/fit.glb $S/d3/fit.glb 0.968 1.75 1.18 0.01 1.1 0.9 0.96 0.97
+TOON_HEIGHT=1.851 python3 scripts/people3d/build_toon_bodies.py $S d1:d1/fit.glb      # Buzz: 1.849, tag d1-h3
+# the file's chin carried from today's (the build's own chin estimate lands on the neck clamp on a smaller
+# head) and look 1,1,1; then its moving face carried exactly:
+python3 tools/bodies/patch_chin.py public/star/people3d/toon-p1.glb public/star/people3d/toon-d1.glb
+python3 tools/bodies/carry_face.py h1 public/star/people3d/toon-p1.glb public/star/people3d/toon-d1.glb …
+node scripts/perf3d/shrink-models.mjs star/people3d/toon-d1.glb …   # POLICY lines are in
+```
+`patch_chin.py`: extras.face.chinY = Head - (Head - chin)_today x k, k = the head's scale
+(head_end - Head, new over today's), and extras.look = {head 1, neck 1, hands 1}. `carry_face.py` does
+the same carry for the moving face's landmarks (faceFileLandmarks.ts).

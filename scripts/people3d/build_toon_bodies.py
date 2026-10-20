@@ -32,7 +32,7 @@ from build_people3d import smooth_normals, srgb_to_lin  # noqa: E402
 SRC = sys.argv[1] if len(sys.argv) > 1 else "."
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "..", "public", "star", "people3d")
-HEIGHT = 1.83
+HEIGHT = float(os.environ.get("TOON_HEIGHT", "1.83"))  # B5d: a body with the head dial baked in is scaled to today's full height
 TEX = int(os.environ.get("TOON_TEX", "1024"))  # 2048 for the higher-detail heads (sharper faces)
 MASK = 512
 
