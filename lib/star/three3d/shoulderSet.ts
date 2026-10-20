@@ -26,12 +26,70 @@
  *      would go in, the whole arm turns about the shoulder just enough to come
  *      out, the way a real arm swings round the hip; the turn is spread over
  *      the frames around it (dilate, then blur), so the swing stays smooth.
- * The legs, the spine, the head, the hand's own pose and the clip's timing
+ * Without the posture (POSTURE below, for the standing and walking clips) the legs, the spine, the head, the hand's own pose and the clip's timing
  * are untouched. Pure apart from the clip it rewrites.
  */
 import type * as THREE from "three";
 
 type Three = typeof import("three");
+
+/**
+ * POSTURE (B5c, Harry 23:21: "whyyyy is the posture so weird, there has to be a
+ * solution"). Measured from the side on our own skeleton (tools/motionref/sagittal.mts)
+ * and with the same detector on the 28 reference videos and on our renders
+ * (tools/motionref/posture.py): the capture idle stands with the head 7.6 cm
+ * ahead of the shoulders, the shoulders 5.6 cm ahead of the hips, the hips 6.3 cm
+ * ahead of the ankles (the whole man leaning on his toes) and the relaxed knee
+ * bent 27° with the hips not over the standing leg. A real man stands near the
+ * plumb line: ear over shoulder over hip, hips a little ahead of the ankles, the
+ * standing knee soft, the hips shifted over the standing leg.
+ * Before the shoulders and arms, at every key of a standing or walking clip
+ * (POSTURE_CLIPS; never a dive, a sit or a kick), each a ceiling only: a pose
+ * already inside it is left alone, so it settles once and stays (every body):
+ *   0a. STILL CLIPS: the hips go back over the feet (at most HIP_FWD of the torso
+ *       ahead of the ankles), over the standing leg (SHIFT of the way), and up
+ *       until the standing knee is soft, not bent (KNEE_STANCE); both legs are
+ *       solved back onto their own feet (the feet do not move).
+ *   0b. CHEST UP: the shoulders over the hips (at most SH_FWD of the torso ahead;
+ *       walking SH_FWD_MOVE), the turn spread up the spine.
+ *   0c. HEAD BACK: the head's middle over the shoulders (HEAD_FWD), the neck
+ *       taking it back, the head keeping where it looks (a tucked chin, not a
+ *       raised one).
+ *   0d. SHOULDERS BACK: a collarbone rolled forward of its bind place goes back.
+ *   and, in 2, a standing man's hanging arm is held a little out from his side
+ *   (ARM_OUT), by his thigh rather than in front of it (HAND_FWD), with the
+ *   elbow softer (ELBOW).
+ */
+export const POSTURE = {
+  /** Ceilings, as shares of the torso (hip joints to shoulder joints). */
+  HEAD_FWD: 0.12, HEAD_FWD_MOVE: 0.14,
+  SH_FWD: 0.08, SH_FWD_MOVE: 0.12,
+  HIP_FWD: 0.02,
+  /** The standing knee, degrees (straighter is left alone). */
+  KNEE_STANCE: 6,
+  /** The hips this share of the way over the standing foot (from between the feet). */
+  SHIFT: 0.3,
+  /** A collarbone this far (metres) forward of its bind place before it is taken back. */
+  CLAV_FWD: 0.01,
+  /** Standing, a hanging arm's elbow is bent at least this (real people: 17-22 deg, ours 13), degrees. */
+  ELBOW: 18,
+  /** Standing still, a hanging upper arm is at least this far out from his side, seen from the front, degrees
+   * (real people hold the arms out more than ours did: 15-20 deg against 7-10, measured the same way). */
+  ARM_OUT: 9,
+  /** Standing still, the hands at most this far (metres) ahead of the hip joints: a real arm hangs by the
+   * thigh, not in front of it (the capture idle: 14.6 cm ahead). */
+  HAND_FWD: 0.07,
+};
+/** The clips the posture is for (standing, talking, walking). Not the emotional slumps, dives, sits, kicks or hugs. */
+export const POSTURE_CLIPS = new Set([
+  "idle", "boss-idle", "boss-talk", "boss-wave", "wave", "talk", "nod", "point", "applause", "handshake", "shirt_hold",
+  "walk", "walk_confident", "dealer_idle", "bartender_idle", "pickup",
+]);
+/** Of those, the ones standing still (the legs and hips are set too). */
+export const STILL_CLIPS = new Set([
+  "idle", "boss-idle", "boss-talk", "boss-wave", "wave", "talk", "nod", "point", "applause", "handshake", "shirt_hold",
+  "dealer_idle", "bartender_idle",
+]);
 
 /** Collarbone lift allowed with the arm straight up (a real shrug), degrees; none with the arm below ARM_SHRUG_FROM. */
 export const SHRUG_MAX = 22;
@@ -86,11 +144,13 @@ export function shoulderBodyOf(T: Three, inner: THREE.Object3D, bones: Record<st
   // the middle finger's root, when the body has fingers: the hand's own line (a fist or a bent wrist)
   const mid = { L: bones.LeftHandMiddle1 ? "LeftHandMiddle1" : null, R: bones.RightHandMiddle1 ? "RightHandMiddle1" : null };
   const LEGS = ["LeftUpLeg", "LeftLeg", "LeftFoot", "RightUpLeg", "RightLeg", "RightFoot", "Head"].filter((n) => bones[n]);
+  // the toes (which way his feet point: his front, for the posture)
+  const TOES = ["LeftToeBase", "RightToeBase"].filter((n) => bones[n]);
   if (need.some((n) => !bones[n])) return null;
   inner.updateMatrixWorld(true);
   // the chain: every ancestor of the needed bones up to the hips
   const set = new Set<string>();
-  for (const n of [...need, ...LEGS, ...[mid.L, mid.R].filter((x): x is string => !!x)]) { let b: THREE.Object3D | null = bones[n]; while (b && (b as THREE.Bone).isBone) { set.add(b.name); if (b.name === NAMES.hips) break; b = b.parent; } }
+  for (const n of [...need, ...LEGS, ...TOES, ...[mid.L, mid.R].filter((x): x is string => !!x)]) { let b: THREE.Object3D | null = bones[n]; while (b && (b as THREE.Bone).isBone) { set.add(b.name); if (b.name === NAMES.hips) break; b = b.parent; } }
   const order: string[] = [];
   const visit = (o: THREE.Object3D) => { if (set.has(o.name) && (o as THREE.Bone).isBone) order.push(o.name); o.children.forEach(visit); };
   visit(bones[NAMES.hips]);
@@ -224,7 +284,7 @@ const settled = new WeakMap<THREE.AnimationClip, string>();
  * and forearm quaternion tracks. Returns what it measured, or null when the
  * clip has no arm tracks or was already settled for this body.
  */
-export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip): SettleReport | null {
+export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip, opts: { posture?: boolean } = {}): SettleReport | null {
   if (settled.get(clip) === sb.key) return null;
   const n = sb.order.length;
   const idx = (s: string) => sb.order.indexOf(s);
@@ -267,6 +327,128 @@ export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip
   const d2r = Math.PI / 180;
   const hipsBindInv = sb.hipsBind.clone().invert(), chestBindInv = sb.chestBind.clone().invert();
   void hipsBindInv; void chestBindInv;
+
+  // ── 0. POSTURE (see POSTURE at the top) ──
+  const legI = (s: "Left" | "Right") => ({ up: idx(`${s}UpLeg`), leg: idx(`${s}Leg`), foot: idx(`${s}Foot`), toe: idx(`${s}ToeBase`) });
+  const LG = { L: legI("Left"), R: legI("Right") };
+  const iHead = idx("Head");
+  const spineI = ["Spine02", "Spine01", NAMES.chest].map(idx).filter((i) => i >= 0);
+  // the posture once, on the first body (settle_clips.mts): set per body, each would move it again under the others' cleared arms
+  const doPosture = !!opts.posture && POSTURE_CLIPS.has(clip.name) && LG.L.foot >= 0 && LG.R.foot >= 0 && LG.L.toe >= 0 && LG.R.toe >= 0 && iHead >= 0 && !!sb.head;
+  const still = doPosture && STILL_CLIPS.has(clip.name);
+  const topInv = sb.top.clone().invert();
+  const headBindInv = sb.bindM.Head ? sb.bindM.Head.clone().invert() : null;
+  const sstep = (a: number, b: number, x: number) => { const u = Math.max(0, Math.min(1, (x - a) / (b - a))); return u * u * (3 - 2 * u); };
+  const mid2 = (a: number, b: number) => P(a).add(P(b)).multiplyScalar(0.5);
+  /** His own frame this pose: up, front (where his toes point), across (to his left), and the joints. */
+  const body = () => {
+    const up = new T.Vector3(0, 1, 0);
+    const across = P(LG.L.up).sub(P(LG.R.up)); across.y = 0; across.normalize();
+    const fwd = new T.Vector3().crossVectors(across, up).normalize();
+    const toes = P(LG.L.toe).sub(P(LG.L.foot)).add(P(LG.R.toe).sub(P(LG.R.foot))); toes.y = 0;
+    if (fwd.dot(toes) < 0) { fwd.negate(); across.negate(); }
+    const hip = mid2(LG.L.up, LG.R.up), ank = mid2(LG.L.foot, LG.R.foot), sh = mid2(ix.L.arm, ix.R.arm);
+    const head = headBindInv ? sb.head!.c.clone().applyMatrix4(headBindInv).applyMatrix4(Wm[iHead]) : P(iHead);
+    return { up, fwd, across, hip, ank, sh, head, torso: Math.max(0.2, sh.distanceTo(hip)) };
+  };
+  // the bind pose's hip height and each collarbone's forward place against the neck
+  for (let i = 0; i < n; i++) { lq[i].copy(sb.restQ[i]); lp[i].copy(sb.restPos[i]); }
+  fk();
+  const bindHipY = doPosture ? mid2(LG.L.up, LG.R.up).y : 1;
+  const clavFwd0 = { L: 0, R: 0 };
+  if (doPosture) { const f = body(); for (const s of ["L", "R"] as const) clavFwd0[s] = P(ix[s].arm).sub(P(iN)).dot(f.fwd); }
+  const kneeOf = (g: { up: number; leg: number; foot: number }) => 180 - P(g.up).sub(P(g.leg)).angleTo(P(g.foot).sub(P(g.leg))) / d2r;
+  /** Turn bone i about a world axis by ang, the way that makes score() smaller (tries both). */
+  const turnLess = (i: number, axis: THREE.Vector3, ang: number, score: () => number) => {
+    const s0 = score();
+    turnWorld(i, new T.Quaternion().setFromAxisAngle(axis, ang)); fk(i);
+    if (score() > s0) { turnWorld(i, new T.Quaternion().setFromAxisAngle(axis, -2 * ang)); fk(i); }
+  };
+  /** Two bones (thigh, shin) back onto a foot place: knee in the plane it was in, the foot keeping its turn. */
+  const legOnto = (g: { up: number; leg: number; foot: number }, F: THREE.Vector3, footQ: THREE.Quaternion, pole: THREE.Vector3) => {
+    const A = P(g.up), K = P(g.leg), Fn = P(g.foot);
+    const a = A.distanceTo(K), b = K.distanceTo(Fn);
+    const to = F.clone().sub(A); const d0 = to.length(); to.divideScalar(d0);
+    const d = Math.max(Math.abs(a - b) + 1e-4, Math.min(a + b - 1e-4, d0));
+    const ca = Math.max(-1, Math.min(1, (a * a + d * d - b * b) / (2 * a * d))), sa = Math.sqrt(1 - ca * ca);
+    const pn = pole.clone().addScaledVector(to, -pole.dot(to)).normalize();
+    const K2 = A.clone().addScaledVector(to, a * ca).addScaledVector(pn, a * sa);
+    turnWorld(g.up, new T.Quaternion().setFromUnitVectors(K.clone().sub(A).normalize(), K2.clone().sub(A).normalize())); fk(g.up);
+    const K3 = P(g.leg);
+    turnWorld(g.leg, new T.Quaternion().setFromUnitVectors(P(g.foot).sub(K3).normalize(), F.clone().sub(K3).normalize())); fk(g.leg);
+    lq[g.foot].copy(parentWQ(g.foot).invert().multiply(footQ)).normalize(); fk(g.foot);
+  };
+  const posture = (): number => {
+    if (!doPosture) return 0;
+    let f = body();
+    const wU = sstep(0.82, 0.92, f.hip.y / bindHipY) * sstep(Math.cos(40 * d2r), Math.cos(25 * d2r), P(iN).sub(f.hip).normalize().y);
+    if (wU <= 0) return 0;
+    // 0a. still: the hips back over the feet, over the standing leg, the standing knee soft
+    if (still) {
+      const feet = { L: P(LG.L.foot), R: P(LG.R.foot) }, footQ = { L: WQ(LG.L.foot), R: WQ(LG.R.foot) };
+      const pole = { L: P(LG.L.leg).sub(f.hip), R: P(LG.R.leg).sub(f.hip) };
+      const kb = { L: kneeOf(LG.L), R: kneeOf(LG.R) };
+      const stance: "L" | "R" = kb.L <= kb.R ? "L" : "R";
+      const relaxed = kb.L - kb.R > 6 || kb.R - kb.L > 6;
+      const shift = new T.Vector3();
+      const ahead = f.hip.clone().sub(f.ank).dot(f.fwd) - POSTURE.HIP_FWD * f.torso;
+      if (ahead > 0) shift.addScaledVector(f.fwd, -ahead);
+      if (relaxed) {
+        const want = feet[stance].clone().sub(f.ank).dot(f.across) * POSTURE.SHIFT, now = f.hip.clone().sub(f.ank).dot(f.across);
+        if (Math.abs(want) > Math.abs(now) && Math.sign(want) === Math.sign(want - now)) shift.addScaledVector(f.across, want - now);
+      }
+      // the height: the standing knee at KNEE_STANCE at most (or as it is, if straighter)
+      const g = LG[stance];
+      const a = P(g.up).distanceTo(P(g.leg)), b = P(g.leg).distanceTo(P(g.foot));
+      const kn = Math.min(kb[stance], POSTURE.KNEE_STANCE) * d2r;
+      const dWant = Math.sqrt(a * a + b * b + 2 * a * b * Math.cos(kn));
+      const hs = P(g.up).add(shift), hor = Math.hypot(hs.x - feet[stance].x, hs.z - feet[stance].z);
+      if (dWant > hor) shift.y = feet[stance].y + Math.sqrt(dWant * dWant - hor * hor) - P(g.up).y;
+      // never so high the other leg cannot reach its foot (knee 3° at least)
+      const o: "L" | "R" = stance === "L" ? "R" : "L", go = LG[o];
+      const ao = P(go.up).distanceTo(P(go.leg)), bo = P(go.leg).distanceTo(P(go.foot));
+      const dMax = Math.sqrt(ao * ao + bo * bo + 2 * ao * bo * Math.cos(3 * d2r));
+      const ho = P(go.up).add(shift), horO = Math.hypot(ho.x - feet[o].x, ho.z - feet[o].z);
+      if (dMax > horO) shift.y = Math.min(shift.y, feet[o].y + Math.sqrt(dMax * dMax - horO * horO) - P(go.up).y);
+      shift.multiplyScalar(wU);
+      if (shift.lengthSq() > 1e-8) {
+        const hw = P(iH).add(shift);
+        lp[iH].copy(hw.applyMatrix4(topInv)); fk();
+        legOnto(LG.L, feet.L, footQ.L, pole.L);
+        legOnto(LG.R, feet.R, footQ.R, pole.R);
+      }
+      f = body();
+    }
+    // 0b. chest up: the shoulders over the hips, the turn spread up the spine
+    const shMax = (still ? POSTURE.SH_FWD : POSTURE.SH_FWD_MOVE) * f.torso;
+    const shAhead = () => mid2(ix.L.arm, ix.R.arm).sub(mid2(LG.L.up, LG.R.up)).dot(f.fwd);
+    const e = shAhead() - shMax;
+    if (e > 0.002 && spineI.length) {
+      const ang = Math.atan2(e, f.torso) * wU;
+      spineI.forEach((i, j) => turnLess(i, f.across, ang * [0.4, 0.3, 0.3][j], shAhead));
+    }
+    // 0c. head back over the shoulders: the neck takes it back, the head keeps where it looks
+    const hdMax = (still ? POSTURE.HEAD_FWD : POSTURE.HEAD_FWD_MOVE) * f.torso;
+    const hdAhead = () => { const b2 = body(); return b2.head.clone().sub(b2.sh).dot(f.fwd); };
+    const e2 = hdAhead() - hdMax;
+    if (e2 > 0.002) {
+      const headQ = WQ(iHead);
+      const len = Math.max(0.08, body().head.distanceTo(P(iN)));
+      turnLess(iN, f.across, Math.atan2(e2, len) * wU, hdAhead);
+      lq[iHead].copy(parentWQ(iHead).invert().multiply(headQ)).normalize(); fk(iHead);
+    }
+    // 0d. a collarbone rolled forward goes back (the upper arm keeps where it points)
+    for (const s of ["L", "R"] as const) {
+      const c = ix[s];
+      const fw = () => P(c.arm).sub(P(iN)).dot(f.fwd);
+      const e3 = fw() - clavFwd0[s] - POSTURE.CLAV_FWD;
+      if (e3 <= 0) continue;
+      const armW = WQ(c.arm), lev = Math.max(0.05, P(c.arm).distanceTo(P(c.clav)));
+      turnLess(c.clav, new T.Vector3(0, 1, 0), Math.atan2(e3 + 0.5 * POSTURE.CLAV_FWD, lev) * wU, fw);
+      lq[c.arm].copy(parentWQ(c.arm).invert().multiply(armW)).normalize(); fk(c.clav);
+    }
+    return wU;
+  };
 
   // how deep a world point goes into the torso (0: outside), and the outward way, on this pose
   const toBindH = new T.Matrix4(), toBindC = new T.Matrix4(), fromBindH = new T.Matrix4(), fromBindC = new T.Matrix4();
@@ -363,10 +545,16 @@ export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip
   const out: Record<string, number[]> = {};
   const writeBones = [ix.L.clav, ix.L.arm, ix.L.fore, ix.R.clav, ix.R.arm, ix.R.fore];
   for (const b of writeBones) out[sb.order[b]] = [];
+  // the posture's bones (0): the spine, neck and head; standing still, the hips and legs too
+  const postBones = !doPosture ? [] : [...spineI, iN, iHead, ...(still ? [iH, LG.L.up, LG.L.leg, LG.L.foot, LG.R.up, LG.R.leg, LG.R.foot] : [])].filter((i, j, a) => i >= 0 && a.indexOf(i) === j);
+  for (const b of postBones) out[sb.order[b]] = [];
+  const hipsOut: number[] = [];
   /** Per key, per side: the arm's push off the body, as a rotation vector in the chest's own frame. */
   const push: Record<"L" | "R", THREE.Vector3[]> = { L: [], R: [] };
   const local = { L: [] as THREE.Quaternion[][], R: [] as THREE.Quaternion[][] };
   let clavB = 0, clavA = 0, inB = 0;
+  /** The whole pose at each key after 0–2 (the arm turns of 3 go on top in the second pass). */
+  const snap: { q: THREE.Quaternion[]; p: THREE.Vector3[] }[] = [];
   const evalKey = (t: number) => {
     for (let i = 0; i < n; i++) {
       const q = qTr[i]; if (q) { const v = q.evaluate(t); lq[i].set(v[0], v[1], v[2], v[3]).normalize(); } else lq[i].copy(sb.restQ[i]);
@@ -376,6 +564,7 @@ export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip
   };
   for (let k = 0; k < K; k++) {
     evalKey(times[k]);
+    const wP = posture();
     const chest = P(iC), up = P(iN).sub(chest).normalize();
     const across = P(ix.L.arm).sub(P(ix.R.arm)).normalize();
     const fwd = across.clone().cross(up).normalize(); // his front
@@ -400,10 +589,16 @@ export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip
         fk(c.clav);
       }
       clavA += (Math.asin(Math.max(-1, Math.min(1, cl().dot(up)))) - sb.clav0[s]) / (2 * K);
-      // 2. a hanging arm's elbow never locked straight
+      // 2. standing still, a hanging arm a little out from his side (POSTURE.ARM_OUT)
+      if (still && wP > 0 && armUp < 35) {
+        const abd = () => { const u = P(c.fore).sub(P(c.arm)); return Math.atan2(Math.abs(u.dot(across)), -u.dot(up)) / d2r; };
+        const e4 = POSTURE.ARM_OUT - abd();
+        if (e4 > 0.5) turnLess(c.arm, fwd, e4 * d2r * wP, () => -abd());
+      }
+      // 2. a hanging arm's elbow never locked straight (softer standing: POSTURE.ELBOW)
       if (armUp < 60) {
         const el = P(c.arm).sub(P(c.fore)).angleTo(P(c.hand).sub(P(c.fore))) / d2r;
-        const want = 180 - ELBOW_SOFT;
+        const want = 180 - (wP > 0 ? ELBOW_SOFT + (POSTURE.ELBOW - ELBOW_SOFT) * wP : ELBOW_SOFT);
         if (el > want) {
           const before = P(c.hand).dot(fwd);
           turnWorld(c.fore, new T.Quaternion().setFromAxisAngle(across, (el - want) * d2r));
@@ -411,7 +606,14 @@ export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip
           if (P(c.hand).dot(fwd) < before) { turnWorld(c.fore, new T.Quaternion().setFromAxisAngle(across, -2 * (el - want) * d2r)); fk(c.fore); }
         }
       }
+      // standing still, the hand back beside the thigh (POSTURE.HAND_FWD), after the elbow has its bend
+      if (still && wP > 0 && armUp < 35) {
+        const hf = () => P(c.hand).sub(mid2(LG.L.up, LG.R.up)).dot(fwd);
+        const e5 = hf() - POSTURE.HAND_FWD;
+        if (e5 > 0.003) turnLess(c.arm, across, Math.atan2(e5, Math.max(0.3, P(c.hand).distanceTo(P(c.arm)))) * wP, hf);
+      }
     }
+    snap.push({ q: lq.map((q) => q.clone()), p: lp.map((v) => v.clone()) });
     // 3. the arms off the body: how far each arm must turn about its shoulder (kept for smoothing)
     framePose();
     const chestQ = WQ(iC), chestInv = chestQ.clone().invert();
@@ -457,8 +659,7 @@ export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip
   // apply and write
   let inA = 0;
   for (let k = 0; k < K; k++) {
-    evalKey(times[k]);
-    for (const s of ["L", "R"] as const) { const c = ix[s]; const [a, b, f] = local[s][k]; lq[c.clav].copy(a); lq[c.arm].copy(b); lq[c.fore].copy(f); }
+    for (let i = 0; i < n; i++) { lq[i].copy(snap[k].q[i]); lp[i].copy(snap[k].p[i]); }
     fk();
     const chestQ = WQ(iC);
     for (const s of ["L", "R"] as const) {
@@ -473,10 +674,18 @@ export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip
     framePose();
     for (const s of ["L", "R"] as const) inA = Math.max(inA, worstOf(s).d - CLEARANCE);
     for (const b of writeBones) { const q = lq[b]; out[sb.order[b]].push(q.x, q.y, q.z, q.w); }
+    for (const b of postBones) { const q = lq[b]; out[sb.order[b]].push(q.x, q.y, q.z, q.w); }
+    hipsOut.push(lp[iH].x, lp[iH].y, lp[iH].z);
   }
-  for (const b of writeBones) {
+  for (const b of [...writeBones, ...postBones]) {
     const name = `${sb.order[b]}.quaternion`;
     const tr = new T.QuaternionKeyframeTrack(name, times, out[sb.order[b]]);
+    const i = clip.tracks.findIndex((x) => x.name === name);
+    if (i >= 0) clip.tracks[i] = tr; else clip.tracks.push(tr);
+  }
+  if (still) {
+    const name = `${NAMES.hips}.position`;
+    const tr = new T.VectorKeyframeTrack(name, times, hipsOut);
     const i = clip.tracks.findIndex((x) => x.name === name);
     if (i >= 0) clip.tracks[i] = tr; else clip.tracks.push(tr);
   }
