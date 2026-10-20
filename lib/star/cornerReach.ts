@@ -1,4 +1,4 @@
-import { buildScenario, launch, stepBall, type KickSkills, type Scenario, type Vec2 } from "./canvasEngine";
+import { airCarry, buildScenario, type KickSkills, type Scenario, type Vec2 } from "./canvasEngine";
 import { mulberry32 } from "./season";
 import { CX, BOX_DEPTH } from "./pitch";
 
@@ -43,26 +43,12 @@ function emptyCorner(): Scenario {
   } as Scenario;
 }
 
-/** How far one delivery carries in the air towards the middle of the box. */
+/** How far one delivery carries in the air towards the middle of the box (the engine's own airCarry). */
 function carryOf(skills: KickSkills, cy: number): number {
   const sc = emptyCorner();
-  const from = { ...sc.ball };
-  const dx = BOX_MIDDLE.x - from.x, dy = BOX_MIDDLE.y - from.y;
+  const dx = BOX_MIDDLE.x - sc.ball.x, dy = BOX_MIDDLE.y - sc.ball.y;
   const L = Math.hypot(dx, dy);
-  const dir = { x: dx / L, y: dy / L };
-  // A random draw that makes the miskick noise zero: aim exactly.
-  const still = () => 0.9999999;
-  const ball = launch(sc, dir, 1, { cx: 0, cy }, skills, still);
-  let airborne = false;
-  let best = 0;
-  for (let t = 0; t < 6; t += 1 / 120) {
-    stepBall(ball, sc, still, 1 / 120);
-    const along = (ball.pos.x - from.x) * dir.x + (ball.pos.y - from.y) * dir.y;
-    if (ball.z > 0.3) airborne = true;
-    if (airborne && ball.z <= 0.15) return along; // first landing
-    best = Math.max(best, along);
-  }
-  return airborne ? best : 0;
+  return airCarry(sc, { x: dx / L, y: dy / L }, 1, cy, skills);
 }
 
 /** Your best corner, and whether it reaches the middle of the box. */

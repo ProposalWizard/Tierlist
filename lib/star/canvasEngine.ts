@@ -8355,3 +8355,27 @@ export const OUTCOME_TEXT: Record<Outcome, { text: string; kind: "goal" | "pass"
   // Neutral, same as `short`/`out` — never a shot or a pass, see creditChance.
   touchOn: { text: "Touch on!", kind: "neutral" },
 };
+
+/**
+ * HOW FAR A KICK CARRIES IN THE AIR (Mikey, 20 Oct 2026, for the corner rule
+ * in cornerReach.ts). Kicks `sc`'s ball along `dir` with the real `launch`
+ * and flies it with the real `stepBall` until it first comes down, returning
+ * the distance along `dir`. Read-only measurement: it lives here so no other
+ * file runs its own copy of the flight (scripts/one-engine-guard.mjs).
+ */
+export function airCarry(sc: Scenario, dir: Vec2, power: number, cy: number, skills: KickSkills): number {
+  const from = { ...sc.ball };
+  // A random draw that makes the miskick noise zero: aim exactly.
+  const still = () => 0.9999999;
+  const ball = launch(sc, dir, power, { cx: 0, cy }, skills, still);
+  let airborne = false;
+  let best = 0;
+  for (let t = 0; t < 6; t += 1 / 120) {
+    stepBall(ball, sc, still, 1 / 120);
+    const along = (ball.pos.x - from.x) * dir.x + (ball.pos.y - from.y) * dir.y;
+    if (ball.z > 0.3) airborne = true;
+    if (airborne && ball.z <= 0.15) return along; // first landing
+    best = Math.max(best, along);
+  }
+  return airborne ? best : 0;
+}
