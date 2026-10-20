@@ -18,6 +18,14 @@
  * knows the FA Cup quarter-final is week 22 in one should not have to relearn it
  * in the other.
  *
+ * Three exceptions since B13 (20 Oct 2026, Harry: "do a full pass over all
+ * the fixtures"), because the career has real dates and the Draft does not:
+ * the European final is week 36 (not 38), a Premier League club in Europe
+ * plays the cups on their own weekends (LEAGUE_CUP_SLOTS_IN_EUROPE,
+ * FA_CUP_SLOTS_IN_EUROPE), and the play-offs have their own days
+ * (PLAY_OFF_SLOTS). tests/star/fixtureClashes.mts plays every division and
+ * every competition and fails on any clash.
+ *
  * ── Why dates and not just weeks ──
  *
  * "Week 25" is a number in a fixture list. "Sat 14 Feb" is a season. The English
@@ -29,7 +37,7 @@
  * and euro.ts. This only decides when.
  */
 
-import { breakSaturdays } from "./intl/windows";
+import { breakSaturdays, seasonWindows } from "./intl/windows";
 
 // ── The slots ───────────────────────────────────────────────────────────────
 
@@ -96,7 +104,45 @@ export const EURO_KO_SLOTS_WITH_R32: CupSlot[] = [
   { round: "Quarter-Final", week: 32, leg: 2 },
   { round: "Semi-Final", week: 34, leg: 1 },
   { round: "Semi-Final", week: 35, leg: 2 },
-  { round: "Final", week: 38 },
+  // The final is the Tuesday after the FA Cup final (B13, 20 Oct 2026). It
+  // was week 38, the Draft's slot, which in a division that stops for
+  // international breaks is four weekends after the league: 1 June 2027,
+  // and inside FIFA's June window in some years. Week 36 is three days after
+  // the FA Cup final and always before the end of May.
+  { round: "Final", week: 36 },
+];
+
+/**
+ * A Premier League club in Europe plays both domestic cups on these weekends
+ * instead of LEAGUE_CUP_SLOTS / FA_CUP_SLOTS (B13, 20 Oct 2026).
+ *
+ * The plain tables put a cup Wednesday the day after a European Tuesday on
+ * four weekends (5, 22, 25, 28). The old fix pushed the tie a week later until
+ * it was clear, which found nowhere for the FA Cup quarter-final: it went from
+ * 22 to 24, the day after a Premier League Tuesday round. These are chosen so
+ * that no weekend holds two midweek games for a club in Europe:
+ *
+ *   Europe (Tue)   5 7 9 11 13 15 22 23 25 26 28 29 31 32 34 35 · final 36
+ *   League (Tue)   17 19 21 24
+ *   League Cup     3 8 16 · semi-final 27 and 33
+ *   FA Cup         2 6 12 · quarter-final 20 · semi-final 30
+ */
+export const LEAGUE_CUP_SLOTS_IN_EUROPE: CupSlot[] = [
+  { round: "Round of 32", week: 3 },
+  { round: "Round of 16", week: 8 },
+  { round: "Quarter-Final", week: 16 },
+  { round: "Semi-Final", week: 27, leg: 1 },
+  { round: "Semi-Final", week: 33, leg: 2 },
+  { round: "Final", week: POST_SEASON(1) },
+];
+
+export const FA_CUP_SLOTS_IN_EUROPE: CupSlot[] = [
+  { round: "Round of 64", week: 2 },
+  { round: "Round of 32", week: 6 },
+  { round: "Round of 16", week: 12 },
+  { round: "Quarter-Final", week: 20 },
+  { round: "Semi-Final", week: 30 },
+  { round: "Final", week: POST_SEASON(2) },
 ];
 
 /** Top eight: straight into the last sixteen. */
@@ -335,8 +381,14 @@ export type MatchDay = "saturday" | "tuesday" | "wednesday";
  * neither is referenced by CHAMPIONSHIP_LEAGUE_CUP_SLOTS/
  * CHAMPIONSHIP_FA_CUP_SLOTS, so every existing cup-round-to-weekend mapping
  * is unaffected.
+ *
+ * Weekend 2's Tuesday moved to weekend 1 (B13, 20 Oct 2026). The FA Cup
+ * Round of 64 is the Wednesday of weekend 2, so every club in these divisions
+ * played on Tuesday 25 August and again on Wednesday 26 August. The Tuesday
+ * after the opening Saturday is free of everything. Only rounds 2 and 3 swap
+ * days; every round from weekend 3 on keeps its weekend.
  */
-const CHAMPIONSHIP_MIDWEEK_WEEKS = [2, 6, 10, 14, 19, 24, 27, 33];
+const CHAMPIONSHIP_MIDWEEK_WEEKS = [1, 6, 10, 14, 19, 24, 27, 33];
 
 interface RoundSlot {
   /** The PLAYING weekend this round belongs to (1 = the opening weekend;
@@ -379,9 +431,20 @@ const CHAMPIONSHIP_ROUNDS: RoundSlot[] = buildRounds(MATCHWEEKS, CHAMPIONSHIP_MI
  * 19, 21 and 24, clear of every cup and European midweek), the Championship
  * twelve (clear of the cups and of Europe). League One and below play
  * through the breaks.
+ *
+ * The Championship's weekend-2 Tuesday moved to weekend 1 (B13, 20 Oct
+ * 2026), for the same reason as CHAMPIONSHIP_MIDWEEK_WEEKS above: it was the
+ * day before the FA Cup Round of 64. Its weekend-4 Tuesday moved to weekend
+ * 18 (early January), so a Championship club in Europe has a free midweek
+ * for the FA Cup Round of 32 (see faCupSlotsFor).
+ *
+ * A pre-break weekend (the last Saturday before a FIFA window) changes with
+ * the year — 5, 6, 10, 11, 28 or 29 — so a midweek on one of those weekends
+ * would fall inside the window. `fixtureDate` moves such a game to the
+ * Wednesday after the window instead (see `outOfBreak`).
  */
 const PREMIER_MIDWEEK_WEEKS = [17, 19, 21, 24];
-const CHAMPIONSHIP_BREAK_MIDWEEK_WEEKS = [2, 4, 6, 10, 14, 17, 19, 20, 21, 24, 27, 33];
+const CHAMPIONSHIP_BREAK_MIDWEEK_WEEKS = [1, 6, 10, 14, 17, 18, 19, 20, 21, 24, 27, 33];
 const PREMIER_ROUNDS: RoundSlot[] = buildRounds(MATCHWEEKS - PREMIER_MIDWEEK_WEEKS.length, PREMIER_MIDWEEK_WEEKS);
 const CHAMPIONSHIP_BREAK_ROUNDS: RoundSlot[] = buildRounds(
   CHAMPIONSHIP_MATCHWEEKS - CHAMPIONSHIP_BREAK_MIDWEEK_WEEKS.length, CHAMPIONSHIP_BREAK_MIDWEEK_WEEKS);
@@ -417,6 +480,8 @@ function lastLeagueWeekend(division: CareerDivision): number {
 function playingWeekendOf(week: number, division: CareerDivision, kind?: string): number {
   const league = !kind || kind === "league";
   const rounds = roundsFor(division);
+  const playOff = kind === "playoff" ? PLAY_OFF_DAYS.get(week) : undefined;
+  if (playOff) return lastLeagueWeekend(division) + playOff.weekendsAfter;
   if (kind !== "europe" && week > rounds.length) return lastLeagueWeekend(division) + (week - rounds.length);
   if (kind === "europe") return week;
   if (league || division !== "premier") {
@@ -502,7 +567,42 @@ export function fixtureDate(
     ? opening.getTime() + (week - 1) * 7 * DAY_MS
     : playingSaturday(year, playingWeekendOf(week, division, kind), division);
   const offset = day === "saturday" ? 0 : day === "tuesday" ? 3 : 4;
-  return new Date(saturday + offset * DAY_MS);
+  const date = saturday + offset * DAY_MS;
+  if (offset > 0 && week >= 1 && stopsForBreaks(division)) return new Date(outOfBreak(year, date));
+  return new Date(date);
+}
+
+/**
+ * A midweek game in the Premier League or the Championship that would fall
+ * inside a FIFA window is played on the Wednesday after the window instead
+ * (B13, 20 Oct 2026).
+ *
+ * The midweek follows its Saturday, and the last Saturday before a break is
+ * followed straight away by the window (it opens on the Monday). In 2026/27
+ * that put a Champions League night on Tue 10 November, two days before
+ * England played, and a Championship round on Tue 22 September. Which
+ * weekend is the last before a break moves with the year (5, 6, 10, 11, 28
+ * or 29), so this is decided on the real date, not in the tables.
+ *
+ * Every window ends on a Tuesday, so the Wednesday after it is 3 days after
+ * the last international (a Sunday) and 3 days before the next Saturday. No
+ * table puts a game on that Wednesday, and no club has two midweek games on
+ * one weekend (except a Championship club deep in Europe, the known limit in
+ * tests/star/fixtureClashes.mts), so nothing clashes with it.
+ */
+function outOfBreak(year: number, date: number): number {
+  // A career with no start year has no real dates (NaN): leave it alone.
+  // Without this the Wednesday search below never ended.
+  if (!Number.isFinite(date) || !Number.isFinite(year)) return date;
+  for (const w of seasonWindows(year)) {
+    if (w.kind === "jun") continue;
+    const start = w.start.getTime(), end = w.end.getTime();
+    if (!(date >= start && date <= end)) continue;
+    let t = end + DAY_MS;
+    for (let i = 0; i < 7 && new Date(t).getUTCDay() !== 3; i++) t += DAY_MS;
+    return t;
+  }
+  return date;
 }
 
 /**
@@ -559,6 +659,12 @@ export function dayFor(
   const rounds = roundsFor(division);
   if (league && week >= 1 && week <= rounds.length) return rounds[week - 1].day;
   if (league) return "saturday";
+  const playOff = kind === "playoff" ? PLAY_OFF_DAYS.get(week) : undefined;
+  if (playOff) return playOff.day;
+  // The Community Shield is the Saturday a week before the league starts, so
+  // a club that also plays the Super Cup (Tuesday) has two clear days between
+  // them. It was a Wednesday, the day after the Super Cup (B13).
+  if (week < 1 && kind !== "europe") return "saturday";
   if (isPostSeason(week, division)) return "saturday";
   if (kind === "europe") return "tuesday";
   return "wednesday";
@@ -651,9 +757,13 @@ export const CHAMPIONSHIP_LEAGUE_CUP_SLOTS: CupSlot[] = [
  * SAME real weekend as the Premier League's own new week-2 Round of 64
  * slot (FA_CUP_SLOTS above), matching this file's own existing convention
  * that every round mirrors the same real weekend in both divisions.
+ *
+ * Now round 3 (B13, 20 Oct 2026): the midweek round moved from weekend 2 to
+ * weekend 1, so weekend 2's Saturday is round 3. Same Wednesday as before
+ * (26 August 2026), but no longer the day after a Tuesday league round.
  */
 export const CHAMPIONSHIP_FA_CUP_SLOTS: CupSlot[] = [
-  { round: "Round of 64", week: 2 },        // weekend 2
+  { round: "Round of 64", week: 3 },        // weekend 2
   { round: "Round of 32", week: 6 },        // weekend 5
   { round: "Round of 16", week: 15 },       // weekend 12
   { round: "Quarter-Final", week: 27 },     // weekend 22
@@ -665,16 +775,38 @@ export const CHAMPIONSHIP_FA_CUP_SLOTS: CupSlot[] = [
  * THE PLAY-OFFS.
  *
  * Third through sixth, for the one promotion place the automatic two leave
- * behind: 3rd v 6th and 4th v 5th over two legs, then a single final. Played
- * after the league AND after both cup finals, which is the order the real
- * season runs in — the play-off final is the last match of the English
- * season, every year.
+ * behind: 3rd v 6th and 4th v 5th over two legs, then a single final. The
+ * play-off final is the last match of the English season, every year.
+ *
+ * The days (B13, 20 Oct 2026), counted from the last league Saturday (L):
+ *
+ *   L      last league round (Sat)
+ *   L+4    semi-final, first leg (Wed)      North/South: qualifier
+ *   L+7    League Cup final (Sat)
+ *   L+11   semi-final, second leg (Wed)     North/South: semi-final
+ *   L+14   FA Cup final (Sat)
+ *   L+21   play-off final (Sat)
+ *
+ * They were three Saturdays after the FA Cup final, which put the final on
+ * Sat 5 June 2027, after the end of May and, in some years, inside FIFA's
+ * June window (it opens on 29 May in 2028). L+21 is always before both. A
+ * club in the League Cup final, the FA Cup final and the play-offs has at
+ * least two clear days before every game, as real clubs do. The week numbers
+ * are unchanged; PLAY_OFF_DAYS says which day each one is.
  */
 export const PLAY_OFF_SLOTS: CupSlot[] = [
   { round: "Play-Off Semi-Final", week: CHAMPIONSHIP_POST_SEASON(3), leg: 1 },
   { round: "Play-Off Semi-Final", week: CHAMPIONSHIP_POST_SEASON(4), leg: 2 },
   { round: "Play-Off Final", week: CHAMPIONSHIP_POST_SEASON(5) },
 ];
+
+/** Each play-off week's day: how many weekends after the last league
+ *  Saturday, and which day of that week. See PLAY_OFF_SLOTS. */
+const PLAY_OFF_DAYS = new Map<number, { weekendsAfter: number; day: MatchDay }>([
+  [CHAMPIONSHIP_POST_SEASON(3), { weekendsAfter: 0, day: "wednesday" }],
+  [CHAMPIONSHIP_POST_SEASON(4), { weekendsAfter: 1, day: "wednesday" }],
+  [CHAMPIONSHIP_POST_SEASON(5), { weekendsAfter: 3, day: "saturday" }],
+]);
 
 /**
  * The League Cup stays exactly what it always was — a Premier League/
@@ -689,11 +821,22 @@ export const PLAY_OFF_SLOTS: CupSlot[] = [
  * competitions.ts's `seedCups`, which skips it outright when this returns
  * an empty list) — same as the National League already correctly had.
  */
-export function leagueCupSlotsFor(division: CareerDivision): CupSlot[] {
-  if (division === "premier") return LEAGUE_CUP_SLOTS;
+export function leagueCupSlotsFor(division: CareerDivision, inEurope = false): CupSlot[] {
+  if (division === "premier") return inEurope ? LEAGUE_CUP_SLOTS_IN_EUROPE : LEAGUE_CUP_SLOTS;
   if (division === "championship") return asRounds(LEAGUE_CUP_SLOTS, CHAMPIONSHIP_LEAGUE_CUP_SLOTS, division);
   return [];
 }
+
+/**
+ * A Championship club in Europe (a relegated cup winner) plays the FA Cup
+ * Round of 32 on weekend 4 instead of 5, the weekend of the first European
+ * night (B13, 20 Oct 2026). Everything else stays: such a club needs about 38
+ * midweeks and a season has 34, so a deep run in Europe and the cups still
+ * meets a clash (tests/star/fixtureClashes.mts lists them). Weekend 4's
+ * Tuesday league round moved to weekend 18 to make the room.
+ */
+const FA_CUP_WEEKENDS_CHAMPIONSHIP_IN_EUROPE: CupSlot[] = FA_CUP_SLOTS.map(s =>
+  s.round === "Round of 32" ? { ...s, week: 4 } : s);
 
 /**
  * The Premier League's cup weekends, as this division's round numbers: each
@@ -709,8 +852,12 @@ function asRounds(premier: CupSlot[], fallback: CupSlot[], division: CareerDivis
 }
 
 /** Every one of the five divisions enters the FA Cup (real life). */
-export function faCupSlotsFor(division: CareerDivision): CupSlot[] {
-  return division === "premier" ? FA_CUP_SLOTS : asRounds(FA_CUP_SLOTS, CHAMPIONSHIP_FA_CUP_SLOTS, division);
+export function faCupSlotsFor(division: CareerDivision, inEurope = false): CupSlot[] {
+  if (division === "premier") return inEurope ? FA_CUP_SLOTS_IN_EUROPE : FA_CUP_SLOTS;
+  if (division === "championship" && inEurope) {
+    return asRounds(FA_CUP_WEEKENDS_CHAMPIONSHIP_IN_EUROPE, CHAMPIONSHIP_FA_CUP_SLOTS, division);
+  }
+  return asRounds(FA_CUP_SLOTS, CHAMPIONSHIP_FA_CUP_SLOTS, division);
 }
 
 // ── The Lower League Trophy ─────────────────────────────────────────────────
@@ -729,7 +876,7 @@ export function inLowerLeagueTrophy(division: CareerDivision): boolean {
  * weekends: the tie is on that weekend's Wednesday.
  *
  * All five divisions play the same 46-round table (38 Saturdays, 8 Tuesdays
- * on weekends 2, 6, 10, 14, 19, 24, 27, 33) and the FA Cup on the Wednesdays
+ * on weekends 1, 6, 10, 14, 19, 24, 27, 33) and the FA Cup on the Wednesdays
  * of weekends 2, 5, 12, 22 and 30. These seven weekends are none of those,
  * so a Trophy tie never shares a day with a league or FA Cup game, and is
  * never the day after a Tuesday league round:
@@ -800,7 +947,10 @@ export function transferWindowFor(
   startYear: number, season: number, week: number,
   division: CareerDivision = "premier",
 ): TransferWindow {
-  const month = fixtureDate(startYear, season, week, "saturday", division).getUTCMonth(); // 0 = January
+  // The day this league round is really played (B13): a Championship
+  // Tuesday round that falls in a FIFA window is played on the Wednesday
+  // after it (fixtureDate), which can be the next month.
+  const month = fixtureDate(startYear, season, week, dayFor("league", week, division), division, "league").getUTCMonth(); // 0 = January
   if (month === 0) return "january";
   if (month === 7 || month === 8) return "summer";       // August, September
   return null;

@@ -30,6 +30,9 @@ export async function GET() {
     notes: BUILT_IN_PATCH_NOTES,
     token: process.env.GITHUB_TOKEN?.trim() || null,
     repo: process.env.GITHUB_REPO?.trim() || undefined,
+    // Vercel sets VERCEL=1. Anywhere else is a test build whose key (if any)
+    // came from the computer running it, so a refusal says that (B13).
+    where: process.env.VERCEL ? "live" : "local",
   });
   // Live bars (dev_status.sql). Missing table or no service key = "not switched on yet".
   let statusOn = false;

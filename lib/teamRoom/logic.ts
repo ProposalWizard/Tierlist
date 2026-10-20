@@ -109,6 +109,31 @@ export function pageLabel(path: string | null, names: Record<string, string>): s
   return last ? last.replace(/^star-/, "").replace(/-dev$/, "").replace(/-/g, " ") : "home";
 }
 
+/** Mark a page's own bottom-left control with this attribute and the chat
+ *  bubble sits just above it (B13, 20 Oct 2026). */
+export const BUBBLE_CLEAR = "data-bubble-clear";
+/** The bubble's size and its gap from the corner (px); ChatBubble uses these. */
+export const BUBBLE_SIZE = 40;
+export const BUBBLE_EDGE = 12;
+/** Gap between a marked control and the bubble (px). */
+const CLEAR_GAP = 8;
+
+/**
+ * How far up the bubble sits (px from the bottom): BUBBLE_EDGE, or just above
+ * the highest marked control under it. Never more than half the screen up.
+ */
+export function bubbleBottom(
+  left: number, viewH: number, marked: { left: number; right: number; top: number; bottom: number }[],
+): number {
+  let bottom = BUBBLE_EDGE;
+  for (const r of marked) {
+    if (r.right <= left || r.left >= left + BUBBLE_SIZE) continue;            // not under it, side to side
+    if (r.bottom <= viewH - BUBBLE_EDGE - BUBBLE_SIZE - CLEAR_GAP) continue;  // well above where it sits
+    bottom = Math.max(bottom, Math.round(viewH - r.top + CLEAR_GAP));
+  }
+  return Math.min(bottom, Math.round(viewH / 2));
+}
+
 /** Should the chat bubble show on this page? */
 export function bubbleOn(path: string, adminUrls: string[]): boolean {
   const p = path.split("?")[0].replace(/\/+$/, "") || "/";

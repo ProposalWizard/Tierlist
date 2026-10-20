@@ -31,7 +31,7 @@ const START_YEAR = 2027;
 const SEASON = 1;
 
 const champDate = (week: number, kind?: string) =>
-  fixtureDate(START_YEAR, SEASON, week, dayFor(kind, week, "championship"), "championship");
+  fixtureDate(START_YEAR, SEASON, week, dayFor(kind, week, "championship"), "championship", kind);
 
 // ── Forty-six rounds, eight of them midweek ─────────────────────────────────
 {
@@ -134,9 +134,18 @@ const champDate = (week: number, kind?: string) =>
   check(sf1.leg === 1 && sf2.leg === 2, "the semi-final is two legs");
   check(poFinal.round === "Play-Off Final" && poFinal.leg === undefined, "the final is one match");
 
-  const dates = PLAY_OFF_SLOTS.map(s => champDate(s.week, "cup").getTime());
+  // B13 (20 Oct 2026): the semi-final legs are the Wednesdays either side of
+  // the League Cup final, the final a week after the FA Cup final, so the
+  // play-offs finish in May. They used to be three Saturdays after the FA Cup
+  // final (the final on Sat 5 June 2027).
+  const dates = PLAY_OFF_SLOTS.map(s => champDate(s.week, "playoff").getTime());
+  const DAY = 86_400_000;
   check(dates.every(d => d > leagueEnd), "every play-off tie is after the league finishes");
-  check(dates.every(d => d > lcFinal && d > faFinal), "and after both cup finals");
+  check(dates[0] - leagueEnd >= 3 * DAY && Math.abs(dates[0] - lcFinal) >= 3 * DAY
+    && Math.abs(dates[1] - lcFinal) >= 3 * DAY && Math.abs(dates[1] - faFinal) >= 3 * DAY,
+    "two clear days between each play-off leg and the cup finals around it");
+  check(dates[2] > lcFinal && dates[2] > faFinal, "the final is after both cup finals");
+  check(new Date(dates[2]).getUTCMonth() === 4, `the play-off final is in May (${formatDate(new Date(dates[2]))})`);
   check(dates[0] < dates[1] && dates[1] < dates[2], "legs then final, in that order");
   check(PLAY_OFF_SLOTS.every(s => isPostSeason(s.week, "championship")),
     "and all three read as post-season");
