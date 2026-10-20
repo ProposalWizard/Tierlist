@@ -50,7 +50,7 @@
 .vx-dial { display: block; font-size: 13px; font-weight: 800; }
 .vx-dial > span { display: flex; justify-content: space-between; gap: 8px; }
 .vx-dial > span b { color: #cfe0ff; }
-.vx-dial input[type="range"] { width: 100%; height: 28px; accent-color: var(--bc-accent); }
+.vx-dial input[type="range"] { width: 100%; height: 36px; accent-color: var(--bc-accent); }
 .vx-colours { display: flex; gap: 14px; flex-wrap: wrap; }
 .vx-colours label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; }
 .vx-colours input { width: 46px; height: 36px; border: 1px solid var(--bc-line); border-radius: 3px; background: transparent; padding: 0; }
@@ -58,7 +58,7 @@
 .vx-ok { margin: 0; font-size: 13px; font-weight: 900; color: #6ee7b7; }
 
 .vx-check { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 12px; background: rgba(0, 0, 0, 0.3); border-radius: 3px; cursor: pointer; }
-.vx-check input { width: 22px; height: 22px; accent-color: var(--bc-accent); }
+.vx-check input { width: 30px; height: 30px; accent-color: var(--bc-accent); }
 .vx-check span { font-size: 14px; font-weight: 900; }
 .vx-match { margin: 0 -4px; }
 .vx-row { display: flex; flex-wrap: wrap; gap: 8px; }

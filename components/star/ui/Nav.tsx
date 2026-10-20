@@ -47,6 +47,8 @@ function Arrow({ side, a, compact = false }: { side: "left" | "right"; a: EdgeAr
       className={`kib-press relative flex ${compact ? "h-[22px]" : "h-[24px]"} min-w-0 items-center gap-1 px-1.5 text-white/80 ${side === "right" ? "flex-row-reverse text-right" : ""}`}
       style={{ background: "rgba(var(--sk-flat-rgb),.34)", borderRadius: 2, opacity: 0.74 }}
     >
+      {/* Phone fix: an invisible 40px-tall touch area; the arrow looks the same. */}
+      <span aria-hidden className="absolute -inset-x-1 -inset-y-[9px]" />
       <span className="text-white/70">{tri}</span>
       {a.icon != null && <span className={`shrink-0 leading-none ${compact ? "text-[11px]" : "text-[12px]"}`}>{a.icon}</span>}
       <span className={`min-w-0 truncate font-semibold uppercase leading-none tracking-wide ${compact ? "text-[9.5px]" : "text-[10.5px]"}`}>{a.label}</span>
@@ -182,7 +184,7 @@ export function HomeBar({ onActivate, label = "Home" }: { onActivate: () => void
           // A swipe up closes; a tap is the click above.
           if (up > 22) { swiped.current = true; onActivate(); }
         }}
-        className="grid h-[22px] w-[150px] touch-none place-items-center"
+        className="-my-[9px] grid h-[40px] w-[150px] touch-none place-items-center"
       >
         <span className="block h-[5px] w-[112px] rounded-full bg-white/85" style={{ transform: `translateY(${-lift}px)`, boxShadow: "0 0 6px rgba(255,255,255,.35)" }} />
       </button>

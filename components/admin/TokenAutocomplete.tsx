@@ -109,13 +109,13 @@ export default function TokenAutocomplete({
   };
 
   useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
+    const onDocClick = (e: PointerEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
+    document.addEventListener("pointerdown", onDocClick);
+    return () => document.removeEventListener("pointerdown", onDocClick);
   }, []);
 
   return (

@@ -1301,12 +1301,12 @@ function PowersPanel({
                   <input
                     type="color" value={design[side].shirt}
                     onChange={e => setDesign({ ...design, [side]: { ...design[side], shirt: e.target.value } })}
-                    className="w-5 h-5 rounded" title={`${side} shirt`}
+                    className="w-9 h-9 shrink-0 rounded" title={`${side} shirt`} aria-label={`${side} shirt colour`}
                   />
                   <input
                     type="color" value={design[side].trim}
                     onChange={e => setDesign({ ...design, [side]: { ...design[side], trim: e.target.value } })}
-                    className="w-5 h-5 rounded" title={`${side} trim`}
+                    className="w-9 h-9 shrink-0 rounded" title={`${side} trim`} aria-label={`${side} trim colour`}
                   />
                 </div>
               ))}

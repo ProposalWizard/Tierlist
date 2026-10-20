@@ -9083,7 +9083,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           <button
             onClick={toggleMuted}
             aria-label={muted ? "Unmute sound" : "Mute sound"}
-            className="px-2.5 flex items-center border-l border-white/10 text-white/80 hover:text-amber-300 transition"
+            className="min-w-[40px] px-2.5 flex items-center justify-center border-l border-white/10 text-white/80 hover:text-amber-300 transition"
           >
             {muted ? (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
@@ -9159,7 +9159,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           <button
             onClick={() => setTouchModeOn(t => !t)}
             aria-label={touchModeOn ? "Turn off Touch Mode" : "Turn on Touch Mode"}
-            className={`absolute top-2 right-2 z-30 pointer-events-auto flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-black tracking-wide shadow-lg transition ${
+            className={`absolute top-2 right-2 z-30 pointer-events-auto flex min-h-[36px] items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-black tracking-wide shadow-lg transition ${
               touchModeOn ? "bg-fuchsia-500 text-white" : "bg-gray-950/70 text-fuchsia-300 border border-fuchsia-500/50"
             }`}
           >
@@ -9204,7 +9204,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           <button
             onClick={() => setPowerArmed((v) => !v)}
             data-power-shot={powerArmed ? "on" : "off"}
-            className={`absolute left-2 bottom-2 z-30 pointer-events-auto rounded-lg px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wider border-2 shadow-lg ${
+            className={`absolute left-2 bottom-2 z-30 pointer-events-auto min-h-[36px] rounded-lg px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wider border-2 shadow-lg ${
               powerArmed ? "bg-amber-400 text-gray-950 border-amber-200" : "bg-gray-950/70 text-amber-300 border-amber-400/60"}`}
           >
             ⚡ Power shot{powerArmed ? " — on" : ""}

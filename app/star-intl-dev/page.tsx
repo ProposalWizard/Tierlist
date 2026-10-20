@@ -275,7 +275,7 @@ export default function IntlDevPage() {
   const profile = nationKitProfile(nation);
   const shown = nations.filter((n) => n.toLowerCase().includes(search.trim().toLowerCase()));
   const card = (label: string, v: Shot, line: string, main = false) => (
-    <div className="iw-card" tabIndex={0} onMouseEnter={() => setHot(v)} onFocus={() => setHot(v)}>
+    <div className="iw-card" tabIndex={0} onMouseEnter={() => setHot(v)} onFocus={() => setHot(v)} onPointerDown={() => setHot(v)}>
       <div className="iw-ct">{label}</div>
       <CardPicture key={`${v}-${nation}-${year}`} shot={v} nation={nation} label={label} done={done} hot={hot === v} />
       <div className="iw-cl">{line}</div>

@@ -293,17 +293,43 @@ function FixedCrop({ imageUrl, imageName, onCrop, onCancel, aspectRatio }: { ima
     [naturalSize, CROP_W, CROP_H]
   );
 
+  // Phone fix (20 Oct 2026): a phone has no mouse wheel. Two fingers now
+  // pinch the zoom; one finger still drags the picture.
+  const touches = useRef(new Map<number, { x: number; y: number }>());
+  const pinchStart = useRef<{ dist: number; zoom: number } | null>(null);
+  const fingerSpread = () => {
+    const [a, b] = Array.from(touches.current.values());
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  };
   function onPointerDown(e: React.PointerEvent) {
     e.preventDefault();
+    touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    if (touches.current.size === 2) {
+      pinchStart.current = { dist: fingerSpread(), zoom };
+      setDragging(false);
+      return;
+    }
     setDragging(true);
     dragStart.current = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y };
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }
   function onPointerMove(e: React.PointerEvent) {
+    if (touches.current.has(e.pointerId)) touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (touches.current.size === 2 && pinchStart.current && naturalSize && pinchStart.current.dist > 0) {
+      const minScale = Math.max(CROP_W / naturalSize.w, CROP_H / naturalSize.h);
+      const z = Math.max(minScale, Math.min(5, pinchStart.current.zoom * (fingerSpread() / pinchStart.current.dist)));
+      setZoom(z);
+      setOffset((prev) => clampOffset(prev.x, prev.y, z));
+      return;
+    }
     if (!dragging) return;
     setOffset(clampOffset(dragStart.current.ox + e.clientX - dragStart.current.x, dragStart.current.oy + e.clientY - dragStart.current.y, zoom));
   }
-  function onPointerUp() { setDragging(false); }
+  function onPointerUp(e: React.PointerEvent) {
+    touches.current.delete(e.pointerId);
+    if (touches.current.size < 2) pinchStart.current = null;
+    setDragging(false);
+  }
 
   useEffect(() => {
     const el = containerRef.current;
@@ -349,7 +375,7 @@ function FixedCrop({ imageUrl, imageName, onCrop, onCancel, aspectRatio }: { ima
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/92 backdrop-blur-sm p-4">
       <div className="mb-4 flex items-center gap-3 rounded-xl border border-gray-700 bg-gray-900 px-4 py-2.5">
-        <p className="text-sm text-white">Drag image to position · scroll to zoom</p>
+        <p className="text-sm text-white">Drag image to position · pinch or use the slider to zoom</p>
         <button onClick={applyCrop} disabled={!naturalSize || applying}
           className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40">
           {applying ? "Applying..." : "Apply Crop"}

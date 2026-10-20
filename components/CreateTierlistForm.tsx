@@ -303,8 +303,10 @@ export default function CreateTierlistForm() {
                       )}
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); removeImage(i); }}
-                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeImage(i); }}
+                      aria-label="Remove image"
+                      className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white opacity-0 shadow transition-opacity group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
                     >
                       ×
                     </button>
