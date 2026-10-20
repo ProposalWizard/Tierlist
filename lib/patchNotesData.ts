@@ -27,6 +27,224 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.87",
+      "title": "Harry's patch notes: B19 Team Is Home",
+      "publishedAt": "2026-10-20T15:40:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "B19 Team Is Home (20 Oct). Admins now land on the Team board (/admin/team) from the site's top menu Admin (it was Site content), Settings → Developer → Admin pages, the admin slide-out's top link (\"Admin & Dev · Team\"), the KIB Admin app (new /admin/home), a game home's back arrow and the old Admin breadcrumbs. Testers keep their home. The left menu puts Team first (Team board, Team chat, Ideas, My to-do, Patch notes), then Games, then Videos. Patch notes moved into the Team area. All four skins have the same layout. Reasoned only: the site menu's Admin link, what testers see, the live database path.",
+      "stats": [
+        {
+          "value": "6",
+          "label": "ways into admin that now land on the Team board"
+        },
+        {
+          "value": "5",
+          "label": "pages inside Team: board, chat, ideas, to-do, patch notes"
+        },
+        {
+          "value": "4",
+          "label": "skins with the same layout"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Admin in the site menu",
+              "detail": "As an admin, press Admin in the site's top menu. You land on the Team board (/admin/team). It used to be Site content."
+            },
+            {
+              "title": "Settings → Developer",
+              "detail": "Admin pages opens the Team board."
+            },
+            {
+              "title": "The slide-out",
+              "detail": "Its top link says \"Admin & Dev · Team\"."
+            },
+            {
+              "title": "The KIB Admin app",
+              "detail": "Admins go to the Team board. Testers go to the Ballon d'Or home. Everyone else goes to the site."
+            },
+            {
+              "title": "The back arrow",
+              "detail": "On a game's home it goes to the Team board."
+            },
+            {
+              "title": "The left menu",
+              "detail": "Team first. Inside it: Team board, Team chat, Ideas, My to-do, Patch notes. Then Games, then Videos."
+            },
+            {
+              "title": "Phone and folded menu",
+              "detail": "Team is first in both."
+            },
+            {
+              "title": "Site content",
+              "detail": "It is now at Website games → Tierlists."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Admins now land on the Team board",
+              "detail": "From Admin in the site's top menu (it was Site content), Settings → Developer → Admin pages, the admin slide-out's top link, the KIB Admin app (new /admin/home: admins to the Team board, testers to the Ballon d'Or home, others to the site), a game home's back arrow and the old Admin breadcrumbs. Testers keep their home."
+            },
+            {
+              "title": "The left menu puts Team first",
+              "detail": "Team has a people icon and is a solid bar while you are in the Team area. Inside it: Team board, Team chat, Ideas, My to-do, Patch notes. Then Games (Ballon d'Or, Website, Studio), then Other (Videos). In a game: Team (not lit), the game's home, then its groups. The folded menu and the phone menu also put Team first."
+            },
+            {
+              "title": "Patch notes moved into the Team area",
+              "detail": "The top of the Team room is a toggle: Board | Chat | Ideas | To-do."
+            },
+            {
+              "title": "All four skins have the same layout",
+              "detail": "Broadcast, Bento, Ops room and Clean light."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Phones that added the KIB Admin app may open the old home",
+              "detail": "Until the app is added again."
+            },
+            {
+              "title": "Site content moved",
+              "detail": "Site content (/admin) is now at Website games → Tierlists."
+            },
+            {
+              "title": "Not seen: the site menu's Admin link, what testers see, the live database path",
+              "detail": "Reasoned from the code only. The pictures are from a local build at 1440 × 900 and 390 × 844."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.86",
+      "title": "Harry's patch notes: B2 Highlights Rebuild: build-ups",
+      "publishedAt": "2026-10-20T15:40:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "B2 Highlights Rebuild: build-ups (20 Oct). A switch, Full highlights rebuild: Off | On, with a ? that lists 8 parts. It is in main Settings → Quick, on the pre-match line-up and in the match. On adds a build-up before open-play chances, longer ones at big moments, players already moving at hand-over, an extra defender when the defence is thin, and fouls before about half of free kicks and penalties. Chances and goals are unchanged: 5.81 chances and 2.31 goals a match over 500 matches, Off or On. The match engine file is unchanged. Reasoned only: the run-on stopping on an early kick, the whistle sound, the drag feel on a real phone.",
+      "stats": [
+        {
+          "value": "5.81 · 2.31",
+          "label": "chances and goals a match, the same Off or On (500 matches)"
+        },
+        {
+          "value": "6.4 s to 9.4 s",
+          "label": "build-up median, ordinary moment to a level final at 90'"
+        },
+        {
+          "value": "269 of 2,757",
+          "label": "open-play chances got an extra defender (9.8%)"
+        },
+        {
+          "value": "44 of 44",
+          "label": "fouls before set pieces made"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Find the switch",
+              "detail": "Settings → Quick: \"Full highlights rebuild: Off | On\" with a ?. Also a ⚙ on the pre-match line-up and the match ⚙."
+            },
+            {
+              "title": "Press the ?",
+              "detail": "It lists 8 parts."
+            },
+            {
+              "title": "Switch it On, play",
+              "detail": "Before an open-play chance you see a build-up of passes and runs. Tap to skip it."
+            },
+            {
+              "title": "A big moment",
+              "detail": "Late in a close game, or in a final, the build-up is longer and the passing quicker."
+            },
+            {
+              "title": "The hand-over",
+              "detail": "The other players are still running. They ease into place while you aim."
+            },
+            {
+              "title": "A thin defence",
+              "detail": "A defender runs in from off screen, behind the ball."
+            },
+            {
+              "title": "A free kick or a penalty",
+              "detail": "About half show the foul first, then everyone walks to place."
+            },
+            {
+              "title": "Switch it Off",
+              "detail": "The game is as it is now."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "A switch: Full highlights rebuild, Off | On",
+              "detail": "In main Settings → Quick, a new ⚙ on the pre-match line-up and the match ⚙. Everyone can see it. The ? lists 8 parts. The Full highlights rebuild card left the Chances group; it is still a test page, with two tabs: Ruler and Build-ups. Chances and goals: 5.81 and 2.31 a match over 500 matches, with the switch Off, On and On + build-ups."
+            },
+            {
+              "title": "Build-ups before your chances",
+              "detail": "Infinite Highlights and Infinite Match use the career's build-up builder. A Moment / Length / Intensity control is on the test pages only. A sheet of 24 build-ups checked by eye: 0 problems."
+            },
+            {
+              "title": "Longer build-ups at big moments",
+              "detail": "Late in a close game or in a final. Median 6.4 s ordinary, 9.4 s in a level final at 90' (longest 11.4 s). Breaks at a big moment: median 7.5 s. Length control: short 5.0 s, long 8.3 s. Ordinary moments keep the old tempo exactly."
+            },
+            {
+              "title": "Players already moving at hand-over",
+              "detail": "They ease into place over about 0.9 s (1.6 m at most) while you aim, and stop when you kick. 358 build-ups: about 8 men moving, median 2.6 m/s, 0 problems."
+            },
+            {
+              "title": "An extra defender when the defence is thin",
+              "detail": "A covering defender runs in from off screen and ends up behind the ball. The offside line is unchanged. 269 of 2,757 open-play chances (9.8%). On those: goals 14.5% → 14.9%, blocked or tackled 31.6% → 30.5%, players reacting 4.62 → 5.74."
+            },
+            {
+              "title": "Fouls before free kicks and penalties",
+              "detail": "About half first show the foul: you carry the ball, the nearest defender fouls you, the whistle, \"Foul! Free kick.\" or \"Penalty!\", then everyone walks to place. 44 of 44 made, 4.4 to 6.3 s each."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "The match engine file is not changed",
+              "detail": "Harry refused two engine edits, so they were left out. CanvasMatch, EnginePlay, ScenarioPlay and InfiniteMatch changed for the switch only. Mikey's scenario gallery is never written to (a test checks it). Pitch widths measured again: Infinite Highlights 366 px phone and 493 computer, Infinite Match 366 and 384."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Reasoned only: the early kick, the whistle sound, the drag feel",
+              "detail": "The run-on stopping when you kick early, the whistle sound and how dragging feels on a real phone were worked out from the code, not seen. Pictures were taken at 390 × 844 in a test browser."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.85",
       "title": "Harry's patch notes: B17 PC Match + Radar",
       "publishedAt": "2026-10-20T15:20:00Z",

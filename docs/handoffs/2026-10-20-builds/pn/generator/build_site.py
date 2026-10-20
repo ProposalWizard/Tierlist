@@ -28,8 +28,10 @@ PAGES = [  # key, kept version
     ('b1', '0.66'), ('b3', '0.67'), ('b4', '0.68'), ('b5', '0.69'), ('b6', '0.70'), ('b7', '0.71'), ('b8', '0.72'), ('b9', '0.73'),
     ('b11', '0.74'), ('b12', '0.76'), ('b7b', '0.77'), ('b13', '0.78'), ('b15', '0.79'), ('b9b', '0.80'), ('b16', '0.81'),
     ('a19admin', '0.65'), ('a19team', '0.60'), ('a19drift', '0.62'), ('a19fhr', '0.63'), ('a19data', '0.64'), ('a19scene', '0.61'),
-    ('b17', '0.85'),   # B17 has no artifact of its own: it is a page of this one
+    ('b17', '0.85'), ('b2', '0.86'), ('b19', '0.87'),   # these have no artifact of their own: each is a page of this one
 ]
+
+PAGE_KEYS = {k for k, _ in PAGES}
 
 up = os.path.join(OUT, 'urls.json')
 if os.path.exists(up):
@@ -57,6 +59,8 @@ def localize(html, prefix, index_href):
         if not hm or hm.group(1) not in ID2KEY:
             return tag
         key = ID2KEY[hm.group(1)]
+        if key != 'last2' and key not in PAGE_KEYS:   # another artifact (e.g. the Questions page): stays an external link
+            return tag
         rel = index_href if key == 'last2' else '%s%s/index.html' % (prefix, key)
         tag = tag.replace(hm.group(0), 'href="%s"' % rel)
         tag = re.sub(r'\s+target="_blank"', '', tag)
@@ -93,9 +97,9 @@ for key, ver in PAGES:
 
 idx = open(os.path.join(PG, '0.75', 'index.html'), encoding='utf-8').read()
 idx = localize(idx, 'pages/', 'index.html')
-# B17's card links the notes artifact with #b17 in the kept copy (the admin archive needs an absolute link); here it opens the page
-idx = idx.replace('<a class="bcard" href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN#b17" target="_blank" rel="noopener">', '<a class="bcard" href="pages/b17/index.html">')
-assert 'artifact/Jjqh5F2Qjym1GMBwhA2dSN#b17' not in idx
+# B17, B2 and B19's cards link the notes artifact with #b17 in the kept copy (the admin archive needs an absolute link); here it opens the page
+idx = re.sub(r'<a class="bcard" href="https://claude\.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN#(\w+)" target="_blank" rel="noopener">', r'<a class="bcard" href="pages/\1/index.html">', idx)
+assert 'artifact/Jjqh5F2Qjym1GMBwhA2dSN#' not in idx
 note = 'This index is v0.75. Pages open here, in the same tab: use &ldquo;&larr; All patch notes&rdquo; at the top of a page to come back.'
 assert 'This index is v0.75.' in idx
 idx = idx.replace('This index is v0.75.', note, 1)

@@ -21,6 +21,8 @@
  */
 export const PATCH_NOTE_PAGES: Record<string, string> = {
   // 19-20 Oct 2026: the last two days, one kept page per build (Harry: acknowledge every tab).
+  "0.87": "pages/0.87/index.html",
+  "0.86": "pages/0.86/index.html",
   "0.85": "pages/0.85/index.html",
   "0.84": "pages/0.84/index.html",
   "0.83": "pages/0.83/index.html",
