@@ -1,0 +1,58 @@
+Harry can delete now.
+
+B5c HQ references done (20 Oct 2026, 17:05): 18 scenes, each hq-<scene>.jpg (Nano Banana Pro 4K) + hq-<scene>.mp4 (Seedance 2.5, 480p draft).
+Table, notes and checks: higgsfield.md. 613 credits (balance 8,332.57 -> 7,719.57).
+
+Higgsfield items to delete (images, then videos, then uploads). Kept and rejected are both listed.
+
+IMAGES (nano_banana_pro 4K)
+0a1f0e32-5674-4db3-9b42-9b30bd0d5179 handshake
+97d193d8-11f8-42ee-a658-8fd02624ad66 trophy-lift v1 (rejected)
+9b77d346-c1e8-4845-bedb-f1947cf4849f trophy-lift
+4b76a1d3-6fbb-4dfc-8ab1-10072d626012 goal v1 (rejected)
+26c0c7f0-4942-4ed6-bad4-ab1e74fcfe7f goal-celebration
+fd6b89b6-c7aa-42e9-aeb1-423857f8e175 walkout
+5b575fa6-a40d-42fd-b909-99f4f3fc55a5 press-answer
+782c2eb9-5c75-40ba-ae96-7987046869a2 shirt-photo
+37f38298-8f4a-447f-a492-0385cbc06d5a farewell
+7dbdd51d-8ecc-431d-8509-0cf41cbd77bf greeting v1 (rejected)
+0b67831f-2045-4904-9f2b-12428aacfdbd greeting
+52c5f040-17bf-4743-8fa8-0c53e1563217 mentor
+8b80d4de-098b-40f1-9ade-20c8f0812c15 home-idle
+fd908089-4fbd-4986-acd3-3f76eb7cfaea bench-chat
+8f29c54f-6b67-4f72-a8e3-1b9da3f0c761 walk-and-talk
+3f6e3e7e-c4bb-4e0c-a477-8ea27ce1cff5 trophy-grip
+ec7e9cd1-5fe8-4e31-bc04-fcb516e0cbbb jog-stop
+db26c979-2568-4b63-9462-73d77eb0e81e talk-to-camera
+12bb5ada-dc48-4b99-b116-74e549e50e3c garden-walk v1 (rejected)
+cdc89cbc-d31d-414e-8bfa-9ae18457fd20 garden-walk
+9f9bff2c-7a4d-4181-a051-fdff2fe00aee garden-bench
+357f097f-d79e-42df-883c-260ccab34ecb office-manager
+
+VIDEOS (seedance_2_5, 480p draft)
+b67a622d-1a4f-4f10-a5ce-f6adea35c604 handshake
+5c9887cd-c0d8-4420-825f-a38f3c3db909 trophy-lift v1 (rejected)
+bb3fc287-4842-4e98-8fc9-0ce6e70d85f3 trophy-lift
+526d2d61-a2ff-4607-98fe-d58164e29eac goal-celebration
+b968f5bc-7f1f-43b8-a83b-d3785aa3865c walkout
+1551a867-d688-42d1-b5dc-ed7478b507ec press-answer
+f010d61b-659d-49d7-a798-516eb173c1f4 shirt-photo
+2a52e910-5986-491e-82ce-d02a34a04f72 farewell
+16c711dd-4ff5-4fac-8f12-39652fb9dbed greeting v1 (rejected)
+5a59cc3f-9eb5-4811-a9a7-a33aa7cf8689 greeting
+ec2d26fa-3684-4186-831a-56c742c8bbd2 mentor
+ac828534-35ce-4e46-8978-b322459050a0 home-idle
+d030cec1-b0e0-4023-8c0b-d7e78c2e3d3a bench-chat
+2b957486-9384-4085-a559-a233221c2ea1 walk-and-talk
+a1c457b5-f0ff-458e-95ad-c064ad655521 trophy-grip
+8a17e214-96bd-43a9-bdcd-5eebb8f1dae4 jog-stop
+2bb434b1-6ccb-48f5-9d70-574d8bca96c5 talk-to-camera
+b0781f45-a4c1-42ba-9096-6c322ab1b932 garden-walk v1 (rejected)
+6d472fde-b8c1-4c4b-825a-f5be0c7f33c9 garden-walk
+d2f3a63f-fb03-454a-aec4-9c3067120fdf garden-bench
+2165e05c-768e-4702-bd5f-fecd6657d972 office-manager
+Refused by the safety filter (no file, may still show as failed): 0c878c0a-5dd8-4dec-b693-b20121a769a9, dca6b9a1-e8c6-4911-b9f6-8aa871a7b4df
+
+UPLOADS
+7bff11ef-e37b-4ffc-935e-71f62bcd9562 (garden still)
+31166b35-7b3e-4423-8062-574273447217 (office still)
