@@ -429,6 +429,17 @@ export function setToonRim(T: Three, o: { color: string; strength: number; from?
   u.uRimFx.value.set(c.r, c.g, c.b, o.strength);
   if (o.from) u.uRimDirV.value.set(...o.from).normalize();
 }
+/**
+ * A rim for one draw only, then the page's own rim back (the headshot maker,
+ * lib/star/headshot3d/maker.ts: it draws a picture while Home's player or a
+ * 3D place may own the page's rim).
+ */
+export function withToonRim<R>(T: Three, o: { color: string; strength: number; from?: [number, number, number] }, draw: () => R): R {
+  const u = toonRimUniforms(T);
+  const fx = u.uRimFx.value.clone(), dir = u.uRimDirV.value.clone();
+  setToonRim(T, o);
+  try { return draw(); } finally { u.uRimFx.value.copy(fx); u.uRimDirV.value.copy(dir); }
+}
 
 /** The cloth: weave strength (± share of the colour) and how much darker a stitched seam is. */
 export const TOON_CLOTH = { weave: 0.04, seam: 0.3 } as const;

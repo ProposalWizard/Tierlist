@@ -45,12 +45,15 @@ import type { CareerState } from "@/lib/star/types";
 import BallonDor from "@/components/star/BallonDor";
 import { BallonDorCeremony } from "@/components/star/BallonDorNight";
 import { computeBallonDorShortlist, type BallonDorEntry, type BallonDorResult } from "@/lib/star/ballonDor";
+import SeasonAwardsScreen from "@/components/star/SeasonAwardsScreen";
+import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
 
 type Source = { kind: "shape"; shape: PreviewShape } | { kind: "save"; key: string };
 type View = "menu" | "notice" | "whistle" | "overview" | "hall" | "hall-entry" | "seasons" | "card"
   | "fw-invite" | "fw-sheets" | "fw-walkout" | "fw-walkout-drawn" | "fw-ovation" | "fw-ovation-drawn" | "fw-result" | "fw-overview"
   | "compare" | "compare-flow" | "share-link"
-  | "bd-win" | "bd-second" | "bd-out" | "bd-second-drawn" | "bd-out-drawn" | "bd-old" | "bd-result";
+  | "bd-win" | "bd-second" | "bd-out" | "bd-second-drawn" | "bd-out-drawn" | "bd-old" | "bd-result"
+  | "season-awards";
 
 /** A made-up full time for the test page: 4–3, two goals and an assist. */
 const SAMPLE_FAREWELL: MatchStats = {
@@ -220,6 +223,10 @@ export default function RetirementPreviewPage() {
       );
     }
   }
+  if (view === "season-awards" && lastSeason) {
+    // The end-of-season awards (trophies, Golden Boot and the rest, the Team of the Season) on the last season.
+    return wrap(<SeasonAwardsScreen career={{ ...lastSeason, lastSeasonAwardStats: computeSeasonAwardStats(lastSeason) }} onContinue={toMenu} />);
+  }
   if (view.startsWith("bd-") && lastSeason) {
     // The Ballon d'Or night (STAR_ROADMAP #7) on the career's last season.
     const place = view === "bd-win" ? 1 : view === "bd-out" || view === "bd-out-drawn" ? 7 : 2;
@@ -334,6 +341,14 @@ export default function RetirementPreviewPage() {
                 {card("Not in the top three · drawn", "bd-out-drawn", !!lastSeason, "bd-out-drawn")}
                 {card("The result page after it", "bd-result", !!lastSeason, "bd-result")}
                 {card("Old (the countdown cards)", "bd-old", !!lastSeason, "bd-old")}
+              </div>
+            </Panel>
+          </div>
+
+          <div data-season-awards-tests>
+            <Panel title="Season awards" note="the cards after every season: faces are 3D headshots">
+              <div className="rt-cards">
+                {card("Season awards (last season)", "season-awards", !!lastSeason)}
               </div>
             </Panel>
           </div>

@@ -113,3 +113,22 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Team board push count: now real pushes from GitHub's push log, any branch, last 7 days, own work only. Seen: Harry 166, Mikey 34, Leo 21 (before: capped at the newest 20 commits, and main's merged work counted as his).
 - "GitHub refused the site's key": came from the local test computer's key, not Vercel's; a refused key is tried once then the board reads without it; one line says whose key.
 - Watch: Mikey's unmerged "FA Cup: ten rounds" touches the same calendar — run tests/star/fixtureClashes.mts after it merges.
+
+## B15 — 3D-model headshots on award cards
+- Player of the Month (shortlist, winner card, "You won it" pop-up), season awards (each award + Team of the Season) and Ballon d'Or (result page, top ten, countdown, winner, runner-up) now show a head-and-shoulders picture from our 3D Style A model in the player's club kit. Before: drawn heads (PotM) and the made-up photo faces (season awards, Ballon d'Or) even though photo faces are off.
+- Each player has the same seeded look the 3D match men use (keyed to squad id); you get your own look from Settings → Your look. One hidden renderer, one fixed lens/pose/studio light, never resized.
+- Made only when a card comes near the screen, one at a time; kept on the device (~10 KB each, newest 400). Second visit: 0 new pictures, all 13 faces in 0.5 s.
+- Fallback: the drawn head until ready, and if WebGL is missing (seen: 10 failed → 10 drawn heads, no blank circles).
+- Time on this machine (no graphics chip): start-up 1.3–3.3 s once per visit, each picture ~0.2 s (first 0.6–1.0 s); 13 faces from scratch ~6 s.
+- Not changed: team sheets (drawn head; one-line swap if wanted), scout report, transfers panel, league and matchday screens (still photo-face paths).
+- Looks odd: blond hair colour also goes on eyebrows and beard; on dark skin up close it reads oddly (still 09). Shared 3D look, not changed.
+- Seen on test pages at 390×844; not in a real career or on a phone. Stills in b15/.
+
+## B9b — The Lower League Trophy gets its own screen (and so do the other cups)
+- "Mikey's FA Cup screen" on Harry is the after-match round-up: results board, "Road to the Final" bracket, the cup draw. B9 had wired those to the Trophy. Where you browse cups (League → Table → a cup's tab), each was a long list: the Trophy's Round 1 was 56 rows (about two phone screens).
+- Now League → Table → Trophy tab: cup colour, headline ("Round 1"), your next tie ("Wed 9 Sep · away at Walsall"), a road with a segment per round, and Open the Trophy. Fits one 844 px screen.
+- The cup's own screen (CupScreen): headline (Winners / Out / Not in it / Cup-tied / bye), your road, Mikey's bracket from the last 16, every round's results with ‹ › arrows (byes under Round 1), "Still in it" crests; bottom bar Back · The draw · Play.
+- One screen for all three domestic cups (FA Cup and League Cup tabs work the same way now, each in its own colour). The FA Cup tab no longer lists every tie; the list is one tap away.
+- Reused, not copied: Mikey's Board and Bracket, CupDrawReveal, cupBoard/cupBracket. page.tsx not touched.
+- Seen at 390×844 in the real game (League One career at Huddersfield, matches played through the real Sim): Round 1 went 1–1, 4–3 on penalties (penalties straight away, as the rules say). Stills in b9b/.
+- Open: no Trophy picture yet (🏆 emoji); a tie you only watched goes straight back to Home (same as the FA Cup); after a Round 1 bye no draw pops up (see it with "The draw"); a Premier League career still shows the Trophy tab as "Not in it" — hide it?

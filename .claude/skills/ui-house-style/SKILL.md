@@ -39,6 +39,20 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 20 Oct 2026 — every domestic cup gets its own screen (Harry)
+- **"The Lower League Trophy needs its own screen like Mikey's FA Cup one (and
+  the international ones)."** A cup is not a long list on the League page.
+  League → Table → a cup's tab shows where it stands for you (headline, the
+  round-by-round road, Open); Open is the cup's own screen
+  (`components/star/CupScreen.tsx`): your road, Mikey's "Road to the Final"
+  bracket from the last 16, every round's results (edge arrows between
+  rounds), who is still in it, and "The draw" replays the latest draw. One
+  screen for the FA Cup, League Cup and the Trophy, in each cup's own colour
+  (`lib/star/competitionLook.ts`). Reuse the round-up's Board and Bracket,
+  never a copy. The Trophy's round 1 tab went from a 56-row list (about two
+  phone screens) to one 844 px screen. (Applying it to the FA Cup and League
+  Cup too is inferred from "like the FA Cup one".)
+
 ### 20 Oct 2026 — one layout, four skins; one back arrow; the chat bubble (Harry)
 - **"Redo all of the other looks … right now it's like they're different skins.
   In reality, I want everything to look the same, but with a different kind of
