@@ -493,6 +493,13 @@ function ClubLeagueScreen({ career, compact = false, view: forcedView, hideTabs 
                           </div>
                         );
                       })}
+                      {/* Through without a game (the Lower League Trophy's 8 byes). */}
+                      {round.byes && round.byes.length > 0 && (
+                        <div data-cup-byes className={`rounded-lg px-1.5 py-1 text-[10px] font-bold ${round.byes.includes(you) ? "text-white" : "bg-white/[0.04] text-white/85"}`}
+                          style={round.byes.includes(you) ? youRow(glow) : undefined}>
+                          <span className="font-black text-emerald-300">Byes · </span>{round.byes.join(", ")}
+                        </div>
+                      )}
                     </div>
                   )}
                 </ClubCard>
