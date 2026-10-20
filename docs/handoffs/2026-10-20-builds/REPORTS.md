@@ -123,3 +123,12 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Not changed: team sheets (drawn head; one-line swap if wanted), scout report, transfers panel, league and matchday screens (still photo-face paths).
 - Looks odd: blond hair colour also goes on eyebrows and beard; on dark skin up close it reads oddly (still 09). Shared 3D look, not changed.
 - Seen on test pages at 390×844; not in a real career or on a phone. Stills in b15/.
+
+## B9b — The Lower League Trophy gets its own screen (and so do the other cups)
+- "Mikey's FA Cup screen" on Harry is the after-match round-up: results board, "Road to the Final" bracket, the cup draw. B9 had wired those to the Trophy. Where you browse cups (League → Table → a cup's tab), each was a long list: the Trophy's Round 1 was 56 rows (about two phone screens).
+- Now League → Table → Trophy tab: cup colour, headline ("Round 1"), your next tie ("Wed 9 Sep · away at Walsall"), a road with a segment per round, and Open the Trophy. Fits one 844 px screen.
+- The cup's own screen (CupScreen): headline (Winners / Out / Not in it / Cup-tied / bye), your road, Mikey's bracket from the last 16, every round's results with ‹ › arrows (byes under Round 1), "Still in it" crests; bottom bar Back · The draw · Play.
+- One screen for all three domestic cups (FA Cup and League Cup tabs work the same way now, each in its own colour). The FA Cup tab no longer lists every tie; the list is one tap away.
+- Reused, not copied: Mikey's Board and Bracket, CupDrawReveal, cupBoard/cupBracket. page.tsx not touched.
+- Seen at 390×844 in the real game (League One career at Huddersfield, matches played through the real Sim): Round 1 went 1–1, 4–3 on penalties (penalties straight away, as the rules say). Stills in b9b/.
+- Open: no Trophy picture yet (🏆 emoji); a tie you only watched goes straight back to Home (same as the FA Cup); after a Round 1 bye no draw pops up (see it with "The draw"); a Premier League career still shows the Trophy tab as "Not in it" — hide it?
