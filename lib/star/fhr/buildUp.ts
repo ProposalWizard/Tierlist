@@ -63,6 +63,7 @@ import type { Scenario, ScenarioKind, Vec2, Viewport, Identity } from "../canvas
 import { leadInEntities, leadInCamera, ballAlong, LEAD_MAX_RUN, type LeadIn, type LeadMoment, type LeadBallKey } from "../leadIn";
 import { PITCH_W, CX, HALF_LEN, GOAL_W } from "../pitch";
 import PJ from "./patterns.json";
+import { airArrival } from "../airDrawings";
 
 interface Patterns {
   xEdges: number[]; yEdges: number[];
@@ -110,6 +111,10 @@ const HZ = 15;
 export const FHR_RUNON_S = 0.9;
 /** The most a man is still short of his drawn spot at the hand-over (m). */
 export const FHR_RUNON_MAX_M = 1.6;
+/** B10: the crosser of a header or volley comes onto the ball at this share of his top speed… */
+export const CROSSER_RUN = 0.72;
+/** …and is on his spot this long before the ball reaches him (s). */
+export const CROSSER_WAIT_S = 0.45;
 
 // ─────────────────────────────────────────────────────────────────────────
 //  HOW BIG THE MOMENT IS (Harry, 20 Oct 2026: "automatic and natural … in a
@@ -322,6 +327,8 @@ export interface FhrAction {
   to: Vec2;
   /** A pass in the air: its top height (m). */
   h: number;
+  /** A pass that arrives in the air (the cross to a header or a volley, B10): its height on arrival (m). */
+  endZ?: number;
   /** From the data: "chain" (a real sequence into the chance) or "moves" (the zone tables). */
   src: "chain" | "moves" | "break";
   t0: number;
@@ -385,8 +392,13 @@ function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport, tp:
   const loft = (L: number, t: string) => (t === "high" || t === "head" || t === "cross" || L > 28 ? Math.min(5, 1.2 + L * 0.11) : 0);
 
   // 2a. The last touches: a real sequence into a shot (or a cross) from here.
-  const zR = zoneOf(R);
-  const endType = sc.kind === "byline_cross" || sc.kind === "cutback" ? "cross" : (sc.kind === "one_on_one" || sc.kind === "tight_angle" || sc.kind === "long_range" || sc.kind === "volley" || sc.kind === "header") ? "shot" : null;
+  // B10: a header or a volley ends with the ball reaching you IN THE AIR — the
+  // cross from the team-mate the drawing has out wide (airArrival). The real
+  // sequence before it is then one that ends in a cross from HIS spot.
+  const air = airArrival(sc);
+  if (air) push({ type: "pass", from: air.from, to: R, h: air.apex, endZ: air.endZ, src: "chain" });
+  const zR = zoneOf(cur);
+  const endType = air || sc.kind === "byline_cross" || sc.kind === "cutback" ? "cross" : (sc.kind === "one_on_one" || sc.kind === "tight_angle" || sc.kind === "long_range") ? "shot" : null;
   if (endType && r() < 0.8) {
     const cands = CHAINS.flatMap((c) => c.endType !== endType ? [] : c.end === zR ? [{ c, m: false }] : mirrorZone(c.end) === zR ? [{ c, m: true }] : []);
     if (cands.length) {
@@ -667,10 +679,13 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
   const ballKeys: LeadBallKey[] = [{ t: 0, p: { ...acts[0].from } }];
   for (const a of acts) {
     ballKeys.push({ t: a.t0, p: { ...a.from } });
-    ballKeys.push(a.type === "pass" ? { t: a.t1, p: { ...a.to }, pass: { h: a.h } } : { t: a.t1, p: { ...a.to } });
+    ballKeys.push(a.type === "pass" ? { t: a.t1, p: { ...a.to }, pass: { h: a.h, ...(a.endZ ? { endZ: a.endZ } : {}) } } : { t: a.t1, p: { ...a.to } });
   }
   ballKeys.push({ t: durS, p: { ...R } });
-  const ballAt = (t: number) => (t >= durS ? { x: R.x, y: R.y, z: 0 } : ballAlong(ballKeys, t));
+  // B10: a cross that reaches you in the air stays at that height until the chance is yours.
+  const lastA = acts[acts.length - 1];
+  const endZ = lastA.type === "pass" && lastA.endZ ? lastA.endZ : 0;
+  const ballAt = (t: number) => (t >= durS || (endZ > 0 && t >= lastA.t1) ? { x: R.x, y: R.y, z: t >= lastA.t1 ? endZ : 0 } : ballAlong(ballKeys, t));
   // Where the shape thinks the ball is: it reacts a little behind the ball.
   const lagBall: Vec2[] = [];
   {
@@ -912,7 +927,43 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
   const problems: string[] = [];
   // You run onto the last pass (or are on the ball already for your carry).
   if (!put(you, youSpell, false)) problems.push("you can't get onto the last touch in time");
+  // B10: a header or volley's cross is played by the crosser the chance has out
+  // wide (teammates[0], who ends exactly where he crosses it). He comes down the
+  // wing onto the ball (CROSSER_RUN of his top speed) and waits for it
+  // (CROSSER_WAIT_S), on the line that keeps him furthest from whoever plays it
+  // to him. Measured first without this: the shape put him 20+ m away, an extra
+  // man out of the frame took the cross, and he sprinted to his spot at
+  // 10-12 m/s (or stood next to the man crossing it).
+  const crossSpell = acts[acts.length - 1].type === "pass" && acts[acts.length - 1].endZ ? spells.length - 2 : -1;
+  const crosser = crossSpell >= 0 ? people.find((p) => p.key === "mate0" && dist(p.end, acts[acts.length - 1].from) < 0.05) : undefined;
+  if (crosser) {
+    const s = spells[crossSpell];
+    const E = crosser.end;
+    // Where he stands as his spell starts: just behind the ball.
+    const T = spotFor(crosser.key, s)(s.tIn);
+    const v = crosser.vmax * CROSSER_RUN;
+    const prev = s.first > 0 ? acts[s.first - 1] : null;
+    const runAt = (deg: number) => {
+      const a = (deg * Math.PI) / 180, dir = { x: Math.sin(a), y: Math.cos(a) };
+      return (t: number): Vec2 => {
+        if (t > s.tIn) return { ...E };
+        const d = Math.min(22, v * Math.max(0, s.tIn - CROSSER_WAIT_S - t));
+        // (Never clamped tighter than T itself: a held spot behind a ball on the line is just off it.)
+        return { x: clamp(T.x + dir.x * d, Math.min(0.5, T.x), Math.max(PITCH_W - 0.5, T.x)), y: clamp(T.y + dir.y * d, Math.min(0.5, T.y), LEN - 0.5) };
+      };
+    };
+    let at = runAt(0), bestGap = -Infinity;
+    for (const deg of [0, 30, -30, 55, -55]) {
+      const f = runAt(deg);
+      let gap = Infinity;
+      if (prev) for (let t = 0; t <= s.tIn; t += 0.1) gap = Math.min(gap, dist(f(t), prev.from), dist(f(t), prev.to));
+      if (gap > bestGap + 0.5) { bestGap = gap; at = f; }
+    }
+    crosser.path = crosser.path.map((_, i) => (i >= N ? { ...E } : at(tOf(i))));
+    if (put(crosser, s, true)) { owners[crossSpell] = crosser.key; taken.add(crosser.key); }
+  }
   for (let j = spells.length - 2; j >= 0; j--) {
+    if (owners[j]) continue;
     const s = spells[j];
     const carry = acts.slice(s.first, s.last + 1).some((a) => a.type === "carry");
     const passLen = acts[s.last].type === "pass" ? dist(acts[s.last].from, acts[s.last].to) : 0;

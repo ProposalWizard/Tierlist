@@ -15,7 +15,9 @@ function mulberry32(a: number) {
 }
 
 check(EVEN_KIND_MIX, "the even mix is on");
-check(!EVEN_KINDS.includes("volley") && !EVEN_KINDS.includes("header"), "switched-off kinds stay out");
+// B10 (20 Oct 2026): headers and volleys are back on, so they are in the bag.
+check(EVEN_KINDS.includes("volley") && EVEN_KINDS.includes("header"), "headers and volleys are in the even mix");
+check(EVEN_KINDS.length === 10, "a round of the even mix is 10 kinds");
 
 // The bag: each kind once per round, never twice in a row.
 const bag = newKindBag(), rng = mulberry32(7);
@@ -58,7 +60,7 @@ check(corner.sc.kind === "corner", "a corner request still gives a corner");
   const bag = newKindBag(), dealt: Record<string, number> = {};
   const rr = mulberry32(11);
   for (let i = 0; i < 17 * 40; i++) { const k = nextEvenKind(bag, rr, true); dealt[k] = (dealt[k] ?? 0) + 1; }
-  for (const k of EVEN_KINDS) check(dealt[k] === (REAL_MIX[k] ?? 1) * 40, `real mix: ${k} ${dealt[k]}, wanted ${(REAL_MIX[k] ?? 1) * 40}`);
+  for (const k of EVEN_KINDS) check((dealt[k] ?? 0) === (REAL_MIX[k] ?? 1) * 40, `real mix: ${k} ${dealt[k] ?? 0}, wanted ${(REAL_MIX[k] ?? 1) * 40}`);
   const deep = (dealt.midfield_pass ?? 0) + (dealt.buildup ?? 0) + (dealt.through_ball ?? 0);
   check(deep / (17 * 40) > 0.45, "about half the real mix is deep");
   check(dealt.one_on_one! * 8 < 17 * 40, "fewer one-on-ones than the even mix's one in 8");

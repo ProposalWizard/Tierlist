@@ -28,7 +28,7 @@ import {
   makeChance, drawingShape, servesDrawings, PictureMemory, pictureOf, SAME_PICTURE_M, PICTURE_MEMORY,
   defenderOnTheBall, DEFENDER_ON_BALL,
 } from "@/lib/star/chanceMaker";
-import { authoredPool, applyAuthoredShape, keeperSharesOf, mateBodiesOf, ruleSetFor } from "@/lib/star/authoredChance";
+import { authoredPool, playPool, applyAuthoredShape, keeperSharesOf, mateBodiesOf, ruleSetFor } from "@/lib/star/authoredChance";
 import { sampleFromAuthored } from "@/lib/star/scenarioRules";
 import { closestFigures, closestMarking, MIN_GAP, MARKING_GAP } from "@/lib/star/spacing";
 import { setupKind } from "@/lib/star/kindRules";
@@ -64,7 +64,7 @@ for (const kind of DRAWN) {
   for (let i = 0; i < 150; i++) {
     const sh = drawingShape(kind, mulberry32(200 + i * 7919));
     if (!sh) continue;
-    const ms = authoredPool(kind).find((x) => x.id === sh.sourceId);
+    const ms = playPool(kind).find((x) => x.id === sh.sourceId);
     const s0 = ms ? sampleFromAuthored(ms) : null;
     if (!s0) continue;
     const share = keeperSharesOf(s0);
@@ -82,7 +82,7 @@ for (const kind of ["penalty", "free_kick"] as ScenarioKind[]) {
   for (let i = 0; i < 150; i++) {
     const sh = drawingShape(kind, mulberry32(300 + i * 7919));
     if (!sh) continue;
-    const ms = authoredPool(kind).find((x) => x.id === sh.sourceId);
+    const ms = playPool(kind).find((x) => x.id === sh.sourceId);
     let s0 = ms ? sampleFromAuthored(ms) : null;
     if (!s0) continue;
     if (sh.mirrored) {

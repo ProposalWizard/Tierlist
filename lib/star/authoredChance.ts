@@ -38,6 +38,7 @@ import { CX, GOAL_W, PITCH_W } from "./pitch";
 import { AUTHORED_SCENARIOS } from "./authoredScenarios";
 import type { MatchScenario } from "./scenarios";
 import { listScenarios } from "./scenarioStore";
+import { derivedAirDrawings, isAirKind, CROSSER_MATE_INDEX, CROSSER_IN_M } from "./airDrawings";
 import {
   deriveRuleSet, sampleFromAuthored, violations, MIN_SAMPLES_FOR_INVARIANT,
   type RuleSet, type ShapeSample,
@@ -120,6 +121,19 @@ export function authoredPool(kind: string): MatchScenario[] {
 }
 
 /**
+ * THE DRAWINGS A KIND IS PLAYED FROM: its own, or, for a header or a volley
+ * with fewer than 5 of its own, the team's cross drawings at the moment the
+ * ball arrives (lib/star/airDrawings.ts — everyone where the team drew them,
+ * the drawn TARGET or POACH is you). Five real ones and only those are used.
+ * Every other kind: exactly authoredPool.
+ */
+export function playPool(kind: string): MatchScenario[] {
+  const own = authoredPool(kind);
+  if (!isAirKind(kind) || own.filter((s) => !!sampleFromAuthored(s)).length >= MIN_SAMPLES_FOR_INVARIANT) return own;
+  return [...own, ...derivedAirDrawings(kind, authoredPool)];
+}
+
+/**
  * The rule set for a kind, scanned off whatever is authored for it right now.
  *
  * Memoised only against the exact pool it was scanned from — the key is every
@@ -131,7 +145,7 @@ export function authoredPool(kind: string): MatchScenario[] {
 const ruleCache = new Map<string, { key: string; set: RuleSet }>();
 
 export function ruleSetFor(kind: string): RuleSet | null {
-  const pool = authoredPool(kind);
+  const pool = playPool(kind);
   if (!pool.length) return null;
   const key = pool.map((s) => `${s.id}@${s.updatedAt ?? 0}`).join("|");
   const hit = ruleCache.get(kind);
@@ -432,7 +446,7 @@ export function nextAuthoredShape(
   kind: string, rng: () => number, recent: string[] = [], stableKey?: number,
 ): AuthoredShape | null {
   const set = ruleSetFor(kind);
-  const pool = authoredPool(kind);
+  const pool = playPool(kind);
   // FIVE DRAWINGS BEFORE A KIND IS TAKEN OVER — the same bar a law needs.
   //
   // It used to be one. Measured: a single saved free kick served 400 of 400
@@ -735,7 +749,23 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   const bodies = mateBodiesOf(sc);
   const takenM = new Set<number>();
   let matesPlaced = 0;
-  for (const spot of shape.mates) {
+  // A header or volley played off a cross drawing (airDrawings.ts): the
+  // builder's crosser (teammates[0], who is credited with the assist) takes
+  // the drawing's crosser spot (its mates[0]) before anyone else is matched —
+  // measured, nearest-first left him out (and so off the picture) in 26 of
+  // 1,200 served, the builder's support runners being nearer his spot.
+  let firstSpot = 0;
+  if (isAirKind(sc.kind) && shape.mates.length && sc.teammates.length) {
+    const c = sc.teammates[0], spot = shape.mates[CROSSER_MATE_INDEX];
+    // In open play he crosses it from ON the pitch: a corner drawing's taker
+    // stands on (or a nudge past) the flag.
+    c.x = clamp(spot.x, CROSSER_IN_M, PITCH_W - CROSSER_IN_M);
+    c.y = Math.max(CROSSER_IN_M, spot.y);
+    takenM.add(bodies.indexOf(c));
+    matesPlaced++;
+    firstSpot = CROSSER_MATE_INDEX + 1;
+  }
+  for (const spot of shape.mates.slice(firstSpot)) {
     let best = -1, bestD = Infinity;
     bodies.forEach((m, i) => {
       if (takenM.has(i)) return;
