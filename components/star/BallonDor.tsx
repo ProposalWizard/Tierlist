@@ -5,7 +5,10 @@ import { computeBallonDorShortlist, type BallonDorEntry, type BallonDorResult } 
 import { retirementCheck } from "@/lib/star/retirement";
 import { shortClub } from "@/lib/star/media/grammar";
 import { faceOrFake } from "@/lib/star/fakeFaces";
+import { PHOTO_FACES } from "@/lib/star/faceStyle";
+import { kitsOf } from "@/lib/star/kits";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import Headshot3D, { HeadshotCareer, useHeadshotId } from "./Headshot3D";
 import ClubBadge from "@/components/star/ClubBadge";
 import TrophyImage from "./TrophyImage";
 import { Burst, PressButton, Shine, KitStyles } from "./ui";
@@ -81,9 +84,24 @@ function keyStat(e: BallonDorEntry): string {
   return `${e.goals}G ${e.assists}A`;
 }
 
-/** A real face when the database has one, otherwise that player's own fake
- *  face — never a silhouette (Harry, v0.15 item 37). */
-function Face({ image, name, size, ring }: { image?: string; name: string; size: number; ring: string }) {
+/**
+ * His face. Photo faces are off (PHOTO_FACES): his headshot shot from the 3D
+ * model, in his club's kit (B15, 20 Oct 2026; Headshot3D.tsx; the drawn head
+ * until it is made, and if it can't be). With photos on: a real face when the
+ * database has one, otherwise that player's own fake face — never a
+ * silhouette (Harry, v0.15 item 37).
+ */
+function Face({ image, name, club, isYou, size, ring }: { image?: string; name: string; club: string; isYou?: boolean; size: number; ring: string }) {
+  const idOf = useHeadshotId();
+  if (!PHOTO_FACES) {
+    const kit = kitsOf(club).home;
+    // the small chips crop in on the face; the winner's big one keeps the shoulders
+    const zoom = size >= 60 ? 1.1 : 1.4;
+    return (
+      <Headshot3D id={idOf(name, club, isYou)} you={isYou} kit={kit} size={size} zoom={zoom}
+        className={`rounded-full border ${ring}`} style={{ backgroundColor: kit.shirt }} />
+    );
+  }
   return (
     <ImageWithFallback
       src={faceOrFake(image, name)}
@@ -95,7 +113,12 @@ function Face({ image, name, size, ring }: { image?: string; name: string; size:
   );
 }
 
-export default function BallonDor({ career, onContinue, startAt, result }: Props) {
+/** The ceremony, with the squad ids for the headshots (the same face as on his Player of the Month card). */
+export default function BallonDor(props: Props) {
+  return <HeadshotCareer career={props.career}><BallonDorInner {...props} /></HeadshotCareer>;
+}
+
+function BallonDorInner({ career, onContinue, startAt, result }: Props) {
   const { entries, playerRank, playerNominated } = useMemo(() => result ?? computeBallonDorShortlist(career), [career, result]);
   const winner = entries[0];
   const runnerUp = entries[1];
@@ -356,7 +379,7 @@ export default function BallonDor({ career, onContinue, startAt, result }: Props
           <div className="kit-card kit-reveal p-4" style={{ animationDelay: "200ms" }}>
             <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-white/70">Winner</p>
             <div className="flex items-center gap-3">
-              <Face image={winner.image} name={winner.name} size={36} ring="border-amber-400/40" />
+              <Face image={winner.image} name={winner.name} club={winner.club} isYou={winner.isPlayer} size={36} ring="border-amber-400/40" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-black text-white">{winner.name}</p>
                 <div className="mt-0.5 flex items-center gap-1">
@@ -375,7 +398,7 @@ export default function BallonDor({ career, onContinue, startAt, result }: Props
             {entries.map(e => (
               <div key={e.rank} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 ${e.isPlayer ? "bg-amber-400/10" : ""}`}>
                 <span className={`w-5 shrink-0 text-center text-[11px] font-black ${e.rank <= 3 ? "text-amber-400" : "text-white/70"}`}>{e.rank}</span>
-                <Face image={e.image} name={e.name} size={22} ring="border-white/15" />
+                <Face image={e.image} name={e.name} club={e.club} isYou={e.isPlayer} size={22} ring="border-white/15" />
                 <span className={`min-w-0 flex-1 truncate text-[12px] font-bold ${e.isPlayer ? "text-amber-300" : "text-white"}`}>{e.name}</span>
                 <span className="shrink-0 text-[10px] text-white/70">{keyStat(e)}</span>
               </div>
@@ -451,7 +474,7 @@ function CountdownCard({ entry }: { entry: BallonDorEntry }) {
       style={{ animation: "bdSlideUp 0.45s ease-out", ...(entry.isPlayer ? { boxShadow: "inset 0 0 0 1px rgba(251,191,36,.55), 0 0 22px rgba(251,191,36,.22)" } : {}) }}
     >
       <span className={`w-7 shrink-0 text-center text-sm font-black ${entry.rank <= 3 ? "text-amber-400" : "text-white/70"}`}>#{entry.rank}</span>
-      <Face image={entry.image} name={entry.name} size={34} ring={entry.isPlayer ? "border-amber-400/50" : "border-white/15"} />
+      <Face image={entry.image} name={entry.name} club={entry.club} isYou={entry.isPlayer} size={34} ring={entry.isPlayer ? "border-amber-400/50" : "border-white/15"} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <p className={`truncate text-sm font-black ${entry.isPlayer ? "text-amber-300" : "text-white"}`}>{entry.name}</p>
@@ -508,7 +531,7 @@ function WinnerCard({ entry }: { entry: BallonDorEntry }) {
     >
       <Rays color="#fde68a" size={320} className="top-[30%]" />
       <Shine trigger={1} />
-      <div className="relative mx-auto w-fit"><Face image={entry.image} name={entry.name} size={84} ring={entry.isPlayer ? "border-amber-300" : "border-amber-400/60"} /></div>
+      <div className="relative mx-auto w-fit"><Face image={entry.image} name={entry.name} club={entry.club} isYou={entry.isPlayer} size={84} ring={entry.isPlayer ? "border-amber-300" : "border-amber-400/60"} /></div>
       <div className="relative mx-auto mt-3 w-fit">
         <TrophyImage name="Ballon d'Or" height={46} fallback="🏅" />
       </div>
@@ -542,7 +565,7 @@ function RunnerUpCard({ entry }: { entry: BallonDorEntry }) {
       style={{ animation: "bdSlideUp 0.5s ease-out" }}
     >
       <span className="shrink-0 text-lg">🥈</span>
-      <Face image={entry.image} name={entry.name} size={38} ring="border-white/25" />
+      <Face image={entry.image} name={entry.name} club={entry.club} isYou={entry.isPlayer} size={38} ring="border-white/25" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-black text-white">
           {entry.name}{entry.isPlayer ? " (You)" : ""} <span className="font-bold text-white/70">has come second</span>

@@ -1,5 +1,5 @@
 import { project, horizonPx, type FpCamera } from "./firstPersonView";
-import { OWN_GAIT_M, passBand, type FpDefender, type DefenderPhase, type PassBand } from "./firstPersonDribble";
+import { OWN_GAIT_M, passBand, knockRing, type FpDefender, type DefenderPhase, type PassBand } from "./firstPersonDribble";
 import { drawPlayerHead } from "./drawPlayerHead";
 import { DEFAULT_FACE_STYLE, type FaceStyle } from "./faceStyle";
 import type { FakeFaceStyle } from "./fakeFaceStyle";
@@ -1058,7 +1058,9 @@ function drawDefender(
   ctx: CanvasRenderingContext2D, cam: FpCamera, def: FpDefender, assist: boolean,
   getFace?: (url: string | undefined) => HTMLImageElement | undefined, faceStyle?: FaceStyle,
   fakeFaceStyle?: FakeFaceStyle, kit: { shirt: string; rim: string } = { shirt: C.opp, rim: C.oppRim },
+  knockClock?: number,
 ) {
+  if (knockClock !== undefined) drawKnockRing(ctx, cam, def, knockClock);
   // Drawn even while "waiting" — his wave was PLACED, not sprung on you
   // (see firstPersonDribble.ts's own header), so he's meant to be visible,
   // standing, from a distance before he ever engages.
@@ -1133,6 +1135,48 @@ function drawDefender(
     fakeFaceStyle,
     headKey: def.who?.id ?? def.who?.face ?? `def-${Math.round(def.x * 10)}`,
   });
+}
+
+/**
+ * The knock-on's ring (training Pace, firstPersonDribble.ts "THE KNOCK-ON"):
+ * a thin white ring marks the one man coming for the ball; when he drops his
+ * shoulder it closes in, amber; it turns solid green for the GO window —
+ * knock it past him now. Cover men (holding their lanes) wear nothing.
+ */
+function drawKnockRing(ctx: CanvasRenderingContext2D, cam: FpCamera, def: FpDefender, clock: number) {
+  const ring = knockRing(def, clock);
+  if (ring.stage === "gone") return;
+  const feet = project(cam, def.x, def.y, 0);
+  if (!feet) return;
+  const sc = feet.scale;
+  const r = ring.stage === "coming" ? 1.25 : ring.stage === "wait" ? lerp(1.9, 0.75, ring.t) : 0.75;
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(feet.px, feet.py, r * sc, r * 0.36 * sc, 0, 0, Math.PI * 2);
+  if (ring.stage === "go") {
+    ctx.fillStyle = "rgba(52,211,153,0.45)";
+    ctx.fill();
+    ctx.lineWidth = Math.max(4, 0.16 * sc);
+    ctx.strokeStyle = "#34d399";
+  } else if (ring.stage === "wait") {
+    ctx.lineWidth = Math.max(3, 0.11 * sc);
+    ctx.strokeStyle = "rgba(251,191,36,0.95)";
+  } else {
+    ctx.lineWidth = Math.max(2, 0.07 * sc);
+    ctx.strokeStyle = "rgba(255,255,255,0.75)";
+  }
+  ctx.stroke();
+  // The target the closing ring lands on, so the GO moment can be seen coming.
+  if (ring.stage === "wait") {
+    ctx.beginPath();
+    ctx.ellipse(feet.px, feet.py, 0.75 * sc, 0.27 * sc, 0, 0, Math.PI * 2);
+    ctx.lineWidth = Math.max(2, 0.06 * sc);
+    ctx.strokeStyle = "rgba(52,211,153,0.7)";
+    ctx.setLineDash([Math.max(3, 0.12 * sc), Math.max(3, 0.1 * sc)]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  ctx.restore();
 }
 
 /** The ring under a team-mate: how hard the ball to him is right now. */
@@ -1357,6 +1401,9 @@ export interface RenderFirstPersonOptions {
   /** Team-mates offering a pass (firstPersonDribble.ts FpMate), each with a
    *  difficulty ring. Omit and none are drawn. */
   mates?: FpMateDraw[];
+  /** The knock-on (training Pace): the run's clock (sim seconds). Set, and
+   *  the man coming for the ball wears the GO ring (drawKnockRing). */
+  knockClock?: number;
 }
 
 export interface FpKit { shirt: string; shorts: string }
@@ -1392,7 +1439,7 @@ export function renderFirstPerson(canvas: HTMLCanvasElement, opts: RenderFirstPe
   for (const def of opts.defenders) {
     const p = project(cam, def.x, def.y, 0);
     if (!p) continue;
-    items.push({ s: p.scale, draw: () => drawDefender(ctx, cam, def, opts.assist, opts.getFace, opts.faceStyle, opts.fakeFaceStyle, oppKit) });
+    items.push({ s: p.scale, draw: () => drawDefender(ctx, cam, def, opts.assist, opts.getFace, opts.faceStyle, opts.fakeFaceStyle, oppKit, opts.knockClock) });
   }
 
   (opts.mates ?? []).forEach((mate, i) => {

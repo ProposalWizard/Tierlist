@@ -4,7 +4,7 @@
  * Who a push or pull request belongs to, which patch note a push went out in,
  * and that the GitHub read never throws and never reaches the network here.
  */
-import { fetchTeamBoard, noteOwner, patchFor, perDay, personFor, splitMessage, NOTE_REACH_MS } from "@/lib/teamBoard";
+import { fetchTeamBoard, noteOwner, ownWork, patchFor, perDay, personFor, pushCount, pushLog, sessionOwners, splitMessage, NOTE_REACH_MS } from "@/lib/teamBoard";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import { ADMIN_PAGES, relatedFor, currentPage, visibleTo } from "@/lib/adminRegistry";
 import { ADMIN_GUIDES } from "@/lib/adminGuides";
@@ -79,6 +79,62 @@ const bad = await fetchTeamBoard({ fetch: async () => ({ ok: false, status: 403,
 ok(bad.problems.some((p) => p.includes("limiting")), "rate limit → a plain-English problem, no throw");
 const down = await fetchTeamBoard({ fetch: async () => { throw new Error("offline"); }, notes, now, noCache: true });
 ok(down.problems.length > 0 && down.people.length === 3, "GitHub unreachable → still three cards");
+ok(down.problems.length === 1, `one line for everything GitHub could not be reached for, not one per read (${down.problems.length})`);
+
+console.log("A refused key (B13)");
+{
+  // Like a local test build: the computer's GITHUB_TOKEN is refused. The
+  // board asks again without it (the repository is public) and says so once.
+  const asked: { url: string; auth: boolean }[] = [];
+  const refusing = async (url: string, init?: { headers?: Record<string, string> }) => {
+    const auth = !!init?.headers?.Authorization;
+    asked.push({ url, auth });
+    if (auth) return { ok: false, status: 401, json: async () => ({}) };
+    return fake(url);
+  };
+  const local = await fetchTeamBoard({ fetch: refusing, notes, now, noCache: true, token: "bad", where: "local" });
+  ok(local.problems.length === 1 && local.problems[0].includes("local test build") && !local.problems[0].includes("Check GITHUB_TOKEN in Vercel"),
+    `local build: one line saying the key is this computer's, not Vercel's (${local.problems.join(" | ")})`);
+  ok(local.people.find((p) => p.person === "Harry")?.pushes.length === 1, "and the board still shows, read without the key");
+  // The first reads go out together, so each tries the key once; reads after
+  // the refusal (the push log's next pages, open PRs) leave it off.
+  const firstBatch = asked.filter((a) => a.auth).length;
+  ok(firstBatch <= 7 && asked.length - firstBatch >= firstBatch, `the refused key is tried once per first read, never again (${firstBatch} with the key, ${asked.length - firstBatch} without)`);
+  const live = await fetchTeamBoard({ fetch: refusing, notes, now, noCache: true, token: "bad", where: "live" });
+  ok(live.problems.length === 1 && live.problems[0].includes("Vercel"), "live site: the one line points at GITHUB_TOKEN in Vercel");
+  const none = await fetchTeamBoard({ fetch: fake, notes, now, noCache: true, token: null });
+  ok(none.problems.length === 0, "no key at all: GitHub still answers, no line");
+}
+
+console.log("Pushes counted from GitHub's push log (B13)");
+{
+  const at = (h: number) => new Date(now - h * 3600_000).toISOString();
+  const ev = (login: string, h: number, branch: string, head: string) =>
+    ({ type: "PushEvent", created_at: at(h), actor: { login }, payload: { ref: `refs/heads/${branch}`, head } });
+  const events = [
+    ev("harryv2157-dev", 1, "Harry", "h1"), ev("harryv2157-dev", 2, "Harry", "h2"), ev("harryv2157-dev", 30, "main", "h3"),
+    ev("ProposalWizard", 5, "Mikey", "m1"), ev("LeoVassiliou", 200, "Leo", "l1"),
+    { type: "PullRequestEvent", created_at: at(3), actor: { login: "harryv2157-dev" } },
+  ];
+  const log = pushLog(events, true);
+  ok(log.pushes.length === 5, "only push events count");
+  const harry = pushCount(log, "Harry", now);
+  ok(harry.week === 3 && harry.weekComplete, `Harry: 3 pushes this week, on any branch (${harry.week})`);
+  ok(pushCount(log, "Leo", now).week === 0, "Leo's push 8 days ago is not this week");
+  ok(harry.days.length === 14 && harry.days[13] === 2 && harry.days[12] === 1, "per day, oldest first");
+  // A log that ran out (GitHub keeps the last 300 events) two days back.
+  const short = pushLog(events.filter((e) => Date.parse(e.created_at) > now - 40 * 3600_000), false);
+  const hs = pushCount(short, "Harry", now);
+  ok(!hs.weekComplete && hs.days.slice(0, 11).every((d) => d === null) && hs.days[13] === 2, "a short log: \"at least\", and older days unknown, not zero");
+  // Whose chat made a commit: the person who pushed it.
+  const session: Record<string, string> = { h1: "S-harry", h2: "S-harry", h3: "S-harry", m1: "S-mikey" };
+  const owners = sessionOwners(log.pushes, (sha) => session[sha] ?? null);
+  ok(owners.get("S-harry") === "Harry" && owners.get("S-mikey") === "Mikey", "each chat belongs to whoever pushed its work");
+  const c = (sha: string, s: string | null) => ({ sha, title: sha, body: "", at: at(1), branch: "Harry", person: "Harry" as const, url: "", session: s, patch: null });
+  const onHarry = [c("a", "S-harry"), c("b", "S-mikey"), c("c", null), c("d", null), c("e", "S-unknown")];
+  const own = ownWork(onHarry, "Harry", owners, new Set(["d", "e"]));
+  ok(own.map((x) => x.sha).join("") === "ac", `Harry's card keeps his own work, drops Mikey's merged in from main (${own.map((x) => x.sha).join("")})`);
+}
 
 console.log("The page list");
 const urls = ADMIN_PAGES.map((p) => p.url);

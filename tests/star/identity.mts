@@ -397,6 +397,14 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     if (Array.isArray(rest.cupState)) {
       rest.cupState = (rest.cupState as { competition: string }[]).filter(s => s.competition !== "Lower League Trophy");
     }
+    // B13, 20 Oct 2026: the Championship's weekend-2 Tuesday league round
+    // moved to weekend 1, so weekend 2's Saturday is round 3 and the FA Cup
+    // Round of 64 (same Wednesday, 26 Aug) is week 3, not 2. Measured: this
+    // is the only difference in the two Championship careers.
+    if (Array.isArray(rest.fixtures)) {
+      rest.fixtures = (rest.fixtures as { competition?: string; round?: string; week: number }[]).map(f =>
+        (f.competition === "FA Cup" && f.round === "Round of 64" && f.week === 2 ? { ...f, week: 3 } : f));
+    }
     return JSON.stringify(rest);
   };
 

@@ -71,10 +71,33 @@ export interface Deploy {
   url: string | null;
 }
 
+/**
+ * One person's pushes, from GitHub's push log (B13, 20 Oct 2026).
+ *
+ * "N pushes this week" used to count the newest 20 commits on the person's
+ * branch, so it could never pass 20 (Harry made about 120 that week), and it
+ * counted other people's work that came in when main was merged into the
+ * branch. Now it is the number of times the person pushed to GitHub in the
+ * last 7 days, on any branch, read from GitHub's own push log, which names
+ * who pushed.
+ */
+export interface PushCount {
+  /** Pushes in the last 7 days. */
+  week: number;
+  /** Pushes a day for 14 days, oldest first; null = before the log starts. */
+  days: (number | null)[];
+  /** False when the log does not reach back 7 days (then `week` is "at least"). */
+  weekComplete: boolean;
+  /** The newest push, any branch. */
+  last: string | null;
+}
+
 export interface TeamBoardData {
   fetchedAt: string;
   deploy: Deploy;
-  people: { person: Person; branch: string; pushes: Push[]; status?: DevStatus | null }[];
+  people: { person: Person; branch: string; pushes: Push[]; status?: DevStatus | null; count?: PushCount | null }[];
+  /** How far back GitHub's push log reaches (null = it could not be read). */
+  pushLogFrom?: string | null;
   /** Live bars switched on (the dev_status table is there). */
   statusOn?: boolean;
   pulls: PullRequest[];
@@ -167,13 +190,104 @@ export function perDay(pushes: Pick<Push, "at">[], now: number, days = 7): numbe
   return out;
 }
 
+/* ── The push log ─────────────────────────────────────────────────────── */
+
+/** One event from GitHub's repository event log (only what is used). */
+export interface GhEvent {
+  type: string;
+  created_at: string;
+  actor?: { login?: string };
+  payload?: { ref?: string; head?: string };
+}
+
+export interface LoggedPush { person: Person | null; login: string; at: string; branch: string; head: string | null }
+
+export interface PushLog {
+  pushes: LoggedPush[];
+  /** The oldest event the log holds (null = empty). */
+  from: string | null;
+  /** True when the log ran out before GitHub's limit, so nothing older is missing. */
+  whole: boolean;
+}
+
+/** GitHub keeps the last 300 events (3 pages of 100). */
+export const EVENT_PAGES = 3;
+export const EVENTS_PER_PAGE = 100;
+
+/** The push events in GitHub's event log, and who pushed each. */
+export function pushLog(events: GhEvent[], whole: boolean): PushLog {
+  const pushes: LoggedPush[] = [];
+  for (const e of events) {
+    if (e.type !== "PushEvent") continue;
+    const login = e.actor?.login ?? "";
+    pushes.push({
+      person: LOGIN_PERSON[login] ?? null, login, at: e.created_at,
+      branch: (e.payload?.ref ?? "").replace(/^refs\/heads\//, ""), head: e.payload?.head ?? null,
+    });
+  }
+  const times = events.map((e) => Date.parse(e.created_at)).filter(Number.isFinite);
+  return { pushes, from: times.length ? new Date(Math.min(...times)).toISOString() : null, whole };
+}
+
+/** One person's pushes from the log: the last 7 days, and per day for 14. */
+export function pushCount(log: PushLog, person: Person, now: number): PushCount {
+  const mine = log.pushes.filter((p) => p.person === person);
+  const week = mine.filter((p) => now - Date.parse(p.at) < 7 * 86400_000).length;
+  const from = log.from ? Date.parse(log.from) : now;
+  const dayMs = 86400_000;
+  const days: (number | null)[] = perDay(mine, now, 14);
+  if (!log.whole) {
+    // Days the log does not reach are unknown, not empty.
+    const today = Math.floor(now / dayMs);
+    for (let i = 0; i < days.length; i++) {
+      const day = today - (days.length - 1 - i);
+      if ((day + 1) * dayMs <= from) days[i] = null;
+    }
+  }
+  const last = mine.reduce<string | null>((a, p) => (!a || Date.parse(p.at) > Date.parse(a) ? p.at : a), null);
+  return { week, days, weekComplete: log.whole || from <= now - 7 * dayMs, last };
+}
+
+/**
+ * Which person each Claude chat (session) belongs to: the person who pushed
+ * the commits it made. Every commit is authored "Claude", so the push log is
+ * the one place a name is recorded. Most votes wins.
+ */
+export function sessionOwners(pushes: LoggedPush[], sessionOf: (sha: string) => string | null): Map<string, Person> {
+  const votes = new Map<string, Map<Person, number>>();
+  for (const p of pushes) {
+    if (!p.person || !p.head) continue;
+    const s = sessionOf(p.head);
+    if (!s) continue;
+    const v = votes.get(s) ?? new Map<Person, number>();
+    v.set(p.person, (v.get(p.person) ?? 0) + 1);
+    votes.set(s, v);
+  }
+  const out = new Map<string, Person>();
+  votes.forEach((v, s) => out.set(s, Array.from(v.entries()).sort((a, b) => b[1] - a[1])[0][0]));
+  return out;
+}
+
+/**
+ * The commits on a person's branch that are their own work: made in one of
+ * their own chats, or (a chat the log does not know) not on main. Leaves out
+ * other people's work that came in when main was merged into the branch.
+ */
+export function ownWork(commits: Push[], person: Person, owners: Map<string, Person>, onMain: Set<string>): Push[] {
+  return commits.filter((c) => {
+    const owner = c.session ? owners.get(c.session) : undefined;
+    if (owner) return owner === person;
+    return !onMain.has(c.sha);
+  });
+}
+
 /* ── GitHub ───────────────────────────────────────────────────────────── */
 
 type Fetch = (url: string, init?: { headers?: Record<string, string> }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
 
 const API = "https://api.github.com";
 export const DEFAULT_REPO = "ProposalWizard/Tierlist";
-const PUSHES_PER_BRANCH = 20;
+const PUSHES_PER_BRANCH = 100;
 
 interface GhCommit { sha: string; html_url: string; commit: { message: string; committer?: { date?: string }; author?: { date?: string } } }
 interface GhPull { number: number; title: string; html_url: string; state: string; merged_at: string | null; created_at: string; updated_at: string; user?: { login?: string }; head?: { ref?: string } }
@@ -181,6 +295,21 @@ interface GhStatus { state?: string; statuses?: { context?: string; state?: stri
 
 let cache: { at: number; key: string; data: TeamBoardData } | null = null;
 export const CACHE_MS = 60_000;
+
+/**
+ * Where the site's GitHub key comes from, for the message when GitHub
+ * refuses it (B13, 20 Oct 2026). On the live site it is GITHUB_TOKEN in
+ * Vercel. A local test build reads GITHUB_TOKEN from the computer running it,
+ * which is not the site's key at all, so "Check GITHUB_TOKEN in Vercel" sent
+ * people to fix something that was not broken.
+ */
+export type KeyPlace = "live" | "local";
+
+export function keyRefusedLine(where: KeyPlace): string {
+  return where === "live"
+    ? "GitHub refused the site's key (GITHUB_TOKEN in Vercel), so the board asked without it. That works, but only about 60 times an hour. Ask Harry to renew the key."
+    : "This is a local test build: GitHub refused the GITHUB_TOKEN on this computer, so the board asked without a key. The live site uses its own key from Vercel; this says nothing about that one.";
+}
 
 /**
  * Read the board from GitHub. Never throws: anything that fails becomes a
@@ -193,29 +322,43 @@ export async function fetchTeamBoard(opts: {
   repo?: string;
   now?: number;
   noCache?: boolean;
+  /** Where the key came from (default "live"). See keyRefusedLine. */
+  where?: KeyPlace;
 }): Promise<TeamBoardData> {
   const repo = opts.repo || DEFAULT_REPO;
   const now = opts.now ?? Date.now();
   const key = `${repo}|${opts.token ? "t" : "-"}`;
   if (!opts.noCache && cache && cache.key === key && now - cache.at < CACHE_MS) return cache.data;
 
-  const problems: string[] = [];
+  // Problems by kind, so six failed reads make one line, not six.
+  const limited: string[] = [];
+  const unreachable: string[] = [];
+  const other: string[] = [];
+  let keyRefused = false;
   const headers: Record<string, string> = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
 
   const get = async <T,>(path: string, what: string): Promise<T | null> => {
     try {
-      const r = await opts.fetch(`${API}${path}`, { headers });
+      const sent = { ...headers };
+      let r = await opts.fetch(`${API}${path}`, { headers: sent });
+      // A refused key: the repository is public, so ask again without it,
+      // and leave it off every read after this one.
+      if (r.status === 401 && sent.Authorization) {
+        keyRefused = true;
+        delete headers.Authorization;
+        const bare = { ...sent };
+        delete bare.Authorization;
+        r = await opts.fetch(`${API}${path}`, { headers: bare });
+      }
       if (!r.ok) {
-        problems.push(r.status === 403 || r.status === 429
-          ? `GitHub is limiting how often we can ask (${what}). Try again in a few minutes.`
-          : r.status === 401 ? `GitHub refused the site's key (${what}). Check GITHUB_TOKEN in Vercel.`
-          : `GitHub answered ${r.status} for ${what}.`);
+        if (r.status === 403 || r.status === 429) limited.push(what);
+        else other.push(`GitHub answered ${r.status} for ${what}.`);
         return null;
       }
       return (await r.json()) as T;
     } catch {
-      problems.push(`Could not reach GitHub for ${what}.`);
+      unreachable.push(what);
       return null;
     }
   };
@@ -228,11 +371,28 @@ export async function fetchTeamBoard(opts: {
     return p;
   };
 
+  // GitHub's push log, newest first, up to 300 events: stop once it reaches
+  // back two weeks (the activity chart) or runs out.
+  const events: GhEvent[] = [];
+  let logRead = true;
+  let whole = false;
+  const readLog = async () => {
+    for (let page = 1; page <= EVENT_PAGES; page++) {
+      const got = await get<GhEvent[]>(`/repos/${repo}/events?per_page=${EVENTS_PER_PAGE}&page=${page}`, "the push log");
+      if (!got) { logRead = page > 1; return; }
+      events.push(...got);
+      if (got.length < EVENTS_PER_PAGE) { whole = true; return; }
+      const oldest = Math.min(...got.map((e) => Date.parse(e.created_at)).filter(Number.isFinite));
+      if (oldest < now - 14 * 86400_000) { whole = true; return; }
+    }
+  };
+
   const [branchCommits, pullsRaw, status, mainCommits] = await Promise.all([
     Promise.all(PEOPLE.map((p) => get<GhCommit[]>(`/repos/${repo}/commits?sha=${p}&per_page=${PUSHES_PER_BRANCH}`, `${p}'s branch`))),
     get<GhPull[]>(`/repos/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=20`, "pull requests"),
     get<GhStatus>(`/repos/${repo}/commits/main/status`, "the live deploy"),
-    get<GhCommit[]>(`/repos/${repo}/commits?sha=main&per_page=1`, "main"),
+    get<GhCommit[]>(`/repos/${repo}/commits?sha=main&per_page=${PUSHES_PER_BRANCH}`, "main"),
+    readLog(),
   ]);
 
   const pulls: PullRequest[] = (pullsRaw ?? []).map((p) => ({
@@ -263,6 +423,21 @@ export async function fetchTeamBoard(opts: {
     card.pushes.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
   });
 
+  // Each card keeps its own work only (B13): a commit that came in when main
+  // was merged into the branch belongs to whoever pushed it first.
+  const log = logRead ? pushLog(events, whole) : null;
+  const sessionBySha = new Map<string, string | null>();
+  for (const c of [...branchCommits.flat(), ...(mainCommits ?? [])]) {
+    if (c) sessionBySha.set(c.sha, splitMessage(c.commit.message).session);
+  }
+  const owners = log ? sessionOwners(log.pushes, (sha) => sessionBySha.get(sha) ?? null) : new Map<string, Person>();
+  const onMain = new Set((mainCommits ?? []).map((c) => c.sha));
+  const cards = people.map((c) => ({
+    ...c,
+    pushes: ownWork(c.pushes, c.person, owners, onMain),
+    count: log ? pushCount(log, c.person, now) : null,
+  }));
+
   const vercel = status?.statuses?.find((s) => /vercel/i.test(s.context ?? ""));
   const head = mainCommits?.[0];
   const st = vercel?.state ?? status?.state;
@@ -274,7 +449,18 @@ export async function fetchTeamBoard(opts: {
     url: vercel?.target_url ?? null,
   };
 
-  const data: TeamBoardData = { fetchedAt: new Date(now).toISOString(), deploy, people, pulls, problems };
-  if (!problems.length) cache = { at: now, key, data };
+  const list = (xs: string[]) => Array.from(new Set(xs)).join(", ");
+  const problems: string[] = [
+    ...(keyRefused ? [keyRefusedLine(opts.where ?? "live")] : []),
+    ...(limited.length ? [`GitHub is limiting how often we can ask (${list(limited)}). Try again in a few minutes.${opts.token && !keyRefused ? "" : " Without a working key GitHub allows about 60 asks an hour."}`] : []),
+    ...(unreachable.length ? [`Could not reach GitHub for ${list(unreachable)}.`] : []),
+    ...Array.from(new Set(other)),
+  ];
+  const data: TeamBoardData = {
+    fetchedAt: new Date(now).toISOString(), deploy, people: cards, pulls, problems,
+    pushLogFrom: log?.from ?? null,
+  };
+  // A refused key is not a passing fault: keep the answer for a minute anyway.
+  if (!limited.length && !unreachable.length && !other.length) cache = { at: now, key, data };
   return data;
 }

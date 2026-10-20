@@ -21,11 +21,27 @@ interface RewardRow {
 
 type Tab = "rewards" | "xp-curve" | "xp-awards";
 
+/**
+ * The server's own plain message for a failed request (B13, 20 Oct 2026).
+ * This page used to show a bare "Failed to fetch" whatever went wrong;
+ * /api/admin/xp/rewards now says what is missing (sign-in, the database key,
+ * the table), and this shows that.
+ */
+async function plainError(res: Response, fallback: string): Promise<string> {
+  try {
+    const d = await res.json();
+    if (typeof d?.error === "string" && d.error) return d.error;
+  } catch { /* not JSON: a crash page */ }
+  return `${fallback} (The server answered ${res.status}.)`;
+}
+
 export default function AdminXPPage() {
   const [tab, setTab] = useState<Tab>("rewards");
   const [rewards, setRewards] = useState<RewardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /** The list loaded, but this build can't save (no database key). */
+  const [readOnly, setReadOnly] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<RewardRow>>({});
@@ -51,11 +67,14 @@ export default function AdminXPPage() {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/xp/rewards");
-      if (!res.ok) throw new Error("Failed to fetch");
+      if (!res.ok) throw new Error(await plainError(res, "The rewards list didn't load."));
       const data = await res.json();
       setRewards(data.rewards ?? []);
+      setReadOnly(data.canSave === false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      setError(e instanceof TypeError
+        ? "Couldn't reach the site's server. Check the connection and reload."
+        : e instanceof Error ? e.message : "The rewards list didn't load.");
     }
     setLoading(false);
   }
@@ -70,8 +89,7 @@ export default function AdminXPPage() {
         body: JSON.stringify({ id, ...updates }),
       });
       if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error ?? "Save failed");
+        throw new Error(await plainError(res, "Save failed."));
       }
       setEditingId(null);
       await fetchRewards();
@@ -95,8 +113,7 @@ export default function AdminXPPage() {
         body: JSON.stringify(newForm),
       });
       if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error ?? "Create failed");
+        throw new Error(await plainError(res, "Create failed."));
       }
       setAddingNew(false);
       setNewForm({
@@ -119,7 +136,7 @@ export default function AdminXPPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
-      if (!res.ok) throw new Error("Delete failed");
+      if (!res.ok) throw new Error(await plainError(res, "Delete failed."));
       await fetchRewards();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Delete failed");
@@ -177,6 +194,11 @@ export default function AdminXPPage() {
 
         {tab === "rewards" && (
           <div className="space-y-6">
+            {readOnly && (
+              <div className="rounded-lg border border-amber-700 bg-amber-900/30 px-4 py-2 text-sm text-amber-200" data-xp-read-only>
+                Read-only here. Saving needs the site&apos;s database key, which the live site has and this test build does not.
+              </div>
+            )}
             {/* Add new button */}
             <div className="flex justify-end">
               <button

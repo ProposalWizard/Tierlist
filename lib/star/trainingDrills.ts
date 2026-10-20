@@ -1,4 +1,4 @@
-import { CX, POST_L, POST_R, GOAL_W } from "./pitch";
+import { CX, POST_L, POST_R, GOAL_W, PITCH_W } from "./pitch";
 
 /**
  * TRAINING, AS A LADDER RATHER THAN A TOY.
@@ -299,6 +299,61 @@ export function strikeSpot(distance: number, offset: number): { x: number; y: nu
     x: Math.max(3, Math.min(65, CX + offset)),
     y: Math.max(6, distance),
   };
+}
+
+/**
+ * Where Power's men in the way stand when nobody has placed them by hand:
+ * strung across the shooting lane at staggered depths, so they are a problem
+ * to shoot THROUGH rather than a single line to clear. (Moved here from
+ * TrainingMinigame.tsx unchanged, so the Training levels page draws them
+ * exactly where the drill puts them.)
+ */
+export function powerManSpots(ball: { x: number; y: number }, count: number): { x: number; y: number }[] {
+  return Array.from({ length: count }, (_, i) => {
+    const f = 0.30 + (i / Math.max(1, count)) * 0.42;
+    const laneX = ball.x + (CX - ball.x) * f;
+    const spread = (i % 2 === 0 ? -1 : 1) * (1.1 + i * 0.7);
+    return {
+      x: Math.max(1, Math.min(PITCH_W - 1, laneX + spread)),
+      y: Math.max(1.5, ball.y * (1 - f)),
+    };
+  });
+}
+
+/**
+ * Where a free kick's wall stands when nobody has placed it by hand: 9.15 m
+ * from the ball, square across the line to goal, 1.15 m apart (the real
+ * engine's own wall spacing). Moved here from TrainingMinigame.tsx unchanged.
+ */
+export function wallSpots(ball: { x: number; y: number }, count: number): { x: number; y: number }[] {
+  const gx = CX - ball.x, gy = 0 - ball.y;
+  const gl = Math.hypot(gx, gy) || 1;
+  const ux = gx / gl, uy = gy / gl;
+  const wallCx = ball.x + ux * 9.15, wallCy = ball.y + uy * 9.15;
+  const px = -uy, py = ux;
+  return Array.from({ length: count }, (_, i) => {
+    const off = (i - (count - 1) / 2) * 1.15;
+    return {
+      x: Math.max(1, Math.min(PITCH_W - 1, wallCx + px * off)),
+      y: Math.max(0.6, wallCy + py * off),
+    };
+  });
+}
+
+/**
+ * The men a drill actually stands up: the hand-placed spots first (dragged on
+ * the Training levels page), then the drill's own placement for any more the
+ * level asks for. `count` is the level's number (Men in the way / wall).
+ */
+export function placedMen(
+  own: { x: number; y: number }[], placed: { x: number; y: number }[] | undefined, count: number,
+): { x: number; y: number }[] {
+  return Array.from({ length: count }, (_, i) => placed?.[i] ?? own[i]);
+}
+
+/** Technique's ball: where it was dragged to, or centred six metres behind the gate's distance. */
+export function techniqueBallSpot(cfg: { gateDistance: number; ball?: { x: number; y: number } }): { x: number; y: number } {
+  return cfg.ball ? { ...cfg.ball } : strikeSpot(cfg.gateDistance + 6, 0);
 }
 
 /**

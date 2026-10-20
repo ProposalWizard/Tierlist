@@ -226,6 +226,9 @@ export const ADMIN_GUIDES = {
         ["The result page after it", "Your season, the winner and the top ten, as after the ceremony. Continue comes back here."],
         ["Old (the countdown cards)", "The Ballon d'Or screen as it was (Settings → Look → Ballon d'Or night: Old)."],
       ] },
+      { group: "Season awards", items: [
+        ["Season awards (last season)", "The awards screen after a season: the trophies, the Golden Boot and the other awards, and the Team of the Season, worked out from the picked career's last season. Each face is a headshot shot from the 3D model (the drawn head shows until it is made). Continue comes back here."],
+      ] },
       { group: "Online", items: [
         ["Head to head", "The made-up legend (left, yours) against the career picked above (right): one bar per number."],
         ["Compare with a friend", "Type a friend's code or paste their link, pick one of your careers. Needs the database (the code is looked up)."],
@@ -240,7 +243,7 @@ export const ADMIN_GUIDES = {
       "The overview replaced the old end screen. The Hall of Fame is on the title screen. All seasons is Stats → All seasons (Settings → Look → All seasons page: New | Old).",
       "Share link and Compare: on the end screen and in the Hall of Fame. A shared career opens at /legend/CODE, no sign-in.",
     ],
-    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Ballon d'Or night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts.",
+    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Ballon d'Or night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts; the season awards components/star/SeasonAwardsScreen.tsx (lib/star/seasonAwards.ts computeSeasonAwardStats); the faces on the award cards components/star/Headshot3D.tsx, lib/star/headshot3d/.",
   },
   "/star-intl-dev": {
     title: "International world",
@@ -510,6 +513,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: [
       "Rewards save straight to the live database (Supabase table rewards) and apply to every player immediately.",
+      "On a local test build the list still loads but is read-only: saving needs the site's database key, and an amber note says so. Any other problem (not signed in, not an admin, the table missing) is said in plain words in the red box.",
       "The XP curve and XP awards are set in the code, not here — ask for a code change to alter them.",
     ],
     inGame: ["Players' profiles and level-up unlocks across the whole site."],
@@ -827,7 +831,7 @@ export const ADMIN_GUIDES = {
         ["@ Waiting on me", "Messages that name you that you haven't seen, and points you haven't pressed Got it on. Left side on a computer, folded above the chat on a phone. The round button shows a gold @ when something is waiting."],
         ["Got it (on a pointed page)", "Marks the point as seen; the sender's card shows your face lit. ✕ closes it without saying Got it."],
         ["Pinned", "Pinned messages, on the right (folded above the chat on a phone)."],
-        ["Round chat button", "Bottom-left on every admin and test page: Chat | To-do in a box. 👉 Point starts point mode. Open ↗ goes to the full tab."],
+        ["Round chat button", "Bottom-left on every admin and test page: Chat | To-do in a box. 👉 Point starts point mode. Open ↗ goes to the full tab. On a page whose own buttons sit bottom-left (the Manager's office dialogue, the 3D signing) it sits just above them instead."],
       ] },
       { group: "To-do", items: [
         ["Add a job · for me ▾", "Your own job, or pick Mikey or Leo to give them one."],
@@ -835,9 +839,11 @@ export const ADMIN_GUIDES = {
       ] },
       { group: "Team tab", items: [
         ["Live on knowitball.co.uk", "Whether the newest version of main finished deploying, how long ago, and what it was."],
+        ["N pushes this week (under a name)", "How many times that person pushed to GitHub in the last 7 days, on any branch, from GitHub's own push log (it names who pushed). One push can carry several changes. Other people's work that came in when main was merged is not counted. \"N+ pushes since …\" = GitHub's log (its last 300 events) does not reach back a full week. \"N changes this week\" = the log could not be read, so it counts the changes on their own branch instead. Until 20 Oct it counted only the newest 20 changes on the branch, so it never passed 20 and included work merged in from main."],
+        ["Activity · pushes a day", "The same pushes, per day, for two weeks. Days GitHub's log does not reach are left empty and named under the chart (unknown, not zero)."],
         ["A push", "Opens it: the full message, when, which branch, and the patch note it went out in."],
         ["v0.55 (green tag)", "The patch note that push went out in. Grey \"no notes yet\" = not in any patch notes yet."],
-        ["Show all", "Shows every push on that branch (up to 20)."],
+        ["View all", "Shows that person's latest changes on their branch (up to 30): their own work only, not work merged in from main."],
         ["A pull request", "Opens it on GitHub."],
       ] },
       { group: "Inside a push", items: [
@@ -862,7 +868,7 @@ export const ADMIN_GUIDES = {
     ],
     inGame: ["Nowhere. Admins only."],
     needs: [
-      "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it GitHub only answers a few times an hour and the board says so.",
+      "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it, or if GitHub refuses it, the board asks without a key (the repository is public): that works about 60 times an hour, and one line on the board says which happened. On a local test build the key comes from the computer running it, not from Vercel, and the line says so.",
       "The live progress bars (\"Now working on\") are step 2: one database file for Mikey to run and a shared password. Until then each card says so.",
       "Ideas, Chat and To-do need supabase/migrations/team_room.sql run once in Supabase. Until then they say so.",
       "Seen faces, Got it, Read and understood and patch-note notes need supabase/migrations/team_room_v2.sql (PENDING), run after team_room.sql.",
@@ -1010,16 +1016,16 @@ export const ADMIN_GUIDES = {
 
   "/star-training-dev": {
     title: "Training Levels",
-    what: "Play any of the 30 levels of any training game straight away, and change any level's numbers (Edit level), the way the Scenario Gallery edits a chance.",
+    what: "Play any of the 30 levels of any training game straight away, and change any level (Edit level): drag the ball, cones and men on its picture or set its numbers, the way the Scenario Gallery edits a chance.",
     buttons: [
       {
         group: "The level list",
         items: [
           ["Power / Technique / Free Kick / Pace / Vision", "The tabs at the top: which training game's levels to show."],
-          ["Your skills 40 / 70 / 100", "The player's skills while you play. They change how hard you can hit the ball and how much it bends, so a level plays differently at 40 and at 100. Power levels also ease toward your Power when it is below the level: pick 100 to play a Power level's numbers exactly."],
           ["A level tile", "Picks that level; tap it again to play it. The line under the number is what it asks for (distance and blockers, gate size, wall, chasers, options and time). Stars appear on a tile after you've played it here."],
           ["The dot on a tile", "Amber: unsaved changes. Green: a saved edit every career plays. Orange: saved on this device only."],
-          ["The level panel (right; pinned to the bottom on a phone)", "The picked level: its game, what it asks for, your stars here, and a real picture of that game (taken at level 15)."],
+          ["The level panel (right; pinned to the bottom on a phone)", "The picked level: its game, what it asks for, what it plays with, your stars here, and a real picture of that game (taken at level 15)."],
+          ["Plays with", "The skills the level is played with — no choosing: what a player has after finishing every level before it (2 stars on each, the middle of 1-3; the small print gives the 1-star and 3-star numbers), all skills trained as far. Only the skills that game reads are listed: Power and Technique for Power and Technique, plus Free kick for Free kick. Pace plays at the level's own Your speed; Vision reads no skill."],
           ["Edit level", "Opens the editor for the picked level (on a phone it takes the place of the list)."],
           ["Let's go ›", "Plays the picked level (with any unsaved changes)."],
         ],
@@ -1027,13 +1033,15 @@ export const ADMIN_GUIDES = {
       {
         group: "Edit level",
         items: [
-          ["The sliders (and the number boxes)", "Every number the drill is built from. Power: distance, off centre, men in the way, keeper on/off and strength, score to pass (0.5 = any goal, higher = nearer a post). Technique: gate distance, width, how far off your line, max height, score to pass. Free kick: distance, off centre, men in the wall, keeper strength, score to pass. Pace: men to beat, most in one wave, their speed, your speed. Vision: team-mates, seconds to pick, the clear man's extra space, defenders, share offside, closest to the line, tap target size. \"was …\" shows the committed number; a • marks a change since the last save."],
+          ["The picture (Power, Technique, Free kick, Pace)", "The level from above. Drag the ball, a man or a cone with a finger or the mouse: the numbers beside it change as you go, and ▶ Play uses it straight away. Power: the ball (sets Distance and Off centre) and each man in the way. Technique: the ball, either cone (sets the gap and the distance) or the dot between them (moves the whole gate). Free kick: the ball and each man in the wall. Pace: each man, sideways along his wave's line (the gaps you run into). A dashed ring marks what you can grab; it turns yellow while held. Vision (Pick the Pass) has no picture to drag yet; its pictures are real match moments."],
+          ["The sliders (and the number boxes)", "Every number the drill is built from. Power: distance, off centre, men in the way, keeper on/off and strength, score to pass (0.5 = any goal, higher = nearer a post). Technique: gate distance, width, how far off your line, max height, score to pass. Free kick: distance, off centre, men in the wall, keeper strength, score to pass. Pace: men to beat, most in one wave, their speed, your speed. Vision (Pick the Pass): kick the pass on/off (off = tap the man), seconds to tap him or to start the kick, seconds to let go of the pull, team-mates (2-6), traps (offside, cut out, marked), how clear the right ball is (small = two good balls), someone offside on/off, real match moments on/off (off = the team's drawn chances). \"was …\" shows the committed number; a • marks a change since the last save."],
           ["Keeper On / Off", "Power only: an open goal or a keeper."],
-          ["Layout: Level's own / Shuffle", "Where everyone stands is built from the level's own seed. Shuffle picks a new one (shown as #1234); Level's own goes back."],
-          ["▶ Play", "Plays the level with these numbers straight away, on the same drill a career gets. Nothing is saved by playing."],
+          ["Layout: Level's own / Shuffle", "Where everyone stands is built from the level's own seed. Shuffle picks a new one (shown as #1234); Level's own goes back. Both also put back anyone you dragged. \"Placed by hand\" shows when something has been dragged."],
+          ["▶ Play", "Plays the level as drawn — your dragged picture and these numbers — straight away, on the same drill a career gets, with the skills under Plays with. Power plays exactly as drawn here; in a career a player whose Power is behind the level gets it eased (the small print under Plays with says how far). Nothing is saved by playing."],
           ["Save", "Saves this level's numbers for every career (shared table star_training_levels). Says \"Saved for everyone\" or \"Saved on this device only\" and why."],
           ["Commit", "Writes this level's numbers into the game's levels file in the code (see Committing)."],
-          ["Undo changes", "Back to the saved numbers."],
+          ["↶ Undo", "Steps back one drag or one changed number at a time."],
+          ["Undo all", "Back to the saved level (every unsaved drag and number)."],
           ["Back to committed", "Deletes the saved edit: the level plays as the committed file has it, for everyone."],
           ["Done", "Closes the editor. Unsaved changes stay on the tile (amber dot) until you leave the page."],
         ],
@@ -1043,9 +1051,12 @@ export const ADMIN_GUIDES = {
         items: [
           ["‹ All levels / ‹ Edit level", "Back to the list (or the editor) at any time."],
           ["◀ L13 ▶", "Previous or next level, starting it fresh."],
-          ["unsaved edit", "Shown in the bar when the level is playing numbers you haven't saved."],
+          ["The middle of the bar", "The skills this level plays with (e.g. Power 65 · Technique 65), and \"edited\" when it is playing changes you haven't saved."],
+          ["Pace: the ring", "Pace has a skill to it now: one man in each wave comes for the ball and wears a ring (white). When he drops his shoulder it closes in, amber; it turns green for a moment — flick the other way then. Too early and he goes with you (\"Too early — he read it\"); too late and he's across you. The other men in the wave hold their lanes: pick the gap."],
           ["Let's go", "Level 1 of each game opens on its how-it-works card first, as in a career."],
           ["Tap to start", "Pace (the dribble run) waits for this before anyone moves, on every try."],
+          ["Vision: 3, 2, 1", "Counts down over a cover, then the picture shows and the clock starts. Tap levels: tap the man. Kick levels: drag back from the ball and strike it to him; the clock stops when you start the pull, then you have the let-go time."],
+          ["Vision: the result line", "After each try: RIGHT MAN, OFFSIDE, CUT OUT, MARKED, NOT THE BALL, MISPLACED or TOO SLOW, with the right man ringed green (and your wrong pick red) for a moment. A real picture names its match and minute."],
         ],
       },
     ],
@@ -1063,13 +1074,13 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Each level here is exactly the level a player gets: Training → pick a skill → pick a level. Same three tries, same stars.",
       "A saved level reaches every career the next time its training screen loads; a committed one after the deploy.",
-      "Vision: each of the three tries is its own picture (fixed per level), so a missed try never shows the answer to the next one.",
+      "Vision (Pick the Pass): each of the three tries is its own picture (fixed per level), so a missed try never shows the answer to the next one. The pictures are real match moments or the team's drawn chances, played on the real match engine in the match's own look; on kick levels the engine judges the pass (reached him, offside, cut out). Each level avoids the pictures the levels below it showed, so a player climbing 1 → 30 meets 45 different pictures in 90 tries (an ordinary one on 3 levels at most; the 5 offside ones come back more).",
     ],
     needs: [
       "The star_training_levels table (supabase/migrations/star_training_levels.sql). Until it is run, Save stays on this device only.",
       GITHUB_TOKEN_NEEDED,
     ],
-    dev: "app/star-training-dev/{page,LevelEditor}.tsx mounts components/star/TrainingMinigame.tsx (levelOverride = the draft). Level rows: lib/star/trainingLevelData.ts reading lib/star/data/trainingLevels.json (rebuild: scripts/training-levels/build.mts); saved edits: lib/star/trainingLevelStore.ts, /api/star/training-levels, /api/star/training-levels/commit (lib/star/commitScenarios.ts commitDataFile); vision picture lib/star/visionRound.ts; tests tests/star/trainingLevelData.mts.",
+    dev: "app/star-training-dev/{page,LevelEditor,LevelPicture}.tsx mounts components/star/TrainingMinigame.tsx (levelOverride = the draft, asDrawn, skills from lib/star/trainingAutoSkills.ts). What can be dragged per drill: lib/star/trainingLayout.ts (DRILL_LAYOUTS; Vision plugs in there). Dragged spots are optional row fields (men, ball, lanes) in lib/star/trainingLevelData.ts. Pace's knock-on: lib/star/firstPersonDribble.ts (knockOn), tests/star/paceKnockOn.mts. Level rows: lib/star/trainingLevelData.ts reading lib/star/data/trainingLevels.json (rebuild: scripts/training-levels/build.mts); saved edits: lib/star/trainingLevelStore.ts, /api/star/training-levels, /api/star/training-levels/commit (lib/star/commitScenarios.ts commitDataFile); Vision: lib/star/visionRound.ts picks and judges the pictures from lib/star/data/visionMoments.json (real moments: scripts/vision/build_vision_moments.mts) and lib/star/data/visionChecks.json (each pass tried on the engine: scripts/vision/check_passes.mts); the curve with a modelled player: scripts/vision/curve.mts; tests tests/star/{trainingLevelData,vision,trainingLayout,trainingAutoSkills}.mts, bot tests/star/visionBot.ts.",
   },
   "/star-highlights-dev": {
     title: "Infinite Highlights",
@@ -1486,7 +1497,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing here is saved. The page only shows other test pages at fixed moments."],
     inGame: ["Nothing changes in the game from this page. It is a measuring tool for the 3D changes."],
-    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/home/page.tsx (the Home shot; window.__homeT holds a moment), app/star-3d-bench-dev/face/page.tsx (one head close up, its moving face on an 8 s loop), app/star-3d-bench-dev/faces/page.tsx (measures the eight Style A faces: scripts/bench3d/faces.mjs --write), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old for the before). Home stills: node scripts/bench3d/home.mjs PREFIX 3 8.6 20. Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; on any 3D test page ?skinfix=0 shows the old skin, ?framing=old the old cut-scene cameras, ?face=old still faces.",
+    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/home/page.tsx (the Home shot; window.__homeT holds a moment), app/star-3d-bench-dev/face/page.tsx (one head close up, its moving face on an 8 s loop), app/star-3d-bench-dev/faces/page.tsx (measures the eight Style A faces: scripts/bench3d/faces.mjs --write), app/star-3d-bench-dev/headshots/page.tsx (twelve made-up players and you as card headshots shot from the 3D model, beside the drawn heads they replace, with the time each picture took; Make again forgets this device's kept pictures; ?only=3d|drawn; components/star/Headshot3D.tsx, lib/star/headshot3d/; stills and timings: node scripts/bench3d/headshots.mjs DIR), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old for the before). Home stills: node scripts/bench3d/home.mjs PREFIX 3 8.6 20. Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; on any 3D test page ?skinfix=0 shows the old skin, ?framing=old the old cut-scene cameras, ?face=old still faces.",
   },
   "/star-3d-area-dev": {
     title: "3D Area",
