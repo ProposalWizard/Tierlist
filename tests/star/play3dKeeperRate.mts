@@ -3,6 +3,13 @@
  * On-target shots at a 70-rated keeper should go in about as often as real ones
  * (roughly 20–50% by distance), corners far more often than the middle, and a
  * better keeper should save more. The old keeper saved 86–100%, corners included.
+ *
+ * 20 Oct 2026 (Harry: "Keepers in the 3D minigames are overpowered", fair is "about 1 in
+ * 3 shots saved"): the bands moved up. These shots are struck firm at a random spot
+ * anywhere in the goal (the middle as often as a corner), so he saves more of them than
+ * of a decent player's placed shot (tests/star/play3dSaveRate.mts: 1 in 3). Measured,
+ * before → after: 12 m 41% → 59% in, 18 m 23% → 44%, 25 m 25% → 41%, corners at 18 m
+ * 53% → 80%; at 18 m a 90 lets in 14% → 35%, a 50 32% → 49%.
  */
 import { CX, GOAL_H, POST_L, POST_R, STEP } from "../../lib/star/play3d/constants";
 import { makePlayer, skillsOf } from "../../lib/star/play3d/player";
@@ -39,11 +46,11 @@ function rate(ov: number, dist: number, spd: number) {
 const problems: string[] = [];
 const mid = rate(70, 18, 26), close = rate(70, 12, 22), far = rate(70, 25, 28);
 const good = rate(90, 18, 26), poor = rate(50, 18, 26);
-if (mid.all < 0.15 || mid.all > 0.45) problems.push(`70-rated keeper, 18 m: ${(mid.all * 100).toFixed(0)}% go in (want 15–45%)`);
-if (close.all < 0.3 || close.all > 0.7) problems.push(`70-rated keeper, 12 m: ${(close.all * 100).toFixed(0)}% go in (want 30–70%)`);
-if (far.all < 0.1) problems.push(`70-rated keeper, 25 m: only ${(far.all * 100).toFixed(0)}% go in (want 10%+)`);
+if (mid.all < 0.3 || mid.all > 0.6) problems.push(`70-rated keeper, 18 m: ${(mid.all * 100).toFixed(0)}% go in (want 30–60%)`);
+if (close.all < 0.4 || close.all > 0.75) problems.push(`70-rated keeper, 12 m: ${(close.all * 100).toFixed(0)}% go in (want 40–75%)`);
+if (far.all < 0.25) problems.push(`70-rated keeper, 25 m: only ${(far.all * 100).toFixed(0)}% go in (want 25%+)`);
 if (mid.corners < mid.all + 0.1) problems.push(`corners (${(mid.corners * 100).toFixed(0)}%) not clearly better than the average (${(mid.all * 100).toFixed(0)}%)`);
 if (!(good.all < mid.all && mid.all < poor.all)) problems.push(`a better keeper should save more: 90 → ${(good.all * 100).toFixed(0)}%, 70 → ${(mid.all * 100).toFixed(0)}%, 50 → ${(poor.all * 100).toFixed(0)}% go in`);
-console.log(`go in, 70-rated: 12 m ${(close.all * 100).toFixed(0)}%, 18 m ${(mid.all * 100).toFixed(0)}%, 25 m ${(far.all * 100).toFixed(0)}%; corners at 18 m ${(mid.corners * 100).toFixed(0)}%`);
+console.log(`go in, 70-rated: 12 m ${(close.all * 100).toFixed(0)}%, 18 m ${(mid.all * 100).toFixed(0)}%, 25 m ${(far.all * 100).toFixed(0)}%; corners at 18 m ${(mid.corners * 100).toFixed(0)}%; at 18 m a 90 lets in ${(good.all * 100).toFixed(0)}%, a 50 ${(poor.all * 100).toFixed(0)}%`);
 if (problems.length) { console.error("FAIL\n  " + problems.join("\n  ")); process.exit(1); }
 console.log("ok");

@@ -41,8 +41,14 @@ export type WembleyMode = "normal" | "doubles";
  * 89 s and the 80 won 23% (less than his fair 25%: his rising shots cleared
  * the bar, fixed in wembleyShot). Measured on 200 sessions at 70, with that
  * fix: 38% of shots in, 146 s a session, the 80 wins 42%, no stalls.
+ * 20 Oct 2026 (B16): 66, the same as Free Roam and Headers & Volleys. The shared
+ * keeper now saves about 1 in 3 of a decent player's on-target shots (Harry: "Keepers
+ * in the 3D minigames are overpowered"); at 70 a decent player's shot from Wembley's
+ * 8–14 m was saved 38% (1000 shots), at 66 33% (600 shots). Sessions are quicker: see
+ * tests/star/wembley3d.mts. Raising him back doesn't buy the time back without
+ * breaking the 1 in 3 (82: 102 s but 43% saved).
  */
-export const WEMBLEY_KEEPER = 70;
+export const WEMBLEY_KEEPER = 66;
 
 /** No goal for this long in a round → the keeper tires (rating drops). */
 export const VALVE_SECONDS = 60;

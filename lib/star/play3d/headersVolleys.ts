@@ -25,8 +25,14 @@ import { gameReward } from "../relationships";
 import type { Person3 } from "./freeRoam";
 
 export const HV_CROSSES = 10;
-/** A good session (wins the Team bar): above the measured average bot (about 4.5 points a session against a 66 keeper since the keeper side-steps square to the ball and blocks shots at him, 9 Oct 2026; it was 6 and the bar 7). */
-export const HV_TARGET = 6;
+/**
+ * A good session (wins the Team bar): about the measured average bot (9 Oct 2026: about
+ * 4.5 points a session against a 66 keeper, bar 6; it was 6 and the bar 7).
+ * 20 Oct 2026 (B16): the keeper now saves about 1 in 3, so the average bot (65) went
+ * 5.5 → 7.9 points a session and would win 82% of sessions at 6 (53% before). Bar 6 → 8
+ * keeps it about half (60 sessions measured, median 8).
+ */
+export const HV_TARGET = 8;
 export const HV_POINTS = { header: 2, volley: 3, other: 1 } as const;
 
 export type CrossKind = "head" | "volley" | "low";
