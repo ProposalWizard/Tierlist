@@ -1857,6 +1857,9 @@ export const ADMIN_GUIDES = {
         ["↺ Replay", "Cut scenes: play it again from the start."],
         ["Left thumb / tap / drag back", "Gameplay: move (push to the edge to sprint), pass or call for it, shoot. WASD or the arrows, Shift and Space on a keyboard."],
       ] },
+      { group: "Lag test (only while one is running)", items: [
+        ["The pill at the top", "A Lag test started in the game (Settings → 🛠 Dev → Lag test) comes here for its last step, the cut scene: its link opens the Cut-scene Director. I'm there records 30 s, then Next shows the results. The pill measures only; nothing on this page changes."],
+      ] },
     ],
     saving: ["Nothing is saved. The address can hold a set-up: ?style=ink&scene=goal&tilt=30 (and &t=6 holds a cut scene still at 6 seconds). Director: ?scene=director&fixture=signing, or ?scene=director&event=scored&stakes=0.8&emotion=joy&seed=3; &clean=1 hides the controls for filming; &cam=old or &cam=new overrides the Cut-scene camera setting on this page. Real game: &seed=7 picks the chance stream, &kinds=one_on_one,penalty only those chances, &view=2d starts on 2D, &clock=virtual freezes the clock for frame-by-frame filming (scripts/film/frames3d.mjs)."],
     inGame: ["Nowhere yet: a sandbox for choosing the look. The 2D match is not touched.", "Cut-scene Director (Hand-made): a 3D Scene Editor edit APPROVED for that scene and ticked for \"the test page\" plays here."],
