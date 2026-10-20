@@ -78,11 +78,23 @@ export function refHold(a: CutsceneActor, c: PoseCtx, w: number, clip: RefArmCli
   const T = c.T;
   const s = refArms(clip, (o.from ?? 0) + c.local * (o.speed ?? 1), o.loop);
   if (!s) return;
+  // his trunk's lean first, so the arms are solved from where his shoulders then are
+  if (o.lean) a.lean(s.lean[0] * o.lean * w, -s.lean[1] * o.lean * w);
+  // his paths are in his CHEST's frame (a man leaning over a table has the table "in front"), so
+  // ours go in our man's chest frame too: across the shoulders, up the spine, and out the front
+  const wpt = (n: string) => { const b = a.bone(n); const v = new T.Vector3(); if (b) b.getWorldPosition(v); return v; };
+  const shL = wpt("LeftArm"), shR = wpt("RightArm");
+  const across = shL.clone().sub(shR).normalize();
+  const upv = wpt("neck").sub(wpt("Spine02"));
+  upv.sub(across.clone().multiplyScalar(upv.dot(across))).normalize();
+  if (upv.lengthSq() < 0.5) upv.set(0, 1, 0);
+  const fwd = new T.Vector3().crossVectors(across, upv).normalize();
+  const inChest = (v: number[]) => across.clone().multiplyScalar(v[0]).addScaledVector(upv, v[1]).addScaledVector(fwd, v[2]);
   const put = (side: "L" | "R") => {
     const { sh, len } = armOf(a, T, side);
     const v = s[side], e = s[side === "L" ? "Le" : "Re"];
-    const wr = sh.clone().add(actorDir(T, c, v[0], v[1], v[2]).multiplyScalar(Math.hypot(v[0], v[1], v[2]) * len));
-    const el = sh.clone().add(actorDir(T, c, e[0], e[1], e[2]).multiplyScalar(Math.hypot(e[0], e[1], e[2]) * len));
+    const wr = sh.clone().addScaledVector(inChest(v), len);
+    const el = sh.clone().addScaledVector(inChest(e), len);
     return { sh, wr, el };
   };
   const L = put("L"), R = put("R");
@@ -117,7 +129,6 @@ export function refHold(a: CutsceneActor, c: PoseCtx, w: number, clip: RefArmCli
     a.reach(side, p.wr, along, palm, w, pole.normalize(), c.lag);
     if (o.grip) a.hand(side, o.grip, w);
   }
-  if (o.lean) a.lean(s.lean[0] * o.lean * w, -s.lean[1] * o.lean * w);
 }
 
 /** Knees on the floor, back upright (knee-slide: leaning back). */

@@ -14,7 +14,7 @@ from clipdefs import CLIPS  # noqa: E402
 
 out = sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv else "cmu"
 os.makedirs(out, exist_ok=True)
-trials = sorted({c["trial"] for c in CLIPS.values()})
+trials = sorted({c["trial"] for c in CLIPS.values() if not c["trial"].startswith("video:")})  # video: sources live in video/*.npz
 for t in trials:
     s = t.split("_")[0]
     for name in (f"{s}.asf", f"{t}.amc"):

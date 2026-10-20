@@ -65,13 +65,15 @@ export function refArms(name: RefArmClip, t: number, loop = false): RefArmSample
     };
   };
   if (!loop) return one(t);
+  // a loop of period dur - fade: each new round starts by crossfading the clip's last `fade`
+  // seconds into its first ones, so the seam never pops
   const fade = Math.min(0.4, dur / 4);
-  const tt = ((t % dur) + dur) % dur;
-  const a = one(tt);
-  if (tt < dur - fade) return a;
-  // near the end: mix towards the start, so the loop never pops
-  const k = (tt - (dur - fade)) / fade, s = k * k * (3 - 2 * k);
-  const b = one(tt - (dur - fade));
+  const P = dur - fade;
+  if (t < P) return one(Math.max(0, t));
+  const u = t % P;
+  if (u >= fade) return one(u);
+  const k = u / fade, s = k * k * (3 - 2 * k);
+  const a = one(u + P), b = one(u);
   const mix = (x: number[], y: number[]) => x.map((v, i) => v + (y[i] - v) * s);
   return { L: mix(a.L, b.L) as V3, R: mix(a.R, b.R) as V3, Le: mix(a.Le, b.Le) as V3, Re: mix(a.Re, b.Re) as V3, lean: mix(a.lean, b.lean) as [number, number] };
 }

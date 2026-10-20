@@ -18,6 +18,7 @@ A clip spec (build.py CLIPS[name]):
   edit       fn(rt, frames, src) -> frames: a careful hand-made change on top
              (an "adapted" clip; build.py says which and why)
 """
+import os
 import numpy as np
 from rig import CANON, Ctx, qmul, qinv, qnorm, qrot, qfromto, qaxis
 from retarget import Source, Retarget, solve_clip, local_tracks, close_loop, resample, find_cycle, slerp
@@ -27,7 +28,15 @@ FPS = 30
 _cache = {}
 
 
+VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "video")
+
+
 def motion(cmu_dir, trial):
+    if trial.startswith("video:") and trial not in _cache:
+        # a reference video read by MediaPipe (video.py): "video:<name>:<person>" -> video/<name>.npz
+        import video
+        _, name, person = trial.split(":")
+        _cache[trial] = video.motion(os.path.join(VIDEO_DIR, name + ".npz"), person)
     if trial not in _cache:
         subj = trial.split("_")[0]
         sk = Skeleton(f"{cmu_dir}/{subj}.asf")
@@ -92,7 +101,9 @@ def bake_clip(rig, cmu_dir, name, spec):
     m = dict(spec.get("meta", {}))
     m["duration"] = round(total, 4)
     m["loop"] = loop
-    m["source"] = f"CMU {spec['trial']}" + (" (mirrored)" if spec.get("mirror") else "") + (f", {spec['adapted']}" if spec.get("adapted") else "")
+    src_name = (f"reference video {spec['trial'][6:]} (Higgsfield, read by MediaPipe)" if spec["trial"].startswith("video:")
+                else f"CMU {spec['trial']}")
+    m["source"] = src_name + (" (mirrored)" if spec.get("mirror") else "") + (f", {spec['adapted']}" if spec.get("adapted") else "")
     if info.get("speed") is not None and loop and info["speed"] > 0.3:
         m["speed"] = round(info["speed"], 3)
         m["travel"] = [round(v, 3) for v in info["vel"]]  # m/s, his frame (x = his left, z = forward)

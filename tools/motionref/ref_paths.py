@@ -23,8 +23,9 @@ from arm_metrics import chest_frame, lowpass  # noqa: E402
 # name: (pose file, person, from s, to s, what it is)
 CLIPS = {
     "talk-hands": ("press-answer", "p0", 0.0, 6.0, "answers a question at the press table, talking with his hands"),
-    "trophy-lift": ("trophy-lift", "p0", 0.0, 6.0, "looks at the cup at his chest, lifts it overhead, shakes it"),
-    "roar": ("goal-celebration", "p0", 0.0, 6.0, "on his knees: arms wide, fists in for the roar, arms up"),
+    # the "base standard" references (Harry 17:50): the Nano Banana Pro + Seedance ones (b5c-hq), copied most closely
+    "trophy-lift": ("hq-trophy-lift", "p0", 0.0, 6.4, "looks at the cup at his side, lifts it overhead in one go, roars, holds it up"),
+    "roar": ("hq-goal-celebration", "p0", 0.0, 6.0, "on his knees: arms wide, then fist pumps up high, then arms down"),
     "wave-clap": ("farewell", "p0", 0.0, 6.0, "walks through the guard of honour, waves up, claps over his head"),
     "shirt-up": ("shirt-photo", "p0", 0.0, 6.0, "holds the new shirt up for the cameras"),
 }
@@ -41,6 +42,16 @@ def build(path, pid, t0, t1):
             X[f] = X[f - 1]
     a, b = int(round(t0 * fps)), min(len(X), int(round(t1 * fps)) + 1)
     X = X[a:b]
+    # an elbow or wrist MediaPipe could hardly see (behind the cup, behind the shirt) is a guess that
+    # jumps about: drop it and draw a straight line from the last seen place to the next
+    vis = z[f"img_{pid}"][a:b, :, 2]
+    for j in (13, 14, 15, 16, 17, 18, 19, 20):
+        bad = vis[:, j] < 0.55
+        if bad.all() or not bad.any():
+            continue
+        idx = np.arange(len(X))
+        for d in range(3):
+            X[bad, j, d] = np.interp(idx[bad], idx[~bad], X[~bad, j, d])
     # a running median first (7 frames): MediaPipe now and then throws a hidden wrist (behind a cup)
     # half a metre for a frame or two; the low-pass alone would smear that into a fake swing
     pad = np.concatenate([X[:1].repeat(3, 0), X, X[-1:].repeat(3, 0)])
@@ -82,7 +93,7 @@ if __name__ == "__main__":
     for name, (f, pid, t0, t1, what) in CLIPS.items():
         c = build(f"{src}/{f}.npz", pid, t0, t1)
         c["what"] = what
-        c["video"] = f"docs/handoffs/2026-10-20-builds/b5c/ref-{f}.mp4"
+        c["video"] = (f"docs/handoffs/2026-10-20-builds/b5c-hq/{f}.mp4" if f.startswith("hq-") else f"docs/handoffs/2026-10-20-builds/b5c/ref-{f}.mp4")
         data["clips"][name] = c
         L = np.array(c["L"]).reshape(-1, 3)
         print(f"{name:12s} {c['n']} frames  left wrist x {L[:,0].min():+.2f}..{L[:,0].max():+.2f}  y {L[:,1].min():+.2f}..{L[:,1].max():+.2f}  z {L[:,2].min():+.2f}..{L[:,2].max():+.2f}")

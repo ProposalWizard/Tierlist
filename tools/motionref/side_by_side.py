@@ -26,9 +26,9 @@ def label(t):
 
 
 fc = (
-    f"[0:v]scale=300:-2,{label('BEFORE')}[a];"
-    f"[1:v]scale=300:-2,{label('AFTER')}[b];"
-    f"[2:v]trim=start={opt.get('ref-from', 0)},setpts=PTS-STARTPTS,fps={fps},scale=300:-2,tpad=stop_mode=clone:stop_duration={dur},"
+    f"[0:v]scale=300:650:force_original_aspect_ratio=decrease,pad=300:650:(ow-iw)/2:(oh-ih)/2,{label('BEFORE')}[a];"
+    f"[1:v]scale=300:650:force_original_aspect_ratio=decrease,pad=300:650:(ow-iw)/2:(oh-ih)/2,{label('AFTER')}[b];"
+    f"[2:v]trim=start={opt.get('ref-from', 0)},setpts=PTS-STARTPTS,fps={fps},scale=300:650:force_original_aspect_ratio=decrease,pad=300:650:(ow-iw)/2:(oh-ih)/2,tpad=stop_mode=clone:stop_duration={dur},"
     f"trim=duration={dur},{label('REAL PEOPLE (Higgsfield)')}[c];"
     f"[a][b][c]hstack=inputs=3,pad=iw:ih+40:0:40:black,drawtext=fontfile={font}:text='{title}':x=10:y=10:fontsize=20:fontcolor=white[v]"
 )
