@@ -552,7 +552,7 @@ if (uHome.x > 0.5) gl_FragColor.a = 0.5;
 // TOON_SKIN: the probe paints bare skin one flat magenta (scripts/bench3d measure skin through it);
 // the mark tells a post pass which pixels are skin (alpha 0.75), so its tone curve and grade keep their tone
 #ifdef TN_ACES_SCREEN
-if (tnTone > 0.5 && uSkinFx.z > 0.0) gl_FragColor.rgb = tnSkinPreTone(gl_FragColor.rgb);
+if (tnTone > 0.5 && uSkinFx.z > 0.0 && uHome.x < 0.5) gl_FragColor.rgb = tnSkinPreTone(gl_FragColor.rgb);
 #endif
 if (uSkinFx.y > 0.5 && tnSkin > 0.5) gl_FragColor = vec4(3.0, 0.0, 3.0, 1.0);
 else if (uSkinFx.x > 0.5 && uHome.x < 0.5 && tnTone > 0.5) gl_FragColor.a = ${TOON_SKIN_MARK.toFixed(2)};`);

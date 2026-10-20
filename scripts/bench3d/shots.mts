@@ -83,10 +83,13 @@ for (const s of shots) {
       await page.waitForFunction(() => (window as never as { __frameStep?: unknown; __cutsceneDebug?: unknown }).__frameStep && (window as never as { __cutsceneDebug?: unknown }).__cutsceneDebug, null, { timeout: 400000 });
       await page.waitForTimeout(4000);
     } else {
-      await page.waitForFunction(() => { const f = (window as never as { __frame3d?: { frames: number } }).__frame3d; return !!f && f.frames >= 3; }, null, { timeout: 400000 });
+      // the frame numbers when the place publishes them (the garden's own renderer does not): else on after a long settle
+      await page.waitForFunction(() => { const f = (window as never as { __frame3d?: { frames: number } }).__frame3d; return !!f && f.frames >= 3; }, null, { timeout: Number(process.env.BENCH_WAIT ?? 120000) }).catch(() => page.waitForTimeout(30000));
       await page.waitForTimeout(s.settle ?? 6000);
     }
     const frame = await page.evaluate(() => (window as never as { __frame3d?: unknown }).__frame3d ?? null);
+    // the Home player moves all the time: hold him at 3 s of his round (standing) for both pictures
+    if (s.kind === "home") { await page.evaluate(() => { (window as never as { __homeT?: number }).__homeT = 3; }); await page.waitForTimeout(1500); }
     const seek = async () => { if (s.t !== undefined) { await page.evaluate((t) => (window as never as { __frameStep: { seek(t: number): void } }).__frameStep.seek(t), s.t); await page.waitForTimeout(400); } };
     // the stills without the test page's own buttons (team chat, the page guide's eye, the frame meter)
     await page.addStyleTag({ content: ".tr-fab,.tr-pop,[data-page-guide],[data-frame-meter]{display:none!important}" });
@@ -94,7 +97,8 @@ for (const s of shots) {
     const still = await page.screenshot({ type: "png" });
     await page.screenshot({ path: path.join(OUT, `${s.id}-${TAG}.jpg`), type: "jpeg", quality: 82 });
     await page.evaluate(() => (window as never as { __toonSkin?: { probe(on: boolean): void } }).__toonSkin?.probe(true));
-    if (s.t !== undefined) await seek(); else await page.waitForTimeout(3500);
+    // a still place may stop drawing when nothing moves: a resize and a small mouse move make it draw the probe
+    if (s.t !== undefined) await seek(); else { await page.evaluate(() => window.dispatchEvent(new Event("resize"))); await page.mouse.move(200, 300); await page.mouse.move(204, 302); await page.waitForTimeout(4000); }
     const probe = await page.screenshot({ type: "png" });
     await page.evaluate(() => (window as never as { __toonSkin?: { probe(on: boolean): void } }).__toonSkin?.probe(false));
     const skin = await skinStats(page, still, probe);

@@ -11,6 +11,9 @@
  *   inside    the camera is inside a person's own space (under 30 cm from his head or body,
  *             22 cm from an arm) or inside a prop
  *   prop      a prop the shot is about fills more than 90% of the screen's height or width
+ *   blocked   someone else's head, nearer the lens, covers the subject's face, or anyone's
+ *             face fills more than half the screen (someone walking right past the lens; not the
+ *             near man of an over-the-shoulder shot, who is there on purpose)
  *
  *   node scripts/bench3d/framing.mjs [--base=http://localhost:3027] [--at=audit|shots] [--out=file.json] [--old] [scene ...]
  * --old: the cameras as they were on 19 Oct 2026 (?framing=old) — the "before".
@@ -18,7 +21,9 @@
  * scene: a fixture (signing goal trophy walkout press mentor farewell) or an
  * event "scored:0.8:joy:3" (kind:stakes:emotion:seed). Default: every fixture
  * plus two generated scenes. --at=audit uses the 23 seconds the 19 Oct 3D audit
- * stills were taken at; --at=shots (default) one sample in the middle of every shot.
+ * stills were taken at; --at=shots (default) one sample in the middle of every shot;
+ * --at=dense three samples in every shot (20%, 50%, 80% through it: a man walking
+ * past the lens mid-shot is caught).
  */
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -49,6 +54,7 @@ for (const s of scenes) {
   await page.waitForFunction(() => window.__frameStep && window.__cutsceneDebug && window.__cutscene && window.__styleReady !== false, null, { timeout: 300000 });
   let times;
   if (AT === "audit") times = (AUDIT[s] ?? []).map((t) => ({ t, shot: null }));
+  else if (AT === "dense") times = await page.evaluate(() => window.__cutscene.cameras().flatMap((c, i) => [0.2, 0.5, 0.8].map((f) => ({ t: +(c.at + c.dur * f).toFixed(2), shot: i, preset: c.shot.preset, name: c.name ?? null }))));
   else times = await page.evaluate(() => window.__cutscene.cameras().map((c, i) => ({ t: +(c.at + Math.min(c.dur * 0.5, Math.max(0.3, c.dur - 0.3))).toFixed(2), shot: i, preset: c.shot.preset, name: c.name ?? null })));
   for (const x of times) {
     // a page that reloaded (the dev server rebuilt) brings its director back: wait for it
@@ -65,7 +71,8 @@ for (const s of scenes) {
       const subj = cur?.shot?.subject && "actor" in cur.shot.subject ? cur.shot.subject.actor : null;
       const proj = (v) => v.clone().project(cam);
       const camUp = new V(0, 1, 0).applyQuaternion(cam.quaternion), camRight = new V(1, 0, 0).applyQuaternion(cam.quaternion);
-      const out = { t, preset: cur?.shot?.preset ?? null, name: cur?.name ?? null, subject: subj, people: {}, bad: [] };
+      const subj2 = cur?.shot?.subject2 && "actor" in cur.shot.subject2 ? cur.shot.subject2.actor : null;
+      const out = { t, preset: cur?.shot?.preset ?? null, name: cur?.name ?? null, subject: subj, subject2: subj2, people: {}, bad: [] };
       const pos = cam.position;
       // distance from a point to a segment
       const segD = (p, a, b) => { const ab = b.clone().sub(a), t2 = Math.max(0, Math.min(1, p.clone().sub(a).dot(ab) / Math.max(1e-9, ab.lengthSq()))); return p.distanceTo(a.clone().addScaledVector(ab, t2)); };
@@ -87,13 +94,24 @@ for (const s of scenes) {
         const dArm = Math.min(segD(pos, A.point("shoulder.L"), A.point("hand.L")), segD(pos, A.point("shoulder.R"), A.point("hand.R")));
         // within a person's own space: closer than this, his head, body or arm fills a phone frame
         const inside = dHead < 0.3 || dBody < 0.3 || dArm < 0.22;
-        out.people[id] = { headW: +headW.toFixed(2), headH: +headH.toFixed(2), shoulderW: +shoulderW.toFixed(2), screen: [+hc.x.toFixed(2), +hc.y.toFixed(2)], dCam: +dHead.toFixed(2), inFrame, inside };
+        out.people[id] = { headW: +headW.toFixed(2), headH: +headH.toFixed(2), shoulderW: +shoulderW.toFixed(2), screen: [+hc.x.toFixed(2), +hc.y.toFixed(2)], dCam: +dHead.toFixed(2), inFrame, inside, front };
         if (inside) out.bad.push(`inside ${id}`);
         if (id === subj && inFrame) {
           if (headW > 0.5) out.bad.push(`face ${Math.round(headW * 100)}% wide`);
           else if (shoulderW >= 0.84) out.bad.push(`body ${Math.round(shoulderW * 100)}% wide`);
           if (top > 1.0 && hc.y < 1 && headH < 0.5) out.bad.push("crop head top");
           else if (sides > 1.0 && Math.abs(hc.x) < 1 && headW > 0.2) out.bad.push("crop head side");
+        }
+      }
+      // blocked: someone else's head nearer the lens over the subject's face, or any face filling the screen
+      const sp = subj ? out.people[subj] : null;
+      for (const [id, q] of Object.entries(out.people)) {
+        if (id === subj || !q.front) continue;
+        // the near man of an over-the-shoulder shot, and the other half of a two-shot, are there on purpose
+        if (q.inFrame && q.headW > 0.5 && !(id === subj2 && out.preset === "two-shot") && out.preset !== "ots") { out.bad.push(`blocked by ${id}'s face, ${Math.round(q.headW * 100)}% wide`); continue; }
+        if (sp && sp.front && q.dCam < sp.dCam - 0.2) {
+          const asp = cam.aspect, dx = (q.screen[0] - sp.screen[0]) * asp, dy = q.screen[1] - sp.screen[1];
+          if (Math.hypot(dx, dy) < (q.headH + sp.headH) * 0.8 && Math.abs(sp.screen[0]) < 1 && Math.abs(sp.screen[1]) < 1) out.bad.push(`blocked by ${id}'s head`);
         }
       }
       // props: inside the bounding box (3 cm shrink: a camera grazing a box is not in it)
