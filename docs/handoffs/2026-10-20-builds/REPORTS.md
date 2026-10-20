@@ -218,3 +218,11 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Shoulders: bind pose is level on every body (0°, joint 7.5–8.7 cm below the neck base); the CLIPS raise the collarbones (+13–14° idle/nod/talk/shirt_hold, +26° handshake, +37–39° sitting; 0° walk/jog/knee slide) → B5c's job.
 - Props: pen held at 50° (was 9° flat); trophy by both handles, clear of the head, no longer black; grip slip 0.5 cm (was 2.5).
 - Left: pale line at the neck/collar join on B2/B3; the other 5 player heads + 2 suit heads; the new body files not packed yet; rejected v1 code (proportions.ts, ?prop) still in the files; hands into shins in the sitting clip.
+
+## B2b — build-ups round two (merged with B10)
+- Camera: hand-over jump worst 1.70/1.79 px → 0.088 px over 1,226 hand-overs incl. headers/volleys (0.00–0.07 px seen in a browser); resize during a build-up 20.5 px → 0. Test: fhrCameraHandover.mts. Pitch widths 366/384 (code unchanged by the merge; reasoned).
+- One system: each build-up starts where the hidden match won the ball back; one dial (lib/star/fhr/intel.ts, the strength gap) scales regains, press, passing, run timing. 85v65 / 75v75 / 65v85: 6.45 / 4.70 / 3.31 build-ups a match; regain 20.5 / 23.0 / 25.8 m from goal; scrappy 10 / 33 / 52%.
+- Offsides: before 48.5% of build-ups had an uncalled offside pass; after 0 (600 chances per strength, every kind). Called per match 0.24 / 0.37 / 0.39 (pre-merge). Chances played even strength 5.47 → 4.99 (−8.8%), goals 1.44 → 1.35; strong sides unchanged.
+- Merge with B10: every header/volley build-up ends in the lofted cross; crosser's run played into space, wide-run mistime ×0.4 (builder's guess) → volley build-ups flagged 29% → 16% at even; men no longer run through each other at the hand-over (10 → 2 of 257).
+- Drift files: CanvasMatch.tsx (frame on the chance during a resize, regain extra opponent, end-on-offside hand-back), hiddenMatch.ts (hands over regain info, no new random draws). canvasEngine untouched.
+- Not seen: a career match with the switch On at 390×844; a real-match offside still. Full npm run build not run (memory).
