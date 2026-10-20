@@ -206,7 +206,7 @@ function DirectorEditor({ tabs }: { tabs: React.ReactNode }) {
     setShots((m) => { const n = { ...m }; delete n[shotIdx]; return n; });
     setFreeNow(null);
   };
-  const resetAll = () => { applySaved(emptySaved()); saveLocal(directorId(fixture), emptySaved()); setSaveMsg("All edits cleared for this scene."); };
+  const resetAll = () => { const e = { ...emptySaved(), ...(approval ? { approval } : {}) }; applySaved(e); saveLocal(directorId(fixture), e); setSaveMsg("All edits cleared for this scene (an approval stays)."); };
   const copyEdits = async () => {
     const txt = JSON.stringify({ scriptId: directorId(fixture), edits: current() }, null, 2);
     try { await navigator.clipboard.writeText(txt); setSaveMsg("Edits copied (JSON)."); } catch { setSaveMsg("Couldn't copy — clipboard blocked."); }

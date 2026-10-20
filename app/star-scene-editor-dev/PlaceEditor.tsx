@@ -132,7 +132,7 @@ export default function PlaceEditor({ place, tabs }: { place: Place; tabs: React
     setSaved((s) => ({ ...s, shots: { ...(s.shots ?? {}), [shot]: { ...(s.shots?.[shot] ?? {}), ...e } } }));
   const editScene = (e: NonNullable<PlaceSaved["scene"]>) => setSaved((s) => ({ ...s, scene: { ...(s.scene ?? {}), ...e } }));
   const resetShot = () => setSaved((s) => { const n = { ...(s.shots ?? {}) }; delete n[shot]; return { ...s, shots: n }; });
-  const resetAll = () => { apply(emptyPlace(place)); saveLocal(place, emptyPlace(place)); setSaveMsg("All edits cleared for this place."); };
+  const resetAll = () => { const e = { ...emptyPlace(place), ...(saved.approval ? { approval: saved.approval } : {}) }; apply(e); saveLocal(place, e); setSaveMsg("All edits cleared for this place (an approval stays)."); };
   const play = (id: SigningCamShot) => { h.current?.playShot(id); setShot(id); };
   const orbit = (dx: number, dy: number, dolly: number) => { if (pos && lookAt) editShot(orbitPose({ pos, look: lookAt }, dx, dy, dolly)); };
   const orbitHandlers = useOrbit(orbit);
