@@ -1010,16 +1010,16 @@ export const ADMIN_GUIDES = {
 
   "/star-training-dev": {
     title: "Training Levels",
-    what: "Play any of the 30 levels of any training game straight away, and change any level's numbers (Edit level), the way the Scenario Gallery edits a chance.",
+    what: "Play any of the 30 levels of any training game straight away, and change any level (Edit level): drag the ball, cones and men on its picture or set its numbers, the way the Scenario Gallery edits a chance.",
     buttons: [
       {
         group: "The level list",
         items: [
           ["Power / Technique / Free Kick / Pace / Vision", "The tabs at the top: which training game's levels to show."],
-          ["Your skills 40 / 70 / 100", "The player's skills while you play. They change how hard you can hit the ball and how much it bends, so a level plays differently at 40 and at 100. Power levels also ease toward your Power when it is below the level: pick 100 to play a Power level's numbers exactly."],
           ["A level tile", "Picks that level; tap it again to play it. The line under the number is what it asks for (distance and blockers, gate size, wall, chasers, options and time). Stars appear on a tile after you've played it here."],
           ["The dot on a tile", "Amber: unsaved changes. Green: a saved edit every career plays. Orange: saved on this device only."],
-          ["The level panel (right; pinned to the bottom on a phone)", "The picked level: its game, what it asks for, your stars here, and a real picture of that game (taken at level 15)."],
+          ["The level panel (right; pinned to the bottom on a phone)", "The picked level: its game, what it asks for, what it plays with, your stars here, and a real picture of that game (taken at level 15)."],
+          ["Plays with", "The skills the level is played with — no choosing: what a player has after finishing every level before it (2 stars on each, the middle of 1-3; the small print gives the 1-star and 3-star numbers), all skills trained as far. Only the skills that game reads are listed: Power and Technique for Power and Technique, plus Free kick for Free kick. Pace plays at the level's own Your speed; Vision reads no skill."],
           ["Edit level", "Opens the editor for the picked level (on a phone it takes the place of the list)."],
           ["Let's go ›", "Plays the picked level (with any unsaved changes)."],
         ],
@@ -1027,13 +1027,15 @@ export const ADMIN_GUIDES = {
       {
         group: "Edit level",
         items: [
+          ["The picture (Power, Technique, Free kick, Pace)", "The level from above. Drag the ball, a man or a cone with a finger or the mouse: the numbers beside it change as you go, and ▶ Play uses it straight away. Power: the ball (sets Distance and Off centre) and each man in the way. Technique: the ball, either cone (sets the gap and the distance) or the dot between them (moves the whole gate). Free kick: the ball and each man in the wall. Pace: each man, sideways along his wave's line (the gaps you run into). A dashed ring marks what you can grab; it turns yellow while held. Vision (Pick the Pass) has no picture to drag yet; its pictures are real match moments."],
           ["The sliders (and the number boxes)", "Every number the drill is built from. Power: distance, off centre, men in the way, keeper on/off and strength, score to pass (0.5 = any goal, higher = nearer a post). Technique: gate distance, width, how far off your line, max height, score to pass. Free kick: distance, off centre, men in the wall, keeper strength, score to pass. Pace: men to beat, most in one wave, their speed, your speed. Vision (Pick the Pass): kick the pass on/off (off = tap the man), seconds to tap him or to start the kick, seconds to let go of the pull, team-mates (2-6), traps (offside, cut out, marked), how clear the right ball is (small = two good balls), someone offside on/off, real match moments on/off (off = the team's drawn chances). \"was …\" shows the committed number; a • marks a change since the last save."],
           ["Keeper On / Off", "Power only: an open goal or a keeper."],
-          ["Layout: Level's own / Shuffle", "Where everyone stands is built from the level's own seed. Shuffle picks a new one (shown as #1234); Level's own goes back."],
-          ["▶ Play", "Plays the level with these numbers straight away, on the same drill a career gets. Nothing is saved by playing."],
+          ["Layout: Level's own / Shuffle", "Where everyone stands is built from the level's own seed. Shuffle picks a new one (shown as #1234); Level's own goes back. Both also put back anyone you dragged. \"Placed by hand\" shows when something has been dragged."],
+          ["▶ Play", "Plays the level as drawn — your dragged picture and these numbers — straight away, on the same drill a career gets, with the skills under Plays with. Power plays exactly as drawn here; in a career a player whose Power is behind the level gets it eased (the small print under Plays with says how far). Nothing is saved by playing."],
           ["Save", "Saves this level's numbers for every career (shared table star_training_levels). Says \"Saved for everyone\" or \"Saved on this device only\" and why."],
           ["Commit", "Writes this level's numbers into the game's levels file in the code (see Committing)."],
-          ["Undo changes", "Back to the saved numbers."],
+          ["↶ Undo", "Steps back one drag or one changed number at a time."],
+          ["Undo all", "Back to the saved level (every unsaved drag and number)."],
           ["Back to committed", "Deletes the saved edit: the level plays as the committed file has it, for everyone."],
           ["Done", "Closes the editor. Unsaved changes stay on the tile (amber dot) until you leave the page."],
         ],
@@ -1043,7 +1045,8 @@ export const ADMIN_GUIDES = {
         items: [
           ["‹ All levels / ‹ Edit level", "Back to the list (or the editor) at any time."],
           ["◀ L13 ▶", "Previous or next level, starting it fresh."],
-          ["unsaved edit", "Shown in the bar when the level is playing numbers you haven't saved."],
+          ["The middle of the bar", "The skills this level plays with (e.g. Power 65 · Technique 65), and \"edited\" when it is playing changes you haven't saved."],
+          ["Pace: the ring", "Pace has a skill to it now: one man in each wave comes for the ball and wears a ring (white). When he drops his shoulder it closes in, amber; it turns green for a moment — flick the other way then. Too early and he goes with you (\"Too early — he read it\"); too late and he's across you. The other men in the wave hold their lanes: pick the gap."],
           ["Let's go", "Level 1 of each game opens on its how-it-works card first, as in a career."],
           ["Tap to start", "Pace (the dribble run) waits for this before anyone moves, on every try."],
           ["Vision: 3, 2, 1", "Counts down over a cover, then the picture shows and the clock starts. Tap levels: tap the man. Kick levels: drag back from the ball and strike it to him; the clock stops when you start the pull, then you have the let-go time."],
@@ -1071,7 +1074,7 @@ export const ADMIN_GUIDES = {
       "The star_training_levels table (supabase/migrations/star_training_levels.sql). Until it is run, Save stays on this device only.",
       GITHUB_TOKEN_NEEDED,
     ],
-    dev: "app/star-training-dev/{page,LevelEditor}.tsx mounts components/star/TrainingMinigame.tsx (levelOverride = the draft). Level rows: lib/star/trainingLevelData.ts reading lib/star/data/trainingLevels.json (rebuild: scripts/training-levels/build.mts); saved edits: lib/star/trainingLevelStore.ts, /api/star/training-levels, /api/star/training-levels/commit (lib/star/commitScenarios.ts commitDataFile); Vision: lib/star/visionRound.ts picks and judges the pictures from lib/star/data/visionMoments.json (real moments: scripts/vision/build_vision_moments.mts) and lib/star/data/visionChecks.json (each pass tried on the engine: scripts/vision/check_passes.mts); the curve with a modelled player: scripts/vision/curve.mts; tests tests/star/{trainingLevelData,vision}.mts, bot tests/star/visionBot.ts.",
+    dev: "app/star-training-dev/{page,LevelEditor,LevelPicture}.tsx mounts components/star/TrainingMinigame.tsx (levelOverride = the draft, asDrawn, skills from lib/star/trainingAutoSkills.ts). What can be dragged per drill: lib/star/trainingLayout.ts (DRILL_LAYOUTS; Vision plugs in there). Dragged spots are optional row fields (men, ball, lanes) in lib/star/trainingLevelData.ts. Pace's knock-on: lib/star/firstPersonDribble.ts (knockOn), tests/star/paceKnockOn.mts. Level rows: lib/star/trainingLevelData.ts reading lib/star/data/trainingLevels.json (rebuild: scripts/training-levels/build.mts); saved edits: lib/star/trainingLevelStore.ts, /api/star/training-levels, /api/star/training-levels/commit (lib/star/commitScenarios.ts commitDataFile); Vision: lib/star/visionRound.ts picks and judges the pictures from lib/star/data/visionMoments.json (real moments: scripts/vision/build_vision_moments.mts) and lib/star/data/visionChecks.json (each pass tried on the engine: scripts/vision/check_passes.mts); the curve with a modelled player: scripts/vision/curve.mts; tests tests/star/{trainingLevelData,vision,trainingLayout,trainingAutoSkills}.mts, bot tests/star/visionBot.ts.",
   },
   "/star-highlights-dev": {
     title: "Infinite Highlights",

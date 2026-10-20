@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   newRun, applySteer, applyBurst, stepRun, BURST_T, CALM_CAMERA, LIVELY_CAMERA, stepCameraLean,
-  CARRY, carryLead, applyPass, wavesBeaten, applyFeint, type DuelEvent,
+  CARRY, carryLead, applyPass, wavesBeaten, applyFeint, knockTaker, knockRing, type DuelEvent,
   type FpRunState, type RunPhase, type FpIdentity,
 } from "@/lib/star/firstPersonDribble";
 import { cameraFor, project, type FpCamera } from "@/lib/star/firstPersonView";
@@ -14,6 +14,7 @@ import { revealOnScreen } from "@/lib/revealOnScreen";
 import { loadFaceStyle } from "@/lib/star/faceStyle";
 import { loadFakeFaceStyle } from "@/lib/star/fakeFaceStyle";
 import { classifyRelease } from "@/lib/star/dribbleGesture";
+import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 
 /**
  * THE ONE-ON-ONE DUEL — THE COMPONENT.
@@ -338,6 +339,16 @@ export interface FirstPersonDribbleProps {
   duels?: boolean;
   /** Your dribbling (technique), 0-100. Duels only. */
   dribbling?: number;
+  /**
+   * The knock-on (training Pace only — lib/star/firstPersonDribble.ts "THE
+   * KNOCK-ON"): one man comes for the ball and wears a ring; flick past him
+   * as it turns green. Too early and he goes with you. Off = the run exactly
+   * as before (the real match and the trial never set it).
+   */
+  knockOn?: boolean;
+  /** Men placed by hand, per wave, metres across from the centre (the Training
+   *  levels page's drag). Absent = the seed places them, as before. */
+  lanes?: number[][];
 }
 
 /** The New UI's top-bar edge (components/star/ui/TopHud.tsx): a dark glass
@@ -358,7 +369,7 @@ const PIP_FILL: Record<DuelPip, string> = {
 export default function FirstPersonDribble({
   pace = 60, oppStrength = 55, rounds = 3, waveSizes, roster, seed, assist = false, onComplete, embedded = false,
   hideHint = false, hold = false, camera = "C1", hideYou = false, calmCamera = false, kits,
-  passOptions = 0, vision = 55, mateRoster, duels = false, dribbling = 55,
+  passOptions = 0, vision = 55, mateRoster, duels = false, dribbling = 55, knockOn = false, lanes,
   chaseEye = DEFAULT_CHASE_EYE, chasePitchDeg = DEFAULT_CHASE_PITCH_DEG, chaseOffset = DEFAULT_CHASE_OFFSET,
   cameraFollowRate = DEFAULT_CAMERA_FOLLOW_RATE, ballTouchReach = DEFAULT_BALL_TOUCH_REACH,
 }: FirstPersonDribbleProps) {
@@ -466,7 +477,7 @@ export default function FirstPersonDribble({
   const reset = useCallback((startNow = false) => {
     const rng = newRng();
     rngRef.current = rng;
-    const run = newRun({ pace, oppStrength, rounds, waveSizes, roster, rng, mates: passOptions, mateRoster, ...(duels ? { duels: true, dribbling } : {}) });
+    const run = newRun({ pace, oppStrength, rounds, waveSizes, roster, rng, mates: passOptions, mateRoster, ...(duels ? { duels: true, dribbling } : knockOn ? { knockOn: true } : {}), ...(lanes ? { lanes } : {}) });
     runRef.current = run;
     camXRef.current = run.x;
     ballXRef.current = run.x + sideDirRef.current * CARRY.restFootX;
@@ -480,7 +491,7 @@ export default function FirstPersonDribble({
     // A fresh run waits for its tap; "Go Again" IS a tap, so it goes straight in.
     setPhase(startNow ? "run" : "ready");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pace, oppStrength, rounds, newRng, JSON.stringify(waveSizes), passOptions, duels, dribbling]);
+  }, [pace, oppStrength, rounds, newRng, JSON.stringify(waveSizes), passOptions, duels, dribbling, knockOn, JSON.stringify(lanes)]);
 
   useEffect(() => { reset(); }, [reset]);
 
@@ -497,6 +508,27 @@ export default function FirstPersonDribble({
     const id = requestAnimationFrame(() => revealOnScreen(wrapRef.current));
     return () => cancelAnimationFrame(id);
   }, [phase, hold]);
+
+  // Development only — compiled out of the live site (devMode.ts): the knock-on
+  // ring and your lane, so a playtest bot can time a real flick (the training
+  // Pace drill). Read-only: it changes nothing in the run.
+  useEffect(() => {
+    if (!knockOn || !offlineDevPlayEnabled() || typeof window === "undefined") return;
+    const w = window as unknown as { __fpKnock?: unknown };
+    w.__fpKnock = () => {
+      const run = runRef.current;
+      if (!run) return null;
+      const d = knockTaker(run);
+      return {
+        phase: phaseRef.current,
+        stage: d ? knockRing(d, run.elapsed).stage : null,
+        /** The way to flick: away from where his lunge lands. */
+        away: d ? (run.x >= d.x + d.commitSide * 1.1 ? 1 : -1) : 0,
+        grades: (run.knocks ?? []).map(k => k.grade),
+      };
+    };
+    return () => { delete w.__fpKnock; };
+  }, [knockOn]);
 
   // ── Canvas sizing — raw backing-store pixels, no separate DPR transform:
   // firstPersonView's project() already produces true pixel coordinates,
@@ -837,6 +869,7 @@ export default function FirstPersonDribble({
         faceStyle: faceStyleRef.current,
         fakeFaceStyle: fakeFaceStyleRef.current,
         mates: run.mates,
+        knockClock: run.knockOn ? run.elapsed : undefined,
       });
     };
 
@@ -884,7 +917,7 @@ export default function FirstPersonDribble({
       )}
 
       {/* Duels: what just happened, in the middle of the screen, briefly. */}
-      {duels && phase === "run" && duelNote && (
+      {(duels || knockOn) && phase === "run" && duelNote && (
         <div key={`${duelNote.t}-${duelNote.text}`} className="pointer-events-none absolute inset-x-0 top-[22%] z-20 flex justify-center px-3">
           <span
             className="px-3 py-1 text-[15px] font-black uppercase tracking-wide"
@@ -901,6 +934,8 @@ export default function FirstPersonDribble({
           <p className="px-3 py-2 text-center text-[12px] font-bold leading-snug text-white" style={HUD_BOX}>
             {duels
               ? "Tap a side: drop the shoulder. Swipe down: step-over. Flick: knock it past as he plants."
+              : knockOn
+              ? "Pick the gap. Wait for his shoulder, then flick the other way as his ring turns green."
               : passOptions > 0
               ? "Tap left or right to touch it. Flick to burst. Tap a team-mate to pass."
               : "Tap left or right to touch the ball that way. Flick to burst past him."}
@@ -926,6 +961,8 @@ export default function FirstPersonDribble({
             <span className="px-3 py-1.5 text-[12px] font-bold leading-snug text-white" style={HUD_BOX}>
               {duels
                 ? "He backs off and shows you one way. Sell him a step-over or a dropped shoulder, then go the other way — or flick past him the moment he plants. Tap a team-mate to pass."
+                : knockOn
+                ? "One man comes for the ball (the ring). When his ring turns green, flick the other way. Too early and he goes with you."
                 : passOptions > 0
                 ? "Flick to burst past him. Tap a team-mate to pass: green is on, red is risky."
                 : "Tap left or right to touch the ball. Flick to burst past him."}

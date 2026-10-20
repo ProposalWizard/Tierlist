@@ -20,10 +20,11 @@ import {
   buildScenario, initDefenders,
   type Scenario,
 } from "@/lib/star/canvasEngine";
-import { CX, PITCH_W } from "@/lib/star/pitch";
+import { CX } from "@/lib/star/pitch";
 import {
   powerDrill, powerDrillForLevel, techniqueDrill, freeKickDrill,
   strikeSpot, conePositions, gateCrossing, gateQuality, shotQuality,
+  powerManSpots, wallSpots, placedMen, techniqueBallSpot,
 } from "@/lib/star/trainingDrills";
 import {
   strikeViewport, gateViewport, type TrainingViewport,
@@ -119,6 +120,12 @@ interface Props {
    * same drill a career gets (lib/star/trainingLevelData.ts).
    */
   levelOverride?: AnyLevel;
+  /**
+   * Play the level's numbers exactly, with no easing toward your Power (the
+   * Training levels page: a level is checked as it is drawn and dragged).
+   * Absent = as a career plays it.
+   */
+  asDrawn?: boolean;
 }
 
 const SKILL_TITLES: Record<keyof Skills, string> = {
@@ -368,7 +375,7 @@ export function buildStrikeFrom(kind: StrikeKind, row: StrikeLevel, rng: () => n
     // metres in front of goal — so climbing the ladder moves YOU back, which
     // is what "the cones would be further back" actually looks like from
     // behind the ball.
-    const ball = strikeSpot(cfg.gateDistance + 6, 0);
+    const ball = techniqueBallSpot(cfg);
     const gate = conePositions(ball, cfg);
     const sc = buildScenario("long_range", rng, 40, 60, 55);
     sc.ball = { x: ball.x, y: ball.y };
@@ -405,16 +412,12 @@ export function buildStrikeFrom(kind: StrikeKind, row: StrikeLevel, rng: () => n
     // holding rather than charging. The engine jumps a free-kick wall as the
     // ball is struck all by itself (Defender.z/vz), which is what makes going
     // over one a moving target rather than a fixed height.
-    const gx = CX - ball.x, gy = 0 - ball.y;
-    const gl = Math.hypot(gx, gy) || 1;
-    const ux = gx / gl, uy = gy / gl;
-    const wallCx = ball.x + ux * 9.15, wallCy = ball.y + uy * 9.15;
-    const px = -uy, py = ux;
-    sc.defenders = Array.from({ length: cfg.wall }, (_, i) => {
-      const off = (i - (cfg.wall - 1) / 2) * 1.15; // 1.15 m apart, the real engine's own wall spacing
+    // Where it was dragged to on the Training levels page, else the drill's
+    // own wall (trainingDrills.ts wallSpots).
+    sc.defenders = placedMen(wallSpots(ball, cfg.wall), cfg.men, cfg.wall).map(at => {
       return {
-        x: Math.max(1, Math.min(PITCH_W - 1, wallCx + px * off)),
-        y: Math.max(0.6, wallCy + py * off),
+        x: at.x,
+        y: at.y,
         role: "hold" as const,
         baseRole: "hold" as const,
         speed: 0,
@@ -441,13 +444,12 @@ export function buildStrikeFrom(kind: StrikeKind, row: StrikeLevel, rng: () => n
   initDefenders(sc, rng);
   // Bodies in the way, strung across the shooting lane at staggered depths so
   // they are a problem to shoot THROUGH rather than a single line to clear.
-  sc.defenders = Array.from({ length: cfg.blockers }, (_, i) => {
-    const f = 0.30 + (i / Math.max(1, cfg.blockers)) * 0.42;
-    const laneX = ball.x + (CX - ball.x) * f;
-    const spread = (i % 2 === 0 ? -1 : 1) * (1.1 + i * 0.7);
+  // Where they were dragged to on the Training levels page, else strung
+  // across the lane (trainingDrills.ts powerManSpots).
+  sc.defenders = placedMen(powerManSpots(ball, cfg.blockers), cfg.men, cfg.blockers).map(at => {
     return {
-      x: Math.max(1, Math.min(PITCH_W - 1, laneX + spread)),
-      y: Math.max(1.5, ball.y * (1 - f)),
+      x: at.x,
+      y: at.y,
       role: "hold" as const,
       baseRole: "hold" as const,
       speed: 0.9,
@@ -469,8 +471,8 @@ export function buildStrikeFrom(kind: StrikeKind, row: StrikeLevel, rng: () => n
 }
 
 function StrikeDrill({
-  kind, trainingLevel, skills, onFinish, onExit, override,
-}: { kind: StrikeKind; trainingLevel: number; skills: Skills; onFinish: (stars: number) => void; onExit?: () => void; override?: StrikeLevel }) {
+  kind, trainingLevel, skills, onFinish, onExit, override, asDrawn,
+}: { kind: StrikeKind; trainingLevel: number; skills: Skills; onFinish: (stars: number) => void; onExit?: () => void; override?: StrikeLevel; asDrawn?: boolean }) {
   // One real match engine (CanvasMatch, via EngineFeature) — the same aim,
   // contact, flight, keeper and wall a match has. This file only builds the
   // picture for each rep and scores the result. See .claude/skills/one-engine.
@@ -484,10 +486,10 @@ function StrikeDrill({
   const powerNow = skills.power;
   const row = useMemo((): StrikeLevel => {
     const rowAt = (n: number): StrikeLevel => (n === trainingLevel && override ? override : levelConfig(kind, n));
-    if (kind !== "power") return rowAt(trainingLevel);
+    if (kind !== "power" || asDrawn) return rowAt(trainingLevel);
     return easePowerLevel(trainingLevel, powerNow, n => rowAt(n) as PowerLevel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kind, trainingLevel, override]);
+  }, [kind, trainingLevel, override, asDrawn]);
   const seedRef = useRef(levelSeedOf(kind, trainingLevel, row));
   seedRef.current = levelSeedOf(kind, trainingLevel, row);
   const setupRef = useRef<StrikeSetup | null>(null);
@@ -628,7 +630,7 @@ function GauntletDrill({ trainingLevel, onFinish, onExit, override }: { training
   return (
     <Shell
       title={SKILL_TITLES.pace}
-      instruction="Read each man as he commits, then burst the other way. Get to the line with the ball."
+      instruction="One man comes for the ball. Pick the gap, wait for his shoulder, and flick the other way as his ring turns green."
       results={results} trainingLevel={trainingLevel} onExit={onExit}
     >
       <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "5 / 8" }}>
@@ -644,6 +646,8 @@ function GauntletDrill({ trainingLevel, onFinish, onExit, override }: { training
             chasePitchDeg={5}
             chaseOffset={4}
             cameraFollowRate={10}
+            knockOn
+            lanes={cfg.lanes}
             onComplete={onComplete}
           />
         )}
@@ -1034,7 +1038,7 @@ export default function TrainingMinigame(props: Props) {
   );
 }
 
-function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExit, levelOverride }: Props) {
+function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExit, levelOverride, asDrawn }: Props) {
   const [result, setResult] = useState<number | null>(null);
   // Level 1 of every game opens on a short how-it-works card.
   const [introDone, setIntroDone] = useState(trainingLevel !== 1);
@@ -1059,7 +1063,7 @@ function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExi
     case "power":
     case "technique":
     case "freeKick":
-      return <StrikeDrill kind={skill} trainingLevel={trainingLevel} skills={skills} onFinish={setResult} onExit={onExit} override={levelOverride as StrikeLevel | undefined} />;
+      return <StrikeDrill kind={skill} trainingLevel={trainingLevel} skills={skills} onFinish={setResult} onExit={onExit} override={levelOverride as StrikeLevel | undefined} asDrawn={asDrawn} />;
     default:
       return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} />;
   }

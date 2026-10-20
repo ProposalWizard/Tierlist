@@ -39,7 +39,7 @@ const INTRO: Record<keyof Skills, { title: string; steps: string[] }> = {
   },
   pace: {
     title: "The Gauntlet",
-    steps: ["Drag or tap left and right to move", "Wait for each man to commit", "Flick the other way to burst past, and reach the line"],
+    steps: ["Drag or tap left and right to pick the gap", "One man comes for the ball: wait for his ring to turn green", "Then flick the other way to knock it past him"],
   },
   vision: {
     title: "Pick the Pass",
