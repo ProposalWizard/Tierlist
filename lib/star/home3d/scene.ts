@@ -232,7 +232,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
 
   // ── Renderer (as the shop: one tier chosen first, the governor, still/moving pixels) ──
   // ONE renderer for every 3D place (three3d/perf.ts): no new WebGL context, shaders kept, at each door
-  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
   const dpr = window.devicePixelRatio || 1;
@@ -588,7 +588,9 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   cb.onRoom?.(room.id, room.plan.label);
 
   const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
-  renderer.setAnimationLoop(() => {
+  // the shared renderer's loop is set and stopped only by its owner: a build thrown away while a
+  // newer one is starting (React's double effects in dev, a quick switch) never stops the live one
+  if (isOwner()) renderer.setAnimationLoop(() => {
     if (disposed) return;
     let dt: number;
     if (opts.fixedStep) dt = opts.fixedStep;
@@ -807,7 +809,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       disposed = true;
       gov.dispose();
       hEnh?.dispose();
-      renderer.setAnimationLoop(null);
+      if (isOwner()) renderer.setAnimationLoop(null);
       ro.disconnect();
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);

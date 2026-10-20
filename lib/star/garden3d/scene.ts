@@ -247,7 +247,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   // ONE renderer for every 3D place (three3d/perf.ts): garden → shop → garden
   // keeps the same WebGL context and its compiled shaders (Mikey's video, 12 Oct:
   // 1.5-1.7 s freezes coming back into the garden were a new context + every shader again)
-  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
   // ── LAG (Harry, 5 Oct 2026: "find ways to minimise lag") ──
@@ -2519,7 +2519,9 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
   } catch { /* older browsers: compiled on first use */ }
   if (disposed) throw new Error("disposed");
 
-  renderer.setAnimationLoop(() => {
+  // the shared renderer's loop is set and stopped only by its owner: a build thrown away while a
+  // newer one is starting (React's double effects in dev, a quick switch) never stops the live one
+  if (isOwner()) renderer.setAnimationLoop(() => {
     if (disposed) return;
     const raw = Math.min(0.25, clock.getDelta());
     let dt: number;
@@ -3004,7 +3006,7 @@ async function buildGarden(container: HTMLElement, cb: GardenCallbacks, data: Ga
       gov.dispose();
       savings.dispose();
       hEnh?.dispose();
-      renderer.setAnimationLoop(null);
+      if (isOwner()) renderer.setAnimationLoop(null);
       ro.disconnect();
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);

@@ -30,22 +30,25 @@ export default function UsePanel<E extends { approval?: SceneApproval }>({ place
   const use = PLACE_USE[place];
   const a: SceneApproval = cleanApproval(place, edits.approval) ?? { approved: false, where: ["career"], when: "always" };
   const [msg, setMsg] = useState("");
+  const [bad, setBad] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const write = async (next: SceneApproval, what: string) => {
     const e = { ...edits, approval: { ...next, at: new Date().toISOString() } } as E;
     onChange(e);
     saveLocal(scriptId, e);
-    setBusy(true); setMsg(`${what}…`);
+    setBusy(true); setBad(false); setMsg(`${what}…`);
     const r = await pushShared(scriptId, e);
     setBusy(false);
     forgetApprovedShared();
-    setMsg(r.ok ? `${what}: saved for everyone.` : r.missing ? `${what} on this device only — the shared table isn't switched on yet, so the game can't see it. Commit to game still works.` : `${what} on this device only — ${r.error}`);
+    setBad(!r.ok);
+    setMsg(r.ok ? `${what}: saved for everyone.` : r.missing ? `${what} on this device only — the shared table isn't switched on yet, so the game can't see it. Commit to game still works.` : `${what} on this device only (the game reads only edits saved for everyone or committed) — ${r.error}`);
   };
   const commit = async () => {
-    setBusy(true); setMsg("Committing into the game…");
+    setBusy(true); setBad(false); setMsg("Committing into the game…");
     const r = await commitToGame([{ scriptId, edits: edits.approval ? { ...edits, approval: a } : edits }]);
     setBusy(false);
+    setBad(!r.ok);
     setMsg(r.message);
   };
   const where = (id: string, on: boolean) => write({ ...a, where: on ? [...a.where.filter((w) => w !== id), id] : a.where.filter((w) => w !== id) }, "Where changed");
@@ -82,7 +85,7 @@ export default function UsePanel<E extends { approval?: SceneApproval }>({ place
             </select>
           </div>
         </div>
-        <div className="se-dim" data-use-msg>
+        <div className={bad && msg ? "se-use-err" : "se-dim"} data-use-msg data-bad={bad ? "1" : undefined}>
           {msg || "Approve saves it for everyone. It stays editable: after a change, press SAVE FOR EVERYONE (or Commit to game) so the game gets the new copy."}
         </div>
         {gameNote && <div className="se-dim">{gameNote}</div>}

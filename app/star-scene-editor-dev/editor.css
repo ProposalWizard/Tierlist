@@ -100,3 +100,4 @@
 .se-use-check { display: flex; gap: 6px; align-items: center; color: #fff; font-weight: 700; font-size: 13px; padding: 3px 0; }
 .se-use-check input { width: 18px; height: 18px; accent-color: #16a34a; }
 .se-stands { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.se-use-err { padding: 6px 10px; background: rgba(255, 77, 94, .14); border-left: 4px solid #ff4d5e; color: #ffd0d5; font-weight: 800; font-size: 13px; }

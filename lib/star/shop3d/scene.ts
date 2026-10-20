@@ -243,7 +243,7 @@ async function buildShop(
   // ONE renderer for every 3D place (three3d/perf.ts): garden → shop → garden
   // keeps the same WebGL context and its compiled shaders, instead of a new
   // context (and every shader built again) at each door.
-  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
   // LAG (Harry, 5 Oct 2026): the tier's still cap standing still (High 1.5x
@@ -1352,7 +1352,9 @@ async function buildShop(
   if (disposed) throw new Error("disposed");
 
   const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
-  renderer.setAnimationLoop(() => {
+  // the shared renderer's loop is set and stopped only by its owner: a build thrown away while a
+  // newer one is starting (React's double effects in dev, a quick switch) never stops the live one
+  if (isOwner()) renderer.setAnimationLoop(() => {
     if (disposed) return;
     let dt: number;
     if (opts.fixedStep) dt = opts.fixedStep;
@@ -1666,7 +1668,7 @@ async function buildShop(
       savings.dispose();
       hEnh?.dispose();
       hRoom?.dispose();
-      renderer.setAnimationLoop(null);
+      if (isOwner()) renderer.setAnimationLoop(null);
       ro.disconnect();
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);
