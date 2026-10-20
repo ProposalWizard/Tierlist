@@ -101,6 +101,9 @@ function goal(w: World, st: WembleyState, who: string) {
 {
   const N = Number(process.env.WEMBLEY_N ?? 200);
   let wins80 = 0, total = 0, stalls = 0, valve = 0, maxGap = 0, goals = 0, shots = 0, saves = 0;
+  // B1 (20 Oct 2026): the 80's rising finish used to clear or hit the bar (17 of 124 shots
+  // against 1 of 330 for the 60s): count the bar per shooter so it can't come back
+  let shots80 = 0, shots60 = 0, bars80 = 0, bars60 = 0;
   const rounds: number[] = [];
   for (let seed = 1; seed <= N; seed++) {
     const { world: w, state: s } = makeWembley({
@@ -113,7 +116,8 @@ function goal(w: World, st: WembleyState, who: string) {
       w.step(STEP);
       if (w.events.length) for (const e of w.drain()) {
         if (e.kind === "goal") { goals++; maxGap = Math.max(maxGap, w.t - last); last = w.t; }
-        else if (e.kind === "shot") shots++;
+        else if (e.kind === "shot") { shots++; if (e.who === "p80") shots80++; else if (e.who?.startsWith("p60")) shots60++; }
+        else if (e.kind === "bar") { if (e.who === "p80") bars80++; else if (e.who?.startsWith("p60")) bars60++; }
         else if (e.kind === "save") saves++;
       }
     }
@@ -124,10 +128,19 @@ function goal(w: World, st: WembleyState, who: string) {
   const avgRound = rounds.reduce((a, b) => a + b, 0) / rounds.length;
   check(stalls === 0, `every session ends inside 15 minutes (${stalls} stalled)`);
   check(wins80 / N > 0.25, `the 80 wins more than his fair quarter (${wins80} of ${N})`);
-  check(total / N > 100 && total / N < 300, `a 4-man session lasts a few minutes (${(total / N).toFixed(0)} s)`);
+  // Floor re-pinned 100 → 75 s (20 Oct 2026, B16): the shared 3D keeper now saves about
+  // 1 in 3 of a decent player's on-target shots (Harry: "Keepers in the 3D minigames are
+  // overpowered"), so goals come quicker: measured 146 s → 83 s a session (38% → 55% of
+  // shots in; the keeper is 66 now, was 70). Raising the Wembley keeper back up doesn't
+  // buy the time back without breaking the 1 in 3 (82: 102 s but a decent player saved
+  // 43%). The floor still stops a session being over in a flash.
+  check(total / N > 75 && total / N < 300, `a 4-man session lasts a minute and a half or more (${(total / N).toFixed(0)} s)`);
+  const bar80 = bars80 / Math.max(1, shots80), bar60 = bars60 / Math.max(1, shots60);
+  check(bar80 <= Math.max(0.04, bar60 * 3), `the 80's finishes don't keep hitting the bar (80: ${bars80} of ${shots80}, 60s: ${bars60} of ${shots60})`);
   console.log(`wembley, ${N} sessions, 4 AI men (one 80, three 60s), keeper ${WEMBLEY_KEEPER}: the 80 wins ${wins80} (${(100 * wins80 / N).toFixed(0)}%, fair share 25%); `
     + `average round ${avgRound.toFixed(0)} s, average session ${(total / N).toFixed(0)} s (${(total / N / 60).toFixed(1)} min); `
-    + `${goals} goals from ${shots} shots (${(100 * goals / shots).toFixed(0)}%), ${saves} saves; valve fired ${valve} times (${(valve / N).toFixed(1)} a session); longest gap between goals ${maxGap.toFixed(0)} s; ${stalls} stalls`);
+    + `${goals} goals from ${shots} shots (${(100 * goals / shots).toFixed(0)}%), ${saves} saves; valve fired ${valve} times (${(valve / N).toFixed(1)} a session); longest gap between goals ${maxGap.toFixed(0)} s; ${stalls} stalls; `
+    + `bar: the 80 ${bars80} of ${shots80} shots, the 60s ${bars60} of ${shots60}`);
 }
 
 if (problems.length) { console.error(problems.map((p) => "  ✗ " + p).join("\n")); process.exit(1); }

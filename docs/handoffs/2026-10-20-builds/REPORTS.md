@@ -132,3 +132,12 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Reused, not copied: Mikey's Board and Bracket, CupDrawReveal, cupBoard/cupBracket. page.tsx not touched.
 - Seen at 390×844 in the real game (League One career at Huddersfield, matches played through the real Sim): Round 1 went 1–1, 4–3 on penalties (penalties straight away, as the rules say). Stills in b9b/.
 - Open: no Trophy picture yet (🏆 emoji); a tie you only watched goes straight back to Home (same as the FA Cup); after a Round 1 bye no draw pops up (see it with "The draw"); a Premier League career still shows the Trophy tab as "Not in it" — hide it?
+
+## B16 — 3D keepers save about 1 in 3
+- 3D games with a keeper: Free Roam, Headers & Volleys, Wembley (the dribble run has a keeper but no shooting; Crossbar, Two Touch and Pace have none).
+- Save rate of on-target shots, before → after (600 shots per bot; "on target" = it goes in with the keeper removed): Free Roam decent 70→33%, good 25→14%, careless 75→56%; Headers & Volleys decent 52→31%, good 37→20%, careless 75→54%; Wembley (you) decent 69→33%, good 40→15%, careless 76→55%; Wembley AI men 60s 45→18%, the 80 31→11%.
+- What was wrong: his cover had a hard edge (saved everything within ~2.6 m of his spot, missed everything beyond). Now a slope: reaction 0.30→0.33 s, read error for a 66 keeper 0.39→0.77 m, body reach 1.36→1.17 m, hands past body 0.8→0.66 m, stretch varies ±30% dive to dive, close-range reflex slower and shorter. Dive speed, grab and all sizes unchanged. A better keeper still saves more (at 18 m: 35% in v a 90 keeper, 44% v 70, 49% v 50).
+- Wembley's keeper 70 → 66 (same as the other two; at 70 a decent player was still saved 38%). Sessions shorter: 146 s → 83 s; wembley3d.mts floor moved 100 → 75 s with the reason in the test. The 80 still wins more than his fair quarter (30%, was 40%). Bar hits checked per shooter.
+- Headers & Volleys win bar 6 → 8 points (at 6 the average bot would win 82% of sessions; at 8, 53%, same as before) — say if you'd rather keep 6. Free Roam's win bar (10) unchanged, never measured; goals now come easier.
+- Found, not fixed: high-skill players blaze over in 3D (a 3D swipe always strikes the middle of the ball: an 80-power firm shot from 12–20 m goes over ~78%); Wembley AI men all aim tight to the post (saved 18% v a human's 33%).
+- Seen once per game at 390×844 (a save and a goal each); stills + 6 s clip in b16/. Reasoned: dive animation unchanged while his reach is shorter, so near full stretch a ball may pass just beyond the drawn glove.
