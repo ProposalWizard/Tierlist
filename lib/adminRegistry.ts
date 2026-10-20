@@ -128,6 +128,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/admin/clubs", "Club data", "Every club's data, with the gaps marked", "rbd", "data", "Mikey", "live", "none", "admin"),
   P("/admin/badges", "Club badges", "Club badges, redo on device", "rbd", "data", "Harry", "live", "browser", "admin"),
   P("/admin/custom-clubs", "Custom clubs", "Invent a club", "rbd", "data", "Mikey", "live", "shared", "admin"),
+  P("/star-3d-bench-dev", "3D bench", "The same ten 3D shots at phone size with their frame numbers: every 3D change shows its before and after here", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-3d-area-dev", "3D test area", "Every 3D scene in one list, plus the 3D file store", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-3d-area-dev/signing", "3D signing", "Live 3D signing", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-3d-area-dev/office", "Manager's office", "Manager's office stage", "rbd", "places3d", "Harry", "live", "none", "team"),

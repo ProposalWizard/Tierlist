@@ -24,7 +24,7 @@ import { createStyleKit, type StyleKit } from "../style3d/kit";
 import { resolveStyle, type StyleDef, type StyleId } from "../style3d/styles";
 import { applyMood, MOODS } from "./presets/moods";
 import { compileScript, rootAt, clipsAt, trackWeight, cameraAt, overlayAt, soundsBetween, type Compiled, type Overlay } from "./timeline";
-import { shotPose, mixPose, type Anchor, type ShotPose } from "./presets/camera";
+import { shotPose, mixPose, keepInside, PHONE_FRAMING_ON, type Anchor, type ShotPose } from "./presets/camera";
 import { resolvePoint } from "./presets/locations";
 import { createCutscenePeople } from "./peopleAdapter";
 import { castLook, DEFAULT_CLUB } from "./casting";
@@ -36,6 +36,7 @@ import { makeSignature, signatureAt } from "./signature";
 import { VOICE_LINES } from "./voiceLines";
 import { clamp, lerpAngle, noise1, smooth } from "./math";
 import { filmPass } from "./cinema";
+import { blinkAt, wanderGaze } from "../style3d/toon/face";
 import { cutsceneCameraLook, type CutsceneCameraLook } from "./look";
 
 export interface DirectorOptions {
@@ -102,6 +103,8 @@ export interface DirectorEdit {
 interface Cast { id: string; role: string; body: string; actor: CutsceneActor; clipSet: Set<string> }
 
 const SITS = new Set(["sitidle", "boss-sit", "sitdown", "slot_sit"]);
+/** How near the camera may come to a person (metres from his head point, body line, arm line). */
+export const PERSONAL_SPACE = { head: 0.34, body: 0.32, arm: 0.24 } as const;
 const IN_PLACE = new Set(["sitdown", "sitidle", "boss-sit", "slump_walk", "jog", "sprint", "dribble_run", "celebrate_safe"]);
 
 export async function createDirector(container: HTMLElement, written: CutsceneScript, o: DirectorOptions = {}): Promise<Director> {
@@ -322,8 +325,12 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const vl = sp?.cue ? VOICE_LINES[sp.cue] : null;
       // a recorded line: the mouth follows its loudness; otherwise a talking rhythm
       a.setMouth(!sp ? 0 : vl ? vl.env[Math.min(vl.env.length - 1, Math.max(0, Math.floor((t - sp.at) * 30)))] ?? 0 : 0.5 + 0.5 * noise1(t * 9, c.id.length));
-      const bp = (t + c.id.length * 0.77) % 3.6;
-      a.setBlink(bp < 0.12 ? Math.sin((bp / 0.12) * Math.PI) : 0);
+      // blinks at uneven times, and the eyes wander a little between looks (less while he talks or looks at someone)
+      const seed = (script.seed ?? 1) * 31 + c.id.length * 7 + c.id.charCodeAt(0);
+      a.setBlink(blinkAt(t, seed));
+      const looking = (tracksOf(c.id, "look") as LookTrack[]).some((lt) => trackWeight(lt, t, 0.35, 0.35) > 0.3);
+      const [gx, gy] = wanderGaze(t, seed);
+      a.setGaze?.(gx, gy, sp || looking ? 0.3 : 0.75);
       a.endFrame();
     }
     // 5. props in hands
@@ -458,28 +465,70 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       return { pos: [a.root.position.x, a.root.position.y, a.root.position.z], yaw: r.yaw, head: toV(head), chest: toV(chest), hips: toV(hips), height: head.y - a.root.position.y + 0.1 };
     }
     const p = targetPoint(tg, t);
-    const q: Vec3 = [p.x, p.y, p.z];
+    let q: Vec3 = [p.x, p.y, p.z];
     const yaw = "actor" in tg ? rootAt(C, tg.actor, t).yaw : 0;
-    return { pos: [q[0], 0, q[2]], yaw, head: q, chest: q, hips: q, height: 0.4, thing: true };
+    // a prop: its own size, so an insert shows all of it (B5: the trophy insert was a 0.25 m slice)
+    let height = 0.4, width: number | undefined;
+    if (PHONE_FRAMING_ON.on && "prop" in tg && props.get(tg.prop)?.group) {
+      const box = new T.Box3().setFromObject(props.get(tg.prop)!.group);
+      if (!box.isEmpty()) {
+        const sz = box.getSize(new T.Vector3()), c = box.getCenter(new T.Vector3());
+        if (Math.max(sz.x, sz.y, sz.z) < 2.5) {
+          height = Math.max(0.12, sz.y); width = Math.max(0.12, sz.x, sz.z);
+          if (!tg.handle) q = [c.x, c.y, c.z];
+        }
+      }
+    }
+    return { pos: [q[0], 0, q[2]], yaw, head: q, chest: q, hips: q, height, width, thing: true };
   };
-  /** Where everyone (but the subject) stands at t: things the camera must not sit inside or behind. */
-  const bodiesAt = (t: number, except: Set<string>): Vec3[] => C.cast.filter((m) => !except.has(m.id)).map((m) => { const r = rootAt(C, m.id, t); return [r.pos[0], r.pos[1] + 1.15, r.pos[2]] as Vec3; });
+  /** Where everyone (but the subject) stands at t: things the camera must not sit inside or behind
+   *  (heads: at his head height instead, a man passing the lens is a face across the whole phone screen). */
+  const bodiesAt = (t: number, except: Set<string>, heads = false): Vec3[] => C.cast.filter((m) => !except.has(m.id)).map((m) => {
+    const r = rootAt(C, m.id, t);
+    return [r.pos[0], r.pos[1] + (heads ? 1.62 : 1.15), r.pos[2]] as Vec3;
+  });
   /** A shot whose camera is inside someone, or has someone right in front of the lens, swings round until it is clear. */
-  const clearShot = (spec: CameraTrack["shot"], a: Anchor, b: Anchor | null, t: number): CameraTrack["shot"] => {
+  const clearShot = (spec: CameraTrack["shot"], a: Anchor, b: Anchor | null, t: number, span?: { at: number; dur: number }): CameraTrack["shot"] => {
     if (spec.fixed || spec.preset === "ots" || spec.preset === "pov" || spec.preset === "insert") return spec;
-    const except = new Set<string>();
-    for (const tg of [spec.subject, spec.subject2]) if (tg && "actor" in tg) except.add(tg.actor);
-    const bodies = bodiesAt(t, except);
-    const blocked = (sp: CameraTrack["shot"]) => {
-      const p = shotPose(sp, a, b, { aspect: camera.aspect, k: 0.5, t, seed: 0 });
-      const cam = v(p.pos), look = v(p.look);
+    // a still camera on a tall phone (B5): checked at the phone's own (wider) framing through its whole
+    // shot (heads near the lens), and the second subject counts too unless the shot is of both of
+    // them (in "Watches him go" the mentor, the second subject, stood in front of the wider phone camera
+    // and walked across it 0.4 s in, his face filling the screen). Elsewhere exactly as before.
+    const phone = !!span && PHONE_FRAMING_ON.on && camera.aspect < 1;
+    const except = new Set<string>(), exceptNear = new Set<string>();
+    for (const tg of [spec.subject, spec.subject2]) if (tg && "actor" in tg) {
+      except.add(tg.actor);
+      if (tg === spec.subject || spec.preset === "two-shot") exceptNear.add(tg.actor);
+    }
+    const subj = "actor" in spec.subject && !spec.subject.local ? spec.subject.actor : null;
+    const p0 = subj ? rootAt(C, subj, t).pos : null;
+    // as before: at t, anyone (but the subjects) standing in the line of sight up to 1.8 m out
+    const samples = [{ ts: t, k: 0.5, bodies: bodiesAt(t, except), shift: [0, 0, 0] as Vec3, reach: 1.8, side: 0.45 }];
+    // the phone: anyone's head near the lens (1.3 m) and on its line (0.35 m) at any moment of the shot (a
+    // face across the screen); a man further out is only a figure in the picture, and a man passing beside
+    // the lens is only a shoulder at the edge
+    if (phone) {
+      for (const f of [0.5, 0.1, 0.3, 0.7, 0.9]) {
+        const ts = span!.at + span!.dur * f;
+        // its eye follows the subject a little (camPose)
+        const p1 = subj && p0 ? rootAt(C, subj, ts).pos : null;
+        const shift: Vec3 = p1 && p0 ? [(p1[0] - p0[0]) * 0.7, 0, (p1[2] - p0[2]) * 0.7] : [0, 0, 0];
+        samples.push({ ts, k: f, bodies: bodiesAt(ts, exceptNear, true), shift, reach: 1.3, side: 0.35 });
+      }
+    }
+    // the screen shape the check frames for: the phone's own; else 1, as it always was here (anchors were
+    // measured before the first resize)
+    const asp = phone ? camera.aspect : 1;
+    const blocked = (sp: CameraTrack["shot"]) => samples.some((S) => {
+      const p = shotPose(sp, a, b, { aspect: asp, k: S.k, t: S.ts, seed: 0 });
+      const cam = v(p.pos), look = v(p.look).add(v(S.shift));
       const seg = look.clone().sub(cam); const L = seg.length(); seg.normalize();
-      return bodies.some((q) => {
+      return S.bodies.some((q) => {
         const w = v(q).sub(cam); const along = w.dot(seg);
-        if (along < -0.3 || along > Math.min(L * 0.7, 1.8)) return false;
-        return w.clone().sub(seg.clone().multiplyScalar(along)).length() < 0.45;
+        if (along < -0.3 || along > Math.min(L * 0.7, S.reach)) return false;
+        return w.clone().sub(seg.clone().multiplyScalar(along)).length() < S.side;
       });
-    };
+    });
     if (!blocked(spec)) return spec;
     for (const dy of [28, -28, 55, -55, 85, -85]) { const s2 = { ...spec, yaw: (spec.yaw ?? 0) + dy }; if (!blocked(s2)) return s2; }
     return { ...spec, rise: (spec.rise ?? 0) + 0.8 };
@@ -499,9 +548,14 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       }
       poseActors(at);
       const a = anchorOf(cam.shot.subject, at), b = cam.shot.subject2 ? anchorOf(cam.shot.subject2, at) : null;
-      anchors.set(cam, { a, b, shot: clearShot(cam.shot, a, b, at) });
+      const still = cam.shot.move !== "follow" && cam.shot.move !== "track";
+      anchors.set(cam, { a, b, shot: clearShot(cam.shot, a, b, at, still ? { at: cam.at, dur: cam.dur } : undefined) });
     }
   };
+  // the screen's shape before the shots are measured (a tall phone frames wider: clearShot must check that
+  // camera); a later resize to a different tall shape measures them again
+  camera.aspect = (container.clientWidth || 1) / (container.clientHeight || 1);
+  let measuredAspect = camera.aspect;
   measureAnchors();
 
   const camPose = (cam: CameraTrack, k: number, t: number): ShotPose => {
@@ -518,6 +572,44 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const now = anchorOf(cam.shot.subject, t);
       const d: Vec3 = [now.chest[0] - st.a.chest[0], now.chest[1] - st.a.chest[1], now.chest[2] - st.a.chest[2]];
       p.look = [p.look[0] + d[0] * 0.7, p.look[1] + d[1] * 0.7, p.look[2] + d[2] * 0.7];
+    }
+    return p;
+  };
+
+  /**
+   * The camera is never inside a person or a held prop (B5: the trophy lift's camera sat inside his
+   * arms). Measured on the bodies as posed this frame: a camera nearer than PERSONAL_SPACE to anyone's
+   * head, body or arms, or inside a prop's box, backs away along its own line from what it looks at
+   * (the framing gets a little wider, never cut off).
+   */
+  const clearOfPeople = (p: ShotPose): ShotPose => {
+    const look = v(p.look);
+    const out = v(p.pos).sub(look);
+    const d0 = out.length();
+    if (d0 < 1e-4) return p;
+    out.normalize();
+    const segD = (x: any, a: any, b: any) => { const ab = b.clone().sub(a); const k = clamp(x.clone().sub(a).dot(ab) / Math.max(1e-9, ab.lengthSq()), 0, 1); return x.distanceTo(a.clone().addScaledVector(ab, k)); };
+    const parts = Array.from(cast.values()).map((c) => {
+      const A = c.actor;
+      return { head: A.point("head"), chest: A.point("chest"), hips: A.point("hips"), sl: A.point("shoulder.L"), hl: A.point("hand.L"), sr: A.point("shoulder.R"), hr: A.point("hand.R") };
+    });
+    const boxes: any[] = [];
+    for (const pr of Array.from(props.values())) {
+      if (!pr.group?.visible) continue;
+      const b = new T.Box3().setFromObject(pr.group);
+      if (!b.isEmpty() && Math.max(...b.getSize(new T.Vector3()).toArray()) < 2.5) boxes.push(b.expandByScalar(0.06));
+    }
+    const S = PERSONAL_SPACE;
+    const clear = (c: any) => parts.every((q) => c.distanceTo(q.head) > S.head && segD(c, q.chest, q.hips) > S.body && segD(c, q.sl, q.hl) > S.arm && segD(c, q.sr, q.hr) > S.arm)
+      && boxes.every((b) => !b.containsPoint(c));
+    const at = (k: number) => look.clone().addScaledVector(out, d0 * k);
+    if (clear(at(1))) return p;
+    for (let k = 1.06; k <= 4.01; k *= 1.06) {
+      if (clear(at(k))) {
+        let q: ShotPose = { ...p, pos: at(k).toArray() as Vec3 };
+        if (C.loc.bounds) q = keepInside(q, C.loc.bounds);
+        return q;
+      }
     }
     return p;
   };
@@ -543,6 +635,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     if (cs) {
       let p = camPose(cs.cur, cs.k, t);
       if (cs.prev) p = mixPose(camPose(cs.prev.track, cs.prev.k, t), p, cs.prev.mix);
+      if (PHONE_FRAMING_ON.on) p = clearOfPeople(p);
       camera.position.set(...p.pos);
       camera.up.set(Math.sin((p.roll * Math.PI) / 180), Math.cos((p.roll * Math.PI) / 180), 0);
       const fr = edit?.free?.[C.cameras.indexOf(cs.cur)];
@@ -644,6 +737,10 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    if (PHONE_FRAMING_ON.on && Math.abs(camera.aspect - measuredAspect) > 0.01 && Math.min(camera.aspect, measuredAspect) < 1) {
+      measuredAspect = camera.aspect;
+      measureAnchors();
+    }
   };
   resize();
   const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;

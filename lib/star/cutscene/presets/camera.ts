@@ -10,6 +10,15 @@
  *
  * `side` is which side of the line of action the camera keeps to: +1 = the
  * subject's LEFT as he faces his subject2 (or his own facing).
+ *
+ * A TALL PHONE (B5, 20 Oct 2026; the 3D audit: 14 of 23 cut-scene stills had a
+ * face or body filling the screen). A preset's `size` is the HEIGHT framed; on
+ * a 9:19.5 phone that leaves a frame under half as wide, so a "medium" was a
+ * chest that filled the screen and a close-up a face wider than it. `minW` is
+ * the least WIDTH the shot shows at the subject (PHONE_FRAMING): on a tall
+ * screen the shot widens until that much fits across, his head then sits in
+ * the top part of the picture with a little room above it. A wide screen
+ * already shows more than `minW`, so nothing changes there.
  */
 import type { CameraMove, ShotPreset, ShotSpec, Vec3 } from "../types";
 import { clamp, distForHeight, lensToFov, lerp, noise1, smooth, v3, yawDir } from "../math";
@@ -21,6 +30,8 @@ export interface Anchor {
   height: number;
   /** A point thing (a prop or a mark), not a person. */
   thing?: boolean;
+  /** A thing's own width (metres), when known (a prop's box): an insert shows all of it. */
+  width?: number;
 }
 
 export interface PresetDef {
@@ -36,7 +47,26 @@ export interface PresetDef {
   roll?: number;
   /** Where in the frame the aim point sits, −1..1 up (a close-up keeps the eyes high). */
   frameY?: number;
+  /** The least width shown at the subject, metres (a tall phone; PHONE_FRAMING). */
+  minW?: number;
 }
+
+/**
+ * The least width each shot shows at its subject, metres. Picked so that on a
+ * 9:19.5 phone a head is under half the screen wide (a head is ~0.25 m) and
+ * the shoulders (~0.5 m) under nine tenths of it, with the arms in a medium.
+ */
+export const PHONE_FRAMING: Partial<Record<ShotPreset, number>> = {
+  full: 1.2, "medium-wide": 1.0, medium: 0.85, "medium-close": 0.75, close: 0.68, "extreme-close": 0.6,
+  "low-hero": 1.1, "high-angle": 1.3, insert: 0.42, pov: 0.9, profile: 0.8, dutch: 0.85,
+};
+/** On a tall phone, where his head sits: the frame's top this far over the head point (metres + share of the framed height). */
+export const PHONE_HEADROOM = { m: 0.12, k: 0.14 } as const;
+/**
+ * The phone framing on (the bench's before/after: `?framing=old` on a test page plays the cut-scene
+ * cameras as they were on 19 Oct 2026 — no width rule, inserts by the old size, the camera let into people).
+ */
+export const PHONE_FRAMING_ON = { on: typeof window === "undefined" || new URLSearchParams(window.location.search).get("framing") !== "old" };
 
 export const SHOT_PRESETS: Record<ShotPreset, PresetDef> = {
   establishing: { size: 18, lens: 22, aim: 1, height: { abs: 6 }, angle: 35 },
@@ -115,12 +145,21 @@ export function shotPose(spec: ShotSpec, A: Anchor, B: Anchor | null, o: { aspec
     const dir = rotY(fwd, ang);
     look = aimPoint(A, P.aim);
     // On a phone the frame is narrow: a full shot fits his height, a wide one its width too.
-    const size = P.size * (A.thing && spec.preset !== "insert" ? Math.max(0.4, A.height / 1.8) : 1) * (A.height < 1.5 && !A.thing ? 0.85 : 1);
+    let size = P.size * (A.thing && spec.preset !== "insert" ? Math.max(0.4, A.height / 1.8) : 1) * (A.height < 1.5 && !A.thing ? 0.85 : 1);
+    // an insert shows the whole thing (a trophy, a shirt), not a slice of it
+    if (PHONE_FRAMING_ON.on && A.thing && spec.preset === "insert") size = Math.max(size, A.height * 1.5);
+    // a tall phone: at least this much across at the subject (PHONE_FRAMING)
+    const minW = o.aspect < 1 && PHONE_FRAMING_ON.on ? phoneMinWidth(spec.preset, A) : 0;
+    const narrow = minW > 0 && minW / o.aspect > size;
+    if (narrow) size = minW / o.aspect;
     const d = distForHeight(fov, size);
     const y = P.height.abs !== undefined ? floor + P.height.abs : look[1] + (P.height.eye ?? 0);
     pos = [look[0] + dir[0] * d, y + (spec.rise ?? 0), look[2] + dir[2] * d];
     // keep the aim point where the preset wants it in the frame (eyes high in a close-up)
-    if (P.frameY) look = v3.add(look, [0, -P.frameY * size * 0.5, 0]);
+    if (narrow && !A.thing && P.aim >= 1.2) {
+      // the phone's taller frame: his head near the top with a little room over it, more of him below
+      look = [look[0], A.head[1] + PHONE_HEADROOM.m + PHONE_HEADROOM.k * size - size * 0.5, look[2]];
+    } else if (P.frameY) look = v3.add(look, [0, -P.frameY * size * 0.5, 0]);
     // looking up/down shortens the real distance: keep the size
     const real = v3.dist(pos, look);
     if (real > 1e-3) fov = Math.min(100, fov * clamp(d / real, 0.7, 1.4));
@@ -130,6 +169,15 @@ export function shotPose(spec: ShotSpec, A: Anchor, B: Anchor | null, o: { aspec
   pose = applyMove(spec, pose, k, o);
   if (o.bounds) pose = keepInside(pose, o.bounds);
   return pose;
+}
+
+/** The least width a shot shows at its subject on a tall screen (0 = none). */
+export function phoneMinWidth(preset: ShotPreset, A: Pick<Anchor, "thing" | "height" | "width">): number {
+  const m = PHONE_FRAMING[preset] ?? 0;
+  if (!m) return 0;
+  // a thing: all of it across, with a margin (a shirt is wider than it is tall)
+  if (A.thing) return Math.max(m, (A.width ?? A.height) * 1.35);
+  return m;
 }
 
 function rotY(v: Vec3, a: number): Vec3 {

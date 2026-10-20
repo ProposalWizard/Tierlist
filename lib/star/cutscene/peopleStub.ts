@@ -8,8 +8,9 @@
  * What this stand-in does: clips sampled from t, arm and leg IK, the one
  * body's fingers (named hand shapes), the pen grip measured off the real
  * fingertips (as the live signing does), head-and-neck look-at with a limit,
- * feet kept on the floor, a lean. What it does NOT do: faces (expression,
- * blink and mouth are accepted and only nudge the head), eyes.
+ * feet kept on the floor, a lean. Faces (B5, 20 Oct 2026): on a Style A head the
+ * face moves (style3d/toon/face.ts): blinks, eyes that look where he looks and
+ * wander a little, the expression of the beat, lips that move as he speaks.
  */
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -18,6 +19,7 @@ import { loadPeople3d, makePerson3d, dressPerson3d, poseFingers, fingersDeg, fin
 import { addClips, loadAnims3d } from "../three3d/footballAnims";
 import { solveArm, handWorldQuat, setBoneWorldQuat, rotateBoneWorld, type HandAxes } from "../signing3dRig";
 import { newNumberCanvas, drawShirtNumber } from "../signing3dTextures";
+import { addToonFace, toonFaceFor, type ToonFaceRig } from "../style3d/toon/face";
 
 type Three = typeof import("three");
 
@@ -83,6 +85,8 @@ export function createStubPeople(init: CutscenePeopleInit): CutscenePeople {
       for (const act of Object.values(p.actions)) { act.enabled = true; act.play(); act.setEffectiveWeight(0); }
       dress(T, p, spec);
       const actor = new StubActor(T, spec.id, p);
+      // the face that moves (a Style A head with measured spots; anything else stays as painted)
+      actor.face = addToonFace(T, p);
       made.push(actor);
       return actor;
     },
@@ -131,6 +135,13 @@ class StubActor implements CutsceneActor {
   private yaw = 0;
   private axes: Record<"L" | "R", HandAxes>;
   private exprTilt = 0;
+  /** The moving face (null: a head with no measured face). */
+  face: ToonFaceRig | null = null;
+  private exprW: Record<string, number> = {};
+  private blink = 0;
+  private talk = 0;
+  private gaze: [number, number] = [0, 0];
+  private wander: [number, number] = [0, 0];
 
   constructor(private T: Three, readonly id: string, readonly person: Person3D) {
     this.root = person.root;
@@ -154,6 +165,7 @@ class StubActor implements CutsceneActor {
   beginFrame() {
     this.fingers = { L: handShape("relax"), R: handShape("relax") };
     this.exprTilt = 0;
+    this.exprW = {}; this.blink = 0; this.talk = 0; this.gaze = [0, 0]; this.wander = [0, 0];
   }
 
   poseClips(entries: [string, number, number][]) {
@@ -328,17 +340,34 @@ class StubActor implements CutsceneActor {
     const cur2 = this.dirOf(0, 0, 1).applyQuaternion(hq2.multiply(restW.clone().invert()));
     const q2 = new T.Quaternion().setFromUnitVectors(cur2, lim).slerp(new T.Quaternion(), 1 - w);
     rotateBoneWorld(T, B.Head, q2);
+    // the eyes take what the head could not (past the neck's limits, or a look only part of the way)
+    const yawFull = Math.atan2(fwd.clone().cross(flat).y, fwd.dot(flat));
+    const pitchFull = Math.asin(Math.max(-1, Math.min(1, want.y)));
+    this.gaze = [
+      Math.max(-1, Math.min(1, this.gaze[0] + ((yawFull - yaw) * w + yaw * (1 - w) * 0.6) / 0.45)),
+      Math.max(-1, Math.min(1, this.gaze[1] + ((pitchFull - pitch) * w + pitch * (1 - w) * 0.6) / 0.3)),
+    ];
   }
+
+  /** Small eye movements on top of where he looks (the director's saccades), `w` of the way. */
+  setGaze(x: number, y: number, w = 1) { this.wander = [x * w, y * w]; }
 
   setExpression(expr: Expression, amount: number) {
-    // Faces belong to the people layer. The stand-in only drops or lifts the head a touch.
+    // the face (toon/face.ts), and the head dropped or lifted a touch with the feeling
     this.exprTilt += (EXPR_HEAD[expr] ?? 0) * amount;
+    this.exprW[expr] = (this.exprW[expr] ?? 0) + amount;
   }
-  setBlink(c: number) { void c; }
-  /** No jaw on these bodies: the head moves a touch with the voice (lifts on the stresses). */
-  setMouth(o: number) { this.exprTilt -= o * 0.045; }
+  setBlink(c: number) { this.blink = Math.max(this.blink, c); }
+  /** The lips move with the voice; the head moves a touch with it too (lifts on the stresses). */
+  setMouth(o: number) { this.exprTilt -= o * (this.face ? 0.02 : 0.045); this.talk = Math.max(this.talk, o); }
 
   endFrame() {
+    if (this.face) {
+      this.face.set({
+        face: toonFaceFor(this.exprW), blink: this.blink, talk: this.talk * 0.85,
+        gaze: [this.gaze[0] + this.wander[0], this.gaze[1] + this.wander[1]],
+      });
+    }
     this.applyFingers();
     if (this.exprTilt) {
       const axis = new this.T.Vector3(0, 1, 0).cross(this.dirOf(0, 0, 1)).normalize();
@@ -347,5 +376,5 @@ class StubActor implements CutsceneActor {
     this.root.updateMatrixWorld(true);
   }
 
-  dispose() { this.root.parent?.remove(this.root); }
+  dispose() { this.face?.dispose(); this.root.parent?.remove(this.root); }
 }

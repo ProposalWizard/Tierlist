@@ -42,7 +42,12 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
         const SkeletonUtils = await import("three/examples/jsm/utils/SkeletonUtils.js");
         const { withMeshopt } = await import("@/lib/star/three3d/meshopt");
-        const { loadToonHead, loadPeople3d, makePerson3d, dressPerson3d, poseClips } = await import("@/lib/star/people3d");
+        const { loadToonHead, loadPeople3d, makePerson3d, dressPerson3d, poseClips, relaxToonArms, turnBoneInBody } = await import("@/lib/star/people3d");
+        const { loadAnims3d, addClips, clipInfo } = await import("@/lib/star/three3d/footballAnims");
+        const { addToonFace, toonFaceFor, blinkAt, wanderGaze } = await import("@/lib/star/style3d/toon/face");
+        const { setToonRim } = await import("@/lib/star/style3d/toon/shader");
+        const { homeIdleAt, homeSway, HOME_BALL_REST } = await import("@/lib/star/homeIdle");
+        const { makeHomeSet, juggleSpot } = await import("@/lib/star/homeSet3d");
         const { numberTexture } = await import("@/lib/star/style3d/gameplay");
         if (dead) return;
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
@@ -51,48 +56,83 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
         renderer.setClearColor(0x000000, 0);
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         const scene = new THREE.Scene();
-        scene.add(new THREE.HemisphereLight("#b9cdf0", "#4a5a2a", 1.2));
-        const sun = new THREE.DirectionalLight("#ffe0b0", 2.6);
-        sun.position.set(2.5, 4, 4);
+        // B5 (20 Oct 2026): light with shape, not flat: the sun more from his side, a cool sky fill, and a
+        // soft rim from the floodlights behind him (drawn in his own shader, toon/shader.ts TOON_RIM: no new light)
+        scene.add(new THREE.HemisphereLight("#b9cdf0", "#4a5a2a", 1.1));
+        const sun = new THREE.DirectionalLight("#ffe0b0", 2.5);
+        sun.position.set(3.4, 4, 2.2);
         scene.add(sun);
+        setToonRim(THREE, { color: "#fff1dd", strength: 0.75, from: [-0.35, 0.55, -1] });
         const loader = await withMeshopt(new GLTFLoader());
-        const [g, anims] = await Promise.all([loadToonHead(loader, you.head), loadPeople3d(loader, "anims", "new")]);
+        const [g, anims, fb] = await Promise.all([
+          loadToonHead(loader, you.head), loadPeople3d(loader, "anims", "new"),
+          loadAnims3d(loader as never, "football").catch(() => null),
+        ]);
         if (dead) { renderer.dispose(); return; }
         const SK = (SkeletonUtils as unknown as { default?: unknown }).default ?? SkeletonUtils;
         const p = makePerson3d(THREE, SK as never, g, anims, { outline: 0.006, you: true });
         dressPerson3d(THREE, p, { skin: you.skin, hair: you.hair, kit: { shirt: kitShirt, trim: kitTrim }, number: numberTexture(THREE, num) });
+        if (fb) addClips(THREE, p, fb);
         scene.add(p.root);
-        // frame him: boots on the bottom edge, head near the top
+        // his face moves: blinks, eyes that look round, lips when he talks (toon/face.ts)
+        const face = addToonFace(THREE, p);
+        const homeSet = makeHomeSet(THREE, scene);
+        const jInfo = clipInfo(fb, "juggle");
+        // frame him: boots on the bottom edge, head near the top; the camera a little under his eyes (a hero's angle)
         const tall = 1.83 * (p.root.children[0]?.scale.y ?? 1);
         const cam = new THREE.PerspectiveCamera(18, width / height, 0.1, 40);
-        const fit = (tall * 1.06) / 2 / Math.tan((18 * Math.PI) / 360);
-        const fitW = (0.9 / (width / height)) / 2 / Math.tan((18 * Math.PI) / 360);
-        cam.position.set(0, tall * 0.53, Math.max(fit, fitW));
-        cam.lookAt(0, tall * 0.53, 0);
+        const fit = (tall * 1.08) / 2 / Math.tan((18 * Math.PI) / 360);
+        const fitW = (0.95 / (width / height)) / 2 / Math.tan((18 * Math.PI) / 360);
+        cam.position.set(0, tall * 0.47, Math.max(fit, fitW));
+        cam.lookAt(0, tall * 0.535, 0);
         el.appendChild(renderer.domElement);
         renderer.domElement.style.width = `${width}px`;
         renderer.domElement.style.height = `${height}px`;
-        const idle = p.actions.idle ? "idle" : Object.keys(p.actions)[0];
-        const dur = p.actions[idle]?.getClip().duration ?? 1;
+        const has = (c: string) => !!p.actions[c];
+        const len = (c: string) => p.actions[c]?.getClip().duration ?? 1;
         const t0 = performance.now();
         let snapped = false;
+        // he stands a quarter turned (three quarters to the camera), the way a player poses, not square on
+        const restYaw = where === "home" ? 0.32 : -0.35;
+        const drawAt = (t: number) => {
+          const st = homeIdleAt(t, has, len);
+          poseClips(p, st.clips);
+          // the stance on the standing idle: feet a little apart, arms loose off the hips, his weight shifting
+          if (st.idle > 0.01) {
+            turnBoneInBody(THREE, p, "LeftUpLeg", [0, 0, 1], 3.2 * st.idle);
+            turnBoneInBody(THREE, p, "RightUpLeg", [0, 0, 1], -3.2 * st.idle);
+            relaxToonArms(THREE, p, 5 * st.idle, 9 * st.idle);
+            const hips = p.bones.Hips;
+            if (hips) { hips.position.x += (homeSway(t) / (p.unit || 0.01)) * st.idle; hips.updateMatrixWorld(true); }
+          }
+          const tr = turn.current;
+          if (tr.drag === null && where === "home") tr.yaw += (restYaw - tr.yaw) * 0.04; // drifts back to his pose
+          p.root.rotation.y = tr.yaw;
+          p.root.updateMatrixWorld(true);
+          // the face: the beat's look, the eyes wandering (down to his ball in the keepy-uppies), blinks, the lips
+          const gz = wanderGaze(t, 11);
+          face?.set({ face: toonFaceFor(st.face), blink: blinkAt(t, 5), talk: st.talk, gaze: st.juggle > 0.5 ? [gz[0] * 0.3, -0.75] : gz });
+          homeSet.place(p, tr.yaw, st.juggle, juggleSpot(jInfo, st.juggleT) ?? HOME_BALL_REST, t);
+          renderer.render(scene, cam);
+          // keep this first picture for the next visit's wait (read straight after the draw)
+          if (!snapped) { snapped = true; keepSnap(where, sig, renderer.domElement); }
+        };
+        (window as unknown as { __homePlayer?: unknown }).__homePlayer = { draw: drawAt };
         const frame = (now: number) => {
           raf = requestAnimationFrame(frame);
           if (document.hidden || now - last < 33) return;
           last = now;
-          const t = (now - t0) / 1000;
-          poseClips(p, [[idle, t % dur, 1]]);
-          const tr = turn.current;
-          if (tr.drag === null && where === "home") tr.yaw *= 0.96; // drifts back to face you
-          p.root.rotation.y = tr.yaw;
-          renderer.render(scene, cam);
-          // keep this first picture for the next visit's wait (read straight after the draw)
-          if (!snapped) { snapped = true; keepSnap(where, sig, renderer.domElement); }
+          // stills and films (the bench): window.__homeT holds one moment
+          const held = (window as unknown as { __homeT?: number }).__homeT;
+          drawAt(typeof held === "number" ? held : (now - t0) / 1000);
         };
         raf = requestAnimationFrame(frame);
         setReady(true);
         dispose = () => {
           cancelAnimationFrame(raf);
+          face?.dispose();
+          homeSet.dispose();
+          setToonRim(THREE, { color: "#ffffff", strength: 0 });
           renderer.dispose();
           renderer.domElement.remove();
         };
