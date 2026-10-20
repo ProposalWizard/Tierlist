@@ -193,5 +193,6 @@ DECIDED = {
         ('3D-6: Higgsfield?', 'Harry, 19 Oct', 'On for now. Always say what is being made there, and delete the images and videos after use.'),
         ('GEN-1 and GEN-3: the Scene generator?', 'Harry, 19 Oct', 'Build it as its own admin page in the Studio tab (built in B6). Generated scenes can go in the game if they are good, for the moments that suit them.'),
         ('In-match mute, TOUCH and Power buttons: resize in the match file (sensitive)?', 'Harry, 20 Oct', 'Yes. Done: size only, no game logic.'),
+        ('The in-match radar (Settings &rarr; Match radar: New) draws the ball dot outside its lit area. Fix it?', 'Harry, 20 Oct', 'Fix the match radar. Done the same day: the dot outside its area went from 220 of 455 minutes to 0 of 910 checked (B17, v0.85).'),
     ],
 }
