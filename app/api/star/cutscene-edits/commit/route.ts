@@ -16,6 +16,11 @@ import { mergeSceneEditsFile, SCENE_EDITS_PATH, type SavedSceneEdit } from "@/li
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  // the token first: without it nobody can commit, and saying so names no secret
+  const env = resolveCommitConfig(process.env as Record<string, string | undefined>);
+  if (!env.config) {
+    return NextResponse.json({ ok: false, error: env.message?.replace("the scenario is unchanged", "the game's copy is unchanged"), missingEnv: env.missing }, { status: 503 });
+  }
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || !(await isAdmin(user.id))) {
@@ -28,11 +33,6 @@ export async function POST(req: NextRequest) {
     .filter((r) => JSON.stringify(r.edits).length < 50_000);
   if (!rows.length) {
     return NextResponse.json({ ok: false, error: "Send rows: [{ scriptId, edits }]. Nothing was committed." }, { status: 400 });
-  }
-
-  const env = resolveCommitConfig(process.env as Record<string, string | undefined>);
-  if (!env.config) {
-    return NextResponse.json({ ok: false, error: env.message?.replace("the scenario is unchanged", "the game's copy is unchanged"), missingEnv: env.missing }, { status: 503 });
   }
 
   const names = rows.map((r) => r.scriptId);

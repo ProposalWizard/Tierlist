@@ -48,6 +48,7 @@ const toEdit = (s: WalkSaved): WalkSceneEdit => ({ views: s.views, ...(s.scene ?
 export default function WalkPlaceEditor({ place, tabs }: { place: Place; tabs: ReactNode }) {
   const holder = useRef<HTMLDivElement>(null);
   const h = useRef<WalkHandle | null>(null);
+  const building = useRef<Promise<void>>(Promise.resolve());
   const [status, setStatus] = useState<"loading" | "ready" | "off">("loading");
   const [saved, setSaved] = useState<WalkSaved>(() => emptyWalk(place));
   const views = WALK_VIEWS[place];
@@ -80,7 +81,11 @@ export default function WalkPlaceEditor({ place, tabs }: { place: Place; tabs: R
     let dead = false;
     setStatus("loading");
     (window as unknown as { __editorReady?: boolean }).__editorReady = false;
-    (async () => {
+    // one scene at a time: the renderer is shared (three3d/perf), so a late-finishing build that is
+    // thrown away (React runs effects twice in dev, or a quick sky/home change) would stop the live
+    // one's loop when it is disposed. Each build waits for the last, as the director's does.
+    building.current = building.current.then(async () => {
+      if (dead) return;
       try {
         const { quality3dTier, parseQuality3d } = await import("@/lib/star/three3d/quality");
         const q = parseQuality3d(new URLSearchParams(window.location.search).get("q")) ?? quality3dTier();
@@ -114,7 +119,7 @@ export default function WalkPlaceEditor({ place, tabs }: { place: Place; tabs: R
         console.error("Scene editor: place failed", e);
         if (!dead) setStatus("off");
       }
-    })();
+    });
     return () => { dead = true; h.current?.dispose(); h.current = null; (window as unknown as { __editorReady?: boolean }).__editorReady = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [place, sky, tier]);
