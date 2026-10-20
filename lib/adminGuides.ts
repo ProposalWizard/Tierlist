@@ -1404,13 +1404,13 @@ export const ADMIN_GUIDES = {
     buttons: [
       { items: [
         ["Home player … Made-up scene: a trophy", "Picks the shot. A cut scene stops at the same second every time; a 3D place (garden, office, drill) keeps moving."],
-        ["Skin now / Skin before (19 Oct)", "Skin before shows the shot with the old skin and light (the yellow and orange skin), so the two can be compared on the same shot."],
+        ["Now / Before (19 Oct)", "Before shows the shot as it was on 19 Oct 2026: the old skin and light (yellow in cut scenes, orange in the garden and shop), the old cut-scene cameras (a face or body filling the phone) and faces that never move. Now is the game today. The Home player's new life has no Before here: its before is a still in the patch notes."],
         ["Show the skin it measures", "Paints every bit of bare skin bright pink in the shot: what the skin numbers are measured from."],
       ] },
     ],
     saving: ["Nothing here is saved. The page only shows other test pages at fixed moments."],
     inGame: ["Nothing changes in the game from this page. It is a measuring tool for the 3D changes."],
-    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/home/page.tsx (the Home shot), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old-skin for the before). Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; ?skinfix=0 on any 3D page shows the old skin.",
+    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/home/page.tsx (the Home shot; window.__homeT holds a moment), app/star-3d-bench-dev/face/page.tsx (one head close up, its moving face on an 8 s loop), app/star-3d-bench-dev/faces/page.tsx (measures the eight Style A faces: scripts/bench3d/faces.mjs --write), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old for the before). Home stills: node scripts/bench3d/home.mjs PREFIX 3 8.6 20. Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; on any 3D test page ?skinfix=0 shows the old skin, ?framing=old the old cut-scene cameras, ?face=old still faces.",
   },
   "/star-3d-area-dev": {
     title: "3D Area",

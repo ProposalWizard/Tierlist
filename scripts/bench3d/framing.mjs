@@ -6,13 +6,14 @@
  * director, reads where the camera is and where each person's body is, and
  * marks a shot BAD when, on the phone:
  *   face      the subject's head is more than half the screen wide (a face that fills it)
- *   body      the subject's shoulders are wider than the screen (a body that fills it)
+ *   body      the subject's shoulders take 84% of the screen's width or more (a body that fills it)
  *   crop      the subject's head is cut by the top or side of the frame
  *   inside    the camera is inside a person's own space (under 30 cm from his head or body,
  *             22 cm from an arm) or inside a prop
  *   prop      a prop the shot is about fills more than 90% of the screen's height or width
  *
- *   node scripts/bench3d/framing.mjs [--base=http://localhost:3027] [--at=audit|shots] [--out=file.json] [scene ...]
+ *   node scripts/bench3d/framing.mjs [--base=http://localhost:3027] [--at=audit|shots] [--out=file.json] [--old] [scene ...]
+ * --old: the cameras as they were on 19 Oct 2026 (?framing=old) — the "before".
  *
  * scene: a fixture (signing goal trophy walkout press mentor farewell) or an
  * event "scored:0.8:joy:3" (kind:stakes:emotion:seed). Default: every fixture
@@ -32,9 +33,10 @@ const AUDIT = {
 let scenes = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 if (!scenes.length) scenes = ["signing", "goal", "trophy", "walkout", "press", "mentor", "farewell", "scored:0.8:joy:3", "won-trophy:0.9:joy:5"];
 const urlOf = (s) => {
-  if (!s.includes(":")) return `${BASE}/star-style-dev?scene=director&fixture=${s}&clean=1`;
+  const old = flags.old ? "&framing=old" : "";
+  if (!s.includes(":")) return `${BASE}/star-style-dev?scene=director&fixture=${s}&clean=1${old}`;
   const [kind, stakes, emotion, seed] = s.split(":");
-  return `${BASE}/star-style-dev?scene=director&event=${kind}&stakes=${stakes}&emotion=${emotion}&seed=${seed}&clean=1`;
+  return `${BASE}/star-style-dev?scene=director&event=${kind}&stakes=${stakes}&emotion=${emotion}&seed=${seed}&clean=1${old}`;
 };
 
 const exe = fs.existsSync("/opt/pw-browsers/chromium") && fs.statSync("/opt/pw-browsers/chromium").isFile() ? "/opt/pw-browsers/chromium" : undefined;
@@ -49,6 +51,8 @@ for (const s of scenes) {
   if (AT === "audit") times = (AUDIT[s] ?? []).map((t) => ({ t, shot: null }));
   else times = await page.evaluate(() => window.__cutscene.cameras().map((c, i) => ({ t: +(c.at + Math.min(c.dur * 0.5, Math.max(0.3, c.dur - 0.3))).toFixed(2), shot: i, preset: c.shot.preset, name: c.name ?? null })));
   for (const x of times) {
+    // a page that reloaded (the dev server rebuilt) brings its director back: wait for it
+    await page.waitForFunction(() => window.__frameStep && window.__cutsceneDebug && window.__cutscene, null, { timeout: 300000 });
     const r = await page.evaluate(([t]) => {
       window.__frameStep.seek(t);
       const D = window.__cutsceneDebug, cam = D.camera;
@@ -87,7 +91,7 @@ for (const s of scenes) {
         if (inside) out.bad.push(`inside ${id}`);
         if (id === subj && inFrame) {
           if (headW > 0.5) out.bad.push(`face ${Math.round(headW * 100)}% wide`);
-          else if (shoulderW > 1.0) out.bad.push(`body ${Math.round(shoulderW * 100)}% wide`);
+          else if (shoulderW >= 0.84) out.bad.push(`body ${Math.round(shoulderW * 100)}% wide`);
           if (top > 1.0 && hc.y < 1 && headH < 0.5) out.bad.push("crop head top");
           else if (sides > 1.0 && Math.abs(hc.x) < 1 && headW > 0.2) out.bad.push("crop head side");
         }

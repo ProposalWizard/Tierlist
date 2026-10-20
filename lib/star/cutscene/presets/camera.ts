@@ -62,6 +62,11 @@ export const PHONE_FRAMING: Partial<Record<ShotPreset, number>> = {
 };
 /** On a tall phone, where his head sits: the frame's top this far over the head point (metres + share of the framed height). */
 export const PHONE_HEADROOM = { m: 0.12, k: 0.14 } as const;
+/**
+ * The phone framing on (the bench's before/after: `?framing=old` on a test page plays the cut-scene
+ * cameras as they were on 19 Oct 2026 — no width rule, inserts by the old size, the camera let into people).
+ */
+export const PHONE_FRAMING_ON = { on: typeof window === "undefined" || new URLSearchParams(window.location.search).get("framing") !== "old" };
 
 export const SHOT_PRESETS: Record<ShotPreset, PresetDef> = {
   establishing: { size: 18, lens: 22, aim: 1, height: { abs: 6 }, angle: 35 },
@@ -142,9 +147,9 @@ export function shotPose(spec: ShotSpec, A: Anchor, B: Anchor | null, o: { aspec
     // On a phone the frame is narrow: a full shot fits his height, a wide one its width too.
     let size = P.size * (A.thing && spec.preset !== "insert" ? Math.max(0.4, A.height / 1.8) : 1) * (A.height < 1.5 && !A.thing ? 0.85 : 1);
     // an insert shows the whole thing (a trophy, a shirt), not a slice of it
-    if (A.thing && spec.preset === "insert") size = Math.max(size, A.height * 1.5);
+    if (PHONE_FRAMING_ON.on && A.thing && spec.preset === "insert") size = Math.max(size, A.height * 1.5);
     // a tall phone: at least this much across at the subject (PHONE_FRAMING)
-    const minW = o.aspect < 1 ? phoneMinWidth(spec.preset, A) : 0;
+    const minW = o.aspect < 1 && PHONE_FRAMING_ON.on ? phoneMinWidth(spec.preset, A) : 0;
     const narrow = minW > 0 && minW / o.aspect > size;
     if (narrow) size = minW / o.aspect;
     const d = distForHeight(fov, size);

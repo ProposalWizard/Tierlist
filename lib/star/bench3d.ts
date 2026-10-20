@@ -37,8 +37,12 @@ export const BENCH3D_SHOTS: Bench3dShot[] = [
   { id: "gen-trophy", label: "Made-up scene: a trophy", url: cut("event=won-trophy&stakes=0.9&emotion=joy&seed=5"), t: 5.0, kind: "cut" },
 ];
 
-/** The shot's address with the frame meter on (and the old skin, for a before still). */
-export function benchUrl(s: Bench3dShot, o: { oldSkin?: boolean } = {}): string {
-  const q = [s.t !== undefined ? `t=${s.t}` : "", "fps=1", o.oldSkin ? "skinfix=0" : ""].filter(Boolean).join("&");
+/**
+ * The shot's address with the frame meter on. `old`: the shot as it was on 19 Oct 2026, for a
+ * before still — the old skin (?skinfix=0), the old cut-scene cameras (?framing=old) and painted
+ * faces that never move (?face=old). (The Home player's new life has no switch: its before is a still.)
+ */
+export function benchUrl(s: Bench3dShot, o: { old?: boolean } = {}): string {
+  const q = [s.t !== undefined ? `t=${s.t}` : "", "fps=1", o.old ? "skinfix=0&framing=old&face=old" : ""].filter(Boolean).join("&");
   return `${s.url}${s.url.includes("?") ? "&" : "?"}${q}`;
 }

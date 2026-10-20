@@ -77,6 +77,29 @@ float tnTone = 0.0;       // skin, or a moving face's eye: lit and tone-mapped a
 // The skin's share of a light's colour: a warm lamp or sun lights skin a little less warm than it lights
 // cloth (a camera's white balance on faces), so a golden-hour face stays the tone that was picked.
 vec3 tnSkinLight(vec3 c) { return mix(c, vec3(dot(c, vec3(0.299, 0.587, 0.114))), tnTone * uSkinFx.z); }
+#ifdef TN_ACES_SCREEN
+// Drawn straight to the screen through three's own ACES (Home, the signing and office, Low): skin is
+// handed over so that ACES gives it the curve by brightness only (its hue kept), the same as the post
+// passes give it. ACES's own matrices and curve, solved backwards.
+const mat3 tnAcesIn = mat3(vec3(0.59719, 0.07600, 0.02840), vec3(0.35458, 0.90834, 0.13383), vec3(0.04823, 0.01566, 0.83777));
+const mat3 tnAcesOut = mat3(vec3(1.60475, -0.10208, -0.00327), vec3(-0.53108, 1.10813, -0.07276), vec3(-0.07367, -0.00605, 1.07602));
+const mat3 tnAcesInInv = mat3(vec3(1.764741, -0.147028, -0.036337), vec3(-0.675778, 1.160252, -0.162436), vec3(-0.088963, -0.013224, 1.198773));
+const mat3 tnAcesOutInv = mat3(vec3(0.643038, 0.059269, 0.005962), vec3(0.311187, 0.931436, 0.063929), vec3(0.045775, 0.009295, 0.930118));
+vec3 tnRrt(vec3 v) { return (v * (v + 0.0245786) - 0.000090537) / (v * (0.983729 * v + 0.4329510) + 0.238081); }
+vec3 tnRrtInv(vec3 y) {
+  vec3 a = 1.0 - 0.983729 * y, b = 0.0245786 - 0.4329510 * y, c = -(0.000090537 + 0.238081 * y);
+  return (-b + sqrt(max(b * b - 4.0 * a * c, vec3(0.0)))) / (2.0 * a);
+}
+vec3 tnSkinPreTone(vec3 c) {
+  float e = toneMappingExposure / 0.6;
+  float m = max(max(c.r, c.g), c.b);
+  if (m < 1e-5) return c;
+  float g = clamp(tnAcesOut * tnRrt(tnAcesIn * vec3(m * e)), 0.0, 1.0).r;
+  vec3 want = c * (g / m);
+  vec3 v = tnRrtInv(clamp(tnAcesOutInv * want, 0.0, 1.01));
+  return (tnAcesInInv * v) / e;
+}
+#endif
 vec3 toonStep(float d) {
   if (uShade.x > 0.5) {
     // two soft bands: the shade side stays warm and readable, never a hard dark stripe
@@ -100,12 +123,14 @@ vec3 toonStep(float d) {
  * Off (uTfOn.x 0) on every other person: the head exactly as painted.
  */
 const TOON_FACE = `
-  {
+  if (uTfOn.x > 0.5) {
+  // (a uniform's branch: the slopes below are taken by every pixel of this person, so they stay valid;
+  // everyone without a moving face skips all of it)
   // where on the head's picture a rest-pose step (metres) lands, from this pixel's own slopes
   vec2 tfDx = dFdx(r.xy), tfDy = dFdy(r.xy), tfUx = dFdx(vMapUv), tfUy = dFdy(vMapUv);
   float tfDet = tfDx.x * tfDy.y - tfDy.x * tfDx.y;
   float tfAA = max(fwidth(r.y), 0.00005);
-  if (uTfOn.x > 0.5 && vRestN.z > 0.12 && r.y > uFaceF.x - 0.01) {
+  if (vRestN.z > 0.12 && r.y > uFaceF.x - 0.01) {
     for (int i = 0; i < 2; i++) {
       vec4 E = i == 0 ? uTfEyeR : uTfEyeL;
       vec2 q = (r.xy - E.xy) / E.zw;
@@ -158,7 +183,8 @@ const TOON_FACE = `
         float bot = -op * 0.0068 * pow(ku, 0.75);
         float m = smoothstep(bot - tfAA, bot + tfAA, v) * (1.0 - smoothstep(top - tfAA, top + tfAA, v));
         vec3 mc = mix(vec3(0.07, 0.016, 0.02), vec3(0.2, 0.05, 0.055), smoothstep(bot, top, v) * 0.5);
-        float teeth = step(0.22, op) * (1.0 - smoothstep(top - 0.0013 - tfAA, top - 0.0013 + tfAA, top - v)) * (1.0 - smoothstep(0.62, 0.86, abs(u)));
+        // the upper teeth: a band just under the top lip, once the mouth is open enough to show them
+        float teeth = step(0.22, op) * (1.0 - smoothstep(0.0013 - tfAA, 0.0013 + tfAA, top - v)) * (1.0 - smoothstep(0.62, 0.86, abs(u)));
         mc = mix(mc, vec3(0.8, 0.77, 0.72), teeth);
         col = mix(col, mc, m);
       }
@@ -467,8 +493,11 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
     // the silhouette that the bloom turned into glowing squares (Harry, 9 Oct 2026).
     .replace("reflectedLight.directSpecular += irradiance * BRDF_GGX(", "reflectedLight.directSpecular += (dotNL * directLight.color) * BRDF_GGX(");
   const skinU = toonSkinUniform(T);
-  mat.onBeforeCompile = (sh) => {
+  mat.onBeforeCompile = (sh, renderer) => {
     Object.assign(sh.uniforms, u);
+    // straight to the screen through three's ACES: skin gets its curve here (TN_ACES_SCREEN), not in a post pass
+    const rt = (renderer as unknown as { getRenderTarget?: () => { isXRRenderTarget?: boolean } | null }).getRenderTarget?.() ?? null;
+    if ((renderer as unknown as { toneMapping?: number }).toneMapping === T.ACESFilmicToneMapping && (!rt || rt.isXRRenderTarget)) sh.fragmentShader = "#define TN_ACES_SCREEN\n" + sh.fragmentShader;
     sh.uniforms.uSkinFx = skinU;
     Object.assign(sh.uniforms, toonRimUniforms(T));
     sh.vertexShader = sh.vertexShader
@@ -522,8 +551,11 @@ ${(T.ShaderChunk as Record<string, string>).map_fragment.replace("texture2D( map
 if (uHome.x > 0.5) gl_FragColor.a = 0.5;
 // TOON_SKIN: the probe paints bare skin one flat magenta (scripts/bench3d measure skin through it);
 // the mark tells a post pass which pixels are skin (alpha 0.75), so its tone curve and grade keep their tone
+#ifdef TN_ACES_SCREEN
+if (tnTone > 0.5 && uSkinFx.z > 0.0) gl_FragColor.rgb = tnSkinPreTone(gl_FragColor.rgb);
+#endif
 if (uSkinFx.y > 0.5 && tnSkin > 0.5) gl_FragColor = vec4(3.0, 0.0, 3.0, 1.0);
 else if (uSkinFx.x > 0.5 && uHome.x < 0.5 && tnTone > 0.5) gl_FragColor.a = ${TOON_SKIN_MARK.toFixed(2)};`);
   };
-  mat.customProgramCacheKey = () => "people3d-toon-v10";
+  mat.customProgramCacheKey = () => "people3d-toon-v11";
 }

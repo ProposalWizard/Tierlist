@@ -41,6 +41,9 @@ export interface ToonFaceRig {
   dispose(): void;
 }
 
+/** Faces move (the bench's before/after: `?face=old` on a test page keeps the painted faces still). */
+export const TOON_FACE_ON = { on: typeof window === "undefined" || new URLSearchParams(window.location.search).get("face") !== "old" };
+
 /** The cut-scene face's landmarks from a Style A head's measured ones. */
 export function toonFaceLandmarks(lm: ToonFaceLandmarks): FaceLandmarks {
   return {
@@ -63,7 +66,7 @@ export const TOON_EXPRESSIONS: Record<string, Partial<Record<ExpressionName, num
 /** A face for this person, or null (not a Style A head, or no measured face for it). */
 export function addToonFace(T: Three, p: Person3D): ToonFaceRig | null {
   const lm = p.toonHead ? TOON_FACE_LANDMARKS[p.toonHead] : undefined;
-  if (!lm || !p.u.uTfOn) return null;
+  if (!lm || !p.u.uTfOn || !TOON_FACE_ON.on) return null;
   const body = p.body;
   const shared = body.geometry;
   const geo = shared.clone();

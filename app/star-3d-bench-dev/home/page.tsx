@@ -25,6 +25,10 @@ export default function BenchHomeShot() {
     });
     const s = q.get("sky"); if (s === "day" || s === "night" || s === "sunset") setSky(s);
     setReady(true);
+    // filming (scripts/film/frames3d.mjs): seek(t) holds his round at t (lib/star/homeIdle.ts) and draws it
+    const w = window as unknown as { __frameStep?: unknown; __homeT?: number; __homePlayer?: { draw(t: number): void } };
+    w.__frameStep = { duration: 33, seek: (t: number) => { w.__homeT = t; w.__homePlayer?.draw(t); } };
+    return () => { delete w.__frameStep; delete w.__homeT; };
   }, []);
   const career = { squadNumber: 10, season: 1, player: { firstName: "Bench", lastName: "Player" } } as unknown as CareerState;
   return (

@@ -5,7 +5,8 @@
  * under it are measured: hue and saturation, against the 8 skin tones a player
  * can pick, whose hue is 23–31°).
  *
- *   npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after [--old-skin] [--base=http://localhost:3027] [id ...]
+ *   npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after [--old] [--base=http://localhost:3027] [id ...]
+ * --old: each shot as it was on 19 Oct 2026 (old skin, old cut-scene cameras, still faces).
  *
  * Writes DIR/<id>-<tag>.jpg (≤ 200 KB) and DIR/bench-<tag>.json. Needs the dev
  * server running. This machine has no graphics chip: the frame numbers compare
@@ -21,7 +22,7 @@ const flag = (k: string) => args.find((a) => a.startsWith(`--${k}=`))?.split("="
 const OUT = path.resolve(flag("out") ?? "bench3d-out");
 const TAG = flag("tag") ?? "now";
 const BASE = flag("base") ?? "http://localhost:3027";
-const OLD = args.includes("--old-skin");
+const OLD = args.includes("--old") || args.includes("--old-skin");
 const ids = args.filter((a) => !a.startsWith("--"));
 const shots = ids.length ? BENCH3D_SHOTS.filter((s) => ids.includes(s.id)) : BENCH3D_SHOTS;
 fs.mkdirSync(OUT, { recursive: true });
@@ -74,7 +75,7 @@ for (const s of shots) {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error" && !/CERT_AUTHORITY|favicon|404/.test(m.text())) errors.push(m.text().slice(0, 200)); });
-  const url = BASE + benchUrl(s, { oldSkin: OLD });
+  const url = BASE + benchUrl(s, { old: OLD });
   const t0 = Date.now();
   try {
     await page.goto(url, { waitUntil: "load", timeout: 300000 });

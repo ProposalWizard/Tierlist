@@ -19,7 +19,7 @@ export default function Bench3dPage() {
   const [nonce, setNonce] = useState(0);
   const [f, setF] = useState<Frame3d | null>(null);
   const frame = useRef<HTMLIFrameElement>(null);
-  const src = benchUrl(shot, { oldSkin });
+  const src = benchUrl(shot, { old: oldSkin });
 
   // the shot's own frame meter (window.__frame3d, lib/star/three3d/frameStats.ts), read twice a second
   useEffect(() => {
@@ -43,10 +43,10 @@ export default function Bench3dPage() {
             {BENCH3D_SHOTS.map((s) => <Pill key={s.id} on={s.id === shot.id} onClick={() => { setShot(s); setNonce((n) => n + 1); }}>{s.label}</Pill>)}
           </div>
           <div style={{ marginTop: 12 }}>
-            <Label>Skin</Label>
+            <Label>Before / after</Label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              <Pill on={!oldSkin} onClick={() => setOldSkin(false)}>Skin now</Pill>
-              <Pill on={oldSkin} onClick={() => setOldSkin(true)}>Skin before (19 Oct)</Pill>
+              <Pill on={!oldSkin} onClick={() => setOldSkin(false)}>Now</Pill>
+              <Pill on={oldSkin} onClick={() => setOldSkin(true)}>Before (19 Oct)</Pill>
               <Pill on={probe} onClick={() => setProbe((p) => !p)}>Show the skin it measures</Pill>
             </div>
           </div>

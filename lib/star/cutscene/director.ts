@@ -24,7 +24,7 @@ import { createStyleKit, type StyleKit } from "../style3d/kit";
 import { resolveStyle, type StyleDef, type StyleId } from "../style3d/styles";
 import { applyMood, MOODS } from "./presets/moods";
 import { compileScript, rootAt, clipsAt, trackWeight, cameraAt, overlayAt, soundsBetween, type Compiled, type Overlay } from "./timeline";
-import { shotPose, mixPose, keepInside, type Anchor, type ShotPose } from "./presets/camera";
+import { shotPose, mixPose, keepInside, PHONE_FRAMING_ON, type Anchor, type ShotPose } from "./presets/camera";
 import { resolvePoint } from "./presets/locations";
 import { createCutscenePeople } from "./peopleAdapter";
 import { castLook, DEFAULT_CLUB } from "./casting";
@@ -469,7 +469,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     const yaw = "actor" in tg ? rootAt(C, tg.actor, t).yaw : 0;
     // a prop: its own size, so an insert shows all of it (B5: the trophy insert was a 0.25 m slice)
     let height = 0.4, width: number | undefined;
-    if ("prop" in tg && props.get(tg.prop)?.group) {
+    if (PHONE_FRAMING_ON.on && "prop" in tg && props.get(tg.prop)?.group) {
       const box = new T.Box3().setFromObject(props.get(tg.prop)!.group);
       if (!box.isEmpty()) {
         const sz = box.getSize(new T.Vector3()), c = box.getCenter(new T.Vector3());
@@ -600,7 +600,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     if (cs) {
       let p = camPose(cs.cur, cs.k, t);
       if (cs.prev) p = mixPose(camPose(cs.prev.track, cs.prev.k, t), p, cs.prev.mix);
-      p = clearOfPeople(p);
+      if (PHONE_FRAMING_ON.on) p = clearOfPeople(p);
       camera.position.set(...p.pos);
       camera.up.set(Math.sin((p.roll * Math.PI) / 180), Math.cos((p.roll * Math.PI) / 180), 0);
       const fr = edit?.free?.[C.cameras.indexOf(cs.cur)];
