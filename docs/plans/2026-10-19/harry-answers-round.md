@@ -91,3 +91,6 @@ the BUILD it belongs to (list at the bottom).
 
 ### B11, Harry's words (20 Oct)
 "read receipts in chat, and reply to current chats - also working @ ing and linking other pages directly into chat with some new feature or to be able to almost point someone towards something on a page through a shortcut (like say shift + x means i CAN highlight part of a page and it @'s them to look at it and they see my note.) … the patch notes system could have like a read receipts and notes so we know when everyone has read and understood patch notes"
+
+## Patch notes for the overnight round (Harry, 20 Oct)
+"I need all patch notes split up, named with stills and videos once all is done." → One named patch-notes page per build (B1, B4, B7, B9, B11, B3, B5, B6, B8), each with stills, plus short after-videos for gameplay and animation changes (stills first, videos added after), and one index page linking them all.
