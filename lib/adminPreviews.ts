@@ -16,6 +16,7 @@ export const ADMIN_PREVIEW: Record<string, string> = {
   "/star-update-dev": "/admin/previews/star-update-dev.webp",
   "/star-sim90-dev": "/admin/previews/star-sim90-dev.webp",
   "/star-radar-dev": "/admin/previews/star-radar-dev.webp",
+  "/star-fiveaside-dev": "/admin/previews/star-fiveaside-dev.webp",
   "/star-dribble-stick-dev": "/admin/previews/star-dribble-stick-dev.webp",
   "/star-vfx-lab-dev": "/admin/previews/star-vfx-lab-dev.webp",
   "/star-sound-lab-dev": "/admin/previews/star-sound-lab-dev.webp",

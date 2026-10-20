@@ -166,12 +166,50 @@ export interface FiveASideProps {
   onProgress?: (state: FiveMatchState) => void;
   /** Resume rather than kick off. */
   resumeFrom?: FiveMatchState | null;
+  /*
+   * TEST AREA ONLY (/star-fiveaside-dev, Harry 19 Oct 2026). All off by
+   * default, so the trial plays exactly as before. None of them changes a
+   * kick, a keeper or an outcome.
+   */
+  /** Skip the "How to play / Kick off" card and start at once. */
+  autoStart?: boolean;
+  /** Stop once ONE chance has been played (a scenario), instead of playing on. */
+  stopAfterChance?: boolean;
+  /** Read-only: told how every engine chance ended — yours, a team-mate's, theirs. */
+  onChance?: (c: FiveChanceReport) => void;
+  /** Read-only: where everybody is, once per drawn frame (for a radar). */
+  onFrame?: (f: FiveFrameReport) => void;
+}
+
+/** One finished engine chance, as the test area's numbers read it. */
+export interface FiveChanceReport {
+  who: "you" | "mate" | "them";
+  outcome: Outcome | "out";
+  /** The engine's chance kind (one_on_one, midfield_pass…). */
+  kind: string;
+  /** Your touch only: a team-mate finished your pass. */
+  assist?: boolean;
+  score: [number, number];
+  minute: number;
+}
+
+/** Everybody on the pitch this frame, in OUR picture (your goal at the bottom). */
+export interface FiveFrameReport {
+  figures: { x: number; y: number; side: "us" | "them"; keeper?: boolean; star?: boolean }[];
+  ball: Vec2;
+  phase: string;
+  minute: number;
+  score: [number, number];
+  possession: "you" | "them";
+  /** The pitch metres the screen is showing (left/right/top/bottom of the box). */
+  view?: Viewport;
 }
 
 export default function FiveASide({
   difficulty, keeperStrength = 60, oppKeeperStrength, skills = { power: 55, technique: 55 },
   seed, cast, yourKit, theirKit, rules = FIVE_A_SIDE, embedded,
   onComplete, onProgress, resumeFrom,
+  autoStart, stopAfterChance, onChance, onFrame,
 }: FiveASideProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -217,6 +255,17 @@ export default function FiveASide({
   const [goalTone, setGoalTone] = useState<"you" | "them" | null>(null);
   /** See `obey`. Assigned below, once it exists. */
   const obeyRef = useRef<() => void>(() => {});
+
+  // The test area's observers live in refs: a parent passing a new function
+  // every render must never rebuild the animation loop (a loop rebuilt
+  // mid-chance is the one freeze this screen has never reproduced outside a
+  // browser — see `resolveMine`).
+  const onChanceRef = useRef(onChance);
+  onChanceRef.current = onChance;
+  const onFrameRef = useRef(onFrame);
+  onFrameRef.current = onFrame;
+  const stopAfterRef = useRef(!!stopAfterChance);
+  stopAfterRef.current = !!stopAfterChance;
 
   const faces = useRef(createFaceImageCache());
   const faceStyle = useRef(loadFaceStyle());
@@ -465,7 +514,7 @@ export default function FiveASide({
   // Nothing happens until you kick off (Mikey, 28 Sep 2026: "I didn't even
   // get to read the tutorial… maybe it should start from a kickoff instead,
   // so that you can kick off when you're ready").
-  const [kickedOff, setKickedOff] = useState(false);
+  const [kickedOff, setKickedOff] = useState(!!autoStart);
   useEffect(() => {
     if (!kickedOff) return;
     obey();
@@ -675,6 +724,9 @@ export default function FiveASide({
     matchRef.current = next;
     // Saved at every passage end, which is what makes closing the app safe.
     onProgress?.(next);
+    onChanceRef.current?.({ who: "you", outcome, kind: sc.kind, assist, score: next.score, minute: next.minute });
+    // A scenario: stay on the result picture (the ball settles, nothing else runs).
+    if (stopAfterRef.current) return;
     if (next.over) { finish(next); return; }
     obey();
   }, [finish, obey, onProgress, rng, rules]);
@@ -689,6 +741,9 @@ export default function FiveASide({
     const next = applyTheirAttack(matchRef.current, outcome, world, { passageDraws: rng.drawn() });
     matchRef.current = next;
     onProgress?.(next);
+    onChanceRef.current?.({ who: "them", outcome, kind: their.sc.kind, score: next.score, minute: next.minute });
+    // A scenario: stay on the result picture (the ball settles, nothing else runs).
+    if (stopAfterRef.current) return;
     if (next.over) { finish(next); return; }
     obey();
   }, [finish, obey, onProgress, rng]);
@@ -704,6 +759,9 @@ export default function FiveASide({
     const next = applyMateAttack(matchRef.current, outcome, world, { passageDraws: rng.drawn() });
     matchRef.current = next;
     onProgress?.(next);
+    onChanceRef.current?.({ who: "mate", outcome, kind: mate.sc.kind, score: next.score, minute: next.minute });
+    // A scenario: stay on the result picture (the ball settles, nothing else runs).
+    if (stopAfterRef.current) return;
     if (next.over) { finish(next); return; }
     obey();
   }, [finish, obey, onProgress, rng]);
@@ -841,9 +899,12 @@ export default function FiveASide({
     // move is watched too, but it is your side attacking the engine's own goal,
     // so it is drawn natively (the ordinary passage branch below), never
     // mirrored — gated on `theirRef` rather than the phase for exactly that.
+    // Full time straight after THEIR chance keeps their picture too: it used to
+    // fall back to the un-turned engine picture (your goal at the top, kits
+    // swapped). Seen in the five-a-side test area, 20 Oct 2026.
     const watching = (phaseRef.current === "watch" && !!theirRef.current)
       || phaseRef.current === "brace"
-      || (phaseRef.current === "result" && !!theirRef.current);
+      || ((phaseRef.current === "result" || phaseRef.current === "done") && !!theirRef.current);
 
     // ── Everything in OUR coordinates, whoever is attacking ──
     //
@@ -868,7 +929,24 @@ export default function FiveASide({
     // directly: this screen was "a clear giveaway that its not the same
     // game", drawn at its own smaller size and never animated at all.
     const nowS = performance.now() / 1000;
+    // Read-only copy of what is drawn, for the test area's radar (onFrame).
+    const seen: FiveFrameReport["figures"] = [];
+    const report = (b: Vec2) => {
+      const tell = onFrameRef.current;
+      if (!tell) return;
+      const f = flowRef.current;
+      const possession: "you" | "them" = watching ? "them"
+        : sc ? "you"
+        : f ? (f.beats[f.at]?.possession === "them" ? "them" : "you")
+        : matchRef.current.possession;
+      tell({
+        figures: seen, ball: { x: b.x, y: b.y }, phase: phaseRef.current,
+        minute: matchRef.current.minute, score: [...matchRef.current.score] as [number, number], possession,
+        view: camRef.current ? { ...camRef.current } : undefined,
+      });
+    };
     const fig = (id: string, at: Vec2, look: Parameters<typeof drawFigure>[3]) => {
+      seen.push({ x: at.x, y: at.y, side: look.shirt === theirs.shirt && look.shirt !== mine.shirt ? "them" : "us", star: !!look.star });
       const ps = poseFor(motionRef.current, id, at.x, at.y);
       drawFigure(ctx, p, at, look, faceStyle.current, fakeFaceStyle.current, {
         pose: bodyPoseFor(ps, runPhase(nowS, at.x)), scale: MATCH_SCALE,
@@ -898,6 +976,7 @@ export default function FiveASide({
       at: Vec2, look: Parameters<typeof drawFigure>[3],
       kk?: { dive: number; saveLunge: number; saveDir?: number },
     ) => {
+      seen.push({ x: at.x, y: at.y, side: look.shirt === keeperLook(true).shirt ? "them" : "us", keeper: true });
       const lunge = kk && kk.saveLunge > 0 ? Math.min(1, kk.saveLunge) : 0;
       const sign = !kk ? 0 : kk.saveLunge > 0 ? (kk.saveDir || 1) : Math.sign(kk.dive);
       const across = kk ? Math.min(1, Math.abs(kk.dive) / 1.6) * 0.45 + lunge * 0.55 : 0;
@@ -927,6 +1006,7 @@ export default function FiveASide({
       }));
       fig("you", w.you, { ...mine, star: true, face: face("you", cast?.you?.face) });
       drawBall(ctx, p, w.ball, 0, MATCH_SCALE);
+      report(w.ball);
       return;
     }
 
@@ -1011,6 +1091,7 @@ export default function FiveASide({
     if (phaseRef.current === "aim" && aimRef.current) {
       drawAim(ctx, p, sc.ball, aimRef.current.dir, aimRef.current.power);
     }
+    report(ballAt);
   };
 
   const m = matchRef.current;
