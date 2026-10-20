@@ -49,3 +49,14 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Real moments page: per moment Use in game / Don't use / Automatic, filter, count, "Commit marks to the game". README explains add/remove/edit.
 - Seen: credits, switches, the page marks, a SoccerTrack moment, a real moment served in Infinite Match. Not seen: inside a career match.
 - Pending database file for Mikey: star_real_moments_picks.sql.
+
+## B6 — Scene editor 3b, Approve + Commit to game, Scene generator, last 6 pages framed
+- Scene editor: the 3D Shop, Garden and House now edit live like Signing and Office (Walking view + card/room views; Turn, Rise, Distance, Lens; key light, angle, colour, exposure; drag the preview; drag the sun). No edit = plays exactly as before.
+- "Use in the game" panel on every place: ✓ APPROVE / Withdraw; Where (career and/or test page); When (always, or one moment: signing first contract/move, shop entry, garden day/sunset/night, which home, which Director event). The game reads ONLY approved edits (committed file lib/star/data/sceneEdits.json + shared approved rows; newer wins).
+- Measured: an approved office edit moved the office test camera from 44° to 19.4° (70 mm lens); reverted after.
+- Commit to game: writes approved edits into the repo file on main (needs GITHUB_TOKEN + admin; honest message when missing). Each commit triggers a Vercel production rebuild.
+- Scene generator (Studio tab, /admin/scene-generator): pick event (18), feeling (12), size, intensity, seed; Generate / Re-roll; recipe (place, mood, length, people, film-rules score, beats, shots); 👍/👎; Keep as a hand-made scene (opens in the editor).
+- "When does this play?": 18 rows, all "Not wired" — generated scenes play only on test pages today. A test fails if a career screen starts calling the generator while every row says Not wired.
+- Last 6 admin pages (signing, office, shop, garden, house, style test) on the Broadcast frame: 37 → 43 of 43. ?bare=1 gives the old full screen.
+- Fixed along the way: shop/garden/house scenes could stop the shared 3D renderer when a build was thrown away mid-start (game time stayed at 0 on the framed shop page; now moves).
+- No new database file. Seen in a browser: all of the above except career paths with a real admin save (reasoned).
