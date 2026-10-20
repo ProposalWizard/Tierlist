@@ -3,6 +3,7 @@ import SaveFailedBanner from "@/components/star/SaveFailedBanner";
 import OtherDeviceBanner from "@/components/star/OtherDeviceBanner";
 import GameFullScreen from "@/components/star/GameFullScreen";
 import ConfirmHost from "@/components/star/ConfirmHost";
+import LagTestHost from "@/components/star/LagTest";
 
 export const metadata: Metadata = {
   title: "Star Career — Admin Only",
@@ -27,6 +28,8 @@ export default function StarDevLayout({ children }: { children: React.ReactNode 
       <OtherDeviceBanner />
       {/* The game's own "Are you sure?" — never the browser's (lib/star/askConfirm.ts). */}
       <ConfirmHost />
+      {/* The Lag test's pill (Settings → 🛠 Dev → Lag test, or ?lagtest=1): nothing until opened. */}
+      <LagTestHost />
     </>
   );
 }

@@ -783,7 +783,7 @@ export const ADMIN_GUIDES = {
   },
   "/admin/videos": {
     title: "Videos",
-    what: "Record your screen and voice here, and the recording goes to your Drive with a clear name and a line to paste to Claude.",
+    what: "Record your screen and voice here, and the recording goes to your Drive with a clear name and a line to paste to Claude. Admins also get Live share (test): Claude sees your screen a picture a second and hears you, and answers in its chat, even unasked.",
     buttons: [
       { group: "Record", items: [
         ["Harry / Mikey / Leo", "Who is recording. Goes in the file name. Remembered on this device."],
@@ -801,14 +801,39 @@ export const ADMIN_GUIDES = {
         ["Download", "Saves the video to this device instead."],
         ["Open the Breakdowns folder ↗", "Harry's Drive folder where every breakdown is saved."],
       ] },
+      { group: "Live share (test) — admins only", items: [
+        ["Start live share", "The browser asks which screen, window or tab to share, then (with Voice on) asks for the microphone. It makes a 6-letter code. Use Chrome or Edge on a computer."],
+        ["Voice", "On = what you say is written down as you talk (Chrome, Edge, Safari). Off, or a browser with no voice (Firefox) = type notes instead."],
+        ["Copy for Claude", "Copies one line to paste into a Claude chat. Claude then runs the watcher and answers you in its chat."],
+        ["Copy link / Watch it ↗", "The page that shows the newest picture and what was said, for anyone on the team to watch."],
+        ["Type a note for Claude / Send", "Adds a typed line, as if you had said it."],
+        ["Stop", "Ends the share. The browser's own Stop sharing bar does the same. It also ends by itself after 30 minutes."],
+        ["Delete", "Shown after Stop. Deletes every picture and line of that share."],
+      ] },
     ],
     saving: [
       "Your own Google Drive, folder \"Knowitball screen recordings\" → a folder for whoever is picked under Who is recording (the site makes them the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it. You can move the main folder anywhere in Drive; the site still finds it.",
       "The video goes from your browser straight to Google. The site keeps only its name and link (dev_recordings table), so that person's Claude chats break it down the next time they are messaged (scripts/hooks/recordings-hook.mjs). Needs dev_recordings.sql run once.",
       "Drive needs NEXT_PUBLIC_GOOGLE_CLIENT_ID on the site. Until it is set, recordings only download.",
+      "Live share: once a second, when the screen changed, a small picture (720 px wide) goes to public storage (tierlist-images → live/<code>/), with what was said (transcript.json) and how it is going (state.json, including how much each picture changed). Only the newest 300 pictures (about 5 minutes) are kept. No table. Anyone with the code can open the pictures while they exist; Delete removes them all.",
+      "Claude's side: npx tsx scripts/live-watch.mts <code> prints each line said with the picture on screen at that moment, a SCREEN line when the screen changes (new screen / part changed / small change), and keeps the newest picture in a file it can look at. Claude answers in its chat (about 5–20 s behind), and may comment without being asked. Nothing is said back on this page.",
     ],
     inGame: ["Nowhere."],
-    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · /api/dev-recordings + scripts/hooks/recordings-hook.mjs (auto-read) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md",
+    needs: ["Live share needs SUPABASE_SERVICE_ROLE_KEY on the site (it is there for the other admin uploads). Without it, Start shows \"the site has no storage key\"."],
+    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · /api/dev-recordings + scripts/hooks/recordings-hook.mjs (auto-read) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md · Live share: app/admin/videos/LiveShareCard.tsx, lib/liveShare.ts (pure; tests/star/liveShare.mts), lib/liveShareBrowser.ts, lib/liveShareStore.ts, /api/admin/live-share, scripts/live-watch.mts",
+  },
+  "/admin/videos/live": {
+    title: "Live share",
+    what: "Watch a live share from Admin → Videos: the newest picture of the shared screen and what the person said, every 2 seconds.",
+    buttons: [
+      { group: "On this page", items: [
+        ["(nothing to press)", "It reads by itself every 2 seconds and says Ended when the share stops."],
+      ] },
+    ],
+    saving: ["Nothing. This page only reads the pictures and lines the sharer's browser sends to public storage (tierlist-images → live/<code>/)."],
+    inGame: ["Nowhere."],
+    needs: ["SUPABASE_SERVICE_ROLE_KEY on the site, as for the Videos page's Live share."],
+    dev: "app/admin/videos/live/[code]/* · reads <storage>/live/<code>/state.json, transcript.json, f000001.jpg… (lib/liveShare.ts) · a Claude chat uses scripts/live-watch.mts instead",
   },
   "/admin/team": {
     title: "Team board",
@@ -823,7 +848,7 @@ export const ADMIN_GUIDES = {
         ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again. On a phone the menu is ☰ Menu, Team first."],
       ] },
       { group: "Team room toggle", items: [
-        ["Board | Chat | Ideas | To-do", "Switches part, the same as the lines under Team in the side menu. A red number = new chat or new notes on your things; amber = a new job given to you."],
+        ["Board | Chat | Ideas | To-do", "Switches part, the same as the lines under Team in the side menu. A red number = new chat or new notes on your things; amber = a new job given to you (typed on the board or arrived by push)."],
       ] },
       { group: "Ideas", items: [
         ["By stage | By person", "Idea · Doing · Done columns, or a lane per person. Remembered in this browser."],
@@ -832,7 +857,7 @@ export const ADMIN_GUIDES = {
         ["An idea", "Opens it: move it to Idea / Doing / Done, delete it (yours only), and read or add notes."],
       ] },
       { group: "Chat (and the round button on every admin page)", items: [
-        ["Message… @ or #", "Enter sends; Shift+Enter is a new line. Paste or 🖼 adds a picture. Type @ to pick Harry, Mikey or Leo; type # and a few letters to pick an admin page (it is added as a card)."],
+        ["Message… @ or #", "Enter sends; Shift+Enter is a new line. Paste or 🖼 adds a picture. Type @ to pick Harry, Mikey or Leo (with phone notifications on, they get a buzz; type @all or @everyone to buzz both of the others); type # and a few letters to pick an admin page (it is added as a card)."],
         ["🔗 (link)", "Adds the page you are on as a card. Tapping a card in the chat opens that page."],
         ["⌖ (point) · 👉 Point · Shift+X", "Point at part of a page. Drag a box over it (on a phone, scroll there first), write a note, pick who, Send. It posts a card; whoever opens it gets the page scrolled to the box, outlined, with your note, until they press Got it. Shift+X works on a computer when you are not typing."],
         ["A message", "Tap: ↩ Reply, 📌 Pin (anyone) or Delete (your own). The green tag is the page it was sent from — tap to go there."],
@@ -846,7 +871,17 @@ export const ADMIN_GUIDES = {
       ] },
       { group: "To-do", items: [
         ["Add a job · for me ▾", "Your own job, or pick Mikey or Leo to give them one."],
-        ["Tick box", "Done. Ticked jobs fade and leave after a day. ✕ deletes."],
+        ["Tick box", "Done. Ticked jobs fade and leave after a day. ✕ deletes a job typed here."],
+        ["from a push · Harry (small green tag)", "A job that arrived by push: a Claude chat added it to the jobs file in the code (team/jobs.json) and pushed its branch. It shows under Given to me for whoever it is for (\"all\" = each of the three) within a minute or two of the push, with no deploy and no SQL. The name is who asked for it. It has no ✕: it lives in the code, so it can't be deleted from the board. Tick it when it's done. To take one off for good, a Claude chat deletes it from the jobs file and pushes."],
+        ["Copy prompt", "On a pushed job that has one: copies its prompt, ready to paste into your own Claude chat. Copied ✓ = done. If your browser won't copy, the prompt opens in a box already selected: press Ctrl+C, or hold it and choose Copy."],
+      ] },
+      { group: "Phone notifications (the 🔔 row at the top of To-do and Chat)", items: [
+        ["Turn on phone notifications", "Turns them on for THIS phone or computer: it asks the phone's permission, then sends a test buzz. From then on you get a buzz when someone @'s you (or @all / @everyone), replies to your message, points at something for you, or gives you a job (typed on the To-do or pushed in the jobs file). Never for your own messages. Tapping the buzz opens the Team room on that message, or on the To-do. Each phone and computer is turned on separately (up to 5 per person)."],
+        ["On iPhone: Share → Add to Home Screen…", "Shown instead of the button on an iPhone outside the app: iPhones only allow notifications in the KIB Admin app on the Home Screen (iOS 16.4 or newer). Safari → Share → Add to Home Screen → open KIB Admin from the Home Screen → Team → To-do → Turn on phone notifications → Allow."],
+        ["Phone notifications: On · Send a test · Turn off", "On for this device. Send a test buzzes your own devices. Turn off stops them on this device only."],
+        ["Notifications are blocked for this site", "You (or the phone) said no earlier. Allow notifications for KIB Admin in the phone's settings (on a computer: the browser's site settings), then reload."],
+        ["Phone notifications aren't switched on yet (one Vercel setting)", "The site's private key (TEAM_PUSH_PRIVATE_KEY) isn't set in Vercel yet. Nothing breaks: chat and jobs work as before, just with no buzz."],
+        ["Several buzzes from one chat", "Grouped: one line per chat thread that counts up (\"+2 more\"), not a pile."],
       ] },
       { group: "Team tab", items: [
         ["Live on knowitball.co.uk", "Whether the newest version of main finished deploying, how long ago, and what it was."],
@@ -872,19 +907,24 @@ export const ADMIN_GUIDES = {
     saving: [
       "Board: nothing. It only reads from GitHub, through the site, and refreshes every minute.",
       "Ideas, chat, to-dos, notes and pins save to the shared database at once and show for the other two within about a second. Admins only.",
+      "Pushed jobs (\"from a push\") are read from the code on GitHub: the jobs file on main and on Harry's, Mikey's and Leo's branches, about once a minute. If two branches have the same job, the newer one wins. If GitHub can't be reached, the To-do shows the jobs built into the site at the last deploy.",
+      "Ticking a pushed job saves your tick in the shared database (the same to-do table, as your own row), so it shows on every phone and computer you use and the other two can see it. Each person ticks their own: Harry ticking the lag test does not tick it for Mikey. Unticking takes it back.",
       "First visit asks \"Which one are you?\" once and saves it to your account.",
       "Replies, @names, page cards and points are part of the message itself, so they reach everyone straight away. Seen faces, Got it and Read and understood need supabase/migrations/team_room_v2.sql; until it runs they are kept on the device that pressed them, and the chat says \"saved on this device only\".",
-      "No phone alerts: the site has no push notifications yet, so an @ shows as a gold @ on the round button and in Waiting on me, not as a phone buzz.",
+      "Phone notifications: turning them on keeps this device in your own sign-in account (no new table, no SQL), so only the site can ring it. A device the phone's push service says has gone (app removed, permission taken away) is dropped by itself. A message rings only once, only within 10 minutes of being sent, and only when its sender's phone asks. A pushed job rings each person once, only if it was added in the last day; the site notices it the next time any of the three has an admin page open (it checks once a minute), so a job pushed while nobody is on the site rings when someone next opens it.",
+      "Without phone notifications switched on, an @ still shows as a gold @ on the round button and in Waiting on me.",
       "How a push is matched to a patch note: if the push names a version (\"v0.55\"), that one; otherwise the same person's next patch note that went live after the push, up to 4 days later.",
     ],
     inGame: ["Nowhere. Admins only."],
     needs: [
       "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it, or if GitHub refuses it, the board asks without a key (the repository is public): that works about 60 times an hour, and one line on the board says which happened. On a local test build the key comes from the computer running it, not from Vercel, and the line says so.",
       "The live progress bars (\"Now working on\") are step 2: one database file for Mikey to run and a shared password. Until then each card says so.",
-      "Ideas, Chat and To-do need supabase/migrations/team_room.sql run once in Supabase. Until then they say so.",
+      "Ideas, Chat and To-do need supabase/migrations/team_room.sql run once in Supabase. Until then they say so. Pushed jobs need nothing more: no SQL, no new table.",
+      "Pushed jobs reach the live board only once the change that reads them is on main (deployed). After that, a push to any of the four branches shows on the live board with no deploy. They use GITHUB_TOKEN like the Board; without it GitHub still answers, about 60 times an hour.",
       "Seen faces, Got it, Read and understood and patch-note notes need supabase/migrations/team_room_v2.sql (PENDING), run after team_room.sql.",
+      "Phone notifications need TEAM_PUSH_PRIVATE_KEY in Vercel (set once, then redeploy). Until then the 🔔 row says \"aren't switched on yet\" and nothing else changes. No SQL.",
     ],
-    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md · Team room kit: lib/teamRoom/ (config.ts = settings; extras.ts = replies, @, cards, points, receipts), components/teamRoom/ (chat.tsx, PointLayer.tsx, PatchReceipts.tsx), supabase/migrations/team_room.sql + team_room_v2.sql, tests/star/teamRoom.mts",
+    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md · Team room kit: lib/teamRoom/ (config.ts = settings; extras.ts = replies, @, cards, points, receipts), components/teamRoom/ (chat.tsx, PointLayer.tsx, PatchReceipts.tsx), supabase/migrations/team_room.sql + team_room_v2.sql, tests/star/teamRoom.mts · Pushed jobs: team/jobs.json + team/README.md (how a chat adds one), lib/teamRoom/jobs.ts (read GitHub per branch, merge by id, tick rows \"[job:<id>] …\" in team_tasks), app/api/admin/team/jobs/route.ts (cached 60 s), components/teamRoom/PushedJob.tsx, tests/star/teamRoomJobs.mts · Phone notifications (Web Push, web-push 3.6.7): lib/teamRoom/notify.ts (who + what, pure; tests/star/teamRoomNotify.mts), lib/teamRoom/push.ts (this device: permission, subscribe, devices in user_metadata.teamPush; ringAfter / ringNewJobs), lib/teamRoom/notifyServer.ts + app/api/admin/team/notify/route.ts (GET ready; POST rings from the saved row; pushed jobs rung once via app_metadata.teamPushJobs), public/admin/team-sw.js (scope /admin/ only, no fetch handler), components/teamRoom/PushToggle.tsx, keys: TEAM_ROOM.push in lib/teamRoom/config.ts + TEAM_PUSH_PRIVATE_KEY",
   },
   "/admin/testers": {
     title: "Tester Access",
@@ -1657,6 +1697,31 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-anim3d-dev/page.tsx · lib/star/style3d/animGrid3d.ts (the tiles: one WebGL canvas, one tile each via scissor) · the clips: public/star/anims3d/{football,mocap}.glb through lib/star/three3d/footballAnims.ts · the camera numbers: lib/star/style3d/broadcastCam.ts (BROADCAST) · the match drawing: lib/star/style3d/engineView.ts. Filming: window.__frameStep.",
   },
+  "/admin/motion-refs": {
+    title: "Motion references",
+    what: "Short clips of real-looking people doing our cut-scene moments (a handshake, a trophy lift, a goal celebration and so on), to compare with the movement we build. They are Higgsfield references for the movement rebuild. Each card has the real clip, a still of our game and an empty Ours slot.",
+    buttons: [
+      { group: "The top", items: [
+        ["← (top left)", "Back to the Players + animation group page."],
+        ["HQ (base standard)", "The best round: 18 clips. The five base-standard scenes (handshake, trophy lift, goal celebration, walk-out, press answer) come first and carry an amber \"Base standard\" tag."],
+        ["First round", "The first, lower-quality round: 9 clips. The handshake is left out because it shows a small dark mark on the shirt that looks like a brand logo."],
+        ["All", "Every clip: base standard first, then the rest of the HQ round, then the first round."],
+      ] },
+      { group: "Each card", items: [
+        ["Real person (the clip)", "Plays by itself while you can see it. Muted, loops, no sound. Tap it to pause; tap again to play."],
+        ["❚❚ Pause / ▶ Play", "Same as tapping the clip."],
+        ["½× speed", "Half speed, to watch hands, feet and weight. Press again for normal speed."],
+        ["Our game", "A still of our game that the clip was made from. Where no game still was saved, it shows the clip's own start picture and says so."],
+        ["Ours", "Empty until our own clip of the same scene is added. Then it plays here, beside the real one, with the same Pause and ½× speed buttons."],
+      ] },
+    ],
+    saving: [
+      "Nothing is saved. The page only remembers which of the three buttons you last pressed, on this device.",
+      "The clips and stills are part of the code (about 21 MB). A new clip of ours shows after the next deploy.",
+    ],
+    inGame: ["Nowhere. It is for the team: this is the real movement our cut scenes and animations are being rebuilt to match."],
+    dev: "app/admin/motion-refs/page.tsx · lib/motionRefs.ts (MOTION_REFS: one line per clip; shared with later tools) · files in public/admin/motion-refs/: hq/<scene>.mp4 + .jpg (Nano Banana Pro 4K picture, then Seedance 2.5 video, 480p), r1/<scene>.mp4 (GPT Image 2.5 picture, then Kling 3.0 video), game/ (stills of our game), ours/<scene>.mp4 (OUR clip: drop a file with the scene's name here, e.g. ours/handshake.mp4, and the Ours slot plays it) · registered in lib/adminRegistry.ts (group players, admins only).",
+  },
   "/star-update-dev": {
     title: "Oct 13 update",
     what: "The whole Oct 13 gameplay update behind one Old | New switch: shot power, the contact field (strike the side of the ball to curl it low), keepers, team-mates shooting, and match feel. Each part also has its own row.",
@@ -1856,6 +1921,9 @@ export const ADMIN_GUIDES = {
         ["Camera … from straight down", "Real game and free roam: the camera's tilt (real game 20 to 70, free roam 10 to 70). 40 is the starting angle; 0 would be straight down. Real game: the camera frames everyone in the chance, the goal at the top. The men lean back towards the camera a little so they read at full height."],
         ["↺ Replay", "Cut scenes: play it again from the start."],
         ["Left thumb / tap / drag back", "Gameplay: move (push to the edge to sprint), pass or call for it, shoot. WASD or the arrows, Shift and Space on a keyboard."],
+      ] },
+      { group: "Lag test (only while one is running)", items: [
+        ["The pill at the top", "A Lag test started in the game (Settings → 🛠 Dev → Lag test) comes here for its last step, the cut scene: its link opens the Cut-scene Director. I'm there records 30 s, then Next shows the results. The pill measures only; nothing on this page changes."],
       ] },
     ],
     saving: ["Nothing is saved. The address can hold a set-up: ?style=ink&scene=goal&tilt=30 (and &t=6 holds a cut scene still at 6 seconds). Director: ?scene=director&fixture=signing, or ?scene=director&event=scored&stakes=0.8&emotion=joy&seed=3; &clean=1 hides the controls for filming; &cam=old or &cam=new overrides the Cut-scene camera setting on this page. Real game: &seed=7 picks the chance stream, &kinds=one_on_one,penalty only those chances, &view=2d starts on 2D, &clock=virtual freezes the clock for frame-by-frame filming (scripts/film/frames3d.mjs)."],

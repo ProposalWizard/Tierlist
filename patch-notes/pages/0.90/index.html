@@ -1,0 +1,248 @@
+<title>Team Jobs And Notifications</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one column, stacked cards, stills under their text. Tokens first, then components. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  a{color:var(--blue)}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+  .chip{display:inline-block;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink2);text-decoration:none}
+  .chip.hot{color:var(--amber);border-color:var(--amber)}
+  .back{display:inline-block;font-size:13px;font-weight:700;margin:0 0 4px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b,.row li b{color:var(--ink)}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:4px}
+  .nr{color:var(--ink3);font-style:italic}
+  .tile{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+  .tile>b{display:block;font-size:15px}
+  .tile>p{margin:3px 0 0;color:var(--ink2);font-size:14.5px}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .track.solo{height:14px}
+  .track.solo .fill.now{top:0;bottom:0;height:auto}
+  .fill.now.warn{background:var(--amber)}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.blue{background:var(--blue)}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+  .bnote{color:var(--ink3);font-size:12.5px;margin:2px 0 0}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px 14px;margin:10px 0 0}
+  .figs.wide{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+  .figs figure{margin:0}
+  .figs.pair{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .figs.pair figure.ph{max-width:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details .figs{margin-top:2px}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .sbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px 12px}
+  .sbox h3{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 4px}
+  .sbox h3.g{color:var(--green)} .sbox h3.b{color:var(--blue)} .sbox h3.a{color:var(--amber)} .sbox h3.r{color:var(--red)}
+  .sbox ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+  .sbox li{margin-bottom:4px}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox .q{font-weight:700}
+  .okbox .opts{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+  .okbox .who{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-right:6px}
+
+  .vid{border:2px dashed var(--line);border-radius:var(--r);padding:12px 14px;background:var(--card)}
+  .vid b{color:var(--amber)}
+  .vid p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .vid ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  .cards{display:grid;gap:10px;margin:0}
+  .bcard{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;min-width:0}
+  .bcard .n{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 4px}
+  .bcard .n b{font-size:17px}
+  .bcard p{margin:0;color:var(--ink2);font-size:14.5px}
+  .bcard .go{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:var(--blue)}
+  .bcard.soon{border-style:dashed;opacity:.85}
+
+  /* --- how these patch notes work --- */
+  .how{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 14px 10px;min-width:0}
+  .how svg{display:block;width:100%;max-width:340px;height:auto;margin:2px auto 10px}
+  .how ol{margin:0;padding-left:20px;color:var(--ink2);font-size:14.5px}
+  .how li{margin:0 0 6px}
+  .how li b{color:var(--ink)}
+  .how .mini{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;vertical-align:1px}
+  .how .btn{display:inline-block;font-size:12.5px;font-weight:800;background:var(--pill);color:var(--pillink);padding:2px 9px;border-radius:999px;vertical-align:1px}
+  .how .where{margin:8px 0 0;font-size:13px;color:var(--ink3)}
+  /* --- already decided --- */
+  .donebox{border:1px solid var(--line);border-left:4px solid var(--green);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .donebox ul{margin:0;padding:0;list-style:none}
+  .donebox li{padding:11px 0 11px 28px;border-bottom:1px solid var(--line);position:relative}
+  .donebox li:last-child{border-bottom:0}
+  .donebox li::before{content:"\2713";position:absolute;left:2px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--pillink);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .donebox .q{font-weight:700}
+  .donebox .d{color:var(--ink2);font-size:14px;margin-top:3px}
+  .donebox .by{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-right:6px}
+  /* --- video --- */
+  .clip{margin:12px 0 2px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .look{font-size:13px;color:var(--ink2);margin:0 0 7px}
+  .clip .look b{color:var(--ink)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px}
+  .clip.ph{max-width:390px;margin-left:auto;margin-right:auto}
+  /* --- tabs (index) --- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink2);font:inherit;font-size:13.5px;font-weight:800;padding:8px 13px;border-radius:999px;cursor:pointer;min-height:40px}
+  .tab[aria-selected="true"]{background:var(--pill);color:var(--pillink);border-color:var(--pill)}
+  .tab small{font-weight:700;opacity:.8;margin-left:4px}
+  .js .panel[hidden]{display:none}
+  .panel h3.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px}
+  .bcard .vtag{font-size:11px;font-weight:800;color:var(--ink3);letter-spacing:.04em}
+  .qlist{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px}
+  .qlist ul{margin:0;padding:0;list-style:none}
+  .qlist li{padding:10px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14px}
+  .qlist li:last-child{border-bottom:0}
+  .qlist li b{color:var(--ink)}
+
+  /* --- steps (vertical list) --- */
+  .steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  .steps li{position:relative;padding:9px 0 9px 36px;border-bottom:1px solid var(--line);counter-increment:st;color:var(--ink2);font-size:14.5px;min-width:0}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(st);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .steps li b{color:var(--ink)}
+  .steps li.done::before{background:var(--green);border-color:var(--green);color:var(--pillink);content:"\2713"}
+  .steps li.next::before{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+  .mock{border:2px solid var(--red);border-radius:var(--r);background:var(--rbg);padding:12px 14px;margin:10px 0 2px}
+  .mock b{display:block;color:var(--red);font-size:15px;letter-spacing:.02em}
+  .mock p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .mock .mb{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .mock .mb span{font-size:13px;font-weight:800;padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink2)}
+  .mock .mb span.go{background:var(--card2)}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+<div class="wrap">
+<header>
+  <br>
+  <span class="ver">TEAM &middot; JOBS BY PUSH &amp; PHONE BUZZES</span>
+  <h1>A job can now be added by a push, and your phone can buzz when the team needs you.</h1>
+  <p class="status"><i></i>On the Harry branch, not live yet.</p>
+  <p class="sub">Overnight round, 20 Oct 2026. Two Team room features. Neither needs SQL. In Admin &rarr; Patch notes this is <b>v0.90</b>.</p>
+  <div class="chips"><a class="chip" href="#vid">Videos (none) &darr;</a></div>
+</header>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<ul class="ck"><li><label><input type="checkbox" data-k="c0"><span><span class="q">A pushed job</span><span class="a">Team &rarr; To-do. &ldquo;Given to me&rdquo; shows the lag-test job, tagged &ldquo;from a push &middot; Harry&rdquo;.</span></span></label></li><li><label><input type="checkbox" data-k="c1"><span><span class="q">Copy prompt</span><span class="a">Tap it. The button says Copied &#10003;.</span></span></label></li><li><label><input type="checkbox" data-k="c2"><span><span class="q">If copying fails</span><span class="a">A box opens with the prompt selected.</span></span></label></li><li><label><input type="checkbox" data-k="c3"><span><span class="q">Tick it</span><span class="a">It moves to Done today. Only your own tick changes.</span></span></label></li><li><label><input type="checkbox" data-k="c4"><span><span class="q">The badge</span><span class="a">The amber badge on the To-do tab counts open jobs.</span></span></label></li><li><label><input type="checkbox" data-k="c5"><span><span class="q">Turn on buzzes</span><span class="a">Team &rarr; To-do (or Chat) &rarr; Turn on phone notifications &rarr; Allow. On an iPhone, add KIB Admin to the Home Screen first.</span></span></label></li><li><label><input type="checkbox" data-k="c6"><span><span class="q">Send a test</span><span class="a">The button is in the green bar once it is on.</span></span></label></li><li><label><input type="checkbox" data-k="c7"><span><span class="q">A real buzz</span><span class="a">Ask someone to @ you, or reply to you. Tap the buzz.</span></span></label></li></ul>
+
+<h2 class="add"><i></i>ADDED</h2><div class="item"><div class="ih"><b>Add a team job by pushing a file</b><span class="tag t-seen">seen</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>Harry asked for it: &ldquo;just use pushes&rdquo;. No SQL and no deploy to give someone a job.</p></div><div class="row"><div class="rl w">Why</div><p>A push to your own branch is what the team already does.</p></div><div class="row"><div class="rl f">Fix</div><p>Jobs live in one file, <b>team/jobs.json</b>. Each job has an id, an owner (Harry, Mikey, Leo or all), a title (200 characters at most), a prompt (4,000 at most), who it is from, and when it was added. A Claude chat adds a job by editing that file and pushing its own branch. The Team board reads the main, Harry, Mikey and Leo branches from GitHub and keeps them for 60 seconds. The newest &ldquo;added&rdquo; wins. If GitHub cannot be reached, the board shows its built-in copy.</p></div><div class="figs wide"><figure class="wd"><img src="img/jobs-1-board-todo-badge-computer.jpg" alt="Look at: the amber badge on the To-do tab (3). Team board on a computer." width="900" height="562" loading="lazy"><figcaption><b>Look at:</b> the amber badge on the To-do tab (3). Team board on a computer.</figcaption></figure><figure class="wd"><img src="img/jobs-2-todo-computer.jpg" alt="Look at: &amp;ldquo;Given to me&amp;rdquo;. The job has the tag &amp;ldquo;from a push &amp;middot; Harry&amp;rdquo; and a Copy prompt button. It has no &amp;#10005;." width="900" height="562" loading="lazy"><figcaption><b>Look at:</b> &ldquo;Given to me&rdquo;. The job has the tag &ldquo;from a push &middot; Harry&rdquo; and a Copy prompt button. It has no &#10005;.</figcaption></figure></div></div><div class="item"><div class="ih"><b>Copy prompt</b><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>A job carries a long prompt to paste into a Claude chat. The lag-test one is 871 characters.</p></div><div class="row"><div class="rl w">Why</div><p>Selecting that much text by hand on a phone is hard.</p></div><div class="row"><div class="rl f">Fix</div><p>The <b>Copy prompt</b> button copies it. The button then says <b>Copied &#10003;</b>. If the phone refuses, a box opens with the prompt already selected. It says &ldquo;Copy didn&rsquo;t work here. The prompt is selected below: press Ctrl+C, or hold it and choose Copy.&rdquo;</p></div><div class="figs wide"><figure class="wd"><img src="img/jobs-3-copy-prompt-copied-computer.jpg" alt="Look at: the button now says &amp;ldquo;Copied &amp;#10003;&amp;rdquo;." width="900" height="562" loading="lazy"><figcaption><b>Look at:</b> the button now says &ldquo;Copied &#10003;&rdquo;.</figcaption></figure></div><div class="figs"><figure class="ph"><img src="img/jobs-5-copy-fallback-phone.jpg" alt="Look at: the fallback box on a phone. The prompt is selected. A Close button is at the bottom right." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> the fallback box on a phone. The prompt is selected. A Close button is at the bottom right.</figcaption></figure></div></div><div class="item"><div class="ih"><b>Everyone ticks their own</b><span class="tag t-seen">seen</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>A job for &ldquo;all&rdquo; reaches three people. Each person needs a tick of their own.</p></div><div class="row"><div class="rl w">Why</div><p>Each person does the job on their own phone, so each needs their own tick.</p></div><div class="row"><div class="rl f">Fix</div><p>Your tick is your own to-do row, named &ldquo;[job:id] title&rdquo;. It is hidden from the normal lists. A ticked job moves to <b>Done today</b>. A pushed job has no &#10005;. Open jobs count in the amber badge.</p></div><div class="figs"><figure class="ph"><img src="img/jobs-4-todo-phone.jpg" alt="Look at: a pushed job in &amp;ldquo;Given to me&amp;rdquo; on a phone." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> a pushed job in &ldquo;Given to me&rdquo; on a phone.</figcaption></figure><figure class="ph"><img src="img/jobs-6-ticked-phone.jpg" alt="Look at: the same job ticked. It sits under &amp;ldquo;Done today&amp;rdquo;, crossed out." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> the same job ticked. It sits under &ldquo;Done today&rdquo;, crossed out.</figcaption></figure></div></div><div class="item"><div class="ih"><b>The first job: the lag test</b><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>Three people on three phones need to run the lag test (see v0.89).</p></div><div class="row"><div class="rl f">Fix</div><p>It is the first pushed job, for all, with its prompt. The same prompt is the one that Copy prompt copies (871 characters).</p></div></div><div class="item"><div class="ih"><b>Phone buzzes for the team room</b><span class="tag t-seen">seen</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>You only learn that someone wrote to you when you open the page.</p></div><div class="row"><div class="rl w">Why</div><p>A page cannot tell a phone anything while it is closed.</p></div><div class="row"><div class="rl f">Fix</div><p>Your phone buzzes when:</p><ul><li>someone writes <b>@your name</b> (you get it)</li><li>someone writes <b>@all</b>, <b>@everyone</b> or <b>@team</b> (the other two get it)</li><li>someone replies to your message (the author gets it)</li><li>a point is sent to you</li><li>a job is typed for you</li><li>a job is pushed for you. You get that once, if it was added in the last day, and only when someone next opens an admin page.</li></ul><p>You never buzz yourself. One buzz per message. A busy thread groups into one (&ldquo;+2 more&rdquo;). A tap opens the message in Team chat, or To-do.</p></div><div class="figs"><figure class="ph"><img src="img/notify-phone-chat-off.jpg" alt="Look at: Team chat on a phone. &amp;ldquo;Phone notifications: Off. A buzz when someone @&amp;rsquo;s you, replies to you or gives you a job.&amp;rdquo;" width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> Team chat on a phone. &ldquo;Phone notifications: Off. A buzz when someone @&rsquo;s you, replies to you or gives you a job.&rdquo;</figcaption></figure><figure class="ph"><img src="img/notify-phone-todo-on.jpg" alt="Look at: On. &amp;ldquo;On for this device.&amp;rdquo; with Send a test and Turn off." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> On. &ldquo;On for this device.&rdquo; with Send a test and Turn off.</figcaption></figure></div><div class="figs wide"><figure class="wd"><img src="img/notify-desk-chat-on.jpg" alt="Look at: the same bar on a computer, on the Chat tab." width="900" height="562" loading="lazy"><figcaption><b>Look at:</b> the same bar on a computer, on the Chat tab.</figcaption></figure></div></div><div class="item"><div class="ih"><b>Turn it on once per phone</b><span class="tag t-seen">seen</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>On an iPhone, the buzz needs the app on the Home Screen.</p></div><div class="row"><div class="rl w">Why</div><p>It needs iOS 16.4 or newer. The page itself says: Share &rarr; Add to Home Screen, open KIB Admin from there. That a plain Safari tab cannot get buzzes is reasoned.</p></div><div class="row"><div class="rl f">Fix</div><p>Do this once on each phone:<ol><li><b>iPhone:</b> open Safari at <b>knowitball.co.uk/admin</b>. Tap Share, then Add to Home Screen.</li><li>Open <b>KIB Admin</b> from the Home Screen (not from Safari).</li><li>Team &rarr; To-do (or Chat). Tap <b>Turn on phone notifications</b>.</li><li>Tap <b>Allow</b>.</li><li>Tap <b>Send a test</b>.</li></ol><p>Android and a computer: the same button, no Home Screen step. Harry has already added the key in Vercel, so nothing else is needed.</p></p></div><div class="figs"><figure class="ph"><img src="img/notify-phone-todo-off.jpg" alt="Look at: Off, with the green button." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> Off, with the green button.</figcaption></figure><figure class="ph"><img src="img/notify-phone-todo-iphone.jpg" alt="Look at: on an iPhone in Safari: &amp;ldquo;Share &amp;rarr; Add to Home Screen, open KIB Admin from there, then turn this on.&amp;rdquo;" width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> on an iPhone in Safari: &ldquo;Share &rarr; Add to Home Screen, open KIB Admin from there, then turn this on.&rdquo;</figcaption></figure></div></div><div class="item"><div class="ih"><b>What it says when it cannot work</b><span class="tag t-seen">seen</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>Some phones and accounts cannot turn buzzes on.</p></div><div class="row"><div class="rl f">Fix</div><p>Instead of the button you see a plain message. Which state each picture shows is reasoned from its text:</p><ul><li>Not signed in: &ldquo;Sign in to turn on phone notifications.&rdquo;</li><li>The key missing in Vercel: &ldquo;Phone notifications aren&rsquo;t switched on yet (one Vercel setting).&rdquo;</li><li>The phone blocks it: &ldquo;Notifications are blocked for this site. Allow them in the phone&rsquo;s settings for KIB Admin (or the browser&rsquo;s site settings), then reload.&rdquo;</li></ul></div><div class="figs"><figure class="ph"><img src="img/notify-phone-todo-real.jpg" alt="Look at: signed out." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> signed out.</figcaption></figure><figure class="ph"><img src="img/notify-phone-todo-notready.jpg" alt="Look at: the key missing." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> the key missing.</figcaption></figure></div><div class="figs wide"><figure class="wd"><img src="img/notify-desk-chat-blocked.jpg" alt="Look at: blocked, on a computer. A brown bar across the top." width="900" height="562" loading="lazy"><figcaption><b>Look at:</b> blocked, on a computer. A brown bar across the top.</figcaption></figure></div></div><h2 class="bug"><i></i>KNOWN ISSUES</h2><div class="item"><div class="ih"><b>Team jobs are seen in demo mode only</b><span class="tag t-no">not seen</span></div><div class="row"><div class="rl p">Problem</div><p>The jobs were not read against the real database or a live GitHub read.</p></div><div class="row"><div class="rl w">Why</div><p>GitHub rate-limited the live read. The pictures come from demo mode.</p></div><div class="row"><div class="rl s">Status</div><p>A job reaches the live board only after the next merge to main.</p></div></div><div class="item"><div class="ih"><b>Tick boxes look stretched tall on a phone</b><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>At phone width the tick boxes are tall and thin. Older jobs look the same.</p></div><div class="row"><div class="rl w">Why</div><p>Not looked into yet.</p></div><div class="row"><div class="rl s">Status</div><p>Found, not fixed. Look at the phone pictures.</p></div></div><div class="item"><div class="ih"><b>The job text names a different path to the lag test</b><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>The job says &ldquo;Settings &rarr; Developer tools &rarr; Lag test&rdquo;. The test is at &#9881; &rarr; &#128736; Dev &rarr; Start lag test.</p></div><div class="row"><div class="rl w">Why</div><p>I compared the job line in the pictures with the lag-test report. It is reasoned, not tested in the game.</p></div><div class="row"><div class="rl s">Status</div><p>Both lead to the same Dev tab. Use the second path.</p></div></div><div class="item"><div class="ih"><b>Phone buzzes were not seen on a real iPhone</b><span class="tag t-no">not seen</span></div><div class="row"><div class="rl p">Problem</div><p>No real iPhone was used. Tapping a buzz was not seen. The signed-in flow from start to end was not seen.</p></div><div class="row"><div class="rl w">Why</div><p>The one real push ran in headless Chromium.</p></div><div class="row"><div class="rl s">Status</div><p>Add the app to a Home Screen, turn it on, ask someone to @ you, then tap the buzz.</p></div></div>
+
+<h2 class="nxt"><i></i>THE NUMBERS</h2><details><summary>The numbers, if you want them</summary><p><b>Jobs file.</b> Fields: id, owner (Harry / Mikey / Leo / all), title up to 200 characters, prompt up to 4,000, from, added. Read from main, Harry, Mikey and Leo. Cached 60 s. Newest &ldquo;added&rdquo; wins.</p><p><b>Copy prompt.</b> 871 characters copied for the lag-test job.</p><p><b>Ticks.</b> Each person&rsquo;s own to-do row &ldquo;[job:id] title&rdquo;, hidden from the normal lists.</p><p><b>Buzzes.</b> The sender&rsquo;s page asks the server to send after it saves. The server reads the message itself and only sends for its author, within 10 minutes of writing it, once. Up to 5 phones per person. A phone that Google says is gone is dropped, but never one added in the last 2 minutes.</p><p><b>Where a tap goes.</b> /admin/team?tab=chat&amp;m=&lt;message id&gt;, or To-do.</p><p><b>Setup.</b> The private key is in Vercel as TEAM_PUSH_PRIVATE_KEY (Harry added it). The public key is in the code. One library was added: web-push 3.6.7.</p></details>
+
+<h2 class="nxt" id="vid"><i></i>VIDEOS</h2>
+<div class="vid"><b>No clips on this page.</b><p>Nothing here is gameplay. The stills show every screen that was seen.</p></div>
+
+<h2 class="bug"><i></i>SEEN / NOT SEEN</h2>
+<div class="sbox"><h3 class="g">Seen on a screen</h3><ul><li>The To-do tab in demo mode: a pushed job, Copy prompt (copied, and the fallback box), a tick</li><li>The phone-notification bar in every state: Off, On, signed out, key missing, blocked, iPhone hint</li><li>A real push through Google&rsquo;s push service, in headless Chromium</li><li>A thread grouping, and a gone phone dropped</li><li>At 390 &times; 844 and 1440 &times; 900</li></ul><h3 class="b">Measured (numbers)</h3><ul><li>871 characters copied for the lag-test prompt</li></ul><h3 class="a">Reasoned, not seen</h3><ul><li>The job&rsquo;s line names a different path to the lag test than the report does</li></ul><h3 class="r">Not seen / not done</h3><ul><li>A real iPhone</li><li>Tapping a buzz</li><li>The signed-in flow from start to end</li><li>The jobs read against the real database or a live GitHub read</li></ul></div>
+
+<footer>20 Oct 2026. Built overnight on the Harry branch. Nothing here is live. Every fact comes from the builders&rsquo; reports. Pictures are stills taken while checking the work.</footer>
+</div>
+<script>
+(function(){
+  var K='kib-overnight-jobs-checks', s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>

@@ -167,3 +167,45 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Left menu: Team first (people icon); inside it Team board, Team chat, Ideas, My to-do, Patch notes; then Games; then Videos. Patch notes moved into the Team area. Folded/phone: Team first. All four skins, same layout.
 - Seen at 1440×900 and 390×844 locally. Reasoned: the site menu's Admin link (needs real admin sign-in), testers' view, live database path.
 - Left over: phones that added the KIB Admin app may open the old home until re-added; Site content (/admin) is now at Website games → Tierlists.
+
+## Team jobs by push (Harry: "just use pushes")
+- Jobs live in team/jobs.json (id, owner Harry/Mikey/Leo/all, title ≤ 200, prompt ≤ 4000, from, added). A Claude chat adds one by editing the file and pushing its own branch; no SQL, no deploy (team/README.md).
+- The board reads main, Harry, Mikey and Leo from GitHub (GITHUB_TOKEN), cached 60 s, newest `added` wins; built-in copy when GitHub can't be reached.
+- To-do: "Given to me", tag "from a push · Harry", Copy prompt (871 characters copied; fallback box selected), no ✕, counts in the amber badge.
+- Ticks: the person's own team_tasks row "[job:<id>] <title>", hidden from the normal lists; each person ticks their own.
+- First job: the lag test, for all, with the prompt. Seen in demo mode only (not against the real database, no live GitHub read: rate-limited). Reaches the live board only after the next merge to main.
+- Found, not fixed: tick boxes look stretched tall at phone width (older jobs too).
+
+## B10 — Headers and volleys back on
+- No header/volley drawings exist (0 of 194 committed, 0 of 192 saved). Each is played as the END of one of the team's own cross drawings (TARGET/POACH = you, the wide man = crosser); real drawings take over once the team saves 5 of a kind (lib/star/airDrawings.ts via playPool). switchedOffKinds is now empty.
+- Per match (40 each): even mix headers 0.50, volleys 0.42, chances 6.0; Full rebuild On 0.57 / 0.63 / 6.0. Each open-play kind 1 in 10 (was 1 in 8). Kane mix untouched.
+- Aim: header ball hangs 1.85 m, volley bounces 0–0.95 m, shadow + dotted line. Strike screen "Head it?" / "Volley it?", verdicts (NODDED DOWN … SKIED); airContactRead: off-centre header up to 22° and −35% pace; volley slice up to 26°; no random number.
+- Build-ups (rebuild On): last pass is the crosser's lofted ball (peak 3–4.6 m); 60 of 60, 59 pass own checks.
+- canvasEngine.ts untouched. CanvasMatch.tsx: draw the airborne ball while aiming; header/volley chances always struck from the air. Pitch 366 px phone; 489 px at 1280 wide (audit 493 at its window, reasoned).
+- Conversion (500 shots per cell, poor/avg/elite): header 42.8/46.2/50.2% → 23.4/29.2/35.8%; volley 37.4/40.6/33.6% → 23.0/28.4/35.4%. Blocks: headers 18–21% → 36–42%, volleys 13–15% → ~35% (crowded drawn boxes). Other kinds identical.
+- Tests: new airChances.mts; switchedOffKinds rewritten; keeper fingerprint d2725947 and chanceJudge Old 239:e7c688f6 re-pinned on purpose. 3 suites fail on the base too (chanceMaker counts, longRangeRules, match2dCam 372×704).
+- Seen at 390×844 in Infinite Highlights; not seen in a career match. Plan (not built): docs/plans/2026-10-20-flair-bicycle.md.
+- Open for Harry: play off the cross drawings until 5 real ones exist, or stay off? 1 in 10 right? Kane mix (Mikey)?
+
+## B18 step 0 — the in-game Lag test
+- ⚙ (top right of Home) → 🛠 Dev → Start lag test (testers/admins only; also /star-dev?lagtest=1). Device + person picker, a pill at the top (⇅ moves it), 10 steps (~5 min recording): Home, Stats/Relations, Shop, 3D shop, Garden, Phone feed, 2D match, 3D game, Settings, cut scene.
+- Records frame gaps (p50/p95/p99/worst, over 33/50/100), long tasks/LoAF (Chrome), a 20 ms timer's lateness (iPhone too), 3D counters, memory, hidden time; refresh rate from the idle median. Bars in lib/star/lagTest.ts incl. the low-tier 30 fps rule, 0.5 ms jitter allowance.
+- Runs committed to branch lag-runs (lag/runs/<time>-<person>-<tier>.json) by /api/star/lag-runs via commitScenarios' helper (+ ensureBranch); vercel.json stops builds of lag-runs. Device-only + Copy results when it can't send. `npx tsx scripts/lag-runs.mts`.
+- Seen signed out at 390×844: Home and a 2D match recorded (2,370 frames); 401 "Sign in to send" as expected. Not seen: a real save to GitHub, the cut-scene hand-off, steps 2–6 and 8–10.
+
+## Team room phone notifications (Web Push, no SQL)
+- Buzzes: @Name → that person; @all/@everyone/@team → the other two; a reply → the author; a point sent to you; a job typed for you; a pushed job for you (once, if added in the last day; only when someone next opens an admin page). Never the sender; one per message; a thread groups ("+2 more"); tap opens /admin/team?tab=chat&m=<id> or To-do.
+- Sender's client asks /api/admin/team/notify after a save; the server reads the row with the service role (author only, within 10 min, once). Devices in the account's auth metadata (≤ 5); 410 drops a device, never one under 2 minutes old.
+- Once per phone: iPhone (iOS 16.4+) Safari → knowitball.co.uk/admin → Share → Add to Home Screen → open KIB Admin → Team → To-do → Turn on phone notifications → Allow. Android/computer: the same button.
+- Needs TEAM_PUSH_PRIVATE_KEY in Vercel (given to Harry in chat, in no file); public key in lib/teamRoom/config.ts. web-push 3.6.7 added.
+- Seen: a real push through Google's push service in headless Chromium; grouping; the 410 drop. Not seen: a real iPhone, tapping a buzz, the signed-in flow end to end.
+
+## Live share (test)
+- Admin → Videos → "Live share (test)" (admins only): Start → pick a screen/window/tab, Voice on → a 6-letter code with Copy for Claude, Copy link (/admin/videos/live/<code>), Watch it. Stop, the browser's Stop sharing, or 30 min ends it; Delete removes every picture and line. A typing box where there is no voice.
+- One picture a second (720 px, only when changed, colour compare) + speech transcript to Storage tierlist-images/live/<code>/ through an admin API route with the service key; newest 300 kept. No SQL.
+- Claude: `npx tsx scripts/live-watch.mts <code>` (background), every 2 s: SAID lines with the picture on screen then; SCREEN lines on a new/part-changed screen (small changes at most every 30 s); latest.jpg; ENDED.
+- Measured locally: picture 1.2–2.5 s, speech 0.5–2.5 s to the watcher (+ Claude's reply). Computer: Chrome/Edge pictures + voice, Firefox pictures only; Android can't share the screen; iPhone Safari reportedly from iOS 27 (not tried).
+- Seen in headless Chromium with a fake screen and fake speech end to end. Not seen: real Supabase writes, real voice, Safari, background tab. Full `npm run build` was killed for memory 3 times (tsc alone passes).
+
+## Motion references page
+- /admin/motion-refs (Players + animation, admins only): HQ 18 | First round 9 | All 27; base-standard 5 first; each card = real clip (loop, pause, ½×) + our game still + an "Ours" slot that plays public/admin/motion-refs/ours/<scene>.mp4 once it exists. List in lib/motionRefs.ts. ~21 MB added. HQ clips re-encoded 10-bit HEVC → H.264 (originals untouched). First-round handshake left out (logo-like mark). Seen at 390 and 1440; no clip seen playing (no H.264 in this Chromium).

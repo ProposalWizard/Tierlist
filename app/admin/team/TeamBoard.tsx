@@ -18,6 +18,7 @@ import IdeasBoard from "@/components/teamRoom/IdeasBoard";
 import ChatPage from "@/components/teamRoom/ChatPage";
 import { NoteCount, NotesThread, RoomGate, TodoList } from "@/components/teamRoom/parts";
 import { newGivenTasks, unreadChat, unreadNotes } from "@/lib/teamRoom/logic";
+import { newPushedJobs } from "@/lib/teamRoom/jobs";
 import { useTeamRoom } from "@/lib/teamRoom/store";
 import { isTeamPerson, TEAM_ROOM, type TeamPerson as TeamPersonName } from "@/lib/teamRoom/config";
 import { patchUnread, waitingOnMe, type PatchMeta } from "@/lib/teamRoom/extras";
@@ -57,7 +58,11 @@ const ROOM: { key: Exclude<RoomTab, "notes">; name: string; title: string }[] = 
   { key: "todo", name: "To-do", title: "My to-do" },
 ];
 
-export default function TeamBoard({ initialTab, initialVersion }: { initialTab: RoomTab; initialVersion?: string }) {
+export default function TeamBoard({ initialTab, initialVersion, initialMessage }: {
+  initialTab: RoomTab; initialVersion?: string;
+  /** ?m=<id>: a phone notification opened the chat on this message. */
+  initialMessage?: number | null;
+}) {
   const [tab, setTab] = useState<RoomTab>(initialTab);
   const room = useTeamRoom();
   const [version, setVersion] = useState<string | undefined>(initialVersion);
@@ -100,7 +105,7 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
     team: unreadNotes(room.notes, room.me, room.read.pushNotes, "push"),
     ideas: unreadNotes(room.notes, room.me, room.read.notes, "idea"),
     chat: (tab === "chat" ? 0 : unreadChat(room.messages, room.me, room.read.chat)) + waiting,
-    todo: tab === "todo" ? 0 : newGivenTasks(room.tasks, room.me, room.read.tasks),
+    todo: tab === "todo" ? 0 : newGivenTasks(room.tasks, room.me, room.read.tasks) + newPushedJobs(room.jobs, room.tasks, room.me, room.seenJobs),
     notes: room.me ? toRead(room.me) + unreadNotes(room.notes, room.me, room.read.patchNotes, "patch") : 0,
   };
   const title = ROOM.find((r) => r.key === tab)?.title ?? "Team";
@@ -131,7 +136,7 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
           </nav>
 
           {tab === "ideas" && <IdeasBoard />}
-          {tab === "chat" && <ChatPage />}
+          {tab === "chat" && <ChatPage jumpTo={initialTab === "chat" ? initialMessage : null} />}
           {tab === "todo" && <div className="tr ash-panel tb-todo"><RoomGate><TodoList /></RoomGate></div>}
           {tab === "team" && (<>
 

@@ -1,23 +1,21 @@
 /**
- * CHANCE TYPES SWITCHED OFF FOR NOW.
+ * CHANCE TYPES SWITCHED OFF.
  *
  * Harry, 24 Sep 2026: "for now remove volley and header from scenario gallery
- * and from being in the game in general."
+ * and from being in the game in general." Back ON (B10, 20 Oct 2026: "headers
+ * AND volleys back on, with the ball-in-the-air + shadow signal and build-ups
+ * lofting it to your head"), so the list is empty. A header or a volley with
+ * no drawings of its own is played off the team's cross drawings
+ * (lib/star/airDrawings.ts).
  *
- * One list, so turning one back on is deleting a word here. Nothing is
- * deleted from the engine (canvasEngine.ts is never edited, Mikey's rule):
- * it still knows how to build a volley or a header. The match, the gallery
- * and the highlights page simply never ask for one — and if the engine's own
- * pickers roll one anyway, the match swaps it for the nearest chance that is
- * still on before you ever see it.
- *
- * This is about the CHANCE types (the situations you are handed). A team-mate
- * still heads a cross you put on his head: that is how a cross is finished,
- * not a situation you are dealt.
+ * One list, so switching a kind off again is adding its word here: the match,
+ * the gallery and the highlights page never ask for it, and if the engine's
+ * own pickers roll one anyway, the match swaps it for the nearest chance that
+ * is still on before you ever see it.
  */
 import type { ScenarioKind } from "./canvasEngine";
 
-export const SWITCHED_OFF_KINDS: ReadonlySet<ScenarioKind> = new Set<ScenarioKind>(["volley", "header"]);
+export const SWITCHED_OFF_KINDS: ReadonlySet<ScenarioKind> = new Set<ScenarioKind>([]);
 
 export const isSwitchedOff = (k: ScenarioKind): boolean => SWITCHED_OFF_KINDS.has(k);
 

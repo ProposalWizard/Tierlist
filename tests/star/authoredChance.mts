@@ -491,18 +491,19 @@ ok(lines.some(l => /near-post cover[^:]*: 0\.\d\d to 0\.\d\d/.test(l)),
 // through. A fifth: now it serves.
 {
   const donor = AUTHORED_SCENARIOS[Object.keys(AUTHORED_SCENARIOS)[0]];
+  const NOBODY = "a kind nobody has drawn";
   const fake = (i: number) => ({
     ...donor, id: `min5-${i}`, updatedAt: i,
-    source: { ...(donor.source ?? { tool: "gallery" as const, seed: null }), kind: "header" },
+    source: { ...(donor.source ?? { tool: "gallery" as const, seed: null }), kind: NOBODY },
   });
   setLiveScenarioPool([0, 1, 2, 3].map(fake));
-  // A header: switched off, so nobody has drawn one. (This used corners until
-  // nine corners were committed — then 9 + 4 served, and the test measured
-  // the pool, not the rule.)
-  ok(nextAuthoredShape("header", mulberry32(1)) === null,
+  // A kind nobody has drawn. (This used corners until nine corners were
+  // committed — then 9 + 4 served, and the test measured the pool, not the
+  // rule; then headers, until B10 played headers off the cross drawings.)
+  ok(nextAuthoredShape(NOBODY, mulberry32(1)) === null,
     "4 drawings of a kind are not enough — the game keeps building it procedurally");
   setLiveScenarioPool([0, 1, 2, 3, 4].map(fake));
-  ok(nextAuthoredShape("header", mulberry32(1)) !== null,
+  ok(nextAuthoredShape(NOBODY, mulberry32(1)) !== null,
     "the 5th drawing is the one that switches the kind over");
   setLiveScenarioPool(null);
 }

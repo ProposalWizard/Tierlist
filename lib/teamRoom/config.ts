@@ -6,6 +6,8 @@
  *
  * The names must match the CHECK lists in team_room.sql.
  */
+import bundledJobs from "@/team/jobs.json";
+
 export const TEAM_PEOPLE = ["Harry", "Mikey", "Leo"] as const;
 export type TeamPerson = (typeof TEAM_PEOPLE)[number];
 
@@ -33,7 +35,61 @@ export const TEAM_ROOM = {
   bubblePrefixes: ["/admin"],
   /** …but never on these (the game itself, the home page). */
   bubbleNever: ["/", "/star-dev"],
+  /**
+   * Jobs that arrive by push (Harry, 20 Oct 2026: "just use pushes"). The
+   * site reads `path` from GitHub on each of `branches`, about once a minute,
+   * so a push to any of them shows with no deploy. lib/teamRoom/jobs.ts.
+   */
+  jobs: {
+    repo: "ProposalWizard/Tierlist",
+    path: "team/jobs.json",
+    branches: ["main", "Harry", "Mikey", "Leo"],
+    /** The site's own route that reads them (admins only). */
+    api: "/api/admin/team/jobs",
+    /** How long the site keeps one read, and how often the board asks again. */
+    refreshMs: 60_000,
+  },
+  /**
+   * Phone notifications (Web Push; Harry, 20 Oct 2026: "when I @Leo @Mikey,
+   * do they get added on their phone? Because that is also needed").
+   * lib/teamRoom/notify.ts (who and what), push.ts (this device),
+   * notifyServer.ts + /api/admin/team/notify (sending). No table, no SQL:
+   * each person's phones are kept in their own sign-in account's details.
+   */
+  push: {
+    /**
+     * The public half of the key pair: safe to show. The private half is
+     * TEAM_PUSH_PRIVATE_KEY in Vercel only, never in the code. The two must
+     * be one pair. NEXT_PUBLIC_TEAM_PUSH_KEY replaces this one if set.
+     */
+    publicKey: process.env.NEXT_PUBLIC_TEAM_PUSH_KEY?.trim() || "BAX5ykRvw2ivHG3-kV6VZx9OemlveYCVX-WRb8Pvt3_MRf7tgKliuKU3fZKZYR4m4MUgURkbeZEbLdUAJagelvY",
+    /** Who the push services may contact about these notifications. */
+    subject: "mailto:knowitballcontact@gmail.com",
+    /** The worker that shows them. It lives under /admin, so it never touches the game or the public site. */
+    worker: "/admin/team-sw.js",
+    scope: "/admin/",
+    /** The site's route that rings people (admins only). */
+    api: "/api/admin/team/notify",
+    /** Phones and computers kept per person (newest win). */
+    maxDevices: 5,
+    /** A message or job only rings if it is asked for within this long of being made. */
+    freshMs: 10 * 60_000,
+    /** A pushed job (team/jobs.json) rings once, and only if it was added within this long. */
+    jobFreshMs: 24 * 3600_000,
+    /** The picture on the notification. */
+    icon: "/admin/app-icon-192.png",
+    /** Where in the account's details: your devices (you write them), and pushed jobs already rung (the site writes them). */
+    devicesKey: "teamPush",
+    jobsKey: "teamPushJobs",
+  },
 } as const;
+
+/**
+ * The jobs file as it was when the site was built. Used when GitHub can't
+ * be reached, and in place of main's copy if main has none yet. When moving
+ * the kit to another site, point this at that site's jobs file.
+ */
+export const BUNDLED_JOBS: unknown = bundledJobs;
 
 export const isTeamPerson = (s: unknown): s is TeamPerson =>
   typeof s === "string" && (TEAM_PEOPLE as readonly string[]).includes(s);

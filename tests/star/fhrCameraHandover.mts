@@ -95,7 +95,7 @@ for (const cv of CANVASES) {
     check(still.tilt === matchStill(sc0, hw, 20).tilt, `${key}: the chance's angle is not fixed`);
   }
 }
-for (const k of ["one_on_one", "cutback", "long_range", "tight_angle", "free_kick", "penalty"]) check(kindsSeen.has(k), `no ${k} build-up was checked`);
+for (const k of ["one_on_one", "cutback", "long_range", "tight_angle", "header", "volley", "free_kick", "penalty"]) check(kindsSeen.has(k), `no ${k} build-up was checked`);
 
 // 3. The framing depends on where the men are — so the chance must be framed on its own spots.
 {

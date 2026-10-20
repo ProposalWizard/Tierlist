@@ -1,0 +1,131 @@
+/**
+ * /api/admin/team/notify — the Team room's phone notifications (admins only).
+ *
+ * GET  → { ready, publicKey }: is the private key set (TEAM_PUSH_PRIVATE_KEY)?
+ * POST → ring people, after the sender's phone has saved a row:
+ *   { table: "team_messages", id }  a chat message (@name, @all, a reply, a point)
+ *   { table: "team_tasks", id }     a job typed on the board for someone else
+ *   { jobs: ["id", …] }             pushed jobs the phone has just seen (team/jobs.json)
+ *   { test: true }                  a test buzz to your own devices
+ *
+ * Never trusts words from the phone: it reads the row itself with the
+ * service role, checks the caller wrote it and that it is new (10 minutes),
+ * and works out who to ring (lib/teamRoom/notify.ts). Pushed jobs are read
+ * from GitHub here too, and each person is rung for a job once ever
+ * (remembered in their account, app_metadata.teamPushJobs).
+ */
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isAdmin } from "@/lib/admin";
+import { offlineDevPlayEnabled } from "@/lib/star/devMode";
+import { BUNDLED_JOBS, TEAM_ROOM, isTeamPerson, type TeamPerson } from "@/lib/teamRoom/config";
+import { fetchTeamJobs } from "@/lib/teamRoom/jobs";
+import type { TeamMessage, TeamTask } from "@/lib/teamRoom/logic";
+import {
+  RungBefore, TEST_PAYLOAD, jobsToRing, payloadForJob, payloadForMessage, payloadForTask, ringsForMessage, ringsForTask, withRungJobs,
+  type PushPayload,
+} from "@/lib/teamRoom/notify";
+import { pushReady, ring, rungJobsOf, saveRungJobs, teamAccounts } from "@/lib/teamRoom/notifyServer";
+
+export const dynamic = "force-dynamic";
+
+/** Rows already rung by this server (a second ask for the same row rings nobody). */
+const rungBefore = new RungBefore(500);
+
+async function caller(): Promise<{ id: string } | NextResponse> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+  if (!(await isAdmin(user.id))) return NextResponse.json({ error: "Admins only." }, { status: 403 });
+  return { id: user.id };
+}
+
+export async function GET() {
+  if (!offlineDevPlayEnabled()) {
+    const c = await caller();
+    if (c instanceof NextResponse) return c;
+  }
+  return NextResponse.json({ ready: pushReady(), publicKey: TEAM_ROOM.push.publicKey }, { headers: { "Cache-Control": "no-store" } });
+}
+
+const fresh = (iso: string) => Date.now() - (Date.parse(iso) || 0) <= TEAM_ROOM.push.freshMs;
+
+export async function POST(req: Request) {
+  const c = await caller();
+  if (c instanceof NextResponse) return c;
+  if (!pushReady()) return NextResponse.json({ ok: false, off: true, error: "Notifications aren't switched on yet (TEAM_PUSH_PRIVATE_KEY)." });
+
+  let body: Record<string, unknown>;
+  try { body = (await req.json()) as Record<string, unknown>; } catch { return NextResponse.json({ error: "Bad request." }, { status: 400 }); }
+
+  const sb = createServiceClient();
+  let accounts: Partial<Record<TeamPerson, string>>;
+  try { accounts = await teamAccounts(sb); } catch (e) {
+    return NextResponse.json({ error: `Could not read the team list (${(e as Error).message}).` }, { status: 500 });
+  }
+  const me = (Object.keys(accounts) as TeamPerson[]).find((p) => accounts[p] === c.id) ?? null;
+  if (!me) return NextResponse.json({ error: "Pick your name in the Team room first." }, { status: 403 });
+
+  // A test buzz to your own devices (the one time the sender is rung).
+  if (body.test === true) {
+    const d = await ring(sb, accounts, [{ person: me, payload: TEST_PAYLOAD }]);
+    return NextResponse.json({ ok: true, ...d });
+  }
+
+  // Pushed jobs: read from GitHub here (never the phone's list), rung once per person.
+  if (Array.isArray(body.jobs)) {
+    const ids = body.jobs.filter((x): x is string => typeof x === "string").slice(0, 20);
+    const read = await fetchTeamJobs({
+      fetch: (url, init) => fetch(url, { ...init, cache: "no-store" }),
+      bundled: BUNDLED_JOBS,
+      token: process.env.GITHUB_TOKEN?.trim() || null,
+      repo: process.env.GITHUB_REPO?.trim() || undefined,
+    });
+    const people = (Object.keys(accounts) as TeamPerson[]);
+    const had: Partial<Record<TeamPerson, string[]>> = {};
+    await Promise.all(people.map(async (p) => { had[p] = await rungJobsOf(sb, accounts[p]!); }));
+    const todo = jobsToRing(read.jobs, ids, Date.now(), had).filter(({ job }) => rungBefore.first(`j:${job.id}`));
+    if (!todo.length) return NextResponse.json({ ok: true, sent: 0, jobs: 0 });
+    // Mark them first: two phones asking at once must not ring twice.
+    const newFor: Partial<Record<TeamPerson, string[]>> = {};
+    for (const { job, to } of todo) for (const p of to) (newFor[p] ??= []).push(job.id);
+    await Promise.all((Object.keys(newFor) as TeamPerson[]).map((p) => saveRungJobs(sb, accounts[p]!, withRungJobs(had[p], newFor[p]!))));
+    const rings = todo.flatMap(({ job, to }) => to.map((person) => ({ person, payload: payloadForJob(job) })));
+    const d = await ring(sb, accounts, rings);
+    return NextResponse.json({ ok: true, jobs: todo.length, ...d });
+  }
+
+  const id = Number(body.id);
+  if (!Number.isSafeInteger(id) || id <= 0) return NextResponse.json({ error: "Which row?" }, { status: 400 });
+
+  let rings: { person: TeamPerson; payload: PushPayload }[] = [];
+  if (body.table === "team_messages") {
+    const { data: m } = await sb.from("team_messages").select("id, person, body, image_url, created_at").eq("id", id).maybeSingle();
+    const row = m as (Pick<TeamMessage, "id" | "person" | "body" | "image_url" | "created_at">) | null;
+    if (!row) return NextResponse.json({ error: "No such message." }, { status: 404 });
+    if (row.person !== me) return NextResponse.json({ error: "Only the sender can ring for a message." }, { status: 403 });
+    if (!fresh(row.created_at)) return NextResponse.json({ ok: true, sent: 0, stale: true });
+    if (!rungBefore.first(`m:${id}`)) return NextResponse.json({ ok: true, sent: 0, again: true });
+    const re = /^\[re:(\d{1,12})\]/.exec(row.body)?.[1];
+    let answers: { person: TeamPerson } | null = null;
+    if (re) {
+      const { data: a } = await sb.from("team_messages").select("person").eq("id", Number(re)).maybeSingle();
+      if (a && isTeamPerson((a as { person: string }).person)) answers = { person: (a as { person: TeamPerson }).person };
+    }
+    rings = ringsForMessage(row, answers).map((r) => ({ person: r.person, payload: payloadForMessage(row, r.why) }));
+  } else if (body.table === "team_tasks") {
+    const { data: t } = await sb.from("team_tasks").select("id, owner, made_by, title, created_at").eq("id", id).maybeSingle();
+    const row = t as (Pick<TeamTask, "id" | "owner" | "made_by" | "title" | "created_at">) | null;
+    if (!row) return NextResponse.json({ error: "No such job." }, { status: 404 });
+    if (row.made_by !== me) return NextResponse.json({ error: "Only whoever gave the job can ring for it." }, { status: 403 });
+    if (!fresh(row.created_at)) return NextResponse.json({ ok: true, sent: 0, stale: true });
+    if (!rungBefore.first(`t:${id}`)) return NextResponse.json({ ok: true, sent: 0, again: true });
+    rings = ringsForTask(row).map((r) => ({ person: r.person, payload: payloadForTask(row) }));
+  } else {
+    return NextResponse.json({ error: "Which table?" }, { status: 400 });
+  }
+  if (!rings.length) return NextResponse.json({ ok: true, sent: 0 });
+  const d = await ring(sb, accounts, rings);
+  return NextResponse.json({ ok: true, ...d });
+}

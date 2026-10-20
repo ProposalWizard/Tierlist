@@ -4,6 +4,7 @@
  * note dots. No React, no database.
  */
 import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "./config";
+import { isJobMarker } from "./jobs";
 
 export interface TeamMessage { id: number; person: TeamPerson; body: string; image_url: string | null; page: string | null; pinned: boolean; created_at: string }
 export type IdeaStage = "idea" | "doing" | "done";
@@ -63,12 +64,16 @@ export function ideasByPerson(ideas: TeamIdea[], votes: TeamVote[], person: Team
   return ranked.sort((a, b) => order[a.stage] - order[b.stage]);
 }
 
-/** Your list: open ones (yours first, then given to you), then ticked in the last day. */
+/**
+ * Your list: open ones (yours first, then given to you), then ticked in the
+ * last day. The rows that only mark a pushed job done (jobs.ts) are left out;
+ * pushed jobs are listed by pushedFor.
+ */
 export function tasksFor(tasks: TeamTask[], me: TeamPerson | null, now: number) {
   const empty = { mine: [] as TeamTask[], given: [] as TeamTask[], done: [] as TeamTask[], open: 0 };
   if (!me) return empty;
   const keep = TEAM_ROOM.keepDoneHours * 3600_000;
-  const own = tasks.filter((x) => x.owner === me);
+  const own = tasks.filter((x) => x.owner === me && !isJobMarker(x));
   const open = own.filter((x) => !x.done_at).sort((a, b) => t(b.created_at) - t(a.created_at));
   return {
     mine: open.filter((x) => x.made_by === me),
@@ -81,13 +86,13 @@ export function tasksFor(tasks: TeamTask[], me: TeamPerson | null, now: number) 
 /** Jobs you gave the other two that are still open. */
 export function tasksGivenBy(tasks: TeamTask[], me: TeamPerson | null): TeamTask[] {
   if (!me) return [];
-  return tasks.filter((x) => x.made_by === me && x.owner !== me && !x.done_at).sort((a, b) => t(b.created_at) - t(a.created_at));
+  return tasks.filter((x) => x.made_by === me && x.owner !== me && !x.done_at && !isJobMarker(x)).sort((a, b) => t(b.created_at) - t(a.created_at));
 }
 
 /** Open jobs the other two gave you since you last looked at the list. */
 export function newGivenTasks(tasks: TeamTask[], me: TeamPerson | null, lastSeen: number): number {
   if (!me) return 0;
-  return tasks.filter((x) => x.owner === me && x.made_by !== me && !x.done_at && t(x.created_at) > lastSeen).length;
+  return tasks.filter((x) => x.owner === me && x.made_by !== me && !x.done_at && !isJobMarker(x) && t(x.created_at) > lastSeen).length;
 }
 
 /** Time for a message: "10:04" today, "Mon 10:04" this week, else "12 Oct". */

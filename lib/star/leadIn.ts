@@ -489,7 +489,9 @@ export function alongKeys(keys: KeyPt[], t: number, ease = true): Vec2 {
 // ── Shared with the Real shots lead-in (lib/star/realMoments/leadin.ts) and the build-ups (leadInGen.ts) ──
 
 /** The ball's keyframes: when it is where, and whether it got there by a pass (lofted or not). */
-export interface LeadBallKey { t: number; p: Vec2; pass?: { h: number } }
+/** `pass.endZ`: a pass that arrives in the air (a cross met by a header or a
+ *  volley, B10) ends at this height instead of on the grass; `h` is still its top. */
+export interface LeadBallKey { t: number; p: Vec2; pass?: { h: number; endZ?: number } }
 
 /** The fastest a man may be made to run in a lead-in, m/s (lead-in time). */
 export const LEAD_MAX_RUN = 9;
@@ -503,7 +505,8 @@ export function ballAlong(keys: LeadBallKey[], t: number): { x: number; y: numbe
       const f = b.t > a.t ? (t - a.t) / (b.t - a.t) : 1;
       // A pass slows a little as it runs; a carry is steady.
       const g = b.pass ? f * (1.3 - 0.3 * f) : f;
-      const z = b.pass && b.pass.h > 0 ? 4 * b.pass.h * f * (1 - f) : 0;
+      const endZ = b.pass?.endZ ?? 0;
+      const z = b.pass && b.pass.h > 0 ? endZ * f + 4 * Math.max(0, b.pass.h - endZ / 2) * f * (1 - f) : 0;
       return { x: a.p.x + (b.p.x - a.p.x) * g, y: a.p.y + (b.p.y - a.p.y) * g, z };
     }
   }

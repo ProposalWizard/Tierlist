@@ -21,10 +21,13 @@ import { isSwitchedOff } from "./switchedOffKinds";
 /** THE ONE SWITCH. */
 export const EVEN_KIND_MIX = true;
 
-/** Every open-play kind that is switched on (volley and header are off). */
+/** Every open-play kind that is switched on. Header and volley joined on
+ *  20 Oct 2026 (B10: "headers AND volleys back on"), so a round is 10 deals:
+ *  each kind 1 in 10 of open play (was 1 in 8). */
 export const EVEN_KINDS: ScenarioKind[] = ([
   "one_on_one", "tight_angle", "long_range", "cutback",
   "byline_cross", "through_ball", "midfield_pass", "buildup",
+  "header", "volley",
 ] as ScenarioKind[]).filter((k) => !isSwitchedOff(k));
 
 /** The bag: what is left to deal this round, and the last kind dealt. */
@@ -49,6 +52,10 @@ export const REAL_MIX: Partial<Record<ScenarioKind, number>> = {
   midfield_pass: 3, buildup: 2, through_ball: 3,
   long_range: 2, cutback: 2, byline_cross: 2,
   tight_angle: 2, one_on_one: 1,
+  // B10 (20 Oct 2026): headers and volleys are not in this StatsBomb count, so
+  // the real mix stays exactly as measured (17 deals, half of them deep) until
+  // someone re-measures it with them in. The even mix (the default) deals them.
+  header: 0, volley: 0,
 };
 
 /** One round of the real-mix bag: each kind as many times as its weight. */
