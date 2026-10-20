@@ -21,6 +21,12 @@ export const TEAM_ROOM = {
   keepDoneHours: 24,
   /** The SQL file to run when the tables are missing (shown on screen). */
   sqlFile: "supabase/migrations/team_room.sql",
+  /** Round two: who has seen what, "Got it", "Read and understood", patch-note notes. */
+  sqlFileV2: "supabase/migrations/team_room_v2.sql",
+  /** Patch notes from this day on count as "still to read" (older ones show faces but never nag). */
+  patchReceiptsFrom: "2026-10-18",
+  /** A message counts as seen once this much of it is on screen in the open chat. */
+  seenShare: 0.6,
   /** Where the full Team room lives. */
   home: "/admin/team",
   /** Chat bubble shows on these pages (plus every page in the admin list). */

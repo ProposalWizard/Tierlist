@@ -6,6 +6,7 @@
  */
 import type { TeamPerson } from "./config";
 import type { TeamIdea, TeamMessage, TeamNote, TeamTask, TeamVote } from "./logic";
+import { pointUrl, type ReadMarks, type TeamAck } from "./extras";
 
 export function demoRoom(now: number) {
   const ago = (min: number) => new Date(now - min * 60_000).toISOString();
@@ -16,6 +17,20 @@ export function demoRoom(now: number) {
     { id: 3, person: "Leo", body: "same on my clips, the goal clip page shows it too", image_url: null, page: "/star-goal-clips-dev", pinned: false, created_at: ago(12) },
     { id: 4, person: "Harry", body: "looking now 👀", image_url: null, page: "/admin/team?tab=chat", pinned: false, created_at: ago(9) },
     { id: 5, person: "Mikey", body: "Vercel: push main on its own first, then the branches", image_url: null, page: null, pinned: true, created_at: ago(5) },
+    // Round two: a reply, an @mention, a page card and a point.
+    { id: 6, person: "Leo", body: "[re:2] I think it's the dive start, @Harry can you check the keeper page?", image_url: null, page: "/star-goal-clips-dev", pinned: false, created_at: ago(4) },
+    { id: 7, person: "Harry", body: "Here's the page\n/star-gallery-dev", image_url: null, page: "/admin/team?tab=chat", pinned: false, created_at: ago(3) },
+    { id: 8, person: "Mikey", body: `@Harry 👉 this card's numbers look off\n${pointUrl("/admin/team", {
+      v: 1, id: "demo-pt1", by: "Mikey", to: ["Harry"], n: "this card's numbers look off", pn: "Team board",
+      x: 24, y: 330, w: 320, h: 140, sx: 0, sy: 0, vw: 390, vh: 844,
+    })}`, image_url: null, page: "/admin/team", pinned: false, created_at: ago(2) },
+  ];
+  // Mikey has seen up to 7, Leo up to 4, Harry (you) up to 5.
+  const marks: ReadMarks = { Harry: 5, Mikey: 7, Leo: 4 };
+  const acks: TeamAck[] = [
+    { kind: "patch", target: "0.59", person: "Harry", at: ago(60) },
+    { kind: "patch", target: "0.57", person: "Mikey", at: ago(90) },
+    { kind: "patch", target: "0.57", person: "Leo", at: ago(80) },
   ];
   const ideas: TeamIdea[] = [
     { id: 1, person: "Mikey", title: "Rainy matches slow the ball", stage: "doing", created_at: ago(60 * 48), updated_at: ago(60 * 3) },
@@ -39,7 +54,8 @@ export function demoRoom(now: number) {
     { id: 1, target_kind: "idea", target_id: "1", owner: "Mikey", person: "Harry", body: "only on grass pitches, not 3G", created_at: ago(60 * 20) },
     { id: 2, target_kind: "idea", target_id: "1", owner: "Mikey", person: "Leo", body: "can the goal clips show the splash?", created_at: ago(180) },
     { id: 3, target_kind: "idea", target_id: "2", owner: "Harry", person: "Mikey", body: "yes, and a share picture", created_at: ago(40) },
+    { id: 4, target_kind: "patch", target_id: "0.59", owner: "Mikey", person: "Leo", body: "Ageing reads well. Are League Two fees still too big?", created_at: ago(30) },
   ];
   const me: TeamPerson | null = fresh ? null : "Harry";
-  return { me, taken: fresh ? (["Mikey"] as TeamPerson[]) : [], messages, ideas, votes, tasks, notes, online: ["Harry", "Mikey"] as TeamPerson[] };
+  return { me, taken: fresh ? (["Mikey"] as TeamPerson[]) : [], messages, ideas, votes, tasks, notes, online: ["Harry", "Mikey"] as TeamPerson[], marks, acks };
 }

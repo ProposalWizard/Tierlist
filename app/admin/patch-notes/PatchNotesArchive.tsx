@@ -5,6 +5,7 @@ import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import { DEMOS, DEMO_CSS, DEMO_TOKENS } from "@/lib/patchNotesDemos";
 import { PATCH_NOTE_PAGES, patchNotePageUrl } from "@/lib/patchNotePages";
 import { PATCH_NOTE_REVIEWS, type PatchNoteReview } from "@/lib/patchNoteReviews";
+import { PatchReadBar, PatchRailFaces, PatchUnreadDot } from "@/components/teamRoom/PatchReceipts";
 import {
   SECTION_COLOR,
   barGroupCeiling,
@@ -119,13 +120,14 @@ function VersionRail({
             <button
               key={n.version}
               onClick={() => onSelect(n.version)}
-              className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[13px] font-extrabold transition ${
+              className={`relative shrink-0 rounded-full border px-3.5 py-1.5 text-[13px] font-extrabold transition ${
                 on
                   ? "border-[#3ddc84] bg-[#3ddc84]/15 text-[#3ddc84]"
                   : `${LINE} ${CARD} ${INK2}`
               }`}
             >
               v{n.version}
+              <PatchUnreadDot note={n} />
             </button>
           );
         })}
@@ -150,7 +152,7 @@ function VersionRail({
                 <span className={`block text-sm font-extrabold ${on ? "text-[#3ddc84]" : INK}`}>
                   v{n.version}
                 </span>
-                <span className={`block text-[11px] ${INK3}`}>{formatPatchDate(n.publishedAt)}</span>
+                <span className={`flex items-center justify-between gap-2 text-[11px] ${INK3}`}>{formatPatchDate(n.publishedAt)}<PatchRailFaces note={n} /></span>
               </button>
             );
           })}
@@ -194,6 +196,7 @@ function VersionView({ note }: { note: PatchNote }) {
     : "The same notes as plain data.";
   return (
     <>
+      <PatchReadBar note={note} />
       {(hasPage || review) && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {hasPage && tab("page", "Page")}

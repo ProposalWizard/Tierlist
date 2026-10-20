@@ -10,7 +10,7 @@ export type IdeaStage = "idea" | "doing" | "done";
 export interface TeamIdea { id: number; person: TeamPerson; title: string; stage: IdeaStage; created_at: string; updated_at: string }
 export interface TeamVote { idea_id: number; person: TeamPerson }
 export interface TeamTask { id: number; owner: TeamPerson; made_by: TeamPerson; title: string; done_at: string | null; created_at: string }
-export type NoteKind = "idea" | "push";
+export type NoteKind = "idea" | "push" | "patch";
 export interface TeamNote { id: number; target_kind: NoteKind; target_id: string; owner: TeamPerson | null; person: TeamPerson; body: string; created_at: string }
 
 const t = (iso: string) => Date.parse(iso) || 0;

@@ -15,6 +15,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
+import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import PatchNotesArchive from "./PatchNotesArchive";
 import PageGuide from "@/components/admin/PageGuide";
 
@@ -25,11 +26,14 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function PatchNotesPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // A local dev build lets everyone in, like /admin/team (never the live site).
+  if (!offlineDevPlayEnabled()) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) redirect("/auth?next=/admin/patch-notes");
-  if (!(await isAdmin(user.id))) redirect("/");
+    if (!user) redirect("/auth?next=/admin/patch-notes");
+    if (!(await isAdmin(user.id))) redirect("/");
+  }
 
   return (
     <>

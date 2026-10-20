@@ -15,7 +15,9 @@ import ChatPage from "@/components/teamRoom/ChatPage";
 import { NoteCount, NotesThread, RoomGate, TodoList } from "@/components/teamRoom/parts";
 import { newGivenTasks, unreadChat, unreadNotes } from "@/lib/teamRoom/logic";
 import { useTeamRoom } from "@/lib/teamRoom/store";
-import { isTeamPerson } from "@/lib/teamRoom/config";
+import { isTeamPerson, TEAM_ROOM, type TeamPerson as TeamPersonName } from "@/lib/teamRoom/config";
+import { patchUnread, waitingOnMe, type PatchMeta } from "@/lib/teamRoom/extras";
+import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import "@/components/teamRoom/teamRoom.css";
 import PatchNotesArchive from "@/app/admin/patch-notes/PatchNotesArchive";
 import { perDay, type Person, type PullRequest, type Push, type TeamBoardData } from "@/lib/teamBoard";
@@ -23,6 +25,7 @@ import type { DevStatus } from "@/lib/devStatus";
 import "./teamBoard.css";
 
 const REFRESH_MS = 60_000;
+const PATCH_META: PatchMeta[] = BUILT_IN_PATCH_NOTES.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
 
 function ago(iso: string | null, now: number): string {
   if (!iso) return "—";
@@ -86,11 +89,14 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
   }, [data]);
 
   const pulls = data?.pulls ?? [];
+  const waiting = waitingOnMe(room.messages, room.me, room.marks, room.acks).length;
+  const toRead = (p: Person) => (isTeamPerson(p) ? patchUnread(PATCH_META, p, room.acks, TEAM_ROOM.patchReceiptsFrom).length : 0);
   const badges: Partial<Record<RoomTab, number>> = {
     team: unreadNotes(room.notes, room.me, room.read.pushNotes, "push"),
     ideas: unreadNotes(room.notes, room.me, room.read.notes, "idea"),
-    chat: tab === "chat" ? 0 : unreadChat(room.messages, room.me, room.read.chat),
+    chat: (tab === "chat" ? 0 : unreadChat(room.messages, room.me, room.read.chat)) + waiting,
     todo: tab === "todo" ? 0 : newGivenTasks(room.tasks, room.me, room.read.tasks),
+    notes: room.me ? toRead(room.me) + unreadNotes(room.notes, room.me, room.read.patchNotes, "patch") : 0,
   };
   const title = ROOM.find((r) => r.key === tab)?.title ?? "Team";
   return (
@@ -131,7 +137,8 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
             <div className="tb-people">
               {(data ? people : (["Harry", "Mikey", "Leo"] as Person[]).map((person) => ({ person, branch: person, pushes: [] as Push[], status: null }))).map((c) => (
                 <PersonCard key={c.person} person={c.person} pushes={c.pushes} status={"status" in c ? c.status ?? null : null}
-                  statusOn={!!data?.statusOn} now={now} loading={!data} onOpen={setOpen} onNote={openNote} />
+                  statusOn={!!data?.statusOn} now={now} loading={!data} onOpen={setOpen} onNote={openNote}
+                  toRead={room.status === "ready" ? patchUnread(PATCH_META, c.person as TeamPersonName, room.acks, TEAM_ROOM.patchReceiptsFrom) : null} />
               ))}
             </div>
             <PullPanel pulls={pulls} now={now} loading={!data} />
@@ -187,9 +194,11 @@ function notesOf(pushes: Push[]) {
 
 const STATUS_WORD = { live: "Live", quiet: "Active", off: "Quiet" } as const;
 
-function PersonCard({ person, pushes, status, statusOn, now, loading, onOpen, onNote }: {
+function PersonCard({ person, pushes, status, statusOn, now, loading, onOpen, onNote, toRead }: {
   person: Person; pushes: Push[]; status: DevStatus | null; statusOn: boolean; now: number; loading: boolean;
   onOpen: (p: Push) => void; onNote: (v: string) => void;
+  /** Patch notes this person still has to read (null = team room not loaded). */
+  toRead: PatchMeta[] | null;
 }) {
   const [all, setAll] = useState(false);
   // Merges aren't work, they are bookkeeping: left off the board.
@@ -210,6 +219,10 @@ function PersonCard({ person, pushes, status, statusOn, now, loading, onOpen, on
         <div className="tb-who">
           <b>{person}</b>
           <small>{loading ? "…" : `${week} push${week === 1 ? "" : "es"} this week`}</small>
+          {toRead && (toRead.length > 0
+            ? <button className="tb-toread" onClick={() => onNote(toRead[toRead.length - 1].version)} title={`Not read yet: ${toRead.map((n) => `v${n.version}`).join(", ")}`}>
+                <DocIcon /> {toRead.length} patch note{toRead.length === 1 ? "" : "s"} to read</button>
+            : <span className="tb-toread done" title="Every patch note since the receipts started is read">✓ Patch notes read</span>)}
         </div>
         <div className={`tb-state ${live}`} title={last ? clock(last) : ""}>
           <b><span className={`ash-dot ${live === "live" ? "live" : live === "quiet" ? "on" : ""}`} /> {loading ? "…" : STATUS_WORD[live]}</b>

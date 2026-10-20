@@ -166,3 +166,9 @@
 .tb-todo { max-width: 720px; display: flex; flex-direction: column; }
 .tb-pushnotes { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--ash-line); }
 .tb-pushes .tr-ncount { flex: 0 0 auto; font-size: 11px; }
+
+/* Patch notes still to read, per person (Team room round two, 20 Oct 2026). */
+.tb-toread { display: inline-flex; align-items: center; gap: 4px; margin-top: 3px; padding: 2px 8px; border-radius: 99px; border: 1px solid color-mix(in srgb, var(--ash-amber) 55%, transparent);
+  background: var(--ash-amber-soft); color: var(--ash-amber); font: inherit; font-size: 11.5px; font-weight: 800; cursor: pointer; width: fit-content; }
+.tb-toread svg { width: 13px; height: 13px; }
+.tb-toread.done { border-color: var(--ash-line); background: none; color: var(--ash-ink3); cursor: default; }
