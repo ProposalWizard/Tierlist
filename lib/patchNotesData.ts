@@ -27,6 +27,30 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.61",
+      "title": "Leo's patch notes v0.19: Real Goals — every league goal of 2017/18",
+      "publishedAt": "2026-10-20T14:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/WoADNDMiHYbcYfE56wUZbe",
+      "summary": "Leo v0.19. Real Goals (test page /star-real-goals-dev) adds every 2017/18 goal of the Premier League, La Liga, Serie A, Bundesliga and Ligue 1 (4,393; no penalties or own goals), from the same free Wyscout data. 232 → 4,625 goals. A button for each competition under the search; 66 clubs get their real 2017/18 shirts (0 clashes). The level map is unchanged. Test page only; the career is unchanged.",
+      "stats": [
+        { "value": "232 → 4,625", "label": "real goals to play" },
+        { "value": "98", "label": "clubs in their real 2017/18 colours" },
+        { "value": "7 → 0", "label": "goals where two shirts looked alike" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Every league goal of 2017/18", "detail": "Premier League 931, La Liga 911, Serie A 889, Bundesliga 763, Ligue 1 899." },
+          { "title": "A button for each competition", "detail": "Under the search, with its goal count. League goals show their match date." },
+          { "title": "Real club shirts", "detail": "66 clubs added. If both of the other side's kits clash, the scorers change kit." }
+        ] },
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "A few scores before a goal can be off by one", "detail": "In 4 of 1,826 matches the data's goals do not add up to the final score." },
+          { "title": "Not played by a finger yet", "detail": "Tests and phone-size stills only; the real line scored 60 of 60." }
+        ] }
+      ]
+    },
+    {
       "version": "0.60",
       "title": "Leo's patch notes v0.18: Real Goals 2 — every goal, a game",
       "publishedAt": "2026-10-19T14:00:00Z",
