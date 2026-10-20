@@ -11,11 +11,13 @@
  * (Harry, 19 Oct 2026: "we need to be able to close the side tab").
  */
 import "./adminShell.css";
+import "./skin.css";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { ADMIN_PAGES, GAMES, gameForPath, gameOf, groupGame, groupIcon, groupsOf, visibleTo, type AdminGameKey, type AdminGroup } from "@/lib/adminRegistry";
-import { ADMIN_LOOKS, isBoardLook, setAdminLook, setAdminMode, useAdminLook, useAdminMode } from "@/lib/adminLook";
+import { ADMIN_LOOKS, setAdminLook, setAdminMode, useAdminLook, useAdminMode } from "@/lib/adminLook";
+import BackArrow from "@/components/admin/BackArrow";
 
 export type ShellTab = "home" | "team" | "notes" | "videos" | "ideas" | "chat" | "todo";
 export type RoomTab = "team" | "ideas" | "chat" | "todo" | "notes";
@@ -70,8 +72,8 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
   // Same count as the home's tiles and search (the admin home itself is not a page to open).
   const count = (g: string) => pages.filter((p) => p.group === g && p.url !== "/admin/star").length;
   const gameCount = (k: AdminGameKey) => groupsOf(k).reduce((n, g) => n + count(g.key), 0);
-  // Broadcast/Bento open a group's own page; Ops room / Clean light jump down the game's home.
-  const groupHref = (k: AdminGroup) => (isBoardLook(look) ? `/admin/star/g/${k}` : `${G.home}#${k}`);
+  // Every look opens a group's own page: one layout, four skins (Harry, 20 Oct 2026).
+  const groupHref = (k: AdminGroup) => `/admin/star/g/${k}`;
 
   const navTab = (t: RoomTab, label: string, icon: keyof typeof I) => {
     const href = t === "team" ? "/admin/team" : `/admin/team?tab=${t}`;
@@ -88,15 +90,16 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
   return (
     <div className="ash" data-look={look} data-folded={folded} data-admin-shell>
       <div className="ash-top">
+        {/* The one back arrow, top left (Harry, 20 Oct 2026: "Always top left … always the same"). */}
+        <BackArrow />
         <button className="ash-btn ghost" onClick={() => setOpen(true)} aria-label="Open the admin menu"><Icon name="menu" /> Menu</button>
         <b className="ash-word">KNOWITBALL</b>
-        <span style={{ width: 70 }} />
       </div>
       <div className="ash-layout">
         {open && <div className="ash-scrim" onClick={() => setOpen(false)} />}
         <aside className="ash-side" data-open={open} aria-label="Admin menu">
           <div className="ash-brand">
-            <span className="ash-mark">K</span>
+            <BackArrow />
             <span className="ash-navt"><b>KNOWITBALL</b><small>{role === "admin" ? "Admin" : "Test pages"}</small></span>
             <button className="ash-fold" onClick={() => fold(!folded)} aria-label={folded ? "Open the side menu" : "Fold the side menu away"} title={folded ? "Open the side menu" : "Fold the side menu away"}>
               <Icon name={folded ? "unfold" : "fold"} size={15} />

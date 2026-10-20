@@ -29,7 +29,7 @@ function Shop3DTest() {
   // its front doors lead out to the 3D garden test page, as in a career
   return (
     <>
-      <Shop3D dev backLabel="3D area" atDoor={q.get("door") === "1"} onBack={() => router.push("/star-3d-area-dev")} onDoor={() => router.push("/star-garden3d-dev?arrive=shop")} />
+      <Shop3D dev backLabel="3D places" atDoor={q.get("door") === "1"} onBack={() => router.push("/admin/star/g/places3d")} onDoor={() => router.push("/star-garden3d-dev?arrive=shop")} />
       <PageGuide page="/star-shop3d-dev" corner="bottom-left" />
     </>
   );

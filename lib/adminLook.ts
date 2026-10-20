@@ -26,7 +26,9 @@ export const ADMIN_LOOKS: { id: AdminLook; name: string }[] = [
   { id: "ops", name: "Ops room" },
   { id: "light", name: "Clean light" },
 ];
-/** D and F lay the home out as one board with every group on it. */
+/** Kept for old callers only. Since 20 Oct 2026 every look has the SAME layout
+ *  (Harry: "everything to look the same, but with a different kind of skin");
+ *  never branch a layout on the look. */
 export const isBoardLook = (l: AdminLook) => l === "broadcast" || l === "bento";
 /** The two light looks (for anything that paints itself dark or light). */
 export const isLightLook = (l: AdminLook) => l === "light" || l === "bento";

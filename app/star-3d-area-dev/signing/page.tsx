@@ -9,7 +9,7 @@
  * the sample terms, and a picker for the look so it can be tested without a
  * career: skin tone, face picture, hair, every store accessory, the aviators.
  */
-import Link from "next/link";
+import BackArrow from "@/components/admin/BackArrow";
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import PageGuide from "@/components/admin/PageGuide";
@@ -118,9 +118,9 @@ export default function Signing3dPage() {
           onDone={() => setReplay((r) => r + 1)}
           doneLabel="Continue (replays here)"
           replayKey={replay}
+          topLeft={<BackArrow />}
           topRight={
             <>
-              <Link href="/star-3d-area-dev" aria-label="Back" style={{ ...chip(false), minHeight: 36, display: "flex", alignItems: "center", textDecoration: "none", borderRadius: 999 }}>‹</Link>
               <button onClick={() => setReplay((r) => r + 1)} style={{ ...chip(false), minHeight: 36, borderRadius: 999 }}>↺</button>
               <button data-picker onClick={() => setOpen((o) => !o)} style={{ ...chip(open), minHeight: 36, borderRadius: 999 }}>Your player</button>
             </>

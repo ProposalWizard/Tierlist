@@ -13,6 +13,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
 import AdminPanelLoader from "./AdminPanelLoader";
 import PageGuide from "@/components/admin/PageGuide";
+import AdminTopBar from "@/components/admin/AdminTopBar";
 import type { Tierlist } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -40,6 +41,8 @@ export default async function AdminPage() {
     .returns<Tierlist[]>();
 
   return (
+    <>
+    <AdminTopBar title="Site content" />
     <main className="min-h-screen bg-gray-950 p-4 md:p-8">
       <header className="mb-8">
         <div className="flex items-center gap-3">
@@ -57,5 +60,6 @@ export default async function AdminPage() {
       <AdminPanelLoader initialTierlists={tierlists ?? []} />
       <PageGuide page="/admin" />
     </main>
+    </>
   );
 }

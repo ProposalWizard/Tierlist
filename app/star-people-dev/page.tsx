@@ -146,7 +146,6 @@ export default function PeopleDevPage() {
     <BroadcastPage
       title="Cut-scene people"
       sub="Faces, hands and the moves every cut scene uses."
-      back="/star-play-dev"
       actions={
         <div className="pp-row">
           <Pill on={layout === "studio"} onClick={() => setLayout("studio")}>Studio</Pill>

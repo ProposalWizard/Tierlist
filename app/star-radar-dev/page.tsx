@@ -247,7 +247,6 @@ export default function MatchRadarPage() {
     <BroadcastPage
       title="Match Radar"
       sub="The unseen 90, minute by minute"
-      back="/star-play-dev"
     >
       <div className="rd-layout-pick" role="group" aria-label="Layout">
         <Label>Layout</Label>

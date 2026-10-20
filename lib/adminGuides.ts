@@ -685,33 +685,47 @@ export const ADMIN_GUIDES = {
       { group: "Game tabs (across the top of every admin page)", items: [
         ["Road to Ballon d'Or", "The career game's groups and pages. This is /admin/star."],
         ["Website games", "PL Draft, Tierlists, Site XP + Tic Tac Toe and the old tests. Opens /admin/star/game/web."],
-        ["Studio", "The team: Team board, Patch notes, Videos, App plan, Tester access. Opens /admin/star/game/studio."],
+        ["Studio", "The team: Team board, Patch notes, Videos, Research, App plan, Tester access. Opens /admin/star/game/studio."],
         ["The number on a tab", "How many pages that game has (that you can open)."],
       ] },
       { group: "Top", items: [
-        ["Search … pages in (game)", "Type part of a name or what a page does. Searches this game only."],
+        ["← (top left)", "The one back arrow, in the same corner on every admin and test page. Here it goes back to the site; on a group page to the game's home; on any other admin page to that page's group."],
+        ["Search … pages in (game)", "Type part of a name or what a page does. Searches this game only. While you search, the matching pages show as rows under their group."],
         ["All / Harry / Mikey / Leo", "Show everyone's pages, or only one person's, in this game."],
         ["Saves real data", "Only pages whose buttons change things other players see."],
-        ["Grid / List", "Broadcast and Bento: the game's groups as big tiles or one row each. Kept on this device."],
-        ["Play the game", "Ops room and Clean light: opens the game as players see it."],
+        ["Grid / List", "The game's groups as big tiles or one row each. Kept on this device."],
       ] },
       { group: "Cards", items: [
-        ["A group tile", "Broadcast and Bento: opens that group's own page (its admin tools first, then its test pages)."],
-        ["A card", "Opens that page. The letter is its owner. \"Saves real data\" / \"This browser\" / \"Writes the code\" say what its buttons save."],
-        ["Old tests (n)", "Website games tab. Old test pages that are kept but not used day to day."],
+        ["A group tile", "Opens that group's own page (its admin tools first, then its test pages)."],
+        ["A card (on a group page)", "Opens that page. The letter is its owner. \"Saves real data\" / \"Writes the code\" say what its buttons save."],
+        ["Old tests", "Website games tab. Old test pages that are kept but not used day to day."],
         ["Clear", "Shows when a search or filter matches nothing; puts everything back."],
       ] },
       { group: "Side menu", items: [
         ["(Game) home", "This game's home page."],
-        ["The game's groups (slanted bars on Broadcast)", "Every group of the game you are in, the one you are on lit up. Broadcast and Bento open the group's own page; Ops room and Clean light jump to it on the home. On a phone they are in ☰ Menu; on a computer « folds them to icons."],
+        ["The game's groups", "Every group of the game you are in, the one you are on lit up. Each opens the group's own page. On a phone they are in ☰ Menu; on a computer « folds them to icons."],
         ["Team board / Ideas / Team chat / My to-do / Patch notes / Videos", "The team's own pages, the same in every game (Team room and Patch notes are admins only)."],
-        ["Broadcast / Bento / Ops room / Clean light", "The admin look. Broadcast (dark blue) and Bento (a colour per group) show every group on one board. Kept on this device."],
+        ["Broadcast / Bento / Ops room / Clean light", "The admin look: the same pages and the same layout in all four, only the paint changes (Broadcast dark blue, Bento a soft colour per group, Ops room near-black and green, Clean light white). Every admin and test page follows it. Kept on this device."],
         ["Admin mode", "On: the admin side menu sits on every page of the site, opened on the admin pages for the page you are on. Off: it hides. Kept on this device."],
       ] },
     ],
     saving: ["Nothing here saves anything shared. The look and Admin mode are kept in this browser only."],
     inGame: ["Nowhere. This is the front door to the tools."],
     dev: "app/admin/star/page.tsx (first game) · app/admin/star/game/[game]/page.tsx (other games) · app/admin/star/g/[group] (a group's page) · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (GAMES = the tabs: a new game is one line there, then its groups say game: \"<key>\"; GROUPS; ADMIN_PAGES) · components/admin/shell/* · components/AdminNavPanel.tsx (the side menu on other pages, also one game at a time) · lib/adminLook.ts",
+  },
+  "/admin/research": {
+    title: "Research",
+    what: "Every research write-up we have made (Football Manager, highlights, 3D and so on), one card each, newest first.",
+    buttons: [
+      { group: "Page", items: [
+        ["←", "Back to the Research group page (Studio tab)."],
+        ["All / (a topic)", "Show every write-up, or only one topic's. Shows only when there is more than one topic."],
+        ["A card / Read ↗", "Opens that write-up in a new tab. The coloured line is its topic; the date is when it was made."],
+      ] },
+    ],
+    saving: ["Nothing. The list is part of the code: a new write-up is one line in the list file, added by Claude."],
+    inGame: ["Nowhere. It is for the team."],
+    dev: "app/admin/research/page.tsx · lib/research.ts (RESEARCH: one line per write-up; topic, date, by) · registered in lib/adminRegistry.ts (group research, Studio)",
   },
   "/star-tournament-dev": {
     title: "Tournaments",
@@ -724,7 +738,7 @@ export const ADMIN_GUIDES = {
         ["Play matchday 1–3", "Plays the next round of group games."],
         ["Play to the final", "Plays every match left, through the knockouts, to a winner."],
         ["Reset", "Back to the draw."],
-        ["← (top left)", "Back to the Play Area."],
+        ["← (top left)", "Back to the Real data group page."],
       ] },
     ],
     saving: ["Nothing. It reads and writes only this screen."],
@@ -1018,7 +1032,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Top of the page",
         items: [
-          ["←", "Back to the Scenario Gallery."],
+          ["← (top left)", "Back to the Chances group page."],
           ["Highlights N/11", "Choose which chance types to show: All, None, tap types on or off, then \"Watch these\"."],
           ["▦ Sheet of 24", "Sheet of 24: twenty-four chances of one type served in a row, on one screen, to check by eye. Under each: which drawing it came from, the nearest drawing, and in colour anything wrong (red: added by the serving; amber: already in the drawing, or \"like #n\" — looks like one of the five before it). New sheet serves another 24. It uses the Play Area's Chances dial."],
           ["⚽ Play a penalty shootout", "On the chance-types screen. A whole shootout on the real match, with the Play Area's test sides: every kick live — team-mates at their keeper, their takers at yours (from the same end), yours to take when your turn comes. Nothing is saved; \"Another shootout\" starts again."],
@@ -1133,7 +1147,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Home",
         items: [
-          ["← (top left)", "Back to the admin home."],
+          ["← (top left)", "Back to the Chances group page."],
           ["Infinite Highlights → (first picture card)", "Opens Infinite Highlights."],
           ["Infinite Match → (second picture card)", "A real match that runs for the length you set, counting every chance it serves you."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
@@ -1236,7 +1250,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Top of the page",
         items: [
-          ["← (blue, top left) / ‹ (in the store)", "Back to the Play Area."],
+          ["← (top left) / ‹ (in the store)", "← goes to the Money + rewards group page. ‹ inside the store goes to the Play Area."],
           ["★ and Coins (top right)", "Your test wallet, shown at a glance."],
           ["★ (wallet, in the store)", "Your test stars — the money you earn by playing."],
           ["Coins +", "Your test Coins — the money you would buy with real money. Tapping it opens the Coins tab."],
@@ -1360,7 +1374,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Top of the page",
         items: [
-          ["←", "Back to the Play Area."],
+          ["← (top left)", "Back to the 3D places group page."],
           ["Places / All scenes / 3D files (left, or along the top on a phone)", "Switch between the 3D places, the full list of scenes and the 3D file store. The page remembers which one you had open."],
         ],
       },
@@ -1405,7 +1419,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["‹", "Back to the 3D Test Area."],
+          ["← (top left)", "Back to the 3D places group page."],
           ["↺", "Starts the scene again from the first line."],
           ["Your player", "Opens the picker: skin tone, face picture, hair, every store accessory and the Star Pass Gold Aviators. A change rebuilds your player straight away."],
           ["Skip", "Leaves the scene. In a career this goes straight on to the next screen."],
@@ -1441,7 +1455,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["‹", "Back to the 3D Test Area."],
+          ["← (top left)", "Back to the 3D places group page."],
           ["He talks / You talk", "Moves the camera: over your shoulder at him, or over his at you."],
           ["Next line", "Steps through four sample lines, switching who talks."],
           ["👁 (bottom left)", "This guide."],
@@ -1463,7 +1477,7 @@ export const ADMIN_GUIDES = {
     what: "Every move the 3D match plays (outfield and keeper), each looping on its own tile, seen through the real 3D match camera at the real match size: a man is 6% of a phone screen, the men 1.35 × life, the realistic players.",
     buttons: [
       { group: "Top", items: [
-        ["← and 3D test area (left list)", "Back to the list of 3D test pages."],
+        ["← (top left)", "Back to the Players + animation group page."],
         ["Outfield / Keeper (left list)", "Jumps to that group of tiles."],
         ["2D animations (left list)", "Opens the 2D animation page."],
         ["❚❚ / ▶ (player bar)", "Stops or starts every tile. Play also lets go of any tile you held with its slider."],
@@ -1488,7 +1502,7 @@ export const ADMIN_GUIDES = {
     what: "The whole Oct 13 gameplay update behind one Old | New switch: shot power, the contact field (strike the side of the ball to curl it low), keepers, team-mates shooting, and match feel. Each part also has its own row.",
     buttons: [
       { group: "Top", items: [
-        ["‹ Play Area", "Back to the Play Area."],
+        ["← (top left)", "Back to the Match tests group page."],
       ] },
       { group: "The whole update", items: [
         ["New / Old", "Flips every part at once, on this phone. New also plays in your real career matches on this phone. Starts on Old."],
@@ -1515,7 +1529,7 @@ export const ADMIN_GUIDES = {
     what: "Every New player animation (keeper saves, touches, shots, passes, headers, blocks, clearances) looping next to how the Old game drew that moment, with the dials and switches that size them.",
     buttons: [
       { group: "Top", items: [
-        ["←", "Back to the Play Area."],
+        ["← (top left)", "Back to the Players + animation group page."],
       ] },
       { group: "The list on the left (a row of tabs on a phone)", items: [
         ["Keeper / Touches / Shots / Passes & headers / Defenders / All", "Which animations to show. All shows every group under its own title; it is heavy on an older phone."],
@@ -1593,7 +1607,7 @@ export const ADMIN_GUIDES = {
     what: "The walk-around 3D garden, on a made-up career, so every part can be seen without playing to it. It is the same screen a career opens from Home's Garden.",
     buttons: [
       { items: [
-        ["‹ Home", "Back to the 3D Test Area."],
+        ["‹ Home", "Back to the 3D places group page."],
         ["day / sunset / night", "Changes the time of day. In a career it follows the time of your next kick-off."],
         ["Full career / New career", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
         ["Restart", "Builds the garden again from the start."],
@@ -1640,7 +1654,7 @@ export const ADMIN_GUIDES = {
         ["Two Touch: the grade pop", "Every touch is graded by timing: Perfect touch, Good touch, Heavy, Scuffed it. A better first touch sits up higher and closer. Your return goes where you swipe or point, as hard as the swipe or hold: Too wide / Too hard / Too soft and he has to run for it. You step under the ball yourself; the stick only nudges."],
         ["3D drills: left thumb", "A stick: how far you push it sets the speed (walk, jog, run); all the way sprints. With a mouse: WASD or arrows run, hold Shift to sprint. The hint at the bottom follows your pointer (finger or mouse), not the screen size."],
         ["3D drills: tap on the right", "Free Roam: pass to the team-mate you face if you have the ball, take a touch if it's at your feet, tackle, or call for it. Two Touch: your keepy-up touch (1st controls it up, 2nd sends it back). Space bar does the same."],
-        ["‹ Back (top left)", "On the picker, the pre-screen, Crossbar and every 3D drill, at any moment: back to the picker (or, opened straight from the top row, the 3D Test Area). The drill ends there: no reward, nothing asked."],
+        ["‹ Back (top left)", "On the picker, the pre-screen, Crossbar and every 3D drill, at any moment: back to the picker (or, opened straight from the top row, the 3D places group page). The drill ends there: no reward, nothing asked."],
         ["↻ Restart (top right)", "Starts again with a different team-mate."],
         ["Last (top right)", "The last result: score, won or lost, and the Team bar change, with the drill under it. A dash until you finish one."],
         ["Continue →", "On the result card. Here it just starts again and shows the result in the \"Last\" box at the top."],
@@ -1687,7 +1701,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["‹ 3D area", "Back to the 3D Test Area."],
+          ["‹ 3D places", "Back to the 3D places group page."],
           ["The club button (top right)", "Changes the kit he's wearing. Tap again for the next club."],
           ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
           ["Drag the view", "Swings the camera round him."],
@@ -1727,7 +1741,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["‹ 3D area", "Back to the 3D Test Area."],
+          ["‹ 3D places", "Back to the 3D places group page."],
           ["starter … estate", "Which home you are in. In a career it is the best home you own: Studio Flat or City Apartment = flat, Penthouse, Suburban House = house, Beach Villa or Mansion = villa, Country Estate or Private Island = estate."],
           ["Full cabinet / Empty cabinet", "The made-up career with trophies, awards, cars, watches, jewellery and cans, or with none."],
           ["House: New / Old", "New: the home's rooms. Old: the one room, as it was. The same as Settings → Look → \"House\" (this button does not change that setting)."],

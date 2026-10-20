@@ -116,7 +116,7 @@ function Body() {
             career={career}
             startDrill={drill === "picker" ? undefined : drill}
             startMode={mode}
-            onExit={() => { window.location.href = "/star-3d-area-dev"; }}
+            onExit={() => { window.location.href = "/admin/star/g/places3d"; }}
             onFinish={(r) => { setLast(r); setKey((k) => k + 1); }}
           />
         </div>

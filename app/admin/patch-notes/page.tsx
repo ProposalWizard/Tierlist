@@ -18,6 +18,7 @@ import { isAdmin } from "@/lib/admin";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import PatchNotesArchive from "./PatchNotesArchive";
 import PageGuide from "@/components/admin/PageGuide";
+import AdminTopBar from "@/components/admin/AdminTopBar";
 
 export const metadata: Metadata = {
   title: "Patch Notes",
@@ -37,6 +38,7 @@ export default async function PatchNotesPage() {
 
   return (
     <>
+      <AdminTopBar title="Patch notes" />
       <PatchNotesArchive />
       <PageGuide page="/admin/patch-notes" />
     </>

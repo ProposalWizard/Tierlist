@@ -35,13 +35,15 @@ type Spot = Corner | "top-left" | "tucked";
 
 const CORNER: Record<Spot, string> = {
   "bottom-right": "right-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))]",
-  "bottom-left": "left-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))]",
+  // Bottom left is the team chat bubble's corner (40 px, 12 px in): the eye sits just above it.
+  "bottom-left": "left-2 bottom-[calc(3.75rem+env(safe-area-inset-bottom))]",
   "top-right": "right-2 top-2",
   "top-left": "left-2 top-2",
   // Mostly off the right edge: 16 px showing, in the page's own gutter.
   "tucked": "-right-6 top-[58%]",
 };
-const SPOTS: Spot[] = ["bottom-right", "bottom-left", "top-right", "top-left"];
+// Top left is the back arrow's corner (Harry, 20 Oct 2026): the eye never goes there.
+const SPOTS: Spot[] = ["bottom-right", "bottom-left", "top-right"];
 
 /**
  * ON A PHONE THE EYE MOVES OUT OF THE WAY.
@@ -71,7 +73,7 @@ function busyAt(spot: Spot): number {
   const x0 = tucked ? window.innerWidth - TUCK_SHOW_PX
     : spot.endsWith("left") ? EDGE_PX : window.innerWidth - EDGE_PX - EYE_PX;
   const y0 = tucked ? window.innerHeight * 0.58
-    : spot.startsWith("top") ? EDGE_PX : window.innerHeight - EDGE_PX - EYE_PX;
+    : spot.startsWith("top") ? EDGE_PX : window.innerHeight - (spot === "bottom-left" ? 60 : EDGE_PX) - EYE_PX;
   let busy = 0;
   for (const fx of [0.15, 0.5, 0.85]) {
     for (const fy of [0.15, 0.5, 0.85]) {

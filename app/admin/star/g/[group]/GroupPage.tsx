@@ -7,7 +7,7 @@
  */
 import Link from "next/link";
 import AdminShell from "@/components/admin/shell/AdminShell";
-import { GROUPS, gameOf, groupIcon, groupsOf, isTestPage, visibleTo, type AdminGroup, type AdminOwner, type AdminPage } from "@/lib/adminRegistry";
+import { GROUPS, groupIcon, groupsOf, isTestPage, visibleTo, type AdminGroup, type AdminOwner, type AdminPage } from "@/lib/adminRegistry";
 import { ADMIN_PREVIEW } from "@/lib/adminPreviews";
 import { TAGLINE } from "../../AdminHome";
 import "../../adminHome.css";
@@ -23,16 +23,13 @@ export default function GroupPage({ group, role }: { group: AdminGroup; role: "a
   const pages = visibleTo(role).filter((p) => p.group === group && p.url !== "/admin/star");
   // Only this game's other groups (Harry, 19 Oct 2026: a game's tab never shows another game's pages).
   const others = groupsOf(g.game).filter((x) => x.key !== group && visibleTo(role).some((p) => p.group === x.key));
-  const home = gameOf(g.game)?.home ?? "/admin/star";
   return (
     <AdminShell tab="home" role={role} game={g.game} group={group}>
       <div className="agp" data-g={group}>
-        <div className="agp-head">
-          <Link href={home} className="agp-back" aria-label="Back to all groups" title="All groups">←</Link>
-          <div className="agp-banner">
-            <h1>{g.name}</h1>
-            <span>{TAGLINE[group]} · {pages.length} page{pages.length === 1 ? "" : "s"}</span>
-          </div>
+        {/* The back arrow is the shell's, top left (it goes to the game's home). */}
+        <div className="agp-banner">
+          <h1>{g.name}</h1>
+          <span>{TAGLINE[group]} · {pages.length} page{pages.length === 1 ? "" : "s"}</span>
         </div>
         <nav className="agp-jump" aria-label="Other groups">
           {others.map((o) => <Link key={o.key} href={`/admin/star/g/${o.key}`}>{o.name}</Link>)}

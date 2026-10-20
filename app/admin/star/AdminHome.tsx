@@ -1,17 +1,17 @@
 "use client";
 /**
- * The admin home (/admin/star) — Harry's grouped admin, in the Ops room look
- * (Higgsfield design B, 18 Oct 2026) or Clean light. Every page comes from
- * lib/adminRegistry.ts. Harry, 18 Oct: "this is too much for an admin page -
- * focus on simplicity", then "keep pictures just simpler than these": one
- * flat Higgsfield icon per group (public/admin/icons), no picture banners.
+ * The admin home (/admin/star, and each game's home). ONE layout in every Look
+ * (Harry, 20 Oct 2026: "everything to look the same, but with a different
+ * kind of skin"): the game's groups as tiles (grid or list), each opening its
+ * own page; a search lists the matching pages. The Look only repaints it (the
+ * --sk-* skin tokens in adminHome.css). Every page comes from
+ * lib/adminRegistry.ts; one flat Higgsfield icon per group (public/admin/icons).
  */
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/admin/shell/AdminShell";
 import { GAMES, gameOf, groupIcon, groupsOf, visibleTo, type AdminGameKey, type AdminOwner, type AdminPage } from "@/lib/adminRegistry";
 import type { TeamBoardData } from "@/lib/teamBoard";
-import { isBoardLook, useAdminLook } from "@/lib/adminLook";
 import "./adminHome.css";
 
 const WRITES: Record<AdminPage["writes"], { text: string; tone: string } | null> = {
@@ -33,7 +33,6 @@ const OWNER_LETTER: Record<AdminOwner, string> = { Harry: "H", Mikey: "M", Leo: 
 export default function AdminHome({ role, game = GAMES[0].key }: { role: "admin" | "tester"; game?: AdminGameKey }) {
   const G = gameOf(game) ?? GAMES[0];
   // Only this game's groups and pages: a game's tab never shows another game's (Harry, 19 Oct 2026).
-  const GROUPS = groupsOf(game);
   const all = useMemo(() => {
     const keys = new Set<string>(groupsOf(game).map((g) => g.key));
     return visibleTo(role).filter((p) => p.url !== "/admin/star" && keys.has(p.group));
@@ -51,8 +50,6 @@ export default function AdminHome({ role, game = GAMES[0].key }: { role: "admin"
   const shown = all.filter(match);
   const count = (o: AdminOwner) => all.filter((p) => p.owner === o).length;
   const filtering = !!(q.trim() || owner || realOnly);
-  const look = useAdminLook();
-  const board = isBoardLook(look);
 
   return (
     <AdminShell tab="home" role={role} game={game}>
@@ -72,17 +69,12 @@ export default function AdminHome({ role, game = GAMES[0].key }: { role: "admin"
           {role === "admin" && <TeamWidget />}
         </div>
 
-        {/* Broadcast / Bento: the home is just the groups, each opens its own
-            page (Harry, 19 Oct 2026). A search or filter lists matching pages. */}
-        {board && !filtering && <GroupHome pages={all} game={game} />}
-        {board && filtering && <Board shown={shown} filtering={filtering} game={game} />}
-
-        {!board && !filtering && G.play && (
-          <Link href={G.play} className="ash-panel ah-play">
-            <img src="/admin/icons/play.webp" alt="Play the game" title="Play the game" className="ah-ic ah-ic-lg" />
-            <span><b>Play the game</b><small>{G.name}, as players see it</small></span>
-          </Link>
-        )}
+        {/* One layout in every look (Harry, 20 Oct 2026: "They can't just click
+            Clean light and suddenly I'm on a different admin page with a
+            different layout"): the home is the groups, each opens its own
+            page. A search or filter lists the matching pages instead. */}
+        {!filtering && <GroupHome pages={all} game={game} />}
+        {filtering && shown.length > 0 && <Board shown={shown} filtering={filtering} game={game} />}
 
         {shown.length === 0 && (
           <div className="ash-panel ah-empty">
@@ -90,42 +82,20 @@ export default function AdminHome({ role, game = GAMES[0].key }: { role: "admin"
             <button className="ash-btn ghost" onClick={() => { setQ(""); setOwner(null); setRealOnly(false); }}>Clear</button>
           </div>
         )}
-
-        {!board && GROUPS.map((g) => {
-          const pages = shown.filter((p) => p.group === g.key && p.url !== "/star-dev");
-          if (!pages.length) return null;
-          const body = (
-            <div className="ah-grid">{pages.map((p) => <Card key={p.url} p={p} />)}</div>
-          );
-          if (g.key === "old") {
-            return (
-              <details key={g.key} id={g.key} className="ah-group ah-old" open={filtering}>
-                <summary><span className="ash-h2" style={{ margin: 0 }}>Old tests ({pages.length})</span></summary>
-                {body}
-              </details>
-            );
-          }
-          return (
-            <section key={g.key} id={g.key} className="ah-group">
-              <div className="ah-ghead"><img src={groupIcon(g.key)}alt={g.name} title={g.name} className="ah-ic" /><h2>{g.name}</h2><span>{pages.length}</span></div>
-              {body}
-            </section>
-          );
-        })}
       </div>
     </AdminShell>
   );
 }
 
-/** Broadcast (D) and Bento (F): every group on one board, one short row per
- * page (Harry, 19 Oct 2026: "even the groups on the side, it's a bit hard to
- * see everything"). Hovering a row says what the page is for. */
+/** Search results: every matching page as one short row, under its group
+ * (Harry, 19 Oct 2026: "even the groups on the side, it's a bit hard to see
+ * everything"). Hovering a row says what the page is for. */
 export const TAGLINE: Record<string, string> = {
   career: "Your journey, your story.", chances: "Moments that change everything.", match: "Play, analyse, improve.",
   data: "Real teams. Real numbers.", places3d: "Explore. Shop. Work.", players: "Bring the team to life.",
   money: "Play. Earn. Upgrade.", sound: "Hear the difference.", site: "Keep it fresh.",
   draft: "The draft game.", tierlists: "Rank what matters.", old: "Kept for reference.",
-  studio: "The team, the notes, the testers.",
+  studio: "The team, the notes, the testers.", research: "What we found out, and what to do.",
 };
 function Board({ shown, filtering, game }: { shown: AdminPage[]; filtering: boolean; game: AdminGameKey }) {
   const groups = groupsOf(game).map((g) => ({ g, pages: shown.filter((p) => p.group === g.key) }))
@@ -202,24 +172,6 @@ function Row({ p }: { p: AdminPage }) {
         <svg className="ahb-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="m9 6 6 6-6 6" /></svg>
       </Link>
     </li>
-  );
-}
-
-function Card({ p }: { p: AdminPage }) {
-  const w = WRITES[p.writes];
-  return (
-    <Link href={p.url} className="ash-panel ah-card" title={`${p.name}: ${p.purpose}`}>
-      <div className="ah-card-top">
-        <b>{p.name}</b>
-      </div>
-      <p>{p.purpose}</p>
-      <div className="ah-card-foot">
-        <span className={`ash-av ${p.owner}`} title={`Owner: ${p.owner}`}>{OWNER_LETTER[p.owner]}</span>
-        <span className="ah-owner">{p.owner === "Shared" ? "Shared" : p.owner}</span>
-        {w && <span className={`ash-tag ${w.tone}`} title={WRITE_HELP[p.writes]}>{w.text}</span>}
-        {p.access === "admin" && <span className="ash-tag grey" title="Only admins can open this page">Admins</span>}
-      </div>
-    </Link>
   );
 }
 

@@ -1,0 +1,27 @@
+/* The Research page: cards of write-ups, painted with the frame's skin tokens
+   (--bc-*), so every admin look works without its own rules. */
+.rs-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.rs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.rs-card {
+  display: flex; flex-direction: column; gap: 8px; padding: 16px 16px 14px; text-decoration: none; color: var(--bc-ink);
+  background: var(--bc-panel); border: 1px solid var(--bc-line); border-top: 3px solid var(--t); border-radius: 6px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18); min-width: 0;
+}
+.bc[data-look="ops"] .rs-card { border-radius: 16px; }
+.bc[data-look="light"] .rs-card { border-radius: 14px; box-shadow: 0 1px 2px rgba(15, 23, 19, 0.06); }
+.bc[data-look="bento"] .rs-card { border-radius: 20px; border-top-width: 1px; background: color-mix(in srgb, var(--t) 10%, #fff); border-color: color-mix(in srgb, var(--t) 26%, #fff); box-shadow: none; }
+.rs-card:hover { border-color: var(--bc-accent); }
+.rs-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rs-topic { font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: var(--bc-ink); padding: 2px 8px; border-radius: 99px;
+  background: color-mix(in srgb, var(--t) 30%, transparent); }
+.rs-date { font-size: 12px; color: var(--bc-ink3); font-weight: 700; }
+.rs-title { font-size: 19px; font-weight: 900; line-height: 1.2; }
+.bc[data-look="broadcast"] .rs-title { font-style: italic; text-transform: uppercase; font-size: 18px; }
+.rs-line { font-size: 14px; color: var(--bc-ink2); line-height: 1.45; flex: 1; }
+.rs-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.rs-by { font-size: 12px; color: var(--bc-ink3); font-weight: 700; }
+.rs-open { font-size: 13px; font-weight: 900; padding: 6px 14px; color: #fff; background: var(--bc-blue); border-radius: 8px; }
+.bc[data-look="broadcast"] .rs-open { border-radius: 0; font-style: italic; text-transform: uppercase; color: #1a1300; background: var(--bc-amber);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+.bc[data-look="ops"] .rs-open { color: #04180d; background: #34e08b; }
+@media (max-width: 640px) { .rs-card { padding: 13px 13px 12px; } .rs-title { font-size: 17px; } }

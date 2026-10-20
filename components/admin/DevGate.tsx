@@ -16,13 +16,17 @@ import { createClient } from "@/lib/supabase/server";
 import { isAdmin, isTester } from "@/lib/admin";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { pageFor } from "@/lib/adminRegistry";
+import AdminTopBar from "./AdminTopBar";
 
 export default async function DevGate({ url, children: page }: { url: string; children: React.ReactNode }) {
   const entry = pageFor(url);
   const access = entry?.access ?? "admin"; // a page missing from the list is admins only
   // Road to Ballon d'Or admin pages fill the screen like the Play Area: the
   // site's top menu and footer hide (globals.css, data-rbd-admin). UI lookover, 19 Oct 2026.
-  const children = entry?.section === "rbd" ? <><span data-rbd-admin hidden />{page}</> : page;
+  // Every other listed page gets the slim admin top bar with THE back arrow,
+  // top left (Harry, 20 Oct 2026). Framed pages hide it (they carry their own).
+  const children = entry?.section === "rbd" ? <><span data-rbd-admin hidden />{page}</>
+    : entry ? <><AdminTopBar title={entry.name} />{page}</> : page;
   if (access === "open" || offlineDevPlayEnabled()) return <>{children}</>;
   let userId: string | null = null;
   try {

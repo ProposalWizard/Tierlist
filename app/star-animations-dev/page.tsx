@@ -155,7 +155,7 @@ export default function AnimationsTestPage() {
   };
 
   return (
-    <BroadcastPage title="2D Animations" sub="Every New animation next to the Old game, with the dials that size them" back="/star-play-dev">
+    <BroadcastPage title="2D Animations" sub="Every New animation next to the Old game, with the dials that size them">
       <style>{`@keyframes kibAnimStrip { from { transform: translateX(0) } to { transform: translateX(-100%) } }`}</style>
       <div className="anim-layout">
         {/* ── Sections ── */}
