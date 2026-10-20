@@ -1,0 +1,17 @@
+B5c reference videos: first round done (20 Oct 2026, 16:32).
+
+10 Higgsfield videos of real-looking people doing each cut-scene moment, made from a still of
+how the scene looks today. 104 credits. Job list: higgsfield.md.
+
+  ref-handshake.mp4        signing: both stand, shake hands, pat on the arm      (still-handshake-game/real.jpg)
+  ref-shirt-photo.mp4      signing: lifts the No. 9 shirt, hand on his shoulder   (still-shirt-photo-*)
+  ref-trophy-lift.mp4      trophy: looks at it, lifts it overhead, shakes it      (still-trophy-lift-*)
+  ref-goal-celebration.mp4 goal: on his knees, arms wide, roar, arms up           (still-goal-celebration-*)
+  ref-mentor.mp4           mentor: talks, hand on the shoulder, walks off         (still-mentor-*)
+  ref-press-answer.mp4     press: answers with his hands                          (still-press-answer-*)
+  ref-walkout.mp4          walk-out: down the tunnel, arms swinging loose         (still-walkout-*)
+  ref-farewell.mp4         farewell: through the guard of honour, waves, claps    (still-farewell-*)
+  ref-home-idle.mp4        Home: weight shifts, shakes his arms out, keepy-ups    (still-home-idle-*)
+  ref-greeting.mp4         ovation greeting: clasp, one-arm hug, back pats        (still-greeting-real.jpg)
+
+Not made: the garden bench. Higgsfield originals need deleting by hand (see higgsfield.md).

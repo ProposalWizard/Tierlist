@@ -821,6 +821,6 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   // the frame-by-frame filming hook: seek(t) draws exactly that moment
   (window as any).__frameStep = { owner: api, duration, seek: (s: number) => api.frameSeek(s) };
   (window as any).__cutscene = api;
-  (window as any).__cutsceneDebug = { camera, cast, props, rootAt: (id: string, t: number) => rootAt(C, id, t) };
+  (window as any).__cutsceneDebug = { camera, cast, props, rootAt: (id: string, t: number) => rootAt(C, id, t), pose: (s: number) => poseActors(clamp(s, 0, duration)) };
   return api;
 }
