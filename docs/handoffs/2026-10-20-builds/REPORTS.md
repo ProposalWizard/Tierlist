@@ -233,3 +233,13 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Collarbones level and no overlaps in the bind pose on all 8 bodies (measured with B5c's checker). In clips: walk hand-into-thigh 10.0 → 7.7 / 7.0 / 5.1 cm; idle boot-into-boot worse 2.9 → 5.1–5.9 cm (longer legs, same stance).
 - Head 16–22% smaller than today, so the face is smaller on screen. Six new GLBs packed (~220 KB each).
 - Waiting on Harry: pick A, B or C.
+
+## B5c — shoulders, arms, overlaps, fluid arms, posture (merged)
+- Shoulders: the clips lifted the collarbones (13° idle/applause/talk, 23–26° handshake/wave/point/celebrations; 49 of 73 clips > 3°); now level unless an arm rises (up to 22° arm straight up). Neck base above the shoulder joints: idle 4.0 → 8.5 cm, handshake −0.1 → 8.5 cm. Bake: tools/motionref/settle_clips.mts (lib/star/three3d/shoulderSet.ts); test shoulderSet.mts.
+- Press desk: top 0.765 → 0.665 m (was 11 cm under the seated shoulders); neck ÷ shoulder width in the shot 0.36 → 0.55.
+- Arms through the body: walk hand 8.8 cm into the hip in 92% of frames → each arm turns about the shoulder to clear torso/legs/head (not a hand gripping a prop). Clips/scenes with a forearm or hand inside the body: 50 → 20 (today's body). Goal scene 10.5 → 3.1 cm, signing 11.6 → 2.5 cm.
+- Self-overlap check: tools/motionref/body_overlap.mts (14 parts, every pair, every frame), --gate + overlap_exceptions.json; tests/star/bodyOverlap.mts. Named exceptions: legs (hip fold, inner thighs, knees), upper arm vs lat (body fix needed), keeper dives, sitting hands into shins 3–6 cm.
+- Fluid arms from the 5 HQ references: frozen-wrist share trophy 0.49 → 0.14, goal 0.18 → 0.05, press 0.87 → 0.37, farewell 0.28 → 0.09 (real 0.00–0.02).
+- Posture pass (Harry 23:21): the capture idle leaned onto its toes. Side-on vs real (MediaPipe on 28 refs): hips ahead of ankles 0.24 → 0.13–0.14 (real ≈0.05); knee bend 18–21° → 8–12° (≈7°); head ahead 0.12–0.18 → 0.10–0.14 (0.02–0.17); arms out 7–9° → 17–18° (19–20°); elbow 11–13° → 15–16° (19–22°). Front-on change is small. Not done: breathing; chest leans 1° back; relaxed knee 27°; pelvis side tilt 5–6° (real 3–4°).
+- With B5b's grips: trophy slip ≤ 0.4 cm, cup 2.6 cm clear of the head. Bug caught: the first posture bake broke keys in untouched clips; tools/motionref/clip_check.mts now refuses to write a broken file.
+- Higgsfield: 125 credits for B5c's rounds (list in b5c/higgsfield.md), none after 18:25.
