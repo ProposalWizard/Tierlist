@@ -4,14 +4,15 @@ import type { CareerState, Fixture, CupRun, Competition, LeagueTeam, LeagueSquad
 import type { NamedOppGoal } from "./leagueSquads";
 import {
   openCup, playCupRound, finishCupToWinner, yourTie, currentRound, cupStrength, tieWinner,
-  roundNamesFor, stillIn, isTwoLeggedRound, type CupState, type CupId,
+  roundNamesFor, stillIn, isTwoLeggedRound, hasBye, type CupState, type CupId,
 } from "./cups";
+import { openLowerLeagueTrophy } from "./lowerLeagueTrophy";
 import { mulberry32, sortLeague } from "./season";
 import {
   PRE_SEASON_WEEK, EURO_LEAGUE_PHASE_WEEKS, EURO_KO_SLOTS_WITH_R32,
   LEAGUE_CUP_SLOTS, FA_CUP_SLOTS,
-  leagueCupSlotsFor, faCupSlotsFor, divisionOf, fixtureTimestamp, tournamentWeeksFor,
-  type CareerDivision,
+  leagueCupSlotsFor, faCupSlotsFor, lowerLeagueTrophySlotsFor, divisionOf, fixtureTimestamp, tournamentWeeksFor,
+  type CareerDivision, type CupSlot,
 } from "./calendar";
 import {
   openEuro, poolFor, knockoutSlots, simulateEuroMatchday, sortEuro, leaguePhaseComplete, drawTie,
@@ -501,6 +502,7 @@ export function fixtureLabel(f: Fixture): string {
 const COMPETITION_ABBREV: Record<Competition, string> = {
   "FA Cup": "FA Cup",
   "League Cup": "L Cup",
+  "Lower League Trophy": "LL Trophy",
   "Champions League": "UCL",
   "Europa League": "UEL",
   "Conference League": "UECL",
@@ -547,7 +549,13 @@ export function competitionAbbrev(f: Fixture, division: CareerDivision): string 
  * rounds, which is both how the two actually sit in a season and how they avoid
  * landing on the same week as each other.
  */
-export function seedCups(career: CareerState): { states: CupState[]; fixtures: Fixture[] } {
+export function seedCups(
+  career: CareerState,
+  /** Last season's League One, best first, for the Lower League Trophy's
+   *  byes (lowerLeagueTrophy.ts leagueOneOrder, read before the rollover).
+   *  Absent in a first season: the 8 strongest League One clubs. */
+  opts: { leagueOneOrder?: string[] } = {},
+): { states: CupState[]; fixtures: Fixture[] } {
   const rng = mulberry32(career.season * 6151 + career.league.length * 13);
   const division = divisionOf(career);
   // The National League never enters the League Cup (real life) — an empty
@@ -558,6 +566,10 @@ export function seedCups(career: CareerState): { states: CupState[]; fixtures: F
     ...(leagueCupSlotsFor(division).length > 0
       ? [openCup("League Cup", career.league, division, rng)] : []),
     openCup("FA Cup", career.league, division, rng),
+    // The Lower League Trophy is opened in every career, on its own seed so
+    // the two cups above draw exactly as before. Played by you only when
+    // your club is in it; otherwise it plays out on its own dates.
+    openLowerLeagueTrophy(career, mulberry32(career.season * 7919 + 101), opts.leagueOneOrder),
   ];
   const fixtures: Fixture[] = [];
   for (const st of states) {
@@ -601,12 +613,17 @@ export function seedCups(career: CareerState): { states: CupState[]; fixtures: F
  * double-booked dates from the `kind`-aware `fixtureDate` — just not this
  * additional rest-gap push.
  */
+/** The calendar slots of one cup, in this division's week numbers. */
+function cupSlotsFor(competition: CupId, division: CareerDivision): CupSlot[] {
+  if (competition === "Lower League Trophy") return lowerLeagueTrophySlotsFor(division);
+  return competition === "League Cup" ? leagueCupSlotsFor(division) : faCupSlotsFor(division);
+}
+
 export function cupRoundWeek(
   competition: CupId, roundIndex: number, _clubCount?: number,
   division: CareerDivision = "premier", inEurope = false,
 ): number {
-  const slots = competition === "League Cup"
-    ? leagueCupSlotsFor(division) : faCupSlotsFor(division);
+  const slots = cupSlotsFor(competition, division);
   // One entry per ROUND, not per match: the League Cup's two-legged semi-final
   // occupies two slots and is still the fourth round of the competition.
   const byRound: string[] = [];
@@ -640,8 +657,7 @@ function clearOfEurope(week: number, competition: CupId, division: CareerDivisio
 export function cupSecondLegWeek(
   competition: CupId, roundIndex: number, division: CareerDivision = "premier",
 ): number | null {
-  const slots = competition === "League Cup"
-    ? leagueCupSlotsFor(division) : faCupSlotsFor(division);
+  const slots = cupSlotsFor(competition, division);
   const byRound: string[] = [];
   for (const s of slots) if (!byRound.includes(s.round)) byRound.push(s.round);
   const round = byRound[Math.min(roundIndex, byRound.length - 1)];
@@ -864,7 +880,11 @@ export function advanceEliminatedCups(
     // in it, but you are not, so it plays on like any cup you are out of.
     const tied = !!career.cupTied && career.cupTied.season === career.season
       && career.cupTied.competitions.includes(state.competition);
-    if (stillIn(state, club) && !tied) return state;
+    // A bye (the Lower League Trophy's Round 1) is still in, but has no tie
+    // to play: the round plays on without you, and you come out the other
+    // side with a tie in the next (cupFixturesOwed puts it on the calendar).
+    const bye = hasBye(state, club);
+    if (stillIn(state, club) && !tied && !bye) return state;
 
     let s = state;
     // Bounded the same way finishCupToWinner always was — one more than the
@@ -885,11 +905,40 @@ export function advanceEliminatedCups(
       if (played === s) break; // nothing left to play — already resolved
       s = played;
       changed = true;
+      // Through on a bye: your tie in the next round is yours to play.
+      if (bye && !tied && yourTie(s, club)) break;
     }
     return s;
   });
 
   return changed ? next : states;
+}
+
+/**
+ * Your cup ties that are drawn but not on the calendar: the round after a bye
+ * (the Lower League Trophy's eight byes skip Round 1). Every other tie is put
+ * on the calendar by the tie before it; a bye has no tie before it.
+ */
+export function cupFixturesOwed(career: CareerState, states: CupState[]): Fixture[] {
+  const club = career.player.club;
+  const out: Fixture[] = [];
+  for (const st of states) {
+    if (st.winner) continue;
+    const tied = !!career.cupTied && career.cupTied.season === career.season
+      && career.cupTied.competitions.includes(st.competition);
+    if (tied) continue;
+    // Only the round straight after a bye of yours: every other tie is put
+    // on the calendar by the tie before it, and must not be put there twice.
+    const before = st.rounds[st.rounds.length - 2];
+    if (!before?.byes?.includes(club)) continue;
+    const tie = yourTie(st, club);
+    if (!tie || tie.hs !== undefined) continue;
+    const pending = career.fixtures.some(f => !f.played && f.kind === "cup" && f.competition === st.competition);
+    if (pending) continue;
+    const f = cupFixtureFor(st, career, st.rounds.length - 1);
+    if (f) out.push(f);
+  }
+  return out;
 }
 
 // ── Playing in Europe ───────────────────────────────────────────────────────

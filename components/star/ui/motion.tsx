@@ -20,6 +20,7 @@
  * guard watches for canvas loops, and none of this is football.
  */
 import { useEffect, useRef, useState } from "react";
+import { ffNow, ffSkipped, onFfSkip } from "./fastForward";
 
 export const KIT_CSS = `
   @keyframes kib-rise { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
@@ -180,11 +181,14 @@ export function useCountUp(value: number, ms = 700): number {
   useEffect(() => {
     const start = from.current;
     if (start === value) return;
-    if (prefersReducedMotion()) { from.current = value; setShown(value); return; }
-    const t0 = performance.now();
+    if (prefersReducedMotion() || ffSkipped()) { from.current = value; setShown(value); return; }
+    // The post-match clock (fastForward.tsx): 4x while held, the end on a
+    // double-tap; the wall clock everywhere else.
+    const t0 = ffNow();
     let raf = 0;
-    const tick = (t: number) => {
-      const k = Math.min(1, (t - t0) / ms);
+    const offSkip = onFfSkip(() => { cancelAnimationFrame(raf); from.current = value; setShown(value); });
+    const tick = () => {
+      const k = ffSkipped() ? 1 : Math.min(1, (ffNow() - t0) / ms);
       const e = 1 - Math.pow(1 - k, 3);
       const v = start + (value - start) * e;
       from.current = v;
@@ -193,7 +197,7 @@ export function useCountUp(value: number, ms = 700): number {
       else from.current = value;
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => { cancelAnimationFrame(raf); offSkip(); };
   }, [value, ms]);
   return shown;
 }

@@ -1670,6 +1670,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
     if (!skipDraw && playedFixture) {
       const cupCompetition = playedFixture.competition === "FA Cup" || playedFixture.competition === "League Cup"
+        || playedFixture.competition === "Lower League Trophy"
         ? playedFixture.competition : null;
       if (cupCompetition) {
         const state = from.cupState?.find((s) => s.competition === cupCompetition);

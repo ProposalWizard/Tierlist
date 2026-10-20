@@ -6,6 +6,7 @@ import ClubBadge from "./ClubBadge";
 import { PressButton, Shine } from "./ui";
 import { Screen } from "./ui/Screen";
 import { prefersReducedMotion } from "./ui/motion";
+import FastForward, { ffTimeout, onFfSkip } from "./ui/fastForward";
 
 /**
  * THE CUP AND EUROPEAN ROUND-UP (Mikey, 8 Oct 2026): after each of your cup
@@ -24,6 +25,7 @@ export type { RoundupStage };
 export const COMPETITION_GLOW: Record<string, { glow: string; bg: string }> = {
   "FA Cup": { glow: "#dc2626", bg: "radial-gradient(120% 80% at 50% 25%, #7f1d1d 0%, #3b0a0a 60%, #1a0505 100%)" },
   "League Cup": { glow: "#16a34a", bg: "radial-gradient(120% 80% at 50% 25%, #1f7a43 0%, #0f4a28 55%, #082a17 100%)" },
+  "Lower League Trophy": { glow: "#d97706", bg: "radial-gradient(120% 80% at 50% 25%, #7c4a0b 0%, #4a2c06 55%, #241503 100%)" },
   "Champions League": { glow: "#2563eb", bg: "radial-gradient(120% 80% at 50% 25%, #1e3a8a 0%, #0b1a4a 60%, #050b24 100%)" },
   "Europa League": { glow: "#f97316", bg: "radial-gradient(120% 80% at 50% 25%, #9a3412 0%, #431407 60%, #1c0802 100%)" },
 };
@@ -257,7 +259,7 @@ export default function KnockoutRoundup({ competition, stages, you, nextLine, on
 }) {
   const [at, setAt] = useState(0);
   const [step, setStep] = useState(0);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timer = useRef<(() => void) | null>(null);
   const stage = stages[at];
   const last = at === stages.length - 1;
   const bracketSteps = stage?.kind === "bracket" && stage.view.animate !== null ? (stage.view.animate === -1 ? 1 : 2) : 0;
@@ -268,17 +270,20 @@ export default function KnockoutRoundup({ competition, stages, you, nextLine, on
   useEffect(() => {
     if (prefersReducedMotion()) { setStep(bracketSteps); return; }
     if (animDone) return;
-    timer.current = setTimeout(() => setStep(s => s + 1), step === 0 ? 700 : 1100);
-    return () => { if (timer.current) clearTimeout(timer.current); };
+    timer.current = ffTimeout(() => setStep(s => s + 1), step === 0 ? 700 : 1100);
+    return () => { timer.current?.(); };
   }, [step, animDone, bracketSteps]);
+  // Double-tap (fastForward.tsx): the bracket's end state, like a tap.
+  useEffect(() => onFfSkip(() => setStep(bracketSteps)), [bracketSteps]);
 
-  const skip = () => { if (timer.current) clearTimeout(timer.current); setStep(bracketSteps); };
+  const skip = () => { timer.current?.(); setStep(bracketSteps); };
   const scrolls = stage?.kind !== "bracket";
   const content = useMemo(() => stage, [stage]);
   if (!content) return null;
 
   return (
     <Screen glow={look.glow} className="max-w-sm px-3 py-3">
+      <FastForward />
       <div className="w-full select-none" onClick={animDone ? undefined : skip}>
         <div className="relative overflow-hidden" style={{ background: look.bg }}>
           <div className="relative z-10 pt-3 pb-2 text-center">

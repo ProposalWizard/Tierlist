@@ -392,6 +392,11 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     // Harry, 1 Oct 2026 (P26): new careers start manager/team-mates/fans 50,
     // happiness 45; and a new career carries the unlock chain (unlocks.ts).
     for (const k of ["relationships", "happiness", "unlocks"]) delete rest[k];
+    // Harry, 20 Oct 2026: every career now opens the Lower League Trophy as a
+    // third cup (on its own seed, so the two old cups draw exactly as before).
+    if (Array.isArray(rest.cupState)) {
+      rest.cupState = (rest.cupState as { competition: string }[]).filter(s => s.competition !== "Lower League Trophy");
+    }
     return JSON.stringify(rest);
   };
 

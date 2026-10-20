@@ -11,6 +11,7 @@ import { ClubCard, CountUp, PressButton, Burst, FloatText, Glow, Shine, Pop, clu
 import { SquareBar } from "./ui/Flat";
 import { FillStar } from "./ui/TopMeter";
 import { Screen, Kicker, SectionLabel, useLater } from "./ui/Screen";
+import FastForward, { ffTimeout } from "./ui/fastForward";
 
 /** Every star, not a rounded "3k" — Harry wants the real numbers. */
 const exact = (n: number) => Math.round(n).toLocaleString("en-GB");
@@ -118,6 +119,8 @@ export default function PostMatch({ stats, homeTeam, awayTeam, onContinue, compe
 
   return (
     <Screen glow={theme.glow} tone={look.color}>
+      {/* Hold anywhere: 4x. Double-tap: the end of this screen (Harry, 20 Oct 2026). */}
+      <FastForward />
       <div className="mb-2 flex justify-center">
         <Kicker color={competition ? "#93c5fd" : "#fcd34d"}>{competition ? competition : "Full Time"}</Kicker>
       </div>
@@ -435,10 +438,10 @@ function StarBar({ before, after, on, star }: { before?: number; after?: number;
     setStage(1);
     sfx("star-tick");
     if (!up) return;
-    const t1 = setTimeout(() => { setStage(2); sfx("level-up"); }, plan.first + STAR_HOLD_MS);
+    const t1 = ffTimeout(() => { setStage(2); sfx("level-up"); }, plan.first + STAR_HOLD_MS);
     // One frame at 0 with no glide, then fill again.
-    const t2 = setTimeout(() => setStage(3), plan.first + STAR_HOLD_MS + 90);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const t2 = ffTimeout(() => setStage(3), plan.first + STAR_HOLD_MS + 90);
+    return () => { t1(); t2(); };
   }, [on, up, after === undefined]);
   if (after === undefined) return null;
   const value = stage === 0 ? begin : stage === 1 ? (up ? 100 : endPct) : stage === 2 ? 0 : endPct;
@@ -506,8 +509,7 @@ function RelBar({ label, from, to, on, delay }: { label: string; from: number; t
   const [moved, setMoved] = useState(false);
   useEffect(() => {
     if (!on) return;
-    const t = setTimeout(() => setMoved(true), delay);
-    return () => clearTimeout(t);
+    return ffTimeout(() => setMoved(true), delay);
   }, [on, delay]);
   const up = to > from, down = to < from;
   const tint = moved && up ? "#34d399" : moved && down ? "#f87171" : "#e5e7eb";

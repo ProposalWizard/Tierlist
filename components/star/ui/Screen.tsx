@@ -31,6 +31,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { KitStyles, prefersReducedMotion } from "./motion";
+import { ffTimeout } from "./fastForward";
 import { rgba } from "./theme";
 import PressButton from "./PressButton";
 
@@ -187,8 +188,8 @@ export function useLater(ms: number): boolean {
   const [on, setOn] = useState(false);
   useEffect(() => {
     if (prefersReducedMotion() || ms <= 0) { setOn(true); return; }
-    const t = setTimeout(() => setOn(true), ms);
-    return () => clearTimeout(t);
+    // On the post-match clock (fastForward.tsx): sooner while held, at once on a skip.
+    return ffTimeout(() => setOn(true), ms);
   }, [ms]);
   return on;
 }

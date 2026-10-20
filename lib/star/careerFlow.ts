@@ -31,10 +31,11 @@ import { progressObjectives, rollSponsorSeason } from "./sponsors";
 import { appearanceMoney, loyaltyMoney, contractForClubMove } from "./contracts";
 import {
   seedSeasonKnockouts, seedCups, seedEurope, settleEuro, settleCupTie, resolveKnockout,
-  qualificationFor, leaguePosition, seasonQualifiers, advanceEliminatedCups, nextFixtureFor,
+  qualificationFor, leaguePosition, seasonQualifiers, advanceEliminatedCups, cupFixturesOwed, nextFixtureFor,
 } from "./competitions";
 import { STARTING_EUROPEAN_QUALIFICATION } from "./clubs";
 import { finishCupToWinner } from "./cups";
+import { LOWER_LEAGUE_TROPHY, leagueOneOrder, lowerLeagueTrophyPrize } from "./lowerLeagueTrophy";
 import { simulateShootout } from "./shootout";
 import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
@@ -1029,6 +1030,8 @@ export function creditMatchResult(
     const clock = fixtureTimestamp(career.player.startYear, career.season, fixture.week, fixture.kind, divisionOf(career));
     const cupsRng = mulberry32(career.season * 60013 + fixture.week * 7 + 41);
     cupState = advanceEliminatedCups({ ...career, cupState }, clock, cupsRng);
+    // Through on a bye (the Lower League Trophy): the next tie goes on the calendar.
+    extraFixtures = [...extraFixtures, ...cupFixturesOwed({ ...career, fixtures: [...career.fixtures, ...extraFixtures] }, cupState ?? [])];
   }
 
   // International football is its own record. Caps and international goals do
@@ -1165,6 +1168,8 @@ export function creditMatchResult(
     money: alreadyPlayed ? career.money : career.money + stats.totalCash
       + (isInternational ? 0 : appearanceMoney(career.contract))
       + progressed.earned
+      // The Lower League Trophy's prize: two weeks' wage (lowerLeagueTrophy.ts).
+      + (cupTrophy?.competition === LOWER_LEAGUE_TROPHY ? lowerLeagueTrophyPrize(career) : 0)
       - (career.horse ? horseUpkeep(career.horse) : 0),
     // Twenty minutes off the bench does not sharpen you as much as ninety —
     // and a replay does not sharpen you again.
@@ -1470,6 +1475,7 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
     st.winner ? st : finishCupToWinner(st, career.league, career.player.club, rngWinners));
   const faCupWinner = finishedCups.find(st => st.competition === "FA Cup")?.winner ?? null;
   const leagueCupWinner = finishedCups.find(st => st.competition === "League Cup")?.winner ?? null;
+  const lowerLeagueTrophyWinner = finishedCups.find(st => st.competition === LOWER_LEAGUE_TROPHY)?.winner;
   const finalTable = sortLeague(career.league);
   const leagueWinner = finalTable[0]?.name;
   const leagueRunnerUp = finalTable[1]?.name;
@@ -1511,6 +1517,7 @@ export function resolveSeasonWinners(career: CareerState): SeasonWinners {
     leagueRunnerUp,
     faCup: faCupWinner ?? undefined,
     leagueCup: leagueCupWinner ?? undefined,
+    ...(lowerLeagueTrophyWinner ? { lowerLeagueTrophy: lowerLeagueTrophyWinner } : {}),
     championsLeague: championsLeagueWinner,
     europaLeague: europaLeagueWinner,
     ...(career.tournament?.season === career.season && career.tournament.winner
@@ -2012,7 +2019,9 @@ export function advanceSeason(
   // the national side is picking you.
   const seeded = seedSeasonKnockouts(next);
   next.cups = seeded.runs;
-  const drawn = seedCups(next);
+  // The Lower League Trophy's byes go to last season's League One top 8, so
+  // its order is read off the career BEFORE this rollover.
+  const drawn = seedCups(next, { leagueOneOrder: leagueOneOrder(career) });
   next.cupState = drawn.states;
   // Europe: the field, and all eight league-phase games at once. A league phase
   // can be drawn up in advance because nothing you do changes who is in it.
@@ -2201,6 +2210,7 @@ export function simulateMissedFixture(
     const clock = fixtureTimestamp(career.player.startYear, career.season, fixture.week, fixture.kind, divisionOf(career));
     const cupsRng = mulberry32(career.season * 60013 + fixture.week * 7 + 41);
     cupState = advanceEliminatedCups({ ...career, cupState }, clock, cupsRng);
+    extraFixtures = [...extraFixtures, ...cupFixturesOwed({ ...career, fixtures: [...career.fixtures, ...extraFixtures] }, cupState ?? [])];
   }
 
   const fixtures = career.fixtures.map((f) =>
@@ -2243,7 +2253,9 @@ export function simulateMissedFixture(
     // You are paid for the week, not for turning up, so the share is the
     // same as it would have been had you played this one.
     // …and your sponsors pay you for the week whether you played or not.
-    money: career.money + wageForFixture(career, fixture) + sponsorPayFor(career, fixture) - (career.horse ? horseUpkeep(career.horse) : 0),
+    money: career.money + wageForFixture(career, fixture) + sponsorPayFor(career, fixture)
+      + (cupTrophy?.competition === LOWER_LEAGUE_TROPHY ? lowerLeagueTrophyPrize(career) : 0)
+      - (career.horse ? horseUpkeep(career.horse) : 0),
     weekActions: WEEK_ACTIONS,
     ...sessionsAfterMatch(career, dayFor(fixture.kind, fixture.week, divisionOf(career))),
     matchFitness: Math.max(20, career.matchFitness + (fixture.watch ? 0 : MISSED_WEEK.matchFitness)),
