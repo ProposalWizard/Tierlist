@@ -12,6 +12,7 @@ import {
   RECORDERS, DRIVE_CLIENT_ID, DRIVE_FOLDER_NAME, canRecordScreen, connectDrive, lengthLabel,
   recordingName, startRecording, starterFor, uploadToDrive, type LiveRecording, type Recorder,
 } from "@/lib/recording";
+import LiveShareCard from "./LiveShareCard";
 import "./videos.css";
 
 type Take = { blob: Blob; ext: string; seconds: number; at: Date; url: string };
@@ -208,6 +209,9 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
             </div>
           </section>
         )}
+
+        {/* Live share (test), Harry 20 Oct 2026: admins only. */}
+        {role === "admin" && <LiveShareCard who={who} />}
 
         <details className="ash-panel vt-card vt-else">
           <summary>Recorded somewhere else?</summary>

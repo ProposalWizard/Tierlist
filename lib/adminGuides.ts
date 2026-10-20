@@ -783,7 +783,7 @@ export const ADMIN_GUIDES = {
   },
   "/admin/videos": {
     title: "Videos",
-    what: "Record your screen and voice here, and the recording goes to your Drive with a clear name and a line to paste to Claude.",
+    what: "Record your screen and voice here, and the recording goes to your Drive with a clear name and a line to paste to Claude. Admins also get Live share (test): Claude sees your screen a picture a second and hears you, and answers in its chat, even unasked.",
     buttons: [
       { group: "Record", items: [
         ["Harry / Mikey / Leo", "Who is recording. Goes in the file name. Remembered on this device."],
@@ -801,14 +801,39 @@ export const ADMIN_GUIDES = {
         ["Download", "Saves the video to this device instead."],
         ["Open the Breakdowns folder ↗", "Harry's Drive folder where every breakdown is saved."],
       ] },
+      { group: "Live share (test) — admins only", items: [
+        ["Start live share", "The browser asks which screen, window or tab to share, then (with Voice on) asks for the microphone. It makes a 6-letter code. Use Chrome or Edge on a computer."],
+        ["Voice", "On = what you say is written down as you talk (Chrome, Edge, Safari). Off, or a browser with no voice (Firefox) = type notes instead."],
+        ["Copy for Claude", "Copies one line to paste into a Claude chat. Claude then runs the watcher and answers you in its chat."],
+        ["Copy link / Watch it ↗", "The page that shows the newest picture and what was said, for anyone on the team to watch."],
+        ["Type a note for Claude / Send", "Adds a typed line, as if you had said it."],
+        ["Stop", "Ends the share. The browser's own Stop sharing bar does the same. It also ends by itself after 30 minutes."],
+        ["Delete", "Shown after Stop. Deletes every picture and line of that share."],
+      ] },
     ],
     saving: [
       "Your own Google Drive, folder \"Knowitball screen recordings\" → a folder for whoever is picked under Who is recording (the site makes them the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it. You can move the main folder anywhere in Drive; the site still finds it.",
       "The video goes from your browser straight to Google. The site keeps only its name and link (dev_recordings table), so that person's Claude chats break it down the next time they are messaged (scripts/hooks/recordings-hook.mjs). Needs dev_recordings.sql run once.",
       "Drive needs NEXT_PUBLIC_GOOGLE_CLIENT_ID on the site. Until it is set, recordings only download.",
+      "Live share: once a second, when the screen changed, a small picture (720 px wide) goes to public storage (tierlist-images → live/<code>/), with what was said (transcript.json) and how it is going (state.json, including how much each picture changed). Only the newest 300 pictures (about 5 minutes) are kept. No table. Anyone with the code can open the pictures while they exist; Delete removes them all.",
+      "Claude's side: npx tsx scripts/live-watch.mts <code> prints each line said with the picture on screen at that moment, a SCREEN line when the screen changes (new screen / part changed / small change), and keeps the newest picture in a file it can look at. Claude answers in its chat (about 5–20 s behind), and may comment without being asked. Nothing is said back on this page.",
     ],
     inGame: ["Nowhere."],
-    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · /api/dev-recordings + scripts/hooks/recordings-hook.mjs (auto-read) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md",
+    needs: ["Live share needs SUPABASE_SERVICE_ROLE_KEY on the site (it is there for the other admin uploads). Without it, Start shows \"the site has no storage key\"."],
+    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · /api/dev-recordings + scripts/hooks/recordings-hook.mjs (auto-read) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md · Live share: app/admin/videos/LiveShareCard.tsx, lib/liveShare.ts (pure; tests/star/liveShare.mts), lib/liveShareBrowser.ts, lib/liveShareStore.ts, /api/admin/live-share, scripts/live-watch.mts",
+  },
+  "/admin/videos/live": {
+    title: "Live share",
+    what: "Watch a live share from Admin → Videos: the newest picture of the shared screen and what the person said, every 2 seconds.",
+    buttons: [
+      { group: "On this page", items: [
+        ["(nothing to press)", "It reads by itself every 2 seconds and says Ended when the share stops."],
+      ] },
+    ],
+    saving: ["Nothing. This page only reads the pictures and lines the sharer's browser sends to public storage (tierlist-images → live/<code>/)."],
+    inGame: ["Nowhere."],
+    needs: ["SUPABASE_SERVICE_ROLE_KEY on the site, as for the Videos page's Live share."],
+    dev: "app/admin/videos/live/[code]/* · reads <storage>/live/<code>/state.json, transcript.json, f000001.jpg… (lib/liveShare.ts) · a Claude chat uses scripts/live-watch.mts instead",
   },
   "/admin/team": {
     title: "Team board",
