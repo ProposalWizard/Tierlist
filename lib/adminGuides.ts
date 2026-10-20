@@ -305,7 +305,7 @@ export const ADMIN_GUIDES = {
       "Commit marks to the game writes them into data/realmoments/picks.json on main (a real commit) and into the table.",
     ],
     inGame: [
-      "Settings → Harry changes → Full highlights rebuild: On (test) → Real moment highlights: On. Then about 1 in 4 open-play chances of a kind the real moments have (one-on-one, tight angle, long range) is a real moment marked In game here: the ball and every man where they really stood, with the real 4 seconds before it as the build-up (a tap skips it). Off: the game is exactly as before.",
+      "Settings → Full highlights rebuild: On → Real moment highlights: On. Then about 1 in 4 open-play chances of a kind the real moments have (one-on-one, tight angle, long range) is a real moment marked In game here: the ball and every man where they really stood, with the real 4 seconds before it as the build-up (a tap skips it). Off: the game is exactly as before.",
       "To see one at once while testing: add ?fhr=on&realmoments=every to the career's or Infinite Match's address: every open-play chance of those kinds is then a real one (never stored).",
     ],
     needs: ["The star_real_moments_picks table (supabase/migrations/star_real_moments_picks.sql). Until it is run, marks stay on this device only. Commit needs GITHUB_TOKEN."],
@@ -1103,6 +1103,7 @@ export const ADMIN_GUIDES = {
           ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game. Framed by the match's own camera (Full highlights rebuild, phase 1): the match's zoom, the same canvas shape, tipped back by the camera angle, you not drawn on a shooting chance (the ball is you) and the men at the match's size — so nothing moves when you press Play. Dragging still works on the tipped picture. Add ?still=builder to the address to see the old builder's frame instead."],
           ["A penalty", "Harry's penalty rules: the keeper stays dead centre on his line, the ball on the spot, you straight behind it and the camera fixed — none of them drag. Anyone else only slides along the edge of the box."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
+          ["Build-ups (panel)", "Full highlights rebuild for this phone: Off / On. On: ▶ Play first plays the build-up before the chance (the moves before it; a foul before some free kicks and penalties), exactly as a career match does, then the chance — the other players still running when it is yours. Tap the match to skip it. A layer on top: the picture, your edits and Save are never changed by it. Moment (Auto / Normal / Big: final, 90') · Length (Short / Auto / Long) · Intensity (Calm / Auto / High): this page's and Infinite Match's only, stored on this phone, never in a career."],
           ["Fix this chance", "The panel on the right (under the picture on a phone): the buttons below, Save and Commit."],
           ["+ Mate / + Opp", "Add a team-mate or an opponent."],
           ["Remove", "Takes out the player you tapped."],
@@ -1155,13 +1156,20 @@ export const ADMIN_GUIDES = {
 
   "/star-fhr-dev": {
     title: "Full highlights rebuild",
-    what: "The Full Highlights Rebuild's switch, and the ruler: today's numbers (chances, goals, players reacting, start distance) that every phase of the rebuild is held to.",
+    what: "The rebuild's test area, in two tabs: the Ruler (today's numbers every phase is held to) and Build-ups (a generated build-up played by the real match). Not on the admin list any more (Harry, 20 Oct 2026): the switch lives in Settings; this page is reached from the Play Area.",
     buttons: [
+      {
+        group: "Tabs",
+        items: [
+          ["Ruler", "Today's numbers: chances, goals, players reacting, start distance, Off and On side by side. Measured when the tab opens."],
+          ["Build-ups", "A generated build-up played by the real match, with the same build-up drawn from above."],
+        ],
+      },
       {
         group: "The switch",
         items: [
-          ["Off / On (test)", "The same switch as Settings → Harry changes → Full highlights rebuild. Off is the game as it is today. On also turns Chances to New. (Infinite Highlights draws its still with the real match's camera either way: that test page's default since phase 1.) Stored on this phone only."],
-          ["Infinite Highlights →", "Opens Infinite Highlights, to see the still with the switch On."],
+          ["Off / On", "The same switch as Settings → Full highlights rebuild (also in the match's ⚙ and the ⚙ before kick-off, each with a ? that lists every part). Off is the game as it is today. On also turns Chances to New. Stored on this phone only."],
+          ["Infinite Highlights → / Play Area →", "Open the two test areas that play build-ups when the switch is On."],
         ],
       },
       {
@@ -1184,7 +1192,7 @@ export const ADMIN_GUIDES = {
           ["The match", "The real match plays a chance the real match served, starting with its generated 4–8 second build-up (the moves before it, made from real football patterns). Tap the match to skip to the chance. It always ends exactly on the chance's own picture."],
           ["Generate another", "The next chance the match serves, with a new build-up. Every chance gets its own; the same chance always gets the same one."],
           ["↺ Watch again", "Plays the same build-up and chance again."],
-          ["The three small pitches", "The same build-up from above: the first frame, the middle and the last (= the chance). White is you, blue the chance's team-mates, pale blue team-mates who are only in the build-up (off the screen when the chance starts), red defenders, yellow the keeper; dashed is the chance's frame."],
+          ["The three small pitches", "The same build-up from above: the first frame, the middle and the last (= the chance, once the players still running have stopped). White is you, blue the chance's team-mates, pale blue team-mates who are only in the build-up (off the screen when the chance starts), red defenders (a white ring: the extra defender who ran in from off the screen), yellow the keeper; dashed is the chance's frame."],
           ["The list", "Each touch: a pass, a ball in the air or a carry, how long, who plays it, and whether it came from a real route into this kind of chance."],
         ],
       },
@@ -1193,10 +1201,10 @@ export const ADMIN_GUIDES = {
       "The switch is stored in this browser only (localStorage star-fhr). The numbers are worked out on the page and kept nowhere. No career is touched.",
     ],
     inGame: [
-      "Off: nothing in the game changes. On: Chances: New is on in every match on this phone (the same as setting Chances: New by hand), Infinite Highlights' still uses the match camera, and every open-play chance in a match starts with a generated 4–8 s build-up (never penalties, free kicks or corners). Later phases of the rebuild arrive here first.",
+      "Off: nothing in the game changes. On: Chances: New is on in every match on this phone (the same as setting Chances: New by hand), Infinite Highlights' still uses the match camera, every open-play chance in a match starts with a generated build-up (4–8 s; longer late in a close game, up to about 11 s in the 90th minute of a level final), the other players are still running when the chance becomes yours and stop on their places while you aim, a covering defender sometimes sprints in from off the screen and joins the chance when the defence is thin, and about half of free kicks and penalties first show the foul that won them. Infinite Highlights (on Play) and Infinite Match play the same build-ups, with Moment / Length / Intensity dials of their own.",
       "Under the switch in Settings, while it is On: \"Real moment highlights: Off | On\". On: about 1 in 4 open-play chances of a kind the real moments have is a REAL moment (every man where he really stood) with the real 4 s before it as its build-up. Which moments: the Real moments page (/star-real-moments-dev).",
     ],
-    dev: "app/star-fhr-dev/{page,BuildUpPanel}.tsx · lib/star/fhr/{toggle,ruler,stillCamera,buildUp,servedChances}.ts · lib/star/fhr/patterns.json (scripts/fhr/make-patterns.mts) · terminal: npx tsx scripts/fhr/ruler.mts 200 · npx tsx scripts/fhr/buildup-measure.mts 500 · sheet: npx tsx scripts/fhr/buildup-sheet.mts 48 · browser check: node scripts/fhr/still-vs-play.mjs 100 on · tests/star/fhr.mts",
+    dev: "app/star-fhr-dev/{page,BuildUpPanel}.tsx · components/star/{FhrSwitchRow,FhrAdjust}.tsx · lib/star/fhr/{toggle,ruler,stillCamera,buildUp,foulBuildUp,builders,servedChances}.ts · lib/star/fhr/patterns.json (scripts/fhr/make-patterns.mts) · terminal: npx tsx scripts/fhr/ruler.mts 200 · npx tsx scripts/fhr/buildup-measure.mts 500 · sheet: npx tsx scripts/fhr/buildup-sheet.mts 48 · browser check: node scripts/fhr/still-vs-play.mjs 100 on · tests/star/fhr.mts",
   },
   "/star-play-dev": {
     title: "Play Area",
@@ -1208,6 +1216,8 @@ export const ADMIN_GUIDES = {
           ["← (top left)", "Back to the Chances group page."],
           ["Infinite Highlights → (first picture card)", "Opens Infinite Highlights."],
           ["Infinite Match → (second picture card)", "A real match that runs for the length you set, counting every chance it serves you."],
+          ["Full highlights rebuild: Off / On", "The same switch as Settings (this phone). On: both doors play a build-up before each chance, as a career match does."],
+          ["Ruler and build-ups →", "The rebuild's test area: the Ruler tab (today's numbers) and the Build-ups tab (one generated build-up at a time, played and drawn from above)."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
@@ -1236,6 +1246,7 @@ export const ADMIN_GUIDES = {
         items: [
           ["← (top left) / ‹ Back", "Back to the Play Area."],
           ["What it served", "Live count of each chance type the match has given you, with shares and a per-90."],
+          ["Build-ups: Off / On, Moment, Length, Intensity", "Full highlights rebuild for this phone. On: every chance gets the career's build-up, from this match's own minute and score (Auto), or Normal / Big (a level final, 90th minute); Length and Intensity tune it. The dials are this page's and Infinite Highlights' only. Save / Commit always save the chance as drawn, never the build-up or the extra defender."],
           ["This chance: …", "The bar pinned to the top of the screen for the whole match: which chance you are on and the minute."],
           ["✎ Edit", "Opens the chance on screen in an editor: drag, + Mate, + Opp, Remove. On a penalty only the other players move, along the edge of the box."],
           ["Save", "Saves the chance exactly as it stands into that chance type in the gallery, for the whole team. No editing needed."],

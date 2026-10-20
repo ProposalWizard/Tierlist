@@ -47,7 +47,7 @@ import type { PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import { enterTestArea } from "@/lib/star/testArea";
-import type { LeadIn } from "@/lib/star/leadIn";
+import type { LeadIn, LeadMoment } from "@/lib/star/leadIn";
 import type { RealGoalView } from "@/lib/star/realGoalView";
 
 /**
@@ -279,8 +279,10 @@ export default function EnginePlay({
    *  videos test page). Absent: nothing is recorded. */
   onGoalClip?: (track: GoalTrack) => void;
   /** The moves before the opening chance, replayed in the match's own
-   *  picture first (the Real shots page). See CanvasMatch's `leadIn`. */
-  leadIn?: (sc: Scenario) => LeadIn | null;
+   *  picture first (the Real shots page). See CanvasMatch's `leadIn`.
+   *  Without `openOn` it is asked for every chance, with the match's moment:
+   *  Infinite Match's Full highlights rebuild build-ups (lib/star/fhr/builders.ts). */
+  leadIn?: (sc: Scenario, moment?: LeadMoment) => LeadIn | null;
   /** What is on the pitch / whose camera (CanvasMatch's `scene`). The Real
    *  shots page passes `ownFrame` so its real players stay on screen.
    *  Absent: exactly as before. */

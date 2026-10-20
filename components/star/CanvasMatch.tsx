@@ -17,7 +17,7 @@ import {
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
   type Facing, type Runner, type Vec2,
 } from "@/lib/star/canvasEngine";
-import { leadInEntities, leadInCamera, type LeadIn, type LeadEntity, type LeadMoment } from "@/lib/star/leadIn";
+import { leadInEntities, leadInCamera, stakesOf, type LeadIn, type LeadEntity, type LeadMoment } from "@/lib/star/leadIn";
 import type { RealGoalView } from "@/lib/star/realGoalView";
 import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario, lateSubQuota, noteServedKind,
@@ -1469,6 +1469,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   leadInPropRef.current = leadIn;
   const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null } | null>(null);
   const leadTriedRef = useRef(false);
+  /**
+   * PLAYERS ALREADY MOVING (the lead-in's `runOnS`, Full highlights rebuild
+   * phase 3): after the hand-over the men in `ents` keep running along the
+   * lead-in (posAt past durS) while you aim, and stop on their drawn spots.
+   * Strike it before then and they stop where they are: from the strike the
+   * engine moves them as it moves everyone. Null: nobody is still running.
+   */
+  const runOnRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[] } | null>(null);
   // ── The move plays on after your pass (lib/star/playOn.ts, Chances: New) ──
   /** A lead-in played before this chance (a build-up, or a carry-on). */
   const leadPlayedRef = useRef(false);
@@ -1491,6 +1499,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     callMsgTimerRef.current = window.setTimeout(() => setCallMsg(null), 1500);
   };
   const [leadInOn, setLeadInOn] = useState(false);
+  /** The lead-in's own line while it plays, when it asks for it shown (`captionShown`: "Foul! Free kick."). */
+  const [leadCap, setLeadCap] = useState<string | null>(null);
+  const leadCapRef = useRef<string | null>(null);
   /** See the `onChanceServed` / `neverHooked` props. Held in refs for the
    *  same reason `openOn` is — the loop reads them outside React's render. */
   const onChanceServedRef = useRef(onChanceServed);
@@ -5594,10 +5605,27 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!build) return;
     const sc = scenarioRef.current;
     let lead: LeadIn | null = null;
-    try { lead = build(sc, moment ?? { opening: true, fresh: true, seed: seedRef.current }); } catch (e) { console.error("Lead-in could not be built (the chance plays as normal)", e); }
+    // One picture (openOn): the opening chance, with its frame and the match's minute and score.
+    const opening: LeadMoment = {
+      opening: true, fresh: true, seed: seedRef.current,
+      frame: { ...baseViewportRef.current },
+      minute: matchMinuteRef.current, scoreDiff: userScoreRef.current - oppScoreRef.current,
+    };
+    try { lead = build(sc, moment ?? opening); } catch (e) { console.error("Lead-in could not be built (the chance plays as normal)", e); }
     if (!lead || !(lead.durS > 0)) return;
+    runOnRef.current = null;
     const ents = leadInEntities(sc);
     const ends = ents.map((e) => e.get());
+    // Men who JOIN the chance (a covering defender in from off the screen):
+    // a real defender from now on, in the shape the chance's own defence has
+    // (cover; at rest he holds his place). Reset to his place at the end like everyone.
+    for (const j of lead.joiners ?? []) {
+      const at = lead.posAt(j.key, 0) ?? j.end;
+      const d: Scenario["defenders"][number] = { x: at.x, y: at.y, homeX: j.end.x, homeY: j.end.y, containT: 0, speed: 1, role: "cover", baseRole: "cover" };
+      sc.defenders.push(d);
+      ents.push({ key: j.key, side: "opp", get: () => ({ x: d.x, y: d.y }), set: (p) => { d.x = p.x; d.y = p.y; } });
+      ends.push({ ...j.end });
+    }
     // Team-mates in the move but not in the chance: on the pitch for the lead-in only.
     const mates0 = sc.teammates.length;
     for (let i = 0; i < (lead.extraMates ?? 0); i++) {
@@ -5623,21 +5651,69 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!L) return;
     // The screen's picture (the 3D view) is still loading: hold on the first frame.
     if (frameObsRef.current?.warming && L.t === 0) { applyLeadIn(); return; }
+    const was = L.t;
     L.t += dt;
+    // A foul before a set piece: the referee's whistle as it happens.
+    const wAt = L.lead.whistleAt;
+    if (wAt !== undefined && was < wAt && L.t >= wAt) playWhistle();
+    // Its line over the picture, when it asks (a state change only when the line changes).
+    const cap = L.lead.captionShown && L.t < L.lead.durS ? L.lead.captionAt?.(L.t) ?? null : null;
+    if (cap !== leadCapRef.current) { leadCapRef.current = cap; setLeadCap(cap); }
     if (L.t < L.lead.durS) {
       applyLeadIn();
       try { L.lead.onTick?.(L.t, false); } catch { /* an observer never breaks the match */ }
       return;
     }
     const sc = scenarioRef.current;
-    L.ents.forEach((e, i) => { if (i < L.ends.length) e.set(L.ends[i]); });
+    // Still running at the hand-over (runOnS): those men stay where the lead-in
+    // has them at durS and carry on (stepRunOn); everyone else is on his spot.
+    const runKeys = new Set(L.lead.runOnS && L.lead.runOnS > 0 ? L.lead.runOnKeys ?? [] : []);
+    const runEnts: LeadEntity[] = [], runEnds: Vec2[] = [];
+    L.ents.forEach((e, i) => {
+      if (i >= L.ends.length) return;
+      const p = runKeys.has(e.key) ? L.lead.posAt(e.key, L.lead.durS) : null;
+      if (p) { e.set(p); runEnts.push(e); runEnds.push(L.ends[i]); }
+      else e.set(L.ends[i]);
+    });
     sc.teammates.length = L.mates0;
     sc.ball.x = L.ball.x; sc.ball.y = L.ball.y;
     viewportRef.current = baseViewportRef.current;
     leadRef.current = null;
+    runOnRef.current = runEnts.length ? { lead: L.lead, t: 0, ents: runEnts, ends: runEnds } : null;
     setLeadInOn(false);
     try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
   };
+  /** Is this man under the captain's orders, or the man pressing you (they move by their own rules)? */
+  const ownMover = (key: string): boolean => {
+    const sc = scenarioRef.current;
+    const presser = presserRef.current;
+    if (key === "run") return !!(sc.runner?.commandedTo || sc.runner?.heldAt);
+    if (key.startsWith("sec")) { const r = sc.secondaryRunners[Number(key.slice(3))]; return !!(r?.commandedTo || r?.heldAt); }
+    if (key === "follower") return !!(sc.follower.commandedTo || sc.follower.heldAt);
+    if (key.startsWith("def")) return !!presser && presser === sc.defenders[Number(key.slice(3))];
+    return false;
+  };
+  /** Phase 3: the men still running after the hand-over, while you aim. They stop on their drawn spots. */
+  const stepRunOn = (dt: number) => {
+    const R = runOnRef.current;
+    if (!R) return;
+    R.t += dt;
+    const T = R.lead.durS + R.t;
+    const end = R.t >= (R.lead.runOnS ?? 0);
+    R.ents.forEach((e, i) => {
+      if (ownMover(e.key)) return;
+      const p = end ? R.ends[i] : R.lead.posAt(e.key, T);
+      if (p) e.set(p);
+    });
+    if (end) runOnRef.current = null;
+  };
+  /**
+   * The ball is struck while they are still running: from the strike the
+   * engine moves them, as it moves everyone (stepReactions: a man reacts when
+   * the ball comes near him), so the run-on stops where they are. The match
+   * engine itself is unchanged.
+   */
+  const handOverRunOn = () => { runOnRef.current = null; };
   /** A tap on a skippable lead-in (the career's build-ups): straight to the chance. */
   const skipLeadIn = () => {
     const L = leadRef.current;
@@ -6144,6 +6220,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         trailRef.current.shift(); // let it dissolve after the play resolves
       }
 
+      // Phase 3: still running after the hand-over, while you aim (or pick the contact).
+      if (runOnRef.current) {
+        if (phaseRef.current === "aim" || phaseRef.current === "contact") stepRunOn(dt);
+        else runOnRef.current = null; // the chance ended some other way: they stop where they are
+      }
       if (leadRef.current) stepLeadIn(dt);
       recordGoalFrame(dt);
       render();
@@ -7732,6 +7813,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // Load a new scenario onto the canvas and enter aim phase.
   const loadScenario = (attacking: boolean) => {
     sceneGenRef.current += 1;
+    runOnRef.current = null;
     bootRef.current = null;
     applyClearanceRules();
     seedRef.current += 1;
@@ -8090,6 +8172,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         us: careerRef.current?.player.club, them: fixture?.opponent,
         themStrength: oppStrengthRef.current,
         frame: { ...baseViewportRef.current },
+        // How big the moment is (a build-up runs longer late in a close final).
+        minute: matchMinuteRef.current,
+        scoreDiff: userScoreRef.current - oppScoreRef.current,
+        stakes: stakesOf(fixture),
       });
     }
     playWhistle();
@@ -8658,6 +8744,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   ) => {
     const a = over ? { dir: over.dir, power: over.power } : aim;
     if (!a) return;
+    // Struck while the men were still running after the hand-over (phase 3):
+    // each carries his speed into the play. Before the replay snapshot, so a
+    // goal replay throws the same runs. Nobody running: nothing happens.
+    handOverRunOn();
     // A ball you hit in the air (airborne test switch): a header or a volley,
     // started from the height it was at. Kept on the contact so a replay does the same.
     let contact: StrikeContact = { cx: tapped.cx, cy: tapped.cy };
@@ -9192,7 +9282,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         {/* A build-up before the chance (lib/star/leadInGen.ts): a tap skips it. */}
         {leadInOn && leadRef.current?.lead.skippable && (
           <div data-buildup className="absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none rounded-full bg-black/60 px-3 py-1 text-[11px] font-black text-white">
-            Build-up · tap to skip
+            {leadCap ?? "Build-up"} · tap to skip
           </div>
         )}
         {/* ⚡ Power shot (Settings → Gameplay "Knuckleball & power shot",

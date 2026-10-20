@@ -31,8 +31,9 @@
 import { useCallback, useMemo, useRef } from "react";
 import EnginePlay from "./EnginePlay";
 import type { Scenario } from "@/lib/star/canvasEngine";
+import type { LeadIn, LeadMoment } from "@/lib/star/leadIn";
 
-export default function ScenarioPlay({ build, onStop, width }: {
+export default function ScenarioPlay({ build, onStop, width, leadIn }: {
   /** Rebuilds the scenario from scratch. Called for every chance, so this
    *  must be pure — handing back one shared object would let the engine
    *  mutate the card's own picture as you play it. */
@@ -47,6 +48,10 @@ export default function ScenarioPlay({ build, onStop, width }: {
    *  EnginePlay then reads the drag against the real match's canvas, so it
    *  kicks the same (see EnginePlay's `width`). */
   width?: number;
+  /** The moves before the picture, played first (Infinite Highlights with
+   *  Full highlights rebuild On: lib/star/fhr/builders.ts testAreaBuildUp).
+   *  A layer on top: the picture itself is never changed by it. Absent: none. */
+  leadIn?: (sc: Scenario, moment?: LeadMoment) => LeadIn | null;
 }) {
   // The latest `build`, read at the moment a chance starts — so the factory
   // handed to the engine stays the same function across re-renders.
@@ -76,5 +81,5 @@ export default function ScenarioPlay({ build, onStop, width }: {
   // Through EnginePlay, like every test screen: the picture's size (the real
   // match's feel — see EnginePlay's `width`), the real squads and weather,
   // and the Play Area's dials.
-  return <EnginePlay key={key} openOn={openOn} bare width={width} />;
+  return <EnginePlay key={key} openOn={openOn} bare width={width} leadIn={leadIn} />;
 }
