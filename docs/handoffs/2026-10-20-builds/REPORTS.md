@@ -150,3 +150,20 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - No red-guarded file edited. Measured: the dot sat inside the named area 455 of 455 minutes over 5 matches.
 - Seen: ~6 minutes over several matches at both sizes, 3 chances checked by eye, 3D view, dribble hold. Not seen: full time panel, a penalty against you.
 - Found, not fixed (career change, Harry's call): the career's in-match radar (Settings → Match radar: New) draws its dot outside its own lit area 220 of 455 minutes, 50 of them off the pitch — its position shuffle can go negative. One-line fix in MatchRadar.tsx `jitter` (end with `>>> 0`). The test page uses a corrected copy.
+
+## B2 — Highlights rebuild: the switch, build-ups, moving players, extra defender, fouls
+- Chances and goals unchanged Off or On: 5.81 chances / 2.31 goals a match over 500 matches (Off, On, On + build-ups).
+- Switch "Full highlights rebuild: Off | On" with "?" in main Settings → Quick, a ⚙ on the pre-match line-up, and the match ⚙; visible to everyone. "?" lists 8 parts. /star-fhr-dev left the Chances group (test page, Ruler | Build-ups tabs).
+- Infinite Highlights / Infinite Match use the career's build-up builder; Moment / Length / Intensity control on the test pages only.
+- Big moments: median 6.4 s ordinary → 9.4 s in a level final at 90' (max 11.4 s); quicker passing; ordinary moments keep the old tempo.
+- Players moving at hand-over ease into place ~0.9 s (≤ 1.6 m), stop at the kick; 358 build-ups: ~8 men moving, median 2.6 m/s, 0 problems.
+- Extra defender from off screen when the defence is thin, always behind the ball: 269 of 2,757 open-play chances (9.8%); goals 14.5% → 14.9%, blocked/tackled 31.6% → 30.5%, players reacting 4.62 → 5.74.
+- Fouls before ~half of free kicks and penalties (carry, foul, whistle, "Foul! Free kick." / "Penalty!", walk to places): 44 of 44, 4.4–6.3 s.
+- Mikey's gallery never written to (tested). canvasEngine.ts unchanged (Harry refused two engine edits; left out). Drift files changed for the switch only; pitch widths re-measured as the audit (366/493, 366/384).
+- Seen at 390×844 incl. a 9 s clip and a 24-build-up sheet (0 problems). Reasoned: run-on stopping on an early kick, the whistle sound, drag feel on a phone.
+
+## B19 — Team is the admin home
+- Admins land on the Team board from: the site menu's Admin, Settings → Developer → Admin pages, the slide-out top link ("Admin & Dev · Team"), the KIB Admin app (new /admin/home), a game home's back arrow, old breadcrumbs. Testers keep their home.
+- Left menu: Team first (people icon); inside it Team board, Team chat, Ideas, My to-do, Patch notes; then Games; then Videos. Patch notes moved into the Team area. Folded/phone: Team first. All four skins, same layout.
+- Seen at 1440×900 and 390×844 locally. Reasoned: the site menu's Admin link (needs real admin sign-in), testers' view, live database path.
+- Left over: phones that added the KIB Admin app may open the old home until re-added; Site content (/admin) is now at Website games → Tierlists.
