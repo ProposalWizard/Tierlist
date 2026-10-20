@@ -16,6 +16,8 @@
 import type { Act, CastMember, Emotion, EventKind, Expression, LocationId, PoseHold, PropSpec, ShotSpec, StoryEvent, Target, Track, Vec3 } from "./types";
 import type { Rng } from "./math";
 import { VOICE_LINES } from "./voiceLines";
+import { FLUID_ON } from "./fluid";
+import { PRESS_DESK_TOP } from "./presets/locations";
 
 export type ShotPurpose = "establish" | "action" | "detail" | "emotion" | "reaction" | "hero" | "two" | "pov" | "crowd" | "follow";
 
@@ -231,7 +233,7 @@ export const shirtPhoto: BeatDef = {
         { type: "clip", actor: Y, at: t, clip: "idle" },
         { type: "clip", actor: O, at: t, clip: "idle-boss" },
         { type: "prop", prop: "shirt", at: t, action: "show" },
-        { type: "pose", actor: Y, at: t, dur: d, pose: "hold-shirt-up", prop: "shirt", blendIn: 0 },
+        { type: "pose", actor: Y, at: t, dur: d, pose: FLUID_ON.on ? "ref-shirt-up" : "hold-shirt-up", prop: "shirt", blendIn: 0 },
         { type: "reach", actor: O, hand: "R", at: t, dur: d, target: { actor: Y, part: "shoulder.L" }, offset: [0.02, 0.04, -0.05], grip: "flat", along: [-1, 0, 0.1], palm: [0, -1, 0], blendIn: 0 },
         { type: "look", actor: Y, at: t, dur: d, target: { mark: "photo.cam" }, amount: 0.9, blendIn: 0 },
         { type: "look", actor: O, at: t, dur: d, target: { mark: "photo.cam" }, amount: 0.9, blendIn: 0 },
@@ -359,8 +361,11 @@ export const trophyLift: BeatDef = {
     const tr: Track[] = [
       { type: "place", actor: Y, at: t, to: "podium", yaw: 180 },
       { type: "clip", actor: Y, at: t, clip: "idle" },
-      { type: "pose", actor: Y, at: t, dur: 1.6, pose: "trophy-chest", prop: "trophy", blendIn: 0.1 },
-      { type: "pose", actor: Y, at: t + 1.4, dur: d - 1.4, pose: "trophy-overhead", prop: "trophy", blendIn: 0.35 },
+      // the cup held by its handles at his chest, then lifted clear of his head (B5b, perform3d holdCup);
+      // B5c: the lift dips first, overshoots and settles (fluid.ts liftCurve), as the real man's did
+      // (ref-trophy-lift.mp4; the "ref-trophy-lift" hold copies his whole arm path but not the handles)
+      { type: "pose", actor: Y, at: t, dur: 1.6, pose: "trophy-chest", prop: "trophy", blendIn: 0.1 } as Track,
+      { type: "pose", actor: Y, at: t + 1.4, dur: d - 1.4, pose: "trophy-overhead", prop: "trophy", blendIn: 0.35 } as Track,
       { type: "look", actor: Y, at: t, dur: 1.6, target: { prop: "trophy" }, amount: 0.8 },
       { type: "look", actor: Y, at: t + 1.6, dur: d, target: { point: [0, 9, 20] }, amount: 0.5 },
       { type: "face", actor: Y, at: t, expression: "proud", dur: 1.5 },
@@ -477,8 +482,9 @@ export const pressQuestion: BeatDef = {
       tracks: [
         { type: "clip", actor: Y, at: 0, clip: "sit" },
         { type: "pose", actor: Y, at: 0, dur: 20, pose: "lean-in", amount: 0.25, blendIn: 0 },
-        { type: "reach", actor: Y, hand: "R", at: 0, dur: 30, target: { actor: Y, local: [-0.2, 0.775, 0.42] }, along: [0.25, -0.15, 1], palm: [0.15, -1, 0.05], blendIn: 0 },
-        { type: "reach", actor: Y, hand: "L", at: 0, dur: 30, target: { actor: Y, local: [0.2, 0.775, 0.42] }, along: [-0.25, -0.15, 1], palm: [-0.15, -1, 0.05], blendIn: 0 },
+        // hands on the table while he listens; B5c: they lift off when he answers (pressAnswer, ref-talk-hands)
+        { type: "reach", actor: Y, hand: "R", at: 0, dur: FLUID_ON.on ? t + d + 0.2 : 30, target: { actor: Y, local: [-0.2, PRESS_DESK_TOP + 0.035, 0.42] }, along: [0.25, -0.15, 1], palm: [0.15, -1, 0.05], blendIn: 0, blendOut: 0.5 },
+        { type: "reach", actor: Y, hand: "L", at: 0, dur: FLUID_ON.on ? t + d + 0.3 : 30, target: { actor: Y, local: [0.2, PRESS_DESK_TOP + 0.035, 0.42] }, along: [-0.25, -0.15, 1], palm: [-0.15, -1, 0.05], blendIn: 0, blendOut: 0.5 },
         { type: "clip", actor: "jour", at: 0, clip: "talk-boss", loop: true },
         { type: "speak", actor: "jour", at: t + 0.3, dur: 2.2, line: q },
         { type: "caption", at: t + 0.3, dur: 2.4, text: q, style: "subtitle", speaker: "Journalist" },
@@ -509,6 +515,8 @@ export const pressAnswer: BeatDef = {
         { type: "look", actor: Y, at: t, dur: d, target: { mark: "journalist", y: 1.2 }, amount: 0.75 },
         { type: "face", actor: Y, at: t, expression: perf.face === "elated" ? "smile" : perf.face, amount: 0.9 },
         { type: "pose", actor: Y, at: t + 0.2, dur: d, pose: "lean-in", amount: 0.4 },
+        // B5c: he talks with his hands, as the real man did (ref-press-answer.mp4)
+        ...(FLUID_ON.on ? [{ type: "pose", actor: Y, at: t, dur: d + 2, pose: "ref-talk-hands", blendIn: 0.6 } as Track] : []),
         { type: "fx", fx: "camera-flashes", at: t, dur: d, around: { point: [0, 1.4, 3.6] }, amount: 0.7 },
         { type: "sound", at: t + 0.1, cue: "camera-shutters" },
       ],
@@ -633,7 +641,8 @@ export const applause: BeatDef = {
     return {
       name: "The applause", act: "aftermath", dur: d,
       tracks: [
-        { type: "pose", actor: Y, at: t, dur: d, pose: c.valence >= 0 ? "salute-crowd" : "applaud", amount: 0.9 },
+        // B5c: a real man's wave up to the stands, then claps over his head (ref-farewell.mp4)
+        { type: "pose", actor: Y, at: t - (FLUID_ON.on && c.valence >= 0 ? 0.8 : 0), dur: d + (FLUID_ON.on && c.valence >= 0 ? 0.8 : 0), blendIn: FLUID_ON.on && c.valence >= 0 ? 1.1 : undefined, pose: c.valence >= 0 ? (FLUID_ON.on ? "ref-wave-clap" : "salute-crowd") : "applaud", amount: 0.9 },
         { type: "face", actor: Y, at: t, expression: "smile", amount: 1 },
         ...c.ids.mates.map((m) => ({ type: "pose", actor: m, at: t, dur: d, pose: "applaud" } as Track)),
         { type: "fx", fx: "camera-flashes", at: t, dur: d, around: { actor: Y }, amount: 0.6 },

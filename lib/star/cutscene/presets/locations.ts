@@ -31,6 +31,14 @@ const m = (x: number, y: number, z: number, yawDeg = 0): Mark => ({ pos: [x, y, 
 // desk centre on the floor at the origin, the manager's side −z (the window
 // behind him), yours +z. Desk 1.4 × 0.68, top 0.76.
 export const DESK = { w: 1.4, d: 0.68, top: 0.76 };
+/**
+ * The press desk's top, m above the floor (B5c, Harry 20 Oct 2026: "our model struggles with
+ * shoulders, why?"). It was 0.765, only 11 cm under our seated man's shoulder joints (0.88): his
+ * hands on it pushed his arms and shoulders up to his ears. Our Style A body sits short (shoulders
+ * 36 cm over the seat, a real man ~58), so the desk comes down to his own elbow height (0.63)
+ * plus a little: forearms resting, elbows near 90°, shoulders down.
+ */
+export const PRESS_DESK_TOP = 0.665;
 export const SEAT_Z = 0.72;
 
 export const LOCATIONS: Record<LocationId, LocationPreset> = {
@@ -136,9 +144,9 @@ export const LOCATIONS: Record<LocationId, LocationPreset> = {
       "seat.you": m(-0.45, 0, -0.55, 0),
       "seat.boss": m(0.55, 0, -0.55, 0),
       "seat.host": m(1.4, 0, -0.55, -10),
-      table: m(0, 0.74, 0, 0),
-      "mic.you": m(-0.45, 0.74, -0.08, 180),
-      "mic.boss": m(0.55, 0.74, -0.08, 180),
+      table: m(0, PRESS_DESK_TOP - 0.025, 0, 0),
+      "mic.you": m(-0.45, PRESS_DESK_TOP - 0.025, -0.08, 180),
+      "mic.boss": m(0.55, PRESS_DESK_TOP - 0.025, -0.08, 180),
       journalist: m(-0.9, 0, 3.1, 180),
       "journalist.2": m(1.3, 0, 3.9, 190),
       "row.0": m(0, 0, 2.6, 180), "row.1": m(0, 0, 3.6, 180), "row.2": m(0, 0, 4.6, 180),

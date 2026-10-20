@@ -70,6 +70,8 @@ const pose = (a: CutsceneActor, t: number) => {
   const wUp = t < 1.1 ? 0 : Math.min(1, (t - 1.1) / 0.35);
   if (wChest > 0) applyPose(a, "trophy-chest", wChest, { ...c, local: t });
   if (wUp > 0) applyPose(a, "trophy-overhead", wUp, { ...c, local: t - 1.1 });
+  // as director.ts: B5c's arm clearance runs after the poses, but leaves a hand on a held prop alone
+  a.clearArms?.(1, { L: true, R: true });
   a.endFrame();
   return c;
 };

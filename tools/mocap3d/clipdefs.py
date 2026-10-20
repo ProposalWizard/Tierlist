@@ -182,6 +182,9 @@ def chain(*fs):
 CLIPS = {
     # ── on his feet ─────────────────────────────────────────────────────
     "idle": dict(trial="82_08", cut=(0.2, 8.0), loop=True, period=(3.0, 5.5)),
+    # B5c: from a REFERENCE VIDEO (Higgsfield, read by MediaPipe: video.py), not CMU. A man standing
+    # on a pitch shifting his weight, glancing round, arms loose (b5c-hq/hq-home-idle.mp4).
+    "idle_video": dict(trial="video:hq-home-idle:p0", cut=(0.2, 7.0), loop=True, period=(3.0, 6.5)),
     "walk": dict(trial="16_15", cut=(0.0, 3.0), loop=True, period=(0.9, 1.3)),
     "jog": dict(trial="35_17", cut=(0.0, 1.39), loop=True, period=(0.6, 0.8)),
     "run": dict(trial="09_01", cut=(0.0, 1.23), loop=True, period=(0.55, 0.8)),
