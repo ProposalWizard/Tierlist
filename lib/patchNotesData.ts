@@ -27,6 +27,40 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.81",
+      "title": "Harry's patch notes: B16 Fairer 3D Keepers",
+      "publishedAt": "2026-10-20T12:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/NCvXEnE1cihMHCNnV1o1SD",
+      "summary": "B16 Fairer 3D Keepers (20 Oct). The keepers in Free Roam, Headers & Volleys and Wembley now save about 1 shot in 3 for a decent player (it was 52 to 70%). His cover had a hard edge; it is now a slope. Wembley's keeper 70 to 66, sessions 146 s to 83 s, Headers & Volleys win bar 6 to 8. Known: high-skill players blaze over in 3D (about 78% from 12 to 20 m). One clip.",
+      "stats": [
+        { "value": "70% to 33%", "label": "Free Roam: decent player saved (600 shots)" },
+        { "value": "69% to 33%", "label": "Wembley: decent player saved" },
+        { "value": "146 s to 83 s", "label": "Wembley session length" },
+        { "value": "78%", "label": "of firm 3D shots from 12 to 20 m go over (not fixed)" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Free Roam", "detail": "Take a few shots that are on target. About 1 in 3 should be saved, not most of them." },
+          { "title": "Headers and Volleys", "detail": "The same: about 1 in 3 saved. A win now needs 8 points." },
+          { "title": "Wembley", "detail": "Shots go in more often. A session is shorter, about 83 s." },
+          { "title": "A better keeper", "detail": "A better keeper still saves more than a weaker one." },
+          { "title": "Sizes", "detail": "The keeper, the goal and the men are the same size as before." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "A decent player is now saved about 1 shot in 3", "detail": "The edge is now a slope. Reaction 0.30 → 0.33 s. Read error for a 66 keeper 0.39 → 0.77 m. Body reach 1.36 → 1.17 m. Hands past the body 0.8 → 0.66 m. The stretch varies ±30% from dive to dive." },
+          { "title": "Wembley: keeper 70 → 66, and sessions are shorter", "detail": "Wembley’s keeper is 66, the same as the other two games. The test floor for the session length moved from 100 s to 75 s, and the test says why. The 80-rated striker still wins more than his fair quarter (30%, was 40%)." },
+          { "title": "Headers and Volleys: the win bar moves from 6 to 8 points", "detail": "The win bar is 8 points. At 8 the average bot wins 53% of its sessions, the same as before. Free Roam’s win bar (10) is unchanged. It was never measured, and goals now come easier. See Needs your OK." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "High-skill players blaze over in 3D", "detail": "Found, not fixed. See Needs your OK." },
+          { "title": "Wembley AI men all aim tight to the post", "detail": "Found, not fixed." },
+          { "title": "The dive picture is the same, but his reach is shorter", "detail": "Reasoned from the code. Not seen." },
+          { "title": "Seen once per game, on a test screen", "detail": "Play a few shots in each game and see if it feels fair." }
+        ]}
+      ]
+    },
+    {
       "version": "0.80",
       "title": "Harry's patch notes: B9b Cup Screens",
       "publishedAt": "2026-10-20T12:25:00Z",
@@ -202,20 +236,20 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.75",
       "title": "Harry's patch notes: Last 2 Days Patch Notes",
       "publishedAt": "2026-10-20T12:00:00Z",
-      "updatedAt": "2026-10-20T12:30:00Z",
+      "updatedAt": "2026-10-20T12:35:00Z",
       "artifactUrl": "https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN",
       "summary": "Last 2 Days Patch Notes (index, 19 to 20 Oct). One page per build in three tabs (Overnight, 19 Oct, Still building), how these patch notes work, every open question in one list and Harry's decided answers. Press Read and understood on each page.",
       "stats": [
-        { "value": "20", "label": "pages of patch notes" },
-        { "value": "16", "label": "questions still open" },
+        { "value": "21", "label": "pages of patch notes" },
+        { "value": "18", "label": "questions still open" },
         { "value": "14", "label": "answers already decided" },
-        { "value": "v0.60 to v0.80", "label": "the pages, one version each (v0.75 is this index)" }
+        { "value": "v0.60 to v0.81", "label": "the pages, one version each (v0.75 is this index)" }
       ],
       "sections": [
         { "kind": "added", "title": "Check these", "items": [
-          { "title": "Open the three tabs", "detail": "Overnight 20 Oct (14 pages), 19 Oct (6 pages), Still building." },
+          { "title": "Open the three tabs", "detail": "Overnight 20 Oct (15 pages), 19 Oct (6 pages), Still building." },
           { "title": "Read how these patch notes work", "detail": "One page per build: Check these, Problem, Why, Fix, the seen / measured / reasoned tag, Needs your OK." },
-          { "title": "Press Read and understood on each version", "detail": "Admin, Patch notes, pick v0.60 to v0.80 (not v0.75, the index), press the button. The Team board counts what is left." }
+          { "title": "Press Read and understood on each version", "detail": "Admin, Patch notes, pick v0.60 to v0.81 (not v0.75, the index), press the button. The Team board counts what is left." }
         ]},
         { "kind": "added", "title": "The pages", "items": [
           { "title": "Admin Split + Looks (v0.65)", "detail": "The admin is split by game, group pages show picture cards, four looks share one layout, the phone admin is tidier." },
@@ -225,19 +259,20 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Free Data v1 (v0.64)", "detail": "2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. StatsBomb deleted." },
           { "title": "Scene Editor 3a (v0.61)", "detail": "The 3D Signing and Office edit live in the scene editor. Also: how generated cut scenes work, and the 3D audit." },
           { "title": "B1 Touch Fixes (v0.66)", "detail": "All 27 touch fixes are built. The 4 old failing tests pass. Wembley is fairer." },
-          { "title": "B3 Real Data (v0.67)", "detail": "Afriskaut is out, two free sources are in, data credits are in Settings, and real moments can appear in your matches." },
+          { "title": "B3 Real Data (v0.67)", "detail": "Afriskaut is out, two free sources are in, data credits are in Settings, and real moments can appear in your matches. Has a clip." },
           { "title": "B4 Admin Skins (v0.68)", "detail": "The admin has one layout in four looks, one back arrow, a smaller chat bubble and a Research area. Clean light is the default." },
           { "title": "B5 3D Looks (v0.69)", "detail": "Natural skin in the 3D cut scenes, phone cameras that fit, faces that move, and a Home player that is alive. Has two clips." },
           { "title": "B6 Scene Studio (v0.70)", "detail": "Edit the 3D shop, garden and house live. Approve and commit edits. Make cut scenes from a game event." },
           { "title": "B7 Training Levels (v0.71)", "detail": "All 150 training levels are editable. Vision level 30 and Pace are harder." },
           { "title": "B8 Five-a-side (v0.72)", "detail": "A test area with Scenarios, a Full match with a live radar, and Data. Two things in it are broken. Has a clip." },
-          { "title": "B9 Lower League Trophy (v0.73)", "detail": "A new cup for 120 lower-league clubs. Hold to speed up and double-tap to skip after a match." },
+          { "title": "B9 Lower League Trophy (v0.73)", "detail": "A new cup for 120 lower-league clubs. Hold to speed up and double-tap to skip after a match. Has a clip." },
           { "title": "B11 Team Room (v0.74)", "detail": "Seen faces, quoted replies, @ and # tags, Shift+X pointing and patch-note read receipts." },
           { "title": "B12 Pick the Pass (v0.76)", "detail": "Vision training rebuilt: look at a real moment, work out who gets the pass, and from level 10 kick it yourself. Has a clip." },
           { "title": "B7b Training Editor (v0.77)", "detail": "Drag and drop in the training editor, no “your skills” slider, and Pace needs the right moment. Has a clip." },
           { "title": "B13 Fixtures + Admin Fixes (v0.78)", "detail": "Every fixture date was checked: 170 clashes are now 0. XP Rewards loads, the chat bubble clears page buttons, and the Team board counts real pushes." },
           { "title": "B15 3D Headshots (v0.79)", "detail": "Award cards show a 3D head-and-shoulders picture of the player in his club kit: Player of the Month, the season awards and the Ballon d’Or." },
-          { "title": "B9b Cup Screens (v0.80)", "detail": "Each cup has its own screen: a one-screen tab, then your road, the bracket and every round. The FA Cup and League Cup work the same way." }
+          { "title": "B9b Cup Screens (v0.80)", "detail": "Each cup has its own screen: a one-screen tab, then your road, the bracket and every round. The FA Cup and League Cup work the same way." },
+          { "title": "B16 Fairer 3D Keepers (v0.81)", "detail": "The keepers in the 3D games (Free Roam, Headers & Volleys, Wembley) now save about 1 shot in 3 for a decent player. Has a clip." }
         ]}
       ]
     },

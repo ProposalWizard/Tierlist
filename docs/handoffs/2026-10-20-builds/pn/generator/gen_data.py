@@ -13,7 +13,7 @@ ORDER = [  # oldest first
  ('b1', '2026-10-20T04:00:00Z'), ('b3', '2026-10-20T04:05:00Z'), ('b4', '2026-10-20T04:10:00Z'), ('b5', '2026-10-20T04:15:00Z'),
  ('b6', '2026-10-20T04:20:00Z'), ('b7', '2026-10-20T04:25:00Z'), ('b8', '2026-10-20T04:30:00Z'), ('b9', '2026-10-20T04:35:00Z'),
  ('b11', '2026-10-20T04:40:00Z'), ('last2', '2026-10-20T12:00:00Z'),
- ('b12', '2026-10-20T12:05:00Z'), ('b7b', '2026-10-20T12:10:00Z'), ('b13', '2026-10-20T12:15:00Z'), ('b15', '2026-10-20T12:20:00Z'), ('b9b', '2026-10-20T12:25:00Z'),
+ ('b12', '2026-10-20T12:05:00Z'), ('b7b', '2026-10-20T12:10:00Z'), ('b13', '2026-10-20T12:15:00Z'), ('b15', '2026-10-20T12:20:00Z'), ('b9b', '2026-10-20T12:25:00Z'), ('b16', '2026-10-20T12:30:00Z'),
 ]
 
 SUM = {
@@ -37,6 +37,7 @@ SUM = {
  'b13': "B13 Fixtures + Admin Fixes (20 Oct). A checker played 5 seasons in every division and found 170 fixture clashes; now 0. XP Rewards loads on a test build with a read-only note, the chat bubble no longer covers 'Next line', and the Team board counts real pushes (Harry 166, Mikey 34, Leo 21). Limit left: a Championship club in Europe winning everything needs 38 midweeks, a season has 34.",
  'b15': "B15 3D Headshots (20 Oct). Player of the Month, the season awards and the Ballon d'Or show a head-and-shoulders picture from our 3D model in the player's club kit, instead of drawn heads and made-up photo faces. Made once and kept on the device. Known: blond hair also colours eyebrows and beard on dark skin; team sheets still drawn.",
  'b9b': "B9b Cup Screens (20 Oct). The Lower League Trophy tab fits one screen (it was a 56-row list), with the cup's own screen for your road, the bracket and every round. The FA Cup and League Cup work the same way. Open: a Premier League career still sees the Trophy tab as Not in it; the cup shows a trophy emoji for now.",
+ 'b16': "B16 Fairer 3D Keepers (20 Oct). The keepers in Free Roam, Headers & Volleys and Wembley now save about 1 shot in 3 for a decent player (it was 52 to 70%). His cover had a hard edge; it is now a slope. Wembley's keeper 70 to 66, sessions 146 s to 83 s, Headers & Volleys win bar 6 to 8. Known: high-skill players blaze over in 3D (about 78% from 12 to 20 m). One clip.",
  'last2': "Last 2 Days Patch Notes (index, 19 to 20 Oct). One page per build in three tabs (Overnight, 19 Oct, Still building), how these patch notes work, every open question in one list and Harry's decided answers. Press Read and understood on each page.",
 }
 
@@ -60,6 +61,7 @@ STATS = {
  'b7b': [('4', 'drills with drag and drop (not Vision)'), ('0', 'skills sliders (a level works its own out)'), ('0.30 to 0.05 s', 'Pace ring window, weak man to best'), ('56% to 29%', 'hasty bot clears, levels 11 to 20')],
  'b13': [('170 to 0', 'fixture clashes over 45 seasons'), ('9', 'division setups checked'), ('132 px', 'bubble moves up in the Manager office'), ('166 / 34 / 21', 'pushes this week: Harry, Mikey, Leo')],
  'b15': [('3', 'award screens with 3D headshots'), ('13', 'faces in 0.5 s on the second visit (~6 s first)'), ('~10 KB', 'per picture, kept on the device'), ('0', 'blank circles when 3D is missing')],
+ 'b16': [('70% to 33%', 'Free Roam: decent player saved (600 shots)'), ('69% to 33%', 'Wembley: decent player saved'), ('146 s to 83 s', 'Wembley session length'), ('78%', 'of firm 3D shots from 12 to 20 m go over (not fixed)')],
  'b9b': [('56 rows to 1', 'screens for the Trophy tab'), ('3', 'domestic cups on one screen'), ('7', 'rounds on the road'), ('1-1, 4-3 pens', 'Round 1 played in the real game')],
 }
 
@@ -105,10 +107,10 @@ def esc(s): return json.dumps(s, ensure_ascii=False)
 def entry(key, pub, ver):
     if key == 'last2':
         _, n_open, n_done = ok_blocks(urls, 'all')
-        stats = [(str(len(ORDER_19 + ORDER_NIGHT)), 'pages of patch notes'), ('8', 'questions still open'), ('11', 'answers already decided'), ('v0.60 to v0.80', 'the pages, one version each (v0.75 is this index)')]
+        stats = [(str(len(ORDER_19 + ORDER_NIGHT)), 'pages of patch notes'), ('8', 'questions still open'), ('11', 'answers already decided'), ('v0.60 to v0.81', 'the pages, one version each (v0.75 is this index)')]
         stats[1] = (str(n_open), 'questions still open'); stats[2] = (str(n_done), 'answers already decided')
         sections = [
-            ('added', 'Check these', [('Open the three tabs', 'Overnight 20 Oct (%d pages), 19 Oct (%d pages), Still building.' % (len(ORDER_NIGHT), len(ORDER_19))), ('Read how these patch notes work', 'One page per build: Check these, Problem, Why, Fix, the seen / measured / reasoned tag, Needs your OK.'), ('Press Read and understood on each version', 'Admin, Patch notes, pick v0.60 to v0.80 (not v0.75, the index), press the button. The Team board counts what is left.')]),
+            ('added', 'Check these', [('Open the three tabs', 'Overnight 20 Oct (%d pages), 19 Oct (%d pages), Still building.' % (len(ORDER_NIGHT), len(ORDER_19))), ('Read how these patch notes work', 'One page per build: Check these, Problem, Why, Fix, the seen / measured / reasoned tag, Needs your OK.'), ('Press Read and understood on each version', 'Admin, Patch notes, pick v0.60 to v0.81 (not v0.75, the index), press the button. The Team board counts what is left.')]),
             ('added', 'The pages', [(PAGES[k][0] + ' (v' + PAGES[k][1] + ')', clean(PAGES[k][2])) for k in ORDER_19 + ORDER_NIGHT]),
         ]
         sec_out = sections

@@ -373,7 +373,7 @@ def render_page(p, spec, index_url):
     back = ('<a class="back" href="%s" target="_blank" rel="noopener">&larr; All last-2-days notes</a>' % index_url) if index_url else ''
     chips = ('<a class="chip hot" href="#ok">%d need your OK &darr;</a>' % nopen) if nopen else '<a class="chip" href="#ok">Nothing waiting on you</a>'
     if ndone: chips += '<a class="chip" href="#ok">%d decided</a>' % ndone
-    chips += '<a class="chip" href="#vid">Videos %s &darr;</a>' % ('coming' if spec['videos_coming'] else ('here' if spec.get('videos_here') else '(none planned)'))
+    chips += '<a class="chip" href="#vid">Videos %s &darr;</a>' % (spec.get('videos_label') or ('coming' if spec['videos_coming'] else ('here' if spec.get('videos_here') else '(none planned)')))
     chips += '<a class="chip" href="#how">How this works</a>'
     checks = ''.join(
         '<li><label><input type="checkbox" data-k="c%d"><span><span class="q">%s</span><span class="a">%s</span></span></label></li>' % (i, q, a)
