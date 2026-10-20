@@ -192,3 +192,10 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Records frame gaps (p50/p95/p99/worst, over 33/50/100), long tasks/LoAF (Chrome), a 20 ms timer's lateness (iPhone too), 3D counters, memory, hidden time; refresh rate from the idle median. Bars in lib/star/lagTest.ts incl. the low-tier 30 fps rule, 0.5 ms jitter allowance.
 - Runs committed to branch lag-runs (lag/runs/<time>-<person>-<tier>.json) by /api/star/lag-runs via commitScenarios' helper (+ ensureBranch); vercel.json stops builds of lag-runs. Device-only + Copy results when it can't send. `npx tsx scripts/lag-runs.mts`.
 - Seen signed out at 390×844: Home and a 2D match recorded (2,370 frames); 401 "Sign in to send" as expected. Not seen: a real save to GitHub, the cut-scene hand-off, steps 2–6 and 8–10.
+
+## Team room phone notifications (Web Push, no SQL)
+- Buzzes: @Name → that person; @all/@everyone/@team → the other two; a reply → the author; a point sent to you; a job typed for you; a pushed job for you (once, if added in the last day; only when someone next opens an admin page). Never the sender; one per message; a thread groups ("+2 more"); tap opens /admin/team?tab=chat&m=<id> or To-do.
+- Sender's client asks /api/admin/team/notify after a save; the server reads the row with the service role (author only, within 10 min, once). Devices in the account's auth metadata (≤ 5); 410 drops a device, never one under 2 minutes old.
+- Once per phone: iPhone (iOS 16.4+) Safari → knowitball.co.uk/admin → Share → Add to Home Screen → open KIB Admin → Team → To-do → Turn on phone notifications → Allow. Android/computer: the same button.
+- Needs TEAM_PUSH_PRIVATE_KEY in Vercel (given to Harry in chat, in no file); public key in lib/teamRoom/config.ts. web-push 3.6.7 added.
+- Seen: a real push through Google's push service in headless Chromium; grouping; the 410 drop. Not seen: a real iPhone, tapping a buzz, the signed-in flow end to end.
