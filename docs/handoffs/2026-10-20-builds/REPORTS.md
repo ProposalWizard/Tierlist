@@ -60,3 +60,12 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Last 6 admin pages (signing, office, shop, garden, house, style test) on the Broadcast frame: 37 → 43 of 43. ?bare=1 gives the old full screen.
 - Fixed along the way: shop/garden/house scenes could stop the shared 3D renderer when a build was thrown away mid-start (game time stayed at 0 on the framed shop page; now moves).
 - No new database file. Seen in a browser: all of the above except career paths with a real admin save (reasoned).
+
+## B8 — Five-a-side test area with tabs (/star-fiveaside-dev)
+- New test page with three tabs: Scenarios (the gallery's 10 five-a-side pictures, each playable as Yours / Team-mate's / Theirs, Prev/Again/Next pinned on top), Full match (kick-off to full time with a new five-a-side radar showing all 10 players and the ball), Data (from 500 simulated matches).
+- The old Match radar can't show five-a-side (zones only, no players), so a new SVG radar was drawn in the same look, fed by a read-only callback. No engine or drift file changed.
+- Gallery chance pictures moved into one shared file (not copied).
+- Fixed: at full time straight after their chance, the scene was drawn the wrong way round with kits swapped (also reaches the trial's five-a-side).
+- Numbers (500 matches, Even, skill 70): goals 1.83 yours – 1.09 theirs; won 56%, drew 19%, lost 24%; shots 6.1 v 5.8; 53% of the ball. By level: Easy 2.58–0.56 (82% won), Hard 1.15–1.55 (28% won).
+- BROKEN, found not fixed (gameplay calls for Harry): (1) a pass to a team-mate in the last third never becomes his shot — 0 of 1,000 (he keeps the ball; five-a-side chances never name a receiver), so you can never get an assist. (2) Chance pictures 1 and 6 never score for the bot: 0 of 200 each (66% and 99.5% of shots blocked).
+- Seen in Chromium: all three tabs on phone and computer, two full matches to full time with the radar matching the pitch. Clip: b8/10-pc-full-match-radar.mp4 (8 s).
