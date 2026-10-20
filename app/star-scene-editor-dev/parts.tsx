@@ -9,8 +9,8 @@ export const T = ({ k }: { k: Tag }) => <span className={`se-tag se-${k}`}>{TAG[
 
 export type PlaceId = "signing" | "office" | "shop" | "garden" | "house" | "director";
 export const PLACES: { id: PlaceId; name: string; live: boolean }[] = [
-  { id: "signing", name: "3D Signing", live: true }, { id: "office", name: "Manager's Office", live: true }, { id: "shop", name: "3D Shop", live: false },
-  { id: "garden", name: "3D Garden", live: false }, { id: "house", name: "3D House", live: false }, { id: "director", name: "Cut-scene Director", live: true },
+  { id: "signing", name: "3D Signing", live: true }, { id: "office", name: "Manager's Office", live: true }, { id: "shop", name: "3D Shop", live: true },
+  { id: "garden", name: "3D Garden", live: true }, { id: "house", name: "3D House", live: true }, { id: "director", name: "Cut-scene Director", live: true },
 ];
 
 /** The place picker: live places are buttons; the rest say "coming next". */

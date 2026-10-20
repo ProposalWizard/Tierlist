@@ -55,6 +55,7 @@ import { buildWearer, repaintKit, type WearInput } from "./wear";
 import { roomPlan, roomFiles, arrivalAt, arrivalDoor, type DoorPlan, type HomeSpot, type HomeStuff } from "./rooms";
 import { buildRoom, disposeGroup, roomFree, MIRROR_LAYER, MIRROR_PX, type BuiltRoom, type RoomEnv, type RoomInput } from "./roomBuild";
 import { safeCompileAsync } from "../three3d/safeCompile";
+import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 
 export type { HomeSpot } from "./rooms";
 
@@ -152,6 +153,9 @@ export interface HomeOptions {
   /** Look H (the broadcast pass) or the plain look. Unset: Settings → Look → "3D look". */
   lookH?: boolean;
   fixedStep?: number;
+  /** The 3D Scene Editor's edit (/star-scene-editor-dev), or an approved one in the
+   *  game (lib/star/sceneEdits). Absent = the house exactly as before. */
+  edit?: WalkSceneEdit | null;
 }
 
 export interface HomeController {
@@ -180,6 +184,14 @@ export interface HomeController {
   rooms: () => { id: RoomId; label: string }[];
   /** Jump to a room (a dot): the fade, then he stands inside its door. */
   goToRoom: (id: RoomId) => Promise<boolean>;
+  /** 3D Scene Editor (and approved edits in the game): the edit to play with (null = as written). */
+  setEdit: (e: WalkSceneEdit | null) => void;
+  /** Editor only: stand him for a view ("follow", or a card in this room: wardrobe, cabinet, drive) and frame it. False: not in this room. */
+  showView: (id: string) => boolean;
+  /** Editor only: where the camera stands and looks at the last frame. */
+  cameraPose: () => { pos: [number, number, number]; look: [number, number, number]; fov: number };
+  /** Editor only: the room from above for the mini-map. */
+  layout: () => { people: { id: string; x: number; z: number }[]; sunDir: [number, number, number]; bounds: { min: [number, number, number]; max: [number, number, number] } };
   dispose: () => void;
 }
 
@@ -220,7 +232,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
 
   // ── Renderer (as the shop: one tier chosen first, the governor, still/moving pixels) ──
   // ONE renderer for every 3D place (three3d/perf.ts): no new WebGL context, shaders kept, at each door
-  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
   const dpr = window.devicePixelRatio || 1;
@@ -320,12 +332,15 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   const env: RoomEnv = { THREE, mergeGeometries, Reflector, prof, quality: tier, envTex, doorOpen: !!cb.onDoor, glb, cloneSkinned: (o: any) => SkeletonUtils.clone(o) };
   let room: BuiltRoom = buildRoom(env, roomIn, rooms[0]);
   scene.add(room.group);
+  /** The editor's key-light edit, put back after each room's sun is placed (set below). */
+  let reLight = () => {};
   const fitSun = () => {
     W2 = room.w2; D2 = room.d2; H = room.h;
     sun.position.set(W2 + 5, 5.5, -1.5);
     const sz = Math.max(W2, D2) + 1;
     Object.assign(sun.shadow.camera, { left: -sz, right: sz, top: sz, bottom: -sz });
     sun.shadow.camera.updateProjectionMatrix();
+    reLight();
   };
   fitSun();
 
@@ -394,11 +409,15 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   window.addEventListener("keydown", kd);
   window.addEventListener("keyup", ku);
   let lastOff = -1;
+  /** The editor's edit (none = as written), and the screen's own lens it starts from. */
+  let edit: WalkSceneEdit | null = opts.edit ?? null;
+  let baseFov = 56;
   const resize = () => {
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.fov = w / h < 0.7 ? 64 : 56;
+    baseFov = camera.fov;
     lastOff = -1;
     camera.updateProjectionMatrix();
   };
@@ -569,7 +588,9 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
   cb.onRoom?.(room.id, room.plan.label);
 
   const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
-  renderer.setAnimationLoop(() => {
+  // the shared renderer's loop is set and stopped only by its owner: a build thrown away while a
+  // newer one is starting (React's double effects in dev, a quick switch) never stops the live one
+  if (isOwner()) renderer.setAnimationLoop(() => {
     if (disposed) return;
     let dt: number;
     if (opts.fixedStep) dt = opts.fixedStep;
@@ -646,7 +667,9 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     camYaw += orb.step(dt);
     if (orbitHold > 0) orbitHold -= dt;
     else if (speed > 0.3) camYaw += angDiff(camYaw, openCamYaw(P.x, P.z, yaw + Math.PI, ROOM_CAM.back, W2 - ROOM_CAM.wallGap, D2 - ROOM_CAM.wallGap)) * Math.min(1, dt * 1.6);
-    const shot = framed ? shotOf(framed) : null;
+    const shot0 = framed ? shotOf(framed) : null;
+    // the editor's card-shot edit (none = as written; the room's own shot is never changed in place)
+    const shot = shot0 && framed && edit?.views?.[framed] ? { cam: editCamera(shot0.cam, shot0.look, edit.views[framed]), look: shot0.look } : shot0;
     frame += ((shot && orbitHold <= 0 ? 1 : 0) - frame) * Math.min(1, dt * 2.6);
     // Harry, 9 Oct 2026: the camera sat jammed behind his head in every room. Now it stands
     // back and up, like a room view in a third-person game, looking down past him into the
@@ -662,6 +685,12 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const camUp = Math.min(ceil, camUp0 + short * ROOM_CAM.riseIfShort);
     want.set(P.x, camUp, P.z).addScaledVector(cf, -room2).addScaledVector(crr, 0.2);
     wantLook.set(P.x, ROOM_CAM.lookY, P.z).addScaledVector(cf, ROOM_CAM.lookAhead + short * 0.5).addScaledVector(crr, 0.1);
+    // the editor's walking-camera edit (none = as written); inRoom below still keeps it inside the walls
+    if (edit?.views) {
+      if (edit.views.follow) want.set(...editCamera([want.x, want.y, want.z], [wantLook.x, wantLook.y, wantLook.z], edit.views.follow));
+      const fov = editFov(baseFov, edit, shot ? framed : null, frame);
+      if (Math.abs(fov - camera.fov) > 1e-3) { camera.fov = fov; camera.updateProjectionMatrix(); }
+    }
     if (intro && (speed > 0.3 || walker.active || orbitHold > 0 || shot)) intro = null; // he moved: the follow camera takes over
     if (intro) { want.set(...intro.cam); wantLook.set(...intro.look); }
     if (shot) { want.lerp(scratchShot.set(...shot.cam), frame); wantLook.lerp(scratchShot.set(...shot.look), frame); }
@@ -705,7 +734,39 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
     const r = renderer.domElement.getBoundingClientRect();
     return new THREE.Vector2(((px - r.left) / r.width) * 2 - 1, -((py - r.top) / r.height) * 2 + 1);
   };
+  // the editor's key light (the sun through the drive window) and exposure; none = as written
+  const lightEdit = makeLightEditor({ key: sun, renderer, lookH: !!hEnh, scene, keyBase: () => ({ x: W2 + 5, y: 5.5, z: -1.5 }) });
+  reLight = () => { if (edit) { lightEdit(edit); shadowDirty = true; } };
+  reLight();
   const ctrl: HomeController = {
+    setEdit: (e) => {
+      edit = e;
+      lightEdit(e);
+      shadowDirty = true;
+      if (!e?.views) { camera.fov = baseFov; camera.updateProjectionMatrix(); }
+    },
+    showView: (id) => {
+      stopWalk();
+      if (id === "follow") {
+        ctrl.setCardOpen(null);
+        const door = arrivalDoor(room.plan, null);
+        const a = door ? arrivalAt(door, 1.5) : room.start;
+        ctrl.place(a.x, a.z, a.yaw);
+        return true;
+      }
+      const spot = id as HomeSpot;
+      if (!room.plan.spots.includes(spot)) return false;
+      const t = standFor(spot);
+      ctrl.place(t.at[0], t.at[1], Math.atan2(t.face[0] - t.at[0], t.face[1] - t.at[1]));
+      ctrl.setCardOpen(spot);
+      return true;
+    },
+    cameraPose: () => ({ pos: [camera.position.x, camera.position.y, camera.position.z], look: [camLook.x, camLook.y, camLook.z], fov: camera.fov }),
+    layout: () => {
+      const d = sun.position.clone().sub(sun.target.position).normalize();
+      const p = me.person.root.position;
+      return { people: [{ id: "you", x: p.x, z: p.z }], sunDir: [d.x, d.y, d.z], bounds: { min: [-W2, 0, -D2], max: [W2, H, D2] } };
+    },
     setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
     orbit: (dx, dy = 0) => { orb.drag(dx, dy); orbitHold = 1.5; },
     pick: (px, py) => {
@@ -748,7 +809,7 @@ async function buildHome(container: HTMLElement, cb: HomeCallbacks, data: HomeDa
       disposed = true;
       gov.dispose();
       hEnh?.dispose();
-      renderer.setAnimationLoop(null);
+      if (isOwner()) renderer.setAnimationLoop(null);
       ro.disconnect();
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);

@@ -15,7 +15,8 @@ import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { fitImage, getFittedHead, type FittedHead } from "@/lib/star/faceFit";
 import { managerLook } from "@/lib/star/managerFace";
 import { AVIATORS_CARD, contractRows, signingLines, wornAccessories } from "@/lib/star/signing3d";
-import type { SigningYou } from "@/lib/star/signing3dScene";
+import type { SigningSceneEdit, SigningYou } from "@/lib/star/signing3dScene";
+import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import SigningScene3D from "./SigningScene3D";
 import { useScannedPortrait } from "./useScannedPortrait";
 import type { ContractTerms } from "./TrialReward";
@@ -36,6 +37,8 @@ export default function SigningScene3DCareer({
    *  play, not a trial. */
   kind?: "trial" | "transfer";
 }) {
+  // an approved 3D Scene Editor edit for the career's signing, this kind of signing (none = as written)
+  const edit = useApprovedEdit<SigningSceneEdit>("signing", "career", [kind]);
   const scanned = useScannedPortrait(career.player.portrait);
   const faceUrl = scanned ?? career.player.portrait ?? DEFAULT_FAKE_FACE;
   const [fitted, setFitted] = useState<FittedHead | null | undefined>(undefined);
@@ -97,6 +100,7 @@ export default function SigningScene3DCareer({
       title={`Signing for ${club}`}
       onDone={onDone}
       onFail={onFail}
+      edit={edit}
     />
   );
 }

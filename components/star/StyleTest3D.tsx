@@ -65,7 +65,7 @@ function HMinimap({ dots }: { dots: Dot[] }) {
   );
 }
 
-export default function StyleTest3D({ header }: { header?: React.ReactNode } = {}) {
+export default function StyleTest3D({ header, embedded = false }: { header?: React.ReactNode; /** Test page on the admin frame: fill its box, not the screen. */ embedded?: boolean } = {}) {
   const [style, setStyle] = useState<StyleId>("real");
   const [scene, setScene] = useState<StyleScene>("real");
   /** The real game: the 3D view, or the 2D game it is drawn from. */
@@ -283,7 +283,7 @@ export default function StyleTest3D({ header }: { header?: React.ReactNode } = {
   const cutScene = scene === "goal" || scene === "signing" || scene === "walkout";
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-black text-white" data-style-test={`${style}-${scene}`}>
+    <div className={`${embedded ? "absolute" : "fixed"} inset-0 flex flex-col bg-black text-white`} data-style-test={`${style}-${scene}`}>
       <div className={`z-20 flex-col gap-1.5 bg-gray-950/95 px-2 pb-2 pt-2 ${clean ? "hidden" : "flex"}`}>
         {header}
         <div className="flex items-center gap-1.5 overflow-x-auto" data-style-chips>

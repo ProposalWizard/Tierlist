@@ -12,7 +12,7 @@
  * three.js is only fetched when this mounts (signing3dScene.ts imports it).
  */
 import { useEffect, useRef, useState } from "react";
-import type { SigningContract, SigningManager, SigningSceneHandle, SigningYou } from "@/lib/star/signing3dScene";
+import type { SigningContract, SigningManager, SigningSceneEdit, SigningSceneHandle, SigningYou } from "@/lib/star/signing3dScene";
 import type { SigningLine } from "@/lib/star/signing3d";
 import { SIGNATURE_D } from "./TrialReward";
 
@@ -62,10 +62,16 @@ export interface SigningScene3DProps {
   onFail?: () => void;
   /** A key that, when it changes, plays the scene from the start again. */
   replayKey?: number;
+  /** An approved 3D Scene Editor edit (lib/star/sceneEdits), or null: the scene exactly as written. */
+  edit?: SigningSceneEdit | null;
+  /** Test page: fill its box on the admin frame instead of the whole screen. */
+  embedded?: boolean;
 }
 
 export default function SigningScene3D(props: SigningScene3DProps) {
-  const { you, manager, contract, lines, title, onDone, doneLabel = "Continue", topRight, topLeft, onFail, replayKey = 0 } = props;
+  const { you, manager, contract, lines, title, onDone, doneLabel = "Continue", topRight, topLeft, onFail, replayKey = 0, edit = null, embedded = false } = props;
+  const editRef = useRef(edit);
+  editRef.current = edit;
   const wrap = useRef<HTMLDivElement>(null);
   const handle = useRef<SigningSceneHandle | null>(null);
   const [stage, setStage] = useState<Stage>("loading");
@@ -100,6 +106,7 @@ export default function SigningScene3D(props: SigningScene3DProps) {
         const { createSigningScene } = await import("@/lib/star/signing3dScene");
         const h = await createSigningScene(el, {
           you: youRef.current, manager, contract, signaturePath: SIGNATURE_D,
+          edit: editRef.current,
           onEvent: (e) => {
             if (e === "stamp") { setStamp(true); window.setTimeout(() => setStamp(false), 1500); }
             if (e === "done") setStage("done");
@@ -128,6 +135,9 @@ export default function SigningScene3D(props: SigningScene3DProps) {
     // The look changes through setYou below, not a rebuild.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [replayKey]);
+
+  // An approved edit that arrives after the scene is built (the shared copy loads a moment later).
+  useEffect(() => { if (edit && stage !== "loading" && stage !== "failed") handle.current?.setEdit(edit); }, [edit, stage === "loading"]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // A new look (the test area's picker, or a face arriving): rebuild you only.
   const youKey = JSON.stringify({ ...you, face: you.face ? (you.face.canvas as HTMLCanvasElement).width + ":" + you.face.chinY : null });
@@ -178,7 +188,7 @@ export default function SigningScene3D(props: SigningScene3DProps) {
   const speaker = current?.who === "boss" ? contract.managerName.toUpperCase() + " · MANAGER" : "YOU";
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "#120c08", color: INK, fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif", overflow: "hidden", touchAction: "manipulation" }}>
+    <div style={{ position: embedded ? "absolute" : "fixed", inset: 0, background: "#120c08", color: INK, fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif", overflow: "hidden", touchAction: "manipulation" }}>
       <div ref={wrap} data-stage={stage} onClick={tapScene} style={{ position: "absolute", inset: 0, cursor: stage === "talk" ? "pointer" : "default", userSelect: "none" }} />
 
       {/* Top bar: title, Skip, extras. A soft shade so the words read over any shot. */}

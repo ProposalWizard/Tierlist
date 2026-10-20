@@ -6,10 +6,12 @@
  * play each shot, each shot's camera position / look point / lens, the key
  * light (strength, angle, colour) and the exposure. No edit = today's scene.
  * Saves under script id "signing" / "office" (store.ts). The game's own
- * signing and office do NOT read these edits yet (Harry wants to see them first).
+ * signing and office use an edit only once it is APPROVED (UsePanel.tsx,
+ * Harry 20 Oct 2026), where and when the approval says.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Panel } from "@/components/admin/broadcast/BroadcastPage";
+import UsePanel from "./UsePanel";
 import { SKIN_TONES } from "@/lib/star/playerIdentity";
 import { SAMPLE_TERMS, contractRows } from "@/lib/star/signing3d";
 import { managerLook } from "@/lib/star/managerFace";
@@ -50,7 +52,7 @@ export default function PlaceEditor({ place, tabs }: { place: Place; tabs: React
     const el = holder.current;
     if (!el) return;
     let dead = false;
-    const first = loadPlaceLocal(place) ?? emptyPlace(place);
+    const first = loadPlaceLocal<PlaceSaved>(place) ?? emptyPlace(place);
     apply(first);
     (async () => {
       try {
@@ -89,8 +91,8 @@ export default function PlaceEditor({ place, tabs }: { place: Place; tabs: React
   useEffect(() => {
     fetchShared().then((sh) => {
       setMissing(sh.missing);
-      const sv = sharedPlace(sh.edits, place);
-      if (!loadPlaceLocal(place) && sv) apply(sv);
+      const sv = sharedPlace<PlaceSaved>(sh.edits, place);
+      if (!loadPlaceLocal<PlaceSaved>(place) && sv) apply(sv);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -130,7 +132,7 @@ export default function PlaceEditor({ place, tabs }: { place: Place; tabs: React
     setSaved((s) => ({ ...s, shots: { ...(s.shots ?? {}), [shot]: { ...(s.shots?.[shot] ?? {}), ...e } } }));
   const editScene = (e: NonNullable<PlaceSaved["scene"]>) => setSaved((s) => ({ ...s, scene: { ...(s.scene ?? {}), ...e } }));
   const resetShot = () => setSaved((s) => { const n = { ...(s.shots ?? {}) }; delete n[shot]; return { ...s, shots: n }; });
-  const resetAll = () => { apply(emptyPlace(place)); saveLocal(place, emptyPlace(place)); setSaveMsg("All edits cleared for this place."); };
+  const resetAll = () => { const e = { ...emptyPlace(place), ...(saved.approval ? { approval: saved.approval } : {}) }; apply(e); saveLocal(place, e); setSaveMsg("All edits cleared for this place (an approval stays)."); };
   const play = (id: SigningCamShot) => { h.current?.playShot(id); setShot(id); };
   const orbit = (dx: number, dy: number, dolly: number) => { if (pos && lookAt) editShot(orbitPose({ pos, look: lookAt }, dx, dy, dolly)); };
   const orbitHandlers = useOrbit(orbit);
@@ -205,7 +207,7 @@ export default function PlaceEditor({ place, tabs }: { place: Place; tabs: React
     <>
       <div className="se-unsaved" data-unsaved>
         Edits save on this device as you change them{missing ? " — the shared table isn't switched on yet, so SAVE FOR EVERYONE keeps them on this device only" : ""}.
-        {" "}The game does NOT read these edits yet: the real {place === "signing" ? "signing" : "manager's office"} in a career plays exactly as before.
+        {" "}The real {place === "signing" ? "signing" : "manager's office"} in a career uses these edits only once you APPROVE them (Use in the game, below); until then it plays exactly as before.
       </div>
       <div className="se-grid">
         <Panel title="3D PREVIEW" note={`live: the real ${name} scene`}>
@@ -239,6 +241,8 @@ export default function PlaceEditor({ place, tabs }: { place: Place; tabs: React
           </Panel>
         </div>
       </div>
+      <UsePanel place={place} scriptId={place} edits={saved} onChange={(e) => { lastSaved.current = JSON.stringify(e); setSaved(e); }}
+        gameNote={place === "signing" ? "In a career: the 3D signing after the trial and after every move (Settings → Look → Signing scene: 3D)." : "In a career: every talk with your manager in his office (the office pages, the line-up talk, Manager moments)."} />
       <div className="se-dim">Shots come from signing3dScene.ts&apos;s fixed table ({shots.length} here{place === "office" ? "; the office only uses the talk and reply shots" : ""}). <T k="code" /> every dial here drives the real scene.</div>
     </>
   );

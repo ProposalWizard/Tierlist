@@ -1,0 +1,4 @@
+{
+  "note": "Approved 3D Scene Editor edits the game uses (/star-scene-editor-dev → Approve → Commit to game). One entry per scene; the shared table star_cutscene_edits sits on top (the newer approval wins).",
+  "edits": {}
+}

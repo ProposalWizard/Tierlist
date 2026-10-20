@@ -10,11 +10,17 @@
  * trophy cabinet, the look (?look=h|old), and the house look (?house=new|old:
  * rooms you walk through, or the one room). The wardrobe's choice stays on
  * this page; nothing is saved.
+ * On the Broadcast frame (A-8, 20 Oct 2026): the house plays in the stage
+ * box, its switches in the title bar; ?bare=1 or ?film=1 opens it full
+ * screen as before. Approved 3D Scene Editor edits ticked for "the test
+ * page" play here.
  */
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageGuide from "@/components/admin/PageGuide";
+import { BroadcastPage, Btn, Pill } from "@/components/admin/broadcast/BroadcastPage";
 import Home3D from "@/components/star/Home3D";
+import "../star-3d-area-dev/stage3d.css";
 import { setToonYou } from "@/lib/star/style3d/toon/bodies";
 
 // the test player's name on the back of his Style A shirt (a career sets it from the save)
@@ -70,19 +76,41 @@ function Home3DTest() {
   }, [full, tier]);
 
   const btn: React.CSSProperties = { height: 28, padding: "0 9px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.6)", color: "#fff", fontWeight: 800, fontSize: 11.5, cursor: "pointer" };
+  const bare = params.get("bare") === "1" || params.get("film") === "1";
+  const home = (
+    <Home3D
+      key={`${tier}-${full}-${house}`}
+      career={career}
+      tier={tier}
+      lookH={lookH}
+      house={house}
+      where="test"
+      embedded={!bare}
+      backLabel="3D places"
+      onBack={() => router.push("/admin/star/g/places3d")}
+      onDoor={() => router.push("/star-garden3d-dev?arrive=house")}
+      onOutfit={setOutfit}
+    />
+  );
+  if (!bare) {
+    return (
+      <>
+        <BroadcastPage title="3D house" sub="Your house: the wardrobe and mirror, the trophy cabinet, your cars on the drive." width={1440}>
+          <div className="s3-bar" data-home3d-dev>
+            {HOME_TIERS.map((t) => <Pill key={t} on={tier === t} onClick={() => setTier(t)}>{t}</Pill>)}
+            <Btn onClick={() => setFull((f) => !f)}>{full ? "Full cabinet" : "Empty cabinet"}</Btn>
+            <Btn onClick={() => setHouse((h) => (h === "new" ? "old" : "new"))} title="Rooms you walk through (New), or the one room (Old)">House: {house === "new" ? "New" : "Old"}</Btn>
+            <Btn href="/star-scene-editor-dev?place=house" title="Camera and light for the house">Scene editor ›</Btn>
+          </div>
+          <div className="s3-stage" data-house-look={house}>{home}</div>
+        </BroadcastPage>
+        <PageGuide page="/star-home3d-dev" corner="bottom-left" />
+      </>
+    );
+  }
   return (
     <>
-      <Home3D
-        key={`${tier}-${full}-${house}`}
-        career={career}
-        tier={tier}
-        lookH={lookH}
-        house={house}
-        backLabel="3D places"
-        onBack={() => router.push("/admin/star/g/places3d")}
-        onDoor={() => router.push("/star-garden3d-dev?arrive=house")}
-        onOutfit={setOutfit}
-      />
+      {home}
       <div style={{ position: "fixed", top: 128, left: 12, right: 12, zIndex: 90, display: "flex", gap: 5, flexWrap: "wrap" }} data-home3d-dev>
         {HOME_TIERS.map((t) => (
           <button key={t} onClick={() => setTier(t)} style={{ ...btn, background: tier === t ? "#facc15" : btn.background, color: tier === t ? "#111" : "#fff" }}>{t}</button>

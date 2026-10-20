@@ -1364,55 +1364,115 @@ export const ADMIN_GUIDES = {
 
   "/star-scene-editor-dev": {
     title: "3D Scene Editor",
-    what: "The one editor for every 3D scene. Three places work: the Cut-scene Director, 3D Signing and the Manager's Office. Pick a scene or a shot, change the camera (or fly a free camera) and the lighting, and watch the real scene play it. Edits save per scene and per shot. Nothing touches a career, and the game does not read these edits yet: the real signing, office and cut scenes play exactly as before.",
+    what: "The one editor for every 3D scene: the Cut-scene Director, 3D Signing, the Manager's Office, the 3D Shop, the 3D Garden and the 3D House. Pick a place, change the camera and the light, and watch the real scene play it. An edit only reaches the game once you APPROVE it, and only where and when you choose. Commit to game writes an approved edit into the game's code.",
     buttons: [
       {
         group: "3D Preview",
         items: [
-          ["Place tabs (3D Signing … Cut-scene Director)", "3D Signing, Manager's Office and Cut-scene Director work. Shop, Garden and House say \"coming next\" (hidden on a phone)."],
+          ["Place tabs (3D Signing … Cut-scene Director)", "Open that place, live. All six work."],
           ["Shot buttons (3D Signing / Manager's Office: 1. He talks … 5. The handshake)", "Play that fixed shot from its start; the settings then change that shot. The office has only He talks and You reply. A • marks a shot you have edited."],
+          ["View buttons (3D Shop / Garden / House: 1. Walking about, 2. Card: …)", "Stand him for that view: walking about, or a card open on the boots, the car, the counter, the homes, the cans (shop) or the wardrobe, the cabinet, the drive (house). The settings then change that view. A • marks an edited view."],
+          ["Time of day, Stand (3D Garden)", "Build the garden by day, at sunset or at night, and stand him at the gate, the fountain, the shop, the casino, the pitch gate or the house door to see the walking camera there."],
+          ["Home, Room (3D House)", "Build that home (starter … estate) and walk into one of its rooms. A card view only works in the room that has it (a line says so)."],
           ["▶ PLAY SHOT (3D Signing / Manager's Office)", "Play the shot on screen again from its start."],
-          ["Scene buttons (Contract signing, Goal celebration …)", "Load that hand-made cut scene into the preview. Your edits are cleared."],
-          ["The badge top-left", "The shot under the playhead, its name and its lens."],
-          ["Drag on the preview", "Free camera: orbit and tilt round the look point. Wheel or pinch moves in and out. Only the shot under the playhead changes."],
-          ["The map, bottom-right", "The set seen from above. Drag the blue box (camera), the white dot (look point) or the yellow sun (key light, round the ring)."],
+          ["Scene buttons (Contract signing, Goal celebration …, Kept: …)", "Load that cut scene into the preview. \"Kept: …\" scenes come from the Scene generator's Keep button."],
+          ["The badge top-left", "The shot or view on screen, and its lens."],
+          ["Drag on the preview", "Director: a free camera round the look point. Signing / Office: orbit this shot. Shop / Garden / House: turn and rise this view; wheel or pinch changes its distance."],
+          ["The map, bottom-right", "The place seen from above. Drag the blue box (camera), the white dot (look point) or the yellow sun (key light, round the ring). Shop, Garden and House: only the sun drags; the camera follows him."],
         ],
       },
       {
-        group: "Settings (Camera / Lighting / Cast / Scene tabs on a phone)",
+        group: "Settings (Camera / Lighting tabs on a phone)",
         items: [
-          ["Shot preset buttons and list", "Change the framing of the shot under the playhead (18 framings)."],
-          ["Lens, Turn, Rise, Move, Move amount, Handheld shake", "Change the shot under the playhead. Each shot keeps its own edits."],
-          ["Mood", "Time of day and colour of the whole scene."],
-          ["Exposure, Key light strength", "Brightness of the scene and of the sun / key light."],
-          ["Spotlight on a person", "Puts a spotlight on one person; Spot strength sets how bright."],
-          ["Position X/Y/Z, Look at", "Show where the camera stands and looks now. Type a number to take over with a free camera."],
-          ["Back to the shot", "Drops the free camera for this shot; the shot plays as written."],
-          ["Key light angle, Key light colour", "Turn the sun round the set and change its colour. \"As written\" puts the colour back."],
-          ["Greyed rows with \"coming next\"", "PART and NEW dials from the drawing. Not built yet."],
-          ["3D Signing / Manager's Office settings", "Only what those scenes have: Position, Look at, Lens per shot (drag the preview to orbit; Back to the shot undoes it), Exposure, Key light strength, angle and colour (the low sun through the window). No mood, spotlight, presets, cast or timeline there."],
+          ["Shot preset buttons and list", "Director: change the framing of the shot under the playhead (18 framings)."],
+          ["Lens, Turn, Rise, Move, Move amount, Handheld shake", "Director: change the shot under the playhead. Each shot keeps its own edits."],
+          ["Turn, Rise, Distance, Lens (Shop / Garden / House)", "Change the view on screen. The edit sits on top of the camera the scene works out as he walks, so it follows him; the scene still keeps it out of walls and trees. \"As written\" puts the lens back."],
+          ["Mood", "Director: time of day and colour of the whole scene."],
+          ["Exposure, Key light strength", "Brightness of the scene and of the sun / key light. With the broadcast look on, Shop / Garden / House exposure brightens the lights instead."],
+          ["Spotlight on a person", "Director: a spotlight on one person; Spot strength sets how bright."],
+          ["Position X/Y/Z, Look at", "Director, Signing, Office: where the camera stands and looks. Type a number to take over."],
+          ["Back to the shot / Back to as written", "Drop this shot's or view's edit; it plays as written."],
+          ["Key light angle, Key light colour", "Turn the key light round the place and change its colour. \"As written\" puts the colour back."],
+          ["Greyed rows with \"coming next\"", "Director dials not built yet."],
         ],
       },
       {
-        group: "Timeline",
+        group: "Timeline and saving",
         items: [
-          ["▶ Play / ❚❚ Pause, ↺ Replay", "Play the scene, stop it, start again."],
-          ["The scrub bar, or a click on a lane", "Jump to that moment (director.seek)."],
-          ["Lanes", "The scene's real tracks, read-only: camera shots, light and effects, each person's moves, speech and captions."],
-          ["SAVE FOR EVERYONE", "Copies this scene's edits to the shared table (admin only). If the table isn't switched on yet, it says so and the edits stay on this device."],
-          ["Copy edits", "Copies this scene's edits as JSON."],
-          ["Reset this shot / Reset all", "Clears the edits of the shot under the playhead / of the whole scene."],
+          ["▶ Play / ❚❚ Pause, ↺ Replay, the scrub bar", "Director: play, stop, start again, jump to a moment."],
+          ["SAVE FOR EVERYONE", "Copies this scene's edits to the shared table (admin only). If the table isn't switched on, it says so and the edits stay on this device."],
+          ["Copy edits", "Copies the edits as text."],
+          ["Reset this shot / view, Reset all", "Clear one shot's or view's edits, or the whole place's (an approval stays)."],
+        ],
+      },
+      {
+        group: "Use in the game",
+        items: [
+          ["✓ APPROVE", "The game may now use this edit. It also saves it for everyone. It stays editable: after a change press SAVE FOR EVERYONE (or Commit to game) so the game gets the new copy."],
+          ["Withdraw approval", "The game stops using it (the shared copy is updated straight away)."],
+          ["Where (ticks)", "In a career: the real game. The test page: that place's own test page. Untick both and nothing uses it."],
+          ["When (list)", "Always, or only at one moment: the signing (first contract / a move), the shop (walking in from the garden / from the Shop page), the garden (day / sunset / night), the house (one home), a cut scene (one event)."],
+          ["COMMIT TO GAME", "Writes this approved edit into the game's code (lib/star/data/sceneEdits.json) on main. Without GITHUB_TOKEN it says so in red and nothing is committed. A withdrawn approval sent this way is taken out of the code."],
         ],
       },
     ],
     saving: [
-      "This device: every change saves at once (localStorage), per scene and per shot, and comes back when you reopen it.",
-      "Save ids: 3D Signing saves as \"signing\", the Manager's Office as \"office\", each director scene under its own name, except Contract signing, which now saves as \"director:signing\" (an older save of it is still read back).",
-      "Shared: SAVE FOR EVERYONE writes to the star_cutscene_edits table through /api/star/cutscene-edits (admins only). Needs supabase/migrations/star_cutscene_edits.sql run; until then it says \"Saved on this device only\".",
-      "Nothing commits to the repo.",
+      "This device: every change saves at once (localStorage), per place and per shot or view, and comes back when you reopen it.",
+      "Save ids: \"signing\", \"office\", \"shop\", \"garden\", \"house\"; each director scene under its own name (Contract signing as \"director:signing\"); a kept generated scene under its recipe id.",
+      "Shared: SAVE FOR EVERYONE and APPROVE write to the star_cutscene_edits table through /api/star/cutscene-edits (admins only). Needs supabase/migrations/star_cutscene_edits.sql (run).",
     ],
-    inGame: ["Nowhere yet. It plays the same director and the same signing/office scene the game uses, but the game does not read these edits (Harry wants to see them first)."],
-    dev: "app/star-scene-editor-dev/page.tsx (+ editor.css, parts.tsx, PlaceEditor.tsx for Signing/Office) · lib/star/signing3dScene.ts (optional edit / setEdit / playShot / shotDefaults / cameraPose / layout; no edit = today's scene, the career never passes one) · lib/star/cutscene/director.ts (optional setEdit / cameras / cameraPose / layout hooks; no edit = the game's behaviour) · store.ts (saves) · app/api/star/cutscene-edits/route.ts · fixtures from lib/star/cutscene/fixtures.ts · drawing: docs/handoffs/2026-10-19-ui-lookover/scene-editor/.",
+    commit: [
+      "COMMIT TO GAME writes approved edits into lib/star/data/sceneEdits.json on the main branch, through GitHub (the gallery's commit machinery). Vercel rebuilds the live site from main: a minute or two.",
+      "Needs an admin sign-in and GITHUB_TOKEN in Vercel. Without the token you get a plain red message and nothing is committed.",
+    ],
+    inGame: [
+      "Only APPROVED edits, only where and when the approval says. The career's 3D signing, the manager's office, the 3D shop, the garden and the house read them as they open (the committed file at once, the shared table a moment later; the newer approval wins).",
+      "No approved edit: every scene plays exactly as before.",
+      "Cut scenes (the Director) don't play in a career yet: an approved director edit is used on the Cut-scene Director test page for now.",
+    ],
+    dev: "app/star-scene-editor-dev/page.tsx (+ editor.css, parts.tsx, PlaceEditor.tsx for Signing/Office, WalkPlaceEditor.tsx for Shop/Garden/House, UsePanel.tsx for Approve/Commit, sampleCareer.ts, store.ts) · lib/star/sceneEdits/ (approval.ts where/when + newest wins, walkEdit.ts view edits, useApproved.ts the game's read hook, kept.ts) · optional edit hooks: lib/star/signing3dScene.ts, lib/star/shop3d/scene.ts, lib/star/garden3d/scene.ts, lib/star/home3d/scene.ts, lib/star/cutscene/director.ts (no edit = as before) · app/api/star/cutscene-edits/route.ts (?approved=1) and commit/route.ts · tests/star/sceneEdits.mts.",
+  },
+  "/admin/scene-generator": {
+    title: "Scene generator",
+    what: "A game moment in, a whole cut scene out. Pick the event, the feeling, how big the moment is and a seed, then Generate: the real cut-scene director plays it, with its recipe beside it. Mark it Good or Bad, keep it for the 3D Scene Editor, and see when a generated scene would play in the game.",
+    buttons: [
+      {
+        group: "The moment",
+        items: [
+          ["Event buttons (Signed … Mentor advice)", "The game moment: 18 kinds."],
+          ["Feeling buttons (Joy … Inspired)", "How you feel about it: 12 feelings."],
+          ["How big the moment is", "Small (a friendly) to big (a cup-final winner). Bigger moments get longer scenes and closer shots."],
+          ["How intense", "Calm to wild."],
+          ["Seed − / + and the box", "Pick the seed. The same event, feeling, size, intensity and seed always make the same scene."],
+          ["🎲 Re-roll", "The next seed, made at once."],
+          ["GENERATE", "Make the scene from the dials."],
+        ],
+      },
+      {
+        group: "The picture",
+        items: [
+          ["▶ PLAY / ❚❚ PAUSE, ↺ Replay, the scrub bar", "Play the scene, stop it, start again, jump to a moment."],
+          ["👍 Good / 👎 Bad", "Mark this recipe. The marks add up per event in the table below."],
+          ["Keep as a hand-made scene", "Save this scene exactly as it is (later changes to the generator never change it). The 3D Scene Editor shows it as \"Kept: …\"."],
+          ["Open in the editor ›", "Open the kept scene in the 3D Scene Editor (keep it first)."],
+          ["3D Scene Editor › (top right)", "Open the editor."],
+        ],
+      },
+      {
+        group: "The recipe and When does this play?",
+        items: [
+          ["The recipe", "Where it happens, the mood, how long, who is in it, the film-rules score (and what broke), the beats in order, and the shot list."],
+          ["The table", "Each event, the game moment that would play it, what the game shows there today, and its status. Tap a row to pick that event."],
+        ],
+      },
+    ],
+    saving: [
+      "Marks and kept scenes: this device at once, then the shared table star_cutscene_edits (rows \"mark:…\" and \"kept:…\", never approved, so the game never reads them). If the shared table can't be written, the line under the buttons says \"saved on this device only\".",
+    ],
+    inGame: [
+      "Nowhere. Today a generated scene plays only on test pages (here, the Cut-scene Director, the 3D Scene Editor). The table is the proposal for which game moment would play each one; nothing is wired until Harry says so.",
+    ],
+    dev: "app/admin/scene-generator/page.tsx (+ generator.css) · lib/star/cutscene/generate.ts (generateScript, scoreScript) · lib/star/sceneEdits/kept.ts (recipes, marks, kept scenes) · lib/star/sceneEdits/whenPlays.ts (the When table; tests/star/sceneEdits.mts keeps it honest) · /api/star/cutscene-edits.",
   },
   "/star-3d-area-dev": {
     title: "3D Area",
@@ -1467,8 +1527,10 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["← (top left)", "Back to the 3D places group page."],
-          ["↺", "Starts the scene again from the first line."],
-          ["Your player", "Opens the picker: skin tone, face picture, hair, every store accessory and the Star Pass Gold Aviators. A change rebuilds your player straight away."],
+          ["↺ Replay (above the scene)", "Starts the scene again from the first line."],
+          ["Your player (above the scene)", "Opens the picker under the scene: skin tone, face picture, hair, every store accessory and the Star Pass Gold Aviators. A change rebuilds your player straight away."],
+          ["Scene editor ›", "Opens the 3D Scene Editor on the signing: camera, lens and light per shot, Approve, Commit to game."],
+          ["?bare=1 on the address", "The scene full screen, as before the admin frame (↺ and Your player at its top right)."],
           ["Skip", "Leaves the scene. In a career this goes straight on to the next screen."],
           ["Tap the scene", "Shows the rest of a line at once, or moves to the next line. While you sign, a tap jumps to the handshake."],
           ["TAP TO SIGN", "Appears with the contract. The camera pulls back, you pick up the pen and sign, SIGNED stamps on, then the handshake."],
@@ -1492,6 +1554,7 @@ export const ADMIN_GUIDES = {
       "In a career when Settings → Look → \"Signing scene\" is 3D (the default, per phone): the first contract and every club move play this scene with your own player (skin, face picture, hair, accessories, aviators), the club's kit, your shirt number, seasons and wage. Drawn keeps the picture signing as it was.",
       "If the phone cannot run the 3D, the career falls back to the drawn signing by itself.",
       "Later transfers (signing for a new club at the end of a season) still use the paper signature page.",
+      "An edit APPROVED in the 3D Scene Editor plays here when it is ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its When holds). None: the scene exactly as written.",
     ],
     dev: "app/star-3d-area-dev/signing/page.tsx · components/star/SigningScene3D.tsx (the screen) · components/star/SigningScene3DCareer.tsx (career → scene) · lib/star/signing3dScene.ts (room, camera, timeline) · lib/star/people3d.ts (the approved player and manager: kit, skin, hair, face picture, accessories, outline) · lib/star/signing3dRig.ts (arm IK) · lib/star/signing3dTextures.ts (contract and other canvas pictures) · lib/star/signing3d.ts (lines, terms, the Settings switch) · public/star/people3d/*.glb (scripts/people3d/build_people3d.py) · public/star/signing3d/aviators.glb · stills: scripts/signing3d-shot.mjs · tests/star/signing3d.mts",
   },
@@ -1503,8 +1566,10 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["← (top left)", "Back to the 3D places group page."],
-          ["He talks / You talk", "Moves the camera: over your shoulder at him, or over his at you."],
-          ["Next line", "Steps through four sample lines, switching who talks."],
+          ["He talks / You talk (above the scene)", "Moves the camera: over your shoulder at him, or over his at you."],
+          ["Next line ›", "Steps through four sample lines, switching who talks."],
+          ["Scene editor ›", "Opens the 3D Scene Editor on the office: camera, lens and light per shot, Approve, Commit to game."],
+          ["?bare=1 on the address", "The office full screen, as before the admin frame."],
           ["👁 (bottom left)", "This guide."],
         ],
       },
@@ -1515,6 +1580,7 @@ export const ADMIN_GUIDES = {
       "The same switch puts three manager moments in the office: a club's contract offer (before the talks), manager news on Home (Continue dismisses it), and being left out of the squad (above the card on the match screen).",
       "If the phone cannot run the 3D, the chat carries on without the office.",
       "The people are the one body (Settings → Look → \"3D people\").",
+      "An edit APPROVED in the 3D Scene Editor plays here when ticked for \"the test page\", and in every career office talk when ticked for \"in a career\". None: the office exactly as written.",
     ],
     dev: "app/star-3d-area-dev/office/page.tsx · components/star/Office3D.tsx (stage + career look) · lib/star/signing3dScene.ts (stage: \"office\" dresses the room) · components/star/relgames/BossChat.tsx, components/star/ManagerMoments.tsx, components/star/LineupIntro.tsx (mount it) · lib/star/look3d.ts (the Settings switches)",
   },
@@ -1655,9 +1721,11 @@ export const ADMIN_GUIDES = {
     buttons: [
       { items: [
         ["‹ Home", "Back to the 3D places group page."],
-        ["day / sunset / night", "Changes the time of day. In a career it follows the time of your next kick-off."],
-        ["Full career / New career", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
-        ["Restart", "Builds the garden again from the start."],
+        ["Day / Sunset / Night (above the scene)", "Changes the time of day. In a career it follows the time of your next kick-off."],
+        ["Full career / New career (above the scene)", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
+        ["↻ Restart (above the scene)", "Builds the garden again from the start."],
+        ["Scene editor › (above the scene)", "Opens the 3D Scene Editor on the garden: the walking camera (turn, rise, distance, lens) and the sun, Approve, Commit to game."],
+        ["?bare=1 (in the address)", "The garden full screen, as before the admin frame (its switches float top left). ?film=1 does the same for the film tools."],
         ["?outfit=coat (in the address)", "He walks the garden in that casual set, as if picked at your house's wardrobe: hoodie, tee, shirt, tracksuit or coat. Without it: the club kit."],
         ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
         ["Drag the view", "Swings the camera round him."],
@@ -1679,7 +1747,7 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: ["Nothing is saved. The career here is made up each time, and so is its money."],
-    inGame: ["Home → Garden in a career opens this 3D garden. The shop where the house used to be is the 3D shop; the casino and the training pitch are at the back.", "Home → Casino opens the 3D casino when Settings → Look → Casino is 3D (the default), else the classic casino menu."],
+    inGame: ["Home → Garden in a career opens this 3D garden. The shop where the house used to be is the 3D shop; the casino and the training pitch are at the back.", "Home → Casino opens the 3D casino when Settings → Look → Casino is 3D (the default), else the classic casino menu.", "A 3D Scene Editor edit APPROVED for the garden plays here when ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its time of day matches). None: the garden as built."],
     dev: "components/star/Garden3D.tsx, lib/star/garden3d/scene.ts (Old look: sceneOld.ts); the casino components/star/Casino3D.tsx + lib/star/casino3d/scene.ts; the pitch's placeholder components/star/TrainingPitchScreen.tsx; tap to move lib/star/tapWalk.ts; the walk lib/star/walkClip.ts; draw-call merging lib/star/freezeStatic.ts; models packed by tools/garden3d/export_models.py and build_anims.py.",
   },
   "/star-training3d-dev": {
@@ -1715,6 +1783,11 @@ export const ADMIN_GUIDES = {
     title: "Style Testing",
     what: "Try the shortlisted art styles (and Mix) on the REAL game (the match engine's own chances, drawn in 3D), the 3D free roam and cut scenes, switching live. A test area: nothing here changes the game.",
     buttons: [
+      { group: "The page (above the scene)", items: [
+        ["Scene generator ›", "Opens the Scene generator (Studio): a cut scene made from a game moment, its recipe, Good/Bad, keep it."],
+        ["Scene editor ›", "Opens the 3D Scene Editor on the Cut-scene Director."],
+        ["The stage", "Everything below plays in this box on the admin frame. ?clean=1 (the stills and film tools) or ?bare=1 opens it full screen, as before."],
+      ] },
       { group: "Style (top row)", items: [
         ["A", "Golden Hour: painted, warm sunset, soft cel bands, thin brown lines, haze, paper grain."],
         ["B", "Floodlight Ink: night under floodlights, bold black lines, comic dots in the shadows, rain."],
@@ -1739,7 +1812,7 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: ["Nothing is saved. The address can hold a set-up: ?style=ink&scene=goal&tilt=30 (and &t=6 holds a cut scene still at 6 seconds). Director: ?scene=director&fixture=signing, or ?scene=director&event=scored&stakes=0.8&emotion=joy&seed=3; &clean=1 hides the controls for filming; &cam=old or &cam=new overrides the Cut-scene camera setting on this page. Real game: &seed=7 picks the chance stream, &kinds=one_on_one,penalty only those chances, &view=2d starts on 2D, &clock=virtual freezes the clock for frame-by-frame filming (scripts/film/frames3d.mjs)."],
-    inGame: ["Nowhere yet: a sandbox for choosing the look. The 2D match is not touched."],
+    inGame: ["Nowhere yet: a sandbox for choosing the look. The 2D match is not touched.", "Cut-scene Director (Hand-made): a 3D Scene Editor edit APPROVED for that scene and ticked for \"the test page\" plays here."],
     dev: "app/star-style-dev/page.tsx · components/star/StyleTest3D.tsx · Real game: components/star/RealGame3D.tsx (EnginePlay in an EngineFrameContext, lib/star/engineFrame.ts) + lib/star/style3d/engineView.ts (the 3D picture and touch hand-over), lib/star/virtualClock.ts (filming) · lib/star/style3d/ (styles.ts the five looks as data, kit.ts sky + lights + rain + materials, post.ts the one-pass post shader, stadium.ts, gameplay.ts on lib/star/play3d's World + picture via its optional bare/rig/draw/onBuilt hooks, flatFigure.ts the 2D cards, cutscenes.ts → the cut-scene system). The cut-scene system: lib/star/cutscene/ (README.md there); components/star/CutsceneDirector.tsx. Loaders through withMeshopt. Post is off on Low quality except the pixel style.",
   },
   "/star-shop3d-dev": {
@@ -1749,6 +1822,9 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["‹ 3D places", "Back to the 3D places group page."],
+          ["Start at the doors / Start in the middle (above the scene)", "Open the shop just inside its front doors (as when you walk in from the garden), or in the middle."],
+          ["Edit in the scene editor › (above the scene)", "Opens the 3D Scene Editor on the shop: walking and card views (turn, rise, distance, lens), the light, Approve, Commit to game."],
+          ["?bare=1 (in the address)", "The shop full screen, as before the admin frame. ?film=1 does the same for the film tools."],
           ["The club button (top right)", "Changes the kit he's wearing. Tap again for the next club."],
           ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
           ["Drag the view", "Swings the camera round him."],
@@ -1775,6 +1851,7 @@ export const ADMIN_GUIDES = {
       "Yes, as a beta: the Shop page (swipe right from Home) has a \"Walk the 3D shop (beta)\" button under Store and Casino. The normal shop is unchanged.",
       "In a career the card shows the career's own prices and an \"Owned\" or \"Wearing\" tag, and its button is \"See it in the shop\": it opens that item in the normal shop to buy it. Nothing is bought in 3D.",
       "The boots and the cars are real 3D models, made from the same Blender models as the shop pictures. Boots are shown at level 3; each car at one level (the card says which). The watches and jewellery are the shop pictures in light boxes, not 3D. The cans are simple 3D cans.",
+      "A 3D Scene Editor edit APPROVED for the shop plays here when ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its When matches: walking in from the garden, or from the Shop page). None: the shop as built.",
     ],
     needs: [
       "A phone or browser that runs 3D (WebGL). If it can't, the page says so and the normal shop still works. A slow phone drops to fewer pixels and no shadows on its own. Standing still it draws 30 times a second; walking, every frame at fewer pixels.",
@@ -1789,7 +1866,9 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["‹ 3D places", "Back to the 3D places group page."],
-          ["starter … estate", "Which home you are in. In a career it is the best home you own: Studio Flat or City Apartment = flat, Penthouse, Suburban House = house, Beach Villa or Mansion = villa, Country Estate or Private Island = estate."],
+          ["Scene editor › (above the scene)", "Opens the 3D Scene Editor on the house: walking and card views (turn, rise, distance, lens), the sun, Approve, Commit to game."],
+          ["?bare=1 (in the address)", "The house full screen, as before the admin frame. ?film=1 does the same for the film tools."],
+          ["starter … estate (above the scene)", "Which home you are in. In a career it is the best home you own: Studio Flat or City Apartment = flat, Penthouse, Suburban House = house, Beach Villa or Mansion = villa, Country Estate or Private Island = estate."],
           ["Full cabinet / Empty cabinet", "The made-up career with trophies, awards, cars, watches, jewellery and cans, or with none."],
           ["House: New / Old", "New: the home's rooms. Old: the one room, as it was. The same as Settings → Look → \"House\" (this button does not change that setting)."],
           ["Room name and dots (top middle)", "Which room you are in. Tap a dot to jump to that room."],
@@ -1825,6 +1904,7 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Yes: Home's phone has a \"Your house\" app, the Shop page has a \"Your house\" button, and the 3D garden has a house door on its east side.",
       "The casual set you pick is what you wear in the 3D garden and the 3D shop. The training pitch and matches are always in kit.",
+      "A 3D Scene Editor edit APPROVED for the house plays here when ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its When matches the home). None: the house as built.",
     ],
     needs: [
       "A phone or browser that runs 3D (WebGL). The casual clothes use the human body file (about 5.6 MB, downloaded once).",

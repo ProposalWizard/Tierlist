@@ -16,7 +16,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import type { SigningManager, SigningSceneHandle, SigningYou } from "@/lib/star/signing3dScene";
+import type { SigningManager, SigningSceneEdit, SigningSceneHandle, SigningYou } from "@/lib/star/signing3dScene";
+import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
 import { kitsOf } from "@/lib/star/kits";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
@@ -38,6 +39,8 @@ export interface Office3DProps {
   onFail?: () => void;
   className?: string;
   style?: React.CSSProperties;
+  /** Which screen this is, for approved 3D Scene Editor edits (lib/star/sceneEdits): the career (default) or the test page. */
+  where?: "career" | "test";
 }
 
 export function managerFor(name: string): SigningManager {
@@ -48,7 +51,11 @@ export function managerFor(name: string): SigningManager {
   };
 }
 
-export default function Office3D({ you, manager, managerName, club, speaker, onFail, className, style }: Office3DProps) {
+export default function Office3D({ you, manager, managerName, club, speaker, onFail, className, style, where = "career" }: Office3DProps) {
+  // an approved 3D Scene Editor edit for the office here (none = as written)
+  const edit = useApprovedEdit<SigningSceneEdit>("office", where);
+  const editRef = useRef(edit);
+  editRef.current = edit;
   const wrap = useRef<HTMLDivElement>(null);
   const handle = useRef<SigningSceneHandle | null>(null);
   const [ready, setReady] = useState(false);
@@ -77,6 +84,7 @@ export default function Office3D({ you, manager, managerName, club, speaker, onF
           you: youRef.current, manager,
           contract: { club, playerName: "", managerName, rows: [], shirt: kit.shirt, trim: kit.trim },
           signaturePath: SIGNATURE_D,
+          edit: editRef.current,
         });
         if (disposed) { h.dispose(); return; }
         handle.current = h;
@@ -96,6 +104,9 @@ export default function Office3D({ you, manager, managerName, club, speaker, onF
     // built once; the look changes through setYou
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // An approved edit that arrives after the office is built.
+  useEffect(() => { if (edit && ready) handle.current?.setEdit(edit); }, [edit, ready]);
 
   // The camera follows whoever is talking.
   useEffect(() => {
