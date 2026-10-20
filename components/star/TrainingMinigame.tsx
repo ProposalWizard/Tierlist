@@ -639,7 +639,7 @@ function GauntletDrill({ trainingLevel, onFinish, onExit, override }: { training
   return (
     <Shell
       title={SKILL_TITLES.pace}
-      instruction="Read each man as he commits, then burst the other way. Get to the line with the ball."
+      instruction="One man comes for the ball. Pick the gap, wait for his shoulder, and flick the other way as his ring turns green."
       results={results} trainingLevel={trainingLevel} onExit={onExit}
     >
       <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "5 / 8" }}>
@@ -655,6 +655,7 @@ function GauntletDrill({ trainingLevel, onFinish, onExit, override }: { training
             chasePitchDeg={5}
             chaseOffset={4}
             cameraFollowRate={10}
+            knockOn
             onComplete={onComplete}
           />
         )}
