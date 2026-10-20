@@ -2,11 +2,11 @@
 // A short content hash per 3D file: the loaders ask for /star/x?v=<hash>, which the site serves as immutable.
 export const ASSET_VERSIONS: Record<string, string> = {
   "/star/anims3d/casino-ual.glb": "5faaf121",
-  "/star/anims3d/casino.glb": "a03b9f6b",
+  "/star/anims3d/casino.glb": "a3f97be3",
   "/star/anims3d/football-ual.glb": "d2d389b1",
-  "/star/anims3d/football.glb": "764505f6",
+  "/star/anims3d/football.glb": "913e95f2",
   "/star/anims3d/mocap-ual.glb": "4a6ea67e",
-  "/star/anims3d/mocap.glb": "84b343ba",
+  "/star/anims3d/mocap.glb": "df97eff4",
   "/star/area3d/match-blender-before-after.jpg": "ddcc902c",
   "/star/area3d/match-blender.jpg": "d3d90afb",
   "/star/area3d/match-sprite-away-hips.png": "65658fda",
@@ -160,7 +160,7 @@ export const ASSET_VERSIONS: Record<string, string> = {
   "/star/onebody/player.glb": "661d0532",
   "/star/onebody/player.ktx2.glb": "58257935",
   "/star/ovation3d/greetings.glb": "e0fa7742",
-  "/star/people3d/anims.glb": "f3d20231",
+  "/star/people3d/anims.glb": "405217ea",
   "/star/people3d/manager.glb": "1290e07c",
   "/star/people3d/player-buzz.glb": "1b9fc428",
   "/star/people3d/player-long.glb": "9a255831",
