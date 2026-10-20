@@ -149,7 +149,8 @@ function SortableImageCard({
     opacity: isDragging ? 0.5 : 1,
     cursor: "grab",
   };
-  // Phone fix (20 Oct 2026): a visible grip shows the card can be moved.
+  // Phone fix (20 Oct 2026): a visible grip (on the picture's bottom-left
+  // corner; both picture kinds are 80 px tall) shows the card can be moved.
   // The whole card still drags (mouse: after 5 px; touch: hold ¼ s first).
   return (
     <div ref={setNodeRef} style={{ ...style, position: "relative" }} {...attributes} {...listeners}>
@@ -157,7 +158,7 @@ function SortableImageCard({
       <span
         aria-hidden
         data-drag-handle
-        className="pointer-events-none absolute bottom-1 left-1 z-10 grid h-6 w-6 place-items-center rounded-md bg-black/70 text-[13px] font-black leading-none text-white ring-1 ring-white/30"
+        className="pointer-events-none absolute left-1 top-[52px] z-10 grid h-6 w-6 place-items-center rounded-md bg-black/70 text-[13px] font-black leading-none text-white ring-1 ring-white/30"
       >
         ⠿
       </span>
