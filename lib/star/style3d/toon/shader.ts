@@ -512,8 +512,10 @@ export function patchToonBody(T: Three, mat: THREE.MeshStandardMaterial, u: Reco
     sh.uniforms.uSkinFx = skinU;
     Object.assign(sh.uniforms, toonRimUniforms(T));
     sh.vertexShader = sh.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vRest;\nvarying vec3 vRestN;")
-      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvRest = position;\nvRestN = normal;");
+      // TOON_AREST: a body rebuilt to other proportions (toon/proportions.ts) carries the file's own rest
+      // as aRest; the kit lines, the number and the face are painted from it, so they stay on the body
+      .replace("#include <common>", "#include <common>\nvarying vec3 vRest;\nvarying vec3 vRestN;\n#ifdef TOON_AREST\nattribute vec3 aRest;\n#endif")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\n#ifdef TOON_AREST\nvRest = aRest;\n#else\nvRest = position;\n#endif\nvRestN = normal;");
     sh.fragmentShader = sh.fragmentShader
       .replace("#include <common>", `#include <common>${head}${TOON_HEAD}`)
       // a far, small man (smallMen.ts SMALL_INK): the skin/hair map's mip bias fades out below fromPx drawing
