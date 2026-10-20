@@ -38,7 +38,7 @@ const SKILLS: { key: TrainingSkill; label: string; game: string }[] = [
   { key: "technique", label: "Technique", game: "Through the Gate" },
   { key: "freeKick", label: "Free Kick", game: "Over the Wall" },
   { key: "pace", label: "Pace", game: "The Gauntlet" },
-  { key: "vision", label: "Vision", game: "Read the Run" },
+  { key: "vision", label: "Vision", game: "Pick the Pass" },
 ];
 
 /** One short line saying what a level asks for — the numbers that change. */
@@ -48,7 +48,7 @@ function levelLine(skill: TrainingSkill, c: AnyLevel): string {
   if (skill === "freeKick") { const f = c as LevelBySkill["freeKick"]; return `${f.distance.toFixed(0)}m · wall ${f.wall}`; }
   if (skill === "pace") { const p = c as LevelBySkill["pace"]; return `${p.chasers} men · ${p.oppStrength.toFixed(0)} spd`; }
   const v = c as LevelBySkill["vision"];
-  return `${v.options} options · ${v.window.toFixed(1)}s`;
+  return `${v.kick ? "kick" : "tap"} · ${v.options} men · ${v.window.toFixed(1)}s${v.offside ? " · offside" : ""}`;
 }
 
 const SKILL_VALUES = [40, 70, 100];

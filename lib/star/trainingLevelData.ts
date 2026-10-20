@@ -1,7 +1,6 @@
 import type { Skills } from "./types";
 import { TRAINING_LEVELS, levelDifficulty, levelSeed } from "./trainingLevels";
-import { techniqueDrill, freeKickDrill, paceDrill, visionDrill, powerDrillForLevel } from "./trainingDrills";
-import { VISION_DEFAULTS } from "./visionRound";
+import { techniqueDrill, freeKickDrill, paceDrill, powerDrillForLevel } from "./trainingDrills";
 import TABLE_JSON from "./data/trainingLevels.json";
 
 /**
@@ -21,6 +20,7 @@ import TABLE_JSON from "./data/trainingLevels.json";
  *
  * The built-in curve is the old one (trainingDrills.ts at rep 0) for levels
  * 1-19. Levels 20-30 climb to a harder top (20 Oct 2026): see TOP_LEVELS.
+ * Vision has its own 1-30 curve since its rebuild (visionDefault).
  */
 
 export type TrainingSkill = keyof Skills;
@@ -72,22 +72,39 @@ export interface PaceLevel {
   runPace: number;
   seed?: number;
 }
+/**
+ * Vision: "who should I pass to?" on a real picture (lib/star/visionRound.ts).
+ * Rebuilt 20 Oct 2026 (Harry: "real scenarios … have someone offside …
+ * early on you tap, then you actually have to kick the ball"). The old
+ * fields (markers, offsideShare, lineGap, tapRadius: the drawn 2D picture
+ * with the yellow line) are gone; a saved row that still has them is an old
+ * row and plays as the committed level instead (sanitizeLevel).
+ */
 export interface VisionLevel {
-  options: number;
-  /** Seconds to pick. */
+  /** false: tap the man. true: kick the pass to him (aim, pull, strike: the real kick). */
+  kick: boolean;
+  /** Seconds: to tap him (tap levels), or to START the kick, your pull on the ball (kick levels). */
   window: number;
-  /** How much more space the right man has than the next one, metres. */
+  /** Kick levels: seconds from starting the pull to letting go of it. */
+  letGo: number;
+  /** Team-mates on the picture, the right man included. */
+  options: number;
+  /** How many of the wrong men are traps: offside, a defender in the lane, or marked. */
+  traps: number;
+  /** How much better the right ball is than the next good one (the engine's spaceScore, 0-1). Small = two good options. */
   margin: number;
-  /** Defenders on the picture. */
-  markers: number;
-  /** Share of team-mates standing offside, 0-1. */
-  offsideShare: number;
-  /** Nobody stands nearer the offside line than this, metres. */
-  lineGap: number;
-  /** How near a man a tap must land, metres. */
-  tapRadius: number;
+  /** One of the traps is a man standing offside. */
+  offside: boolean;
+  /** Real match moments (On) or the team's drawn chances (Off). */
+  real: boolean;
   seed?: number;
 }
+
+/** The first level where you kick the pass instead of tapping the man (the built-in curve). */
+export const VISION_KICK_FROM = 10;
+/** From this level the kick must start inside VISION_TOP_WINDOW seconds (the built-in curve). */
+export const VISION_TOP_FROM = 28;
+export const VISION_TOP_WINDOW = 0.3;
 
 export interface LevelBySkill {
   power: PowerLevel;
@@ -142,15 +159,23 @@ export const LEVEL_FIELDS: { [S in TrainingSkill]: FieldSpec[] } = {
     { key: "runPace", label: "Your speed", min: 20, max: 100, step: 1, int: true },
   ],
   vision: [
-    { key: "options", label: "Team-mates", min: 2, max: 12, step: 1, int: true },
-    { key: "window", label: "Seconds to pick", min: 0.5, max: 5, step: 0.05, unit: "s" },
-    { key: "margin", label: "Clear man's extra space", min: 0.2, max: 10, step: 0.1, unit: "m" },
-    { key: "markers", label: "Defenders", min: 1, max: 14, step: 1, int: true },
-    { key: "offsideShare", label: "Share offside", min: 0, max: 0.8, step: 0.05 },
-    { key: "lineGap", label: "Closest to the line", min: 0.2, max: 4, step: 0.1, unit: "m" },
-    { key: "tapRadius", label: "Tap target size", min: 1.2, max: 4, step: 0.1, unit: "m" },
+    { key: "kick", label: "Kick the pass (off: tap him)", min: 0, max: 1, step: 1, toggle: true },
+    { key: "window", label: "Seconds to tap / start the kick", min: 0.2, max: 5, step: 0.05, unit: "s" },
+    { key: "letGo", label: "Seconds to let go of the pull", min: 0.3, max: 3, step: 0.05, unit: "s" },
+    { key: "options", label: "Team-mates", min: 2, max: 6, step: 1, int: true },
+    { key: "traps", label: "Traps (offside, cut out, marked)", min: 0, max: 4, step: 1, int: true },
+    { key: "margin", label: "How clear the right ball is", min: 0.02, max: 0.5, step: 0.01 },
+    { key: "offside", label: "Someone offside", min: 0, max: 1, step: 1, toggle: true },
+    { key: "real", label: "Real match moments (off: drawn)", min: 0, max: 1, step: 1, toggle: true },
   ],
 };
+
+/** A Vision row from before the rebuild (the drawn 2D picture): it has the old fields and no `kick`. */
+export function isOldVisionRow(raw: unknown): boolean {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return false;
+  const o = raw as Record<string, unknown>;
+  return !("kick" in o) && ("tapRadius" in o || "lineGap" in o || "offsideShare" in o || "markers" in o);
+}
 
 const round2 = (v: number) => Math.round(v * 100) / 100;
 
@@ -159,6 +184,8 @@ const round2 = (v: number) => Math.round(v * 100) / 100;
  *  a drill. */
 export function sanitizeLevel<S extends TrainingSkill>(skill: S, level: number, raw: unknown): LevelBySkill[S] {
   const base = defaultLevel(skill, level) as unknown as Record<string, number | boolean | undefined>;
+  // An old Vision row means a different drill: none of its numbers carry over.
+  if (skill === "vision" && isOldVisionRow(raw)) return base as unknown as LevelBySkill[S];
   const src = (raw && typeof raw === "object" && !Array.isArray(raw)) ? raw as Record<string, unknown> : {};
   const out: Record<string, number | boolean> = {};
   for (const f of LEVEL_FIELDS[skill]) {
@@ -186,12 +213,10 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 /**
  * The built-in numbers for one level. Levels 1-19 are exactly the old drill
  * (trainingDrills.ts at rep 0). From level 20 each value walks from where
- * the old curve stood at 20 to the harder top value at 30.
+ * the old curve stood at 20 to the harder top value at 30. Vision is its
+ * own curve, 1 → 30, since its rebuild (visionDefault below).
  *
  * What made the top flat or easy (20 Oct 2026, measured or read):
- *  - Vision: the same picture on all three tries, with the right man lit
- *    after each one, so try 2 was the answer. A modelled player got 99.9%
- *    of levels 20-30. Fixed in the drill (a new picture each try) and here.
  *  - Pace: YOUR run speed was the level number, so it rose faster than
  *    theirs: at level 30 you ran at 100 against 95. Now the gap closes.
  *  - Free kick: the wall stopped growing at 5 from level 22.
@@ -249,23 +274,48 @@ export function defaultLevel<S extends TrainingSkill>(skill: S, level: number): 
       runPace: t > 0 ? lerp(at20, 85, t) : d,
     } satisfies PaceLevel;
   } else {
-    const c = visionDrill(d, 0);
-    const c20 = visionDrill(at20, 0);
-    row = {
-      options: t > 0 ? Math.round(lerp(c20.options, 11, t)) : c.options,
-      window: t > 0 ? lerp(c20.window, 0.85, t) : c.window,
-      margin: t > 0 ? lerp(c20.margin, 0.3, t) : c.margin,
-      markers: t > 0 ? Math.round(lerp(Math.max(3, Math.round(c20.options * 0.8)), 13, t)) : Math.max(3, Math.round(c.options * 0.8)),
-      offsideShare: t > 0 ? lerp(VISION_DEFAULTS.offsideShare, 0.55, t) : VISION_DEFAULTS.offsideShare,
-      lineGap: t > 0 ? lerp(VISION_DEFAULTS.lineGap, 0.4, t) : VISION_DEFAULTS.lineGap,
-      tapRadius: t > 0 ? lerp(VISION_DEFAULTS.tapRadius, 2.2, t) : VISION_DEFAULTS.tapRadius,
-    } satisfies VisionLevel;
+    row = visionDefault(n);
   }
   // Round to what the editor shows, so the committed file reads cleanly.
   const out: Record<string, number | boolean> = {};
   const ints = new Set(LEVEL_FIELDS[skill].filter(f => f.int).map(f => f.key));
   for (const [k, v] of Object.entries(row)) out[k] = typeof v === "number" ? (ints.has(k) ? Math.round(v) : round2(v)) : v;
   return out as unknown as LevelBySkill[S];
+}
+
+/**
+ * The built-in Vision curve (20 Oct 2026). One smooth climb, 1 → 30:
+ *  - levels 1-9 you TAP the man; from VISION_KICK_FROM you KICK the pass;
+ *  - the window shrinks all the way (tap: 4 s → 1.3 s; the kick's start:
+ *    1.8 s → VISION_TOP_WINDOW from VISION_TOP_FROM, by the same share each
+ *    level), and letting go of the pull 2 s → 0.7 s;
+ *  - more men (2 → 6), more of them traps (0 → 3), and the right ball only
+ *    just better than the next (0.40 → 0.03 of the engine's spaceScore);
+ *  - someone offside on every odd level from 5;
+ *  - the team's drawn chances on levels 1, 2 and the first kick level (clean
+ *    pictures to learn on), real match moments everywhere else.
+ * Measured with the modelled player (tests/star/visionBot.ts): see
+ * tests/star/vision.mts and scripts/vision/curve.mts.
+ */
+function visionDefault(n: number): VisionLevel {
+  const kick = n >= VISION_KICK_FROM;
+  // Tap levels: 1..9. Kick levels: 10..30.
+  const tapT = (n - 1) / (VISION_KICK_FROM - 2);
+  const kickT = (n - VISION_KICK_FROM) / (TRAINING_LEVELS - VISION_KICK_FROM);
+  // The kick's window shrinks by the same share each level (2 s → 0.3 s), so
+  // the squeeze is felt from the middle levels, not only at the very top.
+  const window = !kick ? lerp(4.0, 1.3, tapT)
+    : 1.8 * Math.pow(VISION_TOP_WINDOW / 1.8, Math.min(1, (n - VISION_KICK_FROM) / (VISION_TOP_FROM - VISION_KICK_FROM)));
+  const letGo = kick ? lerp(2.0, 0.7, kickT) : 2;
+  // The kick levels start a little easier than the last tap level: the kick is new.
+  const climb = !kick ? tapT * 0.45 : 0.25 + kickT * 0.75;
+  const options = n <= 2 ? 2 : n === VISION_KICK_FROM ? 2 : Math.round(lerp(3, 6, Math.min(1, climb / 0.85)));
+  // Traps climb to 3; with 6 men that leaves two good balls besides the right one at the top.
+  const traps = n <= 3 || n === VISION_KICK_FROM ? 0 : Math.min(options - 1, Math.round(lerp(1, 3, Math.max(0, (climb - 0.1) / 0.9))));
+  const margin = n === VISION_KICK_FROM ? 0.3 : lerp(0.4, 0.03, Math.pow(Math.min(1, climb), 0.8));
+  const offside = n >= 5 && n % 2 === 1;
+  const real = !(n <= 2 || n === VISION_KICK_FROM);
+  return { kick, window, letGo, options, traps, margin, offside, real };
 }
 
 export function defaultTable(): TrainingTable {
@@ -361,6 +411,8 @@ export function committedLevel<S extends TrainingSkill>(skill: S, level: number)
 export function levelConfig<S extends TrainingSkill>(skill: S, level: number, edits: Record<string, unknown> = overlay): LevelBySkill[S] {
   const n = Math.max(1, Math.min(TRAINING_LEVELS, Math.round(level)));
   const saved = edits[levelId(skill, n)];
+  // A Vision edit saved before the rebuild is for a drill that is gone: play the committed level.
+  if (skill === "vision" && isOldVisionRow(saved)) return committedLevel(skill, n);
   return saved ? sanitizeLevel(skill, n, saved) : committedLevel(skill, n);
 }
 

@@ -1027,7 +1027,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Edit level",
         items: [
-          ["The sliders (and the number boxes)", "Every number the drill is built from. Power: distance, off centre, men in the way, keeper on/off and strength, score to pass (0.5 = any goal, higher = nearer a post). Technique: gate distance, width, how far off your line, max height, score to pass. Free kick: distance, off centre, men in the wall, keeper strength, score to pass. Pace: men to beat, most in one wave, their speed, your speed. Vision: team-mates, seconds to pick, the clear man's extra space, defenders, share offside, closest to the line, tap target size. \"was …\" shows the committed number; a • marks a change since the last save."],
+          ["The sliders (and the number boxes)", "Every number the drill is built from. Power: distance, off centre, men in the way, keeper on/off and strength, score to pass (0.5 = any goal, higher = nearer a post). Technique: gate distance, width, how far off your line, max height, score to pass. Free kick: distance, off centre, men in the wall, keeper strength, score to pass. Pace: men to beat, most in one wave, their speed, your speed. Vision (Pick the Pass): kick the pass on/off (off = tap the man), seconds to tap him or to start the kick, seconds to let go of the pull, team-mates (2-6), traps (offside, cut out, marked), how clear the right ball is (small = two good balls), someone offside on/off, real match moments on/off (off = the team's drawn chances). \"was …\" shows the committed number; a • marks a change since the last save."],
           ["Keeper On / Off", "Power only: an open goal or a keeper."],
           ["Layout: Level's own / Shuffle", "Where everyone stands is built from the level's own seed. Shuffle picks a new one (shown as #1234); Level's own goes back."],
           ["▶ Play", "Plays the level with these numbers straight away, on the same drill a career gets. Nothing is saved by playing."],
@@ -1046,6 +1046,8 @@ export const ADMIN_GUIDES = {
           ["unsaved edit", "Shown in the bar when the level is playing numbers you haven't saved."],
           ["Let's go", "Level 1 of each game opens on its how-it-works card first, as in a career."],
           ["Tap to start", "Pace (the dribble run) waits for this before anyone moves, on every try."],
+          ["Vision: 3, 2, 1", "Counts down over a cover, then the picture shows and the clock starts. Tap levels: tap the man. Kick levels: drag back from the ball and strike it to him; the clock stops when you start the pull, then you have the let-go time."],
+          ["Vision: the result line", "After each try: RIGHT MAN, OFFSIDE, CUT OUT, MARKED, NOT THE BALL, MISPLACED or TOO SLOW, with the right man ringed green (and your wrong pick red) for a moment. A real picture names its match and minute."],
         ],
       },
     ],
@@ -1063,13 +1065,13 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Each level here is exactly the level a player gets: Training → pick a skill → pick a level. Same three tries, same stars.",
       "A saved level reaches every career the next time its training screen loads; a committed one after the deploy.",
-      "Vision: each of the three tries is its own picture (fixed per level), so a missed try never shows the answer to the next one.",
+      "Vision (Pick the Pass): each of the three tries is its own picture (fixed per level), so a missed try never shows the answer to the next one. The pictures are real match moments or the team's drawn chances, played on the real match engine in the match's own look; on kick levels the engine judges the pass (reached him, offside, cut out). Each level avoids the pictures the levels below it showed, so a player climbing 1 → 30 meets 45 different pictures in 90 tries (an ordinary one on 3 levels at most; the 5 offside ones come back more).",
     ],
     needs: [
       "The star_training_levels table (supabase/migrations/star_training_levels.sql). Until it is run, Save stays on this device only.",
       GITHUB_TOKEN_NEEDED,
     ],
-    dev: "app/star-training-dev/{page,LevelEditor}.tsx mounts components/star/TrainingMinigame.tsx (levelOverride = the draft). Level rows: lib/star/trainingLevelData.ts reading lib/star/data/trainingLevels.json (rebuild: scripts/training-levels/build.mts); saved edits: lib/star/trainingLevelStore.ts, /api/star/training-levels, /api/star/training-levels/commit (lib/star/commitScenarios.ts commitDataFile); vision picture lib/star/visionRound.ts; tests tests/star/trainingLevelData.mts.",
+    dev: "app/star-training-dev/{page,LevelEditor}.tsx mounts components/star/TrainingMinigame.tsx (levelOverride = the draft). Level rows: lib/star/trainingLevelData.ts reading lib/star/data/trainingLevels.json (rebuild: scripts/training-levels/build.mts); saved edits: lib/star/trainingLevelStore.ts, /api/star/training-levels, /api/star/training-levels/commit (lib/star/commitScenarios.ts commitDataFile); Vision: lib/star/visionRound.ts picks and judges the pictures from lib/star/data/visionMoments.json (real moments: scripts/vision/build_vision_moments.mts) and lib/star/data/visionChecks.json (each pass tried on the engine: scripts/vision/check_passes.mts); the curve with a modelled player: scripts/vision/curve.mts; tests tests/star/{trainingLevelData,vision}.mts, bot tests/star/visionBot.ts.",
   },
   "/star-highlights-dev": {
     title: "Infinite Highlights",
