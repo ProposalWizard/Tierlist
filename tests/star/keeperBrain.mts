@@ -107,10 +107,13 @@ for (const kind of ["one_on_one", "tight_angle", "long_range", "penalty", "cutba
   ok(rev === 0, `${kind}: no reversal once he has left his feet (${rev} of ${n})`);
 }
 
-console.log("\nHE MOVES BEFORE THE BALL ARRIVES (item 8) — one-on-ones, 200 each");
+// 600 each (was 200): on 200 the 45 read 54.6% against its 55% floor after the
+// drawings were redrawn (14-15 Oct); on 600 it reads 59.5% (B1, 20 Oct 2026).
+// A bigger sample, not a lower floor.
+console.log("\nHE MOVES BEFORE THE BALL ARRIVES (item 8) — one-on-ones, 600 each");
 for (const [ks, floor] of [[45, 0.55], [88, 0.8]] as const) {
   let m = 0, n = 0;
-  for (let s = 1; s <= 200; s++) { const r = play("one_on_one", s * 7919 + 31, ks); if (r.movedBefore !== null) { n++; if (r.movedBefore) m++; } }
+  for (let s = 1; s <= 600; s++) { const r = play("one_on_one", s * 7919 + 31, ks); if (r.movedBefore !== null) { n++; if (r.movedBefore) m++; } }
   ok(m / n >= floor, `rating ${ks}: moves before it reaches him ${pct(m, n)} (today ~1 %)`);
 }
 
