@@ -27,6 +27,187 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.84",
+      "title": "Harry's patch notes: Everything Else",
+      "publishedAt": "2026-10-20T14:10:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/JVS6mefVbco5qGi7gNNfrr",
+      "summary": "Everything Else (19 to 20 Oct). What is not the team board or the admin, and not a build of its own: eight screens now draw the pitch at the real match’s size (Full match on a phone 340 to 366 px), play buttons stay on screen, the engine warning is red and no longer fires on a read-only search, the highlights rebuild phases 0 to 2 (0 of 448 build-ups failed the checks), 2,104 real matches under free licences with Real moments, Real shots and Real Goals rebuilt, and the scene editor and 3D audit. Short sections carry the touch fixes (B1), the free-data follow-up (B3), the 3D looks (B5) and the scene studio (B6). The 19 Oct work is on main; the 20 Oct parts are on the Harry branch. Includes Scene Editor 3a (v0.61), Drift + Play Screens (v0.62), Highlights Rebuild 0-2 (v0.63) and Free Data v1 (v0.64).",
+      "stats": [
+        { "value": "340 → 366 px", "label": "Full match pitch on a phone (the real match)" },
+        { "value": "2,104", "label": "real matches, all free to use in a paid game" },
+        { "value": "0 of 448", "label": "generated build-ups that failed the checks" },
+        { "value": "27", "label": "touch fixes built" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Play screens: Full match on a phone", "detail": "Your chance: the pitch is 366 px wide (it was 340)." },
+          { "title": "Play screens: Training drills on a phone", "detail": "The pitch is 366 px wide (it was 346)." },
+          { "title": "Play screens: Infinite Highlights on a phone", "detail": "NEXT and the chance name stay on screen without scrolling." },
+          { "title": "Play screens: Real moments, Goal videos, Visual effects lab, Real shots", "detail": "Each pitch is 366 px on a phone. None scrolls sideways." },
+          { "title": "The red warning", "detail": "When Claude is about to edit a drift file, the Allow box shows the red notice. A read-only search does not ask." },
+          { "title": "Touch: negotiation", "detail": "Sign a player and open the talks. One tap on − or + moves your offer one step." },
+          { "title": "Highlights rebuild: the switch", "detail": "Settings → Harry changes: “Full highlights rebuild: Off | On (test)”. Off by default." },
+          { "title": "Highlights rebuild: the still", "detail": "Switch On, Infinite Highlights: the still looks like the match. Press Play: the frame does not jump." },
+          { "title": "Highlights rebuild: a build-up", "detail": "On /star-fhr-dev press “Generate another” a few times. Each build-up should look like real football." },
+          { "title": "Free data: three pages", "detail": "Real moments (tap a moment, then Play), Real shots (the shot map), Real Goals (232 levels)." },
+          { "title": "Free data: Settings", "detail": "Settings → More → Data credits: 8 lines. Settings → Full highlights rebuild: Real moment highlights, Off | On." },
+          { "title": "Scene editor", "detail": "Open the 3D Scene editor. Pick Signing, Office, Shop, Garden or House. Move the camera, the lens, the light. Press Approve, pick Where and When." },
+          { "title": "Scene generator", "detail": "Studio tab → Scene generator. Pick Scored and Joy. Press Generate. 18 rows say Not wired." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Every football screen now draws the pitch at the real match’s size", "detail": "8 screens drew the pitch narrower than the real match (366 px on a phone, 384 px on a computer). The kick strength was never off; the pitch was drawn smaller." },
+          { "title": "Play buttons stay on screen", "detail": "On Infinite Highlights and Full match, NEXT and the chance name sat below the fold. House rule now: play controls never sit below the fold." },
+          { "title": "The engine warning no longer fires on a read-only search", "detail": "A “2>/dev/null” in a read-only search made the red warning ask, and stalled a builder for 40 minutes. A “>” now counts only when it points at an engine or drift file." },
+          { "title": "A touch check of every screen, and the fixes (B1)", "detail": "27 things found: 10 in the real game, 9 on test pages, 5 on the website, 3 in the admin. All 27 are built. Six were seen on a touch phone." },
+          { "title": "Small fixes on the website and in the career", "detail": "Ten-A-Ball, tic-tac-toe, the tierlist tier sheet, the Objectives pop-up and the PL Draft season-end table on phones. A 3D signing that throws falls back to the drawn one." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Phase 0: the switch and today’s numbers (the ruler)", "detail": "Settings: Full highlights rebuild: Off | On (test). Off is today’s game exactly. The ruler is the test page /star-fhr-dev." },
+          { "title": "Phase 2: a new build-up before every open-play chance", "detail": "With the switch On, each open-play chance starts with a 4 to 8 second build-up. 2,197 of 2,527 took different routes; 0 of 448 failed the checks; chances and goals per match did not change over 500 matches." },
+          { "title": "2,104 real matches, all free to use in a paid game", "detail": "Four free-licence sources reduced to pattern files. Every StatsBomb file is deleted from the repo." },
+          { "title": "Real moments, Real shots and Real Goals, rebuilt on free data", "detail": "702 real moments, 2,875 real shots, 232 Real Goals levels." },
+          { "title": "Afriskaut out, two sources in, credits in Settings, and a Real moment highlights switch (B3)", "detail": "Matches 2,104 → 1,983. Fully real moments 702 → 926. Real goals 67 → 93. Settings → More → Data credits. Real moment highlights: Off | On." },
+          { "title": "The 3D Signing and the Manager’s Office play live in the scene editor", "detail": "Step 3a: pick a shot and set its camera position and lens, the key light and the exposure." },
+          { "title": "Shop, Garden and House edit live; approve an edit; commit it to the game; make a scene from an event (B6)", "detail": "Approve, then choose Where and When. Commit to game needs a GITHUB_TOKEN. “When does this play?”: all 18 rows say Not wired." },
+          { "title": "The 3D audit, and what B5 fixed from it", "detail": "Skin that is yellow: signing 94% → 0%, press 94% → 0.2%, walk-out 61% → 0%. Phone cameras, moving faces and a Home player who is alive." },
+          { "title": "How generated cut scenes work", "detail": "Five steps: the event, the story, the bodies, the camera, the director. The real game does not play generated scenes yet." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Phase 1: the picture before Play uses the match camera", "detail": "With the switch On, the still is drawn with the match camera at the match box’s size. 0 mismatches in 100." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "The drift audit did not drive every screen", "detail": "The other Full match layout, the 3D and radar views of the 90-minute test, the gallery’s 5-a-side and Tuning tabs, the “Ours vs real” tab. No real iPhone." },
+          { "title": "A generated build-up has not played in a real career match", "detail": "Test page only. Phase 3 (B2) is the next step." },
+          { "title": "4 of the 10 SoccerTrack v2 matches are missing", "detail": "Google Drive refused them. Re-run later." },
+          { "title": "No generated scene plays in the career, and no real commit was seen", "detail": "All 18 rows say Not wired. The test machine has no GITHUB_TOKEN. See Needs your OK." }
+        ]},
+        { "kind": "next", "title": "Next", "items": [
+          { "title": "Where the highlights rebuild is", "detail": "Phases 0 to 2 are done. Phase 3 is build B2: no report yet. B10, B14 and B17 have no report yet either." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.83",
+      "title": "Harry's patch notes: Admin Pages & Skins",
+      "publishedAt": "2026-10-20T14:05:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/QjVrj4AdvMMPqCPm1Gq7yV",
+      "summary": "Admin Pages & Skins (19 to 20 Oct). A full write-up of the admin: split by game (three tabs), picture-card group pages with Admin tools and Test pages, four looks that share one layout with Clean light opening first, one back arrow top left, a 40 px chat bubble that lets taps through, 45 of 45 admin pages on the Broadcast frame (the build check says so), the phone admin (first box 430 to 223 px), a Research area, 64 eye guides (58 on 18 Oct), and the XP Rewards fix. The 19 Oct work is on main; the 20 Oct work is on the Harry branch. Includes Admin Split + Looks (v0.65) and the admin parts of B4 (v0.68), B6 (v0.70), B13 (v0.78) and B1 (v0.66).",
+      "stats": [
+        { "value": "45 of 45", "label": "admin pages on the Broadcast frame" },
+        { "value": "430 → 223 px", "label": "first group box on a phone" },
+        { "value": "4", "label": "looks on one layout" },
+        { "value": "58 → 64", "label": "eye guides, one per admin page" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Game tabs", "detail": "Open the admin. Three tabs at the top: Road to Ballon d’Or, Website games, Studio. The side menu shows one game’s groups." },
+          { "title": "A group page", "detail": "Open any group (for example Real data). Its pages sit in two boxes: Admin tools and Test pages." },
+          { "title": "The Look switch", "detail": "Admin menu, bottom: Broadcast, Bento, Ops room, Clean light. The layout stays the same. A browser that never picked a look opens in Clean light." },
+          { "title": "Back arrow", "detail": "On a phone, open any admin page. The arrow is top left. A page goes back to its group. A group goes back to its game’s home." },
+          { "title": "Chat bubble", "detail": "Bottom left, 40 px. It fades while you scroll. In the Manager’s office it sits above “Next line ›”." },
+          { "title": "Admin on a phone", "detail": "A slim search, the filters on one line, three group boxes in a row. The first box starts at 223 px." },
+          { "title": "A page on the frame", "detail": "Open Real moments or Training levels. The page has the frame and every button it had." },
+          { "title": "The last 6 pages", "detail": "Open the 3D Shop, Garden, House, Signing, Office and Style test. Each has the frame and one back arrow. Add ?bare=1 for the old full screen." },
+          { "title": "Research", "detail": "Studio tab → Research. Four write-ups as cards." },
+          { "title": "The eye", "detail": "Press the eye (bottom right) on any admin page. It explains each button and where a save goes." },
+          { "title": "XP Rewards", "detail": "Admin → XP & Rewards. It loads. On a test build a note says it is read-only." },
+          { "title": "A light look", "detail": "Open Tournaments in Clean light. Every word can be read." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "The admin is split by game, in four levels", "detail": "Game tab, group, page, frame. On 19 Oct the tabs held 44, 10 and 5 pages. Today they hold 45, 10 and 7." },
+          { "title": "Side tabs are back on the Broadcast look", "detail": "A group page has its other groups as tabs along the top." },
+          { "title": "The admin home is one page of group cards", "detail": "Grid shows picture cards. List shows rows. The device remembers your pick." },
+          { "title": "Each group page has two boxes of picture cards: Admin tools and Test pages", "detail": "You kept the two headings (20 Oct). 28 pages were marked as tests, a first guess." },
+          { "title": "New admin pages keep the look by themselves", "detail": "A build check stops the deploy if an admin page does not use the Broadcast frame. It prints 45 of 45, 0 still to move." },
+          { "title": "A Research area", "detail": "A Research page on the Studio tab: 4 write-ups as cards." },
+          { "title": "The eye guide: seven new pages have one", "detail": "Real shots, Research, the Highlights rebuild ruler, the Scene editor, the Scene generator, the 3D bench and Five-a-side. 58 guides on 18 Oct, 64 now." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Every admin page is on the Broadcast frame: 45 of 45", "detail": "36 pages on 19 Oct (five frame only), the last 6 in B6 (37 of 43 → 43 of 43), then the 3D bench and the Five-a-side test area. The site menu and footer are hidden on these pages." },
+          { "title": "One layout, four looks. Clean light opens first.", "detail": "All four looks use Broadcast’s layout. Only colours, fonts and surfaces change. Clean light is the default (20 Oct); anyone who picked a look keeps it." },
+          { "title": "Words you could not read in the light looks", "detail": "About 320 unreadable words on 12 pages → 0–3 per page, with an ink guard on about 40 test pages." },
+          { "title": "One back arrow, top left, in the same place", "detail": "A page goes back to its group. A group page goes back to its game’s home. The 3D garden, house, shop and 3D training keep their own back button." },
+          { "title": "The chat bubble: smaller, see-through to taps, above page buttons", "detail": "50 px → 40 px. It sits above a page’s own bottom-left controls (up 132 px in the Manager’s office)." },
+          { "title": "Admin on a phone: less room for bars, more for pages", "detail": "The first group box starts at 223 px (was 430). Group boxes are three to a row." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "XP Rewards no longer says “Failed to fetch”", "detail": "It loads read-only on a test build, with a note saying why." },
+          { "title": "Admin images: a grip to drag, on a phone", "detail": "Each admin image has a ⠿ grip. On a phone: hold an image, then drag. Other admin touch fixes are reasoned from the code, not seen." },
+          { "title": "Fixes found while moving the pages (19 Oct)", "detail": "Team sheets: opening a club no longer saves. International world: the card pictures follow the picked nation. Full match: event lines show the club name. Real Goals: the big card draws its own goal mouth." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "3D garden, house, shop and 3D training keep their own back button", "detail": "Decided (Harry, 20 Oct)." },
+          { "title": "The Training levels page freezes on the second tab switch", "detail": "Found while building B7b, not fixed. The old page does the same. Not checked on a phone." },
+          { "title": "Five pages got the frame only", "detail": "Club data, Career XP book, Team sheets, Leo’s Oct 13 update and Goal videos keep their old layout, on purpose." },
+          { "title": "What was not seen", "detail": "Any page on a real phone. Any save reaching the real database. Nothing from 20 Oct is live yet." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.82",
+      "title": "Harry's patch notes: Team Board & Team Updates",
+      "publishedAt": "2026-10-20T14:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/QDsYt42R113Enp6A7VR3kj",
+      "summary": "Team Board & Team Updates (19 to 20 Oct). A full write-up of everything team-facing: Team Room v1 (the chat bubble, Ideas, Chat, To-do, the KIB Admin app), round two (seen faces, quoted replies, @ and # tags, Shift+X pointing, patch-note read receipts), the 40 px bubble that lets taps through and clears page buttons, real push counts (Harry 166, Mikey 34, Leo 21), no more “GitHub refused the site’s key” lines, and a patch-notes list that names every page. Round one is on main; round two and the 20 Oct fixes are on the Harry branch. Open: run team_room_v2.sql. Includes Team Room v1 (v0.60) and the team parts of B11 (v0.74), B13 (v0.78) and B4 (v0.68).",
+      "stats": [
+        { "value": "4", "label": "views of the team room: Board, Ideas, Chat, To-do" },
+        { "value": "6", "label": "new in round two: seen faces, replies, @, # links, pointing, patch-note receipts" },
+        { "value": "166 / 34 / 21", "label": "pushes this week: Harry, Mikey, Leo (was capped at 20)" },
+        { "value": "50 → 40 px", "label": "chat bubble size" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "The chat bubble", "detail": "On any admin page, bottom left, 40 px. Tap it: Chat and To-do. Scroll the page: it fades and lets taps through." },
+          { "title": "The four views", "detail": "Admin menu → Team board. Switch Board, Ideas, Chat, To-do. The same four are in the side menu with counts." },
+          { "title": "Seen faces and Reply", "detail": "Team chat. Small H / M / L faces sit under each message. A reply shows the quote. A tap on the quote jumps back." },
+          { "title": "@ names and Waiting on me", "detail": "Type @ in the message box. An @ to you shows gold. The Waiting on me list sits at the top." },
+          { "title": "Link a page", "detail": "Press the link button, or type # and a page name. It goes in as a card." },
+          { "title": "Point at the screen", "detail": "Press Shift+X, or the Point button in the bubble. Drag a box, write a note, pick who. The other person opens the link and presses Got it." },
+          { "title": "Patch notes: Read by", "detail": "Admin → Patch notes. A Read by row, a Read and understood button, a Notes thread. The list on the left names each page." },
+          { "title": "Team board counts", "detail": "Under each person: “N patch notes to read”, and pushes this week (Harry 166, Mikey 34, Leo 21 on 20 Oct)." },
+          { "title": "No amber key lines", "detail": "The Team board shows no “GitHub refused the site’s key” lines." },
+          { "title": "The bubble above page buttons", "detail": "Manager’s office on a phone: the bubble sits above “Next line ›”." }
+        ]},
+        { "kind": "added", "title": "Added: round one (19 Oct, on main)", "items": [
+          { "title": "A chat bubble on every admin page", "detail": "A round button, bottom left, on every admin and test page. It opens a small box with Chat and To-do. It steps clear of the side menu, titles, text and pictures." },
+          { "title": "Four views of the team room: Board, Ideas, Chat, To-do", "detail": "One switch on the team board. The same four sit in the side menu, with red and amber counts." },
+          { "title": "Ideas: a board with three stages", "detail": "Idea → Doing → Done, shown by stage or by person. Each has three vote dots and notes." },
+          { "title": "Team chat", "detail": "A live chat page: who is here now, pinned messages, pictures." },
+          { "title": "To-do: your own jobs and jobs for each other", "detail": "Given to me, Mine, Jobs I gave. A ticked job fades after a day, then leaves." },
+          { "title": "Notes on pushes, and the room as a portable kit", "detail": "The push sheet has notes. The whole room is one folder with one settings file and its own database file." },
+          { "title": "KIB Admin as a home-screen app, and recordings in a folder per person", "detail": "Live on main since 19 Oct." }
+        ]},
+        { "kind": "added", "title": "Added: round two (20 Oct, Harry branch)", "items": [
+          { "title": "Seen faces under each message", "detail": "Small H, M and L faces show who has seen it. Until team_room_v2.sql runs, they stay on the device and the screen says so." },
+          { "title": "Reply with a quote, and tap to jump back", "detail": "A reply shows the quote above your words. A tap on the quote jumps to the original message." },
+          { "title": "@ names, gold highlight, and a “Waiting on me” list", "detail": "Type @ for a list of names. An @ to you shows in gold." },
+          { "title": "Link a page into the chat with # or the link button", "detail": "A page goes into the chat as a card." },
+          { "title": "Point at the screen (Shift+X)", "detail": "Drag a box, write a note, pick who. They open the link: the page scrolls to the box, outlines it and shows the note until they press Got it." },
+          { "title": "Patch notes: “Read by” faces and a “Read and understood” button", "detail": "Each version shows who has read it, has a Notes thread, and the Team board shows “N patch notes to read” under each person." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "The chat bubble is smaller and lets taps through", "detail": "50 px → 40 px. Only the round button takes taps. It fades to 40% while you scroll." },
+          { "title": "The bubble sits above a page’s own buttons", "detail": "In the Manager’s office it moves up 132 px, clear of “Next line ›”." },
+          { "title": "The admin side menu folds on a computer", "detail": "The « button folds it to a 64 px strip of icons. Remembered per browser." },
+          { "title": "The patch-notes list names every page", "detail": "The page name shows under each version. The last two days have one entry per page, v0.60 to v0.84." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Team board push counts are real now", "detail": "Real pushes from GitHub’s push log: any branch, the last 7 days, own work only. Harry 20 at most → 166; Mikey 34; Leo 21." },
+          { "title": "The “GitHub refused the site’s key” lines are gone", "detail": "A refused key is tried once. Then the board reads without it. One line says whose key it was." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Not tried with real people or the real database", "detail": "Seen in a local test room only. team_room_v2.sql has not run. Replies, @ and points work without it. See Needs your OK." },
+          { "title": "A line in one picture the reports do not cover", "detail": "On a phone, the patch-notes Page tab says “Forbidden — patch notes need an admin sign-in”. Not checked." }
+        ]},
+        { "kind": "next", "title": "Next", "items": [
+          { "title": "Phone alerts for chat, and chat search", "detail": "You said yes on 19 Oct. No report says they were built." }
+        ]}
+      ]
+    },
+    {
       "version": "0.81",
       "title": "Harry's patch notes: B16 Fairer 3D Keepers",
       "publishedAt": "2026-10-20T12:30:00Z",
@@ -236,23 +417,26 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.75",
       "title": "Harry's patch notes: Last 2 Days Patch Notes",
       "publishedAt": "2026-10-20T12:00:00Z",
-      "updatedAt": "2026-10-20T12:35:00Z",
+      "updatedAt": "2026-10-20T14:15:00Z",
       "artifactUrl": "https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN",
-      "summary": "Last 2 Days Patch Notes (index, 19 to 20 Oct). One page per build in three tabs (Overnight, 19 Oct, Still building), how these patch notes work, every open question in one list and Harry's decided answers. Press Read and understood on each page.",
+      "summary": "Last 2 Days Patch Notes (index, 19 to 20 Oct). Four tabs: Overnight work (15 build pages, plus a Still building strip), Team board & team updates (v0.82), Admin pages & skins (v0.83) and Everything else (v0.84). Each topic page is a full write-up, with the earlier 19 Oct pages linked under it. How these patch notes work, every open question in one list grouped by tab, and Harry’s decided answers. Press Read and understood on each page. On the live artifact the cards open the pages in the same tab (use “← All patch notes” to come back).",
       "stats": [
-        { "value": "21", "label": "pages of patch notes" },
-        { "value": "18", "label": "questions still open" },
-        { "value": "14", "label": "answers already decided" },
-        { "value": "v0.60 to v0.81", "label": "the pages, one version each (v0.75 is this index)" }
+        { "value": "24", "label": "pages of patch notes" },
+        { "value": "21", "label": "questions still open" },
+        { "value": "45", "label": "answers already decided" },
+        { "value": "v0.60 to v0.84", "label": "the pages, one version each (v0.75 is this index)" }
       ],
       "sections": [
         { "kind": "added", "title": "Check these", "items": [
-          { "title": "Open the three tabs", "detail": "Overnight 20 Oct (15 pages), 19 Oct (6 pages), Still building." },
+          { "title": "Open the four tabs", "detail": "Overnight work (15 pages, plus Still building), Team board & team updates, Admin pages & skins, Everything else. Each topic tab starts with its full write-up." },
           { "title": "Read how these patch notes work", "detail": "One page per build: Check these, Problem, Why, Fix, the seen / measured / reasoned tag, Needs your OK." },
-          { "title": "Press Read and understood on each version", "detail": "Admin, Patch notes, pick v0.60 to v0.81 (not v0.75, the index), press the button. The Team board counts what is left." }
+          { "title": "Press Read and understood on each version", "detail": "Admin, Patch notes, pick v0.60 to v0.84 (not v0.75, the index), press the button. The Team board counts what is left." }
         ]},
         { "kind": "added", "title": "The pages", "items": [
-          { "title": "Admin Split + Looks (v0.65)", "detail": "The admin is split by game, group pages show picture cards, four looks share one layout, the phone admin is tidier." },
+          { "title": "Team Board & Team Updates (v0.82)", "detail": "A full write-up of the team room: the bubble, Ideas, Chat, To-do, seen faces, replies, @ and # tags, pointing, patch-note receipts and the real push counts." },
+          { "title": "Admin Pages & Skins (v0.83)", "detail": "A full write-up of the admin: split by game, picture cards, four looks on one layout, one back arrow, 45 of 45 pages on the frame, the phone admin and the eye guides." },
+          { "title": "Everything Else (v0.84)", "detail": "A full write-up of the play screens and drift, the highlights rebuild phases 0 to 2, the free data, the scene editor and the 3D audit." },
+          { "title": "Admin Split + Looks (v0.65, earlier page)", "detail": "The admin is split by game, group pages show picture cards, four looks share one layout, the phone admin is tidier." },
           { "title": "Team Room v1 (v0.60)", "detail": "A chat bubble on every admin page, an Ideas board, Team chat and a To-do list." },
           { "title": "Drift + Play Screens (v0.62)", "detail": "Eight screens now draw the pitch at the real match’s size, play buttons stay on screen, and the engine warning is red." },
           { "title": "Highlights Rebuild 0-2 (v0.63)", "detail": "The switch, the match-camera still, and generated build-ups before open-play chances." },
@@ -610,7 +794,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-19T21:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/K7pD7AMtL1iTF9BT2BRhAA",
-      "summary": "Admin Split + Looks (19 Oct, with two 20 Oct changes). The admin is split by game (three tabs), group pages show picture cards in Admin tools and Test pages, Broadcast and Bento join Ops room and Clean light on one layout, 36 admin pages sit on the Broadcast frame, and the phone admin is tidier (first box 430 to 223 px). Clean light is the default look. Harry's answers A-1 to A-9 are marked.",
+      "summary": "Admin Split + Looks (19 Oct, with two 20 Oct changes). The admin is split by game (three tabs), group pages show picture cards in Admin tools and Test pages, Broadcast and Bento join Ops room and Clean light on one layout, 36 admin pages sit on the Broadcast frame, and the phone admin is tidier (first box 430 to 223 px). Clean light is the default look. Harry's answers A-1 to A-9 are marked. Now part of v0.83 Admin Pages & Skins.",
       "stats": [
         { "value": "3", "label": "game tabs in the admin" },
         { "value": "430 → 223 px", "label": "first group box on a phone" },
@@ -648,7 +832,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-19T20:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/EBHc5nzaDwyqKYWgjmduLh",
-      "summary": "Free Data v1 (19 Oct). 2,104 real matches under free licences (Wyscout 1,941, Afriskaut 136, SkillCorner 20, IDSSE / DFL 7). Real moments (702), Real shots (2,875) and Real Goals (232 levels) rebuilt on them. StatsBomb deleted, because its licence does not allow a paid game.",
+      "summary": "Free Data v1 (19 Oct). 2,104 real matches under free licences (Wyscout 1,941, Afriskaut 136, SkillCorner 20, IDSSE / DFL 7). Real moments (702), Real shots (2,875) and Real Goals (232 levels) rebuilt on them. StatsBomb deleted, because its licence does not allow a paid game. Now part of v0.84 Everything Else.",
       "stats": [
         { "value": "2,104", "label": "real matches under free licences" },
         { "value": "702", "label": "fully real moments" },
@@ -679,7 +863,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-19T19:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/GSD3ehL48xjdeJkxVticSz",
-      "summary": "Highlights Rebuild phases 0 to 2 (19 Oct), behind a switch that is Off by default: the switch and the ruler, the match-camera still (0 mismatches in 100), and generated 4 to 8 second build-ups before open-play chances (0 of 448 failed the checks). Phase 3 is next; Harry said go and gave the engine OK on 20 Oct.",
+      "summary": "Highlights Rebuild phases 0 to 2 (19 Oct), behind a switch that is Off by default: the switch and the ruler, the match-camera still (0 mismatches in 100), and generated 4 to 8 second build-ups before open-play chances (0 of 448 failed the checks). Phase 3 is next; Harry said go and gave the engine OK on 20 Oct. Now part of v0.84 Everything Else.",
       "stats": [
         { "value": "3", "label": "phases done (0 to 2)" },
         { "value": "0 of 448", "label": "build-ups that failed the checks" },
@@ -711,7 +895,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-19T18:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/2WnB5jiriAoRw4pSv1gAiT",
-      "summary": "Drift + Play Screens (19 Oct). Eight football screens drew the pitch narrower than the real match (kick strength was never off); they now draw it at 366 px on a phone and 384 on a computer. Play buttons stay on screen. The engine and drift warning is now red and asks on every edit. A drift audit of every football screen, and a touch check (27 found, 0 stop a finger in the game).",
+      "summary": "Drift + Play Screens (19 Oct). Eight football screens drew the pitch narrower than the real match (kick strength was never off); they now draw it at 366 px on a phone and 384 on a computer. Play buttons stay on screen. The engine and drift warning is now red and asks on every edit. A drift audit of every football screen, and a touch check (27 found, 0 stop a finger in the game). Now part of v0.84 Everything Else.",
       "stats": [
         { "value": "8", "label": "screens drew the pitch too small, now fixed" },
         { "value": "318 → 366 px", "label": "Real moments pitch on a phone" },
@@ -746,7 +930,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-19T16:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/XNFSvtGTgM37Dmi28rZHhn",
-      "summary": "Scene Editor 3a (19 Oct). The 3D Signing and the Manager's Office play live in the scene editor (camera, lens, light, exposure). The edits stayed on the device and in the team database; the game did not read them until B6. Also: how generated cut scenes work (two kinds, a 5-step flow, four made-up scenes) and the 3D audit with its 10-phase plan.",
+      "summary": "Scene Editor 3a (19 Oct). The 3D Signing and the Manager's Office play live in the scene editor (camera, lens, light, exposure). The edits stayed on the device and in the team database; the game did not read them until B6. Also: how generated cut scenes work (two kinds, a 5-step flow, four made-up scenes) and the 3D audit with its 10-phase plan. Now part of v0.84 Everything Else.",
       "stats": [
         { "value": "2", "label": "3D places edited live (Signing, Office)" },
         { "value": "4", "label": "made-up scenes shown (film-rules score 100, 100, 100, 91%)" },
@@ -773,7 +957,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-19T04:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/QKNPrRrgPkBr4b1Azgqh8c",
-      "summary": "Team Room v1 (19 Oct). The team's room in the admin: a chat bubble on every admin page, an Ideas board (Idea, Doing, Done, three vote dots), Team chat and a To-do list, plus notes on pushes, a portable kit, a folding side menu, the KIB Admin home-screen app and recordings in a folder per person. Database file run by Mikey on 19 Oct. Round two is the B11 page.",
+      "summary": "Team Room v1 (19 Oct). The team's room in the admin: a chat bubble on every admin page, an Ideas board (Idea, Doing, Done, three vote dots), Team chat and a To-do list, plus notes on pushes, a portable kit, a folding side menu, the KIB Admin home-screen app and recordings in a folder per person. Database file run by Mikey on 19 Oct. Round two is the B11 page. Now part of v0.82 Team Board & Team Updates.",
       "stats": [
         { "value": "4", "label": "views: Board, Ideas, Chat, To-do" },
         { "value": "3", "label": "idea stages, with 3 vote dots each" },
