@@ -28,7 +28,7 @@ import { careerBuildUp, wantsBuildUp, buildUpFor } from "../../lib/star/leadInGe
 import { leadInEntities, type LeadIn } from "../../lib/star/leadIn";
 import {
   fhrBuildUpFor, fhrWantsBuildUp, maxSpeed, fhrTempo, momentDrama,
-  FHR_MIN_S, FHR_MAX_S, FHR_TOP_SPEED, FHR_RUNON_S, FHR_RUNON_MAX_M, FHR_BIG_MAX_S, COVER_CLEAR_M, type FhrBuildUp,
+  FHR_MIN_S, FHR_MAX_S, FHR_TOP_SPEED, FHR_RUNON_S, FHR_RUNON_MAX_M, FHR_BIG_MAX_S, COVER_CLEAR_M, COVER_MIN_BALL_Y, type FhrBuildUp,
 } from "../../lib/star/fhr/buildUp";
 import { fhrFoulBuildUpFor, fhrWantsFoul, FOUL_SHARE, type FhrFoulBuildUp } from "../../lib/star/fhr/foulBuildUp";
 import { testAreaBuildUp } from "../../lib/star/fhr/builders";
@@ -168,7 +168,7 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
   // On: every fresh open-play chance gets one; set pieces and moves carrying on never do.
   forceFhrMode("on");
   const durs: number[] = [], sigs = new Set<string>();
-  let open = 0, withProblems = 0, runOns = 0, covers = 0, setPieces = 0, fouls = 0;
+  let open = 0, withProblems = 0, runOns = 0, covers = 0, coverable = 0, setPieces = 0, fouls = 0;
   const runSpeeds: number[] = [];
   for (const c of cs) {
     const sp = c.sc.kind === "penalty" || c.sc.kind === "free_kick" || c.sc.kind === "corner";
@@ -210,6 +210,8 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
       }
     }
     // FHR-3: a covering defender joins behind the ball, never between it and the goal.
+    // (Only with the ball COVER_MIN_BALL_Y or more out: a header, B10, never is.)
+    if (c.sc.ball.y >= COVER_MIN_BALL_Y) coverable++;
     if (l.cover) {
       covers++;
       const j = l.joiners?.[0];
@@ -232,7 +234,7 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
   check(runOns >= open * 0.9, `phase 3: only ${runOns} of ${open} build-ups hand over with men still running`);
   runSpeeds.sort((a, b) => a - b);
   check(runSpeeds[runSpeeds.length >> 1] > 1, `phase 3: median speed at the hand-over ${runSpeeds[runSpeeds.length >> 1]?.toFixed(2)} m/s (nobody really moving)`);
-  check(covers >= open * 0.05 && covers <= open * 0.4, `FHR-3: ${covers} of ${open} chances got an extra defender`);
+  check(covers >= coverable * 0.05 && covers <= open * 0.4, `FHR-3: ${covers} of ${open} chances got an extra defender (${coverable} with the ball ${COVER_MIN_BALL_Y} m+ out)`);
   check(setPieces > 5, "no set pieces served");
   G.__fhrStats = { open, runOns, covers, setPieces, fouls, runSpeedMedian: runSpeeds[runSpeeds.length >> 1] };
   check(withProblems <= Math.ceil(open * 0.01), `${withProblems} of ${open} build-ups failed their own checks`);
