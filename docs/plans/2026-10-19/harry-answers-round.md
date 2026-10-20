@@ -119,3 +119,7 @@ New builds from the feedback:
 - B5b (Harry, 20 Oct ~15:15): "I really like the B5 3D changes; however we now need to figure out how to make the bodies not look badly proportioned, natural movement while speaking, moving, holding objects etc." → proportions as 3 options at phone size first (Harry picks), talking/moving body language from the cut-scene timeline, props held properly (trophy, pen first).
 - Patch notes: "Vision needs to be shown as rebuilt in B7"; "a full plain pass could be run over everything to simplify and get rid of yap in the artifact"; "how these patch notes work doesn't need to be on every page"; questions to a separate artifact.
 - Admin: "the team area should be the default home area and it should open on Team board and have its own tab on the left" → B19.
+
+## 20 Oct, 15:36: lag devices and the push
+- Lag is judged on three phone tiers and three computer tiers: high (iPhone 16+), mid (iPhone 13/14), low (older Android); the same three for PC. Written into docs/research/lag/2026-10-20-research.md §5.0.
+- "we can push everything once the team reviews the patch notes." Push = merge Harry → main, after tsc, both guards, the tests and `npm run build` pass. Gate: the team has reviewed the patch notes (Harry says so). A build still running at that point waits for the next push.
