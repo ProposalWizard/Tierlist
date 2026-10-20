@@ -174,6 +174,17 @@ ok(patchUnread(metaLast2, "Harry", [], TEAM_ROOM.patchReceiptsFrom).length === 0
 ok(last2.every((n) => !!n.artifactUrl && !!PATCH_NOTE_PAGES[n.version]), "each links its artifact page and has a kept page in the archive");
 ok(last2.every((n) => n.sections.length > 0 && n.stats.length === 4 && !!n.summary), "each has a summary, 4 stats and sections");
 
+console.log("The three topic pages (v0.82 to v0.84): the team board, the admin, everything else");
+const topics = ["0.82", "0.83", "0.84"].map((v) => BUILT_IN_PATCH_NOTES.find((n) => n.version === v));
+ok(topics.every((n) => !!n), "v0.82, v0.83 and v0.84 exist");
+ok(topics.every((n) => !!n && /^Harry's patch notes: /.test(n.title) && !!n.artifactUrl && !!PATCH_NOTE_PAGES[n.version]), "each is Harry's, links its artifact and has a kept page");
+ok(topics.every((n) => !!n && n.stats.length === 4 && n.sections.length > 0 && !!n.summary && Date.parse(n.publishedAt) >= Date.parse(TEAM_ROOM.patchReceiptsFrom)), "each has 4 stats, sections and a summary, and counts for the receipts");
+ok(topics.map((n) => n?.title.split(": ")[1]).join() === "Team Board & Team Updates,Admin Pages & Skins,Everything Else", "named as asked");
+const earlier19: Record<string, string> = { "0.60": "v0.82", "0.61": "v0.84", "0.62": "v0.84", "0.63": "v0.84", "0.64": "v0.84", "0.65": "v0.83" };
+ok(Object.entries(earlier19).every(([v, to]) => BUILT_IN_PATCH_NOTES.find((n) => n.version === v)?.summary.includes("Now part of " + to + " ")), "v0.60 to v0.65 stay in the archive and say which topic page they are now part of");
+const idx = BUILT_IN_PATCH_NOTES.find((n) => n.version === "0.75");
+ok(!!idx && /v0\.84/.test(idx.stats[3].value) && idx.sections.some((s) => s.items.some((i) => i.title.startsWith("Team Board & Team Updates (v0.82)"))), "the index (v0.75) lists the three topic pages");
+
 console.log("Typing @ and #");
 ok(JSON.stringify(typingToken("hey @mi", 7)) === JSON.stringify({ kind: "@", query: "mi", start: 4 }), "@ partway through a name");
 ok(typingToken("hey #gal", 8)?.kind === "#" && typingToken("hey #gal", 8)?.query === "gal", "# for a page");
