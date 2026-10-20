@@ -66,6 +66,12 @@ export const TOON_BODY_SETS: Record<string, Partial<Record<ToonHead, string>>> =
   // B made leaner and upright with today's Curls face kept and a flatter chest (Harry 17:46 and 18:41:
   // "a bit like a dinosaur", "losing the face working … the chest comes out a bit much")
   f2: { h1: "/star/people3d/toon-f2.glb" }, f3: { h1: "/star/people3d/toon-f3.glb" },
+  // B5d (Harry 20:15: "gotta try and keep our cartoon like faces"): today's own bodies re-shaped as a
+  // stylised cartoon, the head and face today's (only scaled, as one piece). tools/bodies/README.md "B5d".
+  //   d1 today's body grown up (~5.9 heads), d2 slim stylised athlete (~6.4), d3 hero V, between (~6.1)
+  d1: { h1: "/star/people3d/toon-d1.glb", h3: "/star/people3d/toon-d1-h3.glb" },
+  d2: { h1: "/star/people3d/toon-d2.glb", h3: "/star/people3d/toon-d2-h3.glb" },
+  d3: { h1: "/star/people3d/toon-d3.glb", h3: "/star/people3d/toon-d3-h3.glb" },
 };
 export const TOON_BODY_SET: { id: string | null } = {
   id: (() => {

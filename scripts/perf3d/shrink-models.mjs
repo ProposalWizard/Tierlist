@@ -108,6 +108,13 @@ const POLICY = {
   "star/people3d/toon-q1.glb": PEOPLE.old,
   "star/people3d/toon-f2.glb": PEOPLE.old,
   "star/people3d/toon-f3.glb": PEOPLE.old,
+  // B5d (20 Oct 2026): today's Curls and Buzz bodies re-shaped as a cartoon (tools/bodies/reshape.py, ?bodies=d1|d2|d3)
+  "star/people3d/toon-d1.glb": PEOPLE.old,
+  "star/people3d/toon-d2.glb": PEOPLE.old,
+  "star/people3d/toon-d3.glb": PEOPLE.old,
+  "star/people3d/toon-d1-h3.glb": PEOPLE.old,
+  "star/people3d/toon-d2-h3.glb": PEOPLE.old,
+  "star/people3d/toon-d3-h3.glb": PEOPLE.old,
   // The old shop/garden player: dressInKit (shop3d/scene.ts) reads positions
   // in metres and skinWeight.array as 0..1 floats, so those two stay float.
   "star/shop3d/character.glb": { q: /^(NORMAL|TEXCOORD_\d+|COLOR_\d+)$/, keepWeights: true, webp: true },

@@ -78,14 +78,34 @@ def legband(z):
     return smooth(lo - E, lo + E, z) * (1 - smooth(hem - E, hem + E, z))
 
 
+# RS_SHIN (B5d): the shin's own stretch (boot top to knee); LEGS is then the thigh's (knee to shorts hem).
+# Today's Style A bodies are short in the THIGH (knee 0.51 m, hip joint 0.88 m of 1.86; a real man 0.53 / 0.99),
+# so a cartoon athlete's longer legs come mostly from the thigh, not from longer socks.
+SHIN = os.environ.get("RS_SHIN")
+kneeZ = (J["LeftLeg"].z + J["RightLeg"].z) / 2
+
+
+def stretch_at(z):
+    if SHIN is None: return LEGS
+    return float(SHIN) + (LEGS - float(SHIN)) * smooth(kneeZ - E, kneeZ + E, z)
+
+
+def _leg_int(z):
+    n = 200; acc = 0.0; z0 = lo - E; dz = (z - z0) / n
+    for i in range(n):
+        zz = z0 + (i + 0.5) * dz
+        acc += dz * (1 + (stretch_at(zz) - 1) * legband(zz))
+    return z0 + acc
+
+
+if SHIN is not None: lift = _leg_int(hem + E) - (hem + E)
+
+
 def leg_z(z):
     """Heights: below the boot top stay, the bare legs stretch by LEGS, above rise by `lift`."""
     if z <= lo - E: return z
     if z >= hem + E: return z + lift
-    n = 200; acc = 0.0; z0 = lo - E; dz = (z - z0) / n
-    for i in range(n):
-        acc += dz * (1 + (LEGS - 1) * legband(z0 + (i + 0.5) * dz))
-    return z0 + acc
+    return _leg_int(z)
 
 
 def taper(z):
@@ -106,6 +126,12 @@ for s in SIDES:
     ARM[s] = dict(S=S, E=Ej, W=W, du=(Ej - S).normalized(), df=(W - Ej).normalized(), Lu=(Ej - S).length, Lf=(W - Ej).length)
 pivot = J["Head"] + Vector((0, 0, lift + dn))
 FOREG, HANDS, HEADBACK, NECKS, CHESTD = ENV("RS_FOREARM", ARMG), ENV("RS_HANDS", 1), ENV("RS_HEADBACK", 0) * H0, ENV("RS_NECK", 1), ENV("RS_CHESTD", 1)
+# RS_RIGIDHEAD=1 (B5d): the head moves as one piece. The neck lift, the head-back shift and the trunk's taper
+# fade in by HEIGHT, and the mouth and chin sit below the head joint, so without this the lower face is lifted,
+# moved back and narrowed less than the eyes (a squashed face). With it, a point carried by the head bone takes
+# the head's whole move, so the face is today's face, only scaled (and its landmarks can be carried exactly).
+RIGID = ENV("RS_RIGIDHEAD", 0) == 1
+CHESTD_FROM = ENV("RS_CHESTD_FROM", 0)
 spineY = J["Spine01"].y
 
 
@@ -122,15 +148,20 @@ def deform(p, w):
         k = 1 + (GIRTH - 1) * gb
         p.x = c.x + (p.x - c.x) * k; p.y = c.y + (p.y - c.y) * k
     # the trunk's taper; an arm rides out with its shoulder
-    x = p.x * taper(p.z) * (1 - warm)
+    hw = w["head"] if RIGID else 0.0
+    tp = taper(p.z); tp = tp + (1 - tp) * hw
+    x = p.x * tp * (1 - warm)
     for s in SIDES:
         x += sum(w[s]) * (p.x + (taper(zSh) - 1) * J[s + "Arm"].x)
     q = Vector((x, p.y, leg_z(p.z) * (1 - warm) + (p.z + lift) * warm))
     # neck: lift the head, fading in from the neck's base to the head joint
-    q.z += dn * smooth(neck0, head0, p.z) * (1 - warm)
+    q.z += dn * max(smooth(neck0, head0, p.z), hw) * (1 - warm)
     # chest: less deep in front of the spine (a footballer, not a barrel)
     if CHESTD != 1 and q.y < spineY and warm < 1:
-        bump = smooth(zHip, zHip + 0.1 * H0, p.z) * (1 - smooth(zSh - 0.05 * H0, zSh + 0.03 * H0, p.z))
+        # RS_CHESTD_FROM (B5d): start the flattening this far (x height) above the hip joint, so the shirt's
+        # lower front (which hangs over the shorts' waistband) keeps its depth and the waistband never shows through
+        c0 = zHip + CHESTD_FROM * H0
+        bump = smooth(c0, c0 + 0.1 * H0, p.z) * (1 - smooth(zSh - 0.05 * H0, zSh + 0.03 * H0, p.z))
         q.y = spineY + (q.y - spineY) * (1 - (1 - CHESTD) * bump * (1 - warm))
     # neck: thinner about its own line (neck-bone weight)
     if NECKS != 1 and w["neck"] > 0:
@@ -142,7 +173,7 @@ def deform(p, w):
         q = q + w["head"] * ((pivot + HEAD * (q - pivot)) - q)
     # posture: head and neck back over the shoulders (+y is his back)
     if HEADBACK:
-        q.y += HEADBACK * smooth(neck0 - 0.03 * H0, head0, p.z) * (1 - warm)
+        q.y += HEADBACK * max(smooth(neck0 - 0.03 * H0, head0, p.z), hw) * (1 - warm)
     # arms: each bone stretches along its own line and grows thicker about it
     for s in SIDES:
         wu, wf, wh = w[s]
