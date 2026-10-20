@@ -44,8 +44,10 @@ export function buildProp(T: any, kit: StyleKit, spec: PropSpec, txt: PropText, 
   const mat = (c: string, o: any = {}) => { const m = kit.mat(c, o); disp.push(m); return m; };
   const mesh = (geo: any, m: any, x = 0, y = 0, z = 0) => { const me = new T.Mesh(geo, m); me.position.set(x, y, z); me.castShadow = true; me.receiveShadow = true; g.add(me); disp.push(geo); return me; };
   const tex = (c: HTMLCanvasElement) => { const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; disp.push(t); return t; };
-  const gold = () => mat("#e0b23a", { metal: 0.9, rough: 0.22, emissive: "#3a2600", emissiveIntensity: 0.25 });
-  const silver = () => mat("#d6dbe2", { metal: 0.9, rough: 0.2, emissive: "#202428", emissiveIntensity: 0.2 });
+  // B5b: half metal, so they read gold and silver with no room picture to reflect (at 0.9 metal and no
+  // environment map the trophy drew black in every cut scene: the bench's "Trophy lift")
+  const gold = () => mat("#e0b23a", { metal: 0.5, rough: 0.3, emissive: "#4a3200", emissiveIntensity: 0.3 });
+  const silver = () => mat("#d6dbe2", { metal: 0.45, rough: 0.28, emissive: "#3c4148", emissiveIntensity: 0.3 });
   const base: PropObj = { spec, group: g, grip: "grip", handles: {}, dispose() { for (const d of disp) d.dispose?.(); } };
   const k = spec.kind as PropKind;
   const shirt = spec.color ?? txt.shirt, trim = spec.color2 ?? txt.trim;
@@ -77,7 +79,8 @@ export function buildProp(T: any, kit: StyleKit, spec: PropSpec, txt: PropText, 
     let lastInk = -1, lastSt = false;
     return {
       ...base, grip: "flat",
-      handles: { grip: [0, 0, 0], hold: [-0.09, 0.004, 0.06] },
+      // hold: where the flat hand's WRIST goes: a palm's thickness above the paper (B5b: at 4 mm the hand sank through it)
+      handles: { grip: [0, 0, 0], hold: [-0.09, 0.024, 0.06] },
       surface: (px, py, lift = 0) => [(px / CW - 0.5) * PW, 0.0012 + lift, (py / CH - 0.5) * PH],
       paths: sig ? { signature: sig } : {},
       setInk(u, st = false) {
@@ -130,7 +133,8 @@ export function buildProp(T: any, kit: StyleKit, spec: PropSpec, txt: PropText, 
     if (k === "trophy-cup") {
       for (const s of [-1, 1]) {
         const h = new T.Mesh(new T.TorusGeometry(0.075, 0.012, 10, 24, Math.PI * 1.25), m);
-        h.position.set(s * 0.16, 0.17, 0); h.rotation.z = s > 0 ? -Math.PI * 0.62 : Math.PI * 0.38;
+        // the handles at the bowl's waist, about half way up (B5b: from the rim, 34 cm over the base, no arm could lift the cup clear of a head)
+        h.position.set(s * 0.16, 0.1, 0); h.rotation.z = s > 0 ? -Math.PI * 0.62 : Math.PI * 0.38;
         h.castShadow = true; g.add(h); disp.push(h.geometry);
       }
       mesh(new T.CylinderGeometry(0.157, 0.157, 0.02, 36), accent, 0, 0.3, 0);
@@ -138,9 +142,9 @@ export function buildProp(T: any, kit: StyleKit, spec: PropSpec, txt: PropText, 
       // ribbons in the club's colours
       for (const [s, col] of [[-1, shirt], [1, trim]] as const) {
         const r = new T.Mesh(new T.BoxGeometry(0.03, 0.22, 0.004), mat(col, { side: T.DoubleSide }));
-        r.position.set(s * 0.21, 0.04, 0.02); r.rotation.z = s * 0.15; g.add(r); disp.push(r.geometry);
+        r.position.set(s * 0.21, -0.07, 0.02); r.rotation.z = s * 0.15; g.add(r); disp.push(r.geometry);
       }
-      return { ...base, grip: "grip", handles: { L: [0.235, 0.17, 0], R: [-0.235, 0.17, 0], grip: [0, 0, 0] } };
+      return { ...base, grip: "grip", handles: { L: [0.235, 0.1, 0], R: [-0.235, 0.1, 0], grip: [0, 0, 0] } };
     }
     // league: a crown on top
     const crown = gold();

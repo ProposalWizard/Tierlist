@@ -1,7 +1,0 @@
-Proportions options sheet (Harry to pick A, B or C):
-docs/handoffs/2026-10-20-builds/b5b/proportions-options.jpg
-
-A = today (unchanged in the game). B = modest. C = bolder. Same height for all three (1.86 m).
-Heads tall: A 5.3, B 6.0, C 6.8 (a real man 7.7). Hips at A 0.48, B 0.50, C 0.52 of height (real 0.53).
-Test pages show B or C with ?prop=b or ?prop=c (e.g. /star-3d-bench-dev/home?prop=c).
-Nothing is applied in the game until Harry picks.
