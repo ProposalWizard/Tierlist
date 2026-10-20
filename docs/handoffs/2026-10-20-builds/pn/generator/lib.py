@@ -369,12 +369,12 @@ def render_ok(spec):
 
 def render_page(p, spec, index_url):
     key = spec['key']
-    oksec, nopen, ndone = render_ok(spec)
+    # 20 Oct 2026 (Harry): the questions live in the separate "Patch Notes Questions" artifact (questions_data.py, build_questions.py)
+    # and "How these patch notes work" is on the index only. Pages carry neither. render_ok is kept only for the counts.
+    _oksec, nopen, ndone = render_ok(spec)
     back = ('<a class="back" href="%s" target="_blank" rel="noopener">&larr; All last-2-days notes</a>' % index_url) if index_url else ''
-    chips = ('<a class="chip hot" href="#ok">%d need your OK &darr;</a>' % nopen) if nopen else '<a class="chip" href="#ok">Nothing waiting on you</a>'
-    if ndone: chips += '<a class="chip" href="#ok">%d decided</a>' % ndone
+    chips = ''
     chips += '<a class="chip" href="#vid">Videos %s &darr;</a>' % (spec.get('videos_label') or ('coming' if spec['videos_coming'] else ('here' if spec.get('videos_here') else '(none planned)')))
-    chips += '<a class="chip" href="#how">How this works</a>'
     checks = ''.join(
         '<li><label><input type="checkbox" data-k="c%d"><span><span class="q">%s</span><span class="a">%s</span></span></label></li>' % (i, q, a)
         for i, (q, a) in enumerate(spec['checks']))
@@ -407,8 +407,6 @@ def render_page(p, spec, index_url):
 <h2 class="nxt"><i></i>CHECK THESE</h2>
 <ul class="ck">{checks}</ul>
 
-{how_block(spec.get('ver'))}
-
 {''.join(spec['sections'])}
 
 {numsec}
@@ -418,8 +416,6 @@ def render_page(p, spec, index_url):
 
 <h2 class="bug"><i></i>SEEN / NOT SEEN</h2>
 {seen}
-
-{oksec}
 
 <footer>{foot}</footer>
 </div>

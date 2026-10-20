@@ -27,6 +27,45 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.85",
+      "title": "Harry's patch notes: B17 PC Match + Radar",
+      "publishedAt": "2026-10-20T15:20:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN",
+      "summary": "B17 PC Match + Radar (20 Oct). A new test page shows the real 90-minute match on the left at its real size and a live radar of the whole pitch on the right. Between chances the ball dot glides from area to area; during a chance every man, both keepers and the ball are on the radar. A View 2D | 3D switch changes this page only. On a phone the radar sits under the match. It also found a fault in the career's own in-match radar (the dot outside its lit area 220 of 455 minutes, 50 off the pitch), fixed the same day (0 of 910 checked). A test page: nothing in the real game changed. Not seen: the full-time panel, a penalty against you, a real phone.",
+      "stats": [
+        { "value": "455 of 455", "label": "minutes the dot sat inside the named area (5 matches)" },
+        { "value": "384 px", "label": "the real match on a computer (366 px on a phone)" },
+        { "value": "~12 s", "label": "to load the 3D view on the test machine" },
+        { "value": "220 to 0", "label": "minutes the career radar's dot sat outside its area (fixed)" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Open the page", "detail": "Admin → Test pages → Match tests → PC match + radar. On a computer: the match on the left, the radar on the right." },
+          { "title": "Between chances", "detail": "The ball dot glides from area to area. The area is lit. GOAL!, SHOT, CORNER and YOUR CHANCE flash." },
+          { "title": "During a chance", "detail": "Every man, both keepers and the ball are on the radar. A dashed box shows what the match screen shows." },
+          { "title": "View 2D | 3D", "detail": "The switch above the match. The 3D view needs a few seconds to load." },
+          { "title": "On a phone", "detail": "The radar sits under the match. The pitch is 366 px wide." },
+          { "title": "New match", "detail": "The button starts a new 90-minute match." },
+          { "title": "A dribble", "detail": "The radar holds the last minute and says so." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "A test page: the real match on the left, a live radar of the whole pitch on the right", "detail": "The real 90-minute match at its real size (384 px) and a live radar pinned to the top. At 1440 × 900 the whole pitch and the radar fit. Under the radar: a momentum bar, one line of status and a This match list. The bar above has New match and View 2D | 3D." },
+          { "title": "Between chances, the radar shows the match you do not see, minute by minute", "detail": "The ball dot glides from area to area with a trail. The area is lit in that side's colour. The dot sat inside the named area 455 of 455 minutes over 5 matches." },
+          { "title": "During a chance, every man is on the radar", "detail": "Every man, both keepers and the ball where the match screen just drew them. A dashed box shows the part of the pitch the match screen can see." },
+          { "title": "A 3D view of the match, on this page only", "detail": "The View 2D | 3D switch uses the career's 3D match picture. About 12 s to load on the test machine, which has no graphics chip." },
+          { "title": "On a phone the radar sits under the match", "detail": "The pitch is 366 px wide, the same as the real match." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "The career's own in-match radar drew its dot outside its lit area", "detail": "Found by this page, fixed the same day (Harry: fix the match radar). The dot was outside its lit area 220 of 455 minutes, 50 of them off the pitch. The position shuffle could go below zero. Now 0 of 910 minutes checked." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Not seen: the full-time panel and a penalty against you", "detail": "The check ran about 6 minutes over several matches. Play one match to the end and look." },
+          { "title": "Seen only on a test machine, not on a phone", "detail": "Seen at 1440 × 900 and 390 × 844 in a test browser. The 3D view took about 12 s there." }
+        ]}
+      ]
+    },
+    {
       "version": "0.84",
       "title": "Harry's patch notes: Everything Else",
       "publishedAt": "2026-10-20T14:10:00Z",

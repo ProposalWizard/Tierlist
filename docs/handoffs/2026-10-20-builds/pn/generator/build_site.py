@@ -8,7 +8,12 @@ Usage: PN_OUT=/abs/out python3 build_site.py
             PN_OUT/site/pages/<key>/index.html each page, wrapped as its own document, with a sticky "back" bar
             PN_OUT/site/pages/<key>/img|clips  the page's pictures and clips
             PN_OUT/site/files.json             list of every published path, in two rounds (max 255 files per publish)
-The kept copies in the repo are NOT changed: the admin archive needs their absolute links."""
+The kept copies in the repo are NOT changed: the admin archive needs their absolute links.
+
+After 20 Oct the kept copies in patch-notes/pages are the source of truth: the questions and the how-it-works block were taken out of
+them by strip_questions.py, B7's Vision was rewritten by fix_b7_vision.py, B17 is made by run_b17.py. The older page generators
+(b*.py, d19.py, topics.py, index19.py, index_topics.py) still write the old blocks if run again: run strip_questions.py after them.
+The questions are in questions_data.py and become the Patch Notes Questions artifact (build_questions.py)."""
 import os, re, json, shutil, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lib import OUT, BASE
@@ -23,6 +28,7 @@ PAGES = [  # key, kept version
     ('b1', '0.66'), ('b3', '0.67'), ('b4', '0.68'), ('b5', '0.69'), ('b6', '0.70'), ('b7', '0.71'), ('b8', '0.72'), ('b9', '0.73'),
     ('b11', '0.74'), ('b12', '0.76'), ('b7b', '0.77'), ('b13', '0.78'), ('b15', '0.79'), ('b9b', '0.80'), ('b16', '0.81'),
     ('a19admin', '0.65'), ('a19team', '0.60'), ('a19drift', '0.62'), ('a19fhr', '0.63'), ('a19data', '0.64'), ('a19scene', '0.61'),
+    ('b17', '0.85'),   # B17 has no artifact of its own: it is a page of this one
 ]
 
 up = os.path.join(OUT, 'urls.json')
@@ -87,6 +93,9 @@ for key, ver in PAGES:
 
 idx = open(os.path.join(PG, '0.75', 'index.html'), encoding='utf-8').read()
 idx = localize(idx, 'pages/', 'index.html')
+# B17's card links the notes artifact with #b17 in the kept copy (the admin archive needs an absolute link); here it opens the page
+idx = idx.replace('<a class="bcard" href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN#b17" target="_blank" rel="noopener">', '<a class="bcard" href="pages/b17/index.html">')
+assert 'artifact/Jjqh5F2Qjym1GMBwhA2dSN#b17' not in idx
 note = 'This index is v0.75. Pages open here, in the same tab: use &ldquo;&larr; All patch notes&rdquo; at the top of a page to come back.'
 assert 'This index is v0.75.' in idx
 idx = idx.replace('This index is v0.75.', note, 1)
