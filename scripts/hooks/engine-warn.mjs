@@ -45,9 +45,13 @@ if (["Edit", "Write", "MultiEdit", "NotebookEdit"].includes(tool)) {
   const raw = ti.command ?? "";
   const onlyMentions = /^\s*(git\s+commit|echo|printf)\b/.test(raw);
   const cmd = onlyMentions ? raw.replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, "\"\"") : raw;
-  const writes = /(sed\s+-i|perl\s+-i|>\s*[^&]|\btee\b|\brm\b|\bmv\b|\bcp\b|python|node\s+-e|<<|\.write|writeFile|git\s+(checkout|restore|rm|apply|am)|truncate|patch\b)/;
-  hit = ENGINE.test(cmd) && writes.test(cmd);
-  drift = !hit && DRIFT.test(cmd) && writes.test(cmd);
+  const writeVerb = /(sed\s+-i|perl\s+-i|\btee\b|\brm\b|\bmv\b|\bcp\b|python|node\s+-e|<<|\.write|writeFile|git\s+(checkout|restore|rm|apply|am)|truncate|patch\b)/;
+  // A ">" only writes the file it points at: "grep … CanvasMatch.tsx 2>/dev/null"
+  // is a read (20 Oct 2026: that false alarm stalled a builder for 40 minutes).
+  const redirectTargets = [...cmd.matchAll(/(?:^|[^0-9&<>])\d*>{1,2}\s*["']?([^\s;|&"'<>]+)/g)].map((m) => m[1]);
+  const writes = (re) => writeVerb.test(cmd) || redirectTargets.some((t) => re.test(t));
+  hit = ENGINE.test(cmd) && writes(ENGINE);
+  drift = !hit && DRIFT.test(cmd) && writes(DRIFT);
 }
 
 // No colour codes: the app shows them as raw text. The red squares are the colour.
