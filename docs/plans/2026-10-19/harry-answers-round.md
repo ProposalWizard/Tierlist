@@ -110,3 +110,4 @@ New builds from the feedback:
 - B15 Player of the Month and similar cards: headshots shot from our 3D model, not the old 2D drawn heads ("looks unprofessional").
 - B16 Keepers in the 3D minigames (Wembley, 3D training) feel overpowered — measure and rebalance. NOTE: B1 raised Wembley's keeper 36 → 70; check against this.
 - B17 A PC match layout like the five-a-side test area (pitch + live radar beside it), as a test area first, ideally in 3D ("the way the ball's moving across the pitch is very cool").
+- Answers (20 Oct, 09:45): training "your skills" — "surely it should just be auto — playing a level 20 skill would mean you have the 19 levels completed before it" → no slider; a level plays with the skill you'd have after finishing the levels before it (B7b). Keepers in 3D minigames: fair ≈ 1 in 3 shots saved (B16). Engine OK for B2 and B10: YES (run one at a time; B14 after).
