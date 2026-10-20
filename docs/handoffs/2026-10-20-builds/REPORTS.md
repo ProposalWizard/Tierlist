@@ -175,3 +175,14 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Ticks: the person's own team_tasks row "[job:<id>] <title>", hidden from the normal lists; each person ticks their own.
 - First job: the lag test, for all, with the prompt. Seen in demo mode only (not against the real database, no live GitHub read: rate-limited). Reaches the live board only after the next merge to main.
 - Found, not fixed: tick boxes look stretched tall at phone width (older jobs too).
+
+## B10 — Headers and volleys back on
+- No header/volley drawings exist (0 of 194 committed, 0 of 192 saved). Each is played as the END of one of the team's own cross drawings (TARGET/POACH = you, the wide man = crosser); real drawings take over once the team saves 5 of a kind (lib/star/airDrawings.ts via playPool). switchedOffKinds is now empty.
+- Per match (40 each): even mix headers 0.50, volleys 0.42, chances 6.0; Full rebuild On 0.57 / 0.63 / 6.0. Each open-play kind 1 in 10 (was 1 in 8). Kane mix untouched.
+- Aim: header ball hangs 1.85 m, volley bounces 0–0.95 m, shadow + dotted line. Strike screen "Head it?" / "Volley it?", verdicts (NODDED DOWN … SKIED); airContactRead: off-centre header up to 22° and −35% pace; volley slice up to 26°; no random number.
+- Build-ups (rebuild On): last pass is the crosser's lofted ball (peak 3–4.6 m); 60 of 60, 59 pass own checks.
+- canvasEngine.ts untouched. CanvasMatch.tsx: draw the airborne ball while aiming; header/volley chances always struck from the air. Pitch 366 px phone; 489 px at 1280 wide (audit 493 at its window, reasoned).
+- Conversion (500 shots per cell, poor/avg/elite): header 42.8/46.2/50.2% → 23.4/29.2/35.8%; volley 37.4/40.6/33.6% → 23.0/28.4/35.4%. Blocks: headers 18–21% → 36–42%, volleys 13–15% → ~35% (crowded drawn boxes). Other kinds identical.
+- Tests: new airChances.mts; switchedOffKinds rewritten; keeper fingerprint d2725947 and chanceJudge Old 239:e7c688f6 re-pinned on purpose. 3 suites fail on the base too (chanceMaker counts, longRangeRules, match2dCam 372×704).
+- Seen at 390×844 in Infinite Highlights; not seen in a career match. Plan (not built): docs/plans/2026-10-20-flair-bicycle.md.
+- Open for Harry: play off the cross drawings until 5 real ones exist, or stay off? 1 in 10 right? Kane mix (Mikey)?
