@@ -199,3 +199,10 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Once per phone: iPhone (iOS 16.4+) Safari → knowitball.co.uk/admin → Share → Add to Home Screen → open KIB Admin → Team → To-do → Turn on phone notifications → Allow. Android/computer: the same button.
 - Needs TEAM_PUSH_PRIVATE_KEY in Vercel (given to Harry in chat, in no file); public key in lib/teamRoom/config.ts. web-push 3.6.7 added.
 - Seen: a real push through Google's push service in headless Chromium; grouping; the 410 drop. Not seen: a real iPhone, tapping a buzz, the signed-in flow end to end.
+
+## Live share (test)
+- Admin → Videos → "Live share (test)" (admins only): Start → pick a screen/window/tab, Voice on → a 6-letter code with Copy for Claude, Copy link (/admin/videos/live/<code>), Watch it. Stop, the browser's Stop sharing, or 30 min ends it; Delete removes every picture and line. A typing box where there is no voice.
+- One picture a second (720 px, only when changed, colour compare) + speech transcript to Storage tierlist-images/live/<code>/ through an admin API route with the service key; newest 300 kept. No SQL.
+- Claude: `npx tsx scripts/live-watch.mts <code>` (background), every 2 s: SAID lines with the picture on screen then; SCREEN lines on a new/part-changed screen (small changes at most every 30 s); latest.jpg; ENDED.
+- Measured locally: picture 1.2–2.5 s, speech 0.5–2.5 s to the watcher (+ Claude's reply). Computer: Chrome/Edge pictures + voice, Firefox pictures only; Android can't share the screen; iPhone Safari reportedly from iOS 27 (not tried).
+- Seen in headless Chromium with a fake screen and fake speech end to end. Not seen: real Supabase writes, real voice, Safari, background tab. Full `npm run build` was killed for memory 3 times (tsc alone passes).
