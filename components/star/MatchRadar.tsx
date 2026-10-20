@@ -48,7 +48,10 @@ const KIND_NAME: Record<string, string> = {
 /** Seeded wobble inside an area, so the dot isn't pinned to one spot. */
 function jitter(minute: number, salt: number): number {
   let h = (minute * 2654435761 + salt * 40503) >>> 0;
-  h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995) >>> 0; h ^= h >>> 15;
+  h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995) >>> 0;
+  // ">>> 0" keeps it unsigned: a bare "h ^= …" turns it negative, which put the
+  // dot outside its lit area 220 of 455 minutes, 50 of them off the pitch (20 Oct 2026).
+  h = (h ^ (h >>> 15)) >>> 0;
   return (h % 1000) / 1000 - 0.5;
 }
 export function ballAt(f: Pick<RadarFrame, "zone" | "lane" | "minute">): { x: number; y: number } {
