@@ -40,8 +40,9 @@ import { withMocapOwn } from "./three3d/footballAnims";
 import { motionLook } from "./motionLook";
 import { playerStyleLook, type PlayerStyleLook } from "./style3d/toon/look";
 import { matchPlayerStyle } from "./style3d/toon/matchLook";
-import { TOON_HEADS, TOON_FILES, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
+import { TOON_HEADS, toonFileFor, toonFileIsJudged, TOON_BUILD_SCALE, TOON_SUIT_HEADS, TOON_HEM_FIX, hashId, toonBodyFor, toonHeadFor, toonYou, toonWearsSuit, toonKey, type ToonBody, type ToonHead } from "./style3d/toon/bodies";
 import { patchToonBody, toonUniforms, toonShirtLayout } from "./style3d/toon/shader";
+import { toonProportions, warpToonBody, type ToonPropId } from "./style3d/toon/proportions";
 import { SMALL_INK } from "./style3d/smallMen";
 import { kitPatternFor, KIT_PATTERN_CODE, type KitPattern } from "./style3d/toon/kitPattern";
 import { relaxIdleArms, IDLE_POSTURE_CLIPS, RELAXED_FINGERS_DEG } from "./three3d/runPosture";
@@ -104,6 +105,11 @@ export interface PersonMeta {
   quant?: { scale: number; offset: V3 };
   /** A Style A body (style3d/toon): its kit lines also carry the collar, shorts hem and sleeve end. */
   toon?: boolean;
+  /** A Style A body drawn at real proportions carries its own head, neck and hand scales
+   *  (1, 1, 1: the file is already right), over TOON_LOOK_DEFAULT's cartoon ones. */
+  look?: Partial<Pick<ToonLook, "head" | "neck" | "hands">>;
+  /** A Style A body: the file's own model name (toon-p1, toon-f2 …); `model` becomes player or manager. */
+  file?: string;
 }
 
 export type FingerName = "thumb" | "index" | "middle" | "ring" | "little";
@@ -162,6 +168,8 @@ export interface Person3D {
   toonKey?: string;
   /** Your own player (makePerson3d's `you`): Style A puts your name on the back. */
   you?: boolean;
+  /** Style A: the proportions he was built to (style3d/toon/proportions.ts; "a" = as the file is). */
+  prop?: ToonPropId;
 }
 
 /** A face picture fitted by faceFit.ts (or anything shaped like it). */
@@ -201,7 +209,7 @@ const cache = new Map<string, Promise<GLTF>>();
  * never fetch the other heads). makePerson3d reads it like loadPeople3d's set.
  */
 export function loadToonHead(loader: { loadAsync(url: string): Promise<unknown> }, head: ToonHead): Promise<GLTF> {
-  const url = TOON_FILES[head];
+  const url = toonFileFor(head);
   let g = cache.get(url);
   if (!g) {
     g = loadPersonFile(loader, url);
@@ -239,7 +247,7 @@ export function loadPeople3d(loader: { loadAsync(url: string): Promise<unknown>;
     const want = heads ?? (which === "manager" ? TOON_SUIT_HEADS : TOON_HEADS);
     const all = Promise.all(TOON_HEADS.map((b) => {
       if (!want.includes(b)) return Promise.resolve(undefined as unknown as GLTF);
-      const url = TOON_FILES[b];
+      const url = toonFileFor(b);
       let g = cache.get(url);
       if (!g) {
         g = loadPersonFile(loader, url);
@@ -294,7 +302,7 @@ function people3dPlainFiles(): string[] {
   const anims = (body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES).anims;
   const plain = body === "new" && humanBodyLook() === "human" ? HUMAN3D_FILE : (body === "new" ? ONEBODY_FILES : PEOPLE3D_FILES).player;
   // the 3D match draws realistic players (toon/matchLook.ts) while the rest of the game is Style A: fetch both
-  if (playerStyleLook() === "new") return [...TOON_HEADS.map((h) => TOON_FILES[h]), ...(matchPlayerStyle() === "old" ? [plain] : []), anims];
+  if (playerStyleLook() === "new") return [...TOON_HEADS.map((h) => toonFileFor(h)), ...(matchPlayerStyle() === "old" ? [plain] : []), anims];
   return [plain, anims];
 }
 let warming: Promise<void> | null = null;
@@ -625,6 +633,9 @@ export function relaxToonArms(T: Three, p: Person3D, out = 5, bend = 10) {
 
 let toonAnon = 0;
 
+/** Clips that sit him down: their hips' height is the chair's, so a rebuilt body keeps the file's own (see makePerson3d). */
+export const SEATED_CLIPS = new Set(["sitidle", "boss-sit", "sitdown", "slot_sit"]);
+
 /**
  * One person from a loaded body and the loaded clips. `SkeletonUtils` is
  * three's (passed in, so this file never imports three at load time).
@@ -659,14 +670,18 @@ export function makePerson3d(
   if (meta.quant) dequantize(T, model, meta.quant);
   // the suit heads are modelled in their suits; a player head is in a kit
   const suit = !!toonHead && TOON_SUIT_HEADS.includes(toonHead);
-  if (toon) meta = { ...meta, model: suit ? "manager" : "player" };
-  if (toon && toonHead && TOON_HEM_FIX[toonHead]) meta = { ...meta, kit: { ...meta.kit, hemY: TOON_HEM_FIX[toonHead]! } };
+  if (toon) meta = { ...meta, file: String(meta.model), model: suit ? "manager" : "player" };
+  if (toon && toonHead && TOON_HEM_FIX[toonHead] && !toonFileIsJudged(toonHead)) meta = { ...meta, kit: { ...meta.kit, hemY: TOON_HEM_FIX[toonHead]! } };
   const root = new T.Group();
   const inner = SkeletonUtils.clone(model.scene);
   root.add(inner);
+  const body = inner.getObjectByName("Body") as THREE.SkinnedMesh;
+  // Style A proportions (style3d/toon/proportions.ts): the bind pose rebuilt before anything reads it;
+  // A (today) changes nothing. Done at build scale 1, before the build below.
+  const prop = toon ? toonProportions() : null;
+  const warp = prop ? warpToonBody(T, root, body, prop) : null;
   // Style A build: the whole person a touch slimmer, broader or taller
   if (toon) inner.scale.set(...TOON_BUILD_SCALE[toon]);
-  const body = inner.getObjectByName("Body") as THREE.SkinnedMesh;
   const bones: Record<string, THREE.Bone> = {};
   inner.traverse((o) => { if ((o as THREE.Bone).isBone) bones[o.name] = o as THREE.Bone; });
   const armature = inner.getObjectByName("Armature")!;
@@ -694,6 +709,8 @@ export function makePerson3d(
     ((u as Record<string, { value: unknown }>).uShade.value as THREE.Vector4).set(tl.soft ? 1 : 0, tl.faceLift, tl.hairSheen ? 1 : 0, 0);
     patchToonBody(T, mat, u, FRAG_HEAD, FRAG_ACCESSORIES);
     mat.userData.toon = true;
+    // a rebuilt body paints its kit, number and face from the file's own rest (the aRest it carries)
+    if (warp) mat.defines = { ...(mat.defines ?? {}), TOON_AREST: "" };
   } else {
     mat.metalness = 0;
     mat.roughness = 0.72;
@@ -703,7 +720,7 @@ export function makePerson3d(
   body.frustumCulled = false;
   body.castShadow = !!opts.castShadow;
   // Style A's ink line is a little bolder (the look test's 7 mm against the old 4.5).
-  const tlk = toon ? { ...TOON_LOOK_DEFAULT, ...opts.toonLook } : null;
+  const tlk = toon ? { ...TOON_LOOK_DEFAULT, ...meta.look, ...(prop && prop.id !== "a" ? { head: prop.head } : {}), ...opts.toonLook } : null;
   const thin = tlk && tlk.outlineThin < 1 ? { chinY: meta.face.chinY - 0.03, handX: Math.abs(meta.joints.LeftHand?.[0] ?? 0.4) - 0.01, k: tlk.outlineThin } : undefined;
   const outline = new T.SkinnedMesh(body.geometry, opts.outlinePx ? outlinePxMaterial(T, opts.outlinePx) : outlineMaterial(T, (opts.outline ?? 0.0045) * (toon ? 1.3 : 1), opts.outlineNear, thin));
   outline.name = "Outline";
@@ -739,15 +756,18 @@ export function makePerson3d(
     bones.RightHand?.scale.setScalar(tlk.hands);
   }
 
-  // Clips, the hips' height brought to this body's.
+  // Clips, the hips' height brought to this body's. Rebuilt proportions (longer thighs, same shins):
+  // a seated clip keeps the hips' height as the file had it (the chair does not move).
   const k = hipsRest.y / ((anims.scene.userData as { hipsY?: number }).hipsY || hipsRest.y);
+  const kSit = warp ? warp.hipsRestBefore.y / ((anims.scene.userData as { hipsY?: number }).hipsY || warp.hipsRestBefore.y) : k;
   const mixer = new T.AnimationMixer(inner);
   const actions: Record<string, THREE.AnimationAction> = {};
   for (const clip of anims.animations) {
     // Style A: the standing idles with relaxed arms (his own copy, baked once per body)
-    const c = toonHead && IDLE_POSTURE_CLIPS.has(clip.name) ? toonIdleClip(T, toonHead, inner, bones, clip, hand) : clip.clone();
+    const c = toonHead && IDLE_POSTURE_CLIPS.has(clip.name) ? toonIdleClip(T, prop && prop.id !== "a" ? `${toonHead}:${prop.id}` : toonHead, inner, bones, clip, hand) : clip.clone();
+    const kc = SEATED_CLIPS.has(clip.name) ? kSit : k;
     for (const tr of c.tracks) {
-      if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= k; tr.values = v; }
+      if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= kc; tr.values = v; }
     }
     const a = mixer.clipAction(c);
     a.play();
@@ -782,7 +802,7 @@ export function makePerson3d(
       fingers[side] = out;
     }
   }
-  const person: Person3D = { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit, fingers, toon, toonHead, toonKey: toon && toonHead ? toonKey(toonHead, toon) : undefined, you: !!opts.you };
+  const person: Person3D = { root, body, outline, bones, mixer, actions, meta, u, hand, base, rest, hipsRest, unit, fingers, toon, toonHead, toonKey: toon && toonHead ? toonKey(toonHead, toon) : undefined, you: !!opts.you, prop: prop?.id };
   if (toonHead && fingers) {
     // Style A: relaxed hands from the start (the clips never move a finger); poseClips keeps them
     const relaxed = fingersDeg(RELAXED_FINGERS_DEG);
@@ -803,7 +823,7 @@ export function setToonBuild(p: Person3D, body: ToonBody) {
 
 const toonIdleCache = new Map<string, THREE.AnimationClip>();
 /** A Style A body's copy of a standing idle, its arms baked relaxed (three3d/runPosture.ts). */
-function toonIdleClip(T: Three, toon: ToonHead, inner: THREE.Object3D, bones: Record<string, THREE.Bone>, clip: THREE.AnimationClip, hand: Record<"L" | "R", HandFrame>): THREE.AnimationClip {
+function toonIdleClip(T: Three, toon: string, inner: THREE.Object3D, bones: Record<string, THREE.Bone>, clip: THREE.AnimationClip, hand: Record<"L" | "R", HandFrame>): THREE.AnimationClip {
   const key = `${toon}|${clip.uuid}`;
   let fixed = toonIdleCache.get(key);
   if (!fixed) {

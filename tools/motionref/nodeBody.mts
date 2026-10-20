@@ -70,4 +70,4 @@ export const shoulderBodyFor = (b: NodeBody): ShoulderBody | null => shoulderBod
  * (toon-f2 leaner, toon-f3 bigger head) once they are in the repo. The 20 Oct 2026
  * bake used all four (f2 and f3 from B5b's branch, de417b5f, passed with --ref).
  */
-export const SETTLE_REFS = ["public/star/people3d/toon-p1.glb@c2", "public/star/people3d/toon-p1.glb@c1", "public/star/people3d/toon-f2.glb", "public/star/people3d/toon-f3.glb"].filter((r) => existsSync(r.split("@")[0]));
+export const SETTLE_REFS = ["public/star/people3d/toon-p1.glb@c2", "public/star/people3d/toon-p1.glb@c1", "public/star/people3d/toon-f2.glb", "public/star/people3d/toon-f3.glb", "public/star/people3d/toon-d1.glb", "public/star/people3d/toon-d2.glb", "public/star/people3d/toon-d3.glb"].filter((r) => existsSync(r.split("@")[0]));

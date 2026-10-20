@@ -1,0 +1,248 @@
+<title>B2b Build-ups, Round Two</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one column, stacked cards, stills under their text. Tokens first, then components. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  a{color:var(--blue)}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+  .chip{display:inline-block;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink2);text-decoration:none}
+  .chip.hot{color:var(--amber);border-color:var(--amber)}
+  .back{display:inline-block;font-size:13px;font-weight:700;margin:0 0 4px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b,.row li b{color:var(--ink)}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:4px}
+  .nr{color:var(--ink3);font-style:italic}
+  .tile{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+  .tile>b{display:block;font-size:15px}
+  .tile>p{margin:3px 0 0;color:var(--ink2);font-size:14.5px}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .track.solo{height:14px}
+  .track.solo .fill.now{top:0;bottom:0;height:auto}
+  .fill.now.warn{background:var(--amber)}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.blue{background:var(--blue)}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+  .bnote{color:var(--ink3);font-size:12.5px;margin:2px 0 0}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px 14px;margin:10px 0 0}
+  .figs.wide{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+  .figs figure{margin:0}
+  .figs.pair{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .figs.pair figure.ph{max-width:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details .figs{margin-top:2px}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .sbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px 12px}
+  .sbox h3{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 4px}
+  .sbox h3.g{color:var(--green)} .sbox h3.b{color:var(--blue)} .sbox h3.a{color:var(--amber)} .sbox h3.r{color:var(--red)}
+  .sbox ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+  .sbox li{margin-bottom:4px}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox .q{font-weight:700}
+  .okbox .opts{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+  .okbox .who{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-right:6px}
+
+  .vid{border:2px dashed var(--line);border-radius:var(--r);padding:12px 14px;background:var(--card)}
+  .vid b{color:var(--amber)}
+  .vid p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .vid ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  .cards{display:grid;gap:10px;margin:0}
+  .bcard{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;min-width:0}
+  .bcard .n{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 4px}
+  .bcard .n b{font-size:17px}
+  .bcard p{margin:0;color:var(--ink2);font-size:14.5px}
+  .bcard .go{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:var(--blue)}
+  .bcard.soon{border-style:dashed;opacity:.85}
+
+  /* --- how these patch notes work --- */
+  .how{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 14px 10px;min-width:0}
+  .how svg{display:block;width:100%;max-width:340px;height:auto;margin:2px auto 10px}
+  .how ol{margin:0;padding-left:20px;color:var(--ink2);font-size:14.5px}
+  .how li{margin:0 0 6px}
+  .how li b{color:var(--ink)}
+  .how .mini{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;vertical-align:1px}
+  .how .btn{display:inline-block;font-size:12.5px;font-weight:800;background:var(--pill);color:var(--pillink);padding:2px 9px;border-radius:999px;vertical-align:1px}
+  .how .where{margin:8px 0 0;font-size:13px;color:var(--ink3)}
+  /* --- already decided --- */
+  .donebox{border:1px solid var(--line);border-left:4px solid var(--green);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .donebox ul{margin:0;padding:0;list-style:none}
+  .donebox li{padding:11px 0 11px 28px;border-bottom:1px solid var(--line);position:relative}
+  .donebox li:last-child{border-bottom:0}
+  .donebox li::before{content:"\2713";position:absolute;left:2px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--pillink);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .donebox .q{font-weight:700}
+  .donebox .d{color:var(--ink2);font-size:14px;margin-top:3px}
+  .donebox .by{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-right:6px}
+  /* --- video --- */
+  .clip{margin:12px 0 2px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .look{font-size:13px;color:var(--ink2);margin:0 0 7px}
+  .clip .look b{color:var(--ink)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px}
+  .clip.ph{max-width:390px;margin-left:auto;margin-right:auto}
+  /* --- tabs (index) --- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink2);font:inherit;font-size:13.5px;font-weight:800;padding:8px 13px;border-radius:999px;cursor:pointer;min-height:40px}
+  .tab[aria-selected="true"]{background:var(--pill);color:var(--pillink);border-color:var(--pill)}
+  .tab small{font-weight:700;opacity:.8;margin-left:4px}
+  .js .panel[hidden]{display:none}
+  .panel h3.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px}
+  .bcard .vtag{font-size:11px;font-weight:800;color:var(--ink3);letter-spacing:.04em}
+  .qlist{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px}
+  .qlist ul{margin:0;padding:0;list-style:none}
+  .qlist li{padding:10px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14px}
+  .qlist li:last-child{border-bottom:0}
+  .qlist li b{color:var(--ink)}
+
+  /* --- steps (vertical list) --- */
+  .steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  .steps li{position:relative;padding:9px 0 9px 36px;border-bottom:1px solid var(--line);counter-increment:st;color:var(--ink2);font-size:14.5px;min-width:0}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(st);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .steps li b{color:var(--ink)}
+  .steps li.done::before{background:var(--green);border-color:var(--green);color:var(--pillink);content:"\2713"}
+  .steps li.next::before{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+  .mock{border:2px solid var(--red);border-radius:var(--r);background:var(--rbg);padding:12px 14px;margin:10px 0 2px}
+  .mock b{display:block;color:var(--red);font-size:15px;letter-spacing:.02em}
+  .mock p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .mock .mb{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .mock .mb span{font-size:13px;font-weight:800;padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink2)}
+  .mock .mb span.go{background:var(--card2)}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+<div class="wrap">
+<header>
+  <br>
+  <span class="ver">B2b &middot; BUILD-UPS &middot; ROUND TWO</span>
+  <h1>Build-ups no longer jump at the hand-over, and offside passes are now called.</h1>
+  <p class="status"><i></i>On the Harry branch, not live yet.</p>
+  <p class="sub">Overnight round, 20 Oct 2026. Behind <b>Settings &rarr; Quick &rarr; Full highlights rebuild: Off | On</b>. Merged with the header and volley work (B10). In Admin &rarr; Patch notes this is <b>v0.93</b>.</p>
+  <div class="chips"><a class="chip" href="#vid">Videos here &darr;</a></div>
+</header>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<ul class="ck"><li><label><input type="checkbox" data-k="c0"><span><span class="q">Turn it on</span><span class="a">Settings &rarr; Quick &rarr; Full highlights rebuild: On.</span></span></label></li><li><label><input type="checkbox" data-k="c1"><span><span class="q">The hand-over</span><span class="a">Watch a build-up become the chance. The pitch should not jump.</span></span></label></li><li><label><input type="checkbox" data-k="c2"><span><span class="q">A resize</span><span class="a">Resize the window during a build-up. The picture should stay on the chance.</span></span></label></li><li><label><input type="checkbox" data-k="c3"><span><span class="q">Offside</span><span class="a">A build-up that ends in an offside pass should say OFFSIDE and hand the ball back.</span></span></label></li><li><label><input type="checkbox" data-k="c4"><span><span class="q">Chances at even strength</span><span class="a">About 5 a match now (4.99), a little fewer than before (5.47). Does it feel right?</span></span></label></li><li><label><input type="checkbox" data-k="c5"><span><span class="q">Headers and volleys</span><span class="a">Their build-ups should end in a lofted cross. The men should not run through each other.</span></span></label></li><li><label><input type="checkbox" data-k="c6"><span><span class="q">On a phone</span><span class="a">Play a career match at 390 wide with the switch On. This was not seen.</span></span></label></li></ul>
+
+<h2 class="chg"><i></i>CHANGED</h2><div class="item"><div class="ih"><b>The picture no longer jumps at the hand-over</b><span class="tag t-meas">measured</span><span class="tag t-seen">seen</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>When a build-up handed over to the chance, the picture could jump. The worst jump was 1.70 px and 1.79 px. Resizing the window during a build-up moved it 20.5 px.</p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>The frame now stays on the chance during a resize. Across <b>1,226 hand-overs</b>, headers and volleys included, the worst jump is <b>0.088 px</b>. In a browser it read 0.00 to 0.07 px. A resize during a build-up now moves it <b>0 px</b>. The test is <b>fhrCameraHandover.mts</b>. The pitch is 366 or 384 px wide. Reasoned: the merge did not change that code.</p></div><div class="bars"><div class="bar"><span class="bl">Worst jump at the hand-over</span><span class="track"><span class="fill was" style="width:89.5%"></span><span class="fill now " style="width:4.4%"></span></span><span class="vv"><s>1.79 px</s> &rarr; 0.088 px</span></div><div class="bar"><span class="bl">Jump when the window is resized during a build-up</span><span class="track"><span class="fill was" style="width:82.0%"></span><span class="fill now " style="width:0.0%"></span></span><span class="vv"><s>20.5 px</s> &rarr; 0 px</span></div></div><div class="figs pair"><figure class="ph"><img src="img/b2b-handover-last-buildup-moment.jpg" alt="Look at: the last moment of the build-up. The line at the bottom says &amp;ldquo;On the break &amp;middot; tap to skip&amp;rdquo;." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> the last moment of the build-up. The line at the bottom says &ldquo;On the break &middot; tap to skip&rdquo;.</figcaption></figure><figure class="ph"><img src="img/b2b-handover-the-chance.jpg" alt="Look at: the chance, right after. The pitch has not moved. Same size, same place." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> the chance, right after. The pitch has not moved. Same size, same place.</figcaption></figure></div><figure class="clip ph"><p class="look"><b>Look for:</b> the build-up, then the chance, with the pitch staying put. 9 seconds, on a phone screen.</p><video controls playsinline muted preload="metadata" poster="img/b2b-handover-the-chance.jpg" src="clips/b2b-buildup-into-chance.mp4"></video><figcaption>A build-up into a chance. It ends on the same screen as the still above.</figcaption></figure></div><div class="item"><div class="ih"><b>One system: a build-up starts where the ball was won back</b><span class="tag t-meas">measured</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>The build-up and the hidden match were separate things.</p></div><div class="row"><div class="rl w">Why</div><p>Reasoned from the report&rsquo;s words &ldquo;one system&rdquo;. The report does not say what was wrong before.</p></div><div class="row"><div class="rl f">Fix</div><p>Each build-up now starts <b>where the hidden match won the ball back</b>. One dial sets it all: the strength gap (<b>lib/star/fhr/intel.ts</b>). It scales how often the ball is won back, the press, the passing and the run timing. Three strength pairs, as the report writes them:</p></div><div class="bars"><div class="bar"><span class="bl"><b>Build-ups a match</b></span></div></div><div class="bars"><div class="bar"><span class="bl">85 v 65</span><span class="track solo"><span class="fill now " style="width:92.1%"></span></span><span class="vv">6.45</span></div><div class="bar"><span class="bl">75 v 75</span><span class="track solo"><span class="fill now " style="width:67.1%"></span></span><span class="vv">4.70</span></div><div class="bar"><span class="bl">65 v 85</span><span class="track solo"><span class="fill now blue" style="width:47.3%"></span></span><span class="vv">3.31</span></div></div><div class="bars"><div class="bar"><span class="bl"><b>Scrappy wins of the ball, share of regains</b></span></div></div><div class="bars"><div class="bar"><span class="bl">85 v 65</span><span class="track solo"><span class="fill now warn" style="width:10.0%"></span></span><span class="vv">10%</span></div><div class="bar"><span class="bl">75 v 75</span><span class="track solo"><span class="fill now warn" style="width:33.0%"></span></span><span class="vv">33%</span></div><div class="bar"><span class="bl">65 v 85</span><span class="track solo"><span class="fill now warn" style="width:52.0%"></span></span><span class="vv">52%</span></div></div><p class="bnote">Distance from goal where the ball is won back: 20.5 / 23.0 / 25.8 m, in the same order.</p><div class="figs wide"><figure class="wd"><img src="img/b2b-sheet-1.jpg" alt="Look at: sheet 1 of 5. Six chances at 85 v 65. Each shows four pictures: first, middle (or &amp;ldquo;won back&amp;rdquo;), hand-over, the chance. Titles say how it began, for example &amp;ldquo;WON BACK 26 m out, after 1.1 s&amp;rdquo;." width="900" height="542" loading="lazy"><figcaption><b>Look at:</b> sheet 1 of 5. Six chances at 85 v 65. Each shows four pictures: first, middle (or &ldquo;won back&rdquo;), hand-over, the chance. Titles say how it began, for example &ldquo;WON BACK 26 m out, after 1.1 s&rdquo;.</figcaption></figure><figure class="wd"><img src="img/b2b-sheet-3.jpg" alt="Look at: sheet 3 of 5. Chances #13 to #18 at 75 v 75 and 65 v 85. #14 says &amp;ldquo;EXTRA DEFENDER&amp;rdquo;. The sheet list says problems: none for all 25 chances." width="900" height="542" loading="lazy"><figcaption><b>Look at:</b> sheet 3 of 5. Chances #13 to #18 at 75 v 75 and 65 v 85. #14 says &ldquo;EXTRA DEFENDER&rdquo;. The sheet list says <b>problems: none</b> for all 25 chances.</figcaption></figure></div></div><div class="item"><div class="ih"><b>Header and volley build-ups end in a lofted cross</b><span class="tag t-meas">measured</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>After the merge with the header and volley work (B10, v0.88), some volley build-ups were flagged. At even strength 29% were. Men also ran through each other at the hand-over: 10 of 257.</p></div><div class="row"><div class="rl w">Why</div><p>The report does not say what the flag was for.</p></div><div class="row"><div class="rl f">Fix</div><p>Every header or volley build-up now ends in the <b>lofted cross</b>. The crosser&rsquo;s run is played into space. A wide run that mistimes is cut to &times;0.4. That 0.4 is the builder&rsquo;s guess. Volley build-ups flagged: <b>29% &rarr; 16%</b> at even strength. Men running through each other: <b>10 &rarr; 2 of 257</b>.</p></div><div class="bars"><div class="bar"><span class="bl">Volley build-ups flagged, even strength</span><span class="track"><span class="fill was" style="width:72.5%"></span><span class="fill now " style="width:40.0%"></span></span><span class="vv"><s>29%</s> &rarr; 16%</span></div><div class="bar"><span class="bl">Men running through each other at the hand-over, of 257</span><span class="track"><span class="fill was" style="width:83.3%"></span><span class="fill now " style="width:16.7%"></span></span><span class="vv"><s>10</s> &rarr; 2</span></div></div></div><h2 class="fix"><i></i>FIXED</h2><div class="item"><div class="ih"><b>Offside passes in a build-up are now called</b><span class="tag t-meas">measured</span><span class="tag t-seen">seen</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>Before, <b>48.5%</b> of build-ups had an offside pass that was not called.</p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>Now <b>0</b> of 600 chances at each strength, every kind. A build-up that ends on an offside call hands the ball back. Offsides called per match, before the merge: <b>0.24 / 0.37 / 0.39</b>. Reasoned: that is the order 85 v 65, 75 v 75, 65 v 85. The report only lists the three numbers.</p></div><div class="bars"><div class="bar"><span class="bl">Build-ups with an offside pass not called</span><span class="track"><span class="fill was" style="width:97.0%"></span><span class="fill now " style="width:0.0%"></span></span><span class="vv"><s>48.5%</s> &rarr; 0%</span></div></div><div class="figs pair"><figure class="ph"><img src="img/b2b-offside-flag.jpg" alt="Look at: a one-on-one. The line at the bottom says &amp;ldquo;Offside! &amp;middot; tap to skip&amp;rdquo;." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> a one-on-one. The line at the bottom says &ldquo;Offside! &middot; tap to skip&rdquo;.</figcaption></figure><figure class="ph"><img src="img/b2b-offside-called.jpg" alt="Look at: the same chance a moment later. OFFSIDE on the pitch. This is the test screen, not a real match." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> the same chance a moment later. OFFSIDE on the pitch. This is the test screen, not a real match.</figcaption></figure></div><figure class="clip ph"><p class="look"><b>Look for:</b> the build-up, then &ldquo;Offside!&rdquo;, then the OFFSIDE banner. 10 seconds, on a phone screen.</p><video controls playsinline muted preload="metadata" poster="img/b2b-offside-called.jpg" src="clips/b2b-buildup-offside-called.mp4"></video><figcaption>A build-up that ends in an offside call.</figcaption></figure></div><h2 class="bug"><i></i>KNOWN ISSUES</h2><div class="item"><div class="ih"><b>A cost: about 9% fewer chances at even strength</b><span class="tag t-meas">measured</span><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>At even strength, chances played fall from <b>5.47 to 4.99</b> a match (&minus;8.8%). Goals fall from <b>1.44 to 1.35</b>. Strong sides are unchanged.</p></div><div class="row"><div class="rl w">Why</div><p>Reasoned: calling offsides stops some chances before they start. The report gives the numbers, not the cause.</p></div><div class="row"><div class="rl s">Status</div><p>Check at even strength that about 5 chances a match still feels right.</p></div><div class="bars"><div class="bar"><span class="bl">Chances played a match, even strength</span><span class="track"><span class="fill was" style="width:91.2%"></span><span class="fill now warn" style="width:83.2%"></span></span><span class="vv"><s>5.47</s> &rarr; 4.99</span></div><div class="bar"><span class="bl">Goals a match, even strength</span><span class="track"><span class="fill was" style="width:90.0%"></span><span class="fill now warn" style="width:84.4%"></span></span><span class="vv"><s>1.44</s> &rarr; 1.35</span></div></div></div><div class="item"><div class="ih"><b>A career match was not seen with the switch On</b><span class="tag t-no">not seen</span></div><div class="row"><div class="rl p">Problem</div><p>No career match was played at 390 &times; 844 with the switch On. A real-match offside still was not taken.</p></div><div class="row"><div class="rl s">Status</div><p>Turn it On, play a match on a phone, and watch a build-up and an offside.</p></div></div><div class="item"><div class="ih"><b>The full build was not run</b><span class="tag t-no">not seen</span></div><div class="row"><div class="rl p">Problem</div><p>The full <b>npm run build</b> was not run. The report says: memory.</p></div><div class="row"><div class="rl s">Status</div><p>Run it on a bigger machine before this goes to main.</p></div></div><div class="item"><div class="ih"><b>Files that can drift</b></div><div class="row"><div class="rl p">Problem</div><p>Two shared files changed.</p></div><div class="row"><div class="rl f">Fix</div><p><b>CanvasMatch.tsx</b>: the frame stays on the chance during a resize, an extra opponent on a regain, and the hand-back when a build-up ends on an offside. <b>hiddenMatch.ts</b>: it hands over the regain information, with <b>no new random draws</b>. <b>canvasEngine.ts</b> is untouched.</p></div></div>
+
+<h2 class="nxt"><i></i>THE NUMBERS</h2><details><summary>The numbers, if you want them</summary><p><b>Camera.</b> Hand-over jump, worst: 1.70 / 1.79 px &rarr; 0.088 px over 1,226 hand-overs, headers and volleys included. Seen in a browser: 0.00 to 0.07 px. Resize during a build-up: 20.5 px &rarr; 0. Test: fhrCameraHandover.mts. Pitch widths 366 / 384.</p><p><b>One dial.</b> 85 v 65 / 75 v 75 / 65 v 85: build-ups a match 6.45 / 4.70 / 3.31. Regain from goal 20.5 / 23.0 / 25.8 m. Scrappy 10 / 33 / 52%.</p><p><b>Offsides.</b> Build-ups with an uncalled offside pass: 48.5% &rarr; 0, from 600 chances at each strength, every kind. Called per match, before the merge: 0.24 / 0.37 / 0.39.</p><p><b>Cost.</b> Even strength: chances 5.47 &rarr; 4.99 (&minus;8.8%), goals 1.44 &rarr; 1.35. Strong sides unchanged.</p><p><b>The merge.</b> Volley build-ups flagged at even: 29% &rarr; 16%. Men through each other: 10 &rarr; 2 of 257. Wide-run mistime &times;0.4 (the builder&rsquo;s guess).</p><p><b>Sheets.</b> 25 chances over 5 sheets. The list says problems: none on all 25. #22 to #25 are free kicks and penalties, marked &ldquo;THE FOUL FIRST&rdquo;.</p></details>
+
+<h2 class="nxt" id="vid"><i></i>VIDEOS</h2>
+<div class="vid"><b>Two clips are on this page.</b><ul><li>A build-up into a chance, 9 seconds. It is under &ldquo;The picture no longer jumps at the hand-over&rdquo;.</li><li>A build-up that ends in an offside call, 10 seconds. It is under &ldquo;Offside passes in a build-up are now called&rdquo;.</li></ul><p>Both are phone-screen recordings of the test screen, not a career match.</p></div>
+
+<h2 class="bug"><i></i>SEEN / NOT SEEN</h2>
+<div class="sbox"><h3 class="g">Seen on a screen</h3><ul><li>Four stills on the test screen at 390 &times; 844: the last moment of a build-up and the chance, and an offside before and after the banner</li><li>Two clips of a build-up: one into a chance, one ending in an offside call</li><li>Two of the five sheets of build-ups (25 chances; the sheet list says problems: none on all 25)</li><li>The hand-over jump in a browser: 0.00 to 0.07 px</li></ul><h3 class="b">Measured (numbers)</h3><ul><li>Hand-over jump 1.70 / 1.79 px &rarr; 0.088 px over 1,226 hand-overs; resize 20.5 px &rarr; 0</li><li>Build-ups a match 6.45 / 4.70 / 3.31; regain from goal 20.5 / 23.0 / 25.8 m; scrappy 10 / 33 / 52%</li><li>Uncalled offside passes 48.5% &rarr; 0 over 600 chances at each strength</li><li>Chances 5.47 &rarr; 4.99 and goals 1.44 &rarr; 1.35 at even strength</li><li>Volley build-ups flagged 29% &rarr; 16%; men through each other 10 &rarr; 2 of 257</li></ul><h3 class="a">Reasoned, not seen</h3><ul><li>Pitch widths 366 / 384: the merge did not change that code</li><li>That &ldquo;one system&rdquo; means the build-up and the hidden match were separate before (the report does not say)</li><li>That offsides called 0.24 / 0.37 / 0.39 are in the order 85 v 65, 75 v 75, 65 v 85</li><li>That calling offsides is why chances fall about 9% at even strength</li><li>That the 0.4 for a mistimed wide run is only the builder&rsquo;s guess (the report says so)</li></ul><h3 class="r">Not seen / not done</h3><ul><li>A career match with the switch On at 390 &times; 844</li><li>A real-match offside still</li><li>The full npm run build (memory)</li></ul></div>
+
+<footer>20 Oct 2026. Built overnight on the Harry branch. Nothing here is live. Every fact comes from the builders&rsquo; reports. Pictures are stills taken while checking the work.</footer>
+</div>
+<script>
+(function(){
+  var K='kib-overnight-b2b-checks', s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>

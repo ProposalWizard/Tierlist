@@ -494,7 +494,7 @@ export function settleClip(T: Three, sb: ShoulderBody, clip: THREE.AnimationClip
  * and fades smoothly as the pose moves. `w` scales it (0 = off).
  */
 export const PUSH_LIVE_MAX = 25;
-export function clearArmsLive(T: Three, sb: ShoulderBody, bones: Record<string, THREE.Bone>, w = 1): number {
+export function clearArmsLive(T: Three, sb: ShoulderBody, bones: Record<string, THREE.Bone>, w = 1, skip?: { L?: boolean; R?: boolean }): number {
   if (w <= 0) return 0;
   const need = ["Hips", "Spine", NAMES.L.arm, NAMES.R.arm, NAMES.L.fore, NAMES.R.fore, NAMES.L.hand, NAMES.R.hand];
   if (need.some((n) => !bones[n])) return 0;
@@ -550,6 +550,8 @@ export function clearArmsLive(T: Three, sb: ShoulderBody, bones: Record<string, 
   };
   let turned = 0;
   for (const s of ["L", "R"] as const) {
+    // a hand on a prop's handle stays there (the prop would slip out of it)
+    if (skip?.[s]) continue;
     const arm = NAMES[s].arm;
     const pts = () => sb.rings[s].filter((g) => bones[g.bone] && bones[g.to]).map((g) => [P(g.bone).lerp(P(g.to), g.t).add(g.off.clone().applyQuaternion(WQ(g.bone))), g.r] as const);
     let total = 0;

@@ -361,14 +361,11 @@ export const trophyLift: BeatDef = {
     const tr: Track[] = [
       { type: "place", actor: Y, at: t, to: "podium", yaw: 180 },
       { type: "clip", actor: Y, at: t, clip: "idle" },
-      // B5c: the lift is a real man's (ref-trophy-lift.mp4): looks at it at his chest, lifts it in one
-      // movement with a dip first, overshoots, then shakes it over his head
-      ...(FLUID_ON.on ? [
-        { type: "pose", actor: Y, at: t, dur: d, pose: "ref-trophy-lift", prop: "trophy", blendIn: 0.1 } as Track,
-      ] : [
-        { type: "pose", actor: Y, at: t, dur: 1.6, pose: "trophy-chest", prop: "trophy", blendIn: 0.1 } as Track,
-        { type: "pose", actor: Y, at: t + 1.4, dur: d - 1.4, pose: "trophy-overhead", prop: "trophy", blendIn: 0.35 } as Track,
-      ]),
+      // the cup held by its handles at his chest, then lifted clear of his head (B5b, perform3d holdCup);
+      // B5c: the lift dips first, overshoots and settles (fluid.ts liftCurve), as the real man's did
+      // (ref-trophy-lift.mp4; the "ref-trophy-lift" hold copies his whole arm path but not the handles)
+      { type: "pose", actor: Y, at: t, dur: 1.6, pose: "trophy-chest", prop: "trophy", blendIn: 0.1 } as Track,
+      { type: "pose", actor: Y, at: t + 1.4, dur: d - 1.4, pose: "trophy-overhead", prop: "trophy", blendIn: 0.35 } as Track,
       { type: "look", actor: Y, at: t, dur: 1.6, target: { prop: "trophy" }, amount: 0.8 },
       { type: "look", actor: Y, at: t + 1.6, dur: d, target: { point: [0, 9, 20] }, amount: 0.5 },
       { type: "face", actor: Y, at: t, expression: "proud", dur: 1.5 },

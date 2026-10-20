@@ -27,6 +27,654 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.93",
+      "title": "Harry's patch notes: B2b Build-ups, Round Two",
+      "publishedAt": "2026-10-20T19:40:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Build-ups, round two, 20 Oct. Behind Settings → Quick → Full highlights rebuild: Off | On. Merged with the header and volley work (B10). The picture no longer jumps at the hand-over: worst jump 1.70 / 1.79 px → 0.088 px over 1,226 hand-overs (0.00 to 0.07 px seen in a browser); a resize during a build-up 20.5 px → 0. Each build-up starts where the hidden match won the ball back, with one dial (the strength gap): at 85 v 65 / 75 v 75 / 65 v 85 there are 6.45 / 4.70 / 3.31 build-ups a match. Offside passes are called: build-ups with an uncalled offside pass 48.5% → 0 over 600 chances at each strength. A cost: chances at even strength 5.47 → 4.99 (−8.8%), goals 1.44 → 1.35. Not seen: a career match with the switch On at 390×844, a real-match offside still. The full build was not run (memory).",
+      "stats": [
+        {
+          "value": "1.79 → 0.088 px",
+          "label": "worst jump at the hand-over, over 1,226 hand-overs"
+        },
+        {
+          "value": "48.5% → 0",
+          "label": "build-ups with an uncalled offside pass"
+        },
+        {
+          "value": "5.47 → 4.99",
+          "label": "chances a match at even strength (−8.8%)"
+        },
+        {
+          "value": "10 → 2 of 257",
+          "label": "men running through each other at the hand-over"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Turn it on",
+              "detail": "Settings → Quick → Full highlights rebuild: On."
+            },
+            {
+              "title": "The hand-over",
+              "detail": "Watch a build-up become the chance. The pitch should not jump."
+            },
+            {
+              "title": "A resize",
+              "detail": "Resize the window during a build-up. The picture should stay on the chance."
+            },
+            {
+              "title": "Offside",
+              "detail": "A build-up that ends in an offside pass should say OFFSIDE and hand the ball back."
+            },
+            {
+              "title": "Chances at even strength",
+              "detail": "About 5 a match now (4.99), a little fewer than before (5.47). Does it feel right?"
+            },
+            {
+              "title": "Headers and volleys",
+              "detail": "Their build-ups should end in a lofted cross. The men should not run through each other."
+            },
+            {
+              "title": "On a phone",
+              "detail": "Play a career match at 390 wide with the switch On. This was not seen."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "The picture no longer jumps at the hand-over",
+              "detail": "Worst jump 1.70 / 1.79 px → 0.088 px over 1,226 hand-overs, headers and volleys included. In a browser it read 0.00 to 0.07 px. A resize during a build-up moved the picture 20.5 px; now 0. The frame stays on the chance during a resize. Test: fhrCameraHandover.mts. Pitch widths 366 / 384; the merge did not change that code (reasoned)."
+            },
+            {
+              "title": "One system: a build-up starts where the ball was won back",
+              "detail": "Each build-up starts where the hidden match won the ball back. One dial, the strength gap (lib/star/fhr/intel.ts), scales regains, press, passing and run timing. At 85 v 65 / 75 v 75 / 65 v 85: build-ups a match 6.45 / 4.70 / 3.31; regain from goal 20.5 / 23.0 / 25.8 m; scrappy 10 / 33 / 52%."
+            },
+            {
+              "title": "Header and volley build-ups end in a lofted cross",
+              "detail": "After the merge with B10, every header or volley build-up ends in the lofted cross. The crosser's run is played into space; a mistimed wide run is cut to ×0.4 (the builder's guess). Volley build-ups flagged at even strength 29% → 16%. Men running through each other at the hand-over 10 → 2 of 257."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Offside passes in a build-up are now called",
+              "detail": "Before, 48.5% of build-ups had an offside pass that was not called. Now 0 of 600 chances at each strength, every kind. A build-up that ends on an offside call hands the ball back. Called per match, before the merge: 0.24 / 0.37 / 0.39 (that these are in the order 85 v 65, 75 v 75, 65 v 85 is reasoned)."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "A cost: about 9% fewer chances at even strength",
+              "detail": "Chances played 5.47 → 4.99 a match (−8.8%), goals 1.44 → 1.35. Strong sides unchanged. That calling offsides is the cause is reasoned."
+            },
+            {
+              "title": "A career match was not seen with the switch On",
+              "detail": "Not played at 390 × 844 with the switch On. A real-match offside still was not taken."
+            },
+            {
+              "title": "The full build was not run",
+              "detail": "The full npm run build was not run (memory). Run it on a bigger machine before this goes to main."
+            },
+            {
+              "title": "Files that can drift",
+              "detail": "CanvasMatch.tsx (frame stays on the chance during a resize, an extra opponent on a regain, the hand-back when a build-up ends on an offside) and hiddenMatch.ts (hands over the regain information, no new random draws). canvasEngine.ts is untouched."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.92",
+      "title": "Harry's patch notes: Motion References Page",
+      "publishedAt": "2026-10-20T18:50:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Motion references page, 20 Oct. /admin/motion-refs (Players + animation, admins only) has 27 clips of real-looking people doing our cut-scene moments, with three tabs: HQ (base standard) 18, First round 9, All 27. The five base-standard scenes come first. Each card has a real-person clip (loops, pause, half speed), a still of our game, and an \"Ours\" slot that plays public/admin/motion-refs/ours/<scene>.mp4 once it exists; it is empty now and fills as the movement rebuild lands. The clips are Higgsfield references; no more Higgsfield use for now. The 18 HQ clips were re-encoded from 10-bit HEVC to H.264 (originals untouched), about 21 MB added. The first-round handshake is left out (a dark mark on the shirt that looks like a brand logo). Seen at 390 and 1440 px. No clip was seen playing: this Chromium has no H.264.",
+      "stats": [
+        {
+          "value": "27",
+          "label": "clips: 18 HQ and 9 first round"
+        },
+        {
+          "value": "5",
+          "label": "base-standard scenes, shown first"
+        },
+        {
+          "value": "~21 MB",
+          "label": "added to the site files"
+        },
+        {
+          "value": "0",
+          "label": "clips seen playing (no H.264 in the test browser)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Open it",
+              "detail": "/admin/motion-refs, under Players + animation. Admins only."
+            },
+            {
+              "title": "The tabs",
+              "detail": "HQ (base standard) 18, First round 9, All 27."
+            },
+            {
+              "title": "Play a clip",
+              "detail": "It should loop with no sound. Tap it to pause. Try ½× speed."
+            },
+            {
+              "title": "The Ours slot",
+              "detail": "It is empty. It says \"Our clip shows here when it is made.\""
+            },
+            {
+              "title": "On a phone",
+              "detail": "The three slots stack. Scroll down one card."
+            },
+            {
+              "title": "The first-round handshake",
+              "detail": "It is not on the page, on purpose."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "A page of motion references",
+              "detail": "/admin/motion-refs under Players + animation, admins only. Three tabs: HQ (base standard) 18, First round 9, All 27. The five base-standard scenes come first. The page says: 27 clips of real-looking people doing our cut-scene moments; compare them with our own movement."
+            },
+            {
+              "title": "Each card has three slots",
+              "detail": "Real person (the clip: loops, plays while you can see it, no sound, tap to pause, a Pause button and a ½× speed button), Our game (a still of our game) and Ours (empty for now; plays public/admin/motion-refs/ours/<scene>.mp4 once that file exists). The Ours slot fills as the movement rebuild lands."
+            },
+            {
+              "title": "The clips are Higgsfield references",
+              "detail": "Made on Higgsfield from stills of our game (HQ round: Nano Banana Pro 4K picture, then Seedance 2.5 video). They are references to compare with, not game files. No more Higgsfield use for now."
+            },
+            {
+              "title": "The base-standard scenes first",
+              "detail": "Five scenes are marked BASE STANDARD and sit at the top of the HQ tab. Four are in the pictures: Handshake (signing), Trophy lift, Goal celebration, Walk-out. The fifth is not in a picture."
+            },
+            {
+              "title": "The clips were re-encoded, and one was left out",
+              "detail": "The 18 HQ clips were re-encoded from 10-bit HEVC to H.264. The originals are untouched. About 21 MB was added. That browsers play H.264 better is reasoned. The first-round handshake is left out: it shows a small dark mark on the shirt that looks like a brand logo."
+            },
+            {
+              "title": "The list of clips is one file",
+              "detail": "lib/motionRefs.ts. That a new clip is a new line in it is reasoned."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "No clip was seen playing",
+              "detail": "This Chromium has no H.264, so the pictures show each clip's still, not the video. Open the page in Chrome or Safari and press play on a card."
+            },
+            {
+              "title": "The other two tabs were not looked at",
+              "detail": "The pictures show the HQ tab only. Look at First round 9 and All 27."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.91",
+      "title": "Harry's patch notes: Live Share (Test)",
+      "publishedAt": "2026-10-20T18:50:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Live share (test), 20 Oct. Admin → Videos → \"Live share (test)\" (admins only): Start, pick a screen, window or tab, and you get a 6-letter code with Copy for Claude, Copy link and Watch it. The page sends one picture a second (720 px, only when the screen changed) and your speech as text to Storage, with no SQL. Claude runs npx tsx scripts/live-watch.mts <code> and gets SAID and SCREEN lines every 2 s. Stop, the browser's Stop sharing or 30 minutes ends it; Delete removes every picture and line. Measured here: picture 1.2 to 2.5 s, speech 0.5 to 2.5 s to the watcher. Seen in headless Chromium with a fake screen and fake speech. Not seen: real Supabase writes, real voice, Safari, a background tab, the full build.",
+      "stats": [
+        {
+          "value": "1 a second",
+          "label": "pictures sent, 720 px, only when the screen changed"
+        },
+        {
+          "value": "1.2 to 2.5 s",
+          "label": "picture to the watcher (measured here)"
+        },
+        {
+          "value": "0.5 to 2.5 s",
+          "label": "speech to the watcher (measured here)"
+        },
+        {
+          "value": "30 min",
+          "label": "a share ends by itself; the newest 300 pictures are kept"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Find it",
+              "detail": "Admin → Videos → Live share (test). Admins only. Use a computer browser."
+            },
+            {
+              "title": "Start",
+              "detail": "Press Start live share. Pick a screen, window or tab. Voice is on."
+            },
+            {
+              "title": "Copy for Claude",
+              "detail": "Paste the line into a Claude chat. It has your 6-letter code."
+            },
+            {
+              "title": "Talk",
+              "detail": "Go to the game and say what you see. Claude answers in its chat."
+            },
+            {
+              "title": "Type instead",
+              "detail": "No voice? Type in the box and press Send."
+            },
+            {
+              "title": "Stop",
+              "detail": "Press Stop, or the browser's Stop sharing. It also ends at 30 minutes."
+            },
+            {
+              "title": "Delete",
+              "detail": "Press Delete. Every picture and line is removed."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Live share (test): show Claude a screen and talk",
+              "detail": "A new card on Admin → Videos, admins only. Start live share, pick what to share, Voice on by default. You get a 6-letter code with Copy for Claude (a line to paste into a Claude chat), Copy link (/admin/videos/live/<code>) and Watch it."
+            },
+            {
+              "title": "Claude watches it from a terminal",
+              "detail": "Claude runs npx tsx scripts/live-watch.mts <code> in the background. Every 2 s it prints SAID lines (what you said, with the picture on screen then), SCREEN lines on a new or part-changed screen (a small change at most every 30 s), the newest picture as latest.jpg, and ENDED."
+            },
+            {
+              "title": "A picture a second, and your voice as text",
+              "detail": "One picture a second, 720 px, only when the screen changed (colour compare), plus your speech as text. A typing box is there for where there is no voice. Pictures and lines go to Storage tierlist-images/live/<code>/ through an admin route with the service key. The newest 300 are kept. No SQL. Measured here: picture 1.2 to 2.5 s, speech 0.5 to 2.5 s to the watcher, plus Claude's reply."
+            },
+            {
+              "title": "Stop, then Delete",
+              "detail": "It ends on Stop, on the browser's own Stop sharing, or after 30 minutes. Delete removes every picture and line. In the test: 24 pictures, 3 lines, then deleted."
+            },
+            {
+              "title": "Who can see it",
+              "detail": "The link is not listed anywhere, but anyone with the code can see the pictures while it runs. The card says: don't share private things."
+            },
+            {
+              "title": "Which browsers work",
+              "detail": "Reasoned (the builder's note, not tried on each): Chrome and Edge give pictures and voice, Firefox pictures only. Android browsers cannot share the screen. iPhone Safari is reported to work from iOS 27 (not tried)."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Real storage and real voice were not seen",
+              "detail": "The test used a fake screen and fake speech in headless Chromium. No real Supabase write, no real voice, no Safari and no background tab."
+            },
+            {
+              "title": "The full build did not finish here",
+              "detail": "The full npm run build was killed for memory 3 times. tsc on its own passes. Run the full build on a bigger machine before this goes to main."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.90",
+      "title": "Harry's patch notes: Team Jobs And Notifications",
+      "publishedAt": "2026-10-20T17:40:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Team jobs by push and phone notifications (20 Oct). A job is added by editing team/jobs.json and pushing a branch (no SQL, no deploy). Team → To-do shows it under \"Given to me\" with the tag \"from a push\", a Copy prompt button (871 characters for the lag test) and a tick of your own. The first job is the lag test, for all. Phones buzz for @name, @all, a reply to you, a point sent to you, a job typed for you and a pushed job for you. Turn it on once per phone: on an iPhone, Safari → knowitball.co.uk/admin → Share → Add to Home Screen → open KIB Admin → Team → To-do → Turn on phone notifications → Allow. The Vercel key is already added. Seen: jobs in demo mode, a real push in headless Chromium. Not seen: a real iPhone, tapping a buzz, the live board.",
+      "stats": [
+        {
+          "value": "871",
+          "label": "characters copied by Copy prompt for the lag-test job"
+        },
+        {
+          "value": "6",
+          "label": "things that buzz your phone"
+        },
+        {
+          "value": "0",
+          "label": "SQL steps for either feature"
+        },
+        {
+          "value": "1",
+          "label": "time per phone to turn buzzes on"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "A pushed job",
+              "detail": "Team → To-do. \"Given to me\" shows the lag-test job, tagged \"from a push · Harry\"."
+            },
+            {
+              "title": "Copy prompt",
+              "detail": "Tap it. The button says Copied ✓."
+            },
+            {
+              "title": "If copying fails",
+              "detail": "A box opens with the prompt selected."
+            },
+            {
+              "title": "Tick it",
+              "detail": "It moves to Done today. Only your own tick changes."
+            },
+            {
+              "title": "The badge",
+              "detail": "The amber badge on the To-do tab counts open jobs."
+            },
+            {
+              "title": "Turn on buzzes",
+              "detail": "Team → To-do (or Chat) → Turn on phone notifications → Allow. On an iPhone, add KIB Admin to the Home Screen first."
+            },
+            {
+              "title": "Send a test",
+              "detail": "The button is in the green bar once it is on."
+            },
+            {
+              "title": "A real buzz",
+              "detail": "Ask someone to @ you, or reply to you. Tap the buzz."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Add a team job by pushing a file",
+              "detail": "Harry asked for it: \"just use pushes\". Jobs live in team/jobs.json (id, owner Harry/Mikey/Leo/all, title up to 200 characters, prompt up to 4,000, from, added). A Claude chat adds one by editing the file and pushing its own branch. The Team board reads main, Harry, Mikey and Leo from GitHub, keeps them 60 seconds, and the newest \"added\" wins. If GitHub cannot be reached it shows its built-in copy."
+            },
+            {
+              "title": "Copy prompt",
+              "detail": "Copies the job's prompt (871 characters for the lag test). The button then says Copied ✓. If the phone refuses, a box opens with the prompt already selected."
+            },
+            {
+              "title": "Everyone ticks their own",
+              "detail": "Your tick is your own to-do row \"[job:id] title\", hidden from the normal lists. A pushed job has no ✕. Open jobs count in the amber badge."
+            },
+            {
+              "title": "The first job: the lag test",
+              "detail": "For all, with its prompt (see v0.89)."
+            },
+            {
+              "title": "Phone buzzes for the team room",
+              "detail": "You get one for: @your name, @all/@everyone/@team (the other two), a reply to your message, a point sent to you, a job typed for you, and a job pushed for you (once, if added in the last day, and only when someone next opens an admin page). Never for yourself. One buzz per message. A thread groups (\"+2 more\"). A tap opens the message in Team chat, or To-do."
+            },
+            {
+              "title": "Turn it on once per phone",
+              "detail": "iPhone (iOS 16.4 or newer): Safari → knowitball.co.uk/admin → Share → Add to Home Screen → open KIB Admin from there → Team → To-do → Turn on phone notifications → Allow. Android and a computer: the same button. Harry has already added the key in Vercel."
+            },
+            {
+              "title": "What it says when it cannot work",
+              "detail": "Signed out: \"Sign in to turn on phone notifications.\" Key missing: \"Phone notifications aren't switched on yet (one Vercel setting).\" Blocked: \"Notifications are blocked for this site. Allow them in the phone's settings for KIB Admin (or the browser's site settings), then reload.\""
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Team jobs are seen in demo mode only",
+              "detail": "Not read against the real database or a live GitHub read (rate-limited). A job reaches the live board only after the next merge to main."
+            },
+            {
+              "title": "Tick boxes look stretched tall on a phone",
+              "detail": "Older jobs look the same. Found, not fixed."
+            },
+            {
+              "title": "The job text names a different path to the lag test",
+              "detail": "It says Settings → Developer tools → Lag test. The test is at ⚙ → 🛠 Dev → Start lag test. Reasoned from the pictures and the lag-test report."
+            },
+            {
+              "title": "Phone buzzes were not seen on a real iPhone",
+              "detail": "Tapping a buzz and the signed-in flow from start to end were not seen. The one real push ran in headless Chromium."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.89",
+      "title": "Harry's patch notes: B18 Lag Test",
+      "publishedAt": "2026-10-20T17:40:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "B18 Lag Test, step 0 (20 Oct). A Lag test inside the game: ⚙ (top right of Home) → 🛠 Dev → Start lag test, for testers and admins (also /star-dev?lagtest=1). You pick your device and name, then follow a pill at the top through 10 steps (about 5 minutes of recording). It records frame gaps, slow stretches, a 20 ms timer's lateness, 3D counters, memory and hidden time. Runs are saved by a push to the lag-runs branch (lag/runs/<time>-<person>-<tier>.json), with no SQL. Read them with npx tsx scripts/lag-runs.mts. Seen signed out at 390 × 844: Home and a 2D match (2,370 frames). Not seen: steps 2 to 6 and 8 to 10, the cut-scene hand-off, a real save to GitHub.",
+      "stats": [
+        {
+          "value": "10",
+          "label": "steps, about 5 minutes of recording"
+        },
+        {
+          "value": "7",
+          "label": "device choices, from iPhone 16 to a low office laptop"
+        },
+        {
+          "value": "0",
+          "label": "SQL steps: runs save by a push to the lag-runs branch"
+        },
+        {
+          "value": "2,370",
+          "label": "frames recorded in the check (Home and a 2D match)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Open it",
+              "detail": "⚙ (top right of Home) → 🛠 Dev → Start lag test. Testers and admins only."
+            },
+            {
+              "title": "Pick",
+              "detail": "Your device and your name. Then Start."
+            },
+            {
+              "title": "Follow the pill",
+              "detail": "It sits at the top. It names each screen. Tap I'm there, wait, tap Next. ⇅ moves it."
+            },
+            {
+              "title": "Skip what you cannot reach",
+              "detail": "Tap \"Can't get there → Skip\"."
+            },
+            {
+              "title": "The results card",
+              "detail": "A ✓ or ✗ per step. It sends itself."
+            },
+            {
+              "title": "If it did not send",
+              "detail": "Tap Send again, or Copy results and paste them into the Team chat."
+            },
+            {
+              "title": "Read the runs",
+              "detail": "Run npx tsx scripts/lag-runs.mts. It reads the lag-runs branch."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "A Lag test inside the game",
+              "detail": "Open ⚙ (top right of Home) → 🛠 Dev → Start lag test, or /star-dev?lagtest=1. First you pick your device (iPhone 16 or newer, iPhone 13 or 14, Older Android, High PC, Mid PC, Low PC, Other) and your name."
+            },
+            {
+              "title": "Ten steps, about 5 minutes of recording",
+              "detail": "A pill at the top leads you: Home, Stats and Relations, Shop, 3D shop, Garden, Phone feed, 2D match, 3D game, Settings, Cut scene. Tap I'm there, wait for \"Done, tap Next\", tap Next. Can't get there → Skip skips a step. Stop ends the run. ⇅ moves the pill."
+            },
+            {
+              "title": "What it records, and what passes",
+              "detail": "Frame gaps (middle, 1 in 20, 1 in 100, worst) counted over 33, 50 and 100 ms, slow stretches in Chrome, a 20 ms timer's lateness (iPhone too), 3D counters, memory, time hidden. Refresh rate comes from the idle gaps. Pass rule on a 60 Hz screen: no more than 1 frame in 20 over 20.8 ms, 1 in 100 over 33.4 ms, none over 100 ms. The low tier has a 30 fps rule."
+            },
+            {
+              "title": "The result sends itself",
+              "detail": "The game's server saves each run on a branch called lag-runs (lag/runs/<time>-<person>-<tier>.json). Builds of that branch are stopped, so a run never starts a deploy. If it cannot send, the run stays on the phone: Send again, or Copy results into the Team chat."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Most steps and the real save were not seen",
+              "detail": "Only Home and the 2D match were recorded (2,370 frames), signed out. Steps 2 to 6 and 8 to 10, the cut-scene hand-off and a real save to GitHub were not seen. The save answered 401 \"Sign in to send\", as it should."
+            },
+            {
+              "title": "The numbers on the results picture are not a phone result",
+              "detail": "It says \"Passed 0 of 2\" with Home at 317 ms and a worst frame of 467 ms. Reasoned: it was made in a test browser on a build machine, not on an iPhone, although the card says iPhone 13 or 14."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.88",
+      "title": "Harry's patch notes: B10 Headers And Volleys",
+      "publishedAt": "2026-10-20T17:40:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "B10 Headers And Volleys (20 Oct). Header and volley chances are back on (they had been switched off since 24 Sep). Each is played as the end of one of the team's own cross drawings, because no header or volley drawings exist (0 of 194 committed, 0 of 192 saved). The ball is in the air while you aim (header 1.85 m, volley 0 to 0.95 m). The strike screens ask \"Head it?\" and \"Volley it?\" and give a verdict from NODDED DOWN to SKIED. With Full highlights rebuild On, a header build-up ends with a lofted cross. Per match over 40 matches: headers 0.50 and volleys 0.42 in the even mix, 0.57 and 0.63 with the rebuild On. Goals from 500 shots (poor / average / elite): header 42.8 / 46.2 / 50.2% to 23.4 / 29.2 / 35.8%, volley 37.4 / 40.6 / 33.6% to 23.0 / 28.4 / 35.4%. The core engine file is untouched. Seen in Infinite Highlights only, not in a career match.",
+      "stats": [
+        {
+          "value": "0.50 · 0.42",
+          "label": "headers and volleys a match, even mix (40 matches)"
+        },
+        {
+          "value": "1 in 10",
+          "label": "chance for each open-play kind (was 1 in 8)"
+        },
+        {
+          "value": "35.8% vs 23.4%",
+          "label": "elite vs poor finisher, headers (500 shots each)"
+        },
+        {
+          "value": "59 of 60",
+          "label": "cross build-ups pass their own checks"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "A header chance",
+              "detail": "Play Infinite Highlights until the title says HEADER. A small ball hangs above the ring."
+            },
+            {
+              "title": "Head it",
+              "detail": "\"Where do you head it?\" with a power bar. After the strike you get a verdict, from NODDED DOWN to SKIED."
+            },
+            {
+              "title": "A volley chance",
+              "detail": "The title says VOLLEY. The strike screen has a height bar and a power bar."
+            },
+            {
+              "title": "The build-up cross",
+              "detail": "Switch Full highlights rebuild On. A header build-up ends with a lofted cross."
+            },
+            {
+              "title": "The gallery",
+              "detail": "Gallery → 11-a-side: the header tab says 0/0 until the team saves header drawings."
+            },
+            {
+              "title": "A career match",
+              "detail": "Not seen yet. Play one and look for both."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Headers and volleys are back on",
+              "detail": "They were switched off on 24 Sep. No header or volley drawings exist (0 of 194 committed, 0 of 192 saved), so each is played as the end of one of the team's own cross drawings: you are the man at the target, the wide man is the crosser. The switched-off list is now empty. When the team saves 5 drawings of one kind, the real drawings take over."
+            },
+            {
+              "title": "A strike screen for each: Head it? and Volley it?",
+              "detail": "The ball is in the air while you aim: a header ball hangs at 1.85 m, a volley ball bounces between 0 and 0.95 m. Both show a shadow and a dotted line. Verdicts run from NODDED DOWN to SKIED. An off-centre header goes up to 22° wide and loses 35% of its pace. A mistimed volley slices up to 26°. No random number is used."
+            },
+            {
+              "title": "Headers start from a cross in the build-up",
+              "detail": "With Full highlights rebuild On, the last pass is the crosser's lofted ball, peaking between 3 and 4.6 m. 60 of 60 were made and 59 pass their own checks. A 6 s clip is on the page."
+            },
+            {
+              "title": "How many you get",
+              "detail": "Each open-play kind is now 1 chance in 10 (was 1 in 8). The Kane mix is untouched. Per match over 40 matches: even mix headers 0.50, volleys 0.42, chances 6.0. Rebuild On: 0.57, 0.63, 6.0."
+            },
+            {
+              "title": "Headers and volleys score less often, and skill counts more",
+              "detail": "Goals from 500 shots per cell, poor / average / elite, before → after: header 42.8 / 46.2 / 50.2% → 23.4 / 29.2 / 35.8%. Volley 37.4 / 40.6 / 33.6% → 23.0 / 28.4 / 35.4%. Before, an elite finisher scored fewer volleys than a poor one. More shots are blocked now (headers 18–21% → 36–42%, volleys 13–15% → about 35%), most likely because the drawn boxes are crowded (reasoned, not tested). All other chance kinds are identical."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "The core engine file is not changed",
+              "detail": "The core engine file (sensitive) is untouched. The match file (sensitive) changed in two ways: it draws the airborne ball while you aim, and a header or volley chance is always struck from the air. Two test fingerprints (the keeper one and the chance-judge Old one) were re-pinned on purpose. The pitch is 366 px wide on a phone."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not seen in a career match",
+              "detail": "Seen only in Infinite Highlights, at 390 × 844. Play a career match and look for a header and a volley."
+            },
+            {
+              "title": "Three test suites fail on the base too",
+              "detail": "chanceMaker counts, longRangeRules and match2dCam (372 × 704) fail the same way without this build. Not touched here."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.87",
       "title": "Harry's patch notes: B19 Team Is Home",
       "publishedAt": "2026-10-20T15:40:00Z",

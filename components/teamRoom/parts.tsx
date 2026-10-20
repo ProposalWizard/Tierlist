@@ -14,6 +14,7 @@ import {
 } from "@/lib/teamRoom/store";
 import { Av, Linked } from "./bits";
 import PushedJobRow from "./PushedJob";
+import PushToggle from "./PushToggle";
 import { ChatThread, WaitingOnMe } from "./chat";
 
 export { Av, ChatThread, WaitingOnMe };
@@ -93,6 +94,7 @@ export function TodoList({ visible = true }: { visible?: boolean }) {
   );
   return (
     <div className="tr-todo">
+      <PushToggle />
       <div className="tr-add">
         <input id="tr-task-new" value={title} placeholder="Add a job…" aria-label="New job" maxLength={200}
           onChange={(e) => { setTitle(e.target.value); setErr(null); }} onKeyDown={(e) => { if (e.key === "Enter") add(); }} />

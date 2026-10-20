@@ -14,7 +14,7 @@
  * Pure: no React, no canvas. tests/star/leadIn.mts checks it.
  */
 import type { Scenario, Vec2, Viewport } from "./canvasEngine";
-import type { Lane, ChancePattern } from "./hiddenMatch";
+import type { Lane, ChancePattern, ScenarioRequest } from "./hiddenMatch";
 import { SIX_DEPTH, SIX_L, SIX_R, BOX_DEPTH, BOX_L, BOX_R, CX } from "./pitch";
 
 export interface LeadIn {
@@ -29,6 +29,21 @@ export interface LeadIn {
    * further back): drawn only while the lead-in plays, keys extra0, extra1…
    */
   extraMates?: number;
+  /**
+   * Opponents in the move who are not in the chance's picture (the man your
+   * side wins the ball from, a build-up only): drawn only while the lead-in
+   * plays, keys oppx0, oppx1…
+   */
+  extraOpps?: number;
+  /**
+   * THE MOVE ENDS IN A CALLED OFFSIDE (the rebuild's B2b; Harry, 20 Oct 2026:
+   * "Offsides can happen but they must be called"). The pass at `pass` went
+   * to `by`, who was offside when it was played; the flag is up at `at`.
+   * There is no chance after it: the match calls it the way it calls offside
+   * (OFFSIDE, the whistle), the free kick goes to them, and the people and
+   * the camera stay where the lead-in left them. Absent: the chance follows.
+   */
+  offside?: { at: number; by: string; pass: number; spot: Vec2; why?: "mistimed" | "untimed" };
   /**
    * When each pass starts and arrives (seconds, in order). The camera frames
    * the passer and the receiver of the pass being played. Absent: it frames
@@ -102,6 +117,14 @@ export interface LeadMoment {
   minute?: number;
   scoreDiff?: number;
   stakes?: "final" | "knockout" | "league" | "friendly";
+  /**
+   * How your side last won the ball, as the match had it (the request's
+   * `regain`): the build-up shows that regain when it was this minute, and
+   * never one the match did not have. Absent: no regain is shown.
+   */
+  regain?: ScenarioRequest["regain"];
+  /** The offside law is off for this match (the Rule Book): nobody is ever flagged. */
+  offsideOff?: boolean;
 }
 
 /** What is at stake in a fixture, for LeadMoment.stakes (a final, a knockout round, a league match). */
@@ -402,6 +425,8 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
   };
   /** 0 = following, 1 = fixed on the chance's frame; eased between. */
   const lockAt = (t: number, chance: Viewport) => {
+    // A move that ends in a called offside has no chance to lock onto: it follows to the end.
+    if (lead.offside) return 0;
     const lt = lockTime(chance);
     if (lt <= 0) return 1;
     return smooth((t - (lt - SETTLE)) / SETTLE);
@@ -436,7 +461,12 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
         // The seen-part margin fades to keepBall's as it lands on the chance's frame.
         return keepSafe(z, lead.ballAt(t), 1 - f);
       }
-      return keepBall({ x1: mix(own.x1, chance.x1), x2: mix(own.x2, chance.x2), y1: mix(own.y1, chance.y1), y2: mix(own.y2, chance.y2) }, lead.ballAt(t));
+      // (`own` already keeps the ball inside it. Keeping it again AFTER the mix
+      // pushed the last frames off the chance's own frame whenever the chance
+      // has the ball near its edge — a tight angle — and the picture jumped
+      // 1.7 px onto the chance's camera at the hand-over. B2b, measured in
+      // tests/star/fhrCameraHandover.mts.)
+      return { x1: mix(own.x1, chance.x1), x2: mix(own.x2, chance.x2), y1: mix(own.y1, chance.y1), y2: mix(own.y2, chance.y2) };
     },
   };
 }

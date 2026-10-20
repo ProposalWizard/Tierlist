@@ -186,3 +186,43 @@ All on branch `Harry`, NOT live (Harry has not said push). Stills in `docs/hando
 - Tests: new airChances.mts; switchedOffKinds rewritten; keeper fingerprint d2725947 and chanceJudge Old 239:e7c688f6 re-pinned on purpose. 3 suites fail on the base too (chanceMaker counts, longRangeRules, match2dCam 372×704).
 - Seen at 390×844 in Infinite Highlights; not seen in a career match. Plan (not built): docs/plans/2026-10-20-flair-bicycle.md.
 - Open for Harry: play off the cross drawings until 5 real ones exist, or stay off? 1 in 10 right? Kane mix (Mikey)?
+
+## B18 step 0 — the in-game Lag test
+- ⚙ (top right of Home) → 🛠 Dev → Start lag test (testers/admins only; also /star-dev?lagtest=1). Device + person picker, a pill at the top (⇅ moves it), 10 steps (~5 min recording): Home, Stats/Relations, Shop, 3D shop, Garden, Phone feed, 2D match, 3D game, Settings, cut scene.
+- Records frame gaps (p50/p95/p99/worst, over 33/50/100), long tasks/LoAF (Chrome), a 20 ms timer's lateness (iPhone too), 3D counters, memory, hidden time; refresh rate from the idle median. Bars in lib/star/lagTest.ts incl. the low-tier 30 fps rule, 0.5 ms jitter allowance.
+- Runs committed to branch lag-runs (lag/runs/<time>-<person>-<tier>.json) by /api/star/lag-runs via commitScenarios' helper (+ ensureBranch); vercel.json stops builds of lag-runs. Device-only + Copy results when it can't send. `npx tsx scripts/lag-runs.mts`.
+- Seen signed out at 390×844: Home and a 2D match recorded (2,370 frames); 401 "Sign in to send" as expected. Not seen: a real save to GitHub, the cut-scene hand-off, steps 2–6 and 8–10.
+
+## Team room phone notifications (Web Push, no SQL)
+- Buzzes: @Name → that person; @all/@everyone/@team → the other two; a reply → the author; a point sent to you; a job typed for you; a pushed job for you (once, if added in the last day; only when someone next opens an admin page). Never the sender; one per message; a thread groups ("+2 more"); tap opens /admin/team?tab=chat&m=<id> or To-do.
+- Sender's client asks /api/admin/team/notify after a save; the server reads the row with the service role (author only, within 10 min, once). Devices in the account's auth metadata (≤ 5); 410 drops a device, never one under 2 minutes old.
+- Once per phone: iPhone (iOS 16.4+) Safari → knowitball.co.uk/admin → Share → Add to Home Screen → open KIB Admin → Team → To-do → Turn on phone notifications → Allow. Android/computer: the same button.
+- Needs TEAM_PUSH_PRIVATE_KEY in Vercel (given to Harry in chat, in no file); public key in lib/teamRoom/config.ts. web-push 3.6.7 added.
+- Seen: a real push through Google's push service in headless Chromium; grouping; the 410 drop. Not seen: a real iPhone, tapping a buzz, the signed-in flow end to end.
+
+## Live share (test)
+- Admin → Videos → "Live share (test)" (admins only): Start → pick a screen/window/tab, Voice on → a 6-letter code with Copy for Claude, Copy link (/admin/videos/live/<code>), Watch it. Stop, the browser's Stop sharing, or 30 min ends it; Delete removes every picture and line. A typing box where there is no voice.
+- One picture a second (720 px, only when changed, colour compare) + speech transcript to Storage tierlist-images/live/<code>/ through an admin API route with the service key; newest 300 kept. No SQL.
+- Claude: `npx tsx scripts/live-watch.mts <code>` (background), every 2 s: SAID lines with the picture on screen then; SCREEN lines on a new/part-changed screen (small changes at most every 30 s); latest.jpg; ENDED.
+- Measured locally: picture 1.2–2.5 s, speech 0.5–2.5 s to the watcher (+ Claude's reply). Computer: Chrome/Edge pictures + voice, Firefox pictures only; Android can't share the screen; iPhone Safari reportedly from iOS 27 (not tried).
+- Seen in headless Chromium with a fake screen and fake speech end to end. Not seen: real Supabase writes, real voice, Safari, background tab. Full `npm run build` was killed for memory 3 times (tsc alone passes).
+
+## Motion references page
+- /admin/motion-refs (Players + animation, admins only): HQ 18 | First round 9 | All 27; base-standard 5 first; each card = real clip (loop, pause, ½×) + our game still + an "Ours" slot that plays public/admin/motion-refs/ours/<scene>.mp4 once it exists. List in lib/motionRefs.ts. ~21 MB added. HQ clips re-encoded 10-bit HEVC → H.264 (originals untouched). First-round handshake left out (logo-like mark). Seen at 390 and 1440; no clip seen playing (no H.264 in this Chromium).
+
+## B5b — bodies (merged behind a test flag; the game still uses today's files)
+- Diagnosis: today's body 5.1 heads (guide 7.7), head 0.37 m (0.24), crotch 0.66 m (0.88), arms 0.68 m (0.78); cause: big-headed concept pictures + fit.py aiming at the boxy shorts hem.
+- A/B/C bone-scaled options rejected (16:29); method A (MakeHuman + Style A head) and C (mesh re-shape) built, dropped. Kept B2 and B3 (new Higgsfield-made body, leaner, flatter chest, today's Curls head + neck): 6.7 / 6.5 heads, shoulders 0.47 / 0.48 m (guide 0.47). See with ?bodies=b|f2|f3.
+- Chest (B2): depth 0.217 → 0.177 m (guide 0.231, today 0.260); chest in front of the chin +1.7 → −1.0 cm (guide +5).
+- Face rings fixed: the body file's own name was overwritten (people3d.ts) so the face used Curls eye positions ~3 cm low; each file keeps its own name (meta.file).
+- Shoulders: bind pose is level on every body (0°, joint 7.5–8.7 cm below the neck base); the CLIPS raise the collarbones (+13–14° idle/nod/talk/shirt_hold, +26° handshake, +37–39° sitting; 0° walk/jog/knee slide) → B5c's job.
+- Props: pen held at 50° (was 9° flat); trophy by both handles, clear of the head, no longer black; grip slip 0.5 cm (was 2.5).
+- Left: pale line at the neck/collar join on B2/B3; the other 5 player heads + 2 suit heads; the new body files not packed yet; rejected v1 code (proportions.ts, ?prop) still in the files; hands into shins in the sitting clip.
+
+## B2b — build-ups round two (merged with B10)
+- Camera: hand-over jump worst 1.70/1.79 px → 0.088 px over 1,226 hand-overs incl. headers/volleys (0.00–0.07 px seen in a browser); resize during a build-up 20.5 px → 0. Test: fhrCameraHandover.mts. Pitch widths 366/384 (code unchanged by the merge; reasoned).
+- One system: each build-up starts where the hidden match won the ball back; one dial (lib/star/fhr/intel.ts, the strength gap) scales regains, press, passing, run timing. 85v65 / 75v75 / 65v85: 6.45 / 4.70 / 3.31 build-ups a match; regain 20.5 / 23.0 / 25.8 m from goal; scrappy 10 / 33 / 52%.
+- Offsides: before 48.5% of build-ups had an uncalled offside pass; after 0 (600 chances per strength, every kind). Called per match 0.24 / 0.37 / 0.39 (pre-merge). Chances played even strength 5.47 → 4.99 (−8.8%), goals 1.44 → 1.35; strong sides unchanged.
+- Merge with B10: every header/volley build-up ends in the lofted cross; crosser's run played into space, wide-run mistime ×0.4 (builder's guess) → volley build-ups flagged 29% → 16% at even; men no longer run through each other at the hand-over (10 → 2 of 257).
+- Drift files: CanvasMatch.tsx (frame on the chance during a resize, regain extra opponent, end-on-offside hand-back), hiddenMatch.ts (hands over regain info, no new random draws). canvasEngine untouched.
+- Not seen: a career match with the switch On at 390×844; a real-match offside still. Full npm run build not run (memory).

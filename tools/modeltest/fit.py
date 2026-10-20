@@ -14,7 +14,7 @@ blender -b --python tools/modeltest/fit.py -- <cand.glb> <human_s.glb> <out.glb>
    direction and roll, so each clip's rotations mean the same thing on him.
 6. Exports armature + mesh (skin only; clips are added by addclips.mjs).
 """
-import bpy, bmesh, sys, math
+import bpy, bmesh, sys, math, os
 from mathutils import Vector, Matrix
 
 argv = sys.argv[sys.argv.index("--") + 1:]
@@ -85,7 +85,9 @@ me.transform(Matrix.Translation((-cx, -cy, -zmin)))
 vs = V()
 H0 = max(v.z for v in vs)
 cf = [list(p.vertices) for p in me.polygons]
-c0 = crotch(vs, 0.3, cf)
+# FIT_CROTCH (candidate units, feet at 0): the crotch when the ray would find the shorts hem instead
+# (a body re-shaped by tools/bodies/reshape.py prints it)
+c0 = float(os.environ["FIT_CROTCH"]) if os.environ.get("FIT_CROTCH") else crotch(vs, 0.3, cf)
 ch = crotch(mhv, 0.3, mhf)
 s = ch / c0
 me.transform(Matrix.Scale(s, 4))
@@ -123,6 +125,7 @@ def landmarks(vs, faces):
 
 Lm = landmarks(mhv, mhf)
 Lc = landmarks(vs, cf)
+if os.environ.get("FIT_CROTCH"): Lc["crotch"] = c0 * s
 print("LM mh", {k: round(v, 3) for k, v in Lm.items()}, "cand", {k: round(v, 3) for k, v in Lc.items()})
 
 

@@ -23,6 +23,7 @@ const clearCache = new Map<string, ShoulderBody | null>();
 import { loadPeople3d, makePerson3d, dressPerson3d, poseFingers, fingersDeg, fingerTip, hasFingers, toonHeadsFor, type FingerPose, type Person3D, type PersonModel } from "../people3d";
 import { addClips, loadAnims3d } from "../three3d/footballAnims";
 import { solveArm, handWorldQuat, setBoneWorldQuat, rotateBoneWorld, type HandAxes } from "../signing3dRig";
+import { basisTurn } from "./hold";
 import { newNumberCanvas, drawShirtNumber } from "../signing3dTextures";
 import { addToonFace, toonFaceFor, type ToonFaceRig } from "../style3d/toon/face";
 
@@ -173,10 +174,10 @@ class StubActor implements CutsceneActor {
   }
   private clear: ShoulderBody | null = null;
 
-  clearArms(w: number) {
+  clearArms(w: number, skip?: { L?: boolean; R?: boolean }) {
     if (!this.clear || w <= 0) return;
     this.root.updateMatrixWorld(true);
-    clearArmsLive(this.T, this.clear, this.person.bones as Record<string, THREE.Bone>, w);
+    clearArmsLive(this.T, this.clear, this.person.bones as Record<string, THREE.Bone>, w, skip);
   }
 
   clips() { return Object.keys(this.person.actions); }
@@ -244,6 +245,12 @@ class StubActor implements CutsceneActor {
       case "shoulder.R": return this.wp(B.RightArm);
       case "knee.L": return this.wp(B.LeftLeg);
       case "knee.R": return this.wp(B.RightLeg);
+      case "crown": {
+        // the head's own top (its bone's rest offset to head_end, through its scale), hair included
+        const he = B.head_end ?? null;
+        if (he) return this.wp(he).add(new this.T.Vector3(0, 0.012, 0));
+        return this.wp(B.Head).add(new this.T.Vector3(0, 0.24, 0));
+      }
     }
     return this.wp(B.Hips);
   }
@@ -343,6 +350,44 @@ class StubActor implements CutsceneActor {
     // a held thing stands up out of the fist the way the thumb points (a mic, a statue, a bottle)
     const axis = thumb.clone().sub(palm.clone().multiplyScalar(thumb.dot(palm))).normalize();
     return { pos, axis, up: palm.clone() };
+  }
+
+  handFrame(hand: "L" | "R") {
+    const q = new this.T.Quaternion(); this.person.bones[hand === "R" ? "RightHand" : "LeftHand"].getWorldQuaternion(q);
+    return { along: this.axes[hand].along.clone().applyQuaternion(q), palm: this.axes[hand].palm.clone().applyQuaternion(q) };
+  }
+
+  holdTool(hand: "L" | "R", grip: HandPose, tip: THREE.Vector3, dir: THREE.Vector3, up: THREE.Vector3, w: number, pole?: THREE.Vector3) {
+    if (w <= 0) return;
+    const T = this.T;
+    const S = hand === "R" ? "Right" : "Left";
+    const B = this.person.bones;
+    const chain = [`${S}Shoulder`, `${S}Arm`, `${S}ForeArm`, `${S}Hand`].map((n) => B[n]).filter(Boolean);
+    const saved = chain.map((b) => b.quaternion.clone());
+    const ha = B[`${S}Hand`];
+    // the tool in the hand's own frame (the fingers in the grip first: the pads move with them)
+    this.hand(hand, grip, 1);
+    const hq = new T.Quaternion(); ha.getWorldQuaternion(hq);
+    const inv = hq.clone().invert();
+    const W = this.wp(ha);
+    const g0 = this.gripFrame(hand, grip);
+    const tipL = g0.pos.clone().sub(W).applyQuaternion(inv);
+    // the hand turned so the tool's axis and up go where they are wanted
+    const Q = basisTurn(T, g0.axis.clone().applyQuaternion(inv), g0.up.clone().applyQuaternion(inv), dir, up);
+    const along = this.axes[hand].along.clone().applyQuaternion(Q), palm = this.axes[hand].palm.clone().applyQuaternion(Q);
+    let wrist = tip.clone().sub(tipL.clone().applyQuaternion(Q));
+    for (let i = 0; i < 3; i++) {
+      chain.forEach((b, j) => b.quaternion.copy(saved[j]));
+      this.root.updateMatrixWorld(true);
+      this.reach(hand, wrist, along, palm, 1, pole);
+      this.hand(hand, grip, 1);
+      wrist = wrist.add(tip.clone().sub(this.gripFrame(hand, grip).pos));
+    }
+    if (w < 1) {
+      const solved = chain.map((b) => b.quaternion.clone());
+      chain.forEach((b, j) => { b.quaternion.copy(saved[j]).slerp(solved[j], w); });
+      this.root.updateMatrixWorld(true);
+    }
   }
 
   lookAt(target: THREE.Vector3, w: number) {

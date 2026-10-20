@@ -66,3 +66,7 @@ scripts/tmp/
 
 # Video breakdowns (scripts/screen-video). Never committed.
 .recordings/
+# 4K Higgsfield originals stay on disk, out of git (hundreds of MB)
+docs/handoffs/2026-10-20-builds/b5c-hq/raw/
+docs/handoffs/2026-10-20-builds/b5c-hq/*.png
+docs/handoffs/2026-10-20-builds/b5c-hq/hq-*.jpg

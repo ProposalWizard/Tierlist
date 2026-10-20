@@ -12,15 +12,67 @@ import { aimBone, rotateBoneWorld, solveArm } from "../signing3dRig";
 import { FLUID_ON, clapGap, humanBeat, liftCurve, liveDrift, wander } from "./fluid";
 import { refArms, type RefArmClip } from "./refMotion";
 import { PRESS_DESK_TOP } from "./presets/locations";
+import { gripTo, armReach, liftPlace, chestPlace, type HeldProp } from "./hold";
+import { smooth } from "./math";
 
 /**
  * `lag`: the overlap weights for this hold's arms (the forearm and hand a beat
  * behind the upper arm while it blends on or off; director.ts works them out).
  * `seed`: this actor's own wobble (two men never drift in step).
  */
-export interface PoseCtx { T: any; t: number; local: number; yaw: number; root: Vec3; lag?: ReachLag; seed?: number;
+export interface PoseCtx {
+  T: any; t: number; local: number; yaw: number; root: Vec3; lag?: ReachLag; seed?: number;
   /** The floor under him in the script (his mark), before his feet are planted: a seated man's root drops a few cm, a desk does not. */
-  floorY?: number }
+  floorY?: number;
+  /** The prop this pose holds (its handles and box, its own frame), when it has one. */
+  prop?: HeldProp;
+}
+/** A world point in the actor's own frame (x his left, y up from his feet, z his front). */
+export function toActor(c: PoseCtx, p: { x: number; y: number; z: number }): Vec3 {
+  const cs = Math.cos(c.yaw), s = Math.sin(c.yaw);
+  const dx = p.x - c.root[0], dz = p.z - c.root[2];
+  return [dx * cs - dz * s, p.y - c.root[1], dx * s + dz * cs];
+}
+
+/**
+ * A two-handled cup held by its handles (B5b): up in front of the chest (k = 0),
+ * or lifted over the head (k = 1; between: on its way up, forward of the face).
+ * The hands' grip points go on the handles, so the cup sits in the palms; the
+ * lift is as high as his arms reach and only as far forward as the base needs
+ * to clear his head. Without a prop's measures: false (the old fixed holds).
+ */
+function holdCup(a: CutsceneActor, c: PoseCtx, w: number, k: number): boolean {
+  const P = c.prop;
+  if (!P?.handles.L || !P.handles.R) return false;
+  const T = c.T;
+  const hL = P.handles.L, hR = P.handles.R;
+  const half = Math.abs(hL[0] - hR[0]) / 2;
+  const hy = (hL[1] + hR[1]) / 2;
+  const drop = hy - P.min[1], top = P.max[1] - hy;
+  const shL = toActor(c, a.point("shoulder.L")), shR = toActor(c, a.point("shoulder.R"));
+  const sh: Vec3 = [(shL[0] - shR[0]) / 2, (shL[1] + shR[1]) / 2, (shL[2] + shR[2]) / 2];
+  const chest = chestPlace(sh[1], drop, top);
+  let y = chest.y, z = chest.z;
+  if (k > 0) {
+    const crown = toActor(c, a.point("crown")), eyes = toActor(c, a.point("eyes")), head = toActor(c, a.point("head"));
+    const lp = liftPlace({
+      shoulder: sh, reach: Math.min(armReach(T, a, "L"), armReach(T, a, "R")),
+      // the chin about as far under the eyes as the crown is over them, less a little
+      crownY: crown[1], chinY: eyes[1] - (crown[1] - eyes[1]) * 0.9, faceZ: eyes[2] + 0.05, headZ: head[2], half, drop,
+      front: P.front.map((b) => ({ y0: b.y0 - hy, y1: b.y1 - hy, z: b.z })),
+    });
+    // up and forward: the base swings out in front of the face on the way up
+    y = chest.y + (lp.y - chest.y) * k;
+    z = chest.z + (lp.z - chest.z) * k + 0.12 * Math.sin(Math.PI * k);
+  }
+  const left = actorDir(T, c, 1, 0, 0);
+  const mid = actorPoint(T, c, 0, y, z);
+  // palms in towards the cup, fingers forward round the handle (more up as the arms rise), thumbs up
+  const up = 0.2 + 0.35 * k;
+  gripTo(T, a, "L", "grip", mid.clone().addScaledVector(left, half), actorDir(T, c, 0, up, 1), actorDir(T, c, -1, 0, 0), actorDir(T, c, 0.9, -0.5 + 0.4 * k, -0.25), w);
+  gripTo(T, a, "R", "grip", mid.clone().addScaledVector(left, -half), actorDir(T, c, 0, up, 1), actorDir(T, c, 1, 0, 0), actorDir(T, c, -0.9, -0.5 + 0.4 * k, -0.25), w);
+  return true;
+}
 
 export function actorPoint(T: any, c: PoseCtx, x: number, y: number, z: number) {
   const cs = Math.cos(c.yaw), s = Math.sin(c.yaw);
@@ -296,6 +348,8 @@ export function applyPose(a: CutsceneActor, pose: PoseHold, w: number, c: PoseCt
     case "trophy-overhead": {
       // was a straight-line ramp (Math.min(1, t / 0.7)) that started and stopped dead: now a dip, a rise, a settle
       const lift = FLUID_ON.on ? liftCurve(t, 0.18, 0.75) : Math.min(1, t / 0.7);
+      // B5b: a two-handled cup is held by its handles and lifted clear of his head (holdCup)
+      if (c.prop?.handles.L) { a.lean(-0.08 * w * lift); if (holdCup(a, c, w, smooth(Math.max(0, Math.min(1, lift))))) break; a.lean(0.08 * w * lift); }
       const y = chest + 0.05 + (head + 0.5 - chest) * lift;
       twoHands(a, c, w, [0.21, y, 0.2 - 0.14 * lift], [-0.21, y, 0.2 - 0.14 * lift], [-0.4, 1, 0.1], [-1, 0, 0], [0.4, 1, 0.1], [1, 0, 0], [0, -0.4, -1], 0.8);
       a.hand("L", "grip", w); a.hand("R", "grip", w);
@@ -303,6 +357,7 @@ export function applyPose(a: CutsceneActor, pose: PoseHold, w: number, c: PoseCt
       break;
     }
     case "trophy-chest":
+      if (holdCup(a, c, w, 0)) break;
       twoHands(a, c, w, [0.2, chest - 0.02, 0.26], [-0.2, chest - 0.02, 0.26], [-0.3, 0.3, 1], [-1, 0, 0], [0.3, 0.3, 1], [1, 0, 0], undefined, 0);
       a.hand("L", "grip", w); a.hand("R", "grip", w);
       break;
