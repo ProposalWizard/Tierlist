@@ -9,7 +9,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/admin/shell/AdminShell";
-import { GROUPS, visibleTo, type AdminOwner, type AdminPage } from "@/lib/adminRegistry";
+import { GAMES, gameOf, groupIcon, groupsOf, visibleTo, type AdminGameKey, type AdminOwner, type AdminPage } from "@/lib/adminRegistry";
 import type { TeamBoardData } from "@/lib/teamBoard";
 import { isBoardLook, useAdminLook } from "@/lib/adminLook";
 import "./adminHome.css";
@@ -30,8 +30,14 @@ const WRITE_HELP: Record<AdminPage["writes"], string> = {
 };
 const OWNER_LETTER: Record<AdminOwner, string> = { Harry: "H", Mikey: "M", Leo: "L", Shared: "★" };
 
-export default function AdminHome({ role }: { role: "admin" | "tester" }) {
-  const all = useMemo(() => visibleTo(role).filter((p) => p.url !== "/admin/star"), [role]);
+export default function AdminHome({ role, game = GAMES[0].key }: { role: "admin" | "tester"; game?: AdminGameKey }) {
+  const G = gameOf(game) ?? GAMES[0];
+  // Only this game's groups and pages: a game's tab never shows another game's (Harry, 19 Oct 2026).
+  const GROUPS = groupsOf(game);
+  const all = useMemo(() => {
+    const keys = new Set<string>(groupsOf(game).map((g) => g.key));
+    return visibleTo(role).filter((p) => p.url !== "/admin/star" && keys.has(p.group));
+  }, [role, game]);
   const [q, setQ] = useState("");
   const [owner, setOwner] = useState<AdminOwner | null>(null);
   const [realOnly, setRealOnly] = useState(false);
@@ -49,32 +55,32 @@ export default function AdminHome({ role }: { role: "admin" | "tester" }) {
   const board = isBoardLook(look);
 
   return (
-    <AdminShell tab="home" role={role}>
+    <AdminShell tab="home" role={role} game={game}>
       <div className="ah">
         <div className="ah-bar">
           <label className="ash-search ah-search">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-            <input id="ah-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${all.length} pages`} aria-label="Search pages" />
+            <input id="ah-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${all.length} pages in ${G.name}`} aria-label="Search pages" />
           </label>
           <div className="ah-chips" role="group" aria-label="Filter">
             <button className="ash-chip" aria-pressed={!owner} onClick={() => setOwner(null)}>All</button>
             {(["Harry", "Mikey", "Leo"] as AdminOwner[]).map((o) => (
               <button key={o} className="ash-chip" aria-pressed={owner === o} onClick={() => setOwner(owner === o ? null : o)}>{o} <span className="ah-n">{count(o)}</span></button>
             ))}
-            <button className="ash-chip" aria-pressed={realOnly} onClick={() => setRealOnly(!realOnly)}>Saves real data</button>
+            <button className="ash-chip" aria-pressed={realOnly} onClick={() => setRealOnly(!realOnly)}><span className="ah-full">Saves real data</span><span className="ah-short">Real data</span></button>
           </div>
           {role === "admin" && <TeamWidget />}
         </div>
 
         {/* Broadcast / Bento: the home is just the groups, each opens its own
             page (Harry, 19 Oct 2026). A search or filter lists matching pages. */}
-        {board && !filtering && <GroupHome pages={all} />}
-        {board && filtering && <Board shown={shown} filtering={filtering} />}
+        {board && !filtering && <GroupHome pages={all} game={game} />}
+        {board && filtering && <Board shown={shown} filtering={filtering} game={game} />}
 
-        {!board && !filtering && (
-          <Link href="/star-dev" className="ash-panel ah-play">
+        {!board && !filtering && G.play && (
+          <Link href={G.play} className="ash-panel ah-play">
             <img src="/admin/icons/play.webp" alt="Play the game" title="Play the game" className="ah-ic ah-ic-lg" />
-            <span><b>Play the game</b><small>Road to Ballon d&apos;Or, as players see it</small></span>
+            <span><b>Play the game</b><small>{G.name}, as players see it</small></span>
           </Link>
         )}
 
@@ -101,7 +107,7 @@ export default function AdminHome({ role }: { role: "admin" | "tester" }) {
           }
           return (
             <section key={g.key} id={g.key} className="ah-group">
-              <div className="ah-ghead"><img src={`/admin/icons/${g.key}.webp`} alt={g.name} title={g.name} className="ah-ic" /><h2>{g.name}</h2><span>{pages.length}</span></div>
+              <div className="ah-ghead"><img src={groupIcon(g.key)}alt={g.name} title={g.name} className="ah-ic" /><h2>{g.name}</h2><span>{pages.length}</span></div>
               {body}
             </section>
           );
@@ -119,9 +125,10 @@ export const TAGLINE: Record<string, string> = {
   data: "Real teams. Real numbers.", places3d: "Explore. Shop. Work.", players: "Bring the team to life.",
   money: "Play. Earn. Upgrade.", sound: "Hear the difference.", site: "Keep it fresh.",
   draft: "The draft game.", tierlists: "Rank what matters.", old: "Kept for reference.",
+  studio: "The team, the notes, the testers.",
 };
-function Board({ shown, filtering }: { shown: AdminPage[]; filtering: boolean }) {
-  const groups = GROUPS.map((g) => ({ g, pages: shown.filter((p) => p.group === g.key) }))
+function Board({ shown, filtering, game }: { shown: AdminPage[]; filtering: boolean; game: AdminGameKey }) {
+  const groups = groupsOf(game).map((g) => ({ g, pages: shown.filter((p) => p.group === g.key) }))
     .filter((x) => x.pages.length)
     // "Play the game" leads Career screens, as in both pictures.
     .map((x) => ({ ...x, pages: [...x.pages].sort((a, b) => Number(b.url === "/star-dev") - Number(a.url === "/star-dev")) }));
@@ -131,7 +138,7 @@ function Board({ shown, filtering }: { shown: AdminPage[]; filtering: boolean })
         const rows = <ul className="ahb-rows">{pages.map((p) => <Row key={p.url} p={p} />)}</ul>;
         const head = (
           <div className="ahb-head">
-            <img src={`/admin/icons/${g.key === "old" ? "site" : g.key}.webp`} alt="" className="ahb-ic" />
+            <img src={groupIcon(g.key)} alt="" className="ahb-ic" />
             <span className="ahb-t"><b>{g.name}</b><small>{TAGLINE[g.key]}</small></span>
             <span className="ahb-n" title={`${pages.length} pages`}>{pages.length}</span>
           </div>
@@ -153,7 +160,9 @@ function Board({ shown, filtering }: { shown: AdminPage[]; filtering: boolean })
 /** The groups, as big picture tiles or wide banner rows (Harry: "option 1 and 2
  *  for admin home as a grid/list toggle"). Remembered per browser. */
 const VIEW_KEY = "kib-admin-home-view";
-function GroupHome({ pages }: { pages: AdminPage[] }) {
+function GroupHome({ pages, game }: { pages: AdminPage[]; game: AdminGameKey }) {
+  const G = gameOf(game) ?? GAMES[0];
+  const GROUPS = groupsOf(game);
   const [view, setView] = useState<"grid" | "list">("grid");
   useEffect(() => { try { if (localStorage.getItem(VIEW_KEY) === "list") setView("list"); } catch { /* private */ } }, []);
   const pick = (v: "grid" | "list") => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* private */ } };
@@ -161,7 +170,7 @@ function GroupHome({ pages }: { pages: AdminPage[] }) {
   return (
     <div className="agh" data-view={view}>
       <div className="agh-bar">
-        <h1 className="agh-title">Admin</h1>
+        <h1 className="agh-title">{G.name}</h1>
         <div className="agh-toggle" role="group" aria-label="Show groups as">
           <button aria-pressed={view === "grid"} onClick={() => pick("grid")} title="Big tiles">Grid</button>
           <button aria-pressed={view === "list"} onClick={() => pick("list")} title="One row per group">List</button>
@@ -170,7 +179,7 @@ function GroupHome({ pages }: { pages: AdminPage[] }) {
       <div className="agh-groups">
         {groups.map(({ g, n }) => (
           <Link key={g.key} href={`/admin/star/g/${g.key}`} className="agh-g" data-g={g.key} title={`${g.name}: ${TAGLINE[g.key] ?? ""}`}>
-            <img src={`/admin/icons/${g.key === "old" ? "site" : g.key}.webp`} alt="" className="agh-art" />
+            <img src={groupIcon(g.key)} alt="" className="agh-art" />
             <span className="agh-name">{g.name}</span>
             <span className="agh-line">{TAGLINE[g.key]}</span>
             <span className="agh-n">{n} page{n === 1 ? "" : "s"}</span>

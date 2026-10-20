@@ -20,7 +20,7 @@ export const ADMIN_PREVIEW: Record<string, string> = {
   "/star-vfx-lab-dev": "/admin/previews/star-vfx-lab-dev.webp",
   "/star-sound-lab-dev": "/admin/previews/star-sound-lab-dev.webp",
   "/star-real-moments-dev": "/admin/previews/star-real-moments-dev.webp",
-  "/star-statsbomb-dev": "/admin/previews/star-statsbomb-dev.webp",
+  "/star-real-shots-dev": "/admin/previews/star-real-shots-dev.webp",
   "/star-real-goals-dev": "/admin/previews/star-real-goals-dev.webp",
   "/star-intl-dev": "/admin/previews/star-intl-dev.webp",
   "/star-tournament-dev": "/admin/previews/star-tournament-dev.webp",

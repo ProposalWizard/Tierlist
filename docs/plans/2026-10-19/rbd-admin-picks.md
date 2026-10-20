@@ -52,3 +52,9 @@ Every page keeps all of its key functions ("every page needs to keep the key fun
 | 3D scene editor (camera, lighting) | round 3: A |
 | Tournaments, Sound board | not picked yet: Broadcast frame only |
 | Star Pass: one tier (20 levels) at a time | kept (Harry, 19 Oct) |
+
+## Noted, not built (Harry, 19 Oct 2026, builds paused)
+1. **The game has drifted on Play** in Infinite Highlights, Full match and the trial: what Play runs no longer matches the picture/the real game. Needs measuring against the real match (one-engine) before any fix.
+2. **Key buttons below the fold** (Infinite Highlights NEXT, chance name): keep play controls on screen. Rule in ui-house-style.
+3. **Broadcast admin home: bring back the side tabs** (group list). BUILT 19 Oct (the current game's groups, every look).
+4. **Split the admin by game, fully** (BUILT 19 Oct: GAMES in lib/adminRegistry.ts, tabs on every admin page) (Harry, 19 Oct): the wider website's games (tierlists, draft, tic-tac-toe…) live on a completely separate tab from Road to Ballon d'Or. "we may be a production company that makes alot of games" — so each game is its own top-level area in the admin, and adding a new game adds a new tab, not more pages in a shared list.

@@ -11,10 +11,10 @@
  * real shared data, or the code itself (repo).
  */
 
-export type AdminSection = "rbd" | "site" | "draft" | "tierlists" | "old";
+export type AdminSection = "rbd" | "site" | "draft" | "tierlists" | "old" | "studio";
 export type AdminGroup =
   | "career" | "chances" | "match" | "data" | "places3d" | "players" | "money" | "sound"
-  | "site" | "draft" | "tierlists" | "old";
+  | "site" | "draft" | "tierlists" | "old" | "studio";
 export type AdminOwner = "Harry" | "Mikey" | "Leo" | "Shared";
 export type AdminWrites = "none" | "browser" | "own" | "shared" | "repo";
 export type AdminAccess = "admin" | "team" | "open";
@@ -31,28 +31,49 @@ export interface AdminPage {
   access: AdminAccess;
 }
 
+/**
+ * THE GAMES — one top-level tab each across the admin (Harry, 19 Oct 2026:
+ * "stuff on the wider website should be on a completely different tab than
+ * road to ballon dor stuff — remember we may be a production company that
+ * makes a lot of games"). Inside a game's tab you only ever see its own
+ * groups and pages. A NEW GAME = one line here (its tab, home page and side
+ * list appear by themselves); then its groups below say `game: "<key>"`.
+ * `home` is where the game's tab opens; `play` is the game as players see it.
+ */
+export const GAMES = [
+  { key: "rbd", name: "Road to Ballon d'Or", short: "Ballon d'Or", home: "/admin/star", play: "/star-dev" },
+  { key: "web", name: "Website games", short: "Website", home: "/admin/star/game/web", play: "/" },
+  { key: "studio", name: "Studio", short: "Studio", home: "/admin/star/game/studio", play: null },
+] as const satisfies readonly { key: string; name: string; short: string; home: string; play: string | null }[];
+export type AdminGameKey = (typeof GAMES)[number]["key"];
+export type AdminGame = (typeof GAMES)[number];
+export const DEFAULT_GAME: AdminGameKey = GAMES[0].key;
+
 export const SECTIONS: { key: AdminSection; name: string }[] = [
   { key: "rbd", name: "Road to Ballon d'Or" },
   { key: "site", name: "Site" },
   { key: "draft", name: "PL Draft" },
   { key: "tierlists", name: "Tierlists" },
   { key: "old", name: "Old tests" },
+  { key: "studio", name: "Studio" },
 ];
 
-/** Group order (Harry's answer ADM-Q115), and the section each sits in. */
-export const GROUPS: { key: AdminGroup; name: string; section: AdminSection }[] = [
-  { key: "career", name: "Career screens", section: "rbd" },
-  { key: "chances", name: "Chances", section: "rbd" },
-  { key: "match", name: "Match tests", section: "rbd" },
-  { key: "data", name: "Real data", section: "rbd" },
-  { key: "places3d", name: "3D places", section: "rbd" },
-  { key: "players", name: "Players + animation", section: "rbd" },
-  { key: "money", name: "Money + rewards", section: "rbd" },
-  { key: "sound", name: "Sound", section: "rbd" },
-  { key: "site", name: "Site", section: "site" },
-  { key: "draft", name: "PL Draft", section: "draft" },
-  { key: "tierlists", name: "Tierlists", section: "tierlists" },
-  { key: "old", name: "Old tests", section: "old" },
+/** Group order (Harry's answer ADM-Q115), the section each sits in, and its game.
+ *  `icon` names the picture in public/admin/icons (defaults to the group key). */
+export const GROUPS: { key: AdminGroup; name: string; section: AdminSection; game: AdminGameKey; icon?: string }[] = [
+  { key: "career", name: "Career screens", section: "rbd", game: "rbd" },
+  { key: "chances", name: "Chances", section: "rbd", game: "rbd" },
+  { key: "match", name: "Match tests", section: "rbd", game: "rbd" },
+  { key: "data", name: "Real data", section: "rbd", game: "rbd" },
+  { key: "places3d", name: "3D places", section: "rbd", game: "rbd" },
+  { key: "players", name: "Players + animation", section: "rbd", game: "rbd" },
+  { key: "money", name: "Money + rewards", section: "rbd", game: "rbd" },
+  { key: "sound", name: "Sound", section: "rbd", game: "rbd" },
+  { key: "draft", name: "PL Draft", section: "draft", game: "web" },
+  { key: "tierlists", name: "Tierlists", section: "tierlists", game: "web" },
+  { key: "site", name: "Site XP + Tic Tac Toe", section: "site", game: "web" },
+  { key: "old", name: "Old tests", section: "old", game: "web", icon: "site" },
+  { key: "studio", name: "Team + notes", section: "studio", game: "studio", icon: "site" },
 ];
 
 const P = (url: string, name: string, purpose: string, section: AdminSection, group: AdminGroup,
@@ -60,12 +81,12 @@ const P = (url: string, name: string, purpose: string, section: AdminSection, gr
   ({ url, name, purpose, section, group, owner, status, writes, access });
 
 export const ADMIN_PAGES: AdminPage[] = [
-  P("/admin/star", "Admin home", "Every admin and test page, grouped and searchable", "site", "site", "Harry", "live", "none", "team"),
-  P("/admin/videos", "Videos", "How to hand Claude a screen recording to break down", "site", "site", "Harry", "live", "none", "team"),
-  P("/admin/team", "Team board", "What Harry, Mikey and Leo are doing: pushes, pull requests, live deploy, patch notes", "site", "site", "Harry", "live", "none", "admin"),
-  P("/admin/patch-notes", "Patch notes", "Every patch note, newest first", "site", "site", "Shared", "live", "none", "admin"),
-  P("/admin/app-plan", "App plan", "The app plan and its open questions", "site", "site", "Harry", "live", "none", "admin"),
-  P("/admin/testers", "Tester access", "Tester links, remove testers", "site", "site", "Harry", "live", "shared", "admin"),
+  P("/admin/star", "Admin home", "Every admin and test page, grouped and searchable", "studio", "studio", "Harry", "live", "none", "team"),
+  P("/admin/videos", "Videos", "How to hand Claude a screen recording to break down", "studio", "studio", "Harry", "live", "none", "team"),
+  P("/admin/team", "Team board", "What Harry, Mikey and Leo are doing: pushes, pull requests, live deploy, patch notes", "studio", "studio", "Harry", "live", "none", "admin"),
+  P("/admin/patch-notes", "Patch notes", "Every patch note, newest first", "studio", "studio", "Shared", "live", "none", "admin"),
+  P("/admin/app-plan", "App plan", "The app plan and its open questions", "studio", "studio", "Harry", "live", "none", "admin"),
+  P("/admin/testers", "Tester access", "Tester links, remove testers", "studio", "studio", "Harry", "live", "shared", "admin"),
   P("/admin/xp", "Site XP rewards", "Level-up rewards across the whole site (frames, titles)", "site", "site", "Harry", "live", "shared", "admin"),
   P("/admin/football", "Tic Tac Toe data", "Wikidata data behind Tic Tac Toe", "site", "site", "Harry", "live", "shared", "admin"),
   P("/squad-builder", "Dream XI builder", "Pick a formation and drag players into a dream XI", "old", "old", "Harry", "old", "none", "team"),
@@ -84,6 +105,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-training-dev", "Training levels", "Play any training game at any level", "rbd", "career", "Mikey", "live", "none", "team"),
   P("/star-gallery-dev", "Scenario gallery", "Every chance as a picture; save, commit", "rbd", "chances", "Harry", "live", "repo", "admin"),
   P("/star-highlights-dev", "Infinite Highlights", "Flick through chances and fix a bad one on the spot", "rbd", "chances", "Harry", "live", "repo", "admin"),
+  P("/star-fhr-dev", "Full highlights rebuild", "The rebuild's switch and today's numbers: chances, goals, reactions, start distance", "rbd", "chances", "Harry", "live", "browser", "team"),
   P("/star-play-dev", "Play Area", "Play chances or a full match with every dial to hand", "rbd", "chances", "Harry", "live", "repo", "team"),
   P("/star-update-dev", "Leo's Oct 13 update", "Leo's Oct 13 gameplay update, Old or New", "rbd", "match", "Leo", "live", "browser", "team"),
   P("/star-sim90-dev", "Full match", "Full simulated 90 minutes", "rbd", "match", "Harry", "live", "none", "team"),
@@ -92,8 +114,8 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-dribble-stick-dev", "Dribble on a stick", "Dribble steered by a stick", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-vfx-lab-dev", "Visual effects lab", "Pick and edit the effect for each match moment", "rbd", "players", "Leo", "live", "browser", "team"),
   P("/star-sound-lab-dev", "Sound lab", "Hear, edit, rate match sounds", "rbd", "sound", "Leo", "live", "browser", "team"),
-  P("/star-real-moments-dev", "Real moments", "StatsBomb positions, playable", "rbd", "data", "Mikey", "live", "none", "admin"),
-  P("/star-statsbomb-dev", "Real shots", "WC/Euro shots, playable", "rbd", "data", "Harry", "live", "none", "admin"),
+  P("/star-real-moments-dev", "Real moments", "Real positions (DFL, SkillCorner, Wyscout), playable", "rbd", "data", "Mikey", "live", "none", "admin"),
+  P("/star-real-shots-dev", "Real shots", "WC 2018 / Euro 2016 + tracked shots, playable", "rbd", "data", "Harry", "live", "none", "admin"),
   P("/star-real-goals-dev", "Real Goals", "Recreate real WC/Euro goals: levels, stars, accuracy, ghost", "rbd", "data", "Leo", "live", "browser", "admin"),
   P("/star-intl-dev", "International world", "Call-ups, national managers and every international competition", "rbd", "data", "Mikey", "live", "none", "team"),
   P("/star-tournament-dev", "Tournaments", "Draw and play a whole Euros or World Cup in seconds", "rbd", "data", "Leo", "live", "none", "team"),
@@ -146,6 +168,28 @@ export const RELATED: { prefix: string; label: string; urls: string[] }[] = [
 
 export const pageFor = (url: string) => ADMIN_PAGES.find((p) => p.url === url);
 
+/* ── Games: which game a group, page or path belongs to ───────────────── */
+export const gameOf = (key: string): AdminGame | undefined => GAMES.find((g) => g.key === key);
+export const groupGame = (group: AdminGroup): AdminGameKey => GROUPS.find((g) => g.key === group)?.game ?? DEFAULT_GAME;
+export const groupIcon = (group: AdminGroup) => `/admin/icons/${GROUPS.find((g) => g.key === group)?.icon ?? group}.webp`;
+/** The game's groups, in order. */
+export const groupsOf = (game: AdminGameKey) => GROUPS.filter((g) => g.game === game);
+/** The game a path sits in: a game or group page says so; else its registry
+ *  page's group; else the RELATED list; else the first game. */
+export function gameForPath(path: string): AdminGameKey {
+  const m = path.match(/^\/admin\/star\/(?:game|g)\/([^/?#]+)/);
+  if (m) {
+    if (gameOf(m[1])) return m[1] as AdminGameKey;
+    const g = GROUPS.find((x) => x.key === m[1]);
+    if (g) return g.game;
+  }
+  if (path === "/admin/star") return DEFAULT_GAME;
+  const own = currentPage(path);
+  if (own) return groupGame(own.group);
+  const first = relatedFor(path)?.pages[0];
+  return first ? groupGame(first.group) : DEFAULT_GAME;
+}
+
 /** The registry page a path is on (longest match), if any. */
 export function currentPage(path: string): AdminPage | undefined {
   let best: AdminPage | undefined;
@@ -181,7 +225,7 @@ export function relatedFor(path: string): { label: string; pages: AdminPage[] } 
  */
 export const TEST_PAGES = new Set<string>([
   "/star-goal-clips-dev", "/star-update-dev", "/star-dribble-stick-dev", "/star-vfx-lab-dev", "/star-sound-lab-dev",
-  "/star-real-moments-dev", "/star-statsbomb-dev", "/star-real-goals-dev", "/star-intl-dev", "/star-tournament-dev",
+  "/star-real-moments-dev", "/star-real-shots-dev", "/star-real-goals-dev", "/star-intl-dev", "/star-tournament-dev",
   "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev", "/star-garden3d-dev",
   "/star-home3d-dev", "/star-training3d-dev", "/star-style-dev", "/star-anim3d-dev", "/star-people-dev", "/star-sprites-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev",

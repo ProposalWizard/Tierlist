@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ADMIN_PAGES, GROUPS as REG_GROUPS, SECTIONS, relatedFor } from "@/lib/adminRegistry";
+import { ADMIN_PAGES, GAMES, GROUPS as REG_GROUPS, gameForPath, gameOf, relatedFor, type AdminGameKey } from "@/lib/adminRegistry";
 import { setAdminMode, useAdminMode } from "@/lib/adminLook";
 
 /**
@@ -111,16 +111,18 @@ interface AdminLink {
 
 interface AdminGroup {
   label: string;
+  game: AdminGameKey;
   links: AdminLink[];
 }
 
 /* Every page comes from the one list (lib/adminRegistry.ts, Harry 18 Oct 2026).
- * "Site" also keeps the two everyday links that are not admin pages. */
+ * "Site" also keeps the two everyday links that are not admin pages. The menu
+ * shows one game at a time (Harry, 19 Oct 2026: the website's games "on a
+ * completely different tab" from Road to Ballon d'Or). */
 const EVERYDAY: AdminLink[] = [{ name: "Homepage", href: "/" }, { name: "Profile", href: "/profile" }];
 const GROUPS: AdminGroup[] = REG_GROUPS.map((g) => {
-  const sec = SECTIONS.find((x) => x.key === g.section)?.name;
   const links = ADMIN_PAGES.filter((p) => p.group === g.key).map((p) => ({ name: p.name, href: p.url }));
-  return { label: g.section === "rbd" ? `${sec} · ${g.name}` : g.name, links: g.key === "site" ? [...EVERYDAY, ...links] : links };
+  return { label: g.name, game: g.game, links: g.key === "site" ? [...EVERYDAY, ...links] : links };
 }).filter((g) => g.links.length);
 
 /** Longest matching href wins, so /admin/football/players doesn't also light up /admin. */
@@ -146,6 +148,10 @@ export default function AdminNavPanel() {
   // Off = no tab; the phone menu's "Admin & Dev tools" still opens it.
   const mode = useAdminMode();
   const related = relatedFor(pathname);
+  // The game shown: the page's own game until a game tab is pressed.
+  const [picked, setPicked] = useState<AdminGameKey | null>(null);
+  useEffect(() => { setPicked(null); }, [pathname]);
+  const game = picked ?? gameForPath(pathname);
   // The admin pages' own side menu already does this job there.
   const inShell = ["/admin/star", "/admin/team", "/admin/videos"].some((u) => pathname === u || pathname.startsWith(u + "/"));
   const showTab = mode && !inShell;
@@ -273,7 +279,24 @@ export default function AdminNavPanel() {
               ))}
             </div>
           )}
-          {GROUPS.map((group) => (
+          <div role="group" aria-label="Games" className="mx-3 mb-1 mt-2 flex flex-wrap gap-1">
+            {GAMES.map((g) => (
+              <button
+                key={g.key}
+                aria-pressed={g.key === game}
+                onClick={() => setPicked(g.key)}
+                className={`rounded-md px-2.5 py-1 text-[11px] font-black uppercase tracking-wide transition-colors ${
+                  g.key === game ? "bg-emerald-400 text-gray-950" : "bg-gray-900 text-gray-300 hover:text-white"
+                }`}
+              >
+                {g.short}
+              </button>
+            ))}
+          </div>
+          <Link href={gameOf(game)?.home ?? "/admin/star"} className="mx-4 mb-1 block text-[11px] font-bold text-emerald-300 hover:text-emerald-200">
+            {gameOf(game)?.name} home →
+          </Link>
+          {GROUPS.filter((group) => group.game === game).map((group) => (
             <div key={group.label} className="mb-2">
               <p className="mx-4 mb-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-gray-600">
                 {group.label}

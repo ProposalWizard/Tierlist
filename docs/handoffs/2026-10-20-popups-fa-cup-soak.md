@@ -1,7 +1,7 @@
 # Handoff — 20 Oct 2026 (Mikey): pop-ups, FA Cup, fixes, career soak
 
 Branch `Mikey`. Nothing merged to `main`: merge only when Mikey says push.
-Patch notes v0.19 (site 0.61): https://claude.ai/artifact/QsxGeWuEK6C7GwcCQJSD3r
+Patch notes v0.19 (site 0.63): https://claude.ai/artifact/QsxGeWuEK6C7GwcCQJSD3r
 
 ## Done this chat
 - **Mikey's new pop-ups** (Settings → Match, default Old): `components/star/MikeyPopup.tsx`,

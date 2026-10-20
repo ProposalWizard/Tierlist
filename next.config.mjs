@@ -29,8 +29,8 @@ const nextConfig = {
     outputFileTracingIncludes: {
       "/api/admin/patch-notes/page": ["./patch-notes/**/*"],
       "/api/admin/patch-notes/file/[...path]": ["./patch-notes/**/*"],
-      // The real-shots test page's data (/star-statsbomb-dev).
-      "/api/star/statsbomb-shots": ["./data/statsbomb/shots.json", "./data/statsbomb/leadins.json"],
+      // The real-moment test pages' data (Real moments, Real shots, Real Goals).
+      "/api/star/real-moments": ["./data/realmoments/*.json"],
     },
   },
   // face-api.js depends on node-fetch (which needs 'encoding') and

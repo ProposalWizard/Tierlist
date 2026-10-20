@@ -632,8 +632,8 @@ export interface Scenario {
    */
   keeperFeel?: boolean;
   /**
-   * REAL SHOTS TEST PAGE ONLY (/star-statsbomb-dev, lib/star/statsbombShots.ts).
-   * True = the keeper starts where the picture put him (a real StatsBomb
+   * REAL SHOTS TEST PAGES ONLY (/star-real-shots-dev, lib/star/realMoments).
+   * True = the keeper starts where the picture put him (a real, tracked
    * keeper) and does not walk to the brain's set spot while you aim. He still
    * reacts to the shot. Absent everywhere else, so the real game is unchanged.
    */
@@ -648,7 +648,17 @@ export interface Scenario {
    * save it (in real life none of them did). A shot off the line plays
    * exactly as normal. Absent everywhere else, so the real game is unchanged.
    */
-  realLane?: { x: number; z: number; tolX: number; tolZ: number };
+  realLane?: {
+    x: number; z: number; tolX: number; tolZ: number;
+    /**
+     * Leo, 19 Oct 2026: "if the shot is almost exactly like the real shot then
+     * it WILL go in no matter what". When set, the lane is a round one: the
+     * strike is in it when hypot(dx, dz × hw) <= r — the same distance the
+     * page's accuracy % is worked from, so a shot the page calls 70%+ like the
+     * real one is always in. Absent: the old box (tolX, tolZ).
+     */
+    r?: number; hw?: number;
+  };
   follower: Follower;
   goal: { x1: number; x2: number };
   crossbar: number;
@@ -7351,6 +7361,7 @@ export function inRealLane(ball: Ball, scenario: Scenario): boolean {
   if (!c) return false;
   const room = BALL_R + 0.06;
   if (c.x < scenario.goal.x1 + room || c.x > scenario.goal.x2 - room || c.z > scenario.crossbar - room) return false;
+  if (lane.r !== undefined) return Math.hypot(c.x - lane.x, (c.z - lane.z) * (lane.hw ?? 1)) <= lane.r;
   return Math.abs(c.x - lane.x) <= lane.tolX && Math.abs(c.z - lane.z) <= lane.tolZ;
 }
 

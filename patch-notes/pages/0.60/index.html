@@ -1,0 +1,242 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Knowitball Leo v0.18</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+  .sv{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:12px;margin:8px 0 4px}
+  .ph{max-width:320px;margin:10px auto 2px}
+  .calls li{padding:9px 0;border-bottom:1px solid var(--line)} .calls{list-style:none;padding:0;margin:0}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">LEO v0.18 · SITE 0.60 · 19 OCT 2026</span>
+  <h1>Real Goals 2: every goal, a game</h1>
+  <p class="sub">908 real goals, a build-up that follows the real camera, shots that copy the real one always go in, and a proper game-mode look. Still a test page; your career is unchanged.</p>
+</header>
+
+<div class="strip">
+  <div class="s"><b>250 → 908</b><span>real goals to play</span></div>
+  <div class="s"><b>109 / 109</b><span>strikes 70%+ like the real one that went in</span></div>
+  <div class="s"><b>7.3 → 3.2 m</b><span>men from where the real camera saw them</span></div>
+  <div class="s"><b>1,061 → 0</b><span>frames where the ball blinked</span></div>
+</div>
+
+<h2 class="chg"><i></i>CHECK THESE</h2>
+<ul class="ck">
+<li><div class="q">The new home screen</div><div class="a">Admin menu → Real Goals.</div></li>
+<li><div class="q">A whole tournament, round by round</div><div class="a">Home → World Cup 2022 → Matchday 1.</div></li>
+<li><div class="q">The goal card, then PLAY</div><div class="a">Tap any level on a map.</div></li>
+<li><div class="q">The build-up: does it look like the real goal?</div><div class="a">Try Mbappé v Argentina (World Cup 2022 → The final) or any Euro 2024 goal.</div></li>
+<li><div class="q">Copy the ghost: it should never be saved or blocked</div><div class="a">Any goal. 70%+ on the result = always a goal.</div></li>
+<li><div class="q">Legends and Club worldies</div><div class="a">Home → Legends (Maradona, Bale, Dele Alli…) and Club worldies.</div></li>
+<li><div class="q">Search</div><div class="a">Home → 🔎. Try "Pavard", "Schick", "Messi".</div></li>
+</ul>
+
+<h2 class="add"><i></i>1 · EVERY GOAL, AND MORE</h2>
+<div class="dt"><b>Problem:</b> only 250 goals, and only 50 of them on the level map. Penalties were left out. <b>Why:</b> the first version only took open-play goals from two tournaments. <b>Fix:</b> every goal of six tournaments (own goals are the only ones left out), plus famous goals and the best club goals in StatsBomb's free data.</div>
+<div class="bars">
+<div class="bar"><span class="lb">WC 2022</span><div class="track"><div class="fill now" style="width:100%"></div></div><span class="vv">169 <s>of 172</s></span></div>
+<div class="bar"><span class="lb">Euro 2024</span><div class="track"><div class="fill now" style="width:63%"></div></div><span class="vv">107 <s>of 117</s></span></div>
+<div class="bar"><span class="lb">WC 2018</span><div class="track"><div class="fill now" style="width:93%"></div></div><span class="vv">157 · new</span></div>
+<div class="bar"><span class="lb">Euro 2020</span><div class="track"><div class="fill now" style="width:78%"></div></div><span class="vv">131 · new</span></div>
+<div class="bar"><span class="lb">Copa 2024</span><div class="track"><div class="fill now" style="width:41%"></div></div><span class="vv">69 · new</span></div>
+<div class="bar"><span class="lb">AFCON 2023</span><div class="track"><div class="fill now" style="width:68%"></div></div><span class="vv">115 · new</span></div>
+<div class="bar"><span class="lb">Legends</span><div class="track"><div class="fill now" style="width:36%"></div></div><span class="vv">60 · new</span></div>
+<div class="bar"><span class="lb">Worldies</span><div class="track"><div class="fill now" style="width:59%"></div></div><span class="vv">100 · new</span></div>
+</div>
+<div class="dt">"of 172": the rest are own goals. <b>Legends</b> are famous goals that are in the free data: Maradona v England 1986, Carlos Alberto in the 1970 final, Bale's overhead kick, Gerrard in Istanbul, Dele Alli v Palace, Messi's chip v Betis and more. <b>Club worldies</b> are the data's own best: the hardest, longest and most special goals of every club season it has.</div>
+<figure class="ph"><img src="img/home.png" alt="home"><figcaption>The new home screen: each collection is a tile with its stars.</figcaption></figure>
+<details><summary>What the free data doesn't have</summary>
+<p>The 2026 World Cup is not in it. Club football is only some seasons: the 2015/16 big-five leagues, Barcelona's La Liga 2004–2021, Arsenal 2003/04, Champions League finals 2004–2019, PSG 2021–23, Leverkusen 2023/24, and a few classic World Cup matches.</p>
+<p>So "the 100 most iconic goals" is the famous ones that are in it (60) plus the 100 best by the numbers. Famous goals from other seasons (Rooney's overhead kick, Van Persie v Australia…) are not in the data.</p>
+</details>
+
+<h2 class="fix"><i></i>2 · COPY THE REAL SHOT AND IT GOES IN</h2>
+<div class="dt"><b>Problem:</b> a shot that looked like the real one could still be saved or blocked. <b>Why:</b> the "unstoppable" rule was a box (60 cm across, 55 cm up), while the % on the result is worked out from the distance in any direction. So a shot shown as 77% could fall outside the box. <b>Fix:</b> one measure for both. A strike heading 70%+ like the real one, worked out the moment you hit it, cannot be blocked or saved.</div>
+<div class="sv"><svg viewBox="0 0 340 150" width="100%" style="display:block" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<rect x="20" y="20" width="300" height="120" fill="none" stroke="var(--ink)" stroke-width="4"/>
+<line x1="0" y1="140" x2="340" y2="140" stroke="var(--ink3)" stroke-width="2"/>
+<rect x="196" y="38" width="72" height="66" fill="var(--amber)" opacity=".25" stroke="var(--amber)" stroke-dasharray="4 3"/>
+<ellipse cx="232" cy="71" rx="40" ry="50" fill="var(--green)" opacity=".25" stroke="var(--green)" stroke-width="2"/>
+<circle cx="232" cy="71" r="6" fill="#fcd34d"/>
+<circle cx="232" cy="113" r="5" fill="var(--blue)"/>
+<text x="40" y="58" font-size="12" font-weight="800" fill="var(--amber)">old: a box</text>
+<text x="40" y="76" font-size="12" font-weight="800" fill="var(--green)">now: the 70% line</text>
+<text x="40" y="94" font-size="11.5" fill="var(--ink2)">blue: 77% like the real one,</text>
+<text x="40" y="110" font-size="11.5" fill="var(--ink2)">outside the old box</text>
+</svg><div style="font-size:12px;color:var(--ink3);margin-top:6px">The goal from the front, to scale: the 70% line reaches 67 cm across and 84 cm up and down (height counts a little less).</div></div>
+<div class="bars">
+<div class="bar"><span class="lb">70%+ strikes</span><div class="track"><div class="fill now" style="width:100%"></div></div><span class="vv">109 / 109 goals</span></div>
+</div>
+<figure class="ph"><img src="img/result.png" alt="result"><figcaption>The new result sheet: GOAL! or what stopped it, the % dial, stars, and where the real one went (gold) against yours (blue). Here a test bot's weak shot at Schick's 50-metre lob.</figcaption></figure>
+<details><summary>How it was measured</summary>
+<p>24 real goals from every collection, each struck at the real spot and at 4 spots 25–75 cm off it, against the real defenders and keeper. Every strike that crossed 70%+ like the real one scored (109 of 109). Under 50%, it plays as normal.</p>
+<p>This needed a small change to the match engine: an option the real match never turns on. Real matches are byte-for-byte the same with it off (the same 80-strike fingerprint as before).</p>
+</details>
+
+<h2 class="fix"><i></i>3 · THE BUILD-UP FOLLOWS THE REAL CAMERA</h2>
+<div class="dt"><b>Problem:</b> the build-up didn't look like the real goal, and players glitched and teleported. <b>Why:</b> each man walked one straight line from one guess to his spot at the shot; passers were snapped onto the ball; the shooter was dragged behind every pass; extra passers vanished when your shot began. <b>Fix:</b> every man now follows StatsBomb's 360 camera, about 10 times in 12 seconds: where it really saw him. The ball goes through every real touch at its real time, and nobody snaps or jumps.</div>
+<div class="bars">
+<div class="bar"><span class="lb">Men off real</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:44%"></div></div><span class="vv"><s>7.3 m</s> 3.2 m</span></div>
+<div class="bar"><span class="lb">Ball blinks</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:0.5%"></div></div><span class="vv"><s>1,061</s> 0</span></div>
+<div class="bar"><span class="lb">Snap at shot</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:3%"></div></div><span class="vv"><s>234</s> 6 goals</span></div>
+<div class="bar"><span class="lb">Too-fast men</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now warn" style="width:27%"></div></div><span class="vv"><s>2,911</s> 793 frames</span></div>
+</div>
+<div class="dt">The 793 "too-fast" frames are real sprints, 12–16 m/s at their peak. Only 30 frames across all 754 build-ups go over 16 m/s.</div>
+<figure class="ph"><img src="img/buildup.png" alt="build-up"><figcaption>The 2022 final, 81': "Rabiot → Mbappé". Mbappé runs onto the pass, with Thuram, Otamendi and Romero where the real camera had them.</figcaption></figure>
+<details><summary>Which goals have the real camera</summary>
+<p>World Cup 2022, Euro 2024 and Euro 2020 (405 goals) have StatsBomb's 360 camera, so you see the real men. World Cup 2018, Copa América 2024, AFCON 2023 and most Legends/worldies don't. There the ball still plays every real touch, but the men move with their team's shape. The tiles and goal cards say REAL TRACKING when a goal has it.</p>
+<p>How the men are matched: the camera frames have no names, so each man is matched frame by frame backwards from the shot, where everyone is named. He matches the nearest man on his side that he could have run from.</p>
+</details>
+
+<h2 class="add"><i></i>4 · A GAME, NOT A TEST PAGE</h2>
+<div class="dt">Each tournament is played in its real rounds: Matchday 1, 2, 3, then Round of 16 through The final. Goals come in the order they were scored. Legends and worldies are grouped by where they were scored. A round opens when you have starred half the goals of the round before. Every goal still has 1–3 stars, and the goal card tells you who you are, the score and minute, and how hard it is.</div>
+<div class="shots"><figure><img src="img/legends.png" alt="legends map"><figcaption>Legends, chapter 1: World Cup classics. The glowing one is next.</figcaption></figure>
+<figure><img src="img/card.png" alt="goal card"><figcaption>The goal card: "You are Florian Wirtz", the real scoreboard, then PLAY.</figcaption></figure></div>
+<figure class="ph"><img src="img/aim.png" alt="aim"><figcaption>Your shot: the real scoreboard on top, the ghost into the corner, and Ghost · Build-up · 2D/3D · Restart at the bottom.</figcaption></figure>
+
+<h2 class="add"><i></i>5 · REAL SHIRTS FOR EVERY TEAM</h2>
+<div class="dt">All 160 teams in the 908 goals wear their real colours, clubs too. No two shirts look alike in any goal.</div>
+
+<h2 class="bug"><i></i>KNOWN ISSUES</h2>
+<ul class="n">
+<li><div class="hd">Not played by a finger yet</div><div class="dt">The lane was measured by a test harness. The result-screen still came from a test bot's shot.</div></li>
+<li><div class="hd">3D not checked this round</div><div class="dt">The 2D/3D and camera buttons are on the play screen but were not seen in 3D. The ghost is drawn in 2D only.</div></li>
+<li><div class="hd">No real camera for some collections</div><div class="dt">World Cup 2018, Copa América, AFCON and the club classics: the men move with their team's shape, not the real camera. StatsBomb lists AFCON as tracked, but the files are not public.</div></li>
+<li><div class="hd">A few odd short names</div><div class="dt">Some Korean names show the wrong half (for example "Kyu-Sung").</div></li>
+<li><div class="hd">Test only</div><div class="dt">The StatsBomb data's licence doesn't cover a paid game, so Real Goals stays a test page.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>YOUR CALLS</h2>
+<ul class="calls">
+<li><b>Rounds open with half the goals starred.</b> Right, or should everything be open?</li>
+<li><b>70% = can't be stopped.</b> Too generous, or right?</li>
+<li><b>Shooter's skill:</b> fixed at elite, or the real scorer's own rating?</li>
+<li><b>Show your player on the shot</b>, with his name over his head?</li>
+<li><b>Merge:</b> say "merge" and this goes onto main (the test page only).</li>
+</ul>
+
+<details><summary>Previous versions</summary>
+<p><b>Leo v0.17 — 18 Oct 2026 — Real Goals and the effects lab.</b> 50 goals on a level map, a search of 250, the real move, the ghost, the accuracy %, the real lane (32% → 100% on the real line). Visual Effects Lab: 13 moments, 123 effects. Still open: 3D not seen; the ghost is straight for curled shots.</p>
+<p><b>Leo v0.16 — 14 Oct 2026 — Updates tab, Henry finish, hitboxes, sound lab.</b></p>
+<p><b>Leo v0.15 — 12 Oct 2026 — the gameplay round.</b></p>
+</details>
+
+<footer>Leo v0.18 · Data: StatsBomb open data (https://github.com/statsbomb/open-data) · test page only.</footer>
+</div>

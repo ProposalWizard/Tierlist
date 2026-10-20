@@ -35,9 +35,10 @@ import {
 import { applyOverride, cloneOverride, type PosOverride } from "@/lib/star/scenarioEdit";
 import { penaltyDragSpot } from "@/lib/star/kindRules/penalty";
 import { switchOn } from "@/lib/star/compareSwitches";
+import { tiltFor, tiltCss, screenToCanvas } from "@/lib/star/cameraTilt";
 
 export default function EditableFrame({
-  editKey, baseFrame, override, marks, onCommit, edited, selectedId, onSelect, onSwipe, fit, size, kits,
+  editKey, baseFrame, override, marks, onCommit, edited, selectedId, onSelect, onSwipe, fit, size, kits, tilt = 0, matchCamera = false,
 }: {
   /** Which picture this is, handed straight back on commit. */
   editKey: string;
@@ -60,8 +61,19 @@ export default function EditableFrame({
   /** The kits Play will wear (see `useTestKits`), so pressing Play changes
    *  no colours. Absent: the diagram's blue against red. */
   kits?: FrameKits | null;
+  /**
+   * Full highlights rebuild: On — tip the picture back by the match's camera
+   * angle (degrees), exactly as CanvasMatch tips its canvas (cameraTilt.ts),
+   * and read the pointer through the same inverse. 0 (the default): flat,
+   * exactly as before.
+   */
+  tilt?: number;
+  /** Full highlights rebuild: On — the base frame carries the match's
+   *  camera; keep it whatever an edit (or a penalty's rules) says. */
+  matchCamera?: boolean;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
+  const boxRef = useRef<HTMLDivElement | null>(null);
   const workingRef = useRef<PosOverride | null>(null);
   const dragRef = useRef<{ target: "ball" | string; offX: number; offY: number } | null>(null);
   /** Where a press that grabbed NOTHING started, so it can become a swipe. */
@@ -70,7 +82,10 @@ export default function EditableFrame({
   const { cssW, cssH } = frameCssSize(baseFrame, size);
 
   const effectiveOverride = (): PosOverride | undefined => workingRef.current ?? override;
-  const currentFrame = (): Frame => applyOverride(baseFrame, effectiveOverride());
+  const currentFrame = (): Frame => {
+    const f = applyOverride(baseFrame, effectiveOverride());
+    return matchCamera ? { ...f, camera: baseFrame.camera, facing: baseFrame.facing, sizes: baseFrame.sizes } : f;
+  };
   const repaint = (live: boolean): void => {
     if (!ref.current) return;
     const frame = currentFrame();
@@ -81,6 +96,19 @@ export default function EditableFrame({
     // the instant the drag commits. The selection ring stays — it is the thing
     // under your finger.
     paintMarked(ref.current, frame, live ? ring : [...marks, ...ring], size, kits ?? undefined);
+    if ((tilt > 0 || matchCamera) && ref.current) {
+      // Tipped back inside a clipping box the picture's own size, as the
+      // match's canvas sits in its pitch box.
+      const c = ref.current, box = boxRef.current;
+      const r = box?.getBoundingClientRect();
+      const w = r && r.width > 0 ? r.width : cssW, h = r && r.height > 0 ? r.height : cssH;
+      c.style.boxSizing = "border-box";
+      c.style.width = "100%";
+      c.style.height = "100%";
+      c.style.transform = tiltCss(tiltFor(tilt, w, h));
+      return;
+    }
+    if (ref.current) ref.current.style.transform = "";
     if (fit && ref.current) {
       ref.current.style.maxWidth = "100%";
       ref.current.style.height = "auto";
@@ -90,12 +118,21 @@ export default function EditableFrame({
   useEffect(() => {
     repaint(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editKey, baseFrame, override, marks, selectedId, fit, kits]);
+  }, [editKey, baseFrame, override, marks, selectedId, fit, kits, tilt, matchCamera]);
 
   // The exact inverse of the picture's own camera, quarter turn and all — a
   // corner is drawn turned like the match draws it, so a drag across the
   // screen there is a drag along pitch Y (scenarioFrame.ts's `frameScreen`).
   function pointerToWorld(e: React.PointerEvent<HTMLCanvasElement>): Vec2 {
+    if ((tilt > 0 || matchCamera) && boxRef.current) {
+      // The tipped picture: the box's own pixels back through the tilt's
+      // exact inverse (screenToCanvas), as CanvasMatch's pitchFromPointer.
+      const rect = boxRef.current.getBoundingClientRect();
+      const X = (e.clientX - rect.left) * (cssW / (rect.width || cssW));
+      const Y = (e.clientY - rect.top) * (cssH / (rect.height || cssH));
+      const f = screenToCanvas(tiltFor(tilt, cssW, cssH), X, Y, cssW, cssH);
+      return frameScreen(currentFrame(), cssW, cssH).toWorld(f.sx * cssW, f.sy * cssH);
+    }
     const rect = ref.current!.getBoundingClientRect();
     const cx = (e.clientX - rect.left) * (cssW / (rect.width || cssW));
     const cy = (e.clientY - rect.top) * (cssH / (rect.height || cssH));
@@ -212,7 +249,7 @@ export default function EditableFrame({
     if (wk) onCommit(editKey, wk);
   }
 
-  return (
+  const canvasEl = (
     <canvas
       ref={ref}
       onPointerDown={onPointerDown}
@@ -230,4 +267,19 @@ export default function EditableFrame({
       }}
     />
   );
+  if (tilt > 0 || matchCamera) {
+    return (
+      <div
+        ref={boxRef}
+        data-still-tilt={tilt}
+        style={{
+          position: "relative", overflow: "hidden", margin: "0 auto", borderRadius: 20,
+          width: cssW, maxWidth: "100%", aspectRatio: `${cssW} / ${cssH}`, background: "#14532d",
+        }}
+      >
+        {canvasEl}
+      </div>
+    );
+  }
+  return canvasEl;
 }

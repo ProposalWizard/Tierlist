@@ -7,7 +7,7 @@
  */
 import Link from "next/link";
 import AdminShell from "@/components/admin/shell/AdminShell";
-import { GROUPS, isTestPage, visibleTo, type AdminGroup, type AdminOwner, type AdminPage } from "@/lib/adminRegistry";
+import { GROUPS, gameOf, groupIcon, groupsOf, isTestPage, visibleTo, type AdminGroup, type AdminOwner, type AdminPage } from "@/lib/adminRegistry";
 import { ADMIN_PREVIEW } from "@/lib/adminPreviews";
 import { TAGLINE } from "../../AdminHome";
 import "../../adminHome.css";
@@ -21,12 +21,14 @@ const WRITE_TAG: Record<string, { text: string; tone: string; help: string } | u
 export default function GroupPage({ group, role }: { group: AdminGroup; role: "admin" | "tester" }) {
   const g = GROUPS.find((x) => x.key === group)!;
   const pages = visibleTo(role).filter((p) => p.group === group && p.url !== "/admin/star");
-  const others = GROUPS.filter((x) => x.key !== group && visibleTo(role).some((p) => p.group === x.key));
+  // Only this game's other groups (Harry, 19 Oct 2026: a game's tab never shows another game's pages).
+  const others = groupsOf(g.game).filter((x) => x.key !== group && visibleTo(role).some((p) => p.group === x.key));
+  const home = gameOf(g.game)?.home ?? "/admin/star";
   return (
-    <AdminShell tab="home" role={role}>
+    <AdminShell tab="home" role={role} game={g.game} group={group}>
       <div className="agp" data-g={group}>
         <div className="agp-head">
-          <Link href="/admin/star" className="agp-back" aria-label="Back to all groups" title="All groups">←</Link>
+          <Link href={home} className="agp-back" aria-label="Back to all groups" title="All groups">←</Link>
           <div className="agp-banner">
             <h1>{g.name}</h1>
             <span>{TAGLINE[group]} · {pages.length} page{pages.length === 1 ? "" : "s"}</span>
@@ -55,7 +57,7 @@ function Card({ p, group }: { p: AdminPage; group: AdminGroup }) {
   return (
     <Link href={p.url} className="agp-card" title={`${p.name}: ${p.purpose}`}>
       <span className="agp-pic">
-        {pic ? <img src={pic} alt="" loading="lazy" /> : <img src={`/admin/icons/${group === "old" ? "site" : group}.webp`} alt="" className="agp-icon" />}
+        {pic ? <img src={pic} alt="" loading="lazy" /> : <img src={groupIcon(group)} alt="" className="agp-icon" />}
       </span>
       <span className="agp-body">
         <b>{p.name}</b>

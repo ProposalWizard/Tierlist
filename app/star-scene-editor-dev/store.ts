@@ -5,14 +5,55 @@
  * star_cutscene_edits table via /api/star/cutscene-edits (admin write; until
  * the migration runs the route says migrationMissing and edits stay local).
  * The game's own cut scenes do NOT read these yet.
+ *
+ * Script ids: a director scene saves under its fixture id ("goal", "trophy" …),
+ * except "Contract signing", which saves under "director:signing" — the 3D
+ * Signing place owns "signing" (and the Manager's Office "office"). A place's
+ * saves carry `place`, so an older director save under "signing" (no `place`)
+ * is still read back by "Contract signing".
  */
 import type { DirectorEdit } from "@/lib/star/cutscene/director";
+import type { SigningSceneEdit } from "@/lib/star/signing3dScene";
 import type { MoodId, Vec3 } from "@/lib/star/cutscene/types";
 
 export interface SavedEdits {
   shots?: NonNullable<DirectorEdit["shots"]>;
   free?: Record<number, { pos: Vec3; look: Vec3 }>;
   scene?: { mood?: MoodId; exposure?: number; keyLight?: number; keyAngle?: number; keyColor?: string; spot?: { actor: string; intensity: number } | null };
+}
+
+/** A 3D place's saves (Signing, Office): per fixed shot camera + lens, the key light, the exposure. */
+export interface PlaceSaved {
+  place: "signing" | "office";
+  shots?: NonNullable<SigningSceneEdit["shots"]>;
+  scene?: { exposure?: number; keyLight?: number; keyAngle?: number; keyColor?: string };
+}
+export const emptyPlace = (place: PlaceSaved["place"]): PlaceSaved => ({ place, shots: {}, scene: {} });
+
+/** The save id of a director scene (see the note above). */
+export const directorId = (fixture: string) => (fixture === "signing" ? "director:signing" : fixture);
+const isPlace = (v: unknown) => !!v && typeof v === "object" && "place" in (v as object);
+/** A director scene's saves on this device (falling back to an older save under the bare id). */
+export function loadDirectorLocal(fixture: string): SavedEdits | null {
+  const id = directorId(fixture);
+  const v = loadLocal(id);
+  if (v || id === fixture) return v;
+  const old = loadLocal(fixture);
+  return old && !isPlace(old) ? old : null;
+}
+/** A director scene's shared copy (same fallback). */
+export function sharedDirector(edits: Record<string, unknown>, fixture: string): SavedEdits | undefined {
+  const id = directorId(fixture);
+  const v = edits[id] ?? (id !== fixture && !isPlace(edits[fixture]) ? edits[fixture] : undefined);
+  return v as SavedEdits | undefined;
+}
+export function loadPlaceLocal(place: PlaceSaved["place"]): PlaceSaved | null {
+  const v = loadLocal(place) as unknown;
+  return isPlace(v) ? (v as PlaceSaved) : null;
+}
+export function sharedPlace(edits: Record<string, unknown>, place: PlaceSaved["place"]): PlaceSaved | undefined {
+  const v = edits[place];
+  return isPlace(v) ? (v as PlaceSaved) : undefined;
 }
 
 const KEY = (id: string) => `star-scene-editor:${id}`;
@@ -27,19 +68,19 @@ export function loadLocal(id: string): SavedEdits | null {
   } catch { return null; }
 }
 
-export function saveLocal(id: string, e: SavedEdits): boolean {
+export function saveLocal(id: string, e: SavedEdits | PlaceSaved): boolean {
   try { localStorage.setItem(KEY(id), JSON.stringify(e)); return true; } catch { return false; }
 }
 
-export async function fetchShared(): Promise<{ missing: boolean; edits: Record<string, SavedEdits> }> {
+export async function fetchShared(): Promise<{ missing: boolean; edits: Record<string, unknown> }> {
   try {
     const r = await fetch("/api/star/cutscene-edits", { cache: "no-store" });
     const j = await r.json();
-    return { missing: !!j.migrationMissing, edits: (j.edits ?? {}) as Record<string, SavedEdits> };
+    return { missing: !!j.migrationMissing, edits: (j.edits ?? {}) as Record<string, unknown> };
   } catch { return { missing: false, edits: {} }; }
 }
 
-export async function pushShared(id: string, e: SavedEdits): Promise<{ ok: boolean; missing?: boolean; error?: string }> {
+export async function pushShared(id: string, e: SavedEdits | PlaceSaved): Promise<{ ok: boolean; missing?: boolean; error?: string }> {
   try {
     const r = await fetch("/api/star/cutscene-edits", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ scriptId: id, edits: e }) });
     const j = await r.json().catch(() => ({}));

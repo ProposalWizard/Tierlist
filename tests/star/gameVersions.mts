@@ -50,8 +50,9 @@ for (const gone of ["cutscenePeople", "cutsceneCamera", "chances", "animations",
 check(!/cutscenePeople|cutsceneCamera/.test(settings), "Settings still has a cut-scene row");
 
 // 3.
-const expected = ["keepers", "keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "shotPower", "contactField", "keeperFeel", "mateShots", "hitboxes", "keeperFinish", "matchRadar", "matchFeel", "mikeyPopups", "ui"]; // + the Oct 13 gameplay update (Old by default); hitboxes (Leo, 14 Oct, New) + Keeper realism (Leo, round 16, New)
+const expected = ["keepers", "keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "shotPower", "contactField", "keeperFeel", "mateShots", "hitboxes", "keeperFinish", "matchRadar", "matchFeel", "mikeyPopups", "fhr", "ui"]; // + the Oct 13 gameplay update (Old by default); hitboxes (Leo, 14 Oct, New) + Keeper realism (Leo, round 16, New)
 // Match feel (Leo, 13 Oct 2026): a testing row, Old by default.
+check(LOOK_ROWS.fhr.standard === "off", "Full highlights rebuild must default to Off");
 check(LOOK_ROWS.matchFeel.standard === "old", "Match feel must default to Old while tested");
 // Mikey's new pop-ups (Mikey, 20 Oct 2026): asked for as a toggle by name, Old by default.
 check(LOOK_ROWS.mikeyPopups.standard === "old", "Mikey's new pop-ups must default to Old");
