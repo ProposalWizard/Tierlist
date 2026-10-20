@@ -27,6 +27,214 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.92",
+      "title": "Harry's patch notes: Motion References Page",
+      "publishedAt": "2026-10-20T18:50:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Motion references page, 20 Oct. /admin/motion-refs (Players + animation, admins only) has 27 clips of real-looking people doing our cut-scene moments, with three tabs: HQ (base standard) 18, First round 9, All 27. The five base-standard scenes come first. Each card has a real-person clip (loops, pause, half speed), a still of our game, and an \"Ours\" slot that plays public/admin/motion-refs/ours/<scene>.mp4 once it exists; it is empty now and fills as the movement rebuild lands. The clips are Higgsfield references; no more Higgsfield use for now. The 18 HQ clips were re-encoded from 10-bit HEVC to H.264 (originals untouched), about 21 MB added. The first-round handshake is left out (a dark mark on the shirt that looks like a brand logo). Seen at 390 and 1440 px. No clip was seen playing: this Chromium has no H.264.",
+      "stats": [
+        {
+          "value": "27",
+          "label": "clips: 18 HQ and 9 first round"
+        },
+        {
+          "value": "5",
+          "label": "base-standard scenes, shown first"
+        },
+        {
+          "value": "~21 MB",
+          "label": "added to the site files"
+        },
+        {
+          "value": "0",
+          "label": "clips seen playing (no H.264 in the test browser)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Open it",
+              "detail": "/admin/motion-refs, under Players + animation. Admins only."
+            },
+            {
+              "title": "The tabs",
+              "detail": "HQ (base standard) 18, First round 9, All 27."
+            },
+            {
+              "title": "Play a clip",
+              "detail": "It should loop with no sound. Tap it to pause. Try ½× speed."
+            },
+            {
+              "title": "The Ours slot",
+              "detail": "It is empty. It says \"Our clip shows here when it is made.\""
+            },
+            {
+              "title": "On a phone",
+              "detail": "The three slots stack. Scroll down one card."
+            },
+            {
+              "title": "The first-round handshake",
+              "detail": "It is not on the page, on purpose."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "A page of motion references",
+              "detail": "/admin/motion-refs under Players + animation, admins only. Three tabs: HQ (base standard) 18, First round 9, All 27. The five base-standard scenes come first. The page says: 27 clips of real-looking people doing our cut-scene moments; compare them with our own movement."
+            },
+            {
+              "title": "Each card has three slots",
+              "detail": "Real person (the clip: loops, plays while you can see it, no sound, tap to pause, a Pause button and a ½× speed button), Our game (a still of our game) and Ours (empty for now; plays public/admin/motion-refs/ours/<scene>.mp4 once that file exists). The Ours slot fills as the movement rebuild lands."
+            },
+            {
+              "title": "The clips are Higgsfield references",
+              "detail": "Made on Higgsfield from stills of our game (HQ round: Nano Banana Pro 4K picture, then Seedance 2.5 video). They are references to compare with, not game files. No more Higgsfield use for now."
+            },
+            {
+              "title": "The base-standard scenes first",
+              "detail": "Five scenes are marked BASE STANDARD and sit at the top of the HQ tab. Four are in the pictures: Handshake (signing), Trophy lift, Goal celebration, Walk-out. The fifth is not in a picture."
+            },
+            {
+              "title": "The clips were re-encoded, and one was left out",
+              "detail": "The 18 HQ clips were re-encoded from 10-bit HEVC to H.264. The originals are untouched. About 21 MB was added. That browsers play H.264 better is reasoned. The first-round handshake is left out: it shows a small dark mark on the shirt that looks like a brand logo."
+            },
+            {
+              "title": "The list of clips is one file",
+              "detail": "lib/motionRefs.ts. That a new clip is a new line in it is reasoned."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "No clip was seen playing",
+              "detail": "This Chromium has no H.264, so the pictures show each clip's still, not the video. Open the page in Chrome or Safari and press play on a card."
+            },
+            {
+              "title": "The other two tabs were not looked at",
+              "detail": "The pictures show the HQ tab only. Look at First round 9 and All 27."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.91",
+      "title": "Harry's patch notes: Live Share (Test)",
+      "publishedAt": "2026-10-20T18:50:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Live share (test), 20 Oct. Admin → Videos → \"Live share (test)\" (admins only): Start, pick a screen, window or tab, and you get a 6-letter code with Copy for Claude, Copy link and Watch it. The page sends one picture a second (720 px, only when the screen changed) and your speech as text to Storage, with no SQL. Claude runs npx tsx scripts/live-watch.mts <code> and gets SAID and SCREEN lines every 2 s. Stop, the browser's Stop sharing or 30 minutes ends it; Delete removes every picture and line. Measured here: picture 1.2 to 2.5 s, speech 0.5 to 2.5 s to the watcher. Seen in headless Chromium with a fake screen and fake speech. Not seen: real Supabase writes, real voice, Safari, a background tab, the full build.",
+      "stats": [
+        {
+          "value": "1 a second",
+          "label": "pictures sent, 720 px, only when the screen changed"
+        },
+        {
+          "value": "1.2 to 2.5 s",
+          "label": "picture to the watcher (measured here)"
+        },
+        {
+          "value": "0.5 to 2.5 s",
+          "label": "speech to the watcher (measured here)"
+        },
+        {
+          "value": "30 min",
+          "label": "a share ends by itself; the newest 300 pictures are kept"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Find it",
+              "detail": "Admin → Videos → Live share (test). Admins only. Use a computer browser."
+            },
+            {
+              "title": "Start",
+              "detail": "Press Start live share. Pick a screen, window or tab. Voice is on."
+            },
+            {
+              "title": "Copy for Claude",
+              "detail": "Paste the line into a Claude chat. It has your 6-letter code."
+            },
+            {
+              "title": "Talk",
+              "detail": "Go to the game and say what you see. Claude answers in its chat."
+            },
+            {
+              "title": "Type instead",
+              "detail": "No voice? Type in the box and press Send."
+            },
+            {
+              "title": "Stop",
+              "detail": "Press Stop, or the browser's Stop sharing. It also ends at 30 minutes."
+            },
+            {
+              "title": "Delete",
+              "detail": "Press Delete. Every picture and line is removed."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Live share (test): show Claude a screen and talk",
+              "detail": "A new card on Admin → Videos, admins only. Start live share, pick what to share, Voice on by default. You get a 6-letter code with Copy for Claude (a line to paste into a Claude chat), Copy link (/admin/videos/live/<code>) and Watch it."
+            },
+            {
+              "title": "Claude watches it from a terminal",
+              "detail": "Claude runs npx tsx scripts/live-watch.mts <code> in the background. Every 2 s it prints SAID lines (what you said, with the picture on screen then), SCREEN lines on a new or part-changed screen (a small change at most every 30 s), the newest picture as latest.jpg, and ENDED."
+            },
+            {
+              "title": "A picture a second, and your voice as text",
+              "detail": "One picture a second, 720 px, only when the screen changed (colour compare), plus your speech as text. A typing box is there for where there is no voice. Pictures and lines go to Storage tierlist-images/live/<code>/ through an admin route with the service key. The newest 300 are kept. No SQL. Measured here: picture 1.2 to 2.5 s, speech 0.5 to 2.5 s to the watcher, plus Claude's reply."
+            },
+            {
+              "title": "Stop, then Delete",
+              "detail": "It ends on Stop, on the browser's own Stop sharing, or after 30 minutes. Delete removes every picture and line. In the test: 24 pictures, 3 lines, then deleted."
+            },
+            {
+              "title": "Who can see it",
+              "detail": "The link is not listed anywhere, but anyone with the code can see the pictures while it runs. The card says: don't share private things."
+            },
+            {
+              "title": "Which browsers work",
+              "detail": "Reasoned (the builder's note, not tried on each): Chrome and Edge give pictures and voice, Firefox pictures only. Android browsers cannot share the screen. iPhone Safari is reported to work from iOS 27 (not tried)."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Real storage and real voice were not seen",
+              "detail": "The test used a fake screen and fake speech in headless Chromium. No real Supabase write, no real voice, no Safari and no background tab."
+            },
+            {
+              "title": "The full build did not finish here",
+              "detail": "The full npm run build was killed for memory 3 times. tsc on its own passes. Run the full build on a bigger machine before this goes to main."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.90",
       "title": "Harry's patch notes: Team Jobs And Notifications",
       "publishedAt": "2026-10-20T17:40:00Z",
