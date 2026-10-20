@@ -226,6 +226,24 @@ export function shouldUpgradeSquad(squad: SquadPlayer[]): boolean {
 }
 
 /**
+ * What an existing save's squad becomes when the real one is fetched on load.
+ *
+ * Mikey, 20 Oct 2026: a whole National League season ended with him on 40
+ * goals and 43 assists and his team-mates on 5 and 2 between four players.
+ * His club has no real players, so `shouldUpgradeSquad` stayed true for ever
+ * and every time the game was opened the fetch came back with the invented
+ * squad again (`buildSquadFromRoster([])` → `generateSquad`): the same men,
+ * every tally back at nought. Each reload wiped the season's team-mate goals.
+ *
+ * Now: no real players came back → keep the save's own squad (null). Real
+ * players came back → take them, and keep the tally of anyone already there.
+ */
+export function squadAfterFetch(current: SquadPlayer[], fetched: SquadPlayer[]): SquadPlayer[] | null {
+  if (!fetched.some(p => p.sofifaId)) return null;
+  return mergeSquadStats(fetched, current);
+}
+
+/**
  * Go and get it.
  *
  * Never throws and never rejects: a career is created from whatever comes back,
