@@ -18,6 +18,7 @@ import IdeasBoard from "@/components/teamRoom/IdeasBoard";
 import ChatPage from "@/components/teamRoom/ChatPage";
 import { NoteCount, NotesThread, RoomGate, TodoList } from "@/components/teamRoom/parts";
 import { newGivenTasks, unreadChat, unreadNotes } from "@/lib/teamRoom/logic";
+import { newPushedJobs } from "@/lib/teamRoom/jobs";
 import { useTeamRoom } from "@/lib/teamRoom/store";
 import { isTeamPerson, TEAM_ROOM, type TeamPerson as TeamPersonName } from "@/lib/teamRoom/config";
 import { patchUnread, waitingOnMe, type PatchMeta } from "@/lib/teamRoom/extras";
@@ -100,7 +101,7 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
     team: unreadNotes(room.notes, room.me, room.read.pushNotes, "push"),
     ideas: unreadNotes(room.notes, room.me, room.read.notes, "idea"),
     chat: (tab === "chat" ? 0 : unreadChat(room.messages, room.me, room.read.chat)) + waiting,
-    todo: tab === "todo" ? 0 : newGivenTasks(room.tasks, room.me, room.read.tasks),
+    todo: tab === "todo" ? 0 : newGivenTasks(room.tasks, room.me, room.read.tasks) + newPushedJobs(room.jobs, room.tasks, room.me, room.seenJobs),
     notes: room.me ? toRead(room.me) + unreadNotes(room.notes, room.me, room.read.patchNotes, "patch") : 0,
   };
   const title = ROOM.find((r) => r.key === tab)?.title ?? "Team";

@@ -31,6 +31,7 @@ import { ADMIN_PAGES } from "@/lib/adminRegistry";
 import { useAdminLook } from "@/lib/adminLook";
 import { TEAM_ROOM } from "@/lib/teamRoom/config";
 import { BUBBLE_CLEAR, BUBBLE_EDGE as EDGE, BUBBLE_SIZE as SIZE, bubbleBottom, bubbleOn, newGivenTasks, unreadChat } from "@/lib/teamRoom/logic";
+import { newPushedJobs } from "@/lib/teamRoom/jobs";
 import { waitingOnMe } from "@/lib/teamRoom/extras";
 import { startPointing, useTeamRoom } from "@/lib/teamRoom/store";
 import { ChatThread, RoomGate, TodoList } from "./parts";
@@ -146,7 +147,7 @@ function Bubble({ path }: { path: string }) {
 
   if (s.pageOpen || s.pointing) return null;
   const unread = unreadChat(s.messages, s.me, s.read.chat);
-  const jobs = newGivenTasks(s.tasks, s.me, s.read.tasks);
+  const jobs = newGivenTasks(s.tasks, s.me, s.read.tasks) + newPushedJobs(s.jobs, s.tasks, s.me, s.seenJobs);
   const waiting = waitingOnMe(s.messages, s.me, s.marks, s.acks).length;
   const chatTitle = [unread ? `${unread} new` : "", waiting ? `${waiting} waiting on you` : ""].filter(Boolean).join(", ");
 

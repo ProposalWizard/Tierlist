@@ -823,7 +823,7 @@ export const ADMIN_GUIDES = {
         ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again. On a phone the menu is ☰ Menu, Team first."],
       ] },
       { group: "Team room toggle", items: [
-        ["Board | Chat | Ideas | To-do", "Switches part, the same as the lines under Team in the side menu. A red number = new chat or new notes on your things; amber = a new job given to you."],
+        ["Board | Chat | Ideas | To-do", "Switches part, the same as the lines under Team in the side menu. A red number = new chat or new notes on your things; amber = a new job given to you (typed on the board or arrived by push)."],
       ] },
       { group: "Ideas", items: [
         ["By stage | By person", "Idea · Doing · Done columns, or a lane per person. Remembered in this browser."],
@@ -846,7 +846,9 @@ export const ADMIN_GUIDES = {
       ] },
       { group: "To-do", items: [
         ["Add a job · for me ▾", "Your own job, or pick Mikey or Leo to give them one."],
-        ["Tick box", "Done. Ticked jobs fade and leave after a day. ✕ deletes."],
+        ["Tick box", "Done. Ticked jobs fade and leave after a day. ✕ deletes a job typed here."],
+        ["from a push · Harry (small green tag)", "A job that arrived by push: a Claude chat added it to the jobs file in the code (team/jobs.json) and pushed its branch. It shows under Given to me for whoever it is for (\"all\" = each of the three) within a minute or two of the push, with no deploy and no SQL. The name is who asked for it. It has no ✕: it lives in the code, so it can't be deleted from the board. Tick it when it's done. To take one off for good, a Claude chat deletes it from the jobs file and pushes."],
+        ["Copy prompt", "On a pushed job that has one: copies its prompt, ready to paste into your own Claude chat. Copied ✓ = done. If your browser won't copy, the prompt opens in a box already selected: press Ctrl+C, or hold it and choose Copy."],
       ] },
       { group: "Team tab", items: [
         ["Live on knowitball.co.uk", "Whether the newest version of main finished deploying, how long ago, and what it was."],
@@ -872,6 +874,8 @@ export const ADMIN_GUIDES = {
     saving: [
       "Board: nothing. It only reads from GitHub, through the site, and refreshes every minute.",
       "Ideas, chat, to-dos, notes and pins save to the shared database at once and show for the other two within about a second. Admins only.",
+      "Pushed jobs (\"from a push\") are read from the code on GitHub: the jobs file on main and on Harry's, Mikey's and Leo's branches, about once a minute. If two branches have the same job, the newer one wins. If GitHub can't be reached, the To-do shows the jobs built into the site at the last deploy.",
+      "Ticking a pushed job saves your tick in the shared database (the same to-do table, as your own row), so it shows on every phone and computer you use and the other two can see it. Each person ticks their own: Harry ticking the lag test does not tick it for Mikey. Unticking takes it back.",
       "First visit asks \"Which one are you?\" once and saves it to your account.",
       "Replies, @names, page cards and points are part of the message itself, so they reach everyone straight away. Seen faces, Got it and Read and understood need supabase/migrations/team_room_v2.sql; until it runs they are kept on the device that pressed them, and the chat says \"saved on this device only\".",
       "No phone alerts: the site has no push notifications yet, so an @ shows as a gold @ on the round button and in Waiting on me, not as a phone buzz.",
@@ -881,10 +885,11 @@ export const ADMIN_GUIDES = {
     needs: [
       "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it, or if GitHub refuses it, the board asks without a key (the repository is public): that works about 60 times an hour, and one line on the board says which happened. On a local test build the key comes from the computer running it, not from Vercel, and the line says so.",
       "The live progress bars (\"Now working on\") are step 2: one database file for Mikey to run and a shared password. Until then each card says so.",
-      "Ideas, Chat and To-do need supabase/migrations/team_room.sql run once in Supabase. Until then they say so.",
+      "Ideas, Chat and To-do need supabase/migrations/team_room.sql run once in Supabase. Until then they say so. Pushed jobs need nothing more: no SQL, no new table.",
+      "Pushed jobs reach the live board only once the change that reads them is on main (deployed). After that, a push to any of the four branches shows on the live board with no deploy. They use GITHUB_TOKEN like the Board; without it GitHub still answers, about 60 times an hour.",
       "Seen faces, Got it, Read and understood and patch-note notes need supabase/migrations/team_room_v2.sql (PENDING), run after team_room.sql.",
     ],
-    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md · Team room kit: lib/teamRoom/ (config.ts = settings; extras.ts = replies, @, cards, points, receipts), components/teamRoom/ (chat.tsx, PointLayer.tsx, PatchReceipts.tsx), supabase/migrations/team_room.sql + team_room_v2.sql, tests/star/teamRoom.mts",
+    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md · Team room kit: lib/teamRoom/ (config.ts = settings; extras.ts = replies, @, cards, points, receipts), components/teamRoom/ (chat.tsx, PointLayer.tsx, PatchReceipts.tsx), supabase/migrations/team_room.sql + team_room_v2.sql, tests/star/teamRoom.mts · Pushed jobs: team/jobs.json + team/README.md (how a chat adds one), lib/teamRoom/jobs.ts (read GitHub per branch, merge by id, tick rows \"[job:<id>] …\" in team_tasks), app/api/admin/team/jobs/route.ts (cached 60 s), components/teamRoom/PushedJob.tsx, tests/star/teamRoomJobs.mts",
   },
   "/admin/testers": {
     title: "Tester Access",

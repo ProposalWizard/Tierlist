@@ -137,6 +137,19 @@
 .tr-task.done .tx { color: var(--ash-ink3); text-decoration: line-through; }
 .tr-check { width: 22px; height: 22px; flex: 0 0 auto; border-radius: 6px; border: 2px solid var(--ash-line2); background: none; cursor: pointer; display: grid; place-items: center; color: var(--ash-accent-ink); padding: 0; }
 .tr-check[aria-checked="true"] { background: var(--ash-accent); border-color: var(--ash-accent); }
+.tr-check:disabled { opacity: .5; cursor: default; }
+/* A job that arrived by push (team/jobs.json): no ✕, a small tag, Copy prompt. */
+.tr-job { align-items: flex-start; }
+.tr-job .tr-check { margin-top: 1px; }
+.tr-job.done { opacity: .7; }
+.tr-pushtag { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .03em; padding: 1px 6px; margin: 3px 4px 0 0; border-radius: 5px; background: var(--ash-accent-soft); color: var(--ash-accent); text-decoration: none; }
+.tr-jobacts { display: flex; gap: 6px; margin-top: 7px; }
+.tr-copy { padding: 6px 11px; font-size: 12.5px; min-height: 32px; }
+.tr-copy.ok { color: var(--ash-accent); border-color: var(--ash-accent); }
+.tr-copybox { margin: -2px 0 8px; padding: 8px; border-radius: 10px; border: 1px solid var(--ash-amber); background: var(--ash-amber-soft); display: flex; flex-direction: column; gap: 6px; }
+.tr-copybox p { margin: 0; font-size: 12.5px; color: var(--ash-ink2); }
+.tr-copybox textarea { width: 100%; box-sizing: border-box; resize: vertical; border-radius: 8px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); padding: 7px 9px; font: inherit; font-size: 13px; line-height: 1.35; }
+.tr-copybox .tr-x { align-self: flex-end; }
 .tr-add { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .tr-add input { flex: 1 1 160px; min-width: 0; border-radius: 10px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); padding: 9px 12px; font: inherit; font-size: 15px; }
 .tr-add select { border-radius: 10px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); padding: 9px 8px; font: inherit; font-size: 14px; }

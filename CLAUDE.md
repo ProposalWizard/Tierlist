@@ -471,6 +471,8 @@ write the starter." Then again every 3 hours. Write a handoff only when someone 
 of running 5 parallel full builds let's build slowly and CORRECTLY."* Deep plan first, iterate it,
 design (Higgsfield), then build one piece at a time, each checked and signed off before the next.
 
+**Jobs for the team go in team/jobs.json and arrive by push, never SQL (Harry, 20 Oct 2026: "just use pushes").** See team/README.md.
+
 **Deploy only when told (Harry, 12 Oct 2026; replaces "auto-deploy at every
 major update").** *"what happened to patch notes? What happened to telling me
 if I tell you to push everything currently, push it? Don't just be pushing
