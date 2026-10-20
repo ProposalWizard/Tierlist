@@ -153,8 +153,11 @@ function signature(list: Served[]): string {
  *  merge a474ed8f, then b56b8641 and 5ca671e6), which is what Old serves.
  *  Checked: today's code with the 14 Oct drawings file still gives
  *  239:18eecdc5, so no New code reached Old; only the drawings moved. The
- *  same reason the play-on fingerprints were re-pinned in 185fba28. */
-const OLD_SIGNATURE = "239:bf6f261";
+ *  same reason the play-on fingerprints were re-pinned in 185fba28.
+ *  Re-measured 20 Oct 2026 (was 239:bf6f261), B10: headers and volleys joined
+ *  the even bag (lib/star/kindMix.ts), which Old deals. Checked: the same code
+ *  with the two left out of the bag still gives 239:bf6f261. */
+const OLD_SIGNATURE = "239:da6623ab";
 
 const pct = (n: number, d: number) => (d ? `${((100 * n) / d).toFixed(1)}%` : "  —  ");
 function stats(list: Served[]) {
