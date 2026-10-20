@@ -58,7 +58,11 @@ const ROOM: { key: Exclude<RoomTab, "notes">; name: string; title: string }[] = 
   { key: "todo", name: "To-do", title: "My to-do" },
 ];
 
-export default function TeamBoard({ initialTab, initialVersion }: { initialTab: RoomTab; initialVersion?: string }) {
+export default function TeamBoard({ initialTab, initialVersion, initialMessage }: {
+  initialTab: RoomTab; initialVersion?: string;
+  /** ?m=<id>: a phone notification opened the chat on this message. */
+  initialMessage?: number | null;
+}) {
   const [tab, setTab] = useState<RoomTab>(initialTab);
   const room = useTeamRoom();
   const [version, setVersion] = useState<string | undefined>(initialVersion);
@@ -132,7 +136,7 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
           </nav>
 
           {tab === "ideas" && <IdeasBoard />}
-          {tab === "chat" && <ChatPage />}
+          {tab === "chat" && <ChatPage jumpTo={initialTab === "chat" ? initialMessage : null} />}
           {tab === "todo" && <div className="tr ash-panel tb-todo"><RoomGate><TodoList /></RoomGate></div>}
           {tab === "team" && (<>
 
