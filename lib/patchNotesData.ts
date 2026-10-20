@@ -27,6 +27,334 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.90",
+      "title": "Harry's patch notes: Team Jobs And Notifications",
+      "publishedAt": "2026-10-20T17:40:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Team jobs by push and phone notifications (20 Oct). A job is added by editing team/jobs.json and pushing a branch (no SQL, no deploy). Team → To-do shows it under \"Given to me\" with the tag \"from a push\", a Copy prompt button (871 characters for the lag test) and a tick of your own. The first job is the lag test, for all. Phones buzz for @name, @all, a reply to you, a point sent to you, a job typed for you and a pushed job for you. Turn it on once per phone: on an iPhone, Safari → knowitball.co.uk/admin → Share → Add to Home Screen → open KIB Admin → Team → To-do → Turn on phone notifications → Allow. The Vercel key is already added. Seen: jobs in demo mode, a real push in headless Chromium. Not seen: a real iPhone, tapping a buzz, the live board.",
+      "stats": [
+        {
+          "value": "871",
+          "label": "characters copied by Copy prompt for the lag-test job"
+        },
+        {
+          "value": "6",
+          "label": "things that buzz your phone"
+        },
+        {
+          "value": "0",
+          "label": "SQL steps for either feature"
+        },
+        {
+          "value": "1",
+          "label": "time per phone to turn buzzes on"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "A pushed job",
+              "detail": "Team → To-do. \"Given to me\" shows the lag-test job, tagged \"from a push · Harry\"."
+            },
+            {
+              "title": "Copy prompt",
+              "detail": "Tap it. The button says Copied ✓."
+            },
+            {
+              "title": "If copying fails",
+              "detail": "A box opens with the prompt selected."
+            },
+            {
+              "title": "Tick it",
+              "detail": "It moves to Done today. Only your own tick changes."
+            },
+            {
+              "title": "The badge",
+              "detail": "The amber badge on the To-do tab counts open jobs."
+            },
+            {
+              "title": "Turn on buzzes",
+              "detail": "Team → To-do (or Chat) → Turn on phone notifications → Allow. On an iPhone, add KIB Admin to the Home Screen first."
+            },
+            {
+              "title": "Send a test",
+              "detail": "The button is in the green bar once it is on."
+            },
+            {
+              "title": "A real buzz",
+              "detail": "Ask someone to @ you, or reply to you. Tap the buzz."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Add a team job by pushing a file",
+              "detail": "Harry asked for it: \"just use pushes\". Jobs live in team/jobs.json (id, owner Harry/Mikey/Leo/all, title up to 200 characters, prompt up to 4,000, from, added). A Claude chat adds one by editing the file and pushing its own branch. The Team board reads main, Harry, Mikey and Leo from GitHub, keeps them 60 seconds, and the newest \"added\" wins. If GitHub cannot be reached it shows its built-in copy."
+            },
+            {
+              "title": "Copy prompt",
+              "detail": "Copies the job's prompt (871 characters for the lag test). The button then says Copied ✓. If the phone refuses, a box opens with the prompt already selected."
+            },
+            {
+              "title": "Everyone ticks their own",
+              "detail": "Your tick is your own to-do row \"[job:id] title\", hidden from the normal lists. A pushed job has no ✕. Open jobs count in the amber badge."
+            },
+            {
+              "title": "The first job: the lag test",
+              "detail": "For all, with its prompt (see v0.89)."
+            },
+            {
+              "title": "Phone buzzes for the team room",
+              "detail": "You get one for: @your name, @all/@everyone/@team (the other two), a reply to your message, a point sent to you, a job typed for you, and a job pushed for you (once, if added in the last day, and only when someone next opens an admin page). Never for yourself. One buzz per message. A thread groups (\"+2 more\"). A tap opens the message in Team chat, or To-do."
+            },
+            {
+              "title": "Turn it on once per phone",
+              "detail": "iPhone (iOS 16.4 or newer): Safari → knowitball.co.uk/admin → Share → Add to Home Screen → open KIB Admin from there → Team → To-do → Turn on phone notifications → Allow. Android and a computer: the same button. Harry has already added the key in Vercel."
+            },
+            {
+              "title": "What it says when it cannot work",
+              "detail": "Signed out: \"Sign in to turn on phone notifications.\" Key missing: \"Phone notifications aren't switched on yet (one Vercel setting).\" Blocked: \"Notifications are blocked for this site. Allow them in the phone's settings for KIB Admin (or the browser's site settings), then reload.\""
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Team jobs are seen in demo mode only",
+              "detail": "Not read against the real database or a live GitHub read (rate-limited). A job reaches the live board only after the next merge to main."
+            },
+            {
+              "title": "Tick boxes look stretched tall on a phone",
+              "detail": "Older jobs look the same. Found, not fixed."
+            },
+            {
+              "title": "The job text names a different path to the lag test",
+              "detail": "It says Settings → Developer tools → Lag test. The test is at ⚙ → 🛠 Dev → Start lag test. Reasoned from the pictures and the lag-test report."
+            },
+            {
+              "title": "Phone buzzes were not seen on a real iPhone",
+              "detail": "Tapping a buzz and the signed-in flow from start to end were not seen. The one real push ran in headless Chromium."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.89",
+      "title": "Harry's patch notes: B18 Lag Test",
+      "publishedAt": "2026-10-20T17:40:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "B18 Lag Test, step 0 (20 Oct). A Lag test inside the game: ⚙ (top right of Home) → 🛠 Dev → Start lag test, for testers and admins (also /star-dev?lagtest=1). You pick your device and name, then follow a pill at the top through 10 steps (about 5 minutes of recording). It records frame gaps, slow stretches, a 20 ms timer's lateness, 3D counters, memory and hidden time. Runs are saved by a push to the lag-runs branch (lag/runs/<time>-<person>-<tier>.json), with no SQL. Read them with npx tsx scripts/lag-runs.mts. Seen signed out at 390 × 844: Home and a 2D match (2,370 frames). Not seen: steps 2 to 6 and 8 to 10, the cut-scene hand-off, a real save to GitHub.",
+      "stats": [
+        {
+          "value": "10",
+          "label": "steps, about 5 minutes of recording"
+        },
+        {
+          "value": "7",
+          "label": "device choices, from iPhone 16 to a low office laptop"
+        },
+        {
+          "value": "0",
+          "label": "SQL steps: runs save by a push to the lag-runs branch"
+        },
+        {
+          "value": "2,370",
+          "label": "frames recorded in the check (Home and a 2D match)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Open it",
+              "detail": "⚙ (top right of Home) → 🛠 Dev → Start lag test. Testers and admins only."
+            },
+            {
+              "title": "Pick",
+              "detail": "Your device and your name. Then Start."
+            },
+            {
+              "title": "Follow the pill",
+              "detail": "It sits at the top. It names each screen. Tap I'm there, wait, tap Next. ⇅ moves it."
+            },
+            {
+              "title": "Skip what you cannot reach",
+              "detail": "Tap \"Can't get there → Skip\"."
+            },
+            {
+              "title": "The results card",
+              "detail": "A ✓ or ✗ per step. It sends itself."
+            },
+            {
+              "title": "If it did not send",
+              "detail": "Tap Send again, or Copy results and paste them into the Team chat."
+            },
+            {
+              "title": "Read the runs",
+              "detail": "Run npx tsx scripts/lag-runs.mts. It reads the lag-runs branch."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "A Lag test inside the game",
+              "detail": "Open ⚙ (top right of Home) → 🛠 Dev → Start lag test, or /star-dev?lagtest=1. First you pick your device (iPhone 16 or newer, iPhone 13 or 14, Older Android, High PC, Mid PC, Low PC, Other) and your name."
+            },
+            {
+              "title": "Ten steps, about 5 minutes of recording",
+              "detail": "A pill at the top leads you: Home, Stats and Relations, Shop, 3D shop, Garden, Phone feed, 2D match, 3D game, Settings, Cut scene. Tap I'm there, wait for \"Done, tap Next\", tap Next. Can't get there → Skip skips a step. Stop ends the run. ⇅ moves the pill."
+            },
+            {
+              "title": "What it records, and what passes",
+              "detail": "Frame gaps (middle, 1 in 20, 1 in 100, worst) counted over 33, 50 and 100 ms, slow stretches in Chrome, a 20 ms timer's lateness (iPhone too), 3D counters, memory, time hidden. Refresh rate comes from the idle gaps. Pass rule on a 60 Hz screen: no more than 1 frame in 20 over 20.8 ms, 1 in 100 over 33.4 ms, none over 100 ms. The low tier has a 30 fps rule."
+            },
+            {
+              "title": "The result sends itself",
+              "detail": "The game's server saves each run on a branch called lag-runs (lag/runs/<time>-<person>-<tier>.json). Builds of that branch are stopped, so a run never starts a deploy. If it cannot send, the run stays on the phone: Send again, or Copy results into the Team chat."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Most steps and the real save were not seen",
+              "detail": "Only Home and the 2D match were recorded (2,370 frames), signed out. Steps 2 to 6 and 8 to 10, the cut-scene hand-off and a real save to GitHub were not seen. The save answered 401 \"Sign in to send\", as it should."
+            },
+            {
+              "title": "The numbers on the results picture are not a phone result",
+              "detail": "It says \"Passed 0 of 2\" with Home at 317 ms and a worst frame of 467 ms. Reasoned: it was made in a test browser on a build machine, not on an iPhone, although the card says iPhone 13 or 14."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.88",
+      "title": "Harry's patch notes: B10 Headers And Volleys",
+      "publishedAt": "2026-10-20T17:40:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "B10 Headers And Volleys (20 Oct). Header and volley chances are back on (they had been switched off since 24 Sep). Each is played as the end of one of the team's own cross drawings, because no header or volley drawings exist (0 of 194 committed, 0 of 192 saved). The ball is in the air while you aim (header 1.85 m, volley 0 to 0.95 m). The strike screens ask \"Head it?\" and \"Volley it?\" and give a verdict from NODDED DOWN to SKIED. With Full highlights rebuild On, a header build-up ends with a lofted cross. Per match over 40 matches: headers 0.50 and volleys 0.42 in the even mix, 0.57 and 0.63 with the rebuild On. Goals from 500 shots (poor / average / elite): header 42.8 / 46.2 / 50.2% to 23.4 / 29.2 / 35.8%, volley 37.4 / 40.6 / 33.6% to 23.0 / 28.4 / 35.4%. The core engine file is untouched. Seen in Infinite Highlights only, not in a career match.",
+      "stats": [
+        {
+          "value": "0.50 · 0.42",
+          "label": "headers and volleys a match, even mix (40 matches)"
+        },
+        {
+          "value": "1 in 10",
+          "label": "chance for each open-play kind (was 1 in 8)"
+        },
+        {
+          "value": "35.8% vs 23.4%",
+          "label": "elite vs poor finisher, headers (500 shots each)"
+        },
+        {
+          "value": "59 of 60",
+          "label": "cross build-ups pass their own checks"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "A header chance",
+              "detail": "Play Infinite Highlights until the title says HEADER. A small ball hangs above the ring."
+            },
+            {
+              "title": "Head it",
+              "detail": "\"Where do you head it?\" with a power bar. After the strike you get a verdict, from NODDED DOWN to SKIED."
+            },
+            {
+              "title": "A volley chance",
+              "detail": "The title says VOLLEY. The strike screen has a height bar and a power bar."
+            },
+            {
+              "title": "The build-up cross",
+              "detail": "Switch Full highlights rebuild On. A header build-up ends with a lofted cross."
+            },
+            {
+              "title": "The gallery",
+              "detail": "Gallery → 11-a-side: the header tab says 0/0 until the team saves header drawings."
+            },
+            {
+              "title": "A career match",
+              "detail": "Not seen yet. Play one and look for both."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Headers and volleys are back on",
+              "detail": "They were switched off on 24 Sep. No header or volley drawings exist (0 of 194 committed, 0 of 192 saved), so each is played as the end of one of the team's own cross drawings: you are the man at the target, the wide man is the crosser. The switched-off list is now empty. When the team saves 5 drawings of one kind, the real drawings take over."
+            },
+            {
+              "title": "A strike screen for each: Head it? and Volley it?",
+              "detail": "The ball is in the air while you aim: a header ball hangs at 1.85 m, a volley ball bounces between 0 and 0.95 m. Both show a shadow and a dotted line. Verdicts run from NODDED DOWN to SKIED. An off-centre header goes up to 22° wide and loses 35% of its pace. A mistimed volley slices up to 26°. No random number is used."
+            },
+            {
+              "title": "Headers start from a cross in the build-up",
+              "detail": "With Full highlights rebuild On, the last pass is the crosser's lofted ball, peaking between 3 and 4.6 m. 60 of 60 were made and 59 pass their own checks. A 6 s clip is on the page."
+            },
+            {
+              "title": "How many you get",
+              "detail": "Each open-play kind is now 1 chance in 10 (was 1 in 8). The Kane mix is untouched. Per match over 40 matches: even mix headers 0.50, volleys 0.42, chances 6.0. Rebuild On: 0.57, 0.63, 6.0."
+            },
+            {
+              "title": "Headers and volleys score less often, and skill counts more",
+              "detail": "Goals from 500 shots per cell, poor / average / elite, before → after: header 42.8 / 46.2 / 50.2% → 23.4 / 29.2 / 35.8%. Volley 37.4 / 40.6 / 33.6% → 23.0 / 28.4 / 35.4%. Before, an elite finisher scored fewer volleys than a poor one. More shots are blocked now (headers 18–21% → 36–42%, volleys 13–15% → about 35%), most likely because the drawn boxes are crowded (reasoned, not tested). All other chance kinds are identical."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "The core engine file is not changed",
+              "detail": "The core engine file (sensitive) is untouched. The match file (sensitive) changed in two ways: it draws the airborne ball while you aim, and a header or volley chance is always struck from the air. Two test fingerprints (the keeper one and the chance-judge Old one) were re-pinned on purpose. The pitch is 366 px wide on a phone."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not seen in a career match",
+              "detail": "Seen only in Infinite Highlights, at 390 × 844. Play a career match and look for a header and a volley."
+            },
+            {
+              "title": "Three test suites fail on the base too",
+              "detail": "chanceMaker counts, longRangeRules and match2dCam (372 × 704) fail the same way without this build. Not touched here."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.87",
       "title": "Harry's patch notes: B19 Team Is Home",
       "publishedAt": "2026-10-20T15:40:00Z",
