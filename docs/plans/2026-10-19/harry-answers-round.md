@@ -123,3 +123,4 @@ New builds from the feedback:
 ## 20 Oct, 15:36: lag devices and the push
 - Lag is judged on three phone tiers and three computer tiers: high (iPhone 16+), mid (iPhone 13/14), low (older Android); the same three for PC. Written into docs/research/lag/2026-10-20-research.md §5.0.
 - "we can push everything once the team reviews the patch notes." Push = merge Harry → main, after tsc, both guards, the tests and `npm run build` pass. Gate: the team has reviewed the patch notes (Harry says so). A build still running at that point waits for the next push.
+- 15:40: "less frames is okay" for the low tier: old Android (and the low PC) may run 3D at a steady 30 fps, same picture. Asked "I thought it would be simulated?": the CPU side is simulated for every tier; the graphics chip cannot be simulated here (no GPU), see research §5.0.
