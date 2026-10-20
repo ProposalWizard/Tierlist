@@ -201,12 +201,14 @@ function connect() {
 /** A dev build with no database or no sign-in plays with sample rows, kept in this tab only. */
 let demo = false;
 let demoId = 1000;
+// Read when the page first loads: pages tidy their address before the room starts.
+const DEMO_NO_V2 = typeof window !== "undefined" && /[?&]teamroom=nov2\b/.test(window.location.search);
 function startDemo() {
   demo = true;
   sb = null;
   const room = demoRoom(Date.now());
   // ?teamroom=nov2 shows the screens as they are before team_room_v2.sql runs.
-  const noV2 = typeof window !== "undefined" && /[?&]teamroom=nov2\b/.test(window.location.search);
+  const noV2 = DEMO_NO_V2;
   set({ ...room, status: "ready", live: true, read: loadRead(), v2: noV2 ? "off" : "on" });
   if (noV2) set({ ...localV2(), notes: [...room.notes, ...readJson<TeamNote[]>(LOCAL_NOTES_KEY, [])] });
 }

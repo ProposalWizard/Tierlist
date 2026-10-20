@@ -183,6 +183,14 @@ function cssPath(el: Element): string | null {
     const tour = cur.getAttribute("data-tour");
     if (tour && document.querySelectorAll(`[data-tour="${CSS.escape(tour)}"]`).length === 1) { parts.unshift(`[data-tour="${CSS.escape(tour)}"]`); return parts.join(" > "); }
     const tag = cur.tagName.toLowerCase();
+    // A tag + its own class names that only one thing on the page has (e.g.
+    // section.tb-person.Harry) survives extra banners above it; a numbered
+    // path would not. Tailwind's "lg:" and "[…]" classes are left out.
+    const classes = Array.from(cur.classList).filter((c) => /^[A-Za-z][\w-]*$/.test(c)).slice(0, 6);
+    if (classes.length) {
+      const named = `${tag}${classes.map((c) => `.${CSS.escape(c)}`).join("")}`;
+      try { if (document.querySelectorAll(named).length === 1) { parts.unshift(named); return parts.join(" > "); } } catch { /* odd class */ }
+    }
     const parent: Element | null = cur.parentElement;
     if (!parent) break;
     const same = Array.from(parent.children).filter((c) => c.tagName === cur!.tagName);

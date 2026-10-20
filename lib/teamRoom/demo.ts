@@ -22,6 +22,7 @@ export function demoRoom(now: number) {
     { id: 7, person: "Harry", body: "Here's the page\n/star-gallery-dev", image_url: null, page: "/admin/team?tab=chat", pinned: false, created_at: ago(3) },
     { id: 8, person: "Mikey", body: `@Harry 👉 this card's numbers look off\n${pointUrl("/admin/team", {
       v: 1, id: "demo-pt1", by: "Mikey", to: ["Harry"], n: "this card's numbers look off", pn: "Team board",
+      sel: ".tb-person.Harry", ex: 0, ey: 0, ew: 1, eh: 0.16,
       x: 24, y: 330, w: 320, h: 140, sx: 0, sy: 0, vw: 390, vh: 844,
     })}`, image_url: null, page: "/admin/team", pinned: false, created_at: ago(2) },
   ];

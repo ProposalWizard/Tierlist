@@ -623,7 +623,10 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["Version list", "Tap a version to read it."],
+          ["Version list", "Tap a version to read it. The small H / M / L faces show who has read it (bright = read; the author counts as read). On a phone a red dot = you haven't read it yet."],
+          ["Read by H ✓ read · M wrote it · L not yet", "Who has read this version. Only versions from 18 Oct 2026 on count towards \"to read\"; older ones show faces but never nag."],
+          ["Read and understood", "Say you have read and understood this version. Press again (✓ Read and understood) to take it back. Not shown on your own patch notes."],
+          ["💬 Notes", "Opens a short notes thread under this version. Add a note; ✕ deletes your own. The author gets a red number on Patch notes in the Team room."],
           ["Page", "The version's artifact exactly as it was published, pictures and all. Kept in the code, so it works even if the link changes."],
           ["Text", "The same notes as plain data, in the site's own style."],
           ["Harry's notes", "Only on versions Harry has reviewed: his spoken notes from his recordings (likes, concerns, questions), each with the video and timestamp. Written in by Claude, not typed on this page."],
@@ -631,10 +634,14 @@ export const ADMIN_GUIDES = {
         ],
       },
     ],
-    saving: ["Nothing here saves. New patch notes are added by Claude as part of shipping a change."],
+    saving: [
+      "The notes themselves don't save here. New patch notes are added by Claude as part of shipping a change.",
+      "Read and understood and the notes under a version save to the shared database at once (team_acks, team_notes), so the other two see them. Until supabase/migrations/team_room_v2.sql runs they stay on this device only, and the page says so.",
+    ],
     commit: ["New entries arrive through a normal code change (they live in a file, not the database) — they appear after the next deploy. Each version's page and pictures are copied into patch-notes/ in the repo."],
     inGame: ["Admin only. Players never see this page."],
-    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/",
+    needs: ["supabase/migrations/team_room_v2.sql (PENDING) for read ticks and notes to be shared. Run after team_room.sql."],
+    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts",
   },
 
   "/admin/sound-board": {
@@ -781,10 +788,17 @@ export const ADMIN_GUIDES = {
         ["An idea", "Opens it: move it to Idea / Doing / Done, delete it (yours only), and read or add notes."],
       ] },
       { group: "Chat (and the round button on every admin page)", items: [
-        ["Message the team…", "Enter sends; Shift+Enter is a new line. Paste or 🖼 adds a picture."],
-        ["A message", "Tap: 📌 Pin (anyone) or Delete (your own). The green tag is the page it was sent from — tap to go there."],
+        ["Message… @ or #", "Enter sends; Shift+Enter is a new line. Paste or 🖼 adds a picture. Type @ to pick Harry, Mikey or Leo; type # and a few letters to pick an admin page (it is added as a card)."],
+        ["🔗 (link)", "Adds the page you are on as a card. Tapping a card in the chat opens that page."],
+        ["⌖ (point) · 👉 Point · Shift+X", "Point at part of a page. Drag a box over it (on a phone, scroll there first), write a note, pick who, Send. It posts a card; whoever opens it gets the page scrolled to the box, outlined, with your note, until they press Got it. Shift+X works on a computer when you are not typing."],
+        ["A message", "Tap: ↩ Reply, 📌 Pin (anyone) or Delete (your own). The green tag is the page it was sent from — tap to go there."],
+        ["Reply quote", "The grey line at the top of a reply. Tap it to jump to the message it answers."],
+        ["Small H / M / L faces under a message", "Who has seen it: bright = it was on their screen in the open chat; faded = not yet. The sender is never shown."],
+        ["Gold edge · @ you", "A message that names you or points something at you."],
+        ["@ Waiting on me", "Messages that name you that you haven't seen, and points you haven't pressed Got it on. Left side on a computer, folded above the chat on a phone. The round button shows a gold @ when something is waiting."],
+        ["Got it (on a pointed page)", "Marks the point as seen; the sender's card shows your face lit. ✕ closes it without saying Got it."],
         ["Pinned", "Pinned messages, on the right (folded above the chat on a phone)."],
-        ["Round chat button", "Bottom-left on every admin and test page: Chat | To-do in a box. Open ↗ goes to the full tab."],
+        ["Round chat button", "Bottom-left on every admin and test page: Chat | To-do in a box. 👉 Point starts point mode. Open ↗ goes to the full tab."],
       ] },
       { group: "To-do", items: [
         ["Add a job · for me ▾", "Your own job, or pick Mikey or Leo to give them one."],
@@ -805,13 +819,16 @@ export const ADMIN_GUIDES = {
         ["Notes", "Leave a note on the push. Its owner gets a red number on Board."],
       ] },
       { group: "Patch notes tab", items: [
-        ["Version list", "Every patch note, newest first. Same as /admin/patch-notes."],
+        ["Version list", "Every patch note, newest first. Same as /admin/patch-notes, with who has read each one, Read and understood, and notes."],
+        ["N patch notes to read (on a person's card)", "How many patch notes since 18 Oct that person hasn't marked Read and understood (their own don't count). Tap to open the oldest one."],
       ] },
     ],
     saving: [
       "Board: nothing. It only reads from GitHub, through the site, and refreshes every minute.",
       "Ideas, chat, to-dos, notes and pins save to the shared database at once and show for the other two within about a second. Admins only.",
       "First visit asks \"Which one are you?\" once and saves it to your account.",
+      "Replies, @names, page cards and points are part of the message itself, so they reach everyone straight away. Seen faces, Got it and Read and understood need supabase/migrations/team_room_v2.sql; until it runs they are kept on the device that pressed them, and the chat says \"saved on this device only\".",
+      "No phone alerts: the site has no push notifications yet, so an @ shows as a gold @ on the round button and in Waiting on me, not as a phone buzz.",
       "How a push is matched to a patch note: if the push names a version (\"v0.55\"), that one; otherwise the same person's next patch note that went live after the push, up to 4 days later.",
     ],
     inGame: ["Nowhere. Admins only."],
@@ -819,8 +836,9 @@ export const ADMIN_GUIDES = {
       "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it GitHub only answers a few times an hour and the board says so.",
       "The live progress bars (\"Now working on\") are step 2: one database file for Mikey to run and a shared password. Until then each card says so.",
       "Ideas, Chat and To-do need supabase/migrations/team_room.sql run once in Supabase. Until then they say so.",
+      "Seen faces, Got it, Read and understood and patch-note notes need supabase/migrations/team_room_v2.sql (PENDING), run after team_room.sql.",
     ],
-    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md · Team room kit: lib/teamRoom/ (config.ts = settings), components/teamRoom/, supabase/migrations/team_room.sql, tests/star/teamRoom.mts",
+    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md · Team room kit: lib/teamRoom/ (config.ts = settings; extras.ts = replies, @, cards, points, receipts), components/teamRoom/ (chat.tsx, PointLayer.tsx, PatchReceipts.tsx), supabase/migrations/team_room.sql + team_room_v2.sql, tests/star/teamRoom.mts",
   },
   "/admin/testers": {
     title: "Tester Access",

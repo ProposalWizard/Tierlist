@@ -268,7 +268,7 @@ function Composer({ autoFocus, replyTo, onClearReply }: { autoFocus?: boolean; r
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4" /><circle cx="12" cy="12" r="2.4" /></svg>
         </button>
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { setFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
-        <textarea id="tr-compose" ref={box} rows={1} value={text} autoFocus={autoFocus} placeholder="Message… @ to name, # for a page" aria-label="Message the team"
+        <textarea id="tr-compose" ref={box} rows={1} value={text} autoFocus={autoFocus} placeholder="Message… @ or #" aria-label="Message the team"
           onChange={(e) => { setText(e.target.value); setHide(false); setCaret(e.target.selectionStart ?? e.target.value.length); resize(e.target); }}
           onSelect={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart ?? 0)}
           onPaste={(e) => { const f = Array.from(e.clipboardData.files).find((x) => x.type.startsWith("image/")); if (f) { e.preventDefault(); setFile(f); } }}
