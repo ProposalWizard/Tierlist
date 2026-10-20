@@ -1,0 +1,23 @@
+/* The 3D places' test pages on the Broadcast frame (Harry, 19–20 Oct 2026, A-8:
+   "last 6 admin pages … with the scene editor work"). The place's own screen
+   plays untouched inside one stage box; the page's switches sit in the title
+   bar (actions) or a panel under it. ?bare=1 (and the film/still tools' own
+   ?clean=1 / ?film=1) still open the place full screen, as before. */
+.s3-stage { position: relative; width: 100%; height: min(76dvh, 860px); min-height: 440px; overflow: hidden; background: #000;
+  box-shadow: inset 0 0 0 1px var(--bc-line); isolation: isolate; }
+.s3-stage.s3-tall { height: min(82dvh, 920px); }
+.s3-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.s3-bar .bc-label { margin-right: 4px; }
+.s3-panel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px 18px; }
+.s3-sw { width: 30px; height: 30px; border-radius: 15px; border: 2px solid rgba(255, 255, 255, .2); cursor: pointer; padding: 0; }
+.s3-sw[aria-pressed="true"] { border: 3px solid #fff; }
+.s3-face { width: 38px; height: 38px; padding: 2px; overflow: hidden; border-radius: 6px; border: 1px solid var(--bc-line); background: rgba(255, 255, 255, .06); cursor: pointer; }
+.s3-face[aria-pressed="true"] { background: var(--bc-amber); }
+.s3-face img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+.s3-line { position: absolute; left: 10px; right: 10px; bottom: 14px; padding: 10px 12px; border-radius: 4px; background: rgba(8, 10, 16, .86); border-left: 3px solid #fbbf24; color: #f8fafc; font-family: system-ui, sans-serif; z-index: 5; }
+.s3-line small { display: block; font-size: 11px; font-weight: 900; color: #fbbf24; text-transform: uppercase; }
+.s3-line b { display: block; font-size: 16px; font-weight: 800; }
+@media (max-width: 700px) {
+  .s3-stage { height: calc(100dvh - 150px); min-height: 380px; }
+  .s3-stage.s3-tall { height: calc(100dvh - 130px); }
+}

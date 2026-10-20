@@ -1511,8 +1511,10 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["← (top left)", "Back to the 3D places group page."],
-          ["↺", "Starts the scene again from the first line."],
-          ["Your player", "Opens the picker: skin tone, face picture, hair, every store accessory and the Star Pass Gold Aviators. A change rebuilds your player straight away."],
+          ["↺ Replay (title bar)", "Starts the scene again from the first line."],
+          ["Your player (title bar)", "Opens the picker under the scene: skin tone, face picture, hair, every store accessory and the Star Pass Gold Aviators. A change rebuilds your player straight away."],
+          ["Scene editor ›", "Opens the 3D Scene Editor on the signing: camera, lens and light per shot, Approve, Commit to game."],
+          ["?bare=1 on the address", "The scene full screen, as before the admin frame (↺ and Your player at its top right)."],
           ["Skip", "Leaves the scene. In a career this goes straight on to the next screen."],
           ["Tap the scene", "Shows the rest of a line at once, or moves to the next line. While you sign, a tap jumps to the handshake."],
           ["TAP TO SIGN", "Appears with the contract. The camera pulls back, you pick up the pen and sign, SIGNED stamps on, then the handshake."],
@@ -1536,6 +1538,7 @@ export const ADMIN_GUIDES = {
       "In a career when Settings → Look → \"Signing scene\" is 3D (the default, per phone): the first contract and every club move play this scene with your own player (skin, face picture, hair, accessories, aviators), the club's kit, your shirt number, seasons and wage. Drawn keeps the picture signing as it was.",
       "If the phone cannot run the 3D, the career falls back to the drawn signing by itself.",
       "Later transfers (signing for a new club at the end of a season) still use the paper signature page.",
+      "An edit APPROVED in the 3D Scene Editor plays here when it is ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its When holds). None: the scene exactly as written.",
     ],
     dev: "app/star-3d-area-dev/signing/page.tsx · components/star/SigningScene3D.tsx (the screen) · components/star/SigningScene3DCareer.tsx (career → scene) · lib/star/signing3dScene.ts (room, camera, timeline) · lib/star/people3d.ts (the approved player and manager: kit, skin, hair, face picture, accessories, outline) · lib/star/signing3dRig.ts (arm IK) · lib/star/signing3dTextures.ts (contract and other canvas pictures) · lib/star/signing3d.ts (lines, terms, the Settings switch) · public/star/people3d/*.glb (scripts/people3d/build_people3d.py) · public/star/signing3d/aviators.glb · stills: scripts/signing3d-shot.mjs · tests/star/signing3d.mts",
   },
@@ -1547,8 +1550,10 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["← (top left)", "Back to the 3D places group page."],
-          ["He talks / You talk", "Moves the camera: over your shoulder at him, or over his at you."],
-          ["Next line", "Steps through four sample lines, switching who talks."],
+          ["He talks / You talk (title bar)", "Moves the camera: over your shoulder at him, or over his at you."],
+          ["Next line ›", "Steps through four sample lines, switching who talks."],
+          ["Scene editor ›", "Opens the 3D Scene Editor on the office: camera, lens and light per shot, Approve, Commit to game."],
+          ["?bare=1 on the address", "The office full screen, as before the admin frame."],
           ["👁 (bottom left)", "This guide."],
         ],
       },
@@ -1559,6 +1564,7 @@ export const ADMIN_GUIDES = {
       "The same switch puts three manager moments in the office: a club's contract offer (before the talks), manager news on Home (Continue dismisses it), and being left out of the squad (above the card on the match screen).",
       "If the phone cannot run the 3D, the chat carries on without the office.",
       "The people are the one body (Settings → Look → \"3D people\").",
+      "An edit APPROVED in the 3D Scene Editor plays here when ticked for \"the test page\", and in every career office talk when ticked for \"in a career\". None: the office exactly as written.",
     ],
     dev: "app/star-3d-area-dev/office/page.tsx · components/star/Office3D.tsx (stage + career look) · lib/star/signing3dScene.ts (stage: \"office\" dresses the room) · components/star/relgames/BossChat.tsx, components/star/ManagerMoments.tsx, components/star/LineupIntro.tsx (mount it) · lib/star/look3d.ts (the Settings switches)",
   },
@@ -1699,9 +1705,11 @@ export const ADMIN_GUIDES = {
     buttons: [
       { items: [
         ["‹ Home", "Back to the 3D places group page."],
-        ["day / sunset / night", "Changes the time of day. In a career it follows the time of your next kick-off."],
-        ["Full career / New career", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
-        ["Restart", "Builds the garden again from the start."],
+        ["Day / Sunset / Night (title bar)", "Changes the time of day. In a career it follows the time of your next kick-off."],
+        ["Full career / New career (title bar)", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
+        ["↻ Restart (title bar)", "Builds the garden again from the start."],
+        ["Scene editor › (title bar)", "Opens the 3D Scene Editor on the garden: the walking camera (turn, rise, distance, lens) and the sun, Approve, Commit to game."],
+        ["?bare=1 (in the address)", "The garden full screen, as before the admin frame (its switches float top left). ?film=1 does the same for the film tools."],
         ["?outfit=coat (in the address)", "He walks the garden in that casual set, as if picked at your house's wardrobe: hoodie, tee, shirt, tracksuit or coat. Without it: the club kit."],
         ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
         ["Drag the view", "Swings the camera round him."],
@@ -1723,7 +1731,7 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: ["Nothing is saved. The career here is made up each time, and so is its money."],
-    inGame: ["Home → Garden in a career opens this 3D garden. The shop where the house used to be is the 3D shop; the casino and the training pitch are at the back.", "Home → Casino opens the 3D casino when Settings → Look → Casino is 3D (the default), else the classic casino menu."],
+    inGame: ["Home → Garden in a career opens this 3D garden. The shop where the house used to be is the 3D shop; the casino and the training pitch are at the back.", "Home → Casino opens the 3D casino when Settings → Look → Casino is 3D (the default), else the classic casino menu.", "A 3D Scene Editor edit APPROVED for the garden plays here when ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its time of day matches). None: the garden as built."],
     dev: "components/star/Garden3D.tsx, lib/star/garden3d/scene.ts (Old look: sceneOld.ts); the casino components/star/Casino3D.tsx + lib/star/casino3d/scene.ts; the pitch's placeholder components/star/TrainingPitchScreen.tsx; tap to move lib/star/tapWalk.ts; the walk lib/star/walkClip.ts; draw-call merging lib/star/freezeStatic.ts; models packed by tools/garden3d/export_models.py and build_anims.py.",
   },
   "/star-training3d-dev": {
@@ -1759,6 +1767,11 @@ export const ADMIN_GUIDES = {
     title: "Style Testing",
     what: "Try the shortlisted art styles (and Mix) on the REAL game (the match engine's own chances, drawn in 3D), the 3D free roam and cut scenes, switching live. A test area: nothing here changes the game.",
     buttons: [
+      { group: "The page (title bar)", items: [
+        ["Scene generator ›", "Opens the Scene generator (Studio): a cut scene made from a game moment, its recipe, Good/Bad, keep it."],
+        ["Scene editor ›", "Opens the 3D Scene Editor on the Cut-scene Director."],
+        ["The stage", "Everything below plays in this box on the admin frame. ?clean=1 (the stills and film tools) or ?bare=1 opens it full screen, as before."],
+      ] },
       { group: "Style (top row)", items: [
         ["A", "Golden Hour: painted, warm sunset, soft cel bands, thin brown lines, haze, paper grain."],
         ["B", "Floodlight Ink: night under floodlights, bold black lines, comic dots in the shadows, rain."],
@@ -1783,7 +1796,7 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: ["Nothing is saved. The address can hold a set-up: ?style=ink&scene=goal&tilt=30 (and &t=6 holds a cut scene still at 6 seconds). Director: ?scene=director&fixture=signing, or ?scene=director&event=scored&stakes=0.8&emotion=joy&seed=3; &clean=1 hides the controls for filming; &cam=old or &cam=new overrides the Cut-scene camera setting on this page. Real game: &seed=7 picks the chance stream, &kinds=one_on_one,penalty only those chances, &view=2d starts on 2D, &clock=virtual freezes the clock for frame-by-frame filming (scripts/film/frames3d.mjs)."],
-    inGame: ["Nowhere yet: a sandbox for choosing the look. The 2D match is not touched."],
+    inGame: ["Nowhere yet: a sandbox for choosing the look. The 2D match is not touched.", "Cut-scene Director (Hand-made): a 3D Scene Editor edit APPROVED for that scene and ticked for \"the test page\" plays here."],
     dev: "app/star-style-dev/page.tsx · components/star/StyleTest3D.tsx · Real game: components/star/RealGame3D.tsx (EnginePlay in an EngineFrameContext, lib/star/engineFrame.ts) + lib/star/style3d/engineView.ts (the 3D picture and touch hand-over), lib/star/virtualClock.ts (filming) · lib/star/style3d/ (styles.ts the five looks as data, kit.ts sky + lights + rain + materials, post.ts the one-pass post shader, stadium.ts, gameplay.ts on lib/star/play3d's World + picture via its optional bare/rig/draw/onBuilt hooks, flatFigure.ts the 2D cards, cutscenes.ts → the cut-scene system). The cut-scene system: lib/star/cutscene/ (README.md there); components/star/CutsceneDirector.tsx. Loaders through withMeshopt. Post is off on Low quality except the pixel style.",
   },
   "/star-shop3d-dev": {
@@ -1793,6 +1806,9 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["‹ 3D places", "Back to the 3D places group page."],
+          ["Start at the doors / Start in the middle (title bar)", "Open the shop just inside its front doors (as when you walk in from the garden), or in the middle."],
+          ["Edit in the scene editor › (title bar)", "Opens the 3D Scene Editor on the shop: walking and card views (turn, rise, distance, lens), the light, Approve, Commit to game."],
+          ["?bare=1 (in the address)", "The shop full screen, as before the admin frame. ?film=1 does the same for the film tools."],
           ["The club button (top right)", "Changes the kit he's wearing. Tap again for the next club."],
           ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
           ["Drag the view", "Swings the camera round him."],
@@ -1819,6 +1835,7 @@ export const ADMIN_GUIDES = {
       "Yes, as a beta: the Shop page (swipe right from Home) has a \"Walk the 3D shop (beta)\" button under Store and Casino. The normal shop is unchanged.",
       "In a career the card shows the career's own prices and an \"Owned\" or \"Wearing\" tag, and its button is \"See it in the shop\": it opens that item in the normal shop to buy it. Nothing is bought in 3D.",
       "The boots and the cars are real 3D models, made from the same Blender models as the shop pictures. Boots are shown at level 3; each car at one level (the card says which). The watches and jewellery are the shop pictures in light boxes, not 3D. The cans are simple 3D cans.",
+      "A 3D Scene Editor edit APPROVED for the shop plays here when ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its When matches: walking in from the garden, or from the Shop page). None: the shop as built.",
     ],
     needs: [
       "A phone or browser that runs 3D (WebGL). If it can't, the page says so and the normal shop still works. A slow phone drops to fewer pixels and no shadows on its own. Standing still it draws 30 times a second; walking, every frame at fewer pixels.",
@@ -1833,7 +1850,9 @@ export const ADMIN_GUIDES = {
       {
         items: [
           ["‹ 3D places", "Back to the 3D places group page."],
-          ["starter … estate", "Which home you are in. In a career it is the best home you own: Studio Flat or City Apartment = flat, Penthouse, Suburban House = house, Beach Villa or Mansion = villa, Country Estate or Private Island = estate."],
+          ["Scene editor › (title bar)", "Opens the 3D Scene Editor on the house: walking and card views (turn, rise, distance, lens), the sun, Approve, Commit to game."],
+          ["?bare=1 (in the address)", "The house full screen, as before the admin frame. ?film=1 does the same for the film tools."],
+          ["starter … estate (title bar)", "Which home you are in. In a career it is the best home you own: Studio Flat or City Apartment = flat, Penthouse, Suburban House = house, Beach Villa or Mansion = villa, Country Estate or Private Island = estate."],
           ["Full cabinet / Empty cabinet", "The made-up career with trophies, awards, cars, watches, jewellery and cans, or with none."],
           ["House: New / Old", "New: the home's rooms. Old: the one room, as it was. The same as Settings → Look → \"House\" (this button does not change that setting)."],
           ["Room name and dots (top middle)", "Which room you are in. Tap a dot to jump to that room."],
@@ -1869,6 +1888,7 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Yes: Home's phone has a \"Your house\" app, the Shop page has a \"Your house\" button, and the 3D garden has a house door on its east side.",
       "The casual set you pick is what you wear in the 3D garden and the 3D shop. The training pitch and matches are always in kit.",
+      "A 3D Scene Editor edit APPROVED for the house plays here when ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its When matches the home). None: the house as built.",
     ],
     needs: [
       "A phone or browser that runs 3D (WebGL). The casual clothes use the human body file (about 5.6 MB, downloaded once).",
