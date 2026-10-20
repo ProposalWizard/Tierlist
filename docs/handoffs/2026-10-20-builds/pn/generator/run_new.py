@@ -18,7 +18,8 @@ def fns():
     from b7_b9 import b9
     from b11_b3 import b3
     from b12_b7b_b13 import b12, b7b, b13
-    return {'b1': b1, 'b3': b3, 'b9': b9, 'b12': b12, 'b7b': b7b, 'b13': b13}
+    from b15_b9b import b15, b9b
+    return {'b1': b1, 'b3': b3, 'b9': b9, 'b12': b12, 'b7b': b7b, 'b13': b13, 'b15': b15, 'b9b': b9b}
 
 
 # open-question counts for pages not rebuilt here (read off the live index, 20 Oct)

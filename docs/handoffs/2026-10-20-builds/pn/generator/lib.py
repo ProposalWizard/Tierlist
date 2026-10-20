@@ -228,7 +228,7 @@ class Page:
     Default: the build's own folder under BASE."""
     def __init__(self, key, dirs=None):
         self.key = key
-        self.dirs = dirs or [os.path.join(BASE, key)]
+        self.dirs = dirs or [os.path.join(BASE, key), os.path.join(BASE, key, 'clips')]   # stills, then clips (20 Oct)
         self.used = []          # list of (published name, source path)
         self.clips = []         # list of (published name, source path)
 

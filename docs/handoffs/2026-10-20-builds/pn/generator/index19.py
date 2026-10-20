@@ -14,6 +14,8 @@ PAGES = {
  'b12': ('B12 Pick the Pass', '0.76', 'Vision training rebuilt: look at a real moment, work out who gets the pass, and from level 10 kick it yourself. Has a clip.', 'night'),
  'b7b': ('B7b Training Editor', '0.77', 'Drag and drop in the training editor, no &ldquo;your skills&rdquo; slider, and Pace needs the right moment. Has a clip.', 'night'),
  'b13': ('B13 Fixtures + Admin Fixes', '0.78', 'Every fixture date was checked: 170 clashes are now 0. XP Rewards loads, the chat bubble clears page buttons, and the Team board counts real pushes.', 'night'),
+ 'b15': ('B15 3D Headshots', '0.79', 'Award cards show a 3D head-and-shoulders picture of the player in his club kit: Player of the Month, the season awards and the Ballon d&rsquo;Or.', 'night'),
+ 'b9b': ('B9b Cup Screens', '0.80', 'Each cup has its own screen: a one-screen tab, then your road, the bracket and every round. The FA Cup and League Cup work the same way.', 'night'),
  'a19admin': ('Admin Split + Looks', '0.65', 'The admin is split by game, group pages show picture cards, four looks share one layout, the phone admin is tidier.', 'd19'),
  'a19team':  ('Team Room v1', '0.60', 'A chat bubble on every admin page, an Ideas board, Team chat and a To-do list.', 'd19'),
  'a19drift': ('Drift + Play Screens', '0.62', 'Eight screens now draw the pitch at the real match&rsquo;s size, play buttons stay on screen, and the engine warning is red.', 'd19'),
@@ -21,7 +23,7 @@ PAGES = {
  'a19data':  ('Free Data v1', '0.64', '2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. StatsBomb deleted.', 'd19'),
  'a19scene': ('Scene Editor 3a', '0.61', 'The 3D Signing and Office edit live in the scene editor. Also: how generated cut scenes work, and the 3D audit.', 'd19'),
 }
-ORDER_NIGHT = ['b1', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b11', 'b12', 'b7b', 'b13']
+ORDER_NIGHT = ['b1', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b11', 'b12', 'b7b', 'b13', 'b15', 'b9b']
 ORDER_19 = ['a19admin', 'a19team', 'a19drift', 'a19fhr', 'a19data', 'a19scene']
 
 def card(key, urls, nopen):
@@ -64,6 +66,14 @@ def ok_blocks(urls, scope):
                'At 2 stars a level a career player is always behind on Power levels. Level 20 draws 26 m and plays at 22 m. It is only visible now.', urls, [('b7b', 'B7b page')], who='Your call'),
         okline('A Championship club in Europe that wins everything needs 38 midweeks. A season has 34. Leave it?', [('leave it', 'p-grn'), ('fix it', 'p-amb')],
                '56 clashes became 20, all from deep runs, none before 1 January. Not counted in the 0.', urls, [('b13', 'B13 page')], who='Your call'),
+        okline('Show the 3D headshot on the team sheets too? (A one-line swap.)', [('swap them', 'p-grn'), ('leave drawn', 'p-blu')],
+               'Team sheets still show the drawn head. The scout report, transfers panel, and league and matchday screens would take more work.', urls, [('b15', 'B15 page')], who='Your call'),
+        okline('Fix the blond hair colour that also goes on eyebrows and beard?', [('fix it', 'p-amb'), ('leave it', 'p-blu')],
+               'On dark skin, close up, it reads oddly. It is the shared 3D look, so a fix also changes the match men.', urls, [('b15', 'B15 page')], who='Your call'),
+        okline('Hide the Trophy tab for a Premier League career?', [('hide it', 'p-grn'), ('keep it', 'p-blu')],
+               'A Premier League career is never in the Trophy, so the tab only says Not in it.', urls, [('b9b', 'B9b page')], who='Your call'),
+        okline('A Trophy picture instead of the emoji?', [('make one', 'p-amb'), ('emoji for now', 'p-blu')],
+               'The cups show a trophy emoji until a real picture is made.', urls, [('b9b', 'B9b page')], who='Your call'),
         okline('Run the fixture checker again after Mikey&rsquo;s ten-round FA Cup merges?', [('yes', 'p-grn'), ('skip', 'p-blu')],
                'His change touches the same calendar. The 0 clashes is for today&rsquo;s calendar.', urls, [('b13', 'B13 page')], who='For Mikey'),
         okline('Which generated cut scenes should play in the career first, and is GITHUB_TOKEN set on the live site?', [('pick rows', 'p-amb')],
@@ -85,6 +95,8 @@ def ok_blocks(urls, scope):
         donel('FA Cup Round of 64 date', 'Harry, 20 Oct', 'Fix it, and more: check every fixture date. Done in B13 (v0.78): 170 clashes became 0.'),
         donel('Engine OK for B2 (highlights phase 3) and B10 (headers and volleys)?', 'Harry, 20 Oct', 'Yes. Run one at a time; B14 after. The red warning still asks on every edit.'),
         donel('Training &ldquo;your skills&rdquo; sliders?', 'Harry, 20 Oct', 'No slider. A level plays with the skill you would have after finishing the levels before it. Done in B7b (v0.77).'),
+        donel('Player of the Month and similar cards: 3D headshots', 'Harry, 20 Oct', 'Headshots from our 3D model, not the old drawn heads. Done in B15 (v0.79).'),
+        donel('Lower League Trophy: its own screen?', 'Harry, 20 Oct', 'Yes, like the FA Cup and international ones. Done in B9b (v0.80), with the FA Cup and League Cup on the same screen.'),
         donel('Vision training: how should it work?', 'Harry, 20 Oct', 'Real scenarios: who should I pass to, someone offside, less time, a real kick inside 0.3 s. Done in B12 (v0.76).'),
         donel('How strong should keepers be in the 3D minigames?', 'Harry, 20 Oct', 'Fair is about 1 shot in 3 saved (B16).'),
         donel('Real moment highlights toggle inside the rebuild switch?', 'Harry, 19 Oct', 'Keep. He asked for it (DATA-2).'),
@@ -111,9 +123,7 @@ def build_index(urls, nopen):
     still = (soon('B2 Highlights phase 3', 'Players already moving when your chance starts, behind the switch. Engine OK given (20 Oct). No report yet.', 'next', 'p-amb') +
              soon('B10 Headers and volleys', 'Back on, with the ball in the air and a shadow signal. Engine OK given (20 Oct). No report yet. Run one at a time.', 'next', 'p-amb'))
     queued = ('<h3 class="grp">Queued from your 20 Oct feedback</h3><div class="qlist"><ul>'
-              '<li><b>B9b.</b> The Lower League Trophy gets its own screen.</li>'
               '<li><b>B14 Running after a chance</b> (after B2 and B10). WASD and Shift on a PC, a stamina bar, auto run, and team-mates passing back to you.</li>'
-              '<li><b>B15 Player of the Month cards.</b> Headshots from our 3D model, not the old drawn heads.</li>'
               '<li><b>B16 3D minigame keepers.</b> Measure and rebalance (Wembley, 3D training). Fair is about 1 shot in 3 saved.</li>'
               '<li><b>B17 A PC match layout</b> like the five-a-side test area: pitch and a live radar side by side, first as a test area.</li></ul></div>')
     body = f"""<title>Last 2 Days Patch Notes</title>
@@ -122,9 +132,9 @@ def build_index(urls, nopen):
 <div class="wrap">
 <header>
   <span class="ver">LAST 2 DAYS · 19&ndash;20 OCT 2026</span>
-  <h1>18 pages of patch notes. Read each one, then press Read and understood.</h1>
+  <h1>20 pages of patch notes. Read each one, then press Read and understood.</h1>
   <p class="status"><i></i>The 19 Oct pages are on main. The overnight pages are on the Harry branch, not live.</p>
-  <p class="sub">One page per build, in three tabs. Each page is its own version in Admin &rarr; Patch notes: v0.60 to v0.74, then v0.76 to v0.78. This index is v0.75.</p>
+  <p class="sub">One page per build, in three tabs. Each page is its own version in Admin &rarr; Patch notes: v0.60 to v0.74, then v0.76 to v0.80. This index is v0.75.</p>
   <div class="chips"><a class="chip hot" href="#ok">{n_open} open &darr;</a><a class="chip" href="#ok">{n_done} decided</a><a class="chip" href="#how">How this works</a></div>
 </header>
 
@@ -134,13 +144,13 @@ def build_index(urls, nopen):
 
 <h2 class="nxt"><i></i>THE PAGES</h2>
 <div class="tabs" role="tablist" aria-label="Patch notes">
-  <button class="tab" role="tab" data-p="p-night" aria-selected="true">Overnight 20 Oct <small>12</small></button>
+  <button class="tab" role="tab" data-p="p-night" aria-selected="true">Overnight 20 Oct <small>14</small></button>
   <button class="tab" role="tab" data-p="p-19" aria-selected="false">19 Oct <small>6</small></button>
   <button class="tab" role="tab" data-p="p-still" aria-selected="false">Still building <small>2</small></button>
 </div>
 <section class="panel" id="p-night" role="tabpanel"><p class="snote">Built overnight on the Harry branch. Not live.</p><div class="cards">{night}</div></section>
 <section class="panel" id="p-19" role="tabpanel"><p class="snote">The 19 Oct round. On main since 20 Oct (PR #744), except where a page says otherwise.</p><div class="cards">{d19}</div>{also}</section>
-<section class="panel" id="p-still" role="tabpanel"><p class="snote">No page yet. Each appears here when its build is done. B12, B7b and B13 are done and moved to the Overnight tab.</p><div class="cards">{still}</div>{queued}</section>
+<section class="panel" id="p-still" role="tabpanel"><p class="snote">No page yet. Each appears here when its build is done. B12, B7b, B13, B15 and B9b are done and moved to the Overnight tab.</p><div class="cards">{still}</div>{queued}</section>
 
 <footer>20 Oct 2026. Every fact comes from the builders&rsquo; reports, the 19 Oct patch notes, and Harry&rsquo;s answers file. Pictures are stills taken while checking the work.</footer>
 </div>

@@ -112,12 +112,14 @@ def b9():
                  note='How long the star bar takes. Measured.') +
             p.figs([f('04-postmatch-held-4x.jpg', '<b>Look at:</b> a ⏩ 4× chip, top right, while the finger is held. The score is counting up.'),
                     f('05-postmatch-after-double-tap.jpg', '<b>Look at:</b> after a double-tap the screen is at its end (3 goals, 2 assists, rating 10.0). The “Achievement 1 of 8” pop-up on top is not covered in the report.')]) +
+            p.video('hold-and-double-tap.mp4', 'hold-and-double-tap.jpg', 'the ⏩ 4× chip while a finger is held and the star bar filling faster, then a double-tap jumping to the end of the screen. The clip is 6 seconds long, on a phone-size screen. A team sheet “⏩” sim was used, so the match is simulated.',
+                    'After a match on a touch phone screen (6 s, no sound): hold, let go, then double-tap. The achievement pop-ups arrive after the skip, as the report says they still show.', phone=True) +
             details('More pictures (1): the hint', p.figs([f('03-postmatch-hint.jpg', '<b>Look at:</b> the hint at the bottom: “Hold to speed up · double-tap to skip”.')]))),
     ], note='The report gives no Problem or Why for these three. Each card shows the Fix.')
     bugs = section('bug', 'KNOWN ISSUES', [
-        item('FA Cup Round of 64 lands the day after a league game', [tag('meas', 'found, not fixed')], [
+        item('FA Cup Round of 64 lands the day after a league game', [tag('meas', 'fixed in B13'), '<span class="pill p-grn">fixed</span>'], [
             ('Problem', 'Below the Championship, the FA Cup Round of 64 lands the day after a league game.'),
-            ('Why', NR), ('Status', 'Found, not fixed. Queued for B13 Fixes, which will check every fixture date, not only this one (Harry, 20 Oct).')]),
+            ('Why', NR), ('Status', 'Fixed in B13 (Fixtures + Admin Fixes, v0.78). A new checker played 5 seasons in every division and found 170 clashes, this one among them. Now 0.')]),
     ])
     numbers = (
         '<p><b>Lower League Trophy.</b> 120 clubs + 8 byes = 128 slots. 7 rounds. 119 matches.</p>'
@@ -136,17 +138,17 @@ def b9():
             ('The hint', '“Hold to speed up · double-tap to skip” shows for the first 3 times.'),
             ('Credits stay the same', 'Goals, assists and rating should match a match played without holding.')],
         sections=[add, bugs], numbers=numbers,
-        videos_coming=True,
-        videos='<b>Videos coming.</b><p>Clips are filmed after the push and added to this page.</p><ul><li>Hold to speed up, then double-tap to skip, on a post-match screen.</li></ul>',
+        videos_coming=False, videos_here=True,
+        videos='<b>One clip is on this page.</b><p>Hold to speed up, then double-tap to skip, on a post-match screen. 6 seconds, on a phone-size screen. It is under &ldquo;Hold to speed up. Double-tap to skip.&rdquo; above.</p>',
         seen=dict(
-            seen=['The Round 1 draw and the 8 byes', 'The hint, the ⏩ 4× chip, and the screen after a double-tap'],
+            seen=['The Round 1 draw and the 8 byes', 'The hint, the ⏩ 4× chip, and the screen after a double-tap', 'A 6-second clip of hold, then double-tap, on a phone-size screen (filmed 20 Oct on the built Harry branch)'],
             meas=['200 seasons: 200 of 200 with a winner and exactly 119 matches; no date clashes', 'Star bar: ~3.4 s normal, ~1.1 s held, ~0.6 s double-tap'],
             no=['The prize on a screen (cabinet trophy, XP, fame): the report gives no still', 'The later rounds of the cup on a screen', 'Whether the cash prize is switched on in the code now: you kept it, but the report does not say it is built']),
         ok=[
             dict(q='Pay a cash prize of 2 weeks’ wage for winning the Lower League Trophy?', by='Harry, 20 Oct',
                  done='Keep the cash prize (&ldquo;pretty cool&rdquo;). No cup has paid cash before.'),
             dict(q='Fix the FA Cup Round of 64 date next?', by='Harry, 20 Oct',
-                 done='Yes, and more: B13 Fixes will pass over all fixture dates for clashes, not only this one.'),
+                 done='Yes, and more: B13 passed over all fixture dates for clashes, not only this one. Done in B13 (v0.78): 170 clashes became 0.'),
             dict(q='Should the Lower League Trophy get its own screen?', by='Harry, 20 Oct',
                  done='Yes. Queued as B9b: its own screen, like Mikey&rsquo;s FA Cup and international ones.')],
         footer='20 Oct 2026. Built overnight on the Harry branch. Nothing here is live. Every fact comes from the builders&rsquo; reports. Pictures are stills taken while checking the work. Harry&rsquo;s answers from the morning of 20 Oct are marked as decided.'
