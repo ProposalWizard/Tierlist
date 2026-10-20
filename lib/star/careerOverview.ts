@@ -56,7 +56,7 @@ export const DIVISION_SHORT: Record<CareerDivision, string> = {
 export const HONOUR_ORDER = [
   "Ballon d'Or", "World Cup", "European Championship", "Champions League", "Premier League",
   "Europa League", "FA Cup", "Conference League", "League Cup", "Super Cup", "Community Shield",
-  "Championship", "Play-Offs", "League One", "League Two", "National League",
+  "Championship", "Play-Offs", "League One", "League Two", "National League", "Lower League Trophy",
 ];
 const honourRank = (n: string) => {
   const i = HONOUR_ORDER.indexOf(n);

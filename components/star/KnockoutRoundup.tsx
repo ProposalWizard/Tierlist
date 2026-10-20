@@ -6,6 +6,7 @@ import ClubBadge from "./ClubBadge";
 import { PressButton, Shine } from "./ui";
 import { Screen } from "./ui/Screen";
 import { prefersReducedMotion } from "./ui/motion";
+import FastForward, { ffTimeout, onFfSkip } from "./ui/fastForward";
 
 /**
  * THE CUP AND EUROPEAN ROUND-UP (Mikey, 8 Oct 2026): after each of your cup
@@ -258,7 +259,7 @@ export default function KnockoutRoundup({ competition, stages, you, nextLine, on
 }) {
   const [at, setAt] = useState(0);
   const [step, setStep] = useState(0);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timer = useRef<(() => void) | null>(null);
   const stage = stages[at];
   const last = at === stages.length - 1;
   const bracketSteps = stage?.kind === "bracket" && stage.view.animate !== null ? (stage.view.animate === -1 ? 1 : 2) : 0;
@@ -269,17 +270,20 @@ export default function KnockoutRoundup({ competition, stages, you, nextLine, on
   useEffect(() => {
     if (prefersReducedMotion()) { setStep(bracketSteps); return; }
     if (animDone) return;
-    timer.current = setTimeout(() => setStep(s => s + 1), step === 0 ? 700 : 1100);
-    return () => { if (timer.current) clearTimeout(timer.current); };
+    timer.current = ffTimeout(() => setStep(s => s + 1), step === 0 ? 700 : 1100);
+    return () => { timer.current?.(); };
   }, [step, animDone, bracketSteps]);
+  // Double-tap (fastForward.tsx): the bracket's end state, like a tap.
+  useEffect(() => onFfSkip(() => setStep(bracketSteps)), [bracketSteps]);
 
-  const skip = () => { if (timer.current) clearTimeout(timer.current); setStep(bracketSteps); };
+  const skip = () => { timer.current?.(); setStep(bracketSteps); };
   const scrolls = stage?.kind !== "bracket";
   const content = useMemo(() => stage, [stage]);
   if (!content) return null;
 
   return (
     <Screen glow={look.glow} className="max-w-sm px-3 py-3">
+      <FastForward />
       <div className="w-full select-none" onClick={animDone ? undefined : skip}>
         <div className="relative overflow-hidden" style={{ background: look.bg }}>
           <div className="relative z-10 pt-3 pb-2 text-center">

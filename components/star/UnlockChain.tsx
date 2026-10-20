@@ -14,6 +14,7 @@ import { APP_STORE, LOCK_HINT, FEATURE_INFO, stepsFor, phoneStepLine, phoneShort
 import { formatMoney } from "@/lib/star/money";
 import { Burst, PressButton } from "./ui";
 import StylePicture from "./StylePicture";
+import { ffTimeout } from "./ui/fastForward";
 
 const GOLD = ["#fde047", "#fbbf24", "#ffffff"];
 
@@ -169,7 +170,7 @@ function AchievementStarBar({ from, to }: { from: StarStep; to: StarStep }) {
   const start = Math.round(from.toNext * 100);
   const end = up ? 100 : Math.max(start, Math.round(to.toNext * 100));
   const [w, setW] = useState(start);
-  useEffect(() => { const t = setTimeout(() => setW(end), 250); return () => clearTimeout(t); }, [end]);
+  useEffect(() => ffTimeout(() => setW(end), 250), [end]);
   return (
     <div className="mt-2.5 text-left" data-ach-star>
       <div className="mb-1 flex items-center justify-between text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">
@@ -188,11 +189,12 @@ export function AchievementToasts({ items, onDone, hold = 2400, delay = 0, star 
   const [k, setK] = useState(delay > 0 ? -1 : 0);
   const a = items[k];
   useEffect(() => {
-    if (k < 0) { const t = setTimeout(() => setK(0), delay); return () => clearTimeout(t); }
+    // On the post-match clock (fastForward.tsx): a skip brings the first one
+    // in at once; each still shows for its full hold (4x sooner while held).
+    if (k < 0) return ffTimeout(() => setK(0), delay);
     if (!a) { onDone(); return; }
     sfx("achievement-pop");
-    const t = setTimeout(() => setK((n) => n + 1), hold);
-    return () => clearTimeout(t);
+    return ffTimeout(() => setK((n) => n + 1), hold, { skippable: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [k]);
   if (k < 0 || !a) return null;
