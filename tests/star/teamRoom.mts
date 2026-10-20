@@ -4,7 +4,7 @@
  * and which pages get the chat bubble.
  */
 import {
-  bubbleOn, ideasByPerson, ideasByStage, newGivenTasks, notesFor, pageLabel, rankIdeas, tasksFor, tasksGivenBy,
+  bubbleBottom, bubbleOn, ideasByPerson, ideasByStage, newGivenTasks, notesFor, pageLabel, rankIdeas, tasksFor, tasksGivenBy,
   unreadChat, unreadNotes, upsertById, votersOf,
   type TeamIdea, type TeamMessage, type TeamNote, type TeamTask, type TeamVote,
 } from "@/lib/teamRoom/logic";
@@ -88,6 +88,18 @@ ok(!bubbleOn("/", urls), "never on the home page");
 ok(!bubbleOn("/tierlist/abc", urls) || urls.some((u) => u.startsWith("/tierlist")), "an ordinary site page stays clean");
 ok(pageLabel("/admin/team?tab=chat", { "/admin/team": "Team board" }) === "Team board", "page tag uses the admin list's name");
 ok(pageLabel("/star-goal-clips-dev", {}) === "goal clips", "else a short name from the address");
+
+console.log("The bubble sits above a page's own bottom controls (B13)");
+{
+  // A 390 x 844 phone, the bubble 12 px in from the left.
+  ok(bubbleBottom(12, 844, []) === 12, "nothing marked: the corner, 12 px up");
+  // The Manager's Office dialogue box: 10 px in, 708 px down, to 14 px off the bottom.
+  const box = { left: 10, right: 380, top: 708, bottom: 830 };
+  ok(bubbleBottom(12, 844, [box]) === 844 - 708 + 8, `over the office's dialogue box: sits 8 px above it (${bubbleBottom(12, 844, [box])})`);
+  ok(bubbleBottom(12, 844, [{ ...box, left: 200 }]) === 12, "a marked control off to the right: stays in the corner");
+  ok(bubbleBottom(12, 844, [{ ...box, top: 300, bottom: 360 }]) === 12, "a marked control high up the page: stays in the corner");
+  ok(bubbleBottom(12, 844, [{ ...box, top: 100 }]) === 422, "a huge marked box: never more than half the screen up");
+}
 
 // ── Round two (lib/teamRoom/extras.ts) ─────────────────────────────────
 console.log("Mentions");

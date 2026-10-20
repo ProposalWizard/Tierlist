@@ -16,6 +16,12 @@
  * through, so what is under it shows and can be pressed. Over a control it
  * stays half see-through so you can see what is beneath. (It used to hop up
  * the screen to dodge things; that is gone.)
+ *
+ * A PAGE'S OWN BOTTOM CONTROLS (B13, 20 Oct 2026). A page can mark a control
+ * near the bottom-left with `data-bubble-clear` (BUBBLE_CLEAR); the bubble
+ * then sits just above it instead of on it. Only marked controls move it, so
+ * it never wanders. First used for "Next line ›" in the Manager's Office and
+ * the dialogue bar in the 3D signing, which it covered on a phone.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -24,7 +30,7 @@ import { usePathname } from "next/navigation";
 import { ADMIN_PAGES } from "@/lib/adminRegistry";
 import { useAdminLook } from "@/lib/adminLook";
 import { TEAM_ROOM } from "@/lib/teamRoom/config";
-import { bubbleOn, newGivenTasks, unreadChat } from "@/lib/teamRoom/logic";
+import { BUBBLE_CLEAR, BUBBLE_EDGE as EDGE, BUBBLE_SIZE as SIZE, bubbleBottom, bubbleOn, newGivenTasks, unreadChat } from "@/lib/teamRoom/logic";
 import { waitingOnMe } from "@/lib/teamRoom/extras";
 import { startPointing, useTeamRoom } from "@/lib/teamRoom/store";
 import { ChatThread, RoomGate, TodoList } from "./parts";
@@ -33,9 +39,6 @@ import "./teamRoom.css";
 
 const ADMIN_URLS = ADMIN_PAGES.map((p) => p.url);
 const OPEN_KEY = "kib-team-pop";
-/** The bubble's size and its gap from the corner (px). */
-const SIZE = 40;
-const EDGE = 12;
 /** How long it stays faded after the last scroll or drag. */
 const QUIET_MS = 700;
 const CONTROL = "button, a, input, select, textarea, label, [role='button'], [role='slider'], [role='tab']";
@@ -55,7 +58,7 @@ function Bubble({ path }: { path: string }) {
   const look = useAdminLook();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"chat" | "todo">("chat");
-  const bottom = EDGE;
+  const [bottom, setBottom] = useState(EDGE);
   const [left, setLeft] = useState(EDGE);
   const [quiet, setQuiet] = useState(false);
   const [over, setOver] = useState(false);
@@ -63,11 +66,18 @@ function Bubble({ path }: { path: string }) {
 
   // Always the bottom-left corner. On a computer the admin side menu fills the
   // left edge, so it sits just right of the menu (not on "Back to Knowitball").
+  // Above a control the page marked with data-bubble-clear (BUBBLE_CLEAR).
   const place = useCallback(() => {
     const side = document.querySelector(".ash-side")?.getBoundingClientRect();
     const onScreen = side && side.width > 0 && side.left >= 0 && side.right > 0 && side.width < window.innerWidth / 2;
-    setLeft(onScreen ? Math.round(side.right + EDGE) : EDGE);
+    const x = onScreen ? Math.round(side.right + EDGE) : EDGE;
+    setLeft(x);
+    const marked = Array.from(document.querySelectorAll(`[${BUBBLE_CLEAR}]`))
+      .map((el) => el.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
+    setBottom(bubbleBottom(x, window.innerHeight, marked));
   }, []);
+  // A marked control can appear or move after load (a 3D stage loading in).
+  useEffect(() => { const id = setInterval(place, 1000); return () => clearInterval(id); }, [place]);
   useEffect(() => {
     place();
     const t = setTimeout(place, 800);
@@ -115,7 +125,7 @@ function Bubble({ path }: { path: string }) {
     look();
     const id = setInterval(look, 1000);
     return () => clearInterval(id);
-  }, [path, left]);
+  }, [path, left, bottom]);
 
   useEffect(() => { try { const v = sessionStorage.getItem(OPEN_KEY); if (v === "chat" || v === "todo") { setOpen(true); setTab(v); } } catch { /* private */ } }, []);
   useEffect(() => { try { sessionStorage.setItem(OPEN_KEY, open ? tab : ""); } catch { /* private */ } }, [open, tab]);

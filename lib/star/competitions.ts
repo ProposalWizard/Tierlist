@@ -9,8 +9,7 @@ import {
 import { openLowerLeagueTrophy } from "./lowerLeagueTrophy";
 import { mulberry32, sortLeague } from "./season";
 import {
-  PRE_SEASON_WEEK, EURO_LEAGUE_PHASE_WEEKS, EURO_KO_SLOTS_WITH_R32,
-  LEAGUE_CUP_SLOTS, FA_CUP_SLOTS,
+  PRE_SEASON_WEEK, EURO_LEAGUE_PHASE_WEEKS,
   leagueCupSlotsFor, faCupSlotsFor, lowerLeagueTrophySlotsFor, divisionOf, fixtureTimestamp, tournamentWeeksFor,
   type CareerDivision, type CupSlot,
 } from "./calendar";
@@ -594,58 +593,45 @@ export function seedCups(
  * ── `inEurope` ──
  *
  * A club also in the Champions League or Europa League plays midweek too, and
- * the static slots above were built without knowing that — reported directly,
- * after a Tuesday European tie was followed by a Wednesday domestic cup tie
- * with one day's rest between them. When `inEurope` is set (and the division
- * is Premier League — see below), the raw slot week is pushed forward, one
- * week at a time, until it clears both Europe's own known weeks (the league
- * phase AND every knockout week, since which route a club takes into the
- * knockout is not known this far ahead) and the OTHER domestic cup's own
- * static weeks. Four weeks — 5, 22, 25 in the raw table, cascading a League
- * Cup semi-final as far as 33 — need this; every other round is already clear
- * and the loop is a no-op for it.
+ * the plain slots put a cup Wednesday the day after a European Tuesday on four
+ * weekends. A Premier League club in Europe plays both cups on their own
+ * weekends instead (calendar.ts LEAGUE_CUP_SLOTS_IN_EUROPE /
+ * FA_CUP_SLOTS_IN_EUROPE), chosen so no weekend holds two midweek games.
  *
- * Scoped to `division === "premier"`: a Championship round here is a ROUND
- * NUMBER translated to a real weekend by `championshipCalendarWeek`, not a
- * direct week number, so "the next week" would not mean what it means below.
- * A Championship club that has retained European football (see
- * `careerFlow.ts`'s relegated-cup-winner case) still gets correct, non
- * double-booked dates from the `kind`-aware `fixtureDate` — just not this
- * additional rest-gap push.
+ * Until B13 (20 Oct 2026) this pushed the tie forward a week at a time until
+ * it was clear of Europe and the other cup. It did not know about the Premier
+ * League's own Tuesday rounds, so the FA Cup quarter-final went from week 22
+ * to week 24, the day after a league Tuesday (seen: Tue 16 / Wed 17 Feb 2027).
+ *
+ * A Championship club in Europe (a relegated cup winner) keeps the plain
+ * slots: with twelve Tuesday league rounds, sixteen European Tuesdays and ten
+ * cup ties it needs 38 midweeks, and a season has 34. See
+ * tests/star/fixtureClashes.mts.
  */
 /** The calendar slots of one cup, in this division's week numbers. */
-function cupSlotsFor(competition: CupId, division: CareerDivision): CupSlot[] {
+function cupSlotsFor(competition: CupId, division: CareerDivision, inEurope = false): CupSlot[] {
   if (competition === "Lower League Trophy") return lowerLeagueTrophySlotsFor(division);
-  return competition === "League Cup" ? leagueCupSlotsFor(division) : faCupSlotsFor(division);
+  return competition === "League Cup" ? leagueCupSlotsFor(division, inEurope) : faCupSlotsFor(division, inEurope);
+}
+
+/** The round names of a slot table, one per round (a two-legged round once). */
+function roundsOf(slots: CupSlot[]): string[] {
+  const byRound: string[] = [];
+  for (const s of slots) if (!byRound.includes(s.round)) byRound.push(s.round);
+  return byRound;
 }
 
 export function cupRoundWeek(
   competition: CupId, roundIndex: number, _clubCount?: number,
   division: CareerDivision = "premier", inEurope = false,
 ): number {
-  const slots = cupSlotsFor(competition, division);
+  const slots = cupSlotsFor(competition, division, inEurope);
   // One entry per ROUND, not per match: the League Cup's two-legged semi-final
   // occupies two slots and is still the fourth round of the competition.
-  const byRound: string[] = [];
-  for (const s of slots) if (!byRound.includes(s.round)) byRound.push(s.round);
+  const byRound = roundsOf(slots);
   const round = byRound[Math.min(roundIndex, byRound.length - 1)];
   const slot = slots.find(s => s.round === round);
-  return clearOfEurope(slot?.week ?? 3 + roundIndex * 6, competition, division, inEurope);
-}
-
-/** Push a cup week off a European week (and the other cup's), Premier League only. */
-function clearOfEurope(week: number, competition: CupId, division: CareerDivision, inEurope: boolean, after = -1): number {
-  if (!(inEurope && division === "premier")) return Math.max(week, after + 1);
-  const otherSlots = competition === "League Cup" ? FA_CUP_SLOTS : LEAGUE_CUP_SLOTS;
-  const reserved = new Set<number>([
-    ...EURO_LEAGUE_PHASE_WEEKS,
-    ...EURO_KO_SLOTS_WITH_R32.map(s => s.week),
-    ...otherSlots.map(s => s.week),
-  ]);
-  let w = Math.max(week, after + 1);
-  let guard = 0;
-  while (reserved.has(w) && guard < 10) { w += 1; guard += 1; }
-  return w;
+  return slot?.week ?? 3 + roundIndex * 6;
 }
 
 /**
@@ -655,11 +641,10 @@ function clearOfEurope(week: number, competition: CupId, division: CareerDivisio
  * and the reason that competition needs six dates for five rounds.
  */
 export function cupSecondLegWeek(
-  competition: CupId, roundIndex: number, division: CareerDivision = "premier",
+  competition: CupId, roundIndex: number, division: CareerDivision = "premier", inEurope = false,
 ): number | null {
-  const slots = cupSlotsFor(competition, division);
-  const byRound: string[] = [];
-  for (const s of slots) if (!byRound.includes(s.round)) byRound.push(s.round);
+  const slots = cupSlotsFor(competition, division, inEurope);
+  const byRound = roundsOf(slots);
   const round = byRound[Math.min(roundIndex, byRound.length - 1)];
   return slots.find(s => s.round === round && s.leg === 2)?.week ?? null;
 }
@@ -692,10 +677,10 @@ function secondLegFixture(state: CupState, career: CareerState, firstLeg: Fixtur
   const division = divisionOf(career);
   const inEurope = career.europeanQualification === "Champions League"
     || career.europeanQualification === "Europa League";
-  const slot = cupSecondLegWeek(state.competition, roundIndex, division) ?? firstLeg.week + 3;
+  const slot = cupSecondLegWeek(state.competition, roundIndex, division, inEurope) ?? firstLeg.week + 3;
   return {
     ...firstLeg,
-    week: clearOfEurope(slot, state.competition, division, inEurope, firstLeg.week),
+    week: Math.max(slot, firstLeg.week + 1),
     home: !firstLeg.home,
     played: false,
     leg: 2,

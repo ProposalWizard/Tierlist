@@ -78,7 +78,7 @@ export default function OfficePage() {
               <Office3D you={you} manager={managerFor(SAMPLE_TERMS.manager)} managerName={SAMPLE_TERMS.manager} club={SAMPLE_TERMS.club}
                 speaker={speaker} where="test" style={{ position: "absolute", inset: 0 }} />
             )}
-            <div className="s3-line">
+            <div className="s3-line" data-bubble-clear>
               <small>{cur.who === "boss" ? `${SAMPLE_TERMS.manager} · Manager` : "You"}</small>
               <b>{cur.text}</b>
               <button data-next className="bc-btn" style={{ marginTop: 8 }} onClick={next}>Next line ›</button>
@@ -102,7 +102,7 @@ export default function OfficePage() {
         <button data-boss onClick={() => setSpeaker("boss")} style={chip(speaker === "boss")}>He talks</button>
         <button data-you onClick={() => setSpeaker("you")} style={chip(speaker === "you")}>You talk</button>
       </div>
-      <div style={{ position: "absolute", left: 10, right: 10, bottom: 18, padding: "10px 12px", borderRadius: 6, background: "rgba(8,10,16,.86)", borderLeft: "3px solid #fbbf24" }}>
+      <div data-bubble-clear style={{ position: "absolute", left: 10, right: 10, bottom: 18, padding: "10px 12px", borderRadius: 6, background: "rgba(8,10,16,.86)", borderLeft: "3px solid #fbbf24" }}>
         <div style={{ fontSize: 11, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase" }}>{cur.who === "boss" ? `${SAMPLE_TERMS.manager} · Manager` : "You"}</div>
         <div style={{ fontSize: 16, fontWeight: 800 }}>{cur.text}</div>
         <button data-next onClick={() => { const n = (line + 1) % LINES.length; setLine(n); setSpeaker(LINES[n].who); }} style={{ ...chip(false), marginTop: 8 }}>Next line ›</button>

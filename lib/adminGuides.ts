@@ -510,6 +510,7 @@ export const ADMIN_GUIDES = {
     ],
     saving: [
       "Rewards save straight to the live database (Supabase table rewards) and apply to every player immediately.",
+      "On a local test build the list still loads but is read-only: saving needs the site's database key, and an amber note says so. Any other problem (not signed in, not an admin, the table missing) is said in plain words in the red box.",
       "The XP curve and XP awards are set in the code, not here — ask for a code change to alter them.",
     ],
     inGame: ["Players' profiles and level-up unlocks across the whole site."],
@@ -827,7 +828,7 @@ export const ADMIN_GUIDES = {
         ["@ Waiting on me", "Messages that name you that you haven't seen, and points you haven't pressed Got it on. Left side on a computer, folded above the chat on a phone. The round button shows a gold @ when something is waiting."],
         ["Got it (on a pointed page)", "Marks the point as seen; the sender's card shows your face lit. ✕ closes it without saying Got it."],
         ["Pinned", "Pinned messages, on the right (folded above the chat on a phone)."],
-        ["Round chat button", "Bottom-left on every admin and test page: Chat | To-do in a box. 👉 Point starts point mode. Open ↗ goes to the full tab."],
+        ["Round chat button", "Bottom-left on every admin and test page: Chat | To-do in a box. 👉 Point starts point mode. Open ↗ goes to the full tab. On a page whose own buttons sit bottom-left (the Manager's office dialogue, the 3D signing) it sits just above them instead."],
       ] },
       { group: "To-do", items: [
         ["Add a job · for me ▾", "Your own job, or pick Mikey or Leo to give them one."],
@@ -835,9 +836,11 @@ export const ADMIN_GUIDES = {
       ] },
       { group: "Team tab", items: [
         ["Live on knowitball.co.uk", "Whether the newest version of main finished deploying, how long ago, and what it was."],
+        ["N pushes this week (under a name)", "How many times that person pushed to GitHub in the last 7 days, on any branch, from GitHub's own push log (it names who pushed). One push can carry several changes. Other people's work that came in when main was merged is not counted. \"N+ pushes since …\" = GitHub's log (its last 300 events) does not reach back a full week. \"N changes this week\" = the log could not be read, so it counts the changes on their own branch instead. Until 20 Oct it counted only the newest 20 changes on the branch, so it never passed 20 and included work merged in from main."],
+        ["Activity · pushes a day", "The same pushes, per day, for two weeks. Days GitHub's log does not reach are left empty and named under the chart (unknown, not zero)."],
         ["A push", "Opens it: the full message, when, which branch, and the patch note it went out in."],
         ["v0.55 (green tag)", "The patch note that push went out in. Grey \"no notes yet\" = not in any patch notes yet."],
-        ["Show all", "Shows every push on that branch (up to 20)."],
+        ["View all", "Shows that person's latest changes on their branch (up to 30): their own work only, not work merged in from main."],
         ["A pull request", "Opens it on GitHub."],
       ] },
       { group: "Inside a push", items: [
@@ -862,7 +865,7 @@ export const ADMIN_GUIDES = {
     ],
     inGame: ["Nowhere. Admins only."],
     needs: [
-      "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it GitHub only answers a few times an hour and the board says so.",
+      "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it, or if GitHub refuses it, the board asks without a key (the repository is public): that works about 60 times an hour, and one line on the board says which happened. On a local test build the key comes from the computer running it, not from Vercel, and the line says so.",
       "The live progress bars (\"Now working on\") are step 2: one database file for Mikey to run and a shared password. Until then each card says so.",
       "Ideas, Chat and To-do need supabase/migrations/team_room.sql run once in Supabase. Until then they say so.",
       "Seen faces, Got it, Read and understood and patch-note notes need supabase/migrations/team_room_v2.sql (PENDING), run after team_room.sql.",

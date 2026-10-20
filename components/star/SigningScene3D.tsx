@@ -215,7 +215,7 @@ export default function SigningScene3D(props: SigningScene3DProps) {
 
       {/* The words. */}
       {stage === "talk" && current && (
-        <div data-line={line} onClick={advance} style={{ position: "absolute", left: 12, right: 12, bottom: "max(22px, env(safe-area-inset-bottom))", padding: "12px 14px 22px", background: "rgba(5,7,12,.84)", borderLeft: `3px solid ${current.who === "boss" ? "#fbbf24" : "#60a5fa"}`, borderRadius: 4 }}>
+        <div data-line={line} data-bubble-clear onClick={advance} style={{ position: "absolute", left: 12, right: 12, bottom: "max(22px, env(safe-area-inset-bottom))", padding: "12px 14px 22px", background: "rgba(5,7,12,.84)", borderLeft: `3px solid ${current.who === "boss" ? "#fbbf24" : "#60a5fa"}`, borderRadius: 4 }}>
           <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: current.who === "boss" ? "#fbbf24" : "#60a5fa" }}>{speaker}</div>
           <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.3, marginTop: 4, minHeight: 46 }}>{current.text.slice(0, typed)}</div>
           <div style={{ position: "absolute", right: 12, bottom: 6, fontSize: 11, color: "#94a3b8" }}>{line + 1}/{lines.length} · tap ›</div>
@@ -223,7 +223,7 @@ export default function SigningScene3D(props: SigningScene3DProps) {
       )}
 
       {stage === "contract" && (
-        <div style={{ position: "absolute", left: 12, right: 12, bottom: "max(22px, env(safe-area-inset-bottom))" }}>
+        <div data-bubble-clear style={{ position: "absolute", left: 12, right: 12, bottom: "max(22px, env(safe-area-inset-bottom))" }}>
           <button data-sign onClick={sign} style={{ width: "100%", padding: "16px 0", fontSize: 18, fontWeight: 900, letterSpacing: 1.5, color: "#1a1206", background: "linear-gradient(180deg,#fde047,#f59e0b)", border: "none", borderRadius: 12, boxShadow: "0 6px 22px rgba(245,158,11,.45)" }}>
             TAP TO SIGN
           </button>
@@ -237,7 +237,7 @@ export default function SigningScene3D(props: SigningScene3DProps) {
       )}
 
       {stage === "done" && (
-        <div style={{ position: "absolute", left: 12, right: 12, bottom: "max(22px, env(safe-area-inset-bottom))" }}>
+        <div data-bubble-clear style={{ position: "absolute", left: 12, right: 12, bottom: "max(22px, env(safe-area-inset-bottom))" }}>
           <div style={{ textAlign: "center", marginBottom: 10, textShadow: "0 2px 6px #000" }}>
             <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: "#fbbf24" }}>WELCOME TO</div>
             <div style={{ fontSize: 26, fontWeight: 900, textTransform: "uppercase" }}>{contract.club}</div>
