@@ -137,6 +137,13 @@ export interface HiddenMatchState {
   sinceTurnover?: number;
   /** The zone when possession last flipped to you. */
   turnoverZone?: Zone;
+  /**
+   * How that last regain went: true when the ball was moved on a zone the
+   * moment it was won (a clearance or a counter), false when it was won on
+   * the spot. Set at the turnover from the roll that already decides it, so
+   * no random number is added. Absent on an old in-flight state.
+   */
+  turnoverMoved?: boolean;
   /** Added time, chasing: the "everyone forward" line has been read out. */
   chargeAnnounced?: boolean;
   /**
@@ -560,6 +567,15 @@ export interface ScenarioRequest {
   penaltyWon?: boolean;
   /** Added time, you're behind, everyone's forward — see FERGIE_*. */
   lateCharge?: boolean;
+  /**
+   * How your side last won the ball, as the match had it when this chance
+   * came: the zone it was won in, how many minutes ago (0 = this minute),
+   * and whether it was moved on a zone the moment it was won (a clearance or
+   * a counter) or won on the spot. Read only by what shows the move before
+   * the chance (so a build-up shows the regain this match really had, and
+   * never one it did not). Nothing in the match reads it back.
+   */
+  regain?: { zone: Zone; ago: number; moved: boolean };
 }
 
 /**
@@ -1109,7 +1125,7 @@ function tickMinute(
     const next: Side = userWins ? "user" : "opponent";
     if (next !== state.possession) {
       state.possession = next;
-      if (next === "user") { state.sinceTurnover = 0; state.turnoverZone = state.zone; }
+      if (next === "user") { state.sinceTurnover = 0; state.turnoverZone = state.zone; state.turnoverMoved = false; }
       if (lateCharge && next === "opponent" && rng() < FERGIE_COUNTER) {
         // Caught with men forward: they break into the space you left.
         state.zone = shift(state.zone, -2);
@@ -1118,6 +1134,7 @@ function tickMinute(
         // Half of turnovers are a clearance or a counter, which moves the ball;
         // the rest are won on the spot and leave it where it was.
         state.zone = shift(state.zone, next === "user" ? 1 : -1);
+        if (next === "user") state.turnoverMoved = true;
       }
     }
   }
@@ -1539,6 +1556,7 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
     kinds: weightKinds(kinds, state, inputs),
     lane,
     pattern,
+    regain: { zone: state.turnoverZone ?? state.zone, ago: state.sinceTurnover ?? 99, moved: !!state.turnoverMoved },
     ...(lateCharge ? { lateCharge: true } : {}),
     reason: lateCharge
       ? "Everyone forward — it's launched into the box"

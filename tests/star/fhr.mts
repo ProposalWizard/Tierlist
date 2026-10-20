@@ -167,7 +167,7 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
   // On: every fresh open-play chance gets one; set pieces and moves carrying on never do.
   forceFhrMode("on");
   const durs: number[] = [], sigs = new Set<string>();
-  let open = 0, withProblems = 0, runOns = 0, covers = 0, setPieces = 0, fouls = 0;
+  let open = 0, withProblems = 0, runOns = 0, covers = 0, setPieces = 0, fouls = 0, called = 0, regains = 0;
   const runSpeeds: number[] = [];
   for (const c of cs) {
     const sp = c.sc.kind === "penalty" || c.sc.kind === "free_kick" || c.sc.kind === "corner";
@@ -185,9 +185,22 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
     }
     open++;
     if (!l) { check(false, `${c.sc.kind}: no build-up`); continue; }
-    durs.push(l.durS); sigs.add(l.signature);
+    sigs.add(l.signature);
     if (l.problems.length) withProblems++;
-    check(l.durS >= FHR_MIN_S - 1e-9 && l.durS <= FHR_MAX_S + 1e-9, `${c.sc.kind}: build-up ${l.durS.toFixed(2)} s, not 4–8`);
+    // B2b: never an offside left uncalled; a called one ends the move (no chance, so no hand-over checks).
+    check(l.passChecks.every((p) => !p.offside || p.called), `${c.sc.kind}: an offside pass was not called`);
+    if (l.offside) {
+      called++;
+      check(l.whistleAt === l.offside.at && l.captionAt?.(l.offside.at + 0.01) === "Offside!", `${c.sc.kind}: a called offside without its whistle and caption`);
+      check(l.passChecks.some((p) => p.called && p.by === l.offside!.by), `${c.sc.kind}: the called offside is not in the pass checks`);
+      check(!l.runOnKeys?.length, `${c.sc.kind}: men still running after a called offside`);
+      continue;
+    }
+    durs.push(l.durS);
+    // A regain (B2b: the match's own, this minute) adds their spell: up to half of it longer.
+    if (l.regain) regains++;
+    const maxS = FHR_MAX_S + (l.regain ? 0.5 * l.regain.spellS + 0.6 : 0);
+    check(l.durS >= FHR_MIN_S - 1e-9 && l.durS <= maxS + 1e-9, `${c.sc.kind}: build-up ${l.durS.toFixed(2)} s, not 4–${maxS.toFixed(1)}`);
     // Ends exactly on the drawing: the ball and you at the hand-over (durS), and
     // the men still running (phase 3) once they have stopped (durS + runOnS).
     const b = l.ballAt(l.durS);
@@ -227,12 +240,14 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
     check(leadSig(careerBuildUp(c.sc, c.moment)) === leadSig(l), `${c.sc.kind}: the same chance got a different build-up`);
   }
   check(open > 100, `only ${open} open-play chances served`);
-  check(runOns >= open * 0.9, `phase 3: only ${runOns} of ${open} build-ups hand over with men still running`);
+  check(runOns >= (open - called) * 0.9, `phase 3: only ${runOns} of ${open - called} build-ups hand over with men still running`);
+  check(called > 0 && called <= open * 0.2, `B2b: ${called} of ${open} build-ups ended in a called offside`);
+  check(regains > 0, "B2b: no build-up showed the match's regain");
   runSpeeds.sort((a, b) => a - b);
   check(runSpeeds[runSpeeds.length >> 1] > 1, `phase 3: median speed at the hand-over ${runSpeeds[runSpeeds.length >> 1]?.toFixed(2)} m/s (nobody really moving)`);
   check(covers >= open * 0.05 && covers <= open * 0.4, `FHR-3: ${covers} of ${open} chances got an extra defender`);
   check(setPieces > 5, "no set pieces served");
-  G.__fhrStats = { open, runOns, covers, setPieces, fouls, runSpeedMedian: runSpeeds[runSpeeds.length >> 1] };
+  G.__fhrStats = { open, called, regains, runOns, covers, setPieces, fouls, runSpeedMedian: runSpeeds[runSpeeds.length >> 1] };
   check(withProblems <= Math.ceil(open * 0.01), `${withProblems} of ${open} build-ups failed their own checks`);
   check(sigs.size >= open * 0.85, `only ${sigs.size} distinct routes in ${open} build-ups`);
   durs.sort((a, b) => a - b);

@@ -36,7 +36,7 @@ export function fhrBuildUpOn(sc: Scenario, moment: LeadMoment, adjust?: FhrAdjus
   let lead: LeadIn | null = null;
   if (fhrWantsBuildUp(sc.kind, moment)) {
     const b = fhrBuildUpFor(sc, moment, adjust);
-    note({ kind: sc.kind, what: "open", cover: !!b.cover, drama: b.drama, durS: b.durS, runOnS: b.runOnS ?? 0 });
+    note({ kind: sc.kind, what: "open", cover: !!b.cover, drama: b.drama, durS: b.durS, runOnS: b.runOnS ?? 0, offside: !!b.offside, regain: !!b.regain });
     lead = b;
   } else if (fhrWantsFoul(sc, moment)) {
     const b = fhrFoulBuildUpFor(sc, moment);
@@ -47,7 +47,7 @@ export function fhrBuildUpOn(sc: Scenario, moment: LeadMoment, adjust?: FhrAdjus
 }
 
 /** For the test drivers (scripts/fhr/b2-stills.mjs): what the last build-up was. Read-only, never stored. */
-function note(v: { kind: ScenarioKind; what: "open" | "foul"; cover: boolean; drama: number; durS: number; runOnS: number }) {
+function note(v: { kind: ScenarioKind; what: "open" | "foul"; cover: boolean; drama: number; durS: number; runOnS: number; offside?: boolean; regain?: boolean }) {
   (globalThis as Record<string, unknown>).__starLastBuildUp = { ...v, at: Date.now() };
 }
 

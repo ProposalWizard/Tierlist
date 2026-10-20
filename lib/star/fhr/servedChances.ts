@@ -50,6 +50,8 @@ export function servedChances(o: { count: number; seed?: number; chances?: Chanc
             moment: {
               opening: false, fresh: !setPiece, lane: req.lane, pattern: req.pattern, seed,
               usStrength: inputs.teamStrength, themStrength: inputs.oppStrength,
+              // B2b: how the ball was won, as the match had it (the build-up shows it).
+              ...(req.regain ? { regain: req.regain } : {}),
               frame: { x1: frame.x1, x2: frame.x2, y1: frame.y1, y2: frame.y2 },
             },
           });
