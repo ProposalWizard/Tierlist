@@ -1,0 +1,277 @@
+<title>Drift + Play Screens</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one column, stacked cards, stills under their text. Tokens first, then components. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  a{color:var(--blue)}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+  .chip{display:inline-block;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink2);text-decoration:none}
+  .chip.hot{color:var(--amber);border-color:var(--amber)}
+  .back{display:inline-block;font-size:13px;font-weight:700;margin:0 0 4px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b,.row li b{color:var(--ink)}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:4px}
+  .nr{color:var(--ink3);font-style:italic}
+  .tile{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+  .tile>b{display:block;font-size:15px}
+  .tile>p{margin:3px 0 0;color:var(--ink2);font-size:14.5px}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .track.solo{height:14px}
+  .track.solo .fill.now{top:0;bottom:0;height:auto}
+  .fill.now.warn{background:var(--amber)}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.blue{background:var(--blue)}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+  .bnote{color:var(--ink3);font-size:12.5px;margin:2px 0 0}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px 14px;margin:10px 0 0}
+  .figs.wide{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+  .figs figure{margin:0}
+  .figs.pair{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .figs.pair figure.ph{max-width:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details .figs{margin-top:2px}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .sbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px 12px}
+  .sbox h3{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 4px}
+  .sbox h3.g{color:var(--green)} .sbox h3.b{color:var(--blue)} .sbox h3.a{color:var(--amber)} .sbox h3.r{color:var(--red)}
+  .sbox ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+  .sbox li{margin-bottom:4px}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox .q{font-weight:700}
+  .okbox .opts{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+  .okbox .who{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-right:6px}
+
+  .vid{border:2px dashed var(--line);border-radius:var(--r);padding:12px 14px;background:var(--card)}
+  .vid b{color:var(--amber)}
+  .vid p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .vid ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  .cards{display:grid;gap:10px;margin:0}
+  .bcard{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;min-width:0}
+  .bcard .n{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 4px}
+  .bcard .n b{font-size:17px}
+  .bcard p{margin:0;color:var(--ink2);font-size:14.5px}
+  .bcard .go{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:var(--blue)}
+  .bcard.soon{border-style:dashed;opacity:.85}
+
+  /* --- how these patch notes work --- */
+  .how{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 14px 10px;min-width:0}
+  .how svg{display:block;width:100%;max-width:340px;height:auto;margin:2px auto 10px}
+  .how ol{margin:0;padding-left:20px;color:var(--ink2);font-size:14.5px}
+  .how li{margin:0 0 6px}
+  .how li b{color:var(--ink)}
+  .how .mini{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;vertical-align:1px}
+  .how .btn{display:inline-block;font-size:12.5px;font-weight:800;background:var(--pill);color:var(--pillink);padding:2px 9px;border-radius:999px;vertical-align:1px}
+  .how .where{margin:8px 0 0;font-size:13px;color:var(--ink3)}
+  /* --- already decided --- */
+  .donebox{border:1px solid var(--line);border-left:4px solid var(--green);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .donebox ul{margin:0;padding:0;list-style:none}
+  .donebox li{padding:11px 0 11px 28px;border-bottom:1px solid var(--line);position:relative}
+  .donebox li:last-child{border-bottom:0}
+  .donebox li::before{content:"\2713";position:absolute;left:2px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--pillink);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .donebox .q{font-weight:700}
+  .donebox .d{color:var(--ink2);font-size:14px;margin-top:3px}
+  .donebox .by{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-right:6px}
+  /* --- video --- */
+  .clip{margin:12px 0 2px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .look{font-size:13px;color:var(--ink2);margin:0 0 7px}
+  .clip .look b{color:var(--ink)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px}
+  /* --- tabs (index) --- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink2);font:inherit;font-size:13.5px;font-weight:800;padding:8px 13px;border-radius:999px;cursor:pointer;min-height:40px}
+  .tab[aria-selected="true"]{background:var(--pill);color:var(--pillink);border-color:var(--pill)}
+  .tab small{font-weight:700;opacity:.8;margin-left:4px}
+  .js .panel[hidden]{display:none}
+  .panel h3.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px}
+  .bcard .vtag{font-size:11px;font-weight:800;color:var(--ink3);letter-spacing:.04em}
+  .qlist{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px}
+  .qlist ul{margin:0;padding:0;list-style:none}
+  .qlist li{padding:10px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14px}
+  .qlist li:last-child{border-bottom:0}
+  .qlist li b{color:var(--ink)}
+
+  /* --- steps (vertical list) --- */
+  .steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  .steps li{position:relative;padding:9px 0 9px 36px;border-bottom:1px solid var(--line);counter-increment:st;color:var(--ink2);font-size:14.5px;min-width:0}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(st);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .steps li b{color:var(--ink)}
+  .steps li.done::before{background:var(--green);border-color:var(--green);color:var(--pillink);content:"\2713"}
+  .steps li.next::before{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+  .mock{border:2px solid var(--red);border-radius:var(--r);background:var(--rbg);padding:12px 14px;margin:10px 0 2px}
+  .mock b{display:block;color:var(--red);font-size:15px;letter-spacing:.02em}
+  .mock p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .mock .mb{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .mock .mb span{font-size:13px;font-weight:800;padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink2)}
+  .mock .mb span.go{background:var(--card2)}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+<div class="wrap">
+<header>
+  <a class="back" href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">&larr; All last-2-days notes</a><br>
+  <span class="ver">19 OCT · PLAY SCREENS</span>
+  <h1>Every football screen draws the pitch at the real match&rsquo;s size, play buttons stay on screen, and the engine warning is red.</h1>
+  <p class="status"><i></i>Merged to main on 20 Oct (PR #744). It goes live with the main deploy. Not checked on the live site from here. The match engine file was not changed (two comments only).</p>
+  <p class="sub">19 Oct 2026. In Admin &rarr; Patch notes this is <b>v0.62</b>.</p>
+  <div class="chips"><a class="chip" href="#ok">Nothing waiting on you</a><a class="chip" href="#ok">3 decided</a><a class="chip" href="#vid">Videos (none planned) &darr;</a><a class="chip" href="#how">How this works</a></div>
+</header>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<ul class="ck"><li><label><input type="checkbox" data-k="c0"><span><span class="q">Full match on a phone</span><span class="a">Your chance: the pitch is 366 px wide (it was 340).</span></span></label></li><li><label><input type="checkbox" data-k="c1"><span><span class="q">Training drills on a phone</span><span class="a">The pitch is 366 px wide (it was 346).</span></span></label></li><li><label><input type="checkbox" data-k="c2"><span><span class="q">Infinite Highlights on a phone</span><span class="a">NEXT and the chance name stay on screen without scrolling.</span></span></label></li><li><label><input type="checkbox" data-k="c3"><span><span class="q">Real moments, Goal videos, Visual effects lab, Real shots</span><span class="a">Each pitch is 366 px on a phone. None scrolls sideways.</span></span></label></li><li><label><input type="checkbox" data-k="c4"><span><span class="q">The red warning</span><span class="a">When Claude is about to edit a drift file, the Allow box shows the red notice.</span></span></label></li></ul>
+
+<h2 class="nxt" id="how"><i></i>HOW THESE PATCH NOTES WORK</h2><div class="how"><svg viewBox="0 0 346 250" role="img" aria-label="A drawing of one patch-notes page: 1 Check these, 2 each change as Problem, Why, Fix with its picture, 3 the Seen, measured or reasoned tag, 4 Needs your OK, 5 the Read and understood button on the admin Patch notes page.">
+<rect x="8" y="6" width="176" height="238" rx="10" style="fill:var(--card);stroke:var(--line);stroke-width:1.5"/>
+<rect x="20" y="18" width="46" height="9" rx="4.5" style="fill:var(--pill)"/>
+<rect x="20" y="33" width="136" height="6" rx="3" style="fill:var(--ink3)"/>
+<rect x="20" y="44" width="98" height="6" rx="3" style="fill:var(--ink3)"/>
+<rect x="20" y="60" width="52" height="5" rx="2.5" style="fill:var(--ink2)"/>
+<rect x="20" y="71" width="8" height="8" rx="2" style="fill:none;stroke:var(--green);stroke-width:1.5"/><rect x="34" y="73" width="96" height="4" rx="2" style="fill:var(--line)"/>
+<rect x="20" y="84" width="8" height="8" rx="2" style="fill:none;stroke:var(--green);stroke-width:1.5"/><rect x="34" y="86" width="78" height="4" rx="2" style="fill:var(--line)"/>
+<rect x="20" y="97" width="8" height="8" rx="2" style="fill:none;stroke:var(--green);stroke-width:1.5"/><rect x="34" y="99" width="108" height="4" rx="2" style="fill:var(--line)"/>
+<rect x="20" y="112" width="152" height="62" rx="6" style="fill:var(--card2);stroke:var(--line)"/>
+<rect x="27" y="120" width="14" height="5" rx="2.5" style="fill:var(--red)"/><rect x="46" y="121" width="64" height="3.5" rx="1.7" style="fill:var(--line)"/>
+<rect x="27" y="134" width="14" height="5" rx="2.5" style="fill:var(--amber)"/><rect x="46" y="135" width="52" height="3.5" rx="1.7" style="fill:var(--line)"/>
+<rect x="27" y="148" width="14" height="5" rx="2.5" style="fill:var(--green)"/><rect x="46" y="149" width="64" height="3.5" rx="1.7" style="fill:var(--line)"/>
+<rect x="120" y="118" width="44" height="50" rx="4" style="fill:var(--line)"/>
+<path d="M124 160 l10 -14 l8 8 l7 -11 l11 17z" style="fill:var(--ink3);opacity:.6"/>
+<rect x="20" y="181" width="34" height="9" rx="4.5" style="fill:var(--green);opacity:.85"/>
+<rect x="58" y="181" width="40" height="9" rx="4.5" style="fill:var(--blue);opacity:.85"/>
+<rect x="102" y="181" width="40" height="9" rx="4.5" style="fill:var(--amber);opacity:.85"/>
+<rect x="20" y="198" width="152" height="18" rx="4" style="fill:var(--card2)"/><rect x="20" y="198" width="3" height="18" style="fill:var(--amber)"/><rect x="30" y="205" width="100" height="4" rx="2" style="fill:var(--ink3)"/>
+<rect x="20" y="224" width="92" height="13" rx="6.5" style="fill:var(--pill)"/><rect x="34" y="229.5" width="64" height="3" rx="1.5" style="fill:var(--pillink);opacity:.8"/>
+<g style="font:700 11px -apple-system,Segoe UI,Roboto,sans-serif;fill:var(--ink2)">
+<circle cx="204" cy="82" r="9" style="fill:var(--pill)"/><text x="204" y="86" text-anchor="middle" style="fill:var(--pillink)">1</text><text x="220" y="80">Check these</text><text x="220" y="93">first</text>
+<circle cx="204" cy="140" r="9" style="fill:var(--pill)"/><text x="204" y="144" text-anchor="middle" style="fill:var(--pillink)">2</text><text x="220" y="138">Problem, Why,</text><text x="220" y="151">Fix + picture</text>
+<circle cx="204" cy="186" r="9" style="fill:var(--pill)"/><text x="204" y="190" text-anchor="middle" style="fill:var(--pillink)">3</text><text x="220" y="184">Seen, measured</text><text x="220" y="197">or reasoned</text>
+<circle cx="204" cy="207" r="9" style="fill:var(--pill)"/><text x="204" y="211" text-anchor="middle" style="fill:var(--pillink)">4</text><text x="220" y="211">Needs your OK</text>
+<circle cx="204" cy="231" r="9" style="fill:var(--pill)"/><text x="204" y="235" text-anchor="middle" style="fill:var(--pillink)">5</text><text x="220" y="235">Read and understood</text>
+</g></svg><ol><li><b>One page per build.</b> Open the one you want.</li><li><b>Check these</b> is the short list at the top. Look at each one in the game.</li><li><b>Each change is Problem &rarr; Why &rarr; Fix</b>, with its picture right under it.</li><li><b>The tag says how sure we are:</b> <span class="mini t-seen">seen</span> on a screen, <span class="mini t-meas">measured</span> as a number, <span class="mini t-reas">reasoned</span> from the code only, <span class="mini t-no">not seen</span>.</li><li><b>Needs your OK</b> lists what waits on you. Then press <span class="btn">Read and understood</span> on the admin Patch notes page, so we know you read it.</li></ol><p class="where">This page is <b>v0.62</b> in <b>Admin &rarr; Patch notes</b>.</p></div>
+
+<h2 class="fix"><i></i>FIXED</h2><div class="item"><div class="ih"><b>Every football screen now draws the pitch at the real match&rsquo;s size</b><span class="tag t-meas">measured</span></div><div class="row"><div class="rl p">Problem</div><p>You said: &ldquo;The game has definitely drifted when I press Play.&rdquo; <b>8 screens drew the pitch narrower than the real match</b> (366 px on a phone, 384 px on a computer).</p></div><div class="row"><div class="rl w">Why</div><p>Each page&rsquo;s padding squeezed the play box. <b>The kick strength was never off:</b> every screen already read your drag against the real match. The pitch and the players were just drawn smaller.</p></div><div class="row"><div class="rl f">Fix</div><p>The shared play box now steps into the page&rsquo;s side margins by exactly the missing amount, without sideways scrolling. Also: the training card lost its 10 px padding, the Real goals card no longer clips the match&rsquo;s edges, and the trial&rsquo;s pitch frame border is a ring now (it ate 4 px).</p></div><div class="bars"><div class="bar"><span class="bl">Full match, your chance</span><span class="track"><span class="fill was" style="width:85.0%"></span><span class="fill now " style="width:91.5%"></span></span><span class="vv"><s>340</s> &rarr; 366</span></div><div class="bar"><span class="bl">Training drills</span><span class="track"><span class="fill was" style="width:86.5%"></span><span class="fill now " style="width:91.5%"></span></span><span class="vv"><s>346</s> &rarr; 366</span></div><div class="bar"><span class="bl">Trial: Take him on</span><span class="track"><span class="fill was" style="width:90.5%"></span><span class="fill now " style="width:91.5%"></span></span><span class="vv"><s>362</s> &rarr; 366</span></div><div class="bar"><span class="bl">Real moments</span><span class="track"><span class="fill was" style="width:79.5%"></span><span class="fill now " style="width:91.5%"></span></span><span class="vv"><s>318</s> &rarr; 366</span></div><div class="bar"><span class="bl">Goal videos</span><span class="track"><span class="fill was" style="width:83.0%"></span><span class="fill now " style="width:91.5%"></span></span><span class="vv"><s>332</s> &rarr; 366</span></div><div class="bar"><span class="bl">Visual effects lab</span><span class="track"><span class="fill was" style="width:85.0%"></span><span class="fill now " style="width:91.5%"></span></span><span class="vv"><s>340</s> &rarr; 366</span></div><div class="bar"><span class="bl">Real shots</span><span class="track"><span class="fill was" style="width:86.0%"></span><span class="fill now " style="width:91.5%"></span></span><span class="vv"><s>344</s> &rarr; 366</span></div><div class="bar"><span class="bl">Real goals</span><span class="track"><span class="fill was" style="width:90.0%"></span><span class="fill now " style="width:91.5%"></span></span><span class="vv"><s>360</s> &rarr; 366</span></div><div class="bar"><span class="bl">Dribble on a stick</span><span class="track"><span class="fill was" style="width:90.5%"></span><span class="fill now " style="width:91.5%"></span></span><span class="vv"><s>362</s> &rarr; 366</span></div></div><p class="bnote">Pitch width in px on a 390 px phone. Grey is before. Colour is after. The real match is 366 px wide.</p><details><summary>The computer sizes (3 screens changed)</summary><div class="bars"><div class="bar"><span class="bl">Training drills</span><span class="track"><span class="fill was" style="width:86.7%"></span><span class="fill now " style="width:91.4%"></span></span><span class="vv"><s>364</s> &rarr; 384</span></div><div class="bar"><span class="bl">Trial: Take him on</span><span class="track"><span class="fill was" style="width:90.5%"></span><span class="fill now " style="width:91.4%"></span></span><span class="vv"><s>380</s> &rarr; 384</span></div><div class="bar"><span class="bl">Real moments</span><span class="track"><span class="fill was" style="width:81.0%"></span><span class="fill now " style="width:91.4%"></span></span><span class="vv"><s>340</s> &rarr; 384</span></div></div><p class="bnote">Pitch width in px on a computer. The real match is 384 px. The other screens were already 384.</p></details></div><div class="item"><div class="ih"><b>Play buttons stay on screen</b><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>On Infinite Highlights and Full match, NEXT and the chance name sat below the fold.</p></div><div class="row"><div class="rl w">Why</div><p>The page was taller than a phone screen.</p></div><div class="row"><div class="rl f">Fix</div><p>They are pinned on screen at 390&times;844 and at 1440&times;900. This is now a house rule: <b>play controls never sit below the fold</b>.</p></div><div class="figs"><figure class="ph"><img src="img/fit-hl.jpg" alt="Look at: Infinite Highlights on a phone. NEXT and the chance name are on screen." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> Infinite Highlights on a phone. NEXT and the chance name are on screen.</figcaption></figure><figure class="ph"><img src="img/fit-fm.jpg" alt="Look at: Full match, your chance." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> Full match, your chance.</figcaption></figure><figure class="ph"><img src="img/fit-trial.jpg" alt="Look at: the Trial." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> the Trial.</figcaption></figure></div></div><h2 class="add"><i></i>ADDED</h2><div class="item"><div class="ih"><b>The engine warning is red and asks every time</b><span class="tag t-reas">a drawing, not a screen shot</span></div><div class="row"><div class="rl p">Problem</div><p>You said: &ldquo;a lot of times I&rsquo;m just clicking Allow, allow, allow, and that&rsquo;s how these things happen.&rdquo;</p></div><div class="row"><div class="rl w">Why</div><p>The old notice only covered the match engine file, and it was easy to click past. The play screens drifted through other files, not the engine.</p></div><div class="row"><div class="rl f">Fix</div><p>When a Claude session is about to edit the match engine, or any file that decides what a play screen hands the engine, the Allow box now shows a <b>red notice</b> and asks every time. It never blocks: you can press No.<div class="mock"><b>&#128997;&#128997; THIS IS A MATCH ENGINE CHANGE &#128997;&#128997;</b><p>It changes the physics every match runs on.</p><p>Only press Allow if someone asked for this in words. Otherwise press No.</p><div class="mb"><span class="go">Allow</span><span>No</span></div></div><p class="bnote">A drawing of the Allow box. The words are the real ones. The other notice reads &ldquo;SOMETHING MAY DRIFT FROM THE REAL MATCH&rdquo;.</p></p></div><details><summary>Which files ask</summary><ul><li><b>The engine itself:</b> canvasEngine.</li><li><b>Drift files:</b> CanvasMatch, EnginePlay, ScenarioPlay, InfiniteMatch, hiddenMatch, engineProfile, playArea, scenePicture, matchView.</li><li>On 20 Oct a Python script that edited the engine slipped past once. The check now also catches quoted file paths in scripts.</li></ul></details></div><div class="item"><div class="ih"><b>A drift audit of every football screen</b><span class="tag t-meas">measured</span></div><div class="row"><div class="rl p">Problem</div><p>You said: &ldquo;work to fix any drifts across the game&rdquo;. A drift is anything the engine is given that differs from the real career match.</p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>Every screen was measured at 390 and 1440 px, with scripts that read the real match&rsquo;s settings off each canvas. The result: <b>no drift in keeper strength, squads, weather, fatigue or camera framing</b>, beyond a few named test dials. The full table is in the repo (docs/handoffs/2026-10-19-ui-lookover/drift-audit.md).</p></div><details><summary>Left as designed, not drift</summary><ul><li>Highlights and Gallery Play are 493 px wide on a computer on purpose. The drag is set so a kick is the same.</li><li>Goal videos force the keeper to 25 and clear weather so goals get scored and recorded.</li><li>Real goals force the keeper to 80 and give the real goal&rsquo;s own framing.</li></ul></details></div><div class="item"><div class="ih"><b>A touch check of every screen</b><span class="tag t-reas">read from the code, not played</span></div><div class="row"><div class="rl p">Problem</div><p>You asked that anything using a mouse on a computer work instantly with a finger.</p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>27 things found: <b>0 stop a finger in the real game</b>. 2 stop a finger on the website. The fixes are built in <b>B1</b> (see its page).</p></div><div class="bars"><div class="bar"><span class="bl">Real game: small or wrong</span><span class="track solo"><span class="fill now blue" style="width:83.3%"></span></span><span class="vv">10 found</span></div><div class="bar"><span class="bl">Test pages: small</span><span class="track solo"><span class="fill now blue" style="width:75.0%"></span></span><span class="vv">9 found</span></div><div class="bar"><span class="bl">Website: 2 stop a finger, 3 small</span><span class="track solo"><span class="fill now warn" style="width:41.7%"></span></span><span class="vv">5 found</span></div><div class="bar"><span class="bl">Admin: small</span><span class="track solo"><span class="fill now blue" style="width:25.0%"></span></span><span class="vv">3 found</span></div></div><p class="bnote">The one wrong one in the game: the &minus; and + offer buttons in contract talks. One tap could move the offer twice.</p></div><h2 class="nxt"><i></i>NEXT</h2><div class="item"><div class="ih"><b>Not driven end to end in the audit</b><span class="tag t-no">not seen</span></div><div class="row"><div class="rl p">Problem</div><p>The other Full match layout (&ldquo;TV broadcast&rdquo;), the 3D and radar views of the 90-minute test, the gallery&rsquo;s 5-a-side and Tuning tabs, and the &ldquo;Ours vs real&rdquo; tab.</p></div><div class="row"><div class="rl w">Why</div><p>They mount the same play box or no match, so no new drift was expected.</p></div><div class="row"><div class="rl s">Status</div><p>Not measured. Also not measured: a real iPhone (sizes are layout numbers, not feel).</p></div></div>
+
+
+
+<h2 class="nxt" id="vid"><i></i>VIDEOS</h2>
+<div class="vid"><b>No clip is planned.</b><p>This is sizes and a warning. Stills and numbers show it.</p></div>
+
+<h2 class="bug"><i></i>SEEN / NOT SEEN</h2>
+<div class="sbox"><h3 class="g">Seen on a screen</h3><ul><li>Pitch widths on 15 screens at 390 and 1440 px (layout measurements in Chromium)</li><li>The buttons staying on screen on three screens</li></ul><h3 class="b">Measured (numbers)</h3><ul><li>Widths before and after for 8 screens (see the bars)</li><li>tsc clean; the one-engine guard clean; the finishing, aiming, outcomes and oneEngine tests pass</li></ul><h3 class="a">Reasoned, not seen</h3><ul><li>The touch check: read from the code, not played</li><li>The red warning is shown as a drawing: it appears in the Allow box inside a Claude session</li></ul><h3 class="r">Not seen / not done</h3><ul><li>A real iPhone (this machine has no graphics chip)</li><li>How a kick feels after the size fix</li></ul></div>
+
+<h2 class="bug" id="ok"><i></i>NEEDS YOUR OK</h2><p class="snote">Nothing is waiting on you on this page.</p><h2 class="fix"><i></i>ALREADY DECIDED</h2><div class="donebox"><ul><li><div class="q">Make the engine and drift warning impossible to miss?</div><div class="d"><span class="by">Harry, 19 Oct</span>Yes, answer 9. Done on 19 Oct.</div></li><li><div class="q">When the touch check comes back, fix everything it finds without asking item by item?</div><div class="d"><span class="by">Harry, 19 Oct</span>Yes: fix all, and show stills. Built in B1.</div></li><li><div class="q">B2 (highlights phase 3) and B10 (headers and volleys) will edit match files. Engine OK?</div><div class="d"><span class="by">Harry, 20 Oct</span>Yes. Run one at a time; B14 after. They have no report yet. The red warning still asks on every edit. Press Allow only when the build needs it.</div></li></ul></div>
+
+<footer>19 Oct 2026. Facts come from the 19 Oct patch notes, the notes and answers files in the repo, and the build log. Pictures are stills taken while checking the work. Harry&rsquo;s answers are marked as decided.</footer>
+</div>
+<script>
+(function(){
+  var K='kib-overnight-a19drift-checks', s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>

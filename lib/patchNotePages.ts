@@ -20,6 +20,23 @@
  * A version with no entry here just shows the Text view, as before.
  */
 export const PATCH_NOTE_PAGES: Record<string, string> = {
+  // 19-20 Oct 2026: the last two days, one kept page per build (Harry: acknowledge every tab).
+  "0.75": "pages/0.75/index.html",
+  "0.74": "pages/0.74/index.html",
+  "0.73": "pages/0.73/index.html",
+  "0.72": "pages/0.72/index.html",
+  "0.71": "pages/0.71/index.html",
+  "0.70": "pages/0.70/index.html",
+  "0.69": "pages/0.69/index.html",
+  "0.68": "pages/0.68/index.html",
+  "0.67": "pages/0.67/index.html",
+  "0.66": "pages/0.66/index.html",
+  "0.65": "pages/0.65/index.html",
+  "0.64": "pages/0.64/index.html",
+  "0.63": "pages/0.63/index.html",
+  "0.62": "pages/0.62/index.html",
+  "0.61": "pages/0.61/index.html",
+  "0.60": "pages/0.60/index.html",
   "0.59": "mikey/v0.17.html",
   "0.57": "pages/0.57/index.html",
   "0.56": "pages/0.56/index.html",

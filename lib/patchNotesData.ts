@@ -27,6 +27,571 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.75",
+      "title": "Harry's patch notes: Last 2 Days Patch Notes",
+      "publishedAt": "2026-10-20T12:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN",
+      "summary": "Last 2 Days Patch Notes (index, 19 to 20 Oct). One page per build in three tabs (Overnight, 19 Oct, Still building), how these patch notes work, every open question in one list and Harry's decided answers. Press Read and understood on each page.",
+      "stats": [
+        { "value": "15", "label": "pages of patch notes" },
+        { "value": "8", "label": "questions still open" },
+        { "value": "11", "label": "answers already decided" },
+        { "value": "v0.60 to v0.74", "label": "the pages, one version each" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Open the three tabs", "detail": "Overnight 20 Oct (9 pages), 19 Oct (6 pages), Still building." },
+          { "title": "Read how these patch notes work", "detail": "One page per build: Check these, Problem, Why, Fix, the seen / measured / reasoned tag, Needs your OK." },
+          { "title": "Press Read and understood on each version", "detail": "Admin, Patch notes, pick v0.60 to v0.74, press the button. The Team board counts what is left." }
+        ]},
+        { "kind": "added", "title": "The pages", "items": [
+          { "title": "Admin Split + Looks (v0.65)", "detail": "The admin is split by game, group pages show picture cards, four looks share one layout, the phone admin is tidier." },
+          { "title": "Team Room v1 (v0.60)", "detail": "A chat bubble on every admin page, an Ideas board, Team chat and a To-do list." },
+          { "title": "Drift + Play Screens (v0.62)", "detail": "Eight screens now draw the pitch at the real match’s size, play buttons stay on screen, and the engine warning is red." },
+          { "title": "Highlights Rebuild 0-2 (v0.63)", "detail": "The switch, the match-camera still, and generated build-ups before open-play chances." },
+          { "title": "Free Data v1 (v0.64)", "detail": "2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. StatsBomb deleted." },
+          { "title": "Scene Editor 3a (v0.61)", "detail": "The 3D Signing and Office edit live in the scene editor. Also: how generated cut scenes work, and the 3D audit." },
+          { "title": "B1 Touch Fixes (v0.66)", "detail": "All 27 touch fixes are built. The 4 old failing tests pass. Wembley is fairer." },
+          { "title": "B3 Real Data (v0.67)", "detail": "Afriskaut is out, two free sources are in, data credits are in Settings, and real moments can appear in your matches." },
+          { "title": "B4 Admin Skins (v0.68)", "detail": "The admin has one layout in four looks, one back arrow, a smaller chat bubble and a Research area. Clean light is the default." },
+          { "title": "B5 3D Looks (v0.69)", "detail": "Natural skin in the 3D cut scenes, phone cameras that fit, faces that move, and a Home player that is alive. Has two clips." },
+          { "title": "B6 Scene Studio (v0.70)", "detail": "Edit the 3D shop, garden and house live. Approve and commit edits. Make cut scenes from a game event." },
+          { "title": "B7 Training Levels (v0.71)", "detail": "All 150 training levels are editable. Vision level 30 and Pace are harder." },
+          { "title": "B8 Five-a-side (v0.72)", "detail": "A test area with Scenarios, a Full match with a live radar, and Data. Two things in it are broken. Has a clip." },
+          { "title": "B9 Lower League Trophy (v0.73)", "detail": "A new cup for 120 lower-league clubs. Hold to speed up and double-tap to skip after a match." },
+          { "title": "B11 Team Room (v0.74)", "detail": "Seen faces, quoted replies, @ and # tags, Shift+X pointing and patch-note read receipts." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.74",
+      "title": "Harry's patch notes: B11 Team Room",
+      "publishedAt": "2026-10-20T04:40:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/ThR8RjKdNvUbexGWVXKxZt",
+      "summary": "B11 Team Room round two (overnight 20 Oct). Seen faces under messages, quoted replies, @ and # suggestions, page cards, Shift+X pointing at part of a screen, and patch-note read receipts (Read by faces, Read and understood, a notes thread, 'N patch notes to read' on the Team board). Database file waiting for Mikey.",
+      "stats": [
+        { "value": "3", "label": "faces under each message (H, M, L)" },
+        { "value": "4", "label": "new ways to talk: reply, @, #, point" },
+        { "value": "Shift+X", "label": "points at part of a screen" },
+        { "value": "1", "label": "database file waiting (team_room_v2.sql)" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Seen faces and Reply", "detail": "Team room → Chat. Small H / M / L faces sit under each message. A message can show Reply and Pin." },
+          { "title": "@ and “Waiting on me”", "detail": "Type @ in the message box. An @ to you shows gold. The Waiting on me list sits at the top." },
+          { "title": "Link a page", "detail": "Press the link button, or type # and a page name. It goes in as a card." },
+          { "title": "Point at the screen", "detail": "Press Shift+X, or the 👉 Point button in the chat bubble. Drag a box, write a note, pick who. The other person opens the link and presses Got it." },
+          { "title": "Patch notes read-by", "detail": "Patch notes: a Read by row, a Read and understood button, and a Notes thread. The Team board shows “N patch notes to read”." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Seen faces under each message", "detail": "Small H, M and L faces sit under every message. They show who has seen it. A dim face looks like “not seen yet” (read from the pictures; the report only says “seen faces”)." },
+          { "title": "Reply with a quote, and tap to jump back", "detail": "A message can show Reply and Pin. A reply shows the quote above your words. A tap on the quote jumps to the original message." },
+          { "title": "@ names and a “Waiting on me” list", "detail": "Type @ and a list of names shows. An @ to you shows in gold. A “Waiting on me” list sits at the top of the chat." },
+          { "title": "Link a page with # or the link button", "detail": "The link button attaches this page. Typing # shows page suggestions. A page goes into the chat as a card." },
+          { "title": "Point at the screen (Shift+X, or the 👉 Point button)", "detail": "Drag a box over the part you mean. Write a note. Pick who it is for. The other person opens the link: the page scrolls to the box, outlines it and shows your note. The note stays until they press Got it." },
+          { "title": "Patch notes: “Read by” faces and a “Read and understood” button", "detail": "Each patch-notes version shows who has read it. A Read and understood button marks it. Each version has its own notes thread. The Team board shows “N patch notes to read” under each person." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Not tried with real people or the real database", "detail": "Replies, @ and points work without it. Seen faces and Got it stay on the device until it runs." },
+          { "title": "Three lines in the pictures that the report does not cover", "detail": "The Team board pictures show six amber lines: “GitHub refused the site’s key … Check GITHUB_TOKEN in Vercel”.The patch-notes Page tab says “Forbidden — patch notes need an admin sign-in”." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.73",
+      "title": "Harry's patch notes: B9 Lower League Trophy",
+      "publishedAt": "2026-10-20T04:35:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/J1dND9UWP7nAW8fZDGShp8",
+      "summary": "B9 Lower League Trophy (overnight 20 Oct). A new cup for 120 lower-league clubs (128-slot draw, 8 byes, 7 midweek rounds, 119 matches; tested over 200 seasons). Prize: trophy, 30,000 XP, fame +2, a small transfer-interest boost, and a cash prize Harry kept. Hold anywhere after a match for 4x; double-tap to skip.",
+      "stats": [
+        { "value": "120", "label": "clubs in the Lower League Trophy" },
+        { "value": "119", "label": "matches in 7 rounds" },
+        { "value": "200 of 200", "label": "seasons tested with a winner" },
+        { "value": "3.4 s → 1.1 s", "label": "star bar when held (4x)" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "The new tab", "detail": "In a lower-league career, open Table. The Lower League Trophy tab sits beside League Two and FA Cup. Round 1 shows the draw. The byes show at the bottom." },
+          { "title": "Hold after a match", "detail": "On the full-time screen, hold anywhere. It runs at 4×. A ⏩ 4× chip shows top right." },
+          { "title": "Double-tap", "detail": "On the full-time screen, double-tap. It jumps to the end of that screen." },
+          { "title": "The hint", "detail": "“Hold to speed up · double-tap to skip” shows for the first 3 times." },
+          { "title": "Credits stay the same", "detail": "Goals, assists and rating should match a match played without holding." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Lower League Trophy", "detail": "120 clubs: League One, League Two, National League, North and South (this season’s ladder).A 128-slot draw. 8 byes go to last season’s League One top 8.7 rounds, 119 matches, played on Wednesdays (weekends 4, 8, 16, 21, 25, 29,…" },
+          { "title": "Prize for winning", "detail": "A trophy in the cabinet. 30,000 XP (the League Cup pays 108,000). Fame +2. A small transfer-interest boost from those leagues: +0.05 for a semi-final, +0.1 for a win. A cash prize of 2 weeks’ wage too." },
+          { "title": "Hold to speed up. Double-tap to skip.", "detail": "After a match, hold anywhere: the screen runs at 4×. Double-tap: it skips to the end of that screen. Crediting is unchanged. A hint shows the first 3 times." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "FA Cup Round of 64 lands the day after a league game", "detail": "Found, not fixed. Queued for B13 Fixes, which will check every fixture date, not only this one (Harry, 20 Oct)." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.72",
+      "title": "Harry's patch notes: B8 Five-a-side",
+      "publishedAt": "2026-10-20T04:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/ALyk269G1eEncrBGVBgkCW",
+      "summary": "B8 Five-a-side (overnight 20 Oct). A test area at /star-fiveaside-dev with Scenarios, Full match (with a new live radar of all 10 players and the ball) and Data from 500 simulated matches. A full-time scene drawn the wrong way round is fixed. Two things are broken and need gameplay calls: a pass never becomes a team-mate's shot (0 of 1,000), and chance pictures 1 and 6 never score. One clip.",
+      "stats": [
+        { "value": "3", "label": "tabs: Scenarios, Full match, Data" },
+        { "value": "56%", "label": "matches won in 500 simulated" },
+        { "value": "0 of 1,000", "label": "passes that become a team-mate shot" },
+        { "value": "2 of 8", "label": "checks fail on the Data tab" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Open /star-fiveaside-dev", "detail": "Three tabs: Scenarios, Full match, Data." },
+          { "title": "Scenarios", "detail": "Pick Yours, Team-mate’s or Theirs. Prev, Again and Next stay pinned on top while you scroll." },
+          { "title": "Full match", "detail": "Press New match. Play to full time. The radar under the pitch shows all 10 players and the ball." },
+          { "title": "Data", "detail": "The red “What looks broken” box shows 2 of 8 checks fail." },
+          { "title": "Full time after their chance", "detail": "The scene should no longer draw the wrong way round with the kits swapped." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Five-a-side is back as a test area with three tabs", "detail": "A new page, /star-fiveaside-dev, with Scenarios, Full match and Data. Scenarios has the gallery’s 10 five-a-side pictures. Play each one as Yours, Team-mate’s or Theirs. Prev, Again and Next stay pinned on top." },
+          { "title": "A match radar made for five-a-side", "detail": "A new SVG radar in the same look. It shows all 10 players and the ball. It reads from a read-only callback, so no engine file and no drift file changed." },
+          { "title": "A Data tab from 500 simulated matches", "detail": "The Data tab plays 500 whole matches with a bot for your thumb (Even opposition, skill 70, same seeds every time). It lists what looks broken (2 of 8 checks fail, below), then goals, who wins, who scores and how chances end." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "The 10 chance pictures live in one file", "detail": "The pictures moved into one shared file. The gallery and the new page read the same one. Nothing is copied." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Full time right after their chance drew the scene the wrong way round", "detail": "Fixed. The report gives no still of the fix." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "A pass to a team-mate never becomes his shot", "detail": "Not changed. It is a gameplay call." },
+          { "title": "Chance pictures 1 and 6 never score for the bot", "detail": "Not changed. It is a gameplay call." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.71",
+      "title": "Harry's patch notes: B7 Training Levels",
+      "publishedAt": "2026-10-20T04:25:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/VuKweZcyS76Jap9zW1E6NR",
+      "summary": "B7 Training Levels (overnight 20 Oct). All 150 training levels are data and editable on a page (Play, Save, Commit, Undo). Vision level 30 is much harder (11 team-mates, 13 defenders, first-try pass rate 67% to 41%) and Pace climbs (28% flat to 43, 22, 14%). Harry's answer on the skills slider is queued as B7b.",
+      "stats": [
+        { "value": "150", "label": "training levels now editable" },
+        { "value": "67% → 41%", "label": "Vision level 30 first-try pass rate" },
+        { "value": "28% → 14%", "label": "Pace level 30 runs cleared" },
+        { "value": "11 and 13", "label": "team-mates and defenders at Vision level 30" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Open an Edit panel", "detail": "Training levels page → pick a drill → tap a level. Sliders and number boxes show." },
+          { "title": "Press ▶ Play on an unsaved edit", "detail": "Does it play your numbers? The panel says “Playing uses the saved numbers”. The play screen says “Unsaved edit”." },
+          { "title": "Press Save, then reload", "detail": "The screen says “on this device only”. The reload should keep your edit." },
+          { "title": "Vision level 30", "detail": "Many more men on the pitch. A new picture on each try." },
+          { "title": "Pace levels 24 to 30", "detail": "The levels should climb in difficulty. They were flat before." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Edit any of the 150 training levels on a page", "detail": "All 150 levels are data now. The Training levels page has an Edit panel for each level, like the gallery. It has sliders and number boxes, ▶ Play (plays at once), Save, Commit, Undo changes and Back to committed.Save writes to a…" }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Vision: a new picture each try, and level 30 is much harder", "detail": "Each try gets a new picture. Level 30 now has 11 team-mates (was 8) and 13 defenders (was 6). You get 0.85 s to pick (was 0.95). The tap area is 2.2 m (was 3.2)." },
+          { "title": "Pace: no longer flat at the top", "detail": "Now it climbs: level 20 clears 43%, level 25 clears 22%, level 30 clears 14%. Measured with a bot on the real run." },
+          { "title": "Power, Free kick and Technique: top levels a bit harder", "detail": "The top levels are a bit harder and need placed shots." }
+        ]},
+        { "kind": "next", "title": "Next", "items": [
+          { "title": "B7b: drag and drop in the training editor", "detail": "Queued as B7b. Harry answered (20 Oct, 09:45): no slider. A level plays with the skill you would have after finishing the levels before it. Pace gets a real skill element." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.70",
+      "title": "Harry's patch notes: B6 Scene Studio",
+      "publishedAt": "2026-10-20T04:20:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/XTxMVD52AJN4T4F2EXLu5B",
+      "summary": "B6 Scene Studio (overnight 20 Oct). The 3D Shop, Garden and House edit live in the scene editor. Approve an edit and choose where and when the game uses it. Commit to game writes approved edits to the repo (needs a GitHub token). A Scene generator makes cut scenes from a game event, with a 'When does this play?' table (all 18 Not wired). The last 6 admin pages are on the Broadcast frame.",
+      "stats": [
+        { "value": "3", "label": "more places edit live (shop, garden, house)" },
+        { "value": "18", "label": "events in the Scene generator" },
+        { "value": "18 of 18", "label": "\"When does this play?\" rows say Not wired" },
+        { "value": "37 → 43 of 43", "label": "admin pages on the Broadcast frame" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Scene editor: Shop, Garden, House", "detail": "Open the 3D Scene editor (the 3D Shop page has an “Edit in the scene editor” button). Pick a place. Move Turn, Rise, Distance and Lens, or drag the preview." },
+          { "title": "Use in the game", "detail": "Under the preview, press ✓ Approve. Pick Where and When. Press Withdraw approval to undo it." },
+          { "title": "Commit to game", "detail": "Press it with no token. A red line says nothing was committed." },
+          { "title": "Scene generator", "detail": "Studio tab → Scene generator. Pick Scored and Joy. Press Generate, then Re-roll. Mark it Good or Bad." },
+          { "title": "When does this play?", "detail": "Under the generator: 18 rows, all “Not wired”." },
+          { "title": "The 6 framed pages", "detail": "Open the 3D Shop, Garden, House, Signing, Office and Style test. Each has the frame and one back arrow. Add ?bare=1 for the old full screen." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Edit the 3D Shop, Garden and House live", "detail": "The Shop, Garden and House now edit live, like Signing and the Office. Each has a Walking view and card or room views. You can set Turn, Rise, Distance and Lens, the key light (angle, colour) and the exposure." },
+          { "title": "Approve an edit, then choose where and when the game uses it", "detail": "Every place has a Use in the game panel. Press ✓ Approve (or Withdraw approval). Where: in a career, on the test page, or both. When: always, or one moment only (signing: the first contract or a move; the shop: entry;" },
+          { "title": "Commit to game", "detail": "A Commit to game button writes the approved edits into that file on main. It needs an admin sign-in and a GITHUB_TOKEN. With no token it says so in red and commits nothing. Each commit starts a Vercel rebuild of the live site." },
+          { "title": "Scene generator: make a cut scene from a game event", "detail": "A new page, Studio → Scene generator. Pick an event (18), a feeling (12), how big the moment is, how intense, and a seed. Press Generate or Re-roll." },
+          { "title": "“When does this play?”: a table of 18 rows", "detail": "The generator page now has a table of 18 events. Each row says which game moment would play it, what plays there today, and a status. All 18 say “Not wired”." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "The last 6 admin pages are on the Broadcast frame", "detail": "All six now sit on the Broadcast frame (one back arrow, the page title, the side menu). The report counts 37 of 43 → 43 of 43. Add ?bare=1 to the address to get the old full screen back." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "A thrown-away build could stop the shared 3D renderer", "detail": "Only the renderer’s owner can set or stop it now. Game time moves on the framed shop page." }
+        ]},
+        { "kind": "next", "title": "Next", "items": [
+          { "title": "Pick the game moments where generated scenes should play", "detail": "Waiting for your pick (below)." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.69",
+      "title": "Harry's patch notes: B5 3D Looks",
+      "publishedAt": "2026-10-20T04:15:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/3VjJkbYFvSE2XrgLtueCz5",
+      "summary": "B5 3D Looks (overnight 20 Oct). Skin in the 3D cut scenes is natural (yellow skin 94% to 0% in the signing scene). Cut-scene cameras fit a phone (bad shots to 0). Faces blink, glance and speak. The Home player is alive in a 33-second loop. A bench page compares the same 10 shots. Two clips.",
+      "stats": [
+        { "value": "94% → 0%", "label": "yellow skin in the signing scene" },
+        { "value": "27 of 65 → 0", "label": "bad mid-shot cameras on a phone" },
+        { "value": "33 s", "label": "Home player loop" },
+        { "value": "2", "label": "clips" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "The bench page", "detail": "Open /star-3d-bench-dev. Ten shots at phone size. Flip Now and Before (19 Oct)." },
+          { "title": "Skin", "detail": "Signing, press, walk-out and the trophy lift: skin is brown, not yellow." },
+          { "title": "Cameras on a phone", "detail": "In every shot the head sits in the top part. No face or cheek fills the screen." },
+          { "title": "Faces", "detail": "Open /star-3d-bench-dev/face. Blinks, glances, a smile, a frown, lips moving when talking." },
+          { "title": "Home", "detail": "Open the Home player. He idles, does keepy-uppies, says a few words and stretches. A 33-second loop." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Skin was yellow in the 3D cut scenes. It is now natural.", "detail": "No new light and no extra drawing. Skin keeps half of each light’s colour. Skin is tone-mapped by its brightness only, and 80% of the colour grade skips it. The Home scene also gets a soft rim light." },
+          { "title": "A face filled the phone screen, and shots were too tight", "detail": "Each person shot has a minimum width on a tall screen, with the head in the top part. Prop inserts show the whole prop. A still camera is checked at every moment of its shot." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Faces move: blinks, glances, expressions and lips", "detail": "Every drawn (Style A) head, in cut scenes and on Home, now blinks, glances, moves its irises and shows an expression from the feeling of each beat. The lips move, with teeth, when someone speaks. No photo faces." },
+          { "title": "The Home player is alive", "detail": "A 33-second loop built from clips we already have: idle, keepy-uppies with his own ball, idle, a few words, idle, a quad stretch. Feet apart, weight shifting. The camera sits a quarter-turn round." },
+          { "title": "A bench page: the same 10 shots at phone size", "detail": "A new test page, /star-3d-bench-dev. It shows the same 10 shots at phone size (Home, signing, office, press, trophy lift, walk-out, garden, a Free Roam drill and 2 made-up scenes), with a frame number on each and a Now / Before…" }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Away players still pass about 1 m from the lens in the walk-out wide shot", "detail": "Not changed. The report says: Harry to judge on his phone." },
+          { "title": "Not seen: Low quality, phone speed, shop and casino skin", "detail": "Reasoned, not seen." }
+        ]},
+        { "kind": "next", "title": "Next", "items": [
+          { "title": "Where the 3D plan is", "detail": "Phases 1 to 5 are built. Phases 6 to 10 (hands and props, a stadium and real rooms, training rebuilt, one flow through the career, sharper 2D moves) are not started.Phase 1: the bench page.Phase 2: skin and light.Phase 3:…" }
+        ]}
+      ]
+    },
+    {
+      "version": "0.68",
+      "title": "Harry's patch notes: B4 Admin Skins",
+      "publishedAt": "2026-10-20T04:10:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/Uaf9V9vfYrErZNkYqXAYTW",
+      "summary": "B4 Admin Skins (overnight 20 Oct). All four admin looks share one layout, one back arrow top left, a 40 px chat bubble that lets taps through, an ink guard for unreadable words in light looks, and a Research area. Clean light is the default look.",
+      "stats": [
+        { "value": "4", "label": "looks, one layout" },
+        { "value": "50 → 40 px", "label": "chat bubble" },
+        { "value": "320 → 0–3", "label": "unreadable words per page, light looks" },
+        { "value": "1", "label": "back arrow, top left" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Switch the look", "detail": "Admin menu, bottom: Look. Pick Broadcast, Bento, Ops room or Clean light. The layout stays the same. A browser that never picked a look opens in Clean light." },
+          { "title": "Back arrow", "detail": "On a phone, open any admin page. The arrow is top left. A page goes back to its group. A group goes back to its game’s home." },
+          { "title": "Chat bubble", "detail": "Bottom left, 40 px. Scroll the page: it fades. Taps pass through to the page." },
+          { "title": "A test page in a light look", "detail": "Open Tournaments in Clean light. Every word can be read." },
+          { "title": "Research", "detail": "Studio tab → Research. Four write-ups as cards." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "One layout, four looks", "detail": "Broadcast, Bento, Ops room and Clean light all use Broadcast’s layout. Only colours, fonts and surfaces change. Bento cards now show dark words on a pale tint, with a white count pill." },
+          { "title": "One back arrow, in the same place", "detail": "One arrow, top left, on every framed page. A page goes back to its group. A group page goes back to its game’s home. Measured: the arrow sits at the same corner on every framed page on a phone." },
+          { "title": "Smaller chat bubble that stays out of the way", "detail": "40 px, fixed at the bottom left. Only the round button takes taps. It fades to 40% while you scroll and lets taps through." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Words you could not read in the light looks", "detail": "An “ink guard” on about 40 test pages fixes the words. Now 0–3 per page." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Research area", "detail": "A Research page on the Studio tab: 4 write-ups as cards. Tap Read to open one. To add a write-up, add one line to a list (lib/research.ts)." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "3D places keep their own back button", "detail": "Decided (Harry, 20 Oct): these keep their own back button. Everything else uses the one arrow." },
+          { "title": "Two things in the pictures that the report does not cover", "detail": "Queued for the next build, B13 Fixes (Harry, 20 Oct): the XP Rewards “Failed to fetch” and the bubble over “Next line ›”. Not checked yet: does “Next line ›” still take the tap?" }
+        ]}
+      ]
+    },
+    {
+      "version": "0.67",
+      "title": "Harry's patch notes: B3 Real Data",
+      "publishedAt": "2026-10-20T04:05:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/Pa3a8mKnzEKYbuC8My83cm",
+      "summary": "B3 Real Data (overnight 20 Oct). Afriskaut removed; SoccerTrack v2 and SkillCorner added (matches 2,104 to 1,983; fully real moments 702 to 926). Data credits in Settings. A Real moment highlights switch serves real moments in 1 in 4 open-play chances. A Real moments page to choose which moments the game may use. Database file waiting for Mikey.",
+      "stats": [
+        { "value": "2,104 → 1,983", "label": "matches" },
+        { "value": "702 → 926", "label": "fully real moments" },
+        { "value": "67 → 93", "label": "real goals" },
+        { "value": "24.5%", "label": "open-play chances served as real moments" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Data credits", "detail": "Settings → More → Data credits. Eight lines." },
+          { "title": "The new switch", "detail": "Settings → Full highlights rebuild → Real moment highlights: Off | On. It shows only while the rebuild is On." },
+          { "title": "The Real moments page", "detail": "For each moment: Use in game, Don’t use, Automatic. Try the filter. The count shows at the top." },
+          { "title": "A SoccerTrack moment", "detail": "On the Real moments page, search “Tsukuba”. Open No. 40 (9′)." },
+          { "title": "A real moment in Infinite Match", "detail": "With Real moment highlights On, about 1 in 4 one-on-ones, tight angles and long-range chances is a real one." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Afriskaut is out. Two new free sources are in.", "detail": "Afriskaut is gone. Matches went from 2,104 to 1,983 (lost 136, added 15 from SoccerTrack v2 and SkillCorner 2019/20). Tracked matches went from 27 to 42. Fully real moments went from 702 to 926 (750 shots, 176 corners)." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Two new data sources", "detail": "SoccerTrack v2 (CC BY 4.0): 6 of 10 matches loaded. Google Drive refused the other 4. Re-run later.SkillCorner first release (MIT): 9 matches. Pattern data only." },
+          { "title": "Data credits in Settings", "detail": "Settings → More → Data credits. Eight lines say where the real football data comes from." },
+          { "title": "Real moment highlights (a new switch)", "detail": "Settings → Full highlights rebuild → Real moment highlights: Off | On. It shows only while the rebuild is On. With it on, 1 in 4 open-play one-on-ones, tight angles and long-range chances becomes a real moment of the same kind,…" },
+          { "title": "A Real moments page: choose which moments the game may use", "detail": "For each moment: Use in game, Don’t use or Automatic. There is a filter, a count, and a “Commit marks to the game” button. A README explains how to add, remove and edit moments." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "4 of the 10 SoccerTrack v2 matches are missing", "detail": "Re-run later." },
+          { "title": "Marks are saved on this device only", "detail": "Waiting on Mikey. Use “Commit marks to the game” to put marks in the code." },
+          { "title": "Not seen inside a career match", "detail": "Not seen." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.66",
+      "title": "Harry's patch notes: B1 Touch Fixes",
+      "publishedAt": "2026-10-20T04:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/3iCBAwMeNQVssqW5THU8R8",
+      "summary": "B1 Touch Fixes (overnight 20 Oct). All 27 touch fixes built (G5, the in-match button sizes, done after Harry's OK). The 4 old failing tests pass with the limits not loosened. Wembley's stronger striker no longer hits the bar. Player of the Month cards draw heads, 0 broken images.",
+      "stats": [
+        { "value": "27 of 27", "label": "touch fixes built" },
+        { "value": "4", "label": "old failing tests now pass" },
+        { "value": "23% → 40%", "label": "Wembley: 80-rated striker win share" },
+        { "value": "11", "label": "drawn heads, 0 broken images" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Negotiation: tap − and +", "detail": "Sign a player and open the talks. One tap should move your offer one step." },
+          { "title": "Match: LOW, MEDIUM, HIGH", "detail": "In a match, the three energy buttons at the bottom show their names." },
+          { "title": "Match: mute, TOUCH and Power buttons", "detail": "In a match, these three are easy to hit with a thumb (mute at least 40 px wide, the other two at least 36 px tall)." },
+          { "title": "Achievements: tap one", "detail": "Career overview → Achievements. A tap shows the description." },
+          { "title": "Profile: the ✕ on your tierlists", "detail": "Profile → My Tierlists on a touch phone. The red ✕ shows. A tap asks before it deletes." },
+          { "title": "Zoom: − and + and pinch", "detail": "Open the image zoom view. Use − and +, or pinch." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Touch fixes: all 27 are built", "detail": "26 were built overnight. The 27th (G5, the in-match buttons) was done on 20 Oct after your OK. Six were seen on a touch phone screen (below). The rest are reasoned from the code." },
+          { "title": "In-match buttons are finger-sized (G5)", "detail": "Done on 20 Oct after your OK. The mute button is now at least 40 px wide. TOUCH and Power are at least 36 px tall. Only the size styling changed. No game logic." },
+          { "title": "Player of the Month cards: drawn heads", "detail": "The cards now draw the head. Seen: 11 drawn heads, 0 broken images." },
+          { "title": "4 old failing tests now pass", "detail": "The stored fingerprint of the drawings was re-recorded. The samples are bigger (keeperPro 80 → 240 seeds, keeperBrain 200 → 600). The limits were not loosened. The Wembley test is a real game change (below)." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Wembley minigame: the stronger striker no longer hits the bar", "detail": "Shots are aimed lower. Keeper 36 → 70. Valve drop 6 → 10 (the report gives no units). The 80-rated striker now wins 40% of the time. A fair share is 25%." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "3 other test files still fail", "detail": "Untouched." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.65",
+      "title": "Harry's patch notes: Admin Split + Looks",
+      "publishedAt": "2026-10-19T21:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/K7pD7AMtL1iTF9BT2BRhAA",
+      "summary": "Admin Split + Looks (19 Oct, with two 20 Oct changes). The admin is split by game (three tabs), group pages show picture cards in Admin tools and Test pages, Broadcast and Bento join Ops room and Clean light on one layout, 36 admin pages sit on the Broadcast frame, and the phone admin is tidier (first box 430 to 223 px). Clean light is the default look. Harry's answers A-1 to A-9 are marked.",
+      "stats": [
+        { "value": "3", "label": "game tabs in the admin" },
+        { "value": "430 → 223 px", "label": "first group box on a phone" },
+        { "value": "36", "label": "admin pages on the Broadcast frame" },
+        { "value": "4", "label": "looks on one layout" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Game tabs", "detail": "Open the admin. Three tabs at the top: Road to Ballon d’Or, Website games, Studio. The side menu shows one game’s groups." },
+          { "title": "A group page", "detail": "Open any group (for example Real data). Its pages sit in two boxes: Admin tools and Test pages." },
+          { "title": "The Look switch", "detail": "Admin menu, bottom: Broadcast, Bento, Ops room, Clean light. The layout stays the same. A new browser opens in Clean light." },
+          { "title": "Admin on a phone", "detail": "A slim search, the filters on one line, three group boxes in a row." },
+          { "title": "A page on the frame", "detail": "Open Real moments or Training levels. The page has the frame and every button it had." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "The admin is split by game", "detail": "One tab per game at the top of every admin page: Road to Ballon d’Or (44 pages), Website games (10) and Studio (5: team board, patch notes, videos, testers). A new game adds a new tab." },
+          { "title": "Side tabs are back on the Broadcast look", "detail": "A group page has its other groups as tabs along the top (Career screens, Chances, Match tests…)." },
+          { "title": "The admin home is one page of group cards", "detail": "The home shows groups only. Grid shows picture cards. List shows rows. The device remembers your pick." },
+          { "title": "Each group has a page of picture cards: Admin tools and Test pages", "detail": "Each group page has two boxes: Admin tools (things already in the game that we tune) and Test pages (new things being tried). 28 pages were marked as tests, a first guess. Every card has its owner and an Open button." },
+          { "title": "Looks: Broadcast and Bento, and now Clean light is the default", "detail": "Broadcast (midnight blue, slanted bars) and Bento (a soft colour per group) joined Ops room and Clean light on the Look switch, now a 2×2 grid." },
+          { "title": "New admin pages keep the look by themselves", "detail": "One shared Broadcast frame. A build check stops the deploy if a new admin page does not use it. A short “not yet” list of older pages can only get shorter." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "36 Road to Ballon d’Or admin pages are on the Broadcast frame", "detail": "36 pages are on the frame in the layout you picked, with every button kept. The “New-look admin pages” notes show 30 of them one by one. Eleven were left alone on purpose." },
+          { "title": "Admin on a phone: less room for bars, more for pages", "detail": "A slimmer top bar and tabs. The search is one slim line. The filters and the team’s three faces share one line that scrolls sideways. “Saves real data” reads “Real data”. Group boxes are three to a row." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Fixes found while moving the pages", "detail": "Team sheets: opening a club no longer saves. Only an edit saves.International world: the card pictures follow the picked nation.Full match: event lines show the club name, not “{club}”.Real Goals: the big card draws its own goal…" }
+        ]}
+      ]
+    },
+    {
+      "version": "0.64",
+      "title": "Harry's patch notes: Free Data v1",
+      "publishedAt": "2026-10-19T20:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/EBHc5nzaDwyqKYWgjmduLh",
+      "summary": "Free Data v1 (19 Oct). 2,104 real matches under free licences (Wyscout 1,941, Afriskaut 136, SkillCorner 20, IDSSE / DFL 7). Real moments (702), Real shots (2,875) and Real Goals (232 levels) rebuilt on them. StatsBomb deleted, because its licence does not allow a paid game.",
+      "stats": [
+        { "value": "2,104", "label": "real matches under free licences" },
+        { "value": "702", "label": "fully real moments" },
+        { "value": "2,875", "label": "real shots" },
+        { "value": "232", "label": "Real Goals levels" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Real moments", "detail": "Tap a moment, then Play. One Play button is enough." },
+          { "title": "Real shots", "detail": "The shot map shows 2,875 shots. Each picture says whether it is a real strike with our own defenders." },
+          { "title": "Real Goals", "detail": "The level map shows 232 levels." },
+          { "title": "StatsBomb", "detail": "No StatsBomb file is left in the repo." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "2,104 real matches, all free to use in a paid game", "detail": "Four free-licence sources were reduced to pattern files the game can read. Each needs a credit line shown in the game (done on 20 Oct, in Settings, see B3)." },
+          { "title": "Real moments, rebuilt on free data", "detail": "702 fully real moments (581 shots and 121 corners), with all 22 players where they really stood. One Play button instead of one on every row (you kept it: A-6)." },
+          { "title": "Real shots, rebuilt on free data", "detail": "2,875 real shots (2018 World Cup and Euro 2016). The strike and the result are real. The defenders are placed by our own rules. Each picture says which kind it is." },
+          { "title": "Real Goals, rebuilt on free data", "detail": "232 levels. Every StatsBomb file is deleted from the repo." }
+        ]},
+        { "kind": "next", "title": "Next", "items": [
+          { "title": "What the next build did with this", "detail": "On 20 Oct, B3 removed Afriskaut (“no one’s heard of them”), added two sources (SoccerTrack v2 and SkillCorner), put the data credits in Settings and added a “Real moment highlights” switch. Matches went 2,104 → 1,983." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.63",
+      "title": "Harry's patch notes: Highlights Rebuild 0-2",
+      "publishedAt": "2026-10-19T19:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/GSD3ehL48xjdeJkxVticSz",
+      "summary": "Highlights Rebuild phases 0 to 2 (19 Oct), behind a switch that is Off by default: the switch and the ruler, the match-camera still (0 mismatches in 100), and generated 4 to 8 second build-ups before open-play chances (0 of 448 failed the checks). Phase 3 is next; Harry said go and gave the engine OK on 20 Oct.",
+      "stats": [
+        { "value": "3", "label": "phases done (0 to 2)" },
+        { "value": "0 of 448", "label": "build-ups that failed the checks" },
+        { "value": "2,197 of 2,527", "label": "build-ups on different routes" },
+        { "value": "5.81 / 2.31", "label": "chances and goals per match, unchanged" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "The switch", "detail": "Settings → Harry changes: “Full highlights rebuild: Off | On (test)”. It is Off by default." },
+          { "title": "The ruler", "detail": "Open /star-fhr-dev. It lists today’s numbers." },
+          { "title": "Infinite Highlights, switch On", "detail": "The still looks like the match. Press Play: the frame does not jump." },
+          { "title": "Generate another", "detail": "On /star-fhr-dev press “Generate another” a few times. Each build-up should look like real football." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Phase 0: the switch and today’s numbers (the ruler)", "detail": "A new Settings row: Full highlights rebuild: Off | On (test). Off is today’s game exactly. On also turns on “Chances: New”. The ruler is the test page /star-fhr-dev." },
+          { "title": "Phase 2: a new build-up before every open-play chance", "detail": "With the switch On, each open-play chance starts with a 4 to 8 second build-up. It is different every time and ends exactly on the drawn chance. The moves come from real attacking patterns in the free match data." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Phase 1: the picture before Play uses the match camera", "detail": "With the switch On, the still is drawn with the match camera at exactly the match box’s size. 0 mismatches in 100." }
+        ]},
+        { "kind": "next", "title": "Next", "items": [
+          { "title": "Where the rebuild is", "detail": "Three phases are done. The red engine warning will ask when phase 3 starts.Phase 0: the switch and the ruler.Phase 1: the still uses the match camera.Phase 2: generated build-ups before open-play chances.Phase 3: players already…" }
+        ]}
+      ]
+    },
+    {
+      "version": "0.62",
+      "title": "Harry's patch notes: Drift + Play Screens",
+      "publishedAt": "2026-10-19T18:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/2WnB5jiriAoRw4pSv1gAiT",
+      "summary": "Drift + Play Screens (19 Oct). Eight football screens drew the pitch narrower than the real match (kick strength was never off); they now draw it at 366 px on a phone and 384 on a computer. Play buttons stay on screen. The engine and drift warning is now red and asks on every edit. A drift audit of every football screen, and a touch check (27 found, 0 stop a finger in the game).",
+      "stats": [
+        { "value": "8", "label": "screens drew the pitch too small, now fixed" },
+        { "value": "318 → 366 px", "label": "Real moments pitch on a phone" },
+        { "value": "27", "label": "touch problems found (0 stop a finger in the game)" },
+        { "value": "15", "label": "screens measured at 390 and 1440 px" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Full match on a phone", "detail": "Your chance: the pitch is 366 px wide (it was 340)." },
+          { "title": "Training drills on a phone", "detail": "The pitch is 366 px wide (it was 346)." },
+          { "title": "Infinite Highlights on a phone", "detail": "NEXT and the chance name stay on screen without scrolling." },
+          { "title": "Real moments, Goal videos, Visual effects lab, Real shots", "detail": "Each pitch is 366 px on a phone. None scrolls sideways." },
+          { "title": "The red warning", "detail": "When Claude is about to edit a drift file, the Allow box shows the red notice." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Every football screen now draws the pitch at the real match’s size", "detail": "The shared play box now steps into the page’s side margins by exactly the missing amount, without sideways scrolling." },
+          { "title": "Play buttons stay on screen", "detail": "They are pinned on screen at 390×844 and at 1440×900. This is now a house rule: play controls never sit below the fold." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "The engine warning is red and asks every time", "detail": "When a Claude session is about to edit the match engine, or any file that decides what a play screen hands the engine, the Allow box now shows a red notice and asks every time." },
+          { "title": "A drift audit of every football screen", "detail": "Every screen was measured at 390 and 1440 px, with scripts that read the real match’s settings off each canvas. The result: no drift in keeper strength, squads, weather, fatigue or camera framing, beyond a few named test dials." },
+          { "title": "A touch check of every screen", "detail": "27 things found: 0 stop a finger in the real game. 2 stop a finger on the website. The fixes are built in B1 (see its page)." }
+        ]},
+        { "kind": "next", "title": "Next", "items": [
+          { "title": "Not driven end to end in the audit", "detail": "The other Full match layout (“TV broadcast”), the 3D and radar views of the 90-minute test, the gallery’s 5-a-side and Tuning tabs, and the “Ours vs real” tab." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.61",
+      "title": "Harry's patch notes: Scene Editor 3a",
+      "publishedAt": "2026-10-19T16:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/XNFSvtGTgM37Dmi28rZHhn",
+      "summary": "Scene Editor 3a (19 Oct). The 3D Signing and the Manager's Office play live in the scene editor (camera, lens, light, exposure). The edits stayed on the device and in the team database; the game did not read them until B6. Also: how generated cut scenes work (two kinds, a 5-step flow, four made-up scenes) and the 3D audit with its 10-phase plan.",
+      "stats": [
+        { "value": "2", "label": "3D places edited live (Signing, Office)" },
+        { "value": "4", "label": "made-up scenes shown (film-rules score 100, 100, 100, 91%)" },
+        { "value": "14 of 23", "label": "audit shots too tight on a phone" },
+        { "value": "52", "label": "stills in the 3D audit" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Scene editor: Signing", "detail": "Open the 3D Scene editor and pick 3D Signing. Pick a shot. Move the camera, the lens, the light and the exposure." },
+          { "title": "Scene editor: Manager’s Office", "detail": "Same, in the office." },
+          { "title": "Play, Save and the shots fit on screen", "detail": "On a phone, the shot buttons and Save stay on screen." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "The 3D Signing and the Manager’s Office play live in the scene editor", "detail": "Steps 1 and 2 were already live: a free camera, a mini-map, the key light’s angle and colour, and Save. Step 3a: the 3D Signing and the Manager’s Office now play live in the editor." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Where the edits go", "detail": "You answered: an Approve button, and edits that commit straight into the game (3D-3, 3D-4). Built in B6 the next night (see its page): Approve, Where and When, and Commit to game." }
+        ]}
+      ]
+    },
+    {
+      "version": "0.60",
+      "title": "Harry's patch notes: Team Room v1",
+      "publishedAt": "2026-10-19T04:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/QKNPrRrgPkBr4b1Azgqh8c",
+      "summary": "Team Room v1 (19 Oct). The team's room in the admin: a chat bubble on every admin page, an Ideas board (Idea, Doing, Done, three vote dots), Team chat and a To-do list, plus notes on pushes, a portable kit, a folding side menu, the KIB Admin home-screen app and recordings in a folder per person. Database file run by Mikey on 19 Oct. Round two is the B11 page.",
+      "stats": [
+        { "value": "4", "label": "views: Board, Ideas, Chat, To-do" },
+        { "value": "3", "label": "idea stages, with 3 vote dots each" },
+        { "value": "40 px", "label": "later chat bubble size (B4)" },
+        { "value": "24 h", "label": "a ticked job stays, then leaves" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "The chat bubble", "detail": "On any admin page, bottom left. It opens Chat and To-do." },
+          { "title": "The four views", "detail": "Admin menu → Team board. Switch Board, Ideas, Chat, To-do. The same four are in the side menu with counts." },
+          { "title": "Ideas", "detail": "Add an idea. Move it between Idea, Doing, Done. Flip By stage and By person." },
+          { "title": "To-do", "detail": "Add a job for yourself and one for someone else. Tick one. It fades." },
+          { "title": "Who are you", "detail": "The first time, it asks which of Harry, Mikey or Leo you are." }
+        ]},
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "A chat bubble on every admin page", "detail": "A round button, bottom left, on every admin and test page. It opens a small box with Chat and To-do. It steps clear of the side menu and of buttons. (The next round, B11, made it smaller and see-through to taps.)" },
+          { "title": "Four views of the team room: Board, Ideas, Chat, To-do", "detail": "One switch on the team board: Board | Ideas | Chat | To-do. The same four sit in the side menu, with red and amber counts. The board and the bubble take the colours of the look you pick." },
+          { "title": "Ideas: a board with three stages", "detail": "Ideas sit in Idea → Doing → Done, shown by stage or by person. Each has three vote dots and notes. You can move an idea between stages." },
+          { "title": "Team chat", "detail": "A live chat page: who is here now, pinned messages, pictures. It asks once which of Harry, Mikey or Leo you are." },
+          { "title": "To-do: your own jobs and jobs for each other", "detail": "A list for jobs given to you, your own jobs and jobs you gave. A ticked job fades after a day, then leaves." },
+          { "title": "Notes on pushes", "detail": "The push sheet (a push to the repo, on the team board) has notes. Anyone can add one." },
+          { "title": "The room is a portable kit", "detail": "One folder, one settings file for the people, colours and repo, and its own database file. The old team board moved into the kit too." },
+          { "title": "KIB Admin as a home-screen app, and recordings in a folder per person", "detail": "The admin installs on a phone’s home screen as KIB Admin (icon C). The screen recorder saves each person’s recordings in their own folder. Both are live on main since 19 Oct." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "The admin side menu folds on a computer", "detail": "The « button at the top of the menu folds it to a 64 px strip of icons. » opens it. Your choice is remembered per browser. The thick scrollbar is gone." }
+        ]}
+      ]
+    },
+    {
       "version": "0.59",
       "title": "Mikey's patch notes v0.17: The transfer window and the world that ages",
       "publishedAt": "2026-10-18T22:00:00Z",
