@@ -1,0 +1,35 @@
+/* PC match + radar (/star-pc-match-dev). Broadcast tokens (--bc-*) only. */
+.pm-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.pm-gap { flex: 1; }
+.pm-muted { color: var(--bc-ink2); font-size: 12.5px; line-height: 1.45; }
+.pm-link { color: var(--bc-ink2); font-size: 12.5px; font-weight: 800; text-decoration: none; margin-left: 10px; }
+.pm-link:hover { color: #fff; }
+
+/* The match on the left, the radar on the right; stacked under 900 px. */
+.pm-play { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 22px; align-items: start; }
+.pm-pitch { min-width: 0; }
+.pm-match { position: relative; }
+.pm-loading { text-align: center; padding: 4px 0 6px; }
+.pm-side { display: flex; flex-direction: column; gap: 14px; min-width: 0; position: sticky; top: 8px; }
+
+.pm-status { font-size: 14px; font-weight: 800; color: #fff; line-height: 1.35; min-height: 19px; }
+.pm-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--bc-ink2); }
+.pm-legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; background: var(--c); }
+.pm-legend .pm-dash::before { border-radius: 1px; background: transparent; border: 1.5px dashed #fff; width: 12px; height: 8px; }
+
+.pm-feed { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; max-height: 260px; overflow-y: auto; }
+.pm-feed div { display: grid; grid-template-columns: 34px 1fr; gap: 8px; color: #e8efff; }
+.pm-feed b { font-variant-numeric: tabular-nums; color: var(--bc-ink2); }
+.pm-feed i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+@media (max-width: 899px) {
+  .pm-play { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .pm-side { position: static; }
+  .pm-link { margin-left: 0; }
+}
+
+/* The radar never taller than the screen, so the whole of it stays in view beside the match. */
+[data-pc-radar-wrap] { width: 100%; max-width: calc((100vh - 200px) * 1.5); margin: 0 auto; }
+.pm-under { margin-top: 14px; }
+.pm-legend span::before { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }
+.pm-legend .pm-dash::before { box-shadow: none; border-color: currentColor; }
