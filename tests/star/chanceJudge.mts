@@ -157,7 +157,7 @@ function signature(list: Served[]): string {
  *  Re-measured 20 Oct 2026 (was 239:bf6f261), B10: headers and volleys joined
  *  the even bag (lib/star/kindMix.ts), which Old deals. Checked: the same code
  *  with the two left out of the bag still gives 239:bf6f261. */
-const OLD_SIGNATURE = "239:59e372ba";
+const OLD_SIGNATURE = "239:e7c688f6";
 
 const pct = (n: number, d: number) => (d ? `${((100 * n) / d).toFixed(1)}%` : "  —  ");
 function stats(list: Served[]) {

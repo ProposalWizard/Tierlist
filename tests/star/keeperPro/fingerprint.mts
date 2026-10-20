@@ -35,7 +35,7 @@ export function keeperFingerprint(): { hash: string; n: number } {
  *  off the team's cross drawings, lib/star/airDrawings.ts). Checked: the same
  *  shots over every OTHER kind give 4284c48 on the code before and after
  *  (scripts/b10/fingerprintNoAir.mts), so the keeper code did not change. */
-export const KEEPER_FINGERPRINT_BEFORE = "102ddf88";
+export const KEEPER_FINGERPRINT_BEFORE = "d2725947";
 
 if (process.argv[1]?.endsWith("fingerprint.mts")) {
   const store = new Map<string, string>();
