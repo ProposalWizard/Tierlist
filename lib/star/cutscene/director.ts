@@ -279,7 +279,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         }
       }
       const seed = actorSeed(c.id);
-      const ctx: PoseCtx = { T, t, local: 0, yaw: r.yaw, root: [a.root.position.x, a.root.position.y, a.root.position.z], seed };
+      const ctx: PoseCtx = { T, t, local: 0, yaw: r.yaw, root: [a.root.position.x, a.root.position.y, a.root.position.z], seed, floorY: r.pos[1] };
       // a few degrees of sway with overlap on every arm, so nobody stands with dead arms (fluid.ts)
       liveArms(a, ctx);
       for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) {

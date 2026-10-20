@@ -17,6 +17,7 @@ import type { Act, CastMember, Emotion, EventKind, Expression, LocationId, PoseH
 import type { Rng } from "./math";
 import { VOICE_LINES } from "./voiceLines";
 import { FLUID_ON } from "./fluid";
+import { PRESS_DESK_TOP } from "./presets/locations";
 
 export type ShotPurpose = "establish" | "action" | "detail" | "emotion" | "reaction" | "hero" | "two" | "pov" | "crowd" | "follow";
 
@@ -485,8 +486,8 @@ export const pressQuestion: BeatDef = {
         { type: "clip", actor: Y, at: 0, clip: "sit" },
         { type: "pose", actor: Y, at: 0, dur: 20, pose: "lean-in", amount: 0.25, blendIn: 0 },
         // hands on the table while he listens; B5c: they lift off when he answers (pressAnswer, ref-talk-hands)
-        { type: "reach", actor: Y, hand: "R", at: 0, dur: FLUID_ON.on ? t + d + 0.2 : 30, target: { actor: Y, local: [-0.2, 0.775, 0.42] }, along: [0.25, -0.15, 1], palm: [0.15, -1, 0.05], blendIn: 0, blendOut: 0.5 },
-        { type: "reach", actor: Y, hand: "L", at: 0, dur: FLUID_ON.on ? t + d + 0.3 : 30, target: { actor: Y, local: [0.2, 0.775, 0.42] }, along: [-0.25, -0.15, 1], palm: [-0.15, -1, 0.05], blendIn: 0, blendOut: 0.5 },
+        { type: "reach", actor: Y, hand: "R", at: 0, dur: FLUID_ON.on ? t + d + 0.2 : 30, target: { actor: Y, local: [-0.2, PRESS_DESK_TOP + 0.035, 0.42] }, along: [0.25, -0.15, 1], palm: [0.15, -1, 0.05], blendIn: 0, blendOut: 0.5 },
+        { type: "reach", actor: Y, hand: "L", at: 0, dur: FLUID_ON.on ? t + d + 0.3 : 30, target: { actor: Y, local: [0.2, PRESS_DESK_TOP + 0.035, 0.42] }, along: [-0.25, -0.15, 1], palm: [-0.15, -1, 0.05], blendIn: 0, blendOut: 0.5 },
         { type: "clip", actor: "jour", at: 0, clip: "talk-boss", loop: true },
         { type: "speak", actor: "jour", at: t + 0.3, dur: 2.2, line: q },
         { type: "caption", at: t + 0.3, dur: 2.4, text: q, style: "subtitle", speaker: "Journalist" },

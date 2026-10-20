@@ -11,13 +11,16 @@ import type { CutsceneActor, PoseHold, ReachLag, Vec3 } from "./types";
 import { aimBone, rotateBoneWorld, solveArm } from "../signing3dRig";
 import { FLUID_ON, clapGap, humanBeat, liftCurve, liveDrift, wander } from "./fluid";
 import { refArms, type RefArmClip } from "./refMotion";
+import { PRESS_DESK_TOP } from "./presets/locations";
 
 /**
  * `lag`: the overlap weights for this hold's arms (the forearm and hand a beat
  * behind the upper arm while it blends on or off; director.ts works them out).
  * `seed`: this actor's own wobble (two men never drift in step).
  */
-export interface PoseCtx { T: any; t: number; local: number; yaw: number; root: Vec3; lag?: ReachLag; seed?: number }
+export interface PoseCtx { T: any; t: number; local: number; yaw: number; root: Vec3; lag?: ReachLag; seed?: number;
+  /** The floor under him in the script (his mark), before his feet are planted: a seated man's root drops a few cm, a desk does not. */
+  floorY?: number }
 
 export function actorPoint(T: any, c: PoseCtx, x: number, y: number, z: number) {
   const cs = Math.cos(c.yaw), s = Math.sin(c.yaw);
@@ -53,8 +56,6 @@ function armOf(a: CutsceneActor, T: any, side: "L" | "R") {
   return { sh, len: Math.max(0.3, sh.distanceTo(el) + el.distanceTo(wr)) };
 }
 
-/** The press desk's top, m above the player's feet (beats.ts pressQuestion rests his hands on it). */
-export const PRESS_DESK_TOP = 0.775;
 
 export interface RefHoldOpts {
   /** Seconds into the reference at local 0. */
@@ -69,7 +70,7 @@ export interface RefHoldOpts {
   lean?: number;
   grip?: Parameters<CutsceneActor["hand"]>[1];
   /** Turn the palms: in (towards each other), to the front, or leave the hand on the forearm. */
-  palms?: "in" | "front" | null;
+  palms?: "in" | "front" | "down" | null;
   /** The hands never lower than this (m above his feet): a desk top his hands rest on, not sink into. */
   floor?: number;
 }
@@ -124,7 +125,7 @@ export function refHold(a: CutsceneActor, c: PoseCtx, w: number, clip: RefArmCli
   if (o.floor !== undefined) {
     // (the real man sat lower to his table than ours does to the press desk: his hands, put on our
     // man as they were, went under the desk top)
-    const fl = c.root[1] + o.floor;
+    const fl = (c.floorY ?? c.root[1]) + o.floor;
     for (const p of [L, R]) if (p.wr.y < fl) { const dy = fl - p.wr.y; p.wr.y = fl; p.el.y += dy * 0.5; }
   }
   for (const [side, p] of [["L", L], ["R", R]] as const) {
@@ -135,7 +136,9 @@ export function refHold(a: CutsceneActor, c: PoseCtx, w: number, clip: RefArmCli
     if (o.palms) {
       along = p.wr.clone().sub(p.el).normalize();
       const sg = side === "L" ? 1 : -1;
-      palm = o.palms === "in" ? actorDir(T, c, -sg, 0, 0) : actorDir(T, c, 0, 0, 1);
+      palm = o.palms === "in" ? actorDir(T, c, -sg, 0, 0) : o.palms === "down" ? actorDir(T, c, 0, -1, 0) : actorDir(T, c, 0, 0, 1);
+      // palms down on a desk: the fingers lie flat along it, the way the forearm points
+      if (o.palms === "down") { along.y = 0; if (along.lengthSq() < 1e-6) along.copy(actorDir(T, c, 0, 0, 1)); along.normalize(); }
     }
     a.reach(side, p.wr, along, palm, w, pole.normalize(), c.lag);
     if (o.grip) a.hand(side, o.grip, w);
@@ -231,7 +234,7 @@ export function applyPose(a: CutsceneActor, pose: PoseHold, w: number, c: PoseCt
       break;
     }
     case "ref-roar": refHold(a, c, w, "roar", { lean: 0.6 }); a.hand("L", "fist", w); a.hand("R", "fist", w); break;
-    case "ref-talk-hands": refHold(a, c, w, "talk-hands", { loop: true, lean: 0.5, grip: "open", floor: PRESS_DESK_TOP + 0.06 }); break;
+    case "ref-talk-hands": refHold(a, c, w, "talk-hands", { loop: true, lean: 0.5, grip: "open", palms: "down", floor: PRESS_DESK_TOP + 0.09 }); break;
     case "ref-trophy-lift": refHold(a, c, w, "trophy-lift", { span: 0.42, lead: "L", lean: 0.5, grip: "grip", palms: "in" }); break;
     case "ref-wave-clap": refHold(a, c, w, "wave-clap", { lean: 0.4, grip: "open" }); break;
     case "ref-shirt-up": refHold(a, c, w, "shirt-up", { span: 0.42, lean: 0.3, grip: "pinch", palms: "front" }); break;
