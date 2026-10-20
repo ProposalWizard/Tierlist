@@ -1,7 +1,13 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Skills } from "@/lib/star/types";
-import { levelDifficulty, levelSeed, starsForTry } from "@/lib/star/trainingLevels";
+import { starsForTry } from "@/lib/star/trainingLevels";
+import {
+  levelConfig, levelSeedOf, easePowerLevel,
+  type AnyLevel, type PowerLevel, type TechniqueLevel, type FreeKickLevel, type PaceLevel, type VisionLevel,
+} from "@/lib/star/trainingLevelData";
+import { buildVisionRound, visionTapPick, type VisionRound } from "@/lib/star/visionRound";
+import { ensureTrainingLevels } from "@/lib/star/trainingLevelStore";
 import { mulberry32 } from "@/lib/star/season";
 import {
   buildScenario, initDefenders,
@@ -9,7 +15,7 @@ import {
 } from "@/lib/star/canvasEngine";
 import { CX, PITCH_W } from "@/lib/star/pitch";
 import {
-  powerDrill, powerDrillForLevel, techniqueDrill, freeKickDrill, paceDrill, visionDrill,
+  powerDrill, powerDrillForLevel, techniqueDrill, freeKickDrill,
   strikeSpot, conePositions, gateCrossing, gateQuality, shotQuality,
 } from "@/lib/star/trainingDrills";
 import {
@@ -101,6 +107,12 @@ interface Props {
    *  before it, already has one). Safe at any point: a level only ever
    *  awards stars through onComplete, which this never calls. */
   onExit?: () => void;
+  /**
+   * Play these numbers instead of the level's saved ones: the Training
+   * levels page's "Edit level" panel plays its draft through here, on the
+   * same drill a career gets (lib/star/trainingLevelData.ts).
+   */
+  levelOverride?: AnyLevel;
 }
 
 const SKILL_TITLES: Record<keyof Skills, string> = {
@@ -330,24 +342,39 @@ export interface StrikeSetup {
   scenario: Scenario;
   viewport: TrainingViewport;
   gate: { left: { x: number; y: number }; right: { x: number; y: number }; centre: { x: number; y: number } } | null;
-  gateCfg: ReturnType<typeof techniqueDrill> | null;
+  gateCfg: TechniqueLevel | null;
   /** What the HUD says this rep is asking for. */
   brief: string;
   /** Power's first levels: no keeper on the pitch (powerDrillForLevel). */
   openGoal?: boolean;
+  /** The score a try needs to pass (gateQuality / shotQuality, 0-1). */
+  pass: number;
 }
+
+/** The numbers a strike drill is built from: one level's row. */
+export type StrikeLevel = PowerLevel | TechniqueLevel | FreeKickLevel;
 
 /**
  * `byLevel` (Power only): build from the training LEVEL and the player's own
  * Power — an open goal first, and scaled to your Power (powerDrillForLevel,
- * Harry 2 Oct 2026). Absent: the old 0-100 ladder, as the dev page uses it.
+ * Harry 2 Oct 2026). Absent: the old 0-100 ladder, as the trial and the
+ * relationship games use it. Training levels themselves are built from
+ * their saved row with `buildStrikeFrom`.
  */
 export function buildStrike(
   kind: StrikeKind, level: number, rep: number, rng: () => number,
   byLevel?: { trainingLevel: number; power: number },
 ): StrikeSetup {
+  if (kind === "technique") return buildStrikeFrom(kind, { ...techniqueDrill(level, rep), pass: 0.25 }, rng);
+  if (kind === "freeKick") return buildStrikeFrom(kind, { ...freeKickDrill(level, rep), pass: 0.5 }, rng);
+  const cfg = byLevel ? powerDrillForLevel(byLevel.trainingLevel, rep, byLevel.power) : { ...powerDrill(level, rep), keeper: true };
+  return buildStrikeFrom(kind, { ...cfg, pass: 0.5 }, rng);
+}
+
+/** One strike drill's picture from a level's numbers. */
+export function buildStrikeFrom(kind: StrikeKind, row: StrikeLevel, rng: () => number): StrikeSetup {
   if (kind === "technique") {
-    const cfg = techniqueDrill(level, rep);
+    const cfg = row as TechniqueLevel;
     // The ball sits far enough back that the gate always stands about six
     // metres in front of goal — so climbing the ladder moves YOU back, which
     // is what "the cones would be further back" actually looks like from
@@ -373,11 +400,12 @@ export function buildStrike(
       gate,
       gateCfg: cfg,
       brief: `${cfg.gateDistance.toFixed(0)}m · ${cfg.gateWidth.toFixed(1)}m gate`,
+      pass: cfg.pass,
     };
   }
 
   if (kind === "freeKick") {
-    const cfg = freeKickDrill(level, rep);
+    const cfg = row as FreeKickLevel;
     const ball = strikeSpot(cfg.distance, cfg.offset);
     const sc = buildScenario("free_kick", rng, cfg.keeperStrength, 60, 55);
     sc.ball = { x: ball.x, y: ball.y };
@@ -411,10 +439,11 @@ export function buildStrike(
       gate: null,
       gateCfg: null,
       brief: `${cfg.distance.toFixed(0)}m · ${cfg.wall}-man wall`,
+      pass: cfg.pass,
     };
   }
 
-  const cfg = byLevel ? powerDrillForLevel(byLevel.trainingLevel, rep, byLevel.power) : { ...powerDrill(level, rep), keeper: true };
+  const cfg = row as PowerLevel;
   const ball = strikeSpot(cfg.distance, cfg.offset);
   const sc = buildScenario("long_range", rng, cfg.keeperStrength, 60, 55);
   sc.ball = { x: ball.x, y: ball.y };
@@ -442,55 +471,55 @@ export function buildStrike(
     viewport: strikeViewport(ball),
     gate: null,
     gateCfg: null,
-    brief: cfg.keeper
+    brief: (cfg.keeper
       ? `${cfg.distance.toFixed(0)}m · ${cfg.blockers} in the way`
-      : `${cfg.distance.toFixed(0)}m · open goal`,
+      : `${cfg.distance.toFixed(0)}m · open goal`) + (cfg.pass > 0.5 ? " · near a post" : ""),
     openGoal: !cfg.keeper,
+    pass: cfg.pass,
   };
 }
 
 function StrikeDrill({
-  kind, trainingLevel, skills, onFinish, onExit,
-}: { kind: StrikeKind; trainingLevel: number; skills: Skills; onFinish: (stars: number) => void; onExit?: () => void }) {
+  kind, trainingLevel, skills, onFinish, onExit, override,
+}: { kind: StrikeKind; trainingLevel: number; skills: Skills; onFinish: (stars: number) => void; onExit?: () => void; override?: StrikeLevel }) {
   // One real match engine (CanvasMatch, via EngineFeature) — the same aim,
   // contact, flight, keeper and wall a match has. This file only builds the
   // picture for each rep and scores the result. See .claude/skills/one-engine.
-  // A level is one fixed picture: the same difficulty, the same seed, the same
-  // layout on every try, so it can be learnt (Mikey, 25 Sep 2026).
-  const level = levelDifficulty(trainingLevel);
+  // A level is one fixed picture: the same numbers, the same seed, the same
+  // layout on every try, so it can be learnt (Mikey, 25 Sep 2026). The
+  // numbers are the level's row (lib/star/trainingLevelData.ts).
   const rep = 0;
   const { results, attempt, done } = useTries(onFinish);
-  const seedRef = useRef(levelSeed(kind, trainingLevel));
+  // Power is the level's row eased toward YOUR Power when you are behind it
+  // (Harry, 2 Oct 2026). Held for the whole drill: a level is one picture.
+  const powerNow = skills.power;
+  const row = useMemo((): StrikeLevel => {
+    const rowAt = (n: number): StrikeLevel => (n === trainingLevel && override ? override : levelConfig(kind, n));
+    if (kind !== "power") return rowAt(trainingLevel);
+    return easePowerLevel(trainingLevel, powerNow, n => rowAt(n) as PowerLevel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, trainingLevel, override]);
+  const seedRef = useRef(levelSeedOf(kind, trainingLevel, row));
+  seedRef.current = levelSeedOf(kind, trainingLevel, row);
   const setupRef = useRef<StrikeSetup | null>(null);
   const prevRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const crossedRef = useRef<{ x: number; z: number } | null>(null);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
-  // Power is built from the level number and YOUR Power (open goal first,
-  // scaled to your Power — powerDrillForLevel). Held for the whole drill.
-  const powerNow = skills.power;
-  const byLevel = useMemo(
-    () => (kind === "power" ? { trainingLevel, power: powerNow } : undefined),
-    // Fixed at the start of the drill: a level is one picture.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [kind, trainingLevel],
-  );
-  const powerKeeper = kind === "power" && byLevel
-    ? powerDrillForLevel(byLevel.trainingLevel, rep, byLevel.power).keeperStrength
-    : powerDrill(level, rep).keeperStrength;
+  const keeperStrength = kind === "technique" ? 40 : (row as PowerLevel | FreeKickLevel).keeperStrength;
 
   const openOn = useCallback((): Scenario => {
-    const setup = buildStrike(kind, level, rep, mulberry32(seedRef.current), byLevel);
+    const setup = buildStrikeFrom(kind, row, mulberry32(seedRef.current));
     setup.scenario.viewport = { ...setup.viewport };
     setupRef.current = setup;
     prevRef.current = null;
     crossedRef.current = null;
     return setup.scenario;
-  }, [kind, level, byLevel]);
+  }, [kind, row]);
 
   // The HUD line and the cones for this rep — the same seeded build the
   // engine was handed, so the cones stand exactly where the gate is judged.
   const view = useMemo(() => {
-    const setup = buildStrike(kind, level, rep, mulberry32(seedRef.current), byLevel);
+    const setup = buildStrikeFrom(kind, row, mulberry32(seedRef.current));
     return {
       brief: setup.brief,
       openGoal: !!setup.openGoal,
@@ -499,7 +528,7 @@ function StrikeDrill({
         { x: setup.gate.right.x, y: setup.gate.right.y },
       ] : [],
     };
-  }, [kind, level, rep, byLevel]);
+  }, [kind, row]);
   const brief = view.brief;
   const markers = view.markers;
 
@@ -529,7 +558,7 @@ function StrikeDrill({
       const reached = o === "goal" || o === "rebound" || o === "wide" || o === "over" || o === "post";
       q = shotQuality(o, reached && info.ball ? info.ball.x : null);
       text = o === "goal" || o === "rebound"
-        ? (q > 0.85 ? "TOP CORNER!" : "GOAL!")
+        ? (q < setup.pass ? "TOO CENTRAL" : q > 0.85 ? "TOP CORNER!" : "GOAL!")
         : o === "saved" || o === "tipped" ? "SAVED"
         : o === "caught" ? "CAUGHT"
         : o === "post" ? "OFF THE POST"
@@ -537,9 +566,9 @@ function StrikeDrill({
         : o === "over" ? "OVER"
         : "WIDE";
     }
-    // Passed: through the cones for the gate (anything inside them counts),
-    // in the net for a shot or a free kick.
-    const ok = setup.gate ? q >= 0.25 : q >= 0.5;
+    // Passed: the level's own score to pass (lib/star/trainingLevelData.ts):
+    // 0.25 = anywhere through the cones, 0.5 = any goal, more = nearer a post.
+    const ok = q >= setup.pass;
     setFlash({ text, good: ok });
     window.setTimeout(() => setFlash(null), 1000);
     attempt(ok);
@@ -561,7 +590,7 @@ function StrikeDrill({
           markers={markers}
           skills={{ power: skills.power, technique: skills.technique }}
           setPieceSkill={skills.freeKick}
-          keeperStrength={kind === "technique" ? 40 : kind === "freeKick" ? freeKickDrill(level, rep).keeperStrength : powerKeeper}
+          keeperStrength={keeperStrength}
           seed={seedRef.current}
           scene={view.openGoal ? { ...DRILL_SCENE.power, keeper: false } : DRILL_SCENE[kind]}
         />}
@@ -580,20 +609,21 @@ function StrikeDrill({
 // PACE — the gauntlet, on the real match's own first-person dribble
 // ═══════════════════════════════════════════════════════════════════════════
 
-function GauntletDrill({ trainingLevel, onFinish, onExit }: { trainingLevel: number; onFinish: (stars: number) => void; onExit?: () => void }) {
+function GauntletDrill({ trainingLevel, onFinish, onExit, override }: { trainingLevel: number; onFinish: (stars: number) => void; onExit?: () => void; override?: PaceLevel }) {
   // The same run a real match serves (FirstPersonDribble, same camera
-  // settings as CanvasMatch's own mount). Your pace stat is the run speed.
-  const level = levelDifficulty(trainingLevel);
+  // settings as CanvasMatch's own mount). The level's row sets how many men,
+  // how quick they are, and how quick you run (lib/star/trainingLevelData.ts).
   const { results, attempt, done } = useTries(onFinish);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
   const [runKey, setRunKey] = useState(0);
-  const cfg = paceDrill(level, 0);
-  // The drill's chaser count, in the real run's waves of up to three.
+  const cfg = override ?? levelConfig("pace", trainingLevel);
+  // The drill's chaser count, in the real run's waves of up to `waveMax`.
   const waveSizes = useMemo(() => {
     const out: number[] = [];
-    for (let left = cfg.chasers; left > 0; left -= 3) out.push(Math.min(3, left));
+    const max = Math.max(1, cfg.waveMax);
+    for (let left = cfg.chasers; left > 0; left -= max) out.push(Math.min(max, left));
     return out;
-  }, [cfg.chasers]);
+  }, [cfg.chasers, cfg.waveMax]);
   const total = waveSizes.reduce((a, b) => a + b, 0);
 
   // Passed: you got to the line with the ball.
@@ -617,8 +647,8 @@ function GauntletDrill({ trainingLevel, onFinish, onExit }: { trainingLevel: num
           <FirstPersonDribble
             key={runKey}
             embedded
-            seed={levelSeed("pace", trainingLevel)}
-            pace={level}
+            seed={levelSeedOf("pace", trainingLevel, cfg)}
+            pace={cfg.runPace}
             oppStrength={cfg.oppStrength}
             waveSizes={waveSizes}
             chaseEye={5}
@@ -638,91 +668,11 @@ function GauntletDrill({ trainingLevel, onFinish, onExit }: { trainingLevel: num
 // VISION — read the run
 // ═══════════════════════════════════════════════════════════════════════════
 
-interface VisionMate { x: number; y: number; space: number; onside: boolean; }
-interface VisionRound {
-  mates: VisionMate[];
-  defenders: { x: number; y: number }[];
-  line: number;
-  best: number;
-  viewport: TrainingViewport;
-}
+// The picture is built in lib/star/visionRound.ts (buildVisionRound), from
+// the level's row: how many team-mates, how clear the right one is, how many
+// defenders, how many offside, how near the line.
 
-/**
- * One picture to read.
- *
- * Built rather than randomised into existence: mates and markers are thrown
- * down, everyone's space is measured, and then the best onside option is
- * pushed clear until it leads the next-best by the ladder's `margin`. At the
- * bottom of the ladder that margin is seven metres and the right ball is
- * obvious; at the top it is barely one, and you have under a second.
- */
-function buildVisionRound(level: number, rep: number, rng: () => number): VisionRound {
-  const cfg = visionDrill(level, rep);
-  const line = 26 + rng() * 6;
-  const n = cfg.options;
-  // The frame is decided FIRST and everybody is placed inside it. Doing it
-  // the other way round — scatter across the full 68 m pitch, then fit a
-  // 5:8 frame to the spread — put half the options off the side of a
-  // portrait canvas, where they could neither be read nor tapped.
-  const viewW = 34;
-  const x1 = CX - viewW / 2, x2 = CX + viewW / 2;
-  const viewH = viewW / (5 / 8);
-  const y1 = line - 12;
-  const y2 = y1 + viewH;
-  const spanX = (f: number) => x1 + 3 + f * (viewW - 6);
-
-  const defenders = Array.from({ length: Math.max(3, Math.round(n * 0.8)) }, () => ({
-    x: spanX(rng()),
-    y: line + (rng() - 0.5) * 7,
-  }));
-  const mates: VisionMate[] = Array.from({ length: n }, () => {
-    // Some of them run beyond the line — those are the ones you must NOT
-    // pick, however much space they are standing in.
-    const beyond = rng() < 0.42;
-    const y = beyond ? line - 1.5 - rng() * 7 : line + 1.5 + rng() * 11;
-    return { x: spanX(rng()), y, space: 0, onside: !beyond };
-  });
-  const spaceOf = (m: VisionMate) =>
-    defenders.reduce((min, d) => Math.min(min, Math.hypot(d.x - m.x, d.y - m.y)), 99);
-  for (const m of mates) m.space = spaceOf(m);
-
-  const onside = mates.map((m, i) => ({ m, i })).filter(o => o.m.onside);
-  if (onside.length === 0) {
-    // Vanishingly unlikely, but a round with no legal pass is not a round.
-    mates[0].onside = true;
-    mates[0].y = line + 3;
-    mates[0].space = spaceOf(mates[0]);
-    onside.push({ m: mates[0], i: 0 });
-  }
-  onside.sort((a, b) => b.m.space - a.m.space);
-  const best = onside[0];
-  const runnerUp = onside[1]?.m.space ?? 0;
-  // Push the best option clear of the field by the ladder's margin — walking
-  // it away from its nearest marker rather than teleporting it, so the
-  // picture still looks like a real one.
-  let guard = 0;
-  while (best.m.space < runnerUp + cfg.margin && guard++ < 40) {
-    const near = defenders.reduce((a, d) =>
-      Math.hypot(d.x - best.m.x, d.y - best.m.y) < Math.hypot(a.x - best.m.x, a.y - best.m.y) ? d : a, defenders[0]);
-    const dx = best.m.x - near.x, dy = best.m.y - near.y;
-    const l = Math.hypot(dx, dy) || 1;
-    // Clamped to the fixed frame, not the whole pitch — the frame is what
-    // has to stay readable, and this is the only step that can walk a mate
-    // outside it.
-    best.m.x = Math.max(x1 + 2, Math.min(x2 - 2, best.m.x + (dx / l) * 0.8));
-    best.m.y = Math.max(line + 1.2, Math.min(y2 - 2, best.m.y + (dy / l) * 0.8));
-    best.m.space = spaceOf(best.m);
-  }
-
-  return {
-    mates, defenders, line, best: best.i,
-    viewport: { x1, x2, y1, y2 },
-  };
-}
-
-function VisionDrillView({ trainingLevel, onFinish, onExit }: { trainingLevel: number; onFinish: (stars: number) => void; onExit?: () => void }) {
-  const level = levelDifficulty(trainingLevel);
-  const rep = 0;
+function VisionDrillView({ trainingLevel, onFinish, onExit, override }: { trainingLevel: number; onFinish: (stars: number) => void; onExit?: () => void; override?: VisionLevel }) {
   const { results, attempt } = useTries(onFinish);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -732,7 +682,13 @@ function VisionDrillView({ trainingLevel, onFinish, onExit }: { trainingLevel: n
   const [left, setLeft] = useState(1);
   const startedRef = useRef(0);
   const answeredRef = useRef(false);
-  const cfg = useMemo(() => visionDrill(level, rep), [level, rep]);
+  const cfg: VisionLevel = override ?? levelConfig("vision", trainingLevel);
+  // Which try this is (0, 1, 2). Each try is its OWN picture (20 Oct 2026):
+  // with one picture for all three, and the right man lit after a try, the
+  // second try was the answer — a modelled player passed 99.9% of levels
+  // 20-30. The three pictures are fixed per level, so a level still plays
+  // the same way every time.
+  const tryRef = useRef(0);
   // 3, 2, 1, GO before every try, with the picture hidden (Mikey, 25 Sep
   // 2026). 0 is "GO"; null once it's over and the clock is running.
   const [count, setCount] = useState<number | null>(3);
@@ -743,16 +699,18 @@ function VisionDrillView({ trainingLevel, onFinish, onExit }: { trainingLevel: n
   // The countdown (and so the clock) only runs while the pitch is on screen.
   const onScreen = useMostlyOnScreen(wrapRef);
 
-  // The same picture on every try: a fresh generator from the level's own seed.
-  const startRep = useCallback((r: number) => {
-    setRound(buildVisionRound(level, r, mulberry32(levelSeed("vision", trainingLevel))));
+  const seed = levelSeedOf("vision", trainingLevel, cfg);
+  const cfgKey = JSON.stringify(cfg);
+  const startRep = useCallback((t: number) => {
+    setRound(buildVisionRound(cfg, mulberry32((seed + t * 7919) >>> 0)));
     startedRef.current = performance.now();
     answeredRef.current = false;
     setLeft(1);
     setCount(3);
-  }, [level, trainingLevel]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfgKey, seed]);
 
-  useEffect(() => { startRep(0); }, [startRep]);
+  useEffect(() => { tryRef.current = 0; startRep(0); }, [startRep]);
 
   const answer = useCallback((i: number | null) => {
     if (answeredRef.current || !round) return;
@@ -779,9 +737,9 @@ function VisionDrillView({ trainingLevel, onFinish, onExit }: { trainingLevel: n
     attempt(ok);
     window.setTimeout(() => {
       setFlash(null);
-      if (!ok) startRep(rep);
+      if (!ok) { tryRef.current += 1; startRep(tryRef.current); }
     }, 950);
-  }, [round, cfg.window, attempt, rep, startRep]);
+  }, [round, cfg.window, attempt, startRep]);
 
   // The countdown: 3, 2, 1 a beat apart, then GO, then the picture and the
   // clock start together — and not before the pitch is on screen: the count
@@ -848,11 +806,7 @@ function VisionDrillView({ trainingLevel, onFinish, onExit }: { trainingLevel: n
     const vp = round.viewport;
     const x = vp.x1 + ((e.clientX - r.left) / r.width) * (vp.x2 - vp.x1);
     const y = vp.y1 + ((e.clientY - r.top) / r.height) * (vp.y2 - vp.y1);
-    let bestI = -1, bestD = 3.2;
-    round.mates.forEach((m, i) => {
-      const d = Math.hypot(m.x - x, m.y - y);
-      if (d < bestD) { bestD = d; bestI = i; }
-    });
+    const bestI = visionTapPick(round, x, y, cfg.tapRadius);
     if (bestI >= 0) answer(bestI);
   };
 
@@ -928,6 +882,9 @@ function CompleteScreen({ title, trainingLevel, stars }: { title: string; traini
 }
 
 export default function TrainingMinigame(props: Props) {
+  // The level's numbers: this device's copy of the saved levels at once, the
+  // shared table once per page load (lib/star/trainingLevelStore.ts).
+  if (typeof window !== "undefined") void ensureTrainingLevels();
   return (
     <DrillLook.Provider value={{ skill: props.skill, glow: props.glow ?? "#2F6F4E" }}>
       <KitStyles />
@@ -937,7 +894,7 @@ export default function TrainingMinigame(props: Props) {
   );
 }
 
-function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExit }: Props) {
+function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExit, levelOverride }: Props) {
   const [result, setResult] = useState<number | null>(null);
   // Level 1 of every game opens on a short how-it-works card.
   const [introDone, setIntroDone] = useState(trainingLevel !== 1);
@@ -956,13 +913,13 @@ function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExi
 
   switch (skill) {
     case "pace":
-      return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} />;
+      return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} override={levelOverride as PaceLevel | undefined} />;
     case "vision":
-      return <VisionDrillView trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} />;
+      return <VisionDrillView trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} override={levelOverride as VisionLevel | undefined} />;
     case "power":
     case "technique":
     case "freeKick":
-      return <StrikeDrill kind={skill} trainingLevel={trainingLevel} skills={skills} onFinish={setResult} onExit={onExit} />;
+      return <StrikeDrill kind={skill} trainingLevel={trainingLevel} skills={skills} onFinish={setResult} onExit={onExit} override={levelOverride as StrikeLevel | undefined} />;
     default:
       return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} />;
   }

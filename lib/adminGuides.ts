@@ -981,35 +981,66 @@ export const ADMIN_GUIDES = {
 
   "/star-training-dev": {
     title: "Training Levels",
-    what: "Play any of the 30 levels of any training game straight away, to see and test what each one is.",
+    what: "Play any of the 30 levels of any training game straight away, and change any level's numbers (Edit level), the way the Scenario Gallery edits a chance.",
     buttons: [
       {
         group: "The level list",
         items: [
           ["Power / Technique / Free Kick / Pace / Vision", "The tabs at the top: which training game's levels to show."],
-          ["Your skills 40 / 70 / 100", "The player's skills while you play. They change how hard you can hit the ball and how much it bends, so a level plays differently at 40 and at 100."],
+          ["Your skills 40 / 70 / 100", "The player's skills while you play. They change how hard you can hit the ball and how much it bends, so a level plays differently at 40 and at 100. Power levels also ease toward your Power when it is below the level: pick 100 to play a Power level's numbers exactly."],
           ["A level tile", "Picks that level; tap it again to play it. The line under the number is what it asks for (distance and blockers, gate size, wall, chasers, options and time). Stars appear on a tile after you've played it here."],
+          ["The dot on a tile", "Amber: unsaved changes. Green: a saved edit every career plays. Orange: saved on this device only."],
           ["The level panel (right; pinned to the bottom on a phone)", "The picked level: its game, what it asks for, your stars here, and a real picture of that game (taken at level 15)."],
-          ["Let's go ›", "Plays the picked level."],
+          ["Edit level", "Opens the editor for the picked level (on a phone it takes the place of the list)."],
+          ["Let's go ›", "Plays the picked level (with any unsaved changes)."],
+        ],
+      },
+      {
+        group: "Edit level",
+        items: [
+          ["The sliders (and the number boxes)", "Every number the drill is built from. Power: distance, off centre, men in the way, keeper on/off and strength, score to pass (0.5 = any goal, higher = nearer a post). Technique: gate distance, width, how far off your line, max height, score to pass. Free kick: distance, off centre, men in the wall, keeper strength, score to pass. Pace: men to beat, most in one wave, their speed, your speed. Vision: team-mates, seconds to pick, the clear man's extra space, defenders, share offside, closest to the line, tap target size. \"was …\" shows the committed number; a • marks a change since the last save."],
+          ["Keeper On / Off", "Power only: an open goal or a keeper."],
+          ["Layout: Level's own / Shuffle", "Where everyone stands is built from the level's own seed. Shuffle picks a new one (shown as #1234); Level's own goes back."],
+          ["▶ Play", "Plays the level with these numbers straight away, on the same drill a career gets. Nothing is saved by playing."],
+          ["Save", "Saves this level's numbers for every career (shared table star_training_levels). Says \"Saved for everyone\" or \"Saved on this device only\" and why."],
+          ["Commit", "Writes this level's numbers into the game's levels file in the code (see Committing)."],
+          ["Undo changes", "Back to the saved numbers."],
+          ["Back to committed", "Deletes the saved edit: the level plays as the committed file has it, for everyone."],
+          ["Done", "Closes the editor. Unsaved changes stay on the tile (amber dot) until you leave the page."],
         ],
       },
       {
         group: "While playing",
         items: [
-          ["‹ All levels", "Back to the list at any time."],
+          ["‹ All levels / ‹ Edit level", "Back to the list (or the editor) at any time."],
           ["◀ L13 ▶", "Previous or next level, starting it fresh."],
+          ["unsaved edit", "Shown in the bar when the level is playing numbers you haven't saved."],
           ["Let's go", "Level 1 of each game opens on its how-it-works card first, as in a career."],
           ["Tap to start", "Pace (the dribble run) waits for this before anyone moves, on every try."],
         ],
       },
     ],
     saving: [
-      "Nothing is saved. No career is touched and no stars are banked; the stars on the tiles are forgotten when you leave the page.",
+      "Playing saves nothing: no career is touched and no stars are banked; the stars on the tiles are forgotten when you leave the page.",
+      "Edits are kept on this page only until you press Save.",
+      "Save writes the level to the shared table star_training_levels, which every career reads on top of the committed file, with no deploy. It also keeps a copy on this device. Until the table exists, a save stays on this device only (it plays on this device) and the page says so.",
+    ],
+    commit: [
+      "Commit writes the level into the game's levels file (lib/star/data/trainingLevels.json) directly on the main branch, through GitHub.",
+      "Vercel rebuilds the live site from main every time — it takes a minute or two.",
+      "A commit also saves the same numbers to the shared table, so the two never disagree.",
+      "Needs an admin sign-in, and GITHUB_TOKEN set in Vercel. Without the token you get a message saying so and nothing is committed.",
     ],
     inGame: [
-      "Each level here is exactly the level a player gets: Training → pick a skill → pick a level. Same picture, same three tries, same stars.",
+      "Each level here is exactly the level a player gets: Training → pick a skill → pick a level. Same three tries, same stars.",
+      "A saved level reaches every career the next time its training screen loads; a committed one after the deploy.",
+      "Vision: each of the three tries is its own picture (fixed per level), so a missed try never shows the answer to the next one.",
     ],
-    dev: "app/star-training-dev/page.tsx mounts components/star/TrainingMinigame.tsx with trainingLevel = the tile. Levels: lib/star/trainingLevels.ts; drill numbers: lib/star/trainingDrills.ts.",
+    needs: [
+      "The star_training_levels table (supabase/migrations/star_training_levels.sql). Until it is run, Save stays on this device only.",
+      GITHUB_TOKEN_NEEDED,
+    ],
+    dev: "app/star-training-dev/{page,LevelEditor}.tsx mounts components/star/TrainingMinigame.tsx (levelOverride = the draft). Level rows: lib/star/trainingLevelData.ts reading lib/star/data/trainingLevels.json (rebuild: scripts/training-levels/build.mts); saved edits: lib/star/trainingLevelStore.ts, /api/star/training-levels, /api/star/training-levels/commit (lib/star/commitScenarios.ts commitDataFile); vision picture lib/star/visionRound.ts; tests tests/star/trainingLevelData.mts.",
   },
   "/star-highlights-dev": {
     title: "Infinite Highlights",

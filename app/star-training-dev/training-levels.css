@@ -63,3 +63,33 @@
   .tr-go .bc-btn { width: 100%; justify-content: center; font-size: 18px; }
 }
 @media (max-width: 420px) { .tr-line { font-size: 12px; text-transform: none; } .tr-bar-mid { font-size: 12px; } .tr-bar-back { padding: 6px 10px; font-size: 13px; } }
+
+/* Edit level (20 Oct 2026): every number of the picked level as a slider. */
+.tr-go { gap: 8px; flex-wrap: wrap; }
+.tr-tile[data-mark]::after { content: ""; position: absolute; top: 8px; right: 14px; width: 8px; height: 8px; border-radius: 50%; }
+.tr-tile[data-mark="edit"]::after { background: var(--bc-amber); }
+.tr-tile[data-mark="saved"]::after { background: #3ddc84; }
+.tr-tile[data-mark="device"]::after { background: #ff9f43; }
+.tr-ed { display: flex; flex-direction: column; gap: 6px; }
+.tr-ed-row { display: grid; grid-template-columns: 118px minmax(0, 1fr) 66px; align-items: center; gap: 4px 8px; }
+.tr-ed-row .tr-ed-pills { grid-column: 2 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+.tr-ed-name { font-size: 12.5px; font-weight: 800; color: var(--bc-ink); }
+.tr-ed-name i { color: var(--bc-amber); font-style: normal; }
+.tr-ed-row input[type="range"] { width: 100%; accent-color: #5fe3ff; min-height: 28px; }
+.tr-ed-num { width: 66px; padding: 4px 6px; border: 1px solid var(--bc-line); border-radius: 3px; background: rgba(0, 0, 0, 0.3); color: #fff;
+  font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tr-ed-was { grid-column: 2 / -1; margin-top: -4px; font-size: 11px; color: var(--bc-ink3); font-style: italic; }
+.tr-ed-was:empty { display: none; }
+.tr-ed-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.tr-ed-status { font-size: 12.5px; font-weight: 800; padding: 6px 10px; border-radius: 3px; background: rgba(255, 255, 255, 0.06); }
+.tr-ed-status[data-tone="good"] { color: #7dffb0; }
+.tr-ed-status[data-tone="warn"] { color: #ffc24a; }
+.tr-ed-status[data-tone="bad"] { color: #ff8a95; }
+@media (max-width: 820px) {
+  /* Editing on a phone: the editor replaces the grid instead of covering it. */
+  .tr-layout[data-editing="true"] .tr-grid { display: none; }
+  .tr-layout[data-editing="true"] .tr-side { position: static; }
+  .tr-ed-row { grid-template-columns: 104px minmax(0, 1fr) 60px; }
+  .tr-ed-num { width: 60px; }
+  .tr-go .bc-btn { width: auto; flex: 1; justify-content: center; }
+}
