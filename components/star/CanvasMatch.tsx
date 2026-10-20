@@ -62,6 +62,7 @@ import { deflectBlock } from "@/lib/star/deflection";
 import { steerDeflectionFromOwnGoal, clearLooseWin } from "@/lib/star/defenderTouch";
 import { footSign, takerFootSign, drawnTakerAt, activeFoot } from "@/lib/star/kickFoot";
 import { clearYouSpot } from "@/lib/star/youSpot";
+import { canTakeCorners } from "@/lib/star/cornerReach";
 import type { PreferredFoot } from "@/lib/star/playerIdentity";
 import {
   commentaryBuildup, commentaryStrike, commentaryReceived, commentaryReceiverShot, commentaryResult,
@@ -1723,6 +1724,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       home: fixture?.home,
       pace: careerRef.current?.skills.pace,
       freeKick: careerRef.current?.skills.freeKick,
+      // Can your best corner reach the middle of the box? Measured with the
+      // match's own ball physics on your kicking skills (lib/star/cornerReach.ts).
+      canTakeCorners: canTakeCorners(skillsRef.current),
       // So a corner/free kick/penalty is weighted by the position you play
       // like every other chance is, instead of bypassing it — see
       // buildRequest's dead-ball block in hiddenMatch.ts.
