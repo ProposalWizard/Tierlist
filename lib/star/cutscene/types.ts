@@ -109,7 +109,9 @@ export type Target =
 
 export type BodyPart =
   | "head" | "eyes" | "chest" | "hips" | "feet" | "hand.L" | "hand.R"
-  | "shoulder.L" | "shoulder.R" | "knee.L" | "knee.R";
+  | "shoulder.L" | "shoulder.R" | "knee.L" | "knee.R"
+  /** The top of the head and hair (a cup lifted over it must clear it). */
+  | "crown";
 
 /** Named hand shapes (fingers). The people layer may know more. */
 export type HandPose =
@@ -254,6 +256,8 @@ export interface TraceTrack extends TrackBase {
   handAlong?: Vec3; handPalm?: Vec3;
   /** Lead in from / out to the tool's resting point over this long, s. */
   leadIn?: number; leadOut?: number;
+  /** The tool's own way while it writes, actor's frame: tip → back (default: a pen held ~50° up, back towards the writing shoulder), and the back of the hand. */
+  toolDir?: Vec3; toolUp?: Vec3;
 }
 
 /** Hand shape on its own (no reach). */
@@ -446,6 +450,14 @@ export interface CutsceneActor {
    * grip. `pen`: the pen's tip and its barrel's direction (tip → back).
    */
   gripFrame(hand: "L" | "R", grip: HandPose): { pos: THREE.Vector3; axis: THREE.Vector3; up: THREE.Vector3 };
+  /**
+   * Hold a tool as it is really held (B5b): the fingers in `grip`, the grip
+   * frame's point on `tip`, its axis along `dir` and its `up` towards `up`
+   * (world). Optional: a body without it gets the reach + gripFrame route.
+   */
+  holdTool?(hand: "L" | "R", grip: HandPose, tip: THREE.Vector3, dir: THREE.Vector3, up: THREE.Vector3, weight: number, pole?: THREE.Vector3): void;
+  /** The hand's way now (world): fingers along, palm towards. Optional (hold.ts gripTo blends from it). */
+  handFrame?(hand: "L" | "R"): { along: THREE.Vector3; palm: THREE.Vector3 };
   /** Head and neck (and eyes, if it has them) towards a point, `weight` of the way. */
   lookAt(target: THREE.Vector3, weight: number): void;
   setExpression(expr: Expression, amount: number): void;

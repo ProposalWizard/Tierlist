@@ -182,7 +182,9 @@ def build(src, tag, suit=False):
     # Colour texture, down to 1024.
     mat = j["materials"][0]
     ti = mat["pbrMetallicRoughness"]["baseColorTexture"]["index"]
-    big = Image.open(io.BytesIO(glb.image_bytes(j, b, j["textures"][ti]["source"]))).convert("RGB")
+    # TOON_BASE: the colour picture painted outside the file (tools/bodies/paint_atlas.py)
+    big = (Image.open(os.environ["TOON_BASE"]) if os.environ.get("TOON_BASE") else
+           Image.open(io.BytesIO(glb.image_bytes(j, b, j["textures"][ti]["source"])))).convert("RGB")
     base = np.asarray(big.resize((TEX, TEX), Image.LANCZOS)).astype(np.float32) / 255
 
     # Where on the body each texel is (rest pose, metres).
@@ -211,6 +213,10 @@ def build(src, tag, suit=False):
         d = np.linalg.norm(pos - (e + np.clip(t, 0, 1)[..., None] * ab), axis=-1)
         fore |= (t > 0.25) & (t < 0.85) & (d < 0.06)
     ref["skin"] = med(fore)
+    if np.linalg.norm(ref["shorts"] - ref["skin"]) < 0.15:
+        # longer legs (a body drawn at real proportions, tools/bodies): the window above fell on the
+        # bare thigh under the hem; read the shorts just under the hips instead
+        ref["shorts"] = med((np.abs(np.abs(x) - 0.1) < 0.04) & (y > hipsY - 0.07) & (y < hipsY - 0.02) & (z > 0))
     if suit:
         # sleeves cover his forearms: skin from the front of the face, below the eyes
         ref["skin"] = med((y > neckY + 0.06) & (y < top - 0.14) & (z > 0) & (np.abs(x) > 0.02) & (np.abs(x) < 0.06))
@@ -255,14 +261,21 @@ def build(src, tag, suit=False):
         v = y[sel]
         return float(np.percentile(v, q)) if v.size > 50 else fall
     shirt_lo = pct(cov & (cls == 2) & (y < hipsY + 0.1) & (z > 0) & (np.abs(x) < 0.12), 5, hipsY - 0.06)
-    sock_top = pct(legs & (cls == 4), 97, kneeY - 0.05)
+    if os.environ.get("TOON_DEBUG"):
+        sel_ = cov & (cls == 2) & (z > 0) & (np.abs(x) < 0.12)
+        sho_ = cov & (cls == 3) & (z > 0) & (np.abs(x) < 0.12)
+        print("DEBUG hips", round(float(hipsY), 3), "knee", round(float(kneeY), 3), "shirt y pct 1/5/25", [round(float(np.percentile(y[sel_], q)), 3) for q in (1, 5, 25)] if sel_.sum() else None,
+              "shorts y pct 5/50/95", [round(float(np.percentile(y[sho_], q)), 3) for q in (5, 50, 95)] if sho_.sum() else None)
+    # a body with real cloth (TOON_REAL, tools/bodies): the lines sit at the cloth's own edges, which are not level
+    EDGE = 0.3 if os.environ.get("TOON_REAL") == "1" else 3
+    sock_top = pct(legs & (cls == 4), 100 - EDGE, kneeY - 0.05)
     boot_top = pct(legs & (cls == 5) & (y < footY + 0.1), 95, footY + 0.02)
     if np.linalg.norm(ref["shirt"] - ref["shorts"]) < 0.15:
         shirt_lo = hipsY - 0.055   # one colour: the hem where the generated shirt ends (cN/concept.png)
     # a stray low texel (a red sock top) must not drag the hem to the knee: it sits near the hips
     shirt_lo = min(max(shirt_lo, hipsY - 0.06), hipsY + 0.08)
     collar = pct(cov & kit & (np.abs(x) < 0.1) & ~head, 98, neckY - 0.06)
-    shorts_lo = pct(legs & (cls == 3) & (y < shirt_lo), 3, kneeY + 0.08)
+    shorts_lo = pct(legs & (cls == 3) & (y < shirt_lo), EDGE, kneeY + 0.08)
     ts = []
     for side in ("Left", "Right"):
         a_, e_ = J[side + "Arm"][:3, 3], J[side + "ForeArm"][:3, 3]
@@ -375,6 +388,8 @@ def build(src, tag, suit=False):
         "scene": 0,
         "scenes": [{"name": model, "nodes": j["scenes"][0]["nodes"], "extras": {
             "model": model, "toon": True,
+            # a body drawn at real proportions (TOON_REAL=1) keeps its own head, neck and hands (people3d's meta.look)
+            **({"look": {"head": 1, "neck": 1, "hands": 1}} if os.environ.get("TOON_REAL") == "1" else {}),
             "skinAvg": [round(float(v), 5) for v in skinAvg],
             "hairAvg": [round(float(v), 5) for v in hairAvg],
             "face": {"chinY": round(chinY, 4), "eyeY": round(eyeY, 4), "browY": round(browY, 4), "frontZ": round(frontZ, 4)},

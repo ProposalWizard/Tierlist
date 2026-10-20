@@ -47,6 +47,7 @@ import { TIER_PROFILES, quality3dTier, type Quality3d } from "./three3d/quality"
 import { rememberGpu } from "./three3d/perf";
 import { withMeshopt } from "./three3d/meshopt";
 import { safeCompileAsync } from "./three3d/safeCompile";
+import { basisTurn } from "./cutscene/hold";
 
 type Three = typeof import("three");
 
@@ -884,6 +885,29 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
   // The writing hand's direction (fixed while writing).
   const writeAlong = () => dirOf(you, 0.2, -0.7, 0.68);
   const writePalm = () => dirOf(you, 0.85, -0.5, -0.1);
+  /** The pen's own axis in the hand's frame, the fingers in the pen grip (measured once). */
+  let penAxisL: THREE.Vector3 | null = null;
+  /**
+   * B5b: the writing hand turned so the pen stands up off the paper as a pen is
+   * held (~50°, back towards his right shoulder, the back of the hand up and
+   * out). The hand's own along/palm left it lying almost flat on the paper,
+   * 9° up. `w` blends from the given along/palm (picking it up, putting it down).
+   */
+  const penHold = (along: THREE.Vector3, palm: THREE.Vector3, w: number) => {
+    if (!hasFingers(you) || w <= 0) return { along, palm };
+    if (!penAxisL) {
+      const saved = snapshot(you, ARM_R);
+      const keep = you.fingers!.R;
+      const fq = (["thumb", "index", "middle", "ring", "little"] as const).flatMap((f) => keep[f].bones.map((b) => [b, b.quaternion.clone()] as const));
+      poseFingers(T, you, "R", HANDS.pen);
+      penAxisL = penInHandOf(you, "R").axis.clone().applyQuaternion(handQ(you, "R").invert());
+      for (const [b, q] of fq) b.quaternion.copy(q);
+      restore(you, saved);
+    }
+    const Q = basisTurn(T, penAxisL, you.hand.R.palm.clone().negate(), dirOf(you, -0.3, 0.78, -0.55), dirOf(you, -0.5, 0.85, -0.1));
+    const a2 = you.hand.R.along.clone().applyQuaternion(Q), p2 = you.hand.R.palm.clone().applyQuaternion(Q);
+    return { along: along.clone().lerp(a2, w).normalize(), palm: palm.clone().lerp(p2, w).normalize() };
+  };
 
   /** The one body: your right hand's fingers this frame (set in frame()). */
   let fingersR: FingerPose = HANDS.relax;
@@ -1049,7 +1073,8 @@ export async function createSigningScene(container: HTMLElement, opts: SigningSc
         tip = endP.clone().add(v3(0, 0.05 * lift, 0)).lerp(penGripOnDesk.clone().add(v3(0, 0.012, 0)), down);
       }
       penInHand = e >= S.grip && down < 0.98;
-      const along = writeAlong(), palm = writePalm();
+      const pw = penHold(writeAlong(), writePalm(), pickK * (1 - down));
+      const along = pw.along, palm = pw.palm;
       const restAlong = dirOf(you, restR.along[0], restR.along[1], restR.along[2]);
       const restPalm = dirOf(you, restR.palm[0], restR.palm[1], restR.palm[2]);
       const k = Math.max(reach, 1 - seg(e, S.lift, S.standA - 0.05));

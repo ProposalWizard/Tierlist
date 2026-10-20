@@ -38,6 +38,7 @@ import { clamp, lerpAngle, noise1, smooth } from "./math";
 import { filmPass } from "./cinema";
 import { blinkAt, wanderGaze } from "../style3d/toon/face";
 import { cutsceneCameraLook, type CutsceneCameraLook } from "./look";
+import { gripTo, heldPropOf, twoHandPlace, type HeldProp } from "./hold";
 
 export interface DirectorOptions {
   career?: CareerContext;
@@ -163,9 +164,16 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   };
   const sig = makeSignature(txt.player);
   const props = new Map<string, PropObj>();
+  const heldOf = new Map<string, HeldProp>();
+  const heldProp = (id?: string) => {
+    if (!id || !props.has(id)) return undefined;
+    let h = heldOf.get(id);
+    if (!h) { h = heldPropOf(T, props.get(id)!); heldOf.set(id, h); }
+    return h;
+  };
   const buildProps = () => {
     for (const p of Array.from(props.values())) { root.remove(p.group); p.dispose(); }
-    props.clear();
+    props.clear(); heldOf.clear();
     for (const s of script.props ?? []) { const p = buildProp(T, kit, s, txt, sig); props.set(s.id, p); root.add(p.group); }
   };
   buildProps();
@@ -221,26 +229,8 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
 
   const tracksOf = <K extends string>(id: string, type: K) => (C.byActor.get(id) ?? []).filter((x) => x.type === type) as any[];
 
-  /** Hold the tool's grip point (not the wrist) on `want`: a few passes, each moving the wrist by the miss. */
-  const toolTo = (a: CutsceneActor, hand: "L" | "R", grip: any, want: any, along: any, palm: any, pole: any, w: number) => {
-    const S = hand === "R" ? "Right" : "Left";
-    const bones = [`${S}Shoulder`, `${S}Arm`, `${S}ForeArm`, `${S}Hand`].map((n) => a.bone(n)).filter(Boolean) as any[];
-    const saved = bones.map((b) => b.quaternion.clone());
-    let wrist = want.clone().add(new T.Vector3(0, 0.08, 0));
-    for (let i = 0; i < 4; i++) {
-      bones.forEach((b, j) => b.quaternion.copy(saved[j]));
-      a.root.updateMatrixWorld(true);
-      a.reach(hand, wrist, along, palm, 1, pole);
-      a.hand(hand, grip, 1);
-      const g = a.gripFrame(hand, grip).pos;
-      wrist = wrist.add(want.clone().sub(g));
-    }
-    if (w < 1) {
-      const solved = bones.map((b) => b.quaternion.clone());
-      bones.forEach((b, j) => { b.quaternion.copy(saved[j]).slerp(solved[j], w); });
-      a.root.updateMatrixWorld(true);
-    }
-  };
+  /** Hold the tool's grip point (not the wrist) on `want` (hold.ts). */
+  const toolTo = (a: CutsceneActor, hand: "L" | "R", grip: any, want: any, along: any, palm: any, pole: any, w: number) => gripTo(T, a, hand, grip, want, along, palm, pole, w);
 
   // prop states from the prop tracks
   const propTracks = C.tracks.filter((x): x is PropTrack => x.type === "prop");
@@ -280,7 +270,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const ctx: PoseCtx = { T, t, local: 0, yaw: r.yaw, root: [a.root.position.x, a.root.position.y, a.root.position.z] };
       for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) {
         const w = trackWeight(pt, t, 0.3, 0.35) * (pt.amount ?? 1);
-        if (w > 0) applyPose(a, pt.pose, w, { ...ctx, local: t - pt.at });
+        if (w > 0) applyPose(a, pt.pose, w, { ...ctx, local: t - pt.at, prop: heldProp(pt.prop) });
       }
       if (cs.upright > 0) a.lookAt(actorLocal(c.id, t, [0, 1.62, 6]), 0.8 * cs.upright);
     }
@@ -310,6 +300,8 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         if (ht.hand === "both" || ht.hand === "R") a.hand("R", ht.pose, w);
       }
     }
+    // props in hands, so a look at one sees where it is now (placed again at 5., after the fingers)
+    placeProps(t, "held");
     // 4. look, face, talk; blinks
     for (const c of Array.from(cast.values())) {
       const a = c.actor;
@@ -370,7 +362,15 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     const w = t > t3 ? 1 - smooth((t - t3) / 0.35) : smooth((t - t0) / 0.2);
     const along = localDir(c.id, t, tr.handAlong ?? [0.2, -0.7, 0.68]);
     const palm = localDir(c.id, t, tr.handPalm ?? [0.85, -0.5, -0.1]);
-    toolTo(a, tr.hand, "pen", want, along, palm, localDir(c.id, t, tr.hand === "R" ? [-0.7, -0.6, -0.2] : [0.7, -0.6, -0.2]), w);
+    const pole = localDir(c.id, t, tr.hand === "R" ? [-0.7, -0.6, -0.2] : [0.7, -0.6, -0.2]);
+    if (a.holdTool) {
+      // B5b: the pen held as a pen is (it lay almost flat along the paper, 9° up): the barrel ~50° up
+      // from the paper, back towards his writing shoulder, the back of the hand up and out
+      const sx = tr.hand === "R" ? -1 : 1;
+      const dir = localDir(c.id, t, tr.toolDir ?? [0.3 * sx, 0.78, -0.55]);
+      const up = localDir(c.id, t, tr.toolUp ?? [0.5 * sx, 0.85, -0.1]);
+      a.holdTool(tr.hand, "pen", want, dir, up, w, pole);
+    } else toolTo(a, tr.hand, "pen", want, along, palm, pole, w);
   };
 
   const placeProps = (t: number, phase: "rest" | "held") => {
@@ -406,17 +406,8 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         const restPos = v(st.pos);
         let pos: any, q: any;
         if (both) {
-          const a = cast.get(both)!.actor;
-          const gl = a.gripFrame("L", "grip").pos, gr = a.gripFrame("R", "grip").pos;
-          const hl = v(p.handles.L ?? [0.1, 0, 0]), hr = v(p.handles.R ?? [-0.1, 0, 0]);
-          const X = gl.clone().sub(gr).normalize();
-          const fwd = actorDir(T, { T, t, local: 0, yaw: rootAt(C, both, t).yaw, root: [0, 0, 0] }, 0, 0, 1);
-          const Y = new T.Vector3().crossVectors(fwd, X).normalize();
-          const Z = new T.Vector3().crossVectors(X, Y).normalize();
-          q = new T.Quaternion().setFromRotationMatrix(new T.Matrix4().makeBasis(X, Y, Z));
-          const mid = gl.clone().add(gr).multiplyScalar(0.5);
-          const hm = hl.clone().add(hr).multiplyScalar(0.5).multiply(p.group.scale).applyQuaternion(q);
-          pos = mid.sub(hm);
+          const pl = twoHandPlace(T, cast.get(both)!.actor, p.handles, p.group.scale, rootAt(C, both, t).yaw);
+          pos = pl.pos; q = pl.q;
         } else {
           const a = cast.get(held!.actor)!.actor;
           if (held!.part) { pos = a.point(held!.part as any); q = new T.Quaternion(); a.bone("Spine02")?.getWorldQuaternion(q); }

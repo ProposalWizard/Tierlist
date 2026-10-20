@@ -1142,6 +1142,14 @@ export const ASSETS_3D: Asset3dFolder[] = [
     "note": "Eight stylised people at 1.83 m (toon-p1..p6 in a kit, toon-mgr/mgr2 in suits), ~14.5k triangles each, weighted fingers, a grey-kit colour texture and a kit/skin/hair mask, recoloured live in the Style A shader (lib/star/style3d/toon). Builds (Slim/Strong/Tall) are a scale, not a file. Packed by scripts/perf3d/shrink-models.mjs. Clips: star/people3d/anims.glb.",
     "files": [
       {
+        "path": "/star/people3d/toon-f2.glb",
+        "bytes": 2558640
+      },
+      {
+        "path": "/star/people3d/toon-f3.glb",
+        "bytes": 2548660
+      },
+      {
         "path": "/star/people3d/toon-mgr.glb",
         "bytes": 227628
       },
@@ -1172,6 +1180,10 @@ export const ASSETS_3D: Asset3dFolder[] = [
       {
         "path": "/star/people3d/toon-p6.glb",
         "bytes": 231648
+      },
+      {
+        "path": "/star/people3d/toon-q1.glb",
+        "bytes": 691932
       }
     ]
   },
