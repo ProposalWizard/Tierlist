@@ -63,6 +63,7 @@ import type { Scenario, ScenarioKind, Vec2, Viewport, Identity } from "../canvas
 import { leadInEntities, leadInCamera, ballAlong, LEAD_MAX_RUN, type LeadIn, type LeadMoment, type LeadBallKey } from "../leadIn";
 import { PITCH_W, CX, HALF_LEN, GOAL_W } from "../pitch";
 import PJ from "./patterns.json";
+import { airArrival } from "../airDrawings";
 
 interface Patterns {
   xEdges: number[]; yEdges: number[];
@@ -322,6 +323,8 @@ export interface FhrAction {
   to: Vec2;
   /** A pass in the air: its top height (m). */
   h: number;
+  /** A pass that arrives in the air (the cross to a header or a volley, B10): its height on arrival (m). */
+  endZ?: number;
   /** From the data: "chain" (a real sequence into the chance) or "moves" (the zone tables). */
   src: "chain" | "moves" | "break";
   t0: number;
@@ -385,8 +388,13 @@ function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport, tp:
   const loft = (L: number, t: string) => (t === "high" || t === "head" || t === "cross" || L > 28 ? Math.min(5, 1.2 + L * 0.11) : 0);
 
   // 2a. The last touches: a real sequence into a shot (or a cross) from here.
-  const zR = zoneOf(R);
-  const endType = sc.kind === "byline_cross" || sc.kind === "cutback" ? "cross" : (sc.kind === "one_on_one" || sc.kind === "tight_angle" || sc.kind === "long_range" || sc.kind === "volley" || sc.kind === "header") ? "shot" : null;
+  // B10: a header or a volley ends with the ball reaching you IN THE AIR — the
+  // cross from the team-mate the drawing has out wide (airArrival). The real
+  // sequence before it is then one that ends in a cross from HIS spot.
+  const air = airArrival(sc);
+  if (air) push({ type: "pass", from: air.from, to: R, h: air.apex, endZ: air.endZ, src: "chain" });
+  const zR = zoneOf(cur);
+  const endType = air || sc.kind === "byline_cross" || sc.kind === "cutback" ? "cross" : (sc.kind === "one_on_one" || sc.kind === "tight_angle" || sc.kind === "long_range") ? "shot" : null;
   if (endType && r() < 0.8) {
     const cands = CHAINS.flatMap((c) => c.endType !== endType ? [] : c.end === zR ? [{ c, m: false }] : mirrorZone(c.end) === zR ? [{ c, m: true }] : []);
     if (cands.length) {
@@ -667,10 +675,13 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
   const ballKeys: LeadBallKey[] = [{ t: 0, p: { ...acts[0].from } }];
   for (const a of acts) {
     ballKeys.push({ t: a.t0, p: { ...a.from } });
-    ballKeys.push(a.type === "pass" ? { t: a.t1, p: { ...a.to }, pass: { h: a.h } } : { t: a.t1, p: { ...a.to } });
+    ballKeys.push(a.type === "pass" ? { t: a.t1, p: { ...a.to }, pass: { h: a.h, ...(a.endZ ? { endZ: a.endZ } : {}) } } : { t: a.t1, p: { ...a.to } });
   }
   ballKeys.push({ t: durS, p: { ...R } });
-  const ballAt = (t: number) => (t >= durS ? { x: R.x, y: R.y, z: 0 } : ballAlong(ballKeys, t));
+  // B10: a cross that reaches you in the air stays at that height until the chance is yours.
+  const lastA = acts[acts.length - 1];
+  const endZ = lastA.type === "pass" && lastA.endZ ? lastA.endZ : 0;
+  const ballAt = (t: number) => (t >= durS || (endZ > 0 && t >= lastA.t1) ? { x: R.x, y: R.y, z: t >= lastA.t1 ? endZ : 0 } : ballAlong(ballKeys, t));
   // Where the shape thinks the ball is: it reacts a little behind the ball.
   const lagBall: Vec2[] = [];
   {

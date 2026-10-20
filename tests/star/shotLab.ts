@@ -136,6 +136,8 @@ export interface LabOptions {
   lift?: (stat: number) => number;
   /** Shoot THIS served chance (a copy of it) instead of making one of `kind`. */
   scenario?: E.Scenario;
+  /** The thumb instead of humanThumb (B10: a header or a volley is met, not struck like a shot). */
+  thumbFor?: (sc: E.Scenario, r: () => number) => Thumb;
 }
 
 /** Where a struck ball crosses y = 0 with nobody in the way: the real
@@ -172,7 +174,7 @@ export function shoot(kind: E.ScenarioKind, seed: number, o: LabOptions = {}): S
   // The aim takes a second or two; the keeper gets set meanwhile.
   const aimT = 1 + aimR() * 1.5;
   for (let t = 0; t < aimT; t += 1 / 60) { E.stepKeeper(sc, 1 / 60); B.brainAim(sc, 1 / 60); }
-  const thumb = humanThumb(sc, aimR, o.perfect, tapSdFor(kind, seed));
+  const thumb = o.thumbFor ? o.thumbFor(sc, aimR) : humanThumb(sc, aimR, o.perfect, tapSdFor(kind, seed));
   const dx = thumb.aimX - sc.ball.x, dy = -sc.ball.y, L = Math.hypot(dx, dy);
   const dir = rotate({ x: dx / L, y: dy / L }, thumb.aimErrDeg);
   const arrowX = sc.ball.x + dir.x * (sc.ball.y / -dir.y);

@@ -144,6 +144,7 @@ import {
 } from "@/lib/star/runupStyles";
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
 import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
+import { isAirKind, airWaitZ } from "@/lib/star/airDrawings";
 import { useFitWidth } from "./useFitWidth";
 import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
 import { bannerStyle, soundSet } from "@/lib/star/style3d/texturePack";
@@ -1468,6 +1469,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const leadInPropRef = useRef(leadIn);
   leadInPropRef.current = leadIn;
   const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null } | null>(null);
+  // B10: when a header or volley chance became yours (for the ball hanging /
+  // bouncing while you aim — lib/star/airDrawings.ts airWaitZ). Drawing only.
+  const airT0Ref = useRef<{ sc: Scenario; t0: number } | null>(null);
   const leadTriedRef = useRef(false);
   /**
    * PLAYERS ALREADY MOVING (the lead-in's `runOnS`, Full highlights rebuild
@@ -4846,8 +4850,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Sep 2026). Now whoever is nearer the camera covers it, the way he would.
     // The trail and the landing mark above stay on the grass, under everyone.
     const ball = ballRef.current;
+    // B10: a header or volley chance — the ball is IN THE AIR while you aim,
+    // its shadow on the grass under it (the gap is the height): a header hangs
+    // at your head, a volley bounces (lib/star/airDrawings.ts airWaitZ).
+    let airZ = 0;
+    if (onTheSpot && !leadRef.current && isAirKind(sc.kind)) {
+      const now = performance.now() / 1000;
+      if (airT0Ref.current?.sc !== sc) airT0Ref.current = { sc, t0: now };
+      airZ = airWaitZ(sc.kind, now - airT0Ref.current.t0);
+    }
     const ballAt = ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
-      : onTheSpot ? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? 0 } : null;
+      : onTheSpot ? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? airZ } : null;
     if (ballAt) {
       const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
       if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
@@ -8750,10 +8763,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     handOverRunOn();
     // A ball you hit in the air (airborne test switch): a header or a volley,
     // started from the height it was at. Kept on the contact so a replay does the same.
+    // B10: a header or volley chance is always struck this way (where you met
+    // it and when count: airContactRead), switch or no switch.
     let contact: StrikeContact = { cx: tapped.cx, cy: tapped.cy };
-    if (!over && tapped.lift !== undefined && airborneOn()) {
+    if (!over && tapped.lift !== undefined && (airborneOn() || isAirKind(scenarioRef.current.kind))) {
       const m = strikeMotion(scenarioRef.current.kind, seedRef.current);
-      if (m === "float" || m === "bounce") contact = { ...contact, air: { kind: m === "float" ? "header" : "volley", lift: tapped.lift } };
+      if (m === "float" || m === "bounce") contact = { ...contact, air: { kind: m === "float" ? "header" : "volley", lift: tapped.lift, cx: tapped.cx, cy: tapped.cy } };
     }
     const auto = over?.skills ? { skills: over.skills } : null;
     setContactTimerS(null);
@@ -8781,6 +8796,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       : switchOn("powerCurve")
       ? { ...strikeWith, power: strikingPower(strikeWith.power) }
       : strikeWith;
+    // Your technique softens a mis-hit header or volley (kept on the strike for the replay).
+    if (contact.air) contact = { ...contact, air: { ...contact.air, tech: launchWith.technique } };
     // Snapshot everything a replay would need to reproduce this exact strike
     // — see GoalReplay and rngCallCountRef. Cheap and thrown away unless the
     // ball actually ends up in the net (resolveOutcome), so this costs

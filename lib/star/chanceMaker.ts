@@ -58,7 +58,7 @@ import { applyFormationShape, type ShapeInput } from "./formationShape";
 import { setupKind } from "./kindRules";
 import { isSwitchedOff, playableKind, withoutSwitchedOff } from "./switchedOffKinds";
 import {
-  authoredPool, ruleSetFor, randomiseAuthored, applyAuthoredShape,
+  playPool, ruleSetFor, randomiseAuthored, applyAuthoredShape,
   keeperSharesOf, placeKeeper, sampleFromScenario, mirrorShape,
   type AuthoredShape,
 } from "./authoredChance";
@@ -369,7 +369,7 @@ interface Drawn extends ShapeSample { id: string }
 /** Every usable drawing of a kind, the named outliers left out (as today). */
 function drawingsOf(kind: string, set: RuleSet): Drawn[] {
   const bad = new Set(outliersOf(set).map((o) => o.id));
-  const all = authoredPool(kind)
+  const all = playPool(kind)
     .map((ms) => { const s = sampleFromAuthored(ms); return s ? { id: ms.id, ...s } : null; })
     .filter((s): s is Drawn => !!s);
   const clean = all.filter((s) => !bad.has(s.id));
@@ -448,7 +448,7 @@ export function drawingShape(
 ): DrawnShape | null {
   const set = ruleSetFor(kind);
   if (!set || set.n < MIN_SAMPLES_FOR_INVARIANT) return null;
-  const pool = authoredPool(kind);
+  const pool = playPool(kind);
   const bad = new Set(outliersOf(set).map((o) => o.id));
   const clean = pool.filter((s) => !bad.has(s.id));
   const from = clean.length ? clean : pool;
@@ -486,7 +486,7 @@ export function drawingShape(
 const ownFaultCache = new Map<string, string[]>();
 export function drawingOwnFaults(kind: ScenarioKind, id: string, mirrored: boolean): string[] {
   const set = ruleSetFor(kind);
-  const ms = authoredPool(kind).find((x) => x.id === id);
+  const ms = playPool(kind).find((x) => x.id === id);
   if (!set || !ms) return [];
   const key = `${kind}|${id}|${ms.updatedAt ?? 0}|${mirrored}|${set.n}`;
   const hit = ownFaultCache.get(key);
@@ -818,7 +818,7 @@ function drawnOpenKinds(): ScenarioKind[] {
 /** Where a kind's ball sits: across from the middle and depth from goal,
  *  averaged over its drawings (side-free: the picture gets mirrored anyway). */
 function kindCentroid(kind: ScenarioKind): { lat: number; depth: number } {
-  const balls = authoredPool(kind).map((ms) => sampleFromAuthored(ms)).filter((x): x is ShapeSample => !!x).map((x) => x.ball);
+  const balls = playPool(kind).map((ms) => sampleFromAuthored(ms)).filter((x): x is ShapeSample => !!x).map((x) => x.ball);
   // No drawing at all: the builder's own ball, on a fixed stream of its own.
   if (!balls.length) balls.push(buildScenario(kind, mulberry32(0x5eed)).ball);
   return { lat: mean(balls.map((b) => Math.abs(b.x - CX))), depth: mean(balls.map((b) => b.y)) };
