@@ -94,3 +94,7 @@ the BUILD it belongs to (list at the bottom).
 
 ## Patch notes for the overnight round (Harry, 20 Oct)
 "I need all patch notes split up, named with stills and videos once all is done." → One named patch-notes page per build (B1, B4, B7, B9, B11, B3, B5, B6, B8), each with stills, plus short after-videos for gameplay and animation changes (stills first, videos added after), and one index page linking them all.
+
+## B12 — Vision training rebuilt (Harry, 20 Oct, morning)
+"the vision skill is horrendous. It's cluttered, and the skill gap doesn't increase. I don't like the line on the pitch. Instead, what would be an actual good vision skill would be real scenarios: Who should I pass to in this scenario? Have someone offside. Lessen the time. Maybe even make them actually kick the ball. Why are we just tapping? Maybe … early on you tap, then you actually have to kick the ball inside 0.3 seconds. You have to actually aim and kick the ball. We can do better with vision. That doesn't look interesting at all."
+Note (not a build yet): "I also don't like how it's in the old 2D style. All of these images in the training." → every training drill should move to the new match look later.
