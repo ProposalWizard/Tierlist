@@ -90,9 +90,9 @@ export const HEADER_LOOP_VZ = 3;
 /** A volley met on the very edge slices this far off line (degrees). */
 export const VOLLEY_SLICE_DEG = 26;
 /** A volley's sweet timing: met as it drops between these heights (share of the bounce). */
-export const VOLLEY_SWEET: readonly [number, number] = [0.3, 0.8];
+export const VOLLEY_SWEET: readonly [number, number] = [0.25, 0.9];
 /** Mistimed: at the top of the bounce it balloons (+ m/s up at worst); near the grass it is scuffed (pace lost at worst, degrees off line at worst). */
-export const VOLLEY_BALLOON_VZ = 3.5;
+export const VOLLEY_BALLOON_VZ = 2;
 export const VOLLEY_SCUFF_PACE = 0.35;
 export const VOLLEY_SCUFF_DEG = 12;
 /** A volley met under the ball skies (m/s up per ball radius past 0.4); over the top it goes into the ground. */

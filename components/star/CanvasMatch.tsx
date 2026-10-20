@@ -4858,6 +4858,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const now = performance.now() / 1000;
       if (airT0Ref.current?.sc !== sc) airT0Ref.current = { sc, t0: now };
       airZ = airWaitZ(sc.kind, now - airT0Ref.current.t0);
+      // …and a faint line from its shadow up to it, so the height reads at a
+      // phone's size (the gap alone is a few pixels on a wide frame).
+      if (airZ > 0.12) {
+        const g = toPx(sc.ball.x, sc.ball.y);
+        ctx.save();
+        ctx.strokeStyle = "rgba(255,255,255,0.55)";
+        ctx.lineWidth = Math.max(1, BALL_PX * g.scale * 0.25);
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(g.px, g.py);
+        ctx.lineTo(g.px, g.py - airZ * heightScale * g.scale);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
     const ballAt = ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
       : onTheSpot ? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? airZ } : null;
