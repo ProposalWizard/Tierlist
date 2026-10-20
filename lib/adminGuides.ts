@@ -1697,6 +1697,31 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-anim3d-dev/page.tsx · lib/star/style3d/animGrid3d.ts (the tiles: one WebGL canvas, one tile each via scissor) · the clips: public/star/anims3d/{football,mocap}.glb through lib/star/three3d/footballAnims.ts · the camera numbers: lib/star/style3d/broadcastCam.ts (BROADCAST) · the match drawing: lib/star/style3d/engineView.ts. Filming: window.__frameStep.",
   },
+  "/admin/motion-refs": {
+    title: "Motion references",
+    what: "Short clips of real-looking people doing our cut-scene moments (a handshake, a trophy lift, a goal celebration and so on), to compare with the movement we build. They are Higgsfield references for the movement rebuild. Each card has the real clip, a still of our game and an empty Ours slot.",
+    buttons: [
+      { group: "The top", items: [
+        ["← (top left)", "Back to the Players + animation group page."],
+        ["HQ (base standard)", "The best round: 18 clips. The five base-standard scenes (handshake, trophy lift, goal celebration, walk-out, press answer) come first and carry an amber \"Base standard\" tag."],
+        ["First round", "The first, lower-quality round: 9 clips. The handshake is left out because it shows a small dark mark on the shirt that looks like a brand logo."],
+        ["All", "Every clip: base standard first, then the rest of the HQ round, then the first round."],
+      ] },
+      { group: "Each card", items: [
+        ["Real person (the clip)", "Plays by itself while you can see it. Muted, loops, no sound. Tap it to pause; tap again to play."],
+        ["❚❚ Pause / ▶ Play", "Same as tapping the clip."],
+        ["½× speed", "Half speed, to watch hands, feet and weight. Press again for normal speed."],
+        ["Our game", "A still of our game that the clip was made from. Where no game still was saved, it shows the clip's own start picture and says so."],
+        ["Ours", "Empty until our own clip of the same scene is added. Then it plays here, beside the real one, with the same Pause and ½× speed buttons."],
+      ] },
+    ],
+    saving: [
+      "Nothing is saved. The page only remembers which of the three buttons you last pressed, on this device.",
+      "The clips and stills are part of the code (about 21 MB). A new clip of ours shows after the next deploy.",
+    ],
+    inGame: ["Nowhere. It is for the team: this is the real movement our cut scenes and animations are being rebuilt to match."],
+    dev: "app/admin/motion-refs/page.tsx · lib/motionRefs.ts (MOTION_REFS: one line per clip; shared with later tools) · files in public/admin/motion-refs/: hq/<scene>.mp4 + .jpg (Nano Banana Pro 4K picture, then Seedance 2.5 video, 480p), r1/<scene>.mp4 (GPT Image 2.5 picture, then Kling 3.0 video), game/ (stills of our game), ours/<scene>.mp4 (OUR clip: drop a file with the scene's name here, e.g. ours/handshake.mp4, and the Ours slot plays it) · registered in lib/adminRegistry.ts (group players, admins only).",
+  },
   "/star-update-dev": {
     title: "Oct 13 update",
     what: "The whole Oct 13 gameplay update behind one Old | New switch: shot power, the contact field (strike the side of the ball to curl it low), keepers, team-mates shooting, and match feel. Each part also has its own row.",

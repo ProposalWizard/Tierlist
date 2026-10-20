@@ -156,6 +156,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-style-dev", "Art styles + cut-scene director", "Art styles + Cut-scene Director", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-animations-dev", "2D animations", "2D New vs Old animations", "rbd", "players", "Leo", "live", "browser", "team"),
   P("/star-anim3d-dev", "3D animations", "Every 3D match move", "rbd", "players", "Harry", "live", "none", "team"),
+  P("/admin/motion-refs", "Motion references", "Clips of real-looking people doing our cut-scene moments, to compare with our own movement", "rbd", "players", "Harry", "live", "none", "admin"),
   P("/star-people-dev", "Cut-scene people", "Cut-scene faces, hands", "rbd", "players", "Harry", "live", "none", "team"),
   P("/star-sprites-dev", "3D match figures", "Every baked 3D match figure", "rbd", "players", "Leo", "live", "none", "team"),
   P("/admin/star-pass", "Star Pass", "Which reward sits at each Star Pass level", "rbd", "money", "Mikey", "live", "shared", "admin"),
