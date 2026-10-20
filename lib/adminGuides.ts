@@ -303,6 +303,7 @@ export const ADMIN_GUIDES = {
     ],
     inGame: [
       "Settings → Harry changes → Full highlights rebuild: On (test) → Real moment highlights: On. Then about 1 in 4 open-play chances of a kind the real moments have (one-on-one, tight angle, long range) is a real moment marked In game here: the ball and every man where they really stood, with the real 4 seconds before it as the build-up (a tap skips it). Off: the game is exactly as before.",
+      "To see one at once while testing: add ?fhr=on&realmoments=every to the career's or Infinite Match's address: every open-play chance of those kinds is then a real one (never stored).",
     ],
     needs: ["The star_real_moments_picks table (supabase/migrations/star_real_moments_picks.sql). Until it is run, marks stay on this device only. Commit needs GITHUB_TOKEN."],
     dev: "app/star-real-moments-dev/page.tsx, GamePicks.tsx; lib/star/realMoments/ (types, shots.ts scenarioForShot / scenarioForCorner, track.ts buildUpOf / trackLeadIn, picks.ts, pickStore.ts); lib/star/fhr/realMomentHighlights.ts (which moments, serving, the build-up), realMomentToggle.ts; lib/star/chanceMaker.ts (step 1b); lib/star/leadInGen.ts careerBuildUp; app/api/star/real-moments/route.ts, app/api/star/real-moment-picks/ (+ /commit); data/realmoments/ (README, picks.json); scripts/realmoments/ (extract_tracking.py, extract_wyscout.py, soccertrack_compact.py, extract_soccertrack.py); credit lines in data/opendata/LICENCES.md and lib/star/dataCredits.ts; tests/star/realMoments.mts, realMomentHighlights.mts.",

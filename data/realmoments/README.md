@@ -65,7 +65,7 @@ Off by default; per phone). Off: the game is exactly as before.
 **Which moments are allowed — one list, three layers.** Every moment has a
 stable id (`dfl…` DFL, `sc…` SkillCorner, `st…` SoccerTrack; corners `scc…`,
 `stc…`). By default the game may serve every FULLY REAL open-play shot that
-passes the automatic checks (`autoCheck`: shot at the goal at y = 0, their
+passes the automatic checks (`autoCheck`: an open-play shot from within 35 m, their
 keeper by his goal, all 22 on the pitch, a whole 4 s track, not a header —
 headers are switched off). A mark overrides that:
 
@@ -85,6 +85,10 @@ the page says which). Press **Commit marks to the game** to write it into
 **To put one back, or force one in:** **Automatic** returns it to the checks;
 **Use in game** lets it in even if a check left it out (it must still be a
 fully real shot of a kind the game serves).
+
+**To see one at once while testing:** add `?fhr=on&realmoments=every` to the
+page address (the career's /star-dev, or the Play Area's Infinite Match):
+every open-play chance of those kinds is then a real one. Never stored.
 
 **To edit one:** the moment itself is the real data, so it is not edited by
 hand; mark it Don't use instead. To change WHICH moments exist (more matches,

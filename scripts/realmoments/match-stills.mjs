@@ -10,7 +10,7 @@ const b = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || "/o
 const pg = await (await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage();
 const errs = [];
 pg.on("pageerror", (e) => errs.push(String(e)));
-await pg.goto(`http://localhost:${port}/star-play-dev?fhr=on&realmoments=on`, { waitUntil: "domcontentloaded", timeout: 600000 });
+await pg.goto(`http://localhost:${port}/star-play-dev?fhr=on&realmoments=every`, { waitUntil: "domcontentloaded", timeout: 600000 });
 const door = pg.getByText(/Infinite Match/).first();
 await door.waitFor({ timeout: 600000 });
 await pg.waitForTimeout(1500);

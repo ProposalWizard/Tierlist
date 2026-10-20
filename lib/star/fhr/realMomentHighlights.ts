@@ -37,7 +37,7 @@ import { trackLeadIn } from "../realMoments/track";
 import { inGame, pickOf } from "../realMoments/picks";
 import { ensureRealMomentPicks } from "../realMoments/pickStore";
 import { CX } from "../pitch";
-import { realMomentsOn } from "./realMomentToggle";
+import { realMomentsOn, realMomentsEvery } from "./realMomentToggle";
 
 // ─────────────────────────────────────────────────────────────────────────
 //  THE DIALS
@@ -53,6 +53,9 @@ export const REAL_MOMENT_SHARE = 1 / REAL_MOMENT_SHARE_IN;
  * set pieces are never served.
  */
 export const REAL_MOMENT_KINDS: readonly ScenarioKind[] = ["one_on_one", "tight_angle", "long_range"];
+
+/** Real shots struck from further out than this (metres from the middle of the goal) are left out: 8 of 688 open-play shots, speculative punts. */
+export const REAL_MOMENT_MAX_M = 35;
 
 /** A moment served in the last this-many real moments is not served again. */
 export const REAL_MOMENT_MEMORY = 40;
@@ -71,7 +74,7 @@ export function servedKindOf(m: TrackedMoment): ScenarioKind | null {
 /**
  * Why a fully real shot is left out automatically, or null when it passes.
  * The same checks tests/star/realMoments.mts holds the data to: an open-play
- * shot at the goal at y = 0, their keeper by his goal, all 22 on the pitch,
+ * shot from within REAL_MOMENT_MAX_M of goal, their keeper by his goal, all 22 on the pitch,
  * a whole 4 s track, and a picture that holds everyone near the ball and the
  * whole goal.
  */
@@ -80,7 +83,7 @@ export function autoCheck(m: TrackedMoment, track: RealTrack | undefined): strin
   if (!isFullyReal(m)) return "not fully real";
   if (m.type !== "Open Play") return `a ${m.type.toLowerCase()} (open play only)`;
   if (!servedKindOf(m)) return "a header (headers are switched off)";
-  if (m.ball[1] >= 40) return "struck from its own half";
+  if (Math.hypot(m.ball[0] - CX, m.ball[1]) > REAL_MOMENT_MAX_M) return `struck from more than ${REAL_MOMENT_MAX_M} m out`;
   const k = peopleOf(m).keeper;
   if (!k || k.y >= 12 || Math.abs(k.x - CX) >= 15) return "their keeper is not by his goal";
   if ((m.ff?.length ?? 0) < 19) return "not all 22 on the pitch";
@@ -191,7 +194,7 @@ export function serveRealMoment(kind: ScenarioKind, rng: () => number, opts: { f
   }
   const all = servable(pool, kind);
   if (!all.length) return null;
-  if (!opts.force && rng() >= REAL_MOMENT_SHARE) return null;
+  if (!opts.force && rng() >= (realMomentsEvery() ? 1 : REAL_MOMENT_SHARE)) return null;
   const seen = new Set(recent());
   const fresh = all.filter((m) => !seen.has(m.id));
   const from = fresh.length ? fresh : all;

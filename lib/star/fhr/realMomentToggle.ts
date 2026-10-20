@@ -24,12 +24,23 @@ export function parseRealMomentsMode(v: string | null | undefined): RealMomentsM
   return v === "on" || v === "off" ? v : null;
 }
 
-function urlOverride(): RealMomentsMode | null {
+function urlValue(): string | null {
   try {
     if (typeof location === "undefined") return null;
-    return parseRealMomentsMode(new URLSearchParams(location.search).get("realmoments"));
+    return new URLSearchParams(location.search).get("realmoments");
   } catch { return null; }
 }
+function urlOverride(): RealMomentsMode | null {
+  const v = urlValue();
+  return v === "every" ? "on" : parseRealMomentsMode(v);
+}
+
+/**
+ * Testing only: `?realmoments=every` on the page makes EVERY open-play chance
+ * of a real-moment kind a real one (instead of 1 in 4), so a tester sees one
+ * at once. Never stored; the setting itself has only Off | On.
+ */
+export const realMomentsEvery = () => urlValue() === "every";
 
 let cached: RealMomentsMode | null = null;
 const listeners = new Set<() => void>();
