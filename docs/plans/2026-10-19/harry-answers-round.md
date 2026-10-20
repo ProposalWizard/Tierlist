@@ -124,3 +124,8 @@ New builds from the feedback:
 - Lag is judged on three phone tiers and three computer tiers: high (iPhone 16+), mid (iPhone 13/14), low (older Android); the same three for PC. Written into docs/research/lag/2026-10-20-research.md §5.0.
 - "we can push everything once the team reviews the patch notes." Push = merge Harry → main, after tsc, both guards, the tests and `npm run build` pass. Gate: the team has reviewed the patch notes (Harry says so). A build still running at that point waits for the next push.
 - 15:40: "less frames is okay" for the low tier: old Android (and the low PC) may run 3D at a steady 30 fps, same picture. Asked "I thought it would be simulated?": the CPU side is simulated for every tier; the graphics chip cannot be simulated here (no GPU), see research §5.0.
+
+## 20 Oct, 15:48: B2b (on B2's build-ups)
+- "The highlights need to end on the actual camera we have been using in game, I don't want that to drift as camera has been a problem throughout." → the build-up's last frame = the chance's own camera, 0 px apart at 390 and on a computer, with a test.
+- "All of this has to scale with level of npc's your teammates intelligence vs opposition. How easy it is to get the ball back." → regains, press, passing and run timing scale with the gap between the two sides. Chances and goals stay with the hidden match.
+- "A lot of times in the moving build ups offsides occur that aren't called, offsides can happen but they must be called." → every pass checked; an offside is called (flag, whistle, free kick, move ends); 0 uncalled, as a test.
