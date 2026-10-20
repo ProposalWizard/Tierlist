@@ -1,7 +1,7 @@
 "use client";
 import { useState, type ReactNode } from "react";
 import OwnPortraitImg from "../OwnPortraitImg";
-import DrawnHeadChip from "../DrawnHeadChip";
+import Headshot3D from "../Headshot3D";
 import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import TrophyImage from "../TrophyImage";
 import type { GraphicSpec, PotmNominee } from "@/lib/star/media/types";
@@ -428,9 +428,9 @@ function NomineeTile({ n, won }: { n: PotmNominee; won: boolean }) {
             generated squad or a career whose division has not been refreshed
             ends up. Never somebody else's face. */}
         {!PHOTO_FACES ? (
-          <TileHead id={n.id ?? `${n.club}|${n.name}`} kit={kit} size={64} />
+          <TileHead id={n.id ?? `${n.club}|${n.name}`} you={n.isYou} kit={kit} size={64} />
         ) : n.face ? (
-          <Face src={n.face} own={n.own} kit={kit} fallback={<TileHead id={n.id ?? `${n.club}|${n.name}`} kit={kit} size={64} />} />
+          <Face src={n.face} own={n.own} kit={kit} fallback={<TileHead id={n.id ?? `${n.club}|${n.name}`} you={n.isYou} kit={kit} size={64} />} />
         ) : n.number !== undefined ? (
           <div
             className="absolute inset-0 grid place-items-center text-2xl font-black tabular-nums"
@@ -490,9 +490,9 @@ function PotmWinner({ s }: { s: Extract<GraphicSpec, { type: "potmWinner" }> }) 
             style={{ backgroundColor: kit.trim }}
           />
           {!PHOTO_FACES ? (
-            <TileHead id={s.id ?? `${s.club}|${s.lastName}`} kit={kit} size={112} />
+            <TileHead id={s.id ?? `${s.club}|${s.lastName}`} you={s.isYou} kit={kit} size={112} />
           ) : s.face ? (
-            <Face src={s.face} own={s.own} kit={kit} fallback={<TileHead id={s.id ?? `${s.club}|${s.lastName}`} kit={kit} size={112} />} />
+            <Face src={s.face} own={s.own} kit={kit} fallback={<TileHead id={s.id ?? `${s.club}|${s.lastName}`} you={s.isYou} kit={kit} size={112} />} />
           ) : s.number !== undefined ? (
             <div
               className="absolute inset-0 grid place-items-center text-4xl font-black tabular-nums"
@@ -607,18 +607,18 @@ function Face({ src, own, kit, fallback }: { src: string; own?: boolean; kit: { 
 }
 
 /**
- * HIS DRAWN HEAD IN A TILE (B1, 20 Oct 2026). Photo faces are off for
- * everyone (PHOTO_FACES, faceStyle.ts; Harry, 12 Oct 2026: "every head is the
- * drawn one"), but these cards still put up photos: a real player's raw
- * cdn.sofifa.net link (dead without a SoFIFA sign-in) came out as a broken
- * picture, and your own photo or picked face was still shown. Now each tile
- * shows the drawn head the team sheets show (DrawnHeadChip), in his kit,
- * stood on the bottom edge like the cut-outs were.
+ * HIS HEADSHOT IN A TILE. Photo faces are off for everyone (PHOTO_FACES,
+ * faceStyle.ts; Harry, 12 Oct 2026). B1 (20 Oct 2026) put the drawn head here
+ * instead of a dead photo link; B15 (20 Oct 2026, Harry: "the drawn heads look
+ * unprofessional — they should be headshots shot from our 3D model") shoots
+ * his Style A head and shoulders from the 3D model, in his kit
+ * (Headshot3D.tsx). The drawn head shows until the picture is made, and stays
+ * if it can't be (no WebGL). Stood on the bottom edge like the cut-outs were.
  */
-function TileHead({ id, kit, size }: { id: string; kit: { shirt: string; trim: string }; size: number }) {
+function TileHead({ id, you, kit, size }: { id: string; you?: boolean; kit: { shirt: string; trim: string }; size: number }) {
   return (
     <div className="absolute inset-x-0 bottom-0 flex justify-center" data-potm-head={id}>
-      <DrawnHeadChip id={id} shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={size} />
+      <Headshot3D id={id} you={you} kit={kit} size={size} />
     </div>
   );
 }
