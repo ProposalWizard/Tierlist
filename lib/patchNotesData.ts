@@ -27,6 +27,118 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.93",
+      "title": "Harry's patch notes: B2b Build-ups, Round Two",
+      "publishedAt": "2026-10-20T19:40:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Build-ups, round two, 20 Oct. Behind Settings → Quick → Full highlights rebuild: Off | On. Merged with the header and volley work (B10). The picture no longer jumps at the hand-over: worst jump 1.70 / 1.79 px → 0.088 px over 1,226 hand-overs (0.00 to 0.07 px seen in a browser); a resize during a build-up 20.5 px → 0. Each build-up starts where the hidden match won the ball back, with one dial (the strength gap): at 85 v 65 / 75 v 75 / 65 v 85 there are 6.45 / 4.70 / 3.31 build-ups a match. Offside passes are called: build-ups with an uncalled offside pass 48.5% → 0 over 600 chances at each strength. A cost: chances at even strength 5.47 → 4.99 (−8.8%), goals 1.44 → 1.35. Not seen: a career match with the switch On at 390×844, a real-match offside still. The full build was not run (memory).",
+      "stats": [
+        {
+          "value": "1.79 → 0.088 px",
+          "label": "worst jump at the hand-over, over 1,226 hand-overs"
+        },
+        {
+          "value": "48.5% → 0",
+          "label": "build-ups with an uncalled offside pass"
+        },
+        {
+          "value": "5.47 → 4.99",
+          "label": "chances a match at even strength (−8.8%)"
+        },
+        {
+          "value": "10 → 2 of 257",
+          "label": "men running through each other at the hand-over"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Turn it on",
+              "detail": "Settings → Quick → Full highlights rebuild: On."
+            },
+            {
+              "title": "The hand-over",
+              "detail": "Watch a build-up become the chance. The pitch should not jump."
+            },
+            {
+              "title": "A resize",
+              "detail": "Resize the window during a build-up. The picture should stay on the chance."
+            },
+            {
+              "title": "Offside",
+              "detail": "A build-up that ends in an offside pass should say OFFSIDE and hand the ball back."
+            },
+            {
+              "title": "Chances at even strength",
+              "detail": "About 5 a match now (4.99), a little fewer than before (5.47). Does it feel right?"
+            },
+            {
+              "title": "Headers and volleys",
+              "detail": "Their build-ups should end in a lofted cross. The men should not run through each other."
+            },
+            {
+              "title": "On a phone",
+              "detail": "Play a career match at 390 wide with the switch On. This was not seen."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "The picture no longer jumps at the hand-over",
+              "detail": "Worst jump 1.70 / 1.79 px → 0.088 px over 1,226 hand-overs, headers and volleys included. In a browser it read 0.00 to 0.07 px. A resize during a build-up moved the picture 20.5 px; now 0. The frame stays on the chance during a resize. Test: fhrCameraHandover.mts. Pitch widths 366 / 384; the merge did not change that code (reasoned)."
+            },
+            {
+              "title": "One system: a build-up starts where the ball was won back",
+              "detail": "Each build-up starts where the hidden match won the ball back. One dial, the strength gap (lib/star/fhr/intel.ts), scales regains, press, passing and run timing. At 85 v 65 / 75 v 75 / 65 v 85: build-ups a match 6.45 / 4.70 / 3.31; regain from goal 20.5 / 23.0 / 25.8 m; scrappy 10 / 33 / 52%."
+            },
+            {
+              "title": "Header and volley build-ups end in a lofted cross",
+              "detail": "After the merge with B10, every header or volley build-up ends in the lofted cross. The crosser's run is played into space; a mistimed wide run is cut to ×0.4 (the builder's guess). Volley build-ups flagged at even strength 29% → 16%. Men running through each other at the hand-over 10 → 2 of 257."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Offside passes in a build-up are now called",
+              "detail": "Before, 48.5% of build-ups had an offside pass that was not called. Now 0 of 600 chances at each strength, every kind. A build-up that ends on an offside call hands the ball back. Called per match, before the merge: 0.24 / 0.37 / 0.39 (that these are in the order 85 v 65, 75 v 75, 65 v 85 is reasoned)."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "A cost: about 9% fewer chances at even strength",
+              "detail": "Chances played 5.47 → 4.99 a match (−8.8%), goals 1.44 → 1.35. Strong sides unchanged. That calling offsides is the cause is reasoned."
+            },
+            {
+              "title": "A career match was not seen with the switch On",
+              "detail": "Not played at 390 × 844 with the switch On. A real-match offside still was not taken."
+            },
+            {
+              "title": "The full build was not run",
+              "detail": "The full npm run build was not run (memory). Run it on a bigger machine before this goes to main."
+            },
+            {
+              "title": "Files that can drift",
+              "detail": "CanvasMatch.tsx (frame stays on the chance during a resize, an extra opponent on a regain, the hand-back when a build-up ends on an offside) and hiddenMatch.ts (hands over the regain information, no new random draws). canvasEngine.ts is untouched."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.92",
       "title": "Harry's patch notes: Motion References Page",
       "publishedAt": "2026-10-20T18:50:00Z",
