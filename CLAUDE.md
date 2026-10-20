@@ -604,8 +604,10 @@ unreachable (the getter returns the kept value), marked "Decided, no toggle".
 - **Match camera (action fit):** Old until the rebuilt camera lands.
 - **2D match:** match view New, chance framing Zoom, wide chances Old, camera
   angle 20°, players 3D-made sprites, 2D players Style A, ball New.
-- **Your player:** hidden on shooting chances; shown on set pieces and build-up
-  (`showYouFigure`, `lib/star/newLook.ts`).
+- **Your player:** shown on EVERY chance (Mikey, 20 Oct 2026; was hidden on
+  shooting chances, Harry's 12 Oct call, to be re-agreed with Harry). When a
+  chance opens he is moved clear of the ball and the aim arrow
+  (`lib/star/youSpot.ts`; `showYouFigure`, `lib/star/newLook.ts`).
 - **Shot spread cone:** drawn in the test area only (`lib/star/testArea.ts`).
 - **3D world:** garden New, house New, 3D look H, shop player New, 3D people
   New, body Before, player style New, players in a 3D match Style A, 3D quality

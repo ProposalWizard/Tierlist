@@ -61,6 +61,7 @@ import { ruleBookFor } from "@/lib/star/ruleBook";
 import { deflectBlock } from "@/lib/star/deflection";
 import { steerDeflectionFromOwnGoal, clearLooseWin } from "@/lib/star/defenderTouch";
 import { footSign, takerFootSign, drawnTakerAt, activeFoot } from "@/lib/star/kickFoot";
+import { clearYouSpot } from "@/lib/star/youSpot";
 import type { PreferredFoot } from "@/lib/star/playerIdentity";
 import {
   commentaryBuildup, commentaryStrike, commentaryReceived, commentaryReceiverShot, commentaryResult,
@@ -1477,6 +1478,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const leadPlayedRef = useRef(false);
   /** Your run and the team-mate's lay-off, while your pass plays on. */
   const playOnRef = useRef<PlayOn | null>(null);
+  /** Chances whose opening spot for your man has been set (youSpot.ts). */
+  const youPlacedRef = useRef(new WeakSet<object>());
   const playOnRngRef = useRef<() => number>(Math.random);
   const layOffsLeftRef = useRef(MAX_LAY_OFFS);
   /** The lay-off reached you: the same picture, your next kick. */
@@ -4292,6 +4295,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const takerFoot = auto
       ? takerFootSign(auto.taker.id || auto.taker.name)
       : footSign(preferredFootRef.current ?? careerRef.current?.player.preferredFoot ?? activeFoot());
+    // Mikey, 20 Oct 2026: your man is drawn on every chance, so the moment a
+    // chance opens (its first aim frame, before you see it) he is moved off
+    // the ball and the arrow's line to goal (lib/star/youSpot.ts). Once per
+    // chance; penalties and free kicks keep their own run-up spot.
+    if (!auto && phaseRef.current === "aim" && !leadRef.current && !playOnRef.current
+      && !hasRunup(sc.kind) && sceneRef.current?.you !== false && !youPlacedRef.current.has(sc)) {
+      youPlacedRef.current.add(sc);
+      const vpNow = viewportRef.current;
+      const span = facingRef.current === "up" ? vpNow.y2 - vpNow.y1 : vpNow.x2 - vpNow.x1;
+      const spot = clearYouSpot({ ball: sc.ball, player: sc.player, foot: takerFoot, toPx, R, ballR: BALL_PX, arrowM: span * 0.132 * 1.05 });
+      sc.player.x = spot.x; sc.player.y = spot.y;
+    }
     const drawnTaker = hasRunup(sc.kind) ? drawnTakerAt(sc.ball, sc.player, takerFoot) : { at: sc.player, mirrored: false };
     const runBody = runBody0 && drawnTaker.mirrored ? { ...runBody0, lean: -runBody0.lean } : runBody0;
     const tx = drawnTaker.at.x, ty = drawnTaker.at.y;
