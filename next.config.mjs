@@ -31,6 +31,8 @@ const nextConfig = {
       "/api/admin/patch-notes/file/[...path]": ["./patch-notes/**/*"],
       // The real-moment test pages' data (Real moments, Real shots, Real Goals).
       "/api/star/real-moments": ["./data/realmoments/*.json"],
+      // Marketing → Client reads the client record and its Brain notes at request time.
+      "/admin/marketing/client": ["./marketing/clients/**/*", "./brain/*/*.md"],
     },
   },
   // face-api.js depends on node-fetch (which needs 'encoding') and

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "v01-patch-0.1-0.3",
+    "title": "v01 · Patch notes 0.1 to 0.3",
+    "stage": "posted",
+    "owner": "Claude",
+    "updated": "2026-10-21T11:19:27Z",
+    "postOn": "2026-10-21",
+    "line": "Three mates building the best football game ever: the keeper who saved everything (9.8% → 47.6%), Goalie Mode, exact aim, real grass, no more team-mates in the way.",
+    "script": "docs/marketing/videos/v01-patch-0.1-0.3/script.md",
+    "cover": "docs/marketing/videos/v01-patch-0.1-0.3/cover.png",
+    "video": "docs/marketing/videos/v01-patch-0.1-0.3/knowitball-v01-patch-0.1-0.3.mp4",
+    "seconds": 44.7,
+    "links": [],
+    "log": [
+      "2026-10-21 Script: 11 beats, each from a line of patch notes 0.1, 0.2 or 0.3.",
+      "2026-10-21 Made: drawn frame by frame in a browser, voice by Kokoro (bm_george), 1080×1920.",
+      "2026-10-21 Done: committed with its cover and script (commit 9b770682). No channel link recorded yet: add it under links."
+    ]
+  }
+]

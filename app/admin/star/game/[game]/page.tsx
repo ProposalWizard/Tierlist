@@ -22,6 +22,8 @@ export default async function AdminGamePage({ params }: { params: Promise<{ game
   if (!g) notFound();
   // The first game's home is /admin/star itself, so there is one address for it.
   if (g.key === GAMES[0].key) redirect("/admin/star");
+  // A game with a home of its own (Marketing: /admin/marketing) opens there.
+  if (g.home !== `/admin/star/game/${g.key}`) redirect(g.home);
   let role: "admin" | "tester" = "admin";
   if (!offlineDevPlayEnabled()) {
     const supabase = await createClient();

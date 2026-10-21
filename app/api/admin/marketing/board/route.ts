@@ -1,0 +1,32 @@
+/**
+ * GET /api/admin/marketing/board — the Marketing production board (admins only).
+ *
+ * Reads marketing/board.json from GitHub on main and on each person's branch with
+ * the site's GITHUB_TOKEN, merged by id (lib/marketing/board.ts). Cached 60 s
+ * on the server. If GitHub can't be reached, the copy built into the site.
+ */
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/admin";
+import { offlineDevPlayEnabled } from "@/lib/star/devMode";
+import bundledBoard from "@/marketing/board.json";
+import { fetchBoard } from "@/lib/marketing/board";
+
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  // A local dev build lets everyone in (lib/star/devMode.ts; never the live site).
+  if (!offlineDevPlayEnabled()) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+    if (!(await isAdmin(user.id))) return NextResponse.json({ error: "Admins only." }, { status: 403 });
+  }
+  const data = await fetchBoard({
+    fetch: (url, init) => fetch(url, { ...init, cache: "no-store" }),
+    bundled: bundledBoard,
+    token: process.env.GITHUB_TOKEN?.trim() || null,
+    repo: process.env.GITHUB_REPO?.trim() || undefined,
+  });
+  return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
+}
