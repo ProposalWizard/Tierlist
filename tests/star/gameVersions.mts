@@ -30,6 +30,8 @@ store.set("star-look-cutscene-camera", "old");
 
 const { LOOK_ROWS, LOOK_ROW_IDS, readLook, setLookRow, changedFromDefault } = await import("../../lib/star/lookRows");
 const { cutscenePeopleLook, cutsceneCameraLook } = await import("../../lib/star/cutscene/look");
+const { POPUP_PACK_DEFAULT, popupPack, setPopupPack } = await import("../../lib/star/popupPack");
+const { MIKEY_POPUPS_DEFAULT, MIKEY_POPUPS_KEY, mikeyPopupsLook } = await import("../../lib/star/mikeyPopups");
 
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -50,12 +52,20 @@ for (const gone of ["cutscenePeople", "cutsceneCamera", "chances", "animations",
 check(!/cutscenePeople|cutsceneCamera/.test(settings), "Settings still has a cut-scene row");
 
 // 3.
-const expected = ["keepers", "keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "shotPower", "contactField", "keeperFeel", "mateShots", "hitboxes", "keeperFinish", "matchRadar", "matchFeel", "mikeyPopups", "fhr", "ui"]; // + the Oct 13 gameplay update (Old by default); hitboxes (Leo, 14 Oct, New) + Keeper realism (Leo, round 16, New)
+const expected = ["keepers", "keeperPro", "shotsPro", "knucklePower", "ballPhysics", "matchFlow", "shotPower", "contactField", "keeperFeel", "mateShots", "hitboxes", "keeperFinish", "matchRadar", "matchFeel", "fhr", "ui"]; // + the Oct 13 gameplay update (Old by default); hitboxes (Leo, 14 Oct, New) + Keeper realism (Leo, round 16, New)
 // Match feel (Leo, 13 Oct 2026): a testing row, Old by default.
 check(LOOK_ROWS.fhr.standard === "off", "Full highlights rebuild must default to Off");
 check(LOOK_ROWS.matchFeel.standard === "old", "Match feel must default to Old while tested");
-// Mikey's new pop-ups (Mikey, 20 Oct 2026): asked for as a toggle by name, Old by default.
-check(LOOK_ROWS.mikeyPopups.standard === "old", "Mikey's new pop-ups must default to Old");
+// Mikey's new pop-ups: a pack since 21 Oct 2026 (Settings → Pop-up pack: Classic | Broadcast), default Classic = the old pop-ups.
+check(POPUP_PACK_DEFAULT === "classic" && MIKEY_POPUPS_DEFAULT === "old", "Pop-up pack must default to Classic (the old pop-ups)");
+check(/<PopupPackRow \/>/.test(settings), "Settings has no Pop-up pack row");
+check(!("mikeyPopups" in LOOK_ROWS), "Mikey's pop-ups are a pack now, not a New | Old row");
+check(popupPack() === "classic", `a new phone's pop-up pack reads ${popupPack()}`);
+setPopupPack("broadcast");
+check(store.get(MIKEY_POPUPS_KEY) === "new" && mikeyPopupsLook() === "new", "Broadcast must store Mikey's own value (new)");
+setPopupPack("classic");
+check(store.get(MIKEY_POPUPS_KEY) === "old" && popupPack() === "classic", "Classic must store old");
+store.delete(MIKEY_POPUPS_KEY);
 check(LOOK_ROW_IDS.join() === expected.join(), `rows are ${LOOK_ROW_IDS.join()}`);
 
 check(LOOK_ROWS.keepers.standard === "new", "Keepers must default to New");

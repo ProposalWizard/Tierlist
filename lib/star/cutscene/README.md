@@ -48,4 +48,4 @@ const script = { ...c, set: { location: "office", mood: "golden-hour" }, tracks:
 - `node scripts/cutscene/probe.mjs "<url>" 3.2` — camera and where each head lands on screen.
 - `npx tsx scripts/cutscene/shots.mts signing` / `… scored 0.8 joy 3` — the shot list and its film-rules score.
 
-URLs: `/star-style-dev?scene=director&fixture=signing&clean=1` or `?scene=director&event=scored&stakes=0.8&emotion=joy&seed=3&clean=1`.
+URLs: `/star-3d-bench-dev/scene?scene=director&fixture=signing&clean=1` or `?scene=director&event=scored&stakes=0.8&emotion=joy&seed=3&clean=1`.

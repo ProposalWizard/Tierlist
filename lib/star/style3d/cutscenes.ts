@@ -2,7 +2,7 @@
  * STYLE TESTING — CUT SCENES. The goal and the signing are now SCRIPTS on the
  * cut-scene system (lib/star/cutscene: fixtures.ts, played by director.ts).
  * The first hand-coded versions are kept, untouched, in cutscenesOld.ts
- * (?cut=old on /star-style-dev).
+ * (?cut=old on /star-3d-bench-dev/scene).
  */
 import type { Quality3d } from "../three3d/quality";
 import type { StyleDef } from "./styles";

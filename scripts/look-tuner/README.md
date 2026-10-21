@@ -7,7 +7,7 @@ picture — the same style, on our own camera, kits and boards.
 ## Run it (one dev server)
 ```bash
 export LOOK_BENCH=/abs/folder/with/the/benchmark/pictures   # NOT in the repo: they show real brands
-node scripts/look-tuner/tune.mjs --url "http://localhost:PORT/star-style-dev?style=real&scene=play3d&tod=day&clean=1" \
+node scripts/look-tuner/tune.mjs --url "http://localhost:PORT/star-3d-bench-dev/scene?style=real&scene=play3d&tod=day&clean=1" \
   --tod day --iters 100 --out /abs/tune-day --write
 ```
 About 2 s a try on this machine (software WebGL, 390 × 844). It writes:

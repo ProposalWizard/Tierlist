@@ -20,8 +20,12 @@ import { defaultVersion } from "../../lib/star/gameplayVersion";
 let failed = 0;
 const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  FAIL ${what}`); } else console.log(`  ✓ ${what}`); };
 
-/** Taken on the code before keeperFinish existed (origin/main 406e125e). */
-const OLD_HASH = "8794d5d2";
+/** Taken on the code before keeperFinish existed (origin/main 406e125e): 8794d5d2.
+ *  Retaken 21 Oct 2026 (sim rebuild piece 1): Keeper pro's depth (`proDepth`,
+ *  on in the "oct13" config) was re-sourced to free tracking, so the Old
+ *  keeper with Keeper pro on now stands where real keepers stand. Nothing in
+ *  keeperFinish itself changed. */
+const OLD_HASH = "dd696eda";
 
 function fingerprint(): string {
   let h = 2166136261 >>> 0;

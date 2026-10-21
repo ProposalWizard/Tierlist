@@ -6,18 +6,22 @@ Switches: Settings → Look → Gameplay → **Shots** (`shotsPro`) and
 `tests/star/shotsPro.mts`). Code: `lib/star/shotModel.ts`. No edit to
 `canvasEngine.ts`.
 
-## Real reference (approximate public figures)
+## Real reference (re-sourced from free data, 21 Oct 2026)
 
-| Chance | Scored | On target | Source |
+Wyscout public dataset (CC BY 4.0, 1,941 matches;
+`data/opendata/wyscout_shot_outcomes.json` `by_kind`). The first version of
+this table quoted a licensed data set, removed 19 Oct 2026.
+
+| Chance | Scored | On target | Free definition |
 |---|---|---|---|
-| Penalty | 76–78% | ~93% | Opta / StatsBomb, long-run PL |
-| One-on-one / big chance | 30–40% (Opta big-chance ~39%; Mikey's Kane sample 20%) | ~65% | Opta big chances, StatsBomb xG |
-| Tight angle in the box | ~7–10% | ~45% | StatsBomb xG by angle |
-| Long range (20–28 m) | ~3–5% | ~25% (≈33% blocked) | StatsBomb xG, Opta |
-| Volley in the box | ~8–12% | ~30% | StatsBomb xG |
-| Header from a cross | ~10–12% | ~33% | StatsBomb xG |
-| Direct free kick | ~6% | ~30% | StatsBomb |
-| Blocked (all shots) | ~25% (outside box ~33%) | | Opta |
+| Penalty | 72.5% | — | Wyscout penalties (n 658) |
+| One-on-one | 19% | — | DFL + SkillCorner tracking: foot, in the box, no defender between ball and posts (n 213) |
+| Tight angle in the box | 8.7% | 43% | foot, in the box, wider than the six-yard box, under 11 m out (n 3,962) |
+| Long range (20–28 m) | 3.3% | 28% (32% blocked) | foot (n 10,523) |
+| Volley in the box | 13.4% | 34% | no volley tag: a foot shot within 4 s of a team-mate's high ball, open play (n 1,141) |
+| Header (open play) | 13.8% | 40% | tag head/body, no corner or free kick in the 10 s before (n 3,293) |
+| Direct free kick | 6.2% | 32% | Wyscout direct free kicks (n 2,209) |
+| Blocked (all shots) | 23.7% | | all run-of-play shots (n 43,078) |
 
 Shot speeds: average ~25 m/s, hard ~30+ m/s (the game: 26 m/s at power 65 full pull — fine, unchanged).
 
@@ -37,12 +41,12 @@ The bot is an assumption, not a measured human.
 
 | Chance | Old | New | Real |
 |---|---|---|---|
-| Penalty | 48.0% / 63.6% | **68.0% / 82.2%** | 76% / 93% |
-| One-on-one | 39.6% / 68.6% | 41.0% / 74.2% | 30–40% / 65% |
-| Tight angle | 23.2% / 67.2% | 21.4% / 61.8% | 8% / 45% |
-| Long range | 22.0% / 52.6% (31% blocked) | 21.8% / 46.0% (28% blocked) | 4% / 25% |
-| Volley | 27.0% / 63.0% | 32.0% / 65.4% | 10% / 30% |
-| Header | 14.8% / 52.2% | 15.8% / 49.2% | 11% / 33% |
+| Penalty | 48.0% / 63.6% | **68.0% / 82.2%** | 72.5% / — |
+| One-on-one | 39.6% / 68.6% | 41.0% / 74.2% | 19% / — |
+| Tight angle | 23.2% / 67.2% | 21.4% / 61.8% | 8.7% / 43% |
+| Long range | 22.0% / 52.6% (31% blocked) | 21.8% / 46.0% (28% blocked) | 3.3% / 28% (32% blocked) |
+| Volley | 27.0% / 63.0% | 32.0% / 65.4% | 13.4% / 34% |
+| Header | 14.8% / 52.2% | 15.8% / 49.2% | 13.8% / 40% |
 | Free kick | 6.2% | 6.2% (untouched) | 6% |
 
 Skill now matters in the right direction: one-on-one tech 40 → 90 = 36.8% → 47.3% (New); Old was 32.0% → 48.8%, but Old **skied more as technique grew** on placed shots (tech 65 → 80 placed one-on-ones 35% → 18%: more loft range, same tap).
@@ -87,11 +91,12 @@ windy chance. Not mine (ball physics/weather) — flagged.
 
 ## Shot side vs keeper side
 
-New on-target rates still sit above real (long range 46% vs 25%, volley
-65% vs 30%). Even so, goals per shot on target are the keeper's gap:
-long range 47% (real ~15%), volley 49% (~30%), tight 35% (~18%);
+New on-target rates still sit above real (long range 46% vs 28%, volley
+65% vs 34%; free data, 21 Oct 2026). Even so, goals per shot on target are the keeper's gap:
+long range 47% (real 12%), volley 49% (~39%, the high-ball stand-in), tight 35% (20%);
 one-on-one 55% and penalty 83% are right. If on-target were exactly real,
-conversion would be: long 12% (real 4%), volley 15% (10%), tight 12% (8%).
+conversion would be: long 13% (real 3.3%), volley 17% (13.4%), tight 15% (8.7%)
+(real numbers: free Wyscout data, re-sourced 21 Oct 2026).
 **So roughly two thirds of the long-range / volley / tight-angle gap is the
 keeper's save rate, one third is shot accuracy.** Penalty and one-on-one are
 now in range from the shot side.

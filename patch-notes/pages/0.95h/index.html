@@ -1,0 +1,240 @@
+<title>B14 Running After A Chance</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one column, stacked cards, stills under their text. Tokens first, then components. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  a{color:var(--blue)}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+  .chip{display:inline-block;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink2);text-decoration:none}
+  .chip.hot{color:var(--amber);border-color:var(--amber)}
+  .back{display:inline-block;font-size:13px;font-weight:700;margin:0 0 4px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b,.row li b{color:var(--ink)}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:4px}
+  .nr{color:var(--ink3);font-style:italic}
+  .tile{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+  .tile>b{display:block;font-size:15px}
+  .tile>p{margin:3px 0 0;color:var(--ink2);font-size:14.5px}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .track.solo{height:14px}
+  .track.solo .fill.now{top:0;bottom:0;height:auto}
+  .fill.now.warn{background:var(--amber)}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.blue{background:var(--blue)}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+  .bnote{color:var(--ink3);font-size:12.5px;margin:2px 0 0}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px 14px;margin:10px 0 0}
+  .figs.wide{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+  .figs figure{margin:0}
+  .figs.pair{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .figs.pair figure.ph{max-width:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details .figs{margin-top:2px}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .sbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px 12px}
+  .sbox h3{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 4px}
+  .sbox h3.g{color:var(--green)} .sbox h3.b{color:var(--blue)} .sbox h3.a{color:var(--amber)} .sbox h3.r{color:var(--red)}
+  .sbox ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+  .sbox li{margin-bottom:4px}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox .q{font-weight:700}
+  .okbox .opts{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+  .okbox .who{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-right:6px}
+
+  .vid{border:2px dashed var(--line);border-radius:var(--r);padding:12px 14px;background:var(--card)}
+  .vid b{color:var(--amber)}
+  .vid p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .vid ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  .cards{display:grid;gap:10px;margin:0}
+  .bcard{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;min-width:0}
+  .bcard .n{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 4px}
+  .bcard .n b{font-size:17px}
+  .bcard p{margin:0;color:var(--ink2);font-size:14.5px}
+  .bcard .go{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:var(--blue)}
+  .bcard.soon{border-style:dashed;opacity:.85}
+
+  /* --- how these patch notes work --- */
+  .how{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 14px 10px;min-width:0}
+  .how svg{display:block;width:100%;max-width:340px;height:auto;margin:2px auto 10px}
+  .how ol{margin:0;padding-left:20px;color:var(--ink2);font-size:14.5px}
+  .how li{margin:0 0 6px}
+  .how li b{color:var(--ink)}
+  .how .mini{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;vertical-align:1px}
+  .how .btn{display:inline-block;font-size:12.5px;font-weight:800;background:var(--pill);color:var(--pillink);padding:2px 9px;border-radius:999px;vertical-align:1px}
+  .how .where{margin:8px 0 0;font-size:13px;color:var(--ink3)}
+  /* --- already decided --- */
+  .donebox{border:1px solid var(--line);border-left:4px solid var(--green);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .donebox ul{margin:0;padding:0;list-style:none}
+  .donebox li{padding:11px 0 11px 28px;border-bottom:1px solid var(--line);position:relative}
+  .donebox li:last-child{border-bottom:0}
+  .donebox li::before{content:"\2713";position:absolute;left:2px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--pillink);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .donebox .q{font-weight:700}
+  .donebox .d{color:var(--ink2);font-size:14px;margin-top:3px}
+  .donebox .by{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-right:6px}
+  /* --- video --- */
+  .clip{margin:12px 0 2px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .look{font-size:13px;color:var(--ink2);margin:0 0 7px}
+  .clip .look b{color:var(--ink)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px}
+  .clip.ph{max-width:390px;margin-left:auto;margin-right:auto}
+  /* --- tabs (index) --- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink2);font:inherit;font-size:13.5px;font-weight:800;padding:8px 13px;border-radius:999px;cursor:pointer;min-height:40px}
+  .tab[aria-selected="true"]{background:var(--pill);color:var(--pillink);border-color:var(--pill)}
+  .tab small{font-weight:700;opacity:.8;margin-left:4px}
+  .js .panel[hidden]{display:none}
+  .panel h3.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px}
+  .bcard .vtag{font-size:11px;font-weight:800;color:var(--ink3);letter-spacing:.04em}
+  .qlist{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px}
+  .qlist ul{margin:0;padding:0;list-style:none}
+  .qlist li{padding:10px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14px}
+  .qlist li:last-child{border-bottom:0}
+  .qlist li b{color:var(--ink)}
+
+  /* --- steps (vertical list) --- */
+  .steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  .steps li{position:relative;padding:9px 0 9px 36px;border-bottom:1px solid var(--line);counter-increment:st;color:var(--ink2);font-size:14.5px;min-width:0}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(st);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .steps li b{color:var(--ink)}
+  .steps li.done::before{background:var(--green);border-color:var(--green);color:var(--pillink);content:"\2713"}
+  .steps li.next::before{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+  .mock{border:2px solid var(--red);border-radius:var(--r);background:var(--rbg);padding:12px 14px;margin:10px 0 2px}
+  .mock b{display:block;color:var(--red);font-size:15px;letter-spacing:.02em}
+  .mock p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .mock .mb{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .mock .mb span{font-size:13px;font-weight:800;padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink2)}
+  .mock .mb span.go{background:var(--card2)}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+<div class="wrap">
+<header>
+  <br>
+  <span class="ver">B14 · RUNNING AFTER A CHANCE</span>
+  <h1>After you pass, the move carries on and you can run onto the ball back.</h1>
+  <p class="status"><i></i>On the Harry branch, not live yet.</p>
+  <p class="sub">Overnight build B14, 20-21 Oct 2026. Merged into the Harry branch at 01:08. In Admin &rarr; Patch notes this is <b>v0.95h</b>.</p>
+</header>
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<ul class="ck"><li><label><input type="checkbox" data-k="c0"><span><span class="q">Pass in open play</span><span class="a">After your pass the picture stays. You keep running (Auto run on a phone).</span></span></label></li><li><label><input type="checkbox" data-k="c1"><span><span class="q">Computer keys</span><span class="a">W A S D or the arrows steer you, Shift sprints. Let go: Auto run takes over after 0.6 s.</span></span></label></li><li><label><input type="checkbox" data-k="c2"><span><span class="q">The stamina bar</span><span class="a">It drains when you sprint and refills when you ease off, but never past your match energy (the rest is hatched).</span></span></label></li><li><label><input type="checkbox" data-k="c3"><span><span class="q">The ball back</span><span class="a">Run into the box: the man on the ball sometimes plays it back to you. Your next kick is in the same picture.</span></span></label></li></ul>
+<h2 class="add"><i></i>ADDED: THE RUN AFTER YOUR PASS</h2><div class="item"><div class="ih"><b>Your pass no longer ends your part in the move</b><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div><div class="row"><div class="rl p">Problem</div><p>After you passed in open play, the chance ended for you. Only <b>Chances: New</b> with a build-up played on.</p></div><div class="row"><div class="rl w">Why</div><p>The run-on code sat behind that one setting.</p></div><div class="row"><div class="rl f">Fix</div><p>Any pass in open play with a goal in the picture now plays on in the same picture, whatever the Chances setting. Not on shots, corners, free kicks or penalties. The two old play-on branches in the match are replaced by this one run.</p></div><div class="figs pair"><figure class="ph"><img src="img/b14-phone-auto-run.jpg" alt="Phone, Auto run: you keep running after your pass." loading="lazy"><figcaption><b>Look at:</b> Phone, Auto run: you keep running after your pass.</figcaption></figure><figure class="ph"><img src="img/b14-phone-auto-run-sprinting.jpg" alt="Phone, Auto run sprinting into space." loading="lazy"><figcaption><b>Look at:</b> Phone, Auto run sprinting into space.</figcaption></figure></div></div><div class="item"><div class="ih"><b>Auto run on a phone, keys on a computer</b><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>There was no way to move your player after a pass.</p></div><div class="row"><div class="rl f">Fix</div><p><b>Auto run</b> (phone, and whenever you do not steer) takes you into the best space it can see: onside, toward goal, a sprint when it is far, and a sprint onto a ball played back. On a computer <b>W A S D</b> (or the arrows) steer you and <b>Shift</b> sprints. Let go and Auto run takes over after 0.6 s. The keys only belong to the match while your run is live, so they never touch the aim. The <b>After you pass: Joystick</b> setting keeps its thumb stick, now on the same legs and bar.</p></div><div class="figs wide"><figure><img src="img/b14-pc-sprinting-wasd-shift.jpg" alt="Computer: W + Shift, the bar draining." loading="lazy"><figcaption><b>Look at:</b> Computer: W + Shift, the bar draining.</figcaption></figure><figure><img src="img/b14-pc-auto-run-after-letting-go.jpg" alt="Computer: keys let go, Auto run has taken over." loading="lazy"><figcaption><b>Look at:</b> Computer: keys let go, Auto run has taken over.</figcaption></figure></div><figure class="clip"><p class="look"><b>Look for:</b> pass, sprint with W + Shift, let go, Auto run carries on.</p><video controls playsinline muted preload="metadata" poster="img/b14-pc-sprinting-wasd-shift.jpg" src="clips/b14-pc-pass-sprint-auto-run.mp4"></video></figure></div><div class="item"><div class="ih"><b>The man on the ball can play it back to you</b><span class="tag t-meas">measured</span><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>The team-mate who took your pass always finished the move himself.</p></div><div class="row"><div class="rl f">Fix</div><p>He shoots, plays it to your feet, or slides you in. It depends on how much better your spot is than his and how good a passer he is. No captaincy needed (captains still get <b>Call for it</b>). You reach 85% of the balls played back. If you were onside when you passed, you are offside when he looks up 2.5% of the time.</p></div><div class="bars"><div class="bar"><span class="bl">Ball back, passer with passing 45 (% of his reads)</span><span class="track"><span class="fill was" style="width:0.0%"></span><span class="fill now blue" style="width:92.6%"></span></span><span class="vv"><s>—</s> &rarr; 9.1%</span></div><div class="bar"><span class="bl">Ball back, passer with passing 88</span><span class="track"><span class="fill was" style="width:0.0%"></span><span class="fill now blue" style="width:92.6%"></span></span><span class="vv"><s>—</s> &rarr; 15.4%</span></div><div class="bar"><span class="bl">Ball back when you stand still</span><span class="track"><span class="fill was" style="width:0.0%"></span><span class="fill now blue" style="width:92.6%"></span></span><span class="vv"><s>—</s> &rarr; 4.3%</span></div><div class="bar"><span class="bl">Ball back when you sprint into the box</span><span class="track"><span class="fill was" style="width:0.0%"></span><span class="fill now blue" style="width:92.6%"></span></span><span class="vv"><s>—</s> &rarr; 30.6%</span></div></div><div class="figs wide"><figure><img src="img/b14-pc-ball-back-through-ball.jpg" alt="Computer: a through ball back into your run." loading="lazy"><figcaption><b>Look at:</b> Computer: a through ball back into your run.</figcaption></figure><figure><img src="img/b14-pc-your-kick-after-the-ball-back.jpg" alt="Your next kick, in the same picture." loading="lazy"><figcaption><b>Look at:</b> Your next kick, in the same picture.</figcaption></figure></div><figure class="clip"><p class="look"><b>Look for:</b> the through ball comes back into your run and you shoot.</p><video controls playsinline muted preload="metadata" poster="img/b14-pc-ball-back-through-ball.jpg" src="clips/b14-pc-ball-back-through-ball.mp4"></video></figure></div>
+<h2 class="chg"><i></i>CHANGED: STAMINA IS YOUR ENERGY</h2><div class="item"><div class="ih"><b>One bar, tied to your match energy</b><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div><div class="row"><div class="rl p">Problem</div><p>Sprint stamina and match energy were two separate things.</p></div><div class="row"><div class="rl f">Fix</div><p>The bar is the 3D games' sprint bar: 6 s of sprinting from full to empty at Physical 50, and it refills when you ease off. It can never refill past your match energy: at energy 60 it stops at 60%, and the part past that is hatched. Sprinting costs real match energy, <b>0.12 a second</b> (a full 6 s sprint = 0.7), taken off the same energy the career saves. Speeds come from your pace: pace 50 runs 5.1 and sprints 6.9 m/s; pace 90 sprints 7.9 m/s.</p></div><div class="bars"><div class="bar"><span class="bl">Energy used per match by sprinting: Auto run</span><span class="track"><span class="fill was" style="width:0.0%"></span><span class="fill now " style="width:92.6%"></span></span><span class="vv"><s>0</s> &rarr; 0.08</span></div><div class="bar"><span class="bl">Energy used per match: steering into the box</span><span class="track"><span class="fill was" style="width:0.0%"></span><span class="fill now " style="width:92.6%"></span></span><span class="vv"><s>0</s> &rarr; 0.20</span></div></div><div class="figs wide"><figure class="ph"><img src="img/b14-phone-bar-recovering.jpg" alt="Phone: the bar refilling after a sprint." loading="lazy"><figcaption><b>Look at:</b> Phone: the bar refilling after a sprint.</figcaption></figure><figure><img src="img/b14-pc-bar-recovering.jpg" alt="Computer: the bar refilling, capped at the match energy." loading="lazy"><figcaption><b>Look at:</b> Computer: the bar refilling, capped at the match energy.</figcaption></figure></div></div><div class="item"><div class="ih"><b>The match result barely moves</b><span class="tag t-meas">measured</span></div><div class="row"><div class="rl p">Problem</div><p>A new way to score could make the game too easy.</p></div><div class="row"><div class="rl f">Fix</div><p>Measured over 500 matches with a bot that passes 35% of open-play chances (scripts/b14-measure.mts). Chances handed to you stay 5.82 a match. canvasEngine.ts is not changed.</p></div><div class="bars"><div class="bar"><span class="bl">Your goals per match (before → Auto run)</span><span class="track"><span class="fill was" style="width:87.3%"></span><span class="fill now warn" style="width:92.6%"></span></span><span class="vv"><s>0.98</s> &rarr; 1.04</span></div><div class="bar"><span class="bl">Team-mate goals off your pass</span><span class="track"><span class="fill was" style="width:92.6%"></span><span class="fill now " style="width:76.0%"></span></span><span class="vv"><s>0.39</s> &rarr; 0.32</span></div><div class="bar"><span class="bl">Team goals with you involved</span><span class="track"><span class="fill was" style="width:90.6%"></span><span class="fill now " style="width:92.6%"></span></span><span class="vv"><s>1.37</s> &rarr; 1.40</span></div><div class="bar"><span class="bl">Their goals</span><span class="track"><span class="fill was" style="width:92.6%"></span><span class="fill now " style="width:91.0%"></span></span><span class="vv"><s>1.16</s> &rarr; 1.14</span></div><div class="bar"><span class="bl">Ball back to you in the same picture</span><span class="track"><span class="fill was" style="width:0.0%"></span><span class="fill now blue" style="width:92.6%"></span></span><span class="vv"><s>0.00</s> &rarr; 0.15</span></div></div></div>
+<h2 class="bug"><i></i>KNOWN ISSUES</h2><div class="item"><div class="ih"><b>Three open questions for Harry</b><span class="tag t-reas">reasoned</span></div><div class="row"><div class="rl p">Problem</div><p>Should Auto run take over on Joystick when the thumb is off? Is the bar's spot right (on a computer it could touch the goal net's corner)? Is 0.12 energy a second the right cost?</p></div><div class="row"><div class="rl f">Fix</div><p>The first two were answered and built in B14b (v0.96h). The cost is unchanged.</p></div></div>
+<h2 class="bug"><i></i>SEEN / NOT SEEN</h2>
+<div class="sbox"><h3 class="g">Seen on a screen</h3><ul><li>Computer 1440×900: W + Shift sprint, the bar 0.86 → 0.61, refill to its cap, Auto run after letting go, energy 86.04 → 85.86, a through ball back and the next kick</li><li>Phone 390×844: Auto run sprinting, the bar draining and refilling. No page errors</li></ul><h3 class="b">Measured (numbers)</h3><ul><li>500 matches before / Auto run / steering (the table above)</li><li>Ball back by passer and by run (160 chances × 5 kinds, tests/star/runAfter.mts)</li><li>Pitch 366×744 on a phone, 384×800 on a computer (unchanged)</li></ul><h3 class="r">Not seen / not done</h3><ul><li>A ball back on a phone (measured only)</li><li>The Joystick setting live</li><li>A short phone (checked on 844 tall only)</li></ul></div>
+<footer>21 Oct 2026. From the B14 builder's report. Checks: type-check clean, both guards clean, 16 of 16 match test files, npm run build passed.</footer>
+</div>
+<script>
+(function(){
+  var K="kib-pn-0.95h-checks", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>

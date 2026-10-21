@@ -1,5 +1,11 @@
 # Real Goals (Leo, 18 Oct 2026) — test page /star-real-goals-dev
 
+> **History.** This describes the FIRST Real Goals, built on a licensed event
+> data set whose licence forbids a paid game. That data, its scripts and its
+> route were deleted on 19 Oct 2026; Real Goals was rebuilt on the free Wyscout
+> data (CC BY 4.0): see `data/realmoments/README.md` and `lib/star/realGoals.ts`.
+> No number below is used by the game.
+
 Leo: "real shots mode … 40% accuracy, 90% accuracy, u gotta try get 100% accuracy
 from real irl goal … score hero system … NEYMAR GOAL VS CROATIA … make the teams
 and players actually accurate … build up needs to be more accurate … shots needs
@@ -7,10 +13,10 @@ to be ALWAYS scoreable as the real goal". His dad: "ghost thing like mariokart".
 
 ## Real reference
 
-StatsBomb open data, World Cup 2022 + Euro 2024: 250 non-penalty goals with a
+The licensed open data (deleted), World Cup 2022 + Euro 2024: 250 non-penalty goals with a
 freeze frame (248 open play, 2 free kicks). Every goal now also has (from the
-raw events + line-ups, `scripts/statsbomb/fetch_real_goals.py` →
-`data/statsbomb/goals.json`): the score before it, the height it crossed the
+raw events + line-ups, a fetch script →
+a goals file, both deleted): the score before it, the height it crossed the
 line at (end_location z, yards), every frozen man's name and position, the
 names players are known by, the shot's flight time, the whole move (passes,
 carries, dribbles with real timestamps). Licence: test only, credit shown.
@@ -57,7 +63,7 @@ at 45 cm, 60% at 80 cm. ★ a goal, ★★ 60%+, ★★★ 85%+. Shows 100% with
 
 ## Not done / limits
 
-- StatsBomb has no ball path, only start and end: the ghost line is straight in
+- That data had no ball path, only start and end: the ghost line is straight in
   plan with a drawn arc; a curled real shot is drawn straight.
 - The ghost is drawn in the 2D picture; the 3D view does not draw it.
 - The real goal's spot is kept 0.4 m inside the posts (a goal in off the post
@@ -73,8 +79,8 @@ the shot is almost exactly like the real shot then it WILL go in no matter what
 
 ## The goals: 250 → 908
 
-`scripts/statsbomb/fetch_real_goals.py` → `data/statsbomb/realgoals/<collection>.json`
-(+ `index.json`; served by `/api/star/statsbomb-shots?rg=…`). Every goal but own
+a fetch script → one file per collection
+(+ an index; served by an API route; all deleted 19 Oct 2026). Every goal but own
 goals (penalties now in; a penalty has no freeze frame, so its keeper comes from
 the 360 frame or stands on his line):
 
@@ -85,7 +91,7 @@ the 360 frame or stands on his line):
 | World Cup 2018 | 157 of 169 (12 own goals) | — |
 | Euro 2020 | 131 of 142 (11 own goals) | 129 |
 | Copa América 2024 | 69 of 70 | — |
-| AFCON 2023 | 115 of 119 | — (StatsBomb lists 360, but the files are not in the open repo) |
+| AFCON 2023 | 115 of 119 | — (the data listed 360, but the files were not in its open repo) |
 | Legends | 60 hand-picked (`LEGENDS` in the script) | 6 |
 | Club worldies | 100, picked by `worldie_score` per season | 17 |
 

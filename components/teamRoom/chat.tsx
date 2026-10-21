@@ -192,7 +192,7 @@ function Composer({ autoFocus, replyTo, onClearReply }: { autoFocus?: boolean; r
   const [hide, setHide] = useState(false);
   const tok = hide ? null : typingToken(text, caret);
   const people = tok?.kind === "@" ? TEAM_PEOPLE.filter((p) => p !== s.me && p.toLowerCase().startsWith(tok.query)) : [];
-  const pages = tok?.kind === "#" ? PAGES.filter((p) => p.name.toLowerCase().includes(tok.query) || p.url.toLowerCase().includes(tok.query)).slice(0, 6) : [];
+  const pages = tok?.kind === "#" ? PAGES.filter((p) => p.name.toLowerCase().includes(tok.query) || p.url.toLowerCase().includes(tok.query)).slice(0, tok.query ? 6 : 8) : [];
   const options = tok?.kind === "@" ? people.map((p) => ({ key: p, label: p })) : pages.map((p) => ({ key: p.url, label: p.name, sub: p.url }));
   useEffect(() => setPick(0), [tok?.kind, tok?.query]);
 
@@ -216,6 +216,16 @@ function Composer({ autoFocus, replyTo, onClearReply }: { autoFocus?: boolean; r
     }
   };
   const addThisPage = () => {
+    // In the Team room itself (the full chat on a phone) "this page" is the chat:
+    // open the page list instead (Harry, 21 Oct 2026: link a page didn't work on mobile).
+    if (window.location.pathname.startsWith(TEAM_ROOM.home)) {
+      const at = box.current?.selectionStart ?? text.length;
+      const next = `${text.slice(0, at)}${at > 0 && !/\s$/.test(text.slice(0, at)) ? " " : ""}#${text.slice(at)}`;
+      const caretAt = next.length - (text.length - at);
+      setText(next); setHide(false); setCaret(caretAt);
+      requestAnimationFrame(() => { box.current?.focus(); box.current?.setSelectionRange(caretAt, caretAt); setCaret(caretAt); });
+      return;
+    }
     const url = (window.location.pathname + window.location.search).slice(0, 190);
     const name = nameOfPage(window.location.pathname) || document.title;
     setLinks((l) => (l.some((x) => x.url === url) ? l : [...l, { url, name }]));
@@ -261,7 +271,7 @@ function Composer({ autoFocus, replyTo, onClearReply }: { autoFocus?: boolean; r
         <button className="tr-iconbtn" onClick={() => fileRef.current?.click()} title="Add a picture" aria-label="Add a picture">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.8" /><path d="m21 16-5-5-8 8" /></svg>
         </button>
-        <button className="tr-iconbtn" onClick={addThisPage} title="Link this page (or type # to pick one)" aria-label="Link this page">
+        <button className="tr-iconbtn" onClick={addThisPage} title="Link this page (in the Team room: pick a page; or type # anywhere)" aria-label="Link this page">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></svg>
         </button>
         <button className="tr-iconbtn" onClick={() => startPointing()} disabled={!s.me} title="Point at part of this page (Shift+X)" aria-label="Point at part of this page">

@@ -13,7 +13,6 @@ import { uiVersion, setUiVersion, UI_VERSION_DEFAULT } from "./uiLook";
 import { gameplayVersion, setGameplayVersion, defaultVersion } from "./gameplayVersion";
 import { matchRadarLook, setMatchRadarLook } from "./matchRadarLook";
 import { matchFeelLook, setMatchFeelLook } from "./matchFeel";
-import { mikeyPopupsLook, setMikeyPopupsLook } from "./mikeyPopups";
 import { fhrMode, setFhrMode } from "./fhr/toggle";
 
 /** One New | Old switch: how to read it, how to set it, and its default. */
@@ -57,8 +56,7 @@ export const LOOK_ROWS = {
   matchRadar: row("Match radar (testing)", "new", "old", "old", matchRadarLook, setMatchRadarLook),
   // Leo, 13 Oct 2026: impact, hit-stop, sounds, keeper dives (lib/star/matchFeel.ts). Old while tested.
   matchFeel: row("Match feel (testing)", "new", "old", "old", matchFeelLook, setMatchFeelLook),
-  // Mikey, 20 Oct 2026: TV-style pop-ups (components/star/MikeyPopup.tsx). Old by default.
-  mikeyPopups: row("Mikey's new pop-ups", "new", "old", "old", mikeyPopupsLook, setMikeyPopupsLook),
+  // (Mikey's new pop-ups left this list on 21 Oct 2026: they are a pack now, Settings → Pop-up pack, lib/star/popupPack.ts.)
   // Harry, 19 Oct 2026: the Full Highlights Rebuild's test switch, Off by
   // default; On includes Chances: New (lib/star/fhr/toggle.ts). Its own row
   // with a "?" since 20 Oct 2026 (components/star/FhrSwitchRow.tsx): Settings,

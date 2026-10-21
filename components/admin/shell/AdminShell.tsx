@@ -16,6 +16,10 @@
  * Ideas, My to-do, Patch notes) and one line per game; no game tab is lit.
  * In a game the menu is Team, then the game's home and its groups, as before.
  * Testers have no Team area: their menu starts at the game's home.
+ *
+ * THE INBOX (Harry, 21 Oct 2026): a bell at the right end of the top bar (phone)
+ * or of the game tabs (computer) counts the patch notes you haven't read;
+ * components/teamRoom/InboxBell.tsx.
  */
 import "./adminShell.css";
 import "./skin.css";
@@ -25,6 +29,7 @@ import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { ADMIN_PAGES, GAMES, TEAM_HOME, gameForPath, gameOf, groupGame, groupIcon, groupsOf, visibleTo, type AdminGameKey, type AdminGroup } from "@/lib/adminRegistry";
 import { ADMIN_LOOKS, setAdminLook, setAdminMode, useAdminLook, useAdminMode } from "@/lib/adminLook";
 import BackArrow from "@/components/admin/BackArrow";
+import InboxBell from "@/components/teamRoom/InboxBell";
 
 export type ShellTab = "home" | "team" | "notes" | "videos" | "ideas" | "chat" | "todo";
 export type RoomTab = "team" | "ideas" | "chat" | "todo" | "notes";
@@ -113,6 +118,8 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
         <BackArrow role={role} />
         <button className="ash-btn ghost" onClick={() => setOpen(true)} aria-label="Open the admin menu"><Icon name="menu" /> Menu</button>
         <b className="ash-word">KNOWITBALL</b>
+        {/* The Inbox: patch notes you haven't read (Harry, 21 Oct 2026). Admins on the team only. */}
+        {role === "admin" && <InboxBell className="ash-bell" />}
       </div>
       <div className="ash-layout">
         {open && <div className="ash-scrim" onClick={() => setOpen(false)} />}
@@ -203,6 +210,7 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
                 <span className="ash-game-n">{gameCount(g.key)}</span>
               </Link>
             ))}
+            {role === "admin" && <InboxBell className="ash-bell ash-bell-pc" />}
           </nav>
           {children}
         </main>

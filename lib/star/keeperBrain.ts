@@ -1159,13 +1159,18 @@ export const KEEPER_FEEL_BRAIN = {
 // power it has … you could shoot far post bottom corner like Henry used to …
 // the goalie seems to save almost everything if he's close to it."
 //
-// Real (StatsBomb PL 2015/16, on-target foot shots, tools/statsbomb/placement.py (deleted 19 Oct 2026),
-// docs/gameplay16/keeper.md): a low shot into the FAR corner from a channel of
-// the box is saved 13% of the time (n 55); from under 12 m, 9% (n 33). The
-// near-post low corner from the same spots: 36-66%. Top corners from 12-18 m:
-// 38%. Central shots from 12-18 m: 89-98%. Measured before this, keeper 80:
-// the Henry from the corner of the six-yard box was saved 76% (live) and 90%
-// (Oct 13 update on).
+// Real (re-sourced 21 Oct 2026 from free data: the Wyscout public dataset,
+// CC BY 4.0, 1,941 matches, on-target foot shots by Wyscout's goal-mouth zone;
+// data/opendata/wyscout_shot_outcomes.json `keeper_save_pct_by_goal_mouth_zone_foot`,
+// made by scripts/opendata/reduce_resource.py): a low shot into the FAR corner
+// from a channel of the box is saved 37% of the time (n 609); from under 12 m,
+// 23% (n 53). The near-post low corner from the same spots: 78% (n 1,014). Top
+// corners from 12-18 m: 43% (n 188). Central shots from 12-18 m: 84% (dead
+// centre 89%). The values below were tuned before the re-source, against an
+// older reference; the game's results (docs/gameplay16/keeper.md: Henry saved
+// 13-58% after) sit around the free 23-37%, so they stay. Measured before this,
+// keeper 80: the Henry from the corner of the six-yard box was saved 76% (live)
+// and 90% (Oct 13 update on).
 //
 // Why a real keeper loses these: he is set at his near post, and a low ball
 // across his body to the far post asks for the slowest movement he has —
@@ -1352,8 +1357,10 @@ export const KEEPER_PRO_BRAIN = {
    * The open-play dial (KEEPER_BRAIN.openPlay) with Keeper pro on: how much
    * of the dial's "hard to read from distance" is left. Middle (0.55) plays
    * as 0.8. Before, a well-struck shot from 22 m+ on target beat an
-   * 80-rated keeper 17-33% of the time; real Premier League keepers concede
-   * 8-10% of on-target shots from there (StatsBomb 2015/16).
+   * 80-rated keeper 17-33% of the time; real keepers concede 9.6% of
+   * on-target shots from 22 m+ (Wyscout public dataset, 3,797 shots,
+   * data/opendata/wyscout_shot_outcomes.json; re-sourced 21 Oct 2026, value
+   * unchanged: the same 8-10% band it was set against).
    */
   farReadShare: 0.45,
   // ── Claims (crosses and through balls) ──
@@ -1400,16 +1407,21 @@ const smooth01 = (a: number, b: number, v: number) => { const t = clamp((v - a) 
 
 /**
  * KEEPER PRO: how far off his line he sets for a ball at `ball` — the real
- * keepers' depth (StatsBomb, Premier League 2015/16, 9,800 shots, keeper's
- * spot in the freeze frame at the strike): 1.2 m for a shot from under 8 m,
- * 1.6 m from 8-12, 2.3-2.4 m from 12-22, 1.8-1.9 m from 22 m out. The old
- * curve fell to 0.9 m for a long shot (measured 1.1 m in the game). A man
- * clean through: at least `throughDepth` (real one-on-ones: 2.0-2.5 m).
+ * keepers' depth. Re-sourced 21 Oct 2026 from free tracking (DFL + SkillCorner,
+ * pro matches only, 547 open-play shots, keeper's spot at the strike;
+ * data/opendata/tracked_shot_shapes.json `keeper_off_line_m_by_shot_distance`):
+ * median 1.8 m for a shot from under 8 m, 2.1 m from 8-12, 2.5 m from 12-22,
+ * 2.6 m from 22 m+. Real keepers do NOT come back toward the line for a long
+ * shot. The curve below (with the wide-angle cut and the `ball.y - 4` cap) gives
+ * 1.45 / 2.1 / 2.5 / 2.6 m on those same real shot spots (close shots are held
+ * back by the cap). Before: 1.0 + 1.4 s(5,15) − 0.5 s(20,28), which gave
+ * 0.85 / 1.24 / 1.82 / 1.68 m on them. A man clean through: at least
+ * `throughDepth` (real one-on-ones: median 2.5 m, the same file's tracking).
  */
 export function proDepth(sc: Scenario, ball: { x: number; y: number }): number {
   const D = Math.hypot(ball.x - CX, ball.y);
   const ang = Math.atan2(Math.abs(ball.x - CX), Math.max(0.5, ball.y));
-  let d = 1.0 + 1.4 * smooth01(5, 15, D) - 0.5 * smooth01(20, 28, D);
+  let d = 2.6 + 0.7 * smooth01(5, 15, D) - 0.2 * smooth01(20, 28, D);
   if (clearThrough(sc, ball)) d = Math.max(d, KEEPER_PRO_BRAIN.throughDepth);
   const wideCut = 1 - 0.45 * Math.sin(ang);
   return clamp(d * wideCut, 0.8, Math.max(0.8, ball.y - 4));

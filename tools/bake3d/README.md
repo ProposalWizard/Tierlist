@@ -18,7 +18,7 @@ kept on Low quality).
 ## Steps (re-run after the set's shape changes)
 ```bash
 # 1. catch the set's still triangles from the live scene (a dev server running)
-node tools/bake3d/capture.mjs "http://localhost:PORT/star-style-dev?style=real&scene=play3d&tod=day&clean=1" \
+node tools/bake3d/capture.mjs "http://localhost:PORT/star-3d-bench-dev/scene?style=real&scene=play3d&tod=day&clean=1" \
   --out /abs/cap/stadium.json --wait "window.__styleReady === true && window.__frameStep"
 # 2. bake (Blender 4, headless; ~7 min for the stadium on 4 cores)
 blender -b --python tools/bake3d/bake_light.py -- /abs/cap/stadium.json tools/bake3d/sets/stadium.json /abs/bake/stadium

@@ -1,7 +1,8 @@
 /**
  * KEEPER PRO (Leo v0.15, 11 Oct 2026; Settings → Gameplay → Keeper pro).
- * Real reference (StatsBomb, Premier League 2015/16, tools/statsbomb/keeper.py, deleted 19 Oct 2026)
- * and the before/after numbers: docs/gameplay15/keeper.md.
+ * Real reference (free Wyscout data, re-sourced 21 Oct 2026:
+ * data/opendata/wyscout_shot_outcomes.json; keeper depth from free tracking,
+ * tracked_shot_shapes.json) and the before/after numbers: docs/gameplay15/keeper.md.
  *
  * 1. Old is exactly the keeper from before (a hash of 1,224 seeded shots).
  * 2. New: save % falls with distance like the real one; he holds the gentle
@@ -49,7 +50,7 @@ const rs: ShotRec[] = [];
 for (const ks of [60, 80, 90]) for (const kind of kinds) for (let s = 1; s <= 240; s++) rs.push(shoot(kind, s * 7919 + 13, ks));
 const k80 = rs.filter((r) => r.ks === 80);
 const near = saveRate(k80.filter((r) => r.dist < 12)).rate, mid = saveRate(k80.filter((r) => r.dist >= 12 && r.dist < 22)).rate, far = saveRate(k80.filter((r) => r.dist >= 22)).rate;
-console.log(`  under 12 m ${pctS(near * 100, 100)} · 12-22 m ${pctS(mid * 100, 100)} · 22 m+ ${pctS(far * 100, 100)} (real 53 / 77 / 90)`);
+console.log(`  under 12 m ${pctS(near * 100, 100)} · 12-22 m ${pctS(mid * 100, 100)} · 22 m+ ${pctS(far * 100, 100)} (real 49 / 75 / 90, Wyscout)`);
 ok(near < mid && mid < far, "it falls the closer the shot");
 ok(near <= 0.72 && far >= 0.85, "close shots beat him far more often than long ones");
 

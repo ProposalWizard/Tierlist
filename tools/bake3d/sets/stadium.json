@@ -1,6 +1,6 @@
 {
   "about": "Look H's stadium (lib/star/style3d/real/arena.ts). Suns from lib/star/style3d/real/tod.ts; night's 'sun' is the main floodlight bank. sky = the sky's light as a share of the sun's.",
-  "url": "/star-style-dev?style=real&scene=play3d&tod=day&clean=1",
+  "url": "/star-3d-bench-dev/scene?style=real&scene=play3d&tod=day&clean=1",
   "workers": 4,
   "groundAlbedo": 0.12,
   "sunRays": 4,

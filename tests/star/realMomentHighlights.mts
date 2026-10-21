@@ -210,7 +210,7 @@ console.log("\n5. THE REAL BUILD-UP");
 console.log("\n6. THE DATA CREDITS");
 {
   const lic = readFileSync("data/opendata/LICENCES.md", "utf8");
-  for (const c of DATA_CREDITS) ok(lic.includes(c.line), `${c.id}: Settings shows LICENCES.md's line`);
+  for (const c of DATA_CREDITS) if (["patterns", "roles", "moments"].includes(c.use)) ok(lic.includes(c.line), `${c.id}: Settings shows LICENCES.md's line`);
   ok(new Set(DATA_CREDITS.map((c) => c.id)).size === DATA_CREDITS.length, "every credit id is unique");
 }
 

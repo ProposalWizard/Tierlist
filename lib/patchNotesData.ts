@@ -27,6 +27,658 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.102h",
+      "title": "Harry's patch notes: Inbox And Patch Notes Live",
+      "publishedAt": "2026-10-21T09:17:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Inbox, 21 Oct. A bell at the top right of the admin counts the patch notes you haven't marked Read and understood, from 20 Oct on (older ones never show), newest first; opening one marks it read. Notes under a patch note can @ someone (it reaches their Inbox and buzzes their phone) and quote lines of the note (tap them, or select text). A new patch note buzzes everyone but its author once (one buzz per person; no SQL: kept in each account). Fixed: the patch notes' Notes and Read and understood buttons and the 👉 Point layer took no taps (the chat bubble's let-taps-through rule hit them); 🔗 in the Team room linked the chat itself, now it opens the page list. Patch notes now ship to main on their own with scripts/patch-notes/ship.mjs (only patch-notes files), so they are live as soon as they are built.",
+      "stats": [
+        {
+          "value": "From 20 Oct",
+          "label": "the Inbox lists notes from this day on"
+        },
+        {
+          "value": "1",
+          "label": "buzz per person per new batch of notes"
+        },
+        {
+          "value": "3",
+          "label": "Team room bugs fixed"
+        },
+        {
+          "value": "0",
+          "label": "feature files a patch-notes PR may carry"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "The bell",
+              "detail": "Top right of any admin page. The red number = patch notes you haven't read (plus mentions)."
+            },
+            {
+              "title": "Open one from the Inbox",
+              "detail": "It opens on the Patch notes tab and leaves the list."
+            },
+            {
+              "title": "Notes on a patch note",
+              "detail": "💬 Notes → ❝ Pick lines, tap two lines, tap @Mikey, write, Add."
+            },
+            {
+              "title": "👉 Point on a phone",
+              "detail": "Open the chat, tap 👉 Point, drag a box: it should draw, not scroll."
+            },
+            {
+              "title": "🔗 in the Team room chat",
+              "detail": "It should open the list of pages."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: The Inbox",
+          "items": [
+            {
+              "title": "A bell with your unread patch notes",
+              "detail": "Patch notes were easy to miss: the only sign was a count on your card on the Team board. A 🔔 at the top right of every admin page (the phone top bar, or the end of the game tabs on a computer). The red number counts the patch notes you haven't marked Read and understood, published on or after 20 Oct 2026; older ones never appear. Newest first. Tap one: it opens on the Patch notes tab and counts as read (the same receipt as the button). ✓ marks one read without opening; Mark all read clears it. Before team_room_v2.sql runs, the marks stay on that device and the list says so. Only Harry, Mikey and Leo see it."
+            },
+            {
+              "title": "A phone buzz when new patch notes go up",
+              "detail": "Nobody knew a patch note had gone up unless they looked. When a new patch note reaches the site, the first of the three to open an admin page makes the site buzz everyone but its author: one buzz per person (“New patch notes from Harry · v0.95h”, or “3 new patch notes to read”); tap it to open the newest. Only notes from the last 3 days, and each person once per version: the versions already rung are kept in each person's sign-in account, so no SQL. Uses the existing phone notifications (TEAM_PUSH_PRIVATE_KEY in Vercel). Tested with fakes; not seen on a real phone."
+            },
+            {
+              "title": "Notes on a patch note can @ someone and quote its lines",
+              "detail": "Harry: in a note you should be able to @ someone and pick lines of the patch note to talk about. Under 💬 Notes: @Mikey / @Leo / @Harry / @all buttons (that person gets it in their Inbox and, with notifications on, a buzz), ❝ Pick lines (every headline of the version; tap the ones you mean) and ❝ Quote my selection (select words on the page first). A note shows its quoted lines first. Opening the notes marks a mention as seen."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: Team room",
+          "items": [
+            {
+              "title": "Notes and Read and understood did nothing",
+              "detail": "On the patch notes, the 💬 Notes button (and Read and understood) could not be pressed. The chat bubble's rule that lets taps pass through it was written for every Team room box, so it also hit the patch notes' Read bar. The rule now covers only the bubble's own wrapper."
+            },
+            {
+              "title": "👉 Point scrolled the page instead of drawing",
+              "detail": "In point mode, dragging on a phone scrolled the page and no box appeared. The same let-taps-through rule hit the drawing layer, so every touch went to the page under it. Not the frame setting (X-Frame-Options): the drawing layer is not in a frame, and the patch-notes pages load as text, not as a framed address. Fixed with the same one-line change. Seen: the box draws and the note form opens."
+            },
+            {
+              "title": "🔗 in the Team room linked the chat itself",
+              "detail": "On a phone you chat on the Team room page, so 🔗 “link this page” added a card for the chat (/admin/team?tab=chat). “This page” is the chat when you are in the Team room. In the Team room 🔗 now opens the list of pages (the same list as typing #); tap one to add it. On any other page it still links that page."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Patch notes go live as soon as they are built",
+          "items": [
+            {
+              "title": "Patch notes no longer wait for the feature push",
+              "detail": "Patch notes only reached the site when Harry pushed the whole branch, so the team read them late. Every build now ends with its patch notes, and they go to main at once in a patch-notes-only pull request made by scripts/patch-notes/ship.mjs. It starts from main and copies only the named versions' entries, their kept pages and pictures; it refuses if anything else changed or if the two patch-notes files import any code. The feature itself still waits for Harry's push. Brain notes RUL-TEAM-018 and PRO-TEAM-007."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not seen on a real phone",
+              "detail": "The buzz for new patch notes and for an @ in a note were tested with fakes only. They need a signed-in admin with notifications on. An @ in a note can't buzz anyone until team_room_v2.sql runs (notes stay on the device until then)."
+            },
+            {
+              "title": "The eye can sit on the bell",
+              "detail": "On a phone, when the chat sheet covers the bottom corners, the page's eye moves to the top right, over the bell. Close the chat and it moves back. Not changed."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.101h",
+      "title": "Harry's patch notes: Research Round",
+      "publishedAt": "2026-10-21T09:16:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Research, 21 Oct. (1) Headers and volleys: headers are about 18 goals in 100, volleys 23; the real-highlights data already holds about 67 header-height and 102 volley-height shots the game never serves. (2) Navigation: keep the five-button bar; fix Back, one back button, the house icon, the bar on more screens, a cleaner Phone, doors for Transfers and Career. (3) Leo/Mikey audit: the 4,393 league goals reach only the Real Goals page; StatsBomb-derived numbers are still in the code. (4) Simulation plan: the live game still runs the Old unseen match (15.2 shots, no corners, 15% scored; real 23.6, 9.9, 10.4%); free Wyscout data replaces StatsBomb almost one for one. (5) Build-ups measured: +33 s a match On (111 → 144 s), 7% end offside with no chance, a 3D build-up stretches below 20 fps.",
+      "stats": [
+        {
+          "value": "18 / 23",
+          "label": "goals in 100 that are headers / volleys (real)"
+        },
+        {
+          "value": "+33 s",
+          "label": "per match with build-ups On (111 → 144 s)"
+        },
+        {
+          "value": "15.2 vs 23.6",
+          "label": "shots a match: live game vs real football"
+        },
+        {
+          "value": "0 of 4,393",
+          "label": "league goals that reach a highlight today"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Read the five summaries",
+              "detail": "Each has a plain-English summary at the top and options to pick from."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: What we found",
+          "items": [
+            {
+              "title": "Headers, volleys and acrobatics",
+              "detail": "Harry: “make it a really great feature … linked to a certain skill”. Real numbers (34,853 shots, 1,401 matches): headers 16 shots and 18 goals in 100; volleys 21 and 23; bicycle kicks 6 shots in 1,000 (one goal in about 108 matches); diving headers 4 in 1,000 but 20% score. From 6 to 11 m: foot 29%, volley 20%, header 9.5%. A defender on a header inside 16 m: 7.6% against 13.7% free. Biggest find: the real-highlights data already has about 67 header-height and 102 volley-height shots that the game never serves."
+            },
+            {
+              "title": "Navigation",
+              "detail": "Harry: “what's the optimal idea for the flow and place of everything”. Today: Back sends you Home from Ownership, Sponsors, Casino, Trophies and Achievements; 8 different back buttons; about 40 screens lose the bottom bar; the Phone holds 14 apps, 3 of them copies; Transfers and Career have no door. Recommended: keep the five buttons and the big Play, and apply four rules everywhere: Back returns where you came from; places keep the bar, scenes take the phone; the house always means Home; anything that needs you shows a dot. 13 of 15 places are already one or two taps from Home."
+            },
+            {
+              "title": "What Leo's and Mikey's work reaches",
+              "detail": "Is the work on main wired into Harry's systems? Leo's 4,393 league goals reach the Real Goals page only: 0 can be served as highlights (one line excludes Wyscout), and none reach the radar or the simulation. 2,166 of them would fit the highlights. Mikey's pages are in the admin with eyes. Not asked, but found: several live numbers were tuned from StatsBomb data, which was deleted on 19 Oct for its licence; the numbers stayed."
+            },
+            {
+              "title": "The simulation rebuild plan",
+              "detail": "Harry: use the new highlights system and the 4,400 matches to massively improve the simulation and the radar, with licensed data only. The live game still runs the Old unseen match (Settings Match flow defaults to Old). Plan, not built. Free Wyscout and tracking data match StatsBomb's three biggest numbers almost exactly (striker on the ball 47/36/17% vs 49/31/20%; back line 0.66 vs 0.66; keeper saves 46/73/90% vs 53/77/90%). Order: get the data, then shots and corners, then fouls, cards and offsides, then roles, then make the radar the match."
+            },
+            {
+              "title": "Build-ups measured",
+              "detail": "Harry: Off feels snappy; is On too slow, and does the camera work? On, 92% of chances get a build-up, 6.4 s on average: 111 → 144 s a match (+33 s, +30%; a real player's share is more like +15 to 25%). 7% of build-ups end in a called offside with no chance. The ball is off the glass in 1.1%; the real issue is framing (in 55% of build-ups a passer or receiver is off screen for over 0.3 s). In 3D the build-up plays, but below 20 fps it runs in slow motion. Options: play only the last 3 s (saves 18 s a match), a calmer camera, and three 3D choices."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.100h",
+      "title": "Harry's patch notes: Small Fixes Round",
+      "publishedAt": "2026-10-21T09:15:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Small fixes, 21 Oct. Build-ups: the slowest 1 in 100 took 158 ms to make, now about 55 ms, with the same output (fingerprint identical over 2,748 build-ups). The lag-test pill sits beside the match (computer) or between the score row and the pitch (phone) until ⇅ is tapped. Team-room tick boxes are square on a phone (22×40 → 22×22). Mikey's corner-taker rule is used by the match radar page, sim90 and the FHR ruler. Settings → Match → Pop-up pack: Classic | Broadcast replaces the New | Old row (same stored value, default Classic).",
+      "stats": [
+        {
+          "value": "158 → ≈55 ms",
+          "label": "slowest 1 in 100 build-ups to make"
+        },
+        {
+          "value": "2,748",
+          "label": "build-ups with an identical result"
+        },
+        {
+          "value": "22×40 → 22×22",
+          "label": "tick box on a phone"
+        },
+        {
+          "value": "3",
+          "label": "test tools that now use Mikey's corner takers"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Build-ups",
+              "detail": "Same chances as before, shorter wait before a build-up starts on a slow phone."
+            },
+            {
+              "title": "Lag test pill",
+              "detail": "During a match it should not cover the pitch."
+            },
+            {
+              "title": "Team room To-do",
+              "detail": "Tick boxes are square on a phone."
+            },
+            {
+              "title": "Settings → Match → Pop-up pack",
+              "detail": "Classic or Broadcast."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Build-ups took too long to make",
+              "detail": "The slowest 1 in 100 build-ups took 158 ms to make: a visible hitch on a slow phone. The spacing step copied arrays and made new functions on every try, and a try that could not beat the best one still ran to the end. Flat arrays with an early check, no copies, and a try that can't win stops before the slow parts (lib/star/fhr/buildUp.ts). The output is identical over 2,748 build-ups (seeds 3 and 11). Measured by scripts/fhr/buildup-speed.mts."
+            },
+            {
+              "title": "The lag-test pill covered the match",
+              "detail": "The Lag test's pill sat at the top, on the pitch. During a match it sits beside the match on a computer, or between the score row and the pitch on a phone, until you tap ⇅ to move it (lib/star/lagPillSpot.ts)."
+            },
+            {
+              "title": "Tick boxes were tall on a phone",
+              "detail": "Team room To-do tick boxes were 22×40 on a phone. The admin's phone rule makes every button at least 40 tall, and the tick box is a button. Exempted: 22×22."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Corner takers in the test tools",
+              "detail": "Mikey's corner-taker rule (withCornerReach) was used by the game but not by the test tools, so they showed different takers. The match radar page, sim90 and the FHR ruler / served chances now pass it too."
+            },
+            {
+              "title": "Pop-ups as a pack",
+              "detail": "The pop-up row said New | Old, which says nothing about what you get. Settings → Match → Pop-up pack: Classic | Broadcast (lib/star/popupPack.ts). Same stored value as before, default Classic."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.99h",
+      "title": "Harry's patch notes: 3D Admin Clean-up",
+      "publishedAt": "2026-10-21T09:14:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "3D admin clean-up, 21 Oct. lib/star/cutscene/sceneList.ts is now the one list of cut scenes (hand-made plus those kept from the Scene generator): the Scene Editor's buttons and a new Cut scenes tab on /star-3d-area-dev both read it, and ?scene=<id> opens one. The 3D Area place cards, 7 cut-scene cards and the 3D places group previews were re-made in today's look (B5 skin and cameras, B5c arms and posture). /star-style-dev (Art styles + Cut-scene Director) was deleted; the bare scene the 3D bench, filming tools and the Lag test need moved to /star-3d-bench-dev/scene.",
+      "stats": [
+        {
+          "value": "1",
+          "label": "list of cut scenes (was one per page)"
+        },
+        {
+          "value": "7",
+          "label": "cut-scene cards re-made"
+        },
+        {
+          "value": "1 page",
+          "label": "deleted: Art styles"
+        },
+        {
+          "value": "0",
+          "label": "stale &ldquo;Planned&rdquo; rows left"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "3D Area → Cut scenes",
+              "detail": "A new tab lists every cut scene; tap one to open it."
+            },
+            {
+              "title": "Scene Editor",
+              "detail": "Its scene buttons are the same list."
+            },
+            {
+              "title": "3D places group",
+              "detail": "The preview pictures should show today's skin, arms and posture."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "One list of cut scenes",
+              "detail": "The Scene Editor and the 3D Area each had their own idea of which cut scenes exist. lib/star/cutscene/sceneList.ts is the one list (hand-made scenes plus the ones kept from the Scene generator). The Scene Editor's buttons and a new Cut scenes tab on the 3D Area both read it. ?scene=<id> opens one."
+            },
+            {
+              "title": "Pictures in today's look",
+              "detail": "The 3D place cards and group previews showed the old skin, cameras and arms. Re-made with scripts/admin3d/stills.mjs: the 3D Area place cards, 7 cut-scene cards and the 3D places group previews."
+            },
+            {
+              "title": "The Art styles page is gone",
+              "detail": "/star-style-dev (Art styles + Cut-scene Director) was out of date and duplicated the Scene Editor. Deleted: out of the admin list, previews and guides. The bare scene the 3D bench, the filming tools and the Lag test need now lives at /star-3d-bench-dev/scene. The stale “Your home and garage (Planned)” row was removed too."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.98h",
+      "title": "Harry's patch notes: The Brain",
+      "publishedAt": "2026-10-21T09:13:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "The Brain, 21 Oct. CLAUDE.md was 441 KB and loaded into every message. Session history moved to SESSION_LOG.md (441 → 59 KB), then the working rules became 90 short notes in brain/ with one index (59 → 43 KB). Claude now searches the index first and cites the note code. Pilot: 10 questions, 4,456,060 → 50,168 characters read (89 times less), 10 of 10 right (old way 8 sure, 2 risky). Blind test by a separate session: 15 questions, 13 hit, 2 miss (both now have notes), 0 wrong.",
+      "stats": [
+        {
+          "value": "441 → 43 KB",
+          "label": "CLAUDE.md, read on every message"
+        },
+        {
+          "value": "89×",
+          "label": "less reading for the 10 pilot questions"
+        },
+        {
+          "value": "13 / 15",
+          "label": "blind test hits, 0 wrong"
+        },
+        {
+          "value": "90",
+          "label": "notes in brain/"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Ask Claude a rule",
+              "detail": "e.g. “when can a change go live?” The answer should name a code like RUL-TEAM-001."
+            },
+            {
+              "title": "The rules are still there",
+              "detail": "Every moved rule is kept word for word in docs/brain-sources/working-rules-2026-10-21.md."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "CLAUDE.md was too big to read well",
+              "detail": "CLAUDE.md was 441 KB. It was loaded into every message, and old rules sat next to the newer rules that cancelled them. Every build added a dated entry and nothing ever left. Two live-looking Higgsfield rules and two patch-note rules disagreed. Step 1: session history moved to SESSION_LOG.md, word for word (441 → 59 KB). Step 2: the rules for working became Brain notes (59 → 43 KB)."
+            },
+            {
+              "title": "The Brain: short notes with codes, searched first",
+              "detail": "Finding a rule meant reading the whole file. brain/ holds one idea per note, each with a code (RUL-TEAM-001), a one-line summary, tags and the exact source line. scripts/brain/build_index.py checks every source line still says it and builds brain/_index.md. Claude greps the index, opens at most 3 notes, and cites the code. A changed rule gets a new note; the old one is marked superseded."
+            },
+            {
+              "title": "Tested blind",
+              "detail": "A search system can look right and still miss. A separate read-only Claude session wrote 15 questions from the old CLAUDE.md and answered them from the Brain alone: 13 hit, 2 miss, 0 wrong. Both misses (how to write replies; what to do after a game change) now have notes."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Mikey and Leo read the rules the same way",
+              "detail": "A pushed job asks each of them to read the Brain section once. Other areas of CLAUDE.md (the game's systems) can be converted the same way, one area at a time."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.97h",
+      "title": "Harry's patch notes: Main Merged In",
+      "publishedAt": "2026-10-21T09:12:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "Main merged into Harry, 21 Oct. Brought in: Leo's Real Goals (every league goal of 2017/18, 4,393 goals, site v0.61), Mikey's new pop-ups and the ten-round FA Cup (v0.63), and the world season (every league and cup played). Kept both sides: the FA Cup's ten rounds with Harry's Lower League Trophy and B13 fixture pass. Three fixture moves keep tests/star/fixtureClashes.mts passing. Harry's four patch notes that also used 0.60 to 0.63 are now 0.60h to 0.63h.",
+      "stats": [
+        {
+          "value": "4,393",
+          "label": "league goals from Leo's Real Goals now on the branch"
+        },
+        {
+          "value": "10",
+          "label": "FA Cup rounds (was 6)"
+        },
+        {
+          "value": "0",
+          "label": "fixture clashes after the merge"
+        },
+        {
+          "value": "4",
+          "label": "patch notes renamed 0.60h to 0.63h"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Patch notes list",
+              "detail": "Harry's 19 Oct notes now show as v0.60h, v0.61h, v0.62h, v0.63h. Leo's and Mikey's keep 0.60 to 0.63."
+            },
+            {
+              "title": "FA Cup",
+              "detail": "A new career: ten rounds, each league joining at its real round."
+            },
+            {
+              "title": "Lower League Trophy",
+              "detail": "Still there, as a third cup, with its own seven rounds."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: From main",
+          "items": [
+            {
+              "title": "Leo: Real Goals, every league goal of 2017/18",
+              "detail": "The Real Goals test page only had the World Cup and Euro goals. 4,393 league goals from five leagues (931 England, 911 Spain, 889 Italy, 763 Germany, 899 France), on /star-real-goals-dev. Leo's own notes: v0.61. They do not reach highlights or the simulation yet (see the research note, v0.101h)."
+            },
+            {
+              "title": "Mikey: new pop-ups and the real FA Cup",
+              "detail": "The FA Cup had six rounds and every league joined at once. Ten rounds from the 3rd Qualifying Round, each league joining at its real round; your club always plays every round it reaches. Settings → Match → Mikey's new pop-ups: a scoreboard that rolls on a goal and TV captions. Mikey's own notes: v0.63."
+            },
+            {
+              "title": "Mikey: the world season",
+              "detail": "Leagues and cups you were not in were not really played. Every league and cup is played round by round on its real date. Promotion and relegation read those tables. View it under League → All leagues and Season Awards → Every league and cup."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: Merging the two sides",
+          "items": [
+            {
+              "title": "Ten FA Cup rounds next to the Trophy, with no clashes",
+              "detail": "Main's ten-round FA Cup and Harry's Lower League Trophy and B13 fixture pass both moved dates. Together, some clubs had two games too close. Three moves: (1) a Premier League club in Europe plays the FA Cup on its own dates (Third 18, Fourth 20, Fifth 25, Quarter 26, Semi 30); (2) the Trophy's Round 1 moves to weekend 5; (3) the Championship's early-January league Tuesday goes back to weekend 4. tests/star/fixtureClashes.mts (no two games on one day, three days apart) passes."
+            },
+            {
+              "title": "Two notes had the same number",
+              "detail": "Harry's branch and main each used 0.60 to 0.63 for different patch notes. The archive, read receipts and the team board all find a note by its number. Main's keep their numbers (Leo 0.60, 0.61; Mikey 0.62, 0.63). Harry's four are now 0.60h, 0.61h, 0.62h, 0.63h, with their pages in patch-notes/pages/0.6Xh/. A new note now checks the number on both branches first (Brain RUL-TEAM-006)."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "A club in the European knockout play-off still has two close Tuesdays",
+              "detail": "9th to 24th play two more Tuesdays, 25 and 26, next to their FA Cup Fifth Round and Quarter-Final. Not fixed. Known limit, written in CLAUDE.md."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.96h",
+      "title": "Harry's patch notes: B14b Camera, Bar And Joystick",
+      "publishedAt": "2026-10-21T09:11:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "B14b, 21 Oct. Measured why the run looked small: it did not widen anything. Men are 17.8 px on a phone in the run and at the chance's start (the decided phone size). The real fault was a cut when the ball came back (33.3 → 32.2 m across, bottom edge 2.3 m higher, in one frame): now 0 px move over 151 frames. The camera pans with your run only if you or the ball would leave the picture (max 9 m/s, never a zoom). Joystick: thumb off for 0.6 s and Auto run takes over. The stamina bar picks the first clear corner (bottom-left first), never over the goal, the ball or a man. Bigger men would change every chance: 22.3 px or 27.8 px are options, not built.",
+      "stats": [
+        {
+          "value": "1 cut → 0 px",
+          "label": "camera move when the ball comes back (phone, 151 frames)"
+        },
+        {
+          "value": "17.8 px",
+          "label": "a man on a phone, before and after: the run did not shrink him"
+        },
+        {
+          "value": "0.6 s",
+          "label": "thumb off the stick before Auto run takes over"
+        },
+        {
+          "value": "2,998 / 2,998",
+          "label": "random layouts where the bar found a clear corner"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Ball back on a phone",
+              "detail": "When the ball comes back into your run, the picture should not jump."
+            },
+            {
+              "title": "Stamina bar",
+              "detail": "Bottom-left of the pitch when that is clear; it moves to another corner rather than cover the goal, the ball or a man."
+            },
+            {
+              "title": "Joystick",
+              "detail": "Settings → After you pass: Joystick. Lift your thumb: Auto run takes over after 0.6 s."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: The camera",
+          "items": [
+            {
+              "title": "The picture jumped when the ball came back",
+              "detail": "On a phone, when the ball came back into your run the camera re-framed in one frame: 33.3 → 32.2 m across, the bottom edge 2.3 m (about 25 px) higher. The ball back was treated as a new chance, so it got a new frame. The camera you were watching stays. It eases wider over 0.5 s only if you, the ball and the goal would not all be on the glass, and only as much as needed; the men keep their size. Seen live on a phone: 0 px move."
+            },
+            {
+              "title": "Why the run looked small: it was not the run",
+              "detail": "Harry's still from B14 looked like a far-away half pitch. Measured in the real career match: during the run the men are exactly the size they are at the chance's start, 17.8 px on a phone (19 chances). 17.8 px is the decided phone size for every man (New view, 0.8 × 0.8 of the zoomed-out size). Nothing to undo. Bigger men would change every chance, not the run. Options for Harry, not built: drop the outfield 0.8 shrink → 22.3 px; drop both → 27.8 px."
+            },
+            {
+              "title": "The camera follows your run",
+              "detail": "You could run out of the picture. It pans (never zooms) only if you, or a ball played back to you, would leave the picture, and never past the chance's play area. Speed cap 9 m/s, at most 1.6 px a frame on a phone. Ordinary chances, shots, set pieces and build-ups are untouched. Measured in tests; not seen live (Auto run never left the picture in 5 runs)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: The bar and the Joystick",
+          "items": [
+            {
+              "title": "The stamina bar picks a clear corner",
+              "detail": "Top-left, the bar could sit on the goal net when the goal was on the left. It tries bottom-left, then bottom-right, top-left, top-right, and takes the first clear of the goal (posts, net, bar), the ball (with its height) and every man. It stays put while clear (5 looks a second) and never sits on the scoreboard. Tested on 2,998 random layouts; the goal-on-the-left case is tested, not seen live."
+            },
+            {
+              "title": "Auto run takes over on the Joystick",
+              "detail": "On Joystick, with your thumb off the stick you stood still. Thumb off for 0.6 s: Auto run takes over, the same as letting go of W A S D. Thumb on the stick but still: you stand. Test: thumb never on → Auto run from 0.00 s, ran 10 m; held still → 0.00 m; lifted at 0.5 s → Auto run at 1.11 s. Not seen live."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.95h",
+      "title": "Harry's patch notes: B14 Running After A Chance",
+      "publishedAt": "2026-10-21T09:10:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "B14, 20-21 Oct. Any pass in open play with a goal in the picture now plays on in the same picture, whatever the Chances setting. Phone: Auto run takes you into space and sprints onto a ball played back. Computer: W A S D steer, Shift sprints; let go and Auto run takes over after 0.6 s. A stamina bar (the 3D games' sprint bar) never refills past your match energy; sprinting costs 0.12 energy a second. The man on the ball shoots, plays it to your feet or slides you in, by how much better your spot is and how good a passer he is. 500 matches: your goals 0.98 → 1.04, their goals 1.16 → 1.14, ball back to you in the same picture 0 → 0.15 a match. canvasEngine.ts untouched.",
+      "stats": [
+        {
+          "value": "0 → 0.15",
+          "label": "balls back to you in the same picture, per match (Auto run)"
+        },
+        {
+          "value": "0.98 → 1.04",
+          "label": "your goals per match (500 matches)"
+        },
+        {
+          "value": "0.12 / s",
+          "label": "energy a sprint costs (a full 6 s sprint = 0.7)"
+        },
+        {
+          "value": "85%",
+          "label": "of balls played back that you reach"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Pass in open play",
+              "detail": "After your pass the picture stays. You keep running (Auto run on a phone)."
+            },
+            {
+              "title": "Computer keys",
+              "detail": "W A S D or the arrows steer you, Shift sprints. Let go: Auto run takes over after 0.6 s."
+            },
+            {
+              "title": "The stamina bar",
+              "detail": "It drains when you sprint and refills when you ease off, but never past your match energy (the rest is hatched)."
+            },
+            {
+              "title": "The ball back",
+              "detail": "Run into the box: the man on the ball sometimes plays it back to you. Your next kick is in the same picture."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: The run after your pass",
+          "items": [
+            {
+              "title": "Your pass no longer ends your part in the move",
+              "detail": "After you passed in open play, the chance ended for you. Only Chances: New with a build-up played on. The run-on code sat behind that one setting. Any pass in open play with a goal in the picture now plays on in the same picture, whatever the Chances setting. Not on shots, corners, free kicks or penalties. The two old play-on branches in the match are replaced by this one run."
+            },
+            {
+              "title": "Auto run on a phone, keys on a computer",
+              "detail": "There was no way to move your player after a pass. Auto run (phone, and whenever you do not steer) takes you into the best space it can see: onside, toward goal, a sprint when it is far, and a sprint onto a ball played back. On a computer W A S D (or the arrows) steer you and Shift sprints. Let go and Auto run takes over after 0.6 s. The keys only belong to the match while your run is live, so they never touch the aim. The After you pass: Joystick setting keeps its thumb stick, now on the same legs and bar."
+            },
+            {
+              "title": "The man on the ball can play it back to you",
+              "detail": "The team-mate who took your pass always finished the move himself. He shoots, plays it to your feet, or slides you in. It depends on how much better your spot is than his and how good a passer he is. No captaincy needed (captains still get Call for it). You reach 85% of the balls played back. If you were onside when you passed, you are offside when he looks up 2.5% of the time."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Stamina is your energy",
+          "items": [
+            {
+              "title": "One bar, tied to your match energy",
+              "detail": "Sprint stamina and match energy were two separate things. The bar is the 3D games' sprint bar: 6 s of sprinting from full to empty at Physical 50, and it refills when you ease off. It can never refill past your match energy: at energy 60 it stops at 60%, and the part past that is hatched. Sprinting costs real match energy, 0.12 a second (a full 6 s sprint = 0.7), taken off the same energy the career saves. Speeds come from your pace: pace 50 runs 5.1 and sprints 6.9 m/s; pace 90 sprints 7.9 m/s."
+            },
+            {
+              "title": "The match result barely moves",
+              "detail": "A new way to score could make the game too easy. Measured over 500 matches with a bot that passes 35% of open-play chances (scripts/b14-measure.mts). Chances handed to you stay 5.82 a match. canvasEngine.ts is not changed."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Three open questions for Harry",
+              "detail": "Should Auto run take over on Joystick when the thumb is off? Is the bar's spot right (on a computer it could touch the goal net's corner)? Is 0.12 energy a second the right cost? The first two were answered and built in B14b (v0.96h). The cost is unchanged."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.94",
       "title": "Harry's patch notes: 3D Bodies & Smoother Movement",
       "publishedAt": "2026-10-21T00:10:00Z",
@@ -1155,7 +1807,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "added", "title": "Added", "items": [
           { "title": "Phase 0: the switch and today’s numbers (the ruler)", "detail": "Settings: Full highlights rebuild: Off | On (test). Off is today’s game exactly. The ruler is the test page /star-fhr-dev." },
           { "title": "Phase 2: a new build-up before every open-play chance", "detail": "With the switch On, each open-play chance starts with a 4 to 8 second build-up. 2,197 of 2,527 took different routes; 0 of 448 failed the checks; chances and goals per match did not change over 500 matches." },
-          { "title": "2,104 real matches, all free to use in a paid game", "detail": "Four free-licence sources reduced to pattern files. Every StatsBomb file is deleted from the repo." },
+          { "title": "2,104 real matches, all free to use in a paid game", "detail": "Four free-licence sources reduced to pattern files. Every file of the licensed data is deleted from the repo." },
           { "title": "Real moments, Real shots and Real Goals, rebuilt on free data", "detail": "702 real moments, 2,875 real shots, 232 Real Goals levels." },
           { "title": "Afriskaut out, two sources in, credits in Settings, and a Real moment highlights switch (B3)", "detail": "Matches 2,104 → 1,983. Fully real moments 702 → 926. Real goals 67 → 93. Settings → More → Data credits. Real moment highlights: Off | On." },
           { "title": "The 3D Signing and the Manager’s Office play live in the scene editor", "detail": "Step 3a: pick a shot and set its camera position and lens, the key light and the exposure." },
@@ -1554,7 +2206,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Team Room v1 (v0.60h)", "detail": "A chat bubble on every admin page, an Ideas board, Team chat and a To-do list." },
           { "title": "Drift + Play Screens (v0.62h)", "detail": "Eight screens now draw the pitch at the real match’s size, play buttons stay on screen, and the engine warning is red." },
           { "title": "Highlights Rebuild 0-2 (v0.63h)", "detail": "The switch, the match-camera still, and generated build-ups before open-play chances." },
-          { "title": "Free Data v1 (v0.64)", "detail": "2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. StatsBomb deleted." },
+          { "title": "Free Data v1 (v0.64)", "detail": "2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. The licensed data deleted." },
           { "title": "Scene Editor 3a (v0.61h)", "detail": "The 3D Signing and Office edit live in the scene editor. Also: how generated cut scenes work, and the 3D audit." },
           { "title": "B1 Touch Fixes (v0.66)", "detail": "All 27 touch fixes are built. The 4 old failing tests pass. Wembley is fairer." },
           { "title": "B3 Real Data (v0.67)", "detail": "Afriskaut is out, two free sources are in, data credits are in Settings, and real moments can appear in your matches. Has a clip." },
@@ -1984,7 +2636,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-19T20:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/EBHc5nzaDwyqKYWgjmduLh",
-      "summary": "Free Data v1 (19 Oct). 2,104 real matches under free licences (Wyscout 1,941, Afriskaut 136, SkillCorner 20, IDSSE / DFL 7). Real moments (702), Real shots (2,875) and Real Goals (232 levels) rebuilt on them. StatsBomb deleted, because its licence does not allow a paid game. Now part of v0.84 Everything Else.",
+      "summary": "Free Data v1 (19 Oct). 2,104 real matches under free licences (Wyscout 1,941, Afriskaut 136, SkillCorner 20, IDSSE / DFL 7). Real moments (702), Real shots (2,875) and Real Goals (232 levels) rebuilt on them. The licensed data deleted, because its licence does not allow a paid game. Now part of v0.84 Everything Else.",
       "stats": [
         { "value": "2,104", "label": "real matches under free licences" },
         { "value": "702", "label": "fully real moments" },
@@ -1996,13 +2648,13 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Real moments", "detail": "Tap a moment, then Play. One Play button is enough." },
           { "title": "Real shots", "detail": "The shot map shows 2,875 shots. Each picture says whether it is a real strike with our own defenders." },
           { "title": "Real Goals", "detail": "The level map shows 232 levels." },
-          { "title": "StatsBomb", "detail": "No StatsBomb file is left in the repo." }
+          { "title": "Licensed data", "detail": "No file of the licensed data is left in the repo." }
         ]},
         { "kind": "added", "title": "Added", "items": [
           { "title": "2,104 real matches, all free to use in a paid game", "detail": "Four free-licence sources were reduced to pattern files the game can read. Each needs a credit line shown in the game (done on 20 Oct, in Settings, see B3)." },
           { "title": "Real moments, rebuilt on free data", "detail": "702 fully real moments (581 shots and 121 corners), with all 22 players where they really stood. One Play button instead of one on every row (you kept it: A-6)." },
           { "title": "Real shots, rebuilt on free data", "detail": "2,875 real shots (2018 World Cup and Euro 2016). The strike and the result are real. The defenders are placed by our own rules. Each picture says which kind it is." },
-          { "title": "Real Goals, rebuilt on free data", "detail": "232 levels. Every StatsBomb file is deleted from the repo." }
+          { "title": "Real Goals, rebuilt on free data", "detail": "232 levels. Every file of the licensed data is deleted from the repo." }
         ]},
         { "kind": "next", "title": "Next", "items": [
           { "title": "What the next build did with this", "detail": "On 20 Oct, B3 removed Afriskaut (“no one’s heard of them”), added two sources (SoccerTrack v2 and SkillCorner), put the data credits in Settings and added a “Real moment highlights” switch. Matches went 2,104 → 1,983." }
@@ -2109,7 +2761,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-19T14:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/LBiZVmQDLKzWpNgpuDWxgW",
-      "summary": "Leo v0.18. Real Goals (test page /star-real-goals-dev) becomes a game mode: 908 real goals (every goal but own goals of WC 2022, Euro 2024, WC 2018, Euro 2020, Copa América 2024 and AFCON 2023, plus 60 Legends and 100 club worldies), played round by round with stars. The build-up follows StatsBomb's 360 camera (men 7.3 m → 3.2 m from where it saw them, no ball blinks, no snaps). A strike 70%+ like the real one can't be blocked or saved (109 of 109 in tests). Real shirts for all 160 teams. Test page only; the career is unchanged.",
+      "summary": "Leo v0.18. Real Goals (test page /star-real-goals-dev) becomes a game mode: 908 real goals (every goal but own goals of WC 2022, Euro 2024, WC 2018, Euro 2020, Copa América 2024 and AFCON 2023, plus 60 Legends and 100 club worldies), played round by round with stars. The build-up follows the old licensed data's 360 camera (removed 19 Oct; men 7.3 m → 3.2 m from where it saw them, no ball blinks, no snaps). A strike 70%+ like the real one can't be blocked or saved (109 of 109 in tests). Real shirts for all 160 teams. Test page only; the career is unchanged.",
       "stats": [
         { "value": "250 → 908", "label": "real goals to play" },
         { "value": "109 / 109", "label": "strikes 70%+ like the real one that went in" },
@@ -2124,7 +2776,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         ] },
         { "kind": "fixed", "title": "Fixed", "items": [
           { "title": "Copy the real shot and it goes in", "detail": "The unstoppable lane now uses the page's own %: 70%+ like the real one can't be blocked or saved (109 of 109 in tests). Real matches unchanged (same fingerprint)." },
-          { "title": "The build-up follows the real camera", "detail": "Men 7.3 m → 3.2 m from where StatsBomb's 360 camera saw them; ball blinks 1,061 → 0; snaps at the shot 234 → 6." }
+          { "title": "The build-up follows the real camera", "detail": "Men 7.3 m → 3.2 m from where the old licensed 360 camera saw them (removed 19 Oct); ball blinks 1,061 → 0; snaps at the shot 234 → 6." }
         ] },
         { "kind": "known", "title": "Known issues", "items": [
           { "title": "Not played by a finger yet; 3D not checked", "detail": "Measured by tests and seen in stills at phone size." },
@@ -2449,7 +3101,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             },
             {
               "title": "Keepers misread soft shots",
-              "detail": "Save % of shots on target, all old / v0.15 three on / all new: keeper 40: 50/53/64, 70: 69/72/77, 90: 83/84/89. Goals per shot v a 70: 24.8% → 22.0% → 18.5%. A 70's save % by distance 53/75/97 v the Premier League's 53/77/90 (all old: 53/71/79)."
+              "detail": "Save % of shots on target, all old / v0.15 three on / all new: keeper 40: 50/53/64, 70: 69/72/77, 90: 83/84/89. Goals per shot v a 70: 24.8% → 22.0% → 18.5%. A 70's save % by distance 53/75/97 v real keepers' 44/73/90 (free Wyscout data, re-sourced 21 Oct; all old: 53/71/79)."
             },
             {
               "title": "Team-mates shot from far too deep",
@@ -3043,7 +3695,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-12T00:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/3x6BjhftYfYtYCYJRkKDbg",
-      "summary": "The six gameplay things Harry and Mikey asked for, each measured against real football and behind a New | Old switch: a tighter match camera and the late-sub score fix; Keeper pro built from a full StatsBomb Premier League season; shots whose height follows where you hit the ball, with a spread cone and contact grades; knuckleball and power shot in the real match; a believable 90 minutes and a live match radar; dribble duels that need timing, plus a top-down option; real ball physics. Leo, 12 Oct: all of these start on Old as \"(testing)\" switches; Settings → Look → New in v0.15 has All new / All old; a new Tournament test page plays a Euros or World Cup to the final in one tap.",
+      "summary": "The six gameplay things Harry and Mikey asked for, each measured against real football and behind a New | Old switch: a tighter match camera and the late-sub score fix; Keeper pro built from real keeper numbers (re-sourced to free Wyscout data on 21 Oct); shots whose height follows where you hit the ball, with a spread cone and contact grades; knuckleball and power shot in the real match; a believable 90 minutes and a live match radar; dribble duels that need timing, plus a top-down option; real ball physics. Leo, 12 Oct: all of these start on Old as \"(testing)\" switches; Settings → Look → New in v0.15 has All new / All old; a new Tournament test page plays a Euros or World Cup to the final in one tap.",
       "stats": [
         {
           "value": "6",
@@ -3293,7 +3945,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-09T15:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/843j4zo8tXx2CKCzYceAFh",
-      "summary": "Real Premier League 2015/16 shots (StatsBomb's free data) now play in our engine as test chances, and they show our close chances are too easy (a game-made one-on-one scores 68%, a real one 20%). A new Chance mix (testing) switch (Settings → More → Match, or the Preview version) builds a match from Harry Kane's real touches: about 9 highlights instead of 6, half of them deeper, half as many one-on-ones. Old stays the default. Mikey's notes call this v0.14.",
+      "summary": "Real Premier League 2015/16 shots (from a licensed data set, removed on 19 Oct) now play in our engine as test chances, and they show our close chances are too easy (a game-made one-on-one scores 68%, a real one 19% in the free DFL + SkillCorner tracking). A new Chance mix (testing) switch (Settings → More → Match, or the Preview version) builds a match from Harry Kane's real touches: about 9 highlights instead of 6, half of them deeper, half as many one-on-ones. Old stays the default. Mikey's notes call this v0.14.",
       "stats": [
         {
           "value": "7,807",
@@ -3337,7 +3989,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "Chance mix (testing): built from Kane's real touches",
-              "detail": "Highlights 6.1 → 9.0 a match, deep touches 2.0 → 3.8, one-on-ones 0.67 → 0.49, own shots 2.1 → 2.5 (Kane: 2.5). Measured over 600 matches. Old is the default."
+              "detail": "Highlights 6.1 → 9.0 a match, deep touches 2.0 → 3.8, one-on-ones 0.67 → 0.49, own shots 2.1 → 2.5 (a real central forward: 2.5 per 90, free Wyscout data). Measured over 600 matches. Old is the default."
             },
             {
               "title": "Real moments page (admin, testing only)",

@@ -51,6 +51,17 @@ export async function saveRungJobs(sb: Admin, id: string, ids: string[]) {
   await sb.auth.admin.updateUserById(id, { app_metadata: { [TEAM_ROOM.push.jobsKey]: ids } });
 }
 
+/** Patch-note versions this account has already been rung for (lib/teamRoom/inbox.ts). */
+export async function rungPatchesOf(sb: Admin, id: string): Promise<string[]> {
+  const u = await account(sb, id);
+  const v = (u?.app_metadata as Record<string, unknown> | undefined)?.[TEAM_ROOM.push.patchesKey];
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+}
+
+export async function saveRungPatches(sb: Admin, id: string, versions: string[]) {
+  await sb.auth.admin.updateUserById(id, { app_metadata: { [TEAM_ROOM.push.patchesKey]: versions } });
+}
+
 /** Send one push to one device with the site's key. Throws (with statusCode) when refused. */
 function sendOne(d: PushDevice, body: string) {
   return webpush.sendNotification(

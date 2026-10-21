@@ -12,7 +12,7 @@ Paste the prompt at the bottom into a new session (or say "go" in this one).
 A green test suite is not enough. Every job is judged on the real game's screen.
 1. **Real reference first.** Each job writes down what real football looks like,
    with numbers: for example keeper save rates by shot type, how far a struck
-   ball travels, how a dribble beats a man. Sources: StatsBomb free data (already
+   ball travels, how a dribble beats a man. Sources: free data (Wyscout and tracking; the licensed set first named here was removed 19 Oct 2026) (already
    in the repo, see Mikey's Kane drawings), Opta-style public stats, and match
    footage descriptions.
 2. **Measure the game against it.** A script over 1,000+ seeded chances gives
@@ -61,7 +61,7 @@ A green test suite is not enough. Every job is judged on the real game's screen.
     real rates.
   - Knuckleball and power shot move from the test match into the real game,
     behind a switch.
-- **Measure:** conversion by kind against StatsBomb xG. Arrow vs actual
+- **Measure:** conversion by kind against the free Wyscout xG model (data/realmoments/README.md). Arrow vs actual
   landing error. Clips.
 
 ### 3. Ball physics

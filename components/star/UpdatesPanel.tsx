@@ -31,11 +31,7 @@ const has = (id: string): id is LookRowId => id in LOOK_ROWS;
 
 /** Newest first. A row id not in LOOK_ROWS yet is skipped, so a half-merged round can't crash Settings. */
 const ALL_UPDATES: Update[] = [
-  {
-    id: "mikey-popups", title: "Mikey's new pop-ups", date: "20 Oct 2026",
-    sub: "A scoreboard for every goal, TV captions for passes, offsides and the rest",
-    rows: (["mikeyPopups"] as string[]).filter(has),
-  },
+  // (Mikey's new pop-ups: a pack since 21 Oct 2026, Settings → Pop-up pack — not a New | Old update.)
   {
     id: "r16", title: "Keepers, hitboxes & jumping", date: "14 Oct 2026",
     sub: "Henry finishes, top corners, chips over heads, physical jumps",
@@ -65,7 +61,6 @@ function rowNote(id: LookRowId, look: Record<LookRowId, string>): React.ReactNod
   if (g?.newText) return look[id] === "new" ? g.newText : g.oldText;
   if (id === "matchRadar") return "New: a live mini-pitch above the commentary between your chances. Old: the commentary on its own.";
   if (id === "matchFeel") return "New: impact, hit-stop, sounds and keeper dives. Old: as before.";
-  if (id === "mikeyPopups") return "New: a goal shows a scoreboard at the top with the score rolling over, the scorer and the assist; every other pop-up is a short TV caption. Old: the pop-ups as before.";
   if (id === "ui") return "Old: the game as it was before v0.23, kept as a backup. Same save.";
   return undefined;
 }
