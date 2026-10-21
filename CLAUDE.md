@@ -256,6 +256,19 @@ different notes. Main's (Leo 0.60/0.61, Mikey 0.62/0.63) keep those numbers;
 Harry's four are **0.60h, 0.61h, 0.62h, 0.63h** (pages in `patch-notes/pages/0.6Xh/`).
 Before numbering a new note, search the data file for the number on BOTH branches.
 
+## Running after a chance (B14, Harry, 20 Oct 2026)
+
+Any pass you play in open play with a goal in the picture plays on in the
+same picture, whatever the Chances setting (`lib/star/playOn.ts` THE RUN).
+Auto run by default (phone, and whenever you don't steer); W A S D / arrows
++ Shift on a computer; the "After you pass: Joystick" row keeps its thumb
+stick. The man who takes it shoots or plays it back (`stickRead`, no
+captaincy needed; a better passer and a better spot = more often). Your legs
+and the stamina bar are `lib/star/legs.ts` (3D gait.ts speeds and bar; the bar
+never refills past your match energy; sprinting costs energy). The dribble in
+the match (Harry 17:20) should move on these same legs. Measure:
+`npx tsx scripts/b14-measure.mts`; tests `tests/star/runAfter.mts`.
+
 ## Ballon d'Or winners data (Mikey, 8 Oct 2026)
 
 Every men's winner 1956–2025, from ballondor.com only, for a future game

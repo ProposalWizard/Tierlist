@@ -147,3 +147,12 @@ New builds from the feedback:
 - "OFFSIDE" shown twice: **Once everywhere** (banner only, real match too).
 - Headers/volleys before 5 real drawings each: **Use the cross drawings now.**
 - B5d body pick: asked for it in chat with pictures (sent: fronts, 6-scene sheet, walk clip). Waiting.
+
+## 21 Oct 2026 — car and horse in the 3D world
+Ask: "For the 3d ecosystem let's make it so u can get into your car and drive home, Also make the horse ridable with a saddle."
+1. How you drive home: answered "C" (only a/b were offered: a = cut scene, b = steer yourself). Asked back.
+2. Several cars: **tap the one you want at the car park.**
+3. No car: **both** — the car park says "Buy one in the shop" and a taxi takes you home.
+4. Riding: **round the whole garden with the walking controls (walk, gallop on hold)**, plus "make a field area unlock for the horse to ride in - maybe obstacle course vibe".
+5. Saddle: **free, on the horse only while you ride.**
+6. **Riding trains the horse** (speed / stamina).

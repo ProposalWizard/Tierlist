@@ -194,7 +194,7 @@ function AfterPassRow() {
         <SegTabs className="w-[170px] shrink-0" value={m} onChange={setAfterPassMode} tabs={[["auto", "Auto run"], ["stick", "Joystick"]] as const} />
       </div>
       <SetNote dim className="mt-1 text-[10px]">
-        With Chances: New. Joystick: steer your run after a pass; he can pass back or slide you in.
+        After any pass in open play you run on. Auto run: you find space on your own (W A S D + Shift on a computer). Joystick: a thumb stick steers you instead.
       </SetNote>
     </>
   );

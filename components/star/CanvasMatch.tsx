@@ -53,7 +53,8 @@ import {
 } from "@/lib/star/pitch";
 import { mulberry32 } from "@/lib/star/season";
 import { newChancesOn } from "@/lib/star/newChances";
-import { playOnWanted, startPlayOn, stepPlayOn, carryFrom, carryOnLeadIn, MAX_LAY_OFFS, playOnStickWanted, startPlayOnStick, steerPlayOn, callForIt, callForItShown, type PlayOn, type CarryFrom } from "@/lib/star/playOn";
+import { stepPlayOn, carryFrom, carryOnLeadIn, MAX_LAY_OFFS, steerPlayOn, callForIt, callForItShown, runAfterWanted, startPlayOnRun, sprintPlayOn, type PlayOn, type CarryFrom } from "@/lib/star/playOn";
+import { takeEnergySpent, setLegsEnergy, barCap, moveKeyOf, keysScreenDir, noKeys, KEY_PUSH, type MoveKeys } from "@/lib/star/legs";
 import { afterPassStickOn } from "@/lib/star/afterPass";
 import { dealDribble, dribbleLevelFor, newDribbleDeal, type DribbleDeal } from "@/lib/star/dribbleDeal";
 import { ruleBookFor } from "@/lib/star/ruleBook";
@@ -239,7 +240,7 @@ import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt
 
 /** The net's drawn depth from the side, metres: a real goal's ~2 m. */
 const SIDE_NET_DEPTH = 2.0;
-import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook, BUILD_UP_KINDS as PASS_BUILD_UP_KINDS } from "@/lib/star/newLook";
+import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
 
 /**
@@ -1507,6 +1508,49 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const carryOnRef = useRef<CarryFrom | null>(null);
   /** "After you pass: Joystick" (lib/star/afterPass.ts): the stick is up, your thumb on it, and the captain's call's answer. */
   const [stickLive, setStickLive] = useState(false);
+  // ── B14 THE RUN (lib/star/playOn.ts startPlayOnRun, lib/star/legs.ts) ──
+  /** A run is live (any pass in open play): the stamina bar shows, keys steer. */
+  const [runLive, setRunLive] = useState(false);
+  /** The stamina bar on screen: how full (0..1), the cap your energy sets (0..1), sprinting. */
+  const [stamUi, setStamUi] = useState<{ v: number; cap: number; sprint: boolean; auto: boolean } | null>(null);
+  const stamUiAtRef = useRef(0);
+  /** The bar as it was at the end of the last run in this move (a run that carries on keeps it). */
+  const barRef = useRef(1);
+  /** W A S D / arrows and Shift, held (PC). */
+  const keysRef = useRef<MoveKeys>(noKeys());
+  const keysSteeringRef = useRef(false);
+  /** A keyboard was used in this match: the bar's label says W A S D. */
+  const [keysSeen, setKeysSeen] = useState(false);
+  /** A computer (a mouse, hover): the bar says which keys. A phone never shows it. */
+  const [pcPointer, setPcPointer] = useState(false);
+  useEffect(() => {
+    try { setPcPointer(window.matchMedia("(hover: hover) and (pointer: fine)").matches); } catch { /* no matchMedia */ }
+  }, []);
+  const pcKeys = pcPointer || keysSeen;
+  useEffect(() => {
+    const typing = (t: EventTarget | null) => {
+      const el = t as HTMLElement | null;
+      return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+    };
+    const set = (e: KeyboardEvent, down: boolean) => {
+      if (typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+      const k = moveKeyOf(e.code);
+      if (!k) return;
+      keysRef.current[k] = down;
+      // Only while your run is live do the keys belong to the match (no page scroll under it).
+      if (playOnRef.current?.stick && phaseRef.current === "flight") {
+        e.preventDefault();
+        if (down && k !== "sprint") setKeysSeen(true);
+      }
+    };
+    const onDown = (e: KeyboardEvent) => set(e, true);
+    const onUp = (e: KeyboardEvent) => set(e, false);
+    const clear = () => { keysRef.current = noKeys(); };
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    window.addEventListener("blur", clear);
+    return () => { window.removeEventListener("keydown", onDown); window.removeEventListener("keyup", onUp); window.removeEventListener("blur", clear); };
+  }, []);
   const poStickUiRef = useRef<{ id: number; cx: number; cy: number; fx: number; fy: number; vx: number; vy: number } | null>(null);
   const [callMsg, setCallMsg] = useState<string | null>(null);
   const callMsgTimerRef = useRef<number | null>(null);
@@ -5070,7 +5114,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     // "After you pass: Joystick" (lib/star/afterPass.ts): the stick, bottom-left,
     // in the match's own picture (the same stick the top-down dribble draws).
-    if (phaseRef.current === "flight" && playOnRef.current?.stick) {
+    if (phaseRef.current === "flight" && playOnRef.current?.stick && !playOnRef.current.stick.auto) {
       const st = poStickUiRef.current;
       const rr = Math.min(W, H) * 0.13;
       // Resting above the commentary box, which covers the bottom of the pitch.
@@ -5623,7 +5667,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const po = playOnRef.current;
         if (!po) return null;
         const s = po.stick;
-        return { stick: !!s, layOffLive: po.layOffLive, choice: s?.choice ?? null, push: s ? { ...s.push } : null, you: { ...scenarioRef.current.player }, youOnScreen: pitchToClient(scenarioRef.current.player) };
+        return {
+          stick: !!s, layOffLive: po.layOffLive, choice: s?.choice ?? null, push: s ? { ...s.push } : null, you: { ...scenarioRef.current.player }, youOnScreen: pitchToClient(scenarioRef.current.player),
+          // B14: the run's legs (lib/star/legs.ts) and whether Auto run is steering.
+          auto: !!s?.autoOn, thumb: !!s && !s.auto,
+          legs: s?.legs ? { bar: s.legs.stamina.v, cap: s.legs.cap, sprinting: s.legs.sprinting, speed: Math.hypot(s.legs.vel.x, s.legs.vel.y) } : null,
+          energy: energyRef.current,
+        };
       },
       ball: () => pitchToClient(ballRef.current ? ballRef.current.pos : scenarioRef.current.ball),
       // show a banner word now, as the match would (banner stills)
@@ -6075,6 +6125,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           steps = Math.floor(physAccRef.current * 180 + 1e-6);
           physAccRef.current = Math.max(0, physAccRef.current - steps / 180);
         }
+        // B14: W A S D / arrows + Shift steer your run (PC), turned into a pitch
+        // direction through the match's own camera, once a frame.
+        applyRunKeys();
         for (let i = 0; i < steps; i++) {
           const recorded = replaySubstepsRef.current;
           let h: number;
@@ -6128,7 +6181,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const po = playOnRef.current;
           if (po && !touchLive) {
             const wasLive = po.layOffLive;
-            if (stepPlayOn(po, scenarioRef.current, ballRef.current, h, playOnRngRef.current, layOffsLeftRef.current) === "caught") {
+            const caughtIt = stepPlayOn(po, scenarioRef.current, ballRef.current, h, playOnRngRef.current, layOffsLeftRef.current) === "caught";
+            noteRunStep(po);
+            if (caughtIt) {
               playOnCaughtRef.current = true;
               resolveOutcome("delivered");
               break;
@@ -8162,9 +8217,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // not just a different position fed into the same rebuild.
     const isTouchContinuation = chain !== null && chain.touchTouches !== undefined;
     // A new picture starts a new move (playOn.ts); a re-touch / a lay-off taken back is the same move.
+    // B14: the same move keeps the stamina bar as your run left it; a new
+    // chance comes a minute or more later, with your breath back (up to your energy).
+    const legsWas = playOnRef.current?.stick?.legs;
+    barRef.current = isTouchContinuation && legsWas ? legsWas.stamina.v : 1;
     playOnRef.current = null;
     poStickUiRef.current = null;
     setStickLive(false);
+    setRunLive(false);
+    {
+      const cap = barCap(liveEnergyAt(matchMinuteRef.current));
+      setStamUi({ v: Math.min(barRef.current, cap), cap, sprint: false, auto: false });
+    }
     if (!isTouchContinuation) { leadPlayedRef.current = false; layOffsLeftRef.current = MAX_LAY_OFFS; }
     const carry = chain && !isTouchContinuation ? carryOnRef.current : null;
     carryOnRef.current = null;
@@ -8533,6 +8597,45 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     steerPlayOn(po, pl > 1e-6 ? (pvx / pl) * mag : 0, pl > 1e-6 ? (pvy / pl) * mag : 0);
     return true;
   };
+  /**
+   * B14: W A S D (or the arrows) steer your run, Shift sprints. Up the keys is
+   * up the screen, turned into a pitch direction through the match's camera,
+   * as the thumb stick is. Let go: Auto run takes over again (playOn.ts
+   * AUTO_AFTER_S); on "Joystick" you stand, as with the thumb off.
+   */
+  const applyRunKeys = () => {
+    const po = playOnRef.current, c = canvasRef.current;
+    if (!po?.stick || !c) return;
+    const k = keysRef.current;
+    sprintPlayOn(po, k.sprint);
+    const d = keysScreenDir(k);
+    if (d.x === 0 && d.y === 0) {
+      if (keysSteeringRef.current) { keysSteeringRef.current = false; if (!poStickUiRef.current) steerPlayOn(po, 0, 0); }
+      return;
+    }
+    keysSteeringRef.current = true;
+    const r = c.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const a = pitchFromPointer(cx, cy), b = pitchFromPointer(cx + d.x * 40, cy + d.y * 40);
+    const pvx = b.x - a.x, pvy = b.y - a.y, pl = Math.hypot(pvx, pvy);
+    if (pl > 1e-6) steerPlayOn(po, (pvx / pl) * KEY_PUSH, (pvy / pl) * KEY_PUSH);
+  };
+  /** B14: after each substep of the run, sprinting's cost comes off your match energy, and the bar on screen follows (10 a second). */
+  const noteRunStep = (po: PlayOn) => {
+    const legs = po.stick?.legs;
+    if (!legs) return;
+    const spent = takeEnergySpent(legs);
+    if (spent > 0 && !hookedRef.current && !farewellRef.current) {
+      energyRef.current = clampEnergy(energyRef.current - spent);
+    }
+    const now = performance.now();
+    if (now - stamUiAtRef.current > 100) {
+      stamUiAtRef.current = now;
+      setLegsEnergy(legs, liveEnergyAt(matchMinuteRef.current));
+      setStamUi({ v: legs.stamina.v, cap: legs.cap, sprint: legs.sprinting, auto: !!po.stick?.autoOn });
+      setLiveEnergy(energyRef.current);
+    }
+  };
   /** Captain's "Call for it" (playOn.ts callForIt). */
   const onCallForIt = () => {
     const po = playOnRef.current;
@@ -8565,7 +8668,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       return;
     }
-    if (phaseRef.current === "flight" && playOnRef.current?.stick && poStickInput("down", e)) return;
+    if (phaseRef.current === "flight" && playOnRef.current?.stick && !playOnRef.current.stick.auto && poStickInput("down", e)) return;
     if (phaseRef.current === "flight") {
       if (!canCurve) return;
       curveSwipeStartRef.current = { x: e.clientX, y: e.clientY };
@@ -9088,40 +9191,38 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (touchModeOnRef.current && canExtraTouch && !auto) {
       scenarioRef.current.player = { x: ballRef.current.pos.x, y: ballRef.current.pos.y };
     }
-    // ── Your pass plays on (lib/star/playOn.ts; Chances: New only) ──
-    // After a build-up, a pass (not a shot) is one move: you make a run, the
-    // man who takes it shoots or lays it back into your run, and nothing cuts
-    // until the move is over. Its own seeded stream, so the match's is unchanged.
+    // ── B14 THE RUN: your pass plays on (lib/star/playOn.ts startPlayOnRun) ──
+    // Any pass in open play with a goal in the picture (not a shot, not a set
+    // piece) is one move, whatever the Chances setting: you run on (Auto run,
+    // or W A S D + Shift on a computer, or the thumb stick on "After you pass:
+    // Joystick"), the man who takes it shoots or plays it back to you, and
+    // nothing cuts until the move is over. Its own seeded stream, so the
+    // match's is unchanged.
     playOnRef.current = null;
     playOnCaughtRef.current = false;
+    setRunLive(false);
     {
       const sc = scenarioRef.current;
       // The joystick's calmer tempo (playOn.ts stickReception) belongs to one
-      // pass; startPlayOnStick below sets it again when this kick earns it.
+      // pass; startPlayOnRun below sets it again when this kick earns it.
       delete sc.matePace;
       const touchOn = touchModeOnRef.current && canExtraTouch;
-      // "After you pass: Joystick" (lib/star/afterPass.ts): any pass in a chance
-      // with a goal in it gives you the stick (no build-up needed). Auto run
-      // takes the branch below, exactly as before.
-      if (!touchOn && !shootoutKickRef.current && afterPassStickOn() && playOnStickWanted({
-        newChances: newChancesOn(), stick: true,
+      if (!touchOn && !shootoutKickRef.current && runAfterWanted({
         kind: sc.kind, youShotAtGoal: ballRef.current.youStruckAtGoal === true, auto: !!auto,
       })) {
         playOnRngRef.current = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x61a7) >>> 0);
         const bl = ballRef.current;
+        const stick = afterPassStickOn();
         // You are where you struck it (not the stand-off you lined it up from).
         sc.player = { x: bl.pos.x, y: bl.pos.y };
-        playOnRef.current = startPlayOnStick(sc, playOnRngRef.current, { x: bl.pos.x + bl.vel.x * 0.8, y: bl.pos.y + bl.vel.y * 0.8 });
+        const car = careerRef.current;
+        playOnRef.current = startPlayOnRun(sc, playOnRngRef.current, { x: bl.pos.x + bl.vel.x * 0.8, y: bl.pos.y + bl.vel.y * 0.8 }, {
+          stick, pace: car?.skills.pace, energy: liveEnergyAt(matchMinuteRef.current), bar: barRef.current,
+        });
         poStickUiRef.current = null;
-        setStickLive(true);
-      } else if (!touchOn && !shootoutKickRef.current && playOnWanted({
-        newChances: newChancesOn(),
-        hadBuildUp: leadPlayedRef.current || PASS_BUILD_UP_KINDS.has(sc.kind),
-        kind: sc.kind, youShotAtGoal: ballRef.current.youStruckAtGoal === true, auto: !!auto,
-      })) {
-        playOnRngRef.current = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x61a7) >>> 0);
-        const bl = ballRef.current;
-        playOnRef.current = startPlayOn(sc, playOnRngRef.current, { x: bl.pos.x + bl.vel.x * 0.8, y: bl.pos.y + bl.vel.y * 0.8 });
+        keysSteeringRef.current = false;
+        setStickLive(stick);
+        setRunLive(true);
       }
     }
     setPhase("flight");
@@ -9441,7 +9542,32 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         )}
 
         {/* "After you pass: Joystick" — the captain's call (playOn.ts callForIt). */}
-        {phase === "flight" && callForItShown({ captain: isCaptain, stickLive, layOffLive: false }) && (
+        {/* B14: the stamina bar (lib/star/legs.ts). Fills to your energy at most
+            (the dim part past the line is energy you no longer have); drains as
+            you sprint, refills as you ease off. Top-left, never on the ball. */}
+        {stamUi && !leadInOn && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
+          <div
+            data-stamina={stamUi.v.toFixed(2)}
+            data-stamina-cap={stamUi.cap.toFixed(2)}
+            className={`pointer-events-none absolute left-2 z-30 rounded-md bg-black/60 px-1.5 py-1 ${ADDED > 0 && matchMinute > MATCH_DURATION ? "top-9" : "top-2"}`}
+          >
+            <div className="flex items-center justify-between gap-2 text-[9px] font-black uppercase tracking-wider leading-none text-white">
+              <span>Stamina</span>
+              {runLive && <span className={stamUi.sprint ? "text-amber-300" : "text-white/80"}>{stamUi.sprint ? "Sprint" : stamUi.auto ? "Auto run" : "Run"}</span>}
+            </div>
+            <div className="relative mt-1 h-2 w-[104px] overflow-hidden rounded-sm bg-white/15">
+              <div className="absolute inset-y-0 right-0 bg-black/55" style={{ width: `${(1 - stamUi.cap) * 100}%`, backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 2px, transparent 2px 5px)" }} />
+              <div
+                className={`absolute inset-y-0 left-0 ${stamUi.v < 0.25 ? "bg-red-500" : stamUi.v < 0.5 ? "bg-amber-400" : "bg-emerald-400"}`}
+                style={{ width: `${stamUi.v * 100}%`, transition: "width 100ms linear" }}
+              />
+            </div>
+            {runLive && pcKeys && (
+              <div className="mt-1 text-[9px] font-bold leading-none text-white/85">W A S D move · Shift sprint</div>
+            )}
+          </div>
+        )}
+        {phase === "flight" && callForItShown({ captain: isCaptain, stickLive: runLive, layOffLive: false }) && (
           <button
             type="button"
             data-call-for-it
