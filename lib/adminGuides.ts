@@ -850,7 +850,7 @@ export const ADMIN_GUIDES = {
       { group: "Side menu (Team area)", items: [
         ["Team (first line, lit)", "The Team area, the admin's home. It is the first line of the side menu on every admin page. These all open here, on the Team board: Admin in the site's top menu, Settings → Developer → Admin pages, Admin & Dev · Team in the admin slide-out, the KIB Admin home-screen app, and ← on a game's home."],
         ["Team board / Team chat / Ideas / My to-do / Patch notes", "The Team area's views, under Team. Each switches in place, the one you are on lit. A red number = something new for you there; amber = a new job given to you."],
-        ["Games: Ballon d'Or / Website / Studio", "Each game's home (its groups and pages). The game tabs across the top do the same; in the Team area none of them is lit."],
+        ["Games: Ballon d'Or / Website / Studio / Marketing", "Each game's home (its groups and pages). The game tabs across the top do the same; in the Team area none of them is lit. Marketing (our videos) shows for Harry, Mikey and Leo only, never for testers."],
         ["Videos", "How to hand Claude a screen recording."],
         ["← (top left)", "Back to the site. The Team area is the top of the admin: a game's home goes back to here."],
         ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again. On a phone the menu is ☰ Menu, Team first."],
@@ -2400,6 +2400,50 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing — sample data only."],
     inGame: ["Not used by the real game until someone decides to make it official."],
     dev: "app/draft/preview/page.tsx · components/draft/preview/*",
+  },
+
+  "/admin/marketing": {
+    title: "Production board",
+    what: "The Marketing tab's home: every Knowitball video as a card, in the column for the step it is at (Idea → Script → Script OK → Making → In edit → Final check → Posted). Admins only.",
+    buttons: [
+      { group: "Top of the page", items: [
+        ["Marketing (game tab across the top)", "This area. Only Harry, Mikey and Leo see the tab; testers never do."],
+        ["Board | Client", "Switch between this board and the Knowitball client page."],
+        ["Calendar / Suite / Uploads / Scripts (Soon)", "Not built yet. They come in later slices of the plan; they do nothing when tapped."],
+        ["↻ Check now", "Reads the board again straight away. It also reads by itself about once a minute."],
+      ] },
+      { group: "The board", items: [
+        ["All · Idea · Script · Script OK · Making · In edit · Final check · Posted", "Show every column, or one. The number is how many videos are in it. On a phone an empty column is one thin line."],
+        ["A card", "One video: its cover, title, step, who is making it, the day it goes (or went) out, its length and one line about it."],
+        ["Script ↗ / Cover ↗ / Video ↗", "Open that file on GitHub, on the branch the card came from."],
+        ["What happened (N)", "Opens the card's short log: one line per step, newest last."],
+      ] },
+    ],
+    saving: [
+      "Nothing is saved from this page. You cannot move a card here yet.",
+      "The cards live in the code, in one file (marketing/board.json). A Claude chat moves a card by changing that file and pushing its own branch (the video-board skill). The board reads main and Harry's, Mikey's and Leo's branches from GitHub about once a minute, so a pushed change shows within a minute or two, with no deploy and no database. Two branches with the same card: the newest change wins.",
+      "If GitHub can't be reached, the board shows the copy built into the site and says so at the top.",
+    ],
+    inGame: ["Nowhere. This is for making our own videos."],
+    dev: "app/admin/marketing/page.tsx · components/admin/marketing/{ProductionBoard,MarketingTabs}.tsx · lib/marketing/board.ts (pure; tests/star/adminMarketing.mts) · /api/admin/marketing/board · marketing/board.json · .claude/skills/video-board/SKILL.md · leak guard: scripts/marketing/private-names-guard.mjs",
+  },
+  "/admin/marketing/client": {
+    title: "Knowitball client",
+    what: "Knowitball set up as a client, the way a video studio keeps a client: who we are, our voice, audience, rules, brand, what each video taught us, and our best scripts. Admins only.",
+    buttons: [
+      { group: "On this page", items: [
+        ["Board | Client", "Switch between the production board and this page."],
+        ["The record file ↗", "Opens the client record on GitHub."],
+        ["A grey code (e.g. RUL-KIB-001)", "The Brain note each line comes from. Quote it when you want something changed."],
+        ["To confirm (amber)", "A note still waiting for Harry's yes (for now: the audience)."],
+      ] },
+    ],
+    saving: [
+      "Nothing is saved from this page. It only reads.",
+      "The words come from Brain notes with the tag client-kib, listed in one short file (marketing/clients/knowitball/client.md). To change a line, a Claude chat writes a new Brain note, marks the old one superseded, rebuilds the Brain index and swaps the code in the file. It shows here after the next deploy.",
+    ],
+    inGame: ["Nowhere. It guides how our videos are written and made."],
+    dev: "app/admin/marketing/client/page.tsx · lib/marketing/clientRecord.ts (pure parts tested in tests/star/adminMarketing.mts) · marketing/clients/knowitball/client.md · brain/*/{FACT,RUL,REF}-KIB-*.md · next.config.mjs traces those files for Vercel",
   },
 
 } satisfies Record<string, AdminGuide>;
