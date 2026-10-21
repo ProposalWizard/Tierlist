@@ -190,3 +190,4 @@ D1 replace match flow Old/New with the new formula, no toggle: yes. D2 long shot
 - "This should be its own whole tab on admin or a completely different app. Marketing and production."
 - Wants: production calendars; a team board again but for videos, with a new creation skill that keeps it updated as videos are made; videos uploading straight into it.
 - Plan first (RUL-TEAM-009): docs/plans/2026-10-21-marketing-production.md.
+- 1 (where it lives): "let's have it as a tab instead". By "new app" he meant the way admin is its own section with its own Add to Home Screen button; the tab works.
