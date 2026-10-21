@@ -351,25 +351,25 @@ def data19():
         note='2,104 matches in all, every source free to use in a paid game. Afriskaut was removed on 20 Oct (see the B3 page).')
     add = section('add', 'ADDED', [
         item('2,104 real matches, all free to use in a paid game', [tag('meas')], [
-            ('Problem', 'The real-football pages used StatsBomb data, and its licence does not allow a paid game.'),
+            ('Problem', 'The real-football pages used licensed data, and its licence does not allow a paid game.'),
             ('Why', 'A paid game needs data whose licence allows it.'),
             ('Fix', 'Four free-licence sources were reduced to pattern files the game can read. Each needs a credit line shown in the game (done on 20 Oct, in Settings, see B3).')],
             sources),
         item('Real moments, rebuilt on free data', [tag('seen'), tag('meas')], [
-            ('Problem', 'The page used StatsBomb data.'),
+            ('Problem', 'The page used licensed data.'),
             ('Why', 'Same licence problem.'),
             ('Fix', '<b>702 fully real moments</b> (581 shots and 121 corners), with all 22 players where they really stood. One Play button instead of one on every row (you kept it: A-6).')],
             p.figs([f('rm-play.jpg', '<b>Look at:</b> a real moment playing: the real strike with every player in their real place.'),
                     f('real-moments-after-phone-360.jpg', '<b>Look at:</b> the page on a phone: a moments list, a search box, one big Play.')])),
         item('Real shots, rebuilt on free data', [tag('seen'), tag('meas')], [
-            ('Problem', 'The page used StatsBomb data.'),
+            ('Problem', 'The page used licensed data.'),
             ('Why', 'Same licence problem.'),
             ('Fix', '<b>2,875 real shots</b> (2018 World Cup and Euro 2016). The strike and the result are real. The defenders are placed by our own rules. Each picture says which kind it is.')],
             p.figs([f('rs-map.jpg', '<b>Look at:</b> the shot map. You called it &ldquo;pretty cool&rdquo;.', 'wd')], wide=True)),
         item('Real Goals, rebuilt on free data', [tag('seen'), tag('meas')], [
-            ('Problem', 'The page used StatsBomb data.'),
+            ('Problem', 'The page used licensed data.'),
             ('Why', 'Same licence problem.'),
-            ('Fix', '<b>232 levels.</b> Every StatsBomb file is deleted from the repo.')],
+            ('Fix', '<b>232 levels.</b> Every file of the licensed data is deleted from the repo.')],
             p.figs([f('rg-levels.jpg', '<b>Look at:</b> the level map.'),
                     f('real-goals-after-phone-360.jpg', '<b>Look at:</b> the page on a phone.')])),
     ])
@@ -381,7 +381,7 @@ def data19():
         '<p><b>Real moments.</b> 702 (581 shots, 121 corners). <b>Real shots.</b> 2,875. <b>Real Goals.</b> 232 levels.</p>')
     return p, dict(
         key='a19data', ver='0.64', title='Free Data v1', pill='19 OCT · FREE DATA',
-        headline='2,104 real matches, all free to use in a paid game. Real moments, Real shots and Real Goals now run on them. StatsBomb is deleted.',
+        headline='2,104 real matches, all free to use in a paid game. Real moments, Real shots and Real Goals now run on them. The licensed data is deleted.',
         sub='19 Oct 2026. The 20 Oct follow-up is on the B3 page.',
         status=MAIN,
         footer=FOOT19,
@@ -389,7 +389,7 @@ def data19():
             ('Real moments', 'Tap a moment, then Play. One Play button is enough.'),
             ('Real shots', 'The shot map shows 2,875 shots. Each picture says whether it is a real strike with our own defenders.'),
             ('Real Goals', 'The level map shows 232 levels.'),
-            ('StatsBomb', 'No StatsBomb file is left in the repo.')],
+            ('Licensed data', 'No file of the licensed data is left in the repo.')],
         sections=[add, nxt], numbers=numbers,
         videos_coming=False,
         videos='<b>No clip is planned.</b><p>Stills show the pages. Say if you want one.</p>',

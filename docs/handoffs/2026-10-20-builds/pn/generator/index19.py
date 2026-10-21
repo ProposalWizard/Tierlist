@@ -21,7 +21,7 @@ PAGES = {
  'a19team':  ('Team Room v1', '0.60h', 'A chat bubble on every admin page, an Ideas board, Team chat and a To-do list.', 'd19'),
  'a19drift': ('Drift + Play Screens', '0.62h', 'Eight screens now draw the pitch at the real match&rsquo;s size, play buttons stay on screen, and the engine warning is red.', 'd19'),
  'a19fhr':   ('Highlights Rebuild 0-2', '0.63h', 'The switch, the match-camera still, and generated build-ups before open-play chances.', 'd19'),
- 'a19data':  ('Free Data v1', '0.64', '2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. StatsBomb deleted.', 'd19'),
+ 'a19data':  ('Free Data v1', '0.64', '2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. The licensed data deleted.', 'd19'),
  'a19scene': ('Scene Editor 3a', '0.61h', 'The 3D Signing and Office edit live in the scene editor. Also: how generated cut scenes work, and the 3D audit.', 'd19'),
 }
 ORDER_NIGHT = ['b1', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b11', 'b12', 'b7b', 'b13', 'b15', 'b9b', 'b16']
