@@ -71,6 +71,16 @@ function closeWindow(t: GoalTrack): { from: number; to: number } {
   return { from: Math.max(0, Math.min(t.strikeT - 0.35, t.goalT - 0.8)), to: Math.min(dur, t.goalT + 0.45) };
 }
 
+/** A goal headed or volleyed in: its close replay runs this slow (headers piece 5,
+ *  21 Oct 2026: "slow-motion for the 0.3 s before contact … replay in the goal video"). */
+export const AIR_REPLAY_RATE = 0.3;
+
+/** Was the goal's last strike a header or a volley (the recorded strike's own mode)? */
+export function airFinish(t: GoalTrack): boolean {
+  const strike = t.events.filter((e) => e.kind === "shot" && e.t <= t.goalT + 0.05).pop();
+  return strike?.mode === "header" || strike?.mode === "volley";
+}
+
 const replay = (track: number, angle: ClipAngle, w: { from: number; to: number }, rate: number, caption?: string): Shot =>
   ({ track, angle, from: w.from, to: w.to, rate, replay: true, ...(caption ? { caption } : {}) });
 
@@ -122,6 +132,8 @@ export function makeEdit(tracks: GoalTrack[], style: ClipStyle, moves: ClipMoves
     [replay(last, "side", replayWindow(lt), 0.4), replay(last, "net", closeWindow(lt), 0.55)],
     [replay(last, "high", replayWindow(lt), 0.5), replay(last, "net", closeWindow(lt), 0.4)],
   ][v % 3];
+  // A header or a volley: the close replay (the contact and the finish) slower still.
+  if (airFinish(lt)) plan[1] = { ...plan[1], rate: Math.min(plan[1].rate, AIR_REPLAY_RATE) };
   // A reel keeps to one replay, so it stays short.
   shots.push(...(reel ? plan.slice(0, 1) : plan));
   return base;

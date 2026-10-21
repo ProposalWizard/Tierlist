@@ -35,6 +35,7 @@ import { mulberry32, standInResult, RULER_INPUTS } from "../../lib/star/fhr/rule
 import { careerBuildUp } from "../../lib/star/leadInGen";
 import { leadInEntities } from "../../lib/star/leadIn";
 import { DATA_CREDITS } from "../../lib/star/dataCredits";
+import { isAirKind, airWaitZ, type AirHeighted } from "../../lib/star/airDrawings";
 import type { ScenarioKind } from "../../lib/star/canvasEngine";
 
 let failed = 0;
@@ -186,13 +187,13 @@ console.log("\n5. THE REAL BUILD-UP");
   const rng = mulberry32(21);
   let n = 0, exact = 0, ballEnd = 0, viaCareer = 0, notFresh = 0;
   for (let i = 0; i < 40; i++) {
-    const s = serveRealMoment(REAL_MOMENT_KINDS[i % 3], rng, { force: true });
+    const s = serveRealMoment(REAL_MOMENT_KINDS[i % REAL_MOMENT_KINDS.length], rng, { force: true });
     if (!s) continue;
     n++;
     const moment = { opening: false, fresh: true, seed: i };
     const lead = realMomentLeadIn(s.sc, moment);
     if (lead && leadInEntities(s.sc).every((e) => { const p = lead.posAt(e.key, lead.durS); return !p || d(p, e.get()) < 1e-6; })) exact++;
-    if (lead) { const b = lead.ballAt(lead.durS); if (d(b, s.sc.ball) < 1e-6 && b.z === 0) ballEnd++; }
+    if (lead) { const b = lead.ballAt(lead.durS); const wantZ = isAirKind(s.sc.kind) ? airWaitZ(s.sc.kind, 0, s.sc as typeof s.sc & AirHeighted) : 0; if (d(b, s.sc.ball) < 1e-6 && Math.abs(b.z - wantZ) < 1e-9) ballEnd++; }
     if (careerBuildUp(s.sc, moment)?.durS === lead?.durS && lead?.skippable) viaCareer++;
     if (!realMomentLeadIn(s.sc, { ...moment, fresh: false })) notFresh++;
   }

@@ -67,7 +67,7 @@ export function airborneMotion(kind: string, seed: number): BallMotion {
 export interface AirStrike { kind: "header" | "volley"; lift: number; cx?: number; cy?: number; tech?: number }
 export type StrikeContact = Contact & { air?: AirStrike };
 
-import { HEADER_Z, VOLLEY_MAX_Z } from "./airDrawings";
+import { HEADER_Z, VOLLEY_MAX_Z, airZOf } from "./airDrawings";
 export { HEADER_Z, VOLLEY_MAX_Z };
 const HEADER_PACE = 0.72;          // a header is softer than a strike
 const VOLLEY_PACE = 1.06;          // a clean volley comes off hot
@@ -158,8 +158,12 @@ export function applyAirborne(ball: Ball, scenario: Scenario, air: AirStrike | u
   if (!air) return ball;
   const lift = Math.max(0, Math.min(1, air.lift));
   const read = airContactRead(air);
+  // This chance's own height (airDrawings.ts airZOf: the kind's usual height
+  // unless the chance carries its own); the airborne test switch's header on
+  // another kind of chance keeps the usual one.
+  const top = scenario.kind === air.kind ? airZOf(scenario) : air.kind === "header" ? HEADER_Z : VOLLEY_MAX_Z;
   if (air.kind === "header") {
-    ball.z = HEADER_Z * (0.85 + 0.15 * lift);
+    ball.z = top * (0.85 + 0.15 * lift);
     ball.vel = { x: ball.vel.x * HEADER_PACE, y: ball.vel.y * HEADER_PACE };
     // Nodded down: whatever lift the contact gave is mostly taken away.
     ball.vz = Math.max(-4, Math.min(2.5, ball.vz * 0.35 - 1.2));
@@ -167,7 +171,7 @@ export function applyAirborne(ball: Ball, scenario: Scenario, air: AirStrike | u
     ball.topspin = 0;
     offLine(ball, read);
   } else {
-    ball.z = Math.max(0.15, VOLLEY_MAX_Z * lift);
+    ball.z = Math.max(0.15, top * lift);
     ball.vel = { x: ball.vel.x * VOLLEY_PACE, y: ball.vel.y * VOLLEY_PACE };
     // The height it starts at is taken back over the flight, so a volley
     // struck through the middle arrives about where the same shot off the

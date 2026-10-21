@@ -75,6 +75,9 @@ export interface RealShot extends MomentBase {
   end: XY | null;
   /** Its height crossing the line (m), when known. */
   endZ?: number | null;
+  /** The ball's height when it was struck (m): tracking with a ball height only
+   *  (DFL, SkillCorner). Decides a real header or volley (shots.ts airKindOf). */
+  z?: number | null;
   /** A counter-attack (as the source tags it). */
   counter?: 1;
   /** The real passes before it (Wyscout). */

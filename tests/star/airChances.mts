@@ -16,7 +16,7 @@
  *  6. A better finisher scores more of both.
  */
 import { playPool, authoredPool, setLiveScenarioPool, ruleSetFor } from "../../lib/star/authoredChance";
-import { derivedAirDrawings, airWaitZ, arriveZ, AIR_DEPTH, BALL_CLEAR_M, HEADER_Z, VOLLEY_MAX_Z, CROSSER_IN_M } from "../../lib/star/airDrawings";
+import { derivedAirDrawings, airWaitZ, airZOf, headerZFromSpread, AIR_HEIGHT_VARIES, type AirHeighted, AIR_DEPTH, BALL_CLEAR_M, HEADER_Z, VOLLEY_MAX_Z, CROSSER_IN_M } from "../../lib/star/airDrawings";
 import { airContactRead, applyAirborne, VOLLEY_SWEET } from "../../lib/star/airborneChance";
 import { makeChance } from "../../lib/star/chanceMaker";
 import { fhrBuildUpFor, fhrWantsBuildUp } from "../../lib/star/fhr/buildUp";
@@ -93,9 +93,9 @@ console.log("\n3. THE BUILD-UP LOFTS IT TO YOU (Full highlights rebuild On)");
     // B2b: a run caught offside on the way ends the move with the flag (no cross, no chance).
     if (b.offside) { flagged++; ok(b.whistleAt === b.offside.at, `${c.sc.kind}: flagged offside without its whistle`); continue; }
     const last = b.acts[b.acts.length - 1];
-    if (last.type === "pass" && last.h >= 3 && last.endZ === arriveZ(c.sc.kind)) lofted++;
+    if (last.type === "pass" && last.h >= 3 && Math.abs(last.endZ - airZOf(c.sc as typeof c.sc & AirHeighted)) < 1e-9) lofted++;
     if (b.actOwners[b.acts.length - 1] === "mate0") byCrosser++;
-    if (b.ballAt(b.durS).z === arriveZ(c.sc.kind) && b.ballAt(last.t0 + (last.t1 - last.t0) / 2).z > 2) arrives++;
+    if (Math.abs(b.ballAt(b.durS).z - airZOf(c.sc as typeof c.sc & AirHeighted)) < 1e-9 && b.ballAt(last.t0 + (last.t1 - last.t0) / 2).z > 2) arrives++;
     if (!b.problems.length) clean++;
   }
   const n = pool.length - flagged;
@@ -143,6 +143,14 @@ console.log("\n5. THE BALL WHILE YOU AIM");
   ok(hMin > HEADER_Z - 0.1 && hMax < HEADER_Z + 0.1, `a header hangs at your head (${hMin.toFixed(2)}–${hMax.toFixed(2)} m)`);
   ok(vMin < 0.02 && vMax > VOLLEY_MAX_Z - 0.02, `a volley bounces from the grass to the top of its bounce (${vMin.toFixed(2)}–${vMax.toFixed(2)} m)`);
   ok(airWaitZ("volley", 0) === VOLLEY_MAX_Z && airWaitZ("one_on_one", 1) === 0, "a volley starts at the top of the bounce (where the cross arrives); other kinds stay on the grass");
+  // Headers piece 4: a chance with its own height hangs there (when the heights vary), else at the usual one.
+  const own = { kind: "header", airZ: 2.4 };
+  const want = AIR_HEIGHT_VARIES ? 2.4 : HEADER_Z;
+  ok(Math.abs(airWaitZ("header", 0, own) - want) < 1e-9 && Math.abs(airZOf(own) - want) < 1e-9, `a header chance with its own height hangs at it (${want} m)`);
+  ok(airZOf({ kind: "header", airZ: 3.9 }) <= 2.6 + 1e-9 && airZOf({ kind: "header", airZ: 0.5 }) >= (AIR_HEIGHT_VARIES ? 1.5 : HEADER_Z) - 1e-9, "a header's own height stays between 1.5 and 2.6 m");
+  const zs = Array.from({ length: 2000 }, (_, i) => headerZFromSpread(i * 7919 + 3)).sort((a, b) => a - b);
+  const q = (f: number) => zs[Math.floor(f * (zs.length - 1))];
+  ok(q(0) >= 1.5 && q(1) <= 2.6 && Math.abs(q(0.5) - 2.1) < 0.1, `a drawn header's height follows the real spread (1.5–2.6 m, median ${q(0.5)})`);
 }
 
 console.log("\n6. A BETTER FINISHER SCORES MORE");
