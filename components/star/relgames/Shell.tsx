@@ -7,6 +7,7 @@
  */
 import type React from "react";
 import { FlatPanel, SquareBar, PressButton } from "../ui";
+import BackButton from "../ui/BackButton";
 
 export interface GameResult {
   won: boolean;
@@ -27,7 +28,7 @@ export function GameShell({ title, who, current, tone, onBack, children }: {
     <div className="min-h-screen bg-[#0b1220] px-3 pb-6 pt-3 text-white" data-relgame={title}>
       <div className="mx-auto w-full max-w-sm">
         <div className="mb-3 flex items-center gap-2">
-          {onBack && <button onClick={onBack} className="kib-press rounded px-3 py-2 text-[13px] font-black uppercase ring-1 ring-white/25">← Back</button>}
+          {onBack && <BackButton onClick={onBack} />}
           <div className="min-w-0 flex-1 text-right">
             <div className="text-[18px] font-black uppercase leading-none tracking-wide" style={{ color: tone }}>{title}</div>
           </div>

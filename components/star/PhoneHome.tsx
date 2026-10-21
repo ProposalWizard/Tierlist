@@ -76,7 +76,7 @@ const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const appOf = (id: AppId) => (id === "appstore" ? APP_STORE_ICON : APPS.find((a) => a.id === id)!);
 
-export default function PhoneHome({ career, onToggleLike, onLeave, onClose, installed, onInstall }: {
+export default function PhoneHome({ career, onToggleLike, onLeave, onClose, installed, onInstall, isNew, onOpened }: {
   career: CareerState;
   onToggleLike?: (postId: string) => void;
   onLeave: (ph: Leave) => void;
@@ -86,6 +86,11 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
   /** Unlock chain: which apps are on the phone yet. Absent = all of them. */
   installed?: (id: string) => boolean;
   onInstall?: (id: string) => void;
+  /** An app just added to the phone, not opened yet: it wears "NEW"
+   *  (lib/star/unlocks.ts appIsNew; navigation round 1). */
+  isNew?: (id: string) => boolean;
+  /** An app was opened: its "NEW" goes. */
+  onOpened?: (id: string) => void;
 }) {
   const theme = useClubTheme(career);
   const [app, setApp] = useState<AppId | null>(null);
@@ -143,6 +148,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
   };
 
   const open = (id: AppId | Leave, from?: HTMLElement | null) => {
+    if (isNew?.(id)) onOpened?.(id);
     if (!INSIDE.has(id)) return onLeave(id as Leave);
     markSeen(id as AppId);
     // An app opens on the tap's own frame: no zoom out of the icon (Harry,
@@ -159,7 +165,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
             onBack={app !== null ? goHome : onClose} backLabel={app !== null ? "Back to home screen" : "Close phone"}
             onHome={app !== null ? goHome : undefined}>
             <div ref={screenRef} className="relative flex min-h-0 flex-1 flex-col">
-              {app === null && <Grid career={career} glow={theme.glow} badges={badges} onOpen={open} onClose={onClose} installed={installed} />}
+              {app === null && <Grid career={career} glow={theme.glow} badges={badges} onOpen={open} onClose={onClose} installed={installed} isNew={isNew} />}
               {app !== null && (
                 <div
                   key={app}
@@ -194,8 +200,10 @@ function wallpaper(glow: string, trim: string): React.CSSProperties {
   };
 }
 
-function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true, off = false }: {
+function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true, off = false, fresh = false }: {
   app: App; size?: number; badge?: number; index?: number; label?: boolean;
+  /** Just arrived on the phone and never opened: a "NEW" tag. */
+  fresh?: boolean;
   /** An app you do not have yet: a blacked-out shape, like New Star Soccer's
    *  empty slots (Harry, P90). Tapping it opens the App Store. */
   off?: boolean;
@@ -225,17 +233,21 @@ function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true, o
         <span aria-hidden className="pointer-events-none absolute inset-x-[6%] top-[4%] h-[46%] rounded-t-[40%] bg-gradient-to-b from-white/35 to-transparent" />
         <span className="relative" style={{ filter: "drop-shadow(0 2px 2px rgba(0,0,0,.35))" }}>{app.icon}</span>
         <Badge count={badge} />
+        {fresh && badge === 0 && (
+          <span data-app-new className="absolute -right-1.5 -top-1.5 rounded-full bg-amber-400 px-1.5 py-[2px] text-[8.5px] font-black uppercase leading-none tracking-wide text-gray-950 ring-2 ring-black/40">New</span>
+        )}
       </span>
       {label && <span className="w-full truncate text-center text-[9.5px] font-bold text-white" style={{ textShadow: "0 1px 3px rgba(0,0,0,.9)" }}>{app.label}</span>}
     </button>
   );
 }
 
-function Grid({ career, glow, badges, onOpen, onClose, installed }: {
+function Grid({ career, glow, badges, onOpen, onClose, installed, isNew }: {
   career: CareerState; glow: string; badges: Partial<Record<AppId, number>>;
   onOpen: (id: AppId | Leave, from?: HTMLElement | null) => void;
   onClose?: () => void;
   installed?: (id: string) => boolean;
+  isNew?: (id: string) => boolean;
 }) {
   const next = nextFixtureFor(career);
   // A new career's phone shows every app, the ones it does not have yet
@@ -255,7 +267,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed }: {
       )}
       <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-2.5">
         {grid.map((a, i) => (
-          <AppIcon key={a.id} app={a} index={i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} off={!!installed && a.id !== "appstore" && !installed(a.id)} />
+          <AppIcon key={a.id} app={a} index={i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} off={!!installed && a.id !== "appstore" && !installed(a.id)} fresh={!!isNew?.(a.id)} />
         ))}
       </div>
       <div className="min-h-0 flex-1" />
@@ -265,7 +277,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed }: {
         style={{ background: "rgba(255,255,255,.11)", backdropFilter: "blur(10px)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.18), 0 8px 20px -10px rgba(0,0,0,.8)" }}
       >
         {dock.map((a, i) => (
-          <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} />
+          <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} fresh={!!isNew?.(a.id)} />
         ))}
       </div>
       {/* Back (PhoneFrame's nav bar) puts the phone down from here. */}

@@ -3,7 +3,7 @@ import type React from "react";
 import { forwardRef } from "react";
 import { KitStyles } from "./motion";
 import { rgba } from "./theme";
-import PressButton from "./PressButton";
+import BackButton from "./BackButton";
 import { useCountUp } from "./motion";
 import { FloatText, Pop } from "./juice";
 
@@ -69,9 +69,7 @@ export default function ScreenShell({ glow, title, icon, onBack, backLabel = "Ba
           {!bare && (
             <div className="flex items-center gap-2 px-3 pb-2 pt-3">
               {onBack && (
-                <PressButton variant="secondary" size="none" onClick={onBack} className="flex h-9 shrink-0 items-center gap-1 rounded-full pl-2.5 pr-3 text-[12px] font-black uppercase tracking-wide">
-                  <span className="text-[16px] leading-none">‹</span>{backLabel}
-                </PressButton>
+                <BackButton onClick={onBack} label={backLabel} />
               )}
               <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 {icon && <span className="text-[18px] leading-none">{icon}</span>}

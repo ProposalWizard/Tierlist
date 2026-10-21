@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/build-start.mjs && node scripts/one-engine-guard.mjs && node scripts/admin-look-guard.mjs && next build",
+    "build": "node scripts/build-start.mjs && node scripts/one-engine-guard.mjs && node scripts/admin-look-guard.mjs && node scripts/marketing/private-names-guard.mjs && next build",
     "guard:engine": "node scripts/one-engine-guard.mjs",
     "start": "next start",
     "lint": "next lint",

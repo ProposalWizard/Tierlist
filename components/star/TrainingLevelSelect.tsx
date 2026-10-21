@@ -4,6 +4,7 @@ import {
   TRAINING_LEVELS, highestUnlocked, starsOf, totalStars, skillFromStars,
 } from "@/lib/star/trainingLevels";
 import { KitStyles, Shine, Glow, SquareBar, useClubTheme, rgba } from "./ui";
+import BackButton from "./ui/BackButton";
 
 /**
  * Pick a training level (Mikey, 25 Sep 2026 — New Star Soccer's ladder).
@@ -45,9 +46,7 @@ export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {
       <KitStyles />
       <div className="mx-auto w-full max-w-sm">
         <div className="flex items-center justify-between">
-          <button onClick={onBack} className="kib-press rounded-xl bg-white/10 px-3 py-1.5 text-sm font-black text-white ring-1 ring-white/15">
-            ‹ Back
-          </button>
+          <BackButton onClick={onBack} />
           <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: a }}>Training</div>
         </div>
 

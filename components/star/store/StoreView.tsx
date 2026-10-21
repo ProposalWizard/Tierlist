@@ -32,6 +32,7 @@ import {
   type StoreItem, type Rarity, type AccessoryItem, type AccessorySlot, type PriceContext, type AnimationSet,
 } from "@/lib/star/store/catalogue";
 import { dailySpecials, msUntilReset, formatCountdown } from "@/lib/star/store/daily";
+import BackButton from "../ui/BackButton";
 import { owns, priceNow, type StoreState, type Currency } from "@/lib/star/store/purchase";
 import {
   COIN_PACKS, coinsToStars, coinValueLine, packBonusPercent, packCoinsNow, formatPounds, COINS_PER_WAGE_WEEK,
@@ -286,7 +287,7 @@ export default function StoreView(p: StoreViewProps) {
           <div className="flex items-center gap-2 px-4 pt-3 pb-2">
             {"href" in p.back
               ? <Link href={p.back.href} aria-label="Back" className="kib-press flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-b from-white/[0.16] to-white/[0.05] text-lg font-black ring-1 ring-white/10">‹</Link>
-              : <PressButton variant="secondary" size="none" onClick={p.back.onClick} aria-label="Back" className="flex h-9 w-9 items-center justify-center rounded-full text-lg font-black">‹</PressButton>}
+              : <BackButton onClick={p.back.onClick} />}
             <h1 className="text-[20px] font-black uppercase tracking-wide" style={{ textShadow: `0 2px 10px rgba(0,0,0,.7), 0 0 18px ${rgba(glow, 0.5)}` }}>Store</h1>
             {testArea && <span className="rounded-md bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-rose-200">Test</span>}
             <div className="ml-auto flex items-center gap-1.5">

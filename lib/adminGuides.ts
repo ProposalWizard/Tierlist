@@ -666,7 +666,7 @@ export const ADMIN_GUIDES = {
       "The Inbox has no table of its own: a patch note leaves it when you say Read and understood (or open it from the Inbox), and a mention leaves it when you open that version's notes. Both are the same saved receipts (team_acks).",
       "A new patch note on the site buzzes everyone but its author once (one buzz per person, however many notes are new; only notes from the last 3 days). The site sends it the first time one of the three opens an admin page after the deploy. Who has been buzzed for which version is kept in each person's sign-in account, so no SQL.",
     ],
-    commit: ["New entries arrive through a normal code change (they live in a file, not the database) — they appear after the next deploy. Each version's page and pictures are copied into patch-notes/ in the repo."],
+    commit: ["New entries live in a file, not the database. Each build ends with its patch notes going to main at once in a patch-notes-only pull request (scripts/patch-notes/ship.mjs), without the feature code; they appear after that deploys. Each version's page and pictures are copied into patch-notes/ in the repo."],
     inGame: ["Admin only. Players never see this page."],
     needs: ["supabase/migrations/team_room_v2.sql (PENDING) for read ticks and notes to be shared. Run after team_room.sql."],
     dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts · Inbox: components/teamRoom/InboxBell.tsx, lib/teamRoom/inbox.ts · quotes: lib/teamRoom/patchQuote.ts · buzz: /api/admin/team/notify {patches:true} and {table:\"team_notes\"}",
@@ -850,7 +850,7 @@ export const ADMIN_GUIDES = {
       { group: "Side menu (Team area)", items: [
         ["Team (first line, lit)", "The Team area, the admin's home. It is the first line of the side menu on every admin page. These all open here, on the Team board: Admin in the site's top menu, Settings → Developer → Admin pages, Admin & Dev · Team in the admin slide-out, the KIB Admin home-screen app, and ← on a game's home."],
         ["Team board / Team chat / Ideas / My to-do / Patch notes", "The Team area's views, under Team. Each switches in place, the one you are on lit. A red number = something new for you there; amber = a new job given to you."],
-        ["Games: Ballon d'Or / Website / Studio", "Each game's home (its groups and pages). The game tabs across the top do the same; in the Team area none of them is lit."],
+        ["Games: Ballon d'Or / Website / Studio / Marketing", "Each game's home (its groups and pages). The game tabs across the top do the same; in the Team area none of them is lit. Marketing (our videos) shows for Harry, Mikey and Leo only, never for testers."],
         ["Videos", "How to hand Claude a screen recording."],
         ["← (top left)", "Back to the site. The Team area is the top of the admin: a game's home goes back to here."],
         ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again. On a phone the menu is ☰ Menu, Team first."],
@@ -1164,7 +1164,7 @@ export const ADMIN_GUIDES = {
           ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game. Framed by the match's own camera (Full highlights rebuild, phase 1): the match's zoom, the same canvas shape, tipped back by the camera angle, you not drawn on a shooting chance (the ball is you) and the men at the match's size — so nothing moves when you press Play. Dragging still works on the tipped picture. Add ?still=builder to the address to see the old builder's frame instead."],
           ["A penalty", "Harry's penalty rules: the keeper stays dead centre on his line, the ball on the spot, you straight behind it and the camera fixed — none of them drag. Anyone else only slides along the edge of the box."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
-          ["Build-ups (panel)", "Full highlights rebuild for this phone: Off / On. On: ▶ Play first plays the build-up before the chance (the moves before it; a foul before some free kicks and penalties), exactly as a career match does, then the chance — the other players still running when it is yours. Tap the match to skip it. A layer on top: the picture, your edits and Save are never changed by it. Moment (Auto / Normal / Big: final, 90') · Length (Short / Auto / Long) · Intensity (Calm / Auto / High): this page's and Infinite Match's only, stored on this phone, never in a career."],
+          ["Build-ups (panel)", "Full highlights rebuild for this phone: Off / On. On: ▶ Play first plays the build-up before the chance (the moves before it; a foul before some free kicks and penalties), exactly as a career match does, then the chance — the other players still running when it is yours. Tap the match to skip it. The build-up is the last 5 seconds of the move (6.5 at the biggest moments); this page's one picture always gets one, and Length: Long plays the whole move. A layer on top: the picture, your edits and Save are never changed by it. Moment (Auto / Normal / Big: final, 90') · Length (Short / Auto / Long) · Intensity (Calm / Auto / High): this page's and Infinite Match's only, stored on this phone, never in a career."],
           ["Fix this chance", "The panel on the right (under the picture on a phone): the buttons below, Save and Commit."],
           ["+ Mate / + Opp", "Add a team-mate or an opponent."],
           ["Remove", "Takes out the player you tapped."],
@@ -1250,7 +1250,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Phase 2: a generated build-up",
         items: [
-          ["The match", "The real match plays a chance the real match served, starting with its generated 4–8 second build-up (the moves before it, made from real football patterns). Tap the match to skip to the chance. It always ends exactly on the chance's own picture."],
+          ["The match", "The real match plays a chance the real match served, starting with its generated build-up (about 5 seconds, the last part of the move before it, made from real football patterns; long shots get one 6 times in 10 and tight angles 3 times in 4). Tap the match to skip to the chance. It always ends exactly on the chance's own picture."],
           ["Generate another", "The next chance the match serves, with a new build-up. Every chance gets its own; the same chance always gets the same one."],
           ["↺ Watch again", "Plays the same build-up and chance again."],
           ["The three small pitches", "The same build-up from above: the first frame, the middle and the last (= the chance, once the players still running have stopped). White is you, blue the chance's team-mates, pale blue team-mates who are only in the build-up (off the screen when the chance starts), red defenders (a white ring: the extra defender who ran in from off the screen), yellow the keeper; dashed is the chance's frame."],
@@ -1262,7 +1262,7 @@ export const ADMIN_GUIDES = {
       "The switch is stored in this browser only (localStorage star-fhr). The numbers are worked out on the page and kept nowhere. No career is touched.",
     ],
     inGame: [
-      "Off: nothing in the game changes. On: Chances: New is on in every match on this phone (the same as setting Chances: New by hand), Infinite Highlights' still uses the match camera, every open-play chance in a match starts with a generated build-up (4–8 s; longer late in a close game, up to about 11 s in the 90th minute of a level final), the other players are still running when the chance becomes yours and stop on their places while you aim, a covering defender sometimes sprints in from off the screen and joins the chance when the defence is thin, and about half of free kicks and penalties first show the foul that won them. Infinite Highlights (on Play) and Infinite Match play the same build-ups, with Moment / Length / Intensity dials of their own.",
+      "Off: nothing in the game changes. On: Chances: New is on in every match on this phone (the same as setting Chances: New by hand), Infinite Highlights' still uses the match camera, every open-play chance in a match starts with a generated build-up (about 5 s, 6.5 s at the biggest moments, never under 4 s; long shots get one 6 times in 10 and tight angles 3 times in 4, other open-play chances always), the other players are still running when the chance becomes yours and stop on their places while you aim, a covering defender sometimes sprints in from off the screen and joins the chance when the defence is thin, and about half of free kicks and penalties first show the foul that won them. Infinite Highlights (on Play) and Infinite Match play the same build-ups, with Moment / Length / Intensity dials of their own.",
       "Under the switch in Settings, while it is On: \"Real moment highlights: Off | On\". On: about 1 in 4 open-play chances of a kind the real moments have is a REAL moment (every man where he really stood) with the real 4 s before it as its build-up. Which moments: the Real moments page (/star-real-moments-dev).",
     ],
     dev: "app/star-fhr-dev/{page,BuildUpPanel}.tsx · components/star/{FhrSwitchRow,FhrAdjust}.tsx · lib/star/fhr/{toggle,ruler,stillCamera,buildUp,foulBuildUp,builders,servedChances}.ts · lib/star/fhr/patterns.json (scripts/fhr/make-patterns.mts) · terminal: npx tsx scripts/fhr/ruler.mts 200 · npx tsx scripts/fhr/buildup-measure.mts 500 · sheet: npx tsx scripts/fhr/buildup-sheet.mts 48 · browser check: node scripts/fhr/still-vs-play.mjs 100 on · tests/star/fhr.mts",
@@ -2400,6 +2400,50 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing — sample data only."],
     inGame: ["Not used by the real game until someone decides to make it official."],
     dev: "app/draft/preview/page.tsx · components/draft/preview/*",
+  },
+
+  "/admin/marketing": {
+    title: "Production board",
+    what: "The Marketing tab's home: every Knowitball video as a card, in the column for the step it is at (Idea → Script → Script OK → Making → In edit → Final check → Posted). Admins only.",
+    buttons: [
+      { group: "Top of the page", items: [
+        ["Marketing (game tab across the top)", "This area. Only Harry, Mikey and Leo see the tab; testers never do."],
+        ["Board | Client", "Switch between this board and the Knowitball client page."],
+        ["Soon: Calendar · Suite · Uploads · Scripts", "Not built yet: a line of text, not buttons. They come in later slices of the plan."],
+        ["↻ Check now", "Reads the board again straight away. It also reads by itself about once a minute."],
+      ] },
+      { group: "The board", items: [
+        ["All · Idea · Script · Script OK · Making · In edit · Final check · Posted", "Show every column, or one. The number is how many videos are in it. On a phone the row slides sideways, and All shows only the columns with videos in, with the empty ones named on one line (\"Nothing in …\"). A computer shows all seven columns side by side."],
+        ["A card", "One video: its cover, title, step, who is making it, the day it goes (or went) out, its length and one line about it."],
+        ["Script ↗ / Cover ↗ / Video ↗", "Open that file on GitHub, on the branch the card came from."],
+        ["What happened (N)", "Opens the card's short log: one line per step, newest last."],
+      ] },
+    ],
+    saving: [
+      "Nothing is saved from this page. You cannot move a card here yet.",
+      "The cards live in the code, in one file (marketing/board.json). A Claude chat moves a card by changing that file and pushing its own branch (the video-board skill). The board reads main and Harry's, Mikey's and Leo's branches from GitHub about once a minute, so a pushed change shows within a minute or two, with no deploy and no database. Two branches with the same card: the newest change wins.",
+      "If GitHub can't be reached, the board shows the copy built into the site and says so at the top.",
+    ],
+    inGame: ["Nowhere. This is for making our own videos."],
+    dev: "app/admin/marketing/page.tsx · components/admin/marketing/{ProductionBoard,MarketingTabs}.tsx · lib/marketing/board.ts (pure; tests/star/adminMarketing.mts) · /api/admin/marketing/board · marketing/board.json · .claude/skills/video-board/SKILL.md · leak guard: scripts/marketing/private-names-guard.mjs",
+  },
+  "/admin/marketing/client": {
+    title: "Knowitball client",
+    what: "Knowitball set up as a client, the way a video studio keeps a client: who we are, our voice, audience, rules, brand, what each video taught us, and our best scripts. Admins only.",
+    buttons: [
+      { group: "On this page", items: [
+        ["Board | Client", "Switch between the production board and this page."],
+        ["The record file ↗", "Opens the client record on GitHub."],
+        ["A grey code (e.g. RUL-KIB-001)", "The Brain note each line comes from. Quote it when you want something changed."],
+        ["To confirm (amber)", "A note still waiting for Harry's yes (for now: the audience)."],
+      ] },
+    ],
+    saving: [
+      "Nothing is saved from this page. It only reads.",
+      "The words come from Brain notes with the tag client-kib, listed in one short file (marketing/clients/knowitball/client.md). To change a line, a Claude chat writes a new Brain note, marks the old one superseded, rebuilds the Brain index and swaps the code in the file. It shows here after the next deploy.",
+    ],
+    inGame: ["Nowhere. It guides how our videos are written and made."],
+    dev: "app/admin/marketing/client/page.tsx · lib/marketing/clientRecord.ts (pure parts tested in tests/star/adminMarketing.mts) · marketing/clients/knowitball/client.md · brain/*/{FACT,RUL,REF}-KIB-*.md · next.config.mjs traces those files for Vercel",
   },
 
 } satisfies Record<string, AdminGuide>;

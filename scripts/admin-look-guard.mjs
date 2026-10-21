@@ -20,7 +20,8 @@ const NOT_YET = new Set([]);
 const SKIP = new Set(["/star-dev"]); // the game itself, not an admin page
 
 const reg = fs.readFileSync(path.join(ROOT, "lib/adminRegistry.ts"), "utf8");
-const urls = [...reg.matchAll(/^\s*P\("([^"]+)",[^\n]*?"rbd",/gm)].map((m) => m[1]).filter((u) => !SKIP.has(u));
+// Road to Ballon d'Or, and the Marketing tab (21 Oct 2026: built on the frame from day one).
+const urls = [...reg.matchAll(/^\s*P\("([^"]+)",[^\n]*?"(?:rbd|marketing)",/gm)].map((m) => m[1]).filter((u) => !SKIP.has(u));
 const missing = [];
 let onFrame = 0;
 for (const url of urls) {
@@ -36,4 +37,4 @@ if (missing.length) {
   console.error("See scripts/admin-look-guard.mjs.\n");
   process.exit(1);
 }
-console.log(`admin-look: ${onFrame} of ${urls.length} RBD admin pages on the Broadcast frame (${NOT_YET.size} still to move).`);
+console.log(`admin-look: ${onFrame} of ${urls.length} RBD + Marketing admin pages on the Broadcast frame (${NOT_YET.size} still to move).`);

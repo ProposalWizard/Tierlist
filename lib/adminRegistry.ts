@@ -11,10 +11,10 @@
  * real shared data, or the code itself (repo).
  */
 
-export type AdminSection = "rbd" | "site" | "draft" | "tierlists" | "old" | "studio";
+export type AdminSection = "rbd" | "site" | "draft" | "tierlists" | "old" | "studio" | "marketing";
 export type AdminGroup =
   | "career" | "chances" | "match" | "data" | "places3d" | "players" | "money" | "sound"
-  | "site" | "draft" | "tierlists" | "old" | "studio" | "research";
+  | "site" | "draft" | "tierlists" | "old" | "studio" | "research" | "marketing";
 export type AdminOwner = "Harry" | "Mikey" | "Leo" | "Shared";
 export type AdminWrites = "none" | "browser" | "own" | "shared" | "repo";
 export type AdminAccess = "admin" | "team" | "open";
@@ -44,10 +44,15 @@ export const GAMES = [
   { key: "rbd", name: "Road to Ballon d'Or", short: "Ballon d'Or", home: "/admin/star", play: "/star-dev" },
   { key: "web", name: "Website games", short: "Website", home: "/admin/star/game/web", play: "/" },
   { key: "studio", name: "Studio", short: "Studio", home: "/admin/star/game/studio", play: null },
-] as const satisfies readonly { key: string; name: string; short: string; home: string; play: string | null }[];
+  // Marketing & Production (Harry, 21 Oct 2026: "its own whole tab"; decision 1 in
+  // docs/plans/2026-10-21-marketing-production.md). Admins only: testers never see the tab.
+  { key: "marketing", name: "Marketing", short: "Marketing", home: "/admin/marketing", play: null, adminOnly: true },
+] as const satisfies readonly { key: string; name: string; short: string; home: string; play: string | null; adminOnly?: boolean }[];
 export type AdminGameKey = (typeof GAMES)[number]["key"];
 export type AdminGame = (typeof GAMES)[number];
 export const DEFAULT_GAME: AdminGameKey = GAMES[0].key;
+/** The game tabs a person sees: testers never see an admins-only tab (Marketing). */
+export const gamesFor = (role: "admin" | "tester") => GAMES.filter((g) => role === "admin" || !("adminOnly" in g && g.adminOnly));
 
 /**
  * THE ADMIN'S HOME is the Team area, open on the Team board (Harry, 20 Oct
@@ -69,6 +74,7 @@ export const SECTIONS: { key: AdminSection; name: string }[] = [
   { key: "tierlists", name: "Tierlists" },
   { key: "old", name: "Old tests" },
   { key: "studio", name: "Studio" },
+  { key: "marketing", name: "Marketing" },
 ];
 
 /** Group order (Harry's answer ADM-Q115), the section each sits in, and its game.
@@ -89,6 +95,8 @@ export const GROUPS: { key: AdminGroup; name: string; section: AdminSection; gam
   { key: "studio", name: "Team + notes", section: "studio", game: "studio", icon: "site" },
   // Research write-ups (Harry, 20 Oct 2026). The list itself is lib/research.ts.
   { key: "research", name: "Research", section: "studio", game: "studio", icon: "research" },
+  // Marketing & Production (Harry, 21 Oct 2026). Board, Client; later Calendar, Suite, Uploads, Scripts.
+  { key: "marketing", name: "Marketing", section: "marketing", game: "marketing", icon: "play" },
 ];
 
 const P = (url: string, name: string, purpose: string, section: AdminSection, group: AdminGroup,
@@ -163,6 +171,8 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-store-dev", "Store test", "Try the store and paid items", "rbd", "money", "Harry", "live", "browser", "team"),
   P("/star-wallet-dev", "Gems test", "Gems on the server", "rbd", "money", "Harry", "live", "own", "team"),
   P("/star-tuning-dev", "Balance numbers", "Change the game's balance numbers on this device", "rbd", "money", "Harry", "live", "browser", "team"),
+  P("/admin/marketing", "Production board", "Every Knowitball video and the step it is at, from a file Claude pushes", "marketing", "marketing", "Harry", "live", "none", "admin"),
+  P("/admin/marketing/client", "Knowitball client", "Our voice, audience, rules, brand, learnings and best scripts, from the client record and its Brain notes", "marketing", "marketing", "Harry", "live", "none", "admin"),
   P("/admin/sound-board", "Sound board", "Swap any game sound", "rbd", "sound", "Harry", "live", "shared", "admin"),
 ];
 

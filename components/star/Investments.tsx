@@ -20,6 +20,7 @@ import OwnedLineupEditor from "./OwnedLineupEditor";
 import type { NegotiationState } from "@/lib/star/negotiation";
 import { Burst, CountUp, FloatText, PressButton, clubTheme, useTrigger } from "./ui";
 import { Screen } from "./ui/Screen";
+import BackButton from "./ui/BackButton";
 
 /**
  * INVESTMENTS — BUY A STAKE, AND, PAST 50.1%, RUN THE BOARDROOM.
@@ -135,7 +136,7 @@ export default function Investments(props: Props) {
     <Screen glow={theme.glow}>
       <div className="w-full">
         <div className="flex items-center gap-2 mb-3">
-          <PressButton variant="secondary" size="sm" onClick={props.onBack} className="normal-case tracking-normal">← Back</PressButton>
+          <BackButton onClick={props.onBack} />
           <div className="flex-1 kit-card rounded-xl px-3 py-2 flex items-center justify-between" style={{ ["--kit-glow" as string]: "#f59e0b" } as React.CSSProperties}>
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Balance</span>
             {/* The balance counts to its new value after a buy or a sale. */}

@@ -26,8 +26,9 @@ import ClubBadge from "./ClubBadge";
 import NationFlag from "./NationFlag";
 import { nationOf } from "@/lib/star/competitions";
 import IntlWorldPanel from "./IntlWorldPanel";
-import { ClubCard, StatBar, PressButton, RiseIn, Chev, useClubTheme } from "./ui";
+import { ClubCard, StatBar, PressButton, RiseIn, useClubTheme } from "./ui";
 import { CardTitle } from "./screenKit";
+import TrophyCabinet from "./TrophyCabinet";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const seasonLabel = (c: CareerState, s: number) => {
@@ -35,13 +36,15 @@ const seasonLabel = (c: CareerState, s: number) => {
   return `${String(y).slice(2)}/${String(y + 1).slice(2)}`;
 };
 
+/** Five chips, one row (navigation round 1, Harry's answer 17, 21 Oct 2026):
+ *  Season (with Status folded in), Career (All seasons + Country), Records,
+ *  Trophies (the cabinet, 2 taps from Home, was 3), Contract. */
 const VIEWS = [
   { id: "season", label: "Season", icon: "📊" },
-  { id: "contract", label: "Contract", icon: "📝" },
-  { id: "status", label: "Status", icon: "🩺" },
-  { id: "all", label: "All seasons", icon: "🗓️" },
-  { id: "country", label: "Country", icon: "🌍" },
+  { id: "career", label: "Career", icon: "🗓️" },
   { id: "records", label: "Records", icon: "🏅" },
+  { id: "trophies", label: "Trophies", icon: "🏆" },
+  { id: "contract", label: "Contract", icon: "📝" },
 ] as const;
 type View = (typeof VIEWS)[number]["id"];
 let lastView: View = "season";
@@ -55,38 +58,61 @@ let lastView: View = "season";
  * the other page arrows (SwipePages). The Premier League mini-table is gone from here: Home
  * has it, and the League screen has the full table.
  */
-export default function StatsTabs({ career, onRenew, onOpen, hallRecords }: {
+export default function StatsTabs({ career, onRenew, onOpen, hallRecords, startView }: {
   career: CareerState; onRenew: () => void; onOpen?: (ph: "achievements" | "trophies") => void;
+  /** Open on this chip (e.g. the Home "Career" door). Otherwise the last one. */
+  startView?: View;
   /** Your own retired careers' records (lib/star/hallRecords.ts). */
   hallRecords?: HallRecord[];
 }) {
-  const [view, setViewState] = useState<View>(lastView);
+  const [view, setViewState] = useState<View>(startView ?? lastView);
   const setView = (v: View) => { lastView = v; setViewState(v); };
   const { glow } = useClubTheme(career);
   const allLook = useAllSeasonsLook();
-  const i = VIEWS.findIndex((v) => v.id === view);
-  const step = (d: number) => setView(VIEWS[(i + d + VIEWS.length) % VIEWS.length].id);
-  const here = VIEWS[i];
   return (
     <div className="pb-2">
-      <div data-stats-row className="mb-2 grid items-center">
-        <div className="flex min-w-0 items-center justify-center gap-1">
-          <button onClick={() => step(-1)} aria-label={`Previous view: ${VIEWS[(i + VIEWS.length - 1) % VIEWS.length].label}`} className="kib-press grid h-[30px] w-[26px] shrink-0 place-items-center text-[16px] font-black leading-none text-amber-300" style={{ background: "rgba(var(--sk-flat-rgb),.7)", borderRadius: 2, boxShadow: "inset 0 0 0 1px var(--sk-edge)" }}><Chev dir="left" size={14} /></button>
-          <div className="min-w-0 truncate text-center text-[13px] font-black uppercase tracking-wide text-white" style={{ minWidth: 72 }}><span className="mr-1">{here.icon}</span>{here.label}</div>
-          <button onClick={() => step(1)} aria-label={`Next view: ${VIEWS[(i + 1) % VIEWS.length].label}`} className="kib-press grid h-[30px] w-[26px] shrink-0 place-items-center text-[16px] font-black leading-none text-amber-300" style={{ background: "rgba(var(--sk-flat-rgb),.7)", borderRadius: 2, boxShadow: "inset 0 0 0 1px var(--sk-edge)" }}><Chev dir="right" size={14} /></button>
-        </div>
+      {/* One row of five chips: every view is one tap (was arrows, up to 3 taps). */}
+      <div data-stats-row role="tablist" aria-label="Stats" className="mb-2 grid grid-cols-5 gap-1">
+        {VIEWS.map((v) => {
+          const on = v.id === view;
+          return (
+            <button
+              key={v.id}
+              role="tab"
+              aria-selected={on}
+              data-stats-chip={v.id}
+              onClick={() => setView(v.id)}
+              className={`kib-press flex h-[38px] min-w-0 flex-col items-center justify-center gap-0.5 text-[10.5px] font-black uppercase leading-none tracking-wide ${on ? "text-gray-950" : "text-white"}`}
+              style={on
+                ? { background: "linear-gradient(180deg, #fde047, #f59e0b)", borderRadius: 3, boxShadow: "inset 0 1px 0 rgba(255,255,255,.5)" }
+                : { background: "rgba(var(--sk-flat-rgb),.7)", borderRadius: 3, boxShadow: "inset 0 0 0 1px var(--sk-edge)" }}
+            >
+              <span className="text-[13px] leading-none">{v.icon}</span>
+              <span className="max-w-full truncate px-0.5">{v.label}</span>
+            </button>
+          );
+        })}
       </div>
       <RiseIn key={view}>
-        {(view === "season" || view === "contract" || view === "status") && <DashboardStats career={career} onRenew={onRenew} view={view === "season" ? "stats" : view} />}
-        {view === "all" && (allLook === "new" ? <AllSeasonsNew career={career} /> : <AllSeasons career={career} glow={glow} />)}
-        {view === "country" && <Country career={career} glow={glow} />}
+        {view === "season" && (
+          <>
+            <DashboardStats career={career} onRenew={onRenew} view="stats" />
+            {/* Status (fitness, injury) folds into Season. */}
+            <div className="mt-2"><DashboardStats career={career} onRenew={onRenew} view="status" /></div>
+          </>
+        )}
+        {view === "contract" && <DashboardStats career={career} onRenew={onRenew} view="contract" />}
+        {view === "career" && (
+          <>
+            {allLook === "new" ? <AllSeasonsNew career={career} /> : <AllSeasons career={career} glow={glow} />}
+            <Country career={career} glow={glow} />
+          </>
+        )}
         {view === "records" && <Records career={career} glow={glow} hallRecords={hallRecords} />}
         {view === "records" && onOpen && (
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <PressButton variant="secondary" size="none" onClick={() => onOpen("achievements")} className="rounded-xl py-2.5 text-[11px] font-black">⭐ Achievements →</PressButton>
-            <PressButton variant="secondary" size="none" onClick={() => onOpen("trophies")} className="rounded-xl py-2.5 text-[11px] font-black">🏆 Trophy cabinet →</PressButton>
-          </div>
+          <PressButton variant="secondary" size="none" onClick={() => onOpen("achievements")} className="mt-2 w-full rounded-xl py-2.5 text-[11px] font-black">⭐ Achievements →</PressButton>
         )}
+        {view === "trophies" && <TrophyCabinet trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} />}
       </RiseIn>
     </div>
   );
