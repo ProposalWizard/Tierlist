@@ -84,6 +84,7 @@ import { applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilem
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { earnedBetween, addSeasonRecords, type EarnPop } from "@/lib/star/earnPops";
 // The unlock chain a new career walks (Harry, 1 Oct 2026, P13-P40).
+import { needsYou, barBadges, needsInput, type NeedId } from "@/lib/star/needsYou";
 import { openFrom as navOpenFrom, backFrom as navBackFrom, ROOT_PHASES, type NavEntry, type NavSpot } from "@/lib/star/navReturn";
 import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, installApp, appInstalled, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft, gameFirst, managerTalkDue, phoneShortfall, phoneStepLine, DRILLS_TO_OPEN_SHOP } from "@/lib/star/unlocks";
 import { applyGameGain } from "@/lib/star/relationshipGame";
@@ -112,7 +113,7 @@ import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 // Swipe home screens — Stats · Home · Training (v0.15 item 34).
 import SwipePages from "@/components/star/SwipePages";
-import HomeHub from "@/components/star/HomeHub";
+import HomeHub, { daysToNext } from "@/components/star/HomeHub";
 import TopHud, { type HudScreen } from "@/components/star/ui/TopHud";
 import GameBar from "@/components/star/ui/GameBar";
 import { PHONE_SEEN_EVENT, phoneUnreadCount } from "@/lib/star/phoneUnread";
@@ -4993,6 +4994,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     && nextFixture?.kind !== "international"
     ? setPieceTalkDue(career) : null;
   const step = nextStep(career);
+  // "Needs you" (navigation round 1, lib/star/needsYou.ts): badges on the bar
+  // and one chip on Home, most urgent first, all from sources that exist.
+  const needsIn = needsInput(career, { seasonOver, phoneUnread, nextFixture: nextFixture ?? null, daysToNext });
+  const needList = needsYou(needsIn);
+  const needGo: Record<NeedId, () => void> = {
+    "season-end": handleSeasonEnd,
+    "boss-talk": () => handleOpenRelationshipGame("boss"),
+    "sponsor-offers": () => openHub("sponsors"),
+    "training": () => handleNavigate("skills"),
+    "phone": () => handleNavigate("media"),
+    "match-today": () => handleNavigate("play"),
+  };
   const onTraining = phase === "skills" && trainingTab === "training";
   const onRelations = phase === "skills" && trainingTab === "life";
   const tour: { key: string; steps: TourStep[]; skippable?: boolean; onDone: () => void } | null = (() => {
@@ -5076,6 +5089,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // A red dot while something on the phone is unread; it clears once you
       // have opened it (lib/star/phoneUnread.ts; Harry, P89).
       mediaUnread={phoneUnread > 0}
+      badges={barBadges(needsIn)}
       nextMatchLabel={nextMatchLabel}
       nextMatchDate={nextMatchDate ?? undefined}
       fullBleed={phase === "media" && activeNav === "media"}
@@ -5216,18 +5230,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         // Made captain: the manager tells you, once (lib/star/managerMoments.ts).
         <CaptainInOffice career={career} onDone={() => setCareer(c => (c ? { ...c, captainMomentPending: false } : c))} />
       )}
-      {phase === "dashboard" && seasonOver && (
-        <div className="mb-3 rounded-xl border border-amber-400/50 bg-gradient-to-b from-amber-500/20 to-amber-600/10 p-4 text-center">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200">Season {career.season} complete</div>
-          <p className="mt-1 text-xs text-amber-50/90">Every fixture has been played. The awards are next.</p>
-          <button
-            onClick={handleSeasonEnd}
-            className="mt-3 w-full rounded-xl bg-amber-400 py-2.5 font-black text-gray-950 hover:bg-amber-300"
-          >
-            End of Season 🏆
-          </button>
-        </div>
-      )}
+      {/* The season-over card is the "End of Season 🏆" chip on Home now
+          (navigation round 1, research §6 item 13): same action, top of the list. */}
       {phase === "media" && activeNav === "media" && (
         <PhoneHome
           career={career}
@@ -5290,6 +5294,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               onBuyCan={handleBuyKib}
               onOpen={openHub}
               onLeague={isOpen(career, "league") ? () => handleNavigate("league") : undefined}
+              needs={needList.length > 0 ? { need: needList[0], more: needList.length - 1, onClick: needGo[needList[0].id] } : null}
             />,
             isOpen(career, "shop")
               ? (shopLookNow === "new"
