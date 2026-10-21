@@ -5,6 +5,6 @@ client: team
 tags: [process, deploy, team]
 status: live
 date: 2026-10-21
-source: "CLAUDE.md:501-511"
+source: "docs/brain-sources/working-rules-2026-10-21.md:87-97"
 summary: Every deploy comes with patch notes; Harry decides each time whether to push now or see patch notes first.
 ---

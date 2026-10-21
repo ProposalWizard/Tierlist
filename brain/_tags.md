@@ -41,3 +41,7 @@ default | ruling:eco | economy
 default | fact:eco | economy
 default | process:all | process
 default | decision:all | rule
+default | process:3d | three-d
+default | process:dat | data
+default | fact:eng | engine
+default | fact:team | team

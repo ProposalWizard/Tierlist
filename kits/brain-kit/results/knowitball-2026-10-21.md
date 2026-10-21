@@ -26,3 +26,40 @@ Notes on the old way:
   3 Oct rule that cancels it. Same risk. Both moved to SESSION_LOG.md in step 1.
 - One fix found while testing: PRO-TEAM-002 said "Patch-note order", so a grep for "patch note" missed it.
   Summaries now use the plain words people search for.
+
+## Blind test (CONVERT.md step 3): 15 questions, 13 HIT, 2 MISS, 0 WRONG
+
+A separate Claude session (cloud, read-only, never saw the notes being written) wrote 15 questions from the
+pre-shrink CLAUDE.md and the 19 Oct answers doc, then answered them from the 34-note pilot Brain only.
+
+| # | Question | Result | Notes |
+|---|---|---|---|
+| 1 | When can I merge into main? | HIT | RUL-TEAM-001, PRO-TEAM-001 |
+| 2 | New look: add a New/Old row? | HIT | RUL-UI-001 |
+| 3 | Where does unfinished work go? | HIT | RUL-UI-002 |
+| 4 | Can I change the match engine? | HIT | RUL-ENG-001, PRO-ENG-001 |
+| 5 | Can a 3D game use canvasEngine.ts? | HIT | RUL-3D-001 |
+| 6 | Can I use Higgsfield now? | HIT | RUL-3D-002 (RUL-3D-004 superseded, ignored) |
+| 7 | How often are progress updates? | HIT | RUL-TEAM-003 |
+| 8 | New chat after each build? | HIT | RUL-TEAM-004 |
+| 9 | Do patch notes link the test build? | HIT | RUL-TEAM-005 |
+| 10 | How do I give the team a job? | HIT | RUL-TEAM-007 |
+| 11 | Which branch do I push to? | HIT | RUL-TEAM-008 |
+| 12 | How should I write replies? | MISS | now covered by RUL-ALL-003, RUL-ALL-004 (area 1) |
+| 13 | Has star_xp_config.sql run? | HIT | FACT-DAT-002 |
+| 14 | What must I do after a lib/star change? | MISS | now covered by RUL-ALL-009, FACT-ALL-003 (area 1) |
+| 15 | Can a 3D player's size change? | HIT | RUL-3D-006 |
+
+It also flagged 3 notes. Fixed: RUL-3D-003 now names the 17:50 exception; FACT-UI-001 now points to the full
+"rows that stay" list (FACT-UI-013). Not a fault: FACT-DAT-004's pointer to SESSION_LOG.md is right in this repo
+(the tester read the pre-shrink CLAUDE.md, where those rows still sat).
+
+## Area 1 converted: the rules for working
+
+Moved word for word from CLAUDE.md into `docs/brain-sources/working-rules-2026-10-21.md` (335 lines, 0 missing):
+"How to talk to this team" (with Which model and the agent table), the decided-no-toggle list, deploy and patch-note
+rules, "Pending Migrations", "ONE ENGINE" (with the 3D games exception) and "The 3D files are packed small".
+Each section in CLAUDE.md is now one line plus a list of codes. 56 new notes; 90 in all; build script errors=0.
+
+Lesson: a note citing CLAUDE.md breaks as soon as CLAUDE.md lines move (the script caught RUL-TEAM-008).
+`scripts/brain/make_notes.py` finds each source line by its text, so re-running the spec fixes the numbers.
