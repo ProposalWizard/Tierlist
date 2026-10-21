@@ -117,7 +117,8 @@ console.log("The leak guard");
   fs.writeFileSync(list, "# a word that IS in the repo, to prove it fails\nKnowitball Tierlists\n");
   const hit = run({ KIB_PRIVATE_NAMES_FILE: list });
   ok(hit.status === 1 && /name #1/.test(hit.stderr) && !/Knowitball Tierlists/.test(hit.stderr + hit.stdout), "a planted name fails the guard, and the name itself is never printed");
-  const clean = run({ KIB_PRIVATE_NAMES: "zz-no-such-word-qq" });
+  // Built at run time, so the word is not in this file either.
+  const clean = run({ KIB_PRIVATE_NAMES: `zz${"q".repeat(3)}${Date.now()}` });
   ok(clean.status === 0 && /0 hits/.test(clean.stdout), "a name that is nowhere → passes");
   fs.rmSync(tmp, { recursive: true, force: true });
 }
