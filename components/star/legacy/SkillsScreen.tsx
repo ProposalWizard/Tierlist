@@ -40,6 +40,7 @@ const SKILL_COLOR: Record<keyof Skills, [string, string]> = {
   technique: ["#38bdf8", "#a5f3fc"],
   vision: ["#a78bfa", "#ddd6fe"],
   freeKick: ["#f472b6", "#fbcfe8"],
+  aerial: ["#2dd4bf", "#99f6e4"],
 };
 
 const ENERGY_COST = getTuning("energy.trainingCost");

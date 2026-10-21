@@ -134,6 +134,7 @@ const SKILL_TITLES: Record<keyof Skills, string> = {
   technique: "Through the Gate",
   vision: "Pick the Pass",
   freeKick: "Over the Wall",
+  aerial: "Head & Volley",
 };
 
 
@@ -178,6 +179,7 @@ const SKILL_LOOK: Record<keyof Skills, { icon: string; label: string; accent: st
   technique: { icon: "🎯", label: "Technique", accent: "#a78bfa" },
   vision: { icon: "👁️", label: "Vision", accent: "#38bdf8" },
   freeKick: { icon: "🌀", label: "Free kick", accent: "#fbbf24" },
+  aerial: { icon: "🤸", label: "Aerial", accent: "#2dd4bf" },
 };
 
 const DrillLook = createContext<{ skill: keyof Skills; glow: string }>({ skill: "pace", glow: "#2F6F4E" });

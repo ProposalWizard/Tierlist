@@ -290,10 +290,10 @@ export default function DashboardStats({ career, onRenew, view }: Props) {
             </div>
           </Panel>
           <Panel tone="#34d399" title="⚡ Skills">
-            <div className="mt-2 grid grid-cols-5 gap-1 text-center">
-              {(["pace", "power", "technique", "vision", "freeKick"] as const).map((k) => (
-                <div key={k} className="rounded-lg bg-black/30 py-1 ring-1 ring-white/5">
-                  <div className="text-[9px] font-black uppercase text-white/75">{k === "freeKick" ? "FK" : k.slice(0, 4)}</div>
+            <div className="mt-2 grid grid-cols-6 gap-1 text-center">
+              {(["pace", "power", "technique", "vision", "freeKick", "aerial"] as const).map((k) => (
+                <div key={k} className="rounded-lg bg-black/30 py-1 ring-1 ring-white/5" title={k === "aerial" ? "Aerial & Acrobatics" : undefined}>
+                  <div className="text-[9px] font-black uppercase text-white/75">{k === "freeKick" ? "FK" : k === "aerial" ? "AIR" : k.slice(0, 4)}</div>
                   <div className="text-sm font-black tabular-nums text-emerald-300">{career.skills[k]}</div>
                 </div>
               ))}

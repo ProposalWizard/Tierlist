@@ -40,6 +40,10 @@ const SKILL_WEIGHTS: Record<keyof Skills, number> = {
   technique: getTuning("rating.weightTechnique"),
   vision: getTuning("rating.weightVision"),
   freeKick: getTuning("rating.weightFreeKick"),
+  // Aerial & Acrobatics (21 Oct 2026) does not count toward the star rating
+  // yet: giving it a share would move every existing player's rating. Ask
+  // Harry before giving it one (the other five's shares sum to 1).
+  aerial: 0,
 };
 
 /** 0-100, purely off trained attributes — a maxed-out set of skills (all

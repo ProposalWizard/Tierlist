@@ -134,6 +134,11 @@ export const TUNABLES: TunableDef[] = [
     description: "Set-piece ability a brand-new career starts with, 0-100. 40 like the other four (Mikey, 25 Sep 2026): every skill climbs the same 30-level training ladder from 40.",
     default: 40, min: 0, max: 100, step: 1,
   },
+  {
+    key: "startingSkills.aerial", category: "Starting Skills", label: "Starting Aerial & Acrobatics",
+    description: "Headers and volleys a brand-new career starts with, 0-100. 40 like the other five (Harry, Q7, 21 Oct 2026).",
+    default: 40, min: 0, max: 100, step: 1,
+  },
 
   // ── Attribute decay ──────────────────────────────────────────────────
   {
