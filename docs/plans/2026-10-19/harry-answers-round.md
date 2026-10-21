@@ -158,3 +158,16 @@ Ask: "For the 3d ecosystem let's make it so u can get into your car and drive ho
 6. **Riding trains the horse** (speed / stamina).
 - (02:40) Body: **C** ("yes but I still think the body needs work"). Car Q1: **both** (steer yourself, plus a skip to the cut scene).
 - B14 Q15 joystick auto run: yes. Q16 stamina bar: move it. Q17 sprint 0.12/s: yes. Bug hunt: skip. Hold live until the camera fix is checked.
+
+## 21 Oct 2026 ~04:15 — answers to the 1–20 list
+1. Body C: "posture spine to head is off, it should move naturally, it's like the model is always configured to look slightly weird and inhuman".
+2. Riding field unlock → a **garden level**: XP from garden training drills and casino play; levels give more space and areas (horse riding, race track, fast travel to your house, …).
+3. Course: jumps and poles, timed lap + best time. 4. Every ride trains a little and uses horse energy. 5. Taxi: small fare.
+6. Play the ~170 real headers/volleys as true ones: yes.
+7. Skill: **create a new Aerial & Acrobatics skill** (instead of Power/Technique/Flair).
+8. Team-mates head/volley by their own skill (engine change): yes.
+9. Mix: as built (1 in 10 each).
+10. Flair/bicycle input: not an extra button — "a random timed event or completely different random (rare timed event that looks completely different)".
+11. Speed up build-up making: yes. 12. Winger 16%: fine. 13. Lag pill: move it. 14. Tick boxes: fix.
+15. N1 keep the bottom bar. 16–18 (house icon, Stats chips, Transfers line): my picks (icon inert on Home, 5 chips, "window opens in N weeks").
+Camera: "we really need to fix that camera" → player size options being drawn.
