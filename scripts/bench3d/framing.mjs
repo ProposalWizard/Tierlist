@@ -39,9 +39,9 @@ let scenes = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 if (!scenes.length) scenes = ["signing", "goal", "trophy", "walkout", "press", "mentor", "farewell", "scored:0.8:joy:3", "won-trophy:0.9:joy:5"];
 const urlOf = (s) => {
   const old = flags.old ? "&framing=old" : "";
-  if (!s.includes(":")) return `${BASE}/star-style-dev?scene=director&fixture=${s}&clean=1${old}`;
+  if (!s.includes(":")) return `${BASE}/star-3d-bench-dev/scene?scene=director&fixture=${s}&clean=1${old}`;
   const [kind, stakes, emotion, seed] = s.split(":");
-  return `${BASE}/star-style-dev?scene=director&event=${kind}&stakes=${stakes}&emotion=${emotion}&seed=${seed}&clean=1${old}`;
+  return `${BASE}/star-3d-bench-dev/scene?scene=director&event=${kind}&stakes=${stakes}&emotion=${emotion}&seed=${seed}&clean=1${old}`;
 };
 
 const exe = fs.existsSync("/opt/pw-browsers/chromium") && fs.statSync("/opt/pw-browsers/chromium").isFile() ? "/opt/pw-browsers/chromium" : undefined;

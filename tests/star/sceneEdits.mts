@@ -18,6 +18,8 @@ import {
 import { editCamera, editFov, lensToFov, viewEdited, makeLightEditor } from "../../lib/star/sceneEdits/walkEdit";
 import { allMarks, keepScene, keptScenes, markTally, recipeId, type Recipe } from "../../lib/star/sceneEdits/kept";
 import { WHEN_PLAYS, EVENT_KINDS } from "../../lib/star/sceneEdits/whenPlays";
+import { cutsceneList, CUT_STILL_AT } from "../../lib/star/cutscene/sceneList";
+import { FIXTURES, FIXTURE_LIST } from "../../lib/star/cutscene/fixtures";
 import { generateScript } from "../../lib/star/cutscene/generate";
 import COMMITTED from "../../lib/star/data/sceneEdits.json";
 
@@ -122,6 +124,23 @@ const callers = careerFiles.filter((f) => !testOnly.has(path.basename(f)) && !f.
 const anyWired = WHEN_PLAYS.some((w) => w.wired);
 ok(callers.length > 0 || !anyWired, `no career screen calls the generator (${callers.length} found), so no row says "wired"`);
 console.log(`generator callers in the career: ${callers.length ? callers.map((f) => path.relative(ROOT, f)).join(", ") : "none"}; rows wired: ${WHEN_PLAYS.filter((w) => w.wired).length} of ${WHEN_PLAYS.length}`);
+
+// THE ONE CUT-SCENE LIST (Harry, 21 Oct 2026: the admin's 3D pages and the Scene Editor showed
+// different cut scenes). Both read lib/star/cutscene/sceneList.ts: every hand-made scene, each with a
+// still on disk and a still time, then every kept scene, each opening in the editor.
+{
+  const ROOT2 = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
+  const k = keepScene({ ...FIXTURES.goal(), id: "x" }, { kind: "scored", emotion: "joy", stakes: 0.8, intensity: 0.7, seed: 3 });
+  const list = cutsceneList([k]);
+  ok(list.length === FIXTURE_LIST.length + 1, "the list is every hand-made scene plus every kept one");
+  ok(FIXTURE_LIST.every((f) => list.some((c) => c.id === f.id && c.kind === "hand")), "every hand-made scene is in the list");
+  ok(list.some((c) => c.id === k.id && c.kind === "kept" && c.href.includes(`scene=${k.id}`)), "a kept scene is in the list and opens in the editor");
+  for (const f of FIXTURE_LIST) {
+    ok(typeof CUT_STILL_AT[f.id] === "number", `${f.id}: has a still time`);
+    ok(fs.existsSync(path.join(ROOT2, "public/admin/3d-area", `cut-${f.id}.webp`)), `${f.id}: its card still exists (node scripts/admin3d/stills.mjs --only=cuts ${f.id})`);
+  }
+  ok(!fs.existsSync(path.join(ROOT2, "app/star-style-dev")), "the Art styles page stays deleted");
+}
 
 console.log(fails ? `\n${fails} FAILED` : "\nall passed");
 if (fails) process.exit(1);

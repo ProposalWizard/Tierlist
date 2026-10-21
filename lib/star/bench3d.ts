@@ -22,7 +22,7 @@ export interface Bench3dShot {
   kind: "home" | "cut" | "place" | "drill";
 }
 
-const cut = (q: string) => `/star-style-dev?scene=director&${q}&clean=1`;
+const cut = (q: string) => `/star-3d-bench-dev/scene?scene=director&${q}&clean=1`;
 
 export const BENCH3D_SHOTS: Bench3dShot[] = [
   { id: "home", label: "Home player", url: "/star-3d-bench-dev/home", settle: 6000, kind: "home" },
@@ -32,7 +32,7 @@ export const BENCH3D_SHOTS: Bench3dShot[] = [
   { id: "trophy", label: "Trophy lift", url: cut("fixture=trophy"), t: 4.1, kind: "cut" },
   { id: "walkout", label: "Walk-out", url: cut("fixture=walkout"), t: 2.3, kind: "cut" },
   { id: "garden", label: "Garden", url: "/star-garden3d-dev", settle: 12000, kind: "place" },
-  { id: "drill", label: "Training drill (Free Roam)", url: "/star-style-dev?scene=play3d&clean=1", settle: 9000, kind: "drill" },
+  { id: "drill", label: "Training drill (Free Roam)", url: "/star-3d-bench-dev/scene?scene=play3d&clean=1", settle: 9000, kind: "drill" },
   { id: "gen-goal", label: "Made-up scene: a goal", url: cut("event=scored&stakes=0.8&emotion=joy&seed=3"), t: 7.1, kind: "cut" },
   { id: "gen-trophy", label: "Made-up scene: a trophy", url: cut("event=won-trophy&stakes=0.9&emotion=joy&seed=5"), t: 5.0, kind: "cut" },
 ];

@@ -202,7 +202,7 @@ export default function SceneGeneratorPage() {
 
           <Panel title="WHEN DOES THIS PLAY?" note="the one list: lib/star/sceneEdits/whenPlays.ts">
             <div className="sg-callout" data-when-callout>
-              <b>Today a generated scene does NOT play in the real game.</b> It plays only on test pages: here, the Cut-scene Director and the 3D Scene Editor.
+              <b>Today a generated scene does NOT play in the real game.</b> It plays only on test pages: here and in the 3D Scene Editor.
               Below is the proposal: which game moment would play each one. Nothing is wired until Harry says so.
             </div>
             {row && <div className="sg-now" data-when-now><b>{label(row.kind)}:</b> {row.moment}. <i>{row.wired ? "Wired" : "Not wired"}.</i></div>}

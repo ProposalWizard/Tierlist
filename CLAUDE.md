@@ -340,7 +340,10 @@ from t alone (`window.__frameStep`). Scenes are GENERATED from a game event
 ones (`fixtures.ts`) are the benchmark the generator must match
 (`tests/star/cutscene.mts`). Never write a new bespoke cut-scene loop. The people
 layer (faces, hands, IK) plugs in at `peopleAdapter.ts`. Watch any scene:
-/star-style-dev → "Cut-scene Director".
+the 3D Scene Editor (/star-scene-editor-dev → "Cut-scene Director"). The one
+list of cut scenes is `lib/star/cutscene/sceneList.ts`: the editor and the 3D
+Area's Cut scenes cards both read it. The old Art styles page is gone (21 Oct
+2026); bare stills for the bench and filming: /star-3d-bench-dev/scene.
 
 ## Goal videos are recordings, never re-runs (Leo, 7 Oct 2026)
 

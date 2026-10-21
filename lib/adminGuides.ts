@@ -1448,7 +1448,7 @@ export const ADMIN_GUIDES = {
           ["Time of day, Stand (3D Garden)", "Build the garden by day, at sunset or at night, and stand him at the gate, the fountain, the shop, the casino, the pitch gate or the house door to see the walking camera there."],
           ["Home, Room (3D House)", "Build that home (starter … estate) and walk into one of its rooms. A card view only works in the room that has it (a line says so)."],
           ["▶ PLAY SHOT (3D Signing / Manager's Office)", "Play the shot on screen again from its start."],
-          ["Scene buttons (Contract signing, Goal celebration …, Kept: …)", "Load that cut scene into the preview. \"Kept: …\" scenes come from the Scene generator's Keep button."],
+          ["Scene buttons (Contract signing, Goal celebration …, Kept: …)", "Load that cut scene into the preview. \"Kept: …\" scenes come from the Scene generator's Keep button. The 3D Area's Cut scenes cards show exactly this list (one list for both)."],
           ["The badge top-left", "The shot or view on screen, and its lens."],
           ["Drag on the preview", "Director: a free camera round the look point. Signing / Office: orbit this shot. Shop / Garden / House: turn and rise this view; wheel or pinch changes its distance."],
           ["The map, bottom-right", "The place seen from above. Drag the blue box (camera), the white dot (look point) or the yellow sun (key light, round the ring). Shop, Garden and House: only the sun drags; the camera follows him."],
@@ -1483,7 +1483,7 @@ export const ADMIN_GUIDES = {
         items: [
           ["✓ APPROVE", "The game may now use this edit. It also saves it for everyone. It stays editable: after a change press SAVE FOR EVERYONE (or Commit to game) so the game gets the new copy."],
           ["Withdraw approval", "The game stops using it (the shared copy is updated straight away)."],
-          ["Where (ticks)", "In a career: the real game. The test page: that place's own test page. Untick both and nothing uses it."],
+          ["Where (ticks)", "In a career: the real game. The test page: that place's own test page (for a cut scene, the 3D bench's cut-scene shots). Untick both and nothing uses it."],
           ["When (list)", "Always, or only at one moment: the signing (first contract / a move), the shop (walking in from the garden / from the Shop page), the garden (day / sunset / night), the house (one home), a cut scene (one event)."],
           ["COMMIT TO GAME", "Writes this approved edit into the game's code (lib/star/data/sceneEdits.json) on main. Without GITHUB_TOKEN it says so in red and nothing is committed. A withdrawn approval sent this way is taken out of the code."],
         ],
@@ -1501,7 +1501,7 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Only APPROVED edits, only where and when the approval says. The career's 3D signing, the manager's office, the 3D shop, the garden and the house read them as they open (the committed file at once, the shared table a moment later; the newer approval wins).",
       "No approved edit: every scene plays exactly as before.",
-      "Cut scenes (the Director) don't play in a career yet: an approved director edit is used on the Cut-scene Director test page for now.",
+      "Cut scenes (the Director) don't play in a career yet: an approved director edit is used on the 3D bench's cut-scene shots for now.",
     ],
     dev: "app/star-scene-editor-dev/page.tsx (+ editor.css, parts.tsx, PlaceEditor.tsx for Signing/Office, WalkPlaceEditor.tsx for Shop/Garden/House, UsePanel.tsx for Approve/Commit, sampleCareer.ts, store.ts) · lib/star/sceneEdits/ (approval.ts where/when + newest wins, walkEdit.ts view edits, useApproved.ts the game's read hook, kept.ts) · optional edit hooks: lib/star/signing3dScene.ts, lib/star/shop3d/scene.ts, lib/star/garden3d/scene.ts, lib/star/home3d/scene.ts, lib/star/cutscene/director.ts (no edit = as before) · app/api/star/cutscene-edits/route.ts (?approved=1) and commit/route.ts · tests/star/sceneEdits.mts.",
   },
@@ -1543,7 +1543,7 @@ export const ADMIN_GUIDES = {
       "Marks and kept scenes: this device at once, then the shared table star_cutscene_edits (rows \"mark:…\" and \"kept:…\", never approved, so the game never reads them). If the shared table can't be written, the line under the buttons says \"saved on this device only\".",
     ],
     inGame: [
-      "Nowhere. Today a generated scene plays only on test pages (here, the Cut-scene Director, the 3D Scene Editor). The table is the proposal for which game moment would play each one; nothing is wired until Harry says so.",
+      "Nowhere. Today a generated scene plays only on test pages (here and the 3D Scene Editor). The table is the proposal for which game moment would play each one; nothing is wired until Harry says so.",
     ],
     dev: "app/admin/scene-generator/page.tsx (+ generator.css) · lib/star/cutscene/generate.ts (generateScript, scoreScript) · lib/star/sceneEdits/kept.ts (recipes, marks, kept scenes) · lib/star/sceneEdits/whenPlays.ts (the When table; tests/star/sceneEdits.mts keeps it honest) · /api/star/cutscene-edits.",
   },
@@ -1559,27 +1559,34 @@ export const ADMIN_GUIDES = {
     ],
     saving: ["Nothing here is saved. The page only shows other test pages at fixed moments."],
     inGame: ["Nothing changes in the game from this page. It is a measuring tool for the 3D changes."],
-    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/home/page.tsx (the Home shot; window.__homeT holds a moment), app/star-3d-bench-dev/face/page.tsx (one head close up, its moving face on an 8 s loop), app/star-3d-bench-dev/faces/page.tsx (measures the eight Style A faces: scripts/bench3d/faces.mjs --write), app/star-3d-bench-dev/headshots/page.tsx (twelve made-up players and you as card headshots shot from the 3D model, beside the drawn heads they replace, with the time each picture took; Make again forgets this device's kept pictures; ?only=3d|drawn; components/star/Headshot3D.tsx, lib/star/headshot3d/; stills and timings: node scripts/bench3d/headshots.mjs DIR), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old for the before). Home stills: node scripts/bench3d/home.mjs PREFIX 3 8.6 20. Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; on any 3D test page ?skinfix=0 shows the old skin, ?framing=old the old cut-scene cameras, ?face=old still faces.",
+    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/scene/page.tsx (the cut-scene and Free Roam shots: a bare StyleTest3D, ?scene=director&fixture=…&clean=1; it took over from the deleted Art styles page /star-style-dev, 21 Oct 2026; also the Lag test's cut-scene step), app/star-3d-bench-dev/home/page.tsx (the Home shot; window.__homeT holds a moment), app/star-3d-bench-dev/face/page.tsx (one head close up, its moving face on an 8 s loop), app/star-3d-bench-dev/faces/page.tsx (measures the eight Style A faces: scripts/bench3d/faces.mjs --write), app/star-3d-bench-dev/headshots/page.tsx (twelve made-up players and you as card headshots shot from the 3D model, beside the drawn heads they replace, with the time each picture took; Make again forgets this device's kept pictures; ?only=3d|drawn; components/star/Headshot3D.tsx, lib/star/headshot3d/; stills and timings: node scripts/bench3d/headshots.mjs DIR), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old for the before). Home stills: node scripts/bench3d/home.mjs PREFIX 3 8.6 20. Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; on any 3D test page ?skinfix=0 shows the old skin, ?framing=old the old cut-scene cameras, ?face=old still faces.",
   },
   "/star-3d-area-dev": {
     title: "3D Area",
-    what: "Every 3D place, cutscene and 3D area being built, in one list, plus a store of every 3D and Blender file the site has. Nothing here touches a career.",
+    what: "Every 3D place, every cut scene (the same list the 3D Scene Editor shows) and the other 3D areas being built, plus a store of every 3D and Blender file the site has. Nothing here touches a career.",
     buttons: [
       {
         group: "Top of the page",
         items: [
           ["← (top left)", "Back to the 3D places group page."],
-          ["Places / All scenes / 3D files (left, or along the top on a phone)", "Switch between the 3D places, the full list of scenes and the 3D file store. The page remembers which one you had open."],
+          ["Places / Cut scenes / Other scenes / 3D files (left, or along the top on a phone)", "Switch between the 3D places, every cut scene, the other 3D scenes and the 3D file store. The page remembers which one you had open."],
         ],
       },
       {
         group: "Places",
         items: [
-          ["A place card (Signing, Manager's office, Shop, Garden, House, Training, 3D scene editor)", "Opens that 3D place's own test page. The picture is a real still of that page."],
+          ["A place card (Signing, Manager's office, Shop, Garden, House, Training, 3D scene editor)", "Opens that 3D place's own test page. The picture is a real still of that place in today's look (re-made 21 Oct 2026, after the new skin, cameras and arms)."],
         ],
       },
       {
-        group: "Scenes",
+        group: "Cut scenes",
+        items: [
+          ["A cut-scene card (Contract signing, Goal celebration, Trophy lift, Walk-out, Press conference, The Icon, Farewell, then any KEPT ones)", "Opens that cut scene in the 3D Scene Editor, ready to edit. This is the SAME list the editor's scene buttons show: the hand-made scenes, then every scene kept from the Scene generator (shared ones and this device's). The picture is a real still of the scene as it plays on a phone; a kept scene has no still yet (it says KEPT)."],
+          ["EDIT", "Same as tapping the card."],
+        ],
+      },
+      {
+        group: "Other scenes",
         items: [
           ["A scene card", "Opens that scene's own test page. A card with no › (Planned) has nothing to open yet."],
           ["The coloured tag", "Prototype: being built here. Test page: its own dev page. Pictures: renders only. Planned: written up, not started. Proposal: one picture to judge."],
@@ -1604,7 +1611,7 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Nowhere — a sandbox. Each scene says on its own page whether any of it is in the game.",
     ],
-    dev: "app/star-3d-area-dev/page.tsx · lib/star/area3d.ts (the scene list) · lib/star/assets3dManifest.ts (generated) · scripts/assets3d-manifest.mjs · tests/star/assets3d.mts",
+    dev: "app/star-3d-area-dev/page.tsx · lib/star/cutscene/sceneList.ts (the one cut-scene list, shared with the Scene Editor; stills public/admin/3d-area/cut-<id>.webp) · place and cut-scene stills: node scripts/admin3d/stills.mjs (dev server running) · lib/star/area3d.ts (the other scenes) · lib/star/assets3dManifest.ts (generated) · scripts/assets3d-manifest.mjs · tests/star/assets3d.mts",
   },
 
   "/star-3d-area-dev/signing": {
@@ -1890,45 +1897,6 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing is saved. The career is made up, and the result (and the Team bar change it shows) goes nowhere."],
     inGame: ["Home → Garden → the training-pitch gate opens the same picker. Winning a drill (or a level crossbar finish) moves the Team bar the way the Woodwork challenge does, and costs the usual training energy. Pace Sprint leaves the Team bar alone and adds its stars to your pace instead."],
     dev: "app/star-training3d-dev/page.tsx; the gate and picker components/star/Training3D.tsx (the crossbar is CrossbarChallenge there, on EngineFeature); the 3D drills components/star/Play3D.tsx on the shared 3D engine lib/star/play3d (drill list drills.ts, rules twoTouch.ts / freeRoam.ts / wembley.ts / headersVolleys.ts / paceDrill.ts, speeds and stamina by stat lib/star/three3d/gait.ts (tests/star/play3dGait.mts), World world.ts, picture scene.ts; tests tests/star/play3d.mts, wembley3d.mts, headersVolleys3d.mts, practiceCam.mts); the practice camera lib/star/three3d/practiceCam.ts; the device controls lib/star/play3d/controlScheme.ts; crossbar rules lib/star/training3d/crossbar.ts (tests/star/crossbar3d.mts). Loaders through withMeshopt.",
-  },
-  "/star-style-dev": {
-    title: "Style Testing",
-    what: "Try the shortlisted art styles (and Mix) on the REAL game (the match engine's own chances, drawn in 3D), the 3D free roam and cut scenes, switching live. A test area: nothing here changes the game.",
-    buttons: [
-      { group: "The page (above the scene)", items: [
-        ["Scene generator ›", "Opens the Scene generator (Studio): a cut scene made from a game moment, its recipe, Good/Bad, keep it."],
-        ["Scene editor ›", "Opens the 3D Scene Editor on the Cut-scene Director."],
-        ["The stage", "Everything below plays in this box on the admin frame. ?clean=1 (the stills and film tools) or ?bare=1 opens it full screen, as before."],
-      ] },
-      { group: "Style (top row)", items: [
-        ["A", "Golden Hour: painted, warm sunset, soft cel bands, thin brown lines, haze, paper grain."],
-        ["B", "Floodlight Ink: night under floodlights, bold black lines, comic dots in the shadows, rain."],
-        ["D", "Pixel: drawn small and blown up with square pixels, a limited palette with dither."],
-        ["S", "Strikers: toy-like glossy chunky men, a rusted steel arena with an electric cage, smoky orange-and-teal light, lightning, glowing goal frames. Our own take: no game's characters, names or logos."],
-        ["Anime", "A normal daytime match; only the players are anime: cel-shaded with clean outlines. In cut scenes: poses on twos, a close-up of the eyes before the strike, an impact frame, speed lines and an aura."],
-        ["H", "Console Real: realistic lighting, mown stripes, a glow on bright things."],
-        ["Mix", "H for gameplay, A for cut scenes, the same warm evening sky and colour grade on both."],
-      ] },
-      { group: "Scene (second row)", items: [
-        ["Real game (opens first)", "The real match: Infinite Highlights' chances one after another on the one engine, with its scoreboard and commentary. Drag back from the ball, pick where to strike, and the real keeper and scoring decide it. The 3D picture only draws what the match does."],
-        ["View: 2D | 3D view", "Real game: the 2D game itself, or the same game drawn in 3D in the chosen style. In 3D a touch is handed to the 2D game at the same spot of grass; a shot's drag keeps your finger's own length, so it kicks as hard as in 2D."],
-        ["Free Roam (3D)", "Free Roam, playable: you, two team-mates and a keeper, four opponents standing goal-side (scenery: they never tackle). The camera is fixed and follows the ball."],
-        ["Free Roam (2D)", "The same free roam with every man drawn flat on a card: plain heads, no faces, the number on the back."],
-        ["Cut: Goal", "Now a script on the cut-scene system: on the ball, behind the shooter, the top corner, wheels away, a low knee slide, the roar, team-mates pile on. ?cut=old plays the first hand-coded version."],
-        ["Cut: Signing", "Now a script on the cut-scene system: sat across the desk, the contract slides over, he picks up the pen and signs his own signature, looks up and smiles, both stand and shake hands, then he holds his shirt up for the cameras. ?cut=old plays the first version."],
-        ["Cut-scene Director", "Watch any cut scene. Hand-made: the seven written scenes (signing, goal, trophy, walk-out, press, The Icon, Farewell). Generate from event: pick a game event, its feeling, stakes, intensity, rival there, home, night, then Make it; 🎲 Reroll tries another seed. ▶/❚❚ play and pause, ↺ replay, Skip jumps to the end, the slider scrubs (the beats are marked under it). \"Shot rules\" scores the shots against the film rules (opens on the place, pace of cuts, one side of the line, no jump cuts, a close-up). The style chips above change the look live. Settings → Look → Cut-scene camera: New adds the camera pass (a wide first, stiff moves hidden behind faces and props, every shot moving) and the scene's music (when Sound effects is on); Old plays the shots as written."],
-        ["Walk-out", "The farewell guard of honour as it is in the game. The styles don't reach it yet."],
-        ["Camera … from straight down", "Real game and free roam: the camera's tilt (real game 20 to 70, free roam 10 to 70). 40 is the starting angle; 0 would be straight down. Real game: the camera frames everyone in the chance, the goal at the top. The men lean back towards the camera a little so they read at full height."],
-        ["↺ Replay", "Cut scenes: play it again from the start."],
-        ["Left thumb / tap / drag back", "Gameplay: move (push to the edge to sprint), pass or call for it, shoot. WASD or the arrows, Shift and Space on a keyboard."],
-      ] },
-      { group: "Lag test (only while one is running)", items: [
-        ["The pill at the top", "A Lag test started in the game (Settings → 🛠 Dev → Lag test) comes here for its last step, the cut scene: its link opens the Cut-scene Director. I'm there records 30 s, then Next shows the results. The pill measures only; nothing on this page changes."],
-      ] },
-    ],
-    saving: ["Nothing is saved. The address can hold a set-up: ?style=ink&scene=goal&tilt=30 (and &t=6 holds a cut scene still at 6 seconds). Director: ?scene=director&fixture=signing, or ?scene=director&event=scored&stakes=0.8&emotion=joy&seed=3; &clean=1 hides the controls for filming; &cam=old or &cam=new overrides the Cut-scene camera setting on this page. Real game: &seed=7 picks the chance stream, &kinds=one_on_one,penalty only those chances, &view=2d starts on 2D, &clock=virtual freezes the clock for frame-by-frame filming (scripts/film/frames3d.mjs)."],
-    inGame: ["Nowhere yet: a sandbox for choosing the look. The 2D match is not touched.", "Cut-scene Director (Hand-made): a 3D Scene Editor edit APPROVED for that scene and ticked for \"the test page\" plays here."],
-    dev: "app/star-style-dev/page.tsx · components/star/StyleTest3D.tsx · Real game: components/star/RealGame3D.tsx (EnginePlay in an EngineFrameContext, lib/star/engineFrame.ts) + lib/star/style3d/engineView.ts (the 3D picture and touch hand-over), lib/star/virtualClock.ts (filming) · lib/star/style3d/ (styles.ts the five looks as data, kit.ts sky + lights + rain + materials, post.ts the one-pass post shader, stadium.ts, gameplay.ts on lib/star/play3d's World + picture via its optional bare/rig/draw/onBuilt hooks, flatFigure.ts the 2D cards, cutscenes.ts → the cut-scene system). The cut-scene system: lib/star/cutscene/ (README.md there); components/star/CutsceneDirector.tsx. Loaders through withMeshopt. Post is off on Low quality except the pixel style.",
   },
   "/star-shop3d-dev": {
     title: "3D Shop",

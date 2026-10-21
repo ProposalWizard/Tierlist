@@ -63,9 +63,9 @@ about a minute for 2 s of film), perfect to watch.
 
 ```bash
 # 1. a cut scene, full length (the page says how long it is)
-node scripts/film/frames3d.mjs "http://localhost:PORT/star-style-dev?style=mix&scene=goal&clean=1" --out /abs/frames/goal
+node scripts/film/frames3d.mjs "http://localhost:PORT/star-3d-bench-dev/scene?style=mix&scene=goal&clean=1" --out /abs/frames/goal
 # 2. a scripted gameplay demo (dribble forward, shoot), 4 s
-node scripts/film/frames3d.mjs "http://localhost:PORT/star-style-dev?style=mix&scene=play3d&demo=dribble-shoot&clean=1" --out /abs/frames/play
+node scripts/film/frames3d.mjs "http://localhost:PORT/star-3d-bench-dev/scene?style=mix&scene=play3d&demo=dribble-shoot&clean=1" --out /abs/frames/play
 # 3. join into an MP4 + a contact sheet (every 6th frame, with times)
 python3 scripts/film/frames3d_encode.py /abs/frames/goal /abs/out/goal.mp4 --every 6
 ```

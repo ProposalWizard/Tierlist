@@ -4,7 +4,7 @@
  *
  *   On:  the career match is drawn in 3D (lib/star/style3d/engineView.ts) over
  *        the real 2D match, which keeps running underneath, invisible, and
- *        takes every touch — exactly as on /star-style-dev → "Real game".
+ *        takes every touch — exactly as on /star-3d-bench-dev/scene → "Real game".
  *        Nothing about the football changes; only the picture.
  *   Off: the 2D match, as it was.
  * Being tested: On in Preview only (lib/star/gameVersions.ts), so the default is Off.

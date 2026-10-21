@@ -4,7 +4,7 @@
 //
 //   node scripts/cutscene/stills.mjs "<url>" <outPrefix> <t> [t ...] [--sheet]
 //
-// e.g. node scripts/cutscene/stills.mjs "http://localhost:3000/star-style-dev?scene=director&fixture=signing&clean=1" /tmp/sign 2 6 9 12
+// e.g. node scripts/cutscene/stills.mjs "http://localhost:3000/star-3d-bench-dev/scene?scene=director&fixture=signing&clean=1" /tmp/sign 2 6 9 12
 // --sheet also writes <outPrefix>-sheet.png: every still side by side, labelled.
 import { chromium } from "playwright";
 import fs from "node:fs";
