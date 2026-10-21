@@ -162,9 +162,86 @@ export const HEADER_Z = 1.85;
 export const VOLLEY_MAX_Z = 0.95;
 
 /** The height the cross arrives at (the build-up's last pass, and the ball you
- *  line up while you aim): a header at your head, a volley at the top of its bounce. */
+ *  line up while you aim): a header at your head, a volley at the top of its bounce.
+ *  The kind's usual height; one chance's own height is airZOf. */
 export function arriveZ(kind: string): number {
   return kind === "header" ? HEADER_Z : kind === "volley" ? VOLLEY_MAX_Z : 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  EACH CHANCE'S OWN HEIGHT (headers piece 4, 21 Oct 2026)
+//
+//  Research (docs/research/2026-10-21-headers-volleys-acrobatics.md §5.4):
+//  "every header arrives at 1.85 m and every volley bounces to 0.95 m. Real
+//  headers are struck between 1.5 and 2.6 m." So a header chance carries its
+//  own height (`airZ` on the scenario: a plain number, so it survives the
+//  goal replay's JSON copy of the scenario):
+//   - a real header or volley (real moments): the height it was really struck at;
+//   - a header off a cross drawing: one height from the real spread
+//     (REAL_HEADER_Z_DECILES), picked from the picture itself (no random number).
+//  Nobody is placed by it: it is only how high the ball is.
+//
+//  AIR_HEIGHT_VARIES switches all of it. It stays false until CanvasMatch.tsx
+//  passes the chance to airWaitZ (the ball while you aim: one line there,
+//  `airWaitZ(sc.kind, t, sc)`). Without that line the ball would arrive at its
+//  own height, hang at 1.85 m while you aim, then be struck from its own height.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** The engine's own air heights (canvasEngine.ts HEADER_MIN_Z, HEADER_MAX_REACH_Z,
+ *  VOLLEY_MIN_Z, in m; not exported there, so repeated here with the same numbers). */
+export const AIR_HEADER_MIN_Z = 1.3;
+export const AIR_HEADER_MAX_Z = 2.6;
+export const AIR_VOLLEY_MIN_Z = 0.35;
+
+/** On: each header/volley chance has its own height (airZOf). Off: the kind's usual height. */
+export const AIR_HEIGHT_VARIES = false;
+
+/** A header is met between these (m): research §5.4, real headers 1.5 to 2.6 m. */
+export const HEADER_Z_RANGE: readonly [number, number] = [1.5, AIR_HEADER_MAX_Z];
+/** The top of a volley's bounce stays between these (m): a real volley struck at
+ *  0.4 m still bounces high enough to read; 1.3 m is where a header starts. */
+export const VOLLEY_TOP_RANGE: readonly [number, number] = [0.6, AIR_HEADER_MIN_Z];
+
+/**
+ * The real spread of header heights (m), 0th to 100th percentile in tenths:
+ * 52 real open-play headers in data/realmoments/tracked.json (DFL headers,
+ * and SkillCorner balls struck between 1.3 and 2.6 m), measured 21 Oct 2026
+ * (z at the strike), held inside HEADER_Z_RANGE. Median 2.1 m.
+ */
+export const REAL_HEADER_Z_DECILES: readonly number[] = [1.5, 1.5, 1.7, 1.9, 2.0, 2.1, 2.1, 2.2, 2.4, 2.5, 2.6];
+
+const clampZ = (z: number, r: readonly [number, number]) => Math.min(r[1], Math.max(r[0], z));
+
+/** A chance that may carry its own air height. */
+export interface AirHeighted { kind: string; airZ?: number }
+
+/** How high this chance's ball is when it reaches you (m). */
+export function airZOf(sc: AirHeighted): number {
+  const base = arriveZ(sc.kind);
+  if (!AIR_HEIGHT_VARIES || !isAirKind(sc.kind)) return base;
+  const z = sc.airZ;
+  if (typeof z !== "number" || !Number.isFinite(z)) return base;
+  return clampZ(z, sc.kind === "header" ? HEADER_Z_RANGE : VOLLEY_TOP_RANGE);
+}
+
+/** Give a header/volley chance its own height (held inside its kind's range). Other kinds: nothing. */
+export function setAirZ(sc: AirHeighted, z: number): void {
+  if (!isAirKind(sc.kind) || !Number.isFinite(z)) return;
+  sc.airZ = Math.round(clampZ(z, sc.kind === "header" ? HEADER_Z_RANGE : VOLLEY_TOP_RANGE) * 100) / 100;
+}
+
+/** One height from the real header spread for `key` (any whole number; the same key, the same height). */
+export function headerZFromSpread(key: number): number {
+  const u = ((Math.imul((key ^ 0x9e3779b9) >>> 0, 2654435761) >>> 0) % 10000) / 10000;
+  const d = REAL_HEADER_Z_DECILES, f = u * (d.length - 1), i = Math.min(d.length - 2, Math.floor(f));
+  return Math.round((d[i] + (d[i + 1] - d[i]) * (f - i)) * 100) / 100;
+}
+
+/** The key a drawn header picture's height is picked from: where the ball and everyone stand (cm). */
+export function pictureKey(sc: { ball: { x: number; y: number }; player: { x: number; y: number }; defenders: { x: number; y: number }[] }): number {
+  let h = 17;
+  for (const p of [sc.ball, sc.player, ...sc.defenders]) h = (Math.imul(h, 31) + Math.round(p.x * 100) * 7 + Math.round(p.y * 100)) | 0;
+  return h >>> 0;
 }
 
 /**
@@ -174,9 +251,10 @@ export function arriveZ(kind: string): number {
  * was yours. Drawing only: the strike's height is the contact screen's.
  */
 export const VOLLEY_BOUNCE_S = 0.9;
-export function airWaitZ(kind: string, t: number): number {
-  if (kind === "header") return HEADER_Z + 0.05 * Math.sin(t * 2.6);
-  if (kind === "volley") return VOLLEY_MAX_Z * Math.abs(Math.cos((Math.PI * Math.max(0, t)) / VOLLEY_BOUNCE_S));
+export function airWaitZ(kind: string, t: number, sc?: AirHeighted): number {
+  const top = sc ? airZOf(sc) : arriveZ(kind);
+  if (kind === "header") return top + 0.05 * Math.sin(t * 2.6);
+  if (kind === "volley") return top * Math.abs(Math.cos((Math.PI * Math.max(0, t)) / VOLLEY_BOUNCE_S));
   return 0;
 }
 
@@ -186,12 +264,12 @@ export function airWaitZ(kind: string, t: number): number {
  * out wide), how high it goes (a cross, 3-4.6 m at its top) and how high it
  * arrives. Null for any other kind, or a crosser off the pitch.
  */
-export function airArrival(sc: { kind: string; ball: { x: number; y: number }; teammates: { x: number; y: number }[] }):
+export function airArrival(sc: AirHeighted & { ball: { x: number; y: number }; teammates: { x: number; y: number }[] }):
   { from: { x: number; y: number }; apex: number; endZ: number } | null {
   if (!isAirKind(sc.kind)) return null;
   const c = sc.teammates[0];
   if (!c || c.x < -1 || c.x > 69 || c.y < -1 || c.y > 104) return null;
   const L = hyp(c, sc.ball);
   if (L < 6) return null;
-  return { from: { x: c.x, y: c.y }, apex: Math.min(4.6, Math.max(3, 2.6 + L * 0.06)), endZ: arriveZ(sc.kind) };
+  return { from: { x: c.x, y: c.y }, apex: Math.min(4.6, Math.max(3, 2.6 + L * 0.06)), endZ: airZOf(sc) };
 }

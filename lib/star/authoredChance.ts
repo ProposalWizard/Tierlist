@@ -38,7 +38,7 @@ import { CX, GOAL_W, PITCH_W } from "./pitch";
 import { AUTHORED_SCENARIOS } from "./authoredScenarios";
 import type { MatchScenario } from "./scenarios";
 import { listScenarios } from "./scenarioStore";
-import { derivedAirDrawings, isAirKind, CROSSER_MATE_INDEX, CROSSER_IN_M } from "./airDrawings";
+import { derivedAirDrawings, isAirKind, CROSSER_MATE_INDEX, CROSSER_IN_M, setAirZ, headerZFromSpread, pictureKey, type AirHeighted } from "./airDrawings";
 import {
   deriveRuleSet, sampleFromAuthored, violations, MIN_SAMPLES_FOR_INVARIANT,
   type RuleSet, type ShapeSample,
@@ -808,6 +808,11 @@ export function applyAuthoredShape(sc: Scenario, shape: AuthoredShape): {
   // builder's, so the side view is re-hung on IT — you at the bottom, like a
   // corner. (A corner's builder already hangs its frame on the flag.)
   else if (sc.kind === "byline_cross") sc.viewport = crossViewportOnBall(sc.ball, sc.ball.x >= CX ? 1 : -1);
+
+  // A header off a cross drawing meets the ball at one height from the real
+  // spread (1.5 to 2.6 m), picked from the picture: no random number, and
+  // nobody moves (airDrawings.ts airZOf; read only while AIR_HEIGHT_VARIES).
+  if (sc.kind === "header") setAirZ(sc as Scenario & AirHeighted, headerZFromSpread(pictureKey(sc)));
 
   return { defendersPlaced, matesPlaced, removed };
 }

@@ -1,0 +1,66 @@
+diff --git a/data/realmoments/README.md b/data/realmoments/README.md
+index 2f0fd262..4c59bd18 100644
+--- a/data/realmoments/README.md
++++ b/data/realmoments/README.md
+@@ -67,8 +67,12 @@ Off by default; per phone). Off: the game is exactly as before.
+ stable id (`dfl…` DFL, `sc…` SkillCorner, `st…` SoccerTrack; corners `scc…`,
+ `stc…`). By default the game may serve every FULLY REAL open-play shot that
+ passes the automatic checks (`autoCheck`: an open-play shot from within 35 m, their
+-keeper by his goal, all 22 on the pitch, a whole 4 s track, not a header —
+-headers are switched off). A mark overrides that:
++keeper by his goal, all 22 on the pitch, a whole 4 s track, not struck
++overhead). A real header is served for a header chance and a real volley for
++a volley chance, from the ball's real height when it was struck (`z` on each
++tracked shot; `lib/star/realMoments/shots.ts` airKindOf). A foot shot at 1.3 m
++or more, or a ball above 2.6 m, is an overhead kick: acrobatics are not built
++yet, so it is left out. A mark overrides that:
+ 
+ | Layer (newest wins) | Where | Who writes it |
+ |---|---|---|
+diff --git a/lib/star/fhr/realMomentHighlights.ts b/lib/star/fhr/realMomentHighlights.ts
+index 407757cb..79089b0f 100644
+--- a/lib/star/fhr/realMomentHighlights.ts
++++ b/lib/star/fhr/realMomentHighlights.ts
+@@ -32,7 +32,7 @@
+ import type { Scenario, ScenarioKind } from "../canvasEngine";
+ import type { LeadIn, LeadMoment } from "../leadIn";
+ import { isFullyReal, type RealShot, type RealTrack, type TrackedFile, type TrackFile, type TrackedMoment } from "../realMoments/types";
+-import { peopleOf, playKindForShot, scenarioForShot, frameHoldsShot } from "../realMoments/shots";
++import { peopleOf, playKindForShot, scenarioForShot, frameHoldsShot, airKindOf } from "../realMoments/shots";
+ import { trackLeadIn } from "../realMoments/track";
+ import { inGame, pickOf } from "../realMoments/picks";
+ import { ensureRealMomentPicks } from "../realMoments/pickStore";
+@@ -49,10 +49,11 @@ export const REAL_MOMENT_SHARE = 1 / REAL_MOMENT_SHARE_IN;
+ 
+ /**
+  * The kinds a real moment can stand in for (the kind the match asked for must
+- * be one of these). Headers are played as "volley", which is switched off, and
+- * set pieces are never served.
++ * be one of these). A real header is served for a header chance and a real
++ * volley for a volley chance (headers piece 1, 21 Oct 2026: realMoments/shots.ts
++ * airKindOf, from the ball's real height). Set pieces are never served.
+  */
+-export const REAL_MOMENT_KINDS: readonly ScenarioKind[] = ["one_on_one", "tight_angle", "long_range"];
++export const REAL_MOMENT_KINDS: readonly ScenarioKind[] = ["one_on_one", "tight_angle", "long_range", "header", "volley"];
+ 
+ /** Real shots struck from further out than this (metres from the middle of the goal) are left out: 8 of 688 open-play shots, speculative punts. */
+ export const REAL_MOMENT_MAX_M = 35;
+@@ -67,6 +68,9 @@ export const REAL_MOMENT_MEMORY = 40;
+ /** The kind a real moment plays as in the game, or null when it can't be served at all. */
+ export function servedKindOf(m: TrackedMoment): ScenarioKind | null {
+   if (m.what !== "shot" || !isFullyReal(m)) return null;
++  // A foot shot above the waist or a ball above 2.6 m (a scissor or bicycle
++  // kick): acrobatics are not built yet.
++  if (airKindOf(m) === "high") return null;
+   const k = playKindForShot(m);
+   return REAL_MOMENT_KINDS.includes(k) ? k : null;
+ }
+@@ -82,7 +86,7 @@ export function autoCheck(m: TrackedMoment, track: RealTrack | undefined): strin
+   if (m.what !== "shot") return "a corner (only shots are served)";
+   if (!isFullyReal(m)) return "not fully real";
+   if (m.type !== "Open Play") return `a ${m.type.toLowerCase()} (open play only)`;
+-  if (!servedKindOf(m)) return "a header (headers are switched off)";
++  if (!servedKindOf(m)) return airKindOf(m) === "high" ? "struck overhead (acrobatics are not built yet)" : "not a kind the game serves";
+   if (Math.hypot(m.ball[0] - CX, m.ball[1]) > REAL_MOMENT_MAX_M) return `struck from more than ${REAL_MOMENT_MAX_M} m out`;
+   const k = peopleOf(m).keeper;
+   if (!k || k.y >= 12 || Math.abs(k.x - CX) >= 15) return "their keeper is not by his goal";
