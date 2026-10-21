@@ -238,6 +238,17 @@ def tracking():
             b, a1, a2 = tuple(m["ball"]), (CX - 3.66, 0), (CX + 3.66, 0)
             lane.append(sum(1 for p in opp(m) if intri(p, b, a1, a2)))
             mates.append(sum(1 for x, y, mt, kp in m["ff"] if mt and intri((x, y), b, a1, a2)))
+    gaps = []
+    for m in ms:
+        if 16 <= m["ball"][1] <= 35 and back4(m):
+            xs = sorted(p[0] for p in back4(m))
+            gaps += [b - a for a, b in zip(xs, xs[1:])]
+    boxshots = [m for m in ms if m["ball"][1] <= 16.5 and abs(m["ball"][0] - CX) <= 20.16]
+    zone_defs = {"six_yard_box": lambda x, y: abs(x) <= 9.16 and y <= 5.5,
+                 "penalty_spot_area_9_12m": lambda x, y: abs(x) < 4 and 9 <= y <= 12.5,
+                 "second_six_5_11m": lambda x, y: abs(x) <= 9.16 and 5.5 < y <= 11,
+                 "edge_14_20m": lambda x, y: abs(x) < 10 and 14 <= y <= 20}
+    zone_density = {z: round(st.mean(sum(1 for x, y in opp(m) if f(x - CX, y)) for m in boxshots), 2) for z, f in zone_defs.items()}
     counters = [m for m in ms if m.get("counter")]
     cor = [m for m in d["moments"] if m["what"] == "corner" and m["src"] in PRO]
     near = far = 0
@@ -263,6 +274,9 @@ def tracking():
                              "opponents_at_most_3_pct": pct(sum(v <= 3 for v in lane), len(lane)),
                              "team_mate_in_lane_pct": pct(sum(v >= 1 for v in mates), len(mates)),
                              "more_than_one_team_mate_pct": pct(sum(v > 1 for v in mates), len(mates))},
+        "back_four_adjacent_gap_m_16_35m": {"n": len(gaps), "median": round(q(gaps, .5), 1), "p25": round(q(gaps, .25), 1),
+                                             "p75": round(q(gaps, .75), 1), "p90": round(q(gaps, .9), 1)},
+        "box_shots_defenders_per_zone": {"n": len(boxshots), **zone_density},
         "counter_shots": {"n": len(counters), "share_pct": pct(len(counters), len(ms)),
                           "defenders_in_box_median": st.median([inb(m) for m in counters]) if counters else None},
         "corners_attacker_at_post_pct": {"n": len(cor), "near_post_six_yard_half": pct(near, len(cor)), "far_post_six_yard_half": pct(far, len(cor))},

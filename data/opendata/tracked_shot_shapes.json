@@ -123,6 +123,20 @@
   "team_mate_in_lane_pct": 12.4,
   "more_than_one_team_mate_pct": 2.0
  },
+ "back_four_adjacent_gap_m_16_35m": {
+  "n": 708,
+  "median": 5.2,
+  "p25": 3.5,
+  "p75": 7.5,
+  "p90": 9.8
+ },
+ "box_shots_defenders_per_zone": {
+  "n": 317,
+  "six_yard_box": 0.59,
+  "penalty_spot_area_9_12m": 0.73,
+  "second_six_5_11m": 2.07,
+  "edge_14_20m": 1.04
+ },
  "counter_shots": {
   "n": 11,
   "share_pct": 2.0,

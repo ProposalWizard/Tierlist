@@ -7,8 +7,8 @@
  *
  * The cause: a man a chance does not use is parked at (-400, 400), "off the
  * picture" (authoredChance.ts OFF_THE_PICTURE). A drawing with no poacher
- * parks the follower there, and so did EVERY Kane drawing (since deleted with
- * the StatsBomb data). matchView's zoom
+ * parks the follower there, and so did EVERY Kane drawing (since deleted, with
+ * the licensed data they came from, 19 Oct 2026). matchView's zoom
  * counted him as a man to keep on screen, could not fit a man 400 m away,
  * and gave up: the kind's widest camera, people in the top quarter.
  *
@@ -21,7 +21,7 @@
  *  1. A parked man is not a body to frame (bodiesOf / keyPointsOf).
  *  2. A one-on-one with a parked follower still zooms in.
  *  3. Fully real shots (tracking, data/realmoments): the people fill the
- *     screen. (Was the Kane drawings, deleted with the StatsBomb data.)
+ *     screen. (Was the Kane drawings, deleted 19 Oct 2026.)
  *  4. The extra glass fit (fitToPlay) never cuts anybody off the glass
  *     (Match camera Old); with Match camera New (camera round 3) the action
  *     is never cut off and nobody else is cut in half.

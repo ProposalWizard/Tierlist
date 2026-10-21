@@ -57,7 +57,8 @@ export const knucklePowerOn = () => gameplayVersion("knucklePower") === "new";
 
 /** Kinds whose strike is a pass or a delivery, or a dead ball with its own
  *  rules (kindRules/freeKick.ts): never touched. A free kick already converts
- *  at the real rate (6%, StatsBomb ~6%). */
+ *  at the real rate (6%: Wyscout public dataset, 137 of 2,209 direct free
+ *  kicks = 6.2%, data/opendata/wyscout_shot_outcomes.json). */
 const UNTOUCHED: ScenarioKind[] = ["corner", "byline_cross", "free_kick"];
 
 /** Goal-line x of the mouth (pitch metres) and its margin for "aimed at goal". */
@@ -128,8 +129,13 @@ export function gradeContact(c: Contact, power: number, knuckles = true, field =
 // ─────────────────────────────────────────────────────────────────────────
 
 /** Harder to strike true: a volley off a moving ball, a header, a strike from
- *  distance at full stretch. Measured against StatsBomb on-target rates by
- *  kind (docs/gameplay15/shots.md). */
+ *  distance at full stretch. Set against real on-target rates by kind
+ *  (docs/gameplay15/shots.md). Re-sourced 21 Oct 2026 to free data (Wyscout
+ *  public dataset, data/opendata/wyscout_shot_outcomes.json `by_kind`): long
+ *  range 20-28 m 28% on target, tight angle 43%, open-play header 40%, foot
+ *  shot off a high ball (the volley stand-in) 34%, penalty 72.5% scored. The
+ *  game's on-target rates still sit above all of these (shots.md), so the
+ *  spreads are unchanged: the new reference asks for no less spread. */
 const KIND_SPREAD: Partial<Record<ScenarioKind, number>> = {
   volley: 1.9,
   header: 1.7,

@@ -152,7 +152,9 @@ console.log("\n4. KEEPER FEEL (on top of Keeper pro)");
 {
   // The whole update together (Shots, Keeper pro, Ball physics, Shot power,
   // Contact field, Keeper feel): save % by distance for a 70-rated keeper
-  // against the real Premier League (StatsBomb 2015/16: 53 / 77 / 90).
+  // against real keepers: free Wyscout data, foot shots on target, 44 / 73 / 90
+  // (data/opendata/wyscout_shot_outcomes.json `foot_test_bands`; re-sourced
+  // 21 Oct 2026, was 53 / 77 / 90 from an older licensed reference).
   on("keeperPro", true); on("keeperFeel", true); E.setBallPhysics("new");
   const kinds = ["one_on_one", "tight_angle", "long_range", "volley", "through_ball"] as const;
   const bd: Record<string, [number, number]> = {};
@@ -163,8 +165,8 @@ console.log("\n4. KEEPER FEEL (on top of Keeper pro)");
     bd[k] ??= [0, 0]; bd[k][0]++; if (r.save && r.save !== "fumble") bd[k][1]++;
   }
   const rate = (k: string) => pct(bd[k][1], bd[k][0]);
-  console.log(`  all new, keeper 70: under 12 m ${rate("under 12 m").toFixed(0)}% · 12-22 m ${rate("12-22 m").toFixed(0)}% · 22 m+ ${rate("22 m+").toFixed(0)}% (real 53 / 77 / 90)`);
-  ok(Math.abs(rate("under 12 m") - 53) < 15 && Math.abs(rate("12-22 m") - 77) < 12 && Math.abs(rate("22 m+") - 90) < 10,
+  console.log(`  all new, keeper 70: under 12 m ${rate("under 12 m").toFixed(0)}% · 12-22 m ${rate("12-22 m").toFixed(0)}% · 22 m+ ${rate("22 m+").toFixed(0)}% (real 44 / 73 / 90)`);
+  ok(Math.abs(rate("under 12 m") - 44) < 15 && Math.abs(rate("12-22 m") - 73) < 12 && Math.abs(rate("22 m+") - 90) < 10,
     "the whole update together keeps a 70's save % near the real one at every distance");
   on("keeperPro", false); on("keeperFeel", false); E.setBallPhysics("old");
 }
