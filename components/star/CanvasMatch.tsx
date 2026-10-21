@@ -54,6 +54,8 @@ import {
 import { mulberry32 } from "@/lib/star/season";
 import { newChancesOn } from "@/lib/star/newChances";
 import { stepPlayOn, carryFrom, carryOnLeadIn, MAX_LAY_OFFS, steerPlayOn, callForIt, callForItShown, runAfterWanted, startPlayOnRun, sprintPlayOn, type PlayOn, type CarryFrom } from "@/lib/star/playOn";
+import { pickBarCorner, type BarCorner, type Box as BarBox } from "@/lib/star/barSpot";
+import { panToKeep, followStep, widenToHold, easeCam, BACK_EASE_S } from "@/lib/star/runCamera";
 import { takeEnergySpent, setLegsEnergy, barCap, moveKeyOf, keysScreenDir, noKeys, KEY_PUSH, type MoveKeys } from "@/lib/star/legs";
 import { afterPassStickOn } from "@/lib/star/afterPass";
 import { dealDribble, dribbleLevelFor, newDribbleDeal, type DribbleDeal } from "@/lib/star/dribbleDeal";
@@ -236,6 +238,11 @@ import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt
 
 /** The net's drawn depth from the side, metres: a real goal's ~2 m. */
 const SIDE_NET_DEPTH = 2.0;
+/** B14b: the stamina bar in its corner (lib/star/barSpot.ts BAR_INSET = 8 px; 36 px down at the top while the added-time badge is up). */
+const barCornerStyle = (c: "bl" | "br" | "tl" | "tr", addedUp: boolean): React.CSSProperties => ({
+  ...(c === "bl" || c === "tl" ? { left: 8 } : { right: 8 }),
+  ...(c === "tl" || c === "tr" ? { top: addedUp ? 36 : 8 } : { bottom: 8 }),
+});
 import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
 
@@ -1505,6 +1512,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** The stamina bar on screen: how full (0..1), the cap your energy sets (0..1), sprinting. */
   const [stamUi, setStamUi] = useState<{ v: number; cap: number; sprint: boolean; auto: boolean } | null>(null);
   const stamUiAtRef = useRef(0);
+  /** B14b: which corner of the pitch the stamina bar sits in (lib/star/barSpot.ts). */
+  const [barCorner, setBarCorner] = useState<BarCorner>("bl");
+  const barCornerRef = useRef<BarCorner>("bl");
   /** The bar as it was at the end of the last run in this move (a run that carries on keeps it). */
   const barRef = useRef(1);
   /** W A S D / arrows and Shift, held (PC). */
@@ -2888,6 +2898,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const baseViewportRef = useRef<Viewport>({ x1: -5, x2: 105, y1: -5, y2: 100 });
   /** PROTOTYPE zoom-to-play: how far this chance's camera is zoomed in (1 = today). */
   const playZoomRef = useRef(1);
+  /**
+   * B14b (lib/star/runCamera.ts): the ball came back into your run — keep the
+   * camera you were watching (set by resolveOutcome, read once by loadScenario).
+   */
+  const keepRunCamRef = useRef(false);
+  /** B14b: an eased widen in progress (from, to, seconds in, zoom at the start). */
+  const camEaseRef = useRef<{ from: Viewport; to: Viewport; t: number; zoom0: number } | null>(null);
   /** Figures and ball: divide their size by this (Z2 keeps them today's size). */
   const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1);
 
@@ -3050,6 +3067,63 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       return fy < 0.5 ? "bottom" : "top";
     } catch { return cur ?? "top"; }
   };
+  /** B14b: a man's height on the glass (CSS px, head to boots) at this camera,
+   *  the size the loop draws him (R, below, times MATCH_FIGURE_HEIGHT_R). */
+  const figPxOnGlass = () => {
+    const b = canvasBox(), vp = viewportRef.current, turned = facingRef.current !== "up";
+    const unitCss = turned ? b.height / (vp.x2 - vp.x1) : b.width / (vp.x2 - vp.x1);
+    const nv = newViewRef.current;
+    const R = (unitCss / (nv ? figZoomDiv() : 1)) * MATCH_FIGURE_R_MULT * (nv ? NEW_FIGURE_SCALE * NEW_OUTFIELD_SHRINK * figureGrow() : 1);
+    return R * MATCH_FIGURE_HEIGHT_R;
+  };
+  /**
+   * B14b: the stamina bar's corner (lib/star/barSpot.ts). The goal (posts,
+   * net, bar), the ball (and how high it is) and every man, as boxes in the
+   * pitch wrapper's own CSS px; the bar takes the first corner clear of all of
+   * them and stays there while it is clear.
+   */
+  const updateBarCorner = () => {
+    const w = wrapRef.current;
+    if (!w) return;
+    const r = w.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0)) return;
+    const loc = (p: { x: number; y: number }) => { const q = pitchToClient(p); return { x: q.x - r.left, y: q.y - r.top }; };
+    const sc = scenarioRef.current;
+    const pl = loc({ x: POST_L, y: 0 }), pr = loc({ x: POST_R, y: 0 });
+    const unitCss = Math.hypot(pr.x - pl.x, pr.y - pl.y) / (POST_R - POST_L);
+    const gh = unitCss * (VFX_GOAL_H + 0.4);
+    const gpts = [pl, pr, loc({ x: POST_L, y: -SIDE_NET_DEPTH }), loc({ x: POST_R, y: -SIDE_NET_DEPTH })];
+    const things: { box: BarBox; weight?: number }[] = [{
+      box: { x1: Math.min(...gpts.map((q) => q.x)) - gh, x2: Math.max(...gpts.map((q) => q.x)) + gh, y1: Math.min(...gpts.map((q) => q.y)) - gh, y2: Math.max(...gpts.map((q) => q.y)) + gh * 0.3 },
+      weight: 10,
+    }];
+    const fh = figPxOnGlass();
+    const man = (p: { x: number; y: number } | null | undefined, weight = 1) => {
+      if (!p) return;
+      const q = loc(p);
+      things.push({ box: { x1: q.x - fh * 0.45, x2: q.x + fh * 0.45, y1: q.y - fh * 1.05, y2: q.y + fh * 0.15 }, weight });
+    };
+    man(sc.player, 3); man(sc.keeper);
+    sc.defenders.forEach((d) => man(d)); sc.teammates.forEach((t) => man(t));
+    if (sc.runner) man(sc.runner.pos);
+    (sc.secondaryRunners ?? []).forEach((m) => man(m.pos));
+    if (sc.follower) man(sc.follower);
+    const bl = ballRef.current, bp = loc(bl ? bl.pos : sc.ball), bz = (bl?.z ?? 0) * unitCss;
+    things.push({ box: { x1: bp.x - 8, x2: bp.x + 8, y1: bp.y - bz - 8, y2: bp.y + 8 }, weight: 10 });
+    const topPad = (addedRef.current ?? 0) > 0 && matchMinuteRef.current > MATCH_DURATION ? 28 : 0;
+    const c = pickBarCorner(r.width, r.height, things, barCornerRef.current, topPad);
+    if (c !== barCornerRef.current) { barCornerRef.current = c; setBarCorner(c); }
+  };
+  // Five looks a second while the bar is up: it moves only when something
+  // comes into its corner (pickBarCorner keeps a clear corner).
+  const barUp = !!stamUi;
+  useEffect(() => {
+    if (!barUp) return;
+    try { updateBarCorner(); } catch { /* a missed look keeps the corner */ }
+    const id = window.setInterval(() => { try { updateBarCorner(); } catch { /* ignore */ } }, 200);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [barUp]);
   /** A pitch point -> where it is on the glass (client px). The inverse of
    *  pitchFromPointer, turn and tilt and all. */
   const pitchToClient = (p: { x: number; y: number }) => {
@@ -5048,7 +5122,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     // "After you pass: Joystick" (lib/star/afterPass.ts): the stick, bottom-left,
     // in the match's own picture (the same stick the top-down dribble draws).
-    if (phaseRef.current === "flight" && playOnRef.current?.stick && !playOnRef.current.stick.auto) {
+    if (phaseRef.current === "flight" && playOnRef.current?.stick?.thumb) {
       const st = poStickUiRef.current;
       const rr = Math.min(W, H) * 0.13;
       // Resting above the commentary box, which covers the bottom of the pitch.
@@ -5604,7 +5678,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         return {
           stick: !!s, layOffLive: po.layOffLive, choice: s?.choice ?? null, push: s ? { ...s.push } : null, you: { ...scenarioRef.current.player }, youOnScreen: pitchToClient(scenarioRef.current.player),
           // B14: the run's legs (lib/star/legs.ts) and whether Auto run is steering.
-          auto: !!s?.autoOn, thumb: !!s && !s.auto,
+          auto: !!s?.autoOn, thumb: !!s?.thumb, held: !!s?.held,
           legs: s?.legs ? { bar: s.legs.stamina.v, cap: s.legs.cap, sprinting: s.legs.sprinting, speed: Math.hypot(s.legs.vel.x, s.legs.vel.y) } : null,
           energy: energyRef.current,
         };
@@ -5641,6 +5715,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           zoom: playZoomRef.current, canvas: r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null,
           box: (() => { const b = canvasBox(); return { x: b.left, y: b.top, w: b.width, h: b.height }; })(),
           men, hw: canvasHW(), sc: JSON.parse(JSON.stringify(sc)),
+          // B14b: how big a man is on the glass (CSS px, head to boots) and the
+          // pitch in view (metres across x down), at this camera, this frame.
+          ...(() => {
+            const vp = viewportRef.current, turned = facingRef.current !== "up";
+            return { figPx: figPxOnGlass(), barCorner: barCornerRef.current, metres: { across: turned ? vp.y2 - vp.y1 : vp.x2 - vp.x1, down: turned ? vp.x2 - vp.x1 : vp.y2 - vp.y1 } };
+          })(),
         };
       },
       // the ball in flight, and a way to set it (ball-physics stills: send a
@@ -6353,6 +6433,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // Nothing outside the frame is part of the game, so there is nothing out
       // there to pan to — and when the camera went looking anyway, you lost your
       // bearings and, twice, the thing you were aiming at.
+      // ── B14b: the one exception, your run (lib/star/runCamera.ts) ──
+      // Harry, 21 Oct 2026: follow the run, never jump. While your pass plays
+      // on, the chance's own camera pans (never zooms) just enough to keep you
+      // — and a ball played back to you — in the picture, inside the chance's
+      // play area. When the ball comes back, a widen (only if you, the ball and
+      // the goal would not all fit) eases in over BACK_EASE_S, the men kept
+      // their size. Everything else keeps the frame exactly as set.
+      {
+        const nvOk = newViewRef.current && !sceneRef.current?.ownFrame && !leadRef.current && !runOnRef.current;
+        const ce = camEaseRef.current;
+        if (ce) {
+          ce.t += dt;
+          const v = easeCam(ce.from, ce.to, ce.t / BACK_EASE_S);
+          // The men stay the size they were (the zoom divides back, as Zoom does).
+          playZoomRef.current = ce.zoom0 * (ce.from.x2 - ce.from.x1) / (v.x2 - v.x1);
+          baseViewportRef.current = v;
+          if (ce.t >= BACK_EASE_S) camEaseRef.current = null;
+        } else if (nvOk && playOnRef.current && phaseRef.current === "flight") {
+          const sc = scenarioRef.current, po = playOnRef.current, b = ballRef.current;
+          const pts = [sc.player, ...(po.layOffLive && b ? [b.pos] : [])];
+          const want = panToKeep(baseViewportRef.current, pts, sc.viewport);
+          baseViewportRef.current = followStep(baseViewportRef.current, want, dt);
+        }
+      }
       viewportRef.current = baseViewportRef.current;
 
       if (shakeRef.current.t > 0) shakeRef.current.t = Math.max(0, shakeRef.current.t - dt);
@@ -6894,6 +6998,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // your next kick, straight away. Repositioned like a Touch Mode
       // re-touch (resetForTouchOn), without spending its budget.
       playOnCaughtRef.current = false;
+      keepRunCamRef.current = true;   // B14b: the next kick keeps this camera (runCamera.ts)
       const b = ballRef.current;
       if (b) {
         chainRef.current = {
@@ -8267,7 +8372,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     standBackForRunup(scenarioRef.current);
 
-    frameScenario(scenarioRef.current);
+    // B14b: the ball came back into your run — the camera you were watching
+    // stays (no re-frame, no cut). It eases wider only if you, the ball and
+    // the goal would not all be in the picture (runCamera.ts widenToHold).
+    const keepCam = keepRunCamRef.current && isTouchContinuation && newViewRef.current && !sceneRef.current?.ownFrame;
+    keepRunCamRef.current = false;
+    if (keepCam) {
+      const sc = scenarioRef.current, cur = { ...baseViewportRef.current };
+      const to = widenToHold(cur, [sc.player, sc.ball, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }]);
+      // The play area always holds the picture (the engine's "out" line is never on the glass).
+      sc.viewport = { x1: Math.min(sc.viewport.x1, to.x1), x2: Math.max(sc.viewport.x2, to.x2), y1: Math.min(sc.viewport.y1, to.y1), y2: Math.max(sc.viewport.y2, to.y2) };
+      camEaseRef.current = to.x1 === cur.x1 && to.x2 === cur.x2 && to.y1 === cur.y1 && to.y2 === cur.y2 ? null : { from: cur, to, t: 0, zoom0: playZoomRef.current };
+    } else {
+      camEaseRef.current = null;
+      frameScenario(scenarioRef.current);
+    }
     ballRef.current = null;
     setAim(null);
     runupRef.current = null;
@@ -8503,12 +8622,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (f.sx >= 0.6) return false;
       try { c.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       poStickUiRef.current = { id: e.pointerId, cx: e.clientX, cy: e.clientY, fx: f.sx, fy: f.sy, vx: 0, vy: 0 };
+      po.stick.held = true;
       return true;
     }
     const st = poStickUiRef.current;
     if (!st || st.id !== e.pointerId) return false;
     if (kind === "up") {
       poStickUiRef.current = null;
+      po.stick.held = false;   // thumb off: Auto run takes over after AUTO_AFTER_S
       steerPlayOn(po, 0, 0);
       try { c.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
       return true;
@@ -8535,7 +8656,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    * B14: W A S D (or the arrows) steer your run, Shift sprints. Up the keys is
    * up the screen, turned into a pitch direction through the match's camera,
    * as the thumb stick is. Let go: Auto run takes over again (playOn.ts
-   * AUTO_AFTER_S); on "Joystick" you stand, as with the thumb off.
+   * AUTO_AFTER_S), on "Joystick" too while the thumb is off the stick.
    */
   const applyRunKeys = () => {
     const po = playOnRef.current, c = canvasRef.current;
@@ -8602,7 +8723,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       return;
     }
-    if (phaseRef.current === "flight" && playOnRef.current?.stick && !playOnRef.current.stick.auto && poStickInput("down", e)) return;
+    if (phaseRef.current === "flight" && playOnRef.current?.stick?.thumb && poStickInput("down", e)) return;
     if (phaseRef.current === "flight") {
       if (!canCurve) return;
       curveSwipeStartRef.current = { x: e.clientX, y: e.clientY };
@@ -9478,18 +9599,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         {/* "After you pass: Joystick" — the captain's call (playOn.ts callForIt). */}
         {/* B14: the stamina bar (lib/star/legs.ts). Fills to your energy at most
             (the dim part past the line is energy you no longer have); drains as
-            you sprint, refills as you ease off. Top-left, never on the ball. */}
+            you sprint, refills as you ease off. B14b: in the first corner of the
+            pitch clear of the goal, the ball and every man (lib/star/barSpot.ts). */}
         {stamUi && !leadInOn && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
           <div
             data-stamina={stamUi.v.toFixed(2)}
             data-stamina-cap={stamUi.cap.toFixed(2)}
-            className={`pointer-events-none absolute left-2 z-30 rounded-md bg-black/60 px-1.5 py-1 ${ADDED > 0 && matchMinute > MATCH_DURATION ? "top-9" : "top-2"}`}
+            data-stamina-corner={barCorner}
+            className="pointer-events-none absolute z-30 w-[124px] rounded-md bg-black/60 px-1.5 py-1"
+            style={barCornerStyle(barCorner, ADDED > 0 && matchMinute > MATCH_DURATION)}
           >
             <div className="flex items-center justify-between gap-2 text-[9px] font-black uppercase tracking-wider leading-none text-white">
               <span>Stamina</span>
               {runLive && <span className={stamUi.sprint ? "text-amber-300" : "text-white/80"}>{stamUi.sprint ? "Sprint" : stamUi.auto ? "Auto run" : "Run"}</span>}
             </div>
-            <div className="relative mt-1 h-2 w-[104px] overflow-hidden rounded-sm bg-white/15">
+            <div className="relative mt-1 h-2 w-full overflow-hidden rounded-sm bg-white/15">
               <div className="absolute inset-y-0 right-0 bg-black/55" style={{ width: `${(1 - stamUi.cap) * 100}%`, backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 2px, transparent 2px 5px)" }} />
               <div
                 className={`absolute inset-y-0 left-0 ${stamUi.v < 0.25 ? "bg-red-500" : stamUi.v < 0.5 ? "bg-amber-400" : "bg-emerald-400"}`}
