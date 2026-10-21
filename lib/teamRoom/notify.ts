@@ -62,6 +62,36 @@ export function ringsForMessage(m: Pick<TeamMessage, "person" | "body">, answers
   return pick(rings, m.person);
 }
 
+/**
+ * A note under a patch note, an idea or a push (Harry, 21 Oct 2026: "you should
+ * be able to @ someone" in patch-note notes). @Name rings that person, @all the
+ * other two. Never the writer.
+ */
+export function ringsForNote(n: { person: TeamPerson; body: string }): Ring[] {
+  const rings: Ring[] = [];
+  for (const x of parseMessage(n.body).mentions) rings.push({ person: x, why: "mention" });
+  if (mentionsAll(n.body)) for (const x of TEAM_PEOPLE) rings.push({ person: x, why: "all" });
+  return pick(rings, n.person);
+}
+
+/** "> quoted line" rows at the top of a note are the lines it is about; the rest is what was said. */
+export function splitQuotes(body: string): { quotes: string[]; text: string } {
+  const lines = (body ?? "").split("\n");
+  const quotes: string[] = [];
+  let i = 0;
+  for (; i < lines.length && /^>\s?/.test(lines[i]); i++) quotes.push(lines[i].replace(/^>\s?/, "").trim());
+  return { quotes: quotes.filter(Boolean), text: lines.slice(i).join("\n").trim() };
+}
+
+export function payloadForNote(n: { person: TeamPerson; body: string; target_kind: string; target_id: string }, why: RingWhy): PushPayload {
+  const where = n.target_kind === "patch" ? `patch notes v${n.target_id}` : n.target_kind === "idea" ? "an idea" : "a push";
+  const { quotes, text } = splitQuotes(n.body);
+  const body = cut(`${text}${quotes.length ? ` (about: “${quotes[0]}”${quotes.length > 1 ? ` +${quotes.length - 1}` : ""})` : ""}`, 160);
+  const url = n.target_kind === "patch" ? `${TEAM_ROOM.home}?tab=notes&v=${encodeURIComponent(n.target_id)}&notes=1`
+    : n.target_kind === "idea" ? `${TEAM_ROOM.home}?tab=ideas` : TEAM_ROOM.home;
+  return { title: `${n.person} ${why === "all" ? "noted for the team" : "mentioned you"} on ${where}`, body, tag: `kib-note-${n.target_kind}-${n.target_id}`, url, icon: TEAM_ROOM.push.icon };
+}
+
 /** A job typed on the board for someone else rings them. Your own, or a pushed job's tick row, rings nobody. */
 export function ringsForTask(t: Pick<TeamTask, "owner" | "made_by" | "title">): Ring[] {
   if (isJobMarker(t) || t.owner === t.made_by) return [];

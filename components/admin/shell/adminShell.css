@@ -390,3 +390,8 @@ body:has([data-admin-shell]) [data-global-chrome] { display: none !important; }
   .ash[data-look="broadcast"][data-folded="true"] .ash-area[data-on="true"] { clip-path: none; }
 }
 .ash[data-look="bento"] .ash-area[data-on="true"] { border-radius: 12px; }
+
+/* The Inbox bell (Harry, 21 Oct 2026): right end of the phone top bar, or of the game tabs on a computer. */
+.ash-top .ash-bell { margin-left: auto; }
+.ash-games .ash-bell-pc { margin-left: auto; align-self: center; margin-right: 2px; }
+@media (max-width: 1023px) { .ash-games .ash-bell-pc { display: none; } }

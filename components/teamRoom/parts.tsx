@@ -5,13 +5,16 @@
  * Used by the chat bubble (every admin page), the Team room tabs and the
  * patch notes.
  */
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "@/lib/teamRoom/config";
 import { notesFor, stamp, tasksFor, tasksGivenBy, type NoteKind, type TeamTask } from "@/lib/teamRoom/logic";
 import { pushedFor, type PushedJob } from "@/lib/teamRoom/jobs";
 import {
-  addNote, addTask, claimName, deleteNote, deleteTask, markJobsSeen, markRead, tickTask, useTeamRoom,
+  addNote, addTask, claimName, deleteNote, deleteTask, markJobsSeen, markRead, setAck, tickTask, useTeamRoom,
 } from "@/lib/teamRoom/store";
+import { splitQuotes } from "@/lib/teamRoom/notify";
+import { noteMentionsFor, noteSeenKey } from "@/lib/teamRoom/inbox";
+import { clearPatchSelection, usePatchSelection, watchSelection } from "@/lib/teamRoom/patchQuote";
 import { Av, Linked } from "./bits";
 import PushedJobRow from "./PushedJob";
 import PushToggle from "./PushToggle";
@@ -115,34 +118,100 @@ export function TodoList({ visible = true }: { visible?: boolean }) {
 }
 
 /** Notes under an idea or a push. `owner` gets the red dot. */
-export function NotesThread({ kind, id, owner }: { kind: NoteKind; id: string | number; owner: TeamPerson | null }) {
+/**
+ * A notes thread under an idea, a push or a patch note. Patch notes (Harry,
+ * 21 Oct 2026): "@" buttons (@Name rings that person's phone and lands in
+ * their Inbox), and quoting lines: tap lines from the note's list, or select
+ * text on the page and press "Quote my selection". A note shows its quotes
+ * first. Opening the thread marks notes that @ you as seen.
+ */
+export function NotesThread({ kind, id, owner, lines }: { kind: NoteKind; id: string | number; owner: TeamPerson | null; lines?: string[] }) {
   const s = useTeamRoom();
   const [text, setText] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  const [quotes, setQuotes] = useState<string[]>([]);
+  const [picking, setPicking] = useState(false);
+  const selected = usePatchSelection();
+  const box = useRef<HTMLTextAreaElement>(null);
   const now = Date.now();
   const notes = notesFor(s.notes, kind, id);
+  const isPatch = kind === "patch";
   useEffect(() => { if (s.me && owner === s.me) markRead(kind === "idea" ? "notes" : kind === "push" ? "pushNotes" : "patchNotes"); }, [s.me, owner, kind, notes.length]);
+  // Seen: notes here that @ you leave your Inbox.
+  useEffect(() => {
+    if (!isPatch || !s.me) return;
+    for (const n of noteMentionsFor(notes, s.me, s.acks, "1970-01-01")) void setAck("patch", noteSeenKey(n.id), true);
+  }, [isPatch, s.me, s.acks, notes]);
+  // Text selected on this page (the Text view) can be quoted too.
+  useEffect(() => (isPatch ? watchSelection(document, (n) => !!(n && (n as Element).parentElement?.closest?.(".tr-notes"))) : undefined), [isPatch]);
   if (s.status !== "ready" || !s.me) return <RoomGate>{null}</RoomGate>;
-  const add = async () => { const r = await addNote(kind, id, owner, text); if (r.ok) setText(""); else setErr(r.error); };
+  const me = s.me;
+  const add = async () => {
+    const said = text.trim();
+    if (!said && quotes.length === 0) return;
+    const body = [...quotes.map((q) => `> ${q}`), said || "(see the lines above)"].join("\n");
+    const r = await addNote(kind, id, owner, body);
+    if (r.ok) { setText(""); setQuotes([]); setPicking(false); clearPatchSelection(); } else setErr(r.error);
+  };
+  const toggle = (q: string) => setQuotes((l) => (l.includes(q) ? l.filter((x) => x !== q) : [...l, q].slice(0, 6)));
+  const at = (who: string) => {
+    const tag = `@${who} `;
+    setText((t) => (t.includes(`@${who}`) ? t : `${t}${t && !t.endsWith(" ") ? " " : ""}${tag}`));
+    requestAnimationFrame(() => box.current?.focus());
+  };
   return (
     <div className="tr-notes">
       <p className="tr-lbl">Notes · {notes.length}</p>
       {notes.length === 0 && <p className="tr-muted">No notes yet.</p>}
-      {notes.map((n) => (
-        <div key={n.id} className="tr-note">
-          <Av p={n.person} sm />
-          <div className="t"><small><b>{n.person}</b>{stamp(n.created_at, now)}{n.id < 0 && <em className="tr-local">saved on this device only</em>}</small><p><Linked text={n.body} me={s.me} /></p></div>
-          {n.person === s.me && <button className="tr-x" onClick={() => deleteNote(n.id)} title="Delete your note" aria-label="Delete your note">✕</button>}
+      {notes.map((n) => {
+        const { quotes: q, text: t } = splitQuotes(n.body);
+        return (
+          <div key={n.id} className="tr-note">
+            <Av p={n.person} sm />
+            <div className="t">
+              <small><b>{n.person}</b>{stamp(n.created_at, now)}{n.id < 0 && <em className="tr-local">saved on this device only</em>}</small>
+              {q.map((x, i) => <blockquote key={i} className="tr-nq">{x}</blockquote>)}
+              {t && <p><Linked text={t} me={me} /></p>}
+            </div>
+            {n.person === me && <button className="tr-x" onClick={() => deleteNote(n.id)} title="Delete your note" aria-label="Delete your note">✕</button>}
+          </div>
+        );
+      })}
+      {quotes.length > 0 && (
+        <div className="tr-nqs" aria-label="Lines this note is about">
+          {quotes.map((q) => (
+            <span key={q} className="tr-nqchip"><span>“{q}”</span><button className="tr-x" onClick={() => toggle(q)} aria-label="Take this line out">✕</button></span>
+          ))}
         </div>
-      ))}
+      )}
+      {isPatch && (
+        <div className="tr-ntools">
+          {lines && lines.length > 0 && (
+            <button className={`tr-chipbtn${picking ? " on" : ""}`} onClick={() => setPicking(!picking)} aria-expanded={picking}>❝ Pick lines</button>
+          )}
+          {selected && !quotes.includes(selected) && (
+            <button className="tr-chipbtn" onClick={() => { toggle(selected); clearPatchSelection(); }} title={`Quote: “${selected}”`}>❝ Quote my selection</button>
+          )}
+          {[...TEAM_PEOPLE.filter((p) => p !== me), "all"].map((p) => (
+            <button key={p} className="tr-chipbtn" onClick={() => at(p)} title={p === "all" ? "Tell the other two (their phones buzz)" : `Tell ${p} (their phone buzzes)`}>@{p}</button>
+          ))}
+        </div>
+      )}
+      {picking && lines && (
+        <ul className="tr-nlines" aria-label="Tap the lines this note is about">
+          {lines.map((l) => (
+            <li key={l}><button aria-pressed={quotes.includes(l)} onClick={() => toggle(l)}><span className="ck" aria-hidden>{quotes.includes(l) ? "✓" : ""}</span>{l}</button></li>
+          ))}
+        </ul>
+      )}
       <div className="tr-add">
-        <input id={`tr-note-${kind}-${id}`} value={text} placeholder="Add a note…" aria-label="Add a note" maxLength={1000}
-          onChange={(e) => { setText(e.target.value); setErr(null); }} onKeyDown={(e) => { if (e.key === "Enter") add(); }} />
-        <button className="tr-btn" onClick={add} disabled={!text.trim()}>Add</button>
+        <textarea ref={box} id={`tr-note-${kind}-${id}`} rows={1} value={text} placeholder={isPatch ? "Add a note… @ to tell someone" : "Add a note…"} aria-label="Add a note" maxLength={1000}
+          onChange={(e) => { setText(e.target.value); setErr(null); }} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); add(); } }} />
+        <button className="tr-btn" onClick={add} disabled={!text.trim() && quotes.length === 0}>Add</button>
       </div>
       {err && <p className="tr-err">{err}</p>}
       {kind === "patch" && s.v2 === "off" && (
-        <p className="tr-muted">New notes here are saved on this device only until <code>{TEAM_ROOM.sqlFileV2}</code> runs.</p>
+        <p className="tr-muted">New notes here are saved on this device only until <code>{TEAM_ROOM.sqlFileV2}</code> runs, and an @ in them can&apos;t buzz anyone yet.</p>
       )}
     </div>
   );

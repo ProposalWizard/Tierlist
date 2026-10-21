@@ -22,6 +22,8 @@ import { newPushedJobs } from "@/lib/teamRoom/jobs";
 import { useTeamRoom } from "@/lib/teamRoom/store";
 import { isTeamPerson, TEAM_ROOM, type TeamPerson as TeamPersonName } from "@/lib/teamRoom/config";
 import { patchUnread, waitingOnMe, type PatchMeta } from "@/lib/teamRoom/extras";
+import { compareVersionsDesc } from "@/lib/teamRoom/inbox";
+import { OPEN_PATCH_EVENT } from "@/components/teamRoom/InboxBell";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import "@/components/teamRoom/teamRoom.css";
 import PatchNotesArchive from "@/app/admin/patch-notes/PatchNotesArchive";
@@ -92,6 +94,12 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage }
   }, [tab, version]);
 
   const openNote = (v: string) => { setVersion(v); setTab("notes"); setOpen(null); window.scrollTo(0, 0); };
+  // The Inbox bell opens a patch note here in place (no reload).
+  useEffect(() => {
+    const h = (e: Event) => { const v = (e as CustomEvent<string>).detail; if (typeof v === "string") { e.preventDefault(); openNote(v); } };
+    window.addEventListener(OPEN_PATCH_EVENT, h);
+    return () => window.removeEventListener(OPEN_PATCH_EVENT, h);
+  }, []);
 
   const people = useMemo(() => {
     if (!data) return [];
@@ -200,7 +208,7 @@ function notesOf(pushes: Push[]) {
     const g = m.get(p.patch.version) ?? { version: p.patch.version, title: shortTitle(p.patch.title), url: p.patch.artifactUrl ?? null, n: 0 };
     g.n++; m.set(p.patch.version, g);
   }
-  return Array.from(m.values()).sort((a, b) => parseFloat(b.version) - parseFloat(a.version));
+  return Array.from(m.values()).sort((a, b) => compareVersionsDesc(a.version, b.version));
 }
 
 const STATUS_WORD = { live: "Live", quiet: "Active", off: "Quiet" } as const;

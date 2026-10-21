@@ -28,7 +28,8 @@ PAGES = [  # key, kept version
     ('b1', '0.66'), ('b3', '0.67'), ('b4', '0.68'), ('b5', '0.69'), ('b6', '0.70'), ('b7', '0.71'), ('b8', '0.72'), ('b9', '0.73'),
     ('b11', '0.74'), ('b12', '0.76'), ('b7b', '0.77'), ('b13', '0.78'), ('b15', '0.79'), ('b9b', '0.80'), ('b16', '0.81'),
     ('a19admin', '0.65'), ('a19team', '0.60h'), ('a19drift', '0.62h'), ('a19fhr', '0.63h'), ('a19data', '0.64'), ('a19scene', '0.61h'),
-    ('b17', '0.85'), ('b2', '0.86'), ('b19', '0.87'), ('b10', '0.88'), ('lag', '0.89'), ('jobs', '0.90'), ('live', '0.91'), ('motion', '0.92'), ('b2b', '0.93'), ('bodies', '0.94'),   # these have no artifact of their own: each is a page of this one
+    ('b17', '0.85'), ('b2', '0.86'), ('b19', '0.87'), ('b10', '0.88'), ('lag', '0.89'), ('jobs', '0.90'), ('live', '0.91'), ('motion', '0.92'), ('b2b', '0.93'), ('bodies', '0.94'),
+    ('b14', '0.95h'), ('b14b', '0.96h'), ('mergemain', '0.97h'), ('brain', '0.98h'), ('admin3d', '0.99h'), ('fix1', '0.100h'), ('research1021', '0.101h'), ('inbox', '0.102h'),   # round_1021.py (21 Oct)   # these have no artifact of their own: each is a page of this one
 ]
 
 PAGE_KEYS = {k for k, _ in PAGES}

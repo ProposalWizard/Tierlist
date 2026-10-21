@@ -10,6 +10,7 @@
  * these pages, as on every other admin page.
  */
 import BackArrow from "./BackArrow";
+import InboxBell from "@/components/teamRoom/InboxBell";
 import { useAdminLook } from "@/lib/adminLook";
 
 export default function AdminTopBar({ title }: { title: string }) {
@@ -19,6 +20,8 @@ export default function AdminTopBar({ title }: { title: string }) {
       <BackArrow />
       <b className="kb-topbar-t">{title}</b>
       <span className="kb-topbar-k">Admin</span>
+      {/* The Inbox: patch notes you haven't read (only shows for Harry, Mikey and Leo). */}
+      <InboxBell />
     </div>
   );
 }

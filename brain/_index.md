@@ -36,11 +36,13 @@ PRO-3D-001 | Any 3D, animation, mocap, model or cut-scene work: merge main first
 PRO-DAT-001 | Run a pending migration in the Supabase SQL Editor before touching the related features. | data
 PRO-ENG-001 | After a match engine change: say so in the reply and patch notes, run the match tests and playtest before pushing. | engine,process,deploy,style
 PRO-TEAM-001 | Push means merge Harry into main after tsc, both guards, the tests and npm run build pass, once the team reviewed the patch notes. | team,process,deploy
-PRO-TEAM-002 | Patch notes order: stills on the page, push, publish; then film the gameplay clips; never hold the push for a video. | process,rule,deploy
+PRO-TEAM-002 | [SUPERSEDED] Patch notes order: stills on the page, push, publish; then film the gameplay clips; never hold the push for a video. | process,rule,deploy
 PRO-TEAM-003 | Pictures as they come in: builders save each still at once, and the lead sends each new still to Harry with a caption. | process
 PRO-TEAM-004 | Build approved changes straight onto the Harry branch; prototype first only for things Harry has to judge by eye. | team,process
 PRO-TEAM-005 | Clear disk space before every new build: remove old agent worktrees, git worktree prune, delete old folders, check df -h. | process
 PRO-TEAM-006 | Builders check light: ONE quick check per change (loads, no console errors, one still); Harry judges 3D on his phone. | three-d,process
+PRO-TEAM-007 | Ship patch notes alone: node scripts/patch-notes/ship.mjs <versions> --pr makes a patch-notes-only PR to main; feature code waits for Harry's push. | process,deploy
+PRO-TEAM-008 | Patch notes order: stills on the page, ship the notes with ship.mjs, publish; push the feature when Harry says; then film clips. | process,deploy
 REF-ALL-001 | Big documents and skills stay whole; each gets one reference note that links to the source. | brain
 RUL-3D-001 | Fully 3D games are the exception: own physics and rules in lib/star/play3d/, never importing canvasEngine.ts. | engine,three-d,rule
 RUL-3D-002 | No Higgsfield use by any builder until Harry says otherwise (about 730 credits used on 20 Oct). | three-d
@@ -68,8 +70,8 @@ RUL-ENG-003 | The one-engine guard runs inside npm run build and blocks every Ve
 RUL-ENG-004 | Never add to KNOWN_COPIES, raise CEILING, touch the canary or remove the guard unless asked in those words. | engine,rule
 RUL-ENG-005 | The real match (app/star-dev/page.tsx) is the only screen that mounts CanvasMatch directly. | engine
 RUL-ENG-006 | Shared mechanics, not a shared picture: a mode keeps the real ball and picks what is on the pitch with scene. | engine
-RUL-TEAM-001 | Deploy only when told: commit and push to the Harry branch freely, merge to main only when Harry says push. | team,rule,deploy
-RUL-TEAM-002 | Every deploy comes with patch notes; Harry decides each time whether to push now or see patch notes first. | process,deploy,team
+RUL-TEAM-001 | [SUPERSEDED] Deploy only when told: commit and push to the Harry branch freely, merge to main only when Harry says push. | team,rule,deploy
+RUL-TEAM-002 | [SUPERSEDED] Every deploy comes with patch notes; Harry decides each time whether to push now or see patch notes first. | process,deploy,team
 RUL-TEAM-003 | Progress updates every 5 minutes on every task, with % and time left on every bar and the token/weekly usage block. | process,team
 RUL-TEAM-004 | No forced new chats: after about 3 hours of chat, add one line that it could be a good time to restart. | process,team
 RUL-TEAM-005 | Patch notes never link the Vercel test build; mostly stills, a short after clip only for gameplay and animation. | process,rule,team
@@ -85,6 +87,9 @@ RUL-TEAM-014 | The everyday model, at medium or high effort, for common tasks; t
 RUL-TEAM-015 | Subagents follow the same split: pass the model; the everyday model for star-playtest, video breakdowns, reviews. | process,team
 RUL-TEAM-016 | Update 1 Oct: the everyday model at medium effort for recordings and building artifacts; the top model for logic tasks. | team
 RUL-TEAM-017 | Playtest videos: the everyday model does the breakdown; the top model does the analysis and the answers. | process,style,team
+RUL-TEAM-018 | Patch notes are made automatically as each build finishes and go onto the site straight away; the inbox notifies everyone of unread ones. | process,team
+RUL-TEAM-019 | Deploy only when told: merge feature code to main only when Harry says push; patch-notes-only PRs made by ship.mjs go to main at once. | rule,deploy,team
+RUL-TEAM-020 | Every deploy's patch notes are already live, shipped on their own first; Harry still decides when the feature itself is pushed. | process,deploy,team
 RUL-UI-001 | Decide, don't toggle: a new look or gameplay change is built as THE game, with no new New/Old row in Settings. | ui
 RUL-UI-002 | Unfinished work lives on a test page (a /star-*-dev page), not behind a switch in the real game. | ui,admin
 RUL-UI-003 | Existing switches stay until someone decides each one; never delete one unasked. | rule,ui
