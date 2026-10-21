@@ -19,11 +19,10 @@ const VIEWS: { key: MarketingView | null; label: string; href?: string }[] = [
 export default function MarketingTabs({ view }: { view: MarketingView }) {
   return (
     <nav className="mk-tabs" aria-label="Marketing">
-      {VIEWS.map((v) => v.href ? (
-        <Link key={v.label} href={v.href} className="mk-tab" aria-current={v.key === view ? "page" : undefined}>{v.label}</Link>
-      ) : (
-        <span key={v.label} className="mk-tab" data-soon="true" title={`${v.label}: coming in a later slice`}>{v.label} <small>Soon</small></span>
+      {VIEWS.filter((v) => v.href).map((v) => (
+        <Link key={v.label} href={v.href!} className="mk-tab" aria-current={v.key === view ? "page" : undefined}>{v.label}</Link>
       ))}
+      <span className="mk-soon" title="Coming in later slices of the plan">Soon: {VIEWS.filter((v) => !v.href).map((v) => v.label).join(" · ")}</span>
     </nav>
   );
 }

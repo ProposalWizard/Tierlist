@@ -2409,11 +2409,11 @@ export const ADMIN_GUIDES = {
       { group: "Top of the page", items: [
         ["Marketing (game tab across the top)", "This area. Only Harry, Mikey and Leo see the tab; testers never do."],
         ["Board | Client", "Switch between this board and the Knowitball client page."],
-        ["Calendar / Suite / Uploads / Scripts (Soon)", "Not built yet. They come in later slices of the plan; they do nothing when tapped."],
+        ["Soon: Calendar · Suite · Uploads · Scripts", "Not built yet: a line of text, not buttons. They come in later slices of the plan."],
         ["↻ Check now", "Reads the board again straight away. It also reads by itself about once a minute."],
       ] },
       { group: "The board", items: [
-        ["All · Idea · Script · Script OK · Making · In edit · Final check · Posted", "Show every column, or one. The number is how many videos are in it. On a phone an empty column is one thin line."],
+        ["All · Idea · Script · Script OK · Making · In edit · Final check · Posted", "Show every column, or one. The number is how many videos are in it. On a phone the row slides sideways, and All shows only the columns with videos in, with the empty ones named on one line (\"Nothing in …\"). A computer shows all seven columns side by side."],
         ["A card", "One video: its cover, title, step, who is making it, the day it goes (or went) out, its length and one line about it."],
         ["Script ↗ / Cover ↗ / Video ↗", "Open that file on GitHub, on the branch the card came from."],
         ["What happened (N)", "Opens the card's short log: one line per step, newest last."],

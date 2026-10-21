@@ -32,7 +32,10 @@ export default function ProductionBoard({ initial }: { initial: BoardRead }) {
 
   const cards = data.cards;
   const counts = useMemo(() => Object.fromEntries(STAGES.map((s) => [s.key, inStage(cards, s.key).length])) as Record<StageKey, number>, [cards]);
+  // "All": the columns with videos in; the empty ones are named on one line (phone first).
+  // A computer shows all seven columns side by side (wide screens only, see marketing.css).
   const shown = STAGES.filter((s) => filter === "all" || s.key === filter);
+  const empty = STAGES.filter((s) => counts[s.key] === 0);
 
   return (
     <div className="mk-board">
@@ -50,7 +53,9 @@ export default function ProductionBoard({ initial }: { initial: BoardRead }) {
         ))}
       </div>
 
-      <div className="mk-cols" data-filter={filter}>
+      {filter === "all" && empty.length > 0 && <p className="mk-emptyline">Nothing in {empty.map((s) => s.name).join(" · ")}</p>}
+      <div className="mk-cols" data-filter={filter}
+        style={{ ["--mk-cols" as string]: STAGES.map((s) => (counts[s.key] ? "minmax(0, 3fr)" : "minmax(0, 1fr)")).join(" ") }}>
         {shown.map((s) => (
           <section key={s.key} className="mk-col" data-stage={s.key} data-empty={counts[s.key] === 0}>
             <h3 title={s.help}><span>{s.name}</span><b>{counts[s.key]}</b></h3>

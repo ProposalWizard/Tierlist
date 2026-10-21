@@ -167,18 +167,29 @@ export async function fetchBoard(opts: {
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
   const problems: string[] = [];
   const where = (b: string) => (b === "main" ? "main" : `${b}'s branch`);
+  let keyRefused = false;
+  // Rate limits, by branch, so four refused reads make one line, not four.
+  const limited: string[] = [];
 
   const read = async (branch: string): Promise<VideoCard[] | "none" | null> => {
     const url = `https://api.github.com/repos/${repo}/contents/${BOARD.path}?ref=${encodeURIComponent(branch)}`;
     try {
-      let r = await opts.fetch(url, { headers: { ...headers } });
-      if (r.status === 401 && headers.Authorization) {
-        // The repository is public: ask again without the refused key.
+      const sent = { ...headers };
+      let r = await opts.fetch(url, { headers: sent });
+      if (r.status === 401 && sent.Authorization) {
+        // The repository is public: ask again without the refused key, and leave it off after this.
+        keyRefused = true;
         delete headers.Authorization;
-        r = await opts.fetch(url, { headers: { ...headers } });
+        const bare = { ...sent };
+        delete bare.Authorization;
+        r = await opts.fetch(url, { headers: bare });
       }
       if (r.status === 404) return "none";
-      if (!r.ok) { problems.push(`GitHub answered ${r.status} for the board on ${where(branch)}.`); return null; }
+      if (!r.ok) {
+        if (r.status === 403 || r.status === 429) limited.push(where(branch));
+        else problems.push(`GitHub answered ${r.status} for the board on ${where(branch)}.`);
+        return null;
+      }
       let raw: unknown;
       try { raw = JSON.parse(await r.text()); } catch {
         problems.push(`The board file on ${where(branch)} is not valid JSON, so its cards are left out until it is fixed.`);
@@ -195,6 +206,8 @@ export async function fetchBoard(opts: {
   };
 
   const got = await Promise.all(branches.map(read));
+  if (limited.length) problems.push(`GitHub is limiting how often we can ask (the board on ${limited.join(", ")}). Try again in a few minutes.`);
+  if (keyRefused) problems.unshift("GitHub refused the site's key (GITHUB_TOKEN), so the board was read without it.");
   const bundled = parseBoard(opts.bundled);
   const readAny = got.some((g) => g !== null);
   let data: BoardRead;
