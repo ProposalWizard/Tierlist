@@ -649,6 +649,10 @@ export const ADMIN_GUIDES = {
           ["Read by H ✓ read · M wrote it · L not yet", "Who has read this version. Only versions from 18 Oct 2026 on count towards \"to read\"; older ones show faces but never nag."],
           ["Read and understood", "Say you have read and understood this version. Press again (✓ Read and understood) to take it back. Not shown on your own patch notes."],
           ["💬 Notes", "Opens a short notes thread under this version. Add a note; ✕ deletes your own. The author gets a red number on Patch notes in the Team room."],
+          ["❝ Pick lines (in Notes)", "Lists every headline of this version. Tap the lines your note is about; they are quoted at the top of the note (✕ takes one out)."],
+          ["❝ Quote my selection (in Notes)", "Shows after you select some words on the page or in Text. Adds them as a quote."],
+          ["@Mikey / @Leo / @Harry / @all (in Notes)", "Adds an @ to your note. That person gets it in their 🔔 Inbox and, with phone notifications on, a buzz (@all = the other two)."],
+          ["🔔 Inbox (top right)", "The patch notes you haven't read yet, from 20 Oct 2026 on (older ones never show), newest first, plus notes under a patch note that @ you (Mentions). The red number is how many. Tap a patch note: it opens and counts as Read and understood. Tap a mention: that version opens with its notes showing. ✓ marks one read without opening it; Mark all read clears the list. Only Harry, Mikey and Leo see it."],
           ["Page", "The version's artifact exactly as it was published, pictures and all. Kept in the code, so it works even if the link changes."],
           ["Text", "The same notes as plain data, in the site's own style."],
           ["Harry's notes", "Only on versions Harry has reviewed: his spoken notes from his recordings (likes, concerns, questions), each with the video and timestamp. Written in by Claude, not typed on this page."],
@@ -658,12 +662,14 @@ export const ADMIN_GUIDES = {
     ],
     saving: [
       "The notes themselves don't save here. New patch notes are added by Claude as part of shipping a change.",
-      "Read and understood and the notes under a version save to the shared database at once (team_acks, team_notes), so the other two see them. Until supabase/migrations/team_room_v2.sql runs they stay on this device only, and the page says so.",
+      "Read and understood and the notes under a version save to the shared database at once (team_acks, team_notes), so the other two see them. Until supabase/migrations/team_room_v2.sql runs they stay on this device only, and the page says so (then an @ in a note can't buzz anyone or reach their Inbox).",
+      "The Inbox has no table of its own: a patch note leaves it when you say Read and understood (or open it from the Inbox), and a mention leaves it when you open that version's notes. Both are the same saved receipts (team_acks).",
+      "A new patch note on the site buzzes everyone but its author once (one buzz per person, however many notes are new; only notes from the last 3 days). The site sends it the first time one of the three opens an admin page after the deploy. Who has been buzzed for which version is kept in each person's sign-in account, so no SQL.",
     ],
     commit: ["New entries arrive through a normal code change (they live in a file, not the database) — they appear after the next deploy. Each version's page and pictures are copied into patch-notes/ in the repo."],
     inGame: ["Admin only. Players never see this page."],
     needs: ["supabase/migrations/team_room_v2.sql (PENDING) for read ticks and notes to be shared. Run after team_room.sql."],
-    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts",
+    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts · Inbox: components/teamRoom/InboxBell.tsx, lib/teamRoom/inbox.ts · quotes: lib/teamRoom/patchQuote.ts · buzz: /api/admin/team/notify {patches:true} and {table:\"team_notes\"}",
   },
 
   "/admin/sound-board": {
@@ -705,6 +711,7 @@ export const ADMIN_GUIDES = {
     what: "Every admin and test page, split by game: one tab per game across the top (Road to Ballon d'Or, Website games, Studio). Inside a tab you only see that game's groups and pages. The admin itself opens on the Team area (Team, first in the side menu); the games sit under it. Testers have no Team area: this is their home, and they see only the pages they can open.",
     buttons: [
       { group: "Game tabs (across the top of every admin page)", items: [
+          ["🔔 Inbox (top right)", "The patch notes you haven't read yet, from 20 Oct 2026 on (older ones never show), newest first, plus notes under a patch note that @ you (Mentions). The red number is how many. Tap a patch note: it opens and counts as Read and understood. Tap a mention: that version opens with its notes showing. ✓ marks one read without opening it; Mark all read clears the list. Only Harry, Mikey and Leo see it."],
         ["Road to Ballon d'Or", "The career game's groups and pages. This is /admin/star."],
         ["Website games", "PL Draft, Tierlists, Site XP + Tic Tac Toe and the old tests. Opens /admin/star/game/web."],
         ["Studio", "The team: Team board, Patch notes, Videos, Research, App plan, Tester access. Opens /admin/star/game/studio."],
@@ -786,6 +793,7 @@ export const ADMIN_GUIDES = {
     what: "Record your screen and voice here, and the recording goes to your Drive with a clear name and a line to paste to Claude. Admins also get Live share (test): Claude sees your screen a picture a second and hears you, and answers in its chat, even unasked.",
     buttons: [
       { group: "Record", items: [
+        ["🔔 Inbox (top right)", "The patch notes you haven't read yet, from 20 Oct 2026 on (older ones never show), newest first, plus notes under a patch note that @ you (Mentions). The red number is how many. Tap a patch note: it opens and counts as Read and understood. Tap a mention: that version opens with its notes showing. ✓ marks one read without opening it; Mark all read clears the list. Only Harry, Mikey and Leo see it."],
         ["Harry / Mikey / Leo", "Who is recording. Goes in the file name. Remembered on this device."],
         ["What is it about?", "A few words for the file name, e.g. keeper dive feels slow."],
         ["Record screen", "The browser asks which screen, window or tab to share. Pick the game. Your voice records too if the microphone is on."],
@@ -846,6 +854,7 @@ export const ADMIN_GUIDES = {
         ["Videos", "How to hand Claude a screen recording."],
         ["← (top left)", "Back to the site. The Team area is the top of the admin: a game's home goes back to here."],
         ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again. On a phone the menu is ☰ Menu, Team first."],
+        ["🔔 Inbox (top right)", "The patch notes you haven't read yet, from 20 Oct 2026 on (older ones never show), newest first, plus notes under a patch note that @ you (Mentions). The red number is how many. Tap a patch note: it opens and counts as Read and understood. Tap a mention: that version opens with its notes showing. ✓ marks one read without opening it; Mark all read clears the list. Only Harry, Mikey and Leo see it."],
       ] },
       { group: "Team room toggle", items: [
         ["Board | Chat | Ideas | To-do", "Switches part, the same as the lines under Team in the side menu. A red number = new chat or new notes on your things; amber = a new job given to you (typed on the board or arrived by push)."],
@@ -858,7 +867,7 @@ export const ADMIN_GUIDES = {
       ] },
       { group: "Chat (and the round button on every admin page)", items: [
         ["Message… @ or #", "Enter sends; Shift+Enter is a new line. Paste or 🖼 adds a picture. Type @ to pick Harry, Mikey or Leo (with phone notifications on, they get a buzz; type @all or @everyone to buzz both of the others); type # and a few letters to pick an admin page (it is added as a card)."],
-        ["🔗 (link)", "Adds the page you are on as a card. Tapping a card in the chat opens that page."],
+        ["🔗 (link)", "Adds the page you are on as a card. Here in the Team room (the full chat) it opens the list of pages instead, because \"this page\" would be the chat itself: tap one to add it. Tapping a card in the chat opens that page."],
         ["⌖ (point) · 👉 Point · Shift+X", "Point at part of a page. Drag a box over it (on a phone, scroll there first), write a note, pick who, Send. It posts a card; whoever opens it gets the page scrolled to the box, outlined, with your note, until they press Got it. Shift+X works on a computer when you are not typing."],
         ["A message", "Tap: ↩ Reply, 📌 Pin (anyone) or Delete (your own). The green tag is the page it was sent from — tap to go there."],
         ["Reply quote", "The grey line at the top of a reply. Tap it to jump to the message it answers."],
@@ -882,6 +891,7 @@ export const ADMIN_GUIDES = {
         ["Notifications are blocked for this site", "You (or the phone) said no earlier. Allow notifications for KIB Admin in the phone's settings (on a computer: the browser's site settings), then reload."],
         ["Phone notifications aren't switched on yet (one Vercel setting)", "The site's private key (TEAM_PUSH_PRIVATE_KEY) isn't set in Vercel yet. Nothing breaks: chat and jobs work as before, just with no buzz."],
         ["Several buzzes from one chat", "Grouped: one line per chat thread that counts up (\"+2 more\"), not a pile."],
+        ["New patch notes (buzz)", "When a new patch note reaches the site, the other two get one buzz (\"New patch notes from Harry · v0.95h\", or \"3 new patch notes to read\"). Tap it to open the newest. An @ in a patch-note note buzzes that person too."],
       ] },
       { group: "Team tab", items: [
         ["Live on knowitball.co.uk", "Whether the newest version of main finished deploying, how long ago, and what it was."],
@@ -900,7 +910,7 @@ export const ADMIN_GUIDES = {
         ["Notes", "Leave a note on the push. Its owner gets a red number on Board."],
       ] },
       { group: "Patch notes tab", items: [
-        ["Version list", "Every patch note, newest first. Same as /admin/patch-notes, with who has read each one, Read and understood, and notes."],
+        ["Version list", "Every patch note, newest first. Same as /admin/patch-notes, with who has read each one, Read and understood, and notes (which can @ someone and quote lines of the note)."],
         ["N patch notes to read (on a person's card)", "How many patch notes since 18 Oct that person hasn't marked Read and understood (their own don't count). Tap to open the oldest one."],
       ] },
     ],
