@@ -27,6 +27,126 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.105h",
+      "title": "Harry's patch notes: Real Headers And Volleys, And The Aerial & Acrobatics Skill",
+      "publishedAt": "2026-10-21T20:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "21 Oct. Real headers and volleys: Real moments now serves 52 real headers and 102 real volleys as true headers and volleys, from the ball's real strike height. Before, about 130 of these air shots played as ground shots. 15 overheads are left out until acrobatics are built. With Real moments on you meet about 1 real header per 8 matches and 1 real volley per 5.4 matches. The goal-video close replay of a header or volley runs at 0.3x (was 0.4 to 0.6x). Placed real headed goals play as headers. Varying header height (1.5 to 2.6 m) is built but OFF: it needs a match-file change and a scoring measurement (in a small test elite headers went from 34.7% to 50%). Eye check: all 154 looked at; 7 have a defender nearer the goal line than an off-line keeper, which is real positioning. Aerial & Acrobatics: a sixth skill (Training card, level screen, Stats AIR, admin Training levels tab). Old saves start at 60% Power + 40% Technique, minimum 40 (Power 64 + Technique 58 gives 62); new careers start at 40. New Head & Volley drill: 30 levels (headers odd, volleys even), real engine, 3 tries, 30 energy. Goals per 100 at Aerial 30/60/90: headers 20.8/25.4/31.4 (before 21.2/25.4/32.5), volleys 25.0/28.3/31.8 (before 23.8/28.3/26.3). In real matches the skill takes effect only after one match-file edit awaiting Harry's Allow. Not counted in star rating or Star Points yet.",
+      "stats": [
+        {
+          "value": "52 + 102",
+          "label": "real headers and volleys now played in the air"
+        },
+        {
+          "value": "0.3x",
+          "label": "close replay of a header or volley (was 0.4 to 0.6x)"
+        },
+        {
+          "value": "30",
+          "label": "Head & Volley levels"
+        },
+        {
+          "value": "6",
+          "label": "skills (Aerial & Acrobatics is new)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Real headers and volleys",
+              "detail": "Real moments on: a header is played as a header and a volley as a volley, not a ground shot."
+            },
+            {
+              "title": "Close replay speed",
+              "detail": "Goal videos: a header or volley close replay runs at 0.3x."
+            },
+            {
+              "title": "Aerial & Acrobatics card",
+              "detail": "Training: a sixth card, Aerial & Acrobatics, \"Headers and volleys\"."
+            },
+            {
+              "title": "Old save start",
+              "detail": "An old save starts Aerial at 60% Power + 40% Technique, min 40 (64 and 58 gives 62)."
+            },
+            {
+              "title": "Stats AIR",
+              "detail": "Stats: the Skills row shows six skills, the last is AIR."
+            },
+            {
+              "title": "Head & Volley drill",
+              "detail": "Training, Aerial & Acrobatics: 30 levels, 3 tries, 30 energy, headers on odd levels, volleys on even."
+            },
+            {
+              "title": "Admin Training levels",
+              "detail": "Admin, Training levels tab: the Aerial levels are listed."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Real headers and volleys",
+          "items": [
+            {
+              "title": "Real headers and volleys are played in the air",
+              "detail": "Real moments had about 130 air shots (headers and volleys) that played as ground shots. The moment kept the shot but not the height the ball really had when it was struck, so the game treated it like a shot off the floor. Real moments now serves 52 real headers and 102 real volleys as true headers and volleys, from the ball's real strike height. 15 overheads are left out until acrobatics are built. With Real moments on you meet about 1 real header per 8 matches and 1 real volley per 5.4 matches."
+            },
+            {
+              "title": "Header and volley goal videos: close replay at 0.3x",
+              "detail": "The close replay of a header or volley ran at 0.4 to 0.6x. A header or volley is over in a moment. At 0.4 to 0.6x the contact was hard to see. The close replay now runs at 0.3x. Placed real headed goals also play as headers now."
+            },
+            {
+              "title": "Eye check of all 154",
+              "detail": "Numbers passing is not enough for a drawn chance (standing rule, 26 Sep). A sheet can pass every measure and still show a stranded player or a man behind the keeper. All 154 were looked at. 7 have a defender nearer the goal line than an off-line keeper. That is real positioning, so they stay."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Aerial & Acrobatics",
+          "items": [
+            {
+              "title": "A sixth skill: Aerial & Acrobatics",
+              "detail": "Headers and volleys had no skill of their own. They leaned on Power and Technique. A strong long shooter is not automatically good in the air. A new skill with its own Training card, level screen, Stats \"AIR\" and a tab in Admin, Training levels. An old save starts at 60% Power + 40% Technique, minimum 40 (Power 64 + Technique 58 gives 62). A new career starts at 40."
+            },
+            {
+              "title": "Head & Volley drill: 30 levels",
+              "detail": "Nothing trained the new skill. A skill needs a drill, like the other five. Head & Volley: 30 levels (headers on odd levels, volleys on even), on the real engine, 3 tries, 30 energy. A cross comes in, you drag back to aim, then head it or volley it past the keeper. First try 3 stars, second 2, third 1."
+            },
+            {
+              "title": "The skill changes how often you score",
+              "detail": "Aerial had no effect on goals. The skill has to matter or training it is pointless. Goals per 100 chances at Aerial 30 / 60 / 90: headers 20.8 / 25.4 / 31.4 (before 21.2 / 25.4 / 32.5), volleys 25.0 / 28.3 / 31.8 (before 23.8 / 28.3 / 26.3). The volley curve no longer falls at 90."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "In real matches the skill is not on yet",
+              "detail": "Aerial changes the drill and the numbers above, but a real match ignores it. It needs one edit to a match file, which waits for Harry's Allow (engine rule RUL-ENG-001). Takes effect after that edit. Not changed yet."
+            },
+            {
+              "title": "Varying header height is built but OFF",
+              "detail": "Real headers all use one height. A height of 1.5 to 2.6 m is built but switched off. It needs a match-file change and a scoring measurement first. In a small test elite headers went from 34.7% to 50%, too big a jump to switch on blind. Stays off until measured."
+            },
+            {
+              "title": "Not in star rating or Star Points yet",
+              "detail": "Aerial does not count towards the star rating or Star Points. Left out on purpose for now. Not changed."
+            },
+            {
+              "title": "15 overheads are not played",
+              "detail": "15 real overhead kicks are left out of Real moments. They return when acrobatics are built."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.103",
       "title": "Mikey's patch notes v0.20: Game music",
       "publishedAt": "2026-10-21T18:00:00Z",
