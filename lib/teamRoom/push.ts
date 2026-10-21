@@ -224,3 +224,24 @@ export function ringNewJobs(jobs: TeamJob[]) {
     if (j.ok) write(ASKED_JOBS_KEY, JSON.stringify([...asked, ...ids].slice(-300)));
   }).catch(() => { /* asked again next minute */ }).finally(() => ids.forEach((id) => inFlight.delete(id)));
 }
+
+const ASKED_PATCHES_KEY = "kib-team-push-patches";
+let patchesAsked = false;
+/**
+ * New patch notes in this deploy (Harry, 21 Oct 2026: tell everyone when a
+ * patch note goes onto the site). The Inbox bell calls this with the newest
+ * version in the archive it was built with; each browser asks the site once
+ * per new version. The site decides who is rung (everyone but the author,
+ * once per version, however many phones ask: lib/teamRoom/inbox.ts).
+ */
+export function ringNewPatches(newestVersion: string | undefined) {
+  if (patchesAsked || !newestVersion || typeof window === "undefined" || offlineDevPlayEnabled()) return;
+  if (read(ASKED_PATCHES_KEY) === newestVersion) return;
+  patchesAsked = true;
+  post({ patches: true }).then(async (r) => {
+    const j = (await r.json().catch(() => ({}))) as { ok?: boolean; off?: boolean };
+    // Rung, notifications off (no key yet), or not on the team: ask again at the next new version.
+    if (j.ok || j.off || r.status === 401 || r.status === 403) write(ASKED_PATCHES_KEY, newestVersion);
+    else patchesAsked = false;
+  }).catch(() => { patchesAsked = false; /* asked again on the next page */ });
+}

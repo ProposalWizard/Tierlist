@@ -6,6 +6,7 @@
  *   { table: "team_messages", id }  a chat message (@name, @all, a reply, a point)
  *   { table: "team_tasks", id }     a job typed on the board for someone else
  *   { jobs: ["id", …] }             pushed jobs the phone has just seen (team/jobs.json)
+ *   { patches: true }               new patch notes in this deploy (any admin page asks once a visit)
  *   { test: true }                  a test buzz to your own devices
  *
  * Never trusts words from the phone: it reads the row itself with the
@@ -13,6 +14,13 @@
  * and works out who to ring (lib/teamRoom/notify.ts). Pushed jobs are read
  * from GitHub here too, and each person is rung for a job once ever
  * (remembered in their account, app_metadata.teamPushJobs).
+ *
+ * Patch notes (Harry, 21 Oct 2026): the list is the archive THIS deploy was
+ * built with (lib/patchNotesData.ts), never the phone's. Each new version
+ * (published from TEAM_ROOM.inboxFrom, within 3 days) rings everyone but its
+ * author once ever, as one buzz per person; the versions rung are kept in
+ * each account (app_metadata.teamPushPatches). So the first admin to open an
+ * admin page after a patch-notes deploy rings the team. No table, no SQL.
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -26,7 +34,9 @@ import {
   RungBefore, TEST_PAYLOAD, jobsToRing, payloadForJob, payloadForMessage, payloadForTask, ringsForMessage, ringsForTask, withRungJobs,
   type PushPayload,
 } from "@/lib/teamRoom/notify";
-import { pushReady, ring, rungJobsOf, saveRungJobs, teamAccounts } from "@/lib/teamRoom/notifyServer";
+import { pushReady, ring, rungJobsOf, rungPatchesOf, saveRungJobs, saveRungPatches, teamAccounts } from "@/lib/teamRoom/notifyServer";
+import { patchesToRing, payloadForPatches, withRungPatches } from "@/lib/teamRoom/inbox";
+import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +104,23 @@ export async function POST(req: Request) {
     const rings = todo.flatMap(({ job, to }) => to.map((person) => ({ person, payload: payloadForJob(job) })));
     const d = await ring(sb, accounts, rings);
     return NextResponse.json({ ok: true, jobs: todo.length, ...d });
+  }
+
+  // New patch notes in the archive this deploy carries: one buzz each person, once per version.
+  if (body.patches === true) {
+    const notes = BUILT_IN_PATCH_NOTES.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
+    const people = (Object.keys(accounts) as TeamPerson[]);
+    const had: Partial<Record<TeamPerson, string[]>> = {};
+    await Promise.all(people.map(async (p) => { had[p] = await rungPatchesOf(sb, accounts[p]!); }));
+    const todo = patchesToRing(notes, Date.now(), had)
+      .filter((t) => accounts[t.person])
+      .map((t) => ({ ...t, notes: t.notes.filter((n) => rungBefore.first(`p:${t.person}:${n.version}`)) }))
+      .filter((t) => t.notes.length);
+    if (!todo.length) return NextResponse.json({ ok: true, sent: 0, patches: 0 });
+    // Mark them first: two phones asking at once must not ring twice.
+    await Promise.all(todo.map((t) => saveRungPatches(sb, accounts[t.person]!, withRungPatches(had[t.person], t.notes.map((n) => n.version)))));
+    const d = await ring(sb, accounts, todo.map((t) => ({ person: t.person, payload: payloadForPatches(t.notes) })));
+    return NextResponse.json({ ok: true, patches: todo.reduce((n, t) => n + t.notes.length, 0), ...d });
   }
 
   const id = Number(body.id);

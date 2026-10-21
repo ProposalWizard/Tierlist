@@ -27,6 +27,12 @@ export const TEAM_ROOM = {
   sqlFileV2: "supabase/migrations/team_room_v2.sql",
   /** Patch notes from this day on count as "still to read" (older ones show faces but never nag). */
   patchReceiptsFrom: "2026-10-18",
+  /**
+   * The Inbox (the bell, top right of the admin): every patch note you haven't
+   * marked read, from this day on (Harry, 21 Oct 2026: "not backlogged starting
+   * from yesterday's"). Older ones never appear there. lib/teamRoom/inbox.ts.
+   */
+  inboxFrom: "2026-10-20",
   /** A message counts as seen once this much of it is on screen in the open chat. */
   seenShare: 0.6,
   /** Where the full Team room lives. */
@@ -76,11 +82,15 @@ export const TEAM_ROOM = {
     freshMs: 10 * 60_000,
     /** A pushed job (team/jobs.json) rings once, and only if it was added within this long. */
     jobFreshMs: 24 * 3600_000,
+    /** A new patch note rings everyone but its author once, only if it was published within this long. */
+    patchFreshMs: 3 * 24 * 3600_000,
     /** The picture on the notification. */
     icon: "/admin/app-icon-192.png",
     /** Where in the account's details: your devices (you write them), and pushed jobs already rung (the site writes them). */
     devicesKey: "teamPush",
     jobsKey: "teamPushJobs",
+    /** Patch-note versions each person has already been rung for (the site writes them). */
+    patchesKey: "teamPushPatches",
   },
 } as const;
 
