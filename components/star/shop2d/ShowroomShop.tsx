@@ -62,6 +62,7 @@ import { loadShopItemsView, saveShopItemsView, type ShopItemsView } from "@/lib/
 import TrophyBadge from "./TrophyBadge";
 import { bestHome, homeNameOf } from "@/lib/star/home3d/homes";
 import { art, tierColour, rungName, LevelLadder, GiveChips, StoreSheet, GoldButton, ConfirmSheet, PurchaseMoment, type ConfirmInfo, type StoreTab } from "./parts";
+import BackButton from "../ui/BackButton";
 
 interface ActionResult { ok: boolean; reason?: string }
 
@@ -743,7 +744,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
       {/* Top: back · the category name · 1|3|5 · More · balance + fame. Floats over the item. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/75 via-black/35 to-transparent pb-2" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="pointer-events-auto mx-auto flex h-[46px] max-w-[820px] items-center gap-1.5 px-2.5">
-          <button onClick={onBack} aria-label="Back" data-shop-back className="kib-press grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black/55 text-[20px] font-black ring-1 ring-white/20 backdrop-blur">‹</button>
+          <BackButton onClick={onBack} dark data-shop-back />
           <div className="min-w-0 flex-1 truncate pl-1 text-[16px] font-black" data-shop-cat-title>{tab === "foryou" ? "For You" : onBoots ? <span style={{ color: cat.accent }}>Boots</span> : ""}</div>
           {tab === "shop" && <ViewSwitch view={view} onPick={setView} />}
           {tab === "shop" && moreLinks.length > 0 && (

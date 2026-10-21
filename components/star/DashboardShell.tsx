@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { HomeFxStyles } from "./HomeFx";
 import GameBar from "./ui/GameBar";
+import type { BarBadges } from "@/lib/star/needsYou";
 import { preloadSfx, sfx } from "@/lib/star/sfx";
 
 /** Whether the Phone had something unread last time a shell looked — kept
@@ -66,11 +67,13 @@ interface Props {
   swipe?: boolean;
   /** The small "?" in the header: replays this screen's pointers (never forced). */
   onHelp?: () => void;
+  /** "Needs you" (lib/star/needsYou.ts): a count or a dot on each button. */
+  badges?: BarBadges;
 }
 
 export type NavTab = "league" | "skills" | "home" | "media" | "play" | "life";
 
-export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false, locked, homeSlot, hud, swipe = false, mediaUnread = false, onHelp }: Props) {
+export default function DashboardShell({ career, children, onNavigate, onSettings, activeNav = null, nextMatchLabel, nextMatchDate, fullBleed = false, compact = false, onHome, atHome = false, locked, homeSlot, hud, swipe = false, mediaUnread = false, onHelp, badges }: Props) {
   // A new message on the phone pings (lib/star/sfx.ts).
   useEffect(() => { preloadSfx(); }, []);
   useEffect(() => {
@@ -170,10 +173,10 @@ export default function DashboardShell({ career, children, onNavigate, onSetting
           {homeSlot
             ? <NavBtn tour="nav-league" label={homeSlot.label ?? "Home"} icon={homeSlot.icon ?? "🏠"} tight={(homeSlot.label ?? "").length > 8} active={homeSlot.active} onClick={homeSlot.onClick} />
             : <NavBtn tour="nav-league" label="League" icon="🏆" active={activeNav === "league"} onClick={() => tap("league", "League")} lockHint={locked?.league} />}
-          <NavBtn tour="nav-training" label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => tap("skills", "Training")} lockHint={locked?.skills} />
-          <PlayBtn active={activeNav === "play"} onClick={() => tap("play", "Play")} locked={!!locked?.play} />
-          <NavBtn tour="nav-life" label="Relations" icon="❤️" active={activeNav === "life"} onClick={() => tap("life", "Relations")} lockHint={locked?.life} />
-          <NavBtn tour="nav-phone" label="Phone" icon="📱" active={activeNav === "media"} onClick={() => tap("media", "Phone")} lockHint={locked?.media} dot={mediaUnread} />
+          <NavBtn tour="nav-training" label="Training" icon="⚽" active={activeNav === "skills"} onClick={() => tap("skills", "Training")} lockHint={locked?.skills} count={badges?.skills} countTone="bolt" />
+          <PlayBtn active={activeNav === "play"} onClick={() => tap("play", "Play")} locked={!!locked?.play} today={!!badges?.play} />
+          <NavBtn tour="nav-life" label="Relations" icon="❤️" active={activeNav === "life"} onClick={() => tap("life", "Relations")} lockHint={locked?.life} dot={badges?.life === "dot"} />
+          <NavBtn tour="nav-phone" label="Phone" icon="📱" active={activeNav === "media"} onClick={() => tap("media", "Phone")} lockHint={locked?.media} dot={mediaUnread && !badges?.media} count={badges?.media} />
         </div>
       </div>
     </div>
@@ -189,7 +192,7 @@ function LockGlyph({ size = 14 }: { size?: number }) {
   );
 }
 
-function NavBtn({ label, icon, active, onClick, dot, lockHint, tight, tour }: { tour?: string; label: string; icon: string; active: boolean; onClick: () => void; dot?: boolean; lockHint?: string; /** A long label ("Achievements") set smaller so it is not cut off. */ tight?: boolean }) {
+function NavBtn({ label, icon, active, onClick, dot, lockHint, tight, tour, count, countTone = "red" }: { tour?: string; label: string; icon: string; active: boolean; onClick: () => void; dot?: boolean; lockHint?: string; /** A long label ("Achievements") set smaller so it is not cut off. */ tight?: boolean; /** "Needs you": a number on the button (unread, sessions left). */ count?: number; /** Red for unread; amber with a bolt for sessions left. */ countTone?: "red" | "bolt" }) {
   if (lockHint) return (
     <button
       onClick={onClick}
@@ -218,13 +221,22 @@ function NavBtn({ label, icon, active, onClick, dot, lockHint, tight, tour }: { 
       <span className={`max-w-full truncate ${tight ? "!text-[9px] min-[380px]:!text-[9.5px] tracking-[-0.03em]" : ""}`}>{label}</span>
       {active && <span className="absolute bottom-1 h-[3px] w-5 rounded-full bg-emerald-400" />}
       {dot && <span className="absolute right-2 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-gray-700" />}
+      {count !== undefined && count > 0 && (
+        <span
+          data-nav-badge={count}
+          aria-label={`${count} waiting`}
+          className={`absolute right-1 top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-1 text-[10.5px] font-black leading-none tabular-nums ring-2 ring-gray-700 ${countTone === "bolt" ? "bg-amber-400 text-gray-950" : "bg-red-500 text-white"}`}
+        >
+          {countTone === "bolt" && <span className="-ml-0.5 mr-px text-[9px]">⚡</span>}{count > 99 ? "99+" : count}
+        </span>
+      )}
     </button>
   );
 }
 
 /** The centre button: bigger than the rest, raised above the bar, green, and
  *  breathing slowly so the eye goes to it. */
-function PlayBtn({ active, onClick, locked = false }: { active: boolean; onClick: () => void; locked?: boolean }) {
+function PlayBtn({ active, onClick, locked = false, today = false }: { active: boolean; onClick: () => void; locked?: boolean; /** "Needs you": a match today, so the pulse is quicker and a ring shows. */ today?: boolean }) {
   if (locked) return (
     <div className="relative flex justify-center">
       <button
@@ -244,10 +256,11 @@ function PlayBtn({ active, onClick, locked = false }: { active: boolean; onClick
         onClick={onClick}
         data-tour="nav-play"
         aria-label="Play"
+        data-match-today={today ? "" : undefined}
         className={`kib-press kib-play-pulse -mt-5 flex h-[66px] w-[66px] flex-col items-center justify-center rounded-full border-[3px] font-black text-white ${
-          active ? "border-white/80" : "border-gray-800"
+          active ? "border-white/80" : today ? "border-amber-300" : "border-gray-800"
         }`}
-        style={{ background: "radial-gradient(circle at 35% 28%, #6ee7b7 0%, #10b981 45%, #047857 100%)" }}
+        style={{ background: "radial-gradient(circle at 35% 28%, #6ee7b7 0%, #10b981 45%, #047857 100%)", ...(today ? { animationDuration: "1.2s" } : {}) }}
       >
         <svg width="24" height="24" viewBox="0 0 24 24" className="ml-0.5 drop-shadow"><path d="M7 4.5v15l13-7.5z" fill="#fff" /></svg>
         <span className="text-[11px] uppercase tracking-wider leading-none">Play</span>
