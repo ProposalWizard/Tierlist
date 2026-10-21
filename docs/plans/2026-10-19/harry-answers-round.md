@@ -171,3 +171,7 @@ Ask: "For the 3d ecosystem let's make it so u can get into your car and drive ho
 11. Speed up build-up making: yes. 12. Winger 16%: fine. 13. Lag pill: move it. 14. Tick boxes: fix.
 15. N1 keep the bottom bar. 16–18 (house icon, Stats chips, Transfers line): my picks (icon inert on Home, 5 chips, "window opens in N weeks").
 Camera: "we really need to fix that camera" → player size options being drawn.
+
+## 21 Oct 2026 ~04:35 — simulation formula and data
+"replace and work heavily using my new highlights system to massively improve the simulation formula in game and in turn massively improve match radar. We can also use those 4400 matches to train npc data, role data etc as we already were. I like what ur saying about balancing though, try and find more role data, shots missed, defending etc. Make sure any licensed data is removed with new readily available legal and added to credits. try and use the corner takers on [radar]."
+21 league goals in highlights: yes. 22 replace StatsBomb numbers with free data: yes. 23 Mikey's pop-ups: add as a texture/style pack (unless Mikey is already doing it — he isn't). 24 Mikey's failing tests: leave to Mikey.
