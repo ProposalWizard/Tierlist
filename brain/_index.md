@@ -103,6 +103,8 @@ RUL-TEAM-017 | Playtest videos: the everyday model does the breakdown; the top m
 RUL-TEAM-018 | Patch notes are made automatically as each build finishes and go onto the site straight away; the inbox notifies everyone of unread ones. | process,team
 RUL-TEAM-019 | Deploy only when told: merge feature code to main only when Harry says push; patch-notes-only PRs made by ship.mjs go to main at once. | rule,deploy,team
 RUL-TEAM-020 | Every deploy's patch notes are already live, shipped on their own first; Harry still decides when the feature itself is pushed. | process,deploy,team
+RUL-TEAM-021 | In Mikey's chats, write or update patch notes only when Mikey says "create patch notes"; never on your own, not even at a deploy. | team,process,rule,deploy,style
+RUL-TEAM-022 | In Mikey's chats, never run a playtest unless Mikey asks; when one would really help, recommend it in one line and stop. | team,process,rule
 RUL-UI-001 | Decide, don't toggle: a new look or gameplay change is built as THE game, with no new New/Old row in Settings. | ui
 RUL-UI-002 | Unfinished work lives on a test page (a /star-*-dev page), not behind a switch in the real game. | ui,admin
 RUL-UI-003 | Existing switches stay until someone decides each one; never delete one unasked. | rule,ui

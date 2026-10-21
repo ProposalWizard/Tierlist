@@ -20,6 +20,17 @@ New facts and rules go in `brain/` notes, not in this file. Kit and how-to: `kit
 
 ---
 
+## Mikey's chats: no patch notes, no playtests unless asked (Mikey, 21 Oct 2026)
+
+Applies in every chat Mikey works in (local, cloud, branch Mikey). It overrides
+any skill, note or line in this file that says to write patch notes or run
+`star-playtest` by default. Asked for to save time and tokens.
+- **Patch notes only when Mikey says "create patch notes".** Never write, update
+  or republish patch notes (new or old) on your own, not even at a deploy.
+- **No playtests unless Mikey asks.** When a playtest would really help, end
+  the reply with one line recommending it ("Recommend a playtest: …why"), then
+  stop. Mikey decides.
+
 ## What This Project Is
 
 Football games platform at **knowitball.co.uk**. Features: drag-and-drop tierlists, community vote tierlists, PL Draft game, star career game (`/star-dev`), multiplayer draft, tic-tac-toe daily, manager mode.

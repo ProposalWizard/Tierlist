@@ -1,6 +1,6 @@
 ---
 name: creating-patch-notes-mikey
-description: Build "Knowitball Patch Notes Mikey (version)" — a shareable artifact page for Harry and Leo listing what changed in the game since the last patch notes (fixed, added, changed, known issues, next), with before→after numbers. Use whenever Mikey asks for patch notes, a changelog, an update summary for the team, or "what changed"; also offer it after a batch of game changes is pushed.
+description: Build "Knowitball Patch Notes Mikey (version)" — a shareable artifact page for Harry and Leo listing what changed in the game since the last patch notes (fixed, added, changed, known issues, next), with before→after numbers. Use whenever Mikey asks for patch notes, a changelog, an update summary for the team, or "what changed". Only when Mikey says "create patch notes" (RUL-TEAM-021): never on your own, never offered after a push.
 ---
 
 Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
