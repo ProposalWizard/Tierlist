@@ -6,9 +6,10 @@
  * app/api/admin/patch-notes/. Server-only: it touches the filesystem.
  *
  * Why the archive loads the page as TEXT into an iframe's `srcdoc` instead of
- * pointing an iframe at a URL: next.config.mjs sends `X-Frame-Options: DENY`
- * on every response, so the site cannot frame its own pages — deliberately,
- * and it stays that way. A srcdoc frame has no response to carry the header,
+ * pointing an iframe at a URL: when this was written next.config.mjs sent
+ * `X-Frame-Options: DENY`, so the site could not frame its own pages. It is
+ * SAMEORIGIN since 21 Oct 2026 (Harry: yes, for the 3D bench preview frame);
+ * other sites still cannot frame us. A srcdoc frame needs no header at all,
  * and it is same-origin, so the archive can size it to the page's height.
  */
 

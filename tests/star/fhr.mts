@@ -31,7 +31,7 @@ import {
   FHR_MIN_S, FHR_MAX_S, FHR_TOP_SPEED, FHR_RUNON_S, FHR_RUNON_MAX_M, FHR_BIG_MAX_S, COVER_CLEAR_M, COVER_MIN_BALL_Y, type FhrBuildUp,
 } from "../../lib/star/fhr/buildUp";
 import { fhrFoulBuildUpFor, fhrWantsFoul, FOUL_SHARE, type FhrFoulBuildUp } from "../../lib/star/fhr/foulBuildUp";
-import { testAreaBuildUp } from "../../lib/star/fhr/builders";
+import { testAreaBuildUp, snappyBuildUp, snappyCapS, fhrShareRoll, fhrBuildUpOn, FHR_BUILDUP_SHARE, FHR_SNAPPY_S } from "../../lib/star/fhr/builders";
 import { standBackFor, yourRunupFor, penaltyRunupOf, freeKickRunupOf } from "../../lib/star/runupStyles";
 import { servedChances } from "../../lib/star/fhr/servedChances";
 import { arriveZ } from "../../lib/star/airDrawings";
@@ -168,7 +168,7 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
   // On: every fresh open-play chance gets one; set pieces and moves carrying on never do.
   forceFhrMode("on");
   const durs: number[] = [], sigs = new Set<string>();
-  let open = 0, withProblems = 0, runOns = 0, covers = 0, coverable = 0, setPieces = 0, fouls = 0, called = 0, regains = 0;
+  let skipped = 0, open = 0, withProblems = 0, runOns = 0, covers = 0, coverable = 0, setPieces = 0, fouls = 0, called = 0, regains = 0;
   const runSpeeds: number[] = [];
   for (const c of cs) {
     const sp = c.sc.kind === "penalty" || c.sc.kind === "free_kick" || c.sc.kind === "corner";
@@ -185,7 +185,8 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
       continue;
     }
     open++;
-    if (!l) { check(false, `${c.sc.kind}: no build-up`); continue; }
+    // B20 (A2): a long shot or tight angle that loses its share roll arrives cold, as with the switch Off.
+    if (!l) { if (fhrShareRoll(c.sc, c.moment)) check(false, `${c.sc.kind}: no build-up`); else skipped++; continue; }
     sigs.add(l.signature);
     if (l.problems.length) withProblems++;
     // B2b: never an offside left uncalled; a called one ends the move (no chance, so no hand-over checks).
@@ -244,7 +245,8 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
     check(leadSig(careerBuildUp(c.sc, c.moment)) === leadSig(l), `${c.sc.kind}: the same chance got a different build-up`);
   }
   check(open > 100, `only ${open} open-play chances served`);
-  check(runOns >= (open - called) * 0.9, `phase 3: only ${runOns} of ${open - called} build-ups hand over with men still running`);
+  check(runOns >= (open - skipped - called) * 0.9, `phase 3: only ${runOns} of ${open - skipped - called} build-ups hand over with men still running`);
+  check(skipped > 0 && skipped < open * 0.35, `B20 (A2): ${skipped} of ${open} open-play chances arrived cold`);
   check(called > 0 && called <= open * 0.2, `B2b: ${called} of ${open} build-ups ended in a called offside`);
   check(regains > 0, "B2b: no build-up showed the match's regain");
   runSpeeds.sort((a, b) => a - b);
@@ -255,7 +257,8 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
   check(withProblems <= Math.ceil(open * 0.01), `${withProblems} of ${open} build-ups failed their own checks`);
   check(sigs.size >= open * 0.85, `only ${sigs.size} distinct routes in ${open} build-ups`);
   durs.sort((a, b) => a - b);
-  check(durs[Math.floor(durs.length / 2)] > 5 && durs[Math.floor(durs.length / 2)] < 7.5, `median build-up ${durs[Math.floor(durs.length / 2)].toFixed(2)} s`);
+  // B20 (A1): only the last FHR_SNAPPY_S of the move plays (was a median of ~6.4 s).
+  check(durs[Math.floor(durs.length / 2)] > FHR_SNAPPY_S - 0.6 && durs[Math.floor(durs.length / 2)] <= FHR_SNAPPY_S + 0.3, `median build-up ${durs[Math.floor(durs.length / 2)].toFixed(2)} s`);
   clearForces();
   // The ruler: build-ups never move the chances or goals served.
   const plain = measureRuler({ matches: 30, chances: "new" });
@@ -337,6 +340,52 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
   const served = load.indexOf("onChanceServedRef.current?.({\n      kind: scenarioRef.current.kind");
   const lead = load.indexOf("startLeadIn({");
   check(served > 0 && lead > served, "the match starts the build-up before telling the page its chance (a Save could catch it mid-build-up)");
+}
+
+// ── B20: snappy build-ups (A1) and fewer of them (A2) ──
+// Harry, 21 Oct 2026: "closer to 20-25 secs a match on average". Only the last
+// part of the move plays, and it still ends EXACTLY on the drawing.
+{
+  forceFhrMode("on");
+  const pool = servedChances({ count: 160, seed: 21 }).filter((c) => fhrWantsBuildUp(c.sc.kind, c.moment));
+  let n = 0, worstEnd = 0, over = 0, offKept = 0, offN = 0, startMidPass = 0;
+  for (const c of pool.slice(0, 70)) {
+    const whole = fhrBuildUpFor(c.sc, c.moment);
+    const cut = snappyBuildUp(whole, snappyCapS(whole.drama));
+    n++;
+    const a = whole.ballAt(whole.durS), b2 = cut.ballAt(cut.durS);
+    worstEnd = Math.max(worstEnd, Math.hypot(a.x - b2.x, a.y - b2.y));
+    for (const k of ["you", "keeper", "def0", "def1", "runner"]) {
+      const p = whole.posAt(k, whole.durS), q = cut.posAt(k, cut.durS);
+      if (p && q) worstEnd = Math.max(worstEnd, Math.hypot(p.x - q.x, p.y - q.y));
+    }
+    // (A start inside a pass may move back to that pass's kick: at most one pass longer.)
+    if (cut.durS > snappyCapS(whole.drama) + 1.6 && !whole.offside) over++;
+    if (whole.offside) { offN++; if (cut.offside && cut.passStart![cut.offside.pass] >= 0 && cut.offside.at > 0 && cut.whistleAt === cut.offside.at) offKept++; }
+    const ps = cut.passStart ?? [], pe = cut.passEnd ?? [];
+    if (ps.length && ps[0] <= 0 && pe[0] > 0.05 && (cut.trimmedS ?? 0) > 0) {
+      // A pass already in the air at t = 0 (it may only start from a moment on someone's foot, or right as it lands).
+      const g = cut.ballAt(0), h = cut.ballAt(0.05);
+      if (Math.hypot(g.x - h.x, g.y - h.y) > 0.3 && pe[0] > 0.2) startMidPass++;
+    }
+  }
+  check(worstEnd < 1e-6, `B20: a snappy build-up ends exactly where the whole one does (worst ${worstEnd.toFixed(4)} m)`);
+  check(over === 0, `B20: ${over} snappy build-ups run more than 1.6 s past their cap`);
+  check(offKept === offN, `B20: ${offN - offKept} of ${offN} offside build-ups lost their called offside when cut`);
+  check(startMidPass <= Math.ceil(n * 0.05), `B20: ${startMidPass} of ${n} snappy build-ups open on a ball in the air`);
+  // A2: the same chance always gets the same answer, and the shares are near what they say.
+  const lr = servedChances({ count: 400, seed: 33 }).filter((c) => c.sc.kind === "long_range" && fhrWantsBuildUp(c.sc.kind, c.moment));
+  const got = lr.filter((c) => fhrShareRoll(c.sc, c.moment)).length / Math.max(1, lr.length);
+  check(lr.every((c) => fhrShareRoll(c.sc, c.moment) === fhrShareRoll(c.sc, c.moment)), "B20: the share roll is the same every time");
+  check(lr.length < 20 || Math.abs(got - (FHR_BUILDUP_SHARE.long_range ?? 1)) < 0.15, `B20: long shots with a build-up ${(100 * got).toFixed(0)}% (want ~${(100 * (FHR_BUILDUP_SHARE.long_range ?? 1)).toFixed(0)}%)`);
+  check(FHR_SNAPPY_S >= 4 && FHR_SNAPPY_S <= 6, "B20: the snappy length is between 4 and 6 s");
+  // The career path is cut and shared; Infinite Highlights' one picture always gets one.
+  const c0 = lr.find((c) => !fhrShareRoll(c.sc, c.moment));
+  if (c0) {
+    check(fhrBuildUpOn(c0.sc, c0.moment) === null, "B20: a long shot that loses the roll gets no build-up");
+    check(fhrBuildUpOn(c0.sc, c0.moment, undefined, { everyChance: true }) !== null, "B20: a test page's one picture still gets its build-up");
+  }
+  forceFhrMode(null);
 }
 
 if (problems.length) {

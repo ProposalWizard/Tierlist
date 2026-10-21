@@ -677,6 +677,8 @@ export interface FhrBuildUp extends LeadIn {
    * offside position is ALWAYS called: never `offside && !called`.
    */
   passChecks: { pass: number; by: string; behindLineM: number; judged: boolean; offside: boolean; called: boolean }[];
+  /** B20 (A1): seconds cut off the front of the move (builders.ts snappyBuildUp). Absent: the whole move plays. */
+  trimmedS?: number;
   /** B2b: at your touches in the last 45 m that their nearest man pressed: how close he got (m, mean). */
   pressM: number | null;
   /** B2b: the share of your touches in the last 45 m that were pressed. */

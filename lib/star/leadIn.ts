@@ -162,7 +162,9 @@ export function leadInEntities(sc: Scenario): LeadEntity[] {
   return out;
 }
 
-/** How long the camera takes to glide onto the chance's own frame (before it locks). */
+/** How long the camera takes to glide onto the chance's own frame (before it locks).
+ *  B20 tried 1.8 and 2.2 s (B1's "settle earlier"): the ball left the glass in
+ *  2.4% / 6.1% of build-ups (0.9% at 1.5 s), so it stays 1.5 s. */
 export const LEAD_SETTLE_S = 1.5;
 /** The men the lead-in camera keeps in frame: those this close to the ball (m). Used when the lead-in has no passes listed. */
 export const LEAD_FRAME_NEAR = 16;
@@ -172,6 +174,25 @@ export const LEAD_FOLLOW_OMEGA = 3;
 export const LEAD_FOLLOW_TOP = 30;
 /** The closest the lead-in frame comes in (m across), so it never jams in on one man. */
 export const LEAD_FRAME_MIN_W = 28;
+/** B20 (B1): the build-ups' zoom spring (per second). Was LEAD_FOLLOW_OMEGA × 0.6 = 1.8; 0.8 halves the
+ *  sudden zooms (over 15% in half a second: 8.3% → 4.3% of build-ups). */
+export const LEAD_FOLLOW_SIZE_OMEGA = 0.8;
+/** B20 (B1): the build-ups' pan cap, in frame widths a second (~450 px/s on a phone's 366 px). */
+export const LEAD_FOLLOW_TOP_W = 1.2;
+/**
+ * B20 (B2, lead room): while a pass is played the frame leans this share of
+ * the way from the passer-and-receiver middle toward where the pass goes.
+ * Measured OFF: 0.06 and 0.18 both left the passer or receiver off the glass
+ * more often (54% → 55% / 59% of build-ups), so it is 0 until a better shape.
+ */
+export const LEAD_ROOM = 0;
+/** B20 (B2): a pass longer than this share of the chance's width is "long"… */
+export const LEAD_LONG_PASS = 0.9;
+/** …and while it is played the frame may widen up to this × the chance's width (eased in before, out after). */
+export const LEAD_WIDE_MAX = 1.25;
+/** B2: how long the widening takes to ease in before the kick and out after the arrival (s). */
+export const LEAD_WIDE_IN_S = 1.5;
+export const LEAD_WIDE_OUT_S = 2;
 
 /**
  * THE TV CAMERA (lead.camera "tv"; Harry, 14 Oct 2026: "the camerawork needs to
@@ -326,7 +347,7 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
   const tv = lead.camera === "tv";
   const STEP = 1 / 60;
   const W_POS = tv ? LEAD_TV_OMEGA : LEAD_FOLLOW_OMEGA;
-  const W_SIZE = tv ? LEAD_TV_OMEGA_SIZE : LEAD_FOLLOW_OMEGA * 0.6;
+  const W_SIZE = tv ? LEAD_TV_OMEGA_SIZE : LEAD_FOLLOW_SIZE_OMEGA;
   const TOP = tv ? LEAD_TV_TOP : LEAD_FOLLOW_TOP;
   const SETTLE = tv ? LEAD_TV_SETTLE_S : LEAD_SETTLE_S;
   const MARGIN = tv ? LEAD_TV_MARGIN : 14;
@@ -343,7 +364,10 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
       const tt = Math.min(lead.durS, Math.max(0, t));
       const i = pe!.findIndex((e) => tt < e);
       const b = lead.ballAt(tt);
-      return box(i >= 0 ? [b, lead.ballAt(ps![i]), lead.ballAt(pe![i])] : [b, lead.ballAt(lead.durS)]);
+      const g = box(i >= 0 ? [b, lead.ballAt(ps![i]), lead.ballAt(pe![i])] : [b, lead.ballAt(lead.durS)]);
+      // B2: lead room — lean toward where the ball is going.
+      const to = i >= 0 ? lead.ballAt(pe![i]) : lead.ballAt(lead.durS);
+      return { ...g, cx: g.cx + (to.x - g.cx) * LEAD_ROOM, cy: g.cy + (to.y - g.cy) * LEAD_ROOM };
     }
     const a = actionBox(lead, t, keys);
     const ahead = lead.ballAt(Math.min(lead.durS, t + 0.35));
@@ -352,6 +376,23 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
   };
   // The chance's frame shape (the TV camera works at its scale); set by at().
   let cw0 = 30, ch0 = 58;
+  // B2: how much wider than the chance's frame the build-up may be at t (0 = not at all, 1 = LEAD_WIDE_MAX):
+  // only around a long pass, eased in before it is hit and out after it lands.
+  const longPasses: [number, number][] = [];
+  let longFor = -1;
+  const wideAt = (t: number, cw: number) => {
+    if (tv || !hasPasses) return 0;
+    if (longFor !== cw) {
+      longFor = cw; longPasses.length = 0;
+      for (let i = 0; i < ps!.length; i++) {
+        const a = lead.ballAt(ps![i]), b = lead.ballAt(pe![i]);
+        if (Math.hypot(b.x - a.x, b.y - a.y) > LEAD_LONG_PASS * cw) longPasses.push([ps![i], pe![i]]);
+      }
+    }
+    let w = 0;
+    for (const [a, b] of longPasses) w = Math.max(w, smooth((t - (a - LEAD_WIDE_IN_S)) / LEAD_WIDE_IN_S) * (1 - smooth((t - b) / LEAD_WIDE_OUT_S)));
+    return w;
+  };
   // TV: what to keep in frame at t — the ball, the pass being played or the next
   // one (its passer until it is hit, and where it goes), and the goal near the box.
   const tvGoal = { x: CX, y: 0 };
@@ -397,7 +438,9 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
       let vx = st.vx + (W_POS * W_POS * (g.cx - st.cx) - 2 * W_POS * st.vx) * STEP;
       let vy = st.vy + (W_POS * W_POS * (g.cy - st.cy) - 2 * W_POS * st.vy) * STEP;
       const sp = Math.hypot(vx, vy);
-      if (sp > TOP) { vx *= TOP / sp; vy *= TOP / sp; }
+      // B1: the build-ups' top speed is a share of the frame's width (the same speed on the glass at any zoom).
+      const top = tv ? TOP : Math.min(TOP, LEAD_FOLLOW_TOP_W * Math.max(cw0, st.sx));
+      if (sp > top) { vx *= top / sp; vy *= top / sp; }
       const wx = tv && g.sx > st.sx ? LEAD_TV_OMEGA_OUT : W_SIZE, wy = tv && g.sy > st.sy ? LEAD_TV_OMEGA_OUT : W_SIZE;
       const vsx = st.vsx + (wx * wx * (g.sx - st.sx) - 2 * wx * st.vsx) * STEP;
       const vsy = st.vsy + (wy * wy * (g.sy - st.sy) - 2 * wy * st.vsy) * STEP;
@@ -440,12 +483,15 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
       const f = lockAt(t, chance);
       if (f >= 1) return { ...chance };
       const cw = chance.x2 - chance.x1, ch = chance.y2 - chance.y1;
-      if (tv && (cw !== cw0 || ch !== ch0)) { cw0 = cw; ch0 = ch; }
+      if (cw !== cw0 || ch !== ch0) { cw0 = cw; ch0 = ch; }
       advance(t);
       const s = st!;
       // The build-ups: never wider than the chance's frame. The TV camera: the chance's scale, up to LEAD_TV_MAX_RATIO wider.
       const lo = tv ? cw : Math.min(cw, LEAD_FRAME_MIN_W);
-      const hi = tv ? cw * LEAD_TV_MAX_RATIO : cw;
+      // B2: wider only around a long pass, and back to the chance's width before the glide onto it starts.
+      const glideAt = lead.offside ? lead.durS : lockTime(chance) - SETTLE;
+      const endFade = 1 - smooth((t - (glideAt - LEAD_WIDE_OUT_S)) / LEAD_WIDE_OUT_S);
+      const hi = tv ? cw * LEAD_TV_MAX_RATIO : cw * (1 + (LEAD_WIDE_MAX - 1) * wideAt(t, cw) * endFade);
       const w = Math.min(hi, Math.max(lo, s.sx, s.sy * cw / ch)), h = w * ch / cw;
       const cx = clampC(s.cx, w / 2, -4, 72), cy = clampC(s.cy, h / 2, -7, 112);
       const raw = { x1: cx - w / 2, x2: cx + w / 2, y1: cy - h / 2, y2: cy + h / 2 };

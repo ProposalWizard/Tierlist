@@ -1,0 +1,94 @@
+B20: match look + build-ups (21 Oct 2026, branch Harry, not pushed)
+
+[M] = measured, [S] = seen in a still, [R] = reasoned, not measured.
+
+1. PLAYER SIZE C (both shrinks dropped)
+- lib/star/matchView.ts: NEW_FIGURE_SCALE 0.8 -> 1, NEW_OUTFIELD_SHRINK 0.8 -> 1. Men x1.5625, the keeper x1.25
+  (he is now 0.82 of a man: 27.8 / 22.8 px in the long-range picture the size sheet used). The ball keeps its size
+  (NEW_BALL_SCALE pinned at 0.56): option C grew only the men.
+- One set of numbers, so the match, Infinite Highlights, Infinite Match and the Play Area (all EnginePlay -> CanvasMatch)
+  and the gallery / still camera (fhr/stillCamera.ts) all change together.
+- Live, real career match, 390x844 [M, dev hook figPx]: the same two chances before and after:
+  build-up 25.3 -> 39.5 px, midfield pass 25.3 -> 39.5 px; tight angle 24.1 (before) / 37.7 (after); header 29.5 after.
+  Computer 1440x900 after: volley 39.1 px, cutback 29.9 px.
+  NOTE: 27.8 px is the long-range picture. Pictures framed tighter (build-up, midfield, volley) now show men ~40 px.
+- Drift guard [M]: pitch 366x744 phone, 384x800 computer, unchanged.
+- Overlap: not re-measured by me. The size sheet (b14b/size-options-*.jpg, harness) gave for C: 0.75 overlapping pairs
+  a picture, 41% of pictures with an overlap (today 0.16 / 11%). A cluster overlapping is visible in
+  after-size-phone-04-4-header.jpg [S].
+- Stills: before-size-phone-0*.jpg, after-size-phone-0*.jpg, after-size-pc-0*.jpg.
+
+2. BUILD-UPS: 20-25 s A MATCH (A1 + A2, B1 + B2)
+- lib/star/fhr/builders.ts: snappyBuildUp (A1): the move is made whole, then only its last FHR_SNAPPY_S = 5 s plays
+  (6.5 s at the biggest moment). Ends on exactly the same frame (test: 0 m). A start inside a pass moves to that pass's
+  kick or arrival. A called offside keeps its offside pass in view (starts >= 1.2 s before it). Tap to skip unchanged.
+  fhrShareRoll (A2): long shots 60%, tight angles 75%, every other open-play kind 100%; the same answer every time.
+  Infinite Highlights' one picture always gets one; a test page set to "long" sees the whole move.
+- Generator, 1,192 chances in 221 matches (same method and seed as the report) [M]:
+                          before        after
+  chances with one        92%           80%
+  build-ups a match       4.9           4.3
+  length (mean/p90/max)   6.5/7.9/10.0  5.0/5.5/6.8 s (never cut below 4 s)
+  SECONDS A MATCH         32.2          21.6   (22.0 with the match minute + score)
+- Real career match, phone, after [M]: 7 build-ups, 4.5-5.6 s each, played at real time (planned minus played 0.01-0.2 s),
+  ball on the glass in 157 of 157 sampled frames, 0 errors. Stills b20-buildup-*.jpg.
+- Offsides: still called. 70 of 955 build-ups (7.3%) end in a called offside with no chance = 0.32 a match
+  (before ~6-7%) [M].
+- Camera, leadIn.ts (700 chances, phone canvas, 30 fps samples) [M]:
+                                         before   after (as shipped: cut + A2)
+  ball off the glass (any moment)         1.1%     1.2%
+  passer/receiver off >0.3 s in a pass    54.6%    54.5%  (whole moves, camera only: 53.8%)
+  sudden zoom (>15% in 0.5 s)             7.8%     4.8%   (>30%: 0.6% -> 0.2%)
+  pan over 600 px/s                       1.1%     0.7%
+  zoom change >15% in the last 1.5 s      7.8%     11.3%  (WORSE)
+  hand-over to the chance                 0.00 px  0.00 px
+  What is in: zoom spring 1.8 -> 0.8 (B1), pan cap 1.2 frame widths/s (B1), widen to 1.25x only around a pass longer
+  than 0.9 of the frame, eased in over 1.5 s and out over 2 s, back to 1x before the glide onto the chance (B2).
+  What is NOT in, measured worse: "settle earlier" (LEAD_SETTLE_S 1.8 / 2.2 s: ball off the glass 2.4% / 6.1%),
+  lead room (0.06 / 0.18: receiver off more, 55% / 59%). Both kept at today's value; Harry may want to know.
+  The receiver-off number barely moved: the long passes are longer than 1.25x the frame. Not fixed.
+
+3. 3D BUILD-UPS (C1)
+- CanvasMatch.tsx: the lead-in replay clock uses real time up to 0.25 s a frame (LEAD_REPLAY_MAX_DT); the match's own
+  steps keep the 0.05 clamp.
+- One headless run, Match view 3D On [M]: 5 build-ups played in 3D, each handed over to the chance (aim, kick, result),
+  0 console errors. Wall time 19-33 s for 4.8-6.3 s build-ups (this machine: ~1 frame a second, software 3D), against
+  88 s for 5.8 s in the research run. At 4 fps or more it is real time [R]; a phone at 10 fps: 6.5 s, was ~13 s [R].
+  Phone frame rates NOT tested.
+- Seen [S]: b20-3d-buildup-cutback-header-sheet.jpg (follows the move, then the chance). The first build-up of the
+  run (b20-3d-buildup-byline-cross-sheet.jpg) showed a far, foggy stadium view, then cut to the chance: looks like the
+  3D view's first-picture warm-up, not checked further.
+
+4. BUG: "your player runs after the ball while it's being kicked whilst being in position"
+- Found [M, live]: at your pass CanvasMatch snapped you from your spot (youSpot.ts, beside the ball) ONTO the ball:
+  a 1.4-1.6 m jump toward the ball, at the kick, and Auto run started the same frame, sliding you during the kick pose.
+- Fixed: no snap (you stay on your spot, as a shot already does), and PlayOnStick.kicking holds the run while the kick
+  pose plays (playOn.ts moveRun). Live, phone, 3 passes after the fix: jump at the kick 0.00 m (was 1.39-1.60 m),
+  moved in the first 0.25 s 0.00 m, then the run goes (0.55-0.63 m by 0.5 s, ~3.6 m by 1 s).
+  tests/star/runAfter.mts section 7. Stills b20-kick-*.jpg.
+
+5. CORNER RULE IN THE SIMMED CAREER MATCH
+- lib/star/simMatch.ts passes canTakeCorners (cornerReach.ts) on the sim's own power/technique (boots counted).
+- 300 simmed league matches each [M]: power+technique 50 (best corner 31.6 m of 34.4 m, short): corners to you
+  0.11 -> 0.00 a match. 70 (37.7 m, reaches): 0.11 -> 0.11. Chances a match 5.37 -> 5.28 (weak), 5.44 -> 5.44.
+
+6. X-Frame-Options DENY -> SAMEORIGIN (next.config.mjs)
+- /star-3d-bench-dev sends SAMEORIGIN and its preview frame (/star-3d-bench-dev/home?fps=1) draws the home player
+  [S, b20-3d-bench-preview-frame.jpg]. Other sites still cannot frame the site. Two comments that said DENY updated.
+
+ENGINE / DRIFT
+- lib/star/canvasEngine.ts: NONE.
+- components/star/CanvasMatch.tsx (drift file): replay clock (C1), the kick hold flag, no snap onto the ball.
+- lib/star/matchView.ts (drift file): the two shrinks. Pitch re-measured unchanged (366 / 384 px).
+
+CHECKS
+- npx tsc --noEmit: clean. one-engine guard: clean. admin-look guard: 45/45.
+- star tests (-j 2): finishing, keeper x8, aiming, outcomes, fhr, runAfter, runCamera, barSpot, playOn, joystick
+  (afterPassStick), matchRadar, sim90, cornerReach, fhrCameraHandover, leadIn, leadInGen, leadInTvCamera: pass.
+  match2dCam: 1 check fails ("372x704: ball at least a full-power drag above the bottom", 1 of 555 short).
+  It fails the same with the old player sizes restored, so it was failing before this round (not caused here).
+  There is no simMatch test file; simMatch measured with the corner script above.
+- Playtested the real career match: phone 390x844 (sizes, build-ups, kick hold, 3D) and computer 1440x900 (sizes).
+  One dev-only ChunkLoadError (Style A home player chunk) during a fresh career on the dev server; not seen in the
+  other runs.
+- No `npm run build`.
