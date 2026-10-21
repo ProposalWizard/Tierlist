@@ -27,6 +27,146 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.104h",
+      "title": "Harry's patch notes: Navigation Round 1 And The Marketing Tab",
+      "publishedAt": "2026-10-21T16:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "21 Oct. Navigation round 1 (star career, New UI only): Back returns to where you came from (Phone, Owner, Back lands on the Phone; before it went Home); one shared Back control replaces 8 variants; \"Needs you\" badges on the bottom bar (training sessions left, Phone count of unread plus new apps) and one chip on Home; the house icon does nothing on Home; Stats is one row of 5 chips (Season, Career, Records, Trophies, Contract), so Career overview goes from 4 taps to 2 and the Trophy cabinet from 3 to 2; Home says \"Transfer window opens in N weeks\"; the Phone keeps every app and a newly unlocked app wears a yellow NEW tag until opened. Admin, Marketing tab (admins only): a Production board (Idea, Script, Script OK, Making, In edit, Final check, Posted) read from marketing/board.json with v01 in Posted, a Knowitball client page built from 13 client-kib Brain notes, the video-board skill, and a private-names guard in the build. Cards move only by a push; no uploads, storage, editing suite or calendar yet.",
+      "stats": [
+        {
+          "value": "4 to 2",
+          "label": "taps to Career overview"
+        },
+        {
+          "value": "8 to 1",
+          "label": "Back button variants"
+        },
+        {
+          "value": "4 to 3",
+          "label": "taps: Phone place and back"
+        },
+        {
+          "value": "7",
+          "label": "steps on the Production board"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Back from the Phone",
+              "detail": "Phone, Owner, Back: you land on the Phone, not Home."
+            },
+            {
+              "title": "One Back button",
+              "detail": "Open any screen from the Phone, Relations, Stats, the Shop rail or the gear: the same Back control, same place."
+            },
+            {
+              "title": "Needs you badges",
+              "detail": "Bottom bar: Training shows sessions left, Phone shows unread plus new apps. Home shows one chip, +N for the rest."
+            },
+            {
+              "title": "House icon",
+              "detail": "On Home it is dimmed and does nothing. The main menu is under Settings."
+            },
+            {
+              "title": "Stats chips",
+              "detail": "Stats: Season, Career, Records, Trophies, Contract in one row."
+            },
+            {
+              "title": "Transfer window line",
+              "detail": "Home: \"Transfer window opens in N weeks\"."
+            },
+            {
+              "title": "Phone NEW tag",
+              "detail": "A newly unlocked Phone app shows a yellow NEW tag until you open it."
+            },
+            {
+              "title": "Marketing tab",
+              "detail": "Admin, Marketing (admins only): Board and Client."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Navigation round 1 (star career, New UI)",
+          "items": [
+            {
+              "title": "Back goes back to where you came from",
+              "detail": "Phone, Owner, Back landed on Home, not the Phone. Sponsors, Casino, Trophies and Achievements did the same. Each screen sent Back to Home. It did not remember where you came from. There were also 8 different Back controls (Back, Home, a round arrow, a bar button, Menu, Close phone and more). A screen opened from the Phone, Relations, Stats, the Shop rail or the gear remembers where it came from (navReturn). One shared Back control replaces the 8 variants. Going to a Phone place and back to the Phone takes 3 taps, was 4. The Old UI is untouched."
+            },
+            {
+              "title": "\"Needs you\" badges on the bar and a chip on Home",
+              "detail": "Nothing told you something was waiting: one red dot on the Phone, a small count on Sponsors, nothing on Training, Relations or League. The game knew (training sessions left, unread phone, boss talk, sponsor offers, match today) but only showed some of it. The bar shows a number or a dot on the right button: Training shows sessions left, Phone shows unread messages plus new apps. Home shows one chip, most urgent first, with +N for the rest. The old End of Season card is now the top chip. Every tutorial pointer name is unchanged."
+            },
+            {
+              "title": "The house icon does nothing on Home",
+              "detail": "On Home the house icon opened the main menu, but everywhere else it went Home. One icon with two meanings. It is dimmed and does nothing on Home. The main menu stays under Settings. Cost: the main menu and Hall of Fame go from 2 taps to 3 (gear, Main menu, item)."
+            },
+            {
+              "title": "Stats is one row of 5 chips",
+              "detail": "Stats had 6 views hidden behind swipes and tiny arrows. Career overview took 4 taps, the Trophy cabinet 3. The views were pages beside Home, not a visible list. One row: Season (Status folded in), Career (All seasons and Country), Records, Trophies (the cabinet, now inside Stats) and Contract."
+            },
+            {
+              "title": "Home says when the transfer window opens",
+              "detail": "Transfers has no door during the season, so there was no hint when you could move. You can only move in the summer window (18 Oct rule). The game never said how far away it was. Home shows \"Transfer window opens in N weeks\". Transfers still has no door on purpose."
+            },
+            {
+              "title": "The Phone keeps every app; a new app wears NEW",
+              "detail": "The research asked to trim the Phone (14 apps, 3 of them copies of League, Fixtures and Settings). Harry: \"I wouldn't get rid of the phone stuff. We'll have stuff slowly unlock on the phone.\" Every app stays. An app added from the App Store wears a yellow NEW tag until you first open it, and counts on the Phone button. Starter apps and old saves show nothing new."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Admin: Marketing tab (admins only)",
+          "items": [
+            {
+              "title": "Production board",
+              "detail": "No one could see where each Knowitball video was (script, being made, posted). Video work lived in chats and files. Admin, Marketing, Board shows seven steps: Idea, Script, Script OK, Making, In edit, Final check, Posted. It reads marketing/board.json. The first card, v01 (patch notes 0.1 to 0.3, 44.7 s), is in Posted, with its Script, Cover and Video links. The video-board skill moves a card every time a video starts, moves or finishes."
+            },
+            {
+              "title": "Knowitball client page",
+              "detail": "What Knowitball is, who it is for and how it sounds was spread across notes. Anything we make for marketing needs one place to check against. The Client tab is built from 13 client-kib Brain notes. The audience note is marked \"To confirm\" for Harry."
+            },
+            {
+              "title": "A private-names guard in the build",
+              "detail": "A client or private name could end up in public code or notes. Marketing notes name real clients, and the site is public. The build now checks for private names and fails if one appears where it should not."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Board cards move only by a push",
+              "detail": "A card moves only when marketing/board.json changes on a branch and the site reads it (within a minute or two). By design for slice 1. Not changed."
+            },
+            {
+              "title": "Marketing has no uploads, storage, editing suite or calendar yet",
+              "detail": "The menu shows \"Soon: Calendar, Suite, Uploads, Scripts\". Next round (R2)."
+            },
+            {
+              "title": "The board stills show a GitHub warning",
+              "detail": "In the test stills the board says GitHub refused the site's key (GITHUB_TOKEN) and shows the copy built into the site. Not checked on the live site. The fallback works as shown: v01 still appears."
+            },
+            {
+              "title": "Transfers has no door in the season",
+              "detail": "You cannot open Transfers outside the summer window. On purpose (Decision 4 of the research). Not changed."
+            },
+            {
+              "title": "Not checked on a real phone",
+              "detail": "All stills are 390x844 browser captures. No real device was used."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.103h",
       "title": "Harry's patch notes: Bigger Men And Shorter Build-ups",
       "publishedAt": "2026-10-21T11:30:00Z",
