@@ -26,6 +26,7 @@ import { EVENT_KINDS_COVERED } from "@/lib/star/cutscene/beats";
 import { VOICE_LINES } from "@/lib/star/cutscene/voiceLines";
 import { useCutsceneCameraLook, type CutsceneCameraLook } from "@/lib/star/cutscene/look";
 import { createCutsceneMusic, musicBedFor, musicCue, type CutsceneMusic } from "@/lib/star/cutscene/music";
+import { holdMusic } from "@/lib/star/gameMusic";
 import { sfxOn, sfxUrl } from "@/lib/star/sfx";
 
 const EMOTIONS: Emotion[] = ["joy", "pride", "relief", "defiance", "anger", "sadness", "shock", "tension", "calm", "gratitude", "hunger", "inspired"];
@@ -101,6 +102,9 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
     })();
     return () => { dead = true; dir.current?.dispose(); dir.current = null; music.current?.dispose(); music.current = null; };
   }, [script, inited, camLook]);
+
+  // Game music steps aside while a cut scene is up (it has its own bed).
+  useEffect(() => { holdMusic("cutscene", true); return () => holdMusic("cutscene", false); }, []);
 
   useEffect(() => { dir.current?.setStyle(style); }, [style]);
 
