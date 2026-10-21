@@ -47,6 +47,10 @@ if (NEW) {
   await ctx.storageState({ path: STATE });
 }
 
+// A cold dev server can take a minute to load the career: wait for the bar.
+await pg.locator('[data-tour="nav-phone"]').first().waitFor({ state: "visible", timeout: 180000 }).catch(() => console.log("bar never showed"));
+await wait(1500);
+
 const steps = {
   async home() { await dismiss(); await shot("home"); },
   async phoneOwnerBack() {
@@ -55,12 +59,29 @@ const steps = {
     await clickText(/Back/i); await dismiss(); await shot("phone-owner-back");
   },
   async houseOnHome() {
-    await click('[data-tour="home"]'); await dismiss(); await shot("home-house-tap");
+    // From wherever we are, the house goes Home; on Home, tap it once more.
+    await click('[data-tour="home"]'); await dismiss();
+    await pg.locator('[data-tour="home"]').first().click({ force: true }); await wait(900); await shot("home-house-tap");
   },
   async stats() {
-    await click('[data-tour="home"]'); await dismiss();
+    // From Home: the Stats arrow at the bottom edge.
     const a = pg.locator('button[aria-label^="Previous"]').filter({ visible: true }).first();
     await a.click(); await wait(900); await dismiss(); await shot("stats");
+    // The five chips (after step 3); absent before.
+    for (const id of ["career", "records", "trophies", "contract", "season"]) {
+      const chip = pg.locator(`[data-stats-chip="${id}"]`);
+      if (await chip.count() === 0) break;
+      await chip.click(); await wait(700); await shot(`stats-${id}`);
+    }
+    // Stats → Trophies (Records' button before step 3) → Back.
+    await click('[data-tour="nav-phone"]'); await dismiss();
+    await clickText(/Awards/i); await dismiss(); await shot("phone-awards");
+    await clickText(/Back/i); await dismiss(); await shot("phone-awards-back");
+  },
+  async needsChip() {
+    await click('[data-tour="home"]'); await dismiss();
+    const chip = pg.locator("[data-needs-chip]");
+    if (await chip.count()) { await chip.click(); await wait(900); await dismiss(); await shot("needs-chip-tap"); }
   },
 };
 

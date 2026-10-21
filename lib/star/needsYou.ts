@@ -20,6 +20,7 @@ import type { CareerState, Fixture } from "./types";
 import { brandsOf } from "./sponsorDeals";
 import { trainingLeft } from "./week";
 import { managerTalkDue, isOpen } from "./unlocks";
+import { fixtureTimestamp } from "./calendar";
 
 export type NeedId = "season-end" | "boss-talk" | "sponsor-offers" | "training" | "phone" | "match-today";
 
@@ -76,6 +77,35 @@ export function barBadges(i: NeedsInput): BarBadges {
   if (i.phoneOpen && i.phoneUnread > 0) b.media = i.phoneUnread;
   if (i.playOpen && i.matchInDays !== null && i.matchInDays <= 0) b.play = true;
   return b;
+}
+
+/**
+ * TRANSFERS HAVE NO DOOR, ON PURPOSE (CLAUDE.md, 18 Oct 2026: only the summer
+ * window, at the season's end). Harry's answer 18 (21 Oct 2026): say when it
+ * opens instead — "Transfer window opens in N weeks" on Home.
+ *
+ * Weeks from "today" (the day after your last match, as Home's countdown
+ * counts it) to your last fixture of the season, rounded up. 0 = this week.
+ * Null when the season's fixtures are all played (the End of Season chip
+ * leads there) or there are none.
+ */
+export function transferWindowWeeks(career: Pick<CareerState, "fixtures" | "player" | "season">, division: Parameters<typeof fixtureTimestamp>[4]): number | null {
+  const left = career.fixtures.filter((f) => !f.played);
+  if (left.length === 0) return null;
+  const ts = (f: Fixture) => fixtureTimestamp(career.player.startYear, career.season, f.week, f.kind, division);
+  const last = Math.max(...left.map(ts));
+  const played = career.fixtures.filter((f) => f.played).map(ts);
+  const firstLeft = Math.min(...left.map(ts));
+  const today = played.length ? Math.max(...played) + DAY : firstLeft - 5 * DAY;
+  return Math.max(0, Math.ceil((last - today) / (7 * DAY)));
+}
+const DAY = 86400000;
+
+/** The Home line for it, or null. */
+export function transferWindowLine(weeks: number | null): string | null {
+  if (weeks === null) return null;
+  if (weeks === 0) return "Transfer window opens this week";
+  return `Transfer window opens in ${weeks} week${weeks === 1 ? "" : "s"}`;
 }
 
 /** The inputs, from a career and what page.tsx already knows. */

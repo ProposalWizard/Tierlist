@@ -82,6 +82,9 @@ interface Props {
   /** "Needs you" (lib/star/needsYou.ts): the most urgent thing waiting, and
    *  how many more wait behind it. One chip, top left under the league row. */
   needs?: { need: Need; more: number; onClick: () => void } | null;
+  /** "Transfer window opens in N weeks" (Harry's answer 18): transfers have
+   *  no door on purpose, so Home says when the summer window comes. */
+  windowLine?: string | null;
 }
 
 export const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
@@ -189,7 +192,7 @@ export default function HomeHub(p: Props) {
         <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
         <RiseIn onPageActive index={1} className="relative z-10 mt-1 px-3"><StatTiles career={career} /></RiseIn>
         <div data-home-league className="relative z-20 mt-1">{duty ? <NationDropdown career={career} duty={duty} onOpen={p.onLeague} /> : <LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} />}</div>
-        <NeedsRow needs={p.needs} />
+        <NeedsRow needs={p.needs} windowLine={p.windowLine} />
         <HeroNew {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
         <MiddleLinks career={career} onOpen={p.onOpen} />
       </div>
@@ -204,7 +207,7 @@ export default function HomeHub(p: Props) {
       <HomeScene sky={homeSkyFor(career, p.nextFixture)} />
       <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
       <div data-home-league className="relative z-20 mt-1">{duty ? <NationDropdown career={career} duty={duty} onOpen={p.onLeague} /> : <LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} />}</div>
-      <NeedsRow needs={p.needs} />
+      <NeedsRow needs={p.needs} windowLine={p.windowLine} />
       <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
       <MiddleLinks career={career} onOpen={p.onOpen} />
     </div>
@@ -215,13 +218,26 @@ export default function HomeHub(p: Props) {
 //
 // Floats over the top of the pitch, so Home keeps its height (it must fit
 // one screen with no scrolling, 1 Oct 2026). Tap goes to the thing.
-function NeedsRow({ needs }: { needs?: Props["needs"] }) {
-  if (!needs) return null;
-  const { need, more, onClick } = needs;
-  const urgent = need.id === "season-end" || need.id === "boss-talk";
+function NeedsRow({ needs, windowLine }: { needs?: Props["needs"]; windowLine?: string | null }) {
+  if (!needs && !windowLine) return null;
   return (
     <div className="relative z-[15] h-0">
-      <div className="absolute left-2.5 top-1.5 flex items-center gap-1.5">
+      <div className="absolute left-2.5 top-1.5 flex flex-col items-start gap-1">
+        {needs && <NeedsChip {...needs} />}
+        {windowLine && (
+          <span data-transfer-window-line className="rounded-[3px] bg-gray-950/70 px-1.5 py-1 text-[10.5px] font-black leading-none text-white/85">
+            🔁 {windowLine}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NeedsChip({ need, more, onClick }: NonNullable<Props["needs"]>) {
+  const urgent = need.id === "season-end" || need.id === "boss-talk";
+  return (
+    <div className="flex items-center gap-1.5">
         <button
           onClick={onClick}
           data-needs-chip={need.id}
@@ -235,7 +251,6 @@ function NeedsRow({ needs }: { needs?: Props["needs"] }) {
           <Chev dir="right" size={10} className={urgent ? "text-gray-950/70" : "text-amber-300"} />
         </button>
         {more > 0 && <span aria-label={`${more} more waiting`} className="rounded-[3px] bg-gray-950/70 px-1.5 py-1 text-[10.5px] font-black leading-none text-amber-200">+{more}</span>}
-      </div>
     </div>
   );
 }

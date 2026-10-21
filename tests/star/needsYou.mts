@@ -1,4 +1,8 @@
-import { needsYou, barBadges, type NeedsInput } from "../../lib/star/needsYou";
+import { needsYou, barBadges, transferWindowWeeks, transferWindowLine, type NeedsInput } from "../../lib/star/needsYou";
+import { makeInitialCareer } from "../../lib/star/careerFlow";
+import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
+import { divisionOf } from "../../lib/star/calendar";
+import type { StarPlayer } from "../../lib/star/types";
 
 /** "Needs you": the most urgent thing first, and badges only from real sources. */
 const problems: string[] = [];
@@ -28,6 +32,22 @@ check(Object.keys(barBadges(locked)).length === 0, "locked features show no badg
 
 // A match tomorrow is not today.
 check(!barBadges({ ...quiet, matchInDays: 1 }).play, "no match-today pulse the day before");
+
+// The transfer window line (Harry's answer 18): counts down to the season's last fixture.
+{
+  const player = { firstName: "T", lastName: "P", age: 18, skinTone: "light", club: "Arsenal", clubBadge: null, position: "ST", nationality: "England", startYear: 2027 } as StarPlayer;
+  const c = makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS]);
+  const w0 = transferWindowWeeks(c, divisionOf(c));
+  check(w0 !== null && w0 >= 30 && w0 <= 45, `a new season's window is about 9-10 months away (got ${w0} weeks)`);
+  const half = { ...c, fixtures: c.fixtures.map((f, i) => (i < c.fixtures.length / 2 ? { ...f, played: true } : f)) };
+  const w1 = transferWindowWeeks(half, divisionOf(c));
+  check(w1 !== null && w0 !== null && w1 < w0, "the count goes down as the season is played");
+  const done = { ...c, fixtures: c.fixtures.map((f) => ({ ...f, played: true })) };
+  check(transferWindowWeeks(done, divisionOf(c)) === null, "no line once every fixture is played");
+  check(transferWindowLine(0) === "Transfer window opens this week", "0 weeks reads 'this week'");
+  check(transferWindowLine(1) === "Transfer window opens in 1 week", "1 week, singular");
+  check(transferWindowLine(12) === "Transfer window opens in 12 weeks", "12 weeks");
+}
 
 if (problems.length) {
   console.log("FAIL");

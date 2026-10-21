@@ -84,7 +84,7 @@ import { applyEffects, type Dilemma, type DilemmaEffect } from "@/lib/star/dilem
 import { checkNewAchievements } from "@/lib/star/achievements";
 import { earnedBetween, addSeasonRecords, type EarnPop } from "@/lib/star/earnPops";
 // The unlock chain a new career walks (Harry, 1 Oct 2026, P13-P40).
-import { needsYou, barBadges, needsInput, type NeedId } from "@/lib/star/needsYou";
+import { needsYou, barBadges, needsInput, transferWindowWeeks, transferWindowLine, type NeedId } from "@/lib/star/needsYou";
 import { openFrom as navOpenFrom, backFrom as navBackFrom, ROOT_PHASES, type NavEntry, type NavSpot } from "@/lib/star/navReturn";
 import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, installApp, appInstalled, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft, gameFirst, managerTalkDue, phoneShortfall, phoneStepLine, DRILLS_TO_OPEN_SHOP } from "@/lib/star/unlocks";
 import { applyGameGain } from "@/lib/star/relationshipGame";
@@ -5111,12 +5111,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onCareer={setCareer}
         />
       }
-      // The home button top-left opens the main menu (Mikey, 28 Sep 2026:
-      // "this home button should take you back to the main menu").
-      // On Home it opens the main menu; anywhere else it takes you back to
-      // Home (Mikey, 29 Sep 2026: "there's no simple way to get back").
-      onHome={() => (swipeActive ? setTitleOpen(true) : handleNavigate("home"))}
-      atHome={swipeActive}
+      // The house always means Home (navigation round 1, Harry's answer 16,
+      // 21 Oct 2026): dimmed and inert on Home itself; the main menu is
+      // Settings → "⌂ Main menu". Was: on Home it opened the main menu
+      // (Mikey, 28 Sep 2026); anywhere else it goes Home (Mikey, 29 Sep 2026).
+      onHome={() => { if (!(swipeActive && homePage === 1)) handleNavigate("home"); }}
+      atHome={swipeActive && homePage === 1}
       locked={career.unlocks ? {
         ...(isOpen(career, "league") ? {} : { league: LOCK_HINT.league }),
         ...(isOpen(career, "play") ? {} : { play: LOCK_HINT.play }),
@@ -5295,6 +5295,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               onOpen={openHub}
               onLeague={isOpen(career, "league") ? () => handleNavigate("league") : undefined}
               needs={needList.length > 0 ? { need: needList[0], more: needList.length - 1, onClick: needGo[needList[0].id] } : null}
+              windowLine={transferWindowLine(transferWindowWeeks(career, divisionOf(career)))}
             />,
             isOpen(career, "shop")
               ? (shopLookNow === "new"
