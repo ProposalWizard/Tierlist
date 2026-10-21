@@ -150,5 +150,13 @@
     "toCommit": "d6fe204d",
     "url": "https://claude.ai/artifact/QsxGeWuEK6C7GwcCQJSD3r",
     "headline": "Mikey's new pop-ups (scoreboard goals, TV captions), the real 10-round FA Cup, team-mate goals kept on reload, PL Draft FC 27 back to 20 clubs"
+  },
+  {
+    "version": "0.20",
+    "date": "2026-10-21",
+    "fromCommit": "d6fe204d",
+    "toCommit": "06a9f8de",
+    "url": "https://claude.ai/artifact/DrwirnxpBBqLzqqjmfipd3",
+    "headline": "Game music: 11 original orchestral tracks for home, matches, full time and the Ballon d'Or night, behind a Settings switch"
   }
 ]

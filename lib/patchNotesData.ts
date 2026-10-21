@@ -31,7 +31,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "title": "Mikey's patch notes v0.20: Game music",
       "publishedAt": "2026-10-21T18:00:00Z",
       "updatedAt": "2026-10-21T18:00:00Z",
-      "artifactUrl": "ARTIFACT_URL",
+      "artifactUrl": "https://claude.ai/artifact/DrwirnxpBBqLzqqjmfipd3",
       "summary": "Game music, a switch in Settings (off by default). Eleven original orchestral tracks, inspired by Blue Lock's speed, key and energy, play on the home screen, in matches (following the score, the clock, a knockout and a dribble), at full time and on the Ballon d'Or night. Quiet under the match, muted with the match, silent in cut scenes, gapless loops.",
       "stats": [
         { "value": "11", "label": "new music tracks, all original" },
