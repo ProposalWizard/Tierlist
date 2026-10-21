@@ -1,11 +1,13 @@
 ---
 name: handoff
-description: Hand a piece of work to a fresh chat — your own next chat, or Mikey/Leo's. Load ONLY when someone asks: "handoff", "hand this over", "new chat", "start a fresh chat", "context is too big". Not at the end of every build any more (Harry, 20 Oct 2026: "completely disregard this"; instead a one-line nudge every 3 hours of chat, see CLAUDE.md). Writes one handoff file in the repo and gives a short paste-in starter for the new chat.
+description: Hand a piece of work to a fresh chat — your own next chat, or Mikey/Leo's. Load ONLY when someone asks: "handoff", "hand this over", "new chat", "start a fresh chat", "context is too big". Not at the end of every build any more (Harry, 20 Oct 2026: "completely disregard this"; instead a one-line nudge every 3 hours of chat, see RUL-TEAM-004). Writes one handoff file in the repo and gives a short paste-in starter for the new chat.
 ---
+
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
 
 # Handoff — only when asked, start the next chat from it
 
-**Changed 20 Oct 2026 (Harry): no handoff after every build.** *"completely disregard this - instead every 3 hours of chat give a prompt that it could be a good time to restart the chat."* Keep working in the same chat; write a handoff only when someone asks. The rules below still say HOW to write one.
+**No handoff after every build (RUL-TEAM-004).** Keep working in the same chat; write a handoff only when someone asks. The rules below still say HOW to write one.
 
 Harry, 15 Oct 2026: *"we definitely need to set up a handoff skill, not only to hand off to
 ourselves but to others. Context bloat is huge now — we need to use a chat after every build."*
@@ -15,9 +17,7 @@ handoff and a new-chat starter went out. Harry: *"chill on pasting into new chat
 same build"*. One step of a bigger ask is not a build. Hand off only when Harry says the build is
 done, or the chat is genuinely too long; otherwise carry on.
 
-**Rule: one build per chat.** A "build" = one task done in full, from idea to game/push ready (Harry, 15 Oct 2026). Planning, design and building one task all happen in the same chat; the handoff comes when it is ready to push (or stopped for a decision). When a build is done (pushed, or stopped for a decision), write a
-handoff and tell the person to open a new chat with the starter below. Don't carry on in a chat
-whose context is already long.
+**The old "one build per chat, then a handoff" rule (15 Oct) is superseded by RUL-TEAM-004.** Write a handoff when asked, or when the person says the chat is too long.
 
 ## 1. Write the file
 
@@ -47,8 +47,8 @@ rules (short sentences, no coder words in the headings). Sections, in this order
 - **Hard cap: 80 lines.** If it's longer, cut prose or move detail into a linked file.
 - **Only what the next chat needs to act.** No history, no story of how we got here, no tour
   of the code. "Done and live" items are one line each, or left out.
-- **Rules go home, not in the handoff.** A standing rule Harry gives goes into CLAUDE.md or the
-  right skill, and the handoff links to it. Otherwise every handoff re-copies every rule.
+- **Rules go home, not in the handoff.** A standing rule Harry gives becomes a Brain note (see
+  CLAUDE.md "The Brain"), and the handoff cites its code. Otherwise every handoff re-copies every rule.
 - **Link, don't paste.** Plans, tables, stills: in `docs/handoffs/<name>/` or a skill, linked.
 - **Retire when done.** When a build ships, move its handoff to `docs/handoffs/done/` in the
   same commit. Files there are never read at the start of a chat.
