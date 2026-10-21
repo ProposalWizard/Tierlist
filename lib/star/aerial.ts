@@ -8,8 +8,13 @@
  * by one skill for both):
  *  - how much a mis-hit header or volley is forgiven (airborneChance.ts
  *    airContactRead: the same softening Technique gave, now read off Aerial);
- *  - a header's pace (×0.9 at 30, ×1 at 60, ×1.1 at 90 — the research
- *    table's header-pace row).
+ *  - a header's pace (×0.8 at 30, ×1 at 60, ×1.2 at 90) and a clean
+ *    volley's (×0.9, ×1, ×1.1).
+ * Pinned at 60: Aerial 60 plays exactly as today's header and volley.
+ * Measured (scripts/aerial/measure.mts, 1,000 a cell, B10's method, the
+ * bot's hand held at B10's "average"): goals per 100 at Aerial 30/60/90 —
+ * headers 20.8 / 25.4 / 31.4 (today, by Power+Technique: 21.2 / 25.4 / 32.5),
+ * volleys 25.0 / 28.3 / 31.8 (today: 23.8 / 28.3 / 26.3).
  * The strike itself is still launched with Power and Technique, as every
  * shot is; Aerial sits on top.
  *
@@ -42,11 +47,21 @@ export function aerialOf(skills: { power?: unknown; technique?: unknown; aerial?
   return typeof skills.aerial === "number" && Number.isFinite(skills.aerial) ? skills.aerial : aerialFromOld(skills);
 }
 
+/** Pace change per Aerial point away from 60 (header, volley). */
+export const AERIAL_HEADER_PACE_PER_PT = 1 / 150;
+export const AERIAL_VOLLEY_PACE_PER_PT = 1 / 300;
+
 /**
- * A header's pace by Aerial: ×0.9 at 30, ×1 at 60, ×1.1 at 90 (straight
- * line, held inside 0.85-1.15). Absent = ×1 (today's header).
+ * A header's pace by Aerial, pinned at 60 (×1 = today's header), a straight
+ * line held inside 0.75-1.25. Absent = ×1.
  */
 export function aerialHeaderPace(aerial: number | undefined): number {
   if (aerial === undefined || !Number.isFinite(aerial)) return 1;
-  return Math.max(0.85, Math.min(1.15, 1 + (aerial - 60) / 300));
+  return Math.max(0.75, Math.min(1.25, 1 + (aerial - 60) * AERIAL_HEADER_PACE_PER_PT));
+}
+
+/** A clean volley's pace by Aerial, pinned at 60, held inside 0.85-1.15. Absent = ×1. */
+export function aerialVolleyPace(aerial: number | undefined): number {
+  if (aerial === undefined || !Number.isFinite(aerial)) return 1;
+  return Math.max(0.85, Math.min(1.15, 1 + (aerial - 60) * AERIAL_VOLLEY_PACE_PER_PT));
 }

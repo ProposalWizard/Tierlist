@@ -160,6 +160,38 @@
       {"kick":true,"window":0.3,"letGo":0.83,"options":6,"traps":3,"margin":0.05,"offside":false,"real":true},
       {"kick":true,"window":0.3,"letGo":0.77,"options":6,"traps":3,"margin":0.04,"offside":true,"real":true},
       {"kick":true,"window":0.3,"letGo":0.7,"options":6,"traps":3,"margin":0.03,"offside":false,"real":true}
+    ],
+    "aerial": [
+      {"volley":false,"keeperStrength":20,"marker":false,"pass":0.5},
+      {"volley":true,"keeperStrength":23,"marker":false,"pass":0.5},
+      {"volley":false,"keeperStrength":25,"marker":false,"pass":0.5},
+      {"volley":true,"keeperStrength":28,"marker":false,"pass":0.5},
+      {"volley":false,"keeperStrength":30,"marker":false,"pass":0.5},
+      {"volley":true,"keeperStrength":33,"marker":false,"pass":0.5},
+      {"volley":false,"keeperStrength":36,"marker":true,"pass":0.5},
+      {"volley":true,"keeperStrength":38,"marker":true,"pass":0.5},
+      {"volley":false,"keeperStrength":41,"marker":true,"pass":0.5},
+      {"volley":true,"keeperStrength":44,"marker":true,"pass":0.5},
+      {"volley":false,"keeperStrength":46,"marker":true,"pass":0.5},
+      {"volley":true,"keeperStrength":49,"marker":true,"pass":0.5},
+      {"volley":false,"keeperStrength":51,"marker":true,"pass":0.5},
+      {"volley":true,"keeperStrength":54,"marker":true,"pass":0.5},
+      {"volley":false,"keeperStrength":57,"marker":true,"pass":0.5},
+      {"volley":true,"keeperStrength":59,"marker":true,"pass":0.5},
+      {"volley":false,"keeperStrength":62,"marker":true,"pass":0.5},
+      {"volley":true,"keeperStrength":65,"marker":true,"pass":0.5},
+      {"volley":false,"keeperStrength":67,"marker":true,"pass":0.5},
+      {"volley":true,"keeperStrength":70,"marker":true,"pass":0.5},
+      {"volley":false,"keeperStrength":72,"marker":true,"pass":0.5},
+      {"volley":true,"keeperStrength":75,"marker":true,"pass":0.5},
+      {"volley":false,"keeperStrength":78,"marker":true,"pass":0.5},
+      {"volley":true,"keeperStrength":80,"marker":true,"pass":0.5},
+      {"volley":false,"keeperStrength":83,"marker":true,"pass":0.5},
+      {"volley":true,"keeperStrength":86,"marker":true,"pass":0.5},
+      {"volley":false,"keeperStrength":88,"marker":true,"pass":0.5},
+      {"volley":true,"keeperStrength":91,"marker":true,"pass":0.6},
+      {"volley":false,"keeperStrength":93,"marker":true,"pass":0.65},
+      {"volley":true,"keeperStrength":96,"marker":true,"pass":0.7}
     ]
   }
 }
