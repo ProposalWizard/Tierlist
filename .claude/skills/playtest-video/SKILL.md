@@ -3,6 +3,8 @@ name: playtest-video
 description: Harry and Mikey playtest with a screen recording running (OBS, mp4) and hand over the video instead of describing it. Load WHENEVER someone gives a video link or file of the game being played — "here's the recording", "watch this", a Google Drive/Dropbox link, a .mp4 — or asks what happened at a timestamp. Turns the video into pictures and a transcript Claude can actually read, then checks every claim against the real game before reporting it.
 ---
 
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
+
 # Watching a playtest recording
 
 Asked for directly (Harry, 27 Sep 2026): *"from now on when im playtesting im
@@ -98,7 +100,7 @@ game's rules goes back to them:
 
 - Reproduce it in the real game in a browser (star-playtest, or record the
   engine's state frame by frame as in `scripts/playtest-video/README.md`).
-- Say which of the three it is, every time: **seen in your video at 12:31**,
+- Say which of the three it is, every time (RUL-ALL-007): **seen in your video at 12:31**,
   **measured in the real game**, or **reasoned from the code** (not yet seen).
 - Their words are about what they SAW. If your number seems to contradict
   them, first check you mean the same thing by the same word (the "his line"
@@ -106,6 +108,8 @@ game's rules goes back to them:
   Show a picture rather than argue.
 
 ## 5. Hand back
+
+Model split: everyday model for the breakdown, top model for the analysis and answers (RUL-TEAM-017). Play it before claiming it works (RUL-ALL-009).
 
 Findings go into the patch notes (artifact-house-style), each with the
 timestamp and a frame from their own video where one helps.

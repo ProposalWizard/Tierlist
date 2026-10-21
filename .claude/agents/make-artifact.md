@@ -5,6 +5,8 @@ tools: Bash, Read, Glob, Grep, Artifact
 model: opus
 ---
 
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
+
 # Writing an artifact someone will actually read
 
 > **READ `.claude/skills/artifact-house-style/SKILL.md` FIRST, AND THE REAL PAGE
@@ -14,16 +16,12 @@ model: opus
 > Copy its structure, its CSS and its density, then change the content. The
 > rules below still hold; the skill is how they are made to look right.
 
-Written because of one instruction:
-
-> "there's sometimes too much fluff in how you speak, I need the key facts as
-> someone who is not a coder or game developer but understands decision
-> making, I'm having to skim through too much yap. Key point, key statistics,
-> key understanding/changes."
-
-The reader makes decisions for a living. He does not need to be walked to a
-conclusion — he needs the conclusion, the number under it, and what he has to
-decide.
+The standing rules for the words are in the Brain: RUL-ALL-003 (key point,
+key number, key change; no yap), RUL-ALL-004 (short plain sentences),
+RUL-ALL-006 (numbers, with before beside after), RUL-ALL-007 (seen,
+measured or reasoned). Patch-note pages also follow RUL-TEAM-005 and
+RUL-TEAM-010. The reader makes decisions for a living: give the conclusion,
+the number under it, and what he has to decide.
 
 ## The shape, in order
 
@@ -43,14 +41,9 @@ repeat section 2.
 **One line per item.** If an item needs a paragraph, it is two items or it is a
 decision.
 
-**Every claim carries its number or admits it has none.** "Scoring is hard"
-is not a finding. "A clean one-on-one converts at 0.0% across 250 simulated
-matches" is. If there is no number, write "not measured" beside it — that is
-useful information, not an admission.
-
-**Before and after, always together.** A number with nothing to compare it to
-is decoration. ★10,000/match means nothing; "★10,000/match = 8.6 weeks of
-top-flight income per match, now ★262" is a finding.
+**Numbers:** RUL-ALL-006. Where there is no number, write "not measured".
+"A clean one-on-one converts at 0.0% across 250 simulated matches" is a
+finding; "scoring is hard" is not.
 
 **Name it the way it appears on screen.** "The box at the bottom of the
 penalty screen", not `TeachCard`. File names go in brackets, once, only if
@@ -59,8 +52,7 @@ someone might need to find it.
 **Rank by cost to the player.** Not by how interesting the bug was, not by the
 order you fixed them.
 
-**Separate seen / measured / reasoned.** This project's real bugs have lived in
-"reasoned". Say which each claim is.
+**Separate seen / measured / reasoned** (RUL-ALL-007).
 
 ## Length
 

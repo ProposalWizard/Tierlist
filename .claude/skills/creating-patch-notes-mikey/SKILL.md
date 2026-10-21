@@ -3,6 +3,8 @@ name: creating-patch-notes-mikey
 description: Build "Knowitball Patch Notes Mikey (version)" — a shareable artifact page for Harry and Leo listing what changed in the game since the last patch notes (fixed, added, changed, known issues, next), with before→after numbers. Use whenever Mikey asks for patch notes, a changelog, an update summary for the team, or "what changed"; also offer it after a batch of game changes is pushed.
 ---
 
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
+
 # Creating patch notes — Mikey
 
 (Leo has his own track in `creating-patch-notes`; Harry may have one too. This one is only for Mikey's work.)
@@ -10,29 +12,28 @@ description: Build "Knowitball Patch Notes Mikey (version)" — a shareable arti
 Patch notes are how Mikey tells **Harry and Leo** what changed in Knowitball, and how the team tracks updates and bugs over time. Neither of them writes code. Write for someone who plays the game, not someone who reads it.
 
 
+> **Patch-note rules live in the Brain** (cite the code): RUL-TEAM-018 (made
+> automatically as each build finishes, live on the site at once, inbox for
+> unread), PRO-TEAM-007 (`node scripts/patch-notes/ship.mjs <versions> --pr`
+> ships the notes alone), PRO-TEAM-008 (order: stills, ship notes, publish,
+> push the feature when Harry says, then film clips), RUL-TEAM-019 and
+> RUL-TEAM-020 (feature code reaches main only when Harry says push),
+> RUL-TEAM-005 (no test build link; mostly stills; a short clip only for
+> gameplay or animation), RUL-TEAM-010 (no "needs Mikey's yes"), RUL-TEAM-006
+> (version keys unique). The old before/after-video and filming-phase rules
+> are superseded (FACT-ALL-002).
+
 > **Standing rule (Harry, 24 Sep 2026):** readable by someone who wasn't in
 > the conversation. The biggest or most confusing change is the headline;
-> every item is Problem → Why → Fix; confusing ones get a before/after
-> picture; answers to questions go low. See `artifact-house-style` → Every
-> item is Problem → Why → Fix.
-
-> **SUPERSEDED (Harry, 2 Oct 2026):** no filming phase. Patch notes link the
-> test build (the Vercel preview of the branch) and use stills; a short
-> "after" clip only when a still cannot show it (motion, timing, a fixed
-> problem). Befores only as a quick still of a simple UI or specific gameplay
-> change. Full rule: CLAUDE.md, "No filming phase".
-
-> **Standing rule (Harry, 1 Oct 2026):** every new thing gets a real video
-> plus a still — a before clip and an after clip of the whole phone screen,
-> filmed with `scripts/film/rec.mjs`, shown one full-width clip at a time with
-> a playhead and ½×/¼× speed. Never GIFs, crops or squeezed side-by-sides.
-> See `artifact-house-style` → 4b and `scripts/film/README.md`.
+> every item is Problem -> Why -> Fix; confusing ones get a before/after
+> picture; answers to questions go low. See `artifact-house-style` -> Every
+> item is Problem -> Why -> Fix. (No Brain note yet.)
 
 > **Standing rule (Harry, 24 Sep 2026):** every patch notes page opens with a
-> "Check these" list — one plain line per changed feature or fix, with where
-> to find it, no explanations. See `artifact-house-style` → What always goes
+> "Check these" list: one plain line per changed feature or fix, with where
+> to find it, no explanations. See `artifact-house-style` -> What always goes
 > in. The site entry (`lib/patchNotesData.ts`) gets it too, as its first
-> section's items.
+> section's items. (No Brain note yet.)
 
 ## Naming and versions
 
@@ -73,9 +74,8 @@ Each item is one line with an optional fold-out:
 - **Optional before/after bars** when a number moved and the size of the move matters.
 - **Optional fold-out ("Why / how")**: the reason or cause, for anyone who wants it. Keep it short. File names in `<code>` only here, never in the headline.
 
-Rules (these are the team's standing rules — see CLAUDE.md "How to talk to this team"):
-- No fluff, no praise, no "we're excited to". Key point, key number.
-- Say whether each thing was **seen** (playtested on a screen), **measured** (tests/scripts), or **reasoned** (read the code only). Use a small tag at the end of the detail line: `seen`, `measured`, or `not yet seen`.
+Rules (standing, in the Brain: RUL-ALL-003 answer shape, RUL-ALL-004 short plain sentences, RUL-ALL-006 numbers with before and after, RUL-ALL-007 seen / measured / reasoned):
+- Tag the end of each detail line `seen`, `measured`, or `not yet seen`.
 - Name things the way they appear on screen.
 - Group many small changes to one area into one item rather than ten.
 
@@ -92,7 +92,7 @@ Start from `template.html` in this folder. It has the full style (dark green the
 
 1. Append the new entry to `patch-notes/mikey/versions.json` (with the artifact URL and `toCommit` = current `HEAD`).
 2. Tell Mikey: the link, the version number, and a 3–5 bullet summary. Remind him the artifact is private until he shares it with Harry and Leo from the page's Share menu.
-3. Don't commit or push unless Mikey asks. If he does, the patch-notes files go in the same commit.
+3. Ship the notes alone with `node scripts/patch-notes/ship.mjs <versions> --pr` (PRO-TEAM-007, RUL-TEAM-018). Feature code reaches main only when Harry says push (RUL-TEAM-019). Don't push anything else unless Mikey asks.
 
 ## The site shows the page itself (standing, 26 Sep 2026)
 

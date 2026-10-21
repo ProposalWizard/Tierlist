@@ -3,11 +3,13 @@ name: film-pass
 description: How to run the before/after filming pass for a Knowitball patch-notes or review page quickly. Load BEFORE launching any filmer agent, before writing a filming driver script, and whenever a build round reaches "film before/after". Covers the built-server setup, the scene library, claims between filmers, deterministic outcomes, and which model films.
 ---
 
-> **SUPERSEDED (Harry, 2 Oct 2026):** no filming phase. Patch notes link the
-> test build (the Vercel preview of the branch) and use stills; a short
-> "after" clip only when a still cannot show it (motion, timing, a fixed
-> problem). Befores only as a quick still of a simple UI or specific gameplay
-> change. Full rule: CLAUDE.md, "No filming phase".
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
+
+> **Scope (Brain):** there is no before/after filming phase any more
+> (FACT-ALL-002). Patch notes use stills; a short "after" clip is made only
+> for gameplay or animation, after the page is shipped and the feature pushed
+> (RUL-TEAM-005, PRO-TEAM-008). Never link the Vercel test build. Use the
+> how-to below only for those clips.
 
 # The filming pass, fast
 
@@ -108,7 +110,7 @@ The wall clock went to server compiles, memory crashes and bot retries.
 
 ## Which model
 - Filming is mostly waiting for a browser, so a bigger model doesn't make it faster.
-  Use the everyday model at medium effort (as CLAUDE.md says).
+  Use the everyday model at medium effort (RUL-TEAM-014, RUL-TEAM-015, RUL-TEAM-016).
 - The one place model strength helps: writing a NEW scene that works first time.
   If a round has many new screens, write those scenes on the top model, then
   hand the running and checking back to the everyday model.

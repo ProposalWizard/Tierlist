@@ -3,6 +3,8 @@ name: screen-video
 description: Watch a video someone hands over instead of describing it - screen recordings (OBS, a phone, a Loom, a playtest capture) AND other people's videos (an mp4, a TikTok, an ad, a tutorial). Load WHENEVER a video arrives - "here's a recording", "watch this", "new recording's in", a Google Drive / Dropbox / Loom / TikTok link, a .mp4/.mov/.webm - or someone asks what happened at a timestamp. Turns the video into time-stamped pictures + a transcript lined up side by side, reads ALL of it, checks every claim against the frames before reporting, and publishes the whole breakdown as a page.
 ---
 
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
+
 # Watching a video
 
 Claude can't watch a video, but it can read pictures and text. This is the
@@ -168,7 +170,7 @@ A frame shows what happened, not why. Before any claim about the cause:
 - Reproduce it in the REAL running app: same page or screen, same window width
   as the video, same steps. Screenshot it.
 - Find the cause in the code, fix it, and shoot it again.
-- Label every finding: **SEEN** in the video at 12:31 · **REPRODUCED** in the
+- Label every finding (RUL-ALL-007): **SEEN** in the video at 12:31 · **REPRODUCED** in the
   app · **REASONED** from the code, not seen yet.
 - The person's words are about what they SAW. If a finding seems to contradict
   them, first check you both mean the same thing by the same word. Show a
@@ -189,6 +191,8 @@ A frame shows what happened, not why. Before any claim about the cause:
 - Use `--stills` when the frames will be re-used as image references.
 
 ## 5. Hand back
+
+Model split: everyday model for the breakdown, top model for analysis (RUL-TEAM-017).
 
 1. **Paste the findings in chat, in full** (a file link alone is not a
    delivery). Each finding: timestamp, what was said, what was on screen, the
