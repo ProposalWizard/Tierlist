@@ -141,3 +141,9 @@ New builds from the feedback:
 - 19:45: "as a rule something like a chin or any body part can't overlap inside another body part" → standing rule in CLAUDE.md; B5c builds a reusable self-overlap check (every part vs every part, every clip).
 - 20:15: "nah the b2 + todays face is ass, gotta try and keep our cartoon like faces, the movements are beginning to look a bit better" → realistic-body direction dropped; B5d: a stylised cartoon body that fits our unchanged cartoon heads (3 directions, sheet + walk clip, Harry picks). B5c movement on the right track.
 - 23:21 (B5d sheet, old clips): "whyyyy is the posture so weird, there has to be a solution" → B5c posture pass: measure head-forward, neck angle, shoulder roll, elbow bend, palm direction, arm gap, chest/pelvis tilt, weight shift, knee bend from the 28 references vs ours; add a posture layer to every standing/idle/walk/cut-scene clip; before/after on today + d1–d3.
+
+## 21 Oct 2026 (open questions round)
+- B2b offsides in build-ups (0.37 a match at even strength): **Keep.**
+- "OFFSIDE" shown twice: **Once everywhere** (banner only, real match too).
+- Headers/volleys before 5 real drawings each: **Use the cross drawings now.**
+- B5d body pick: asked for it in chat with pictures (sent: fronts, 6-scene sheet, walk clip). Waiting.
