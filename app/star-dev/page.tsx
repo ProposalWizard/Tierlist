@@ -86,7 +86,7 @@ import { earnedBetween, addSeasonRecords, type EarnPop } from "@/lib/star/earnPo
 // The unlock chain a new career walks (Harry, 1 Oct 2026, P13-P40).
 import { needsYou, barBadges, needsInput, transferWindowWeeks, transferWindowLine, type NeedId } from "@/lib/star/needsYou";
 import { openFrom as navOpenFrom, backFrom as navBackFrom, ROOT_PHASES, type NavEntry, type NavSpot } from "@/lib/star/navReturn";
-import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, installApp, appInstalled, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft, gameFirst, managerTalkDue, phoneShortfall, phoneStepLine, DRILLS_TO_OPEN_SHOP } from "@/lib/star/unlocks";
+import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, installApp, appInstalled, appIsNew, newAppCount, markAppOpened, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft, gameFirst, managerTalkDue, phoneShortfall, phoneStepLine, DRILLS_TO_OPEN_SHOP } from "@/lib/star/unlocks";
 import { applyGameGain } from "@/lib/star/relationshipGame";
 import { AchievementPop, UnlockChallenges, LockedPage, UnlockPop, AchievementToasts, SlotQuestion, type StepGo, type StarStep } from "@/components/star/UnlockChain";
 
@@ -4996,7 +4996,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const step = nextStep(career);
   // "Needs you" (navigation round 1, lib/star/needsYou.ts): badges on the bar
   // and one chip on Home, most urgent first, all from sources that exist.
-  const needsIn = needsInput(career, { seasonOver, phoneUnread, nextFixture: nextFixture ?? null, daysToNext });
+  // A new app on the phone counts as something to look at (navigation round 1).
+  const needsIn = needsInput(career, { seasonOver, phoneUnread: phoneUnread + newAppCount(career), nextFixture: nextFixture ?? null, daysToNext });
   const needList = needsYou(needsIn);
   const needGo: Record<NeedId, () => void> = {
     "season-end": handleSeasonEnd,
@@ -5240,6 +5241,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onClose={() => handleNavigate("home")}
           installed={career.unlocks ? (id) => appInstalled(career, id) : undefined}
           onInstall={(id) => setCareer(c => (c ? installApp(c, id) : c))}
+          isNew={(id) => appIsNew(career, id)}
+          onOpened={(id) => setCareer(c => (c ? markAppOpened(c, id) : c))}
         />
       )}
       {/* ── The swipe home screens: Stats · Home · Training ──

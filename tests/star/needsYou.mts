@@ -2,6 +2,7 @@ import { needsYou, barBadges, transferWindowWeeks, transferWindowLine, type Need
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import { divisionOf } from "../../lib/star/calendar";
+import { appIsNew, newAppCount, markAppOpened, installApp } from "../../lib/star/unlocks";
 import type { StarPlayer } from "../../lib/star/types";
 
 /** "Needs you": the most urgent thing first, and badges only from real sources. */
@@ -47,6 +48,19 @@ check(!barBadges({ ...quiet, matchInDays: 1 }).play, "no match-today pulse the d
   check(transferWindowLine(0) === "Transfer window opens this week", "0 weeks reads 'this week'");
   check(transferWindowLine(1) === "Transfer window opens in 1 week", "1 week, singular");
   check(transferWindowLine(12) === "Transfer window opens in 12 weeks", "12 weeks");
+}
+
+// The Phone: an app added from the App Store wears "NEW" until it is opened.
+{
+  const player = { firstName: "T", lastName: "P", age: 18, skinTone: "light", club: "Arsenal", clubBadge: null, position: "ST", nationality: "England", startYear: 2027 } as StarPlayer;
+  const c0 = { ...makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS]), money: 100000 };
+  check(!!c0.unlocks, "a new career has the unlock chain");
+  check(!appIsNew(c0, "social") && newAppCount(c0) === 0, "starter apps are not new");
+  const c1 = installApp(c0, "casino-menu");
+  check(appIsNew(c1, "casino-menu") && newAppCount(c1) === 1, "an installed app is new");
+  const c2 = markAppOpened(c1, "casino-menu");
+  check(!appIsNew(c2, "casino-menu") && newAppCount(c2) === 0, "opening it clears NEW");
+  check(!appIsNew({ unlocks: undefined }, "casino-menu"), "an old save has nothing new");
 }
 
 if (problems.length) {
