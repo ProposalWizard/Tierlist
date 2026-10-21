@@ -23,8 +23,7 @@
  *   cut scenes      nothing (they have their own music)
  *
  * Quiet on purpose: a match plays at MATCH_VOLUME, under the crowd and the
- * kicks. The match's mute button does NOT mute it (Mikey, 21 Oct 2026: a saved
- * match mute left every match silent); the Game music switch is its only off. Loops are gapless (each file
+ * kicks; the match's mute button mutes it too. Loops are gapless (each file
  * carries half a second of its own loop either side, see `CUES`).
  *
  * Never throws: no window, no Web Audio, a missing file = no music.
@@ -55,7 +54,7 @@ export const CUES: Record<CueId, { loop: boolean; pre: number; len: number }> = 
 export const MUSIC_KEY = "star-game-music";
 /** Loudness of the music (0-1) on each kind of screen. A match sits lowest. */
 export const MENU_VOLUME = 0.32;
-export const MATCH_VOLUME = 0.26;
+export const MATCH_VOLUME = 0.17;
 export const RESULT_VOLUME = 0.34;
 const FADE_S = 1.6;
 /** A bed stays at least this long before the score can swap it (stops flip-flopping). */

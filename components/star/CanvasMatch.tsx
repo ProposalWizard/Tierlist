@@ -249,7 +249,7 @@ const barCornerStyle = (c: "bl" | "br" | "tl" | "tr", addedUp: boolean): React.C
 });
 import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
-import { setMusicScene, clearMusicScene, playTurningPoint, isTurningPoint } from "@/lib/star/gameMusic";
+import { setMusicScene, clearMusicScene, setMusicMuted, playTurningPoint, isTurningPoint } from "@/lib/star/gameMusic";
 
 /**
  * `feed` is the commentary screen, and it is where a match LIVES — see
@@ -2066,7 +2066,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         } }, 10);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- extraTimeEligibility reads refs; the fixture is fixed for the match
   }, [matchMode, phase, displayScore, matchMinute, MATCH_DURATION]);
-  useEffect(() => () => clearMusicScene("match"), []);
+  useEffect(() => { if (matchMode) setMusicMuted(muted); }, [matchMode, muted]);
+  useEffect(() => () => { clearMusicScene("match"); setMusicMuted(false); }, []);
 
   const [aim, setAim] = useState<{ dir: { x: number; y: number }; power: number } | null>(null);
   // ── Knuckleball & power shot (lib/star/shotModel.ts; Settings → Gameplay) ──
