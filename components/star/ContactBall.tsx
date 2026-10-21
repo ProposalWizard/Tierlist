@@ -59,6 +59,9 @@ interface Props {
   motion?: BallMotion;
   /** Your technique, 0-100. Higher = the ball moves slower. */
   technique?: number;
+  /** Your Aerial & Acrobatics, 0-100: read instead of technique for how a
+   *  header or volley comes off (airborneChance.ts). Absent = technique, as before. */
+  aerial?: number;
   /** A feature's teaching pause (CanvasMatch `holdAt`): the clock waits
    *  until this goes false. Absent in the real match. */
   hold?: boolean;
@@ -82,7 +85,7 @@ const TOO_SLOW_MS = 350;
 export const STRIKE_ZONE_R = 1.18;
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, hold = false, grades = false, knuckles = false, field = false }: Props) {
+export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, hold = false, grades = false, knuckles = false, field = false }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
@@ -192,7 +195,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
     const lift = liftRef.current;
     if (air) {
       // B10: a header or volley says how it came off (the same read the strike uses).
-      const rd = airContactRead({ kind: motion === "float" ? "header" : "volley", lift, cx, cy, tech: technique });
+      const rd = airContactRead({ kind: motion === "float" ? "header" : "volley", lift, cx, cy, tech: technique, aerial });
       setGraded({ label: rd.label, good: rd.good });
     } else if (grades) {
       const g = gradeContact({ cx, cy }, power, knuckles, field);

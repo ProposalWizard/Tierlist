@@ -31,6 +31,7 @@ const SKILL_LABELS: [keyof Skills, string, string, string][] = [
   ["technique", "Technique", "🎯", "Ball control, curl, precise strikes"],
   ["vision", "Vision", "👁️", "More team-mates to pass to in every chance"],
   ["freeKick", "Free Kick", "🎪", "Free kicks, corners and penalties — and how many are yours"],
+  ["aerial", "Aerial & Acrobatics", "🤸", "Headers and volleys"],
 ];
 
 /** Each skill's own colour: the bar, the card's wash, the reward. */
@@ -40,6 +41,7 @@ const SKILL_COLOR: Record<keyof Skills, [string, string]> = {
   technique: ["#38bdf8", "#a5f3fc"],
   vision: ["#a78bfa", "#ddd6fe"],
   freeKick: ["#f472b6", "#fbcfe8"],
+  aerial: ["#2dd4bf", "#99f6e4"],
 };
 
 const ENERGY_COST = getTuning("energy.trainingCost");

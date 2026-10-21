@@ -190,8 +190,9 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
       technique: getTuning("startingSkills.technique"),
       vision: getTuning("startingSkills.vision"),
       freeKick: getTuning("startingSkills.freeKick"),
+      aerial: getTuning("startingSkills.aerial"),
     },
-    lastTrainedWeek: { pace: 1, power: 1, technique: 1, vision: 1, freeKick: 1 },
+    lastTrainedWeek: { pace: 1, power: 1, technique: 1, vision: 1, freeKick: 1, aerial: 1 },
     // Harry, 1 Oct 2026 (P26): "it should all be at like 50, 50, 50 ... you
     // probably like 45, reputation zero, fame one". Was boss 60, team 60,
     // fans 40, happiness 60, reputation 20, fame 0. Only a NEW career starts
@@ -1118,6 +1119,7 @@ export function creditMatchResult(
     technique: Math.min(100, Math.round(career.skills.technique + perSkillGain)),
     vision: Math.min(100, Math.round(career.skills.vision + perSkillGain)),
     freeKick: Math.min(100, Math.round(career.skills.freeKick + perSkillGain)),
+    aerial: Math.min(100, Math.round(career.skills.aerial + perSkillGain)),
   };
 
   const next: CareerState = {
@@ -1733,6 +1735,7 @@ export function advanceSeason(
     technique: career.skills.technique, // technique decays slower
     vision: career.skills.vision,       // vision holds with experience
     freeKick: career.skills.freeKick,
+    aerial: ageEffect(career.skills.aerial), // the jump goes with the legs
   };
 
   // Sponsor terms run down. A deal that was not delivered lapses, which costs

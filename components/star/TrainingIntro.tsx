@@ -45,6 +45,10 @@ const INTRO: Record<keyof Skills, { title: string; steps: string[] }> = {
     title: "Pick the Pass",
     steps: ["3, 2, 1, GO: a real moment from a match", "Who gets the pass? Not offside, not marked, nobody in the way", "Tap him before the bar runs out (later: kick it to him)"],
   },
+  aerial: {
+    title: "Head & Volley",
+    steps: ["The cross comes in: drag back to aim", "Head it on top of the ball, or volley it as it drops", "Score past the keeper"],
+  },
 };
 
 const G = "#34d399";   // you / good
@@ -94,6 +98,16 @@ function Picture({ skill }: { skill: keyof Skills }) {
         <Figure x={100} y={104} c={G} />
         <path d="M100 90 L 70 70 L 104 30" fill="none" stroke="#fbbf24" strokeWidth={2.5} strokeDasharray="5 4" strokeLinecap="round" />
       </>)}
+      {skill === "aerial" && (<>
+        {goal}
+        <Figure x={100} y={28} c="#facc15" />
+        <Figure x={88} y={66} c={R} />
+        {/* The cross comes in from the wing, you meet it in the air. */}
+        <path d="M178 96 Q 150 40 112 62" fill="none" stroke={W} strokeWidth={2} strokeDasharray="3 4" strokeLinecap="round" />
+        <Figure x={106} y={80} c={G} />
+        {arrow(108, 60, 120, 18, 0)}
+        {ball(110, 62)}
+      </>)}
       {skill === "vision" && (<>
         {/* No line on the pitch (Harry, 20 Oct 2026): one man free, one marked, one behind a defender. */}
         <Figure x={56} y={52} c={G} /><Figure x={64} y={50} c={R} />
@@ -114,6 +128,7 @@ const WHY: Record<keyof Skills, string> = {
   freeKick: "Free Kick: free kicks, corners and penalties",
   pace: "Pace: faster dribbles and more runs into space",
   vision: "Vision: more team-mates to pass to",
+  aerial: "Aerial & Acrobatics: headers and volleys",
 };
 
 /** The drill's how-it-works, as one block: drawing, three lines, stars. */

@@ -169,7 +169,7 @@ export default function MediaLab() {
         key={`${trainingPreview.skill}-${trainingPreview.level}-${trainingPreview.run ?? 0}`}
         skill={trainingPreview.skill}
         trainingLevel={trainingPreview.level}
-        skills={{ pace: 40, power: 40, technique: 40, vision: 40, freeKick: 40 }}
+        skills={{ pace: 40, power: 40, technique: 40, vision: 40, freeKick: 40, aerial: 40 }}
         onComplete={() => setTrainingPreview({ ...trainingPreview, run: (trainingPreview.run ?? 0) + 1 })}
       />
       <PageGuide page="/star-dev/media-lab" />

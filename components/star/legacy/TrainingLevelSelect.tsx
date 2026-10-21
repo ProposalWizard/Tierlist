@@ -21,6 +21,7 @@ const LOOK: Record<keyof Skills, { title: string; icon: string; accent: string; 
   technique: { title: "Technique", icon: "🎯", accent: "#22d3ee", line: "Ball control, curl, precise strikes" },
   vision: { title: "Vision", icon: "👁️", accent: "#a78bfa", line: "More team-mates to pass to" },
   freeKick: { title: "Free Kick", icon: "🎪", accent: "#f472b6", line: "Free kicks, corners and penalties" },
+  aerial: { title: "Aerial & Acrobatics", icon: "🤸", accent: "#2dd4bf", line: "Headers and volleys" },
 };
 
 export default function TrainingLevelSelect({ career, skill, onPlay, onBack }: {

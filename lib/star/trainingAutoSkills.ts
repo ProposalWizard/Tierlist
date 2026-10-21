@@ -26,10 +26,10 @@ import { getTuning } from "./tuningStore";
 export const AUTO_STARS = 2;
 
 /** Every skill, in the order the screen lists them. */
-export const SKILL_ORDER: (keyof Skills)[] = ["power", "technique", "freeKick", "pace", "vision"];
+export const SKILL_ORDER: (keyof Skills)[] = ["power", "technique", "freeKick", "pace", "vision", "aerial"];
 
 export const SKILL_LABEL: Record<keyof Skills, string> = {
-  power: "Power", technique: "Technique", freeKick: "Free kick", pace: "Pace", vision: "Vision",
+  power: "Power", technique: "Technique", freeKick: "Free kick", pace: "Pace", vision: "Vision", aerial: "Aerial",
 };
 
 /** A new career's skills (tuning.ts startingSkills.*). */
@@ -40,6 +40,7 @@ export function startingSkills(): Skills {
     technique: getTuning("startingSkills.technique"),
     vision: getTuning("startingSkills.vision"),
     freeKick: getTuning("startingSkills.freeKick"),
+    aerial: getTuning("startingSkills.aerial"),
   };
 }
 
@@ -64,6 +65,9 @@ export function skillsAtLevel(level: number, stars = AUTO_STARS, start: Skills =
  *    Technique (setPieces.ts setPieceSkills: 60% free kick, 40% technique).
  *  - Pace: none — the level sets how quick you run ("Your speed").
  *  - Vision: none.
+ *  - Aerial: a header or volley is struck with Power and Technique like any
+ *    shot; Aerial softens a mis-hit and sets a header's pace (aerial.ts),
+ *    once the match hands it to the strike (see aerial.ts, "NOT YET LIVE").
  */
 export const DRILL_READS: Record<keyof Skills, (keyof Skills)[]> = {
   power: ["power", "technique"],
@@ -71,6 +75,7 @@ export const DRILL_READS: Record<keyof Skills, (keyof Skills)[]> = {
   freeKick: ["power", "technique", "freeKick"],
   pace: [],
   vision: [],
+  aerial: ["power", "technique", "aerial"],
 };
 
 /** "Power 65 · Technique 65" — the skills this drill reads, at this level. */

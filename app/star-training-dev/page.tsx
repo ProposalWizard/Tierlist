@@ -46,6 +46,7 @@ const SKILLS: { key: TrainingSkill; label: string; game: string }[] = [
   { key: "freeKick", label: "Free Kick", game: "Over the Wall" },
   { key: "pace", label: "Pace", game: "The Gauntlet" },
   { key: "vision", label: "Vision", game: "Pick the Pass" },
+  { key: "aerial", label: "Aerial", game: "Head & Volley" },
 ];
 
 /** One short line saying what a level asks for — the numbers that change. */
@@ -54,6 +55,7 @@ function levelLine(skill: TrainingSkill, c: AnyLevel): string {
   if (skill === "technique") { const t = c as LevelBySkill["technique"]; return `${t.gateDistance.toFixed(0)}m · ${t.gateWidth.toFixed(1)}m gap`; }
   if (skill === "freeKick") { const f = c as LevelBySkill["freeKick"]; return `${f.distance.toFixed(0)}m · wall ${f.wall}`; }
   if (skill === "pace") { const p = c as LevelBySkill["pace"]; return `${p.chasers} men · ${p.oppStrength.toFixed(0)} spd`; }
+  if (skill === "aerial") { const a = c as LevelBySkill["aerial"]; return `${a.volley ? "volley" : "header"} · keeper ${a.keeperStrength.toFixed(0)}${a.marker ? " · marked" : ""}`; }
   const v = c as LevelBySkill["vision"];
   return `${v.kick ? "kick" : "tap"} · ${v.options} men · ${v.window.toFixed(1)}s${v.offside ? " · offside" : ""}`;
 }

@@ -4,7 +4,7 @@ import type { Skills } from "@/lib/star/types";
 import { starsForTry } from "@/lib/star/trainingLevels";
 import {
   levelConfig, levelSeedOf, easePowerLevel,
-  type AnyLevel, type PowerLevel, type TechniqueLevel, type FreeKickLevel, type PaceLevel, type VisionLevel,
+  type AnyLevel, type PowerLevel, type TechniqueLevel, type FreeKickLevel, type PaceLevel, type VisionLevel, type AerialLevel,
 } from "@/lib/star/trainingLevelData";
 import {
   loadVisionMoments, visionMomentsReady, visionLevelPicturesAsync, visionAsk, visionScenario,
@@ -134,6 +134,7 @@ const SKILL_TITLES: Record<keyof Skills, string> = {
   technique: "Through the Gate",
   vision: "Pick the Pass",
   freeKick: "Over the Wall",
+  aerial: "Head & Volley",
 };
 
 
@@ -178,6 +179,7 @@ const SKILL_LOOK: Record<keyof Skills, { icon: string; label: string; accent: st
   technique: { icon: "🎯", label: "Technique", accent: "#a78bfa" },
   vision: { icon: "👁️", label: "Vision", accent: "#38bdf8" },
   freeKick: { icon: "🌀", label: "Free kick", accent: "#fbbf24" },
+  aerial: { icon: "🤸", label: "Aerial", accent: "#2dd4bf" },
 };
 
 const DrillLook = createContext<{ skill: keyof Skills; glow: string }>({ skill: "pace", glow: "#2F6F4E" });
@@ -313,7 +315,7 @@ function useMostlyOnScreen(ref: React.RefObject<HTMLElement>): boolean {
 // STRIKING — power, technique and free kick share this one drill
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type StrikeKind = "power" | "technique" | "freeKick";
+export type StrikeKind = "power" | "technique" | "freeKick" | "aerial";
 
 /**
  * What each drill puts on the pitch. The ball, the kick and the flight are the
@@ -332,6 +334,9 @@ export const DRILL_SCENE: Record<StrikeKind, ScenePicture> = {
   // known issue). The same choice his woodwork challenge made.
   power: { teammates: false, banners: false, ownFrame: true },
   freeKick: { teammates: false, banners: false },
+  // Aerial: the crosser stays on (the ball came from him), the keeper and
+  // the one marker of the level. Its own close camera like Power.
+  aerial: { banners: false, ownFrame: true },
 };
 
 export interface StrikeSetup {
@@ -348,7 +353,7 @@ export interface StrikeSetup {
 }
 
 /** The numbers a strike drill is built from: one level's row. */
-export type StrikeLevel = PowerLevel | TechniqueLevel | FreeKickLevel;
+export type StrikeLevel = PowerLevel | TechniqueLevel | FreeKickLevel | AerialLevel;
 
 /**
  * `byLevel` (Power only): build from the training LEVEL and the player's own
@@ -362,6 +367,7 @@ export function buildStrike(
   byLevel?: { trainingLevel: number; power: number },
 ): StrikeSetup {
   if (kind === "technique") return buildStrikeFrom(kind, { ...techniqueDrill(level, rep), pass: 0.25 }, rng);
+  if (kind === "aerial") return buildStrikeFrom(kind, { volley: rep % 2 === 1, keeperStrength: 20 + 0.76 * Math.max(0, level - 40) / 0.6, marker: level >= 55, pass: 0.5 }, rng);
   if (kind === "freeKick") return buildStrikeFrom(kind, { ...freeKickDrill(level, rep), pass: 0.5 }, rng);
   const cfg = byLevel ? powerDrillForLevel(byLevel.trainingLevel, rep, byLevel.power) : { ...powerDrill(level, rep), keeper: true };
   return buildStrikeFrom(kind, { ...cfg, pass: 0.5 }, rng);
@@ -369,6 +375,28 @@ export function buildStrike(
 
 /** One strike drill's picture from a level's numbers. */
 export function buildStrikeFrom(kind: StrikeKind, row: StrikeLevel, rng: () => number): StrikeSetup {
+  if (kind === "aerial") {
+    // The real match's own header / volley chance (canvasEngine buildHeader,
+    // buildVolley): the ball in the air off a cross, the crosser on the
+    // wing, the keeper and the builder's one defender. The strike screen is
+    // the match's own (Head it? / the volley's green band).
+    const cfg = row as AerialLevel;
+    const sc = buildScenario(cfg.volley ? "volley" : "header", rng, cfg.keeperStrength, 60, 55);
+    sc.keeperStrength = cfg.keeperStrength;
+    if (!cfg.marker) sc.defenders = [];
+    sc.runner = null;
+    sc.passTarget = null;
+    sc.receiver = null;
+    sc.secondaryRunners = [];
+    return {
+      scenario: sc,
+      viewport: strikeViewport(sc.ball),
+      gate: null,
+      gateCfg: null,
+      brief: `${cfg.volley ? "Volley" : "Header"}${cfg.marker ? " · marked" : ""}` + (cfg.pass > 0.5 ? " · near a post" : ""),
+      pass: cfg.pass,
+    };
+  }
   if (kind === "technique") {
     const cfg = row as TechniqueLevel;
     // The ball sits far enough back that the gate always stands about six
@@ -496,7 +524,7 @@ function StrikeDrill({
   const prevRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const crossedRef = useRef<{ x: number; z: number } | null>(null);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
-  const keeperStrength = kind === "technique" ? 40 : (row as PowerLevel | FreeKickLevel).keeperStrength;
+  const keeperStrength = kind === "technique" ? 40 : (row as PowerLevel | FreeKickLevel | AerialLevel).keeperStrength;
 
   const openOn = useCallback((): Scenario => {
     const setup = buildStrikeFrom(kind, row, mulberry32(seedRef.current));
@@ -565,7 +593,9 @@ function StrikeDrill({
     attempt(ok);
   }, [attempt]);
 
-  const instruction = kind === "technique"
+  const instruction = kind === "aerial"
+    ? "The cross is in the air. Drag back to aim, then meet it: head it on top of the ball, or volley it as it drops."
+    : kind === "technique"
     ? "Drag back from the ball to aim and set power, then pick your spot on the ball to bend it through the cones."
     : kind === "freeKick"
       ? "Drag back to aim and set power, then strike it over the wall or round it."
@@ -1063,6 +1093,7 @@ function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExi
     case "power":
     case "technique":
     case "freeKick":
+    case "aerial":
       return <StrikeDrill kind={skill} trainingLevel={trainingLevel} skills={skills} onFinish={setResult} onExit={onExit} override={levelOverride as StrikeLevel | undefined} asDrawn={asDrawn} />;
     default:
       return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} />;

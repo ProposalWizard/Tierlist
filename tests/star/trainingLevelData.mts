@@ -113,6 +113,7 @@ const HARDER: Record<string, Record<string, Dir>> = {
   freeKick: { distance: 1, wall: 1, keeperStrength: 1, pass: 1 },
   pace: { chasers: 1, oppStrength: 1, runPace: 1 },
   vision: { options: 1, window: -1, margin: -1, traps: 1, letGo: -1 },
+  aerial: { keeperStrength: 1, pass: 1 },
 };
 for (const s of TRAINING_SKILLS) {
   for (const [key, dir] of Object.entries(HARDER[s])) {

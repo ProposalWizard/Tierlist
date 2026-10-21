@@ -386,6 +386,7 @@ export function applyYouthWeek(career: CareerState, match: YouthMatch): CareerSt
     technique: Math.min(100, Math.round(career.skills.technique + gain)),
     vision: Math.min(100, Math.round(career.skills.vision + gain)),
     freeKick: Math.min(100, Math.round(career.skills.freeKick + gain)),
+    aerial: Math.min(100, Math.round(career.skills.aerial + gain)),
   };
   return {
     ...career,

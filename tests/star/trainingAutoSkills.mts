@@ -43,7 +43,7 @@ let ruleOk = true;
 for (const stars of [1, 2, 3]) {
   for (let n = 1; n <= TRAINING_LEVELS; n++) {
     const want = skillFromStars((n - 1) * stars);
-    const got = skillsAtLevel(n, stars, { pace: 40, power: 40, technique: 40, vision: 40, freeKick: 40 });
+    const got = skillsAtLevel(n, stars, { pace: 40, power: 40, technique: 40, vision: 40, freeKick: 40, aerial: 40 });
     if (SKILL_ORDER.some(k => got[k] !== want)) ruleOk = false;
   }
 }
