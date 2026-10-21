@@ -1155,7 +1155,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "added", "title": "Added", "items": [
           { "title": "Phase 0: the switch and today’s numbers (the ruler)", "detail": "Settings: Full highlights rebuild: Off | On (test). Off is today’s game exactly. The ruler is the test page /star-fhr-dev." },
           { "title": "Phase 2: a new build-up before every open-play chance", "detail": "With the switch On, each open-play chance starts with a 4 to 8 second build-up. 2,197 of 2,527 took different routes; 0 of 448 failed the checks; chances and goals per match did not change over 500 matches." },
-          { "title": "2,104 real matches, all free to use in a paid game", "detail": "Four free-licence sources reduced to pattern files. Every StatsBomb file is deleted from the repo." },
+          { "title": "2,104 real matches, all free to use in a paid game", "detail": "Four free-licence sources reduced to pattern files. Every file of the licensed data is deleted from the repo." },
           { "title": "Real moments, Real shots and Real Goals, rebuilt on free data", "detail": "702 real moments, 2,875 real shots, 232 Real Goals levels." },
           { "title": "Afriskaut out, two sources in, credits in Settings, and a Real moment highlights switch (B3)", "detail": "Matches 2,104 → 1,983. Fully real moments 702 → 926. Real goals 67 → 93. Settings → More → Data credits. Real moment highlights: Off | On." },
           { "title": "The 3D Signing and the Manager’s Office play live in the scene editor", "detail": "Step 3a: pick a shot and set its camera position and lens, the key light and the exposure." },
@@ -1554,7 +1554,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Team Room v1 (v0.60h)", "detail": "A chat bubble on every admin page, an Ideas board, Team chat and a To-do list." },
           { "title": "Drift + Play Screens (v0.62h)", "detail": "Eight screens now draw the pitch at the real match’s size, play buttons stay on screen, and the engine warning is red." },
           { "title": "Highlights Rebuild 0-2 (v0.63h)", "detail": "The switch, the match-camera still, and generated build-ups before open-play chances." },
-          { "title": "Free Data v1 (v0.64)", "detail": "2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. StatsBomb deleted." },
+          { "title": "Free Data v1 (v0.64)", "detail": "2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. The licensed data deleted." },
           { "title": "Scene Editor 3a (v0.61h)", "detail": "The 3D Signing and Office edit live in the scene editor. Also: how generated cut scenes work, and the 3D audit." },
           { "title": "B1 Touch Fixes (v0.66)", "detail": "All 27 touch fixes are built. The 4 old failing tests pass. Wembley is fairer." },
           { "title": "B3 Real Data (v0.67)", "detail": "Afriskaut is out, two free sources are in, data credits are in Settings, and real moments can appear in your matches. Has a clip." },
@@ -1984,7 +1984,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-19T20:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/EBHc5nzaDwyqKYWgjmduLh",
-      "summary": "Free Data v1 (19 Oct). 2,104 real matches under free licences (Wyscout 1,941, Afriskaut 136, SkillCorner 20, IDSSE / DFL 7). Real moments (702), Real shots (2,875) and Real Goals (232 levels) rebuilt on them. StatsBomb deleted, because its licence does not allow a paid game. Now part of v0.84 Everything Else.",
+      "summary": "Free Data v1 (19 Oct). 2,104 real matches under free licences (Wyscout 1,941, Afriskaut 136, SkillCorner 20, IDSSE / DFL 7). Real moments (702), Real shots (2,875) and Real Goals (232 levels) rebuilt on them. The licensed data deleted, because its licence does not allow a paid game. Now part of v0.84 Everything Else.",
       "stats": [
         { "value": "2,104", "label": "real matches under free licences" },
         { "value": "702", "label": "fully real moments" },
@@ -1996,13 +1996,13 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "Real moments", "detail": "Tap a moment, then Play. One Play button is enough." },
           { "title": "Real shots", "detail": "The shot map shows 2,875 shots. Each picture says whether it is a real strike with our own defenders." },
           { "title": "Real Goals", "detail": "The level map shows 232 levels." },
-          { "title": "StatsBomb", "detail": "No StatsBomb file is left in the repo." }
+          { "title": "Licensed data", "detail": "No file of the licensed data is left in the repo." }
         ]},
         { "kind": "added", "title": "Added", "items": [
           { "title": "2,104 real matches, all free to use in a paid game", "detail": "Four free-licence sources were reduced to pattern files the game can read. Each needs a credit line shown in the game (done on 20 Oct, in Settings, see B3)." },
           { "title": "Real moments, rebuilt on free data", "detail": "702 fully real moments (581 shots and 121 corners), with all 22 players where they really stood. One Play button instead of one on every row (you kept it: A-6)." },
           { "title": "Real shots, rebuilt on free data", "detail": "2,875 real shots (2018 World Cup and Euro 2016). The strike and the result are real. The defenders are placed by our own rules. Each picture says which kind it is." },
-          { "title": "Real Goals, rebuilt on free data", "detail": "232 levels. Every StatsBomb file is deleted from the repo." }
+          { "title": "Real Goals, rebuilt on free data", "detail": "232 levels. Every file of the licensed data is deleted from the repo." }
         ]},
         { "kind": "next", "title": "Next", "items": [
           { "title": "What the next build did with this", "detail": "On 20 Oct, B3 removed Afriskaut (“no one’s heard of them”), added two sources (SoccerTrack v2 and SkillCorner), put the data credits in Settings and added a “Real moment highlights” switch. Matches went 2,104 → 1,983." }
@@ -2109,7 +2109,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-19T14:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/LBiZVmQDLKzWpNgpuDWxgW",
-      "summary": "Leo v0.18. Real Goals (test page /star-real-goals-dev) becomes a game mode: 908 real goals (every goal but own goals of WC 2022, Euro 2024, WC 2018, Euro 2020, Copa América 2024 and AFCON 2023, plus 60 Legends and 100 club worldies), played round by round with stars. The build-up follows StatsBomb's 360 camera (men 7.3 m → 3.2 m from where it saw them, no ball blinks, no snaps). A strike 70%+ like the real one can't be blocked or saved (109 of 109 in tests). Real shirts for all 160 teams. Test page only; the career is unchanged.",
+      "summary": "Leo v0.18. Real Goals (test page /star-real-goals-dev) becomes a game mode: 908 real goals (every goal but own goals of WC 2022, Euro 2024, WC 2018, Euro 2020, Copa América 2024 and AFCON 2023, plus 60 Legends and 100 club worldies), played round by round with stars. The build-up follows the old licensed data's 360 camera (removed 19 Oct; men 7.3 m → 3.2 m from where it saw them, no ball blinks, no snaps). A strike 70%+ like the real one can't be blocked or saved (109 of 109 in tests). Real shirts for all 160 teams. Test page only; the career is unchanged.",
       "stats": [
         { "value": "250 → 908", "label": "real goals to play" },
         { "value": "109 / 109", "label": "strikes 70%+ like the real one that went in" },
@@ -2124,7 +2124,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         ] },
         { "kind": "fixed", "title": "Fixed", "items": [
           { "title": "Copy the real shot and it goes in", "detail": "The unstoppable lane now uses the page's own %: 70%+ like the real one can't be blocked or saved (109 of 109 in tests). Real matches unchanged (same fingerprint)." },
-          { "title": "The build-up follows the real camera", "detail": "Men 7.3 m → 3.2 m from where StatsBomb's 360 camera saw them; ball blinks 1,061 → 0; snaps at the shot 234 → 6." }
+          { "title": "The build-up follows the real camera", "detail": "Men 7.3 m → 3.2 m from where the old licensed 360 camera saw them (removed 19 Oct); ball blinks 1,061 → 0; snaps at the shot 234 → 6." }
         ] },
         { "kind": "known", "title": "Known issues", "items": [
           { "title": "Not played by a finger yet; 3D not checked", "detail": "Measured by tests and seen in stills at phone size." },
@@ -2449,7 +2449,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
             },
             {
               "title": "Keepers misread soft shots",
-              "detail": "Save % of shots on target, all old / v0.15 three on / all new: keeper 40: 50/53/64, 70: 69/72/77, 90: 83/84/89. Goals per shot v a 70: 24.8% → 22.0% → 18.5%. A 70's save % by distance 53/75/97 v the Premier League's 53/77/90 (all old: 53/71/79)."
+              "detail": "Save % of shots on target, all old / v0.15 three on / all new: keeper 40: 50/53/64, 70: 69/72/77, 90: 83/84/89. Goals per shot v a 70: 24.8% → 22.0% → 18.5%. A 70's save % by distance 53/75/97 v real keepers' 44/73/90 (free Wyscout data, re-sourced 21 Oct; all old: 53/71/79)."
             },
             {
               "title": "Team-mates shot from far too deep",
@@ -3043,7 +3043,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-12T00:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/3x6BjhftYfYtYCYJRkKDbg",
-      "summary": "The six gameplay things Harry and Mikey asked for, each measured against real football and behind a New | Old switch: a tighter match camera and the late-sub score fix; Keeper pro built from a full StatsBomb Premier League season; shots whose height follows where you hit the ball, with a spread cone and contact grades; knuckleball and power shot in the real match; a believable 90 minutes and a live match radar; dribble duels that need timing, plus a top-down option; real ball physics. Leo, 12 Oct: all of these start on Old as \"(testing)\" switches; Settings → Look → New in v0.15 has All new / All old; a new Tournament test page plays a Euros or World Cup to the final in one tap.",
+      "summary": "The six gameplay things Harry and Mikey asked for, each measured against real football and behind a New | Old switch: a tighter match camera and the late-sub score fix; Keeper pro built from real keeper numbers (re-sourced to free Wyscout data on 21 Oct); shots whose height follows where you hit the ball, with a spread cone and contact grades; knuckleball and power shot in the real match; a believable 90 minutes and a live match radar; dribble duels that need timing, plus a top-down option; real ball physics. Leo, 12 Oct: all of these start on Old as \"(testing)\" switches; Settings → Look → New in v0.15 has All new / All old; a new Tournament test page plays a Euros or World Cup to the final in one tap.",
       "stats": [
         {
           "value": "6",
@@ -3293,7 +3293,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-09T15:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/843j4zo8tXx2CKCzYceAFh",
-      "summary": "Real Premier League 2015/16 shots (StatsBomb's free data) now play in our engine as test chances, and they show our close chances are too easy (a game-made one-on-one scores 68%, a real one 20%). A new Chance mix (testing) switch (Settings → More → Match, or the Preview version) builds a match from Harry Kane's real touches: about 9 highlights instead of 6, half of them deeper, half as many one-on-ones. Old stays the default. Mikey's notes call this v0.14.",
+      "summary": "Real Premier League 2015/16 shots (from a licensed data set, removed on 19 Oct) now play in our engine as test chances, and they show our close chances are too easy (a game-made one-on-one scores 68%, a real one 19% in the free DFL + SkillCorner tracking). A new Chance mix (testing) switch (Settings → More → Match, or the Preview version) builds a match from Harry Kane's real touches: about 9 highlights instead of 6, half of them deeper, half as many one-on-ones. Old stays the default. Mikey's notes call this v0.14.",
       "stats": [
         {
           "value": "7,807",
@@ -3337,7 +3337,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "Chance mix (testing): built from Kane's real touches",
-              "detail": "Highlights 6.1 → 9.0 a match, deep touches 2.0 → 3.8, one-on-ones 0.67 → 0.49, own shots 2.1 → 2.5 (Kane: 2.5). Measured over 600 matches. Old is the default."
+              "detail": "Highlights 6.1 → 9.0 a match, deep touches 2.0 → 3.8, one-on-ones 0.67 → 0.49, own shots 2.1 → 2.5 (a real central forward: 2.5 per 90, free Wyscout data). Measured over 600 matches. Old is the default."
             },
             {
               "title": "Real moments page (admin, testing only)",

@@ -365,7 +365,7 @@ export const ADMIN_GUIDES = {
         ["✕", "Closes the goal."],
       ] },
     ],
-    saving: ["Your stars and best % per goal are kept in this browser only (localStorage, star-real-goals-progress-v2; the old v1 stars were for the StatsBomb goals and are not carried over). Nothing goes to the database or the repo."],
+    saving: ["Your stars and best % per goal are kept in this browser only (localStorage, star-real-goals-progress-v2; the old v1 stars were for the earlier, licensed goals (removed 19 Oct 2026) and are not carried over). Nothing goes to the database or the repo."],
     inGame: ["Nowhere yet. This is a test page."],
     dev: "app/star-real-goals-dev/page.tsx; lib/star/realGoals.ts (levels, stars, accuracy, kits, names, ghost, build-up) and lib/star/realGoalView.ts (what the match is handed); CanvasMatch's `realGoal` prop (drawing only, TEST_ONLY in scripts/one-engine-guard.mjs); canvasEngine.ts Scenario.realLane (the real lane, off by default); data/realmoments/wyscout_shots.json + wyscout_goals.json (scripts/realmoments/extract_wyscout.py); the league goals in data/realmoments/wyscout_league_<england|spain|italy|germany|france>.json (scripts/realmoments/extract_wyscout_leagues.py); tests/star/realGoals.mts and tests/star/realGoals/ (harness, measure, buildup).",
   },
