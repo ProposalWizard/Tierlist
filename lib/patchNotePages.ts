@@ -27,6 +27,7 @@ export const PATCH_NOTE_PAGES: Record<string, string> = {
   // that were also numbered 0.60 to 0.63 (written on his branch before main
   // had them) keep their number with an "h" for Harry: 0.60h to 0.63h.
   // 21 Oct 2026: Harry's notes 0.95h on (round_1021.py). 19-20 Oct 2026: the last two days, one kept page per build (Harry: acknowledge every tab).
+  "0.103h": "pages/0.103h/index.html",
   "0.102h": "pages/0.102h/index.html",
   "0.101h": "pages/0.101h/index.html",
   "0.100h": "pages/0.100h/index.html",
