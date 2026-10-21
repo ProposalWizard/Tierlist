@@ -74,7 +74,9 @@ export default function InboxBell({ className }: { className?: string }) {
     return () => window.removeEventListener("keydown", k);
   }, [open]);
 
-  if (!ready) return null;
+  // Nothing until mounted: the server never has the room, and a later-hydrating
+  // part of the page could otherwise see it ready and not match the server's HTML.
+  if (!ready || !mounted) return null;
   const n = list.length + mentions.length;
 
   const markRead = async (v: string) => {
