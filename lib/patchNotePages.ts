@@ -26,7 +26,15 @@ export const PATCH_NOTE_PAGES: Record<string, string> = {
   // 0.60 to 0.63 are Leo's and Mikey's live pages (main). Harry's four pages
   // that were also numbered 0.60 to 0.63 (written on his branch before main
   // had them) keep their number with an "h" for Harry: 0.60h to 0.63h.
-  // 19-20 Oct 2026: the last two days, one kept page per build (Harry: acknowledge every tab).
+  // 21 Oct 2026: Harry's notes 0.95h on (round_1021.py). 19-20 Oct 2026: the last two days, one kept page per build (Harry: acknowledge every tab).
+  "0.102h": "pages/0.102h/index.html",
+  "0.101h": "pages/0.101h/index.html",
+  "0.100h": "pages/0.100h/index.html",
+  "0.99h": "pages/0.99h/index.html",
+  "0.98h": "pages/0.98h/index.html",
+  "0.97h": "pages/0.97h/index.html",
+  "0.96h": "pages/0.96h/index.html",
+  "0.95h": "pages/0.95h/index.html",
   "0.94": "pages/0.94/index.html",
   "0.93": "pages/0.93/index.html",
   "0.92": "pages/0.92/index.html",
