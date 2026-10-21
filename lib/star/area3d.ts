@@ -5,6 +5,10 @@
  *
  * One row per scene. `href` is where it can be seen today; a planned scene
  * has none. Keep `status` honest — it is what Harry reads first.
+ * Cut scenes are NOT listed here: they come from the one shared list,
+ * lib/star/cutscene/sceneList.ts (the 3D Area's "Cut scenes" tab and the 3D
+ * Scene Editor both read it). 21 Oct 2026: "Your home and garage" (Planned)
+ * taken out: it is built, as "Your house" above.
  */
 
 export type Scene3dStatus = "Prototype" | "Test page" | "Pictures" | "Planned" | "Proposal";
@@ -74,14 +78,6 @@ export const SCENES_3D: Scene3d[] = [
     href: "/star-store-dev",
     thumb: "/shop/store/coins-chest.webp",
     files: "public/shop/store · tools/blender-shop/scripts/store.py",
-  },
-  {
-    id: "home",
-    title: "Your home and garage",
-    line: "Your house and the car you own, in 3D, in place of \"My stuff\".",
-    status: "Planned",
-    thumb: "/shop/house-1-L3.webp",
-    files: "plan: scratchpad v024/PLAN-3d.md §3b",
   },
   {
     id: "boss",

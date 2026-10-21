@@ -67,7 +67,7 @@ export interface LagStepDef {
  * About 10 steps, about 10 minutes with the walking between them. Nothing here
  * changes the career to make a step reachable: a step that can't be reached is
  * skipped ("Can't get there → Skip"). The cut scene is last because it opens a
- * test page outside the game (Cut-scene Director), so nobody has to come back.
+ * test page outside the game (the 3D bench's scene shot), so nobody has to come back.
  */
 export const LAG_STEPS: readonly LagStepDef[] = [
   { id: "home", title: "Home, hands off", how: "Go to Home. Don't touch the screen.", seconds: 20, three: true },
@@ -80,8 +80,8 @@ export const LAG_STEPS: readonly LagStepDef[] = [
   { id: "play3d", title: "3D game", how: "Garden → training pitch: Free Roam or Headers & Volleys. Or a match in 3D view.", seconds: 40, three: true },
   { id: "settings", title: "Settings, in and out", how: "Open Settings, then go back to Home. Do it 4 or 5 times.", seconds: 20, three: false },
   {
-    id: "cutscene", title: "Cut scene", how: "Open the Cut-scene Director (a test page) and play a scene.", seconds: 30, three: true,
-    link: { href: "/star-style-dev?bare=1&scene=director", label: "Open the Cut-scene Director →" },
+    id: "cutscene", title: "Cut scene", how: "Open the cut-scene test shot (a test page) and play a scene.", seconds: 30, three: true,
+    link: { href: "/star-3d-bench-dev/scene?scene=director", label: "Open the cut-scene test shot →" },
   },
 ];
 
