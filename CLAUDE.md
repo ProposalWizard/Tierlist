@@ -200,10 +200,11 @@ request, scouts watching, agents, loans, promises, moves abroad.
 
 ## Mikey's new pop-ups (Mikey, 20 Oct 2026)
 
-Settings → Match → "Mikey's new pop-ups: New | Old" (default Old; asked for as
-a toggle by name). New = `components/star/MikeyPopup.tsx`: a goal is a
+Settings → Match → "Pop-up pack: Classic | Broadcast" since 21 Oct 2026 (Harry:
+"add them as a texture pack"; `lib/star/popupPack.ts`, same stored value, default
+Classic = the old pop-ups). Broadcast = `components/star/MikeyPopup.tsx`: a goal is a
 scoreboard at the top whose score rolls over, with scorer and assist; every
-other `showAction` word is a TV caption. Old = the pop-ups exactly as before.
+other `showAction` word is a TV caption. Classic = the pop-ups exactly as before.
 Career soak for any season/cup/ladder change: `npx tsx scripts/soak/careerSoak.mts 20`.
 
 ## The world season: every league and cup is played (Mikey, 19 Oct 2026)

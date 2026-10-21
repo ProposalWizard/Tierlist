@@ -35,6 +35,7 @@
  */
 import { startRadar, stepRadar, resolveHighlight, radarOver, type RadarMatch, type RadarFrame, type RadarHighlight } from "./matchRadar";
 import type { HiddenMatchInputs, RadarTick, Zone, Lane } from "./hiddenMatch";
+import { withCornerReach } from "./cornerReach";
 import { mulberry32 } from "./season";
 import { PITCH_W, CX, HALF_LEN, POST_L, POST_R } from "./pitch";
 import { formationForClub } from "./clubFormation";
@@ -340,7 +341,8 @@ function radarFor(setup: Sim90Setup): RadarMatch {
     teamStrength: setup.homeStrength, oppStrength: setup.awayStrength, home: true,
     playerSkill: 70, pace: 70, freeKick: 70, position: "ST", matchFlow: !!setup.matchFlow,
   };
-  return startRadar(setup.seed, inputs, 90, 100);
+  // Mikey's corner rule, as the real match passes it (lib/star/cornerReach.ts).
+  return startRadar(setup.seed, withCornerReach(inputs), 90, 100);
 }
 
 /** One radar minute as the live radar strip draws it. */

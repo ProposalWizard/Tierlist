@@ -8,7 +8,10 @@
  *   1. the start screen: which device, who you are;
  *   2. the pill at the top: "Lag test · step 3 of 10 · …", I'm there, Skip,
  *      Stop. Each step records for 20–40 s once you tap I'm there. ⇅ moves
- *      the pill to the bottom when it covers something;
+ *      the pill to the bottom when it covers something. While a match is on
+ *      screen it finds a free spot by itself (beside the match, under the
+ *      pitch, or over the scoreboard: lib/star/lagPillSpot.ts) until ⇅ is
+ *      tapped;
  *   3. the results: a ✓/✗ table per step, sent to the team (committed as a
  *      file to the `lag-runs` branch; kept on this device when that can't
  *      happen), and Copy results for the Team chat.
@@ -18,7 +21,8 @@
  * It renders nothing until opened, and measures nothing until a step records.
  * State and maths: lib/star/lagSession.ts, lib/star/lagTest.ts.
  */
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { lagPillSpot, type Box, type PillSpot } from "@/lib/star/lagPillSpot";
 import {
   JITTER_MS, LAG_PEOPLE, LAG_STEPS, LAG_TIERS, barFor, fmt, passCount, stepVerdict, tierDef, tierLabel,
   type Bar, type LagTier,
@@ -155,22 +159,90 @@ function Choice({ on, onClick, hint, children }: { on: boolean; onClick: () => v
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.max(0, Math.round(s)) % 60).padStart(2, "0")}`;
 
+/**
+ * The match on screen: its box (CanvasMatch's own `max-w-sm` column, from the
+ * scoreboard down to the bottom of the pitch, the biggest canvas's box) and the
+ * band between the score row and the pitch (the stats strip). Null: no match.
+ */
+function matchOnScreen(): { keep: Box; band: { top: number; bottom: number } | null } | null {
+  let best: HTMLCanvasElement | null = null, area = 0;
+  document.querySelectorAll("canvas").forEach((c) => {
+    const r = c.getBoundingClientRect();
+    if (r.width < 160 || r.height < 160 || r.bottom <= 0 || r.top >= window.innerHeight) return;
+    if (r.width * r.height > area) { area = r.width * r.height; best = c; }
+  });
+  const cv = best as HTMLCanvasElement | null;
+  if (!cv) return null;
+  // (The canvas can be wider than its box, which clips it: the box is what shows.)
+  const pitch = (cv.parentElement ?? cv).getBoundingClientRect();
+  const colEl = cv.closest(".max-w-sm");
+  const col = (colEl ?? cv.parentElement ?? cv).getBoundingClientRect();
+  const keep = { top: Math.min(col.top, pitch.top), bottom: pitch.bottom, left: Math.min(col.left, pitch.left), right: Math.max(col.right, pitch.right) };
+  // The score row: the column's first box with a height (the scoreboard plate's stats strip comes next).
+  let band: { top: number; bottom: number } | null = null;
+  const first = colEl ? Array.from(colEl.children).find((e) => e.tagName !== "STYLE" && e.getBoundingClientRect().height > 0) : null;
+  if (first && !first.contains(cv)) { const r = first.getBoundingClientRect(); if (r.bottom < pitch.top) band = { top: r.bottom, bottom: pitch.top }; }
+  return { keep, band };
+}
+
+/** How much of the pill shows: all of it, without the step's long line, or one row (I'm there, Skip, ⇅). */
+type Fit = 0 | 1 | 2;
+
 function Pill() {
   const s = useSyncExternalStore(lagSubscribe, lagState, lagServerState);
+  const pillRef = useRef<HTMLDivElement>(null);
+  // Placed by itself while a match shows, until ⇅ is tapped (then the dock, as before).
+  const [manual, setManual] = useState(false);
+  const [spot, setSpotRaw] = useState<PillSpot | null>(null);
+  // (The same spot again is not a new render: this runs while frames are being timed.)
+  const setSpot = (v: PillSpot | null) => setSpotRaw((p) => (JSON.stringify(p) === JSON.stringify(v) ? p : v));
+  const [fit, setFit] = useState<Fit>(0);
+  const fullH = useRef(0);
+  useEffect(() => {
+    if (manual) { setSpot(null); setFit(0); return; }
+    const place = () => {
+      const el = pillRef.current;
+      const m = matchOnScreen();
+      if (!el || !m) { setSpot(null); setFit(0); return; }
+      const h = el.offsetHeight;
+      if (fit === 0) fullH.current = h;
+      const vw = window.innerWidth, vh = window.innerHeight, H = fullH.current || h;
+      // Heights at each fit: measured when showing; else the long line is about 40% of the pill; one row is 40 px.
+      const est: Record<Fit, number> = { 0: H, 1: fit === 1 ? h : Math.round(H * 0.6), 2: fit === 2 ? h : Math.min(H, 40) };
+      for (const f of [0, 1, 2] as Fit[]) {
+        const sp = lagPillSpot({ vw, vh, keep: m.keep, band: m.band, pillH: est[f] });
+        if (sp) { setSpot(sp); setFit(f); return; }
+      }
+      setSpot(null); setFit(0);
+    };
+    place();
+    const t = setInterval(place, 700);
+    window.addEventListener("resize", place);
+    return () => { clearInterval(t); window.removeEventListener("resize", place); };
+  }, [manual, fit, s.stepState, s.stepIndex]); // eslint-disable-line react-hooks/exhaustive-deps
   const def = LAG_STEPS[s.stepIndex];
   if (!def) return null;
   const n = `${s.stepIndex + 1} of ${LAG_STEPS.length}`;
-  const pos: React.CSSProperties = s.dock === "top"
-    ? { top: "max(6px, env(safe-area-inset-top))" }
-    : { bottom: "calc(max(6px, env(safe-area-inset-bottom)) + 64px)" };
+  const h = pillRef.current?.offsetHeight ?? 0;
+  const pos: React.CSSProperties = spot?.at === "side"
+    ? { top: spot.top, left: spot.left, width: spot.width, padding: 0 }
+    : spot?.at === "below"
+      ? { bottom: Math.max(6, Math.round((spot.gap - h) / 2)), left: 0, right: 0 }
+      : spot?.at === "above"
+        ? { top: Math.max(6, Math.round((spot.gap - h) / 2)), left: 0, right: 0 }
+        : spot?.at === "band"
+          ? { top: spot.top, left: 0, right: 0 }
+          : s.dock === "top"
+            ? { top: "max(6px, env(safe-area-inset-top))", left: 0, right: 0 }
+            : { bottom: "calc(max(6px, env(safe-area-inset-bottom)) + 64px)", left: 0, right: 0 };
   const btn = "kib-press rounded-full px-3 py-1.5 text-[12px] font-black leading-none text-white";
   const move = (
-    <button aria-label="Move the pill" onClick={lagToggleDock} className="kib-press shrink-0 rounded-full bg-white/10 px-2 py-1 text-[12px] font-black text-white">⇅</button>
+    <button aria-label="Move the pill" onClick={() => { setManual(true); lagToggleDock(); }} className="kib-press shrink-0 rounded-full bg-white/10 px-2 py-1 text-[12px] font-black text-white">⇅</button>
   );
 
   return (
-    <div className="pointer-events-none fixed left-0 right-0 flex justify-center px-14" style={{ ...pos, zIndex: Z }}>
-      <div data-lag-pill={s.stepState} className="pointer-events-auto w-full max-w-[320px] rounded-2xl border border-white/20 px-2.5 py-1.5 shadow-[0_6px_20px_rgba(0,0,0,.55)]"
+    <div className="pointer-events-none fixed flex justify-center px-14" style={{ ...pos, zIndex: Z }} data-lag-pill-at={spot?.at ?? s.dock}>
+      <div ref={pillRef} data-lag-pill={s.stepState} className={`pointer-events-auto w-full max-w-[320px] rounded-2xl border border-white/20 px-2.5 shadow-[0_6px_20px_rgba(0,0,0,.55)] ${fit === 2 ? "py-1" : "py-1.5"}`}
         style={{ background: "rgba(10,16,30,.92)", color: ink, backdropFilter: "blur(6px)" }}>
         {s.stepState === "rec" && (
           <div className="flex items-center gap-2">
@@ -191,14 +263,23 @@ function Pill() {
           </div>
         )}
 
-        {s.stepState === "go" && (<>
+        {s.stepState === "go" && fit === 2 && (
+          <div className="flex items-center gap-1.5">
+            <span className="min-w-0 flex-1 truncate text-[11px] font-black text-white/80">Step {n}</span>
+            <button data-lag-there onClick={lagImThere} className={btn} style={{ background: "#16a34a" }}>I&apos;m there</button>
+            <button onClick={lagSkip} className={`${btn} bg-white/15`}>Skip</button>
+            {move}
+          </div>
+        )}
+
+        {s.stepState === "go" && fit !== 2 && (<>
           <div className="flex items-center gap-1.5">
             <span className="min-w-0 flex-1 truncate text-[11px] font-black text-white/80">Lag test · step {n}</span>
             <span className="text-[12px] font-black tabular-nums">{mmss(def.seconds)}</span>
             <button onClick={lagStop} className="kib-press shrink-0 rounded-full bg-white/10 px-2 py-1 text-[11px] font-black text-white/85">Stop</button>
             {move}
           </div>
-          <div className="mt-0.5 text-[13px] font-bold leading-snug text-white">{def.how}</div>
+          {fit === 0 && <div className="mt-0.5 text-[13px] font-bold leading-snug text-white">{def.how}</div>}
           {s.reloaded && <div className="mt-0.5 text-[11px] font-semibold text-amber-300">The page reloaded, so this step starts again.</div>}
           {def.link && (
             <a href={def.link.href} className="mt-1 inline-block text-[12px] font-black text-sky-300 underline">{def.link.label}</a>

@@ -31,6 +31,7 @@ import { benchConversion, type HiddenMatchInputs, type RadarTick } from "@/lib/s
 import { PREMIER_LEAGUE_CLUBS, CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsFor, labelInk, kitLabelOnDark, type Kit } from "@/lib/star/kits";
 import { oldMatchFlow } from "@/lib/star/gameplayVersion";
+import { withCornerReach } from "@/lib/star/cornerReach";
 
 /** Which of the two layouts this device shows (Harry: "match radar both as toggles"). */
 const LAYOUT_KEY = "star-radar-dev-layout";
@@ -77,12 +78,13 @@ function side(club: string, strength: number, k: Kit): RadarSide {
 }
 
 function inputsFor(s: Setup): HiddenMatchInputs {
-  return {
+  // Mikey's corner rule, as the real match passes it (lib/star/cornerReach.ts).
+  return withCornerReach({
     teamStrength: s.usStrength, oppStrength: s.themStrength, home: s.home,
     playerSkill: s.skill, pace: s.skill, freeKick: s.skill, position: s.position,
     // Settings → Look → Gameplay → Match flow, as the real match reads it.
     matchFlow: !oldMatchFlow(),
-  };
+  });
 }
 
 export default function MatchRadarPage() {
