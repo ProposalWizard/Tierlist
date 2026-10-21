@@ -180,3 +180,13 @@ Camera: "we really need to fix that camera" → player size options being drawn.
 D1 replace match flow Old/New with the new formula, no toggle: yes. D2 long shots: "keep it fun but skill based". D3 cards/fouls: real effect, "and potentially in game cut scene". D4 your chance mix: real. D5 league shots in highlights: yes after checking, "the drawn rules win for now". D6 fewer defenders in box at 25 m: "potentially after checking". D7 pro only. D8 credits: Settings + public /credits.
 26 X-Frame-Options SAMEORIGIN: yes. 27 build-ups: my picks (A1 snappy, A2 fewer, B1 calmer camera, B2 lead room) but "closer to 20-25 secs a match on average" (not 6). 3D: FIX the build-up in 3D (not switch off). Bug: "your player runs after the ball while it's being kicked whilst being in position".
 28 player size: C — drop both shrinks (~27.8 px). 29 lag pill on phone stats strip: fine. 30 corner rule in simMatch: add it.
+
+## 21 Oct 2026, ~12:40 — video skills and Marketing & Production
+
+- Port the video skills from his other repo: only the method, never the client material ("cool").
+- AI video (Higgsfield) "will be unblocked at some point": port ai-video-build/ai-video-references, parked until then.
+- Editing suite: an admin page, videos stored outside the code; "it works here as an artifact too".
+- Keep the scriptwriting skill and the idea of a "client": "We need to think of knowitball as a 'client'".
+- "This should be its own whole tab on admin or a completely different app. Marketing and production."
+- Wants: production calendars; a team board again but for videos, with a new creation skill that keeps it updated as videos are made; videos uploading straight into it.
+- Plan first (RUL-TEAM-009): docs/plans/2026-10-21-marketing-production.md.
