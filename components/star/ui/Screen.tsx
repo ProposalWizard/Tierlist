@@ -34,6 +34,7 @@ import { KitStyles, prefersReducedMotion } from "./motion";
 import { ffTimeout } from "./fastForward";
 import { rgba } from "./theme";
 import PressButton from "./PressButton";
+import BackButton from "./BackButton";
 
 export const SCREEN_CSS = `
   .kit-card {
@@ -136,7 +137,7 @@ export function Title({ children, className = "text-[22px]" }: { children?: Reac
 
 /** Back button, a title (with a kicker above it) and an optional slot on
  *  the right. The back button is the kit's glass one. */
-export function ScreenHeader({ title, kicker, kickerColor, onBack, right, backLabel = "← Back" }: {
+export function ScreenHeader({ title, kicker, kickerColor, onBack, right, backLabel = "Back" }: {
   title: React.ReactNode;
   kicker?: React.ReactNode;
   kickerColor?: string;
@@ -146,7 +147,7 @@ export function ScreenHeader({ title, kicker, kickerColor, onBack, right, backLa
 }) {
   return (
     <div className="mb-3 grid grid-cols-[auto_1fr_auto] items-center gap-2">
-      {onBack ? <PressButton variant="secondary" size="sm" onClick={onBack} className="normal-case tracking-normal">{backLabel}</PressButton> : <span />}
+      {onBack ? <BackButton onClick={onBack} label={backLabel} /> : <span />}
       <div className="min-w-0 text-center">
         {kicker && <div className="truncate text-[9px] font-black uppercase tracking-[0.24em]" style={{ color: kickerColor ?? "#fcd34d" }}>{kicker}</div>}
         <Title className="truncate text-[19px]">{title}</Title>

@@ -242,7 +242,6 @@ export default function SettingsScreen({
         kicker={career.player.club || undefined}
         kickerColor={tint(glow, 0.55)}
         onBack={onBack}
-        backLabel="← Home"
         right={onExitToTitle && (
           <PressButton variant="secondary" size="sm" onClick={onExitToTitle} className="normal-case tracking-normal">
             ⌂ Main menu
