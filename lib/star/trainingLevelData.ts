@@ -25,7 +25,7 @@ import { PITCH_W } from "./pitch";
  */
 
 export type TrainingSkill = keyof Skills;
-export const TRAINING_SKILLS: TrainingSkill[] = ["power", "technique", "freeKick", "pace", "vision"];
+export const TRAINING_SKILLS: TrainingSkill[] = ["power", "technique", "freeKick", "pace", "vision", "aerial"];
 
 /** The first level of the harder top end; 30 is the top. */
 export const TOP_FROM = 20;
@@ -113,6 +113,22 @@ export interface VisionLevel {
   seed?: number;
 }
 
+/**
+ * Aerial & Acrobatics (21 Oct 2026, Harry Q7/Q10): a cross met in the air,
+ * on the real match's own header or volley chance (canvasEngine
+ * buildHeader / buildVolley), scored like Power: a goal passes.
+ */
+export interface AerialLevel {
+  /** true: a volley (the ball drops to you at the edge of the box). false: a header in the six-yard box. */
+  volley: boolean;
+  keeperStrength: number;
+  /** The builder's one defender (the man marking you / covering the goal) is there. */
+  marker: boolean;
+  /** Score a try needs (0.5 = any goal; higher = nearer a post). */
+  pass: number;
+  seed?: number;
+}
+
 /** The first level where you kick the pass instead of tapping the man (the built-in curve). */
 export const VISION_KICK_FROM = 10;
 /** From this level the kick must start inside VISION_TOP_WINDOW seconds (the built-in curve). */
@@ -128,6 +144,7 @@ export interface LevelBySkill {
   freeKick: FreeKickLevel;
   pace: PaceLevel;
   vision: VisionLevel;
+  aerial: AerialLevel;
 }
 export type AnyLevel = LevelBySkill[TrainingSkill];
 export type TrainingTable = { [S in TrainingSkill]: LevelBySkill[S][] };
@@ -183,6 +200,12 @@ export const LEVEL_FIELDS: { [S in TrainingSkill]: FieldSpec[] } = {
     { key: "margin", label: "How clear the right ball is", min: 0.02, max: 0.5, step: 0.01 },
     { key: "offside", label: "Someone offside", min: 0, max: 1, step: 1, toggle: true },
     { key: "real", label: "Real match moments (off: drawn)", min: 0, max: 1, step: 1, toggle: true },
+  ],
+  aerial: [
+    { key: "volley", label: "Volley (off: header)", min: 0, max: 1, step: 1, toggle: true },
+    { key: "keeperStrength", label: "Keeper strength", min: 0, max: 99, step: 1, int: true },
+    { key: "marker", label: "Marker", min: 0, max: 1, step: 1, toggle: true },
+    { key: "pass", label: "Score to pass", min: 0.5, max: 0.95, step: 0.05 },
   ],
 };
 
@@ -339,6 +362,8 @@ export function defaultLevel<S extends TrainingSkill>(skill: S, level: number): 
       // the top. From 20 you stay where 20 put you and they catch up.
       runPace: t > 0 ? lerp(at20, 85, t) : d,
     } satisfies PaceLevel;
+  } else if (skill === "aerial") {
+    row = aerialDefault(n);
   } else {
     row = visionDefault(n);
   }
@@ -382,6 +407,21 @@ function visionDefault(n: number): VisionLevel {
   const offside = n >= 5 && n % 2 === 1;
   const real = !(n <= 2 || n === VISION_KICK_FROM);
   return { kick, window, letGo, options, traps, margin, offside, real };
+}
+
+/**
+ * The built-in Aerial curve (21 Oct 2026): headers on odd levels, volleys on
+ * even ones; the keeper climbs 20 -> 96 across the 30 levels; the marker
+ * joins from level 7; the top three want it placed, not just in. A design
+ * curve, not yet measured with a bot (the other five's were).
+ */
+function aerialDefault(n: number): AerialLevel {
+  return {
+    volley: n % 2 === 0,
+    keeperStrength: lerp(20, 96, (n - 1) / (TRAINING_LEVELS - 1)),
+    marker: n >= 7,
+    pass: n >= 28 ? lerp(0.6, 0.7, (n - 28) / 2) : 0.5,
+  };
 }
 
 export function defaultTable(): TrainingTable {

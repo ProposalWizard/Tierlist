@@ -2267,7 +2267,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (!career) return;
     setCareer({
       ...career,
-      skills: { pace: 99, power: 99, technique: 99, vision: 99, freeKick: 99 },
+      skills: { pace: 99, power: 99, technique: 99, vision: 99, freeKick: 99, aerial: 99 },
     });
   }, [career]);
 

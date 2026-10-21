@@ -12,6 +12,7 @@ import { catchUpAwards, compactPotmHistory } from "./potm";
 import { toSavedForm, fromSavedForm } from "./squadSaveCodec";
 import { setActiveFoot } from "./kickFoot";
 import { addToHall, accountOfScope } from "./hallOfFame";
+import { aerialFromOld } from "./aerial";
 import {
   type SaveStamp, type SyncRecord, type SyncedVersion, type DeviceKind, type OtherDeviceWarning,
   type LoadWhy, emptySyncRecord, sanitizeSyncRecord, readStamp, progressFingerprint, nextStamp,
@@ -413,8 +414,15 @@ function backfill(c: CareerState): CareerState {
   // "never", so it gets the same fresh grace period a brand-new career
   // does rather than reading every skill as already overdue the moment
   // decaySkills first runs against it.
+  // Aerial & Acrobatics came in on 21 Oct 2026: a save from before it starts
+  // where its own Power and Technique put it (aerial.ts aerialFromOld), and
+  // counts as trained this week, like the rest on a first load.
+  if (out.skills && (typeof out.skills.aerial !== "number" || !Number.isFinite(out.skills.aerial))) {
+    out.skills = { ...out.skills, aerial: aerialFromOld(out.skills) };
+    if (out.lastTrainedWeek && out.lastTrainedWeek.aerial === undefined) out.lastTrainedWeek = { ...out.lastTrainedWeek, aerial: out.week };
+  }
   if (!out.lastTrainedWeek) {
-    out.lastTrainedWeek = { pace: out.week, power: out.week, technique: out.week, vision: out.week, freeKick: out.week };
+    out.lastTrainedWeek = { pace: out.week, power: out.week, technique: out.week, vision: out.week, freeKick: out.week, aerial: out.week };
   }
   // A career saved before reputation existed has no world/club/government/
   // shareholder standing on file — backfilled at the same neutral starting

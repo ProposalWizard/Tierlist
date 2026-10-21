@@ -30,7 +30,7 @@ import { SetCard, SetHead, SetNote } from "./settingsKit";
  * buttons. Every handler and every number is unchanged.
  */
 
-const SKILL_KEYS = ["pace", "power", "technique", "vision", "freeKick"] as const;
+const SKILL_KEYS = ["pace", "power", "technique", "vision", "freeKick", "aerial"] as const;
 const TONE = "#a78bfa";
 
 function Tile({ label, value, children }: { label: string; value: React.ReactNode; children: React.ReactNode }) {

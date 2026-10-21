@@ -80,7 +80,7 @@ function formatEffects(effects: DilemmaEffect): React.ReactElement[] {
   const labels: Record<string, string> = {
     money: "★", happiness: "Happy", matchFitness: "Sharpness",
     boss: "Boss", team: "Team", fans: "Fans", sponsors: "Sponsors", fame: "Fame", reputation: "Rep",
-    pace: "Pace", power: "Power", technique: "Tech", vision: "Vision", freeKick: "FK",
+    pace: "Pace", power: "Power", technique: "Tech", vision: "Vision", freeKick: "FK", aerial: "Aerial",
   };
   Object.entries(effects).forEach(([k, v]) => {
     if (typeof v !== "number" || v === 0) return;

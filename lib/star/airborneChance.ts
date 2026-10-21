@@ -64,10 +64,17 @@ export function airborneMotion(kind: string, seed: number): BallMotion {
  *  on the ball (the contact screen's tap); `tech`: your technique. All three
  *  are kept on the strike so a goal replay strikes it the same way; absent
  *  (older replays, the airborne test switch's own tests) = dead centre. */
-export interface AirStrike { kind: "header" | "volley"; lift: number; cx?: number; cy?: number; tech?: number }
+export interface AirStrike {
+  kind: "header" | "volley"; lift: number; cx?: number; cy?: number; tech?: number;
+  /** Your Aerial & Acrobatics (aerial.ts). When present it is read instead of
+   *  `tech` to soften a mis-hit, and it sets a header's pace. Absent (the
+   *  match today, older replays) = exactly the strike as before. */
+  aerial?: number;
+}
 export type StrikeContact = Contact & { air?: AirStrike };
 
 import { HEADER_Z, VOLLEY_MAX_Z, airZOf } from "./airDrawings";
+import { aerialHeaderPace, aerialVolleyPace } from "./aerial";
 export { HEADER_Z, VOLLEY_MAX_Z };
 const HEADER_PACE = 0.72;          // a header is softer than a strike
 const VOLLEY_PACE = 1.06;          // a clean volley comes off hot
@@ -119,7 +126,10 @@ export function airContactRead(air: AirStrike): AirRead {
   const cx = Math.max(-1, Math.min(1, air.cx ?? 0));
   const cy = Math.max(-1, Math.min(1, air.cy ?? 0));
   const lift = Math.max(0, Math.min(1, air.lift));
-  const k = Math.max(0.6, Math.min(1.25, 1.3 - ((air.tech ?? 50) / 100) * 0.6));
+  // Aerial & Acrobatics governs a ball met in the air (Harry, Q7, 21 Oct
+  // 2026); a strike without it (the match until it hands Aerial over) keeps
+  // reading Technique, so nothing moves until then.
+  const k = airForgiveness(air);
   const side = Math.max(0, Math.abs(cx) - AIR_CENTRE_R) / (1 - AIR_CENTRE_R);
   // Met on the right side of the ball, it goes left (and the other way round),
   // the same way the engine curls it (positive spin bends it left).
@@ -153,6 +163,21 @@ export function airContactRead(air: AirStrike): AirRead {
   return read;
 }
 
+/**
+ * How much a mis-hit is made worse (>1) or forgiven (<1). Technique: ×1.12
+ * at 30, ×1 at 50, ×0.76 at 90 (B10). Aerial, when the strike carries it, is
+ * read on a steeper line pinned at 60 (the same ×0.94 Technique 60 gives,
+ * so a 60 plays as today): ×1.42 at 30, ×0.46 at 90. Measured with
+ * scripts/aerial/measure.mts.
+ */
+export const AERIAL_FORGIVE_SLOPE = 1.6;
+export function airForgiveness(air: Pick<AirStrike, "tech" | "aerial">): number {
+  if (air.aerial !== undefined && Number.isFinite(air.aerial)) {
+    return Math.max(0.4, Math.min(1.5, 0.94 - ((air.aerial - 60) / 100) * AERIAL_FORGIVE_SLOPE));
+  }
+  return Math.max(0.6, Math.min(1.25, 1.3 - ((air.tech ?? 50) / 100) * 0.6));
+}
+
 /** The struck ball, started from where it really was. Same object, changed. */
 export function applyAirborne(ball: Ball, scenario: Scenario, air: AirStrike | undefined): Ball {
   if (!air) return ball;
@@ -164,7 +189,9 @@ export function applyAirborne(ball: Ball, scenario: Scenario, air: AirStrike | u
   const top = scenario.kind === air.kind ? airZOf(scenario) : air.kind === "header" ? HEADER_Z : VOLLEY_MAX_Z;
   if (air.kind === "header") {
     ball.z = top * (0.85 + 0.15 * lift);
-    ball.vel = { x: ball.vel.x * HEADER_PACE, y: ball.vel.y * HEADER_PACE };
+    // Aerial sets how hard it is headed: ×0.8 at 30, ×1 at 60, ×1.2 at 90.
+    const hp = HEADER_PACE * aerialHeaderPace(air.aerial);
+    ball.vel = { x: ball.vel.x * hp, y: ball.vel.y * hp };
     // Nodded down: whatever lift the contact gave is mostly taken away.
     ball.vz = Math.max(-4, Math.min(2.5, ball.vz * 0.35 - 1.2));
     ball.spin *= 0.3;
@@ -172,7 +199,8 @@ export function applyAirborne(ball: Ball, scenario: Scenario, air: AirStrike | u
     offLine(ball, read);
   } else {
     ball.z = Math.max(0.15, top * lift);
-    ball.vel = { x: ball.vel.x * VOLLEY_PACE, y: ball.vel.y * VOLLEY_PACE };
+    const vp = VOLLEY_PACE * aerialVolleyPace(air.aerial);
+    ball.vel = { x: ball.vel.x * vp, y: ball.vel.y * vp };
     // The height it starts at is taken back over the flight, so a volley
     // struck through the middle arrives about where the same shot off the
     // grass would — a knee-high ball does not fly over the bar by itself.

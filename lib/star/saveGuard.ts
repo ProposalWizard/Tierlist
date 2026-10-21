@@ -67,6 +67,7 @@
 import { DIVISION_BASE_WAGE, PREMIER_WAGE_CAP, REPUTATION_PREMIUM_MAX,
   SIGNING_ON_WEEKS_MAX, WAGE_FLOOR, standingMultiplier, tierWeeklyIncome, typicalWeeklyWage, bootPriceForWage } from "./economy";
 import { TRAINING_LEVELS, SKILL_MAX, skillFromStars, starsFromSkill } from "./trainingLevels";
+import { aerialFromOld } from "./aerial";
 import { BOOT_LEVELS, BOOTS_CATALOGUE_DEFAULT, KIB_CANS_DEFAULT, LIFESTYLE_LEVELS, LIFESTYLE_ITEMS_DEFAULT } from "./shopDefaults";
 import { computeStarRating } from "./rating";
 import type { CareerState } from "./types";
@@ -266,7 +267,7 @@ type Raw = Record<string, unknown>;
 const isObj = (v: unknown): v is Raw => !!v && typeof v === "object" && !Array.isArray(v);
 const num = (v: unknown, fallback = 0): number => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
-const SKILL_KEYS = ["pace", "power", "technique", "vision", "freeKick"] as const;
+const SKILL_KEYS = ["pace", "power", "technique", "vision", "freeKick", "aerial"] as const;
 type SkillKey = (typeof SKILL_KEYS)[number];
 
 /** Is this even shaped like a career? */
@@ -277,7 +278,10 @@ export function looksLikeCareer(v: unknown): v is Raw {
 
 function skillsOf(c: Raw): Record<SkillKey, number> {
   const s = isObj(c.skills) ? c.skills : {};
-  return Object.fromEntries(SKILL_KEYS.map(k => [k, num(s[k], 40)])) as Record<SkillKey, number>;
+  // A save from before Aerial (21 Oct 2026) reads the start its own Power and
+  // Technique give it (aerial.ts), the same number storage.ts fills in on
+  // load, so filling it in is never read as a skill jump.
+  return Object.fromEntries(SKILL_KEYS.map(k => [k, k === "aerial" ? num(s[k], aerialFromOld(s)) : num(s[k], 40)])) as Record<SkillKey, number>;
 }
 
 /** Stars earned on one skill (trainingLevels.ts's own rule for an old save
@@ -346,7 +350,7 @@ export function genesisOf(next: Raw): Raw {
   return {
     version: 2, player: next.player, season: 1, week: 1, gardenWeeks: 0, money: 0,
     division: next.division,
-    skills: { pace: 40, power: 40, technique: 40, vision: 40, freeKick: 40 },
+    skills: { pace: 40, power: 40, technique: 40, vision: 40, freeKick: 40, aerial: 40 },
     contract: { wage: 0 }, starRating: 0, fame: 1, reputation: 0,
     trophies: [], awards: [], achievements: [], ballonDorWins: 0,
     careerStats: { appearances: 0, goals: 0, assists: 0 },

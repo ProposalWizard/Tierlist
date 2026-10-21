@@ -155,6 +155,14 @@ export interface Skills {
   technique: number;
   vision: number;
   freeKick: number;
+  /**
+   * Aerial & Acrobatics (Harry, Q7, 21 Oct 2026: "create a new aerial and
+   * acrobatics skill"). Governs headers and volleys (lib/star/aerial.ts).
+   * Trained on the Training screen like the other five. A save from before
+   * it gets a starting value from Power and Technique on load
+   * (storage.ts, aerialFromOld).
+   */
+  aerial: number;
 }
 
 /** Defensive / Balanced / Attacking — see CareerState.playstyle. */
