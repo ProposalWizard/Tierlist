@@ -6,7 +6,7 @@ import {
   CX, PITCH_W, POST_L, POST_R, HALF_LEN, NET_DEPTH, BOX_DEPTH, SIX_DEPTH,
 } from "./pitch";
 import { scenarioFaults, fixBaseScenario, offsideLineOf, inShotCone } from "./baseScenario";
-import { targetBlock, defensiveLineOf, onTheBoxEdge, type ShapeInput } from "./formationShape";
+import { targetBlock, defensiveLineOf, onTheBoxEdge, backSpan, BLOCK_SHIFT, type ShapeInput } from "./formationShape";
 import type { Lane, ChancePattern, ScenarioRequest } from "./hiddenMatch";
 
 /**
@@ -37,17 +37,26 @@ import type { Lane, ChancePattern, ScenarioRequest } from "./hiddenMatch";
  *
  * ── Where the numbers come from ──
  *
- * scratchpad/research-SB360-measured.md, 653,890 StatsBomb-360 freeze frames:
- *  - Table 1: back line ≈ 0.66 × the ball's distance from goal; defenders
- *    inside the box collapse 7 → 4 → 2 → 0 as the ball goes 10 → 20 → 25 → 30 m
- *    out. DEFENDER_IN_BOX_BY_BAND below.
- *  - Table 6: regular play median 4 defenders in the box, a genuine counter 1,
- *    and only ~4% of shots come from one. That is `transition`.
- *  - Table 3: from 16-25 m a team-mate is in the shot's own lane in under a
- *    quarter of shots, and essentially never more than one.
- *  - Table 4: box occupation on crosses — near post 0.56 vs far post 0.15.
- *  - Table 5: keeper 1.7-3.9 m off his line for a 20-30 m ball, shading
- *    ~0.28 × the ball's lateral offset.
+ * Free tracking, re-sourced 21 Oct 2026 (DFL + SkillCorner, pro matches only,
+ * every open-play shot with all 22 men: data/opendata/tracked_shot_shapes.json,
+ * made by scripts/opendata/reduce_resource.py):
+ *  - back four ≈ 0.67 × the ball's distance from goal (median, ball 16-35 m);
+ *    defenders inside the box, 10th-90th percentile by ball band: six 4-9,
+ *    golden 3-8, spot 2-8, edge 1-7, range 0-6. DEFENDERS_IN_BOX below keeps a
+ *    tighter band inside those (a design choice; widening it is Harry's D6,
+ *    after an eye check).
+ *  - counters: only 2-6% of shots (2.0% tracked, 5.6% of Wyscout's tagged as a
+ *    counter). How many defenders a counter leaves in the box: the free data
+ *    has 11 tracked counter shots (median 4), too few to set a value. The
+ *    `transition` rule below (1-2 men screening, the rest recovering) is a
+ *    design rule until there is more data. That is `transition`.
+ *  - the shot's own lane, ball 16-25 m out: a team-mate is in it on 12% of
+ *    shots, more than one on 2%; opponents in it: median 0, p75 1, never
+ *    more than 3.
+ *  - corners: an attacker stands in the near-post half of the six-yard box at
+ *    68% of corners, the far-post half at 42%: the near post is attacked first.
+ *  - keeper 1.6-3.9 m off his line for a 20-30 m ball (10th-90th percentile),
+ *    shading 0.22 × the ball's lateral offset.
  * research-C-attacking-occupation §C3: no team-mate inside the ball→posts
  *    triangle for a shot from ≥14 m.
  * research-A-defensive-shape §A4/§A6: marking distances, and 4+ defenders
@@ -88,7 +97,7 @@ export type StrengthBand = "weak" | "even" | "strong";
 /** Metres from the goal line, [lo, hi]. */
 export const DISTANCE_M: Record<DistanceBand, [number, number]> = {
   six: [1, 5.5],
-  golden: [5.5, 11],      // 51.1% of open-play header goals land 6-12 yd [C]
+  golden: [5.5, 11],      // 64% of open-play header goals come from 5.5-11 m (Wyscout, 453 goals)
   spot: [11, 16.5],
   edge: [16.5, 22],
   range: [22, 30],
@@ -110,7 +119,7 @@ export const ENGAGE_M: Record<Engagement, [number, number]> = {
   free: [5.5, 9.0],
 };
 
-/** Keeper distance off his line. [M] Table 5 for "stepped". */
+/** Keeper distance off his line. "stepped" sits inside the free tracking's 1.6-3.9 m (10th-90th percentile, 20-30 m shots; tracked_shot_shapes.json). */
 export const KEEPER_M: Record<KeeperSet, [number, number]> = {
   set: [0.5, 1.4],
   stepped: [1.7, 3.3],
@@ -147,7 +156,8 @@ const KEEPER_MUST_BE_SEEN = new Set<ScenarioKind>([
 ]);
 export const ZOOM_H: Record<FrameZoom, number> = { tight: 42, normal: 42, wide: 42 };
 
-/** Defenders genuinely inside the box, by ball distance [M Table 1]. Used by
+/** Defenders genuinely inside the box, by ball distance (each band inside the
+ *  free tracking's 10th-90th percentile, see the header). Used by
  *  the filter, not to add or remove bodies — the engine owns the count. */
 export const DEFENDERS_IN_BOX: Record<DistanceBand, [number, number]> = {
   six: [4, 8], golden: [4, 8], spot: [3, 7],
@@ -682,13 +692,14 @@ export function applyChancePlan(sc: Scenario, plan: ChancePlan, rng: () => numbe
   // measure as a no-op — the gallery never passes a formation.
   const rawLineY = clamp(shaped ? shaped.lineY : ballDist * 0.66, 3.2, Math.max(4, ballDist - 2.0));
   const lineY = onTheBoxEdge(rawLineY, ballDist, 3.2);
-  const span = shaped ? shaped.span : clamp(16 + ballDist * 0.22, 16, 25) * (p.backLine === 5 ? 1.28 : 1);
-  const shift = shaped ? shaped.blockShift : clamp((ballX - CX) * 0.4, -8, 8);
+  const span = shaped ? shaped.span : backSpan(ballDist) * (p.backLine === 5 ? 1.28 : 1);
+  const shift = shaped ? shaped.blockShift : clamp((ballX - CX) * BLOCK_SHIFT, -8, 8);
 
   const n = sc.defenders.length;
   if (n > 0 && !turned) {
     const backN = Math.min(n, p.backLine);
-    // H10 [M Table 2b]: adjacent back-line gaps sit at 5.1-8.0 m. The SPAN is
+    // H10: adjacent back-four gaps sit at 3.5-7.5 m (free tracking p25-p75,
+    // median 5.2, p90 9.8; tracked_shot_shapes.json). The SPAN is
     // what gives, never the number of men — a scenario with two defenders in it
     // is two men holding a normal gap, not two men stretched across the span a
     // back four would cover. (Measured: without this, a two-man line at range
@@ -697,8 +708,9 @@ export function applyChancePlan(sc: Scenario, plan: ChancePlan, rng: () => numbe
     const gap = clamp(span / Math.max(1, p.backLine - 1), 3.2, 8.6);
     const useSpan = gap * Math.max(1, backN - 1);
     if (p.pattern === "transition") {
-      // [M Table 6] a genuine counter has a median of 1 defender in the box:
-      // most men are RECOVERING behind the ball, not screening in front of it.
+      // A genuine counter: most men are RECOVERING behind the ball, not
+      // screening in front of it (a design rule; see the header: the free data
+      // has too few tracked counters to measure it).
       const keep = Math.max(1, Math.min(n, 2));
       for (let i = 0; i < n; i++) {
         const d = sc.defenders[i];
@@ -717,9 +729,10 @@ export function applyChancePlan(sc: Scenario, plan: ChancePlan, rng: () => numbe
       // ── SETTLED BOX CHANCE (spec §2.3) — THE "far too open in the box" FIX ──
       //
       // A box scene is not a back line. Real defenders occupy ZONES: the near
-      // post, the man on the ball's end point, the penalty spot (T4: 1.46
-      // defenders per shot, the densest zone [M]), the far post, the second six
-      // (1.72 [M]), and the edge. Placing a flat line across a byline chance
+      // post, the man on the ball's end point, the penalty spot, the far post,
+      // the second six (the densest zone: 2.07 defenders per box shot in the
+      // free tracking, the spot area 0.73, the edge 1.04; tracked_shot_shapes.json),
+      // and the edge. Placing a flat line across a byline chance
       // instead put bodies straight across the shot: measured, it sent the
       // blocked rate on a tight angle from 11.0% to 67.3%.
       const slots: Vec2[] = [
@@ -780,7 +793,7 @@ export function applyChancePlan(sc: Scenario, plan: ChancePlan, rng: () => numbe
     }
   }
 
-  // ── 3. The keeper [M Table 5] ──
+  // ── 3. The keeper (free tracking: 1.6-3.9 m off his line, 20-30 m shots) ──
   //
   // §2.4, honoured: a one-on-one and a tight angle KEEP the engine's own
   // stance logic, because in those two the keeper's position IS the chance —
@@ -795,11 +808,11 @@ export function applyChancePlan(sc: Scenario, plan: ChancePlan, rng: () => numbe
     const kY = U(rng, KEEPER_M[p.keeper][0], KEEPER_M[p.keeper][1]);
     sc.keeper.y = clamp(kY, 0.5, Math.max(0.6, ballY - 1.5));
     // ONLY HIS DEPTH. How far off his line he has set himself is the
-    // interesting, measured variety [M Table 5] and it is what this layer is
+    // interesting, measured variety (free tracking) and it is what this layer is
     // for. His SIDEWAYS position is left exactly as the engine placed it.
     //
     // Measured, taking that over too with the spec's own shade
-    // (x = CX + 0.28 × ball lateral, itself a real measurement): a keeper
+    // (x = CX + 0.28 × ball lateral then; free tracking says 0.22): a keeper
     // that well centred on every single chance sent headers from 16.3% to
     // 6.4% and cutbacks from 41.0% to 9.8% with almost none of it blocked —
     // he was simply always in the right place. The engine's finishing model
@@ -859,7 +872,7 @@ export function applyChancePlan(sc: Scenario, plan: ChancePlan, rng: () => numbe
  * run here because the block layer is deliberately skipped when a plan applied.
  */
 /**
- * H10 [M Table 2b]: no adjacent back-line gap over ~10 m. Pulls the two men
+ * H10: no adjacent back-line gap over ~10 m (free tracking p90 9.8 m). Pulls the two men
  * either side of a hole toward each other — never drops or adds a body, which
  * is the engine's own count to own.
  */
@@ -938,7 +951,7 @@ function tidyBlock(sc: Scenario, p: ChanceParams): void {
   //    (through_ball 8.9% → 21.0%, tight_angle 11.0% → 25.7%).
   //
   //  - A RADIUS IS THE WRONG RULE ANYWAY. H5's own rule is a COUNT — at most
-  //    three opponents in the lane [M Table 3, p75 = 2] — so that is what is
+  //    three opponents in the lane (free tracking: p75 1, never more than 3) — so that is what is
   //    enforced, with the men nearest the shot moving out first so the picture
   //    keeps its depth rather than being swept clean.
   //  - AND THE CONE ITSELF IS THE WRONG TEST FOR A SHALLOW SHOT. The triangle
@@ -1008,14 +1021,14 @@ function tidyBlock(sc: Scenario, p: ChanceParams): void {
   if (sc.kind === "through_ball" || sc.kind === "one_on_one") {
     for (const d of sc.defenders) if (offLine(d) < SHOT_LANE_R) stepOut(d);
   }
-  // Beyond that the lane simply has a ceiling [M Table 3: p75 = 2 opponents in
-  // the lane, 98% ≤ 3]. The men nearest the shot move out first, so what is
+  // Beyond that the lane simply has a ceiling (free tracking: p75 = 1 opponent
+  // in the lane, 100% ≤ 3). The men nearest the shot move out first, so what is
   // left is depth rather than a wall on the ball.
   // TWO inside the box, and two for a through ball as well: being played in
   // BEHIND the line is the whole chance, so three bodies across the lane
   // contradicts the situation rather than defending it. Measured with a cap
   // of 3 there, once the camera stopped zooming out: blocked 23.8% -> 29.1%,
-  // past the +16 pp bar. Everywhere else three stands [M Table 3, 98% <= 3].
+  // past the +16 pp bar. Everywhere else three stands (free tracking: 100% <= 3).
   const laneCap = (sc.ball.y <= 16.5 || sc.kind === "through_ball") ? 2 : 3;
   const laneMen = sc.defenders.filter(inTheWay);
   if (laneMen.length > laneCap) {
@@ -1118,7 +1131,8 @@ function placeAttackers(sc: Scenario, p: ChanceParams, rng: () => number): void 
   const side = p.side;
   const bd = sc.ball.y;
 
-  // Zone fill by kind — [M Table 4] near post 0.56 vs far post 0.15 on crosses.
+  // Zone fill by kind — the near post is filled first (free tracking: an attacker
+  // at the near post at 68% of corners, the far post at 42%).
   const spots: Vec2[] = [];
   if (p.kind === "cutback") {
     spots.push({ x: CX + U(rng, -3, 3), y: U(rng, 8, 12) });            // second six

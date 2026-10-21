@@ -20,6 +20,7 @@ import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Panel, PanelGrid, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
 import "./radar.css";
 import FunTargetsReport from "@/components/star/FunTargetsReport";
+import RealWorldTable from "@/components/star/RealWorldTable";
 import {
   RadarPitch, MomentumStrip, LiveRadar, RadarFeed, Scoreboard, FullTime, describeArea, handedKinds,
   type RadarSide,
@@ -243,7 +244,7 @@ export default function MatchRadarPage() {
       )}
     </>
   );
-  const fun = <div className="rd-fun"><FunTargetsReport /></div>;
+  const fun = <div className="rd-fun"><RealWorldTable inputs={inputsFor(setup)} label={`${setup.usStrength} v ${setup.themStrength}, you a ${setup.position}`} /><FunTargetsReport /></div>;
 
   return (
     <BroadcastPage
@@ -272,7 +273,7 @@ export default function MatchRadarPage() {
             <Panel title="The match">{setupBox}</Panel>
             <Panel title={over ? "Full time" : "Minute by minute"}>{feed}</Panel>
           </div>
-          <div className="rd-a-fun"><Panel title="200 matches">{fun}</Panel></div>
+          <div className="rd-a-fun"><Panel title="Real world · many matches">{fun}</Panel></div>
         </div>
       ) : (
         <div className="rd-l2" data-radar-layout="2">
@@ -290,7 +291,7 @@ export default function MatchRadarPage() {
           <Panel title="Events" note="up is you on top"><div className="rd-events">{momentum}</div></Panel>
           <PanelGrid min={360}>
             <Panel title="The match">{setupBox}</Panel>
-            <Panel title="200 matches">{fun}</Panel>
+            <Panel title="Real world · many matches">{fun}</Panel>
           </PanelGrid>
         </div>
       )}

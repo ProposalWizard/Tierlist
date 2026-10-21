@@ -1,0 +1,150 @@
+{
+ "meta": {
+  "source": "DFL (IDSSE, Bassek et al. 2025, 7 matches) and SkillCorner Open Data (20 A-League matches), the shots in data/realmoments/tracked.json; pro matches only (SoccerTrack's university matches left out, Harry D7)",
+  "credit_ids": [
+   "dfl-moments",
+   "skillcorner-moments"
+  ],
+  "licence": "CC BY 4.0 (DFL) / MIT (SkillCorner)",
+  "shots": 547,
+  "made": "scripts/opendata/reduce_resource.py, 21 Oct 2026",
+  "frame": "our pitch metres: y from the attacked goal line, x 0..68; back four = the four deepest outfield defenders"
+ },
+ "back_line_over_ball_y_16_35m": {
+  "n": 236,
+  "median": 0.668,
+  "mean": 0.695,
+  "p25": 0.571,
+  "deepest_man_mean": 0.608
+ },
+ "back_four_span_m_by_ball_y": {
+  "8-16": {
+   "n": 204,
+   "median": 14.8,
+   "p25": 11.4,
+   "p75": 18.7
+  },
+  "16-22": {
+   "n": 141,
+   "median": 16.9,
+   "p25": 11.8,
+   "p75": 20.9
+  },
+  "22-28": {
+   "n": 77,
+   "median": 16.6,
+   "p25": 13.5,
+   "p75": 19.8
+  },
+  "28-40": {
+   "n": 19,
+   "median": 20.4,
+   "p25": 17.4,
+   "p75": 23.9
+  }
+ },
+ "block_shift_x_ball_lateral": 0.33,
+ "keeper_off_line_m_by_shot_distance": {
+  "0-8": {
+   "n": 48,
+   "median": 1.8,
+   "p10": 1.07,
+   "p90": 3.52
+  },
+  "8-12": {
+   "n": 67,
+   "median": 2.1,
+   "p10": 1.0,
+   "p90": 3.84
+  },
+  "12-22": {
+   "n": 271,
+   "median": 2.5,
+   "p10": 1.4,
+   "p90": 4.8
+  },
+  "22+": {
+   "n": 161,
+   "median": 2.6,
+   "p10": 1.6,
+   "p90": 4.1
+  },
+  "20-30": {
+   "n": 184,
+   "median": 2.6,
+   "p10": 1.6,
+   "p90": 3.87
+  }
+ },
+ "keeper_shade_x_ball_lateral_12m_plus": 0.22,
+ "defenders_in_box_by_ball_y_band": {
+  "six": {
+   "n": 42,
+   "median": 6.0,
+   "p10": 4,
+   "p90": 9
+  },
+  "golden": {
+   "n": 131,
+   "median": 6,
+   "p10": 3,
+   "p90": 8
+  },
+  "spot": {
+   "n": 143,
+   "median": 5,
+   "p10": 2,
+   "p90": 8
+  },
+  "edge": {
+   "n": 132,
+   "median": 4.0,
+   "p10": 1,
+   "p90": 7
+  },
+  "range": {
+   "n": 89,
+   "median": 2,
+   "p10": 0,
+   "p90": 6
+  },
+  "deep": {
+   "n": 7,
+   "median": 0,
+   "p10": 0,
+   "p90": 0
+  }
+ },
+ "shot_lane_16_25m": {
+  "n": 251,
+  "opponents_median": 0,
+  "opponents_p75": 1.0,
+  "opponents_at_most_3_pct": 100.0,
+  "team_mate_in_lane_pct": 12.4,
+  "more_than_one_team_mate_pct": 2.0
+ },
+ "back_four_adjacent_gap_m_16_35m": {
+  "n": 708,
+  "median": 5.2,
+  "p25": 3.5,
+  "p75": 7.5,
+  "p90": 9.8
+ },
+ "box_shots_defenders_per_zone": {
+  "n": 317,
+  "six_yard_box": 0.59,
+  "penalty_spot_area_9_12m": 0.73,
+  "second_six_5_11m": 2.07,
+  "edge_14_20m": 1.04
+ },
+ "counter_shots": {
+  "n": 11,
+  "share_pct": 2.0,
+  "defenders_in_box_median": 4
+ },
+ "corners_attacker_at_post_pct": {
+  "n": 121,
+  "near_post_six_yard_half": 67.8,
+  "far_post_six_yard_half": 42.1
+ }
+}

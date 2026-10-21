@@ -5,7 +5,12 @@ the sources below. No single match, event, frame, team or player is stored.
 The game may read these patterns; it must never replay a real match.
 
 **Where the game shows credits:** Settings → More → **Data credits** shows
-every "Credit line to show" below (Harry, 20 Oct 2026: "Settings is fine").
+every "Credit line to show" below (Harry, 20 Oct 2026: "Settings is fine"),
+and so does the public page **/credits** (Harry, D8, 21 Oct 2026: "Settings +
+public /credits"). Both read `lib/star/dataCredits.ts`, which also lists the
+3D models, voices, fonts and facts the game uses (their licence files sit
+next to those files) and maps every data file to its credit
+(tests/star/dataCredits.mts checks it).
 They are one list in `lib/star/dataCredits.ts`: a new source is one entry
 there plus its section here (tests/star/realMomentHighlights.mts checks every
 line is in this file). Use the same lines on a store listing or about page.
@@ -36,6 +41,31 @@ fine; it is listed under "Checked and NOT used".
 
 **Credit line to show:**
 > Match event patterns derived from the Wyscout public dataset (Pappalardo et al., Scientific Data 2019), CC BY 4.0. Changes made.
+
+**Re-sourced numbers (21 Oct 2026):** `wyscout_shot_outcomes.json` (shot
+outcomes by kind and distance, keeper save % by distance and goal-mouth zone,
+headers, a forward's touches by area) made by
+`scripts/opendata/reduce_resource.py` from the same events plus the PlayeRank
+file below. It replaced every number the game had taken from a licensed set
+(sim rebuild piece 1).
+
+## 1b. Wyscout PlayeRank roles — CC BY 4.0 ✓ commercial use allowed (added 21 Oct 2026)
+
+- Used in: `wyscout_shot_outcomes.json` (`forward_touches_by_area`: which
+  players are central and wide forwards).
+- Source: the same figshare collection, article 9361148 ("PlayeRank",
+  46,897 player-matches: each player's role cluster and minutes in each
+  match). Pappalardo, L., Cintia, P., Ferragina, P., Massucco, E., Pedreschi,
+  D., Giannotti, F. *PlayeRank: data-driven performance evaluation and player
+  ranking in soccer via a machine learning approach.* ACM Transactions on
+  Intelligent Systems and Technology 10(5), 59 (2019).
+- Licence, as figshare states it: **"CC BY 4.0"**; it asks to cite the
+  Scientific Data paper and the PlayeRank paper.
+- Changes made: joined to the events by match and player, reduced to
+  per-role averages and shares; no player is named or kept.
+
+**Credit line to show:**
+> Player roles from the Wyscout public dataset's PlayeRank file (Pappalardo et al., Scientific Data 2019; Pappalardo et al., ACM TIST 2019), CC BY 4.0. Changes made.
 
 ## 2. IDSSE — DFL tracking + event data — CC BY 4.0 ✓ commercial use allowed
 
@@ -85,6 +115,12 @@ fine; it is listed under "Checked and NOT used".
   SkillCorner (they removed it) would be polite; the licence does not ask
   for it.
 - Changes made: reduced to aggregate shapes, pressure and back-line heights.
+
+Also used (21 Oct 2026): `tracked_shot_shapes.json` (back line, keeper
+depth and shade, men in the box and in the shot's lane at every tracked
+shot), made by `scripts/opendata/reduce_resource.py` from the DFL and
+SkillCorner shots in `data/realmoments/tracked.json` (pro matches only;
+SoccerTrack's university matches left out, Harry's D7).
 
 **Credit line to show** (covers both releases):
 > Tracking and phase-of-play patterns derived from SkillCorner Open Data (MIT licence, © 2020 SkillCorner).

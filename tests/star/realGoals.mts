@@ -49,6 +49,23 @@ console.log("\n1. NO STATSBOMB DATA OR CODE");
   };
   for (const d of ["app", "components", "lib", "public", "data", "scripts", "tools"]) walk(d);
   ok(bad.length === 0, `no StatsBomb file, import or data path left${bad.length ? ` (found: ${bad.join(", ")})` : ""}`);
+
+  // Sim rebuild piece 1 (21 Oct 2026): no number may be sourced to it either.
+  // No source line in the game, its tests, its scripts or its patch notes may
+  // name it (the old 360 tables too). History lives in SESSION_LOG.md,
+  // data/opendata/LICENCES.md, the brain and the dated plans under docs/.
+  const named: string[] = [];
+  const word = /stats\s*bomb|\bsb[- ]?360\b/i;
+  const scan = (d: string) => {
+    for (const f of readdirSync(d)) {
+      const p = join(d, f);
+      if (statSync(p).isDirectory()) { if (f !== "node_modules" && !f.startsWith(".") && p !== join("scripts", "brain")) scan(p); continue; }
+      if (!/\.(ts|tsx|mts|js|mjs|py|json|html|md)$/.test(f) || p.endsWith("realGoals.mts")) continue;
+      readFileSync(p, "utf8").split("\n").forEach((line, i) => { if (word.test(line)) named.push(`${p}:${i + 1}`); });
+    }
+  };
+  for (const d of ["app", "components", "lib", "tests", "scripts", "tools", "patch-notes", "data/realmoments"]) scan(d);
+  ok(named.length === 0, `no line in the game, tests, scripts or patch notes is sourced to it${named.length ? ` (found: ${named.slice(0, 8).join(", ")}${named.length > 8 ? ", …" : ""})` : ""}`);
 }
 
 const goals = loadGoals();

@@ -323,7 +323,7 @@ def admin_page():
         item('The eye (&#9432;) guide: seven new pages have one', [tag('meas')], [
             ('Problem', 'A page without a guide leaves people guessing what a button does and where a save goes.'),
             ('Why', 'The house rule says: change a button, change its guide in the same change. New pages need an entry too.'),
-            ('Fix', 'Every admin and test page has an <b>eye button</b> (bottom right) that explains each button, where a save goes, and whether anything commits to the repo. Counted from the guides file: <b>58 guides on 18 Oct, 64 now</b>. New: Real shots, Research, the Highlights rebuild ruler, the Scene editor, the Scene generator, the 3D bench and Five-a-side. One went with the deleted StatsBomb page. The Team board&rsquo;s guide says what a push count is.')],
+            ('Fix', 'Every admin and test page has an <b>eye button</b> (bottom right) that explains each button, where a save goes, and whether anything commits to the repo. Counted from the guides file: <b>58 guides on 18 Oct, 64 now</b>. New: Real shots, Research, the Highlights rebuild ruler, the Scene editor, the Scene generator, the 3D bench and Five-a-side. One went with the deleted licensed-data page. The Team board&rsquo;s guide says what a push count is.')],
             p.figs([f('0.78', '4b-team-board-guide-push-count-computer.jpg', '<b>Look at:</b> the eye guide open on the Team board.', 'wd')], wide=True)),
     ])
 
@@ -429,7 +429,7 @@ def admin_page():
         '<p><b>Phone admin, where the first box starts.</b> Grey is before. Colour is after.</p>' +
         bars(bar('First group box (px from the top)', 430, 223, 460, '430', '223')) +
         '<p><b>Pages.</b> Tabs today: Road to Ballon d&rsquo;Or 45, Website games 10, Studio 7 (from a 20 Oct still). On 19 Oct: 44, 10 and 5. 59 pages in the old list. 28 marked as test pages. 12 group cards. Frame: 36 on 19 Oct, 37 &rarr; 43 of 43 in B6, 45 of 45 today.</p>'
-        '<p><b>Eye guides.</b> 58 on 18 Oct, 64 now (7 new, 1 removed with the StatsBomb page).</p>'
+        '<p><b>Eye guides.</b> 58 on 18 Oct, 64 now (7 new, 1 removed with the licensed-data page).</p>'
         '<p><b>Light looks.</b> About 320 unreadable words on 12 pages before, 0&ndash;3 per page after.</p>')
 
     return p, dict(
@@ -575,12 +575,12 @@ def else_page():
         note='2,104 matches in all on 19 Oct, every source free to use in a paid game.')
     data_add = [
         item('2,104 real matches, all free to use in a paid game', [T('Free data'), tag('meas')], [
-            ('Problem', 'The real-football pages used StatsBomb data, and its licence does not allow a paid game.'),
+            ('Problem', 'The real-football pages used licensed data, and its licence does not allow a paid game.'),
             ('Why', 'A paid game needs data whose licence allows it.'),
-            ('Fix', 'Four free-licence sources were reduced to pattern files the game can read. Each needs a credit line shown in the game (done on 20 Oct, in Settings). <b>Every StatsBomb file is deleted from the repo.</b>')],
+            ('Fix', 'Four free-licence sources were reduced to pattern files the game can read. Each needs a credit line shown in the game (done on 20 Oct, in Settings). <b>Every file of the licensed data is deleted from the repo.</b>')],
             sources),
         item('Real moments, Real shots and Real Goals, rebuilt on free data', [T('Free data'), tag('seen'), tag('meas')], [
-            ('Problem / Why', 'The three pages used StatsBomb data. Same licence problem.'),
+            ('Problem / Why', 'The three pages used licensed data. Same licence problem.'),
             ('Fix', '<ul><li><b>Real moments:</b> 702 fully real moments (581 shots, 121 corners), all 22 players where they really stood. One Play button instead of one on every row (you kept it: A-6).</li>'
                     '<li><b>Real shots:</b> 2,875 real shots (2018 World Cup and Euro 2016). The strike and the result are real. The defenders are placed by our own rules. You called the shot map &ldquo;pretty cool&rdquo;.</li>'
                     '<li><b>Real Goals:</b> 232 levels.</li></ul>')],
