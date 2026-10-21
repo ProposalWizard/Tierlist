@@ -6,6 +6,8 @@ import { getTuning } from "./tuningStore";
 import { divisionOf } from "./clubs";
 import { rememberFetchedSquads } from "./squadSaveCodec";
 import { profileOf } from "./data/clubProfiles";
+import { squadRating, dataRating } from "./world/clubRating";
+import type { CareerDivision } from "./calendar";
 
 /**
  * THE OTHER NINETEEN DRESSING ROOMS.
@@ -704,6 +706,31 @@ export function nameGoals(squad: LeagueSquad | undefined, count: number, rng: ()
   return out.sort((a, b) => a.m - b.m);
 }
 
+/**
+ * The same choice as `nameGoals` — who scores, who makes it — without
+ * touching the squad. The world season (world/leagues.ts) keeps its own
+ * goal counts, so the squads' tallies (read by your league's awards) stay
+ * your league's alone.
+ */
+export function pickGoalIds(
+  squad: LeagueSquad | undefined, count: number, rng: () => number,
+): { id: string; name: string; m: number; assistId?: string; assist?: string }[] {
+  if (!squad || count <= 0) return [];
+  const out: { id: string; name: string; m: number; assistId?: string; assist?: string }[] = [];
+  for (let i = 0; i < count; i++) {
+    const scorer = weightedPick(squad.players, SCORE_WEIGHT, rng);
+    if (!scorer) break;
+    const assister = rng() < ASSIST_SHARE
+      ? weightedPick(squad.players, ASSIST_WEIGHT, rng, scorer.id, creatorQuality)
+      : null;
+    out.push({
+      id: scorer.id, name: scorer.name, m: 2 + Math.floor(rng() * 88),
+      ...(assister ? { assistId: assister.id, assist: assister.name } : {}),
+    });
+  }
+  return out.sort((a, b) => a.m - b.m);
+}
+
 /** One of the opponent's goals, already decided live — see OppGoalEvent
  *  (types.ts) and CanvasMatch.tsx's opponent-goal branch. */
 export interface NamedOppGoal {
@@ -928,10 +955,25 @@ export function averageStartingXIRating(squad: LeagueSquad | undefined): number 
  * cached. A club with no squad entry yet (fetch still in flight, or failed)
  * keeps whatever strength it already had rather than losing it.
  */
-export function syncLeagueStrengthFromSquads(league: LeagueTeam[], squads: LeagueSquad[]): LeagueTeam[] {
+export function syncLeagueStrengthFromSquads(
+  league: LeagueTeam[], squads: LeagueSquad[],
+  /**
+   * The division this table is (Mikey, 19 Oct 2026). Given, a club whose
+   * squad is invented is rated from its club data instead of its invented
+   * XI, whose ratings are a hash of its name (world/clubRating.ts). Absent:
+   * every club reads its XI, as before (the frozen Old UI passes none).
+   */
+  division?: CareerDivision,
+): LeagueTeam[] {
   const byClub = new Map(squads.map(s => [s.club, s]));
+  const peers = league.map(t => t.name);
   return league.map((t) => {
-    const rating = averageStartingXIRating(byClub.get(t.name));
+    const squad = byClub.get(t.name);
+    if (division && squad) {
+      const real = squadRating(squad) !== null ? averageStartingXIRating(squad) : null;
+      return { ...t, strength: real ?? Math.round(dataRating(t.name, division, peers)) };
+    }
+    const rating = averageStartingXIRating(squad);
     return rating === null ? t : { ...t, strength: rating };
   });
 }

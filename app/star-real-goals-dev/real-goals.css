@@ -94,3 +94,8 @@
   .rg-arrows { display: none; }
   .rg-rstat { margin-left: auto; }
 }
+/* The competition chips over the goal list (league goals, 20 Oct 2026): one scrolling line on a phone. */
+.rg-comps { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.rg-comps::-webkit-scrollbar { display: none; }
+.rg-comps .bc-pill { flex: none; white-space: nowrap; }
+.rg-ccount { opacity: 0.7; font-weight: 600; margin-left: 4px; }

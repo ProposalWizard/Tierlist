@@ -821,6 +821,45 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       ]
     },
     {
+      "version": "0.63",
+      "title": "Mikey's patch notes v0.19: New pop-ups and the real FA Cup",
+      "publishedAt": "2026-10-20T16:00:00Z",
+      "updatedAt": "2026-10-20T16:00:00Z",
+      "artifactUrl": "https://claude.ai/artifact/QsxGeWuEK6C7GwcCQJSD3r",
+      "summary": "Mikey's new pop-ups (a switch, Old by default): a goal scoreboard whose score rolls over, with scorer and assist, and TV captions for every other action. The FA Cup has its real ten rounds, each league joining at its real round. Team-mate goals are kept on reload, your player stands on every chance, corners need a taker who can reach the box, PL Draft FC 27 offers 20 clubs again, and player search no longer times out.",
+      "stats": [
+        { "value": "10", "label": "FA Cup rounds (was 6)" },
+        { "value": "177 → 20", "label": "clubs in PL Draft FC 27" },
+        { "value": "20,029", "label": "matches in the career soak, 0 broken states" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Settings → Match → Mikey's new pop-ups: New", "detail": "Score a goal and make a pass." },
+          { "title": "A National League North or South career", "detail": "The FA Cup starts in the 3rd Qualifying Round." },
+          { "title": "Reload at a club with no real players", "detail": "Team-mates keep their goals." },
+          { "title": "PL Draft → FC 27", "detail": "Exactly 20 clubs." }
+        ]},
+        { "kind": "added", "title": "New", "items": [
+          { "title": "Mikey's new pop-ups", "detail": "Goal: a scoreboard at the top, score rolls over, scorer and assist. Others: a short TV caption. Same speed as before." },
+          { "title": "The real FA Cup", "detail": "3rd Qualifying (NL North, South, Step 3; 24 byes, never you) → 4th Q (+National League) → R1 (+League One, Two) → R2 → R3 (+PL, Championship) → 32 → 16 → 8 → 4 → 2." }
+        ]},
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Team-mate goals wiped on reload", "detail": "At a club with no real players the squad was replaced on every load." },
+          { "title": "PL Draft FC 27 offered 177 clubs", "detail": "AC Milan, Real Madrid and junk names; now the game's 20." },
+          { "title": "Player search timed out", "detail": "\"kane\" failed; now about 1 s, accents work." },
+          { "title": "The build guard would have stopped deploys", "detail": "The corner check now measures through the engine. No change to matches." }
+        ]},
+        { "kind": "changed", "title": "Changed", "items": [
+          { "title": "Your player on every chance", "detail": "Moved clear of the ball and the arrow. To be agreed with Harry." },
+          { "title": "Corners need reach", "detail": "Your best corner must carry 34.4 m to the middle of the box: about power 60 today." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Six old test failures in keepers and long shots", "detail": "Left for Leo; they failed before this round." },
+          { "title": "star_xp_config.sql not run", "detail": "The game uses its built-in XP amounts until then." }
+        ]}
+      ]
+    },
+    {
       "version": "0.87",
       "title": "Harry's patch notes: B19 Team Is Home",
       "publishedAt": "2026-10-20T15:40:00Z",
@@ -1083,7 +1122,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-20T14:10:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/JVS6mefVbco5qGi7gNNfrr",
-      "summary": "Everything Else (19 to 20 Oct). What is not the team board or the admin, and not a build of its own: eight screens now draw the pitch at the real match’s size (Full match on a phone 340 to 366 px), play buttons stay on screen, the engine warning is red and no longer fires on a read-only search, the highlights rebuild phases 0 to 2 (0 of 448 build-ups failed the checks), 2,104 real matches under free licences with Real moments, Real shots and Real Goals rebuilt, and the scene editor and 3D audit. Short sections carry the touch fixes (B1), the free-data follow-up (B3), the 3D looks (B5) and the scene studio (B6). The 19 Oct work is on main; the 20 Oct parts are on the Harry branch. Includes Scene Editor 3a (v0.61), Drift + Play Screens (v0.62), Highlights Rebuild 0-2 (v0.63) and Free Data v1 (v0.64).",
+      "summary": "Everything Else (19 to 20 Oct). What is not the team board or the admin, and not a build of its own: eight screens now draw the pitch at the real match’s size (Full match on a phone 340 to 366 px), play buttons stay on screen, the engine warning is red and no longer fires on a read-only search, the highlights rebuild phases 0 to 2 (0 of 448 build-ups failed the checks), 2,104 real matches under free licences with Real moments, Real shots and Real Goals rebuilt, and the scene editor and 3D audit. Short sections carry the touch fixes (B1), the free-data follow-up (B3), the 3D looks (B5) and the scene studio (B6). The 19 Oct work is on main; the 20 Oct parts are on the Harry branch. Includes Scene Editor 3a (v0.61h), Drift + Play Screens (v0.62h), Highlights Rebuild 0-2 (v0.63h) and Free Data v1 (v0.64).",
       "stats": [
         { "value": "340 → 366 px", "label": "Full match pitch on a phone (the real match)" },
         { "value": "2,104", "label": "real matches, all free to use in a paid game" },
@@ -1202,7 +1241,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "publishedAt": "2026-10-20T14:00:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/QDsYt42R113Enp6A7VR3kj",
-      "summary": "Team Board & Team Updates (19 to 20 Oct). A full write-up of everything team-facing: Team Room v1 (the chat bubble, Ideas, Chat, To-do, the KIB Admin app), round two (seen faces, quoted replies, @ and # tags, Shift+X pointing, patch-note read receipts), the 40 px bubble that lets taps through and clears page buttons, real push counts (Harry 166, Mikey 34, Leo 21), no more “GitHub refused the site’s key” lines, and a patch-notes list that names every page. Round one is on main; round two and the 20 Oct fixes are on the Harry branch. Open: run team_room_v2.sql. Includes Team Room v1 (v0.60) and the team parts of B11 (v0.74), B13 (v0.78) and B4 (v0.68).",
+      "summary": "Team Board & Team Updates (19 to 20 Oct). A full write-up of everything team-facing: Team Room v1 (the chat bubble, Ideas, Chat, To-do, the KIB Admin app), round two (seen faces, quoted replies, @ and # tags, Shift+X pointing, patch-note read receipts), the 40 px bubble that lets taps through and clears page buttons, real push counts (Harry 166, Mikey 34, Leo 21), no more “GitHub refused the site’s key” lines, and a patch-notes list that names every page. Round one is on main; round two and the 20 Oct fixes are on the Harry branch. Open: run team_room_v2.sql. Includes Team Room v1 (v0.60h) and the team parts of B11 (v0.74), B13 (v0.78) and B4 (v0.68).",
       "stats": [
         { "value": "4", "label": "views of the team room: Board, Ideas, Chat, To-do" },
         { "value": "6", "label": "new in round two: seen faces, replies, @, # links, pointing, patch-note receipts" },
@@ -1243,7 +1282,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           { "title": "The chat bubble is smaller and lets taps through", "detail": "50 px → 40 px. Only the round button takes taps. It fades to 40% while you scroll." },
           { "title": "The bubble sits above a page’s own buttons", "detail": "In the Manager’s office it moves up 132 px, clear of “Next line ›”." },
           { "title": "The admin side menu folds on a computer", "detail": "The « button folds it to a 64 px strip of icons. Remembered per browser." },
-          { "title": "The patch-notes list names every page", "detail": "The page name shows under each version. The last two days have one entry per page, v0.60 to v0.84." }
+          { "title": "The patch-notes list names every page", "detail": "The page name shows under each version. The last two days have one entry per page, v0.60h to v0.84." }
         ]},
         { "kind": "fixed", "title": "Fixed", "items": [
           { "title": "Team board push counts are real now", "detail": "Real pushes from GitHub’s push log: any branch, the last 7 days, own work only. Harry 20 at most → 166; Mikey 34; Leo 21." },
@@ -1256,6 +1295,30 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "kind": "next", "title": "Next", "items": [
           { "title": "Phone alerts for chat, and chat search", "detail": "You said yes on 19 Oct. No report says they were built." }
         ]}
+      ]
+    },
+    {
+      "version": "0.61",
+      "title": "Leo's patch notes v0.19: Real Goals — every league goal of 2017/18",
+      "publishedAt": "2026-10-20T14:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/WoADNDMiHYbcYfE56wUZbe",
+      "summary": "Leo v0.19. Real Goals (test page /star-real-goals-dev) adds every 2017/18 goal of the Premier League, La Liga, Serie A, Bundesliga and Ligue 1 (4,393; no penalties or own goals), from the same free Wyscout data. 232 → 4,625 goals. A button for each competition under the search; 66 clubs get their real 2017/18 shirts (0 clashes). The level map is unchanged. Test page only; the career is unchanged.",
+      "stats": [
+        { "value": "232 → 4,625", "label": "real goals to play" },
+        { "value": "98", "label": "clubs in their real 2017/18 colours" },
+        { "value": "7 → 0", "label": "goals where two shirts looked alike" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Every league goal of 2017/18", "detail": "Premier League 931, La Liga 911, Serie A 889, Bundesliga 763, Ligue 1 899." },
+          { "title": "A button for each competition", "detail": "Under the search, with its goal count. League goals show their match date." },
+          { "title": "Real club shirts", "detail": "66 clubs added. If both of the other side's kits clash, the scorers change kit." }
+        ] },
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "A few scores before a goal can be off by one", "detail": "In 4 of 1,826 matches the data's goals do not add up to the final score." },
+          { "title": "Not played by a finger yet", "detail": "Tests and phone-size stills only; the real line scored 60 of 60." }
+        ] }
       ]
     },
     {
@@ -1475,24 +1538,24 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         { "value": "24", "label": "pages of patch notes" },
         { "value": "21", "label": "questions still open" },
         { "value": "45", "label": "answers already decided" },
-        { "value": "v0.60 to v0.84", "label": "the pages, one version each (v0.75 is this index)" }
+        { "value": "v0.60h to v0.84", "label": "the pages, one version each (v0.75 is this index)" }
       ],
       "sections": [
         { "kind": "added", "title": "Check these", "items": [
           { "title": "Open the four tabs", "detail": "Overnight work (15 pages, plus Still building), Team board & team updates, Admin pages & skins, Everything else. Each topic tab starts with its full write-up." },
           { "title": "Read how these patch notes work", "detail": "One page per build: Check these, Problem, Why, Fix, the seen / measured / reasoned tag, Needs your OK." },
-          { "title": "Press Read and understood on each version", "detail": "Admin, Patch notes, pick v0.60 to v0.84 (not v0.75, the index), press the button. The Team board counts what is left." }
+          { "title": "Press Read and understood on each version", "detail": "Admin, Patch notes, pick v0.60h to v0.84 (not v0.75, the index), press the button. The Team board counts what is left." }
         ]},
         { "kind": "added", "title": "The pages", "items": [
           { "title": "Team Board & Team Updates (v0.82)", "detail": "A full write-up of the team room: the bubble, Ideas, Chat, To-do, seen faces, replies, @ and # tags, pointing, patch-note receipts and the real push counts." },
           { "title": "Admin Pages & Skins (v0.83)", "detail": "A full write-up of the admin: split by game, picture cards, four looks on one layout, one back arrow, 45 of 45 pages on the frame, the phone admin and the eye guides." },
           { "title": "Everything Else (v0.84)", "detail": "A full write-up of the play screens and drift, the highlights rebuild phases 0 to 2, the free data, the scene editor and the 3D audit." },
           { "title": "Admin Split + Looks (v0.65, earlier page)", "detail": "The admin is split by game, group pages show picture cards, four looks share one layout, the phone admin is tidier." },
-          { "title": "Team Room v1 (v0.60)", "detail": "A chat bubble on every admin page, an Ideas board, Team chat and a To-do list." },
-          { "title": "Drift + Play Screens (v0.62)", "detail": "Eight screens now draw the pitch at the real match’s size, play buttons stay on screen, and the engine warning is red." },
-          { "title": "Highlights Rebuild 0-2 (v0.63)", "detail": "The switch, the match-camera still, and generated build-ups before open-play chances." },
+          { "title": "Team Room v1 (v0.60h)", "detail": "A chat bubble on every admin page, an Ideas board, Team chat and a To-do list." },
+          { "title": "Drift + Play Screens (v0.62h)", "detail": "Eight screens now draw the pitch at the real match’s size, play buttons stay on screen, and the engine warning is red." },
+          { "title": "Highlights Rebuild 0-2 (v0.63h)", "detail": "The switch, the match-camera still, and generated build-ups before open-play chances." },
           { "title": "Free Data v1 (v0.64)", "detail": "2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. StatsBomb deleted." },
-          { "title": "Scene Editor 3a (v0.61)", "detail": "The 3D Signing and Office edit live in the scene editor. Also: how generated cut scenes work, and the 3D audit." },
+          { "title": "Scene Editor 3a (v0.61h)", "detail": "The 3D Signing and Office edit live in the scene editor. Also: how generated cut scenes work, and the 3D audit." },
           { "title": "B1 Touch Fixes (v0.66)", "detail": "All 27 touch fixes are built. The 4 old failing tests pass. Wembley is fairer." },
           { "title": "B3 Real Data (v0.67)", "detail": "Afriskaut is out, two free sources are in, data credits are in Settings, and real moments can appear in your matches. Has a clip." },
           { "title": "B4 Admin Skins (v0.68)", "detail": "The admin has one layout in four looks, one back arrow, a smaller chat bubble and a Research area. Clean light is the default." },
@@ -1878,6 +1941,44 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       ]
     },
     {
+      "version": "0.62",
+      "title": "Mikey's patch notes v0.18: The world season",
+      "publishedAt": "2026-10-19T21:00:00Z",
+      "updatedAt": "2026-10-19T21:00:00Z",
+      "artifactUrl": "https://claude.ai/artifact/6Gz5vvm7PVwXUrJ3ZMBB7V",
+      "summary": "Every English league, the FA Cup, the League Cup, both shields, the Champions League and the Europa League are now played match by match on their real dates, with real club ratings. Promotion and relegation come from the tables. A new All leagues screen shows every table, result and scorer. Also two transfer talk fixes.",
+      "stats": [
+        { "value": "7 leagues", "label": "played week by week, not only yours" },
+        { "value": "58%", "label": "Arsenal's title chance; relegated 0 in 2,000 seasons" },
+        { "value": "34% → 8%", "label": "League Two beating a Premier League club in a cup" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "League → 🌍 All leagues", "detail": "Every table, results, top scorers and assists." },
+          { "title": "All leagues → Change", "detail": "FA Cup, League Cup, Community Shield, Super Cup, Champions League, Europa League." },
+          { "title": "Season Awards → Every league and cup", "detail": "The whole season just finished." },
+          { "title": "Season 1 pre-season", "detail": "Arsenal v Man City and PSG v Aston Villa." },
+          { "title": "End of a season", "detail": "Who goes up and down matches the final tables." }
+        ]},
+        { "kind": "added", "title": "The world season", "items": [
+          { "title": "Real club ratings", "detail": "Best eleven of a real squad; otherwise the league's level ± up to 4 for reputation, history and spending." },
+          { "title": "Every league played by date", "detail": "Was one dice roll at season end; now every round on its real date, with scorers." },
+          { "title": "Promotion and relegation from the tables", "detail": "Plus real play-offs. Was a weighted draw." },
+          { "title": "Cups on real ratings", "detail": "League Two beating a Premier League club 34% → 8%. The League Cup is played even without you." },
+          { "title": "Champions League and Europa League in full", "detail": "36 clubs, 8 matchdays, UEFA bracket. Fixed: a club not in the field could win (17.5% of Europa League winners)." },
+          { "title": "Community Shield and Super Cup", "detail": "Season 1 fixed pairs, then last season's winners." },
+          { "title": "Lag", "detail": "About 2 ms a week; a whole season about 95 ms; save +85 KB." }
+        ]},
+        { "kind": "fixed", "title": "Transfer talks", "items": [
+          { "title": "A smaller club offers its own wage", "detail": "It no longer drops out for being below your wage." },
+          { "title": "+/- steps fit the amount", "detail": "★10 a step around ★400 (was ★500)." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Not yet seen on a phone", "detail": "End-of-season screen and phone speed not checked." }
+        ]}
+      ]
+    },
+    {
       "version": "0.64",
       "title": "Harry's patch notes: Free Data v1",
       "publishedAt": "2026-10-19T20:00:00Z",
@@ -1909,7 +2010,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       ]
     },
     {
-      "version": "0.63",
+      "version": "0.63h",
       "title": "Harry's patch notes: Highlights Rebuild 0-2",
       "publishedAt": "2026-10-19T19:00:00Z",
       "updatedAt": null,
@@ -1941,7 +2042,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       ]
     },
     {
-      "version": "0.62",
+      "version": "0.62h",
       "title": "Harry's patch notes: Drift + Play Screens",
       "publishedAt": "2026-10-19T18:00:00Z",
       "updatedAt": null,
@@ -1976,7 +2077,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       ]
     },
     {
-      "version": "0.61",
+      "version": "0.61h",
       "title": "Harry's patch notes: Scene Editor 3a",
       "publishedAt": "2026-10-19T16:00:00Z",
       "updatedAt": null,
@@ -2004,6 +2105,35 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     },
     {
       "version": "0.60",
+      "title": "Leo's patch notes v0.18: Real Goals 2 — every goal, a game",
+      "publishedAt": "2026-10-19T14:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/LBiZVmQDLKzWpNgpuDWxgW",
+      "summary": "Leo v0.18. Real Goals (test page /star-real-goals-dev) becomes a game mode: 908 real goals (every goal but own goals of WC 2022, Euro 2024, WC 2018, Euro 2020, Copa América 2024 and AFCON 2023, plus 60 Legends and 100 club worldies), played round by round with stars. The build-up follows StatsBomb's 360 camera (men 7.3 m → 3.2 m from where it saw them, no ball blinks, no snaps). A strike 70%+ like the real one can't be blocked or saved (109 of 109 in tests). Real shirts for all 160 teams. Test page only; the career is unchanged.",
+      "stats": [
+        { "value": "250 → 908", "label": "real goals to play" },
+        { "value": "109 / 109", "label": "strikes 70%+ like the real one that went in" },
+        { "value": "7.3 → 3.2 m", "label": "men from where the real camera saw them" },
+        { "value": "1,061 → 0", "label": "frames where the build-up ball blinked" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Added", "items": [
+          { "title": "Every goal, and more: 250 → 908", "detail": "Every goal but own goals of World Cup 2022 (169), Euro 2024 (107), World Cup 2018 (157), Euro 2020 (131), Copa América 2024 (69) and AFCON 2023 (115), plus 60 Legends (Maradona v England, Bale's overhead kick, Dele Alli v Palace…) and 100 club worldies picked by the numbers." },
+          { "title": "A game mode", "detail": "Home with collection tiles; each tournament played round by round (Matchday 1-3 → The final), a round opening at half the round before starred; a goal card; a full-screen play screen; a result sheet with an accuracy dial." },
+          { "title": "Real shirts for all 160 teams", "detail": "No two alike in any goal." }
+        ] },
+        { "kind": "fixed", "title": "Fixed", "items": [
+          { "title": "Copy the real shot and it goes in", "detail": "The unstoppable lane now uses the page's own %: 70%+ like the real one can't be blocked or saved (109 of 109 in tests). Real matches unchanged (same fingerprint)." },
+          { "title": "The build-up follows the real camera", "detail": "Men 7.3 m → 3.2 m from where StatsBomb's 360 camera saw them; ball blinks 1,061 → 0; snaps at the shot 234 → 6." }
+        ] },
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "Not played by a finger yet; 3D not checked", "detail": "Measured by tests and seen in stills at phone size." },
+          { "title": "No real camera for some collections", "detail": "World Cup 2018, Copa, AFCON and the club classics move the men with their team's shape." }
+        ] }
+      ]
+    },
+    {
+      "version": "0.60h",
       "title": "Harry's patch notes: Team Room v1",
       "publishedAt": "2026-10-19T04:00:00Z",
       "updatedAt": null,

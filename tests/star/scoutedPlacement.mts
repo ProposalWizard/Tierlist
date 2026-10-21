@@ -1,3 +1,4 @@
+import { stillIn } from "../../lib/star/cups";
 import {
   scoutedPlacement, finalPenScoredOf, scoutedOfferForTrial, SCOUTED_ODDS, type ScoutedDivision,
 } from "../../lib/star/scoutedPlacement.ts";
@@ -73,7 +74,8 @@ for (let seed = 1; seed < 400 && reached.size < 3; seed++) {
   check(c.player.club === offer.club && c.division === offer.division, `${offer.division}: career at ${offer.club} in ${c.division}`);
   check(c.league.length === 24 && league.length === matchweeksFor(offer.division) && league.length === 46,
     `${offer.division}: 24-club table, 46 league fixtures (${c.league.length}, ${league.length})`);
-  check(c.fixtures.some(f => f.competition === "FA Cup") && !c.fixtures.some(f => f.competition === "League Cup"),
+  const fa = c.cupState?.find(st => st.competition === "FA Cup");
+  check(!!fa && stillIn(fa, c.player.club) && !c.fixtures.some(f => f.competition === "League Cup"),
     `${offer.division}: in the FA Cup, not the League Cup`);
 }
 check(reached.size === 3, `careers started in all three divisions (${Array.from(reached).join(", ")})`);

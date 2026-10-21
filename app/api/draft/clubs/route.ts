@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createPublicReadClient } from "@/lib/supabase/publicRead";
 import { STAR_FIFA_YEAR } from "@/lib/star/edition";
-import { CLUB_KITS } from "@/lib/star/kits";
+import { PREMIER_LEAGUE_CLUBS } from "@/lib/star/clubs";
 
 export const maxDuration = 30;
 // Force dynamic: this route reads the live DB, so it must never be frozen into
@@ -36,13 +36,17 @@ const NON_ENGLISH_PL_CLUBS = new Set(
 );
 
 /**
- * The current twenty, spelled the way the database spells them.
+ * The current twenty, spelled the way the database spells them: the game's
+ * own Premier League (lib/star/clubs.ts).
  *
- * Not a second copy of the list — it IS the list, read off `CLUB_KITS`, which
- * has to be keyed on the database's spelling anyway or a club would play in the
- * wrong colours. See the second pass below for why it is here.
+ * This used to be read off `CLUB_KITS`, back when that held only the twenty.
+ * It now holds every club with a kit (246, Europe and the lower leagues
+ * included), so the FC 27 list in PL Draft offered 177 clubs — AC Milan,
+ * Accrington, Real Madrid, and junk names like "espa" (seen on the live site,
+ * 20 Oct 2026). For the current edition only these twenty count.
  */
-const CURRENT_PL_CLUBS = Object.keys(CLUB_KITS);
+const CURRENT_PL_CLUBS: string[] = [...PREMIER_LEAGUE_CLUBS];
+const CURRENT_PL_SET = new Set(CURRENT_PL_CLUBS);
 
 function isEnglishPLClub(club: string): boolean {
   return !NON_ENGLISH_PL_CLUBS.has(club.trim().toLowerCase());
@@ -56,6 +60,11 @@ export async function GET() {
   const clubMap = new Map<string, Set<number>>();
   const add = (club: string | null, year: number | null) => {
     if (!club || typeof year !== "number") return;
+    // A two-digit year (26 for 2026) is a row written by the old clone form
+    // (fix_two_digit_fifa_years.sql); it is not an edition of its own.
+    if (year < 2000) return;
+    // The edition the career is played in has exactly the game's twenty.
+    if (year >= STAR_FIFA_YEAR && !CURRENT_PL_SET.has(club)) return;
     if (!clubMap.has(club)) clubMap.set(club, new Set());
     clubMap.get(club)!.add(year);
   };

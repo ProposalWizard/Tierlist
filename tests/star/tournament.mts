@@ -21,7 +21,9 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 function base(nationality = "England", season = 2, lastName = "Player"): CareerState {
   const p = { firstName: "Test", lastName, age: 24, position: "ST", club: "Arsenal", nationality, startYear: 2027 } as StarPlayer;
   const c = makeInitialCareer(p, PREMIER_LEAGUE_CLUBS);
-  return { ...c, season, fixtures: c.fixtures.map(f => ({ ...f, played: true })) };
+  // The club season is over by the summer tournament: every fixture played,
+  // the cups decided (their finals are before it).
+  return { ...c, season, fixtures: c.fixtures.map(f => ({ ...f, played: true })), cupState: [] };
 }
 function stats(over: Partial<MatchStats>): MatchStats {
   return {

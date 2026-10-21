@@ -63,3 +63,69 @@ at 45 cm, 60% at 80 cm. ★ a goal, ★★ 60%+, ★★★ 85%+. Shows 100% with
 - The real goal's spot is kept 0.4 m inside the posts (a goal in off the post
   sits ON the post in the data).
 - Cameras: TV / behind / side-on use the 3D camera lock (3D only).
+
+# Round 2 (Leo, 19 Oct 2026) — every goal, a real build-up, a game mode
+
+Leo: "I want ALL the goals from wc22 and euros24 … wc18, euros21 … the 100 best
+most iconic goals … the buildup should be almost unnoticeably different … if
+the shot is almost exactly like the real shot then it WILL go in no matter what
+… revamp ui and look".
+
+## The goals: 250 → 908
+
+`scripts/statsbomb/fetch_real_goals.py` → `data/statsbomb/realgoals/<collection>.json`
+(+ `index.json`; served by `/api/star/statsbomb-shots?rg=…`). Every goal but own
+goals (penalties now in; a penalty has no freeze frame, so its keeper comes from
+the 360 frame or stands on his line):
+
+| Collection | Goals | 360 build-up |
+|---|---|---|
+| World Cup 2022 | 169 of 172 (3 own goals) | 169 |
+| Euro 2024 | 107 of 117 (10 own goals) | 107 |
+| World Cup 2018 | 157 of 169 (12 own goals) | — |
+| Euro 2020 | 131 of 142 (11 own goals) | 129 |
+| Copa América 2024 | 69 of 70 | — |
+| AFCON 2023 | 115 of 119 | — (StatsBomb lists 360, but the files are not in the open repo) |
+| Legends | 60 hand-picked (`LEGENDS` in the script) | 6 |
+| Club worldies | 100, picked by `worldie_score` per season | 17 |
+
+**Not in the free data:** the 2026 World Cup; most club seasons (only the
+2015/16 big-five leagues, Barcelona's La Liga 2004-2021, Arsenal 2003/04, the
+Champions League finals 2004-2019, PSG 2021-23, Leverkusen 2023/24 and a few
+classic World Cup matches). So "the 100 most iconic goals" is the famous ones
+that are in it (60) plus the data's own best (100).
+
+## The lane: a round one, the page's own %
+
+v0.17's lane was a box (0.6 m across, 0.55 m up) beside an accuracy % worked
+from a round distance, so a shot shown as 77% could be outside it. Now
+`realLane.r/hw` (canvasEngine.ts, off by default): in the lane when
+hypot(dx, dz × 0.8) ≤ 0.67 m, which is exactly 70% on the page. Measured
+(tests/star/realGoals/lane.mts, 24 goals × 5 spots): 109 of 109 strikes 70%+
+like the real one scored. Engine fingerprint with no lane: `c7ad8836`, unchanged.
+
+## The build-up (lib/star/realGoalTrack.ts)
+
+| | v0.17 | now |
+|---|---|---|
+| Men vs where the 360 camera saw them | 7.29 m | 3.23 m (4.94 m on frames it never saw) |
+| Ball blinks (>45 m/s in a frame), all 754 build-ups | 1,061 | 0 |
+| Hand-over to the chance with a step | 234 | 6 |
+| Man-frames over 12 m/s | 2,911 | 793 (real sprints; none over 20 m/s but 30 in last-second lay-offs) |
+
+How: one ball key per real touch (passes the data skipped are passes, not a
+22 m/s dribble); the data's loose timestamps retimed so no carry beats 8.5 m/s
+and no pass 33 m/s; every 360 frame matched man to man backwards from the shot
+(no faster than a man can run); straight runs with rounded corners (no spline
+overshoot); the man on the ball blends on and off over 0.35 s, his time on it
+tied to the ball's own keys; every real man of the freeze frame is in the
+chance (none vanish); a man the camera has not caught yet comes with the play.
+
+## The look
+
+A game mode: home (collections as tournament tiles, stars, carry on), each
+collection a Score Hero path in its real rounds (a chapter opens with half the
+chapter before starred), a goal card (scoreboard, "you are", shot type,
+distance, xG, difficulty 1-5), a full-screen play screen (scoreboard, the real
+move's captions, ghost / build-up / 2D-3D / camera / restart) and a result
+sheet (accuracy dial, stars, goal mouth). Seen at 390×844 in stills.

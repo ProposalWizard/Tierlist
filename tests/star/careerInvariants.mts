@@ -1,6 +1,6 @@
 import { makeInitialCareer, creditMatchResult, advanceSeason, simulateMissedFixture } from "../../lib/star/careerFlow";
 import { generateSquad, clubNameSeed } from "../../lib/star/squadData";
-import { PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
+import { PREMIER_LEAGUE_CLUBS, NATIONAL_LEAGUE_NORTH_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, LeagueSquad, LeaguePlayer, MatchStats, StarPlayer } from "../../lib/star/types";
 
 /**
@@ -246,7 +246,9 @@ function auditCareer(c: CareerState, when: string): void {
 // skips the whole settlement block, `idx < 0`, trivially "passing" either
 // way), so this uses the actual FA Cup tie `makeInitialCareer` seeds.
 {
-  const c = freshCareer();
+  // A National League North club plays the FA Cup from its first round (the
+  // 3rd Qualifying), so its first tie is on the calendar from day one.
+  const c = makeInitialCareer({ ...player(), club: NATIONAL_LEAGUE_NORTH_CLUBS[0] }, [...NATIONAL_LEAGUE_NORTH_CLUBS], "national_league_north");
   const fixture = c.fixtures.find(f => f.kind === "cup" && f.competition === "FA Cup")!;
   const stats = statsFor(2, 0, fixture.home, 2);
 

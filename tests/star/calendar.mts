@@ -80,7 +80,9 @@ const START_YEAR = 2027;   // a career begun in FC 27 → the 2026/27 season
   for (const s of LEAGUE_CUP_SLOTS) {
     slots.push({ label: `League Cup ${s.round}`, week: s.week, day: dayFor("cup", s.week) });
   }
-  for (const s of FA_CUP_SLOTS) {
+  // A Premier League club joins the FA Cup in the Third Round (Mikey, 19 Oct
+  // 2026): the four rounds before it are not on its calendar.
+  for (const s of FA_CUP_SLOTS.slice(4)) {
     slots.push({ label: `FA Cup ${s.round}`, week: s.week, day: dayFor("cup", s.week) });
   }
   EURO_LEAGUE_PHASE_WEEKS.forEach((w, i) => {
@@ -108,7 +110,7 @@ const START_YEAR = 2027;   // a career begun in FC 27 → the 2026/27 season
   const heavy = Array.from(perWeek.entries()).filter(([, n]) => n > 3);
   check(heavy.length === 0, `no week has four matches in it (${heavy.map(([w, n]) => `w${w}:${n}`).join(",")})`);
   const threes = Array.from(perWeek.entries()).filter(([, n]) => n === 3).map(([w]) => w).sort((a, b) => a - b);
-  check(threes.join(",") === "5,22,25,28",
+  check(threes.join(",") === "22,25,26,28,32",
     `the three-match weeks are the ones the Draft has (${threes.join(",")})`);
 }
 
@@ -122,20 +124,13 @@ const START_YEAR = 2027;   // a career begun in FC 27 → the 2026/27 season
   check(cupRoundWeek("League Cup", 2) === 16, "League Cup QF is week 16");
   check(cupRoundWeek("League Cup", 3) === 25, "League Cup SF first leg is week 25");
   check(cupSecondLegWeek("League Cup", 3) === 28, "…and the second is week 28");
-  check(cupSecondLegWeek("FA Cup", 3) === null, "the FA Cup semi-final has only one leg");
+  check(cupSecondLegWeek("FA Cup", 8) === null, "the FA Cup semi-final has only one leg");
 
-  // The FA Cup is now sixty-four clubs — a Round of 64 ahead of the Round
-  // of 32, so every later FA Cup round index shifted up by one.
-  check(cupRoundWeek("FA Cup", 0) === 2, "FA Cup R64 is week 2");
-  check(cupRoundWeek("FA Cup", 1) === 5, "FA Cup R32 is week 5");
-  check(cupRoundWeek("FA Cup", 2) === 12, "FA Cup R16 is week 12");
-  check(cupRoundWeek("FA Cup", 3) === 22, "FA Cup QF is week 22");
-  check(cupRoundWeek("FA Cup", 4) === 30, "FA Cup SF is week 30");
-
-  // Both finals are played after the league has finished.
-  check(isPostSeason(cupRoundWeek("League Cup", 4)), "the League Cup final is after the season");
-  check(isPostSeason(cupRoundWeek("FA Cup", 5)), "and so is the FA Cup final");
-  check(cupRoundWeek("League Cup", 4) < cupRoundWeek("FA Cup", 5),
+  // The ten-round FA Cup (Mikey, 19 Oct 2026): the real order on the game's calendar.
+  const faWeeks = [4, 7, 9, 12, 18, 22, 26, 30, 32];
+  faWeeks.forEach((w, i) => check(cupRoundWeek("FA Cup", i) === w, `FA Cup round ${i + 1} is week ${w} (${cupRoundWeek("FA Cup", i)})`));
+  check(isPostSeason(cupRoundWeek("FA Cup", 9)), "and so is the FA Cup final");
+  check(cupRoundWeek("League Cup", 4) < cupRoundWeek("FA Cup", 9),
     "with the FA Cup last, which is how the season ends");
 
   check(EURO_LEAGUE_PHASE_WEEKS.join(",") === "5,7,9,11,13,15,22,23",

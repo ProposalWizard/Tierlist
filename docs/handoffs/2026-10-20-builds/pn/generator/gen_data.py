@@ -107,10 +107,10 @@ def esc(s): return json.dumps(s, ensure_ascii=False)
 def entry(key, pub, ver):
     if key == 'last2':
         _, n_open, n_done = ok_blocks(urls, 'all')
-        stats = [(str(len(ORDER_19 + ORDER_NIGHT)), 'pages of patch notes'), ('8', 'questions still open'), ('11', 'answers already decided'), ('v0.60 to v0.81', 'the pages, one version each (v0.75 is this index)')]
+        stats = [(str(len(ORDER_19 + ORDER_NIGHT)), 'pages of patch notes'), ('8', 'questions still open'), ('11', 'answers already decided'), ('v0.60h to v0.81', 'the pages, one version each (v0.75 is this index)')]
         stats[1] = (str(n_open), 'questions still open'); stats[2] = (str(n_done), 'answers already decided')
         sections = [
-            ('added', 'Check these', [('Open the three tabs', 'Overnight 20 Oct (%d pages), 19 Oct (%d pages), Still building.' % (len(ORDER_NIGHT), len(ORDER_19))), ('Read how these patch notes work', 'One page per build: Check these, Problem, Why, Fix, the seen / measured / reasoned tag, Needs your OK.'), ('Press Read and understood on each version', 'Admin, Patch notes, pick v0.60 to v0.81 (not v0.75, the index), press the button. The Team board counts what is left.')]),
+            ('added', 'Check these', [('Open the three tabs', 'Overnight 20 Oct (%d pages), 19 Oct (%d pages), Still building.' % (len(ORDER_NIGHT), len(ORDER_19))), ('Read how these patch notes work', 'One page per build: Check these, Problem, Why, Fix, the seen / measured / reasoned tag, Needs your OK.'), ('Press Read and understood on each version', 'Admin, Patch notes, pick v0.60h to v0.81 (not v0.75, the index), press the button. The Team board counts what is left.')]),
             ('added', 'The pages', [(PAGES[k][0] + ' (v' + PAGES[k][1] + ')', clean(PAGES[k][2])) for k in ORDER_19 + ORDER_NIGHT]),
         ]
         sec_out = sections

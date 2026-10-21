@@ -75,12 +75,39 @@ export const LEAGUE_CUP_SLOTS: CupSlot[] = [
  * EURO_LEAGUE_PHASE_WEEKS/EURO_KO_SLOTS_WITH_R32 entry — so every existing
  * round below keeps its own week number unchanged.
  */
-export const FA_CUP_SLOTS: CupSlot[] = [
+export const FA_CUP_SLOTS_V1: CupSlot[] = [
   { round: "Round of 64", week: 2 },
   { round: "Round of 32", week: 5 },
   { round: "Round of 16", week: 12 },
   { round: "Quarter-Final", week: 22 },
   { round: "Semi-Final", week: 30 },
+  { round: "Final", week: POST_SEASON(2) },
+];
+
+/**
+ * The FA Cup the real way (Mikey, 19 Oct 2026): ten rounds, each league
+ * joining at its real round (cups.ts openFaCup). This game's Premier League
+ * season ends in early April, so the rounds keep the real ORDER and spacing
+ * rather than the real dates. Weeks chosen so that:
+ *  - the 3rd Qualifying to the Second Round (no Premier League or
+ *    Championship club in them) avoid the lower leagues' midweek rounds;
+ *  - from the Third Round every week is clear of the League Cup and of every
+ *    league's midweek round; the Fourth Round, Fifth Round and semi-final
+ *    share a week with Europe, and a club in Europe has its own tie moved a
+ *    week on (competitions.ts clearOfEurope), as before.
+ * The old six rounds stay above (FA_CUP_SLOTS_V1) for a save whose cup was
+ * drawn before this.
+ */
+export const FA_CUP_SLOTS: CupSlot[] = [
+  { round: "Third Qualifying Round", week: 4 },
+  { round: "Fourth Qualifying Round", week: 7 },
+  { round: "First Round", week: 9 },
+  { round: "Second Round", week: 12 },
+  { round: "Third Round", week: 18 },
+  { round: "Fourth Round", week: 22 },
+  { round: "Fifth Round", week: 26 },
+  { round: "Quarter-Final", week: 30 },
+  { round: "Semi-Final", week: 32 },
   { round: "Final", week: POST_SEASON(2) },
 ];
 
@@ -136,7 +163,9 @@ export const LEAGUE_CUP_SLOTS_IN_EUROPE: CupSlot[] = [
   { round: "Final", week: POST_SEASON(1) },
 ];
 
-export const FA_CUP_SLOTS_IN_EUROPE: CupSlot[] = [
+/** The old six-round FA Cup for a Premier League club in Europe (a cup drawn
+ *  before the ten-round one; see FA_CUP_SLOTS_V1). */
+export const FA_CUP_SLOTS_IN_EUROPE_V1: CupSlot[] = [
   { round: "Round of 64", week: 2 },
   { round: "Round of 32", week: 6 },
   { round: "Round of 16", week: 12 },
@@ -144,6 +173,40 @@ export const FA_CUP_SLOTS_IN_EUROPE: CupSlot[] = [
   { round: "Semi-Final", week: 30 },
   { round: "Final", week: POST_SEASON(2) },
 ];
+
+/**
+ * The ten-round FA Cup (FA_CUP_SLOTS) for a Premier League club in Europe
+ * (merge of Mikey's ten rounds, 19 Oct 2026, with Harry's B13 fixture pass,
+ * 20 Oct 2026).
+ *
+ * The plain weeks put four rounds the day after a European Tuesday (22, 26,
+ * 32 and, with the League Cup, 33). A club that wins every tie in Europe, the
+ * League Cup (weeks 3, 8, 16, 27, 33) and this cup has only these midweeks
+ * clear of Europe and of the league's own Tuesdays (17, 19, 21, 24) from the
+ * Third Round on: 18, 20, 25, 26 and 30. Five rounds, five weeks, so every
+ * round moves except the Third (18) and uses exactly those:
+ *
+ *   Third Round 18 · Fourth Round 20 · Fifth Round 25 · Quarter-Final 26 ·
+ *   Semi-Final 30 · Final (post-season, unchanged)
+ *
+ * These are all EARLIER than or equal to the plain week, which is fine: your
+ * own tie settles the whole country's round at once (competitions.ts
+ * settleCupTie), the dates only say when YOU play.
+ *
+ * KNOWN LIMIT: weeks 25 and 26 are also the two European knockout play-off
+ * Tuesdays that only a club finishing 9th to 24th in the league phase plays.
+ * That club, winning everything, meets its Fifth Round or Quarter-Final the
+ * day after one of them. There is no clear week left for it (the same shape
+ * as the Championship club in Europe, tests/star/fixtureClashes.mts). The
+ * test plays the top-eight clubs, which have byes.
+ */
+export const FA_CUP_SLOTS_IN_EUROPE: CupSlot[] = FA_CUP_SLOTS.map(s => {
+  if (s.round === "Fourth Round") return { ...s, week: 20 };
+  if (s.round === "Fifth Round") return { ...s, week: 25 };
+  if (s.round === "Quarter-Final") return { ...s, week: 26 };
+  if (s.round === "Semi-Final") return { ...s, week: 30 };
+  return s;
+});
 
 /** Top eight: straight into the last sixteen. */
 export const EURO_KO_SLOTS_SEEDED: CupSlot[] = EURO_KO_SLOTS_WITH_R32.filter(
@@ -434,9 +497,14 @@ const CHAMPIONSHIP_ROUNDS: RoundSlot[] = buildRounds(MATCHWEEKS, CHAMPIONSHIP_MI
  *
  * The Championship's weekend-2 Tuesday moved to weekend 1 (B13, 20 Oct
  * 2026), for the same reason as CHAMPIONSHIP_MIDWEEK_WEEKS above: it was the
- * day before the FA Cup Round of 64. Its weekend-4 Tuesday moved to weekend
- * 18 (early January), so a Championship club in Europe has a free midweek
- * for the FA Cup Round of 32 (see faCupSlotsFor).
+ * day before the FA Cup Round of 64. Its weekend-4 Tuesday had also moved to
+ * weekend 18 (early January), to leave weekend 4 free for a Championship club
+ * in Europe's FA Cup Round of 32. With the ten-round FA Cup (Mikey, 19 Oct
+ * 2026) weekend 18 is the Championship's Third Round, the day after that
+ * Tuesday (5 Jan / 6 Jan 2027, 5 clashes), so the Tuesday is back on weekend
+ * 4 (the merge of the two). Only a Championship club in Europe with an OLD
+ * six-round cup (FA_CUP_SLOTS_V1) loses the free weekend 4 again; that club is
+ * already the known limit in tests/star/fixtureClashes.mts.
  *
  * A pre-break weekend (the last Saturday before a FIFA window) changes with
  * the year — 5, 6, 10, 11, 28 or 29 — so a midweek on one of those weekends
@@ -444,7 +512,7 @@ const CHAMPIONSHIP_ROUNDS: RoundSlot[] = buildRounds(MATCHWEEKS, CHAMPIONSHIP_MI
  * Wednesday after the window instead (see `outOfBreak`).
  */
 const PREMIER_MIDWEEK_WEEKS = [17, 19, 21, 24];
-const CHAMPIONSHIP_BREAK_MIDWEEK_WEEKS = [1, 6, 10, 14, 17, 18, 19, 20, 21, 24, 27, 33];
+const CHAMPIONSHIP_BREAK_MIDWEEK_WEEKS = [1, 4, 6, 10, 14, 17, 19, 20, 21, 24, 27, 33];
 const PREMIER_ROUNDS: RoundSlot[] = buildRounds(MATCHWEEKS - PREMIER_MIDWEEK_WEEKS.length, PREMIER_MIDWEEK_WEEKS);
 const CHAMPIONSHIP_BREAK_ROUNDS: RoundSlot[] = buildRounds(
   CHAMPIONSHIP_MATCHWEEKS - CHAMPIONSHIP_BREAK_MIDWEEK_WEEKS.length, CHAMPIONSHIP_BREAK_MIDWEEK_WEEKS);
@@ -762,7 +830,7 @@ export const CHAMPIONSHIP_LEAGUE_CUP_SLOTS: CupSlot[] = [
  * weekend 1, so weekend 2's Saturday is round 3. Same Wednesday as before
  * (26 August 2026), but no longer the day after a Tuesday league round.
  */
-export const CHAMPIONSHIP_FA_CUP_SLOTS: CupSlot[] = [
+export const CHAMPIONSHIP_FA_CUP_SLOTS_V1: CupSlot[] = [
   { round: "Round of 64", week: 3 },        // weekend 2
   { round: "Round of 32", week: 6 },        // weekend 5
   { round: "Round of 16", week: 15 },       // weekend 12
@@ -770,6 +838,12 @@ export const CHAMPIONSHIP_FA_CUP_SLOTS: CupSlot[] = [
   { round: "Semi-Final", week: 37 },        // weekend 30
   { round: "Final", week: CHAMPIONSHIP_POST_SEASON(2) },
 ];
+
+/** The ten-round FA Cup on the weekends of a division without breaks: each
+ *  Premier League cup week as that division's round on the same weekend. */
+export const CHAMPIONSHIP_FA_CUP_SLOTS: CupSlot[] = FA_CUP_SLOTS.map(s => (
+  s.week > MATCHWEEKS ? { ...s, week: CHAMPIONSHIP_POST_SEASON(2) } : { ...s, week: weekOnWeekend("league_one", s.week) }
+));
 
 /**
  * THE PLAY-OFFS.
@@ -835,7 +909,7 @@ export function leagueCupSlotsFor(division: CareerDivision, inEurope = false): C
  * meets a clash (tests/star/fixtureClashes.mts lists them). Weekend 4's
  * Tuesday league round moved to weekend 18 to make the room.
  */
-const FA_CUP_WEEKENDS_CHAMPIONSHIP_IN_EUROPE: CupSlot[] = FA_CUP_SLOTS.map(s =>
+const FA_CUP_WEEKENDS_CHAMPIONSHIP_IN_EUROPE_V1: CupSlot[] = FA_CUP_SLOTS_V1.map(s =>
   s.round === "Round of 32" ? { ...s, week: 4 } : s);
 
 /**
@@ -854,9 +928,6 @@ function asRounds(premier: CupSlot[], fallback: CupSlot[], division: CareerDivis
 /** Every one of the five divisions enters the FA Cup (real life). */
 export function faCupSlotsFor(division: CareerDivision, inEurope = false): CupSlot[] {
   if (division === "premier") return inEurope ? FA_CUP_SLOTS_IN_EUROPE : FA_CUP_SLOTS;
-  if (division === "championship" && inEurope) {
-    return asRounds(FA_CUP_WEEKENDS_CHAMPIONSHIP_IN_EUROPE, CHAMPIONSHIP_FA_CUP_SLOTS, division);
-  }
   return asRounds(FA_CUP_SLOTS, CHAMPIONSHIP_FA_CUP_SLOTS, division);
 }
 
@@ -877,16 +948,19 @@ export function inLowerLeagueTrophy(division: CareerDivision): boolean {
  *
  * All five divisions play the same 46-round table (38 Saturdays, 8 Tuesdays
  * on weekends 1, 6, 10, 14, 19, 24, 27, 33) and the FA Cup on the Wednesdays
- * of weekends 2, 5, 12, 22 and 30. These seven weekends are none of those,
- * so a Trophy tie never shares a day with a league or FA Cup game, and is
- * never the day after a Tuesday league round:
+ * of weekends 4, 7, 9 and 12 (the ten-round cup's early rounds, which these
+ * divisions play: 3rd and 4th Qualifying, First and Second Round). These
+ * seven weekends are none of those, so a Trophy tie never shares a day with a
+ * league or FA Cup game, and is never the day after a Tuesday league round.
+ * Round 1 was weekend 4 until the ten-round FA Cup put the 3rd Qualifying
+ * Round (North/South clubs) on the same Wednesday (merge, 21 Oct 2026):
  *
  *   Round 1 early Sep · Round of 64 early Oct · Round of 32 late Nov ·
  *   Round of 16 early Jan · Quarter-final late Jan · Semi-final late Feb ·
  *   Final early Apr (a midweek too, still inside the season)
  */
 export const LOWER_LEAGUE_TROPHY_WEEKENDS: { round: string; weekend: number }[] = [
-  { round: "Round 1", weekend: 4 },
+  { round: "Round 1", weekend: 5 },
   { round: "Round of 64", weekend: 8 },
   { round: "Round of 32", weekend: 16 },
   { round: "Round of 16", weekend: 21 },
@@ -907,6 +981,15 @@ export function lowerLeagueTrophySlotsFor(division: CareerDivision): CupSlot[] {
     round,
     week: division === "premier" ? weekend : weekOnWeekend(division, weekend),
   }));
+}
+
+/** The old six-round FA Cup's weeks, for a cup drawn before the ten-round one. */
+export function faCupSlotsV1For(division: CareerDivision, inEurope = false): CupSlot[] {
+  if (division === "premier") return inEurope ? FA_CUP_SLOTS_IN_EUROPE_V1 : FA_CUP_SLOTS_V1;
+  if (division === "championship" && inEurope) {
+    return asRounds(FA_CUP_WEEKENDS_CHAMPIONSHIP_IN_EUROPE_V1, CHAMPIONSHIP_FA_CUP_SLOTS_V1, division);
+  }
+  return asRounds(FA_CUP_SLOTS_V1, CHAMPIONSHIP_FA_CUP_SLOTS_V1, division);
 }
 
 // ── Months, for the award ───────────────────────────────────────────────────

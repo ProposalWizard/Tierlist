@@ -7,7 +7,7 @@ import { starLevel } from "@/lib/star/starPoints";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { nationOf, nextFixtureFor } from "@/lib/star/competitions";
-import { exitRound, type CupId } from "@/lib/star/cups";
+import { exitRound, yourEntryRound, type CupId } from "@/lib/star/cups";
 import { CupSummary } from "./CupSummary";
 import { sortEuro, knockoutSlots } from "@/lib/star/euro";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
@@ -446,6 +446,7 @@ function ClubLeagueScreen({ career, compact = false, view: forcedView, hideTabs 
           ...(career.cupState ?? []).map((cup) => {
             const round = cup.rounds[cup.rounds.length - 1];
             const out = exitRound(cup, you);
+            const joinIn = yourEntryRound(cup, you);
             const tone = cup.winner === you ? "#fbbf24" : out ? "#6b7280" : "#10b981";
             // The match-week page: where the cup stands and a way into its
             // own screen (Harry, 20 Oct 2026), not every tie of the round.
@@ -471,6 +472,7 @@ function ClubLeagueScreen({ career, compact = false, view: forcedView, hideTabs 
                       {cup.winner === you ? "WON IT"
                         : cup.winner ? `${cup.winner} won it`
                         : out ? `Out in the ${out}`
+                        : joinIn ? `You join in the ${joinIn}`
                         : round?.name}
                     </span>
                   </div>

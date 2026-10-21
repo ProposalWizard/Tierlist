@@ -1,6 +1,6 @@
 """The questions that used to sit on the patch-notes pages, in one place (Harry, 20 Oct 2026).
 
-Read off the 24 kept pages and the index (v0.60 to v0.84) BEFORE strip_questions.py took them out of the pages, then merged:
+Read off the 24 kept pages and the index (v0.60h to v0.84) BEFORE strip_questions.py took them out of the pages, then merged:
   - the same question on several pages is one question (team_room_v2.sql, the two-people test, relationship games, goal videos,
     cut scenes, the walk-out shot, star_real_moments_picks.sql, star_training_levels.sql, Vision level 30, five-a-side passes)
   - Vision level 30 appears on B7 (41% first try) and B12 (21% first try). B12 is the newer page, so its number is used.

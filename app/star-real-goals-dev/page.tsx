@@ -37,7 +37,7 @@ import { REAL_CREDIT, PICTURE_WORDS, leadinTrack, fetchRealFile, type WyscoutSho
 import {
   joinGoals, buildLevels, levelOpen, totalStars, recordResult, loadProgress, saveProgress,
   accuracyPct, starsFor, realEnd, scenarioForGoal, viewForGoal, realMoveLeadin, moveWindow, realBallKeys,
-  scorerShort, concededBy, minuteOf, knownAs, NATION_KITS, FEATURED, STAR_TWO, STAR_THREE,
+  scorerShort, concededBy, minuteOf, knownAs, sideKits, stageOf, isTournament, LEAGUES, FEATURED, STAR_TWO, STAR_THREE,
   type RealGoal, type RgFile, type Progress, type Stage, type Level,
 } from "@/lib/star/realGoals";
 
@@ -69,7 +69,7 @@ function spotWords(x: number, z: number): string {
 }
 
 function Swatch({ team, size = 14 }: { team: string; size?: number }) {
-  const k = NATION_KITS[team]?.home;
+  const k = sideKits(team).home;
   return <span style={{ display: "inline-block", width: size, height: size, borderRadius: 4, background: k?.shirt ?? "#64748b", border: `2px solid ${k?.trim ?? "#fff"}`, verticalAlign: "-2px" }} />;
 }
 
@@ -173,7 +173,7 @@ function PlayGoal({ goal, level, onClose, onResult, onNext }: {
       <div className="flex items-start justify-between gap-2 px-3 pt-3">
         <div className="min-w-0">
           <div className="text-[11px] font-black uppercase tracking-wider text-emerald-300">
-            {level ? `Level ${level.n + 1} · ${x.comp}` : x.comp} · {x.stage}
+            {level ? `Level ${level.n + 1} · ${x.comp}` : x.comp} · {stageOf(goal)}
           </div>
           <div data-real-score className="mt-0.5 text-base font-black leading-tight">
             <Swatch team={x.home} /> {x.home} {x.score[0]}–{x.score[1]} {x.away} <Swatch team={x.away} /> <span className="text-emerald-300">· {minuteOf(goal)}&apos;</span>
@@ -317,20 +317,36 @@ function LevelMap({ stages, progress, onPick }: { stages: Stage[]; progress: Pro
   );
 }
 
-function GoalList({ goals, progress, onPick }: { goals: RealGoal[]; progress: Progress; onPick: (g: RealGoal) => void }) {
+/** The competition chips over the goal list, in this order. */
+const COMPS = ["World Cup 2018", "Euro 2016", ...LEAGUES.map((l) => l.comp)];
+const COMP_SHORT = (c: string) => c.replace(" 2017/18", "");
+
+function GoalList({ goals, progress, leaguesLoading, onPick }: { goals: RealGoal[]; progress: Progress; leaguesLoading: boolean; onPick: (g: RealGoal) => void }) {
   const [q, setQ] = useState("");
+  const [comp, setComp] = useState<string>("all");
   const [shown, setShown] = useState(20);
+  const counts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const g of goals) m.set(g.x.comp, (m.get(g.x.comp) ?? 0) + 1);
+    return m;
+  }, [goals]);
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
     const feat = new Map(FEATURED.map((f, i) => [f.id, i]));
-    const all = goals.filter((g) => !t || [g.shot.player, knownAs(g, g.shot.player), g.shot.team, g.shot.match, g.x.stage, g.x.comp].some((s) => s.toLowerCase().includes(t)));
+    const all = goals.filter((g) => comp === "all" || g.x.comp === comp).filter((g) => !t || [g.shot.player, knownAs(g, g.shot.player), g.shot.team, g.shot.match, stageOf(g), g.x.comp].some((s) => s.toLowerCase().includes(t)));
     return all.sort((a, b) => (feat.get(a.id) ?? 999) - (feat.get(b.id) ?? 999));
   }, [goals, q]);
-  useEffect(() => setShown(20), [q]);
+  useEffect(() => setShown(20), [q, comp]);
   return (
     <Panel title="Every goal" note={`${list.length} ${list.length === 1 ? "goal" : "goals"}`}>
       <div data-goal-list className="rg-list">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search a player, team or match (Mbappé, Güler…)" data-search className="rg-search" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search a player, team or match (Mbappé, Salah, Messi…)" data-search className="rg-search" />
+        <div className="rg-comps" data-comps>
+          <Pill on={comp === "all"} onClick={() => setComp("all")}>All</Pill>
+          {COMPS.map((c) => (
+            <Pill key={c} on={comp === c} onClick={() => setComp(c)}>{COMP_SHORT(c)} <span className="rg-ccount">{counts.get(c) ?? (leaguesLoading ? "…" : 0)}</span></Pill>
+          ))}
+        </div>
         <div className="rg-grid">
           {list.slice(0, shown).map((g) => {
             const f = FEATURED.find((x) => x.id === g.id);
@@ -339,7 +355,7 @@ function GoalList({ goals, progress, onPick }: { goals: RealGoal[]; progress: Pr
                 <MiniMouth goal={g} />
                 <span className="rg-itext">
                   <b>{knownAs(g, g.shot.player)} <em>· {g.shot.team}</em></b>
-                  <span>{g.x.home} {g.x.score[0]}–{g.x.score[1]} {g.x.away} · {minuteOf(g)}&apos; · {g.x.stage}</span>
+                  <span>{g.x.home} {g.x.score[0]}–{g.x.score[1]} {g.x.away} · {minuteOf(g)}&apos; · {stageOf(g)}</span>
                   {f && <span className="rg-feat">★ {f.label}</span>}
                 </span>
                 <span className="rg-iright">{STAR(progress[g.id]?.stars ?? 0, 3, 12)}<span>xG {Math.round(g.shot.xg * 100)}%</span></span>
@@ -361,7 +377,7 @@ function Hero({ level, progress, onPlay }: { level: Level; progress: Progress; o
   return (
     <section className="rg-hero" data-hero={g.id}>
       <div className="rg-hpic">
-        <span className="rg-hbadge">{g.x.comp} · {g.x.stage}</span>
+        <span className="rg-hbadge">{g.x.comp} · {stageOf(g)}</span>
         <MiniMouth goal={g} />
       </div>
       <div className="rg-hinfo">
@@ -380,6 +396,9 @@ const TAB_KEY = "star-real-goals-tab";
 
 export default function RealGoalsDev() {
   const [goals, setGoals] = useState<RealGoal[] | null>(null);
+  // The 2017/18 league goals (Leo, 20 Oct 2026): loaded after the World Cup / Euro ones, for the list only.
+  const [leagueGoals, setLeagueGoals] = useState<RealGoal[]>([]);
+  const [leaguesLoading, setLeaguesLoading] = useState(true);
   const [error, setError] = useState("");
   const [tab, setTabState] = useState<"levels" | "all">("levels");
   const [progress, setProgress] = useState<Progress>({});
@@ -391,22 +410,31 @@ export default function RealGoalsDev() {
     Promise.all([fetchRealFile<WyscoutShotFile>("shots"), fetchRealFile<RgFile>("goals")])
       .then(([s, g]) => setGoals(joinGoals(s.shots, g.goals)))
       .catch((e) => setError(String(e)));
+    Promise.allSettled(LEAGUES.map((l) => fetchRealFile<RgFile & WyscoutShotFile>(l.file)))
+      .then((rs) => {
+        const out: RealGoal[] = [];
+        for (const r of rs) if (r.status === "fulfilled") out.push(...joinGoals(r.value.shots, r.value.goals));
+        setLeagueGoals(out);
+      })
+      .finally(() => setLeaguesLoading(false));
     const q = new URLSearchParams(window.location.search);
     let saved: string | null = null;
     try { saved = localStorage.getItem(TAB_KEY); } catch { /* private */ }
     if (q.get("tab") === "all" || (!q.get("tab") && saved === "all")) setTabState("all");
   }, []);
 
-  const stages = useMemo(() => (goals ? buildLevels(goals) : []), [goals]);
+  // The level map stays on the World Cup / Euro goals (stars already won stay where they are).
+  const stages = useMemo(() => (goals ? buildLevels(goals.filter(isTournament)) : []), [goals]);
+  const everyGoal = useMemo(() => (goals ? [...goals, ...leagueGoals] : []), [goals, leagueGoals]);
   const allLevels = useMemo(() => stages.flatMap((s) => s.levels), [stages]);
 
   // ?play=<id> opens a goal straight away (for checking one by eye).
   useEffect(() => {
     if (!goals) return;
     const id = new URLSearchParams(window.location.search).get("play");
-    const g = id ? goals.find((q) => q.id === id) : null;
-    if (g) setPlaying({ goal: g, level: allLevels.find((l) => l.goal.id === g.id) ?? null });
-  }, [goals, allLevels]);
+    const g = id ? everyGoal.find((q) => q.id === id) : null;
+    if (g) setPlaying((p) => p ?? { goal: g, level: allLevels.find((l) => l.goal.id === g.id) ?? null });
+  }, [goals, everyGoal, allLevels]);
 
   const onResult = useCallback((stars: number, pct: number) => {
     if (!playing) return;
@@ -424,7 +452,7 @@ export default function RealGoalsDev() {
   return (
     <BroadcastPage
       title="Real Goals"
-      sub="Score the real World Cup 2018 and Euro 2016 goals — the way they really went in."
+      sub="Score the real goals — World Cup 2018, Euro 2016 and the 2017/18 Premier League, La Liga, Serie A, Bundesliga and Ligue 1 — the way they really went in."
       actions={<div className="rg-total" data-total-stars>{STAR(1, 1, 22)} <b>{totalStars(progress)}</b><span>/ {allLevels.length * 3 || 150}</span></div>}
     >
       <PageGuide page="/star-real-goals-dev" />
@@ -449,11 +477,11 @@ export default function RealGoalsDev() {
           <>
             <div className="rg-tabs">
               <Pill on={tab === "levels"} onClick={() => setTab("levels")}>🗺️ Levels</Pill>
-              <Pill on={tab === "all"} onClick={() => setTab("all")}>🔎 All {goals.length} goals</Pill>
+              <Pill on={tab === "all"} onClick={() => setTab("all")}>🔎 All {everyGoal.length.toLocaleString("en-GB")}{leaguesLoading ? "…" : ""} goals</Pill>
             </div>
             {tab === "levels"
               ? <LevelMap stages={stages} progress={progress} onPick={(lv) => play(lv.goal, lv)} />
-              : <GoalList goals={goals} progress={progress} onPick={(g) => play(g, allLevels.find((l) => l.goal.id === g.id) ?? null)} />}
+              : <GoalList goals={everyGoal} progress={progress} leaguesLoading={leaguesLoading} onPick={(g) => play(g, allLevels.find((l) => l.goal.id === g.id) ?? null)} />}
           </>
         )}
         <div data-credit className="rg-credit">{REAL_CREDIT.wyscout} {PICTURE_WORDS.placed}.</div>

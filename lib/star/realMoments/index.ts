@@ -12,6 +12,7 @@
  *                 real spot, who, how, what happened and the real passes
  *                 before it; the others are PLACED by our scenario rules;
  *   wyscout_goals.json  the match facts for Real Goals.
+ *   wyscout_league_<league>.json  the 2017/18 league goals for Real Goals (goal shots + match facts).
  * Served to the pages by /api/star/real-moments?file=shots|tracked|tracks|goals.
  *
  * Credit (show it on any page that uses it): REAL_CREDIT, from
@@ -37,7 +38,8 @@ export {
 export { buildUpOf, passesInTrack, trackLeadIn, type TrackSide, type BuildUpMan, type RealBuildUp } from "./track";
 
 export const REAL_MOMENTS_API = "/api/star/real-moments";
-export type RealFileName = "shots" | "tracked" | "tracks" | "goals";
+export type RealFileName = "shots" | "tracked" | "tracks" | "goals"
+  | "league-england" | "league-spain" | "league-italy" | "league-germany" | "league-france";
 
 /** Fetch one of the files (browser). */
 export function fetchRealFile<T>(file: RealFileName): Promise<T> {

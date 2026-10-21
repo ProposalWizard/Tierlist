@@ -47,7 +47,7 @@ import { setPieceDuties } from "@/lib/star/setPieces";
 import { devInfoOn } from "@/lib/star/matchDayPrefs";
 import { simulateOwnMatch } from "@/lib/star/simMatch";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
-import { currentRound, roundNamesFor, type CupId } from "@/lib/star/cups";
+import { currentRound, lastSixteenIndex } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
 import { type RoundupStage } from "@/components/star/KnockoutRoundup";
 import { knockoutRoundupFor } from "@/lib/star/knockoutView";
@@ -68,7 +68,7 @@ import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { markGodMode, withGodMode } from "@/lib/star/godMode";
 import { moveToClub, squadPlayerFromHit, addToSquad, removeFromSquad, setDevStart, type PlayerSearchHit } from "@/lib/star/devTeam";
 import { computeSeasonAwardStats } from "@/lib/star/seasonAwards";
-import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats, refreshSquadPhotos } from "@/lib/star/realSquad";
+import { fetchRealSquad, shouldUpgradeSquad, mergeSquadStats, refreshSquadPhotos, squadAfterFetch } from "@/lib/star/realSquad";
 import { fetchLeagueSquads, mergeLeagueSquadStats, shouldUpgradeLeagueSquads, syncLeagueStrengthFromSquads, fetchFreeAgents, reconcileExternalSquads, isRealFetch, refreshLeagueSquadPhotos, relabelOutOfPosition, withoutPlayersElsewhere, addFullRoster } from "@/lib/star/leagueSquads";
 import { ageFetchedForCareer, ageOwnFetchedForCareer } from "@/lib/star/worldAgeing";
 import { hydrateSquads } from "@/lib/star/squadSaveCodec";
@@ -1396,7 +1396,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     fetchLeagueSquads(taker.clubs).then(leagueSquads => {
       setCareer(c => (c ? {
         ...c, leagueSquads,
-        league: syncLeagueStrengthFromSquads(c.league, leagueSquads),
+        league: syncLeagueStrengthFromSquads(c.league, leagueSquads, divisionOf(c)),
       } : c));
     });
     return "youth";
@@ -1681,7 +1681,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         // round is drawn without you and the game moves straight on.
         const youreIn = !!round && round.ties.some((t) => t.home === from.player.club || t.away === from.player.club);
         // From the quarter-finals the bracket has already shown the draw.
-        const r16 = roundNamesFor(cupCompetition as CupId).indexOf("Round of 16");
+        const r16 = state ? lastSixteenIndex(state) : -1;
         const shownInBracket = !!state && state.rounds.length - 1 > r16;
         if (freshlyDrawn && round && youreIn && !shownInBracket) {
           setPendingDraw({ competition: cupCompetition, round });
@@ -1848,7 +1848,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         // with his day-one club too.
         const clean = withoutPlayersElsewhere(ageFetchedForCareer(c, fresh), [...(c.leagueSquads ?? []), ...(c.externalSquads ?? [])]);
         const leagueSquads = [...(c.leagueSquads ?? []), ...clean.filter(s => !already.has(s.club))];
-        return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
+        return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads, divisionOf(c)) };
       });
     });
     return () => { alive = false; };
@@ -2313,10 +2313,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // Photos only: a refresh must never undo a transfer, a grown rating or
       // a signing (see refreshLeagueSquadPhotos). A failed fetch changes nothing.
       const dissolved = (club: string) => !!c.ownedClubs?.[club]?.dissolvedInto;
-      const squad = shouldUpgradeSquad(c.squad ?? []) ? mergeSquadStats(ageOwnFetchedForCareer(c, c.player.club, freshSquad), c.squad ?? []) : refreshSquadPhotos(freshSquad, c.squad ?? []);
+      const squad = shouldUpgradeSquad(c.squad ?? [])
+        ? (squadAfterFetch(c.squad ?? [], ageOwnFetchedForCareer(c, c.player.club, freshSquad)) ?? (c.squad ?? []))
+        : refreshSquadPhotos(freshSquad, c.squad ?? []);
       const leagueSquads = isRealFetch(freshLeague) ? refreshLeagueSquadPhotos(c.leagueSquads ?? [], ageFetchedForCareer(c, freshLeague), dissolved) : (c.leagueSquads ?? []);
       const externalSquads = isRealFetch(freshExternal) ? refreshLeagueSquadPhotos(c.externalSquads ?? [], ageFetchedForCareer(c, freshExternal), dissolved) : (c.externalSquads ?? []);
-      return { ...c, squad, leagueSquads, externalSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
+      return { ...c, squad, leagueSquads, externalSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads, divisionOf(c)) };
     });
   }, [career]);
 
@@ -2467,8 +2469,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
     if (shouldUpgradeSquad(saved.squad ?? [])) {
       fetchRealSquad(saved.player.club).then((real) => {
-        setCareer(c => (c && c.player.club === saved.player.club && shouldUpgradeSquad(c.squad ?? [])
-          ? { ...c, squad: ageOwnFetchedForCareer(c, saved.player.club, real) } : c));
+        setCareer(c => {
+          if (!c || c.player.club !== saved.player.club || !shouldUpgradeSquad(c.squad ?? [])) return c;
+          // Never throw away the season's team-mate goals (squadAfterFetch).
+          const squad = squadAfterFetch(c.squad ?? [], ageOwnFetchedForCareer(c, saved.player.club, real));
+          return squad ? { ...c, squad } : c;
+        });
       });
     }
 
@@ -2481,7 +2487,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (!(saved.leagueSquads ?? []).length) {
       fetchLeagueSquads(saved.league.map(t => t.name)).then((leagueSquads) => {
         setCareer(c => (c && !(c.leagueSquads ?? []).length
-          ? { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) } : c));
+          ? { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads, divisionOf(c)) } : c));
       });
     } else {
       // ── The rest of the division, refetched on every load ──
@@ -2503,7 +2509,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           const filled = relabelOutOfPosition(hydrateSquads(c.leagueSquads ?? []));
           if (isRealFetch(fresh) && shouldUpgradeLeagueSquads(filled)) {
             const leagueSquads = mergeLeagueSquadStats(ageFetchedForCareer(c, fresh), filled);
-            return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads) };
+            return { ...c, leagueSquads, league: syncLeagueStrengthFromSquads(c.league, leagueSquads, divisionOf(c)) };
           }
           return filled === c.leagueSquads ? c : { ...c, leagueSquads: filled };
         });
@@ -3561,7 +3567,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           fetchLeagueSquads(clubs).then(leagueSquads => {
             setCareer(c => (c ? {
               ...c, leagueSquads,
-              league: syncLeagueStrengthFromSquads(c.league, leagueSquads),
+              league: syncLeagueStrengthFromSquads(c.league, leagueSquads, divisionOf(c)),
             } : c));
           });
   };

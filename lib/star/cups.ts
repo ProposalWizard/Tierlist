@@ -6,6 +6,7 @@ import {
   NATIONAL_LEAGUE_NORTH_CLUBS, NATIONAL_LEAGUE_SOUTH_CLUBS,
 } from "./clubs";
 import { hasExtraTime, extraTimeScore, simulateShootout } from "./shootout";
+import { simulateFixtureScore } from "./season";
 
 /**
  * THE CUPS.
@@ -41,9 +42,17 @@ export type CupId = "FA Cup" | "League Cup" | "Lower League Trophy";
  */
 export const CUP_ROUND_NAMES = ["Round of 32", "Round of 16", "Quarter-Final", "Semi-Final", "Final"];
 
-/** The FA Cup: sixty-four clubs, six rounds. See CUP_ROUND_NAMES for the
- *  League Cup's own, separate five. */
-export const FA_CUP_ROUND_NAMES = ["Round of 64", "Round of 32", "Round of 16", "Quarter-Final", "Semi-Final", "Final"];
+/**
+ * The FA Cup the real way (Mikey, 19 Oct 2026): ten rounds, each league
+ * joining at its real round — National League North and South and Step 3 in
+ * the 3rd Qualifying Round, the National League in the 4th, League One and
+ * Two in the First Round, the Premier League and Championship in the Third.
+ * See openFaCup.
+ */
+export const FA_CUP_ROUND_NAMES = [
+  "Third Qualifying Round", "Fourth Qualifying Round", "First Round", "Second Round",
+  "Third Round", "Fourth Round", "Fifth Round", "Quarter-Final", "Semi-Final", "Final",
+];
 
 /**
  * The Lower League Trophy (Mikey asked, Harry answered, 20 Oct 2026): every
@@ -56,10 +65,25 @@ export const LOWER_LEAGUE_TROPHY_ROUND_NAMES = [
   "Round 1", "Round of 64", "Round of 32", "Round of 16", "Quarter-Final", "Semi-Final", "Final",
 ];
 
-/** Which round-name list a cup actually plays through. */
+/** The old 64-club FA Cup, for a save whose cup was drawn before the ten rounds. */
+export const FA_CUP_ROUND_NAMES_V1 = ["Round of 64", "Round of 32", "Round of 16", "Quarter-Final", "Semi-Final", "Final"];
+
+/** Which round-name list a NEW cup of this competition plays through. */
 export function roundNamesFor(competition: CupId): string[] {
   if (competition === "Lower League Trophy") return LOWER_LEAGUE_TROPHY_ROUND_NAMES;
   return competition === "FA Cup" ? FA_CUP_ROUND_NAMES : CUP_ROUND_NAMES;
+}
+
+/** The rounds THIS cup plays through (an old save's FA Cup keeps its six). */
+export function cupRoundNames(state: CupState): string[] {
+  if (state.names) return state.names;
+  if (state.competition === "Lower League Trophy") return LOWER_LEAGUE_TROPHY_ROUND_NAMES;
+  return state.competition === "FA Cup" ? FA_CUP_ROUND_NAMES_V1 : CUP_ROUND_NAMES;
+}
+
+/** The round with sixteen clubs left (every cup ends: last 16, QF, SF, Final). */
+export function lastSixteenIndex(state: CupState): number {
+  return cupRoundNames(state).length - 4;
 }
 
 export interface CupTie {
@@ -90,8 +114,9 @@ export interface CupRound {
   name: string;
   ties: CupTie[];
   /**
-   * Clubs through to the next round without playing (the Lower League
-   * Trophy's eight byes in Round 1). Absent on every other round and cup.
+   * Clubs through to the next round without playing this one (the FA Cup's
+   * 3rd Qualifying Round; the Lower League Trophy's eight byes in Round 1).
+   * Never the player's club in the FA Cup.
    */
   byes?: string[];
 }
@@ -102,6 +127,12 @@ export interface CupState {
   rounds: CupRound[];
   /** Whoever lifted it. Absent until the final is played. */
   winner?: string;
+  /** The rounds this cup plays through. Absent on a cup drawn before the
+   *  ten-round FA Cup (see cupRoundNames). */
+  names?: string[];
+  /** Clubs still to join, by the round they join in. A round's list is
+   *  removed once that round is drawn. */
+  entries?: Record<string, string[]>;
 }
 
 /** How many clubs the League Cup holds. Five rounds of halving. */
@@ -378,7 +409,85 @@ export function openCup(
   competition: CupId, league: LeagueTeam[], division: CareerDivision, rng: () => number,
 ): CupState {
   const field = cupField(league, division, rng, competition);
+  if (competition === "FA Cup") {
+    // The old one-round-for-everyone FA Cup. The game opens openFaCup now;
+    // this stays for the tests that measure the old field.
+    return { competition, names: FA_CUP_ROUND_NAMES_V1, rounds: [drawRound(FA_CUP_ROUND_NAMES_V1[0], field, rng)] };
+  }
   return { competition, rounds: [drawRound(roundNamesFor(competition)[0], field, rng)] };
+}
+
+// ── The FA Cup, round by round ──────────────────────────────────────────────
+
+/**
+ * Who enters the FA Cup, and where. Each qualifying list is best first (last
+ * season's finish): the best get the byes.
+ */
+export interface FaCupEntrants {
+  /** National League North, then Step 3 North. */
+  north: string[];
+  /** National League South, then Step 3 South. */
+  south: string[];
+  nationalLeague: string[];
+  /** League One and League Two. */
+  footballLeague: string[];
+  /** Premier League and Championship. */
+  topTwo: string[];
+}
+
+/** How many come through the 3rd Qualifying Round: with the National
+ *  League's 24 that makes the 4th Qualifying Round's real 64. */
+export const FA_QUALIFIERS = 40;
+
+/**
+ * Open the ten-round FA Cup (Mikey, 19 Oct 2026, option A: byes, no new
+ * clubs). The 3rd Qualifying Round has 56 clubs and must send 40 on, so 32
+ * play and 24 go through on a bye: the 12 best of the North and the 12 best
+ * of the South. Your club never gets a bye: "Your club must play in every
+ * round that you get to" — the next club down takes it. The 3rd Qualifying
+ * Round is drawn North and South, as the real one is.
+ *
+ *   3rd Qualifying   56 (32 play, 24 byes)  → 40
+ *   4th Qualifying   40 + National League 24 = 64 → 32
+ *   First Round      32 + League One and Two 48 = 80 → 40
+ *   Second Round     40 → 20
+ *   Third Round      20 + Premier League and Championship 44 = 64
+ *   then 32, 16, 8, 4, 2.
+ *
+ * Works for any sizes: byes = 2 × 40 − entrants, split by region size.
+ */
+export function openFaCup(e: FaCupEntrants, yourClub: string, rng: () => number): CupState {
+  const total = e.north.length + e.south.length;
+  const byes = Math.max(0, Math.min(total, 2 * FA_QUALIFIERS - total));
+  let byesNorth = total > 0 ? Math.round(byes * e.north.length / total) : 0;
+  let byesSouth = byes - byesNorth;
+  // Both regions must leave an even number to play (they always both
+  // leave even or both odd, as 2·40 − total byes leaves an even total).
+  if ((e.north.length - byesNorth) % 2 !== 0) {
+    if (byesSouth > 0) { byesSouth -= 1; byesNorth += 1; } else { byesNorth -= 1; byesSouth += 1; }
+  }
+  const split = (list: string[], n: number) => {
+    const bye = list.filter(c => c !== yourClub).slice(0, n);
+    return { bye, play: list.filter(c => !bye.includes(c)) };
+  };
+  const N = split(e.north, byesNorth);
+  const S = split(e.south, byesSouth);
+  const names = FA_CUP_ROUND_NAMES;
+  const first: CupRound = {
+    name: names[0],
+    ties: [...drawRound(names[0], N.play, rng).ties, ...drawRound(names[0], S.play, rng).ties],
+    byes: [...N.bye, ...S.bye],
+  };
+  return {
+    competition: "FA Cup",
+    names,
+    rounds: [first],
+    entries: {
+      [names[1]]: [...e.nationalLeague],
+      [names[2]]: [...e.footballLeague],
+      [names[4]]: [...e.topTwo],
+    },
+  };
 }
 
 /**
@@ -427,20 +536,18 @@ export function cupStrength(club: string, league: LeagueTeam[]): number {
 
 // ── Playing a round ─────────────────────────────────────────────────────────
 
-function poisson(lambda: number, rng: () => number): number {
-  const L = Math.exp(-lambda);
-  let k = 0, p = 1;
-  do { k++; p *= rng(); } while (p > L);
-  return k - 1;
-}
 
-/** A scoreline between two clubs, from the same model the league uses. */
+/**
+ * A scoreline between two clubs: the league's own model (season.ts
+ * simulateFixtureScore), home advantage included. Until 19 Oct 2026 this was
+ * a ratio of the two strengths, which squeezed every gap: a League Two side
+ * got past a Premier League one 34% of the time (measured, 40,000 ties). The
+ * league's model gives 8% — near the real FA Cup — and a Championship side
+ * 28%.
+ */
 function tieScore(homeStr: number, awayStr: number, rng: () => number): { hs: number; as: number } {
-  const h = homeStr + 3;   // the same home advantage the division gets
-  return {
-    hs: poisson(Math.max(0.3, (h / awayStr) * 1.4), rng),
-    as: poisson(Math.max(0.2, (awayStr / h) * 1.1), rng),
-  };
+  const s = simulateFixtureScore(homeStr, awayStr, rng);
+  return { hs: s.home, as: s.away };
 }
 
 /**
@@ -518,17 +625,33 @@ export function playCupRound(
   });
 
   const rounds = [...state.rounds.slice(0, -1), { ...round, ties: played }];
-  // A bye is through without a game (the Lower League Trophy's Round 1).
-  const winners = [...played.map(tieWinner).filter((w): w is string => !!w), ...(round.byes ?? [])];
-  const names = roundNamesFor(state.competition);
+  const winners = played.map(tieWinner).filter((w): w is string => !!w);
+  const names = cupRoundNames(state);
+  const nextName = names[Math.min(rounds.length, names.length - 1)];
+  // Next round: the winners, anyone through on a bye (the FA Cup's 3rd
+  // Qualifying Round, the Lower League Trophy's Round 1), and whoever joins now.
+  const joining = state.entries?.[nextName] ?? [];
+  const field = [...winners, ...(round.byes ?? []), ...joining];
 
   // The final: somebody has won it and there is nothing left to draw.
-  if (round.name === names[names.length - 1] || winners.length < 2) {
-    return { ...state, rounds, winner: winners[0] };
+  if (round.name === names[names.length - 1] || field.length < 2) {
+    return { ...state, rounds, winner: winners[0] ?? field[0] };
   }
 
-  const nextName = names[Math.min(rounds.length, names.length - 1)];
-  return { ...state, rounds: [...rounds, drawRound(nextName, winners, rng)] };
+  let entries = state.entries;
+  if (entries && nextName in entries) {
+    entries = { ...entries };
+    delete entries[nextName];
+  }
+  return { ...state, rounds: [...rounds, drawEven(nextName, field, yourClub, rng)] , ...(entries ? { entries } : {}) };
+}
+
+/** Draw a round; an odd number in the hat sends one club (never yours) through on a bye. */
+function drawEven(name: string, field: string[], yourClub: string, rng: () => number): CupRound {
+  if (field.length % 2 === 0) return drawRound(name, field, rng);
+  const others = field.filter(c => c !== yourClub);
+  const bye = others[Math.floor(rng() * others.length)];
+  return { ...drawRound(name, field.filter(c => c !== bye), rng), byes: [bye] };
 }
 
 /**
@@ -556,7 +679,7 @@ export function finishCupToWinner(
   rng: () => number,
 ): CupState {
   let s = state;
-  const guardLimit = roundNamesFor(state.competition).length + 1;
+  const guardLimit = cupRoundNames(state).length + 1;
   for (let guard = 0; guard < guardLimit && !s.winner; guard++) {
     const next = playCupRound(s, league, yourClub, null, rng);
     if (next === s) break; // nothing left to play — already resolved
@@ -585,10 +708,25 @@ export function hasBye(state: CupState, club: string): boolean {
   return !!currentRound(state)?.byes?.includes(club);
 }
 
-/** Are you still in this cup? */
+/** Are you still in this cup? (Including still waiting to join it.) */
 export function stillIn(state: CupState, club: string): boolean {
   if (state.winner) return state.winner === club;
-  return yourTie(state, club) !== null || hasBye(state, club);
+  if (yourTie(state, club) !== null) return true;
+  if (hasBye(state, club)) return true;
+  return Object.values(state.entries ?? {}).some(list => list.includes(club));
+}
+
+/** You have a tie in this round still to play: the cup waits for you. */
+export function awaitsYourTie(state: CupState, club: string): boolean {
+  if (state.winner) return false;
+  const tie = yourTie(state, club);
+  return !!tie && tie.hs === undefined;
+}
+
+/** The round you join this cup in, when you are still waiting to join. */
+export function yourEntryRound(state: CupState, club: string): string | null {
+  for (const [round, list] of Object.entries(state.entries ?? {})) if (list.includes(club)) return round;
+  return null;
 }
 
 /** Which round you went out in, for the record. */

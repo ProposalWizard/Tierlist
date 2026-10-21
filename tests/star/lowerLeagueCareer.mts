@@ -1,3 +1,4 @@
+import { stillIn } from "../../lib/star/cups";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import {
@@ -76,7 +77,10 @@ for (const { division, clubs, name } of TIERS) {
   } else {
     check(!expectLeagueCup, `${name}: does NOT enter the League Cup (unchanged by these divisions becoming playable)`);
   }
-  check(cupWeeks.size > 0, `${name}: is entered in at least one cup`);
+  // League One/Two and the National League join the FA Cup in a later round
+  // (Mikey, 19 Oct 2026): entered from day one, the tie comes when drawn.
+  const faState = career.cupState?.find(st => st.competition === "FA Cup");
+  check(cupWeeks.size > 0 || (!!faState && stillIn(faState, career.player.club)), `${name}: is entered in at least one cup`);
   const validSlots = new Set([
     ...CHAMPIONSHIP_LEAGUE_CUP_SLOTS.map(s => s.week), ...CHAMPIONSHIP_FA_CUP_SLOTS.map(s => s.week),
     // The Lower League Trophy (20 Oct 2026): these divisions play it midweek.

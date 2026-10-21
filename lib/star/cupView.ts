@@ -1,5 +1,5 @@
 import type { CareerState, Fixture } from "./types";
-import { exitRound, roundNamesFor, tieWinner, type CupId, type CupState } from "./cups";
+import { exitRound, yourEntryRound, cupRoundNames, lastSixteenIndex, tieWinner, type CupId, type CupState } from "./cups";
 import { divisionOf, fixtureDateLabel } from "./calendar";
 import { shortClub } from "./media/grammar";
 
@@ -20,6 +20,14 @@ import { shortClub } from "./media/grammar";
 /** A round's name, short, for the road along the top. */
 export const ROUND_SHORT: Record<string, string> = {
   "Round 1": "R1",
+  // The ten-round FA Cup (Mikey, 19 Oct 2026).
+  "Third Qualifying Round": "Q3",
+  "Fourth Qualifying Round": "Q4",
+  "First Round": "1R",
+  "Second Round": "2R",
+  "Third Round": "3R",
+  "Fourth Round": "4R",
+  "Fifth Round": "5R",
   "Round of 64": "R64",
   "Round of 32": "R32",
   "Round of 16": "R16",
@@ -69,6 +77,9 @@ export interface CupView {
   entered: boolean;
   /** Your club is in it but you played in it for another club this season. */
   tied: boolean;
+  /** The round your club joins in, when it has not joined yet (the ten-round
+   *  FA Cup: a Premier League club joins in the Third Round). */
+  joins?: string;
   /** The round you went out in. */
   out: string | null;
   winner?: string;
@@ -84,7 +95,9 @@ export interface CupView {
 
 export function cupViewFor(career: CareerState, state: CupState): CupView {
   const you = career.player.club;
-  const names = roundNamesFor(state.competition);
+  // This cup's own rounds (an old save's FA Cup keeps its six; the ten-round FA Cup
+  // and the Lower League Trophy have theirs).
+  const names = cupRoundNames(state);
   const tied = !!career.cupTied && career.cupTied.season === career.season
     && career.cupTied.competitions.includes(state.competition);
 
@@ -134,7 +147,9 @@ export function cupViewFor(career: CareerState, state: CupState): CupView {
     for (const b of last.byes ?? []) left.push(b);
   }
 
-  const r16 = names.indexOf("Round of 16");
+  // The round with sixteen clubs left: "Round of 16" in the League Cup, the Lower
+  // League Trophy and the old FA Cup, the Fifth Round in the ten-round FA Cup.
+  const r16 = lastSixteenIndex(state);
   let lastPlayed = -1;
   state.rounds.forEach((r, i) => { if (r.ties.length > 0 && r.ties.every(t => t.hs !== undefined)) lastPlayed = i; });
   const bracketFrom = r16 >= 0 && state.rounds.length > r16 ? Math.max(r16, lastPlayed) : null;
@@ -150,6 +165,7 @@ export function cupViewFor(career: CareerState, state: CupState): CupView {
     path,
     entered: path.length > 0,
     tied,
+    ...(yourEntryRound(state, you) ? { joins: yourEntryRound(state, you)! } : {}),
     out: exitRound(state, you),
     winner: state.winner,
     left,
@@ -180,6 +196,9 @@ export function cupStatus(view: CupView, career: CareerState): CupStatus {
   const names = view.names;
   if (view.tied) return { headline: "Cup-tied", sub: "You played in it for another club this season.", tone: "grey" };
   if (view.winner && view.winner === you) return { headline: "Winners!", sub: `You won the ${view.competition}.`, tone: "gold" };
+  if (!view.entered && view.joins) {
+    return { headline: `Joins in the ${view.joins}`, sub: "The earlier rounds are played without you.", tone: "white" };
+  }
   if (!view.entered) {
     return {
       headline: "Not in it",

@@ -117,7 +117,7 @@ def build_topic_index(urls, nopen, specs):
 
     team_tab = (tcard('t82', n_page_open(specs['t82'])) +
                 '<h3 class="grp">Earlier pages, now part of this one</h3>' +
-                qlist([earlier('Team Room v1', '0.60', 'A chat bubble on every admin page, an Ideas board, Team chat and a To-do list.', URLS['a19team']),
+                qlist([earlier('Team Room v1', '0.60h', 'A chat bubble on every admin page, an Ideas board, Team chat and a To-do list.', URLS['a19team']),
                        earlier('Admin home and Team board', None, 'The 19 Oct page for the admin home and the team board.', OLD19['adminhome'])]) +
                 '<h3 class="grp">Overnight pages that also cover this</h3>' +
                 qlist([also('b11', 'Seen faces, quoted replies, @ and # tags, Shift+X pointing and patch-note read receipts (20 stills).'),
@@ -135,10 +135,10 @@ def build_topic_index(urls, nopen, specs):
                         also('b1', 'The admin image grip and the other touch fixes.')]))
     else_tab = (tcard('t84', n_page_open(specs['t84'])) +
                 '<h3 class="grp">Earlier pages, now part of this one</h3>' +
-                qlist([earlier('Drift + Play Screens', '0.62', 'Eight screens at the real match&rsquo;s size, play buttons on screen, the red engine warning.', URLS['a19drift']),
-                       earlier('Highlights Rebuild 0-2', '0.63', 'The switch, the match-camera still and generated build-ups.', URLS['a19fhr']),
+                qlist([earlier('Drift + Play Screens', '0.62h', 'Eight screens at the real match&rsquo;s size, play buttons on screen, the red engine warning.', URLS['a19drift']),
+                       earlier('Highlights Rebuild 0-2', '0.63h', 'The switch, the match-camera still and generated build-ups.', URLS['a19fhr']),
                        earlier('Free Data v1', '0.64', '2,104 real matches under free licences. Real moments, Real shots, Real Goals.', URLS['a19data']),
-                       earlier('Scene Editor 3a', '0.61', 'The 3D Signing and Office edit live, how generated cut scenes work, the 3D audit.', URLS['a19scene']),
+                       earlier('Scene Editor 3a', '0.61h', 'The 3D Signing and Office edit live, how generated cut scenes work, the 3D audit.', URLS['a19scene']),
                        earlier('Everything in this round', None, 'The big 19 Oct page with every question.', OLD19['round'])]) +
                 '<h3 class="grp">Other 19 Oct pages, no new page</h3>' +
                 qlist(['<li><b>3D audit and plan.</b> <a href="%s" target="_blank" rel="noopener">Open it</a>. Its summary is on the Scene Editor 3a page and on this topic page.</li>' % OLD19['audit3d'],
@@ -160,7 +160,7 @@ def build_topic_index(urls, nopen, specs):
   <span class="ver">LAST 2 DAYS &middot; 19&ndash;20 OCT 2026</span>
   <h1>The last 2 days in four tabs: the overnight builds, the team board, the admin, and everything else.</h1>
   <p class="status"><i></i>The 19 Oct work is on main. The overnight work and the 20 Oct parts of the topic pages are on the Harry branch, not live.</p>
-  <p class="sub">Start with a topic page: each is a full write-up and links to the build pages for detail. Each page is its own version in Admin &rarr; Patch notes: v0.60 to v0.74, v0.76 to v0.81, and the three topic pages v0.82 to v0.84. This index is v0.75.</p>
+  <p class="sub">Start with a topic page: each is a full write-up and links to the build pages for detail. Each page is its own version in Admin &rarr; Patch notes: v0.60h to v0.74, v0.76 to v0.81, and the three topic pages v0.82 to v0.84. This index is v0.75.</p>
   <div class="chips"><a class="chip hot" href="#ok">{n_open} open &darr;</a><a class="chip" href="#ok">{n_done} decided</a><a class="chip" href="#pages">The pages &darr;</a><a class="chip" href="#how">How this works</a></div>
 </header>
 

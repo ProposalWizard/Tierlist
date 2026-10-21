@@ -3,14 +3,17 @@ import { openEuroBracket, advanceEuroBracket, euroTieFromBracket, settleYourKoTi
 import type { CareerState, Fixture, CupRun, Competition, LeagueTeam, LeagueSquad } from "./types";
 import type { NamedOppGoal } from "./leagueSquads";
 import {
-  openCup, playCupRound, finishCupToWinner, yourTie, currentRound, cupStrength, tieWinner,
-  roundNamesFor, stillIn, isTwoLeggedRound, hasBye, type CupState, type CupId,
+  openCup, openFaCup, playCupRound, finishCupToWinner, yourTie, currentRound, cupStrength, tieWinner,
+  roundNamesFor, cupRoundNames, awaitsYourTie, isTwoLeggedRound, type CupState, type CupId, type FaCupEntrants,
 } from "./cups";
 import { openLowerLeagueTrophy } from "./lowerLeagueTrophy";
+import { membershipOf } from "./promotion";
 import { mulberry32, sortLeague } from "./season";
+import { ratedTeams } from "./world";
+import { SEASON_ONE_HOLDERS } from "./world/holders";
 import {
   PRE_SEASON_WEEK, EURO_LEAGUE_PHASE_WEEKS,
-  leagueCupSlotsFor, faCupSlotsFor, lowerLeagueTrophySlotsFor, divisionOf, fixtureTimestamp, tournamentWeeksFor,
+  leagueCupSlotsFor, faCupSlotsFor, faCupSlotsV1For, lowerLeagueTrophySlotsFor, divisionOf, fixtureTimestamp, tournamentWeeksFor,
   type CareerDivision, type CupSlot,
 } from "./calendar";
 import {
@@ -114,9 +117,10 @@ function roundWeeks(
  * that are decided by looking backwards.
  */
 export function seedPreSeason(career: CareerState): Fixture[] {
-  const last = career.season - 1;
-  if (last < 1) return [];
-  const w = career.lastSeasonWinners;
+  // Season 1's holders are fixed (Mikey, 19 Oct 2026): Arsenal v Man City,
+  // and Paris Saint-Germain v Aston Villa — see world/holders.ts.
+  const w: NonNullable<CareerState["lastSeasonWinners"]> | undefined =
+    career.season <= 1 ? { ...SEASON_ONE_HOLDERS } : career.lastSeasonWinners;
   if (!w) return [];
 
   const rng = mulberry32(career.season * 3301 + career.league.length);
@@ -131,7 +135,7 @@ export function seedPreSeason(career: CareerState): Fixture[] {
     if (inLeague) return inLeague.strength;
     const inEurope = [...poolFor("Champions League"), ...poolFor("Europa League")]
       .find(c => c.name === name);
-    return inEurope?.strength ?? cupStrength(name, career.league);
+    return Math.round(inEurope?.strength ?? cupStrength(name, ratedTeams(career)));
   };
 
   // ── Community Shield: champions v FA Cup holders ──
@@ -142,8 +146,13 @@ export function seedPreSeason(career: CareerState): Fixture[] {
   // other eighteen clubs' pre-season is not your calendar to fill in. When
   // the same club did both — a Double — the champions' slot goes to the
   // league runner-up, which is what the real competition does.
-  if (w.league && w.faCup) {
-    const champion = w.league === w.faCup ? (w.leagueRunnerUp ?? w.league) : w.league;
+  // The PREMIER LEAGUE's champions, whatever division you play in (until 19
+  // Oct 2026 this read your own league's winner — a Championship champion
+  // in the Community Shield). An old save without it keeps `league`.
+  const plChampion = w.premierLeague ?? w.league;
+  const plRunnerUp = w.premierLeague ? w.premierLeagueRunnerUp : w.leagueRunnerUp;
+  if (plChampion && w.faCup) {
+    const champion = plChampion === w.faCup ? (plRunnerUp ?? plChampion) : plChampion;
     const cupHolder = w.faCup;
     if (champion === club || cupHolder === club) {
       const opponent = champion === club ? cupHolder : champion;
@@ -564,7 +573,7 @@ export function seedCups(
   const states = [
     ...(leagueCupSlotsFor(division).length > 0
       ? [openCup("League Cup", career.league, division, rng)] : []),
-    openCup("FA Cup", career.league, division, rng),
+    openFaCup(faCupEntrantsFor(career), career.player.club, rng),
     // The Lower League Trophy is opened in every career, on its own seed so
     // the two cups above draw exactly as before. Played by you only when
     // your club is in it; otherwise it plays out on its own dates.
@@ -576,6 +585,65 @@ export function seedCups(
     if (f) fixtures.push(f);
   }
   return { states, fixtures };
+}
+
+/**
+ * Who enters the FA Cup this season, by the round they join in (cups.ts
+ * openFaCup). This season's real leagues (membershipOf). The two qualifying
+ * lists are ordered best first for the byes, by last season's finish:
+ * clubs relegated from the National League first (by where they finished
+ * there), then last season's North or South table, then anyone else (a
+ * club up from Step 3), then Step 3. With no last season to read (season 1,
+ * an old save) the club ratings decide.
+ */
+export function faCupEntrantsFor(career: CareerState): FaCupEntrants {
+  const m = membershipOf(career);
+  const last = career.lastWorld && career.lastWorld.season === career.season - 1 ? career.lastWorld : null;
+  const posIn = (division: CareerDivision, club: string): number => {
+    const t = last?.tables.find(x => x.division === division);
+    return t ? t.rows.findIndex(r => r.name === club) : -1;
+  };
+  const rating = new Map(ratedTeams(career).map(t => [t.name, t.strength]));
+  const rank = (division: CareerDivision, step3: string[]) => (club: string): number => {
+    if (step3.includes(club)) return 3000 - (rating.get(club) ?? 0);
+    if (last) {
+      const fromAbove = posIn("national_league", club);
+      if (fromAbove >= 0) return fromAbove;
+      const here = posIn(division, club);
+      if (here >= 0) return 100 + here;
+      return 2000 - (rating.get(club) ?? 0);
+    }
+    return 1000 - (rating.get(club) ?? 0);
+  };
+  const ordered = (division: CareerDivision, clubs: string[], step3: string[]) => {
+    const key = rank(division, step3);
+    return [...clubs, ...step3].map(c => ({ c, k: key(c) })).sort((a, b) => a.k - b.k).map(x => x.c);
+  };
+  return {
+    north: ordered("national_league_north", m.nationalLeagueNorth, m.step3North),
+    south: ordered("national_league_south", m.nationalLeagueSouth, m.step3South),
+    nationalLeague: [...m.nationalLeague],
+    footballLeague: [...m.leagueOne, ...m.leagueTwo],
+    topTwo: [...m.premier, ...m.championship],
+  };
+}
+
+/**
+ * Your FA Cup or League Cup tie, for any cup that has just drawn you in
+ * without a fixture on the calendar yet: the round you JOIN in (a Premier
+ * League club's Third Round), once the rounds before it have been played.
+ */
+export function newCupFixtures(career: CareerState, states: CupState[]): Fixture[] {
+  const out: Fixture[] = [];
+  for (const st of states) {
+    if (!awaitsYourTie(st, career.player.club)) continue;
+    const round = currentRound(st)?.name;
+    const has = career.fixtures.some(f => !f.played && f.kind === "cup" && f.competition === st.competition && f.round === round);
+    if (has) continue;
+    const f = cupFixtureFor(st, career, st.rounds.length - 1);
+    if (f) out.push(f);
+  }
+  return out;
 }
 
 /**
@@ -624,7 +692,14 @@ function roundsOf(slots: CupSlot[]): string[] {
 export function cupRoundWeek(
   competition: CupId, roundIndex: number, _clubCount?: number,
   division: CareerDivision = "premier", inEurope = false,
+  /** The round's name, when known: an old save's FA Cup rounds are found by name. */
+  roundName?: string,
 ): number {
+  if (competition === "FA Cup" && roundName) {
+    const slot = faCupSlotsFor(division, inEurope).find(s => s.round === roundName)
+      ?? faCupSlotsV1For(division, inEurope).find(s => s.round === roundName);
+    if (slot) return slot.week;
+  }
   const slots = cupSlotsFor(competition, division, inEurope);
   // One entry per ROUND, not per match: the League Cup's two-legged semi-final
   // occupies two slots and is still the fourth round of the competition.
@@ -659,7 +734,7 @@ export function cupFixtureFor(state: CupState, career: CareerState, roundIndex: 
     || career.europeanQualification === "Europa League";
   const round = currentRound(state)?.name;
   return {
-    week: cupRoundWeek(state.competition, roundIndex, career.league.length, divisionOf(career), inEurope),
+    week: cupRoundWeek(state.competition, roundIndex, career.league.length, divisionOf(career), inEurope, round),
     opponent,
     home,
     played: false,
@@ -667,7 +742,7 @@ export function cupFixtureFor(state: CupState, career: CareerState, roundIndex: 
     kind: "cup",
     round,
     ...(round && isTwoLeggedRound(state.competition, round) ? { leg: 1 as const } : {}),
-    opponentStrength: cupStrength(opponent, career.league),
+    opponentStrength: Math.round(cupStrength(opponent, ratedTeams(career))),
   };
 }
 
@@ -722,7 +797,7 @@ export function settleCupTie(
 
   const club = career.player.club;
   const before = states[idx];
-  const roundName = currentRound(before)?.name ?? roundNamesFor(before.competition)[0];
+  const roundName = currentRound(before)?.name ?? cupRoundNames(before)[0];
   const rng = mulberry32(career.season * 977 + fixture.week * 31 + idx * 7);
 
   // Reported from your point of view; the tie wants home and away.
@@ -761,7 +836,7 @@ export function settleCupTie(
   // `livePens` is already in home/away terms (it comes straight off
   // CanvasMatch's own shootout, which tracks the real fixture's home/away
   // sides) — no flip needed the way hs/as needed one above.
-  const after = playCupRound(before, career.league, club, { hs, as, pens, wentToExtraTime, legs }, rng);
+  const after = playCupRound(before, ratedTeams(career), club, { hs, as, pens, wentToExtraTime, legs }, rng);
   const next = states.map((st, i) => (i === idx ? after : st));
 
   const tie = before.rounds[before.rounds.length - 1]?.ties
@@ -865,33 +940,35 @@ export function advanceEliminatedCups(
     // in it, but you are not, so it plays on like any cup you are out of.
     const tied = !!career.cupTied && career.cupTied.season === career.season
       && career.cupTied.competitions.includes(state.competition);
-    // A bye (the Lower League Trophy's Round 1) is still in, but has no tie
-    // to play: the round plays on without you, and you come out the other
-    // side with a tie in the next (cupFixturesOwed puts it on the calendar).
-    const bye = hasBye(state, club);
-    if (stillIn(state, club) && !tied && !bye) return state;
+    // A cup waiting on your own tie waits for you. Otherwise — out of it, or
+    // not in it yet (the FA Cup's early rounds before your club joins), or
+    // through on a bye (the Lower League Trophy's Round 1) — the country's
+    // rounds are played on their dates; cupFixturesOwed puts your next tie
+    // on the calendar after a bye.
+    if (awaitsYourTie(state, club) && !tied) return state;
 
     let s = state;
     // Bounded the same way finishCupToWinner always was — one more than the
     // competition's own round count is more passes than a real hat could
     // ever need to reach a winner, so this can never spin forever even if
     // `uptoTimestamp` is far in the future (a big dev-skip jump).
-    const guardLimit = roundNamesFor(s.competition).length + 1;
+    const guardLimit = cupRoundNames(s).length + 1;
     for (let guard = 0; guard < guardLimit && !s.winner; guard++) {
       const roundIndex = s.rounds.length - 1;
       // The raw, un-shifted slot week — advanceEliminatedCups is asking when
       // the COUNTRY plays this round, not when the fixture list would have
       // scheduled it around the player's own midweek European commitments
       // (that `inEurope` nudge only ever applied to the player's OWN tie).
-      const roundWeek = cupRoundWeek(s.competition, roundIndex, career.league.length, division, false);
+      const roundWeek = cupRoundWeek(s.competition, roundIndex, career.league.length, division, false, currentRound(s)?.name);
       const roundTs = fixtureTimestamp(career.player.startYear, career.season, roundWeek, "cup", division);
       if (roundTs > uptoTimestamp) break;
-      const played = playCupRound(s, career.league, club, null, rng);
+      const played = playCupRound(s, ratedTeams(career), club, null, rng);
       if (played === s) break; // nothing left to play — already resolved
       s = played;
       changed = true;
-      // Through on a bye: your tie in the next round is yours to play.
-      if (bye && !tied && yourTie(s, club)) break;
+      // Drawn in (your club's entry round, or the round after a bye): stop
+      // here and play it yourself.
+      if (!tied && awaitsYourTie(s, club)) break;
     }
     return s;
   });

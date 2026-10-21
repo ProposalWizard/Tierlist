@@ -91,23 +91,23 @@ def team_page():
         item('A chat bubble on every admin page', [tag('seen')], [
             ('Problem / Why', 'Your ask (19 Oct): a team room in the admin, with &ldquo;live chat you can open from any admin page as a pop-up box&rdquo;. Chat lives only in the admin room.'),
             ('Fix', 'A round button, bottom left, on every admin and test page. It opens a small box with <b>Chat</b> and <b>To-do</b>. It steps clear of the side menu, titles, text and pictures. On a 3D page with no free spot it tucks half behind the right edge, and the box stays on screen. (From the commit titles.) The next round made it smaller and see-through to taps: see Changed.')],
-            p.figs([f('0.60', 'bubble-phone.jpg', '<b>Look at:</b> the box open on a phone: Chat and To-do tabs, then the messages. Sample messages in a local test room.')])),
+            p.figs([f('0.60h', 'bubble-phone.jpg', '<b>Look at:</b> the box open on a phone: Chat and To-do tabs, then the messages. Sample messages in a local test room.')])),
         item('Four views of the team room: Board, Ideas, Chat, To-do', [tag('seen')], [
             ('Problem / Why', 'Your ask (19 Oct): an idea board and hand-typed tasks next to the live bars on the team board.'),
             ('Fix', 'One switch on the team board: <b>Board | Ideas | Chat | To-do</b>. The same four sit in the side menu, with red and amber counts. The board and the bubble take the colours of the look you pick.')],
-            p.figs([f('0.60', 'broadcast-team-pc.jpg', '<b>Look at:</b> the team board in the Broadcast look: a card each for Harry, Mikey and Leo.', 'wd')], wide=True)),
+            p.figs([f('0.60h', 'broadcast-team-pc.jpg', '<b>Look at:</b> the team board in the Broadcast look: a card each for Harry, Mikey and Leo.', 'wd')], wide=True)),
         item('Ideas: a board with three stages', [tag('seen')], [
             ('Problem / Why', NR),
             ('Fix', 'Ideas sit in <b>Idea &rarr; Doing &rarr; Done</b>, shown <b>by stage</b> or <b>by person</b>. Each has three vote dots and notes. You can move an idea between stages.')],
-            p.figs([f('0.60', 'ideas-pc.jpg', '<b>Look at:</b> three columns. Each card shows who wrote it, a note count and three vote dots. Sample ideas in a local test room.', 'wd')], wide=True)),
+            p.figs([f('0.60h', 'ideas-pc.jpg', '<b>Look at:</b> three columns. Each card shows who wrote it, a note count and three vote dots. Sample ideas in a local test room.', 'wd')], wide=True)),
         item('Team chat', [tag('seen')], [
             ('Problem / Why', 'The full chat page is the bigger version of the bubble. Same ask.'),
             ('Fix', 'A live chat page: who is here now, pinned messages, pictures. It asks once which of Harry, Mikey or Leo you are.')],
-            p.figs([f('0.60', 'chat-pc.jpg', '<b>Look at:</b> Here now (left), the messages, and Pinned (right). The little faces under a message, Reply, @ and page cards came in round two (below).', 'wd')], wide=True)),
+            p.figs([f('0.60h', 'chat-pc.jpg', '<b>Look at:</b> Here now (left), the messages, and Pinned (right). The little faces under a message, Reply, @ and page cards came in round two (below).', 'wd')], wide=True)),
         item('To-do: your own jobs and jobs for each other', [tag('seen')], [
             ('Problem / Why', 'Your ask: hand-typed tasks next to the live bars.'),
             ('Fix', 'A list for <b>jobs given to you</b>, <b>your own</b> jobs and <b>jobs you gave</b>. A ticked job fades after a day, then leaves.')],
-            p.figs([f('0.60', 'todo-pc.jpg', '<b>Look at:</b> Given to me, Mine, Jobs I gave, and Done today (ticked, faded).', 'wd')], wide=True)),
+            p.figs([f('0.60h', 'todo-pc.jpg', '<b>Look at:</b> Given to me, Mine, Jobs I gave, and Done today (ticked, faded).', 'wd')], wide=True)),
         item('Notes on pushes, and the room as a portable kit', [tag('reas', 'no still')], [
             ('Problem / Why', 'You said (19 Oct): &ldquo;build the full team room/board as a portable kit for later&rdquo;.'),
             ('Fix', 'The push sheet (a push to the repo, on the team board) has notes. Anyone can add one. The whole room is one folder with one settings file for the people, colours and repo, and its own database file. The old team board moved into the kit too.')]),
@@ -185,7 +185,7 @@ def team_page():
         item('The patch-notes list names every page', [tag('seen'), tag('reas', 'from the commit')], [
             ('Problem', 'The list on the left of Admin &rarr; Patch notes said only &ldquo;v0.xx&rdquo;. With this many versions in two days, you could not tell which page was which.'),
             ('Why', 'The list showed the version number and the date, not the page&rsquo;s name.'),
-            ('Fix', 'The page&rsquo;s name now shows under each version. The last two days have one entry per page, v0.60 to v0.84 (v0.75 is the index). Each entry opens its kept page, with its pictures, exactly as published. Every title starts with &ldquo;Harry&rsquo;s patch notes&rdquo;, so each has an owner and the author counts as having read it.')],
+            ('Fix', 'The page&rsquo;s name now shows under each version. The last two days have one entry per page, v0.60h to v0.84 (v0.75 is the index). Each entry opens its kept page, with its pictures, exactly as published. Every title starts with &ldquo;Harry&rsquo;s patch notes&rdquo;, so each has an owner and the author counts as having read it.')],
             p.figs([f(None, 'patch-notes-archive-pc.png', '<b>Look at:</b> the page name under each version on the left, and the Read by faces. The counts in the middle (15 pages, 8 open) are from the first 15-page version of the index. Today it lists more.', 'wd', base=os.path.join(BASE, 'pn'))], wide=True)),
     ])
 
@@ -231,7 +231,7 @@ def team_page():
         '<p><b>Counts.</b> Four views (Board, Ideas, Chat, To-do). Idea stages: 3. Vote dots per idea: 3. A ticked job leaves after 24 hours. The room loads the last 300 messages and the database keeps 5,000.</p>'
         '<p><b>Bubble.</b> 50 px &rarr; 40 px. Fades to 40% while scrolling. Up 132 px in the Manager&rsquo;s office. Covers the left 11 px of &ldquo;Let&rsquo;s go&rdquo; on Training levels.</p>'
         '<p><b>Pushes in the last 7 days (20 Oct).</b> Harry 166, Mikey 34, Leo 21. Before, the count stopped at the newest 20 commits.</p>'
-        '<p><b>Patch notes in the list.</b> 25 versions for 19&ndash;20 Oct (v0.60 to v0.84).</p>')
+        '<p><b>Patch notes in the list.</b> 25 versions for 19&ndash;20 Oct (v0.60h to v0.84).</p>')
 
     return p, dict(
         key='t82', ver='0.82', title='Team Board &amp; Team Updates', pill='TEAM BOARD &middot; TEAM UPDATES',
@@ -506,9 +506,9 @@ def else_page():
             ('Problem', 'On Infinite Highlights and Full match, NEXT and the chance name sat below the fold.'),
             ('Why', 'The page was taller than a phone screen.'),
             ('Fix', 'They are pinned on screen at 390&times;844 and at 1440&times;900. This is now a house rule: <b>play controls never sit below the fold</b>.')],
-            p.figs([f('0.62', 'fit-hl.jpg', '<b>Look at:</b> Infinite Highlights on a phone. NEXT and the chance name are on screen.'),
-                    f('0.62', 'fit-fm.jpg', '<b>Look at:</b> Full match, your chance.'),
-                    f('0.62', 'fit-trial.jpg', '<b>Look at:</b> the Trial.')])),
+            p.figs([f('0.62h', 'fit-hl.jpg', '<b>Look at:</b> Infinite Highlights on a phone. NEXT and the chance name are on screen.'),
+                    f('0.62h', 'fit-fm.jpg', '<b>Look at:</b> Full match, your chance.'),
+                    f('0.62h', 'fit-trial.jpg', '<b>Look at:</b> the Trial.')])),
         item('The engine warning no longer fires on a read-only search', [T('Play screens'), tag('reas', 'read from the code')], [
             ('Problem', 'A read-only search with &ldquo;2&gt;/dev/null&rdquo; in it made the red warning ask. That false alarm stalled a builder for 40 minutes (20 Oct).'),
             ('Why', 'Any &ldquo;&gt;&rdquo; in a command counted as a write to the engine file the command also named. A &ldquo;2&gt;/dev/null&rdquo; points at nothing.'),
@@ -554,15 +554,15 @@ def else_page():
             bars(bar('Build-ups that took a different route (of 2,527)', None, 2197, 2527, '', '2,197', 'blue'),
                  bar('Build-ups that failed the checks (of 448 checked)', None, 0, 448, '', '0 of 448'),
                  note='Chances and goals per match did not change over 500 matches (5.81 and 2.31).') +
-            p.figs([f('0.63', 'fhr-sheet.jpg', '<b>Look at:</b> 8 of the 48 build-ups checked by eye. Each row: the start, the middle, and the moment your chance begins.', 'wd')], wide=True)),
+            p.figs([f('0.63h', 'fhr-sheet.jpg', '<b>Look at:</b> 8 of the 48 build-ups checked by eye. Each row: the start, the middle, and the moment your chance begins.', 'wd')], wide=True)),
     ]
     hl_chg = [
         item('Phase 1: the picture before Play uses the match camera', [T('Highlights rebuild'), tag('meas'), tag('seen')], [
             ('Problem', 'The still before Play used a different camera from the real match, so pressing Play jumped.'),
             ('Why', 'The still was framed by its own camera, not the match&rsquo;s.'),
             ('Fix', 'With the switch On, the still is drawn with the match camera at exactly the match box&rsquo;s size. <b>0 mismatches in 100.</b>')],
-            p.figs([f('0.63', 'fhr-still.jpg', '<b>Look at:</b> the still, before Play (switch On).'),
-                    f('0.63', 'fhr-play.jpg', '<b>Look at:</b> after Play: the same frame.')])),
+            p.figs([f('0.63h', 'fhr-still.jpg', '<b>Look at:</b> the still, before Play (switch On).'),
+                    f('0.63h', 'fhr-play.jpg', '<b>Look at:</b> after Play: the same frame.')])),
     ]
     hl_add = [x for x in hl_add if x]
 
@@ -617,8 +617,8 @@ def else_page():
         item('The 3D Signing and the Manager&rsquo;s Office play live in the scene editor', [T('Scene editor'), tag('seen')], [
             ('Problem / Why', 'You wanted to edit the 3D scenes without a coder. Steps 1 and 2 were already live: a free camera, a mini-map, the key light&rsquo;s angle and colour, and Save.'),
             ('Fix', '<b>Step 3a:</b> the 3D Signing and the Manager&rsquo;s Office now play live in the editor. You pick a shot and set its camera position and lens, the key light and the exposure. Play, Save and the shots fit on screen.')],
-            p.figs([f('0.61', 'se-signing.jpg', '<b>Look at:</b> Signing, with one shot edited.', 'wd'),
-                    f('0.61', 'se-office.jpg', '<b>Look at:</b> the Manager&rsquo;s Office, with one shot edited.', 'wd')], wide=True)),
+            p.figs([f('0.61h', 'se-signing.jpg', '<b>Look at:</b> Signing, with one shot edited.', 'wd'),
+                    f('0.61h', 'se-office.jpg', '<b>Look at:</b> the Manager&rsquo;s Office, with one shot edited.', 'wd')], wide=True)),
         item('Shop, Garden and House edit live; approve an edit; commit it to the game; make a scene from an event', [build_pill('b6'), T('Scene editor'), tag('seen'), tag('meas')], [
             ('Problem', 'The edits did not reach the game. Save kept them on that device and in the team&rsquo;s database. They did <b>not</b> go into the repo, and the game&rsquo;s real cut scenes did not read them. You said: &ldquo;I would love it to commit straight into the game&rdquo; (3D-3).'),
             ('Why', 'The game keeps its own copy of approved edits as a file in its code. Nothing wrote to that file.'),
@@ -648,9 +648,9 @@ def else_page():
         ('Problem / Why', 'You asked how the &ldquo;made-up scenes&rdquo; work. This is the answer.'),
         ('Fix', '<b>Hand-made (6):</b> signing, goal, trophy, walk-out, press and The Icon. Every move and shot is written by hand. They are the benchmark. <b>Generated:</b> made by the game from a <b>game event</b>, with nothing pre-built. The same event and the same number (the &ldquo;seed&rdquo;) always give the same scene. <b>The real game does not play generated scenes yet.</b> Five steps:' + flow)],
         scores +
-        p.figs([f('0.61', 'gen-scored.jpg', '<b>Scored:</b> the keeper&rsquo;s view, the celebration, then a close-up far too tight for a phone.'),
-                f('0.61', 'gen-sacked.jpg', '<b>Sacked:</b> the office, &ldquo;You&rsquo;re not in the side on Saturday&rdquo;, alone with it.')]) +
-        details('More pictures (2) and why bodies break', p.figs([f('0.61', 'gen-trophy.jpg', '<b>Won a trophy.</b>'), f('0.61', 'gen-injured.jpg', '<b>Injured:</b> he is smiling, because faces never moved then (B5 fixed that).')]) +
+        p.figs([f('0.61h', 'gen-scored.jpg', '<b>Scored:</b> the keeper&rsquo;s view, the celebration, then a close-up far too tight for a phone.'),
+                f('0.61h', 'gen-sacked.jpg', '<b>Sacked:</b> the office, &ldquo;You&rsquo;re not in the side on Saturday&rdquo;, alone with it.')]) +
+        details('More pictures (2) and why bodies break', p.figs([f('0.61h', 'gen-trophy.jpg', '<b>Won a trophy.</b>'), f('0.61h', 'gen-injured.jpg', '<b>Injured:</b> he is smiling, because faces never moved then (B5 fixed that).')]) +
                 '<p><b>Why bodies break</b> (reasoned from the code and the audit stills, not measured):</p><ul><li>A beat joins clips from different sources end to end, and code-made poses bend joints on top. When the two disagree, a shoulder twists or a boot floats.</li><li>Walks move the body at a set speed that does not match the steps, so the feet slide.</li><li>The people in them are a stand-in layer. A proper people layer (faces, hands, planted feet) plugs in at one place when it is ready.</li></ul>'))
 
 
