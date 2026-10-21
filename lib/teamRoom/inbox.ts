@@ -16,8 +16,9 @@
  *                 (app_metadata.teamPushPatches), so no table and no SQL.
  */
 import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "./config";
-import { patchAuthor, type PatchMeta, type TeamAck } from "./extras";
-import type { PushPayload } from "./notify";
+import { mentionsIn, patchAuthor, type PatchMeta, type TeamAck } from "./extras";
+import { mentionsAll, type PushPayload } from "./notify";
+import type { TeamNote } from "./logic";
 
 const at = (iso: string) => Date.parse(iso) || 0;
 
@@ -43,6 +44,24 @@ export function inboxFor(notes: PatchMeta[], person: TeamPerson | null, acks: Te
     .filter(({ n }) => at(n.publishedAt) >= start && patchAuthor(n.title) !== person && !hasRead(acks, person, n.version))
     .sort((a, b) => at(b.n.publishedAt) - at(a.n.publishedAt) || a.i - b.i)
     .map(({ n }) => n);
+}
+
+/** The receipt that says you have seen a note that @'s you (kept with the patch-note receipts, team_acks). */
+export const noteSeenKey = (id: number) => `n:${id}`;
+
+/**
+ * Notes under patch notes that @ you (or @all) by someone else, not seen yet,
+ * written on or after `from`. Newest first. Opening the note's thread marks
+ * them seen (the same "patch" receipts, target "n:<id>").
+ */
+export function noteMentionsFor(notes: TeamNote[], person: TeamPerson | null, acks: TeamAck[], from: string = TEAM_ROOM.inboxFrom): TeamNote[] {
+  if (!person) return [];
+  const start = at(from);
+  return notes
+    .filter((n) => n.target_kind === "patch" && n.person !== person && n.id > 0 && at(n.created_at) >= start
+      && (mentionsIn(n.body).includes(person) || mentionsAll(n.body))
+      && !hasRead(acks, person, noteSeenKey(n.id)))
+    .sort((a, b) => at(b.created_at) - at(a.created_at) || b.id - a.id);
 }
 
 /** The bell's number: 0 to 99, then "99+". */

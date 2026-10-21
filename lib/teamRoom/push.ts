@@ -192,10 +192,10 @@ function post(body: unknown) {
 }
 
 /** A message or a job was just saved: ring whoever it is for (the site decides, from the saved row). */
-export function ringAfter(table: "team_messages" | "team_tasks", row: { id?: unknown; body?: unknown; owner?: unknown; made_by?: unknown }) {
+export function ringAfter(table: "team_messages" | "team_tasks" | "team_notes", row: { id?: unknown; body?: unknown; owner?: unknown; made_by?: unknown }) {
   const id = Number(row.id);
   if (!Number.isSafeInteger(id) || id <= 0) return;
-  if (table === "team_messages" && !mayRing(String(row.body ?? ""))) return;
+  if ((table === "team_messages" || table === "team_notes") && !mayRing(String(row.body ?? ""))) return;
   if (table === "team_tasks" && row.owner === row.made_by) return;
   post({ table, id }).catch(() => { /* a missed buzz never blocks the chat */ });
 }

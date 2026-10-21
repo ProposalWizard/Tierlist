@@ -6,7 +6,9 @@
  * Also: the real archive has unique versions and sorts 0.100h after 0.99h.
  * Fakes only: no network, no database.
  */
-import { compareVersionsDesc, bellCount, inboxFor, patchesToRing, payloadForPatches, shortPatchTitle, withRungPatches } from "@/lib/teamRoom/inbox";
+import { compareVersionsDesc, bellCount, inboxFor, noteMentionsFor, noteSeenKey, patchesToRing, payloadForPatches, shortPatchTitle, withRungPatches } from "@/lib/teamRoom/inbox";
+import { payloadForNote, ringsForNote, splitQuotes } from "@/lib/teamRoom/notify";
+import { cleanQuote, linesOf } from "@/lib/teamRoom/patchQuote";
 import { TEAM_ROOM } from "@/lib/teamRoom/config";
 import type { PatchMeta, TeamAck } from "@/lib/teamRoom/extras";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
@@ -65,6 +67,28 @@ console.log("The buzz for new patch notes");
   ok(many.url === "/admin/team?tab=notes&v=0.97h", "several: tap opens the newest");
   ok(JSON.stringify(withRungPatches(["a", "b"], ["b", "c"])) === '["a","b","c"]', "remembered versions: no doubles");
   ok(withRungPatches(Array.from({ length: 400 }, (_, i) => `v${i}`), ["new"]).length === 300 && withRungPatches(null, ["x"])[0] === "x", "kept to the newest 300; junk ignored");
+}
+
+console.log("Notes under a patch note: @ and quoted lines");
+{
+  const note = (id: number, person: "Harry" | "Mikey" | "Leo", body: string, created = "2026-10-21T09:00:00Z", kind: "patch" | "idea" = "patch") =>
+    ({ id, target_kind: kind, target_id: "0.95h", owner: "Harry" as const, person, body, created_at: created });
+  ok(ringsForNote(note(1, "Mikey", "> Auto run\n@Harry is this right?")).map((r) => r.person).join() === "Harry", "@Harry in a note rings Harry");
+  ok(ringsForNote(note(2, "Mikey", "@all look")).map((r) => r.person).join() === "Harry,Leo", "@all rings the other two");
+  ok(ringsForNote(note(3, "Mikey", "@Mikey to self")).length === 0, "never the writer");
+  const sq = splitQuotes("> Auto run takes over\n>Shift sprints\nwhy 0.6 s?");
+  ok(sq.quotes.join("|") === "Auto run takes over|Shift sprints" && sq.text === "why 0.6 s?", "quoted lines come first, then the words");
+  ok(splitQuotes("no quotes > here").quotes.length === 0, "a > in the middle is not a quote");
+  const pay = payloadForNote(note(4, "Leo", "> Shift sprints\n@Harry too fast?"), "mention");
+  ok(pay.title === "Leo mentioned you on patch notes v0.95h" && pay.body.includes("about: “Shift sprints”") && pay.url.endsWith("v=0.95h&notes=1"), "note buzz: who, which version, the line, opens the notes");
+  const notes = [note(5, "Mikey", "@Harry look"), note(6, "Leo", "@all hi"), note(7, "Harry", "@Mikey"), note(8, "Mikey", "@Harry old", "2026-10-19T09:00:00Z"),
+    note(9, "Mikey", "@Harry idea", undefined, "idea"), note(-10, "Mikey", "@Harry local")];
+  ok(noteMentionsFor(notes, "Harry", []).map((n) => n.id).join() === "6,5", "Harry's mentions: @Harry and @all from others, patch notes only, from 20 Oct, newest first");
+  ok(noteMentionsFor(notes, "Harry", [ack("Harry", noteSeenKey(5))]).map((n) => n.id).join() === "6", "seen clears a mention (receipt n:<id>)");
+  ok(inboxFor(NOTES, "Mikey", [ack("Mikey", noteSeenKey(5))]).length === 4, "a mention receipt never clears a patch note");
+  const lines = linesOf({ sections: [{ kind: "fixed", title: "", items: [{ title: "A  line" }, { title: "B" }] }, { kind: "history", title: "", items: [{ title: "old" }] }, { kind: "added", title: "", items: [{ title: "B" }] }] });
+  ok(lines.join("|") === "A line|B", "tap-able lines: every headline once, history left out");
+  ok(cleanQuote("  x ") === null && cleanQuote("two  words") === "two words" && (cleanQuote("y".repeat(300)) ?? "").length === 240, "a selection is cleaned and capped at 240");
 }
 
 console.log("Version order and the real archive");

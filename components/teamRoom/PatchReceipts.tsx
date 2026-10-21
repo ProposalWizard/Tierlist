@@ -7,6 +7,8 @@
  * On /admin/patch-notes (and the Patch notes tab of the Team board): the
  * H / M / L faces, a "Read and understood" button for you, and a notes thread
  * under the version. A patch note's own author counts as having read it.
+ * Notes can @ someone (their phone buzzes, it lands in their Inbox) and quote
+ * lines of the note (Harry, 21 Oct 2026).
  * Saved in team_acks / team_notes (this device only until team_room_v2.sql).
  */
 import { useState } from "react";
@@ -15,13 +17,15 @@ import { notesFor } from "@/lib/teamRoom/logic";
 import { patchAuthor, patchReaders, type PatchMeta } from "@/lib/teamRoom/extras";
 import { setAck, useTeamRoom } from "@/lib/teamRoom/store";
 import { Av } from "./bits";
+import { takeNotesRequest } from "@/lib/teamRoom/patchQuote";
 import { NotesThread } from "./parts";
 import "./teamRoom.css";
 
 /** The bar above a version: faces, your button, and the notes. */
-export function PatchReadBar({ note }: { note: PatchMeta }) {
+export function PatchReadBar({ note, lines }: { note: PatchMeta; lines?: string[] }) {
   const s = useTeamRoom();
-  const [open, setOpen] = useState(false);
+  // The Inbox opens a version with its notes showing (a note that @'s you).
+  const [open, setOpen] = useState(() => takeNotesRequest(note.version));
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   if (s.status === "idle" || s.status === "loading") return null;
@@ -59,7 +63,7 @@ export function PatchReadBar({ note }: { note: PatchMeta }) {
       </div>
       {s.v2 === "off" && <p className="tr-muted">Ticks and notes here are saved on this device only until <code>{TEAM_ROOM.sqlFileV2}</code> runs.</p>}
       {err && <p className="tr-err">{err}</p>}
-      {open && <div className="notes"><NotesThread kind="patch" id={note.version} owner={author} /></div>}
+      {open && <div className="notes"><NotesThread kind="patch" id={note.version} owner={author} lines={lines} /></div>}
     </section>
   );
 }

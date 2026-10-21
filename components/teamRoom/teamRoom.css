@@ -102,7 +102,10 @@
 /* The bubble (Harry, 20 Oct 2026): small, fixed bottom left, and only the
    round button takes taps. Fades to 40% (and lets taps through) while you
    scroll or drag; half see-through while it sits over a control. */
-.tr-vars.tr { pointer-events: none; }
+/* Only the bubble's own wrapper lets taps through (B13). It used to be every
+ * ".tr-vars.tr" box, which also killed the patch notes' Read bar (Notes, Read
+ * and understood) and the 👉 Point drawing layer (21 Oct 2026 fix). */
+.tr-vars.tr.tr-float { pointer-events: none; }
 .tr-vars.tr .tr-fab, .tr-vars.tr .tr-pop, .tr-vars.tr .tr-scrim { pointer-events: auto; }
 .tr-fab { position: fixed; z-index: 2147482000; width: 40px; height: 40px; padding: 0; border-radius: 50%; border: 0;
   margin-left: env(safe-area-inset-left, 0px);
@@ -375,3 +378,18 @@
 .tr-inbox-empty { margin: 0; padding: 18px 14px; color: var(--ash-ink2); font-size: 14px; }
 .tr-inbox-foot { padding: 8px 14px 0; font-size: 12px; }
 .tr-inbox-foot:last-child { padding-bottom: 12px; }
+
+/* Patch-note notes: quoted lines, @ buttons, the line picker (Harry, 21 Oct 2026). */
+.tr-nq { margin: 4px 0 2px; padding: 4px 8px; border-left: 3px solid var(--ash-amber); background: var(--ash-amber-soft); border-radius: 0 6px 6px 0; color: var(--ash-ink2); font-size: 12.5px; }
+.tr-nqs { display: flex; flex-direction: column; gap: 4px; margin: 8px 0 0; }
+.tr-nqchip { display: flex; align-items: flex-start; gap: 6px; padding: 4px 4px 4px 8px; border-left: 3px solid var(--ash-amber); background: var(--ash-amber-soft); border-radius: 0 6px 6px 0; font-size: 12.5px; color: var(--ash-ink2); }
+.tr-nqchip > span { flex: 1; min-width: 0; }
+.tr-ntools { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+.tr-chipbtn { border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); border-radius: 99px; padding: 6px 11px; font-weight: 800; font-size: 12.5px; cursor: pointer; min-height: 32px; }
+.tr-chipbtn.on, .tr-chipbtn[aria-expanded="true"] { border-color: var(--ash-accent); background: var(--ash-accent-soft); }
+.tr-nlines { list-style: none; margin: 8px 0 0; padding: 0; max-height: 260px; overflow-y: auto; border: 1px solid var(--ash-line); border-radius: 10px; }
+.tr-nlines li + li { border-top: 1px solid var(--ash-line); }
+.tr-nlines button { display: flex; gap: 8px; width: 100%; text-align: left; background: none; border: 0; padding: 9px 10px; color: var(--ash-ink); font-size: 13px; cursor: pointer; }
+.tr-nlines button[aria-pressed="true"] { background: var(--ash-accent-soft); }
+.tr-nlines .ck { flex: 0 0 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--ash-line2); display: grid; place-items: center; font-size: 12px; font-weight: 900; color: var(--ash-accent); }
+.tr-notes .tr-add textarea { flex: 1; min-width: 0; resize: none; font: inherit; font-size: 15px; border-radius: 10px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); padding: 8px 10px; }

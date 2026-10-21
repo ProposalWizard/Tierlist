@@ -17,6 +17,9 @@
  * about new patch notes (lib/teamRoom/push.ts ringNewPatches; who and when:
  * lib/teamRoom/inbox.ts).
  *
+ * Notes under a patch note that @ you are in the Inbox too, above the notes
+ * ("Mentions"); tapping one opens that version with its notes showing.
+ *
  * Shown only to Harry, Mikey and Leo once they have picked their name in the
  * Team room (status ready + me). Testers and signed-out visitors see nothing.
  */
@@ -26,7 +29,9 @@ import { useRouter } from "next/navigation";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import { TEAM_ROOM } from "@/lib/teamRoom/config";
 import { patchAuthor, type PatchMeta } from "@/lib/teamRoom/extras";
-import { bellCount, inboxFor, shortPatchTitle } from "@/lib/teamRoom/inbox";
+import { bellCount, inboxFor, noteMentionsFor, noteSeenKey, shortPatchTitle } from "@/lib/teamRoom/inbox";
+import { splitQuotes } from "@/lib/teamRoom/notify";
+import { requestNotes } from "@/lib/teamRoom/patchQuote";
 import { setAck, useTeamRoom } from "@/lib/teamRoom/store";
 import { ringNewPatches } from "@/lib/teamRoom/push";
 import { useAdminLook } from "@/lib/adminLook";
@@ -55,6 +60,7 @@ export default function InboxBell({ className }: { className?: string }) {
 
   const ready = s.status === "ready" && !!s.me;
   const list = useMemo(() => (ready ? inboxFor(META, s.me, s.acks) : []), [ready, s.me, s.acks]);
+  const mentions = useMemo(() => (ready ? noteMentionsFor(s.notes, s.me, s.acks) : []), [ready, s.notes, s.me, s.acks]);
 
   // New patch notes in this deploy: ask the site to buzz the team (once per version per browser).
   useEffect(() => { if (ready) ringNewPatches(META[0]?.version); }, [ready]);
@@ -69,7 +75,7 @@ export default function InboxBell({ className }: { className?: string }) {
   }, [open]);
 
   if (!ready) return null;
-  const n = list.length;
+  const n = list.length + mentions.length;
 
   const markRead = async (v: string) => {
     setErr(null);
@@ -77,21 +83,24 @@ export default function InboxBell({ className }: { className?: string }) {
     if (!r.ok) setErr(r.error);
     return r.ok;
   };
-  const openNote = async (v: string) => {
+  const openNote = async (v: string, mention?: number) => {
     setOpen(false);
-    void markRead(v);
+    if (mention) { void setAck("patch", noteSeenKey(mention), true); requestNotes(v); } else void markRead(v);
     const ev = new CustomEvent(OPEN_PATCH_EVENT, { detail: v, cancelable: true });
     window.dispatchEvent(ev);
     if (!ev.defaultPrevented) router.push(`${TEAM_ROOM.home}?tab=notes&v=${encodeURIComponent(v)}`);
   };
-  const markAll = async () => { for (const p of list) if (!(await markRead(p.version))) break; };
+  const markAll = async () => {
+    for (const m of mentions) if (!(await markRead(noteSeenKey(m.id)))) return;
+    for (const p of list) if (!(await markRead(p.version))) break;
+  };
 
   return (
     <>
       <button ref={btn} type="button" className={`tr-bell${className ? ` ${className}` : ""}`} data-on={n > 0 || undefined}
         onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="dialog"
-        aria-label={n ? `Inbox: ${n} patch note${n === 1 ? "" : "s"} to read` : "Inbox: nothing to read"}
-        title={n ? `${n} patch note${n === 1 ? "" : "s"} to read` : "Inbox: all read"}>
+        aria-label={n ? `Inbox: ${n} to read` : "Inbox: nothing to read"}
+        title={n ? `${list.length} patch note${list.length === 1 ? "" : "s"} to read${mentions.length ? `, ${mentions.length} mention${mentions.length === 1 ? "" : "s"}` : ""}` : "Inbox: all read"}>
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
         </svg>
@@ -103,14 +112,30 @@ export default function InboxBell({ className }: { className?: string }) {
           <div className="tr-inbox" role="dialog" aria-label="Inbox" style={{ top }}>
             <div className="tr-inbox-h">
               <b>Inbox</b>
-              <span className="tr-muted">{n ? `${n} patch note${n === 1 ? "" : "s"} to read` : "All read"}</span>
+              <span className="tr-muted">{n ? [list.length ? `${list.length} patch note${list.length === 1 ? "" : "s"} to read` : "", mentions.length ? `${mentions.length} mention${mentions.length === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ") : "All read"}</span>
               {n > 1 && <button className="tr-btn ghost sm" onClick={markAll}>Mark all read</button>}
               <button className="tr-x" onClick={() => setOpen(false)} aria-label="Close">✕</button>
             </div>
             {n === 0 ? (
               <p className="tr-inbox-empty">You are up to date. New patch notes land here, and on your phone if notifications are on.</p>
-            ) : (
-              <ul className="tr-inbox-l">
+            ) : (<>
+              {mentions.length > 0 && (
+                <ul className="tr-inbox-l" aria-label="Notes that mention you">
+                  {mentions.map((m) => {
+                    const { quotes, text } = splitQuotes(m.body);
+                    return (
+                      <li key={`n${m.id}`}>
+                        <button className="tr-inbox-i" onClick={() => openNote(m.target_id, m.id)} title="Open the note (counts as seen)">
+                          <Av p={m.person} sm />
+                          <span className="t"><b>@ {m.person} on v{m.target_id}</b><small>{quotes[0] ? `“${quotes[0]}” · ` : ""}{text.slice(0, 90)}</small></span>
+                        </button>
+                        <button className="tr-inbox-ok" onClick={() => markRead(noteSeenKey(m.id))} aria-label="Mark this mention seen" title="Mark seen without opening">✓</button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {list.length > 0 && <ul className="tr-inbox-l">
                 {list.map((p) => {
                   const who = patchAuthor(p.title);
                   return (
@@ -123,8 +148,8 @@ export default function InboxBell({ className }: { className?: string }) {
                     </li>
                   );
                 })}
-              </ul>
-            )}
+              </ul>}
+            </>)}
             {s.v2 === "off" && <p className="tr-muted tr-inbox-foot">Read marks are kept on this device only until <code>{TEAM_ROOM.sqlFileV2}</code> runs.</p>}
             {err && <p className="tr-err tr-inbox-foot">{err}</p>}
             <p className="tr-muted tr-inbox-foot">Patch notes from {day(TEAM_ROOM.inboxFrom)} on. Opening one marks it &ldquo;Read and understood&rdquo;.</p>

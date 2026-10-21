@@ -5,6 +5,7 @@
  * POST → ring people, after the sender's phone has saved a row:
  *   { table: "team_messages", id }  a chat message (@name, @all, a reply, a point)
  *   { table: "team_tasks", id }     a job typed on the board for someone else
+ *   { table: "team_notes", id }     a note with @name / @all (patch-note notes, ideas, pushes)
  *   { jobs: ["id", …] }             pushed jobs the phone has just seen (team/jobs.json)
  *   { patches: true }               new patch notes in this deploy (any admin page asks once a visit)
  *   { test: true }                  a test buzz to your own devices
@@ -31,7 +32,7 @@ import { BUNDLED_JOBS, TEAM_ROOM, isTeamPerson, type TeamPerson } from "@/lib/te
 import { fetchTeamJobs } from "@/lib/teamRoom/jobs";
 import type { TeamMessage, TeamTask } from "@/lib/teamRoom/logic";
 import {
-  RungBefore, TEST_PAYLOAD, jobsToRing, payloadForJob, payloadForMessage, payloadForTask, ringsForMessage, ringsForTask, withRungJobs,
+  RungBefore, TEST_PAYLOAD, jobsToRing, payloadForJob, payloadForMessage, payloadForNote, payloadForTask, ringsForMessage, ringsForNote, ringsForTask, withRungJobs,
   type PushPayload,
 } from "@/lib/teamRoom/notify";
 import { pushReady, ring, rungJobsOf, rungPatchesOf, saveRungJobs, saveRungPatches, teamAccounts } from "@/lib/teamRoom/notifyServer";
@@ -149,6 +150,14 @@ export async function POST(req: Request) {
     if (!fresh(row.created_at)) return NextResponse.json({ ok: true, sent: 0, stale: true });
     if (!rungBefore.first(`t:${id}`)) return NextResponse.json({ ok: true, sent: 0, again: true });
     rings = ringsForTask(row).map((r) => ({ person: r.person, payload: payloadForTask(row) }));
+  } else if (body.table === "team_notes") {
+    const { data: n } = await sb.from("team_notes").select("id, person, body, target_kind, target_id, created_at").eq("id", id).maybeSingle();
+    const row = n as { id: number; person: TeamPerson; body: string; target_kind: string; target_id: string; created_at: string } | null;
+    if (!row) return NextResponse.json({ error: "No such note." }, { status: 404 });
+    if (row.person !== me) return NextResponse.json({ error: "Only the writer can ring for a note." }, { status: 403 });
+    if (!fresh(row.created_at)) return NextResponse.json({ ok: true, sent: 0, stale: true });
+    if (!rungBefore.first(`n:${id}`)) return NextResponse.json({ ok: true, sent: 0, again: true });
+    rings = ringsForNote(row).map((r) => ({ person: r.person, payload: payloadForNote(row, r.why) }));
   } else {
     return NextResponse.json({ error: "Which table?" }, { status: 400 });
   }

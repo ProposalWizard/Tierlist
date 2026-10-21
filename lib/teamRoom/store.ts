@@ -299,7 +299,7 @@ async function insert<T extends { id: number }>(table: string, key: "messages" |
   if (error) return fail(error, plain);
   set((s) => ({ [key]: upsertById(s[key] as unknown as T[], data as T) }) as Partial<TeamRoomState>);
   // An @name, a reply, a point or a job given: ring their phone (lib/teamRoom/push.ts).
-  if (table === "team_messages" || table === "team_tasks") ringAfter(table, data as Record<string, unknown>);
+  if (table === "team_messages" || table === "team_tasks" || table === "team_notes") ringAfter(table, data as Record<string, unknown>);
   return { ok: true };
 }
 

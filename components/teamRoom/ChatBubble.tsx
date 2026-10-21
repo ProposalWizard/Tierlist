@@ -152,7 +152,7 @@ function Bubble({ path }: { path: string }) {
   const chatTitle = [unread ? `${unread} new` : "", waiting ? `${waiting} waiting on you` : ""].filter(Boolean).join(", ");
 
   return (
-    <div className="tr-vars tr" data-look={look}>
+    <div className="tr-vars tr tr-float" data-look={look}>
       {open && <div className="tr-scrim" onClick={() => setOpen(false)} />}
       {open && (
         <div className="tr-pop" style={{ bottom: Math.min(bottom + SIZE + 10, Math.max(8, window.innerHeight - 590)), left: Math.max(8, Math.min(left, window.innerWidth - 392)) }} role="dialog" aria-label="Team room">
