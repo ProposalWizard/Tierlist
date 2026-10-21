@@ -156,3 +156,5 @@ Ask: "For the 3d ecosystem let's make it so u can get into your car and drive ho
 4. Riding: **round the whole garden with the walking controls (walk, gallop on hold)**, plus "make a field area unlock for the horse to ride in - maybe obstacle course vibe".
 5. Saddle: **free, on the horse only while you ride.**
 6. **Riding trains the horse** (speed / stamina).
+- (02:40) Body: **C** ("yes but I still think the body needs work"). Car Q1: **both** (steer yourself, plus a skip to the cut scene).
+- B14 Q15 joystick auto run: yes. Q16 stamina bar: move it. Q17 sprint 0.12/s: yes. Bug hunt: skip. Hold live until the camera fix is checked.
