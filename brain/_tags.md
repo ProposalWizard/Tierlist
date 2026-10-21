@@ -17,6 +17,7 @@ rule | a hard rule or limit | never, must, only when
 deploy | pushing and merging to live | push, deploy, merge, to main, into main
 style | how replies and pages are written | answer, sentence, claim, reply, write
 brain | the Brain notes system itself | brain
+client-kib | Knowitball as a marketing client: voice, audience, rules, brand, learnings, scripts (approved by Harry, 21 Oct 2026) | knowitball client, marketing
 
 ## Defaults (applied by type:client, on top of keyword tags)
 default | ruling:all | rule
@@ -45,3 +46,6 @@ default | process:3d | three-d
 default | process:dat | data
 default | fact:eng | engine
 default | fact:team | team
+default | fact:kib | client-kib
+default | ruling:kib | client-kib
+default | reference:kib | client-kib

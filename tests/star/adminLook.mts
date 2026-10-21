@@ -29,7 +29,8 @@ ok(backFor("/admin/star/game/web", "tester").href === GAMES[0].home, "a tester: 
 ok(backFor("/somewhere-unlisted", "tester").href === GAMES[0].home, "a tester never gets sent to the Team area");
 ok(backFor("/admin/star/g/chances", "tester").href === "/admin/star", "a tester: a group → its game's home, as for an admin");
 ok(backFor("/admin/research?x=1").href === "/admin/star/g/research", "a query string is ignored");
-for (const p of ADMIN_PAGES.filter((x) => x.url !== "/admin/star" && x.url !== TEAM_HOME)) {
+// A game's home (the Ballon d'Or home, the Marketing board) goes to the Team area, checked above.
+for (const p of ADMIN_PAGES.filter((x) => !GAMES.some((g) => g.home === x.url) && x.url !== TEAM_HOME)) {
   const b = backFor(p.url);
   if (!GROUPS.some((g) => b.href === `/admin/star/g/${g.key}`)) ok(false, `${p.url} goes back to a group page (got ${b.href})`);
 }

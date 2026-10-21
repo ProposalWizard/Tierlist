@@ -26,7 +26,7 @@ import "./skin.css";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState, type ReactNode } from "react";
-import { ADMIN_PAGES, GAMES, TEAM_HOME, gameForPath, gameOf, groupGame, groupIcon, groupsOf, visibleTo, type AdminGameKey, type AdminGroup } from "@/lib/adminRegistry";
+import { ADMIN_PAGES, GAMES, TEAM_HOME, gameForPath, gameOf, gamesFor, groupGame, groupIcon, groupsOf, visibleTo, type AdminGameKey, type AdminGroup } from "@/lib/adminRegistry";
 import { ADMIN_LOOKS, setAdminLook, setAdminMode, useAdminLook, useAdminMode } from "@/lib/adminLook";
 import BackArrow from "@/components/admin/BackArrow";
 import InboxBell from "@/components/teamRoom/InboxBell";
@@ -152,7 +152,7 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
             {/* One line per game: its home. */}
             <div className="ash-navh">Games</div>
             <div className="ash-glist">
-              {GAMES.map((g) => {
+              {gamesFor(role).map((g) => {
                 const lead = groupsOf(g.key)[0]?.key;
                 return (
                   <Link key={g.key} className="ash-gnav" data-g={lead} href={g.home} title={`${g.name}: ${gameCount(g.key)} pages`}>
@@ -204,7 +204,7 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
         <main className="ash-main">
           {/* One tab per game; inside a tab you only see that game's pages. */}
           <nav className="ash-games" aria-label="Games">
-            {GAMES.map((g) => (
+            {gamesFor(role).map((g) => (
               <Link key={g.key} href={g.home} className="ash-game" aria-current={!inTeam && g.key === game ? "page" : undefined} title={`${g.name}: ${gameCount(g.key)} pages`}>
                 <span className="ash-game-full">{g.name}</span><span className="ash-game-short">{g.short}</span>
                 <span className="ash-game-n">{gameCount(g.key)}</span>

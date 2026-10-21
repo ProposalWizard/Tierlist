@@ -96,6 +96,7 @@ export const TAGLINE: Record<string, string> = {
   money: "Play. Earn. Upgrade.", sound: "Hear the difference.", site: "Keep it fresh.",
   draft: "The draft game.", tierlists: "Rank what matters.", old: "Kept for reference.",
   studio: "The team, the notes, the testers.", research: "What we found out, and what to do.",
+  marketing: "Our videos, from idea to posted.",
 };
 function Board({ shown, filtering, game }: { shown: AdminPage[]; filtering: boolean; game: AdminGameKey }) {
   const groups = groupsOf(game).map((g) => ({ g, pages: shown.filter((p) => p.group === g.key) }))
