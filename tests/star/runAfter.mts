@@ -186,5 +186,40 @@ const auto = runs("auto");
   check(`onside at your pass: the spot is never more than a metre behind you (${ahead} of ${n - wasOff})`, ahead >= 0.98 * (n - wasOff));
 }
 
+// ── 6. B14b: "After you pass: Joystick" — thumb off, Auto run takes over (Harry: "sure") ──
+{
+  const stickRun = (thumb: "off" | "held" | "release") => {
+    const rng = mulberry32(7711);
+    const sc: Scenario = makeChance({ source: { from: "kind", kind: "long_range" }, rng }).sc;
+    initDefenders(sc, rng);
+    const to = orderableRunners(sc)[0]?.pos ?? { x: sc.ball.x + 8, y: sc.ball.y };
+    const ball: Ball = launch(sc, { x: to.x - sc.ball.x, y: to.y - sc.ball.y }, 0.4, { cx: 0, cy: 0 }, { power: 70, technique: 70 }, rng);
+    ball.vz = 0; ball.z = 0.08; ball.shot = false; ball.youStruckAtGoal = false;
+    sc.player = { x: sc.ball.x, y: sc.ball.y };
+    const st = startPlayOnRun(sc, rng, to, { stick: true, pace: 70, energy: 90 });
+    const s = st.stick!;
+    const lr = mulberry32(3);
+    const p0 = { ...sc.player };
+    let autoAt: number | null = null, movedHeld = 0;
+    for (let t = 0; t < 1.6; t += H) {
+      s.held = thumb === "held" || (thumb === "release" && t < 0.5);
+      steerPlayOn(st, 0, 0);
+      const was = { ...sc.player };
+      if (stepPlayOn(st, sc, ball, H, lr, MAX_LAY_OFFS) === "caught") break;
+      if (s.held) movedHeld += Math.hypot(sc.player.x - was.x, sc.player.y - was.y);
+      if (s.autoOn && autoAt === null) autoAt = t;
+      stepBall(ball, sc, rng, H);
+      if (ball.event) ball.event = null;
+    }
+    return { thumb: s.thumb, autoAt, moved: Math.hypot(sc.player.x - p0.x, sc.player.y - p0.y), movedHeld };
+  };
+  const off = stickRun("off"), held = stickRun("held"), rel = stickRun("release");
+  console.log(`  Joystick, thumb off: Auto run from ${off.autoAt?.toFixed(2)} s, moved ${off.moved.toFixed(1)} m · thumb held still: moved ${held.movedHeld.toFixed(2)} m · let go at 0.5 s: Auto run from ${rel.autoAt?.toFixed(2)} s`);
+  check("Joystick: the stick is still drawn (thumb)", off.thumb === true);
+  check("Joystick, thumb never on the stick: Auto run runs you", off.autoAt !== null && off.autoAt < 0.05 && off.moved > 1);
+  check("Joystick, thumb on the stick but still: you stand (no Auto run)", held.autoAt === null && held.movedHeld < 0.05);
+  check("Joystick, thumb lifted at 0.5 s: Auto run takes over 0.6 s later", rel.autoAt !== null && Math.abs(rel.autoAt - 1.1) < 0.05);
+}
+
 console.log(fails ? `\n${fails} FAILED` : "\nall passed");
 process.exit(fails ? 1 : 0);

@@ -433,6 +433,10 @@ export interface PlayOnStick {
   sprintHeld?: boolean;
   /** THE RUN only: you run on your own when nobody steers (Auto run). */
   auto?: boolean;
+  /** "After you pass: Joystick": the thumb stick is drawn and listened to. */
+  thumb?: boolean;
+  /** The thumb is on the stick now (held still counts as steering: you stand). */
+  held?: boolean;
   /** Seconds since you last steered (keys or thumb). */
   idleT?: number;
   /** Auto run is steering you this substep. */
@@ -683,7 +687,8 @@ export function callForItShown(o: { captain: boolean; stickLive: boolean; layOff
 //     run, by how much better your spot is than his and how good a passer he
 //     is (passQuality). Captain or not. The captain can still call for it.
 // "After you pass: Joystick" keeps its thumb stick (and its calmer tempo); it
-// now has the same legs and bar. Thumb off still stands you still there.
+// now has the same legs and bar. Thumb off the stick: Auto run takes over after
+// AUTO_AFTER_S, as when you let go of the keys (B14b, Harry: "sure").
 
 /** After you stop steering, Auto run takes over again after this long (s). */
 export const AUTO_AFTER_S = 0.6;
@@ -705,7 +710,7 @@ export interface RunOptions {
   /** Your match energy now (0–100) and the bar as it was (0..1). */
   energy?: number;
   bar?: number;
-  /** "After you pass: Joystick": the thumb stick, its tempo, no Auto run. */
+  /** "After you pass: Joystick": the thumb stick and its tempo (Auto run when the thumb is off). */
   stick?: boolean;
 }
 
@@ -722,7 +727,7 @@ export function startPlayOnRun(sc: Scenario, rng: () => number, passTo: Vec2 | u
     target: supportRunTarget(sc, passTo), layOff: null, layOffLive: false,
     stick: {
       push: { x: 0, y: 0 }, vel: legs.vel, run: legs.speeds.run, called: false, choice: null, passTo: null, note: null, read: null,
-      legs, sprintHeld: false, auto: !o.stick, idleT: AUTO_AFTER_S, autoOn: false, autoTarget: null, retargetT: 0, mateAt: passTo ? { ...passTo } : null,
+      legs, sprintHeld: false, auto: true, thumb: !!o.stick, held: false, idleT: AUTO_AFTER_S, autoOn: false, autoTarget: null, retargetT: 0, mateAt: passTo ? { ...passTo } : null,
     },
   };
 }
@@ -734,7 +739,7 @@ export function sprintPlayOn(st: PlayOn, held: boolean) {
 
 function moveRun(st: PlayOn, stk: PlayOnStick, legs: Legs, sc: Scenario, ball: Ball, dt: number) {
   let push = stk.push, sprint = !!stk.sprintHeld;
-  const steering = Math.hypot(push.x, push.y) > 0.08;
+  const steering = Math.hypot(push.x, push.y) > 0.08 || !!stk.held;
   stk.idleT = steering ? 0 : (stk.idleT ?? 0) + dt;
   stk.autoOn = false;
   if (stk.auto && !steering && (stk.idleT ?? 0) >= AUTO_AFTER_S) {
