@@ -17,13 +17,13 @@ How to read the tags:
 
 ### What real football says
 
-1. **Headers are about 1 goal in 5.** About 16 shots in 100 are headers. About 18 goals in 100 are headers. [M, 34,853 shots from 1,401 matches] The Premier League's own figures are 16 to 20 headed goals in 100 in most seasons since 2003/04, with a low of 13.6 in 2019/20. [S, a search summary of premierleague.com, page not opened]
-2. **Volleys and half-volleys are even more common.** About 21 shots in 100. About 23 goals in 100. [M]
-3. **Bicycle kicks are very rare.** 6 shots in 1,000. 4 goals in 1,000. Only 13 goals in 1,401 matches, so one goal in about 108 matches. Only 6 in 100 of them score. [M]
-4. **Diving headers are rare but good.** 4 shots in 1,000, but 20 in 100 score, because they only happen from very close (the middle one is 9 m out). [M]
-5. **Distance decides almost everything.** A header from under 6 m scores 29 in 100. From 11 to 16 m it scores 4 in 100. [M]
-6. **At the same distance a header is much harder than a foot shot.** From 6 to 11 m: foot 29 in 100, volley 20, header 9.5. [M] Headers look as good as feet overall (10 in 100 against 8.5) only because headers come from closer in. [M]
-7. **Pressure hurts headers most.** Inside 16 m a header with a defender on him scores 7.6 in 100. A free header scores 13.7. [M]
+1. **Headers are about 1 goal in 5.** About 15 shots in 100 are headers. About 19 goals in 100 are headers. [M, Wyscout, 45,287 shots from 1,941 matches; re-measured from free data 21 Oct 2026, section 2.0] The Premier League's own figures are 16 to 20 headed goals in 100 in most seasons since 2003/04, with a low of 13.6 in 2019/20. [S, a search summary of premierleague.com, page not opened]
+2. **Volleys are common but no free data tags them.** About 19 in 100 tracked strikes are at volley height (0.35 to 1.3 m). [M, DFL and SkillCorner tracking] A foot shot straight off a team-mate's high ball is about 3 in 100 open-play shots and scores 13 in 100. [M, Wyscout]
+3. **Bicycle kicks are very rare.** No free data set tags them, so their rate in the game is a design choice. [R]
+4. **Diving headers are rare.** No free data set tags them either. [R]
+5. **Distance decides almost everything.** An open-play header from under 6 m scores 42 in 100. From 11 to 16 m it scores 5 in 100. [M, Wyscout]
+6. **At the same distance a header is much harder than a foot shot.** From 6 to 11 m in open play: foot 31.5 in 100, foot off a high ball 24.7, header 17.4. [M, Wyscout] Headers look as good as feet overall (13.8 in 100 against 10.0) only because headers come from closer in. [M]
+7. **Pressure on headers: no free number yet.** Wyscout has no pressure flag. [R]
 
 ### What we already have
 
@@ -62,7 +62,7 @@ How to read the tags:
    - tune how team-mates head and volley by skill, or
    - add new move names to one type list (`BallActionMode`). I can avoid this one.
    - Everything else in my plan stays out of that file.
-2. **The mix.** Real open play, inside 20 m: 13.6 in 100 shots are headers and 21.6 in 100 are volleys. [M] The game gives 10 in 100 to each. That is lighter than real, but the game's chances are not all shots. Your call. See section 6.
+2. **The mix.** Real open play, inside 20 m: 16.6 in 100 shots are headers [M, Wyscout]; about 19 in 100 tracked strikes are at volley height [M, tracking]. The game gives 10 in 100 to each. That is lighter than real, but the game's chances are not all shots. Your call. See section 6.
 3. **Which skill for which move.** Section 2.
 4. **Input for the bicycle kick.** A or B from the flair plan. I agree with the plan: A.
 
@@ -77,41 +77,71 @@ How to read the tags:
 
 ## 2. Real football, with numbers (question 1)
 
+### 2.0 Re-measured from free data (21 Oct 2026, sim rebuild piece 1)
+
+The first version of this section was measured on a licensed data set whose
+terms forbid any commercial use of the data "or any analysis derived" from it
+(see `data/opendata/LICENCES.md`, "Checked and NOT used"). Those numbers are
+removed. Everything below is re-measured from free data that allows
+commercial use with credit (`lib/star/dataCredits.ts`, Settings → Data
+credits and the public `/credits` page):
+
+- **Wyscout public dataset** [M], all of it: 1,941 men's matches (Premier
+  League, La Liga, Serie A, Bundesliga and Ligue 1 2017/18, World Cup 2018,
+  Euro 2016), CC BY 4.0. 45,287 shots that are not penalties; 43,078 of them
+  from the run of play (not a direct free kick).
+- **DFL and SkillCorner tracking** [M] (`data/realmoments/tracked.json`, pro
+  matches only, Harry's D7): ball height at the strike.
+
+What changed against the first version, in short:
+
+| Number | First version | Free data now | Effect on the advice |
+|---|---:|---:|---|
+| Headers, share of shots / goals (all play) | 16.6% / 18.8% | **15.4% / 18.9%** | none |
+| Headers inside 20 m, open play | 13.6% of shots | **16.6%** | headers are a little more common near goal |
+| Header goals per 100, 6 to 11 m | 9.5 | **17.4** (open play) | a header is about half a foot shot, not a third |
+| Header on target | 31% | **40%** (open play) | headers are more accurate than first thought |
+| Volleys and half-volleys | 20.7% of shots | **no free tag**; a foot shot within 4 s of a team-mate's high ball is 3.3% of open-play shots; ball at volley height (0.35-1.3 m) on 19% of tracked strikes | use the tracked heights, not a tag |
+| Bicycle and scissor kicks, diving headers | counted | **no free source** | a design choice, not a number (flagged in 7.4, 7.5) |
+| Pressure on a header | counted | **no free source yet** (Wyscout has no pressure flag; tracking has too few headers) | 7.2's pressure rule is a design choice |
+
+Wyscout's limits, stated: it tags the body part as "head/body" (no volley,
+overhead or diving tag); "on target" and "saved" come from its tags, so a ball
+cleared off the line counts as on target. "Open play" here = no corner or free
+kick by the shooting side in the 10 s before the shot (20.2% of shots follow
+one).
+
 ### 2.1 Source of the numbers
 
-- **StatsBomb open data** [M]. I pulled every shot from 1,401 men's matches:
-  - Premier League 2015/16
-  - Bundesliga 2015/16
-  - Serie A 2015/16
-  - Ligue 1 2015/16
-  - World Cup 2018 and 2022
-  - Euro 2020 and 2024
-- Penalties are left out. That leaves 34,853 shots and 3,213 goals (9.2%). StatsBomb tags each shot with a technique (Normal, Volley, Half Volley, Overhead Kick, Diving Header, Backheel, Lob) and a body part.
-- **Licence warning.** The project removed its StatsBomb data on 19 Oct 2026 (CLAUDE.md). I stored nothing in the repo. If these numbers ever appear in the game or on a page, check the licence and add the credit line first.
-- **The repo's own Wyscout data** [M]: 2,875 shots (2018 World Cup and Euro 2016). Used as a cross-check. It has a body part, but no volley or overhead tag.
+- **Wyscout public dataset** [M]: every shot event of the 1,941 matches,
+  streamed from `events.zip` (figshare 7770599). Body part from tag 403,
+  goal 101, on target 1801, blocked 2101, goal-mouth zone 1201-1223. Distance
+  from the goal's middle on a 105 × 68 m pitch.
+- **Tracking** [M]: DFL (7 Bundesliga matches) and SkillCorner (20 A-League
+  matches): ball height at the strike frame.
+- **The repo's own Wyscout files** (`data/realmoments/wyscout_shots.json`,
+  `wyscout_goals.json`) are a cut of the same set.
 
-### 2.2 How common each move is [M, StatsBomb]
+### 2.2 How common each move is [M, Wyscout]
 
-| Move | Shots | % of all shots | Goals | % of all goals | Goals per 100 shots | Middle distance |
+| Move | Share of shots | Share of goals | Goals per 100 shots | On target | Middle distance | Per match (both teams) |
 |---|---:|---:|---:|---:|---:|---:|
-| Foot, normal | 21,247 | 61.0 | 1,797 | 55.9 | 8.5 | 21.0 m |
-| Header (all) | 5,780 | 16.6 | 603 | 18.8 | 10.4 | 8.9 m |
-| Volley | 2,333 | 6.7 | 271 | 8.4 | 11.6 | 14.0 m |
-| Half-volley | 4,888 | 14.0 | 463 | 14.4 | 9.5 | 16.4 m |
-| Overhead kick (bicycle, scissor) | 204 | 0.6 | 13 | 0.4 | 6.4 | 11.9 m |
-| Diving header | 149 | 0.4 | 30 | 0.9 | 20.1 | 9.1 m |
-| Backheel | 136 | 0.4 | 15 | 0.5 | 11.0 | 8.6 m |
-| Lob | 269 | 0.8 | 53 | 1.7 | 19.7 | 19.0 m |
+| Foot (all; share columns include direct free kicks) | 84.6% | 81.1% | 10.0 | 35.4% | 19.1 m | 19.7 |
+| Header (all play) | 15.4% | 18.9% | 12.5 | 36.4% | 10.5 m | 3.60 |
+| Header (open play) | 9.6% | 12.5% | 13.8 | 40.3% | — | 1.70 |
+| Foot shot straight off a team-mate's high ball (volley stand-in, open play) | 3.3% | 4.2% | 13.4 | 33.9% | — | 0.59 |
+| Bicycle / scissor / diving header | no tag | no tag | — | — | — | — |
 
 Notes:
 
-- The "foot, normal" row leaves out every header, volley and special technique. The header row includes diving headers.
-- Per match, both teams together: 4.0 headers, 5.2 volleys and half-volleys, 0.15 overhead attempts. [M]
-- Overhead tags are uneven: Premier League 63, Serie A 55, Ligue 1 51, the rest under 15 each. [M] Some data sets may tag them less. Treat 0.6% as roughly right, not exact.
-- Wyscout agrees on headers [M]: 16.2% of shots, 18.2% of goals (55 of 303 including penalties).
+- Wyscout counts every shot, not only open play. 20.2% of all shots come
+  within 10 s of a corner or free kick; most headers do (only 1.70 of the 3.60
+  headers a match are open play).
+- The volley stand-in is narrow on purpose (a pass tagged "high" by a
+  team-mate, then a foot shot within 4 s). Half-volleys off a bounce are not
+  in it. The fair count of volley-height strikes is the tracking one (2.5).
 - In the 232 non-penalty World Cup and Euro goals [M, `wyscout_goals.json`]:
-  - 55 were headers (23.7%).
-  - 45 foot goals came off a high pass (19%). Those are the volley and first-time candidates.
+  55 were headers (23.7%); 45 foot goals came off a high pass (19%).
 
 Beach soccer is a different game, so do not use it for 11-a-side. [S, FIFA Training Centre] At the 2024 Beach Soccer World Cup:
 
@@ -119,57 +149,44 @@ Beach soccer is a different game, so do not use it for 11-a-side. [S, FIFA Train
 - Defenders blocked half of them: 244 block attempts, 50% success.
 - A beach player says he scores one "once a season" in 11-a-side. That is one man's remark, not data. [S, FIFA.com]
 
-### 2.3 Open play only, near goal [M, StatsBomb]
+### 2.3 Open play only, near goal [M, Wyscout]
 
-Open play means "Regular Play" and "From Counter".
+| Within | Open-play shots | Headers: of shots / of goals | Foot off a high ball: of shots / of goals |
+|---|---:|---:|---:|
+| 60 m | 34,304 | 9.6% / 12.5% | 3.3% / 4.2% |
+| 20 m | 19,735 | 16.6% / 14.1% | 4.8% / 4.6% |
+| 16 m | 13,957 | 22.7% / 16.1% | 5.5% / 5.1% |
 
-| Within | Open-play shots | Headers | Volleys and half-volleys | Overheads |
-|---|---:|---:|---:|---:|
-| 60 m | 13,284 | 8.0% | 16.9% | 0.4% |
-| 20 m | 7,812 | 13.6% | 21.6% | 0.64% |
-| 16 m | 5,181 | 20.3% | 24.3% | 0.87% |
+### 2.4 Goals per 100 shots, by distance [M, Wyscout, open play]
 
-The shares of goals in open play inside 20 m are 12.3% headers and 19.9% volleys.
+| Distance | Foot, ground ball | Header | Foot off a high ball |
+|---|---:|---:|---:|
+| 0 to 6 m | 64.4 (n 528) | 42.0 (n 231) | 56.8 (n 44) |
+| 6 to 11 m | 31.5 (n 2,368) | 17.4 (n 1,613) | 24.7 (n 247) |
+| 11 to 16 m | 15.3 (n 7,121) | 5.1 (n 1,322) | 11.4 (n 483) |
+| 16 to 25 m | 6.1 (n 10,842) | 5.9 (n 119) | 4.0 (n 278) |
 
-### 2.4 Goals per 100 shots, by distance [M, StatsBomb]
-
-| Distance | Foot, normal | Header | Volley | Half-volley | Overhead | Diving header |
-|---|---:|---:|---:|---:|---:|---:|
-| 0 to 6 m | 63.1 | 28.8 | 46.2 | 42.3 | 20 (10 shots) | 42.9 (14 shots) |
-| 6 to 11 m | 29.1 | 9.5 | 19.7 | 21.8 | 7.8 | 21.6 |
-| 11 to 16 m | 15.8 | 3.6 | 8.4 | 9.4 | 5.6 | 8.8 |
-| 16 to 25 m | 5.2 | 2.7 | 4.0 | 3.5 | 0 (22 shots) | 0 (4 shots) |
+All play (corners in): headers 37.0 / 15.1 / 5.0 / 4.2; on target 51 / 38 /
+32 / 29% at the same four distances.
 
 Plain reading:
 
-- A header scores about 0.45 as often as a foot shot at 0 to 6 m. About 0.33 at 6 to 11 m. About 0.23 at 11 to 16 m.
-- A volley or half-volley scores about 0.7 as often as a foot shot up to 11 m, and about 0.55 at 11 to 16 m.
-- Bicycle kicks are short on shots, so only the shape matters. They are worse than a volley at the same distance.
+- A header scores about 0.65 as often as a foot shot at 0 to 6 m. About 0.55
+  at 6 to 11 m. About 0.33 at 11 to 16 m.
+- A foot shot off a high ball scores about 0.8-0.9 as often as a ground-ball
+  shot up to 11 m, and about 0.75 at 11 to 16 m.
+- Bicycle kicks: no free count. Their rate is a design choice (7.4).
 
 ### 2.5 What makes each one work [M where marked, [R] otherwise]
 
 - **Distance.** Far the biggest factor. See 2.4. [M]
-- **Pressure.** Inside 16 m, goals per 100 shots with a defender on the man [M]:
-
-| Move | Under pressure | Free |
-|---|---:|---:|
-| Header | 7.6 | 13.7 |
-| Volley or half-volley | 14.5 | 17.7 |
-| Foot, normal | 19.3 | 22.3 |
-
-- **First time.** 71 in 100 volleys and half-volleys are first-time. [M] Foot shots hit first time score 12.6 in 100. The rest score 6.9. [M] Distance mixes in here, so do not read it as cause and effect.
-- **On target.** [M] Header 31%, volley 28%, half-volley 27%, overhead 25%, foot 34%. A volley is a "hit it and hope" shot. A header is not much better.
-- **Does the xG model miss them?** Goals against model expectation [M]:
-
-| Move | Goals | Expected goals |
-|---|---:|---:|
-| Header | 573 | 595 |
-| Volley and half-volley | 734 | 724 |
-| Overhead | 13 | 16.0 |
-| Diving header | 30 | 28.5 |
-| Backheel | 15 | 20.3 |
-
-  Nothing is far off, so these moves are not secretly easier or harder than their position says. Overheads and backheels are a little below the model, but the samples are small.
+- **Pressure.** No free number yet: Wyscout has no pressure flag, and the
+  tracked matches hold too few headers (25) to split. Football sense says a
+  marked header is harder; 7.2 treats it as a design choice. [R]
+- **First time.** No free flag. [R]
+- **On target** [M, Wyscout, open play]: header 40%, foot off a high ball
+  34%, every open-play shot 36%. A volley is still a "hit it and hope" shot;
+  a header is not worse than a foot shot once corners are left out.
 - **Ball height, approach angle, body shape.** I found no free numbers for these. [S] FIFA's own article gives no heights. It says the bicycle kick needs the player to "lift the ball up" first, and that it often follows a poor pass or a through ball. [R] My guess from physics: the ball must be above the head, the man must have his back to goal or be side-on, and the cross must come from behind or beside him. That is the rule the flair plan already uses.
 - **Real ball height at the strike** [M, DFL and SkillCorner tracking, open play, up to 35 m]:
   - 12% of strikes are header height (1.3 m or more, or tagged a header).
@@ -423,7 +440,7 @@ The numbers 0.35, 1.3 and 2.6 are the engine's own (`HEADER_MIN_Z` and the other
 | Goals per 100 | 20 | 29 | 40 |
 
   Keep the middle where it is. Widen the spread a little. [R]
-- **Pressure.** Real headers with a defender on them score half as often (7.6 against 13.7). [M] Reuse the drawing's marker: if a defender is within about 1.5 m of you, narrow the band. The pictures already hold the marker. [R]
+- **Pressure.** No free number yet (2.5); a marked header being harder is football sense. [R] Reuse the drawing's marker: if a defender is within about 1.5 m of you, narrow the band. The pictures already hold the marker. [R]
 - **Picture.** `header_stand` with the jump timed to the tap. Slow-motion for the 0.3 s before contact. Freeze 3 frames. Camera punch. Replay in the goal video.
 - **Sound.** A new head-on-ball thump. `public/sfx` has no header sound today. [C]
 
@@ -440,7 +457,7 @@ The numbers 0.35, 1.3 and 2.6 are the engine's own (`HEADER_MIN_Z` and the other
 I accept the flair plan almost whole (`docs/plans/2026-10-20-flair-bicycle.md`). My changes:
 
 - **Offer rule.** Only on a header or volley chance where the ball arrives from behind or beside you, 6 to 14 m out. The rule only picks among chances that already exist. It places nobody. [R]
-- **Offer rate.** The plan says Flair ÷ 2 in 100 of those chances. The real world offers it 0.15 times a match for two teams. [M] A new player at Flair 15 sees about 1 in 14 matches. An Icon sees about 1 in 3. That is a good game rate and is not real. It is fine, because the move should be a treat. [R]
+- **Offer rate.** The plan says Flair ÷ 2 in 100 of those chances. No free data counts real attempts, so this is a design rate. [R] A new player at Flair 15 sees about 1 in 14 matches. An Icon sees about 1 in 3. That is a good game rate and is not real. It is fine, because the move should be a treat. [R]
 - **Skill link, proposed targets** (to be measured):
 
 | Flair | 15 | 45 | 80 |
@@ -448,7 +465,7 @@ I accept the flair plan almost whole (`docs/plans/2026-10-20-flair-bicycle.md`).
 | Clean contact | 15 in 100 | 35 in 100 | 60 in 100 |
 | Goal, per attempt | 4 in 100 | 10 in 100 | 20 in 100 |
 
-  Real attempts score 6.4 in 100. [M] So a Flair 45 player sits just above real life, and the best sit well above. That is a fair price for rare, spectacular moves. [R]
+  No free data gives a real rate for attempts (2.2). A foot shot off a high ball from 6 to 16 m scores 11-25 in 100 [M, Wyscout]; a bicycle kick should sit well below that. [R] That is a fair price for rare, spectacular moves. [R]
 - **Failure.** A miss wastes the chance. No injury or foul. That matches the plan.
 - **Input.** Option A: one more choice on the strike screen: BICYCLE. The ring is half the size and the timing band is half as wide. I agree with the plan.
 - **Picture.** The new keyed clip. A low side-on camera for the replay only.
@@ -456,7 +473,7 @@ I accept the flair plan almost whole (`docs/plans/2026-10-20-flair-bicycle.md`).
 
 ### 7.5 Diving header (skills: Power, Flair for the dive)
 
-- **When.** A low ball (0.5 to 1.2 m) arriving wide of you, 4 to 11 m out. Real diving headers are 0.4% of shots, 9 m out, and score 20 in 100. [M]
+- **When.** A low ball (0.5 to 1.2 m) arriving wide of you, 4 to 11 m out. No free data tags diving headers; an open-play header from 6 to 11 m scores 17 in 100 [M, Wyscout]. [R]
 - **Input.** A DIVE button on the strike screen.
 - **Goal chance target.** Same as a header, a little higher because the real figure is higher: Power 30 / 60 / 90 gives 22 / 30 / 40. [R]
 - **Picture.** `header_diving` exists in 3D. It needs baking into the sprites and a recheck with the overlap tool.
@@ -522,11 +539,10 @@ Each piece is checked and signed off before the next (CLAUDE.md: "build slowly a
 
 ## Appendix A. How I measured
 
-1. **StatsBomb open data.** Fetched `competitions.json` and each match's events from the public GitHub `statsbomb/open-data` repo. Kept each Shot event's location, technique, body part, outcome, xG, first-time flag, play pattern and pressure flag. Dropped penalties and shots with no location. Kept 34,853 shots.
-   - Distance is from the shot to the goal's middle, with StatsBomb's 120 × 80 yard pitch converted to metres (× 0.9144).
-   - "Foot, normal" means technique Normal and body part not Head.
-   - "Header" means body part Head, so it includes diving headers in the header row. The diving-header row is by technique.
-   - Scratch script and data: `/tmp/claude-0/-home-user-Tierlist/06265a1b-84e9-513f-a9d9-be07aadc231e/scratchpad/sb/fetch.py` and `shots.json`. Not in the repo.
+1. **Wyscout public dataset** (re-measured 21 Oct 2026). `events.zip` from figshare 7770599 (CC BY 4.0), all 1,941 matches,
+   streamed in Python (scratch script `scratchpad/sim1/wyscout_measure.py`, not in the repo). Shot = event 10, direct free kick = 3/33,
+   penalty = 3/35 (left out). Header = tag 403. "Off a high ball" = the side's previous action, under 4 s before, was a pass tagged high (801) or a
+   high pass (8/82). "Open play" = no corner or free kick by the side in the 10 s before. Distance from the goal's middle, x × 1.05, y × 0.68.
 2. **Repo data.** `data/realmoments/wyscout_shots.json` (2,875 shots), `wyscout_goals.json` (232 goals), `tracked.json` and `tracks.json` (ball height at the strike frame, index `−t0 ÷ dt`). I counted open-play DFL and SkillCorner shots up to 35 m whose keeper is by his goal, with at least 19 men and a track of at least 21 frames. This copies `autoCheck` without calling it, so the counts may differ by a few from the game's.
 3. **Technique numbers in 5.2** are worked out from the constants in `airborneChance.ts` and `ContactBall.tsx`. They were computed, not seen on a screen.
 4. **Test run.** `node scripts/run-star-tests.mjs airChances`: 1 passed, 13 s.
@@ -543,7 +559,7 @@ Each piece is checked and signed off before the next (CLAUDE.md: "build slowly a
 - eFootball heading: [pesmastery](https://pesmastery.com/efootball-heading-tutorial/). Search summary.
 - Score! Hero: [pocketgamer](https://www.pocketgamer.com/score-hero/review/), [trustedreviews](https://www.trustedreviews.com/score-hero-review). Search summary.
 - New Star Soccer: [pocketgamer 1.52 update](https://www.pocketgamer.com/articles/054583/r/), [macworld](https://www.macworld.com/article/666864/new-star-soccer-for-ios-review.html). Search summary.
-- StatsBomb open data: [github.com/statsbomb/open-data](https://github.com/statsbomb/open-data).
+- Wyscout public dataset: Pappalardo et al., Scientific Data 6, 236 (2019), [figshare collection 4415000](https://doi.org/10.6084/m9.figshare.c.4415000.v5), CC BY 4.0.
 - Repo: `docs/plans/2026-10-20-flair-bicycle.md`, `docs/handoffs/2026-10-20-builds/REPORTS.md` (B10), `OPEN-QUESTIONS.md`, `docs/plans/2026-10-19/harry-answers-round.md`, `data/realmoments/README.md`, `docs/3D_HANDBOOK.md`.
 
 ## Appendix C. Code map
