@@ -249,6 +249,7 @@ const barCornerStyle = (c: "bl" | "br" | "tl" | "tr", addedUp: boolean): React.C
 });
 import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
+import { setMusicScene, clearMusicScene, setMusicMuted, playTurningPoint, isTurningPoint } from "@/lib/star/gameMusic";
 
 /**
  * `feed` is the commentary screen, and it is where a match LIVES — see
@@ -2042,6 +2043,31 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const phaseRef = useRef<Phase>("aim");
   const [phase, setPhaseState] = useState<Phase>("aim");
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
+
+  // Game music (Settings → Game music, off by default; lib/star/gameMusic.ts).
+  // A career match only: the score, the clock, a knockout and a dribble pick
+  // the bed; a goal of yours from behind plays the turning-point cue once.
+  const musicScoreRef = useRef(displayScore);
+  useEffect(() => {
+    if (!matchMode) return;
+    const before = musicScoreRef.current;
+    musicScoreRef.current = displayScore;
+    if (isTurningPoint(before.user, before.opp, displayScore.user)) playTurningPoint();
+  }, [matchMode, displayScore]);
+  useEffect(() => {
+    if (!matchMode) return;
+    setMusicScene("match", phase === "postmatch"
+      ? { kind: "full-time", us: displayScore.user, them: displayScore.opp }
+      : { kind: "match", state: {
+          us: displayScore.user, them: displayScore.opp,
+          minute: matchMinute, duration: MATCH_DURATION,
+          knockout: !!extraTimeEligibility(),
+          dribbling: phase === "dribble" || phase === "fpDribble" || phase === "tdDribble",
+        } }, 10);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- extraTimeEligibility reads refs; the fixture is fixed for the match
+  }, [matchMode, phase, displayScore, matchMinute, MATCH_DURATION]);
+  useEffect(() => { if (matchMode) setMusicMuted(muted); }, [matchMode, muted]);
+  useEffect(() => () => { clearMusicScene("match"); setMusicMuted(false); }, []);
 
   const [aim, setAim] = useState<{ dir: { x: number; y: number }; power: number } | null>(null);
   // ── Knuckleball & power shot (lib/star/shotModel.ts; Settings → Gameplay) ──

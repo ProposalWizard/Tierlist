@@ -159,6 +159,17 @@ scoreboard at the top whose score rolls over, with scorer and assist; every
 other `showAction` word is a TV caption. Classic = the pop-ups exactly as before.
 Career soak for any season/cup/ladder change: `npx tsx scripts/soak/careerSoak.mts 20`.
 
+## Game music (Mikey, 21 Oct 2026)
+
+Settings → first card → "Game music" (off by default; asked for as a toggle).
+11 original orchestral tracks inspired by Blue Lock's score (speed, key, energy
+only; every note new), played by the CC0 VSCO 2 CE recordings, in
+`public/star/music/`. Which plays where: `lib/star/gameMusic.ts` (pure
+`matchCue`/`sceneCue`, test `tests/star/gameMusic.mts`). Page sets the screen,
+CanvasMatch the match (priority 10), BallonDorNight the night; cut scenes hold
+it silent. Remake or add tracks: `tools/game-music/README.md`. Mikey's Blue
+Lock reference files must never go in the repo.
+
 ## The world season: every league and cup is played (Mikey, 19 Oct 2026)
 
 Read `docs/WORLD_SEASON.md` before touching it. `lib/star/world/`:

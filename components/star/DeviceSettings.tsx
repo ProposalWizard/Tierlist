@@ -3,6 +3,7 @@ import { useCamZoom, setCamZoom, useCamHeightTest, setCamHeightTest, ZOOM_MIN, Z
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
+import { useGameMusicOn, setGameMusicOn } from "@/lib/star/gameMusic";
 import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { useMatchView3d, setMatchView3d } from "@/lib/star/matchView3d";
@@ -116,12 +117,15 @@ export function QuickSwitches({ glow, fullscreen }: {
   fullscreen: { support: FullscreenSupport; on: boolean; onToggle: () => void };
 }) {
   const sfxNow = useSfxOn();
+  const musicNow = useGameMusicOn();
   const [skipLineup, setSkipLineupState] = useState(() => getSkipLineup());
   const flipSkipLineup = () => { const next = !skipLineup; setSkipLineupState(next); setSkipLineup(next); };
   return (
     <SetCard tone={glow} className="px-3 py-1">
       <FullScreenRow support={fullscreen.support} on={fullscreen.on} onToggle={fullscreen.onToggle} />
       <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const on = !sfxNow; setSfxOn(on); if (on) sfx("ui-confirm"); }} />
+      {/* Mikey, 21 Oct 2026: off by default; music for the home screens, matches and results (lib/star/gameMusic.ts). */}
+      <SetToggle label="Game music" on={musicNow} onClick={() => setGameMusicOn(!musicNow)} />
       <div className="border-b border-white/10 py-2.5"><Quality3dRow /></div>
       <SetToggle label="Skip the line-up" on={skipLineup} onClick={flipSkipLineup} />
       {/* Harry, 20 Oct 2026: a toggle with a "?", on the first screen (also in the match's ⚙ and before kick-off). */}

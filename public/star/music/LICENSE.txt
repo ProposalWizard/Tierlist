@@ -1,0 +1,4 @@
+Knowitball game music (01-11). Original compositions for Knowitball, 2026.
+Played with the VS Chamber Orchestra: Community Edition samples
+(Versilian Studios, https://github.com/sgossner/VSCO-2-CE), CC0 1.0 Universal.
+How they are made: tools/game-music/README.md

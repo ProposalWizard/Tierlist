@@ -27,6 +27,35 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.103",
+      "title": "Mikey's patch notes v0.20: Game music",
+      "publishedAt": "2026-10-21T18:00:00Z",
+      "updatedAt": "2026-10-21T18:00:00Z",
+      "artifactUrl": "https://claude.ai/artifact/DrwirnxpBBqLzqqjmfipd3",
+      "summary": "Game music, a switch in Settings (off by default). Eleven original orchestral tracks, inspired by Blue Lock's speed, key and energy, play on the home screen, in matches (following the score, the clock, a knockout and a dribble), at full time and on the Ballon d'Or night. Quiet under the match, muted with the match, silent in cut scenes, gapless loops.",
+      "stats": [
+        { "value": "11", "label": "new music tracks, all original" },
+        { "value": "Off", "label": "by default, a switch in Settings" },
+        { "value": "17%", "label": "music level in a match (home 32%)" }
+      ],
+      "sections": [
+        { "kind": "added", "title": "Check these", "items": [
+          { "title": "Settings → Game music", "detail": "Switch it on." },
+          { "title": "Home screen", "detail": "Calm music; after a win, the winning track." },
+          { "title": "A match", "detail": "Quiet music that changes with the score; a short turning-point piece when you score from behind." },
+          { "title": "Full time and the Ballon d'Or night", "detail": "A win or loss track." }
+        ]},
+        { "kind": "added", "title": "New", "items": [
+          { "title": "In a match", "detail": "Level: Working it out. Ahead: Good spell. One behind: Find a way back. Two+ behind: Under the cosh. Level, last 15: Last attack. Cup knockout, last 15, within a goal: Final boss. Dribbling: Dribble." },
+          { "title": "Everywhere else", "detail": "Home: Lobby (Winning after a win). Training and trial: Working it out. Full time: Winning, Defeat or Lobby. Cut scenes: silent." }
+        ]},
+        { "kind": "known", "title": "Known issues", "items": [
+          { "title": "The 10 new tracks are not heard yet", "detail": "Only the final boss was listened to; the rest were measured." },
+          { "title": "No choir", "detail": "The free orchestra library has none." }
+        ]}
+      ]
+    },
+    {
       "version": "0.104h",
       "title": "Harry's patch notes: Navigation Round 1 And The Marketing Tab",
       "publishedAt": "2026-10-21T16:30:00Z",

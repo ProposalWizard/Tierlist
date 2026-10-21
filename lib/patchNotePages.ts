@@ -21,8 +21,8 @@
  */
 export const PATCH_NOTE_PAGES: Record<string, string> = {
   "0.104h": "pages/0.104h/index.html",
-  "0.103h": "pages/0.103h/index.html",
   "0.62": "mikey/v0.18.html",
+  "0.103": "mikey/v0.20.html",
   "0.63": "mikey/v0.19.html",
   // VERSION KEYS MUST BE UNIQUE ACROSS HARRY, LEO AND MIKEY. Site versions
   // 0.60 to 0.63 are Leo's and Mikey's live pages (main). Harry's four pages

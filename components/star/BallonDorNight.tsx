@@ -18,6 +18,7 @@
  * Timing for both: lib/star/ballonDorNight.ts. The host is nobody real.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { setMusicScene, clearMusicScene } from "@/lib/star/gameMusic";
 import type { CareerState } from "@/lib/star/types";
 import { computeBallonDorShortlist, type BallonDorResult } from "@/lib/star/ballonDor";
 import { nightPlan, beatAt, callingAt, finalistXAt, podiumHeightAt, podiumX, placeWord, PODIUM, type NightPlan, type Finalist } from "@/lib/star/ballonDorNight";
@@ -47,6 +48,13 @@ export default function BallonDorNight({ career, onContinue }: { career: CareerS
   const look = useBallonDorNightLook();
   const result = useMemo(() => computeBallonDorShortlist(career), [career]);
   const [stage, setStage] = useState<"ceremony" | "result">("ceremony");
+  // Game music: suspense while the names are read, then win or loss (lib/star/gameMusic.ts).
+  const youWon = result.playerNominated && result.playerRank === 1;
+  const ceremonyShown = look !== "old" && stage === "ceremony" && result.entries.length >= 3;
+  useEffect(() => {
+    setMusicScene("bdor", { kind: "ballon-dor", won: ceremonyShown ? null : youWon }, 10);
+  }, [ceremonyShown, youWon]);
+  useEffect(() => () => clearMusicScene("bdor"), []);
   if (look === "old") return <BallonDor career={career} onContinue={onContinue} />;
   // Fewer than three on the list: no podiums to fill, straight to the result.
   if (stage === "result" || result.entries.length < 3) return <BallonDor career={career} onContinue={onContinue} startAt="result" result={result} />;
@@ -90,6 +98,9 @@ export function BallonDorCeremony({ career, result, onDone, drawn = false }: {
   // The room: a swell as the winner is named.
   const revealed = t >= plan.revealAt;
   useEffect(() => { if (revealed && frozenRef.current === null) playCrowdSwell("cheer"); }, [revealed]);
+  useEffect(() => {
+    if (revealed) setMusicScene("bdor", { kind: "ballon-dor", won: result.playerNominated && result.playerRank === 1 }, 10);
+  }, [revealed, result]);
 
   // Stills for checking: window.__bdorNight.seek(t) holds the night at t.
   const handleRef = useRef<NightSceneHandle | null>(null);

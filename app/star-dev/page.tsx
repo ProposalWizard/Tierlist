@@ -105,6 +105,7 @@ import { setPieceTalkDue, markSetPieceTold } from "@/lib/star/setPieceTalk";
 import { welcomeTour, LEAGUE_TOUR, LEAGUE_SCREEN_TOUR, FIRST_GAME_TOUR, shopTour, HELP_TOURS, TRAINING_TOUR, LEVEL_TOUR, ONE_MORE_DRILL_TOUR, bossTour, BOSS_MEETING_TOUR, relationsTour, PHONE_TOUR, REACTIONS_TOUR, stepTour, type HelpScreen, type TourStep } from "@/lib/star/tours";
 import { computeStarRating, growthMultiplier } from "@/lib/star/rating";
 import { sfx } from "@/lib/star/sfx";
+import { setMusicScene, clearMusicScene } from "@/lib/star/gameMusic";
 import { getTuning } from "@/lib/star/tuningStore";
 import { starsNow, starStatus, matchStarPoints, withStars, starGain, starTitle } from "@/lib/star/starPoints";
 import { clubTheme } from "@/components/star/ui";
@@ -3435,6 +3436,24 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setPhase(!career.retired && retirementCheck(career).mustRetire ? "retirement" : "dashboard");
     }
   }, [career, phase, farewell, farewellStats]);
+
+  // Game music (Settings → Game music, off by default; lib/star/gameMusic.ts).
+  // The page says which kind of screen is up; the match and the Ballon d'Or
+  // night set their own scene on top while they run.
+  useEffect(() => {
+    const score = lastMatchStats && playedFixture
+      ? { us: playedFixture.home !== false ? lastMatchStats.homeScore : lastMatchStats.awayScore,
+          them: playedFixture.home !== false ? lastMatchStats.awayScore : lastMatchStats.homeScore }
+      : null;
+    const practice = phase === "training" || phase.startsWith("trial");
+    const silent = !career || phase === "profile-setup" || phase === "match" || phase === "ballon-dor" || phase.startsWith("farewell-");
+    setMusicScene("page",
+      silent ? { kind: "none" }
+        : practice ? { kind: "practice" }
+        : (phase === "post-match" || phase === "media") && score ? { kind: "full-time", ...score }
+        : { kind: "menu", lastWon: !!score && score.us > score.them });
+  }, [career, phase, lastMatchStats, playedFixture]);
+  useEffect(() => () => clearMusicScene("page"), []);
 
   // ---------- RENDER ----------
   if (cloudLoading) {
