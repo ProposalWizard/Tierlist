@@ -175,3 +175,8 @@ Camera: "we really need to fix that camera" → player size options being drawn.
 ## 21 Oct 2026 ~04:35 — simulation formula and data
 "replace and work heavily using my new highlights system to massively improve the simulation formula in game and in turn massively improve match radar. We can also use those 4400 matches to train npc data, role data etc as we already were. I like what ur saying about balancing though, try and find more role data, shots missed, defending etc. Make sure any licensed data is removed with new readily available legal and added to credits. try and use the corner takers on [radar]."
 21 league goals in highlights: yes. 22 replace StatsBomb numbers with free data: yes. 23 Mikey's pop-ups: add as a texture/style pack (unless Mikey is already doing it — he isn't). 24 Mikey's failing tests: leave to Mikey.
+
+## 21 Oct 2026 ~09:30 — sim decisions and the rest
+D1 replace match flow Old/New with the new formula, no toggle: yes. D2 long shots: "keep it fun but skill based". D3 cards/fouls: real effect, "and potentially in game cut scene". D4 your chance mix: real. D5 league shots in highlights: yes after checking, "the drawn rules win for now". D6 fewer defenders in box at 25 m: "potentially after checking". D7 pro only. D8 credits: Settings + public /credits.
+26 X-Frame-Options SAMEORIGIN: yes. 27 build-ups: my picks (A1 snappy, A2 fewer, B1 calmer camera, B2 lead room) but "closer to 20-25 secs a match on average" (not 6). 3D: FIX the build-up in 3D (not switch off). Bug: "your player runs after the ball while it's being kicked whilst being in position".
+28 player size: C — drop both shrinks (~27.8 px). 29 lag pill on phone stats strip: fine. 30 corner rule in simMatch: add it.
