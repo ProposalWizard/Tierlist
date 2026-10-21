@@ -16,7 +16,7 @@
  * Credit: REAL_CREDIT.wyscout (data/opendata/LICENCES.md).
  */
 import type { Scenario, Vec2 } from "./canvasEngine";
-import type { Kit } from "./kits";
+import { kitsOf, type Kit } from "./kits";
 import type { LeadBallKey } from "./leadIn";
 import { ballAlong } from "./leadIn";
 import type { RealGoalView, RealGoalGhost } from "./realGoalView";
@@ -101,8 +101,30 @@ export function scoreBefore(g: RealGoal): string {
 /** The minute as a match clock shows it. */
 export const minuteOf = (g: RealGoal) => g.shot.minute;
 
+/** The league seasons in the data (2017/18), as the page and its filter name them. */
+export const LEAGUES: { file: LeagueFile; comp: string; badge: string }[] = [
+  { file: "league-england", comp: "Premier League 2017/18", badge: "PL" },
+  { file: "league-spain", comp: "La Liga 2017/18", badge: "LIGA" },
+  { file: "league-italy", comp: "Serie A 2017/18", badge: "SERIE A" },
+  { file: "league-germany", comp: "Bundesliga 2017/18", badge: "BUNDES" },
+  { file: "league-france", comp: "Ligue 1 2017/18", badge: "L1" },
+];
+export type LeagueFile = "league-england" | "league-spain" | "league-italy" | "league-germany" | "league-france";
+
+/** A World Cup or Euro goal (the level map is made of these). */
+export const isTournament = (g: RealGoal) => g.x.comp.startsWith("World Cup") || g.x.comp.startsWith("Euro");
+
 export function compBadge(g: RealGoal): string {
+  const lg = LEAGUES.find((l) => l.comp === g.x.comp);
+  if (lg) return lg.badge;
   return g.x.comp.startsWith("World Cup") ? "WC" : "EURO";
+}
+
+/** The round for a tournament goal ("Quarter-finals"); the date for a league goal ("12 Aug 2017"). */
+export function stageOf(g: RealGoal): string {
+  if (g.x.stage) return g.x.stage;
+  const d = new Date(`${g.x.date}T12:00:00Z`);
+  return Number.isNaN(d.getTime()) ? g.x.date : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -156,6 +178,92 @@ export const NATION_KITS: Record<string, { home: Kit; away: Kit }> = {
   Uruguay: { home: k("#5cbfeb", "#111111"), away: k("#ffffff", "#5cbfeb") },
   Wales: { home: k("#c8102e", "#00b140"), away: k("#111111", "#c8102e") },
 };
+/**
+ * Club kits for the 2017/18 league goals (Leo, 20 Oct 2026) that the game's own
+ * club table (lib/star/kits.ts) does not have: the real 2017/18 home and change
+ * colours, by the name the data uses. The rest come from kitsOf().
+ */
+export const CLUB_KITS_1718: Record<string, { home: Kit; away: Kit }> = {
+  // La Liga
+  Barcelona: { home: k("#a50044", "#004d98"), away: k("#f5e14c", "#a50044") },
+  Valencia: { home: k("#ffffff", "#111111"), away: k("#111111", "#f18e00") },
+  Sevilla: { home: k("#ffffff", "#d0103a"), away: k("#d0103a", "#ffffff") },
+  Villarreal: { home: k("#ffe667", "#005187"), away: k("#005187", "#ffe667") },
+  "Athletic Club": { home: k("#ee2523", "#ffffff"), away: k("#111111", "#ee2523") },
+  "Real Betis": { home: k("#00954c", "#ffffff"), away: k("#ffffff", "#00954c") },
+  Getafe: { home: k("#005999", "#ffffff"), away: k("#ffffff", "#005999") },
+  Girona: { home: k("#cd2534", "#ffffff"), away: k("#111111", "#cd2534") },
+  Espanyol: { home: k("#0074c8", "#ffffff"), away: k("#111111", "#0074c8") },
+  "Celta de Vigo": { home: k("#8ac3ee", "#ffffff"), away: k("#c8102e", "#ffffff") },
+  Eibar: { home: k("#a0002b", "#0b2c6b"), away: k("#ffffff", "#a0002b") },
+  Levante: { home: k("#0b2c6b", "#b4053f"), away: k("#ffffff", "#b4053f") },
+  Leganés: { home: k("#ffffff", "#1a3e8c"), away: k("#1a3e8c", "#ffffff") },
+  "Deportivo Alavés": { home: k("#1e4ea0", "#ffffff"), away: k("#ffffff", "#1e4ea0") },
+  "Deportivo La Coruña": { home: k("#1b54a6", "#ffffff"), away: k("#111111", "#1b54a6") },
+  "Las Palmas": { home: k("#fde500", "#004fa3"), away: k("#004fa3", "#fde500") },
+  Málaga: { home: k("#2a6fb5", "#ffffff"), away: k("#111111", "#2a6fb5") },
+  // Serie A
+  Milan: { home: k("#c8102e", "#111111"), away: k("#ffffff", "#c8102e") },
+  Internazionale: { home: k("#0068a8", "#111111"), away: k("#ffffff", "#0068a8") },
+  Fiorentina: { home: k("#5b2d8e", "#ffffff"), away: k("#ffffff", "#5b2d8e") },
+  Torino: { home: k("#8a1e03", "#ffffff"), away: k("#ffffff", "#8a1e03") },
+  Sampdoria: { home: k("#1b5497", "#ffffff"), away: k("#ffffff", "#1b5497") },
+  Genoa: { home: k("#a2142c", "#002350"), away: k("#ffffff", "#a2142c") },
+  Bologna: { home: k("#a21c26", "#1a2f48"), away: k("#ffffff", "#a21c26") },
+  Udinese: { home: k("#111111", "#ffffff"), away: k("#ffffff", "#111111") },
+  Cagliari: { home: k("#a11e2e", "#0a2a59"), away: k("#ffffff", "#a11e2e") },
+  Sassuolo: { home: k("#00a752", "#111111"), away: k("#ffffff", "#00a752") },
+  Chievo: { home: k("#f5e14c", "#1b3a8c"), away: k("#ffffff", "#1b3a8c") },
+  "Hellas Verona": { home: k("#002f6c", "#f5e14c"), away: k("#ffffff", "#002f6c") },
+  SPAL: { home: k("#ffffff", "#5ab4e5"), away: k("#5ab4e5", "#ffffff") },
+  Crotone: { home: k("#c8102e", "#0b2c6b"), away: k("#ffffff", "#c8102e") },
+  Benevento: { home: k("#d6001c", "#f5e14c"), away: k("#f5e14c", "#d6001c") },
+  // Bundesliga
+  "Bayern München": { home: k("#dc052d", "#ffffff"), away: k("#ffffff", "#dc052d") },
+  "Bayer Leverkusen": { home: k("#e32221", "#111111"), away: k("#111111", "#e32221") },
+  Hoffenheim: { home: k("#1961b5", "#ffffff"), away: k("#ffffff", "#1961b5") },
+  "Werder Bremen": { home: k("#1d9053", "#ffffff"), away: k("#ffffff", "#1d9053") },
+  "Hertha BSC": { home: k("#005ca9", "#ffffff"), away: k("#ffffff", "#005ca9") },
+  Stuttgart: { home: k("#ffffff", "#e32219"), away: k("#e32219", "#ffffff") },
+  "Schalke 04": { home: k("#004d9d", "#ffffff"), away: k("#ffffff", "#004d9d") },
+  "Hamburger SV": { home: k("#ffffff", "#0a3f86"), away: k("#0a3f86", "#ffffff") },
+  Augsburg: { home: k("#ffffff", "#ba3733"), away: k("#ba3733", "#46714d") },
+  "Hannover 96": { home: k("#c8102e", "#111111"), away: k("#ffffff", "#c8102e") },
+  "Mainz 05": { home: k("#c3141e", "#ffffff"), away: k("#ffffff", "#c3141e") },
+  Wolfsburg: { home: k("#65b32e", "#ffffff"), away: k("#ffffff", "#65b32e") },
+  "Borussia M'gladbach": { home: k("#ffffff", "#111111"), away: k("#111111", "#00a650") },
+  Köln: { home: k("#ffffff", "#ed1c24"), away: k("#ed1c24", "#ffffff") },
+  Freiburg: { home: k("#c8102e", "#111111"), away: k("#ffffff", "#c8102e") },
+  // Ligue 1
+  PSG: { home: k("#004170", "#da291c"), away: k("#ffffff", "#004170") },
+  Monaco: { home: k("#e51f2b", "#ffffff"), away: k("#ffffff", "#e51f2b") },
+  "Olympique Marseille": { home: k("#ffffff", "#2faee0"), away: k("#2faee0", "#ffffff") },
+  Lille: { home: k("#e01e13", "#20325f"), away: k("#ffffff", "#e01e13") },
+  Nice: { home: k("#c8102e", "#111111"), away: k("#ffffff", "#c8102e") },
+  Bordeaux: { home: k("#1a2a50", "#ffffff"), away: k("#ffffff", "#1a2a50") },
+  Rennes: { home: k("#e13327", "#111111"), away: k("#ffffff", "#e13327") },
+  Nantes: { home: k("#fcd405", "#00843d"), away: k("#00843d", "#fcd405") },
+  "Saint-Étienne": { home: k("#009639", "#ffffff"), away: k("#ffffff", "#009639") },
+  Montpellier: { home: k("#0b2c6b", "#f37021"), away: k("#ffffff", "#f37021") },
+  Toulouse: { home: k("#6a2c91", "#ffffff"), away: k("#ffffff", "#6a2c91") },
+  Strasbourg: { home: k("#0090d0", "#ffffff"), away: k("#ffffff", "#0090d0") },
+  Metz: { home: k("#7a1f3d", "#ffffff"), away: k("#ffffff", "#7a1f3d") },
+  Guingamp: { home: k("#c8102e", "#111111"), away: k("#ffffff", "#c8102e") },
+  Caen: { home: k("#1a3e8c", "#c8102e"), away: k("#ffffff", "#1a3e8c") },
+  "Amiens SC": { home: k("#ffffff", "#111111"), away: k("#111111", "#ffffff") },
+  Troyes: { home: k("#0055a4", "#ffffff"), away: k("#ffffff", "#0055a4") },
+  Angers: { home: k("#ffffff", "#111111"), away: k("#111111", "#ffffff") },
+  Dijon: { home: k("#c8102e", "#ffffff"), away: k("#ffffff", "#c8102e") },
+};
+
+/** A side's kits: a nation, a 2017/18 club, a club the game knows, else grey. */
+export function sideKits(team: string): { home: Kit; away: Kit } {
+  const own = NATION_KITS[team] ?? CLUB_KITS_1718[team];
+  if (own) return own;
+  const c = kitsOf(team);
+  return c === kitsOf("") ? FALLBACK : c;
+}
+
 const FALLBACK: { home: Kit; away: Kit } = { home: k("#64748b", "#ffffff"), away: k("#ffffff", "#64748b") };
 
 const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -169,11 +277,18 @@ export const KIT_CLASH = 120;
 
 const KEEPER_SHIRTS: Kit[] = [k("#a3e635", "#14532d"), k("#f97316", "#111111"), k("#111111", "#a3e635"), k("#7c3aed", "#ffffff"), k("#06b6d4", "#111111")];
 
-/** The two real sides' shirts: the scorers in their home kit, the others in theirs unless it clashes. */
+/**
+ * The two real sides' shirts: the scorers in their home kit, the others in theirs
+ * unless it clashes (then their change kit). If both of theirs clash, the scorers
+ * change instead (Levante's navy v Real Sociedad's blue and black); failing all
+ * three, the pair furthest apart.
+ */
 export function kitsForGoal(g: RealGoal): { us: Kit; them: Kit; keeper: Kit } {
-  const us = (NATION_KITS[g.shot.team] ?? FALLBACK).home;
-  const t = NATION_KITS[concededBy(g)] ?? FALLBACK;
-  const them = colourGap(t.home.shirt, us.shirt) < KIT_CLASH ? t.away : t.home;
+  const u = sideKits(g.shot.team);
+  const t = sideKits(concededBy(g));
+  const pairs: [Kit, Kit][] = [[u.home, t.home], [u.home, t.away], [u.away, t.home]];
+  const [us, them] = pairs.find(([a, b]) => colourGap(a.shirt, b.shirt) >= KIT_CLASH)
+    ?? pairs.reduce((best, p) => (colourGap(p[0].shirt, p[1].shirt) > colourGap(best[0].shirt, best[1].shirt) ? p : best));
   const keeper = KEEPER_SHIRTS.find((kk) => colourGap(kk.shirt, us.shirt) >= KIT_CLASH && colourGap(kk.shirt, them.shirt) >= KIT_CLASH) ?? KEEPER_SHIRTS[0];
   return { us, them, keeper };
 }

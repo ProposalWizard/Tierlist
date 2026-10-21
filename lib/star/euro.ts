@@ -10,8 +10,9 @@ import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
 } from "./clubs";
 import { seasonQualifiers } from "./qualification";
-import { englishTopFlightTable } from "./englishTopFlight";
+import { standInTopFlight } from "./englishTopFlight";
 import { membershipOf, estimateClubStrength } from "./promotion";
+import { squadRating } from "./world/clubRating";
 import { divisionOf as divisionOfCareer } from "./calendar";
 import { extraTimeScore, simulateShootout } from "./shootout";
 
@@ -336,9 +337,18 @@ function nationOf(club: string): string {
 
 /** An English club always reads its real, LIVE strength off `career.league`
  *  — everyone else reads the flat table above. */
+export function europeanStrengthOf(club: string, career: CareerState): number {
+  return strengthOf(club, career);
+}
+
 function strengthOf(club: string, career: CareerState): number {
   const inLeague = career.league.find(t => t.name === club);
   if (inLeague) return inLeague.strength;
+  // Its real squad, when this career holds one (world/clubRating.ts, Mikey
+  // 19 Oct 2026). Measured FC 27: Real Madrid 86, Bayern 83, Arsenal 87 —
+  // the flat numbers below had Real Madrid 92 against English clubs on 80.
+  const real = squadRating((career.externalSquads ?? []).find(s => s.club === club));
+  if (real !== null) return Math.round(real);
   const saudi = SAUDI_CLUBS.find(s => s.name === club);
   if (saudi) return saudi.strength;
   if (NON_ENGLISH_CLUB_STRENGTH[club] !== undefined) return NON_ENGLISH_CLUB_STRENGTH[club];
@@ -421,8 +431,18 @@ function seasonField(competition: "Champions League" | "Europa League", career: 
   // actually an ENGLISH one — an English club can't win both in one season,
   // so at most one of these two is ever real.
   const uefaRules = ruleBookFor(career, "UEFA");
-  // The Premier League's table, not your own division's (englishTopFlight.ts).
-  const topFlight = englishTopFlightTable(career);
+  // LAST season's final Premier League table — this field is drawn at the
+  // START of a season. Until 19 Oct 2026 this read the new season's table
+  // (all zeros) for a Premier League career, or a fresh stand-in season
+  // below it, so England's entrants were nobody in particular.
+  const topFlight = career.lastTopFlight?.length
+    ? career.lastTopFlight.map((name, i, all) => ({
+      name, strength: strengthOf(name, career), played: 38, won: 0, drawn: 0, lost: 0,
+      goalsFor: 0, goalsAgainst: 0, points: (all.length - i) * 3,
+    }))
+    // A save from before 19 Oct 2026: the old stand-in, never the world
+    // (which is built from this very field).
+    : standInTopFlight(career);
   const englishNames = new Set(topFlight.map(t => t.name));
   const europeanTrophyWinner = [
     career.lastSeasonWinners?.championsLeague, career.lastSeasonWinners?.europaLeague,

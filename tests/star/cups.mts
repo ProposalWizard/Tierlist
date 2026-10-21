@@ -1,7 +1,7 @@
 import {
   openCup, drawRound, playCupRound, shuffle, tieWinner, cupField, cupStrength,
   currentRound, yourTie, stillIn, exitRound,
-  CUP_ROUND_NAMES, CUP_FIELD, FA_CUP_ROUND_NAMES, FA_CUP_FIELD, type CupState,
+  CUP_ROUND_NAMES, CUP_FIELD, FA_CUP_ROUND_NAMES, FA_CUP_ROUND_NAMES_V1, FA_CUP_FIELD, type CupState,
 } from "../../lib/star/cups";
 import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
@@ -237,13 +237,14 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
   check(shuffle([], mulberry(1)).length === 0, "nor is an empty one");
 }
 
-// ── A cup plays out to one winner — the FA Cup's new sixth round ───────────
+// ── A cup plays out to one winner — the old 64-club FA Cup (openCup) ───────
+// The game opens the ten-round one (openFaCup): tests/star/faCupRounds.mts.
 {
   for (let seed = 0; seed < 60; seed++) {
     const rng = mulberry(seed * 31 + 5);
     let cup = openCup("FA Cup", LEAGUE, "premier", rng);
     check(cup.rounds[0].ties.length === 32, `seed ${seed}: thirty-two first-round ties`);
-    check(cup.rounds[0].name === FA_CUP_ROUND_NAMES[0], `seed ${seed}: it is the round of 64`);
+    check(cup.rounds[0].name === FA_CUP_ROUND_NAMES_V1[0], `seed ${seed}: it is the round of 64`);
 
     let guard = 0;
     while (!cup.winner && guard++ < 10) cup = playCupRound(cup, LEAGUE, "nobody", null, rng);
@@ -252,7 +253,7 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
     check(cup.rounds.length === 6, `seed ${seed}: six rounds (${cup.rounds.length})`);
     check(cup.rounds.map(r => r.ties.length).join(",") === "32,16,8,4,2,1",
       `seed ${seed}: 32, 16, 8, 4, 2, 1 ties (${cup.rounds.map(r => r.ties.length).join(",")})`);
-    check(cup.rounds.map(r => r.name).join(",") === FA_CUP_ROUND_NAMES.join(","),
+    check(cup.rounds.map(r => r.name).join(",") === FA_CUP_ROUND_NAMES_V1.join(","),
       `seed ${seed}: the round names run in order (${cup.rounds.map(r => r.name).join(",")})`);
     check(cup.rounds.every(r => r.ties.every(t => t.hs !== undefined)), `seed ${seed}: every tie is played`);
     check(cup.rounds.every(r => r.ties.every(t => t.hs !== t.as || !!t.pens)),
@@ -321,7 +322,7 @@ const LEAGUE: LeagueTeam[] = buildLeague(CLUBS, "Liverpool");
   // Lose it and you are out, and it says where.
   const out = playCupRound(cup, LEAGUE, "Liverpool", home ? { hs: 0, as: 2 } : { hs: 2, as: 0 }, mulberry(2));
   check(!stillIn(out, "Liverpool"), "losing puts you out");
-  check(exitRound(out, "Liverpool") === FA_CUP_ROUND_NAMES[0], `and records the round (${exitRound(out, "Liverpool")})`);
+  check(exitRound(out, "Liverpool") === FA_CUP_ROUND_NAMES_V1[0], `and records the round (${exitRound(out, "Liverpool")})`);
   check(!!currentRound(out), "the cup carries on without you");
   check(out.rounds[1].ties.every(t => t.home !== "Liverpool" && t.away !== "Liverpool"),
     "…and you are not in the next draw");

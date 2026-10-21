@@ -103,7 +103,7 @@ def build():
 <h2 class="fix" id="done"><i></i>ALREADY DECIDED &middot; %d</h2>
 <details><summary>%d answers, by tab. Each one is Harry&rsquo;s.</summary>%s</details>
 
-<footer>20 Oct 2026. The questions come from the patch-notes pages v0.60 to v0.85. The same question on several pages is one question here. Private page.</footer>
+<footer>20 Oct 2026. The questions come from the patch-notes pages v0.60h to v0.85. The same question on several pages is one question here. Private page.</footer>
 </div>
 """ % (CSS, EXTRA, total_open, chips, body, nd, nd, decided)
     return doc, total_open, nd, counts

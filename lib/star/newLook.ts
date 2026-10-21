@@ -99,6 +99,9 @@ export const BUILD_UP_KINDS: ReadonlySet<string> = new Set(["midfield_pass", "bu
 export function showYouFigure(kind: string, ctx: { newView: boolean; sceneYou?: boolean }): boolean {
   if (ctx.sceneYou === false) return false;
   if (!ctx.newView) return true;
-  if (youInOpenPlay() === "shown") return true;
-  return SET_PIECE_KINDS.has(kind) || BUILD_UP_KINDS.has(kind);
+  // Mikey, 20 Oct 2026: shown on every chance ("I like the player to be
+  // there"), reversing the 12 Oct "hidden on shooting chances" call. He is
+  // moved clear of the ball and the arrow when a chance opens (youSpot.ts).
+  void kind;
+  return true;
 }

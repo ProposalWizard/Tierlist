@@ -18,11 +18,11 @@ PAGES = {
  'b9b': ('B9b Cup Screens', '0.80', 'Each cup has its own screen: a one-screen tab, then your road, the bracket and every round. The FA Cup and League Cup work the same way.', 'night'),
  'b16': ('B16 Fairer 3D Keepers', '0.81', 'The keepers in the 3D games (Free Roam, Headers &amp; Volleys, Wembley) now save about 1 shot in 3 for a decent player. Has a clip.', 'night'),
  'a19admin': ('Admin Split + Looks', '0.65', 'The admin is split by game, group pages show picture cards, four looks share one layout, the phone admin is tidier.', 'd19'),
- 'a19team':  ('Team Room v1', '0.60', 'A chat bubble on every admin page, an Ideas board, Team chat and a To-do list.', 'd19'),
- 'a19drift': ('Drift + Play Screens', '0.62', 'Eight screens now draw the pitch at the real match&rsquo;s size, play buttons stay on screen, and the engine warning is red.', 'd19'),
- 'a19fhr':   ('Highlights Rebuild 0-2', '0.63', 'The switch, the match-camera still, and generated build-ups before open-play chances.', 'd19'),
+ 'a19team':  ('Team Room v1', '0.60h', 'A chat bubble on every admin page, an Ideas board, Team chat and a To-do list.', 'd19'),
+ 'a19drift': ('Drift + Play Screens', '0.62h', 'Eight screens now draw the pitch at the real match&rsquo;s size, play buttons stay on screen, and the engine warning is red.', 'd19'),
+ 'a19fhr':   ('Highlights Rebuild 0-2', '0.63h', 'The switch, the match-camera still, and generated build-ups before open-play chances.', 'd19'),
  'a19data':  ('Free Data v1', '0.64', '2,104 real matches under free licences. Real moments, Real shots and Real Goals rebuilt. StatsBomb deleted.', 'd19'),
- 'a19scene': ('Scene Editor 3a', '0.61', 'The 3D Signing and Office edit live in the scene editor. Also: how generated cut scenes work, and the 3D audit.', 'd19'),
+ 'a19scene': ('Scene Editor 3a', '0.61h', 'The 3D Signing and Office edit live in the scene editor. Also: how generated cut scenes work, and the 3D audit.', 'd19'),
 }
 ORDER_NIGHT = ['b1', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b11', 'b12', 'b7b', 'b13', 'b15', 'b9b', 'b16']
 ORDER_19 = ['a19admin', 'a19team', 'a19drift', 'a19fhr', 'a19data', 'a19scene']
@@ -138,7 +138,7 @@ def build_index(urls, nopen):
   <span class="ver">LAST 2 DAYS · 19&ndash;20 OCT 2026</span>
   <h1>21 pages of patch notes. Read each one, then press Read and understood.</h1>
   <p class="status"><i></i>The 19 Oct pages are on main. The overnight pages are on the Harry branch, not live.</p>
-  <p class="sub">One page per build, in three tabs. Each page is its own version in Admin &rarr; Patch notes: v0.60 to v0.74, then v0.76 to v0.81. This index is v0.75.</p>
+  <p class="sub">One page per build, in three tabs. Each page is its own version in Admin &rarr; Patch notes: v0.60h to v0.74, then v0.76 to v0.81. This index is v0.75.</p>
   <div class="chips"><a class="chip hot" href="#ok">{n_open} open &darr;</a><a class="chip" href="#ok">{n_done} decided</a><a class="chip" href="#how">How this works</a></div>
 </header>
 

@@ -198,6 +198,64 @@ summer. Your club is shown a fee (no club budgets yet: future work). "Find a
 new club" (Stats → Contract) is gone. Not built on purpose: transfer
 request, scouts watching, agents, loans, promises, moves abroad.
 
+## Mikey's new pop-ups (Mikey, 20 Oct 2026)
+
+Settings → Match → "Mikey's new pop-ups: New | Old" (default Old; asked for as
+a toggle by name). New = `components/star/MikeyPopup.tsx`: a goal is a
+scoreboard at the top whose score rolls over, with scorer and assist; every
+other `showAction` word is a TV caption. Old = the pop-ups exactly as before.
+Career soak for any season/cup/ladder change: `npx tsx scripts/soak/careerSoak.mts 20`.
+
+## The world season: every league and cup is played (Mikey, 19 Oct 2026)
+
+Read `docs/WORLD_SEASON.md` before touching it. `lib/star/world/`:
+- Club rating (`clubRating.ts`): a real squad's best XI; no real squad, its
+  division level moved by club data (reputation, history, spending), ±4.
+  Used by the ladder, cups, Europe and your own league's invented squads.
+- `career.world`: every league you're not in, the CL/EL you're not in, the
+  League Cup when you're not entered, both shields. Played round by round on
+  each round's real date after every match (`worldAfterMatch`), finished at
+  season end (`finishWorld`, pure, cached). Same result live or at the end.
+- Promotion/relegation read the world tables (+ real play-offs). Cups use the
+  league's match model. Season 1 shields: Arsenal v Man City, PSG v Aston Villa.
+- Viewer: League → 🌍 All leagues; Season Awards → Every league and cup
+  (`career.lastWorld`).
+- **Fallback if it lags:** set `WORLD_LIVE = false` (`lib/star/world/index.ts`):
+  nothing plays during the season, everything plays at the end, same tables.
+
+## The FA Cup: ten rounds, each league joins at its real round (Mikey, 19 Oct 2026)
+
+`cups.ts openFaCup`, entrants from `competitions.ts faCupEntrantsFor`, dates in
+`calendar.ts FA_CUP_SLOTS` (the game's own calendar, real order). 3rd Qualifying:
+NL North + South + Step 3 = 56, 32 play (drawn North/South), 24 byes to the 12
+best of each region by last season's finish. **Never your club** ("Your club
+must play in every round that you get to"): the next club down takes it.
+4th Q +National League (64) · R1 +League One/Two (80) · R2 40 · R3 +PL/Championship
+(64) · 32 · 16 · 8 · 4 · 2. A club joining later gets its tie on the calendar the
+moment it is drawn (`newCupFixtures`). An old save's six-round cup keeps its
+own rounds (`cupRoundNames`, `FA_CUP_SLOTS_V1`). Test: `tests/star/faCupRounds.mts`.
+
+**Merged with Harry's fixture pass and Lower League Trophy (21 Oct 2026).**
+The Lower League Trophy is a third cup (`cupRoundNames` knows its seven rounds;
+byes use the same `CupRound.byes` as the 3rd Qualifying). `tests/star/fixtureClashes.mts`
+(no two games on one day, three days apart) passes with the ten rounds because:
+(1) a Premier League club in Europe plays the FA Cup on `FA_CUP_SLOTS_IN_EUROPE`
+(Third 18, Fourth 20, Fifth 25, Quarter 26, Semi 30; the old `clearOfEurope`
+push-a-week is gone), (2) the Trophy's Round 1 is weekend 5 (was 4, the same
+Wednesday as the 3rd Qualifying Round), (3) the Championship's early-January
+league Tuesday is back on weekend 4 (it had moved to 18, the day before the
+Championship's Third Round). Known limit: a club that plays the European
+knockout play-off (9th to 24th) has two more Tuesdays, 25 and 26, next to its
+Fifth Round and Quarter-Final. The old six-round tables keep `_V1` names.
+
+## Patch-note version keys must be unique (merge, 21 Oct 2026)
+
+`lib/patchNotesData.ts`, `lib/patchNotePages.ts`, read receipts and the team board
+all key on the version string. Harry's branch and main each used 0.60 to 0.63 for
+different notes. Main's (Leo 0.60/0.61, Mikey 0.62/0.63) keep those numbers;
+Harry's four are **0.60h, 0.61h, 0.62h, 0.63h** (pages in `patch-notes/pages/0.6Xh/`).
+Before numbering a new note, search the data file for the number on BOTH branches.
+
 ## Running after a chance (B14, Harry, 20 Oct 2026)
 
 Any pass you play in open play with a goal in the picture plays on in the
@@ -597,8 +655,10 @@ unreachable (the getter returns the kept value), marked "Decided, no toggle".
 - **Match camera (action fit):** Old until the rebuilt camera lands.
 - **2D match:** match view New, chance framing Zoom, wide chances Old, camera
   angle 20°, players 3D-made sprites, 2D players Style A, ball New.
-- **Your player:** hidden on shooting chances; shown on set pieces and build-up
-  (`showYouFigure`, `lib/star/newLook.ts`).
+- **Your player:** shown on EVERY chance (Mikey, 20 Oct 2026; was hidden on
+  shooting chances, Harry's 12 Oct call, to be re-agreed with Harry). When a
+  chance opens he is moved clear of the ball and the aim arrow
+  (`lib/star/youSpot.ts`; `showYouFigure`, `lib/star/newLook.ts`).
 - **Shot spread cone:** drawn in the test area only (`lib/star/testArea.ts`).
 - **3D world:** garden New, house New, 3D look H, shop player New, 3D people
   New, body Before, player style New, players in a 3D match Style A, 3D quality
@@ -825,6 +885,7 @@ Three people are building this. To avoid two sessions editing the same files:
 | `xp_atomic_award.sql` | **RUN** (by Mikey, 8 Oct 2026; seen live: `add_user_xp` exists and refuses the anon key, as designed) | `add_user_xp(user, amount)`: adds XP to `user_xp.total_xp` in one statement (service role only), so two awards at once can't lose one. Until it runs, `/api/xp` falls back to its old read-then-write; nothing breaks. Idempotent. |
 | `star_wallet.sql` | **RUN** (by Mikey, 20 Oct 2026; seen live: its table answers) | The gem wallet: paid things that cannot be faked (Harry: "we are DEFINITELY going to have paid items"). Four tables (`star_paid_items`, `star_wallet`, `star_wallet_ledger` append-only, `star_entitlements`), read-own-only RLS and no browser writes at all; changes only through `spend_gems` (players; price read from the table) and the service-only `grant_gems`/`grant_item`. Seeds one test item (`test-golden-boots`, 50 gems). Until it runs, `/api/star/wallet` answers `migrationMissing` ("Gems aren't switched on yet") and nothing else breaks. Idempotent; verify queries at the bottom. Rules for paid items: `PAID_ITEMS.md`. |
 | `star_scenario_corrections.sql` | **RUN** (Sep 2026, by Mikey) | Creates `star_scenario_corrections` so Tune corrections are one shared team list instead of one per browser. Confirmed live 23 Sep 2026: the table answers the anon key and held 3 corrections. Browser-only corrections upload on the next sync. |
+| `star_xp_config.sql` | **PENDING** (seen missing in the live database, 20 Oct 2026) | XP amounts set by admins (`/api/star/xp-config`, `lib/star/xpStore.ts`). Until it runs the route answers `migrationMissing` and the game uses its built-in amounts (`DEFAULT_XP`); nothing breaks. |
 | `star_tuning_notes.sql` | **PENDING** (20 Oct: Mikey ran the SQL files, but `star_tuning_notes` still does not exist live — run this one again) (new, 14 Oct 2026) | The Tuning panel's "Say what feels off" notes (gallery, Infinite Highlights, Infinite Match; `components/star/TuningSessionPanel.tsx`, `/api/star/tuning-notes`). Anyone inserts, admins read. Until it runs a note says "Saved on this device only" and is sent with the next one that gets through. Terminal: `npx tsx scripts/tuning-notes.mts` (needs `SUPABASE_SERVICE_ROLE_KEY`; also printed by `tuner-proposals.mts`). Idempotent. |
 | `star_real_moments_picks.sql` | **RUN** (by Mikey, 20 Oct 2026; seen live: its table answers) | Real moment highlights' allow / deny marks (Settings → Full highlights rebuild → Real moment highlights; `lib/star/fhr/realMomentHighlights.ts`). The Real moments page (/star-real-moments-dev) marks a moment "Use in game" / "Don't use"; one row per mark, on top of the committed `data/realmoments/picks.json`, read by every game with no deploy. GET public, writes admin-only through `/api/star/real-moment-picks`. Until it runs, a mark stays on that device only (and counts there) and the page says so; Commit still works (needs `GITHUB_TOKEN`). Idempotent. |
 | `star_training_levels.sql` | **RUN** (by Mikey, 20 Oct 2026; seen live: its table answers) | Saved edits to training levels (Training levels page /star-training-dev → Edit level → Save). One row per edited level (`vision:30`), on top of the committed `lib/star/data/trainingLevels.json`; every career plays it with no deploy. GET public, writes admin-only through `/api/star/training-levels`. Until it runs, Save stays on that device only (and plays there) and the page says so; Commit still works (needs `GITHUB_TOKEN`). Idempotent. |

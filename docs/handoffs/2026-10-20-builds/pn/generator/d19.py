@@ -163,7 +163,7 @@ def team19():
     ])
     numbers = '<p><b>Counts.</b> Four views (Board, Ideas, Chat, To-do). Idea stages: 3. Vote dots per idea: 3. A ticked job leaves after 24 hours. The room loads the last 300 messages and the database keeps 5,000.</p>'
     return p, dict(
-        key='a19team', ver='0.60', title='Team Room v1', pill='19 OCT · TEAM ROOM',
+        key='a19team', ver='0.60h', title='Team Room v1', pill='19 OCT · TEAM ROOM',
         headline='The team has a room in the admin: a chat bubble on every page, an Ideas board, Team chat and a To-do list.',
         sub='19 Oct 2026. The second round (seen faces, replies, @, pointing) is on the B11 page.',
         status='On main since 19 Oct. The database file (team_room.sql) was run by Mikey on 19 Oct, as the 19 Oct notes say.',
@@ -244,7 +244,7 @@ def drift19():
             ('Status', 'Not measured. Also not measured: a real iPhone (sizes are layout numbers, not feel).')]),
     ])
     return p, dict(
-        key='a19drift', ver='0.62', title='Drift + Play Screens', pill='19 OCT · PLAY SCREENS',
+        key='a19drift', ver='0.62h', title='Drift + Play Screens', pill='19 OCT · PLAY SCREENS',
         headline='Every football screen draws the pitch at the real match&rsquo;s size, play buttons stay on screen, and the engine warning is red.',
         sub='19 Oct 2026.',
         status=MAIN + ' The match engine file was not changed (two comments only).',
@@ -311,7 +311,7 @@ def fhr19():
         '<p><b>Build-ups.</b> 2,527 made. 2,197 took different routes. Median length 6.4 s. Top speed 8.7 m/s. 0 of 448 failed the checks. 48 were checked by eye.</p>'
         '<p><b>The still.</b> 0 mismatches in 100.</p>')
     return p, dict(
-        key='a19fhr', ver='0.63', title='Highlights Rebuild 0-2', pill='19 OCT · HIGHLIGHTS',
+        key='a19fhr', ver='0.63h', title='Highlights Rebuild 0-2', pill='19 OCT · HIGHLIGHTS',
         headline='A new switch rebuilds highlights. Three phases are done: the switch, the match-camera still, and generated build-ups.',
         sub='19 Oct 2026. Behind a switch that is Off by default.',
         status=MAIN + ' The match engine was not changed in these phases.',
@@ -453,7 +453,7 @@ def scene19():
     ])
     numbers = '<p><b>Made-up scenes (film-rules score).</b> Scored 100%, Sacked 100%, Won trophy 100%, Injured 91%. Length 6.5 to 10.1 s. 3 to 7 shots each.</p><p><b>3D audit.</b> 52 stills. 14 of 23 shots too tight on a phone.</p>'
     return p, dict(
-        key='a19scene', ver='0.61', title='Scene Editor 3a', pill='19 OCT · SCENE EDITOR',
+        key='a19scene', ver='0.61h', title='Scene Editor 3a', pill='19 OCT · SCENE EDITOR',
         headline='The 3D Signing and Manager&rsquo;s Office edit live in the scene editor. This page also explains how generated cut scenes work.',
         sub='19 Oct 2026. The next night (B6) connected the editor to the game.',
         status=MAIN,

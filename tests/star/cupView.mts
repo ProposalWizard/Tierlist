@@ -118,11 +118,14 @@ function playRound(st: CupState, c: CareerState, win: boolean, seed: number): Cu
   check(!v.entered && v.path.length === 0, "a Premier League club is not in the Trophy");
   check(v.marks[0] === "drawn", `Round 1 drawn without you (${v.marks[0]})`);
   check(cupStatus(v, c).headline === "Not in it", "headline Not in it");
-  // The FA Cup: in it.
+  // The FA Cup (ten rounds, Mikey 19 Oct 2026): a Premier League club joins in
+  // the Third Round, so at the start it is "in it" but not yet drawn.
   const fa = c.cupState!.find(s => s.competition === "FA Cup")!;
   const f = cupViewFor(c, fa);
-  check(f.entered && f.marks[0] === "now", `the FA Cup: your first tie (${f.marks[0]})`);
-  check(f.names.length === roundNamesFor("FA Cup").length, "the FA Cup's own rounds");
+  check(!f.entered && f.joins === "Third Round", `the FA Cup: you join in the Third Round (${f.joins})`);
+  check(cupStatus(f, c).headline === "Joins in the Third Round", `headline says when you join (${cupStatus(f, c).headline})`);
+  check(f.names.length === roundNamesFor("FA Cup").length && f.names.length === 10, "the FA Cup's own ten rounds");
+  check(f.bracketFrom === null, "no bracket yet");
 }
 
 if (problems.length) {

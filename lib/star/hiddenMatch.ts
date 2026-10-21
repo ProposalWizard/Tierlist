@@ -197,6 +197,9 @@ export interface HiddenMatchInputs {
   /** Your free-kick rating (0-100). A better dead-ball striker is handed more
    *  free kicks and corners — see takesIt in buildRequest. */
   freeKick?: number;
+  /** False when your best corner cannot reach the middle of the box in the air
+   *  (cornerReach.ts): a team-mate takes every corner. Absent = no limit. */
+  canTakeCorners?: boolean;
   /**
    * The position you are playing, e.g. "ST"/"CM" — the same string
    * `pickScenarioKindFrom` weights by. Used ONLY to stop set pieces
@@ -1488,6 +1491,10 @@ function buildRequest(state: HiddenMatchState, rng: () => number, inputs: Hidden
   };
   const DEFAULT_DUTY = { penalty: 3, free_kick: 5, corner: 6 };
   const takesIt = (kind: "penalty" | "free_kick" | "corner"): boolean => {
+    // Mikey, 20 Oct 2026: a corner is yours only if your strongest delivery
+    // reaches the middle of the box (lib/star/cornerReach.ts). Checked first,
+    // so even the farewell match hands a short-kicking taker's corners on.
+    if (kind === "corner" && inputs.canTakeCorners === false) return false;
     if (!inputs.position) return true;   // an old caller is byte-identical
     // The farewell match: every set piece is yours (farewellDuties). Without
     // this a striker took 3 free kicks in 8 and 1 corner in 4.

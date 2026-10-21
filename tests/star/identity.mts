@@ -392,19 +392,22 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
     // Harry, 1 Oct 2026 (P26): new careers start manager/team-mates/fans 50,
     // happiness 45; and a new career carries the unlock chain (unlocks.ts).
     for (const k of ["relationships", "happiness", "unlocks"]) delete rest[k];
-    // Harry, 20 Oct 2026: every career now opens the Lower League Trophy as a
-    // third cup (on its own seed, so the two old cups draw exactly as before).
-    if (Array.isArray(rest.cupState)) {
-      rest.cupState = (rest.cupState as { competition: string }[]).filter(s => s.competition !== "Lower League Trophy");
-    }
-    // B13, 20 Oct 2026: the Championship's weekend-2 Tuesday league round
-    // moved to weekend 1, so weekend 2's Saturday is round 3 and the FA Cup
-    // Round of 64 (same Wednesday, 26 Aug) is week 3, not 2. Measured: this
-    // is the only difference in the two Championship careers.
+    // The world season (Mikey, 19 Oct 2026): a cup opponent's strength is
+    // now its real rating (world/clubRating.ts), and season 1 has a Community
+    // Shield and Super Cup (Arsenal v Man City, PSG v Aston Villa), so those
+    // clubs open with that fixture. Who is drawn is unchanged.
     if (Array.isArray(rest.fixtures)) {
-      rest.fixtures = (rest.fixtures as { competition?: string; round?: string; week: number }[]).map(f =>
-        (f.competition === "FA Cup" && f.round === "Round of 64" && f.week === 2 ? { ...f, week: 3 } : f));
+      rest.fixtures = (rest.fixtures as { competition?: string; opponentStrength?: number }[])
+        // The FA Cup is ten rounds from 19 Oct 2026 (Mikey): a club joins at
+        // its league's round, so the old Round of 64 tie is not on day one.
+        .filter(f => f.competition !== "Community Shield" && f.competition !== "Super Cup" && f.competition !== "FA Cup")
+        .map(f => ({ ...f, opponentStrength: undefined }));
     }
+    // …and its draw (cupState) is a different, ten-round one (and, from
+    // Harry's 20 Oct 2026 round, carries a third cup, the Lower League Trophy,
+    // on its own seed). The B13 move of the Championship's weekend-2 Tuesday
+    // only touched the FA Cup Round of 64 tie, which is filtered out above.
+    delete rest.cupState;
     return JSON.stringify(rest);
   };
 

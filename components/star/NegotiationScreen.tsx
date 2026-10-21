@@ -217,7 +217,14 @@ export default function NegotiationScreen({
   note?: string;
 }) {
   const [state, setState] = useState<NegotiationState>(() => initialState ?? startNegotiation(marketValue, mode, Math.random));
-  const [amount, setAmount] = useState(() => state.yourPosition);
+  // Your offer box starts at THEIR offer: you have not asked for anything
+  // yet (Mikey, 19 Oct 2026: "it says I'm asking for 470, even though I
+  // haven't offered anything yet").
+  const [amount, setAmount] = useState(() => (initialState ? state.yourPosition : state.theirPosition));
+  // While you type, the box holds your text as typed, so clearing it and
+  // typing 400 gives 400, not 1,400 (the old box always kept a 1).
+  const [typed, setTyped] = useState<string | null>(null);
+  const asked = state.round > 0 || !!initialState;
   const holdRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Requested directly: the old +/- arrows moved by ★1 per click — with
@@ -226,7 +233,8 @@ export default function NegotiationScreen({
   // same "clean numbers" idea as the Casino's own bet-amount stepper), and
   // holding the button repeats it — typing an exact number directly is
   // still completely free-form, this only governs the +/- buttons.
-  const nudge = (dir: 1 | -1) => setAmount(a => Math.max(1, a + dir * niceMoneyStep(a)));
+  // Going down uses the step of the number below, so ★1,000 → ★990, not ★900.
+  const nudge = (dir: 1 | -1) => { setTyped(null); setAmount(a => Math.max(1, a + dir * niceMoneyStep(dir < 0 ? a - 1 : a))); };
   // Phone fix (20 Oct 2026): pointer events only. Touch AND mouse handlers
   // made one tap fire twice on a phone (the browser sends both), and a
   // finger that slid off the button never sent touchend, so the number
@@ -266,7 +274,9 @@ export default function NegotiationScreen({
 
   function propose(value: number) {
     if (finished) return;
+    if (!(value >= 1)) return;
     const next = makeOffer(state, Math.max(1, Math.round(value)), Math.random);
+    setTyped(null);
     setState(next);
     setAmount(next.status === "negotiating" ? next.yourPosition : next.yourPosition);
   }
@@ -326,7 +336,7 @@ export default function NegotiationScreen({
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sky-500/20 text-lg">🤝</div>
             <div className="min-w-0 flex-1">
               <div className="text-[9px] font-black uppercase tracking-widest text-sky-300/80">{verb}</div>
-              <div className="tabular-nums text-white font-black text-lg leading-tight"><Pop value={state.yourPosition}>★{money(state.yourPosition)}</Pop></div>
+              <div className="tabular-nums text-white font-black text-lg leading-tight">{asked ? <Pop value={state.yourPosition}>★{money(state.yourPosition)}</Pop> : <span className="text-white/60">Nothing yet</span>}</div>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-amber-950/70 to-amber-900/30 border border-amber-500/30 px-3 py-2.5">
@@ -381,8 +391,14 @@ export default function NegotiationScreen({
                 <span className="text-amber-300 font-black text-sm">★</span>
                 <input
                   type="text" inputMode="numeric"
-                  value={formatAmountInput(amount)}
-                  onChange={e => setAmount(Math.max(1, Math.round(Number(e.target.value.replace(/[^0-9]/g, "")) || 0)))}
+                  value={typed ?? formatAmountInput(amount)}
+                  onFocus={e => e.target.select()}
+                  onChange={e => {
+                    const digits = e.target.value.replace(/[^0-9]/g, "").replace(/^0+/, "");
+                    setTyped(digits ? formatAmountInput(Number(digits)) : "");
+                    setAmount(digits ? Number(digits) : 0);
+                  }}
+                  onBlur={() => { setTyped(null); setAmount(a => Math.max(1, a)); }}
                   className="flex-1 min-w-0 bg-transparent text-base font-bold text-white tabular-nums outline-none"
                 />
               </div>

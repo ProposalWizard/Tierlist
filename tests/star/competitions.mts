@@ -31,7 +31,13 @@ const PLAYER: StarPlayer = {
 } as StarPlayer;
 
 const CLUBS = ["Arsenal", "Chelsea", "Liverpool", "Man City", "Man Utd", "Spurs", "Newcastle", "Aston Villa", "Brighton", "West Ham"];
-const base = () => makeInitialCareer(PLAYER, CLUBS);
+// Arsenal open season 1 with the Community Shield (v Man City — world
+// season, 19 Oct 2026). These checks are about the cups and Europe, so the
+// shield is taken off the calendar; tests/star/world.mts covers it.
+const base = () => {
+  const c = makeInitialCareer(PLAYER, CLUBS);
+  return { ...c, fixtures: c.fixtures.filter(f => f.competition !== "Community Shield") };
+};
 
 const result = (userGoals: number, oppGoals: number): MatchStats => ({
   minutes: 90, chances: 5, goals: userGoals, assists: 0, passes: 12,
@@ -57,8 +63,12 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
   // sixty-four/thirty-two — its own new Round of 64.
   check(states.find(x => x.competition === "League Cup")!.rounds[0].ties.length === 16,
     "League Cup: thirty-two clubs, sixteen ties");
-  check(states.find(x => x.competition === "FA Cup")!.rounds[0].ties.length === 32,
-    "FA Cup: sixty-four clubs, thirty-two ties");
+  // The FA Cup opens with its 3rd Qualifying Round (Mikey, 19 Oct 2026):
+  // 56 clubs, 16 ties and 24 byes. A Premier League club joins in the Third.
+  const fa = states.find(x => x.competition === "FA Cup")!;
+  check(fa.rounds[0].name === "Third Qualifying Round" && fa.rounds[0].ties.length === 16 && fa.rounds[0].byes?.length === 24,
+    "FA Cup: 3rd Qualifying Round, sixteen ties and twenty-four byes");
+  check(fa.entries?.["Third Round"]?.includes(c.player.club) === true, "…and you join it in the Third Round");
   // Europe's own knockout draw specifically — as opposed to its league
   // phase, which CAN already be running from week one (see the block
   // below): nothing has been won yet to earn a knockout tie, and the
@@ -67,8 +77,8 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
     "…and no European knockout tie either, nothing has been won yet to earn one");
 
   const cupFixtures = c.fixtures.filter(f => f.kind === "cup");
-  check(cupFixtures.length === 2,
-    `only the FIRST round of each is on the calendar (${cupFixtures.length}) — the rest is earned`);
+  check(cupFixtures.length === 1 && cupFixtures[0].competition === "League Cup",
+    `only the League Cup's first round is on the calendar (${cupFixtures.length}) — the FA Cup tie comes when you are drawn in`);
   check(cupFixtures[0].round === "Round of 32", `and it is the opening round (${cupFixtures[0].round})`);
   check(cupFixtures[0].week > 1 && cupFixtures[0].week <= leagueWeeks(CLUBS.length),
     `the cup tie is inside the season (week ${cupFixtures[0].week} of ${leagueWeeks(CLUBS.length)})`);
@@ -508,7 +518,11 @@ function play(c: CareerState, userGoals: number, oppGoals: number): CareerState 
 {
   let c = base();
   let guard = 0;
-  while (nextFixtureFor(c)?.kind !== "cup" && guard++ < 40) c = play(c, 1, 0);
+  // A domestic cup tie, not season 1's Community Shield (Arsenal v Man City
+  // since 19 Oct 2026), which is a one-off match with no cup state.
+  const isCupTie = (f: ReturnType<typeof nextFixtureFor>) =>
+    f?.kind === "cup" && (f.competition === "FA Cup" || f.competition === "League Cup");
+  while (!isCupTie(nextFixtureFor(c)) && guard++ < 40) c = play(c, 1, 0);
   const tie = nextFixtureFor(c)!;
   const missed = simulateMissedFixture(c, tie).career;
   const st = (missed.cupState ?? []).find(x => x.competition === tie.competition)!;

@@ -13,6 +13,9 @@
  *   7. The real match is unchanged with the lane absent: a fingerprint of real goals struck
  *      with no lane (retaken on the Wyscout goals, 19 Oct 2026; the StatsBomb one
  *      was taken on the engine before the lane existed).
+ *   8. The 2017/18 league goals (Leo, 20 Oct 2026): five files, every goal joins,
+ *      a kit for all 98 clubs, no clashes, a real keeper's name, scenarios build,
+ *      the real line scores, and the level map is unchanged by them.
  *
  * Run: npx tsx tests/star/realGoals.mts
  */
@@ -23,7 +26,8 @@ import { measureBuildup } from "./realGoals/buildup.mts";
 import {
   buildLevels, levelOpen, recordResult, totalStars, accuracyPct, starsFor, realEnd, NATION_KITS, kitsForGoal,
   colourGap, KIT_CLASH, FEATURED, dressFor, scenarioForGoal, LEVELS_PER_STAGE, STAGE_GATES, shortNameOf, knownAs,
-  type Progress,
+  joinGoals, LEAGUES, isTournament, stageOf, sideKits, CLUB_KITS_1718,
+  type Progress, type RgFile,
 } from "../../lib/star/realGoals";
 
 let failed = 0;
@@ -164,6 +168,39 @@ console.log("\n7. THE REAL MATCH IS UNCHANGED WITH THE LANE ABSENT");
   const fp = h.toString(16).padStart(8, "0");
   console.log(`  fingerprint (no lane) ${fp}`);
   ok(OLD_HASH === "PENDING" || fp === OLD_HASH, `no lane = exactly the engine before it (${fp} = ${OLD_HASH})`);
+}
+
+// ── 8. League goals ──────────────────────────────────────────────────────
+console.log("\n8. THE 2017/18 LEAGUE GOALS");
+{
+  const league = LEAGUES.flatMap((l) => {
+    const f = JSON.parse(readFileSync(`data/realmoments/wyscout_${l.file.replace("-", "_")}.json`, "utf8")) as RgFile & { shots: Parameters<typeof joinGoals>[0] };
+    const j = joinGoals(f.shots, f.goals);
+    ok(j.length === f.goals.length && j.length > 700 && j.every((g) => g.x.comp === l.comp), `${l.comp}: all ${j.length} goals join with their facts`);
+    return j;
+  });
+  ok(league.length > 4300, `${league.length} league goals in all`);
+  ok(!league.some(isTournament) && goals.every(isTournament), "league goals are never in the level map's pool");
+  ok(new Set([...goals, ...league].map((g) => g.id)).size === goals.length + league.length, "no id twice across tournaments and leagues");
+  const teams = new Set(league.flatMap((g) => [g.x.home, g.x.away]));
+  const grey = [...teams].filter((t) => sideKits(t) === sideKits("nobody at all"));
+  ok(grey.length === 0, `a kit for every one of the ${teams.size} clubs${grey.length ? ` (missing ${grey.join(", ")})` : ""}`);
+  ok(Object.keys(CLUB_KITS_1718).every((t) => teams.has(t)), "every hand-set club kit is a club in the data (no misspelt names)");
+  const clash = league.filter((g) => { const k = kitsForGoal(g); return colourGap(k.us.shirt, k.them.shirt) < KIT_CLASH || colourGap(k.keeper.shirt, k.us.shirt) < KIT_CLASH || colourGap(k.keeper.shirt, k.them.shirt) < KIT_CLASH; });
+  ok(clash.length === 0, `no two shirts alike in any of the ${league.length} league goals (${clash.length}${clash.length ? `: ${clash.slice(0, 5).map((g) => `${g.shot.team} v ${g.x.home === g.shot.team ? g.x.away : g.x.home}`).join(", ")}` : ""})`);
+  ok(league.filter((g) => g.x.keeper).length >= league.length - 2, "the conceding keeper's name on (nearly) every goal");
+  ok(league.every((g) => g.x.score[0] <= g.x.final[0] && g.x.score[1] <= g.x.final[1]), "the score before a goal never passes the final score");
+  ok(stageOf(league[0]).match(/^\d{1,2} [A-Z][a-z]{2} 201[78]$/) !== null, `a league goal shows its date (${stageOf(league[0])})`);
+  let built = 0, on = 0, n = 0;
+  for (const g of league.filter((_, i) => i % 220 === 0)) {
+    const sc = scenarioForGoal(g); dressFor(g)(sc); if (sc.ball && sc.keeper) built++;
+    const aim = aimAtReal(g);
+    for (let s = 0; s < 3; s++) { n++; if (playStrike(g, aim, true, (9100 + s * 13) >>> 0, false).goal) on++; }
+  }
+  ok(built === Math.ceil(league.length / 220), `a scenario builds for every sampled goal (${built})`);
+  ok(on / n >= 0.9, `the real line scores on sampled league goals (${(100 * on / n).toFixed(1)}% of ${n})`);
+  const lv = buildLevels(goals).flatMap((s) => s.levels.map((l) => l.goal.id)).join();
+  ok(lv === buildLevels([...goals, ...league].filter(isTournament)).flatMap((s) => s.levels.map((l) => l.goal.id)).join(), "the level map is exactly the same as before the league goals");
 }
 
 if (failed) { console.error(`\n${failed} FAILED`); process.exit(1); }

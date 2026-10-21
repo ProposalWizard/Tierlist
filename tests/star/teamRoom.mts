@@ -164,8 +164,9 @@ ok(patchUnread(pn, "Mikey", pa, "2026-10-18").map((n) => n.version).join() === "
 ok(patchReaders(pn[0], pa).join() === "Mikey" && patchReaders(pn[1], pa).join() === "Harry,Leo", "faces: the author plus who pressed Read");
 
 console.log("The last two days' patch notes (19-20 Oct): one page each, all counted");
-const last2 = BUILT_IN_PATCH_NOTES.filter((n) => /^0\.(6\d|7[0-5])$/.test(n.version)); // not the old 0.6 and 0.7
-ok(last2.length === 16 && last2.map((n) => n.version).sort().join() === Array.from({ length: 16 }, (_, i) => "0." + (60 + i)).join(), "16 entries, v0.60 to v0.75");
+// Harry's own (main's Leo and Mikey notes use 0.60 to 0.63 too, so Harry's four are 0.60h to 0.63h)
+const last2 = BUILT_IN_PATCH_NOTES.filter((n) => /^0\.(6\d|7[0-5])h?$/.test(n.version) && /^Harry's/.test(n.title)); // not the old 0.6 and 0.7
+ok(last2.length === 16 && last2.map((n) => n.version).sort().join() === Array.from({ length: 16 }, (_, i) => "0." + (60 + i) + (i < 4 ? "h" : "")).join(), "16 entries, v0.60h to v0.75");
 ok(new Set(BUILT_IN_PATCH_NOTES.map((n) => n.version)).size === BUILT_IN_PATCH_NOTES.length, "every patch-note version is unique (receipts are keyed by it)");
 ok(last2.every((n) => Date.parse(n.publishedAt) >= Date.parse(TEAM_ROOM.patchReceiptsFrom)), "all dated on or after patchReceiptsFrom, so they count");
 const metaLast2: PatchMeta[] = last2.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
@@ -180,8 +181,8 @@ ok(topics.every((n) => !!n), "v0.82, v0.83 and v0.84 exist");
 ok(topics.every((n) => !!n && /^Harry's patch notes: /.test(n.title) && !!n.artifactUrl && !!PATCH_NOTE_PAGES[n.version]), "each is Harry's, links its artifact and has a kept page");
 ok(topics.every((n) => !!n && n.stats.length === 4 && n.sections.length > 0 && !!n.summary && Date.parse(n.publishedAt) >= Date.parse(TEAM_ROOM.patchReceiptsFrom)), "each has 4 stats, sections and a summary, and counts for the receipts");
 ok(topics.map((n) => n?.title.split(": ")[1]).join() === "Team Board & Team Updates,Admin Pages & Skins,Everything Else", "named as asked");
-const earlier19: Record<string, string> = { "0.60": "v0.82", "0.61": "v0.84", "0.62": "v0.84", "0.63": "v0.84", "0.64": "v0.84", "0.65": "v0.83" };
-ok(Object.entries(earlier19).every(([v, to]) => BUILT_IN_PATCH_NOTES.find((n) => n.version === v)?.summary.includes("Now part of " + to + " ")), "v0.60 to v0.65 stay in the archive and say which topic page they are now part of");
+const earlier19: Record<string, string> = { "0.60h": "v0.82", "0.61h": "v0.84", "0.62h": "v0.84", "0.63h": "v0.84", "0.64": "v0.84", "0.65": "v0.83" };
+ok(Object.entries(earlier19).every(([v, to]) => BUILT_IN_PATCH_NOTES.find((n) => n.version === v)?.summary.includes("Now part of " + to + " ")), "v0.60h to v0.65 stay in the archive and say which topic page they are now part of");
 const idx = BUILT_IN_PATCH_NOTES.find((n) => n.version === "0.75");
 ok(!!idx && /v0\.84/.test(idx.stats[3].value) && idx.sections.some((s) => s.items.some((i) => i.title.startsWith("Team Board & Team Updates (v0.82)"))), "the index (v0.75) lists the three topic pages");
 

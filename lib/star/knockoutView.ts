@@ -1,9 +1,10 @@
 import type { CupState, CupTie } from "./cups";
-import { tieWinner, roundNamesFor, cupStrength } from "./cups";
+import { tieWinner, lastSixteenIndex, cupStrength } from "./cups";
 import type { CareerState, Fixture } from "./types";
 import { shortClub } from "./media/grammar";
 import type { EuroState } from "./euro";
 import { koAggregate, type KoTie } from "./euroBracket";
+import { ratedTeams } from "./world";
 
 /**
  * WHAT THE CUP AND EUROPEAN ROUND-UPS SHOW (Mikey, 8 Oct 2026: "something
@@ -99,8 +100,7 @@ function cupNote(t: CupTie): { note?: string; pensWinner?: "home" | "away" } {
  * own rounds) the round just played. Null before the last sixteen.
  */
 export function cupBracket(state: CupState, roundIndex: number, you: string): BracketView | null {
-  const names = roundNamesFor(state.competition);
-  const r16 = names.indexOf("Round of 16");
+  const r16 = lastSixteenIndex(state);
   if (r16 < 0 || roundIndex < r16 || !state.rounds[r16]) return null;
 
   // Lay each round out in the order of the round after it.
@@ -269,7 +269,7 @@ export function knockoutRoundupFor(c: CareerState, f: Fixture): Roundup | null {
     });
     if (k < 0) return null;
     const stages: RoundupStage[] = [
-      { kind: "board", title: st.rounds[k].name, ties: cupBoard(st, k, you, (x) => cupStrength(x, c.league)) },
+      { kind: "board", title: st.rounds[k].name, ties: cupBoard(st, k, you, (x) => cupStrength(x, ratedTeams(c))) },
     ];
     const br = cupBracket(st, k, you);
     if (br) stages.push({ kind: "bracket", title: "Road to the Final", view: br });

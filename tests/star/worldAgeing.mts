@@ -1,4 +1,6 @@
-import { buildLeagueSquad, growWonderkids, averageStartingXIRating, type RosterRow } from "../../lib/star/leagueSquads";
+import { buildLeagueSquad, growWonderkids, averageStartingXIRating, syncLeagueStrengthFromSquads, type RosterRow } from "../../lib/star/leagueSquads";
+import { squadRating } from "../../lib/star/world/clubRating";
+import { divisionOf } from "../../lib/star/calendar";
 import { makeInitialCareer, advanceSeason } from "../../lib/star/careerFlow";
 import { runTransferWindow } from "../../lib/star/leagueTransfers";
 import {
@@ -338,8 +340,12 @@ for (const [label, r] of [["BEFORE", before], ["AFTER", after]] as const) {
   check(worldNow.flatMap(s => s.players).some(p => isRegenId(p.id)), "regens have arrived");
   check(players(worldNow) === players([...(day1.leagueSquads ?? []), ...(day1.externalSquads ?? [])]), "the world's head count is unchanged");
   // League strengths are read off the aged squads.
-  const byClub = new Map((career.leagueSquads ?? []).map(s => [s.club, averageStartingXIRating(s)]));
-  check(career.league.every(t => !byClub.has(t.name) || byClub.get(t.name) === t.strength), "club strengths are re-synced to the aged squads");
+  // A real squad's strength is its aged XI; an invented one's is its club
+  // data (world/clubRating.ts, 19 Oct 2026) — syncLeagueStrengthFromSquads.
+  const resynced = new Map(syncLeagueStrengthFromSquads(career.league, career.leagueSquads ?? [], divisionOf(career)).map(t => [t.name, t.strength]));
+  check(career.league.every(t => resynced.get(t.name) === t.strength), "club strengths are re-synced to the aged squads");
+  check((career.leagueSquads ?? []).every(s => squadRating(s) === null || career.league.find(t => t.name === s.club)?.strength === averageStartingXIRating(s)),
+    "a real squad's strength is its aged XI");
   // Your team-mates age with your club's copy, and keep their career tallies.
   const ownNow = [...(career.leagueSquads ?? []), ...(career.externalSquads ?? [])].find(s => s.club === career.player.club);
   if (career.player.club === you && ownNow) {

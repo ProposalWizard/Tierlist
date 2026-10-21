@@ -20,6 +20,12 @@
  * A version with no entry here just shows the Text view, as before.
  */
 export const PATCH_NOTE_PAGES: Record<string, string> = {
+  "0.62": "mikey/v0.18.html",
+  "0.63": "mikey/v0.19.html",
+  // VERSION KEYS MUST BE UNIQUE ACROSS HARRY, LEO AND MIKEY. Site versions
+  // 0.60 to 0.63 are Leo's and Mikey's live pages (main). Harry's four pages
+  // that were also numbered 0.60 to 0.63 (written on his branch before main
+  // had them) keep their number with an "h" for Harry: 0.60h to 0.63h.
   // 19-20 Oct 2026: the last two days, one kept page per build (Harry: acknowledge every tab).
   "0.94": "pages/0.94/index.html",
   "0.93": "pages/0.93/index.html",
@@ -52,10 +58,10 @@ export const PATCH_NOTE_PAGES: Record<string, string> = {
   "0.66": "pages/0.66/index.html",
   "0.65": "pages/0.65/index.html",
   "0.64": "pages/0.64/index.html",
-  "0.63": "pages/0.63/index.html",
-  "0.62": "pages/0.62/index.html",
-  "0.61": "pages/0.61/index.html",
-  "0.60": "pages/0.60/index.html",
+  "0.63h": "pages/0.63h/index.html",
+  "0.62h": "pages/0.62h/index.html",
+  "0.61h": "pages/0.61h/index.html",
+  "0.60h": "pages/0.60h/index.html",
   "0.59": "mikey/v0.17.html",
   "0.57": "pages/0.57/index.html",
   "0.56": "pages/0.56/index.html",

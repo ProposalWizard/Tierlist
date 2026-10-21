@@ -1,4 +1,6 @@
-import type { CareerState, LeagueTeam } from "./types";
+import type { CareerState, LeagueTeam, LeagueSquad } from "./types";
+import { rateClub, squadRating, type RatingTier } from "./world/clubRating";
+import { finishWorld } from "./world";
 import { sortLeague, simulateFixtureScore, mulberry32 } from "./season";
 import { divisionOf, divisionRank, type CareerDivision } from "./calendar";
 import {
@@ -152,64 +154,62 @@ export function membershipOf(career: CareerState): DivisionMembership {
 // ── Strength, for a club that may not be in your division ───────────────────
 
 /**
- * How good a club is, for the purpose of drawing lots.
- *
- * Real squad strength when this career actually holds the squad — which is
- * only ever true of your own division. For everybody else, a stable number
- * derived from the club's name and its tier: the point is that the draw is
- * weighted and repeatable, not that it is accurate about a division nobody
- * is simulating.
+ * How good a club is (world/clubRating.ts, Mikey 19 Oct 2026). Your own
+ * division's clubs read their live table strength. Everybody else: the best
+ * XI of their real squad, or — with no real squad — their division's level
+ * moved by their club data. Before 19 Oct 2026 this was a division baseline
+ * plus 0-9 off the club's name, so Arsenal (real XI 87) and Sunderland (79)
+ * came out 79 and 86.
  */
-function baselineFor(tier: keyof DivisionMembership): number {
-  return tier === "premier" ? 78
-    : tier === "championship" ? 70
-    : tier === "leagueOne" ? 63
-    : tier === "leagueTwo" ? 58
-    : tier === "nationalLeague" ? 55
-    : tier === "step3North" || tier === "step3South" ? 45
-    : 50; // nationalLeagueNorth / nationalLeagueSouth — one rung, side by side
+type TierKeyAll = keyof DivisionMembership;
+const TIER_RATING: Record<TierKeyAll, RatingTier> = {
+  premier: "premier", championship: "championship", leagueOne: "league_one", leagueTwo: "league_two",
+  nationalLeague: "national_league", nationalLeagueNorth: "national_league_north",
+  nationalLeagueSouth: "national_league_south", step3North: "step3", step3South: "step3",
+};
+const TIER_ORDER: TierKeyAll[] = ["premier", "championship", "leagueOne", "leagueTwo", "nationalLeague", "nationalLeagueNorth", "nationalLeagueSouth", "step3North", "step3South"];
+
+const squadMaps = new WeakMap<object, Map<string, LeagueSquad>>();
+function squadsByClub(career: CareerState): Map<string, LeagueSquad> {
+  const key = career as object;
+  const hit = squadMaps.get(key);
+  if (hit) return hit;
+  const m = new Map<string, LeagueSquad>();
+  for (const s of career.externalSquads ?? []) m.set(s.club, s);
+  for (const s of career.leagueSquads ?? []) m.set(s.club, s);
+  squadMaps.set(key, m);
+  return m;
 }
 
-function nameNoise(club: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < club.length; i++) {
-    h ^= club.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return ((h >>> 0) % 900) / 100; // 0.00 - 8.99
+function tierOfClub(members: DivisionMembership, club: string): TierKeyAll | null {
+  for (const t of TIER_ORDER) if (members[t].includes(club)) return t;
+  return null;
+}
+
+/** One club's rating, given the ladder it sits on. */
+export function ratingFor(career: CareerState, club: string, members: DivisionMembership = membershipOf(career)): number {
+  const live = career.league.find(t => t.name === club)?.strength;
+  if (live !== undefined) return live;
+  const tier = tierOfClub(members, club);
+  const squad = squadsByClub(career).get(club);
+  if (!tier) return squadRating(squad) ?? 72;
+  return rateClub(club, squad, TIER_RATING[tier], members[tier]);
 }
 
 function strengthTable(career: CareerState, members: DivisionMembership): Map<string, number> {
   const out = new Map<string, number>();
-  for (const tier of ["premier", "championship", "leagueOne", "leagueTwo", "nationalLeague", "nationalLeagueNorth", "nationalLeagueSouth", "step3North", "step3South"] as const) {
-    for (const club of members[tier]) out.set(club, baselineFor(tier) + nameNoise(club));
+  for (const tier of TIER_ORDER) {
+    for (const club of members[tier]) out.set(club, ratingFor(career, club, members));
   }
-  // Anything this career genuinely knows about beats the estimate.
-  for (const t of career.league) out.set(t.name, t.strength);
   return out;
 }
 
 /**
- * The same estimate `strengthTable` builds for the whole ladder at once, for
- * a single club — used by lib/star/relegationOffers.ts to price an offer
- * from a club this career has never actually simulated (a Premier League
- * side, while you have spent the season in the Championship).
+ * The same rating `strengthTable` builds for the whole ladder at once, for a
+ * single club — used to price offers, transfer interest and Europe.
  */
 export function estimateClubStrength(career: CareerState, club: string): number {
-  const real = career.league.find(t => t.name === club)?.strength;
-  if (real !== undefined) return real;
-  const members = membershipOf(career);
-  const tier: keyof DivisionMembership =
-    members.premier.includes(club) ? "premier"
-    : members.championship.includes(club) ? "championship"
-    : members.leagueOne.includes(club) ? "leagueOne"
-    : members.leagueTwo.includes(club) ? "leagueTwo"
-    : members.nationalLeague.includes(club) ? "nationalLeague"
-    : members.nationalLeagueNorth.includes(club) ? "nationalLeagueNorth"
-    : members.nationalLeagueSouth.includes(club) ? "nationalLeagueSouth"
-    : members.step3North.includes(club) ? "step3North"
-    : "step3South";
-  return baselineFor(tier) + nameNoise(club);
+  return ratingFor(career, club);
 }
 
 // ── Drawing lots ────────────────────────────────────────────────────────────
@@ -578,6 +578,9 @@ export interface LadderOutcome {
    *  resolved lands here too, not just returns from a previous one. Persist
    *  onto `career.limboClubs`. See forcedMovement.ts. */
   limbo: string[];
+  /** Every other division's play-offs, played off its world table
+   *  (world season, 19 Oct 2026). */
+  worldPlayOffs: { division: CareerDivision; result: PlayOffResult }[];
 }
 
 /**
@@ -646,6 +649,27 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     premier: [], championship: [], leagueOne: [], leagueTwo: [], nationalLeague: [],
   };
   let playOffs: PlayOffResult | null = null;
+  const worldPlayOffs: { division: CareerDivision; result: PlayOffResult }[] = [];
+
+  // ── Every division you did not play has a real table now ──
+  //
+  // The world season (lib/star/world, 19 Oct 2026) plays every other league
+  // in full, so who goes up and down there is read off its final table, the
+  // same way your own division's is. The weighted draw below is only for a
+  // division the world has no table for (never, in practice).
+  const world = (() => { try { return finishWorld(career); } catch { return null; } })();
+  const worldSorted = (div: CareerDivision): LeagueTeam[] | null => {
+    const lg = world?.leagues.find(l => l.division === div);
+    return lg && lg.played >= lg.rounds ? sortLeague(lg.teams) : null;
+  };
+  const worldPromoted = (div: CareerDivision, count: number): string[] | null => {
+    const t = worldSorted(div);
+    if (!t) return null;
+    const po = resolvePlayOffs(t, strength, rng, count - 1);
+    if (po) worldPlayOffs.push({ division: div, result: po });
+    const auto = t.slice(0, count - 1).map(x => x.name);
+    return po ? [...auto, po.promoted] : t.slice(0, count).map(x => x.name);
+  };
 
   // Top boundary to bottom — every tier's "who left" is decided (real table
   // or weighted draw) before it's asked to top itself back up, same order
@@ -658,9 +682,10 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     const relegated = playingAbove
       // Your table is real, so its bottom N is a fact.
       ? names.slice(-count)
-      // Nobody played this tier, so who came down is a draw — weighted the
-      // other way, since it is the weak who go.
-      : weightedDraw(working[above], strength, count, rng, true);
+      // So is every other division's now (the world season).
+      : worldSorted(TIER_TO_DIVISION[above])?.slice(-count).map(t => t.name)
+      // A division with no table: a draw, weighted the other way.
+      ?? weightedDraw(working[above], strength, count, rng, true);
     relegatedFrom[above] = relegated;
 
     // ── Who goes UP, from `below` into `above` ──
@@ -677,8 +702,10 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
       const last = played ?? playOffs?.promoted;
       promoted = last ? [...auto, last] : auto;
     } else {
-      // Nobody played this tier, so who came up is a draw.
-      promoted = weightedDraw(working[below], strength, count, rng);
+      // The world's table: top (count − 1) and the play-off winner.
+      promoted = worldPromoted(TIER_TO_DIVISION[below], count)
+        // A division with no table: a draw.
+        ?? weightedDraw(working[below], strength, count, rng);
     }
     promotedInto[above] = promoted;
 
@@ -695,9 +722,16 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
   const playingNationalLeague = division === "national_league";
   const relegatedFromNationalLeague = playingNationalLeague
     ? names.slice(-NATIONAL_DOWN_COUNT)
-    : weightedDraw(working.nationalLeague, strength, NATIONAL_DOWN_COUNT, rng, true);
+    : worldSorted("national_league")?.slice(-NATIONAL_DOWN_COUNT).map(t => t.name)
+      ?? weightedDraw(working.nationalLeague, strength, NATIONAL_DOWN_COUNT, rng, true);
   const regionUp = (key: "nationalLeagueNorth" | "nationalLeagueSouth", div: CareerDivision): string[] => {
-    if (division !== div) return weightedDraw(members[key], strength, REGIONAL_UP_COUNT, rng);
+    if (division !== div) {
+      const t = worldSorted(div);
+      if (!t) return weightedDraw(members[key], strength, REGIONAL_UP_COUNT, rng);
+      const po = resolveRegionalPlayOffs(t, strength, rng);
+      if (po) worldPlayOffs.push({ division: div, result: po });
+      return po ? [t[0].name, po.promoted] : t.slice(0, REGIONAL_UP_COUNT).map(x => x.name);
+    }
     // The champion up, and the 2nd-7th play-off winner (resolveRegionalPlayOffs).
     const played = career.playOffState?.promoted;
     playOffs = played ? null : resolveRegionalPlayOffs(career.league, strength, rng);
@@ -715,7 +749,8 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
       // bottom-four finish forces a move first (page.tsx, "relegation-move");
       // if that somehow didn't happen, the club above you goes instead.
       ? names.filter(c => c !== career.player.club).slice(-REGIONAL_DOWN_COUNT)
-      : weightedDraw(members[key].filter(c => !up.includes(c)), strength, REGIONAL_DOWN_COUNT, rng, true);
+      : worldSorted(div)?.filter(t => !up.includes(t.name)).slice(-REGIONAL_DOWN_COUNT).map(t => t.name)
+        ?? weightedDraw(members[key].filter(c => !up.includes(c)), strength, REGIONAL_DOWN_COUNT, rng, true);
   const relegatedFromNorth = regionDown("nationalLeagueNorth", "national_league_north", promotedFromNorth);
   const relegatedFromSouth = regionDown("nationalLeagueSouth", "national_league_south", promotedFromSouth);
   // Step 3's four all go up.
@@ -805,5 +840,6 @@ export function resolveLadder(career: CareerState, rng: () => number): LadderOut
     relegatedFromNorth, relegatedFromSouth, promotedFromStep3North, promotedFromStep3South,
     playOffs,
     limbo,
+    worldPlayOffs,
   };
 }

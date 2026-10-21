@@ -38,16 +38,21 @@ export async function GET(request: NextRequest) {
   if (q.length < 2) return NextResponse.json({ results: [] });
 
   const supabase = createPublicReadClient();
-  const filter = variants(q).map(v => `name.ilike.%${v}%`).join(",");
-
-  const { data, error } = await supabase
+  // One query per spelling, run side by side. They used to be one OR of every
+  // spelling, which stops the database using its name index: "kane" (13
+  // spellings) hit the 3 s statement timeout and returned a 500, while each
+  // spelling on its own answers in about half a second (measured 20 Oct 2026).
+  const answers = await Promise.all(variants(q).map(v => supabase
     .from("sofifa_players")
     .select("sofifa_id, fifa_year, name, club, overall, manual_overall, positions, manual_positions, age, image_url, nationality, manual_nationality, attributes")
-    .or(filter)
+    .ilike("name", `%${v}%`)
     .order("fifa_year", { ascending: false })
     .order("overall", { ascending: false, nullsFirst: false })
-    .limit(150);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    .limit(150)));
+  const failed = answers.filter(a => a.error);
+  if (failed.length === answers.length) return NextResponse.json({ error: failed[0].error!.message }, { status: 500 });
+  const data = answers.flatMap(a => (a.data ?? []) as Record<string, unknown>[])
+    .sort((a, b) => ((b.fifa_year as number) - (a.fifa_year as number)) || (((b.overall as number) ?? 0) - ((a.overall as number) ?? 0)));
 
   // Newest edition first, so the first row seen for an id is the one kept.
   const seen = new Set<string>();
