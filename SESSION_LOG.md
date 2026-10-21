@@ -1311,3 +1311,7 @@ Three new PL Draft (`/draft`) feature requests, dictated by voice-to-text:
 All changes type-check clean (`npx tsc --noEmit`). Could not manually verify in a running browser this session — the sandbox has no Supabase credentials configured, so `next dev` 500s on every page via the auth middleware.
 
 ---
+
+## 21 Oct 2026 — Sim rebuild piece 1 (credits, licensed numbers out, real-world column)
+
+Credits list in lib/star/dataCredits.ts shown in Settings and on public /credits. Every number once taken from the licensed event data was re-sourced to free Wyscout + PlayeRank + pro tracking (scripts/opendata/reduce_resource.py). Value changes: Keeper pro depth curve, back-four span, block slide 0.33, line floor 0.57, keeper shade 0.22, REAL_MIX 10/5/2. Radar path byte-identical. Real world column on /star-radar-dev. Details: docs/handoffs/2026-10-20-builds/sim1/READY.txt.

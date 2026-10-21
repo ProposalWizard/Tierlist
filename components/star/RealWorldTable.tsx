@@ -76,7 +76,7 @@ export default function RealWorldTable({ inputs, label }: { inputs: HiddenMatchI
       </div>
       <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
         {[100, 200, 500].map((v) => (
-          <button key={v} onClick={() => setN(v)} style={{ padding: "4px 10px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.2)", background: n === v ? "#2563eb" : "transparent", color: "#fff", fontSize: 12, fontWeight: 800 }}>{v}</button>
+          <button key={v} onClick={() => setN(v)} style={{ padding: "4px 10px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.2)", background: n === v ? "#2563eb" : "transparent", color: n === v ? "#fff" : "inherit", fontSize: 12, fontWeight: 800 }}>{v}</button>
         ))}
         <button onClick={run} disabled={busy} style={{ padding: "4px 12px", borderRadius: 999, border: "none", background: busy ? "#334155" : "#16a34a", color: "#fff", fontSize: 12, fontWeight: 800 }}>
           {busy ? "Playing…" : res ? "Measure again" : "Measure"}
@@ -92,8 +92,8 @@ export default function RealWorldTable({ inputs, label }: { inputs: HiddenMatchI
               {rows.map(([w, a, b, r]) => (
                 <tr key={w} style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                   <td style={{ padding: "4px 6px", fontWeight: 700 }}>{w}</td>
-                  <td style={{ padding: "4px 6px", color: a === NOT ? MUTED : "#fff" }}>{a}</td>
-                  <td style={{ padding: "4px 6px", color: b === NOT ? MUTED : "#fff" }}>{b}</td>
+                  <td style={{ padding: "4px 6px", color: a === NOT ? MUTED : "inherit" }}>{a}</td>
+                  <td style={{ padding: "4px 6px", color: b === NOT ? MUTED : "inherit" }}>{b}</td>
                   <td style={{ padding: "4px 6px", fontWeight: 800 }}>{r}</td>
                 </tr>
               ))}
