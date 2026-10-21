@@ -50,7 +50,7 @@ export default function PushedJobRow({ j, now }: { j: PushedJob; now: number }) 
     <div data-pushed-job={j.id}>
       <div className={`tr-task tr-job${j.done_at ? " done" : ""}`}
         title="This job came from a push (team/jobs.json in the repo), so it can't be deleted here. Tick it when it's done.">
-        <button className="tr-check" role="checkbox" aria-checked={!!j.done_at} aria-label={j.done_at ? "Not done" : "Done"} disabled={busy} onClick={tick}>
+        <button className="tr-check" data-compact role="checkbox" aria-checked={!!j.done_at} aria-label={j.done_at ? "Not done" : "Done"} disabled={busy} onClick={tick}>
           {j.done_at && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" aria-hidden><path d="m5 12 5 5 9-10" /></svg>}
         </button>
         <span className="tx">

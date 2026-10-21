@@ -18,6 +18,7 @@ import { newSelectionMemory } from "../scenarioSelect";
 import { forceChancesMode, type ChancesMode } from "../newChances";
 import { matchStill, matchCanvasHW } from "./stillCamera";
 import { mulberry32, standInResult, RULER_INPUTS } from "./ruler";
+import { withCornerReach } from "../cornerReach";
 
 export interface ServedChance { sc: Scenario; moment: LeadMoment; match: number; minute: number }
 
@@ -26,7 +27,8 @@ export const PHONE_HW = matchCanvasHW(390, 700);
 
 /** `count` open-play and set-piece chances as the match serves them (Chances: New unless told). */
 export function servedChances(o: { count: number; seed?: number; chances?: ChancesMode; inputs?: HiddenMatchInputs }): ServedChance[] {
-  const inputs = o.inputs ?? RULER_INPUTS;
+  // Mikey's corner rule, as the real match passes it (lib/star/cornerReach.ts).
+  const inputs = withCornerReach(o.inputs ?? RULER_INPUTS);
   const prev = (globalThis as Record<string, unknown>).__starChancesForced as ChancesMode | null | undefined;
   forceChancesMode(o.chances ?? "new");
   const out: ServedChance[] = [];

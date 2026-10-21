@@ -240,19 +240,22 @@ const YC = YE.slice(0, -1).map((e, i) => (e + YE[i + 1]) / 2);
 type RoleTable = Record<string, number[][]>;
 const ROLES = P.roles as { in: RoleTable; out: RoleTable };
 /** A role's average spot (and spread) for a ball at (X, Y), both in the team's own frame: blended between zone centres. */
+/** Which two zone centres `v` falls between, and how far along (written out, not a closure: roleSpot runs ~100k times a build-up). */
+function bracket(v: number, c: number[], out: number[]) {
+  if (v <= c[0]) { out[0] = 0; out[1] = 0; out[2] = 0; return; }
+  for (let i = 0; i < c.length - 1; i++) if (v <= c[i + 1]) { out[0] = i; out[1] = i + 1; out[2] = (v - c[i]) / (c[i + 1] - c[i]); return; }
+  out[0] = c.length - 1; out[1] = c.length - 1; out[2] = 0;
+}
+const BX = [0, 0, 0], BY = [0, 0, 0];
 function roleSpot(phase: "in" | "out", role: string, X: number, Y: number): [number, number, number, number] {
   const tab = ROLES[phase][role] ?? ROLES[phase].CM ?? ROLES[phase].DM;
-  const fi = (v: number, c: number[]) => {
-    if (v <= c[0]) return [0, 0, 0] as const;
-    for (let i = 0; i < c.length - 1; i++) if (v <= c[i + 1]) return [i, i + 1, (v - c[i]) / (c[i + 1] - c[i])] as const;
-    return [c.length - 1, c.length - 1, 0] as const;
-  };
-  const [x0, x1, fx] = fi(X, XC), [y0, y1, fy] = fi(Y, YC);
-  const at = (ix: number, iy: number) => tab[ix * 5 + iy];
+  bracket(X, XC, BX); bracket(Y, YC, BY);
+  const x0 = BX[0], x1 = BX[1], fx = BX[2], y0 = BY[0], y1 = BY[1], fy = BY[2];
+  const a0 = tab[x0 * 5 + y0], a1 = tab[x0 * 5 + y1], b0 = tab[x1 * 5 + y0], b1 = tab[x1 * 5 + y1];
   const out: [number, number, number, number] = [0, 0, 0, 0];
   for (let k = 0; k < 4; k++) {
-    const a = at(x0, y0)[k] * (1 - fy) + at(x0, y1)[k] * fy;
-    const b = at(x1, y0)[k] * (1 - fy) + at(x1, y1)[k] * fy;
+    const a = a0[k] * (1 - fy) + a1[k] * fy;
+    const b = b0[k] * (1 - fy) + b1[k] * fy;
     out[k] = a * (1 - fx) + b * fx;
   }
   return out;
@@ -811,7 +814,8 @@ export function fhrBuildUpFor(sc: Scenario, moment0: LeadMoment, adjust?: FhrAdj
     const o: AttemptOpts = { intel, regain: rg, caughtU };
     // (The fallbacks get fewer tries: the generator stays about as quick as before B2b.)
     for (let k = 0; k < (pi === 0 ? FHR_TRIES : FHR_FALLBACK_TRIES); k++) {
-      const b = attempt(sc, moment, seedOf(k), k, tp, cv, o);
+      // (A try that already has as many problems as the best so far can never be picked: it stops early, null.)
+      const b = attempt(sc, moment, seedOf(k), k, tp, cv, o, false, best ? best.problems.length : Infinity);
       if (!b) continue;
       if (!b.problems.length) return b;
       if (!best || b.problems.length < best.problems.length) { best = b; bestSeed = seedOf(k); bestOpts = o; bestCover = cv; }
@@ -839,7 +843,11 @@ interface AttemptOpts {
 /** The problem a try lists when a run is offside and can't be held back in time. */
 const UNTIMED = "offside run not timed";
 
-function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, tp: FhrTempo, coverEnd: Vec2 | null, o: AttemptOpts, force = false): FhrBuildUp | null {
+/**
+ * One try. `giveUpAt`: stop and return null as soon as this try has that many
+ * problems (it could never beat the best try so far), before the slow parts.
+ */
+function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, tp: FhrTempo, coverEnd: Vec2 | null, o: AttemptOpts, force = false, giveUpAt = Infinity): FhrBuildUp | null {
   const r = rngOf(seed);
   const frame = moment.frame ?? sc.viewport;
   // ── B2b: where the ball was won (the match's own regain), how high up, how long they had it ──
@@ -1164,7 +1172,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     // (The regainer: held for the last moments of his press too, so nobody is eased off the challenge.)
     if (spell && s === spells[0]) for (let i = idx(s.tIn - 0.35); i < iA; i++) pin.push(i);
     const cap = vmax * 0.97;
-    const okAround = (lo: number, hi: number) => maxSpeed(out.slice(Math.max(0, lo), Math.min(N, hi) + 1)) <= cap;
+    const okAround = (lo: number, hi: number) => maxSpeedIn(out, Math.max(0, lo), Math.min(N, hi)) <= cap;
     if (iA > 0) {
       const target = out[iA];
       let ok = false;
@@ -1353,6 +1361,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
   const oppx = loser && loser.side === "oppx" ? [loser] : [];
   const all = [...people, ...extras, ...oppx, ...(cover ? [cover] : [])];
 
+  if (problems.length >= giveUpAt) return null;
   // ── Ease everybody apart ──
   separate(all, N, durS);
   // …which can leave a short burst too quick: smoothed out where it is (never a held sample, nor the end).
@@ -1532,6 +1541,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
   if (!called) {
     for (const e of [...extras, ...oppx]) if (inFrame(e.path[N], 1.5)) problems.push(`${e.key} is still in the chance's frame at the end`);
   }
+  if (problems.length >= giveUpAt) return null;
   const overlap = minGap(all, Math.max(...all.map((p) => p.path.length - 1)), durS, spell && loser ? { a: loser.key, b: owners[0], until: Math.round((spell.tackleT + 0.5) * HZ) } : null);
   if (overlap.d < FHR_OVERLAP_M) problems.push(`${overlap.a} and ${overlap.b} ${overlap.d.toFixed(2)} m apart at ${(overlap.i / HZ).toFixed(1)} s`);
   // Nobody between the keeper and his goal (unless the drawing has him there at the end).
@@ -1622,10 +1632,26 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
 
 /** The fastest a stored path moves (m/s), over 0.2 s stretches. */
 export function maxSpeed(path: Vec2[]): number {
+  return maxSpeedIn(path, 0, path.length - 1);
+}
+/**
+ * maxSpeed over path[lo..hi] only (as if that stretch were sliced out), with
+ * no copy. The fastest step is found first and turned into m/s once (the same
+ * number: m/s only grows with the step); a step that plainly can't beat the
+ * fastest so far (its two sides added up are shorter) is not measured.
+ */
+function maxSpeedIn(path: Vec2[], lo: number, hi: number): number {
   const w = 3; // 0.2 s at HZ
-  let v = 0;
-  for (let i = w; i < path.length; i++) v = Math.max(v, (dist(path[i], path[i - w]) * HZ) / w);
-  return v;
+  let m = 0;
+  for (let i = lo + w; i <= hi; i++) {
+    const a = path[i], b = path[i - w];
+    const dx = a.x - b.x, dy = a.y - b.y;
+    if ((dx < 0 ? -dx : dx) + (dy < 0 ? -dy : dy) < m * 0.999) continue;
+    const d = Math.hypot(dx, dy);
+    if (d !== d) return NaN;
+    if (d > m) m = d;
+  }
+  return (m * HZ) / w;
 }
 
 /** Smooths a path where it is briefly faster than `vmax` (held samples and the two ends stay put). */
@@ -1659,7 +1685,10 @@ function minGap(all: { key: string; path: Vec2[] }[], N: number, durS: number, c
       if (i >= late && (pa.length > late + HZ || pb.length > late + HZ) && dist(pa[pa.length - 1], pb[pb.length - 1]) < FHR_SPACE_M) continue;
       // B2b: the two in a challenge for the ball meet (until just after it is won).
       if (challenge && i <= challenge.until && ((all[a].key === challenge.a && all[b].key === challenge.b) || (all[a].key === challenge.b && all[b].key === challenge.a))) continue;
-      const d = dist(at(pa, i), at(pb, i));
+      const qa = at(pa, i), qb = at(pb, i);
+      // (Can't come closer than the best so far: a gap is never under its larger side.)
+      if (Math.abs(qa.x - qb.x) >= best.d || Math.abs(qa.y - qb.y) >= best.d) continue;
+      const d = dist(qa, qb);
       if (d < best.d) best = { d, a: all[a].key, b: all[b].key, i };
     }
   }
@@ -1673,47 +1702,53 @@ function minGap(all: { key: string; path: Vec2[] }[], N: number, durS: number, c
  */
 export function separate(all: { path: Vec2[]; pin: number[] }[], N: number, durS: number) {
   const fade = (i: number) => clamp((durS - i / HZ) / 0.8, 0, 1);
+  const M = all.length, L = N + 1;
+  // (Pushes in flat arrays, one row per man: the same sums in the same order, without ~2,000 objects a pass.)
+  const px = new Float64Array(M * L), py = new Float64Array(M * L);
   for (let it = 0; it < 6; it++) {
-    const push: Vec2[][] = all.map(() => Array.from({ length: N + 1 }, () => ({ x: 0, y: 0 })));
+    px.fill(0); py.fill(0);
     let any = false;
     for (let i = 0; i < N; i++) {
       const f = fade(i);
       if (f <= 0) continue;
-      for (let a = 0; a < all.length; a++) for (let b = a + 1; b < all.length; b++) {
-        const pa = all[a].path[i], pb = all[b].path[i];
-        let dx = pb.x - pa.x, dy = pb.y - pa.y;
-        let d = Math.hypot(dx, dy);
-        if (d >= FHR_SPACE_M) continue;
-        if (d < 1e-3) { dx = (a % 2 ? 1 : -1) * 0.01; dy = 0.01; d = Math.hypot(dx, dy); }
-        const need = (FHR_SPACE_M - d) * f;
-        const la = all[a].pin[i] ? 0 : 1, lb = all[b].pin[i] ? 0 : 1;
-        if (!la && !lb) continue;
-        const sa = la / (la + lb), sb = lb / (la + lb);
-        push[a][i].x -= (dx / d) * need * sa; push[a][i].y -= (dy / d) * need * sa;
-        push[b][i].x += (dx / d) * need * sb; push[b][i].y += (dy / d) * need * sb;
-        any = true;
+      for (let a = 0; a < M; a++) {
+        const pa = all[a].path[i];
+        for (let b = a + 1; b < M; b++) {
+          const pb = all[b].path[i];
+          let dx = pb.x - pa.x, dy = pb.y - pa.y;
+          // (Far apart on either axis: never closer than FHR_SPACE_M.)
+          if (dx >= FHR_SPACE_M || dx <= -FHR_SPACE_M || dy >= FHR_SPACE_M || dy <= -FHR_SPACE_M) continue;
+          let d = Math.hypot(dx, dy);
+          if (d >= FHR_SPACE_M) continue;
+          if (d < 1e-3) { dx = (a % 2 ? 1 : -1) * 0.01; dy = 0.01; d = Math.hypot(dx, dy); }
+          const need = (FHR_SPACE_M - d) * f;
+          const la = all[a].pin[i] ? 0 : 1, lb = all[b].pin[i] ? 0 : 1;
+          if (!la && !lb) continue;
+          const sa = la / (la + lb), sb = lb / (la + lb);
+          const ia = a * L + i, ib = b * L + i;
+          px[ia] -= (dx / d) * need * sa; py[ia] -= (dy / d) * need * sa;
+          px[ib] += (dx / d) * need * sb; py[ib] += (dy / d) * need * sb;
+          any = true;
+        }
       }
     }
     if (!any) break;
     // Smooth each man's push over ±0.4 s, then apply (never to a held sample, nor at the end).
     const K = 6;
-    all.forEach((p, a) => {
-      const sm: Vec2[] = [];
-      for (let i = 0; i <= N; i++) {
+    for (let a = 0; a < M; a++) {
+      const p = all[a], row = a * L;
+      for (let i = 0; i < N; i++) {
+        if (p.pin[i]) continue;
         let sx = 0, sy = 0, w = 0;
         for (let k = -K; k <= K; k++) {
           const j = i + k;
           if (j < 0 || j > N) continue;
           const wk = K + 1 - Math.abs(k);
-          sx += push[a][j].x * wk; sy += push[a][j].y * wk; w += wk;
+          sx += px[row + j] * wk; sy += py[row + j] * wk; w += wk;
         }
-        sm.push({ x: (sx / w) * 2.2, y: (sy / w) * 2.2 });
-      }
-      for (let i = 0; i < N; i++) {
-        if (p.pin[i]) continue;
         const f = fade(i);
-        p.path[i] = { x: clamp(p.path[i].x + sm[i].x * f, 0.3, PITCH_W - 0.3), y: clamp(p.path[i].y + sm[i].y * f, 0.3, LEN - 0.3) };
+        p.path[i] = { x: clamp(p.path[i].x + (sx / w) * 2.2 * f, 0.3, PITCH_W - 0.3), y: clamp(p.path[i].y + (sy / w) * 2.2 * f, 0.3, LEN - 0.3) };
       }
-    });
+    }
   }
 }

@@ -85,7 +85,7 @@ export function TodoList({ visible = true }: { visible?: boolean }) {
   };
   const row = (x: (typeof l.mine)[number], who?: ReactNode) => (
     <div key={x.id} className={`tr-task${x.done_at ? " done" : ""}`}>
-      <button className="tr-check" role="checkbox" aria-checked={!!x.done_at} aria-label={x.done_at ? "Not done" : "Done"} onClick={() => tickTask(x.id, !x.done_at)}>
+      <button className="tr-check" data-compact role="checkbox" aria-checked={!!x.done_at} aria-label={x.done_at ? "Not done" : "Done"} onClick={() => tickTask(x.id, !x.done_at)}>
         {x.done_at && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" aria-hidden><path d="m5 12 5 5 9-10" /></svg>}
       </button>
       <span className="tx">{x.title}{who}</span>
