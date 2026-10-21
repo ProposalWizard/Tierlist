@@ -33,7 +33,7 @@ import { buildScenario, type Scenario, type ScenarioKind } from "@/lib/star/canv
 import { frameFromScenario, paint } from "@/lib/star/scenarioFrame";
 import { mulberry32 } from "@/lib/star/season";
 import {
-  REAL_CREDIT, PICTURE_WORDS, KIND_LABEL as SHOT_KIND_LABEL, isFullyReal, kindForShot, scenarioForShot, scenarioForCorner, fetchRealFile,
+  REAL_CREDIT, PICTURE_WORDS, KIND_LABEL as SHOT_KIND_LABEL, isFullyReal, kindForShot, playKindForShot, shotKindLabel, scenarioForShot, scenarioForCorner, fetchRealFile,
   type RealShot, type RealCorner, type WyscoutShotFile, type TrackedFile,
 } from "@/lib/star/realMoments";
 
@@ -55,6 +55,8 @@ interface Moment {
   id: string;
   set: SetId;
   kind: ScenarioKind;
+  /** The list's word for it (shots: Header / Volley when struck in the air). */
+  label?: string;
   full: boolean;
   build: () => Scenario;
   player: string;
@@ -68,7 +70,9 @@ interface Moment {
 
 function fromShot(s: RealShot): Moment {
   return {
-    id: s.id, set: isFullyReal(s) ? "shots" : "placed", kind: kindForShot(s), full: isFullyReal(s),
+    // Fully real: the kind the game plays it as (a real header is a header, a real volley a volley).
+    id: s.id, set: isFullyReal(s) ? "shots" : "placed", kind: isFullyReal(s) ? playKindForShot(s) : kindForShot(s), full: isFullyReal(s),
+    label: shotKindLabel(s),
     build: () => scenarioForShot(s, { wideFrame: true }),
     player: s.player, match: s.match, comp: s.comp, minute: s.minute, xg: s.xg, outcome: s.outcome, what: "shot",
   };
@@ -121,7 +125,7 @@ function Tag({ full }: { full: boolean }) {
 }
 
 function Facts({ m }: { m: Moment }) {
-  return <>{KIND_LABEL[m.kind] ?? m.kind} · {m.what === "shot"
+  return <>{m.label ?? KIND_LABEL[m.kind] ?? m.kind} · {m.what === "shot"
     ? <>xG {Math.round((m.xg ?? 0) * 100)}% · <span className={m.outcome === "Goal" ? "rm-goal" : undefined}>{m.outcome}</span></>
     : m.what}</>;
 }
@@ -233,7 +237,7 @@ export default function RealMomentsDev() {
               <Label>Kind</Label>
               <div className="rm-pills">
                 <Pill on={kind === "all"} onClick={() => setKind("all")}>Every kind</Pill>
-                {kinds.map((k) => <Pill key={k} on={kind === k} onClick={() => setKind(k)}>{KIND_LABEL[k] ?? k}</Pill>)}
+                {kinds.map((k) => <Pill key={k} on={kind === k} onClick={() => setKind(k)}>{set === "shots" && k === "volley" ? "Volley" : KIND_LABEL[k] ?? k}</Pill>)}
               </div>
               {set !== "corners" && <>
                 <Label>Chance it went in</Label>

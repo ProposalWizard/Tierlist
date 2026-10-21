@@ -67,8 +67,12 @@ Off by default; per phone). Off: the game is exactly as before.
 stable id (`dfl…` DFL, `sc…` SkillCorner, `st…` SoccerTrack; corners `scc…`,
 `stc…`). By default the game may serve every FULLY REAL open-play shot that
 passes the automatic checks (`autoCheck`: an open-play shot from within 35 m, their
-keeper by his goal, all 22 on the pitch, a whole 4 s track, not a header —
-headers are switched off). A mark overrides that:
+keeper by his goal, all 22 on the pitch, a whole 4 s track, not struck
+overhead). A real header is served for a header chance and a real volley for
+a volley chance, from the ball's real height when it was struck (`z` on each
+tracked shot; `lib/star/realMoments/shots.ts` airKindOf). A foot shot at 1.3 m
+or more, or a ball above 2.6 m, is an overhead kick: acrobatics are not built
+yet, so it is left out. A mark overrides that:
 
 | Layer (newest wins) | Where | Who writes it |
 |---|---|---|

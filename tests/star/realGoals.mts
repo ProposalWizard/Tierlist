@@ -170,8 +170,11 @@ console.log("\n7. THE REAL MATCH IS UNCHANGED WITH THE LANE ABSENT");
 {
   /** Retaken on Harry 66ce9cf1 with the Wyscout goals and their placed pictures
    *  (19 Oct 2026; it moves if the placing rule in lib/star/realMoments changes). The StatsBomb
-   *  goals' one (c7ad8836) was taken on origin/main 0beabcbf, before the real lane. */
-  const OLD_HASH = "c0175259";
+   *  goals' one (c7ad8836) was taken on origin/main 0beabcbf, before the real lane.
+   *  Retaken 21 Oct 2026 (headers piece 1): a real headed goal is now played as
+   *  a header (realMoments/shots.ts kindForShot), not as a bouncing volley or a
+   *  ground shot; was c0175259. */
+  const OLD_HASH = "cedc67e1";
   let h = 2166136261 >>> 0;
   const mix = (v: number | string) => { const s = typeof v === "number" ? (Number.isNaN(v) ? "nan" : v.toFixed(4)) : v; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } };
   for (const g of goals.slice(0, 40)) {

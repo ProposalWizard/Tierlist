@@ -205,6 +205,10 @@ def moment(m, f, team, actor, flip, meta, kind, step):
     if kind == "shot":
         end, endz = shot_end(m, f, team, actor, flip, step)
         rec["end"], rec["endZ"] = end, endz
+        # The ball's height when it was struck (m): a header or a volley is
+        # served as one (lib/star/realMoments/shots.ts airKindOf). Old files:
+        # scripts/realmoments/add_strike_z.py fills it in from tracks.json.
+        rec["z"] = round(max(0.0, bz), 2)
         if rec.get("xg") is None:
             rec["xg"] = round(xg_of(XGW, xg_features(ball[0], ball[1], rec["body"] == "Head", rec["type"] == "Free Kick")), 3)
     tr = track(m, f, team, actor, flip, SHOT_WIN if kind == "shot" else CORNER_WIN, step)

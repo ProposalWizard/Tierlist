@@ -32,7 +32,7 @@
 import type { Scenario, ScenarioKind } from "../canvasEngine";
 import type { LeadIn, LeadMoment } from "../leadIn";
 import { isFullyReal, type RealShot, type RealTrack, type TrackedFile, type TrackFile, type TrackedMoment } from "../realMoments/types";
-import { peopleOf, playKindForShot, scenarioForShot, frameHoldsShot } from "../realMoments/shots";
+import { peopleOf, playKindForShot, scenarioForShot, frameHoldsShot, airKindOf } from "../realMoments/shots";
 import { trackLeadIn } from "../realMoments/track";
 import { inGame, pickOf } from "../realMoments/picks";
 import { ensureRealMomentPicks } from "../realMoments/pickStore";
@@ -49,10 +49,11 @@ export const REAL_MOMENT_SHARE = 1 / REAL_MOMENT_SHARE_IN;
 
 /**
  * The kinds a real moment can stand in for (the kind the match asked for must
- * be one of these). Headers are played as "volley", which is switched off, and
- * set pieces are never served.
+ * be one of these). A real header is served for a header chance and a real
+ * volley for a volley chance (headers piece 1, 21 Oct 2026: realMoments/shots.ts
+ * airKindOf, from the ball's real height). Set pieces are never served.
  */
-export const REAL_MOMENT_KINDS: readonly ScenarioKind[] = ["one_on_one", "tight_angle", "long_range"];
+export const REAL_MOMENT_KINDS: readonly ScenarioKind[] = ["one_on_one", "tight_angle", "long_range", "header", "volley"];
 
 /** Real shots struck from further out than this (metres from the middle of the goal) are left out: 8 of 688 open-play shots, speculative punts. */
 export const REAL_MOMENT_MAX_M = 35;
@@ -67,6 +68,9 @@ export const REAL_MOMENT_MEMORY = 40;
 /** The kind a real moment plays as in the game, or null when it can't be served at all. */
 export function servedKindOf(m: TrackedMoment): ScenarioKind | null {
   if (m.what !== "shot" || !isFullyReal(m)) return null;
+  // A foot shot above the waist or a ball above 2.6 m (a scissor or bicycle
+  // kick): acrobatics are not built yet.
+  if (airKindOf(m) === "high") return null;
   const k = playKindForShot(m);
   return REAL_MOMENT_KINDS.includes(k) ? k : null;
 }
@@ -82,7 +86,7 @@ export function autoCheck(m: TrackedMoment, track: RealTrack | undefined): strin
   if (m.what !== "shot") return "a corner (only shots are served)";
   if (!isFullyReal(m)) return "not fully real";
   if (m.type !== "Open Play") return `a ${m.type.toLowerCase()} (open play only)`;
-  if (!servedKindOf(m)) return "a header (headers are switched off)";
+  if (!servedKindOf(m)) return airKindOf(m) === "high" ? "struck overhead (acrobatics are not built yet)" : "not a kind the game serves";
   if (Math.hypot(m.ball[0] - CX, m.ball[1]) > REAL_MOMENT_MAX_M) return `struck from more than ${REAL_MOMENT_MAX_M} m out`;
   const k = peopleOf(m).keeper;
   if (!k || k.y >= 12 || Math.abs(k.x - CX) >= 15) return "their keeper is not by his goal";

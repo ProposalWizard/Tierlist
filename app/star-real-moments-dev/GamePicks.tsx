@@ -118,7 +118,7 @@ export function GamePicksPanel({ pool, sync, rev }: { pool: RealMomentPool | nul
       {stats && (
         <div data-picks-panel style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div className="rm-count" data-in-game-count>
-            {stats.inGame} real moments are in the game ({stats.byKind.map(([k, n]) => `${KIND_LABEL[k] ?? k} ${n}`).join(", ")});
+            {stats.inGame} real moments are in the game ({stats.byKind.map(([k, n]) => `${k === "volley" ? "Volley" : KIND_LABEL[k] ?? k} ${n}`).join(", ")});
             {" "}{stats.servable - stats.inGame} more fully real shots of those kinds are left out (set pieces, a failed check, or marked Don&apos;t use).
             With Real moment highlights On, about 1 in {REAL_MOMENT_SHARE_IN} open-play chances of those kinds is one of them.
           </div>
