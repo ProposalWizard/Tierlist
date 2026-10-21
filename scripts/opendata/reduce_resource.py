@@ -59,6 +59,7 @@ def wyscout():
     Z = zipfile.ZipFile(os.path.join(RAW, "events.zip"))
     touch = defaultdict(Counter)
     shots, matches = [], set()
+    disc = Counter()
     for name in Z.namelist():
         ev = json.load(Z.open(name))
         last, lastsp = None, {}
@@ -67,6 +68,12 @@ def wyscout():
             tg = {t["id"] for t in e["tags"]}
             x, y = e["positions"][0]["x"], e["positions"][0]["y"]
             eid, sid = e["eventId"], e["subEventId"]
+            if eid == 2:
+                disc["fouls"] += 1
+                disc["yellows"] += 1702 in tg
+                disc["reds"] += bool(tg & {1701, 1703})
+            elif eid == 6:
+                disc["offsides"] += 1
             if eid == 3 and sid in (30, 31, 32, 34):
                 lastsp[e["teamId"]] = (e["matchPeriod"], e["eventSec"])
             role = roles.get((e["matchId"], e["playerId"]))
@@ -186,6 +193,7 @@ def wyscout():
                     "per_match": round(len(heads) / M, 2), "open_play_per_match": round(sum(1 for s in heads if s["k"] == "shot" and s["open"]) / M, 2),
                     "set_piece_phase_share_of_all_shots": pct(sum(not s["open"] for s in op), len(op))},
         "forward_touches_by_area": fw,
+        "discipline_per_match": {k: round(v / M, 2) for k, v in sorted(disc.items())},
     }
 
 
@@ -283,9 +291,49 @@ def tracking():
     }
 
 
+def real_targets(wy):
+    """lib/star/sim/realTargets.json: the per-match targets the test pages show
+    in their "Real world" column (sim rebuild, Harry: "first shown as a
+    real-world column beside today's numbers"). Nothing in the match reads it."""
+    mf = json.load(open(os.path.join(OUT, "wyscout_match_flow.json")))
+    pm, mu, ha = mf["per_match"], mf["matchup"], mf["home_away"]
+    k = wy["by_kind"]["all_open_play_shots"]
+    def row(key, label, value, unit, source):
+        return {"key": key, "label": label, "value": value, "unit": unit, "source": source}
+    flow, out = "Wyscout, wyscout_match_flow.json", "Wyscout, wyscout_shot_outcomes.json"
+    d = wy["discipline_per_match"]
+    return {
+        "meta": {"what": "Real-football targets per match, both teams unless said. Read by the test pages' Real world column only; nothing in the match reads it.",
+                 "credit_ids": ["wyscout-patterns"], "made": "scripts/opendata/reduce_resource.py, 21 Oct 2026", "matches": mf["meta"]["matches"]},
+        "rows": [
+            row("shots", "Shots a match", pm["shots"]["mean"], "", flow),
+            row("goals", "Goals a match", pm["goals"]["mean"], "", flow),
+            row("conversion", "Shots that score (run of play)", k["scored"], "%", out),
+            row("onTarget", "Shots on target", k["on_target"], "%", out),
+            row("blocked", "Shots blocked", k["blocked"], "%", out),
+            row("saves", "Keeper saves, of shots on target", wy["keeper_save_pct_by_distance"]["overall"]["saved"], "%", out),
+            row("corners", "Corners a match", pm["corners"]["mean"], "", flow),
+            row("cornersEach", "Corners each, even match", mu["mid_v_mid"]["corners"]["mean"], "", flow),
+            row("possessionTopBottom", "Possession, top side v bottom side", round(100 * mu["top_v_bottom"]["pass_share"]["mean"]), "%", flow),
+            row("shotsTopBottom", "Shots, top side v bottom side", f'{mu["top_v_bottom"]["shots"]["mean"]:.1f} v {mu["bottom_v_top"]["shots"]["mean"]:.1f}', "", flow),
+            row("homeAwayGoals", "Goals, home v away", f'{ha["home_goals"] / ha["home_n"]:.2f} v {ha["away_goals"] / ha["away_n"]:.2f}', "", flow),
+            row("fouls", "Fouls a match", d["fouls"], "", out),
+            row("yellows", "Yellow cards a match", d["yellows"], "", out),
+            row("reds", "Red cards a match", d["reds"], "", out),
+            row("offsides", "Offsides a match", d["offsides"], "", out),
+            row("headersShare", "Headers, share of shots", wy["headers"]["share_of_shots"], "%", out),
+        ],
+    }
+
+
 if __name__ == "__main__":
     M, wy = wyscout()
     tr = tracking()
+    os.makedirs(os.path.join(ROOT, "lib", "star", "sim"), exist_ok=True)
+    with open(os.path.join(ROOT, "lib", "star", "sim", "realTargets.json"), "w") as f:
+        json.dump(real_targets(wy), f, indent=1, ensure_ascii=False)
+        f.write("\n")
+    print("wrote lib/star/sim/realTargets.json")
     for name, obj in (("wyscout_shot_outcomes.json", wy), ("tracked_shot_shapes.json", tr)):
         with open(os.path.join(OUT, name), "w") as f:
             json.dump(obj, f, indent=1, ensure_ascii=False)

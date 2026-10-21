@@ -310,5 +310,11 @@
    "box": 7.1,
    "deep_per_90": 40.4
   }
+ },
+ "discipline_per_match": {
+  "fouls": 26.3,
+  "offsides": 4.22,
+  "reds": 0.17,
+  "yellows": 3.83
  }
 }

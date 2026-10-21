@@ -1,0 +1,124 @@
+{
+ "meta": {
+  "what": "Real-football targets per match, both teams unless said. Read by the test pages' Real world column only; nothing in the match reads it.",
+  "credit_ids": [
+   "wyscout-patterns"
+  ],
+  "made": "scripts/opendata/reduce_resource.py, 21 Oct 2026",
+  "matches": 1941
+ },
+ "rows": [
+  {
+   "key": "shots",
+   "label": "Shots a match",
+   "value": 23.63,
+   "unit": "",
+   "source": "Wyscout, wyscout_match_flow.json"
+  },
+  {
+   "key": "goals",
+   "label": "Goals a match",
+   "value": 2.6,
+   "unit": "",
+   "source": "Wyscout, wyscout_match_flow.json"
+  },
+  {
+   "key": "conversion",
+   "label": "Shots that score (run of play)",
+   "value": 10.4,
+   "unit": "%",
+   "source": "Wyscout, wyscout_shot_outcomes.json"
+  },
+  {
+   "key": "onTarget",
+   "label": "Shots on target",
+   "value": 35.6,
+   "unit": "%",
+   "source": "Wyscout, wyscout_shot_outcomes.json"
+  },
+  {
+   "key": "blocked",
+   "label": "Shots blocked",
+   "value": 23.7,
+   "unit": "%",
+   "source": "Wyscout, wyscout_shot_outcomes.json"
+  },
+  {
+   "key": "saves",
+   "label": "Keeper saves, of shots on target",
+   "value": 70.7,
+   "unit": "%",
+   "source": "Wyscout, wyscout_shot_outcomes.json"
+  },
+  {
+   "key": "corners",
+   "label": "Corners a match",
+   "value": 9.95,
+   "unit": "",
+   "source": "Wyscout, wyscout_match_flow.json"
+  },
+  {
+   "key": "cornersEach",
+   "label": "Corners each, even match",
+   "value": 5.03,
+   "unit": "",
+   "source": "Wyscout, wyscout_match_flow.json"
+  },
+  {
+   "key": "possessionTopBottom",
+   "label": "Possession, top side v bottom side",
+   "value": 62,
+   "unit": "%",
+   "source": "Wyscout, wyscout_match_flow.json"
+  },
+  {
+   "key": "shotsTopBottom",
+   "label": "Shots, top side v bottom side",
+   "value": "15.5 v 8.8",
+   "unit": "",
+   "source": "Wyscout, wyscout_match_flow.json"
+  },
+  {
+   "key": "homeAwayGoals",
+   "label": "Goals, home v away",
+   "value": "1.47 v 1.14",
+   "unit": "",
+   "source": "Wyscout, wyscout_match_flow.json"
+  },
+  {
+   "key": "fouls",
+   "label": "Fouls a match",
+   "value": 26.3,
+   "unit": "",
+   "source": "Wyscout, wyscout_shot_outcomes.json"
+  },
+  {
+   "key": "yellows",
+   "label": "Yellow cards a match",
+   "value": 3.83,
+   "unit": "",
+   "source": "Wyscout, wyscout_shot_outcomes.json"
+  },
+  {
+   "key": "reds",
+   "label": "Red cards a match",
+   "value": 0.17,
+   "unit": "",
+   "source": "Wyscout, wyscout_shot_outcomes.json"
+  },
+  {
+   "key": "offsides",
+   "label": "Offsides a match",
+   "value": 4.22,
+   "unit": "",
+   "source": "Wyscout, wyscout_shot_outcomes.json"
+  },
+  {
+   "key": "headersShare",
+   "label": "Headers, share of shots",
+   "value": 15.4,
+   "unit": "%",
+   "source": "Wyscout, wyscout_shot_outcomes.json"
+  }
+ ]
+}

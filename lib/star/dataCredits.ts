@@ -199,6 +199,7 @@ export const DATA_FILE_CREDITS: Readonly<Record<string, readonly string[]>> = {
   "data/ballondor/players.json": ["ballondor"],
   "data/ballondor/year_notes.json": ["ballondor"],
   "lib/star/fhr/patterns.json": ["wyscout-patterns", "dfl-patterns", "skillcorner-patterns"],
+  "lib/star/sim/realTargets.json": ["wyscout-patterns"],
   "lib/star/data/sources/nation_kits_2026-10.json": ["wikipedia-kits"],
 };
 
