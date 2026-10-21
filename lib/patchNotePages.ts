@@ -36,6 +36,7 @@ export const PATCH_NOTE_PAGES: Record<string, string> = {
   "0.97h": "pages/0.97h/index.html",
   "0.96h": "pages/0.96h/index.html",
   "0.95h": "pages/0.95h/index.html",
+  "0.104h": "pages/0.104h/index.html",
   "0.94": "pages/0.94/index.html",
   "0.93": "pages/0.93/index.html",
   "0.92": "pages/0.92/index.html",
