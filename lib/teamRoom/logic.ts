@@ -4,13 +4,14 @@
  * note dots. No React, no database.
  */
 import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "./config";
+import { isJobMarker } from "./jobs";
 
 export interface TeamMessage { id: number; person: TeamPerson; body: string; image_url: string | null; page: string | null; pinned: boolean; created_at: string }
 export type IdeaStage = "idea" | "doing" | "done";
 export interface TeamIdea { id: number; person: TeamPerson; title: string; stage: IdeaStage; created_at: string; updated_at: string }
 export interface TeamVote { idea_id: number; person: TeamPerson }
 export interface TeamTask { id: number; owner: TeamPerson; made_by: TeamPerson; title: string; done_at: string | null; created_at: string }
-export type NoteKind = "idea" | "push";
+export type NoteKind = "idea" | "push" | "patch";
 export interface TeamNote { id: number; target_kind: NoteKind; target_id: string; owner: TeamPerson | null; person: TeamPerson; body: string; created_at: string }
 
 const t = (iso: string) => Date.parse(iso) || 0;
@@ -63,12 +64,16 @@ export function ideasByPerson(ideas: TeamIdea[], votes: TeamVote[], person: Team
   return ranked.sort((a, b) => order[a.stage] - order[b.stage]);
 }
 
-/** Your list: open ones (yours first, then given to you), then ticked in the last day. */
+/**
+ * Your list: open ones (yours first, then given to you), then ticked in the
+ * last day. The rows that only mark a pushed job done (jobs.ts) are left out;
+ * pushed jobs are listed by pushedFor.
+ */
 export function tasksFor(tasks: TeamTask[], me: TeamPerson | null, now: number) {
   const empty = { mine: [] as TeamTask[], given: [] as TeamTask[], done: [] as TeamTask[], open: 0 };
   if (!me) return empty;
   const keep = TEAM_ROOM.keepDoneHours * 3600_000;
-  const own = tasks.filter((x) => x.owner === me);
+  const own = tasks.filter((x) => x.owner === me && !isJobMarker(x));
   const open = own.filter((x) => !x.done_at).sort((a, b) => t(b.created_at) - t(a.created_at));
   return {
     mine: open.filter((x) => x.made_by === me),
@@ -81,13 +86,13 @@ export function tasksFor(tasks: TeamTask[], me: TeamPerson | null, now: number) 
 /** Jobs you gave the other two that are still open. */
 export function tasksGivenBy(tasks: TeamTask[], me: TeamPerson | null): TeamTask[] {
   if (!me) return [];
-  return tasks.filter((x) => x.made_by === me && x.owner !== me && !x.done_at).sort((a, b) => t(b.created_at) - t(a.created_at));
+  return tasks.filter((x) => x.made_by === me && x.owner !== me && !x.done_at && !isJobMarker(x)).sort((a, b) => t(b.created_at) - t(a.created_at));
 }
 
 /** Open jobs the other two gave you since you last looked at the list. */
 export function newGivenTasks(tasks: TeamTask[], me: TeamPerson | null, lastSeen: number): number {
   if (!me) return 0;
-  return tasks.filter((x) => x.owner === me && x.made_by !== me && !x.done_at && t(x.created_at) > lastSeen).length;
+  return tasks.filter((x) => x.owner === me && x.made_by !== me && !x.done_at && !isJobMarker(x) && t(x.created_at) > lastSeen).length;
 }
 
 /** Time for a message: "10:04" today, "Mon 10:04" this week, else "12 Oct". */
@@ -107,6 +112,31 @@ export function pageLabel(path: string | null, names: Record<string, string>): s
   if (names[clean]) return names[clean];
   const last = clean.split("/").filter(Boolean).pop();
   return last ? last.replace(/^star-/, "").replace(/-dev$/, "").replace(/-/g, " ") : "home";
+}
+
+/** Mark a page's own bottom-left control with this attribute and the chat
+ *  bubble sits just above it (B13, 20 Oct 2026). */
+export const BUBBLE_CLEAR = "data-bubble-clear";
+/** The bubble's size and its gap from the corner (px); ChatBubble uses these. */
+export const BUBBLE_SIZE = 40;
+export const BUBBLE_EDGE = 12;
+/** Gap between a marked control and the bubble (px). */
+const CLEAR_GAP = 8;
+
+/**
+ * How far up the bubble sits (px from the bottom): BUBBLE_EDGE, or just above
+ * the highest marked control under it. Never more than half the screen up.
+ */
+export function bubbleBottom(
+  left: number, viewH: number, marked: { left: number; right: number; top: number; bottom: number }[],
+): number {
+  let bottom = BUBBLE_EDGE;
+  for (const r of marked) {
+    if (r.right <= left || r.left >= left + BUBBLE_SIZE) continue;            // not under it, side to side
+    if (r.bottom <= viewH - BUBBLE_EDGE - BUBBLE_SIZE - CLEAR_GAP) continue;  // well above where it sits
+    bottom = Math.max(bottom, Math.round(viewH - r.top + CLEAR_GAP));
+  }
+  return Math.min(bottom, Math.round(viewH / 2));
 }
 
 /** Should the chat bubble show on this page? */

@@ -24,19 +24,22 @@ import { createStyleKit, type StyleKit } from "../style3d/kit";
 import { resolveStyle, type StyleDef, type StyleId } from "../style3d/styles";
 import { applyMood, MOODS } from "./presets/moods";
 import { compileScript, rootAt, clipsAt, trackWeight, cameraAt, overlayAt, soundsBetween, type Compiled, type Overlay } from "./timeline";
-import { shotPose, mixPose, type Anchor, type ShotPose } from "./presets/camera";
+import { shotPose, mixPose, keepInside, PHONE_FRAMING_ON, type Anchor, type ShotPose } from "./presets/camera";
 import { resolvePoint } from "./presets/locations";
 import { createCutscenePeople } from "./peopleAdapter";
 import { castLook, DEFAULT_CLUB } from "./casting";
 import { buildSet, type BuiltSet } from "./locations3d";
 import { buildProp, type PropObj, type PropText } from "./props3d";
 import { createFx, type FxActive } from "./fx3d";
-import { applyPose, actorDir, type PoseCtx } from "./perform3d";
+import { applyPose, actorDir, liveArms, type PoseCtx } from "./perform3d";
+import { FLUID_ON, OVERLAP, actorSeed, liveDrift } from "./fluid";
 import { makeSignature, signatureAt } from "./signature";
 import { VOICE_LINES } from "./voiceLines";
 import { clamp, lerpAngle, noise1, smooth } from "./math";
 import { filmPass } from "./cinema";
+import { blinkAt, wanderGaze } from "../style3d/toon/face";
 import { cutsceneCameraLook, type CutsceneCameraLook } from "./look";
+import { gripTo, heldPropOf, twoHandPlace, type HeldProp } from "./hold";
 
 export interface DirectorOptions {
   career?: CareerContext;
@@ -102,6 +105,8 @@ export interface DirectorEdit {
 interface Cast { id: string; role: string; body: string; actor: CutsceneActor; clipSet: Set<string> }
 
 const SITS = new Set(["sitidle", "boss-sit", "sitdown", "slot_sit"]);
+/** How near the camera may come to a person (metres from his head point, body line, arm line). */
+export const PERSONAL_SPACE = { head: 0.34, body: 0.32, arm: 0.24 } as const;
 const IN_PLACE = new Set(["sitdown", "sitidle", "boss-sit", "slump_walk", "jog", "sprint", "dribble_run", "celebrate_safe"]);
 
 export async function createDirector(container: HTMLElement, written: CutsceneScript, o: DirectorOptions = {}): Promise<Director> {
@@ -160,9 +165,16 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   };
   const sig = makeSignature(txt.player);
   const props = new Map<string, PropObj>();
+  const heldOf = new Map<string, HeldProp>();
+  const heldProp = (id?: string) => {
+    if (!id || !props.has(id)) return undefined;
+    let h = heldOf.get(id);
+    if (!h) { h = heldPropOf(T, props.get(id)!); heldOf.set(id, h); }
+    return h;
+  };
   const buildProps = () => {
     for (const p of Array.from(props.values())) { root.remove(p.group); p.dispose(); }
-    props.clear();
+    props.clear(); heldOf.clear();
     for (const s of script.props ?? []) { const p = buildProp(T, kit, s, txt, sig); props.set(s.id, p); root.add(p.group); }
   };
   buildProps();
@@ -218,26 +230,8 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
 
   const tracksOf = <K extends string>(id: string, type: K) => (C.byActor.get(id) ?? []).filter((x) => x.type === type) as any[];
 
-  /** Hold the tool's grip point (not the wrist) on `want`: a few passes, each moving the wrist by the miss. */
-  const toolTo = (a: CutsceneActor, hand: "L" | "R", grip: any, want: any, along: any, palm: any, pole: any, w: number) => {
-    const S = hand === "R" ? "Right" : "Left";
-    const bones = [`${S}Shoulder`, `${S}Arm`, `${S}ForeArm`, `${S}Hand`].map((n) => a.bone(n)).filter(Boolean) as any[];
-    const saved = bones.map((b) => b.quaternion.clone());
-    let wrist = want.clone().add(new T.Vector3(0, 0.08, 0));
-    for (let i = 0; i < 4; i++) {
-      bones.forEach((b, j) => b.quaternion.copy(saved[j]));
-      a.root.updateMatrixWorld(true);
-      a.reach(hand, wrist, along, palm, 1, pole);
-      a.hand(hand, grip, 1);
-      const g = a.gripFrame(hand, grip).pos;
-      wrist = wrist.add(want.clone().sub(g));
-    }
-    if (w < 1) {
-      const solved = bones.map((b) => b.quaternion.clone());
-      bones.forEach((b, j) => { b.quaternion.copy(saved[j]).slerp(solved[j], w); });
-      a.root.updateMatrixWorld(true);
-    }
-  };
+  /** Hold the tool's grip point (not the wrist) on `want` (hold.ts). */
+  const toolTo = (a: CutsceneActor, hand: "L" | "R", grip: any, want: any, along: any, palm: any, pole: any, w: number) => gripTo(T, a, hand, grip, want, along, palm, pole, w);
 
   // prop states from the prop tracks
   const propTracks = C.tracks.filter((x): x is PropTrack => x.type === "prop");
@@ -274,10 +268,16 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
           a.root.updateMatrixWorld(true);
         }
       }
-      const ctx: PoseCtx = { T, t, local: 0, yaw: r.yaw, root: [a.root.position.x, a.root.position.y, a.root.position.z] };
+      const seed = actorSeed(c.id);
+      const ctx: PoseCtx = { T, t, local: 0, yaw: r.yaw, root: [a.root.position.x, a.root.position.y, a.root.position.z], seed, floorY: r.pos[1] };
+      // a few degrees of sway with overlap on every arm, so nobody stands with dead arms (fluid.ts)
+      liveArms(a, ctx);
       for (const pt of tracksOf(c.id, "pose") as PoseTrack[]) {
-        const w = trackWeight(pt, t, 0.3, 0.35) * (pt.amount ?? 1);
-        if (w > 0) applyPose(a, pt.pose, w, { ...ctx, local: t - pt.at });
+        const amt = pt.amount ?? 1;
+        const w = trackWeight(pt, t, 0.3, 0.35) * amt;
+        // overlap (fluid.ts): the forearm and the hand blend on and off a beat after the upper arm
+        const lag = FLUID_ON.on ? { lower: trackWeight(pt, t - OVERLAP.lower, 0.3, 0.35) * amt, hand: trackWeight(pt, t - OVERLAP.hand, 0.3, 0.35) * amt } : undefined;
+        if (w > 0 || (lag && lag.lower > 0)) applyPose(a, pt.pose, w, { ...ctx, local: t - pt.at, lag, prop: heldProp(pt.prop) });
       }
       if (cs.upright > 0) a.lookAt(actorLocal(c.id, t, [0, 1.62, 6]), 0.8 * cs.upright);
     }
@@ -288,16 +288,22 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const a = c.actor;
       for (const rt of tracksOf(c.id, "reach") as ReachTrack[]) {
         const w = trackWeight(rt, t, 0.35, 0.35);
-        if (w <= 0) continue;
+        const lag = FLUID_ON.on && !rt.toolGrip ? { lower: trackWeight(rt, t - OVERLAP.lower, 0.35, 0.35), hand: trackWeight(rt, t - OVERLAP.hand, 0.35, 0.35) } : undefined;
+        if (w <= 0 && !(lag && lag.lower > 0)) continue;
         let p = targetPoint(rt.target, t);
         if (rt.offset) p = p.clone().add(v(rt.offset));
+        // a hand held to a spot on his own body (on the desk, on a knee) breathes and sways with him (fluid.ts)
+        if (FLUID_ON.on && "actor" in rt.target && rt.target.actor === c.id && rt.target.local) {
+          const d = liveDrift(t, actorSeed(c.id) + (rt.hand === "L" ? 0.3 : 0.47));
+          p = p.clone().add(localDir(c.id, t, [d[0], 0, d[2]]).multiplyScalar(Math.hypot(d[0], d[2]))).add(new T.Vector3(0, d[1], 0));
+        }
         if (rt.pump) p = p.clone().add(new T.Vector3(0, Math.sin((t - rt.at) * Math.PI * 2 * rt.pump[1]) * rt.pump[0] * smooth((t - rt.at) / 0.4), 0));
         const along = rt.along ? localDir(c.id, t, rt.along) : null;
         const palm = rt.palm ? localDir(c.id, t, rt.palm) : null;
         const pole = rt.pole ? localDir(c.id, t, rt.pole) : undefined;
         if (rt.grip) a.hand(rt.hand, rt.grip, w);
         if (rt.toolGrip && rt.grip) toolTo(a, rt.hand, rt.grip, p, along, palm, pole, w);
-        else a.reach(rt.hand, p, along, palm, w, pole);
+        else a.reach(rt.hand, p, along, palm, w, pole, lag);
       }
       for (const tr of tracksOf(c.id, "trace") as TraceTrack[]) traceOne(c, tr, t);
       for (const ht of tracksOf(c.id, "hand") as HandTrack[]) {
@@ -307,6 +313,11 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         if (ht.hand === "both" || ht.hand === "R") a.hand("R", ht.pose, w);
       }
     }
+    // 3b. no arm inside his own body (B5c, Harry: "any body part can't overlap inside another"),
+    // except a hand holding a prop: it stays on its handle (B5b's grips)
+    if (FLUID_ON.on) for (const c of Array.from(cast.values())) c.actor.clearArms?.(1, holdingHands(c.id, t));
+    // props in hands, so a look at one sees where it is now (placed again at 5., after the fingers)
+    placeProps(t, "held");
     // 4. look, face, talk; blinks
     for (const c of Array.from(cast.values())) {
       const a = c.actor;
@@ -322,8 +333,12 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const vl = sp?.cue ? VOICE_LINES[sp.cue] : null;
       // a recorded line: the mouth follows its loudness; otherwise a talking rhythm
       a.setMouth(!sp ? 0 : vl ? vl.env[Math.min(vl.env.length - 1, Math.max(0, Math.floor((t - sp.at) * 30)))] ?? 0 : 0.5 + 0.5 * noise1(t * 9, c.id.length));
-      const bp = (t + c.id.length * 0.77) % 3.6;
-      a.setBlink(bp < 0.12 ? Math.sin((bp / 0.12) * Math.PI) : 0);
+      // blinks at uneven times, and the eyes wander a little between looks (less while he talks or looks at someone)
+      const seed = (script.seed ?? 1) * 31 + c.id.length * 7 + c.id.charCodeAt(0);
+      a.setBlink(blinkAt(t, seed));
+      const looking = (tracksOf(c.id, "look") as LookTrack[]).some((lt) => trackWeight(lt, t, 0.35, 0.35) > 0.3);
+      const [gx, gy] = wanderGaze(t, seed);
+      a.setGaze?.(gx, gy, sp || looking ? 0.3 : 0.75);
       a.endFrame();
     }
     // 5. props in hands
@@ -363,9 +378,32 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     const w = t > t3 ? 1 - smooth((t - t3) / 0.35) : smooth((t - t0) / 0.2);
     const along = localDir(c.id, t, tr.handAlong ?? [0.2, -0.7, 0.68]);
     const palm = localDir(c.id, t, tr.handPalm ?? [0.85, -0.5, -0.1]);
-    toolTo(a, tr.hand, "pen", want, along, palm, localDir(c.id, t, tr.hand === "R" ? [-0.7, -0.6, -0.2] : [0.7, -0.6, -0.2]), w);
+    const pole = localDir(c.id, t, tr.hand === "R" ? [-0.7, -0.6, -0.2] : [0.7, -0.6, -0.2]);
+    if (a.holdTool) {
+      // B5b: the pen held as a pen is (it lay almost flat along the paper, 9° up): the barrel ~50° up
+      // from the paper, back towards his writing shoulder, the back of the hand up and out
+      const sx = tr.hand === "R" ? -1 : 1;
+      const dir = localDir(c.id, t, tr.toolDir ?? [0.3 * sx, 0.78, -0.55]);
+      const up = localDir(c.id, t, tr.toolUp ?? [0.5 * sx, 0.85, -0.1]);
+      a.holdTool(tr.hand, "pen", want, dir, up, w, pole);
+    } else toolTo(a, tr.hand, "pen", want, along, palm, pole, w);
   };
 
+  /** Which of an actor's hands hold a prop at t (attached to that hand, or a pose with both hands on it): B5c's arm clearance leaves those alone. */
+  const holdingHands = (id: string, t: number): { L: boolean; R: boolean } => {
+    const out = { L: false, R: false };
+    for (const pid of Array.from(props.keys())) {
+      let hand: "L" | "R" | null = null;
+      for (const pt of propTracks) {
+        if (pt.prop !== pid || pt.at > t) continue;
+        if (pt.action === "attach") hand = pt.actor === id && !pt.part ? (pt.hand ?? "R") : null;
+        else if (pt.action === "detach" || pt.action === "place") hand = null;
+      }
+      if (hand) out[hand] = true;
+    }
+    for (const pt of tracksOf(id, "pose") as PoseTrack[]) if (pt.prop && trackWeight(pt, t) > 0) { out.L = true; out.R = true; }
+    return out;
+  };
   const placeProps = (t: number, phase: "rest" | "held") => {
     for (const [id, p] of Array.from(props)) {
       let st = { ...propRest.get(id)! };
@@ -399,17 +437,8 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
         const restPos = v(st.pos);
         let pos: any, q: any;
         if (both) {
-          const a = cast.get(both)!.actor;
-          const gl = a.gripFrame("L", "grip").pos, gr = a.gripFrame("R", "grip").pos;
-          const hl = v(p.handles.L ?? [0.1, 0, 0]), hr = v(p.handles.R ?? [-0.1, 0, 0]);
-          const X = gl.clone().sub(gr).normalize();
-          const fwd = actorDir(T, { T, t, local: 0, yaw: rootAt(C, both, t).yaw, root: [0, 0, 0] }, 0, 0, 1);
-          const Y = new T.Vector3().crossVectors(fwd, X).normalize();
-          const Z = new T.Vector3().crossVectors(X, Y).normalize();
-          q = new T.Quaternion().setFromRotationMatrix(new T.Matrix4().makeBasis(X, Y, Z));
-          const mid = gl.clone().add(gr).multiplyScalar(0.5);
-          const hm = hl.clone().add(hr).multiplyScalar(0.5).multiply(p.group.scale).applyQuaternion(q);
-          pos = mid.sub(hm);
+          const pl = twoHandPlace(T, cast.get(both)!.actor, p.handles, p.group.scale, rootAt(C, both, t).yaw);
+          pos = pl.pos; q = pl.q;
         } else {
           const a = cast.get(held!.actor)!.actor;
           if (held!.part) { pos = a.point(held!.part as any); q = new T.Quaternion(); a.bone("Spine02")?.getWorldQuaternion(q); }
@@ -458,28 +487,70 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       return { pos: [a.root.position.x, a.root.position.y, a.root.position.z], yaw: r.yaw, head: toV(head), chest: toV(chest), hips: toV(hips), height: head.y - a.root.position.y + 0.1 };
     }
     const p = targetPoint(tg, t);
-    const q: Vec3 = [p.x, p.y, p.z];
+    let q: Vec3 = [p.x, p.y, p.z];
     const yaw = "actor" in tg ? rootAt(C, tg.actor, t).yaw : 0;
-    return { pos: [q[0], 0, q[2]], yaw, head: q, chest: q, hips: q, height: 0.4, thing: true };
+    // a prop: its own size, so an insert shows all of it (B5: the trophy insert was a 0.25 m slice)
+    let height = 0.4, width: number | undefined;
+    if (PHONE_FRAMING_ON.on && "prop" in tg && props.get(tg.prop)?.group) {
+      const box = new T.Box3().setFromObject(props.get(tg.prop)!.group);
+      if (!box.isEmpty()) {
+        const sz = box.getSize(new T.Vector3()), c = box.getCenter(new T.Vector3());
+        if (Math.max(sz.x, sz.y, sz.z) < 2.5) {
+          height = Math.max(0.12, sz.y); width = Math.max(0.12, sz.x, sz.z);
+          if (!tg.handle) q = [c.x, c.y, c.z];
+        }
+      }
+    }
+    return { pos: [q[0], 0, q[2]], yaw, head: q, chest: q, hips: q, height, width, thing: true };
   };
-  /** Where everyone (but the subject) stands at t: things the camera must not sit inside or behind. */
-  const bodiesAt = (t: number, except: Set<string>): Vec3[] => C.cast.filter((m) => !except.has(m.id)).map((m) => { const r = rootAt(C, m.id, t); return [r.pos[0], r.pos[1] + 1.15, r.pos[2]] as Vec3; });
+  /** Where everyone (but the subject) stands at t: things the camera must not sit inside or behind
+   *  (heads: at his head height instead, a man passing the lens is a face across the whole phone screen). */
+  const bodiesAt = (t: number, except: Set<string>, heads = false): Vec3[] => C.cast.filter((m) => !except.has(m.id)).map((m) => {
+    const r = rootAt(C, m.id, t);
+    return [r.pos[0], r.pos[1] + (heads ? 1.62 : 1.15), r.pos[2]] as Vec3;
+  });
   /** A shot whose camera is inside someone, or has someone right in front of the lens, swings round until it is clear. */
-  const clearShot = (spec: CameraTrack["shot"], a: Anchor, b: Anchor | null, t: number): CameraTrack["shot"] => {
+  const clearShot = (spec: CameraTrack["shot"], a: Anchor, b: Anchor | null, t: number, span?: { at: number; dur: number }): CameraTrack["shot"] => {
     if (spec.fixed || spec.preset === "ots" || spec.preset === "pov" || spec.preset === "insert") return spec;
-    const except = new Set<string>();
-    for (const tg of [spec.subject, spec.subject2]) if (tg && "actor" in tg) except.add(tg.actor);
-    const bodies = bodiesAt(t, except);
-    const blocked = (sp: CameraTrack["shot"]) => {
-      const p = shotPose(sp, a, b, { aspect: camera.aspect, k: 0.5, t, seed: 0 });
-      const cam = v(p.pos), look = v(p.look);
+    // a still camera on a tall phone (B5): checked at the phone's own (wider) framing through its whole
+    // shot (heads near the lens), and the second subject counts too unless the shot is of both of
+    // them (in "Watches him go" the mentor, the second subject, stood in front of the wider phone camera
+    // and walked across it 0.4 s in, his face filling the screen). Elsewhere exactly as before.
+    const phone = !!span && PHONE_FRAMING_ON.on && camera.aspect < 1;
+    const except = new Set<string>(), exceptNear = new Set<string>();
+    for (const tg of [spec.subject, spec.subject2]) if (tg && "actor" in tg) {
+      except.add(tg.actor);
+      if (tg === spec.subject || spec.preset === "two-shot") exceptNear.add(tg.actor);
+    }
+    const subj = "actor" in spec.subject && !spec.subject.local ? spec.subject.actor : null;
+    const p0 = subj ? rootAt(C, subj, t).pos : null;
+    // as before: at t, anyone (but the subjects) standing in the line of sight up to 1.8 m out
+    const samples = [{ ts: t, k: 0.5, bodies: bodiesAt(t, except), shift: [0, 0, 0] as Vec3, reach: 1.8, side: 0.45 }];
+    // the phone: anyone's head near the lens (1.3 m) and on its line (0.35 m) at any moment of the shot (a
+    // face across the screen); a man further out is only a figure in the picture, and a man passing beside
+    // the lens is only a shoulder at the edge
+    if (phone) {
+      for (const f of [0.5, 0.1, 0.3, 0.7, 0.9]) {
+        const ts = span!.at + span!.dur * f;
+        // its eye follows the subject a little (camPose)
+        const p1 = subj && p0 ? rootAt(C, subj, ts).pos : null;
+        const shift: Vec3 = p1 && p0 ? [(p1[0] - p0[0]) * 0.7, 0, (p1[2] - p0[2]) * 0.7] : [0, 0, 0];
+        samples.push({ ts, k: f, bodies: bodiesAt(ts, exceptNear, true), shift, reach: 1.3, side: 0.35 });
+      }
+    }
+    // the screen shape the check frames for: the phone's own; else 1, as it always was here (anchors were
+    // measured before the first resize)
+    const asp = phone ? camera.aspect : 1;
+    const blocked = (sp: CameraTrack["shot"]) => samples.some((S) => {
+      const p = shotPose(sp, a, b, { aspect: asp, k: S.k, t: S.ts, seed: 0 });
+      const cam = v(p.pos), look = v(p.look).add(v(S.shift));
       const seg = look.clone().sub(cam); const L = seg.length(); seg.normalize();
-      return bodies.some((q) => {
+      return S.bodies.some((q) => {
         const w = v(q).sub(cam); const along = w.dot(seg);
-        if (along < -0.3 || along > Math.min(L * 0.7, 1.8)) return false;
-        return w.clone().sub(seg.clone().multiplyScalar(along)).length() < 0.45;
+        if (along < -0.3 || along > Math.min(L * 0.7, S.reach)) return false;
+        return w.clone().sub(seg.clone().multiplyScalar(along)).length() < S.side;
       });
-    };
+    });
     if (!blocked(spec)) return spec;
     for (const dy of [28, -28, 55, -55, 85, -85]) { const s2 = { ...spec, yaw: (spec.yaw ?? 0) + dy }; if (!blocked(s2)) return s2; }
     return { ...spec, rise: (spec.rise ?? 0) + 0.8 };
@@ -499,9 +570,14 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       }
       poseActors(at);
       const a = anchorOf(cam.shot.subject, at), b = cam.shot.subject2 ? anchorOf(cam.shot.subject2, at) : null;
-      anchors.set(cam, { a, b, shot: clearShot(cam.shot, a, b, at) });
+      const still = cam.shot.move !== "follow" && cam.shot.move !== "track";
+      anchors.set(cam, { a, b, shot: clearShot(cam.shot, a, b, at, still ? { at: cam.at, dur: cam.dur } : undefined) });
     }
   };
+  // the screen's shape before the shots are measured (a tall phone frames wider: clearShot must check that
+  // camera); a later resize to a different tall shape measures them again
+  camera.aspect = (container.clientWidth || 1) / (container.clientHeight || 1);
+  let measuredAspect = camera.aspect;
   measureAnchors();
 
   const camPose = (cam: CameraTrack, k: number, t: number): ShotPose => {
@@ -518,6 +594,44 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
       const now = anchorOf(cam.shot.subject, t);
       const d: Vec3 = [now.chest[0] - st.a.chest[0], now.chest[1] - st.a.chest[1], now.chest[2] - st.a.chest[2]];
       p.look = [p.look[0] + d[0] * 0.7, p.look[1] + d[1] * 0.7, p.look[2] + d[2] * 0.7];
+    }
+    return p;
+  };
+
+  /**
+   * The camera is never inside a person or a held prop (B5: the trophy lift's camera sat inside his
+   * arms). Measured on the bodies as posed this frame: a camera nearer than PERSONAL_SPACE to anyone's
+   * head, body or arms, or inside a prop's box, backs away along its own line from what it looks at
+   * (the framing gets a little wider, never cut off).
+   */
+  const clearOfPeople = (p: ShotPose): ShotPose => {
+    const look = v(p.look);
+    const out = v(p.pos).sub(look);
+    const d0 = out.length();
+    if (d0 < 1e-4) return p;
+    out.normalize();
+    const segD = (x: any, a: any, b: any) => { const ab = b.clone().sub(a); const k = clamp(x.clone().sub(a).dot(ab) / Math.max(1e-9, ab.lengthSq()), 0, 1); return x.distanceTo(a.clone().addScaledVector(ab, k)); };
+    const parts = Array.from(cast.values()).map((c) => {
+      const A = c.actor;
+      return { head: A.point("head"), chest: A.point("chest"), hips: A.point("hips"), sl: A.point("shoulder.L"), hl: A.point("hand.L"), sr: A.point("shoulder.R"), hr: A.point("hand.R") };
+    });
+    const boxes: any[] = [];
+    for (const pr of Array.from(props.values())) {
+      if (!pr.group?.visible) continue;
+      const b = new T.Box3().setFromObject(pr.group);
+      if (!b.isEmpty() && Math.max(...b.getSize(new T.Vector3()).toArray()) < 2.5) boxes.push(b.expandByScalar(0.06));
+    }
+    const S = PERSONAL_SPACE;
+    const clear = (c: any) => parts.every((q) => c.distanceTo(q.head) > S.head && segD(c, q.chest, q.hips) > S.body && segD(c, q.sl, q.hl) > S.arm && segD(c, q.sr, q.hr) > S.arm)
+      && boxes.every((b) => !b.containsPoint(c));
+    const at = (k: number) => look.clone().addScaledVector(out, d0 * k);
+    if (clear(at(1))) return p;
+    for (let k = 1.06; k <= 4.01; k *= 1.06) {
+      if (clear(at(k))) {
+        let q: ShotPose = { ...p, pos: at(k).toArray() as Vec3 };
+        if (C.loc.bounds) q = keepInside(q, C.loc.bounds);
+        return q;
+      }
     }
     return p;
   };
@@ -543,6 +657,7 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     if (cs) {
       let p = camPose(cs.cur, cs.k, t);
       if (cs.prev) p = mixPose(camPose(cs.prev.track, cs.prev.k, t), p, cs.prev.mix);
+      if (PHONE_FRAMING_ON.on) p = clearOfPeople(p);
       camera.position.set(...p.pos);
       camera.up.set(Math.sin((p.roll * Math.PI) / 180), Math.cos((p.roll * Math.PI) / 180), 0);
       const fr = edit?.free?.[C.cameras.indexOf(cs.cur)];
@@ -644,6 +759,10 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    if (PHONE_FRAMING_ON.on && Math.abs(camera.aspect - measuredAspect) > 0.01 && Math.min(camera.aspect, measuredAspect) < 1) {
+      measuredAspect = camera.aspect;
+      measureAnchors();
+    }
   };
   resize();
   const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
@@ -724,6 +843,6 @@ export async function createDirector(container: HTMLElement, written: CutsceneSc
   // the frame-by-frame filming hook: seek(t) draws exactly that moment
   (window as any).__frameStep = { owner: api, duration, seek: (s: number) => api.frameSeek(s) };
   (window as any).__cutscene = api;
-  (window as any).__cutsceneDebug = { camera, cast, props, rootAt: (id: string, t: number) => rootAt(C, id, t) };
+  (window as any).__cutsceneDebug = { camera, cast, props, rootAt: (id: string, t: number) => rootAt(C, id, t), pose: (s: number) => poseActors(clamp(s, 0, duration)) };
   return api;
 }

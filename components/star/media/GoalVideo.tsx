@@ -468,10 +468,11 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
         {status === "ready" && clip && (clip.hasAudio || clip.audio) && (
           <button
             onClick={toggleSound}
-            className="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            className="relative grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
             aria-label={audible ? "Mute" : "Sound on"}
             data-goal-video-sound={audible ? "on" : "off"}
           >
+            <span aria-hidden className="absolute -inset-1.5" />
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
               {audible ? (

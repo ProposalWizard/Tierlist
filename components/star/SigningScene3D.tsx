@@ -12,7 +12,7 @@
  * three.js is only fetched when this mounts (signing3dScene.ts imports it).
  */
 import { useEffect, useRef, useState } from "react";
-import type { SigningContract, SigningManager, SigningSceneHandle, SigningYou } from "@/lib/star/signing3dScene";
+import type { SigningContract, SigningManager, SigningSceneEdit, SigningSceneHandle, SigningYou } from "@/lib/star/signing3dScene";
 import type { SigningLine } from "@/lib/star/signing3d";
 import { SIGNATURE_D } from "./TrialReward";
 
@@ -56,14 +56,22 @@ export interface SigningScene3DProps {
   doneLabel?: string;
   /** Extra controls on the top bar (the test area's picker button). */
   topRight?: React.ReactNode;
+  /** Something at the very left of the top bar (the test area's back arrow). */
+  topLeft?: React.ReactNode;
   /** Something to open the 3D failing with (the drawn signing). */
   onFail?: () => void;
   /** A key that, when it changes, plays the scene from the start again. */
   replayKey?: number;
+  /** An approved 3D Scene Editor edit (lib/star/sceneEdits), or null: the scene exactly as written. */
+  edit?: SigningSceneEdit | null;
+  /** Test page: fill its box on the admin frame instead of the whole screen. */
+  embedded?: boolean;
 }
 
 export default function SigningScene3D(props: SigningScene3DProps) {
-  const { you, manager, contract, lines, title, onDone, doneLabel = "Continue", topRight, onFail, replayKey = 0 } = props;
+  const { you, manager, contract, lines, title, onDone, doneLabel = "Continue", topRight, topLeft, onFail, replayKey = 0, edit = null, embedded = false } = props;
+  const editRef = useRef(edit);
+  editRef.current = edit;
   const wrap = useRef<HTMLDivElement>(null);
   const handle = useRef<SigningSceneHandle | null>(null);
   const [stage, setStage] = useState<Stage>("loading");
@@ -98,6 +106,7 @@ export default function SigningScene3D(props: SigningScene3DProps) {
         const { createSigningScene } = await import("@/lib/star/signing3dScene");
         const h = await createSigningScene(el, {
           you: youRef.current, manager, contract, signaturePath: SIGNATURE_D,
+          edit: editRef.current,
           onEvent: (e) => {
             if (e === "stamp") { setStamp(true); window.setTimeout(() => setStamp(false), 1500); }
             if (e === "done") setStage("done");
@@ -126,6 +135,9 @@ export default function SigningScene3D(props: SigningScene3DProps) {
     // The look changes through setYou below, not a rebuild.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [replayKey]);
+
+  // An approved edit that arrives after the scene is built (the shared copy loads a moment later).
+  useEffect(() => { if (edit && stage !== "loading" && stage !== "failed") handle.current?.setEdit(edit); }, [edit, stage === "loading"]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // A new look (the test area's picker, or a face arriving): rebuild you only.
   const youKey = JSON.stringify({ ...you, face: you.face ? (you.face.canvas as HTMLCanvasElement).width + ":" + you.face.chinY : null });
@@ -176,11 +188,12 @@ export default function SigningScene3D(props: SigningScene3DProps) {
   const speaker = current?.who === "boss" ? contract.managerName.toUpperCase() + " · MANAGER" : "YOU";
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "#120c08", color: INK, fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif", overflow: "hidden", touchAction: "manipulation" }}>
+    <div style={{ position: embedded ? "absolute" : "fixed", inset: 0, background: "#120c08", color: INK, fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif", overflow: "hidden", touchAction: "manipulation" }}>
       <div ref={wrap} data-stage={stage} onClick={tapScene} style={{ position: "absolute", inset: 0, cursor: stage === "talk" ? "pointer" : "default", userSelect: "none" }} />
 
       {/* Top bar: title, Skip, extras. A soft shade so the words read over any shot. */}
       <div style={{ position: "absolute", left: 0, right: 0, top: 0, padding: "max(10px, env(safe-area-inset-top)) 12px 26px", background: "linear-gradient(180deg, rgba(0,0,0,.6), rgba(0,0,0,0))", display: "flex", alignItems: "center", gap: 8, pointerEvents: "none" }}>
+        {topLeft && <div style={{ display: "flex", pointerEvents: "auto" }}>{topLeft}</div>}
         <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.4, color: "#fbbf24", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1, textShadow: "0 1px 3px #000" }}>{title}</div>
         <div style={{ display: "flex", gap: 6, pointerEvents: "auto" }}>
           {topRight}
@@ -202,7 +215,7 @@ export default function SigningScene3D(props: SigningScene3DProps) {
 
       {/* The words. */}
       {stage === "talk" && current && (
-        <div data-line={line} onClick={advance} style={{ position: "absolute", left: 12, right: 12, bottom: "max(22px, env(safe-area-inset-bottom))", padding: "12px 14px 22px", background: "rgba(5,7,12,.84)", borderLeft: `3px solid ${current.who === "boss" ? "#fbbf24" : "#60a5fa"}`, borderRadius: 4 }}>
+        <div data-line={line} data-bubble-clear onClick={advance} style={{ position: "absolute", left: 12, right: 12, bottom: "max(22px, env(safe-area-inset-bottom))", padding: "12px 14px 22px", background: "rgba(5,7,12,.84)", borderLeft: `3px solid ${current.who === "boss" ? "#fbbf24" : "#60a5fa"}`, borderRadius: 4 }}>
           <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: current.who === "boss" ? "#fbbf24" : "#60a5fa" }}>{speaker}</div>
           <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.3, marginTop: 4, minHeight: 46 }}>{current.text.slice(0, typed)}</div>
           <div style={{ position: "absolute", right: 12, bottom: 6, fontSize: 11, color: "#94a3b8" }}>{line + 1}/{lines.length} · tap ›</div>
@@ -210,7 +223,7 @@ export default function SigningScene3D(props: SigningScene3DProps) {
       )}
 
       {stage === "contract" && (
-        <div style={{ position: "absolute", left: 12, right: 12, bottom: "max(22px, env(safe-area-inset-bottom))" }}>
+        <div data-bubble-clear style={{ position: "absolute", left: 12, right: 12, bottom: "max(22px, env(safe-area-inset-bottom))" }}>
           <button data-sign onClick={sign} style={{ width: "100%", padding: "16px 0", fontSize: 18, fontWeight: 900, letterSpacing: 1.5, color: "#1a1206", background: "linear-gradient(180deg,#fde047,#f59e0b)", border: "none", borderRadius: 12, boxShadow: "0 6px 22px rgba(245,158,11,.45)" }}>
             TAP TO SIGN
           </button>
@@ -224,7 +237,7 @@ export default function SigningScene3D(props: SigningScene3DProps) {
       )}
 
       {stage === "done" && (
-        <div style={{ position: "absolute", left: 12, right: 12, bottom: "max(22px, env(safe-area-inset-bottom))" }}>
+        <div data-bubble-clear style={{ position: "absolute", left: 12, right: 12, bottom: "max(22px, env(safe-area-inset-bottom))" }}>
           <div style={{ textAlign: "center", marginBottom: 10, textShadow: "0 2px 6px #000" }}>
             <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: "#fbbf24" }}>WELCOME TO</div>
             <div style={{ fontSize: 26, fontWeight: 900, textTransform: "uppercase" }}>{contract.club}</div>

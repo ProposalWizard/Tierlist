@@ -2,7 +2,7 @@ import { stillIn } from "../../lib/star/cups";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import {
-  divisionOf, leagueNameFor, matchweeksFor, isPostSeason, leagueCupSlotsFor, faCupSlotsFor,
+  divisionOf, leagueNameFor, matchweeksFor, isPostSeason, leagueCupSlotsFor, faCupSlotsFor, lowerLeagueTrophySlotsFor,
   CHAMPIONSHIP_LEAGUE_CUP_SLOTS, CHAMPIONSHIP_FA_CUP_SLOTS, type CareerDivision,
 } from "../../lib/star/calendar";
 import { resolveLadder } from "../../lib/star/promotion";
@@ -83,6 +83,8 @@ for (const { division, clubs, name } of TIERS) {
   check(cupWeeks.size > 0 || (!!faState && stillIn(faState, career.player.club)), `${name}: is entered in at least one cup`);
   const validSlots = new Set([
     ...CHAMPIONSHIP_LEAGUE_CUP_SLOTS.map(s => s.week), ...CHAMPIONSHIP_FA_CUP_SLOTS.map(s => s.week),
+    // The Lower League Trophy (20 Oct 2026): these divisions play it midweek.
+    ...lowerLeagueTrophySlotsFor(division).map(s => s.week),
   ]);
   const strays = Array.from(cupWeeks).filter(w => !validSlots.has(w));
   check(strays.length === 0, `${name}: every cup tie sits on a real (Championship-shaped) cup week (strays: ${strays.join(", ") || "none"})`);

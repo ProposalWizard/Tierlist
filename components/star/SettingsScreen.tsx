@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useIsAdmin, useIsTester } from "@/lib/useIsAdmin";
 import { setAdminMode, useAdminMode } from "@/lib/adminLook";
+import { adminHomeFor } from "@/lib/adminRegistry";
 import { frameMeterOn, setFrameMeterOn } from "@/lib/star/three3d/frameMeterPref";
 import type { CareerState, GoalReplay } from "@/lib/star/types";
 import type { SkipTarget } from "@/lib/star/devSkip";
@@ -9,6 +10,7 @@ import type { SaveSlotSummary } from "@/lib/star/storage";
 import { devInfoOn, setDevInfo } from "@/lib/star/matchDayPrefs";
 import { useFramingV2, setFramingV2 } from "@/lib/star/matchView";
 import { useAirborne, setAirborne } from "@/lib/star/airborneChance";
+import { openLagTest } from "@/lib/star/lagSession";
 import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import { SettingsTop, SettingsGroups } from "./DeviceSettings";
 import UpdatesPanel from "./UpdatesPanel";
@@ -296,9 +298,27 @@ export default function SettingsScreen({
               <Switch on={adminMode} onClick={() => setAdminMode(!adminMode)} label="Admin mode" />
             </div>
           )}
-          <a href="/admin/star" className="block rounded-lg bg-black/30 px-3 py-2 text-[12px] font-black text-white">
+          {/* An admin lands on the Team board, a tester on the game home (Harry, 20 Oct 2026). */}
+          <a href={adminHomeFor(isAdmin ? "admin" : "tester")} className="block rounded-lg bg-black/30 px-3 py-2 text-[12px] font-black text-white">
             {isAdmin ? "Admin pages →" : "Test pages →"}
           </a>
+        </SetCard>
+      </RiseIn>
+
+      {/* The Lag test (B18 step 0, Harry, 20 Oct 2026): a guided route that
+          records frame times on THIS device. The pill lives in the layout
+          (components/star/LagTest.tsx); this only opens its start screen. */}
+      <RiseIn index={next()} className="mt-2">
+        <SetCard tone={DEV} strength={0.18}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[11px] font-black text-white">Lag test</div>
+              <SetNote className="mt-0.5">Measure lag on this phone or computer, screen by screen. About 10 minutes.</SetNote>
+            </div>
+            <PressButton data-lag-open variant="accent" accent="#16a34a" size="none" onClick={openLagTest} className="shrink-0 rounded-xl px-3 py-2 text-[11px] font-black text-white">
+              Start lag test
+            </PressButton>
+          </div>
         </SetCard>
       </RiseIn>
 

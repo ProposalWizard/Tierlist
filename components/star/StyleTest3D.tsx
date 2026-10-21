@@ -65,7 +65,7 @@ function HMinimap({ dots }: { dots: Dot[] }) {
   );
 }
 
-export default function StyleTest3D() {
+export default function StyleTest3D({ header, embedded = false }: { header?: React.ReactNode; /** Test page on the admin frame: fill its box, not the screen. */ embedded?: boolean } = {}) {
   const [style, setStyle] = useState<StyleId>("real");
   const [scene, setScene] = useState<StyleScene>("real");
   /** The real game: the 3D view, or the 2D game it is drawn from. */
@@ -277,14 +277,15 @@ export default function StyleTest3D() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene]);
 
-  const chip = (on: boolean) => `h-[28px] shrink-0 rounded-full border px-2.5 text-[12px] font-extrabold ${on ? "border-amber-300 bg-amber-400 text-black" : "border-white/20 bg-white/5 text-white"}`;
+  const chip = (on: boolean) => `h-[36px] shrink-0 rounded-full border px-2.5 text-[12px] font-extrabold ${on ? "border-amber-300 bg-amber-400 text-black" : "border-white/20 bg-white/5 text-white"}`;
   const styleName = STYLE_CHIPS.find((c) => c.id === style)?.name ?? "";
   const mins = hud?.timeLeft !== undefined ? `${Math.floor(hud.timeLeft / 60)}:${String(Math.floor(hud.timeLeft % 60)).padStart(2, "0")}` : "";
   const cutScene = scene === "goal" || scene === "signing" || scene === "walkout";
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-black text-white" data-style-test={`${style}-${scene}`}>
+    <div className={`${embedded ? "absolute" : "fixed"} inset-0 flex flex-col bg-black text-white`} data-style-test={`${style}-${scene}`}>
       <div className={`z-20 flex-col gap-1.5 bg-gray-950/95 px-2 pb-2 pt-2 ${clean ? "hidden" : "flex"}`}>
+        {header}
         <div className="flex items-center gap-1.5 overflow-x-auto" data-style-chips>
           <span className="mr-0.5 shrink-0 text-[11px] font-black uppercase text-white/60">Style</span>
           {STYLE_CHIPS.map((c) => (

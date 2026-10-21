@@ -3,12 +3,17 @@ import { isAdmin } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createPublicReadClient } from "@/lib/supabase/publicRead";
+import { approvedOnly } from "@/lib/star/sceneEdits/approval";
 
 /**
- * The 3D Scene Editor's shared saves (one row per cut-scene script).
+ * The 3D Scene Editor's shared saves (one row per cut-scene script or place).
  * Same shape as /api/star/scenarios: GET public, POST/DELETE admin-only, and a
  * missing table (supabase/migrations/star_cutscene_edits.sql not run yet) is a
- * named state (`migrationMissing`), never a 500. The game does not read these yet.
+ * named state (`migrationMissing`), never a 500.
+ * GET ?approved=1 returns only APPROVED edits: that is what the game reads
+ * (lib/star/sceneEdits/useApproved.ts). Unapproved edits only show in the editor.
+ * The same table also keeps the Scene generator's Good/Bad marks ("mark:…")
+ * and its kept scenes ("kept:…"), never approved, so the game never sees them.
  */
 export const dynamic = "force-dynamic";
 
@@ -24,7 +29,7 @@ const MIGRATION_HINT =
 function validEdits(e: unknown): boolean {
   if (!e || typeof e !== "object" || Array.isArray(e)) return false;
   const x = e as Record<string, unknown>;
-  for (const k of ["shots", "scene"]) {
+  for (const k of ["shots", "scene", "views", "approval"]) {
     const v = x[k];
     if (v !== undefined && (typeof v !== "object" || v === null || Array.isArray(v))) return false;
   }
@@ -40,7 +45,7 @@ async function requireAdmin(): Promise<NextResponse | null> {
   return null;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { data, error } = await createPublicReadClient().from("star_cutscene_edits").select("script_id, edits");
   if (error) {
     if (isMissingTable(error)) return NextResponse.json({ edits: {}, migrationMissing: true, message: MIGRATION_HINT });
@@ -48,7 +53,8 @@ export async function GET() {
   }
   const edits: Record<string, unknown> = {};
   for (const r of (data ?? []) as { script_id: string; edits: unknown }[]) edits[r.script_id] = r.edits;
-  return NextResponse.json({ edits, migrationMissing: false });
+  const onlyApproved = new URL(req.url).searchParams.get("approved") === "1";
+  return NextResponse.json({ edits: onlyApproved ? approvedOnly(edits) : edits, migrationMissing: false });
 }
 
 export async function POST(req: NextRequest) {

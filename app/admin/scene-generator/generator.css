@@ -1,0 +1,46 @@
+/* The Scene generator: painted with the frame's skin tokens (--bc-*), so every admin look works. */
+.sg-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 14px; align-items: start; margin-bottom: 14px; }
+.sg-grid2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); }
+.sg-lab { margin: 10px 0 6px; font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: var(--bc-ink3); }
+.sg-lab b { margin-left: 6px; color: var(--bc-amber); letter-spacing: .04em; }
+.sg-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.sg-pills .bc-pill { padding: 5px 9px; font-size: 13px; }
+.sg-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sg-row > span { font-size: 12px; color: var(--bc-ink2); font-weight: 700; }
+.sg-row input[type=range] { flex: 1; min-width: 120px; accent-color: var(--bc-amber); }
+.sg-seed input[type=number] { width: 70px; padding: 6px; font-weight: 900; font-size: 15px; background: rgba(0, 0, 0, .3); color: var(--bc-ink); border: 1px solid var(--bc-line); }
+.sg-view { position: relative; aspect-ratio: 16 / 9; background: #000; overflow: hidden; }
+.sg-canvas { position: absolute; inset: 0; }
+.sg-badge { position: absolute; left: 10px; top: 10px; padding: 4px 10px; background: rgba(0, 0, 0, .7); color: #fff; font-weight: 900; font-size: 13px; border-left: 3px solid var(--bc-accent); pointer-events: none; }
+.sg-msg { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-weight: 800; text-align: center; padding: 20px; }
+.sg-play { margin: 8px 0; }
+.sg-scrub { flex: 1; min-width: 140px; accent-color: var(--bc-amber); }
+.sg-marks { margin: 6px 0; }
+.sg-recipe-name { font-weight: 900; color: var(--bc-ink); flex-basis: 100%; }
+.sg-mark { padding: 8px 14px; font-weight: 900; font-size: 15px; border: 1px solid var(--bc-line); background: rgba(22, 163, 74, .12); color: var(--bc-ink); cursor: pointer; border-radius: 3px; }
+.sg-mark[aria-pressed="true"] { background: #16a34a; color: #fff; border-color: transparent; }
+.sg-mark.sg-bad { background: rgba(255, 77, 94, .12); }
+.sg-mark.sg-bad[aria-pressed="true"] { background: var(--bc-red); color: #fff; }
+.sg-facts { display: grid; gap: 4px; font-size: 14px; color: var(--bc-ink); margin-bottom: 6px; }
+.sg-facts b { display: inline-block; min-width: 86px; color: var(--bc-ink3); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.sg-warn { color: var(--bc-amber); font-weight: 800; }
+.sg-list { margin: 0; padding-left: 22px; font-size: 13px; color: var(--bc-ink); line-height: 1.6; }
+.sg-list span { display: inline-block; min-width: 84px; color: var(--bc-ink3); font-variant-numeric: tabular-nums; }
+.sg-list b { color: var(--bc-amber); }
+.sg-callout { padding: 10px 12px; background: rgba(255, 194, 74, .12); border-left: 4px solid var(--bc-amber); color: var(--bc-ink); font-size: 14px; line-height: 1.45; margin-bottom: 8px; }
+.sg-now { font-size: 14px; color: var(--bc-ink); margin-bottom: 8px; }
+.sg-tablewrap { overflow-x: auto; }
+.sg-table { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--bc-ink); }
+.sg-table th { text-align: left; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--bc-ink3); padding: 6px 8px; border-bottom: 2px solid var(--bc-line); white-space: nowrap; }
+.sg-table td { padding: 6px 8px; border-bottom: 1px solid var(--bc-line); vertical-align: top; }
+.sg-table tr { cursor: pointer; }
+.sg-table tr[aria-current="true"] td { background: color-mix(in srgb, var(--bc-accent) 18%, transparent); }
+.sg-off, .sg-on { display: inline-block; padding: 2px 8px; font-weight: 900; font-size: 11px; text-transform: uppercase; white-space: nowrap; border-radius: 3px; }
+.sg-off { background: rgba(255, 77, 94, .18); color: #ffb3bb; }
+.sg-on { background: #16a34a; color: #fff; }
+.sg-tally { white-space: nowrap; }
+.bc[data-look="light"] .sg-off, .bc[data-look="bento"] .sg-off { color: #9f1239; }
+@media (max-width: 900px) {
+  .sg-grid, .sg-grid2 { grid-template-columns: 1fr; }
+  .sg-table th:nth-child(3), .sg-table td:nth-child(3) { display: none; }
+}

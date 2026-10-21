@@ -11,7 +11,7 @@ import type { LocationId, Vec3 } from "./types";
 import type { StyleKit } from "../style3d/kit";
 import type { Quality3d } from "../three3d/quality";
 import { buildStadium, type Stadium } from "../style3d/stadium";
-import { DESK } from "./presets/locations";
+import { DESK, PRESS_DESK_TOP } from "./presets/locations";
 import { rng } from "./math";
 
 export interface SetOpts { shirt: string; trim: string; club: string; lamps: { intensity: number; color: string }; seed: number; night: boolean }
@@ -196,8 +196,8 @@ export function buildSet(T: any, kit: StyleKit, tier: Quality3d, id: LocationId,
     // sponsor backdrop in the club's colours
     const bc = canvas(1024, 512); { const g = bc.getContext("2d")!; g.fillStyle = "#f4f4f4"; g.fillRect(0, 0, 1024, 512); for (let y = 0; y < 5; y++) for (let x = 0; x < 6; x++) { const cx = x * 180 + (y % 2) * 90 + 40, cy = y * 110 + 50; g.fillStyle = (x + y) % 2 ? o.shirt : o.trim === "#ffffff" ? "#1f2433" : o.trim; g.font = "900 34px system-ui"; g.textAlign = "center"; g.fillText((x + y) % 2 ? o.club.toUpperCase().slice(0, 10) : "STAR", cx, cy); } }
     plane(8, 3.2, 0, 1.6, -1.25, 0, 0, mat("#ffffff", { map: tex(bc) }));
-    box(3.6, 0.05, 0.8, 0, 0.74, -0.15, mat("#1f2433"));
-    box(3.6, 0.7, 0.04, 0, 0.37, 0.22, mat(o.shirt));
+    box(3.6, 0.05, 0.8, 0, PRESS_DESK_TOP - 0.025, -0.15, mat("#1f2433"));
+    box(3.6, PRESS_DESK_TOP - 0.065, 0.04, 0, (PRESS_DESK_TOP - 0.065) / 2, 0.22, mat(o.shirt));
     for (const x of [-0.45, 0.55, 1.4]) { box(0.5, 0.08, 0.5, x, 0.48, -0.62, mat("#18181b")); box(0.5, 0.6, 0.06, x, 0.82, -0.88, mat("#18181b")); }
     // journalists, seated rows
     const pts: Vec3[] = [];

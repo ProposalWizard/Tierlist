@@ -5,6 +5,7 @@ import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import { DEMOS, DEMO_CSS, DEMO_TOKENS } from "@/lib/patchNotesDemos";
 import { PATCH_NOTE_PAGES, patchNotePageUrl } from "@/lib/patchNotePages";
 import { PATCH_NOTE_REVIEWS, type PatchNoteReview } from "@/lib/patchNoteReviews";
+import { PatchReadBar, PatchRailFaces, PatchUnreadDot } from "@/components/teamRoom/PatchReceipts";
 import {
   SECTION_COLOR,
   barGroupCeiling,
@@ -106,6 +107,12 @@ export default function PatchNotesArchive({ initialVersion }: { initialVersion?:
     </main>
   );
 }
+/** "Harry's patch notes: B6 Scene Studio" → "B6 Scene Studio" (the name after the author), so the rail says which version is which. */
+function railName(title: string): string {
+  const m = /^(?:harry|mikey|leo)['’]s patch notes\s*(?:v[\d.]+)?\s*:\s*(.+)$/i.exec(title.trim());
+  return m ? m[1] : "";
+}
+
 function VersionRail({
   notes, selected, onSelect,
 }: { notes: PatchNote[]; selected: string | null; onSelect: (v: string) => void }) {
@@ -119,13 +126,14 @@ function VersionRail({
             <button
               key={n.version}
               onClick={() => onSelect(n.version)}
-              className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[13px] font-extrabold transition ${
+              className={`relative shrink-0 rounded-full border px-3.5 py-1.5 text-[13px] font-extrabold transition ${
                 on
                   ? "border-[#3ddc84] bg-[#3ddc84]/15 text-[#3ddc84]"
                   : `${LINE} ${CARD} ${INK2}`
               }`}
             >
               v{n.version}
+              <PatchUnreadDot note={n} />
             </button>
           );
         })}
@@ -150,7 +158,8 @@ function VersionRail({
                 <span className={`block text-sm font-extrabold ${on ? "text-[#3ddc84]" : INK}`}>
                   v{n.version}
                 </span>
-                <span className={`block text-[11px] ${INK3}`}>{formatPatchDate(n.publishedAt)}</span>
+                <span className={`flex items-center justify-between gap-2 text-[11px] ${INK3}`}>{formatPatchDate(n.publishedAt)}<PatchRailFaces note={n} /></span>
+                {railName(n.title) && <span className={`mt-0.5 block truncate text-[11.5px] ${INK2}`}>{railName(n.title)}</span>}
               </button>
             );
           })}
@@ -194,6 +203,7 @@ function VersionView({ note }: { note: PatchNote }) {
     : "The same notes as plain data.";
   return (
     <>
+      <PatchReadBar note={note} />
       {(hasPage || review) && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {hasPage && tab("page", "Page")}

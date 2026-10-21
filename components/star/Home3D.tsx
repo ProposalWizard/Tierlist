@@ -34,6 +34,8 @@ import { baseIdOf } from "@/lib/star/shopData";
 import { skinToneHex, resolveHairStyle, hairColourHex } from "@/lib/star/playerIdentity";
 import { quality3dTier, parseQuality3d } from "@/lib/star/three3d/quality";
 import { people3dLook, fallBackToOldPeople } from "@/lib/star/look3d";
+import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
+import type { WalkSceneEdit } from "@/lib/star/sceneEdits/walkEdit";
 import { Stick, pill, round } from "./Shop3D";
 
 const INK = "#f7f1e8";
@@ -54,11 +56,43 @@ export interface Home3DProps {
   lookH?: boolean;
   /** Test page: force the house look (?house=new|old); else Settings → Look → "House". */
   house?: HouseLook;
+  /** Which screen this is, for approved 3D Scene Editor edits (lib/star/sceneEdits): the career (default) or the test page. */
+  where?: "career" | "test";
+  /** Test page: fill its box on the admin frame instead of the whole screen. */
+  embedded?: boolean;
 }
 
 type Tab = "casual" | "kit" | "boots";
 
-export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house }: Home3DProps) {
+/**
+ * What the 3D house is built from, off a career (the screen below, and the
+ * 3D Scene Editor's house on /star-scene-editor-dev).
+ */
+export function homeSceneData(career: CareerState, tier: HomeTier, house: HouseLook | undefined, choice: OutfitChoice): HomeData {
+  const room = roomPreset(tier);
+  const rooms = roomsFor(tier, house ?? houseLook());
+  const stuff = homeStuffOf(career);
+  return {
+    tier,
+    kits: kitsOf(career.player.club),
+    number: career.squadNumber ?? 10,
+    worn: wornAt({ outfit: choice, currentBoot: career.currentBoot }, "home"),
+    skin: skinToneHex(career.player.skinTone),
+    hair: hairColourHex(career.player.hairColour),
+    hairStyle: resolveHairStyle(career.player.hairStyle),
+    slots: cabinetSlots(career, cabinetSize(tier)),
+    cars: carsOnDrive(career, Math.max(room.cars, rooms.includes("garage") ? carsIn("garage", tier) : 0)),
+    boots: bootChoices(career),
+    casual: CASUAL_SETS,
+    rooms,
+    stuff,
+    bikeModel: stuff.bike ? BIKE_LOD : null,
+    club: career.player.club,
+    badge: badgeSvg(career.player.club, "home-cinema"),
+  };
+}
+
+export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onOutfit, tier: tierProp, lookH, house, where = "career", embedded = false }: Home3DProps) {
   const holder = useRef<HTMLDivElement>(null);
   const ctrlRef = useRef<HomeController | null>(null);
   const doorRef = useRef(onDoor);
@@ -82,26 +116,15 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const boots = useMemo(() => bootChoices(career), [career]);
   const homeName = tierProp ? room.label : homeNameOf(career.ownedItems);
 
-  const data: HomeData = useMemo(() => ({
-    tier,
-    kits,
-    number: career.squadNumber ?? 10,
-    worn: wornAt({ outfit: choice, currentBoot: career.currentBoot }, "home"),
-    skin: skinToneHex(career.player.skinTone),
-    hair: hairColourHex(career.player.hairColour),
-    hairStyle: resolveHairStyle(career.player.hairStyle),
-    slots,
-    cars,
-    boots,
-    casual: CASUAL_SETS,
-    rooms,
-    stuff: homeStuffOf(career),
-    bikeModel: homeStuffOf(career).bike ? BIKE_LOD : null,
-    club: career.player.club,
-    badge: badgeSvg(career.player.club, "home-cinema"),
+  const data: HomeData = useMemo(() => homeSceneData(career, tier, house, choice),
     // built once per visit
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [tier, rooms]);
+    [tier, rooms]);
+  // an approved 3D Scene Editor edit for the house here and for this home (none = as built)
+  const approved = useApprovedEdit<WalkSceneEdit>("house", where, [tier]);
+  const approvedRef = useRef(approved);
+  approvedRef.current = approved;
+  useEffect(() => { if (approved) ctrlRef.current?.setEdit(approved); }, [approved, status]);
 
   useEffect(() => {
     document.body.classList.add("knowitball-immersive");
@@ -135,6 +158,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
           quality: restarts > 0 ? "low" : parseQuality3d(q.get("q")) ?? quality3dTier(),
           lookH,
           fixedStep: q.get("film") === "1" ? 1 / 30 : undefined,
+          edit: approvedRef.current,
         });
         let c: HomeController;
         try {
@@ -191,7 +215,7 @@ export default function Home3D({ career, onBack, backLabel = "Home", onDoor, onO
   const casualOn = choice.wear === "casual";
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "#1a1612", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-home3d>
+    <div style={{ position: embedded ? "absolute" : "fixed", inset: 0, zIndex: embedded ? 1 : 80, background: "#1a1612", color: INK, overflow: "hidden", touchAction: "none", userSelect: "none" }} data-home3d>
       <div
         ref={holder}
         style={{ position: "absolute", inset: 0 }}

@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { niceMoneyStep, formatMoneyPrecise } from "@/lib/star/money";
 import {
   startNegotiation, makeOffer, moodToFace,
@@ -235,14 +235,34 @@ export default function NegotiationScreen({
   // still completely free-form, this only governs the +/- buttons.
   // Going down uses the step of the number below, so ★1,000 → ★990, not ★900.
   const nudge = (dir: 1 | -1) => { setTyped(null); setAmount(a => Math.max(1, a + dir * niceMoneyStep(dir < 0 ? a - 1 : a))); };
-  const startHold = (dir: 1 | -1) => {
-    nudge(dir);
-    stopHold();
-    holdRef.current = setInterval(() => nudge(dir), 120);
-  };
+  // Phone fix (20 Oct 2026): pointer events only. Touch AND mouse handlers
+  // made one tap fire twice on a phone (the browser sends both), and a
+  // finger that slid off the button never sent touchend, so the number
+  // kept running. One press = one step; holding repeats after a short wait.
+  const holdDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stopHold = () => {
+    if (holdDelayRef.current) { clearTimeout(holdDelayRef.current); holdDelayRef.current = null; }
     if (holdRef.current) { clearInterval(holdRef.current); holdRef.current = null; }
   };
+  const startHold = (dir: 1 | -1) => {
+    stopHold();
+    nudge(dir);
+    holdDelayRef.current = setTimeout(() => {
+      holdRef.current = setInterval(() => nudge(dir), 120);
+    }, 380);
+  };
+  // Safety stop: a release anywhere on the page ends the repeat.
+  useEffect(() => {
+    window.addEventListener("pointerup", stopHold);
+    window.addEventListener("pointercancel", stopHold);
+    window.addEventListener("blur", stopHold);
+    return () => {
+      window.removeEventListener("pointerup", stopHold);
+      window.removeEventListener("pointercancel", stopHold);
+      window.removeEventListener("blur", stopHold);
+      stopHold();
+    };
+  }, []);
   const mood = moodToFace(state);
   const verb = mode === "buying" ? "You're offering" : "You're asking";
   const theirVerb = mode === "buying" ? "Their asking price" : "Their offer";
@@ -383,15 +403,21 @@ export default function NegotiationScreen({
                 />
               </div>
               <button
-                onMouseDown={() => startHold(-1)} onMouseUp={stopHold} onMouseLeave={stopHold}
-                onTouchStart={() => startHold(-1)} onTouchEnd={stopHold}
+                onPointerDown={e => { e.preventDefault(); startHold(-1); }}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nudge(-1); } }}
+                onPointerUp={stopHold} onPointerCancel={stopHold} onPointerLeave={stopHold}
+                onContextMenu={e => e.preventDefault()}
+                style={{ touchAction: "none" }}
                 className="kit-btn kit-btn-glass shrink-0 w-9 h-9 rounded-xl text-lg select-none"
               >
                 −
               </button>
               <button
-                onMouseDown={() => startHold(1)} onMouseUp={stopHold} onMouseLeave={stopHold}
-                onTouchStart={() => startHold(1)} onTouchEnd={stopHold}
+                onPointerDown={e => { e.preventDefault(); startHold(1); }}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nudge(1); } }}
+                onPointerUp={stopHold} onPointerCancel={stopHold} onPointerLeave={stopHold}
+                onContextMenu={e => e.preventDefault()}
+                style={{ touchAction: "none" }}
                 className="kit-btn kit-btn-glass shrink-0 w-9 h-9 rounded-xl text-lg select-none"
               >
                 +

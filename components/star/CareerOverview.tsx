@@ -33,6 +33,7 @@ import {
   ScreenShell, FlatPanel, StatBar, CountUp, RiseIn, EdgeArrows, BottomBar, BarButton, HelpDot, clubTheme, rgba,
 } from "./ui";
 import { Rays } from "./ui/Screen";
+import { TapTip } from "./ui/TapTip";
 import { ShareCardSheet } from "./ShareCard";
 
 export interface OverviewAction { icon?: React.ReactNode; label: string; onClick: () => void; primary?: boolean }
@@ -475,9 +476,9 @@ export function SeasonList({ o, newestFirst = false }: { o: CareerOverviewData; 
                   </span>
                   <span className="mt-0.5 flex flex-wrap items-center gap-1">
                     <PositionTag s={s} />
-                    {s.trophies.map((t, k) => <span key={k} title={t}><TrophyImage name={t} height={15} /></span>)}
-                    {s.ballonDorRank === 1 && <span title="Ballon d'Or"><TrophyImage name="Ballon d'Or" height={15} /></span>}
-                    {s.awards.map(a => <span key={a} className="text-[11px]" title={a}>{AWARD_ICON[a.replace(/ ×\d+$/, "")] ?? "🏅"}{/×(\d+)/.test(a) ? <span className="text-[9px] font-black text-white/70">{a.match(/×\d+/)![0]}</span> : null}</span>)}
+                    {s.trophies.map((t, k) => <TapTip key={k} tip={t}><TrophyImage name={t} height={15} /></TapTip>)}
+                    {s.ballonDorRank === 1 && <TapTip tip="Ballon d'Or"><TrophyImage name="Ballon d'Or" height={15} /></TapTip>}
+                    {s.awards.map(a => <TapTip key={a} tip={a} className="text-[11px]">{AWARD_ICON[a.replace(/ ×\d+$/, "")] ?? "🏅"}{/×(\d+)/.test(a) ? <span className="text-[9px] font-black text-white/70">{a.match(/×\d+/)![0]}</span> : null}</TapTip>)}
                     {s.ballonDorRank !== undefined && s.ballonDorRank > 1 && <span className="px-1 text-[9px] font-black text-amber-200" style={{ background: "rgba(251,191,36,.15)", borderRadius: 2 }}>BdO #{s.ballonDorRank}</span>}
                   </span>
                 </span>
@@ -647,10 +648,10 @@ function ClubsPage({ o }: { o: CareerOverviewData }) {
                   <div className="flex items-center gap-2 px-3 py-2">
                     <div className="flex min-w-0 flex-1 flex-wrap items-end gap-2">
                       {cl.trophies.map(tr => (
-                        <span key={tr.competition} className="flex items-end gap-0.5" title={tr.competition}>
+                        <TapTip key={tr.competition} tip={tr.competition} className="items-end gap-0.5">
                           <TrophyImage name={tr.competition} height={26} />
                           {tr.count > 1 && <span className="text-[11px] font-black text-amber-200">×{tr.count}</span>}
-                        </span>
+                        </TapTip>
                       ))}
                     </div>
                     {cl.best && (
@@ -702,6 +703,7 @@ function Shelf({ items, empty }: { items: { competition: string; count: number; 
 
 function TrophiesPage({ o }: { o: CareerOverviewData }) {
   const unlocked = o.achievements.filter(a => a.unlocked).length;
+  const [openAch, setOpenAch] = useState<string | null>(null);
   // The Ballon d'Or is yours, not the team's: it heads the awards shelf.
   const team = o.honours.filter(h => h.competition !== "Ballon d'Or");
   const awards = [...o.honours.filter(h => h.competition === "Ballon d'Or"), ...o.individual];
@@ -720,12 +722,29 @@ function TrophiesPage({ o }: { o: CareerOverviewData }) {
       <Heading right={<span className="text-[11px] font-black text-white/80">{unlocked} / {o.achievements.length}</span>}>Achievements</Heading>
       <div className="mb-1"><StatBar value={(unlocked / Math.max(1, o.achievements.length)) * 100} colors={["#d97706", "#fde68a"]} className="h-2.5" sheen={false} /></div>
       <div className="grid grid-cols-2 gap-1">
-        {o.achievements.map(a => (
-          <div key={a.id} className="flex items-center gap-1.5 px-1.5 py-1" style={{ background: "rgba(255,255,255,.05)", filter: a.unlocked ? undefined : "brightness(.3)" }} title={a.description}>
-            <span className="text-[14px]">{a.unlocked ? "⭐" : "🔒"}</span>
-            <span className="truncate text-[10.5px] font-black text-white">{a.label}</span>
-          </div>
-        ))}
+        {o.achievements.map(a => {
+          // Phone fix (20 Oct 2026): the description lived only in title=,
+          // which a phone never shows. Tap a badge to read it underneath.
+          const open = openAch === a.id;
+          return (
+            <button
+              type="button"
+              key={a.id}
+              data-achievement={a.id}
+              aria-expanded={open}
+              onClick={() => setOpenAch(open ? null : a.id)}
+              className={`flex min-h-[32px] flex-col justify-center px-1.5 py-1 text-left ${open ? "col-span-2" : ""}`}
+              style={{ background: open ? "rgba(255,255,255,.10)" : "rgba(255,255,255,.05)" }}
+              title={a.description}
+            >
+              <span className="flex w-full min-w-0 items-center gap-1.5" style={{ filter: a.unlocked || open ? undefined : "brightness(.3)" }}>
+                <span className="text-[14px]">{a.unlocked ? "⭐" : "🔒"}</span>
+                <span className="truncate text-[10.5px] font-black text-white">{a.label}</span>
+              </span>
+              {open && <span className="mt-0.5 block text-[10.5px] font-bold leading-snug text-white/85">{a.description}{a.unlocked ? "" : " · not yet"}</span>}
+            </button>
+          );
+        })}
       </div>
       <div className="h-3" />
     </>

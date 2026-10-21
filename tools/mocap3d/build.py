@@ -167,5 +167,6 @@ if __name__ == "__main__":
     files, out = main()
     if "--no-shrink" not in sys.argv and os.path.abspath(out) == os.path.abspath(OUT):
         sys.path.insert(0, os.path.join(ROOT, "scripts", "perf3d"))
-        from shrink_after_build import shrink
+        from shrink_after_build import shrink, settle
         shrink(files)
+        settle(files)

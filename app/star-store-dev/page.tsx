@@ -134,7 +134,7 @@ export default function StoreTestPage() {
   );
 
   return (
-    <BroadcastPage title="Store test" sub="Try the store and paid items. Nothing here reaches a career." back="/star-play-dev"
+    <BroadcastPage title="Store test" sub="Try the store and paid items. Nothing here reaches a career."
       actions={<div className="st-wallet"><Stars v={state.stars} /><span>{state.coins.toLocaleString("en-GB")} Coins</span></div>}>
       <div className="st-layout">
         <aside className="st-rail">{controls}</aside>

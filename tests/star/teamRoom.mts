@@ -4,11 +4,19 @@
  * and which pages get the chat bubble.
  */
 import {
-  bubbleOn, ideasByPerson, ideasByStage, newGivenTasks, notesFor, pageLabel, rankIdeas, tasksFor, tasksGivenBy,
+  bubbleBottom, bubbleOn, ideasByPerson, ideasByStage, newGivenTasks, notesFor, pageLabel, rankIdeas, tasksFor, tasksGivenBy,
   unreadChat, unreadNotes, upsertById, votersOf,
   type TeamIdea, type TeamMessage, type TeamNote, type TeamTask, type TeamVote,
 } from "@/lib/teamRoom/logic";
 import { ADMIN_PAGES } from "@/lib/adminRegistry";
+import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
+import { PATCH_NOTE_PAGES } from "@/lib/patchNotePages";
+import { TEAM_ROOM } from "@/lib/teamRoom/config";
+import {
+  ackedBy, composeBody, decodePoint, mentionsIn, parseMessage, patchAuthor, patchReaders, patchUnread, pointUrl, pointsWaiting,
+  quoteLine, seenBy, typingToken, unseenMentions, waitingOnMe, withAck,
+  type PatchMeta, type PointBox, type ReadMarks, type TeamAck,
+} from "@/lib/teamRoom/extras";
 
 let failed = 0;
 const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  FAIL ${what}`); } else console.log(`  ✓ ${what}`); };
@@ -80,6 +88,109 @@ ok(!bubbleOn("/", urls), "never on the home page");
 ok(!bubbleOn("/tierlist/abc", urls) || urls.some((u) => u.startsWith("/tierlist")), "an ordinary site page stays clean");
 ok(pageLabel("/admin/team?tab=chat", { "/admin/team": "Team board" }) === "Team board", "page tag uses the admin list's name");
 ok(pageLabel("/star-goal-clips-dev", {}) === "goal clips", "else a short name from the address");
+
+console.log("The bubble sits above a page's own bottom controls (B13)");
+{
+  // A 390 x 844 phone, the bubble 12 px in from the left.
+  ok(bubbleBottom(12, 844, []) === 12, "nothing marked: the corner, 12 px up");
+  // The Manager's Office dialogue box: 10 px in, 708 px down, to 14 px off the bottom.
+  const box = { left: 10, right: 380, top: 708, bottom: 830 };
+  ok(bubbleBottom(12, 844, [box]) === 844 - 708 + 8, `over the office's dialogue box: sits 8 px above it (${bubbleBottom(12, 844, [box])})`);
+  ok(bubbleBottom(12, 844, [{ ...box, left: 200 }]) === 12, "a marked control off to the right: stays in the corner");
+  ok(bubbleBottom(12, 844, [{ ...box, top: 300, bottom: 360 }]) === 12, "a marked control high up the page: stays in the corner");
+  ok(bubbleBottom(12, 844, [{ ...box, top: 100 }]) === 422, "a huge marked box: never more than half the screen up");
+}
+
+// ── Round two (lib/teamRoom/extras.ts) ─────────────────────────────────
+console.log("Mentions");
+ok(mentionsIn("hey @mikey and @Leo, look").join() === "Mikey,Leo", "@names found, any case, board order");
+ok(mentionsIn("mail me at x@leo.com").length === 0, "an email address is not a mention");
+ok(mentionsIn("@Harry@Mikey").join() === "Harry", "two names glued together: only the first");
+ok(mentionsIn("@Leonardo").length === 0, "a longer word is not a mention");
+
+console.log("Replies, cards, points");
+const pt: PointBox = { v: 1, id: "ab12", by: "Mikey", to: ["Harry"], n: "numbers look off – “£”", pn: "Team board",
+  sel: "#main > div:nth-of-type(2)", ex: 0.1, ey: 0.2, ew: 0.5, eh: 0.25, x: 24, y: 330, w: 320, h: 140, sx: 0, sy: 400, vw: 390, vh: 844 };
+const url = pointUrl("/admin/team?tab=chat#old", pt);
+ok(url.startsWith("/admin/team?tab=chat#kib-point="), "a point link keeps the page and its ?, drops the old #");
+const back = decodePoint(url);
+ok(!!back && back.n === pt.n && back.sel === pt.sel && back.to.join() === "Harry" && back.sy === 400, "a point survives the round trip (non-English letters too)");
+ok(decodePoint("/admin/team#kib-point=not-json") === null && decodePoint("/admin/team") === null, "a broken or missing point → nothing, no crash");
+const body = composeBody("  look at this @Mikey ", { replyTo: 42, links: ["/star-gallery-dev", url] });
+ok(body.startsWith("[re:42] look at this @Mikey\n/star-gallery-dev\n"), "a reply, its words and one link per line");
+const pm = parseMessage(body);
+ok(pm.replyTo === 42 && pm.text === "look at this @Mikey" && pm.mentions.join() === "Mikey", "parsed back: reply, text, mention");
+ok(pm.cards.length === 2 && pm.cards[0].path === "/star-gallery-dev" && pm.cards[0].point === null && pm.cards[1].point?.id === "ab12", "two cards: a page and a point");
+const full = parseMessage("see https://knowitball.co.uk/star-play-dev?x=1\nhttps://example.com/a", ["https://knowitball.co.uk"]);
+ok(full.cards.length === 0 && full.text.includes("https://example.com/a"), "a link inside a sentence stays text");
+const own = parseMessage("https://knowitball.co.uk/star-play-dev?x=1\nhttps://example.com/a", ["https://knowitball.co.uk"]);
+ok(own.cards.length === 1 && own.cards[0].url === "/star-play-dev?x=1" && own.text === "https://example.com/a", "a whole line linking our own site is a card; other sites stay links");
+ok(parseMessage("//evil.com/x").cards.length === 0, "//other-site is never treated as our page");
+ok(parseMessage("[re:7]").replyTo === 7 && parseMessage("[re:7]").text === "", "a bare reply token is not shown as text");
+ok(quoteLine({ body: `@Harry 👉 x\n${url}`, image_url: null }).startsWith("@Harry 👉 x"), "a quoted point shows its words");
+ok(quoteLine(undefined) === "An older message", "a reply to a message not loaded says so");
+
+console.log("Seen faces and waiting on me");
+const m2: TeamMessage[] = [
+  { id: 10, person: "Mikey", body: "hi @Harry", image_url: null, page: null, pinned: false, created_at: at(1) },
+  { id: 11, person: "Leo", body: "general", image_url: null, page: null, pinned: false, created_at: at(2) },
+  { id: 12, person: "Mikey", body: `@Harry 👉 here\n${url}`, image_url: null, page: null, pinned: false, created_at: at(3) },
+  { id: 13, person: "Harry", body: "@Mikey ok", image_url: null, page: null, pinned: false, created_at: at(4) },
+];
+const marks: ReadMarks = { Harry: 10, Mikey: 13, Leo: 11 };
+ok(seenBy(m2[0], marks).join() === "Harry,Leo", "seen by everyone whose mark reached it, never the sender");
+ok(seenBy(m2[3], marks).join() === "Mikey", "Leo's mark (11) hasn't reached 13");
+ok(seenBy(m2[3], {}).length === 0, "no marks → nobody");
+ok(unseenMentions(m2, "Harry", marks).map((m) => m.id).join() === "12", "a mention you've seen (10) stops waiting");
+ok(unseenMentions(m2, "Mikey", marks).length === 0, "your own mention of others never waits on you");
+const acks: TeamAck[] = [];
+ok(pointsWaiting(m2, "Harry", acks).length === 1 && pointsWaiting(m2, "Leo", acks).length === 0, "a point waits only on who it was for");
+ok(waitingOnMe(m2, "Harry", marks, acks).map((m) => m.id).join() === "12", "a mention + point in one message counts once");
+const acked = withAck(acks, { kind: "point", target: "ab12", person: "Harry", at: at(5) }, true);
+ok(waitingOnMe(m2, "Harry", { ...marks, Harry: 13 }, acked).length === 0, "Got it + seen → nothing waiting");
+ok(withAck(withAck(acked, acked[0], true), acked[0], false).length === 0, "acks never double, and come off");
+ok(ackedBy(acked, "point", "ab12").join() === "Harry", "who pressed Got it");
+
+console.log("Patch-note receipts");
+const pn: PatchMeta[] = [
+  { version: "0.59", title: "Mikey's patch notes v0.17: …", publishedAt: "2026-10-18T22:00:00Z" },
+  { version: "0.58", title: "Leo's patch notes: …", publishedAt: "2026-10-18T21:00:00Z" },
+  { version: "0.56", title: "Harry's patch notes: …", publishedAt: "2026-10-14T10:00:00Z" },
+];
+const pa: TeamAck[] = [{ kind: "patch", target: "0.58", person: "Harry", at: at(1) }];
+ok(patchAuthor("Mikey's patch notes v0.17") === "Mikey" && patchAuthor("Knowitball patch notes") === null, "the author from the title");
+ok(patchUnread(pn, "Harry", pa, "2026-10-18").map((n) => n.version).join() === "0.59", "Harry: 0.58 read, 0.56 before receipts started");
+ok(patchUnread(pn, "Mikey", pa, "2026-10-18").map((n) => n.version).join() === "0.58", "your own patch notes never wait on you");
+ok(patchReaders(pn[0], pa).join() === "Mikey" && patchReaders(pn[1], pa).join() === "Harry,Leo", "faces: the author plus who pressed Read");
+
+console.log("The last two days' patch notes (19-20 Oct): one page each, all counted");
+// Harry's own (main's Leo and Mikey notes use 0.60 to 0.63 too, so Harry's four are 0.60h to 0.63h)
+const last2 = BUILT_IN_PATCH_NOTES.filter((n) => /^0\.(6\d|7[0-5])h?$/.test(n.version) && /^Harry's/.test(n.title)); // not the old 0.6 and 0.7
+ok(last2.length === 16 && last2.map((n) => n.version).sort().join() === Array.from({ length: 16 }, (_, i) => "0." + (60 + i) + (i < 4 ? "h" : "")).join(), "16 entries, v0.60h to v0.75");
+ok(new Set(BUILT_IN_PATCH_NOTES.map((n) => n.version)).size === BUILT_IN_PATCH_NOTES.length, "every patch-note version is unique (receipts are keyed by it)");
+ok(last2.every((n) => Date.parse(n.publishedAt) >= Date.parse(TEAM_ROOM.patchReceiptsFrom)), "all dated on or after patchReceiptsFrom, so they count");
+const metaLast2: PatchMeta[] = last2.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
+ok(patchUnread(metaLast2, "Mikey", [], TEAM_ROOM.patchReceiptsFrom).length === 16 && patchUnread(metaLast2, "Leo", [], TEAM_ROOM.patchReceiptsFrom).length === 16, "Mikey and Leo each have 16 to read");
+ok(patchUnread(metaLast2, "Harry", [], TEAM_ROOM.patchReceiptsFrom).length === 0, "Harry wrote them, so none wait on him");
+ok(last2.every((n) => !!n.artifactUrl && !!PATCH_NOTE_PAGES[n.version]), "each links its artifact page and has a kept page in the archive");
+ok(last2.every((n) => n.sections.length > 0 && n.stats.length === 4 && !!n.summary), "each has a summary, 4 stats and sections");
+
+console.log("The three topic pages (v0.82 to v0.84): the team board, the admin, everything else");
+const topics = ["0.82", "0.83", "0.84"].map((v) => BUILT_IN_PATCH_NOTES.find((n) => n.version === v));
+ok(topics.every((n) => !!n), "v0.82, v0.83 and v0.84 exist");
+ok(topics.every((n) => !!n && /^Harry's patch notes: /.test(n.title) && !!n.artifactUrl && !!PATCH_NOTE_PAGES[n.version]), "each is Harry's, links its artifact and has a kept page");
+ok(topics.every((n) => !!n && n.stats.length === 4 && n.sections.length > 0 && !!n.summary && Date.parse(n.publishedAt) >= Date.parse(TEAM_ROOM.patchReceiptsFrom)), "each has 4 stats, sections and a summary, and counts for the receipts");
+ok(topics.map((n) => n?.title.split(": ")[1]).join() === "Team Board & Team Updates,Admin Pages & Skins,Everything Else", "named as asked");
+const earlier19: Record<string, string> = { "0.60h": "v0.82", "0.61h": "v0.84", "0.62h": "v0.84", "0.63h": "v0.84", "0.64": "v0.84", "0.65": "v0.83" };
+ok(Object.entries(earlier19).every(([v, to]) => BUILT_IN_PATCH_NOTES.find((n) => n.version === v)?.summary.includes("Now part of " + to + " ")), "v0.60h to v0.65 stay in the archive and say which topic page they are now part of");
+const idx = BUILT_IN_PATCH_NOTES.find((n) => n.version === "0.75");
+ok(!!idx && /v0\.84/.test(idx.stats[3].value) && idx.sections.some((s) => s.items.some((i) => i.title.startsWith("Team Board & Team Updates (v0.82)"))), "the index (v0.75) lists the three topic pages");
+
+console.log("Typing @ and #");
+ok(JSON.stringify(typingToken("hey @mi", 7)) === JSON.stringify({ kind: "@", query: "mi", start: 4 }), "@ partway through a name");
+ok(typingToken("hey #gal", 8)?.kind === "#" && typingToken("hey #gal", 8)?.query === "gal", "# for a page");
+ok(typingToken("mail x@le", 9) === null, "not after a letter (an email)");
+ok(typingToken("@", 1)?.query === "", "a bare @ shows everyone");
 
 if (failed) { console.error(`\n${failed} failed`); process.exit(1); }
 console.log("\nAll passed");

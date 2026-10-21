@@ -33,7 +33,9 @@ function Frame({ b, t, title }: { b: FhrBuildUp; t: number; title: string }) {
   const W = 150, H = 200, s = Math.min(W / (x2 - x1), H / (y2 - y1));
   const ox = (W - (x2 - x1) * s) / 2, oy = (H - (y2 - y1) * s) / 2;
   const X = (x: number) => ox + (x - x1) * s, Y = (y: number) => oy + (y - y1) * s;
-  const i = Math.min(b.people[0].path.length - 1, Math.round(t * HZ));
+  // (Men still running at the hand-over have samples past durS: phase 3.)
+  const i = Math.round(t * HZ);
+  const at = (path: { x: number; y: number }[]) => path[Math.min(i, path.length - 1)];
   const route: string[] = [];
   for (let u = 0; u <= b.durS; u += 0.1) { const q = b.ballAt(u); route.push(`${X(q.x).toFixed(1)},${Y(q.y).toFixed(1)}`); }
   const ball = b.ballAt(t), r = Math.max(2.4, 0.5 * s);
@@ -53,7 +55,7 @@ function Frame({ b, t, title }: { b: FhrBuildUp; t: number; title: string }) {
         ))}
         <circle cx={X(ball.x)} cy={Y(ball.y)} r={Math.max(2, 0.35 * s)} fill="#111" stroke="#fff" strokeWidth={0.8} />
         {b.people.map((p) => (
-          <circle key={p.key} cx={X(p.path[i].x)} cy={Y(p.path[i].y)} r={r} fill={COL[p.side]} stroke={p.side === "you" ? "#f59e0b" : "#111"} strokeWidth={p.side === "you" ? 1.6 : 0.6} />
+          <circle key={p.key} cx={X(at(p.path).x)} cy={Y(at(p.path).y)} r={r} fill={COL[p.side]} stroke={p.side === "you" ? "#f59e0b" : p.key.startsWith("cover") ? "#fff" : "#111"} strokeWidth={p.side === "you" || p.key.startsWith("cover") ? 1.6 : 0.6} />
         ))}
       </svg>
       <div style={{ fontSize: 10, textAlign: "center", opacity: 0.75 }}>{title}</div>
@@ -113,7 +115,7 @@ export default function BuildUpPanel() {
           <div style={{ display: "flex", gap: 6 }}>
             <Frame b={shown} t={0} title="first (0 s)" />
             <Frame b={shown} t={shown.durS / 2} title={`middle (${(shown.durS / 2).toFixed(1)} s)`} />
-            <Frame b={shown} t={shown.durS} title="last = the chance" />
+            <Frame b={shown} t={shown.durS + (shown.runOnS ?? 0)} title="last = the chance" />
           </div>
           <ol style={{ fontSize: 12, margin: "8px 0 0 18px", padding: 0 }}>
             {shown.acts.map((a, k) => {
@@ -121,7 +123,7 @@ export default function BuildUpPanel() {
               return <li key={k}>{a.type === "pass" ? (a.h > 0 ? "A ball in the air" : "A pass") : "A carry"} of {Math.hypot(a.to.x - a.from.x, a.to.y - a.from.y).toFixed(0)} m{a.src === "chain" ? " (a real route into this chance)" : a.src === "break" ? " (the long ball of a break)" : ""} · {who(spell)}</li>;
             })}
           </ol>
-          <Note>White = you · blue = the chance&apos;s team-mates · pale blue = team-mates only in the build-up (off the screen when the chance starts) · red = defenders · yellow = keeper · dashed = the chance&apos;s frame.</Note>
+          <Note>White = you · blue = the chance&apos;s team-mates · pale blue = team-mates only in the build-up (off the screen when the chance starts) · red = defenders (white ring = the extra defender in from off the screen) · yellow = keeper · dashed = the chance&apos;s frame.</Note>
         </div>
       </div>
       <Note>{FHR_DATA_CREDIT.join(" ")}</Note>

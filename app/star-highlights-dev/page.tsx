@@ -70,6 +70,7 @@ import ShootoutPlay from "@/components/star/ShootoutPlay";
 import { usePlayWidth, useTestKits } from "@/components/star/EnginePlay";
 import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import { useFhrMode } from "@/lib/star/fhr/toggle";
+import { useFhrBuildUps, FhrAdjustBar } from "@/components/star/FhrAdjust";
 import { matchStill, matchCanvasHW, withMatchCamera } from "@/lib/star/fhr/stillCamera";
 import {
   addFigureTo,
@@ -506,6 +507,7 @@ export default function HighlightsPage() {
   // `?still=builder` shows the old builder's frame. This page is not the game:
   // the switch Off still leaves every match exactly as today.
   const fhrSwitch = useFhrMode() === "on";
+  const fhrBuild = useFhrBuildUps();
   const [builderStill, setBuilderStill] = useState(false);
   useEffect(() => { setBuilderStill(new URLSearchParams(window.location.search).get("still") === "builder"); }, []);
   const fhrOnHere = fhrSwitch || !builderStill;
@@ -848,7 +850,6 @@ export default function HighlightsPage() {
     <BroadcastPage
       title="Infinite Highlights"
       sub="Flick through real chances. Fix a bad one on the spot."
-      back="/star-gallery-dev"
     >
       {tools}
 
@@ -927,6 +928,9 @@ export default function HighlightsPage() {
                   }}
                   onStop={() => setPlaying(false)}
                   width={pictureW}
+                  // Full highlights rebuild On: the build-up before it, as in a
+                  // career match (a layer on top: the picture is never changed).
+                  leadIn={fhrBuild.builder}
                 />
               ) : shot && shownBase && (
                 <EditableFrame
@@ -985,6 +989,11 @@ export default function HighlightsPage() {
           </section>
 
           <div className="ih-side" data-side-column>
+            {/* Full highlights rebuild (Harry, 20 Oct 2026): Play shows the build-up
+                first when it is On. Automatic; these dials are this page's only. */}
+            <Panel title="Build-ups" note="on Play, when Full highlights rebuild is On">
+              <FhrAdjustBar adjust={fhrBuild.adjust} set={fhrBuild.set} />
+            </Panel>
             <Panel title="Fix this chance" note="tap a player, drag to move">
               {/* The editor tools. Same as the gallery's version screen, in the
                   same order, doing the same thing. */}

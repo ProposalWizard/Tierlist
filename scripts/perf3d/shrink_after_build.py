@@ -23,3 +23,21 @@ def shrink(paths):
               "\n   (tools: npm i --no-save @gltf-transform/core@4 @gltf-transform/functions@4"
               " @gltf-transform/extensions@4 meshoptimizer draco3dgltf sharp)\n")
     return ok
+
+
+def settle(paths):
+    """B5c (20 Oct 2026): the people-skeleton clip files get their shoulders down
+    and arms kept off the body (tools/motionref/settle_clips.mts) after a rebuild,
+    or the rebuild silently brings back the shrug and the arms through the hips.
+    tests/star/shoulderSet.mts fails until it has run."""
+    people = [p for p in paths if p.endswith(".glb") and "-ual" not in os.path.basename(p)]
+    if not people:
+        return True
+    cmd = ["npx", "tsx", "tools/motionref/settle_clips.mts", *[os.path.relpath(os.path.abspath(p), ROOT) for p in people]]
+    try:
+        ok = subprocess.run(cmd, cwd=ROOT).returncode == 0
+    except OSError:
+        ok = False
+    if not ok:
+        print("\n!! NOT SETTLED (shoulders / arms through the body). Run:\n   SHRINK_TOOLS=<tools dir> " + " ".join(cmd) + "\n")
+    return ok

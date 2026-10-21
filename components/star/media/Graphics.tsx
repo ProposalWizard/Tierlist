@@ -1,5 +1,8 @@
 "use client";
+import { useState, type ReactNode } from "react";
 import OwnPortraitImg from "../OwnPortraitImg";
+import Headshot3D from "../Headshot3D";
+import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import TrophyImage from "../TrophyImage";
 import type { GraphicSpec, PotmNominee } from "@/lib/star/media/types";
 import { kitsOf, labelInk } from "@/lib/star/kits";
@@ -424,8 +427,10 @@ function NomineeTile({ n, won }: { n: PotmNominee; won: boolean }) {
             the back of your shirt. Failing that, a monogram, which is where a
             generated squad or a career whose division has not been refreshed
             ends up. Never somebody else's face. */}
-        {n.face ? (
-          <Face src={n.face} own={n.own} kit={kit} />
+        {!PHOTO_FACES ? (
+          <TileHead id={n.id ?? `${n.club}|${n.name}`} you={n.isYou} kit={kit} size={64} />
+        ) : n.face ? (
+          <Face src={n.face} own={n.own} kit={kit} fallback={<TileHead id={n.id ?? `${n.club}|${n.name}`} you={n.isYou} kit={kit} size={64} />} />
         ) : n.number !== undefined ? (
           <div
             className="absolute inset-0 grid place-items-center text-2xl font-black tabular-nums"
@@ -484,8 +489,10 @@ function PotmWinner({ s }: { s: Extract<GraphicSpec, { type: "potmWinner" }> }) 
             className="absolute inset-y-0 left-2 w-9 -skew-x-[14deg]"
             style={{ backgroundColor: kit.trim }}
           />
-          {s.face ? (
-            <Face src={s.face} own={s.own} kit={kit} />
+          {!PHOTO_FACES ? (
+            <TileHead id={s.id ?? `${s.club}|${s.lastName}`} you={s.isYou} kit={kit} size={112} />
+          ) : s.face ? (
+            <Face src={s.face} own={s.own} kit={kit} fallback={<TileHead id={s.id ?? `${s.club}|${s.lastName}`} you={s.isYou} kit={kit} size={112} />} />
           ) : s.number !== undefined ? (
             <div
               className="absolute inset-0 grid place-items-center text-4xl font-black tabular-nums"
@@ -565,14 +572,20 @@ function PotmWinner({ s }: { s: Extract<GraphicSpec, { type: "potmWinner" }> }) 
  * `isolate` matters: mix-blend-mode composites against the nearest stacking
  * context, and without it the two layers reach past the tile and tint the card.
  */
-function Face({ src, own, kit }: { src: string; own?: boolean; kit: { shirt: string; trim: string } }) {
+function Face({ src, own, kit, fallback }: { src: string; own?: boolean; kit: { shirt: string; trim: string }; fallback?: ReactNode }) {
+  // A link that does not load (an old cdn.sofifa.net one: that CDN now wants
+  // a signed-in session) showed the browser's broken-picture box. It falls
+  // back to his drawn head instead (B1, 20 Oct 2026).
+  const [dead, setDead] = useState(false);
   if (!own) {
+    if (dead && fallback) return <>{fallback}</>;
     return (
       <img
         src={src}
         alt=""
         referrerPolicy="no-referrer"
         loading="lazy"
+        onError={() => setDead(true)}
         className="absolute inset-0 h-full w-full object-contain object-bottom"
       />
     );
@@ -589,6 +602,23 @@ function Face({ src, own, kit }: { src: string; own?: boolean; kit: { shirt: str
         <div className="absolute inset-0" style={{ background: c.duoLight, mixBlendMode: "multiply", opacity: TREATMENT }} />
         <div className="absolute inset-0" style={{ background: kit.shirt, mixBlendMode: "color", opacity: 0.7 }} />
       </OwnPortraitImg>
+    </div>
+  );
+}
+
+/**
+ * HIS HEADSHOT IN A TILE. Photo faces are off for everyone (PHOTO_FACES,
+ * faceStyle.ts; Harry, 12 Oct 2026). B1 (20 Oct 2026) put the drawn head here
+ * instead of a dead photo link; B15 (20 Oct 2026, Harry: "the drawn heads look
+ * unprofessional — they should be headshots shot from our 3D model") shoots
+ * his Style A head and shoulders from the 3D model, in his kit
+ * (Headshot3D.tsx). The drawn head shows until the picture is made, and stays
+ * if it can't be (no WebGL). Stood on the bottom edge like the cut-outs were.
+ */
+function TileHead({ id, you, kit, size }: { id: string; you?: boolean; kit: { shirt: string; trim: string }; size: number }) {
+  return (
+    <div className="absolute inset-x-0 bottom-0 flex justify-center" data-potm-head={id}>
+      <Headshot3D id={id} you={you} kit={kit} size={size} />
     </div>
   );
 }

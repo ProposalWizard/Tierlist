@@ -60,8 +60,9 @@ export const LOOK_ROWS = {
   // Mikey, 20 Oct 2026: TV-style pop-ups (components/star/MikeyPopup.tsx). Old by default.
   mikeyPopups: row("Mikey's new pop-ups", "new", "old", "old", mikeyPopupsLook, setMikeyPopupsLook),
   // Harry, 19 Oct 2026: the Full Highlights Rebuild's test switch, Off by
-  // default; On includes Chances: New (lib/star/fhr/toggle.ts). Shown in
-  // Settings → Harry changes as "Off | On (test)".
+  // default; On includes Chances: New (lib/star/fhr/toggle.ts). Its own row
+  // with a "?" since 20 Oct 2026 (components/star/FhrSwitchRow.tsx): Settings,
+  // the match's ⚙ and the ⚙ before kick-off. Shown to everyone.
   fhr: row("Full highlights rebuild", "on", "off", "off", fhrMode, setFhrMode),
   ui: row("UI", "new", "old", UI_VERSION_DEFAULT, uiVersion, setUiVersion),
 } as const satisfies Record<string, LookRow>;

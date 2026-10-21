@@ -8,16 +8,24 @@
  * What this stand-in does: clips sampled from t, arm and leg IK, the one
  * body's fingers (named hand shapes), the pen grip measured off the real
  * fingertips (as the live signing does), head-and-neck look-at with a limit,
- * feet kept on the floor, a lean. What it does NOT do: faces (expression,
- * blink and mouth are accepted and only nudge the head), eyes.
+ * feet kept on the floor, a lean. Faces (B5, 20 Oct 2026): on a Style A head the
+ * face moves (style3d/toon/face.ts): blinks, eyes that look where he looks and
+ * wander a little, the expression of the beat, lips that move as he speaks.
  */
 import type * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
-import type { ActorSpec, BodyPart, CutsceneActor, CutscenePeople, CutscenePeopleInit, Expression, HandPose, Vec3 } from "./types";
+import type { ActorSpec, BodyPart, CutsceneActor, CutscenePeople, CutscenePeopleInit, Expression, HandPose, ReachLag, Vec3 } from "./types";
+import { FLUID_ON, shoulderFollow } from "./fluid";
+import { shoulderBodyOf, clearArmsLive, type ShoulderBody } from "../three3d/shoulderSet";
+
+/** Each body's measures for the arm clearance, once per body file and build (B5c). */
+const clearCache = new Map<string, ShoulderBody | null>();
 import { loadPeople3d, makePerson3d, dressPerson3d, poseFingers, fingersDeg, fingerTip, hasFingers, toonHeadsFor, type FingerPose, type Person3D, type PersonModel } from "../people3d";
 import { addClips, loadAnims3d } from "../three3d/footballAnims";
 import { solveArm, handWorldQuat, setBoneWorldQuat, rotateBoneWorld, type HandAxes } from "../signing3dRig";
+import { basisTurn } from "./hold";
 import { newNumberCanvas, drawShirtNumber } from "../signing3dTextures";
+import { addToonFace, toonFaceFor, type ToonFaceRig } from "../style3d/toon/face";
 
 type Three = typeof import("three");
 
@@ -83,6 +91,8 @@ export function createStubPeople(init: CutscenePeopleInit): CutscenePeople {
       for (const act of Object.values(p.actions)) { act.enabled = true; act.play(); act.setEffectiveWeight(0); }
       dress(T, p, spec);
       const actor = new StubActor(T, spec.id, p);
+      // the face that moves (a Style A head with measured spots; anything else stays as painted)
+      actor.face = addToonFace(T, p);
       made.push(actor);
       return actor;
     },
@@ -131,6 +141,13 @@ class StubActor implements CutsceneActor {
   private yaw = 0;
   private axes: Record<"L" | "R", HandAxes>;
   private exprTilt = 0;
+  /** The moving face (null: a head with no measured face). */
+  face: ToonFaceRig | null = null;
+  private exprW: Record<string, number> = {};
+  private blink = 0;
+  private talk = 0;
+  private gaze: [number, number] = [0, 0];
+  private wander: [number, number] = [0, 0];
 
   constructor(private T: Three, readonly id: string, readonly person: Person3D) {
     this.root = person.root;
@@ -146,6 +163,21 @@ class StubActor implements CutsceneActor {
       return { along: h.along, palm: h.palm, side: new T.Vector3().crossVectors(h.along, h.palm).normalize() };
     };
     this.axes = { L: ax("L"), R: ax("R") };
+    // the body's own torso, legs, head and arm thickness, measured at the bind pose (B5c, shoulderSet.ts)
+    const key = person.toonKey ?? (person.body.geometry as { uuid?: string }).uuid ?? id;
+    if (!clearCache.has(key)) {
+      let sb: ShoulderBody | null = null;
+      try { sb = shoulderBodyOf(T, person.root.children[0] ?? person.root, person.bones as Record<string, THREE.Bone>, person.body, key); } catch { sb = null; }
+      clearCache.set(key, sb);
+    }
+    this.clear = clearCache.get(key) ?? null;
+  }
+  private clear: ShoulderBody | null = null;
+
+  clearArms(w: number, skip?: { L?: boolean; R?: boolean }) {
+    if (!this.clear || w <= 0) return;
+    this.root.updateMatrixWorld(true);
+    clearArmsLive(this.T, this.clear, this.person.bones as Record<string, THREE.Bone>, w, skip);
   }
 
   clips() { return Object.keys(this.person.actions); }
@@ -154,6 +186,7 @@ class StubActor implements CutsceneActor {
   beginFrame() {
     this.fingers = { L: handShape("relax"), R: handShape("relax") };
     this.exprTilt = 0;
+    this.exprW = {}; this.blink = 0; this.talk = 0; this.gaze = [0, 0]; this.wander = [0, 0];
   }
 
   poseClips(entries: [string, number, number][]) {
@@ -212,6 +245,12 @@ class StubActor implements CutsceneActor {
       case "shoulder.R": return this.wp(B.RightArm);
       case "knee.L": return this.wp(B.LeftLeg);
       case "knee.R": return this.wp(B.RightLeg);
+      case "crown": {
+        // the head's own top (its bone's rest offset to head_end, through its scale), hair included
+        const he = B.head_end ?? null;
+        if (he) return this.wp(he).add(new this.T.Vector3(0, 0.012, 0));
+        return this.wp(B.Head).add(new this.T.Vector3(0, 0.24, 0));
+      }
     }
     return this.wp(B.Hips);
   }
@@ -238,19 +277,31 @@ class StubActor implements CutsceneActor {
     this.root.updateMatrixWorld(true);
   }
 
-  reach(hand: "L" | "R", wrist: THREE.Vector3, along: THREE.Vector3 | null, palm: THREE.Vector3 | null, w: number, pole?: THREE.Vector3) {
-    if (w <= 0) return;
+  reach(hand: "L" | "R", wrist: THREE.Vector3, along: THREE.Vector3 | null, palm: THREE.Vector3 | null, w: number, pole?: THREE.Vector3, lag?: ReachLag) {
+    const wl = lag?.lower ?? w, wh = lag?.hand ?? w;
+    if (w <= 0 && wl <= 0 && wh <= 0) return;
     const S = hand === "R" ? "Right" : "Left";
     const B = this.person.bones;
     const ha = B[`${S}Hand`];
-    const q0 = ha.quaternion.clone();
+    // the collarbone goes with the arm (up for a hand above the shoulder, forward for a reach): a real
+    // shoulder is never a fixed socket (fluid.ts, B5c)
+    const sh = B[`${S}Shoulder`];
+    if (sh && w > 0 && FLUID_ON.on) {
+      const sp = this.wp(B[`${S}Arm`]);
+      const len = sp.distanceTo(this.wp(B[`${S}ForeArm`])) + this.wp(B[`${S}ForeArm`]).distanceTo(this.wp(ha));
+      const d = wrist.clone().sub(sp);
+      const f = shoulderFollow(d.y / len, d.dot(this.dirOf(0, 0, 1)) / len);
+      const sg = hand === "L" ? 1 : -1;
+      if (f.raise) rotateBoneWorld(this.T, sh, new this.T.Quaternion().setFromAxisAngle(this.dirOf(0, 0, 1), sg * f.raise * w));
+      if (f.forward) rotateBoneWorld(this.T, sh, new this.T.Quaternion().setFromAxisAngle(new this.T.Vector3(0, 1, 0), -sg * f.forward * w));
+    }
     const pl = pole ?? this.dirOf(hand === "R" ? -0.8 : 0.8, -0.55, -0.3);
-    solveArm(this.T, B[`${S}Arm`], B[`${S}ForeArm`], ha, wrist, pl, w);
-    if (along && palm) {
+    solveArm(this.T, B[`${S}Arm`], B[`${S}ForeArm`], ha, wrist, pl, w, wl);
+    if (along && palm && wh > 0) {
       const qa = ha.quaternion.clone();
       setBoneWorldQuat(this.T, ha, handWorldQuat(this.T, this.axes[hand], along, palm));
-      if (w < 1) { ha.quaternion.copy(qa.slerp(ha.quaternion.clone(), w)); ha.updateMatrixWorld(true); }
-    } else void q0;
+      if (wh < 1) { ha.quaternion.copy(qa.slerp(ha.quaternion.clone(), wh)); ha.updateMatrixWorld(true); }
+    }
   }
 
   reachFoot(foot: "L" | "R", ankle: THREE.Vector3, w: number, pole?: THREE.Vector3) {
@@ -301,6 +352,44 @@ class StubActor implements CutsceneActor {
     return { pos, axis, up: palm.clone() };
   }
 
+  handFrame(hand: "L" | "R") {
+    const q = new this.T.Quaternion(); this.person.bones[hand === "R" ? "RightHand" : "LeftHand"].getWorldQuaternion(q);
+    return { along: this.axes[hand].along.clone().applyQuaternion(q), palm: this.axes[hand].palm.clone().applyQuaternion(q) };
+  }
+
+  holdTool(hand: "L" | "R", grip: HandPose, tip: THREE.Vector3, dir: THREE.Vector3, up: THREE.Vector3, w: number, pole?: THREE.Vector3) {
+    if (w <= 0) return;
+    const T = this.T;
+    const S = hand === "R" ? "Right" : "Left";
+    const B = this.person.bones;
+    const chain = [`${S}Shoulder`, `${S}Arm`, `${S}ForeArm`, `${S}Hand`].map((n) => B[n]).filter(Boolean);
+    const saved = chain.map((b) => b.quaternion.clone());
+    const ha = B[`${S}Hand`];
+    // the tool in the hand's own frame (the fingers in the grip first: the pads move with them)
+    this.hand(hand, grip, 1);
+    const hq = new T.Quaternion(); ha.getWorldQuaternion(hq);
+    const inv = hq.clone().invert();
+    const W = this.wp(ha);
+    const g0 = this.gripFrame(hand, grip);
+    const tipL = g0.pos.clone().sub(W).applyQuaternion(inv);
+    // the hand turned so the tool's axis and up go where they are wanted
+    const Q = basisTurn(T, g0.axis.clone().applyQuaternion(inv), g0.up.clone().applyQuaternion(inv), dir, up);
+    const along = this.axes[hand].along.clone().applyQuaternion(Q), palm = this.axes[hand].palm.clone().applyQuaternion(Q);
+    let wrist = tip.clone().sub(tipL.clone().applyQuaternion(Q));
+    for (let i = 0; i < 3; i++) {
+      chain.forEach((b, j) => b.quaternion.copy(saved[j]));
+      this.root.updateMatrixWorld(true);
+      this.reach(hand, wrist, along, palm, 1, pole);
+      this.hand(hand, grip, 1);
+      wrist = wrist.add(tip.clone().sub(this.gripFrame(hand, grip).pos));
+    }
+    if (w < 1) {
+      const solved = chain.map((b) => b.quaternion.clone());
+      chain.forEach((b, j) => { b.quaternion.copy(saved[j]).slerp(solved[j], w); });
+      this.root.updateMatrixWorld(true);
+    }
+  }
+
   lookAt(target: THREE.Vector3, w: number) {
     if (w <= 0) return;
     const B = this.person.bones;
@@ -328,17 +417,34 @@ class StubActor implements CutsceneActor {
     const cur2 = this.dirOf(0, 0, 1).applyQuaternion(hq2.multiply(restW.clone().invert()));
     const q2 = new T.Quaternion().setFromUnitVectors(cur2, lim).slerp(new T.Quaternion(), 1 - w);
     rotateBoneWorld(T, B.Head, q2);
+    // the eyes take what the head could not (past the neck's limits, or a look only part of the way)
+    const yawFull = Math.atan2(fwd.clone().cross(flat).y, fwd.dot(flat));
+    const pitchFull = Math.asin(Math.max(-1, Math.min(1, want.y)));
+    this.gaze = [
+      Math.max(-1, Math.min(1, this.gaze[0] + ((yawFull - yaw) * w + yaw * (1 - w) * 0.6) / 0.45)),
+      Math.max(-1, Math.min(1, this.gaze[1] + ((pitchFull - pitch) * w + pitch * (1 - w) * 0.6) / 0.3)),
+    ];
   }
+
+  /** Small eye movements on top of where he looks (the director's saccades), `w` of the way. */
+  setGaze(x: number, y: number, w = 1) { this.wander = [x * w, y * w]; }
 
   setExpression(expr: Expression, amount: number) {
-    // Faces belong to the people layer. The stand-in only drops or lifts the head a touch.
+    // the face (toon/face.ts), and the head dropped or lifted a touch with the feeling
     this.exprTilt += (EXPR_HEAD[expr] ?? 0) * amount;
+    this.exprW[expr] = (this.exprW[expr] ?? 0) + amount;
   }
-  setBlink(c: number) { void c; }
-  /** No jaw on these bodies: the head moves a touch with the voice (lifts on the stresses). */
-  setMouth(o: number) { this.exprTilt -= o * 0.045; }
+  setBlink(c: number) { this.blink = Math.max(this.blink, c); }
+  /** The lips move with the voice; the head moves a touch with it too (lifts on the stresses). */
+  setMouth(o: number) { this.exprTilt -= o * (this.face ? 0.02 : 0.045); this.talk = Math.max(this.talk, o); }
 
   endFrame() {
+    if (this.face) {
+      this.face.set({
+        face: toonFaceFor(this.exprW), blink: this.blink, talk: this.talk * 0.85,
+        gaze: [this.gaze[0] + this.wander[0], this.gaze[1] + this.wander[1]],
+      });
+    }
     this.applyFingers();
     if (this.exprTilt) {
       const axis = new this.T.Vector3(0, 1, 0).cross(this.dirOf(0, 0, 1)).normalize();
@@ -347,5 +453,5 @@ class StubActor implements CutsceneActor {
     this.root.updateMatrixWorld(true);
   }
 
-  dispose() { this.root.parent?.remove(this.root); }
+  dispose() { this.face?.dispose(); this.root.parent?.remove(this.root); }
 }

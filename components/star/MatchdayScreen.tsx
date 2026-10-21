@@ -639,6 +639,8 @@ function Opposition({ career, fixture }: { career: CareerState; fixture: Fixture
                 <span className="text-[8px] font-black text-white/40">v</span>
                 <ClubBadge club={f.opponent} kit={kitsOf(f.opponent).home} size={14} />
               </div>
+              {/* Phone fix: the opponent's name was only in title= (hover). */}
+              <div className="mt-0.5 w-full truncate text-center text-[8px] font-black leading-none text-white/60">{short(f.opponent)}</div>
             </div>
           ) : (
             <div key={i} className="rounded-lg border border-dashed border-white/10" />

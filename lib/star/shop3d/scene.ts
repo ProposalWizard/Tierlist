@@ -52,6 +52,7 @@ import { look3dStyle } from "../look3dStyle";
 import { dressShopH } from "./hRoom";
 import { OrbitCam, CAM_MIN_Y } from "../three3d/orbitCam";
 import { safeCompileAsync } from "../three3d/safeCompile";
+import { editCamera, editFov, makeLightEditor, type WalkSceneEdit } from "../sceneEdits/walkEdit";
 
 export interface KitColours { shirt: string; trim: string }
 
@@ -101,6 +102,14 @@ export interface ShopController {
   where: () => { x: number; z: number; yaw: number; camYaw: number; t: number };
   /** Filming only: [wall-clock ms, game seconds] for every frame drawn. */
   filmLog: () => [number, number][];
+  /** 3D Scene Editor (and approved edits in the game): the edit to play with (null = as written). */
+  setEdit: (e: WalkSceneEdit | null) => void;
+  /** Editor only: stand him for a view ("follow", or a card: boots, car, counter, homes, cans) and frame it. */
+  showView: (id: string) => void;
+  /** Editor only: where the camera stands and looks at the last frame. */
+  cameraPose: () => { pos: [number, number, number]; look: [number, number, number]; fov: number };
+  /** Editor only: the room from above for the mini-map. */
+  layout: () => { people: { id: string; x: number; z: number }[]; sunDir: [number, number, number]; bounds: { min: [number, number, number]; max: [number, number, number] } };
   /** What one frame costs to draw: draw calls and triangles. */
   stats: () => { calls: number; triangles: number; pixelRatio: number; loaded: number; shadowRenders?: number; frames?: number; merged?: { before: number; after: number }; quality?: string };
   dispose: () => void;
@@ -170,6 +179,9 @@ export interface ShopOptions {
   atDoor?: boolean;
   /** The shirt number on his back (your squad number; 10 on the test page). */
   number?: number;
+  /** The 3D Scene Editor's edit (/star-scene-editor-dev), or an approved one in the
+   *  game (lib/star/sceneEdits). Absent = the shop exactly as before. */
+  edit?: WalkSceneEdit | null;
 }
 
 /** Your footballer in the shop. Skin and hair are "#rrggbb". */
@@ -231,7 +243,7 @@ async function buildShop(
   // ONE renderer for every 3D place (three3d/perf.ts): garden → shop → garden
   // keeps the same WebGL context and its compiled shaders, instead of a new
   // context (and every shader built again) at each door.
-  const { renderer, release } = acquireRenderer(THREE, container, prof);
+  const { renderer, release, isOwner } = acquireRenderer(THREE, container, prof);
   own.release = release;
   rememberGpu(renderer);
   // LAG (Harry, 5 Oct 2026): the tier's still cap standing still (High 1.5x
@@ -1196,12 +1208,16 @@ async function buildShop(
   window.addEventListener("keydown", kd);
   window.addEventListener("keyup", ku);
 
+  /** The editor's edit (none = as written), and the screen's own lens it starts from. */
+  let edit: WalkSceneEdit | null = opts.edit ?? null;
+  let baseFov = 54;
   const resize = () => {
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     // a tall phone screen sees more of the room with a wider lens
     camera.fov = w / h < 0.7 ? 60 : 54;
+    baseFov = camera.fov;
     lastOff = -1;
     camera.updateProjectionMatrix();
   };
@@ -1336,7 +1352,9 @@ async function buildShop(
   if (disposed) throw new Error("disposed");
 
   const scratchCf = new THREE.Vector3(), scratchCr = new THREE.Vector3(), scratchShot = new THREE.Vector3(); // the loop makes no garbage
-  renderer.setAnimationLoop(() => {
+  // the shared renderer's loop is set and stopped only by its owner: a build thrown away while a
+  // newer one is starting (React's double effects in dev, a quick switch) never stops the live one
+  if (isOwner()) renderer.setAnimationLoop(() => {
     if (disposed) return;
     let dt: number;
     if (opts.fixedStep) dt = opts.fixedStep;
@@ -1442,6 +1460,13 @@ async function buildShop(
     const [camUp, camBack] = orb.lift(2.85, 4.6, 0.95); // the drag's tilt, same distance from him
     want.set(player.position.x, camUp, player.position.z).addScaledVector(cf, -camBack).addScaledVector(cr, 0.3);
     wantLook.set(player.position.x, 0.95, player.position.z).addScaledVector(cf, 2.4).addScaledVector(cr, 0.15);
+    // the editor's view edits (none = as written): walking, and the card shot of what is picked
+    if (edit?.views) {
+      if (edit.views.follow) want.set(...editCamera([want.x, want.y, want.z], [wantLook.x, wantLook.y, wantLook.z], edit.views.follow));
+      if (shot && edit.views[sel.display]) shot.cam = editCamera(shot.cam, shot.look, edit.views[sel.display]);
+      const fov = editFov(baseFov, edit, shot ? sel.display : null, frame);
+      if (Math.abs(fov - camera.fov) > 1e-3) { camera.fov = fov; camera.updateProjectionMatrix(); }
+    }
     if (shot) {
       want.lerp(scratchShot.set(...shot.cam), frame);
       wantLook.lerp(scratchShot.set(...shot.look), frame);
@@ -1551,6 +1576,9 @@ async function buildShop(
   });
 
   const ray = new THREE.Raycaster();
+  // the editor's key light (the warm fill from the front) and exposure; none = as written
+  const lightEdit = makeLightEditor({ key: fill, renderer, lookH: !!hEnh, scene });
+  if (edit) lightEdit(edit);
   const ctrl: ShopController = {
     setStick: (x, y) => { stick = { x, y }; if (Math.hypot(x, y) > 0.05) stopWalk(); },
     setCardOpen: (open) => { framed = open; if (open) orbitHold = 0; },
@@ -1610,6 +1638,29 @@ async function buildShop(
     },
     where: () => ({ x: player.position.x, z: player.position.z, yaw, camYaw, t: gameT }),
     filmLog: () => filmLog,
+    setEdit: (e) => {
+      edit = e;
+      lightEdit(e);
+      if (!e?.views) { camera.fov = baseFov; camera.updateProjectionMatrix(); }
+    },
+    showView: (id) => {
+      stopWalk();
+      if (id === "follow" || !displays[id as DisplayId] || !ZONES.some((z) => z.id === id)) {
+        framed = false;
+        ctrl.place(START.x, START.z, Math.PI);
+        return;
+      }
+      const p: Picked = { display: id as DisplayId, index: 0 };
+      ctrl.select(p.display, 0);
+      const s0 = standFor(p);
+      ctrl.place(s0.at[0], s0.at[1], Math.atan2(s0.face[0] - s0.at[0], s0.face[1] - s0.at[1]));
+      framed = true; orbitHold = 0;
+    },
+    cameraPose: () => ({ pos: [camera.position.x, camera.position.y, camera.position.z], look: [camLook.x, camLook.y, camLook.z], fov: camera.fov }),
+    layout: () => {
+      const d = fill.position.clone().normalize();
+      return { people: [{ id: "you", x: player.position.x, z: player.position.z }], sunDir: [d.x, d.y, d.z], bounds: { min: [-ROOM.x, 0, -ROOM.z], max: [ROOM.x, ROOM.h, ROOM.z] } };
+    },
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio: renderer.getPixelRatio(), loaded, shadowRenders, frames: drawn, merged: frozen, quality: tier }),
     dispose: () => {
       disposed = true;
@@ -1617,7 +1668,7 @@ async function buildShop(
       savings.dispose();
       hEnh?.dispose();
       hRoom?.dispose();
-      renderer.setAnimationLoop(null);
+      if (isOwner()) renderer.setAnimationLoop(null);
       ro.disconnect();
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);

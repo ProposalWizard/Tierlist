@@ -22,6 +22,11 @@ import ClubBadge from "./ClubBadge";
 import { FixturesPane, ScoutPane } from "./MatchWeekPanes";
 import { short } from "./HomeHub";
 import { BarButton, BottomBar, Chev, EdgeArrows, ScreenShell, useClubTheme } from "./ui";
+import type { CupId } from "@/lib/star/cups";
+import { lazyScreen } from "@/lib/star/lazyScreen";
+
+/** A domestic cup's own screen (Table → the cup's tab → Open). */
+const CupScreen = lazyScreen(() => import("./CupScreen"));
 
 export const WEEK_VIEWS = [
   { id: "results", label: "Results", icon: "📋" },
@@ -51,6 +56,9 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
   const [view, setViewState] = useState<WeekView>(initialView ?? lastView);
   const setView = (v: WeekView) => { lastView = v; setViewState(v); };
   const [bell, setBell] = useState(false);
+  // The cup's own screen, over this page; Back returns to the same tab.
+  const [cup, setCup] = useState<CupId | null>(null);
+  useEffect(() => { void CupScreen.preload().catch(() => {}); }, []);
   const [ticks, setTicks] = useState<string[]>(() => followedClubs());
   const i = WEEK_VIEWS.findIndex((v) => v.id === view);
   const here = WEEK_VIEWS[i];
@@ -62,6 +70,10 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
   const rung = ticks.length > 0 || followedFixtures().some((f) => f.season === career.season);
 
   return (
+    <>
+    {cup && <CupScreen career={career} competition={cup} hud={hud} onBack={() => setCup(null)} onPlay={nextFixture ? onPlay : undefined} />}
+    {/* Kept mounted under the cup's screen, so Back lands on the same tab. */}
+    <div style={cup ? { display: "none" } : undefined}>
     <ScreenShell
       bare
       tone="pitch"
@@ -85,7 +97,7 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
           <span className="inline-flex items-center justify-center gap-1.5">
             {here.label}
             {onHelp && (
-              <button onClick={onHelp} data-help-button aria-label="Help — show me around" className="kib-press flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-gray-600 text-[14px] font-black leading-none text-amber-300 hover:bg-gray-500" style={{ borderRadius: 3 }}>?</button>
+              <button onClick={onHelp} data-help-button aria-label="Help — show me around" className="kib-press relative flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-gray-600 text-[14px] font-black leading-none text-amber-300 hover:bg-gray-500" style={{ borderRadius: 3 }}><span aria-hidden className="absolute -inset-[9px]" />?</button>
             )}
           </span>
         </EdgeArrows>
@@ -93,11 +105,13 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
         {view === "fixtures" ? <FixturesPane career={career} next={nextFixture} />
           : view === "scout" ? <ScoutPane career={career} fixture={nextFixture} />
           : view === "world" ? <WorldPane career={career} />
-          : <LeagueScreen career={career} view={view} hideTabs />}
+          : <LeagueScreen career={career} view={view} hideTabs onOpenCup={setCup} />}
       </div>
 
       {bell && <AlertsSheet career={career} ticks={ticks} onTick={(c) => setTicks(toggleFollowedClub(c))} onClose={() => setBell(false)} />}
     </ScreenShell>
+    </div>
+    </>
   );
 }
 

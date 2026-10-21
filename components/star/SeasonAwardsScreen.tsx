@@ -8,7 +8,9 @@ import { kitsOf, labelInk } from "@/lib/star/kits";
 import { shortClub } from "@/lib/star/media/grammar";
 import { formationOf } from "@/lib/star/formations";
 import { faceOrFake } from "@/lib/star/fakeFaces";
+import { PHOTO_FACES } from "@/lib/star/faceStyle";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import Headshot3D, { HeadshotCareer, useHeadshotId } from "./Headshot3D";
 import { Burst, PressButton, Shine, clubTheme } from "./ui";
 import { Screen, Rays, Kicker, SectionLabel } from "./ui/Screen";
 
@@ -34,9 +36,25 @@ interface Props {
   onContinue: () => void;
 }
 
-/** A real face when the database has one, otherwise that player's own fake
- *  face — never a silhouette (Harry, v0.15 item 37). */
-function Face({ image, name, size }: { image?: string; name: string; size: number }) {
+/** How far a round chip crops in on the headshot (head and a little collar, not the chest). */
+const ROUND_ZOOM = 1.4;
+
+/**
+ * His face. Photo faces are off (PHOTO_FACES): his headshot shot from the 3D
+ * model, in his club's kit (B15, 20 Oct 2026; Headshot3D.tsx; the drawn head
+ * until it is made, and if it can't be). With photos on: a real face when the
+ * database has one, otherwise that player's own fake face — never a
+ * silhouette (Harry, v0.15 item 37).
+ */
+function Face({ image, name, club, isYou, size, ring = "border border-white/20" }: { image?: string; name: string; club: string; isYou?: boolean; size: number; ring?: string }) {
+  const idOf = useHeadshotId();
+  if (!PHOTO_FACES) {
+    const kit = kitsOf(club).home;
+    return (
+      <Headshot3D id={idOf(name, club, isYou)} you={isYou} kit={kit} size={size} zoom={ROUND_ZOOM}
+        className={`rounded-full ${ring}`} style={{ backgroundColor: kit.shirt }} />
+    );
+  }
   return (
     <ImageWithFallback
       src={faceOrFake(image, name)}
@@ -115,7 +133,7 @@ function AwardCard({ id, winner, index }: { id: keyof typeof AWARD_META; winner:
       </div>
       {winner ? (
         <div className="mt-1.5 flex items-center gap-2">
-          <Face image={winner.image} name={winner.name} size={34} />
+          <Face image={winner.image} name={winner.name} club={winner.club} isYou={winner.isYou} size={34} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-black text-white">
               {winner.name}{winner.isYou ? " (You)" : ""}
@@ -170,13 +188,18 @@ function TeamOfSeasonPitch({ career }: { career: CareerState }) {
           >
             <div className="kit-reveal flex w-full flex-col items-center" style={{ animationDelay: `${1300 + i * 70}ms` }}>
             <div className="relative">
-              <ImageWithFallback
-                src={faceOrFake(m.image, m.name)}
-                fallbackSrc={faceOrFake(null, m.name)}
-                alt=""
-                className={`h-9 w-9 rounded-full border-2 bg-black/40 object-cover shadow-md ${
-                  m.isYou ? "border-amber-300" : "border-white/80"}`}
-              />
+              {!PHOTO_FACES ? (
+                <Face name={m.name} club={m.club} isYou={m.isYou} size={36}
+                  ring={`border-2 shadow-md ${m.isYou ? "border-amber-300" : "border-white/80"}`} />
+              ) : (
+                <ImageWithFallback
+                  src={faceOrFake(m.image, m.name)}
+                  fallbackSrc={faceOrFake(null, m.name)}
+                  alt=""
+                  className={`h-9 w-9 rounded-full border-2 bg-black/40 object-cover shadow-md ${
+                    m.isYou ? "border-amber-300" : "border-white/80"}`}
+                />
+              )}
               <span className="absolute -bottom-0.5 -right-0.5">
                 <Crest club={m.club} size={14} />
               </span>
@@ -199,7 +222,12 @@ function TeamOfSeasonPitch({ career }: { career: CareerState }) {
   );
 }
 
-export default function SeasonAwardsScreen({ career, onContinue }: Props) {
+/** The screen, with the squad ids for the headshots (the same face as on his Player of the Month card). */
+export default function SeasonAwardsScreen(props: Props) {
+  return <HeadshotCareer career={props.career}><SeasonAwardsInner {...props} /></HeadshotCareer>;
+}
+
+function SeasonAwardsInner({ career, onContinue }: Props) {
   const [world, setWorld] = useState(false);
   const stats = career.lastSeasonAwardStats;
   if (!stats) return null;

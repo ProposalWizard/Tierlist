@@ -5,7 +5,7 @@ import { sortLeague } from "../season";
 import type { Archetype, AvatarGlyph, MediaAccount, Platform, Tag, VoiceProfile } from "./types";
 import { kitsOf } from "../kits";
 import { hashSeed, initialsOf, rngFor, surname } from "./grammar";
-import { divisionOf, leagueNameFor, type CareerDivision } from "../calendar";
+import { divisionOf, leagueNameFor, inLowerLeagueTrophy, type CareerDivision } from "../calendar";
 
 /**
  * THE ROSTER
@@ -348,10 +348,13 @@ export function buildRoster(career: CareerState): MediaAccount[] {
   // division, so a post's competition finds it (feed.ts highlightPosts).
   out.push(account(leagueAccountSeed(career), seedKey, used));
 
-  for (const comp of ["FA Cup", "Champions League", "Europa League"]) {
+  // The Lower League Trophy's own account, only for a club that plays it.
+  const comps = ["FA Cup", "Champions League", "Europa League",
+    ...(inLowerLeagueTrophy(divisionOf(career)) ? ["Lower League Trophy"] : [])];
+  for (const comp of comps) {
     out.push(account({
       handle: "@" + comp.replace(/\s+/g, ""), name: comp, archetype: "competition",
-      verified: true, followers: comp === "Champions League" ? 9_000_000 : 1_400_000,
+      verified: true, followers: comp === "Champions League" ? 9_000_000 : comp === "Lower League Trophy" ? 60_000 : 1_400_000,
     }, seedKey, used));
   }
 

@@ -8,6 +8,7 @@ import { clubReputation, clubStanding } from "./clubReputation";
 import { offerClauses, rescaleClauses } from "./contracts";
 import { offerStanding, weeklyWageFor, goalBonusFor, assistBonusFor, signingOnFee } from "./economy";
 import { playerOverall, squadNeed, positionGroup, CROWDED_AT } from "./transferRequest";
+import { lowerLeagueTrophyInterest } from "./lowerLeagueTrophy";
 
 /**
  * THE CLUBS INTERESTED IN YOU (rebuilt 18 Oct 2026, replacing "Find a new club").
@@ -43,6 +44,8 @@ import { playerOverall, squadNeed, positionGroup, CROWDED_AT } from "./transferR
  *
  *   + a gap in your position (nobody better than you there)
  *   − three or more better than you there (crowded)
+ *   + a good Lower League Trophy run, for clubs in League One down to
+ *     North/South only: semi-final +0.05, winner +0.1 (lowerLeagueTrophy.ts)
  *   ± a small seeded wobble per club, so the line is not a ruler
  *
  * The levels: National League North/South 0, National League 1, League Two 2,
@@ -413,7 +416,8 @@ export function windowInterest(career: CareerState, window: WindowKind): WindowI
       // A club that changed league is judged by its new league alone: where
       // it finished in the old one says nothing about its place in the new.
       const aim = moved ? levelOf(division) + (clubStanding(club, division) - 0.5) * 2 * AIM_REPUTATION : clubAim(career, was ?? division, club, window) - levelOf(was ?? division) + levelOf(division);
-      const margin = you + wobble + (gap ? NEED_BONUS : 0) - (crowded ? CROWDED_PENALTY : 0) - aim;
+      const margin = you + wobble + (gap ? NEED_BONUS : 0) - (crowded ? CROWDED_PENALTY : 0)
+        + lowerLeagueTrophyInterest(career, division) - aim;
       if (margin < 0) continue;
 
       // Terms: the same wage rules as every other offer in the game.

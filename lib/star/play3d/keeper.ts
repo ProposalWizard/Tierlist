@@ -40,11 +40,30 @@ export const READ_TIME = 0.75, READ_RUSH = 0.7;
  * grab 0.42 + 0.22) let him cover the whole goal: 86–100% of on-target shots saved,
  * corners included. Real keepers move about 3–5 m/s across the goal and save roughly
  * 70% of on-target shots, far fewer into the corners. tests/star/play3dKeeperRate.mts pins it.
+ *
+ * 20 Oct 2026 (Harry: "Keepers in the 3D minigames are overpowered"; fair is "about
+ * 1 in 3 shots saved"). Measured with bot shooters (tests/star/play3dSaveRate.mts), a
+ * decent player's on-target shots were still saved 70% in Free Roam, 52% in Headers &
+ * Volleys and 69% in Wembley; now 33%, 31% and 33% (a good player 14–20%, a careless
+ * one 54–56%). His covering was a cliff: every ball inside about 2.6 m
+ * of his spot was saved, every ball outside it went in. Now:
+ *   - a beat later off the mark (react 0.30 → 0.33 s, less his rating × 0.1),
+ *   - a worse read of where it's going (error 0.55 − 0.25 × rating → 1.1 − 0.5 × rating:
+ *     0.39 → 0.77 m for a 66, so his rating counts for more),
+ *   - his body goes less far (reach 0.70 + 1.0 × rating → 0.31 + 1.3 × rating: 1.36 → 1.17 m
+ *     for a 66) and so do his hands past it (HAND_REACH 0.80 → 0.66 m),
+ *   - and how far he stretches changes from dive to dive (KEEPER_STRETCH_SPREAD, new),
+ *     so the edge of what he can reach is a slope, not a wall.
+ * Dive speed and grab are unchanged. A better keeper still saves more (play3dKeeperRate.mts).
  */
-export const KEEPER_REACT = 0.3, KEEPER_READ_ERR = 0.55;
-export const KEEPER_REACH = 0.7, KEEPER_REACH_SKILL = 1.0;
+export const KEEPER_REACT = 0.33, KEEPER_READ_ERR = 1.1, KEEPER_READ_SKILL = 0.5;
+export const KEEPER_REACH = 0.31, KEEPER_REACH_SKILL = 1.3;
 export const KEEPER_DIVE_SPEED = 3.2, KEEPER_DIVE_SKILL = 1.8;
 export const KEEPER_GRAB = 0.34;
+/** How far his hands go past his body at full stretch (m). Was 0.8. */
+export const HAND_REACH = 0.66;
+/** His stretch on one dive: body and hand reach × (1 ± this, one standard deviation), kept to 0.5–1.6. New, 20 Oct 2026. */
+export const KEEPER_STRETCH_SPREAD = 0.3;
 /**
  * A strike from close in (under CLOSE_RANGE m from him: a header or volley off a
  * cross, a first-time finish in the box). He has watched the cross come in and is
@@ -56,9 +75,11 @@ export const KEEPER_GRAB = 0.34;
  * and further are untouched (play3dKeeperRate.mts).
  * Without it, Headers & Volleys went from 3.1 to 5.7 goals per 10 against a
  * 60 keeper when the keeper above was made beatable (9 Oct 2026).
+ * 20 Oct 2026: softer (react 0.10 → 0.13 s, spring 4 → 3.5 m/s, spread 0.9 → 0.65 m)
+ * so a decent header, volley or close finish is saved about 1 in 3, not 1 in 2.
  */
 export const CLOSE_RANGE = 10.5, CLOSE_FULL = 7.5;
-export const CLOSE_REACT = 0.1, CLOSE_SPRING = 4, CLOSE_REACH = 0.9;
+export const CLOSE_REACT = 0.13, CLOSE_SPRING = 3.5, CLOSE_REACH = 0.65;
 
 /** Where he stands: on the line from goal centre to the ball, a little off his line. */
 export function keeperSpot(b: Ball3): { x: number; y: number } {
@@ -105,9 +126,11 @@ export function stepKeeper3d(k: P3, b: Ball3, dt: number, rng: Rng, holding: boo
       m.react = KEEPER_REACT + (CLOSE_REACT - KEEPER_REACT) * close - r * 0.1 + Math.abs(gauss(rng)) * 0.05;
       // his read: worse the less time he has (a close-range header or volley is a guess)
       const rush = clamp(1 - line.t / READ_TIME, 0, 1);
-      m.tx = clamp(line.x + gauss(rng) * (KEEPER_READ_ERR - r * 0.25 + rush * READ_RUSH), POST_L - 0.6, POST_R + 0.6);
+      m.tx = clamp(line.x + gauss(rng) * (KEEPER_READ_ERR - r * KEEPER_READ_SKILL + rush * READ_RUSH), POST_L - 0.6, POST_R + 0.6);
       m.tz = clamp(line.z, 0.2, GOAL_H + 0.2);
       m.x0 = k.x; m.dt = 0;
+      // how far he gets this time: some dives he finds an extra yard, some he falls short
+      m.stretch = clamp(1 + gauss(rng) * KEEPER_STRETCH_SPREAD, 0.5, 1.6);
       // a ball coming straight at him he reads well (it doesn't move across his eyes): block it standing
       if (Math.abs(line.x - k.x) < BLOCK_X && (m.tz as number) < 1.9) { m.mode = "block"; m.tx = line.x + gauss(rng) * 0.1; }
       else m.mode = Math.abs((m.tx as number) - k.x) < BLOCK_X && (m.tz as number) < 1.9 ? "block" : "dive";
@@ -134,7 +157,8 @@ export function stepKeeper3d(k: P3, b: Ball3, dt: number, rng: Rng, holding: boo
     } else {
       const tx = m.tx as number, tz = m.tz as number, x0 = m.x0 as number;
       const side = Math.sign(tx - x0) || 1;
-      const reach = KEEPER_REACH + r * KEEPER_REACH_SKILL + ((m.close as number) ?? 0) * CLOSE_REACH * (0.4 + r); // how far his body can go sideways
+      const stretch0 = (m.stretch as number) ?? 1;
+      const reach = (KEEPER_REACH + r * KEEPER_REACH_SKILL + ((m.close as number) ?? 0) * CLOSE_REACH * (0.4 + r)) * stretch0; // how far his body can go sideways
       const speed = KEEPER_DIVE_SPEED + r * KEEPER_DIVE_SKILL + ((m.close as number) ?? 0) * CLOSE_SPRING * (0.4 + r); // m/s across his goal
       const wantX = clamp(tx - side * 0.75, x0 - reach, x0 + reach);
       const step = clamp(wantX - k.x, -speed * dt, speed * dt);
@@ -147,7 +171,7 @@ export function stepKeeper3d(k: P3, b: Ball3, dt: number, rng: Rng, holding: boo
       // high AND wide is the hardest save: a full stretch can't also go all the way up
       const stretch = clamp(Math.abs(wantX - x0) / Math.max(0.1, reach), 0, 1);
       const topZ = 2.45 - stretch * (0.55 - r * 0.25);
-      const hx = k.x + side * 0.8 * prog, hz = 0.6 + (Math.min(tz, topZ) - 0.6) * prog;
+      const hx = k.x + side * HAND_REACH * stretch0 * prog, hz = 0.6 + (Math.min(tz, topZ) - 0.6) * prog;
       const dHands = Math.hypot(b.x - hx, b.y - k.y, b.z - hz);
       const dBody = Math.hypot(b.x - k.x, b.y - k.y, Math.max(0, b.z - 1.8));
       const grab = KEEPER_GRAB + r * 0.16;

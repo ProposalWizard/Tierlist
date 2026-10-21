@@ -5,8 +5,10 @@
  * 5 Oct 2026: "Rebuild that office for the manager relationship
  * conversations"). Sample player and lines; the real chat mounts the same
  * stage (components/star/Office3D.tsx) from BossChat.tsx.
+ * On the Broadcast frame (A-8, 20 Oct 2026); ?bare=1 opens it full screen as
+ * before. Approved 3D Scene Editor edits ticked for "the test page" play here.
  */
-import Link from "next/link";
+import BackArrow from "@/components/admin/BackArrow";
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import PageGuide from "@/components/admin/PageGuide";
@@ -17,6 +19,8 @@ import { SAMPLE_TERMS } from "@/lib/star/signing3d";
 import { kitsOf } from "@/lib/star/kits";
 import type { SigningYou } from "@/lib/star/signing3dScene";
 import { managerFor, type OfficeSpeaker } from "@/components/star/Office3D";
+import { BroadcastPage, Btn, Pill } from "@/components/admin/broadcast/BroadcastPage";
+import "../stage3d.css";
 
 const Office3D = dynamic(() => import("@/components/star/Office3D"), { ssr: false });
 const INK = "#f8fafc";
@@ -32,6 +36,9 @@ export default function OfficePage() {
   const [line, setLine] = useState(0);
   const [speaker, setSpeaker] = useState<OfficeSpeaker>("boss");
   const [fitted, setFitted] = useState<FittedHead | null | undefined>(undefined);
+  // ?bare=1: full screen, as before the frame
+  const [bare, setBare] = useState(false);
+  useEffect(() => { setBare(new URLSearchParams(window.location.search).get("bare") === "1"); }, []);
   useEffect(() => {
     document.body.classList.add("knowitball-immersive");
     return () => document.body.classList.remove("knowitball-immersive");
@@ -55,20 +62,47 @@ export default function OfficePage() {
     background: on ? INK : "rgba(255,255,255,.12)", color: on ? "#07090f" : INK,
   });
   const cur = LINES[line];
+  const next = () => { const n = (line + 1) % LINES.length; setLine(n); setSpeaker(LINES[n].who); };
+  if (!bare) {
+    // On the Broadcast frame (A-8, 20 Oct 2026): the office in the stage, who talks in the title bar
+    return (
+      <>
+        <BroadcastPage title="Manager's office" sub="The 3D stage for every talk with your manager. Sample player and lines." width={1440}>
+          <div className="s3-bar">
+            <Pill on={speaker === "boss"} onClick={() => setSpeaker("boss")}><span data-boss>He talks</span></Pill>
+            <Pill on={speaker === "you"} onClick={() => setSpeaker("you")}><span data-you>You talk</span></Pill>
+            <Btn href="/star-scene-editor-dev?place=office" title="Camera and light for the office">Scene editor ›</Btn>
+          </div>
+          <div className="s3-stage" style={{ background: "#0b0d12" }}>
+            {fitted !== undefined && (
+              <Office3D you={you} manager={managerFor(SAMPLE_TERMS.manager)} managerName={SAMPLE_TERMS.manager} club={SAMPLE_TERMS.club}
+                speaker={speaker} where="test" style={{ position: "absolute", inset: 0 }} />
+            )}
+            <div className="s3-line" data-bubble-clear>
+              <small>{cur.who === "boss" ? `${SAMPLE_TERMS.manager} · Manager` : "You"}</small>
+              <b>{cur.text}</b>
+              <button data-next className="bc-btn" style={{ marginTop: 8 }} onClick={next}>Next line ›</button>
+            </div>
+          </div>
+        </BroadcastPage>
+        <PageGuide page="/star-3d-area-dev/office" corner="bottom-left" />
+      </>
+    );
+  }
   return (
     <main style={{ position: "fixed", inset: 0, background: "#0b0d12", color: INK, fontFamily: "system-ui, sans-serif" }}>
       {fitted !== undefined && (
         <Office3D you={you} manager={managerFor(SAMPLE_TERMS.manager)} managerName={SAMPLE_TERMS.manager} club={SAMPLE_TERMS.club}
-          speaker={speaker} style={{ position: "absolute", inset: 0 }} />
+          speaker={speaker} where="test" style={{ position: "absolute", inset: 0 }} />
       )}
       <div style={{ position: "absolute", top: 10, left: 10, right: 10, display: "flex", gap: 6, alignItems: "center" }}>
-        <Link href="/star-3d-area-dev" aria-label="Back" style={{ ...chip(false), textDecoration: "none" }}>‹</Link>
+        <BackArrow />
         <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: "#fbbf24" }}>MANAGER&apos;S OFFICE</span>
         <span style={{ flex: 1 }} />
         <button data-boss onClick={() => setSpeaker("boss")} style={chip(speaker === "boss")}>He talks</button>
         <button data-you onClick={() => setSpeaker("you")} style={chip(speaker === "you")}>You talk</button>
       </div>
-      <div style={{ position: "absolute", left: 10, right: 10, bottom: 18, padding: "10px 12px", borderRadius: 6, background: "rgba(8,10,16,.86)", borderLeft: "3px solid #fbbf24" }}>
+      <div data-bubble-clear style={{ position: "absolute", left: 10, right: 10, bottom: 18, padding: "10px 12px", borderRadius: 6, background: "rgba(8,10,16,.86)", borderLeft: "3px solid #fbbf24" }}>
         <div style={{ fontSize: 11, fontWeight: 900, color: "#fbbf24", textTransform: "uppercase" }}>{cur.who === "boss" ? `${SAMPLE_TERMS.manager} · Manager` : "You"}</div>
         <div style={{ fontSize: 16, fontWeight: 800 }}>{cur.text}</div>
         <button data-next onClick={() => { const n = (line + 1) % LINES.length; setLine(n); setSpeaker(LINES[n].who); }} style={{ ...chip(false), marginTop: 8 }}>Next line ›</button>

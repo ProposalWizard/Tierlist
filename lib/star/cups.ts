@@ -3,6 +3,7 @@ import type { CareerDivision } from "./calendar";
 import {
   PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS, PROMOTION_POOL_CLUBS,
   LEAGUE_ONE_CLUBS, LEAGUE_TWO_CLUBS, NATIONAL_LEAGUE_CLUBS,
+  NATIONAL_LEAGUE_NORTH_CLUBS, NATIONAL_LEAGUE_SOUTH_CLUBS,
 } from "./clubs";
 import { hasExtraTime, extraTimeScore, simulateShootout } from "./shootout";
 import { simulateFixtureScore } from "./season";
@@ -30,7 +31,7 @@ import { simulateFixtureScore } from "./season";
  * simpler: a round is a list of survivors, shuffled and paired.
  */
 
-export type CupId = "FA Cup" | "League Cup";
+export type CupId = "FA Cup" | "League Cup" | "Lower League Trophy";
 
 /**
  * The League Cup's own five rounds — unchanged. The FA Cup is now a
@@ -53,17 +54,30 @@ export const FA_CUP_ROUND_NAMES = [
   "Third Round", "Fourth Round", "Fifth Round", "Quarter-Final", "Semi-Final", "Final",
 ];
 
+/**
+ * The Lower League Trophy (Mikey asked, Harry answered, 20 Oct 2026): every
+ * club in League One, League Two, the National League and both regions —
+ * 120 clubs — into a 128-place draw. Eight byes go straight to the Round of
+ * 64, so Round 1 is 56 ties. Seven rounds, 119 matches, one winner. See
+ * lib/star/lowerLeagueTrophy.ts for who is in it and who gets the byes.
+ */
+export const LOWER_LEAGUE_TROPHY_ROUND_NAMES = [
+  "Round 1", "Round of 64", "Round of 32", "Round of 16", "Quarter-Final", "Semi-Final", "Final",
+];
+
 /** The old 64-club FA Cup, for a save whose cup was drawn before the ten rounds. */
 export const FA_CUP_ROUND_NAMES_V1 = ["Round of 64", "Round of 32", "Round of 16", "Quarter-Final", "Semi-Final", "Final"];
 
 /** Which round-name list a NEW cup of this competition plays through. */
 export function roundNamesFor(competition: CupId): string[] {
+  if (competition === "Lower League Trophy") return LOWER_LEAGUE_TROPHY_ROUND_NAMES;
   return competition === "FA Cup" ? FA_CUP_ROUND_NAMES : CUP_ROUND_NAMES;
 }
 
 /** The rounds THIS cup plays through (an old save's FA Cup keeps its six). */
 export function cupRoundNames(state: CupState): string[] {
   if (state.names) return state.names;
+  if (state.competition === "Lower League Trophy") return LOWER_LEAGUE_TROPHY_ROUND_NAMES;
   return state.competition === "FA Cup" ? FA_CUP_ROUND_NAMES_V1 : CUP_ROUND_NAMES;
 }
 
@@ -99,8 +113,11 @@ export function isTwoLeggedRound(competition: CupId, round: string): boolean {
 export interface CupRound {
   name: string;
   ties: CupTie[];
-  /** Clubs through to the next round without playing this one (the FA
-   *  Cup's 3rd Qualifying Round). Never the player's club. */
+  /**
+   * Clubs through to the next round without playing this one (the FA Cup's
+   * 3rd Qualifying Round; the Lower League Trophy's eight byes in Round 1).
+   * Never the player's club in the FA Cup.
+   */
   byes?: string[];
 }
 
@@ -369,6 +386,19 @@ export function drawRound(name: string, survivors: string[], rng: () => number):
 }
 
 /**
+ * Open a cup whose first round has byes: `byes` go straight through, the rest
+ * are paired out of the hat. The Lower League Trophy uses it (120 clubs, a
+ * 128-place draw, so 8 byes and 56 ties).
+ */
+export function openCupWithByes(
+  competition: CupId, field: string[], byes: string[], rng: () => number,
+): CupState {
+  const byeSet = new Set(byes);
+  const first = drawRound(roundNamesFor(competition)[0], field.filter(c => !byeSet.has(c)), rng);
+  return { competition, rounds: [{ ...first, byes: [...byes] }] };
+}
+
+/**
  * Open a cup: everybody in, first round drawn.
  *
  * The field is the division actually being played — guaranteed, whichever
@@ -490,6 +520,11 @@ export function cupStrength(club: string, league: LeagueTeam[]): number {
   if (LEAGUE_ONE_CLUBS.includes(club)) return belowStrength(club, "league_one");
   if (LEAGUE_TWO_CLUBS.includes(club)) return belowStrength(club, "league_two");
   if (NATIONAL_LEAGUE_CLUBS.includes(club)) return belowStrength(club, "national_league");
+  // North and South: a rung under the National League (only the Lower
+  // League Trophy draws them).
+  if (NATIONAL_LEAGUE_NORTH_CLUBS.includes(club) || NATIONAL_LEAGUE_SOUTH_CLUBS.includes(club)) {
+    return belowStrength(club, "national_league") - 4;
+  }
   if (PROMOTION_POOL_CLUBS.includes(club)) return belowStrength(club, "pool");
   // A padded filler name ("X B") from a division too small to fill the
   // field on real clubs alone.
@@ -593,7 +628,8 @@ export function playCupRound(
   const winners = played.map(tieWinner).filter((w): w is string => !!w);
   const names = cupRoundNames(state);
   const nextName = names[Math.min(rounds.length, names.length - 1)];
-  // Next round: the winners, anyone through on a bye, and whoever joins now.
+  // Next round: the winners, anyone through on a bye (the FA Cup's 3rd
+  // Qualifying Round, the Lower League Trophy's Round 1), and whoever joins now.
   const joining = state.entries?.[nextName] ?? [];
   const field = [...winners, ...(round.byes ?? []), ...joining];
 
@@ -666,11 +702,17 @@ export function yourTie(state: CupState, club: string): CupTie | null {
   return round.ties.find(t => t.home === club || t.away === club) ?? null;
 }
 
+/** A bye in the round being played: through to the next without a game. */
+export function hasBye(state: CupState, club: string): boolean {
+  if (state.winner) return false;
+  return !!currentRound(state)?.byes?.includes(club);
+}
+
 /** Are you still in this cup? (Including still waiting to join it.) */
 export function stillIn(state: CupState, club: string): boolean {
   if (state.winner) return state.winner === club;
   if (yourTie(state, club) !== null) return true;
-  if (currentRound(state)?.byes?.includes(club)) return true;
+  if (hasBye(state, club)) return true;
   return Object.values(state.entries ?? {}).some(list => list.includes(club));
 }
 

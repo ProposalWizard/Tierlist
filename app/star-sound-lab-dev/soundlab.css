@@ -89,7 +89,7 @@
 .sl-row-name .sl-tag:first-child { margin-left: 0; }
 .sl-row-stars { font-style: normal; color: var(--bc-amber); margin-left: 4px; }
 .sl-radio { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: rgba(0, 6, 24, 0.35) !important; }
-.sl-radio i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--bc-ink2); box-sizing: border-box; }
+.sl-radio i { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--bc-ink2); box-sizing: border-box; }
 .sl-radio[aria-pressed="true"] i { border-color: var(--bc-amber); background: radial-gradient(circle, var(--bc-amber) 45%, transparent 50%); }
 .sl-radio span, .sl-row-edit span { font-size: 12px; font-weight: 800; color: var(--bc-ink2); text-transform: uppercase; }
 .sl-row-edit { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 18px; background: rgba(0, 6, 24, 0.35) !important; }

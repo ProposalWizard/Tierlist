@@ -6,8 +6,22 @@
  * messages; an amber dot = a new job given to you.
  *
  * Mounted once by GlobalNav for admins only, portaled into <body> so it
- * survives full-screen pages. It never sits on a button: if the corner is
- * taken it steps up the screen until it is clear (like the admin tab).
+ * survives full-screen pages.
+ *
+ * Where it sits (Harry, 20 Oct 2026: "fixed at bottom left on every page …
+ * as long as, if it is covering something, I can still press it"): always
+ * bottom left (just right of the admin side menu on a computer), small, and
+ * only the round button itself takes taps, so anything it does not cover is
+ * pressable. While you scroll or drag it fades to 40% and lets every tap
+ * through, so what is under it shows and can be pressed. Over a control it
+ * stays half see-through so you can see what is beneath. (It used to hop up
+ * the screen to dodge things; that is gone.)
+ *
+ * A PAGE'S OWN BOTTOM CONTROLS (B13, 20 Oct 2026). A page can mark a control
+ * near the bottom-left with `data-bubble-clear` (BUBBLE_CLEAR); the bubble
+ * then sits just above it instead of on it. Only marked controls move it, so
+ * it never wanders. First used for "Next line ›" in the Manager's Office and
+ * the dialogue bar in the 3D signing, which it covered on a phone.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -16,25 +30,28 @@ import { usePathname } from "next/navigation";
 import { ADMIN_PAGES } from "@/lib/adminRegistry";
 import { useAdminLook } from "@/lib/adminLook";
 import { TEAM_ROOM } from "@/lib/teamRoom/config";
-import { bubbleOn, newGivenTasks, unreadChat } from "@/lib/teamRoom/logic";
-import { useTeamRoom } from "@/lib/teamRoom/store";
+import { BUBBLE_CLEAR, BUBBLE_EDGE as EDGE, BUBBLE_SIZE as SIZE, bubbleBottom, bubbleOn, newGivenTasks, unreadChat } from "@/lib/teamRoom/logic";
+import { newPushedJobs } from "@/lib/teamRoom/jobs";
+import { waitingOnMe } from "@/lib/teamRoom/extras";
+import { startPointing, useTeamRoom } from "@/lib/teamRoom/store";
 import { ChatThread, RoomGate, TodoList } from "./parts";
+import PointLayer from "./PointLayer";
 import "./teamRoom.css";
 
 const ADMIN_URLS = ADMIN_PAGES.map((p) => p.url);
 const OPEN_KEY = "kib-team-pop";
-const SIZE = 50;
-const TRY = [16, 80, 144, 208, 272];
-// Never on a control, and never on words or pictures either (UI lookover, 19 Oct
-// 2026: it covered titles, table rows and notes on eight admin pages).
-const BUSY = "button, a, input, select, textarea, canvas, img, svg, video, h1, h2, h3, h4, p, label, li, td, th, .ash-side, [role='button'], [data-tour]";
+/** How long it stays faded after the last scroll or drag. */
+const QUIET_MS = 700;
+const CONTROL = "button, a, input, select, textarea, label, [role='button'], [role='slider'], [role='tab']";
 
 export default function ChatBubble() {
   const path = usePathname() ?? "/";
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   if (!mounted || !bubbleOn(path, ADMIN_URLS)) return null;
-  return createPortal(<Bubble path={path} />, document.body);
+  // The point layer (Shift+X, and showing a point someone sent) stays on even
+  // while the full chat page hides the bubble.
+  return createPortal(<><Bubble path={path} /><PointLayer path={path} /></>, document.body);
 }
 
 function Bubble({ path }: { path: string }) {
@@ -42,46 +59,74 @@ function Bubble({ path }: { path: string }) {
   const look = useAdminLook();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"chat" | "todo">("chat");
-  const [bottom, setBottom] = useState(16);
-  const [left, setLeft] = useState(16);
+  const [bottom, setBottom] = useState(EDGE);
+  const [left, setLeft] = useState(EDGE);
+  const [quiet, setQuiet] = useState(false);
+  const [over, setOver] = useState(false);
   const fab = useRef<HTMLButtonElement>(null);
 
-  // Find a corner spot with nothing to tap underneath.
+  // Always the bottom-left corner. On a computer the admin side menu fills the
+  // left edge, so it sits just right of the menu (not on "Back to Knowitball").
+  // Above a control the page marked with data-bubble-clear (BUBBLE_CLEAR).
   const place = useCallback(() => {
-    const el = fab.current;
-    if (!el) return;
-    const prev = el.style.visibility;
-    el.style.visibility = "hidden";
-    // The admin side menu fills the left edge on a computer: start just right of it.
     const side = document.querySelector(".ash-side")?.getBoundingClientRect();
-    const xs = side && side.right > 0 && side.left >= 0 && side.width < window.innerWidth / 2 ? [side.right + 16, 16] : [16];
-    // Then the right edge, above the page guide's eye (bottom-right).
-    xs.push(window.innerWidth - SIZE - 16);
-    // Nowhere free (a full-screen 3D page is all canvas): tuck half of it
-    // behind the right edge, above the middle, clear of joysticks and bars.
-    let spot = { x: window.innerWidth - SIZE / 2 - 2, b: Math.round(window.innerHeight * 0.55) };
-    search: for (const lx of xs) {
-      for (const b of (lx > window.innerWidth / 2 ? TRY.slice(1) : TRY)) {
-        const cx = lx + SIZE / 2, cy = window.innerHeight - b - SIZE / 2;
-        const hits = [-14, 0, 14].flatMap((d) => document.elementsFromPoint(cx + d, cy + d));
-        if (!hits.some((h) => h.closest(BUSY) && !h.closest(".tr-vars"))) { spot = { x: lx, b }; break search; }
-      }
-    }
-    el.style.visibility = prev;
-    setLeft(spot.x);
-    setBottom(spot.b);
+    const onScreen = side && side.width > 0 && side.left >= 0 && side.right > 0 && side.width < window.innerWidth / 2;
+    const x = onScreen ? Math.round(side.right + EDGE) : EDGE;
+    setLeft(x);
+    const marked = Array.from(document.querySelectorAll(`[${BUBBLE_CLEAR}]`))
+      .map((el) => el.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
+    setBottom(bubbleBottom(x, window.innerHeight, marked));
   }, []);
+  // A marked control can appear or move after load (a 3D stage loading in).
+  useEffect(() => { const id = setInterval(place, 1000); return () => clearInterval(id); }, [place]);
   useEffect(() => {
     place();
-    const t1 = setTimeout(place, 800);
-    const t2 = setTimeout(place, 2500);
+    const t = setTimeout(place, 800);
     window.addEventListener("resize", place);
-    // The side menu folds and unfolds: look again when it does.
     const side = document.querySelector(".ash-side");
     const ro = side && typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => place()) : null;
     if (side && ro) ro.observe(side);
-    return () => { clearTimeout(t1); clearTimeout(t2); window.removeEventListener("resize", place); ro?.disconnect(); };
+    return () => { clearTimeout(t); window.removeEventListener("resize", place); ro?.disconnect(); };
   }, [place, path]);
+
+  // Scrolling or dragging: fade to 40% and let taps through for a moment.
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | null = null;
+    let down = false;
+    const hush = () => { setQuiet(true); if (t) clearTimeout(t); t = setTimeout(() => setQuiet(false), QUIET_MS); };
+    const onDown = (e: PointerEvent) => { down = !(e.target as Element | null)?.closest?.(".tr-fab"); };
+    const onMove = () => { if (down) hush(); };
+    const onUp = () => { down = false; };
+    window.addEventListener("scroll", hush, { passive: true, capture: true });
+    window.addEventListener("wheel", hush, { passive: true });
+    window.addEventListener("touchmove", hush, { passive: true });
+    window.addEventListener("pointerdown", onDown, { passive: true });
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerup", onUp, { passive: true });
+    return () => {
+      if (t) clearTimeout(t);
+      window.removeEventListener("scroll", hush, { capture: true });
+      window.removeEventListener("wheel", hush);
+      window.removeEventListener("touchmove", hush);
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, []);
+
+  // Sitting over a button or link: half see-through, so you can see it is there.
+  useEffect(() => {
+    const look = () => {
+      const el = fab.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const pts: [number, number][] = [[r.left + r.width / 2, r.top + r.height / 2], [r.left + 6, r.top + 6], [r.right - 6, r.bottom - 6], [r.right - 6, r.top + 6], [r.left + 6, r.bottom - 6]];
+      setOver(pts.some(([x, y]) => document.elementsFromPoint(x, y).some((h) => !h.closest(".tr-vars") && h.closest(CONTROL))));
+    };
+    look();
+    const id = setInterval(look, 1000);
+    return () => clearInterval(id);
+  }, [path, left, bottom]);
 
   useEffect(() => { try { const v = sessionStorage.getItem(OPEN_KEY); if (v === "chat" || v === "todo") { setOpen(true); setTab(v); } } catch { /* private */ } }, []);
   useEffect(() => { try { sessionStorage.setItem(OPEN_KEY, open ? tab : ""); } catch { /* private */ } }, [open, tab]);
@@ -92,10 +137,19 @@ function Bubble({ path }: { path: string }) {
     return () => window.removeEventListener("keydown", k);
   }, [open]);
 
-  if (s.pageOpen) return null;
+  // Opening a point from the chat: get the box out of the way of the page.
+  useEffect(() => {
+    const h = () => { if (window.location.hash.includes("kib-point=")) setOpen(false); };
+    window.addEventListener("hashchange", h);
+    return () => window.removeEventListener("hashchange", h);
+  }, []);
+  useEffect(() => { if (s.pointing) setOpen(false); }, [s.pointing]);
+
+  if (s.pageOpen || s.pointing) return null;
   const unread = unreadChat(s.messages, s.me, s.read.chat);
-  const jobs = newGivenTasks(s.tasks, s.me, s.read.tasks);
-  const chatTitle = unread ? `Team chat — ${unread} new` : "Team chat";
+  const jobs = newGivenTasks(s.tasks, s.me, s.read.tasks) + newPushedJobs(s.jobs, s.tasks, s.me, s.seenJobs);
+  const waiting = waitingOnMe(s.messages, s.me, s.marks, s.acks).length;
+  const chatTitle = [unread ? `${unread} new` : "", waiting ? `${waiting} waiting on you` : ""].filter(Boolean).join(", ");
 
   return (
     <div className="tr-vars tr" data-look={look}>
@@ -108,6 +162,7 @@ function Bubble({ path }: { path: string }) {
               <button aria-pressed={tab === "chat"} onClick={() => setTab("chat")}>Chat{unread > 0 && tab !== "chat" && <span className="tr-badge">{unread}</span>}</button>
               <button aria-pressed={tab === "todo"} onClick={() => setTab("todo")}>To-do{jobs > 0 && tab !== "todo" && <span className="tr-badge amber dot" />}</button>
             </div>
+            <button className="tr-open tr-pointbtn" onClick={() => startPointing()} disabled={!s.me} title="Point at part of this page (Shift+X on a computer)">👉 Point</button>
             <Link className="tr-open" href={`${TEAM_ROOM.home}?tab=${tab}`} onClick={() => setOpen(false)} title="Open the full Team room">Open ↗</Link>
             <button className="tr-x" onClick={() => setOpen(false)} aria-label="Close">✕</button>
           </div>
@@ -116,13 +171,15 @@ function Bubble({ path }: { path: string }) {
           </div>
         </div>
       )}
-      <button ref={fab} className="tr-fab" style={{ left, bottom: `calc(${bottom}px + env(safe-area-inset-bottom, 0px))` }}
-        onClick={() => setOpen(!open)} aria-expanded={open} aria-label={chatTitle} title={chatTitle}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <button ref={fab} className="tr-fab" data-quiet={quiet && !open ? "true" : undefined} data-over={over && !open ? "true" : undefined}
+        style={{ left, bottom: `calc(${bottom}px + env(safe-area-inset-bottom, 0px))` }}
+        onClick={() => setOpen(!open)} aria-expanded={open} aria-label={chatTitle ? `Team chat — ${chatTitle}` : "Team chat"} title={chatTitle ? `Team chat — ${chatTitle}` : "Team chat (Shift+X points at part of the page)"}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5z" />
         </svg>
         {unread > 0 && <span className="tr-badge">{unread > 99 ? "99+" : unread}</span>}
-        {unread === 0 && jobs > 0 && <span className="tr-badge amber dot" />}
+        {waiting > 0 && <span className="tr-badge at" title={`${waiting} waiting on you`}>@</span>}
+        {unread === 0 && waiting === 0 && jobs > 0 && <span className="tr-badge amber dot" />}
       </button>
     </div>
   );

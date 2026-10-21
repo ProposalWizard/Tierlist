@@ -9,7 +9,7 @@
 .pp-ctrl { display: flex; flex-direction: column; gap: 12px; }
 .pp-ctrl > div > .bc-label { margin-bottom: 6px; }
 .pp-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.pp-skin { width: 30px; height: 30px; border-radius: 3px; border: 2px solid rgba(255, 255, 255, 0.25); cursor: pointer; }
+.pp-skin { width: 38px; height: 38px; border-radius: 3px; border: 2px solid rgba(255, 255, 255, 0.25); cursor: pointer; }
 .pp-skin[aria-pressed="true"] { border-color: var(--bc-amber); box-shadow: 0 0 0 2px rgba(255, 194, 74, 0.35); }
 .pp-turn { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--bc-ink2); }
 .pp-turn input { flex: 1; accent-color: var(--bc-accent); }

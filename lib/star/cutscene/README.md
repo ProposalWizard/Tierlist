@@ -22,8 +22,10 @@ StoryEvent ─ story.ts ─▶ beats ─ beats.ts + generate.ts ─▶ performan
 | `fixtures.ts` | The hand-made scenes (signing, goal, trophy, walk-out, press, The Icon) = test benchmarks. |
 | `presets/` | camera shots, locations (marks), moods, clip names and stand-ins. |
 | `locations3d.ts` / `props3d.ts` / `fx3d.ts` / `perform3d.ts` | Sets, props, effects, procedural body holds. |
-| `peopleStub.ts` / `peopleAdapter.ts` | Today's people layer (on people3d). When `people.ts` lands, change the one line in `peopleAdapter.ts`. |
+| `peopleStub.ts` / `peopleAdapter.ts` | Today's people layer (on people3d). When `people.ts` lands, change the one line in `peopleAdapter.ts`. Every Style A actor's face moves (B5, 20 Oct 2026: `style3d/toon/face.ts`): blinks, glances, the beat's expression, lips on speak tracks. |
+| `presets/camera.ts` `PHONE_FRAMING` | A tall phone: every person shot shows at least a set width at the subject, his head near the top; inserts show the whole prop; the director keeps the camera out of people and props (`clearOfPeople`) and swings a still camera clear of anyone who comes within 1.3 m of the lens at any moment of its shot (`clearShot`). Check: `node scripts/bench3d/framing.mjs` (`--at=dense`: 3 moments a shot). |
 | `signature.ts` | A signature from a name: the strokes the pen really follows. |
+| `refMotion.ts` + `refMotion.json` / `fluid.ts` | FLUID ARMS (B5c, 20 Oct 2026, Harry: "I don't like how robotic the arms can end up being"). The "ref-…" holds in `perform3d.ts` put the arms where real people's were in reference videos (wrist and elbow paths read with MediaPipe by `tools/motionref/ref_paths.py`); `fluid.ts` adds what a pinned IK hand lacked: the forearm and hand trailing the upper arm, a living drift on held hands, the collarbone following a raised hand, eased lifts, human (not metronome) rhythms. `?fluid=old` on the director page plays the old arms. Shoulders and arm clearance are in the clip files themselves (`lib/star/three3d/shoulderSet.ts`, `tools/motionref/settle_clips.mts`). |
 
 ## Writing a scene by hand
 

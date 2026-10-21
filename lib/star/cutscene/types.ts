@@ -109,7 +109,9 @@ export type Target =
 
 export type BodyPart =
   | "head" | "eyes" | "chest" | "hips" | "feet" | "hand.L" | "hand.R"
-  | "shoulder.L" | "shoulder.R" | "knee.L" | "knee.R";
+  | "shoulder.L" | "shoulder.R" | "knee.L" | "knee.R"
+  /** The top of the head and hair (a cup lifted over it must clear it). */
+  | "crown";
 
 /** Named hand shapes (fingers). The people layer may know more. */
 export type HandPose =
@@ -127,7 +129,9 @@ export type PoseHold =
   | "sit" | "stand" | "kneel" | "knee-slide" | "arms-wide" | "arms-up" | "fist-pump"
   | "hold-shirt-up" | "trophy-overhead" | "trophy-chest" | "point-sky" | "badge-kiss"
   | "hands-on-head" | "head-down" | "applaud" | "lean-desk" | "hands-on-hips"
-  | "arms-folded" | "salute-crowd" | "kneel-pray" | "lean-in" | "lean-back" | "nod" | "hand-on-shoulder";
+  | "arms-folded" | "salute-crowd" | "kneel-pray" | "lean-in" | "lean-back" | "nod" | "hand-on-shoulder"
+  // arms copied from real people (refMotion.ts, B5c): the wrist and elbow paths of a reference video
+  | "ref-talk-hands" | "ref-trophy-lift" | "ref-roar" | "ref-wave-clap" | "ref-shirt-up";
 
 /** The camera's framing presets (presets/camera.ts turns these into a lens and a place). */
 export type ShotPreset =
@@ -254,6 +258,8 @@ export interface TraceTrack extends TrackBase {
   handAlong?: Vec3; handPalm?: Vec3;
   /** Lead in from / out to the tool's resting point over this long, s. */
   leadIn?: number; leadOut?: number;
+  /** The tool's own way while it writes, actor's frame: tip → back (default: a pen held ~50° up, back towards the writing shoulder), and the back of the hand. */
+  toolDir?: Vec3; toolUp?: Vec3;
 }
 
 /** Hand shape on its own (no reach). */
@@ -415,6 +421,13 @@ export interface ActorSpec {
  * Nothing here may keep state between frames that t does not decide
  * (seek(t) must give the same picture whichever frame came before).
  */
+/**
+ * Overlap (B5c): while an arm blends onto or off an IK target, the lower arm
+ * and the hand follow the upper arm a beat later (their own, later weights),
+ * so the shoulder leads and the hand trails, as in a real arm.
+ */
+export interface ReachLag { lower: number; hand: number }
+
 export interface CutsceneActor {
   readonly id: string;
   readonly root: THREE.Object3D;
@@ -436,7 +449,9 @@ export interface CutsceneActor {
   /** Keep the lowest foot on the floor (clips' legs differ from bodies'). */
   plantFeet(weight: number): void;
   /** Arm IK: the wrist to `wrist` with the hand's fingers along `along`, palm to `palm` (world). */
-  reach(hand: "L" | "R", wrist: THREE.Vector3, along: THREE.Vector3 | null, palm: THREE.Vector3 | null, weight: number, pole?: THREE.Vector3): void;
+  reach(hand: "L" | "R", wrist: THREE.Vector3, along: THREE.Vector3 | null, palm: THREE.Vector3 | null, weight: number, pole?: THREE.Vector3, lag?: ReachLag): void;
+  /** B5c: turn any arm that went inside his own body (torso, legs, head) back out about the shoulder. Optional. */
+  clearArms?(weight: number, skip?: { L?: boolean; R?: boolean }): void;
   /** Leg IK: the ankle to `ankle`, the knee bending towards `pole`. */
   reachFoot(foot: "L" | "R", ankle: THREE.Vector3, weight: number, pole?: THREE.Vector3): void;
   /** Finger shape (a name, or the people layer's own numbers). */
@@ -446,11 +461,21 @@ export interface CutsceneActor {
    * grip. `pen`: the pen's tip and its barrel's direction (tip → back).
    */
   gripFrame(hand: "L" | "R", grip: HandPose): { pos: THREE.Vector3; axis: THREE.Vector3; up: THREE.Vector3 };
+  /**
+   * Hold a tool as it is really held (B5b): the fingers in `grip`, the grip
+   * frame's point on `tip`, its axis along `dir` and its `up` towards `up`
+   * (world). Optional: a body without it gets the reach + gripFrame route.
+   */
+  holdTool?(hand: "L" | "R", grip: HandPose, tip: THREE.Vector3, dir: THREE.Vector3, up: THREE.Vector3, weight: number, pole?: THREE.Vector3): void;
+  /** The hand's way now (world): fingers along, palm towards. Optional (hold.ts gripTo blends from it). */
+  handFrame?(hand: "L" | "R"): { along: THREE.Vector3; palm: THREE.Vector3 };
   /** Head and neck (and eyes, if it has them) towards a point, `weight` of the way. */
   lookAt(target: THREE.Vector3, weight: number): void;
   setExpression(expr: Expression, amount: number): void;
   setBlink(closed: number): void;
   setMouth(open: number): void;
+  /** Small eye movements on top of where he looks (−1..1 across and up), `w` of the way. Optional: a body with no eyes ignores it. */
+  setGaze?(x: number, y: number, w?: number): void;
   /** After everything: world matrices up to date. */
   endFrame(): void;
   /** Style kit hooks (outline, materials). */

@@ -847,8 +847,10 @@ const wp = (T: Three, o: THREE.Object3D) => { const v = new T.Vector3(); o.getWo
  */
 export function solveArm(
   T: Three, upper: THREE.Bone, lower: THREE.Bone, hand: THREE.Bone, target: THREE.Vector3, pole: THREE.Vector3, weight = 1,
+  /** The lower bone's own weight (an arm's forearm trailing its upper arm); default = weight. */
+  weightLower = weight,
 ) {
-  if (weight <= 0) return;
+  if (weight <= 0 && weightLower <= 0) return;
   const q0u = upper.quaternion.clone(), q0l = lower.quaternion.clone();
   const S = wp(T, upper), E = wp(T, lower), H = wp(T, hand);
   const a = S.distanceTo(E), b = E.distanceTo(H);
@@ -865,10 +867,10 @@ export function solveArm(
   const H2 = wp(T, hand);
   const Td = S.clone().add(dir.clone().multiplyScalar(d));
   aimBone(T, lower, H2, Td);
-  if (weight < 1) {
-    upper.quaternion.copy(q0u.slerp(upper.quaternion, weight));
+  if (weight < 1 || weightLower < 1) {
+    upper.quaternion.copy(q0u.slerp(upper.quaternion, Math.max(0, Math.min(1, weight))));
     upper.updateMatrixWorld(true);
-    lower.quaternion.copy(q0l.slerp(lower.quaternion, weight));
+    lower.quaternion.copy(q0l.slerp(lower.quaternion, Math.max(0, Math.min(1, weightLower))));
     lower.updateMatrixWorld(true);
   }
 }

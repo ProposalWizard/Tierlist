@@ -921,14 +921,16 @@ function snapshot(w: FiveWorld, flow: FiveFlowState): FlowBeat {
   };
 }
 
-const THEM_MISS = [
+/** Exported (read-only) so the five-a-side numbers (scripts/fiveaside-data)
+ *  can tell a rolled miss of theirs from one of your team-mates'. */
+export const THEM_MISS = [
   "They drag one wide from distance.",
   "Your keeper watches it fly over.",
   "A shot from the edge, comfortably held.",
   "Blocked before it got near your goal.",
 ];
 
-const MATE_MISS = [
+export const MATE_MISS = [
   "A team-mate drags it wide.",
   "Their keeper holds it.",
   "Blocked on the line.",

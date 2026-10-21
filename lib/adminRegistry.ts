@@ -14,7 +14,7 @@
 export type AdminSection = "rbd" | "site" | "draft" | "tierlists" | "old" | "studio";
 export type AdminGroup =
   | "career" | "chances" | "match" | "data" | "places3d" | "players" | "money" | "sound"
-  | "site" | "draft" | "tierlists" | "old" | "studio";
+  | "site" | "draft" | "tierlists" | "old" | "studio" | "research";
 export type AdminOwner = "Harry" | "Mikey" | "Leo" | "Shared";
 export type AdminWrites = "none" | "browser" | "own" | "shared" | "repo";
 export type AdminAccess = "admin" | "team" | "open";
@@ -49,6 +49,19 @@ export type AdminGameKey = (typeof GAMES)[number]["key"];
 export type AdminGame = (typeof GAMES)[number];
 export const DEFAULT_GAME: AdminGameKey = GAMES[0].key;
 
+/**
+ * THE ADMIN'S HOME is the Team area, open on the Team board (Harry, 20 Oct
+ * 2026: "the team area should be the default home area, and it should open on
+ * Team board, and have its own tab on the left"). Every way into the admin
+ * lands there for an admin. Testers cannot see the Team room, so they keep the
+ * first game's home. ADMIN_FRONT_DOOR (app/admin/home) sends each person to
+ * theirs, for links that do not know who is opening them (the KIB Admin app).
+ */
+export type AdminRole = "admin" | "tester";
+export const TEAM_HOME = "/admin/team";
+export const ADMIN_FRONT_DOOR = "/admin/home";
+export const adminHomeFor = (role: AdminRole): string => (role === "admin" ? TEAM_HOME : GAMES[0].home);
+
 export const SECTIONS: { key: AdminSection; name: string }[] = [
   { key: "rbd", name: "Road to Ballon d'Or" },
   { key: "site", name: "Site" },
@@ -74,6 +87,8 @@ export const GROUPS: { key: AdminGroup; name: string; section: AdminSection; gam
   { key: "site", name: "Site XP + Tic Tac Toe", section: "site", game: "web" },
   { key: "old", name: "Old tests", section: "old", game: "web", icon: "site" },
   { key: "studio", name: "Team + notes", section: "studio", game: "studio", icon: "site" },
+  // Research write-ups (Harry, 20 Oct 2026). The list itself is lib/research.ts.
+  { key: "research", name: "Research", section: "studio", game: "studio", icon: "research" },
 ];
 
 const P = (url: string, name: string, purpose: string, section: AdminSection, group: AdminGroup,
@@ -81,11 +96,13 @@ const P = (url: string, name: string, purpose: string, section: AdminSection, gr
   ({ url, name, purpose, section, group, owner, status, writes, access });
 
 export const ADMIN_PAGES: AdminPage[] = [
-  P("/admin/star", "Admin home", "Every admin and test page, grouped and searchable", "studio", "studio", "Harry", "live", "none", "team"),
+  P("/admin/star", "Game home", "Every admin and test page of a game, grouped and searchable", "studio", "studio", "Harry", "live", "none", "team"),
   P("/admin/videos", "Videos", "How to hand Claude a screen recording to break down", "studio", "studio", "Harry", "live", "none", "team"),
   P("/admin/team", "Team board", "What Harry, Mikey and Leo are doing: pushes, pull requests, live deploy, patch notes", "studio", "studio", "Harry", "live", "none", "admin"),
   P("/admin/patch-notes", "Patch notes", "Every patch note, newest first", "studio", "studio", "Shared", "live", "none", "admin"),
   P("/admin/app-plan", "App plan", "The app plan and its open questions", "studio", "studio", "Harry", "live", "none", "admin"),
+  P("/admin/research", "Research", "Every research write-up we have made, one card each", "studio", "research", "Harry", "live", "none", "team"),
+  P("/admin/scene-generator", "Scene generator", "A game moment in, a cut scene out: its recipe, Good/Bad, keep it, and when it would play", "studio", "studio", "Harry", "live", "shared", "team"),
   P("/admin/testers", "Tester access", "Tester links, remove testers", "studio", "studio", "Harry", "live", "shared", "admin"),
   P("/admin/xp", "Site XP rewards", "Level-up rewards across the whole site (frames, titles)", "site", "site", "Harry", "live", "shared", "admin"),
   P("/admin/football", "Tic Tac Toe data", "Wikidata data behind Tic Tac Toe", "site", "site", "Harry", "live", "shared", "admin"),
@@ -105,11 +122,15 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-training-dev", "Training levels", "Play any training game at any level", "rbd", "career", "Mikey", "live", "none", "team"),
   P("/star-gallery-dev", "Scenario gallery", "Every chance as a picture; save, commit", "rbd", "chances", "Harry", "live", "repo", "admin"),
   P("/star-highlights-dev", "Infinite Highlights", "Flick through chances and fix a bad one on the spot", "rbd", "chances", "Harry", "live", "repo", "admin"),
-  P("/star-fhr-dev", "Full highlights rebuild", "The rebuild's switch and today's numbers: chances, goals, reactions, start distance", "rbd", "chances", "Harry", "live", "browser", "team"),
+  // "/star-fhr-dev" (Full highlights rebuild): taken off the list (Harry, 20 Oct 2026: "It doesn't
+  // need its whole own page"). The switch is in Settings; the page stays as a test area (Ruler /
+  // Build-ups tabs), reached from the Play Area.
   P("/star-play-dev", "Play Area", "Play chances or a full match with every dial to hand", "rbd", "chances", "Harry", "live", "repo", "team"),
   P("/star-update-dev", "Leo's Oct 13 update", "Leo's Oct 13 gameplay update, Old or New", "rbd", "match", "Leo", "live", "browser", "team"),
   P("/star-sim90-dev", "Full match", "Full simulated 90 minutes", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-radar-dev", "Match radar", "Unseen match, minute by minute", "rbd", "match", "Harry", "live", "none", "team"),
+  P("/star-fiveaside-dev", "Five-a-side", "Five-a-side chances, a full match with a radar, and 500 matches' numbers", "rbd", "match", "Harry", "live", "none", "team"),
+  P("/star-pc-match-dev", "PC match + radar", "The real match with the whole pitch from above beside it, in 2D or 3D", "rbd", "match", "Harry", "live", "none", "team"),
   // "/star-dribble-dev" (First-person dribble): taken off the list (Harry, 19 Oct 2026: "remove as an admin page").
   P("/star-dribble-stick-dev", "Dribble on a stick", "Dribble steered by a stick", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-vfx-lab-dev", "Visual effects lab", "Pick and edit the effect for each match moment", "rbd", "players", "Leo", "live", "browser", "team"),
@@ -123,6 +144,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/admin/clubs", "Club data", "Every club's data, with the gaps marked", "rbd", "data", "Mikey", "live", "none", "admin"),
   P("/admin/badges", "Club badges", "Club badges, redo on device", "rbd", "data", "Harry", "live", "browser", "admin"),
   P("/admin/custom-clubs", "Custom clubs", "Invent a club", "rbd", "data", "Mikey", "live", "shared", "admin"),
+  P("/star-3d-bench-dev", "3D bench", "The same ten 3D shots at phone size with their frame numbers: every 3D change shows its before and after here", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-3d-area-dev", "3D test area", "Every 3D scene in one list, plus the 3D file store", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-3d-area-dev/signing", "3D signing", "Live 3D signing", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-3d-area-dev/office", "Manager's office", "Manager's office stage", "rbd", "places3d", "Harry", "live", "none", "team"),
@@ -130,10 +152,11 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-garden3d-dev", "3D garden", "Walk round the 3D garden", "rbd", "places3d", "Mikey", "live", "none", "team"),
   P("/star-home3d-dev", "3D house", "Walk round the 3D house", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-training3d-dev", "3D training", "3D training pitch", "rbd", "places3d", "Harry", "live", "none", "team"),
-  P("/star-scene-editor-dev", "3D scene editor", "Camera, lighting and timeline over the Cut-scene Director (step 1)", "rbd", "places3d", "Harry", "live", "none", "team"),
+  P("/star-scene-editor-dev", "3D scene editor", "Camera and light for every 3D scene (director, signing, office, shop, garden, house); Approve; Commit to game", "rbd", "places3d", "Harry", "live", "repo", "team"),
   P("/star-style-dev", "Art styles + cut-scene director", "Art styles + Cut-scene Director", "rbd", "places3d", "Harry", "live", "none", "team"),
   P("/star-animations-dev", "2D animations", "2D New vs Old animations", "rbd", "players", "Leo", "live", "browser", "team"),
   P("/star-anim3d-dev", "3D animations", "Every 3D match move", "rbd", "players", "Harry", "live", "none", "team"),
+  P("/admin/motion-refs", "Motion references", "Clips of real-looking people doing our cut-scene moments, to compare with our own movement", "rbd", "players", "Harry", "live", "none", "admin"),
   P("/star-people-dev", "Cut-scene people", "Cut-scene faces, hands", "rbd", "players", "Harry", "live", "none", "team"),
   P("/star-sprites-dev", "3D match figures", "Every baked 3D match figure", "rbd", "players", "Leo", "live", "none", "team"),
   P("/admin/star-pass", "Star Pass", "Which reward sits at each Star Pass level", "rbd", "money", "Mikey", "live", "shared", "admin"),
@@ -199,6 +222,39 @@ export function currentPage(path: string): AdminPage | undefined {
   return best;
 }
 
+/** True on the Team area's own address (any of its views: ?tab=chat …). */
+export const isTeamPath = (path: string) => (path.split(/[?#]/)[0].replace(/\/+$/, "") || "/") === TEAM_HOME;
+
+/**
+ * Where the one back arrow goes (Harry, 20 Oct 2026: "Always top left … always
+ * the same"). A page in the list → its group's page; a group page → its
+ * game's home; a game's home → the Team area (the admin's home); the Team
+ * area → the site. Anything else → the admin's home.
+ * A tester has no Team area: the first game's home is their top (→ the site),
+ * and the other games' homes go back to it.
+ */
+export function backFor(path: string, role: AdminRole = "admin"): { href: string; label: string } {
+  const p = path.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
+  const team = { href: TEAM_HOME, label: "Team" };
+  const first = { href: GAMES[0].home, label: GAMES[0].name };
+  if (p === TEAM_HOME) return { href: "/", label: "Knowitball" };
+  const g = p.match(/^\/admin\/star\/g\/([^/]+)$/);
+  if (g) {
+    const game = gameOf(GROUPS.find((x) => x.key === g[1])?.game ?? DEFAULT_GAME) ?? GAMES[0];
+    return { href: game.home, label: game.name };
+  }
+  if (GAMES.some((x) => x.home === p)) {
+    if (role === "admin") return team;
+    return p === GAMES[0].home ? { href: "/", label: "Knowitball" } : first;
+  }
+  const own = currentPage(p);
+  if (own && own.url !== "/admin/star") {
+    const grp = GROUPS.find((x) => x.key === own.group);
+    if (grp) return { href: `/admin/star/g/${grp.key}`, label: grp.name };
+  }
+  return role === "admin" ? team : first;
+}
+
 /** What admin mode lists first on this path: a label and the pages. */
 export function relatedFor(path: string): { label: string; pages: AdminPage[] } | null {
   const own = currentPage(path);
@@ -229,7 +285,7 @@ export const TEST_PAGES = new Set<string>([
   "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev", "/star-garden3d-dev",
   "/star-home3d-dev", "/star-training3d-dev", "/star-style-dev", "/star-anim3d-dev", "/star-people-dev", "/star-sprites-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev",
-  "/star-animations-dev",
+  "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev",
 ]);
 export const isTestPage = (url: string) => TEST_PAGES.has(url);
 

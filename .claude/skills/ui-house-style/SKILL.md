@@ -39,6 +39,62 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 20 Oct 2026 — the Team area is the admin's home (Harry)
+- **"The team area should be the default home area, and it should open on
+  Team board, and have its own tab on the left."** Every way into the admin
+  (Admin in the site menu, Settings → Admin pages, the admin slide-out, the KIB
+  Admin app via /admin/home, ← on a game's home) lands an admin on
+  /admin/team, Team board. "Team" is the FIRST line of the side menu, a solid
+  bar while you are in it; inside it the menu lists Team board, Team chat,
+  Ideas, My to-do, Patch notes, then one line per game; no game tab is lit.
+  In a game the menu is Team, the game's home, its groups, as before. Testers
+  have no Team area and keep the game home. `TEAM_HOME`, `adminHomeFor`,
+  `backFor(path, role)` in lib/adminRegistry.ts. Same layout in all four skins.
+
+### 20 Oct 2026 — every domestic cup gets its own screen (Harry)
+- **"The Lower League Trophy needs its own screen like Mikey's FA Cup one (and
+  the international ones)."** A cup is not a long list on the League page.
+  League → Table → a cup's tab shows where it stands for you (headline, the
+  round-by-round road, Open); Open is the cup's own screen
+  (`components/star/CupScreen.tsx`): your road, Mikey's "Road to the Final"
+  bracket from the last 16, every round's results (edge arrows between
+  rounds), who is still in it, and "The draw" replays the latest draw. One
+  screen for the FA Cup, League Cup and the Trophy, in each cup's own colour
+  (`lib/star/competitionLook.ts`). Reuse the round-up's Board and Bracket,
+  never a copy. The Trophy's round 1 tab went from a 56-row list (about two
+  phone screens) to one 844 px screen. (Applying it to the FA Cup and League
+  Cup too is inferred from "like the FA Cup one".)
+
+### 20 Oct 2026 — one layout, four skins; one back arrow; the chat bubble (Harry)
+- **"Redo all of the other looks … right now it's like they're different skins.
+  In reality, I want everything to look the same, but with a different kind of
+  skin … They can't just click Clean light and suddenly I'm on a different admin
+  page with a different layout."** The admin Look (Broadcast, Bento, Ops room,
+  Clean light) changes paint only: colours, fonts, corners, surfaces. Every look
+  has Broadcast's layout (group tiles home, group pages of picture cards, side
+  menu, game tabs). Paint lives in tokens: `--sk-*`
+  (components/admin/shell/skin.css) for the home and group pages, `--bc-*` +
+  components/admin/broadcast/skins.css for every BroadcastPage. **Never add a
+  look-specific layout.** In the light looks a page's own dark tiles stay
+  dark and stay readable: the ink guard (broadcast/inkGuard.ts) gives dark
+  boxes light words and fixes words that vanish. Measured with a contrast
+  audit at 390 px in Clean light: about 320 words under 2.6:1 on 12 pages
+  before the guard → 0 to 3 a page after (most of those are clipped rows).
+- **Bento group cards must read** (Harry: hard to read): dark words on a pale
+  tint of the group's colour, the count in a white pill.
+- **Back arrow: "Always top left … always the same."** One component
+  (components/admin/BackArrow.tsx), 16 px in on a computer, 12 px on a phone,
+  skinned per look. It goes to the page's group (a group page → its game's
+  home). BroadcastPage, the admin shell and the slim AdminTopBar (pages with no
+  frame) carry it; never draw a page's own back link. A screen inside a page
+  may pass `back={() => …}` to step back one screen.
+- **Team chat bubble: "fixed at bottom left on every page … as long as, if it
+  is covering something, I can still press it."** 40 px, bottom left (right of
+  the side menu on a computer), only the round button takes taps, fades to 40%
+  and lets taps through while you scroll or drag, half see-through over a
+  control. The page guide's eye never takes top left (the arrow) and sits
+  above the bubble when a page puts it bottom left.
+
 ### 19 Oct 2026 — key controls never below the fold (Harry)
 - **"I heavily dislike when ui is off the screen that could be very easy to
   press on the screen."** On Infinite Highlights at 1440×900 the Next button

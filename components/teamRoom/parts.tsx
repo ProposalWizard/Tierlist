@@ -1,25 +1,23 @@
 "use client";
 /**
  * components/teamRoom/parts.tsx — the Team room's shared pieces: the name
- * picker, the chat thread, the to-do list and a notes thread. Used by the
- * chat bubble (every admin page) and by the Team room tabs.
+ * picker, the to-do list and a notes thread (the chat itself is chat.tsx).
+ * Used by the chat bubble (every admin page), the Team room tabs and the
+ * patch notes.
  */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ADMIN_PAGES } from "@/lib/adminRegistry";
+import { useEffect, useState, type ReactNode } from "react";
 import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "@/lib/teamRoom/config";
-import { notesFor, pageLabel, stamp, tasksFor, tasksGivenBy, type NoteKind, type TeamMessage } from "@/lib/teamRoom/logic";
+import { notesFor, stamp, tasksFor, tasksGivenBy, type NoteKind, type TeamTask } from "@/lib/teamRoom/logic";
+import { pushedFor, type PushedJob } from "@/lib/teamRoom/jobs";
 import {
-  addNote, addTask, claimName, deleteMessage, deleteNote, deleteTask, markRead, sendMessage, setPinned, tickTask, useTeamRoom,
+  addNote, addTask, claimName, deleteNote, deleteTask, markJobsSeen, markRead, tickTask, useTeamRoom,
 } from "@/lib/teamRoom/store";
+import { Av, Linked } from "./bits";
+import PushedJobRow from "./PushedJob";
+import PushToggle from "./PushToggle";
+import { ChatThread, WaitingOnMe } from "./chat";
 
-const PAGE_NAMES: Record<string, string> = Object.fromEntries([
-  ...ADMIN_PAGES.map((p) => [p.url.split("?")[0], p.name]),
-  ["/admin/team", "Team board"], ["/admin/star", "Admin home"], ["/admin/videos", "Videos"],
-]);
-
-export function Av({ p, sm }: { p: TeamPerson; sm?: boolean }) {
-  return <span className={`tr-av ${p}${sm ? " sm" : ""}`} title={p}>{p[0]}</span>;
-}
+export { Av, ChatThread, WaitingOnMe };
 
 /** Loading / not switched on / pick your name — then the children. */
 export function RoomGate({ children }: { children: ReactNode }) {
@@ -57,110 +55,10 @@ function WhoAreYou({ taken }: { taken: TeamPerson[] }) {
   );
 }
 
-const LINK = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g;
-function Linked({ text }: { text: string }) {
-  const parts = text.split(LINK);
-  return <>{parts.map((x, i) => (i % 2 ? <a key={i} href={x} target="_blank" rel="noreferrer">{x}</a> : x))}</>;
-}
-
-const dayOf = (iso: string) => new Date(iso).toDateString();
-const dayLabel = (iso: string, now: number) => {
-  const d = new Date(iso);
-  if (d.toDateString() === new Date(now).toDateString()) return "Today";
-  if (d.toDateString() === new Date(now - 86400_000).toDateString()) return "Yesterday";
-  return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" });
-};
-
-/** The chat: messages, then the box to type in. `visible` marks it read. */
-export function ChatThread({ visible = true, autoFocus }: { visible?: boolean; autoFocus?: boolean }) {
-  const s = useTeamRoom();
-  const list = useRef<HTMLDivElement>(null);
-  const [now, setNow] = useState(() => Date.now());
-  const [zoom, setZoom] = useState<string | null>(null);
-  const [openId, setOpenId] = useState<number | null>(null);
-  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(id); }, []);
-  useLayoutEffect(() => { const el = list.current; if (el) el.scrollTop = el.scrollHeight; }, [s.messages.length, visible]);
-  useEffect(() => { if (visible && s.me) markRead("chat"); }, [visible, s.me, s.messages.length]);
-
-  return (
-    <div className="tr-chat">
-      <div className="tr-msgs" ref={list} aria-live="polite">
-        {s.messages.length === 0 && <p className="tr-muted" style={{ textAlign: "center", marginTop: 30 }}>No messages yet. Say hello.</p>}
-        {s.messages.map((m, i) => (
-          <MessageRow key={m.id} m={m} me={s.me} now={now} day={i === 0 || dayOf(m.created_at) !== dayOf(s.messages[i - 1].created_at)}
-            open={openId === m.id} onOpen={() => setOpenId(openId === m.id ? null : m.id)} onZoom={setZoom} />
-        ))}
-      </div>
-      <Composer autoFocus={autoFocus} />
-      {zoom && <div className="tr-zoom" onClick={() => setZoom(null)} role="dialog" aria-label="Picture"><img src={zoom} alt="" /></div>}
-    </div>
-  );
-}
-
-function MessageRow({ m, me, now, day, open, onOpen, onZoom }: { m: TeamMessage; me: TeamPerson | null; now: number; day: boolean; open: boolean; onOpen: () => void; onZoom: (u: string) => void }) {
-  const mine = m.person === me;
-  const where = pageLabel(m.page, PAGE_NAMES);
-  return (
-    <>
-      {day && <span className="tr-day">{dayLabel(m.created_at, now)}</span>}
-      <div className={`tr-msg${mine ? " me" : ""}`}>
-        {!mine && <Av p={m.person} />}
-        <div className="tr-bub" data-open={open} onClick={onOpen}>
-          <small>
-            {!mine && <b>{m.person}</b>}<span>{stamp(m.created_at, now)}</span>
-            {where && m.page && <a className="tr-where" href={m.page} onClick={(e) => e.stopPropagation()} title={`Sent from ${m.page}`}>· {where}</a>}
-            {m.pinned && <span className="tr-pinmark" title="Pinned">📌</span>}
-          </small>
-          {m.body && <p><Linked text={m.body} /></p>}
-          {m.image_url && <img src={m.image_url} alt="Picture sent in the chat" loading="lazy" onClick={(e) => { e.stopPropagation(); onZoom(m.image_url!); }} />}
-          <span className="tr-acts">
-            <button onClick={(e) => { e.stopPropagation(); setPinned(m.id, !m.pinned); }} title={m.pinned ? "Unpin" : "Pin it for the team"}>{m.pinned ? "Unpin" : "📌 Pin"}</button>
-            {mine && <button onClick={(e) => { e.stopPropagation(); deleteMessage(m.id); }} title="Delete your message">Delete</button>}
-          </span>
-        </div>
-      </div>
-    </>
-  );
-}
-
-function Composer({ autoFocus }: { autoFocus?: boolean }) {
-  const [text, setText] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
-  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
-
-  const send = async () => {
-    if (busy || (!text.trim() && !file)) return;
-    setBusy(true); setErr(null);
-    const r = await sendMessage(text, file, typeof window === "undefined" ? null : window.location.pathname + window.location.search);
-    setBusy(false);
-    if (r.ok) { setText(""); setFile(null); } else setErr(r.error);
-  };
-  return (
-    <div>
-      {file && preview && (
-        <div className="tr-attach"><img src={preview} alt="" /><span>Picture ready to send</span><button className="tr-x" onClick={() => setFile(null)} aria-label="Remove the picture">✕</button></div>
-      )}
-      <div className="tr-compose">
-        <button className="tr-iconbtn" onClick={() => fileRef.current?.click()} title="Add a picture" aria-label="Add a picture">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.8" /><path d="m21 16-5-5-8 8" /></svg>
-        </button>
-        <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { setFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
-        <textarea id="tr-compose" rows={1} value={text} autoFocus={autoFocus} placeholder="Message the team…" aria-label="Message the team"
-          onChange={(e) => { setText(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${Math.min(120, e.target.scrollHeight)}px`; }}
-          onPaste={(e) => { const f = Array.from(e.clipboardData.files).find((x) => x.type.startsWith("image/")); if (f) { e.preventDefault(); setFile(f); } }}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }} />
-        <button className="tr-send" onClick={send} disabled={busy || (!text.trim() && !file)}>{busy ? "…" : "Send"}</button>
-      </div>
-      {err && <p className="tr-err" style={{ padding: "0 12px 8px" }}>{err}</p>}
-    </div>
-  );
-}
-
-/** Your to-do list: yours, given to you, jobs you gave, ticked today. */
+/**
+ * Your to-do list: yours, given to you, jobs you gave, ticked today.
+ * Jobs that arrived by push (team/jobs.json) sit under "Given to me" too.
+ */
 export function TodoList({ visible = true }: { visible?: boolean }) {
   const s = useTeamRoom();
   const [now, setNow] = useState(() => Date.now());
@@ -171,6 +69,16 @@ export function TodoList({ visible = true }: { visible?: boolean }) {
   useEffect(() => { if (visible && s.me) markRead("tasks"); }, [visible, s.me, s.tasks.length]);
   const l = tasksFor(s.tasks, s.me, now);
   const gave = tasksGivenBy(s.tasks, s.me);
+  const pj = pushedFor(s.jobs, s.tasks, s.me, now);
+  const openIds = pj.open.map((j) => j.id).join(",");
+  useEffect(() => { if (visible && s.me && openIds) markJobsSeen(openIds.split(",")); }, [visible, s.me, openIds]);
+  // Given to me: typed and pushed, newest first. Done today: both, latest ticked first.
+  type Item = { at: string; task?: TeamTask; job?: PushedJob };
+  const byTime = (key: (x: Item) => string) => (a: Item, b: Item) => (Date.parse(key(b)) || 0) - (Date.parse(key(a)) || 0);
+  const given: Item[] = [...l.given.map((x) => ({ at: x.created_at, task: x })), ...pj.open.map((j) => ({ at: j.added, job: j }))].sort(byTime((x) => x.at));
+  const done: Item[] = [...l.done.map((x) => ({ at: x.done_at!, task: x })), ...pj.done.map((j) => ({ at: j.done_at!, job: j }))].sort(byTime((x) => x.at));
+  const item = (x: Item, who?: (t: TeamTask) => ReactNode) =>
+    x.job ? <PushedJobRow key={`job-${x.job.id}`} j={x.job} now={now} /> : row(x.task!, who?.(x.task!));
   const add = async () => {
     const r = await addTask(title, owner === "me" ? s.me : owner);
     if (r.ok) setTitle(""); else setErr(r.error);
@@ -186,6 +94,7 @@ export function TodoList({ visible = true }: { visible?: boolean }) {
   );
   return (
     <div className="tr-todo">
+      <PushToggle />
       <div className="tr-add">
         <input id="tr-task-new" value={title} placeholder="Add a job…" aria-label="New job" maxLength={200}
           onChange={(e) => { setTitle(e.target.value); setErr(null); }} onKeyDown={(e) => { if (e.key === "Enter") add(); }} />
@@ -196,11 +105,11 @@ export function TodoList({ visible = true }: { visible?: boolean }) {
         <button className="tr-btn" onClick={add} disabled={!title.trim()}>Add</button>
       </div>
       {err && <p className="tr-err">{err}</p>}
-      {l.open === 0 && l.done.length === 0 && gave.length === 0 && <p className="tr-muted">Nothing to do. Add a job, or give one to Mikey or Leo.</p>}
-      {l.given.length > 0 && <div><p className="tr-lbl">Given to me</p>{l.given.map((x) => row(x, <small>from {x.made_by} · {stamp(x.created_at, now)}</small>))}</div>}
+      {l.open === 0 && done.length === 0 && gave.length === 0 && pj.open.length === 0 && <p className="tr-muted">Nothing to do. Add a job, or give one to Mikey or Leo.</p>}
+      {given.length > 0 && <div><p className="tr-lbl">Given to me</p>{given.map((x) => item(x, (t) => <small>from {t.made_by} · {stamp(t.created_at, now)}</small>))}</div>}
       {l.mine.length > 0 && <div><p className="tr-lbl">Mine</p>{l.mine.map((x) => row(x))}</div>}
       {gave.length > 0 && <div><p className="tr-lbl">Jobs I gave</p>{gave.map((x) => row(x, <small>for {x.owner}</small>))}</div>}
-      {l.done.length > 0 && <div><p className="tr-lbl">Done today</p>{l.done.map((x) => row(x))}</div>}
+      {done.length > 0 && <div><p className="tr-lbl">Done today</p>{done.map((x) => item(x))}</div>}
     </div>
   );
 }
@@ -212,7 +121,7 @@ export function NotesThread({ kind, id, owner }: { kind: NoteKind; id: string | 
   const [err, setErr] = useState<string | null>(null);
   const now = Date.now();
   const notes = notesFor(s.notes, kind, id);
-  useEffect(() => { if (s.me && owner === s.me) markRead(kind === "idea" ? "notes" : "pushNotes"); }, [s.me, owner, kind, notes.length]);
+  useEffect(() => { if (s.me && owner === s.me) markRead(kind === "idea" ? "notes" : kind === "push" ? "pushNotes" : "patchNotes"); }, [s.me, owner, kind, notes.length]);
   if (s.status !== "ready" || !s.me) return <RoomGate>{null}</RoomGate>;
   const add = async () => { const r = await addNote(kind, id, owner, text); if (r.ok) setText(""); else setErr(r.error); };
   return (
@@ -222,7 +131,7 @@ export function NotesThread({ kind, id, owner }: { kind: NoteKind; id: string | 
       {notes.map((n) => (
         <div key={n.id} className="tr-note">
           <Av p={n.person} sm />
-          <div className="t"><small><b>{n.person}</b>{stamp(n.created_at, now)}</small><p><Linked text={n.body} /></p></div>
+          <div className="t"><small><b>{n.person}</b>{stamp(n.created_at, now)}{n.id < 0 && <em className="tr-local">saved on this device only</em>}</small><p><Linked text={n.body} me={s.me} /></p></div>
           {n.person === s.me && <button className="tr-x" onClick={() => deleteNote(n.id)} title="Delete your note" aria-label="Delete your note">✕</button>}
         </div>
       ))}
@@ -232,6 +141,9 @@ export function NotesThread({ kind, id, owner }: { kind: NoteKind; id: string | 
         <button className="tr-btn" onClick={add} disabled={!text.trim()}>Add</button>
       </div>
       {err && <p className="tr-err">{err}</p>}
+      {kind === "patch" && s.v2 === "off" && (
+        <p className="tr-muted">New notes here are saved on this device only until <code>{TEAM_ROOM.sqlFileV2}</code> runs.</p>
+      )}
     </div>
   );
 }

@@ -1,22 +1,34 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Skills } from "@/lib/star/types";
-import { levelDifficulty, levelSeed, starsForTry } from "@/lib/star/trainingLevels";
+import { starsForTry } from "@/lib/star/trainingLevels";
+import {
+  levelConfig, levelSeedOf, easePowerLevel,
+  type AnyLevel, type PowerLevel, type TechniqueLevel, type FreeKickLevel, type PaceLevel, type VisionLevel,
+} from "@/lib/star/trainingLevelData";
+import {
+  loadVisionMoments, visionMomentsReady, visionLevelPicturesAsync, visionAsk, visionScenario,
+  judgeKick, judgeTap, tapPick, camToBox, aimedMan,
+  type VisionPicture, type VisionVerdict,
+} from "@/lib/star/visionRound";
+import { REAL_CREDIT } from "@/lib/star/realMoments/types";
+import { offlineDevPlayEnabled } from "@/lib/star/devMode";
+import { EngineFrameContext, type EngineFrame, type EngineFrameObserver } from "@/lib/star/engineFrame";
+import { ensureTrainingLevels } from "@/lib/star/trainingLevelStore";
 import { mulberry32 } from "@/lib/star/season";
 import {
   buildScenario, initDefenders,
   type Scenario,
 } from "@/lib/star/canvasEngine";
-import { CX, PITCH_W } from "@/lib/star/pitch";
+import { CX } from "@/lib/star/pitch";
 import {
-  powerDrill, powerDrillForLevel, techniqueDrill, freeKickDrill, paceDrill, visionDrill,
+  powerDrill, powerDrillForLevel, techniqueDrill, freeKickDrill,
   strikeSpot, conePositions, gateCrossing, gateQuality, shotQuality,
+  powerManSpots, wallSpots, placedMen, techniqueBallSpot,
 } from "@/lib/star/trainingDrills";
 import {
-  renderTrainingScene, strikeViewport, gateViewport, type TrainingViewport,
+  strikeViewport, gateViewport, type TrainingViewport,
 } from "@/lib/star/trainingRender";
-import { createFaceImageCache } from "@/lib/star/faceImageCache";
-import { fakeFaceFor } from "@/lib/star/fakeFaces";
 import FirstPersonDribble from "./FirstPersonDribble";
 import TrainingIntro from "./TrainingIntro";
 import { EngineFeature } from "./EnginePlay";
@@ -53,9 +65,10 @@ import { Burst, Glow, KitStyles, Shine, rgba } from "./ui";
  *                same simulation the real match uses, in which your PACE
  *                STAT IS YOUR RUNNING SPEED (`dribbleSpeed`). The old drill
  *                read none of that.
- *   Vision     → read a real picture: who is onside, who is in space, and
- *                which of those two things matters more, inside a window
- *                that shrinks as your vision climbs.
+ *   Vision     → who should I pass to? A real picture on the real match
+ *                (a real tracked pass, or one of the team's drawn chances):
+ *                tap the right man early on, then kick the pass to him,
+ *                inside a window that shrinks to 0.3 s (20 Oct 2026).
  *
  * Three components, not five: power, technique and free kick are all "strike
  * a ball at a target with the real engine" and differ only in the geometry
@@ -101,13 +114,25 @@ interface Props {
    *  before it, already has one). Safe at any point: a level only ever
    *  awards stars through onComplete, which this never calls. */
   onExit?: () => void;
+  /**
+   * Play these numbers instead of the level's saved ones: the Training
+   * levels page's "Edit level" panel plays its draft through here, on the
+   * same drill a career gets (lib/star/trainingLevelData.ts).
+   */
+  levelOverride?: AnyLevel;
+  /**
+   * Play the level's numbers exactly, with no easing toward your Power (the
+   * Training levels page: a level is checked as it is drawn and dragged).
+   * Absent = as a career plays it.
+   */
+  asDrawn?: boolean;
 }
 
 const SKILL_TITLES: Record<keyof Skills, string> = {
   pace: "The Gauntlet",
   power: "Long Range",
   technique: "Through the Gate",
-  vision: "Read the Run",
+  vision: "Pick the Pass",
   freeKick: "Over the Wall",
 };
 
@@ -284,23 +309,6 @@ function useMostlyOnScreen(ref: React.RefObject<HTMLElement>): boolean {
   return on;
 }
 
-/** Sizes a canvas to its wrapper at devicePixelRatio and keeps it there. */
-function useCanvasSize(canvasRef: React.RefObject<HTMLCanvasElement>, wrapRef: React.RefObject<HTMLDivElement>) {
-  useEffect(() => {
-    const c = canvasRef.current, wrap = wrapRef.current;
-    if (!c || !wrap) return;
-    const resize = () => {
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const w = Math.max(1, Math.round(wrap.clientWidth * dpr));
-      const h = Math.max(1, Math.round(wrap.clientHeight * dpr));
-      if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
-    };
-    resize();
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, [canvasRef, wrapRef]);
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // STRIKING — power, technique and free kick share this one drill
 // ═══════════════════════════════════════════════════════════════════════════
@@ -330,29 +338,44 @@ export interface StrikeSetup {
   scenario: Scenario;
   viewport: TrainingViewport;
   gate: { left: { x: number; y: number }; right: { x: number; y: number }; centre: { x: number; y: number } } | null;
-  gateCfg: ReturnType<typeof techniqueDrill> | null;
+  gateCfg: TechniqueLevel | null;
   /** What the HUD says this rep is asking for. */
   brief: string;
   /** Power's first levels: no keeper on the pitch (powerDrillForLevel). */
   openGoal?: boolean;
+  /** The score a try needs to pass (gateQuality / shotQuality, 0-1). */
+  pass: number;
 }
+
+/** The numbers a strike drill is built from: one level's row. */
+export type StrikeLevel = PowerLevel | TechniqueLevel | FreeKickLevel;
 
 /**
  * `byLevel` (Power only): build from the training LEVEL and the player's own
  * Power — an open goal first, and scaled to your Power (powerDrillForLevel,
- * Harry 2 Oct 2026). Absent: the old 0-100 ladder, as the dev page uses it.
+ * Harry 2 Oct 2026). Absent: the old 0-100 ladder, as the trial and the
+ * relationship games use it. Training levels themselves are built from
+ * their saved row with `buildStrikeFrom`.
  */
 export function buildStrike(
   kind: StrikeKind, level: number, rep: number, rng: () => number,
   byLevel?: { trainingLevel: number; power: number },
 ): StrikeSetup {
+  if (kind === "technique") return buildStrikeFrom(kind, { ...techniqueDrill(level, rep), pass: 0.25 }, rng);
+  if (kind === "freeKick") return buildStrikeFrom(kind, { ...freeKickDrill(level, rep), pass: 0.5 }, rng);
+  const cfg = byLevel ? powerDrillForLevel(byLevel.trainingLevel, rep, byLevel.power) : { ...powerDrill(level, rep), keeper: true };
+  return buildStrikeFrom(kind, { ...cfg, pass: 0.5 }, rng);
+}
+
+/** One strike drill's picture from a level's numbers. */
+export function buildStrikeFrom(kind: StrikeKind, row: StrikeLevel, rng: () => number): StrikeSetup {
   if (kind === "technique") {
-    const cfg = techniqueDrill(level, rep);
+    const cfg = row as TechniqueLevel;
     // The ball sits far enough back that the gate always stands about six
     // metres in front of goal — so climbing the ladder moves YOU back, which
     // is what "the cones would be further back" actually looks like from
     // behind the ball.
-    const ball = strikeSpot(cfg.gateDistance + 6, 0);
+    const ball = techniqueBallSpot(cfg);
     const gate = conePositions(ball, cfg);
     const sc = buildScenario("long_range", rng, 40, 60, 55);
     sc.ball = { x: ball.x, y: ball.y };
@@ -373,11 +396,12 @@ export function buildStrike(
       gate,
       gateCfg: cfg,
       brief: `${cfg.gateDistance.toFixed(0)}m · ${cfg.gateWidth.toFixed(1)}m gate`,
+      pass: cfg.pass,
     };
   }
 
   if (kind === "freeKick") {
-    const cfg = freeKickDrill(level, rep);
+    const cfg = row as FreeKickLevel;
     const ball = strikeSpot(cfg.distance, cfg.offset);
     const sc = buildScenario("free_kick", rng, cfg.keeperStrength, 60, 55);
     sc.ball = { x: ball.x, y: ball.y };
@@ -388,16 +412,12 @@ export function buildStrike(
     // holding rather than charging. The engine jumps a free-kick wall as the
     // ball is struck all by itself (Defender.z/vz), which is what makes going
     // over one a moving target rather than a fixed height.
-    const gx = CX - ball.x, gy = 0 - ball.y;
-    const gl = Math.hypot(gx, gy) || 1;
-    const ux = gx / gl, uy = gy / gl;
-    const wallCx = ball.x + ux * 9.15, wallCy = ball.y + uy * 9.15;
-    const px = -uy, py = ux;
-    sc.defenders = Array.from({ length: cfg.wall }, (_, i) => {
-      const off = (i - (cfg.wall - 1) / 2) * 1.15; // 1.15 m apart, the real engine's own wall spacing
+    // Where it was dragged to on the Training levels page, else the drill's
+    // own wall (trainingDrills.ts wallSpots).
+    sc.defenders = placedMen(wallSpots(ball, cfg.wall), cfg.men, cfg.wall).map(at => {
       return {
-        x: Math.max(1, Math.min(PITCH_W - 1, wallCx + px * off)),
-        y: Math.max(0.6, wallCy + py * off),
+        x: at.x,
+        y: at.y,
         role: "hold" as const,
         baseRole: "hold" as const,
         speed: 0,
@@ -411,10 +431,11 @@ export function buildStrike(
       gate: null,
       gateCfg: null,
       brief: `${cfg.distance.toFixed(0)}m · ${cfg.wall}-man wall`,
+      pass: cfg.pass,
     };
   }
 
-  const cfg = byLevel ? powerDrillForLevel(byLevel.trainingLevel, rep, byLevel.power) : { ...powerDrill(level, rep), keeper: true };
+  const cfg = row as PowerLevel;
   const ball = strikeSpot(cfg.distance, cfg.offset);
   const sc = buildScenario("long_range", rng, cfg.keeperStrength, 60, 55);
   sc.ball = { x: ball.x, y: ball.y };
@@ -423,13 +444,12 @@ export function buildStrike(
   initDefenders(sc, rng);
   // Bodies in the way, strung across the shooting lane at staggered depths so
   // they are a problem to shoot THROUGH rather than a single line to clear.
-  sc.defenders = Array.from({ length: cfg.blockers }, (_, i) => {
-    const f = 0.30 + (i / Math.max(1, cfg.blockers)) * 0.42;
-    const laneX = ball.x + (CX - ball.x) * f;
-    const spread = (i % 2 === 0 ? -1 : 1) * (1.1 + i * 0.7);
+  // Where they were dragged to on the Training levels page, else strung
+  // across the lane (trainingDrills.ts powerManSpots).
+  sc.defenders = placedMen(powerManSpots(ball, cfg.blockers), cfg.men, cfg.blockers).map(at => {
     return {
-      x: Math.max(1, Math.min(PITCH_W - 1, laneX + spread)),
-      y: Math.max(1.5, ball.y * (1 - f)),
+      x: at.x,
+      y: at.y,
       role: "hold" as const,
       baseRole: "hold" as const,
       speed: 0.9,
@@ -442,55 +462,55 @@ export function buildStrike(
     viewport: strikeViewport(ball),
     gate: null,
     gateCfg: null,
-    brief: cfg.keeper
+    brief: (cfg.keeper
       ? `${cfg.distance.toFixed(0)}m · ${cfg.blockers} in the way`
-      : `${cfg.distance.toFixed(0)}m · open goal`,
+      : `${cfg.distance.toFixed(0)}m · open goal`) + (cfg.pass > 0.5 ? " · near a post" : ""),
     openGoal: !cfg.keeper,
+    pass: cfg.pass,
   };
 }
 
 function StrikeDrill({
-  kind, trainingLevel, skills, onFinish, onExit,
-}: { kind: StrikeKind; trainingLevel: number; skills: Skills; onFinish: (stars: number) => void; onExit?: () => void }) {
+  kind, trainingLevel, skills, onFinish, onExit, override, asDrawn,
+}: { kind: StrikeKind; trainingLevel: number; skills: Skills; onFinish: (stars: number) => void; onExit?: () => void; override?: StrikeLevel; asDrawn?: boolean }) {
   // One real match engine (CanvasMatch, via EngineFeature) — the same aim,
   // contact, flight, keeper and wall a match has. This file only builds the
   // picture for each rep and scores the result. See .claude/skills/one-engine.
-  // A level is one fixed picture: the same difficulty, the same seed, the same
-  // layout on every try, so it can be learnt (Mikey, 25 Sep 2026).
-  const level = levelDifficulty(trainingLevel);
+  // A level is one fixed picture: the same numbers, the same seed, the same
+  // layout on every try, so it can be learnt (Mikey, 25 Sep 2026). The
+  // numbers are the level's row (lib/star/trainingLevelData.ts).
   const rep = 0;
   const { results, attempt, done } = useTries(onFinish);
-  const seedRef = useRef(levelSeed(kind, trainingLevel));
+  // Power is the level's row eased toward YOUR Power when you are behind it
+  // (Harry, 2 Oct 2026). Held for the whole drill: a level is one picture.
+  const powerNow = skills.power;
+  const row = useMemo((): StrikeLevel => {
+    const rowAt = (n: number): StrikeLevel => (n === trainingLevel && override ? override : levelConfig(kind, n));
+    if (kind !== "power" || asDrawn) return rowAt(trainingLevel);
+    return easePowerLevel(trainingLevel, powerNow, n => rowAt(n) as PowerLevel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, trainingLevel, override, asDrawn]);
+  const seedRef = useRef(levelSeedOf(kind, trainingLevel, row));
+  seedRef.current = levelSeedOf(kind, trainingLevel, row);
   const setupRef = useRef<StrikeSetup | null>(null);
   const prevRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const crossedRef = useRef<{ x: number; z: number } | null>(null);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
-  // Power is built from the level number and YOUR Power (open goal first,
-  // scaled to your Power — powerDrillForLevel). Held for the whole drill.
-  const powerNow = skills.power;
-  const byLevel = useMemo(
-    () => (kind === "power" ? { trainingLevel, power: powerNow } : undefined),
-    // Fixed at the start of the drill: a level is one picture.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [kind, trainingLevel],
-  );
-  const powerKeeper = kind === "power" && byLevel
-    ? powerDrillForLevel(byLevel.trainingLevel, rep, byLevel.power).keeperStrength
-    : powerDrill(level, rep).keeperStrength;
+  const keeperStrength = kind === "technique" ? 40 : (row as PowerLevel | FreeKickLevel).keeperStrength;
 
   const openOn = useCallback((): Scenario => {
-    const setup = buildStrike(kind, level, rep, mulberry32(seedRef.current), byLevel);
+    const setup = buildStrikeFrom(kind, row, mulberry32(seedRef.current));
     setup.scenario.viewport = { ...setup.viewport };
     setupRef.current = setup;
     prevRef.current = null;
     crossedRef.current = null;
     return setup.scenario;
-  }, [kind, level, byLevel]);
+  }, [kind, row]);
 
   // The HUD line and the cones for this rep — the same seeded build the
   // engine was handed, so the cones stand exactly where the gate is judged.
   const view = useMemo(() => {
-    const setup = buildStrike(kind, level, rep, mulberry32(seedRef.current), byLevel);
+    const setup = buildStrikeFrom(kind, row, mulberry32(seedRef.current));
     return {
       brief: setup.brief,
       openGoal: !!setup.openGoal,
@@ -499,7 +519,7 @@ function StrikeDrill({
         { x: setup.gate.right.x, y: setup.gate.right.y },
       ] : [],
     };
-  }, [kind, level, rep, byLevel]);
+  }, [kind, row]);
   const brief = view.brief;
   const markers = view.markers;
 
@@ -529,7 +549,7 @@ function StrikeDrill({
       const reached = o === "goal" || o === "rebound" || o === "wide" || o === "over" || o === "post";
       q = shotQuality(o, reached && info.ball ? info.ball.x : null);
       text = o === "goal" || o === "rebound"
-        ? (q > 0.85 ? "TOP CORNER!" : "GOAL!")
+        ? (q < setup.pass ? "TOO CENTRAL" : q > 0.85 ? "TOP CORNER!" : "GOAL!")
         : o === "saved" || o === "tipped" ? "SAVED"
         : o === "caught" ? "CAUGHT"
         : o === "post" ? "OFF THE POST"
@@ -537,9 +557,9 @@ function StrikeDrill({
         : o === "over" ? "OVER"
         : "WIDE";
     }
-    // Passed: through the cones for the gate (anything inside them counts),
-    // in the net for a shot or a free kick.
-    const ok = setup.gate ? q >= 0.25 : q >= 0.5;
+    // Passed: the level's own score to pass (lib/star/trainingLevelData.ts):
+    // 0.25 = anywhere through the cones, 0.5 = any goal, more = nearer a post.
+    const ok = q >= setup.pass;
     setFlash({ text, good: ok });
     window.setTimeout(() => setFlash(null), 1000);
     attempt(ok);
@@ -561,7 +581,7 @@ function StrikeDrill({
           markers={markers}
           skills={{ power: skills.power, technique: skills.technique }}
           setPieceSkill={skills.freeKick}
-          keeperStrength={kind === "technique" ? 40 : kind === "freeKick" ? freeKickDrill(level, rep).keeperStrength : powerKeeper}
+          keeperStrength={keeperStrength}
           seed={seedRef.current}
           scene={view.openGoal ? { ...DRILL_SCENE.power, keeper: false } : DRILL_SCENE[kind]}
         />}
@@ -580,20 +600,21 @@ function StrikeDrill({
 // PACE — the gauntlet, on the real match's own first-person dribble
 // ═══════════════════════════════════════════════════════════════════════════
 
-function GauntletDrill({ trainingLevel, onFinish, onExit }: { trainingLevel: number; onFinish: (stars: number) => void; onExit?: () => void }) {
+function GauntletDrill({ trainingLevel, onFinish, onExit, override }: { trainingLevel: number; onFinish: (stars: number) => void; onExit?: () => void; override?: PaceLevel }) {
   // The same run a real match serves (FirstPersonDribble, same camera
-  // settings as CanvasMatch's own mount). Your pace stat is the run speed.
-  const level = levelDifficulty(trainingLevel);
+  // settings as CanvasMatch's own mount). The level's row sets how many men,
+  // how quick they are, and how quick you run (lib/star/trainingLevelData.ts).
   const { results, attempt, done } = useTries(onFinish);
   const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
   const [runKey, setRunKey] = useState(0);
-  const cfg = paceDrill(level, 0);
-  // The drill's chaser count, in the real run's waves of up to three.
+  const cfg = override ?? levelConfig("pace", trainingLevel);
+  // The drill's chaser count, in the real run's waves of up to `waveMax`.
   const waveSizes = useMemo(() => {
     const out: number[] = [];
-    for (let left = cfg.chasers; left > 0; left -= 3) out.push(Math.min(3, left));
+    const max = Math.max(1, cfg.waveMax);
+    for (let left = cfg.chasers; left > 0; left -= max) out.push(Math.min(max, left));
     return out;
-  }, [cfg.chasers]);
+  }, [cfg.chasers, cfg.waveMax]);
   const total = waveSizes.reduce((a, b) => a + b, 0);
 
   // Passed: you got to the line with the ball.
@@ -609,7 +630,7 @@ function GauntletDrill({ trainingLevel, onFinish, onExit }: { trainingLevel: num
   return (
     <Shell
       title={SKILL_TITLES.pace}
-      instruction="Read each man as he commits, then burst the other way. Get to the line with the ball."
+      instruction="One man comes for the ball. Pick the gap, wait for his shoulder, and flick the other way as his ring turns green."
       results={results} trainingLevel={trainingLevel} onExit={onExit}
     >
       <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "5 / 8" }}>
@@ -617,14 +638,16 @@ function GauntletDrill({ trainingLevel, onFinish, onExit }: { trainingLevel: num
           <FirstPersonDribble
             key={runKey}
             embedded
-            seed={levelSeed("pace", trainingLevel)}
-            pace={level}
+            seed={levelSeedOf("pace", trainingLevel, cfg)}
+            pace={cfg.runPace}
             oppStrength={cfg.oppStrength}
             waveSizes={waveSizes}
             chaseEye={5}
             chasePitchDeg={5}
             chaseOffset={4}
             cameraFollowRate={10}
+            knockOn
+            lanes={cfg.lanes}
             onComplete={onComplete}
           />
         )}
@@ -635,258 +658,333 @@ function GauntletDrill({ trainingLevel, onFinish, onExit }: { trainingLevel: num
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// VISION — read the run
+// VISION — who should I pass to? (rebuilt 20 Oct 2026)
 // ═══════════════════════════════════════════════════════════════════════════
+//
+// Harry: "the vision skill is horrendous. It's cluttered, and the skill gap
+// doesn't increase. I don't like the line on the pitch … real scenarios: Who
+// should I pass to? Have someone offside. Lessen the time … early on you tap,
+// then you actually have to kick the ball." And: "I don't like how it's in
+// the old 2D style."
+//
+// Each try is a REAL picture (lib/star/visionRound.ts: a real tracked pass,
+// or one of the team's drawn chances), played on the real match
+// (EngineFeature): the match's own new view, its own figures, no line drawn.
+//  - Tap levels: tap the man you'd pass to before the bar runs out.
+//  - Kick levels: play the pass with the real drag and strike. The window is
+//    the time to START the kick (your pull on the ball); then you must let go
+//    inside the level's let-go time. The engine judges the pass: did it reach
+//    the right man, was he offside, was it cut out.
+// The drill reads the match only through its observers (the frame reader for
+// where a man is on the glass and when your pull starts; onBallStep and
+// onChanceResolved for what the pass did). No loop of its own.
 
-interface VisionMate { x: number; y: number; space: number; onside: boolean; }
-interface VisionRound {
-  mates: VisionMate[];
-  defenders: { x: number; y: number }[];
-  line: number;
-  best: number;
-  viewport: TrainingViewport;
+type VisionPhase = "count" | "play" | "result";
+
+/** Where the match's pitch box sits inside our own box, for the overlays. */
+function boxOffset(pitch: HTMLDivElement | null, mine: HTMLDivElement | null): { x: number; y: number } {
+  if (!pitch || !mine) return { x: 0, y: 0 };
+  const a = pitch.getBoundingClientRect(), b = mine.getBoundingClientRect();
+  return { x: a.left + pitch.clientLeft - b.left, y: a.top + pitch.clientTop - b.top };
 }
 
-/**
- * One picture to read.
- *
- * Built rather than randomised into existence: mates and markers are thrown
- * down, everyone's space is measured, and then the best onside option is
- * pushed clear until it leads the next-best by the ladder's `margin`. At the
- * bottom of the ladder that margin is seven metres and the right ball is
- * obvious; at the top it is barely one, and you have under a second.
- */
-function buildVisionRound(level: number, rep: number, rng: () => number): VisionRound {
-  const cfg = visionDrill(level, rep);
-  const line = 26 + rng() * 6;
-  const n = cfg.options;
-  // The frame is decided FIRST and everybody is placed inside it. Doing it
-  // the other way round — scatter across the full 68 m pitch, then fit a
-  // 5:8 frame to the spread — put half the options off the side of a
-  // portrait canvas, where they could neither be read nor tapped.
-  const viewW = 34;
-  const x1 = CX - viewW / 2, x2 = CX + viewW / 2;
-  const viewH = viewW / (5 / 8);
-  const y1 = line - 12;
-  const y2 = y1 + viewH;
-  const spanX = (f: number) => x1 + 3 + f * (viewW - 6);
+function VisionDrillView({ trainingLevel, skills, onFinish, onExit, override }: { trainingLevel: number; skills: Skills; onFinish: (stars: number) => void; onExit?: () => void; override?: VisionLevel }) {
+  const { results, attempt, done } = useTries(onFinish);
+  const cfg: VisionLevel = override ?? levelConfig("vision", trainingLevel);
+  const cfgKey = JSON.stringify(cfg);
+  const seed = levelSeedOf("vision", trainingLevel, cfg);
+  // The real moments load the first time Vision is played.
+  const [ready, setReady] = useState(visionMomentsReady());
+  useEffect(() => {
+    if (ready) return;
+    let live = true;
+    void loadVisionMoments().then(() => { if (live) setReady(true); });
+    return () => { live = false; };
+  }, [ready]);
+  // The level's three pictures, one per try, fixed by the level's seed. Built
+  // with every level below it, so a picture from an earlier level comes back
+  // as rarely as the pictures allow (a first play of a high level builds them
+  // all, a frame between levels).
+  const [pics, setPics] = useState<VisionPicture[]>([]);
+  const [built, setBuilt] = useState(false);
+  useEffect(() => {
+    if (!ready) return;
+    let live = true;
+    setBuilt(false);
+    const levelOf = (n: number) => {
+      if (n === trainingLevel) return { ask: visionAsk(cfg), seed };
+      const c = levelConfig("vision", n);
+      return { ask: visionAsk(c), seed: levelSeedOf("vision", n, c) };
+    };
+    void visionLevelPicturesAsync(trainingLevel, levelOf, TRIES).then((p) => { if (live) { setPics(p); setBuilt(true); } });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, cfgKey, seed, trainingLevel]);
+  const [tryIdx, setTryIdx] = useState(0);
+  const pic: VisionPicture | undefined = pics[Math.min(tryIdx, pics.length - 1)];
 
-  const defenders = Array.from({ length: Math.max(3, Math.round(n * 0.8)) }, () => ({
-    x: spanX(rng()),
-    y: line + (rng() - 0.5) * 7,
-  }));
-  const mates: VisionMate[] = Array.from({ length: n }, () => {
-    // Some of them run beyond the line — those are the ones you must NOT
-    // pick, however much space they are standing in.
-    const beyond = rng() < 0.42;
-    const y = beyond ? line - 1.5 - rng() * 7 : line + 1.5 + rng() * 11;
-    return { x: spanX(rng()), y, space: 0, onside: !beyond };
-  });
-  const spaceOf = (m: VisionMate) =>
-    defenders.reduce((min, d) => Math.min(min, Math.hypot(d.x - m.x, d.y - m.y)), 99);
-  for (const m of mates) m.space = spaceOf(m);
-
-  const onside = mates.map((m, i) => ({ m, i })).filter(o => o.m.onside);
-  if (onside.length === 0) {
-    // Vanishingly unlikely, but a round with no legal pass is not a round.
-    mates[0].onside = true;
-    mates[0].y = line + 3;
-    mates[0].space = spaceOf(mates[0]);
-    onside.push({ m: mates[0], i: 0 });
-  }
-  onside.sort((a, b) => b.m.space - a.m.space);
-  const best = onside[0];
-  const runnerUp = onside[1]?.m.space ?? 0;
-  // Push the best option clear of the field by the ladder's margin — walking
-  // it away from its nearest marker rather than teleporting it, so the
-  // picture still looks like a real one.
-  let guard = 0;
-  while (best.m.space < runnerUp + cfg.margin && guard++ < 40) {
-    const near = defenders.reduce((a, d) =>
-      Math.hypot(d.x - best.m.x, d.y - best.m.y) < Math.hypot(a.x - best.m.x, a.y - best.m.y) ? d : a, defenders[0]);
-    const dx = best.m.x - near.x, dy = best.m.y - near.y;
-    const l = Math.hypot(dx, dy) || 1;
-    // Clamped to the fixed frame, not the whole pitch — the frame is what
-    // has to stay readable, and this is the only step that can walk a mate
-    // outside it.
-    best.m.x = Math.max(x1 + 2, Math.min(x2 - 2, best.m.x + (dx / l) * 0.8));
-    best.m.y = Math.max(line + 1.2, Math.min(y2 - 2, best.m.y + (dy / l) * 0.8));
-    best.m.space = spaceOf(best.m);
-  }
-
-  return {
-    mates, defenders, line, best: best.i,
-    viewport: { x1, x2, y1, y2 },
-  };
-}
-
-function VisionDrillView({ trainingLevel, onFinish, onExit }: { trainingLevel: number; onFinish: (stars: number) => void; onExit?: () => void }) {
-  const level = levelDifficulty(trainingLevel);
-  const rep = 0;
-  const { results, attempt } = useTries(onFinish);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const facesRef = useRef(createFaceImageCache());
-  const [round, setRound] = useState<VisionRound | null>(null);
-  const [flash, setFlash] = useState<{ text: string; good: boolean } | null>(null);
+  const [phase, setPhase] = useState<VisionPhase>("count");
+  const [count, setCount] = useState(3);
+  const [verdict, setVerdict] = useState<VisionVerdict | null>(null);
+  const [tapped, setTapped] = useState<number | null>(null);
   const [left, setLeft] = useState(1);
-  const startedRef = useRef(0);
-  const answeredRef = useRef(false);
-  const cfg = useMemo(() => visionDrill(level, rep), [level, rep]);
-  // 3, 2, 1, GO before every try, with the picture hidden (Mikey, 25 Sep
-  // 2026). 0 is "GO"; null once it's over and the clock is running.
-  const [count, setCount] = useState<number | null>(3);
-  const countRef = useRef<number | null>(3);
-  countRef.current = count;
+  const [hold, setHold] = useState(false);
+  const [rings, setRings] = useState<{ x: number; y: number; good: boolean }[]>([]);
+  const phaseRef = useRef<VisionPhase>("count");
+  phaseRef.current = phase;
+  const goAtRef = useRef(0);
+  const pullAtRef = useRef<number | null>(null);
+  const letGoAtRef = useRef<number | null>(null);
+  // Which man the aim arrow pointed at when you let go (for "you played it to an offside man").
+  const aimedRef = useRef<number | null>(null);
+  const strikeOffRef = useRef<boolean[] | null>(null);
+  const scRef = useRef<Scenario | null>(null);
+  const frameRef = useRef<EngineFrame | null>(null);
+  const pitchRef = useRef<HTMLDivElement | null>(null);
+  const mineRef = useRef<HTMLDivElement>(null);
+  const picRef = useRef(pic);
+  picRef.current = pic;
 
-  useCanvasSize(canvasRef, wrapRef);
   // The countdown (and so the clock) only runs while the pitch is on screen.
-  const onScreen = useMostlyOnScreen(wrapRef);
+  const onScreen = useMostlyOnScreen(mineRef);
 
-  // The same picture on every try: a fresh generator from the level's own seed.
-  const startRep = useCallback((r: number) => {
-    setRound(buildVisionRound(level, r, mulberry32(levelSeed("vision", trainingLevel))));
-    startedRef.current = performance.now();
-    answeredRef.current = false;
-    setLeft(1);
+  // A fresh try: the countdown again, nothing answered.
+  useEffect(() => {
+    setPhase("count");
     setCount(3);
-  }, [level, trainingLevel]);
+    setVerdict(null);
+    setTapped(null);
+    setLeft(1);
+    setHold(false);
+    setRings([]);
+    pullAtRef.current = null;
+    letGoAtRef.current = null;
+    aimedRef.current = null;
+    strikeOffRef.current = null;
+    scRef.current = null;
+  }, [tryIdx, cfgKey]);
 
-  useEffect(() => { startRep(0); }, [startRep]);
-
-  const answer = useCallback((i: number | null) => {
-    if (answeredRef.current || !round) return;
-    answeredRef.current = true;
-    const picked = i === null ? null : round.mates[i];
-    let q = 0;
-    let text = "TOO SLOW";
-    if (picked) {
-      if (!picked.onside) { q = 0; text = "OFFSIDE!"; }
-      else if (i === round.best) {
-        const spent = (performance.now() - startedRef.current) / 1000;
-        q = Math.max(0.5, Math.min(1, 1 - (spent / cfg.window) * 0.5));
-        text = q > 0.85 ? "PERFECT BALL!" : "GOOD BALL";
-      } else {
-        // Onside but not the best ball on — a real pass, just not the one the
-        // picture was asking for.
-        q = 0.3;
-        text = "SAFE BALL";
-      }
-    }
-    // Passed: the best ball on, in time.
-    const ok = !!picked && picked.onside && i === round.best;
-    setFlash({ text, good: ok });
-    attempt(ok);
-    window.setTimeout(() => {
-      setFlash(null);
-      if (!ok) startRep(rep);
-    }, 950);
-  }, [round, cfg.window, attempt, rep, startRep]);
-
-  // The countdown: 3, 2, 1 a beat apart, then GO, then the picture and the
-  // clock start together — and not before the pitch is on screen: the count
-  // holds on its number until it is.
+  // 3, 2, 1 a beat apart, then GO: the picture and the clock start together.
   useEffect(() => {
-    if (count === null || !onScreen) return;
+    if (phase !== "count" || !pic || !onScreen) return;
     const t = window.setTimeout(() => {
-      if (count > 0) setCount(count - 1);
+      if (count > 1) setCount(count - 1);
       else {
-        startedRef.current = performance.now();
-        setCount(null);
+        goAtRef.current = performance.now();
+        setPhase("play");
       }
-    }, count > 0 ? 700 : 450);
+    }, 650);
     return () => window.clearTimeout(t);
-  }, [count, onScreen]);
+  }, [phase, count, pic, onScreen]);
 
-  // The clock.
+  /** Ring the right man (and the wrong man you picked) where the match drew them. */
+  const ringMen = useCallback((picked: number | null) => {
+    const p = picRef.current, f = frameRef.current;
+    if (!p || !f) return;
+    const off = boxOffset(pitchRef.current, mineRef.current);
+    const at = (i: number) => {
+      const fig = f.figures.find((g) => g.sid === `run${i}`);
+      const q = camToBox(f.cam, fig ? { x: fig.x, y: fig.y } : p.options[i]);
+      return { x: off.x + q.x, y: off.y + q.y };
+    };
+    const out = [{ ...at(p.best), good: true }];
+    if (picked !== null && picked !== p.best) out.push({ ...at(picked), good: false });
+    setRings(out);
+  }, []);
+
+  const finish = useCallback((v: VisionVerdict, picked: number | null) => {
+    if (phaseRef.current === "result") return;
+    phaseRef.current = "result";
+    setPhase("result");
+    setVerdict(v);
+    setTapped(picked);
+    ringMen(picked);
+    attempt(v.ok);
+  }, [attempt, ringMen]);
+
+  // After the result: a beat to see it, then the next try (a miss) or the end.
   useEffect(() => {
+    if (phase !== "result" || !verdict) return;
+    // A kick plays on a moment (he takes it, or it is cut out), then freezes.
+    const freeze = window.setTimeout(() => setHold(true), cfg.kick ? 1300 : 0);
+    const next = window.setTimeout(() => {
+      if (!verdict.ok && tryIdx < TRIES - 1) setTryIdx(tryIdx + 1);
+    }, 2300);
+    return () => { window.clearTimeout(freeze); window.clearTimeout(next); };
+  }, [phase, verdict, tryIdx, cfg.kick]);
+
+  // The clock: tap levels until the tap; kick levels until the pull starts,
+  // then the let-go time until it is released.
+  useEffect(() => {
+    if (phase !== "play") return;
     let raf = 0;
     const tick = () => {
       raf = requestAnimationFrame(tick);
-      if (answeredRef.current || countRef.current !== null) return;
-      const spent = (performance.now() - startedRef.current) / 1000;
-      const frac = Math.max(0, 1 - spent / cfg.window);
-      setLeft(frac);
-      if (frac <= 0) answer(null);
+      if (phaseRef.current !== "play") return;
+      const now = performance.now();
+      const p = picRef.current;
+      if (!p) return;
+      if (!cfg.kick || pullAtRef.current === null) {
+        const spent = (now - goAtRef.current) / 1000;
+        setLeft(Math.max(0, 1 - spent / cfg.window));
+        if (spent > cfg.window) finish(judgeTap(p, null), null);
+      } else if (letGoAtRef.current === null) {
+        const held = (now - pullAtRef.current) / 1000;
+        setLeft(Math.max(0, 1 - held / cfg.letGo));
+        if (held > cfg.letGo) finish(judgeTap(p, null), null);
+      }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [cfg.window, answer]);
+  }, [phase, cfg.kick, cfg.window, cfg.letGo, finish]);
 
-  // The picture.
+  // The match's own frames: where everyone is drawn, and (kick levels) the
+  // moment your pull starts (the aim arrow appears) and is let go.
+  const observer = useMemo((): EngineFrameObserver => ({
+    hold,
+    attach: (wrap) => { pitchRef.current = wrap; },
+    onFrame: (f) => {
+      frameRef.current = f;
+      if (!cfg.kick || phaseRef.current !== "play") return;
+      if (pullAtRef.current === null && (f.aim || f.phase !== "aim")) pullAtRef.current = performance.now();
+      if (f.aim && picRef.current) aimedRef.current = aimedMan(picRef.current, { x: f.aim.to.x - f.aim.from.x, y: f.aim.to.y - f.aim.from.y });
+      if (letGoAtRef.current === null && f.phase !== "aim") letGoAtRef.current = performance.now();
+    },
+  }), [hold, cfg.kick]);
+
+  // The picture for this try, as the engine's Scenario. Kept, so what the
+  // engine does to it (who took the ball, offside) can be read back.
+  const openOn = useCallback((): Scenario => {
+    const p = picRef.current!;
+    const sc = visionScenario(p, (seed + tryIdx * 7919) >>> 0);
+    scRef.current = sc;
+    return sc;
+  }, [seed, tryIdx]);
+
+  // The pass, as the engine plays it.
+  const onBallStep = useCallback(() => {
+    const p = picRef.current, sc = scRef.current;
+    if (!p || !sc || phaseRef.current !== "play") return;
+    // The law's flags as the ball left your foot (a defender's touch clears them later).
+    if (!strikeOffRef.current) strikeOffRef.current = sc.secondaryRunners.map((r) => !!r.offside);
+    const v = judgeKick(p, sc, null, aimedRef.current, strikeOffRef.current);
+    if (v) finish(v, sc.receivedBy ? sc.secondaryRunners.indexOf(sc.receivedBy) : aimedRef.current);
+  }, [finish]);
+  const onChanceResolved = useCallback((info: ChanceResolved) => {
+    const p = picRef.current, sc = scRef.current;
+    if (!p || !sc) return;
+    if (phaseRef.current === "result") { setHold(true); return; }
+    const v = judgeKick(p, sc, info.outcome, aimedRef.current, strikeOffRef.current ?? undefined);
+    if (v) finish(v, sc.receivedBy ? sc.secondaryRunners.indexOf(sc.receivedBy) : aimedRef.current);
+  }, [finish]);
+
+  // Development only (compiled out of the live site, devMode.ts): the answer
+  // and where this drill thinks each man is on the glass, so a playtest bot
+  // can tap the right (or a wrong) man and check the drill's sums against
+  // the match's own (window.__starMatch.frame()). Read-only.
   useEffect(() => {
-    let raf = 0;
-    const draw = () => {
-      raf = requestAnimationFrame(draw);
-      const c = canvasRef.current;
-      if (!c || !round) return;
-      renderTrainingScene(c, {
-        viewport: round.viewport,
-        goal: false,
-        defenders: round.defenders.map((d, i) => ({
-          ...d, face: facesRef.current.get(fakeFaceFor(`defender-${i}`)),
-        })),
-        mates: round.mates.map((m, i) => ({
-          x: m.x, y: m.y,
-          highlight: answeredRef.current && i === round.best,
-          dim: answeredRef.current && i !== round.best,
-          face: facesRef.current.get(fakeFaceFor(`mate-${i}`)),
-        })),
-        you: { x: CX, y: round.viewport.y2 - 3, face: facesRef.current.get(fakeFaceFor("you")) },
-        ball: { x: CX, y: round.viewport.y2 - 2.2, z: 0 },
-        offsideLine: round.line,
-      });
+    if (!offlineDevPlayEnabled() || typeof window === "undefined") return;
+    const w = window as unknown as { __vision?: unknown };
+    w.__vision = {
+      phase: () => phaseRef.current,
+      best: () => picRef.current?.best ?? -1,
+      traps: () => picRef.current?.options.map((o) => o.trap) ?? [],
+      onGlass: () => {
+        const p = picRef.current, f = frameRef.current, box = pitchRef.current;
+        if (!p || !f || !box) return null;
+        const r = box.getBoundingClientRect();
+        return p.options.map((o) => { const q = camToBox(f.cam, o); return { x: r.left + box.clientLeft + q.x, y: r.top + box.clientTop + q.y }; });
+      },
+      ball: () => {
+        const p = picRef.current, f = frameRef.current, box = pitchRef.current;
+        if (!p || !f || !box) return null;
+        const r = box.getBoundingClientRect();
+        const q = camToBox(f.cam, p.ball);
+        return { x: r.left + box.clientLeft + q.x, y: r.top + box.clientTop + q.y };
+      },
     };
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
-  }, [round]);
+    return () => { delete w.__vision; };
+  }, []);
 
+  // Tap levels: a tap on a man is the answer.
   const tap = (e: React.PointerEvent) => {
-    const c = canvasRef.current;
-    if (!c || !round || answeredRef.current || countRef.current !== null) return;
-    const r = c.getBoundingClientRect();
-    const vp = round.viewport;
-    const x = vp.x1 + ((e.clientX - r.left) / r.width) * (vp.x2 - vp.x1);
-    const y = vp.y1 + ((e.clientY - r.top) / r.height) * (vp.y2 - vp.y1);
-    let bestI = -1, bestD = 3.2;
-    round.mates.forEach((m, i) => {
-      const d = Math.hypot(m.x - x, m.y - y);
-      if (d < bestD) { bestD = d; bestI = i; }
-    });
-    if (bestI >= 0) answer(bestI);
+    const p = picRef.current, f = frameRef.current, box = pitchRef.current;
+    if (!p || !f || !box || phaseRef.current !== "play" || cfg.kick) return;
+    const r = box.getBoundingClientRect();
+    const i = tapPick(f.cam, p.options, e.clientX - r.left - box.clientLeft, e.clientY - r.top - box.clientTop);
+    if (i >= 0) finish(judgeTap(p, i), i);
   };
 
+  const real = pic?.source === "real";
+  const instruction = verdict
+    ? verdict.line
+    : cfg.kick
+      ? `Play the pass: drag back from the ball to aim at him, then strike it. Start inside ${cfg.window.toFixed(1)}s.`
+      : "Tap the team-mate you'd pass to. Not offside, not marked, nobody in the way.";
+
   return (
-    <Shell
-      title={SKILL_TITLES.vision}
-      instruction="Pick the best ball on: the man in the most space who is still ONSIDE — behind the yellow line."
-      results={results} trainingLevel={trainingLevel} onExit={onExit}
-    >
-      <div
-        ref={wrapRef}
-        className="relative w-full overflow-hidden rounded-xl border-2 border-emerald-800 shadow-2xl touch-none select-none"
-        style={{ aspectRatio: "5 / 8" }}
-      >
-        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none" onPointerDown={tap} />
-        <div className="pointer-events-none absolute inset-x-2 top-2 h-1.5 rounded-full bg-black/40 overflow-hidden">
-          <div
-            className={`h-full rounded-full ${left > 0.4 ? "bg-emerald-400" : "bg-red-400"}`}
-            style={{ width: `${left * 100}%` }}
-          />
-        </div>
-        {count !== null && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-950">
-            <div key={count} className="text-7xl font-black text-white">
-              {count > 0 ? count : "GO!"}
-            </div>
-            <div className="mt-3 text-base font-black text-emerald-300">Pick the free pass</div>
+    <Shell title={SKILL_TITLES.vision} instruction={instruction} results={results} trainingLevel={trainingLevel} onExit={onExit}>
+      <div ref={mineRef} className="relative" data-vision-phase={phase} data-vision-try={tryIdx}>
+        {!pic ? (
+          <div className="grid w-full place-items-center text-[13px] font-black text-white/70" style={{ aspectRatio: "5 / 9" }}>
+            {built ? "No pictures for this level." : "Loading real moments…"}
+          </div>
+        ) : !done || phase === "result" ? (
+          <EngineFrameContext.Provider value={observer}>
+            <EngineFeature
+              key={`${tryIdx}-${pic.id}`}
+              openOn={openOn}
+              onBallStep={onBallStep}
+              onChanceResolved={onChanceResolved}
+              skills={{ power: skills.power, technique: skills.technique }}
+              seed={(seed + tryIdx) >>> 0}
+              scene={VISION_SCENE}
+            />
+          </EngineFrameContext.Provider>
+        ) : null}
+        {/* The clock. */}
+        {phase === "play" && (
+          <div className="pointer-events-none absolute inset-x-2 top-2 z-30 h-1.5 overflow-hidden rounded-full bg-black/45">
+            <div className={`h-full rounded-full ${left > 0.4 ? "bg-emerald-400" : "bg-red-400"}`} style={{ width: `${left * 100}%` }} />
           </div>
         )}
-        {flash && <Flash text={flash.text} good={flash.good} />}
+        {/* Tap levels: the pitch answers a tap, not a drag. Afterwards nothing on it takes a touch. */}
+        {pic && ((phase === "play" && !cfg.kick) || phase === "result") && (
+          <div className="absolute inset-0 z-20 touch-none" onPointerDown={tap} data-vision-tap />
+        )}
+        {/* The right man (green) and the wrong one you picked (red). */}
+        {phase === "result" && rings.map((g, i) => (
+          <div key={i} className="pointer-events-none absolute z-30" style={{ left: g.x, top: g.y }}>
+            <div className="absolute -translate-x-1/2 -translate-y-1/2 rounded-[50%]"
+              style={{ width: 46, height: 20, border: `3px solid ${g.good ? "#34d399" : "#ef4444"}`, boxShadow: `0 0 14px ${g.good ? "#34d399" : "#ef4444"}` }} />
+            {/* A badge just above his head, so it reads as his and not as a mark on the pitch. */}
+            <div className="absolute flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full text-[12px] font-black leading-none text-white"
+              style={{ top: -44, background: g.good ? "#10b981" : "#ef4444", boxShadow: "0 1px 4px rgba(0,0,0,.6)" }}>
+              {g.good ? "✓" : "✗"}
+            </div>
+          </div>
+        ))}
+        {/* 3, 2, 1 — the picture stays hidden until GO. */}
+        {pic && phase === "count" && (
+          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-gray-950">
+            <div key={count} className="text-7xl font-black text-white">{count}</div>
+            <div className="mt-3 text-base font-black text-emerald-300">{cfg.kick ? "Who gets the pass? Kick it to him" : "Who gets the pass?"}</div>
+          </div>
+        )}
+        {verdict && <Flash text={verdict.word} good={verdict.ok} />}
       </div>
+      {real && pic && (
+        <div className="mt-1 px-1 text-center text-[9.5px] leading-tight text-white/55" data-vision-credit>
+          {phase === "result" && pic.match ? `${pic.match}, ${pic.minute}'. ` : "A real moment. "}
+          {REAL_CREDIT[(pic.src ?? "dfl") as keyof typeof REAL_CREDIT] ?? ""}
+        </div>
+      )}
     </Shell>
   );
 }
+
+/** The Vision picture on the match: everything on, but the drill says what happened (no GOAL / PASS / OFFSIDE text). */
+const VISION_SCENE: ScenePicture = { banners: false };
 
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -928,6 +1026,9 @@ function CompleteScreen({ title, trainingLevel, stars }: { title: string; traini
 }
 
 export default function TrainingMinigame(props: Props) {
+  // The level's numbers: this device's copy of the saved levels at once, the
+  // shared table once per page load (lib/star/trainingLevelStore.ts).
+  if (typeof window !== "undefined") void ensureTrainingLevels();
   return (
     <DrillLook.Provider value={{ skill: props.skill, glow: props.glow ?? "#2F6F4E" }}>
       <KitStyles />
@@ -937,7 +1038,7 @@ export default function TrainingMinigame(props: Props) {
   );
 }
 
-function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExit }: Props) {
+function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExit, levelOverride, asDrawn }: Props) {
   const [result, setResult] = useState<number | null>(null);
   // Level 1 of every game opens on a short how-it-works card.
   const [introDone, setIntroDone] = useState(trainingLevel !== 1);
@@ -956,13 +1057,13 @@ function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExi
 
   switch (skill) {
     case "pace":
-      return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} />;
+      return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} override={levelOverride as PaceLevel | undefined} />;
     case "vision":
-      return <VisionDrillView trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} />;
+      return <VisionDrillView trainingLevel={trainingLevel} skills={skills} onFinish={setResult} onExit={onExit} override={levelOverride as VisionLevel | undefined} />;
     case "power":
     case "technique":
     case "freeKick":
-      return <StrikeDrill kind={skill} trainingLevel={trainingLevel} skills={skills} onFinish={setResult} onExit={onExit} />;
+      return <StrikeDrill kind={skill} trainingLevel={trainingLevel} skills={skills} onFinish={setResult} onExit={onExit} override={levelOverride as StrikeLevel | undefined} asDrawn={asDrawn} />;
     default:
       return <GauntletDrill trainingLevel={trainingLevel} onFinish={setResult} onExit={onExit} />;
   }

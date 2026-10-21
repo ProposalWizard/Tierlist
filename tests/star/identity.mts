@@ -403,7 +403,10 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
         .filter(f => f.competition !== "Community Shield" && f.competition !== "Super Cup" && f.competition !== "FA Cup")
         .map(f => ({ ...f, opponentStrength: undefined }));
     }
-    // …and its draw (cupState) is a different, ten-round one.
+    // …and its draw (cupState) is a different, ten-round one (and, from
+    // Harry's 20 Oct 2026 round, carries a third cup, the Lower League Trophy,
+    // on its own seed). The B13 move of the Championship's weekend-2 Tuesday
+    // only touched the FA Cup Round of 64 tie, which is filtered out above.
     delete rest.cupState;
     return JSON.stringify(rest);
   };

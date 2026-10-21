@@ -12,6 +12,7 @@
  * pixel style, whose whole point is the small render (and that is cheaper).
  */
 import type { PostLook } from "./styles";
+import { setToonSkinMark, toonSkinFixOn, TOON_SKIN_MARK, TOON_SKIN } from "./toon/shader";
 
 const VERT = /* glsl */ `
 varying vec2 vUv;
@@ -26,7 +27,7 @@ uniform vec2 res;
 uniform float cNear, cFar, exposure, time, dpr;
 uniform float edge, edgeW, posterize, posterMix, halftone, grain, bloom, bloomThresh, sat, contrast, vignette, palette, dither;
 uniform vec3 edgeColor, tint, lift, burstColor;
-uniform float burst, impact, lite;
+uniform float burst, impact, lite, skinFix;
 varying vec2 vUv;
 
 float linD(float d) { float z = d * 2.0 - 1.0; return (2.0 * cNear * cFar) / (cFar + cNear - z * (cFar - cNear)); }
@@ -46,9 +47,19 @@ float bayer4(vec2 p) {
   return (v + 0.5) / 16.0;
 }
 
+// Skin (toon/shader.ts TOON_SKIN): the curve by brightness only, so a lit face keeps its own colour.
+// ACES per colour pushed bright warm skin to lemon yellow (red tops out first, green keeps climbing).
+vec3 acesHue(vec3 x) {
+  float m = max(max(x.r, x.g), x.b);
+  float mt = aces(vec3(m)).r;
+  return x * (mt / max(m, 1e-5));
+}
+
 void main() {
   vec2 px = 1.0 / res;
-  vec3 c = texture2D(tColor, vUv).rgb;
+  vec4 c4 = texture2D(tColor, vUv);
+  vec3 c = c4.rgb;
+  float skinK = skinFix > 0.5 ? 1.0 - smoothstep(0.03, 0.09, abs(c4.a - ${TOON_SKIN_MARK.toFixed(2)})) : 0.0;
 
   // glow: two rings of bright samples
   if (bloom > 0.0) {
@@ -65,7 +76,7 @@ void main() {
     c += b * bloom / 10.0;
   }
 
-  c = toSRGB(aces(c));
+  c = toSRGB(mix(aces(c), acesHue(c), skinK));
 
   // cel bands, keeping the hue
   if (posterMix > 0.0) {
@@ -86,10 +97,12 @@ void main() {
     c = mix(c, c * 0.28, dotm * halftone * smoothstep(0.85, 0.35, l));
   }
 
-  // the grade
-  c = c * tint + lift;
+  // the grade (skin is spared most of the tint and lift and all of the extra colour: the golden
+  // hour stays in the picture, his face stays his own tone)
+  float skG = skinK * ${TOON_SKIN.gradeOff.toFixed(2)};
+  c = c * mix(tint, vec3(1.0), skG) + lift * (1.0 - skG);
   c = (c - 0.5) * contrast + 0.5;
-  c = mix(vec3(luma(c)), c, sat);
+  c = mix(vec3(luma(c)), c, mix(sat, ${TOON_SKIN.sat.toFixed(2)}, skinK));
 
   // ink lines from depth jumps
   if (edge > 0.0) {
@@ -159,7 +172,7 @@ export function makeStylePost(T: any, renderer: any): StylePost {
     edge: { value: 0 }, edgeW: { value: 1 }, posterize: { value: 4 }, posterMix: { value: 0 }, halftone: { value: 0 },
     grain: { value: 0 }, bloom: { value: 0 }, bloomThresh: { value: 1 }, sat: { value: 1 }, contrast: { value: 1 },
     vignette: { value: 0 }, palette: { value: 0 }, dither: { value: 0 },
-    edgeColor: { value: new T.Color() }, burstColor: { value: new T.Color() }, burst: { value: 0 }, impact: { value: 0 }, lite: { value: 0 }, tint: { value: new T.Vector3(1, 1, 1) }, lift: { value: new T.Vector3() },
+    skinFix: { value: 0 }, edgeColor: { value: new T.Color() }, burstColor: { value: new T.Color() }, burst: { value: 0 }, impact: { value: 0 }, lite: { value: 0 }, tint: { value: new T.Vector3(1, 1, 1) }, lift: { value: new T.Vector3() },
   };
   const mat = new T.ShaderMaterial({ uniforms: u, vertexShader: VERT, fragmentShader: FRAG, depthTest: false, depthWrite: false });
   const quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat);
@@ -188,8 +201,11 @@ export function makeStylePost(T: any, renderer: any): StylePost {
       if (rt.width !== w || rt.height !== h) rt.setSize(w, h);
       renderer.toneMapping = T.NoToneMapping;
       renderer.setRenderTarget(rt);
+      setToonSkinMark(true);
       renderer.render(scene, camera);
+      setToonSkinMark(false);
       renderer.setRenderTarget(null);
+      u.skinFix.value = toonSkinFixOn() ? 1 : 0;
       u.tColor.value = rt.texture;
       u.tDepth.value = rt.depthTexture;
       u.res.value.set(w, h);

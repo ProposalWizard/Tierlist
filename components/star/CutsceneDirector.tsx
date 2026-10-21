@@ -16,7 +16,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { StyleId } from "@/lib/star/style3d/styles";
 import type { CutsceneScript, Emotion, EventKind, StoryEvent } from "@/lib/star/cutscene/types";
-import type { Director } from "@/lib/star/cutscene/director";
+import type { Director, DirectorEdit } from "@/lib/star/cutscene/director";
+import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
+import { directorScriptId } from "@/lib/star/sceneEdits/approval";
 import type { Overlay } from "@/lib/star/cutscene/timeline";
 import { FIXTURES, FIXTURE_LIST } from "@/lib/star/cutscene/fixtures";
 import { generateScript, scoreScript } from "@/lib/star/cutscene/generate";
@@ -40,6 +42,8 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
   const [time, setTime] = useState(0);
   const [ov, setOv] = useState<Overlay | null>(null);
   const [inited, setInited] = useState(false);
+  // Phone fix: a beat name is cut short on the bar; a tap shows it whole.
+  const [beatTip, setBeatTip] = useState<number | null>(null);
   const styleRef = useRef(style); styleRef.current = style;
   const lookCam = useCutsceneCameraLook();
   const [camOverride, setCamOverride] = useState<CutsceneCameraLook | null>(null);
@@ -100,6 +104,11 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
 
   useEffect(() => { dir.current?.setStyle(style); }, [style]);
 
+  // a hand-made scene's approved 3D Scene Editor edit, on this test page (lib/star/sceneEdits; none = as written)
+  const evKind = script.source?.event?.kind;
+  const approved = useApprovedEdit<DirectorEdit>(mode === "fixture" ? directorScriptId(fixture) : "", "test", evKind ? [evKind] : []);
+  useEffect(() => { if (approved && mode === "fixture" && status === "ready") dir.current?.setEdit(approved); }, [approved, status, mode]);
+
   const d = dir.current;
   const set = <K extends keyof StoryEvent>(k: K, v: StoryEvent[K]) => setEv((e) => ({ ...e, [k]: v }));
   const regen = () => { setMode("generate"); setGen((g) => g + 1); };
@@ -129,11 +138,14 @@ export default function CutsceneDirector({ style, clean }: { style: StyleId; cle
           </div>
           <div className="relative">
             <input type="range" min={0} max={script.duration} step={1 / 30} value={time} onChange={(e) => d?.seek(Number(e.target.value))} className="w-full accent-amber-400" data-scrub />
-            <div className="relative h-3">
+            <div className="relative h-6">
               {(script.beats ?? []).map((b, i) => (
-                <div key={i} title={b.name} className="absolute top-0 h-3 truncate border-l border-amber-300/70 pl-0.5 text-[8px] leading-3 text-white/60" style={{ left: `${(b.at / script.duration) * 100}%`, width: `${(b.dur / script.duration) * 100}%` }}>{b.name}</div>
+                <button type="button" key={i} title={b.name} data-beat={i} onClick={() => setBeatTip(beatTip === i ? null : i)} className={`absolute top-0 h-6 truncate border-l border-amber-300/70 pl-0.5 text-left text-[8px] leading-6 ${beatTip === i ? "bg-amber-300/20 text-white" : "text-white/60"}`} style={{ left: `${(b.at / script.duration) * 100}%`, width: `${(b.dur / script.duration) * 100}%` }}>{b.name}</button>
               ))}
             </div>
+            {beatTip !== null && script.beats?.[beatTip] && (
+              <div className="text-[11px] font-bold text-amber-200" data-beat-name>{script.beats[beatTip].name} · {script.beats[beatTip].at.toFixed(1)} s</div>
+            )}
           </div>
           <div className="flex items-center gap-1.5 overflow-x-auto">
             <button className={`${btn} ${mode === "fixture" ? on : ""}`} onClick={() => setMode("fixture")}>Hand-made</button>

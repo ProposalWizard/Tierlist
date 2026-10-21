@@ -27,8 +27,8 @@
  *   - a 99 is still the best there is: the curve never goes down.
  * One side effect, unreachable today: `launch` also reads the power stat for
  * how strong you are in the air when a defender contests a HEADER — header
- * chances are switched off (lib/star/switchedOffKinds.ts). If they come back,
- * a 99 would contest in the air like an 82.
+ * chances are back on (B10, 20 Oct 2026), so a 99 contests in the air like an
+ * 82 (reasoned from this curve, not measured).
  *
  * Applied in one place — CanvasMatch's strike (handleContact) — which is where
  * every mode kicks the ball: the real match, highlights, the gallery's Play,

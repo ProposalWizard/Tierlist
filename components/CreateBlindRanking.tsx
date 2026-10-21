@@ -291,19 +291,23 @@ export default function CreateBlindRanking() {
                     className="w-full bg-transparent text-xs text-white placeholder-gray-600 focus:text-white focus:outline-none"
                   />
                 </div>
-                <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity [@media(hover:none)]:opacity-100">
                   <button
+                    type="button"
                     onClick={() => setCropTarget({ imageUrl: img.preview, imageName: img.name || "Image", type: "image", id: img.tempId })}
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600/90 text-xs text-white"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600/90 text-xs text-white"
                     title="Crop"
+                    aria-label="Crop image"
                   >
                     ✂
                   </button>
                   <button
-                    onClick={() => removeImage(img.tempId)}
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600/90 text-xs text-white"
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeImage(img.tempId); }}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600/90 text-xs text-white"
+                    aria-label="Remove image"
                   >
-                    x
+                    ✕
                   </button>
                 </div>
                 {img.pendingCropDataUrl && (

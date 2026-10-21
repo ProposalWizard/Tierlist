@@ -48,8 +48,9 @@ export default function LiveScorePop({ pop, onClose }: { pop: LiveGoal & { id: n
         <button
           onClick={onClose}
           aria-label="Close"
-          className="ml-0.5 grid h-5 w-5 shrink-0 place-items-center rounded bg-white/10 text-[11px] font-black text-white hover:bg-white/20"
+          className="relative ml-0.5 grid h-5 w-5 shrink-0 place-items-center rounded bg-white/10 text-[11px] font-black text-white hover:bg-white/20"
         >
+          <span aria-hidden className="absolute -inset-[10px]" />
           ×
         </button>
       </div>

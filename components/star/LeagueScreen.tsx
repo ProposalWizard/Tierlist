@@ -7,7 +7,8 @@ import { starLevel } from "@/lib/star/starPoints";
 import type { CareerState } from "@/lib/star/types";
 import { sortLeague } from "@/lib/star/season";
 import { nationOf, nextFixtureFor } from "@/lib/star/competitions";
-import { exitRound, yourEntryRound } from "@/lib/star/cups";
+import { exitRound, yourEntryRound, type CupId } from "@/lib/star/cups";
+import { CupSummary } from "./CupSummary";
 import { sortEuro, knockoutSlots } from "@/lib/star/euro";
 import { goldenBootRace, assistRace } from "@/lib/star/recognition";
 import { groupedGoalLines, shortClub } from "@/lib/star/media/grammar";
@@ -51,6 +52,12 @@ interface Props {
   /** The match-week page drives the view itself (its edge arrows) and hides this screen's own tab row. */
   view?: "table" | "results" | "fixtures" | "awards" | "squad";
   hideTabs?: boolean;
+  /**
+   * The match-week page: a domestic cup's tab shows where it stands for you
+   * and an "Open" button into the cup's own screen (CupScreen.tsx) instead
+   * of every tie of the round. Absent (the phone's app): the list as before.
+   */
+  onOpenCup?: (competition: CupId) => void;
 }
 
 /** A cup round's name as a heading over its ties: "Quarter-Final" → "Quarter-Finals". */
@@ -192,7 +199,7 @@ function ovrStyle(o?: number): string {
     : "bg-gradient-to-b from-gray-500 to-gray-700 text-white";
 }
 
-function ClubLeagueScreen({ career, compact = false, view: forcedView, hideTabs = false }: Props) {
+function ClubLeagueScreen({ career, compact = false, view: forcedView, hideTabs = false, onOpenCup }: Props) {
   const { glow } = useClubTheme(career);
   // The league tables' columns and club names (see `compact`).
   // Inside the phone the table is zoomed in (Mikey, 5 Oct 2026: "it doesn't
@@ -441,6 +448,15 @@ function ClubLeagueScreen({ career, compact = false, view: forcedView, hideTabs 
             const out = exitRound(cup, you);
             const joinIn = yourEntryRound(cup, you);
             const tone = cup.winner === you ? "#fbbf24" : out ? "#6b7280" : "#10b981";
+            // The match-week page: where the cup stands and a way into its
+            // own screen (Harry, 20 Oct 2026), not every tie of the round.
+            if (onOpenCup) {
+              return {
+                key: `domestic-${cup.competition}`,
+                label: cup.competition,
+                content: <CupSummary career={career} state={cup} onOpen={() => onOpenCup(cup.competition)} />,
+              };
+            }
             return {
               key: `domestic-${cup.competition}`,
               label: cup.competition,
@@ -495,6 +511,13 @@ function ClubLeagueScreen({ career, compact = false, view: forcedView, hideTabs 
                           </div>
                         );
                       })}
+                      {/* Through without a game (the Lower League Trophy's 8 byes). */}
+                      {round.byes && round.byes.length > 0 && (
+                        <div data-cup-byes className={`rounded-lg px-1.5 py-1 text-[10px] font-bold ${round.byes.includes(you) ? "text-white" : "bg-white/[0.04] text-white/85"}`}
+                          style={round.byes.includes(you) ? youRow(glow) : undefined}>
+                          <span className="font-black text-emerald-300">Byes · </span>{round.byes.join(", ")}
+                        </div>
+                      )}
                     </div>
                   )}
                 </ClubCard>

@@ -174,6 +174,10 @@ function playUntilTieAndLose(c: CareerState, competition: string): CareerState {
   const fa = after.find(s => s.competition === "FA Cup")!;
   check(currentRound(fa)?.name === "Third Round" && !!yourTie(fa, "Liverpool"),
     `the FA Cup plays its four early rounds, then stops at Liverpool's Third Round tie (${currentRound(fa)?.name})`);
+  // The Lower League Trophy (Harry, 20 Oct 2026) is opened in every career
+  // and plays on without a Premier League club.
+  const llt = after.find(s => s.competition === "Lower League Trophy");
+  check(!!llt, "the Lower League Trophy is opened in every career and plays on without you");
 }
 
 if (problems.length) {

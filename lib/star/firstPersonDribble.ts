@@ -224,6 +224,15 @@ export interface FpDefender {
   feints?: number;
   /** He brought you down. */
   fouled?: boolean;
+  // ── Knock-on only (training Pace; absent otherwise) — see "THE KNOCK-ON". ──
+  /** "taker": the one man who comes for the ball; "cover": holds his lane. */
+  role?: "taker" | "cover";
+  /** The GO window around the moment he commits, wall-clock seconds. */
+  goWin?: number;
+  /** Run time (sim seconds) he committed at. */
+  commitAt?: number;
+  /** You went too early: the side he read, and goes. */
+  readDir?: -1 | 1;
 }
 
 export interface FpBurst {
@@ -241,6 +250,8 @@ export interface FpBurst {
   lat?: number;
   /** Duels only: which move this was. */
   move?: DribbleMove;
+  /** Knock-on only: a clean knock's own length, sim seconds (absent = BURST_T). */
+  dur?: number;
 }
 
 /**
@@ -353,6 +364,14 @@ export interface FpRunState {
   stick?: FpStick;
   /** Forward m/s you are actually running at (the stick builds and eases it). */
   fwd?: number;
+  // ── Knock-on only (training Pace) — see "THE KNOCK-ON" below. ──
+  knockOn?: boolean;
+  /** Your pace, 0-100: how far a good knock carries you on. */
+  knockPace?: number;
+  /** Sim seconds of forward surge left after a good knock. */
+  surge?: number;
+  /** Every knock graded, oldest first (tests and the screen read it). */
+  knocks?: KnockGrade[];
 }
 
 // ── Tuned constants ─────────────────────────────────────────────────────────
@@ -581,6 +600,16 @@ export function newRun(opts: {
   duels?: boolean;
   /** Your dribbling (technique), 0-100. Duels only. */
   dribbling?: number;
+  /**
+   * The knock-on (training Pace only — see "THE KNOCK-ON" below): one man
+   * per wave comes for the ball, the rest hold their lanes, and a burst is
+   * judged on WHEN you go against the moment he commits. Absent/false = the
+   * run exactly as before (the real match and the trial never set it).
+   */
+  knockOn?: boolean;
+  /** Men placed by hand, per wave, metres across from the centre line (the
+   *  Training levels page). Absent = placed by the seed, as before. */
+  lanes?: number[][];
   rng: () => number;
 }): FpRunState {
   const { rng } = opts;
@@ -599,6 +628,10 @@ export function newRun(opts: {
     const factor = roundCount > 1 ? 0.85 + (classic ? 0.15 : 0.23) * (r / (roundCount - 1)) : 1.0;
     const y = START_Y - FIRST_DUEL_DEPTH - DUEL_GAP * r;
     const xs = placeWave(size, rng);
+    // Men placed by hand on the Training levels page (metres across from the
+    // centre). placeWave still ran, so every later roll is the seed's own.
+    const placed = opts.lanes?.[r];
+    if (placed) placed.forEach((off, i) => { if (i < xs.length && Number.isFinite(off)) xs[i] = clamp(CX + off, CX - CORRIDOR_HALF, CX + CORRIDOR_HALF); });
     // Rank this wave's men by distance from your fixed starting lane —
     // nearest presses hardest (see PRESS_STEPS / the file header). Ranking
     // at construction, off the same fixed CX placement already uses, keeps
@@ -684,6 +717,7 @@ export function newRun(opts: {
   };
   for (const m of run.mates) placeMate(run, m, 0, true);
   if (opts.duels) initDuels(run, opts.pace, opts.dribbling ?? 55);
+  else if (opts.knockOn) initKnockOn(run, opts.pace);
   return run;
 }
 
@@ -803,6 +837,7 @@ function nearestLiveInActiveRound(s: FpRunState): FpDefender | undefined {
  */
 export function applyBurst(s: FpRunState, dir: -1 | 1): boolean {
   if (s.duels) return applyBurstDuel(s, dir);
+  if (s.knockOn) return applyBurstKnock(s, dir);
   if (s.phase !== "running" || s.burst || s.burstLock > 0) return false;
   const threat = nearestLiveInActiveRound(s);
   const power = threat?.phase === "committed" ? 0.3 : 1;
@@ -825,6 +860,7 @@ function stepDefender(idx: number, s: FpRunState, sdt: number): void {
       const d = s.y - def.y;
       if (d <= ENGAGE_D) {
         def.phase = "closing";
+        if (s.knockOn) assignKnockRoles(s, def.round);
         // His `read` already starts at his own real lane (set in newRun —
         // he was placed, not lazily spawned; see the file header), so
         // nothing to reset here beyond the phase itself.
@@ -840,12 +876,16 @@ function stepDefender(idx: number, s: FpRunState, sdt: number): void {
       // so he genuinely can't fully close a wide starting gap before he
       // commits, and stays a real, exploitable gap instead of arriving
       // late to the same spot everyone else did.
-      const mirror = def.mirrorSpeed * def.press;
+      let mirror = def.mirrorSpeed * def.press;
+      // Knock-on: the man coming for the ball gets across to you before he
+      // plants, however wide he started — every wave is a real one-on-one.
+      if (def.role === "taker") mirror = Math.max(mirror, knockTakerSpeed(s, def));
       def.x += clamp(def.read - def.x, -mirror * sdt, mirror * sdt);
       def.y += def.closeSpeed * sdt;
-      if (s.y - def.y <= def.commitD) {
+      // Knock-on: a cover man never comes for the ball — he holds his lane.
+      if (s.y - def.y <= def.commitD && def.role !== "cover") {
         def.phase = "telegraph";
-        def.commitSide = pickSide(def, s);
+        def.commitSide = def.readDir ?? pickSide(def, s);
         def.tell = def.tellT;
       }
       break;
@@ -858,6 +898,7 @@ function stepDefender(idx: number, s: FpRunState, sdt: number): void {
         def.phase = "committed";
         def.lungeFrom = def.x;
         def.lunge = 0;
+        if (s.knockOn) def.commitAt = s.elapsed;
       }
       break;
     }
@@ -900,13 +941,16 @@ export function stepRun(s: FpRunState, dt: number): RunPhase {
   let boost = 1;
   if (s.burst) {
     const b = s.burst;
+    // A knock-on's clean knock is quicker and longer (b.dur / b.lat); every
+    // other burst leaves both unset and is exactly as before.
+    const T = b.dur ?? BURST_T;
     b.t += sdt;
-    const f = easeOutCubic(b.t / BURST_T);
-    const target = BURST_LATERAL * b.power * f;
+    const f = easeOutCubic(b.t / T);
+    const target = (b.lat ?? BURST_LATERAL) * b.power * f;
     s.x += b.dir * (target - b.done);
     b.done = target;
-    boost = 1 + (BURST_BOOST - 1) * (1 - clamp(b.t / BURST_T, 0, 1));
-    if (b.t >= BURST_T) s.burst = null;
+    boost = 1 + (BURST_BOOST - 1) * (1 - clamp(b.t / T, 0, 1));
+    if (b.t >= T) s.burst = null;
   }
 
   let forward: number;
@@ -919,6 +963,7 @@ export function stepRun(s: FpRunState, dt: number): RunPhase {
     s.x = clamp(s.x, s.minX, s.maxX);
     forward = s.speed * boost;
   }
+  if (s.knockOn) forward *= knockSurgeBoost(s, sdt);
   s.y -= forward * sdt;
   if (s.y > s.startY + STICK_BACK_ROOM) s.y = s.startY + STICK_BACK_ROOM;
   s.stride += Math.abs(forward) * sdt;
@@ -1619,4 +1664,197 @@ function stepRunDuels(s: FpRunState, dt: number): RunPhase {
  */
 export function duelWaveSizes(rng: () => number): number[] {
   return pickWaveSizes(rng, { minRounds: 2, maxRounds: 3, maxSize: 2, maxTotal: 5 });
+}
+
+// ── THE KNOCK-ON (training Pace only) ───────────────────────────────────────
+//
+// Harry, 20 Oct 2026: Pace "is mostly holding to run" — it needed a real skill
+// that a better player does better. Measured before this (bots on the real
+// run, every level's own layout): a player who read every shoulder cleared
+// 38% / 54% / 21% of levels 1-10 / 11-20 / 21-30, one who swiped any way at
+// all 17% / 19% / 5%, and on some levels the swiper did BETTER (L25: 9% vs
+// 11%) — two or three men committing in the same beat, against one burst,
+// was luck. So, only with `knockOn`:
+//
+//  1. ONE MAN COMES FOR THE BALL (the "taker": whoever is nearest your lane
+//     when his wave wakes). The rest of his wave hold their lanes and drift
+//     across only a little (KNOCK.coverPress). Run into one and he has it;
+//     pick the gap and they are scenery. Reading the lane is a skill.
+//  2. GO AS HE GOES. He drops a shoulder (the telegraph) and a ring closes on
+//     him; the moment he commits is the moment to knock it past him. Inside
+//     the GO window around that moment (KNOCK.winEasy → winHard: wide against
+//     a weak man, a tenth of a second against the best) the knock is clean:
+//     you go again quickly (KNOCK.lock) and burst forward, further the more
+//     pace you have (KNOCK.surge*). Too early and he reads you: he goes the
+//     way you went. Too late and he is already across you (a third of a
+//     burst, as before). Nothing is rolled: the same inputs give the same run.
+//
+// Measured after (same bots): see tests/star/paceKnockOn.mts.
+
+export type KnockGradeKind = "perfect" | "early" | "late";
+export interface KnockGrade {
+  grade: KnockGradeKind;
+  /** Index of the man it was judged against. */
+  man: number;
+  /** Run time (sim seconds). */
+  t: number;
+  /** Wall seconds off the moment he committed (minus = before). */
+  off: number;
+}
+
+export const KNOCK = {
+  /** The GO window, wall-clock seconds, against a man of strength 0 and 100. */
+  winEasy: 0.30,
+  winHard: 0.05,
+  /** How the window narrows with his strength (1 = evenly; higher = late and fast). */
+  winCurve: 1.6,
+  /** Share of the window that falls before he commits (the rest is just after). */
+  before: 0.7,
+  /** A clean knock is a sharp touch: this quick (sim seconds; a burst is 0.35)… */
+  burstT: 0.2,
+  /** …and this far across (metres; a burst is 2.2). */
+  lateral: 2.5,
+  /** A cover man drifts toward your lane at this share of his mirror speed
+   *  (0: he holds his lane — the gap you see is the gap you get). */
+  coverPress: 0,
+  /** Too early: he goes with you, so your knock carries only this share. */
+  earlyPower: 0.3,
+  /** The man coming for the ball crosses at up to this (m/s) to reach your lane before he plants. */
+  takerCross: 10,
+  /** After a clean knock you can go again this soon (sim seconds; a burst is 0.55). */
+  lock: 0.2,
+  /** Forward surge after a clean knock: extra speed share at pace 0 and 100… */
+  surgeLow: 0.1,
+  surgeHigh: 0.35,
+  /** …for this long (sim seconds). */
+  surgeT: 0.55,
+};
+
+/** His GO window (wall seconds) from his strength, 0-100+. */
+export function knockWindow(strength: number): number {
+  // Narrows slowly at first and fastest at the top, so the last levels are
+  // the ones that ask for a really sharp touch.
+  return lerp01(KNOCK.winEasy, KNOCK.winHard, Math.pow(clamp(strength, 0, 100) / 100, KNOCK.winCurve));
+}
+
+function initKnockOn(s: FpRunState, pace: number) {
+  s.knockOn = true;
+  s.knockPace = clamp(pace, 0, 100);
+  s.surge = 0;
+  s.knocks = [];
+  s.events = [];
+  for (const d of s.defenders) {
+    // newRun's tellT is TELL_BASE × (1.25 − 0.5 × strength/100): read it back.
+    const str = clamp((1.25 - d.tellT / TELL_BASE) / 0.5, 0, 1) * 100;
+    d.goWin = knockWindow(str);
+  }
+}
+
+/** When a wave wakes: the man nearest your lane comes for the ball; the rest cover. */
+function assignKnockRoles(s: FpRunState, round: number) {
+  const wave = s.defenders.filter(d => d.round === round);
+  if (wave.length === 0 || wave.some(d => d.role)) return;
+  let taker = wave[0];
+  for (const d of wave) if (Math.abs(d.x - s.x) < Math.abs(taker.x - s.x)) taker = d;
+  for (const d of wave) {
+    d.role = d === taker ? "taker" : "cover";
+    if (d.role === "cover") d.press = KNOCK.coverPress;
+  }
+}
+
+/** How fast (m/s) the man coming for the ball must cross to be on your lane by the time he plants. */
+function knockTakerSpeed(s: FpRunState, d: FpDefender): number {
+  const depthLeft = Math.max(0.5, s.y - d.y - d.commitD);
+  const timeLeft = depthLeft / Math.max(1, s.speed + d.closeSpeed);
+  return Math.min(KNOCK.takerCross, (Math.abs(d.read - d.x) / timeLeft) * 1.2);
+}
+
+/** The live man coming for the ball in the active wave, if there is one. */
+export function knockTaker(s: FpRunState): FpDefender | undefined {
+  return s.defenders.find(d => d.round === s.activeRound && d.role === "taker" && d.phase !== "beaten" && d.phase !== "won");
+}
+
+/**
+ * Where a knock fired now sits against his commit, in wall seconds (minus =
+ * before he commits). Null while he hasn't dropped his shoulder yet.
+ */
+export function knockOffset(s: FpRunState, d: FpDefender): number | null {
+  if (d.phase === "telegraph") return -d.tell / TELE_SLOW;
+  if (d.phase === "committed" && d.commitAt !== undefined) return s.elapsed - d.commitAt;
+  return null;
+}
+
+/**
+ * The ring under the man coming for the ball — what the screen draws:
+ *  "coming": he is on his way (a thin ring: this is your man);
+ *  "wait":   shoulder dropped, ring closing — too early to go (`t` 0→1);
+ *  "go":     inside the GO window — knock it now;
+ *  "gone":   he is past the window (or not the man coming for it).
+ */
+export function knockRing(d: FpDefender, elapsed: number): { stage: "coming" | "wait" | "go" | "gone"; t: number } {
+  if (d.role !== "taker") return { stage: "gone", t: 0 };
+  if (d.phase === "closing") return { stage: "coming", t: 0 };
+  const w = d.goWin ?? KNOCK.winEasy;
+  let off: number | null = null;
+  if (d.phase === "telegraph") off = -d.tell / TELE_SLOW;
+  else if (d.phase === "committed" && d.commitAt !== undefined) off = elapsed - d.commitAt;
+  if (off === null) return { stage: "gone", t: 0 };
+  const start = -w * KNOCK.before;
+  if (off < start) {
+    const tellWall = d.tellT / TELE_SLOW;
+    const waited = tellWall + off; // seconds since the shoulder dropped
+    return { stage: "wait", t: clamp(waited / Math.max(0.01, tellWall + start), 0, 1) };
+  }
+  if (off <= w * (1 - KNOCK.before)) return { stage: "go", t: (off - start) / Math.max(0.01, w) };
+  return { stage: "gone", t: 0 };
+}
+
+/** Early, clean or late, for a knock fired now against him. */
+export function knockGradeNow(s: FpRunState, d: FpDefender): KnockGradeKind {
+  const off = knockOffset(s, d);
+  const w = d.goWin ?? KNOCK.winEasy;
+  if (off === null) return d.phase === "closing" || d.phase === "waiting" ? "early" : "late";
+  if (off < -w * KNOCK.before) return "early";
+  if (off > w * (1 - KNOCK.before)) return "late";
+  return "perfect";
+}
+
+function applyBurstKnock(s: FpRunState, dir: -1 | 1): boolean {
+  if (s.phase !== "running" || s.burst || s.burstLock > 0) return false;
+  const d = knockTaker(s);
+  if (!d) {
+    // Nobody coming for it (only cover men left): an ordinary burst.
+    s.burst = { dir, t: 0, done: 0, power: 1 };
+    s.burstLock = BURST_LOCK;
+    return true;
+  }
+  const grade = knockGradeNow(s, d);
+  const off = knockOffset(s, d) ?? -1;
+  s.knocks!.push({ grade, man: s.defenders.indexOf(d), t: s.elapsed, off });
+  if (grade === "early") {
+    // He reads it: he goes the way you went, and stays with you.
+    if (d.phase === "telegraph") d.commitSide = dir;
+    else d.readDir = dir;
+    s.burst = { dir, t: 0, done: 0, power: KNOCK.earlyPower };
+    s.burstLock = BURST_LOCK;
+    duelEvent(s, "Too early — he read it", "bad");
+  } else if (grade === "late") {
+    s.burst = { dir, t: 0, done: 0, power: 0.3 };
+    s.burstLock = BURST_LOCK;
+    duelEvent(s, "Too late", "bad");
+  } else {
+    s.burst = { dir, t: 0, done: 0, power: 1, lat: KNOCK.lateral, dur: KNOCK.burstT };
+    s.burstLock = KNOCK.lock;
+    s.surge = KNOCK.surgeT;
+    duelEvent(s, "Knocked it past him!", "good");
+  }
+  return true;
+}
+
+/** Forward speed share from a clean knock's surge, this tick. */
+function knockSurgeBoost(s: FpRunState, sdt: number): number {
+  if (!s.surge || s.surge <= 0) return 1;
+  const k = s.surge / KNOCK.surgeT;
+  s.surge = Math.max(0, s.surge - sdt);
+  return 1 + lerp01(KNOCK.surgeLow, KNOCK.surgeHigh, (s.knockPace ?? 60) / 100) * k;
 }

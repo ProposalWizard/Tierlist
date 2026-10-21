@@ -17,7 +17,8 @@ import {
   type Scenario, type Ball, type Outcome, type KickSkills, type ScenarioKind, type Viewport,
   type Facing, type Runner, type Vec2,
 } from "@/lib/star/canvasEngine";
-import { leadInEntities, leadInCamera, type LeadIn, type LeadEntity, type LeadMoment } from "@/lib/star/leadIn";
+import { leadInEntities, leadInCamera, stakesOf, type LeadIn, type LeadEntity, type LeadMoment } from "@/lib/star/leadIn";
+import { fhrOn } from "@/lib/star/fhr/toggle";
 import type { RealGoalView } from "@/lib/star/realGoalView";
 import {
   newMatch, advanceUntilInvolved, advanceTo, resolveScenario, lateSubQuota, noteServedKind,
@@ -52,7 +53,10 @@ import {
 } from "@/lib/star/pitch";
 import { mulberry32 } from "@/lib/star/season";
 import { newChancesOn } from "@/lib/star/newChances";
-import { playOnWanted, startPlayOn, stepPlayOn, carryFrom, carryOnLeadIn, MAX_LAY_OFFS, playOnStickWanted, startPlayOnStick, steerPlayOn, callForIt, callForItShown, type PlayOn, type CarryFrom } from "@/lib/star/playOn";
+import { stepPlayOn, carryFrom, carryOnLeadIn, MAX_LAY_OFFS, steerPlayOn, callForIt, callForItShown, runAfterWanted, startPlayOnRun, sprintPlayOn, type PlayOn, type CarryFrom } from "@/lib/star/playOn";
+import { pickBarCorner, type BarCorner, type Box as BarBox } from "@/lib/star/barSpot";
+import { panToKeep, followStep, widenToHold, easeCam, BACK_EASE_S } from "@/lib/star/runCamera";
+import { takeEnergySpent, setLegsEnergy, barCap, moveKeyOf, keysScreenDir, noKeys, KEY_PUSH, type MoveKeys } from "@/lib/star/legs";
 import { afterPassStickOn } from "@/lib/star/afterPass";
 import { dealDribble, dribbleLevelFor, newDribbleDeal, type DribbleDeal } from "@/lib/star/dribbleDeal";
 import { ruleBookFor } from "@/lib/star/ruleBook";
@@ -146,6 +150,7 @@ import {
 } from "@/lib/star/runupStyles";
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
 import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
+import { isAirKind, airWaitZ } from "@/lib/star/airDrawings";
 import { useFitWidth } from "./useFitWidth";
 import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
 import { bannerStyle, soundSet } from "@/lib/star/style3d/texturePack";
@@ -237,7 +242,12 @@ import { cameraTilt, tiltFor, tiltCss, screenToCanvas, canvasToScreen, type Tilt
 
 /** The net's drawn depth from the side, metres: a real goal's ~2 m. */
 const SIDE_NET_DEPTH = 2.0;
-import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook, BUILD_UP_KINDS as PASS_BUILD_UP_KINDS } from "@/lib/star/newLook";
+/** B14b: the stamina bar in its corner (lib/star/barSpot.ts BAR_INSET = 8 px; 36 px down at the top while the added-time badge is up). */
+const barCornerStyle = (c: "bl" | "br" | "tl" | "tr", addedUp: boolean): React.CSSProperties => ({
+  ...(c === "bl" || c === "tl" ? { left: 8 } : { right: 8 }),
+  ...(c === "tl" || c === "tr" ? { top: addedUp ? 36 : 8 } : { bottom: 8 }),
+});
+import { showYouFigure, matchBallLook, useMatchPlayersLook, matchPlayersLook } from "@/lib/star/newLook";
 import { drawMatchBall } from "@/lib/star/matchBall";
 
 /**
@@ -579,6 +589,9 @@ export interface ChanceResolved {
   /** Set when the match struck it for somebody else (a team-mate's or an
    *  opponent's penalty — see lib/star/penaltyTaking.ts). */
   autoKick?: "us" | "them";
+  /** The move ended in its build-up (a called offside, Full highlights
+   *  rebuild): no kick was taken and nothing is yours. */
+  buildUp?: boolean;
 }
 
 // Only the fields finaliseMatch reads — lets the standalone sandbox produce a
@@ -1474,8 +1487,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** See the `leadIn` prop: the builder, and the lead-in while it plays. */
   const leadInPropRef = useRef(leadIn);
   leadInPropRef.current = leadIn;
-  const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null } | null>(null);
+  const leadRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[]; ball: Vec2; z: number; mates0: number; defs0: number; cam: { at(t: number, chance: Viewport): Viewport; lockAt(t: number, chance: Viewport): number }; endAt: Record<string, Vec2>; endKeeper: Vec2 | null } | null>(null);
+  // B10: when a header or volley chance became yours (for the ball hanging /
+  // bouncing while you aim — lib/star/airDrawings.ts airWaitZ). Drawing only.
+  const airT0Ref = useRef<{ sc: Scenario; t0: number } | null>(null);
   const leadTriedRef = useRef(false);
+  /**
+   * PLAYERS ALREADY MOVING (the lead-in's `runOnS`, Full highlights rebuild
+   * phase 3): after the hand-over the men in `ents` keep running along the
+   * lead-in (posAt past durS) while you aim, and stop on their drawn spots.
+   * Strike it before then and they stop where they are: from the strike the
+   * engine moves them as it moves everyone. Null: nobody is still running.
+   */
+  const runOnRef = useRef<{ lead: LeadIn; t: number; ents: LeadEntity[]; ends: Vec2[] } | null>(null);
   // ── The move plays on after your pass (lib/star/playOn.ts, Chances: New) ──
   /** A lead-in played before this chance (a build-up, or a carry-on). */
   const leadPlayedRef = useRef(false);
@@ -1491,6 +1515,52 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const carryOnRef = useRef<CarryFrom | null>(null);
   /** "After you pass: Joystick" (lib/star/afterPass.ts): the stick is up, your thumb on it, and the captain's call's answer. */
   const [stickLive, setStickLive] = useState(false);
+  // ── B14 THE RUN (lib/star/playOn.ts startPlayOnRun, lib/star/legs.ts) ──
+  /** A run is live (any pass in open play): the stamina bar shows, keys steer. */
+  const [runLive, setRunLive] = useState(false);
+  /** The stamina bar on screen: how full (0..1), the cap your energy sets (0..1), sprinting. */
+  const [stamUi, setStamUi] = useState<{ v: number; cap: number; sprint: boolean; auto: boolean } | null>(null);
+  const stamUiAtRef = useRef(0);
+  /** B14b: which corner of the pitch the stamina bar sits in (lib/star/barSpot.ts). */
+  const [barCorner, setBarCorner] = useState<BarCorner>("bl");
+  const barCornerRef = useRef<BarCorner>("bl");
+  /** The bar as it was at the end of the last run in this move (a run that carries on keeps it). */
+  const barRef = useRef(1);
+  /** W A S D / arrows and Shift, held (PC). */
+  const keysRef = useRef<MoveKeys>(noKeys());
+  const keysSteeringRef = useRef(false);
+  /** A keyboard was used in this match: the bar's label says W A S D. */
+  const [keysSeen, setKeysSeen] = useState(false);
+  /** A computer (a mouse, hover): the bar says which keys. A phone never shows it. */
+  const [pcPointer, setPcPointer] = useState(false);
+  useEffect(() => {
+    try { setPcPointer(window.matchMedia("(hover: hover) and (pointer: fine)").matches); } catch { /* no matchMedia */ }
+  }, []);
+  const pcKeys = pcPointer || keysSeen;
+  useEffect(() => {
+    const typing = (t: EventTarget | null) => {
+      const el = t as HTMLElement | null;
+      return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+    };
+    const set = (e: KeyboardEvent, down: boolean) => {
+      if (typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+      const k = moveKeyOf(e.code);
+      if (!k) return;
+      keysRef.current[k] = down;
+      // Only while your run is live do the keys belong to the match (no page scroll under it).
+      if (playOnRef.current?.stick && phaseRef.current === "flight") {
+        e.preventDefault();
+        if (down && k !== "sprint") setKeysSeen(true);
+      }
+    };
+    const onDown = (e: KeyboardEvent) => set(e, true);
+    const onUp = (e: KeyboardEvent) => set(e, false);
+    const clear = () => { keysRef.current = noKeys(); };
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    window.addEventListener("blur", clear);
+    return () => { window.removeEventListener("keydown", onDown); window.removeEventListener("keyup", onUp); window.removeEventListener("blur", clear); };
+  }, []);
   const poStickUiRef = useRef<{ id: number; cx: number; cy: number; fx: number; fy: number; vx: number; vy: number } | null>(null);
   const [callMsg, setCallMsg] = useState<string | null>(null);
   const callMsgTimerRef = useRef<number | null>(null);
@@ -1500,6 +1570,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     callMsgTimerRef.current = window.setTimeout(() => setCallMsg(null), 1500);
   };
   const [leadInOn, setLeadInOn] = useState(false);
+  /** The lead-in's own line while it plays, when it asks for it shown (`captionShown`: "Foul! Free kick."). */
+  const [leadCap, setLeadCap] = useState<string | null>(null);
+  const leadCapRef = useRef<string | null>(null);
   /** See the `onChanceServed` / `neverHooked` props. Held in refs for the
    *  same reason `openOn` is — the loop reads them outside React's render. */
   const onChanceServedRef = useRef(onChanceServed);
@@ -2636,8 +2709,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       tiltSettingRef.current = newViewRef.current ? cameraTilt() : 0;
       applyTilt(tiltForChance(scenarioRef.current));
       // New view: the camera holds the canvas's own shape, so a new shape
-      // means a new frame — never while a ball is in flight.
-      if (newViewRef.current && !ballRef.current && scenarioRef.current) frameScenario(scenarioRef.current);
+      // means a new frame — never while a ball is in flight. Framed on the
+      // chance's own spots (frameOnChance): a resize during a build-up (a
+      // phone's address bar sliding away) used to frame the chance on the
+      // build-up's men and play it there — measured 20 px off and 38% out.
+      if (newViewRef.current && !ballRef.current && scenarioRef.current) frameOnChance();
     };
     resize();
     window.addEventListener("resize", resize);
@@ -2839,6 +2915,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const baseViewportRef = useRef<Viewport>({ x1: -5, x2: 105, y1: -5, y2: 100 });
   /** PROTOTYPE zoom-to-play: how far this chance's camera is zoomed in (1 = today). */
   const playZoomRef = useRef(1);
+  /**
+   * B14b (lib/star/runCamera.ts): the ball came back into your run — keep the
+   * camera you were watching (set by resolveOutcome, read once by loadScenario).
+   */
+  const keepRunCamRef = useRef(false);
+  /** B14b: an eased widen in progress (from, to, seconds in, zoom at the start). */
+  const camEaseRef = useRef<{ from: Viewport; to: Viewport; t: number; zoom0: number } | null>(null);
   /** Figures and ball: divide their size by this (Z2 keeps them today's size). */
   const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1);
 
@@ -3038,6 +3121,63 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       mikey.show({ text, side: "top", goal });
     }, 0);
   };
+  /** B14b: a man's height on the glass (CSS px, head to boots) at this camera,
+   *  the size the loop draws him (R, below, times MATCH_FIGURE_HEIGHT_R). */
+  const figPxOnGlass = () => {
+    const b = canvasBox(), vp = viewportRef.current, turned = facingRef.current !== "up";
+    const unitCss = turned ? b.height / (vp.x2 - vp.x1) : b.width / (vp.x2 - vp.x1);
+    const nv = newViewRef.current;
+    const R = (unitCss / (nv ? figZoomDiv() : 1)) * MATCH_FIGURE_R_MULT * (nv ? NEW_FIGURE_SCALE * NEW_OUTFIELD_SHRINK * figureGrow() : 1);
+    return R * MATCH_FIGURE_HEIGHT_R;
+  };
+  /**
+   * B14b: the stamina bar's corner (lib/star/barSpot.ts). The goal (posts,
+   * net, bar), the ball (and how high it is) and every man, as boxes in the
+   * pitch wrapper's own CSS px; the bar takes the first corner clear of all of
+   * them and stays there while it is clear.
+   */
+  const updateBarCorner = () => {
+    const w = wrapRef.current;
+    if (!w) return;
+    const r = w.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0)) return;
+    const loc = (p: { x: number; y: number }) => { const q = pitchToClient(p); return { x: q.x - r.left, y: q.y - r.top }; };
+    const sc = scenarioRef.current;
+    const pl = loc({ x: POST_L, y: 0 }), pr = loc({ x: POST_R, y: 0 });
+    const unitCss = Math.hypot(pr.x - pl.x, pr.y - pl.y) / (POST_R - POST_L);
+    const gh = unitCss * (VFX_GOAL_H + 0.4);
+    const gpts = [pl, pr, loc({ x: POST_L, y: -SIDE_NET_DEPTH }), loc({ x: POST_R, y: -SIDE_NET_DEPTH })];
+    const things: { box: BarBox; weight?: number }[] = [{
+      box: { x1: Math.min(...gpts.map((q) => q.x)) - gh, x2: Math.max(...gpts.map((q) => q.x)) + gh, y1: Math.min(...gpts.map((q) => q.y)) - gh, y2: Math.max(...gpts.map((q) => q.y)) + gh * 0.3 },
+      weight: 10,
+    }];
+    const fh = figPxOnGlass();
+    const man = (p: { x: number; y: number } | null | undefined, weight = 1) => {
+      if (!p) return;
+      const q = loc(p);
+      things.push({ box: { x1: q.x - fh * 0.45, x2: q.x + fh * 0.45, y1: q.y - fh * 1.05, y2: q.y + fh * 0.15 }, weight });
+    };
+    man(sc.player, 3); man(sc.keeper);
+    sc.defenders.forEach((d) => man(d)); sc.teammates.forEach((t) => man(t));
+    if (sc.runner) man(sc.runner.pos);
+    (sc.secondaryRunners ?? []).forEach((m) => man(m.pos));
+    if (sc.follower) man(sc.follower);
+    const bl = ballRef.current, bp = loc(bl ? bl.pos : sc.ball), bz = (bl?.z ?? 0) * unitCss;
+    things.push({ box: { x1: bp.x - 8, x2: bp.x + 8, y1: bp.y - bz - 8, y2: bp.y + 8 }, weight: 10 });
+    const topPad = (addedRef.current ?? 0) > 0 && matchMinuteRef.current > MATCH_DURATION ? 28 : 0;
+    const c = pickBarCorner(r.width, r.height, things, barCornerRef.current, topPad);
+    if (c !== barCornerRef.current) { barCornerRef.current = c; setBarCorner(c); }
+  };
+  // Five looks a second while the bar is up: it moves only when something
+  // comes into its corner (pickBarCorner keeps a clear corner).
+  const barUp = !!stamUi;
+  useEffect(() => {
+    if (!barUp) return;
+    try { updateBarCorner(); } catch { /* a missed look keeps the corner */ }
+    const id = window.setInterval(() => { try { updateBarCorner(); } catch { /* ignore */ } }, 200);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [barUp]);
   /** A pitch point -> where it is on the glass (client px). The inverse of
    *  pitchFromPointer, turn and tilt and all. */
   const pitchToClient = (p: { x: number; y: number }) => {
@@ -4901,8 +5041,31 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Sep 2026). Now whoever is nearer the camera covers it, the way he would.
     // The trail and the landing mark above stay on the grass, under everyone.
     const ball = ballRef.current;
+    // B10: a header or volley chance — the ball is IN THE AIR while you aim,
+    // its shadow on the grass under it (the gap is the height): a header hangs
+    // at your head, a volley bounces (lib/star/airDrawings.ts airWaitZ).
+    let airZ = 0;
+    if (onTheSpot && !leadRef.current && isAirKind(sc.kind)) {
+      const now = performance.now() / 1000;
+      if (airT0Ref.current?.sc !== sc) airT0Ref.current = { sc, t0: now };
+      airZ = airWaitZ(sc.kind, now - airT0Ref.current.t0);
+      // …and a faint line from its shadow up to it, so the height reads at a
+      // phone's size (the gap alone is a few pixels on a wide frame).
+      if (airZ > 0.12) {
+        const g = toPx(sc.ball.x, sc.ball.y);
+        ctx.save();
+        ctx.strokeStyle = "rgba(255,255,255,0.55)";
+        ctx.lineWidth = Math.max(1, BALL_PX * g.scale * 0.25);
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(g.px, g.py);
+        ctx.lineTo(g.px, g.py - airZ * heightScale * g.scale);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
     const ballAt = ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
-      : onTheSpot ? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? 0 } : null;
+      : onTheSpot ? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? airZ } : null;
     if (ballAt) {
       const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
       if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
@@ -5025,7 +5188,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
     // "After you pass: Joystick" (lib/star/afterPass.ts): the stick, bottom-left,
     // in the match's own picture (the same stick the top-down dribble draws).
-    if (phaseRef.current === "flight" && playOnRef.current?.stick) {
+    if (phaseRef.current === "flight" && playOnRef.current?.stick?.thumb) {
       const st = poStickUiRef.current;
       const rr = Math.min(W, H) * 0.13;
       // Resting above the commentary box, which covers the bottom of the pitch.
@@ -5578,7 +5741,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const po = playOnRef.current;
         if (!po) return null;
         const s = po.stick;
-        return { stick: !!s, layOffLive: po.layOffLive, choice: s?.choice ?? null, push: s ? { ...s.push } : null, you: { ...scenarioRef.current.player }, youOnScreen: pitchToClient(scenarioRef.current.player) };
+        return {
+          stick: !!s, layOffLive: po.layOffLive, choice: s?.choice ?? null, push: s ? { ...s.push } : null, you: { ...scenarioRef.current.player }, youOnScreen: pitchToClient(scenarioRef.current.player),
+          // B14: the run's legs (lib/star/legs.ts) and whether Auto run is steering.
+          auto: !!s?.autoOn, thumb: !!s?.thumb, held: !!s?.held,
+          legs: s?.legs ? { bar: s.legs.stamina.v, cap: s.legs.cap, sprinting: s.legs.sprinting, speed: Math.hypot(s.legs.vel.x, s.legs.vel.y) } : null,
+          energy: energyRef.current,
+        };
       },
       ball: () => pitchToClient(ballRef.current ? ballRef.current.pos : scenarioRef.current.ball),
       // show a banner word now, as the match would (banner stills)
@@ -5612,6 +5781,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           zoom: playZoomRef.current, canvas: r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null,
           box: (() => { const b = canvasBox(); return { x: b.left, y: b.top, w: b.width, h: b.height }; })(),
           men, hw: canvasHW(), sc: JSON.parse(JSON.stringify(sc)),
+          // B14b: how big a man is on the glass (CSS px, head to boots) and the
+          // pitch in view (metres across x down), at this camera, this frame.
+          ...(() => {
+            const vp = viewportRef.current, turned = facingRef.current !== "up";
+            return { figPx: figPxOnGlass(), barCorner: barCornerRef.current, metres: { across: turned ? vp.y2 - vp.y1 : vp.x2 - vp.x1, down: turned ? vp.x2 - vp.x1 : vp.y2 - vp.y1 } };
+          })(),
         };
       },
       // the ball in flight, and a way to set it (ball-physics stills: send a
@@ -5660,16 +5835,41 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!build) return;
     const sc = scenarioRef.current;
     let lead: LeadIn | null = null;
-    try { lead = build(sc, moment ?? { opening: true, fresh: true, seed: seedRef.current }); } catch (e) { console.error("Lead-in could not be built (the chance plays as normal)", e); }
+    // One picture (openOn): the opening chance, with its frame and the match's minute and score.
+    const opening: LeadMoment = {
+      opening: true, fresh: true, seed: seedRef.current,
+      frame: { ...baseViewportRef.current },
+      minute: matchMinuteRef.current, scoreDiff: userScoreRef.current - oppScoreRef.current,
+    };
+    try { lead = build(sc, moment ?? opening); } catch (e) { console.error("Lead-in could not be built (the chance plays as normal)", e); }
     if (!lead || !(lead.durS > 0)) return;
+    runOnRef.current = null;
     const ents = leadInEntities(sc);
     const ends = ents.map((e) => e.get());
+    // Men who JOIN the chance (a covering defender in from off the screen):
+    // a real defender from now on, in the shape the chance's own defence has
+    // (cover; at rest he holds his place). Reset to his place at the end like everyone.
+    for (const j of lead.joiners ?? []) {
+      const at = lead.posAt(j.key, 0) ?? j.end;
+      const d: Scenario["defenders"][number] = { x: at.x, y: at.y, homeX: j.end.x, homeY: j.end.y, containT: 0, speed: 1, role: "cover", baseRole: "cover" };
+      sc.defenders.push(d);
+      ents.push({ key: j.key, side: "opp", get: () => ({ x: d.x, y: d.y }), set: (p) => { d.x = p.x; d.y = p.y; } });
+      ends.push({ ...j.end });
+    }
     // Team-mates in the move but not in the chance: on the pitch for the lead-in only.
     const mates0 = sc.teammates.length;
     for (let i = 0; i < (lead.extraMates ?? 0); i++) {
       const m = { x: sc.ball.x, y: sc.ball.y };
       sc.teammates.push(m);
       ents.push({ key: `extra${i}`, side: "mate", get: () => ({ x: m.x, y: m.y }), set: (p) => { m.x = p.x; m.y = p.y; } });
+    }
+    // …and opponents (the man your side wins the ball from): the same, after the chance's own.
+    const defs0 = sc.defenders.length;
+    for (let i = 0; i < (lead.extraOpps ?? 0); i++) {
+      const at = lead.posAt(`oppx${i}`, 0) ?? { x: sc.ball.x, y: sc.ball.y };
+      const d: Scenario["defenders"][number] = { x: at.x, y: at.y, homeX: at.x, homeY: at.y, containT: 0, speed: 1, role: "cover", baseRole: "cover" };
+      sc.defenders.push(d);
+      ents.push({ key: `oppx${i}`, side: "opp", get: () => ({ x: d.x, y: d.y }), set: (p) => { d.x = p.x; d.y = p.y; } });
     }
     // Where the chance has each man, by the figure name the frame uses (for a 3D camera of its own).
     const endAt: Record<string, Vec2> = {};
@@ -5679,7 +5879,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const sid = e.key === "keeper" ? null : e.key === "run" ? "run0" : e.key.startsWith("sec") ? `run${Number(e.key.slice(3)) + 1}` : e.key;
       if (sid) endAt[sid] = { ...ends[i] }; else endKeeper = { ...ends[i] };
     });
-    leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, cam: leadInCamera(lead, ents.map((e) => e.key)), endAt, endKeeper };
+    leadRef.current = { lead, t: 0, ents, ends, ball: { x: sc.ball.x, y: sc.ball.y }, z: 0, mates0, defs0, cam: leadInCamera(lead, ents.map((e) => e.key)), endAt, endKeeper };
     leadPlayedRef.current = true;
     setLeadInOn(true);
     applyLeadIn();
@@ -5689,20 +5889,126 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!L) return;
     // The screen's picture (the 3D view) is still loading: hold on the first frame.
     if (frameObsRef.current?.warming && L.t === 0) { applyLeadIn(); return; }
+    const was = L.t;
     L.t += dt;
+    // A foul before a set piece: the referee's whistle as it happens.
+    const wAt = L.lead.whistleAt;
+    if (wAt !== undefined && was < wAt && L.t >= wAt) playWhistle();
+    // Its line over the picture, when it asks (a state change only when the line changes).
+    const cap = L.lead.captionShown && L.t < L.lead.durS ? L.lead.captionAt?.(L.t) ?? null : null;
+    if (cap !== leadCapRef.current) { leadCapRef.current = cap; setLeadCap(cap); }
     if (L.t < L.lead.durS) {
       applyLeadIn();
       try { L.lead.onTick?.(L.t, false); } catch { /* an observer never breaks the match */ }
       return;
     }
+    // The move ended in a called offside: no chance follows (endInOffside).
+    if (L.lead.offside) { endInOffside(L); return; }
     const sc = scenarioRef.current;
-    L.ents.forEach((e, i) => { if (i < L.ends.length) e.set(L.ends[i]); });
+    // Still running at the hand-over (runOnS): those men stay where the lead-in
+    // has them at durS and carry on (stepRunOn); everyone else is on his spot.
+    const runKeys = new Set(L.lead.runOnS && L.lead.runOnS > 0 ? L.lead.runOnKeys ?? [] : []);
+    const runEnts: LeadEntity[] = [], runEnds: Vec2[] = [];
+    L.ents.forEach((e, i) => {
+      if (i >= L.ends.length) return;
+      const p = runKeys.has(e.key) ? L.lead.posAt(e.key, L.lead.durS) : null;
+      if (p) { e.set(p); runEnts.push(e); runEnds.push(L.ends[i]); }
+      else e.set(L.ends[i]);
+    });
     sc.teammates.length = L.mates0;
+    sc.defenders.length = L.defs0;
     sc.ball.x = L.ball.x; sc.ball.y = L.ball.y;
     viewportRef.current = baseViewportRef.current;
     leadRef.current = null;
+    runOnRef.current = runEnts.length ? { lead: L.lead, t: 0, ents: runEnts, ends: runEnds } : null;
     setLeadInOn(false);
     try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
+  };
+  /** Is this man under the captain's orders, or the man pressing you (they move by their own rules)? */
+  const ownMover = (key: string): boolean => {
+    const sc = scenarioRef.current;
+    const presser = presserRef.current;
+    if (key === "run") return !!(sc.runner?.commandedTo || sc.runner?.heldAt);
+    if (key.startsWith("sec")) { const r = sc.secondaryRunners[Number(key.slice(3))]; return !!(r?.commandedTo || r?.heldAt); }
+    if (key === "follower") return !!(sc.follower.commandedTo || sc.follower.heldAt);
+    if (key.startsWith("def")) return !!presser && presser === sc.defenders[Number(key.slice(3))];
+    return false;
+  };
+  /** Phase 3: the men still running after the hand-over, while you aim. They stop on their drawn spots. */
+  const stepRunOn = (dt: number) => {
+    const R = runOnRef.current;
+    if (!R) return;
+    R.t += dt;
+    const T = R.lead.durS + R.t;
+    const end = R.t >= (R.lead.runOnS ?? 0);
+    R.ents.forEach((e, i) => {
+      if (ownMover(e.key)) return;
+      const p = end ? R.ends[i] : R.lead.posAt(e.key, T);
+      if (p) e.set(p);
+    });
+    if (end) runOnRef.current = null;
+  };
+  /**
+   * The ball is struck while they are still running: from the strike the
+   * engine moves them, as it moves everyone (stepReactions: a man reacts when
+   * the ball comes near him), so the run-on stops where they are. The match
+   * engine itself is unchanged.
+   */
+  const handOverRunOn = () => { runOnRef.current = null; };
+  /**
+   * A BUILD-UP THAT ENDS IN A CALLED OFFSIDE (Full highlights rebuild: On,
+   * lib/star/fhr/buildUp.ts; Harry, 20 Oct 2026: "Offsides can happen but
+   * they must be called"). The flag went up (the whistle at the lead-in's
+   * whistleAt): it is called the way a chance's offside is (OFFSIDE), the
+   * free kick is theirs, and the move ends — no chance from it, in the
+   * match's own count too (handed back as the match hands back an offside).
+   * Nothing is credited to you. The men, the ball and the camera stay where
+   * the build-up left them; then the match goes on as after any chance.
+   */
+  const endInOffside = (L: NonNullable<typeof leadRef.current>) => {
+    leadRef.current = null;
+    runOnRef.current = null;
+    setLeadInOn(false);
+    if (leadCapRef.current !== null) { leadCapRef.current = null; setLeadCap(null); }
+    baseViewportRef.current = { ...viewportRef.current };
+    try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
+    const sc = scenarioRef.current;
+    setOutcome("offside");
+    setPhase("result");
+    showAction("OFFSIDE");
+    pushLine(L.lead.offside?.by === "you" ? `Flag up — ${playerLabel()} went too early. Free kick to them.` : "Flag up — the run was too early. Offside, free kick to them.");
+    try { onChanceResolvedRef.current?.({ outcome: "offside", kind: sc.kind, youShot: false, teammateShot: false, ball: null, buildUp: true }); } catch { /* an observer never breaks the match */ }
+    if (matchModeRef.current) {
+      resolveScenario(matchStateRef.current, matchResultFor("offside"));
+      handOver(() => startSimulation(), 1800);
+    } else if (!replayOfRef.current) handOver(() => loadScenario(false), 1800);
+  };
+  /**
+   * Frame the chance from the chance's own spots. While a build-up (or its
+   * run-on) plays, the scenario holds the build-up's positions; framing on
+   * those gave the chance a camera of their own (B2b, Harry: "end on the
+   * actual camera we have been using in game"). So its men and the ball are
+   * put on the chance's spots for the framing — the build-up's own extras
+   * out of it — and straight back. Outside a build-up: frameScenario as ever.
+   */
+  const frameOnChance = () => {
+    const sc = scenarioRef.current;
+    const L = leadRef.current, R = runOnRef.current;
+    if (!L && !R) { frameScenario(sc); return; }
+    const ents = L ? L.ents : R!.ents, ends = L ? L.ends : R!.ends;
+    const now = ents.map((e) => e.get());
+    const ball = { x: sc.ball.x, y: sc.ball.y };
+    const mates = L ? sc.teammates.splice(L.mates0) : [];
+    const opps = L ? sc.defenders.splice(L.defs0) : [];
+    ents.forEach((e, i) => { if (i < ends.length) e.set(ends[i]); });
+    if (L) { sc.ball.x = L.ball.x; sc.ball.y = L.ball.y; }
+    try { frameScenario(sc); } finally {
+      sc.teammates.push(...mates);
+      sc.defenders.push(...opps);
+      ents.forEach((e, i) => e.set(now[i]));
+      sc.ball.x = ball.x; sc.ball.y = ball.y;
+    }
+    if (L) viewportRef.current = L.cam.at(L.t, baseViewportRef.current);
   };
   /** A tap on a skippable lead-in (the career's build-ups): straight to the chance. */
   const skipLeadIn = () => {
@@ -5899,6 +6205,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           steps = Math.floor(physAccRef.current * 180 + 1e-6);
           physAccRef.current = Math.max(0, physAccRef.current - steps / 180);
         }
+        // B14: W A S D / arrows + Shift steer your run (PC), turned into a pitch
+        // direction through the match's own camera, once a frame.
+        applyRunKeys();
         for (let i = 0; i < steps; i++) {
           const recorded = replaySubstepsRef.current;
           let h: number;
@@ -5952,7 +6261,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const po = playOnRef.current;
           if (po && !touchLive) {
             const wasLive = po.layOffLive;
-            if (stepPlayOn(po, scenarioRef.current, ballRef.current, h, playOnRngRef.current, layOffsLeftRef.current) === "caught") {
+            const caughtIt = stepPlayOn(po, scenarioRef.current, ballRef.current, h, playOnRngRef.current, layOffsLeftRef.current) === "caught";
+            noteRunStep(po);
+            if (caughtIt) {
               playOnCaughtRef.current = true;
               resolveOutcome("delivered");
               break;
@@ -6188,6 +6499,30 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // Nothing outside the frame is part of the game, so there is nothing out
       // there to pan to — and when the camera went looking anyway, you lost your
       // bearings and, twice, the thing you were aiming at.
+      // ── B14b: the one exception, your run (lib/star/runCamera.ts) ──
+      // Harry, 21 Oct 2026: follow the run, never jump. While your pass plays
+      // on, the chance's own camera pans (never zooms) just enough to keep you
+      // — and a ball played back to you — in the picture, inside the chance's
+      // play area. When the ball comes back, a widen (only if you, the ball and
+      // the goal would not all fit) eases in over BACK_EASE_S, the men kept
+      // their size. Everything else keeps the frame exactly as set.
+      {
+        const nvOk = newViewRef.current && !sceneRef.current?.ownFrame && !leadRef.current && !runOnRef.current;
+        const ce = camEaseRef.current;
+        if (ce) {
+          ce.t += dt;
+          const v = easeCam(ce.from, ce.to, ce.t / BACK_EASE_S);
+          // The men stay the size they were (the zoom divides back, as Zoom does).
+          playZoomRef.current = ce.zoom0 * (ce.from.x2 - ce.from.x1) / (v.x2 - v.x1);
+          baseViewportRef.current = v;
+          if (ce.t >= BACK_EASE_S) camEaseRef.current = null;
+        } else if (nvOk && playOnRef.current && phaseRef.current === "flight") {
+          const sc = scenarioRef.current, po = playOnRef.current, b = ballRef.current;
+          const pts = [sc.player, ...(po.layOffLive && b ? [b.pos] : [])];
+          const want = panToKeep(baseViewportRef.current, pts, sc.viewport);
+          baseViewportRef.current = followStep(baseViewportRef.current, want, dt);
+        }
+      }
       viewportRef.current = baseViewportRef.current;
 
       if (shakeRef.current.t > 0) shakeRef.current.t = Math.max(0, shakeRef.current.t - dt);
@@ -6210,6 +6545,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         trailRef.current.shift(); // let it dissolve after the play resolves
       }
 
+      // Phase 3: still running after the hand-over, while you aim (or pick the contact).
+      if (runOnRef.current) {
+        if (phaseRef.current === "aim" || phaseRef.current === "contact") stepRunOn(dt);
+        else runOnRef.current = null; // the chance ended some other way: they stop where they are
+      }
       if (leadRef.current) stepLeadIn(dt);
       recordGoalFrame(dt);
       render();
@@ -6724,6 +7064,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // your next kick, straight away. Repositioned like a Touch Mode
       // re-touch (resetForTouchOn), without spending its budget.
       playOnCaughtRef.current = false;
+      keepRunCamRef.current = true;   // B14b: the next kick keeps this camera (runCamera.ts)
       const b = ballRef.current;
       if (b) {
         chainRef.current = {
@@ -7798,6 +8139,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // Load a new scenario onto the canvas and enter aim phase.
   const loadScenario = (attacking: boolean) => {
     sceneGenRef.current += 1;
+    runOnRef.current = null;
     bootRef.current = null;
     applyClearanceRules();
     seedRef.current += 1;
@@ -7980,9 +8322,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // not just a different position fed into the same rebuild.
     const isTouchContinuation = chain !== null && chain.touchTouches !== undefined;
     // A new picture starts a new move (playOn.ts); a re-touch / a lay-off taken back is the same move.
+    // B14: the same move keeps the stamina bar as your run left it; a new
+    // chance comes a minute or more later, with your breath back (up to your energy).
+    const legsWas = playOnRef.current?.stick?.legs;
+    barRef.current = isTouchContinuation && legsWas ? legsWas.stamina.v : 1;
     playOnRef.current = null;
     poStickUiRef.current = null;
     setStickLive(false);
+    setRunLive(false);
+    {
+      const cap = barCap(liveEnergyAt(matchMinuteRef.current));
+      setStamUi({ v: Math.min(barRef.current, cap), cap, sprint: false, auto: false });
+    }
     if (!isTouchContinuation) { leadPlayedRef.current = false; layOffsLeftRef.current = MAX_LAY_OFFS; }
     const carry = chain && !isTouchContinuation ? carryOnRef.current : null;
     carryOnRef.current = null;
@@ -8087,7 +8438,21 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     standBackForRunup(scenarioRef.current);
 
-    frameScenario(scenarioRef.current);
+    // B14b: the ball came back into your run — the camera you were watching
+    // stays (no re-frame, no cut). It eases wider only if you, the ball and
+    // the goal would not all be in the picture (runCamera.ts widenToHold).
+    const keepCam = keepRunCamRef.current && isTouchContinuation && newViewRef.current && !sceneRef.current?.ownFrame;
+    keepRunCamRef.current = false;
+    if (keepCam) {
+      const sc = scenarioRef.current, cur = { ...baseViewportRef.current };
+      const to = widenToHold(cur, [sc.player, sc.ball, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }]);
+      // The play area always holds the picture (the engine's "out" line is never on the glass).
+      sc.viewport = { x1: Math.min(sc.viewport.x1, to.x1), x2: Math.max(sc.viewport.x2, to.x2), y1: Math.min(sc.viewport.y1, to.y1), y2: Math.max(sc.viewport.y2, to.y2) };
+      camEaseRef.current = to.x1 === cur.x1 && to.x2 === cur.x2 && to.y1 === cur.y1 && to.y2 === cur.y2 ? null : { from: cur, to, t: 0, zoom0: playZoomRef.current };
+    } else {
+      camEaseRef.current = null;
+      frameScenario(scenarioRef.current);
+    }
     ballRef.current = null;
     setAim(null);
     runupRef.current = null;
@@ -8155,7 +8520,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         seed: seedRef.current,
         us: careerRef.current?.player.club, them: fixture?.opponent,
         themStrength: oppStrengthRef.current,
+        // B2b (Full highlights rebuild: On only — Off hands over exactly what
+        // it always did): your side's strength (the match's own number), how
+        // your side won the ball this move as the match had it, and whether
+        // the offside law is on.
+        ...(fhrOn() ? {
+          usStrength: hiddenInputs().teamStrength,
+          regain: request?.regain,
+          offsideOff: careerRef.current ? ruleBookFor(careerRef.current, "FA").offsideAbolished : false,
+        } : {}),
         frame: { ...baseViewportRef.current },
+        // How big the moment is (a build-up runs longer late in a close final).
+        minute: matchMinuteRef.current,
+        scoreDiff: userScoreRef.current - oppScoreRef.current,
+        stakes: stakesOf(fixture),
       });
     }
     playWhistle();
@@ -8310,12 +8688,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       if (f.sx >= 0.6) return false;
       try { c.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       poStickUiRef.current = { id: e.pointerId, cx: e.clientX, cy: e.clientY, fx: f.sx, fy: f.sy, vx: 0, vy: 0 };
+      po.stick.held = true;
       return true;
     }
     const st = poStickUiRef.current;
     if (!st || st.id !== e.pointerId) return false;
     if (kind === "up") {
       poStickUiRef.current = null;
+      po.stick.held = false;   // thumb off: Auto run takes over after AUTO_AFTER_S
       steerPlayOn(po, 0, 0);
       try { c.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
       return true;
@@ -8337,6 +8717,45 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const mag = Math.min(1, Math.hypot(dx, dy));
     steerPlayOn(po, pl > 1e-6 ? (pvx / pl) * mag : 0, pl > 1e-6 ? (pvy / pl) * mag : 0);
     return true;
+  };
+  /**
+   * B14: W A S D (or the arrows) steer your run, Shift sprints. Up the keys is
+   * up the screen, turned into a pitch direction through the match's camera,
+   * as the thumb stick is. Let go: Auto run takes over again (playOn.ts
+   * AUTO_AFTER_S), on "Joystick" too while the thumb is off the stick.
+   */
+  const applyRunKeys = () => {
+    const po = playOnRef.current, c = canvasRef.current;
+    if (!po?.stick || !c) return;
+    const k = keysRef.current;
+    sprintPlayOn(po, k.sprint);
+    const d = keysScreenDir(k);
+    if (d.x === 0 && d.y === 0) {
+      if (keysSteeringRef.current) { keysSteeringRef.current = false; if (!poStickUiRef.current) steerPlayOn(po, 0, 0); }
+      return;
+    }
+    keysSteeringRef.current = true;
+    const r = c.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const a = pitchFromPointer(cx, cy), b = pitchFromPointer(cx + d.x * 40, cy + d.y * 40);
+    const pvx = b.x - a.x, pvy = b.y - a.y, pl = Math.hypot(pvx, pvy);
+    if (pl > 1e-6) steerPlayOn(po, (pvx / pl) * KEY_PUSH, (pvy / pl) * KEY_PUSH);
+  };
+  /** B14: after each substep of the run, sprinting's cost comes off your match energy, and the bar on screen follows (10 a second). */
+  const noteRunStep = (po: PlayOn) => {
+    const legs = po.stick?.legs;
+    if (!legs) return;
+    const spent = takeEnergySpent(legs);
+    if (spent > 0 && !hookedRef.current && !farewellRef.current) {
+      energyRef.current = clampEnergy(energyRef.current - spent);
+    }
+    const now = performance.now();
+    if (now - stamUiAtRef.current > 100) {
+      stamUiAtRef.current = now;
+      setLegsEnergy(legs, liveEnergyAt(matchMinuteRef.current));
+      setStamUi({ v: legs.stamina.v, cap: legs.cap, sprint: legs.sprinting, auto: !!po.stick?.autoOn });
+      setLiveEnergy(energyRef.current);
+    }
   };
   /** Captain's "Call for it" (playOn.ts callForIt). */
   const onCallForIt = () => {
@@ -8370,7 +8789,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       return;
     }
-    if (phaseRef.current === "flight" && playOnRef.current?.stick && poStickInput("down", e)) return;
+    if (phaseRef.current === "flight" && playOnRef.current?.stick?.thumb && poStickInput("down", e)) return;
     if (phaseRef.current === "flight") {
       if (!canCurve) return;
       curveSwipeStartRef.current = { x: e.clientX, y: e.clientY };
@@ -8724,12 +9143,18 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   ) => {
     const a = over ? { dir: over.dir, power: over.power } : aim;
     if (!a) return;
+    // Struck while the men were still running after the hand-over (phase 3):
+    // each carries his speed into the play. Before the replay snapshot, so a
+    // goal replay throws the same runs. Nobody running: nothing happens.
+    handOverRunOn();
     // A ball you hit in the air (airborne test switch): a header or a volley,
     // started from the height it was at. Kept on the contact so a replay does the same.
+    // B10: a header or volley chance is always struck this way (where you met
+    // it and when count: airContactRead), switch or no switch.
     let contact: StrikeContact = { cx: tapped.cx, cy: tapped.cy };
-    if (!over && tapped.lift !== undefined && airborneOn()) {
+    if (!over && tapped.lift !== undefined && (airborneOn() || isAirKind(scenarioRef.current.kind))) {
       const m = strikeMotion(scenarioRef.current.kind, seedRef.current);
-      if (m === "float" || m === "bounce") contact = { ...contact, air: { kind: m === "float" ? "header" : "volley", lift: tapped.lift } };
+      if (m === "float" || m === "bounce") contact = { ...contact, air: { kind: m === "float" ? "header" : "volley", lift: tapped.lift, cx: tapped.cx, cy: tapped.cy } };
     }
     const auto = over?.skills ? { skills: over.skills } : null;
     setContactTimerS(null);
@@ -8757,6 +9182,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       : switchOn("powerCurve")
       ? { ...strikeWith, power: strikingPower(strikeWith.power) }
       : strikeWith;
+    // Your technique softens a mis-hit header or volley (kept on the strike for the replay).
+    if (contact.air) contact = { ...contact, air: { ...contact.air, tech: launchWith.technique } };
     // Snapshot everything a replay would need to reproduce this exact strike
     // — see GoalReplay and rngCallCountRef. Cheap and thrown away unless the
     // ball actually ends up in the net (resolveOutcome), so this costs
@@ -8885,40 +9312,38 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (touchModeOnRef.current && canExtraTouch && !auto) {
       scenarioRef.current.player = { x: ballRef.current.pos.x, y: ballRef.current.pos.y };
     }
-    // ── Your pass plays on (lib/star/playOn.ts; Chances: New only) ──
-    // After a build-up, a pass (not a shot) is one move: you make a run, the
-    // man who takes it shoots or lays it back into your run, and nothing cuts
-    // until the move is over. Its own seeded stream, so the match's is unchanged.
+    // ── B14 THE RUN: your pass plays on (lib/star/playOn.ts startPlayOnRun) ──
+    // Any pass in open play with a goal in the picture (not a shot, not a set
+    // piece) is one move, whatever the Chances setting: you run on (Auto run,
+    // or W A S D + Shift on a computer, or the thumb stick on "After you pass:
+    // Joystick"), the man who takes it shoots or plays it back to you, and
+    // nothing cuts until the move is over. Its own seeded stream, so the
+    // match's is unchanged.
     playOnRef.current = null;
     playOnCaughtRef.current = false;
+    setRunLive(false);
     {
       const sc = scenarioRef.current;
       // The joystick's calmer tempo (playOn.ts stickReception) belongs to one
-      // pass; startPlayOnStick below sets it again when this kick earns it.
+      // pass; startPlayOnRun below sets it again when this kick earns it.
       delete sc.matePace;
       const touchOn = touchModeOnRef.current && canExtraTouch;
-      // "After you pass: Joystick" (lib/star/afterPass.ts): any pass in a chance
-      // with a goal in it gives you the stick (no build-up needed). Auto run
-      // takes the branch below, exactly as before.
-      if (!touchOn && !shootoutKickRef.current && afterPassStickOn() && playOnStickWanted({
-        newChances: newChancesOn(), stick: true,
+      if (!touchOn && !shootoutKickRef.current && runAfterWanted({
         kind: sc.kind, youShotAtGoal: ballRef.current.youStruckAtGoal === true, auto: !!auto,
       })) {
         playOnRngRef.current = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x61a7) >>> 0);
         const bl = ballRef.current;
+        const stick = afterPassStickOn();
         // You are where you struck it (not the stand-off you lined it up from).
         sc.player = { x: bl.pos.x, y: bl.pos.y };
-        playOnRef.current = startPlayOnStick(sc, playOnRngRef.current, { x: bl.pos.x + bl.vel.x * 0.8, y: bl.pos.y + bl.vel.y * 0.8 });
+        const car = careerRef.current;
+        playOnRef.current = startPlayOnRun(sc, playOnRngRef.current, { x: bl.pos.x + bl.vel.x * 0.8, y: bl.pos.y + bl.vel.y * 0.8 }, {
+          stick, pace: car?.skills.pace, energy: liveEnergyAt(matchMinuteRef.current), bar: barRef.current,
+        });
         poStickUiRef.current = null;
-        setStickLive(true);
-      } else if (!touchOn && !shootoutKickRef.current && playOnWanted({
-        newChances: newChancesOn(),
-        hadBuildUp: leadPlayedRef.current || PASS_BUILD_UP_KINDS.has(sc.kind),
-        kind: sc.kind, youShotAtGoal: ballRef.current.youStruckAtGoal === true, auto: !!auto,
-      })) {
-        playOnRngRef.current = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x61a7) >>> 0);
-        const bl = ballRef.current;
-        playOnRef.current = startPlayOn(sc, playOnRngRef.current, { x: bl.pos.x + bl.vel.x * 0.8, y: bl.pos.y + bl.vel.y * 0.8 });
+        keysSteeringRef.current = false;
+        setStickLive(stick);
+        setRunLive(true);
       }
     }
     setPhase("flight");
@@ -9149,7 +9574,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           <button
             onClick={toggleMuted}
             aria-label={muted ? "Unmute sound" : "Mute sound"}
-            className="px-2.5 flex items-center border-l border-white/10 text-white/80 hover:text-amber-300 transition"
+            className="px-2.5 min-w-[40px] justify-center flex items-center border-l border-white/10 text-white/80 hover:text-amber-300 transition"
           >
             {muted ? (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
@@ -9225,7 +9650,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           <button
             onClick={() => setTouchModeOn(t => !t)}
             aria-label={touchModeOn ? "Turn off Touch Mode" : "Turn on Touch Mode"}
-            className={`absolute top-2 right-2 z-30 pointer-events-auto flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-black tracking-wide shadow-lg transition ${
+            className={`absolute top-2 right-2 z-30 pointer-events-auto flex items-center gap-1 px-2 py-1.5 min-h-[36px] rounded-lg text-[10px] font-black tracking-wide shadow-lg transition ${
               touchModeOn ? "bg-fuchsia-500 text-white" : "bg-gray-950/70 text-fuchsia-300 border border-fuchsia-500/50"
             }`}
           >
@@ -9238,7 +9663,35 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         )}
 
         {/* "After you pass: Joystick" — the captain's call (playOn.ts callForIt). */}
-        {phase === "flight" && callForItShown({ captain: isCaptain, stickLive, layOffLive: false }) && (
+        {/* B14: the stamina bar (lib/star/legs.ts). Fills to your energy at most
+            (the dim part past the line is energy you no longer have); drains as
+            you sprint, refills as you ease off. B14b: in the first corner of the
+            pitch clear of the goal, the ball and every man (lib/star/barSpot.ts). */}
+        {stamUi && !leadInOn && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
+          <div
+            data-stamina={stamUi.v.toFixed(2)}
+            data-stamina-cap={stamUi.cap.toFixed(2)}
+            data-stamina-corner={barCorner}
+            className="pointer-events-none absolute z-30 w-[124px] rounded-md bg-black/60 px-1.5 py-1"
+            style={barCornerStyle(barCorner, ADDED > 0 && matchMinute > MATCH_DURATION)}
+          >
+            <div className="flex items-center justify-between gap-2 text-[9px] font-black uppercase tracking-wider leading-none text-white">
+              <span>Stamina</span>
+              {runLive && <span className={stamUi.sprint ? "text-amber-300" : "text-white/80"}>{stamUi.sprint ? "Sprint" : stamUi.auto ? "Auto run" : "Run"}</span>}
+            </div>
+            <div className="relative mt-1 h-2 w-full overflow-hidden rounded-sm bg-white/15">
+              <div className="absolute inset-y-0 right-0 bg-black/55" style={{ width: `${(1 - stamUi.cap) * 100}%`, backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 2px, transparent 2px 5px)" }} />
+              <div
+                className={`absolute inset-y-0 left-0 ${stamUi.v < 0.25 ? "bg-red-500" : stamUi.v < 0.5 ? "bg-amber-400" : "bg-emerald-400"}`}
+                style={{ width: `${stamUi.v * 100}%`, transition: "width 100ms linear" }}
+              />
+            </div>
+            {runLive && pcKeys && (
+              <div className="mt-1 text-[9px] font-bold leading-none text-white/85">W A S D move · Shift sprint</div>
+            )}
+          </div>
+        )}
+        {phase === "flight" && callForItShown({ captain: isCaptain, stickLive: runLive, layOffLive: false }) && (
           <button
             type="button"
             data-call-for-it
@@ -9258,7 +9711,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         {/* A build-up before the chance (lib/star/leadInGen.ts): a tap skips it. */}
         {leadInOn && leadRef.current?.lead.skippable && (
           <div data-buildup className="absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none rounded-full bg-black/60 px-3 py-1 text-[11px] font-black text-white">
-            Build-up · tap to skip
+            {leadCap ?? "Build-up"} · tap to skip
           </div>
         )}
         {/* ⚡ Power shot (Settings → Gameplay "Knuckleball & power shot",
@@ -9270,7 +9723,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           <button
             onClick={() => setPowerArmed((v) => !v)}
             data-power-shot={powerArmed ? "on" : "off"}
-            className={`absolute left-2 bottom-2 z-30 pointer-events-auto rounded-lg px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wider border-2 shadow-lg ${
+            className={`absolute left-2 bottom-2 z-30 pointer-events-auto rounded-lg px-2.5 py-1.5 min-h-[36px] text-[11px] font-black uppercase tracking-wider border-2 shadow-lg ${
               powerArmed ? "bg-amber-400 text-gray-950 border-amber-200" : "bg-gray-950/70 text-amber-300 border-amber-400/60"}`}
           >
             ⚡ Power shot{powerArmed ? " — on" : ""}

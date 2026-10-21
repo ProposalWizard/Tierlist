@@ -360,3 +360,96 @@ export async function removeScenariosFromRepo(opts: {
 
   return attempt(1);
 }
+
+/**
+ * Commit any one data file the same way (read, merge, PUT, one retry on a
+ * moved sha). Used by the Training levels page for
+ * lib/star/data/trainingLevels.json (20 Oct 2026): same token, same branch
+ * (main), same honest messages as a scenario commit.
+ */
+export async function commitDataFile(opts: {
+  config: CommitConfig;
+  path: string;
+  /** What to call one item in messages ("training level"). */
+  what: string;
+  message: string;
+  merge: (currentText: string) => { text: string; ids: string[] };
+  fetchImpl?: FetchLike;
+}): Promise<CommitResult> {
+  const cfg: CommitConfig = { ...opts.config, path: opts.path };
+  const doFetch = (opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike));
+  const attempt = async (retriesLeft: number): Promise<CommitResult> => {
+    const file = await readFile(cfg, doFetch);
+    if ("ok" in file) return file;
+    const merged = opts.merge(file.text);
+    if (!merged.ids.length) return { ok: false, status: 400, message: `No ${opts.what} was sent, so nothing was committed.` };
+    const payload: Record<string, unknown> = { message: opts.message, content: b64encode(merged.text), branch: cfg.branch };
+    if (file.sha) payload.sha = file.sha;
+    let res: Awaited<ReturnType<FetchLike>>;
+    try {
+      res = await doFetch(`${API}/repos/${cfg.repo}/contents/${opts.path}`, { method: "PUT", headers: headersFor(cfg.token), body: JSON.stringify(payload) });
+    } catch {
+      return { ok: false, status: 502, message: "Couldn't reach GitHub to write the commit. Nothing was committed." };
+    }
+    const body = await res.json().catch(() => null) as { commit?: { sha?: string }; message?: string } | null;
+    if (res.ok) {
+      return {
+        ok: true, status: 200, committed: merged.ids, commitSha: body?.commit?.sha,
+        message: `Committed to ${cfg.repo} on ${cfg.branch} — ${merged.ids.length === 1 ? `this ${opts.what} is` : `these ${merged.ids.length} are`} now part of the code (${opts.path}).`,
+      };
+    }
+    const moved = res.status === 409 || res.status === 422;
+    if (moved && retriesLeft > 0) return attempt(retriesLeft - 1);
+    if (moved) return { ok: false, status: 409, raced: true, message: `${opts.path} moved under this commit twice, so nothing was committed. Press Commit again.` };
+    if (res.status === 401 || res.status === 403) {
+      return { ok: false, status: 403, message: `GitHub refused the token (${res.status}). It needs Contents: Read and write on ${cfg.repo}. Nothing was committed.` };
+    }
+    return { ok: false, status: 502, message: `GitHub refused the commit (${res.status}${body?.message ? `: ${body.message}` : ""}). Nothing was committed.` };
+  };
+  return attempt(1);
+}
+
+/**
+ * Make sure a branch exists, creating it from `from` (main) when it doesn't.
+ * Used by the Lag test (app/api/star/lag-runs, 20 Oct 2026: Harry, "why are we
+ * using sql's ... just use pushes"): each run is a JSON file committed to the
+ * `lag-runs` branch, which vercel.json keeps from ever starting a deploy.
+ * A branch made by someone else between the check and the create (422
+ * "Reference already exists") counts as there.
+ */
+export async function ensureBranch(opts: {
+  config: CommitConfig;
+  branch: string;
+  from?: string;
+  fetchImpl?: FetchLike;
+}): Promise<{ ok: true; created: boolean } | CommitResult> {
+  const { config: cfg, branch } = opts;
+  const from = opts.from ?? DEFAULT_BRANCH;
+  const doFetch = (opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike));
+  const refUrl = (b: string) => `${API}/repos/${cfg.repo}/git/ref/heads/${encodeURIComponent(b)}`;
+  const refused = (status: number): CommitResult => ({
+    ok: false, status: 403,
+    message: `GitHub refused the token (${status}). It needs Contents: Read and write on ${cfg.repo}. Nothing was committed.`,
+  });
+  try {
+    const have = await doFetch(refUrl(branch), { method: "GET", headers: headersFor(cfg.token), cache: "no-store" });
+    if (have.ok) return { ok: true, created: false };
+    if (have.status === 401 || have.status === 403) return refused(have.status);
+    if (have.status !== 404) return { ok: false, status: 502, message: `GitHub couldn't check the ${branch} branch (${have.status}). Nothing was committed.` };
+    const base = await doFetch(refUrl(from), { method: "GET", headers: headersFor(cfg.token), cache: "no-store" });
+    const baseBody = await base.json().catch(() => null) as { object?: { sha?: string } } | null;
+    if (!base.ok || typeof baseBody?.object?.sha !== "string") {
+      if (base.status === 401 || base.status === 403) return refused(base.status);
+      return { ok: false, status: 502, message: `GitHub couldn't read ${from} to start the ${branch} branch (${base.status}). Nothing was committed.` };
+    }
+    const made = await doFetch(`${API}/repos/${cfg.repo}/git/refs`, {
+      method: "POST", headers: headersFor(cfg.token),
+      body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: baseBody.object.sha }),
+    });
+    if (made.ok || made.status === 422) return { ok: true, created: made.ok };
+    if (made.status === 401 || made.status === 403) return refused(made.status);
+    return { ok: false, status: 502, message: `GitHub couldn't make the ${branch} branch (${made.status}). Nothing was committed.` };
+  } catch {
+    return { ok: false, status: 502, message: "Couldn't reach GitHub. Nothing was committed." };
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "what": "Which real moments the game may serve (Settings → Full highlights rebuild → Real moment highlights). Every fully real open-play shot that passes the automatic checks is in by default; a moment listed here as \"dont\" is kept out, one listed as \"use\" is let in even if a check left it out (it must still be a fully real shot of a kind the game serves). Written by the Real moments page's Commit; read data/realmoments/README.md, \"Real moments in the game\".",
+  "picks": {}
+}

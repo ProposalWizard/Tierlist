@@ -5,8 +5,12 @@
  * and Patch notes. Tap a push to see it, and the patch note it went out in.
  *
  * The Team room (Harry, 19 Oct 2026): a toggle along the top switches
- * Board | Ideas | Chat | To-do in place (also lines in the side menu).
+ * Board | Chat | Ideas | To-do in place (also lines in the side menu).
  * Pushes take notes (components/teamRoom).
+ *
+ * The Team area is the admin's home (Harry, 20 Oct 2026): every way into the
+ * admin lands here, on Board. "Team" is the first tab of the side menu
+ * (components/admin/shell/AdminShell.tsx).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminShell, { type RoomTab } from "@/components/admin/shell/AdminShell";
@@ -14,15 +18,19 @@ import IdeasBoard from "@/components/teamRoom/IdeasBoard";
 import ChatPage from "@/components/teamRoom/ChatPage";
 import { NoteCount, NotesThread, RoomGate, TodoList } from "@/components/teamRoom/parts";
 import { newGivenTasks, unreadChat, unreadNotes } from "@/lib/teamRoom/logic";
+import { newPushedJobs } from "@/lib/teamRoom/jobs";
 import { useTeamRoom } from "@/lib/teamRoom/store";
-import { isTeamPerson } from "@/lib/teamRoom/config";
+import { isTeamPerson, TEAM_ROOM, type TeamPerson as TeamPersonName } from "@/lib/teamRoom/config";
+import { patchUnread, waitingOnMe, type PatchMeta } from "@/lib/teamRoom/extras";
+import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import "@/components/teamRoom/teamRoom.css";
 import PatchNotesArchive from "@/app/admin/patch-notes/PatchNotesArchive";
-import { perDay, type Person, type PullRequest, type Push, type TeamBoardData } from "@/lib/teamBoard";
+import { perDay, type Person, type PullRequest, type Push, type PushCount, type TeamBoardData } from "@/lib/teamBoard";
 import type { DevStatus } from "@/lib/devStatus";
 import "./teamBoard.css";
 
 const REFRESH_MS = 60_000;
+const PATCH_META: PatchMeta[] = BUILT_IN_PATCH_NOTES.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
 
 function ago(iso: string | null, now: number): string {
   if (!iso) return "—";
@@ -42,14 +50,19 @@ const clock = (iso: string) =>
 const liveness = (iso: string | null, now: number) =>
   !iso ? "off" : now - Date.parse(iso) < 30 * 60_000 ? "live" : now - Date.parse(iso) < 3 * 3600_000 ? "quiet" : "off";
 
+// Same order as the Team area's side menu (Team board, Team chat, Ideas, My to-do).
 const ROOM: { key: Exclude<RoomTab, "notes">; name: string; title: string }[] = [
   { key: "team", name: "Board", title: "Team" },
-  { key: "ideas", name: "Ideas", title: "Ideas" },
   { key: "chat", name: "Chat", title: "Team chat" },
+  { key: "ideas", name: "Ideas", title: "Ideas" },
   { key: "todo", name: "To-do", title: "My to-do" },
 ];
 
-export default function TeamBoard({ initialTab, initialVersion }: { initialTab: RoomTab; initialVersion?: string }) {
+export default function TeamBoard({ initialTab, initialVersion, initialMessage }: {
+  initialTab: RoomTab; initialVersion?: string;
+  /** ?m=<id>: a phone notification opened the chat on this message. */
+  initialMessage?: number | null;
+}) {
   const [tab, setTab] = useState<RoomTab>(initialTab);
   const room = useTeamRoom();
   const [version, setVersion] = useState<string | undefined>(initialVersion);
@@ -86,11 +99,14 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
   }, [data]);
 
   const pulls = data?.pulls ?? [];
+  const waiting = waitingOnMe(room.messages, room.me, room.marks, room.acks).length;
+  const toRead = (p: Person) => (isTeamPerson(p) ? patchUnread(PATCH_META, p, room.acks, TEAM_ROOM.patchReceiptsFrom).length : 0);
   const badges: Partial<Record<RoomTab, number>> = {
     team: unreadNotes(room.notes, room.me, room.read.pushNotes, "push"),
     ideas: unreadNotes(room.notes, room.me, room.read.notes, "idea"),
-    chat: tab === "chat" ? 0 : unreadChat(room.messages, room.me, room.read.chat),
-    todo: tab === "todo" ? 0 : newGivenTasks(room.tasks, room.me, room.read.tasks),
+    chat: (tab === "chat" ? 0 : unreadChat(room.messages, room.me, room.read.chat)) + waiting,
+    todo: tab === "todo" ? 0 : newGivenTasks(room.tasks, room.me, room.read.tasks) + newPushedJobs(room.jobs, room.tasks, room.me, room.seenJobs),
+    notes: room.me ? toRead(room.me) + unreadNotes(room.notes, room.me, room.read.patchNotes, "patch") : 0,
   };
   const title = ROOM.find((r) => r.key === tab)?.title ?? "Team";
   return (
@@ -120,7 +136,7 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
           </nav>
 
           {tab === "ideas" && <IdeasBoard />}
-          {tab === "chat" && <ChatPage />}
+          {tab === "chat" && <ChatPage jumpTo={initialTab === "chat" ? initialMessage : null} />}
           {tab === "todo" && <div className="tr ash-panel tb-todo"><RoomGate><TodoList /></RoomGate></div>}
           {tab === "team" && (<>
 
@@ -131,7 +147,9 @@ export default function TeamBoard({ initialTab, initialVersion }: { initialTab: 
             <div className="tb-people">
               {(data ? people : (["Harry", "Mikey", "Leo"] as Person[]).map((person) => ({ person, branch: person, pushes: [] as Push[], status: null }))).map((c) => (
                 <PersonCard key={c.person} person={c.person} pushes={c.pushes} status={"status" in c ? c.status ?? null : null}
-                  statusOn={!!data?.statusOn} now={now} loading={!data} onOpen={setOpen} onNote={openNote} />
+                  count={"count" in c ? c.count ?? null : null} logFrom={data?.pushLogFrom ?? null}
+                  statusOn={!!data?.statusOn} now={now} loading={!data} onOpen={setOpen} onNote={openNote}
+                  toRead={room.status === "ready" ? patchUnread(PATCH_META, c.person as TeamPersonName, room.acks, TEAM_ROOM.patchReceiptsFrom) : null} />
               ))}
             </div>
             <PullPanel pulls={pulls} now={now} loading={!data} />
@@ -187,16 +205,30 @@ function notesOf(pushes: Push[]) {
 
 const STATUS_WORD = { live: "Live", quiet: "Active", off: "Quiet" } as const;
 
-function PersonCard({ person, pushes, status, statusOn, now, loading, onOpen, onNote }: {
+function PersonCard({ person, pushes, status, count, logFrom, statusOn, now, loading, onOpen, onNote, toRead }: {
   person: Person; pushes: Push[]; status: DevStatus | null; statusOn: boolean; now: number; loading: boolean;
+  /** Pushes from GitHub's push log (null = the log could not be read). */
+  count: PushCount | null; logFrom: string | null;
   onOpen: (p: Push) => void; onNote: (v: string) => void;
+  /** Patch notes this person still has to read (null = team room not loaded). */
+  toRead: PatchMeta[] | null;
 }) {
   const [all, setAll] = useState(false);
   // Merges aren't work, they are bookkeeping: left off the board.
   const work = pushes.filter((p) => !/^Merge\b/i.test(p.title));
-  const last = status?.at && (!work[0] || Date.parse(status.at) > Date.parse(work[0].at)) ? status.at : work[0]?.at ?? null;
+  const last = [status?.at, count?.last, work[0]?.at].filter((x): x is string => !!x)
+    .sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null;
   const live = liveness(last, now);
-  const week = work.filter((p) => now - Date.parse(p.at) < 7 * 86400_000).length;
+  // B13: real pushes (GitHub's push log, any branch, named by who pushed).
+  // Without the log, the person's own changes on their branch this week.
+  const week = count ? count.week : work.filter((p) => now - Date.parse(p.at) < 7 * 86400_000).length;
+  const weekLine = loading ? "…"
+    : !count ? `${week} change${week === 1 ? "" : "s"} this week`
+    : count.weekComplete ? `${week} push${week === 1 ? "" : "es"} this week`
+    : `${week}+ pushes since ${logFrom ? new Date(logFrom).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) : "the log starts"}`;
+  const weekTitle = count
+    ? "Times this person pushed to GitHub in the last 7 days, on any branch, from GitHub's push log. A push can carry several changes. Other people's work merged in from main is not counted."
+    : "GitHub's push log could not be read, so this counts the changes on this person's own branch this week instead.";
   const notes = notesOf(work);
   const unsent = work.filter((p) => !p.patch).length;
   const hasBars = !!status && status.bars.length > 0;
@@ -209,7 +241,11 @@ function PersonCard({ person, pushes, status, statusOn, now, loading, onOpen, on
         <span className={`tb-ring ${person}`}>{person[0]}</span>
         <div className="tb-who">
           <b>{person}</b>
-          <small>{loading ? "…" : `${week} push${week === 1 ? "" : "es"} this week`}</small>
+          <small title={weekTitle} data-push-count>{weekLine}</small>
+          {toRead && (toRead.length > 0
+            ? <button className="tb-toread" onClick={() => onNote(toRead[toRead.length - 1].version)} title={`Not read yet: ${toRead.map((n) => `v${n.version}`).join(", ")}`}>
+                <DocIcon /> {toRead.length} patch note{toRead.length === 1 ? "" : "s"} to read</button>
+            : <span className="tb-toread done" title="Every patch note since the receipts started is read">✓ Patch notes read</span>)}
         </div>
         <div className={`tb-state ${live}`} title={last ? clock(last) : ""}>
           <b><span className={`ash-dot ${live === "live" ? "live" : live === "quiet" ? "on" : ""}`} /> {loading ? "…" : STATUS_WORD[live]}</b>
@@ -246,7 +282,7 @@ function PersonCard({ person, pushes, status, statusOn, now, loading, onOpen, on
         </button>
       ) : null}
 
-      <Activity pushes={work} now={now} />
+      <Activity days={count ? count.days : perDay(work, now, 14)} />
 
       <div className="tb-sec">
         <div className="tb-label-row">
@@ -291,21 +327,26 @@ function PersonCard({ person, pushes, status, statusOn, now, loading, onOpen, on
   );
 }
 
-/** Pushes per day over two weeks, with a scale. */
-function Activity({ pushes, now }: { pushes: Push[]; now: number }) {
-  const days = perDay(pushes, now, 14);
-  const max = Math.max(2, ...days);
+/** Pushes per day over two weeks, with a scale. A day before GitHub's push
+ *  log starts (null) is left empty and named under the chart, never drawn
+ *  as zero. */
+function Activity({ days }: { days: (number | null)[] }) {
+  const max = Math.max(2, ...days.map((n) => n ?? 0));
   const top = Math.ceil(max / 2) * 2;
+  const unknown = days.filter((n) => n === null).length;
   return (
     <div className="tb-sec">
       <p className="tb-label">Activity · pushes a day</p>
-      <div className="tb-chart" title={days.map((n, i) => `${13 - i === 0 ? "today" : `${13 - i}d ago`}: ${n}`).join(" · ")}>
+      <div className="tb-chart" title={days.map((n, i) => `${13 - i === 0 ? "today" : `${13 - i}d ago`}: ${n ?? "not in the log"}`).join(" · ")}>
         <div className="tb-y"><span>{top}</span><span>{top / 2}</span><span>0</span></div>
         <div className="tb-bars14">
-          {days.map((n, i) => <i key={i} style={{ height: `${Math.max(3, (n / top) * 100)}%` }} className={n ? "" : "zero"} />)}
+          {days.map((n, i) => (n === null
+            ? <i key={i} style={{ height: 0, background: "transparent" }} />
+            : <i key={i} style={{ height: `${Math.max(3, (n / top) * 100)}%` }} className={n ? "" : "zero"} />))}
         </div>
       </div>
       <div className="tb-x"><span>2 weeks ago</span><span>1 week</span><span>today</span></div>
+      {unknown > 0 && <p className="tb-muted" style={{ marginTop: 4, fontSize: 11 }}>The first {unknown} day{unknown === 1 ? "" : "s"}: not known (GitHub keeps its last 300 events).</p>}
     </div>
   );
 }

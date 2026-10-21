@@ -47,6 +47,7 @@ import type { PlaySettings } from "@/lib/star/playArea";
 import TuningSessionPanel from "./TuningSessionPanel";
 import { recordSeen } from "@/lib/star/tuningSession";
 import { PINNED_TOP } from "@/lib/pinnedTop";
+import { useFhrBuildUps, FhrAdjustBar } from "./FhrAdjust";
 
 const INK = "#f2f5f9";
 const MUTED = "#8a97aa";
@@ -70,6 +71,7 @@ export default function InfiniteMatch({ settings, onBack }: {
   onBack: () => void;
 }) {
   const isAdmin = useIsAdmin();
+  const fhrBuild = useFhrBuildUps();
   /** Bumped to start a fresh match. Also the component key, because
    *  CanvasMatch takes its career, fixture and match length once at mount. */
   const [run, setRun] = useState(0);
@@ -216,6 +218,13 @@ export default function InfiniteMatch({ settings, onBack }: {
         <LiveChanceEditor scenario={current.scenario} minute={current.minute} onClose={() => setEditing(false)} />
       )}
 
+      {/* Full highlights rebuild (Harry, 20 Oct 2026): with it On, every chance
+          gets the career's build-up, from this match's own minute and score.
+          The dials are this page's only. Off: the match exactly as before. */}
+      <div style={{ width: "100%", maxWidth: 460 }}>
+        <FhrAdjustBar adjust={fhrBuild.adjust} set={fhrBuild.set} />
+      </div>
+
       <div style={{ width: "100%", maxWidth: 460 }}>
         <EnginePlay
           key={run}
@@ -223,6 +232,7 @@ export default function InfiniteMatch({ settings, onBack }: {
           seed={1000 + run}
           onChanceServed={onChanceServed}
           onComplete={() => setDone("Full time.")}
+          leadIn={fhrBuild.builder}
         />
       </div>
 

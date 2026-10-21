@@ -1,0 +1,247 @@
+<title>Patch Notes Questions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one column, stacked cards, stills under their text. Tokens first, then components. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  a{color:var(--blue)}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+  .chip{display:inline-block;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink2);text-decoration:none}
+  .chip.hot{color:var(--amber);border-color:var(--amber)}
+  .back{display:inline-block;font-size:13px;font-weight:700;margin:0 0 4px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b,.row li b{color:var(--ink)}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:4px}
+  .nr{color:var(--ink3);font-style:italic}
+  .tile{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+  .tile>b{display:block;font-size:15px}
+  .tile>p{margin:3px 0 0;color:var(--ink2);font-size:14.5px}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .track.solo{height:14px}
+  .track.solo .fill.now{top:0;bottom:0;height:auto}
+  .fill.now.warn{background:var(--amber)}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.blue{background:var(--blue)}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+  .bnote{color:var(--ink3);font-size:12.5px;margin:2px 0 0}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px 14px;margin:10px 0 0}
+  .figs.wide{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+  .figs figure{margin:0}
+  .figs.pair{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .figs.pair figure.ph{max-width:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details .figs{margin-top:2px}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .sbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px 12px}
+  .sbox h3{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 4px}
+  .sbox h3.g{color:var(--green)} .sbox h3.b{color:var(--blue)} .sbox h3.a{color:var(--amber)} .sbox h3.r{color:var(--red)}
+  .sbox ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+  .sbox li{margin-bottom:4px}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox .q{font-weight:700}
+  .okbox .opts{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+  .okbox .who{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-right:6px}
+
+  .vid{border:2px dashed var(--line);border-radius:var(--r);padding:12px 14px;background:var(--card)}
+  .vid b{color:var(--amber)}
+  .vid p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .vid ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  .cards{display:grid;gap:10px;margin:0}
+  .bcard{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;min-width:0}
+  .bcard .n{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 4px}
+  .bcard .n b{font-size:17px}
+  .bcard p{margin:0;color:var(--ink2);font-size:14.5px}
+  .bcard .go{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:var(--blue)}
+  .bcard.soon{border-style:dashed;opacity:.85}
+
+  /* --- how these patch notes work --- */
+  .how{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 14px 10px;min-width:0}
+  .how svg{display:block;width:100%;max-width:340px;height:auto;margin:2px auto 10px}
+  .how ol{margin:0;padding-left:20px;color:var(--ink2);font-size:14.5px}
+  .how li{margin:0 0 6px}
+  .how li b{color:var(--ink)}
+  .how .mini{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;vertical-align:1px}
+  .how .btn{display:inline-block;font-size:12.5px;font-weight:800;background:var(--pill);color:var(--pillink);padding:2px 9px;border-radius:999px;vertical-align:1px}
+  .how .where{margin:8px 0 0;font-size:13px;color:var(--ink3)}
+  /* --- already decided --- */
+  .donebox{border:1px solid var(--line);border-left:4px solid var(--green);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .donebox ul{margin:0;padding:0;list-style:none}
+  .donebox li{padding:11px 0 11px 28px;border-bottom:1px solid var(--line);position:relative}
+  .donebox li:last-child{border-bottom:0}
+  .donebox li::before{content:"\2713";position:absolute;left:2px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--pillink);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .donebox .q{font-weight:700}
+  .donebox .d{color:var(--ink2);font-size:14px;margin-top:3px}
+  .donebox .by{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-right:6px}
+  /* --- video --- */
+  .clip{margin:12px 0 2px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .look{font-size:13px;color:var(--ink2);margin:0 0 7px}
+  .clip .look b{color:var(--ink)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px}
+  .clip.ph{max-width:390px;margin-left:auto;margin-right:auto}
+  /* --- tabs (index) --- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink2);font:inherit;font-size:13.5px;font-weight:800;padding:8px 13px;border-radius:999px;cursor:pointer;min-height:40px}
+  .tab[aria-selected="true"]{background:var(--pill);color:var(--pillink);border-color:var(--pill)}
+  .tab small{font-weight:700;opacity:.8;margin-left:4px}
+  .js .panel[hidden]{display:none}
+  .panel h3.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px}
+  .bcard .vtag{font-size:11px;font-weight:800;color:var(--ink3);letter-spacing:.04em}
+  .qlist{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px}
+  .qlist ul{margin:0;padding:0;list-style:none}
+  .qlist li{padding:10px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14px}
+  .qlist li:last-child{border-bottom:0}
+  .qlist li b{color:var(--ink)}
+
+  /* --- steps (vertical list) --- */
+  .steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  .steps li{position:relative;padding:9px 0 9px 36px;border-bottom:1px solid var(--line);counter-increment:st;color:var(--ink2);font-size:14.5px;min-width:0}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(st);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .steps li b{color:var(--ink)}
+  .steps li.done::before{background:var(--green);border-color:var(--green);color:var(--pillink);content:"\2713"}
+  .steps li.next::before{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+  .mock{border:2px solid var(--red);border-radius:var(--r);background:var(--rbg);padding:12px 14px;margin:10px 0 2px}
+  .mock b{display:block;color:var(--red);font-size:15px;letter-spacing:.02em}
+  .mock p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .mock .mb{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .mock .mb span{font-size:13px;font-weight:800;padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink2)}
+  .mock .mb span.go{background:var(--card2)}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .qc{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:var(--r);padding:12px 14px;margin:0 0 12px;min-width:0}
+  .qc.mikey{border-left-color:var(--blue)}
+  .qh{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 7px}
+  .qn{font-weight:900;font-size:13px;letter-spacing:.02em;background:var(--amber);color:var(--bg);border-radius:999px;padding:2px 11px}
+  .qc.mikey .qn{background:var(--blue)}
+  .qc .who{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+  .qt{font-weight:700;font-size:16px;line-height:1.35;margin:0 0 9px}
+  .qc .opts{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 9px}
+  .qc .why{color:var(--ink2);font-size:14px;margin:0}
+  .qc .rec{color:var(--ink2);font-size:14px;margin:6px 0 0}
+  .qc .rec b{color:var(--green)}
+  .qc .src{color:var(--ink3);font-size:12.5px;margin:9px 0 0}
+  .qa{font-size:13.5px;color:var(--ink2);margin:0 0 12px}
+  .qa b{color:var(--ink)}
+  .gh{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px;font-weight:800}
+  details .donebox{margin:0 0 6px}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">QUESTIONS &middot; 20 OCT 2026</span>
+  <h1>25 questions are waiting. Answer each in a word, like &ldquo;Q4 leave it&rdquo;.</h1>
+  <p class="status"><i></i>Every question has a recommended answer. The numbers stay the same.</p>
+  <p class="sub">They come from the last 2 days of patch notes. The questions are no longer on the pages. Questions already answered are at the bottom.</p>
+  <div class="chips"><a class="chip hot" href="#g-night">Overnight work 16</a><a class="chip" href="#g-team">Team board &amp; team updates 2</a><a class="chip" href="#g-admin">Admin pages &amp; skins 2</a><a class="chip" href="#g-else">Everything else 5</a><a class="chip" href="#done">Decided 46</a></div>
+</header>
+
+<p class="qa">The <b>From</b> link under a question opens the patch notes. Use the tab named there to find the page.</p>
+
+<h2 class="add" id="g-night"><i></i>Overnight work &middot; 16</h2><div class="qc" id="q1"><div class="qh"><span class="qn">Q1</span><span class="who">Gameplay call</span></div><p class="qt">Five-a-side: a pass to a team-mate in the last third never turns into his shot. Fix it?</p><div class="opts"><span class="pill p-grn">fix it (recommended)</span><span class="pill p-blu">leave it</span></div><p class="why">0 of 1,000 passes became a shot, so you can never get an assist. Fixing it changes the five-a-side rules.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B8 Five-a-side page (v0.72)</a> &middot; Overnight work tab</p></div><div class="qc" id="q2"><div class="qh"><span class="qn">Q2</span><span class="who">Gameplay call</span></div><p class="qt">Five-a-side: chance pictures 1 and 6 never let the bot score. Redraw them?</p><div class="opts"><span class="pill p-grn">redraw them (recommended)</span><span class="pill p-blu">leave them</span></div><p class="why">0 goals in 200 tries on each. 66% and 99.5% of the bot&rsquo;s shots are blocked.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B8 Five-a-side page (v0.72)</a> &middot; Overnight work tab</p></div><div class="qc" id="q3"><div class="qh"><span class="qn">Q3</span><span class="who">Your call</span></div><p class="qt">Vision level 30: is it about right?</p><div class="opts"><span class="pill p-grn">keep it (recommended)</span><span class="pill p-blu">easier</span><span class="pill p-blu">harder</span></div><p class="why">A modelled good player picks and kicks the right man first time 21% of the time at level 30.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B12 Vision page (v0.76)</a> &middot; Overnight work tab</p></div><div class="qc" id="q4"><div class="qh"><span class="qn">Q4</span><span class="who">Your call</span></div><p class="qt">Only 5 real offside pictures for 13 offside levels. Add drawn ones?</p><div class="opts"><span class="pill p-blu">add drawn ones</span><span class="pill p-grn">leave it (recommended)</span></div><p class="why">One real offside picture comes back on 6 levels. Drawn ones would be fresh, but they are not real moments. You asked for real scenarios.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B12 Vision page (v0.76)</a> &middot; Overnight work tab</p></div><div class="qc" id="q5"><div class="qh"><span class="qn">Q5</span><span class="who">Your call</span></div><p class="qt">Power levels are always eased in a career when you are behind. Keep that?</p><div class="opts"><span class="pill p-grn">keep it (recommended)</span><span class="pill p-blu">play as drawn</span></div><p class="why">At 2 stars a level a career player is always behind on Power levels. Level 20 draws 26 m and plays at 22 m. The new &ldquo;Plays with&rdquo; line now shows it.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B7b Training editor page (v0.77)</a> &middot; Overnight work tab</p></div><div class="qc" id="q6"><div class="qh"><span class="qn">Q6</span><span class="who">Your call</span></div><p class="qt">A Championship club in Europe that wins everything needs 38 midweek games. A season has 34. Leave it?</p><div class="opts"><span class="pill p-grn">leave it (recommended)</span><span class="pill p-blu">fix it</span></div><p class="why">56 clashes became 20. All come from deep cup and Europe runs. None are before 1 January.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B13 Fixtures page (v0.78)</a> &middot; Overnight work tab</p></div><div class="qc mikey" id="q7"><div class="qh"><span class="qn">Q7</span><span class="who">For Mikey</span></div><p class="qt">Run the fixture checker again after Mikey&rsquo;s ten-round FA Cup merges?</p><div class="opts"><span class="pill p-grn">yes (recommended)</span><span class="pill p-blu">skip</span></div><p class="why">His change touches the same calendar. The 0 clashes is for today&rsquo;s calendar only.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B13 Fixtures page (v0.78)</a> &middot; Overnight work tab</p></div><div class="qc" id="q8"><div class="qh"><span class="qn">Q8</span><span class="who">Your call</span></div><p class="qt">Show the 3D headshot on the team sheets too?</p><div class="opts"><span class="pill p-grn">swap them (recommended)</span><span class="pill p-blu">leave drawn</span></div><p class="why">Team sheets still show the drawn head. It is a one-line change. The scout report, transfers panel, and league and matchday screens would take more work.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B15 Headshots page (v0.79)</a> &middot; Overnight work tab</p></div><div class="qc" id="q9"><div class="qh"><span class="qn">Q9</span><span class="who">Your call</span></div><p class="qt">Fix the blond hair colour that also goes on eyebrows and beard?</p><div class="opts"><span class="pill p-grn">fix it (recommended)</span><span class="pill p-blu">leave it</span></div><p class="why">On dark skin, close up, it reads oddly. It is the shared 3D look, so a fix also changes the match men a little.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B15 Headshots page (v0.79)</a> &middot; Overnight work tab</p></div><div class="qc" id="q10"><div class="qh"><span class="qn">Q10</span><span class="who">Your call</span></div><p class="qt">Hide the Lower League Trophy tab in a Premier League career?</p><div class="opts"><span class="pill p-grn">hide it (recommended)</span><span class="pill p-blu">keep it</span></div><p class="why">A Premier League career is never in the Trophy, so the tab only says &ldquo;Not in it&rdquo;.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B9b Cup screen page (v0.80)</a> &middot; Overnight work tab</p></div><div class="qc" id="q11"><div class="qh"><span class="qn">Q11</span><span class="who">Your call</span></div><p class="qt">Make a real Trophy picture now, or keep the trophy emoji?</p><div class="opts"><span class="pill p-grn">emoji for now (recommended)</span><span class="pill p-blu">make a picture</span></div><p class="why">The cups show an emoji until a real picture exists. A later set of professional pictures (one style, like the shop items) can include the trophy.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B9b Cup screen page (v0.80)</a> &middot; Overnight work tab</p></div><div class="qc" id="q12"><div class="qh"><span class="qn">Q12</span><span class="who">Your call</span></div><p class="qt">FA Cup and League Cup tabs: is it OK that the full list of ties is now one tap away on the cup screen?</p><div class="opts"><span class="pill p-grn">fine (recommended)</span><span class="pill p-blu">put the list back on the tab</span></div><p class="why">The Trophy&rsquo;s Round 1 alone was 56 rows, about two phone screens. Now each cup tab fits one screen.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B9b Cup screen page (v0.80)</a> &middot; Overnight work tab</p></div><div class="qc" id="q13"><div class="qh"><span class="qn">Q13</span><span class="who">Your call</span></div><p class="qt">Headers &amp; Volleys: move the win bar from 6 to 8 points?</p><div class="opts"><span class="pill p-grn">keep 8 (recommended)</span><span class="pill p-blu">back to 6</span></div><p class="why">At 6 the average bot would win 82% of its sessions. At 8 it wins 53%, the same as before.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B16 3D keepers page (v0.81)</a> &middot; Overnight work tab</p></div><div class="qc" id="q14"><div class="qh"><span class="qn">Q14</span><span class="who">Your call</span></div><p class="qt">Wembley sessions are now shorter (146 s &rarr; 83 s). Fine?</p><div class="opts"><span class="pill p-grn">fine (recommended)</span><span class="pill p-blu">make them longer</span></div><p class="why">They were 89 s before the first keeper change. The keeper is 66 now (was 70), so goals come sooner. The 80-rated striker wins 30% (a fair share is 25%).</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B16 3D keepers page (v0.81)</a> &middot; Overnight work tab</p></div><div class="qc" id="q15"><div class="qh"><span class="qn">Q15</span><span class="who">Your call</span></div><p class="qt">High-skill players blaze over in 3D. Fix it?</p><div class="opts"><span class="pill p-grn">fix it (recommended)</span><span class="pill p-blu">leave it</span></div><p class="why">A 3D swipe always strikes the middle of the ball. An 80-power firm shot from 12 to 20 m goes over about 78% of the time.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B16 3D keepers page (v0.81)</a> &middot; Overnight work tab</p></div><div class="qc mikey" id="q16"><div class="qh"><span class="qn">Q16</span><span class="who">For Mikey</span></div><p class="qt">Run <b>star_training_levels.sql</b> (a database file)?</p><div class="opts"><span class="pill p-grn">run it (recommended)</span><span class="pill p-blu">later</span></div><p class="why">Until it runs, a saved training-level edit stays on that device only, and the page says so. Commit still works (it needs GITHUB_TOKEN).</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B7 Training levels page (v0.71)</a> &middot; Overnight work tab</p></div><h2 class="chg" id="g-team"><i></i>Team board &amp; team updates &middot; 2</h2><div class="qc mikey" id="q17"><div class="qh"><span class="qn">Q17</span><span class="who">For Mikey</span></div><p class="qt">Run <b>team_room_v2.sql</b> (a database file, the one after team_room.sql)?</p><div class="opts"><span class="pill p-grn">run it (recommended)</span><span class="pill p-blu">later</span></div><p class="why">Until it runs, replies, @ and points work. Seen faces and &ldquo;Got it&rdquo; stay on the device, and the screen says so.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">Team Board &amp; Team Updates page (v0.82)</a> &middot; Team board &amp; team updates tab</p></div><div class="qc" id="q18"><div class="qh"><span class="qn">Q18</span><span class="who">Your call</span></div><p class="qt">Try the team room with two people on real phones once that file has run?</p><div class="opts"><span class="pill p-grn">yes (recommended)</span><span class="pill p-blu">later</span></div><p class="why">It was not tried with two people at once, or on a real iPhone.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">Team Board &amp; Team Updates page (v0.82)</a> &middot; Team board &amp; team updates tab</p></div><h2 class="fix" id="g-admin"><i></i>Admin pages &amp; skins &middot; 2</h2><div class="qc" id="q19"><div class="qh"><span class="qn">Q19</span><span class="who">Not answered yet</span></div><p class="qt">Relationship games: move the games&rsquo; rules (fixed numbers in code) into the settings file so they can be tuned?</p><div class="opts"><span class="pill p-grn">yes (recommended)</span><span class="pill p-blu">no</span></div><p class="why">Today only the test player&rsquo;s dials change. It is a small build. Your 20 Oct answers do not mention it.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">Admin Pages &amp; Skins page (v0.83)</a> &middot; Admin pages &amp; skins tab</p></div><div class="qc" id="q20"><div class="qh"><span class="qn">Q20</span><span class="who">Not answered yet</span></div><p class="qt">Goal videos page: move it to the new look only if it can really edit highlights. Is that the plan?</p><div class="opts"><span class="pill p-grn">yes (recommended)</span><span class="pill p-blu">no</span></div><p class="why">It is one of the pages that got the frame only. Your 20 Oct answers do not mention it.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">Admin Pages &amp; Skins page (v0.83)</a> &middot; Admin pages &amp; skins tab</p></div><h2 class="bug" id="g-else"><i></i>Everything else &middot; 5</h2><div class="qc" id="q21"><div class="qh"><span class="qn">Q21</span><span class="who">Your call</span></div><p class="qt">Which generated cut scenes should play in the career first?</p><div class="opts"><span class="pill p-grn">pick rows (recommended)</span><span class="pill p-blu">none yet</span></div><p class="why">All 18 rows say &ldquo;Not wired&rdquo;, so generated scenes play on test pages only. To pick: Studio &rarr; Scene generator &rarr; &ldquo;When does this play?&rdquo;. You said they can go in if they are good (GEN-3).</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B6 Scene Studio page (v0.70)</a> &middot; Overnight work tab</p></div><div class="qc" id="q22"><div class="qh"><span class="qn">Q22</span><span class="who">For the live site</span></div><p class="qt">Is GITHUB_TOKEN set on the live site, with Contents: read and write?</p><div class="opts"><span class="pill p-blu">yes, it is set</span><span class="pill p-blu">no</span><span class="pill p-grn">not sure, check it (recommended)</span></div><p class="why">&ldquo;Commit to game&rdquo; needs it. Without it nothing is committed and the page says so in red. Each commit rebuilds the live site.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B6 Scene Studio page (v0.70)</a> &middot; Overnight work tab</p></div><div class="qc" id="q23"><div class="qh"><span class="qn">Q23</span><span class="who">Your call</span></div><p class="qt">Is the walk-out wide shot fine on your phone?</p><div class="opts"><span class="pill p-grn">fine (recommended)</span><span class="pill p-blu">fix it</span></div><p class="why">Away players still pass about 1 m from the lens in that shot. It is the same as before B5. The report says to judge it on your phone.</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B5 3D Looks page (v0.69)</a> &middot; Overnight work tab</p></div><div class="qc mikey" id="q24"><div class="qh"><span class="qn">Q24</span><span class="who">For Mikey</span></div><p class="qt">Run <b>star_real_moments_picks.sql</b> (a database file)?</p><div class="opts"><span class="pill p-grn">run it (recommended)</span><span class="pill p-blu">later</span></div><p class="why">Until it runs, a Real moments mark stays on that device only, and the page says so. Commit still works (it needs GITHUB_TOKEN).</p><p class="src">From: <a href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">B3 Real Data page (v0.67)</a> &middot; Overnight work tab</p></div><div class="qc" id="q25"><div class="qh"><span class="qn">Q25</span><span class="who">Your call</span></div><p class="qt">Lag: which phones will you judge lag on? Say the iPhone model, any Android, and whether you have a Mac for Safari&rsquo;s tools.</p><div class="opts"><span class="pill p-blu">iPhone model?</span><span class="pill p-blu">any Android?</span><span class="pill p-blu">a Mac for Safari?</span></div><p class="why">This is for the lag check (B18) after the overnight work is done.</p><p class="rec"><b>Recommended:</b> Answer all three. Every lag number since 9 Oct comes from a machine with no graphics chip. A real phone, plus a Mac to read it, gives real numbers.</p><p class="src">From: B18 lag research (not on a patch-notes page yet)</p></div>
+
+<h2 class="fix" id="done"><i></i>ALREADY DECIDED &middot; 46</h2>
+<details><summary>46 answers, by tab. Each one is Harry&rsquo;s.</summary><h3 class="gh">Overnight work &middot; 9</h3><div class="donebox"><ul><li><div class="q">Lower League Trophy: pay a cash prize of 2 weeks&rsquo; wage?</div><div class="d"><span class="by">Harry, 20 Oct</span>Keep it (&ldquo;pretty cool&rdquo;).</div></li><li><div class="q">Wembley change: keep?</div><div class="d"><span class="by">Harry, 20 Oct</span>Keep. B16 checked it: Wembley&rsquo;s keeper moved from 70 to 66, like the other two games (v0.81).</div></li><li><div class="q">FA Cup Round of 64 date</div><div class="d"><span class="by">Harry, 20 Oct</span>Fix it, and more: check every fixture date. Done in B13 (v0.78): 170 clashes became 0.</div></li><li><div class="q">Training &ldquo;your skills&rdquo; sliders?</div><div class="d"><span class="by">Harry, 20 Oct</span>No slider. A level plays with the skill you would have after finishing the levels before it. Done in B7b (v0.77).</div></li><li><div class="q">Player of the Month and similar cards: 3D headshots</div><div class="d"><span class="by">Harry, 20 Oct</span>Headshots from our 3D model, not the old drawn heads. Done in B15 (v0.79).</div></li><li><div class="q">Lower League Trophy: its own screen?</div><div class="d"><span class="by">Harry, 20 Oct</span>Yes, like the FA Cup and international ones. Done in B9b (v0.80), with the FA Cup and League Cup on the same screen.</div></li><li><div class="q">Vision training: how should it work?</div><div class="d"><span class="by">Harry, 20 Oct</span>Real scenarios: who should I pass to, someone offside, less time, a real kick inside 0.3 s. Done in B12 (v0.76).</div></li><li><div class="q">How strong should keepers be in the 3D minigames?</div><div class="d"><span class="by">Harry, 20 Oct</span>Fair is about 1 shot in 3 saved. Done in B16 (v0.81).</div></li><li><div class="q">Move every training drill to the new match look?</div><div class="d"><span class="by">Harry, 20 Oct</span>Later, not in that build. Vision is in the new look now. The other drills keep the old 2D look for now.</div></li></ul></div><h3 class="gh">Team board &amp; team updates &middot; 7</h3><div class="donebox"><ul><li><div class="q">Build the whole team room as a portable kit?</div><div class="d"><span class="by">Harry, 19 Oct</span>Yes: &ldquo;build the full team room/board as a portable kit for later&rdquo;.</div></li><li><div class="q">Where does chat live?</div><div class="d"><span class="by">Harry, 19 Oct</span>Only in the admin room, reachable from every admin page as a pop-up box.</div></li><li><div class="q">Team room before the big CLAUDE.md trim?</div><div class="d"><span class="by">Harry, 19 Oct</span>Yes, the team room comes first.</div></li><li><div class="q">A &ldquo;Waiting on me&rdquo; inbox, phone alerts for chat, chat search and threads?</div><div class="d"><span class="by">Harry, 19 Oct</span>Yes to all three (&ldquo;waiting on you is cool&rdquo;). &ldquo;Waiting on me&rdquo; is built (round two). No report says phone alerts or chat search were built.</div></li><li><div class="q">Read receipts, replies, @, page links, Shift+X pointing, patch-note receipts?</div><div class="d"><span class="by">Harry, 20 Oct</span>Asked for in your words. Built in round two (B11).</div></li><li><div class="q">The Team board push count, the XP Rewards error, the chat bubble over &ldquo;Next line &rsaquo;&rdquo; and the GitHub key line</div><div class="d"><span class="by">Harry, 20 Oct</span>Asked for in your feedback on the overnight pages. Done in B13.</div></li><li><div class="q">The chat bubble covering 11 px of &ldquo;Let&rsquo;s go&rdquo; on Training levels (admin and test pages)</div><div class="d"><span class="by">Harry, 20 Oct</span>Fine as it is. The button still takes the tap.</div></li></ul></div><h3 class="gh">Admin pages &amp; skins &middot; 9</h3><div class="donebox"><ul><li><div class="q">A-1: two headings (Admin tools, Test pages), or one list A to Z?</div><div class="d"><span class="by">Harry, 20 Oct</span>Keep the two headings.</div></li><li><div class="q">A-2: the Bento cards are hard to read. Redo them or drop Bento?</div><div class="d"><span class="by">Harry, 19 Oct</span>Redo all the looks so they share one layout. Built in B4.</div></li><li><div class="q">A-3: the chat bubble sometimes covers buttons. Fix it bottom left, or keep it moving?</div><div class="d"><span class="by">Harry, 19 Oct</span>Fixed bottom left, &ldquo;as long as, if it is covering something, I can still press it&rdquo;. Built in B4 and B13.</div></li><li><div class="q">A-4: where should the back arrow go?</div><div class="d"><span class="by">Harry, 19 Oct</span>&ldquo;Always top left &hellip; always the same&rdquo;, on every admin and test page. Built in B4.</div></li><li><div class="q">A-5: Training levels take two taps. Keep it?</div><div class="d"><span class="by">Harry, 19 Oct</span>Keep. New ask: edit the training drills like the scenario gallery. Built in B7 and B7b.</div></li><li><div class="q">A-8: the last 6 admin pages, now or with the scene editor?</div><div class="d"><span class="by">Harry, 19 Oct</span>With the scene editor work. Built in B6.</div></li><li><div class="q">A-9: three group boxes in a row on a phone, or two?</div><div class="d"><span class="by">Harry, 19 Oct</span>Three stays. &ldquo;Looks a lot better with the key button staying on screen.&rdquo;</div></li><li><div class="q">3D garden, house, shop and 3D training: own back button?</div><div class="d"><span class="by">Harry, 20 Oct</span>They keep their own. Everything else uses the one arrow.</div></li><li><div class="q">Which admin look opens by default?</div><div class="d"><span class="by">Harry, 20 Oct</span>Clean light (&ldquo;he preferred that&rdquo;). Done.</div></li></ul></div><h3 class="gh">Everything else &middot; 21</h3><div class="donebox"><ul><li><div class="q">Make the engine and drift warning impossible to miss?</div><div class="d"><span class="by">Harry, 19 Oct</span>Yes, answer 9. Done on 19 Oct.</div></li><li><div class="q">When the touch check comes back, fix everything it finds without asking item by item?</div><div class="d"><span class="by">Harry, 19 Oct</span>Yes: fix all, and show stills. Built in B1.</div></li><li><div class="q">B2 (highlights phase 3) and B10 (headers and volleys) edit match files. Engine OK?</div><div class="d"><span class="by">Harry, 20 Oct</span>Yes. Run one at a time; B14 after. The red warning still asks on every edit. Press Allow only when the build needs it.</div></li><li><div class="q">FHR-1: go on phase 3?</div><div class="d"><span class="by">Harry, 19 Oct</span>Go. Players already moving; an engine change behind the switch; the red guard will ask.</div></li><li><div class="q">FHR-2: carry on into the 22-player model?</div><div class="d"><span class="by">Harry, 19 Oct</span>Decide later. Ask again after phase 3.</div></li><li><div class="q">FHR-3: extra defenders running in?</div><div class="d"><span class="by">Harry, 19 Oct</span>Yes, if it makes sense for one to come in from off screen.</div></li><li><div class="q">FHR-4: every open-play chance gets a build-up?</div><div class="d"><span class="by">Harry, 19 Oct</span>Yes. Some set pieces and penalties can show the foul that won them.</div></li><li><div class="q">The switch: who sees it, and where?</div><div class="d"><span class="by">Harry, 19 Oct</span>No own admin page and no ruler card. Just a toggle, in Settings and in the settings before a match, with a small &ldquo;?&rdquo; that explains it. Show it to everyone for now.</div></li><li><div class="q">Build-ups in the test areas, and the gallery?</div><div class="d"><span class="by">Harry, 19 Oct</span>Infinite Highlights and Infinite Match must play build-ups. Generated build-ups must never write over Mikey&rsquo;s hand-checked scenarios. In a final, a longer build-up in the 90th minute; a 90th-minute winner goes to a celebration and the trophy lift.</div></li><li><div class="q">More than 2,104 matches, and remove Afriskaut?</div><div class="d"><span class="by">Harry, 19 Oct</span>Yes: more tracking data, and remove Afriskaut (&ldquo;no one&rsquo;s heard of them&rdquo;). Built in B3.</div></li><li><div class="q">DATA-1: where do the credit lines go?</div><div class="d"><span class="by">Harry, 19 Oct</span>Settings is fine. Built in B3 (Settings &rarr; More &rarr; Data credits).</div></li><li><div class="q">DATA-2: should real moments feed the real game?</div><div class="d"><span class="by">Harry, 19 Oct</span>Try it, inside the highlights switch as another toggle, &ldquo;Real moment highlights&rdquo;. Built in B3. Keep.</div></li><li><div class="q">A-6: one Play button on Real moments?</div><div class="d"><span class="by">Harry, 19 Oct</span>Keep. Real shots shot map: &ldquo;pretty cool&rdquo;.</div></li><li><div class="q">Delete raw downloaded data after use?</div><div class="d"><span class="by">Harry, 20 Oct</span>Done for B3&rsquo;s 1.2 GB. The rule is in data/opendata/README.md.</div></li><li><div class="q">3D plan: go on phases 1 to 5?</div><div class="d"><span class="by">Harry, 19 Oct</span>Liked. &ldquo;Fixing skin and light is very big.&rdquo; Go on phases 1 to 5 (built in B5). Home player: natural, energetic poses; eyes blink and look around; lips move when talking; holds things properly.</div></li><li><div class="q">Blender on the cloud machine?</div><div class="d"><span class="by">Harry, 19 Oct</span>Install it whenever it is needed.</div></li><li><div class="q">3D-3, 3D-4, 3D-5: where do edits save, and what next?</div><div class="d"><span class="by">Harry, 19 Oct</span>&ldquo;I would love it to commit straight into the game.&rdquo; An Approve button: approved edits are used in the game and stay editable; you choose when and where. Step 3b (shop, garden, house) first. Built in B6.</div></li><li><div class="q">3D-6: Higgsfield?</div><div class="d"><span class="by">Harry, 19 Oct</span>On for now. Always say what is being made there, and delete the images and videos after use.</div></li><li><div class="q">GEN-1 and GEN-3: the Scene generator?</div><div class="d"><span class="by">Harry, 19 Oct</span>Build it as its own admin page in the Studio tab (built in B6). Generated scenes can go in the game if they are good, for the moments that suit them.</div></li><li><div class="q">In-match mute, TOUCH and Power buttons: resize in the match file (sensitive)?</div><div class="d"><span class="by">Harry, 20 Oct</span>Yes. Done: size only, no game logic.</div></li><li><div class="q">The in-match radar (Settings &rarr; Match radar: New) draws the ball dot outside its lit area. Fix it?</div><div class="d"><span class="by">Harry, 20 Oct</span>Fix the match radar. Done the same day: the dot outside its area went from 220 of 455 minutes to 0 of 910 checked (B17, v0.85).</div></li></ul></div></details>
+
+<footer>20 Oct 2026. The questions come from the patch-notes pages v0.60h to v0.85. The same question on several pages is one question here. Private page.</footer>
+</div>

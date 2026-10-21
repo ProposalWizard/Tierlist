@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { gradeContact } from "@/lib/star/shotModel";
+import { airContactRead, AIR_CENTRE_R, VOLLEY_SWEET } from "@/lib/star/airborneChance";
 
 /**
  * How the ball is moving while you pick where to hit it (Mikey, 27 Sep 2026).
@@ -86,6 +87,8 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
   const moverRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
   const liftRef = useRef(0);
+  // B10: the volley's height meter (its marker follows the ball's height).
+  const meterRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
   // One sweep across takes 2.2s at technique 40, 3.4s at 100.
   const period = 2.2 + Math.max(0, Math.min(100, technique) - 40) / 60 * 1.2;
@@ -103,6 +106,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       // How high it is now, 0..1 of this motion's top (float sits ~0.42-0.5 up).
       const top = motion === "float" ? 0.5 : motion === "bounce" ? 0.26 : 0.05;
       liftRef.current = Math.max(0, Math.min(1, -y / top));
+      if (meterRef.current) meterRef.current.style.bottom = `calc(${(liftRef.current * 100).toFixed(1)}% - 3px)`;
       const sh = shadowRef.current;
       if (sh) {
         // The shadow stays on the grass, under the ball, smaller and fainter the higher it is.
@@ -184,14 +188,18 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
 
     locked.current = true;
     setSpark({ left: r + cx * r, top: r + cy * r });
-    if (grades) {
+    const air = motion === "float" || motion === "bounce";
+    const lift = liftRef.current;
+    if (air) {
+      // B10: a header or volley says how it came off (the same read the strike uses).
+      const rd = airContactRead({ kind: motion === "float" ? "header" : "volley", lift, cx, cy, tech: technique });
+      setGraded({ label: rd.label, good: rd.good });
+    } else if (grades) {
       const g = gradeContact({ cx, cy }, power, knuckles, field);
       if (g.label) setGraded({ label: g.label, good: g.grade === "clean" || g.grade === "knuckle" || g.label === "CURLER" });
     }
     // A graded strike holds a beat longer so the verdict can be read.
-    const air = motion === "float" || motion === "bounce";
-    const lift = liftRef.current;
-    setTimeout(() => onContact(air ? { cx, cy, lift } : { cx, cy }), grades ? 420 : 200);
+    setTimeout(() => onContact(air ? { cx, cy, lift } : { cx, cy }), grades || air ? 420 : 200);
   };
 
   const powerPct = Math.round(power * 100);
@@ -258,6 +266,12 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
         >
           {motion === "float" ? "Head it?" : motion === "bounce" ? "Volley it?" : "Strike it?"}
         </div>
+        {/* B10: what matters for a ball in the air, in one line. */}
+        {(motion === "float" || motion === "bounce") && (
+          <div data-air-hint className="mt-1.5 text-[11px] font-bold text-white/90" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+            {motion === "float" ? "Top nods it down · the sides glance it · under loops it up" : "Hit the middle as it drops through the green"}
+          </div>
+        )}
 
         {/* Three ways to read the ball, as chips rather than a run-on line —
             the run-on line asked you to parse three instructions in one
@@ -331,6 +345,21 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
         </span>
       </div>
 
+      {/* B10: a volley's height meter — the ball's height now, and the green
+          band where it is met sweetly as it drops (VOLLEY_SWEET). */}
+      {motion === "bounce" && (
+        <div data-volley-meter className="absolute left-2.5 top-1/2 z-40 -translate-y-1/2 flex flex-col items-center gap-1.5 pointer-events-none">
+          <span className="text-white text-[9px] font-black uppercase tracking-[0.15em]" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+            Height
+          </span>
+          <div className="relative h-28 w-3 rounded-full bg-black/50 border border-white/10">
+            <div className="absolute left-0 right-0 rounded-sm bg-emerald-400/70"
+              style={{ bottom: `${VOLLEY_SWEET[0] * 100}%`, height: `${(VOLLEY_SWEET[1] - VOLLEY_SWEET[0]) * 100}%` }} />
+            <div ref={meterRef} className="absolute -left-1 -right-1 h-1.5 rounded-full bg-white shadow" style={{ bottom: "-3px" }} />
+          </div>
+        </div>
+      )}
+
       {/* The ball — sitting ON the grass. It used to float in the middle of the
           sky with the turf a long way below it, which reads as a ball in the
           air, and this screen is you standing over a ball at your feet. */}
@@ -383,6 +412,14 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
             draggable={false}
             className="relative w-full h-full object-cover rounded-full select-none pointer-events-none"
           />
+
+          {/* B10: a ball in the air — the middle of it, where a header or a
+              volley is struck clean (AIR_CENTRE_R either side). */}
+          {(motion === "float" || motion === "bounce") && (
+            <svg data-air-centre className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
+              <circle cx="0" cy="0" r={AIR_CENTRE_R + 0.08} fill="none" stroke="#fff" strokeOpacity="0.75" strokeWidth="0.035" strokeDasharray="0.07 0.05" />
+            </svg>
+          )}
 
           {/* Contact field guide (Oct 13): height lines that fade out toward
               the sides, and a curl mark at each edge. One faint layer. */}

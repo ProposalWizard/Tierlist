@@ -1,0 +1,82 @@
+/* ── The admin skins (Harry, 20 Oct 2026): "I want everything to look the same,
+   but with a different kind of skin … They can't just click Clean light and
+   suddenly I'm on a different admin page with a different layout."
+   The admin home, the group pages and the search results read these --sk-*
+   tokens; the LAYOUT is one and the same in every look (Broadcast's). Each
+   look below only swaps paint: colours, fonts, corners, surfaces. ── */
+.ash {
+  --sk-r: 6px;                         /* card corners */
+  --sk-type-style: italic;             /* titles */
+  --sk-type-case: uppercase;
+  --sk-tile: radial-gradient(120% 90% at 50% 0%, rgba(90,160,255,.28), transparent 60%), linear-gradient(180deg, #0e2a6a, #061536);
+  --sk-tile-border: rgba(90, 150, 255, 0.34);
+  --sk-tile-ink: #ffffff;
+  --sk-tile-ink2: #c4d4f0;
+  --sk-bar: linear-gradient(100deg, #1b5fd6, #123f9c);
+  --sk-bar-ink: #ffffff;
+  --sk-bar-clip: polygon(0 0, 100% 0, calc(100% - 16px) 100%, 0 100%);
+  --sk-badge: var(--ash-amber);
+  --sk-badge-ink: #1a1300;
+  --sk-badge-skew: skewX(-10deg);
+  --sk-card: linear-gradient(180deg, rgba(14,40,98,.85), rgba(6,20,54,.9));
+  --sk-card-border: rgba(90, 160, 255, 0.45);
+  --sk-card-ink: #eef4ff;
+  --sk-card-ink2: #b3c6e8;
+  --sk-pic: #04112f;
+  --sk-open: var(--ash-amber);
+  --sk-open-ink: #1a1300;
+  --sk-open-clip: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  --sk-open-r: 0px;
+  --sk-h2: var(--ash-amber);
+  --sk-hover: 0 0 18px rgba(47, 140, 255, 0.35);
+}
+.ash[data-look="ops"] {
+  --sk-r: 16px; --sk-type-style: normal; --sk-type-case: none;
+  --sk-tile: radial-gradient(120% 80% at 50% 0%, rgba(52,224,139,.14), transparent 65%), linear-gradient(180deg, rgba(24,40,32,.92), rgba(11,18,14,.94));
+  --sk-tile-border: rgba(120, 200, 160, 0.24); --sk-tile-ink: #eef6f1; --sk-tile-ink2: #b4cbbf;
+  --sk-bar: none; --sk-bar-ink: #eef6f1; --sk-bar-clip: none;
+  --sk-badge: rgba(52, 224, 139, 0.16); --sk-badge-ink: #5cf0a6; --sk-badge-skew: none;
+  --sk-card: rgba(18, 30, 24, 0.78); --sk-card-border: rgba(120, 200, 160, 0.2); --sk-card-ink: #eef6f1; --sk-card-ink2: #a9c2b5; --sk-pic: #0b1410;
+  --sk-open: #34e08b; --sk-open-ink: #04180d; --sk-open-clip: none; --sk-open-r: 8px;
+  --sk-h2: #8aa597; --sk-hover: 0 0 0 1px rgba(52, 224, 139, 0.5);
+}
+.ash[data-look="light"] {
+  --sk-r: 14px; --sk-type-style: normal; --sk-type-case: none;
+  --sk-tile: #ffffff; --sk-tile-border: #dfe6e1; --sk-tile-ink: #0f1713; --sk-tile-ink2: #44574d;
+  --sk-bar: none; --sk-bar-ink: #0f1713; --sk-bar-clip: none;
+  --sk-badge: #e8f5ed; --sk-badge-ink: #0b7a3b; --sk-badge-skew: none;
+  --sk-card: #ffffff; --sk-card-border: #dfe6e1; --sk-card-ink: #0f1713; --sk-card-ink2: #44574d; --sk-pic: #eef3f0;
+  --sk-open: #12a150; --sk-open-ink: #ffffff; --sk-open-clip: none; --sk-open-r: 8px;
+  --sk-h2: #5b6e64; --sk-hover: 0 0 0 1px #12a150, 0 6px 18px rgba(15, 23, 19, 0.08);
+}
+/* Bento: each group in its own soft colour (--g, set by data-g). Dark words on
+   a pale tint so every card reads (Harry, 20 Oct: the Bento cards were hard to read). */
+.ash[data-look="bento"] {
+  --sk-r: 20px; --sk-type-style: normal; --sk-type-case: none;
+  --sk-tile: color-mix(in srgb, var(--g, #2f6bff) 13%, #fff); --sk-tile-border: color-mix(in srgb, var(--g, #2f6bff) 28%, #fff);
+  --sk-tile-ink: #151a2d; --sk-tile-ink2: #3e4763;
+  --sk-bar: none; --sk-bar-ink: #151a2d; --sk-bar-clip: none;
+  --sk-badge: #ffffff; --sk-badge-ink: color-mix(in srgb, var(--g, #2f6bff) 55%, #000); --sk-badge-skew: none;
+  --sk-card: #ffffff; --sk-card-border: color-mix(in srgb, var(--g, #2f6bff) 24%, #fff); --sk-card-ink: #151a2d; --sk-card-ink2: #4a5370;
+  --sk-pic: color-mix(in srgb, var(--g, #2f6bff) 12%, #fff);
+  --sk-open: #2f6bff; --sk-open-ink: #ffffff; --sk-open-clip: none; --sk-open-r: 99px;
+  --sk-h2: #4a5370; --sk-hover: 0 0 0 2px color-mix(in srgb, var(--g, #2f6bff) 45%, #fff), 0 8px 22px rgba(21, 26, 45, 0.08);
+}
+[data-g="research"] { --g: #14b8a6; }
+/* Tokens re-read at each [data-g] element, so a Bento tile picks up its own group's colour. */
+.ash[data-look="bento"] [data-g] {
+  --sk-tile: color-mix(in srgb, var(--g) 13%, #fff); --sk-tile-border: color-mix(in srgb, var(--g) 28%, #fff);
+  --sk-badge-ink: color-mix(in srgb, var(--g) 55%, #000); --sk-card-border: color-mix(in srgb, var(--g) 24%, #fff);
+  --sk-pic: color-mix(in srgb, var(--g) 12%, #fff);
+}
+
+/* The one back arrow sits in the top-left corner: the same spot as on every
+   framed page (BroadcastPage's title bar is 16 px in, 16 px down). */
+.ash-side { padding-top: 16px; }
+.ash-brand { padding: 0 0 14px 4px; }
+.ash-top { justify-content: flex-start; }
+.ash-top .ash-word { margin-left: auto; }
+@media (max-width: 1023px) { .ash-top { padding: 8px 12px; } }
+@media (min-width: 1024px) {
+  .ash[data-folded="true"] .ash-brand { padding: 0 0 12px; }
+}

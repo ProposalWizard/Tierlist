@@ -414,7 +414,12 @@ export function periodDue(career: CareerState): Period | null {
     if (s.periods[p.key]) continue;
     const first = p.matches.find((m) => !played(m) && !s.played[m.id]);
     if (!first || first.date < lastPlayedTime(career)) continue;
-    if (first.date <= limit + DAY && first.date <= seasonEnd(career)) return p;
+    // Three days ahead (B13, 20 Oct 2026), the same three days awayOnDuty
+    // keeps you away before the first match: the squad is named before a
+    // League One Tuesday two days ahead of a Thursday international, so you
+    // miss that Tuesday instead of playing both (it was one day: you played
+    // Tue 22 Sep and Thu 24 Sep 2026).
+    if (first.date <= limit + 3 * DAY && first.date <= seasonEnd(career)) return p;
   }
   return null;
 }
@@ -601,7 +606,12 @@ export function awayOnDuty(career: CareerState, f: Fixture): string | null {
   for (const p of periodsFrom(w, s.nation, t - 60 * DAY)) {
     if (!s.periods[p.key]?.called) continue;
     const first = p.matches[0]?.date ?? p.start;
-    const last = p.kind === "tournament" ? p.end : (p.matches[p.matches.length - 1]?.date ?? p.end) + DAY;
+    // Two days after the last international (B13, 20 Oct 2026): a League One
+    // Tuesday two days after a Sunday international is still missed, so you
+    // always have two clear days between games. It was one day, and the
+    // fixture checker (tests/star/fixtureClashes.mts) found Sun 15 Nov then
+    // Tue 17 Nov 2026.
+    const last = p.kind === "tournament" ? p.end : (p.matches[p.matches.length - 1]?.date ?? p.end) + 2 * DAY;
     if (t >= first - 3 * DAY && t <= last) {
       return p.kind === "tournament"
         ? `You're away with ${s.nation} at the ${p.comp}.`

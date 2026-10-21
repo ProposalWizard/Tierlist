@@ -4,12 +4,12 @@
  * you pass the ball off, you should then get a joystick, and you can still
  * continue moving in that play").
  *
- * Only does anything with Chances: New (lib/star/newChances.ts).
- * Auto run = the play-on as it was (lib/star/playOn.ts: after a build-up you
- * run into the box on your own; the default).
- * Joystick = after any pass in a chance with a goal in it, a thumb stick
- * bottom-left steers you; the team-mate reads where you are (playOn.ts
- * "THE JOYSTICK").
+ * B14 (Harry, 20 Oct 2026): every pass in open play with a goal in the
+ * picture now plays on, whatever the Chances setting (playOn.ts THE RUN).
+ * Auto run (the default) = you find space on your own; on a computer W A S D
+ * steer and Shift sprints. Joystick = a thumb stick bottom-left steers you
+ * instead (thumb off, you stand). Either way the team-mate reads where you
+ * are (playOn.ts stickRead) and you have the stamina bar (lib/star/legs.ts).
  *
  * A setting per phone, stored like the Chances setting. `?afterpass=auto|stick`
  * on any page overrides it for that page only.

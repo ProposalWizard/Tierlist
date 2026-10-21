@@ -9,8 +9,8 @@ export const T = ({ k }: { k: Tag }) => <span className={`se-tag se-${k}`}>{TAG[
 
 export type PlaceId = "signing" | "office" | "shop" | "garden" | "house" | "director";
 export const PLACES: { id: PlaceId; name: string; live: boolean }[] = [
-  { id: "signing", name: "3D Signing", live: true }, { id: "office", name: "Manager's Office", live: true }, { id: "shop", name: "3D Shop", live: false },
-  { id: "garden", name: "3D Garden", live: false }, { id: "house", name: "3D House", live: false }, { id: "director", name: "Cut-scene Director", live: true },
+  { id: "signing", name: "3D Signing", live: true }, { id: "office", name: "Manager's Office", live: true }, { id: "shop", name: "3D Shop", live: true },
+  { id: "garden", name: "3D Garden", live: true }, { id: "house", name: "3D House", live: true }, { id: "director", name: "Cut-scene Director", live: true },
 ];
 
 /** The place picker: live places are buttons; the rest say "coming next". */
@@ -110,11 +110,15 @@ export function MiniMap({ layout, pose, free, onCam, onLook, onSun }: {
   };
   const grab = (k: "cam" | "look" | "sun") => (e: React.PointerEvent) => { e.stopPropagation(); drag.current = k; box.current?.setPointerCapture(e.pointerId); };
   return (
-    <svg ref={box} className="se-map" data-minimap viewBox={`0 0 ${S} ${S}`} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerDown={(e) => e.stopPropagation()}>
+    <svg ref={box} className="se-map" data-minimap viewBox={`0 0 ${S} ${S}`} style={{ touchAction: "none" }} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }} onPointerDown={(e) => e.stopPropagation()}>
       <rect x={0} y={0} width={S} height={S} rx={8} fill="rgba(8,12,20,0.78)" stroke="rgba(255,255,255,0.25)" />
       <circle cx={S / 2} cy={S / 2} r={sunR} fill="none" stroke="rgba(255,210,90,0.25)" strokeDasharray="2 3" />
       {layout.people.map((p) => { const [x, y] = toS(p.x, p.z); return <g key={p.id}><circle cx={x} cy={y} r={4} fill="#9aa4b2" /><text x={x + 5} y={y + 3} fontSize={7} fill="#cbd5e1">{p.id}</text></g>; })}
       <line x1={px} y1={py} x2={lx} y2={ly} stroke={free ? "#38bdf8" : "rgba(56,189,248,0.5)"} strokeWidth={1.5} />
+      {/* Phone fix: bigger invisible finger targets under the three markers. */}
+      <circle cx={lx} cy={ly} r={16} fill="transparent" onPointerDown={grab("look")} />
+      <circle cx={px} cy={py} r={16} fill="transparent" onPointerDown={grab("cam")} />
+      <circle cx={S / 2 + Math.cos(sunPhi) * sunR} cy={S / 2 + Math.sin(sunPhi) * sunR} r={16} fill="transparent" onPointerDown={grab("sun")} />
       <circle data-map-look cx={lx} cy={ly} r={5} fill="#fff" stroke="#0f172a" onPointerDown={grab("look")} style={{ cursor: "move" }} />
       <rect data-map-cam x={px - 6} y={py - 5} width={12} height={10} rx={2} fill="#38bdf8" stroke="#0f172a" onPointerDown={grab("cam")} style={{ cursor: "move" }} />
       <circle data-map-sun cx={S / 2 + Math.cos(sunPhi) * sunR} cy={S / 2 + Math.sin(sunPhi) * sunR} r={6} fill="#fcd34d" stroke="#92400e" onPointerDown={grab("sun")} style={{ cursor: "move" }} />

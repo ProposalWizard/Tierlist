@@ -258,7 +258,7 @@ function nextLineFor(next: Fixture | undefined, label: (r: string) => string): s
  */
 export function knockoutRoundupFor(c: CareerState, f: Fixture): Roundup | null {
   const you = c.player.club;
-  if (f.kind === "cup" && (f.competition === "FA Cup" || f.competition === "League Cup")) {
+  if (f.kind === "cup" && (f.competition === "FA Cup" || f.competition === "League Cup" || f.competition === "Lower League Trophy")) {
     if (f.leg === 1) return null;
     const st = c.cupState?.find(x => x.competition === f.competition);
     if (!st) return null;

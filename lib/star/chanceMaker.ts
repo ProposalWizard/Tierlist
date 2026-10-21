@@ -38,7 +38,9 @@
  *   one-on-one is offered when the match says the move is a break ("They
  *   lose it — you break on them"), and in settled play only 1 time in 10
  *   (SETTLED_ONE_ON_ONE); otherwise the middle of the box is a tight angle. A pass that comes back to you can still put you through.
- *   Volleys and headers stay switched off (switchedOffKinds.ts).
+ *   Volleys and headers are back on (B10, 20 Oct 2026): with no drawings of
+ *   their own they are played off the team's cross drawings (airDrawings.ts,
+ *   through authoredChance's playPool).
  *
  * canvasEngine.ts is not touched. Kinds with fewer than 5 drawings are made
  * by the builder and the chance formula, as before.
@@ -58,7 +60,7 @@ import { applyFormationShape, type ShapeInput } from "./formationShape";
 import { setupKind } from "./kindRules";
 import { isSwitchedOff, playableKind, withoutSwitchedOff } from "./switchedOffKinds";
 import {
-  authoredPool, ruleSetFor, randomiseAuthored, applyAuthoredShape,
+  playPool, ruleSetFor, randomiseAuthored, applyAuthoredShape,
   keeperSharesOf, placeKeeper, sampleFromScenario, mirrorShape,
   type AuthoredShape,
 } from "./authoredChance";
@@ -70,6 +72,7 @@ import { separateBodies } from "./spacing";
 import { finishServedFrame } from "./goalFrame";
 import { CX, PITCH_W } from "./pitch";
 import { mulberry32 } from "./season";
+import { serveRealMoment } from "./fhr/realMomentHighlights";
 
 // ─────────────────────────────────────────────────────────────────────────
 //  THE ONE DIAL
@@ -368,7 +371,7 @@ interface Drawn extends ShapeSample { id: string }
 /** Every usable drawing of a kind, the named outliers left out (as today). */
 function drawingsOf(kind: string, set: RuleSet): Drawn[] {
   const bad = new Set(outliersOf(set).map((o) => o.id));
-  const all = authoredPool(kind)
+  const all = playPool(kind)
     .map((ms) => { const s = sampleFromAuthored(ms); return s ? { id: ms.id, ...s } : null; })
     .filter((s): s is Drawn => !!s);
   const clean = all.filter((s) => !bad.has(s.id));
@@ -447,7 +450,7 @@ export function drawingShape(
 ): DrawnShape | null {
   const set = ruleSetFor(kind);
   if (!set || set.n < MIN_SAMPLES_FOR_INVARIANT) return null;
-  const pool = authoredPool(kind);
+  const pool = playPool(kind);
   const bad = new Set(outliersOf(set).map((o) => o.id));
   const clean = pool.filter((s) => !bad.has(s.id));
   const from = clean.length ? clean : pool;
@@ -485,7 +488,7 @@ export function drawingShape(
 const ownFaultCache = new Map<string, string[]>();
 export function drawingOwnFaults(kind: ScenarioKind, id: string, mirrored: boolean): string[] {
   const set = ruleSetFor(kind);
-  const ms = authoredPool(kind).find((x) => x.id === id);
+  const ms = playPool(kind).find((x) => x.id === id);
   if (!set || !ms) return [];
   const key = `${kind}|${id}|${ms.updatedAt ?? 0}|${mirrored}|${set.n}`;
   const hit = ownFaultCache.get(key);
@@ -525,7 +528,7 @@ function stableIndex(ids: string[], key: number): number {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The kinds a request offers. Volleys and headers stay switched off, and a
+ * The kinds a request offers. Switched-off kinds come out (none today), and a
  * one-on-one is on offer when the move is a break (the hidden match's
  * "transition" pattern) — and, in settled play, only SETTLED_ONE_ON_ONE of
  * the time. A dribble's own request is separate: it becomes the first-person
@@ -588,7 +591,8 @@ export interface MadeChance {
   sc: Scenario;
   /** The drawn/generated shape laid on (null for a plan or the builder). */
   shape: AuthoredShape | null;
-  how: "drawing" | "plan" | "builder";
+  /** "real": a real moment (Settings → Full highlights rebuild → Real moment highlights). */
+  how: "drawing" | "plan" | "builder" | "real";
   appliedPlan: boolean;
   appliedAuthored: boolean;
   sourceId: string | null;
@@ -661,7 +665,8 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     kind = src.kind;
     plan = src.plan ?? null;
   }
-  // A switched-off kind (volley, header) is swapped before it is ever shown.
+  // A switched-off kind is swapped before it is ever shown (none today: B10
+  // switched headers and volleys back on).
   if (isSwitchedOff(kind)) {
     kind = playableKind(kind, rng);
     plan = null;
@@ -674,6 +679,25 @@ export function makeChance(o: MakeChanceOptions): MadeChance {
     const k2 = drawnKindFor(kind);
     if (k2 !== kind) { kind = k2; plan = null; first = null; }
     if (o.selection) noteDealt((o.selection.dealt ??= []), kind);
+  }
+
+  // ── 1b. Real moment highlights (lib/star/fhr/realMomentHighlights.ts) ──
+  // Settings → Full highlights rebuild: On → Real moment highlights: On. Some
+  // OPEN-PLAY chances of a kind the real moments have are a real moment of that
+  // kind: the ball and every man where they really stood (its real build-up is
+  // leadInGen.ts careerBuildUp's). Off: serveRealMoment returns null at once and
+  // draws no random number, so nothing here changes.
+  if (src.from === "request" && !src.request.dribble && src.request.pattern !== "set_piece") {
+    const real = serveRealMoment(kind, rng);
+    if (real) {
+      const separated = separateBodies(real.sc);
+      finishServedFrame(real.sc);
+      o.memory?.remember(pictureOf(real.sc));
+      return {
+        sc: real.sc, shape: null, how: "real", appliedPlan: false, appliedAuthored: false, sourceId: real.id,
+        faultRebuilds: 0, memoryRebuilds: 0, faults: [], nearestRecent: Infinity, separated,
+      };
+    }
   }
 
   // ── 2. A kind with fewer than 5 drawings: the formula's plan or the builder ──
@@ -797,7 +821,7 @@ function drawnOpenKinds(): ScenarioKind[] {
 /** Where a kind's ball sits: across from the middle and depth from goal,
  *  averaged over its drawings (side-free: the picture gets mirrored anyway). */
 function kindCentroid(kind: ScenarioKind): { lat: number; depth: number } {
-  const balls = authoredPool(kind).map((ms) => sampleFromAuthored(ms)).filter((x): x is ShapeSample => !!x).map((x) => x.ball);
+  const balls = playPool(kind).map((ms) => sampleFromAuthored(ms)).filter((x): x is ShapeSample => !!x).map((x) => x.ball);
   // No drawing at all: the builder's own ball, on a fixed stream of its own.
   if (!balls.length) balls.push(buildScenario(kind, mulberry32(0x5eed)).ball);
   return { lat: mean(balls.map((b) => Math.abs(b.x - CX))), depth: mean(balls.map((b) => b.y)) };

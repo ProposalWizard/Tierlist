@@ -14,7 +14,7 @@
  * Pure: no React, no canvas. tests/star/leadIn.mts checks it.
  */
 import type { Scenario, Vec2, Viewport } from "./canvasEngine";
-import type { Lane, ChancePattern } from "./hiddenMatch";
+import type { Lane, ChancePattern, ScenarioRequest } from "./hiddenMatch";
 import { SIX_DEPTH, SIX_L, SIX_R, BOX_DEPTH, BOX_L, BOX_R, CX } from "./pitch";
 
 export interface LeadIn {
@@ -29,6 +29,21 @@ export interface LeadIn {
    * further back): drawn only while the lead-in plays, keys extra0, extra1…
    */
   extraMates?: number;
+  /**
+   * Opponents in the move who are not in the chance's picture (the man your
+   * side wins the ball from, a build-up only): drawn only while the lead-in
+   * plays, keys oppx0, oppx1…
+   */
+  extraOpps?: number;
+  /**
+   * THE MOVE ENDS IN A CALLED OFFSIDE (the rebuild's B2b; Harry, 20 Oct 2026:
+   * "Offsides can happen but they must be called"). The pass at `pass` went
+   * to `by`, who was offside when it was played; the flag is up at `at`.
+   * There is no chance after it: the match calls it the way it calls offside
+   * (OFFSIDE, the whistle), the free kick goes to them, and the people and
+   * the camera stay where the lead-in left them. Absent: the chance follows.
+   */
+  offside?: { at: number; by: string; pass: number; spot: Vec2; why?: "mistimed" | "untimed" };
   /**
    * When each pass starts and arrives (seconds, in order). The camera frames
    * the passer and the receiver of the pass being played. Absent: it frames
@@ -49,6 +64,26 @@ export interface LeadIn {
    * at the end. Absent: the build-ups' camera (never wider than the chance's frame).
    */
   camera?: "tv";
+  /**
+   * PLAYERS ALREADY MOVING (the rebuild's phase 3). The men in `runOnKeys`
+   * are still running when the chance becomes yours: posAt answers for them
+   * up to durS + runOnS, easing each one to a stop EXACTLY on the drawing's
+   * spot. The ball and you are done at durS; the chance is yours from durS.
+   * Strike it before they stop and they stop where they are (from the strike
+   * the engine moves everyone, unchanged). Absent: everyone stops at durS, as before.
+   */
+  runOnS?: number;
+  runOnKeys?: string[];
+  /**
+   * Men who JOIN the chance (the rebuild's extra covering defender): drawn
+   * from the start of the lead-in, at posAt(key, t), and kept in the chance
+   * afterwards at `end` (or at posAt during the run-on). Absent: nobody joins.
+   */
+  joiners?: { key: string; side: "opp"; end: Vec2 }[];
+  /** A referee's whistle at this second of the lead-in (a foul before a set piece). */
+  whistleAt?: number;
+  /** Show captionAt over the picture while it plays ("Foul! Free kick.", "One last attack"). Absent: the plain "Build-up" label. */
+  captionShown?: boolean;
 }
 
 /**
@@ -73,6 +108,33 @@ export interface LeadMoment {
   themStrength?: number;
   /** The chance's own camera frame as the match shows it (absent: sc.viewport). */
   frame?: Viewport;
+  /**
+   * How big the moment is, for how long a build-up runs (the rebuild: "in a
+   * final, you get a big, longer build-up in the 90th minute"). The match
+   * minute, your goals minus theirs, and what is at stake. Absent: an
+   * ordinary moment (the build-up exactly as before these existed).
+   */
+  minute?: number;
+  scoreDiff?: number;
+  stakes?: "final" | "knockout" | "league" | "friendly";
+  /**
+   * How your side last won the ball, as the match had it (the request's
+   * `regain`): the build-up shows that regain when it was this minute, and
+   * never one the match did not have. Absent: no regain is shown.
+   */
+  regain?: ScenarioRequest["regain"];
+  /** The offside law is off for this match (the Rule Book): nobody is ever flagged. */
+  offsideOff?: boolean;
+}
+
+/** What is at stake in a fixture, for LeadMoment.stakes (a final, a knockout round, a league match). */
+export function stakesOf(f?: { kind?: string; round?: string; competition?: string } | null): LeadMoment["stakes"] {
+  if (!f) return undefined;
+  const round = f.round ?? "";
+  if (/\bfinal\b/i.test(round) && !/semi|quarter|eighth/i.test(round)) return "final";
+  if (f.kind && f.kind !== "league" && round) return "knockout";
+  if (!f.kind || f.kind === "league") return "league";
+  return f.kind === "international" ? "friendly" : "knockout";
 }
 
 /** One person in a chance, by a key that is stable within the chance. */
@@ -363,6 +425,8 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
   };
   /** 0 = following, 1 = fixed on the chance's frame; eased between. */
   const lockAt = (t: number, chance: Viewport) => {
+    // A move that ends in a called offside has no chance to lock onto: it follows to the end.
+    if (lead.offside) return 0;
     const lt = lockTime(chance);
     if (lt <= 0) return 1;
     return smooth((t - (lt - SETTLE)) / SETTLE);
@@ -397,7 +461,12 @@ export function leadInCamera(lead: LeadIn, keys: readonly string[] = []) {
         // The seen-part margin fades to keepBall's as it lands on the chance's frame.
         return keepSafe(z, lead.ballAt(t), 1 - f);
       }
-      return keepBall({ x1: mix(own.x1, chance.x1), x2: mix(own.x2, chance.x2), y1: mix(own.y1, chance.y1), y2: mix(own.y2, chance.y2) }, lead.ballAt(t));
+      // (`own` already keeps the ball inside it. Keeping it again AFTER the mix
+      // pushed the last frames off the chance's own frame whenever the chance
+      // has the ball near its edge — a tight angle — and the picture jumped
+      // 1.7 px onto the chance's camera at the hand-over. B2b, measured in
+      // tests/star/fhrCameraHandover.mts.)
+      return { x1: mix(own.x1, chance.x1), x2: mix(own.x2, chance.x2), y1: mix(own.y1, chance.y1), y2: mix(own.y2, chance.y2) };
     },
   };
 }
@@ -420,7 +489,9 @@ export function alongKeys(keys: KeyPt[], t: number, ease = true): Vec2 {
 // ── Shared with the Real shots lead-in (lib/star/realMoments/leadin.ts) and the build-ups (leadInGen.ts) ──
 
 /** The ball's keyframes: when it is where, and whether it got there by a pass (lofted or not). */
-export interface LeadBallKey { t: number; p: Vec2; pass?: { h: number } }
+/** `pass.endZ`: a pass that arrives in the air (a cross met by a header or a
+ *  volley, B10) ends at this height instead of on the grass; `h` is still its top. */
+export interface LeadBallKey { t: number; p: Vec2; pass?: { h: number; endZ?: number } }
 
 /** The fastest a man may be made to run in a lead-in, m/s (lead-in time). */
 export const LEAD_MAX_RUN = 9;
@@ -434,7 +505,8 @@ export function ballAlong(keys: LeadBallKey[], t: number): { x: number; y: numbe
       const f = b.t > a.t ? (t - a.t) / (b.t - a.t) : 1;
       // A pass slows a little as it runs; a carry is steady.
       const g = b.pass ? f * (1.3 - 0.3 * f) : f;
-      const z = b.pass && b.pass.h > 0 ? 4 * b.pass.h * f * (1 - f) : 0;
+      const endZ = b.pass?.endZ ?? 0;
+      const z = b.pass && b.pass.h > 0 ? endZ * f + 4 * Math.max(0, b.pass.h - endZ / 2) * f * (1 - f) : 0;
       return { x: a.p.x + (b.p.x - a.p.x) * g, y: a.p.y + (b.p.y - a.p.y) * g, z };
     }
   }

@@ -1,0 +1,247 @@
+<title>Team Room v1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one column, stacked cards, stills under their text. Tokens first, then components. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  a{color:var(--blue)}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+  .chip{display:inline-block;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink2);text-decoration:none}
+  .chip.hot{color:var(--amber);border-color:var(--amber)}
+  .back{display:inline-block;font-size:13px;font-weight:700;margin:0 0 4px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b,.row li b{color:var(--ink)}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:4px}
+  .nr{color:var(--ink3);font-style:italic}
+  .tile{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+  .tile>b{display:block;font-size:15px}
+  .tile>p{margin:3px 0 0;color:var(--ink2);font-size:14.5px}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .track.solo{height:14px}
+  .track.solo .fill.now{top:0;bottom:0;height:auto}
+  .fill.now.warn{background:var(--amber)}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.blue{background:var(--blue)}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+  .bnote{color:var(--ink3);font-size:12.5px;margin:2px 0 0}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px 14px;margin:10px 0 0}
+  .figs.wide{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+  .figs figure{margin:0}
+  .figs.pair{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .figs.pair figure.ph{max-width:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details .figs{margin-top:2px}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .sbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px 12px}
+  .sbox h3{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 4px}
+  .sbox h3.g{color:var(--green)} .sbox h3.b{color:var(--blue)} .sbox h3.a{color:var(--amber)} .sbox h3.r{color:var(--red)}
+  .sbox ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+  .sbox li{margin-bottom:4px}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox .q{font-weight:700}
+  .okbox .opts{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+  .okbox .who{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-right:6px}
+
+  .vid{border:2px dashed var(--line);border-radius:var(--r);padding:12px 14px;background:var(--card)}
+  .vid b{color:var(--amber)}
+  .vid p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .vid ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  .cards{display:grid;gap:10px;margin:0}
+  .bcard{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;min-width:0}
+  .bcard .n{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 4px}
+  .bcard .n b{font-size:17px}
+  .bcard p{margin:0;color:var(--ink2);font-size:14.5px}
+  .bcard .go{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:var(--blue)}
+  .bcard.soon{border-style:dashed;opacity:.85}
+
+  /* --- how these patch notes work --- */
+  .how{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 14px 10px;min-width:0}
+  .how svg{display:block;width:100%;max-width:340px;height:auto;margin:2px auto 10px}
+  .how ol{margin:0;padding-left:20px;color:var(--ink2);font-size:14.5px}
+  .how li{margin:0 0 6px}
+  .how li b{color:var(--ink)}
+  .how .mini{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;vertical-align:1px}
+  .how .btn{display:inline-block;font-size:12.5px;font-weight:800;background:var(--pill);color:var(--pillink);padding:2px 9px;border-radius:999px;vertical-align:1px}
+  .how .where{margin:8px 0 0;font-size:13px;color:var(--ink3)}
+  /* --- already decided --- */
+  .donebox{border:1px solid var(--line);border-left:4px solid var(--green);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .donebox ul{margin:0;padding:0;list-style:none}
+  .donebox li{padding:11px 0 11px 28px;border-bottom:1px solid var(--line);position:relative}
+  .donebox li:last-child{border-bottom:0}
+  .donebox li::before{content:"\2713";position:absolute;left:2px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--pillink);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .donebox .q{font-weight:700}
+  .donebox .d{color:var(--ink2);font-size:14px;margin-top:3px}
+  .donebox .by{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-right:6px}
+  /* --- video --- */
+  .clip{margin:12px 0 2px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .look{font-size:13px;color:var(--ink2);margin:0 0 7px}
+  .clip .look b{color:var(--ink)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px}
+  /* --- tabs (index) --- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink2);font:inherit;font-size:13.5px;font-weight:800;padding:8px 13px;border-radius:999px;cursor:pointer;min-height:40px}
+  .tab[aria-selected="true"]{background:var(--pill);color:var(--pillink);border-color:var(--pill)}
+  .tab small{font-weight:700;opacity:.8;margin-left:4px}
+  .js .panel[hidden]{display:none}
+  .panel h3.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px}
+  .bcard .vtag{font-size:11px;font-weight:800;color:var(--ink3);letter-spacing:.04em}
+  .qlist{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px}
+  .qlist ul{margin:0;padding:0;list-style:none}
+  .qlist li{padding:10px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14px}
+  .qlist li:last-child{border-bottom:0}
+  .qlist li b{color:var(--ink)}
+
+  /* --- steps (vertical list) --- */
+  .steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  .steps li{position:relative;padding:9px 0 9px 36px;border-bottom:1px solid var(--line);counter-increment:st;color:var(--ink2);font-size:14.5px;min-width:0}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(st);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .steps li b{color:var(--ink)}
+  .steps li.done::before{background:var(--green);border-color:var(--green);color:var(--pillink);content:"\2713"}
+  .steps li.next::before{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+  .mock{border:2px solid var(--red);border-radius:var(--r);background:var(--rbg);padding:12px 14px;margin:10px 0 2px}
+  .mock b{display:block;color:var(--red);font-size:15px;letter-spacing:.02em}
+  .mock p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .mock .mb{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .mock .mb span{font-size:13px;font-weight:800;padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink2)}
+  .mock .mb span.go{background:var(--card2)}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+<div class="wrap">
+<header>
+  <a class="back" href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">&larr; All last-2-days notes</a><br>
+  <span class="ver">19 OCT · TEAM ROOM</span>
+  <h1>The team has a room in the admin: a chat bubble on every page, an Ideas board, Team chat and a To-do list.</h1>
+  <p class="status"><i></i>On main since 19 Oct. Mikey ran the database file (team_room.sql) on 19 Oct, as the 19 Oct notes say.</p>
+  <p class="sub">19 Oct 2026. Round two (seen faces, replies, @, pointing) is on the B11 page. Admin &rarr; Patch notes: <b>v0.60h</b>.</p>
+  <div class="chips"><a class="chip" href="#vid">Videos (none planned) &darr;</a></div>
+</header>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<ul class="ck"><li><label><input type="checkbox" data-k="c0"><span><span class="q">The chat bubble</span><span class="a">Any admin page, bottom left. Opens Chat and To-do.</span></span></label></li><li><label><input type="checkbox" data-k="c1"><span><span class="q">The four views</span><span class="a">Admin menu &rarr; Team board. Switch Board, Ideas, Chat, To-do. The side menu has the same four, with counts.</span></span></label></li><li><label><input type="checkbox" data-k="c2"><span><span class="q">Ideas</span><span class="a">Add an idea. Move it between Idea, Doing, Done. Flip By stage and By person.</span></span></label></li><li><label><input type="checkbox" data-k="c3"><span><span class="q">To-do</span><span class="a">Add a job for yourself and one for someone else. Tick one. It fades.</span></span></label></li><li><label><input type="checkbox" data-k="c4"><span><span class="q">Who are you</span><span class="a">First time, it asks which of Harry, Mikey or Leo you are.</span></span></label></li></ul>
+
+<h2 class="add"><i></i>ADDED</h2><p class="snote">Stills were taken for this page from a local test room with sample rows, as the room looks today (with round two). The first build&rsquo;s stills were not kept.</p><div class="item"><div class="ih"><b>A chat bubble on every admin page</b><span class="tag t-seen">seen</span></div><div class="row"><div class="rl w">Problem / Why</div><p>Your ask (19 Oct): a team room in the admin, with &ldquo;live chat you can open from any admin page as a pop-up box&rdquo;. Chat lives only in the admin room.</p></div><div class="row"><div class="rl f">Fix</div><p>A round button, bottom left, on every admin and test page. It opens a small box with <b>Chat</b> and <b>To-do</b>. It steps clear of the side menu and buttons. (Round two, B11, made it smaller and see-through to taps.)</p></div><div class="figs"><figure class="ph"><img src="img/bubble-phone.jpg" alt="Look at: the box open on a phone: Chat and To-do tabs, then the messages. Sample messages in a local test room." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> the box open on a phone: Chat and To-do tabs, then the messages. Sample messages in a local test room.</figcaption></figure></div></div><div class="item"><div class="ih"><b>Four views of the team room: Board, Ideas, Chat, To-do</b><span class="tag t-seen">seen</span></div><div class="row"><div class="rl w">Problem / Why</div><p>Your ask (19 Oct): an idea board and hand-typed tasks next to the live bars on the team board.</p></div><div class="row"><div class="rl f">Fix</div><p>One switch on the team board: <b>Board | Ideas | Chat | To-do</b>. The side menu has the same four, with red and amber counts. The board and bubble take the colours of your look.</p></div><div class="figs wide"><figure class="wd"><img src="img/broadcast-team-pc.jpg" alt="Look at: the team board in the Broadcast look: a card each for Harry, Mikey and Leo." width="1200" height="750" loading="lazy"><figcaption><b>Look at:</b> the team board in the Broadcast look: a card each for Harry, Mikey and Leo.</figcaption></figure></div></div><div class="item"><div class="ih"><b>Ideas: a board with three stages</b><span class="tag t-seen">seen</span></div><div class="row"><div class="rl w">Problem / Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>Ideas sit in <b>Idea &rarr; Doing &rarr; Done</b>, shown <b>by stage</b> or <b>by person</b>. Each has three vote dots and notes. You can move an idea between stages.</p></div><div class="figs wide"><figure class="wd"><img src="img/ideas-pc.jpg" alt="Look at: three columns. Each card shows who wrote it, a note count and three vote dots. Sample ideas in a local test room." width="1280" height="860" loading="lazy"><figcaption><b>Look at:</b> three columns. Each card shows who wrote it, a note count and three vote dots. Sample ideas in a local test room.</figcaption></figure></div></div><div class="item"><div class="ih"><b>Team chat</b><span class="tag t-seen">seen</span></div><div class="row"><div class="rl w">Problem / Why</div><p>The full chat page is the bigger bubble. Same ask.</p></div><div class="row"><div class="rl f">Fix</div><p>A live chat page: who is here, pinned messages, pictures. It asks once which of Harry, Mikey or Leo you are.</p></div><div class="figs wide"><figure class="wd"><img src="img/chat-pc.jpg" alt="Look at: Here now (left), the messages, Pinned (right). Little faces under a message, Reply, @ and page cards came in round two (B11 page)." width="1280" height="860" loading="lazy"><figcaption><b>Look at:</b> Here now (left), the messages, Pinned (right). Little faces under a message, Reply, @ and page cards came in round two (B11 page).</figcaption></figure></div></div><div class="item"><div class="ih"><b>To-do: your own jobs and jobs for each other</b><span class="tag t-seen">seen</span></div><div class="row"><div class="rl f">Fix</div><p>A list for <b>jobs given to you</b>, <b>your own</b> jobs and <b>jobs you gave</b>. A ticked job fades after a day, then leaves.</p></div><div class="figs wide"><figure class="wd"><img src="img/todo-pc.jpg" alt="Look at: Given to me, Mine, Jobs I gave, and Done today (ticked, faded)." width="1280" height="860" loading="lazy"><figcaption><b>Look at:</b> Given to me, Mine, Jobs I gave, and Done today (ticked, faded).</figcaption></figure></div></div><div class="item"><div class="ih"><b>Notes on pushes</b><span class="tag t-reas">no still</span></div><div class="row"><div class="rl w">Problem / Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>The push sheet (a push to the repo, on the team board) has notes. Anyone can add one.</p></div></div><div class="item"><div class="ih"><b>The room is a portable kit</b><span class="tag t-reas">no still</span></div><div class="row"><div class="rl w">Problem / Why</div><p>You said (19 Oct): &ldquo;build the full team room/board as a portable kit for later&rdquo;.</p></div><div class="row"><div class="rl f">Fix</div><p>One folder, one settings file for the people, colours and repo, and its own database file. The old team board moved in too.</p></div></div><div class="item"><div class="ih"><b>KIB Admin as a home-screen app, and recordings in a folder per person</b><span class="tag t-reas">live, not shown here</span></div><div class="row"><div class="rl w">Problem / Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>The admin installs on a phone&rsquo;s home screen as <b>KIB Admin</b> (icon C). The screen recorder saves each person&rsquo;s recordings in their own folder. Both are live on main since 19 Oct.</p></div></div><h2 class="chg"><i></i>CHANGED</h2><div class="item"><div class="ih"><b>The admin side menu folds on a computer</b><span class="tag t-reas">no still</span></div><div class="row"><div class="rl p">Problem</div><p>You said: &ldquo;We need to be able to close the side tab.&rdquo; You also disliked the thick dark scrollbar.</p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>The &laquo; button at the top of the menu folds it to a 64 px strip of icons. &raquo; opens it. Remembered per browser. The thick scrollbar is gone.</p></div></div>
+
+<h2 class="nxt"><i></i>THE NUMBERS</h2><details><summary>The numbers, if you want them</summary><p><b>Counts.</b> The room loads the last 300 messages. The database keeps 5,000.</p></details>
+
+<h2 class="nxt" id="vid"><i></i>VIDEOS</h2>
+<div class="vid"><b>No clip is planned.</b></div>
+
+<h2 class="bug"><i></i>SEEN / NOT SEEN</h2>
+<div class="sbox"><h3 class="g">Seen on a screen</h3><ul><li>The Ideas, Chat and To-do views on a computer and the bubble on a phone (taken for this page, sample rows)</li><li>The team board in Broadcast (the 19 Oct admin notes)</li></ul><h3 class="a">Reasoned, not seen</h3><ul><li>The first build&rsquo;s own checks: type check and a test file (tests/star/teamRoom.mts); no live look kept</li><li>Notes on pushes, the portable kit, the folding side menu, KIB Admin and the recorder folders (no still)</li></ul><h3 class="r">Not seen / not done</h3><ul><li>Two people using it at once on real phones</li><li>The real database: the 19 Oct notes say Mikey switched it on; not seen here</li></ul></div>
+
+<footer>19 Oct 2026. Facts come from the 19 Oct patch notes, the notes and answers files in the repo, and the build log. Pictures are stills taken while checking the work. Harry&rsquo;s answers are marked as decided.</footer>
+</div>
+<script>
+(function(){
+  var K='kib-overnight-a19team-checks', s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>

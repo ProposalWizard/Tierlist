@@ -83,7 +83,7 @@ export const ADMIN_GUIDES = {
 
   "/admin": {
     title: "Admin Dashboard",
-    what: "Run the live site's content: tierlists, categories, vote tierlists, blind rankings, the daily games, objectives, cards and feedback.",
+    what: "Run the live site's content: tierlists, categories, vote tierlists, blind rankings, the daily games, objectives, cards and feedback. Since 20 Oct 2026 Admin in the site's top menu opens the Team board (the admin's home), not this page; reach this one from Website games → Tierlists.",
     buttons: [
       {
         group: "Top of the page",
@@ -226,6 +226,9 @@ export const ADMIN_GUIDES = {
         ["The result page after it", "Your season, the winner and the top ten, as after the ceremony. Continue comes back here."],
         ["Old (the countdown cards)", "The Ballon d'Or screen as it was (Settings → Look → Ballon d'Or night: Old)."],
       ] },
+      { group: "Season awards", items: [
+        ["Season awards (last season)", "The awards screen after a season: the trophies, the Golden Boot and the other awards, and the Team of the Season, worked out from the picked career's last season. Each face is a headshot shot from the 3D model (the drawn head shows until it is made). Continue comes back here."],
+      ] },
       { group: "Online", items: [
         ["Head to head", "The made-up legend (left, yours) against the career picked above (right): one bar per number."],
         ["Compare with a friend", "Type a friend's code or paste their link, pick one of your careers. Needs the database (the code is looked up)."],
@@ -240,7 +243,7 @@ export const ADMIN_GUIDES = {
       "The overview replaced the old end screen. The Hall of Fame is on the title screen. All seasons is Stats → All seasons (Settings → Look → All seasons page: New | Old).",
       "Share link and Compare: on the end screen and in the Hall of Fame. A shared career opens at /legend/CODE, no sign-in.",
     ],
-    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Ballon d'Or night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts.",
+    dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Ballon d'Or night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts; the season awards components/star/SeasonAwardsScreen.tsx (lib/star/seasonAwards.ts computeSeasonAwardStats); the faces on the award cards components/star/Headshot3D.tsx, lib/star/headshot3d/.",
   },
   "/star-intl-dev": {
     title: "International world",
@@ -270,7 +273,7 @@ export const ADMIN_GUIDES = {
   },
   "/star-real-moments-dev": {
     title: "Real moments",
-    what: "Real match positions in our engine, from free-licensed data (cleared for a paid game, with credit). Fully real: every shot and corner of 7 Bundesliga / 2. Bundesliga 2022/23 matches (DFL tracking) and 20 A-League 2024/25 matches (SkillCorner tracking), all 22 players where they really stood. Real shot, placed defenders: every World Cup 2018 / Euro 2016 shot (Wyscout): the shot is real, the other players are placed by the game's own rules. Each is drawn as a chance in the game's camera and playable in the real match. Testing only.",
+    what: "Real match positions in our engine, from free-licensed data (cleared for a paid game, with credit). Fully real: every shot and corner of 7 Bundesliga / 2. Bundesliga 2022/23 matches (DFL tracking), 20 A-League 2024/25 matches (SkillCorner tracking) and 10 university matches in Japan (SoccerTrack v2 tracking), all 22 players where they really stood. Real shot, placed defenders: every World Cup 2018 / Euro 2016 shot (Wyscout): the shot is real, the other players are placed by the game's own rules. Each is drawn as a chance in the game's camera and playable in the real match. It is also where you choose which real moments the game may serve (Settings → Full highlights rebuild → Real moment highlights).",
     buttons: [
       { group: "Filters", items: [
         ["Fully real shots / Fully real corners / Real shots, placed defenders", "Which set to show, with how many there are. Every row says Fully real or Real shot, placed defenders."],
@@ -278,20 +281,35 @@ export const ADMIN_GUIDES = {
         ["All / xG under 8% / 8–50% / Over 50%", "How likely the real shot was to go in (DFL's own number for DFL shots; our model fitted on 45,287 Wyscout shots for the rest). Not shown for corners."],
         ["Goals only / Led to a goal", "Only shots that went in for real (corners: only corners whose move ended in a goal)."],
         ["Search players, matches", "Only moments whose player, match or competition has these words."],
+        ["In the game: All / In game / Left out", "Fully real shots only: every one, only those the game may serve now, or only those it may not."],
+      ] },
+      { group: "In the game (left)", items: [
+        ["The count", "How many fully real open-play shots the game may serve, by kind (one-on-one, tight angle, long range). With Real moment highlights On, about 1 in 4 open-play chances of those kinds is one of them."],
+        ["Commit marks to the game", "Writes every mark not yet in the code into data/realmoments/picks.json on main (a real git commit; needs GITHUB_TOKEN). Greyed out when every mark is already in the code."],
       ] },
       { group: "The list (left; under the picture on a phone)", items: [
-        ["A row", "Picks that moment: it shows big on the right. A small picture, the player and minute, the match, the kind and xG, and which kind of picture it is."],
+        ["A row", "Picks that moment: it shows big on the right. A small picture, the player and minute, the match, the kind and xG, which kind of picture it is, and (fully real shots) In game or Left out, with \"(by hand)\" when someone marked it."],
         ["More", "Shows 24 more."],
       ] },
       { group: "The picked moment", items: [
         ["The picture", "Red = defenders, green = keeper, blue = team-mates, YOU = the real shooter (or corner taker), with the ball at his feet. Only people inside the camera are kept."],
         ["▶ Play / ■ Stop", "Plays the real match on that picture, or goes back to it. Nothing is counted or saved."],
         ["Next to the game's own", "Puts a chance the game made of the same kind beside the real one, with its own Play."],
+        ["In the game: yes / no", "Whether the game may serve this moment, and why: in automatically (passes every check), left out automatically (and the check it fails: a header, a set piece, not all 22 on the pitch …), or marked by hand. Corners and placed shots are never served."],
+        ["Use in game / Don't use / Automatic", "Marks this moment. Use in game: the game may serve it even if a check left it out. Don't use: never. Automatic: back to the checks. Saves at once, for everyone (or on this device only until the table exists; it says which)."],
       ] },
     ],
-    saving: ["Nothing saves. The moments are read from data/realmoments/ (tracked.json, wyscout_shots.json) each time the page opens."],
-    inGame: ["Nowhere yet. The moments (with where everyone was over the seconds before, lib/star/realMoments buildUpOf) are ready for the Full Highlights Rebuild's build-ups."],
-    dev: "app/star-real-moments-dev/page.tsx; lib/star/realMoments/ (types, shots.ts scenarioForShot / scenarioForCorner, track.ts buildUpOf / trackLeadIn); app/api/star/real-moments/route.ts; data/realmoments/ (README); scripts/realmoments/ (extract_tracking.py, extract_wyscout.py); credit lines in data/opendata/LICENCES.md; tests/star/realMoments.mts.",
+    saving: [
+      "The moments are read from data/realmoments/ (tracked.json, tracks.json, wyscout_shots.json) each time the page opens.",
+      "A mark saves at once to the shared table star_real_moments_picks, which every game reads on top of the committed file, with no deploy. It also keeps a copy on this device. Until the table exists, a mark stays on this device only (and counts in the game on this device), and the page says so.",
+      "Commit marks to the game writes them into data/realmoments/picks.json on main (a real commit) and into the table.",
+    ],
+    inGame: [
+      "Settings → Full highlights rebuild: On → Real moment highlights: On. Then about 1 in 4 open-play chances of a kind the real moments have (one-on-one, tight angle, long range) is a real moment marked In game here: the ball and every man where they really stood, with the real 4 seconds before it as the build-up (a tap skips it). Off: the game is exactly as before.",
+      "To see one at once while testing: add ?fhr=on&realmoments=every to the career's or Infinite Match's address: every open-play chance of those kinds is then a real one (never stored).",
+    ],
+    needs: ["The star_real_moments_picks table (supabase/migrations/star_real_moments_picks.sql). Until it is run, marks stay on this device only. Commit needs GITHUB_TOKEN."],
+    dev: "app/star-real-moments-dev/page.tsx, GamePicks.tsx; lib/star/realMoments/ (types, shots.ts scenarioForShot / scenarioForCorner, track.ts buildUpOf / trackLeadIn, picks.ts, pickStore.ts); lib/star/fhr/realMomentHighlights.ts (which moments, serving, the build-up), realMomentToggle.ts; lib/star/chanceMaker.ts (step 1b); lib/star/leadInGen.ts careerBuildUp; app/api/star/real-moments/route.ts, app/api/star/real-moment-picks/ (+ /commit); data/realmoments/ (README, picks.json); scripts/realmoments/ (extract_tracking.py, extract_wyscout.py, soccertrack_compact.py, extract_soccertrack.py); credit lines in data/opendata/LICENCES.md and lib/star/dataCredits.ts; tests/star/realMoments.mts, realMomentHighlights.mts.",
   },
   "/star-real-shots-dev": {
     title: "Real shots (test)",
@@ -490,11 +508,13 @@ export const ADMIN_GUIDES = {
           ["Edit / Delete", "On each reward. Edit opens it; Save Changes saves it."],
           ["XP Curve", "Read-only table of how much XP each level (1–50) needs."],
           ["XP Awards", "Read-only list of how much XP each action gives (winning a draft, creating a tierlist, login streaks…)."],
+          ["Admin (top line)", "Opens the Team board, the admin's home."],
         ],
       },
     ],
     saving: [
       "Rewards save straight to the live database (Supabase table rewards) and apply to every player immediately.",
+      "On a local test build the list still loads but is read-only: saving needs the site's database key, and an amber note says so. Any other problem (not signed in, not an admin, the table missing) is said in plain words in the red box.",
       "The XP curve and XP awards are set in the code, not here — ask for a code change to alter them.",
     ],
     inGame: ["Players' profiles and level-up unlocks across the whole site."],
@@ -538,6 +558,7 @@ export const ADMIN_GUIDES = {
           ["Browse", "Search clubs and players; tap a club for its squad (Show All-Time for everyone who ever played there), tap a player for his career. \"Re-fetch from Wikidata\" refreshes one player's career."],
           ["TTT Helper", "Type 3 row and 3 column clubs/countries, then Generate Grid to find the answers. Give it a title and difficulty and press Save Puzzle to add it to the Tic Tac Toe puzzles. Check tests whether one player fits."],
           ["Database", "Refresh Stats, \"Import from Wikidata\" (or Resume from a year), Import one player by his Wikidata id, Fix Missing Careers, and Clear All Data (wipes the whole football database — careful)."],
+          ["Admin (top line)", "Opens the Team board, the admin's home."],
         ],
       },
     ],
@@ -561,6 +582,7 @@ export const ADMIN_GUIDES = {
           ["Edit (per edition)", "Club, league, potential, age and attributes. Save Changes saves; Close closes."],
           ["Clone", "Copies the player into another year, optionally with a new rating, club or positions. Move does the same and deletes the old year."],
           ["Delete", "Deletes that one edition."],
+          ["Admin / Football Data (top line)", "Admin opens the Team board, the admin's home. Football Data opens the football data page."],
         ],
       },
     ],
@@ -623,7 +645,10 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["Version list", "Tap a version to read it."],
+          ["Version list", "Tap a version to read it. The small H / M / L faces show who has read it (bright = read; the author counts as read). On a phone a red dot = you haven't read it yet."],
+          ["Read by H ✓ read · M wrote it · L not yet", "Who has read this version. Only versions from 18 Oct 2026 on count towards \"to read\"; older ones show faces but never nag."],
+          ["Read and understood", "Say you have read and understood this version. Press again (✓ Read and understood) to take it back. Not shown on your own patch notes."],
+          ["💬 Notes", "Opens a short notes thread under this version. Add a note; ✕ deletes your own. The author gets a red number on Patch notes in the Team room."],
           ["Page", "The version's artifact exactly as it was published, pictures and all. Kept in the code, so it works even if the link changes."],
           ["Text", "The same notes as plain data, in the site's own style."],
           ["Harry's notes", "Only on versions Harry has reviewed: his spoken notes from his recordings (likes, concerns, questions), each with the video and timestamp. Written in by Claude, not typed on this page."],
@@ -631,10 +656,14 @@ export const ADMIN_GUIDES = {
         ],
       },
     ],
-    saving: ["Nothing here saves. New patch notes are added by Claude as part of shipping a change."],
+    saving: [
+      "The notes themselves don't save here. New patch notes are added by Claude as part of shipping a change.",
+      "Read and understood and the notes under a version save to the shared database at once (team_acks, team_notes), so the other two see them. Until supabase/migrations/team_room_v2.sql runs they stay on this device only, and the page says so.",
+    ],
     commit: ["New entries arrive through a normal code change (they live in a file, not the database) — they appear after the next deploy. Each version's page and pictures are copied into patch-notes/ in the repo."],
     inGame: ["Admin only. Players never see this page."],
-    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/",
+    needs: ["supabase/migrations/team_room_v2.sql (PENDING) for read ticks and notes to be shared. Run after team_room.sql."],
+    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts",
   },
 
   "/admin/sound-board": {
@@ -672,39 +701,54 @@ export const ADMIN_GUIDES = {
   },
 
   "/admin/star": {
-    title: "Admin home",
-    what: "Every admin and test page, split by game: one tab per game across the top (Road to Ballon d'Or, Website games, Studio). Inside a tab you only see that game's groups and pages. Testers see only the pages they can open.",
+    title: "Game home",
+    what: "Every admin and test page, split by game: one tab per game across the top (Road to Ballon d'Or, Website games, Studio). Inside a tab you only see that game's groups and pages. The admin itself opens on the Team area (Team, first in the side menu); the games sit under it. Testers have no Team area: this is their home, and they see only the pages they can open.",
     buttons: [
       { group: "Game tabs (across the top of every admin page)", items: [
         ["Road to Ballon d'Or", "The career game's groups and pages. This is /admin/star."],
         ["Website games", "PL Draft, Tierlists, Site XP + Tic Tac Toe and the old tests. Opens /admin/star/game/web."],
-        ["Studio", "The team: Team board, Patch notes, Videos, App plan, Tester access. Opens /admin/star/game/studio."],
+        ["Studio", "The team: Team board, Patch notes, Videos, Research, App plan, Tester access. Opens /admin/star/game/studio."],
         ["The number on a tab", "How many pages that game has (that you can open)."],
       ] },
       { group: "Top", items: [
-        ["Search … pages in (game)", "Type part of a name or what a page does. Searches this game only."],
+        ["← (top left)", "The one back arrow, in the same corner on every admin and test page. Here (a game's home) it goes to the Team area, the admin's home; for a tester to the site (Road to Ballon d'Or) or to the Road to Ballon d'Or home (the other games). On a group page it goes to the game's home; on any other admin page to that page's group."],
+        ["Search … pages in (game)", "Type part of a name or what a page does. Searches this game only. While you search, the matching pages show as rows under their group."],
         ["All / Harry / Mikey / Leo", "Show everyone's pages, or only one person's, in this game."],
         ["Saves real data", "Only pages whose buttons change things other players see."],
-        ["Grid / List", "Broadcast and Bento: the game's groups as big tiles or one row each. Kept on this device."],
-        ["Play the game", "Ops room and Clean light: opens the game as players see it."],
+        ["Grid / List", "The game's groups as big tiles or one row each. Kept on this device."],
       ] },
       { group: "Cards", items: [
-        ["A group tile", "Broadcast and Bento: opens that group's own page (its admin tools first, then its test pages)."],
-        ["A card", "Opens that page. The letter is its owner. \"Saves real data\" / \"This browser\" / \"Writes the code\" say what its buttons save."],
-        ["Old tests (n)", "Website games tab. Old test pages that are kept but not used day to day."],
+        ["A group tile", "Opens that group's own page (its admin tools first, then its test pages)."],
+        ["A card (on a group page)", "Opens that page. The letter is its owner. \"Saves real data\" / \"Writes the code\" say what its buttons save."],
+        ["Old tests", "Website games tab. Old test pages that are kept but not used day to day."],
         ["Clear", "Shows when a search or filter matches nothing; puts everything back."],
       ] },
       { group: "Side menu", items: [
+        ["Team (first line)", "The Team area, the admin's home: Team board, Team chat, Ideas, My to-do, Patch notes. Opens on the Team board. Admins only."],
         ["(Game) home", "This game's home page."],
-        ["The game's groups (slanted bars on Broadcast)", "Every group of the game you are in, the one you are on lit up. Broadcast and Bento open the group's own page; Ops room and Clean light jump to it on the home. On a phone they are in ☰ Menu; on a computer « folds them to icons."],
-        ["Team board / Ideas / Team chat / My to-do / Patch notes / Videos", "The team's own pages, the same in every game (Team room and Patch notes are admins only)."],
-        ["Broadcast / Bento / Ops room / Clean light", "The admin look. Broadcast (dark blue) and Bento (a colour per group) show every group on one board. Kept on this device."],
+        ["The game's groups", "Every group of the game you are in, the one you are on lit up. Each opens the group's own page. On a phone they are in ☰ Menu (Team first); on a computer « folds them to icons."],
+        ["Videos", "How to hand Claude a screen recording. The same in every game."],
+        ["Broadcast / Bento / Ops room / Clean light", "The admin look: the same pages and the same layout in all four, only the paint changes (Broadcast dark blue, Bento a soft colour per group, Ops room near-black and green, Clean light white). Every admin and test page follows it. Kept on this device."],
         ["Admin mode", "On: the admin side menu sits on every page of the site, opened on the admin pages for the page you are on. Off: it hides. Kept on this device."],
       ] },
     ],
     saving: ["Nothing here saves anything shared. The look and Admin mode are kept in this browser only."],
     inGame: ["Nowhere. This is the front door to the tools."],
-    dev: "app/admin/star/page.tsx (first game) · app/admin/star/game/[game]/page.tsx (other games) · app/admin/star/g/[group] (a group's page) · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (GAMES = the tabs: a new game is one line there, then its groups say game: \"<key>\"; GROUPS; ADMIN_PAGES) · components/admin/shell/* · components/AdminNavPanel.tsx (the side menu on other pages, also one game at a time) · lib/adminLook.ts",
+    dev: "app/admin/home/page.tsx (the front door: admin → /admin/team, tester → /admin/star; the KIB Admin app opens there) · lib/adminRegistry.ts TEAM_HOME, adminHomeFor, backFor · app/admin/star/page.tsx (first game) · app/admin/star/game/[game]/page.tsx (other games) · app/admin/star/g/[group] (a group's page) · app/admin/star/AdminHome.tsx · lib/adminRegistry.ts (GAMES = the tabs: a new game is one line there, then its groups say game: \"<key>\"; GROUPS; ADMIN_PAGES) · components/admin/shell/* · components/AdminNavPanel.tsx (the side menu on other pages, also one game at a time) · lib/adminLook.ts",
+  },
+  "/admin/research": {
+    title: "Research",
+    what: "Every research write-up we have made (Football Manager, highlights, 3D and so on), one card each, newest first.",
+    buttons: [
+      { group: "Page", items: [
+        ["←", "Back to the Research group page (Studio tab)."],
+        ["All / (a topic)", "Show every write-up, or only one topic's. Shows only when there is more than one topic."],
+        ["A card / Read ↗", "Opens that write-up in a new tab. The coloured line is its topic; the date is when it was made."],
+      ] },
+    ],
+    saving: ["Nothing. The list is part of the code: a new write-up is one line in the list file, added by Claude."],
+    inGame: ["Nowhere. It is for the team."],
+    dev: "app/admin/research/page.tsx · lib/research.ts (RESEARCH: one line per write-up; topic, date, by) · registered in lib/adminRegistry.ts (group research, Studio)",
   },
   "/star-tournament-dev": {
     title: "Tournaments",
@@ -717,7 +761,7 @@ export const ADMIN_GUIDES = {
         ["Play matchday 1–3", "Plays the next round of group games."],
         ["Play to the final", "Plays every match left, through the knockouts, to a winner."],
         ["Reset", "Back to the draw."],
-        ["← (top left)", "Back to the Play Area."],
+        ["← (top left)", "Back to the Real data group page."],
       ] },
     ],
     saving: ["Nothing. It reads and writes only this screen."],
@@ -739,7 +783,7 @@ export const ADMIN_GUIDES = {
   },
   "/admin/videos": {
     title: "Videos",
-    what: "Record your screen and voice here, and the recording goes to your Drive with a clear name and a line to paste to Claude.",
+    what: "Record your screen and voice here, and the recording goes to your Drive with a clear name and a line to paste to Claude. Admins also get Live share (test): Claude sees your screen a picture a second and hears you, and answers in its chat, even unasked.",
     buttons: [
       { group: "Record", items: [
         ["Harry / Mikey / Leo", "Who is recording. Goes in the file name. Remembered on this device."],
@@ -757,22 +801,54 @@ export const ADMIN_GUIDES = {
         ["Download", "Saves the video to this device instead."],
         ["Open the Breakdowns folder ↗", "Harry's Drive folder where every breakdown is saved."],
       ] },
+      { group: "Live share (test) — admins only", items: [
+        ["Start live share", "The browser asks which screen, window or tab to share, then (with Voice on) asks for the microphone. It makes a 6-letter code. Use Chrome or Edge on a computer."],
+        ["Voice", "On = what you say is written down as you talk (Chrome, Edge, Safari). Off, or a browser with no voice (Firefox) = type notes instead."],
+        ["Copy for Claude", "Copies one line to paste into a Claude chat. Claude then runs the watcher and answers you in its chat."],
+        ["Copy link / Watch it ↗", "The page that shows the newest picture and what was said, for anyone on the team to watch."],
+        ["Type a note for Claude / Send", "Adds a typed line, as if you had said it."],
+        ["Stop", "Ends the share. The browser's own Stop sharing bar does the same. It also ends by itself after 30 minutes."],
+        ["Delete", "Shown after Stop. Deletes every picture and line of that share."],
+      ] },
     ],
     saving: [
       "Your own Google Drive, folder \"Knowitball screen recordings\" → a folder for whoever is picked under Who is recording (the site makes them the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it. You can move the main folder anywhere in Drive; the site still finds it.",
       "The video goes from your browser straight to Google. The site keeps only its name and link (dev_recordings table), so that person's Claude chats break it down the next time they are messaged (scripts/hooks/recordings-hook.mjs). Needs dev_recordings.sql run once.",
       "Drive needs NEXT_PUBLIC_GOOGLE_CLIENT_ID on the site. Until it is set, recordings only download.",
+      "Live share: once a second, when the screen changed, a small picture (720 px wide) goes to public storage (tierlist-images → live/<code>/), with what was said (transcript.json) and how it is going (state.json, including how much each picture changed). Only the newest 300 pictures (about 5 minutes) are kept. No table. Anyone with the code can open the pictures while they exist; Delete removes them all.",
+      "Claude's side: npx tsx scripts/live-watch.mts <code> prints each line said with the picture on screen at that moment, a SCREEN line when the screen changes (new screen / part changed / small change), and keeps the newest picture in a file it can look at. Claude answers in its chat (about 5–20 s behind), and may comment without being asked. Nothing is said back on this page.",
     ],
     inGame: ["Nowhere."],
-    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · /api/dev-recordings + scripts/hooks/recordings-hook.mjs (auto-read) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md",
+    needs: ["Live share needs SUPABASE_SERVICE_ROLE_KEY on the site (it is there for the other admin uploads). Without it, Start shows \"the site has no storage key\"."],
+    dev: "app/admin/videos/* · lib/recording.ts (recorder, Drive upload, names; tests/star/recording.mts) · /api/dev-recordings + scripts/hooks/recordings-hook.mjs (auto-read) · the breakdown: scripts/screen-video/, .claude/skills/screen-video/SKILL.md · Live share: app/admin/videos/LiveShareCard.tsx, lib/liveShare.ts (pure; tests/star/liveShare.mts), lib/liveShareBrowser.ts, lib/liveShareStore.ts, /api/admin/live-share, scripts/live-watch.mts",
+  },
+  "/admin/videos/live": {
+    title: "Live share",
+    what: "Watch a live share from Admin → Videos: the newest picture of the shared screen and what the person said, every 2 seconds.",
+    buttons: [
+      { group: "On this page", items: [
+        ["(nothing to press)", "It reads by itself every 2 seconds and says Ended when the share stops."],
+      ] },
+    ],
+    saving: ["Nothing. This page only reads the pictures and lines the sharer's browser sends to public storage (tierlist-images → live/<code>/)."],
+    inGame: ["Nowhere."],
+    needs: ["SUPABASE_SERVICE_ROLE_KEY on the site, as for the Videos page's Live share."],
+    dev: "app/admin/videos/live/[code]/* · reads <storage>/live/<code>/state.json, transcript.json, f000001.jpg… (lib/liveShare.ts) · a Claude chat uses scripts/live-watch.mts instead",
   },
   "/admin/team": {
     title: "Team board",
-    what: "The Team room. Board: what Harry, Mikey and Leo are doing (pushes, pull requests, live bars, patch notes). Ideas, Chat and To-do: the team's idea board, live chat and each person's jobs. The toggle along the top switches between them.",
+    what: "The Team area: the admin's home. Every way into the admin opens here, on the Team board. Board: what Harry, Mikey and Leo are doing (pushes, pull requests, live bars, patch notes). Chat, Ideas and To-do: the team's live chat, idea board and each person's jobs. Patch notes: every version. Testers have no Team area; they go to the game home instead.",
     buttons: [
+      { group: "Side menu (Team area)", items: [
+        ["Team (first line, lit)", "The Team area, the admin's home. It is the first line of the side menu on every admin page. These all open here, on the Team board: Admin in the site's top menu, Settings → Developer → Admin pages, Admin & Dev · Team in the admin slide-out, the KIB Admin home-screen app, and ← on a game's home."],
+        ["Team board / Team chat / Ideas / My to-do / Patch notes", "The Team area's views, under Team. Each switches in place, the one you are on lit. A red number = something new for you there; amber = a new job given to you."],
+        ["Games: Ballon d'Or / Website / Studio", "Each game's home (its groups and pages). The game tabs across the top do the same; in the Team area none of them is lit."],
+        ["Videos", "How to hand Claude a screen recording."],
+        ["← (top left)", "Back to the site. The Team area is the top of the admin: a game's home goes back to here."],
+        ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again. On a phone the menu is ☰ Menu, Team first."],
+      ] },
       { group: "Team room toggle", items: [
-        ["Board | Ideas | Chat | To-do", "Switches part. A red number = new chat or new notes on your things; amber = a new job given to you. The same four are in the side menu."],
-        ["« (top of the side menu)", "Folds the side menu to a strip of icons on a computer. » opens it again."],
+        ["Board | Chat | Ideas | To-do", "Switches part, the same as the lines under Team in the side menu. A red number = new chat or new notes on your things; amber = a new job given to you (typed on the board or arrived by push)."],
       ] },
       { group: "Ideas", items: [
         ["By stage | By person", "Idea · Doing · Done columns, or a lane per person. Remembered in this browser."],
@@ -781,20 +857,39 @@ export const ADMIN_GUIDES = {
         ["An idea", "Opens it: move it to Idea / Doing / Done, delete it (yours only), and read or add notes."],
       ] },
       { group: "Chat (and the round button on every admin page)", items: [
-        ["Message the team…", "Enter sends; Shift+Enter is a new line. Paste or 🖼 adds a picture."],
-        ["A message", "Tap: 📌 Pin (anyone) or Delete (your own). The green tag is the page it was sent from — tap to go there."],
+        ["Message… @ or #", "Enter sends; Shift+Enter is a new line. Paste or 🖼 adds a picture. Type @ to pick Harry, Mikey or Leo (with phone notifications on, they get a buzz; type @all or @everyone to buzz both of the others); type # and a few letters to pick an admin page (it is added as a card)."],
+        ["🔗 (link)", "Adds the page you are on as a card. Tapping a card in the chat opens that page."],
+        ["⌖ (point) · 👉 Point · Shift+X", "Point at part of a page. Drag a box over it (on a phone, scroll there first), write a note, pick who, Send. It posts a card; whoever opens it gets the page scrolled to the box, outlined, with your note, until they press Got it. Shift+X works on a computer when you are not typing."],
+        ["A message", "Tap: ↩ Reply, 📌 Pin (anyone) or Delete (your own). The green tag is the page it was sent from — tap to go there."],
+        ["Reply quote", "The grey line at the top of a reply. Tap it to jump to the message it answers."],
+        ["Small H / M / L faces under a message", "Who has seen it: bright = it was on their screen in the open chat; faded = not yet. The sender is never shown."],
+        ["Gold edge · @ you", "A message that names you or points something at you."],
+        ["@ Waiting on me", "Messages that name you that you haven't seen, and points you haven't pressed Got it on. Left side on a computer, folded above the chat on a phone. The round button shows a gold @ when something is waiting."],
+        ["Got it (on a pointed page)", "Marks the point as seen; the sender's card shows your face lit. ✕ closes it without saying Got it."],
         ["Pinned", "Pinned messages, on the right (folded above the chat on a phone)."],
-        ["Round chat button", "Bottom-left on every admin and test page: Chat | To-do in a box. Open ↗ goes to the full tab."],
+        ["Round chat button", "Bottom-left on every admin and test page: Chat | To-do in a box. 👉 Point starts point mode. Open ↗ goes to the full tab. On a page whose own buttons sit bottom-left (the Manager's office dialogue, the 3D signing) it sits just above them instead."],
       ] },
       { group: "To-do", items: [
         ["Add a job · for me ▾", "Your own job, or pick Mikey or Leo to give them one."],
-        ["Tick box", "Done. Ticked jobs fade and leave after a day. ✕ deletes."],
+        ["Tick box", "Done. Ticked jobs fade and leave after a day. ✕ deletes a job typed here."],
+        ["from a push · Harry (small green tag)", "A job that arrived by push: a Claude chat added it to the jobs file in the code (team/jobs.json) and pushed its branch. It shows under Given to me for whoever it is for (\"all\" = each of the three) within a minute or two of the push, with no deploy and no SQL. The name is who asked for it. It has no ✕: it lives in the code, so it can't be deleted from the board. Tick it when it's done. To take one off for good, a Claude chat deletes it from the jobs file and pushes."],
+        ["Copy prompt", "On a pushed job that has one: copies its prompt, ready to paste into your own Claude chat. Copied ✓ = done. If your browser won't copy, the prompt opens in a box already selected: press Ctrl+C, or hold it and choose Copy."],
+      ] },
+      { group: "Phone notifications (the 🔔 row at the top of To-do and Chat)", items: [
+        ["Turn on phone notifications", "Turns them on for THIS phone or computer: it asks the phone's permission, then sends a test buzz. From then on you get a buzz when someone @'s you (or @all / @everyone), replies to your message, points at something for you, or gives you a job (typed on the To-do or pushed in the jobs file). Never for your own messages. Tapping the buzz opens the Team room on that message, or on the To-do. Each phone and computer is turned on separately (up to 5 per person)."],
+        ["On iPhone: Share → Add to Home Screen…", "Shown instead of the button on an iPhone outside the app: iPhones only allow notifications in the KIB Admin app on the Home Screen (iOS 16.4 or newer). Safari → Share → Add to Home Screen → open KIB Admin from the Home Screen → Team → To-do → Turn on phone notifications → Allow."],
+        ["Phone notifications: On · Send a test · Turn off", "On for this device. Send a test buzzes your own devices. Turn off stops them on this device only."],
+        ["Notifications are blocked for this site", "You (or the phone) said no earlier. Allow notifications for KIB Admin in the phone's settings (on a computer: the browser's site settings), then reload."],
+        ["Phone notifications aren't switched on yet (one Vercel setting)", "The site's private key (TEAM_PUSH_PRIVATE_KEY) isn't set in Vercel yet. Nothing breaks: chat and jobs work as before, just with no buzz."],
+        ["Several buzzes from one chat", "Grouped: one line per chat thread that counts up (\"+2 more\"), not a pile."],
       ] },
       { group: "Team tab", items: [
         ["Live on knowitball.co.uk", "Whether the newest version of main finished deploying, how long ago, and what it was."],
+        ["N pushes this week (under a name)", "How many times that person pushed to GitHub in the last 7 days, on any branch, from GitHub's own push log (it names who pushed). One push can carry several changes. Other people's work that came in when main was merged is not counted. \"N+ pushes since …\" = GitHub's log (its last 300 events) does not reach back a full week. \"N changes this week\" = the log could not be read, so it counts the changes on their own branch instead. Until 20 Oct it counted only the newest 20 changes on the branch, so it never passed 20 and included work merged in from main."],
+        ["Activity · pushes a day", "The same pushes, per day, for two weeks. Days GitHub's log does not reach are left empty and named under the chart (unknown, not zero)."],
         ["A push", "Opens it: the full message, when, which branch, and the patch note it went out in."],
         ["v0.55 (green tag)", "The patch note that push went out in. Grey \"no notes yet\" = not in any patch notes yet."],
-        ["Show all", "Shows every push on that branch (up to 20)."],
+        ["View all", "Shows that person's latest changes on their branch (up to 30): their own work only, not work merged in from main."],
         ["A pull request", "Opens it on GitHub."],
       ] },
       { group: "Inside a push", items: [
@@ -805,22 +900,31 @@ export const ADMIN_GUIDES = {
         ["Notes", "Leave a note on the push. Its owner gets a red number on Board."],
       ] },
       { group: "Patch notes tab", items: [
-        ["Version list", "Every patch note, newest first. Same as /admin/patch-notes."],
+        ["Version list", "Every patch note, newest first. Same as /admin/patch-notes, with who has read each one, Read and understood, and notes."],
+        ["N patch notes to read (on a person's card)", "How many patch notes since 18 Oct that person hasn't marked Read and understood (their own don't count). Tap to open the oldest one."],
       ] },
     ],
     saving: [
       "Board: nothing. It only reads from GitHub, through the site, and refreshes every minute.",
       "Ideas, chat, to-dos, notes and pins save to the shared database at once and show for the other two within about a second. Admins only.",
+      "Pushed jobs (\"from a push\") are read from the code on GitHub: the jobs file on main and on Harry's, Mikey's and Leo's branches, about once a minute. If two branches have the same job, the newer one wins. If GitHub can't be reached, the To-do shows the jobs built into the site at the last deploy.",
+      "Ticking a pushed job saves your tick in the shared database (the same to-do table, as your own row), so it shows on every phone and computer you use and the other two can see it. Each person ticks their own: Harry ticking the lag test does not tick it for Mikey. Unticking takes it back.",
       "First visit asks \"Which one are you?\" once and saves it to your account.",
+      "Replies, @names, page cards and points are part of the message itself, so they reach everyone straight away. Seen faces, Got it and Read and understood need supabase/migrations/team_room_v2.sql; until it runs they are kept on the device that pressed them, and the chat says \"saved on this device only\".",
+      "Phone notifications: turning them on keeps this device in your own sign-in account (no new table, no SQL), so only the site can ring it. A device the phone's push service says has gone (app removed, permission taken away) is dropped by itself. A message rings only once, only within 10 minutes of being sent, and only when its sender's phone asks. A pushed job rings each person once, only if it was added in the last day; the site notices it the next time any of the three has an admin page open (it checks once a minute), so a job pushed while nobody is on the site rings when someone next opens it.",
+      "Without phone notifications switched on, an @ still shows as a gold @ on the round button and in Waiting on me.",
       "How a push is matched to a patch note: if the push names a version (\"v0.55\"), that one; otherwise the same person's next patch note that went live after the push, up to 4 days later.",
     ],
     inGame: ["Nowhere. Admins only."],
     needs: [
-      "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it GitHub only answers a few times an hour and the board says so.",
+      "GITHUB_TOKEN in Vercel (already set for scenario commits). Without it, or if GitHub refuses it, the board asks without a key (the repository is public): that works about 60 times an hour, and one line on the board says which happened. On a local test build the key comes from the computer running it, not from Vercel, and the line says so.",
       "The live progress bars (\"Now working on\") are step 2: one database file for Mikey to run and a shared password. Until then each card says so.",
-      "Ideas, Chat and To-do need supabase/migrations/team_room.sql run once in Supabase. Until then they say so.",
+      "Ideas, Chat and To-do need supabase/migrations/team_room.sql run once in Supabase. Until then they say so. Pushed jobs need nothing more: no SQL, no new table.",
+      "Pushed jobs reach the live board only once the change that reads them is on main (deployed). After that, a push to any of the four branches shows on the live board with no deploy. They use GITHUB_TOKEN like the Board; without it GitHub still answers, about 60 times an hour.",
+      "Seen faces, Got it, Read and understood and patch-note notes need supabase/migrations/team_room_v2.sql (PENDING), run after team_room.sql.",
+      "Phone notifications need TEAM_PUSH_PRIVATE_KEY in Vercel (set once, then redeploy). Until then the 🔔 row says \"aren't switched on yet\" and nothing else changes. No SQL.",
     ],
-    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md · Team room kit: lib/teamRoom/ (config.ts = settings), components/teamRoom/, supabase/migrations/team_room.sql, tests/star/teamRoom.mts",
+    dev: "app/admin/team/* · app/api/admin/team/route.ts · lib/teamBoard.ts · tests/star/teamBoard.mts · plan: docs/plans/2026-10-15/teamboard.md · Team room kit: lib/teamRoom/ (config.ts = settings; extras.ts = replies, @, cards, points, receipts), components/teamRoom/ (chat.tsx, PointLayer.tsx, PatchReceipts.tsx), supabase/migrations/team_room.sql + team_room_v2.sql, tests/star/teamRoom.mts · Pushed jobs: team/jobs.json + team/README.md (how a chat adds one), lib/teamRoom/jobs.ts (read GitHub per branch, merge by id, tick rows \"[job:<id>] …\" in team_tasks), app/api/admin/team/jobs/route.ts (cached 60 s), components/teamRoom/PushedJob.tsx, tests/star/teamRoomJobs.mts · Phone notifications (Web Push, web-push 3.6.7): lib/teamRoom/notify.ts (who + what, pure; tests/star/teamRoomNotify.mts), lib/teamRoom/push.ts (this device: permission, subscribe, devices in user_metadata.teamPush; ringAfter / ringNewJobs), lib/teamRoom/notifyServer.ts + app/api/admin/team/notify/route.ts (GET ready; POST rings from the saved row; pushed jobs rung once via app_metadata.teamPushJobs), public/admin/team-sw.js (scope /admin/ only, no fetch handler), components/teamRoom/PushToggle.tsx, keys: TEAM_ROOM.push in lib/teamRoom/config.ts + TEAM_PUSH_PRIVATE_KEY",
   },
   "/admin/testers": {
     title: "Tester Access",
@@ -963,35 +1067,71 @@ export const ADMIN_GUIDES = {
 
   "/star-training-dev": {
     title: "Training Levels",
-    what: "Play any of the 30 levels of any training game straight away, to see and test what each one is.",
+    what: "Play any of the 30 levels of any training game straight away, and change any level (Edit level): drag the ball, cones and men on its picture or set its numbers, the way the Scenario Gallery edits a chance.",
     buttons: [
       {
         group: "The level list",
         items: [
           ["Power / Technique / Free Kick / Pace / Vision", "The tabs at the top: which training game's levels to show."],
-          ["Your skills 40 / 70 / 100", "The player's skills while you play. They change how hard you can hit the ball and how much it bends, so a level plays differently at 40 and at 100."],
           ["A level tile", "Picks that level; tap it again to play it. The line under the number is what it asks for (distance and blockers, gate size, wall, chasers, options and time). Stars appear on a tile after you've played it here."],
-          ["The level panel (right; pinned to the bottom on a phone)", "The picked level: its game, what it asks for, your stars here, and a real picture of that game (taken at level 15)."],
-          ["Let's go ›", "Plays the picked level."],
+          ["The dot on a tile", "Amber: unsaved changes. Green: a saved edit every career plays. Orange: saved on this device only."],
+          ["The level panel (right; pinned to the bottom on a phone)", "The picked level: its game, what it asks for, what it plays with, your stars here, and a real picture of that game (taken at level 15)."],
+          ["Plays with", "The skills the level is played with — no choosing: what a player has after finishing every level before it (2 stars on each, the middle of 1-3; the small print gives the 1-star and 3-star numbers), all skills trained as far. Only the skills that game reads are listed: Power and Technique for Power and Technique, plus Free kick for Free kick. Pace plays at the level's own Your speed; Vision reads no skill."],
+          ["Edit level", "Opens the editor for the picked level (on a phone it takes the place of the list)."],
+          ["Let's go ›", "Plays the picked level (with any unsaved changes)."],
+        ],
+      },
+      {
+        group: "Edit level",
+        items: [
+          ["The picture (Power, Technique, Free kick, Pace)", "The level from above. Drag the ball, a man or a cone with a finger or the mouse: the numbers beside it change as you go, and ▶ Play uses it straight away. Power: the ball (sets Distance and Off centre) and each man in the way. Technique: the ball, either cone (sets the gap and the distance) or the dot between them (moves the whole gate). Free kick: the ball and each man in the wall. Pace: each man, sideways along his wave's line (the gaps you run into). A dashed ring marks what you can grab; it turns yellow while held. Vision (Pick the Pass) has no picture to drag yet; its pictures are real match moments."],
+          ["The sliders (and the number boxes)", "Every number the drill is built from. Power: distance, off centre, men in the way, keeper on/off and strength, score to pass (0.5 = any goal, higher = nearer a post). Technique: gate distance, width, how far off your line, max height, score to pass. Free kick: distance, off centre, men in the wall, keeper strength, score to pass. Pace: men to beat, most in one wave, their speed, your speed. Vision (Pick the Pass): kick the pass on/off (off = tap the man), seconds to tap him or to start the kick, seconds to let go of the pull, team-mates (2-6), traps (offside, cut out, marked), how clear the right ball is (small = two good balls), someone offside on/off, real match moments on/off (off = the team's drawn chances). \"was …\" shows the committed number; a • marks a change since the last save."],
+          ["Keeper On / Off", "Power only: an open goal or a keeper."],
+          ["Layout: Level's own / Shuffle", "Where everyone stands is built from the level's own seed. Shuffle picks a new one (shown as #1234); Level's own goes back. Both also put back anyone you dragged. \"Placed by hand\" shows when something has been dragged."],
+          ["▶ Play", "Plays the level as drawn — your dragged picture and these numbers — straight away, on the same drill a career gets, with the skills under Plays with. Power plays exactly as drawn here; in a career a player whose Power is behind the level gets it eased (the small print under Plays with says how far). Nothing is saved by playing."],
+          ["Save", "Saves this level's numbers for every career (shared table star_training_levels). Says \"Saved for everyone\" or \"Saved on this device only\" and why."],
+          ["Commit", "Writes this level's numbers into the game's levels file in the code (see Committing)."],
+          ["↶ Undo", "Steps back one drag or one changed number at a time."],
+          ["Undo all", "Back to the saved level (every unsaved drag and number)."],
+          ["Back to committed", "Deletes the saved edit: the level plays as the committed file has it, for everyone."],
+          ["Done", "Closes the editor. Unsaved changes stay on the tile (amber dot) until you leave the page."],
         ],
       },
       {
         group: "While playing",
         items: [
-          ["‹ All levels", "Back to the list at any time."],
+          ["‹ All levels / ‹ Edit level", "Back to the list (or the editor) at any time."],
           ["◀ L13 ▶", "Previous or next level, starting it fresh."],
+          ["The middle of the bar", "The skills this level plays with (e.g. Power 65 · Technique 65), and \"edited\" when it is playing changes you haven't saved."],
+          ["Pace: the ring", "Pace has a skill to it now: one man in each wave comes for the ball and wears a ring (white). When he drops his shoulder it closes in, amber; it turns green for a moment — flick the other way then. Too early and he goes with you (\"Too early — he read it\"); too late and he's across you. The other men in the wave hold their lanes: pick the gap."],
           ["Let's go", "Level 1 of each game opens on its how-it-works card first, as in a career."],
           ["Tap to start", "Pace (the dribble run) waits for this before anyone moves, on every try."],
+          ["Vision: 3, 2, 1", "Counts down over a cover, then the picture shows and the clock starts. Tap levels: tap the man. Kick levels: drag back from the ball and strike it to him; the clock stops when you start the pull, then you have the let-go time."],
+          ["Vision: the result line", "After each try: RIGHT MAN, OFFSIDE, CUT OUT, MARKED, NOT THE BALL, MISPLACED or TOO SLOW, with the right man ringed green (and your wrong pick red) for a moment. A real picture names its match and minute."],
         ],
       },
     ],
     saving: [
-      "Nothing is saved. No career is touched and no stars are banked; the stars on the tiles are forgotten when you leave the page.",
+      "Playing saves nothing: no career is touched and no stars are banked; the stars on the tiles are forgotten when you leave the page.",
+      "Edits are kept on this page only until you press Save.",
+      "Save writes the level to the shared table star_training_levels, which every career reads on top of the committed file, with no deploy. It also keeps a copy on this device. Until the table exists, a save stays on this device only (it plays on this device) and the page says so.",
+    ],
+    commit: [
+      "Commit writes the level into the game's levels file (lib/star/data/trainingLevels.json) directly on the main branch, through GitHub.",
+      "Vercel rebuilds the live site from main every time — it takes a minute or two.",
+      "A commit also saves the same numbers to the shared table, so the two never disagree.",
+      "Needs an admin sign-in, and GITHUB_TOKEN set in Vercel. Without the token you get a message saying so and nothing is committed.",
     ],
     inGame: [
-      "Each level here is exactly the level a player gets: Training → pick a skill → pick a level. Same picture, same three tries, same stars.",
+      "Each level here is exactly the level a player gets: Training → pick a skill → pick a level. Same three tries, same stars.",
+      "A saved level reaches every career the next time its training screen loads; a committed one after the deploy.",
+      "Vision (Pick the Pass): each of the three tries is its own picture (fixed per level), so a missed try never shows the answer to the next one. The pictures are real match moments or the team's drawn chances, played on the real match engine in the match's own look; on kick levels the engine judges the pass (reached him, offside, cut out). Each level avoids the pictures the levels below it showed, so a player climbing 1 → 30 meets 45 different pictures in 90 tries (an ordinary one on 3 levels at most; the 5 offside ones come back more).",
     ],
-    dev: "app/star-training-dev/page.tsx mounts components/star/TrainingMinigame.tsx with trainingLevel = the tile. Levels: lib/star/trainingLevels.ts; drill numbers: lib/star/trainingDrills.ts.",
+    needs: [
+      "The star_training_levels table (supabase/migrations/star_training_levels.sql). Until it is run, Save stays on this device only.",
+      GITHUB_TOKEN_NEEDED,
+    ],
+    dev: "app/star-training-dev/{page,LevelEditor,LevelPicture}.tsx mounts components/star/TrainingMinigame.tsx (levelOverride = the draft, asDrawn, skills from lib/star/trainingAutoSkills.ts). What can be dragged per drill: lib/star/trainingLayout.ts (DRILL_LAYOUTS; Vision plugs in there). Dragged spots are optional row fields (men, ball, lanes) in lib/star/trainingLevelData.ts. Pace's knock-on: lib/star/firstPersonDribble.ts (knockOn), tests/star/paceKnockOn.mts. Level rows: lib/star/trainingLevelData.ts reading lib/star/data/trainingLevels.json (rebuild: scripts/training-levels/build.mts); saved edits: lib/star/trainingLevelStore.ts, /api/star/training-levels, /api/star/training-levels/commit (lib/star/commitScenarios.ts commitDataFile); Vision: lib/star/visionRound.ts picks and judges the pictures from lib/star/data/visionMoments.json (real moments: scripts/vision/build_vision_moments.mts) and lib/star/data/visionChecks.json (each pass tried on the engine: scripts/vision/check_passes.mts); the curve with a modelled player: scripts/vision/curve.mts; tests tests/star/{trainingLevelData,vision,trainingLayout,trainingAutoSkills}.mts, bot tests/star/visionBot.ts.",
   },
   "/star-highlights-dev": {
     title: "Infinite Highlights",
@@ -1000,7 +1140,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Top of the page",
         items: [
-          ["←", "Back to the Scenario Gallery."],
+          ["← (top left)", "Back to the Chances group page."],
           ["Highlights N/11", "Choose which chance types to show: All, None, tap types on or off, then \"Watch these\"."],
           ["▦ Sheet of 24", "Sheet of 24: twenty-four chances of one type served in a row, on one screen, to check by eye. Under each: which drawing it came from, the nearest drawing, and in colour anything wrong (red: added by the serving; amber: already in the drawing, or \"like #n\" — looks like one of the five before it). New sheet serves another 24. It uses the Play Area's Chances dial."],
           ["⚽ Play a penalty shootout", "On the chance-types screen. A whole shootout on the real match, with the Play Area's test sides: every kick live — team-mates at their keeper, their takers at yours (from the same end), yours to take when your turn comes. Nothing is saved; \"Another shootout\" starts again."],
@@ -1014,6 +1154,7 @@ export const ADMIN_GUIDES = {
           ["The picture", "Drawn exactly as Play will show it: same size (bigger on a laptop, full width on a phone), the real club kits Play plays in, the goal standing on the goal line as in the match, and corners and byline crosses turned sideways like the real game. Framed by the match's own camera (Full highlights rebuild, phase 1): the match's zoom, the same canvas shape, tipped back by the camera angle, you not drawn on a shooting chance (the ball is you) and the men at the match's size — so nothing moves when you press Play. Dragging still works on the tipped picture. Add ?still=builder to the address to see the old builder's frame instead."],
           ["A penalty", "Harry's penalty rules: the keeper stays dead centre on his line, the ball on the spot, you straight behind it and the camera fixed — none of them drag. Anyone else only slides along the edge of the box."],
           ["Drag", "Move any player or the ball. Tap a player to select him. Swipe the grass for next / previous."],
+          ["Build-ups (panel)", "Full highlights rebuild for this phone: Off / On. On: ▶ Play first plays the build-up before the chance (the moves before it; a foul before some free kicks and penalties), exactly as a career match does, then the chance — the other players still running when it is yours. Tap the match to skip it. A layer on top: the picture, your edits and Save are never changed by it. Moment (Auto / Normal / Big: final, 90') · Length (Short / Auto / Long) · Intensity (Calm / Auto / High): this page's and Infinite Match's only, stored on this phone, never in a career."],
           ["Fix this chance", "The panel on the right (under the picture on a phone): the buttons below, Save and Commit."],
           ["+ Mate / + Opp", "Add a team-mate or an opponent."],
           ["Remove", "Takes out the player you tapped."],
@@ -1066,13 +1207,20 @@ export const ADMIN_GUIDES = {
 
   "/star-fhr-dev": {
     title: "Full highlights rebuild",
-    what: "The Full Highlights Rebuild's switch, and the ruler: today's numbers (chances, goals, players reacting, start distance) that every phase of the rebuild is held to.",
+    what: "The rebuild's test area, in two tabs: the Ruler (today's numbers every phase is held to) and Build-ups (a generated build-up played by the real match). Not on the admin list any more (Harry, 20 Oct 2026): the switch lives in Settings; this page is reached from the Play Area.",
     buttons: [
+      {
+        group: "Tabs",
+        items: [
+          ["Ruler", "Today's numbers: chances, goals, players reacting, start distance, Off and On side by side. Measured when the tab opens."],
+          ["Build-ups", "A generated build-up played by the real match, with the same build-up drawn from above."],
+        ],
+      },
       {
         group: "The switch",
         items: [
-          ["Off / On (test)", "The same switch as Settings → Harry changes → Full highlights rebuild. Off is the game as it is today. On also turns Chances to New. (Infinite Highlights draws its still with the real match's camera either way: that test page's default since phase 1.) Stored on this phone only."],
-          ["Infinite Highlights →", "Opens Infinite Highlights, to see the still with the switch On."],
+          ["Off / On", "The same switch as Settings → Full highlights rebuild (also in the match's ⚙ and the ⚙ before kick-off, each with a ? that lists every part). Off is the game as it is today. On also turns Chances to New. Stored on this phone only."],
+          ["Infinite Highlights → / Play Area →", "Open the two test areas that play build-ups when the switch is On."],
         ],
       },
       {
@@ -1095,7 +1243,7 @@ export const ADMIN_GUIDES = {
           ["The match", "The real match plays a chance the real match served, starting with its generated 4–8 second build-up (the moves before it, made from real football patterns). Tap the match to skip to the chance. It always ends exactly on the chance's own picture."],
           ["Generate another", "The next chance the match serves, with a new build-up. Every chance gets its own; the same chance always gets the same one."],
           ["↺ Watch again", "Plays the same build-up and chance again."],
-          ["The three small pitches", "The same build-up from above: the first frame, the middle and the last (= the chance). White is you, blue the chance's team-mates, pale blue team-mates who are only in the build-up (off the screen when the chance starts), red defenders, yellow the keeper; dashed is the chance's frame."],
+          ["The three small pitches", "The same build-up from above: the first frame, the middle and the last (= the chance, once the players still running have stopped). White is you, blue the chance's team-mates, pale blue team-mates who are only in the build-up (off the screen when the chance starts), red defenders (a white ring: the extra defender who ran in from off the screen), yellow the keeper; dashed is the chance's frame."],
           ["The list", "Each touch: a pass, a ball in the air or a carry, how long, who plays it, and whether it came from a real route into this kind of chance."],
         ],
       },
@@ -1104,9 +1252,10 @@ export const ADMIN_GUIDES = {
       "The switch is stored in this browser only (localStorage star-fhr). The numbers are worked out on the page and kept nowhere. No career is touched.",
     ],
     inGame: [
-      "Off: nothing in the game changes. On: Chances: New is on in every match on this phone (the same as setting Chances: New by hand), Infinite Highlights' still uses the match camera, and every open-play chance in a match starts with a generated 4–8 s build-up (never penalties, free kicks or corners). Later phases of the rebuild arrive here first.",
+      "Off: nothing in the game changes. On: Chances: New is on in every match on this phone (the same as setting Chances: New by hand), Infinite Highlights' still uses the match camera, every open-play chance in a match starts with a generated build-up (4–8 s; longer late in a close game, up to about 11 s in the 90th minute of a level final), the other players are still running when the chance becomes yours and stop on their places while you aim, a covering defender sometimes sprints in from off the screen and joins the chance when the defence is thin, and about half of free kicks and penalties first show the foul that won them. Infinite Highlights (on Play) and Infinite Match play the same build-ups, with Moment / Length / Intensity dials of their own.",
+      "Under the switch in Settings, while it is On: \"Real moment highlights: Off | On\". On: about 1 in 4 open-play chances of a kind the real moments have is a REAL moment (every man where he really stood) with the real 4 s before it as its build-up. Which moments: the Real moments page (/star-real-moments-dev).",
     ],
-    dev: "app/star-fhr-dev/{page,BuildUpPanel}.tsx · lib/star/fhr/{toggle,ruler,stillCamera,buildUp,servedChances}.ts · lib/star/fhr/patterns.json (scripts/fhr/make-patterns.mts) · terminal: npx tsx scripts/fhr/ruler.mts 200 · npx tsx scripts/fhr/buildup-measure.mts 500 · sheet: npx tsx scripts/fhr/buildup-sheet.mts 48 · browser check: node scripts/fhr/still-vs-play.mjs 100 on · tests/star/fhr.mts",
+    dev: "app/star-fhr-dev/{page,BuildUpPanel}.tsx · components/star/{FhrSwitchRow,FhrAdjust}.tsx · lib/star/fhr/{toggle,ruler,stillCamera,buildUp,foulBuildUp,builders,servedChances}.ts · lib/star/fhr/patterns.json (scripts/fhr/make-patterns.mts) · terminal: npx tsx scripts/fhr/ruler.mts 200 · npx tsx scripts/fhr/buildup-measure.mts 500 · sheet: npx tsx scripts/fhr/buildup-sheet.mts 48 · browser check: node scripts/fhr/still-vs-play.mjs 100 on · tests/star/fhr.mts",
   },
   "/star-play-dev": {
     title: "Play Area",
@@ -1115,9 +1264,11 @@ export const ADMIN_GUIDES = {
       {
         group: "Home",
         items: [
-          ["← (top left)", "Back to the admin home."],
+          ["← (top left)", "Back to the Chances group page."],
           ["Infinite Highlights → (first picture card)", "Opens Infinite Highlights."],
           ["Infinite Match → (second picture card)", "A real match that runs for the length you set, counting every chance it serves you."],
+          ["Full highlights rebuild: Off / On", "The same switch as Settings (this phone). On: both doors play a build-up before each chance, as a career match does."],
+          ["Ruler and build-ups →", "The rebuild's test area: the Ruler tab (today's numbers) and the Build-ups tab (one generated build-up at a time, played and drawn from above)."],
           ["Power / Technique / Opposition / Match length", "Sliders for you, the other side, and how long Infinite Match lasts."],
           ["Keeper: Real / Set", "Real (the default) is the opposition's own starting keeper, exactly as in a career. Set shows a Keeper rating slider that decides instead."],
           ["Keeper: long shots & through balls — Hard / Middle / Easier", "The keeper sets himself while you aim, reacts a beat after you strike, steps while he reads it and throws one dive, all by his rating — everywhere in the game. This row is how well he reads a shot from distance. Middle is the game. Hard: fewer long shots and through balls go in; Easier: more. Test screens only."],
@@ -1146,6 +1297,7 @@ export const ADMIN_GUIDES = {
         items: [
           ["← (top left) / ‹ Back", "Back to the Play Area."],
           ["What it served", "Live count of each chance type the match has given you, with shares and a per-90."],
+          ["Build-ups: Off / On, Moment, Length, Intensity", "Full highlights rebuild for this phone. On: every chance gets the career's build-up, from this match's own minute and score (Auto), or Normal / Big (a level final, 90th minute); Length and Intensity tune it. The dials are this page's and Infinite Highlights' only. Save / Commit always save the chance as drawn, never the build-up or the extra defender."],
           ["This chance: …", "The bar pinned to the top of the screen for the whole match: which chance you are on and the minute."],
           ["✎ Edit", "Opens the chance on screen in an editor: drag, + Mate, + Opp, Remove. On a penalty only the other players move, along the edge of the box."],
           ["Save", "Saves the chance exactly as it stands into that chance type in the gallery, for the whole team. No editing needed."],
@@ -1218,7 +1370,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Top of the page",
         items: [
-          ["← (blue, top left) / ‹ (in the store)", "Back to the Play Area."],
+          ["← (top left) / ‹ (in the store)", "← goes to the Money + rewards group page. ‹ inside the store goes to the Play Area."],
           ["★ and Coins (top right)", "Your test wallet, shown at a glance."],
           ["★ (wallet, in the store)", "Your test stars — the money you earn by playing."],
           ["Coins +", "Your test Coins — the money you would buy with real money. Tapping it opens the Coins tab."],
@@ -1285,55 +1437,129 @@ export const ADMIN_GUIDES = {
 
   "/star-scene-editor-dev": {
     title: "3D Scene Editor",
-    what: "The one editor for every 3D scene. Three places work: the Cut-scene Director, 3D Signing and the Manager's Office. Pick a scene or a shot, change the camera (or fly a free camera) and the lighting, and watch the real scene play it. Edits save per scene and per shot. Nothing touches a career, and the game does not read these edits yet: the real signing, office and cut scenes play exactly as before.",
+    what: "The one editor for every 3D scene: the Cut-scene Director, 3D Signing, the Manager's Office, the 3D Shop, the 3D Garden and the 3D House. Pick a place, change the camera and the light, and watch the real scene play it. An edit only reaches the game once you APPROVE it, and only where and when you choose. Commit to game writes an approved edit into the game's code.",
     buttons: [
       {
         group: "3D Preview",
         items: [
-          ["Place tabs (3D Signing … Cut-scene Director)", "3D Signing, Manager's Office and Cut-scene Director work. Shop, Garden and House say \"coming next\" (hidden on a phone)."],
+          ["Place tabs (3D Signing … Cut-scene Director)", "Open that place, live. All six work."],
           ["Shot buttons (3D Signing / Manager's Office: 1. He talks … 5. The handshake)", "Play that fixed shot from its start; the settings then change that shot. The office has only He talks and You reply. A • marks a shot you have edited."],
+          ["View buttons (3D Shop / Garden / House: 1. Walking about, 2. Card: …)", "Stand him for that view: walking about, or a card open on the boots, the car, the counter, the homes, the cans (shop) or the wardrobe, the cabinet, the drive (house). The settings then change that view. A • marks an edited view."],
+          ["Time of day, Stand (3D Garden)", "Build the garden by day, at sunset or at night, and stand him at the gate, the fountain, the shop, the casino, the pitch gate or the house door to see the walking camera there."],
+          ["Home, Room (3D House)", "Build that home (starter … estate) and walk into one of its rooms. A card view only works in the room that has it (a line says so)."],
           ["▶ PLAY SHOT (3D Signing / Manager's Office)", "Play the shot on screen again from its start."],
-          ["Scene buttons (Contract signing, Goal celebration …)", "Load that hand-made cut scene into the preview. Your edits are cleared."],
-          ["The badge top-left", "The shot under the playhead, its name and its lens."],
-          ["Drag on the preview", "Free camera: orbit and tilt round the look point. Wheel or pinch moves in and out. Only the shot under the playhead changes."],
-          ["The map, bottom-right", "The set seen from above. Drag the blue box (camera), the white dot (look point) or the yellow sun (key light, round the ring)."],
+          ["Scene buttons (Contract signing, Goal celebration …, Kept: …)", "Load that cut scene into the preview. \"Kept: …\" scenes come from the Scene generator's Keep button."],
+          ["The badge top-left", "The shot or view on screen, and its lens."],
+          ["Drag on the preview", "Director: a free camera round the look point. Signing / Office: orbit this shot. Shop / Garden / House: turn and rise this view; wheel or pinch changes its distance."],
+          ["The map, bottom-right", "The place seen from above. Drag the blue box (camera), the white dot (look point) or the yellow sun (key light, round the ring). Shop, Garden and House: only the sun drags; the camera follows him."],
         ],
       },
       {
-        group: "Settings (Camera / Lighting / Cast / Scene tabs on a phone)",
+        group: "Settings (Camera / Lighting tabs on a phone)",
         items: [
-          ["Shot preset buttons and list", "Change the framing of the shot under the playhead (18 framings)."],
-          ["Lens, Turn, Rise, Move, Move amount, Handheld shake", "Change the shot under the playhead. Each shot keeps its own edits."],
-          ["Mood", "Time of day and colour of the whole scene."],
-          ["Exposure, Key light strength", "Brightness of the scene and of the sun / key light."],
-          ["Spotlight on a person", "Puts a spotlight on one person; Spot strength sets how bright."],
-          ["Position X/Y/Z, Look at", "Show where the camera stands and looks now. Type a number to take over with a free camera."],
-          ["Back to the shot", "Drops the free camera for this shot; the shot plays as written."],
-          ["Key light angle, Key light colour", "Turn the sun round the set and change its colour. \"As written\" puts the colour back."],
-          ["Greyed rows with \"coming next\"", "PART and NEW dials from the drawing. Not built yet."],
-          ["3D Signing / Manager's Office settings", "Only what those scenes have: Position, Look at, Lens per shot (drag the preview to orbit; Back to the shot undoes it), Exposure, Key light strength, angle and colour (the low sun through the window). No mood, spotlight, presets, cast or timeline there."],
+          ["Shot preset buttons and list", "Director: change the framing of the shot under the playhead (18 framings)."],
+          ["Lens, Turn, Rise, Move, Move amount, Handheld shake", "Director: change the shot under the playhead. Each shot keeps its own edits."],
+          ["Turn, Rise, Distance, Lens (Shop / Garden / House)", "Change the view on screen. The edit sits on top of the camera the scene works out as he walks, so it follows him; the scene still keeps it out of walls and trees. \"As written\" puts the lens back."],
+          ["Mood", "Director: time of day and colour of the whole scene."],
+          ["Exposure, Key light strength", "Brightness of the scene and of the sun / key light. With the broadcast look on, Shop / Garden / House exposure brightens the lights instead."],
+          ["Spotlight on a person", "Director: a spotlight on one person; Spot strength sets how bright."],
+          ["Position X/Y/Z, Look at", "Director, Signing, Office: where the camera stands and looks. Type a number to take over."],
+          ["Back to the shot / Back to as written", "Drop this shot's or view's edit; it plays as written."],
+          ["Key light angle, Key light colour", "Turn the key light round the place and change its colour. \"As written\" puts the colour back."],
+          ["Greyed rows with \"coming next\"", "Director dials not built yet."],
         ],
       },
       {
-        group: "Timeline",
+        group: "Timeline and saving",
         items: [
-          ["▶ Play / ❚❚ Pause, ↺ Replay", "Play the scene, stop it, start again."],
-          ["The scrub bar, or a click on a lane", "Jump to that moment (director.seek)."],
-          ["Lanes", "The scene's real tracks, read-only: camera shots, light and effects, each person's moves, speech and captions."],
-          ["SAVE FOR EVERYONE", "Copies this scene's edits to the shared table (admin only). If the table isn't switched on yet, it says so and the edits stay on this device."],
-          ["Copy edits", "Copies this scene's edits as JSON."],
-          ["Reset this shot / Reset all", "Clears the edits of the shot under the playhead / of the whole scene."],
+          ["▶ Play / ❚❚ Pause, ↺ Replay, the scrub bar", "Director: play, stop, start again, jump to a moment."],
+          ["SAVE FOR EVERYONE", "Copies this scene's edits to the shared table (admin only). If the table isn't switched on, it says so and the edits stay on this device."],
+          ["Copy edits", "Copies the edits as text."],
+          ["Reset this shot / view, Reset all", "Clear one shot's or view's edits, or the whole place's (an approval stays)."],
+        ],
+      },
+      {
+        group: "Use in the game",
+        items: [
+          ["✓ APPROVE", "The game may now use this edit. It also saves it for everyone. It stays editable: after a change press SAVE FOR EVERYONE (or Commit to game) so the game gets the new copy."],
+          ["Withdraw approval", "The game stops using it (the shared copy is updated straight away)."],
+          ["Where (ticks)", "In a career: the real game. The test page: that place's own test page. Untick both and nothing uses it."],
+          ["When (list)", "Always, or only at one moment: the signing (first contract / a move), the shop (walking in from the garden / from the Shop page), the garden (day / sunset / night), the house (one home), a cut scene (one event)."],
+          ["COMMIT TO GAME", "Writes this approved edit into the game's code (lib/star/data/sceneEdits.json) on main. Without GITHUB_TOKEN it says so in red and nothing is committed. A withdrawn approval sent this way is taken out of the code."],
         ],
       },
     ],
     saving: [
-      "This device: every change saves at once (localStorage), per scene and per shot, and comes back when you reopen it.",
-      "Save ids: 3D Signing saves as \"signing\", the Manager's Office as \"office\", each director scene under its own name, except Contract signing, which now saves as \"director:signing\" (an older save of it is still read back).",
-      "Shared: SAVE FOR EVERYONE writes to the star_cutscene_edits table through /api/star/cutscene-edits (admins only). Needs supabase/migrations/star_cutscene_edits.sql run; until then it says \"Saved on this device only\".",
-      "Nothing commits to the repo.",
+      "This device: every change saves at once (localStorage), per place and per shot or view, and comes back when you reopen it.",
+      "Save ids: \"signing\", \"office\", \"shop\", \"garden\", \"house\"; each director scene under its own name (Contract signing as \"director:signing\"); a kept generated scene under its recipe id.",
+      "Shared: SAVE FOR EVERYONE and APPROVE write to the star_cutscene_edits table through /api/star/cutscene-edits (admins only). Needs supabase/migrations/star_cutscene_edits.sql (run).",
     ],
-    inGame: ["Nowhere yet. It plays the same director and the same signing/office scene the game uses, but the game does not read these edits (Harry wants to see them first)."],
-    dev: "app/star-scene-editor-dev/page.tsx (+ editor.css, parts.tsx, PlaceEditor.tsx for Signing/Office) · lib/star/signing3dScene.ts (optional edit / setEdit / playShot / shotDefaults / cameraPose / layout; no edit = today's scene, the career never passes one) · lib/star/cutscene/director.ts (optional setEdit / cameras / cameraPose / layout hooks; no edit = the game's behaviour) · store.ts (saves) · app/api/star/cutscene-edits/route.ts · fixtures from lib/star/cutscene/fixtures.ts · drawing: docs/handoffs/2026-10-19-ui-lookover/scene-editor/.",
+    commit: [
+      "COMMIT TO GAME writes approved edits into lib/star/data/sceneEdits.json on the main branch, through GitHub (the gallery's commit machinery). Vercel rebuilds the live site from main: a minute or two.",
+      "Needs an admin sign-in and GITHUB_TOKEN in Vercel. Without the token you get a plain red message and nothing is committed.",
+    ],
+    inGame: [
+      "Only APPROVED edits, only where and when the approval says. The career's 3D signing, the manager's office, the 3D shop, the garden and the house read them as they open (the committed file at once, the shared table a moment later; the newer approval wins).",
+      "No approved edit: every scene plays exactly as before.",
+      "Cut scenes (the Director) don't play in a career yet: an approved director edit is used on the Cut-scene Director test page for now.",
+    ],
+    dev: "app/star-scene-editor-dev/page.tsx (+ editor.css, parts.tsx, PlaceEditor.tsx for Signing/Office, WalkPlaceEditor.tsx for Shop/Garden/House, UsePanel.tsx for Approve/Commit, sampleCareer.ts, store.ts) · lib/star/sceneEdits/ (approval.ts where/when + newest wins, walkEdit.ts view edits, useApproved.ts the game's read hook, kept.ts) · optional edit hooks: lib/star/signing3dScene.ts, lib/star/shop3d/scene.ts, lib/star/garden3d/scene.ts, lib/star/home3d/scene.ts, lib/star/cutscene/director.ts (no edit = as before) · app/api/star/cutscene-edits/route.ts (?approved=1) and commit/route.ts · tests/star/sceneEdits.mts.",
+  },
+  "/admin/scene-generator": {
+    title: "Scene generator",
+    what: "A game moment in, a whole cut scene out. Pick the event, the feeling, how big the moment is and a seed, then Generate: the real cut-scene director plays it, with its recipe beside it. Mark it Good or Bad, keep it for the 3D Scene Editor, and see when a generated scene would play in the game.",
+    buttons: [
+      {
+        group: "The moment",
+        items: [
+          ["Event buttons (Signed … Mentor advice)", "The game moment: 18 kinds."],
+          ["Feeling buttons (Joy … Inspired)", "How you feel about it: 12 feelings."],
+          ["How big the moment is", "Small (a friendly) to big (a cup-final winner). Bigger moments get longer scenes and closer shots."],
+          ["How intense", "Calm to wild."],
+          ["Seed − / + and the box", "Pick the seed. The same event, feeling, size, intensity and seed always make the same scene."],
+          ["🎲 Re-roll", "The next seed, made at once."],
+          ["GENERATE", "Make the scene from the dials."],
+        ],
+      },
+      {
+        group: "The picture",
+        items: [
+          ["▶ PLAY / ❚❚ PAUSE, ↺ Replay, the scrub bar", "Play the scene, stop it, start again, jump to a moment."],
+          ["👍 Good / 👎 Bad", "Mark this recipe. The marks add up per event in the table below."],
+          ["Keep as a hand-made scene", "Save this scene exactly as it is (later changes to the generator never change it). The 3D Scene Editor shows it as \"Kept: …\"."],
+          ["Open in the editor ›", "Open the kept scene in the 3D Scene Editor (keep it first)."],
+          ["3D Scene Editor › (top right)", "Open the editor."],
+        ],
+      },
+      {
+        group: "The recipe and When does this play?",
+        items: [
+          ["The recipe", "Where it happens, the mood, how long, who is in it, the film-rules score (and what broke), the beats in order, and the shot list."],
+          ["The table", "Each event, the game moment that would play it, what the game shows there today, and its status. Tap a row to pick that event."],
+        ],
+      },
+    ],
+    saving: [
+      "Marks and kept scenes: this device at once, then the shared table star_cutscene_edits (rows \"mark:…\" and \"kept:…\", never approved, so the game never reads them). If the shared table can't be written, the line under the buttons says \"saved on this device only\".",
+    ],
+    inGame: [
+      "Nowhere. Today a generated scene plays only on test pages (here, the Cut-scene Director, the 3D Scene Editor). The table is the proposal for which game moment would play each one; nothing is wired until Harry says so.",
+    ],
+    dev: "app/admin/scene-generator/page.tsx (+ generator.css) · lib/star/cutscene/generate.ts (generateScript, scoreScript) · lib/star/sceneEdits/kept.ts (recipes, marks, kept scenes) · lib/star/sceneEdits/whenPlays.ts (the When table; tests/star/sceneEdits.mts keeps it honest) · /api/star/cutscene-edits.",
+  },
+  "/star-3d-bench-dev": {
+    title: "3D bench",
+    what: "The same ten 3D shots, every time, at the size of a phone: the Home player, the signing close-up, the manager's office, the press conference, the trophy lift, the walk-out, the garden, a training drill and two made-up cut scenes. Each shows its frame numbers. Every 3D change is judged here, before and after, on the same pictures.",
+    buttons: [
+      { items: [
+        ["Home player … Made-up scene: a trophy", "Picks the shot. A cut scene stops at the same second every time; a 3D place (garden, office, drill) keeps moving."],
+        ["Now / Before (19 Oct)", "Before shows the shot as it was on 19 Oct 2026: the old skin and light (yellow in cut scenes, orange in the garden and shop), the old cut-scene cameras (a face or body filling the phone) and faces that never move. Now is the game today. The Home player's new life has no Before here: its before is a still in the patch notes."],
+        ["Show the skin it measures", "Paints every bit of bare skin bright pink in the shot: what the skin numbers are measured from."],
+      ] },
+    ],
+    saving: ["Nothing here is saved. The page only shows other test pages at fixed moments."],
+    inGame: ["Nothing changes in the game from this page. It is a measuring tool for the 3D changes."],
+    dev: "app/star-3d-bench-dev/page.tsx (the page), app/star-3d-bench-dev/home/page.tsx (the Home shot; window.__homeT holds a moment), app/star-3d-bench-dev/face/page.tsx (one head close up, its moving face on an 8 s loop), app/star-3d-bench-dev/faces/page.tsx (measures the eight Style A faces: scripts/bench3d/faces.mjs --write), app/star-3d-bench-dev/headshots/page.tsx (twelve made-up players and you as card headshots shot from the 3D model, beside the drawn heads they replace, with the time each picture took; Make again forgets this device's kept pictures; ?only=3d|drawn; components/star/Headshot3D.tsx, lib/star/headshot3d/; stills and timings: node scripts/bench3d/headshots.mjs DIR), lib/star/bench3d.ts (the ten shots). Stills + skin numbers + frame numbers: npx tsx scripts/bench3d/shots.mts --out=DIR --tag=after (add --old for the before). Home stills: node scripts/bench3d/home.mjs PREFIX 3 8.6 20. Cut-scene framing at phone size: node scripts/bench3d/framing.mjs. The skin probe and mark: lib/star/style3d/toon/shader.ts TOON_SKIN; on any 3D test page ?skinfix=0 shows the old skin, ?framing=old the old cut-scene cameras, ?face=old still faces.",
   },
   "/star-3d-area-dev": {
     title: "3D Area",
@@ -1342,7 +1568,7 @@ export const ADMIN_GUIDES = {
       {
         group: "Top of the page",
         items: [
-          ["←", "Back to the Play Area."],
+          ["← (top left)", "Back to the 3D places group page."],
           ["Places / All scenes / 3D files (left, or along the top on a phone)", "Switch between the 3D places, the full list of scenes and the 3D file store. The page remembers which one you had open."],
         ],
       },
@@ -1387,9 +1613,11 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["‹", "Back to the 3D Test Area."],
-          ["↺", "Starts the scene again from the first line."],
-          ["Your player", "Opens the picker: skin tone, face picture, hair, every store accessory and the Star Pass Gold Aviators. A change rebuilds your player straight away."],
+          ["← (top left)", "Back to the 3D places group page."],
+          ["↺ Replay (above the scene)", "Starts the scene again from the first line."],
+          ["Your player (above the scene)", "Opens the picker under the scene: skin tone, face picture, hair, every store accessory and the Star Pass Gold Aviators. A change rebuilds your player straight away."],
+          ["Scene editor ›", "Opens the 3D Scene Editor on the signing: camera, lens and light per shot, Approve, Commit to game."],
+          ["?bare=1 on the address", "The scene full screen, as before the admin frame (↺ and Your player at its top right)."],
           ["Skip", "Leaves the scene. In a career this goes straight on to the next screen."],
           ["Tap the scene", "Shows the rest of a line at once, or moves to the next line. While you sign, a tap jumps to the handshake."],
           ["TAP TO SIGN", "Appears with the contract. The camera pulls back, you pick up the pen and sign, SIGNED stamps on, then the handshake."],
@@ -1413,6 +1641,7 @@ export const ADMIN_GUIDES = {
       "In a career when Settings → Look → \"Signing scene\" is 3D (the default, per phone): the first contract and every club move play this scene with your own player (skin, face picture, hair, accessories, aviators), the club's kit, your shirt number, seasons and wage. Drawn keeps the picture signing as it was.",
       "If the phone cannot run the 3D, the career falls back to the drawn signing by itself.",
       "Later transfers (signing for a new club at the end of a season) still use the paper signature page.",
+      "An edit APPROVED in the 3D Scene Editor plays here when it is ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its When holds). None: the scene exactly as written.",
     ],
     dev: "app/star-3d-area-dev/signing/page.tsx · components/star/SigningScene3D.tsx (the screen) · components/star/SigningScene3DCareer.tsx (career → scene) · lib/star/signing3dScene.ts (room, camera, timeline) · lib/star/people3d.ts (the approved player and manager: kit, skin, hair, face picture, accessories, outline) · lib/star/signing3dRig.ts (arm IK) · lib/star/signing3dTextures.ts (contract and other canvas pictures) · lib/star/signing3d.ts (lines, terms, the Settings switch) · public/star/people3d/*.glb (scripts/people3d/build_people3d.py) · public/star/signing3d/aviators.glb · stills: scripts/signing3d-shot.mjs · tests/star/signing3d.mts",
   },
@@ -1423,9 +1652,11 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["‹", "Back to the 3D Test Area."],
-          ["He talks / You talk", "Moves the camera: over your shoulder at him, or over his at you."],
-          ["Next line", "Steps through four sample lines, switching who talks."],
+          ["← (top left)", "Back to the 3D places group page."],
+          ["He talks / You talk (above the scene)", "Moves the camera: over your shoulder at him, or over his at you."],
+          ["Next line ›", "Steps through four sample lines, switching who talks."],
+          ["Scene editor ›", "Opens the 3D Scene Editor on the office: camera, lens and light per shot, Approve, Commit to game."],
+          ["?bare=1 on the address", "The office full screen, as before the admin frame."],
           ["👁 (bottom left)", "This guide."],
         ],
       },
@@ -1436,6 +1667,7 @@ export const ADMIN_GUIDES = {
       "The same switch puts three manager moments in the office: a club's contract offer (before the talks), manager news on Home (Continue dismisses it), and being left out of the squad (above the card on the match screen).",
       "If the phone cannot run the 3D, the chat carries on without the office.",
       "The people are the one body (Settings → Look → \"3D people\").",
+      "An edit APPROVED in the 3D Scene Editor plays here when ticked for \"the test page\", and in every career office talk when ticked for \"in a career\". None: the office exactly as written.",
     ],
     dev: "app/star-3d-area-dev/office/page.tsx · components/star/Office3D.tsx (stage + career look) · lib/star/signing3dScene.ts (stage: \"office\" dresses the room) · components/star/relgames/BossChat.tsx, components/star/ManagerMoments.tsx, components/star/LineupIntro.tsx (mount it) · lib/star/look3d.ts (the Settings switches)",
   },
@@ -1445,7 +1677,7 @@ export const ADMIN_GUIDES = {
     what: "Every move the 3D match plays (outfield and keeper), each looping on its own tile, seen through the real 3D match camera at the real match size: a man is 6% of a phone screen, the men 1.35 × life, the realistic players.",
     buttons: [
       { group: "Top", items: [
-        ["← and 3D test area (left list)", "Back to the list of 3D test pages."],
+        ["← (top left)", "Back to the Players + animation group page."],
         ["Outfield / Keeper (left list)", "Jumps to that group of tiles."],
         ["2D animations (left list)", "Opens the 2D animation page."],
         ["❚❚ / ▶ (player bar)", "Stops or starts every tile. Play also lets go of any tile you held with its slider."],
@@ -1465,12 +1697,37 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-anim3d-dev/page.tsx · lib/star/style3d/animGrid3d.ts (the tiles: one WebGL canvas, one tile each via scissor) · the clips: public/star/anims3d/{football,mocap}.glb through lib/star/three3d/footballAnims.ts · the camera numbers: lib/star/style3d/broadcastCam.ts (BROADCAST) · the match drawing: lib/star/style3d/engineView.ts. Filming: window.__frameStep.",
   },
+  "/admin/motion-refs": {
+    title: "Motion references",
+    what: "Short clips of real-looking people doing our cut-scene moments (a handshake, a trophy lift, a goal celebration and so on), to compare with the movement we build. They are Higgsfield references for the movement rebuild. Each card has the real clip, a still of our game and an empty Ours slot.",
+    buttons: [
+      { group: "The top", items: [
+        ["← (top left)", "Back to the Players + animation group page."],
+        ["HQ (base standard)", "The best round: 18 clips. The five base-standard scenes (handshake, trophy lift, goal celebration, walk-out, press answer) come first and carry an amber \"Base standard\" tag."],
+        ["First round", "The first, lower-quality round: 9 clips. The handshake is left out because it shows a small dark mark on the shirt that looks like a brand logo."],
+        ["All", "Every clip: base standard first, then the rest of the HQ round, then the first round."],
+      ] },
+      { group: "Each card", items: [
+        ["Real person (the clip)", "Plays by itself while you can see it. Muted, loops, no sound. Tap it to pause; tap again to play."],
+        ["❚❚ Pause / ▶ Play", "Same as tapping the clip."],
+        ["½× speed", "Half speed, to watch hands, feet and weight. Press again for normal speed."],
+        ["Our game", "A still of our game that the clip was made from. Where no game still was saved, it shows the clip's own start picture and says so."],
+        ["Ours", "Empty until our own clip of the same scene is added. Then it plays here, beside the real one, with the same Pause and ½× speed buttons."],
+      ] },
+    ],
+    saving: [
+      "Nothing is saved. The page only remembers which of the three buttons you last pressed, on this device.",
+      "The clips and stills are part of the code (about 21 MB). A new clip of ours shows after the next deploy.",
+    ],
+    inGame: ["Nowhere. It is for the team: this is the real movement our cut scenes and animations are being rebuilt to match."],
+    dev: "app/admin/motion-refs/page.tsx · lib/motionRefs.ts (MOTION_REFS: one line per clip; shared with later tools) · files in public/admin/motion-refs/: hq/<scene>.mp4 + .jpg (Nano Banana Pro 4K picture, then Seedance 2.5 video, 480p), r1/<scene>.mp4 (GPT Image 2.5 picture, then Kling 3.0 video), game/ (stills of our game), ours/<scene>.mp4 (OUR clip: drop a file with the scene's name here, e.g. ours/handshake.mp4, and the Ours slot plays it) · registered in lib/adminRegistry.ts (group players, admins only).",
+  },
   "/star-update-dev": {
     title: "Oct 13 update",
     what: "The whole Oct 13 gameplay update behind one Old | New switch: shot power, the contact field (strike the side of the ball to curl it low), keepers, team-mates shooting, and match feel. Each part also has its own row.",
     buttons: [
       { group: "Top", items: [
-        ["‹ Play Area", "Back to the Play Area."],
+        ["← (top left)", "Back to the Match tests group page."],
       ] },
       { group: "The whole update", items: [
         ["New / Old", "Flips every part at once, on this phone. New also plays in your real career matches on this phone. Starts on Old."],
@@ -1497,7 +1754,7 @@ export const ADMIN_GUIDES = {
     what: "Every New player animation (keeper saves, touches, shots, passes, headers, blocks, clearances) looping next to how the Old game drew that moment, with the dials and switches that size them.",
     buttons: [
       { group: "Top", items: [
-        ["←", "Back to the Play Area."],
+        ["← (top left)", "Back to the Players + animation group page."],
       ] },
       { group: "The list on the left (a row of tabs on a phone)", items: [
         ["Keeper / Touches / Shots / Passes & headers / Defenders / All", "Which animations to show. All shows every group under its own title; it is heavy on an older phone."],
@@ -1575,10 +1832,12 @@ export const ADMIN_GUIDES = {
     what: "The walk-around 3D garden, on a made-up career, so every part can be seen without playing to it. It is the same screen a career opens from Home's Garden.",
     buttons: [
       { items: [
-        ["‹ Home", "Back to the 3D Test Area."],
-        ["day / sunset / night", "Changes the time of day. In a career it follows the time of your next kick-off."],
-        ["Full career / New career", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
-        ["Restart", "Builds the garden again from the start."],
+        ["‹ Home", "Back to the 3D places group page."],
+        ["Day / Sunset / Night (above the scene)", "Changes the time of day. In a career it follows the time of your next kick-off."],
+        ["Full career / New career (above the scene)", "Full: trophies, a horse, three cars and a mansion. New: nothing owned or won yet."],
+        ["↻ Restart (above the scene)", "Builds the garden again from the start."],
+        ["Scene editor › (above the scene)", "Opens the 3D Scene Editor on the garden: the walking camera (turn, rise, distance, lens) and the sun, Approve, Commit to game."],
+        ["?bare=1 (in the address)", "The garden full screen, as before the admin frame (its switches float top left). ?film=1 does the same for the film tools."],
         ["?outfit=coat (in the address)", "He walks the garden in that casual set, as if picked at your house's wardrobe: hoodie, tee, shirt, tracksuit or coat. Without it: the club kit."],
         ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
         ["Drag the view", "Swings the camera round him."],
@@ -1600,7 +1859,7 @@ export const ADMIN_GUIDES = {
       ] },
     ],
     saving: ["Nothing is saved. The career here is made up each time, and so is its money."],
-    inGame: ["Home → Garden in a career opens this 3D garden. The shop where the house used to be is the 3D shop; the casino and the training pitch are at the back.", "Home → Casino opens the 3D casino when Settings → Look → Casino is 3D (the default), else the classic casino menu."],
+    inGame: ["Home → Garden in a career opens this 3D garden. The shop where the house used to be is the 3D shop; the casino and the training pitch are at the back.", "Home → Casino opens the 3D casino when Settings → Look → Casino is 3D (the default), else the classic casino menu.", "A 3D Scene Editor edit APPROVED for the garden plays here when ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its time of day matches). None: the garden as built."],
     dev: "components/star/Garden3D.tsx, lib/star/garden3d/scene.ts (Old look: sceneOld.ts); the casino components/star/Casino3D.tsx + lib/star/casino3d/scene.ts; the pitch's placeholder components/star/TrainingPitchScreen.tsx; tap to move lib/star/tapWalk.ts; the walk lib/star/walkClip.ts; draw-call merging lib/star/freezeStatic.ts; models packed by tools/garden3d/export_models.py and build_anims.py.",
   },
   "/star-training3d-dev": {
@@ -1622,7 +1881,7 @@ export const ADMIN_GUIDES = {
         ["Two Touch: the grade pop", "Every touch is graded by timing: Perfect touch, Good touch, Heavy, Scuffed it. A better first touch sits up higher and closer. Your return goes where you swipe or point, as hard as the swipe or hold: Too wide / Too hard / Too soft and he has to run for it. You step under the ball yourself; the stick only nudges."],
         ["3D drills: left thumb", "A stick: how far you push it sets the speed (walk, jog, run); all the way sprints. With a mouse: WASD or arrows run, hold Shift to sprint. The hint at the bottom follows your pointer (finger or mouse), not the screen size."],
         ["3D drills: tap on the right", "Free Roam: pass to the team-mate you face if you have the ball, take a touch if it's at your feet, tackle, or call for it. Two Touch: your keepy-up touch (1st controls it up, 2nd sends it back). Space bar does the same."],
-        ["‹ Back (top left)", "On the picker, the pre-screen, Crossbar and every 3D drill, at any moment: back to the picker (or, opened straight from the top row, the 3D Test Area). The drill ends there: no reward, nothing asked."],
+        ["‹ Back (top left)", "On the picker, the pre-screen, Crossbar and every 3D drill, at any moment: back to the picker (or, opened straight from the top row, the 3D places group page). The drill ends there: no reward, nothing asked."],
         ["↻ Restart (top right)", "Starts again with a different team-mate."],
         ["Last (top right)", "The last result: score, won or lost, and the Team bar change, with the drill under it. A dash until you finish one."],
         ["Continue →", "On the result card. Here it just starts again and shows the result in the \"Last\" box at the top."],
@@ -1636,6 +1895,11 @@ export const ADMIN_GUIDES = {
     title: "Style Testing",
     what: "Try the shortlisted art styles (and Mix) on the REAL game (the match engine's own chances, drawn in 3D), the 3D free roam and cut scenes, switching live. A test area: nothing here changes the game.",
     buttons: [
+      { group: "The page (above the scene)", items: [
+        ["Scene generator ›", "Opens the Scene generator (Studio): a cut scene made from a game moment, its recipe, Good/Bad, keep it."],
+        ["Scene editor ›", "Opens the 3D Scene Editor on the Cut-scene Director."],
+        ["The stage", "Everything below plays in this box on the admin frame. ?clean=1 (the stills and film tools) or ?bare=1 opens it full screen, as before."],
+      ] },
       { group: "Style (top row)", items: [
         ["A", "Golden Hour: painted, warm sunset, soft cel bands, thin brown lines, haze, paper grain."],
         ["B", "Floodlight Ink: night under floodlights, bold black lines, comic dots in the shadows, rain."],
@@ -1658,9 +1922,12 @@ export const ADMIN_GUIDES = {
         ["↺ Replay", "Cut scenes: play it again from the start."],
         ["Left thumb / tap / drag back", "Gameplay: move (push to the edge to sprint), pass or call for it, shoot. WASD or the arrows, Shift and Space on a keyboard."],
       ] },
+      { group: "Lag test (only while one is running)", items: [
+        ["The pill at the top", "A Lag test started in the game (Settings → 🛠 Dev → Lag test) comes here for its last step, the cut scene: its link opens the Cut-scene Director. I'm there records 30 s, then Next shows the results. The pill measures only; nothing on this page changes."],
+      ] },
     ],
     saving: ["Nothing is saved. The address can hold a set-up: ?style=ink&scene=goal&tilt=30 (and &t=6 holds a cut scene still at 6 seconds). Director: ?scene=director&fixture=signing, or ?scene=director&event=scored&stakes=0.8&emotion=joy&seed=3; &clean=1 hides the controls for filming; &cam=old or &cam=new overrides the Cut-scene camera setting on this page. Real game: &seed=7 picks the chance stream, &kinds=one_on_one,penalty only those chances, &view=2d starts on 2D, &clock=virtual freezes the clock for frame-by-frame filming (scripts/film/frames3d.mjs)."],
-    inGame: ["Nowhere yet: a sandbox for choosing the look. The 2D match is not touched."],
+    inGame: ["Nowhere yet: a sandbox for choosing the look. The 2D match is not touched.", "Cut-scene Director (Hand-made): a 3D Scene Editor edit APPROVED for that scene and ticked for \"the test page\" plays here."],
     dev: "app/star-style-dev/page.tsx · components/star/StyleTest3D.tsx · Real game: components/star/RealGame3D.tsx (EnginePlay in an EngineFrameContext, lib/star/engineFrame.ts) + lib/star/style3d/engineView.ts (the 3D picture and touch hand-over), lib/star/virtualClock.ts (filming) · lib/star/style3d/ (styles.ts the five looks as data, kit.ts sky + lights + rain + materials, post.ts the one-pass post shader, stadium.ts, gameplay.ts on lib/star/play3d's World + picture via its optional bare/rig/draw/onBuilt hooks, flatFigure.ts the 2D cards, cutscenes.ts → the cut-scene system). The cut-scene system: lib/star/cutscene/ (README.md there); components/star/CutsceneDirector.tsx. Loaders through withMeshopt. Post is off on Low quality except the pixel style.",
   },
   "/star-shop3d-dev": {
@@ -1669,7 +1936,10 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["‹ 3D area", "Back to the 3D Test Area."],
+          ["‹ 3D places", "Back to the 3D places group page."],
+          ["Start at the doors / Start in the middle (above the scene)", "Open the shop just inside its front doors (as when you walk in from the garden), or in the middle."],
+          ["Edit in the scene editor › (above the scene)", "Opens the 3D Scene Editor on the shop: walking and card views (turn, rise, distance, lens), the light, Approve, Commit to game."],
+          ["?bare=1 (in the address)", "The shop full screen, as before the admin frame. ?film=1 does the same for the film tools."],
           ["The club button (top right)", "Changes the kit he's wearing. Tap again for the next club."],
           ["The stick (bottom left)", "Drag it to walk. A little way is a walk, all the way is a jog. On a computer, WASD or the arrow keys work too (hold Shift to jog)."],
           ["Drag the view", "Swings the camera round him."],
@@ -1696,6 +1966,7 @@ export const ADMIN_GUIDES = {
       "Yes, as a beta: the Shop page (swipe right from Home) has a \"Walk the 3D shop (beta)\" button under Store and Casino. The normal shop is unchanged.",
       "In a career the card shows the career's own prices and an \"Owned\" or \"Wearing\" tag, and its button is \"See it in the shop\": it opens that item in the normal shop to buy it. Nothing is bought in 3D.",
       "The boots and the cars are real 3D models, made from the same Blender models as the shop pictures. Boots are shown at level 3; each car at one level (the card says which). The watches and jewellery are the shop pictures in light boxes, not 3D. The cans are simple 3D cans.",
+      "A 3D Scene Editor edit APPROVED for the shop plays here when ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its When matches: walking in from the garden, or from the Shop page). None: the shop as built.",
     ],
     needs: [
       "A phone or browser that runs 3D (WebGL). If it can't, the page says so and the normal shop still works. A slow phone drops to fewer pixels and no shadows on its own. Standing still it draws 30 times a second; walking, every frame at fewer pixels.",
@@ -1709,8 +1980,10 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
-          ["‹ 3D area", "Back to the 3D Test Area."],
-          ["starter … estate", "Which home you are in. In a career it is the best home you own: Studio Flat or City Apartment = flat, Penthouse, Suburban House = house, Beach Villa or Mansion = villa, Country Estate or Private Island = estate."],
+          ["‹ 3D places", "Back to the 3D places group page."],
+          ["Scene editor › (above the scene)", "Opens the 3D Scene Editor on the house: walking and card views (turn, rise, distance, lens), the sun, Approve, Commit to game."],
+          ["?bare=1 (in the address)", "The house full screen, as before the admin frame. ?film=1 does the same for the film tools."],
+          ["starter … estate (above the scene)", "Which home you are in. In a career it is the best home you own: Studio Flat or City Apartment = flat, Penthouse, Suburban House = house, Beach Villa or Mansion = villa, Country Estate or Private Island = estate."],
           ["Full cabinet / Empty cabinet", "The made-up career with trophies, awards, cars, watches, jewellery and cans, or with none."],
           ["House: New / Old", "New: the home's rooms. Old: the one room, as it was. The same as Settings → Look → \"House\" (this button does not change that setting)."],
           ["Room name and dots (top middle)", "Which room you are in. Tap a dot to jump to that room."],
@@ -1746,6 +2019,7 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Yes: Home's phone has a \"Your house\" app, the Shop page has a \"Your house\" button, and the 3D garden has a house door on its east side.",
       "The casual set you pick is what you wear in the 3D garden and the 3D shop. The training pitch and matches are always in kit.",
+      "A 3D Scene Editor edit APPROVED for the house plays here when ticked for \"the test page\", and in a career when ticked for \"in a career\" (and its When matches the home). None: the house as built.",
     ],
     needs: [
       "A phone or browser that runs 3D (WebGL). The casual clothes use the human body file (about 5.6 MB, downloaded once).",
@@ -1853,6 +2127,90 @@ export const ADMIN_GUIDES = {
       "Nowhere — it's a window onto the match the career already runs. Every minute is the real match's own function; your highlights are the moments a career would stop and let you play.",
     ],
     dev: "app/star-radar-dev/page.tsx · components/star/MatchRadar.tsx · lib/star/matchRadar.ts (calls tick/resolveScenario in lib/star/hiddenMatch.ts) · Fun targets: components/star/FunTargetsReport.tsx, lib/star/funTargets.ts (the table), lib/star/funTargetsMeasure.ts, tests/star/funTargets.mts",
+  },
+
+  "/star-fiveaside-dev": {
+    title: "Five-a-side",
+    what: "The five-a-side game on its own, in three tabs: play its chances one at a time, play a whole match with a radar beside it, and see what 500 simulated matches add up to. Every kick is the five-a-side screen the trial uses.",
+    buttons: [
+      {
+        items: [
+          ["Scenarios | Full match | Data", "The three tabs. This device remembers the last one you were on."],
+          ["Settings: Opposition Easy | Even | Hard", "How good the other side is (Scenarios and Full match; beside the pitch, under it on a phone). Changing it starts the chance or the match again."],
+          ["Settings: Your skill 40 | 70 | 100", "Your power and technique for every kick you take. Changing it starts again."],
+        ],
+      },
+      {
+        group: "Scenarios",
+        items: [
+          ["Yours | Team-mate's | Theirs", "Which way to play the picture. Yours: the ball is at your feet. Team-mate's: the same picture with a team-mate on the ball; you watch him. Theirs: the same picture turned round; they shoot at your goal and you get one tap."],
+          ["◀ Prev / Next ▶ (◀ / ▶ on a phone)", "The ten five-a-side chance pictures (the same ten as the Scenario gallery's Five-a-side tab). This bar stays pinned at the top while you scroll, and shows how the last roll ended."],
+          ["The pitch", "Your ball: tap a team-mate to pass, or drag back from the ball to shoot. Their ball: tap a man to throw a body at the shot, or tap the goal to send your keeper. The chance stops once it is over."],
+          ["↻ Again (↻ on a phone)", "The same picture with the next roll of the dice (Roll 2, 3…). Turns yellow once a roll has ended."],
+          ["This chance", "What to do, how the last roll ended, and your own goals here since you opened the page."],
+          ["The bot, 200 tries", "How often this picture goes in when the bot plays it, from the Data tab's numbers (at Even, skill 70). Roll 1 on screen uses the same dice as the bot's try 1, but the screen's timing can still make it end differently."],
+        ],
+      },
+      {
+        group: "Full match",
+        items: [
+          ["Kick off", "Starts the match (45 minutes). Between your touches the match plays itself; your touches, your team-mates' chances near goal and theirs are played through the real kicks."],
+          ["↻ New match / ↻ Play another", "A different match (a new roll), from kick-off."],
+          ["Match radar", "The match from above: your goal on the left, theirs on the right. Blue dots are your side (you are ringed in yellow), orange are theirs, the white dot is the ball. The lit area is where the ball is, in the colour of whoever has it."],
+          ["This match", "Chances so far for you, your team-mates and them, and how each ended, newest first. Team-mates' goals the match rolls between chances show on the score only."],
+          ["Time on the ball (screen time)", "Who had the ball for how long on screen. Not the match's own count: the flow between chances is played fast."],
+          ["Full time", "The score, your goals and touches, and the trial score this match would have earned."],
+        ],
+      },
+      {
+        group: "Data",
+        items: [
+          ["What looks broken", "Checks on the 500 matches: every match finishes, no kick freezes, nobody leaves the pitch, both sides score, the goals add up, a pass in the last third can become a shot, every chance picture can be scored. A ✗ is something to look at."],
+          ["The numbers tiles", "Goals a match, results, shots, your side's share of the ball, and your touches a match."],
+          ["Goals in a match / Who scores / Chance kinds / How chances end", "What the 500 matches add up to. Hover a bar for its number."],
+          ["Each scenario, 200 tries", "Every chance picture played 200 times each way. Tap a cell to open that scenario in the Scenarios tab."],
+          ["The ball / Harder opposition", "Each side's share of the ball and its longest spell on it; and the same bot against Easy and Hard sides."],
+          ["How the bot plays", "The bot's rules: it stands in for your thumb in every number on this tab."],
+        ],
+      },
+    ],
+    saving: [
+      "Nothing is saved. Playing here touches no career and no shared data. Leaving the page forgets your scenario tries; only the tab you were on is remembered, in this browser.",
+      "The Data tab's numbers are a file in the code, made by a script and committed like any other change. They only change when someone re-makes them.",
+    ],
+    inGame: [
+      "The trial's five-a-side stage plays this same screen. Nothing here changes it: the test area only starts it, stops it after one chance, and reads what happened.",
+    ],
+    dev: "app/star-fiveaside-dev/{page,FiveRadar}.tsx · components/star/FiveASide.tsx (test-only props autoStart, stopAfterChance, onChance, onFrame) · lib/star/fiveASide/scenarios.ts (shared with the gallery) · numbers: npx tsx scripts/fiveaside-data/run.mts → lib/star/fiveASide/simData.json (lib/star/fiveASide/simSummary.ts) · tests/star/fiveASideData.mts",
+  },
+
+  "/star-pc-match-dev": {
+    title: "PC match + radar",
+    what: "The real eleven-a-side match on the left and the whole pitch from above on the right, the five-a-side test area's layout tried on the real game. On a phone the radar folds under the match.",
+    buttons: [
+      {
+        items: [
+          ["↻ New match / ↻ Play another", "A different match (the next seed), from kick-off."],
+          ["View: 2D | 3D", "The match screen's picture. 3D is the career's Match view 3D picture, switched on this page only: it does not change your Settings. On a slow computer 3D can take a while to build; the 2D match plays until it is ready."],
+          ["Club and dials: Play Area ›", "Who you play for, your position and the other dials come from the Play Area's settings on this device, read when the match starts. Only its match length is not used: here it is always ninety minutes."],
+          ["The match", "The real match, exactly as in a career: commentary between your chances, then you play each chance. Ninety minutes, then Full time with ↻ Play another."],
+        ],
+      },
+      {
+        group: "Radar",
+        items: [
+          ["Between chances", "The match nobody sees, minute by minute: the lit area is where the ball is, in the colour of whoever has it (blue your side, orange them). It moves as the commentary clock moves. GOAL!, SHOT, CORNER and YOUR CHANCE flash on the minute they happen. There are no players here: the unseen match has none."],
+          ["During a chance", "Every man on the match screen and the ball, where the match has just drawn them, with the ball's trail. You are ringed in yellow, keepers have a white edge. The dashed box is the part of the pitch the match screen shows."],
+          ["The bar under the radar", "Momentum, one bar a minute (up for your side, down for them), with each side's share of the ball at the ends."],
+          ["This match", "Goals, shots and corners from the unseen match, and every chance you were handed with how it ended, newest first."],
+        ],
+      },
+    ],
+    saving: ["Nothing is saved. Playing here touches no career and no shared data."],
+    inGame: [
+      "Nowhere yet: a test area. The career match is unchanged. Its own small radar at the top of the commentary (Settings → Match radar) is left out on this page, so there is only one radar here.",
+    ],
+    dev: "app/star-pc-match-dev/{page,ElevenRadar}.tsx · reads only: EnginePlay's onChanceServed / onChanceResolved / onComplete, EngineFrameContext (lib/star/engineFrame.ts) during chances, and the live radar's minutes through LiveRadarTap (components/star/MatchRadar.tsx) between chances; MatchRadarLookOverride (lib/star/matchRadarLook.ts) turns the live radar on for this mount only · 3D: lib/star/style3d/engineView.ts, as components/star/Match3DLayer.tsx builds it",
   },
 
   "/star-sim90-dev": {

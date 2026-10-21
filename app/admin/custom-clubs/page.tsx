@@ -134,7 +134,7 @@ export default function CustomClubsAdminPage() {
   const selectedClub = clubs.find(c => c.name === selected) ?? null;
 
   return (
-    <BroadcastPage title="Custom clubs" sub="Invent a club: kit, badge, stadium and a squad. Vote it into a real competition from the Rule Book." back="/admin" width={1280}>
+    <BroadcastPage title="Custom clubs" sub="Invent a club: kit, badge, stadium and a squad. Vote it into a real competition from the Rule Book." width={1280}>
       {error && <div className="cc-error">{error}</div>}
 
       <div className="cc-layout">

@@ -58,7 +58,7 @@ export default function UpdateTestPage() {
   );
 
   return (
-    <BroadcastPage title="Leo's Oct 13 update" sub="The whole update behind one Old | New switch." back="/star-play-dev" width={640}>
+    <BroadcastPage title="Leo's Oct 13 update" sub="The whole update behind one Old | New switch." width={640}>
       <div style={{ display: "grid", gap: 12 }}>
         <Panel title="The whole update">
           <div style={{ display: "grid", gap: 10 }} data-update-switch={state}>

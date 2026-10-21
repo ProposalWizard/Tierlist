@@ -36,3 +36,25 @@
 .vt-else ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: var(--ash-ink2); }
 .vt-small { font-size: 12.5px; }
 .vt-self { align-self: flex-start; }
+
+/* Live share (test), Harry 20 Oct 2026. */
+.ls-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ls-head .vt-label { margin: 0; }
+.ls-sub { margin: 0; color: var(--ash-ink2); font-size: 14px; }
+.ls-start { background: var(--ash-accent); color: #04120b; }
+.ls-start i { background: #04120b; }
+.ls-box { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); }
+.ls-code { display: flex; align-items: baseline; gap: 10px; }
+.ls-code span { font-size: 11.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ash-ink3); }
+.ls-code b { font-size: 26px; letter-spacing: .12em; }
+.ls-step { margin: 0; font-size: 14px; }
+.ls-line { word-break: break-word; font-size: 12.5px; }
+.ls-meta { margin: 0; color: var(--ash-ink2); font-size: 13px; font-variant-numeric: tabular-nums; }
+.ls-hearing { margin: 0; color: var(--ash-ink2); font-style: italic; font-size: 13.5px; }
+.ls-type { display: flex; gap: 8px; }
+.ls-type .vt-input { flex: 1; min-width: 0; }
+.ls-box .vt-stop { align-self: flex-start; }
+.ls-lines { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; }
+.ls-lines span { color: var(--ash-ink3); margin-right: 6px; }
+.ls-end { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; }
+.ls-limits { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; color: var(--ash-ink3); font-size: 12.5px; }

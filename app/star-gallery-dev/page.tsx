@@ -34,7 +34,8 @@ import { mulberry32 } from "@/lib/star/season";
 import { FIVE_A_SIDE, type MatchRules } from "@/lib/star/fiveASide/rules";
 import { defensiveShape, DEFEND_ROLES } from "@/lib/star/fiveASide/shape";
 import { attackingShape, ATTACK_ROLES } from "@/lib/star/fiveASide/attack";
-import { buildPassage, type FiveWorld } from "@/lib/star/fiveASide/passage";
+import { buildPassage } from "@/lib/star/fiveASide/passage";
+import { fiveChanceWorld, jitter } from "@/lib/star/fiveASide/scenarios";
 import { FIVE_KEEPER_STRENGTH } from "@/lib/star/fiveASide/geometry";
 import { fixBaseScenario, scenarioFaults } from "@/lib/star/baseScenario";
 import { enforceHardRules } from "@/lib/star/kindRules";
@@ -412,7 +413,8 @@ async function copyText(text: string): Promise<void> {
  *  seed jitters the INPUT positions deterministically so a group has real
  *  versions to review rather than one picture. */
 const FIVE_SEEDS = [0, 4001, 4002, 4003, 4004, 4005, 4006, 4007, 4008, 4009];
-const J = (rng: () => number, v: number, a: number) => v + (rng() * 2 - 1) * a;
+/** Shared with the five-a-side test area (lib/star/fiveASide/scenarios.ts). */
+const J = jitter;
 
 function fiveDefensiveFrame(seed: number): Frame {
   const on = seed === 0 ? 0 : 1;
@@ -465,28 +467,8 @@ function fiveAttackingFrame(seed: number): Frame {
   return { rules: FIVE_A_SIDE, camera: FIVE_A_SIDE.view, goalAtY: 0, offsideY: null, offsideFrom: null, items: items.map((it, i) => ({ ...it, id: String(i) })), ball };
 }
 
-/** A fixed 5-a-side world with the ball in the last third, for a chance. */
-function fiveChanceWorld(seed: number): FiveWorld {
-  const on = seed === 3000 ? 0 : 1;
-  const rng = mulberry32(seed + 3);
-  return {
-    ball: { x: J(rng, 30, 3 * on), y: J(rng, 9, 2 * on) },
-    you: { x: J(rng, 32, 3 * on), y: J(rng, 9.5, 2 * on) },
-    mates: [
-      { x: J(rng, 26, 3 * on), y: J(rng, 6, 2 * on) },
-      { x: J(rng, 38, 3 * on), y: J(rng, 7, 2 * on) },
-      { x: J(rng, 34, 3 * on), y: J(rng, 3.5, 1.5 * on) },
-    ],
-    yourKeeper: { x: 34, y: 33 },
-    opps: [
-      { x: J(rng, 31, 3 * on), y: J(rng, 4.5, 1.5 * on) },
-      { x: J(rng, 37, 3 * on), y: J(rng, 5.5, 1.5 * on) },
-      { x: J(rng, 27, 3 * on), y: J(rng, 8, 2 * on) },
-      { x: J(rng, 34, 3 * on), y: J(rng, 2.5, 1 * on) },
-    ],
-    theirKeeper: { x: 34, y: 1.2 },
-  };
-}
+// fiveChanceWorld (the chance pictures) lives in lib/star/fiveASide/scenarios.ts,
+// shared with the five-a-side test area (/star-fiveaside-dev).
 
 const FIVE_CACHE = new Map<string, Cell[]>();
 function fiveVersions(group: string): Cell[] {

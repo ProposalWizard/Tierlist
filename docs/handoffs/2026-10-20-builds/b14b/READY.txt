@@ -1,0 +1,60 @@
+B14b: the camera through your run, Auto run on the Joystick, the stamina bar moved (21 Oct 2026)
+
+1. CAMERA — "why does ur generated game look so weird and small?"
+Measured in the real career match (scripts/star-sandbox/camera-run.mjs, dev hook frame().figPx / .metres):
+
+  where in the chance             phone 390x844 (366x744 px canvas)       computer 1440x900 (384x800)
+  start of the chance (aim)       men 17.8 px, 23.7-33.3 m across,        men 22.6-26.5 px, 19.6-26.8 m across
+                                  48-68 m down (19 chances)               41-56 m down
+  during B14's run (96 samples)   identical to that chance's start:       identical to that chance's start
+                                  same camera, same 17.8 px
+  ball comes back (before)        a CUT: 33.3 -> 32.2 m across, the       not caught on the computer
+                                  bottom edge 2.3 m (~25 px) higher,
+                                  in one frame
+  ball comes back (after)         no move: worst 0 px a frame over 151    -
+                                  frames; men 17.8 px throughout
+
+Verdict: B14 did NOT widen anything. The half-pitch picture in Harry's still is the ordinary
+long-range chance framing, and 17.8 px is the decided phone size for every man (New view:
+0.8 x 0.8 of the zoomed-out size, "~18 px on a phone", kept constant by the Zoom setting).
+Still b14b-05: the chance at your kick and the run a moment later, side by side, same size.
+Making the men bigger is a change to EVERY chance, not to the run. Numbers if wanted
+(not built; a size for Harry to judge on show-options):
+  drop the outfield 0.8 shrink -> 22.3 px on a phone; drop both 0.8s -> 27.8 px.
+
+What B14b changed in the camera (lib/star/runCamera.ts, CanvasMatch "There is no camera" block):
+- Ball back into your run: the camera you were watching stays (no re-frame, no cut). It eases
+  wider over 0.5 s ONLY if you, the ball and the goal would not all be on the glass, only as much
+  as needed, men kept their size (zoom divides back). Phone: 0 px move seen live.
+- During the run: the camera pans (never zooms) only if you, or a ball played back to you, would
+  leave the picture, never past the chance's play area. Speed-capped at 9 m/s (max 1.6 px a frame
+  on a phone). Measured in tests; NOT seen live (Auto run never left the picture in 5 runs).
+- Ordinary chances, shots, set pieces, build-ups: untouched (frameScenario as before).
+
+2. JOYSTICK: thumb off the stick -> Auto run takes over after 0.6 s (same as letting go of W A S D).
+   Thumb on the stick but still = you stand. tests/star/runAfter.mts section 6: thumb never on ->
+   Auto run from 0.00 s, ran 10 m; held still -> 0.00 m; lifted at 0.5 s -> Auto run at 1.11 s.
+   Not seen live (the drivers use Auto run / keys).
+
+3. STAMINA BAR: now picks a corner of the pitch (lib/star/barSpot.ts): bottom-left first, then
+   bottom-right, top-left, top-right; the first clear of the goal (posts, net, bar), the ball
+   (with its height) and every man; stays put while clear (5 looks a second). Never on the
+   scoreboard (it is inside the pitch box; the scoreboard is above it). Seen bottom-left and clear
+   at 390x844 and 1440x900 (b14b-06, b14b-07). Goal-on-the-left (side-on) case: tested
+   (tests/star/barSpot.mts, plus 2998/2998 random layouts), NOT seen live (no side-on chance came
+   up in the computer runs).
+   Sprint cost 0.12 energy/s unchanged.
+
+Stills (this folder): 00 Harry's B14 still; 01/02 before: ball back, then the cut; 03/04 after:
+ball back, no cut; 05 chance start vs run, same size; 06/07 the bar, computer and phone.
+raw/ has every frame the drivers took (the "before-" ones after pass 2 already had the new bar).
+
+Engine / drift
+- lib/star/canvasEngine.ts: NONE.
+- components/star/CanvasMatch.tsx (drift file): run camera follow + ball-back keep (only when the
+  run caught the ball; new view, no own-frame scene), stamina bar corner, joystick held flag,
+  dev hook adds figPx / metres / barCorner. Pitch re-measured: 366x744 phone, 384x800 computer
+  (unchanged).
+Checks: tsc clean, one-engine guard clean, admin-look guard clean; 19 test files pass
+(finishing, keeper x8, aiming, outcomes, runAfter, playOn, afterPassStick, fhrCameraHandover,
+runCamera NEW, barSpot NEW, energy, captain, touchMode). No `npm run build` (memory).

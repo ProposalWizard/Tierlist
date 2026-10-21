@@ -52,6 +52,42 @@ export const TOON_FILES: Record<ToonHead, string> = {
   m2: "/star/people3d/toon-mgr2.glb",
 };
 /**
+ * BODIES BEING JUDGED (B5b, 20 Oct 2026; Harry rejected bone-scaled proportions:
+ * "none of those body proportions look remotely good, you need to find a way to
+ * do this better"). Each set is another WAY of making the body, put on the heads
+ * it has a file for; the other heads keep today's. Only `?bodies=<id>` on a page
+ * picks one (test pages; the real game never sees it). Sources: tools/bodies/.
+ *   b: a new Style A body generated at real proportions (Higgsfield picture → 3D)
+ *   f2, f3: B leaner (B2) / lean with a bigger head (B3), today's Curls head and face put on
+ * (A, C, B1–B4 were judged and dropped; tools/bodies/README.md remakes any of them.)
+ */
+export const TOON_BODY_SETS: Record<string, Partial<Record<ToonHead, string>>> = {
+  b: { h1: "/star/people3d/toon-q1.glb" },
+  // B made leaner and upright with today's Curls face kept and a flatter chest (Harry 17:46 and 18:41:
+  // "a bit like a dinosaur", "losing the face working … the chest comes out a bit much")
+  f2: { h1: "/star/people3d/toon-f2.glb" }, f3: { h1: "/star/people3d/toon-f3.glb" },
+  // B5d (Harry 20:15: "gotta try and keep our cartoon like faces"): today's own bodies re-shaped as a
+  // stylised cartoon, the head and face today's (only scaled, as one piece). tools/bodies/README.md "B5d".
+  //   d1 today's body grown up (~5.9 heads), d2 slim stylised athlete (~6.4), d3 hero V, between (~6.1)
+  d1: { h1: "/star/people3d/toon-d1.glb", h3: "/star/people3d/toon-d1-h3.glb" },
+  d2: { h1: "/star/people3d/toon-d2.glb", h3: "/star/people3d/toon-d2-h3.glb" },
+  d3: { h1: "/star/people3d/toon-d3.glb", h3: "/star/people3d/toon-d3-h3.glb" },
+};
+export const TOON_BODY_SET: { id: string | null } = {
+  id: (() => {
+    if (typeof window === "undefined") return null;
+    const q = new URLSearchParams(window.location.search).get("bodies");
+    return q && TOON_BODY_SETS[q] ? q : null;
+  })(),
+};
+/** The file this head is drawn from (today's, or the set being judged). */
+export function toonFileFor(head: ToonHead): string {
+  return (TOON_BODY_SET.id && TOON_BODY_SETS[TOON_BODY_SET.id][head]) || TOON_FILES[head];
+}
+/** True when this head is drawn from a set being judged (its own kit lines are right: no hem fix). */
+export const toonFileIsJudged = (head: ToonHead) => toonFileFor(head) !== TOON_FILES[head];
+
+/**
  * The shirt's hem (rest y, metres) where the head file's own kit line is wrong.
  * build_toon_bodies.py reads the hem off the generated texture; on the Quiff
  * and the Fringe it landed ~8 cm low, so the top of the shorts was painted in

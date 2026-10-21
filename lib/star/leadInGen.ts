@@ -39,7 +39,8 @@ import { teamShapesAt } from "./sim90";
 import { mulberry32 } from "./season";
 import { newChancesOn } from "./newChances";
 import { fhrOn } from "./fhr/toggle";
-import { fhrBuildUpFor, fhrWantsBuildUp } from "./fhr/buildUp";
+import { fhrBuildUpOn } from "./fhr/builders";
+import { realMomentLeadIn } from "./fhr/realMomentHighlights";
 import { PITCH_W, CX, HALF_LEN } from "./pitch";
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -55,8 +56,9 @@ import { PITCH_W, CX, HALF_LEN } from "./pitch";
 // Note on crosses: in every drawn cross and cutback YOU are the man on the
 // ball at the byline (measured: 0 of 200 drawn crosses, 2 of 200 cutbacks
 // have you in the middle). So their build-up ends with the ball reaching YOU
-// out wide. A cross with you in the middle would be the header / volley
-// kinds, which are switched off (switchedOffKinds.ts).
+// out wide. A cross with you in the middle is the header / volley kinds (back
+// on, B10): their build-up is the Full highlights rebuild's, ending with the
+// cross in the air to you (fhr/buildUp.ts).
 export const BUILD_UP_KINDS: Partial<Record<ScenarioKind, number>> = {
   one_on_one: 1,
   long_range: 0.5,
@@ -404,9 +406,17 @@ export const buildUpKeys = (sc: Scenario, b: BuildUp): string[] => [
  */
 export function careerBuildUp(sc: Scenario, moment?: LeadMoment): LeadIn | null {
   if (!moment || moment.opening) return null;
-  // Full highlights rebuild: On (test) — phase 2: every fresh open-play chance
-  // gets a GENERATED 4–8 s build-up (lib/star/fhr/buildUp.ts). Off: below, as before.
-  if (fhrOn()) return fhrWantsBuildUp(sc.kind, moment) ? fhrBuildUpFor(sc, moment) : null;
+  // A real moment (Real moment highlights, lib/star/fhr/realMomentHighlights.ts):
+  // its build-up is the real 4 s before the shot, everyone where he really ran.
+  const real = realMomentLeadIn(sc, moment);
+  if (real) return real;
+  // Full highlights rebuild: On — every fresh open-play chance gets a GENERATED
+  // build-up (lib/star/fhr/buildUp.ts: players still running at the hand-over,
+  // a covering defender when the defence is thin, longer at a big moment), and
+  // some fresh free kicks and penalties show the foul that won them
+  // (lib/star/fhr/foulBuildUp.ts). One place: lib/star/fhr/builders.ts.
+  // Off: below, as before.
+  if (fhrOn()) return fhrBuildUpOn(sc, moment);
   if (!newChancesOn()) return null;
   if (!wantsBuildUp(sc.kind, moment)) return null;
   return buildUpFor(sc, moment);

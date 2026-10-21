@@ -346,6 +346,9 @@ export default function MatchCommentary({
                     on ? `bg-white/[0.08] ring-2 ${ring}` : "bg-gray-800 hover:bg-gray-700"}`}
                 >
                   <EnergyModeIcon mode={m} active={on} size={46} />
+                  {/* Phone fix (20 Oct 2026): a phone has no hover, so the
+                      title never showed. A tiny caption names each one. */}
+                  <span className={`-mt-0.5 pb-0.5 text-[9px] font-black uppercase leading-none tracking-wider ${on ? "text-white" : "text-white/60"}`}>{m === "low" ? "Low" : m === "high" ? "High" : "Medium"}</span>
                 </button>
               );
             })}

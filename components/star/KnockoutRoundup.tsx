@@ -2,10 +2,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { BoardTie, BracketView, RoundupStage } from "@/lib/star/knockoutView";
 import { shortClub } from "@/lib/star/media/grammar";
+import { COMPETITION_GLOW } from "@/lib/star/competitionLook";
 import ClubBadge from "./ClubBadge";
 import { PressButton, Shine } from "./ui";
 import { Screen } from "./ui/Screen";
 import { prefersReducedMotion } from "./ui/motion";
+import FastForward, { ffTimeout, onFfSkip } from "./ui/fastForward";
 
 /**
  * THE CUP AND EUROPEAN ROUND-UP (Mikey, 8 Oct 2026): after each of your cup
@@ -21,12 +23,8 @@ import { prefersReducedMotion } from "./ui/motion";
 
 export type { RoundupStage };
 
-export const COMPETITION_GLOW: Record<string, { glow: string; bg: string }> = {
-  "FA Cup": { glow: "#dc2626", bg: "radial-gradient(120% 80% at 50% 25%, #7f1d1d 0%, #3b0a0a 60%, #1a0505 100%)" },
-  "League Cup": { glow: "#16a34a", bg: "radial-gradient(120% 80% at 50% 25%, #1f7a43 0%, #0f4a28 55%, #082a17 100%)" },
-  "Champions League": { glow: "#2563eb", bg: "radial-gradient(120% 80% at 50% 25%, #1e3a8a 0%, #0b1a4a 60%, #050b24 100%)" },
-  "Europa League": { glow: "#f97316", bg: "radial-gradient(120% 80% at 50% 25%, #9a3412 0%, #431407 60%, #1c0802 100%)" },
-};
+// The colours live in lib/star/competitionLook.ts (the cup screen reads them too).
+export { COMPETITION_GLOW };
 
 // ── The results board ────────────────────────────────────────────────────────
 
@@ -38,7 +36,10 @@ function legsLine(t: BoardTie): string | null {
   return bits.length ? bits.join(" · ") : null;
 }
 
-function Board({ ties }: { ties: BoardTie[] }) {
+/** One round's ties, yours first. Also the cup screen's results list
+ *  (CupScreen.tsx), where `still` drops the rows' rise-in: a menu shows at
+ *  once (ui-house-style, 14 Oct 2026). */
+export function Board({ ties, still = false }: { ties: BoardTie[]; still?: boolean }) {
   return (
     <div className="flex flex-col gap-1 px-2 pb-2">
       {ties.map((t, i) => {
@@ -51,7 +52,7 @@ function Board({ ties }: { ties: BoardTie[] }) {
             style={{
               background: t.yours ? "rgba(250,204,21,.16)" : "rgba(0,0,0,.25)",
               boxShadow: t.yours ? "inset 0 0 0 1.5px #facc15" : undefined,
-              animation: `koRow 320ms ease-out both`, animationDelay: `${Math.min(i, 24) * 45}ms`,
+              ...(still ? null : { animation: `koRow 320ms ease-out both`, animationDelay: `${Math.min(i, 24) * 45}ms` }),
             }}>
             <div className="flex items-center gap-1.5">
               <div className={`flex min-w-0 flex-1 items-center justify-end gap-1.5 ${awayWon ? "opacity-45" : ""}`}>
@@ -154,7 +155,9 @@ function connector(bi: number, j: number): { stubs: Record<Slot, string>; out: s
 
 const pct = (x: number, y: number) => ({ left: `${(x / W) * 100}%`, top: `${(y / H) * 100}%` });
 
-function Bracket({ view, you, step }: { view: BracketView; you: string; step: number }) {
+/** The "Road to the Final". With `view.animate` null it is drawn as it
+ *  stands, nothing moving (the cup screen, CupScreen.tsx). */
+export function Bracket({ view, you, step }: { view: BracketView; you: string; step: number }) {
   const a = view.animate;
   const scoresShown = (bi: number) => a === null || bi < a || (bi === a && step >= 1);
   const advanced = (bi: number) => a === null || bi < a || (bi === a && step >= 2);
@@ -257,7 +260,7 @@ export default function KnockoutRoundup({ competition, stages, you, nextLine, on
 }) {
   const [at, setAt] = useState(0);
   const [step, setStep] = useState(0);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timer = useRef<(() => void) | null>(null);
   const stage = stages[at];
   const last = at === stages.length - 1;
   const bracketSteps = stage?.kind === "bracket" && stage.view.animate !== null ? (stage.view.animate === -1 ? 1 : 2) : 0;
@@ -268,18 +271,21 @@ export default function KnockoutRoundup({ competition, stages, you, nextLine, on
   useEffect(() => {
     if (prefersReducedMotion()) { setStep(bracketSteps); return; }
     if (animDone) return;
-    timer.current = setTimeout(() => setStep(s => s + 1), step === 0 ? 700 : 1100);
-    return () => { if (timer.current) clearTimeout(timer.current); };
+    timer.current = ffTimeout(() => setStep(s => s + 1), step === 0 ? 700 : 1100);
+    return () => { timer.current?.(); };
   }, [step, animDone, bracketSteps]);
+  // Double-tap (fastForward.tsx): the bracket's end state, like a tap.
+  useEffect(() => onFfSkip(() => setStep(bracketSteps)), [bracketSteps]);
 
-  const skip = () => { if (timer.current) clearTimeout(timer.current); setStep(bracketSteps); };
+  const skip = () => { timer.current?.(); setStep(bracketSteps); };
   const scrolls = stage?.kind !== "bracket";
   const content = useMemo(() => stage, [stage]);
   if (!content) return null;
 
   return (
     <Screen glow={look.glow} className="max-w-sm px-3 py-3">
-      <div className="w-full select-none" onClick={animDone ? undefined : skip}>
+      <FastForward />
+      <div className="w-full select-none" data-knockout-roundup={competition} data-stage={content.kind} onClick={animDone ? undefined : skip}>
         <div className="relative overflow-hidden" style={{ background: look.bg }}>
           <div className="relative z-10 pt-3 pb-2 text-center">
             <div className="text-[10px] uppercase tracking-[0.3em] text-white/75">{competition}</div>

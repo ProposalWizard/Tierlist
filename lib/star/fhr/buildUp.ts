@@ -43,13 +43,29 @@
  * match's lead-in replay (CanvasMatch's `leadIn` prop): nothing is stepped,
  * no physics, no new loop.
  *
+ * Added in B2 (Harry, 20 Oct 2026), all still behind the switch:
+ *   - PLAYERS ALREADY MOVING (FHR-1 phase 3): the men are still running at
+ *     the hand-over. Each runs on a little past the moment (`runOnS`, at most
+ *     FHR_RUNON_MAX_M) and eases into his place while you aim; the run-on is
+ *     a replay too (CanvasMatch's run-on step), stopped the instant you kick.
+ *   - THE EXTRA DEFENDER (FHR-3): when the defence is thin, a covering
+ *     defender jogs, then sprints in from off the screen and ends behind the
+ *     ball (so he never moves the offside line). `coverSpotFor` decides.
+ *   - LONGER AT BIG MOMENTS: `momentDrama` (late, close, final) stretches the
+ *     length and quickens the passing (`fhrTempo`); drama 0 is the old tempo
+ *     exactly. FhrAdjust is the test pages' small Length/Intensity control.
+ *   - FOULS BEFORE SET PIECES (FHR-4): foulBuildUp.ts, not this file.
+ *
  * Pure: no React, no canvas. tests/star/fhr.mts measures it;
  * scripts/fhr/buildup-sheet.mts draws 48 of them to check by eye.
  */
-import type { Scenario, ScenarioKind, Vec2, Viewport, Identity } from "../canvasEngine";
-import { leadInEntities, ballAlong, LEAD_MAX_RUN, type LeadIn, type LeadMoment, type LeadBallKey } from "../leadIn";
+import { goalInView, type Scenario, type ScenarioKind, type Vec2, type Viewport, type Identity } from "../canvasEngine";
+import type { Zone } from "../hiddenMatch";
+import { leadInEntities, leadInCamera, ballAlong, LEAD_MAX_RUN, type LeadIn, type LeadMoment, type LeadBallKey } from "../leadIn";
+import { fhrIntel, type FhrIntel } from "./intel";
 import { PITCH_W, CX, HALF_LEN, GOAL_W } from "../pitch";
 import PJ from "./patterns.json";
+import { airArrival } from "../airDrawings";
 
 interface Patterns {
   xEdges: number[]; yEdges: number[];
@@ -84,8 +100,100 @@ export const FHR_SPACE_M = 1.6;
 export const FHR_OVERLAP_M = 1.0;
 /** Tries with the next seed before the best one is kept. */
 export const FHR_TRIES = 24;
+/** …and for each fallback (without the regain, without the covering defender). */
+export const FHR_FALLBACK_TRIES = 10;
 /** How often each man's path is stored, per second. */
 const HZ = 15;
+
+/**
+ * PHASE 3 — PLAYERS ALREADY MOVING (Harry, 20 Oct 2026: "GO"). At the hand-over
+ * the men in the chance are still running: each one eases to a stop on his
+ * drawn spot over up to this long after the chance is yours, while you aim
+ * (CanvasMatch's run-on). Strike it sooner and they stop where they are; from
+ * the strike the engine moves everyone exactly as before.
+ */
+export const FHR_RUNON_S = 0.9;
+/** The most a man is still short of his drawn spot at the hand-over (m). */
+export const FHR_RUNON_MAX_M = 1.6;
+/** B10: the crosser of a header or volley comes onto the ball at this share of his top speed… */
+export const CROSSER_RUN = 0.72;
+/** …and is on his spot this long before the ball reaches him (s). */
+export const CROSSER_WAIT_S = 0.45;
+
+// ─────────────────────────────────────────────────────────────────────────
+//  HOW BIG THE MOMENT IS (Harry, 20 Oct 2026: "automatic and natural … in a
+//  final, you get a big, longer build-up in the 90th minute")
+// ─────────────────────────────────────────────────────────────────────────
+//
+// The match hands the build-up its minute, the score and what is at stake
+// (LeadMoment.minute / scoreDiff / stakes). A late, level chance in a final
+// gets the longest, most patient build-up; an ordinary chance gets exactly
+// the 4–8 s it always had. Absent (the ruler, a test with no match): drama 0,
+// so the route is drawn exactly as before this existed.
+
+/** The longest a build-up runs at the biggest moment (a level final, 90th minute), seconds. */
+export const FHR_BIG_MAX_S = 11.5;
+/** Its shortest, then. */
+export const FHR_BIG_MIN_S = 6.2;
+
+/** The test pages' adjust (never the career): what moment to play, how long, how intense. */
+export interface FhrAdjust {
+  /** "auto": from the match; "normal": an ordinary moment; "big": a level final in the 90th minute. */
+  moment?: "auto" | "normal" | "big";
+  length?: "short" | "auto" | "long";
+  intensity?: "calm" | "auto" | "high";
+}
+export const FHR_ADJUST_AUTO: Required<FhrAdjust> = { moment: "auto", length: "auto", intensity: "auto" };
+
+/** How big a moment is, 0 (ordinary) to 1 (the 90th minute of a final, level). */
+export function momentDrama(m: Pick<LeadMoment, "minute" | "scoreDiff" | "stakes">): number {
+  const late = m.minute === undefined ? 0 : clamp((m.minute - 72) / 18, 0, 1);
+  const d = m.scoreDiff === undefined ? 2 : Math.abs(m.scoreDiff);
+  const close = d === 0 ? 1 : d === 1 ? 0.75 : 0.15;
+  const stake = m.stakes === "final" ? 1 : m.stakes === "knockout" ? 0.55 : m.stakes === "league" ? 0.2 : 0;
+  return clamp(late * close * (0.45 + 0.55 * stake) + 0.15 * stake * close, 0, 1);
+}
+
+/** The moment a test page's adjust stands for (auto: the match's own). */
+export function adjustedMoment(m: LeadMoment, a?: FhrAdjust): LeadMoment {
+  if (!a || !a.moment || a.moment === "auto") return m;
+  if (a.moment === "big") return { ...m, minute: 90, scoreDiff: 0, stakes: "final" };
+  return { ...m, minute: undefined, scoreDiff: undefined, stakes: undefined };
+}
+
+/** What the moment (and a test page's adjust) asks of the build-up. */
+export interface FhrTempo {
+  drama: number;
+  /** Settled play: the length is drawn from the data between these (s). */
+  minS: number;
+  maxS: number;
+  /** A break's. */
+  breakMinS: number;
+  breakMaxS: number;
+  /** The shortest it may be once the touches are timed (s). */
+  padS: number;
+  /** × the time on the ball between touches (lower = quicker). */
+  touch: number;
+  /** × the distance the nearest defender presses from (lower = tighter). */
+  press: number;
+}
+
+export function fhrTempo(m: LeadMoment, a?: FhrAdjust): FhrTempo {
+  const d = momentDrama(m);
+  const len = a?.length === "short" ? 0.72 : a?.length === "long" ? 1.3 : 1;
+  const it = a?.intensity ?? "auto";
+  const touch = it === "calm" ? 1.25 : it === "high" ? 0.8 : 1 - 0.12 * d;
+  const press = it === "calm" ? 1.3 : it === "high" ? 0.72 : 1 - 0.22 * d;
+  const by = (a0: number, b0: number) => a0 + (b0 - a0) * d;
+  const sc = (v: number) => (len === 1 ? v : Math.max(3, v * len));
+  return {
+    drama: d,
+    minS: sc(by(4.6, FHR_BIG_MIN_S)), maxS: sc(by(FHR_MAX_S, FHR_BIG_MAX_S)),
+    breakMinS: sc(by(FHR_MIN_S, 5)), breakMaxS: sc(by(FHR_BREAK_MAX_S, 8.5)),
+    padS: sc(by(FHR_MIN_S, 5.2)),
+    touch, press,
+  };
+}
 
 /** Set pieces never get a build-up. */
 const SET_PIECES: ReadonlySet<ScenarioKind> = new Set<ScenarioKind>(["penalty", "free_kick", "corner"]);
@@ -200,12 +308,37 @@ const drawBetween = (q: number[], lo: number, hi: number, r: Rng) => {
 };
 
 type Tier = "top" | "mid" | "bottom" | "all";
-const tierOf = (strength?: number): Tier => (strength === undefined ? "all" : strength >= 78 ? "top" : strength <= 62 ? "bottom" : "mid");
 type Moves = { pass: number[][]; carry: number[][]; passLen: number[][] };
 const MOVES = P.moves as Record<Tier, Moves>;
 type Chain = { acts: [string, number][]; end: number; endType: string; n: number };
 const CHAINS = P.chains as Chain[];
 const ATTACK = P.attack as Record<Tier, { seconds: number[]; speed: number[]; counterShare: number }>;
+
+/**
+ * B2b: the real teams the route is drawn from, blended by how the two sides
+ * compare (intel.ts `tiers`: a much better side passes like the top of the
+ * league, a much worse one like the bottom, smoothly in between). Strengths
+ * unknown: the whole league's tables, as before. Each tier's tables count
+ * equally (scaled by its own total), passes and carries together, so the
+ * carry share inside a tier is its own.
+ */
+const blendCache = new Map<string, { mv: Moves; at: { seconds: number[]; speed: number[] } }>();
+function dataFor(ix: FhrIntel): { mv: Moves; at: { seconds: number[]; speed: number[] } } {
+  if (!ix.known) return { mv: MOVES.all, at: ATTACK.all };
+  const key = `${ix.tiers.top.toFixed(2)}/${ix.tiers.bottom.toFixed(2)}`;
+  const hit = blendCache.get(key);
+  if (hit) return hit;
+  const ws: [Tier, number][] = (["top", "mid", "bottom"] as Tier[]).map((t) => [t, ix.tiers[t as "top" | "mid" | "bottom"]]);
+  const tot = (t: Tier) => { let n = 0; for (const r of MOVES[t].pass) for (const v of r) n += v; for (const r of MOVES[t].carry) for (const v of r) n += v; return n || 1; };
+  const grid = (pick: (m: Moves) => number[][]) => pick(MOVES.mid).map((row, i) => row.map((_, j) => ws.reduce((s0, [t, w]) => s0 + (w ? (w * pick(MOVES[t])[i][j]) / tot(t) : 0), 0) * 1e6));
+  const avg = (pick: (t: Tier) => number[]) => pick("mid").map((_, i) => ws.reduce((s0, [t, w]) => s0 + w * pick(t)[i], 0));
+  const out = {
+    mv: { pass: grid((m) => m.pass), carry: grid((m) => m.carry), passLen: MOVES.mid.passLen.map((row, i) => row.map((_, j) => ws.reduce((s0, [t, w]) => s0 + w * MOVES[t].passLen[i][j], 0))) },
+    at: { seconds: avg((t) => ATTACK[t].seconds), speed: avg((t) => ATTACK[t].speed) },
+  };
+  blendCache.set(key, out);
+  return out;
+}
 const SPEEDS = P.speeds as Record<string, [number, number]>;
 const PRESS = P.press as number[][];
 
@@ -223,31 +356,76 @@ export interface FhrAction {
   to: Vec2;
   /** A pass in the air: its top height (m). */
   h: number;
+  /** A pass that arrives in the air (the cross to a header or a volley, B10): its height on arrival (m). */
+  endZ?: number;
   /** From the data: "chain" (a real sequence into the chance) or "moves" (the zone tables). */
   src: "chain" | "moves" | "break";
+  /**
+   * B2b: the last ball to you into the box or down the side, played into
+   * space ahead of your run (slower, so you can be onside when it is hit and
+   * still get there first). Absent: a pass to feet.
+   */
+  through?: boolean;
   t0: number;
   t1: number;
 }
 
 const passSpeed = (len: number, h: number) => (h > 0 ? clamp(10 + 0.28 * len, 14, 21) : clamp(9 + 0.3 * len, 10, 19));
+/** B2b: a ball into space runs this much slower than one to feet. */
+export const THROUGH_BALL_PACE = 0.72;
+/** …and it is the last ball to you when the chance's ball is this near their goal line (m), or the chance is a run in behind. */
+const THROUGH_BALL_Y = 16;
+/** Half the width of the box (m). A run that ends wider than this is a winger's run down the line… */
+const BOX_HALF_W = 20.16;
+/** …which is mistimed less often than a run through the middle (×, on intel.mistime). Since the
+ *  B10 merge every header/volley build-up has one (the crosser's run to the byline): at the full
+ *  rate 30–47% of volley build-ups ended in a flag. */
+export const WIDE_RUN_MISTIME = 0.4;
+const THROUGH_KINDS: ReadonlySet<ScenarioKind> = new Set<ScenarioKind>(["one_on_one", "through_ball", "cutback", "tight_angle", "byline_cross"]);
 const CARRY_SPEED = 6.2;
 const BREAK_CARRY_SPEED = 6.8;
 
-interface Route { acts: FhrAction[]; durS: number; hold: number }
+/**
+ * B2b: WHERE THE BALL WAS WON (the match's own regain, hiddenMatch.ts's
+ * request `regain`). When the match had your side win it back this minute,
+ * the build-up starts with it: their man on the ball, yours pressing, the
+ * ball won in the regain zone (`band` on the pitch, higher up for the better
+ * side), then the move from there.
+ */
+interface RegainPlan {
+  /** The regain zone on the pitch: metres from their goal line. */
+  band: { y1: number; y2: number };
+  /** Where in it the route should start (metres from their goal line). */
+  targetY: number;
+  /** How long they have the ball before it is won (s). */
+  spellS: number;
+}
+
+/** The zones on the pitch, metres from their goal line (ours is at 105). */
+export const REGAIN_BAND: Record<Zone, { y1: number; y2: number }> = {
+  box: { y1: 5, y2: 16 }, attacking: { y1: 17, y2: 35 }, middle: { y1: 36, y2: 66 },
+  defensive: { y1: 67, y2: 86 }, own_box: { y1: 87, y2: 99 },
+};
+
+interface Route { acts: FhrAction[]; durS: number; hold: number; regain?: RegainPlan }
 
 /** The route of the ball, worked back from the chance's ball `R`. */
-function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport): Route | null {
+function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport, tp: FhrTempo, ix: { intel: FhrIntel; regain?: RegainPlan }): Route | null {
   const R: Vec2 = { x: sc.ball.x, y: sc.ball.y };
   const brk = moment.pattern === "transition";
-  const tier = tierOf(moment.usStrength);
-  const mv = MOVES[tier] ?? MOVES.all;
-  const at = ATTACK[tier] ?? ATTACK.all;
+  const { mv, at } = dataFor(ix.intel);
+  const rg = ix.regain;
   // 1. How long, how fast.
-  const T = brk ? drawBetween(at.seconds, FHR_MIN_S, FHR_BREAK_MAX_S, r) : drawBetween(at.seconds, 4.6, FHR_MAX_S, r);
+  let T = brk ? drawBetween(at.seconds, tp.breakMinS, tp.breakMaxS, r) : drawBetween(at.seconds, tp.minS, tp.maxS, r);
   const speed = brk ? quantile(at.speed, 0.5 + 0.42 * r()) : quantile(at.speed, 0.15 + 0.5 * r());
   const room = LEN - 6 - R.y;
-  const F = clamp(speed * T, Math.min(10, room), Math.max(10, room));
-  const touch = () => (brk ? 0.22 + 0.35 * r() : 0.4 + 0.65 * r());
+  let F = clamp(speed * T, Math.min(10, room), Math.max(10, room));
+  if (rg) {
+    // From where the ball was won, in the time their spell leaves (a little longer overall).
+    T = Math.max(2.6, T - 0.55 * rg.spellS);
+    F = Math.max(0, rg.targetY - R.y);
+  }
+  const touch = () => (brk ? 0.22 + 0.35 * r() : 0.4 + 0.65 * r()) * tp.touch * ix.intel.touch;
   const laneX = moment.lane === "left" ? 13.5 : moment.lane === "right" ? 54.5 : moment.lane === "centre" ? CX : null;
 
   // Backward: the touch that ends at `to`, from a point in zone `z`.
@@ -272,8 +450,15 @@ function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport): Ro
     }
     return best;
   };
-  const durOf = (a: Omit<FhrAction, "t0" | "t1">) => { const L = dist(a.from, a.to); return a.type === "pass" ? L / passSpeed(L, a.h) : L / (brk ? BREAK_CARRY_SPEED : CARRY_SPEED); };
-  const push = (a: Omit<FhrAction, "t0" | "t1">) => {
+  const durOf = (a: Omit<FhrAction, "t0" | "t1">) => { const L = dist(a.from, a.to); return a.type === "pass" ? L / (passSpeed(L, a.h) * (a.through ? THROUGH_BALL_PACE : 1)) : L / (brk ? BREAK_CARRY_SPEED : CARRY_SPEED); };
+  // The last ball to you, in behind or to the byline, goes into space (B2b: so your run can be onside).
+  const throughLast = THROUGH_KINDS.has(sc.kind) && R.y < THROUGH_BALL_Y + (sc.kind === "one_on_one" || sc.kind === "through_ball" ? 10 : 0);
+  // B10 + B2b: a header/volley ends in a cross from the crosser's drawn spot (airArrival); the ball
+  // to him is played into space too, so his run to the byline can be timed onside.
+  const air = airArrival(sc);
+  const push = (a0: Omit<FhrAction, "t0" | "t1">) => {
+    const toCrosser = !!air && back.length === 1 && a0.type === "pass" && dist(a0.to, air.from) < 1e-6;
+    const a = (!back.length && throughLast && a0.type === "pass") || toCrosser ? { ...a0, through: true } : a0;
     used += durOf(a) + (back.length ? touch() : 0);
     back.push({ ...a, t0: 0, t1: 0 });
     cur = a.from;
@@ -284,10 +469,17 @@ function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport): Ro
     return clamp(q[0] + (q[2] - q[0]) * r(), 7, 34);
   };
   const loft = (L: number, t: string) => (t === "high" || t === "head" || t === "cross" || L > 28 ? Math.min(5, 1.2 + L * 0.11) : 0);
+  // A regain: the route is far enough back once its start is in the regain zone.
+  const inBand = (p: Vec2) => !!rg && p.y >= rg.band.y1 - 1.5 && p.y <= rg.band.y2 + 1.5;
+  const farEnough = () => !!rg && inBand(cur) && used >= Math.min(T * 0.5, 2.2);
 
   // 2a. The last touches: a real sequence into a shot (or a cross) from here.
-  const zR = zoneOf(R);
-  const endType = sc.kind === "byline_cross" || sc.kind === "cutback" ? "cross" : (sc.kind === "one_on_one" || sc.kind === "tight_angle" || sc.kind === "long_range" || sc.kind === "volley" || sc.kind === "header") ? "shot" : null;
+  // B10: a header or a volley ends with the ball reaching you IN THE AIR — the
+  // cross from the team-mate the drawing has out wide (airArrival). The real
+  // sequence before it is then one that ends in a cross from HIS spot.
+  if (air) push({ type: "pass", from: air.from, to: R, h: air.apex, endZ: air.endZ, src: "chain" });
+  const zR = zoneOf(cur);
+  const endType = air || sc.kind === "byline_cross" || sc.kind === "cutback" ? "cross" : (sc.kind === "one_on_one" || sc.kind === "tight_angle" || sc.kind === "long_range") ? "shot" : null;
   if (endType && r() < 0.8) {
     const cands = CHAINS.flatMap((c) => c.endType !== endType ? [] : c.end === zR ? [{ c, m: false }] : mirrorZone(c.end) === zR ? [{ c, m: true }] : []);
     if (cands.length) {
@@ -301,17 +493,19 @@ function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport): Ro
         if (!p) break;
         const realType = dist(p, cur) < 6 ? "carry" : type;
         push({ type: realType, from: p, to: cur, h: realType === "pass" ? loft(dist(p, cur), ty) : 0, src: "chain" });
-        if (used > T - 0.5) break;
+        if (used > T - 0.5 || farEnough()) break;
       }
     }
   }
   // 2b. A break: a long ball from deep, then the touches after it.
   // 2c. Earlier touches from the zone tables until the time is used.
   let guard = 0;
-  while (used < T - 0.55 && guard++ < 12) {
+  while (used < T - 0.55 && guard++ < (T > FHR_MAX_S ? 20 : 12) && !farEnough()) {
     const z = zoneOf(cur);
     const left = T - used;
     const progressWant = Math.max(0, F - (cur.y - R.y));
+    // A regain behind the route already: no further back than it.
+    if (rg && cur.y > rg.band.y2 + 1.5) break;
     // Break: the first touch of the move is a long ball from deep when there is room.
     if (brk && left < 2.4 && progressWant > 12 && back.every((a) => a.src !== "break")) {
       const L = clamp(22 + 14 * r(), 18, 40);
@@ -344,11 +538,36 @@ function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport): Ro
     if (!p) continue;
     push({ type, from: p, to: cur, h: type === "pass" ? loft(dist(p, cur), "simple") : 0, src: "moves" });
   }
+  if (rg) {
+    // The move must start where the ball was won: one more touch from the regain zone onto it if not.
+    if (!inBand(cur)) {
+      if (cur.y > rg.band.y2 + 12) return null;
+      let best: Vec2 | null = null, bs = Infinity;
+      for (let k = 0; k < 16; k++) {
+        const p = inPitch({ x: cur.x + (r() - 0.5) * 22, y: clamp(rg.targetY + (r() - 0.5) * 5, rg.band.y1, rg.band.y2) }, 3);
+        const L = dist(p, cur);
+        if (L < 3 || L > 42) continue;
+        if (L < 10 && p.y < cur.y + 1.5) continue; // a carry goes forward
+        if (p.y < 6 && Math.abs(p.x - CX) < 12) continue;
+        const s0 = Math.abs(L - (L < 10 ? 6 : 18)) + (laneX !== null ? Math.abs(p.x - laneX) * 0.08 : 0);
+        if (s0 < bs) { bs = s0; best = p; }
+      }
+      if (!best) return null;
+      const L = dist(best, cur);
+      push(L < 10 ? { type: "carry", from: best, to: cur, h: 0, src: "moves" } : { type: "pass", from: best, to: cur, h: loft(L, "simple"), src: "moves" });
+    }
+    // Won right where the chance is: a short carry onto it.
+    if (!back.length) {
+      const p = inPitch({ x: cur.x + (r() - 0.5) * 3, y: cur.y + 3 + 2 * r() }, 3);
+      push({ type: "carry", from: p, to: cur, h: 0, src: "moves" });
+    }
+  }
   if (!back.length) return null;
 
   // 3. Forward: the times. A pause on the ball first, then each touch in turn.
+  // (A regain: their spell first, then a touch to settle it.)
   const acts = back.reverse();
-  let t = 0.3 + 0.3 * r();
+  let t = rg ? rg.spellS + (0.12 + 0.22 * r()) * ix.intel.touch : 0.3 + 0.3 * r();
   const hold = t;
   acts.forEach((a, k) => {
     if (k > 0) t += touch();
@@ -357,24 +576,27 @@ function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport): Ro
     a.t1 = t;
   });
   let durS = t + FHR_TAIL_S;
-  // Too long: drop the earliest touches (and shift time back).
-  while (durS > FHR_MAX_S && acts.length > 1) {
+  // A regain may run a little longer: their spell is extra.
+  const maxS = rg ? tp.maxS + 0.5 * rg.spellS + 0.6 : tp.maxS;
+  // Too long: drop the earliest touches (and shift time back) — never the regain's own.
+  while (!rg && durS > maxS && acts.length > 1) {
     const cut = acts[1].t0 - 0.3;
     acts.shift();
     acts.forEach((a) => { a.t0 -= cut; a.t1 -= cut; });
     durS -= cut;
   }
   // Too short: the first pause and the touches are longer (a slower, patient move).
-  if (durS < FHR_MIN_S) {
-    const need = FHR_MIN_S - durS;
+  const padS = rg ? Math.min(maxS, tp.padS + 0.5 * rg.spellS) : tp.padS;
+  if (durS < padS) {
+    const need = padS - durS;
     const slots = acts.length; // the first pause + each touch
     const per = need / slots;
     acts.forEach((a, k) => { const sh = per * (k + 1); a.t0 += sh; a.t1 += sh; });
-    durS = FHR_MIN_S;
+    durS = padS;
   }
-  if (durS > FHR_MAX_S + 1e-6) return null;
+  if (durS > maxS + 1e-6) return null;
   void frame;
-  return { acts, durS, hold };
+  return { acts, durS, hold, ...(rg ? { regain: rg } : {}) };
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -383,7 +605,8 @@ function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport): Ro
 
 interface Person {
   key: string;
-  side: "you" | "mate" | "opp" | "keeper" | "extra";
+  /** "oppx": an opponent only in the build-up (B2b: the man your side wins the ball from). */
+  side: "you" | "mate" | "opp" | "keeper" | "extra" | "oppx";
   who?: Identity;
   end: Vec2;
   role: string;
@@ -430,6 +653,117 @@ export interface FhrBuildUp extends LeadIn {
   signature: string;
   /** The chance's own frame it ends on. */
   frame: Viewport;
+  /** How big the moment was (0 ordinary … 1 a level final, 90th minute). */
+  drama: number;
+  /** FHR-3: the covering defender who ran in from off the screen and stays in the chance, if one did. */
+  cover: { end: Vec2; enterS: number } | null;
+  /** B2b: how the two sides compared for this build-up (intel.ts). */
+  gap: number;
+  /**
+   * B2b: the regain it starts with — the match's own (its request's
+   * `regain`, won this minute) — or null when the match had none this minute
+   * (or it would not fit cleanly: then the move is shown from after it).
+   * `heightM`: metres from their goal line (lower = higher up the pitch).
+   */
+  regain: { spot: Vec2; at: number; spellS: number; scrappy: boolean; by: string; from: string; heightM: number } | null;
+  /**
+   * B2b: every pass, judged by the law at the moment it was played: who it
+   * went to, how far he was behind their second-last man (+, onside) or
+   * beyond him (−), whether the law applied (a goal in the picture, the law
+   * not abolished), and whether the flag went up. A pass to a man in an
+   * offside position is ALWAYS called: never `offside && !called`.
+   */
+  passChecks: { pass: number; by: string; behindLineM: number; judged: boolean; offside: boolean; called: boolean }[];
+  /** B2b: at your touches in the last 45 m that their nearest man pressed: how close he got (m, mean). */
+  pressM: number | null;
+  /** B2b: the share of your touches in the last 45 m that were pressed. */
+  pressShare: number | null;
+}
+
+/** Level is onside (the engine's own OFFSIDE_EPS). */
+const OFF_EPS = 0.05;
+/** A touch counts as pressed (measured) when their nearest man is this close (m). */
+export const PRESSED_M = 4.5;
+/** After a called offside: the flag this long after he takes the ball, then the picture holds (s). */
+export const OFFSIDE_FLAG_S = 0.25;
+export const OFFSIDE_HOLD_S = 1.6;
+
+// ─────────────────────────────────────────────────────────────────────────
+//  FHR-3 — A COVERING DEFENDER FROM OFF THE SCREEN (Harry, 20 Oct 2026: "If
+//  it makes sense for an extra defender to come off screen and help defend,
+//  then sure.")
+// ─────────────────────────────────────────────────────────────────────────
+//
+// When it makes sense: the drawing's defence near the ball is thin (at most
+// one defender goal-side within COVER_NEAR_M of the ball) and the drawing has
+// at least one outfield defender already. Then, on COVER_SHARE of those
+// chances, a defender who was out of the picture sprints back into it during
+// the build-up and JOINS the chance, recovering behind the ball (never between
+// the ball and the goal, never in the drawn pass lanes), still running at the
+// hand-over. Behind the ball, he never moves the offside line: an attacker
+// ahead of the ball is already beyond him, and the drawing's own defender
+// stays the second-last man. The drawing's people never move for him.
+
+/** Share of the chances where it makes sense that get one. */
+export const COVER_SHARE = 0.65;
+/** "Near the ball", for how thin the defence is (m). */
+export const COVER_NEAR_M = 16;
+/** He ends at least this far from anyone in the chance (m). */
+export const COVER_CLEAR_M = 2.8;
+/** …and at least this far from a drawn pass lane (m). */
+export const COVER_LANE_M = 2.4;
+/** Only with the ball at least this far from the goal line (m): nearer, "behind the ball" is beside the goal. */
+export const COVER_MIN_BALL_Y = 10;
+/** Open-play kinds with the goal in view, where a recovering defender makes sense. */
+const COVER_KINDS: ReadonlySet<ScenarioKind> = new Set<ScenarioKind>(["one_on_one", "tight_angle", "long_range", "cutback", "byline_cross", "through_ball", "volley", "header"]);
+
+const segDist = (p: Vec2, a: Vec2, b: Vec2) => {
+  const sx = b.x - a.x, sy = b.y - a.y, l2 = sx * sx + sy * sy;
+  if (l2 < 1e-6) return dist(p, a);
+  const t = clamp(((p.x - a.x) * sx + (p.y - a.y) * sy) / l2, 0, 1);
+  return Math.hypot(p.x - (a.x + sx * t), p.y - (a.y + sy * t));
+};
+
+/** Where the covering defender ends in the chance, or null when the situation doesn't call for one. Own seeded stream. */
+export function coverSpotFor(sc: Scenario, moment: LeadMoment, seed: number): Vec2 | null {
+  if (!COVER_KINDS.has(sc.kind)) return null;
+  const r = rngOf((seed ^ 0xc0ae5d1) >>> 0);
+  if (r() >= COVER_SHARE) return null;
+  const R: Vec2 = { x: sc.ball.x, y: sc.ball.y };
+  // A ball at the byline (a cutback, a tight angle): "behind the ball" is the
+  // six-yard box, beside the goal. Seen on the sheet (20 Oct 2026): he ended at
+  // the near post. Only with the ball this far out.
+  if (R.y < COVER_MIN_BALL_Y) return null;
+  const onPitch = (p: Vec2) => p.x > -1 && p.x < PITCH_W + 1 && p.y > -1 && p.y < LEN + 1;
+  const defs = sc.defenders.filter((d) => onPitch(d));
+  if (defs.length < 1) return null;
+  const goalSide = defs.filter((d) => d.y < R.y + 1 && dist(d, R) < COVER_NEAR_M).length;
+  if (goalSide > 1) return null;
+  const frame = moment.frame ?? sc.viewport;
+  const ends = leadInEntities(sc).map((e) => e.get()).filter(onPitch);
+  const mates: Vec2[] = [
+    ...(sc.runner ? [sc.runner.pos] : []), ...sc.secondaryRunners.map((x) => x.pos),
+    ...(onPitch(sc.follower) ? [sc.follower] : []), ...sc.teammates, ...(sc.passTarget ? [sc.passTarget] : []),
+  ].filter(onPitch);
+  const inward = R.x < CX ? 1 : -1;
+  let best: Vec2 | null = null, bestScore = -Infinity;
+  for (let k = 0; k < 36; k++) {
+    const side = k % 3 === 2 ? -inward : inward;
+    const p = { x: R.x + side * (2.5 + 5 * r()), y: R.y + 1.5 + 4.5 * r() };
+    if (p.x < frame.x1 + 2.5 || p.x > frame.x2 - 2.5 || p.y < frame.y1 + 2.5 || p.y > frame.y2 - 2.5) continue;
+    if (p.x < 2 || p.x > PITCH_W - 2 || p.y > LEN - 2) continue;
+    let clear = Infinity;
+    for (const e of ends) clear = Math.min(clear, dist(p, e));
+    clear = Math.min(clear, dist(p, R));
+    if (clear < COVER_CLEAR_M) continue;
+    let lane = Infinity;
+    for (const m of mates) lane = Math.min(lane, segDist(p, R, m));
+    if (lane < COVER_LANE_M) continue;
+    // Nearer the ball is more help; more room from everyone is a cleaner picture.
+    const score = Math.min(clear, 6) + Math.min(lane, 6) * 0.5 - dist(p, R) * 0.35;
+    if (score > bestScore) { bestScore = score; best = p; }
+  }
+  return best;
 }
 
 /** The chance's own seed (CanvasMatch hands every chance of a match the same match seed): mixed with where the chance is. */
@@ -446,44 +780,131 @@ export function chanceSeed(sc: Scenario, seed: number): number {
  * THE GENERATED BUILD-UP for a chance `sc` (every man where the drawing put
  * him) at the radar's `moment`. Never null: if no try passes every check, the
  * best try is returned with its problems listed (tests count these).
+ *
+ * B2b: how the sides compare (moment.usStrength / themStrength, intel.ts)
+ * shapes the passing, the pressing, the regain and the runs. The match's own
+ * regain this minute (moment.regain) is shown first. Every pass is judged by
+ * the offside law; a run that is offside is either timed (held back so he is
+ * onside when the ball is played) or mistimed — and then the flag goes up,
+ * the move ends, and there is no chance (`offside` on the lead-in). A run
+ * that can't be timed cleanly in any try is called, never left uncalled.
  */
-export function fhrBuildUpFor(sc: Scenario, moment: LeadMoment): FhrBuildUp {
+export function fhrBuildUpFor(sc: Scenario, moment0: LeadMoment, adjust?: FhrAdjust): FhrBuildUp {
+  const moment = adjustedMoment(moment0, adjust);
+  const tp = fhrTempo(moment, adjust);
+  const intel = fhrIntel(moment.usStrength, moment.themStrength);
   const base = chanceSeed(sc, moment.seed);
+  const cover = coverSpotFor(sc, moment, base);
+  // The match's own regain, this minute: shown first.
+  const showRegain = !!moment.regain && moment.regain.ago === 0;
+  // Is a run that needs timing mistimed? Decided once for the build-up, on its own stream.
+  const caughtU = rngOf((base ^ 0x0ff51de) >>> 0)();
+  const seedOf = (k: number) => (base + k * 0x632be5ab) >>> 0;
   let best: FhrBuildUp | null = null;
-  for (let k = 0; k < FHR_TRIES; k++) {
-    const b = attempt(sc, moment, (base + k * 0x632be5ab) >>> 0, k);
-    if (!b) continue;
-    if (!b.problems.length) return b;
-    if (!best || b.problems.length < best.problems.length) best = b;
+  let bestSeed = 0, bestOpts: AttemptOpts | null = null, bestCover: Vec2 | null = null;
+  // The regain and the covering defender are kept when they fit cleanly; else left out (in that order), never forced in.
+  const plans: [Vec2 | null, boolean][] = [[cover, showRegain]];
+  if (cover) plans.push([null, showRegain]);
+  if (showRegain) { plans.push([cover, false]); if (cover) plans.push([null, false]); }
+  for (let pi = 0; pi < plans.length; pi++) {
+    const [cv, rg] = plans[pi];
+    const o: AttemptOpts = { intel, regain: rg, caughtU };
+    // (The fallbacks get fewer tries: the generator stays about as quick as before B2b.)
+    for (let k = 0; k < (pi === 0 ? FHR_TRIES : FHR_FALLBACK_TRIES); k++) {
+      const b = attempt(sc, moment, seedOf(k), k, tp, cv, o);
+      if (!b) continue;
+      if (!b.problems.length) return b;
+      if (!best || b.problems.length < best.problems.length) { best = b; bestSeed = seedOf(k); bestOpts = o; bestCover = cv; }
+    }
+  }
+  if (best && bestOpts && best.problems.some((p) => p.startsWith(UNTIMED))) {
+    // Offside and it could not be timed in any try: the flag goes up (never an uncalled offside).
+    const b = attempt(sc, moment, bestSeed, best.tries, tp, bestCover, { ...bestOpts, callUntimed: true });
+    if (b) return b;
   }
   if (best) return best;
   // Nothing at all could be made (never seen): a single pass to you from out of the frame.
-  return attempt(sc, { ...moment, pattern: "transition" }, base ^ 0x55, FHR_TRIES, true)!;
+  return attempt(sc, { ...moment, pattern: "transition" }, base ^ 0x55, FHR_TRIES, tp, null, { intel, regain: false, caughtU: 1, callUntimed: true }, true)!;
 }
 
-function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, force = false): FhrBuildUp | null {
+interface AttemptOpts {
+  intel: FhrIntel;
+  /** Show the match's regain (moment.regain) first. */
+  regain: boolean;
+  /** The build-up's one roll (0–1) for a mistimed run: under intel.mistime (less for a run out wide, WIDE_RUN_MISTIME) the first offside pass is called. */
+  caughtU: number;
+  /** A run that can't be timed is called (the last resort; never left uncalled). */
+  callUntimed?: boolean;
+}
+/** The problem a try lists when a run is offside and can't be held back in time. */
+const UNTIMED = "offside run not timed";
+
+function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, tp: FhrTempo, coverEnd: Vec2 | null, o: AttemptOpts, force = false): FhrBuildUp | null {
   const r = rngOf(seed);
   const frame = moment.frame ?? sc.viewport;
-  const route = routeFor(sc, moment, r, frame);
+  // ── B2b: where the ball was won (the match's own regain), how high up, how long they had it ──
+  let plan: RegainPlan | undefined;
+  if (o.regain && moment.regain) {
+    const band = REGAIN_BAND[moment.regain.zone] ?? REGAIN_BAND.middle;
+    const h = clamp(o.intel.regainHigh + (r() - 0.5) * 0.5, 0.03, 0.97);
+    const [s0, s1] = o.intel.oppSpellS;
+    plan = { band, targetY: band.y2 - (band.y2 - band.y1) * h, spellS: s0 + (s1 - s0) * r() };
+  }
+  const route = routeFor(sc, moment, r, frame, tp, { intel: o.intel, regain: plan });
   if (!route && !force) return null;
   const R: Vec2 = { x: sc.ball.x, y: sc.ball.y };
   const acts: FhrAction[] = route?.acts ?? [{ type: "pass", from: inPitch({ x: R.x, y: R.y + 30 }), to: R, h: 3, src: "break", t0: 0.4, t1: 2 }];
-  const durS = route?.durS ?? FHR_MIN_S;
-  const N = Math.ceil(durS * HZ);
+  let durS = route?.durS ?? FHR_MIN_S;
+  let N = Math.ceil(durS * HZ);
   const tOf = (i: number) => Math.min(durS, i / HZ);
+  const idx = (t: number) => clamp(Math.round(t * HZ), 0, N);
+
+  // ── B2b: their spell on the ball, and the regain ──
+  // Their man carries it at your goal; yours presses from goal-side and wins
+  // it (a clean steal), or pokes it loose and it runs on (scrappy); then the
+  // move. The better your side against theirs, the shorter their spell, the
+  // closer your press, the higher up and the cleaner the regain (intel.ts).
+  const rgn = route?.regain;
+  let spell: { P0: Vec2; G0: Vec2; dirA: Vec2; carryT0: number; tackleT: number; scrappy: boolean; pressStart: Vec2 } | null = null;
+  if (rgn) {
+    const G = acts[0].from;
+    const scrappy = r() < o.intel.scrappy;
+    const tackleT = scrappy ? Math.max(0.55, rgn.spellS - 0.45) : rgn.spellS;
+    const ang = (r() - 0.5) * 0.8;
+    const dirA = { x: Math.sin(ang), y: Math.cos(ang) }; // their attack: towards your goal (+y)
+    // (A scrappy one: the challenge a couple of metres off where your man gathers it — on the side that keeps it in the match's zone.)
+    const off = 1.8 + 1.2 * r(), flip = G.y - off < rgn.band.y1 ? -1 : 1;
+    const G0 = scrappy ? inPitch({ x: G.x - dirA.x * 2 * flip + (r() - 0.5) * 1.4, y: G.y - dirA.y * off * flip }, 2) : { ...G };
+    const vA = 3.6 + 1.2 * r();
+    const carryS = Math.max(0.2, Math.min(tackleT - 0.25, (2.5 + 3 * r()) / vA));
+    const P0 = inPitch({ x: G0.x - dirA.x * vA * carryS, y: G0.y - dirA.y * vA * carryS }, 2);
+    const [d0, d1] = o.intel.pressOnThemM;
+    const d = d0 + (d1 - d0) * r();
+    const side = r() < 0.5 ? -1 : 1;
+    const pressStart = inPitch({ x: P0.x + dirA.x * (d + 0.6) + side * (0.6 + 0.8 * r()), y: P0.y + dirA.y * (d + 0.6) }, 1.5);
+    spell = { P0, G0, dirA, carryT0: tackleT - carryS, tackleT, scrappy, pressStart };
+  }
 
   // ── The ball ──
-  const ballKeys: LeadBallKey[] = [{ t: 0, p: { ...acts[0].from } }];
+  const ballKeys: LeadBallKey[] = [];
+  if (spell) {
+    ballKeys.push({ t: 0, p: { ...spell.P0 } }, { t: spell.carryT0, p: { ...spell.P0 } }, { t: spell.tackleT, p: { ...spell.G0 } });
+    if (spell.scrappy) ballKeys.push({ t: rgn!.spellS, p: { ...acts[0].from }, pass: { h: 0 } });
+  } else ballKeys.push({ t: 0, p: { ...acts[0].from } });
   for (const a of acts) {
     ballKeys.push({ t: a.t0, p: { ...a.from } });
-    ballKeys.push(a.type === "pass" ? { t: a.t1, p: { ...a.to }, pass: { h: a.h } } : { t: a.t1, p: { ...a.to } });
+    ballKeys.push(a.type === "pass" ? { t: a.t1, p: { ...a.to }, pass: { h: a.h, ...(a.endZ ? { endZ: a.endZ } : {}) } } : { t: a.t1, p: { ...a.to } });
   }
   ballKeys.push({ t: durS, p: { ...R } });
-  const ballAt = (t: number) => (t >= durS ? { x: R.x, y: R.y, z: 0 } : ballAlong(ballKeys, t));
+  // B10: a cross that reaches you in the air stays at that height until the chance is yours.
+  const lastA = acts[acts.length - 1];
+  const endZ = lastA.type === "pass" && lastA.endZ ? lastA.endZ : 0;
+  let ballAt = (t: number) => (t >= durS || (endZ > 0 && t >= lastA.t1) ? { x: R.x, y: R.y, z: t >= lastA.t1 ? endZ : 0 } : ballAlong(ballKeys, t));
   // Where the shape thinks the ball is: it reacts a little behind the ball.
   const lagBall: Vec2[] = [];
   {
-    let q: Vec2 = { ...acts[0].from };
+    const b0 = ballAt(0);
+    let q: Vec2 = { x: b0.x, y: b0.y };
     const k = 1 - Math.exp(-1 / HZ / 0.9);
     for (let i = 0; i <= N; i++) { const b = ballAt(tOf(i)); q = { x: q.x + (b.x - q.x) * k, y: q.y + (b.y - q.y) * k }; lagBall.push(q); }
   }
@@ -560,7 +981,9 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
       const slot = slots.get(i);
       p.role = slot === undefined ? "CM" : SHAPE[slot].role;
       p.vmax = topSpeedOf(p.role, p.who);
-      const spotOf = (b: Vec2) => (slot === undefined ? p.end : shapeSpot(side, slot, toData(b)));
+      // B2b: their shape squeezes onto the ball — tighter the better they are (intel.squeeze).
+      const sq = side === "them" ? o.intel.squeeze : 0;
+      const spotOf = (b: Vec2) => (slot === undefined ? p.end : sq ? lerp(shapeSpot(side, slot, toData(b)), b, sq) : shapeSpot(side, slot, toData(b)));
       const [, , sdx, sdy] = roleSpot(side === "us" ? "in" : "out", p.role, endBall.X, endBall.Y);
       const jit = { x: clamp(gauss(r) * sdy * 0.68 * 0.3, -4, 4), y: clamp(gauss(r) * sdx * 1.05 * 0.3, -4, 4) };
       p.path = baseOf(p, spotOf, side === "us" ? teamShift.us : -teamShift.them, jit);
@@ -572,32 +995,103 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
   keeper.path = baseOf(keeper, (b) => { const bd = toData(b); const [mx, my] = roleSpot("out", "GK", 100 - bd.X, 100 - bd.Y); return fromDataDef(mx, my); }, 0, { x: 0, y: 0 });
   keeper.pin = new Array(N + 1).fill(0);
 
-  // The man nearest the ball as the move starts presses it, from a real distance.
-  {
-    const b0 = acts[0].from;
-    const zDef = zoneOf({ x: PITCH_W - b0.x, y: LEN - b0.y }); // the ball's zone in the defending team's frame
-    const q = PRESS[zDef] ?? [3, 5, 8];
-    const want = clamp(q[0] + (q[2] - q[0]) * r(), 1.8, 12);
+  // ── B2b: the man who loses it ──
+  // Near the chance, one of its own defenders (he then recovers to his place);
+  // further back, a man who is only in the build-up (and stays out of the
+  // chance's picture). He is held to the ball until it is won.
+  let loser: Person | null = null;
+  const inFrame = (p: Vec2, m = 3) => p.x > frame.x1 - m && p.x < frame.x2 + m && p.y > frame.y1 - m && p.y < frame.y2 + m;
+  if (spell) {
+    const iT = idx(spell.tackleT);
     let near: Person | null = null, nd = Infinity;
-    for (const p of theirs) { const d = dist(p.path[0], b0); if (d < nd) { nd = d; near = p; } }
-    if (near && nd > want) {
-      // Goal-side of the ball, between it and his goal.
-      const toGoal = { x: CX - b0.x, y: 0 - b0.y }, n = Math.hypot(toGoal.x, toGoal.y) || 1;
-      const spot = inPitch({ x: b0.x + (toGoal.x / n) * want + gauss(r) * 1.2, y: b0.y + (toGoal.y / n) * want });
-      const old = near.path;
-      // Blend his start onto the press spot, fading over the first 40% of the build-up.
-      const fadeN = Math.max(4, Math.round(N * 0.4));
-      const trial = old.map((p0, i) => (i >= fadeN ? p0 : lerp(spot, p0, smooth(i / fadeN))));
-      if (maxSpeed(trial) <= near.vmax * 0.92) near.path = trial;
+    for (const p of theirs) { const dd = dist(p.path[iT], spell.G0); if (dd < nd) { nd = dd; near = p; } }
+    const carryAt = (t: number) => { const b = ballAt(Math.min(t, spell!.tackleT)); return { x: b.x - spell!.dirA.x * 0.62, y: b.y - spell!.dirA.y * 0.62 }; };
+    // After the challenge: he stumbles to a stop (0.35 s).
+    const vA = { x: (spell.G0.x - spell.P0.x) / Math.max(0.2, spell.tackleT - spell.carryT0), y: (spell.G0.y - spell.P0.y) / Math.max(0.2, spell.tackleT - spell.carryT0) };
+    const stumble = (t: number) => { const tau = Math.min(Math.max(0, t - spell!.tackleT), 0.35); const f = tau - (tau * tau) / 0.7; const a0 = carryAt(spell!.tackleT); return { x: a0.x + vA.x * f, y: a0.y + vA.y * f }; };
+    const useDrawn = near && (nd < 8 || (inFrame(spell.G0, 3) && nd < 16));
+    if (useDrawn && near) {
+      const base0 = near.path.slice();
+      let ok = false;
+      for (let W = 8; W <= N - iT && !ok; W += 4) {
+        const out = base0.map((q, i) => {
+          const t = tOf(i);
+          if (t <= spell!.tackleT) return carryAt(t);
+          if (i >= iT + W) return q;
+          return lerp(stumble(t), q, smooth((i - iT) / W));
+        });
+        out[N] = { ...near.end };
+        if (maxSpeed(out) <= near.vmax * 0.97) { near.path = out; ok = true; }
+      }
+      if (ok) {
+        loser = near;
+        for (let i = 0; i <= iT; i++) near.pin[i] = 1;
+      }
+    }
+    if (!loser) {
+      const path: Vec2[] = [], pin: number[] = [];
+      for (let i = 0; i <= N; i++) {
+        const t = tOf(i);
+        if (t <= spell.tackleT) { path.push(carryAt(t)); pin.push(1); continue; }
+        // Beaten: he stops, then trots back after it, slowly.
+        const s0 = stumble(t), back = Math.max(0, t - spell.tackleT - 0.6) * 1.4;
+        path.push(inPitch({ x: s0.x, y: s0.y - back }, 1));
+        pin.push(0);
+      }
+      loser = { key: "oppx0", side: "oppx", end: path[N], role: "CM", vmax: 8.5, path, pin };
     }
   }
+
+  // THEIR PRESS (B2b: "how tight the opposition presses"). At every touch of
+  // your move their nearest man steps toward the ball, to a real pressing
+  // distance for that part of the pitch (`press`, from tracking data) —
+  // closer when they are the better side (intel.pressOnUs) — then drops back
+  // into his shape. Only as far as he can run; never the keeper, never the
+  // man who has just lost it, and never in the last second (the drawing's).
+  const pressDists: number[] = [];
+  let pressedN = 0, pressTouches = 0;
+  for (let k = 0; k < acts.length; k++) {
+    const b0 = acts[k].from;
+    const iP = idx(acts[k].t0);
+    if (iP > N - Math.round(1.1 * HZ)) break;
+    const zDef = zoneOf({ x: PITCH_W - b0.x, y: LEN - b0.y }); // the ball's zone in the defending team's frame
+    const q = PRESS[zDef] ?? [3, 5, 8];
+    const want = clamp((q[0] + (q[2] - q[0]) * r()) * tp.press * o.intel.pressOnUs, 1.8, 12);
+    let near: Person | null = null, nd = Infinity;
+    for (const p of theirs) { if (p === loser) continue; const d = dist(p.path[iP], b0); if (d < nd) { nd = d; near = p; } }
+    if (!near) continue;
+    // Goal-side of the ball, between it and his goal.
+    const toGoal = { x: CX - b0.x, y: 0 - b0.y }, n = Math.hypot(toGoal.x, toGoal.y) || 1;
+    const spot = inPitch({ x: b0.x + (toGoal.x / n) * want + gauss(r) * 0.8, y: b0.y + (toGoal.y / n) * want });
+    const need = dist(near.path[iP], spot);
+    if (nd > want && need < o.intel.pressReachM) {
+      const old = near.path;
+      const dx = spot.x - old[iP].x, dy = spot.y - old[iP].y;
+      // He gets there at a jog-to-run on top of his shape (about 5 m/s more), and drops back off over a second.
+      const inN = Math.max(3, Math.min(iP, Math.round(Math.max(0.9, need / 3.4) * HZ)));
+      // Back in his shape before the last second (the drawing's).
+      const outN = Math.min(Math.round(Math.max(1.0, need / 3.4) * HZ), N - Math.round(1.0 * HZ) - iP);
+      if (outN >= Math.round(0.6 * HZ)) {
+        const trial = old.map((p0, i) => {
+          const w = i <= iP ? (i < iP - inN ? 0 : smooth((i - (iP - inN)) / inN)) : i < iP + outN ? 1 - smooth((i - iP) / outN) : 0;
+          return w > 0 ? { x: p0.x + dx * w, y: p0.y + dy * w } : p0;
+        });
+        const lo = Math.max(0, iP - inN - 4), hi = Math.min(N, iP + outN + 4) + 1;
+        if (maxSpeed(trial.slice(lo, hi)) <= Math.max(near.vmax * 0.96, maxSpeed(old.slice(lo, hi)))) { near.path = trial; nd = dist(trial[iP], b0); }
+      }
+    }
+    // (Measured where their drawn defence is: your touches in the last 45 m.)
+    if (b0.y < 45) { pressTouches++; if (nd <= PRESSED_M) { pressedN++; pressDists.push(nd); } }
+  }
+  const pressM = pressDists.length ? pressDists.reduce((a0, b1) => a0 + b1, 0) / pressDists.length : null;
+  const pressShare = pressTouches ? pressedN / pressTouches : null;
 
   // ── Who plays each touch ──
   // Possession spells: a pass ends one and starts the next; a carry stays with its man.
   interface Spell { first: number; last: number; tIn: number; tOut: number; atIn: Vec2; atOut: Vec2 }
   const spells: Spell[] = [];
   acts.forEach((a, k) => {
-    if (k === 0 || acts[k - 1].type === "pass") spells.push({ first: k, last: k, tIn: k === 0 ? 0 : acts[k - 1].t1, tOut: a.t0, atIn: a.from, atOut: a.from });
+    if (k === 0 || acts[k - 1].type === "pass") spells.push({ first: k, last: k, tIn: k === 0 ? (spell ? spell.tackleT : 0) : acts[k - 1].t1, tOut: a.t0, atIn: k === 0 && spell ? spell.G0 : a.from, atOut: a.from });
     const s = spells[spells.length - 1];
     s.last = k;
     if (a.type === "carry") s.atOut = a.to;
@@ -624,8 +1118,6 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     for (let k = s.first; k <= Math.min(s.last, acts.length - 1); k++) { const a = acts[k]; if (t <= a.t1) return a.to; }
     return null;
   };
-  const inFrame = (p: Vec2, m = 3) => p.x > frame.x1 - m && p.x < frame.x2 + m && p.y > frame.y1 - m && p.y < frame.y2 + m;
-  const idx = (t: number) => clamp(Math.round(t * HZ), 0, N);
   /**
    * Where a man on the ball is from sample iA to iB: at the ball, his side of it
    * eased round over ±0.27 s as the ball's next direction changes (a carry, then
@@ -652,6 +1144,13 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     }
     return ownerSpot(tt, nextOf(s, tt));
   };
+  /** B2b: the regainer presses their man from goal-side, onto the ball at the challenge. */
+  const pressed = (path: Vec2[], s: Spell, key: string): Vec2[] => {
+    if (!spell || s !== spells[0]) return path;
+    const out = path.slice(), iA = idx(s.tIn), tgt = spotFor(key, s)(s.tIn);
+    for (let i = 0; i < iA; i++) out[i] = lerp(spell.pressStart, tgt, smooth(i / Math.max(1, iA)));
+    return out;
+  };
   /**
    * Man `p` takes spell `s`: held to the ball from s.tIn to s.tOut, running
    * onto it before (as late as he can at his speed, so it looks like a run)
@@ -662,6 +1161,8 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     const out = path.slice(), pin: number[] = [];
     const held = heldSpots(iA, iB, spotAt);
     for (let i = iA; i <= iB; i++) { out[i] = held[i - iA]; pin.push(i); }
+    // (The regainer: held for the last moments of his press too, so nobody is eased off the challenge.)
+    if (spell && s === spells[0]) for (let i = idx(s.tIn - 0.35); i < iA; i++) pin.push(i);
     const cap = vmax * 0.97;
     const okAround = (lo: number, hi: number) => maxSpeed(out.slice(Math.max(0, lo), Math.min(N, hi) + 1)) <= cap;
     if (iA > 0) {
@@ -688,7 +1189,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     return { path: out, pin };
   };
   const put = (p: Person, s: Spell, back: boolean): boolean => {
-    const res = onSpell(p.path, p.vmax, s, spotFor(p.key, s), back);
+    const res = onSpell(pressed(p.path, s, p.key), p.vmax, s, spotFor(p.key, s), back);
     if (!res) return false;
     p.path = res.path;
     for (const i of res.pin) p.pin[i] = 1;
@@ -721,7 +1222,43 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
   const problems: string[] = [];
   // You run onto the last pass (or are on the ball already for your carry).
   if (!put(you, youSpell, false)) problems.push("you can't get onto the last touch in time");
+  // B10: a header or volley's cross is played by the crosser the chance has out
+  // wide (teammates[0], who ends exactly where he crosses it). He comes down the
+  // wing onto the ball (CROSSER_RUN of his top speed) and waits for it
+  // (CROSSER_WAIT_S), on the line that keeps him furthest from whoever plays it
+  // to him. Measured first without this: the shape put him 20+ m away, an extra
+  // man out of the frame took the cross, and he sprinted to his spot at
+  // 10-12 m/s (or stood next to the man crossing it).
+  const crossSpell = acts[acts.length - 1].type === "pass" && acts[acts.length - 1].endZ ? spells.length - 2 : -1;
+  const crosser = crossSpell >= 0 ? people.find((p) => p.key === "mate0" && dist(p.end, acts[acts.length - 1].from) < 0.05) : undefined;
+  if (crosser) {
+    const s = spells[crossSpell];
+    const E = crosser.end;
+    // Where he stands as his spell starts: just behind the ball.
+    const T = spotFor(crosser.key, s)(s.tIn);
+    const v = crosser.vmax * CROSSER_RUN;
+    const prev = s.first > 0 ? acts[s.first - 1] : null;
+    const runAt = (deg: number) => {
+      const a = (deg * Math.PI) / 180, dir = { x: Math.sin(a), y: Math.cos(a) };
+      return (t: number): Vec2 => {
+        if (t > s.tIn) return { ...E };
+        const d = Math.min(22, v * Math.max(0, s.tIn - CROSSER_WAIT_S - t));
+        // (Never clamped tighter than T itself: a held spot behind a ball on the line is just off it.)
+        return { x: clamp(T.x + dir.x * d, Math.min(0.5, T.x), Math.max(PITCH_W - 0.5, T.x)), y: clamp(T.y + dir.y * d, Math.min(0.5, T.y), LEN - 0.5) };
+      };
+    };
+    let at = runAt(0), bestGap = -Infinity;
+    for (const deg of [0, 30, -30, 55, -55]) {
+      const f = runAt(deg);
+      let gap = Infinity;
+      if (prev) for (let t = 0; t <= s.tIn; t += 0.1) gap = Math.min(gap, dist(f(t), prev.from), dist(f(t), prev.to));
+      if (gap > bestGap + 0.5) { bestGap = gap; at = f; }
+    }
+    crosser.path = crosser.path.map((_, i) => (i >= N ? { ...E } : at(tOf(i))));
+    if (put(crosser, s, true)) { owners[crossSpell] = crosser.key; taken.add(crosser.key); }
+  }
   for (let j = spells.length - 2; j >= 0; j--) {
+    if (owners[j]) continue;
     const s = spells[j];
     const carry = acts.slice(s.first, s.last + 1).some((a) => a.type === "carry");
     const passLen = acts[s.last].type === "pass" ? dist(acts[s.last].from, acts[s.last].to) : 0;
@@ -730,7 +1267,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
       if (taken.has(p.key) && p.key !== "you") continue;
       // You may give it and go (a one-two): only the touch before the one you get back.
       if (p.key === "you" && (j !== spells.length - 3 || r() < 0.4)) continue;
-      if (!onSpell(p.path, p.vmax, s, spotFor(p.key, s), true)) continue;
+      if (!onSpell(pressed(p.path, s, p.key), p.vmax, s, spotFor(p.key, s), true)) continue;
       const skill = carry ? stat(p.who, "dribbling") : passLen > 22 ? stat(p.who, "passing") : 65;
       const cost = dist(p.path[idx(s.tIn)], spotFor(p.key, s)(s.tIn)) - (skill - 65) * 0.08;
       if (cost < bestCost) { bestCost = cost; best = p; }
@@ -748,31 +1285,243 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
   }
 
   // ── The men who are only in the build-up ──
-  const extras: Person[] = extrasAt.map(({ spell }, n) => {
-    const s = spells[spell];
+  const extras: Person[] = extrasAt.map(({ spell: si }, n) => {
+    const s = spells[si];
     const pIn = ownerSpot(s.tIn, nextOf(s, s.tIn));
     const pOut = ownerSpot(s.tOut, nextOf(s, s.tOut));
     // Where the next pass goes: he jogs on after it a little, then holds.
     const after = (extraPlan(s) ?? { after: pOut }).after;
-    // He comes onto the ball from 6 m further back (as far as he can run in time).
-    const from = s.tIn <= 0 ? pIn : (() => { const back = { x: pIn.x + (pIn.x - CX) * 0.05, y: pIn.y + 6 }; const d = dist(back, pIn), m = 5 * s.tIn; return d <= m ? back : lerp(pIn, back, m / d); })();
+    // He comes onto the ball from 6 m further back (as far as he can run in time) — or, winning it back, from his press.
+    const regainer = !!spell && si === 0;
+    const from = regainer ? spell!.pressStart : s.tIn <= 0 ? pIn : (() => { const back = { x: pIn.x + (pIn.x - CX) * 0.05, y: pIn.y + 6 }; const d = dist(back, pIn), m = 5 * s.tIn; return d <= m ? back : lerp(pIn, back, m / d); })();
     const path: Vec2[] = [], pin: number[] = [];
     const iA = idx(s.tIn);
     const held = heldSpots(iA, idx(s.tOut), (t) => ownerSpot(t, nextOf(s, t)));
     for (let i = 0; i <= N; i++) {
       const t = tOf(i);
-      if (t < s.tIn) { path.push(lerp(from, pIn, smooth(t / Math.max(0.01, s.tIn)))); pin.push(0); }
+      if (t < s.tIn) { path.push(lerp(from, pIn, smooth(t / Math.max(0.01, s.tIn)))); pin.push(regainer && t >= s.tIn - 0.35 ? 1 : 0); }
       else if (i - iA < held.length && i >= iA) { path.push(held[i - iA]); pin.push(1); }
       else { path.push(lerp(pOut, after, smooth((t - s.tOut) / Math.max(0.3, durS - s.tOut)))); pin.push(0); }
     }
     return { key: `extra${n}`, side: "extra", end: path[N], role: "CM", vmax: 8.5, path, pin };
   });
-  const all = [...people, ...extras];
+
+  // ── FHR-3: the covering defender, in from off the screen ──
+  // The build-up's own camera (the match plays it with leadInCamera, framed on
+  // the ball and the pass) says where the screen is at each moment: he waits
+  // out of it, then sprints in and arrives at his place in the chance still
+  // running. No way in that keeps him off the screen first: no cover.
+  let cover: Person | null = null, coverEnter = 0;
+  if (coverEnd) {
+    const cam = leadInCamera({ durS, ballAt, posAt: () => null, passStart: acts.map((a) => a.t0), passEnd: acts.map((a) => a.t1) }, []);
+    const frames: Viewport[] = [];
+    for (let i = 0; i <= N; i++) frames.push(cam.at(tOf(i), frame));
+    const offScreen = (p: Vec2, i: number, m = 1.5) => { const f = frames[clamp(i, 0, N)]; return p.x < f.x1 - m || p.x > f.x2 + m || p.y < f.y1 - m || p.y > f.y2 + m; };
+    const vmax = topSpeedOf("CB");
+    const vRun = Math.min(7.4, vmax * 0.86), vJog = 2;
+    const inward = coverEnd.x < CX ? -1 : 1; // he comes from the middle of the pitch, behind the play
+    let bestPlan: { path: Vec2[]; enter: number } | null = null;
+    for (const ang of [0, 25, -25, 45, -45, 65, -65, 80, -80]) {
+      const a = (ang * inward * Math.PI) / 180;
+      const u = { x: Math.sin(a), y: Math.cos(a) }; // from his place, back up the pitch
+      for (let Trun = Math.min(durS - 0.3, 5.5); Trun >= 2; Trun -= 0.25) {
+        const t0 = durS - Trun;
+        // Speed through the build-up: a jog, then (from t0) up to a sprint over 0.6 s.
+        const speedAt = (t: number) => (t < t0 ? vJog : vJog + (vRun - vJog) * smooth((t - t0) / 0.6));
+        const remaining: number[] = new Array(N + 1).fill(0);
+        for (let i = N - 1; i >= 0; i--) remaining[i] = remaining[i + 1] + (speedAt(tOf(i)) + speedAt(tOf(i + 1))) / 2 / HZ;
+        const path = remaining.map((d) => ({ x: coverEnd.x + u.x * d, y: coverEnd.y + u.y * d }));
+        if (path.some((q) => q.x < 0.5 || q.x > PITCH_W - 0.5 || q.y < 0.5 || q.y > LEN - 0.5)) continue;
+        // Off the screen until he starts his sprint (and a moment after), then in it.
+        const i0 = Math.round(t0 * HZ);
+        let hidden = true;
+        for (let i = 0; i <= Math.min(N, i0 + 3) && hidden; i++) hidden = offScreen(path[i], i);
+        if (!hidden) continue;
+        let enter = -1;
+        for (let i = i0; i <= N; i++) if (!offScreen(path[i], i, 0)) { enter = i; break; }
+        if (enter < 0 || (N - enter) / HZ < 1.0) continue;
+        bestPlan = { path, enter };
+        break;
+      }
+      if (bestPlan) break;
+    }
+    if (bestPlan) {
+      cover = { key: "cover0", side: "opp", end: { ...coverEnd }, role: "CB", vmax, path: bestPlan.path, pin: new Array(N + 1).fill(0) };
+      coverEnter = bestPlan.enter / HZ;
+    }
+  }
+  const oppx = loser && loser.side === "oppx" ? [loser] : [];
+  const all = [...people, ...extras, ...oppx, ...(cover ? [cover] : [])];
 
   // ── Ease everybody apart ──
   separate(all, N, durS);
   // …which can leave a short burst too quick: smoothed out where it is (never a held sample, nor the end).
   for (const p of all) calmBursts(p.path, p.pin, p.vmax, N);
+
+  // ── Phase 3: still running at the hand-over ──
+  // Each man of the chance (not you, not the keeper) keeps the speed he
+  // arrives with: at the hand-over he is a little short of his drawn spot
+  // (at most FHR_RUNON_MAX_M, eased in over his last unheld stretch so his
+  // speed is unchanged), then he slows evenly to a stop EXACTLY on it over
+  // up to FHR_RUNON_S. A man standing still has nothing to carry on.
+  // (A called offside, below, takes them away again: no chance to hand over to.)
+  const runOnKeys: string[] = [];
+  let runOnS = 0;
+  for (const p of all) {
+    if (p.side === "you" || p.side === "keeper" || p.side === "extra" || p.side === "oppx") continue;
+    const n = N;
+    if (n < 4) continue;
+    const v = { x: ((p.path[n].x - p.path[n - 3].x) * HZ) / 3, y: ((p.path[n].y - p.path[n - 3].y) * HZ) / 3 };
+    const sp = Math.hypot(v.x, v.y);
+    if (sp < 0.8) continue;
+    let lastPin = -1;
+    for (let i = 0; i <= n; i++) if (p.pin[i]) lastPin = i;
+    const i0 = Math.max(lastPin + 1, n - Math.round(1.6 * HZ), 1);
+    const tr = (n - i0) / HZ;
+    // How far short he is: the run-on's own distance (v·G/2), capped so easing it in never adds more than ~1.2 m/s.
+    const cap = Math.min(FHR_RUNON_MAX_M, 0.8 * tr, (sp * FHR_RUNON_S) / 2);
+    if ((2 * cap) / sp < 0.2) continue;
+    // Whole samples: he slows over ng samples, so his speed at the hand-over is exactly v.
+    const ng = Math.max(3, Math.round(((2 * cap) / sp) * HZ));
+    const G = ng / HZ;
+    const backM = (sp * G) / 2;
+    const back = { x: (v.x / sp) * backM, y: (v.y / sp) * backM };
+    const keepPath = p.path.slice(), keepPin = p.pin.slice();
+    for (let i = i0; i <= n; i++) {
+      const w = smooth((i - i0) / Math.max(1, n - i0));
+      p.path[i] = { x: p.path[i].x - back.x * w, y: p.path[i].y - back.y * w };
+    }
+    const q = p.path[n];
+    for (let k = 1; k <= ng; k++) {
+      const s = k / ng;
+      p.path.push({ x: q.x + v.x * G * (s - 0.5 * s * s), y: q.y + v.y * G * (s - 0.5 * s * s) });
+      p.pin.push(0);
+    }
+    p.path[p.path.length - 1] = { ...p.end };
+    // A run-on never takes him through a man he was clear of (a tight marker
+    // arriving onto you in a header picture): then he simply arrives, as before phase 3.
+    const at = (q: Vec2[], i: number) => q[Math.min(i, q.length - 1)];
+    const into = all.some((o2) => o2 !== p && p.path.some((_, i) => i >= i0 && dist(p.path[i], at(o2.path, i)) < FHR_OVERLAP_M && dist(at(keepPath, i), at(o2.path, i)) >= FHR_OVERLAP_M));
+    if (into) { p.path = keepPath; p.pin = keepPin; continue; }
+    runOnKeys.push(p.key);
+    runOnS = Math.max(runOnS, ng / HZ);
+  }
+
+  // ── B2b: OFFSIDE, judged at every pass ──
+  // The law: at the moment the ball is played, a team-mate it goes to who is in
+  // their half, nearer their goal line than both the ball and their
+  // second-last man (the keeper counts) is offside. The engine's own rule,
+  // read the same way (a goal in the picture; never when the law is off).
+  // Such a run is either TIMED — he holds his run so he is level or just
+  // behind the line when it is played, then goes (intel.onsideM: cleverer
+  // team-mates sit closer to the line) — or MISTIMED (o.caughtU, intel.mistime:
+  // likelier against a better side): the flag goes up when he takes it, the
+  // free kick is theirs and the move ends there.
+  const judged = !moment.offsideOff && goalInView(sc.kind);
+  const opps = all.filter((p) => p.side === "opp" || p.side === "keeper" || p.side === "oppx");
+  const lineAt = (t: number) => { const ys = opps.map((p) => atT(p, t).y).sort((a, b) => a - b); return ys.length >= 2 ? ys[1] : -Infinity; };
+  const spellOfAct = (k: number) => spells.findIndex((s) => k >= s.first && k <= s.last);
+  const byKeyNow = (key: string) => all.find((q) => q.key === key) ?? null;
+  // Where a man is at t, read exactly as the lead-in's posAt reads his path.
+  const atT = (p: Person, t: number): Vec2 => {
+    const f = t * HZ, i = Math.floor(f), g = f - i, L = p.path.length - 1;
+    const a0 = p.path[Math.min(L, Math.min(N, i))], b0 = p.path[Math.min(L, Math.min(N, i + 1))];
+    return { x: a0.x + (b0.x - a0.x) * g, y: a0.y + (b0.y - a0.y) * g };
+  };
+  const passChecks: FhrBuildUp["passChecks"] = [];
+  let called: { k: number; by: string; why: "mistimed" | "untimed" } | null = null;
+  // Hold a run back by D metres at sample i0 (the pass), eased in before and made up by iPin (the ball reaching him).
+  const timeRun = (p: Person, i0: number, iPin: number, D: number): boolean => {
+    let lastPin = -1;
+    for (let i = 0; i < i0; i++) if (p.pin[i]) lastPin = i;
+    if (iPin <= i0 + 1) return false;
+    const old = p.path.slice();
+    for (const span of [22, 16, 10, 6]) {
+      const iS = Math.max(lastPin + 1, i0 - span);
+      if (iS >= i0) continue;
+      const out = old.map((q, i) => {
+        if (i < iS || i >= iPin) return q;
+        const w = i <= i0 ? smooth((i - iS) / Math.max(1, i0 - iS)) : 1 - smooth((i - i0) / (iPin - i0));
+        return { x: q.x, y: clamp(q.y + D * w, 0.3, LEN - 0.3) };
+      });
+      if (maxSpeed(out) <= p.vmax * 0.98 && keepsClear(p, old, out, iS, iPin)) { p.path = out; return true; }
+    }
+    return false;
+  };
+  // A held-back run never ends up closer to anyone than before (or than FHR_SPACE_M): a tight
+  // marker in a header picture stands right on the line he is held to.
+  const keepsClear = (p: Person, old: Vec2[], out: Vec2[], i0: number, i1: number): boolean => {
+    for (const q of all) {
+      if (q === p) continue;
+      for (let i = i0; i < i1; i++) {
+        const qq = q.path[Math.min(i, q.path.length - 1)];
+        const was = dist(old[i], qq), now = dist(out[i], qq);
+        if (now < was - 1e-6 && now < FHR_SPACE_M) return false;
+      }
+    }
+    return true;
+  };
+  for (let k = 0; k < acts.length && !called; k++) {
+    const a = acts[k];
+    if (a.type !== "pass") continue;
+    const by = owners[spellOfAct(k) + 1];
+    const P = by ? byKeyNow(by) : null;
+    if (!P) continue;
+    const i0 = idx(a.t0);
+    const line = lineAt(a.t0);
+    const y = atT(P, a.t0).y;
+    const isOff = (yy: number) => judged && yy < HALF_LEN - OFF_EPS && yy < a.from.y - OFF_EPS && yy < line - OFF_EPS;
+    const row = { pass: k, by, behindLineM: y - line, judged, offside: isOff(y), called: false };
+    if (row.offside) {
+      if (o.caughtU < o.intel.mistime * (Math.abs(a.to.x - CX) > BOX_HALF_W ? WIDE_RUN_MISTIME : 1)) { row.called = true; called = { k, by, why: "mistimed" }; }
+      else {
+        const [m0, m1] = o.intel.onsideM;
+        const D = Math.min(line, a.from.y) + m0 + (m1 - m0) * r() - y;
+        if ([0, 0.7, 1.4].some((more) => timeRun(P, i0, idx(a.t1), D + more)) && !isOff(atT(P, a.t0).y - 0.1)) { row.offside = false; row.behindLineM = atT(P, a.t0).y - line; }
+        else if (o.callUntimed) { row.called = true; called = { k, by, why: "untimed" }; }
+        else problems.push(`${UNTIMED}: ${by} for touch ${k + 1}`);
+      }
+    }
+    passChecks.push(row);
+  }
+
+  // ── A called offside: the move ends there ──
+  // He takes it, the flag goes up (the whistle), and everyone slows to a stop.
+  // No chance follows: the lead-in ends here, on its own picture.
+  let offside: FhrBuildUp["offside"];
+  if (called) {
+    const a = acts[called.k];
+    const tFlag = a.t1 + OFFSIDE_FLAG_S;
+    const tEnd = a.t1 + OFFSIDE_HOLD_S;
+    const dirP = { x: (a.to.x - a.from.x) / (dist(a.from, a.to) || 1), y: (a.to.y - a.from.y) / (dist(a.from, a.to) || 1) };
+    const stopAt = inPitch({ x: a.to.x + dirP.x * 0.9, y: a.to.y + dirP.y * 0.9 }, 0.5);
+    const oldBall = ballAt;
+    ballAt = (t: number) => {
+      if (t <= a.t1) return oldBall(t);
+      const f = smooth((t - a.t1) / 0.5);
+      return { x: a.to.x + (stopAt.x - a.to.x) * f, y: a.to.y + (stopAt.y - a.to.y) * f, z: 0 };
+    };
+    const iF = Math.round(a.t1 * HZ);
+    const Nn = Math.ceil(tEnd * HZ);
+    for (const p of all) {
+      const iv = Math.max(3, Math.min(iF, p.path.length - 1));
+      const v = { x: ((p.path[iv].x - p.path[iv - 3].x) * HZ) / 3, y: ((p.path[iv].y - p.path[iv - 3].y) * HZ) / 3 };
+      const at0 = p.path[Math.min(iF, p.path.length - 1)];
+      const out: Vec2[] = p.path.slice(0, Math.min(iF, p.path.length - 1) + 1);
+      const pin: number[] = p.pin.slice(0, out.length);
+      for (let i = out.length; i <= Nn; i++) {
+        const t = i / HZ;
+        if (p.key === called.by) { const b = ballAt(t); out.push({ x: b.x - dirP.x * 0.6, y: b.y - dirP.y * 0.6 }); pin.push(1); continue; }
+        const tau = Math.min(t - a.t1, 0.8), f = tau - (tau * tau) / 1.6;
+        out.push(inPitch({ x: at0.x + v.x * f, y: at0.y + v.y * f }, 0.3));
+        pin.push(0);
+      }
+      p.path = out; p.pin = pin;
+    }
+    durS = tEnd; N = Nn;
+    runOnKeys.length = 0; runOnS = 0;
+    offside = { at: tFlag, by: called.by, pass: called.k, spot: { ...a.to }, why: called.why };
+  }
 
   // ── The checks ──
   for (const p of all) {
@@ -780,8 +1529,10 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     if (v > p.vmax + 0.05) problems.push(`${p.key} runs ${v.toFixed(1)} m/s (top ${p.vmax.toFixed(1)})`);
     for (const q of p.path) if (q.x < -1 || q.x > PITCH_W + 1 || q.y < -1 || q.y > LEN + 1) { problems.push(`${p.key} leaves the pitch`); break; }
   }
-  for (const e of extras) if (inFrame(e.end, 1.5)) problems.push(`${e.key} is still in the chance's frame at the end`);
-  const overlap = minGap(all, N, durS);
+  if (!called) {
+    for (const e of [...extras, ...oppx]) if (inFrame(e.path[N], 1.5)) problems.push(`${e.key} is still in the chance's frame at the end`);
+  }
+  const overlap = minGap(all, Math.max(...all.map((p) => p.path.length - 1)), durS, spell && loser ? { a: loser.key, b: owners[0], until: Math.round((spell.tackleT + 0.5) * HZ) } : null);
   if (overlap.d < FHR_OVERLAP_M) problems.push(`${overlap.a} and ${overlap.b} ${overlap.d.toFixed(2)} m apart at ${(overlap.i / HZ).toFixed(1)} s`);
   // Nobody between the keeper and his goal (unless the drawing has him there at the end).
   for (const p of all) {
@@ -794,45 +1545,74 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     }
   }
   // The man on the ball is at it when he plays it, and the receiver when it arrives.
-  const posOf = (key: string, t: number) => { const p = all.find((q) => q.key === key)!; return p.path[idx(t)]; };
-  acts.forEach((a, k) => {
-    const spell = spells.findIndex((s) => k >= s.first && k <= s.last);
-    const o = owners[spell];
+  const posOf = (key: string, t: number) => { const p = all.find((q) => q.key === key)!; return p.path[Math.min(idx(t), p.path.length - 1)]; };
+  const shown = called ? acts.slice(0, called.k + 1) : acts;
+  shown.forEach((a, k) => {
+    const sp = spellOfAct(k);
+    const ow = owners[sp];
     // (You ease into the drawing's stance over the last half second: that far from it is allowed then.)
-    const reach = (who: string, t: number) => (who === "you" && t > durS - 0.6 ? Math.max(1.6, Math.hypot(youOff.x, youOff.y) + 0.3) : 1.6);
-    if (dist(posOf(o, a.t0), a.from) > reach(o, a.t0)) problems.push(`${o} is not on the ball for touch ${k + 1}`);
+    const reach = (who: string, t: number) => (!called && who === "you" && t > durS - 0.6 ? Math.max(1.6, Math.hypot(youOff.x, youOff.y) + 0.3) : 1.6);
+    if (dist(posOf(ow, a.t0), a.from) > reach(ow, a.t0)) problems.push(`${ow} is not on the ball for touch ${k + 1}`);
     if (a.type === "pass") {
-      const rcv = owners[spell + 1];
+      const rcv = owners[sp + 1];
       if (rcv && dist(posOf(rcv, a.t1), a.to) > reach(rcv, a.t1) + 0.2) problems.push(`${rcv} is not there to take touch ${k + 1}`);
     }
   });
+  // The man who loses it is on the ball until he does, and the man who wins it is there.
+  if (spell && loser) {
+    for (let t = 0; t <= spell.tackleT; t += 0.2) if (dist(posOf(loser.key, t), ballAt(t)) > 1.2) { problems.push(`${loser.key} is not on the ball before it is won`); break; }
+    if (dist(posOf(owners[0], spell.tackleT), ballAt(spell.tackleT)) > 1.6) problems.push(`${owners[0]} is not there to win it`);
+  }
 
   // ── The lead-in the match plays ──
   const byKey = new Map(all.map((p) => [p.key, p]));
+  // A man who carries on (phase 3) has samples past durS; everyone else stops at durS.
+  // (Samples 0…N-1 are at i/HZ, sample N at durS; a run-on's sample N+k at durS + k/HZ.)
   const posAt = (key: string, t: number): Vec2 | null => {
     const p = byKey.get(key);
     if (!p) return null;
-    if (t >= durS) return { ...p.path[N] };
+    const last = p.path.length - 1;
     if (t <= 0) return { ...p.path[0] };
+    if (t >= durS) {
+      const f = N + (t - durS) * HZ;
+      if (f >= last) return { ...p.path[last] };
+      const i = Math.floor(f), g = f - i;
+      const a = p.path[i], b = p.path[i + 1];
+      return { x: a.x + (b.x - a.x) * g, y: a.y + (b.y - a.y) * g };
+    }
     const f = t * HZ, i = Math.floor(f), g = f - i;
     const a = p.path[Math.min(N, i)], b = p.path[Math.min(N, i + 1)];
     return { x: a.x + (b.x - a.x) * g, y: a.y + (b.y - a.y) * g };
   };
   const roles: Record<string, string> = {};
   for (const p of all) roles[p.key] = p.side === "keeper" ? "GK" : p.role;
-  const signature = acts.map((a) => `${a.type === "pass" ? "P" : "C"}${zoneOf(a.from)}`).join("-") + `>${zoneOf(R)}`;
+  const signature = shown.map((a) => `${a.type === "pass" ? "P" : "C"}${zoneOf(a.from)}`).join("-") + `>${zoneOf(R)}` + (spell ? "R" : "") + (called ? "OFF" : "");
   const brk = moment.pattern === "transition";
+  // The biggest moments say so (a level final, the 90th minute).
+  const lastAttack = tp.drama >= 0.6 && (moment.minute ?? 0) >= 85;
+  const caption = (t: number) => (offside && t >= offside.at ? "Offside!" : lastAttack ? "One last attack" : brk ? "On the break" : "Build-up");
   return {
     durS, ballAt, posAt,
     extraMates: extras.length,
-    passStart: acts.map((a) => a.t0),
-    passEnd: acts.map((a) => a.t1),
+    ...(oppx.length ? { extraOpps: oppx.length } : {}),
+    passStart: shown.map((a) => a.t0),
+    passEnd: shown.map((a) => a.t1),
     skippable: true,
-    captionAt: () => (brk ? "On the break…" : "Build-up…"),
-    acts, owners, roles,
-    actOwners: acts.map((_, k) => owners[spells.findIndex((s) => k >= s.first && k <= s.last)] ?? "you"),
+    captionAt: caption,
+    captionShown: true,
+    ...(offside ? { offside, whistleAt: offside.at } : {}),
+    ...(runOnKeys.length ? { runOnS, runOnKeys } : {}),
+    ...(cover ? { joiners: [{ key: cover.key, side: "opp" as const, end: { ...cover.end } }] } : {}),
+    acts: shown, owners, roles,
+    actOwners: shown.map((_, k) => owners[spellOfAct(k)] ?? "you"),
     people: all.map((p) => ({ key: p.key, side: p.side, role: roles[p.key], vmax: p.vmax, path: p.path })),
     problems, tries: tryNo, signature, frame,
+    drama: tp.drama,
+    cover: cover ? { end: { ...cover.end }, enterS: coverEnter } : null,
+    gap: o.intel.gap,
+    regain: spell && loser ? { spot: { ...spell.G0 }, at: spell.tackleT, spellS: rgn!.spellS, scrappy: spell.scrappy, by: owners[0], from: loser.key, heightM: spell.G0.y } : null,
+    passChecks,
+    pressM, pressShare,
   };
 }
 
@@ -849,7 +1629,7 @@ export function maxSpeed(path: Vec2[]): number {
 }
 
 /** Smooths a path where it is briefly faster than `vmax` (held samples and the two ends stay put). */
-function calmBursts(path: Vec2[], pin: number[], vmax: number, N: number) {
+export function calmBursts(path: Vec2[], pin: number[], vmax: number, N: number) {
   const w = 3;
   for (let it = 0; it < 40; it++) {
     const bad: number[] = [];
@@ -864,13 +1644,22 @@ function calmBursts(path: Vec2[], pin: number[], vmax: number, N: number) {
 }
 
 /** The closest two men come (not counting the last 0.6 s, where the drawing decides). */
-function minGap(all: { key: string; path: Vec2[] }[], N: number, durS: number) {
+function minGap(all: { key: string; path: Vec2[] }[], N: number, durS: number, challenge: { a: string; b: string; until: number } | null = null) {
   let best = { d: Infinity, a: "", b: "", i: 0 };
   const stop = Math.max(0, N - Math.round(0.6 * HZ));
-  void durS;
+  // (A man who stopped at durS stays where he stopped while the others carry on.)
+  const at = (p: Vec2[], i: number) => p[Math.min(i, p.length - 1)];
+  // Two men the drawing stands close together (a marker and his man) arrive
+  // that way: theirs to decide in the last second before the hand-over too,
+  // now that the men still running arrive after it (phase 3).
+  const late = Math.round((durS - 1) * HZ);
   for (let i = 0; i < stop; i++) {
     for (let a = 0; a < all.length; a++) for (let b = a + 1; b < all.length; b++) {
-      const d = dist(all[a].path[i], all[b].path[i]);
+      const pa = all[a].path, pb = all[b].path;
+      if (i >= late && (pa.length > late + HZ || pb.length > late + HZ) && dist(pa[pa.length - 1], pb[pb.length - 1]) < FHR_SPACE_M) continue;
+      // B2b: the two in a challenge for the ball meet (until just after it is won).
+      if (challenge && i <= challenge.until && ((all[a].key === challenge.a && all[b].key === challenge.b) || (all[a].key === challenge.b && all[b].key === challenge.a))) continue;
+      const d = dist(at(pa, i), at(pb, i));
       if (d < best.d) best = { d, a: all[a].key, b: all[b].key, i };
     }
   }
@@ -882,7 +1671,7 @@ function minGap(all: { key: string; path: Vec2[] }[], N: number, durS: number) {
  * never moved; nearer the end the push fades, so everyone still ends exactly
  * where the drawing has him. The push is smoothed over time, so nobody jerks.
  */
-function separate(all: { path: Vec2[]; pin: number[] }[], N: number, durS: number) {
+export function separate(all: { path: Vec2[]; pin: number[] }[], N: number, durS: number) {
   const fade = (i: number) => clamp((durS - i / HZ) / 0.8, 0, 1);
   for (let it = 0; it < 6; it++) {
     const push: Vec2[][] = all.map(() => Array.from({ length: N + 1 }, () => ({ x: 0, y: 0 })));

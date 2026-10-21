@@ -22,7 +22,11 @@
  * match. An international shows both nations' squads (international.ts).
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { CareerState, Fixture } from "@/lib/star/types";
+import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
+import { SetCard, SetToggle } from "./settingsKit";
+import FhrSwitchRow from "./FhrSwitchRow";
 import type { SelectionVerdict } from "@/lib/star/selection";
 import { MIN_ENERGY_TO_START } from "@/lib/star/selection";
 import type { Role } from "@/lib/star/formations";
@@ -129,6 +133,7 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
   );
   const [picking, setPicking] = useState(false);
   const [held, setHeld] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const canPick = !!onPlayAs && alternates.length > 0 && (status === "1st Team" || status === "Substitute");
   const here = playAs ?? (career.player.position as Role);
 
@@ -228,6 +233,22 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
             style={{ background: "rgba(3,7,18,.82)", borderRadius: 2, boxShadow: "inset 0 0 0 1px rgba(125,211,252,.55)" }}
           >⏩</button>
         )}
+        {/* Settings before kick-off (Harry, 20 Oct 2026: "before a game, I can
+            press settings and turn on full highlights rebuild"). Opening it
+            stops the auto kick-off, like Play as. */}
+        <button
+          data-prematch-settings
+          onClick={() => { setSettingsOpen(true); setHeld(true); }}
+          aria-label="Settings"
+          className={`kib-press fixed right-3 ${(status === "1st Team" || status === "Substitute") ? "top-[160px]" : "top-[116px]"} z-50 grid h-9 w-9 place-items-center text-white`}
+          style={{ background: "rgba(3,7,18,.82)", borderRadius: 2, boxShadow: "inset 0 0 0 1px rgba(255,255,255,.45)" }}
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+          </svg>
+        </button>
+        {settingsOpen && <PreMatchSettings glow={glow} onClose={() => setSettingsOpen(false)} />}
         <VersusScreen
           matchday={matchday}
           date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))}
@@ -291,5 +312,38 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Settings before kick-off: sound, and Full highlights rebuild with its "?".
+ * Over the line-up; nothing kicks off while it is open. Taps inside never
+ * reach the line-up (it kicks off on a tap anywhere else).
+ */
+function PreMatchSettings({ glow, onClose }: { glow: string; onClose: () => void }) {
+  const sfxNow = useSfxOn();
+  return createPortal(
+    <div
+      data-prematch-settings-sheet
+      className="fixed inset-0 z-[90] flex flex-col bg-gray-950/95 backdrop-blur-sm"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+        <div className="text-[17px] font-black text-white">Settings</div>
+        <button onClick={onClose} className="kib-press rounded-lg bg-emerald-500 px-3.5 py-1.5 text-[14px] font-black text-gray-950">
+          Back to the line-up
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto px-3 pb-10 pt-3">
+        <div className="mx-auto max-w-md space-y-2">
+          <SetCard tone={glow} className="px-3 py-1">
+            <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const v = !sfxNow; setSfxOn(v); if (v) sfx("ui-confirm"); }} />
+            <div className="py-2.5"><FhrSwitchRow /></div>
+          </SetCard>
+          <div className="text-[12px] font-bold text-white">More in Settings on the home screen.</div>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }

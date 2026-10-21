@@ -99,9 +99,21 @@
 .tr-zoom img { max-width: 94vw; max-height: 90vh; border-radius: 8px; }
 
 /* Bubble + pop-up */
-.tr-fab { position: fixed; left: calc(16px + env(safe-area-inset-left, 0px)); z-index: 2147482000; width: 50px; height: 50px; border-radius: 50%; border: 0;
-  background: var(--ash-accent); color: var(--ash-accent-ink); display: grid; place-items: center; cursor: pointer; box-shadow: var(--ash-shadow); }
-.tr-fab .tr-badge { border-color: var(--ash-accent); }
+/* The bubble (Harry, 20 Oct 2026): small, fixed bottom left, and only the
+   round button takes taps. Fades to 40% (and lets taps through) while you
+   scroll or drag; half see-through while it sits over a control. */
+.tr-vars.tr { pointer-events: none; }
+.tr-vars.tr .tr-fab, .tr-vars.tr .tr-pop, .tr-vars.tr .tr-scrim { pointer-events: auto; }
+.tr-fab { position: fixed; z-index: 2147482000; width: 40px; height: 40px; padding: 0; border-radius: 50%; border: 0;
+  margin-left: env(safe-area-inset-left, 0px);
+  background: var(--ash-accent); color: var(--ash-accent-ink); display: grid; place-items: center; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); transition: opacity .15s; }
+.tr-fab[data-over="true"] { opacity: .62; }
+.tr-fab[data-quiet="true"] { opacity: .4; pointer-events: none !important; }
+.tr-fab:hover, .tr-fab:focus-visible { opacity: 1; }
+.tr-fab .tr-badge { border-color: var(--ash-accent); top: -5px; right: -5px; min-width: 15px; height: 15px; font-size: 9px; padding: 0 3px; }
+.tr-fab .tr-badge.dot { min-width: 9px; width: 9px; height: 9px; top: -2px; right: -2px; }
+.tr-fab .tr-badge.at { top: auto; bottom: -4px; right: -5px; }
 .tr-pop { position: fixed; z-index: 2147482001; display: flex; flex-direction: column; background: var(--ash-panel-solid); border: 1px solid var(--ash-line2); box-shadow: var(--ash-shadow); overflow: hidden;
   left: calc(16px + env(safe-area-inset-left, 0px)); width: 384px; height: min(580px, calc(100vh - 110px)); border-radius: 16px; }
 .tr-pop-h { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--ash-line); }
@@ -125,6 +137,19 @@
 .tr-task.done .tx { color: var(--ash-ink3); text-decoration: line-through; }
 .tr-check { width: 22px; height: 22px; flex: 0 0 auto; border-radius: 6px; border: 2px solid var(--ash-line2); background: none; cursor: pointer; display: grid; place-items: center; color: var(--ash-accent-ink); padding: 0; }
 .tr-check[aria-checked="true"] { background: var(--ash-accent); border-color: var(--ash-accent); }
+.tr-check:disabled { opacity: .5; cursor: default; }
+/* A job that arrived by push (team/jobs.json): no ✕, a small tag, Copy prompt. */
+.tr-job { align-items: flex-start; }
+.tr-job .tr-check { margin-top: 1px; }
+.tr-job.done { opacity: .7; }
+.tr-pushtag { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .03em; padding: 1px 6px; margin: 3px 4px 0 0; border-radius: 5px; background: var(--ash-accent-soft); color: var(--ash-accent); text-decoration: none; }
+.tr-jobacts { display: flex; gap: 6px; margin-top: 7px; }
+.tr-copy { padding: 6px 11px; font-size: 12.5px; min-height: 32px; }
+.tr-copy.ok { color: var(--ash-accent); border-color: var(--ash-accent); }
+.tr-copybox { margin: -2px 0 8px; padding: 8px; border-radius: 10px; border: 1px solid var(--ash-amber); background: var(--ash-amber-soft); display: flex; flex-direction: column; gap: 6px; }
+.tr-copybox p { margin: 0; font-size: 12.5px; color: var(--ash-ink2); }
+.tr-copybox textarea { width: 100%; box-sizing: border-box; resize: vertical; border-radius: 8px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); padding: 7px 9px; font: inherit; font-size: 13px; line-height: 1.35; }
+.tr-copybox .tr-x { align-self: flex-end; }
 .tr-add { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .tr-add input { flex: 1 1 160px; min-width: 0; border-radius: 10px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); padding: 9px 12px; font: inherit; font-size: 15px; }
 .tr-add select { border-radius: 10px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); padding: 9px 8px; font: inherit; font-size: 14px; }
@@ -198,3 +223,123 @@
 
 .tr-notice { padding: 16px; border-radius: 14px; border: 1px solid var(--ash-amber); background: var(--ash-amber-soft); display: flex; flex-direction: column; gap: 6px; }
 .tr-notice code { font-size: 12.5px; }
+
+/* ── Round two (Harry, 20 Oct 2026): seen faces, replies, @, page cards, points, patch receipts ── */
+.tr-av.xs { width: 15px; height: 15px; font-size: 7.5px; border-width: 1.5px; }
+.tr-av.off { opacity: .32; background: none; filter: grayscale(.6); }
+.tr-at { font-weight: 800; color: var(--ash-mikey); }
+.tr-at.me { color: var(--ash-amber); background: var(--ash-amber-soft); border-radius: 5px; padding: 0 3px; }
+.tr-atflag { color: var(--ash-amber); font-weight: 900; }
+.tr-msg.at-me .tr-bub { border-color: var(--ash-amber); box-shadow: inset 3px 0 0 var(--ash-amber); }
+.tr-msg.flash .tr-bub { animation: tr-flash 1.4s ease-out; }
+@keyframes tr-flash { 0%, 35% { box-shadow: 0 0 0 3px var(--ash-accent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+.tr-quote { display: flex; flex-direction: column; gap: 1px; width: 100%; text-align: left; margin: 2px 0 5px; padding: 4px 8px; border: 0; border-left: 3px solid var(--ash-accent);
+  border-radius: 6px; background: color-mix(in srgb, var(--ash-ink) 6%, transparent); color: var(--ash-ink2); cursor: pointer; font-size: 12.5px; }
+.tr-quote b { color: var(--ash-accent); font-size: 11.5px; font-weight: 800; }
+.tr-quote span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-seen { display: flex; justify-content: flex-end; gap: 2px; margin-top: 4px; }
+.tr-msg:not(.me) .tr-seen { justify-content: flex-start; }
+.tr-pcard { display: flex; align-items: center; gap: 9px; margin-top: 6px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--ash-line2);
+  background: var(--ash-panel-solid); color: var(--ash-ink) !important; text-decoration: none; min-width: 0; }
+.tr-pcard:hover { border-color: var(--ash-accent); }
+.tr-pcard.point { border-color: color-mix(in srgb, var(--ash-amber) 60%, transparent); }
+.tr-pcard .ic { font-size: 18px; flex: 0 0 auto; }
+.tr-pcard .tx { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
+.tr-pcard .tx b { font-size: 13.5px; font-weight: 800; }
+.tr-pcard .tx .nt { font-size: 13px; color: var(--ash-ink); overflow-wrap: anywhere; }
+.tr-pcard .tx small { display: block; color: var(--ash-ink3); font-size: 11px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-pcard .got { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 3px; }
+.tr-pcard .got .g { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--ash-ink3); font-weight: 700; }
+.tr-pcard .got .g.on { color: var(--ash-accent); }
+.tr-pcard .go { color: var(--ash-ink3); font-size: 20px; }
+.tr-v2off { align-self: center; margin: 0; font-size: 11.5px; color: var(--ash-amber); background: var(--ash-amber-soft); border-radius: 8px; padding: 4px 9px; text-align: center; }
+.tr-v2off code { font-size: 11px; }
+.tr-local { font-style: normal; color: var(--ash-amber); font-weight: 700; }
+.tr-composer { position: relative; }
+.tr-composer .tr-compose { gap: 5px; }
+.tr-composer .tr-iconbtn { width: 34px; height: 34px; }
+.tr-iconbtn:disabled { opacity: .45; cursor: default; }
+.tr-replying { display: flex; align-items: center; gap: 8px; margin: 6px 12px 0; padding: 6px 4px 6px 10px; border-left: 3px solid var(--ash-accent); border-radius: 6px;
+  background: var(--ash-panel2); font-size: 12.5px; color: var(--ash-ink2); }
+.tr-replying span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-replying b { color: var(--ash-accent); }
+.tr-attach .ic { font-size: 16px; }
+.tr-attach > span:not(.ic) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-attach small { color: var(--ash-ink3); }
+.tr-suggest { position: absolute; left: 10px; right: 10px; bottom: calc(100% - 4px); z-index: 5; display: flex; flex-direction: column; gap: 2px; padding: 6px;
+  border-radius: 12px; border: 1px solid var(--ash-line2); background: var(--ash-panel-solid); box-shadow: var(--ash-shadow); max-height: 260px; overflow-y: auto; }
+.tr-suggest .tr-lbl { margin: 2px 6px 4px; }
+.tr-suggest button { display: flex; align-items: center; gap: 9px; padding: 8px 9px; min-height: 40px; border: 0; border-radius: 8px; background: none; color: var(--ash-ink); cursor: pointer; text-align: left; font-weight: 700; }
+.tr-suggest button.on, .tr-suggest button:hover { background: var(--ash-accent-soft); }
+.tr-suggest button small { display: block; color: var(--ash-ink3); font-weight: 500; font-size: 11px; }
+.tr-suggest .ic { width: 18px; text-align: center; }
+.tr-badge.at { background: var(--ash-amber); color: #1a1205; top: auto; bottom: -5px; right: -5px; }
+.tr-pointbtn { border: 1px solid var(--ash-line2); background: var(--ash-panel2); cursor: pointer; font-weight: 800; }
+.tr-pointbtn:disabled { opacity: .45; cursor: default; }
+.tr-count { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--ash-amber); color: #1a1205; font-size: 10.5px; display: grid; place-items: center; letter-spacing: 0; }
+.tr-waiting { display: flex; flex-direction: column; gap: 6px; }
+.tr-wait { display: flex; gap: 8px; align-items: flex-start; padding: 8px 9px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--ash-amber) 50%, transparent);
+  background: var(--ash-amber-soft); color: var(--ash-ink) !important; text-decoration: none; text-align: left; cursor: pointer; font: inherit; width: 100%; }
+.tr-wait span { display: flex; flex-direction: column; min-width: 0; }
+.tr-wait b { font-size: 13px; font-weight: 800; }
+.tr-wait small { color: var(--ash-ink2); font-size: 12px; overflow-wrap: anywhere; }
+
+/* Point mode: drawing, then the outline the other person sees. */
+.tr-pt-draw { position: fixed; inset: 0; z-index: 2147482500; cursor: crosshair; touch-action: none; background: rgba(4, 10, 24, 0.22); user-select: none; -webkit-user-select: none; }
+.tr-pt-draw[data-phase="note"] { cursor: default; }
+.tr-pt-bar { position: fixed; top: calc(10px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px;
+  width: max-content; max-width: calc(100vw - 20px); padding: 7px 8px 7px 14px; border-radius: 14px; background: var(--ash-panel-solid); border: 1px solid var(--ash-line2); box-shadow: var(--ash-shadow); font-size: 13.5px; cursor: default; }
+.tr-pt-bar > span { flex: 1; min-width: 0; }
+.tr-pt-bar em { font-style: normal; color: var(--ash-ink3); }
+@media (min-width: 641px) { .tr-pt-bar em { display: none; } }
+.tr-pt-bar .tr-btn { padding: 7px 11px; }
+.tr-pt-box { position: fixed; pointer-events: none; border-radius: 8px; }
+.tr-pt-box.drawing { border: 2.5px dashed var(--ash-amber); background: color-mix(in srgb, var(--ash-amber) 14%, transparent); }
+.tr-pt-box.shown { z-index: 2147482400; border: 3px solid var(--ash-amber); box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.28), 0 0 22px color-mix(in srgb, var(--ash-amber) 70%, transparent);
+  animation: tr-pt-pulse 1.6s ease-in-out infinite; }
+@keyframes tr-pt-pulse { 50% { border-color: color-mix(in srgb, var(--ash-amber) 55%, white); } }
+.tr-pt-form { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: min(440px, calc(100vw - 20px));
+  display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 16px; background: var(--ash-panel-solid); border: 1px solid var(--ash-line2); box-shadow: var(--ash-shadow); cursor: default; }
+.tr-pt-form textarea { width: 100%; resize: none; border-radius: 12px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); padding: 9px 12px; font: inherit; font-size: 15px; }
+.tr-pt-who { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tr-pt-who button[aria-pressed] { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px 6px 6px; border-radius: 99px; border: 1px solid var(--ash-line2); background: none; color: var(--ash-ink2); font-weight: 800; cursor: pointer; }
+.tr-pt-who button[aria-pressed="true"] { background: var(--ash-accent-soft); border-color: var(--ash-accent); color: var(--ash-ink); }
+.tr-pt-sent { margin: 0; color: var(--ash-accent); font-weight: 900; }
+.tr-pt-show { position: fixed; inset: 0; z-index: 2147482400; pointer-events: none; }
+.tr-pt-note { position: fixed; z-index: 2147482450; pointer-events: auto; width: 340px; max-width: calc(100vw - 24px); padding: 11px 12px; border-radius: 14px;
+  background: var(--ash-panel-solid); border: 1px solid var(--ash-amber); box-shadow: var(--ash-shadow); }
+.tr-pt-note.sheet { left: 10px; right: 10px; width: auto; max-width: none; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+.tr-pt-note .h { display: flex; align-items: center; gap: 7px; }
+.tr-pt-note .h b { flex: 1; font-size: 13.5px; }
+.tr-pt-note .n { margin: 6px 0 2px; font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.tr-pt-note .f { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
+.tr-pt-note .who { display: inline-flex; align-items: center; gap: 6px; color: var(--ash-ink3); font-size: 12px; font-weight: 700; }
+.tr-pt-note .who .on { color: var(--ash-accent); }
+
+/* Patch notes: who has read it. */
+.tr-patchbar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; padding: 11px 12px; border-radius: 14px; border: 1px solid var(--ash-line2); background: var(--ash-panel); }
+.tr-patchbar .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tr-patchbar .faces { display: flex; gap: 12px; margin-right: auto; }
+.tr-patchbar .face { display: inline-flex; align-items: center; gap: 5px; }
+.tr-patchbar .face small { color: var(--ash-ink3); font-size: 11.5px; font-weight: 700; }
+.tr-patchbar .face.on small { color: var(--ash-accent); }
+.tr-patchbar .tr-btn { padding: 8px 12px; min-height: 38px; }
+.tr-patchbar .notes { border-top: 1px solid var(--ash-line); padding-top: 10px; }
+.tr-railfaces { display: inline-flex; gap: 2px; }
+.tr-unreaddot { position: absolute; top: -2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; background: var(--ash-red); border: 2px solid #0b100e; }
+
+/* Phone notifications (Harry, 20 Oct 2026): one row per device, top of the To-do and the chat. PushToggle.tsx */
+.tr-push { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 9px 11px; border-radius: 12px; border: 1px solid var(--ash-line); background: var(--ash-panel2); color: var(--ash-ink2); font-size: 13px; }
+.tr-push > svg { flex: 0 0 auto; color: var(--ash-ink3); }
+.tr-push > svg + span { flex: 1 1 180px; min-width: 0; }
+.tr-push .tx { flex: 1 1 180px; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.tr-push .tx b { color: var(--ash-ink); font-size: 13.5px; }
+.tr-push .tx small { color: var(--ash-ink3); font-size: 12px; }
+.tr-push .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.tr-push .tr-btn { padding: 8px 12px; min-height: 36px; font-size: 13px; }
+.tr-push.on { border-color: color-mix(in srgb, var(--ash-accent) 45%, transparent); background: var(--ash-accent-soft); }
+.tr-push.on > svg { color: var(--ash-accent); }
+.tr-push.muted { color: var(--ash-ink3); }
+.tr-push.tip { border-color: var(--ash-amber); background: var(--ash-amber-soft); color: var(--ash-ink); }
+.tr-push.tip > svg { color: var(--ash-amber); }
+.tr-pushbar { margin-bottom: 10px; }

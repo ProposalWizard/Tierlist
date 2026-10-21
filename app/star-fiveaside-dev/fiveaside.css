@@ -1,0 +1,76 @@
+/* Five-a-side test area (/star-fiveaside-dev). Broadcast tokens (--bc-*) only. */
+.fv-tabs { display: flex; gap: 4px 26px; flex-wrap: wrap; border-bottom: 1px solid var(--bc-line); padding: 0 4px; }
+.fv-tab { padding: 6px 2px 8px; border: 0; background: none; cursor: pointer; color: var(--bc-ink2); font-size: 20px; font-weight: 900;
+  font-style: italic; text-transform: uppercase; letter-spacing: .01em; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+.fv-tab:hover { color: #fff; }
+.fv-tab[aria-selected="true"] { color: #5fe3ff; border-bottom-color: #5fe3ff; }
+
+.fv-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fv-dials { display: flex; align-items: center; gap: 14px 22px; flex-wrap: wrap; }
+
+/* The pitch on the left, everything else on the right; stacked on a phone. */
+.fv-play { display: grid; grid-template-columns: minmax(0, 470px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.fv-pitch { min-width: 0; }
+.fv-side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+/* The scenario dock: pinned to the top while you scroll (house rule, 19 Oct 2026). */
+.fv-dock { position: sticky; top: 0; z-index: 20; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(8, 26, 66, 0.97), rgba(5, 18, 48, 0.97)); border: 1px solid var(--bc-line); border-radius: 4px; }
+.fv-name { flex: 1; min-width: 0; text-align: center; font-weight: 900; font-style: italic; text-transform: uppercase; font-size: 15px; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fv-name small { display: block; font-size: 11px; font-weight: 700; font-style: normal; text-transform: none; color: var(--bc-ink2); }
+
+.fv-result { font-size: 18px; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.fv-big { font-size: 28px; font-weight: 900; font-style: italic; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
+.fv-muted { color: var(--bc-ink2); font-size: 12.5px; line-height: 1.45; }
+
+/* Stat tiles */
+.fv-tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }
+.fv-tile { padding: 10px 12px; border: 1px solid var(--bc-line); border-radius: 4px; background: rgba(255, 255, 255, 0.03); min-width: 0; }
+.fv-tile b { display: block; font-size: 26px; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.fv-tile span { display: block; margin-top: 2px; font-size: 12px; line-height: 1.35; color: var(--bc-ink2); }
+
+/* Tables scroll inside their panel on a phone, never the page. */
+.fv-tablewrap { overflow-x: auto; max-width: 100%; }
+.fv-table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+.fv-table th, .fv-table td { padding: 6px 8px; text-align: right; border-bottom: 1px solid rgba(255, 255, 255, 0.07); white-space: nowrap; }
+.fv-table th:first-child, .fv-table td:first-child { text-align: left; }
+.fv-table th { font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: var(--bc-ink3); }
+.fv-table td { color: #e8efff; }
+.fv-cell { border: 0; cursor: pointer; width: 100%; padding: 6px 8px; border-radius: 3px; color: #fff; font-weight: 800; font-size: 13px;
+  font-variant-numeric: tabular-nums; text-align: center; }
+.fv-cell:hover { outline: 2px solid #5fe3ff; }
+
+.fv-health { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fv-health li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-items: start; font-size: 13.5px; line-height: 1.4; }
+.fv-health i { font-style: normal; font-weight: 900; text-align: center; border-radius: 3px; padding: 1px 0; }
+.fv-health i[data-ok="true"] { background: rgba(31, 168, 96, 0.25); color: #6ff0a8; }
+.fv-health i[data-ok="false"] { background: rgba(255, 77, 94, 0.22); color: #ff8a95; }
+.fv-health small { display: block; color: var(--bc-ink2); font-size: 12px; }
+
+.fv-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--bc-ink2); }
+.fv-legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; background: var(--c); }
+
+.fv-feed { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; max-height: 220px; overflow-y: auto; }
+.fv-feed div { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; color: #e8efff; }
+.fv-feed b { font-variant-numeric: tabular-nums; color: var(--bc-ink2); }
+
+.fv-split { display: flex; height: 14px; border-radius: 3px; overflow: hidden; gap: 2px; }
+
+/* Radar and the match's chances side by side when the column is wide enough. */
+.fv-pair { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); align-items: start; }
+.fv-dock .bc-btn { flex: 0 0 auto; }
+.fv-dock .bc-pill { flex: 1 1 0; min-width: 0; }
+
+.fv-narrow { display: none; }
+
+@media (max-width: 760px) {
+  .fv-wide { display: none; }
+  .fv-narrow { display: inline; }
+  .fv-table { font-size: 12px; }
+  .fv-table th, .fv-table td { padding: 5px 4px; }
+  .fv-cell { padding: 6px 2px; }
+  .fv-play { grid-template-columns: minmax(0, 1fr); }
+  .fv-tabs { gap: 18px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .fv-tab { font-size: 16px; white-space: nowrap; flex: 0 0 auto; }
+}

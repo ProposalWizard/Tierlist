@@ -42,7 +42,11 @@ store.set("star-gameplay-keeperPro", "new");
 console.log("\nNEW — SAVE % BY DISTANCE (keeper 80)");
 const kinds = ["one_on_one", "through_ball", "long_range", "tight_angle", "volley"] as const;
 const rs: ShotRec[] = [];
-for (const ks of [60, 80, 90]) for (const kind of kinds) for (let s = 1; s <= 80; s++) rs.push(shoot(kind, s * 7919 + 13, ks));
+// 240 seeds a kind and rating (was 80). On 80 the error and rebound rates sat
+// on their limits by chance: after the drawings were redrawn (14-15 Oct) the
+// same keeper read 1.6% / 7.2% on those 80 and 0.8% / 4.9% on 320 fresh seeds
+// (B1, 20 Oct 2026). A bigger sample, not a looser limit.
+for (const ks of [60, 80, 90]) for (const kind of kinds) for (let s = 1; s <= 240; s++) rs.push(shoot(kind, s * 7919 + 13, ks));
 const k80 = rs.filter((r) => r.ks === 80);
 const near = saveRate(k80.filter((r) => r.dist < 12)).rate, mid = saveRate(k80.filter((r) => r.dist >= 12 && r.dist < 22)).rate, far = saveRate(k80.filter((r) => r.dist >= 22)).rate;
 console.log(`  under 12 m ${pctS(near * 100, 100)} · 12-22 m ${pctS(mid * 100, 100)} · 22 m+ ${pctS(far * 100, 100)} (real 53 / 77 / 90)`);

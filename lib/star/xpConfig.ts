@@ -110,6 +110,8 @@ export const DEFAULT_XP: XpConfig = {
     "Championship": 96_000, "Premier League": 240_000,
     "Community Shield": 18_000, "Super Cup": 65_000,
     "League Cup": 108_000, "Conference League": 108_000,
+    // Well below the League Cup (20 Oct 2026): League One down to North/South.
+    "Lower League Trophy": 30_000,
     "FA Cup": 144_000, "Europa League": 156_000, "Champions League": 360_000,
     "World Cup": 400_000, "European Championship": 300_000,
     "Play-Offs": 0, // the promotion it wins is paid by promotionShare

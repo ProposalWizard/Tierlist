@@ -9,7 +9,7 @@
  * the sample terms, and a picker for the look so it can be tested without a
  * career: skin tone, face picture, hair, every store accessory, the aviators.
  */
-import Link from "next/link";
+import BackArrow from "@/components/admin/BackArrow";
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import PageGuide from "@/components/admin/PageGuide";
@@ -20,7 +20,10 @@ import { ACCESSORIES, SLOT_LABEL } from "@/lib/star/store/catalogue";
 import { SAMPLE_TERMS, contractRows, signingLines, wornAccessories, SIGNING3D_ACCESSORY_SLOTS } from "@/lib/star/signing3d";
 import { managerLook } from "@/lib/star/managerFace";
 import { kitsOf } from "@/lib/star/kits";
-import type { SigningHairStyle, SigningYou } from "@/lib/star/signing3dScene";
+import type { SigningHairStyle, SigningSceneEdit, SigningYou } from "@/lib/star/signing3dScene";
+import { BroadcastPage, Btn, Panel } from "@/components/admin/broadcast/BroadcastPage";
+import { useApprovedEdit } from "@/lib/star/sceneEdits/useApproved";
+import "../stage3d.css";
 
 const SigningScene3D = dynamic(() => import("@/components/star/SigningScene3D"), { ssr: false });
 
@@ -38,6 +41,10 @@ export default function Signing3dPage() {
   const [club, setClub] = useState<string>(SAMPLE_TERMS.club);
   const [open, setOpen] = useState(false);
   const [replay, setReplay] = useState(0);
+  // ?bare=1: full screen, as before the frame; approved 3D Scene Editor edits ticked for "the test page" play here
+  const [bare, setBare] = useState(false);
+  useEffect(() => { setBare(new URLSearchParams(window.location.search).get("bare") === "1"); }, []);
+  const approved = useApprovedEdit<SigningSceneEdit>("signing", "test", ["trial"]);
 
   useEffect(() => {
     document.body.classList.add("knowitball-immersive");
@@ -105,31 +112,72 @@ export default function Signing3dPage() {
     padding: "7px 10px", fontSize: 12, fontWeight: 800, borderRadius: 8, border: "none",
     background: on ? INK : "rgba(255,255,255,.1)", color: on ? "#07090f" : INK,
   });
+  const pickerBody = <PickerBody {...{ chip, skin, setSkin, face, setFace, hairStyle, setHairStyle, hair, setHair, worn, setWorn, aviators, setAviators }} />;
+
+  const scene = !waitingForFace && (
+    <SigningScene3D
+      you={you}
+      manager={manager}
+      contract={contract}
+      lines={signingLines({ seasons: SAMPLE_TERMS.seasons, number: SAMPLE_TERMS.number })}
+      title={`Signing for ${club}`}
+      onDone={() => setReplay((r) => r + 1)}
+      doneLabel="Continue (replays here)"
+      replayKey={replay}
+      edit={approved}
+      embedded={!bare}
+      topLeft={bare ? <BackArrow /> : undefined}
+      topRight={bare ? (
+        <>
+          <button onClick={() => setReplay((r) => r + 1)} style={{ ...chip(false), minHeight: 36, borderRadius: 999 }}>↺</button>
+          <button data-picker onClick={() => setOpen((o) => !o)} style={{ ...chip(open), minHeight: 36, borderRadius: 999 }}>Your player</button>
+        </>
+      ) : undefined}
+    />
+  );
+
+  // On the Broadcast frame (A-8, 20 Oct 2026): the signing in the stage, ↺ and Your player in the title bar,
+  // the look picker in a panel under it. ?bare=1 opens it full screen as before.
+  if (!bare) {
+    return (
+      <>
+        <BroadcastPage title="3D signing" sub={`Signing for ${club}: the career's own scene, with sample terms.`} width={1440}>
+          <div className="s3-bar">
+            <Btn onClick={() => setReplay((r) => r + 1)} title="Play it again from the start">↺ Replay</Btn>
+            <button data-picker className="bc-btn" data-main={open ? "true" : undefined} onClick={() => setOpen((o) => !o)}>Your player</button>
+            <Btn href="/star-scene-editor-dev?place=signing" title="Camera and light for the signing">Scene editor ›</Btn>
+          </div>
+          <div className="s3-stage s3-tall">{scene}</div>
+          {open && <Panel title="YOUR PLAYER" note="the look the career would pass in">{pickerBody}</Panel>}
+        </BroadcastPage>
+        <PageGuide page="/star-3d-area-dev/signing" corner="bottom-left" />
+      </>
+    );
+  }
 
   return (
     <main>
-      {!waitingForFace && (
-        <SigningScene3D
-          you={you}
-          manager={manager}
-          contract={contract}
-          lines={signingLines({ seasons: SAMPLE_TERMS.seasons, number: SAMPLE_TERMS.number })}
-          title={`Signing for ${club}`}
-          onDone={() => setReplay((r) => r + 1)}
-          doneLabel="Continue (replays here)"
-          replayKey={replay}
-          topRight={
-            <>
-              <Link href="/star-3d-area-dev" aria-label="Back" style={{ ...chip(false), minHeight: 36, display: "flex", alignItems: "center", textDecoration: "none", borderRadius: 999 }}>‹</Link>
-              <button onClick={() => setReplay((r) => r + 1)} style={{ ...chip(false), minHeight: 36, borderRadius: 999 }}>↺</button>
-              <button data-picker onClick={() => setOpen((o) => !o)} style={{ ...chip(open), minHeight: 36, borderRadius: 999 }}>Your player</button>
-            </>
-          }
-        />
-      )}
+      {scene}
 
       {open && (
         <div style={{ position: "fixed", left: 8, right: 8, top: 58, maxHeight: "62vh", overflowY: "auto", zIndex: 40, padding: 12, borderRadius: 12, background: "rgba(8,10,16,.94)", color: INK, fontFamily: "system-ui, sans-serif", boxShadow: "0 12px 30px rgba(0,0,0,.6)" }}>
+          {pickerBody}
+          <button onClick={() => setOpen(false)} style={{ ...chip(true), width: "100%", marginTop: 4, padding: "10px 0" }}>Done</button>
+        </div>
+      )}
+      <PageGuide page="/star-3d-area-dev/signing" corner="bottom-left" />
+    </main>
+  );
+}
+
+function PickerBody({ chip, skin, setSkin, face, setFace, hairStyle, setHairStyle, hair, setHair, worn, setWorn, aviators, setAviators }: {
+  chip: (on: boolean) => React.CSSProperties;
+  skin: SkinTone; setSkin: (s: SkinTone) => void; face: number; setFace: (n: number) => void;
+  hairStyle: SigningHairStyle; setHairStyle: (h: SigningHairStyle) => void; hair: string; setHair: (h: string) => void;
+  worn: Record<string, string>; setWorn: React.Dispatch<React.SetStateAction<Record<string, string>>>; aviators: boolean; setAviators: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  return (
+        <div style={{ color: INK, fontFamily: "system-ui, sans-serif" }}>
           <Section title="Skin tone">
             {SKIN_TONES.map((t) => (
               <button key={t.id} data-skin={t.id} onClick={() => setSkin(t.id)} aria-label={t.label}
@@ -166,11 +214,7 @@ export default function Signing3dPage() {
           <Section title="Star Pass">
             <button onClick={() => setAviators((v) => !v)} style={chip(aviators)}>Gold Aviators</button>
           </Section>
-          <button onClick={() => setOpen(false)} style={{ ...chip(true), width: "100%", marginTop: 4, padding: "10px 0" }}>Done</button>
         </div>
-      )}
-      <PageGuide page="/star-3d-area-dev/signing" corner="bottom-left" />
-    </main>
   );
 }
 

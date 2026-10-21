@@ -1,0 +1,271 @@
+<title>B12 Pick the Pass</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one column, stacked cards, stills under their text. Tokens first, then components. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  a{color:var(--blue)}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+  .chip{display:inline-block;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink2);text-decoration:none}
+  .chip.hot{color:var(--amber);border-color:var(--amber)}
+  .back{display:inline-block;font-size:13px;font-weight:700;margin:0 0 4px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b,.row li b{color:var(--ink)}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:4px}
+  .nr{color:var(--ink3);font-style:italic}
+  .tile{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+  .tile>b{display:block;font-size:15px}
+  .tile>p{margin:3px 0 0;color:var(--ink2);font-size:14.5px}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .track.solo{height:14px}
+  .track.solo .fill.now{top:0;bottom:0;height:auto}
+  .fill.now.warn{background:var(--amber)}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.blue{background:var(--blue)}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+  .bnote{color:var(--ink3);font-size:12.5px;margin:2px 0 0}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px 14px;margin:10px 0 0}
+  .figs.wide{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+  .figs figure{margin:0}
+  .figs.pair{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .figs.pair figure.ph{max-width:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details .figs{margin-top:2px}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .sbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px 12px}
+  .sbox h3{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 4px}
+  .sbox h3.g{color:var(--green)} .sbox h3.b{color:var(--blue)} .sbox h3.a{color:var(--amber)} .sbox h3.r{color:var(--red)}
+  .sbox ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+  .sbox li{margin-bottom:4px}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox .q{font-weight:700}
+  .okbox .opts{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+  .okbox .who{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-right:6px}
+
+  .vid{border:2px dashed var(--line);border-radius:var(--r);padding:12px 14px;background:var(--card)}
+  .vid b{color:var(--amber)}
+  .vid p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .vid ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  .cards{display:grid;gap:10px;margin:0}
+  .bcard{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;min-width:0}
+  .bcard .n{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 4px}
+  .bcard .n b{font-size:17px}
+  .bcard p{margin:0;color:var(--ink2);font-size:14.5px}
+  .bcard .go{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:var(--blue)}
+  .bcard.soon{border-style:dashed;opacity:.85}
+
+  /* --- how these patch notes work --- */
+  .how{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 14px 10px;min-width:0}
+  .how svg{display:block;width:100%;max-width:340px;height:auto;margin:2px auto 10px}
+  .how ol{margin:0;padding-left:20px;color:var(--ink2);font-size:14.5px}
+  .how li{margin:0 0 6px}
+  .how li b{color:var(--ink)}
+  .how .mini{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;vertical-align:1px}
+  .how .btn{display:inline-block;font-size:12.5px;font-weight:800;background:var(--pill);color:var(--pillink);padding:2px 9px;border-radius:999px;vertical-align:1px}
+  .how .where{margin:8px 0 0;font-size:13px;color:var(--ink3)}
+  /* --- already decided --- */
+  .donebox{border:1px solid var(--line);border-left:4px solid var(--green);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .donebox ul{margin:0;padding:0;list-style:none}
+  .donebox li{padding:11px 0 11px 28px;border-bottom:1px solid var(--line);position:relative}
+  .donebox li:last-child{border-bottom:0}
+  .donebox li::before{content:"\2713";position:absolute;left:2px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--pillink);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .donebox .q{font-weight:700}
+  .donebox .d{color:var(--ink2);font-size:14px;margin-top:3px}
+  .donebox .by{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-right:6px}
+  /* --- video --- */
+  .clip{margin:12px 0 2px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .look{font-size:13px;color:var(--ink2);margin:0 0 7px}
+  .clip .look b{color:var(--ink)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px}
+  .clip.ph{max-width:390px;margin-left:auto;margin-right:auto}
+  /* --- tabs (index) --- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink2);font:inherit;font-size:13.5px;font-weight:800;padding:8px 13px;border-radius:999px;cursor:pointer;min-height:40px}
+  .tab[aria-selected="true"]{background:var(--pill);color:var(--pillink);border-color:var(--pill)}
+  .tab small{font-weight:700;opacity:.8;margin-left:4px}
+  .js .panel[hidden]{display:none}
+  .panel h3.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px}
+  .bcard .vtag{font-size:11px;font-weight:800;color:var(--ink3);letter-spacing:.04em}
+  .qlist{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px}
+  .qlist ul{margin:0;padding:0;list-style:none}
+  .qlist li{padding:10px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14px}
+  .qlist li:last-child{border-bottom:0}
+  .qlist li b{color:var(--ink)}
+
+  /* --- steps (vertical list) --- */
+  .steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  .steps li{position:relative;padding:9px 0 9px 36px;border-bottom:1px solid var(--line);counter-increment:st;color:var(--ink2);font-size:14.5px;min-width:0}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(st);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .steps li b{color:var(--ink)}
+  .steps li.done::before{background:var(--green);border-color:var(--green);color:var(--pillink);content:"\2713"}
+  .steps li.next::before{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+  .mock{border:2px solid var(--red);border-radius:var(--r);background:var(--rbg);padding:12px 14px;margin:10px 0 2px}
+  .mock b{display:block;color:var(--red);font-size:15px;letter-spacing:.02em}
+  .mock p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .mock .mb{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .mock .mb span{font-size:13px;font-weight:800;padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink2)}
+  .mock .mb span.go{background:var(--card2)}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+<div class="wrap">
+<header>
+  <a class="back" href="https://claude.ai/artifact/Jjqh5F2Qjym1GMBwhA2dSN" target="_blank" rel="noopener">&larr; All last-2-days notes</a><br>
+  <span class="ver">B12 · PICK THE PASS</span>
+  <h1>Vision training is now &ldquo;Pick the Pass&rdquo;: look at a real moment, work out who gets the ball, and from level 10 kick the pass yourself.</h1>
+  <p class="status"><i></i>On the Harry branch, not live yet.</p>
+  <p class="sub">Overnight round, 20 Oct 2026. In Admin &rarr; Patch notes this is <b>v0.76</b>.</p>
+  <div class="chips"><a class="chip" href="#vid">Videos here &darr;</a></div>
+</header>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<ul class="ck"><li><label><input type="checkbox" data-k="c0"><span><span class="q">Level 1: tap the man</span><span class="a">Training → Vision → level 1. Tap the team-mate you would pass to.</span></span></label></li><li><label><input type="checkbox" data-k="c1"><span><span class="q">Level 4: an offside man</span><span class="a">Tap the offside man. OFFSIDE shows with a reason. The right man gets a green ✓.</span></span></label></li><li><label><input type="checkbox" data-k="c2"><span><span class="q">Level 10 and up: kick the pass</span><span class="a">Drag back from the ball to aim at him, then strike. Start inside the time on the hint.</span></span></label></li><li><label><input type="checkbox" data-k="c3"><span><span class="q">Level 30: TOO SLOW</span><span class="a">Wait too long. TOO SLOW shows and the right man gets a green ring.</span></span></label></li><li><label><input type="checkbox" data-k="c4"><span><span class="q">A real picture names its match</span><span class="a">Under the pitch: the match, the minute and the data credit.</span></span></label></li><li><label><input type="checkbox" data-k="c5"><span><span class="q">Pictures do not repeat much</span><span class="a">Go through levels 1 to 30. An ordinary picture comes back on 3 levels at most.</span></span></label></li></ul>
+
+<h2 class="chg"><i></i>CHANGED</h2><div class="item"><div class="ih"><b>Vision is now &ldquo;Pick the Pass&rdquo;: real pictures, real passes</b><span class="tag t-seen">seen</span></div><div class="row"><div class="rl p">Problem</div><p>Harry, 20 Oct: <b>&ldquo;the vision skill is horrendous. It&rsquo;s cluttered, and the skill gap doesn&rsquo;t increase. I don&rsquo;t like the line on the pitch.&rdquo;</b></p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>Vision is rebuilt from the start. Each try is a real moment from a tracked match: <b>263 real passes</b> (DFL, SkillCorner and SoccerTrack), plus the team&rsquo;s own drawn chances on levels 1, 2 and 10. It uses the real match&rsquo;s new view. <b>No guide line.</b> Only the men who matter are drawn. The two deepest defenders always stay, so the offside line is exact.</p></div><div class="figs"><figure class="ph"><img src="img/1-tap-level1-play.jpg" alt="Look at: level 1. No line on the pitch. Five men and the ball. Hint: tap the team-mate you’d pass to. Not offside, not marked, nobody in the way." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> level 1. No line on the pitch. Five men and the ball. Hint: tap the team-mate you&rsquo;d pass to. Not offside, not marked, nobody in the way.</figcaption></figure><figure class="ph"><img src="img/4-level30-aim.jpg" alt="Look at: level 30. A real moment, credit under the pitch. The arrow is your drag. Hint: start inside 0.3 s." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> level 30. A real moment, credit under the pitch. The arrow is your drag. Hint: start inside 0.3 s.</figcaption></figure></div></div><div class="item"><div class="ih"><b>The question: who gets the pass?</b><span class="tag t-meas">measured</span></div><div class="row"><div class="rl p">Problem</div><p>Harry, 20 Oct: <b>&ldquo;Who should I pass to in this scenario? Have someone offside.&rdquo;</b></p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>Three traps: a man who is <b>offside</b>, a lane that is <b>cut</b>, a man who is <b>marked</b>. The engine&rsquo;s own rules pick the right man. Every pass in every picture was played <b>24 times</b> on the engine: the right man was reached at least 80% of the time, a cut lane under 40%.</p></div><style>.vsvg{display:block;width:100%;max-width:340px;height:auto;margin:6px auto 2px}</style><svg class="vsvg" viewBox="0 0 340 250" role="img" aria-label="A drawing of a pitch from above. The ball is at the bottom. Four team-mates: one is the right man (green), one is beyond the last defender so offside, one has a defender on the pass line so the lane is cut, one has a defender right beside him so he is marked.">
+<rect x="6" y="6" width="328" height="238" rx="10" style="fill:var(--card2);stroke:var(--line);stroke-width:1.5"/>
+<rect x="140" y="6" width="60" height="10" style="fill:none;stroke:var(--ink3);stroke-width:1.5"/>
+<line x1="14" y1="70" x2="326" y2="70" style="stroke:var(--amber);stroke-width:1.5;stroke-dasharray:6 4"/>
+<text x="20" y="64" style="font:700 9px -apple-system,Segoe UI,Roboto,sans-serif;fill:var(--amber)">LAST DEFENDER</text>
+<circle cx="170" cy="28" r="5" style="fill:var(--amber)"/>
+<circle cx="150" cy="70" r="5" style="fill:var(--red)"/><circle cx="214" cy="78" r="5" style="fill:var(--red)"/>
+<circle cx="112" cy="182" r="5" style="fill:var(--red)"/>
+<circle cx="278" cy="166" r="5" style="fill:var(--red)"/>
+<line x1="170" y1="218" x2="232" y2="120" style="stroke:var(--green);stroke-width:2"/>
+<line x1="170" y1="218" x2="60" y2="150" style="stroke:var(--red);stroke-width:2;stroke-dasharray:4 4"/>
+<line x1="170" y1="218" x2="290" y2="176" style="stroke:var(--amber);stroke-width:2;stroke-dasharray:4 4"/>
+<circle cx="232" cy="120" r="12" style="fill:none;stroke:var(--green);stroke-width:2.5"/><circle cx="232" cy="120" r="5.5" style="fill:var(--blue)"/>
+<circle cx="66" cy="44" r="12" style="fill:none;stroke:var(--red);stroke-width:2.5"/><circle cx="66" cy="44" r="5.5" style="fill:var(--blue)"/>
+<circle cx="60" cy="150" r="12" style="fill:none;stroke:var(--red);stroke-width:2.5"/><circle cx="60" cy="150" r="5.5" style="fill:var(--blue)"/>
+<circle cx="290" cy="176" r="12" style="fill:none;stroke:var(--amber);stroke-width:2.5"/><circle cx="290" cy="176" r="5.5" style="fill:var(--blue)"/>
+<circle cx="170" cy="218" r="6.5" style="fill:var(--blue);stroke:var(--ink);stroke-width:1.5"/><circle cx="180" cy="224" r="3" style="fill:var(--ink)"/>
+<g style="font:800 10px -apple-system,Segoe UI,Roboto,sans-serif">
+<text x="232" y="100" text-anchor="middle" style="fill:var(--green)">RIGHT MAN</text>
+<text x="66" y="28" text-anchor="middle" style="fill:var(--red)">OFFSIDE</text>
+<text x="60" y="132" text-anchor="middle" style="fill:var(--red)">CUT OUT</text>
+<text x="292" y="202" text-anchor="middle" style="fill:var(--amber)">MARKED</text>
+<text x="170" y="240" text-anchor="middle" style="fill:var(--ink3)">THE BALL</text>
+</g></svg><p class="bnote">A drawing, not a still, of the four kinds of man. Only the green one is right.</p><p class="bnote">Checked on the engine: 30 of 30 passes to an offside man ended OFFSIDE. 240 of 240 good passes found the right man. 119 of 120 passes into a cut lane were lost.</p></div><div class="item"><div class="ih"><b>Levels 1 to 9: tap the man. From level 10: kick the pass.</b><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div><div class="row"><div class="rl p">Problem</div><p>Harry, 20 Oct: <b>&ldquo;Why are we just tapping? &hellip; early on you tap, then you actually have to kick the ball inside 0.3 seconds.&rdquo;</b></p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>Levels 1 to 9: tap, with less time each level. From level 10 you <b>kick the pass</b>: the real drag and strike, started in time. The engine judges the kick.</p></div><div class="bars"><div class="bar"><span class="bl">Level 1: time to tap</span><span class="track solo"><span class="fill now blue" style="width:88.9%"></span></span><span class="vv">4.0 s</span></div><div class="bar"><span class="bl">Level 9: time to tap</span><span class="track solo"><span class="fill now blue" style="width:28.9%"></span></span><span class="vv">1.3 s</span></div><div class="bar"><span class="bl">Level 10: time to start the kick</span><span class="track solo"><span class="fill now " style="width:40.0%"></span></span><span class="vv">1.8 s</span></div><div class="bar"><span class="bl">Level 28 and up: time to start the kick</span><span class="track solo"><span class="fill now warn" style="width:6.7%"></span></span><span class="vv">0.3 s</span></div></div><p class="bnote">Less time at every step. From level 28 it is 0.3 s, the number Harry asked for.</p><div class="figs"><figure class="ph"><img src="img/2-kick-level25-aim.jpg" alt="Look at: level 25. A real moment from SkillCorner (credit under the pitch). The orange arrow is the drag. Hint: start inside 0.4 s." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> level 25. A real moment from SkillCorner (credit under the pitch). The orange arrow is the drag. Hint: start inside 0.4 s.</figcaption></figure></div><figure class="clip ph"><p class="look"><b>Look for:</b> the kick at level 12: a drag back, the strike, then RIGHT MAN with confetti. 9 seconds, phone-size screen.</p><video controls playsinline muted preload="metadata" poster="img/6-kick-level12.jpg" src="clips/6-kick-level12.mp4"></video><figcaption>Level 12, a real moment from Fortuna Düsseldorf 1-0 FC St. Pauli (78&prime;). One kick, one right man (9 s, no sound).</figcaption></figure></div><div class="item"><div class="ih"><b>After each try you are told why</b><span class="tag t-seen">seen</span></div><div class="row"><div class="rl w">Problem / Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>One word, then one line: <b>RIGHT MAN</b>, <b>OFFSIDE</b>, <b>CUT OUT</b>, <b>MARKED</b>, <b>NOT THE BALL</b>, <b>MISPLACED</b> or <b>TOO SLOW</b>. The right man gets a green ✓ ring. Your pick gets a red ✗.</p></div><div class="figs"><figure class="ph"><img src="img/3-offside-level4-result-tapoffside.jpg" alt="Look at: OFFSIDE on level 4. Under the pitch: “Gnabry was beyond the last man. Coman was the ball.” Green ✓ is the right man. Red ✗ is the man tapped. The credit names the match: FC Köln 1-2 FC Bayern München, 8′." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> OFFSIDE on level 4. Under the pitch: &ldquo;Gnabry was beyond the last man. Coman was the ball.&rdquo; Green ✓ is the right man. Red ✗ is the man tapped. The credit names the match: FC Köln 1-2 FC Bayern München, 8&prime;.</figcaption></figure><figure class="ph"><img src="img/5-too-slow-level30-play.jpg" alt="Look at: TOO SLOW on level 30. The right man is ringed green. The line says: No. 11 was the ball." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> TOO SLOW on level 30. The right man is ringed green. The line says: No. 11 was the ball.</figcaption></figure></div><details><summary>More pictures (1): RIGHT MAN</summary><div class="figs"><figure class="ph"><img src="img/6-kick-level12.jpg" alt="Look at: RIGHT MAN on level 12. The line says: Iyoha: onside, free and the lane open." width="390" height="844" loading="lazy"><figcaption><b>Look at:</b> RIGHT MAN on level 12. The line says: Iyoha: onside, free and the lane open.</figcaption></figure></div></details></div><div class="item"><div class="ih"><b>Fewer repeats across the 30 levels</b><span class="tag t-meas">measured</span></div><div class="row"><div class="rl w">Problem / Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>Levels 1 to 30 now show more different pictures. An ordinary picture comes back on at most 3 levels.</p></div><div class="bars"><div class="bar"><span class="bl">Different pictures in 90 tries</span><span class="track"><span class="fill was" style="width:35.6%"></span><span class="fill now " style="width:50.0%"></span></span><span class="vv"><s>32</s> &rarr; 45</span></div><div class="bar"><span class="bl">Levels an ordinary picture comes back on (at most)</span><span class="track"><span class="fill was" style="width:87.5%"></span><span class="fill now blue" style="width:37.5%"></span></span><span class="vv"><s>7</s> &rarr; 3</span></div></div><p class="bnote">Measured over levels 1 to 30, 90 tries.</p></div><div class="item"><div class="ih"><b>How hard it gets</b><span class="tag t-meas">measured</span></div><div class="row"><div class="rl p">Problem</div><p>Harry, 20 Oct: <b>&ldquo;the skill gap doesn&rsquo;t increase&rdquo;</b>.</p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl f">Fix</div><p>The pass rate now falls the whole way. The steepest step is level 14 (87%) to level 16 (51%). Every level&rsquo;s numbers can be softened in the training editor.</p></div><div class="bars"><div class="bar"><span class="bl">Level 1</span><span class="track solo"><span class="fill now " style="width:99.0%"></span></span><span class="vv">99%</span></div><div class="bar"><span class="bl">Level 10</span><span class="track solo"><span class="fill now " style="width:93.0%"></span></span><span class="vv">93%</span></div><div class="bar"><span class="bl">Level 20</span><span class="track solo"><span class="fill now warn" style="width:36.0%"></span></span><span class="vv">36%</span></div><div class="bar"><span class="bl">Level 25</span><span class="track solo"><span class="fill now warn" style="width:28.0%"></span></span><span class="vv">28%</span></div><div class="bar"><span class="bl">Level 30</span><span class="track solo"><span class="fill now bad" style="width:21.0%"></span></span><span class="vv">21%</span></div></div><p class="bnote">First try, a modelled good player picks and kicks the right man. Kicks were played on the engine. Not a person.</p></div><h2 class="bug"><i></i>KNOWN ISSUES</h2><div class="item"><div class="ih"><b>Only 5 real offside pictures for 13 offside levels</b><span class="tag t-meas">measured</span><span class="pill p-amb">half fixed</span></div><div class="row"><div class="rl p">Problem</div><p>The 13 offside levels draw on just 5 real offside moments. One of them comes back on 6 levels.</p></div><div class="row"><div class="rl w">Why</div><p><span class="nr">Not in the report.</span></p></div><div class="row"><div class="rl s">Status</div><p>Open. Q4 on the <a href="https://claude.ai/artifact/CSEM8X286GwLUa8Dyw6WTh" target="_blank" rel="noopener">Patch Notes Questions</a> page: add drawn offside pictures?</p></div></div><div class="item"><div class="ih"><b>Not tried on a real phone at 0.3 s</b><span class="tag t-no">not seen</span></div><div class="row"><div class="rl p">Problem</div><p>The 0.3 s kick start was only seen on a test browser at 390 × 844.</p></div><div class="row"><div class="rl s">Status</div><p>Harry to try on his phone.</p></div></div>
+
+<h2 class="nxt"><i></i>THE NUMBERS</h2><details><summary>The numbers, if you want them</summary><p><b>First-try pass rate, a modelled good player, kicks played on the engine.</b></p><div class="bars"><div class="bar"><span class="bl">Level 1</span><span class="track solo"><span class="fill now " style="width:99.0%"></span></span><span class="vv">99%</span></div><div class="bar"><span class="bl">Level 10</span><span class="track solo"><span class="fill now " style="width:93.0%"></span></span><span class="vv">93%</span></div><div class="bar"><span class="bl">Level 14</span><span class="track solo"><span class="fill now " style="width:87.0%"></span></span><span class="vv">87%</span></div><div class="bar"><span class="bl">Level 16</span><span class="track solo"><span class="fill now " style="width:51.0%"></span></span><span class="vv">51%</span></div><div class="bar"><span class="bl">Level 20</span><span class="track solo"><span class="fill now " style="width:36.0%"></span></span><span class="vv">36%</span></div><div class="bar"><span class="bl">Level 25</span><span class="track solo"><span class="fill now " style="width:28.0%"></span></span><span class="vv">28%</span></div><div class="bar"><span class="bl">Level 30</span><span class="track solo"><span class="fill now bad" style="width:21.0%"></span></span><span class="vv">21%</span></div></div><p><b>Time to answer.</b> Tap levels 1 to 9: 4.0 s down to 1.3 s. Kick levels: 1.8 s at level 10, 0.3 s from level 28.</p><p><b>Pictures.</b> 263 real passes (DFL, SkillCorner, SoccerTrack v2) plus drawn chances on levels 1, 2 and 10. 45 different pictures in 90 tries (32 before). An ordinary picture comes back on 3 levels at most (7 before).</p><p><b>Not changed.</b> No engine or drift file.</p></details>
+
+<h2 class="nxt" id="vid"><i></i>VIDEOS</h2>
+<div class="vid"><b>One clip is on this page.</b></div>
+
+<h2 class="bug"><i></i>SEEN / NOT SEEN</h2>
+<div class="sbox"><h3 class="g">Seen on a screen</h3><ul><li>Level 1 (tap), level 4 (OFFSIDE with the reason), level 12 (RIGHT MAN), level 25 and level 30 (the aim arrow), and TOO SLOW on level 30, at 390 × 844</li><li>A 9-second clip of a kick on level 12</li></ul><h3 class="b">Measured (numbers)</h3><ul><li>First-try pass rate by level, for a modelled good player (99% at level 1 down to 21% at level 30)</li><li>On the engine: 30 of 30 offside passes ended OFFSIDE; 240 of 240 good passes found the right man; 119 of 120 cut-lane passes were lost</li><li>Different pictures in 90 tries: 32 → 45</li></ul><h3 class="r">Not seen / not done</h3><ul><li>A real phone at 0.3 s: not tried</li><li>A person playing the whole curve: not in the report</li></ul></div>
+
+<footer>20 Oct 2026. Built overnight on the Harry branch. Nothing here is live. Every fact comes from the builders&rsquo; reports. Pictures are stills taken while checking the work.</footer>
+</div>
+<script>
+(function(){
+  var K='kib-overnight-b12-checks', s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+})();
+</script>

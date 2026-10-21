@@ -35,6 +35,7 @@ import {
 import { CX, PEN_SPOT_Y } from "./pitch";
 import { leadInEntities, ballAlong, type LeadIn, type LeadBallKey } from "./leadIn";
 import { stickSpeed, STICK_UP_T, STICK_DOWN_T } from "./firstPersonDribble";
+import { newLegs, stepLegs, type Legs } from "./legs";
 
 /** Your supporting run, m/s (a team-mate's run is 7.0, canvasEngine RUNNER_SPEED). */
 export const PLAY_ON_RUN_SPEED = 6.6;
@@ -426,6 +427,25 @@ export interface PlayOnStick {
   read: StickRead | null;
   /** He has already run on with it once, looking for a better shot (STICK_DEVELOP_BELOW). */
   developed?: boolean;
+  /** THE RUN (B14) only: your legs and the stamina bar (lib/star/legs.ts). Absent = the joystick as it was. */
+  legs?: Legs;
+  /** THE RUN only: Shift held (PC). */
+  sprintHeld?: boolean;
+  /** THE RUN only: you run on your own when nobody steers (Auto run). */
+  auto?: boolean;
+  /** "After you pass: Joystick": the thumb stick is drawn and listened to. */
+  thumb?: boolean;
+  /** The thumb is on the stick now (held still counts as steering: you stand). */
+  held?: boolean;
+  /** Seconds since you last steered (keys or thumb). */
+  idleT?: number;
+  /** Auto run is steering you this substep. */
+  autoOn?: boolean;
+  /** Where Auto run is taking you, and when it looks again. */
+  autoTarget?: Vec2 | null;
+  retargetT?: number;
+  /** THE RUN only: where the pass was going (the man who takes it), until he has it. */
+  mateAt?: Vec2 | null;
 }
 
 export interface StickRead {
@@ -593,7 +613,8 @@ function playPassTo(st: PlayOn, stk: PlayOnStick, sc: Scenario, ball: Ball, to: 
 
 function stepPlayOnStick(st: PlayOn, stk: PlayOnStick, sc: Scenario, ball: Ball, dt: number, rng: () => number, layOffsLeft: number): "caught" | null {
   const p = sc.player;
-  moveOnStick(stk, p, dt);
+  if (stk.legs) moveRun(st, stk, stk.legs, sc, ball, dt);
+  else moveOnStick(stk, p, dt);
   if (st.layOffLive) {
     if (ball.contactCd <= 0 && ball.z < 1.0 && Math.hypot(ball.pos.x - p.x, ball.pos.y - p.y) < STICK_CATCH_R) return "caught";
     if (ball.owner !== "mate" || sc.receiverDone || ball.shot) st.layOffLive = false;
@@ -622,7 +643,7 @@ function stepPlayOnStick(st: PlayOn, stk: PlayOnStick, sc: Scenario, ball: Ball,
     if (layOffsLeft > 0 && stk.called) {
       if (pick) go = pick; else stk.note = "noLane";
       stk.called = false;
-    } else if (layOffsLeft > 0 && pick && rng() < r.pPass) go = pick;
+    } else if (layOffsLeft > 0 && pick && rng() < r.pPass * (stk.legs ? runPassBias(passQuality(sc)) : 1)) go = pick;
     const gcx = (sc.goal.x1 + sc.goal.x2) / 2 || CX;
     if (go) {
       stk.choice = go;
@@ -641,4 +662,164 @@ function stepPlayOnStick(st: PlayOn, stk: PlayOnStick, sc: Scenario, ball: Ball,
 /** The captain's "Call for it" button: only for the captain, only while the joystick is live and no pass to you is on its way. */
 export function callForItShown(o: { captain: boolean; stickLive: boolean; layOffLive: boolean }): boolean {
   return o.captain && o.stickLive && !o.layOffLive;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  THE RUN (B14, Harry, 20 Oct 2026) — every pass in open play, the real game
+// ─────────────────────────────────────────────────────────────────────────
+//
+// "WASD to move your player and Shift to sprint after you've played the ball
+// (and while waiting for it back) … a stamina bar … auto run … team-mates
+// sometimes pass back to you even before you're captain."
+//
+// Any pass you play in an open-play chance with a goal in it (not a shot, not
+// a set piece, not a penalty) now plays on in the same picture, whatever the
+// Chances setting:
+//   - you move on your LEGS (lib/star/legs.ts): your pace sets your speeds,
+//     sprinting drains the stamina bar, and the bar never refills past your
+//     match energy;
+//   - nobody steering: AUTO RUN takes you into the best space it can see,
+//     onside, toward goal (pickRunSpot), and sprints onto a ball played to you;
+//     on a computer, W A S D steer and Shift sprints the moment you press them;
+//     let go and Auto run picks it up again after AUTO_AFTER_S;
+//   - the man who takes your pass reads you exactly as the joystick's man does
+//     (stickRead): he shoots, or plays it to your feet, or through into your
+//     run, by how much better your spot is than his and how good a passer he
+//     is (passQuality). Captain or not. The captain can still call for it.
+// "After you pass: Joystick" keeps its thumb stick (and its calmer tempo); it
+// now has the same legs and bar. Thumb off the stick: Auto run takes over after
+// AUTO_AFTER_S, as when you let go of the keys (B14b, Harry: "sure").
+
+/** After you stop steering, Auto run takes over again after this long (s). */
+export const AUTO_AFTER_S = 0.6;
+/** Auto run looks for a new spot this often (s). */
+export const AUTO_RETARGET_S = 0.35;
+/** Auto run sprints when its spot is further than this (m) and the bar is above AUTO_SPRINT_BAR. */
+export const AUTO_SPRINT_M = 6;
+export const AUTO_SPRINT_BAR = 0.3;
+
+/** Whether a kick gives you the run: open play, a goal in the picture, a pass (not a shot at goal). */
+export function runAfterWanted(o: { kind: ScenarioKind; youShotAtGoal: boolean; auto?: boolean }): boolean {
+  return !o.auto && !o.youShotAtGoal && goalInView(o.kind) && acceptsCaptainOrders(o.kind);
+}
+
+export interface RunOptions {
+  /** Your pace and physical (0–100). */
+  pace?: number;
+  physical?: number;
+  /** Your match energy now (0–100) and the bar as it was (0..1). */
+  energy?: number;
+  bar?: number;
+  /** "After you pass: Joystick": the thumb stick and its tempo (Auto run when the thumb is off). */
+  stick?: boolean;
+}
+
+/** Start the run at your pass. `passTo`: where the pass is going. */
+export function startPlayOnRun(sc: Scenario, rng: () => number, passTo: Vec2 | undefined, o: RunOptions = {}): PlayOn {
+  if (!sc.receiver) sc.receiver = playOnReceiver(rng);
+  delete sc.matePace;
+  if (o.stick) {
+    sc.matePace = "stick";
+    setMateReceptionRule(stickReception);
+  }
+  const legs = newLegs({ pace: o.pace, physical: o.physical, energy: o.energy, bar: o.bar });
+  return {
+    target: supportRunTarget(sc, passTo), layOff: null, layOffLive: false,
+    stick: {
+      push: { x: 0, y: 0 }, vel: legs.vel, run: legs.speeds.run, called: false, choice: null, passTo: null, note: null, read: null,
+      legs, sprintHeld: false, auto: true, thumb: !!o.stick, held: false, idleT: AUTO_AFTER_S, autoOn: false, autoTarget: null, retargetT: 0, mateAt: passTo ? { ...passTo } : null,
+    },
+  };
+}
+
+/** Shift (PC). */
+export function sprintPlayOn(st: PlayOn, held: boolean) {
+  if (st.stick) st.stick.sprintHeld = held;
+}
+
+function moveRun(st: PlayOn, stk: PlayOnStick, legs: Legs, sc: Scenario, ball: Ball, dt: number) {
+  let push = stk.push, sprint = !!stk.sprintHeld;
+  const steering = Math.hypot(push.x, push.y) > 0.08 || !!stk.held;
+  stk.idleT = steering ? 0 : (stk.idleT ?? 0) + dt;
+  stk.autoOn = false;
+  if (stk.auto && !steering && (stk.idleT ?? 0) >= AUTO_AFTER_S) {
+    const a = autoPush(st, stk, legs, sc, ball, dt);
+    push = a.push; sprint = sprint || a.sprint;
+    stk.autoOn = true;
+  }
+  stepLegs(legs, sc.player, push, sprint, dt);
+  stk.vel = legs.vel;
+}
+
+/** Auto run, one substep: onto a ball played to you, else to its spot. */
+function autoPush(st: PlayOn, stk: PlayOnStick, legs: Legs, sc: Scenario, ball: Ball, dt: number): { push: Vec2; sprint: boolean } {
+  const p = sc.player;
+  if (st.layOffLive) {
+    const lead = { x: ball.pos.x + ball.vel.x * 0.25, y: ball.pos.y + ball.vel.y * 0.25 };
+    const dx = lead.x - p.x, dy = lead.y - p.y, d = Math.hypot(dx, dy) || 1;
+    return { push: { x: dx / d, y: dy / d }, sprint: true };
+  }
+  stk.retargetT = (stk.retargetT ?? 0) - dt;
+  if (!stk.autoTarget || stk.retargetT <= 0) {
+    // Read off the man who has it (or is about to): offside is judged from him, and you are the other option.
+    const mate = sc.receivedAt ?? stk.mateAt ?? ball.pos;
+    stk.autoTarget = pickRunSpot(sc, p, mate, stk.autoTarget ?? null);
+    stk.retargetT = AUTO_RETARGET_S;
+  }
+  const t = stk.autoTarget;
+  const dx = t.x - p.x, dy = t.y - p.y, d = Math.hypot(dx, dy);
+  if (d < 0.8) return { push: { x: 0, y: 0 }, sprint: false };
+  const mag = d > 2.5 ? 1 : 0.6;
+  return { push: { x: (dx / d) * mag, y: (dy / d) * mag }, sprint: d > AUTO_SPRINT_M && legs.stamina.v > AUTO_SPRINT_BAR };
+}
+
+/**
+ * Where Auto run goes: the best spot within reach, never behind you, onside
+ * from the man with the ball (`ballAt`), with a sight of goal (shotValue), room
+ * around it, a clear lane from him, and not on top of a team-mate or of him.
+ */
+export function pickRunSpot(sc: Scenario, you: Vec2, ballAt: Vec2, prev: Vec2 | null): Vec2 {
+  const gcx = (sc.goal.x1 + sc.goal.x2) / 2 || CX;
+  const mates: Vec2[] = [
+    ...(sc.runner ? [sc.runner.pos] : []), ...sc.secondaryRunners.map((r) => r.pos), { x: sc.follower.x, y: sc.follower.y },
+  ];
+  let best: Vec2 | null = null, bestS = -Infinity;
+  for (let gy = 5; gy <= 32; gy += 2.5) {
+    if (gy > you.y + 1) break;
+    for (let gx = -15; gx <= 15; gx += 3) {
+      const q = { x: gcx + gx, y: gy };
+      const dist = Math.hypot(q.x - you.x, q.y - you.y);
+      if (dist > 22) continue;
+      // Onside with a metre to spare: the line moves while he takes his touch.
+      if (offsideAt(sc, q, ballAt) || offsideAt(sc, { x: q.x, y: q.y - 1 }, ballAt)) continue;
+      let room = 6;
+      for (const d of sc.defenders) room = Math.min(room, Math.hypot(d.x - q.x, d.y - q.y));
+      let s = shotValue(sc, q) + (room / 6) * 0.35 - dist / 30;
+      if (laneClear(sc, ballAt, q)) s += 0.15;
+      if (mates.some((m) => Math.hypot(m.x - q.x, m.y - q.y) < 3.5)) s -= 0.25;
+      if (Math.hypot(ballAt.x - q.x, ballAt.y - q.y) < 5) s -= 0.3;
+      if (prev && Math.hypot(prev.x - q.x, prev.y - q.y) < 2) s += 0.05;
+      if (s > bestS) { bestS = s; best = q; }
+    }
+  }
+  if (best) return best;
+  // Nowhere onside ahead (you are past the line: a square ball, a pass back).
+  // He is close enough to shoot: stay for the rebound. Further out: come back
+  // level with the line, so he can find you.
+  if (Math.hypot(ballAt.x - gcx, ballAt.y) < 18) return { x: you.x, y: you.y };
+  const ys = sc.defenders.map((d) => d.y);
+  ys.push(sc.keeper.y);
+  ys.sort((a, b) => a - b);
+  const line = Math.min(ballAt.y, ys.length > 1 ? ys[1] : ys[0] ?? 0);
+  return { x: you.x, y: Math.max(you.y, line + 1) };
+}
+
+/**
+ * THE RUN: how much a passer's quality moves "does he give it back" (Harry:
+ * "more often for better team-mates"). passQuality 0.4 → ×0.5, 0.6 → ×0.75,
+ * 0.8 → ×1.0, capped 0.45–1.2. On top of stickRead's own small lift. The
+ * old joystick (startPlayOnStick, no legs) is untouched.
+ */
+export function runPassBias(q: number): number {
+  return Math.max(0.45, Math.min(1.2, 0.5 + 1.25 * (q - 0.4)));
 }

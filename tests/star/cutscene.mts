@@ -12,7 +12,7 @@ import { generateScript, scoreScript } from "../../lib/star/cutscene/generate";
 import { EVENT_KINDS_COVERED } from "../../lib/star/cutscene/beats";
 import { compileScript, lintScript, rootAt, clipsAt, cameraAt, overlayAt } from "../../lib/star/cutscene/timeline";
 import { makeSignature, signatureAt } from "../../lib/star/cutscene/signature";
-import { shotPose, type Anchor } from "../../lib/star/cutscene/presets/camera";
+import { shotPose, PHONE_FRAMING, SHOT_PRESETS, type Anchor, type ShotPose } from "../../lib/star/cutscene/presets/camera";
 import { castLook } from "../../lib/star/cutscene/casting";
 import { makePath, rng, lensToFov } from "../../lib/star/cutscene/math";
 import type { CameraTrack, Emotion, StoryEvent } from "../../lib/star/cutscene/types";
@@ -152,13 +152,65 @@ for (const [id, ev] of Object.entries(FIXTURE_EVENTS)) {
   const wide = shotPose({ preset: "wide", subject: { actor: "x" } }, man, null, { aspect: 0.46, k: 0, t: 0, seed: 1 });
   const dc = Math.hypot(close.pos[0], close.pos[2]), dw = Math.hypot(wide.pos[0], wide.pos[2]);
   check(dc > 0.4 && dc < 2.5, `a close-up stands near (${dc.toFixed(2)} m)`);
-  check(dw > dc * 2, `a wide stands further than a close-up (${dw.toFixed(2)} vs ${dc.toFixed(2)})`);
+  check(dw > dc * 1.5, `a wide stands further than a close-up (${dw.toFixed(2)} vs ${dc.toFixed(2)})`);
   check(close.pos[2] > 0, "a close-up is in front of him");
   const L = shotPose({ preset: "medium", subject: { actor: "x" }, side: 1 }, man, null, { aspect: 0.46, k: 0, t: 0, seed: 1 });
   const R = shotPose({ preset: "medium", subject: { actor: "x" }, side: -1 }, man, null, { aspect: 0.46, k: 0, t: 0, seed: 1 });
   check(L.pos[0] > 0 && R.pos[0] < 0, "side +1 is his left, −1 his right");
   const low = shotPose({ preset: "low-hero", subject: { actor: "x" } }, man, null, { aspect: 0.46, k: 0, t: 0, seed: 1 });
   check(low.pos[1] < 0.6 && low.look[1] > low.pos[1], "a hero shot looks up from low");
+}
+
+// ── a tall phone (B5, 20 Oct 2026: 14 of 23 audit stills had a face or body filling the screen) ──
+{
+  const man: Anchor = { pos: [0, 0, 0], yaw: 0, head: [0, 1.7, 0], chest: [0, 1.35, 0.05], hips: [0, 1.0, 0], height: 1.8 };
+  /** On screen: the head's share of the width, the shoulders' share, and whether the top of his head is in. */
+  const onScreen = (p: ShotPose, aspect: number, a: Anchor) => {
+    const d = Math.hypot(a.head[0] - p.pos[0], a.head[1] - p.pos[1], a.head[2] - p.pos[2]);
+    const tv = Math.tan((p.fov * Math.PI) / 360), width = 2 * d * tv * aspect;
+    // the head's top against the frame's top, along the camera's own pitch
+    const f = [p.look[0] - p.pos[0], p.look[1] - p.pos[1], p.look[2] - p.pos[2]], fl = Math.hypot(f[0], f[1], f[2]);
+    const pitch = Math.asin(f[1] / fl), up = Math.atan2(a.head[1] + 0.13 - p.pos[1], Math.hypot(a.head[0] - p.pos[0], a.head[2] - p.pos[2]));
+    return { head: 0.26 / width, shoulders: 0.6 / width, topIn: up - pitch < (p.fov * Math.PI) / 360 };
+  };
+  for (const preset of Object.keys(PHONE_FRAMING) as (keyof typeof PHONE_FRAMING)[]) {
+    if (preset === "insert") continue;
+    const p = shotPose({ preset, subject: { actor: "x" } }, man, null, { aspect: 9 / 19.5, k: 0.5, t: 0, seed: 1 });
+    const s = onScreen(p, 9 / 19.5, man);
+    check(s.head <= 0.5, `phone ${preset}: his head is ${Math.round(s.head * 100)}% of the width (at most half)`);
+    if (preset !== "extreme-close") check(s.shoulders <= 0.92, `phone ${preset}: his shoulders are ${Math.round(s.shoulders * 100)}% of the width (at most 92%)`);
+    check(s.topIn, `phone ${preset}: the top of his head is in the picture`);
+    // a wide screen is as before: the width rule never bites there (the height framed is still the preset's own)
+    const w = shotPose({ preset, subject: { actor: "x" } }, man, null, { aspect: 16 / 9, k: 0.5, t: 0, seed: 1 });
+    const dW = Math.hypot(w.look[0] - w.pos[0], w.look[1] - w.pos[1], w.look[2] - w.pos[2]);
+    const hW = 2 * dW * Math.tan((w.fov * Math.PI) / 360) / SHOT_PRESETS[preset].size;
+    check(hW > 0.7 && hW < 1.4, `landscape ${preset}: frames its own height as before (${hW.toFixed(2)} of it)`);
+  }
+  // an insert of a prop shows all of it: a trophy 0.62 m tall, 0.36 across
+  const cup: Anchor = { pos: [0, 0, 0], yaw: 0, head: [0, 1.9, 0], chest: [0, 1.9, 0], hips: [0, 1.9, 0], height: 0.62, width: 0.36, thing: true };
+  const ins = shotPose({ preset: "insert", subject: { prop: "cup" }, lens: 42 }, cup, null, { aspect: 9 / 19.5, k: 0.5, t: 0, seed: 1 });
+  const di = Math.hypot(ins.pos[0], ins.pos[1] - 1.9, ins.pos[2]);
+  const tvi = Math.tan((ins.fov * Math.PI) / 360);
+  const cupH = 0.62 / (2 * di * tvi), cupW = 0.36 / (2 * di * tvi * (9 / 19.5));
+  check(cupH < 0.9 && cupW < 0.9, `phone insert: the whole trophy fits (${Math.round(cupH * 100)}% tall, ${Math.round(cupW * 100)}% wide)`);
+  // every person-framed shot of every hand-made and generated scene, on the phone
+  let shots = 0, bad = 0;
+  const scripts = [...Object.values(FIXTURES).map((f) => f()), ...EVENT_KINDS_COVERED.map((kind) => generateScript({ kind, stakes: 0.8, emotion: "joy", intensity: 0.8 } as StoryEvent, 3))];
+  for (const raw of scripts) {
+    const sc = filmPass(raw);
+    const C = compileScript(sc);
+    for (const cam of C.cameras) {
+      const sub = cam.shot.subject;
+      if (!("actor" in sub) || sub.local || sub.part || cam.shot.fixed || ["ots", "pov", "two-shot", "establishing", "wide", "crowd", "top-down"].includes(cam.shot.preset)) continue;
+      const r = rootAt(C, sub.actor, cam.at + 0.02);
+      const a: Anchor = { pos: r.pos, yaw: r.yaw, head: [r.pos[0], r.pos[1] + 1.7, r.pos[2]], chest: [r.pos[0], r.pos[1] + 1.35, r.pos[2]], hips: [r.pos[0], r.pos[1] + 1.0, r.pos[2]], height: 1.8 };
+      const p = shotPose(cam.shot, a, null, { aspect: 9 / 19.5, k: 0.5, t: cam.at, seed: sc.seed ?? 1 });
+      const s = onScreen(p, 9 / 19.5, a);
+      shots++;
+      if (s.head > 0.5 || s.shoulders > 0.95) bad++;
+    }
+  }
+  check(shots > 20 && bad === 0, `phone: ${bad} of ${shots} person shots in every scene fill the screen (want 0)`);
 }
 
 // ── casting ──

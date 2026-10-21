@@ -14,12 +14,9 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
-const NOT_YET = new Set([
- 
- 
-  "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev",
-  "/star-garden3d-dev", "/star-home3d-dev", "/star-style-dev",
-]);
+// Empty since 20 Oct 2026 (B6): the last six (the 3D places and the Cut-scene
+// Director's page) moved onto the frame. It may only shrink: never add one back.
+const NOT_YET = new Set([]);
 const SKIP = new Set(["/star-dev"]); // the game itself, not an admin page
 
 const reg = fs.readFileSync(path.join(ROOT, "lib/adminRegistry.ts"), "utf8");

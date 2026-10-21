@@ -2,28 +2,47 @@
 /**
  * The admin pages' frame: one tab per GAME across the top (Harry, 19 Oct
  * 2026: "stuff on the wider website should be on a completely different tab
- * than road to ballon dor stuff"), a side menu (the game's home and its
- * groups, then the Team room, Patch notes, Videos) and the Look switch
+ * than road to ballon dor stuff"), a side menu and the Look switch
  * (Broadcast, Bento, Ops room, Clean light). Games and groups come from
  * lib/adminRegistry.ts (GAMES, GROUPS). Used by /admin/star (and its game
  * and group pages), /admin/team and /admin/videos. On a phone the menu hides
  * behind "☰ Menu"; on a computer « folds it to a thin strip of icons
  * (Harry, 19 Oct 2026: "we need to be able to close the side tab").
+ *
+ * THE TEAM AREA (Harry, 20 Oct 2026: "the team area should be the default
+ * home area, and it should open on Team board, and have its own tab on the
+ * left"). For an admin the side menu starts with "Team", lit while you are in
+ * it. Inside the Team area the menu lists its views (Team board, Team chat,
+ * Ideas, My to-do, Patch notes) and one line per game; no game tab is lit.
+ * In a game the menu is Team, then the game's home and its groups, as before.
+ * Testers have no Team area: their menu starts at the game's home.
  */
 import "./adminShell.css";
+import "./skin.css";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
-import { ADMIN_PAGES, GAMES, gameForPath, gameOf, groupGame, groupIcon, groupsOf, visibleTo, type AdminGameKey, type AdminGroup } from "@/lib/adminRegistry";
-import { ADMIN_LOOKS, isBoardLook, setAdminLook, setAdminMode, useAdminLook, useAdminMode } from "@/lib/adminLook";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { ADMIN_PAGES, GAMES, TEAM_HOME, gameForPath, gameOf, groupGame, groupIcon, groupsOf, visibleTo, type AdminGameKey, type AdminGroup } from "@/lib/adminRegistry";
+import { ADMIN_LOOKS, setAdminLook, setAdminMode, useAdminLook, useAdminMode } from "@/lib/adminLook";
+import BackArrow from "@/components/admin/BackArrow";
 
 export type ShellTab = "home" | "team" | "notes" | "videos" | "ideas" | "chat" | "todo";
 export type RoomTab = "team" | "ideas" | "chat" | "todo" | "notes";
+/** The Team area's views, in the side menu's order (the brief: Team board,
+ *  Team chat, Ideas, My to-do, Patch notes). */
+const TEAM_VIEWS: { tab: RoomTab; label: string; icon: keyof typeof I }[] = [
+  { tab: "team", label: "Team board", icon: "board" },
+  { tab: "chat", label: "Team chat", icon: "chat" },
+  { tab: "ideas", label: "Ideas", icon: "ideas" },
+  { tab: "todo", label: "My to-do", icon: "todo" },
+  { tab: "notes", label: "Patch notes", icon: "notes" },
+];
 const FOLD_KEY = "kib-admin-side-folded";
 
 const I = {
   home: <path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
   team: <><circle cx="9" cy="8" r="3.2" /><circle cx="17" cy="9" r="2.6" /><path d="M3 20c.6-3.4 3-5 6-5s5.4 1.6 6 5M14.5 15.2c2.8-.4 5.3.9 6 4.8" /></>,
+  board: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M12 5v14" /><circle cx="12" cy="12" r="2.6" /></>,
   notes: <><rect x="5" y="3.5" width="14" height="17" rx="2" /><path d="M8.5 8h7M8.5 12h7M8.5 16h4" /></>,
   back: <path d="M15 5 8 12l7 7" />,
   video: <><rect x="3" y="6" width="13" height="12" rx="2" /><path d="m16 10 5-3v10l-5-3" /></>,
@@ -66,15 +85,17 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
   const path = usePathname() ?? "/admin/star";
   const game = gameProp ?? (group ? groupGame(group) : gameForPath(path));
   const G = gameOf(game) ?? GAMES[0];
+  // In the Team area (admins only): Team is lit, no game is.
+  const inTeam = role === "admin" && TEAM_VIEWS.some((v) => v.tab === tab);
   const pages = visibleTo(role);
   // Same count as the home's tiles and search (the admin home itself is not a page to open).
   const count = (g: string) => pages.filter((p) => p.group === g && p.url !== "/admin/star").length;
   const gameCount = (k: AdminGameKey) => groupsOf(k).reduce((n, g) => n + count(g.key), 0);
-  // Broadcast/Bento open a group's own page; Ops room / Clean light jump down the game's home.
-  const groupHref = (k: AdminGroup) => (isBoardLook(look) ? `/admin/star/g/${k}` : `${G.home}#${k}`);
+  // Every look opens a group's own page: one layout, four skins (Harry, 20 Oct 2026).
+  const groupHref = (k: AdminGroup) => `/admin/star/g/${k}`;
 
   const navTab = (t: RoomTab, label: string, icon: keyof typeof I) => {
-    const href = t === "team" ? "/admin/team" : `/admin/team?tab=${t}`;
+    const href = t === "team" ? TEAM_HOME : `${TEAM_HOME}?tab=${t}`;
     const cur = tab === t ? "page" : undefined;
     const n = badges?.[t] ?? 0;
     const inner = <><span className="ash-navl"><Icon name={icon} /><span className="ash-navt">{label}</span></span>{n > 0 && <span className="ash-nbadge">{n > 99 ? "99+" : n}</span>}</>;
@@ -88,44 +109,72 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
   return (
     <div className="ash" data-look={look} data-folded={folded} data-admin-shell>
       <div className="ash-top">
+        {/* The one back arrow, top left (Harry, 20 Oct 2026: "Always top left … always the same"). */}
+        <BackArrow role={role} />
         <button className="ash-btn ghost" onClick={() => setOpen(true)} aria-label="Open the admin menu"><Icon name="menu" /> Menu</button>
         <b className="ash-word">KNOWITBALL</b>
-        <span style={{ width: 70 }} />
       </div>
       <div className="ash-layout">
         {open && <div className="ash-scrim" onClick={() => setOpen(false)} />}
         <aside className="ash-side" data-open={open} aria-label="Admin menu">
           <div className="ash-brand">
-            <span className="ash-mark">K</span>
+            <BackArrow role={role} />
             <span className="ash-navt"><b>KNOWITBALL</b><small>{role === "admin" ? "Admin" : "Test pages"}</small></span>
             <button className="ash-fold" onClick={() => fold(!folded)} aria-label={folded ? "Open the side menu" : "Fold the side menu away"} title={folded ? "Open the side menu" : "Fold the side menu away"}>
               <Icon name={folded ? "unfold" : "fold"} size={15} />
             </button>
           </div>
-          <Link className="ash-nav" aria-current={tab === "home" && !group ? "page" : undefined} href={G.home} title={`${G.name}: home`}>
-            <span className="ash-navl"><Icon name="home" /><span className="ash-navt">{G.short} home</span></span><span className="n ash-navt">{gameCount(game)}</span>
-          </Link>
 
-          {/* The game's groups, one slanted bar each (Harry, 19 Oct 2026: "on
-              broadcast there should still be side tabs"). */}
-          <div className="ash-navh">{G.name}</div>
-          <div className="ash-glist">
-            {groupsOf(game).filter((g) => count(g.key)).map((g) => (
-              <Link key={g.key} className="ash-gnav" data-g={g.key} aria-current={group === g.key ? "page" : undefined}
-                href={groupHref(g.key)} title={`${g.name}: ${count(g.key)} page${count(g.key) === 1 ? "" : "s"}`}>
-                <img src={groupIcon(g.key)} alt="" className="ash-gic" />
-                <span className="ash-navt ash-gname">{g.name}</span><span className="n ash-navt">{count(g.key)}</span>
-              </Link>
-            ))}
-          </div>
+          {/* Team: its own tab, first, for admins (Harry, 20 Oct 2026). Lit
+              while you are anywhere in the Team area. */}
+          {role === "admin" && (inTeam && onTab ? (
+            <button className="ash-nav ash-area" data-on="true" title="Team: board, chat, ideas, to-do, patch notes" onClick={() => { onTab("team"); setOpen(false); }}>
+              <span className="ash-navl"><Icon name="team" /><span className="ash-navt">Team</span></span>
+            </button>
+          ) : (
+            <Link className="ash-nav ash-area" data-on={inTeam} href={TEAM_HOME} title="Team: board, chat, ideas, to-do, patch notes">
+              <span className="ash-navl"><Icon name="team" /><span className="ash-navt">Team</span></span>
+            </Link>
+          ))}
 
-          {role === "admin" && <div className="ash-navh">Team room</div>}
-          {role === "admin" && navTab("team", "Team board", "team")}
-          {role === "admin" && navTab("ideas", "Ideas", "ideas")}
-          {role === "admin" && navTab("chat", "Team chat", "chat")}
-          {role === "admin" && navTab("todo", "My to-do", "todo")}
+          {inTeam ? (<>
+            {/* The Team area's views. */}
+            <div className="ash-subs" role="group" aria-label="Team">
+              {TEAM_VIEWS.map((v) => <Fragment key={v.tab}>{navTab(v.tab, v.label, v.icon)}</Fragment>)}
+            </div>
+            {/* One line per game: its home. */}
+            <div className="ash-navh">Games</div>
+            <div className="ash-glist">
+              {GAMES.map((g) => {
+                const lead = groupsOf(g.key)[0]?.key;
+                return (
+                  <Link key={g.key} className="ash-gnav" data-g={lead} href={g.home} title={`${g.name}: ${gameCount(g.key)} pages`}>
+                    {lead && <img src={groupIcon(lead)} alt="" className="ash-gic" />}
+                    <span className="ash-navt ash-gname">{g.short}</span><span className="n ash-navt">{gameCount(g.key)}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </>) : (<>
+            <Link className="ash-nav" aria-current={tab === "home" && !group ? "page" : undefined} href={G.home} title={`${G.name}: home`}>
+              <span className="ash-navl"><Icon name="home" /><span className="ash-navt">{G.short} home</span></span><span className="n ash-navt">{gameCount(game)}</span>
+            </Link>
+
+            {/* The game's groups, one slanted bar each (Harry, 19 Oct 2026: "on
+                broadcast there should still be side tabs"). */}
+            <div className="ash-navh">{G.name}</div>
+            <div className="ash-glist">
+              {groupsOf(game).filter((g) => count(g.key)).map((g) => (
+                <Link key={g.key} className="ash-gnav" data-g={g.key} aria-current={group === g.key ? "page" : undefined}
+                  href={groupHref(g.key)} title={`${g.name}: ${count(g.key)} page${count(g.key) === 1 ? "" : "s"}`}>
+                  <img src={groupIcon(g.key)} alt="" className="ash-gic" />
+                  <span className="ash-navt ash-gname">{g.name}</span><span className="n ash-navt">{count(g.key)}</span>
+                </Link>
+              ))}
+            </div>
+          </>)}
+
           {role === "admin" && <div className="ash-navh">Other</div>}
-          {role === "admin" && navTab("notes", "Patch notes", "notes")}
           <Link className="ash-nav" aria-current={tab === "videos" ? "page" : undefined} href="/admin/videos" title="Videos">
             <span className="ash-navl"><Icon name="video" /><span className="ash-navt">Videos</span></span>
           </Link>
@@ -149,7 +198,7 @@ export default function AdminShell({ tab, role, children, onTab, badges, game: g
           {/* One tab per game; inside a tab you only see that game's pages. */}
           <nav className="ash-games" aria-label="Games">
             {GAMES.map((g) => (
-              <Link key={g.key} href={g.home} className="ash-game" aria-current={g.key === game ? "page" : undefined} title={`${g.name}: ${gameCount(g.key)} pages`}>
+              <Link key={g.key} href={g.home} className="ash-game" aria-current={!inTeam && g.key === game ? "page" : undefined} title={`${g.name}: ${gameCount(g.key)} pages`}>
                 <span className="ash-game-full">{g.name}</span><span className="ash-game-short">{g.short}</span>
                 <span className="ash-game-n">{gameCount(g.key)}</span>
               </Link>

@@ -27,6 +27,8 @@
   background: linear-gradient(100deg, rgba(27, 95, 214, 0.55), rgba(18, 63, 156, 0.2) 60%, rgba(18, 63, 156, 0)); }
 .sg-dot { position: absolute; top: -8px; right: 4px; z-index: 5; width: 16px; height: 16px; border-radius: 999px; padding: 0; cursor: pointer;
   border: 2px solid rgba(3, 6, 14, 0.7); background: var(--bc-red); box-shadow: 0 0 0 4px rgba(255, 77, 94, 0.2); }
+/* Phone fix: the dot stays 16px to look at; the finger target is 32px. */
+.sg-dot::before { content: ""; position: absolute; inset: -8px; border-radius: 999px; }
 .sg-warn { position: absolute; top: 16px; right: 0; left: 0; z-index: 6; padding: 10px 12px; background: #2a0d0d; border: 1px solid var(--bc-red);
   border-radius: 4px; color: #fecaca; font-size: 13px; font-weight: 700; line-height: 1.45; }
 .sg-nudge { width: 100%; text-align: left; cursor: pointer; padding: 11px 14px; font-size: 13px; font-weight: 900; font-style: italic; text-transform: uppercase;

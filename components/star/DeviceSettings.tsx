@@ -12,6 +12,8 @@ import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetNote, SetSection, SetToggle } from "./settingsKit";
 import Quality3dRow from "./Quality3dRow";
+import FhrSwitchRow from "./FhrSwitchRow";
+import DataCredits, { DATA_CREDIT_SOURCES } from "./DataCredits";
 
 /**
  * THE SETTINGS THAT BELONG TO THIS DEVICE, NOT TO A SAVE.
@@ -107,7 +109,7 @@ function HomeScreenTip() {
 // scene rows ("the new cut scenes will be staying"). See CLAUDE.md →
 // "Decided, no toggle".
 
-/** The first screen's switches: full screen, sound, 3D quality, skip the line-up. */
+/** The first screen's switches: full screen, sound, 3D quality, skip the line-up, Full highlights rebuild. */
 export function QuickSwitches({ glow, fullscreen }: {
   glow: string;
   fullscreen: { support: FullscreenSupport; on: boolean; onToggle: () => void };
@@ -120,7 +122,9 @@ export function QuickSwitches({ glow, fullscreen }: {
       <FullScreenRow support={fullscreen.support} on={fullscreen.on} onToggle={fullscreen.onToggle} />
       <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const on = !sfxNow; setSfxOn(on); if (on) sfx("ui-confirm"); }} />
       <div className="border-b border-white/10 py-2.5"><Quality3dRow /></div>
-      <SetToggle label="Skip the line-up" on={skipLineup} onClick={flipSkipLineup} last />
+      <SetToggle label="Skip the line-up" on={skipLineup} onClick={flipSkipLineup} />
+      {/* Harry, 20 Oct 2026: a toggle with a "?", on the first screen (also in the match's ⚙ and before kick-off). */}
+      <div className="py-2.5"><FhrSwitchRow /></div>
     </SetCard>
   );
 }
@@ -243,6 +247,8 @@ export function SettingsGroups({ glow, extra = [], inMatch = false }: { glow: st
     { id: "world", title: "3D match camera", sub: "Zoom and camera height", count: 2, content: <World3dGroup />, card: true },
     { id: "screens", title: "Screens", sub: "Old UI or New UI", count: 1, content: <ScreensGroup />, card: true },
     ...extra,
+    // Harry, 20 Oct 2026: the free data's credit lines live in Settings (components/star/DataCredits.tsx).
+    { id: "credits", title: "Data credits", sub: "Where the real football data comes from", count: DATA_CREDIT_SOURCES, content: <DataCredits />, card: true },
   ];
   return (
     <>

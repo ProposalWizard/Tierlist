@@ -55,7 +55,7 @@ function fingerprint(extra: Partial<HiddenMatchInputs>): string {
       while (st.minute < 94) {
         const { events, request } = tick(st, inputs, rng);
         feed(JSON.stringify(events));
-        if (request) { feed(JSON.stringify(request)); resolveScenario(st, standIn(request.zone, rng)); }
+        if (request) { feed(JSON.stringify({ ...request, regain: undefined })); resolveScenario(st, standIn(request.zone, rng)); }
         feed(`${st.minute}:${st.userScore}-${st.oppScore}:${st.zone}:${st.possession}:${st.momentum.toFixed(6)}`);
       }
     }
@@ -63,6 +63,10 @@ function fingerprint(extra: Partial<HiddenMatchInputs>): string {
   return h.toString(16);
 }
 // Taken from lib/star/hiddenMatch.ts as it was before match flow (ddd06d7d).
+// B2b (2c985b9d) added a read-only `regain` note to ScenarioRequest (no random
+// draw, nothing reads it back), which changed the JSON of every request. The
+// fingerprint leaves that one note out (`regain: undefined`), so it still pins
+// every event, score, zone and the rest of every request to the old match.
 const OLD_FINGERPRINT = "4173b349";
 console.log("\n== Old is exactly the old match");
 check(fingerprint({}) === OLD_FINGERPRINT, `no matchFlow: fingerprint ${fingerprint({})} = ${OLD_FINGERPRINT}`);

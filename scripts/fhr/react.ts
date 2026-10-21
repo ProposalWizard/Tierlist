@@ -30,6 +30,11 @@ function bodies(sc: Scenario): Map<string, { x: number; y: number }> {
 
 /** Strike the served chance once and count the men who react. */
 export function reactingAfterStrike(sc: Scenario, seed: number): Reaction {
+  return strikeOnce(sc, seed).reaction;
+}
+
+/** The same strike, with how it ended (for the B2 measure: the extra defender's effect). */
+export function strikeOnce(sc: Scenario, seed: number): { reaction: Reaction; result: string | null } {
   const rng = mulberry32(seed);
   const s: Scenario = JSON.parse(JSON.stringify(sc));
   initDefenders(s, rng);
@@ -62,6 +67,6 @@ export function reactingAfterStrike(sc: Scenario, seed: number): Reaction {
     if (moved(after, k, p)) { r.all++; if (!k.startsWith("d")) r.mates++; }
     if (moved(early, k, p)) r.early++;
   }
-  return r;
+  return { reaction: r, result: typeof res === "string" ? res : null };
 }
 

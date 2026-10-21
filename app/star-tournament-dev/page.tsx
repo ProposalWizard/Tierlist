@@ -41,7 +41,7 @@ export default function TournamentDev() {
   const stage = s.winner ? "Finished" : s.ko.length ? s.ko[s.ko.length - 1].name : s.matchday ? `After matchday ${s.matchday}` : "The draw";
 
   return (
-    <BroadcastPage title="Tournaments" sub="The real tournament code: draw, groups, knockouts with extra time and penalties. Nothing is saved." back="/star-play-dev">
+    <BroadcastPage title="Tournaments" sub="The real tournament code: draw, groups, knockouts with extra time and penalties. Nothing is saved.">
       <div className="tn" data-tournament-dev>
         <Panel title="Set up" note={stage}>
           <div className="tn-controls">

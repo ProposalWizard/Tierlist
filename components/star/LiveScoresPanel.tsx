@@ -41,8 +41,9 @@ export default function LiveScoresPanel({
         <button
           onClick={onClose}
           aria-label="Close live scores"
-          className="grid h-6 w-6 place-items-center rounded bg-white/10 text-sm font-black text-white hover:bg-white/20"
+          className="relative grid h-6 w-6 place-items-center rounded bg-white/10 text-sm font-black text-white hover:bg-white/20"
         >
+          <span aria-hidden className="absolute -inset-2" />
           ×
         </button>
       </div>

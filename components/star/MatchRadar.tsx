@@ -14,6 +14,7 @@
  * minute, never a screen that runs its own ball physics (see the one-engine
  * guard's rule on canvas animation loops).
  */
+import { createContext, useContext, useEffect } from "react";
 import type { RadarFrame, RadarHighlight, RadarMatch, RadarSummary, RadarEvent } from "@/lib/star/matchRadar";
 import { attackLabel } from "@/lib/star/matchRadar";
 import type { Zone, Lane, RadarTick, Side } from "@/lib/star/hiddenMatch";
@@ -47,7 +48,10 @@ const KIND_NAME: Record<string, string> = {
 /** Seeded wobble inside an area, so the dot isn't pinned to one spot. */
 function jitter(minute: number, salt: number): number {
   let h = (minute * 2654435761 + salt * 40503) >>> 0;
-  h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995) >>> 0; h ^= h >>> 15;
+  h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995) >>> 0;
+  // ">>> 0" keeps it unsigned: a bare "h ^= …" turns it negative, which put the
+  // dot outside its lit area 220 of 455 minutes, 50 of them off the pitch (20 Oct 2026).
+  h = (h ^ (h >>> 15)) >>> 0;
   return (h % 1000) / 1000 - 0.5;
 }
 export function ballAt(f: Pick<RadarFrame, "zone" | "lane" | "minute">): { x: number; y: number } {
@@ -320,6 +324,28 @@ export function liveBallAt(t: Pick<RadarTick, "zone" | "lane" | "minute">): { x:
   };
 }
 
+/** What the live radar was handed this render: the unseen match's minutes and the clock. */
+export interface LiveRadarReading {
+  trace: ReadonlyMap<number, RadarTick>;
+  minute: number;
+  stepMs: number;
+  fullTime: number;
+  us: LiveRadarSide;
+  them: LiveRadarSide;
+}
+
+/**
+ * A TEST PAGE READING THE LIVE RADAR (the PC match + radar page,
+ * /star-pc-match-dev). The live radar is drawn inside the real match's
+ * commentary from the unseen match's own minutes; a page that wants those
+ * minutes for a bigger radar of its own wraps the match in this and is
+ * handed exactly what the live radar was handed, every time it draws.
+ * Read only: nothing here reaches the match. `hideInline` leaves the small
+ * radar out of the commentary (the page shows its own beside it).
+ * Absent (every real match): nothing changes.
+ */
+export const LiveRadarTap = createContext<{ onReading: (r: LiveRadarReading) => void; hideInline?: boolean } | null>(null);
+
 /** The minute to draw: the newest one the clock has reached. */
 export function liveTickAt(trace: ReadonlyMap<number, RadarTick>, minute: number): RadarTick | null {
   for (let m = Math.floor(minute); m >= 0; m--) {
@@ -338,6 +364,8 @@ export function LiveRadar({ trace, minute, us, them, stepMs, fullTime = 90 }: {
   stepMs: number;
   fullTime?: number;
 }) {
+  const tap = useContext(LiveRadarTap);
+  useEffect(() => { tap?.onReading({ trace, minute, stepMs, fullTime, us, them }); });
   const t = liveTickAt(trace, minute);
   const ticks: RadarTick[] = [];
   for (let m = 1; m <= Math.floor(minute); m++) { const k = trace.get(m); if (k) ticks.push(k); }
@@ -360,6 +388,7 @@ export function LiveRadar({ trace, minute, us, them, stepMs, fullTime = 90 }: {
   const labelCol = flash === "yours" ? "#fde047" : flash ? side(flashSide).colour : "#fff";
   const bw = (LW - 8) / fullTime;
 
+  if (tap?.hideInline) return null;
   return (
     <div data-live-radar style={{ padding: "6px 6px 4px", background: "linear-gradient(#0b1220, #0a0f1a)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
       <style>{`

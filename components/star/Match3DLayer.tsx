@@ -41,6 +41,7 @@ import { useMatchView3d, setMatchView3d } from "@/lib/star/matchView3d";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { SettingsGroups } from "./DeviceSettings";
 import Quality3dRow from "./Quality3dRow";
+import FhrSwitchRow from "./FhrSwitchRow";
 import { quality3dTier } from "@/lib/star/three3d/quality";
 import { SetCard, SetToggle } from "./settingsKit";
 
@@ -229,6 +230,8 @@ function MatchSettings({ onClose }: { onClose: () => void }) {
           <div className="text-[12px] font-bold text-white/85">The match is paused.</div>
           <SetCard tone={GLOW} className="px-3 py-1">
             <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const v = !sfxNow; setSfxOn(v); if (v) sfx("ui-confirm"); }} />
+            {/* Harry, 20 Oct 2026: "inside of a game, I can press settings … and turn on full highlights rebuild". From the next chance. */}
+            <div className="border-b border-white/10 py-2.5"><FhrSwitchRow /></div>
             <div className="py-2.5"><Quality3dRow when="Changes when you go back to the match." /></div>
           </SetCard>
           <SettingsGroups glow={GLOW} inMatch />

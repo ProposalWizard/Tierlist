@@ -91,3 +91,83 @@ the BUILD it belongs to (list at the bottom).
 
 ### B11, Harry's words (20 Oct)
 "read receipts in chat, and reply to current chats - also working @ ing and linking other pages directly into chat with some new feature or to be able to almost point someone towards something on a page through a shortcut (like say shift + x means i CAN highlight part of a page and it @'s them to look at it and they see my note.) … the patch notes system could have like a read receipts and notes so we know when everyone has read and understood patch notes"
+
+## Patch notes for the overnight round (Harry, 20 Oct)
+"I need all patch notes split up, named with stills and videos once all is done." → One named patch-notes page per build (B1, B4, B7, B9, B11, B3, B5, B6, B8), each with stills, plus short after-videos for gameplay and animation changes (stills first, videos added after), and one index page linking them all.
+
+## B12 — Vision training rebuilt (Harry, 20 Oct, morning)
+"the vision skill is horrendous. It's cluttered, and the skill gap doesn't increase. I don't like the line on the pitch. Instead, what would be an actual good vision skill would be real scenarios: Who should I pass to in this scenario? Have someone offside. Lessen the time. Maybe even make them actually kick the ball. Why are we just tapping? Maybe … early on you tap, then you actually have to kick the ball inside 0.3 seconds. You have to actually aim and kick the ball. We can do better with vision. That doesn't look interesting at all."
+Note (not a build yet): "I also don't like how it's in the old 2D style. All of these images in the training." → every training drill should move to the new match look later.
+
+## Harry's answers + feedback on the overnight pages (20 Oct, morning)
+Decided: Lower League Trophy cash prize KEEP ("pretty cool"). In-match mute/Touch/Power button sizes: YES (done). Wembley change: KEEP. 3D garden/house/shop/3D training keep their own back button; everything else on the one arrow. The bubble covering 11 px of "Let's go" (admin/test page only): fine. Default admin look = Clean light ("he [Mikey] preferred that") — done. Google Drive / downloaded data: delete raw downloads after use (done for B3's 1.2 GB; rule in data/opendata/README.md).
+New builds from the feedback:
+- PN: patch notes for the last 2 days, split into tabs (overnight B1/B4/B7/B9/B11/B3 + yesterday's admin round + everything else), a section explaining this patch-notes style, and each one in the admin patch-notes archive so everyone acknowledges every tab ("push this all through into that new admin build").
+- B13 Fixes: full pass over ALL fixture dates for clashes (not only the FA Cup Round of 64); admin fixes seen in the stills (XP Rewards "Failed to fetch"; chat bubble over "Next line ›" in the Manager's Office); Team board "Harry's push count looks wrong"; the "GitHub refused the site's key" line.
+- B7b Training editor: drag and drop like the gallery (move the ball, cones, men; Save); explain/replace the "your skills" sliders; Pace needs a real skill element.
+- B9b Lower League Trophy gets its own screen like Mikey's FA Cup / international ones.
+- B14 Running after a chance: WASD + Shift to sprint on PC, a stamina bar on PC and phone, auto run (Harry likes it), and team-mates sometimes pass back to you even before you're captain. (Match/dribble files → red guard asks.)
+- B15 Player of the Month and similar cards: headshots shot from our 3D model, not the old 2D drawn heads ("looks unprofessional").
+- B16 Keepers in the 3D minigames (Wembley, 3D training) feel overpowered — measure and rebalance. NOTE: B1 raised Wembley's keeper 36 → 70; check against this.
+- B17 A PC match layout like the five-a-side test area (pitch + live radar beside it), as a test area first, ideally in 3D ("the way the ball's moving across the pitch is very cool").
+- Answers (20 Oct, 09:45): training "your skills" — "surely it should just be auto — playing a level 20 skill would mean you have the 19 levels completed before it" → no slider; a level plays with the skill you'd have after finishing the levels before it (B7b). Keepers in 3D minigames: fair ≈ 1 in 3 shots saved (B16). Engine OK for B2 and B10: YES (run one at a time; B14 after).
+
+## Harry, 20 Oct afternoon
+- Allowed B2's match-screen edit and B17's (false alarm) box: "1 and 2 is fine".
+- Patch notes regrouped: "outside of all the overnight work have a notes on: team board / all team updates; full admin pages / skins update; anything else that doesn't fit that or overnight work" → index tabs Overnight · Team · Admin & skins · Everything else, one full page per topic (v0.82–v0.84).
+- B18 LAG (after everything else is done): "once all of this is done I want a double / triple lag check and research into how and why to make everything lagless. I want zero lag for the same quality, let's revolutionise mobile gaming." Plan: research now (best practice + our code); then on the final merged build, three independent measurements of every screen (static audit, scripted traces at phone size with a phone-like CPU throttle, a separate re-measure); a ranked fix plan with gain/cost/quality risk; then build fixes one at a time, each re-measured. Same quality, no lower settings as the answer.
+- B5b (Harry, 20 Oct ~15:15): "I really like the B5 3D changes; however we now need to figure out how to make the bodies not look badly proportioned, natural movement while speaking, moving, holding objects etc." → proportions as 3 options at phone size first (Harry picks), talking/moving body language from the cut-scene timeline, props held properly (trophy, pen first).
+- Patch notes: "Vision needs to be shown as rebuilt in B7"; "a full plain pass could be run over everything to simplify and get rid of yap in the artifact"; "how these patch notes work doesn't need to be on every page"; questions to a separate artifact.
+- Admin: "the team area should be the default home area and it should open on Team board and have its own tab on the left" → B19.
+
+## 20 Oct, 15:36: lag devices and the push
+- Lag is judged on three phone tiers and three computer tiers: high (iPhone 16+), mid (iPhone 13/14), low (older Android); the same three for PC. Written into docs/research/lag/2026-10-20-research.md §5.0.
+- "we can push everything once the team reviews the patch notes." Push = merge Harry → main, after tsc, both guards, the tests and `npm run build` pass. Gate: the team has reviewed the patch notes (Harry says so). A build still running at that point waits for the next push.
+- 15:40: "less frames is okay" for the low tier: old Android (and the low PC) may run 3D at a steady 30 fps, same picture. Asked "I thought it would be simulated?": the CPU side is simulated for every tier; the graphics chip cannot be simulated here (no GPU), see research §5.0.
+
+## 20 Oct, 15:48: B2b (on B2's build-ups)
+- "The highlights need to end on the actual camera we have been using in game, I don't want that to drift as camera has been a problem throughout." → the build-up's last frame = the chance's own camera, 0 px apart at 390 and on a computer, with a test.
+- "All of this has to scale with level of npc's your teammates intelligence vs opposition. How easy it is to get the ball back." → regains, press, passing and run timing scale with the gap between the two sides. Chances and goals stay with the hidden match.
+- "A lot of times in the moving build ups offsides occur that aren't called, offsides can happen but they must be called." → every pass checked; an offside is called (flag, whistle, free kick, move ends); 0 uncalled, as a test.
+- 16:29, B5b: "none of those body proportions look remotely good, you need to find a way to do this better" — A/B/C (bone scaling of the Style A body) all rejected. New plan: diagnose against a real-proportion guide; prototype three different methods (MakeHuman body with the Style A look; a new properly proportioned Style A body via Higgsfield → fit.py; a mesh re-shape in Blender); full body, side, 3/4, scenes and a walk clip each; the builder and the coordinator both judge harshly before anything reaches Harry.
+- 17:12: "I'm liking the look of that proportion model" (read as the MakeHuman body on the right of the B5b diagnosis sheet) → B5b focuses on method a. "I don't like how robotic the arms can end up being… there needs to be fluidity" → B5c: Higgsfield reference videos of every cut scene as it is now, then rebuild the movement from them. Team room: "@Leo @Mikey, do they get added on their phone? … that is also needed" → phone notifications (Web Push, no SQL).
+- 17:20, next after the bodies: an animation deep dive — the new proportions used with all the real shots, real highlights and real stats ("animations should just make the game feel a lot better"). Then the final system: dribbling in the game — higher dribbling skill = dribble for longer, a faster step-off, skill moves; moving with the ball in the match, and moving and kicking the ball, on PC and phone.
+- 17:44: "Delete all higgsfield videos and images once done also." → every Higgsfield image, video and 3D model is deleted there once a round is done (copies kept in the repo first), listed in that build's higgsfield.md.
+- 17:50 Higgsfield: "5 images in Nano Banana Pro 4K, then 5 videos with those images in Seedance 2.5 480p draft mode. Those 5 will be exceptional, and that will be the base standard … do another 10 of those right now … I'll delete stuff for you." → 15 references with that recipe into docs/handoffs/2026-10-20-builds/b5c-hq/; B5c copies the first 5 most closely. Harry deletes Higgsfield items himself (replaces the 17:44 delete rule for this round).
+- 17:50 Live share idea: a live screen + voice share in the admin Videos section that a Claude chat can watch, replying in the terminal. Built as a TEST: frames every ~3 s + a speech transcript to Storage under a code, `scripts/live-watch.mts <code>` for the Claude side.
+- 18:25: "jesus that was alot of credits - no more higgsfeild use for now" → no Higgsfield use by any builder until Harry says otherwise (~730 credits used today: 104 first round, ~13.5 B5b body, ~613 HQ round).
+- 18:38: "the arms are hitting into the body and through the body" (confirmed from the walk clip frames) → B5c fixes it together with the high shoulders, with a measured arm-to-body clearance check on every clip.
+- 18:38: "continue with all builds until later - save questions for last and collect all open questions onto that same artifact" → no questions in chat for now; every open question goes onto the Patch Notes Questions artifact (https://claude.ai/artifact/CSEM8X286GwLUa8Dyw6WTh, questions_data.py / build_questions.py), updated at the end of the round.
+- 19:45: "as a rule something like a chin or any body part can't overlap inside another body part" → standing rule in CLAUDE.md; B5c builds a reusable self-overlap check (every part vs every part, every clip).
+- 20:15: "nah the b2 + todays face is ass, gotta try and keep our cartoon like faces, the movements are beginning to look a bit better" → realistic-body direction dropped; B5d: a stylised cartoon body that fits our unchanged cartoon heads (3 directions, sheet + walk clip, Harry picks). B5c movement on the right track.
+- 23:21 (B5d sheet, old clips): "whyyyy is the posture so weird, there has to be a solution" → B5c posture pass: measure head-forward, neck angle, shoulder roll, elbow bend, palm direction, arm gap, chest/pelvis tilt, weight shift, knee bend from the 28 references vs ours; add a posture layer to every standing/idle/walk/cut-scene clip; before/after on today + d1–d3.
+
+## 21 Oct 2026 (open questions round)
+- B2b offsides in build-ups (0.37 a match at even strength): **Keep.**
+- "OFFSIDE" shown twice: **Once everywhere** (banner only, real match too).
+- Headers/volleys before 5 real drawings each: **Use the cross drawings now.**
+- B5d body pick: asked for it in chat with pictures (sent: fronts, 6-scene sheet, walk clip). Waiting.
+
+## 21 Oct 2026 — car and horse in the 3D world
+Ask: "For the 3d ecosystem let's make it so u can get into your car and drive home, Also make the horse ridable with a saddle."
+1. How you drive home: answered "C" (only a/b were offered: a = cut scene, b = steer yourself). Asked back.
+2. Several cars: **tap the one you want at the car park.**
+3. No car: **both** — the car park says "Buy one in the shop" and a taxi takes you home.
+4. Riding: **round the whole garden with the walking controls (walk, gallop on hold)**, plus "make a field area unlock for the horse to ride in - maybe obstacle course vibe".
+5. Saddle: **free, on the horse only while you ride.**
+6. **Riding trains the horse** (speed / stamina).
+- (02:40) Body: **C** ("yes but I still think the body needs work"). Car Q1: **both** (steer yourself, plus a skip to the cut scene).
+- B14 Q15 joystick auto run: yes. Q16 stamina bar: move it. Q17 sprint 0.12/s: yes. Bug hunt: skip. Hold live until the camera fix is checked.
+
+## 21 Oct 2026 ~04:15 — answers to the 1–20 list
+1. Body C: "posture spine to head is off, it should move naturally, it's like the model is always configured to look slightly weird and inhuman".
+2. Riding field unlock → a **garden level**: XP from garden training drills and casino play; levels give more space and areas (horse riding, race track, fast travel to your house, …).
+3. Course: jumps and poles, timed lap + best time. 4. Every ride trains a little and uses horse energy. 5. Taxi: small fare.
+6. Play the ~170 real headers/volleys as true ones: yes.
+7. Skill: **create a new Aerial & Acrobatics skill** (instead of Power/Technique/Flair).
+8. Team-mates head/volley by their own skill (engine change): yes.
+9. Mix: as built (1 in 10 each).
+10. Flair/bicycle input: not an extra button — "a random timed event or completely different random (rare timed event that looks completely different)".
+11. Speed up build-up making: yes. 12. Winger 16%: fine. 13. Lag pill: move it. 14. Tick boxes: fix.
+15. N1 keep the bottom bar. 16–18 (house icon, Stats chips, Transfers line): my picks (icon inert on Home, 5 chips, "window opens in N weeks").
+Camera: "we really need to fix that camera" → player size options being drawn.

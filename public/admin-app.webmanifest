@@ -3,7 +3,7 @@
   "short_name": "KIB Admin",
   "description": "The Knowitball admin room for Harry, Mikey and Leo.",
   "id": "/admin-app",
-  "start_url": "/admin/star",
+  "start_url": "/admin/home",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
