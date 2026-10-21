@@ -29,6 +29,7 @@
  * Pure: no React, no canvas, and never touches canvasEngine's physics.
  */
 
+import { canTakeCorners } from "./cornerReach";
 import type { CareerState, Fixture, MatchStats, GoalEvent, OppGoalEvent, SquadPlayer } from "./types";
 import {
   newMatch, advanceTo, advanceUntilInvolved, resolveScenario, lateSubQuota, noteServedKind,
@@ -127,7 +128,13 @@ export function simulateOwnMatch(career: CareerState, fixture: Fixture, o: SimOp
   const energyAt = (minute: number) => clampEnergy(startEnergy - Math.max(0, minute - enteredAt) * perMin);
 
   let subOn = false, subChances = 0;
+  // B20: the corner rule (Mikey, 20 Oct 2026; lib/star/cornerReach.ts), as the
+  // played match passes it: can your best corner reach the middle of the box,
+  // on the power and technique the shot uses (o.skills: boots included, as the
+  // played match gets them).
+  const takesCorners = canTakeCorners({ power: skills.power, technique: skills.technique });
   const inputs = (): HiddenMatchInputs => ({
+    canTakeCorners: takesCorners,
     teamStrength: matchTeamStrength(career, career.relationships.team, fixture),
     oppStrength,
     playerSkill: (career.skills.power + career.skills.technique + career.skills.vision) / 3,

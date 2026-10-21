@@ -36,6 +36,7 @@ import {
   type HiddenMatchInputs, type ScenarioResult, type Zone,
 } from "../hiddenMatch";
 import { type Scenario } from "../canvasEngine";
+import { withCornerReach } from "../cornerReach";
 import { CX } from "../pitch";
 import { makeChance, PictureMemory } from "../chanceMaker";
 import { newSelectionMemory } from "../scenarioSelect";
@@ -135,7 +136,8 @@ const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.l
 export function measureRuler(o: { matches: number; seed?: number; chances?: ChancesMode; inputs?: HiddenMatchInputs; react?: ReactFn; buildUp?: BuildUpFn }): Ruler {
   const t0 = Date.now();
   const mode: ChancesMode = o.chances ?? "old";
-  const inputs = o.inputs ?? RULER_INPUTS;
+  // Mikey's corner rule, as the real match passes it (lib/star/cornerReach.ts).
+  const inputs = withCornerReach(o.inputs ?? RULER_INPUTS);
   const prev = (globalThis as Record<string, unknown>).__starChancesForced as ChancesMode | null | undefined;
   forceChancesMode(mode);
   try {

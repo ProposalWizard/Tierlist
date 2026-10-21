@@ -686,9 +686,13 @@ const CHANCE_BOX = 0.55;    // in the penalty area
 /** Minutes ignored by the match before you go looking for the ball yourself. */
 const STARVED_MIN = 20;
 /**
- * DEEP TOUCHES (Mikey, 9 Oct 2026). Kane is on the ball 33 times a match, 16
- * of them 35m+ from goal (StatsBomb, 12 England matches); the game gave a
- * striker 6.1 highlights, nearly all of them chances. With `deepTouches`, a
+ * DEEP TOUCHES (Mikey, 9 Oct 2026). A real central forward is on the ball 52
+ * times per 90, 30 of them 35 m+ from goal (Wyscout public dataset, CC BY 4.0,
+ * every central forward of 1,941 matches by its PlayeRank roles;
+ * data/opendata/wyscout_shot_outcomes.json, re-sourced 21 Oct 2026); the game
+ * gave a striker 6.1 highlights, nearly all of them chances. DEEP_TOUCH is a
+ * game dial set for "about 9 highlights a match" (tests/star/kindMix.mts), not
+ * a copied number, so the re-source leaves it at 0.24. With `deepTouches`, a
  * minute your side has the ball in midfield or the final third can find you
  * there too, at most one every DEEP_TOUCH_GAP minutes. The even mix (or the
  * real mix) still decides the kind; this only decides how often.

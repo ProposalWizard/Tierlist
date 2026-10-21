@@ -1,5 +1,6 @@
 "use client";
 
+import { linesOf, watchSelection } from "@/lib/teamRoom/patchQuote";
 import { useEffect, useId, useRef, useState } from "react";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import { DEMOS, DEMO_CSS, DEMO_TOKENS } from "@/lib/patchNotesDemos";
@@ -203,7 +204,7 @@ function VersionView({ note }: { note: PatchNote }) {
     : "The same notes as plain data.";
   return (
     <>
-      <PatchReadBar note={note} />
+      <PatchReadBar note={note} lines={linesOf(note)} />
       {(hasPage || review) && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {hasPage && tab("page", "Page")}
@@ -249,9 +250,9 @@ function ReviewView({ review }: { review: PatchNoteReview }) {
 
 /**
  * The kept page, in a frame sized to its full height so the archive scrolls
- * it like any other content. Loaded as text into `srcdoc`: the site sends
- * X-Frame-Options: DENY on every response, so a frame pointed at a URL would
- * be blank (lib/patchNotePageServe.ts).
+ * it like any other content. Loaded as text into `srcdoc` (written when the
+ * site sent X-Frame-Options: DENY; it is SAMEORIGIN since 21 Oct 2026, and
+ * srcdoc still works and still sizes cleanly; lib/patchNotePageServe.ts).
  */
 export function PageFrame({ pageKey, artifactUrl, label }: { pageKey: string; artifactUrl?: string | null; label?: string }) {
   const ref = useRef<HTMLIFrameElement | null>(null);
@@ -284,7 +285,9 @@ export function PageFrame({ pageKey, artifactUrl, label }: { pageKey: string; ar
     const ro = new ResizeObserver(measure);
     ro.observe(doc.documentElement);
     if (doc.body) ro.observe(doc.body);
-    ref.current?.contentWindow?.addEventListener("unload", () => ro.disconnect());
+    // Text selected in the page can be quoted in a note (Notes → Quote my selection).
+    const stop = watchSelection(doc);
+    ref.current?.contentWindow?.addEventListener("unload", () => { ro.disconnect(); stop(); });
   };
 
   if (error) {

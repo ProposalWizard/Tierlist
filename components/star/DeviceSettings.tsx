@@ -13,6 +13,7 @@ import type { FullscreenSupport } from "./ImmersiveToggle";
 import { SegTabs } from "./screenKit";
 import { SetCard, SetNote, SetSection, SetToggle } from "./settingsKit";
 import Quality3dRow from "./Quality3dRow";
+import PopupPackRow from "./PopupPackRow";
 import FhrSwitchRow from "./FhrSwitchRow";
 import DataCredits, { DATA_CREDIT_SOURCES } from "./DataCredits";
 
@@ -187,8 +188,8 @@ function MatchGroup() {
       <LookRow id="keepers" look={look} tabs={NEW_OLD} note={gp("keepers")} />
       {/* Leo, 14 Oct 2026 (round 16): default New. Also in Settings → Updates. */}
       <LookRow id="keeperFinish" look={look} tabs={NEW_OLD} note={gp("keeperFinish")} />
-      {/* Mikey, 20 Oct 2026: asked for as a toggle by name. Also in Settings → Updates. */}
-      <LookRow id="mikeyPopups" look={look} tabs={NEW_OLD} note="New: a scoreboard for every goal (score rolls over, scorer and assist) and TV captions for everything else. Old: as before." />
+      {/* Mikey's pop-ups as a pack (Harry, 21 Oct 2026: "add them as a texture pack"): Classic | Broadcast. */}
+      <PopupPackRow />
       <PrefRow label="Match view 3D" note="On: your match drawn in 3D, in a full stadium. The football is the same; only the picture changes.">
         <SegTabs className="w-[150px] shrink-0" value={view3d} onChange={(v) => setMatchView3d(v)} tabs={[["on", "On"], ["off", "Off"]] as const} />
       </PrefRow>
@@ -247,7 +248,7 @@ export function SettingsGroups({ glow, extra = [], inMatch = false }: { glow: st
     );
   }
   const groups: (ExtraGroup & { card?: boolean })[] = [
-    { id: "match", title: "Match", sub: "Keepers, 2D or 3D, names", count: 3, content: <MatchGroup />, card: true },
+    { id: "match", title: "Match", sub: "Keepers, pop-ups, 2D or 3D, names", count: 3, content: <MatchGroup />, card: true },
     { id: "world", title: "3D match camera", sub: "Zoom and camera height", count: 2, content: <World3dGroup />, card: true },
     { id: "screens", title: "Screens", sub: "Old UI or New UI", count: 1, content: <ScreensGroup />, card: true },
     ...extra,

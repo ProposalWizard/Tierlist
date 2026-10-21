@@ -221,5 +221,44 @@ const auto = runs("auto");
   check("Joystick, thumb lifted at 0.5 s: Auto run takes over 0.6 s later", rel.autoAt !== null && Math.abs(rel.autoAt - 1.1) < 0.05);
 }
 
+// ── 7. B20: "your player runs after the ball while it's being kicked whilst being in position" ──
+// While the match still shows the kick (its kick pose, ~0.28 s), you stand where you struck it.
+{
+  const kickRun = (holdS: number, kind: ScenarioKind, seed: number, windowS = holdS) => {
+    const rng = mulberry32(seed);
+    const sc: Scenario = makeChance({ source: { from: "kind", kind }, rng }).sc;
+    initDefenders(sc, rng);
+    const to = orderableRunners(sc)[0]?.pos ?? { x: sc.ball.x + 8, y: sc.ball.y - 6 };
+    const ball: Ball = launch(sc, { x: to.x - sc.ball.x, y: to.y - sc.ball.y }, 0.4, { cx: 0, cy: 0 }, { power: 70, technique: 70 }, rng);
+    ball.vz = 0; ball.z = 0.08; ball.shot = false; ball.youStruckAtGoal = false;
+    sc.player = { x: sc.ball.x, y: sc.ball.y };
+    const st = startPlayOnRun(sc, rng, to, { pace: 70, energy: 90 });
+    const lr = mulberry32(3);
+    const p0 = { ...sc.player };
+    let duringKick = 0, after = 0;
+    for (let t = 0; t < 1.2; t += H) {
+      st.stick!.kicking = t < holdS;
+      const was = { ...sc.player };
+      if (stepPlayOn(st, sc, ball, H, lr, MAX_LAY_OFFS) === "caught") break;
+      const d = Math.hypot(sc.player.x - was.x, sc.player.y - was.y);
+      if (t < windowS) duringKick += d; else after += d;
+      stepBall(ball, sc, rng, H);
+      if (ball.event) ball.event = null;
+    }
+    return { duringKick, after, end: Math.hypot(sc.player.x - p0.x, sc.player.y - p0.y) };
+  };
+  let worst = 0, ran = 0, n = 0, noHold = 0, oldKick = 0, oldN = 0;
+  for (const kind of KINDS) for (let i = 0; i < 8; i++) {
+    const r = kickRun(0.28, kind, 9100 + i * 31);
+    const old = kickRun(0, kind, 9100 + i * 31);
+    n++; worst = Math.max(worst, r.duringKick); if (r.after > 0.5) ran++;
+    if (old.end > 0.5) noHold++;
+    const o28 = kickRun(0, kind, 9100 + i * 31, 0.28); oldKick += o28.duringKick; if (o28.duringKick > 0.05) oldN++;
+  }
+  console.log(`  kick held 0.28 s: moved during the kick at most ${worst.toFixed(3)} m over ${n} passes; ran afterwards in ${ran}/${n} (without the hold: ${noHold}/${n} ran at all; and moved in the first 0.28 s in ${oldN}/${n}, ${(oldKick / n).toFixed(2)} m on average)`);
+  check("B20: you do not move while the kick is still being played", worst < 1e-9);
+  check("B20: the run still starts once the kick is over (as often as without the hold)", ran >= noHold - 1, `${ran} vs ${noHold}`);
+}
+
 console.log(fails ? `\n${fails} FAILED` : "\nall passed");
 process.exit(fails ? 1 : 0);

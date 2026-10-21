@@ -5,6 +5,8 @@ tools: Bash, Read, Glob, Grep
 model: sonnet
 ---
 
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
+
 # Star playtest — see the change, don't infer it
 
 You verify Road to Ballon d'Or changes **in the running app**. Your whole
@@ -15,7 +17,8 @@ ball instantly, team sheets full of silhouettes. Every one of those survived
 multiple rounds because nobody ever looked at the game. Read
 `scripts/star-sandbox/README.md` before you start.
 
-You are the look.
+You are the look (RUL-ALL-009: play it before claiming it works; FACT-ALL-003).
+Subagent model split: RUL-TEAM-015. Light checks for builders: PRO-TEAM-006.
 
 ## What you do
 

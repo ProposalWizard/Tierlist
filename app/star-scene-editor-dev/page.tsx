@@ -19,13 +19,15 @@
  * Approve + where/when + Commit to game (UsePanel.tsx, answers 3D-3, 3D-4):
  * the game uses an edit only once it is approved.
  * Kept scenes from the Scene generator (/admin/scene-generator) open here as
- * director scenes too ("Kept: …" pills).
+ * director scenes too ("Kept: …" pills). The scene list is lib/star/cutscene/sceneList.ts,
+ * shared with the 3D Area's Cut scenes cards; ?scene=<id> opens one.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Panel, Pill } from "@/components/admin/broadcast/BroadcastPage";
 import "./editor.css";
-import { FIXTURES, FIXTURE_LIST } from "@/lib/star/cutscene/fixtures";
+import { FIXTURES } from "@/lib/star/cutscene/fixtures";
+import { cutsceneList } from "@/lib/star/cutscene/sceneList";
 import { MOODS } from "@/lib/star/cutscene/presets/moods";
 import { SHOT_PRESETS } from "@/lib/star/cutscene/presets/camera";
 import type { CameraMove, CameraTrack, CutsceneScript, MoodId, ShotPreset, Track, Vec3 } from "@/lib/star/cutscene/types";
@@ -148,7 +150,10 @@ function DirectorEditor({ tabs }: { tabs: React.ReactNode }) {
 
   // the shared copies, once (never blocks the page)
   useEffect(() => {
-    const k0 = new URLSearchParams(window.location.search).get("kept");
+    // ?scene=<id> (the 3D Area's cut-scene cards) or the older ?kept=<id>
+    const q = new URLSearchParams(window.location.search);
+    const k0 = q.get("scene") ?? q.get("kept");
+    if (k0 && FIXTURES[k0]) setFixture(k0);
     const local = loadKeptLocal();
     setKept(local);
     if (k0 && local.some((k) => k.id === k0)) setFixture(k0);
@@ -337,14 +342,14 @@ function DirectorEditor({ tabs }: { tabs: React.ReactNode }) {
     <>
       <div className="se-unsaved" data-unsaved>
         Edits save on this device as you change them{shared?.missing ? " — the shared table isn't switched on yet, so SAVE FOR EVERYONE keeps them on this device only" : ""}.
-        {" "}Cut scenes do not play in a career yet (see the Scene generator&apos;s &quot;When does this play?&quot;), so an approved edit here is used on the cut-scene test pages for now.
+        {" "}Cut scenes do not play in a career yet (see the Scene generator&apos;s &quot;When does this play?&quot;), so an approved edit here is used on the 3D bench's cut-scene shots for now.
       </div>
       <div className="se-grid">
         <Panel title="3D PREVIEW" note="live: the real cut-scene director">
           {tabs}
           <div className="se-pills se-scripts">
-            {FIXTURE_LIST.map((f) => <Pill key={f.id} on={fixture === f.id} onClick={() => setFixture(f.id)}>{f.name}</Pill>)}
-            {kept.map((k) => <Pill key={k.id} on={fixture === k.id} onClick={() => setFixture(k.id)} title="Kept from the Scene generator">Kept: {k.name}</Pill>)}
+            {/* the one list of cut scenes (lib/star/cutscene/sceneList.ts): the 3D Area's Cut scenes cards read the same */}
+            {cutsceneList(kept).map((c) => <Pill key={c.id} on={fixture === c.id} onClick={() => setFixture(c.id)} title={c.kind === "kept" ? "Kept from the Scene generator" : undefined}>{c.kind === "kept" ? `Kept: ${c.name}` : c.name}</Pill>)}
           </div>
           <div className="se-view">
             <div ref={holder} className="se-canvas" data-editor={status} {...orbitHandlers} style={{ touchAction: "none", cursor: "grab" }} />
@@ -374,7 +379,7 @@ function DirectorEditor({ tabs }: { tabs: React.ReactNode }) {
         <Timeline script={script} cams={cams} dur={dur} time={time} onSeek={seek} />
       </Panel>
       <UsePanel place="director" scriptId={directorId(fixture)} edits={current()} onChange={(e) => { setApproval(e.approval); lastSaved.current = JSON.stringify(e); }}
-        gameNote="Cut scenes play only on test pages today. When the game plays one, it will use the approved edit for that scene, at the moment you pick under When." />
+        gameNote="Cut scenes play only on test pages today (the 3D bench's cut-scene shots). When the game plays one, it will use the approved edit for that scene, at the moment you pick under When." />
     </>
   );
 }

@@ -56,6 +56,8 @@ export function demoRoom(now: number) {
     { id: 2, target_kind: "idea", target_id: "1", owner: "Mikey", person: "Leo", body: "can the goal clips show the splash?", created_at: ago(180) },
     { id: 3, target_kind: "idea", target_id: "2", owner: "Harry", person: "Mikey", body: "yes, and a share picture", created_at: ago(40) },
     { id: 4, target_kind: "patch", target_id: "0.59", owner: "Mikey", person: "Leo", body: "Ageing reads well. Are League Two fees still too big?", created_at: ago(30) },
+    // The Inbox's "Mentions" (21 Oct 2026): a note that @'s you, quoting a line.
+    { id: 5, target_kind: "patch", target_id: "0.94", owner: "Harry", person: "Mikey", body: "> Pick a body\n@Harry C looks best to me, can we see it in a match?", created_at: ago(8) },
   ];
   const me: TeamPerson | null = fresh ? null : "Harry";
   return { me, taken: fresh ? (["Mikey"] as TeamPerson[]) : [], messages, ideas, votes, tasks, notes, online: ["Harry", "Mikey"] as TeamPerson[], marks, acks };

@@ -36,25 +36,28 @@ export interface KindBag { left: ScenarioKind[]; last?: ScenarioKind }
 export function newKindBag(): KindBag { return { left: [] }; }
 
 /**
- * THE REAL MIX (Mikey, 9 Oct 2026, from Kane's real touches): "Kane would get
- * less chances for one-on-ones … but gets the ball in deeper situations far
- * more often … you can pass it … and then you might get the ball back".
+ * THE REAL MIX (Mikey, 9 Oct 2026): "Kane would get less chances for
+ * one-on-ones … but gets the ball in deeper situations far more often … you
+ * can pass it … and then you might get the ball back".
  *
- * Measured from StatsBomb (12 England matches): Kane is on the ball 33 times a
- * match, 49% of it 35m+ from goal, 31% 18–35m out, 20% in the box. So a round
- * of the bag is 17 deals, 8 of them deep (a pass, build-up, a through ball)
- * and one in 17 a one-on-one, against one in 8 in the even mix. Long shots
- * and tight angles are dealt more, so your own shots a match stay about the
- * same (a striker: 2.1 → 2.5 a match, one-on-ones 0.67 → 0.49, measured over 600 matches): fewer gift chances, not fewer chances. Settings →
- * Match → Chance mix: Old deals the even mix exactly as before.
+ * Re-sourced 21 Oct 2026 from free data: every central forward in the Wyscout
+ * public dataset (CC BY 4.0, 1,941 matches; roles from its PlayeRank file),
+ * data/opendata/wyscout_shot_outcomes.json `forward_touches_by_area`: 52 touches
+ * per 90, 58% of them 35 m+ from goal, 30% 18-35 m out, 12% in the box. So a
+ * round of the bag is 17 deals: 10 deep (a pass, build-up, a through ball),
+ * 5 from 18-35 m (long shot, cutback, cross), 2 in the box (a tight angle, a
+ * one-on-one) — one one-on-one in 17, against one in 8 in the even mix.
+ * Before the re-source the bag was 8 / 6 / 3 (an older single-player count).
+ * Nothing live deals it yet: no screen passes `realMix` (chanceMaker.ts); it
+ * becomes the "real" mix of Harry's D4 in the formula rebuild (piece 5f).
+ * The even mix (the default) is unchanged.
  */
 export const REAL_MIX: Partial<Record<ScenarioKind, number>> = {
-  midfield_pass: 3, buildup: 2, through_ball: 3,
-  long_range: 2, cutback: 2, byline_cross: 2,
-  tight_angle: 2, one_on_one: 1,
-  // B10 (20 Oct 2026): headers and volleys are not in this StatsBomb count, so
-  // the real mix stays exactly as measured (17 deals, half of them deep) until
-  // someone re-measures it with them in. The even mix (the default) deals them.
+  midfield_pass: 4, buildup: 3, through_ball: 3,
+  long_range: 2, cutback: 2, byline_cross: 1,
+  tight_angle: 1, one_on_one: 1,
+  // B10 (20 Oct 2026): headers and volleys stay out of the real mix until the
+  // role tables count them (piece 5f). The even mix (the default) deals them.
   header: 0, volley: 0,
 };
 

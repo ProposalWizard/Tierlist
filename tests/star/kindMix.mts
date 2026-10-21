@@ -53,7 +53,7 @@ const corner = makeChance({
 });
 check(corner.sc.kind === "corner", "a corner request still gives a corner");
 
-// ── The real (Kane) mix: Settings → Gameplay → Chances: New ──
+// ── The real mix (free Wyscout central forwards, REAL_MIX) — not dealt live yet ──
 {
   const round = realMixRound();
   check(round.length === 17, `a real-mix round is 17 deals (${round.length})`);

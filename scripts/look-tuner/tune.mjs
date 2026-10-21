@@ -7,7 +7,7 @@
 // grass, brightness, contrast, colourfulness, detail). A coordinate search keeps every turn that lowers the
 // score and halves its steps when nothing helps.
 //
-//   node scripts/look-tuner/tune.mjs --url "http://localhost:3377/star-style-dev?style=real&scene=play3d&tod=day&clean=1"
+//   node scripts/look-tuner/tune.mjs --url "http://localhost:3377/star-3d-bench-dev/scene?style=real&scene=play3d&tod=day&clean=1"
 //        --tod day --iters 80 --out DIR [--write] [--params exposure,contrast,...] [--seek 0.5] [--start '{"lut":0}']
 //   node scripts/look-tuner/tune.mjs --url ... --out DIR --render name='{"lut":0}' [--render ...]   (stills only)
 //

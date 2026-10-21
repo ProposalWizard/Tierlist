@@ -24,9 +24,9 @@ Preview) sets them all at once.
 
 | Place | Screen | Scene / engine | Test page | Look switch |
 |---|---|---|---|---|
-| The real career match in 3D | `components/star/Match3DLayer.tsx` | `lib/star/style3d/engineView.ts` (draws what the 2D match hands over) | `/star-style-dev` → "Real game" (`components/star/RealGame3D.tsx`) | Match view 3D: On / Off (`lib/star/matchView3d.ts`); 3D camera and 3D player light (`lib/star/style3d/realGameLook.ts`) |
+| The real career match in 3D | `components/star/Match3DLayer.tsx` | `lib/star/style3d/engineView.ts` (draws what the 2D match hands over) | `/star-3d-bench-dev/scene` → "Real game" (`components/star/RealGame3D.tsx`) | Match view 3D: On / Off (`lib/star/matchView3d.ts`); 3D camera and 3D player light (`lib/star/style3d/realGameLook.ts`) |
 | Dribble run in a match | `components/star/Dribble3D.tsx` | `lib/star/play3d/dribbleRun.ts` on the play3d World, drawn by `lib/star/style3d/gameplay.ts` | played inside a career match | Dribble runs 3D: 3D / Old (`lib/star/dribble3dLook.ts`) |
-| 3D drills (Two Touch, Free Roam, Headers & Volleys, Wembley, Pace Sprint) | `components/star/Play3D.tsx`, opened from `components/star/Training3D.tsx` | `lib/star/play3d/scene.ts` (picture) and `lib/star/play3d/world.ts` (rules, own physics). Drill list: `lib/star/play3d/drills.ts` | `/star-training3d-dev`; Free Roam also at `/star-style-dev?scene=play3d` | 3D look: H / Old (`lib/star/look3dStyle.ts`) |
+| 3D drills (Two Touch, Free Roam, Headers & Volleys, Wembley, Pace Sprint) | `components/star/Play3D.tsx`, opened from `components/star/Training3D.tsx` | `lib/star/play3d/scene.ts` (picture) and `lib/star/play3d/world.ts` (rules, own physics). Drill list: `lib/star/play3d/drills.ts` | `/star-training3d-dev`; Free Roam also at `/star-3d-bench-dev/scene?scene=play3d` | 3D look: H / Old (`lib/star/look3dStyle.ts`) |
 | Crossbar Challenge | `components/star/Training3D.tsx` | `lib/star/training3d/scene.ts` (your shot is the 2D engine; the 3D pitch draws it) | `/star-training3d-dev` | none |
 | Garden | `components/star/Garden3D.tsx` | `lib/star/garden3d/scene.ts` (old: `lib/star/garden3d/sceneOld.ts`, frozen) | `/star-garden3d-dev` | 3D garden: New / Old (`lib/star/garden3d/look.ts`) |
 | Your house (rooms you walk through: wardrobe and mirror, trophy cabinet, cars out of the window) | `components/star/Home3D.tsx` | `lib/star/home3d/scene.ts` (one room at a time: `roomBuild.ts`; which rooms and their doors `rooms.ts`; room presets `homes.ts`, outfits `outfits.ts`, the body `wear.ts`, trophies `trophies.ts`, textures `textures.ts`) | `/star-home3d-dev` (`?tier=starter\|flat\|penthouse\|house\|villa\|estate`, `?house=new\|old`, `?look=h\|old`, `?trophies=0`) | none (a new place; its two ways in in a career are one switch, `lib/star/home3d/flag.ts`) |
@@ -36,9 +36,9 @@ Preview) sets them all at once.
 | Manager's office | `components/star/Office3D.tsx` | `lib/star/signing3dScene.ts` with stage "office" | `/star-3d-area-dev/office` | Talk to your manager: 3D / Old (`lib/star/look3d.ts`) |
 | Farewell: guard of honour, standing ovation | `components/star/Farewell.tsx` (the farewell screens) | `lib/star/farewell3d.ts` (guard of honour, plan in `lib/star/guardOfHonour.ts`), `lib/star/ovation3d.ts` | `/star-retirement-dev` | Standing ovation (`lib/star/ovationLook.ts`); Ovation greetings (`lib/star/ovationMoves.ts`) |
 | Ballon d'Or night (host, the final three on podiums, the golden ball) | `components/star/BallonDorNight.tsx` (drawn stage inside it for a phone that can't run 3D) | `lib/star/ballonDor3d.ts` (timing: `lib/star/ballonDorNight.ts`) | `/star-retirement-dev` → "The Ballon d'Or night" | Ballon d'Or night: New / Old (`lib/star/ballonDorNightLook.ts`) |
-| Cut scenes (the director) | `components/star/CutsceneDirector.tsx` | `lib/star/cutscene/director.ts` (read `lib/star/cutscene/README.md`) | `/star-style-dev?scene=director&fixture=signing&clean=1` | Cut-scene people: New / Old (`lib/star/cutscene/look.ts`) |
+| Cut scenes (the director) | `components/star/CutsceneDirector.tsx` | `lib/star/cutscene/director.ts` (read `lib/star/cutscene/README.md`) | watch and edit: `/star-scene-editor-dev` → Cut-scene Director (`?scene=<id>`; the scene list is `lib/star/cutscene/sceneList.ts`, shared with `/star-3d-area-dev` → Cut scenes); a bare still: `/star-3d-bench-dev/scene?scene=director&fixture=signing&clean=1` | Cut-scene people: New / Old (`lib/star/cutscene/look.ts`) |
 | Cut-scene people bench (faces, hands, props) | page only | `lib/star/cutscene/peopleAdapter.ts` | `/star-people-dev` | same |
-| Style test (five art looks, goal / signing / walk-out cut scenes, Free Roam, Real game) | `components/star/StyleTest3D.tsx` | `lib/star/style3d/` (`styles.ts`, `kit.ts`, `post.ts`, `cutscenes.ts`, `gameplay.ts`) | `/star-style-dev` (query: `style`, `scene`, `tod`, `tilt`, `view`, `seed`, `kinds`, `cam`, `plight`, `demo`, `clean=1`) | none (test page only) |
+| Style test (five art looks, goal / signing / walk-out cut scenes, Free Roam, Real game). Its admin page `/star-style-dev` was deleted 21 Oct 2026; it lives on as the 3D bench's bare scene shot for stills and filming | `components/star/StyleTest3D.tsx` | `lib/star/style3d/` (`styles.ts`, `kit.ts`, `post.ts`, `cutscenes.ts`, `gameplay.ts`) | `/star-3d-bench-dev/scene` (query: `style`, `scene`, `tod`, `tilt`, `view`, `seed`, `kinds`, `cam`, `plight`, `demo`, `clean=1`) | none (test page only) |
 | Star Pass podium | `components/star/Podium3D.tsx` | spins a GLB from `tools/star-pass-art/export_live3d.py` | on the Star Pass screens | none |
 | Style A people (every 3D person under Player style: New) | Settings → Your look (`components/star/YourLookPanel.tsx`); Home and title (`components/star/ToonHomePlayer.tsx` via `HomePlayerFigure`) | `lib/star/style3d/toon/` (shader, heads, builds, switch) through `lib/star/people3d.ts` | `/star-look-dev` (`?head=h1..h6`, `?body=c1..c3`, `?pstyle=old`) | Player style: New / Old (`lib/star/style3d/toon/look.ts`) |
 | 3D animations (every match move looping, match camera and size, a frame slider each) | page only | `lib/star/style3d/animGrid3d.ts` (one WebGL canvas, a tile each by scissor) | `/star-anim3d-dev` | none |
@@ -246,7 +246,7 @@ For a clip with no capture, key it by hand in `tools/mocap3d/keyed.py` (keeper d
 The build machine draws 1 to 5 seconds a frame, so a real-time clip stutters. Freeze the clock instead:
 
 ```bash
-node scripts/film/frames3d.mjs "http://localhost:PORT/star-style-dev?style=mix&scene=play3d&demo=dribble-shoot&clean=1" --out /abs/frames/play
+node scripts/film/frames3d.mjs "http://localhost:PORT/star-3d-bench-dev/scene?style=mix&scene=play3d&demo=dribble-shoot&clean=1" --out /abs/frames/play
 python3 scripts/film/frames3d_encode.py /abs/frames/play /abs/out/play.mp4 --every 6
 ```
 
@@ -267,7 +267,7 @@ Goal: a knee-slide-free "arms wide, spin" celebration called `celebrate_spin`.
    so a body without the clip still celebrates.
 6. For a 3D drill, return it from the `celebrate` case in `lib/star/play3d/scene.ts`, and add its length to the one-shot handling beside `celebrate_fist`.
 7. Run `node scripts/run-star-tests.mjs cutscene play3d runPosture` and `npx tsc --noEmit`.
-8. Film it: `frames3d.mjs` on `/star-style-dev?scene=director&fixture=goal&clean=1`, encode, look at the sheet.
+8. Film it: `frames3d.mjs` on `/star-3d-bench-dev/scene?scene=director&fixture=goal&clean=1`, encode, look at the sheet.
 9. If your new clip is a run or walk loop, add its name to `RUN_POSTURE_CLIPS` in `lib/star/three3d/runPosture.ts`.
 
 ---
@@ -560,7 +560,7 @@ Done:
 
 Not done / still lags:
 - **The 3D shop holds ~377 MB of pictures on this machine** (45 Higgsfield models, three 1024² maps each, all WebP, so uncompressed on the GPU). This is the biggest memory risk left on an iPhone. Fix without a softer picture: pack them as KTX2 inside the GLBs (`scripts/perf3d/ktx2-textures.mjs` only does loose pictures today), or load each model's maps only when its shelf is on screen.
-- **The real game's chance start was not timed on this machine** past one run: the browser was killed by the machine's own memory limit (other sessions' servers), not by the page. One run that finished showed a 3.1 s long task at the first chance after a kick (SwiftShader). The profile of it is the next step: `/star-style-dev?scene=real`, play two chances, profile the switch.
+- **The real game's chance start was not timed on this machine** past one run: the browser was killed by the machine's own memory limit (other sessions' servers), not by the page. One run that finished showed a 3.1 s long task at the first chance after a kick (SwiftShader). The profile of it is the next step: `/star-3d-bench-dev/scene?scene=real`, play two chances, profile the switch.
 - One shader still builds at the first corner (the corner flag / canopy material, double-sided). `warmUp(..., { includeHidden: true })` fixes it but builds 70 more unused shaders at load: not worth it.
 
 Next 3 steps, in order:
@@ -670,7 +670,7 @@ What the shots showed: one chance drawn straight top-down with dot men (a side-o
 - `lib/star/style3d/engineView.ts`: `placeBroadcast` uses it for every facing; glide (~0.4 s), held while a finger is down / the arrow is up / the strike screen shows. Smooth playback: crossfades ≥ 0.24 s, a gait kept ≥ 0.35 s, turns ≤ 540°/s, steadier speed reading, a man who appears starts in the right pose. Ball drawn at the men's scale, capped 2×.
 - `tests/star/broadcastCam.mts`: 13 kinds × 20 seeds at 390×844. Angle 48–50°; room below the ball 40–45%; at the 6% default the man is 6.0–6.2% of the height in all 260 (8% gave 8.0–8.3%, median 1.45× life size; 10% gave 9.4–10.5%, median 1.8×). The crossbar sits 7 / 13 / 34% down the screen (p10 / median / p90): close chances still show a band of stand above the goal. Seen in one still (one-on-one: 6.1%, 1.55× life size, 48°).
 - In the match's stats bar, by the speaker: a **3D | 2D** switch (instant, the chance carries on; writes "Match view 3D") and a **⚙** that opens this phone's Settings over the match, the match held while open (`components/star/Match3DLayer.tsx`; `EngineFrameObserver.hold` / `.chrome` in `lib/star/engineFrame.ts`; CanvasMatch reads them, additive).
-- Test page: `/star-style-dev?scene=real&cam=new&man=0.08|0.10|0.12` (size candidates), `&bcam=0` (the New camera as it was before, for before stills).
+- Test page: `/star-3d-bench-dev/scene?scene=real&cam=new&man=0.08|0.10|0.12` (size candidates), `&bcam=0` (the New camera as it was before, for before stills).
 
 **Half-done**
 - The size is 6% and the angle 48–50° (`BROADCAST.manShare`, `elevDeg`, `elevMaxDeg` in `lib/star/style3d/broadcastCam.ts`). The full 8 / 10 / 12% sheet over 4 chances was not finished (stopped at Harry's request): only one-on-one stills exist (today, 8%, 6%), in the round's scratch folder, not the repo.
@@ -681,7 +681,7 @@ What the shots showed: one chance drawn straight top-down with dot men (a side-o
 - Smooth playback lives in `engineView.ts` behind `smooth()`; root motion was already pinned to the 2D record (no change); `ClipPlayer` (`lib/star/three3d/footballAnims.ts`) still drops the older clip if a new change arrives mid-fade.
 
 **Next 3 steps**
-1. Harry judges 6% / 48° on his phone (`/star-style-dev?scene=real&cam=new&man=0.08` to compare); set `manShare`, and drop `kMax` to ~2.2 if he goes bigger.
+1. Harry judges 6% / 48° on his phone (`/star-3d-bench-dev/scene?scene=real&cam=new&man=0.08` to compare); set `manShare`, and drop `kMax` to ~2.2 if he goes bigger.
 2. Play a career match on a phone with "3D camera: New": check corners and byline crosses (turned 30° behind the attack), the drag room, and the glide between chances; then make New the default in Standard (`lib/star/gameVersions.ts`).
 3. Make `ClipPlayer` blend from the current mix on an interrupted fade (no pop), and play the 3D/2D button and ⚙ with the `star-playtest` agent.
 
@@ -763,7 +763,7 @@ head and build (`yourToonHead`); scenes load only their heads
 **Next 3 steps, in order:**
 1. Open each place with Player style New and Old on a phone and make the
    Old/New sheet (`/star-look-dev`, `/star-shop3d-dev`, `/star-garden3d-dev`,
-   `/star-style-dev?scene=play3d`, the Real game tab, `/star-3d-area-dev/signing`,
+   `/star-3d-bench-dev/scene?scene=play3d`, the Real game tab, `/star-3d-area-dev/signing`,
    Home and title in `/star-dev` signed out). Fix what looks wrong there.
 2. Loading: let scenes ask only for the heads they will use (pass the ids up
    front, or start with `loadToonHead` and fetch the rest after first paint).
@@ -785,7 +785,7 @@ outline and shadow, as Old); every new look behind New | Old.
 Harry: "how come in game the 3D doesn't look like this at all?" (a Match Lab still).
 Then: "for cut scenes the Style A is good and in game the realistic players is good".
 
-The Match Lab (`/star-style-dev?scene=real`, `RealGame3D.tsx`) and the career
+The Match Lab (`/star-3d-bench-dev/scene?scene=real`, `RealGame3D.tsx`) and the career
 match (`Match3DLayer.tsx`) call `createEngineView` with the SAME options. Every
 difference comes from the device and its Settings, not the mount:
 
@@ -957,7 +957,7 @@ tool makes speech only and refuses music, so no credits were spent.
 Only the director page plays cut scenes today; a host plays music with
 `createCutsceneMusic(script, sfxUrl(musicCue(musicBedFor(script))), sfxOn)`.
 
-**See it:** `/star-style-dev?scene=director&fixture=farewell&clean=1` (`&cam=old` for Old).
+**See it:** `/star-3d-bench-dev/scene?scene=director&fixture=farewell&clean=1` (`&cam=old` for Old).
 **Tests:** `tests/star/cutscene.mts` (film pass on every fixture and event; music bed and ducking).
 
 **Next:** shallow depth of field is not done (the cel style has no depth pass);
@@ -1065,3 +1065,9 @@ Harry liked the 3D audit plan (steps 1–5): "Fixing skin and light is very big.
 - **Measured on the bench (20 Oct 2026, this machine, no graphics chip).** Skin hue, median (the picked tones are 23–31°): signing 42.7° → 27.1°, press 45.2° → 28.1°, walk-out 38.2° → 27.1°, made-up trophy 40.0° → 28.4°, made-up goal 31.2° → 27.3°, trophy lift 20.5° (sat 0.99) → 24.2° (sat 0.68), office 32.6° → 25.0°, Home 27.2° → 26.4°. Yellow skin pixels (hue over 36°) in the four worst: 61–94% → 0–0.2%. Phone framing (`framing.mjs`): the audit's seconds 11 of 23 bad → 0; every camera shot of the 8 fixtures and 2 made-up scenes 27 of 65 bad → 0; at 3 moments a shot (`--at=dense`) 82 of 195 bad (29 of 65 shots) → 0. Stills and two clips: `docs/handoffs/2026-10-20-builds/b5/`.
 - Not done here (the plan's later steps): props held by hands and the rooms (step 6), one stadium for cut scenes (7), the 90th-minute winner → celebration → trophy cut scene.
 - **B5d: cartoon bodies for our cartoon faces (20 Oct 2026, options only).** Today's Style A bodies re-shaped in Blender (`tools/bodies/reshape.py` with `RS_RIGIDHEAD=1`: the head and face are today's, moved and scaled as one piece; one mesh, so no neck seam), three ways: `?bodies=d1` (today's body grown up, ~6.0 heads), `d2` (slim athlete, ~6.5), `d3` (hero V, ~6.3), on the Curls and Buzz heads. Test pages only; the game keeps today's files. Faces carried, not re-measured: `tools/bodies/carry_face.py`. Read `tools/bodies/README.md` "B5d".
+
+### Admin 3D clean-up: one cut-scene list, Art styles page gone (21 Oct 2026)
+
+- The cut scenes the admin shows come from ONE list, `lib/star/cutscene/sceneList.ts`: the 3D Scene Editor's scene buttons and `/star-3d-area-dev` → Cut scenes both read it (hand-made scenes, then every kept one). A new hand-made scene: a line in `FIXTURE_LIST`, a `CUT_STILL_AT` time, then `node scripts/admin3d/stills.mjs --only=cuts <id>`.
+- `/star-style-dev` (Art styles + Cut-scene Director) is deleted. Watch and edit cut scenes in the Scene Editor. The bare scene the 3D bench, filming tools and the Lag test need is `/star-3d-bench-dev/scene` (same query as before).
+- The 3D Area's place stills, cut-scene stills and the 3D places group previews are made by `scripts/admin3d/stills.mjs` (re-run after a look change).

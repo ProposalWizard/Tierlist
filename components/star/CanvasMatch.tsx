@@ -812,6 +812,8 @@ const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : use
 const ACTION_BANNER_MS = 1000;
 /** Seconds the kicking pose is held so the swing is actually visible. */
 const KICK_POSE_S = 0.28;
+/** B20 (C1): the most a lead-in's replay clock moves in one frame (s): real time down to 4 fps. */
+const LEAD_REPLAY_MAX_DT = 0.25;
 
 /** A deep copy of a scenario for a caller to keep — plain data throughout. */
 function snapshotScenario(sc: Scenario): Scenario | undefined {
@@ -6052,6 +6054,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const last = lastTsRef.current ?? ts;
       let dt = (ts - last) / 1000;
       lastTsRef.current = ts;
+      // B20 (C1): a lead-in is a REPLAY (nothing is stepped, everyone is put where
+      // it says), so its clock runs on real time up to LEAD_REPLAY_MAX_DT a frame.
+      // Under 20 fps (a phone in Match view 3D) the old 0.05 clamp played a 6.5 s
+      // build-up in about 13 s at 10 fps. The match's own steps keep the clamp.
+      const replayDt = Math.min(Math.max(0, dt), LEAD_REPLAY_MAX_DT);
       dt = Math.min(dt, 0.05); // clamp big frame gaps
 
       // Match feel: New (lib/star/matchFeel.ts) — the picture holds at the
@@ -6287,6 +6294,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           const po = playOnRef.current;
           if (po && !touchLive) {
             const wasLive = po.layOffLive;
+            // B20: you finish the kick before you run (lib/star/playOn.ts PlayOnStick.kicking).
+            if (po.stick) po.stick.kicking = kickPoseRef.current > 0;
             const caughtIt = stepPlayOn(po, scenarioRef.current, ballRef.current, h, playOnRngRef.current, layOffsLeftRef.current) === "caught";
             noteRunStep(po);
             if (caughtIt) {
@@ -6576,7 +6585,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         if (phaseRef.current === "aim" || phaseRef.current === "contact") stepRunOn(dt);
         else runOnRef.current = null; // the chance ended some other way: they stop where they are
       }
-      if (leadRef.current) stepLeadIn(dt);
+      if (leadRef.current) stepLeadIn(replayDt);
       recordGoalFrame(dt);
       render();
       rafRef.current = requestAnimationFrame(loop);
@@ -9360,8 +9369,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         playOnRngRef.current = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x61a7) >>> 0);
         const bl = ballRef.current;
         const stick = afterPassStickOn();
-        // You are where you struck it (not the stand-off you lined it up from).
-        sc.player = { x: bl.pos.x, y: bl.pos.y };
+        // B20 (Harry, 21 Oct 2026: "your player runs after the ball while it's
+        // being kicked whilst being in position"): you stay on the spot you were
+        // standing on (youSpot.ts puts you beside the ball, ~1.4-1.6 m off it);
+        // this used to snap you onto the ball's spot at the kick, a 1.5 m jump
+        // after the ball, and the run then started at once. Now you finish the
+        // kick where you are (PlayOnStick.kicking) and run from there, the
+        // same spot a shot is struck from.
         const car = careerRef.current;
         playOnRef.current = startPlayOnRun(sc, playOnRngRef.current, { x: bl.pos.x + bl.vel.x * 0.8, y: bl.pos.y + bl.vel.y * 0.8 }, {
           stick, pace: car?.skills.pace, energy: liveEnergyAt(matchMinuteRef.current), bar: barRef.current,

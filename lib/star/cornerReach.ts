@@ -69,3 +69,15 @@ export function cornerReach(skills: KickSkills): CornerReach {
 export function canTakeCorners(skills: KickSkills): boolean {
   return cornerReach(skills).ok;
 }
+
+/**
+ * The same corner rule for a tool that plays the unseen match without the real
+ * match's kicking skills (the match radar, sim90, the FHR ruler): `inputs` with
+ * `canTakeCorners` filled in from `skills`, or else from `playerSkill` as both
+ * power and technique. Inputs that already say are returned unchanged.
+ */
+export function withCornerReach<T extends { canTakeCorners?: boolean; playerSkill?: number }>(inputs: T, skills?: KickSkills): T {
+  if (inputs.canTakeCorners !== undefined) return inputs;
+  const s = skills ?? { power: inputs.playerSkill ?? 70, technique: inputs.playerSkill ?? 70 };
+  return { ...inputs, canTakeCorners: canTakeCorners(s) };
+}

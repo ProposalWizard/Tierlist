@@ -17,7 +17,7 @@ Two switches, both in Settings → Look (default New):
 | Goals by 15-minute block | 13 / 15 / 18 / 15 / 17 / 22% (last includes added time) | public goal-timing tables; the exact split varies by season, the late rise does not |
 | Corner → shot | ~1 in 3 | Opta-style set-piece summaries |
 
-Honest note: these are the commonly published season-average figures, not a StatsBomb extraction done here.
+Honest note: these are the commonly published season-average figures, not an extraction from event data done here.
 
 ## Before → after (2,000 seeded matches a matchup, `scripts/match-flow-measure.mts`; permanent bounds in `tests/star/matchFlow.mts`)
 

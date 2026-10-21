@@ -14,6 +14,7 @@ import {
   type LagRun, type LagStepResult,
 } from "@/lib/star/lagTest";
 import { ensureBranch } from "@/lib/star/commitScenarios";
+import { lagPillSpot, PILL_W } from "@/lib/star/lagPillSpot";
 
 let failed = 0;
 const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  FAIL ${what}`); } else console.log(`  ✓ ${what}`); };
@@ -197,6 +198,37 @@ ok(other.taken === true && other.ids.length === 0, "a different run there: the p
   replies = [{ status: 401, body: {} }];
   const bad = await ensureBranch({ config, branch: LAG_BRANCH, fetchImpl: fakeFetch });
   ok(!bad.ok && /refused the token/.test((bad as { message: string }).message) && !JSON.stringify(bad).includes("ghp_SECRET"), "a refused token says so, and never shows the token");
+}
+
+// The pill during a match (Harry, 21 Oct 2026: it covered the score): it never overlaps the match's box.
+{
+  type B = { top: number; bottom: number; left: number; right: number };
+  const over = (a: B, b: B) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  const boxOf = (vw: number, vh: number, keep: B, h: number): B | null => {
+    const s = lagPillSpot({ vw, vh, keep, pillH: h });
+    if (!s) return null;
+    const w = Math.min(PILL_W, vw - 112), mid = vw / 2;
+    if (s.at === "side") return { top: s.top, bottom: s.top + h, left: s.left, right: s.left + Math.min(PILL_W, s.width) };
+    return s.at === "below"
+      ? { top: vh - (s.gap + h) / 2, bottom: vh - (s.gap - h) / 2, left: mid - w / 2, right: mid + w / 2 }
+      : { top: (s.gap - h) / 2, bottom: (s.gap + h) / 2, left: mid - w / 2, right: mid + w / 2 };
+  };
+  // A phone, 390x844: scoreboard at 20, pitch to 715 (the b18s0 still): under the pitch.
+  const phone = { top: 20, bottom: 715, left: 12, right: 378 };
+  const p = lagPillSpot({ vw: 390, vh: 844, keep: phone, pillH: 42 });
+  ok(p?.at === "below", `phone: the pill goes under the pitch (${p?.at})`);
+  ok(!over(boxOf(390, 844, phone, 42)!, phone), "phone: it misses the scoreboard and the pitch");
+  // A laptop, 1440x900: the match is a 384 px column in the middle: beside it.
+  const lap = { top: 90, bottom: 860, left: 528, right: 912 };
+  const l = lagPillSpot({ vw: 1440, vh: 900, keep: lap, pillH: 130 });
+  ok(l?.at === "side", `laptop: the pill goes beside the match (${l?.at})`);
+  ok(!over(boxOf(1440, 900, lap, 130)!, lap), "laptop: it misses the match");
+  // No room anywhere (a pitch that fills the phone): null, the usual dock.
+  ok(lagPillSpot({ vw: 390, vh: 844, keep: { top: 10, bottom: 840, left: 0, right: 390 }, pillH: 42 }) === null, "no room: the usual dock");
+  // A phone where the pitch fills the screen (seen at 390x844: score row 0-34, pitch 86-828): over the stats strip, clear of the score and the pitch.
+  const full = lagPillSpot({ vw: 390, vh: 844, keep: { top: -4, bottom: 828, left: 12, right: 378 }, band: { top: 34, bottom: 86 }, pillH: 40 });
+  ok(full?.at === "band" && full.top >= 34 && full.top + 40 <= 86, `full-screen pitch: the pill sits between the score and the pitch (${JSON.stringify(full)})`);
+  ok(lagPillSpot({ vw: 390, vh: 844, keep: { top: -4, bottom: 828, left: 12, right: 378 }, band: { top: 34, bottom: 86 }, pillH: 126 }) === null, "a pill too tall for that strip is not squeezed in");
 }
 
 if (failed) { console.error(`\n${failed} failed`); process.exit(1); }

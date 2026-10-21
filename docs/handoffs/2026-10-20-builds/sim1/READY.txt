@@ -1,0 +1,43 @@
+SIM REBUILD PIECE 1 — READY (21 Oct 2026, branch Harry, not pushed)
+
+Plan: docs/plans/2026-10-21-sim-formula-rebuild.md (piece 1: credits, licensed numbers out, real-world column).
+Harry's answers used: D7 (pro tracking only), D8 (Settings + public /credits). D6 not acted on (in-box counts kept).
+
+WHAT CHANGED
+1. Credits: one list, lib/star/dataCredits.ts (football data + PlayeRank roles + Wikipedia kits + ballondor.com
+   + Kenney, Quaternius, MakeHuman, CMU mocap, Poly Haven, ambientCG + Kokoro + Oswald, Luckiest Guy, Cinzel).
+   Shown in Settings → More → Data credits and on the new public page /credits (footer link, sitemap).
+   DATA_FILE_CREDITS maps every data file to its credit; tests/star/dataCredits.mts checks it.
+   PlayeRank section added to data/opendata/LICENCES.md.
+2. Licensed numbers re-sourced to free data. Source tables (small, committed):
+   data/opendata/wyscout_shot_outcomes.json, data/opendata/tracked_shot_shapes.json, lib/star/sim/realTargets.json,
+   made by scripts/opendata/reduce_resource.py (raw Wyscout events.zip + playerank.json, not committed).
+   Value changes (before → after):
+   - keeperBrain proDepth: 1.0 + 1.4 s(5,15) − 0.5 s(20,28) → 2.6 + 0.7 s(5,15) − 0.2 s(20,28)
+     (real keeper depth 1.8 / 2.1 / 2.5 / 2.6 m; only with Keeper pro, default Old)
+   - formationShape back-four span: clamp(16 + 0.22 d, 16, 25) → clamp(12.5 + 0.22 d, 14, 21)
+   - block slide: 0.40 → 0.33 × ball lateral
+   - line floor: 0.55 → 0.57 × ball distance
+   - keeper shade (formation layer): 0.28 → 0.22 × ball lateral
+   - kindMix REAL_MIX: 8 deep / 6 middle / 3 box → 10 / 5 / 2 of 17 (not dealt live: no caller sets realMix)
+   - test targets: keeper save % 53/77/90 → 44/73/90 (gameplay13); keeperFinish Old hash retaken (dd696eda)
+   Unchanged, re-sourced comment only: back line 0.66 (free median 0.67), DEEP_TOUCH 0.24 (a game dial),
+   free-kick 6% (6.2%), farReadShare (9.6%), KIND_SPREAD, KEEPER_FINISH, DEFENDERS_IN_BOX, lane caps, KEEPER_M.
+3. Real world column: Match Radar page (/star-radar-dev), panel "Real world · many matches" → Measure.
+   Still: radar-real-world.jpg. /credits still: credits-phone.jpg.
+4. Docs: headers research §2 re-measured from Wyscout (dated 2.0 section); gameplay15 keeper/shots,
+   gameplay16 keeper re-sourced; patch notes 0.43/0.45/0.58/0.60/0.64/0.83/0.84 + generators neutralised.
+   tests/star/realGoals.mts now fails on any line naming the licensed source in app, components, lib,
+   tests, scripts, tools, patch-notes, data/realmoments.
+
+GAME EFFECT
+- Radar path (hiddenMatch tick), 600 matches × 4 setups: byte-identical frames before/after
+  (live Old: 14.92 shots, 2.108 goals; New: 25.85 shots, 2.572 goals, 9.11 corners).
+- Served career chances (formation layer on), 2,100 strikes: live goals 20.5% → 20.2%, blocked 22.1% → 22.5%;
+  with Keeper pro on 22.5% → 21.8%. Keeper pro test: save % 67.5/80.4/92.5 → 67.4/80.8/89.9.
+
+NOT REPLACEABLE (flagged, kept as design rules): back three 2 m deeper and 1.28× wider (free tracking has no
+formation labels); counter-attack "1-2 men screening" (only 11 tracked counters, median 4 in the box);
+keeper "held 40-48%", lobs, claims (no free source); bicycle/diving-header rates (no free tag).
+
+CHECKS: tsc clean; one-engine guard and admin-look guard pass; star tests listed in the report.

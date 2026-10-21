@@ -3,11 +3,13 @@ name: creating-patch-notes
 description: The standing workflow for turning a shipped round of work into "Knowitball Patch Notes — Leo vX.Y" — a running, versioned artifact shared with Harry and Mikey to track updates and bugs. Load whenever a round of changes ships and needs writing up for the team — "patch notes", "make the patch notes", "write up this round" — and by default after finishing and shipping any round of work, per the owner's standing instruction to use this every time going forward.
 ---
 
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
+
 # Knowitball Patch Notes — Leo
 
 The recurring release-notes track for this contributor's own work, for Harry
-and Mikey specifically — the two teammates who don't write code (see
-CLAUDE.md's "How to talk to this team"). This is how they find out what
+and Mikey specifically — the two teammates who don't write code (RUL-ALL-002;
+writing style RUL-ALL-003, RUL-ALL-004). This is how they find out what
 changed and what's still broken, without opening a diff.
 
 **The instruction this exists because of**, given directly right after
@@ -24,37 +26,28 @@ derived from whatever the git branch happens to be called in a given
 session.
 
 
+> **Patch-note rules live in the Brain** (cite the code): RUL-TEAM-018 (made
+> automatically as each build finishes, live on the site at once, inbox for
+> unread), PRO-TEAM-007 (`node scripts/patch-notes/ship.mjs <versions> --pr`
+> ships the notes alone), PRO-TEAM-008 (order: stills, ship notes, publish,
+> push the feature when Harry says, then film clips), RUL-TEAM-019 and
+> RUL-TEAM-020 (feature code reaches main only when Harry says push),
+> RUL-TEAM-005 (no test build link; mostly stills; a short clip only for
+> gameplay or animation), RUL-TEAM-010 (no "needs Mikey's yes"), RUL-TEAM-006
+> (version keys unique). The old before/after-video and filming-phase rules
+> are superseded (FACT-ALL-002).
+
 > **Standing rule (Harry, 24 Sep 2026):** readable by someone who wasn't in
 > the conversation. The biggest or most confusing change is the headline;
-> every item is Problem → Why → Fix; confusing ones get a before/after
-> picture; answers to questions go low. See `artifact-house-style` → Every
-> item is Problem → Why → Fix.
-
-> **Latest (Harry, 3 Oct 2026):** stills for anything that is a look; a short
-> "after" video only for gameplay and animation, filmed AFTER the page and the
-> push go out, then added to the same page. Don't write "needs Mikey's yes".
-> See CLAUDE.md.
-
-> **Latest (Harry, 3 Oct 2026): no test build link.** *"the test build stuff doesn't work imo so stop doing that for patch notes"*.
-> Mostly stills; a short clip only for gameplay. Don't link or point at the Vercel preview. See CLAUDE.md.
-
-> **SUPERSEDED (Harry, 2 Oct 2026):** no filming phase. Patch notes link the
-> test build (the Vercel preview of the branch) and use stills; a short
-> "after" clip only when a still cannot show it (motion, timing, a fixed
-> problem). Befores only as a quick still of a simple UI or specific gameplay
-> change. Full rule: CLAUDE.md, "No filming phase".
-
-> **Standing rule (Harry, 1 Oct 2026):** every new thing gets a real video
-> plus a still — a before clip and an after clip of the whole phone screen,
-> filmed with `scripts/film/rec.mjs`, shown one full-width clip at a time with
-> a playhead and ½×/¼× speed. Never GIFs, crops or squeezed side-by-sides.
-> See `artifact-house-style` → 4b and `scripts/film/README.md`.
+> every item is Problem -> Why -> Fix; confusing ones get a before/after
+> picture; answers to questions go low. See `artifact-house-style` -> Every
+> item is Problem -> Why -> Fix. (No Brain note yet.)
 
 > **Standing rule (Harry, 24 Sep 2026):** every patch notes page opens with a
-> "Check these" list — one plain line per changed feature or fix, with where
-> to find it, no explanations. See `artifact-house-style` → What always goes
+> "Check these" list: one plain line per changed feature or fix, with where
+> to find it, no explanations. See `artifact-house-style` -> What always goes
 > in. The site entry (`lib/patchNotesData.ts`) gets it too, as its first
-> section's items.
+> section's items. (No Brain note yet.)
 
 ## Load `artifact-house-style` first, every time
 
@@ -164,8 +157,10 @@ Record each new link here so the next round can find the latest one:
 
 ### The site archive: `lib/patchNotesData.ts`
 
-This is real, shipped, PRODUCTION code — it goes in the same commit and PR
-as everything else in the round, not a side channel. `BUILT_IN_PATCH_NOTES`
+This is real, shipped, PRODUCTION code. Since 21 Oct 2026 the notes go live
+on their own first: `node scripts/patch-notes/ship.mjs <versions> --pr`
+(PRO-TEAM-007, RUL-TEAM-018); the feature code waits for Harry's push
+(RUL-TEAM-019). `BUILT_IN_PATCH_NOTES`
 is a plain array of `PatchNote` objects (typed in `lib/patchNotes.ts`); the
 page renders straight from it, no database, no migration, nothing to run
 before it's live (see that file's own header for why — it was a Supabase
@@ -180,28 +175,12 @@ showed a stale MIGRATION NOT RUN banner instead of the actual notes).
   page's own title convention. `version` uses the SAME number as the
   matching claude.ai artifact version, so a reader can find "the same
   round" in either place without the numbers drifting apart.
-- **`version` is a real, if imperfect, shared namespace — and it already
-  collided once.** Harry's own track uses this exact same array and field.
-  At one point Harry's session RENUMBERED this whole archive: my three old
-  entries (which had been "0.2"/"0.3"/"0.4" on THIS page — a different
-  numbering from my own claude.ai artifact's v0.2/v0.3/v0.4, which were
-  never touched) got merged into one entry and renumbered to "0.2" here,
-  freeing "0.3"/"0.4" for Harry's own next rounds, with a note left
-  directly for me inside that merged entry's own Known Issues saying my
-  next number on this page should be "0.4". By the time I next shipped,
-  Harry had already used 0.3, 0.3.5 AND 0.4 for his own rounds in between —
-  so that note was stale, and blindly following it would have collided
-  with Harry's own already-published 0.4 entry. **The fix, and the
-  standing rule going forward: always determine the next number from
-  what's ACTUALLY in the array right now (highest version string present,
-  +0.1), never from a remembered or previously-left instruction, however
-  directly it was addressed to you** — the array itself is the only source
-  of truth, exactly as this file already says for the claude.ai side's
-  `references/` folder. My next entry after this correction used "0.5",
-  matching both the array's real next-free slot and my own claude.ai
-  track's own natural next number — a happy coincidence this time, not
-  guaranteed next time. Not worth building an automated collision guard
-  for unprompted; just don't invent a prefixing scheme either.
+- **`version` is a shared namespace** with Harry's and Mikey's entries
+  (RUL-TEAM-006: search the data file for the number on BOTH branches before
+  using it; Harry's colliding numbers got an `h` suffix). Always work the
+  next number out from what is ACTUALLY in the array right now (highest
+  version string present, +0.1), never from a remembered or left-behind
+  instruction.
 - **Only the NEWEST entry IN YOUR OWN TRACK gets a real `artifactUrl`** —
   not literally whichever entry sits first in the array. Harry's own
   entries each publish their own fresh claude.ai page per round rather
@@ -230,7 +209,7 @@ showed a stale MIGRATION NOT RUN banner instead of the actual notes).
 
 **"Going forward, whenever I am making changes"** — after a round of work
 ships (pushed, PR merged, a feature or fix landed), not mid-round. One
-version per round, matching the granularity CLAUDE.md's own session log
+version per round, matching the granularity `SESSION_LOG.md`
 already uses — if it was worth its own dated entry there, it's worth its
 own patch note here. Skip it for something too small to have earned its own
 entry either (a typo, a config tweak).
@@ -240,7 +219,7 @@ entry either (a typo, a config tweak).
 1. Load `artifact-house-style` (the SKILL.md and
    `references/patch-notes-v0.1.html`).
 2. Pull the real material for the round from what's already known — the
-   same facts as the CLAUDE.md entry for it. Don't re-derive numbers, reuse
+   same facts as the `SESSION_LOG.md` entry for it. Don't re-derive numbers, reuse
    the ones already measured.
 3. Work out the next version number from this folder.
 4. Build the page: title as above, stat strip, FIXED / ADDED / CHANGED /
@@ -249,8 +228,8 @@ entry either (a typo, a config tweak).
 5. **Known issues carry forward.** Anything still genuinely open from the
    last version's KNOWN ISSUES belongs in THIS version's KNOWN ISSUES too,
    not just the history line — but only carry forward what can actually
-   still be confirmed open (check CLAUDE.md's Pending Migrations / Pending
-   Setup tables for anything DB- or infra-shaped). Don't mechanically
+   still be confirmed open (check the Brain's migration notes FACT-DAT-001 to FACT-DAT-004 and
+   CLAUDE.md's Pending Setup table for anything DB- or infra-shaped). Don't mechanically
    replay a stale line that can't be verified any more — say what's changed
    since instead of guessing either way.
 6. Publish with the Artifact tool — first version ever: no `url`, let it
@@ -269,7 +248,10 @@ entry either (a typo, a config tweak).
 10. Verify the data change like any other code change: `npx tsc --noEmit`
     and `npm run build`. A malformed field here is a real compile error,
     not a silent gap on the page.
-11. Hand the link over. Say plainly it's private by default, and that
+11. **Ship the notes alone, at once** (PRO-TEAM-007, RUL-TEAM-018):
+    `node scripts/patch-notes/ship.mjs <versions> --pr`. Do not hold them
+    for the feature push (RUL-TEAM-020) or for a video (PRO-TEAM-008).
+12. Hand the link over. Say plainly it's private by default, and that
     sharing it with Harry and Mikey is the Share menu on the page itself,
     by hand — that part can't be done on their behalf. Mention the site
     archive too (`/admin/patch-notes`) — that one's already public to

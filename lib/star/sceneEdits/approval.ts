@@ -73,7 +73,7 @@ export const PLACE_USE: Record<ScenePlace, { name: string; where: UseOption[]; w
     name: "Cut-scene Director",
     // cut scenes do not play in a career yet (lib/star/cutscene/whenPlays.ts): "career" is
     // stored and honoured the day they do
-    where: [HERE_CAREER("when the game plays this cut scene: not yet"), HERE_TEST("cut-scene")],
+    where: [HERE_CAREER("when the game plays this cut scene: not yet"), { id: "test", label: "The 3D bench's cut-scene shots" }],
     when: [ALWAYS, ...EVENT_KINDS.map((k) => ({ id: k, label: `Only for a "${k.replace(/-/g, " ")}" moment` }))],
   },
 };

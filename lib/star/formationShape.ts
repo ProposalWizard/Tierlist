@@ -26,20 +26,27 @@ import { playstyleForClub, type PlaystyleProfile } from "./playstyle";
  *
  * ── What the numbers come from (measured, not guessed) ──
  *
- * StatsBomb-360 open-data tables (scratchpad/research-SB360-measured.md,
- * 653,890 freeze frames):
- *  - Table 1: the back line sits at ≈ 0.66 × the ball's distance from goal (the
- *    single deepest man ≈ 0.6 ×, the highest of the four ≈ 0.7 ×). This is the
- *    baseline `lineY` below — the direct fix for "defenders stand next to their
- *    keeper while you're 30 m out."
- *  - Table 2a/2b: a back four spans ~20 m at 25 m out (adjacent gaps ~6-7 m),
- *    stretching wider the further out the ball is — the `span` below.
- *  - Table C / 2b: the block slides ~40 % of the ball's own lateral offset
- *    toward the ball's side (never a full mirror) — `blockShift` below.
- *  - Q6: a back-three system sits its line ~2 m deeper than a back four, and is
- *    wider across — `formOffset` and the back-5 `span` multiplier below.
- *  - Table 5: the keeper sits ~1.7-3.9 m off his line for a 20-30 m ball, higher
- *    with a high line, shading ~1-2.5 m toward the ball — `keeperDepth` below.
+ * Free tracking (re-sourced 21 Oct 2026): DFL + SkillCorner, pro matches only
+ * (Harry, D7), every open-play shot with all 22 men at the strike —
+ * data/opendata/tracked_shot_shapes.json, made by
+ * scripts/opendata/reduce_resource.py from data/realmoments/tracked.json:
+ *  - the back four (the four deepest outfield defenders) sits at a median
+ *    0.67 × the ball's distance from goal for a ball 16-35 m out (mean 0.70,
+ *    deepest 25% 0.57, deepest man 0.61). This is the baseline `lineY` below —
+ *    the direct fix for "defenders stand next to their keeper while you're
+ *    30 m out." (0.66 was the value before the re-source; the free median is
+ *    0.67, so it stays.)
+ *  - the back four spans a median 15-17 m with the ball 8-28 m out and 20 m
+ *    further out — the `span` below (was 16 + 0.22 × distance, ~3-4 m wider
+ *    than real).
+ *  - the block slides 0.33 × the ball's lateral offset toward the ball's side
+ *    (never a full mirror) — `blockShift` below (was 0.40).
+ *  - the keeper is 1.6-3.9 m off his line for a 20-30 m ball (10th-90th
+ *    percentile, median 2.6 m), shading 0.22 × the ball's lateral offset —
+ *    `keeperDepth` below.
+ *  - a back three sitting ~2 m deeper and wider than a back four is a design
+ *    rule from the coaching literature: the free tracking does not say which
+ *    formation a side plays, so it is not measured.
  *
  * Playstyle biases (playstyle.ts) and the strength-gap slide are applied on top,
  * per the research's core finding that a side's line height is a function of its
@@ -47,6 +54,11 @@ import { playstyleForClub, type PlaystyleProfile } from "./playstyle";
  */
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+
+/** The back four's width for a ball `ballDist` m out (free tracking, see the header). */
+export const backSpan = (ballDist: number) => clamp(12.5 + ballDist * 0.22, 14, 21);
+/** How far the block slides toward the ball's side, × its lateral offset (free tracking: 0.33). */
+export const BLOCK_SHIFT = 0.33;
 
 /**
  * The situations a defensive BLOCK shape is the thing you're looking at, and
@@ -99,8 +111,7 @@ export interface DefensiveLine {
  *
  * A back-three system (three centre-backs — 3-5-2, 3-4-2-1, …) defends as a
  * back FIVE, its wing-backs dropping in: this is stated across the coaching
- * literature and confirmed in the SB360 data, where three-at-the-back sides are
- * never re-labelled but visibly sit five men across when defending deep. So a
+ * literature (the free tracking has no formation labels to confirm it). So a
  * count of three centre-backs resolves to a five-man defensive line; a back four
  * (two centre-backs plus two full-backs) to four.
  */
@@ -168,8 +179,8 @@ export interface BlockTarget {
  * which is 3 to 6 m nearer their own goal than the edge of the box, on 100%
  * of them.
  *
- * `0.66 x ballDist` is a real measurement [SB360 Table 1] and stays the rule
- * everywhere else. It just keeps dropping as the ball goes further out, and
+ * `0.66 x ballDist` is a real measurement (free tracking: median 0.67, see the
+ * file header) and stays the rule everywhere else. It just keeps dropping as the ball goes further out, and
  * past the box that stops being what a defence does: it steps out to the edge
  * and blocks rather than retreating to the spot and watching. Never pushed
  * past the ball's own 2.2 m standoff, so a shot from 18 m cannot end up with
@@ -195,19 +206,20 @@ export function targetBlock(input: ShapeInput, ballX: number, ballY: number): Bl
   // drops deeper (a smaller y); a stronger side pushes up. ~0.2 m per point of
   // gap, capped at ±30 points → ±6 m, which sits inside the measured spread.
   const strengthSlide = -clamp(attackerStrength - defenderStrength, -30, 30) * 0.2;
-  const formOffset = line.isBack5 ? -2 : 0; // SB360 Q6: back three ~2 m deeper
+  const formOffset = line.isBack5 ? -2 : 0; // design rule: a back three sits ~2 m deeper (not in the free tracking)
   const shift = clamp(playstyle.lineBias + formOffset + strengthSlide, -12, 10);
 
   // Floor the line at a RATIO of the ball's distance, not a flat metre value:
-  // SB360 Table 1 puts even the deepest 25% of real defensive lines at ~0.55 ×
-  // the ball's distance from goal. A flat 4.5 m floor let playstyle + back-five +
+  // free tracking (tracked_shot_shapes.json) puts even the deepest 25% of real
+  // back fours at 0.57 × the ball's distance from goal (was 0.55 before the
+  // 21 Oct 2026 re-source). A flat 4.5 m floor let playstyle + back-five +
   // a big strength gap stack down to ~5-9 m for a 20-30 m ball — the exact
   // "defenders next to their own keeper" collapse this layer exists to prevent,
   // and it hit precisely the weak, deep sides a strong player faces most. Tying
   // the floor to ballDist caps how shallow the block can get at every distance
   // while still letting a low block / weaker side sit meaningfully deeper than a
   // high line. (Fable design review, 20 Sep 2026.)
-  const lineFloor = Math.max(4.5, ballDist * 0.55);
+  const lineFloor = Math.max(4.5, ballDist * 0.57);
   let lineY = clamp(ballDist * 0.66 + shift, lineFloor, ballDist - 2.2);
 
   // A SHOT FROM OUTSIDE THE BOX IS DEFENDED ON THE EDGE OF THE BOX.
@@ -220,8 +232,8 @@ export function targetBlock(input: ShapeInput, ballX: number, ballY: number): Bl
   // ball at a median 19.3 m, back line at 10.4-13.6 m, i.e. 3 to 6 m nearer
   // their own goal than the edge of the box, 100% of the time.
   //
-  // `0.66 x ballDist` is a real measurement [SB360 Table 1] and stays the rule
-  // everywhere else. It simply keeps dropping as the ball goes further out,
+  // `0.66 x ballDist` is a real measurement (free tracking median 0.67) and
+  // stays the rule everywhere else. It simply keeps dropping as the ball goes further out,
   // and past the box that stops being what a defence does: it steps out to the
   // edge and blocks rather than retreating to the penalty spot and watching.
   // So the line is floored at the box edge whenever the ball is outside it —
@@ -232,11 +244,14 @@ export function targetBlock(input: ShapeInput, ballX: number, ballY: number): Bl
   const keeperY = clamp(1.6 + kSweep, 1.2, 6.5);
   lineY = clamp(Math.max(lineY, keeperY + 3), keeperY + 3, Math.max(keeperY + 3, ballDist - 2.2));
 
-  // Back-four spans ~20 m at 25 m out, wider the further the ball is (Table 2a).
-  // A back five (extra man, wing-backs holding width) is measurably wider.
-  const spanBase = clamp(16 + ballDist * 0.22, 16, 25);
+  // Back-four span: free tracking median 14.8 / 16.9 / 16.6 / 20.4 m with the
+  // ball 8-16 / 16-22 / 22-28 / 28-40 m out (tracked_shot_shapes.json); this
+  // line gives 15.1 / 16.7 / 18.0 / 19.5 at the middles. Was 16 + 0.22 × d in
+  // [16, 25] (18.6 / 20.2 / 21.5 / 23.5) before the 21 Oct 2026 re-source.
+  // A back five (extra man, wing-backs holding width) is wider: a design rule.
+  const spanBase = backSpan(ballDist);
   const span = spanBase * (line.isBack5 ? 1.28 : 1.0);
-  const blockShift = clamp(ballLat * 0.40, -8, 8);
+  const blockShift = clamp(ballLat * BLOCK_SHIFT, -8, 8);
 
   return { lineY, keeperY, span, blockShift, isBack5: line.isBack5 };
 }
@@ -345,7 +360,7 @@ export function applyFormationShape(sc: Scenario, input: ShapeInput | null | und
     if (i < backN) {
       const frac = backN <= 1 ? 0.5 : i / (backN - 1); // 0..1 across the line
       // A gentle stagger so the line isn't robotically flat: the wider men sit a
-      // touch deeper, the central men a touch higher (Table 1's ~3 m spread).
+      // touch deeper, the central men a touch higher (a ~2.4 m stagger, a design choice).
       const fromCentre = Math.abs(frac - 0.5) * 2; // 0 centre .. 1 wide
       d.x = CX + t.blockShift + (frac - 0.5) * t.span;
       d.y = t.lineY - 1.2 + fromCentre * 2.4;
@@ -370,8 +385,10 @@ export function applyFormationShape(sc: Scenario, input: ShapeInput | null | und
 function positionKeeper(sc: Scenario, input: ShapeInput, t?: BlockTarget): void {
   const target = t ?? targetBlock(input, sc.ball.x, sc.ball.y);
   const ballLat = sc.ball.x - CX;
-  // Shade toward the ball's side, but stay fundamentally central (Table 5).
-  const kx = clamp(CX + clamp(ballLat * 0.28, -2.6, 2.6), POST_L - 1.5, POST_R + 1.5);
+  // Shade toward the ball's side, but stay fundamentally central: free
+  // tracking 0.22 × the ball's lateral offset for shots 12 m+ (was 0.28 before
+  // the 21 Oct 2026 re-source; tracked_shot_shapes.json).
+  const kx = clamp(CX + clamp(ballLat * 0.22, -2.6, 2.6), POST_L - 1.5, POST_R + 1.5);
   sc.keeper.x = kx;
   sc.keeper.startX = kx;
   sc.keeper.y = target.keeperY;

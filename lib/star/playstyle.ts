@@ -3,8 +3,8 @@ import { mulberry32 } from "./season";
 /**
  * A PLAYSTYLE — how a side sets up out of possession.
  *
- * The measured research (see scratchpad/research-managers-playstyles.md and the
- * StatsBomb-360 files) is blunt about one thing: a manager's identity sets the
+ * The research (scratchpad/research-managers-playstyles.md, published
+ * analyses of managers' line heights) is blunt about one thing: a manager's identity sets the
  * BASELINE and the CEILING, but the number a side actually shows on the day
  * slides within that band by the strength gap to the opponent. So a playstyle
  * here is a set of biases applied ON TOP of a measured, ball-conditioned block
@@ -27,8 +27,8 @@ export interface PlaystyleProfile {
   /** How it reads in a scout report. */
   name: string;
   /**
-   * Metres the settled back line sits relative to the measured (SB360 Table 1)
-   * baseline. Positive = higher up the pitch (further from own goal, i.e. a
+   * Metres the settled back line sits relative to the measured baseline
+   * (0.66 × the ball's distance; free tracking median 0.67, formationShape.ts). Positive = higher up the pitch (further from own goal, i.e. a
    * LARGER y in scenario coords, closer to the ball); negative = deeper, nearer
    * their own goal. See PlaystyleProfile's file header for why this is relative,
    * not absolute.
@@ -42,7 +42,7 @@ export interface PlaystyleProfile {
    * holds.
    */
   compactness: number;
-  /** 0..1 — how far the keeper strays off his line with a high line (Table 5). */
+  /** 0..1 — how far the keeper strays off his line with a high line (free tracking: 1.6-3.9 m for a 20-30 m ball). */
   keeperSweep: number;
   /** 0..1 — press intensity, for the scout report ("press them, or sit off"). */
   pressing: number;

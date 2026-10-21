@@ -5,24 +5,27 @@ Switch: **Settings → Look → Gameplay → Keeper pro: New | Old** (`keeperPro
 before this round: `tests/star/keeperPro.mts` hashes 1,224 seeded shots through
 the real engine and brain and gets the pre-change hash (`d8dc5b7d`).
 
-## The real reference (measured, not quoted)
+## The real reference (re-sourced from free data, 21 Oct 2026)
 
-`tools/statsbomb/keeper.py` reads every Premier League 2015/16 match in
-StatsBomb's free data (380 matches; penalties left out; shot freeze frames give
-the keeper's spot at the strike).
+The first version of this table came from a licensed event data set, removed
+on 19 Oct 2026 because its licence forbids a paid game (data/opendata/
+LICENCES.md). The numbers below are free: the Wyscout public dataset (CC BY
+4.0, 1,941 matches; `data/opendata/wyscout_shot_outcomes.json`) and DFL +
+SkillCorner tracking (pro matches only; `data/opendata/tracked_shot_shapes.json`),
+both made by `scripts/opendata/reduce_resource.py`. Wyscout has no "saved"
+outcome on a shot, so save % = 1 − goals ÷ shots on target (tag-based; a ball
+cleared off the line counts as on target).
 
-| Real (PL 2015/16) | Number |
+| Real (free data) | Number |
 |---|---|
-| Save % of shots on target | **70.8%** (n 3,135) |
-| …from under 8 m / 8-12 / 12-16 / 16-22 / 22-28 / 28 m+ | 43 / 63 / 71 / 83 / 90 / 92% |
-| …six-yard box / rest of box / outside | 40 / 67 / 86% |
-| …central / mid / corner (across the goal) | 82 / 70 / 65% |
-| Keeper off his line at the strike | median 1.9 m (1.2 m for shots under 8 m, 2.3-2.4 m from 12-22 m, 1.8-1.9 m from 22 m+) |
-| …in one-on-ones | median 2.4 m (2.0-2.5 m at every distance) |
-| One-on-ones (open play, foot, in the box, nobody in the way) | **21.7% scored**; 39% of those on target |
-| Lobs | 25% scored, 47% on target |
-| What a save becomes | held 40% (+8% "saved twice"), out of play 23%, back into danger 18%, safe 12% |
-| Claims + punches per delivery into the box (crosses + corners) | ≈ 11% (1,414 of 12,288); 38% of them punches; 5% dropped |
+| Save % of shots on target | **70.7%** (n 15,320; Wyscout, penalties and direct free kicks left out) |
+| …from under 8 m / 8-12 / 12-16 / 16-22 / 22-28 / 28 m+ | 33 / 60 / 70 / 80 / 89 / 92% |
+| …six-yard box / rest of box / outside | 33 / 68 / 87% |
+| …central column / side columns of the goal | 81 / 61% |
+| Keeper off his line at the strike (tracking) | median 1.8 m for shots under 8 m, 2.1 m from 8-12, 2.5 m from 12-22, 2.6 m from 22 m+ |
+| …in one-on-ones (tracking: foot, in the box, no defender between ball and posts) | median 2.5 m |
+| One-on-ones (same tracking definition, n 213) | **19% scored** |
+| Lobs, what a save becomes, claims and punches | no free source (Wyscout tags none of them): the game's targets below are design targets |
 
 Not measured from data (sports-science figures, used to set the time to dive):
 a keeper reacts to a strike in about 0.2-0.3 s and needs about 0.5-0.7 s more
@@ -39,36 +42,41 @@ Reports: `npx tsx tests/star/keeperPro/report.mts` (`KEEPER=old` for Old,
 
 | Save % on target, by distance | Before | After | Real |
 |---|---|---|---|
-| under 8 m (n 29) | 66% | 38% | 43% |
-| 8-12 m | 82% | 69% | 63% |
-| 12-16 m | 83% | 83% | 71% |
-| 16-22 m | 82% | 85% | 83% |
-| 22-28 m | 76% | 89% | 90% |
+| under 8 m (n 29) | 66% | 38% | 33% |
+| 8-12 m | 82% | 69% | 60% |
+| 12-16 m | 83% | 83% | 70% |
+| 16-22 m | 82% | 85% | 80% |
+| 22-28 m | 76% | 89% | 89% |
 | 28 m+ | 81% | 93% | 92% |
 
 Before, distance made no difference (66-83% flat). After, it follows the real curve.
 
+Re-sourced 21 Oct 2026: `proDepth` now follows the free tracking depths above
+(2.6 + 0.7 s(5,15) − 0.2 s(20,28), was 1.0 + 1.4 s(5,15) − 0.5 s(20,28)); the
+test targets in `tests/star/gameplay13.mts` are 44 / 73 / 90 (foot shots, under
+12 / 12-22 / 22 m+), were 53 / 77 / 90.
+
 | | Before | After | Real |
 |---|---|---|---|
-| Held, of saves | 4% | 47% | 40-48% |
+| Held, of saves | 4% | 47% | target 40-48% |
 | …slow (<18 m/s) / fast (≥25 m/s) | 11% / 2% | 74% / 42% | — |
 | …below the chest / over his head | 7% / 1% | 61-66% / 27% | — |
-| Out of play, of saves | 57% of parries | 27% of saves | 23% |
-| Parried back into danger, of saves | 13.5% | 12% | 18% |
+| Out of play, of saves | 57% of parries | 27% of saves | — |
+| Parried back into danger, of saves | 13.5% | 12% | — |
 | Goals from a rebound, per save | **16.8%** | **3.8%** | — (rare) |
 | Errors (fumbled in), of saves | 4.0% | 0.7% | ≈1% |
 | Ball → body at the save, p90 | 1.25 m | 0.91 m | — |
 | Body → save point 0.35 s later, p90 | 1.03 m (max 2.25) | 0.71 m | arm's length |
-| Long shots: keeper off his line | 1.1 m | 1.7 m | 1.8-1.9 m |
+| Long shots: keeper off his line | 1.1 m | 1.7 m | 2.6 m (tracking; the curve moved to it on 21 Oct 2026) |
 | Save % keeper 60 / 90 | 65 / 90% | 66 / 87% | (PL range ≈ 62-78%) |
-| Corners: keeper comes (catch/punch/flap) | 0% | 12% (ks 80), 15% (ks 90) | ≈ 11% |
+| Corners: keeper comes (catch/punch/flap) | 0% | 12% (ks 80), 15% (ks 90) | — |
 | Byline crosses: keeper comes | 0% | 2-3% | — (low, see below) |
-| Chips in one-on-ones scored | 19% | 18% | lobs 25% |
+| Chips in one-on-ones scored | 19% | 18% | — |
 
 **One-on-ones (for the shots builder):** keeper-half effect only.
 - Shots aimed anywhere: scored 24.7% → 25.3% (ks 80). Fewer first-time saves, but rebound goals collapse.
 - Shots aimed at the corners: scored 32.3% → 40.0% (ks 80); on target saved 60% → 42%.
-- Real: 21.7% scored. The shots builder's 68% is with its own shooter; this round moves that by about −0 to +8 points depending on placement.
+- Real: 19% scored (free tracking, n 213). The shots builder's 68% is with its own shooter; this round moves that by about −0 to +8 points depending on placement.
 
 ## What changed (all behind the switch)
 

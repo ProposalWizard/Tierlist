@@ -25,3 +25,10 @@
   .a3-tab[aria-pressed="true"] { border-bottom-color: var(--bc-amber); }
   .a3-scenes { grid-template-columns: minmax(0, 1fr); }
 }
+/* Cut scenes (21 Oct 2026): phone-shaped cards, the stills are the scene as it plays on a phone. */
+.a3-cuts { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.a3-cutpic { aspect-ratio: 390 / 724; position: relative; background-position: center top; }
+.a3-kept { position: absolute; inset: auto 8px 8px auto; padding: 3px 7px; font-size: 11px; font-weight: 900; background: rgba(0, 0, 0, 0.6); color: var(--bc-amber); }
+.a3-cuts .a3-cf b { font-size: 13px; }
+.a3-cuts .a3-play { padding: 5px 12px 5px 18px; font-size: 12px; }
+.a3-note { margin-top: 12px; font-size: 13px; color: var(--bc-ink2); }

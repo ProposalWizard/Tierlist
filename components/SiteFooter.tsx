@@ -12,12 +12,20 @@ export default function SiteFooter() {
           <p className="text-xs text-white">
             &copy; {new Date().getFullYear()} Knowitball Tierlists
           </p>
-          <Link
-            href="/legal"
-            className="text-xs text-white transition-colors hover:text-gray-300"
-          >
-            Privacy and Terms
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/credits"
+              className="text-xs text-white transition-colors hover:text-gray-300"
+            >
+              Credits
+            </Link>
+            <Link
+              href="/legal"
+              className="text-xs text-white transition-colors hover:text-gray-300"
+            >
+              Privacy and Terms
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

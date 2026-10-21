@@ -13,38 +13,39 @@ corner like Henry used to … the goalie seems to save almost everything if he's
 close to it. If you're around the corner of the 6 yard box and aim far post
 bottom corner that should have a reasonable chance of going in."*
 
-## The real reference (measured, not quoted)
+## The real reference (re-sourced from free data, 21 Oct 2026)
 
-`tools/statsbomb/placement.py` reads every Premier League 2015/16 match in
-StatsBomb's free open data (380 matches): shots on target, no penalties, no
-headers. StatsBomb's `end_location` for a SAVED shot is where the keeper stopped
-it, not where it was going, so the line from the strike through that point is
-carried on to the goal line (shots whose line ends outside the posts are left
-out). Height is scaled the same way (rough). n = 2,593 on-target shots.
+The first version of this section was measured on a licensed event data set,
+removed on 19 Oct 2026 (its licence forbids a paid game; data/opendata/
+LICENCES.md). Now: the Wyscout public dataset (CC BY 4.0, 1,941 matches), every
+on-target foot shot that is not a penalty, by Wyscout's own 3 × 3 goal-mouth
+zone (low / middle / high × the shooter's left / centre / right). Save % =
+1 − goals ÷ on target. Made by `scripts/opendata/reduce_resource.py`
+(`data/opendata/wyscout_shot_outcomes.json`).
 
-| Real save % (PL 2015/16) | Under 12 m | 12-18 m | 18 m+ |
+| Real save % (Wyscout) | Under 12 m | 12-18 m | 18 m+ |
 |---|---|---|---|
-| Top corner (≥ 1.6 m high, ≥ 2.4 m off centre) | 35% (n 49) | 38% (n 40) | 66% (n 77) |
-| Bottom corner (< 0.6 m high, ≥ 2.4 m off centre) | 26% (n 86) | 35% (n 156) | 66% (n 148) |
-| Central (< 1.2 m off centre), low | 50% (n 119) | 89% (n 157) | 98% (n 171) |
-| Central, chest height | 64% (n 72) | 90% (n 79) | 100% (n 117) |
+| Top corners | 18% (n 119) | 43% (n 188) | 63% (n 318) |
+| Bottom corners | 37% (n 888) | 53% (n 1,501) | 83% (n 1,629) |
+| Central, low | 51% (n 995) | 84% (n 1,423) | 98% (n 1,419) |
+| Central, middle height | 54% (n 443) | 89% (n 548) | 96% (n 839) |
 
-By side, struck from a channel of the box (5-11 m across, inside 16 m out):
+By side, struck from a channel of the box (more than 5.5 m across, inside the box):
 
 | Real save % | Near post corner | Far post corner |
 |---|---|---|
-| Low | 66% (n 55) | **13% (n 55)** |
-| Mid height | 77% (n 17) | 16% (n 25) |
-| High | 60% (n 25) | 22% (n 18) |
+| Low | 78% (n 1,014) | **37% (n 609)** |
+| Mid height | 87% (n 556) | 47% (n 203) |
+| High | 61% (n 144) | 26% (n 77) |
 
-From under 12 m: near-post top corner 44% (n 34); near-post bottom corner 36%
-(n 53); far-post bottom corner 9% (n 33).
+From under 12 m: near-post top corner 35% (n 31); near-post bottom corner 73%
+(n 206); far-post bottom corner 23% (n 53).
 
-**Caveat (a bias, stated):** a shot the keeper blocks with his body before it
-gets far is projected to where he was, so it counts as "central", not "far
-corner". The 13% is a floor for "aimed far post low", not the rate for every
-attempt. Leo's brief asked for about 40-55% scored for a good, well-struck
-Henry; the real far-corner figure says higher is also defensible.
+**Caveat (stated):** Wyscout's zone is a tag, not a measured spot, and a ball
+cleared off the line counts as on target. The far-corner figure is for every
+on-target shot that went there, not only well-struck ones. Leo's brief asked
+for about 40-55% scored for a good, well-struck Henry; the free far-corner
+figure (63% scored from a channel, 77% from under 12 m) says that is fair.
 
 Not in the data: shot speed. "Harder top corners as power rises" is football
 sense (a keeper needs about 0.5-0.7 s to get a full dive up into a corner after a
@@ -76,25 +77,26 @@ Report: `npx tsx tests/star/keeperFinish/report.mts` (`N=`, `CFG=live|oct13`,
 ## Before → after
 
 Save % of shots on target, keeper 80, 200 seeded shots a case (fewer where the
-aim search failed). Before = switch Old, after = New. Real = the table above.
+aim search failed). Before = switch Old, after = New. Real = the table above
+(free Wyscout data since 21 Oct 2026; the game columns are from 14 Oct).
 
 | Case | Live: before → after | Oct 13 on: before → after | Real |
 |---|---|---|---|
-| **Henry, served tight-angle chances (channel)** | 44% → 30% | **84% → 56%** | 13% (far corner low, channel) |
-| **Henry, served one-on-one chances (channel)** | 25% → 15% | **72% → 29%** | 13% |
-| Henry, corner of the 6-yard box, keeper set on the angle | 8% → 4% | 60% → 30% | 9% (far low, under 12 m) |
-| Henry, channel 9-14 m, keeper set | 57% → 41% | 85% → 52% | 13% |
+| **Henry, served tight-angle chances (channel)** | 44% → 30% | **84% → 56%** | 37% (far corner low, channel) |
+| **Henry, served one-on-one chances (channel)** | 25% → 15% | **72% → 29%** | 37% |
+| Henry, corner of the 6-yard box, keeper set on the angle | 8% → 4% | 60% → 30% | 23% (far low, under 12 m) |
+| Henry, channel 9-14 m, keeper set | 57% → 41% | 85% → 52% | 37% |
 | Henry, 6-yard-box corner, keeper still central (stress) | 60% → 41% | 88% → 75% | — |
-| Far post low, no curl, 6-yard-box corner | 22% → 14% | 45% → 24% | 9-13% |
-| Top corner 12-16 m, low power | 72% → 68% | 35% → 34% | 38% (all paces) |
-| Top corner 12-16 m, medium power | 38% → 31% | **71% → 48%** | 38% |
-| Top corner 12-16 m, full power | 13% → 6% | **37% → 10%** | 38% |
-| Near-post top corner, close (6-12 m) | 43% → 29% | 35% → 25% | 44% |
-| Near-post bottom corner, close | 64% → 54% | 40% → 32% | 36% |
-| Bottom corner from 18-24 m | 77% → 70% | 95% → 85% | 66% |
-| Low, 1.2-2.4 m off centre, 18-24 m | 80% → 80% | 97% → 96% | 95% |
-| Central low, 10-16 m (control) | 89% → 88% | 95% → 95% | 89% |
-| Straight at him, 10-16 m (control) | 87% → 87% | 96% → 96% | 90% |
+| Far post low, no curl, 6-yard-box corner | 22% → 14% | 45% → 24% | 23-37% |
+| Top corner 12-16 m, low power | 72% → 68% | 35% → 34% | 43% (all paces) |
+| Top corner 12-16 m, medium power | 38% → 31% | **71% → 48%** | 43% |
+| Top corner 12-16 m, full power | 13% → 6% | **37% → 10%** | 43% |
+| Near-post top corner, close (6-12 m) | 43% → 29% | 35% → 25% | 35% |
+| Near-post bottom corner, close | 64% → 54% | 40% → 32% | 73% |
+| Bottom corner from 18-24 m | 77% → 70% | 95% → 85% | 77% |
+| Low, 1.2-2.4 m off centre, 18-24 m | 80% → 80% | 97% → 96% | — (no finer free zone) |
+| Central low, 10-16 m (control) | 89% → 88% | 95% → 95% | 77% |
+| Straight at him, 10-16 m (control) | 87% → 87% | 96% → 96% | 82% |
 
 Pace of the strikes (km/h): live 61 / 82 / 102 for low / medium / full top
 corners, 94 for the Henry; Oct 13 on (Shot power curve) 54 / 69 / 86, Henry 72-77.
@@ -141,10 +143,10 @@ Penalties keep their own rule set (no change); free kicks have no brain (no chan
   a medium one (Old too: 35% vs 71%). That is the shot model, not the keeper;
   not touched.
 - Near-post shots from close were already easy in the game before this (top
-  corner 34-44% saved vs real 44%, bottom corner 40-64% vs real 36%); Leo asked
+  corner 34-44% saved vs real 35%, bottom corner 40-64% vs real 73%); Leo asked
   for the near-post top corner to be harder, and it is a little (see table).
 - Shots from distance into the bottom corner: Oct 13 keeper still saves more than
-  real (real 66%).
+  real (real 77%, 18-24 m).
 - Pre-existing, on `main` too (not caused here): `keeperPro.mts`'s Old hash
   (`d9ce4b14` vs recorded `c808f663`) and `keeperBrain.mts` "rating 45 moves
   before it reaches him" (54.7% vs floor 55%).

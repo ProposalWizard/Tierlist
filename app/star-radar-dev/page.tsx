@@ -20,6 +20,7 @@ import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Panel, PanelGrid, Pill, Label, Note } from "@/components/admin/broadcast/BroadcastPage";
 import "./radar.css";
 import FunTargetsReport from "@/components/star/FunTargetsReport";
+import RealWorldTable from "@/components/star/RealWorldTable";
 import {
   RadarPitch, MomentumStrip, LiveRadar, RadarFeed, Scoreboard, FullTime, describeArea, handedKinds,
   type RadarSide,
@@ -31,6 +32,7 @@ import { benchConversion, type HiddenMatchInputs, type RadarTick } from "@/lib/s
 import { PREMIER_LEAGUE_CLUBS, CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsFor, labelInk, kitLabelOnDark, type Kit } from "@/lib/star/kits";
 import { oldMatchFlow } from "@/lib/star/gameplayVersion";
+import { withCornerReach } from "@/lib/star/cornerReach";
 
 /** Which of the two layouts this device shows (Harry: "match radar both as toggles"). */
 const LAYOUT_KEY = "star-radar-dev-layout";
@@ -77,12 +79,13 @@ function side(club: string, strength: number, k: Kit): RadarSide {
 }
 
 function inputsFor(s: Setup): HiddenMatchInputs {
-  return {
+  // Mikey's corner rule, as the real match passes it (lib/star/cornerReach.ts).
+  return withCornerReach({
     teamStrength: s.usStrength, oppStrength: s.themStrength, home: s.home,
     playerSkill: s.skill, pace: s.skill, freeKick: s.skill, position: s.position,
     // Settings → Look → Gameplay → Match flow, as the real match reads it.
     matchFlow: !oldMatchFlow(),
-  };
+  });
 }
 
 export default function MatchRadarPage() {
@@ -241,7 +244,7 @@ export default function MatchRadarPage() {
       )}
     </>
   );
-  const fun = <div className="rd-fun"><FunTargetsReport /></div>;
+  const fun = <div className="rd-fun"><RealWorldTable inputs={inputsFor(setup)} label={`${setup.usStrength} v ${setup.themStrength}, you a ${setup.position}`} /><FunTargetsReport /></div>;
 
   return (
     <BroadcastPage
@@ -270,7 +273,7 @@ export default function MatchRadarPage() {
             <Panel title="The match">{setupBox}</Panel>
             <Panel title={over ? "Full time" : "Minute by minute"}>{feed}</Panel>
           </div>
-          <div className="rd-a-fun"><Panel title="200 matches">{fun}</Panel></div>
+          <div className="rd-a-fun"><Panel title="Real world · many matches">{fun}</Panel></div>
         </div>
       ) : (
         <div className="rd-l2" data-radar-layout="2">
@@ -288,7 +291,7 @@ export default function MatchRadarPage() {
           <Panel title="Events" note="up is you on top"><div className="rd-events">{momentum}</div></Panel>
           <PanelGrid min={360}>
             <Panel title="The match">{setupBox}</Panel>
-            <Panel title="200 matches">{fun}</Panel>
+            <Panel title="Real world · many matches">{fun}</Panel>
           </PanelGrid>
         </div>
       )}

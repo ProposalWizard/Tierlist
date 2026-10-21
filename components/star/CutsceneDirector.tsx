@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * THE CUT-SCENE DIRECTOR (dev panel on /star-style-dev) — watch any cut
+ * THE CUT-SCENE DIRECTOR (the 3D bench's scene shot, /star-3d-bench-dev/scene) — watch any cut
  * scene: pick a hand-made one, or GENERATE one from a game event (pick the
  * event, set the stakes, the feeling, rival present, home or away, night,
  * a seed to reroll), scrub the timeline (beats marked under it), replay,

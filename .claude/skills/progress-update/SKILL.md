@@ -3,6 +3,8 @@ name: progress-update
 description: Give Harry, Mikey or Leo a quick progress update as text progress bars — one bar per piece of work, how far along it is, and what it is waiting on. Load WHENEVER someone asks "update?", "how's it going", "where are we", "progress", "what are we waiting on", "status", or "how are these changes doing", and at the end of any long build or playtest round. Rebuilt 3 Oct 2026 after the first version (saved outside the repo) was lost with its cloud container; it now lives in the repo so it survives.
 ---
 
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
+
 # Progress update — bars, not paragraphs
 
 Harry, 3 Oct 2026: "the skill where you would give me progress bars". They
@@ -43,10 +45,10 @@ Waiting on: you, to merge Harry → main
   paragraph, no file names, no recap of the request.
 - **A background agent still running** is a bar at its current stage, with
   "running" — never guessed results.
-- Follow the house writing rules (CLAUDE.md "How to talk to this team"): short,
+- Follow the house writing rules (RUL-ALL-002, RUL-ALL-003, RUL-ALL-004): short,
   plain English, numbers where there are numbers.
 
-## Every 5 minutes, on every task — hard rule (Harry, 9 Oct 2026)
+## Every 5 minutes, on every task (the rule is RUL-TEAM-003; this is the how-to)
 
 *"Give the progress every 5 mins and give estimated percents (this should be
 hard coded in the skill and should run on every task) … add a time estimate
@@ -82,23 +84,18 @@ hard coded in the skill and should run on every task) … add a time estimate
   (act on it), but the posted update only goes out every 30 minutes. Between
   them, say nothing unless something is blocked or broken.
 
-## Auto-deploy at every major update (Harry, 9 Oct 2026)
+## Deploying is NOT automatic (RUL-TEAM-019)
 
-*"let's also add that it auto deploys at any major update."*
+The 9 Oct 2026 "auto-deploy at every major update" rule is superseded.
+Feature code reaches main only when Harry says push (RUL-TEAM-019,
+PRO-TEAM-001). Patch-notes-only PRs from `scripts/patch-notes/ship.mjs` go to
+main at once (PRO-TEAM-007, RUL-TEAM-020).
 
-- **A major update** = a piece of work reaching `built` and checked: a new
-  feature, page or screen, a finished fix round, or a bar hitting 100%. Not
-  each small commit.
-- **Deploy** = commit, push the session's own branch (`Harry`, `Mikey` or
-  `Leo`), then open and merge a PR from it → `main` so Vercel builds the live
-  site. Standing permission from Harry and Mikey. No need to ask each time.
-- **Only when the checks pass**: `npx tsc --noEmit`, the one-engine guard, the
-  tests for the files touched, and `npm run build`. A red check means no
-  deploy: fix it first, or report the bar as `blocked: <check>`.
+- A bar reads `built` or `pushed` (on the branch) until Harry says push;
+  `live` only once main has it.
 - Never deploy a builder's half-done worktree. Merge it into the session's
   branch first and check the merged copy.
-- The progress bar shows it: `pushed` → `live` once main has it. Add the
-  merge time to the time line (`Deployed 14:32`).
+- Add the merge time to the time line (`Deployed 14:32`) when it happens.
 
 ## When to send one
 
@@ -163,7 +160,7 @@ Weekly usage    started at 11% → expected ~18–20% at the end (rough)
     everyday-model playtest 0.31M + the top-model coordinator about 0.73M
     new tokens, so about 1.0M for 5%. That is far below the readings above,
     because the coordinator ran about 80 tool calls and each one re-reads the
-    whole conversation (about 150k tokens with this CLAUDE.md). **Long
+    whole conversation (about 150k tokens with CLAUDE.md loaded). **Long
     coordinator chats cost far more than their new tokens: estimate
     turns × context size, not new tokens alone.** Not sure nothing else ran
     on the account, so treat it as rough.
