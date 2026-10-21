@@ -1,0 +1,65 @@
+B14: running after a chance (20 Oct 2026)
+
+What it does
+- Any pass you play in open play with a goal in the picture now plays on in the same picture,
+  whatever the Chances setting (was: Chances: New + a build-up only). Not on shots, corners,
+  free kicks or penalties.
+- Phone, and whenever you don't steer: Auto run takes you into the best space it can see,
+  onside, toward goal, sprints when it is far, and sprints onto a ball played back to you.
+- Computer: W A S D (or the arrows) steer you, Shift sprints. Let go: Auto run takes over again
+  after 0.6 s. The keys only belong to the match while your run is live (they never touch the aim drag).
+- "After you pass: Joystick" (Harry changes) keeps its thumb stick, now with the same legs and bar.
+- The man who takes your pass shoots, or plays it to your feet, or slides you in, by how much
+  better your spot is than his and how good a passer he is. No captaincy needed. Captains still
+  get "Call for it".
+- Stamina bar top-left of the pitch (phone and computer), shown in open-play chances.
+
+Stamina = energy (one system)
+- The bar is the 3D games' sprint bar (6 s of sprinting full to empty at physical 50; refills
+  when you ease off). It can never refill past your match energy: energy 60 -> the bar stops at
+  60%; the part past that is shown hatched.
+- Sprinting costs real match energy: 0.12 a second (a full 6 s sprint = 0.7). It comes off the
+  same energy the career saves. Measured: Auto run sprints ~0.7 s a match (0.08 energy); a
+  player steering into the box ~1.7 s (0.20 energy).
+- Speeds come from your pace (pace 50: run 5.1, sprint 6.9 m/s; pace 90: sprint 7.9).
+
+Measured (scripts/b14-measure.mts, 500 matches, a bot that passes 35% of open-play chances)
+                                 before   after (Auto run)  after (steering into the box)
+  chances handed to you a match   5.82     5.82              5.81
+  your goals                      0.98     1.04              1.06
+  team-mate goals off your pass   0.39     0.32              0.34
+  team goals with you involved    1.37     1.40              1.39
+  their goals                     1.16     1.14              1.16
+  ball back to you, same picture  0.00     0.15              0.20
+- Ball back by passer (tests/star/runAfter.mts, 160 chances x 5 kinds): passing 45 -> 9.1% of
+  his reads, passing 88 -> 15.4%. Standing still 4.3%, Auto run 13.6%, sprinting into the box
+  30.6%. You reach 85% of the balls played back. Onside when you passed: offside when he looks
+  up 2.5%.
+
+Engine / drift edits
+- lib/star/canvasEngine.ts: NONE.
+- components/star/CanvasMatch.tsx (drift file): the run starts at your pass (replaces the two
+  old play-on branches), W A S D / Shift listener, keys turned into a pitch direction once a
+  frame, sprint energy taken off energyRef each substep, stamina bar overlay, dev hook shows the
+  legs. The thumb stick still draws/listens only on "Joystick".
+- Pitch width re-measured in the real career match: 366x744 on a 390 phone, 384x800 on a
+  computer (unchanged baseline).
+
+Seen in the real career match (signed out, dev server)
+- 1440x900: W + Shift sprint, the bar draining (0.86 -> 0.61), refilling to its energy cap,
+  Auto run taking over after letting go, energy 86.04 -> 85.86, a through ball back into the
+  run, and your next kick in the same picture. 390x844: Auto run sprinting, bar drain and refill.
+  No page errors.
+- Not seen: a ball back on a phone (measured only), the Joystick setting live, a short phone
+  (bar sits top-left; checked on 844 only).
+
+Stills and clips: this folder (b14-*.jpg, b14-pc-pass-sprint-auto-run.mp4,
+b14-pc-ball-back-through-ball.mp4).
+Checks: tsc clean, both guards clean, match tests (finishing, keeper x8, aiming, outcomes,
+playOn, afterPassStick, captain, touchMode, energy, runAfter) 16/16, npm run build passes.
+
+Open questions for Harry
+1. Should Auto run also take over on "Joystick" when the thumb is off (today: you stand still)?
+2. Bar position: top-left of the pitch; on a computer it can touch the goal net's corner when
+   the goal sits left. Fine, or move it?
+3. Sprint energy cost 0.12/s (a full sprint ~0.7 energy). Right size?
