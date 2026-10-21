@@ -22,6 +22,8 @@ import {
   type TrackedFile, type TrackFile, type WyscoutShotFile, type RealShot, type RealCorner,
 } from "../../lib/star/realMoments";
 import { leadInEntities } from "../../lib/star/leadIn";
+import { airKindOf, kindForShot, playKindForShot } from "../../lib/star/realMoments/shots";
+import { isAirKind, airWaitZ, airZOf, AIR_HEIGHT_VARIES, HEADER_Z, VOLLEY_MAX_Z, type AirHeighted } from "../../lib/star/airDrawings";
 import { CX, POST_L, POST_R, PITCH_W } from "../../lib/star/pitch";
 
 let failed = 0;
@@ -125,7 +127,9 @@ console.log("\n5. THE TRACKED BUILD-UP (4 s of real movement, then the chance)")
     ents += es.length; matched += lead.matched;
     if (es.every((e) => { const p = lead.posAt(e.key, lead.durS); return !p || d(p, e.get()) < 1e-6; })) endExact++;
     const b = lead.ballAt(lead.durS);
-    if (d(b, sc.ball) < 1e-6 && b.z === 0) ballEnd++;
+    // A real header or volley ends in the air, where its ball hangs or bounces from while you aim.
+    const wantZ = isAirKind(sc.kind) ? airWaitZ(sc.kind, 0, sc as typeof sc & AirHeighted) : 0;
+    if (d(b, sc.ball) < 1e-6 && Math.abs(b.z - wantZ) < 1e-9) ballEnd++;
     const keys = [...es.map((e) => e.key), ...Array.from({ length: lead.extraMates ?? 0 }, (_, i) => `extra${i}`)];
     for (let t = 1 / 30; t <= lead.durS; t += 1 / 30) {
       for (const k of keys) {
@@ -141,7 +145,7 @@ console.log("\n5. THE TRACKED BUILD-UP (4 s of real movement, then the chance)")
   }
   ok(n === tShots.length && startJump === 0, `every shot: 4 s, 21 frames of the ball, 15+ men decoded (${n} shots, ${startJump} off)`);
   ok(endExact === n, `every man ends exactly where the chance has him: ${share(endExact, n)}`);
-  ok(ballEnd === n, `the ball ends on the chance's ball, on the grass: ${share(ballEnd, n)}`);
+  ok(ballEnd === n, `the ball ends on the chance's ball, on the grass (a header or volley: at its height): ${share(ballEnd, n)}`);
   ok(fast / frames < 0.003, `real speeds: man-frames over 11 m/s ${share(fast, frames)}`);
   ok(matched / ents > 0.8, `the chance's men are real men from the track: ${share(matched, ents)}`);
 }
@@ -150,6 +154,36 @@ console.log("\n6. THE CREDIT LINES");
 {
   const lic = readFileSync("data/opendata/LICENCES.md", "utf8");
   for (const [k, line] of Object.entries(REAL_CREDIT)) ok(lic.includes(line), `${k}: the page's credit is LICENCES.md's line`);
+}
+
+console.log("\n7. REAL HEADERS AND VOLLEYS ARE PLAYED AS TRUE ONES (21 Oct 2026)");
+{
+  // The strike height is on every tracked shot that has a ball height (DFL, SkillCorner).
+  const withZ = tShots.filter((s) => s.src !== "soccertrack");
+  ok(withZ.every((s) => typeof s.z === "number" && s.z >= 0 && s.z < 6), `every DFL and SkillCorner shot has its strike height (${withZ.length})`);
+  const open = tShots.filter((s) => s.type === "Open Play");
+  const by = (k: string | null) => open.filter((s) => airKindOf(s) === k);
+  const heads = by("header"), vols = by("volley"), high = by("high");
+  console.log(`  open play: ${heads.length} headers, ${vols.length} volleys, ${high.length} overhead (not served), ${by(null).length} on the grass`);
+  ok(heads.length >= 45 && vols.length >= 90, `the real air-ball shots are there (headers ${heads.length} ≥ 45, volleys ${vols.length} ≥ 90)`);
+  ok(open.filter((s) => s.body === "Head").every((s) => airKindOf(s) === "header"), "every shot the source says was a header is a header");
+  ok(heads.every((s) => playKindForShot(s) === "header" && kindForShot(s) === "header"), "a real header is played as a header (the ball hangs at your head)");
+  ok(vols.every((s) => playKindForShot(s) === "volley"), "a real volley is played as a volley (the ball bounces)");
+  ok(by(null).every((s) => playKindForShot(s) !== "header" && playKindForShot(s) !== "volley"), "a shot on the grass is never played as a header or a volley");
+  ok(high.every((s) => playKindForShot(s) !== "header" && playKindForShot(s) !== "volley"), "an overhead shot is not a header or a volley (acrobatics: not built)");
+  // A foot shot the source names (DFL) is never a header, however high.
+  ok(open.filter((s) => s.src === "dfl" && s.body !== "Head").every((s) => airKindOf(s) !== "header"), "a DFL foot shot is never served as a header");
+  // Its picture: the real men, the whole goal (frameHoldsShot), and its own height when the heights vary.
+  let holds = 0, heightOk = 0;
+  for (const s of [...heads, ...vols]) {
+    const sc = scenarioForShot(s, { wideFrame: true });
+    if (frameHoldsShot(s, sc.viewport)) holds++;
+    const z = airZOf(sc as typeof sc & AirHeighted);
+    const usual = sc.kind === "header" ? HEADER_Z : VOLLEY_MAX_Z;
+    if (AIR_HEIGHT_VARIES ? Math.abs(z - airZOf({ kind: sc.kind, airZ: s.z ?? usual })) < 0.006 && Math.abs(z - (s.z ?? usual)) < 1.4 : z === usual) heightOk++;
+  }
+  ok(holds === heads.length + vols.length, `every real header and volley's picture holds its men and the goal: ${share(holds, heads.length + vols.length)}`);
+  ok(heightOk === heads.length + vols.length, `the ball's height is ${AIR_HEIGHT_VARIES ? "its real one (held in range)" : "the kind's usual one (heights switched off)"}: ${share(heightOk, heads.length + vols.length)}`);
 }
 
 if (failed) { console.error(`\n${failed} FAILED`); process.exit(1); }

@@ -15,6 +15,7 @@
 import type { Scenario, Vec2 } from "../canvasEngine";
 import { leadInEntities, type LeadIn } from "../leadIn";
 import type { RealTrack } from "./types";
+import { isAirKind, airWaitZ, type AirHeighted } from "../airDrawings";
 
 export type TrackSide = "you" | "mate" | "opp" | "keeper";
 
@@ -78,7 +79,8 @@ const lastName = (n: string) => n.trim().split(/\s+/).slice(-1)[0] ?? "";
  * (scenarioForShot of the same moment): each of the chance's men is matched to
  * the real man standing where he stands, and replays that man's real run;
  * team-mates the chance left out (off its camera) run too, as extras. Ends
- * exactly on the chance (every man, the ball on the grass).
+ * exactly on the chance (every man; the ball on the grass, or for a header or
+ * volley at the height the chance's ball starts from).
  */
 export function trackLeadIn(tr: RealTrack, sc: Scenario, opts: { camera?: "tv" } = { camera: "tv" }): LeadIn & { matched: number; build: RealBuildUp } {
   const b = buildUpOf(tr);
@@ -115,11 +117,15 @@ export function trackLeadIn(tr: RealTrack, sc: Scenario, opts: { camera?: "tv" }
   const end = { x: sc.ball.x, y: sc.ball.y };
   const bEnd = along(b.ball, durS, (q) => [q.x, q.y, q.z]);
   const ballOff = { x: end.x - bEnd[0], y: end.y - bEnd[1] };
+  // Where the ball's height ends: on the grass, or for a real header or volley
+  // where the chance's ball hangs or bounces from as you aim (airDrawings.ts
+  // airWaitZ at the first instant), so it does not drop and jump back up.
+  const endZ = isAirKind(sc.kind) ? airWaitZ(sc.kind, 0, sc as Scenario & AirHeighted) : 0;
   const ballAt = (t: number) => {
     const p = along(b.ball, Math.min(durS, Math.max(0, t)), (q) => [q.x, q.y, q.z]);
     const f = smooth(t / durS);
     const zf = 1 - smooth((t - (durS - 0.4)) / 0.4);
-    return { x: p[0] + ballOff.x * f, y: p[1] + ballOff.y * f, z: Math.max(0, p[2]) * zf };
+    return { x: p[0] + ballOff.x * f, y: p[1] + ballOff.y * f, z: Math.max(0, p[2]) * zf + endZ * (1 - zf) };
   };
   const posAt = (key: string, t: number): Vec2 | null => {
     const i = keyMan.get(key);

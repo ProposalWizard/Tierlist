@@ -22,6 +22,7 @@ import { enforceHardRules } from "../kindRules";
 import { placeKeeper, keeperSharesOf, sampleFromScenario } from "../authoredChance";
 import { PITCH_W, CX, POST_L, POST_R, NET_DEPTH } from "../pitch";
 import { isFullyReal, type RealShot, type RealCorner, type TrackedMoment } from "./types";
+import { AIR_HEADER_MIN_Z, AIR_HEADER_MAX_Z, AIR_VOLLEY_MIN_Z, setAirZ, type AirHeighted } from "../airDrawings";
 
 export const P = (p: readonly number[]): Vec2 => ({ x: p[0], y: p[1] });
 
@@ -62,38 +63,75 @@ export function blockersOf(ball: Vec2, opps: Vec2[]): number {
 }
 
 /**
+ * How the ball was in the air when a real shot was struck (headers piece 1,
+ * 21 Oct 2026, Harry: "play the ~170 real headers/volleys as true ones"). The
+ * engine's own heights (airDrawings.ts AIR_*_Z, the same as canvasEngine's):
+ *  - "header": the source says Head, or the ball was 1.3 to 2.6 m up and the
+ *    source does not say which body part (SkillCorner says "Foot" for all);
+ *  - "volley": the ball was 0.35 to 1.3 m up (and not a header);
+ *  - "high": a foot shot at 1.3 m or more, or a ball above 2.6 m (a scissor or
+ *    bicycle kick, or the tracking's mistake). Not built yet: never served.
+ *  - null: on the grass, or no height known (Wyscout, SoccerTrack).
+ */
+export type AirKind = "header" | "volley" | "high";
+export function airKindOf(s: RealShot): AirKind | null {
+  if (s.type === "Penalty" || s.type === "Free Kick") return null;
+  if (s.body === "Head") return "header";
+  const z = s.z;
+  if (typeof z !== "number" || !Number.isFinite(z)) return null;
+  // SkillCorner does not say head or foot (it writes "Foot" for every shot).
+  const bodyKnown = s.src !== "skillcorner";
+  if (z >= AIR_HEADER_MIN_Z) return !bodyKnown && z <= AIR_HEADER_MAX_Z ? "header" : "high";
+  if (z >= AIR_VOLLEY_MIN_Z) return "volley";
+  return null;
+}
+
+/**
  * Our closest chance kind (only the container: camera and rules; the people
- * are the real ones where tracking has them). Headers and crowded close shots
- * go in "volley", the close-range kind; a placed shot (nobody known near it)
- * that is close and on the ground is a one-on-one only on a counter or at a
- * 30%+ chance, else the in-the-box kind with its own defenders.
+ * are the real ones where tracking has them). A real header is a "header" and
+ * a real volley a "volley" (airKindOf), wherever they were struck. On the
+ * grass: crowded close shots go in "volley", the close-range kind; a placed
+ * shot (nobody known near it) that is close is a one-on-one only on a counter
+ * or at a 30%+ chance, else the in-the-box kind with its own defenders.
  */
 export function kindForShot(s: RealShot): ScenarioKind {
   if (s.type === "Penalty") return "penalty";
   if (s.type === "Free Kick") return "free_kick";
+  const air = airKindOf(s);
+  if (air === "header" || air === "volley") return air;
   const { ball, opps } = peopleOf(s);
   if (ball.y >= 17) return "long_range";
   if (Math.abs(ball.x - CX) >= 9 && ball.y <= 15) return "tight_angle";
-  if (s.body === "Head") return "volley";
   if (!isFullyReal(s)) return s.counter || s.xg >= 0.3 ? "one_on_one" : "volley";
   return blockersOf(ball, opps) === 0 ? "one_on_one" : "volley";
 }
 
 /**
- * The kind the ENGINE plays it as: "volley" drops the ball out of the air,
- * right only for a header; a ground shot in a crowded box plays as
- * "one_on_one" (its people are still all there; no kind rule moves them).
+ * The kind the ENGINE plays it as. A real header is played as a header (the
+ * ball hangs at your head) and a real volley as a volley (it bounces); a
+ * fully real ground shot in a crowded box plays as "one_on_one" (its people
+ * are still all there; no kind rule moves them).
  */
 export function playKindForShot(s: RealShot): ScenarioKind {
   const k = kindForShot(s);
-  if (k === "volley" && s.body !== "Head" && isFullyReal(s)) return "one_on_one";
+  if (k === "volley" && airKindOf(s) !== "volley" && isFullyReal(s)) return "one_on_one";
   return k;
 }
 
 export const KIND_LABEL: Partial<Record<ScenarioKind, string>> = {
-  one_on_one: "One-on-one", volley: "In the box", tight_angle: "Tight angle",
+  one_on_one: "One-on-one", volley: "In the box", header: "Header", tight_angle: "Tight angle",
   long_range: "Long range", penalty: "Penalty", free_kick: "Free kick", corner: "Corner",
 };
+
+/** The pages' word for a real shot: Header / Volley when it was struck in the air, else its kind's. */
+export function shotKindLabel(s: RealShot): string {
+  const air = airKindOf(s);
+  if (air === "header") return "Header";
+  if (air === "volley") return "Volley";
+  if (air === "high") return "Overhead (not served)";
+  const k = kindForShot(s);
+  return KIND_LABEL[k] ?? k;
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 //  THE MEASURES — the same four numbers for a real shot and for ours
@@ -316,6 +354,9 @@ export function scenarioForShot(s: RealShot, opts: { wideFrame?: boolean } = {})
   applyOverrideToScenario(sc, overrideForShot(s, kind, seed, !!opts.wideFrame));
   // The real keeper starts where he really stood (the keeper brain would walk him to OUR set spot while you aim).
   if (isFullyReal(s) && peopleOf(s).keeper) sc.keeperHoldsStart = true;
+  // A real header or volley: the ball reaches you at the height it really was
+  // (airDrawings.ts airZOf; held inside the kind's range).
+  if ((kind === "header" || kind === "volley") && typeof s.z === "number") setAirZ(sc as Scenario & AirHeighted, s.z);
   return sc;
 }
 

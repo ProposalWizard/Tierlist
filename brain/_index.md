@@ -17,6 +17,14 @@ FACT-ENG-001 | The guard also fails on a direct CanvasMatch mount, a grown KNOWN
 FACT-ENG-002 | Trial penalties, free kicks, training strike drills and the gauntlet mount EngineFeature; a difference is a named dial. | engine
 FACT-ENG-003 | Still copies, to port next: five-a-side only; the /star-match-dev fork was deleted (18 Oct 2026). | admin,engine
 FACT-ENG-004 | The engine-warn hook also asks, as SOMETHING MAY DRIFT, on CanvasMatch, EnginePlay, hiddenMatch and the other play-screen files. | engine
+FACT-KIB-001 | Knowitball as a client: three mates building the best football game ever; client code KIB. | client-kib
+FACT-KIB-002 | Audience: football fans 16 to 30 on TikTok, Reels and Shorts (Harry to confirm). | client-kib
+FACT-KIB-003 | Video format: 1080×1920 (9:16), 30 fps, H.264, AAC stereo; v01 ran 44.7 s at -13.4 LUFS. | client-kib
+FACT-KIB-004 | Safe area: captions and cards stay inside x 64–950 and y 150–1536. | client-kib
+FACT-KIB-005 | End card: KNOWITBALL, the versions so far, a green knowitball.co.uk pill and "FOLLOW FOR v0.4". | client-kib
+FACT-KIB-006 | Voice-over: Kokoro v1.0 offline, voice bm_george, speed 1.2, en-gb; the same setup as the game's commentary. | media,client-kib
+FACT-KIB-007 | Learning from v01: v0.2 and v0.3 had no screenshots in the repo, so their beats had to be drawn diagrams. | client-kib
+FACT-KIB-008 | Learning from v01: render frames in chunks of 250, one page per chunk; one long session crashed the page. | client-kib
 FACT-UI-001 | Settings keeps only real player preferences (sound, full screen, 3D quality, faces, names) and the Settings UI Old/New row. | three-d,ui
 FACT-UI-002 | Decided, no toggle: to see or bring back an old option, read the files at ebe02ad; old stored values are ignored. | ui
 FACT-UI-003 | Chances: the team's drawn chances only, everywhere; the New chance library and the Generator were DELETED. | team,ui
@@ -44,6 +52,7 @@ PRO-TEAM-006 | Builders check light: ONE quick check per change (loads, no conso
 PRO-TEAM-007 | Ship patch notes alone: node scripts/patch-notes/ship.mjs <versions> --pr makes a patch-notes-only PR to main; feature code waits for Harry's push. | process,deploy
 PRO-TEAM-008 | Patch notes order: stills on the page, ship the notes with ship.mjs, publish; push the feature when Harry says; then film clips. | process,deploy
 REF-ALL-001 | Big documents and skills stay whole; each gets one reference note that links to the source. | brain
+REF-KIB-001 | Script v01, patch notes 0.1 to 0.3: the first Knowitball short, word for word with its sources. | process,client-kib
 RUL-3D-001 | Fully 3D games are the exception: own physics and rules in lib/star/play3d/, never importing canvasEngine.ts. | engine,three-d,rule
 RUL-3D-002 | No Higgsfield use by any builder until Harry says otherwise (about 730 credits used on 20 Oct). | three-d
 RUL-3D-003 | Delete every Higgsfield image, video and 3D model there once a round is done, keeping copies in the repo first. | three-d
@@ -70,6 +79,10 @@ RUL-ENG-003 | The one-engine guard runs inside npm run build and blocks every Ve
 RUL-ENG-004 | Never add to KNOWN_COPIES, raise CEILING, touch the canary or remove the guard unless asked in those words. | engine,rule
 RUL-ENG-005 | The real match (app/star-dev/page.tsx) is the only screen that mounts CanvasMatch directly. | engine
 RUL-ENG-006 | Shared mechanics, not a shared picture: a mode keeps the real ball and picks what is on the pitch with scene. | engine
+RUL-KIB-001 | Voice: short, cheeky, football-mad, numbers first ("9.8% to 47.6%"). | client-kib
+RUL-KIB-002 | Real game footage only, or marked "ILLUSTRATION" on screen. | client-kib
+RUL-KIB-003 | No real club badges or player photos in ads unless we have the right to use them. | client-kib
+RUL-KIB-004 | Never claim a feature that is not live; every number comes from a patch note. | process,rule,style,client-kib
 RUL-TEAM-001 | [SUPERSEDED] Deploy only when told: commit and push to the Harry branch freely, merge to main only when Harry says push. | team,rule,deploy
 RUL-TEAM-002 | [SUPERSEDED] Every deploy comes with patch notes; Harry decides each time whether to push now or see patch notes first. | process,deploy,team
 RUL-TEAM-003 | Progress updates every 5 minutes on every task, with % and time left on every bar and the token/weekly usage block. | process,team

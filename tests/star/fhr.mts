@@ -34,7 +34,7 @@ import { fhrFoulBuildUpFor, fhrWantsFoul, FOUL_SHARE, type FhrFoulBuildUp } from
 import { testAreaBuildUp, snappyBuildUp, snappyCapS, fhrShareRoll, fhrBuildUpOn, FHR_BUILDUP_SHARE, FHR_SNAPPY_S } from "../../lib/star/fhr/builders";
 import { standBackFor, yourRunupFor, penaltyRunupOf, freeKickRunupOf } from "../../lib/star/runupStyles";
 import { servedChances } from "../../lib/star/fhr/servedChances";
-import { arriveZ } from "../../lib/star/airDrawings";
+import { airZOf, type AirHeighted } from "../../lib/star/airDrawings";
 
 /** A lead-in's shape, for comparing two (the ball every twelfth of it). */
 const leadSigOf = (l: LeadIn | null) => {
@@ -207,7 +207,7 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
     // the men still running (phase 3) once they have stopped (durS + runOnS).
     // (A header or a volley's ball ends in the air, where it meets you: B10.)
     const b = l.ballAt(l.durS);
-    check(Math.abs(b.x - c.sc.ball.x) < 1e-9 && Math.abs(b.y - c.sc.ball.y) < 1e-9 && b.z === arriveZ(c.sc.kind), `${c.sc.kind}: the ball does not end on the drawing's`);
+    check(Math.abs(b.x - c.sc.ball.x) < 1e-9 && Math.abs(b.y - c.sc.ball.y) < 1e-9 && Math.abs(b.z - airZOf(c.sc as typeof c.sc & AirHeighted)) < 1e-9, `${c.sc.kind}: the ball does not end on the drawing's`);
     const runs = new Set(l.runOnKeys ?? []);
     if (runs.size) { runOns++; check((l.runOnS ?? 0) > 0 && (l.runOnS ?? 0) <= FHR_RUNON_S + 1 / 15 + 1e-9, `${c.sc.kind}: run-on ${l.runOnS} s`); }
     check(!runs.has("you") && !runs.has("keeper"), `${c.sc.kind}: you or the keeper still running at the hand-over`);

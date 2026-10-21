@@ -19,7 +19,8 @@ import { useCountUp } from "./motion";
 export default function GameBar({ career, onHome, atHome = false, onHelp, onSettings }: {
   career: CareerState;
   onHome: () => void;
-  /** On one of the three swipe screens: the house button is plain; elsewhere it lights green. */
+  /** On Home itself: the house is dimmed and does nothing (navigation round 1,
+   *  21 Oct 2026: "the house icon always means Home"). Elsewhere it lights green. */
   atHome?: boolean;
   onHelp?: () => void;
   onSettings: () => void;
@@ -35,10 +36,11 @@ export default function GameBar({ career, onHome, atHome = false, onHelp, onSett
       <button
         data-home-button
         data-tour="home"
-        onClick={onHome}
-        aria-label="Home"
-        className={`kib-press flex h-8 w-8 shrink-0 items-center justify-center rounded-[3px] transition-colors ${
-          atHome ? "sk-top-btn" : "bg-gradient-to-b from-emerald-400 to-emerald-600 text-white shadow-[0_1px_3px_rgba(0,0,0,.25)]"
+        onClick={atHome ? undefined : onHome}
+        aria-label={atHome ? "Home (you are here)" : "Home"}
+        aria-disabled={atHome || undefined}
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[3px] transition-colors ${
+          atHome ? "sk-top-btn cursor-default opacity-40" : "kib-press bg-gradient-to-b from-emerald-400 to-emerald-600 text-white shadow-[0_1px_3px_rgba(0,0,0,.25)]"
         }`}
       >
         <HouseIcon />

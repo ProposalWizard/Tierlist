@@ -451,6 +451,25 @@ export function appInstalled(c: Pick<CareerState, "unlocks">, id: string): boole
   return STARTER_APPS.includes(id) || c.unlocks.apps.includes(id);
 }
 
+/**
+ * A NEW APP WEARS A "NEW" BADGE (navigation round 1, 21 Oct 2026: Harry, "we'll
+ * have stuff slowly unlock on the phone anyway"). An app the player added
+ * (`unlocks.apps`, the App Store) is new until it is first opened. The phone's
+ * starter apps never are: they arrive together with the phone, and the phone's
+ * own tour shows them. An old save (no `unlocks`) has nothing new.
+ */
+export function appIsNew(c: Pick<CareerState, "unlocks">, id: string): boolean {
+  return !!c.unlocks && c.unlocks.apps.includes(id) && !c.unlocks.seen.includes(`app-new-${id}`);
+}
+/** How many apps on the phone are still new (the Phone button's count). */
+export function newAppCount(c: Pick<CareerState, "unlocks">): number {
+  return c.unlocks ? c.unlocks.apps.filter((id) => appIsNew(c, id)).length : 0;
+}
+/** The app was opened: its "new" badge goes. */
+export function markAppOpened(c: CareerState, id: string): CareerState {
+  return appIsNew(c, id) ? markSeen(c, `app-new-${id}`) : c;
+}
+
 /** Pays for an app and puts it on the phone. Not enough money: nothing happens. */
 export function installApp(c: CareerState, id: string): CareerState {
   if (!c.unlocks || c.unlocks.apps.includes(id)) return c;
