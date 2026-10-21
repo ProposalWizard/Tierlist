@@ -103,13 +103,17 @@ export const NEW_VIEW_WIDTH_M = 38;
 export const NEW_VIEW_MAX_HW = 83 / 38;
 /** Never shorter than the classic 5:8 canvas. */
 export const NEW_VIEW_MIN_HW = 8 / 5;
-/** Figures: this much of their zoomed-out size (option D: ~22 px on a phone). */
-export const NEW_FIGURE_SCALE = 0.8;
-/** Outfield players on top of NEW_FIGURE_SCALE (Harry, 9 Oct 2026: "I like 0.8 but
- *  with the goalie at 1x"). The keeper keeps his size; the ball shrinks with the men. */
-export const NEW_OUTFIELD_SHRINK = 0.8;
-/** The ball: this much of its zoomed-out size (option D: ~7 px, now 0.8 of that). */
-export const NEW_BALL_SCALE = 0.7 * NEW_OUTFIELD_SHRINK;
+/** Figures: this much of their zoomed-out size. Was 0.8 (option D); Harry picked
+ *  size option C on 21 Oct 2026 ("drop both shrinks"): 1, so men are ~27.8 px and
+ *  the keeper ~22.8 px on a 390 × 844 phone (were 17.8 / 18.2). */
+export const NEW_FIGURE_SCALE = 1;
+/** Outfield players on top of NEW_FIGURE_SCALE. Was 0.8 (Harry, 9 Oct 2026: "I like
+ *  0.8 but with the goalie at 1x"); dropped with option C (21 Oct 2026), so it is 1.
+ *  The keeper is drawn at MATCH_KEEPER_R_SHARE of a man. */
+export const NEW_OUTFIELD_SHRINK = 1;
+/** The ball: this much of its zoomed-out size. Option C grew the men only; the ball
+ *  keeps its size (0.7 × the old 0.8 shrink = 0.56, ~5.6 px on a phone). */
+export const NEW_BALL_SCALE = 0.56;
 
 /** TEST ONLY: grow the men, the keeper and the ball together (goal unchanged).
  *  Set by /star-bigger-dev (Harry, 12 Oct 2026: "make this a test, I don't want it

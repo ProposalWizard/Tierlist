@@ -249,9 +249,9 @@ function ReviewView({ review }: { review: PatchNoteReview }) {
 
 /**
  * The kept page, in a frame sized to its full height so the archive scrolls
- * it like any other content. Loaded as text into `srcdoc`: the site sends
- * X-Frame-Options: DENY on every response, so a frame pointed at a URL would
- * be blank (lib/patchNotePageServe.ts).
+ * it like any other content. Loaded as text into `srcdoc` (written when the
+ * site sent X-Frame-Options: DENY; it is SAMEORIGIN since 21 Oct 2026, and
+ * srcdoc still works and still sizes cleanly; lib/patchNotePageServe.ts).
  */
 export function PageFrame({ pageKey, artifactUrl, label }: { pageKey: string; artifactUrl?: string | null; label?: string }) {
   const ref = useRef<HTMLIFrameElement | null>(null);
