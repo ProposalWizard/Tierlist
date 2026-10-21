@@ -3,6 +3,8 @@ name: admin-page-guide
 description: Every admin and dev page on Knowitball carries the same little "eye" button (PageGuide) that explains, in plain English, every button on the screen, where saving goes, whether anything commits to the repo, and where it shows up in the game. Load WHENEVER an admin or dev page is created or edited — anything under app/admin/**, app/star-*-dev/**, app/star-dev/media-lab, app/lineups, app/draft-dev*, app/draft-challenge-dev, app/draft/preview, app/profile-new, app/ballon-dor — or any component or API route those pages use changes a button label, a save path or a commit path. Also load when someone asks "what does this button do", "where does this save", or to add a page to the admin menu.
 ---
 
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
+
 # The admin page guide (the eye)
 
 Asked for directly by Harry: *"there should be an information panel on every
@@ -78,7 +80,7 @@ For developers.** Fill the fields; don't invent new sections.
 - **`inGame`** — where a player would ever see the result. "Nowhere — a
   sandbox" is a real answer.
 - **`needs`** — any migration or env var the page depends on that may not be
-  done. Check CLAUDE.md's Pending Migrations table. Say what the page does
+  done. Check the Brain's migration notes (PRO-DAT-001, FACT-DAT-001 to FACT-DAT-004). Say what the page does
   without it.
 - **`dev`** — the one place file paths and API routes are allowed.
 

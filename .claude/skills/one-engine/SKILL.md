@@ -3,6 +3,8 @@ name: one-engine
 description: The rule that every football-playing screen in Knowitball runs the ONE real match engine, never a copy. Load BEFORE building or changing anything that plays football — a new mode, drill, trial stage, minigame, test/dev screen, highlight or scenario player — or anything touching components/star/{CanvasMatch,EnginePlay,ScenarioPlay,InfiniteMatch,TrainingMinigame,FiveASide}.tsx, components/star/stages/**, lib/star/{engineProfile,playArea}.ts or scripts/one-engine-guard.mjs. Also load when the build fails with "ONE ENGINE GUARD", "GUARD IS BLIND", or "runs its own copy of the match".
 ---
 
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
+
 # One engine
 
 Asked for by Harry (24 Sep 2026): *"the engine isn't being used gamewide… there
@@ -13,16 +15,18 @@ engine."* And: *"yes never drifting — but if an area is specific for tuning
 gameplay, but adapting that gameplay should only happen inside the test area
 and not uniformly."*
 
-**3D games are the exception (Harry, 8 Oct 2026):** *"the match engine rule has
-got to be changed for 3D — surely it would be a completely different set of
-rulesets almost? And that's okay as long as it doesn't infringe on the base
-game."* Fully 3D games (move around, touch, keep-ups, headers, volleys, free
-roam) get their OWN physics and rules, in their own folder (`lib/star/play3d/`).
-Limits: they never import from or change `lib/star/canvasEngine.ts` or the 2D
-match; the 2D base game is untouched by them; shared basics (ball size, gravity,
-how a player's skills scale a kick) come from one shared file so the 3D ball
-still feels like the same sport. Screens built on the 2D engine (trial, drills,
-Crossbar Challenge's aim) keep the one-engine rule as before.
+**3D games are the exception:** RUL-3D-001 (own physics in `lib/star/play3d/`,
+never importing `canvasEngine.ts`) and RUL-3D-008 (shared basics from one file).
+Screens built on the 2D engine keep the one-engine rule.
+
+The rules in the Brain: RUL-ENG-005 (only the real match mounts CanvasMatch),
+RUL-ENG-002 (everything else mounts EnginePlay; no own loop), RUL-ENG-006
+(shared mechanics, not a shared picture), RUL-ENG-003 (the guard runs in
+`npm run build`), RUL-ENG-004 (never touch KNOWN_COPIES, CEILING, the canary
+or the guard unless asked in those words), RUL-ENG-001 and FACT-ENG-004 (the
+engine may change, with a warning hook), FACT-ENG-001 (what else the guard
+fails on), PRO-ENG-001 (after an engine change: say so, run the match tests,
+playtest). The steps below are the how-to.
 
 ## Why
 
@@ -51,9 +55,8 @@ and the real match moved on without it.
 
    If a feature needs something the engine does not do yet, add it to the
    engine as an optional prop that is **off by default**, so the real match is
-   untouched. Changing `lib/star/canvasEngine.ts` itself is allowed
-   (Harry, 5 Oct 2026), but a hook warns on every edit: name the change in
-   the reply and patch notes, and run the match tests.
+   untouched. Changing `lib/star/canvasEngine.ts` itself is allowed with a warning
+   (RUL-ENG-001, PRO-ENG-001).
 3. **Shared mechanics, not a shared picture.** Harry (24 Sep 2026):
    *"different modes and training/trials will be COMPLETELY looking different -
    and that can't be seen as a new build it has to be allowed - i.e technique
@@ -105,19 +108,12 @@ variables are all seen.
 | `EnginePlay passes "X" and the real match never does` | A test-only dial was added | List it in `TEST_ONLY` with the reason, so it stays visibly a test-area thing. |
 | `ONE ENGINE GUARD crashed` | The guard broke | Fix it. It fails closed on purpose: a crashed guard has checked nothing. |
 
-**Never** add a file to `KNOWN_COPIES`, raise `CEILING`, weaken a canary,
-take the guard out of the `build` script, or skip the guard to get a build through —
-unless Harry, Mikey or Leo has asked for exactly that, in those words, in the
-current conversation. If a build is blocked and you think the guard is wrong,
-stop and say so. Don't route around it.
+**Never** touch the guard's lists, canary or build hook without being asked
+in those words (RUL-ENG-004). If a build is blocked and you think the guard
+is wrong, stop and say so. Don't route around it.
 
 ## The copies still to port
 
-`KNOWN_COPIES` in the guard is the live list, each entry with its plan. The
-order agreed on 24 Sep 2026 is:
-
-1. ~~trial penalties and free kicks, and the training strike drills~~ — done 24 Sep 2026 (`EngineFeature` + `onChanceResolved`; training's gate uses `markers` + `onBallStep`; the gauntlet is the real match's `FirstPersonDribble`)
-2. five-a-side: a different game, but it must use the match's own drag and arrow
-3. the two dev prototypes: port or delete
-
-When one is done, the guard itself tells you to delete its line.
+`KNOWN_COPIES` in the guard is the live list, each entry with its plan; the
+state of play is FACT-ENG-002 (ported) and FACT-ENG-003 (still to port). When
+one is ported, the guard itself tells you to delete its line.

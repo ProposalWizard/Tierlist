@@ -50,7 +50,9 @@ const nextConfig = {
   // Ensures logged-in and logged-out users always get fresh data.
   async headers() {
     const securityHeaders = [
-      { key: "X-Frame-Options", value: "DENY" },
+      // SAMEORIGIN (was DENY; Harry, 21 Oct 2026: yes): our own pages may frame
+      // each other (the 3D bench preview frame), other sites still cannot.
+      { key: "X-Frame-Options", value: "SAMEORIGIN" },
       { key: "X-Content-Type-Options", value: "nosniff" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       // camera=(self): the star career photo picker's "Take a photo" needs the

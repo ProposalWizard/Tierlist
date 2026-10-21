@@ -446,6 +446,13 @@ export interface PlayOnStick {
   retargetT?: number;
   /** THE RUN only: where the pass was going (the man who takes it), until he has it. */
   mateAt?: Vec2 | null;
+  /**
+   * B20 (Harry, 21 Oct 2026: "your player runs after the ball while it's being
+   * kicked whilst being in position"): the kick is still being played (the
+   * match's kick pose and follow-through). You stand where you struck it until
+   * it is over; the run (Auto run, keys or thumb) starts after. Set by the match each substep.
+   */
+  kicking?: boolean;
 }
 
 export interface StickRead {
@@ -738,6 +745,8 @@ export function sprintPlayOn(st: PlayOn, held: boolean) {
 }
 
 function moveRun(st: PlayOn, stk: PlayOnStick, legs: Legs, sc: Scenario, ball: Ball, dt: number) {
+  // Still kicking it: no step, no slide (B20). The bar and the clock of Auto run wait too.
+  if (stk.kicking) { legs.vel = { x: 0, y: 0 }; legs.sprinting = false; stk.vel = legs.vel; stk.autoOn = false; return; }
   let push = stk.push, sprint = !!stk.sprintHeld;
   const steering = Math.hypot(push.x, push.y) > 0.08 || !!stk.held;
   stk.idleT = steering ? 0 : (stk.idleT ?? 0) + dt;

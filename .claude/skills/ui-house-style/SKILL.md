@@ -3,6 +3,8 @@ name: ui-house-style
 description: The house UI rules for Knowitball, kept as a living record of what Harry and Mikey have actually said about screens. Load BEFORE building or changing any screen, panel, card, gallery or dev tool — and after they give visual feedback, WRITE THE RULING INTO THIS FILE so it never has to be said twice. Triggers on any work touching components/star/**, app/star-*/**, app/admin/**, or any request phrased as "make it nicer", "too much text", "that looks wrong", "Appleified", "simplify the page".
 ---
 
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
+
 # House UI style
 
 Neither Harry nor Mikey writes code. Every screen is judged **by looking at it on a
@@ -291,7 +293,7 @@ Newest first. Each is something that was actually said.
   bench the buy row now leaves the corner free.
 
 ### 8 Oct 2026 — Settings is the "hybrid" (Harry)
-- **Version on top: Classic | Standard | Preview**, one tap sets every New |
+- ~~**Version on top: Classic | Standard | Preview**~~ (superseded: the Version picker went, FACT-UI-014; RUL-UI-001), one tap sets every New |
   Old switch (`lib/star/gameVersions.ts`; names in one constant). "Custom"
   once a row is changed by hand, with Undo. A new look goes into Preview
   first; Classic is always every old option.
@@ -638,16 +640,18 @@ Newest first. Each is something that was actually said.
   `Math.random()` in anything a person is asked to judge, or they cannot point
   at what they saw.
 
-### Standing, from CLAUDE.md — do not re-derive these
-- **Show, do not describe, anything with a size or a shape in it.** Goal width,
-  figure proportions, prices, framing, difficulty. Render the options at real
-  phone size and let them point. Use the `show-options` agent.
-- **Phone first.** Desktop is the afterthought, not the other way round.
-- **Name things the way they appear on screen.** File paths go in brackets
-  afterwards, once, only if someone needs to find it.
-- **No fluff.** *"There's sometimes too much fluff in how you speak… I'm having
-  to skim through too much yap."* No preamble, no restating the request, no
-  praise for the idea, no tour of the code.
+### Standing rules are in the Brain — do not re-derive these
+- Show, do not describe, anything with a size or a shape: RUL-ALL-008 (use
+  the `show-options` agent).
+- No fluff, no preamble, no praise, no tour of the code: RUL-ALL-003.
+- English only, no coder words: RUL-ALL-002. Name things the way they appear
+  on screen (file paths in brackets once, only if needed).
+- Decide, don't toggle: a new look is THE game, no new New/Old row
+  (RUL-UI-001); unfinished work lives on a `/star-*-dev` page (RUL-UI-002);
+  existing switches stay until each is decided (RUL-UI-003); "Preview" only
+  when asked in those words (RUL-UI-004). The decided look/setting rows are
+  FACT-UI-001 to FACT-UI-015.
+- Phone first. Desktop is the afterthought.
 
 ## Before you hand back
 

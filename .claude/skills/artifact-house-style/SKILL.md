@@ -3,6 +3,8 @@ name: artifact-house-style
 description: How Knowitball artifacts are built — start from references/tuning-plan-standard.html (Harry, 14 Oct 2026: "this should be standard"): numbered points, a drawn diagram for each idea, numbers hidden in a toggle. Load BEFORE writing ANY artifact for this project: patch notes, a build write-up, a review, a decision page, a handover. Triggers on "make artifact", "make an artifact", "patch notes", "write this up", "give me a page", "something I can send the team".
 ---
 
+Standing rules: search the Brain first (grep brain/_index*.md), cite codes.
+
 # The Knowitball artifact recipe
 
 Two people read these and neither writes code. They judge by scanning, on a
@@ -81,60 +83,32 @@ alongside the page) and reference them relatively.
 Every screenshot gets a one-line caption saying what to look at — not what it
 is.
 
-> **Latest (Harry, 3 Oct 2026):** stills for anything that is a look; a short
-> "after" video only for gameplay and animation, filmed AFTER the page and the
-> push go out, then added to the same page. Don't write "needs Mikey's yes".
-> See CLAUDE.md.
+> **Patch-note rules live in the Brain:** RUL-TEAM-005 (no test build link;
+> mostly stills; a short "after" clip only for gameplay or animation),
+> RUL-TEAM-010 (no "needs Mikey's yes"), PRO-TEAM-008 (order: stills, ship
+> notes, publish, push when Harry says, then film clips), PRO-TEAM-003
+> (builders save each still at once; the lead sends it to Harry with a
+> caption). The older before/after-clip-for-everything, "builders don't
+> film" and "one combined copy" rules are superseded (FACT-ALL-002).
 
-> **Latest (Harry, 3 Oct 2026): no test build link.** *"the test build stuff doesn't work imo so stop doing that for patch notes"*.
-> Mostly stills; a short clip only for gameplay. Don't link or point at the Vercel preview. See CLAUDE.md.
-
-> **SUPERSEDED (Harry, 2 Oct 2026):** no filming phase. Patch notes link the
-> test build (the Vercel preview of the branch) and use stills; a short
-> "after" clip only when a still cannot show it (motion, timing, a fixed
-> problem). Befores only as a quick still of a simple UI or specific gameplay
-> change. Full rule: CLAUDE.md, "No filming phase".
-
-### 4b. Every new thing gets a real video — standard (Harry, 1 Oct 2026)
-*"why is the framing off the videos so cooked and there no playhead … redo
-with real videos and screenshots for every single element, remember
-everything has to be clear to read"* — then, of the fix: *"this should be
-standard."*
-
-- **One entry per change, each with a before clip and an after clip** (same
-  save, same taps) **plus a still** of the key moment. Brand-new things film
-  where they would be. A rule you can't see (a %, a timing) still gets a clip
-  of it happening.
+### 4b. How to show a clip (only when RUL-TEAM-005 allows one)
 - **Film with `scripts/film/rec.mjs`** (read `scripts/film/README.md`): real
-  MP4, the whole 390×844 phone screen at 2x, a dot for every tap. Never GIFs,
+  MP4, the whole 390x844 phone screen at 2x, a dot for every tap. Never GIFs,
   never crops, never a 300-px strip.
-- **Show them with `references/clip-card.html`**: `<video controls
-  playsinline muted preload="none">` with the still as `poster`, a
-  Before/After switch so a phone shows one full-width clip at a time (both
-  side by side only on a wide screen), ½× / ¼× speed buttons, and a "Look
-  for" line saying what to watch. Never two phone shots squeezed side by side
-  on a phone — neither is readable.
+- **Show it with `references/clip-card.html`**: `<video controls
+  playsinline muted preload="none">` with the still as `poster`, 1/2x and 1/4x
+  speed buttons, and a "Look for" line saying what to watch. Never two phone
+  shots squeezed side by side on a phone.
 - Clips go in `files` as `clips/<name>.mp4`. The admin patch-notes archive
   plays them too (it serves `.mp4` with byte ranges).
 - Watch every clip's cover and open every still before publishing.
-- **Builders don't film; one filming pass at the end** (Harry, 1 Oct 2026:
-  "we are wasting time and tokens"). During a build: stills only. After the
-  merge: one pass films every before/after for the page.
-- **All "after" clips come from ONE combined copy** (Harry, 1 Oct 2026, on
-  the v0.23 page: *"How am I meant to analyse if you've recorded everything
-  separately? … apply all the changes, and then record stuff so you can see
-  everything together"*). When parts are built in parallel, merge first, then
-  film every "after" on the merged copy and every "before" on the one shared
-  base. Never ship a page whose screens disagree with each other because each
-  part filmed its own branch.
 - **Confirmed by Harry on the v0.20/v0.21 pages (1 Oct 2026):** *"these
   artifacts are amazing, speed tabs, the more pictures settings — this is
-  GREAT."* So keep exactly that: the ½×/¼× speed buttons under every clip,
-  extra stills behind a "More pictures (n)" toggle, the detail behind a
-  "The detail" toggle, and one short line + "Look for" above the clip. The
-  generators that built them are the pattern to copy
-  (`references/generators/review-page-build.py` and `v021-page-build.py`;
-  the reusable card is `references/clip-card.html`).
+  GREAT."* So keep: the speed buttons under every clip, extra stills behind a
+  "More pictures (n)" toggle, the detail behind a "The detail" toggle, and one
+  short line + "Look for" above the clip. Pattern to copy:
+  `references/generators/review-page-build.py` and `v021-page-build.py`; the
+  reusable card is `references/clip-card.html`.
 
 ### 5. Everything long is behind a toggle
 `<details>` / `<summary>`, closed by default, labelled with what is inside
@@ -160,8 +134,7 @@ the main headline."*
 - **The biggest or most confusing change is the headline**, above the
   checklist: its own bordered section with the same Problem / Why / Fix, a
   before/after, and "what this means for you".
-- **Before/after clips for every change** (rule 4b), and pictures for
-  anything confusing. A real screenshot pair when one exists; otherwise a small drawn diagram (inline SVG or HTML boxes)
+- **Pictures for anything confusing** (clips only per RUL-TEAM-005). A real screenshot pair when one exists; otherwise a small drawn diagram (inline SVG or HTML boxes)
   labelled as a drawing, with anything exaggerated for visibility saying so.
 - **Answers to their questions go low**, after the changes, never at the top.
   A reply only makes sense once the reader knows what changed.
@@ -190,40 +163,24 @@ the main headline."*
 - **Anything unverified says it is.** "Not seen in a live match" belongs on the
   page, not in your head.
 
-## Write it 80% of the way to ASD-STE100, and draw the hard parts
+## Write it plain, and draw the hard parts
 
-Harry, 2 Oct 2026, after a Karpathy post on making model output easy to
-understand: *"not saying to change the format/style of the patch notes but a
-lot of times when it's stats or more confusing the vernacular and diagrams you
-can use is quite confusing. Try and approach it with these principles."* The
-page layout stays the same. What changes is how each sentence is written and
-how numbers are shown.
+Standing rules, in the Brain: RUL-ALL-004 (about 80% of ASD-STE100: short
+sentences, active voice, no coder words), RUL-ALL-005 (a stat or rule with
+conditions gets a picture, but only where a picture beats one plain line;
+"don't get crazy on the diagrams"), RUL-ALL-006 (every claim has a number
+or says it has none; before beside after), RUL-ALL-007 (seen, measured or
+reasoned). The page layout stays the same; these set how each sentence is
+written and how numbers are shown.
 
-**Sentences (Simplified Technical English, softened):**
-- One instruction or one fact in each sentence. 20 words at most for an
-  instruction, 25 for a description.
-- Active voice. "The keeper saves 7 in 10", not "7 in 10 are saved".
-- Simple tenses: now, past, future. No "is being", "has been", "would have".
-- Common words, one meaning each. Use the same word for the same thing every
-  time on the page (the button's name on screen, always).
-- No noun piles. "The trial's kick power", not "trial kick power curve value".
-  Three nouns together at most.
-- Keep "the" and "a". Telegraph style is harder to read, not easier.
-- Lists for steps and for anything with three or more parts.
-- No coder words in the main flow: no "state", "render", "ref", "prop",
-  "commit hash". Say what the player sees.
-
-**Numbers and confusing ideas: a picture first, words second — but don't get
-crazy with diagrams (Harry, 2 Oct: "don't get crazy on the diagrams").** Draw
-only where one plain line would not be clear. A simple fact stays a sentence.
+How to draw them on a page (the how-to, not the rule):
 - A number with a before and after is a bar or a dial, never only a sentence.
-- A rate is "7 in 10" or "70 of 100 kicks", not "0.7" or "p = 0.7".
-- A rule with conditions ("only if…, unless…") is a small flow diagram or a
-  table with ✓ and ✗, not a paragraph.
-- A size, a position or a timing is shown on a phone-sized picture with a
-  marked line, not described.
+- A rate is "7 in 10" or "70 of 100 kicks", not "0.7".
+- A rule with conditions is a small flow diagram or a table with ticks and
+  crosses, not a paragraph.
+- A size, position or timing is shown on a phone-sized picture with a marked
+  line.
 - Every diagram has a one-line caption: what to look at, in plain words.
-- If a stat needs more than one sentence to explain, it needs a diagram.
 
 ## What never goes in
 
@@ -329,7 +286,7 @@ yes"), not as a file's name.
   and again under `:root[data-theme="dark"]`. Explicit `background` on `body`.
 - Title is two to four words, a name not a sentence ("Knowitball v0.1").
 - Screenshots go in `files` as `img/<name>.png`, referenced as `img/<name>.png`;
-  clips as `clips/<name>.mp4` (rule 4b).
+  clips as `clips/<name>.mp4` (4b).
 - **Artifacts are private.** Say so when handing over the link, and say who
   cannot open it yet.
 - **You cannot change sharing.** That is the Share menu on the page, by hand.
