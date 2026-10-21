@@ -180,7 +180,7 @@ console.log("\n7. REAL HEADERS AND VOLLEYS ARE PLAYED AS TRUE ONES (21 Oct 2026)
     if (frameHoldsShot(s, sc.viewport)) holds++;
     const z = airZOf(sc as typeof sc & AirHeighted);
     const usual = sc.kind === "header" ? HEADER_Z : VOLLEY_MAX_Z;
-    if (AIR_HEIGHT_VARIES ? Math.abs(z - (s.z ?? usual)) < 0.6 : z === usual) heightOk++;
+    if (AIR_HEIGHT_VARIES ? Math.abs(z - airZOf({ kind: sc.kind, airZ: s.z ?? usual })) < 0.006 && Math.abs(z - (s.z ?? usual)) < 1.4 : z === usual) heightOk++;
   }
   ok(holds === heads.length + vols.length, `every real header and volley's picture holds its men and the goal: ${share(holds, heads.length + vols.length)}`);
   ok(heightOk === heads.length + vols.length, `the ball's height is ${AIR_HEIGHT_VARIES ? "its real one (held in range)" : "the kind's usual one (heights switched off)"}: ${share(heightOk, heads.length + vols.length)}`);
