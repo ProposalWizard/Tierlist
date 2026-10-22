@@ -1,0 +1,47 @@
+/* The Studio's paint (ported 22 Oct 2026 from the other app's "Soft Studio" dark skin, the one its editing suite
+   always wears). Only inside .studio-skin: the tailwind tokens in tailwind.config.ts (bg-floor, text-ink, bg-tonote …)
+   read these, so the rest of the site is untouched. */
+.studio-skin {
+  --floor: #0c0b10;
+  --surface: #17151d;
+  --surface-raised: #201d28;
+  --surface-sunken: #121017;
+  --ink: #f2effa;
+  --ink-secondary: #d2cdde;
+  --ink-muted: #aaa5b8;
+  --ink-faint: #948fa3;
+  --hairline: rgba(242, 239, 250, 0.08);
+  --hairline-strong: rgba(242, 239, 250, 0.15);
+  --outline: #2a2633;
+  --accent: 0.71 0.166 291.9;
+  --accent-hover: 0.773 0.128 293.4;
+  --accent-ink: 0.153 0.011 294.3;
+  --accent-wash: #2a2342;
+  --good: 0.785 0.135 159.5;
+  --bad: 0.756 0.149 35.8;
+  --mid: 0.834 0.141 85.4;
+  --to-note: 0.76 0.12 182;
+  --to-claude: 0.71 0.166 291.9;
+  --shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.45), 0 18px 36px rgba(0, 0, 0, 0.4);
+  --shadow-bubble: 0 10px 28px rgba(165, 139, 255, 0.35);
+  color: var(--ink);
+  background: var(--floor);
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+/* Soft corners and hairline edges, as in the original. */
+.studio-skin *, .studio-skin ::before, .studio-skin ::after { border-color: var(--outline); }
+.studio-skin .rounded-md { border-radius: 10px; }
+.studio-skin .rounded-lg { border-radius: 14px; }
+.studio-skin .rounded-xl { border-radius: 18px; }
+/* The site's display face is a serif; the suite's titles use the plain face. */
+.studio-skin .font-display { font-family: inherit; }
+.studio-skin .font-mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+/* The Studio list (Editing tab) and the Statics placeholder. */
+.studio-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--bc-line); }
+.studio-tabs a { padding: 10px 16px; margin-bottom: -1px; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 800; color: var(--bc-ink2); text-decoration: none; display: inline-flex; gap: 6px; align-items: center; min-height: 42px; }
+.studio-tabs a[aria-current="page"] { border-bottom-color: var(--bc-accent); color: var(--bc-ink); }
+.studio-tabs small { font-size: 10.5px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; color: var(--bc-ink3); }
+.studio-cut { border-radius: 10px; overflow: hidden; }
