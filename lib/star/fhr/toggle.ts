@@ -9,7 +9,7 @@
  *   · Phase 1: Infinite Highlights' still is drawn with the real match's
  *     camera (lib/star/fhr/stillCamera.ts) — that test page's default, switch or not.
  *
- * A setting per phone, never in a save. Default Off. `?fhr=on|off` on any page
+ * A setting per phone, never in a save. Default On (22 Oct 2026; was Off). `?fhr=on|off` on any page
  * overrides it for that page only. Test page: /star-fhr-dev.
  */
 import { useSyncExternalStore } from "react";
@@ -17,7 +17,8 @@ import { useSyncExternalStore } from "react";
 export type FhrMode = "off" | "on";
 
 export const FHR_KEY = "star-fhr";
-export const FHR_DEFAULT: FhrMode = "off";
+// Harry, 22 Oct 2026: "keep my highlights and match feel toggles on as default but keep the toggle".
+export const FHR_DEFAULT: FhrMode = "on";
 
 export function parseFhrMode(v: string | null | undefined): FhrMode | null {
   return v === "on" || v === "off" ? v : null;
