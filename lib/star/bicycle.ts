@@ -113,9 +113,9 @@ export const BICYCLE_CLEAN_PACE = 1.2;
 export const BICYCLE_KEEPER_LATE_S = 0.14;
 /** Mistimed: early (the ball still high) it balloons (+ m/s up at worst);
  *  late (the ball past you) it is scuffed (pace lost, degrees off at worst). */
-export const BICYCLE_BALLOON_VZ = 4;
-export const BICYCLE_SCUFF_PACE = 0.5;
-export const BICYCLE_SCUFF_DEG = 18;
+export const BICYCLE_BALLOON_VZ = 7;
+export const BICYCLE_SCUFF_PACE = 0.6;
+export const BICYCLE_SCUFF_DEG = 25;
 /** Met under the ball it skies (m/s up per ball radius past 0.3); over the top it is driven down. */
 export const BICYCLE_SKY_VZ = 6;
 
@@ -167,10 +167,12 @@ export function bicycleContactRead(t: { cx?: number; cy?: number; lift: number; 
   const clean = inBand && side === 0 && cy <= 0.3 && cy >= -0.5;
   const read: BicycleRead = {
     label: "BICYCLE KICK!", good: clean,
+    // Off the middle it flies off line fast (a square root: a little off is
+    // already a lot off): "get it wrong and it goes anywhere".
     turnDeg: Math.max(-BICYCLE_OFFLINE_DEG, Math.min(BICYCLE_OFFLINE_DEG,
-      (away * side * BICYCLE_OFFLINE_DEG + (away || 1) * late * BICYCLE_SCUFF_DEG) * k)),
-    pace: (clean ? BICYCLE_CLEAN_PACE : 1) * (1 - BICYCLE_SCUFF_PACE * late * k) * (1 - 0.3 * side * k),
-    vzAdd: (early * BICYCLE_BALLOON_VZ + sky * BICYCLE_SKY_VZ - down * 3) * k,
+      (away * Math.sqrt(side) * BICYCLE_OFFLINE_DEG + (away || 1) * Math.sqrt(late) * BICYCLE_SCUFF_DEG) * k)),
+    pace: (clean ? BICYCLE_CLEAN_PACE : 1) * (1 - BICYCLE_SCUFF_PACE * Math.min(1, late * 1.5) * k) * (1 - 0.35 * Math.sqrt(side) * k),
+    vzAdd: (Math.sqrt(early) * BICYCLE_BALLOON_VZ + sky * BICYCLE_SKY_VZ - down * 3) * k,
     keeperLateS: clean ? BICYCLE_KEEPER_LATE_S : 0,
   };
   if (!clean) {
@@ -217,6 +219,8 @@ export interface BicycleChance {
   airZ?: number;
   ball: { x: number; y: number };
   teammates: { x: number; y: number }[];
+  /** A real overhead kick (realMoments/shots.ts): the button is always on. */
+  overhead?: boolean;
 }
 
 /** The cross into this chance: where it meets you, where from, how high. Null: not a header chance. */
@@ -228,6 +232,8 @@ export function crossInto(sc: BicycleChance): CrossIn | null {
 /** The strike screen's `bicycle` prop for this chance: on (and from which side), or undefined. */
 export function bicycleOfferFor(sc: BicycleChance, aerial: number | undefined, seed: number): { fromLeft: boolean } | undefined {
   const c = crossInto(sc);
-  if (!c || !c.from || !bicycleOffered(c, aerial ?? 40, seed)) return undefined;
+  if (!c) return undefined;
+  if (sc.overhead) return { fromLeft: c.from ? c.from.x < c.ball.x : c.ball.x < CX };
+  if (!c.from || !bicycleOffered(c, aerial ?? 40, seed)) return undefined;
   return { fromLeft: c.from.x < c.ball.x };
 }
