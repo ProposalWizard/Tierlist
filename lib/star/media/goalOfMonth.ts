@@ -171,6 +171,8 @@ export function goalOfMonthAfterMatch(
       const mine = bestOf(done.filter(g => keyOf(g.season, g.month) === last), 3)
         .map(({ season: _s, month: _m, ...e }) => e as GotmEntry);
       const theirs = gotm.rivals[rivalKey(pSeason, pMonth)] ?? [];
+      // A poll needs a choice: one goal and nobody else's is no poll.
+      if (mine.length + theirs.length >= 2) {
       const entries = [...mine, ...theirs].sort((a, b) => b.quality - a.quality);
       const seed = `${before.player.firstName}${before.player.lastName}-${id}`;
       const votes = fanVotes(entries, fameOf(after), seed);
@@ -186,13 +188,16 @@ export function goalOfMonthAfterMatch(
         id: postId,
         at: cycleClock + 30,
         author: authorOf(acc),
-        text: `🗳️ ${monthName} Goal of the Month. ${mine.length === 1 ? `${mine[0].scorerShort}'s goal is` : `${mine[0].scorerShort} has ${mine.length}`} up against the best of the rest. Which one gets your vote?`,
+        text: theirs.length
+          ? `🗳️ ${monthName} Goal of the Month. ${mine.length === 1 ? `${mine[0].scorerShort}'s goal is` : `${mine[0].scorerShort} has ${mine.length}`} up against the best of the rest. Which one gets your vote?`
+          : `🗳️ ${monthName} Goal of the Month. Which of ${mine[0].scorerShort}'s ${mine.length} goals was the best? Your vote counts.`,
         graphic: { type: "gotmPoll", pollId: id, monthName, entries, fanVotes: votes, userWeight },
         metrics: metricsFor(acc.followers, 70, rng),
         eventId: "gotm-poll",
         tags: ["goal", "award"],
         scope: "club",
       });
+      }
     }
   }
   // Everything before this month has had its chance.
