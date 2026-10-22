@@ -145,7 +145,8 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-sound-lab-dev", "Sound lab", "Hear, edit, rate match sounds", "rbd", "sound", "Leo", "live", "browser", "team"),
   P("/star-real-moments-dev", "Real moments", "Real positions (DFL, SkillCorner, Wyscout), playable", "rbd", "data", "Mikey", "live", "none", "admin"),
   P("/star-real-shots-dev", "Real shots", "WC 2018 / Euro 2016 + tracked shots, playable", "rbd", "data", "Harry", "live", "none", "admin"),
-  P("/star-real-goals-dev", "Real Goals", "Recreate real WC/Euro goals: levels, stars, accuracy, ghost", "rbd", "data", "Leo", "live", "browser", "admin"),
+  P("/star-real-goals-dev", "Real Goals", "Recreate real goals: WC/Euro, 5 league paths, Worldies, Bangers, daily goal", "rbd", "data", "Leo", "live", "browser", "admin"),
+  P("/star-shootout-dev", "Shootout habits", "A penalty shootout where the keeper learns where you put your kicks", "rbd", "match", "Leo", "live", "none", "team"),
   P("/star-intl-dev", "International world", "Call-ups, national managers and every international competition", "rbd", "data", "Mikey", "live", "none", "team"),
   P("/star-tournament-dev", "Tournaments", "Draw and play a whole Euros or World Cup in seconds", "rbd", "data", "Leo", "live", "none", "team"),
   P("/lineups", "Team sheets", "Every club's XI, bench, manager", "rbd", "data", "Harry", "live", "shared", "admin"),
@@ -294,7 +295,7 @@ export const TEST_PAGES = new Set<string>([
   "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev", "/star-garden3d-dev",
   "/star-home3d-dev", "/star-training3d-dev", "/star-anim3d-dev", "/star-people-dev", "/star-sprites-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev",
-  "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev",
+  "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev", "/star-shootout-dev",
 ]);
 export const isTestPage = (url: string) => TEST_PAGES.has(url);
 
