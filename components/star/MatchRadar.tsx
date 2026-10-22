@@ -16,7 +16,7 @@
  */
 import { createContext, useContext, useEffect } from "react";
 import type { RadarFrame, RadarHighlight, RadarMatch, RadarSummary, RadarEvent } from "@/lib/star/matchRadar";
-import { attackLabel } from "@/lib/star/matchRadar";
+import { attackLabel, hadBall } from "@/lib/star/matchRadar";
 import type { Zone, Lane, RadarTick, Side } from "@/lib/star/hiddenMatch";
 import { withoutSwitchedOff } from "@/lib/star/switchedOffKinds";
 import type { ScenarioKind } from "@/lib/star/canvasEngine";
@@ -369,7 +369,8 @@ export function LiveRadar({ trace, minute, us, them, stepMs, fullTime = 90 }: {
   const t = liveTickAt(trace, minute);
   const ticks: RadarTick[] = [];
   for (let m = 1; m <= Math.floor(minute); m++) { const k = trace.get(m); if (k) ticks.push(k); }
-  const ours = ticks.filter((k) => k.possession === "user").length;
+  // Who had the ball IN each minute: the one rule (matchRadar.ts hadBall).
+  const ours = ticks.filter((k) => hadBall(k) === "user").length;
   const poss = ticks.length ? Math.round((ours / ticks.length) * 100) : 50;
   const side = (s: Side) => (s === "user" ? us : them);
   const col = t ? side(t.possession).colour : "#e5e7eb";

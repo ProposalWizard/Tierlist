@@ -162,6 +162,16 @@ export interface HiddenMatchState {
    * A re-run of a stretch writes the same minutes again, so a Map, not a list.
    */
   radarTrace?: Map<number, RadarTick>;
+  /**
+   * ONE FORMULA, piece 4 (22 Oct 2026): YOUR chance in the final third just
+   * ended without a goal (resolveScenario). With Match flow on, the next
+   * minute first ends it the way a team-mate's missed chance always ended:
+   * maybe turned behind for a corner, maybe the second ball won back
+   * (flowCorner + the recycle in flowEndOfMove). Without it your misses never
+   * gave a corner or a second ball, and an even match came out 44% / 56% on
+   * the ball and 3.9 v 5.4 corners. Read and cleared by the next tick.
+   */
+  missedMove?: boolean;
 }
 
 /** One minute of the unseen match, as the live radar draws it. */
@@ -1095,6 +1105,18 @@ function tickMinute(
   const events: HiddenMatchEvent[] = [];
   state.minute += 1;
   state.sinceInvolved += 1;
+  // Your missed chance ends like a team-mate's (see HiddenMatchState.missedMove).
+  if (state.missedMove) {
+    state.missedMove = false;
+    if (inputs.matchFlow) {
+      const q = clamp1((inputs.teamStrength - inputs.oppStrength) / 40);
+      const h = inputs.home === false ? -HOME_EDGE : inputs.home === true ? HOME_EDGE : 0;
+      const cornerGoal = flowCorner(state, "user", rng, events);
+      // endOfMove already gave them the ball; the recycle can win it back.
+      state.possession = "user";
+      flowEndOfMove(state, cornerGoal, "user", clamp1(q + h), rng);
+    }
+  }
   // The lane walks every tick; the transition read needs to know how long ago
   // the ball changed hands and how far it has travelled since.
   state.lane = stepLane(state.lane ?? "centre", rng);
@@ -1604,6 +1626,9 @@ export function resolveScenario(state: HiddenMatchState, result: ScenarioResult)
   }
   state.momentum = clamp1(state.momentum - (result === "lost" ? 0.1 : 0.05));
   endOfMove(state, false, "user");
+  // A chance in the final third: the next minute may turn it into a corner or
+  // a second ball, exactly as a team-mate's miss (Match flow only; tick reads it).
+  if (USER_DANGER.includes(state.zone)) state.missedMove = true;
 }
 
 /**

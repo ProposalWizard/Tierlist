@@ -40,7 +40,7 @@ import { classifyRelease } from "@/lib/star/dribbleGesture";
 import { PASS_RING } from "@/lib/star/firstPersonRender";
 import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
 import { dribbleReward } from "@/lib/star/dribbleReward";
-import { oldBallPhysics, oldMatchFlow, gameplayVersion } from "@/lib/star/gameplayVersion";
+import { oldBallPhysics, gameplayVersion } from "@/lib/star/gameplayVersion";
 import { setHitboxes, hitboxesOn, showHitboxes } from "@/lib/star/hitbox";
 import { inTestArea } from "@/lib/star/testArea";
 import { setBallPhysics, realBallOn } from "@/lib/star/ballPhysics";
@@ -64,7 +64,7 @@ import { deflectBlock } from "@/lib/star/deflection";
 import { steerDeflectionFromOwnGoal, clearLooseWin } from "@/lib/star/defenderTouch";
 import { footSign, takerFootSign, drawnTakerAt, activeFoot } from "@/lib/star/kickFoot";
 import { clearYouSpot } from "@/lib/star/youSpot";
-import { canTakeCorners } from "@/lib/star/cornerReach";
+import { matchInputsFor, careerMatchSpec } from "@/lib/star/matchInputs";
 import type { PreferredFoot } from "@/lib/star/playerIdentity";
 import {
   commentaryBuildup, commentaryStrike, commentaryReceived, commentaryReceiverShot, commentaryResult,
@@ -158,7 +158,6 @@ import MikeyPopup, { useMikeyPopup, type PopupGoal } from "./MikeyPopup";
 import { mikeyPopupsLook, popupName, useMikeyPopupsLook } from "@/lib/star/mikeyPopups";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, assistFor, noteMatePlays, probeMatePlays, type CreditDelta, type MatePlay } from "@/lib/star/credit";
-import { matchTeamStrength } from "@/lib/star/matchday";
 import { kitsFor, keeperKit, type MatchKits } from "@/lib/star/kits";
 import { competitionAbbrev } from "@/lib/star/competitions";
 import {
@@ -1792,55 +1791,33 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
   const hiddenInputs = (): HiddenMatchInputs => {
     const car = careerRef.current;
-    return {
-      // Your CLUB's strength (Chelsea 83), not the team relationship (60 on
-      // day one) — see matchTeamStrength (lib/star/matchday.ts, item 0).
-      // The relationship keeps its own job: how team-mates combine inside a
-      // chance (buildScenario's teamRelationship, via teamRef below).
-      teamStrength: matchTeamStrength(car, teamRef.current, fixture),
+    // ONE SET OF MATCH INPUTS (lib/star/matchInputs.ts): the radar, sim90,
+    // the ruler and "Sim this match" build theirs the same way.
+    const live = {
       oppStrength: oppStrengthRef.current,
-      playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
-      home: fixture?.home,
-      pace: careerRef.current?.skills.pace,
-      freeKick: careerRef.current?.skills.freeKick,
+      position: positionRef.current,
       // Can your best corner reach the middle of the box? Measured with the
       // match's own ball physics on your kicking skills (lib/star/cornerReach.ts).
-      canTakeCorners: canTakeCorners(skillsRef.current),
-      // So a corner/free kick/penalty is weighted by the position you play
-      // like every other chance is, instead of bypassing it — see
-      // buildRequest's dead-ball block in hiddenMatch.ts.
-      position: positionRef.current,
+      kick: skillsRef.current,
       energy: liveEnergyAt(matchMinuteRef.current),
       energyMode: energyModeRef.current,
       impactSub: startMinuteRef.current > 0,
-      // The talisman tactic — see clubPowers.ts's `setTalisman`. Only ever
-      // true while you're a majority owner of the club you're actually
-      // playing for right now, which `talisman` is stored against.
-      talisman: !!(car && car.ownedClubs?.[car.player.club]?.talisman),
-      // Settings → Look → Gameplay → Match flow: New — the unseen match
-      // against real numbers (shots, corners, possession; hiddenMatch.ts).
-      matchFlow: !oldMatchFlow(),
       // The farewell match: nearly every chance is yours.
-      ...(farewellRef.current ? { farewell: true } : {}),
-      // v0.26: playstyle, team-mates, fans and your stats shape the chances.
-      context: {
-        playstyle: playstyleRef.current,
-        ...(car ? {
-          teamRelationship: car.relationships.team,
-          fanRelationship: car.relationships.fans,
-          skills: { pace: car.skills.pace, power: car.skills.power, technique: car.skills.technique, vision: car.skills.vision },
-        } : {}),
-      },
-      // v0.15 item 6: penalties won in any move, not only yours.
-      livePenalties: true,
+      farewell: !!farewellRef.current,
       // Item 24: once you are on as a sub, your chances are squeezed into the
       // minutes left (allowing for your energy), and from 70' one is owed.
       lateSub: subOnRef.current
         ? { enteredAt: enteredAtRef.current, owed: Math.max(0, lateSubQuota(enteredAtRef.current) - subChancesRef.current), fitness: subFitnessRef.current }
         : undefined,
       // Added time: chasing in it, everyone goes forward (hiddenMatch.ts's FERGIE_*).
-      ...(ADDED > 0 ? { fergie: { from: MATCH_DURATION, to: MATCH_DURATION + ADDED } } : {}),
+      addedTime: ADDED,
+      fullTime: MATCH_DURATION,
     };
+    return matchInputsFor(car
+      // Your CLUB's strength (Chelsea 83), not the team relationship (60 on
+      // day one) — see matchTeamStrength (lib/star/matchday.ts, item 0).
+      ? careerMatchSpec(car, fixture, { ...live, teamFallback: teamRef.current, playstyle: playstyleRef.current })
+      : { ...live, teamStrength: teamRef.current, home: fixture?.home, skills: { power: 55, technique: 55, vision: 55 }, context: { playstyle: playstyleRef.current } });
   };
 
   // Translate what the physics produced into what the match needs to know.
