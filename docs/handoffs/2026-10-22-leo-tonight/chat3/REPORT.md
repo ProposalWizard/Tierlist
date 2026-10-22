@@ -129,3 +129,15 @@ Changed: `components/star/ContactBall.tsx`, `components/star/CanvasMatch.tsx`,
 `public/star/anims3d/football.glb`, `football-ual.glb`, `public/star/sprites/index.json`,
 `index-a.json`, `tools/anims3d/clips.py`, `tools/sprites/new/{defs.js,bake-new.html,bake-new.mjs}`,
 `tests/star/{sprite3dClips,realMoments,shotLab}.mts|ts`.
+
+## Hub join fix (22:57)
+
+Chat 1 (celebrations) also used sprite atlas slot 2. The bicycle frames moved to **slot 3**
+(`atlas-3.webp`, `atlas-3a.webp`, `mask-3.webp`, `mask-3a.webp`; `atlases["3"]` in both
+indexes; the clip says `atlas: 3`). `lib/star/sprites.ts` now has `LAZY_ATLASES = new Set([2, 3])`:
+neither is fetched in the idle preload, only when a clip in it is asked for (the strike screen asks
+for the bicycle as soon as the button shows; goal videos wait for it). `assetVersions.ts` renamed.
+Re-checked in a browser at 390×844 (real overhead moment, ▶ Play): `atlas-3a.webp` fetched with 200
+when the button appeared, a clean tap graded BICYCLE KICK!, no console or page errors. The figure in
+that run was too small in the recording to confirm its pose by eye (it was deflected). Tests
+sprite3dClips, spritesStyleA, bicycle, goalClip, actionLog and tsc pass.
