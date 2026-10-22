@@ -2598,8 +2598,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // stuck there for good.
     const pending = loadStarPhase(scope);
     const seasonOver = saved.fixtures.every((f) => f.played);
+    if (pending?.phase === "season-reel" && seasonOver) {
+      setActiveNav(null);
+      setPhase("season-reel");
+      return;
+    }
     if (pending?.phase === "ballon-dor" && seasonOver) {
       setPhase("ballon-dor");
+      return;
+    }
+    if (pending?.phase === "season-awards" && saved.lastSeasonAwardStats) {
+      setActiveNav(null);
+      setPhase("season-awards");
       return;
     }
     if (pending?.phase === "contract-renewal") {
