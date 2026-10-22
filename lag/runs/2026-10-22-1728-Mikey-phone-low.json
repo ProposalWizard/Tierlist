@@ -1,0 +1,546 @@
+{
+  "v": 1,
+  "id": "lag-mvjr9m4r-kocuu6",
+  "person": "Mikey",
+  "tier": "phone-low",
+  "device": "",
+  "startedAt": 1792686518091,
+  "endedAt": 1792687228338,
+  "facts": {
+    "ua": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36",
+    "screen": "384×854",
+    "viewport": "384×827",
+    "dpr": 2.81,
+    "cores": 8,
+    "memGB": 8,
+    "gpu": "ANGLE (ARM, Mali-G77, OpenGL ES 3.2)",
+    "standalone": true,
+    "quality3d": "auto",
+    "build": "00c79d4b4f47cda6f9e71f2c5aaf0bca46a39618",
+    "tzOffset": -60
+  },
+  "refresh": {
+    "hz": 60,
+    "intervalMs": 16.666666666666668,
+    "medianMs": 16.6
+  },
+  "steps": [
+    {
+      "id": "home",
+      "title": "Home, hands off",
+      "status": "done",
+      "three": true,
+      "seconds": 20,
+      "frames": {
+        "n": 916,
+        "p50": 16.7,
+        "p95": 33.9,
+        "p99": 83.2,
+        "max": 100,
+        "over33": 50,
+        "over50": 37,
+        "over100": 0,
+        "hist": [
+          0,
+          0,
+          743,
+          0,
+          128,
+          8,
+          37,
+          0
+        ]
+      },
+      "longTasks": {
+        "count": 40,
+        "totalMs": 3201,
+        "maxMs": 96
+      },
+      "loaf": {
+        "count": 44,
+        "maxMs": 112,
+        "blockingMs": 1275
+      },
+      "heartbeat": {
+        "n": 780,
+        "p95": 43.9,
+        "max": 90.8,
+        "over50": 37
+      },
+      "frame3d": [
+        {
+          "t": 2,
+          "draws": 11,
+          "tris": 29292,
+          "jsMs": 2.2,
+          "pr": 2,
+          "fps": 25,
+          "worst": 135,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 4,
+          "draws": 11,
+          "tris": 29292,
+          "jsMs": 2.2,
+          "pr": 2,
+          "fps": 26,
+          "worst": 113,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 6,
+          "draws": 11,
+          "tris": 29292,
+          "jsMs": 2.1,
+          "pr": 2,
+          "fps": 26,
+          "worst": 113,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 8,
+          "draws": 11,
+          "tris": 29292,
+          "jsMs": 2.1,
+          "pr": 2,
+          "fps": 26,
+          "worst": 112,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 10,
+          "draws": 11,
+          "tris": 29292,
+          "jsMs": 2.1,
+          "pr": 2,
+          "fps": 26,
+          "worst": 118,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 12,
+          "draws": 11,
+          "tris": 29292,
+          "jsMs": 2.2,
+          "pr": 2,
+          "fps": 26,
+          "worst": 118,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 14,
+          "draws": 11,
+          "tris": 29292,
+          "jsMs": 2.2,
+          "pr": 2,
+          "fps": 26,
+          "worst": 110,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 16,
+          "draws": 11,
+          "tris": 29292,
+          "jsMs": 2.1,
+          "pr": 2,
+          "fps": 26,
+          "worst": 136,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 18,
+          "draws": 11,
+          "tris": 29292,
+          "jsMs": 1.9,
+          "pr": 2,
+          "fps": 25,
+          "worst": 136,
+          "rung": null,
+          "tier": null
+        },
+        {
+          "t": 20,
+          "draws": 11,
+          "tris": 29292,
+          "jsMs": 1.9,
+          "pr": 2,
+          "fps": 25,
+          "worst": 127,
+          "rung": null,
+          "tier": null
+        }
+      ],
+      "heapMB": [
+        89,
+        79.6
+      ],
+      "phases": [],
+      "hiddenMs": 0
+    },
+    {
+      "id": "stats",
+      "title": "Stats and Relations",
+      "status": "done",
+      "three": false,
+      "seconds": 30,
+      "frames": {
+        "n": 1125,
+        "p50": 16.7,
+        "p95": 66.4,
+        "p99": 83.2,
+        "max": 116.5,
+        "over33": 156,
+        "over50": 61,
+        "over100": 1,
+        "hist": [
+          0,
+          0,
+          682,
+          0,
+          302,
+          80,
+          60,
+          1
+        ]
+      },
+      "longTasks": {
+        "count": 63,
+        "totalMs": 4666,
+        "maxMs": 102
+      },
+      "loaf": {
+        "count": 95,
+        "maxMs": 134,
+        "blockingMs": 1651
+      },
+      "heartbeat": {
+        "n": 1199,
+        "p95": 45.7,
+        "max": 109.7,
+        "over50": 55
+      },
+      "frame3d": [],
+      "heapMB": [
+        84,
+        73.8
+      ],
+      "phases": [],
+      "hiddenMs": 0
+    },
+    {
+      "id": "shop",
+      "title": "Shop",
+      "status": "done",
+      "three": false,
+      "seconds": 30,
+      "frames": {
+        "n": 1560,
+        "p50": 16.6,
+        "p95": 33.3,
+        "p99": 83.2,
+        "max": 116.5,
+        "over33": 68,
+        "over50": 46,
+        "over100": 1,
+        "hist": [
+          0,
+          0,
+          1453,
+          0,
+          42,
+          19,
+          45,
+          1
+        ]
+      },
+      "longTasks": {
+        "count": 60,
+        "totalMs": 4525,
+        "maxMs": 103
+      },
+      "loaf": {
+        "count": 63,
+        "maxMs": 117,
+        "blockingMs": 1580
+      },
+      "heartbeat": {
+        "n": 1207,
+        "p95": 37.5,
+        "max": 90.5,
+        "over50": 51
+      },
+      "frame3d": [],
+      "heapMB": [
+        98.6,
+        73.4
+      ],
+      "phases": [],
+      "hiddenMs": 0
+    },
+    {
+      "id": "shop3d",
+      "title": "3D shop",
+      "status": "done",
+      "three": true,
+      "seconds": 30,
+      "frames": {
+        "n": 1238,
+        "p50": 16.7,
+        "p95": 49.8,
+        "p99": 83.3,
+        "max": 1713.3,
+        "over33": 76,
+        "over50": 35,
+        "over100": 8,
+        "hist": [
+          0,
+          0,
+          1025,
+          0,
+          148,
+          30,
+          27,
+          8
+        ]
+      },
+      "longTasks": {
+        "count": 21,
+        "totalMs": 5445,
+        "maxMs": 1715
+      },
+      "loaf": {
+        "count": 54,
+        "maxMs": 1718,
+        "blockingMs": 4499
+      },
+      "heartbeat": {
+        "n": 1042,
+        "p95": 21.3,
+        "max": 1719.8,
+        "over50": 20
+      },
+      "frame3d": [],
+      "heapMB": [
+        75.5,
+        140.4
+      ],
+      "phases": [],
+      "hiddenMs": 0
+    },
+    {
+      "id": "garden",
+      "title": "Garden",
+      "status": "done",
+      "three": true,
+      "seconds": 30,
+      "frames": {
+        "n": 717,
+        "p50": 16.7,
+        "p95": 99.9,
+        "p99": 199.7,
+        "max": 4762,
+        "over33": 156,
+        "over50": 90,
+        "over100": 23,
+        "hist": [
+          0,
+          0,
+          475,
+          0,
+          101,
+          51,
+          67,
+          23
+        ]
+      },
+      "longTasks": {
+        "count": 34,
+        "totalMs": 10935,
+        "maxMs": 4746
+      },
+      "loaf": {
+        "count": 124,
+        "maxMs": 4767,
+        "blockingMs": 9518
+      },
+      "heartbeat": {
+        "n": 770,
+        "p95": 38.2,
+        "max": 4748.4,
+        "over50": 25
+      },
+      "frame3d": [],
+      "heapMB": [
+        93.9,
+        115.5
+      ],
+      "phases": [],
+      "hiddenMs": 0
+    },
+    {
+      "id": "phone",
+      "title": "Phone feed",
+      "status": "done",
+      "three": false,
+      "seconds": 30,
+      "frames": {
+        "n": 894,
+        "p50": 16.7,
+        "p95": 166.5,
+        "p99": 199.9,
+        "max": 266.4,
+        "over33": 146,
+        "over50": 87,
+        "over100": 61,
+        "hist": [
+          0,
+          0,
+          621,
+          0,
+          150,
+          36,
+          26,
+          61
+        ]
+      },
+      "longTasks": {
+        "count": 71,
+        "totalMs": 11745,
+        "maxMs": 271
+      },
+      "loaf": {
+        "count": 88,
+        "maxMs": 309,
+        "blockingMs": 8176
+      },
+      "heartbeat": {
+        "n": 796,
+        "p95": 170.3,
+        "max": 366.6,
+        "over50": 68
+      },
+      "frame3d": [],
+      "heapMB": [
+        123.7,
+        116.4
+      ],
+      "phases": [],
+      "hiddenMs": 0
+    },
+    {
+      "id": "match2d",
+      "title": "2D match",
+      "status": "done",
+      "three": false,
+      "seconds": 40,
+      "frames": {
+        "n": 1238,
+        "p50": 16.7,
+        "p95": 83.3,
+        "p99": 149.9,
+        "max": 216.5,
+        "over33": 304,
+        "over50": 171,
+        "over100": 31,
+        "hist": [
+          0,
+          0,
+          725,
+          0,
+          246,
+          96,
+          140,
+          31
+        ]
+      },
+      "longTasks": {
+        "count": 20,
+        "totalMs": 1484,
+        "maxMs": 198
+      },
+      "loaf": {
+        "count": 207,
+        "maxMs": 3481,
+        "blockingMs": 3812
+      },
+      "heartbeat": {
+        "n": 1444,
+        "p95": 36.3,
+        "max": 405.6,
+        "over50": 41
+      },
+      "frame3d": [],
+      "heapMB": [
+        198.7,
+        236.1
+      ],
+      "phases": [],
+      "hiddenMs": 0
+    },
+    {
+      "id": "play3d",
+      "title": "3D game",
+      "status": "stopped",
+      "three": true,
+      "seconds": 11.6,
+      "frames": {
+        "n": 512,
+        "p50": 16.7,
+        "p95": 33.3,
+        "p99": 216.5,
+        "max": 516.4,
+        "over33": 17,
+        "over50": 13,
+        "over100": 7,
+        "hist": [
+          0,
+          0,
+          474,
+          0,
+          22,
+          3,
+          6,
+          7
+        ]
+      },
+      "longTasks": {
+        "count": 7,
+        "totalMs": 1158,
+        "maxMs": 514
+      },
+      "loaf": {
+        "count": 18,
+        "maxMs": 3402,
+        "blockingMs": 4253
+      },
+      "heartbeat": {
+        "n": 449,
+        "p95": 24,
+        "max": 499.7,
+        "over50": 7
+      },
+      "frame3d": [],
+      "heapMB": [
+        252,
+        214.7
+      ],
+      "phases": [],
+      "hiddenMs": 0
+    }
+  ],
+  "reloads": 2,
+  "complete": false,
+  "saved": {
+    "at": "2026-10-22T16:40:29.445Z",
+    "build": "0f749002620f85f36708628a1d658a157a1a5cce"
+  }
+}
