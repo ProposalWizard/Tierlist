@@ -27,6 +27,166 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.107h",
+      "title": "Harry's patch notes: Players Back To Size B, The Marketing Studio And Uploads, And Fewer Dropped Highlights",
+      "publishedAt": "2026-10-22T18:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "22 Oct. Players back to size B (PR #760): NEW_FIGURE_SCALE 1 to 0.8; men about 22 px on a phone long-range chance (was about 28, 1.56x the old), now 1.25x the old; keeper back to his old size; pitch unchanged. Marketing Studio and uploads (PR #761): Admin, Marketing tabs Board, Client, Studio, Uploads; direct-to-R2 uploads, 500 MB a file, 30 files and 5 GB per admin per day; Studio, Editing suite; Statics soon; recorder Send to Marketing. Highlights fix (PR #763): Match flow New chances back (striker even 6.29 to 6.46, strong 7.61 to 7.84); real moments about 1 in 10 (was 1 in 7); build-ups 4.9 s to about 3.1 s; foul lead-in about 6 s to about 3.5 s; offside 5.3 s to 4.4 s.",
+      "stats": [
+        {
+          "value": "28 → 22 px",
+          "label": "a man on a phone long-range chance"
+        },
+        {
+          "value": "500 MB",
+          "label": "max per uploaded file"
+        },
+        {
+          "value": "1 in 7 → 1 in 10",
+          "label": "real moments"
+        },
+        {
+          "value": "4.9 → 3.1 s",
+          "label": "one build-up"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Player size",
+              "detail": "Play a real match chance: men are about 22 px on a phone long-range chance (were about 28). The keeper is back to his old size."
+            },
+            {
+              "title": "Marketing tabs",
+              "detail": "Admin, Marketing: tabs Board, Client, Studio, Uploads."
+            },
+            {
+              "title": "Uploads",
+              "detail": "Admin, Marketing, Uploads: pick a video or picture and it goes straight to storage. Max 500 MB a file."
+            },
+            {
+              "title": "Studio, Editing",
+              "detail": "Admin, Marketing, Studio, Editing: open a cut. Timeline, filmstrip, waveform, For Claude and Review notes."
+            },
+            {
+              "title": "Lock and render, Done",
+              "detail": "In the suite: Lock & render, and Done."
+            },
+            {
+              "title": "Studio, Statics",
+              "detail": "Admin, Marketing, Studio, Statics: shows \"Soon\"."
+            },
+            {
+              "title": "Recorder",
+              "detail": "The admin recorder has a \"Send to Marketing\" button."
+            },
+            {
+              "title": "Highlights count",
+              "detail": "Match flow: New. A match should show as many chances as with Old."
+            },
+            {
+              "title": "Real moments",
+              "detail": "Real moments on: about 1 real moment in 10 chances (was 1 in 7)."
+            },
+            {
+              "title": "Build-ups",
+              "detail": "Highlights build-ups are about 3.1 s each (were 4.9 s)."
+            },
+            {
+              "title": "Fouls and offsides",
+              "detail": "A foul clip leads in about 3.5 s before the foul (was about 6 s). An offside leads in 4.4 s (was 5.3 s)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Players back to size B (PR #760)",
+          "items": [
+            {
+              "title": "Men are smaller again, the keeper is back to his old size",
+              "detail": "Harry found the players \"HUGE\" in real match chances. The cause was B20's size C: both shrinks were dropped, so men came out 1.56 times the old size, about 28 px on a phone long-range chance. It was not the build-ups. NEW_FIGURE_SCALE went from 1 to 0.8. The outfield shrink stays dropped. Men are now about 22 px (1.25 times the old). The keeper is back to his old size. The pitch is unchanged. Merged as PR #760."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Marketing Studio and uploads (PR #761)",
+          "items": [
+            {
+              "title": "Admin, Marketing has four tabs: Board, Client, Studio, Uploads",
+              "detail": "Reasoned: videos and pictures for marketing had no home in the admin. Reasoned: nothing else held a cut, its notes and its files in one place. Admin, Marketing now has the tabs Board, Client, Studio and Uploads. Merged as PR #761."
+            },
+            {
+              "title": "Uploads go straight from the browser to private storage",
+              "detail": "Reasoned: a big video sent through the site would be slow and heavy for the site. Reasoned: so the file goes from the browser straight to Cloudflare R2, never through the site. A 15-minute signed link starts each upload.. Max 500 MB per file. Video and image only.. Max 30 files and 5 GB per admin per day.. The bucket is private. Playback uses 1-hour signed links.."
+            },
+            {
+              "title": "Studio, Editing: the newest editing suite",
+              "detail": "Reasoned: notes on a video lived in chat, away from the video. Reasoned: the suite puts the notes on the timeline, at the moment they are about. It comes from Harry's other tool. Timeline, filmstrip, waveform and lanes.. Two tabs that never mix: For Claude and Review notes .. Lock & render, and Done.. An auto-check lane, taste notes, and a mic.. The notes are saved as JSON next to the video in R2, not in the public code.."
+            },
+            {
+              "title": "Recorder: \"Send to Marketing\"",
+              "detail": "Reasoned: a recording had to be downloaded and uploaded by hand. Reasoned: the recorder now has a button that sends it to Marketing. The admin recorder has a \"Send to Marketing\" button."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: Highlights drop fewer chances and run shorter (PR #763)",
+          "items": [
+            {
+              "title": "Match flow: New dropped 3 to 4% of chances",
+              "detail": "With Match flow: New a match showed fewer chances than before: striker even 6.47 to 6.29 a match, strong 7.92 to 7.61. Only sim piece 4 dropped chances. Your miss's second ball was won in midfield, so the move never became a chance. The second ball is now won on the edge of their box. Striker even 6.46, strong 7.84. With Match flow: Old (the default) the count never changed: 4.5 to 7 chances a match is normal, and a sub appearance gives fewer."
+            },
+            {
+              "title": "Real moments: 1 in 7 is now about 1 in 10",
+              "detail": "With the toggle on, about 1 chance in 7 was a real moment (11.7 to 15.1%). Headers and volleys joined at \"1 in 4 of each kind\". Now 1 in 6 of each kind. That is about 1 in 10 (8.3 to 10.6%)."
+            },
+            {
+              "title": "Build-ups are shorter",
+              "detail": "Each build-up ran 4.9 s, 22 to 27 s a match. Reasoned: the build-ups were cut too long. About 3.1 s each, 14 to 17 s a match. Seen live: 2.4 to 2.9 s each, 13.9 s for 5."
+            },
+            {
+              "title": "Fouls and offsides lead in closer to the moment",
+              "detail": "A foul clip began about 6 s before the foul. An offside clip began 5.3 s before. Reasoned: the lead-in was longer than the moment needed. Fouls now start 0.8 s before the foul: the lead-in was about 6 s and is now about 3.5 s. Offsides start 0.6 s before the pass: 5.3 s down to 4.4 s."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not tried with the real keys yet",
+              "detail": "The Studio and uploads were seen on a local build with no storage keys. A real upload needs Harry to send one video."
+            },
+            {
+              "title": "A dropped upload restarts",
+              "detail": "If an upload is cut, it starts again from the beginning."
+            },
+            {
+              "title": "Last save wins",
+              "detail": "If two people save the same cut at the same time, the last save wins."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Real upload test",
+              "detail": "Harry uploads one video to prove the keys work."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.107",
       "title": "Leo's plan for tonight: 15 parts, 7 chats (approved, building)",
       "publishedAt": "2026-10-22T17:45:00Z",
