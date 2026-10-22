@@ -59,6 +59,8 @@ Branch `leo-celebrations`. Plan parts 1 (goal celebrations) and 5 (big moments),
 - `node scripts/run-star-tests.mjs finishing keeper aiming outcomes goalClip lateCommentary celebration storeCareer signing3d sprite3dClips gameMusic engineFrame`: all pass (18 files).
 - Knee-slide helper: `animSmooth assets3d perf3d cutscene play3d shoulderSet` pass.
 - `node scripts/one-engine-guard.mjs`: no new copies.
+- `npm run build`: passes (with `NODE_OPTIONS=--max-old-space-size=6144`; the first try ran out of memory while the tests ran beside it). All build guards pass.
+- Merged `origin/Leo` before the final push (already up to date).
 
 ## Files
 New: `lib/star/celebration.ts`, `lib/star/bigMoment.ts`, `lib/star/lateCommentary.ts`, `tests/star/celebration.mts`, `tests/star/lateCommentary.mts`, `public/sfx/cl-late-*.mp3`, `cc-late-*.mp3`, `public/star/sprites/atlas-2*.webp`, `mask-2*.webp`, `tools/mocap3d/one-clip/`.
