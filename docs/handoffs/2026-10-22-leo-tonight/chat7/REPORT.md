@@ -1,6 +1,6 @@
 # Chat 7 · Bug hunt — report (22 Oct 2026)
 
-Checks before the final push: `npx tsc --noEmit` clean · one-engine guard and `npm run build` BUILD_RESULT · soak all held.
+Checks before the final push: `npx tsc --noEmit` clean · one-engine guard and `npm run build` passed (on the branch with main merged, a338932b) · soak all held.
 
 Branch `leo-bughunt` (main merged in at the start). Plain English first; file names at the end of each line for checking.
 
