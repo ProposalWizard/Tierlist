@@ -15,6 +15,7 @@
  * same beats when it can't or the 3D takes too long. Timing for both:
  * lib/star/awardsNight.ts. The host is nobody real.
  */
+import { seasonLabelOf } from "@/lib/star/goalClip/reel";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { setMusicScene, clearMusicScene } from "@/lib/star/gameMusic";
 import type { CareerState } from "@/lib/star/types";
@@ -163,7 +164,7 @@ function Captions({ career, plan, t, loading }: { career: CareerState; plan: Awa
   if (loading) {
     line = <Lower small="The doors open">Finding your table…</Lower>;
   } else if (!a || beat === "intro") {
-    line = <Lower small={`Season ${plan.season}`}>The Season Awards</Lower>;
+    line = <Lower small={seasonLabelOf(career.player.startYear ?? 0, plan.season)}>The Season Awards</Lower>;
   } else if (beat === "call") {
     line = (
       <div className="flex flex-col items-center">
@@ -188,7 +189,7 @@ function Captions({ career, plan, t, loading }: { career: CareerState; plan: Awa
         @media (prefers-reduced-motion: reduce) { .kib-an-in, .kib-an-name { animation: none !important; } }
       `}</style>
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 px-4 pt-5 text-center" style={{ background: "linear-gradient(180deg, rgba(0,0,0,.65), transparent)" }}>
-        <div className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-200">Season {plan.season}</div>
+        <div className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-200">{seasonLabelOf(career.player.startYear ?? 0, plan.season)}</div>
         <h1 className="text-[26px] font-black uppercase leading-none text-white" style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,.8))" }}>Season Awards</h1>
         {/* One dot an award: gold once it is given, a ring for the one on now. */}
         <div className="mt-2 flex justify-center gap-1.5" data-awards-dots>
@@ -351,7 +352,7 @@ function RoomDrawn({ career, plan, t }: { career: CareerState; plan: AwardsPlan;
       {/* The screen with the award. */}
       <div className="absolute left-1/2 top-[20%] flex h-[17%] w-[74%] -translate-x-1/2 flex-col items-center justify-center px-2 text-center"
         style={{ background: "radial-gradient(circle at 50% 45%, #3a1e10, #0b0606)", boxShadow: "0 0 0 3px #0b0806, 0 0 30px rgba(255,170,80,.25)", border: "1px solid rgba(246,196,69,.5)" }}>
-        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300">Season {plan.season}</div>
+        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300">{seasonLabelOf(career.player.startYear ?? 0, plan.season)}</div>
         <div className="text-[20px] font-black uppercase leading-tight text-white">{screenTitle}</div>
       </div>
       {/* Curtains, the stage and its glowing edge. */}
