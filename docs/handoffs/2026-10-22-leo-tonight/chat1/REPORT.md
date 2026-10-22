@@ -49,6 +49,9 @@ Branch `leo-celebrations`. Plan parts 1 (goal celebrations) and 5 (big moments),
 - Sound (crowd rise, heartbeat, roar, late call) cannot be heard here; only checked that nothing errors.
 - Hands Up and Jump not played in a match (only on the frame sheets). In 3D only the knee slide was played (the first 3D check, before the camera fix, showed the run leaving a fixed camera; fixed).
 
+## Goal video: scripted, not recorded (for the feed chat)
+Your run and celebration in a goal video are drawn from the celebration plan (`goalClip/recorder.ts` writes your position from `celebAt` into every frame after the goal; `render.ts` picks the move's frames). They never rely on recorded movement after the goal, so the held picture during the commentary does not freeze them. Seen: a knee-slide goal video plays the run, the slide and the arms up to the end (`goal-video-knee-slide.jpg`). Other men in the shot do hold still after the recording ends.
+
 ## Known issues
 - A team-mate making a run can stay near you in the goal video's tight shot (the match's runners carry on); he sometimes stands in front of you.
 - Frame sheets are cached on a phone for a day (existing rule, next.config.mjs). A re-bake of atlas 2 under the same name can draw broken figures until the cache clears (seen once in testing with a stale cache; fine after clearing). Not a problem for the first release of these files.
