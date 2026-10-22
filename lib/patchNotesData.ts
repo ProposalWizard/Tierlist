@@ -27,6 +27,164 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.106h",
+      "title": "Harry's patch notes: Aerial In Real Matches, Header Heights, The Player Card And Fairer Matches",
+      "publishedAt": "2026-10-22T16:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "22 Oct. Aerial & Acrobatics now counts in real matches: headers and volleys read Aerial, not Technique (tired legs lower it); at Aerial 60 nothing changes. Header heights: crosses 1.5 to 2.6 m (was always 1.85 m); jump 0.45 m at Aerial 40 to 0.75 m at 90; reach 2.14 / 2.32 / 2.50 m at Aerial 30 / 60 / 90; above reach is a stretched header. Goals per 100 headers at Aerial 30 / 60 / 90: 15.7 / 25.4 / 38.0 before, 14.1 / 24.9 / 36.3 now. Header feel with Match feel: New. A FIFA-style player card at the top of Stats (bronze under 65, silver 65 to 74, gold 75 to 87, special 88+). Sim piece 4: one shared match-inputs builder; even-match possession 44.5% to 49.8%, corners 3.94 v 5.37 to 5.43 v 5.65. Still to do: top v bottom 66.6% vs real 62%.",
+      "stats": [
+        {
+          "value": "4",
+          "label": "rounds live today (PRs #755 to #758)"
+        },
+        {
+          "value": "1.5-2.6 m",
+          "label": "cross height (was always 1.85 m)"
+        },
+        {
+          "value": "44.5 → 49.8%",
+          "label": "even-match possession"
+        },
+        {
+          "value": "4",
+          "label": "player card colours"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Aerial in real matches",
+              "detail": "Play a real match with a header or volley: it reads Aerial, not Technique. At Aerial 60 nothing changes."
+            },
+            {
+              "title": "Header heights",
+              "detail": "Crosses now come in between 1.5 and 2.6 m. Not always 1.85 m."
+            },
+            {
+              "title": "Jump and reach",
+              "detail": "Header strike screen: \"Jump 0.22 m · max 0.52 m\", or red \"0.10 m over your reach\" on a high cross."
+            },
+            {
+              "title": "Drill header levels",
+              "detail": "Training, Head & Volley: header levels climb from 1.75 m to 2.55 m."
+            },
+            {
+              "title": "Header feel",
+              "detail": "Settings, Match feel: New. Score a header: a longer beat, a short freeze, a camera punch and a header sound."
+            },
+            {
+              "title": "Player card",
+              "detail": "Stats: a FIFA-style card at the top with overall, position, face, surname, flag, badge and six numbers."
+            },
+            {
+              "title": "Card colour",
+              "detail": "A new career (overall 58) is bronze. Silver 65 to 74, gold 75 to 87, special 88 and up."
+            },
+            {
+              "title": "Card +N flash",
+              "detail": "Train a skill: a green +N flashes once on the card."
+            },
+            {
+              "title": "Save image",
+              "detail": "Player card, Save image: a PNG of the card."
+            },
+            {
+              "title": "Even-match flow",
+              "detail": "Match flow: New. Level teams share the ball and corners more evenly."
+            },
+            {
+              "title": "Old Match flow",
+              "detail": "Match flow: Old. Plays exactly as before."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Aerial & Acrobatics counts in real matches",
+          "items": [
+            {
+              "title": "Headers and volleys now read your Aerial skill",
+              "detail": "Aerial & Acrobatics did the drill and the numbers, but a real match ignored it. A header or volley in a real match still used Technique. The match file was not wired to the new skill. That edit waited for Harry's Allow (engine rule RUL-ENG-001). A header or volley now reads Aerial instead of Technique. Tired legs lower it. At Aerial 60 nothing changes, so a player at 60 plays exactly as before. Merged as PR #755."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Header heights, jumping and header feel",
+          "items": [
+            {
+              "title": "Crosses come in at 1.5 to 2.6 m, and you jump to meet them",
+              "detail": "Every cross arrived at 1.85 m, whoever you were. Aerial did not change how high you could reach. Header height was one fixed number. The varying height was built but switched off in 0.105h until it was measured. Cross height now runs 1.5 to 2.6 m. Your jump depends on Aerial: 0.45 m at Aerial 40, 0.75 m at Aerial 90. Your reach is 2.14 m at Aerial 30, 2.32 m at 60 and 2.50 m at 90. A cross above your reach is a stretched header. Merged as PR #756."
+            },
+            {
+              "title": "The header strike screen shows your jump",
+              "detail": "You could not see why a header was easy or hard. The screen showed no jump. Height and reach were not on the strike screen. The header screen shows \"Jump 0.22 m · max 0.52 m\". When the ball is above your reach it shows red: \"0.10 m over your reach\". Drill header levels climb from 1.75 m to 2.55 m, so a high level asks for a real jump."
+            },
+            {
+              "title": "Header feel (Match feel: New only)",
+              "detail": "A header goal landed with the same weight as a ground shot. There was no sense of a leap. The moment was the same length and had no sound of its own. With Match feel: New a header gets a longer beat, a freeze of about 120 ms (never more than 150), a camera punch, and its own header sound. The sound is made in code and is CC0. Match feel: Old is unchanged."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Player card",
+          "items": [
+            {
+              "title": "A FIFA-style player card at the top of Stats",
+              "detail": "Stats opened on a list of numbers. Nothing showed who your player is at a glance. There was no one picture of your player. Overall, skills and face lived on separate screens. A card at the top of Stats: overall (the existing formula), position, the drawn face, surname, flag, badge, and six numbers: PAC, POW, TEC, VIS, FK and AIR. The colour follows overall: bronze under 65, silver 65 to 74, gold 75 to 87, special 88 and up. A new career at 58 is bronze. A green +N flashes once after a skill goes up. \"Save image\" draws a PNG of the card. Merged as PR #757."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Simulation rebuild, piece 4",
+          "items": [
+            {
+              "title": "One shared match-inputs builder, and level teams play level",
+              "detail": "An even match was not even. Level teams gave one side 44.5% of the ball, and corners ran 3.94 to 5.37. The real match, the radar, sim90, the ruler and \"Sim this match\" each built their own match inputs. They did not agree, and a bias sat in one of them. All five now use one shared builder. An even match: possession 44.5% → 49.8%; corners 3.94 v 5.37 → 5.43 v 5.65. Radars count possession one way. Merged as PR #758."
+            },
+            {
+              "title": "Your missed chance can win a corner or a second ball",
+              "detail": "A chance you missed in the final third just ended. Real football gives a corner or a loose ball. Nothing followed a miss. With Match flow: New, a missed chance in the final third can win a corner or a second ball. Match flow: Old plays exactly as before."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Top v bottom is still too even",
+              "detail": "Top v bottom possession is 66.6% against 62% in real football. Piece 4 fixed the even match. The strength gap is a later piece. Piece 5. Not changed yet."
+            },
+            {
+              "title": "The drill level label overlaps \"HEAD IT?\"",
+              "detail": "In the Head & Volley drill the level label sits a little over the \"HEAD IT?\" text. Seen on the drill screen; the cause is not looked into yet. Not changed yet."
+            },
+            {
+              "title": "The header sound has not been heard by a person",
+              "detail": "The header sound is made in code. Nobody has listened to it yet. A test can see a sound play but cannot judge how it sounds. Someone needs to listen with Match feel: New and say if it is right."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Sim piece 5",
+              "detail": "Top v bottom possession is 66.6% against 62% in real football."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.105h",
       "title": "Harry's patch notes: Real Headers And Volleys, And The Aerial & Acrobatics Skill",
       "publishedAt": "2026-10-21T20:00:00Z",
