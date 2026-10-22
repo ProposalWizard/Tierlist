@@ -238,7 +238,7 @@ import {
 import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
   matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf, turnWideChance,
-  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, MATCH_VIEW_DEFAULT, figureGrow,
+  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, NEW_KEEPER_GROW, MATCH_VIEW_DEFAULT, figureGrow,
   playZoom, playZoomOf, playZoomProbe,
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
@@ -4700,7 +4700,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // a save is being played.
       const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * (K ? K.reachK : 0.55);
       const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
-      const KR = R * MATCH_KEEPER_R_SHARE * kScale / (nv ? NEW_OUTFIELD_SHRINK : 1);   // smaller than an outfielder, smaller again far away; the keeper is not shrunk with the men
+      const KR = R * MATCH_KEEPER_R_SHARE * kScale * (nv ? NEW_KEEPER_GROW / NEW_OUTFIELD_SHRINK : 1);   // smaller again far away; the keeper is not shrunk with the men and stands about a man's height (NEW_KEEPER_GROW)
       // Capped just past flat — see MAX_KEEPER_LEAN. Purely the artwork:
       // nothing in the engine reads this rotation.
       // Animations: New — what he did with the ball (lib/star/actionAnim.ts):

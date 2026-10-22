@@ -730,6 +730,7 @@ export const ADMIN_GUIDES = {
     buttons: [
       {
         items: [
+          ["Move media to Cloudflare", "One-time. Copies every patch-note picture and clip (about 2,100 files, 181 MB) into Cloudflare R2, a batch at a time, with a progress bar. Keep the tab open; Stop or a lost connection is fine: press Carry on moving and files already there are skipped. Works on the live site only (the keys are in Vercel). When it says Done, tell Claude so the follow-up can stop bundling the pictures into the site."],
           ["Version list", "Tap a version to read it. The small H / M / L faces show who has read it (bright = read; the author counts as read). On a phone a red dot = you haven't read it yet."],
           ["Read by H ✓ read · M wrote it · L not yet", "Who has read this version. Only versions from 18 Oct 2026 on count towards \"to read\"; older ones show faces but never nag."],
           ["Read and understood", "Say you have read and understood this version. Press again (✓ Read and understood) to take it back. Not shown on your own patch notes."],
@@ -749,12 +750,13 @@ export const ADMIN_GUIDES = {
       "The notes themselves don't save here. New patch notes are added by Claude as part of shipping a change.",
       "Read and understood and the notes under a version save to the shared database at once (team_acks, team_notes), so the other two see them. Until supabase/migrations/team_room_v2.sql runs they stay on this device only, and the page says so (then an @ in a note can't buzz anyone or reach their Inbox).",
       "The Inbox has no table of its own: a patch note leaves it when you say Read and understood (or open it from the Inbox), and a mention leaves it when you open that version's notes. Both are the same saved receipts (team_acks).",
+      "Move media to Cloudflare writes to the R2 bucket (R2_BUCKET, folder patch-notes/), never the repo or the database. Once a picture is there, the page shows it from Cloudflare (a link that works for an hour); until then it comes from the site, so nothing breaks half way.",
       "A new patch note on the site buzzes everyone but its author once (one buzz per person, however many notes are new; only notes from the last 3 days). The site sends it the first time one of the three opens an admin page after the deploy. Who has been buzzed for which version is kept in each person's sign-in account, so no SQL.",
     ],
     commit: ["New entries live in a file, not the database. Each build ends with its patch notes going to main at once in a patch-notes-only pull request (scripts/patch-notes/ship.mjs), without the feature code; they appear after that deploys. Each version's page and pictures are copied into patch-notes/ in the repo."],
     inGame: ["Admin only. Players never see this page."],
     needs: ["supabase/migrations/team_room_v2.sql (PENDING) for read ticks and notes to be shared. Run after team_room.sql."],
-    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts · Inbox: components/teamRoom/InboxBell.tsx, lib/teamRoom/inbox.ts · quotes: lib/teamRoom/patchQuote.ts · buzz: /api/admin/team/notify {patches:true} and {table:\"team_notes\"}",
+    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · media move: app/admin/patch-notes/MediaSyncPanel.tsx, /api/admin/patch-notes/media-sync, lib/patchNoteMedia.ts, lib/patchNoteMediaServer.ts · Inbox list: lib/patchNoteHeadlines.json (scripts/patch-notes/build-headlines.mjs) · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts · Inbox: components/teamRoom/InboxBell.tsx, lib/teamRoom/inbox.ts · quotes: lib/teamRoom/patchQuote.ts · buzz: /api/admin/team/notify {patches:true} and {table:\"team_notes\"}",
   },
 
   "/admin/sound-board": {
@@ -2569,7 +2571,7 @@ export const ADMIN_GUIDES = {
       "If GitHub can't be reached, the board shows the copy built into the site and says so at the top.",
     ],
     inGame: ["Nowhere. This is for making our own videos."],
-    dev: "app/admin/marketing/page.tsx · components/admin/marketing/{ProductionBoard,MarketingTabs}.tsx · lib/marketing/board.ts (pure; tests/star/adminMarketing.mts) · /api/admin/marketing/board · marketing/board.json · .claude/skills/video-board/SKILL.md · leak guard: scripts/marketing/private-names-guard.mjs",
+    dev: "app/admin/marketing/page.tsx · components/admin/marketing/{ProductionBoard,MarketingTabs}.tsx · lib/marketing/board.ts (pure; tests/star/adminMarketing.mts) · /api/admin/marketing/board · marketing/board.json · .claude/skills/{video-board,patch-note-video,tiktok-remix}/SKILL.md · leak guard: scripts/marketing/private-names-guard.mjs",
   },
   "/admin/marketing/client": {
     title: "Knowitball client",

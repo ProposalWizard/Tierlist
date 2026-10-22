@@ -1,0 +1,495 @@
+From bbd49e7461d01746e2785de88df6536980641dc8 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Thu, 22 Oct 2026 20:35:31 +0000
+Subject: [PATCH] FOLLOW-UP, DO NOT MERGE until the live "Move media to
+ Cloudflare" button says Done
+
+Patch-note pictures served only from Cloudflare R2:
+- next.config.mjs: the two patch-notes routes bundle the pages (.html) only,
+  and exclude the pictures (the trace finds the folder on its own).
+  Measured: each route 189 MB -> 14 MB traced.
+- The move button and /api/admin/patch-notes/media-sync are removed (job done).
+- New stills never go in the repo: .gitignore skips patch-notes media;
+  scripts/patch-notes/media-to-r2.mjs uploads them (same signer,
+  lib/marketing/r2.ts); ship.mjs runs it and refuses without the R2 settings.
+- Brain: FACT-DAT-006 supersedes FACT-DAT-005.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016A37hskL16Hka4FUQjF4xC
+---
+ .gitignore                                    |   9 ++
+ app/admin/patch-notes/MediaSyncPanel.tsx      | 114 ------------------
+ app/admin/patch-notes/page.tsx                |   2 -
+ app/api/admin/patch-notes/media-sync/route.ts |  55 ---------
+ brain/_index.md                               |   3 +-
+ brain/fact/FACT-DAT-005.md                    |   3 +-
+ brain/fact/FACT-DAT-006.md                    |  14 +++
+ lib/adminGuides.ts                            |   7 +-
+ next.config.mjs                               |  16 +--
+ scripts/patch-notes/media-to-r2.mjs           |  91 ++++++++++++++
+ scripts/patch-notes/ship.mjs                  |  18 ++-
+ 11 files changed, 147 insertions(+), 185 deletions(-)
+ delete mode 100644 app/admin/patch-notes/MediaSyncPanel.tsx
+ delete mode 100644 app/api/admin/patch-notes/media-sync/route.ts
+ create mode 100644 brain/fact/FACT-DAT-006.md
+ create mode 100644 scripts/patch-notes/media-to-r2.mjs
+
+diff --git a/.gitignore b/.gitignore
+index ae6f9df5..b0daa470 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -70,3 +70,12 @@ scripts/tmp/
+ docs/handoffs/2026-10-20-builds/b5c-hq/raw/
+ docs/handoffs/2026-10-20-builds/b5c-hq/*.png
+ docs/handoffs/2026-10-20-builds/b5c-hq/hq-*.jpg
++
++# Patch-note stills and clips live in Cloudflare R2, not the repo (22 Oct 2026):
++# scripts/patch-notes/media-to-r2.mjs uploads them; ship.mjs runs it.
++/patch-notes/**/*.jpg
++/patch-notes/**/*.jpeg
++/patch-notes/**/*.png
++/patch-notes/**/*.webp
++/patch-notes/**/*.gif
++/patch-notes/**/*.mp4
+diff --git a/app/admin/patch-notes/MediaSyncPanel.tsx b/app/admin/patch-notes/MediaSyncPanel.tsx
+deleted file mode 100644
+index 07c493a3..00000000
+--- a/app/admin/patch-notes/MediaSyncPanel.tsx
++++ /dev/null
+@@ -1,114 +0,0 @@
+-"use client";
+-/**
+- * The "Move media to Cloudflare" card on /admin/patch-notes (Harry, 22 Oct
+- * 2026). One press copies every patch-note picture and clip into R2, a batch
+- * at a time (/api/admin/patch-notes/media-sync), with a progress bar. Files
+- * already there at the same size are skipped, so pressing again after a stop
+- * carries on. Once it says done, the follow-up change (next.config.mjs) can
+- * stop bundling the pictures into the site.
+- */
+-import { useCallback, useEffect, useRef, useState } from "react";
+-
+-type Status = {
+-  mode?: "r2" | "dev" | "off";
+-  connected?: boolean;
+-  totalFiles: number;
+-  totalBytes: number;
+-  doneFiles: number;
+-  doneBytes: number;
+-  finished?: boolean;
+-  uploaded?: number;
+-  failed?: { rel: string; error: string }[];
+-  error?: string;
+-};
+-
+-const mb = (b: number) => `${(b / 1024 / 1024).toFixed(b < 10 * 1024 * 1024 ? 1 : 0)} MB`;
+-
+-export default function MediaSyncPanel() {
+-  const [s, setS] = useState<Status | null>(null);
+-  const [running, setRunning] = useState(false);
+-  const [err, setErr] = useState<string | null>(null);
+-  const [fails, setFails] = useState<{ rel: string; error: string }[]>([]);
+-  const stop = useRef(false);
+-
+-  const load = useCallback(async () => {
+-    try {
+-      const r = await fetch("/api/admin/patch-notes/media-sync", { cache: "no-store" });
+-      const j = (await r.json()) as Status;
+-      setS(j);
+-      if (j.error) setErr(j.error);
+-    } catch { setErr("Could not reach the site."); }
+-  }, []);
+-  useEffect(() => { void load(); }, [load]);
+-
+-  const run = async () => {
+-    setRunning(true); setErr(null); setFails([]); stop.current = false;
+-    const seen: { rel: string; error: string }[] = [];
+-    try {
+-      for (let i = 0; i < 200 && !stop.current; i++) {
+-        const r = await fetch("/api/admin/patch-notes/media-sync", { method: "POST", cache: "no-store" });
+-        const j = (await r.json()) as Status;
+-        if (!r.ok || j.error) { setErr(j.error ?? `The site answered ${r.status}.`); break; }
+-        setS(j);
+-        for (const f of j.failed ?? []) seen.push(f);
+-        setFails(seen.slice(-5));
+-        if (j.finished) break;
+-        // A batch that moved nothing but had failures will fail the same way again: stop and say so.
+-        if ((j.uploaded ?? 0) === 0 && (j.failed?.length ?? 0) > 0) { setErr(`${j.failed!.length} files would not copy. Press again to retry them.`); break; }
+-      }
+-    } catch { setErr("Lost the connection. Press again to carry on: finished files are skipped."); }
+-    setRunning(false);
+-  };
+-
+-  if (!s) return <Shell><p className="text-[13px] text-[#9fb6aa]">Checking Cloudflare…</p></Shell>;
+-  const pct = s.totalFiles ? Math.round((s.doneFiles / s.totalFiles) * 100) : 0;
+-  const done = !!s.finished;
+-
+-  return (
+-    <Shell>
+-      <div className="flex flex-wrap items-center gap-3">
+-        <div className="min-w-0 flex-1">
+-          <div className="text-[15px] font-extrabold">Patch-note pictures in Cloudflare</div>
+-          <div className="text-[13px] text-[#9fb6aa]">
+-            {!s.connected
+-              ? "Works on the live site only (the Cloudflare keys are in Vercel)."
+-              : done
+-                ? `Done: all ${s.totalFiles.toLocaleString()} files (${mb(s.totalBytes)}) are in Cloudflare. Tell Claude, so the follow-up can shrink the site.`
+-                : `${s.doneFiles.toLocaleString()} of ${s.totalFiles.toLocaleString()} files · ${mb(s.doneBytes)} of ${mb(s.totalBytes)}`}
+-            {s.mode === "dev" && <span className="ml-1 text-[#f5b942]">(test copy on this computer)</span>}
+-          </div>
+-        </div>
+-        {s.connected && !done && (running
+-          ? <button type="button" onClick={() => { stop.current = true; }} className="rounded-full border border-[#24332b] px-4 py-2 text-[13px] font-bold text-[#f2f7f4]">Stop</button>
+-          : <button type="button" onClick={run} className="rounded-full bg-[#3ddc84] px-4 py-2 text-[13px] font-black text-[#06170e]">
+-              {s.doneFiles > 0 ? "Carry on moving" : "Move media to Cloudflare"}
+-            </button>)}
+-      </div>
+-      {s.connected && s.totalFiles > 0 && (
+-        <div className="mt-3">
+-          <div className="h-2.5 overflow-hidden rounded-full bg-[#24332b]" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Files moved">
+-            <div className={`h-full rounded-full ${done ? "bg-[#3ddc84]" : "bg-[#6fb8ff]"} transition-[width] duration-500`} style={{ width: `${pct}%` }} />
+-          </div>
+-          <div className="mt-1 flex justify-between text-[12px] text-[#6f8679]">
+-            <span>{running ? "Moving… keep this tab open" : done ? "Nothing left to move" : "Pictures already moved are served from Cloudflare"}</span>
+-            <span>{pct}%</span>
+-          </div>
+-        </div>
+-      )}
+-      {err && <p className="mt-2 text-[13px] text-[#ff6b6b]">{err}</p>}
+-      {fails.length > 0 && (
+-        <ul className="mt-1 text-[12px] text-[#9fb6aa]">
+-          {fails.map((f) => <li key={f.rel}>✕ {f.rel}: {f.error}</li>)}
+-        </ul>
+-      )}
+-    </Shell>
+-  );
+-}
+-
+-function Shell({ children }: { children: React.ReactNode }) {
+-  return (
+-    <div className="bg-[#0b100e] px-4 pt-6 text-[#f2f7f4] lg:px-8">
+-      <div className="mx-auto max-w-[1180px] rounded-2xl border border-[#24332b] bg-[#141d18] p-4">{children}</div>
+-    </div>
+-  );
+-}
+diff --git a/app/admin/patch-notes/page.tsx b/app/admin/patch-notes/page.tsx
+index 6c88ce02..1456b055 100644
+--- a/app/admin/patch-notes/page.tsx
++++ b/app/admin/patch-notes/page.tsx
+@@ -17,7 +17,6 @@ import { createClient } from "@/lib/supabase/server";
+ import { isAdmin } from "@/lib/admin";
+ import { offlineDevPlayEnabled } from "@/lib/star/devMode";
+ import PatchNotesArchive from "./PatchNotesArchive";
+-import MediaSyncPanel from "./MediaSyncPanel";
+ import PageGuide from "@/components/admin/PageGuide";
+ import AdminTopBar from "@/components/admin/AdminTopBar";
+ 
+@@ -40,7 +39,6 @@ export default async function PatchNotesPage() {
+   return (
+     <>
+       <AdminTopBar title="Patch notes" />
+-      <MediaSyncPanel />
+       <PatchNotesArchive />
+       <PageGuide page="/admin/patch-notes" />
+     </>
+diff --git a/app/api/admin/patch-notes/media-sync/route.ts b/app/api/admin/patch-notes/media-sync/route.ts
+deleted file mode 100644
+index 18cfd66e..00000000
+--- a/app/api/admin/patch-notes/media-sync/route.ts
++++ /dev/null
+@@ -1,55 +0,0 @@
+-/**
+- * /api/admin/patch-notes/media-sync — the "Move media to Cloudflare" button
+- * on /admin/patch-notes (Harry, 22 Oct 2026). Admin only.
+- *
+- *   GET   how far the move is: files and MB in R2 out of those bundled here.
+- *   POST  one batch: copies the next files not yet in R2 (same size = skip),
+- *         for up to ~20 s, then answers with the new totals. The page calls it
+- *         again until `finished`. Safe to stop and press again at any time.
+- *
+- * It runs here, on Vercel, because only Vercel has the R2 keys; the files
+- * come from the copy of patch-notes/ bundled into this route
+- * (next.config.mjs outputFileTracingIncludes). The file route picks moved
+- * files up within 5 minutes (its cached listing of the bucket).
+- */
+-import { NextResponse } from "next/server";
+-import { requireAdmin } from "@/lib/patchNotePageServe";
+-import { offlineDevPlayEnabled } from "@/lib/star/devMode";
+-import { planUploads, progressOf, runBatch } from "@/lib/patchNoteMedia";
+-import { listLocalMedia, listRemote, mediaMode, migrateDeps } from "@/lib/patchNoteMediaServer";
+-
+-export const dynamic = "force-dynamic";
+-export const maxDuration = 60;
+-
+-/** A local dev build lets everyone in, like the page itself (never the live site). */
+-const gate = async () => (offlineDevPlayEnabled() ? null : requireAdmin());
+-
+-function modeBody() {
+-  const m = mediaMode();
+-  return { mode: m.mode, connected: m.mode !== "off", missing: m.missing };
+-}
+-
+-export async function GET() {
+-  const forbidden = await gate();
+-  if (forbidden) return forbidden;
+-  const mode = modeBody();
+-  if (!mode.connected) return NextResponse.json({ ...mode, totalFiles: 0, totalBytes: 0, doneFiles: 0, doneBytes: 0, finished: false });
+-  try {
+-    const p = progressOf(planUploads(await listLocalMedia(), await listRemote()));
+-    return NextResponse.json({ ...mode, ...p, finished: p.totalFiles > 0 && p.doneFiles >= p.totalFiles });
+-  } catch (e) {
+-    return NextResponse.json({ ...mode, error: e instanceof Error ? e.message : "Could not read the bucket." }, { status: 502 });
+-  }
+-}
+-
+-export async function POST() {
+-  const forbidden = await gate();
+-  if (forbidden) return forbidden;
+-  const mode = modeBody();
+-  if (!mode.connected) return NextResponse.json({ ...mode, error: "Storage not connected here. This works on the live site, where the R2 keys are." }, { status: 503 });
+-  try {
+-    return NextResponse.json({ ...mode, ...(await runBatch(migrateDeps())) });
+-  } catch (e) {
+-    return NextResponse.json({ ...mode, error: e instanceof Error ? e.message : "The batch failed." }, { status: 502 });
+-  }
+-}
+diff --git a/brain/_index.md b/brain/_index.md
+index 17008236..781a4f22 100644
+--- a/brain/_index.md
++++ b/brain/_index.md
+@@ -13,7 +13,8 @@ FACT-DAT-001 | star_tuning_notes.sql is PENDING: the table still does not exist
+ FACT-DAT-002 | star_xp_config.sql is PENDING, seen missing in the live database on 20 Oct 2026. | data
+ FACT-DAT-003 | star_casino.sql: DO NOT RUN; the casino stays on the phone with CASINO_ON_SERVER false. | economy,data
+ FACT-DAT-004 | Every other listed migration (draft, sofifa, security, star tables) is RUN, no action needed; full rows are in SESSION_LOG.md. | data
+-FACT-DAT-005 | Patch-note pictures live in the R2 bucket under patch-notes/<path>; the file route sends a signed link when the object is there, else the bundled copy; one button on /admin/patch-notes moves them. | admin,data
++FACT-DAT-005 | [SUPERSEDED] Patch-note pictures live in the R2 bucket under patch-notes/<path>; the file route sends a signed link when the object is there, else the bundled copy; one button on /admin/patch-notes moves them. | admin,data
++FACT-DAT-006 | Patch-note stills and clips go straight into Cloudflare R2, never into the repo; media-to-r2.mjs uploads them (ship.mjs runs it) and needs the four R2 settings. | ui,process,rule,data
+ FACT-ENG-001 | The guard also fails on a direct CanvasMatch mount, a grown KNOWN_COPIES list, a new canvas animation loop or a blind canary. | engine
+ FACT-ENG-002 | Trial penalties, free kicks, training strike drills and the gauntlet mount EngineFeature; a difference is a named dial. | engine
+ FACT-ENG-003 | Still copies, to port next: five-a-side only; the /star-match-dev fork was deleted (18 Oct 2026). | admin,engine
+diff --git a/brain/fact/FACT-DAT-005.md b/brain/fact/FACT-DAT-005.md
+index 8cdd2345..fe0f30c8 100644
+--- a/brain/fact/FACT-DAT-005.md
++++ b/brain/fact/FACT-DAT-005.md
+@@ -3,7 +3,8 @@ id: FACT-DAT-005
+ type: fact
+ client: dat
+ tags: [admin, data]
+-status: live
++status: superseded
++superseded_by: FACT-DAT-006
+ date: 2026-10-22
+ source: "lib/patchNoteMedia.ts:8-17"
+ summary: Patch-note pictures live in the R2 bucket under patch-notes/<path>; the file route sends a signed link when the object is there, else the bundled copy; one button on /admin/patch-notes moves them.
+diff --git a/brain/fact/FACT-DAT-006.md b/brain/fact/FACT-DAT-006.md
+new file mode 100644
+index 00000000..b4492f2a
+--- /dev/null
++++ b/brain/fact/FACT-DAT-006.md
+@@ -0,0 +1,14 @@
++---
++id: FACT-DAT-006
++type: fact
++client: dat
++tags: [ui, process, rule, data]
++status: live
++date: 2026-10-22
++supersedes: FACT-DAT-005
++source: "scripts/patch-notes/media-to-r2.mjs:3-14"
++summary: Patch-note stills and clips go straight into Cloudflare R2, never into the repo; media-to-r2.mjs uploads them (ship.mjs runs it) and needs the four R2 settings.
++---
++The site bundles only the patch-note pages (.html). .gitignore keeps new
++stills out of the repo. A builder without the R2 settings cannot ship a
++patch note with pictures: ship.mjs refuses and says which settings to add.
+diff --git a/lib/adminGuides.ts b/lib/adminGuides.ts
+index 86ad4dda..5991fbe7 100644
+--- a/lib/adminGuides.ts
++++ b/lib/adminGuides.ts
+@@ -645,7 +645,6 @@ export const ADMIN_GUIDES = {
+     buttons: [
+       {
+         items: [
+-          ["Move media to Cloudflare", "One-time. Copies every patch-note picture and clip (about 2,100 files, 181 MB) into Cloudflare R2, a batch at a time, with a progress bar. Keep the tab open; Stop or a lost connection is fine: press Carry on moving and files already there are skipped. Works on the live site only (the keys are in Vercel). When it says Done, tell Claude so the follow-up can stop bundling the pictures into the site."],
+           ["Version list", "Tap a version to read it. The small H / M / L faces show who has read it (bright = read; the author counts as read). On a phone a red dot = you haven't read it yet."],
+           ["Read by H ✓ read · M wrote it · L not yet", "Who has read this version. Only versions from 18 Oct 2026 on count towards \"to read\"; older ones show faces but never nag."],
+           ["Read and understood", "Say you have read and understood this version. Press again (✓ Read and understood) to take it back. Not shown on your own patch notes."],
+@@ -665,13 +664,13 @@ export const ADMIN_GUIDES = {
+       "The notes themselves don't save here. New patch notes are added by Claude as part of shipping a change.",
+       "Read and understood and the notes under a version save to the shared database at once (team_acks, team_notes), so the other two see them. Until supabase/migrations/team_room_v2.sql runs they stay on this device only, and the page says so (then an @ in a note can't buzz anyone or reach their Inbox).",
+       "The Inbox has no table of its own: a patch note leaves it when you say Read and understood (or open it from the Inbox), and a mention leaves it when you open that version's notes. Both are the same saved receipts (team_acks).",
+-      "Move media to Cloudflare writes to the R2 bucket (R2_BUCKET, folder patch-notes/), never the repo or the database. Once a picture is there, the page shows it from Cloudflare (a link that works for an hour); until then it comes from the site, so nothing breaks half way.",
++      "Pictures and clips on the Page tab come from Cloudflare R2 (R2_BUCKET, folder patch-notes/) through a link that works for an hour; only the page text is in the site.",
+       "A new patch note on the site buzzes everyone but its author once (one buzz per person, however many notes are new; only notes from the last 3 days). The site sends it the first time one of the three opens an admin page after the deploy. Who has been buzzed for which version is kept in each person's sign-in account, so no SQL.",
+     ],
+-    commit: ["New entries live in a file, not the database. Each build ends with its patch notes going to main at once in a patch-notes-only pull request (scripts/patch-notes/ship.mjs), without the feature code; they appear after that deploys. Each version's page and pictures are copied into patch-notes/ in the repo."],
++    commit: ["New entries live in a file, not the database. Each build ends with its patch notes going to main at once in a patch-notes-only pull request (scripts/patch-notes/ship.mjs), without the feature code; they appear after that deploys. Each version's page is copied into patch-notes/ in the repo; its pictures go to Cloudflare R2 (ship.mjs runs scripts/patch-notes/media-to-r2.mjs, which needs the R2 settings)."],
+     inGame: ["Admin only. Players never see this page."],
+     needs: ["supabase/migrations/team_room_v2.sql (PENDING) for read ticks and notes to be shared. Run after team_room.sql."],
+-    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · media move: app/admin/patch-notes/MediaSyncPanel.tsx, /api/admin/patch-notes/media-sync, lib/patchNoteMedia.ts, lib/patchNoteMediaServer.ts · Inbox list: lib/patchNoteHeadlines.json (scripts/patch-notes/build-headlines.mjs) · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts · Inbox: components/teamRoom/InboxBell.tsx, lib/teamRoom/inbox.ts · quotes: lib/teamRoom/patchQuote.ts · buzz: /api/admin/team/notify {patches:true} and {table:\"team_notes\"}",
++    dev: "app/admin/patch-notes/PatchNotesArchive.tsx · pictures: lib/patchNoteMedia.ts, lib/patchNoteMediaServer.ts, scripts/patch-notes/media-to-r2.mjs · Inbox list: lib/patchNoteHeadlines.json (scripts/patch-notes/build-headlines.mjs) · lib/patchNotesData.ts · lib/patchNotePages.ts · lib/patchNoteReviews.ts · patch-notes/ · read ticks: components/teamRoom/PatchReceipts.tsx, lib/teamRoom/extras.ts · Inbox: components/teamRoom/InboxBell.tsx, lib/teamRoom/inbox.ts · quotes: lib/teamRoom/patchQuote.ts · buzz: /api/admin/team/notify {patches:true} and {table:\"team_notes\"}",
+   },
+ 
+   "/admin/sound-board": {
+diff --git a/next.config.mjs b/next.config.mjs
+index ec75f3c6..909affbe 100644
+--- a/next.config.mjs
++++ b/next.config.mjs
+@@ -25,14 +25,16 @@ const nextConfig = {
+     // The patch notes archive shows each version's kept artifact page, read
+     // from patch-notes/ at request time (lib/patchNotePageServe.ts). Files a
+     // route reads by a computed path are not traced into the serverless
+-    // bundle on their own, so the folder is listed here or Vercel 404s them.
++    // bundle on their own, so the pages are listed here or Vercel 404s them.
++    // Pages only (~5 MB): since 22 Oct 2026 their pictures and clips are in
++    // Cloudflare R2 and the file route sends a signed link (lib/patchNoteMedia.ts).
++    // The trace also finds patch-notes/ on its own (lib/patchNotePageServe.ts
++    // names the folder), so the pictures are excluded by name as well.
++    outputFileTracingExcludes: {
++      "/api/admin/patch-notes/**": ["./patch-notes/**/*.{jpg,jpeg,png,webp,gif,mp4,JPG,PNG,MP4}"],
++    },
+     outputFileTracingIncludes: {
+-      "/api/admin/patch-notes/page": ["./patch-notes/**/*"],
+-      "/api/admin/patch-notes/file/[...path]": ["./patch-notes/**/*"],
+-      // The one-time "Move media to Cloudflare" button copies from its own
+-      // bundled copy (lib/patchNoteMedia.ts). The follow-up commit drops the
+-      // pictures from all three once the move is done.
+-      "/api/admin/patch-notes/media-sync": ["./patch-notes/**/*"],
++      "/api/admin/patch-notes/page": ["./patch-notes/**/*.html"],
+       // The real-moment test pages' data (Real moments, Real shots, Real Goals).
+       "/api/star/real-moments": ["./data/realmoments/*.json"],
+       // Marketing → Client reads the client record and its Brain notes at request time.
+diff --git a/scripts/patch-notes/media-to-r2.mjs b/scripts/patch-notes/media-to-r2.mjs
+new file mode 100644
+index 00000000..9dcada16
+--- /dev/null
++++ b/scripts/patch-notes/media-to-r2.mjs
+@@ -0,0 +1,91 @@
++#!/usr/bin/env node
++/**
++ * scripts/patch-notes/media-to-r2.mjs — put a patch note's stills and clips
++ * straight into Cloudflare R2 instead of the repo (22 Oct 2026, the
++ * follow-up to the "Move media to Cloudflare" button).
++ *
++ * Needs the four R2 settings in the environment (R2_ACCOUNT_ID,
++ * R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET), the same ones Vercel
++ * has. Signs with lib/marketing/r2.ts (no new package, no second copy).
++ * Files already in R2 at the same size are skipped.
++ *
++ *   node scripts/patch-notes/media-to-r2.mjs 0.108h 0.109h   those versions' folders (patch-notes/pages/<v>/)
++ *   node scripts/patch-notes/media-to-r2.mjs --all           every media file under patch-notes/
++ *   node scripts/patch-notes/media-to-r2.mjs --dry 0.108h    list what would go, upload nothing
++ *
++ * Exit 3 = no R2 settings here (ship.mjs then says what to do).
++ */
++import fs from "node:fs";
++import path from "node:path";
++import { createRequire } from "node:module";
++import { fileURLToPath } from "node:url";
++
++const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
++export const MEDIA = /\.(jpe?g|png|webp|gif|mp4)$/i;
++const TYPES = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif", mp4: "video/mp4" };
++
++async function loadR2() {
++  const ts = createRequire(path.join(ROOT, "package.json"))("typescript");
++  const src = fs.readFileSync(path.join(ROOT, "lib/marketing/r2.ts"), "utf8");
++  const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }).outputText;
++  return import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
++}
++
++/** Media files (paths under patch-notes/) in the given folders. */
++export function mediaUnder(root, folders) {
++  const out = [];
++  const walk = (abs, rel) => {
++    if (!fs.existsSync(abs)) return;
++    for (const e of fs.readdirSync(abs, { withFileTypes: true })) {
++      const r = `${rel}/${e.name}`;
++      if (e.isDirectory()) walk(path.join(abs, e.name), r);
++      else if (MEDIA.test(e.name)) out.push({ rel: r.replace(/^\//, ""), size: fs.statSync(path.join(abs, e.name)).size });
++    }
++  };
++  for (const f of folders) walk(path.join(root, "patch-notes", f), f);
++  return out;
++}
++
++export async function uploadMedia({ root = ROOT, folders, dry = false, log = console.log }) {
++  const r2 = await loadR2();
++  const { config, missing } = r2.r2ConfigFrom(process.env);
++  if (!config) return { ok: false, missing };
++  const files = mediaUnder(root, folders);
++  const there = new Map();
++  let token = null;
++  for (let page = 0; page < 30; page++) {
++    const query = { "list-type": "2", prefix: "patch-notes/", "max-keys": "1000" };
++    if (token) query["continuation-token"] = token;
++    const res = await fetch(r2.r2Url(config, "GET", "", new Date(), 300, { query }));
++    if (!res.ok) throw new Error(`Listing the bucket answered ${res.status}.`);
++    const got = r2.parseList(await res.text());
++    for (const o of got.objects) there.set(o.key, o.size);
++    if (!got.next) break;
++    token = got.next;
++  }
++  let sent = 0, bytes = 0;
++  for (const f of files) {
++    const key = `patch-notes/${f.rel}`;
++    if (there.get(key) === f.size) continue;
++    if (dry) { log(`  would upload ${key} (${f.size} B)`); continue; }
++    const body = fs.readFileSync(path.join(root, "patch-notes", f.rel));
++    const type = TYPES[path.extname(f.rel).slice(1).toLowerCase()];
++    const headers = { "content-length": String(body.length), "content-type": type };
++    const res = await fetch(r2.r2Url(config, "PUT", key, new Date(), 300, { headers }), { method: "PUT", body, headers });
++    if (!res.ok) throw new Error(`Uploading ${key} answered ${res.status}.`);
++    sent++; bytes += body.length;
++  }
++  log(`media-to-r2: ${files.length} media files, ${sent} uploaded (${(bytes / 1024 / 1024).toFixed(1)} MB), ${files.length - sent} already there${dry ? " (dry run)" : ""}.`);
++  return { ok: true, files, sent };
++}
++
++if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
++  const args = process.argv.slice(2);
++  const versions = args.filter((a) => !a.startsWith("--"));
++  const folders = args.includes("--all") ? [""] : versions.map((v) => `pages/${v}`);
++  if (!folders.length) { console.error("Name the versions, or --all."); process.exit(2); }
++  try {
++    const r = await uploadMedia({ folders, dry: args.includes("--dry") });
++    if (!r.ok) { console.error(`media-to-r2: no R2 settings here (missing ${r.missing.join(", ")}).`); process.exit(3); }
++  } catch (e) { console.error(`media-to-r2: ${e.message}`); process.exit(1); }
++}
+diff --git a/scripts/patch-notes/ship.mjs b/scripts/patch-notes/ship.mjs
+index 55f75f19..e35d4cda 100644
+--- a/scripts/patch-notes/ship.mjs
++++ b/scripts/patch-notes/ship.mjs
+@@ -8,7 +8,9 @@
+  * It builds a patch-notes-only branch from origin/main and adds ONLY:
+  *   - the named versions' entries in lib/patchNotesData.ts   (copied from --from)
+  *   - their lines in lib/patchNotePages.ts                    (copied from --from)
+- *   - their kept pages, patch-notes/pages/<version>/**        (copied from --from)
++ *   - their kept pages, patch-notes/pages/<version>/**        (copied from --from; the
++ *     html only: their stills and clips go to Cloudflare R2 with media-to-r2.mjs,
++ *     which needs the R2_* settings here, since 22 Oct 2026)
+  * then checks that nothing else changed and that the two data files import
+  * nothing but the PatchNote type (so main never pulls in unreleased code).
+  * The feature code stays on the person's branch until they say push.
+@@ -173,6 +175,20 @@ async function main() {
+     else console.log(`  would copy ${folder}`);
+   }
+ 
++  // 3b. their stills and clips go to Cloudflare R2, never into the repo (22 Oct 2026):
++  // .gitignore keeps new ones out of the repo; the site serves them from R2 (lib/patchNoteMedia.ts).
++  const folders = copies.filter((f) => f.startsWith("pages/")).map((f) => path.posix.dirname(f));
++  const { uploadMedia, mediaUnder } = await import(new URL("./media-to-r2.mjs", import.meta.url).href);
++  const media = mediaUnder(ROOT, folders);
++  if (media.length) {
++    if (FROM !== "HEAD") console.log(`  note: stills are read from this checkout (${ROOT}), not from ${FROM}`);
++    const up = await uploadMedia({ root: ROOT, folders, dry: DRY });
++    if (!up.ok) {
++      throw new Error(`${media.length} stills/clips need to go to Cloudflare R2, but this computer has no R2 settings (${up.missing.join(", ")}). ` +
++        "Add R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and R2_BUCKET (the same values as Vercel) to this environment's secrets, then run again.");
++    }
++  }
++
+   if (DRY) {
+     console.log(`DRY RUN: would add ${added.length ? added.join(", ") : "nothing"}${replaced.length ? `, replace ${replaced.join(", ")}` : ""}; pages: ${copies.join(", ") || "none"}`);
+     return;
+-- 
+2.43.0
+

@@ -1,0 +1,17 @@
+diff --git a/lib/star/hiddenMatch.ts b/lib/star/hiddenMatch.ts
+index 5458205e..76f28025 100644
+--- a/lib/star/hiddenMatch.ts
++++ b/lib/star/hiddenMatch.ts
+@@ -1115,6 +1115,12 @@ function tickMinute(
+       // endOfMove already gave them the ball; the recycle can win it back.
+       state.possession = "user";
+       flowEndOfMove(state, cornerGoal, "user", clamp1(q + h), rng);
++      // A second ball won after YOUR miss is won on the edge of their box, not
++      // back in midfield (22 Oct 2026, Harry: "barely any highlights"). Sent back
++      // to midfield, piece 4 cost you 3-4% of your chances (1,500 matches a
++      // side, Match flow New: even 6.47 -> 6.29, stronger 7.92 -> 7.61); won on
++      // the edge they are back (6.46, 7.84). scripts/star-sandbox/highlights-measure.mts.
++      if (state.possession === "user") state.zone = "attacking";
+     }
+   }
+   // The lane walks every tick; the transition read needs to know how long ago

@@ -1,0 +1,16 @@
+400 served chances, 313 with a build-up · 5805 ms
+ALL          n  313 · 3.18 s (p10 2.1, p90 4.2) · passes 2.35 · ball travels 37.9 m · move from 25.9 m · ball off screen 0.00% (worst 0.0%) · fastest man p50 7.9 p99 8.6 max 8.7 m/s (over 9: 0) · offside 23 · with problems 0
+open play    n  313 · 3.18 s (p10 2.1, p90 4.2) · passes 2.35 · ball travels 37.9 m · move from 25.9 m · ball off screen 0.00% (worst 0.0%) · fastest man p50 7.9 p99 8.6 max 8.7 m/s (over 9: 0) · offside 23 · with problems 0
+carry        n   94 · 2.87 s (p10 1.9, p90 3.8) · passes 1.79 · ball travels 22.9 m · move from 20.9 m · ball off screen 0.00% (worst 0.0%) · fastest man p50 7.9 p99 8.5 max 8.5 m/s (over 9: 0) · offside 9 · with problems 0
+tiki         n   94 · 3.73 s (p10 3.0, p90 4.5) · passes 3.91 · ball travels 46.4 m · move from 22.0 m · ball off screen 0.00% (worst 0.0%) · fastest man p50 8.0 p99 8.6 max 8.6 m/s (over 9: 0) · offside 12 · with problems 0
+long         n  125 · 3.00 s (p10 2.0, p90 4.0) · passes 1.59 · ball travels 42.9 m · move from 32.6 m · ball off screen 0.00% (worst 0.0%) · fastest man p50 7.9 p99 8.6 max 8.7 m/s (over 9: 0) · offside 2 · with problems 0
+mix: carry 30% · tiki 30% · long 40%
+  byline_cross     14 · 2.64 s · 30.9 m · carry 5 tiki 0 long 9
+  tight_angle      31 · 3.36 s · 37.0 m · carry 8 tiki 12 long 11
+  volley           54 · 3.43 s · 46.2 m · carry 8 tiki 14 long 32
+  header           51 · 3.40 s · 45.3 m · carry 12 tiki 12 long 27
+  long_range       47 · 2.60 s · 27.8 m · carry 24 tiki 14 long 9
+  cutback          51 · 3.52 s · 36.5 m · carry 18 tiki 14 long 19
+  buildup          28 · 2.93 s · 37.4 m · carry 8 tiki 12 long 8
+  midfield_pass    25 · 2.72 s · 33.6 m · carry 7 tiki 11 long 7
+  one_on_one       12 · 3.68 s · 35.7 m · carry 4 tiki 5 long 3
