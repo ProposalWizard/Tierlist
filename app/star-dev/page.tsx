@@ -5069,7 +5069,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const seen = (...keys: string[]) => () => setCareer(c => (c ? keys.reduce((acc, k) => markSeen(acc, k), c) : c));
     // v0.25: energy explained here, at the very start; then "You've got a game
     // today" (game first) — no Skip, so Play is never missed.
-    if (onHome && !hasSeen(career, "tutorial")) return { key: "welcome", steps: welcomeTour(gameFirst(career)), skippable: !gameFirst(career), onDone: seen("tutorial", "help-home", "play-tip") };
+    if (onHome && !hasSeen(career, "tutorial")) return { key: "welcome", steps: welcomeTour(gameFirst(career), nextFixture ? daysToNext(career, nextFixture) : 0), skippable: !gameFirst(career), onDone: seen("tutorial", "help-home", "play-tip") };
     // Training (P2-56, P2-63, P2-65): what it is, each drill, then Power.
     if (onTraining && !hasSeen(career, "help-training")) return { key: "training", steps: TRAINING_TOUR, onDone: seen("help-training") };
     if (onTraining && !gameFirst(career) && career.unlocks.drills === 1 && !hasSeen(career, "drill1-msg")) return { key: "one-more", steps: ONE_MORE_DRILL_TOUR, onDone: seen("drill1-msg") };

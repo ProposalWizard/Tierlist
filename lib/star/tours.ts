@@ -50,15 +50,25 @@ const ENERGY_MODES: TourStep = { target: "energy", text: "In a match you pick Lo
 
 /** A new career's first screen. v0.25 (game first): energy, then "You've got
  *  a game today". No Skip on the last step (P2-55). */
-export function welcomeTour(gameFirst: boolean): TourStep[] {
+/** `daysToGame`: days until the next match, as Home's next-match card counts
+ *  them (HomeHub `daysToNext`). The tip said "today" while the card said
+ *  "2 days" (22 Oct 2026 playtest); it now says what the card says. */
+export function welcomeTour(gameFirst: boolean, daysToGame = 0): TourStep[] {
   return [
     BAR.energy,
     ENERGY_MODES,
     gameFirst
-      ? { target: "nav-play", text: "You've got a game today. Tap Play", press: true }
+      ? { target: "nav-play", text: `${gameWhen(daysToGame)}. Tap Play`, press: true }
       : { target: "nav-training", text: "Go to training", press: true },
   ];
 }
+/** "You've got a game today" only on the day; otherwise when it is. */
+export function gameWhen(days: number): string {
+  if (days <= 0) return "You've got a game today";
+  if (days === 1) return "Your next game is tomorrow";
+  return `Your next game is in ${days} days`;
+}
+
 /** The v0.24 order's welcome (kept for a save part-way through it). */
 export const WELCOME_TOUR: TourStep[] = welcomeTour(false);
 
