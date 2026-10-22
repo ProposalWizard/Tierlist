@@ -1,0 +1,14 @@
+player view · CPU 6× · 390×844 · posts in seed 150
+open (first)     painted 420 ms · posts drawn 4 · longest task while opening 177 ms · still 1194 ms · first video ready 10798 ms
+long tasks 10 s after open: 9 (longest 177 ms, >100ms: 2)
+scroll           {"ms":10628,"steps":82,"height":10244,"longTasks":63,"longest":155,"over100":11,"total":5155}
+open (again)     painted 263 ms · longest 132 ms · first video ready 648 ms
+open (new visit) painted 342 ms · longest 187 ms · first video ready 1378 ms
+errors: Failed to fetch RSC payload for http://localhost:3202/star-highlights-dev. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3202/_next/static/chunks/86096-531b | Failed to fetch RSC payload for http://localhost:3202/tierlists. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3202/_next/static/chunks/86096-531b61d1bc2a62 | Failed to fetch RSC payload for http://localhost:3202/star-gallery-dev. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3202/_next/static/chunks/86096-531b61d | Failed to fetch RSC payload for http://localhost:3202/admin/team. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3202/_next/static/chunks/86096-531b61d1bc2a6 | Failed to fetch RSC payload for http://localhost:3202/blind-rankings. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3202/_next/static/chunks/86096-531b61d1b | club_logos read failed — every badge will fall back to initials: TypeError: Failed to fetch
+JSON {"first":{"painted":420.19999999925494,"posts":4,"video":10797.60000000149,"still":1193.699999999255,"t0":19249.5,"openLongest":177,"lt10s":[177,69,65,75,65,96,161,97,61]},"scroll":{"ms":10628,"steps":82,"height":10244,"longTasks":63,"longest":155,"over100":11,"total":5155},"again":{"painted":262.8999999985099,"posts":4,"video":648.0999999977648,"still":null,"t0":46558.60000000149,"openLongest":132,"lt10s":[132,91,54]},"reload":{"painted":341.6000000014901,"posts":4,"video":1377.5,"still":1021.6999999992549,"t0":18003.599999997765,"openLongest":187,"lt10s":[187,50,61,92,91,179]}}
+BROWSER GONE
