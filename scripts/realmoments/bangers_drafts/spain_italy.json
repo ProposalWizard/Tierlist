@@ -28,7 +28,7 @@
    26.0,
    6.0
   ],
-  "end": 32.5,
+  "end": 31.4,
   "endZ": 0.11,
   "move": [
    [
@@ -94,8 +94,8 @@
   ],
   "source": "Real Madrid club site, anniversary of the 19th Copa del Rey: https://www.realmadrid.com/en-US/news/club/latest-news/eight-years-since-19th-copa-del-rey",
   "source2": "https://www.ibtimes.co.uk/real-madrid-v-barcelona-live-copa-del-rey-final-2014-el-clasico-1445152",
-  "checked": "16 Apr 2014 at Mestalla, 2-1 Real Madrid; Di María opener, Bartra equaliser (~68'), Bale 85'. Coentrão found Bale on the left just inside his own half; Bale knocked it past Bartra, ran outside the touchline, then rolled it under Pinto.",
-  "note": "Neutral venue; Barcelona taken as the listed home side (Eurosport fixture naming). Left foot from memory. Run route and timings estimated."
+  "checked": "16 Apr 2014 at Mestalla, 2-1 Real Madrid; Di María opener, Bartra equaliser (~68'), Bale 85'. Coentrão found Bale on the left just inside his own half; Bale knocked it past Bartra, ran outside the touchline, then rolled it under Pinto. | Pass 2: Coentrão's ball down the left, Bale went off the pitch round Bartra, 85', 1-1 before (Bartra 65'); reports say he slotted inside Pinto's near post / under him.",
+  "note": "end moved 32.5 -> 31.4 (near post, shooter's left) per reports. Left foot not stated in sources found (from memory, very likely). Run timings estimated."
  },
  {
   "id": "bg-messi-athletic-2015",
@@ -118,7 +118,7 @@
   ],
   "minute": 20,
   "period": "1H",
-  "keeper": "Gorka Iraizoz",
+  "keeper": "Iago Herrerín",
   "body": "Left Foot",
   "type": "Open Play",
   "technique": "solo run, low near-post finish",
@@ -177,8 +177,8 @@
   ],
   "source": "Wikipedia, 2015 Copa del Rey final: https://en.wikipedia.org/wiki/2015_Copa_del_Rey_final",
   "source2": "https://www.eurosport.co.uk/football/la-liga/2011-2012/the-world-reacts-to-lionel-messi-s-incredible-copa-del-rey-goal_sto4761364/story.shtml",
-  "checked": "30 May 2015 at Camp Nou, Barcelona won 3-1 (Messi 20' and 74', Neymar, Williams). Opener: Messi from the right flank near halfway, past several players incl. Balenziaga, switched feet past Laporte, low left-foot finish at the near post from ~10 yards.",
-  "note": "Iraizoz as Athletic keeper and Athletic as the listed home side are from memory (search did not confirm). One source says the run started on the left; most say right. Route estimated."
+  "checked": "30 May 2015 at Camp Nou, Barcelona won 3-1 (Messi 20' and 74', Neymar, Williams). Opener: Messi from the right flank near halfway, past several players incl. Balenziaga, switched feet past Laporte, low left-foot finish at the near post from ~10 yards. | Pass 2: 20', Camp Nou, run from the right flank near halfway, low left-foot shot inside the near post from ~10 yards (Eurosport, SI). Keeper was Iago Herrerín (SI), not Iraizoz.",
+  "note": "Fixed keeper Iraizoz -> Herrerín. Athletic listed first as in the Wikipedia final article. Route estimated."
  },
  {
   "id": "bg-messi-realmadrid-2017",
@@ -275,8 +275,8 @@
   ],
   "source": "Inquirer / AP report: https://sports.inquirer.net/?p=246124",
   "source2": "https://www.readbarcelona.com/features/otd-barcelona-messi-el-clasico-shirt-celebration-2017-real-madrid/",
-  "checked": "23 Apr 2017 at the Bernabéu, 3-2 Barcelona; 90+2'; Sergi Roberto's run from defence, Alba's low ball across, Messi one-touch left foot into the bottom corner past Navas; his 500th Barça goal.",
-  "note": "Which bottom corner is from memory (set to the shooter's right). André Gomes's link pass from memory; timings estimated."
+  "checked": "23 Apr 2017 at the Bernabéu, 3-2 Barcelona; 90+2'; Sergi Roberto's run from defence, Alba's low ball across, Messi one-touch left foot into the bottom corner past Navas; his 500th Barça goal. | Pass 2: 92', last kick, Sergi Roberto run, Alba cut-back, 3-2 at the Bernabéu.",
+  "note": "Corner disputed: Sky Sports says bottom right (kept, end 36.8), Eurosport commentary says bottom left. André Gomes link pass not confirmed by search."
  },
  {
   "id": "bg-messi-betis-2019",
@@ -337,7 +337,7 @@
      18.0
     ],
     "Lionel Messi",
-    "Luis Suárez",
+    "Ivan Rakitić",
     0
    ],
    [
@@ -351,15 +351,15 @@
      39.0,
      16.0
     ],
-    "Luis Suárez",
+    "Ivan Rakitić",
     "Lionel Messi",
     0
    ]
   ],
   "source": "Sky Sports report: https://www.skysports.com/football/real-betis-vs-barcelona/report/399579",
   "source2": "https://www.eurosport.com/football/liga/2018-2019/football-news-incredible-lionel-messi-hat-trick-earns-standing-ovation-from-real-betis-fans_sto7190562/story.shtml",
-  "checked": "17 Mar 2019 at the Villamarín, Betis 1-4 Barcelona (Messi 18', 45', 85'; Suárez 63'; Loren 82'). Third: first-time chip over Pau López, 85'; Betis fans applauded. Puskás 2019 nominee.",
-  "note": "The one-two with Suárez and the exact spot (just inside the box, right of centre) are from memory."
+  "checked": "17 Mar 2019 at the Villamarín, Betis 1-4 Barcelona (Messi 18', 45', 85'; Suárez 63'; Loren 82'). Third: first-time chip over Pau López, 85'; Betis fans applauded. Puskás 2019 nominee. | Pass 2: 85', 1-3 -> 1-4, first-time chip over Pau López from the edge of the box after a one-two with Rakitić (FC Barcelona report, ESPN).",
+  "note": "Fixed the one-two partner Suárez -> Rakitić. Height under the bar (endZ 1.9) and side estimated."
  },
  {
   "id": "bg-neymar-villarreal-2015",
@@ -426,8 +426,8 @@
   ],
   "source": "Eurosport report: https://www.eurosport.com/football/liga/2015-2016/barcelona-v-villarreal-live_sto4983832/story.shtml",
   "source2": "https://www.dawn.com/news/amp/1218532",
-  "checked": "8 Nov 2015 at Camp Nou, 3-0 (Neymar 60', 85'; Suárez 70'). From Suárez's cross Neymar heel-flicked it over his head (and Jaume Costa) and volleyed low past Areola. Puskás 2016 nominee.",
-  "note": "Right foot and the exact spot (left side of the box) from memory; low finish confirmed, side estimated."
+  "checked": "8 Nov 2015 at Camp Nou, 3-0 (Neymar 60', 85'; Suárez 70'). From Suárez's cross Neymar heel-flicked it over his head (and Jaume Costa) and volleyed low past Areola. Puskás 2016 nominee. | Pass 2: 85', Suárez drove down the left and chipped a cross; Neymar flicked it over Jaume Costa and volleyed past Areola. FIFA: left-foot flick, right-foot volley (kept Right Foot).",
+  "note": "Spot and corner estimated (low finish). One source says the flick was right-footed."
  },
  {
   "id": "bg-yamal-espanyol-2025",
@@ -462,26 +462,26 @@
   "endZ": 1.8,
   "move": [
    [
-    4.2,
-    "P",
+    3.5,
+    "C",
     [
-     38.0,
-     34.0
+     60.0,
+     30.0
     ],
     [
-     56.0,
-     24.0
+     54.0,
+     23.0
     ],
-    "Dani Olmo",
     "Lamine Yamal",
+    null,
     0
    ],
    [
-    2.6,
+    1.6,
     "C",
     [
-     56.0,
-     24.0
+     54.0,
+     23.0
     ],
     [
      45.0,
@@ -494,8 +494,8 @@
   ],
   "source": "AP via NY1: https://ny1.com/nyc/all-boroughs/ap-top-news/2025/05/15/barcelona-clinches-28th-la-liga-title-after-yamal-scores-in-win-at-espanyol",
   "source2": "https://www.laliga.com/en-US/match/temporada-2024-2025-laliga-ea-sports-rcd-espanyol-fc-barcelona-36",
-  "checked": "15 May 2025, Espanyol 0-2 Barcelona, title clinched; Yamal 53' cut in from the right, past two, left-foot curler into the corner past Joan García; Fermín 90+5'. Puskás nominee.",
-  "note": "Olmo assist from one stats source only. Top corner height estimated ('into the corner')."
+  "checked": "15 May 2025, Espanyol 0-2 Barcelona, title clinched; Yamal 53' cut in from the right, past two, left-foot curler into the corner past Joan García; Fermín 90+5'. Puskás nominee. | Pass 2: 53', 0-0 before, came in off the right flank, slid past two defenders on the edge of the box, left-foot curler into the top corner (AP, Ahram).",
+  "note": "Removed the Olmo pass: no source names a provider, reports describe it as his own dribble, so the move is now two carries in from the right. Corner side inferred from left-footer cutting in from the right."
  },
  {
   "id": "bg-bellingham-barcelona-2023",
@@ -547,8 +547,8 @@
   ],
   "source": "Sky Sports: https://www.skysports.com/football/barcelona-vs-r-madrid/485598",
   "source2": "https://www.beinsports.com/en-mena/football/la-liga/articles-video/barcelona-1-2-real-madrid-highlights-2023-10-28",
-  "checked": "28 Oct 2023 at Montjuïc, Barcelona 1-2 Real Madrid; Gündoğan 6', Bellingham 68' strike from range into the upper-left corner, then the 90+2' winner.",
-  "note": "Build-up not confirmed (a loose ball off a clearance, from memory), so the move is just the ball dropping to him. Spot estimated."
+  "checked": "28 Oct 2023 at Montjuïc, Barcelona 1-2 Real Madrid; Gündoğan 6', Bellingham 68' strike from range into the upper-left corner, then the 90+2' winner. | Pass 2: 68', 1-0 -> 1-1 (Gündoğan 6'), right foot, from about 25 m (Real Madrid report).",
+  "note": "Corner disputed: Reuters says upper left (kept, end 30.8), another report says top right. Build-up not confirmed; spot estimated."
  },
  {
   "id": "bg-higuain-frosinone-2016",
@@ -571,13 +571,13 @@
   ],
   "minute": 71,
   "period": "2H",
-  "keeper": "Nicola Leali",
+  "keeper": "Massimo Zappino",
   "body": "Right Foot",
   "type": "Open Play",
   "technique": "overhead kick",
   "ball": [
    35.0,
-   13.0
+   17.0
   ],
   "end": 33.0,
   "endZ": 1.2,
@@ -587,11 +587,11 @@
     "C",
     [
      35.0,
-     14.0
+     18.0
     ],
     [
      35.0,
-     13.0
+     17.0
     ],
     "Gonzalo Higuaín",
     null,
@@ -600,8 +600,8 @@
   ],
   "source": "Eurosport: https://www.eurosport.com/football/serie-a/2015-2016/gonzalo-higuain-breaks-66-year-serie-a-scoring-record_sto5572454/story.shtml",
   "source2": "https://www.ilpost.it/2016/05/14/higuain-record-gol-serie-a/",
-  "checked": "14 May 2016, Napoli 4-0 Frosinone (Hamšík, Higuaín 52', 62', 71'). Third: chested down with his back to goal, bicycle kick; 36th league goal, beating Nordahl's 35.",
-  "note": "Who played the ball in, the spot and the corner are not confirmed; move is only the chest control. Leali as keeper from memory."
+  "checked": "14 May 2016, Napoli 4-0 Frosinone (Hamšík, Higuaín 52', 62', 71'). Third: chested down with his back to goal, bicycle kick; 36th league goal, beating Nordahl's 35. | Pass 2: 71', third of his hat-trick, 3-0 -> 4-0, chest control with back to goal then overhead kick; FourFourTwo says from 20 yards, looping over the keeper.",
+  "note": "Fixed keeper Leali -> Massimo Zappino (the Frosinone keeper named in reports of this match). Spot moved y 13 -> 17 per the '20 yards' report (only one source gives a distance). Passer and corner not confirmed."
  },
  {
   "id": "bg-ronaldo-sampdoria-2019",
@@ -668,8 +668,8 @@
   ],
   "source": "NBC Sports: https://nbcsports.com/soccer/news/towering-ronaldo-header-sees-juventus-past-sampdoria",
   "source2": "https://www.sampdoria.it/en/news-en-2/team-en-2/2019/12/19/samp-undeservedly-beaten-caprari-scores-but-juve-win-in-marassi/",
-  "checked": "18 Dec 2019 at Marassi, Sampdoria 1-2 Juventus; Dybala 19', Caprari 35', Ronaldo just before half-time heading Alex Sandro's cross from the left, contact at ~2.56 m.",
-  "note": "Minute given as 45 (just before the break). Header spot and placement estimated."
+  "checked": "18 Dec 2019 at Marassi, Sampdoria 1-2 Juventus; Dybala 19', Caprari 35', Ronaldo just before half-time heading Alex Sandro's cross from the left, contact at ~2.56 m. | Pass 2: 45', 1-1 -> 1-2, header from Alex Sandro's cross met at 2.56 m, past Audero (Sky Italia, Daily Star).",
+  "note": "Header spot and placement estimated."
  },
  {
   "id": "bg-hernandez-atalanta-2022",
@@ -751,8 +751,8 @@
   ],
   "source": "AC Milan, best goal 2021/22: https://www.acmilan.com/en/news/articles/awards/2022-07-03/best-goal-2021-22-theo-wins",
   "source2": "https://www.espn.com.au/football/report/_/gameId/614556",
-  "checked": "15 May 2022 at San Siro, Milan 2-0 Atalanta (Leão 56/57', Hernández 75'). Picked up near his own box, ran the length past several, finished low into the bottom-right corner past Musso.",
-  "note": "Left foot not confirmed by a source (from memory). Route estimated."
+  "checked": "15 May 2022 at San Siro, Milan 2-0 Atalanta (Leão 56/57', Hernández 75'). Picked up near his own box, ran the length past several, finished low into the bottom-right corner past Musso. | Pass 2: 75', 1-0 -> 2-0 (Leão first), ~95-100 m run from near his own box after a Krunić challenge, finished back across his body low into the bottom right corner (Yahoo, Sky Italia).",
+  "note": "Foot not stated in any source; Left Foot kept (across the body into the bottom right from the left fits). Route estimated."
  },
  {
   "id": "bg-kvaratskhelia-atalanta-2023",
@@ -780,8 +780,8 @@
   "type": "Open Play",
   "technique": "dribble, finish into the roof of the net",
   "ball": [
-   47.0,
-   8.0
+   42.0,
+   8.5
   ],
   "end": 37.2,
   "endZ": 2.0,
@@ -839,8 +839,8 @@
      10.0
     ],
     [
-     47.0,
-     8.0
+     42.0,
+     8.5
     ],
     "Khvicha Kvaratskhelia",
     null,
@@ -849,8 +849,8 @@
   ],
   "source": "Football Italia: https://football-italia.net/serie-a-napoli-2-0-atalanta-kvaratskhelia-makes-defenders-dizzy/",
   "source2": "https://www.espn.in/football/report/_/gameId/644875",
-  "checked": "11 Mar 2023 at the Maradona, Napoli 2-0 Atalanta (Kvaratskhelia 60', Rrahmani 77'). Anguissa won it, Osimhen released him, he beat several defenders and finished into the roof of the net past Musso.",
-  "note": "Side of the box (right, tight angle) and the right foot are from memory; sources only say he cut inside and finished from close range."
+  "checked": "11 Mar 2023 at the Maradona, Napoli 2-0 Atalanta (Kvaratskhelia 60', Rrahmani 77'). Anguissa won it, Osimhen released him, he beat several defenders and finished into the roof of the net past Musso. | Pass 2: 60', 0-0 -> 1-0, fed by Osimhen, slalom past three defenders into the box, right foot into the roof of the net from 12 yards (Football Italia, The Peninsula).",
+  "note": "Spot moved [47,8] -> [42,8.5]: reports say 12 yards and no source says tight angle. Side of the box and corner still estimated."
  },
  {
   "id": "bg-dimarco-frosinone-2023",
@@ -902,8 +902,8 @@
   ],
   "source": "Inter.it, Dimarco interview: https://inter.it/en/news/player-interview-inter-frosinone-2023-dimarco",
   "source2": "https://www.cbssports.com/soccer/news/watch-inters-federico-dimarco-scores-ridiculous-golazo-from-near-midfield-against-frosinone",
-  "checked": "12 Nov 2023 (not October) at San Siro, Inter 2-0 Frosinone. About two minutes before half-time Dimarco, on the left near halfway, hit it first time from ~56 m over Turati who was off his line; Mkhitaryan assist. Puskás nominee.",
-  "note": "Spot set ~56 m out on the left, just inside Frosinone's half. Minute 43 from 'two minutes before half-time'."
+  "checked": "12 Nov 2023 (not October) at San Siro, Inter 2-0 Frosinone. About two minutes before half-time Dimarco, on the left near halfway, hit it first time from ~56 m over Turati who was off his line; Mkhitaryan assist. Puskás nominee. | Pass 2: 43' (two minutes before half-time), 0-0 -> 1-0, first-time from near the left touchline around halfway after Mkhitaryan released him, over Turati.",
+  "note": "Mkhitaryan pass named by one outlet only. Exact spot and where it dropped estimated."
  },
  {
   "id": "bg-quagliarella-napoli-2018",
@@ -935,7 +935,7 @@
    12.0
   ],
   "end": 32.0,
-  "endZ": 1.0,
+  "endZ": 1.9,
   "move": [
    [
     2.5,
@@ -970,8 +970,8 @@
   ],
   "source": "Sampdoria club report: https://www.sampdoria.it/en/news-en-2/team-en-2/2018/09/03/defrel-and-quagliarella-inspire-samp-to-memorable-win-against-napoli/",
   "source2": "https://www.ilpost.it/flashes/fabio-quagliarella-gol-sampdoria-napoli/",
-  "checked": "2 Sep 2018 at Marassi, Sampdoria 3-0 Napoli (Defrel 11', 32'; Quagliarella 75'). Bereszyński's cross from the right came between his legs; right-heel volley past Koulibaly and Ospina. Puskás 2019 finalist.",
-  "note": "Spot (around the penalty spot) and corner estimated."
+  "checked": "2 Sep 2018 at Marassi, Sampdoria 3-0 Napoli (Defrel 11', 32'; Quagliarella 75'). Bereszyński's cross from the right came between his legs; right-heel volley past Koulibaly and Ospina. Puskás 2019 finalist. | Pass 2: 75' (Sky Italia, Reuters), 2-0 -> 3-0 after Defrel's two, Bereszyński cross from the right, jumping backheel from about 12 yards into the top corner (FIFA).",
+  "note": "endZ raised 1.0 -> 1.9 (FIFA: top corner). Which corner estimated; Reuters calls the cross low."
  },
  {
   "id": "bg-totti-lazio-2015",
@@ -1038,8 +1038,8 @@
   ],
   "source": "ESPN report: https://www.espn.com/soccer/report/_/gameId/403664",
   "source2": "https://www.ilpost.it/2015/01/11/roma-lazio-2-2/",
-  "checked": "11 Jan 2015 derby, Roma 2-2 Lazio (Mauri, Felipe Anderson; Totti 48', 64'). Second: Holebas's cross to the far post, Totti hooked it in acrobatically past Marchetti, then the selfie.",
-  "note": "Holebas crossing from the left inferred (left-back); spot and placement estimated."
+  "checked": "11 Jan 2015 derby, Roma 2-2 Lazio (Mauri, Felipe Anderson; Totti 48', 64'). Second: Holebas's cross to the far post, Totti hooked it in acrobatically past Marchetti, then the selfie. | Pass 2: 64', 1-2 -> 2-2, acrobatic hooked finish from Holebas's cross near the post (Il Post, Eurosport), then the selfie.",
+  "note": "Spot and placement estimated."
  },
  {
   "id": "bg-leao-sassuolo-2020",
@@ -1121,7 +1121,7 @@
   ],
   "source": "Guinness World Records: https://www.guinnessworldrecords.com/world-records/411292-fastest-goal-scored-in-a-serie-a-football-soccer-match",
   "source2": "https://www.acmilan.com/en/news/articles/history/2024-04-12/time-machine-leao-in-sassuolo-v-ac-milan",
-  "checked": "20 Dec 2020, Sassuolo 1-2 Milan; Leão scored after 6.76 s (record). Kick-off routine: Çalhanoğlu surged forward and slipped him in; two touches near the edge of the box, shot at the near post past Consigli.",
+  "checked": "20 Dec 2020, Sassuolo 1-2 Milan; Leão scored after 6.76 s (record). Kick-off routine: Çalhanoğlu surged forward and slipped him in; two touches near the edge of the box, shot at the near post past Consigli. | Pass 2: kick-off move, Çalhanoğlu found Leão, angled drive past Consigli after ~6 s (6.76 s Guinness), Milan won 2-1.",
   "note": "Leão on the left channel and right foot from memory. Kick-off move simplified."
  }
 ]

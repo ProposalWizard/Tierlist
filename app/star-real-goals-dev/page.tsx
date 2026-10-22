@@ -38,10 +38,10 @@ import {
   joinGoals, buildLevels, levelOpen, totalStars, recordResult, loadProgress, saveProgress,
   accuracyPct, starsFor, realEnd, scenarioForGoal, viewForGoal, realMoveLeadin, moveWindow, realBallKeys,
   scorerShort, concededBy, minuteOf, knownAs, sideKits, stageOf, isTournament, LEAGUES, FEATURED, STAR_TWO, STAR_THREE,
-  type RealGoal, type RgFile, type Progress, type Stage, type Level,
+  type RealGoal, type RgFile, type Progress, type Stage, type Level, type LeagueFile,
 } from "@/lib/star/realGoals";
 import {
-  PATHS, pathOf, buildPath, pathStars, pathMaxStars, nextLevelOf, isBanger, loadPathProgress, savePathProgress,
+  PATHS, pathOf, buildPath, fileOfPath, pathStars, pathMaxStars, nextLevelOf, isBanger, loadPathProgress, savePathProgress,
   type PathId, type RgPath, type PathProgress,
 } from "@/lib/star/realGoalPaths";
 import {
@@ -459,9 +459,15 @@ function DailyCard({ goal, date, daily, onPlay }: { goal: RealGoal | null; date:
 export default function RealGoalsDev() {
   const [goals, setGoals] = useState<RealGoal[] | null>(null);
   // The 2017/18 league goals (Leo, 20 Oct 2026) and the Bangers (22 Oct 2026): loaded after the World Cup / Euro ones.
-  const [leagueGoals, setLeagueGoals] = useState<RealGoal[]>([]);
+  const [leagueByFile, setLeagueByFile] = useState<Partial<Record<LeagueFile, RealGoal[]>>>({});
   const [bangers, setBangers] = useState<RealGoal[]>([]);
-  const [leaguesLoading, setLeaguesLoading] = useState(true);
+  // The five league files (3.7 MB) load only when something needs them: a
+  // league path, Worldies, the All goals list, or a daily goal from a league.
+  // At a 6x slower phone CPU they held the home back 1.4 s (22 Oct 2026).
+  const [wantFiles, setWantFiles] = useState<LeagueFile[]>([]);
+  const asked = useRef(new Set<LeagueFile>());
+  const [bangersLoaded, setBangersLoaded] = useState(false);
+  const [playParam, setPlayParam] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [tab, setTabState] = useState<"levels" | "all">("levels");
   const [pathId, setPathIdState] = useState<PathId | null>(null);
@@ -481,14 +487,7 @@ export default function RealGoalsDev() {
     Promise.all([fetchRealFile<WyscoutShotFile>("shots"), fetchRealFile<RgFile>("goals")])
       .then(([s, g]) => setGoals(joinGoals(s.shots, g.goals)))
       .catch((e) => setError(String(e)));
-    Promise.allSettled(LEAGUES.map((l) => fetchRealFile<RgFile & WyscoutShotFile>(l.file)))
-      .then((rs) => {
-        const out: RealGoal[] = [];
-        for (const r of rs) if (r.status === "fulfilled") out.push(...joinGoals(r.value.shots, r.value.goals));
-        setLeagueGoals(out);
-      })
-      .finally(() => setLeaguesLoading(false));
-    fetchRealFile<RgFile & WyscoutShotFile>("bangers").then((b) => setBangers(joinGoals(b.shots, b.goals))).catch(() => setBangers([]));
+    fetchRealFile<RgFile & WyscoutShotFile>("bangers").then((b) => setBangers(joinGoals(b.shots, b.goals))).catch(() => setBangers([])).finally(() => setBangersLoaded(true));
     const q = new URLSearchParams(window.location.search);
     let saved: string | null = null, savedPath: string | null = null;
     try { saved = localStorage.getItem(TAB_KEY); savedPath = localStorage.getItem(PATH_KEY); } catch { /* private */ }
@@ -496,18 +495,34 @@ export default function RealGoalsDev() {
     const wantPath = q.get("path") ?? savedPath;
     if (wantPath && pathOf(wantPath)) setPathIdState(wantPath as PathId);
     if (q.get("fix") === "1") setFixOpen(true);
+    setPlayParam(q.get("play"));
     // A new UTC day while the page is open: the daily card moves on.
     const t = window.setInterval(() => setToday(utcDate(Date.now())), 60_000);
     return () => window.clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    for (const f of wantFiles) {
+      if (asked.current.has(f)) continue;
+      asked.current.add(f);
+      fetchRealFile<RgFile & WyscoutShotFile>(f)
+        .then((r) => joinGoals(r.shots, r.goals))
+        .catch(() => [] as RealGoal[])
+        .then((gs) => setLeagueByFile((m) => ({ ...m, [f]: gs })));
+    }
+  }, [wantFiles]);
+  const leagueGoals = useMemo(() => LEAGUES.flatMap((l) => leagueByFile[l.file] ?? []), [leagueByFile]);
+  const allLeagues = LEAGUES.every((l) => leagueByFile[l.file]);
+  const leaguesLoading = !allLeagues;
+
   const everyGoal = useMemo(() => (goals ? [...bangers, ...goals, ...leagueGoals] : []), [goals, leagueGoals, bangers]);
   // Every path's stages. The World Cup path is exactly the old level map (its stars stay where they are).
   const paths = useMemo(() => {
     const m = new Map<PathId, Stage[]>();
-    for (const p of PATHS) m.set(p.id, buildPath(p.id, everyGoal));
+    // Worldies need all five leagues; a league path only its own file.
+    for (const p of PATHS) m.set(p.id, p.id === "worldies" && !allLeagues ? [] : buildPath(p.id, everyGoal));
     return m;
-  }, [everyGoal]);
+  }, [everyGoal, allLeagues]);
   const progFor = useCallback((id: PathId): Progress => (id === "wc" ? progress : pathProg[id] ?? {}), [progress, pathProg]);
   const starsFn = useCallback((id: PathId) => (id === "wc" ? totalStars : (p: Progress) => pathStars(paths.get(id) ?? [], p)), [paths]);
 
@@ -518,6 +533,14 @@ export default function RealGoalsDev() {
 
   const dailyId = dailyGoalId(today);
   const dailyGoal = useMemo(() => everyGoal.find((g) => g.id === dailyId) ?? null, [everyGoal, dailyId]);
+  const needAll = tab === "all" || pathId === "worldies"
+    || (goals !== null && bangersLoaded && !dailyGoal && !!dailyId)
+    || (!!playParam && goals !== null && bangersLoaded && !everyGoal.some((g) => g.id === playParam));
+  const pathFile = pathId ? (fileOfPath(pathId) as LeagueFile | null) : null;
+  useEffect(() => {
+    const want = needAll ? LEAGUES.map((l) => l.file) : pathFile ? [pathFile] : [];
+    if (want.some((f) => !asked.current.has(f))) setWantFiles(want);
+  }, [needAll, pathFile]);
 
   // ?play=<id> opens a goal straight away (for checking one by eye).
   useEffect(() => {
@@ -547,8 +570,8 @@ export default function RealGoalsDev() {
     [pathId, stages, pathProgress, starsFn],
   );
   const play = (goal: RealGoal, from: From) => { setPlaying({ goal, from }); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const grand = PATHS.reduce((a, p) => a + starsFn(p.id)(progFor(p.id)), 0);
-  const grandMax = PATHS.reduce((a, p) => a + pathMaxStars(paths.get(p.id) ?? []), 0);
+  const grand = PATHS.reduce((a, p) => a + ((paths.get(p.id) ?? []).length ? starsFn(p.id)(progFor(p.id)) : totalStars(progFor(p.id))), 0);
+  const grandMax = PATHS.reduce((a, p) => a + ((paths.get(p.id) ?? []).length ? pathMaxStars(paths.get(p.id)!) : p.id === "bangers" ? 0 : 150), 0);
   const curPath = pathId ? pathOf(pathId)! : null;
 
   return (
@@ -587,8 +610,11 @@ export default function RealGoalsDev() {
                 <div className="rg-tiles" data-path-home>
                   {PATHS.map((p) => {
                     const st = paths.get(p.id) ?? [];
-                    return <PathTile key={p.id} path={p} got={starsFn(p.id)(progFor(p.id))} max={pathMaxStars(st)}
-                      loading={p.id === "wc" ? false : p.id === "bangers" ? !bangers.length && leaguesLoading : leaguesLoading}
+                    // Not loaded yet: the stars come straight from the path's own store (only its levels write there).
+                    const got = st.length ? starsFn(p.id)(progFor(p.id)) : totalStars(progFor(p.id));
+                    const max = st.length ? pathMaxStars(st) : p.id === "bangers" ? 0 : 150;
+                    return <PathTile key={p.id} path={p} got={got} max={max}
+                      loading={p.id === "bangers" ? !bangersLoaded : false}
                       onOpen={() => { setPathId(p.id); window.scrollTo({ top: 0 }); }} />;
                   })}
                 </div>
@@ -600,7 +626,7 @@ export default function RealGoalsDev() {
                   <button className="rg-back" onClick={() => setPathId(null)} data-back-paths>‹ All paths</button>
                   <h2 style={{ borderColor: curPath.colours[1] }}>{curPath.name}</h2>
                 </div>
-                {!stages.length && <Note>{leaguesLoading ? "Loading the goals…" : "No goals for this path yet."}</Note>}
+                {!stages.length && <Note>{(curPath.id === "bangers" ? !bangersLoaded : curPath.id === "worldies" ? !allLeagues : !leagueByFile[fileOfPath(curPath.id) as LeagueFile]) ? "Loading the goals…" : "No goals for this path yet."}</Note>}
                 {!playing && heroLevel && <Hero level={heroLevel} progress={pathProgress} onPlay={() => play(heroLevel.goal, { kind: "path", path: curPath.id, level: heroLevel })} />}
                 <LevelMap stages={stages} progress={pathProgress} stars={starsFn(curPath.id)} onPick={(lv) => play(lv.goal, { kind: "path", path: curPath.id, level: lv })} />
               </div>

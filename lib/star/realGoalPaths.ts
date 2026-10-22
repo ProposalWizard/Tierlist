@@ -55,6 +55,11 @@ export const PATHS: RgPath[] = [
 ];
 export const pathOf = (id: string): RgPath | undefined => PATHS.find((p) => p.id === id);
 
+/** The league file a league path needs ("league-england" for "pl"), or null. */
+export function fileOfPath(id: PathId): string | null {
+  return Object.keys(LEAGUE_PATH).find((f) => LEAGUE_PATH[f] === id) ?? null;
+}
+
 /** The league comp each league path plays ("Premier League 2017/18"). */
 export function compOfPath(id: PathId): string | null {
   const l = LEAGUES.find((q) => LEAGUE_PATH[q.file] === id);

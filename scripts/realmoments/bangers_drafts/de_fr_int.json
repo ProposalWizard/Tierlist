@@ -64,8 +64,8 @@
   ],
   "source": "Al Jazeera, 22 Sep 2015: https://www.aljazeera.com/sports/2015/9/22/bayerns-lewandowski-scores-five-goals-in-nine-minutes",
   "source2": "FourFourTwo report: https://www.fourfourtwo.com/news/bayern-munich-5-wolfsburg-1-super-sub-lewandowski-makes-bundesliga-history",
-  "checked": "Half-time sub; Caligiuri had put Wolfsburg 1-0 up; five goals 51-60 min; fifth on 60 min, 4-1 to 5-1, acrobatic volley from a Götze cross past Benaglio.",
-  "note": "Side of Götze's cross (one report says right) and the foot/corner are from memory, not confirmed in text; placement estimated."
+  "checked": "Half-time sub; Caligiuri had put Wolfsburg 1-0 up; five goals 51-60 min; fifth on 60 min, 4-1 to 5-1, acrobatic volley from a Götze cross past Benaglio. | Pass 2: 5th goal ~60' (one report 61'), 4-1 -> 5-1, volley on the full from Götze's cross from the right (FC Bayern report).",
+  "note": "Corner and foot not stated in sources; placement estimated."
  },
  {
   "id": "bg-lewandowski-augsburg-2021",
@@ -147,8 +147,8 @@
   ],
   "source": "FC Bayern match report, 22 May 2021: https://fcbayern.com/en/news/matchreports/2021/05/match-report-bundesliga-md34-fc-bayern-v-fc-augsburg-220521",
   "source2": "ESPN match report: https://www.espn.com/soccer/report/_/gameId/576852",
-  "checked": "Last league game; goals Gouweleeuw og 9, Gnabry 22, Kimmich 33, Coman 43, Hahn 67, Niederlechner 72, Lewandowski 90 (4-2 to 5-2); Gikiewicz could not hold a Sané shot, Lewandowski took it past him and finished; ESPN: right foot, centre of box, centre of goal.",
-  "note": "The 'P' from Sané is really his shot that the keeper parried to Lewandowski; spots estimated."
+  "checked": "Last league game; goals Gouweleeuw og 9, Gnabry 22, Kimmich 33, Coman 43, Hahn 67, Niederlechner 72, Lewandowski 90 (4-2 to 5-2); Gikiewicz could not hold a Sané shot, Lewandowski took it past him and finished; ESPN: right foot, centre of box, centre of goal. | Pass 2: 90', 4-2 -> 5-2, Gikiewicz parried Sané's low shot, Lewandowski picked it up, rounded the keeper and slotted into an empty net (41st goal).",
+  "note": "The 'P' from Sané is really his parried shot; spots estimated."
  },
  {
   "id": "bg-xhaka-bremen-2024",
@@ -215,8 +215,8 @@
   ],
   "source": "Bayer 04 report: https://bayer04.de/en-us/news/bundesliga/werkself-champions-of-germany-with-five-star-victory",
   "source2": "Flashscore/Soccerway: https://www.soccerway.com/news/soccer-bundesliga-bayer-leverkusen-thrash-werder-bremen-to-secure-maiden-bundesliga-title-in-style/ILDR2gfM",
-  "checked": "Boniface pen ~25 min (1-0); Xhaka 60 min, first-time left foot from ~25 m, set up by Boniface (2-0); Wirtz hat-trick; 5-0 sealed first title; Zetterer in goal.",
-  "note": "Where it went in is not given in the reports found; end spot is a guess. Boniface's carry before the lay-off is estimated."
+  "checked": "Boniface pen ~25 min (1-0); Xhaka 60 min, first-time left foot from ~25 m, set up by Boniface (2-0); Wirtz hat-trick; 5-0 sealed first title; Zetterer in goal. | Pass 2: 60', 1-0 -> 2-0, first-time left-foot curler from ~25 yards after Boniface's pass (Planet Sport).",
+  "note": "Corner not given in any report found; end is a guess."
  },
  {
   "id": "bg-kane-darmstadt-2023",
@@ -283,8 +283,8 @@
   ],
   "source": "Flashscore report: https://www.flashscore.com/news/football-bundesliga-kane-scores-from-own-half-as-10-man-bayern-thrash-nine-man-darmstadt/MyLSV6gd/",
   "source2": "90min: https://www.90min.com/posts/harry-kane-scores-inside-own-half-bayern-destroy-darmstadt",
-  "checked": "Kane collected near the centre circle, saw Schuhen off his line and lobbed him from inside his own half; made it 5-0; AP 69th min (CNN 68th); 8-0 final; second of his hat-trick.",
-  "note": "Swap-in for slot 4 (any famous Bundesliga goal). Spot is in his own half (y 54) on purpose. Minute 68 or 69. Build-up passes not confirmed, shown as his own carry."
+  "checked": "Kane collected near the centre circle, saw Schuhen off his line and lobbed him from inside his own half; made it 5-0; AP 69th min (CNN 68th); 8-0 final; second of his hat-trick. | Pass 2: 69' (FC Bayern), made it 5-0 (4-0 before), lobbed Schuhen who was far off his line from just beyond halfway.",
+  "note": "Spot in his own half (y 54) on purpose. Build-up not confirmed, shown as his own carry."
  },
  {
   "id": "bg-benarfa-saintetienne-2015",
@@ -318,6 +318,21 @@
   "end": 30.8,
   "endZ": 0.15,
   "move": [
+   [
+    8.0,
+    "P",
+    [
+     38.0,
+     48.0
+    ],
+    [
+     44.0,
+     42.0
+    ],
+    "Vincent Koziello",
+    "Hatem Ben Arfa",
+    0
+   ],
    [
     6.5,
     "C",
@@ -366,8 +381,8 @@
   ],
   "source": "ESPN report: https://www.espn.com.au/football/report/_/gameId/424671",
   "source2": "Sky Sports: https://www.skysports.com/football/news/11800/10009324",
-  "checked": "Koziello 5, Perrin 19, Ben Arfa 39 and 45+1, Seri 53; solo goal beat several (one report: five) defenders, low across Ruffier from a tight angle into the bottom left corner, on the stroke of half-time (1-2 to 1-3).",
-  "note": "Minute is 45+1 (written 46 to follow the clock rule). Start point and route of the run estimated; right-side tight angle inferred from 'across' + bottom left."
+  "checked": "Koziello 5, Perrin 19, Ben Arfa 39 and 45+1, Seri 53; solo goal beat several (one report: five) defenders, low across Ruffier from a tight angle into the bottom left corner, on the stroke of half-time (1-2 to 1-3). | Pass 2: 45+1', 1-2 -> 1-3 (Koziello 5', Perrin 19', Ben Arfa 39'), assisted by Koziello (ESPN), dribbled past several defenders and shot low across Ruffier from a tight angle (Sky Sports).",
+  "note": "Added Koziello's pass at the start (ESPN credits him). Run start and route estimated."
  },
  {
   "id": "bg-ibrahimovic-bastia-2013",
@@ -434,8 +449,8 @@
   ],
   "source": "Jamaica Observer (AP), 19 Oct 2013: https://www.jamaicaobserver.com/2013/10/19/ibra-scores-twice-as-psg-beat-bastia-4-0/",
   "source2": "Maxifoot report: https://www.maxifoot.fr/football/article-20010.htm",
-  "checked": "10th min, 0-0; Lucas cross from the right hit Ongenda and looped up behind Ibrahimović, who backheeled it in mid-air past Landreau; he scored again minutes later, Cavani two; 4-0.",
-  "note": "Which heel and where it went in not stated; the deflection off Ongenda is folded into Lucas's cross."
+  "checked": "10th min, 0-0; Lucas cross from the right hit Ongenda and looped up behind Ibrahimović, who backheeled it in mid-air past Landreau; he scored again minutes later, Cavani two; 4-0. | Pass 2: 10', 0-0, Lucas's cross deflected off Ongenda and looped behind him, backheel volley in mid-air past Landreau (AP, Maxifoot).",
+  "note": "Which heel and where it went in not stated; the deflection is folded into Lucas's cross."
  },
  {
   "id": "bg-altintop-kazakhstan-2010",
@@ -464,7 +479,7 @@
   "technique": "volley from a corner",
   "ball": [
    32.0,
-   23.0
+   24.5
   ],
   "end": 31.0,
   "endZ": 0.4,
@@ -493,7 +508,7 @@
     ],
     [
      32.0,
-     23.0
+     24.5
     ],
     "Emre Belözoğlu",
     "Hamit Altıntop",
@@ -502,8 +517,8 @@
   ],
   "source": "UEFA.com: https://www.uefa.com/news/newsid=1516021.html",
   "source2": "Fox Sports (AP): https://www.foxsports.com/stories/soccer/turkey-beats-kazakhstan-3-0-in-euro-qualifier",
-  "checked": "Away in Astana; Arda 24 (0-1), Altıntop 26 volley from ~25 m off Emre's corner (0-2), Nihat 75 (0-3); Sidelnikov in goal; won the 2010 Puskás Award.",
-  "note": "Date is 3 Sep 2010, not October. Corner side and where the volley went in are estimated."
+  "checked": "Away in Astana; Arda 24 (0-1), Altıntop 26 volley from ~25 m off Emre's corner (0-2), Nihat 75 (0-3); Sidelnikov in goal; won the 2010 Puskás Award. | Pass 2: 3 Sep 2010, Astana, 26', 0-1 -> 0-2 (Arda 24'), right-foot volley from Emre's corner, UEFA: 25-metre volley; final 0-3 (Nihat ~75').",
+  "note": "Spot moved y 23 -> 24.5 to match UEFA's 25 m. Corner side and where it went in estimated."
  },
  {
   "id": "bg-ibrahimovic-england-2012",
@@ -570,8 +585,8 @@
   ],
   "source": "Sports Mole live commentary: https://www.sportsmole.co.uk/football/sweden/live-commentary/sweden-4-2-england-as-it-happened_54650.html",
   "source2": "Times Colonist (AP): https://www.timescolonist.com/sports/ibrahimovic-one-man-wrecking-crew-for-sweden-4562150",
-  "checked": "Opening game at the Friends Arena; Ibrahimović scored all four; fourth at 90+1 (3-2 to 4-2): Hart came out and headed clear, Zlatan hit an overhead kick over him into the empty net from ~30 yards; won the 2013 Puskás.",
-  "note": "Range varies by report (18 m to 30 yards); used ~27 m. The long ball forward is generic (passer not confirmed) and the last 'P' is Hart's clearance, not a team-mate."
+  "checked": "Opening game at the Friends Arena; Ibrahimović scored all four; fourth at 90+1 (3-2 to 4-2): Hart came out and headed clear, Zlatan hit an overhead kick over him into the empty net from ~30 yards; won the 2013 Puskás. | Pass 2: stoppage time, 3-2 -> 4-2, Hart came out and headed a long ball clear weakly, overhead kick into the empty net (AP).",
+  "note": "Range varies by report (25 yards to 40 m; AP 30 yards); kept ~27 m. Long-ball passer not confirmed."
  },
  {
   "id": "bg-vanpersie-spain-2014",
@@ -638,8 +653,8 @@
   ],
   "source": "theScore: https://www.thescore.com/worldcup/news/1971818",
   "source2": "CBS Sports: https://www.cbssports.com/soccer/news/2014-fifa-world-cup-netherlands-trounce-spain-5-1",
-  "checked": "Xabi Alonso pen 26/27 (1-0); Blind's ~40-yard ball from near halfway, Van Persie dived and looped a header over Casillas (1-1) just before half-time; Netherlands won 5-1.",
-  "note": "Minute given as 44 (FIFA) but one source says 45. Spots estimated."
+  "checked": "Xabi Alonso pen 26/27 (1-0); Blind's ~40-yard ball from near halfway, Van Persie dived and looped a header over Casillas (1-1) just before half-time; Netherlands won 5-1. | Pass 2: confirmed by first pass sources; 1-0 -> 1-1, Blind long ball from the left, diving header lob over Casillas.",
+  "note": "Minute 44 (FIFA), one source 45. Spots estimated."
  },
  {
   "id": "bg-cahill-netherlands-2014",
@@ -706,8 +721,8 @@
   ],
   "source": "Philstar (AP): https://www.philstar.com/sports/2014/06/19/1336612/netherlands-advances-3-2-win-over-australia/amp/",
   "source2": "Al Bawaba: https://www.albawaba.com/sport/australia-2-3-netherlands-584587",
-  "checked": "Robben 20 (0-1); a minute later Cahill volleyed McGowan's long diagonal first time with his weaker left foot from ~11 yards, in off the underside of the bar past Cillessen (1-1); Netherlands won 3-2.",
-  "note": "Side of the box and the exact corner are estimated (in off the bar is confirmed)."
+  "checked": "Robben 20 (0-1); a minute later Cahill volleyed McGowan's long diagonal first time with his weaker left foot from ~11 yards, in off the underside of the bar past Cillessen (1-1); Netherlands won 3-2. | Pass 2: 21', 0-1 -> 1-1 a minute after Robben, McGowan's long ball, left-foot volley in off the bar.",
+  "note": "Side of the box and exact corner estimated."
  },
  {
   "id": "bg-rodriguez-uruguay-2014",
@@ -774,7 +789,7 @@
   ],
   "source": "Eurosport: https://www.eurosport.com/football/world-cup/2014/rodriguez-genius-fires-colombia-past-toothless-uruguay_sto4305426/story.shtml",
   "source2": "Extratime report: https://www.extratime.ie/fixtures/2014-fifa-world-cup-round-of-16/colombia-v-uruguay/26767/4/report/",
-  "checked": "Maracanã, 28th min, 0-0; Aguilar headed it down to James, back to goal at the edge of the box; chest, turn, left-foot volley in off the bar over Muslera; Colombia won 2-0; Goal of the Tournament and 2014 Puskás.",
+  "checked": "Maracanã, 28th min, 0-0; Aguilar headed it down to James, back to goal at the edge of the box; chest, turn, left-foot volley in off the bar over Muslera; Colombia won 2-0; Goal of the Tournament and 2014 Puskás. | Pass 2: 28', 0-0, headed knock-down, chest control and left-foot volley in off the bar past Muslera.",
   "note": "One report credits Cuadrado with the header instead of Aguilar. Spots estimated."
  },
  {
@@ -857,7 +872,7 @@
   ],
   "source": "CBC match report: https://amp.cbc.ca/sports/soccer/worldcup/2.4924/world-cup-final-germany-1-argentina-0-et-1.2705764",
   "source2": "Channel 4 News: https://www.channel4.com/news/world-cup-final-2014-germany-winners",
-  "checked": "113th min of extra time (CBC says 112), 0-0; sub Schürrle ran down the left and crossed, sub Götze chested it and volleyed left-footed from a tight angle inside the far post past Romero; 1-0.",
+  "checked": "113th min of extra time (CBC says 112), 0-0; sub Schürrle ran down the left and crossed, sub Götze chested it and volleyed left-footed from a tight angle inside the far post past Romero; 1-0. | Pass 2: 113', 0-0, Schürrle's cross from the left, chest control and left-foot volley past Romero.",
   "note": "Minute 113 (one source 112)."
  },
  {
@@ -925,8 +940,8 @@
   ],
   "source": "ESPN report: https://www.espn.co.uk/football/report/_/gameId/560335",
   "source2": "CBC: https://amp.cbc.ca/lite/story/1.6064809",
-  "checked": "Hampden; Schick header 42 (0-1); 52nd min a Hendry shot was blocked back up field, Schick picked it up on halfway, saw Marshall off his line and lobbed him left-footed (0-2).",
-  "note": "Range 45 m (CBC) to 54 yards (ESPN); used ~49.5 m. Where it dropped in is estimated."
+  "checked": "Hampden; Schick header 42 (0-1); 52nd min a Hendry shot was blocked back up field, Schick picked it up on halfway, saw Marshall off his line and lobbed him left-footed (0-2). | Pass 2: Euro 2020 played June 2021, Hampden, 52', 0-1 -> 0-2, from 49.7 m (UEFA, Euro record) after a blocked Scotland shot, Marshall off his line.",
+  "note": "Where it dropped in estimated."
  },
  {
   "id": "bg-richarlison-serbia-2022",
@@ -1008,7 +1023,7 @@
   ],
   "source": "Eurosport: https://www.eurosport.co.uk/football/world-cup/2022/richarlison-scissor-kick-for-brazil-against-serbia-voted-best-goal-of-qatar-2022-world-cup_sto9288090/story.shtml",
   "source2": "Soccerway report: https://www.soccerway.com/news/live-brazil-serbia-report/vFL5QMsT",
-  "checked": "Richarlison rebound 62 (1-0); 73rd min Vinícius crossed with the outside of the boot from the left, Richarlison flicked it up from ~12 yards and scissor-volleyed past Milinković-Savić's right arm (2-0); fans' goal of the tournament.",
+  "checked": "Richarlison rebound 62 (1-0); 73rd min Vinícius crossed with the outside of the boot from the left, Richarlison flicked it up from ~12 yards and scissor-volleyed past Milinković-Savić's right arm (2-0); fans' goal of the tournament. | Pass 2: 73', 1-0 -> 2-0, Vinícius pass from the left, control then scissor-kick volley.",
   "note": "Foot inferred (right); corner inferred from 'beyond the keeper's right arm' = shooter's left."
  },
  {
@@ -1076,8 +1091,8 @@
   ],
   "source": "NBC Sports: https://nbcsports.com/soccer/news/lamine-yamal-goal-vs-france-spanish-16-year-old-scores-near-perfect-equalizer-at-euro-2024",
   "source2": "Flashscore: https://www.flashscore.com/news/flashscore-awards-2024-lamine-yamal-wins-goal-of-the-year-in-euros-drama-against-france/KAE5BIUP",
-  "checked": "Munich semi; Kolo Muani header 9 (0-1); Yamal 21st min from just outside the box after an Olmo pass, feinted past Rabiot and curled into the left corner past Maignan (1-1); Olmo 25 (2-1); youngest Euros scorer.",
-  "note": "In off the post from memory; spots estimated."
+  "checked": "Munich semi; Kolo Muani header 9 (0-1); Yamal 21st min from just outside the box after an Olmo pass, feinted past Rabiot and curled into the left corner past Maignan (1-1); Olmo 25 (2-1); youngest Euros scorer. | Pass 2: 21', 0-1 -> 1-1 (Kolo Muani 9'), cut in from the right past Rabiot, left foot from outside the box into the far top corner, in off the post (Football365, AP).",
+  "note": "No assist credited in any source; Olmo pass before his carry kept as a placeholder link. Spots estimated."
  },
  {
   "id": "bg-bellingham-slovakia-2024",
@@ -1144,7 +1159,7 @@
   ],
   "source": "ABC News (AP): https://abcnews.go.com/Sports/wireStory/bellingham-goal-sends-england-slovakia-extra-time-after-111559519",
   "source2": "TSN: https://www.tsn.ca/soccer/euro/england-storms-back-stuns-slovakia-to-advance-at-uefa-euro-2024-1.2142553",
-  "checked": "Gelsenkirchen; Schranz 25 (0-1); 90+5 Walker long throw from the right, Guéhi flicked on, Bellingham's overhead kick into the bottom corner past Dúbravka (1-1); Kane won it in extra time (2-1).",
-  "note": "It was the Round of 16, not a group game. Which bottom corner is not stated; estimated."
+  "checked": "Gelsenkirchen; Schranz 25 (0-1); 90+5 Walker long throw from the right, Guéhi flicked on, Bellingham's overhead kick into the bottom corner past Dúbravka (1-1); Kane won it in extra time (2-1). | Pass 2: 90+5', 0-1 -> 1-1, Walker long throw from the right, Guéhi flick-on, overhead kick into the bottom corner, Dúbravka rooted (AP). Round of 16.",
+  "note": "Which bottom corner not stated; estimated. Walker's throw shown as a 'P'."
  }
 ]

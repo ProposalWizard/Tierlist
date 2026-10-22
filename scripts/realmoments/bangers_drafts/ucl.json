@@ -32,11 +32,26 @@
   "endZ": 0.15,
   "move": [
    [
-    6.5,
+    7.5,
     "P",
     [
-     36.0,
-     48.0
+     38.0,
+     50.0
+    ],
+    [
+     34.0,
+     47.0
+    ],
+    "Lionel Messi",
+    "Sergio Busquets",
+    0
+   ],
+   [
+    6.8,
+    "P",
+    [
+     34.0,
+     47.0
     ],
     [
      38.0,
@@ -94,8 +109,8 @@
   ],
   "source": "Catalan News, 27 Apr 2011: https://catalannews.com/sports/item/messi-rules-at-the-bernabeu-0-2",
   "source2": "https://www.90min.com/posts/anatomy-of-a-goal-lionel-messi-solo-masterpiece-that-tore-real-madrid-apart-2011",
-  "checked": "Real Madrid 0-2 Barcelona at the Bernabéu; Messi scored both (76' from Afellay's cross, then the solo goal); give-and-go with Busquets just inside Madrid's half, past Lass Diarra, Albiol, Ramos and inside Marcelo, pushed in with his right foot past Casillas",
-  "note": "Minute given as 87 or 88 by different reports (87 used). Route and finishing spot placed from the description (run down Barcelona's right, past Marcelo); end corner not stated in sources."
+  "checked": "Real Madrid 0-2 Barcelona at the Bernabéu; Messi scored both (76' from Afellay's cross, then the solo goal); give-and-go with Busquets just inside Madrid's half, past Lass Diarra, Albiol, Ramos and inside Marcelo, pushed in with his right foot past Casillas | Pass 2 (22 Oct 2026): Eurosport 87', give-and-go with Busquets near halfway (90min), past Lass Diarra and others, past Casillas.",
+  "note": "Pass 2 (22 Oct 2026): Made the Busquets pass a one-two. Finish corner still not in sources. | Earlier: Minute given as 87 or 88 by different reports (87 used). Route and finishing spot placed from the description (run down Barcelona's right, past Marcelo); end corner not stated in sources."
  },
  {
   "id": "bg-messi-manutd-2011",
@@ -162,8 +177,8 @@
   ],
   "source": "Wikipedia, 2011 UEFA Champions League final: https://en.wikipedia.org/wiki/2011_UEFA_Champions_League_final",
   "source2": "https://www.skysports.com/football/barcelona-vs-man-utd/234950",
-  "checked": "Barcelona 3-1 Man United at Wembley, 28 May 2011; Pedro 27', Rooney 34', Messi 54' (2-1), Villa 69'; Iniesta found him free, Messi drove a low left-footed shot past Van der Sar from about 25 yards",
-  "note": "Distance quoted 25-30 yards (edge of area in one report); spot ~23 m used. Which corner it went in is not confirmed; low to the shooter's right assumed."
+  "checked": "Barcelona 3-1 Man United at Wembley, 28 May 2011; Pedro 27', Rooney 34', Messi 54' (2-1), Villa 69'; Iniesta found him free, Messi drove a low left-footed shot past Van der Sar from about 25 yards | Pass 2 (22 Oct 2026): 54th min 2-1, Iniesta found him (AFP), low shot from 20 m-30 yards; one report says down the middle, another curling away from Van der Sar's dive.",
+  "note": "Pass 2 (22 Oct 2026): Corner and foot still not confirmed by a source. | Earlier: Distance quoted 25-30 yards (edge of area in one report); spot ~23 m used. Which corner it went in is not confirmed; low to the shooter's right assumed."
  },
  {
   "id": "bg-drogba-bayern-2012",
@@ -215,8 +230,8 @@
   ],
   "source": "Wikipedia, 2012 UEFA Champions League final: https://en.wikipedia.org/wiki/2012_UEFA_Champions_League_final",
   "source2": "https://www.skysports.com/football/news/11668/7766265/drogba-fulfils-chelsea-dream",
-  "checked": "Bayern 1-1 Chelsea aet at the Allianz Arena (Chelsea won 4-3 on penalties); Müller 83', Drogba 88' powerful near-post header from Mata's corner (Chelsea's first), Neuer got a hand to it",
-  "note": "Type is Open Play because it was headed in from a corner, not scored direct. Which side the corner came from is not stated in the sources found; left side assumed, near post. Final score ignores the shoot-out."
+  "checked": "Bayern 1-1 Chelsea aet at the Allianz Arena (Chelsea won 4-3 on penalties); Müller 83', Drogba 88' powerful near-post header from Mata's corner (Chelsea's first), Neuer got a hand to it | Pass 2 (22 Oct 2026): 88th min, Mata's corner, near-post header past Neuer.",
+  "note": "Pass 2 (22 Oct 2026): Corner side still not stated; one Goal.com piece says Lampard took it (most say Mata). | Earlier: Type is Open Play because it was headed in from a corner, not scored direct. Which side the corner came from is not stated in the sources found; left side assumed, near post. Final score ignores the shoot-out."
  },
  {
   "id": "bg-robben-dortmund-2013",
@@ -298,8 +313,8 @@
   ],
   "source": "UEFA.com, 25 May 2013: https://www.uefa.com/uefachampionsleague/news/newsid=1947490.html",
   "source2": "https://en.wikipedia.org/wiki/2013_UEFA_Champions_League_final",
-  "checked": "Dortmund 1-2 Bayern at Wembley; Mandžukić 60', Gündoğan pen 68', Robben 89' after Ribéry's backheel flick, slotted past Weidenfeller (one report says he scuffed it)",
-  "note": "Long ball before the backheel (passer and spot) estimated; left foot and the corner it rolled into are not stated in the sources found."
+  "checked": "Dortmund 1-2 Bayern at Wembley; Mandžukić 60', Gündoğan pen 68', Robben 89' after Ribéry's backheel flick, slotted past Weidenfeller (one report says he scuffed it) | Pass 2 (22 Oct 2026): 89th min, Ribéry backheel, ball played long into the area; FC Bayern: inside of the LEFT boot past Weidenfeller.",
+  "note": "Pass 2 (22 Oct 2026): Left foot now confirmed; Boateng as the long-ball passer and the corner not confirmed. | Earlier: Long ball before the backheel (passer and spot) estimated; left foot and the corner it rolled into are not stated in the sources found."
  },
  {
   "id": "bg-ramos-atletico-2014",
@@ -351,8 +366,8 @@
   ],
   "source": "Wikipedia, 2014 UEFA Champions League final: https://en.wikipedia.org/wiki/2014_UEFA_Champions_League_final",
   "source2": "https://www.realmadrid.com/en-US/news/club/latest-news/eight-anniversary-of-the-decima",
-  "checked": "Real Madrid 4-1 Atlético aet in Lisbon; Godín 36', Ramos 90+3 header from Modrić's outswinging corner into the bottom corner past Courtois; Bale 110', Marcelo 118', Ronaldo pen 120'",
-  "note": "Corner from the right assumed (Modrić right-footed outswinger); which bottom corner is not stated — far side assumed."
+  "checked": "Real Madrid 4-1 Atlético aet in Lisbon; Godín 36', Ramos 90+3 header from Modrić's outswinging corner into the bottom corner past Courtois; Bale 110', Marcelo 118', Ronaldo pen 120' | Pass 2 (22 Oct 2026): 93rd min header from Modrić's stoppage-time corner, Courtois no chance (UEFA).",
+  "note": "Pass 2 (22 Oct 2026): Corner side and which bottom corner still not stated. | Earlier: Corner from the right assumed (Modrić right-footed outswinger); which bottom corner is not stated — far side assumed."
  },
  {
   "id": "bg-ibrahimovic-anderlecht-2013",
@@ -404,8 +419,8 @@
   ],
   "source": "UEFA.com, 23 Oct 2013: https://www.uefa.com/news/newsid=1988479.html",
   "source2": "https://www.sportsmole.co.uk/football/anderlecht/champions-league/live-commentary/anderlecht-0-5-paris-saint-germain-as-it-happened_113178.html",
-  "checked": "Anderlecht 0-5 PSG in Brussels; Ibrahimović scored 17', 22', 36', 62' and Cavani one; the 36' third was a first-time volley from about 25 m off Kouyaté's headed clearance; Kaminski in goal",
-  "note": "The last 'pass' is an Anderlecht clearance (Kouyaté, recipient none). Group letter (C) from memory, not a source. Exact spot and corner not stated; placed central-right, top left."
+  "checked": "Anderlecht 0-5 PSG in Brussels; Ibrahimović scored 17', 22', 36', 62' and Cavani one; the 36' third was a first-time volley from about 25 m off Kouyaté's headed clearance; Kaminski in goal | Pass 2 (22 Oct 2026): Group C confirmed; 36th min first-time volley from about 25 m (UEFA) off Kouyaté's headed clearance, bent away from Kaminski into the roof of the net.",
+  "note": "Pass 2 (22 Oct 2026): Group now confirmed; side estimated. | Earlier: The last 'pass' is an Anderlecht clearance (Kouyaté, recipient none). Group letter (C) from memory, not a source. Exact spot and corner not stated; placed central-right, top left."
  },
  {
   "id": "bg-messi-bayern-2015",
@@ -472,8 +487,8 @@
   ],
   "source": "Fox News/AP, 6 May 2015: https://www.foxnews.com/sports/messi-dazzles-as-barcelona-beats-bayern-munich-3-0-in-champions-league-match",
   "source2": "https://www.catalannews.com/sports/item/fc-barcelona-vs-fc-bayern-munich-messi-magic-downs-bayern-3-0",
-  "checked": "Barcelona 3-0 Bayern at Camp Nou; Messi 77', 80', Neymar 90+4; for the second Messi took Rakitić's pass at the top of the box, Boateng fell, and he chipped Neuer with his right foot from about 6 yards",
-  "note": "Rakitić credit from one report. Spot on the right of the box from the well-known picture; chip landing point estimated."
+  "checked": "Barcelona 3-0 Bayern at Camp Nou; Messi 77', 80', Neymar 90+4; for the second Messi took Rakitić's pass at the top of the box, Boateng fell, and he chipped Neuer with his right foot from about 6 yards | Pass 2 (22 Oct 2026): 80th min (SI), Rakitić pass, Boateng left on the ground, right-foot chip over Neuer.",
+  "note": "Pass 2 (22 Oct 2026): Some reports name no passer. | Earlier: Rakitić credit from one report. Spot on the right of the box from the well-known picture; chip landing point estimated."
  },
  {
   "id": "bg-sergiroberto-psg-2017",
@@ -540,8 +555,8 @@
   ],
   "source": "ESPN, 8 Mar 2017: https://espndeportes.espn.com/futbol/reporte/_/juegoId/469090",
   "source2": "https://www.fcbarcelona.es/es/futbol/primer-equipo/noticias/775719/fc-barcelona-psg-iesto-es-historia-6-1",
-  "checked": "Barcelona 6-1 PSG (6-5 agg) at Camp Nou; Neymar free kick 88', pen ~90+1, Sergi Roberto 90+5 stretching to poke Neymar's chipped ball past Trapp",
-  "note": "Neymar's spot, Roberto's spot and the finish placement estimated; reports call it a poke/volley with an outstretched leg (right foot assumed)."
+  "checked": "Barcelona 6-1 PSG (6-5 agg) at Camp Nou; Neymar free kick 88', pen ~90+1, Sergi Roberto 90+5 stretching to poke Neymar's chipped ball past Trapp | Pass 2 (22 Oct 2026): 95th min; Neymar lofted the ball into a crowded box after ter Stegen's ball to him; finish with the tip of the boot (FC Barcelona) / sliding stab past Trapp.",
+  "note": "Pass 2 (22 Oct 2026): Foot still not named; placement estimated. | Earlier: Neymar's spot, Roberto's spot and the finish placement estimated; reports call it a poke/volley with an outstretched leg (right foot assumed)."
  },
  {
   "id": "bg-mandzukic-realmadrid-2017",
@@ -623,8 +638,8 @@
   ],
   "source": "Wikipedia, 2017 UEFA Champions League final: https://en.wikipedia.org/wiki/2017_UEFA_Champions_League_final",
   "source2": "https://www.fifa.com/en/news/mandzukic-s-unforgettable-final-strike-2909987",
-  "checked": "Juventus 1-4 Real Madrid in Cardiff; Ronaldo 20', Mandžukić 27' equaliser: Bonucci long ball, Alex Sandro first-time cross, Higuaín's touches, Mandžukić chest then a diagonal overhead kick from about 15 yards arcing over Navas under the bar; ball never touched the ground",
-  "note": "Left foot only from one write-up. Positions estimated (left side of box, far top corner from 'arcing across goal')."
+  "checked": "Juventus 1-4 Real Madrid in Cardiff; Ronaldo 20', Mandžukić 27' equaliser: Bonucci long ball, Alex Sandro first-time cross, Higuaín's touches, Mandžukić chest then a diagonal overhead kick from about 15 yards arcing over Navas under the bar; ball never touched the ground | Pass 2 (22 Oct 2026): 27th min, Bonucci long ball to Alex Sandro on the left, first-time cross, Higuaín chipped/chested it on, overhead kick over Navas.",
+  "note": "Pass 2 (22 Oct 2026): Foot still not confirmed. | Earlier: Left foot only from one write-up. Positions estimated (left side of box, far top corner from 'arcing across goal')."
  },
  {
   "id": "bg-ronaldo-juventus-2018",
@@ -691,8 +706,8 @@
   ],
   "source": "Sky Sports match report: https://www.skysports.com/football/juventus-vs-real-madrid/report/388720",
   "source2": "https://www.thescore.com/seri/news/1970149",
-  "checked": "Juventus 0-3 Real Madrid in Turin; Ronaldo 3' and 64', Marcelo 72'; the 64' goal was an overhead kick from Carvajal's chipped cross from the right edge of the box, past Buffon",
-  "note": "Corner and height where it crossed the line not stated; placed mid-height to the shooter's left. Carvajal's carry estimated."
+  "checked": "Juventus 0-3 Real Madrid in Turin; Ronaldo 3' and 64', Marcelo 72'; the 64' goal was an overhead kick from Carvajal's chipped cross from the right edge of the box, past Buffon | Pass 2 (22 Oct 2026): 64th min, Reuters: Carvajal's chipped ball, overhead kick past Buffon.",
+  "note": "Pass 2 (22 Oct 2026): One piece mentions a Marcelo cross-field ball earlier in the move (not added). Landing still estimated. | Earlier: Corner and height where it crossed the line not stated; placed mid-height to the shooter's left. Carvajal's carry estimated."
  },
  {
   "id": "bg-bale-liverpool-2018",
@@ -721,7 +736,7 @@
   "technique": "overhead kick",
   "ball": [
    33.0,
-   12.0
+   13.7
   ],
   "end": 31.4,
   "endZ": 1.95,
@@ -750,7 +765,7 @@
     ],
     [
      33.0,
-     12.0
+     13.7
     ],
     "Marcelo",
     "Gareth Bale",
@@ -759,8 +774,8 @@
   ],
   "source": "Wikipedia, 2018 UEFA Champions League final: https://en.wikipedia.org/wiki/2018_UEFA_Champions_League_final",
   "source2": "https://www.skysports.com/football/r-madrid-vs-liverpool/389182",
-  "checked": "Real Madrid 3-1 Liverpool in Kyiv; Benzema 51', Mané 55', Bale 64' overhead kick (left foot, top corner) from Marcelo's cross from the left, about two minutes after coming on; Bale 83' too",
-  "note": "Which top corner is not stated; placed shooter's left. Marcelo cross: one source says right foot after cutting in. Spots estimated."
+  "checked": "Real Madrid 3-1 Liverpool in Kyiv; Benzema 51', Mané 55', Bale 64' overhead kick (left foot, top corner) from Marcelo's cross from the left, about two minutes after coming on; Bale 83' too | Pass 2 (22 Oct 2026): 64th min, two minutes after coming on for Isco, Marcelo cross from the left, left foot, from about 15 yards over Karius.",
+  "note": "Pass 2 (22 Oct 2026): Strike moved to 15 yards (y 13.7). Top corner side not stated. | Earlier: Which top corner is not stated; placed shooter's left. Marcelo cross: one source says right foot after cutting in. Spots estimated."
  },
  {
   "id": "bg-messi-liverpool-2019",
@@ -812,8 +827,8 @@
   ],
   "source": "CBS Sports, 1 May 2019: https://www.cbssports.com/soccer/news/barcelona-vs-liverpool-score-messis-magic-puts-barca-on-brink-of-champions-league-final/",
   "source2": "https://www.upi.com/Sports_News/Soccer/2019/05/01/Champions-League-Lionel-Messi-takes-over-leads-Barcelona-over-Liverpool/3041556747578/",
-  "checked": "Barcelona 3-0 Liverpool at Camp Nou; Suárez 26', Messi 75', Messi 82' direct free kick (after a Fabinho foul) from 30+ yards into the top corner past Alisson; his 600th Barcelona goal",
-  "note": "Distance quoted 25-35 yards (~28.5 m used). Reports split on top-left v top-right; top left (far corner for a left-footer from right of centre) used. Left foot from general knowledge, not a source."
+  "checked": "Barcelona 3-0 Liverpool at Camp Nou; Suárez 26', Messi 75', Messi 82' direct free kick (after a Fabinho foul) from 30+ yards into the top corner past Alisson; his 600th Barcelona goal | Pass 2 (22 Oct 2026): 82nd min, left foot (SCMP), top corner past Alisson, about 30 yards (one says 25).",
+  "note": "Pass 2 (22 Oct 2026): Side of the top corner still not stated in any source found. | Earlier: Distance quoted 25-35 yards (~28.5 m used). Reports split on top-left v top-right; top left (far corner for a left-footer from right of centre) used. Left foot from general knowledge, not a source."
  },
  {
   "id": "bg-origi-barcelona-2019",
@@ -865,8 +880,8 @@
   ],
   "source": "Liverpool FC match report: https://www.liverpoolfc.com/news/first-team/349380-match-report-liverpool-barcelona-champions-league",
   "source2": "https://www.skysports.com/football/news/11669/11713953/liverpool-4-0-barcelona-agg-4-3-liverpool-complete-stunning-comeback-to-reach-champions-league-final",
-  "checked": "Liverpool 4-0 Barcelona (4-3 agg) at Anfield; Origi 7', Wijnaldum x2, Origi 79' from Alexander-Arnold's quickly taken corner, into the roof of the net past ter Stegen; Origi saw the left side open",
-  "note": "Corner from the right assumed (Alexander-Arnold the right-back); 'first-time' not confirmed. Type Open Play since not scored direct from the corner."
+  "checked": "Liverpool 4-0 Barcelona (4-3 agg) at Anfield; Origi 7', Wijnaldum x2, Origi 79' from Alexander-Arnold's quickly taken corner, into the roof of the net past ter Stegen; Origi saw the left side open | Pass 2 (22 Oct 2026): 79th min, Alexander-Arnold's quick corner; finish described as clipped/smashed past ter Stegen; one French report: across goal into the top corner.",
+  "note": "Pass 2 (22 Oct 2026): Corner side and first-time not confirmed. | Earlier: Corner from the right assumed (Alexander-Arnold the right-back); 'first-time' not confirmed. Type Open Play since not scored direct from the corner."
  },
  {
   "id": "bg-lucasmoura-ajax-2019",
@@ -963,8 +978,8 @@
   ],
   "source": "THFC database: https://thfcdb.com/matches/2018-19/afc-ajax-08-may-2019/",
   "source2": "https://www.cbssports.com/soccer/news/tottenham-vs-ajax-score-lucas-moura-champions-league-hat-trick-complete-stunning-comeback-for-spurs",
-  "checked": "Ajax 2-3 Tottenham in Amsterdam (3-3 agg, Spurs through on away goals); De Ligt 5', Ziyech 35', Lucas 55', 59', 90+6; Sissoko long ball, Llorente knock-down, Dele first-time pass, Lucas left foot from about 16 yards past Onana",
-  "note": "One Dutch report says 95th minute. Bottom-left corner from general knowledge, not a source."
+  "checked": "Ajax 2-3 Tottenham in Amsterdam (3-3 agg, Spurs through on away goals); De Ligt 5', Ziyech 35', Lucas 55', 59', 90+6; Sissoko long ball, Llorente knock-down, Dele first-time pass, Lucas left foot from about 16 yards past Onana | Pass 2 (22 Oct 2026): 96th min, Sissoko long ball, Llorente touch, Alli flick, left foot from 16 yards, low past Onana.",
+  "note": "Pass 2 (22 Oct 2026): Bottom corner side not in sources. | Earlier: One Dutch report says 95th minute. Bottom-left corner from general knowledge, not a source."
  },
  {
   "id": "bg-rodri-inter-2023",
@@ -1046,7 +1061,7 @@
   ],
   "source": "Wikipedia, 2023 UEFA Champions League final: https://en.wikipedia.org/wiki/2023_UEFA_Champions_League_final",
   "source2": "https://www.uefa.com/uefachampionsleague/news/0282-183fa8a707c0-4056c043e3d1-1000--in-the-zone-man-city-1-0-inter-performance-analysis",
-  "checked": "Man City 1-0 Inter in Istanbul; Rodri 68' first-time shot from the top of the box, inside the near post past Onana, after Akanji fed Bernardo Silva whose cutback was deflected (Acerbi per one report)",
-  "note": "Deflection on the cutback not modelled. Spots estimated; low inside the (right) near post from UEFA's 'near post' wording."
+  "checked": "Man City 1-0 Inter in Istanbul; Rodri 68' first-time shot from the top of the box, inside the near post past Onana, after Akanji fed Bernardo Silva whose cutback was deflected (Acerbi per one report) | Pass 2 (22 Oct 2026): 68th min, Akanji to Bernardo Silva, pull-back (deflected, Acerbi per Goal Italia), side-foot from the edge of the box past Onana.",
+  "note": "Pass 2 (22 Oct 2026): Corner not confirmed beyond the earlier near-post wording. | Earlier: Deflection on the cutback not modelled. Spots estimated; low inside the (right) near post from UEFA's 'near post' wording."
  }
 ]

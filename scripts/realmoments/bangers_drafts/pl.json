@@ -25,8 +25,8 @@
   "type": "Open Play",
   "technique": "overhead kick",
   "ball": [
-   36.5,
-   12.0
+   34.5,
+   11.0
   ],
   "end": 33.0,
   "endZ": 1.9,
@@ -69,8 +69,8 @@
      19.0
     ],
     [
-     36.5,
-     12.0
+     34.5,
+     11.0
     ],
     "Nani",
     "Wayne Rooney",
@@ -79,8 +79,8 @@
   ],
   "source": "Al Jazeera match report, 12 Feb 2011: https://www.aljazeera.com/sports/2011/2/12/brilliant-rooney-downs-city",
   "source2": "https://www.ft.lk/Sectors/rooney-stunner-seals-derby-win-for-man-united/20-18596",
-  "checked": "Old Trafford, 12 Feb 2011, 2-1 United; Nani opener, Dzeko (deflected off Silva) levelled; Rooney 78th min winner from a Nani cross, acrobatic overhead volley back to goal into the top corner past Hart",
-  "note": "The Scholes pass before Nani's cross is estimated (build-up not in sources). The cross took a deflection; which top corner (shooter's left) is from memory, not a source."
+  "checked": "Old Trafford, 12 Feb 2011, 2-1 United; Nani opener, Dzeko (deflected off Silva) levelled; Rooney 78th min winner from a Nani cross, acrobatic overhead volley back to goal into the top corner past Hart | Pass 2 (22 Oct 2026): 78th min, Nani cross deflected off Zabaleta, right foot, struck from the penalty spot (PA/Al Jazeera), top corner past Hart.",
+  "note": "Pass 2 (22 Oct 2026): Ball moved to the penalty spot per PA. Which top corner is still not in any source found. | Earlier: The Scholes pass before Nani's cross is estimated (build-up not in sources). The cross took a deflection; which top corner (shooter's left) is from memory, not a source."
  },
  {
   "id": "bg-aguero-qpr-2012",
@@ -192,8 +192,8 @@
   ],
   "source": "Al Jazeera, 13 May 2012: https://www.aljazeera.com/amp/sports/2012/5/13/man-city-crowned-english-champions",
   "source2": "https://www.fourfourtwo.com/news/how-it-unfolded-manchester-citys-remarkable-last-gasp-win-over-qpr-in-2012-1652346012000",
-  "checked": "Etihad, 13 May 2012, final day; 2-2 after Dzeko's stoppage-time header; Agüero laid off to Balotelli, who slipped but returned it; Agüero beat Kenny at 93:20 for 3-2 and the title on goal difference",
-  "note": "Clock read 93:20 so minute is 94 (90+4). De Jong's starting pass is from the well-known build-up, not a quoted source. Shot placement (near post, high) estimated."
+  "checked": "Etihad, 13 May 2012, final day; 2-2 after Dzeko's stoppage-time header; Agüero laid off to Balotelli, who slipped but returned it; Agüero beat Kenny at 93:20 for 3-2 and the title on goal difference | Pass 2 (22 Oct 2026): 93:20, Agüero to Balotelli, Balotelli fell and prodded it back, Agüero beat one challenge and fired in at the near post; Kenny: shot from about eight yards (FourFourTwo).",
+  "note": "Pass 2 (22 Oct 2026): Height at the near post not stated in sources. | Earlier: Clock read 93:20 so minute is 94 (90+4). De Jong's starting pass is from the well-known build-up, not a quoted source. Shot placement (near post, high) estimated."
  },
  {
   "id": "bg-cisse-chelsea-2012",
@@ -260,8 +260,8 @@
   ],
   "source": "Sky Sports match page: https://www.skysports.com/football/chelsea-vs-newcastle/258390",
   "source2": "https://en.wikipedia.org/wiki/Papiss_Ciss%C3%A9",
-  "checked": "Stamford Bridge, 2 May 2012, 0-2; Cissé scored 19' and in stoppage time (Sky: 94'); from a left-side throw-in Shola Ameobi brought the ball down for Cissé, who struck it with the outside of his right foot from about 37 yards, looping over Čech; MOTD Goal of the Season",
-  "note": "Minute 94 per Sky's listing. Throw-in taker not confirmed, so the move starts with Ameobi. Exact spot (left channel, ~34 m) and far-top-corner landing are estimated."
+  "checked": "Stamford Bridge, 2 May 2012, 0-2; Cissé scored 19' and in stoppage time (Sky: 94'); from a left-side throw-in Shola Ameobi brought the ball down for Cissé, who struck it with the outside of his right foot from about 37 yards, looping over Čech; MOTD Goal of the Season | Pass 2 (22 Oct 2026): UEFA: second goal in the 4th minute of added time, swerving strike from wide left; Ameobi chested a throw-in to him; outside of the right boot, looped over Čech (Wikipedia: 37 yards).",
+  "note": "Pass 2 (22 Oct 2026): Spot and landing still estimated; throw-in taker not found. | Earlier: Minute 94 per Sky's listing. Throw-in taker not confirmed, so the move starts with Ameobi. Exact spot (left channel, ~34 m) and far-top-corner landing are estimated."
  },
  {
   "id": "bg-vanpersie-astonvilla-2013",
@@ -290,7 +290,7 @@
   "technique": "volley",
   "ball": [
    44.0,
-   15.0
+   17.5
   ],
   "end": 31.3,
   "endZ": 1.0,
@@ -304,7 +304,7 @@
     ],
     [
      44.0,
-     15.0
+     17.5
     ],
     "Wayne Rooney",
     "Robin van Persie",
@@ -313,8 +313,8 @@
   ],
   "source": "Goal.com: https://www.goal.com/en/news/it-was-a-dream-van-persie-describes-that-volley-vs-aston/1d3hqaozug1gx1r1lctw8rrfri",
   "source2": "https://www.deccanherald.com/sports/sweet-20-man-u-2256466",
-  "checked": "Old Trafford, 22 Apr 2013, 3-0, title-clinching (20th); RVP hat-trick at 2', 13', 33'; the 13th-min goal was a left-foot volley from Rooney's long pass out of his own half, past Guzan",
-  "note": "Rooney's pass start (around halfway, his own half) and the volley spot on the right of the box are estimated; reports vary on pass length."
+  "checked": "Old Trafford, 22 Apr 2013, 3-0, title-clinching (20th); RVP hat-trick at 2', 13', 33'; the 13th-min goal was a left-foot volley from Rooney's long pass out of his own half, past Guzan | Pass 2 (22 Oct 2026): Rooney long ball from about halfway (Fox: 50 yards), RVP left-foot volley from just outside the box, across Guzan inside the far post (PA).",
+  "note": "Pass 2 (22 Oct 2026): Moved the strike to just outside the box (y 17.5) per PA. | Earlier: Rooney's pass start (around halfway, his own half) and the volley spot on the right of the box are estimated; reports vary on pass length."
  },
  {
   "id": "bg-wilshere-norwich-2013",
@@ -338,58 +338,58 @@
   "minute": 18,
   "period": "1H",
   "keeper": "John Ruddy",
-  "body": "Left Foot",
+  "body": "Right Foot",
   "type": "Open Play",
   "technique": "side-foot finish, team goal",
   "ball": [
    33.0,
    10.0
   ],
-  "end": 34.5,
-  "endZ": 0.6,
+  "end": 31.0,
+  "endZ": 0.3,
   "move": [
    [
     5.5,
     "P",
     [
-     18.0,
-     32.0
+     26.0,
+     26.0
     ],
     [
-     26.0,
+     20.0,
      24.0
     ],
-    "Santi Cazorla",
     "Jack Wilshere",
+    "Santi Cazorla",
     0
    ],
    [
     4.6,
     "P",
     [
-     26.0,
+     20.0,
      24.0
     ],
     [
-     22.0,
-     22.0
+     30.0,
+     19.0
     ],
-    "Jack Wilshere",
     "Santi Cazorla",
+    "Olivier Giroud",
     0
    ],
    [
     3.7,
     "P",
     [
-     22.0,
-     22.0
-    ],
-    [
-     28.0,
+     30.0,
      19.0
     ],
-    "Santi Cazorla",
+    [
+     31.0,
+     17.0
+    ],
+    "Olivier Giroud",
     "Jack Wilshere",
     0
    ],
@@ -397,12 +397,12 @@
     2.6,
     "P",
     [
-     28.0,
-     19.0
+     31.0,
+     17.0
     ],
     [
      32.0,
-     17.0
+     15.0
     ],
     "Jack Wilshere",
     "Olivier Giroud",
@@ -413,7 +413,7 @@
     "P",
     [
      32.0,
-     17.0
+     15.0
     ],
     [
      33.0,
@@ -426,8 +426,8 @@
   ],
   "source": "Arsenal.com match report: https://www.arsenal.com/node/95171",
   "source2": "https://arseblog.news/?p=18857",
-  "checked": "Emirates, 19 Oct 2013, 4-1 (Özil 2, Ramsey; Howson for Norwich); Wilshere opener, Cazorla and Giroud combined with him, Giroud's flick, Wilshere side-footed past Ruddy",
-  "note": "Minute: Arsenal.com 18', Arseblog/EFE 17'. Exact one-two sequence and the finish's side of goal are estimated from the description."
+  "checked": "Emirates, 19 Oct 2013, 4-1 (Özil 2, Ramsey; Howson for Norwich); Wilshere opener, Cazorla and Giroud combined with him, Giroud's flick, Wilshere side-footed past Ruddy | Pass 2 (22 Oct 2026): Arsenal.com and Duke WCWP: finished with his (weaker) right foot; Duke: first-time into the bottom-left corner. Sequence: Wilshere outside-foot to Cazorla, Cazorla to Giroud, Giroud flick to Wilshere, Wilshere backheel to Giroud, Giroud dink into his path.",
+  "note": "Pass 2 (22 Oct 2026): Foot changed Left to Right and end moved to bottom left (one source). Pass spots estimated. | Earlier: Minute: Arsenal.com 18', Arseblog/EFE 17'. Exact one-two sequence and the finish's side of goal are estimated from the description."
  },
  {
   "id": "bg-rooney-westham-2014",
@@ -479,8 +479,8 @@
   ],
   "source": "West Ham report: https://www.whufc.com/news/articles/2014/march/22-march/hammers-beaten-rooney-double",
   "source2": "https://www.premierleague.com/news/1465955",
-  "checked": "Upton Park, 22 Mar 2014, 0-2 (Rooney 8', 33'); Rooney won the ball near halfway after a challenge with Tomkins and half-volleyed over Adrián, who was off his line",
-  "note": "Minute 7' (AP) or 8'; distance reported 45-58 yards, placed at ~50 m. Won ball himself, so the move is one short touch. Long range from around halfway."
+  "checked": "Upton Park, 22 Mar 2014, 0-2 (Rooney 8', 33'); Rooney won the ball near halfway after a challenge with Tomkins and half-volleyed over Adrián, who was off his line | Pass 2 (22 Oct 2026): Won the ball on the halfway line and looped it over Adrián, who was off his line; minute 7 or 8 and 45-58 yards both still reported.",
+  "note": "Pass 2 (22 Oct 2026): Distance and minute vary between sources. | Earlier: Minute 7' (AP) or 8'; distance reported 45-58 yards, placed at ~50 m. Won ball himself, so the move is one short touch. Long range from around halfway."
  },
  {
   "id": "bg-adam-chelsea-2015",
@@ -532,8 +532,8 @@
   ],
   "source": "ESPN match report: https://www.espn.co.uk/football/report/_/gameId/395488",
   "source2": "https://www.skysports.com/football/chelsea-vs-stoke/313689",
-  "checked": "Stamford Bridge, 4 Apr 2015, 2-1 Chelsea (Hazard pen 39', Adam 44', Remy 62'); Adam picked up a loose ball deep in his own half and hit it left-footed; Courtois got a hand to it but it went in",
-  "note": "Struck from his own half (y > 52.5): ESPN 65 yards, Sky 59 yards; placed at 58 m. Loose ball, so the move is one touch."
+  "checked": "Stamford Bridge, 4 Apr 2015, 2-1 Chelsea (Hazard pen 39', Adam 44', Remy 62'); Adam picked up a loose ball deep in his own half and hit it left-footed; Courtois got a hand to it but it went in | Pass 2 (22 Oct 2026): ESPN: loose ball deep in his own half a minute before half-time, left foot, 65-66 yards; Hazard pen 39, Remy 62.",
+  "note": "Pass 2 (22 Oct 2026): None. | Earlier: Struck from his own half (y > 52.5): ESPN 65 yards, Sky 59 yards; placed at 58 m. Loose ball, so the move is one touch."
  },
  {
   "id": "bg-alli-crystalpalace-2016",
@@ -615,8 +615,8 @@
   ],
   "source": "Tottenham report: https://tottenhamhotspur.com/news-archive-1/palace-1-3-spurs-report-from-selhurst-park",
   "source2": "https://www.espn.in/football/report/_/gameId/422444",
-  "checked": "Selhurst Park, 23 Jan 2016, 1-3; 1-1 at 84' when Alli took Eriksen's headed lay-off (after Kane's cross-field ball from the right), flicked it over Jedinak and volleyed past Hennessey for 2-1",
-  "note": "The last C leg is the flick over Jedinak (height 1). Exact spot (~25 yds, central-left) and which low corner are estimated."
+  "checked": "Selhurst Park, 23 Jan 2016, 1-3; 1-1 at 84' when Alli took Eriksen's headed lay-off (after Kane's cross-field ball from the right), flicked it over Jedinak and volleyed past Hennessey for 2-1 | Pass 2 (22 Oct 2026): 84th min, Vertonghen OG then Kane 63 made it 1-1; Eriksen headed pass, flick over Jedinak, volley from about 25 yards into the bottom corner past Hennessey (FA, Tottenham).",
+  "note": "Pass 2 (22 Oct 2026): One report says inside Hennessey's right post (= shooter's left); end kept on the right because the side is not clear; Kane's ball before Eriksen not confirmed. | Earlier: The last C leg is the flick over Jedinak (height 1). Exact spot (~25 yds, central-left) and which low corner are estimated."
  },
  {
   "id": "bg-giroud-crystalpalace-2017",
@@ -743,8 +743,8 @@
   ],
   "source": "The42.ie report: https://www.the42.ie/arsenal-crystal-palace-premier-league-2-3166638-Jan2017/",
   "source2": "https://www.irishnews.com/sport/footballsoccer/2017/01/01/news/olivier-giroud-wondergoal-sees-arsenal-past-crystal-palace-859926/",
-  "checked": "Emirates, 1 Jan 2017, 2-0 (Giroud 17', Iwobi 56'); move via Bellerín, Giroud, Xhaka, Iwobi to Sánchez on the left; cross behind Giroud, hooked in with his left heel over Hennessey off the underside of the bar",
-  "note": "Pass spots and timings estimated; Sánchez's carry before the cross is assumed. Bar-and-in landing placed just under the bar."
+  "checked": "Emirates, 1 Jan 2017, 2-0 (Giroud 17', Iwobi 56'); move via Bellerín, Giroud, Xhaka, Iwobi to Sánchez on the left; cross behind Giroud, hooked in with his left heel over Hennessey off the underside of the bar | Pass 2 (22 Oct 2026): Sky: 17th min, left heel, in off the underside of the bar; move from Arsenal's own half, Giroud's earlier touch a backheel flick; Sánchez cross from the left fell behind him.",
+  "note": "Pass 2 (22 Oct 2026): Pass spots estimated. | Earlier: Pass spots and timings estimated; Sánchez's carry before the cross is assumed. Bar-and-in landing placed just under the bar."
  },
  {
   "id": "bg-mkhitaryan-sunderland-2016",
@@ -779,6 +779,21 @@
   "endZ": 0.7,
   "move": [
    [
+    5.0,
+    "P",
+    [
+     40.0,
+     40.0
+    ],
+    [
+     52.0,
+     24.0
+    ],
+    "Paul Pogba",
+    "Zlatan Ibrahimović",
+    0
+   ],
+   [
     3.0,
     "C",
     [
@@ -811,8 +826,8 @@
   ],
   "source": "Sky Sports: https://www.skysports.com/football/news/11670/10720616",
   "source2": "https://worldsoccertalk.com/2016/12/26/scorpion-volley-was-instinctive-mkhitaryan/",
-  "checked": "Old Trafford, Boxing Day 2016, 3-1 (Blind, Ibrahimović, Mkhitaryan; Borini late); sub Mkhitaryan, 86', 2-0 up, flicked Ibrahimović's right-side cross past Pickford with his right heel; looked offside but stood",
-  "note": "Ibrahimović's carry before the cross and the landing spot are estimated."
+  "checked": "Old Trafford, Boxing Day 2016, 3-1 (Blind, Ibrahimović, Mkhitaryan; Borini late); sub Mkhitaryan, 86', 2-0 up, flicked Ibrahimović's right-side cross past Pickford with his right heel; looked offside but stood | Pass 2 (22 Oct 2026): 86th min; AFP: right heel, Ibrahimović's right-wing cross; Pogba released Ibrahimović first.",
+  "note": "Pass 2 (22 Oct 2026): Added Pogba's pass (one source). Spots and landing estimated. | Earlier: Ibrahimović's carry before the cross and the landing spot are estimated."
  },
  {
   "id": "bg-can-watford-2017",
@@ -879,8 +894,8 @@
   ],
   "source": "Eurosport: https://www.eurosport.com/football/premier-league/2016-2017/emre-can-s-overhead-screamer-gives-liverpool-win-over-watford_sto6149995/story.shtml",
   "source2": "https://www.liverpoolfc.com/match/2016-17/first-team/watford-v-liverpool-live-matchday-blog",
-  "checked": "Vicarage Road, 1 May 2017, 0-1; Lucas Leiva's chip into the box, Can's scissor/overhead kick from about 15 yards into the top corner past Gomes, at the stroke of half-time",
-  "note": "Minute: LFC 45+2 (written 47, period 1H); others say 45'. Which top corner is from memory, not a source."
+  "checked": "Vicarage Road, 1 May 2017, 0-1; Lucas Leiva's chip into the box, Can's scissor/overhead kick from about 15 yards into the top corner past Gomes, at the stroke of half-time | Pass 2 (22 Oct 2026): 1-0, first-half stoppage time (two minutes in), Lucas's ball forward, top corner past Gomes; one report says top-left.",
+  "note": "Pass 2 (22 Oct 2026): Top-left kept (one source, view not stated). | Earlier: Minute: LFC 45+2 (written 47, period 1H); others say 45'. Which top corner is from memory, not a source."
  },
  {
   "id": "bg-salah-everton-2017",
@@ -962,8 +977,8 @@
   ],
   "source": "FIFA.com: https://www.fifa.com/en/news/en/news/salah-magical-moment-2993447",
   "source2": "https://www.11v11.com/matches/liverpool-v-everton-10-december-2017-355901/",
-  "checked": "Anfield, 10 Dec 2017, 1-1 (Salah 42', Rooney pen 77'); Joe Gomez's pass down the right, Salah shrugged off Martina, went past Gueye and curled a left-footer around Ashley Williams into the far top corner past Pickford; 2018 Puskás Award",
-  "note": "Carry route and shot spot estimated from the description."
+  "checked": "Anfield, 10 Dec 2017, 1-1 (Salah 42', Rooney pen 77'); Joe Gomez's pass down the right, Salah shrugged off Martina, went past Gueye and curled a left-footer around Ashley Williams into the far top corner past Pickford; 2018 Puskás Award | Pass 2 (22 Oct 2026): Joe Gomez pass, past Martina and Gueye, curled into the far top corner / top-left corner (two reports).",
+  "note": "Pass 2 (22 Oct 2026): Carry route estimated. | Earlier: Carry route and shot spot estimated from the description."
  },
  {
   "id": "bg-son-burnley-2019",
@@ -998,7 +1013,7 @@
   "endZ": 0.3,
   "move": [
    [
-    12.0,
+    11.0,
     "C",
     [
      44.0,
@@ -1013,7 +1028,7 @@
     0
    ],
    [
-    8.5,
+    7.8,
     "C",
     [
      42.0,
@@ -1028,7 +1043,7 @@
     0
    ],
    [
-    4.5,
+    4.2,
     "C",
     [
      36.0,
@@ -1043,7 +1058,7 @@
     0
    ],
    [
-    1.2,
+    1.1,
     "C",
     [
      30.0,
@@ -1060,8 +1075,8 @@
   ],
   "source": "Tottenham report: https://tottenhamhotspur.com/news/2019/december/sensational-son-strike-helps-us-blaze-past-burnley",
   "source2": "https://www.skysports.com/football/news/11675/11880372/tottenham-5-0-burnley-heung-min-son-solo-goal-helps-spurs-thrash-burnley",
-  "checked": "Tottenham Hotspur Stadium, 7 Dec 2019, 5-0; Kane and Lucas had made it 2-0; Son picked up the ball near his own box, ran about 70 m in 12 seconds past several Burnley players and slotted past Pope for 3-0 (32'); PL Goal of the Season",
-  "note": "Route of the run estimated (start near his own box, about 70 m in 12 s)."
+  "checked": "Tottenham Hotspur Stadium, 7 Dec 2019, 5-0; Kane and Lucas had made it 2-0; Son picked up the ball near his own box, ran about 70 m in 12 seconds past several Burnley players and slotted past Pope for 3-0 (32'); PL Goal of the Season | Pass 2 (22 Oct 2026): 32nd min (Spurs, ESPN), from the edge of his own box, 71.4 m in 11 seconds (Premier League), slotted past Pope for 3-0.",
+  "note": "Pass 2 (22 Oct 2026): Run timed to 11 s per the Premier League figure; route estimated. | Earlier: Route of the run estimated (start near his own box, about 70 m in 12 s)."
  },
  {
   "id": "bg-lamela-arsenal-2021",
@@ -1143,8 +1158,8 @@
   ],
   "source": "ESPN report: https://www.espn.co.uk/football/report/_/gameId/578388",
   "source2": "https://nbcsports.com/soccer/news/watch-lamela-scores-spectacular-rabona-to-give-spurs-lead-at-arsenal",
-  "checked": "Emirates, 14 Mar 2021, 2-1 Arsenal (Lamela 33', Ødegaard, Lacazette pen 64'); sub Lamela, on for Son; Lucas took Reguilón's long pass and fed Lamela, who struck a rabona from the left of the box into the bottom far corner past Leno; Lamela later sent off (76')",
-  "note": "Minute 33' (one report 32'). Pass spots estimated."
+  "checked": "Emirates, 14 Mar 2021, 2-1 Arsenal (Lamela 33', Ødegaard, Lacazette pen 64'); sub Lamela, on for Son; Lucas took Reguilón's long pass and fed Lamela, who struck a rabona from the left of the box into the bottom far corner past Leno; Lamela later sent off (76') | Pass 2 (22 Oct 2026): 33rd min, Lucas Moura pass, left-leg rabona through Partey's legs into the far bottom corner past Leno (Tottenham, SI).",
+  "note": "Pass 2 (22 Oct 2026): None. | Earlier: Minute 33' (one report 32'). Pass spots estimated."
  },
  {
   "id": "bg-garnacho-everton-2023",
@@ -1173,7 +1188,7 @@
   "technique": "overhead kick",
   "ball": [
    33.0,
-   12.0
+   13.7
   ],
   "end": 36.8,
   "endZ": 2.0,
@@ -1217,7 +1232,7 @@
     ],
     [
      33.0,
-     12.0
+     13.7
     ],
     "Diogo Dalot",
     "Alejandro Garnacho",
@@ -1226,7 +1241,7 @@
   ],
   "source": "ESPN report: https://africa.espn.com/football/report/_/gameId/671157",
   "source2": "https://www.businessday.co.za/bd/sport/soccer/2023-11-26-garnacho-scores-overhead-stunner-in-man-us-3-0-win-at-everton",
-  "checked": "Goodison Park, 26 Nov 2023, 0-3 (Garnacho 3', Rashford pen 56', Martial 75'); Rashford played Dalot in on the right, Dalot's cross, Garnacho's overhead kick back across goal into the top right-hand corner past Pickford",
-  "note": "Timing given as 2:13 or 1:53 (third minute either way). 'Top right-hand corner' read as the shooter's view of goal; spots estimated."
+  "checked": "Goodison Park, 26 Nov 2023, 0-3 (Garnacho 3', Rashford pen 56', Martial 75'); Rashford played Dalot in on the right, Dalot's cross, Garnacho's overhead kick back across goal into the top right-hand corner past Pickford | Pass 2 (22 Oct 2026): AP: third minute, overhead kick from about 15 yards, Dalot cross from the right near the byline; PA: top right-hand corner past Pickford.",
+  "note": "Pass 2 (22 Oct 2026): Strike moved to 15 yards (y 13.7). Foot (right) not named in any source found. | Earlier: Timing given as 2:13 or 1:53 (third minute either way). 'Top right-hand corner' read as the shooter's view of goal; spots estimated."
  }
 ]
