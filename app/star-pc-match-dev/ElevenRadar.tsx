@@ -23,7 +23,7 @@
  * from your goal line to theirs, y 0..68 across.
  */
 import type { RadarTick, Side } from "@/lib/star/hiddenMatch";
-import { attackLabel } from "@/lib/star/matchRadar";
+import { attackLabel, hadBall } from "@/lib/star/matchRadar";
 
 export const US = "#3987e5";
 export const THEM = "#d95926";
@@ -238,7 +238,8 @@ function Markings() {
 export function MomentumBar({ ticks, fullTime }: { ticks: RadarTick[]; fullTime: number }) {
   const W = 400;
   const bw = (W - 8) / Math.max(1, fullTime);
-  const ours = ticks.filter((k) => k.possession === "user").length;
+  // Who had the ball IN each minute: the one rule (matchRadar.ts hadBall).
+  const ours = ticks.filter((k) => hadBall(k) === "user").length;
   const poss = ticks.length ? Math.round((ours / ticks.length) * 100) : 50;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }} data-pc-momentum>

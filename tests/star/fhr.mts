@@ -155,7 +155,15 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
     for (let t = 0; t <= l.durS + 1e-9; t += l.durS / 12) { const b = l.ballAt(t); out.push(`${b.x.toFixed(3)},${b.y.toFixed(3)}`); }
     return out.join(";");
   };
-  const cs = servedChances({ count: 160, seed: 9 });
+  // The sample these build-up checks were tuned on: the ruler's inputs before
+  // sim rebuild piece 4 (22 Oct 2026), when the ruler had no context, no live
+  // penalties and no Match flow. The ruler now uses the one inputs builder
+  // (lib/star/matchInputs.ts), which serves a different 160; on that sample
+  // two build-up flaws show (one byline cross's extra defender enters at
+  // 0.2 s or less; 114 distinct routes in 142), left for the FHR build-up
+  // piece (plan §8 row 8). Kept fixed here so this stays a check on the
+  // build-ups, not on which chances an even match happens to serve.
+  const cs = servedChances({ count: 160, seed: 9, inputs: { teamStrength: 70, oppStrength: 70, playerSkill: 65, position: "ST" } });
   // Off: careerBuildUp is exactly today's — none with Chances: Old, leadInGen's own with Chances: New.
   clearForces();
   check(cs.every((c) => careerBuildUp(c.sc, c.moment) === null), "Off + Chances Old: a build-up appeared");

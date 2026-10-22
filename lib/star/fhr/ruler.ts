@@ -37,6 +37,7 @@ import {
 } from "../hiddenMatch";
 import { type Scenario } from "../canvasEngine";
 import { withCornerReach } from "../cornerReach";
+import { matchInputsFor, simpleMatchSpec } from "../matchInputs";
 import { CX } from "../pitch";
 import { makeChance, PictureMemory } from "../chanceMaker";
 import { newSelectionMemory } from "../scenarioSelect";
@@ -60,8 +61,17 @@ export const REACT_MOVE_M = 0.5;
 /** How long a struck ball is followed before the count is taken (seconds). */
 export const REACT_MAX_S = 4;
 
-/** An even game, a striker: the case the plan quotes its bands for. */
-export const RULER_INPUTS: HiddenMatchInputs = { teamStrength: 70, oppStrength: 70, playerSkill: 65, position: "ST" };
+/**
+ * An even game, a striker: the case the plan quotes its bands for. Built by
+ * the one inputs builder (lib/star/matchInputs.ts), so the ruler measures the
+ * match the real match plays: context, live penalties, Mikey's corner rule and
+ * Settings → Match flow (the ruler used to leave Match flow out, so it always
+ * measured the Old match). Read the setting fresh with `rulerInputs()`.
+ */
+export function rulerInputs(matchFlow?: boolean): HiddenMatchInputs {
+  return matchInputsFor(simpleMatchSpec({ teamStrength: 70, oppStrength: 70, skill: 65, position: "ST", matchFlow }));
+}
+export const RULER_INPUTS: HiddenMatchInputs = rulerInputs();
 
 /** The stand-in for you taking the chance (tests/star/hiddenMatch.mts's). */
 export function standInResult(zone: Zone, rng: () => number): ScenarioResult {
@@ -137,7 +147,7 @@ export function measureRuler(o: { matches: number; seed?: number; chances?: Chan
   const t0 = Date.now();
   const mode: ChancesMode = o.chances ?? "old";
   // Mikey's corner rule, as the real match passes it (lib/star/cornerReach.ts).
-  const inputs = withCornerReach(o.inputs ?? RULER_INPUTS);
+  const inputs = withCornerReach(o.inputs ?? rulerInputs());
   const prev = (globalThis as Record<string, unknown>).__starChancesForced as ChancesMode | null | undefined;
   forceChancesMode(mode);
   try {
