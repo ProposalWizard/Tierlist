@@ -20,13 +20,14 @@
  * Also exported: BestGoalsList, the Hall of Fame's "Best goals".
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { CareerState } from "@/lib/star/types";
 import { bestGoals, type CareerGoal } from "@/lib/star/goalLog";
 import { getClip, listClips } from "@/lib/star/goalClip/store";
 import { makeEdit, posterMoment } from "@/lib/star/goalClip/edit";
 import { drawEditFrame, prepareClipSprites } from "@/lib/star/goalClip/render";
 import { useAnimationsLook } from "@/lib/star/animLook";
-import { longSeason } from "@/lib/star/careerOverview";
+import { longSeason, shortSeason } from "@/lib/star/careerOverview";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
 import GoalClipViewer from "./GoalClipViewer";
@@ -214,7 +215,7 @@ function GoalRow({ goal, startYear, here, rank, onOpen }: {
       <div className="min-w-0 flex-1">
         <div className="truncate text-[14px] font-black leading-tight text-white">{goalHeadline(goal)}</div>
         <div className="truncate text-[11px] font-bold text-white/70">
-          {goal.competition} · {longSeason(startYear, goal.season)} · {resultWords(goal.score)}
+          {goal.competition} · {shortSeason(startYear, goal.season)} · {resultWords(goal.score)}
         </div>
         {tags.length > 0 && (
           <div className="mt-0.5 flex gap-1">
@@ -228,7 +229,13 @@ function GoalRow({ goal, startYear, here, rank, onOpen }: {
 
 // ── Tapped: the video, or the facts ──────────────────────────────────────────
 
-function FactsCard({ goal, startYear, note }: { goal: CareerGoal; startYear: number; note?: string }) {
+/** Full-screen sheets go on the page itself, so a moving card above them
+ *  (the Stats page's rise-in) cannot pin them inside it. */
+function onTop(node: React.ReactElement): React.ReactElement {
+  return typeof document === "undefined" ? node : createPortal(node, document.body);
+}
+
+function FactsCard({ goal, startYear, note, picture = true }: { goal: CareerGoal; startYear: number; note?: string; picture?: boolean }) {
   const facts: [string, string][] = [
     ["Minute", `${goal.minute}'`],
     ["Against", `${goal.opponent} (${goal.home ? "home" : "away"})`],
@@ -243,12 +250,14 @@ function FactsCard({ goal, startYear, note }: { goal: CareerGoal; startYear: num
   if (goal.assist) facts.push(["Assist", goal.assist]);
   return (
     <div data-goal-facts>
-      <div className="relative aspect-video w-full overflow-hidden" style={{ borderRadius: 4 }}>
-        {typeof goal.distance === "number"
-          ? <MiniPitch goal={goal} className="absolute inset-0 h-full w-full" />
-          : <ClubTile goal={goal} className="absolute inset-0 h-full w-full" />}
-      </div>
-      <div className="mt-2 grid grid-cols-2 gap-1">
+      {picture && (
+        <div className="relative mb-2 aspect-video w-full overflow-hidden" style={{ borderRadius: 4 }}>
+          {typeof goal.distance === "number"
+            ? <MiniPitch goal={goal} className="absolute inset-0 h-full w-full" />
+            : <ClubTile goal={goal} className="absolute inset-0 h-full w-full" />}
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-1">
         {facts.map(([k, v]) => (
           <div key={k} className="min-w-0 px-2 py-1" style={{ background: "rgba(255,255,255,.05)" }}>
             <div className="text-[9px] font-black uppercase tracking-wider text-white/55">{k}</div>
@@ -268,8 +277,8 @@ export function GoalSheet({ goal, startYear, here, onClose }: { goal: CareerGoal
     ? "Its video is on the phone that recorded it."
     : !goal.clipId ? "No video of this one: it was not recorded." : undefined;
   const facts = <FactsCard goal={goal} startYear={startYear} note={away} />;
-  return (
-    <div className="fixed inset-0 z-[80] overflow-y-auto px-3 pb-6 pt-3" style={{ background: "rgba(5,8,15,.97)" }} role="dialog" aria-label={title} data-goal-sheet>
+  return onTop(
+    <div className="fixed inset-0 z-[80] overflow-y-auto px-3 pb-6 pt-3" style={{ background: "#05080f" }} role="dialog" aria-label={title} data-goal-sheet>
       <div className="mx-auto max-w-[480px]">
         <div className="mb-2 flex items-center gap-2">
           <button onClick={onClose} className="kib-press grid h-9 w-9 shrink-0 place-items-center text-[20px] font-black text-white" style={{ background: "rgba(255,255,255,.08)", borderRadius: 4 }} aria-label="Close">✕</button>
@@ -282,7 +291,7 @@ export function GoalSheet({ goal, startYear, here, onClose }: { goal: CareerGoal
           ? (
             <>
               <GoalClipViewer clipId={goal.clipId} title={title} fallback={facts} />
-              <div className="mt-3"><FactsCard goal={goal} startYear={startYear} /></div>
+              <div className="mt-3"><FactsCard goal={goal} startYear={startYear} picture={false} /></div>
             </>
           )
           : facts}
@@ -367,7 +376,7 @@ export default function CareerGoalsGallery({ career, goals: given }: {
     }
   }
   return (
-    <div data-career-goals>
+    <div className="min-w-0" data-career-goals>
       <div className="-mx-1 mb-1.5 flex gap-1 overflow-x-auto px-1 pb-0.5" role="tablist" aria-label="Which goals">
         {chips.map(c => {
           const on = c.id === filter;
@@ -462,8 +471,8 @@ export function BestGoalsList({ career }: { career: CareerState }) {
 
 /** The Hall of Fame's sheet: a career's best goals over its overview. */
 export function BestGoalsSheet({ career, onClose }: { career: CareerState; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-[70] overflow-y-auto px-3 pb-6 pt-3" style={{ background: "rgba(5,8,15,.97)" }} role="dialog" aria-label="Best goals" data-best-goals-sheet>
+  return onTop(
+    <div className="fixed inset-0 z-[70] overflow-y-auto px-3 pb-6 pt-3" style={{ background: "#05080f" }} role="dialog" aria-label="Best goals" data-best-goals-sheet>
       <div className="mx-auto max-w-[480px]">
         <div className="mb-3 flex items-center gap-2">
           <button onClick={onClose} className="kib-press grid h-9 w-9 shrink-0 place-items-center text-[20px] font-black text-white" style={{ background: "rgba(255,255,255,.08)", borderRadius: 4 }} aria-label="Close">✕</button>

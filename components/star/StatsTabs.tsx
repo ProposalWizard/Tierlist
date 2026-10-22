@@ -79,7 +79,7 @@ export default function StatsTabs({ career, onRenew, onOpen, hallRecords, startV
       {/* Your FIFA-style card, above the chips (Harry, 22 Oct 2026). */}
       <PlayerCard career={career} />
       {/* One row of five chips: every view is one tap (was arrows, up to 3 taps). */}
-      <div data-stats-row role="tablist" aria-label="Stats" className="mb-2 grid grid-cols-6 gap-1">
+      <div data-stats-row role="tablist" aria-label="Stats" className="mb-2 grid grid-cols-6 gap-[3px]">
         {VIEWS.map((v) => {
           const on = v.id === view;
           return (
@@ -89,13 +89,13 @@ export default function StatsTabs({ career, onRenew, onOpen, hallRecords, startV
               aria-selected={on}
               data-stats-chip={v.id}
               onClick={() => setView(v.id)}
-              className={`kib-press flex h-[38px] min-w-0 flex-col items-center justify-center gap-0.5 text-[10.5px] font-black uppercase leading-none tracking-wide ${on ? "text-gray-950" : "text-white"}`}
+              className={`kib-press flex h-[38px] min-w-0 flex-col items-center justify-center gap-0.5 text-[9.5px] font-black uppercase leading-none tracking-tight ${on ? "text-gray-950" : "text-white"}`}
               style={on
                 ? { background: "linear-gradient(180deg, #fde047, #f59e0b)", borderRadius: 3, boxShadow: "inset 0 1px 0 rgba(255,255,255,.5)" }
                 : { background: "rgba(var(--sk-flat-rgb),.7)", borderRadius: 3, boxShadow: "inset 0 0 0 1px var(--sk-edge)" }}
             >
               <span className="text-[13px] leading-none">{v.icon}</span>
-              <span className="max-w-full truncate px-0.5">{v.label}</span>
+              <span className="max-w-full truncate">{v.label}</span>
             </button>
           );
         })}
