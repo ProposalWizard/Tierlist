@@ -8,7 +8,7 @@
 import { useEffect } from "react";
 import { useFhrMode } from "@/lib/star/fhr/toggle";
 import { useRealMomentsMode, setRealMomentsMode } from "@/lib/star/fhr/realMomentToggle";
-import { loadRealMomentPool, REAL_MOMENT_SHARE_IN } from "@/lib/star/fhr/realMomentHighlights";
+import { loadRealMomentPool, REAL_MOMENT_OF_ALL_IN } from "@/lib/star/fhr/realMomentHighlights";
 import { SegTabs } from "./screenKit";
 import { SetNote } from "./settingsKit";
 
@@ -25,7 +25,7 @@ export default function RealMomentsRow() {
         <SegTabs className="w-[120px] shrink-0" value={m} onChange={setRealMomentsMode} tabs={[["off", "Off"], ["on", "On"]] as const} />
       </div>
       <SetNote dim className="mt-1 text-[10px]">
-        On: about 1 in {REAL_MOMENT_SHARE_IN} open-play chances is a real one, every player where he really stood, with the real build-up first.
+        On: about 1 in {REAL_MOMENT_OF_ALL_IN} open-play chances is a real one, every player where he really stood, with the real build-up first.
       </SetNote>
     </div>
   );

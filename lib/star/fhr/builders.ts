@@ -26,9 +26,9 @@
 import type { Scenario, ScenarioKind } from "../canvasEngine";
 import type { LeadIn, LeadMoment } from "../leadIn";
 import { fhrOn } from "./toggle";
-import { fhrBuildUpFor, fhrWantsBuildUp, chanceSeed, FHR_ADJUST_AUTO, FHR_MIN_S, type FhrAdjust, type FhrBuildUp } from "./buildUp";
+import { fhrBuildUpFor, fhrWantsBuildUp, chanceSeed, FHR_ADJUST_AUTO, type FhrAdjust, type FhrBuildUp } from "./buildUp";
 import { fhrFoulBuildUpFor, fhrWantsFoul } from "./foulBuildUp";
-import { realMomentLeadIn } from "./realMomentHighlights";
+import { realMomentLeadIn, lastSecondsOf } from "./realMomentHighlights";
 import { CX } from "../pitch";
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -43,10 +43,21 @@ import { CX } from "../pitch";
 // only its last FHR_SNAPPY_S (longer at a big moment). Measured with the
 // generator over ~220 matches: see docs/handoffs/2026-10-20-builds/b20/READY.txt.
 
-/** The most of a build-up that plays, seconds (an ordinary moment). */
-export const FHR_SNAPPY_S = 5;
+/**
+ * The most of a build-up that plays, seconds (an ordinary moment).
+ * 22 Oct 2026 (Harry: "buildups are still too slow"): 5 -> 3, the big moment
+ * 6.5 -> 4. Measured over 150 matches a setting: 4.9 s each and 22-26 s a
+ * match before; ~3 s each and ~15 s a match after (scripts/star-sandbox/
+ * highlights-measure.mts). Still made whole and cut, so it still ends on
+ * exactly the drawn chance.
+ */
+export const FHR_SNAPPY_S = 3;
 /** …at the biggest moment (drama 1: a level final, the 90th minute). */
-export const FHR_SNAPPY_BIG_S = 6.5;
+export const FHR_SNAPPY_BIG_S = 4;
+/** A foul's build-up starts this long before the foul (s). */
+export const FHR_FOUL_LEAD_S = 1.2;
+/** The shortest a cut build-up may be when its start moves forward off a pass in the air (s). */
+export const FHR_SNAPPY_MIN_S = 2.4;
 /** A move that ends in a called offside: the offside pass starts at least this long after the build-up does. */
 export const FHR_SNAPPY_OFFSIDE_LEAD_S = 1.2;
 /**
@@ -87,8 +98,8 @@ export function snappyBuildUp(b: FhrBuildUp, capS: number): FhrBuildUp {
   for (let i = 0; i < ps.length; i++) {
     if (s > ps[i] && s < pe[i]) {
       const back = Math.max(0, ps[i] - 0.3), fwd = pe[i] - 0.15;
-      // Forward only if it still leaves a build-up of FHR_MIN_S (never a 3 s stub).
-      s = s - back <= fwd - s || fwd > b.durS - FHR_MIN_S ? back : fwd;
+      // Forward only if it still leaves a build-up of FHR_SNAPPY_MIN_S (never a stub).
+      s = s - back <= fwd - s || fwd > b.durS - FHR_SNAPPY_MIN_S ? back : fwd;
       break;
     }
   }
@@ -139,7 +150,12 @@ export function fhrBuildUpOn(sc: Scenario, moment: LeadMoment, adjust?: FhrAdjus
     note({ kind: sc.kind, what: "open", cover: !!b.cover, drama: b.drama, durS: b.durS, runOnS: b.runOnS ?? 0, offside: !!b.offside, regain: !!b.regain, last: { t0: la.t0, t1: la.t1, endZ: la.endZ ?? 0 } });
     lead = b;
   } else if (fhrWantsFoul(sc, moment)) {
-    const b = fhrFoulBuildUpFor(sc, moment);
+    const whole = fhrFoulBuildUpFor(sc, moment);
+    // 22 Oct 2026 ("buildups are still too slow"): a foul's build-up plays from
+    // FHR_FOUL_LEAD_S before the foul (it was the whole move, ~6 s).
+    const b = whole && adjust?.length !== "long"
+      ? lastSecondsOf(whole, FHR_SNAPPY_S, { keepFrom: Math.max(0, (whole.whistleAt ?? 0) - FHR_FOUL_LEAD_S) })
+      : whole;
     if (b) note({ kind: sc.kind, what: "foul", cover: false, drama: 0, durS: b.durS, runOnS: 0 });
     lead = b;
   }
