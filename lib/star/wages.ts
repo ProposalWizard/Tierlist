@@ -96,3 +96,24 @@ export function wageShareFor(career: CareerState, fixture: Fixture): number {
 export function wageForFixture(career: CareerState, fixture: Fixture): number {
   return Math.round(career.contract.wage * wageShareFor(career, fixture));
 }
+
+/**
+ * A MIDWEEK GAME PAYS EXTRA (Mikey's playtest, 21 Oct 2026: "I think you should
+ * get some sort of money for playing a midweek game … 25% of your weekly wage
+ * added on for this game").
+ *
+ * On top of the week's wage (above, unchanged): every club game you PLAY that
+ * is not on a Saturday pays a quarter of your weekly wage. Only a game you
+ * play (matchStats.ts): a game you sit out pays nothing extra. Internationals
+ * are not your club's games and pay nothing.
+ */
+export const MIDWEEK_FEE_SHARE = 0.25;
+
+export function isMidweekFixture(career: CareerState, fixture: Fixture): boolean {
+  if (fixture.kind === "international") return false;
+  return dayFor(fixture.kind, fixture.week, divisionOf(career)) !== "saturday";
+}
+
+export function midweekFeeFor(career: CareerState, fixture: Fixture): number {
+  return isMidweekFixture(career, fixture) ? Math.round(career.contract.wage * MIDWEEK_FEE_SHARE) : 0;
+}
