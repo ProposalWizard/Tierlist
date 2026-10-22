@@ -1,11 +1,13 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { Trend } from "@/lib/star/media/types";
 import { feedFor } from "@/lib/star/media/feed";
 import { formatVolume } from "@/lib/star/media/trending";
 import { divisionOf, fixtureDate, formatDateNumeric } from "@/lib/star/calendar";
 import PostCard, { FEED_LIST_CLASS } from "./media/PostCard";
+import { FeedWindow, FeedSlot } from "./media/FeedWindow";
+import type { StoredPost } from "@/lib/star/media/types";
 import TransfersPanel from "./TransfersPanel";
 import PhoneFrame from "./PhoneFrame";
 import { KitStyles, PressButton, ClubCard, RiseIn, EmptySlots, useClubTheme, rgba } from "./ui";
@@ -57,6 +59,8 @@ interface Props {
   onContinue?: () => void;
   /** Tapping a post's heart. Absent: the heart is not tappable. */
   onToggleLike?: (postId: string) => void;
+  /** Voting in a Goal of the Month poll. Absent: the poll shows no Vote buttons. */
+  onVote?: (postId: string, index: number) => void;
   /** PROTOTYPE: render just the app, inside someone else's PhoneFrame. */
   inPhone?: boolean;
 }
@@ -75,7 +79,8 @@ const FILTERS: { id: string; label: string; scope?: "club" | "league" }[] = [
   { id: "club", label: "Club", scope: "club" },
 ];
 
-export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPhone = false }: Props) {
+export default function MediaFeed({ career, mode, onContinue, onToggleLike, onVote, inPhone = false }: Props) {
+  const scroller = useRef<HTMLDivElement>(null);
   const { glow } = useClubTheme(career);
   const [filter, setFilter] = useState("all");
   // Feed vs Transfers — two tabs of the one app on the phone, not two
@@ -176,7 +181,8 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
             </div>
           )}
 
-          <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto" data-tour={mode === "moment" ? "reactions-feed" : undefined}>
+          <div ref={scroller} className="kib-noscroll min-h-0 flex-1 overflow-y-auto" data-tour={mode === "moment" ? "reactions-feed" : undefined} data-feed-scroll>
+            <FeedWindow scroller={scroller}>
             <div className={FEED_LIST_CLASS}>
               {/* The second of the two Continue buttons — this one scrolls
                   away like any other post, for anyone reading the feed
@@ -194,9 +200,14 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
                   </svg>
                 </PressButton>
               )}
-              {shown.map((p, i) => i < 8
-                ? <RiseIn key={p.id} index={i} step={55}><PostCard post={p} now={now} onToggleLike={onToggleLike} /></RiseIn>
-                : <PostCard key={p.id} post={p} now={now} onToggleLike={onToggleLike} />)}
+              {/* Only posts near the screen are drawn (FeedWindow.tsx). */}
+              {shown.map((p, i) => (
+                <FeedSlot key={p.id} id={p.id} estimate={estimateHeight(p)} first={i < 4}>
+                  {i < 8
+                    ? <RiseIn index={i} step={55}><PostCard post={p} now={now} onToggleLike={onToggleLike} onVote={onVote} /></RiseIn>
+                    : <PostCard post={p} now={now} onToggleLike={onToggleLike} onVote={onVote} />}
+                </FeedSlot>
+              ))}
               {shown.length === 0 && (
                 // Not a blank page: blacked-out posts where posts will be
                 // (Harry, 1 Oct 2026, P90). No words.
@@ -212,6 +223,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
                 </div>
               )}
             </div>
+            </FeedWindow>
           </div>
         </>
       )}
@@ -294,6 +306,17 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, inPh
       </div>
     </div>
   );
+}
+
+/** A post's height before it has been drawn once (px, at phone width). */
+function estimateHeight(p: StoredPost): number {
+  const g = p.graphic as { type?: string; clips?: unknown[]; synth?: unknown[] } | undefined;
+  const lines = Math.ceil((p.text?.length ?? 0) / 38);
+  const base = 74 + lines * 20;
+  if (!g) return base;
+  if (g.type === "gotmPoll") return base + 520;
+  if (g.type === "goalVideo" || ((g.clips?.length ?? 0) + (g.synth?.length ?? 0)) > 0) return base + 200;
+  return base + 220;
 }
 
 /** A small drawn app icon — a ball inside a rounded square, the same

@@ -86,14 +86,51 @@ export async function getClip(id: string): Promise<GoalTrack | null> {
   }
 }
 
-/** The recordings for these ids that this device has, in the order asked. */
+/**
+ * The recordings for these ids that this device has, in the order asked.
+ *
+ * Every post on screen asks at about the same moment; the asks that arrive
+ * together are answered with ONE database read (speed pass, 22 Oct 2026 —
+ * it used to be a database open + read + close per goal, per post).
+ */
 export async function getClips(ids: string[]): Promise<GoalTrack[]> {
-  const out: GoalTrack[] = [];
-  for (const id of ids) {
-    const t = await getClip(id);
-    if (t) out.push(t);
+  const missing = ids.filter(id => !memory.has(id));
+  if (missing.length) await readBatched(missing);
+  return ids.map(id => memory.get(id)).filter((t): t is GoalTrack => !!t);
+}
+
+let batch: { ids: Set<string>; done: Promise<void> } | null = null;
+
+function readBatched(ids: string[]): Promise<void> {
+  if (!batch) {
+    const ids = new Set<string>();
+    const done = new Promise<void>(res => setTimeout(() => { batch = null; void readMany(Array.from(ids)).then(res); }, 0));
+    batch = { ids, done };
   }
-  return out;
+  for (const id of ids) batch.ids.add(id);
+  return batch.done;
+}
+
+async function readMany(ids: string[]): Promise<void> {
+  const want = ids.filter(id => !memory.has(id));
+  if (!want.length) return;
+  const db = await open();
+  if (!db) return;
+  try {
+    const tx = db.transaction(STORE, "readonly");
+    const st = tx.objectStore(STORE);
+    await Promise.all(want.map(id => new Promise<void>((res) => {
+      const req = st.get(id);
+      req.onsuccess = () => {
+        const row = req.result as { track?: unknown } | undefined;
+        const track = row ? trackFromStored(row.track) : null;
+        if (track) memory.set(id, track);
+        res();
+      };
+      req.onerror = () => res();
+    })));
+  } catch { /* the posts show their pictures */ }
+  finally { db.close(); }
 }
 
 /** Forget all but the newest `keep`, never one in `protect`. */
