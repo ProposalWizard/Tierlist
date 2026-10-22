@@ -22,7 +22,7 @@
 import {
   newMatch, tick, resolveScenario, benchConversion, CHANCE_LINES,
   type HiddenMatchInputs, type HiddenMatchState, type HiddenMatchEvent,
-  type ScenarioRequest, type Side, type Zone, type Lane,
+  type ScenarioRequest, type Side, type Zone, type Lane, type RadarTick,
 } from "./hiddenMatch";
 import { mulberry32 } from "./season";
 import { energyPerMinute } from "./energy";
@@ -196,10 +196,48 @@ export interface RadarSummary {
   injuryCheck?: RadarInjuryCheck;
 }
 
+/**
+ * WHO HAD THE BALL IN A MINUTE — the one rule every possession share uses
+ * (this summary, the live radar in the match, the eleven radar; sim rebuild
+ * piece 4, 22 Oct 2026). A side that shot, won a corner, or was handed your
+ * chance had the ball in that minute, even though the move then ended with it
+ * going the other way. Otherwise: whoever has it as the minute ends.
+ *
+ * Before, the minute was given to whoever had the ball AFTER it, so every
+ * chance counted against the side that made it, and your own chances counted
+ * for you on the live radar but against you here: an even match read 44-47%.
+ */
+export function hadBall(t: Pick<RadarTick, "possession" | "shot" | "corner" | "yours">): Side {
+  return t.yours ? "user" : t.shot ?? t.corner ?? t.possession;
+}
+
+/** One radar frame as a minute of the live radar (RadarTick), by the live
+ *  radar's own rule (hiddenMatch.ts radarTickOf + resolveScenario): the last
+ *  shot and corner of the minute count, your goal before theirs, and your
+ *  chance's ending last of all. */
+export function frameTick(f: RadarFrame): RadarTick {
+  const t: RadarTick = { minute: f.minute, possession: f.possession, zone: f.zone, lane: f.lane, momentum: f.momentum };
+  for (const e of f.events) {
+    if (e.kind === "corner-us") t.corner = "user";
+    else if (e.kind === "corner-them") t.corner = "opponent";
+    else if (e.kind === "goal-us" || e.kind === "chance-us") t.shot = "user";
+    else if (e.kind === "goal-them" || e.kind === "chance-them") t.shot = "opponent";
+    if (e.kind === "goal-us") t.goal = "user";
+    else if (e.kind === "goal-them" && t.goal !== "user") t.goal = "opponent";
+  }
+  if (t.goal) t.shot = t.goal;
+  for (const e of f.events) {
+    if (e.kind === "highlight-goal") { t.goal = "user"; t.shot = "user"; }
+    else if (e.kind === "highlight-miss" && !t.shot) t.shot = "user";
+  }
+  if (f.highlight) t.yours = true;
+  return t;
+}
+
 export function radarSummary(m: RadarMatch): RadarSummary {
   const played = m.frames.slice(1);
   const n = Math.max(1, played.length);
-  const ours = played.filter((f) => f.possession === "user").length;
+  const ours = played.filter((f) => hadBall(frameTick(f)) === "user").length;
   const theirHalf = played.filter((f) => f.zone === "attacking" || f.zone === "box").length;
   const ourHalf = played.filter((f) => f.zone === "defensive" || f.zone === "own_box").length;
   const events = played.flatMap((f) => f.events);
