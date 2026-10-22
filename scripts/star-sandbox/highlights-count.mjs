@@ -178,7 +178,7 @@ while (inMatch && Date.now() - tM < MAX_MIN * 60 * 1000) {
     console.log(`  (stall ${stalls}: has ${st.has}, phase ${st.phase}, kind ${st.kind}; buttons: ${bt})`);
     if (stalls <= 3) await snap(`stall-${stalls}`);
     // Any obvious way on, then a tap on the pitch.
-    if (!(await click(/^(Continue|Next|Play on|Resume|OK|Kick off|Second half|Done|Skip|Close|Back to match)/i, 500))) {
+    if (!(await click(/^(Continue|Next|Play on|Resume|OK|Kick off|Second half|Done|Skip|Close|Back to match)/i, 500)) && st.phase !== "feed") {
       const c = await pg.evaluate(() => { const cv = document.querySelector("canvas"); const r = cv?.getBoundingClientRect(); return r ? { x: r.x + r.width / 2, y: r.y + r.height * 0.4 } : null; });
       if (c) await pg.mouse.click(c.x, c.y);
     }
