@@ -4423,6 +4423,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         counterpartLabel={talkOffer.club}
         kicker="Contract talks"
         valueLabel="Their wage offer, per week"
+        valueIsTheirOffer
         note="Every number here is a weekly wage."
         onDone={(finalWeekly) => {
           const weekly = finalWeekly === null ? null : Math.max(wageFloorFor(talkOffer.club, talkDivision), Math.round(finalWeekly));
