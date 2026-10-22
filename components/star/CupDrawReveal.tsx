@@ -204,7 +204,17 @@ export default function CupDrawReveal({ competition, round, yourClub, onContinue
                 {/* The pot: the balls still in it jiggle while the draw runs,
                     one fewer for every name that comes out. */}
                 {!done && <Pot left={Math.max(0, total * 2 - revealed * 2 - (homeShown ? 2 : 1))} />}
-                {round.ties.slice(0, done ? total : revealed + 1).map((tie, i) => {
+                {/* Every tie has its row from the start (empty until drawn), so
+                    the card opens at full size instead of growing a row at a
+                    time (Mikey's playtest, 21 Oct 2026). */}
+                {round.ties.map((tie, i) => {
+                  if (!done && i > revealed) {
+                    return (
+                      <div key={`slot-${i}`} aria-hidden className="relative flex items-center gap-1.5 rounded-xl border border-white/5 bg-black/30 px-2.5 py-2">
+                        <div className="invisible flex flex-1 items-center gap-2"><TeamBadge club={tie.home} kit={kitsFor(tie.home, tie.away).home} /><span className="text-sm font-bold">-</span></div>
+                      </div>
+                    );
+                  }
                   const isCurrent = !done && i === revealed;
                   const isYours = tie.home === yourClub || tie.away === yourClub;
                   const showAway = !isCurrent || homeShown;

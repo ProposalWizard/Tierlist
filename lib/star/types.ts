@@ -1247,6 +1247,12 @@ export interface CareerState {
    */
   careerLeagueStats?: { goals: number; assists: number; appearances: number };
   /**
+   * The same running tally, Premier League games only (Mikey's playtest,
+   * 21 Oct 2026: the PL career records showed 48 goals from League One).
+   * Absent on an older save: records.ts plCareer() falls back.
+   */
+  careerPlStats?: { goals: number; assists: number; appearances: number };
+  /**
    * Your best-ever showing against each entry in the Records tab, keyed by
    * `RecordDef.id` — see lib/star/records.ts.
    *

@@ -38,7 +38,7 @@ export default function AllSeasonsNew({ career }: { career: CareerState }) {
         <BigNumber value={t.avgRating ? t.avgRating.toFixed(2) : "—"} label="Avg rating" />
       </div>
 
-      <Heading right={<span className="text-[10.5px] font-bold text-white/60">age {o.seasons[0]?.age}–{o.ageAtEnd}</span>}>Goals by season</Heading>
+      <Heading right={<span className="text-[10.5px] font-bold text-white/60">age {o.seasons[0]?.age}–{o.ageAtEnd}</span>}>Goals &amp; assists by season</Heading>
       <FlatPanel bleed fade="none" edge className="px-3 py-2.5">
         <ArcChart o={o} />
       </FlatPanel>

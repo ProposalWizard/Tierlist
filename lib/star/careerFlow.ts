@@ -41,7 +41,7 @@ import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { settleBets, betNewsLines } from "./competitionBetting";
 import { checkNewAchievements } from "./achievements";
-import { updatePersonalBests } from "./records";
+import { updatePersonalBests, plCareer } from "./records";
 import { computeStarRating, growthMultiplier } from "./rating";
 import { NEW_CAREER_REPUTATION, changeReputation, cheekyMissReputation } from "./reputation";
 import { freshUnlocks } from "./unlocks";
@@ -1075,6 +1075,12 @@ export function creditMatchResult(
       appearances: priorCareerLeague.appearances + 1,
     }
     : priorCareerLeague;
+  // Premier League games only, for the PL career records. An older save
+  // starts from what records.ts would have shown it (plCareer).
+  const priorPl = plCareer(career);
+  const careerPlStats = kind === "league" && !alreadyPlayed && divisionOf(career) === "premier"
+    ? { goals: priorPl.goals + stats.goals, assists: priorPl.assists + stats.assists, appearances: priorPl.appearances + 1 }
+    : priorPl;
 
   // ── Player of the Month ──
   //
@@ -1150,6 +1156,7 @@ export function creditMatchResult(
     thisSeasonClub: isInternational ? career.thisSeasonClub : career.player.club,
     leagueSeasonStats,
     careerLeagueStats,
+    careerPlStats,
     // Guarded on `alreadyPlayed`, same as every other tally in this
     // function — international caps/goals are no different from a club
     // appearance in that regard.

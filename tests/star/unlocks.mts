@@ -145,10 +145,10 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   check(!slotQuestionDue(c), "no switch question before the first steps are done");
   c = recordPhoneBought(c);
   check(firstStepsDone(c) && nextStep(c) === null, "the phone finishes the first steps");
-  check(slotQuestionDue(c) && bottomLeft(c) === "achievements", "then the game asks to switch the button to League (P2-89)");
-  const yes = setBottomLeft(c, "league"), no = setBottomLeft(c, "achievements");
-  check(bottomLeft(yes) === "league" && !slotQuestionDue(yes), "yes: League, and the question is not asked again");
-  check(bottomLeft(no) === "achievements" && !slotQuestionDue(no), "no: Achievements stays, and the question is not asked again");
+  // Mikey, 21 Oct 2026: no question; League once the first steps are done,
+  // whatever an old save answered (Achievements stays in the swipe row).
+  check(!slotQuestionDue(c) && bottomLeft(c) === "league", "first steps done: the bottom-left is League, no question");
+  check(bottomLeft(setBottomLeft(c, "achievements")) === "league", "an old 'no' answer still gets League");
   const old = { ...c, unlocks: undefined };
   check(bottomLeft(old) === "league" && nextStep(old) === null && !slotQuestionDue(old), "an old save keeps League and has no first steps");
 }

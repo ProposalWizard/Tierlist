@@ -113,6 +113,7 @@ import { POSITION_NAMES, matchdayFor } from "@/lib/star/teamsheet";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 // Swipe home screens — Stats · Home · Training (v0.15 item 34).
+import SwipeBack from "@/components/star/SwipeBack";
 import SwipePages from "@/components/star/SwipePages";
 import HomeHub, { daysToNext } from "@/components/star/HomeHub";
 import TopHud, { type HudScreen } from "@/components/star/ui/TopHud";
@@ -4550,6 +4551,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <>
         {shopLookNow === "new" ? (
+          <SwipeBack onBack={() => { if (goBackRemembered()) return; setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}>
           <ShowroomShop
             career={career}
             kind={kind}
@@ -4570,6 +4572,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             onOpen3D={() => { setShopAtDoor(false); setPhase("shop-3d"); }}
             onOpenHome={HOME3D_IN_CAREER ? () => { setHomeFromGarden(false); setPhase("home-3d"); } : undefined}
           />
+          </SwipeBack>
         ) : (
         <Shop
           career={career}

@@ -2066,6 +2066,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         } }, 10);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- extraTimeEligibility reads refs; the fixture is fixed for the match
   }, [matchMode, phase, displayScore, matchMinute, MATCH_DURATION]);
+  // A chance closes the live scores: after it you are back on the commentary,
+  // not the scores (Mikey's playtest, 21 Oct 2026).
+  useEffect(() => { if (phase !== "feed") setScoresOpen(false); }, [phase]);
   useEffect(() => { if (matchMode) setMusicMuted(muted); }, [matchMode, muted]);
   useEffect(() => () => { clearMusicScene("match"); setMusicMuted(false); }, []);
 
@@ -7330,14 +7333,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     return "tdDribble";
   };
 
-  /** Top-down: the frame follows you up the pitch, about 30 m deep, and sideways too, centred on
+  /** Top-down: the frame follows you up the pitch, about 40 m deep (was 29: "so zoomed in", Mikey's
+   *  playtest 21 Oct 2026), and sideways too, centred on
    *  you (Harry, 13 Oct 2026: "what happened to our top-down dribbling that was actually moving with
    *  the ball?" — it was fixed sideways at the pitch centre). Same width; never past a touchline.
    *  The picture only: the run's rules and the hidden match are untouched. */
   const topDownViewport = (run: FpRunState) => {
     const c = canvasRef.current;
     const aspect = c && c.height > 0 ? c.width / c.height : 5 / 8;
-    const y1 = run.y - 20, y2 = run.y + 9;
+    const y1 = run.y - 28, y2 = run.y + 12;
     const w = (y2 - y1) * aspect;
     const cx = Math.max(w / 2, Math.min(PITCH_W - w / 2, run.x));
     return { x1: cx - w / 2, x2: cx + w / 2, y1, y2 };
@@ -9712,7 +9716,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             (the dim part past the line is energy you no longer have); drains as
             you sprint, refills as you ease off. B14b: in the first corner of the
             pitch clear of the goal, the ball and every man (lib/star/barSpot.ts). */}
-        {stamUi && !leadInOn && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
+        {stamUi && !leadInOn && phase !== "feed" && phase !== "postmatch" && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
           <div
             data-stamina={stamUi.v.toFixed(2)}
             data-stamina-cap={stamUi.cap.toFixed(2)}

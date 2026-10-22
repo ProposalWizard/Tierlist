@@ -376,20 +376,21 @@ export function firstStepsDone(c: Pick<CareerState, "unlocks" | "achievements" |
  * league as a shortcut?"
  *
  *   "league"       — League (locked until two drills on the v0.24 order), and every old save.
- *   "achievements" — once Achievements has opened, through the first steps,
- *                    and after them if the player says no to the switch.
+ *   "achievements" — once Achievements has opened, through the first steps only.
  */
 export type BottomLeft = "league" | "achievements";
 
 export function bottomLeft(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): BottomLeft {
   if (!c.unlocks || !c.unlocks.open.includes("achievements")) return "league";
-  if (c.unlocks.slot) return c.unlocks.slot;
-  return "achievements";
+  // Mikey's playtest, 21 Oct 2026: two Achievements buttons (this one and
+  // the swipe row's). Once the first steps are done this is League, always;
+  // Achievements stays in the swipe row. No question asked any more.
+  return firstStepsDone(c) ? "league" : "achievements";
 }
 
-/** Ask "switch this to League?" — first steps done, not asked yet. */
-export function slotQuestionDue(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): boolean {
-  return !!c.unlocks && c.unlocks.open.includes("achievements") && !c.unlocks.slot && firstStepsDone(c);
+/** The "switch this to League?" question: retired (see bottomLeft). */
+export function slotQuestionDue(_c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): boolean {
+  return false;
 }
 
 export function setBottomLeft(c: CareerState, slot: BottomLeft): CareerState {
