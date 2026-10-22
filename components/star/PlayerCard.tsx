@@ -12,9 +12,9 @@
  * A stat that went UP since this device last showed the card gets one green
  * "+2" flash (once; remembered in localStorage, so the next look is quiet).
  *
- * "Save image" photographs the card (html2canvas) to a PNG. The card's shape
- * is an SVG behind the content, not a CSS clip, because html2canvas cannot
- * draw clip-path.
+ * "Save image" draws the card onto a canvas, piece by piece where each sits
+ * on screen (playerCardImage.ts), and saves it as a PNG. html2canvas was
+ * tried first and moved the text; see that file.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
@@ -24,6 +24,7 @@ import { skinToneHex, shortDisplayName } from "@/lib/star/playerIdentity";
 import ClubBadge from "./ClubBadge";
 import NationFlag from "./NationFlag";
 import DrawnHeadChip from "./DrawnHeadChip";
+import { drawPlayerCardPng } from "./playerCardImage";
 
 /** Each tier's paint: the card's gradient, its edge, its ink. */
 const LOOK: Record<CardTier, { stops: [string, string, string]; edge: string; ink: string; soft: string; line: string }> = {
@@ -85,9 +86,7 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
     if (!el || saving) return;
     setSaving(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(el, { backgroundColor: null, scale: 3, useCORS: true, logging: false });
-      const blob: Blob | null = await new Promise((res) => canvas.toBlob(res, "image/png"));
+      const blob = await drawPlayerCardPng(el, 3);
       if (!blob) return;
       const file = `knowitball-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${data.overall}.png`;
       const url = URL.createObjectURL(blob);
@@ -95,7 +94,7 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
       a.href = url; a.download = file;
       document.body.appendChild(a); a.click(); a.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 4000);
-    } catch { /* a failed photo leaves the card as it is */ } finally {
+    } catch (e) { console.warn("Save image failed", e); /* the card stays as it is */ } finally {
       setSaving(false);
     }
   };
@@ -108,10 +107,11 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
           <div key={s.key} data-card-stat={s.key} className="relative flex items-baseline gap-1.5" title={s.name}>
             <span
               key={up ? `u${flashId}` : "n"}
+              data-pc-text data-pc-color={look.ink}
               className={`w-[26px] text-right text-[19px] leading-none tabular-nums ${up ? "pc-flash" : ""}`}
               style={{ fontFamily: "var(--sk-display)", color: look.ink }}
             >{data.stats[s.key]}</span>
-            <span className="text-[13px] font-bold leading-none tracking-wide" style={{ color: look.soft }}>{s.label}</span>
+            <span data-pc-text className="text-[13px] font-bold leading-none tracking-wide" style={{ color: look.soft }}>{s.label}</span>
             {up ? <span key={`p${flashId}`} data-card-gain={s.key} className="pc-plus absolute -right-1 -top-1 text-[11px] font-black leading-none">+{up}</span> : null}
           </div>
         );
@@ -129,7 +129,7 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
         @media (prefers-reduced-motion: reduce) { .pc-flash { animation: none; color: #16a34a !important; } .pc-plus { animation: none; } }
       `}</style>
       <div ref={cardRef} className="relative shrink-0" style={{ width: W, height: H }} aria-label={`${TIER_NAME[data.tier]} card, overall ${data.overall}`}>
-        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0" aria-hidden>
+        <svg data-pc-shape width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0" aria-hidden>
           <defs>
             <linearGradient id={`pc-g-${data.tier}`} x1="0" y1="0" x2="1" y2="1">
               <stop offset="0" stopColor={look.stops[0]} />
@@ -155,27 +155,29 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
 
         {/* Left column: overall, position, flag, badge. */}
         <div className="absolute flex flex-col items-center" style={{ left: 22, top: 30, width: 50 }}>
-          <span key={gains.overall ? `o${flashId}` : "o"} data-card-overall className={`text-[44px] leading-[0.9] tabular-nums ${gains.overall ? "pc-flash" : ""}`} style={{ fontFamily: "var(--sk-display)", color: look.ink }}>{data.overall}</span>
-          <span className="mt-0.5 text-[15px] leading-none" style={{ fontFamily: "var(--sk-display)", color: look.ink }}>{data.position}</span>
-          <span className="my-1.5 block h-px w-8" style={{ background: look.line }} />
-          <NationFlag nation={nation} width={28} rounded={2} />
-          <span className="mt-1.5 block"><ClubBadge club={career.player.club} kit={kit} size={28} /></span>
+          <span key={gains.overall ? `o${flashId}` : "o"} data-card-overall data-pc-text data-pc-color={look.ink} className={`text-[44px] leading-[0.9] tabular-nums ${gains.overall ? "pc-flash" : ""}`} style={{ fontFamily: "var(--sk-display)", color: look.ink }}>{data.overall}</span>
+          <span data-pc-text className="mt-0.5 text-[15px] leading-none" style={{ fontFamily: "var(--sk-display)", color: look.ink }}>{data.position}</span>
+          <span data-pc-rect className="my-1.5 block h-px w-8" style={{ background: look.line }} />
+          <span data-pc-img className="block"><NationFlag nation={nation} width={28} rounded={2} /></span>
+          <span data-pc-img className="mt-1.5 block"><ClubBadge club={career.player.club} kit={kit} size={28} /></span>
         </div>
 
         {/* The face: the same drawn head the match draws on you. */}
-        <div className="absolute overflow-hidden" style={{ right: 16, top: 26, width: 124, height: 124 }}>
+        <div data-pc-face className="absolute overflow-hidden" style={{ right: 16, top: 26, width: 124, height: 124 }}>
           <DrawnHeadChip id="you" shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={124} skin={skinToneHex(career.player.skinTone)} />
+          {/* Fade the shoulders into the card. */}
+          <div data-pc-fade={look.stops[1]} className="absolute inset-x-0 bottom-0" style={{ height: 34, background: `linear-gradient(180deg, transparent, ${look.stops[1]})` }} />
         </div>
 
         {/* Name. */}
         <div className="absolute left-0 right-0 text-center" style={{ top: 156 }}>
-          <div className="mx-auto truncate px-6 text-[19px] leading-none tracking-wide" style={{ fontFamily: "var(--sk-display)", color: look.ink }}>{name}</div>
+          <div data-pc-text className="mx-auto truncate px-6 text-[19px] leading-none tracking-wide" style={{ fontFamily: "var(--sk-display)", color: look.ink }}>{name}</div>
         </div>
 
         {/* The six. */}
         <div className="absolute flex justify-center gap-5" style={{ left: 0, right: 0, top: 190 }}>
           {half(CARD_STATS.slice(0, 3))}
-          <span className="block w-px self-stretch" style={{ background: look.line }} />
+          <span data-pc-rect className="block w-px self-stretch" style={{ background: look.line }} />
           {half(CARD_STATS.slice(3))}
         </div>
       </div>
