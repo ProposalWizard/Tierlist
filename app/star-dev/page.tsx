@@ -2211,7 +2211,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // talking about you and your old rival who has stopped caring.
     moved.media = generateForCareer(moved,
       { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.transferFee ?? offer.signingFee }, "transfer");
-    pushNews(signingNews(moved, offer.club));
+    // The card shows over next season: the new club's league, next season's age.
+    pushNews(signingNews(moved, offer.club, { division: offer.division ?? divisionOf(career), age: moved.player.age + 1 }));
     setCareer(moved);
     setTransferOffers([]);
     setPendingSignOffer(null);
@@ -4453,6 +4454,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         counterpartLabel={talkOffer.club}
         kicker="Contract talks"
         valueLabel="Their wage offer, per week"
+        valueIsTheirOffer
         note="Every number here is a weekly wage."
         onDone={(finalWeekly) => {
           const weekly = finalWeekly === null ? null : Math.max(wageFloorFor(talkOffer.club, talkDivision), Math.round(finalWeekly));

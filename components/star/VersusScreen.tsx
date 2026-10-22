@@ -70,6 +70,10 @@ interface Props {
   pitchCorner?: React.ReactNode;
   /** The same, in the top-LEFT corner (the boots warning, 5 Oct 2026). */
   pitchCornerLeft?: React.ReactNode;
+  /** Small square buttons in the header's top-right corner, mirroring Back
+   *  (the line-up's Sim and Settings). They used to float fixed on the
+   *  right edge, over the away crest and the Play as pill (22 Oct 2026). */
+  headerRight?: React.ReactNode;
 }
 
 /**
@@ -150,7 +154,7 @@ function scouted(s: TeamSheet): boolean {
   return s.xi.length >= 9;
 }
 
-export default function VersusScreen({ matchday, date, competition, results, clubKits, onKickOff, onBack, pitchCorner, pitchCornerLeft }: Props) {
+export default function VersusScreen({ matchday, date, competition, results, clubKits, onKickOff, onBack, pitchCorner, pitchCornerLeft, headerRight }: Props) {
   const { home, away } = matchday;
   const kits = kitsFor(home.club, away.club, clubKits?.[home.club], clubKits?.[away.club]);
   const [showSubs, setShowSubs] = useState(false);
@@ -234,7 +238,8 @@ export default function VersusScreen({ matchday, date, competition, results, clu
               the room to the right of Back and, when it is too long for one
               line, breaks between the competition and the round (two lines
               at most, never mid-name). */}
-          <div className="pl-[68px]">
+          {headerRight && <div data-header-right className="absolute right-2 top-2 z-10 flex gap-1">{headerRight}</div>}
+          <div className={headerRight ? "px-[68px]" : "pl-[68px]"}>
             <div className="relative mx-auto flex w-fit max-w-full items-center gap-1.5 rounded-md border border-white/20 bg-white/[0.08] px-3 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
               <BallIcon />
               <div className="min-w-0 text-center text-[10px] font-black uppercase tracking-[0.18em] text-white/80">
