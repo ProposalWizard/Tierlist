@@ -480,6 +480,9 @@ export type GraphicSpec =
   | {
       type: "potmNominees";
       month: string;
+      /** The division's name ("League One"). Absent on a card saved before
+       *  22 Oct 2026, which then says only "Nominees". */
+      league?: string;
       nominees: PotmNominee[];
       winner?: string;
     }
