@@ -435,6 +435,12 @@ export function dressFor(g: RealGoal): (sc: Scenario) => void {
     for (const r of sc.secondaryRunners) r.who = blank;
     for (const t of sc.teammates) t.who = blank;
     sc.follower.who = blank;
+    // A cross or a header: the commentary names the crosser. The real last
+    // passer (Nani for Rooney's overhead kick), never a test-club name.
+    if (sc.crosser) {
+      const last = [...g.x.move].reverse().find((e) => e[1] === "P" && e[5]);
+      sc.crosser = last && last[4] ? idFor(knownAs(g, last[4]), "") : undefined;
+    }
   };
 }
 
