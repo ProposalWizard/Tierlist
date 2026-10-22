@@ -124,8 +124,11 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/draft/preview", "Draft design preview", "Draft screen redesigns, sample data", "old", "old", "Harry", "old", "none", "team"),
   P("/star-dev", "Play the game", "Road to Ballon d'Or, as players see it", "rbd", "career", "Shared", "live", "own", "open"),
   P("/star-retirement-dev", "Retirement screens", "Every end-of-career screen, with made-up or real saves", "rbd", "career", "Leo", "live", "own", "team"),
+  P("/star-awards-night-dev", "Season awards night", "The awards read out in a small 3D hall, made-up results", "rbd", "career", "Leo", "live", "none", "team"),
   P("/star-relgames-dev", "Relationship games", "Play the boss, team-mate and fan mini-games", "rbd", "career", "Mikey", "live", "none", "team"),
+  P("/star-goals-gallery-dev", "Career goals", "Stats → Goals with a made-up career; Hall of Fame best goals", "rbd", "career", "Leo", "live", "browser", "team"),
   P("/star-goal-clips-dev", "Goal videos", "Record a goal and turn it into a video with sound", "rbd", "career", "Leo", "live", "browser", "team"),
+  P("/star-season-reel-dev", "Your season video", "The end-of-season reel of every goal, on a made-up season", "rbd", "career", "Leo", "live", "none", "team"),
   P("/star-dev/media-lab", "Media lab", "Media-feed graphics bench", "rbd", "career", "Harry", "live", "none", "team"),
   P("/star-training-dev", "Training levels", "Play any training game at any level", "rbd", "career", "Mikey", "live", "none", "team"),
   P("/star-gallery-dev", "Scenario gallery", "Every chance as a picture; save, commit", "rbd", "chances", "Harry", "live", "repo", "admin"),
@@ -175,6 +178,8 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-tuning-dev", "Balance numbers", "Change the game's balance numbers on this device", "rbd", "money", "Harry", "live", "browser", "team"),
   P("/admin/marketing", "Production board", "Every Knowitball video and the step it is at, from a file Claude pushes", "marketing", "marketing", "Harry", "live", "none", "admin"),
   P("/admin/marketing/client", "Knowitball client", "Our voice, audience, rules, brand, learnings and best scripts, from the client record and its Brain notes", "marketing", "marketing", "Harry", "live", "none", "admin"),
+  P("/admin/marketing/studio", "Studio", "The editing suite: watch a cut on a timeline, leave review notes and edits for Claude (Statics coming later)", "marketing", "marketing", "Harry", "live", "shared", "admin"),
+  P("/admin/marketing/uploads", "Uploads", "Upload videos and pictures straight into private storage (Cloudflare R2)", "marketing", "marketing", "Harry", "live", "shared", "admin"),
   P("/admin/sound-board", "Sound board", "Swap any game sound", "rbd", "sound", "Harry", "live", "shared", "admin"),
 ];
 
@@ -291,12 +296,14 @@ export function relatedFor(path: string): { label: string; pages: AdminPage[] } 
  * other page is a TOOL. First sort by Claude, for Harry to correct.
  */
 export const TEST_PAGES = new Set<string>([
-  "/star-goal-clips-dev", "/star-update-dev", "/star-dribble-stick-dev", "/star-vfx-lab-dev", "/star-sound-lab-dev",
+  "/star-goal-clips-dev", "/star-goals-gallery-dev", "/star-update-dev", "/star-dribble-stick-dev", "/star-vfx-lab-dev", "/star-sound-lab-dev",
   "/star-real-moments-dev", "/star-real-shots-dev", "/star-real-goals-dev", "/star-intl-dev", "/star-tournament-dev",
   "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev", "/star-garden3d-dev",
   "/star-home3d-dev", "/star-training3d-dev", "/star-anim3d-dev", "/star-people-dev", "/star-sprites-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev",
   "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev", "/star-shootout-dev", "/star-weather-dev",
+  "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev", "/star-awards-night-dev",
+  "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev",
 ]);
 export const isTestPage = (url: string) => TEST_PAGES.has(url);
 

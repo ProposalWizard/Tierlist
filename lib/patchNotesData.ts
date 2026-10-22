@@ -34,20 +34,54 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "artifactUrl": "https://claude.ai/artifact/RERQk9D5BLaDv14ebha8qf",
       "summary": "Leo, 22 Oct. A plan, not a release: what 7 chats are building tonight on Leo's branches (nothing live until Leo says push). Goal celebrations bought in the shop (run to the corner, skippable, in videos); a fast social feed on slow phones; Goal of the Month; bicycle kicks (Aerial skill); weather and pitch quality changing the ball (test page first); big late moments; shootout keeper that reads your habits (test page); Real Goals league paths, 60 hand-written bangers 2010-2025 and a daily goal; a season video reel; a career goals gallery; a season awards night; an injuries plan for Mikey; a bug hunt. Harry: parts 3, 4 and 13 touch your areas (match file, ball physics, the night) — say if you object.",
       "stats": [
-        { "value": "15", "label": "parts" },
-        { "value": "7", "label": "chats building at once" },
-        { "value": "408 / 414", "label": "tests passing on main tonight" }
+        {
+          "value": "15",
+          "label": "parts"
+        },
+        {
+          "value": "7",
+          "label": "chats building at once"
+        },
+        {
+          "value": "408 / 414",
+          "label": "tests passing on main tonight"
+        }
       ],
       "sections": [
-        { "kind": "added", "title": "Being built tonight", "items": [
-          { "title": "Celebrations + big moments", "detail": "Chat 1. Touches the match file (the engine warning will ask)." },
-          { "title": "Social feed speed + Goal of the Month + 2 video bugs", "detail": "Chat 2." },
-          { "title": "Bicycle kicks", "detail": "Chat 3. Touches the match file." },
-          { "title": "Weather and pitch", "detail": "Chat 4. Test page only; the real match is unchanged." },
-          { "title": "Real Goals + shootout keeper test page", "detail": "Chat 5." },
-          { "title": "Season reel, goals gallery, awards night, injuries plan", "detail": "Chat 6." },
-          { "title": "Bug hunt", "detail": "Chat 7. Match-engine bugs become team jobs, not fixes." }
-        ] }
+        {
+          "kind": "added",
+          "title": "Being built tonight",
+          "items": [
+            {
+              "title": "Celebrations + big moments",
+              "detail": "Chat 1. Touches the match file (the engine warning will ask)."
+            },
+            {
+              "title": "Social feed speed + Goal of the Month + 2 video bugs",
+              "detail": "Chat 2."
+            },
+            {
+              "title": "Bicycle kicks",
+              "detail": "Chat 3. Touches the match file."
+            },
+            {
+              "title": "Weather and pitch",
+              "detail": "Chat 4. Test page only; the real match is unchanged."
+            },
+            {
+              "title": "Real Goals + shootout keeper test page",
+              "detail": "Chat 5."
+            },
+            {
+              "title": "Season reel, goals gallery, awards night, injuries plan",
+              "detail": "Chat 6."
+            },
+            {
+              "title": "Bug hunt",
+              "detail": "Chat 7. Match-engine bugs become team jobs, not fixes."
+            }
+          ]
+        }
       ]
     },
     {
