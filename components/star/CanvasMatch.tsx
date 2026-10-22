@@ -7586,7 +7586,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Set pieces you do not take go to whoever does, and the match runs on.
     // runStretch keeps EVERY run's lines (lib/star/stretchRun.ts: the lost
     // goal that put the stats screen a goal ahead of the scoreboard).
-    let step = runStretch(st, baseInputs, rng, stretchEnd, mayTake, handedOver);
+    // Already taken off: extra time plays on without you, exactly like the
+    // minutes after you came off (Mikey's playtest, 21 Oct 2026: replaced at
+    // 84', then handed chances at 2-2 in extra time, energy frozen at 20).
+    let step = hookedRef.current
+      ? { events: [...handedOver, ...advanceTo(st, baseInputs, rng, matchCeilingRef.current)], request: null, fullTime: true }
+      : runStretch(st, baseInputs, rng, stretchEnd, mayTake, handedOver);
     /** Item 25: the stretch ran out because his legs did, not the clock. */
     const legsGone = !step.request && offAt < matchCeilingRef.current && st.minute >= offAt;
     if (legsGone) step = { ...step, fullTime: false };
