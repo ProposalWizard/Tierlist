@@ -41,7 +41,9 @@ Notes:
 3. **Made videos are kept on the phone** (IndexedDB `star-goal-videos`, newest 40), keyed by the clip ids + style + cut + moves + who posted it. Reopening, even after closing the game, plays at once.
 4. **One database read for the feed** instead of an open + read + close per goal per post (`store.ts getClips` batches what is asked together).
 5. **Figures load during the match:** the video worker starts 8 s into a match and loads the player drawings then (`page.tsx`, small additive effect).
-6. **Two other things found by measuring**, both fixed:
+6. **Your match's videos are made at full time** (`lib/star/goalClip/premake.ts`, one additive line in `page.tsx` where the match's posts are written). The highlights and your goals (up to 3 posts) start in the worker straight away and are kept on the phone, so the feed finds them ready. Only with the worker (never on the page). `goalVideoKey` is shared with GoalVideo so the copy is found; a post that asks while it is still being made joins the same job.
+7. **Off-screen posts are not painted** (`content-visibility: auto` on each drawn post) and the list scrolls on its own layer. A trace of the remaining scroll freezes showed they were the phone repainting every drawn post (Paint 50–95 ms each), not our code.
+8. **Two other things found by measuring**, both fixed:
    - **The admin tab** (`components/AdminNavPanel.tsx`, team only, not players) hit-tested about 700 points every 0.5 s. On a slow phone that alone froze the page for up to 2 s at a time. It now checks about 45 points (is its spot still clear?), runs only in idle time and never while scrolling, and does the full search at most every 8 s. **Outside my lane (small, clear fix); Harry/Mikey: please know about it.**
    - **The crowd noise under each video's sound** was made from scratch for every video (about 1 s on a slow phone). It is now made once, in slices (`lib/star/goalClip/audio.ts`).
 
