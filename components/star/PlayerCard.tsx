@@ -24,7 +24,7 @@ import { skinToneHex, shortDisplayName } from "@/lib/star/playerIdentity";
 import ClubBadge from "./ClubBadge";
 import NationFlag from "./NationFlag";
 import DrawnHeadChip from "./DrawnHeadChip";
-import { drawPlayerCardPng } from "./playerCardImage";
+import { drawPlayerCardPng, FACE_MASK_CSS } from "./playerCardImage";
 
 /** Each tier's paint: the card's gradient, its edge, its ink. */
 const LOOK: Record<CardTier, { stops: [string, string, string]; edge: string; ink: string; soft: string; line: string }> = {
@@ -64,9 +64,22 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
   const [flashId, setFlashId] = useState(0);
   const [saving, setSaving] = useState(false);
 
+  // Only while the card is on screen: the Stats page is mounted beside Home
+  // (a swipe page), so a flash at mount would play where nobody sees it.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setVisible(true); return; }
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting && e.intersectionRatio >= 0.5), { threshold: [0, 0.5, 1] });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   // The flash: compare with what this device last showed, flash the rises once.
   const sig = JSON.stringify({ ...data.stats, overall: data.overall });
   useEffect(() => {
+    if (!visible) return;
     const key = seenKey(career);
     const before = readSeen(key);
     const now = { ...data.stats, overall: data.overall };
@@ -76,10 +89,15 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
     if (Object.keys(g).length === 0) return;
     setGains(g);
     setFlashId((n) => n + 1);
-    const t = window.setTimeout(() => setGains({}), 2200);
-    return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sig]);
+  }, [sig, visible]);
+  // Each flash clears itself once it has played (kept apart from the check
+  // above, so a re-run of that check can never leave a "+2" stuck on).
+  useEffect(() => {
+    if (flashId === 0) return;
+    const t = window.setTimeout(() => setGains({}), 2300);
+    return () => window.clearTimeout(t);
+  }, [flashId]);
 
   const save = async () => {
     const el = cardRef.current;
@@ -120,7 +138,7 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
   );
 
   return (
-    <div className="relative flex justify-center py-1" data-player-card={data.tier}>
+    <div ref={wrapRef} className="relative flex justify-center py-1" data-player-card={data.tier}>
       <style>{`
         @keyframes pcFlash { 0% { color: #16a34a; text-shadow: 0 0 10px rgba(34,197,94,.9); } 70% { color: #16a34a; text-shadow: 0 0 6px rgba(34,197,94,.6); } 100% { text-shadow: none; } }
         @keyframes pcPlus { 0% { opacity: 0; transform: translateY(4px); } 12% { opacity: 1; transform: translateY(0); } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-4px); } }
@@ -163,10 +181,14 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
         </div>
 
         {/* The face: the same drawn head the match draws on you. */}
-        <div data-pc-face className="absolute overflow-hidden" style={{ right: 16, top: 26, width: 124, height: 124 }}>
-          <DrawnHeadChip id="you" shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={124} skin={skinToneHex(career.player.skinTone)} />
-          {/* Fade the shoulders into the card. */}
-          <div data-pc-fade={look.stops[1]} className="absolute inset-x-0 bottom-0" style={{ height: 34, background: `linear-gradient(180deg, transparent, ${look.stops[1]})` }} />
+        {/* Soft edges so the shoulders melt into the card (FACE_FADE; the
+            saved PNG cuts the same edges). */}
+        <div
+          data-pc-face
+          className="absolute overflow-hidden"
+          style={{ right: 12, top: 24, width: 132, height: 128, WebkitMaskImage: FACE_MASK_CSS, maskImage: FACE_MASK_CSS, WebkitMaskComposite: "source-in", maskComposite: "intersect" }}
+        >
+          <DrawnHeadChip id="you" shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={128} skin={skinToneHex(career.player.skinTone)} />
         </div>
 
         {/* Name. */}
