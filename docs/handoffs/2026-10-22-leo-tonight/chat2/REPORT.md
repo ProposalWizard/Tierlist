@@ -4,34 +4,34 @@ Branch `leo-feed`. Plan parts 2 (feed speed), 10 (Goal of the Month, option B) a
 
 ## The headline
 
-On a phone slowed 6× (a cheap phone), 390×844, a 150-post feed:
+Production build, phone slowed 6× (a cheap phone), 390×844, a 150-post feed. "Player" = a player's phone; "team" = with the admin tab on (Leo, Harry, Mikey).
 
-- **Opening the feed:** 4.7 s → **0.4 s** to the first post (production build). Opening it again: **0.25–0.3 s**.
-- **Freezes while scrolling:** longest 5.3 s → **0.17 s**. Freezes over 0.1 s: 124 in 40 steps → about 16–21 in 82 steps.
-- **Videos:** on a fresh open, none was ready within 90 s. Now the still shows in **0.7–1.2 s** and the video is ready in **11–14 s**. Seen before on this phone: ready in **0.5 s** (same visit) or **1.3–1.4 s** (after closing the game).
+- **Opening the feed (player):** 1.5 s → **0.29 s** to the first post. Opening it again: **0.24 s**. Team: 6.4 s → 0.42 s.
+- **Freezes while scrolling (player):** longest 0.76 s → **0.17 s**; freezes over 0.1 s: 45 in 40 steps → 12 in 82 steps. Team: longest 6.0 s → 0.14 s.
+- **Videos (player):** first video ready on a fresh open 47 s → **12 s**, and the still shows in **under 1 s**. Opened again: 1.9 s → **0.56 s**. After closing the game: 49 s → **1.7 s** (kept on the phone).
 
-## Timing table
+## Timing table (production build, CPU slowed 6×)
 
-Measured with `scripts/feed-bench/` (see "How to re-run"). The timer taps Phone → Social and records when the first post is painted, the long tasks while it opens, the long tasks while it scrolls the whole feed (120 px steps), and when the first goal video is ready.
+Measured with `scripts/feed-bench/` (see "How to re-run"). The timer taps Phone → Social, then records when the first post is painted, the long tasks while it opens, the long tasks while it scrolls the feed in 120 px steps, and when the first goal video is ready. Raw output: `prod-before-*.txt`, `prod-final-*.txt` (and `timing-before.txt`, the first dev-server run).
 
-| What | Before (dev) | After (dev) | After (production build) |
-|---|---|---|---|
-| Tap → first post painted | 4,739 ms | 433–721 ms | **371–413 ms** |
-| Posts built at once | 71 | 4 | 4 |
-| Longest freeze while opening | 3,368 ms | 166–201 ms | **148–190 ms** |
-| Scrolling: steps / time taken | 40 steps / 225 s | 82 steps / 10 s | 82 steps / 11–12 s |
-| Scrolling: freezes over 100 ms | 124 | 6 | 16–21 |
-| Scrolling: longest freeze | 5,284 ms | 168 ms | **167–175 ms** |
-| First video ready, fresh | never (90 s wait) | 12–20 s | **11.6–13.7 s** |
-| Still picture shown | 25 s | 1.2–1.8 s | **0.7–1.2 s** |
-| Open again, same visit: first post / video | 1,466 / 1,470 ms | 361 / 696 ms | **292 / 469–520 ms** |
-| New visit (reload), first post / video | 4,517 ms / never | 459 / 1,488 ms | **246–383 / 1,263–1,440 ms** |
+| What | Player before | Player after | Team before | Team after |
+|---|---|---|---|---|
+| Tap → first post painted | 1,494 ms | **291 ms** | 6,441 ms | **420 ms** |
+| Posts built at once | 71 | 4 | 71 | 4 |
+| Longest freeze while opening | 1,104 ms | **144 ms** | 5,366 ms | **174 ms** |
+| Scroll: freezes over 100 ms | 45 (40 steps) | **12 (82 steps)** | 124 (40 steps) | **16 (82 steps)** |
+| Scroll: longest freeze | 760 ms | **171 ms** | 5,965 ms | **137 ms** |
+| Scroll: time for the steps | 14.5 s (40) | 12.1 s (82) | 268 s (40) | 11.8 s (82) |
+| Still picture shown | 3.0 s | **0.97 s** | 13.7 s | **1.3 s** |
+| First video ready, fresh | 46.9 s | **12.3 s** | never (90 s) | **12.2 s** |
+| Open again: first post / video | 1,245 / 1,921 ms | **238 / 560 ms** | 1,629 / 7,398 ms | **241 / 490 ms** |
+| After closing the game: post / video | 1,751 ms / 49 s | **389 / 1,662 ms** | 6,078 ms / never | **333 / 1,406 ms** |
 
-Notes on the numbers:
-- "Before (dev)" is the code before tonight on the dev server. Dev mode is slower than the live site. The production "before" column is in `prod-before-*.txt` if that build finished (see the end of this file).
-- The production numbers have 2 runs: the team's view (admin tab on) and a player's view (`--player`, admin tab off). Files: `prod-after-admin.txt`, `prod-after-player.txt`.
-- The 6× slow-down applies to the video worker too, so 11–14 s is the cheap-phone time to make a 21 s video from nothing. In the game the worker starts during the match (fix 5), so it is a little sooner there. The bench opens the feed with nothing warmed up.
-- **Targets:** "feed open < 300 ms": met when the feed is opened again (250–300 ms), **not quite met** on the first open (370–410 ms). "No freeze over 100 ms while scrolling": **not met**; the worst is now 0.17 s (was 5.3 s). What is left is the phone building each post (text, picture, buttons) as it comes near; posts are now built one per frame, nearest first.
+Notes:
+- Before = the `Leo` branch as it was at the start of tonight (8ebd74ea), built the same way. Signed-out play in a production build uses the existing switch `NEXT_PUBLIC_STAR_OFFLINE_DEV=1` (lib/star/devMode.ts), local only.
+- The team's "before" was much worse because of the admin tab (fix A6 below).
+- The 6× slow-down applies to the video worker too: 12 s is the cheap-phone time to make a 21 s video from nothing. In the game the worker starts during the match (fix A5).
+- **Targets:** "feed open < 300 ms": **met for players on this run** (291 ms; runs ranged 291–413 ms), met on every reopen (238–241 ms); team 420 ms. "No freeze over 100 ms while scrolling": **not met**: 12–16 remain, the worst 0.14–0.17 s (was 0.76 s / 6.0 s). What is left is the phone building each post as it comes near; posts are now built one per frame, nearest first.
 
 ## What was built
 
@@ -64,12 +64,12 @@ Notes on the numbers:
 ## Checks
 - `npx tsc --noEmit`: clean. One-engine guard: no new copies. Admin-look guard: OK.
 - Tests: finishing, keeper (all), aiming, outcomes, goalClip, goalClipTail, goalClipAudio, media, goalVideoFeed, league*, potm*, goalOfMonth, leagueAccountLabel: **24 passed, 0 failed**.
-- Production `next build` of this branch: built and served (used for the production column).
+- `npm run build` (with every guard) on the merged branch: passes; that build is the one timed above.
 - The match file was touched (bug a, one condition): the engine-warn hook applies; the match suites pass.
 
 ## Known issues
-- First open is 0.37–0.41 s, not under 0.3 s; scroll still has some 0.15–0.18 s hiccups (see Targets).
-- A fresh video on a very slow phone takes 11–14 s to be ready (the still shows at once; ▶ plays when it is).
+- First open is 0.29–0.41 s depending on the run; scroll still has some 0.14–0.17 s hiccups (see Targets).
+- A fresh video on a very slow phone takes about 12 s to be ready (the still shows at once; ▶ plays when it is).
 - Kept videos use phone storage (newest 40, about 0.3–1 MB each).
 - Bug (a): the extra 0.4 s is a held picture (see above).
 - The 🗳️ emoji shows as a box in the test browser's font; real phones have it.
