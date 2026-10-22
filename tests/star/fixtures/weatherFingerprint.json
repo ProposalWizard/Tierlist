@@ -1,0 +1,208 @@
+{
+ "old/none": {
+  "hash": "7296e8b9",
+  "goals": 57,
+  "outcomes": {
+   "blocked": 25,
+   "rebound": 25,
+   "out": 29,
+   "goal": 32,
+   "wide": 62,
+   "over": 25,
+   "saved": 20,
+   "post": 3,
+   "caught": 6,
+   "tackled": 12,
+   "delivered": 1
+  }
+ },
+ "old/clear": {
+  "hash": "7296e8b9",
+  "goals": 57,
+  "outcomes": {
+   "blocked": 25,
+   "rebound": 25,
+   "out": 29,
+   "goal": 32,
+   "wide": 62,
+   "over": 25,
+   "saved": 20,
+   "post": 3,
+   "caught": 6,
+   "tackled": 12,
+   "delivered": 1
+  }
+ },
+ "old/wind": {
+  "hash": "c1983a21",
+  "goals": 54,
+  "outcomes": {
+   "caught": 7,
+   "rebound": 27,
+   "tackled": 13,
+   "wide": 62,
+   "out": 32,
+   "over": 24,
+   "goal": 27,
+   "saved": 23,
+   "blocked": 23,
+   "delivered": 1,
+   "post": 1
+  }
+ },
+ "old/rain": {
+  "hash": "709fe52a",
+  "goals": 57,
+  "outcomes": {
+   "blocked": 25,
+   "rebound": 25,
+   "out": 29,
+   "goal": 32,
+   "wide": 62,
+   "over": 25,
+   "saved": 20,
+   "post": 3,
+   "caught": 6,
+   "tackled": 12,
+   "delivered": 1
+  }
+ },
+ "old/heavy": {
+  "hash": "066fade1",
+  "goals": 64,
+  "outcomes": {
+   "blocked": 25,
+   "rebound": 29,
+   "out": 27,
+   "goal": 35,
+   "wide": 54,
+   "over": 22,
+   "tackled": 17,
+   "saved": 20,
+   "post": 3,
+   "caught": 7,
+   "delivered": 1
+  }
+ },
+ "old/canvasDefault": {
+  "hash": "7296e8b9",
+  "goals": 57,
+  "outcomes": {
+   "blocked": 25,
+   "rebound": 25,
+   "out": 29,
+   "goal": 32,
+   "wide": 62,
+   "over": 25,
+   "saved": 20,
+   "post": 3,
+   "caught": 6,
+   "tackled": 12,
+   "delivered": 1
+  }
+ },
+ "new/none": {
+  "hash": "f8002b58",
+  "goals": 58,
+  "outcomes": {
+   "tackled": 20,
+   "rebound": 26,
+   "goal": 32,
+   "wide": 54,
+   "delivered": 4,
+   "over": 16,
+   "out": 22,
+   "saved": 30,
+   "post": 3,
+   "blocked": 26,
+   "caught": 7
+  }
+ },
+ "new/clear": {
+  "hash": "f8002b58",
+  "goals": 58,
+  "outcomes": {
+   "tackled": 20,
+   "rebound": 26,
+   "goal": 32,
+   "wide": 54,
+   "delivered": 4,
+   "over": 16,
+   "out": 22,
+   "saved": 30,
+   "post": 3,
+   "blocked": 26,
+   "caught": 7
+  }
+ },
+ "new/wind": {
+  "hash": "17468c61",
+  "goals": 52,
+  "outcomes": {
+   "saved": 27,
+   "rebound": 19,
+   "tackled": 15,
+   "wide": 64,
+   "delivered": 3,
+   "over": 18,
+   "goal": 33,
+   "out": 28,
+   "blocked": 23,
+   "caught": 8,
+   "post": 2
+  }
+ },
+ "new/rain": {
+  "hash": "de8c8df5",
+  "goals": 58,
+  "outcomes": {
+   "tackled": 20,
+   "rebound": 26,
+   "goal": 32,
+   "wide": 54,
+   "delivered": 4,
+   "over": 16,
+   "out": 22,
+   "saved": 30,
+   "post": 3,
+   "blocked": 26,
+   "caught": 7
+  }
+ },
+ "new/heavy": {
+  "hash": "6d0cb651",
+  "goals": 58,
+  "outcomes": {
+   "tackled": 23,
+   "rebound": 21,
+   "goal": 37,
+   "wide": 46,
+   "saved": 33,
+   "delivered": 6,
+   "post": 7,
+   "out": 17,
+   "caught": 10,
+   "over": 13,
+   "blocked": 23,
+   "offside": 2,
+   "short": 2
+  }
+ },
+ "new/canvasDefault": {
+  "hash": "f8002b58",
+  "goals": 58,
+  "outcomes": {
+   "tackled": 20,
+   "rebound": 26,
+   "goal": 32,
+   "wide": 54,
+   "delivered": 4,
+   "over": 16,
+   "out": 22,
+   "saved": 30,
+   "post": 3,
+   "blocked": 26,
+   "caught": 7
+  }
+ }
+}

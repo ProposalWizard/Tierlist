@@ -793,6 +793,37 @@ export const ADMIN_GUIDES = {
     needs: ["Real squads need the normal Supabase connection; without it both sides are made-up players (the kicks still work)."],
     dev: "app/star-shootout-dev/page.tsx · components/star/ShootoutPlay.tsx (`readsHabits`, `onHabits`) · components/star/EnginePlay.tsx (`penaltyRead` passed through) · lib/star/penaltyKeeper.ts (`readKickHabits`, `KICK_HABITS`, `habit`, `sideWithHabit`) · lib/star/keeperBrain.ts (the run-up hop uses `sideWithHabit`) · tests/star/penaltyKeeperHabits.mts",
   },
+  "/star-weather-dev": {
+    title: "Weather and pitch",
+    what: "Try wind, rain and a bad pitch on the real ball before any of it goes into the game. The real game is unchanged.",
+    buttons: [
+      { group: "The day", items: [
+        ["☀️ Clear / 💨 Windy / 🌧️ Rain / ⛈️ Heavy rain", "The weather. Rain: the ball skids on after a bounce and rolls further. Heavy rain: a slow, wet pitch."],
+        ["The wind circle (tap a dot)", "Where the wind blows to. Up is towards the goal you attack. The yellow arrow shows it; longer = stronger."],
+        ["Wind slider", "Wind speed, 0 to 20 m/s (a breeze is about 5, a strong wind 10, a gale 17)."],
+        ["A club's home pitch…", "Sets the pitch to that club's own pitch: Premier League perfect, small lower-league grounds poorer."],
+        ["Pitch slider", "Pitch quality by hand, very poor to perfect."],
+        ["Normal / ☀️ Dry spell", "A dry spell bakes a bad pitch: less bounce, slows fast, at worst the ball stops dead. No effect on a perfect pitch."],
+        ["Tame (recommended) / Harsh (first build)", "How hard a bad pitch is on the ball. Tame: it runs almost as normal, then grabs and stops at a crawl (14 in 100 normal passes die short on the worst dry pitch, 6 on a clear day). Harsh: the first build (87 in 100 die short), to compare."],
+        ["Pre-match line", "What the pre-match screen would say, e.g. \"Pitch: poor, dry\". Shown on this page only."],
+      ] },
+      { group: "Shot and pass lab", items: [
+        ["Ground pass / Driven shot / Lofted pass / Long ball", "Which strike to fly."],
+        ["Clear | These conditions", "The same strike from above on a clear day and in your conditions, at the same scale. White = in the air, yellow = rolling, red dot = first bounce, dashed = the clear day. The wind arrow sits on the side the ball is not blown to."],
+        ["Side picture", "Height against distance: dashed clear, yellow now."],
+        ["Measure 200 of each", "Flies 200 of every strike (slightly different each time) and shows the average change against clear."],
+        ["Ball: Old / New", "Which ball the lab uses. It starts on the ball your Settings use."],
+      ] },
+      { group: "Play it", items: [
+        ["▶ Play it", "Plays chances from the real match in the conditions above."],
+        ["■ Stop", "Stops the match. Change a dial, then Play again."],
+        ["← (top left)", "Back to the Match group page."],
+      ] },
+    ],
+    saving: ["Nothing. The dials live on this screen only and reset when you leave."],
+    inGame: ["Nowhere yet. The career still plays in its own weather (clear, windy, rain, heavy pitch) with no direction to the wind and no club pitch. Moving this into the game is a later decision for Leo and Harry."],
+    dev: "app/star-weather-dev/page.tsx · lib/star/weatherLab.ts (dials → conditions, the lab) · lib/star/pitchWeather.ts (wind, skid, grab) · lib/star/pitchQuality.ts (each club's pitch) · tests/star/weatherFingerprint.mts (proof the real ball is unchanged) · scripts/weather/measure.mts",
+  },
   "/star-tournament-dev": {
     title: "Tournaments",
     what: "Draw and play a whole Euros or World Cup in seconds, on the real tournament code.",
