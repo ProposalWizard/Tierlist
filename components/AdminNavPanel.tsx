@@ -63,6 +63,29 @@ const SLIM_W = 10;
  * label); failing that, a spot for a 10 px sliver, which fits in the gutter
  * beside the pitch.
  */
+/** What is drawn at one point of the left edge, ignoring this panel. */
+function takenAt(x: number, y: number, W: number): boolean {
+  for (const el of document.elementsFromPoint(x, y)) {
+    if (el.closest("[data-admin-nav]")) continue;
+    if (el === document.body || el === document.documentElement) return false;
+    if (el.matches("canvas, button, a, input, select, textarea, label, [role=button]")) return true;
+    return el.getBoundingClientRect().width < W - 8;
+  }
+  return false;
+}
+
+/**
+ * Is the tab's current spot still clear? About 45 points instead of
+ * placeTab's ~700, so the tab only searches again when something moved
+ * under it (speed pass, 22 Oct 2026).
+ */
+function spotStillClear(spot: TabSpot): boolean {
+  const W = window.innerWidth;
+  const xs = spot.slim ? [2, SLIM_W - 2] : [2, FULL_W / 2, FULL_W - 2];
+  for (let y = spot.top - 2; y <= spot.top + TAB_H + 2; y += 6) for (const x of xs) if (takenAt(x, y, W)) return false;
+  return true;
+}
+
 function placeTab(): TabSpot {
   const H = window.innerHeight, W = window.innerWidth;
   // What is drawn at one point of the left edge, ignoring this panel: a
@@ -169,18 +192,34 @@ export default function AdminNavPanel() {
   // scroll, an opened editor) — a few times a second, like the page guide.
   useEffect(() => {
     if (!showTab) { setSpot(null); return; }
+    let last: TabSpot | null = null;
     const place = () => {
-      if (window.innerWidth >= 1024) { setSpot(null); return; }
+      if (window.innerWidth >= 1024) { setSpot(null); last = null; return; }
+      if (last && spotStillClear(last)) return;
       const next = placeTab();
+      last = next;
       setSpot((cur) => (cur && cur.top === next.top && cur.slim === next.slim ? cur : next));
     };
     place();
-    const id = window.setInterval(place, 500);
-    window.addEventListener("scroll", place, { passive: true });
+    // placeTab hit-tests ~700 points: on a slow phone that froze the feed
+    // for up to 2 s at a time (Leo's feed speed pass, 22 Oct 2026). So it
+    // never runs while anything is scrolling or being touched, only in idle
+    // time, and at most every 1.5 s.
+    let busyAt = 0;
+    const busy = () => { busyAt = performance.now(); };
+    const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    const later = () => {
+      if (performance.now() - busyAt < 1000) return;
+      if (ric) ric(() => { if (performance.now() - busyAt >= 1000) place(); }, { timeout: 3000 }); else place();
+    };
+    const id = window.setInterval(later, 1500);
+    document.addEventListener("scroll", busy, { capture: true, passive: true });
+    document.addEventListener("touchmove", busy, { capture: true, passive: true });
     window.addEventListener("resize", place);
     return () => {
       window.clearInterval(id);
-      window.removeEventListener("scroll", place);
+      document.removeEventListener("scroll", busy, { capture: true });
+      document.removeEventListener("touchmove", busy, { capture: true });
       window.removeEventListener("resize", place);
     };
   }, [showTab]);

@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 /**
  * ONLY THE POSTS NEAR THE SCREEN ARE DRAWN (Leo, 22 Oct 2026: "I will NOT
@@ -59,11 +59,6 @@ export function FeedSlot({ id, estimate, first, children }: { id: string; estima
       setNear(n);
     });
   }, [watch, id]);
-  // Keep the measured height fresh while drawn (a video's box settles late).
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (near && el && el.offsetHeight > 0) heights.set(id, el.offsetHeight);
-  });
   // No watcher (an old browser): draw everything, as before.
   const show = near || (!watch && typeof IntersectionObserver === "undefined");
   return (

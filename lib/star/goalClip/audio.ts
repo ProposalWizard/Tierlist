@@ -268,9 +268,15 @@ function decode(ctx: BaseAudioContext, data: ArrayBuffer): Promise<AudioBuffer |
 }
 
 /** Two seconds of crowd: pink noise, slowly swelling, a little different per ear. */
+/** The murmur's samples, made once per sample rate and copied into each mix
+ *  (speed pass, 22 Oct 2026: making it for every video took ~1 s on a slow phone). */
+const noiseCache = new Map<number, Float32Array[]>();
+
 function crowdNoise(ctx: BaseAudioContext): AudioBuffer {
   const len = Math.floor(ctx.sampleRate * 4);
   const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+  const hit = noiseCache.get(ctx.sampleRate);
+  if (hit) { for (let ch = 0; ch < 2; ch++) buf.getChannelData(ch).set(hit[ch]); return buf; }
   for (let ch = 0; ch < 2; ch++) {
     const d = buf.getChannelData(ch);
     let b0 = 0, b1 = 0, b2 = 0, seed = 12345 + ch * 777;
@@ -289,6 +295,7 @@ function crowdNoise(ctx: BaseAudioContext): AudioBuffer {
     const f = Math.floor(ctx.sampleRate * 0.05);
     for (let i = 0; i < f; i++) { const k = i / f; d[i] *= k; d[len - 1 - i] *= k; }
   }
+  noiseCache.set(ctx.sampleRate, [buf.getChannelData(0).slice(), buf.getChannelData(1).slice()]);
   return buf;
 }
 

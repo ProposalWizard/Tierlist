@@ -61,8 +61,10 @@ await phoneBtn.click(); await pg.waitForTimeout(3000);
 await pg.locator("button").filter({ hasText: /Social\s*$/ }).first().click().catch(() => {}); await pg.waitForTimeout(8000);
 const otherNav = async () => { const b = pg.locator('[data-tour="nav-life"]').first(); await b.click(); await pg.waitForTimeout(2500); };
 await otherNav();
-// Fresh tab state: reload so nothing made is in memory (first open of the session).
+// Fresh tab state: nothing made in memory, nothing kept on the phone.
+await pg.evaluate(() => new Promise(res => { const d = indexedDB.deleteDatabase("star-goal-videos"); d.onsuccess = d.onerror = d.onblocked = () => res(); }));
 await pg.reload({ waitUntil: "networkidle", timeout: 180000 });
+await pg.evaluate(() => new Promise(res => { const d = indexedDB.deleteDatabase("star-goal-videos"); d.onsuccess = d.onerror = d.onblocked = () => res(); }));
 await pg.waitForTimeout(4000);
 
 let cdp = await ctx.newCDPSession(pg);
@@ -122,7 +124,7 @@ async function scrollFeed() {
     if (!box) return null;
     const t0 = performance.now();
     let steps = 0;
-    while (box.scrollTop + box.clientHeight < box.scrollHeight - 2 && steps < 40) {
+    while (box.scrollTop + box.clientHeight < box.scrollHeight - 2 && steps < 400) {
       box.scrollTop += 120; steps++;
       await new Promise(r => requestAnimationFrame(() => r()));
       await new Promise(r => setTimeout(r, 30));
@@ -135,9 +137,22 @@ async function scrollFeed() {
 }
 
 await cdp.send("Emulation.setCPUThrottlingRate", { rate: RATE });
+const PROFILE = argv.includes("--profile");
+const PROFILE_OPEN = argv.includes("--profile-open");
+if (PROFILE_OPEN) { await cdp.send("Profiler.enable"); await cdp.send("Profiler.setSamplingInterval", { interval: 200 }); await cdp.send("Profiler.start"); }
 const first = await openFeed("open-1");
 const domPosts = first.posts;
-const scroll = await scrollFeed();
+if (PROFILE) { await cdp.send("Profiler.enable"); await cdp.send("Profiler.start"); }
+const scroll = PROFILE_OPEN ? null : await scrollFeed();
+if (PROFILE || PROFILE_OPEN) {
+  const { profile } = await cdp.send("Profiler.stop");
+  const byId = new Map(profile.nodes.map(n => [n.id, n]));
+  const self = new Map();
+  const dt = profile.timeDeltas; 
+  profile.samples.forEach((id, i) => { const n = byId.get(id); const f = n.callFrame; const k = `${f.functionName || "(anon)"} ${f.url.split("/").slice(-2).join("/")}:${f.lineNumber}`; self.set(k, (self.get(k) || 0) + (dt[i] || 0) / 1000); });
+  const top = [...self.entries()].sort((a, b) => b[1] - a[1]).slice(0, 30);
+  console.log("PROFILE self ms:\n" + top.map(([k, v]) => `${Math.round(v)}\t${k}`).join("\n"));
+}
 await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
 if (SHOTS) await pg.screenshot({ path: `${SHOTS}/scrolled.jpg`, type: "jpeg", quality: 70, timeout: 120000 });
 await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
