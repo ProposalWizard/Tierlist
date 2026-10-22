@@ -1,0 +1,1232 @@
+[
+ {
+  "id": "bg-rooney-mancity-2011",
+  "label": "Rooney v Man City — the overhead kick",
+  "player": "Wayne Rooney",
+  "team": "Manchester United",
+  "opp": "Manchester City",
+  "comp": "Premier League 2010/11",
+  "date": "2011-02-12",
+  "stage": "",
+  "home": "Manchester United",
+  "away": "Manchester City",
+  "final": [
+   2,
+   1
+  ],
+  "score": [
+   1,
+   1
+  ],
+  "minute": 78,
+  "period": "2H",
+  "keeper": "Joe Hart",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "overhead kick",
+  "ball": [
+   36.5,
+   12.0
+  ],
+  "end": 33.0,
+  "endZ": 1.9,
+  "move": [
+   [
+    6.0,
+    "P",
+    [
+     24.0,
+     45.0
+    ],
+    [
+     55.0,
+     28.0
+    ],
+    "Paul Scholes",
+    "Nani",
+    2
+   ],
+   [
+    3.0,
+    "C",
+    [
+     55.0,
+     28.0
+    ],
+    [
+     52.0,
+     19.0
+    ],
+    "Nani",
+    null,
+    0
+   ],
+   [
+    1.2,
+    "P",
+    [
+     52.0,
+     19.0
+    ],
+    [
+     36.5,
+     12.0
+    ],
+    "Nani",
+    "Wayne Rooney",
+    2
+   ]
+  ],
+  "source": "Al Jazeera match report, 12 Feb 2011: https://www.aljazeera.com/sports/2011/2/12/brilliant-rooney-downs-city",
+  "source2": "https://www.ft.lk/Sectors/rooney-stunner-seals-derby-win-for-man-united/20-18596",
+  "checked": "Old Trafford, 12 Feb 2011, 2-1 United; Nani opener, Dzeko (deflected off Silva) levelled; Rooney 78th min winner from a Nani cross, acrobatic overhead volley back to goal into the top corner past Hart",
+  "note": "The Scholes pass before Nani's cross is estimated (build-up not in sources). The cross took a deflection; which top corner (shooter's left) is from memory, not a source."
+ },
+ {
+  "id": "bg-aguero-qpr-2012",
+  "label": "Agüero v QPR — 93:20, the title",
+  "player": "Sergio Agüero",
+  "team": "Manchester City",
+  "opp": "Queens Park Rangers",
+  "comp": "Premier League 2011/12",
+  "date": "2012-05-13",
+  "stage": "",
+  "home": "Manchester City",
+  "away": "Queens Park Rangers",
+  "final": [
+   3,
+   2
+  ],
+  "score": [
+   2,
+   2
+  ],
+  "minute": 94,
+  "period": "2H",
+  "keeper": "Paddy Kenny",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "low drive",
+  "ball": [
+   45.5,
+   8.0
+  ],
+  "end": 37.2,
+  "endZ": 1.5,
+  "move": [
+   [
+    5.5,
+    "P",
+    [
+     36.0,
+     40.0
+    ],
+    [
+     40.0,
+     26.0
+    ],
+    "Nigel de Jong",
+    "Sergio Agüero",
+    0
+   ],
+   [
+    4.0,
+    "C",
+    [
+     40.0,
+     26.0
+    ],
+    [
+     38.0,
+     21.0
+    ],
+    "Sergio Agüero",
+    null,
+    0
+   ],
+   [
+    3.2,
+    "P",
+    [
+     38.0,
+     21.0
+    ],
+    [
+     34.0,
+     15.0
+    ],
+    "Sergio Agüero",
+    "Mario Balotelli",
+    0
+   ],
+   [
+    2.4,
+    "P",
+    [
+     34.0,
+     15.0
+    ],
+    [
+     42.0,
+     12.0
+    ],
+    "Mario Balotelli",
+    "Sergio Agüero",
+    0
+   ],
+   [
+    1.2,
+    "C",
+    [
+     42.0,
+     12.0
+    ],
+    [
+     45.5,
+     8.0
+    ],
+    "Sergio Agüero",
+    null,
+    0
+   ]
+  ],
+  "source": "Al Jazeera, 13 May 2012: https://www.aljazeera.com/amp/sports/2012/5/13/man-city-crowned-english-champions",
+  "source2": "https://www.fourfourtwo.com/news/how-it-unfolded-manchester-citys-remarkable-last-gasp-win-over-qpr-in-2012-1652346012000",
+  "checked": "Etihad, 13 May 2012, final day; 2-2 after Dzeko's stoppage-time header; Agüero laid off to Balotelli, who slipped but returned it; Agüero beat Kenny at 93:20 for 3-2 and the title on goal difference",
+  "note": "Clock read 93:20 so minute is 94 (90+4). De Jong's starting pass is from the well-known build-up, not a quoted source. Shot placement (near post, high) estimated."
+ },
+ {
+  "id": "bg-cisse-chelsea-2012",
+  "label": "Cissé v Chelsea — outside of the boot",
+  "player": "Papiss Cissé",
+  "team": "Newcastle United",
+  "opp": "Chelsea",
+  "comp": "Premier League 2011/12",
+  "date": "2012-05-02",
+  "stage": "",
+  "home": "Chelsea",
+  "away": "Newcastle United",
+  "final": [
+   0,
+   2
+  ],
+  "score": [
+   0,
+   1
+  ],
+  "minute": 94,
+  "period": "2H",
+  "keeper": "Petr Čech",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "outside of the boot, volley",
+  "ball": [
+   20.0,
+   33.0
+  ],
+  "end": 37.0,
+  "endZ": 1.9,
+  "move": [
+   [
+    2.5,
+    "C",
+    [
+     16.0,
+     37.0
+    ],
+    [
+     18.0,
+     35.0
+    ],
+    "Shola Ameobi",
+    null,
+    0
+   ],
+   [
+    1.0,
+    "P",
+    [
+     18.0,
+     35.0
+    ],
+    [
+     20.0,
+     33.0
+    ],
+    "Shola Ameobi",
+    "Papiss Cissé",
+    1
+   ]
+  ],
+  "source": "Sky Sports match page: https://www.skysports.com/football/chelsea-vs-newcastle/258390",
+  "source2": "https://en.wikipedia.org/wiki/Papiss_Ciss%C3%A9",
+  "checked": "Stamford Bridge, 2 May 2012, 0-2; Cissé scored 19' and in stoppage time (Sky: 94'); from a left-side throw-in Shola Ameobi brought the ball down for Cissé, who struck it with the outside of his right foot from about 37 yards, looping over Čech; MOTD Goal of the Season",
+  "note": "Minute 94 per Sky's listing. Throw-in taker not confirmed, so the move starts with Ameobi. Exact spot (left channel, ~34 m) and far-top-corner landing are estimated."
+ },
+ {
+  "id": "bg-vanpersie-astonvilla-2013",
+  "label": "Van Persie v Villa — Rooney's long ball",
+  "player": "Robin van Persie",
+  "team": "Manchester United",
+  "opp": "Aston Villa",
+  "comp": "Premier League 2012/13",
+  "date": "2013-04-22",
+  "stage": "",
+  "home": "Manchester United",
+  "away": "Aston Villa",
+  "final": [
+   3,
+   0
+  ],
+  "score": [
+   1,
+   0
+  ],
+  "minute": 13,
+  "period": "1H",
+  "keeper": "Brad Guzan",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "volley",
+  "ball": [
+   44.0,
+   15.0
+  ],
+  "end": 31.3,
+  "endZ": 1.0,
+  "move": [
+   [
+    2.6,
+    "P",
+    [
+     38.0,
+     58.0
+    ],
+    [
+     44.0,
+     15.0
+    ],
+    "Wayne Rooney",
+    "Robin van Persie",
+    2
+   ]
+  ],
+  "source": "Goal.com: https://www.goal.com/en/news/it-was-a-dream-van-persie-describes-that-volley-vs-aston/1d3hqaozug1gx1r1lctw8rrfri",
+  "source2": "https://www.deccanherald.com/sports/sweet-20-man-u-2256466",
+  "checked": "Old Trafford, 22 Apr 2013, 3-0, title-clinching (20th); RVP hat-trick at 2', 13', 33'; the 13th-min goal was a left-foot volley from Rooney's long pass out of his own half, past Guzan",
+  "note": "Rooney's pass start (around halfway, his own half) and the volley spot on the right of the box are estimated; reports vary on pass length."
+ },
+ {
+  "id": "bg-wilshere-norwich-2013",
+  "label": "Wilshere v Norwich — the one-twos",
+  "player": "Jack Wilshere",
+  "team": "Arsenal",
+  "opp": "Norwich City",
+  "comp": "Premier League 2013/14",
+  "date": "2013-10-19",
+  "stage": "",
+  "home": "Arsenal",
+  "away": "Norwich City",
+  "final": [
+   4,
+   1
+  ],
+  "score": [
+   0,
+   0
+  ],
+  "minute": 18,
+  "period": "1H",
+  "keeper": "John Ruddy",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "side-foot finish, team goal",
+  "ball": [
+   33.0,
+   10.0
+  ],
+  "end": 34.5,
+  "endZ": 0.6,
+  "move": [
+   [
+    5.5,
+    "P",
+    [
+     18.0,
+     32.0
+    ],
+    [
+     26.0,
+     24.0
+    ],
+    "Santi Cazorla",
+    "Jack Wilshere",
+    0
+   ],
+   [
+    4.6,
+    "P",
+    [
+     26.0,
+     24.0
+    ],
+    [
+     22.0,
+     22.0
+    ],
+    "Jack Wilshere",
+    "Santi Cazorla",
+    0
+   ],
+   [
+    3.7,
+    "P",
+    [
+     22.0,
+     22.0
+    ],
+    [
+     28.0,
+     19.0
+    ],
+    "Santi Cazorla",
+    "Jack Wilshere",
+    0
+   ],
+   [
+    2.6,
+    "P",
+    [
+     28.0,
+     19.0
+    ],
+    [
+     32.0,
+     17.0
+    ],
+    "Jack Wilshere",
+    "Olivier Giroud",
+    0
+   ],
+   [
+    1.2,
+    "P",
+    [
+     32.0,
+     17.0
+    ],
+    [
+     33.0,
+     10.0
+    ],
+    "Olivier Giroud",
+    "Jack Wilshere",
+    1
+   ]
+  ],
+  "source": "Arsenal.com match report: https://www.arsenal.com/node/95171",
+  "source2": "https://arseblog.news/?p=18857",
+  "checked": "Emirates, 19 Oct 2013, 4-1 (Özil 2, Ramsey; Howson for Norwich); Wilshere opener, Cazorla and Giroud combined with him, Giroud's flick, Wilshere side-footed past Ruddy",
+  "note": "Minute: Arsenal.com 18', Arseblog/EFE 17'. Exact one-two sequence and the finish's side of goal are estimated from the description."
+ },
+ {
+  "id": "bg-rooney-westham-2014",
+  "label": "Rooney v West Ham — from halfway",
+  "player": "Wayne Rooney",
+  "team": "Manchester United",
+  "opp": "West Ham United",
+  "comp": "Premier League 2013/14",
+  "date": "2014-03-22",
+  "stage": "",
+  "home": "West Ham United",
+  "away": "Manchester United",
+  "final": [
+   0,
+   2
+  ],
+  "score": [
+   0,
+   0
+  ],
+  "minute": 8,
+  "period": "1H",
+  "keeper": "Adrián",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "half-volley, lob",
+  "ball": [
+   42.0,
+   50.0
+  ],
+  "end": 34.8,
+  "endZ": 1.8,
+  "move": [
+   [
+    1.0,
+    "C",
+    [
+     43.0,
+     52.0
+    ],
+    [
+     42.0,
+     50.0
+    ],
+    "Wayne Rooney",
+    null,
+    0
+   ]
+  ],
+  "source": "West Ham report: https://www.whufc.com/news/articles/2014/march/22-march/hammers-beaten-rooney-double",
+  "source2": "https://www.premierleague.com/news/1465955",
+  "checked": "Upton Park, 22 Mar 2014, 0-2 (Rooney 8', 33'); Rooney won the ball near halfway after a challenge with Tomkins and half-volleyed over Adrián, who was off his line",
+  "note": "Minute 7' (AP) or 8'; distance reported 45-58 yards, placed at ~50 m. Won ball himself, so the move is one short touch. Long range from around halfway."
+ },
+ {
+  "id": "bg-adam-chelsea-2015",
+  "label": "Adam v Chelsea — from his own half",
+  "player": "Charlie Adam",
+  "team": "Stoke City",
+  "opp": "Chelsea",
+  "comp": "Premier League 2014/15",
+  "date": "2015-04-04",
+  "stage": "",
+  "home": "Chelsea",
+  "away": "Stoke City",
+  "final": [
+   2,
+   1
+  ],
+  "score": [
+   1,
+   0
+  ],
+  "minute": 44,
+  "period": "1H",
+  "keeper": "Thibaut Courtois",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "long-range lob",
+  "ball": [
+   30.0,
+   58.0
+  ],
+  "end": 33.0,
+  "endZ": 1.9,
+  "move": [
+   [
+    1.0,
+    "C",
+    [
+     31.0,
+     60.0
+    ],
+    [
+     30.0,
+     58.0
+    ],
+    "Charlie Adam",
+    null,
+    0
+   ]
+  ],
+  "source": "ESPN match report: https://www.espn.co.uk/football/report/_/gameId/395488",
+  "source2": "https://www.skysports.com/football/chelsea-vs-stoke/313689",
+  "checked": "Stamford Bridge, 4 Apr 2015, 2-1 Chelsea (Hazard pen 39', Adam 44', Remy 62'); Adam picked up a loose ball deep in his own half and hit it left-footed; Courtois got a hand to it but it went in",
+  "note": "Struck from his own half (y > 52.5): ESPN 65 yards, Sky 59 yards; placed at 58 m. Loose ball, so the move is one touch."
+ },
+ {
+  "id": "bg-alli-crystalpalace-2016",
+  "label": "Alli v Palace — flick and volley",
+  "player": "Dele Alli",
+  "team": "Tottenham Hotspur",
+  "opp": "Crystal Palace",
+  "comp": "Premier League 2015/16",
+  "date": "2016-01-23",
+  "stage": "",
+  "home": "Crystal Palace",
+  "away": "Tottenham Hotspur",
+  "final": [
+   1,
+   3
+  ],
+  "score": [
+   1,
+   1
+  ],
+  "minute": 84,
+  "period": "2H",
+  "keeper": "Wayne Hennessey",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "flick and volley",
+  "ball": [
+   29.0,
+   18.0
+  ],
+  "end": 36.6,
+  "endZ": 0.4,
+  "move": [
+   [
+    3.6,
+    "P",
+    [
+     50.0,
+     30.0
+    ],
+    [
+     24.0,
+     24.0
+    ],
+    "Harry Kane",
+    "Christian Eriksen",
+    2
+   ],
+   [
+    2.4,
+    "P",
+    [
+     24.0,
+     24.0
+    ],
+    [
+     28.0,
+     21.0
+    ],
+    "Christian Eriksen",
+    "Dele Alli",
+    1
+   ],
+   [
+    1.2,
+    "C",
+    [
+     28.0,
+     21.0
+    ],
+    [
+     29.0,
+     18.0
+    ],
+    "Dele Alli",
+    null,
+    1
+   ]
+  ],
+  "source": "Tottenham report: https://tottenhamhotspur.com/news-archive-1/palace-1-3-spurs-report-from-selhurst-park",
+  "source2": "https://www.espn.in/football/report/_/gameId/422444",
+  "checked": "Selhurst Park, 23 Jan 2016, 1-3; 1-1 at 84' when Alli took Eriksen's headed lay-off (after Kane's cross-field ball from the right), flicked it over Jedinak and volleyed past Hennessey for 2-1",
+  "note": "The last C leg is the flick over Jedinak (height 1). Exact spot (~25 yds, central-left) and which low corner are estimated."
+ },
+ {
+  "id": "bg-giroud-crystalpalace-2017",
+  "label": "Giroud v Palace — the scorpion kick",
+  "player": "Olivier Giroud",
+  "team": "Arsenal",
+  "opp": "Crystal Palace",
+  "comp": "Premier League 2016/17",
+  "date": "2017-01-01",
+  "stage": "",
+  "home": "Arsenal",
+  "away": "Crystal Palace",
+  "final": [
+   2,
+   0
+  ],
+  "score": [
+   0,
+   0
+  ],
+  "minute": 17,
+  "period": "1H",
+  "keeper": "Wayne Hennessey",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "scorpion kick",
+  "ball": [
+   33.0,
+   11.0
+  ],
+  "end": 35.0,
+  "endZ": 2.1,
+  "move": [
+   [
+    9.0,
+    "P",
+    [
+     52.0,
+     62.0
+    ],
+    [
+     38.0,
+     48.0
+    ],
+    "Héctor Bellerín",
+    "Olivier Giroud",
+    0
+   ],
+   [
+    7.8,
+    "P",
+    [
+     38.0,
+     48.0
+    ],
+    [
+     30.0,
+     42.0
+    ],
+    "Olivier Giroud",
+    "Granit Xhaka",
+    0
+   ],
+   [
+    6.2,
+    "P",
+    [
+     30.0,
+     42.0
+    ],
+    [
+     16.0,
+     30.0
+    ],
+    "Granit Xhaka",
+    "Alex Iwobi",
+    0
+   ],
+   [
+    4.6,
+    "P",
+    [
+     16.0,
+     30.0
+    ],
+    [
+     10.0,
+     20.0
+    ],
+    "Alex Iwobi",
+    "Alexis Sánchez",
+    0
+   ],
+   [
+    2.8,
+    "C",
+    [
+     10.0,
+     20.0
+    ],
+    [
+     12.0,
+     16.0
+    ],
+    "Alexis Sánchez",
+    null,
+    0
+   ],
+   [
+    1.1,
+    "P",
+    [
+     12.0,
+     16.0
+    ],
+    [
+     33.0,
+     11.0
+    ],
+    "Alexis Sánchez",
+    "Olivier Giroud",
+    2
+   ]
+  ],
+  "source": "The42.ie report: https://www.the42.ie/arsenal-crystal-palace-premier-league-2-3166638-Jan2017/",
+  "source2": "https://www.irishnews.com/sport/footballsoccer/2017/01/01/news/olivier-giroud-wondergoal-sees-arsenal-past-crystal-palace-859926/",
+  "checked": "Emirates, 1 Jan 2017, 2-0 (Giroud 17', Iwobi 56'); move via Bellerín, Giroud, Xhaka, Iwobi to Sánchez on the left; cross behind Giroud, hooked in with his left heel over Hennessey off the underside of the bar",
+  "note": "Pass spots and timings estimated; Sánchez's carry before the cross is assumed. Bar-and-in landing placed just under the bar."
+ },
+ {
+  "id": "bg-mkhitaryan-sunderland-2016",
+  "label": "Mkhitaryan v Sunderland — the scorpion kick",
+  "player": "Henrikh Mkhitaryan",
+  "team": "Manchester United",
+  "opp": "Sunderland",
+  "comp": "Premier League 2016/17",
+  "date": "2016-12-26",
+  "stage": "",
+  "home": "Manchester United",
+  "away": "Sunderland",
+  "final": [
+   3,
+   1
+  ],
+  "score": [
+   2,
+   0
+  ],
+  "minute": 86,
+  "period": "2H",
+  "keeper": "Jordan Pickford",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "scorpion kick",
+  "ball": [
+   34.0,
+   5.0
+  ],
+  "end": 33.5,
+  "endZ": 0.7,
+  "move": [
+   [
+    3.0,
+    "C",
+    [
+     52.0,
+     24.0
+    ],
+    [
+     53.0,
+     17.0
+    ],
+    "Zlatan Ibrahimović",
+    null,
+    0
+   ],
+   [
+    1.0,
+    "P",
+    [
+     53.0,
+     17.0
+    ],
+    [
+     34.0,
+     5.0
+    ],
+    "Zlatan Ibrahimović",
+    "Henrikh Mkhitaryan",
+    1
+   ]
+  ],
+  "source": "Sky Sports: https://www.skysports.com/football/news/11670/10720616",
+  "source2": "https://worldsoccertalk.com/2016/12/26/scorpion-volley-was-instinctive-mkhitaryan/",
+  "checked": "Old Trafford, Boxing Day 2016, 3-1 (Blind, Ibrahimović, Mkhitaryan; Borini late); sub Mkhitaryan, 86', 2-0 up, flicked Ibrahimović's right-side cross past Pickford with his right heel; looked offside but stood",
+  "note": "Ibrahimović's carry before the cross and the landing spot are estimated."
+ },
+ {
+  "id": "bg-can-watford-2017",
+  "label": "Can v Watford — the overhead kick",
+  "player": "Emre Can",
+  "team": "Liverpool",
+  "opp": "Watford",
+  "comp": "Premier League 2016/17",
+  "date": "2017-05-01",
+  "stage": "",
+  "home": "Watford",
+  "away": "Liverpool",
+  "final": [
+   0,
+   1
+  ],
+  "score": [
+   0,
+   0
+  ],
+  "minute": 47,
+  "period": "1H",
+  "keeper": "Heurelho Gomes",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "overhead kick",
+  "ball": [
+   32.0,
+   14.0
+  ],
+  "end": 31.2,
+  "endZ": 2.0,
+  "move": [
+   [
+    3.0,
+    "C",
+    [
+     30.0,
+     38.0
+    ],
+    [
+     31.0,
+     34.0
+    ],
+    "Lucas Leiva",
+    null,
+    0
+   ],
+   [
+    1.5,
+    "P",
+    [
+     31.0,
+     34.0
+    ],
+    [
+     32.0,
+     14.0
+    ],
+    "Lucas Leiva",
+    "Emre Can",
+    1
+   ]
+  ],
+  "source": "Eurosport: https://www.eurosport.com/football/premier-league/2016-2017/emre-can-s-overhead-screamer-gives-liverpool-win-over-watford_sto6149995/story.shtml",
+  "source2": "https://www.liverpoolfc.com/match/2016-17/first-team/watford-v-liverpool-live-matchday-blog",
+  "checked": "Vicarage Road, 1 May 2017, 0-1; Lucas Leiva's chip into the box, Can's scissor/overhead kick from about 15 yards into the top corner past Gomes, at the stroke of half-time",
+  "note": "Minute: LFC 45+2 (written 47, period 1H); others say 45'. Which top corner is from memory, not a source."
+ },
+ {
+  "id": "bg-salah-everton-2017",
+  "label": "Salah v Everton — the Puskás curler",
+  "player": "Mohamed Salah",
+  "team": "Liverpool",
+  "opp": "Everton",
+  "comp": "Premier League 2017/18",
+  "date": "2017-12-10",
+  "stage": "",
+  "home": "Liverpool",
+  "away": "Everton",
+  "final": [
+   1,
+   1
+  ],
+  "score": [
+   0,
+   0
+  ],
+  "minute": 42,
+  "period": "1H",
+  "keeper": "Jordan Pickford",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "curler",
+  "ball": [
+   47.0,
+   16.0
+  ],
+  "end": 30.8,
+  "endZ": 1.6,
+  "move": [
+   [
+    4.0,
+    "P",
+    [
+     62.0,
+     45.0
+    ],
+    [
+     56.0,
+     24.0
+    ],
+    "Joe Gomez",
+    "Mohamed Salah",
+    1
+   ],
+   [
+    2.6,
+    "C",
+    [
+     56.0,
+     24.0
+    ],
+    [
+     52.0,
+     20.0
+    ],
+    "Mohamed Salah",
+    null,
+    0
+   ],
+   [
+    1.2,
+    "C",
+    [
+     52.0,
+     20.0
+    ],
+    [
+     47.0,
+     16.0
+    ],
+    "Mohamed Salah",
+    null,
+    0
+   ]
+  ],
+  "source": "FIFA.com: https://www.fifa.com/en/news/en/news/salah-magical-moment-2993447",
+  "source2": "https://www.11v11.com/matches/liverpool-v-everton-10-december-2017-355901/",
+  "checked": "Anfield, 10 Dec 2017, 1-1 (Salah 42', Rooney pen 77'); Joe Gomez's pass down the right, Salah shrugged off Martina, went past Gueye and curled a left-footer around Ashley Williams into the far top corner past Pickford; 2018 Puskás Award",
+  "note": "Carry route and shot spot estimated from the description."
+ },
+ {
+  "id": "bg-son-burnley-2019",
+  "label": "Son v Burnley — the solo run",
+  "player": "Son Heung-min",
+  "team": "Tottenham Hotspur",
+  "opp": "Burnley",
+  "comp": "Premier League 2019/20",
+  "date": "2019-12-07",
+  "stage": "",
+  "home": "Tottenham Hotspur",
+  "away": "Burnley",
+  "final": [
+   5,
+   0
+  ],
+  "score": [
+   2,
+   0
+  ],
+  "minute": 32,
+  "period": "1H",
+  "keeper": "Nick Pope",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "solo run",
+  "ball": [
+   33.0,
+   10.0
+  ],
+  "end": 33.0,
+  "endZ": 0.3,
+  "move": [
+   [
+    12.0,
+    "C",
+    [
+     44.0,
+     86.0
+    ],
+    [
+     42.0,
+     66.0
+    ],
+    "Son Heung-min",
+    null,
+    0
+   ],
+   [
+    8.5,
+    "C",
+    [
+     42.0,
+     66.0
+    ],
+    [
+     36.0,
+     42.0
+    ],
+    "Son Heung-min",
+    null,
+    0
+   ],
+   [
+    4.5,
+    "C",
+    [
+     36.0,
+     42.0
+    ],
+    [
+     30.0,
+     22.0
+    ],
+    "Son Heung-min",
+    null,
+    0
+   ],
+   [
+    1.2,
+    "C",
+    [
+     30.0,
+     22.0
+    ],
+    [
+     33.0,
+     10.0
+    ],
+    "Son Heung-min",
+    null,
+    0
+   ]
+  ],
+  "source": "Tottenham report: https://tottenhamhotspur.com/news/2019/december/sensational-son-strike-helps-us-blaze-past-burnley",
+  "source2": "https://www.skysports.com/football/news/11675/11880372/tottenham-5-0-burnley-heung-min-son-solo-goal-helps-spurs-thrash-burnley",
+  "checked": "Tottenham Hotspur Stadium, 7 Dec 2019, 5-0; Kane and Lucas had made it 2-0; Son picked up the ball near his own box, ran about 70 m in 12 seconds past several Burnley players and slotted past Pope for 3-0 (32'); PL Goal of the Season",
+  "note": "Route of the run estimated (start near his own box, about 70 m in 12 s)."
+ },
+ {
+  "id": "bg-lamela-arsenal-2021",
+  "label": "Lamela v Arsenal — the rabona",
+  "player": "Erik Lamela",
+  "team": "Tottenham Hotspur",
+  "opp": "Arsenal",
+  "comp": "Premier League 2020/21",
+  "date": "2021-03-14",
+  "stage": "",
+  "home": "Arsenal",
+  "away": "Tottenham Hotspur",
+  "final": [
+   2,
+   1
+  ],
+  "score": [
+   0,
+   0
+  ],
+  "minute": 33,
+  "period": "1H",
+  "keeper": "Bernd Leno",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "rabona",
+  "ball": [
+   23.0,
+   14.0
+  ],
+  "end": 37.0,
+  "endZ": 0.3,
+  "move": [
+   [
+    4.0,
+    "P",
+    [
+     12.0,
+     50.0
+    ],
+    [
+     20.0,
+     22.0
+    ],
+    "Sergio Reguilón",
+    "Lucas Moura",
+    2
+   ],
+   [
+    2.2,
+    "C",
+    [
+     20.0,
+     22.0
+    ],
+    [
+     21.0,
+     18.0
+    ],
+    "Lucas Moura",
+    null,
+    0
+   ],
+   [
+    1.0,
+    "P",
+    [
+     21.0,
+     18.0
+    ],
+    [
+     23.0,
+     14.0
+    ],
+    "Lucas Moura",
+    "Erik Lamela",
+    0
+   ]
+  ],
+  "source": "ESPN report: https://www.espn.co.uk/football/report/_/gameId/578388",
+  "source2": "https://nbcsports.com/soccer/news/watch-lamela-scores-spectacular-rabona-to-give-spurs-lead-at-arsenal",
+  "checked": "Emirates, 14 Mar 2021, 2-1 Arsenal (Lamela 33', Ødegaard, Lacazette pen 64'); sub Lamela, on for Son; Lucas took Reguilón's long pass and fed Lamela, who struck a rabona from the left of the box into the bottom far corner past Leno; Lamela later sent off (76')",
+  "note": "Minute 33' (one report 32'). Pass spots estimated."
+ },
+ {
+  "id": "bg-garnacho-everton-2023",
+  "label": "Garnacho v Everton — the overhead kick",
+  "player": "Alejandro Garnacho",
+  "team": "Manchester United",
+  "opp": "Everton",
+  "comp": "Premier League 2023/24",
+  "date": "2023-11-26",
+  "stage": "",
+  "home": "Everton",
+  "away": "Manchester United",
+  "final": [
+   0,
+   3
+  ],
+  "score": [
+   0,
+   0
+  ],
+  "minute": 3,
+  "period": "1H",
+  "keeper": "Jordan Pickford",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "overhead kick",
+  "ball": [
+   33.0,
+   12.0
+  ],
+  "end": 36.8,
+  "endZ": 2.0,
+  "move": [
+   [
+    3.6,
+    "C",
+    [
+     44.0,
+     30.0
+    ],
+    [
+     46.0,
+     26.0
+    ],
+    "Marcus Rashford",
+    null,
+    0
+   ],
+   [
+    2.8,
+    "P",
+    [
+     46.0,
+     26.0
+    ],
+    [
+     56.0,
+     20.0
+    ],
+    "Marcus Rashford",
+    "Diogo Dalot",
+    0
+   ],
+   [
+    1.1,
+    "P",
+    [
+     56.0,
+     20.0
+    ],
+    [
+     33.0,
+     12.0
+    ],
+    "Diogo Dalot",
+    "Alejandro Garnacho",
+    2
+   ]
+  ],
+  "source": "ESPN report: https://africa.espn.com/football/report/_/gameId/671157",
+  "source2": "https://www.businessday.co.za/bd/sport/soccer/2023-11-26-garnacho-scores-overhead-stunner-in-man-us-3-0-win-at-everton",
+  "checked": "Goodison Park, 26 Nov 2023, 0-3 (Garnacho 3', Rashford pen 56', Martial 75'); Rashford played Dalot in on the right, Dalot's cross, Garnacho's overhead kick back across goal into the top right-hand corner past Pickford",
+  "note": "Timing given as 2:13 or 1:53 (third minute either way). 'Top right-hand corner' read as the shooter's view of goal; spots estimated."
+ }
+]

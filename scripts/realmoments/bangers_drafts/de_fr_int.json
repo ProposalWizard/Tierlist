@@ -1,0 +1,1150 @@
+[
+ {
+  "id": "bg-lewandowski-wolfsburg-2015",
+  "label": "Lewandowski v Wolfsburg — the fifth in nine minutes",
+  "player": "Robert Lewandowski",
+  "team": "Bayern Munich",
+  "opp": "VfL Wolfsburg",
+  "comp": "Bundesliga 2015/16",
+  "date": "2015-09-22",
+  "stage": "",
+  "home": "Bayern Munich",
+  "away": "VfL Wolfsburg",
+  "final": [
+   5,
+   1
+  ],
+  "score": [
+   4,
+   1
+  ],
+  "minute": 60,
+  "period": "2H",
+  "keeper": "Diego Benaglio",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "volley",
+  "ball": [
+   32.0,
+   12.0
+  ],
+  "end": 36.6,
+  "endZ": 1.5,
+  "move": [
+   [
+    3.5,
+    "C",
+    [
+     58.0,
+     24.0
+    ],
+    [
+     60.0,
+     19.0
+    ],
+    "Mario Götze",
+    null,
+    0
+   ],
+   [
+    1.2,
+    "P",
+    [
+     60.0,
+     19.0
+    ],
+    [
+     32.0,
+     12.0
+    ],
+    "Mario Götze",
+    "Robert Lewandowski",
+    2
+   ]
+  ],
+  "source": "Al Jazeera, 22 Sep 2015: https://www.aljazeera.com/sports/2015/9/22/bayerns-lewandowski-scores-five-goals-in-nine-minutes",
+  "source2": "FourFourTwo report: https://www.fourfourtwo.com/news/bayern-munich-5-wolfsburg-1-super-sub-lewandowski-makes-bundesliga-history",
+  "checked": "Half-time sub; Caligiuri had put Wolfsburg 1-0 up; five goals 51-60 min; fifth on 60 min, 4-1 to 5-1, acrobatic volley from a Götze cross past Benaglio.",
+  "note": "Side of Götze's cross (one report says right) and the foot/corner are from memory, not confirmed in text; placement estimated."
+ },
+ {
+  "id": "bg-lewandowski-augsburg-2021",
+  "label": "Lewandowski v Augsburg — the record 41st",
+  "player": "Robert Lewandowski",
+  "team": "Bayern Munich",
+  "opp": "FC Augsburg",
+  "comp": "Bundesliga 2020/21",
+  "date": "2021-05-22",
+  "stage": "",
+  "home": "Bayern Munich",
+  "away": "FC Augsburg",
+  "final": [
+   5,
+   2
+  ],
+  "score": [
+   4,
+   2
+  ],
+  "minute": 90,
+  "period": "2H",
+  "keeper": "Rafał Gikiewicz",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "rebound, rounded the keeper",
+  "ball": [
+   33.0,
+   7.5
+  ],
+  "end": 34.6,
+  "endZ": 0.3,
+  "move": [
+   [
+    3.0,
+    "C",
+    [
+     52.0,
+     22.0
+    ],
+    [
+     47.0,
+     15.0
+    ],
+    "Leroy Sané",
+    null,
+    0
+   ],
+   [
+    1.6,
+    "P",
+    [
+     47.0,
+     15.0
+    ],
+    [
+     36.0,
+     8.5
+    ],
+    "Leroy Sané",
+    "Robert Lewandowski",
+    0
+   ],
+   [
+    0.8,
+    "C",
+    [
+     36.0,
+     8.5
+    ],
+    [
+     33.0,
+     7.5
+    ],
+    "Robert Lewandowski",
+    null,
+    0
+   ]
+  ],
+  "source": "FC Bayern match report, 22 May 2021: https://fcbayern.com/en/news/matchreports/2021/05/match-report-bundesliga-md34-fc-bayern-v-fc-augsburg-220521",
+  "source2": "ESPN match report: https://www.espn.com/soccer/report/_/gameId/576852",
+  "checked": "Last league game; goals Gouweleeuw og 9, Gnabry 22, Kimmich 33, Coman 43, Hahn 67, Niederlechner 72, Lewandowski 90 (4-2 to 5-2); Gikiewicz could not hold a Sané shot, Lewandowski took it past him and finished; ESPN: right foot, centre of box, centre of goal.",
+  "note": "The 'P' from Sané is really his shot that the keeper parried to Lewandowski; spots estimated."
+ },
+ {
+  "id": "bg-xhaka-bremen-2024",
+  "label": "Xhaka v Bremen — the title-day rocket",
+  "player": "Granit Xhaka",
+  "team": "Bayer Leverkusen",
+  "opp": "Werder Bremen",
+  "comp": "Bundesliga 2023/24",
+  "date": "2024-04-14",
+  "stage": "",
+  "home": "Bayer Leverkusen",
+  "away": "Werder Bremen",
+  "final": [
+   5,
+   0
+  ],
+  "score": [
+   1,
+   0
+  ],
+  "minute": 60,
+  "period": "2H",
+  "keeper": "Michael Zetterer",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "first-time long-range drive",
+  "ball": [
+   30.0,
+   23.0
+  ],
+  "end": 36.8,
+  "endZ": 1.6,
+  "move": [
+   [
+    2.0,
+    "C",
+    [
+     43.0,
+     24.0
+    ],
+    [
+     40.0,
+     20.0
+    ],
+    "Victor Boniface",
+    null,
+    0
+   ],
+   [
+    1.0,
+    "P",
+    [
+     40.0,
+     20.0
+    ],
+    [
+     30.0,
+     23.0
+    ],
+    "Victor Boniface",
+    "Granit Xhaka",
+    0
+   ]
+  ],
+  "source": "Bayer 04 report: https://bayer04.de/en-us/news/bundesliga/werkself-champions-of-germany-with-five-star-victory",
+  "source2": "Flashscore/Soccerway: https://www.soccerway.com/news/soccer-bundesliga-bayer-leverkusen-thrash-werder-bremen-to-secure-maiden-bundesliga-title-in-style/ILDR2gfM",
+  "checked": "Boniface pen ~25 min (1-0); Xhaka 60 min, first-time left foot from ~25 m, set up by Boniface (2-0); Wirtz hat-trick; 5-0 sealed first title; Zetterer in goal.",
+  "note": "Where it went in is not given in the reports found; end spot is a guess. Boniface's carry before the lay-off is estimated."
+ },
+ {
+  "id": "bg-kane-darmstadt-2023",
+  "label": "Kane v Darmstadt — from his own half",
+  "player": "Harry Kane",
+  "team": "Bayern Munich",
+  "opp": "SV Darmstadt 98",
+  "comp": "Bundesliga 2023/24",
+  "date": "2023-10-28",
+  "stage": "",
+  "home": "Bayern Munich",
+  "away": "SV Darmstadt 98",
+  "final": [
+   8,
+   0
+  ],
+  "score": [
+   4,
+   0
+  ],
+  "minute": 69,
+  "period": "2H",
+  "keeper": "Marcel Schuhen",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "lob from inside his own half",
+  "ball": [
+   32.0,
+   54.0
+  ],
+  "end": 34.4,
+  "endZ": 1.0,
+  "move": [
+   [
+    2.0,
+    "C",
+    [
+     30.0,
+     60.0
+    ],
+    [
+     31.0,
+     56.0
+    ],
+    "Harry Kane",
+    null,
+    0
+   ],
+   [
+    0.6,
+    "C",
+    [
+     31.0,
+     56.0
+    ],
+    [
+     32.0,
+     54.0
+    ],
+    "Harry Kane",
+    null,
+    0
+   ]
+  ],
+  "source": "Flashscore report: https://www.flashscore.com/news/football-bundesliga-kane-scores-from-own-half-as-10-man-bayern-thrash-nine-man-darmstadt/MyLSV6gd/",
+  "source2": "90min: https://www.90min.com/posts/harry-kane-scores-inside-own-half-bayern-destroy-darmstadt",
+  "checked": "Kane collected near the centre circle, saw Schuhen off his line and lobbed him from inside his own half; made it 5-0; AP 69th min (CNN 68th); 8-0 final; second of his hat-trick.",
+  "note": "Swap-in for slot 4 (any famous Bundesliga goal). Spot is in his own half (y 54) on purpose. Minute 68 or 69. Build-up passes not confirmed, shown as his own carry."
+ },
+ {
+  "id": "bg-benarfa-saintetienne-2015",
+  "label": "Ben Arfa v Saint-Étienne — the solo slalom",
+  "player": "Hatem Ben Arfa",
+  "team": "OGC Nice",
+  "opp": "AS Saint-Étienne",
+  "comp": "Ligue 1 2015/16",
+  "date": "2015-09-27",
+  "stage": "",
+  "home": "AS Saint-Étienne",
+  "away": "OGC Nice",
+  "final": [
+   1,
+   4
+  ],
+  "score": [
+   1,
+   2
+  ],
+  "minute": 46,
+  "period": "1H",
+  "keeper": "Stéphane Ruffier",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "solo run, low finish across goal",
+  "ball": [
+   50.0,
+   7.0
+  ],
+  "end": 30.8,
+  "endZ": 0.15,
+  "move": [
+   [
+    6.5,
+    "C",
+    [
+     44.0,
+     42.0
+    ],
+    [
+     52.0,
+     30.0
+    ],
+    "Hatem Ben Arfa",
+    null,
+    0
+   ],
+   [
+    3.5,
+    "C",
+    [
+     52.0,
+     30.0
+    ],
+    [
+     46.0,
+     18.0
+    ],
+    "Hatem Ben Arfa",
+    null,
+    0
+   ],
+   [
+    1.5,
+    "C",
+    [
+     46.0,
+     18.0
+    ],
+    [
+     50.0,
+     7.0
+    ],
+    "Hatem Ben Arfa",
+    null,
+    0
+   ]
+  ],
+  "source": "ESPN report: https://www.espn.com.au/football/report/_/gameId/424671",
+  "source2": "Sky Sports: https://www.skysports.com/football/news/11800/10009324",
+  "checked": "Koziello 5, Perrin 19, Ben Arfa 39 and 45+1, Seri 53; solo goal beat several (one report: five) defenders, low across Ruffier from a tight angle into the bottom left corner, on the stroke of half-time (1-2 to 1-3).",
+  "note": "Minute is 45+1 (written 46 to follow the clock rule). Start point and route of the run estimated; right-side tight angle inferred from 'across' + bottom left."
+ },
+ {
+  "id": "bg-ibrahimovic-bastia-2013",
+  "label": "Ibrahimović v Bastia — the flying backheel",
+  "player": "Zlatan Ibrahimović",
+  "team": "Paris Saint-Germain",
+  "opp": "SC Bastia",
+  "comp": "Ligue 1 2013/14",
+  "date": "2013-10-19",
+  "stage": "",
+  "home": "Paris Saint-Germain",
+  "away": "SC Bastia",
+  "final": [
+   4,
+   0
+  ],
+  "score": [
+   0,
+   0
+  ],
+  "minute": 10,
+  "period": "1H",
+  "keeper": "Mickaël Landreau",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "backheel volley",
+  "ball": [
+   35.0,
+   10.0
+  ],
+  "end": 33.4,
+  "endZ": 0.9,
+  "move": [
+   [
+    3.0,
+    "C",
+    [
+     60.0,
+     24.0
+    ],
+    [
+     62.0,
+     16.0
+    ],
+    "Lucas Moura",
+    null,
+    0
+   ],
+   [
+    1.0,
+    "P",
+    [
+     62.0,
+     16.0
+    ],
+    [
+     35.0,
+     10.0
+    ],
+    "Lucas Moura",
+    "Zlatan Ibrahimović",
+    1
+   ]
+  ],
+  "source": "Jamaica Observer (AP), 19 Oct 2013: https://www.jamaicaobserver.com/2013/10/19/ibra-scores-twice-as-psg-beat-bastia-4-0/",
+  "source2": "Maxifoot report: https://www.maxifoot.fr/football/article-20010.htm",
+  "checked": "10th min, 0-0; Lucas cross from the right hit Ongenda and looped up behind Ibrahimović, who backheeled it in mid-air past Landreau; he scored again minutes later, Cavani two; 4-0.",
+  "note": "Which heel and where it went in not stated; the deflection off Ongenda is folded into Lucas's cross."
+ },
+ {
+  "id": "bg-altintop-kazakhstan-2010",
+  "label": "Altıntop v Kazakhstan — the Puskás volley",
+  "player": "Hamit Altıntop",
+  "team": "Turkey",
+  "opp": "Kazakhstan",
+  "comp": "Euro 2012 qualifier 2010",
+  "date": "2010-09-03",
+  "stage": "Group A",
+  "home": "Kazakhstan",
+  "away": "Turkey",
+  "final": [
+   0,
+   3
+  ],
+  "score": [
+   0,
+   1
+  ],
+  "minute": 26,
+  "period": "1H",
+  "keeper": "Andrei Sidelnikov",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "volley from a corner",
+  "ball": [
+   32.0,
+   23.0
+  ],
+  "end": 31.0,
+  "endZ": 0.4,
+  "move": [
+   [
+    2.5,
+    "C",
+    [
+     67.5,
+     0.5
+    ],
+    [
+     67.5,
+     0.5
+    ],
+    "Emre Belözoğlu",
+    null,
+    0
+   ],
+   [
+    1.4,
+    "P",
+    [
+     67.5,
+     0.5
+    ],
+    [
+     32.0,
+     23.0
+    ],
+    "Emre Belözoğlu",
+    "Hamit Altıntop",
+    2
+   ]
+  ],
+  "source": "UEFA.com: https://www.uefa.com/news/newsid=1516021.html",
+  "source2": "Fox Sports (AP): https://www.foxsports.com/stories/soccer/turkey-beats-kazakhstan-3-0-in-euro-qualifier",
+  "checked": "Away in Astana; Arda 24 (0-1), Altıntop 26 volley from ~25 m off Emre's corner (0-2), Nihat 75 (0-3); Sidelnikov in goal; won the 2010 Puskás Award.",
+  "note": "Date is 3 Sep 2010, not October. Corner side and where the volley went in are estimated."
+ },
+ {
+  "id": "bg-ibrahimovic-england-2012",
+  "label": "Ibrahimović v England — the 30-yard overhead kick",
+  "player": "Zlatan Ibrahimović",
+  "team": "Sweden",
+  "opp": "England",
+  "comp": "International friendly 2012",
+  "date": "2012-11-14",
+  "stage": "",
+  "home": "Sweden",
+  "away": "England",
+  "final": [
+   4,
+   2
+  ],
+  "score": [
+   3,
+   2
+  ],
+  "minute": 91,
+  "period": "2H",
+  "keeper": "Joe Hart",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "overhead kick",
+  "ball": [
+   38.0,
+   27.0
+  ],
+  "end": 34.6,
+  "endZ": 1.3,
+  "move": [
+   [
+    2.5,
+    "P",
+    [
+     48.0,
+     48.0
+    ],
+    [
+     38.0,
+     24.0
+    ],
+    "Sweden player",
+    null,
+    2
+   ],
+   [
+    1.2,
+    "P",
+    [
+     38.0,
+     24.0
+    ],
+    [
+     38.0,
+     27.0
+    ],
+    "Joe Hart (England, headed clearance)",
+    "Zlatan Ibrahimović",
+    1
+   ]
+  ],
+  "source": "Sports Mole live commentary: https://www.sportsmole.co.uk/football/sweden/live-commentary/sweden-4-2-england-as-it-happened_54650.html",
+  "source2": "Times Colonist (AP): https://www.timescolonist.com/sports/ibrahimovic-one-man-wrecking-crew-for-sweden-4562150",
+  "checked": "Opening game at the Friends Arena; Ibrahimović scored all four; fourth at 90+1 (3-2 to 4-2): Hart came out and headed clear, Zlatan hit an overhead kick over him into the empty net from ~30 yards; won the 2013 Puskás.",
+  "note": "Range varies by report (18 m to 30 yards); used ~27 m. The long ball forward is generic (passer not confirmed) and the last 'P' is Hart's clearance, not a team-mate."
+ },
+ {
+  "id": "bg-vanpersie-spain-2014",
+  "label": "Van Persie v Spain — the flying header",
+  "player": "Robin van Persie",
+  "team": "Netherlands",
+  "opp": "Spain",
+  "comp": "World Cup 2014",
+  "date": "2014-06-13",
+  "stage": "Group B",
+  "home": "Spain",
+  "away": "Netherlands",
+  "final": [
+   1,
+   5
+  ],
+  "score": [
+   1,
+   0
+  ],
+  "minute": 44,
+  "period": "1H",
+  "keeper": "Iker Casillas",
+  "body": "Head",
+  "type": "Open Play",
+  "technique": "diving header lob",
+  "ball": [
+   29.0,
+   14.5
+  ],
+  "end": 34.0,
+  "endZ": 1.7,
+  "move": [
+   [
+    3.0,
+    "C",
+    [
+     8.0,
+     54.0
+    ],
+    [
+     9.0,
+     50.0
+    ],
+    "Daley Blind",
+    null,
+    0
+   ],
+   [
+    1.6,
+    "P",
+    [
+     9.0,
+     50.0
+    ],
+    [
+     29.0,
+     14.5
+    ],
+    "Daley Blind",
+    "Robin van Persie",
+    2
+   ]
+  ],
+  "source": "theScore: https://www.thescore.com/worldcup/news/1971818",
+  "source2": "CBS Sports: https://www.cbssports.com/soccer/news/2014-fifa-world-cup-netherlands-trounce-spain-5-1",
+  "checked": "Xabi Alonso pen 26/27 (1-0); Blind's ~40-yard ball from near halfway, Van Persie dived and looped a header over Casillas (1-1) just before half-time; Netherlands won 5-1.",
+  "note": "Minute given as 44 (FIFA) but one source says 45. Spots estimated."
+ },
+ {
+  "id": "bg-cahill-netherlands-2014",
+  "label": "Cahill v Netherlands — the left-foot volley",
+  "player": "Tim Cahill",
+  "team": "Australia",
+  "opp": "Netherlands",
+  "comp": "World Cup 2014",
+  "date": "2014-06-18",
+  "stage": "Group B",
+  "home": "Australia",
+  "away": "Netherlands",
+  "final": [
+   2,
+   3
+  ],
+  "score": [
+   0,
+   1
+  ],
+  "minute": 21,
+  "period": "1H",
+  "keeper": "Jasper Cillessen",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "volley",
+  "ball": [
+   24.0,
+   11.0
+  ],
+  "end": 35.0,
+  "endZ": 2.1,
+  "move": [
+   [
+    3.0,
+    "C",
+    [
+     56.0,
+     48.0
+    ],
+    [
+     54.0,
+     44.0
+    ],
+    "Ryan McGowan",
+    null,
+    0
+   ],
+   [
+    1.8,
+    "P",
+    [
+     54.0,
+     44.0
+    ],
+    [
+     24.0,
+     11.0
+    ],
+    "Ryan McGowan",
+    "Tim Cahill",
+    2
+   ]
+  ],
+  "source": "Philstar (AP): https://www.philstar.com/sports/2014/06/19/1336612/netherlands-advances-3-2-win-over-australia/amp/",
+  "source2": "Al Bawaba: https://www.albawaba.com/sport/australia-2-3-netherlands-584587",
+  "checked": "Robben 20 (0-1); a minute later Cahill volleyed McGowan's long diagonal first time with his weaker left foot from ~11 yards, in off the underside of the bar past Cillessen (1-1); Netherlands won 3-2.",
+  "note": "Side of the box and the exact corner are estimated (in off the bar is confirmed)."
+ },
+ {
+  "id": "bg-rodriguez-uruguay-2014",
+  "label": "James v Uruguay — chest and volley",
+  "player": "James Rodríguez",
+  "team": "Colombia",
+  "opp": "Uruguay",
+  "comp": "World Cup 2014",
+  "date": "2014-06-28",
+  "stage": "Round of 16",
+  "home": "Colombia",
+  "away": "Uruguay",
+  "final": [
+   2,
+   0
+  ],
+  "score": [
+   0,
+   0
+  ],
+  "minute": 28,
+  "period": "1H",
+  "keeper": "Fernando Muslera",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "chest control and volley",
+  "ball": [
+   35.0,
+   22.5
+  ],
+  "end": 33.2,
+  "endZ": 2.1,
+  "move": [
+   [
+    1.6,
+    "P",
+    [
+     40.0,
+     28.0
+    ],
+    [
+     35.5,
+     22.0
+    ],
+    "Abel Aguilar",
+    "James Rodríguez",
+    1
+   ],
+   [
+    0.6,
+    "C",
+    [
+     35.5,
+     22.0
+    ],
+    [
+     35.0,
+     22.5
+    ],
+    "James Rodríguez",
+    null,
+    1
+   ]
+  ],
+  "source": "Eurosport: https://www.eurosport.com/football/world-cup/2014/rodriguez-genius-fires-colombia-past-toothless-uruguay_sto4305426/story.shtml",
+  "source2": "Extratime report: https://www.extratime.ie/fixtures/2014-fifa-world-cup-round-of-16/colombia-v-uruguay/26767/4/report/",
+  "checked": "Maracanã, 28th min, 0-0; Aguilar headed it down to James, back to goal at the edge of the box; chest, turn, left-foot volley in off the bar over Muslera; Colombia won 2-0; Goal of the Tournament and 2014 Puskás.",
+  "note": "One report credits Cuadrado with the header instead of Aguilar. Spots estimated."
+ },
+ {
+  "id": "bg-gotze-argentina-2014",
+  "label": "Götze v Argentina — the World Cup winner",
+  "player": "Mario Götze",
+  "team": "Germany",
+  "opp": "Argentina",
+  "comp": "World Cup 2014",
+  "date": "2014-07-13",
+  "stage": "Final",
+  "home": "Germany",
+  "away": "Argentina",
+  "final": [
+   1,
+   0
+  ],
+  "score": [
+   0,
+   0
+  ],
+  "minute": 113,
+  "period": "E2",
+  "keeper": "Sergio Romero",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "chest control and volley",
+  "ball": [
+   28.0,
+   5.5
+  ],
+  "end": 37.2,
+  "endZ": 0.6,
+  "move": [
+   [
+    4.0,
+    "C",
+    [
+     8.0,
+     38.0
+    ],
+    [
+     7.0,
+     20.0
+    ],
+    "André Schürrle",
+    null,
+    0
+   ],
+   [
+    1.0,
+    "P",
+    [
+     7.0,
+     20.0
+    ],
+    [
+     27.5,
+     6.0
+    ],
+    "André Schürrle",
+    "Mario Götze",
+    1
+   ],
+   [
+    0.5,
+    "C",
+    [
+     27.5,
+     6.0
+    ],
+    [
+     28.0,
+     5.5
+    ],
+    "Mario Götze",
+    null,
+    1
+   ]
+  ],
+  "source": "CBC match report: https://amp.cbc.ca/sports/soccer/worldcup/2.4924/world-cup-final-germany-1-argentina-0-et-1.2705764",
+  "source2": "Channel 4 News: https://www.channel4.com/news/world-cup-final-2014-germany-winners",
+  "checked": "113th min of extra time (CBC says 112), 0-0; sub Schürrle ran down the left and crossed, sub Götze chested it and volleyed left-footed from a tight angle inside the far post past Romero; 1-0.",
+  "note": "Minute 113 (one source 112)."
+ },
+ {
+  "id": "bg-schick-scotland-2021",
+  "label": "Schick v Scotland — from the halfway line",
+  "player": "Patrik Schick",
+  "team": "Czech Republic",
+  "opp": "Scotland",
+  "comp": "Euro 2020",
+  "date": "2021-06-14",
+  "stage": "Group D",
+  "home": "Scotland",
+  "away": "Czech Republic",
+  "final": [
+   0,
+   2
+  ],
+  "score": [
+   0,
+   1
+  ],
+  "minute": 52,
+  "period": "2H",
+  "keeper": "David Marshall",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "lob from halfway",
+  "ball": [
+   38.0,
+   49.5
+  ],
+  "end": 33.0,
+  "endZ": 1.9,
+  "move": [
+   [
+    2.5,
+    "C",
+    [
+     37.0,
+     53.0
+    ],
+    [
+     37.5,
+     51.0
+    ],
+    "Patrik Schick",
+    null,
+    0
+   ],
+   [
+    0.8,
+    "C",
+    [
+     37.5,
+     51.0
+    ],
+    [
+     38.0,
+     49.5
+    ],
+    "Patrik Schick",
+    null,
+    0
+   ]
+  ],
+  "source": "ESPN report: https://www.espn.co.uk/football/report/_/gameId/560335",
+  "source2": "CBC: https://amp.cbc.ca/lite/story/1.6064809",
+  "checked": "Hampden; Schick header 42 (0-1); 52nd min a Hendry shot was blocked back up field, Schick picked it up on halfway, saw Marshall off his line and lobbed him left-footed (0-2).",
+  "note": "Range 45 m (CBC) to 54 yards (ESPN); used ~49.5 m. Where it dropped in is estimated."
+ },
+ {
+  "id": "bg-richarlison-serbia-2022",
+  "label": "Richarlison v Serbia — the scissor kick",
+  "player": "Richarlison",
+  "team": "Brazil",
+  "opp": "Serbia",
+  "comp": "World Cup 2022",
+  "date": "2022-11-24",
+  "stage": "Group G",
+  "home": "Brazil",
+  "away": "Serbia",
+  "final": [
+   2,
+   0
+  ],
+  "score": [
+   1,
+   0
+  ],
+  "minute": 73,
+  "period": "2H",
+  "keeper": "Vanja Milinković-Savić",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "scissor kick volley",
+  "ball": [
+   34.5,
+   11.2
+  ],
+  "end": 31.2,
+  "endZ": 0.6,
+  "move": [
+   [
+    2.5,
+    "C",
+    [
+     8.0,
+     24.0
+    ],
+    [
+     12.0,
+     18.0
+    ],
+    "Vinícius Júnior",
+    null,
+    0
+   ],
+   [
+    1.2,
+    "P",
+    [
+     12.0,
+     18.0
+    ],
+    [
+     34.0,
+     11.0
+    ],
+    "Vinícius Júnior",
+    "Richarlison",
+    1
+   ],
+   [
+    0.6,
+    "C",
+    [
+     34.0,
+     11.0
+    ],
+    [
+     34.5,
+     11.2
+    ],
+    "Richarlison",
+    null,
+    1
+   ]
+  ],
+  "source": "Eurosport: https://www.eurosport.co.uk/football/world-cup/2022/richarlison-scissor-kick-for-brazil-against-serbia-voted-best-goal-of-qatar-2022-world-cup_sto9288090/story.shtml",
+  "source2": "Soccerway report: https://www.soccerway.com/news/live-brazil-serbia-report/vFL5QMsT",
+  "checked": "Richarlison rebound 62 (1-0); 73rd min Vinícius crossed with the outside of the boot from the left, Richarlison flicked it up from ~12 yards and scissor-volleyed past Milinković-Savić's right arm (2-0); fans' goal of the tournament.",
+  "note": "Foot inferred (right); corner inferred from 'beyond the keeper's right arm' = shooter's left."
+ },
+ {
+  "id": "bg-yamal-france-2024",
+  "label": "Yamal v France — the curler",
+  "player": "Lamine Yamal",
+  "team": "Spain",
+  "opp": "France",
+  "comp": "Euro 2024",
+  "date": "2024-07-09",
+  "stage": "Semi-final",
+  "home": "Spain",
+  "away": "France",
+  "final": [
+   2,
+   1
+  ],
+  "score": [
+   0,
+   1
+  ],
+  "minute": 21,
+  "period": "1H",
+  "keeper": "Mike Maignan",
+  "body": "Left Foot",
+  "type": "Open Play",
+  "technique": "curler",
+  "ball": [
+   50.0,
+   21.5
+  ],
+  "end": 30.7,
+  "endZ": 1.5,
+  "move": [
+   [
+    2.5,
+    "P",
+    [
+     40.0,
+     30.0
+    ],
+    [
+     52.0,
+     22.5
+    ],
+    "Dani Olmo",
+    "Lamine Yamal",
+    0
+   ],
+   [
+    1.0,
+    "C",
+    [
+     52.0,
+     22.5
+    ],
+    [
+     50.0,
+     21.5
+    ],
+    "Lamine Yamal",
+    null,
+    0
+   ]
+  ],
+  "source": "NBC Sports: https://nbcsports.com/soccer/news/lamine-yamal-goal-vs-france-spanish-16-year-old-scores-near-perfect-equalizer-at-euro-2024",
+  "source2": "Flashscore: https://www.flashscore.com/news/flashscore-awards-2024-lamine-yamal-wins-goal-of-the-year-in-euros-drama-against-france/KAE5BIUP",
+  "checked": "Munich semi; Kolo Muani header 9 (0-1); Yamal 21st min from just outside the box after an Olmo pass, feinted past Rabiot and curled into the left corner past Maignan (1-1); Olmo 25 (2-1); youngest Euros scorer.",
+  "note": "In off the post from memory; spots estimated."
+ },
+ {
+  "id": "bg-bellingham-slovakia-2024",
+  "label": "Bellingham v Slovakia — the 95th-minute overhead kick",
+  "player": "Jude Bellingham",
+  "team": "England",
+  "opp": "Slovakia",
+  "comp": "Euro 2024",
+  "date": "2024-06-30",
+  "stage": "Round of 16",
+  "home": "England",
+  "away": "Slovakia",
+  "final": [
+   2,
+   1
+  ],
+  "score": [
+   0,
+   1
+  ],
+  "minute": 95,
+  "period": "2H",
+  "keeper": "Martin Dúbravka",
+  "body": "Right Foot",
+  "type": "Open Play",
+  "technique": "overhead kick",
+  "ball": [
+   33.0,
+   11.0
+  ],
+  "end": 31.2,
+  "endZ": 0.3,
+  "move": [
+   [
+    2.2,
+    "P",
+    [
+     68.0,
+     22.0
+    ],
+    [
+     36.0,
+     8.0
+    ],
+    "Kyle Walker",
+    "Marc Guéhi",
+    2
+   ],
+   [
+    0.6,
+    "P",
+    [
+     36.0,
+     8.0
+    ],
+    [
+     33.0,
+     11.0
+    ],
+    "Marc Guéhi",
+    "Jude Bellingham",
+    1
+   ]
+  ],
+  "source": "ABC News (AP): https://abcnews.go.com/Sports/wireStory/bellingham-goal-sends-england-slovakia-extra-time-after-111559519",
+  "source2": "TSN: https://www.tsn.ca/soccer/euro/england-storms-back-stuns-slovakia-to-advance-at-uefa-euro-2024-1.2142553",
+  "checked": "Gelsenkirchen; Schranz 25 (0-1); 90+5 Walker long throw from the right, Guéhi flicked on, Bellingham's overhead kick into the bottom corner past Dúbravka (1-1); Kane won it in extra time (2-1).",
+  "note": "It was the Round of 16, not a group game. Which bottom corner is not stated; estimated."
+ }
+]

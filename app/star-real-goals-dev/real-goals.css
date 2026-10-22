@@ -99,3 +99,49 @@
 .rg-comps::-webkit-scrollbar { display: none; }
 .rg-comps .bc-pill { flex: none; white-space: nowrap; }
 .rg-ccount { opacity: 0.7; font-weight: 600; margin-left: 4px; }
+
+/* Paths home (22 Oct 2026): the daily goal card, then one tile per path. */
+.rg-tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(46%, 220px), 1fr)); }
+.rg-tile { display: flex; flex-direction: column; gap: 4px; min-height: 112px; padding: 12px; text-align: left; color: #fff; cursor: pointer;
+  border: 1px solid var(--bc-line); border-radius: 6px; overflow: hidden; }
+.rg-tile:active:not(:disabled) { transform: scale(0.97); }
+.rg-tile:disabled { opacity: 0.6; cursor: wait; }
+.rg-tname { font-size: 17px; font-weight: 900; font-style: italic; text-transform: uppercase; line-height: 1.05; }
+.rg-tblurb { font-size: 12px; font-weight: 700; color: rgba(255, 255, 255, 0.85); }
+.rg-tfoot { margin-top: auto; display: flex; align-items: baseline; gap: 4px; }
+.rg-tfoot b { font-size: 18px; font-weight: 900; }
+.rg-tfoot i { font-size: 12px; font-weight: 800; font-style: normal; color: rgba(255, 255, 255, 0.8); }
+.rg-tbar { display: block; height: 5px; border-radius: 3px; background: rgba(0, 0, 0, 0.35); overflow: hidden; }
+.rg-tbar span { display: block; height: 100%; }
+
+.rg-daily { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 6px; border: 1px solid rgba(250, 204, 21, 0.5);
+  background: linear-gradient(135deg, rgba(120, 53, 15, 0.85), rgba(6, 20, 54, 0.9)); }
+.rg-dhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.rg-dlabel { padding: 4px 12px 4px 8px; font-size: 13px; font-weight: 900; font-style: italic; text-transform: uppercase; color: #1a1300; background: var(--bc-amber);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+.rg-dstreak { font-size: 15px; font-weight: 900; }
+.rg-dstreak i { font-style: normal; font-size: 12px; color: var(--bc-ink2); font-weight: 800; }
+.rg-dbody { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px; align-items: center; }
+.rg-dbody .rg-mouth { border-radius: 4px; }
+.rg-dinfo { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 12px; font-weight: 700; color: var(--bc-ink2); }
+.rg-dinfo b { font-size: 15px; font-weight: 900; color: #fff; text-transform: uppercase; font-style: italic; }
+.rg-ddone { color: #86efac; font-weight: 900; }
+.rg-dhint { color: #fde68a; }
+.rg-dplay { align-self: stretch; padding: 10px 18px; border: 0; cursor: pointer; font-size: 17px; font-weight: 900; font-style: italic; text-transform: uppercase;
+  color: #1a1300; background: linear-gradient(180deg, #ffd25e, var(--bc-amber)); border-radius: 4px; }
+
+.rg-pathview { display: flex; flex-direction: column; gap: 14px; }
+.rg-pathbar { display: flex; align-items: center; gap: 10px; }
+.rg-pathbar h2 { margin: 0; font-size: 20px; font-weight: 900; font-style: italic; text-transform: uppercase; border-bottom: 3px solid; padding-bottom: 2px; }
+.rg-back { padding: 8px 12px; font-size: 14px; font-weight: 900; color: #fff; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--bc-line); border-radius: 4px; cursor: pointer; }
+
+/* Fix a banger (admin) */
+.rg-fix { display: flex; flex-direction: column; gap: 8px; }
+.rg-fixer { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid rgba(240, 171, 252, 0.4); border-radius: 6px; background: rgba(40, 10, 50, 0.5); }
+.rg-fixfacts { font-size: 13px; font-weight: 700; color: var(--bc-ink); line-height: 1.4; }
+.rg-fixsrc { font-size: 11px; font-weight: 600; color: var(--bc-ink2); word-break: break-word; }
+.rg-fixlabel { font-size: 12px; font-weight: 800; color: #f0abfc; }
+.rg-fixpitch { display: block; max-width: 420px; border-radius: 6px; }
+.rg-fixbtns { display: flex; flex-wrap: wrap; gap: 6px; }
+.rg-fixbtns .rg-dplay { align-self: auto; flex: 1 1 100%; }
+.rg-fixbtn { flex: 1; padding: 8px 10px; font-size: 13px; font-weight: 900; color: #fff; background: rgba(255, 255, 255, 0.12); border: 1px solid var(--bc-line); border-radius: 4px; cursor: pointer; }
