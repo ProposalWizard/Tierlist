@@ -6,7 +6,7 @@ Branch `leo-bughunt` (main merged in at the start). Plain English first; file na
 - **Played:** 3 careers in a real headless browser at phone size (390 × 844). One went to retirement and the Hall of Fame. The 20-season soak ran twice: 420 seasons, 20,672 matches, all rules held both times.
 - **Tests:** before 408 of 414 passing; after LAG_TESTS_AFTER. 3 stale tests fixed. 3 left are in Harry's match/chance area, so they are team jobs.
 - **Refresh safety:** every refresh landed on Home. Cause found and fixed. Ballon d'Or night, the window list, the talks and "Deal agreed" now come back where you were (seen in the browser).
-- **Fixed tonight:** 16 bugs plus 3 stale tests (list below). **Team jobs:** 5 (in `team/jobs.json`).
+- **Fixed tonight:** 17 bugs plus 3 stale tests (list below). **Team jobs:** 5 (in `team/jobs.json`).
 - **Not real squads:** this sandbox could not reach the database (`cagkgfketucousksgtbk.supabase.co` blocked by the network rules), so every club used invented players and badges showed initials. Bugs that need real squads were not looked for.
 
 ## Bugs fixed (each seen or tested; ✅ = seen in a browser after the fix)
@@ -28,7 +28,8 @@ Branch `leo-bughunt` (main merged in at the start). Plain English first; file na
 | 14 | Transfer window | White "Pick a club…" on yellow, hard to read | Dark pill behind it (`TransferHub.tsx`) | career3-transfer-window-contrast.jpg |
 | 15 | Scout talk | "The through the gate is nowhere near it yet." | Each trial stage has a proper phrase ("Your first touch is…") (`signingTalk.ts`) | — |
 | 16 | New career setup | "Step 1 of 2" twice, then "Step 2 of 2" | "Step 1, 2, 3 of 3" (`ProfileSetup.tsx`) | — |
-| 17 | 3 stale tests | chanceMaker, chanceJudge, identity failing on main | Test-only fixes (see Tests) | — |
+| 17 | Admin tab on a phone (Admin mode on) | The tab placer read ~700 points every 0.5 s: 30–45% of a slow phone on every screen | Reads each point only when needed (~50), same spot; rests when the page is hidden (`components/AdminNavPanel.tsx`) | lag table below |
+| 18 | 3 stale tests | chanceMaker, chanceJudge, identity failing on main | Test-only fixes (see Tests) | — |
 
 ## Not fixed: other chats' areas, or needs a decision
 | Where | What | Who |
@@ -66,7 +67,37 @@ The old "Training levels page freezes on the second tab switch" (20 Oct report) 
 - New tests: `seasonLabels.mts`, `welcomeTour.mts`; extended `flowTalks`, `transferInterest`, `signingTalk`, `club`, `hallRecords`.
 
 ## Lag on a slow phone (6× CPU slowdown, 390 × 844)
-LAG_TABLE
+Measured on a **production build** (the dev server was too heavy), signed out, invented squads, 3 tries each, middle value. "Long tasks" = moments the phone is frozen for more than 50 ms, counted from the tap until the screen is quiet. The test browser has no graphics card, so 3D screens look worse here than on a real phone.
+
+**Before → after tonight's admin-tab fix** (the fix only matters with Admin mode on, which signed-out test play and Harry/Mikey/Leo have; ordinary players never had the admin tab):
+
+| Screen | Opens in (ms) | Frozen moments | Total frozen (ms) | Longest freeze (ms) |
+|---|---|---|---|---|
+| Shop (2D) | 1506 → 911 | 145 → 243 | 33,618 → 38,707 | 491 → 358 |
+| Stats | 1610 → 850 | 82 → 206 | 19,036 → 36,994 | 597 → 313 |
+| Home (back from League) | 1573 → 1069 | 14 → 3 | 5,270 → 725 | 1312 → 589 |
+| Fixtures | 468 → 176 | 19 → 1 | 3,788 → 77 | 343 → 77 |
+| My Home (3D house) | 448 → 230 | 11 → 5 | 3,315 → 2,574 | 1447 → 1455 |
+| League table | 1502 → 1112 | 8 → 5 | 2,861 → 618 | 604 → 221 |
+| All leagues | 876 → 329 | 10 → 3 | 2,207 → 345 | 384 → 144 |
+| Settings | 338 → 417 | 14 → 4 | 2,216 → 1,056 | 244 → 443 |
+| Line-up screen (Play) | 458 | 12 | 1,748 | 526 |
+| Match: KICK OFF → picture | 1388 | 11 | 1,615 | 417 |
+| Match: 15 s of play | 24 frames a second (60 at full speed) | 36 | 3,892 | 275 |
+| Sim this match | 1585 | 4 | 1,364 | 962 |
+| Page load → Home | 2898 (944 at full speed) | 14 | 3,635 | 634 |
+
+**The 10 slowest and why** (from CPU recordings; production code has no names, so causes are read from the call path):
+1. **Shop** and 2. **Stats** — busy the whole time, even at full speed (about 39 s busy in 40 s). Before the fix, 30–45% of it was the admin tab placer (`components/AdminNavPanel.tsx`, ~700 hit tests every 0.5 s); now 3.6 s instead of 13.2 s in a 40 s recording. What is left is drawing, not game code ("program" time, a little three.js): most likely a 3D or animated picture redrawing all the time, on the test browser's software graphics. **Not confirmed on a phone** — worth one look in the in-game Lag test (Stats and Shop steps).
+3. **Home** — one 1.1 s picture export (canvas → image) when Home opens, plus the placer (now fixed). Sometimes a whole try was busy like Stats.
+4. **My Home (3D house)** — one 1.4 s freeze on open: three.js preparing its shaders and textures. Same before and after.
+5. **League table** — was mostly the placer; now 0.6 s total.
+6. **Match** — 24 frames a second at 6× slower (60 at full speed); 36 freezes of ~0.1 s in 15 s: the match drawing itself (engine area, not touched).
+7. **Page load** — 2.9 s to Home at 6×; the 1 MB save is read and checked on start (see the save-size team job).
+8. **Sim this match** — one 1 s freeze (the match is played out at once).
+9. **Fixtures**, 10. **All leagues** — were mostly the placer; now small.
+- Every change to the career also writes the whole ~1 MB save to the phone's storage: about 25 ms on the build machine, likely 150 ms+ on a cheap phone → team job.
+- Not timed: the season-end screens, Ballon d'Or night, the summer window, the garden, the phone feed (locked on a new career).
 
 ## Refresh safety (seen in the browser, signed-out career)
 | Refresh during… | Before | After the fix |
