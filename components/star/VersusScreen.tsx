@@ -62,6 +62,10 @@ interface Props {
   clubKits?: Record<string, import("@/lib/star/kits").ClubKits>;
   onKickOff: () => void;
   onBack: () => void;
+  /** Managers this career knows better than the Lineups page: your own
+   *  club's `career.manager`. Home showed him while the team sheet showed the
+   *  club sheet's real-world manager (playtest, 22 Oct 2026). */
+  managers?: Record<string, string>;
   /** Sits in the top-right corner of the pitch, beside the home keeper: the
    *  line-up's "Play as" picker (LineupIntro.tsx). Harry, 2 Oct 2026, v0.24
    *  P1-51: it sat on top of the VS; "maybe just put it here", his cursor at
@@ -154,7 +158,7 @@ function scouted(s: TeamSheet): boolean {
   return s.xi.length >= 9;
 }
 
-export default function VersusScreen({ matchday, date, competition, results, clubKits, onKickOff, onBack, pitchCorner, pitchCornerLeft, headerRight }: Props) {
+export default function VersusScreen({ matchday, date, competition, results, clubKits, managers, onKickOff, onBack, pitchCorner, pitchCornerLeft, headerRight }: Props) {
   const { home, away } = matchday;
   const kits = kitsFor(home.club, away.club, clubKits?.[home.club], clubKits?.[away.club]);
   const [showSubs, setShowSubs] = useState(false);
@@ -250,7 +254,7 @@ export default function VersusScreen({ matchday, date, competition, results, clu
           </div>
 
           <div className="relative mt-2.5 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
-            <TeamHeader club={home.club} kit={kits.home} formation={home.formation.name}
+            <TeamHeader club={home.club} manager={managers?.[home.club]} kit={kits.home} formation={home.formation.name}
               form={recentForm(home.club, results ?? [])} scouted={homeScouted} />
             <div className="flex flex-col items-center gap-1 pt-3">
               <div
@@ -266,7 +270,7 @@ export default function VersusScreen({ matchday, date, competition, results, clu
                 </div>
               )}
             </div>
-            <TeamHeader club={away.club} kit={kits.away} formation={away.formation.name}
+            <TeamHeader club={away.club} manager={managers?.[away.club]} kit={kits.away} formation={away.formation.name}
               form={recentForm(away.club, results ?? [])} scouted={awayScouted} />
           </div>
         </div>
@@ -420,8 +424,8 @@ export default function VersusScreen({ matchday, date, competition, results, clu
  * rows above and below each other can drift apart the instant either row's
  * neighbouring content changes width; one column can't.
  */
-function TeamHeader({ club, kit, formation, form, scouted }: {
-  club: string; kit: Kit; formation: string; form: Result[]; scouted: boolean;
+function TeamHeader({ club, manager: known, kit, formation, form, scouted }: {
+  club: string; manager?: string; kit: Kit; formation: string; form: Result[]; scouted: boolean;
 }) {
   // Requested directly, 14 Sep 2026 — asked as one clarifying question
   // ("where should this actually show?") rather than guessed at: the
@@ -429,7 +433,7 @@ function TeamHeader({ club, kit, formation, form, scouted }: {
   // you'd look to size up whoever's picking the other side. Reads the
   // same real manager record every other screen shows (loadLineup's own
   // `.manager`, kept current by the Boardroom's appoint-a-manager action).
-  const manager = managerFor(club) || undefined;
+  const manager = known || managerFor(club) || undefined;
   return (
     <div className="flex min-w-0 flex-col items-center gap-1">
       {/* Reported directly, repeatedly: no ring, no circle, no oval around

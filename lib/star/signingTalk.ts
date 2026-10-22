@@ -2,7 +2,7 @@ import type { CareerDivision } from "./calendar";
 import { matchweeksFor } from "./calendar";
 import { offerWageFor, offerStanding, weeklyWageFor } from "./economy";
 import { startNegotiation, type NegotiationState } from "./negotiation";
-import { STAGE_LABEL, trialStagesFor, trialScore, type TrialProgress, type TrialStage } from "./trial";
+import { trialStagesFor, trialScore, type TrialProgress, type TrialStage } from "./trial";
 
 /**
  * THE CONVERSATION BEFORE THE CONTRACT.
@@ -167,6 +167,23 @@ function bestAndWorst(trial: TrialProgress): { best: TrialStage | null; worst: T
  * and the division his club is in. Nothing here is a generic
  * congratulations — a 38 gets told it was a 38.
  */
+/**
+ * What the scout calls each trial stage when he talks about it. The stage
+ * titles ("Through the gate", "Take him on") are names of drills, not things
+ * a player has, so dropping them into a sentence read wrong ("The through the
+ * gate is nowhere near it yet"). Each one here is a singular noun phrase that
+ * fits "Your ___ is / was …".
+ */
+export const SCOUT_STAGE_NOUN: Record<TrialStage, string> = {
+  freeKicks: "free-kick taking",
+  technique: "first touch",
+  dribbling: "dribbling",
+  shootout: "penalty taking",
+  penalties: "penalty taking",
+  vision: "passing",
+  fiveASide: "five-a-side game",
+};
+
 export function managerTalkFor(args: {
   trial: TrialProgress;
   club: string;
@@ -195,12 +212,12 @@ export function managerTalkFor(args: {
 
   const onBest = best
     ? score >= 50
-      ? `The ${STAGE_LABEL[best].toLowerCase()} — that is the bit I keep thinking about.`
-      : `The ${STAGE_LABEL[best].toLowerCase()} was the one thing that stood up.`
+      ? `Your ${SCOUT_STAGE_NOUN[best]} — that is the bit I keep thinking about.`
+      : `Your ${SCOUT_STAGE_NOUN[best]} was the one thing that stood up.`
     : "";
 
   const onWorst = worst
-    ? `The ${STAGE_LABEL[worst].toLowerCase()} is nowhere near it yet. We would work on that every day.`
+    ? `Your ${SCOUT_STAGE_NOUN[worst]} is nowhere near it yet. We would work on that every day.`
     : "";
 
   const onClub = `We are ${club}. You would be training with us from Monday.`;

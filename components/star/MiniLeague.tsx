@@ -101,7 +101,7 @@ export function LeagueDropdown({ career, glow, onOpen }: { career: CareerState; 
         </span>
       </button>
       {open && (
-        <div className="absolute inset-x-0 top-full" style={{ background: "rgba(4,16,10,.86)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" }}>
+        <div className="absolute inset-x-0 top-full" style={{ background: "rgb(4,16,10)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" }}>
           <MiniLeague career={career} glow={glow} rows={5} onOpen={onOpen} />
         </div>
       )}

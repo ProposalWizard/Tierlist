@@ -262,6 +262,7 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
           date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))}
           results={career.results}
           clubKits={(intlCareer ?? career).clubKits}
+          managers={career.manager ? { [career.player.club]: career.manager.name } : undefined}
           competition={
             !nextFixture.kind || nextFixture.kind === "league"
               ? `${leagueNameFor(divisionOf(career))} · Matchday ${nextFixture.week}`
