@@ -743,7 +743,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   useEffect(() => {
     const init = async () => {
-      setHydrated(true);
+      // NOT hydrated here: loadCareerIntoState sets it once the phase is
+      // decided. Set here, the "profile-setup" first render wrote over (in
+      // practice REMOVED) the saved resumable phase before it was read.
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -2178,6 +2180,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setPhase("transfer-signing");
   }, [phase]);
 
+  // A refresh on the signing screen goes back to the list the club came
+  // from, like a refresh in the talks does: the agreed deal is React state
+  // only, so the talks are had again. Runs after the phase save above (same
+  // commit, declared later), which has just removed the record for
+  // "transfer-signing"; left removed, the reload landed on Home with the
+  // season over and the window gone.
+  useEffect(() => {
+    if (!hydrated || phase !== "transfer-signing" || !pendingSignOffer) return;
+    saveStarPhase(pendingSignOffer.wasRelegationMove ? "relegation-move" : "season-transfer",
+      slotScope(scopeRef.current, activeSlotRef.current), undefined, wonBallonDor);
+  }, [hydrated, phase, pendingSignOffer, wonBallonDor]);
+
   const handleSigningDone = useCallback(() => {
     if (!career || !pendingSignOffer) return;
     const { offer, wasRelegationMove } = pendingSignOffer;
@@ -2419,7 +2433,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    */
   // `chosen`: the copy the player picked on SaveClashPrompt — load exactly
   // that, without asking the cloud again.
-  const loadCareerIntoState = useCallback(async (slot: number, chosen?: CareerState) => {
+  // Returns "clash" when nothing was loaded yet (see loadCareerIntoState below).
+  const loadCareerAndDecidePhase = useCallback(async (slot: number, chosen?: CareerState): Promise<"clash" | void> => {
     setCloudLoading(true);
     resetTransientState();
     const scope = slotScope(scopeRef.current, slot);
@@ -2435,7 +2450,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         setCareer(null);
         setSaveClash(outcome.clash);
         setCloudLoading(false);
-        return;
+        return "clash";
       }
       saved = outcome.career;
     }
@@ -2636,6 +2651,21 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setPhase("dashboard");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * The phase save (the effect that calls saveStarPhase) stays shut while a
+   * save is being loaded, and opens only once the load has DECIDED the phase.
+   * Opened any earlier, it wrote the phase on screen before the load
+   * ("profile-setup" at start-up; the old save's phase on a slot switch)
+   * into the slot being loaded, which REMOVES the resumable phase a refresh
+   * must return to. A save clash keeps it shut until the player picks a copy
+   * (the pick loads again, and opens it).
+   */
+  const loadCareerIntoState = useCallback(async (slot: number, chosen?: CareerState) => {
+    setHydrated(false);
+    const outcome = await loadCareerAndDecidePhase(slot, chosen);
+    if (outcome !== "clash") setHydrated(true);
+  }, [loadCareerAndDecidePhase]);
 
   // Sends whatever the OUTGOING save has right now to the cloud immediately,
   // rather than trusting the cloud-save effect's 3 s debounce to still be
