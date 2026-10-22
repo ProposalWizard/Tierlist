@@ -49,6 +49,9 @@ Branch `leo-celebrations`. Plan parts 1 (goal celebrations) and 5 (big moments),
 - Sound (crowd rise, heartbeat, roar, late call) cannot be heard here; only checked that nothing errors.
 - Hands Up and Jump not played in a match (only on the frame sheets). In 3D only the knee slide was played (the first 3D check, before the camera fix, showed the run leaving a fixed camera; fixed).
 
+## Goal video: scripted, not recorded (for the feed chat)
+Your run and celebration in a goal video are drawn from the celebration plan (`goalClip/recorder.ts` writes your position from `celebAt` into every frame after the goal; `render.ts` picks the move's frames). They never rely on recorded movement after the goal, so the held picture during the commentary does not freeze them. Seen: a knee-slide goal video plays the run, the slide and the arms up to the end (`goal-video-knee-slide.jpg`). Other men in the shot do hold still after the recording ends.
+
 ## Known issues
 - A team-mate making a run can stay near you in the goal video's tight shot (the match's runners carry on); he sometimes stands in front of you.
 - Frame sheets are cached on a phone for a day (existing rule, next.config.mjs). A re-bake of atlas 2 under the same name can draw broken figures until the cache clears (seen once in testing with a stale cache; fine after clearing). Not a problem for the first release of these files.
@@ -59,6 +62,8 @@ Branch `leo-celebrations`. Plan parts 1 (goal celebrations) and 5 (big moments),
 - `node scripts/run-star-tests.mjs finishing keeper aiming outcomes goalClip lateCommentary celebration storeCareer signing3d sprite3dClips gameMusic engineFrame`: all pass (18 files).
 - Knee-slide helper: `animSmooth assets3d perf3d cutscene play3d shoulderSet` pass.
 - `node scripts/one-engine-guard.mjs`: no new copies.
+- `npm run build`: passes (with `NODE_OPTIONS=--max-old-space-size=6144`; the first try ran out of memory while the tests ran beside it). All build guards pass.
+- Merged `origin/Leo` before the final push (already up to date).
 
 ## Files
 New: `lib/star/celebration.ts`, `lib/star/bigMoment.ts`, `lib/star/lateCommentary.ts`, `tests/star/celebration.mts`, `tests/star/lateCommentary.mts`, `public/sfx/cl-late-*.mp3`, `cc-late-*.mp3`, `public/star/sprites/atlas-2*.webp`, `mask-2*.webp`, `tools/mocap3d/one-clip/`.
