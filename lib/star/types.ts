@@ -1591,6 +1591,13 @@ export interface CareerState {
    * Settings' admin-only "Goal Replays" section, for testing.
    */
   recentGoals?: GoalReplay[];
+  /** Every goal of your career, one small row each (lib/star/goalLog.ts;
+   *  Leo, 22 Oct 2026). Feeds the season reel and Stats → Goals. Absent on
+   *  a save from before, which starts its list from the next goal. */
+  goalLog?: import("./goalLog").CareerGoal[];
+  /** The last season whose reel ("Your season") was made or skipped. Until
+   *  then that season's recordings are kept from the newest-80 prune. */
+  reelDoneSeason?: number;
   /**
    * Up to 3 goals deliberately kept from `recentGoals` — a real choice, not
    * everything you've ever scored. Decoupled from `recentGoals`'s own churn

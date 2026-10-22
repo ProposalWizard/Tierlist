@@ -1,4 +1,5 @@
 "use client";
+import { protectedClipIds } from "@/lib/star/goalLog";
 import { preloadScene } from "@/lib/star/three3d/perf";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
 import { pitchFont } from "@/components/star/ui/pitchFont";
@@ -1238,6 +1239,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     void putClip(track).then(() => {
       const c = careerForClipsRef.current;
       const keep = new Set([...(c?.savedReplays ?? []), ...(c?.recentGoals ?? [])].map(r => r.clipId).filter((x): x is string => !!x));
+      // A season's goals until its reel is made, and the career's best 10 (goalLog.ts).
+      for (const id of protectedClipIds(c)) keep.add(id);
       return pruneClips(keep);
     });
   }, []);

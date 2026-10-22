@@ -56,6 +56,7 @@ import { INJURIES_ON } from "./injurySwitch";
 import { stepBar, drift, happinessEnergyFactor, happinessOf, REL_KEYS, capRel } from "./relationships";
 import { getTuning } from "./tuningStore";
 import { generateSquad, clubNameSeed } from "./squadData";
+import { logMatchGoals } from "./goalLog";
 import { dayFor, transferWindowFor, divisionOf, divisionRank, leagueNameFor, fixtureTimestamp, hasClub, type CareerDivision } from "./calendar";
 import { runTransferWindow, runInternationalWindow, returnLoansHome } from "./leagueTransfers";
 import { wageForFixture } from "./wages";
@@ -1369,6 +1370,10 @@ export function creditMatchResult(
       ? creditIntl(next, fixture, stats)
       : syncIntl(managerAfterClubMatch(next, stats.rating)));
   }
+
+  // Every goal of yours, one small row each (goalLog.ts): the season reel
+  // and Stats → Goals read it.
+  if (!alreadyPlayed) next.goalLog = logMatchGoals(career, fixture, stats, leagueNameFor(divisionOf(career)));
 
   const settled = applyAchievements(next);
   return {
