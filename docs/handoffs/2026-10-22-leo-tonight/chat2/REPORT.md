@@ -57,6 +57,15 @@ Notes:
 - **(a) Video stopped 1–2 s after the goal.** The recording was cut when the result screen handed back to the commentary (1.8 s after the goal). It now keeps recording to the full 2.2 s while the same chance is loaded (one condition in `CanvasMatch.tsx`). **Limit:** during that commentary the match engine moves nothing, so the last 0.4 s is the real picture held still, not players still moving. Chat 1's longer celebrations (+2.5 s) will need the engine to keep moving the players there; not done here. Test: `tests/star/goalClipTail.mts` (last real frame 1.80 s → 2.20 s).
 - **(b) "The League" labelled lower-league goals as Premier League.** Reproduced with a full League One season (and National League North): the league account was already right (fixed 11 Oct). Two other wrong labels did show, and are fixed: cup accounts posting other competitions' news (an "@FACup" post about a League One table move), and "into/out of Europe" stories outside the Premier League. Two fallbacks that said "Premier League" now name your division. Old posts already saying @PremierLeague are left as they are. Test: `tests/star/leagueAccountLabel.mts`.
 
+## Last changes, timed again (production, player, 6×) — `prod-final2-player.txt`
+After A6 (videos made at full time) and A7 (off-screen posts not painted): open 420 ms, reopen 263 ms, still 1.2 s, first video 10.8 s on the bench (which has no match, so no full-time head start), scroll: 11 freezes over 100 ms, longest 155 ms. So A7 helped in the dev trace (8 → 2) but **not clearly in the production build** (12 → 11; runs vary ±100 ms on open). The scroll target is still not met.
+
+## After a real career match (playtest, full speed)
+Fresh career (Farnham Town), first league match played to full time (3-0, 2 goals), then the "Post Match Reactions" feed: the goal-video post showed its still at once and was **ready 2.3–3.2 s after the feed appeared**; it played (time moving). No page errors. Stills: `real-moment-0s.jpg`, `real-moment-20s.jpg`, `real-moment-notour.jpg`, `real-video-playing.jpg`, `real-after-continue.jpg`.
+- Not reached: Phone → Social straight after, because Phone is still locked in a brand-new career.
+- Seen: the first-time tour card covers the top of the moment feed until "GOT IT" (by design).
+- Open question: with 2 goals, one goal-video post showed in that feed. Not checked whether a second was expected (the feed shows 1 or 2 videos a match at random, by design since 16 Oct).
+
 ## Seen in a browser
 - Phone-size stills in this folder: `feed-top.jpg`, `feed-video-still.jpg`, `feed-video-playing.jpg`, `feed-gotm.jpg`, `feed-end.jpg` (playtest helper), `gotm-real-feed-voted.jpg` (the poll in the real feed after a vote), `gotm-poll-*.jpg`, `gotm-winner.jpg` (the helper's component stills).
 - Playtest: scrolled top to bottom and back: no empty boxes on screen, no jumps, the end line shows. A video's still shows at once, the video plays (time moving, 640 wide), and it is ready at once after leaving and coming back, and after a reload. The poll vote shows "You voted" and is saved in the career. No page errors.
