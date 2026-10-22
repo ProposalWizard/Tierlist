@@ -35,7 +35,7 @@ Branch `leo-bicycle`. Not live. Plan: part 3 of `../../../plans/2026-10-22-leo-t
      the strike screen asks for it as soon as the button shows). Sheet: `2d-bicycle-sheet.jpg`.
    - Your own player now plays it through the kick pose (CanvasMatch; it used to force
      the old kick for you). Goal videos wait for it too (`goalClip/render.ts`).
-5. **Crowd and media treat a bicycle goal like a hat-trick.** In the match: "BICYCLE KICK!"
+5. **Crowd and media treat a bicycle goal like a hat-trick.** In the match: "BICYCLE!"
    banner, two goal bursts, the crowd roars twice, its own commentary lines (and a line for a
    try that misses). Media: a `bicycle-kick` story at a hat-trick's importance (76), its own
    fan, tabloid and club posts, the pundit's praise, a headline, and a press-conference
@@ -78,7 +78,27 @@ Before the misses were made harsher, a poor bicycle scored 26–31 in 100 (too f
 
 ## Seen vs not seen
 
-PLAYTEST_PLACEHOLDER
+**Seen in a browser at 390×844** (the real match, on `/star-real-moments-dev` → a real
+overhead moment → ▶ Play; about 45 tries; no console or page errors):
+- `bike-01-button.jpg` the "Head it?" screen with the orange Bicycle! button.
+- `bike-02-mode.jpg` Bicycle kick! mode: Height meter, green band, "← Head it".
+- `bike-03-clean.jpg` a clean hit: "BICYCLE KICK!" grade. (The grade sat over the Power bar;
+  moved under the ball after this still. The fix is type-checked, not re-filmed.)
+- `bike-04/05/06-anim-*.jpg` the pitch after the strike; in a screen recording the player
+  tipped back, scissored, lay flat and sat up: the new clip, not the old kick.
+- `bike-07-result.jpg` a bicycle goal: the banner and confetti. The banner read "BICYCLE KICK!",
+  wrapped onto two lines and was cut off at the left; now "BICYCLE!" (not re-filmed).
+- `bike-08-poor.jpg` a late tap: "TOO LATE" in red. `bike-09-back-to-header.jpg` "← Head it" works.
+- Contact sheets of every frame: `3d-bicycle-side.jpg`, `3d-bicycle-sheet.jpg`, `2d-bicycle-sheet.jpg`.
+
+**Not seen:** the commentary line (the test page has no commentary ticker; the lines are covered
+by type-check only); the move in the 3D match view (seen only on the contact sheets on the real
+body); a bicycle chance arising in a full career match (rare by design: about 1.4 per 40 matches at
+Aerial 40); the media posts on the phone (tested through the real media pipeline, not looked at).
+The playtester saw the player upright again about 0.5 s after the strike, where the clip runs
+1.1 s; the likely reason is the shot ending and the scene moving on, not checked.
+Of 8 overhead moments tried, a clean hit scored as a bicycle on one (with the aim 12° off centre);
+one always went in off a defender (correctly not counted as a bicycle goal); others were saved.
 
 ## Known issues
 
