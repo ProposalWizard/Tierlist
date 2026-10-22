@@ -9,25 +9,25 @@ Branch `leo-bughunt` (main merged in at the start). Plain English first; file na
 - **Fixed tonight:** 17 bugs plus 3 stale tests (list below). **Team jobs:** 5 (in `team/jobs.json`).
 - **Not real squads:** this sandbox could not reach the database (`cagkgfketucousksgtbk.supabase.co` blocked by the network rules), so every club used invented players and badges showed initials. Bugs that need real squads were not looked for.
 
-## Bugs fixed (each seen or tested; ✅ = seen in a browser after the fix)
+## Bugs fixed (each tested; ✅ = seen in a browser after the fix)
 | # | Where | What you saw | Fix | Still |
 |---|---|---|---|---|
 | 1 | Refresh anywhere | Every refresh landed on Home: the saved "resume here" screen was wiped at start-up before it was read | The save of the screen waits until the load has decided the screen (`app/star-dev/page.tsx` init + `loadCareerIntoState` wrapper). Also fixes a slot switch writing the old slot's screen into the new slot ✅ | save-ballondor.jpg → save-fixed-ballondor.jpg |
 | 2 | Refresh after "Deal agreed" | The agreed transfer was lost: Home, still at the old club, window gone | Refresh goes back to the window list (talks again) ✅ | save-signing.jpg → save-fixed-signing.jpg |
 | 3 | Signing news after a summer move | "…has joined Brackley and wants to take charge of the National League", age 16 (really National League North, age 17) | The card reads the new league and next season's age (`lib/star/breakingNews.ts`) | career2-signing-news-wrong-league-age.jpg |
-| 4 | Contract talks (transfer) | Header "Their wage offer ★28", card "★21" | Header shows their real offer, follows their counters (`NegotiationScreen.tsx`) | career2-negotiation-header-wage-mismatch.jpg |
+| 4 | Contract talks (transfer) | Header "Their wage offer ★28", card "★21" | Header shows their real offer, follows their counters (`NegotiationScreen.tsx`) ✅ | career2-negotiation-header-wage-mismatch.jpg |
 | 5 | Transfer list | 4 NL North clubs all "Finished 24th" | Clubs up from Step 3 say "Promoted" (`transferInterest.ts`) | — |
-| 6 | Line-up screen | ⏩ and ⚙ floated over the away crest and cut off "PLAY AS ST" | Both moved into the header's top-right corner (`LineupIntro.tsx`, `VersusScreen.tsx`) | career3-prematch-buttons-overlap.jpg |
+| 6 | Line-up screen | ⏩ and ⚙ floated over the away crest and cut off "PLAY AS ST" | Both moved into the header's top-right corner (`LineupIntro.tsx`, `VersusScreen.tsx`) ✅ | career3-prematch-buttons-overlap.jpg |
 | 7 | Badges, offline | A failed badge read was retried by every badge on every redraw (~2,000 failed reads in one session) | One read at a time; a failed read waits 30 s (`lib/star/clubLogos.ts`) | — |
 | 8 | Career overview, Hall of Fame, farewell | First season labelled 2027/28; the calendar and Home say 2026/27 | One label helper on the calendar's year; old Hall cards read right too (`careerOverview.ts`, `hallRecords.ts`, `farewell.ts`, `HallOfFame.tsx`; test `seasonLabels.mts`) | — |
-| 9 | Welcome tour on Home | Replayed on every Home visit for 20 seasons; covered ⚙ and "End of Season" | The last step counts as done the moment you press it, or when it leaves the screen (`PointerTour.tsx`) | career1-tutorial-replays-blocks-end-of-season.jpg |
-| 10 | Welcome tip | "You've got a game today" with the match 2 days away | Says today / tomorrow / in N days (`tours.ts`; test `welcomeTour.mts`) | — |
+| 9 | Welcome tour on Home | Replayed on every Home visit for 20 seasons; covered ⚙ and "End of Season" | The last step counts as done the moment you press it, or when it leaves the screen (`PointerTour.tsx`) ✅ | career1-tutorial-replays-blocks-end-of-season.jpg |
+| 10 | Welcome tip | "You've got a game today" with the match 2 days away | Says today / tomorrow / in N days (`tours.ts`; test `welcomeTour.mts`) ✅ | — |
 | 11 | Manager after promotion | Manager sacked "after a season below what the board wanted" the summer his club went up | A manager who just won promotion is never sacked (`manager.ts sackCheck`, `careerFlow.ts`) — **Mikey's career area, 3 lines** | career3-sacked-manager-after-promotion.jpg |
 | 12 | Team sheet | Manager "John McGrath" on the team sheet, "Diego Doherty" on Home | Your club's manager comes from the career on both (`VersusScreen.tsx`) | career2-manager-name-differs-home-vs-teamsheet.jpg |
-| 13 | Home league dropdown | See-through: chips showed through the table | Solid background (`MiniLeague.tsx`, `IntlKit.tsx`) | career3-league-dropdown-see-through.jpg |
-| 14 | Transfer window | White "Pick a club…" on yellow, hard to read | Dark pill behind it (`TransferHub.tsx`) | career3-transfer-window-contrast.jpg |
-| 15 | Scout talk | "The through the gate is nowhere near it yet." | Each trial stage has a proper phrase ("Your first touch is…") (`signingTalk.ts`) | — |
-| 16 | New career setup | "Step 1 of 2" twice, then "Step 2 of 2" | "Step 1, 2, 3 of 3" (`ProfileSetup.tsx`) | — |
+| 13 | Home league dropdown | See-through: chips showed through the table | Solid background (`MiniLeague.tsx`, `IntlKit.tsx`) ✅ | career3-league-dropdown-see-through.jpg |
+| 14 | Transfer window | White "Pick a club…" on yellow, hard to read | Dark pill behind it (`TransferHub.tsx`) ✅ | career3-transfer-window-contrast.jpg |
+| 15 | Scout talk | "The through the gate is nowhere near it yet." | Each trial stage has a proper phrase ("Your first touch is…") (`signingTalk.ts`) ✅ | — |
+| 16 | New career setup | "Step 1 of 2" twice, then "Step 2 of 2" | "Step 1, 2, 3 of 3" (`ProfileSetup.tsx`) ✅ | — |
 | 17 | Admin tab on a phone (Admin mode on) | The tab placer read ~700 points every 0.5 s: 30–45% of a slow phone on every screen | Reads each point only when needed (~50), same spot; rests when the page is hidden (`components/AdminNavPanel.tsx`) | lag table below |
 | 18 | 3 stale tests | chanceMaker, chanceJudge, identity failing on main | Test-only fixes (see Tests) | — |
 
@@ -116,7 +116,9 @@ For signed-in players on the live site, the start-up wipe mostly hit an empty ke
 
 ## What was seen and what was not
 - **Seen:** 3 careers (Hemel Hempstead, Halifax → Brackley, Southend), 9 real matches, 3 season ends, Ballon d'Or nights, awards, 3 summer windows (a move, two walk-aways), promotion screens, the All-leagues viewer (11 competitions, row counts right, table sums right), retirement → farewell invite → Career Over → Hall of Fame; the refresh fix.
-- **Not seen:** a real 20-season run (season 3 → 20 was jumped by editing the save), the farewell match itself, cups for your own club (Dev Skip jumped them), real squads, a keeper career, the 3D garden/shop in a career. SEEN_AFTER
+- **Not seen:** a real 20-season run (season 3 → 20 was jumped by editing the save), the farewell match itself, cups for your own club (Dev Skip jumped them), real squads, a keeper career, the 3D garden/shop in a career. 
+- **Fixes seen after the fix** (production build, phone size): setup steps 1/2/3 of 3, scout talk in proper English, line-up buttons in the header, the welcome tour gone after pressing Play (also after a reload), the "in 4 days" tip matching the card, a solid league dropdown, the dark "Pick a club" pill, and the talks header equal to their offer. Stills: `fixed-*.jpg`. Small leftover: on the line-up screen a long competition name wraps to two lines ("NATIONAL LEAGUE SOUTH / · MATCHDAY 1"), and the "PLAY AS" pill touches the header card by ~5 px.
+- **Not seen after the fix:** the signing-news card after a move, the "Promoted" label in the window list, the manager name on the team sheet, the no-sack-after-promotion rule (all covered by tests or type-check only).
 - **Harness trouble (not game bugs):** the dev server ran out of memory (5–6.5 GB) and was killed three times with five testers on it; the lag numbers were then taken on a production build.
 
 ## Files touched
