@@ -193,9 +193,14 @@ export default function AdminNavPanel() {
   useEffect(() => {
     if (!showTab) { setSpot(null); return; }
     let last: TabSpot | null = null;
+    let searchedAt = -Infinity;
     const place = () => {
       if (window.innerWidth >= 1024) { setSpot(null); last = null; return; }
       if (last && spotStillClear(last)) return;
+      // A screen with no clear spot (the phone) would search all the time:
+      // the full search runs at most every 8 s.
+      if (last && performance.now() - searchedAt < 8000) return;
+      searchedAt = performance.now();
       const next = placeTab();
       last = next;
       setSpot((cur) => (cur && cur.top === next.top && cur.slim === next.slim ? cur : next));
