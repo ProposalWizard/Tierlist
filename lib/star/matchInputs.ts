@@ -130,3 +130,20 @@ export function careerMatchSpec(
     },
   };
 }
+
+/**
+ * A test tool's match (the radar page, sim90, the ruler): two strengths, one
+ * number for all your stats, a position. Built exactly like a career match
+ * (balanced playstyle, live penalties, Mikey's corner rule, Match flow).
+ */
+export function simpleMatchSpec(o: {
+  teamStrength: number; oppStrength: number; home?: boolean; skill: number; position: string; matchFlow?: boolean;
+}): MatchInputsSpec {
+  const k = o.skill;
+  return {
+    teamStrength: o.teamStrength, oppStrength: o.oppStrength, home: o.home, position: o.position,
+    skills: { power: k, technique: k, vision: k, pace: k, freeKick: k },
+    energyMode: "medium",
+    matchFlow: o.matchFlow,
+  };
+}

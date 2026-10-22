@@ -34,8 +34,8 @@
  *    unseen match still decides which area each minute is in.
  */
 import { startRadar, stepRadar, resolveHighlight, radarOver, type RadarMatch, type RadarFrame, type RadarHighlight } from "./matchRadar";
-import type { RadarTick, Zone, Lane } from "./hiddenMatch";
-import { matchInputsFor } from "./matchInputs";
+import type { HiddenMatchInputs, RadarTick, Zone, Lane } from "./hiddenMatch";
+import { matchInputsFor, simpleMatchSpec } from "./matchInputs";
 import { mulberry32 } from "./season";
 import { PITCH_W, CX, HALF_LEN, POST_L, POST_R } from "./pitch";
 import { formationForClub } from "./clubFormation";
@@ -336,15 +336,19 @@ export function radarTicks(m: RadarMatch): Map<number, RadarTick> {
   return out;
 }
 
-function radarFor(setup: Sim90Setup): RadarMatch {
-  // ONE SET OF MATCH INPUTS (lib/star/matchInputs.ts): built as the real
-  // match builds them (context, live penalties, Mikey's corner rule).
-  const inputs = matchInputsFor({
+/** The unseen match's inputs for a full 90: the home side is "us", a striker
+ *  with every stat at 70. ONE SET OF MATCH INPUTS (lib/star/matchInputs.ts):
+ *  built as the real match builds them (context, live penalties, Mikey's
+ *  corner rule). */
+export function sim90Inputs(setup: Sim90Setup): HiddenMatchInputs {
+  return matchInputsFor(simpleMatchSpec({
     teamStrength: setup.homeStrength, oppStrength: setup.awayStrength, home: true,
-    skills: { power: 70, technique: 70, vision: 70, pace: 70, freeKick: 70 }, position: "ST",
-    matchFlow: !!setup.matchFlow,
-  });
-  return startRadar(setup.seed, inputs, 90, 100);
+    skill: 70, position: "ST", matchFlow: !!setup.matchFlow,
+  }));
+}
+
+function radarFor(setup: Sim90Setup): RadarMatch {
+  return startRadar(setup.seed, sim90Inputs(setup), 90, 100);
 }
 
 /** One radar minute as the live radar strip draws it. */

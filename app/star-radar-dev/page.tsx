@@ -31,7 +31,7 @@ import {
 import { benchConversion, type HiddenMatchInputs, type RadarTick } from "@/lib/star/hiddenMatch";
 import { PREMIER_LEAGUE_CLUBS, CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsFor, labelInk, kitLabelOnDark, type Kit } from "@/lib/star/kits";
-import { matchInputsFor } from "@/lib/star/matchInputs";
+import { matchInputsFor, simpleMatchSpec } from "@/lib/star/matchInputs";
 
 /** Which of the two layouts this device shows (Harry: "match radar both as toggles"). */
 const LAYOUT_KEY = "star-radar-dev-layout";
@@ -81,11 +81,9 @@ function inputsFor(s: Setup): HiddenMatchInputs {
   // ONE SET OF MATCH INPUTS (lib/star/matchInputs.ts), built as the real
   // match builds them: context, live penalties, Mikey's corner rule and
   // Settings → Look → Gameplay → Match flow.
-  return matchInputsFor({
-    teamStrength: s.usStrength, oppStrength: s.themStrength, home: s.home,
-    skills: { power: s.skill, technique: s.skill, vision: s.skill, pace: s.skill, freeKick: s.skill },
-    position: s.position, energyMode: "medium",
-  });
+  return matchInputsFor(simpleMatchSpec({
+    teamStrength: s.usStrength, oppStrength: s.themStrength, home: s.home, skill: s.skill, position: s.position,
+  }));
 }
 
 export default function MatchRadarPage() {

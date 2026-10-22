@@ -211,16 +211,24 @@ export function hadBall(t: Pick<RadarTick, "possession" | "shot" | "corner" | "y
   return t.yours ? "user" : t.shot ?? t.corner ?? t.possession;
 }
 
-/** One radar frame as a minute of the live radar (RadarTick). */
+/** One radar frame as a minute of the live radar (RadarTick), by the live
+ *  radar's own rule (hiddenMatch.ts radarTickOf + resolveScenario): the last
+ *  shot and corner of the minute count, your goal before theirs, and your
+ *  chance's ending last of all. */
 export function frameTick(f: RadarFrame): RadarTick {
   const t: RadarTick = { minute: f.minute, possession: f.possession, zone: f.zone, lane: f.lane, momentum: f.momentum };
   for (const e of f.events) {
-    if (e.kind === "goal-us" || e.kind === "highlight-goal") { t.goal = "user"; t.shot = "user"; }
-    else if (e.kind === "goal-them") { t.goal = "opponent"; t.shot = "opponent"; }
-    else if ((e.kind === "chance-us" || e.kind === "highlight-miss") && !t.shot) t.shot = "user";
-    else if (e.kind === "chance-them" && !t.shot) t.shot = "opponent";
-    else if (e.kind === "corner-us") t.corner = "user";
+    if (e.kind === "corner-us") t.corner = "user";
     else if (e.kind === "corner-them") t.corner = "opponent";
+    else if (e.kind === "goal-us" || e.kind === "chance-us") t.shot = "user";
+    else if (e.kind === "goal-them" || e.kind === "chance-them") t.shot = "opponent";
+    if (e.kind === "goal-us") t.goal = "user";
+    else if (e.kind === "goal-them" && t.goal !== "user") t.goal = "opponent";
+  }
+  if (t.goal) t.shot = t.goal;
+  for (const e of f.events) {
+    if (e.kind === "highlight-goal") { t.goal = "user"; t.shot = "user"; }
+    else if (e.kind === "highlight-miss" && !t.shot) t.shot = "user";
   }
   if (f.highlight) t.yours = true;
   return t;

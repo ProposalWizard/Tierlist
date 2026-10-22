@@ -37,7 +37,7 @@ import {
 } from "../hiddenMatch";
 import { type Scenario } from "../canvasEngine";
 import { withCornerReach } from "../cornerReach";
-import { matchInputsFor } from "../matchInputs";
+import { matchInputsFor, simpleMatchSpec } from "../matchInputs";
 import { CX } from "../pitch";
 import { makeChance, PictureMemory } from "../chanceMaker";
 import { newSelectionMemory } from "../scenarioSelect";
@@ -69,11 +69,7 @@ export const REACT_MAX_S = 4;
  * measured the Old match). Read the setting fresh with `rulerInputs()`.
  */
 export function rulerInputs(matchFlow?: boolean): HiddenMatchInputs {
-  return matchInputsFor({
-    teamStrength: 70, oppStrength: 70, position: "ST", energyMode: "medium",
-    skills: { power: 65, technique: 65, vision: 65, pace: 65, freeKick: 65 },
-    matchFlow,
-  });
+  return matchInputsFor(simpleMatchSpec({ teamStrength: 70, oppStrength: 70, skill: 65, position: "ST", matchFlow }));
 }
 export const RULER_INPUTS: HiddenMatchInputs = rulerInputs();
 

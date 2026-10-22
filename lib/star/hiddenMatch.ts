@@ -1616,19 +1616,26 @@ export function resolveScenario(state: HiddenMatchState, result: ScenarioResult)
     state.userScore += 1;
     state.momentum = clamp1(state.momentum + 0.3);
     endOfMove(state, true, "user");
-    return;
-  }
-  if (result === "delivered") {
+  } else if (result === "delivered") {
     // You kept the move alive and moved it forward. The ball stays yours.
     state.momentum = clamp1(state.momentum + 0.08);
     state.zone = shift(state.zone, 1);
-    return;
+  } else {
+    state.momentum = clamp1(state.momentum - (result === "lost" ? 0.1 : 0.05));
+    endOfMove(state, false, "user");
+    // A chance in the final third: the next minute may turn it into a corner or
+    // a second ball, exactly as a team-mate's miss (Match flow only; tick reads it).
+    if (USER_DANGER.includes(state.zone)) state.missedMove = true;
   }
-  state.momentum = clamp1(state.momentum - (result === "lost" ? 0.1 : 0.05));
-  endOfMove(state, false, "user");
-  // A chance in the final third: the next minute may turn it into a corner or
-  // a second ball, exactly as a team-mate's miss (Match flow only; tick reads it).
-  if (USER_DANGER.includes(state.zone)) state.missedMove = true;
+  // The live radar's minute shows how your chance ended, as the match radar
+  // (matchRadar.ts resolveHighlight) always did: the goal or the shot, and the
+  // ball where it is now. Read-only for the football (sim rebuild piece 4).
+  const t = state.radarTrace?.get(state.minute);
+  if (t) {
+    t.possession = state.possession; t.zone = state.zone; t.momentum = state.momentum;
+    if (result === "goal") { t.goal = "user"; t.shot = "user"; }
+    else if (result === "saved" && !t.shot) t.shot = "user";
+  }
 }
 
 /**
