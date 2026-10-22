@@ -37,4 +37,4 @@ export async function uploadToMarketing(file: Blob, name: string, folder: string
 
 export const sizeLabel = (b: number) => (b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(1)} GB` : b >= 1024 ** 2 ? `${(b / 1024 ** 2).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 export const playLink = (key: string) => `/api/admin/marketing/media/play?key=${encodeURIComponent(key)}`;
-export const suiteLink = (key: string) => `/admin/marketing/suite?key=${encodeURIComponent(key)}`;
+export const suiteLink = (key: string) => `/admin/marketing/studio?key=${encodeURIComponent(key)}`;

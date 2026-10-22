@@ -9,7 +9,7 @@
  *
  * The bucket is the one source of truth. No database, no index file:
  *   videos/<folder>/<stamp>-<name>.<ext>          an upload (folder = a board card id, or "inbox")
- *   videos/<folder>/<stamp>-<name>.<ext>.notes.json  the suite's notes for that video
+ *   videos/<folder>/<stamp>-<name>.<ext>.suite.json  the editing suite's notes and edits (+ optional helper files)
  *   ledger/<YYYY-MM-DD>/<who>/<stamp>-<bytes>      one empty object per upload link handed out (the daily cap)
  *
  * PURE: no fs, no network, no clock (every function takes `now`). The signing
@@ -66,7 +66,8 @@ export function r2ConfigFrom(env: Record<string, string | undefined>): { config:
 export const INBOX = "inbox";
 /** Same rule as a board card id (lib/marketing/board.ts). */
 export const FOLDER_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/;
-export const NOTES_SUFFIX = ".notes.json";
+/** The editing suite's file beside a video (lib/studio/store.ts). Its presence = the video has notes. */
+export const NOTES_SUFFIX = ".suite.json";
 /** An upload's key. Never a notes file, never climbing out of videos/. */
 export const VIDEO_KEY_RE = /^videos\/[A-Za-z0-9][A-Za-z0-9._-]{0,79}\/[0-9]{8}-[0-9]{6}-[a-z0-9]{4}-[a-z0-9-]{1,60}\.[a-z0-9]{1,5}$/;
 export const isVideoKey = (k: unknown): k is string => typeof k === "string" && VIDEO_KEY_RE.test(k) && !k.includes("..") && !!mediaOf(k);

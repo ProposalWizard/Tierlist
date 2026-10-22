@@ -13,7 +13,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
-import { NOTES_SUFFIX, isVideoKey, parseList, r2ConfigFrom, r2Url, type ListedObject, type R2Config } from "./r2";
+import { isVideoKey, parseList, r2ConfigFrom, r2Url, type ListedObject, type R2Config } from "./r2";
 import { LOCAL_KEY_RE, LOCAL_PREFIX, type Storage } from "./mediaApi";
 
 export const LOCAL_DIR = "docs/marketing/videos";
@@ -72,8 +72,11 @@ function r2Storage(cfg: R2Config): Storage {
 }
 
 /* ── Development only ─────────────────────────────────────────────────── */
-const NOTES_DIR = path.join(os.tmpdir(), "kib-marketing-dev-notes");
-const notesFile = (key: string) => path.join(NOTES_DIR, key.replace(/[^A-Za-z0-9._-]/g, "_"));
+/** Development only: the suite's files (and any helper files studio-prep.py makes) go here, outside the repo. */
+export const DEV_SIDE_DIR = process.env.MARKETING_DEV_NOTES_DIR?.trim() ? path.resolve(process.env.MARKETING_DEV_NOTES_DIR.trim()) : path.join(os.tmpdir(), "kib-marketing-dev-notes");
+/** A side file beside a local video: <local key><one of these>. */
+const SIDE_RE = /\.(suite\.json|qc\.json|lanes\.json|peaks\.json|strip\.jpg|voice\.mp4|music\.mp4|sfx\.mp4)$/;
+export const devSideFile = (key: string) => path.join(DEV_SIDE_DIR, key.replace(/[^A-Za-z0-9._-]/g, "_"));
 
 function localStorageDev(): Storage {
   return {
@@ -93,15 +96,18 @@ function localStorageDev(): Storage {
       }
       return out;
     },
-    async head(key) { const f = localFile(key); return f ? { size: fs.statSync(f).size } : null; },
+    async head(key) {
+      const f = SIDE_RE.test(key) ? devSideFile(key) : localFile(key);
+      return f && fs.existsSync(f) ? { size: fs.statSync(f).size } : null;
+    },
     async getText(key) {
-      if (!key.endsWith(NOTES_SUFFIX)) return null;
-      try { return fs.readFileSync(notesFile(key), "utf8"); } catch { return null; }
+      if (!SIDE_RE.test(key)) return null;
+      try { return fs.readFileSync(devSideFile(key), "utf8"); } catch { return null; }
     },
     async putText(key, body) {
-      if (!key.endsWith(NOTES_SUFFIX)) return;
-      fs.mkdirSync(NOTES_DIR, { recursive: true });
-      fs.writeFileSync(notesFile(key), body);
+      if (!/\.suite\.json$/.test(key)) return;
+      fs.mkdirSync(DEV_SIDE_DIR, { recursive: true });
+      fs.writeFileSync(devSideFile(key), body);
     },
     async remove() {},
   };

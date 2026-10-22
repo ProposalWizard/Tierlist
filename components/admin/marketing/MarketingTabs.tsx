@@ -1,16 +1,16 @@
 /**
  * The Marketing tab's own switch (Harry, 21 Oct 2026; docs/plans/
- * 2026-10-21-marketing-production.md piece 1): Board | Client | Suite | Uploads
+ * 2026-10-21-marketing-production.md piece 1): Board | Client | Studio | Uploads
  * (slice 2, 22 Oct); Calendar and Scripts arrive in later slices and are shown as "Soon".
  */
 import Link from "next/link";
 import "./marketing.css";
 
-export type MarketingView = "board" | "client" | "suite" | "uploads";
+export type MarketingView = "board" | "client" | "studio" | "uploads";
 const VIEWS: { key: MarketingView | null; label: string; href?: string }[] = [
   { key: "board", label: "Board", href: "/admin/marketing" },
   { key: "client", label: "Client", href: "/admin/marketing/client" },
-  { key: "suite", label: "Suite", href: "/admin/marketing/suite" },
+  { key: "studio", label: "Studio", href: "/admin/marketing/studio" },
   { key: "uploads", label: "Uploads", href: "/admin/marketing/uploads" },
   { key: null, label: "Calendar" },
   { key: null, label: "Scripts" },

@@ -806,6 +806,8 @@ export const ADMIN_GUIDES = {
         ["Save to Drive", "Sends it to Drive (only shown if it didn't send by itself)."],
         ["Copy for Claude", "Copies \"Watch this recording: <link>\" to paste into a Claude chat."],
         ["Open in Drive ↗", "The video in your Drive."],
+        ["Send to Marketing", "Admins only. Puts the recording into the Marketing tab's private video storage (the Uploads page), not linked to a card, ready to open in the editing suite. Same limits as the Uploads page (500 MB a file, 30 files and 5 GB a day)."],
+        ["Open in Suite", "Shown once Send to Marketing has finished: opens the recording in Marketing → Suite."],
         ["Download", "Saves the video to this device instead."],
         ["Open the Breakdowns folder ↗", "Harry's Drive folder where every breakdown is saved."],
       ] },
@@ -823,6 +825,7 @@ export const ADMIN_GUIDES = {
       "Your own Google Drive, folder \"Knowitball screen recordings\" → a folder for whoever is picked under Who is recording (the site makes them the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it. You can move the main folder anywhere in Drive; the site still finds it.",
       "The video goes from your browser straight to Google. The site keeps only its name and link (dev_recordings table), so that person's Claude chats break it down the next time they are messaged (scripts/hooks/recordings-hook.mjs). Needs dev_recordings.sql run once.",
       "Drive needs NEXT_PUBLIC_GOOGLE_CLIENT_ID on the site. Until it is set, recordings only download.",
+      "Send to Marketing: the file goes from your browser straight into the Marketing video storage (Cloudflare R2, private). It needs the R2 settings in Vercel; without them it says \"Storage not connected here\".",
       "Live share: once a second, when the screen changed, a small picture (720 px wide) goes to public storage (tierlist-images → live/<code>/), with what was said (transcript.json) and how it is going (state.json, including how much each picture changed). Only the newest 300 pictures (about 5 minutes) are kept. No table. Anyone with the code can open the pictures while they exist; Delete removes them all.",
       "Claude's side: npx tsx scripts/live-watch.mts <code> prints each line said with the picture on screen at that moment, a SCREEN line when the screen changes (new screen / part changed / small change), and keeps the newest picture in a file it can look at. Claude answers in its chat (about 5–20 s behind), and may comment without being asked. Nothing is said back on this page.",
     ],
@@ -2445,7 +2448,7 @@ export const ADMIN_GUIDES = {
     inGame: ["Nowhere. It guides how our videos are written and made."],
     dev: "app/admin/marketing/client/page.tsx · lib/marketing/clientRecord.ts (pure parts tested in tests/star/adminMarketing.mts) · marketing/clients/knowitball/client.md · brain/*/{FACT,RUL,REF}-KIB-*.md · next.config.mjs traces those files for Vercel",
   },
-  "/admin/marketing/suite": {
+  "/admin/marketing/studio": {
     title: "Editing suite",
     what: "Watch one of our cuts on a timeline and leave notes on it. Review notes say what to fix, keep or check at a moment. Edit notes are instructions for Claude: cut a bit out, change something at a moment, or a change for the whole video. Admins only.",
     buttons: [

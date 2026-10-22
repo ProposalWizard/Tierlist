@@ -106,7 +106,7 @@ export default function UploadsPanel({ cards }: { cards: Card[] }) {
               <div key={it.key} className="mk-file">
                 <span className="mk-kind">{it.kind === "video" ? "▶" : "▣"}</span>
                 <span className="mk-file-main"><b>{it.name}</b><small>{sizeLabel(it.size)}{it.uploaded ? ` · ${new Date(it.uploaded).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}{it.hasNotes ? " · has notes" : ""}</small></span>
-                {it.kind === "video" && <a className="bc-btn" href={suiteLink(it.key)}>Open in Suite</a>}
+                {it.kind === "video" && <a className="bc-btn" href={suiteLink(it.key)}>Open in Studio</a>}
               </div>
             ))}
           </div>

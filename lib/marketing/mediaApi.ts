@@ -5,10 +5,9 @@
  * (tests/star/marketingStorage.mts) run these with fakes, never R2.
  */
 import {
-  CAPS, INBOX, isVideoKey, itemsFromList, ledgerKey, ledgerPrefix, notesKeyFor, ukDay, uploadUrl as signUpload,
+  CAPS, INBOX, NOTES_SUFFIX, isVideoKey, itemsFromList, ledgerKey, ledgerPrefix, ukDay, uploadUrl as signUpload,
   usedToday, videoKey, checkUpload, type ListedObject, type MediaItem, type R2Config,
 } from "./r2";
-import { applyOp, emptyNotes, parseNotes, type SuiteNotes } from "./suite";
 
 /** Where videos are: the real bucket, this computer's docs/marketing/videos (dev only, read-only), or nowhere. */
 export type StorageMode = "r2" | "local" | "off";
@@ -77,38 +76,12 @@ export async function listMedia(caller: Caller, store: Storage, now: Date): Prom
   if (denied) return denied;
   if (store.mode === "off") return { status: 200, body: { mode: "off", connected: false, missing: store.missing ?? [], message: NOT_CONNECTED, items: [], caps: capsOut() } };
   const items: MediaItem[] = store.mode === "local" ? localItems(await store.list("")) : itemsFromList(await store.list("videos/"));
+  if (store.mode === "local") for (const it of items) it.hasNotes = !!(await store.head(it.key + NOTES_SUFFIX));
   const used = store.mode === "r2" ? usedToday((await store.list(ledgerPrefix(ukDay(now), caller!.id))).map((o) => o.key)) : { files: 0, bytes: 0 };
   return { status: 200, body: { mode: store.mode, connected: store.mode === "r2", items, used, caps: capsOut(), message: store.mode === "local" ? "Storage not connected here. Showing the videos in docs/marketing/videos on this computer (development only)." : null } };
 }
 
-/** GET notes. */
-export async function readNotes(caller: Caller, key: unknown, store: Storage): Promise<Reply> {
-  const denied = gate(caller);
-  if (denied) return denied;
-  if (typeof key !== "string" || !store.isMediaKey(key)) return { status: 400, body: { error: "Which video?" } };
-  if (store.mode === "off") return { status: 503, body: { error: NOT_CONNECTED } };
-  return { status: 200, body: { notes: await loadNotes(store, key) } };
-}
-
-/** POST notes: one change (add / update / delete), applied to the current file. */
-export async function changeNotes(caller: Caller, body: unknown, store: Storage, now: Date): Promise<Reply> {
-  const denied = gate(caller);
-  if (denied) return denied;
-  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
-  if (typeof b.key !== "string" || !store.isMediaKey(b.key)) return { status: 400, body: { error: "Which video?" } };
-  if (store.mode === "off") return { status: 503, body: { error: NOT_CONNECTED } };
-  const cur = await loadNotes(store, b.key);
-  const res = applyOp(cur, b.change, caller!.name, now);
-  if (!res.ok) return { status: 400, body: { error: res.error, notes: cur } };
-  await store.putText(notesKeyFor(b.key), JSON.stringify(res.notes, null, 1));
-  return { status: 200, body: { notes: res.notes } };
-}
-
-async function loadNotes(store: Storage, key: string): Promise<SuiteNotes> {
-  const raw = await store.getText(notesKeyFor(key));
-  if (!raw) return emptyNotes(key);
-  try { return parseNotes(JSON.parse(raw), key); } catch { return emptyNotes(key); }
-}
+export const NOT_CONNECTED_TEXT = NOT_CONNECTED;
 
 const capsOut = () => ({ maxFileBytes: CAPS.maxFileBytes, dailyFiles: CAPS.dailyFiles, dailyBytes: CAPS.dailyBytes });
 
