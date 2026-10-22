@@ -30,7 +30,7 @@ import { governScene } from "./three3d/governThree";
 import { makeWalkClip } from "./walkClip";
 import { SKIN_TONES, HAIR_COLOURS } from "./playerIdentity";
 import { guardRand } from "./guardOfHonour";
-import { awardAt, beatAt, winnerPosAt, trophyLiftAt, ROOM, type AwardsPlan, type AwardCall } from "./awardsNight";
+import { awardAt, beatAt, winnerPosAt, trophyLiftAt, ROOM, STEPS, type AwardsPlan, type AwardCall } from "./awardsNight";
 import { makeScreenTexture } from "./awardsNightScreen";
 import type { SigningYou } from "./signing3dScene";
 
@@ -47,6 +47,8 @@ export interface AwardsSceneOptions {
   /** Each winner's crest picture, by personId (a crest that fails leaves the shield). */
   crests?: Record<string, string>;
   seed: number;
+  /** The season as the words say it ("2026/27"); else "Season N". */
+  seasonLabel?: string;
   /** The night's clock, seconds (the page owns it, so the words and the room keep time). */
   clock: () => number;
   tier?: Quality3d;
@@ -135,8 +137,9 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
   edge.position.set(0, H - 0.03, ROOM.stageFront + 0.016);
   // The steps (two treads) at the front left, where the winner comes up.
   const tread = std(0x3a2416, 0.7);
-  for (const [h, z0, z1] of [[H / 3, ROOM.stepFoot.z - 0.5, ROOM.stepFoot.z], [(2 * H) / 3, ROOM.stageFront, ROOM.stepFoot.z - 0.5]] as const) {
-    const st = add(new T.Mesh(new T.BoxGeometry(1.1, h, z1 - z0), tread));
+  // The same treads the walk climbs (awardsNight.ts STEPS), so his feet land on them.
+  for (const { top: h, zBack: z0, zFront: z1 } of STEPS.treads) {
+    const st = add(new T.Mesh(new T.BoxGeometry(STEPS.width, h, z1 - z0), tread));
     st.position.set(ROOM.stepFoot.x, h / 2, (z0 + z1) / 2);
     shade(st, false);
   }
@@ -214,6 +217,7 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
   const lampBase = std(0x6b4a22, 0.4, 0.6);
   const lampGlow = glow(0xffcf7a);
   const lampHalo = new T.MeshBasicMaterial({ color: 0xffa040, transparent: true, opacity: 0.16, blending: T.AdditiveBlending, depthWrite: false, toneMapped: false });
+  const lamps: THREE.Mesh[][] = [];
   for (const tb of ROOM.tables) {
     const top = add(new T.Mesh(new T.CylinderGeometry(ROOM.tableR, ROOM.tableR, 0.04, 36), tableTop));
     top.position.set(tb.x, 0.76, tb.z);
@@ -226,6 +230,7 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
     lg.position.set(tb.x, 0.97, tb.z);
     const lh = add(new T.Mesh(new T.SphereGeometry(0.3, 16, 12), lampHalo));
     lh.position.copy(lg.position);
+    lamps.push([lb, lg, lh]);
   }
   // Guests: seated, round the back and sides of each table (the stage side is
   // left free, where the winners wait), shoulders and a head each (instanced).
@@ -259,11 +264,12 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
   if (fan.instanceColor) fan.instanceColor.needsUpdate = true;
   if (fanHead.instanceColor) fanHead.instanceColor.needsUpdate = true;
   const m4 = new T.Matrix4(), qy = new T.Quaternion(), sc = new T.Vector3(), pos3 = new T.Vector3(), eul = new T.Euler();
-  const crowdPose = (t: number, cheer: number) => {
+  const crowdPose = (t: number, cheer: number, hide: Set<number> | null) => {
     for (let i = 0; i < G; i++) {
       const g = guests[i];
-      // A guest right by the lens would fill the picture: he is left out of that shot.
-      if (Math.hypot(g.x - camera.position.x, g.z - camera.position.z) < 2.3) {
+      // A guest right by the lens would fill the picture, and one between the
+      // lens and the winner on his walk would hide him: left out of that shot.
+      if (Math.hypot(g.x - camera.position.x, g.z - camera.position.z) < 2.3 || hide?.has(i)) {
         m4.makeScale(0, 0, 0);
         fan.setMatrixAt(i, m4);
         fanHead.setMatrixAt(i, m4);
@@ -287,17 +293,41 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
   // Strings of warm bulbs across the room (glowing dots, no lights).
   const BULBS = 6 * 22;
   const bulbs = add(new T.InstancedMesh(new T.SphereGeometry(0.03, 6, 4), glow(0xffd28a), BULBS));
+  const bulbAt: THREE.Vector3[] = [];
   for (let s = 0; s < 6; s++) {
     for (let k = 0; k < 22; k++) {
       const u = k / 21;
       const x = -6 + u * 12;
       const z = 1.2 + s * 1.15;
       const y = 3.9 - Math.sin(u * Math.PI) * 0.45 - (s % 2) * 0.1;
-      m4.compose(pos3.set(x, y, z), qy.identity(), sc.setScalar(1));
-      bulbs.setMatrixAt(s * 22 + k, m4);
+      bulbAt.push(new T.Vector3(x, y, z));
     }
   }
-  bulbs.instanceMatrix.needsUpdate = true;
+  /**
+   * The bulbs for this camera: one close to the lens would be a big soft dot,
+   * and the top of the picture is where the title is written, so those are
+   * left out of the shot.
+   */
+  const ndc = new T.Vector3();
+  const bulbsFor = (hide: Set<number> | null) => {
+    camera.updateMatrixWorld();
+    for (let i = 0; i < BULBS; i++) {
+      const b = bulbAt[i];
+      ndc.copy(b).project(camera);
+      const near = b.distanceTo(camera.position) < 4.8;
+      const underTitle = ndc.y > 0.6 && ndc.z < 1;
+      if (near || underTitle) m4.makeScale(0, 0, 0);
+      else m4.compose(b, qy.identity(), sc.setScalar(1));
+      bulbs.setMatrixAt(i, m4);
+    }
+    bulbs.instanceMatrix.needsUpdate = true;
+    // A table lamp low in the picture would glow under the winner's name: left out.
+    lamps.forEach((l, j) => {
+      ndc.copy(l[1].position).project(camera);
+      const show = !(ndc.y < -0.5 && ndc.z < 1) && !hide?.has(G + j);
+      for (const m of l) m.visible = show;
+    });
+  };
 
   // ── People ──
   const loader = await withMeshopt(new GLTFLoader()); // meshopt-packed files (scripts/perf3d/shrink-models.mjs)
@@ -411,8 +441,8 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
       { at: a.nomineesAt, look: [0, SCREEN_Y - 0.15, STAGE_BACK], half: SCREEN_W / 2 + 0.25, up: 0, cut: true },
       { at: a.envelopeAt, look: [L.x - 0.05, H + 1.5, L.z - 0.3], half: 1.0, up: 0.1, yaw: -0.4, cut: true },
       { at: a.revealAt, look: [0, SCREEN_Y - 0.15, STAGE_BACK], half: SCREEN_W / 2 + 0.25, up: 0, cut: true },
-      { at: a.walkFrom + 0.1, look: [0, 0, 0], half: 2.1, up: 1.5, cut: true, follow: a },
-      { at: a.walkTo + 0.3, look: [S.x, H + 1.2, S.z], half: 1.25, up: 0.25 },
+      { at: a.walkFrom + 0.1, look: [0, 0, 0], half: 1.75, up: 1.6, cut: true, follow: a },
+      { at: a.walkTo + 0.3, look: [S.x + 0.2, H + 1.3, S.z], half: 1.25, up: 0.5 },
     );
   }
   frames.push({ at: plan.end + 0.5, look: [0, 1.7, 0], half: 3.4, up: 1.0 });
@@ -420,7 +450,7 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
   const lookOf = (f: Frame, t: number): [number, number, number] => {
     if (!f.follow) return f.look;
     const w = winnerPosAt(f.follow, t);
-    return [w.x * 0.8, w.y + 1.15, w.z];
+    return [w.x * 0.8, w.y + 0.95, w.z];
   };
   const placeCam = (t: number) => {
     let i = 0;
@@ -442,15 +472,56 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
     camera.lookAt(look[0], look[1], look[2]);
   };
 
+  /**
+   * The guests between the lens and the winner on his walk (from the cut to
+   * the walk shot until the next award's cut): worked out once for the whole
+   * shot, so nobody pops in or out while it runs.
+   */
+  const hiddenFor = new Map<AwardCall, Set<number>>();
+  const gTop = new T.Vector3(), gMid = new T.Vector3(), wFeet = new T.Vector3(), wHead = new T.Vector3();
+  const occluders = (a: AwardCall): Set<number> => {
+    const got = hiddenFor.get(a);
+    if (got) return got;
+    const hide = new Set<number>();
+    const t0 = a.walkFrom + 0.1, t1 = a.end;
+    for (let t = t0; t <= t1; t += 0.1) {
+      placeCam(t);
+      camera.updateMatrixWorld();
+      const w = winnerPosAt(a, t);
+      const wd = Math.hypot(w.x - camera.position.x, w.z - camera.position.z);
+      wFeet.set(w.x, w.y, w.z).project(camera);
+      wHead.set(w.x, w.y + 1.85, w.z).project(camera);
+      for (let i = 0; i < G; i++) {
+        const g = guests[i];
+        if (Math.hypot(g.x - camera.position.x, g.z - camera.position.z) >= wd - 0.2) continue;
+        gTop.set(g.x, 1.38 * g.s, g.z).project(camera);
+        gMid.set(g.x + 0.3, 0.8 * g.s, g.z).project(camera);
+        const halfW = Math.abs(gMid.x - gTop.x) + 0.06;
+        // Overlaps him on the screen: across his width and above his feet.
+        if (Math.abs(gTop.x - wFeet.x) < halfW + 0.07 && gTop.y > wFeet.y - 0.02 && gTop.y > -1 && wHead.y > -1) hide.add(i);
+      }
+      // A table lamp's glow between the lens and him would wash over his legs: off too (kept after the guests, from G on).
+      lamps.forEach((l, j) => {
+        const lp = l[1].position;
+        if (Math.hypot(lp.x - camera.position.x, lp.z - camera.position.z) >= wd - 0.2) return;
+        gTop.copy(lp).project(camera);
+        if (Math.abs(gTop.x - wFeet.x) < 0.3 && gTop.y > wFeet.y - 0.1) hide.add(G + j);
+      });
+    }
+    hiddenFor.set(a, hide);
+    return hide;
+  };
+
   // ── The screen's words ──
   const screenAt = (t: number) => {
     const a = awardAt(plan, t);
     const beat = beatAt(plan, t);
-    const kicker = `Season ${plan.season} Awards`;
-    if (!a) return screenWords.draw({ kicker: "Welcome to", title: kicker });
+    const season = opts.seasonLabel ?? `Season ${plan.season}`;
+    const kicker = `${season} Awards`;
+    if (!a) return screenWords.draw({ kicker: "Welcome to the", title: kicker });
     if (beat === "call") return screenWords.draw({ kicker, title: a.label });
     if (beat === "nominees" || beat === "envelope") return screenWords.draw({ kicker: a.label, title: "The nominees", lines: a.nominees.map((n) => (n.isYou ? `${n.name} (You)` : n.name)) });
-    return screenWords.draw({ kicker: a.label, title: a.winner.name, gold: true });
+    return screenWords.draw({ kicker: a.label, title: a.winner.name, gold: true, high: t >= a.walkFrom + 0.1 });
   };
 
   // ── One moment of the night ──
@@ -502,8 +573,10 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
     trophy.rotation.y = 0;
 
     const cheer = a && t >= a.revealAt && t < a.end ? 1 : 0;
+    const hide = a && t >= a.walkFrom + 0.1 && t < a.end ? occluders(a) : null;
     placeCam(t);
-    crowdPose(t, cheer);
+    crowdPose(t, cheer, hide);
+    bulbsFor(hide);
     screenAt(t);
   };
 
@@ -534,6 +607,7 @@ export async function createAwardsScene(container: HTMLElement, opts: AwardsScen
     camera.aspect = w / h;
     camera.fov = w / h < 0.62 ? 56 : 46;
     camera.updateProjectionMatrix();
+    hiddenFor.clear();
   };
   fit();
   const ro = new ResizeObserver(() => { fit(); if (frozen) draw(); });
