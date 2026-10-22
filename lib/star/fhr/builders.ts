@@ -26,7 +26,7 @@
 import type { Scenario, ScenarioKind } from "../canvasEngine";
 import type { LeadIn, LeadMoment } from "../leadIn";
 import { fhrOn } from "./toggle";
-import { fhrBuildUpFor, fhrWantsBuildUp, chanceSeed, FHR_ADJUST_AUTO, type FhrAdjust, type FhrBuildUp } from "./buildUp";
+import { fhrBuildUpFor, fhrWantsBuildUp, fhrStyleFor, fhrStyleWeights, FHR_STYLES, chanceSeed, FHR_ADJUST_AUTO, FHR_COMPACT_BIG_MAX_S, type FhrAdjust, type FhrBuildUp } from "./buildUp";
 import { fhrFoulBuildUpFor, fhrWantsFoul } from "./foulBuildUp";
 import { realMomentLeadIn, lastSecondsOf } from "./realMomentHighlights";
 import { CX } from "../pitch";
@@ -154,16 +154,48 @@ export function snappyBuildUp(b: FhrBuildUp, capS: number): FhrBuildUp {
   return out;
 }
 
+/**
+ * The career's whole short move: the style this moment picks (fhrStyleFor);
+ * if it can't be laid out cleanly here (every try has a problem — tiki-taka
+ * with nobody of the chance's near enough to pass to), the next style that
+ * can, in the order the moment weights them. The fewest problems wins; a tie
+ * keeps the moment's own pick. A move whose run could not be timed onside in
+ * any try (the flag goes up because it had to, buildUp.ts UNTIMED) counts as
+ * a small problem too: another style that plays it onside is preferred. A
+ * MISTIMED run (the build-up's own roll, intel.mistime) is the game's, and stays.
+ */
+export function fhrStyledBuildUp(sc: Scenario, moment: LeadMoment, adjust?: FhrAdjust): FhrBuildUp {
+  const cost = (b: FhrBuildUp) => (b.style ? 0 : 100) + b.problems.length * 10 + (b.offside?.why === "untimed" ? 1 : 0);
+  const first = fhrStyleFor(sc, moment);
+  let best = fhrBuildUpFor(sc, moment, adjust, { style: first });
+  if (cost(best) === 0) return best;
+  const w = fhrStyleWeights(sc, moment);
+  for (const s of FHR_STYLES.filter((x) => x !== first).sort((a, b) => w[b] - w[a])) {
+    const b = fhrBuildUpFor(sc, moment, adjust, { style: s });
+    if (cost(b) < cost(best)) best = b;
+    if (cost(best) === 0) break;
+  }
+  return best;
+}
+
 /** The On path: what a chance gets before it. Null: none (the chance as before). */
 export function fhrBuildUpOn(sc: Scenario, moment: LeadMoment, adjust?: FhrAdjust, o: { everyChance?: boolean } = {}): LeadIn | null {
   let lead: LeadIn | null = null;
   if (fhrWantsBuildUp(sc.kind, moment)) {
     if (!o.everyChance && !fhrShareRoll(sc, moment)) return null;
-    const whole = fhrBuildUpFor(sc, moment, adjust);
-    // A test page asking for a long build-up sees the whole move.
-    const b = adjust?.length === "long" ? whole : snappyBuildUp(whole, snappyCapS(whole.drama));
+    // 22 Oct 2026 (Harry: "shorter build ups shouldn't necessarily mean less
+    // distance … sometimes I still want fast long balls and tiki taka"): the
+    // career's build-up is a WHOLE short move in one of three styles (a long
+    // ball, tiki-taka, a carry and a pass; buildUp.ts fhrStyleFor), made to fit
+    // about 3 s at real ball and running speeds, instead of the last 3 s of a
+    // 4-8 s move (which cut most long passes off). It is still cut, like
+    // before, only if it ever runs past FHR_COMPACT_BIG_MAX_S (a called offside's hold).
+    // A test page asking for a long build-up still sees the long move, whole.
+    const long = adjust?.length === "long";
+    const whole = long ? fhrBuildUpFor(sc, moment, adjust) : fhrStyledBuildUp(sc, moment, adjust);
+    const b = long || whole.durS <= FHR_COMPACT_BIG_MAX_S + 0.05 ? whole : snappyBuildUp(whole, FHR_COMPACT_BIG_MAX_S);
     const la = b.acts[b.acts.length - 1];
-    note({ kind: sc.kind, what: "open", cover: !!b.cover, drama: b.drama, durS: b.durS, runOnS: b.runOnS ?? 0, offside: !!b.offside, regain: !!b.regain, last: { t0: la.t0, t1: la.t1, endZ: la.endZ ?? 0 } });
+    note({ kind: sc.kind, what: "open", cover: !!b.cover, drama: b.drama, durS: b.durS, runOnS: b.runOnS ?? 0, offside: !!b.offside, regain: !!b.regain, style: b.style, passes: b.acts.filter((a) => a.type === "pass").length, last: { t0: la.t0, t1: la.t1, endZ: la.endZ ?? 0 } });
     lead = b;
   } else if (fhrWantsFoul(sc, moment)) {
     const whole = fhrFoulBuildUpFor(sc, moment);
@@ -179,7 +211,7 @@ export function fhrBuildUpOn(sc: Scenario, moment: LeadMoment, adjust?: FhrAdjus
 }
 
 /** For the test drivers (scripts/fhr/b2-stills.mjs): what the last build-up was. Read-only, never stored. */
-function note(v: { kind: ScenarioKind; what: "open" | "foul"; cover: boolean; drama: number; durS: number; runOnS: number; offside?: boolean; regain?: boolean; last?: { t0: number; t1: number; endZ: number } }) {
+function note(v: { kind: ScenarioKind; what: "open" | "foul"; cover: boolean; drama: number; durS: number; runOnS: number; offside?: boolean; regain?: boolean; style?: string; passes?: number; last?: { t0: number; t1: number; endZ: number } }) {
   (globalThis as Record<string, unknown>).__starLastBuildUp = { ...v, at: Date.now() };
 }
 
