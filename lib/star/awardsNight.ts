@@ -52,10 +52,52 @@ export const ROOM = {
   tableR: 0.72,
 } as const;
 
-/** Where a winner waits: the stage side of one of the two front tables. */
+/**
+ * The two steps up to the stage (front left): tread 1 from the step foot back
+ * half a metre, tread 2 from there to the stage front. The winner's height
+ * follows these treads (stairHeightAt), so his feet land on each one.
+ */
+export const STEPS = {
+  width: 1.1,
+  depth: 0.5,
+  treads: [
+    { top: ROOM.stageH / 3, zFront: ROOM.stepFoot.z, zBack: ROOM.stepFoot.z - 0.5 },
+    { top: (2 * ROOM.stageH) / 3, zFront: ROOM.stepFoot.z - 0.5, zBack: ROOM.stageFront },
+  ],
+} as const;
+/** Where he lines up, a pace in front of the first step, before he climbs. */
+const STEP_APPROACH = { x: ROOM.stepFoot.x, z: ROOM.stepFoot.z + 0.3 };
+/** He goes up a step over this much travel: from just before its edge (the front foot lands on it) to just after. */
+const RISE_BEFORE = 0.12, RISE_AFTER = 0.05;
+
+/**
+ * The height under a walker on the steps at depth z (walking towards -z):
+ * the floor, each tread's top, then the stage. Each step up is a short smooth
+ * rise across that step's edge, never a slope over the whole flight.
+ */
+export function stairHeightAt(z: number): number {
+  let y = 0;
+  const edges = [
+    { z: ROOM.stepFoot.z, top: STEPS.treads[0].top },
+    { z: STEPS.treads[1].zFront, top: STEPS.treads[1].top },
+    { z: ROOM.stageFront, top: ROOM.stageH },
+  ];
+  for (const e of edges) {
+    // 0 before the edge window, 1 once past it.
+    const k = smooth((e.z + RISE_BEFORE - z) / (RISE_BEFORE + RISE_AFTER));
+    if (k <= 0) break;
+    y = y + (e.top - y) * k;
+    if (k < 1) break;
+  }
+  return y;
+}
+
+/** Where a winner waits: by the two front tables, on their stage side. */
 const SEATS: readonly { x: number; z: number }[] = [
-  { x: -3.0, z: 2.0 }, { x: -2.6, z: 2.0 }, { x: -2.2, z: 2.0 },
-  { x: 0.05, z: 2.22 }, { x: 0.55, z: 2.22 },
+  // In the gap between the two front tables (on their stage side): the camera
+  // behind him sees him whole down the gap, never with a table over his legs.
+  { x: -1.9, z: 2.25 }, { x: -1.45, z: 2.4 }, { x: -1.15, z: 2.5 },
+  { x: -0.75, z: 2.4 }, { x: -0.35, z: 2.25 },
 ];
 
 export interface AwardCall {
@@ -89,6 +131,8 @@ export interface AwardsPlan {
   /** How many awards are yours. */
   yourWins: number;
 }
+
+function smooth(x: number): number { const t = Math.max(0, Math.min(1, x)); return t * t * (3 - 2 * t); }
 
 /** Small, seeded: the same night is laid out the same way every time. */
 function rand(seed: number, k: number): number {
@@ -182,7 +226,6 @@ export function skipTarget(plan: AwardsPlan, t: number): number {
   return plan.end;
 }
 
-const smooth = (x: number) => { const t = Math.max(0, Math.min(1, x)); return t * t * (3 - 2 * t); };
 
 export interface WinnerPos { x: number; y: number; z: number; /** Facing (y rotation; 0 = to the camera). */ yaw: number; walking: boolean; onStage: boolean; seen: boolean }
 
@@ -196,7 +239,7 @@ export function winnerPosAt(a: AwardCall, t: number): WinnerPos {
   const seen = t >= a.walkFrom && t < a.end;
   const pts = [
     { x: a.seat.x, y: 0, z: a.seat.z },
-    { x: ROOM.stepFoot.x, y: 0, z: ROOM.stepFoot.z },
+    { x: STEP_APPROACH.x, y: 0, z: STEP_APPROACH.z },
     { x: ROOM.stepTop.x, y: ROOM.stageH, z: ROOM.stepTop.z },
     { x: ROOM.spot.x, y: ROOM.stageH, z: ROOM.spot.z },
   ];
@@ -205,7 +248,7 @@ export function winnerPosAt(a: AwardCall, t: number): WinnerPos {
   const k = smooth((t - a.walkFrom) / (a.walkTo - a.walkFrom));
   if (t < a.walkFrom) {
     // Standing by his table, turned to the stage.
-    const yaw = Math.atan2(ROOM.stepFoot.x - a.seat.x, ROOM.stepFoot.z - a.seat.z);
+    const yaw = Math.atan2(STEP_APPROACH.x - a.seat.x, STEP_APPROACH.z - a.seat.z);
     return { ...pts[0], yaw, walking: false, onStage: false, seen };
   }
   if (k >= 1) {
@@ -219,8 +262,10 @@ export function winnerPosAt(a: AwardCall, t: number): WinnerPos {
     if (d <= lens[i] || i === 2) {
       const u = Math.min(1, d / Math.max(1e-6, lens[i]));
       const p0 = pts[i], p1 = pts[i + 1];
+      const z = p0.z + (p1.z - p0.z) * u;
       return {
-        x: p0.x + (p1.x - p0.x) * u, y: p0.y + (p1.y - p0.y) * u, z: p0.z + (p1.z - p0.z) * u,
+        // Up the steps: his height follows the treads (feet on each one), not a straight slope.
+        x: p0.x + (p1.x - p0.x) * u, y: i === 1 ? stairHeightAt(z) : p0.y + (p1.y - p0.y) * u, z,
         yaw: Math.atan2(p1.x - p0.x, p1.z - p0.z), walking: true, onStage: i === 2, seen,
       };
     }

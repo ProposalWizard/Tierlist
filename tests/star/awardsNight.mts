@@ -1,4 +1,4 @@
-import { awardsPlan, awardAt, beatAt, skipTarget, winnerPosAt, trophyLiftAt, nomineesFor, AWARD_ORDER, ROOM } from "../../lib/star/awardsNight";
+import { awardsPlan, awardAt, beatAt, skipTarget, winnerPosAt, trophyLiftAt, nomineesFor, stairHeightAt, AWARD_ORDER, ROOM, STEPS } from "../../lib/star/awardsNight";
 import type { AwardWinner, SeasonAwardStats } from "../../lib/star/seasonAwards";
 
 /**
@@ -58,6 +58,17 @@ for (let seed = 1; seed <= 30; seed++) {
       // Clear of every table (body ~0.25 m round).
       for (const tb of ROOM.tables) check(Math.hypot(at.x - tb.x, at.z - tb.z) > ROOM.tableR + 0.08 + 0.2, `${tag} ${a.key}: walks through a table at ${t.toFixed(2)}`);
     }
+    // Up the steps his feet land on each tread: never a straight slope floating over them.
+    for (let t = a.walkFrom; t <= a.walkTo + 0.5; t += 0.01) {
+      const at = winnerPosAt(a, t);
+      if (Math.abs(at.x - ROOM.stepFoot.x) > STEPS.width / 2) continue;
+      for (const tr of STEPS.treads) {
+        // In the middle of a tread (away from its edges): standing on its top.
+        if (at.z < tr.zFront - 0.06 && at.z > tr.zBack + 0.14) check(Math.abs(at.y - tr.top) < 1e-6, `${tag} ${a.key}: ${(at.y - tr.top).toFixed(3)} m off the tread at z ${at.z.toFixed(2)}`);
+      }
+      if (at.z > ROOM.stepFoot.z + 0.13) check(at.y === 0, `${tag} ${a.key}: off the floor before the steps`);
+      if (at.z < ROOM.stageFront - 0.06) check(Math.abs(at.y - ROOM.stageH) < 1e-6, `${tag} ${a.key}: off the stage`);
+    }
     check(trophyLiftAt(a, a.walkFrom) === 0 && trophyLiftAt(a, a.end) === 1, `${tag} ${a.key}: trophy lift wrong`);
     // A skip lands on the next award (or the end).
     for (const t of [a.from + 0.01, a.nomineesAt + 0.5, a.revealAt + 0.1, a.end - 0.01]) {
@@ -72,6 +83,12 @@ for (let seed = 1; seed <= 30; seed++) {
   check(JSON.stringify(awardsPlan(stats(), seed)) === JSON.stringify(p), `${tag}: not deterministic`);
 }
 
+// The height under the steps rises, one tread at a time.
+{
+  let last = -1;
+  for (let z = ROOM.stepFoot.z + 0.5; z >= ROOM.stageFront - 0.3; z -= 0.01) { const y = stairHeightAt(z); check(y >= last - 1e-9, `stairs go down at z ${z.toFixed(2)}`); last = y; }
+  check(Math.abs(stairHeightAt(ROOM.stageFront - 0.3) - ROOM.stageH) < 1e-9, "stairs do not reach the stage");
+}
 // A winner of two awards is one man from one seat.
 {
   const p = awardsPlan(stats(), 3);
@@ -92,4 +109,4 @@ if (problems.length) {
   console.error(`awardsNight: ${problems.length} problem(s)\n  ` + problems.slice(0, 20).join("\n  "));
   process.exit(1);
 }
-console.log("awardsNight: 5 awards in order, 3 nominees each, beats in order, skips land on the next award, walks clear of the tables, deterministic — ok");
+console.log("awardsNight: 5 awards in order, 3 nominees each, beats in order, skips land on the next award, walks clear of the tables, feet on each tread, deterministic — ok");

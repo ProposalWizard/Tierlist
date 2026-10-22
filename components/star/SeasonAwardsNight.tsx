@@ -37,6 +37,8 @@ import TrophyImage from "./TrophyImage";
 import Headshot3D, { HeadshotCareer, useHeadshotId } from "./Headshot3D";
 import { signing3dBlocker } from "./SigningScene3D";
 import { useYouLook } from "./Farewell";
+import { headshotLookFor } from "@/lib/star/headshot3d/look";
+import { toonYou } from "@/lib/star/style3d/toon/bodies";
 import { Burst, KitStyles } from "./ui";
 
 const GOLD = "#fbbf24";
@@ -122,6 +124,7 @@ export function AwardsCeremony({ career, plan, onDone, drawn = false }: {
     <HeadshotCareer career={career}>
       <div className="relative h-[100dvh] w-full select-none overflow-hidden bg-[#120a07] text-white" data-awards-night={mode} onClick={skip}>
         <KitStyles />
+        {mode === "3d" && <PreloadFaces plan={plan} />}
         {mode === "3d"
           ? <Room3D career={career} plan={plan} kit={ownKit} clock={clock} handleRef={handleRef} onReady={() => setReady(true)} onFail={() => setMode("drawn")} />
           : <RoomDrawn career={career} plan={plan} t={t} />}
@@ -152,6 +155,31 @@ export function AwardsCeremony({ career, plan, onDone, drawn = false }: {
       </div>
     </HeadshotCareer>
   );
+}
+
+/**
+ * Every nominee's headshot made while the room loads (one at a time, kept on
+ * the device), so the nominee cards open with their faces already there
+ * rather than the drawn heads swapping over mid-beat.
+ */
+function PreloadFaces({ plan }: { plan: AwardsPlan }) {
+  const idOf = useHeadshotId();
+  useEffect(() => {
+    if (PHOTO_FACES) return;
+    let dead = false;
+    const seen = new Set<string>();
+    const men = plan.awards.flatMap((a) => a.nominees).filter((n) => { const k = personId(n); if (seen.has(k)) return false; seen.add(k); return true; });
+    void import("@/lib/star/headshot3d/maker").then(async ({ makeHeadshot }) => {
+      // In the order the cards come up: the first award's three first.
+      for (const n of men) {
+        if (dead) return;
+        const id = idOf(n.name, n.club, n.isYou);
+        await makeHeadshot(id, headshotLookFor({ id, you: n.isYou, kit: kitsOf(n.club).home }, toonYou())).catch(() => null);
+      }
+    });
+    return () => { dead = true; };
+  }, [plan, idOf]);
+  return null;
 }
 
 // ── The words over the room ────────────────────────────────────────────────
@@ -309,7 +337,7 @@ function Room3D({ career, plan, kit, clock, handleRef, onReady, onFail }: {
         }
         const crests: Record<string, string> = {};
         for (const [id, club] of Object.entries(clubs)) crests[id] = (logos && lookupClubLogo(logos, club)) || drawnBadgeUrl(club, badgeOverrides[club]);
-        const h = await createAwardsScene(el, { plan, you, kits, crests, seed: seedOf(career), clock });
+        const h = await createAwardsScene(el, { plan, you, kits, crests, seed: seedOf(career), seasonLabel: seasonLabelOf(career.player.startYear ?? 0, plan.season), clock });
         if (disposed) { h.dispose(); return; }
         handle = h;
         handleRef.current = h;

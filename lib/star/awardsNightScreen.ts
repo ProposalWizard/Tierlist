@@ -15,6 +15,8 @@ export interface ScreenWords {
   lines?: string[];
   /** Gold glow when the winner is up. */
   gold?: boolean;
+  /** The big line high on the screen (he stands in front of its middle with the trophy). */
+  high?: boolean;
 }
 
 export function makeScreenTexture(T: typeof import("three")): { texture: THREE.CanvasTexture; draw(w: ScreenWords): void } {
@@ -48,16 +50,19 @@ export function makeScreenTexture(T: typeof import("three")): { texture: THREE.C
       g.textAlign = "center";
       g.textBaseline = "middle";
       g.fillStyle = "#f6c445";
-      fit(w.kicker.toUpperCase(), 860, 40, 800);
-      g.fillText(w.kicker.toUpperCase(), 512, 90);
+      fit(w.kicker.toUpperCase(), 700, 40, 800);
+      // The winner's name sits high, over the trophy he lifts in front of the screen.
+      g.fillText(w.kicker.toUpperCase(), 512, w.high ? 62 : 90);
       const lines = w.lines ?? [];
       g.fillStyle = "#ffffff";
       if (w.gold) { g.shadowColor = "rgba(251,191,36,.9)"; g.shadowBlur = 30; }
-      fit(w.title.toUpperCase(), 900, lines.length ? 84 : 110);
-      g.fillText(w.title.toUpperCase(), 512, lines.length ? 200 : 300);
+      // Kept to the middle of the screen: the camera close on the stage sees
+      // only the middle of the screen, so a long name never runs off it.
+      fit(w.title.toUpperCase(), 660, lines.length ? 84 : 110);
+      g.fillText(w.title.toUpperCase(), 512, lines.length ? 200 : w.high ? 150 : 300);
       g.shadowBlur = 0;
       g.fillStyle = "#f3e3c3";
-      lines.forEach((l, i) => { fit(l, 860, 50, 700); g.fillText(l, 512, 318 + i * 74); });
+      lines.forEach((l, i) => { fit(l, 700, 50, 700); g.fillText(l, 512, 318 + i * 74); });
       texture.needsUpdate = true;
     },
   };
