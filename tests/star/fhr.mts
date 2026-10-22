@@ -31,7 +31,7 @@ import {
   FHR_MIN_S, FHR_MAX_S, FHR_TOP_SPEED, FHR_RUNON_S, FHR_RUNON_MAX_M, FHR_BIG_MAX_S, COVER_CLEAR_M, COVER_MIN_BALL_Y, type FhrBuildUp,
 } from "../../lib/star/fhr/buildUp";
 import { fhrFoulBuildUpFor, fhrWantsFoul, FOUL_SHARE, type FhrFoulBuildUp } from "../../lib/star/fhr/foulBuildUp";
-import { testAreaBuildUp, snappyBuildUp, snappyCapS, fhrShareRoll, fhrBuildUpOn, FHR_BUILDUP_SHARE, FHR_SNAPPY_S } from "../../lib/star/fhr/builders";
+import { testAreaBuildUp, snappyBuildUp, snappyCapS, fhrShareRoll, fhrBuildUpOn, FHR_BUILDUP_SHARE, FHR_SNAPPY_S, FHR_SNAPPY_FLOOR_S } from "../../lib/star/fhr/builders";
 import { standBackFor, yourRunupFor, penaltyRunupOf, freeKickRunupOf } from "../../lib/star/runupStyles";
 import { servedChances } from "../../lib/star/fhr/servedChances";
 import { airZOf, type AirHeighted } from "../../lib/star/airDrawings";
@@ -210,7 +210,9 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
     // A regain (B2b: the match's own, this minute) adds their spell: up to half of it longer.
     if (l.regain) regains++;
     const maxS = FHR_MAX_S + (l.regain ? 0.5 * l.regain.spellS + 0.6 : 0);
-    check(l.durS >= FHR_MIN_S - 1e-9 && l.durS <= maxS + 1e-9, `${c.sc.kind}: build-up ${l.durS.toFixed(2)} s, not 4–${maxS.toFixed(1)}`);
+    // 22 Oct 2026: a cut build-up (trimmedS) may be as short as FHR_SNAPPY_FLOOR_S ("buildups are still too slow": 3 s cap).
+    const minS = (l as FhrBuildUp).trimmedS ? FHR_SNAPPY_FLOOR_S : FHR_MIN_S;
+    check(l.durS >= minS - 1e-9 && l.durS <= maxS + 1e-9, `${c.sc.kind}: build-up ${l.durS.toFixed(2)} s, not ${minS}–${maxS.toFixed(1)}`);
     // Ends exactly on the drawing: the ball and you at the hand-over (durS), and
     // the men still running (phase 3) once they have stopped (durS + runOnS).
     // (A header or a volley's ball ends in the air, where it meets you: B10.)
@@ -368,7 +370,8 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
       if (p && q) worstEnd = Math.max(worstEnd, Math.hypot(p.x - q.x, p.y - q.y));
     }
     // (A start inside a pass may move back to that pass's kick: at most one pass longer.)
-    if (cut.durS > snappyCapS(whole.drama) + 1.6 && !whole.offside) over++;
+    // 22 Oct 2026: a move with a covering defender also starts before he comes on (he must enter from off the screen).
+    if (cut.durS > snappyCapS(whole.drama) + 1.6 && !whole.offside && !whole.cover) over++;
     if (whole.offside) { offN++; if (cut.offside && cut.passStart![cut.offside.pass] >= 0 && cut.offside.at > 0 && cut.whistleAt === cut.offside.at) offKept++; }
     const ps = cut.passStart ?? [], pe = cut.passEnd ?? [];
     if (ps.length && ps[0] <= 0 && pe[0] > 0.05 && (cut.trimmedS ?? 0) > 0) {
@@ -386,7 +389,8 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
   const got = lr.filter((c) => fhrShareRoll(c.sc, c.moment)).length / Math.max(1, lr.length);
   check(lr.every((c) => fhrShareRoll(c.sc, c.moment) === fhrShareRoll(c.sc, c.moment)), "B20: the share roll is the same every time");
   check(lr.length < 20 || Math.abs(got - (FHR_BUILDUP_SHARE.long_range ?? 1)) < 0.15, `B20: long shots with a build-up ${(100 * got).toFixed(0)}% (want ~${(100 * (FHR_BUILDUP_SHARE.long_range ?? 1)).toFixed(0)}%)`);
-  check(FHR_SNAPPY_S >= 4 && FHR_SNAPPY_S <= 6, "B20: the snappy length is between 4 and 6 s");
+  // 22 Oct 2026 (Harry: "buildups are still too slow"): the cap went 5 -> 3 s; the band 4-6 -> 2.5-6.
+  check(FHR_SNAPPY_S >= 2.5 && FHR_SNAPPY_S <= 6, "B20: the snappy length is between 2.5 and 6 s");
   // The career path is cut and shared; Infinite Highlights' one picture always gets one.
   const c0 = lr.find((c) => !fhrShareRoll(c.sc, c.moment));
   if (c0) {

@@ -57,7 +57,11 @@ export const FHR_SNAPPY_BIG_S = 4;
 /** A foul's build-up starts this long before the foul (s). */
 export const FHR_FOUL_LEAD_S = 1.2;
 /** The shortest a cut build-up may be when its start moves forward off a pass in the air (s). */
-export const FHR_SNAPPY_MIN_S = 2.4;
+export const FHR_SNAPPY_MIN_S = 2;
+/** The shortest a cut build-up ever is (a very long pass in the air at the cut, s). */
+export const FHR_SNAPPY_FLOOR_S = 1.5;
+/** The most a cut build-up may run past its cap when its start moves back to a pass's kick (s). */
+export const FHR_SNAPPY_OVER_S = 1.5;
 /** A move that ends in a called offside: the offside pass starts at least this long after the build-up does. */
 export const FHR_SNAPPY_OFFSIDE_LEAD_S = 1.2;
 /**
@@ -98,14 +102,25 @@ export function snappyBuildUp(b: FhrBuildUp, capS: number): FhrBuildUp {
   for (let i = 0; i < ps.length; i++) {
     if (s > ps[i] && s < pe[i]) {
       const back = Math.max(0, ps[i] - 0.3), fwd = pe[i] - 0.15;
-      // Forward only if it still leaves a build-up of FHR_SNAPPY_MIN_S (never a stub).
-      s = s - back <= fwd - s || fwd > b.durS - FHR_SNAPPY_MIN_S ? back : fwd;
+      // Back to the kick only if that adds at most FHR_SNAPPY_OVER_S; forward to
+      // the arrival only if it leaves FHR_SNAPPY_MIN_S (never a stub). The nearer
+      // of the two when both are fine.
+      const backOk = b.durS - back <= capS + FHR_SNAPPY_OVER_S, fwdOk = b.durS - fwd >= FHR_SNAPPY_MIN_S;
+      // Neither: whichever plays nearer the cap (never under FHR_SNAPPY_FLOOR_S).
+      const nearer = Math.abs(b.durS - fwd - capS) < Math.abs(b.durS - back - capS) && b.durS - fwd >= FHR_SNAPPY_FLOOR_S ? fwd : back;
+      s = backOk && (s - back <= fwd - s || !fwdOk) ? back : fwdOk ? fwd : nearer;
       break;
     }
   }
   if (b.offside) {
     const p0 = ps[b.offside.pass] ?? b.offside.at;
     s = Math.min(s, Math.max(0, p0 - FHR_SNAPPY_OFFSIDE_LEAD_S));
+  }
+  // The covering defender (FHR-3) must still come in from off the screen.
+  if (b.cover) s = Math.min(s, Math.max(0, b.cover.enterS - 0.3));
+  // Either of those may land inside an earlier pass: back to its kick (never a ball in the air).
+  if (b.offside || b.cover) {
+    for (let i = 0; i < ps.length; i++) if (s > ps[i] && s < pe[i]) { s = Math.max(0, ps[i] - 0.3); break; }
   }
   if (s <= 0.05) return b;
   // The passes still to come (or in the air) when it starts.
