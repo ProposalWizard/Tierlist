@@ -62,5 +62,13 @@
     "added": "2026-10-22T19:20:00Z",
     "title": "The save is ~1 MB and is rewritten on every change (a 25 ms stall on a fast machine, ~150 ms+ on a slow phone)",
     "prompt": "Measured 22 Oct (chat 7): a season-1 career's localStorage save is 1,036,512 characters: savedSquads 547 KB, results 168 KB, world 144 KB, cupState 67 KB, lastWorld 49 KB. app/star-dev/page.tsx's career effect calls saveCareer (lib/star/storage.ts) on EVERY career change, which JSON.stringifies the whole save synchronously (25 ms on the build machine; 6x slower on a cheap phone) plus a cloud save 3 s later. Options: save locally on a short idle/debounce (like the cloud save) and flush on pagehide (already there); or keep savedSquads out of the per-change write (it changes once a season). Needs whoever owns storage to decide; test with tests/star/save*.mts."
+  },
+  {
+    "id": "bughunt-2026-10-22-buildup-mix",
+    "owner": "Harry",
+    "from": "Leo",
+    "added": "2026-10-22T21:15:00Z",
+    "title": "Two chance tests fail on main after tonight's build-up work: one-on-one mix (11 of 200) and 'forcing Old serves what Old serves'",
+    "prompt": "On main at 850ff5b0 (22 Oct, after the build-up / highlights merges): tests/star/chanceMaker.mts fails 'even mix: a one-on-one about 1 in 10 either way (11/200 settled, 105/200 on a break)', and tests/star/chanceJudge.mts fails 'forcing Old serves exactly what the default (Old) serves'. Both passed on leo-bughunt before main was merged in (Old fingerprint 239:9e68dc38 there). Likely the build-up mix / Match feel default change (858a5e33, 6eb0f230, aeef613e). Decide if Old was meant to change; fix or re-pin with a dated note. (Leo's branch already fixed the older chanceMaker team-mate count and re-pinned chanceJudge to 239:9e68dc38.)"
   }
 ]

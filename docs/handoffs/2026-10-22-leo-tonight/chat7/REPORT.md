@@ -1,12 +1,14 @@
 # Chat 7 · Bug hunt — report (22 Oct 2026)
 
+Checks before the final push: `npx tsc --noEmit` clean · one-engine guard and `npm run build` BUILD_RESULT · soak all held.
+
 Branch `leo-bughunt` (main merged in at the start). Plain English first; file names at the end of each line for checking.
 
 ## In one look
 - **Played:** 3 careers in a real headless browser at phone size (390 × 844). One went to retirement and the Hall of Fame. The 20-season soak ran twice: 420 seasons, 20,672 matches, all rules held both times.
-- **Tests:** before 408 of 414 passing; after LAG_TESTS_AFTER. 3 stale tests fixed. 3 left are in Harry's match/chance area, so they are team jobs.
+- **Tests:** before 408 of 414 passing; after 414 of 417 on this branch (3 new test files). 3 stale tests fixed. 3 left are in Harry's match/chance area, so they are team jobs. Merging tonight's newer main in at the end brought 2 new failures from Harry's build-up work (a 6th team job).
 - **Refresh safety:** every refresh landed on Home. Cause found and fixed. Ballon d'Or night, the window list, the talks and "Deal agreed" now come back where you were (seen in the browser).
-- **Fixed tonight:** 17 bugs plus 3 stale tests (list below). **Team jobs:** 5 (in `team/jobs.json`).
+- **Fixed tonight:** 17 bugs plus 3 stale tests (list below). **Team jobs:** 6 (in `team/jobs.json`).
 - **Not real squads:** this sandbox could not reach the database (`cagkgfketucousksgtbk.supabase.co` blocked by the network rules), so every club used invented players and badges showed initials. Bugs that need real squads were not looked for.
 
 ## Bugs fixed (each tested; ✅ = seen in a browser after the fix)
@@ -45,11 +47,12 @@ Branch `leo-bughunt` (main merged in at the start). Plain English first; file na
 | Keepers | No position picker at career start, so a keeper (or defender) career cannot be made | Design note |
 | FeedbackForm | React warning "Extra attributes from the server: style" on the footer's textarea (4×) | Harmless |
 
-## Team jobs posted (`team/jobs.json`)
+## Team jobs posted (`team/jobs.json`, 6)
 1. **match2dCam** (Harry): at 372 × 704 the ball is 1 px short of a full-power drag above the bottom. Likely the size B change.
 2. **longRangeRules** (Harry): a drawing disagrees with a law; 36 of 300 long shots have a fault.
 3. **realGoals** (Harry): the word StatsBomb is still in patch notes 0.101h and 0.107 (his pages, not edited).
 4. **3D training freeze** (Harry): `/star-training3d-dev`, Head/Volley → Free Roam → Head/Volley freezes 10–60 s in the test browser; stack in the shadow pass (`shadowCache.ts:479/625` → shader compile). Check on a real phone.
+6. **Build-up mix** (Harry): 2 chance tests fail on main after this evening's build-up work (see Tests).
 5. **Save size** (all): the save is ~1 MB (other clubs' squads 547 KB) and is rewritten on every change: 25 ms on the build machine, likely 150 ms+ on a cheap phone.
 
 The old "Training levels page freezes on the second tab switch" (20 Oct report) did **not** come back: 6 runs, every switch answered in under 0.7 s.
@@ -62,7 +65,8 @@ The old "Training levels page freezes on the second tab switch" (20 Oct report) 
   - chanceJudge: the "Old" fingerprint moved with 712caeb3 (licensed numbers swapped for free data, 21 Oct). Checked: its parent still gives the old value. Re-pinned with a note.
   - identity: the new Aerial skill (21 Oct) adds two fields the saved careers predate. Test ignores them, like Free kick.
   - longRangeRules, match2dCam, realGoals: Harry's area → team jobs.
-- **After:** LAG_TESTS_AFTER
+- **After** (this branch before the final merge of main, 22:00): 413 passed, 4 failed → 414 of 417 once `teamRoomJobs` was fixed (my own job entries said "Leo (chat 7…)" where only a name is allowed). Left: longRangeRules, match2dCam, realGoals (team jobs).
+- **After merging tonight's main (850ff5b0) at the end:** chanceMaker "even mix: a one-on-one about 1 in 10 (11/200)" and chanceJudge "forcing Old serves what Old serves" fail — they fail on main itself too (checked). From Harry's build-up/highlights merges this evening → team job 6.
 - **Soak** (`careerSoak.mts 20`): all held, before and after the fixes.
 - New tests: `seasonLabels.mts`, `welcomeTour.mts`; extended `flowTalks`, `transferInterest`, `signingTalk`, `club`, `hallRecords`.
 
