@@ -181,7 +181,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, onVo
             </div>
           )}
 
-          <div ref={scroller} className="kib-noscroll min-h-0 flex-1 overflow-y-auto" data-tour={mode === "moment" ? "reactions-feed" : undefined} data-feed-scroll>
+          <div ref={scroller} className="kib-noscroll min-h-0 flex-1 overflow-y-auto" style={{ willChange: "scroll-position", transform: "translateZ(0)" }} data-tour={mode === "moment" ? "reactions-feed" : undefined} data-feed-scroll>
             <FeedWindow scroller={scroller}>
             <div className={FEED_LIST_CLASS}>
               {/* The second of the two Continue buttons — this one scrolls

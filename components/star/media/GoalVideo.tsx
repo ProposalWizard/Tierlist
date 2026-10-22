@@ -6,6 +6,7 @@ import { makeEdit, editDuration, clipFileName, type ClipStyle } from "@/lib/star
 import type { ClipCredit } from "@/lib/star/goalClip/render";
 import { saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
 import { makeVideo, keptVideo, posterFor, workerReady, videosOnPage } from "@/lib/star/goalClip/makeVideo";
+import { goalVideoKey } from "@/lib/star/goalClip/premake";
 import { useAnimationsLook } from "@/lib/star/animLook";
 import { synthTrack, type SynthGoal } from "@/lib/star/goalClip/synth";
 import { planAudio, mixAudio } from "@/lib/star/goalClip/audio";
@@ -189,7 +190,8 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
   const release = useRef<(() => void) | null>(null);
   if (release.current === null && priority > 0) release.current = owe(priority);
   useEffect(() => () => { release.current?.(); }, []);
-  const key = `${style}|${variant}|${moves}|${clipIds.join(",")}|${synthKey}|${credit?.handle ?? ""}`;
+  // The same name premake.ts uses, so a video made at full time is found here.
+  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle);
 
   useEffect(() => {
     let live = true;

@@ -14,6 +14,7 @@ import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competit
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
 import { putClip, pruneClips } from "@/lib/star/goalClip/store";
 import { warmVideoMaker } from "@/lib/star/goalClip/makeVideo";
+import { premakeFeedVideos } from "@/lib/star/goalClip/premake";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
@@ -1570,6 +1571,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       : generateForMatch(career, next, nextFixture, stats);
     // Goal of the Month you won: a small boost with the fans (media/goalOfMonth.ts).
     { const b = applyGoalOfMonthBoost(next); next.relationships = b.relationships; next.media = b.media; }
+    // Your match's videos start being made now, in the background, so they
+    // are ready when the feed opens (lib/star/goalClip/premake.ts).
+    { const seen = new Set((career.media?.posts ?? []).map(p => p.id)); void premakeFeedVideos((next.media?.posts ?? []).filter(p => !seen.has(p.id))); }
     // …and so does the rest of the division, the same week — `next.results`
     // already carries every OTHER fixture `playLeagueWeek` simulated
     // alongside yours (empty on a cup/Europe/international week, when the

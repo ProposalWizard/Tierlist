@@ -84,7 +84,16 @@ export function FeedSlot({ id, estimate, first, children }: { id: string; estima
   // No watcher (an old browser): draw everything, as before.
   const show = near || (!watch && typeof IntersectionObserver === "undefined");
   return (
-    <div ref={ref} data-feed-slot={show ? "drawn" : "empty"} style={show ? undefined : { height: heights.get(id) ?? estimate }}>
+    <div
+      ref={ref}
+      data-feed-slot={show ? "drawn" : "empty"}
+      // A drawn post off screen is not painted (content-visibility), so a
+      // scroll frame paints only what you see: the freezes left while
+      // scrolling were the phone repainting every drawn post.
+      style={show
+        ? { contentVisibility: "auto", containIntrinsicSize: `auto ${heights.get(id) ?? estimate}px` }
+        : { height: heights.get(id) ?? estimate }}
+    >
       {show ? children : null}
     </div>
   );

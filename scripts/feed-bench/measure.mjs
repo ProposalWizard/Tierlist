@@ -147,7 +147,32 @@ if (PROFILE_OPEN) { await cdp.send("Profiler.enable"); await cdp.send("Profiler.
 const first = await openFeed("open-1");
 const domPosts = first.posts;
 if (PROFILE) { await cdp.send("Profiler.enable"); await cdp.send("Profiler.start"); }
+const TRACE = argv.includes("--trace");
+const traceEvents = [];
+if (TRACE) {
+  cdp.on("Tracing.dataCollected", d => traceEvents.push(...d.value));
+  await cdp.send("Tracing.start", { categories: "devtools.timeline,disabled-by-default-devtools.timeline,v8,blink.user_timing", transferMode: "ReportEvents" });
+}
 const scroll = PROFILE_OPEN ? null : await scrollFeed();
+if (TRACE) {
+  const ended = new Promise(r => cdp.once("Tracing.tracingComplete", r));
+  await cdp.send("Tracing.end"); await ended;
+  const main = traceEvents.find(e => e.name === "thread_name" && e.args?.name === "CrRendererMain");
+  const ev = traceEvents.filter(e => e.ph === "X" && e.pid === main?.pid && e.tid === main?.tid);
+  const tasks = ev.filter(e => e.name === "RunTask" && e.dur > 100000).sort((a, b) => b.dur - a.dur);
+  console.log(`TRACE long tasks >100ms: ${tasks.length}`);
+  for (const t of tasks.slice(0, 14)) {
+    const kids = ev.filter(e => e !== t && e.ts >= t.ts && e.ts + e.dur <= t.ts + t.dur && e.name !== "RunTask");
+    const by = new Map();
+    for (const k of kids) {
+      // only direct-ish children: top-level kinds
+      const name = k.name === "FunctionCall" ? `FunctionCall ${(k.args?.data?.url || "").split("/").slice(-1)[0]}:${k.args?.data?.functionName || ""}` : k.name;
+      by.set(name, Math.max(by.get(name) || 0, 0) + k.dur / 1000);
+    }
+    const top = [...by.entries()].sort((a, b) => b[1] - a[1]).slice(0, 7).map(([n, d]) => `${n} ${Math.round(d)}`).join(" | ");
+    console.log(`  ${Math.round(t.dur / 1000)} ms: ${top}`);
+  }
+}
 if (PROFILE || PROFILE_OPEN) {
   const { profile } = await cdp.send("Profiler.stop");
   const byId = new Map(profile.nodes.map(n => [n.id, n]));

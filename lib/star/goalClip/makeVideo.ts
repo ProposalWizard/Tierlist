@@ -188,10 +188,32 @@ async function gate(): Promise<void> {
  * Make (or fetch the kept copy of) the video for `edit`. Resolves null when
  * this browser cannot make video.
  */
-export async function makeVideo(
+/** Videos being made now: a second ask for the same one joins it (premake.ts starts them at full time). */
+const inFlight = new Map<string, { job: Promise<EncodedClip | null>; listeners: Set<(k: number) => void> }>();
+
+export function makeVideo(
   key: string,
   edit: Edit,
   opts: { credit?: ClipCredit; onProgress?: (k: number) => void; audio?: AudioBuffer | null } = {},
+): Promise<EncodedClip | null> {
+  const have = inFlight.get(key);
+  if (have) {
+    if (opts.onProgress) have.listeners.add(opts.onProgress);
+    return have.job.then(v => (v && !v.audio && opts.audio ? { ...v, audio: opts.audio } : v));
+  }
+  const listeners = new Set<(k: number) => void>();
+  if (opts.onProgress) listeners.add(opts.onProgress);
+  const job = makeOne(key, edit, { ...opts, onProgress: k => listeners.forEach(f => f(k)) });
+  inFlight.set(key, { job, listeners });
+  const done = () => { inFlight.delete(key); };
+  job.then(done, done);
+  return job;
+}
+
+async function makeOne(
+  key: string,
+  edit: Edit,
+  opts: { credit?: ClipCredit; onProgress?: (k: number) => void; audio?: AudioBuffer | null },
 ): Promise<EncodedClip | null> {
   const kept = await keptVideo(key);
   if (kept) { opts.onProgress?.(1); return { ...kept, audio: opts.audio ?? null }; }
