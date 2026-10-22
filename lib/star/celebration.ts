@@ -1,0 +1,181 @@
+/**
+ * AFTER YOU SCORE — the run to the corner and your celebration.
+ *
+ * Leo's tonight plan, part 1 (22 Oct 2026, approved): "You score. Your player
+ * peels away to the corner where the cameras and the fans are, then does the
+ * celebration you picked in the shop. Tap anywhere to skip it." Every goal of
+ * yours, skippable; team-mates keep their short jump.
+ *
+ * This file is the one place that says where you are and what you are doing
+ * at every moment after your goal. The 2D match (CanvasMatch) draws you here,
+ * the 3D view (engineView) reads the same frame, and a goal video
+ * (goalClip/render.ts) works it out again from the same plan, so all three
+ * agree. Pure: no React, no engine, no random numbers.
+ *
+ * Pitch metres, the engine's frame: x across 0..68, the goal line at y = 0,
+ * y grows out of the goal. The corners by the goal are (0, 0) and (68, 0).
+ */
+import { PITCH_W } from "./pitch";
+
+export type CelebrationMove = "hands_up" | "arms_out" | "knee_slide" | "fist_pump" | "jump" | "roar" | "fist";
+
+export interface CelebSpec {
+  /** The 3D clip (public/star/anims3d/mocap.glb). */
+  clip3d: string;
+  /** Where in the 3D clip it starts (s). */
+  from3d: number;
+  /** The 2D sprite clip (lib/star/sprites.ts), when it has been baked. */
+  sprite: string;
+  /** How long the move plays (s). */
+  playS: number;
+  /** A loop (it repeats while it plays). */
+  loop: boolean;
+  /** How far he travels on, along his run, `u` seconds into the move (m). */
+  travel: (u: number) => number;
+  /** His speed as the move begins (m/s): the run slows to it, not to a stop. */
+  enterSpeed: number;
+}
+
+/** Piecewise-linear through (t, v) keys. */
+function keys(k: [number, number][], t: number): number {
+  if (t <= k[0][0]) return k[0][1];
+  for (let i = 1; i < k.length; i++) {
+    if (t <= k[i][0]) {
+      const [t0, v0] = k[i - 1], [t1, v1] = k[i];
+      return v0 + ((v1 - v0) * (t - t0)) / (t1 - t0);
+    }
+  }
+  return k[k.length - 1][1];
+}
+
+/** The knee slide's own travel, measured off its keyed clip (tools/mocap3d/keyed.py, KS hz). */
+const KNEE_HZ: [number, number][] = [[0, 0], [0.18, 0.95], [0.36, 1.95], [0.55, 2.9], [1.05, 4.6], [1.4, 5.55], [1.9, 5.85], [3.2, 5.88]];
+const KNEE_FROM = 0.36;
+
+const still = () => 0;
+
+export const CELEB_SPECS: Record<CelebrationMove, CelebSpec> = {
+  // Jogs on towards the fans with both arms up (celebrate_safe runs at 3.4 m/s).
+  hands_up: { clip3d: "celebrate_safe", from3d: 0, sprite: "celebHandsUp", playS: 2.0, loop: true, travel: (u) => 3.4 * Math.min(u, 2.0), enterSpeed: 3.4 },
+  arms_out: { clip3d: "celebrate_airplane", from3d: 0, sprite: "celebArmsOut", playS: 2.6, loop: false, travel: still, enterSpeed: 0 },
+  // The last strides and the slide itself; he ends about 4 m on, on his knees.
+  knee_slide: {
+    clip3d: "knee_slide", from3d: KNEE_FROM, sprite: "celebKneeSlide", playS: 3.2 - KNEE_FROM, loop: false,
+    travel: (u) => keys(KNEE_HZ, KNEE_FROM + u) - keys(KNEE_HZ, KNEE_FROM), enterSpeed: 5.2,
+  },
+  fist_pump: { clip3d: "celebrate_pump", from3d: 0, sprite: "celebFistPump", playS: 2.2, loop: false, travel: still, enterSpeed: 0 },
+  jump: { clip3d: "celebrate_jump", from3d: 0, sprite: "celebJump", playS: 1.7, loop: false, travel: still, enterSpeed: 0 },
+  roar: { clip3d: "celebrate_roar", from3d: 0, sprite: "celebRoar", playS: 2.2, loop: false, travel: still, enterSpeed: 0 },
+  // Nothing equipped: the team-mates' own fist celebration.
+  fist: { clip3d: "celebrate_fist", from3d: 0, sprite: "celebrate", playS: 2.0, loop: false, travel: still, enterSpeed: 0 },
+};
+
+/** The shop's celebration items, by the `celebration` they carry (lib/star/store/catalogue.ts). */
+const SHOP_MOVE: Record<string, CelebrationMove> = {
+  hands_up: "hands_up", arms_out: "arms_out", knee_slide: "knee_slide", fist_pump: "fist_pump", jump: "jump", roar: "roar",
+};
+
+/** The move a career's equipped celebration item plays (`item.celebration`), or the plain fist. */
+export function celebrationMoveFor(itemCelebration: string | undefined | null): CelebrationMove {
+  return (itemCelebration && SHOP_MOVE[itemCelebration]) || "fist";
+}
+
+/** A moment of stillness as the ball goes in, before he wheels away (s). */
+export const CELEB_REACT_S = 0.25;
+/** The longest run to the corner (s): "about 2 seconds". */
+export const CELEB_RUN_S = 2.0;
+/** His top speed on the run (m/s): a sprint, not a jog. */
+const RUN_TOP = 7.0;
+const ACCEL_S = 0.3;
+const DECEL_S = 0.4;
+/** How far short of the corner flag he ends up (m). */
+const SHORT_OF_FLAG = 3.0;
+/** After the move, before the match goes on (s). */
+export const CELEB_TAIL_S = 0.35;
+
+export interface Vec { x: number; y: number }
+
+export interface CelebPlan {
+  move: CelebrationMove;
+  from: Vec;
+  /** Unit vector of his run. */
+  dir: Vec;
+  /** The corner he runs to. */
+  corner: Vec;
+  runDist: number;
+  runS: number;
+  /** Peak speed of the run (m/s). */
+  vmax: number;
+  /** When the move starts (s after the goal). */
+  moveAt: number;
+  /** When it is all over and the match goes on (s after the goal). */
+  totalS: number;
+}
+
+/** Which corner: the nearer one on the goal line. */
+export function cornerFor(from: Vec, pitchW = PITCH_W): Vec {
+  return { x: from.x < pitchW / 2 ? 0 : pitchW, y: 0 };
+}
+
+export function planCelebration(from: Vec, move: CelebrationMove, pitchW = PITCH_W): CelebPlan {
+  const spec = CELEB_SPECS[move];
+  const corner = cornerFor(from, pitchW);
+  // Aim a little in from the flag so he stays on the grass.
+  const aim = { x: corner.x === 0 ? 1.5 : pitchW - 1.5, y: 1.5 };
+  let dx = aim.x - from.x, dy = aim.y - from.y;
+  const D = Math.hypot(dx, dy);
+  if (D < 1e-6) { dx = 0; dy = -1; } else { dx /= D; dy /= D; }
+  const moveDist = spec.travel(spec.playS);
+  const room = Math.max(0, D - SHORT_OF_FLAG - moveDist);
+  const runDist = Math.min(room, RUN_TOP * (CELEB_RUN_S - (ACCEL_S + DECEL_S) / 2));
+  const runS = runDist <= 0.5 ? 0.4 : Math.max(0.9, Math.min(CELEB_RUN_S, runDist / (RUN_TOP * 0.82)));
+  const ve = Math.min(spec.enterSpeed, RUN_TOP);
+  const tc = Math.max(0, runS - ACCEL_S - DECEL_S);
+  const vmax = runDist <= 0 ? 0 : Math.max(ve, (runDist - (ve * DECEL_S) / 2) / (ACCEL_S / 2 + tc + DECEL_S / 2));
+  const moveAt = CELEB_REACT_S + runS;
+  return { move, from: { ...from }, dir: { x: dx, y: dy }, corner, runDist, runS, vmax, moveAt, totalS: moveAt + spec.playS + CELEB_TAIL_S };
+}
+
+/** Distance along the run, `s` seconds into it (accelerate, cruise, slow to the move's own pace). */
+function runAlong(p: CelebPlan, s: number): { d: number; v: number } {
+  const ve = Math.min(CELEB_SPECS[p.move].enterSpeed, RUN_TOP);
+  const vm = p.vmax, ta = ACCEL_S, td = DECEL_S, tc = Math.max(0, p.runS - ta - td);
+  if (p.runDist <= 0) return { d: 0, v: 0 };
+  s = Math.max(0, Math.min(p.runS, s));
+  if (s <= ta) return { d: (vm * s * s) / (2 * ta), v: (vm * s) / ta };
+  const dA = (vm * ta) / 2;
+  if (s <= ta + tc) return { d: dA + vm * (s - ta), v: vm };
+  const u = s - ta - tc;
+  const v = vm + ((ve - vm) * u) / td;
+  return { d: Math.min(p.runDist, dA + vm * tc + ((vm + v) / 2) * u), v };
+}
+
+export type CelebPhase = "react" | "run" | "move" | "done";
+
+export interface CelebState {
+  x: number;
+  y: number;
+  phase: CelebPhase;
+  /** Seconds into the move (move phase), else 0. */
+  moveT: number;
+  /** Seconds into the 3D clip (from3d + moveT; a loop wraps by itself). */
+  clipT: number;
+  /** His speed now (m/s). */
+  speed: number;
+}
+
+/** Where he is and what he is doing `t` seconds after the goal. */
+export function celebAt(p: CelebPlan, t: number): CelebState {
+  const spec = CELEB_SPECS[p.move];
+  const at = (d: number) => ({ x: p.from.x + p.dir.x * d, y: p.from.y + p.dir.y * d });
+  if (t < CELEB_REACT_S) return { ...at(0), phase: "react", moveT: 0, clipT: 0, speed: 0 };
+  if (t < p.moveAt) {
+    const r = runAlong(p, t - CELEB_REACT_S);
+    return { ...at(r.d), phase: "run", moveT: 0, clipT: 0, speed: r.v };
+  }
+  const u = Math.min(spec.playS, t - p.moveAt);
+  const d0 = p.runDist;
+  const d = d0 + spec.travel(u);
+  const v = u < spec.playS ? (spec.travel(Math.min(spec.playS, u + 0.05)) - spec.travel(u)) / 0.05 : 0;
+  return { ...at(d), phase: t - p.moveAt >= spec.playS ? "done" : "move", moveT: u, clipT: spec.from3d + u, speed: Math.max(0, v) };
+}

@@ -29,7 +29,8 @@ import type { GoalTrack } from "./track";
 import { frameAt } from "./track";
 import {
   pickCall, pickLine, pickReplayLine, SCORE_LINES, REEL_LINES, REPLAY_LINES, allCommentaryLines,
-  type FinishTag, type ScoreTag,
+  LATE_CALLS, LATE_REPLAY_LINES,
+  type FinishTag, type ScoreTag, type LateKind,
 } from "./commentary";
 import { COMMENTARY_SECONDS } from "./commentaryDurations";
 
@@ -73,6 +74,12 @@ export function scoreTagOf(tr: GoalTrack): ScoreTag {
   if (us - them >= 3) return "rout";
   if (us - them === 1) return tr.meta.minute >= 80 ? "late_winner" : "ahead";
   return "none";
+}
+
+/** A big late moment (ClipMeta.late), or undefined. Only YOUR goals. */
+export function lateOf(tr: GoalTrack): LateKind | undefined {
+  const k = tr.meta.late;
+  return tr.meta.isYou && (k === "winner" || k === "level") ? k : undefined;
 }
 
 /** How many saves the keeper made before it went in. */
@@ -183,7 +190,11 @@ export function planAudio(edit: Edit): AudioPlan {
         cues.push({ at: Math.max(acc, out(tr.goalT) - 0.05), sound: "crowd-cheer-stadium", gain: fan ? 1 : 0.85, rate: 1 });
         if (!fan) {
           // The call, then (if there is room before the next goal) what it means.
-          const call = pickCall(finishOf(tr), `${id}:${base}:${goalNo}`, used);
+          // A big late moment gets a late call; every other goal as before.
+          const late = lateOf(tr);
+          const call = late
+            ? pickLine(LATE_CALLS[late], `${id}:${base}:${goalNo}:late`, used)
+            : pickCall(finishOf(tr), `${id}:${base}:${goalNo}`, used);
           used.push(call.id);
           const at = Math.max(out(tr.goalT) + COMMENTARY_DELAY, voiceFree);
           cues.push({ at, sound: call.id, gain: 1, rate: 1 });
@@ -193,7 +204,8 @@ export function planAudio(edit: Edit): AudioPlan {
           // Leave room for the co-commentator over the replay, if there is one.
           const replayAfter = edit.shots.some((sh, k) => k > si && sh.replay);
           const keep = replayAfter && edit.style !== "tiktok" ? MIN_REPLAY_LINE + 0.4 : 0;
-          if (tag !== "none") {
+          // A late call already says what it means: no second line.
+          if (tag !== "none" && !late) {
             const say = pickLine(SCORE_LINES[tag], `${id}:score`, used);
             if (voiceFree + secs(say.id) + keep < Math.min(nextGoal, total) - 0.2) {
               cues.push({ at: voiceFree, sound: say.id, gain: 1, rate: 1 });
@@ -214,7 +226,9 @@ export function planAudio(edit: Edit): AudioPlan {
         const reel = edit.tracks.length > 1;
         const lines = [
           ...(reel ? [pickLine(REEL_LINES, `${id}:reel`, used)] : []),
-          pickReplayLine(finishOf(tr), savesOf(tr), `${id}:replay`, used),
+          lateOf(tr)
+            ? pickLine(LATE_REPLAY_LINES, `${id}:replay`, used)
+            : pickReplayLine(finishOf(tr), savesOf(tr), `${id}:replay`, used),
         ];
         for (let line of lines) {
           const at = Math.max(acc + 0.35, voiceFree);

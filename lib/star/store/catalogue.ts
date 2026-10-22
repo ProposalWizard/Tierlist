@@ -102,7 +102,8 @@ export const SLOT_LABEL: Record<AccessorySlot, string> = {
   boots: "Boots", armband: "Armband", celebration: "Celebration",
 };
 
-export type Celebration = "arms_out" | "knee_slide" | "hands_up";
+/** The move it plays after your goal (lib/star/celebration.ts; Leo, 22 Oct 2026: real moves, not poses). */
+export type Celebration = "arms_out" | "knee_slide" | "hands_up" | "fist_pump" | "jump" | "roar";
 
 export interface AccessoryItem {
   kind: "accessory";
@@ -138,6 +139,9 @@ export const ACCESSORIES: AccessoryItem[] = [
   { kind: "accessory", id: "celeb-hands-up", name: "Hands Up", slot: "celebration", rarity: "common", color: "#34d399", celebration: "hands_up" },
   { kind: "accessory", id: "celeb-arms-out", name: "Aeroplane", slot: "celebration", rarity: "rare", color: "#38bdf8", celebration: "arms_out" },
   { kind: "accessory", id: "celeb-knee-slide", name: "Knee Slide", slot: "celebration", rarity: "legendary", color: "#f472b6", celebration: "knee_slide" },
+  { kind: "accessory", id: "celeb-fist-pump", name: "Fist Pump", slot: "celebration", rarity: "common", color: "#facc15", celebration: "fist_pump" },
+  { kind: "accessory", id: "celeb-jump", name: "Jump", slot: "celebration", rarity: "rare", color: "#a78bfa", celebration: "jump" },
+  { kind: "accessory", id: "celeb-roar", name: "Roar", slot: "celebration", rarity: "rare", color: "#fb923c", celebration: "roar" },
 ];
 
 // ── Boosts (these genuinely help) ──────────────────────────────────────────
