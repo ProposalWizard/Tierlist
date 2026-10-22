@@ -128,6 +128,9 @@ export default function ShootoutPlay({ seed = 1, width, onExit, readsHabits = fa
   stateRef.current = state;
   const [run, setRun] = useState(0);
   const [done, setDone] = useState(false);
+  // The match restarts every KICKS_PER_MOUNT kicks (onChanceResolved).
+  const [seg, setSeg] = useState(0);
+  const chancesRef = useRef(0);
   // Your kicks this shootout, as you see them (penaltyKeeper.ts PastKick).
   const [kicks, setKicks] = useState<PastKick[]>([]);
   const kicksRef = useRef(kicks);
@@ -216,9 +219,17 @@ export default function ShootoutPlay({ seed = 1, width, onExit, readsHabits = fa
     stateRef.current = next;
     setState(next);
     if (next.over) window.setTimeout(() => setDone(true), 2600);
+    // Every kick is one chance of the match EnginePlay is playing, and that
+    // match ends (its FULL TIME card) after a handful of chances. A long
+    // shootout (sudden death, or you taking every kick) would run into it, so
+    // the match starts again every few kicks, once this kick's result has shown.
+    else if (++chancesRef.current >= KICKS_PER_MOUNT) {
+      chancesRef.current = 0;
+      window.setTimeout(() => setSeg((n) => n + 1), 2400);
+    }
   }, []);
 
-  const again = () => { const fresh = createShootout(); stateRef.current = fresh; setState(fresh); setDone(false); setRun((r) => r + 1); if (!rememberKicks) { kicksRef.current = []; setKicks([]); } };
+  const again = () => { const fresh = createShootout(); stateRef.current = fresh; setState(fresh); setDone(false); setRun((r) => r + 1); chancesRef.current = 0; if (!rememberKicks) { kicksRef.current = []; setKicks([]); } };
 
   // The keeper's habit read goes in only for YOUR kick, and only with the
   // prop on and a real lean; otherwise nothing is passed — as before.
@@ -260,13 +271,16 @@ export default function ShootoutPlay({ seed = 1, width, onExit, readsHabits = fa
         </div>
       ) : (
         <EnginePlay
-          key={run} seed={seed} openOn={openOn} bare width={width} onChanceResolved={onChanceResolved}
+          key={`${run}-${seg}`} seed={seed + seg} openOn={openOn} bare width={width} onChanceResolved={onChanceResolved}
           onBallStep={onBallStep} penaltyRead={penaltyRead}
         />
       )}
     </div>
   );
 }
+
+/** Kicks one EnginePlay match plays before it starts again (its match ends after a few more). */
+const KICKS_PER_MOUNT = 3;
 
 const btn: React.CSSProperties = {
   minHeight: 44, padding: "0 16px", borderRadius: 12, cursor: "pointer",

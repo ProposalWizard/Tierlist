@@ -60,6 +60,34 @@ Branch `leo-realgoals` (origin/Leo merged in). All four parts built, checked and
 ## Checks
 `npx tsc --noEmit` clean · `node scripts/one-engine-guard.mjs` passes · `node scripts/run-star-tests.mjs finishing keeper aiming outcomes penalty Habits` 14/14 · `tests/star/realGoals.mts` all new sections pass · `npm run build` passes.
 
+## Quality pass (after the hub's check, ~19:45–21:30 UK)
+
+**1. Played like a player** (a helper drove a production build at 390 × 844; stills `play-*.jpg`):
+- All 8 paths opened; 2 goals played on 6 of them (World Cup, Premier League, La Liga, Serie A, Ligue 1, Bangers) to a result box with % and stars, and "Next level →" after a star. Bundesliga and Worldies: one goal each, no goal scored (the driver aims blind; Worldies are 30-40 m shots). Best accuracy seen: 92% (Serie A).
+- Daily goal: Rooney's overhead kick (Daily #1). Scored on try 2; back home the card read "🔥 1 day · best 1 · ✓ Beaten today". Works.
+- Bangers played: Rooney, Messi's free kick, Adam from his own half, Schick from halfway, Mkhitaryan, Sergi Roberto: start pictures clean, ghost line to the goal.
+- No horizontal overflow at 390 px on any path; no stuck "Loading…"; no page errors (only the expected 500s for real squads, as this sandbox has no database).
+- **Fixed:** the shootout page showed a "FULL TIME 5–0 · Total Cash" card after a few kicks. Every kick is one chance of the match underneath, and that match ends after a handful of chances. The match now starts again every 3 kicks, after the kick's result has shown (`ShootoutPlay.tsx`; this also helps the shootout on the Highlights test page in sudden death). Re-played: 6 kicks over two shootouts, no FULL TIME card. Bar: 1 kick "needs 2" 0% → 2 right 33% → 4 right 100% → then 2 left "mixed → he can't read you" 0%; the Off switch reads "he only reads this kick" (`v2-shootout-*.jpg`).
+- Seen, left as they are (all from before tonight, not this chat's code): Messi's free-kick wall stands bunched (the game's free-kick wall rule); a saved shot that a team-mate scores on the rebound counts "No goal" for you (by design: you must score it); the 2D view leaves the bottom of the pitch empty on close chances (the existing framing); World Cup / league goals' real spot is the middle of Wyscout's 3 × 3 goal-mouth zone (a known limit, in the data README).
+
+**2. Bangers, second fact-check** (two helpers, fresh web searches on all 61): 22 goals corrected, 39 confirmed. Main fixes:
+- Wilshere v Norwich: right foot (was left), bottom-left corner, the real order of the one-twos (Arsenal.com).
+- Messi v Athletic 2015: keeper Herrerín (was Iraizoz). Higuaín v Frosinone: keeper Zappino (was Leali), struck from 20 yards.
+- Messi v Betis 2019: the one-two was with Rakitić (was Suárez). Yamal v Espanyol: a solo run (no assist; the Olmo pass removed).
+- Rooney v Man City: struck from the penalty spot. Van Persie v Villa: just outside the box. Garnacho, Bale v Liverpool: ~15 yards.
+- Son v Burnley: 71.4 m in 11 s (the Premier League's figure). Messi v Real Madrid 2011: the one-two with Busquets. Mkhitaryan: Pogba's pass to Zlatan added.
+- Bale v Barcelona: inside the near post. Kvaratskhelia: 12 yards, not a tight angle. Quagliarella: top corner. Altıntop: 25 m. Ben Arfa: Koziello's assist added.
+- Still open (each in its `note`): which corner for 15 goals no source names; Messi v Real Madrid 2017 (sources split bottom left / right); Bellingham v Barcelona (top left / right).
+- Stills of the 16 moved ones: `bangers-start-corrected.jpg` (all clean). Bangers test still all green (real line 95.6%).
+
+**3. Load speed** (production build, 6× slower CPU, 390 × 844, `scripts/star-sandbox/real-goals-loadtime.mjs`):
+| | Before | After |
+|---|---|---|
+| Home (tiles + daily card) ready | 4.8–5.2 s | 3.4–4.2 s |
+| Data before the home shows | 6.3 MB (all 5 leagues) | 1.4 MB (World Cup + Bangers) |
+| A league path opened directly | 7.0–9.5 s | 6.0–7.5 s (loads only its own league) |
+The five league files (3.7 MB) now load only for a league path (its own file), Worldies, the All goals list, or a daily goal from a league. Any path view takes about 2 s longer than the home at 6× (1.0 s against 0.6 s at full speed); it is the same level-map screen as before tonight.
+
 ## Files touched
 New: `lib/star/realGoalPaths.ts`, `lib/star/realGoalDaily.ts`, `app/star-real-goals-dev/BangerFixer.tsx`, `data/realmoments/bangers.json`, `scripts/realmoments/build_bangers.py`, `scripts/realmoments/bangers_drafts/*.json`, `app/star-shootout-dev/{page,layout}.tsx`, `tests/star/penaltyKeeperHabits.mts`, `scripts/star-sandbox/banger-stills.mjs`.
-Changed: `lib/star/realGoals.ts` (buildLevels options, banger kits, badges, crosser name, isTournament skips bangers), `lib/star/realMoments/{types,index}.ts` ("drafted" source), `app/api/star/real-moments/route.ts` (bangers), `app/star-real-goals-dev/{page.tsx,real-goals.css}`, `tests/star/realGoals.mts`, `lib/star/penaltyKeeper.ts`, `lib/star/keeperBrain.ts`, `components/star/{ShootoutPlay,EnginePlay}.tsx`, `lib/adminRegistry.ts`, `lib/adminGuides.ts`.
+Changed: `lib/star/realGoals.ts` (buildLevels options, banger kits, badges, crosser name, isTournament skips bangers), `lib/star/realMoments/{types,index}.ts` ("drafted" source), `app/api/star/real-moments/route.ts` (bangers), `app/star-real-goals-dev/{page.tsx,real-goals.css}`, `tests/star/realGoals.mts`, `lib/star/penaltyKeeper.ts`, `lib/star/keeperBrain.ts`, `components/star/{ShootoutPlay,EnginePlay}.tsx` (ShootoutPlay also: the match restarts every 3 kicks), `lib/adminRegistry.ts`, `lib/adminGuides.ts`.
