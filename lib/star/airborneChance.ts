@@ -182,11 +182,14 @@ export function airForgiveness(air: Pick<AirStrike, "tech" | "aerial">): number 
 export function applyAirborne(ball: Ball, scenario: Scenario, air: AirStrike | undefined): Ball {
   if (!air) return ball;
   const lift = Math.max(0, Math.min(1, air.lift));
-  const read = airContactRead(air);
   // This chance's own height (airDrawings.ts airZOf: the kind's usual height
   // unless the chance carries its own); the airborne test switch's header on
   // another kind of chance keeps the usual one.
   const top = scenario.kind === air.kind ? airZOf(scenario) : air.kind === "header" ? HEADER_Z : VOLLEY_MAX_Z;
+  // How far above (+) or below (-) the usual header height you met it (m): 0
+  // whenever heights do not vary, so the strike is then exactly as before.
+  const aboveM = air.kind === "header" ? (top - HEADER_Z) * (0.85 + 0.15 * lift) : 0;
+  const read = airContactRead(air);
   if (air.kind === "header") {
     ball.z = top * (0.85 + 0.15 * lift);
     // Aerial sets how hard it is headed: ×0.8 at 30, ×1 at 60, ×1.2 at 90.
@@ -194,6 +197,14 @@ export function applyAirborne(ball: Ball, scenario: Scenario, air: AirStrike | u
     ball.vel = { x: ball.vel.x * hp, y: ball.vel.y * hp };
     // Nodded down: whatever lift the contact gave is mostly taken away.
     ball.vz = Math.max(-4, Math.min(2.5, ball.vz * 0.35 - 1.2));
+    // The height it was met at is (mostly) taken back over the flight, the
+    // volley's way: a header met at 2.5 m is nodded down harder, so it does
+    // not sail over the men in front of it just for being high.
+    if (aboveM !== 0) {
+      const speed = Math.max(4, Math.abs(ball.vel.y));
+      const t = Math.max(0.25, Math.abs(ball.pos.y) / speed);
+      ball.vz -= (aboveM * (aboveM > 0 ? HEADER_Z_TAKEBACK_UP : HEADER_Z_TAKEBACK_DOWN)) / t;
+    }
     ball.spin *= 0.3;
     ball.topspin = 0;
     offLine(ball, read);
@@ -214,6 +225,26 @@ export function applyAirborne(ball: Ball, scenario: Scenario, air: AirStrike | u
   markLanding(ball, scenario);
   return ball;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+//  HOW HIGH YOU MET IT (headers piece 4, 22 Oct 2026). With AIR_HEIGHT_VARIES
+//  a header is met anywhere from 1.5 to 2.6 m. Left alone, a high one flew
+//  over the defenders' block (the engine's block reach is head height, 1.9 m)
+//  and the goal rate jumped (60: 27 → 37 per 100, 90: 39 → 49). A pace or
+//  miss penalty for a high ball was tried and dropped: it hit weak headers
+//  far harder than strong ones (30: -6, 90: +1). What works is the nod: a
+//  ball met high is headed DOWN harder (you get over it), so it still meets
+//  the men in front of it. Measured with scripts/aerial/heights.mts: every
+//  level stays within 2 per 100 of the fixed-height rate.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** How much of the height difference is taken back over the flight. 1 = the
+ *  ball reaches the goal line exactly as high as a usual header would. A ball
+ *  met above the usual height is nodded down harder than that (you get over
+ *  it): HEADER_Z_TAKEBACK_UP; a low, stooping header is lifted back by
+ *  exactly its difference: HEADER_Z_TAKEBACK_DOWN. */
+export const HEADER_Z_TAKEBACK_UP = 3;
+export const HEADER_Z_TAKEBACK_DOWN = 1;
 
 /** Turn, slow and lift the struck ball by a read (a clean, central hit: no change). */
 function offLine(ball: Ball, read: AirRead): void {
