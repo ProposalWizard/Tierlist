@@ -54,8 +54,8 @@ for (const [char, list, dirs] of [["player", NEW_PLAYER_CLIPS, 8], ["keeper", NE
       check(!!s && s.dirs === c.dirs && s.frames === c.frames, `${char}.${name} and ${c.mirrorOf} differ in shape`);
       check(!c.cells, `${char}.${name} mirrors and has its own cells too`);
     } else {
-      // the bicycle kick has its own atlas (2, 22 Oct 2026) so atlas 1 never had to be re-made
-      const want = name === "bicycle" ? 2 : 1, an = idx.atlases?.[String(want)];
+      // the bicycle kick has its own atlas (3, 22 Oct 2026; slot 2 is the celebrations') so atlas 1 never had to be re-made
+      const want = name === "bicycle" ? 3 : 1, an = idx.atlases?.[String(want)];
       check(c.atlas === want, `${char}.${name} is not in atlas ${want}`);
       check(!!an && fs.existsSync(path.join(dir, an.color)) && fs.existsSync(path.join(dir, an.mask)), `atlas ${want}'s files are missing`);
       check((c.cells?.length ?? 0) === c.dirs * c.frames, `${char}.${name}: ${c.cells?.length} cells, want ${c.dirs * c.frames}`);

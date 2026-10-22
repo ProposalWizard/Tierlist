@@ -20,7 +20,8 @@
  * Animations: Old it is never fetched. A clip with `mirrorOf` (the keeper's
  * left-side saves) is its right-side twin drawn flipped.
  *
- * A THIRD atlas (atlas-2.webp + mask-2.webp, and atlas-2a/mask-2a for Style A;
+ * A FOURTH atlas (atlas-3.webp + mask-3.webp, and atlas-3a/mask-3a for Style A;
+ * slot 2 is the celebrations' atlas, chat 1;
  * 22 Oct 2026) holds only the bicycle kick, so atlases 0 and 1 stayed byte for
  * byte as they were (tools/sprites/new/bake-new.mjs extra bicycle). It loads the
  * same way as atlas 1 (any `atlas: n` works).
@@ -39,7 +40,7 @@ export type SpriteClip =
   | "ready" | "diveL" | "diveR"                      // keeper (and "jog")
   | NewSpriteClip;
 
-/** Animations: New only (atlas 1; the bicycle kick in atlas 2). */
+/** Animations: New only (atlas 1; the bicycle kick in atlas 3). */
 export const NEW_PLAYER_CLIPS = ["touch", "passKick", "shotKick", "volley", "chipKick", "header", "block", "clearance", "bicycle"] as const;
 export const NEW_KEEPER_CLIPS = [
   "oneHandR", "oneHandL", "lowDiveR", "lowDiveL", "parryR", "parryL", "catchHold", "fumble", "getUpR", "getUpL",
@@ -199,8 +200,11 @@ function loadAtlas(n: number): Promise<boolean> {
 }
 
 /** Load and colour every later atlas in the background, after atlas 0 (idle time). */
+/** Atlases fetched only when one of their clips is first asked for (never in
+ *  the idle preload): 2 the celebrations, 3 the bicycle kick (22 Oct 2026). */
+const LAZY_ATLASES: ReadonlySet<number> = new Set([2, 3]);
 function preloadLaterAtlases(): void {
-  const ns = Object.keys(index?.atlases ?? {}).map(Number).filter((n) => n >= 1);
+  const ns = Object.keys(index?.atlases ?? {}).map(Number).filter((n) => n >= 1 && !LAZY_ATLASES.has(n));
   if (!ns.length || typeof window === "undefined") return;
   const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
   const go = () => { for (const n of ns) void loadAtlas(n).then((ok) => { if (ok) warmAtlas(n); }); };

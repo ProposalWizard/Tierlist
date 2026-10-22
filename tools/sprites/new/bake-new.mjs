@@ -17,8 +17,8 @@
  *        node tools/sprites/new/bake-new.mjs spike       compare with atlas-0 (idle, jog, celebrate; keeper)
  *        node tools/sprites/new/bake-new.mjs styleA      Style A 2D players: own cells → atlas-0a/1a, mask-0a/1a, index-a.json
  *        node tools/sprites/new/bake-new.mjs extra bicycle   bake ONLY the named player clips into their own
- *                                                         atlas (2): atlas-2/mask-2 on the current body and
- *                                                         atlas-2a/mask-2a on Style A, merged into index.json and
+ *                                                         atlas (3): atlas-3/mask-3 on the current body and
+ *                                                         atlas-3a/mask-3a on Style A, merged into index.json and
  *                                                         index-a.json. Every older atlas file is never written.
  *                                                         OUT=dir writes there instead (a dry run).
  *        node tools/sprites/new/bake-new.mjs glb bicycle     the keyframed clip as a GLB, for the overlap check
@@ -113,7 +113,7 @@ try {
     console.log("wrote", f);
   } else if (mode === "extra") {
     // One more atlas for the named clips; both bodies; old atlases untouched (22 Oct 2026, the bicycle kick).
-    const names = arg.split(","), which = 2;
+    const names = arg.split(","), which = 3; // slot 2 is the celebrations' (chat 1)
     const dst = process.env.OUT ? path.resolve(process.env.OUT) : outDir;
     fs.mkdirSync(dst, { recursive: true });
     const idx0 = JSON.parse(fs.readFileSync(path.join(outDir, "index.json"), "utf8"));
