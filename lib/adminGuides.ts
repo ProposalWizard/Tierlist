@@ -2408,8 +2408,8 @@ export const ADMIN_GUIDES = {
     buttons: [
       { group: "Top of the page", items: [
         ["Marketing (game tab across the top)", "This area. Only Harry, Mikey and Leo see the tab; testers never do."],
-        ["Board | Client", "Switch between this board and the Knowitball client page."],
-        ["Soon: Calendar · Suite · Uploads · Scripts", "Not built yet: a line of text, not buttons. They come in later slices of the plan."],
+        ["Board | Client | Suite | Uploads", "Switch between this board, the Knowitball client page, the editing suite and the uploads page."],
+        ["Soon: Calendar · Scripts", "Not built yet: a line of text, not buttons. They come in later slices of the plan."],
         ["↻ Check now", "Reads the board again straight away. It also reads by itself about once a minute."],
       ] },
       { group: "The board", items: [
@@ -2432,7 +2432,7 @@ export const ADMIN_GUIDES = {
     what: "Knowitball set up as a client, the way a video studio keeps a client: who we are, our voice, audience, rules, brand, what each video taught us, and our best scripts. Admins only.",
     buttons: [
       { group: "On this page", items: [
-        ["Board | Client", "Switch between the production board and this page."],
+        ["Board | Client | Suite | Uploads", "Switch between the parts of the Marketing tab."],
         ["The record file ↗", "Opens the client record on GitHub."],
         ["A grey code (e.g. RUL-KIB-001)", "The Brain note each line comes from. Quote it when you want something changed."],
         ["To confirm (amber)", "A note still waiting for Harry's yes (for now: the audience)."],
@@ -2444,6 +2444,68 @@ export const ADMIN_GUIDES = {
     ],
     inGame: ["Nowhere. It guides how our videos are written and made."],
     dev: "app/admin/marketing/client/page.tsx · lib/marketing/clientRecord.ts (pure parts tested in tests/star/adminMarketing.mts) · marketing/clients/knowitball/client.md · brain/*/{FACT,RUL,REF}-KIB-*.md · next.config.mjs traces those files for Vercel",
+  },
+  "/admin/marketing/suite": {
+    title: "Editing suite",
+    what: "Watch one of our cuts on a timeline and leave notes on it. Review notes say what to fix, keep or check at a moment. Edit notes are instructions for Claude: cut a bit out, change something at a moment, or a change for the whole video. Admins only.",
+    buttons: [
+      { group: "The list", items: [
+        ["A video (Open ›)", "Opens that cut in the suite. The list is every video in storage, newest first."],
+        ["○ Storage not connected here", "Shown when this copy of the site has no storage settings. On a computer running the game for development, the list shows the videos already in the code instead (docs/marketing/videos)."],
+      ] },
+      { group: "The video and the timeline", items: [
+        ["‹ All videos", "Back to the list."],
+        ["▶ / ❚❚ (or Space)", "Play and pause. Tapping the video does the same."],
+        ["‹1s ‹1f 1f› 1s› (or ← →, Shift for a second)", "Step back or on by one frame or one second. On a narrow phone only the frame steps show."],
+        ["− / +", "Zoom the timeline out and in. Zoomed in, swipe the timeline sideways; it follows the playhead while playing."],
+        ["Tap the timeline", "Moves the playhead there. Top to bottom: times, a filmstrip, the sound wave (only for files under 80 MB), then the Review and Edit lanes."],
+        ["A coloured block", "One note: teal Fix, green Keep, yellow Check, blue Change, striped red Cut out. Tap it to jump there and light up its card."],
+      ] },
+      { group: "The notes", items: [
+        ["Review | Edit for Claude", "Switch between the two kinds of note. They are kept apart and never mixed."],
+        ["+ Add at 0:07.4 (or M)", "Pauses and opens a new note at the playhead."],
+        ["✂ Cut from here", "Edit only: starts a Cut out note from the playhead. Play on or step, then Set To."],
+        ["Fix · Keep · Check / Cut out · Change here · Whole video", "The kind of note."],
+        ["From / To · Set to 0:07.4", "The stretch the note is about. Set to puts the playhead's time in."],
+        ["Save / Cancel", "Save stores the note for everyone at once. Cancel throws the draft away."],
+        ["For the whole video · Save for Claude", "Edit only: a change that is not tied to a moment."],
+        ["A card's time", "Jumps the video there."],
+        ["Edit / Delete", "Change a note, or remove it at once (no undo)."],
+        ["Copy for Claude", "Copies every note and edit as text, ready to paste into a Claude chat."],
+        ["Done by Claude / Skipped", "Shown on an edit once Claude has dealt with it."],
+      ] },
+    ],
+    saving: [
+      "Shared with Harry, Mikey and Leo, the moment you press Save: each video's notes are one small file beside the video in our private video storage (Cloudflare R2). No database, nothing in the code, no deploy.",
+      "Two people saving at once both keep their notes (each save is one change, added to what is already there).",
+      "Claude reads the notes with a script when its chat has the storage settings, or from the Copy for Claude text you paste. It then marks each edit Done or Skipped.",
+      "On a computer running the game for development, notes go to a scratch folder on that computer only.",
+    ],
+    inGame: ["Nowhere. This is for making our own videos."],
+    needs: ["The four storage settings in Vercel: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET. Without them the page says \"Storage not connected here\" and lists nothing."],
+    dev: "app/admin/marketing/suite/page.tsx · components/admin/marketing/{SuiteBrowser,CutEditor}.tsx · lib/marketing/suite.ts (notes, pure) · lib/marketing/{r2,mediaApi,storage}.ts · /api/admin/marketing/{media,media/play,notes} · scripts/marketing/suite-notes.mjs · skills review-timeline, suite-inbox · tests/star/marketingStorage.mts",
+  },
+  "/admin/marketing/uploads": {
+    title: "Uploads",
+    what: "Put a video or a picture into our private video storage, straight from this device, and link it to a video card on the board. Admins only.",
+    buttons: [
+      { group: "On this page", items: [
+        ["● Storage connected / ○ Storage not connected here", "Whether this copy of the site can reach the storage. Connected also shows what you have used today against the daily limit."],
+        ["Video card", "Pick the board card this file belongs to, or leave it as Not linked to a card."],
+        ["Choose a file (or drop files on the box)", "Uploads it. A bar shows how far it has got. The file goes straight from your device to storage, never through the site."],
+        ["Open in Suite", "Opens that video in the editing suite."],
+        ["↻ Check now", "Reads the list from storage again."],
+      ] },
+    ],
+    saving: [
+      "Shared with Harry, Mikey and Leo: files go into our private video storage (Cloudflare R2, bucket kib-marketing). Nobody outside the admin can open them; a play link lasts one hour.",
+      "The list is read from the storage itself, so there is nothing else to keep in step.",
+      "Limits (to keep the bill at zero): one file up to 500 MB; videos (mp4, mov, webm) and pictures (jpg, png, webp, gif) only; 30 files and 5 GB per person per day, reset at midnight UK time. A link handed out counts even if the upload then fails.",
+      "A dropped connection means starting that file again (no resume yet). Use Wi-Fi for big files.",
+    ],
+    inGame: ["Nowhere. This is for making our own videos."],
+    needs: ["The four storage settings in Vercel: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET. The bucket's sharing rule (CORS) must allow PUT from knowitball.co.uk, or uploads stop at 0%."],
+    dev: "app/admin/marketing/uploads/page.tsx · components/admin/marketing/UploadsPanel.tsx · lib/marketing/uploadClient.ts · lib/marketing/{r2,mediaApi,storage,caller}.ts · /api/admin/marketing/{upload,upload/done,media} · tests/star/marketingStorage.mts",
   },
 
 } satisfies Record<string, AdminGuide>;
