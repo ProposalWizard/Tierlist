@@ -11,6 +11,13 @@
  *                   colours go on at runtime and skin and hair stay as they are;
  *   - index.json    every frame's rectangle and the point under his boots.
  *
+ * A THIRD atlas (atlas-2 / atlas-2a, Leo, 22 Oct 2026: "After you score")
+ * holds the six goal celebrations your player can equip in the shop
+ * (CELEB_PLAYER_CLIPS), baked from the 3D capture clips in anims3d/mocap.glb by
+ * `node tools/sprites/new/bake-new.mjs celebs`. It is never preloaded: it loads
+ * only when one of them is first asked for (spriteClipReady), so a match with
+ * no celebration never fetches it. Until it is in, callers draw "celebrate".
+ *
  * A SECOND atlas (atlas-1.webp + mask-1.png, Leo, 7 Oct 2026) holds the
  * Animations: New clips — the touch, pass, shot, volley, chip, header, block
  * and clearance, and the keeper's one-hand stretch, low dive, parry, catch,
@@ -38,7 +45,8 @@ export type SpriteChar = "player" | "keeper";
 export type SpriteClip =
   | "idle" | "jog" | "sprint" | "kick" | "celebrate" // player
   | "ready" | "diveL" | "diveR"                      // keeper (and "jog")
-  | NewSpriteClip;
+  | NewSpriteClip
+  | CelebSpriteClip;
 
 /** Animations: New only (atlas 1; the bicycle kick in atlas 2). */
 export const NEW_PLAYER_CLIPS = ["touch", "passKick", "shotKick", "volley", "chipKick", "header", "block", "clearance", "bicycle"] as const;
@@ -46,6 +54,17 @@ export const NEW_KEEPER_CLIPS = [
   "oneHandR", "oneHandL", "lowDiveR", "lowDiveL", "parryR", "parryL", "catchHold", "fumble", "getUpR", "getUpL",
 ] as const;
 export type NewSpriteClip = (typeof NEW_PLAYER_CLIPS)[number] | (typeof NEW_KEEPER_CLIPS)[number];
+
+/**
+ * Goal celebrations (atlas 2, loaded on first ask). Hands up and the knee slide's
+ * travel: the sprite stays on its spot (the knee slide is baked in place; the
+ * game moves him along the grass). Hands up loops; the rest play once and hold
+ * their last frame.
+ */
+export const CELEB_PLAYER_CLIPS = ["celebHandsUp", "celebArmsOut", "celebKneeSlide", "celebFistPump", "celebJump", "celebRoar"] as const;
+export type CelebSpriteClip = (typeof CELEB_PLAYER_CLIPS)[number];
+/** Atlases that are never preloaded: fetched only when one of their clips is first asked for. */
+const LAZY_ATLASES = new Set([2]);
 
 export interface SpriteKit {
   shirt: string;
@@ -63,6 +82,12 @@ interface ClipIndex {
   atlas?: number;
   /** Drawn as this clip of the same man, flipped left to right (no cells of its own). */
   mirrorOf?: string;
+  /**
+   * A "once" clip baked from a 3D clip (the celebrations): each frame's second in
+   * that 3D clip. With it, t is seconds into the 3D clip and the frame shown is
+   * the last one at or before t (the frames need not be evenly spaced).
+   */
+  t3d?: number[];
   /** [x, y, w, h, anchorX, anchorY] per cell; cell = dir * frames + frame. */
   cells?: [number, number, number, number, number, number][];
 }
@@ -201,7 +226,7 @@ function loadAtlas(n: number): Promise<boolean> {
 
 /** Load and colour every later atlas in the background, after atlas 0 (idle time). */
 function preloadLaterAtlases(): void {
-  const ns = Object.keys(index?.atlases ?? {}).map(Number).filter((n) => n >= 1);
+  const ns = Object.keys(index?.atlases ?? {}).map(Number).filter((n) => n >= 1 && !LAZY_ATLASES.has(n));
   if (!ns.length || typeof window === "undefined") return;
   const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
   const go = () => { for (const n of ns) void loadAtlas(n).then((ok) => { if (ok) warmAtlas(n); }); };
@@ -426,9 +451,14 @@ export function cellDir(clip: string, facing: number, dirs: number): number {
 }
 
 /** Which frame of a clip `t` seconds in. */
-export function spriteFrame(clip: { fps: number; loop: string; frames: number }, t: number): number {
+export function spriteFrame(clip: { fps: number; loop: string; frames: number; t3d?: number[] }, t: number): number {
   const n = clip.frames;
   if (n <= 1) return 0;
+  if (clip.t3d && clip.loop === "once") {
+    let i = 0;
+    while (i + 1 < n && clip.t3d[i + 1] <= t + 1e-6) i++;
+    return i;
+  }
   const f = Math.max(0, Math.floor(t * clip.fps));
   if (clip.loop === "once") return Math.min(n - 1, f);
   if (clip.loop === "pingpong") {
