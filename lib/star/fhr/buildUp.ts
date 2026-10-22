@@ -66,6 +66,7 @@ import { fhrIntel, type FhrIntel } from "./intel";
 import { PITCH_W, CX, HALF_LEN, GOAL_W } from "../pitch";
 import PJ from "./patterns.json";
 import { airArrival } from "../airDrawings";
+import { playstyleForClub } from "../playstyle";
 
 interface Patterns {
   xEdges: number[]; yEdges: number[];
@@ -193,6 +194,73 @@ export function fhrTempo(m: LeadMoment, a?: FhrAdjust): FhrTempo {
     padS: sc(by(FHR_MIN_S, 5.2)),
     touch, press,
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  THE MIX: THREE KINDS OF SHORT, WHOLE MOVE (Harry, 22 Oct 2026: "shorter
+//  build ups shouldn't necessarily mean less distance, there should be a mix
+//  of sped up kicking, sometimes I still want fast long balls and tiki taka")
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Until now the career showed only the last 3 s of a 4–8 s move (builders.ts
+// snappyBuildUp), so a long pass was usually cut off and every build-up was
+// "a pass or two near the box". Now the career's build-up is a WHOLE move made
+// to fit about 3 s, in one of three styles:
+//
+//   long   one or two long balls: over the top, or a switch of play (30–48 m,
+//          driven or lofted at 18–25 m/s, the speed of a real long pass);
+//   tiki   4–6 quick one-touch passes (7–13 m, crisp ground passes at
+//          13–18 m/s, 0.06–0.14 s on the ball);
+//   carry  a dribble at pace (6.8–7.4 m/s) and a pass, or you carrying it in.
+//
+// The move is quicker, not sped up: the ball moves at real speeds and every
+// man runs within his own top speed (the same checks as before). Which style:
+// fhrStyleFor (the clubs' playstyles, the strength gap, a break or settled
+// play, the chance's kind, the score late on), then the chance's own seed.
+
+export type FhrStyle = "long" | "tiki" | "carry";
+export const FHR_STYLES: readonly FhrStyle[] = ["long", "tiki", "carry"];
+/** A whole short move is never longer than this on the screen (s); the ordinary one aims at about 3 s. */
+export const FHR_COMPACT_MAX_S = 4.2;
+/** …at the biggest moment (one more pass). */
+export const FHR_COMPACT_BIG_MAX_S = 5;
+
+/** The style weights for this moment (before the roll). Exported for the tests and the measure. */
+export function fhrStyleWeights(sc: Pick<Scenario, "kind">, moment: LeadMoment): Record<FhrStyle, number> {
+  const w: Record<FhrStyle, number> = moment.pattern === "transition" ? { long: 0.5, tiki: 0.15, carry: 0.35 } : { long: 0.3, tiki: 0.4, carry: 0.3 };
+  // Our way of playing, and theirs (playstyle.ts: each club's own settled identity).
+  const ours = moment.us ? playstyleForClub(moment.us).id : null;
+  const theirs = moment.them ? playstyleForClub(moment.them).id : null;
+  if (ours === "possession") w.tiki *= 1.8;
+  if (ours === "counter") { w.long *= 1.6; w.carry *= 1.3; }
+  if (ours === "high-press") w.carry *= 1.4;
+  if (ours === "low-block") w.long *= 1.5;
+  // A high line leaves space in behind; a deep block has none, so work it short.
+  if (theirs === "high-press" || theirs === "possession") w.long *= 1.5;
+  if (theirs === "low-block") { w.tiki *= 1.3; w.carry *= 1.3; w.long *= 0.6; }
+  // The better side keeps it; the weaker side goes direct.
+  const g = fhrIntel(moment.usStrength, moment.themStrength).gap;
+  if (g > 0) w.tiki *= 1 + 0.6 * g; else w.long *= 1 - 0.6 * g;
+  // What the chance is.
+  const k = sc.kind;
+  if (k === "one_on_one" || k === "through_ball") w.long *= 1.8;
+  if (k === "long_range") w.carry *= 1.7;
+  if (k === "tight_angle") w.carry *= 1.3;
+  if (k === "cutback" || k === "byline_cross") { w.tiki *= 1.3; w.carry *= 1.3; }
+  if (k === "header" || k === "volley") w.long *= 1.3;
+  // Late on: chasing the game goes direct, protecting a lead keeps it.
+  if ((moment.minute ?? 0) >= 75 && moment.scoreDiff !== undefined) {
+    if (moment.scoreDiff < 0) w.long *= 1.6;
+    else if (moment.scoreDiff > 0) w.tiki *= 1.3;
+  }
+  return w;
+}
+
+/** The style of this chance's build-up: the moment's weights, rolled on the chance's own seed (the same chance, the same style). */
+export function fhrStyleFor(sc: Scenario, moment: LeadMoment): FhrStyle {
+  const w = fhrStyleWeights(sc, moment);
+  const u = ((((chanceSeed(sc, moment.seed) ^ 0x5717e) >>> 0) * 2246822519) >>> 0) / 4294967296;
+  return pick(FHR_STYLES as FhrStyle[], FHR_STYLES.map((s) => w[s]), () => u);
 }
 
 /** Set pieces never get a build-up. */
@@ -369,6 +437,8 @@ export interface FhrAction {
    * still get there first). Absent: a pass to feet.
    */
   through?: boolean;
+  /** A whole short move (FhrStyle): the ball's own speed for this touch (m/s). Absent: passSpeed / the carry speed. */
+  v?: number;
   t0: number;
   t1: number;
 }
@@ -413,7 +483,8 @@ export const REGAIN_BAND: Record<Zone, { y1: number; y2: number }> = {
 interface Route { acts: FhrAction[]; durS: number; hold: number; regain?: RegainPlan }
 
 /** The route of the ball, worked back from the chance's ball `R`. */
-function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport, tp: FhrTempo, ix: { intel: FhrIntel; regain?: RegainPlan }): Route | null {
+function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport, tp: FhrTempo, ix: { intel: FhrIntel; regain?: RegainPlan; style?: FhrStyle }): Route | null {
+  if (ix.style) return compactRoute(sc, moment, r, tp, ix.style);
   const R: Vec2 = { x: sc.ball.x, y: sc.ball.y };
   const brk = moment.pattern === "transition";
   const { mv, at } = dataFor(ix.intel);
@@ -603,6 +674,242 @@ function routeFor(sc: Scenario, moment: LeadMoment, r: Rng, frame: Viewport, tp:
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+//  A whole short move (FhrStyle)
+// ─────────────────────────────────────────────────────────────────────────
+
+/** A crisp short ground pass (m/s): real one-touch passing runs about 12–18. */
+export const COMPACT_SHORT_V: readonly [number, number] = [13, 18];
+/** A long ball, driven or lofted (m/s, its average over the ground): real long passes run about 18–25. */
+export const COMPACT_LONG_V: readonly [number, number] = [18, 25];
+/** A dribble at pace (m/s): fast men carry it at 7–8. */
+export const COMPACT_CARRY_V: readonly [number, number] = [6.8, 7.4];
+/** A ball into space for your run (or the crosser's) is this much slower, so the run can be onside and still get there. */
+export const COMPACT_THROUGH_PACE = 0.82;
+/**
+ * In a whole short move a man of the chance is never further from his place in
+ * it than he could cover at this average speed in the time the move takes
+ * (m/s): about 3 s is too short for the whole team shape to swing across with
+ * a long ball, and the men who play the quick passes must be near them.
+ */
+export const COMPACT_SPREAD_V = 3.5;
+
+/** A path pulled softly inside `capM` of `end` (a man already about his place): past the cap, a quarter of the extra is kept. */
+function nearHisPlace(path: Vec2[], end: Vec2, capM: number): Vec2[] {
+  return path.map((q) => {
+    const d = dist(q, end);
+    if (d <= capM) return q;
+    const k = (capM + (d - capM) * 0.25) / d;
+    return { x: end.x + (q.x - end.x) * k, y: end.y + (q.y - end.y) * k };
+  });
+}
+
+/**
+ * A whole short move's key ball is mistimed (the flag goes up) this share as
+ * often as a long move's passes are (x intel.mistime). Measured over 400 served
+ * chances: at 1, 17% of the short moves ended offside against 10% of the cut
+ * long moves before.
+ */
+export const COMPACT_MISTIME = 1;
+/** A man running onto the key ball from behind their line (m/s, a little under a sprint). */
+export const COMPACT_RUN_ONTO = 6.5;
+/** Gravity, for how high a lofted long ball goes in the time it is in the air (m/s²). */
+const G = 9.81;
+
+/**
+ * The route of a whole short move in `style`, worked back from the chance's
+ * ball like routeFor, timed at real ball speeds. Null: it could not be laid
+ * out on this pitch (the next try has another seed).
+ */
+function compactRoute(sc: Scenario, moment: LeadMoment, r: Rng, tp: FhrTempo, style: FhrStyle): Route | null {
+  const R: Vec2 = { x: sc.ball.x, y: sc.ball.y };
+  const laneX = moment.lane === "left" ? 13.5 : moment.lane === "right" ? 54.5 : moment.lane === "centre" ? CX : null;
+  const air = airArrival(sc);
+  const throughLast = !air && THROUGH_KINDS.has(sc.kind) && R.y < THROUGH_BALL_Y + (sc.kind === "one_on_one" || sc.kind === "through_ball" ? 10 : 0);
+  const back: FhrAction[] = [];
+  let cur = R;
+  const ok = (p: Vec2) => p.x >= 3 && p.x <= PITCH_W - 3 && p.y >= 4 && p.y <= LEN - 5 && !(p.y < 6 && Math.abs(p.x - CX) < 12);
+  const shortV = (L: number) => clamp((9 + 0.3 * L) * 1.4, COMPACT_SHORT_V[0], COMPACT_SHORT_V[1]);
+  const longV = (L: number, lofted: boolean) => (lofted ? clamp(13 + 0.24 * L, COMPACT_LONG_V[0], COMPACT_LONG_V[1]) : clamp(10 + 0.3 * L, COMPACT_LONG_V[0], COMPACT_LONG_V[1] - 1));
+  const carryV = () => COMPACT_CARRY_V[0] + (COMPACT_CARRY_V[1] - COMPACT_CARRY_V[0]) * r();
+  /** How high a lofted ball goes when it is in the air T seconds (m). */
+  const loftH = (L: number, v: number) => clamp((G * (L / v) ** 2) / 8, 2, 6);
+  const add = (type: "pass" | "carry", from: Vec2, o: { v: number; h?: number; endZ?: number; through?: boolean; src?: FhrAction["src"] }) => {
+    back.push({ type, from, to: cur, h: o.h ?? 0, ...(o.endZ ? { endZ: o.endZ } : {}), src: o.src ?? "moves", ...(o.through ? { through: true } : {}), v: o.v, t0: 0, t1: 0 });
+    cur = from;
+  };
+  /**
+   * A point L0–L1 m from `to`, at an angle a0–a1 (radians) off straight back up
+   * the pitch (0 = from behind, π/2 = from the side; the sign picks the side).
+   * The best of a few by the move's lane; null when none fits on the pitch.
+   */
+  const pointFrom = (to: Vec2, L0: number, L1: number, a0: number, a1: number, extra?: (p: Vec2) => boolean): Vec2 | null => {
+    let best: Vec2 | null = null, bs = Infinity;
+    for (let k = 0; k < 16; k++) {
+      const L = L0 + (L1 - L0) * r(), a = a0 + (a1 - a0) * r();
+      const p = { x: to.x + Math.sin(a) * L, y: to.y + Math.cos(a) * L };
+      if (!ok(p) || (extra && !extra(p))) continue;
+      const s = r() + (laneX !== null ? Math.abs(p.x - laneX) * 0.03 : 0);
+      if (s < bs) { bs = s; best = p; }
+      if (k >= 5 && best) break;
+    }
+    return best;
+  };
+  const sideBoth = () => (r() < 0.5 ? -1 : 1);
+  // The cross to a header or a volley (B10) is always the last ball, from the crosser's drawn spot.
+  if (air) {
+    const L = dist(air.from, R);
+    add("pass", air.from, { v: passSpeed(L, air.apex), h: air.apex, endZ: air.endZ, src: "chain" });
+  }
+  // Their back line in the chance (the second-last of their men, the keeper counted).
+  const lineEnd = [...sc.defenders.filter((d) => d.x > -1 && d.x < PITCH_W + 1 && d.y > -1 && d.y < LEN + 1).map((d) => d.y), sc.keeper.y].sort((a, b) => a - b)[1] ?? 0;
+  const ballTo = (from: Vec2, last: boolean, v: number, h = 0) => {
+    // The last ball to you in behind (or the ball out to the crosser) is played into space.
+    const through = (last && throughLast) || (!!air && back.length === 1);
+    let vv = through ? v * COMPACT_THROUGH_PACE : v;
+    // The key ball to a man who ends past their line: in the air long enough for
+    // his run from behind the line (he must be onside when it is played) at
+    // about COMPACT_RUN_ONTO m/s. Measured without it: 1 in 8 short moves ended
+    // in a flag that no run could avoid (a quick ball is in the air ~0.6 s).
+    if (last || through) {
+      const D = lineEnd + 1.5 - cur.y;
+      if (D > 0) vv = Math.max(8, Math.min(vv, dist(from, cur) / (0.35 + D / COMPACT_RUN_ONTO)));
+    }
+    add("pass", from, { v: vv, h, through, src: h > 0 || v >= COMPACT_LONG_V[0] ? "break" : "moves" });
+  };
+  const last = () => back.length === 0;
+
+  if (style === "long") {
+    // A switch of play from the far side, or a ball over the top from deep.
+    const direct = sc.kind === "one_on_one" || sc.kind === "through_ball";
+    const isSwitch = r() < (direct ? 0.15 : 0.45);
+    // A chance on the byline (a cutback, a tight angle): the long ball lands out
+    // wide and is carried down to the line. Measured without it: a long ball
+    // straight onto the line had the camera gliding onto the chance's picture
+    // while the ball was still in the air (up to 25% of the frames off the screen).
+    if (!air && R.y < 10) {
+      const c = pointFrom(cur, 6, 10, -0.6, 0.6);
+      if (!c) return null;
+      add("carry", c, { v: carryV() });
+    }
+    if (isSwitch) {
+      // Sometimes the switch finds a team-mate who gives it to you; else it lands on you.
+      if (!air && back.length === 0 && r() < 0.3) {
+        const p = pointFrom(cur, 8, 13, -1.3 * sideBoth(), 0.3 * sideBoth());
+        if (p) ballTo(p, true, shortV(dist(p, cur)));
+      }
+      const towardMiddle = cur.x < CX ? 1 : -1;
+      const p = pointFrom(cur, 28, 44, towardMiddle * 1.15, towardMiddle * 1.5, (q) => Math.abs(q.x - cur.x) >= 24);
+      if (!p) return null;
+      const lofted = r() < 0.6, L = dist(p, cur), v = longV(L, lofted);
+      ballTo(p, last(), v, lofted ? loftH(L, v) : 0);
+    } else {
+      // Over the top: one long ball from deep (sometimes after a lay-back to the man who hits it).
+      const p = pointFrom(cur, 28, 45, -0.55, 0.55);
+      if (!p) return null;
+      const lofted = r() < 0.75, L = dist(p, cur), v = longV(L, lofted);
+      ballTo(p, last(), v, lofted ? loftH(L, v) : 0);
+      if (r() < 0.2) {
+        // The lay-back: a short ball played back to him from a team-mate further forward.
+        const q = pointFrom(cur, 8, 12, Math.PI - 0.9, Math.PI + 0.9);
+        if (q) ballTo(q, false, shortV(dist(q, cur)));
+      }
+    }
+  } else if (style === "tiki") {
+    // Quick passes between the men you will see in the chance (and you, in a
+    // one-two), each from about where he stands; a man may have it again two
+    // touches later from a few metres further back (pass and move). Measured
+    // first with made-up spots up the pitch: the chance has its men in and
+    // around the box, so 1 in 4 tiki moves had nobody to play its passes.
+    // A spot outside the chance's picture may be anyone's (a team-mate who is
+    // only in the build-up, who is off the screen at the end).
+    const nP = 4 + (r() < 0.25 ? 1 : 0) + (tp.drama > 0.5 ? 1 : 0) - (air ? 1 : 0);
+    const frame = moment.frame ?? sc.viewport;
+    const outside = (q: Vec2) => q.x < frame.x1 - 2 || q.x > frame.x2 + 2 || q.y < frame.y1 - 2 || q.y > frame.y2 + 2;
+    const mates = leadInEntities(sc).filter((e) => e.side === "mate").map((e) => e.get())
+      .filter((m) => ok(m) && (!air || dist(m, air.from) > 1));
+    const lastUse = new Map<number, number>();
+    let side = sideBoth();
+    for (let i = 0; i < nP; i++) {
+      const prevTo = back.length ? back[back.length - 1].to : null;
+      const cands: { p: Vec2; mi: number }[] = [];
+      mates.forEach((m, mi) => {
+        const used = lastUse.get(mi);
+        if (used !== undefined && used >= i - 1) return;
+        const p = used === undefined
+          ? inPitch({ x: m.x + (r() - 0.5) * 1.6, y: m.y + 0.5 + r() * 1.5 }, 3)
+          : inPitch({ x: m.x + (r() - 0.5) * 6, y: m.y + 5 + r() * 3 }, 3);
+        cands.push({ p, mi });
+      });
+      // You: the one-two, the pass before the one you get back.
+      if (i === 1 && !air) cands.push({ p: inPitch({ x: R.x + (r() - 0.5) * 6, y: R.y + 5 + r() * 4 }, 3), mi: -1 });
+      // (Before the last ball, never forward to a man past their back line: the
+      // quick passes are played to feet in front of it. Measured without this:
+      // 1 in 4 tiki moves ended in a flag, mostly runs that could not be held back.)
+      const offRisk = (p: Vec2) => back.length > 0 && cur.y < p.y - 0.5 && cur.y < lineEnd + 1;
+      const fit = cands.filter((c) => { const L = dist(c.p, cur); return L >= 6 && L <= 18 && ok(c.p) && c.p.y > cur.y - 6 && !offRisk(c.p) && (!prevTo || dist(c.p, prevTo) > 5); });
+      if (fit.length) {
+        const c = pick(fit, fit.map((f) => 1 / (1 + Math.abs(dist(f.p, cur) - 9))), r);
+        if (c.mi >= 0) lastUse.set(c.mi, i);
+        ballTo(c.p, last(), shortV(dist(c.p, cur)));
+        side = c.p.x > cur.x ? -1 : 1;
+        continue;
+      }
+      // Nobody of the chance's there: a zigzag up the pitch, only out of the chance's picture.
+      let p = pointFrom(cur, 7, 13, side * 0.5, side * 1.35, (q) => outside(q) && (!prevTo || dist(q, prevTo) > 6));
+      if (!p) p = pointFrom(cur, 7, 13, -side * 0.5, -side * 1.35, (q) => outside(q) && (!prevTo || dist(q, prevTo) > 6));
+      if (!p) break;
+      ballTo(p, last(), shortV(dist(p, cur)));
+      side = -side;
+    }
+    if (back.length < 3) return null;
+  } else {
+    // A carry at pace, then the pass; or you carry it in yourself.
+    const youCarry = !air && !throughLast && r() < (sc.kind === "long_range" || sc.kind === "tight_angle" ? 0.6 : 0.35);
+    if (youCarry) {
+      const p = pointFrom(cur, 7, 12, -0.5, 0.5);
+      if (!p) return null;
+      add("carry", p, { v: carryV() });
+      if (r() < 0.35) { const q = pointFrom(cur, 8, 13, sideBoth() * 0.3, sideBoth() * 1.3); if (q) ballTo(q, false, shortV(dist(q, cur))); }
+    } else {
+      if (!air) {
+        const p = pointFrom(cur, 9, 15, sideBoth() * 0.2, sideBoth() * 1.1);
+        if (!p) return null;
+        ballTo(p, true, shortV(dist(p, cur)));
+      }
+      // The man on the ball drives at them (the crosser: down the wing).
+      const c = pointFrom(cur, 7, 12, -0.45, 0.45);
+      if (!c) return null;
+      add("carry", c, { v: carryV() });
+      if (r() < 0.2) { const q = pointFrom(cur, 8, 12, sideBoth() * 0.4, sideBoth() * 1.3); if (q) ballTo(q, false, shortV(dist(q, cur))); }
+    }
+  }
+  if (!back.length) return null;
+
+  // The times, forward: a moment on the ball, then each touch at its own speed.
+  const acts = back.reverse();
+  let t = 0.2 + 0.1 * r();
+  const hold = t;
+  acts.forEach((a, k) => {
+    if (k > 0) t += style === "tiki" ? 0.06 + 0.08 * r() : 0.14 + 0.14 * r();
+    a.t0 = t;
+    t += dist(a.from, a.to) / (a.v ?? CARRY_SPEED);
+    a.t1 = t;
+  });
+  let durS = t + FHR_TAIL_S;
+  // Too long: the earliest touches go (never the last ball, and never the long
+  // ball of a long-ball move: that is the move — it may run over instead).
+  const maxS = FHR_COMPACT_MAX_S + (FHR_COMPACT_BIG_MAX_S - FHR_COMPACT_MAX_S) * tp.drama;
+  const isLongBall = (a: FhrAction) => a.type === "pass" && dist(a.from, a.to) >= 24;
+  while (durS > maxS && acts.length > 1 && !(style === "long" && isLongBall(acts[0]))) {
+    const cut = acts[1].t0 - hold;
+    acts.shift();
+    acts.forEach((a) => { a.t0 -= cut; a.t1 -= cut; });
+    durS -= cut;
+  }
+  return { acts, durS, hold };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 //  The people
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -677,6 +984,8 @@ export interface FhrBuildUp extends LeadIn {
    * offside position is ALWAYS called: never `offside && !called`.
    */
   passChecks: { pass: number; by: string; behindLineM: number; judged: boolean; offside: boolean; called: boolean }[];
+  /** 22 Oct 2026: the style of a whole short move (the career's). Absent: the long move from the data. */
+  style?: FhrStyle;
   /** B20 (A1): seconds cut off the front of the move (builders.ts snappyBuildUp). Absent: the whole move plays. */
   trimmedS?: number;
   /** B2b: at your touches in the last 45 m that their nearest man pressed: how close he got (m, mean). */
@@ -794,14 +1103,15 @@ export function chanceSeed(sc: Scenario, seed: number): number {
  * the move ends, and there is no chance (`offside` on the lead-in). A run
  * that can't be timed cleanly in any try is called, never left uncalled.
  */
-export function fhrBuildUpFor(sc: Scenario, moment0: LeadMoment, adjust?: FhrAdjust): FhrBuildUp {
+export function fhrBuildUpFor(sc: Scenario, moment0: LeadMoment, adjust?: FhrAdjust, opt: { style?: FhrStyle } = {}): FhrBuildUp {
   const moment = adjustedMoment(moment0, adjust);
   const tp = fhrTempo(moment, adjust);
   const intel = fhrIntel(moment.usStrength, moment.themStrength);
   const base = chanceSeed(sc, moment.seed);
   const cover = coverSpotFor(sc, moment, base);
   // The match's own regain, this minute: shown first.
-  const showRegain = !!moment.regain && moment.regain.ago === 0;
+  // (A whole short move starts after the regain: their spell on the ball would double its length.)
+  const showRegain = !opt.style && !!moment.regain && moment.regain.ago === 0;
   // Is a run that needs timing mistimed? Decided once for the build-up, on its own stream.
   const caughtU = rngOf((base ^ 0x0ff51de) >>> 0)();
   const seedOf = (k: number) => (base + k * 0x632be5ab) >>> 0;
@@ -813,7 +1123,7 @@ export function fhrBuildUpFor(sc: Scenario, moment0: LeadMoment, adjust?: FhrAdj
   if (showRegain) { plans.push([cover, false]); if (cover) plans.push([null, false]); }
   for (let pi = 0; pi < plans.length; pi++) {
     const [cv, rg] = plans[pi];
-    const o: AttemptOpts = { intel, regain: rg, caughtU };
+    const o: AttemptOpts = { intel, regain: rg, caughtU, ...(opt.style ? { style: opt.style } : {}) };
     // (The fallbacks get fewer tries: the generator stays about as quick as before B2b.)
     for (let k = 0; k < (pi === 0 ? FHR_TRIES : FHR_FALLBACK_TRIES); k++) {
       // (A try that already has as many problems as the best so far can never be picked: it stops early, null.)
@@ -841,6 +1151,8 @@ interface AttemptOpts {
   caughtU: number;
   /** A run that can't be timed is called (the last resort; never left uncalled). */
   callUntimed?: boolean;
+  /** A whole short move in this style (the career's). Absent: the long move (routeFor's data route). */
+  style?: FhrStyle;
 }
 /** The problem a try lists when a run is offside and can't be held back in time. */
 const UNTIMED = "offside run not timed";
@@ -860,7 +1172,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     const [s0, s1] = o.intel.oppSpellS;
     plan = { band, targetY: band.y2 - (band.y2 - band.y1) * h, spellS: s0 + (s1 - s0) * r() };
   }
-  const route = routeFor(sc, moment, r, frame, tp, { intel: o.intel, regain: plan });
+  const route = routeFor(sc, moment, r, frame, tp, { intel: o.intel, regain: plan, style: o.style });
   if (!route && !force) return null;
   const R: Vec2 = { x: sc.ball.x, y: sc.ball.y };
   const acts: FhrAction[] = route?.acts ?? [{ type: "pass", from: inPitch({ x: R.x, y: R.y + 30 }), to: R, h: 3, src: "break", t0: 0.4, t1: 2 }];
@@ -960,13 +1272,17 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     const offEnd = { x: p.end.x - endSpot.x, y: p.end.y - endSpot.y };
     const offStart = { x: jitter.x, y: jitter.y + shiftY };
     let path: Vec2[] = [];
-    for (let k = 0; k <= 4; k++) {
-      const a0 = k / 4;
+    // A whole short move (o.style) has about half the time: if the shape taken
+    // all the way to the chance is still too quick, his own start offset is
+    // taken part-way to his place in the chance too (a third more each time).
+    for (let k = 0; k <= (o.style ? 7 : 4); k++) {
+      const a0 = Math.min(1, k / 4);
+      const os = k > 4 ? lerp(offStart, offEnd, (k - 4) / 3) : offStart;
       const raw: Vec2[] = [];
       for (let i = 0; i <= N; i++) {
         const f = i / N, g = 0.5 * f + 0.5 * smooth(f);
         const s = spotOf(lerp(lagBall[i], lagBall[N], a0 * (1 - f)));
-        raw.push({ x: s.x + offStart.x + (offEnd.x - offStart.x) * g, y: s.y + offStart.y + (offEnd.y - offStart.y) * g });
+        raw.push({ x: s.x + os.x + (offEnd.x - os.x) * g, y: s.y + os.y + (offEnd.y - os.y) * g });
       }
       // Smoothed over ±0.33 s (a man does not twitch with every pass), still ending exactly on his place.
       path = raw.map((_, i) => {
@@ -982,8 +1298,10 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
         return { x: clamp(v.x, Math.min(0.5, p.end.x), Math.max(PITCH_W - 0.5, p.end.x)), y: clamp(v.y, Math.min(0.5, p.end.y), Math.max(LEN - 0.5, p.end.y)) };
       });
       path[N] = { ...p.end };
+      if (o.style) path = nearHisPlace(path, p.end, Math.max(6, COMPACT_SPREAD_V * durS));
       if (maxSpeed(path) <= p.vmax * 0.82) break;
     }
+    if ((globalThis as Record<string, unknown>).__fhrDbg) console.log(`base ${p.key} v=${maxSpeed(path).toFixed(1)} vmax=${p.vmax.toFixed(1)} start→end ${dist(path[0], p.end).toFixed(1)}`);
     return path;
   };
   for (const [group, slots, side] of [[ours, slotOurs, "us"], [theirs, slotTheirs, "them"]] as const) {
@@ -1180,7 +1498,9 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
       let ok = false;
       for (let W = Math.min(5, iA); ; W = Math.min(iA, W + 2)) {
         for (let i = iA - W; i < iA; i++) out[i] = lerp(path[i], target, smooth((i - (iA - W)) / W));
-        if (okAround(iA - W - 4, iA + 4)) { ok = true; break; }
+        // (A one-touch spell is shorter than 4 samples: the run-in is judged up to its end, not into
+        // the path after it, which the way back below rewrites.)
+        if (okAround(iA - W - 4, o.style && back ? Math.min(iA + 4, iB) : iA + 4)) { ok = true; break; }
         if (W >= iA) break;
       }
       if (!ok) return null;
@@ -1274,10 +1594,16 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     const passLen = acts[s.last].type === "pass" ? dist(acts[s.last].from, acts[s.last].to) : 0;
     let best: Person | null = null, bestCost = Infinity;
     for (const p of ours) {
-      if (taken.has(p.key) && p.key !== "you") continue;
+      // A whole short move (o.style): a man may have the ball twice (pass and move:
+      // tiki-taka's triangles), as long as the touches he already has stay exactly where they are.
+      const again = taken.has(p.key) && p.key !== "you";
+      if (again && !o.style) continue;
       // You may give it and go (a one-two): only the touch before the one you get back.
-      if (p.key === "you" && (j !== spells.length - 3 || r() < 0.4)) continue;
-      if (!onSpell(pressed(p.path, s, p.key), p.vmax, s, spotFor(p.key, s), true)) continue;
+      if (p.key === "you" && (j !== spells.length - 3 || (!o.style && r() < 0.4))) continue;
+      const res = onSpell(pressed(p.path, s, p.key), p.vmax, s, spotFor(p.key, s), true);
+      if ((globalThis as Record<string, unknown>).__fhrDbg) console.log(`spell ${j} ${p.key} again=${again} res=${!!res} d=${dist(p.path[idx(s.tIn)], spotFor(p.key, s)(s.tIn)).toFixed(1)} tIn=${s.tIn.toFixed(2)} pins=${res ? p.pin.some((pn, i) => pn && dist(res.path[i], p.path[i]) > 1e-6) : "-"}`);
+      if (!res) continue;
+      if (o.style && (again || p.key === "you") && p.pin.some((pn, i) => pn && dist(res.path[i], p.path[i]) > 1e-6)) continue;
       const skill = carry ? stat(p.who, "dribbling") : passLen > 22 ? stat(p.who, "passing") : 65;
       const cost = dist(p.path[idx(s.tIn)], spotFor(p.key, s)(s.tIn)) - (skill - 65) * 0.08;
       if (cost < bestCost) { bestCost = cost; best = p; }
@@ -1484,7 +1810,10 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     const isOff = (yy: number) => judged && yy < HALF_LEN - OFF_EPS && yy < a.from.y - OFF_EPS && yy < line - OFF_EPS;
     const row = { pass: k, by, behindLineM: y - line, judged, offside: isOff(y), called: false };
     if (row.offside) {
-      if (o.caughtU < o.intel.mistime * (Math.abs(a.to.x - CX) > BOX_HALF_W ? WIDE_RUN_MISTIME : 1)) { row.called = true; called = { k, by, why: "mistimed" }; }
+      // (A whole short move: only its key ball — the last one, or one into space — is ever mistimed;
+      // the quick passes before it are timed. With every pass of a tiki move open to it, 3 in 10 ended in a flag.)
+      const keyBall = !o.style || k === acts.length - 1 || !!a.through;
+      if (keyBall && o.caughtU < o.intel.mistime * (o.style ? COMPACT_MISTIME : 1) * (Math.abs(a.to.x - CX) > BOX_HALF_W ? WIDE_RUN_MISTIME : 1)) { row.called = true; called = { k, by, why: "mistimed" }; }
       else {
         const [m0, m1] = o.intel.onsideM;
         const D = Math.min(line, a.from.y) + m0 + (m1 - m0) * r() - y;
@@ -1619,6 +1948,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     actOwners: shown.map((_, k) => owners[spellOfAct(k)] ?? "you"),
     people: all.map((p) => ({ key: p.key, side: p.side, role: roles[p.key], vmax: p.vmax, path: p.path })),
     problems, tries: tryNo, signature, frame,
+    ...(o.style ? { style: o.style } : {}),
     drama: tp.drama,
     cover: cover ? { end: { ...cover.end }, enterS: coverEnter } : null,
     gap: o.intel.gap,
