@@ -55,7 +55,7 @@ export const FHR_SNAPPY_S = 3;
 /** …at the biggest moment (drama 1: a level final, the 90th minute). */
 export const FHR_SNAPPY_BIG_S = 4;
 /** A foul's build-up starts this long before the foul (s). */
-export const FHR_FOUL_LEAD_S = 1.2;
+export const FHR_FOUL_LEAD_S = 0.8;
 /** The shortest a cut build-up may be when its start moves forward off a pass in the air (s). */
 export const FHR_SNAPPY_MIN_S = 2;
 /** The shortest a cut build-up ever is (a very long pass in the air at the cut, s). */
@@ -63,7 +63,8 @@ export const FHR_SNAPPY_FLOOR_S = 1.5;
 /** The most a cut build-up may run past its cap when its start moves back to a pass's kick (s). */
 export const FHR_SNAPPY_OVER_S = 1.5;
 /** A move that ends in a called offside: the offside pass starts at least this long after the build-up does. */
-export const FHR_SNAPPY_OFFSIDE_LEAD_S = 1.2;
+// 22 Oct 2026: 1.2 -> 0.6 (an offside build-up was still 5.3 s on average with a 3 s cap).
+export const FHR_SNAPPY_OFFSIDE_LEAD_S = 0.6;
 /**
  * A2: the share of each kind's fresh chances that get a build-up. Kinds a
  * move explains (a one-on-one, a cutback, a cross, a through ball) always do;
