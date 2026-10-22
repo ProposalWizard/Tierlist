@@ -195,7 +195,7 @@ export function fhrBuildUpOn(sc: Scenario, moment: LeadMoment, adjust?: FhrAdjus
     const whole = long ? fhrBuildUpFor(sc, moment, adjust) : fhrStyledBuildUp(sc, moment, adjust);
     const b = long || whole.durS <= FHR_COMPACT_BIG_MAX_S + 0.05 ? whole : snappyBuildUp(whole, FHR_COMPACT_BIG_MAX_S);
     const la = b.acts[b.acts.length - 1];
-    note({ kind: sc.kind, what: "open", cover: !!b.cover, drama: b.drama, durS: b.durS, runOnS: b.runOnS ?? 0, offside: !!b.offside, regain: !!b.regain, last: { t0: la.t0, t1: la.t1, endZ: la.endZ ?? 0 } });
+    note({ kind: sc.kind, what: "open", cover: !!b.cover, drama: b.drama, durS: b.durS, runOnS: b.runOnS ?? 0, offside: !!b.offside, regain: !!b.regain, style: b.style, passes: b.acts.filter((a) => a.type === "pass").length, last: { t0: la.t0, t1: la.t1, endZ: la.endZ ?? 0 } });
     lead = b;
   } else if (fhrWantsFoul(sc, moment)) {
     const whole = fhrFoulBuildUpFor(sc, moment);
@@ -211,7 +211,7 @@ export function fhrBuildUpOn(sc: Scenario, moment: LeadMoment, adjust?: FhrAdjus
 }
 
 /** For the test drivers (scripts/fhr/b2-stills.mjs): what the last build-up was. Read-only, never stored. */
-function note(v: { kind: ScenarioKind; what: "open" | "foul"; cover: boolean; drama: number; durS: number; runOnS: number; offside?: boolean; regain?: boolean; last?: { t0: number; t1: number; endZ: number } }) {
+function note(v: { kind: ScenarioKind; what: "open" | "foul"; cover: boolean; drama: number; durS: number; runOnS: number; offside?: boolean; regain?: boolean; style?: string; passes?: number; last?: { t0: number; t1: number; endZ: number } }) {
   (globalThis as Record<string, unknown>).__starLastBuildUp = { ...v, at: Date.now() };
 }
 
