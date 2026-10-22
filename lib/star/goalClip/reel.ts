@@ -21,6 +21,7 @@
  * loudness line. Pure; tests in tests/star/seasonReel.mts. Drawing is
  * reelRender.ts; the screen is components/star/SeasonReel.tsx.
  */
+import { seasonStartYear } from "../calendar";
 import type { CareerState } from "../types";
 import { seasonGoals, bestGoals, type CareerGoal } from "../goalLog";
 import type { ClipAngle } from "./cameras";
@@ -146,7 +147,8 @@ export function quickWindow(t: ClipTiming, len: number): { from: number; to: num
 
 /** "2026/27" for season `season` of a career that started in `startYear`. */
 export function seasonLabelOf(startYear: number, season: number): string {
-  const y = (startYear || 2026) + Math.max(1, season) - 1;
+  // startYear 2027 is the 2026/27 season (calendar.ts seasonStartYear).
+  const y = seasonStartYear(startYear || 2027, Math.max(1, season));
   return `${y}/${String((y + 1) % 100).padStart(2, "0")}`;
 }
 

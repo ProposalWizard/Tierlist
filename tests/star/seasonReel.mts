@@ -148,7 +148,8 @@ for (const n of [26, 30, 40, 45, 50]) {
 }
 
 // ── 5. Words ────────────────────────────────────────────────────────────────
-check(seasonLabelOf(2026, 1) === "2026/27" && seasonLabelOf(2026, 4) === "2029/30" && seasonLabelOf(2026, 74) === "2099/00", "season labels");
+// startYear is the FIFA edition: 2027 = the 2026/27 season (calendar.ts seasonStartYear).
+check(seasonLabelOf(2027, 1) === "2026/27" && seasonLabelOf(2027, 4) === "2029/30" && seasonLabelOf(2027, 74) === "2099/00", "season labels");
 check(goalCaption(goal(3, { minute: 34, opponent: "Arsenal", competition: "FA Cup" })) === "34' v Arsenal · FA Cup", "the caption reads 34' v Arsenal · FA Cup");
 
 if (problems.length) {

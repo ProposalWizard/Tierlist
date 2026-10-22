@@ -27,7 +27,11 @@ import { getClip, listClips } from "@/lib/star/goalClip/store";
 import { makeEdit, posterMoment } from "@/lib/star/goalClip/edit";
 import { drawEditFrame, prepareClipSprites } from "@/lib/star/goalClip/render";
 import { useAnimationsLook } from "@/lib/star/animLook";
-import { longSeason, shortSeason } from "@/lib/star/careerOverview";
+import { seasonLabelOf } from "@/lib/star/goalClip/reel";
+
+/** "2026/27" and "26/27", from the game's own calendar (the reel uses the same). */
+const longSeason = (startYear: number, season: number): string => seasonLabelOf(startYear, season);
+const shortSeason = (startYear: number, season: number): string => seasonLabelOf(startYear, season).slice(2);
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
 import GoalClipViewer from "./GoalClipViewer";
@@ -310,7 +314,7 @@ export default function CareerGoalsGallery({ career, goals: given }: {
   goals?: CareerGoal[];
 }) {
   const goals = useMemo(() => given ?? career.goalLog ?? [], [given, career.goalLog]);
-  const startYear = career.player.startYear ?? 2026;
+  const startYear = career.player.startYear ?? 2027;
   const { glow } = useClubTheme(career);
   const here = useClipsHere();
   const [filter, setFilter] = useState<Filter>("all");
@@ -450,7 +454,7 @@ export function BestGoalsList({ career }: { career: CareerState }) {
   const goals = useMemo(() => bestGoals(career.goalLog ?? [], 10), [career.goalLog]);
   const here = useClipsHere();
   const [open, setOpen] = useState<CareerGoal | null>(null);
-  const startYear = career.player.startYear ?? 2026;
+  const startYear = career.player.startYear ?? 2027;
   const isHere = (g: CareerGoal) => !!g.clipId && !!here?.has(g.clipId);
   return (
     <div data-best-goals>
