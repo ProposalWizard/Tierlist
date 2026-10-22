@@ -456,6 +456,28 @@ export type GraphicSpec =
       /** Your match's highlights: made first, before anyone else's (Leo, 8 Oct 2026). */
       priority?: boolean;
     }
+  /**
+   * GOAL OF THE MONTH (Leo, 22 Oct 2026, option B): your best goals of the
+   * month against two by other players in your league, with a fans' vote.
+   * The whole poll rides on the post, so the card needs nothing else; the
+   * same poll is also kept in `MediaState.gotm` (the source of truth if the
+   * post is pushed out of the feed before it closes). See goalOfMonth.ts.
+   */
+  | {
+      type: "gotmPoll";
+      pollId: string;
+      monthName: string;
+      entries: GotmEntry[];
+      /** The fans' votes, one per entry, fixed when the poll opens. */
+      fanVotes: number[];
+      /** Your one tap (an entry index). Adds a little weight to it. */
+      userVote?: number;
+      /** Votes your tap is worth (added to your pick's total once you vote). */
+      userWeight: number;
+      closed?: boolean;
+      /** The winning entry, once closed. */
+      winner?: number;
+    }
   | {
       type: "thumbnail"; title: string; badge: string;
       /** Goal videos (Leo, 7 Oct 2026): the recordings this post plays, in
@@ -545,6 +567,54 @@ export interface PotmNominee {
    * tile somebody pasted in.
    */
   own?: boolean;
+}
+
+/** One goal in a Goal of the Month poll. */
+export interface GotmEntry {
+  scorer: string;
+  scorerShort: string;
+  club: string;
+  isYou: boolean;
+  /** "25-yard curler v Spurs". */
+  detail: string;
+  /** 0-100: how hard it was (distance, kind, finish). See goalOfMonth.ts. */
+  quality: number;
+  /** Your goal's recording on this device, when it was seen. */
+  clipId?: string;
+  /** Otherwise a made video of it (goalClip/synth.ts). The scorer's names
+   *  are the entry's own (kept once, to keep the save small): see synthOf. */
+  synth?: Omit<SynthGoal, "scorer" | "scorerShort">;
+}
+
+/** A Goal of the Month poll, as `MediaState.gotm` keeps it. */
+export interface GotmPoll {
+  id: string;
+  season: number;
+  /** 0-9, August first (potm.ts monthOfCareer). */
+  month: number;
+  monthName: string;
+  postId: string;
+  /** Feed clock it opened at. It closes at your next match after this. */
+  openedAt: number;
+  entries: GotmEntry[];
+  fanVotes: number[];
+  userWeight: number;
+  userVote?: number;
+  closed?: boolean;
+  winner?: number;
+  /** Set when it closes; a closed poll drops its entries (the post keeps them). */
+  winnerIsYou?: boolean;
+}
+
+/** Goal of the Month bookkeeping, on `MediaState.gotm`. Absent on older saves. */
+export interface GotmState {
+  /** Your goals waiting for their month's poll, filed by season and month. */
+  goals: (GotmEntry & { season: number; month: number })[];
+  /** Other players' best two goals of the month so far, by "season-month". */
+  rivals: Record<string, GotmEntry[]>;
+  polls: GotmPoll[];
+  /** Fans points owed for a Goal of the Month you won (applyGoalOfMonthBoost). */
+  boostDue?: number;
 }
 
 export type GraphicKind = GraphicSpec["type"];
@@ -655,6 +725,8 @@ export interface MediaState {
    * two legacy single-value guards already would have let through anyway,
    * never a NEW hole. */
   seenCycleIds?: string[];
+  /** Goal of the Month (lib/star/media/goalOfMonth.ts). Absent on older saves. */
+  gotm?: GotmState;
 }
 
 export interface MediaCycle {
