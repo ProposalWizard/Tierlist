@@ -22,7 +22,7 @@ ok(!!mk && mk.home === "/admin/marketing", "Marketing is a game tab opening on /
 ok(gamesFor("admin").some((g) => g.key === "marketing") && !gamesFor("tester").some((g) => g.key === "marketing"), "admins see the tab, testers never do");
 ok(gamesFor("tester").length === GAMES.length - 1, "testers still see every other tab");
 const pages = ADMIN_PAGES.filter((p) => p.group === "marketing");
-ok(pages.length === 2 && pages.every((p) => p.access === "admin" && p.section === "marketing"), "two pages, both admins only");
+ok(pages.length === 4 && pages.every((p) => p.access === "admin" && p.section === "marketing"), "four pages (board, client, studio, uploads), all admins only");
 ok(GROUPS.find((g) => g.key === "marketing")?.game === "marketing", "the Marketing group sits on the Marketing tab");
 ok(gameForPath("/admin/marketing/client") === "marketing", "the client page belongs to the Marketing tab");
 ok(backFor("/admin/marketing").href === "/admin/team", "← on the board (a tab's home) goes to the Team area");

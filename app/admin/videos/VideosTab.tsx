@@ -12,6 +12,7 @@ import {
   RECORDERS, DRIVE_CLIENT_ID, DRIVE_FOLDER_NAME, canRecordScreen, connectDrive, lengthLabel,
   recordingName, startRecording, starterFor, uploadToDrive, type LiveRecording, type Recorder,
 } from "@/lib/recording";
+import { uploadToMarketing, suiteLink } from "@/lib/marketing/uploadClient";
 import LiveShareCard from "./LiveShareCard";
 import "./videos.css";
 
@@ -34,6 +35,8 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
   const [upload, setUpload] = useState<Upload>({ state: "idle" });
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  // "Send to Marketing" (22 Oct 2026): admins only; the take goes into the Marketing video storage.
+  const [mk, setMk] = useState<Upload>({ state: "idle" });
   const fileRef = useRef<HTMLInputElement>(null);
   const t0 = useRef(0);
   // The name is read when the upload starts, so a change typed mid-recording counts.
@@ -78,7 +81,7 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
   };
 
   const begin = async () => {
-    setError(null); setUpload({ state: "idle" }); setCopied(false);
+    setError(null); setUpload({ state: "idle" }); setMk({ state: "idle" }); setCopied(false);
     if (take) { URL.revokeObjectURL(take.url); setTake(null); }
     try {
       const r = await startRecording(mic);
@@ -107,7 +110,7 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
 
   const fromFile = (f: File | undefined) => {
     if (!f) return;
-    setError(null); setUpload({ state: "idle" }); setCopied(false);
+    setError(null); setUpload({ state: "idle" }); setMk({ state: "idle" }); setCopied(false);
     if (take) URL.revokeObjectURL(take.url);
     const url = URL.createObjectURL(f);
     const ext = (f.name.split(".").pop() || "mp4").toLowerCase();
@@ -117,6 +120,15 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
     v.onloadedmetadata = () => setTake({ blob: f, ext, seconds: isFinite(v.duration) ? v.duration : 0, at: new Date(f.lastModified || Date.now()), url });
     v.onerror = () => setTake({ blob: f, ext, seconds: 0, at: new Date(), url });
     v.src = url;
+  };
+
+  const sendToMarketing = async () => {
+    if (!take) return;
+    setMk({ state: "sending", share: 0 });
+    try {
+      const { key } = await uploadToMarketing(take.blob, name, null, (share) => setMk({ state: "sending", share }));
+      setMk({ state: "done", link: suiteLink(key) });
+    } catch (e) { setMk({ state: "failed", why: (e as Error).message }); }
   };
 
   const download = () => {
@@ -200,10 +212,18 @@ export default function VideosTab({ role }: { role: "admin" | "tester" }) {
               </div>
             )}
             {upload.state === "failed" && <p className="vt-err">{upload.why}</p>}
+            {mk.state === "sending" && (
+              <div className="vt-progress"><span><i style={{ width: `${Math.round(mk.share * 100)}%` }} /></span><b>Sending to Marketing · {Math.round(mk.share * 100)}%</b></div>
+            )}
+            {mk.state === "done" && <div className="vt-row"><span className="vt-ok">● In Marketing</span><a className="ash-btn ghost" href={mk.link}>Open in Studio</a></div>}
+            {mk.state === "failed" && <p className="vt-err">{mk.why}</p>}
 
             <div className="vt-row">
               {DRIVE_CLIENT_ID && upload.state !== "sending" && upload.state !== "done" && (
                 <button className="ash-btn" onClick={saveToDrive}>Save to Drive</button>
+              )}
+              {role === "admin" && mk.state !== "sending" && mk.state !== "done" && (
+                <button className="ash-btn ghost" onClick={sendToMarketing} title="Into the Marketing tab's video storage, for the editing suite">Send to Marketing</button>
               )}
               <button className="ash-btn ghost" onClick={download}>Download</button>
             </div>
