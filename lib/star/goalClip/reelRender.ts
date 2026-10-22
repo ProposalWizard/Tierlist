@@ -17,6 +17,7 @@ import { CX, POST_L, POST_R, PITCH_W, BOX_L, BOX_R, BOX_DEPTH, SIX_L, SIX_R, SIX
 import type { CareerGoal } from "../goalLog";
 import { drawScene } from "./render";
 import type { ClipMoves } from "./edit";
+import type { ClipAngle } from "./cameras";
 import type { GoalTrack } from "./track";
 import { segAt, shotAt, goalCaption, endLine, type ReelPlan, type ReelSeg } from "./reel";
 
@@ -275,14 +276,117 @@ function tag(ctx: CanvasRenderingContext2D, W: number, label: string, bg: string
   ctx.fillText(label, x + tw / 2, y + 12.5 * s);
 }
 
+/** The quick-fire counter, top left: "GOAL 31 · 32 · 33", the newest number
+ *  popping in, the ones before it fading back. */
+function quickCounter(ctx: CanvasRenderingContext2D, W: number, n: number, club: string, into: number, a: ReelAssets): void {
+  const s = W / 360;
+  const c = colours(club);
+  const x = 14 * s, y = 16 * s, h = 34 * s;
+  const nums = [n - 2, n - 1, n].filter((k) => k >= 1);
+  ctx.font = `${22 * s}px ${display(a)}`;
+  const parts = nums.map((k) => String(k));
+  const gap = ctx.measureText(" · ").width;
+  const ws = parts.map((p) => ctx.measureText(p).width);
+  ctx.font = `900 ${12 * s}px ${BODY}`;
+  const lw = ctx.measureText("GOAL").width;
+  const w = 12 * s + lw + 10 * s + ws.reduce((t, v) => t + v, 0) + gap * (parts.length - 1) + 12 * s;
+  ctx.fillStyle = "rgba(8,10,18,0.85)";
+  roundRect(ctx, x, y, w, h, 7 * s); ctx.fill();
+  ctx.fillStyle = c.shirt;
+  ctx.fillRect(x, y + 6 * s, 4 * s, h - 12 * s);
+  ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  ctx.fillStyle = GOLD;
+  ctx.fillText("GOAL", x + 12 * s, y + h / 2 + 0.5 * s);
+  let cx = x + 12 * s + lw + 10 * s;
+  ctx.font = `${22 * s}px ${display(a)}`;
+  parts.forEach((p, i) => {
+    const last = i === parts.length - 1;
+    const pop = last ? easeOut(into / 0.16) : 1;
+    ctx.save();
+    ctx.translate(cx + ws[i] / 2, y + h / 2 + 1.5 * s);
+    ctx.scale(0.6 + 0.4 * pop + (last ? 0.18 * Math.sin(Math.PI * clamp01(into / 0.24)) : 0), 0.6 + 0.4 * pop);
+    ctx.globalAlpha = last ? pop : 0.32 + 0.18 * i;
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.fillText(p, 0, 0);
+    ctx.restore();
+    cx += ws[i];
+    if (!last) {
+      ctx.fillStyle = "rgba(255,255,255,0.3)";
+      ctx.fillText(" · ", cx, y + h / 2 + 1.5 * s);
+      cx += gap;
+    }
+  });
+  ctx.globalAlpha = 1;
+}
+
+/** The quick-fire caption: one short line, bottom left ("63' v Spurs"). */
+function quickCaption(ctx: CanvasRenderingContext2D, W: number, H: number, g: CareerGoal, a: ReelAssets): void {
+  const s = W / 360;
+  const fade = ctx.createLinearGradient(0, H * 0.8, 0, H);
+  fade.addColorStop(0, "rgba(0,0,0,0)");
+  fade.addColorStop(1, "rgba(0,0,0,0.7)");
+  ctx.fillStyle = fade;
+  ctx.fillRect(0, H * 0.8, W, H * 0.2);
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `${34 * s}px ${display(a)}`;
+  const minute = `${g.minute}'`;
+  ctx.fillText(minute, 18 * s, H - 40 * s);
+  const mw = ctx.measureText(minute).width;
+  ctx.font = `900 ${16 * s}px ${BODY}`;
+  ctx.fillText(`v ${shortClub(g.opponent)}`, 18 * s + mw + 10 * s, H - 44 * s, W - mw - 50 * s);
+}
+
+/**
+ * The goal videos' scene, framed for the reel's tall picture. The TV camera
+ * looks level-ish across the pitch, so in 9:16 its top third is stand. The
+ * reel draws it a little taller than the canvas and lifts it, cropping that
+ * stand off the top: the play sits higher, more grass below for the caption.
+ * cameras.ts is untouched (the goal videos frame exactly as before).
+ */
+const LIFT: Partial<Record<ClipAngle, number>> = { tv: 0.26 };
+function reelScene(ctx: CanvasRenderingContext2D, W: number, H: number, tr: GoalTrack, angle: ClipAngle, t: number, moves: ClipMoves): void {
+  const k = LIFT[angle] ?? 0;
+  if (!k) { drawScene(ctx, W, H, tr, angle, t, moves); return; }
+  ctx.save();
+  ctx.translate(0, -H * k);
+  drawScene(ctx, W, H * (1 + k), tr, angle, t, moves);
+  ctx.restore();
+}
+
+/** A white flash: at a cut (quick-fire) and the instant the ball goes in. */
+function flash(ctx: CanvasRenderingContext2D, W: number, H: number, k: number, peak: number): void {
+  if (k < 0 || k >= 1) return;
+  ctx.fillStyle = `rgba(255,255,255,${peak * (1 - k) * (1 - k)})`;
+  ctx.fillRect(0, 0, W, H);
+}
+
 function drawGoalShot(ctx: CanvasRenderingContext2D, W: number, H: number, seg: Extract<ReelSeg, { kind: "goal" | "best" }>, into: number, a: ReelAssets, plan: ReelPlan): boolean {
   const tr = seg.goal.clipId ? a.tracks.get(seg.goal.clipId) : undefined;
   const at = shotAt(seg.shots, into);
   if (!tr || !at) return false;
-  drawScene(ctx, W, H, tr, at.shot.angle, at.t, a.moves);
+  // The instant it goes in: a small punch-in on the picture and a flash
+  // (live shots only; the slow replay is left clean).
+  const since = at.t - tr.goalT;
+  const hit = !at.shot.replay && since >= 0 && since < 0.35 ? since / 0.35 : -1;
+  if (hit >= 0) {
+    const z = 1 + 0.045 * (1 - hit) * (1 - hit);
+    ctx.save();
+    ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2);
+    reelScene(ctx, W, H, tr, at.shot.angle, at.t, a.moves);
+    ctx.restore();
+  } else {
+    reelScene(ctx, W, H, tr, at.shot.angle, at.t, a.moves);
+  }
+  if (hit >= 0) flash(ctx, W, H, hit / 0.5, 0.42);
   const s = W / 360;
   const c = colours(plan.club);
-  if (seg.kind === "goal") {
+  if (seg.kind === "goal" && seg.quick) {
+    quickCaption(ctx, W, H, seg.goal, a);
+    quickCounter(ctx, W, seg.n, plan.club, into, a);
+    flash(ctx, W, H, into / 0.14, 0.6);
+  } else if (seg.kind === "goal") {
     counter(ctx, W, seg.n, seg.of, plan.club);
     lowerThird(ctx, W, H, seg.goal, into, a);
     wipe(ctx, W, H, into, c.shirt);
@@ -412,12 +516,16 @@ function drawGoalCard(ctx: CanvasRenderingContext2D, W: number, H: number, seg: 
   const s = W / 360;
   const c = colours(plan.club);
   const best = seg.kind === "best";
+  const quick = seg.kind === "goal" && !!seg.quick;
+  // A quick-fire card plays its drawn strike at double speed.
+  if (quick) into *= 1.7;
   const accent = best ? GOLD : c.onDark;
   cardBg(ctx, W, H, best ? "#b45309" : c.shirt, 0.3);
   const pw = W - 56 * s, ph = pw * 0.62;
   const py = H * 0.17;
   miniPitch(ctx, 28 * s, py, pw, ph, seg.goal, into, accent);
-  if (seg.kind === "goal") counter(ctx, W, seg.n, seg.of, plan.club);
+  if (seg.kind === "goal" && seg.quick) quickCounter(ctx, W, seg.n, plan.club, into / 1.7, a);
+  else if (seg.kind === "goal") counter(ctx, W, seg.n, seg.of, plan.club);
   else goldPill(ctx, W, a);
   // The words, big, under the pitch.
   const k = easeOut((into - 0.1) / 0.35);
@@ -440,7 +548,8 @@ function drawGoalCard(ctx: CanvasRenderingContext2D, W: number, H: number, seg: 
     ctx.fillText(extra, W / 2, y0 + 86 * s, W * 0.9);
   }
   ctx.globalAlpha = 1;
-  if (seg.kind === "goal") wipe(ctx, W, H, into, c.shirt);
+  if (quick) flash(ctx, W, H, into / 0.24, 0.6);
+  else if (seg.kind === "goal") wipe(ctx, W, H, into, c.shirt);
   watermark(ctx, W, H);
 }
 

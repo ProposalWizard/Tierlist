@@ -112,7 +112,7 @@ export default function SeasonReelDevPage() {
         </div>
         <Label>Goals</Label>
         <div className="mb-3 flex flex-wrap gap-1.5">
-          {[20, 8, 1, 0].map((n) => <Pill key={n} on={goals === n} onClick={() => setGoals(n)}>{n === 0 ? "No goals" : `${n}`}</Pill>)}
+          {[40, 20, 8, 1, 0].map((n) => <Pill key={n} on={goals === n} onClick={() => setGoals(n)}>{n === 0 ? "No goals" : `${n}`}</Pill>)}
         </div>
         <Label>Recordings on this phone</Label>
         <div className="mb-3 flex flex-wrap gap-1.5">

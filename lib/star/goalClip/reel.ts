@@ -6,7 +6,10 @@
  *  1. a title card (club, season, the club's colours),
  *  2. every goal of the season, in order: about 3 s each, from just before
  *     the strike to just after it goes in, from the camera that suits it,
- *     with a small caption ("34' v Arsenal · FA Cup"),
+ *     with a small caption ("34' v Arsenal · FA Cup"). A big season stays
+ *     at most ~95 s: past the first goals (25 at most, fewer the more there
+ *     are) the rest go by quick-fire, strike to net, ~1.4 s each, a
+ *     "GOAL 31 · 32 · 33" counter ticking. None is dropped.
  *  3. the goal of the season again, slowed down,
  *  4. an end card: goals, assists, average rating, trophies.
  *
@@ -48,7 +51,9 @@ export interface ReelShot {
 export type ReelSeg =
   | { kind: "title"; at: number; dur: number }
   /** A goal: its recording (shots) or, with no recording, a card (shots empty). */
-  | { kind: "goal"; at: number; dur: number; goal: CareerGoal; n: number; of: number; shots: ReelShot[] }
+  /** `quick`: one of the quick-fire run past the first goals of a big season
+   *  (strike to net only, about 1.4 s). */
+  | { kind: "goal"; at: number; dur: number; goal: CareerGoal; n: number; of: number; shots: ReelShot[]; quick?: boolean }
   /** "GOAL OF THE SEASON", a beat before the replay. */
   | { kind: "bestIntro"; at: number; dur: number; goal: CareerGoal; n: number }
   /** The goal of the season again: live, then slow. A card when no recording. */
@@ -92,6 +97,14 @@ export const AFTER_GOAL_S = 1.0;
 /** A goal with no recording: its card is a little shorter than a clip. */
 export const CARD_MIN_S = 2.2;
 export const CARD_MAX_S = 3.0;
+/** A big season: at most this many goals get their full few seconds… */
+export const FULL_GOALS_MAX = 25;
+/** …and the goals part of the reel stays inside this, the rest going by
+ *  quick-fire (strike to net, these many seconds each). */
+export const GOALS_BUDGET_S = 72;
+export const QUICK_S = 1.4;
+export const QUICK_MIN_S = 1.2;
+export const QUICK_MAX_S = 1.6;
 /** The goal of the season's slow replay. */
 export const BEST_SLOW_RATE = 0.4;
 export const BEST_AIR_RATE = 0.3;
@@ -104,6 +117,33 @@ export function perGoalSeconds(n: number): number {
   return Math.max(GOAL_MIN_S, Math.min(GOAL_MAX_S, GOALS_TARGET_S / n));
 }
 
+/**
+ * How many of a season's `n` goals get their full moment; the rest (the
+ * last ones scored) are the quick-fire run. Up to 25 goals: all of them.
+ * Past that, as many as fit so the goals part stays about GOALS_BUDGET_S.
+ */
+export function fullGoalCount(n: number): number {
+  if (n <= FULL_GOALS_MAX) return n;
+  const fit = Math.floor((GOALS_BUDGET_S - n * QUICK_S) / (GOAL_MIN_S - QUICK_S));
+  return Math.max(0, Math.min(FULL_GOALS_MAX, fit));
+}
+
+/** Seconds per quick-fire goal: QUICK_S, shorter only for a giant season. */
+export function quickSeconds(n: number, full: number): number {
+  const q = n - full;
+  if (q <= 0) return QUICK_S;
+  return Math.max(QUICK_MIN_S, Math.min(QUICK_S, (GOALS_BUDGET_S - full * perGoalSeconds(n)) / q));
+}
+
+/** A quick-fire goal's window: from just before the strike to just after it
+ *  goes in, `len` seconds (QUICK_MIN_S..QUICK_MAX_S). */
+export function quickWindow(t: ClipTiming, len: number): { from: number; to: number } {
+  const to = Math.min(t.duration, t.goalT + 0.35);
+  const want = Math.max(QUICK_MIN_S, Math.min(QUICK_MAX_S, to - (t.strikeT - 0.2)));
+  const L = Math.max(QUICK_MIN_S, Math.min(want, len + 0.2));
+  return { from: Math.max(0, to - L), to };
+}
+
 /** "2026/27" for season `season` of a career that started in `startYear`. */
 export function seasonLabelOf(startYear: number, season: number): string {
   const y = (startYear || 2026) + Math.max(1, season) - 1;
@@ -111,16 +151,18 @@ export function seasonLabelOf(startYear: number, season: number): string {
 }
 
 /**
- * The camera that suits a goal: a header from the side, a long one from the
- * TV gantry, a penalty from up high, the rest take turns between the TV and
- * the spider-cam so twenty goals never look the same.
+ * The camera that suits a goal in a TALL picture (the reel is 9:16). Behind
+ * the net looking out is the one that fills a tall frame with football (sky
+ * a sliver, the ball coming at you); the TV gantry shows the distance of a
+ * long one and gives every third goal a change of view. The spider-cam
+ * ("high") and the side camera put a stand across the top half of a tall
+ * frame, so the reel never uses them (the goal videos still do).
  */
 export function angleFor(g: CareerGoal, i: number): ClipAngle {
   const how = (g.how ?? "").toLowerCase();
-  if (how.includes("header")) return "side";
-  if (how.includes("pen")) return "high";
+  if (how.includes("header") || how.includes("pen")) return "net";
   if (how.includes("free") || how.includes("long") || (g.distance ?? 0) >= 20) return "tv";
-  return i % 2 === 0 ? "tv" : "high";
+  return i % 3 === 2 ? "tv" : "net";
 }
 
 /** The live window of a goal: `len` seconds ending AFTER_GOAL_S after it goes in. */
@@ -159,8 +201,21 @@ export function planReel(input: PlanInput): ReelPlan {
 
   const len = perGoalSeconds(goals.length);
   const cardLen = Math.max(CARD_MIN_S, Math.min(CARD_MAX_S, len * 0.8));
+  const full = fullGoalCount(goals.length);
+  const qLen = quickSeconds(goals.length, full);
   goals.forEach((g, i) => {
     const t = g.clipId ? input.timings[g.clipId] : undefined;
+    if (i >= full) {
+      // The quick-fire run: strike to net, the counter ticking.
+      if (t && t.goalT > 0 && t.duration > 0) {
+        const w = quickWindow(t, qLen);
+        const shot: ReelShot = { angle: angleFor(g, i), from: w.from, to: w.to, rate: 1, replay: false };
+        push({ kind: "goal", at, dur: w.to - w.from, goal: g, n: i + 1, of: goals.length, shots: [shot], quick: true });
+      } else {
+        push({ kind: "goal", at, dur: qLen, goal: g, n: i + 1, of: goals.length, shots: [], quick: true });
+      }
+      return;
+    }
     if (t && t.goalT > 0 && t.duration > 0) {
       const w = liveWindow(t, len);
       const shot: ReelShot = { angle: angleFor(g, i), from: w.from, to: w.to, rate: 1, replay: false };
@@ -182,7 +237,7 @@ export function planReel(input: PlanInput): ReelPlan {
       const slowTo = Math.min(t.duration, t.goalT + 0.6);
       const rate = t.air ? BEST_AIR_RATE : BEST_SLOW_RATE;
       const shots: ReelShot[] = [
-        { angle: angleFor(best, n - 1) === "tv" ? "high" : "tv", from: liveFrom, to: liveTo, rate: 1, replay: false },
+        { angle: "tv", from: liveFrom, to: liveTo, rate: 1, replay: false },
         { angle: "net", from: slowFrom, to: slowTo, rate, replay: true },
       ];
       const dur = shots.reduce((a, s) => a + (s.to - s.from) / s.rate, 0);
@@ -265,8 +320,11 @@ export interface LevelPoint { at: number; gain: number }
 
 export const MUSIC_TITLE = 0.85;
 export const MUSIC_UNDER = 0.5;
-export const MUSIC_DUCK = 0.2;
+export const MUSIC_DUCK = 0.42;
 export const MUSIC_END = 1;
+/** Under the quick-fire run the music leads (no dip per goal: 1.4 s goals
+ *  would make it pump). */
+export const MUSIC_MONTAGE = 0.7;
 
 /**
  * The music's loudness line: fades in under the title, sits under the goals,
@@ -277,7 +335,9 @@ export const MUSIC_END = 1;
 export function musicLevels(plan: ReelPlan, timings: Record<string, ClipTiming>): LevelPoint[] {
   const pts: LevelPoint[] = [{ at: 0, gain: 0 }, { at: 1.6, gain: MUSIC_TITLE }];
   for (const s of plan.segs) {
-    if (s.kind === "goal") {
+    if (s.kind === "goal" && s.quick) {
+      pts.push({ at: s.at, gain: MUSIC_MONTAGE }, { at: s.at + s.dur, gain: MUSIC_MONTAGE });
+    } else if (s.kind === "goal") {
       pts.push({ at: s.at, gain: MUSIC_UNDER });
       const t = s.goal.clipId ? timings[s.goal.clipId] : undefined;
       const shot = s.shots[0];

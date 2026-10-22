@@ -1,5 +1,6 @@
 import {
   planReel, perGoalSeconds, musicLevels, segAt, shotAt, seasonLabelOf, goalCaption, reelMusicFor,
+  fullGoalCount, angleFor, FULL_GOALS_MAX, MUSIC_DUCK, QUICK_MIN_S, QUICK_MAX_S,
   type ClipTiming, type PlanInput,
 } from "../../lib/star/goalClip/reel";
 import { bestGoals, type CareerGoal } from "../../lib/star/goalLog";
@@ -14,6 +15,11 @@ import { bestGoals, type CareerGoal } from "../../lib/star/goalLog";
  *  - No recordings: every goal is a card, the reel still has a length.
  *  - No goals: title + end card only.
  *  - The music dips under each goal's strike and never goes above 1.
+ *  - A big season (40+ goals) stays at most ~95 s: past the first goals
+ *    the rest go by quick-fire (1.2-1.6 s, strike to net), none dropped,
+ *    the goal of the season still gets its full moment.
+ *  - The reel never films from the spider-cam or the side (a stand across
+ *    the top half of a tall picture).
  */
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
@@ -67,7 +73,7 @@ const input = (n: number, withClips = true): PlanInput => {
   check(lv[0].gain === 0, "music fades in from silence");
   check(lv.every((x) => x.gain >= 0 && x.gain <= 1), "music level stays 0..1");
   check(lv.every((x, i) => i === 0 || x.at >= lv[i - 1].at), "music points in time order");
-  const dips = lv.filter((x) => x.gain <= 0.2 && x.at > 2 && x.at < p.duration - 1).length;
+  const dips = lv.filter((x) => x.gain <= MUSIC_DUCK && x.at > 2 && x.at < p.duration - 1).length;
   check(dips >= 20, `the music ducks under every goal (${dips} low points)`);
   check(lv[lv.length - 1].gain === 0 && Math.abs(lv[lv.length - 1].at - p.duration) < 1e-9, "music ends silent at the end");
   check(reelMusicFor(p) === "03-winning", "a season with a trophy gets the winning track");
@@ -102,6 +108,43 @@ const input = (n: number, withClips = true): PlanInput => {
   check(perGoalSeconds(40) >= 2.4 && perGoalSeconds(3) <= 4.2, "per-goal time stays 2.4-4.2 s");
   const big = planReel(input(45));
   check(big.segs.filter((s) => s.kind === "goal").length === 45, "45 goals: every one is still in it");
+}
+
+// ── 4b. A big season: the quick-fire run ───────────────────────────────────
+for (const n of [26, 30, 40, 45, 50]) {
+  const inp = input(n);
+  const p = planReel(inp);
+  const goals = p.segs.filter((s) => s.kind === "goal");
+  const quick = goals.filter((s) => s.kind === "goal" && s.quick);
+  check(goals.length === n, `${n} goals: none dropped (${goals.length})`);
+  check(p.duration <= 95, `${n} goals: at most 95 s (${p.duration.toFixed(1)} s)`);
+  check(quick.length === n - fullGoalCount(n) && fullGoalCount(n) <= FULL_GOALS_MAX, `${n} goals: the last ${n - fullGoalCount(n)} are quick-fire (${quick.length})`);
+  check(goals.every((s, i) => (s.kind === "goal" && !!s.quick) === (i >= fullGoalCount(n))), `${n} goals: the quick-fire run comes after the full ones`);
+  check(quick.every((s) => s.dur >= QUICK_MIN_S - 1e-9 && s.dur <= QUICK_MAX_S + 1e-9), `${n} goals: each quick one 1.2-1.6 s (${quick.map((s) => s.dur.toFixed(2)).join(" ")})`);
+  check(quick.every((s) => {
+    if (s.kind !== "goal" || !s.shots.length) return true;
+    const t = inp.timings[s.goal.clipId!];
+    return s.shots[0].from <= t.strikeT + 0.05 && s.shots[0].to > t.goalT;
+  }), `${n} goals: each quick one shows the strike and the ball going in`);
+  const b = p.segs.find((s) => s.kind === "best");
+  check(!!b && b.kind === "best" && b.dur > 5 && b.shots.some((x) => x.rate < 1), `${n} goals: the goal of the season keeps its full slow replay`);
+  const lv = musicLevels(p, inp.timings);
+  check(lv.every((x) => x.gain >= 0 && x.gain <= 1), `${n} goals: music line valid`);
+  if (n === 40) console.log(`  40 goals: ${(p.duration).toFixed(1)} s, ${goals.length - quick.length} full + ${quick.length} quick-fire`);
+}
+{
+  const p = planReel(input(40, false));
+  check(p.duration <= 95, `40 goals, no recordings: at most 95 s (${p.duration.toFixed(1)} s)`);
+  const p20 = planReel(input(20));
+  check(p20.segs.every((s) => !(s.kind === "goal" && s.quick)), "20 goals: no quick-fire run");
+}
+{
+  const kinds = ["header", "penalty", "long_range", "free_kick", "one_on_one", "cutback"];
+  const used = new Set<string>();
+  for (let i = 0; i < 30; i++) used.add(angleFor(goal(i, { how: kinds[i % kinds.length] }), i));
+  check(!used.has("high") && !used.has("side"), `the reel never uses the spider-cam or side camera (${[...used].join(",")})`);
+  const b = planReel(input(20)).segs.find((s) => s.kind === "best");
+  check(!!b && b.kind === "best" && b.shots.every((x) => x.angle !== "high" && x.angle !== "side"), "the goal of the season: no spider-cam either");
 }
 
 // ── 5. Words ────────────────────────────────────────────────────────────────

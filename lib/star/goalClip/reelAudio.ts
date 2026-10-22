@@ -20,6 +20,8 @@ import { musicLevels, reelMusicFor, type ClipTiming, type ReelPlan } from "./ree
 
 /** The crowd's level on a card with no recording, and on the title/end. */
 const BED_CARD = 0.07;
+/** The quick-fire run: the crowd a step back, the music leads. */
+const QUICK_CROWD = 0.6;
 
 /** The sound plan for the whole reel (crowd, kicks, nets, the commentator). */
 export function reelCrowdPlan(plan: ReelPlan, tracks: Map<string, GoalTrack>): AudioPlan {
@@ -36,12 +38,13 @@ export function reelCrowdPlan(plan: ReelPlan, tracks: Map<string, GoalTrack>): A
         shots: seg.shots.map((s) => ({ track: 0, angle: s.angle, from: s.from, to: s.to, rate: s.rate, replay: s.replay })),
       };
       const p = planAudio(edit);
-      for (const c of p.cues) if (c.at < seg.dur) cues.push({ ...c, at: c.at + seg.at, gain: seg.kind === "goal" ? c.gain * 0.9 : c.gain });
+      for (const c of p.cues) if (c.at < seg.dur) cues.push({ ...c, at: c.at + seg.at, gain: seg.kind === "goal" ? c.gain * (seg.quick ? QUICK_CROWD : 0.9) : c.gain });
       for (const b of p.bed) bed.push({ at: Math.min(seg.at + seg.dur, b.at + seg.at), gain: b.gain });
     } else if (seg.kind === "goal" || seg.kind === "best") {
       // A card: a short cheer as the drawn ball goes in.
       bed.push({ at: seg.at, gain: BED_CARD }, { at: seg.at + seg.dur, gain: BED_CARD });
-      cues.push({ at: seg.at + (seg.goal.assist ? 1.1 : 0.7), sound: "crowd-cheer-stadium", gain: 0.55, rate: 1 });
+      const quick = seg.kind === "goal" && seg.quick;
+      cues.push({ at: seg.at + (quick ? 0.55 : seg.goal.assist ? 1.1 : 0.7), sound: "crowd-cheer-stadium", gain: quick ? 0.35 : 0.55, rate: 1 });
     } else if (seg.kind === "end") {
       bed.push({ at: seg.at, gain: BED_CARD }, { at: seg.at + seg.dur - 0.5, gain: 0.02 });
       cues.push({ at: seg.at + 0.4, sound: "crowd-cheer-stadium", gain: 0.4, rate: 1 });
@@ -64,6 +67,50 @@ export function timingOf(tr: GoalTrack): ClipTiming {
     air: strike?.mode === "header" || strike?.mode === "volley",
   };
 }
+
+/** Where a whoosh rides a cut: into each full goal, into the goal of the
+ *  season, into the end card. Not under the quick-fire run (too many). */
+export function whooshTimes(plan: ReelPlan): number[] {
+  const out: number[] = [];
+  for (const s of plan.segs) {
+    if ((s.kind === "goal" && !s.quick) || s.kind === "bestIntro" || s.kind === "end") out.push(s.at);
+  }
+  return out;
+}
+
+/** A short air whoosh peaking at `at`: filtered noise swept upwards. */
+function whoosh(ctx: OfflineAudioContext, out: AudioNode, at: number): void {
+  const len = 0.42;
+  const t0 = at - len * 0.7;
+  if (t0 < 0) return;
+  const n = Math.floor(ctx.sampleRate * len);
+  const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  let seed = 98765 + Math.floor(at * 100);
+  for (let i = 0; i < n; i++) { seed = (seed * 1103515245 + 12345) & 0x7fffffff; d[i] = seed / 0x3fffffff - 1; }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass"; bp.Q.value = 1.4;
+  bp.frequency.setValueAtTime(500, t0);
+  bp.frequency.exponentialRampToValueAtTime(4200, t0 + len * 0.7);
+  bp.frequency.exponentialRampToValueAtTime(1800, t0 + len);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(WHOOSH_GAIN, t0 + len * 0.7);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
+  src.connect(bp); bp.connect(g); g.connect(out);
+  src.start(t0);
+}
+const WHOOSH_GAIN = 0.22;
+/**
+ * The music's overall level and the mix's last trim, set by measuring the
+ * mixed track (22 Oct 2026, 40-goal season, the winning track): music about
+ * -18 dB RMS on the title card and -15 dB on the end card; under a goal's
+ * roar the crowd sits about 6-7 dB above it; the loudest peak about -1.5 dBFS.
+ */
+const MUSIC_LIFT = 2.4;
+const OUT_TRIM = 0.84;
 
 const musicBytes = new Map<string, Promise<ArrayBuffer | null>>();
 function fetchMusic(url: string): Promise<ArrayBuffer | null> {
@@ -89,9 +136,13 @@ function decode(ctx: BaseAudioContext, data: ArrayBuffer): Promise<AudioBuffer |
  * first (mixAudio), then the music laid under it. Resolves null only when
  * this browser has no Web Audio at all.
  */
-export async function mixReelAudio(plan: ReelPlan, tracks: Map<string, GoalTrack>, timings: Record<string, ClipTiming>): Promise<AudioBuffer | null> {
+export async function mixReelAudio(
+  plan: ReelPlan, tracks: Map<string, GoalTrack>, timings: Record<string, ClipTiming>,
+  /** For measuring only: the crowd or the music alone. */
+  only?: "crowd" | "music",
+): Promise<AudioBuffer | null> {
   if (typeof window === "undefined" || plan.duration <= 0) return null;
-  const crowd = await mixAudio(reelCrowdPlan(plan, tracks)).catch(() => null);
+  const crowd = only === "music" ? null : await mixAudio(reelCrowdPlan(plan, tracks)).catch(() => null);
   const OAC = window.OfflineAudioContext
     || (window as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext }).webkitOfflineAudioContext;
   if (!OAC) return crowd;
@@ -101,21 +152,26 @@ export async function mixReelAudio(plan: ReelPlan, tracks: Map<string, GoalTrack
   } catch { return crowd; }
 
   const id = reelMusicFor(plan);
-  const bytes = await fetchMusic(cueUrl(id));
+  const bytes = only === "crowd" ? null : await fetchMusic(cueUrl(id));
   const music = bytes ? await decode(ctx, bytes) : null;
-  if (!music) return crowd;
+  if (!music && only === "music") return null;
+  if (!music && only !== "crowd") return crowd;
 
   // A gentle limiter, so a roar on top of the music never clips.
   const master = ctx.createDynamicsCompressor();
   master.threshold.value = -8; master.knee.value = 8; master.ratio.value = 5;
   master.attack.value = 0.005; master.release.value = 0.25;
-  master.connect(ctx.destination);
+  // A last trim so the loudest roar peaks under -1 dBFS (measured, 22 Oct).
+  const trim = ctx.createGain();
+  trim.gain.value = OUT_TRIM;
+  master.connect(trim); trim.connect(ctx.destination);
   if (crowd) {
     const src = ctx.createBufferSource();
     src.buffer = crowd;
     src.connect(master);
     src.start(0);
   }
+  if (!music) return ctx.startRendering().catch(() => crowd);
   const m = ctx.createBufferSource();
   m.buffer = music;
   const meta = CUES[id];
@@ -124,8 +180,11 @@ export async function mixReelAudio(plan: ReelPlan, tracks: Map<string, GoalTrack
   const levels = musicLevels(plan, timings);
   g.gain.setValueAtTime(levels[0]?.gain ?? 0, 0);
   for (const p of levels) g.gain.linearRampToValueAtTime(p.gain, Math.max(0, p.at));
-  m.connect(g); g.connect(master);
+  const lift = ctx.createGain();
+  lift.gain.value = MUSIC_LIFT;
+  m.connect(g); g.connect(lift); lift.connect(master);
   m.start(0, meta.loop ? meta.pre : 0);
+  for (const at of whooshTimes(plan)) whoosh(ctx, master, at);
   try {
     return await ctx.startRendering();
   } catch { return crowd; }
