@@ -801,9 +801,10 @@ const CELEBS = [
   // running straight on the spot, arms out, so the facing the game gives is the one he shows
   // times: off the moments its crossover steps bring the knees together (celebbones)
   { name: "celebArmsOut", file: "celebrate_airplane", frames: 10, loop: "once", zero: true, noYaw: true, spread: 5, times: [0, 0.33, 0.6, 0.95, 1.35, 1.75, 1.95, 2.4, 2.7, 3.0] },
-  // times: the knees press together and pass through each other between 1.3 s and 1.9 s
-  // of the 3D clip (measured, celebbones), so no frame is taken from that stretch
-  { name: "celebKneeSlide", file: "knee_slide", frames: 9, loop: "once", zero: true, times: [0, 0.3, 0.6, 0.9, 1.2, 2.1, 2.45, 2.8, 3.2] },
+  // times: even through the slide. (The knees used to press together between 1.3 s and
+  // 1.9 s and those frames were skipped; keyed.py's knee_slide was fixed on 22 Oct 2026:
+  // knees ~33 cm apart through the whole slide, measured with celebbones.)
+  { name: "celebKneeSlide", file: "knee_slide", frames: 9, loop: "once", zero: true, times: [0, 0.3, 0.6, 0.95, 1.3, 1.7, 2.1, 2.6, 3.2] },
   { name: "celebFistPump", file: "celebrate_pump", frames: 8, loop: "once" },
   { name: "celebJump", file: "celebrate_jump", frames: 7, loop: "once", spread: 4 },
   { name: "celebRoar", file: "celebrate_roar", frames: 7, loop: "once" },
