@@ -114,7 +114,11 @@ const nextTick = () => new Promise<void>(r => setTimeout(r, 0));
  */
 export async function encodeEdit(
   edit: Edit,
-  opts: { credit?: ClipCredit; onProgress?: (k: number) => void; signal?: AbortSignal; audio?: AudioBuffer | null } = {},
+  opts: {
+    credit?: ClipCredit; onProgress?: (k: number) => void; signal?: AbortSignal; audio?: AudioBuffer | null;
+    /** Waited on before every frame (the page-side maker waits for a pause in scrolling and idle time). */
+    gate?: () => Promise<void>;
+  } = {},
 ): Promise<EncodedClip | null> {
   if (!canMakeVideo() || edit.shots.length === 0) return null;
   await prepareClipSprites(edit.moves);
@@ -199,6 +203,7 @@ export async function encodeEdit(
     for (let i = 0; i < n; i++) {
       if (opts.signal?.aborted) throw new DOMException("aborted", "AbortError");
       if (failure) throw failure;
+      if (opts.gate) await opts.gate();
       feedAudio((i + 1) / fps);
       drawEditFrame(ctx, edit, i / fps, opts.credit);
       const frame = new VideoFrame(canvas, { timestamp: Math.round(i * frameUs), duration: Math.round(frameUs) });
@@ -206,7 +211,8 @@ export async function encodeEdit(
       frame.close();
       // Let the encoder catch up, and the page breathe.
       while (encoder.encodeQueueSize > 4) await new Promise<void>(r => setTimeout(r, 4));
-      if (i % 3 === 2) { opts.onProgress?.(i / n); await nextTick(); }
+      if (opts.gate) opts.onProgress?.(i / n);
+      else if (i % 3 === 2) { opts.onProgress?.(i / n); await nextTick(); }
     }
     feedAudio(Infinity);
     await encoder.flush();

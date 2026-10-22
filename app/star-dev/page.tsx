@@ -14,6 +14,8 @@ import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type Free
 import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competitionBetting";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
 import { putClip, pruneClips } from "@/lib/star/goalClip/store";
+import { warmVideoMaker } from "@/lib/star/goalClip/makeVideo";
+import { premakeFeedVideos } from "@/lib/star/goalClip/premake";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
@@ -65,7 +67,7 @@ import { windowInterest, withRecall, withAgreedWage, markWalkedAway } from "@/li
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
-import { generateForMatch, generateForInternational, generateForCallUp, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, generateForRollover, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
+import { generateForMatch, generateForInternational, generateForCallUp, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, generateForRollover, hasFreshMedia, toggleLike, applyGoalOfMonthBoost, voteGoalOfMonth } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { markGodMode, withGodMode } from "@/lib/star/godMode";
 import { moveToClub, squadPlayerFromHit, addToSquad, removeFromSquad, setDevStart, type PlayerSearchHit } from "@/lib/star/devTeam";
@@ -1241,6 +1243,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // never one a saved replay points at.
   const careerForClipsRef = useRef<CareerState | null>(null);
   careerForClipsRef.current = career;
+  // The goal-video maker starts during the match (speed pass, 22 Oct 2026):
+  // its worker loads the figures then, so the feed after the match never waits.
+  useEffect(() => {
+    if (phase !== "match") return;
+    const t = setTimeout(() => warmVideoMaker(), 8000);
+    return () => clearTimeout(t);
+  }, [phase]);
+
   const handleGoalClip = useCallback((track: GoalTrack) => {
     void putClip(track).then(() => {
       const c = careerForClipsRef.current;
@@ -1568,6 +1578,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     next.media = nextFixture.kind === "international"
       ? generateForInternational(career, next, nextFixture, stats, nationOf(career), nationKits(nationOf(career)).home, nationStrength(nationOf(career)))
       : generateForMatch(career, next, nextFixture, stats);
+    // Goal of the Month you won: a small boost with the fans (media/goalOfMonth.ts).
+    { const b = applyGoalOfMonthBoost(next); next.relationships = b.relationships; next.media = b.media; }
+    // Your match's videos start being made now, in the background, so they
+    // are ready when the feed opens (lib/star/goalClip/premake.ts).
+    { const seen = new Set((career.media?.posts ?? []).map(p => p.id)); void premakeFeedVideos((next.media?.posts ?? []).filter(p => !seen.has(p.id))); }
     // …and so does the rest of the division, the same week — `next.results`
     // already carries every OTHER fixture `playLeagueWeek` simulated
     // alongside yours (empty on a cup/Europe/international week, when the
@@ -1839,6 +1854,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // stays liked when you come back.
   const handleToggleLike = useCallback((postId: string) => {
     setCareer(c => (c ? toggleLike(c, postId) : c));
+  }, []);
+  // Goal of the Month: your vote in the poll (lib/star/media/goalOfMonth.ts).
+  const handleVote = useCallback((postId: string, index: number) => {
+    setCareer(c => (c ? voteGoalOfMonth(c, postId, index) : c));
   }, []);
 
   const handleMediaContinue = useCallback(() => {
@@ -4308,7 +4327,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   if (phase === "media" && activeNav !== "media") {
     return (
       <>
-        <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} onToggleLike={handleToggleLike} />
+        <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} onToggleLike={handleToggleLike} onVote={handleVote} />
         {/* The first time: what this screen is (v0.24, P2-85). */}
         {career.unlocks && !hasSeen(career, "reactions-tut") && (
           <PointerTour key="reactions-tut" steps={REACTIONS_TOUR} onDone={() => setCareer(c => (c ? markSeen(c, "reactions-tut") : c))} />
@@ -5317,6 +5336,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <PhoneHome
           career={career}
           onToggleLike={handleToggleLike}
+          onVote={handleVote}
           onLeave={(ph) => openHub(ph, FROM_PHONE)}
           onClose={() => handleNavigate("home")}
           installed={career.unlocks ? (id) => appInstalled(career, id) : undefined}

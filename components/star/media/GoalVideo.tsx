@@ -2,9 +2,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import { getClips } from "@/lib/star/goalClip/store";
-import { makeEdit, editDuration, posterMoment, clipFileName, type ClipStyle } from "@/lib/star/goalClip/edit";
-import { drawEditFrame, prepareClipSprites, type ClipCredit } from "@/lib/star/goalClip/render";
-import { encodeEdit, saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
+import { makeEdit, editDuration, clipFileName, type ClipStyle } from "@/lib/star/goalClip/edit";
+import type { ClipCredit } from "@/lib/star/goalClip/render";
+import { saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
+import { makeVideo, keptVideo, posterFor, workerReady, videosOnPage } from "@/lib/star/goalClip/makeVideo";
+import { goalVideoKey } from "@/lib/star/goalClip/premake";
 import { useAnimationsLook } from "@/lib/star/animLook";
 import { synthTrack, type SynthGoal } from "@/lib/star/goalClip/synth";
 import { planAudio, mixAudio } from "@/lib/star/goalClip/audio";
@@ -188,7 +190,8 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
   const release = useRef<(() => void) | null>(null);
   if (release.current === null && priority > 0) release.current = owe(priority);
   useEffect(() => () => { release.current?.(); }, []);
-  const key = `${style}|${variant}|${moves}|${clipIds.join(",")}|${synthKey}|${credit?.handle ?? ""}`;
+  // The same name premake.ts uses, so a video made at full time is found here.
+  const key = goalVideoKey(style, variant, moves, clipIds, synth, credit?.handle);
 
   useEffect(() => {
     let live = true;
@@ -225,18 +228,40 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     setStatus("ready");
   }, [key]);
 
-  // The still: one frame, drawn once the figures have loaded.
+  // The still: one frame, drawn in the video worker (makeVideo.ts) and only
+  // copied onto this canvas here, so it never holds the feed up.
   useEffect(() => {
     if (!edit || status === "ready") return;
     let live = true;
-    prepareClipSprites(edit.moves).finally(() => {
+    void posterFor(key, edit, credit).then(img => {
       const c = canvasRef.current;
-      if (!live || !c) return;
-      const ctx = c.getContext("2d");
-      if (ctx) drawEditFrame(ctx, edit, 0, credit, posterMoment(edit));
+      if (!live || !c || !img) return;
+      c.getContext("2d")?.drawImage(img, 0, 0, c.width, c.height);
     });
     return () => { live = false; };
-  }, [edit, status, credit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edit, status, key]);
+
+  // Made before on this phone (kept in IndexedDB): ready at once, no queue.
+  const [keptChecked, setKeptChecked] = useState(false);
+  useEffect(() => {
+    if (!edit || made.has(key)) { setKeptChecked(true); return; }
+    let live = true;
+    setKeptChecked(false);
+    void keptVideo(key).then(v => {
+      if (!live) return;
+      if (v) {
+        const entry = keep(key, { ...v, audio: null });
+        setUrl(entry.url);
+        setStatus("ready");
+        // A file without its own sound plays the mix alongside it.
+        if (!v.hasAudio) void mixAudio(planAudio(edit)).then(a => { entry.clip.audio = a; }).catch(() => { /* silent */ });
+      }
+      setKeptChecked(true);
+    });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edit, key]);
 
   const start = async (quiet = false) => {
     if (!quiet) setWanted(true);
@@ -251,9 +276,10 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
       let job = making.get(key);
       if (!job) {
         const e = edit;
+        // Made in the worker when the phone allows (makeVideo.ts); kept once made.
         const make = () => mixAudio(planAudio(e))
           .catch(() => null)
-          .then(audio => encodeEdit(e, { credit, onProgress: setProgress, audio }));
+          .then(audio => makeVideo(key, e, { credit, onProgress: setProgress, audio }));
         // A tap skips the queue; a post merely near the screen waits its turn.
         job = quiet ? inTurn(make, priority) : make();
         making.set(key, job);
@@ -288,11 +314,17 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     return () => { nearObs.disconnect(); viewObs.disconnect(); };
   }, [edit, canPlay]);
 
+  // Made in the worker: start as soon as the post is drawn (the feed only
+  // draws posts near the screen, FeedWindow.tsx). Made on the page (no
+  // worker): only once it is on screen, so scrolling past never makes one.
+  const [offPage, setOffPage] = useState<boolean | null>(null);
+  useEffect(() => { let live = true; void workerReady().then(ok => { if (live) setOffPage(ok && !videosOnPage()); }); return () => { live = false; }; }, []);
   useEffect(() => {
-    // Your own match's videos start straight away, near the screen or not.
-    if ((near || priority > 0) && edit && canPlay && status === "idle") void start(true);
+    if (!keptChecked || offPage === null) return;
+    const go = offPage ? true : (onView || (priority > 0 && near));
+    if (go && edit && canPlay && status === "idle") void start(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [near, priority, edit, canPlay, status]);
+  }, [near, onView, priority, edit, canPlay, status, keptChecked, offPage]);
 
   useEffect(() => {
     // Its own job is queued (inTurn) or done: stop holding the others back.
