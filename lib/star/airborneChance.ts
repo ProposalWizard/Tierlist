@@ -74,7 +74,7 @@ export interface AirStrike {
 export type StrikeContact = Contact & { air?: AirStrike };
 
 import { HEADER_Z, VOLLEY_MAX_Z, airZOf } from "./airDrawings";
-import { aerialHeaderPace, aerialVolleyPace } from "./aerial";
+import { aerialHeaderPace, aerialVolleyPace, headerJump } from "./aerial";
 export { HEADER_Z, VOLLEY_MAX_Z };
 const HEADER_PACE = 0.72;          // a header is softer than a strike
 const VOLLEY_PACE = 1.06;          // a clean volley comes off hot
@@ -122,7 +122,7 @@ export interface AirRead {
  * random number: the same tap is always the same strike (and the same replay).
  * Technique softens every miss: ×1.12 at 30, ×1 at 50, ×0.76 at 90.
  */
-export function airContactRead(air: AirStrike): AirRead {
+export function airContactRead(air: AirStrike, ballZ?: number): AirRead {
   const cx = Math.max(-1, Math.min(1, air.cx ?? 0));
   const cy = Math.max(-1, Math.min(1, air.cy ?? 0));
   const lift = Math.max(0, Math.min(1, air.lift));
@@ -145,6 +145,15 @@ export function airContactRead(air: AirStrike): AirRead {
     if (side > 0.45) read.label = "GLANCED", read.good = false;
     else if (cy > 0.6) read.label = "LOOPED UP", read.good = false;
     else if (cy < -0.25) read.label = "NODDED DOWN";
+    // Above your reach (aerial.ts headerJump): met at a stretch, softer and
+    // up off the top of your head. Only with Aerial and a height on the strike.
+    const st = headerStretch(ballZ, air.aerial);
+    if (st > 0) {
+      read.pace *= 1 - HEADER_STRETCH_PACE * st;
+      read.vzAdd += HEADER_STRETCH_VZ * st;
+      if (st >= 0.999) read.label = "JUST A TOUCH", read.good = false;
+      else if (read.good) read.label = "STRETCHED", read.good = false;
+    }
     return read;
   }
   const [lo, hi] = VOLLEY_SWEET;
@@ -182,18 +191,30 @@ export function airForgiveness(air: Pick<AirStrike, "tech" | "aerial">): number 
 export function applyAirborne(ball: Ball, scenario: Scenario, air: AirStrike | undefined): Ball {
   if (!air) return ball;
   const lift = Math.max(0, Math.min(1, air.lift));
-  const read = airContactRead(air);
   // This chance's own height (airDrawings.ts airZOf: the kind's usual height
   // unless the chance carries its own); the airborne test switch's header on
   // another kind of chance keeps the usual one.
   const top = scenario.kind === air.kind ? airZOf(scenario) : air.kind === "header" ? HEADER_Z : VOLLEY_MAX_Z;
+  // How far above (+) or below (-) the usual header height you met it (m): 0
+  // whenever heights do not vary, so the strike is then exactly as before.
+  const aboveM = air.kind === "header" ? (top - HEADER_Z) * (0.85 + 0.15 * lift) : 0;
+  const metZ = air.kind === "header" ? top * (0.85 + 0.15 * lift) : top * lift;
+  const read = airContactRead(air, metZ);
   if (air.kind === "header") {
-    ball.z = top * (0.85 + 0.15 * lift);
+    ball.z = metZ;
     // Aerial sets how hard it is headed: ×0.8 at 30, ×1 at 60, ×1.2 at 90.
     const hp = HEADER_PACE * aerialHeaderPace(air.aerial);
     ball.vel = { x: ball.vel.x * hp, y: ball.vel.y * hp };
     // Nodded down: whatever lift the contact gave is mostly taken away.
     ball.vz = Math.max(-4, Math.min(2.5, ball.vz * 0.35 - 1.2));
+    // The height it was met at is (mostly) taken back over the flight, the
+    // volley's way: a header met at 2.5 m is nodded down harder, so it does
+    // not sail over the men in front of it just for being high.
+    if (aboveM !== 0) {
+      const speed = Math.max(4, Math.abs(ball.vel.y));
+      const t = Math.max(0.25, Math.abs(ball.pos.y) / speed);
+      ball.vz -= (aboveM * (aboveM > 0 ? HEADER_Z_TAKEBACK_UP : HEADER_Z_TAKEBACK_DOWN)) / t;
+    }
     ball.spin *= 0.3;
     ball.topspin = 0;
     offLine(ball, read);
@@ -213,6 +234,41 @@ export function applyAirborne(ball: Ball, scenario: Scenario, air: AirStrike | u
   ball.resting = false;
   markLanding(ball, scenario);
   return ball;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  HOW HIGH YOU MET IT (headers piece 4, 22 Oct 2026). With AIR_HEIGHT_VARIES
+//  a header is met anywhere from 1.5 to 2.6 m. Left alone, a high one flew
+//  over the defenders' block (the engine's block reach is head height, 1.9 m)
+//  and the goal rate jumped (60: 27 → 37 per 100, 90: 39 → 49). A pace or
+//  miss penalty for a high ball was tried and dropped: it hit weak headers
+//  far harder than strong ones (30: -6, 90: +1). What works is the nod: a
+//  ball met high is headed DOWN harder (you get over it), so it still meets
+//  the men in front of it. Measured with scripts/aerial/heights.mts: every
+//  level stays within 2 per 100 of the fixed-height rate.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** How much of the height difference is taken back over the flight. 1 = the
+ *  ball reaches the goal line exactly as high as a usual header would. A ball
+ *  met above the usual height is nodded down harder than that (you get over
+ *  it): HEADER_Z_TAKEBACK_UP; a low, stooping header is lifted back by
+ *  exactly its difference: HEADER_Z_TAKEBACK_DOWN. */
+export const HEADER_Z_TAKEBACK_UP = 3;
+export const HEADER_Z_TAKEBACK_DOWN = 1;
+
+/** A ball this far above your reach (m) is barely touched (stretch 1). */
+export const HEADER_OVER_MAX_M = 0.3;
+/** At full stretch the header loses this share of its pace, and goes up this much (m/s). */
+export const HEADER_STRETCH_PACE = 0.45;
+export const HEADER_STRETCH_VZ = 1.5;
+/**
+ * How stretched a header is: 0 within your reach, 1 at HEADER_OVER_MAX_M or
+ * more above it. 0 whenever the strike has no Aerial or no height (older
+ * replays, the airborne test switch): exactly as before.
+ */
+export function headerStretch(ballZ: number | undefined, aerial: number | undefined): number {
+  if (ballZ === undefined || aerial === undefined || !Number.isFinite(ballZ) || !Number.isFinite(aerial)) return 0;
+  return Math.min(1, headerJump(ballZ, aerial).overM / HEADER_OVER_MAX_M);
 }
 
 /** Turn, slow and lift the struck ball by a read (a clean, central hit: no change). */

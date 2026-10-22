@@ -65,3 +65,45 @@ export function aerialVolleyPace(aerial: number | undefined): number {
   if (aerial === undefined || !Number.isFinite(aerial)) return 1;
   return Math.max(0.85, Math.min(1.15, 1 + (aerial - 60) * AERIAL_VOLLEY_PACE_PER_PT));
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+//  THE JUMP (Harry, 22 Oct 2026, "Inside Aerial": heading must involve
+//  JUMPING, and Aerial & Acrobatics sets how high you jump, about 0.45 m at
+//  Aerial 40 to 0.75 m at 90).
+//
+//  Your reach = where your forehead meets a ball standing + your jump. The
+//  standing forehead is 0.1 m under the top of a man's head (hitbox.ts
+//  HITBOX_DEFAULTS.standHeight, 1.85 m): 1.75 m. A straight line, so:
+//    Aerial 30: jump 0.39 m, reach 2.14 m
+//    Aerial 60: jump 0.57 m, reach 2.32 m
+//    Aerial 90: jump 0.75 m, reach 2.50 m (plus the stretch: see below)
+//  The engine's own team-mates jump 0.5 m (hitbox.ts jumpHeight): Aerial 52.
+//  A cross within your reach is met clean; above it, at a stretch
+//  (airborneChance.ts headerStretch), and too far above, barely touched.
+// ─────────────────────────────────────────────────────────────────────────
+
+import { HITBOX_DEFAULTS } from "./hitbox";
+
+/** Where your forehead meets the ball standing (m). */
+export const HEADER_STAND_Z = HITBOX_DEFAULTS.standHeight - 0.1;
+/** Jump height (m) at Aerial 40, and per Aerial point. */
+export const AERIAL_JUMP_AT_40 = 0.45;
+export const AERIAL_JUMP_PER_PT = 0.006;
+
+/** How high you jump (m) for an Aerial, held inside 0.3-0.85 m. */
+export function aerialJumpM(aerial: number): number {
+  const a = Number.isFinite(aerial) ? aerial : 40;
+  return Math.max(0.3, Math.min(0.85, AERIAL_JUMP_AT_40 + (a - 40) * AERIAL_JUMP_PER_PT));
+}
+
+/** The highest ball your forehead meets cleanly (m). */
+export function headerReachM(aerial: number): number {
+  return HEADER_STAND_Z + aerialJumpM(aerial);
+}
+
+/** The jump a header at `ballZ` takes, and how far over your reach it is (m). */
+export function headerJump(ballZ: number, aerial: number): { jumpM: number; maxJumpM: number; overM: number } {
+  const maxJumpM = aerialJumpM(aerial);
+  const need = Math.max(0, ballZ - HEADER_STAND_Z);
+  return { jumpM: Math.min(need, maxJumpM), maxJumpM, overM: Math.max(0, need - maxJumpM) };
+}
