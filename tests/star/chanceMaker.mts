@@ -53,7 +53,8 @@ for (const kind of DRAWN) {
     n++;
     const mates = mateBodiesOf(made.sc).filter((p) => !parked(p)).length;
     if (made.sc.defenders.length !== made.shape.defenders.length) wrongD++;
-    if (mates !== made.shape.mates.length) wrongM++;
+    // A drawing can hold a team-mate parked off the pitch; count the same way on both sides.
+    if (mates !== made.shape.mates.filter((p) => !parked(p)).length) wrongM++;
   }
   ok(n > 100 && wrongD === 0 && wrongM === 0, `${kind}: drawn defenders and team-mates, exactly (${n} served; wrong defenders ${wrongD}, wrong team-mates ${wrongM})`);
 }
