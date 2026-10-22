@@ -17,7 +17,7 @@ The proven example is v01 (`docs/marketing/videos/v01-patch-0.1-0.3/script.md`, 
 
 1. **Name it and make the card.** Read `marketing/board.json`, take the next free `vNN`, say id + title in one line, create the card in `idea`, commit (skill `video-board`, step 0).
 2. **Read the note.** Open the patch note page (`patch-notes/pages/<version>/`, data in `lib/patchNotesData.ts`; Harry's versions end in `h`, so check the branch). Every number must come from it, and never claim a feature that is not live (RUL-KIB-004).
-3. **Pick the hook = the biggest player-facing change.** Something a player would feel (a keeper that saves everything, an aim that was 0.42 m off), not an internal fix. Say the reason in one line.
+3. **Pick the hook from the most intriguing STILL, not just the biggest change.** Harry on v01 (22 Oct 2026): *"the first one wasn't good enough to be viral, some of the stills directly from the patch notes are intriguing and we need to work on our hook."* So: open every still in the note(s) first and shortlist the 3–5 that make you stop scrolling (something looks wrong, funny, surprising or beautiful — a keeper diving the wrong way, men piled up, a before/after that is obviously different). The hook is that picture on screen in the first second, plus one line that makes the viewer need the answer ("why does our keeper save EVERYTHING?"). The biggest player-facing change is the fallback, not the default. Write 3 hook options (picture + first line + on-screen text) for each premise.
 4. **Premise first.** Offer Harry 2 or 3 different stories (different hook, different before to after). He picks one. A note that changes the premise is a restart (`video-board`, step 2).
 5. **Write the beats: Problem, Why, Fix, one number each.** Voice per RUL-KIB-001: short, cheeky, football-mad, numbers first ("9.8% to 47.6%"). 30 to 60 s total, about 3 to 6 s a beat. Open with the headline on screen from frame 0 and the line "3 mates are building the best football game ever". Write `script.md` in v01's table shape: time, voiceover, on screen, source (the note line each number comes from).
 6. **Pictures.** Only real screenshots or clips from the note's own `img/` folder or a real run of the game. Anything drawn is marked "ILLUSTRATION" on screen (RUL-KIB-002). If a version has no stills, either ask for a capture or use drawn diagrams marked ILLUSTRATION (FACT-KIB-007). No real club badges or player photos (RUL-KIB-003). A goal on screen is a recording, never a re-run (see CLAUDE.md "Goal videos are recordings"; no Brain code yet).
@@ -32,7 +32,13 @@ The proven example is v01 (`docs/marketing/videos/v01-patch-0.1-0.3/script.md`, 
 15. **Apply his notes.** Skill `suite-inbox`: triage table first, render only on Done or Lock, then `applied`, `add-render`, move the card. Words for a new voice line go back to Harry as text before any voicing.
 16. **After posting.** Add post links to the card; write what it taught as a new `FACT-KIB-NNN` (`video-board`, step 8). Never invent view numbers.
 
+## Lessons so far
+
+- **v01 (patch notes 0.1–0.3, 21 Oct 2026): not viral enough** (Harry). The hook was a line about the team, not a picture you can't look away from; the drawn beats (v0.2–0.3 illustrations) were weaker than the real stills. Next time: hook on a real, intriguing still; fewer, stronger beats; real stills over drawings.
+- Harry will port his scriptwriting, storytelling, client-building and AI-video skills from his other repo later. When they land, this skill's hook and script steps defer to them (method only; no other client's material).
+
 ## Checklist (paste in chat before handing over)
+- [ ] Hook = a real, intriguing still in the first second (3 options shown to Harry)
 - [ ] Card exists, on the right stage, pushed (or said it is not pushed)
 - [ ] Hook is the biggest player-facing change
 - [ ] Every beat has one number and its patch-note source line
