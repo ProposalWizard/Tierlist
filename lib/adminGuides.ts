@@ -2428,7 +2428,7 @@ export const ADMIN_GUIDES = {
       "If GitHub can't be reached, the board shows the copy built into the site and says so at the top.",
     ],
     inGame: ["Nowhere. This is for making our own videos."],
-    dev: "app/admin/marketing/page.tsx · components/admin/marketing/{ProductionBoard,MarketingTabs}.tsx · lib/marketing/board.ts (pure; tests/star/adminMarketing.mts) · /api/admin/marketing/board · marketing/board.json · .claude/skills/video-board/SKILL.md · leak guard: scripts/marketing/private-names-guard.mjs",
+    dev: "app/admin/marketing/page.tsx · components/admin/marketing/{ProductionBoard,MarketingTabs}.tsx · lib/marketing/board.ts (pure; tests/star/adminMarketing.mts) · /api/admin/marketing/board · marketing/board.json · .claude/skills/{video-board,patch-note-video,tiktok-remix}/SKILL.md · leak guard: scripts/marketing/private-names-guard.mjs",
   },
   "/admin/marketing/client": {
     title: "Knowitball client",
