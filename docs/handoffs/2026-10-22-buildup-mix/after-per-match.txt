@@ -1,0 +1,8 @@
+ST flow=New: chances/match 6.35 (dribbles 0.45); real 74 of 885 served = 8.4% (of open play 9.1%); real/match 0.49
+   build-ups/match 4.93 (83.6% of served), mean 3.14 s, seconds/match 15.5, offside build-ups/match 0.31
+ST flow=Old: chances/match 6.76 (dribbles 0.38); real 117 of 957 served = 12.2% (of open play 13.4%); real/match 0.78
+   build-ups/match 5.32 (83.4% of served), mean 3.16 s, seconds/match 16.8, offside build-ups/match 0.21
+LW flow=New: chances/match 7.04 (dribbles 1.06); real 71 of 897 served = 7.9% (of open play 9.1%); real/match 0.47
+   build-ups/match 4.71 (78.8% of served), mean 3.05 s, seconds/match 14.4, offside build-ups/match 0.20
+LW flow=Old: chances/match 7.07 (dribbles 1.09); real 81 of 897 served = 9.0% (of open play 10.2%); real/match 0.54
+   build-ups/match 4.79 (80.2% of served), mean 3.10 s, seconds/match 14.9, offside build-ups/match 0.20

@@ -112,6 +112,11 @@ export const NEW_FIGURE_SCALE = 0.8;
  *  0.8 but with the goalie at 1x"); dropped with option C (21 Oct 2026), so it is 1.
  *  The keeper is drawn at MATCH_KEEPER_R_SHARE of a man. */
 export const NEW_OUTFIELD_SHRINK = 1;
+/** The keeper next to the men (Harry, 22 Oct 2026: "goalie still looks too small").
+ *  Before size B the keeper skipped the men's 0.8 shrink, so he stood about a man's
+ *  height (18.2 v 17.8 px). Dropping that shrink grew the men only, leaving him at
+ *  ~0.82 of a man. This puts the old ratio back: 1 / 0.8 = 1.25. */
+export const NEW_KEEPER_GROW = 1.25;
 /** The ball: this much of its zoomed-out size. Option C grew the men only; the ball
  *  keeps its size (0.7 × the old 0.8 shrink = 0.56, ~5.6 px on a phone). */
 export const NEW_BALL_SCALE = 0.56;
