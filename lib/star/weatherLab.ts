@@ -12,8 +12,8 @@
  */
 import { integrateBallOld, type Ball } from "./canvasEngine";
 import { integrateBallReal } from "./ballPhysics";
-import type { Conditions, Weather } from "./weather";
-import { pitchLabel, pitchWord, type Ground } from "./pitchQuality";
+import { conditionsFor, type Conditions, type Weather } from "./weather";
+import { clubPitch, groundFor, pitchLabel, pitchWord, type Ground } from "./pitchQuality";
 
 export interface WeatherDials {
   weather: Weather;
@@ -25,6 +25,14 @@ export interface WeatherDials {
   /** 0.25..1, 1 a perfect pitch. */
   pitch: number;
   ground: Ground;
+  /**
+   * How hard a bad pitch is on the ball. "tame" (the default, feel check
+   * 22 Oct 2026): it runs almost as normal, then grabs and stops sharply at a
+   * crawl, so about 1 normal pass in 11 more dies short on the worst dry pitch
+   * than on a clear day. "harsh": the first build, kept to compare (87% of
+   * normal passes died short on the worst dry pitch, Old ball).
+   */
+  worst?: "tame" | "harsh";
 }
 
 export const CLEAR_DIALS: WeatherDials = { weather: "clear", windSpeed: 0, windTo: 90, pitch: 1, ground: "normal" };
@@ -42,6 +50,9 @@ export function windVector(speed: number, to: number): { x: number; y: number } 
   const a = (to * Math.PI) / 180;
   return { x: speed * Math.sin(a), y: -speed * Math.cos(a) };
 }
+
+/** How hard a baked, bad pitch grips the ball at a bounce (tame). Tuned by scripts/weather/feelCheck.mts. */
+export const SKID_DRY = 0.4;
 
 export function buildConditions(d: WeatherDials): Conditions {
   const b = 1 - Math.max(0.25, Math.min(1, d.pitch));   // how bad the pitch is
@@ -61,16 +72,21 @@ export function buildConditions(d: WeatherDials): Conditions {
   const wet = d.weather === "rain" || d.weather === "heavy";
   const ground: Ground = wet ? "wet" : d.ground === "wet" ? "normal" : d.ground;
   // A worn pitch: a bit slower and a bit flatter, whatever the weather.
-  friction *= 1 + 0.5 * b;
+  const harsh = d.worst === "harsh";
+  friction *= 1 + (harsh ? 0.5 : 0.05) * b;
   bounce *= 1 - 0.15 * b;
   // Puddles on a bad wet pitch hold the ball: less skid.
   skid *= 1 - 0.4 * b;
   let deadBelow: number | undefined;
   if (ground === "dry" && b > 0.04) {
     // Baked and bare: low bounce, slows fast, and at worst a slow ball stops dead.
-    friction *= 1 + 0.9 * b;
+    friction *= 1 + (harsh ? 0.9 : 0.08) * b;
     bounce *= 1 - 0.4 * b;
-    deadBelow = Math.round(3.2 * Math.pow(b, 1.3) * 100) / 100;
+    deadBelow = Math.round((harsh ? 3.2 : 2.5) * Math.pow(b, 1.3) * 100) / 100;
+    // Tame: the baked, rough turf grips the ball at each bounce, so a flatter
+    // bounce does not let a skipping ball keep more of its pace (without this
+    // a ground pass ran FURTHER on a bad dry pitch than on a perfect one).
+    if (!harsh) skid = -SKID_DRY * b;
   }
   const windV = d.windSpeed > 0 ? windVector(d.windSpeed, d.windTo) : undefined;
   const pl = pitchLabel(1 - b, ground);
@@ -81,7 +97,7 @@ export function buildConditions(d: WeatherDials): Conditions {
     note: `${note} ${pl}.${windV ? ` Wind ${Math.round(d.windSpeed)} m/s, ${windWords(d.windTo)}.` : ""}`,
     drag, friction: round3(friction), bounce: round3(bounce), wind: 0,
     ...(windV ? { windV } : {}),
-    ...(skid > 0 ? { skid: round3(skid) } : {}),
+    ...(skid !== 0 ? { skid: round3(skid) } : {}),
     ...(deadBelow ? { deadBelow } : {}),
   };
 }
@@ -165,4 +181,28 @@ export function measure(strike: Strike, cond: Conditions | undefined, mode: "old
   }
   for (const k of Object.keys(sum) as (keyof typeof sum)[]) sum[k] /= n;
   return sum;
+}
+
+// ── The plan for the real game (NOT wired in: Leo and Harry decide) ─────────
+
+/**
+ * What a career fixture WOULD play in if this were switched on: the same
+ * weather roll as today (`conditionsFor`, so the same days stay windy or wet),
+ * the wind given a speed (7.6-13 m/s, from today's strength) and a fixed
+ * direction for the match, the home club's own pitch, and a dry spell from
+ * `groundFor`. Only the weather test page's measurements call this.
+ */
+export function plannedDials(season: number, week: number, homeClub: string, homeCity = ""): WeatherDials {
+  const today = conditionsFor(season, week, homeCity);
+  const strength = Math.abs(today.wind) / 2.6;          // 0.4..1 on a windy day
+  let h = Math.imul(season * 9176 + week * 313 + 7, 2654435761) >>> 0;
+  h ^= h >>> 13;
+  return {
+    weather: today.weather,
+    windSpeed: today.weather === "wind" ? Math.round(4 + strength * 9) : 0,
+    windTo: (h % 8) * 45,
+    pitch: clubPitch(homeClub).quality,
+    ground: groundFor(season, week, today.weather === "rain" || today.weather === "heavy"),
+    worst: "tame",
+  };
 }

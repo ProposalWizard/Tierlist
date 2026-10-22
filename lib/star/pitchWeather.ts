@@ -34,7 +34,9 @@ export interface PitchWeatherExtras {
   /** Wind velocity at 10 m, in pitch axes (x across, y up the pitch: +y is
    *  away from the goal you attack). m/s. */
   windV?: { x: number; y: number };
-  /** 0..1: how much of a bounce's lost pace a wet surface gives back. */
+  /** -1..1: how much of a bounce's lost pace a wet surface gives back (above
+   *  0), or how much more a baked, rough pitch takes off (below 0: -0.5 takes
+   *  half as much again). */
   skid?: number;
   /** m/s: a rolling ball slower than this is grabbed by a bad dry pitch. */
   deadBelow?: number;
@@ -51,6 +53,13 @@ export function windAtHeight(z: number): number {
   return Math.max(0, Math.min(1.15, Math.log(Math.max(z, 0.1) / Z0) / LOG_REF));
 }
 
+/** A ball skimming the grass (under 25 cm) is held in line by it; the wind
+ *  takes hold as it rises, fully from 1 m. Without this, the Old ball's long
+ *  run of low skips after landing drifted 18 m sideways in a 10 m/s wind. */
+export function windGrip(z: number): number {
+  return Math.max(0, Math.min(1, (z - 0.25) / 0.75));
+}
+
 /**
  * The extra acceleration the wind gives a ball in the air, over the still-air
  * drag the ball already has: drag on the speed relative to the air, minus
@@ -59,7 +68,8 @@ export function windAtHeight(z: number): number {
 export function windAccel(
   vx: number, vy: number, vz: number, z: number, w: { x: number; y: number }, exact = true,
 ): { ax: number; ay: number; az: number } {
-  const f = windAtHeight(z);
+  const f = windAtHeight(z) * windGrip(z);
+  if (f === 0) return { ax: 0, ay: 0, az: 0 };
   const wx = w.x * f, wy = w.y * f;
   const rx = vx - wx, ry = vy - wy;
   const sRel = Math.hypot(rx, ry, vz), s = Math.hypot(vx, vy, vz);
@@ -81,11 +91,12 @@ export function applyWind(ball: BallLike, cond: PitchWeatherExtras | undefined, 
   ball.vel.x += a.ax * dt; ball.vel.y += a.ay * dt; ball.vz += a.az * dt;
 }
 
-/** A bounce's horizontal keep on a wet surface. Unchanged when there is no `skid`. */
+/** A bounce's horizontal keep: more on a wet surface, less on a baked one. Unchanged when there is no `skid`. */
 export function skidKeep(keep: number, cond: PitchWeatherExtras | undefined): number {
   const s = cond?.skid;
   if (!s) return keep;
-  return keep + (1 - keep) * Math.max(0, Math.min(1, s));
+  if (s > 0) return keep + (1 - keep) * Math.min(1, s);
+  return Math.max(0, keep - (1 - keep) * Math.min(1, -s));
 }
 
 /** A rolling ball's speed drop this step on a bad dry pitch. Unchanged when there is no `deadBelow`. */

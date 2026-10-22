@@ -65,26 +65,33 @@ function WindArrow({ to, speed, size = 64, onPick, x, y }: { to: number; speed: 
 }
 
 /** One strike from above: the ball goes up the picture. 1 m across = 1 m along. */
-function TopView({ flight, ghost, title, wind }: { flight: Flight; ghost?: Flight; title: string; wind?: { to: number; speed: number } }) {
-  const W = 168, H = 330, L = 110, pad = 10;
-  const s = (H - pad * 2) / L;
+function TopView({ flight, ghost, title, wind, fit }: { flight: Flight; ghost?: Flight; title: string; wind?: { to: number; speed: number }; fit: Flight[] }) {
+  const W = 168, H = 330, pad = 10;
+  // 1 m across = 1 m along, sized so the whole path (and the clear one) fits.
+  // Both pictures share one scale (`fit`), so they compare side by side.
+  const all = fit.flatMap((f) => f.path);
+  const L = Math.max(110, ...all.map((p) => p.y + 4));
+  const side = Math.max(4, ...all.map((p) => Math.abs(p.x) + 2));
+  const s = Math.min((H - pad * 2) / L, (W / 2 - 4) / side);
   const X = (x: number) => W / 2 + x * s, Y = (y: number) => H - pad - y * s;
   const pts = (f: Flight) => f.path.map((p) => `${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ");
   const air = (f: Flight) => f.path.filter((p) => p.z > 0.15);
   const land = (f: Flight) => ({ x: X(f.drift), y: Y(f.carry) });
   const end = flight.path[flight.path.length - 1];
+  const arrowLeft = !!wind && wind.speed > 0 && Math.sin((wind.to * Math.PI) / 180) > 0.1;
   return (
     <div style={{ textAlign: "center" }}>
       <div className="bc-label" style={{ marginBottom: 4 }}>{title}</div>
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ background: "linear-gradient(#1f6b3a, #1a5e33)", borderRadius: 4, maxWidth: "100%" }}>
-        {Array.from({ length: 12 }, (_, i) => <line key={i} x1={0} x2={W} y1={Y(i * 10)} y2={Y(i * 10)} stroke="rgba(255,255,255,0.12)" />)}
-        {[20, 40, 60, 80, 100].map((m) => <text key={m} x={4} y={Y(m) - 2} fontSize={8} fill="rgba(255,255,255,0.55)">{m} m</text>)}
+        {Array.from({ length: Math.floor(L / 10) + 1 }, (_, i) => <line key={i} x1={0} x2={W} y1={Y(i * 10)} y2={Y(i * 10)} stroke="rgba(255,255,255,0.12)" />)}
+        {Array.from({ length: Math.floor(L / 20) }, (_, i) => (i + 1) * 20).map((m) => <text key={m} x={arrowLeft ? W - 4 : 4} textAnchor={arrowLeft ? "end" : "start"} y={Y(m) - 2} fontSize={8} fill="rgba(255,255,255,0.55)">{m} m</text>)}
         {ghost && <polyline points={pts(ghost)} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth={1.5} strokeDasharray="3 3" />}
         <polyline points={pts(flight)} fill="none" stroke="#fde68a" strokeWidth={1.4} />
         <polyline points={air(flight).map((p) => `${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ")} fill="none" stroke="#ffffff" strokeWidth={2.6} />
         <circle cx={land(flight).x} cy={land(flight).y} r={3.5} fill="#ff4d5e" />
         <circle cx={X(end.x)} cy={Y(end.y)} r={4} fill="#fff" stroke="#111" />
-        {wind && wind.speed > 0 && <WindArrow x={W - 48} y={4} to={wind.to} speed={wind.speed} size={44} />}
+        {/* The arrow sits on the side the ball is NOT blown to, so it never covers the path. */}
+        {wind && wind.speed > 0 && <WindArrow x={arrowLeft ? 4 : W - 48} y={4} to={wind.to} speed={wind.speed} size={44} />}
       </svg>
     </div>
   );
@@ -175,6 +182,11 @@ export default function WeatherDevPage() {
             <Pill on={!wet && dials.ground !== "dry"} onClick={() => set({ ground: "normal" })}>Normal</Pill>
             <Pill on={!wet && dials.ground === "dry"} onClick={() => set({ ground: "dry", ...(wet ? { weather: "clear" } : {}) })}>☀️ Dry spell</Pill>
           </div>
+          <Label>A bad pitch is</Label>
+          <div style={{ display: "flex", gap: 6, margin: "6px 0 12px", flexWrap: "wrap" }}>
+            <Pill on={dials.worst !== "harsh"} onClick={() => set({ worst: "tame" })} title="Runs almost as normal, then grabs and stops at a crawl">Tame (recommended)</Pill>
+            <Pill on={dials.worst === "harsh"} onClick={() => set({ worst: "harsh" })} title="The first build: most normal passes die short on the worst dry pitch">Harsh (first build)</Pill>
+          </div>
           <Label>Pre-match line (test page only)</Label>
           <div data-prematch style={{ marginTop: 6, padding: "8px 12px", background: "var(--bc-panel)", border: "1px solid var(--bc-line)", borderLeft: `4px solid ${PITCH_COLOUR[word]}`, fontWeight: 800 }}>
             {WEATHERS.find((w) => w[0] === dials.weather)![1]} {cond.label}{dials.windSpeed > 0 ? ` · wind ${windWords(dials.windTo)}` : ""} · {pitchLine}
@@ -186,8 +198,8 @@ export default function WeatherDevPage() {
             {STRIKES.map((s) => <Pill key={s.id} on={strike === s.id} onClick={() => setStrike(s.id)}>{s.name}</Pill>)}
           </div>
           <div style={{ display: "flex", justifyContent: "center", gap: 8 }} data-lab>
-            <TopView flight={fClear} title="Clear" />
-            <TopView flight={fNow} ghost={fClear} title="These conditions" wind={{ to: dials.windTo, speed: dials.windSpeed }} />
+            <TopView flight={fClear} title="Clear" fit={[fClear, fNow]} />
+            <TopView flight={fNow} ghost={fClear} title="These conditions" wind={{ to: dials.windTo, speed: dials.windSpeed }} fit={[fClear, fNow]} />
           </div>
           <div className="bc-note" style={{ textAlign: "center", margin: "4px 0 8px" }}>
             White = in the air · yellow = on the grass · red dot = first bounce · dashed = clear day

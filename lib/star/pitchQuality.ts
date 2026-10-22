@@ -97,5 +97,6 @@ export function groundFor(season: number, week: number, raining: boolean): Groun
 /** The pre-match line: "Pitch: poor, dry". "Pitch: perfect" on a normal day. */
 export function pitchLabel(quality: number, ground: Ground): string {
   const w = pitchWord(quality);
-  return ground === "normal" ? `Pitch: ${w}` : `Pitch: ${w}, ${ground}`;
+  // A perfect pitch is watered: a dry spell changes nothing, so it is not said.
+  return ground === "normal" || (ground === "dry" && w === "perfect") ? `Pitch: ${w}` : `Pitch: ${w}, ${ground}`;
 }

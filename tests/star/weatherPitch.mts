@@ -9,6 +9,35 @@ import { clubPitch, pitchLabel, groundFor } from "../../lib/star/pitchQuality";
 import { windAtHeight } from "../../lib/star/pitchWeather";
 import { PREMIER_LEAGUE_CLUBS, NATIONAL_LEAGUE_NORTH_CLUBS, STEP3_NORTH_CLUBS, LEAGUE_ONE_CLUBS } from "../../lib/star/clubs";
 
+import { integrateBallOld, type Ball } from "../../lib/star/canvasEngine";
+import { integrateBallReal } from "../../lib/star/ballPhysics";
+import type { Conditions } from "../../lib/star/weather";
+
+/** Share of 300 normal ground passes (8-30 m, struck to arrive at 4 m/s on a clear day, ±15%) that stop 1.5 m+ short. */
+function diesShort(mode: "old" | "new", cond: Conditions): number {
+  const dt = 1 / 180;
+  const roll = (v: number, k: Conditions, target: number) => {
+    const ball = { pos: { x: 0, y: 0 }, vel: { x: 0, y: v }, z: 0.11, vz: 0.6, spin: 0, topspin: 0,
+      resting: false, loose: false, contactCd: 0, receiverControlT: 0, event: null, inNet: false } as unknown as Ball;
+    let at = 0;
+    for (let t = 0; t < 15 && !ball.resting; t += dt) {
+      if (mode === "new") integrateBallReal(ball, k, dt); else integrateBallOld(ball, k, dt);
+      if (!at && ball.pos.y >= target) at = Math.hypot(ball.vel.x, ball.vel.y);
+    }
+    return { dist: ball.pos.y, at };
+  };
+  const clear = buildConditions(CLEAR_DIALS);
+  let s = 99; const rnd = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+  let short = 0;
+  for (let i = 0; i < 300; i++) {
+    const d = 8 + rnd() * 22;
+    let lo = 1, hi = 40;
+    for (let j = 0; j < 30; j++) { const m = (lo + hi) / 2; if (roll(m, clear, d).at >= 4) hi = m; else lo = m; }
+    if (roll(hi * (0.85 + rnd() * 0.3), cond, d).dist < d - 1.5) short++;
+  }
+  return short / 300;
+}
+
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { console.log(`${ok ? "ok  " : "FAIL"} ${what}`); if (!ok) problems.push(what); };
 const c = (d: Partial<WeatherDials>) => buildConditions({ ...CLEAR_DIALS, ...d });
@@ -48,7 +77,13 @@ for (const mode of ["old", "new"] as const) {
   const b1 = measure(S.chip, bad, mode).bounce, b0 = base("chip").bounce;
   check(b1 < b0 * 0.6, `${mode}: worst dry pitch — the bounce after a lofted pass ${b0.toFixed(1)} → ${b1.toFixed(1)} m`);
   const r1 = measure(S.ground, bad, mode).roll, r0 = base("ground").roll;
-  check(r1 < r0 * 0.75, `${mode}: a ground pass dies (${r0.toFixed(1)} → ${r1.toFixed(1)} m)`);
+  check(r1 < r0 * 0.97, `${mode}: a ground pass runs a bit less (${r0.toFixed(1)} → ${r1.toFixed(1)} m)`);
+  const rh = measure(S.ground, { ...bad, ...c({ pitch: 0.25, ground: "dry", worst: "harsh" }) }, mode).roll;
+  check(rh < r0 * 0.75, `${mode}: the harsh first build kills it (${r0.toFixed(1)} → ${rh.toFixed(1)} m)`);
+  // Feel check (scripts/weather/feelCheck.mts): on the worst dry pitch at most
+  // about 1 normal pass in 10 more dies short than on a clear day.
+  const extra = diesShort(mode, bad) - diesShort(mode, c({}));
+  check(extra < 0.11, `${mode}: worst dry pitch — ${Math.round(extra * 100)} more normal passes in 100 die short than on a clear day`);
   // Stops dead: a 2 m/s ball on the worst dry pitch stops within a metre.
   const slow = flyBall(2, 0, bad, mode), slowClear = flyBall(2, 0, c({}), mode);
   check(slow.total < 1 && slowClear.total > slow.total * 1.5, `${mode}: a slow ball stops dead (${slowClear.total.toFixed(2)} → ${slow.total.toFixed(2)} m)`);
