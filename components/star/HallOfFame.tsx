@@ -16,6 +16,7 @@ import { loadHall, syncHall, removeFromHall, type HallEntry, type HallCloud } fr
 import { collectRetiredIntoHall } from "@/lib/star/storage";
 import { askConfirm } from "@/lib/star/askConfirm";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
+import { seasonStartYear } from "@/lib/star/calendar";
 import { kitsOf } from "@/lib/star/kits";
 import CareerOverview from "./CareerOverview";
 import { ShareLinkSheet, CompareFlow } from "./LegendShare";
@@ -28,7 +29,9 @@ import { Rays } from "./ui/Screen";
 const GOLD = "#fbbf24";
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "").replace(/^(FC|AFC)\s+/i, "");
 /** "2026–46": the first season's start year to the last season's end year. */
-const years = (first: number, seasons: number) => `${first}–${String(first + Math.max(1, seasons)).slice(-2)}`;
+// `first` is the card's FIFA edition (2027 = the 2026/27 season): the
+// calendar's seasonStartYear turns it into the year the first season began.
+const years = (first: number, seasons: number) => { const y = seasonStartYear(first, 1); return `${y}–${String(y + Math.max(1, seasons)).slice(-2)}`; };
 
 const CLOUD_LINE: Record<HallCloud, string | null> = {
   synced: null,

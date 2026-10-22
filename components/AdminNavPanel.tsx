@@ -79,13 +79,25 @@ function placeTab(): TabSpot {
   };
   const STEP = 6;
   const rows = Math.ceil(H / STEP);
-  const col = (x: number) => Array.from({ length: rows }, (_, i) => taken(x, i * STEP + 1));
-  const full = [col(2), col(FULL_W / 2), col(FULL_W - 2)];
-  const slim = [col(2), col(SLIM_W - 2)];
-  const clear = (top: number, cols: boolean[][]) => {
+  // Each point is looked at only when a candidate spot needs it, and only
+  // once. Before (22 Oct 2026 bug hunt) every point of five columns was read
+  // up front, ~700 elementsFromPoint calls every 500 ms: 30-45% of a slow
+  // phone's CPU on every screen with Admin mode on. Same answer, usually ~50.
+  const col = (x: number) => {
+    const seen = new Map<number, boolean>();
+    return (i: number) => {
+      let v = seen.get(i);
+      if (v === undefined) { v = taken(x, i * STEP + 1); seen.set(i, v); }
+      return v;
+    };
+  };
+  const edge = col(2);
+  const full = [edge, col(FULL_W / 2), col(FULL_W - 2)];
+  const slim = [edge, col(SLIM_W - 2)];
+  const clear = (top: number, cols: ((i: number) => boolean)[]) => {
     for (let i = Math.floor((top - 2) / STEP); i <= Math.ceil((top + TAB_H + 2) / STEP); i++) {
       if (i < 0 || i >= rows) continue;
-      if (cols.some((c) => c[i])) return false;
+      if (cols.some((c) => c(i))) return false;
     }
     return true;
   };
@@ -170,6 +182,7 @@ export default function AdminNavPanel() {
   useEffect(() => {
     if (!showTab) { setSpot(null); return; }
     const place = () => {
+      if (document.hidden) return;
       if (window.innerWidth >= 1024) { setSpot(null); return; }
       const next = placeTab();
       setSpot((cur) => (cur && cur.top === next.top && cur.slim === next.slim ? cur : next));

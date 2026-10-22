@@ -22,5 +22,45 @@
     "added": "2026-10-21T04:00:00Z",
     "title": "Read the Brain rules (new: CLAUDE.md shrunk)",
     "prompt": "The Brain arrived (Harry, 21 Oct 2026). Do this once, in this chat:\n1. Merge main into my branch.\n2. If CLAUDE.md clashes: take the NEW short version from main. If my branch added history or notes to CLAUDE.md since 20 Oct, move those lines into SESSION_LOG.md (newest first, word for word). If my branch added a standing rule, make it a Brain note instead (step 4).\n3. Read kits/brain-kit/SEARCH.md and kits/brain-kit/README.md. From now on, search brain/_index.md before reading long documents, and cite the note code (e.g. RUL-TEAM-001) when you answer.\n4. New facts and rules go in brain/ notes, never in CLAUDE.md. A note is brain/<type>/<CODE>.md:\n   ---\n   id: RUL-ENG-009            (type RUL/FACT/PRO/DEC/REF - area ALL/ENG/3D/UI/CAR/ECO/MED/DAT/ADM/TEAM - next free number)\n   type: ruling               (ruling | fact | process | decision | reference)\n   client: eng                (all, eng, 3d, ui, car, eco, med, dat, adm or team)\n   tags: []                   (leave empty; the script fills it)\n   status: live\n   date: 2026-10-21\n   source: \"path/to/file.md:56\"   (the exact line or range that says it)\n   summary: One plain sentence under 20 words with the word people will search for.\n   ---\n   A changed rule gets a NEW note; set the old one to status: superseded and superseded_by: NEW-CODE. Never reuse a code.\n5. After any note change run: python3 scripts/brain/build_index.py   It must end with errors=0. An ERROR about a source line means the line moved or no longer says it: fix the line number (scripts/brain/make_notes.py with a spec in scripts/brain/specs/ finds lines by their text).\n6. Commit and push my own branch. Tell me in plain English what you merged and moved."
+  },
+  {
+    "id": "bughunt-2026-10-22-match2dcam",
+    "owner": "Harry",
+    "from": "Leo (chat 7 bug hunt)",
+    "added": "2026-10-22T19:20:00Z",
+    "title": "Test match2dCam fails: at 372x704 the ball is 1 px short of a full-power drag above the bottom",
+    "prompt": "tests/star/match2dCam.mts fails on main (22 Oct): '372x704: the ball is at least a full-power drag (62 px) above the bottom in every served kind, every zoom, both corner start views (1 short)'. Likely from 'Players back down to size B' (a7a3299b) changing the framing. Find which kind/zoom is 1 short (run the test), decide whether the framing or the test's floor should move, fix, and run `node scripts/run-star-tests.mjs match2dCam finishing keeper aiming outcomes`. Match-engine area: Leo's bug hunt did not touch it."
+  },
+  {
+    "id": "bughunt-2026-10-22-longrange",
+    "owner": "Harry",
+    "from": "Leo (chat 7 bug hunt)",
+    "added": "2026-10-22T19:20:00Z",
+    "title": "Test longRangeRules fails: a drawing disagrees with a law, 36 of 300 long shots have a fault",
+    "prompt": "tests/star/longRangeRules.mts fails on main (22 Oct): 'no drawing disagrees with a law' and 'fewer than 1 in 10 simulated long shots has a fault (36/300)'. Probably the 21 Oct chance/headers work or the free-data re-source (712caeb3). Run the test, find which drawing and which law, and either redraw or fix the rule (the one-on-one way: drawings decide the values). Leo's bug hunt did not touch it."
+  },
+  {
+    "id": "bughunt-2026-10-22-statsbomb-words",
+    "owner": "Harry",
+    "from": "Leo (chat 7 bug hunt)",
+    "added": "2026-10-22T19:20:00Z",
+    "title": "Test realGoals fails: the word StatsBomb is still in patch notes 0.101h and 0.107",
+    "prompt": "tests/star/realGoals.mts 'no line in the game, tests, scripts or patch notes is sourced to it' fails: lib/patchNotesData.ts:780, :824, :828, patch-notes/pages/0.101h/index.html:223, patch-notes/pages/0.107/index.html:342 mention StatsBomb. These are your patch notes, so Leo's chat did not edit them. Reword those lines (e.g. 'licensed data', or name the free source), or let the test skip patch-note history if that is meant."
+  },
+  {
+    "id": "bughunt-2026-10-22-3d-training-freeze",
+    "owner": "Harry",
+    "from": "Leo (chat 7 bug hunt)",
+    "added": "2026-10-22T19:20:00Z",
+    "title": "3D training page freezes 10-60 s on the second drill switch (Head/Volley, Free Roam, Head/Volley)",
+    "prompt": "/star-training3d-dev: tap Head/Volley, Free Roam, then Head/Volley again: the page stops for 10-60+ s in the test browser (~1.5 s a frame, 49 draws, one loop). Debugger stack: lib/star/three3d/shadowCache.ts:479 and :625 -> WebGLShadowMap.render -> three onFirstUse/getProgram (shader compile + link). Check whether the shadow-cache materials force a new shader program after a scene swap (changing program cache key, needsUpdate, onBeforeCompile) and whether the shadow map is rebuilt on the shared renderer. Try it on a real phone first: the test browser has no graphics card, so it may be much worse there."
+  },
+  {
+    "id": "bughunt-2026-10-22-save-size",
+    "owner": "all",
+    "from": "Leo (chat 7 bug hunt)",
+    "added": "2026-10-22T19:20:00Z",
+    "title": "The save is ~1 MB and is rewritten on every change (a 25 ms stall on a fast machine, ~150 ms+ on a slow phone)",
+    "prompt": "Measured 22 Oct (chat 7): a season-1 career's localStorage save is 1,036,512 characters: savedSquads 547 KB, results 168 KB, world 144 KB, cupState 67 KB, lastWorld 49 KB. app/star-dev/page.tsx's career effect calls saveCareer (lib/star/storage.ts) on EVERY career change, which JSON.stringifies the whole save synchronously (25 ms on the build machine; 6x slower on a cheap phone) plus a cloud save 3 s later. Options: save locally on a short idle/debounce (like the cloud save) and flush on pagehide (already there); or keep savedSquads out of the per-change write (it changes once a season). Needs whoever owns storage to decide; test with tests/star/save*.mts."
   }
 ]

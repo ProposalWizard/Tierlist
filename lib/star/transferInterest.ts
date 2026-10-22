@@ -406,8 +406,12 @@ export function windowInterest(career: CareerState, window: WindowKind): WindowI
     for (const club of nextMembers(division)) {
       if (club === career.player.club || gone.has(club)) continue;
       const was = before.get(club);
-      const moved: InterestedClub["moved"] = was && was !== division
-        ? (levelOf(division) > levelOf(was) ? "promoted" : "relegated") : undefined;
+      // No league this season but one next summer: it came up from Step 3,
+      // which the game does not play. It has no finish to show (it read
+      // "Finished 24th", the bottom of a list it was not in), so: Promoted.
+      const moved: InterestedClub["moved"] = was
+        ? (was !== division ? (levelOf(division) > levelOf(was) ? "promoted" : "relegated") : undefined)
+        : (next ? "promoted" : undefined);
       if (seeded(career, window, club, 3) > rivalInterestOdds(career.player.club, club)) continue;
       const need = squadNeed(career, club, overall);
       const gap = need.known && need.better === 0;

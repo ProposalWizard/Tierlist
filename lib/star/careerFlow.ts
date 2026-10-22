@@ -1759,7 +1759,9 @@ export function advanceSeason(
 
   // The board's view of the manager, taken on the season the CLUB had rather
   // than the one you had — nobody is sacked because a forward was quiet.
-  const sack = sackCheck(career, judgeSeason(career).score);
+  const sack = sackCheck(career, judgeSeason(career).score,
+    !justTransferred && !career.placement
+      && seasonClubMove(career.player.club, divisionOf(career), ladder) === "promoted");
 
   // Individual honours for the season that has just finished, taken BEFORE the
   // stats are reset — they are a verdict on those numbers.
