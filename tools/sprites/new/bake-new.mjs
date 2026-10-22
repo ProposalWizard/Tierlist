@@ -16,6 +16,13 @@
  *        node tools/sprites/new/bake-new.mjs sheet player:shotKick,volley:2,0   a look sheet (to tools/sprites/new/preview/)
  *        node tools/sprites/new/bake-new.mjs spike       compare with atlas-0 (idle, jog, celebrate; keeper)
  *        node tools/sprites/new/bake-new.mjs styleA      Style A 2D players: own cells → atlas-0a/1a, mask-0a/1a, index-a.json
+ *        node tools/sprites/new/bake-new.mjs extra bicycle   bake ONLY the named player clips into their own
+ *                                                         atlas (2): atlas-2/mask-2 on the current body and
+ *                                                         atlas-2a/mask-2a on Style A, merged into index.json and
+ *                                                         index-a.json. Every older atlas file is never written.
+ *                                                         OUT=dir writes there instead (a dry run).
+ *        node tools/sprites/new/bake-new.mjs glb bicycle     the keyframed clip as a GLB, for the overlap check
+ *                                                         (tools/motionref/body_overlap.mts --own=… --clips=bicycle)
  *        node tools/sprites/new/bake-new.mjs reskin      Style A: every cell again on toon-p1, same rects and anchors
  *                                                         → atlas-0a/mask-0a/atlas-1a/mask-1a (index.json untouched)
  * Needs: three (site package) and Playwright's Chromium (swiftshader, no GPU).
@@ -97,6 +104,38 @@ try {
       fs.writeFileSync(path.join(outDir, `atlas-${which}a.webp`), dataOf(r.color));
       fs.writeFileSync(path.join(outDir, `mask-${which}a.png`), dataOf(r.mask));
       console.log(`atlas-${which}a: ${r.cells} cells · drawn smaller to fit (least scale):`, JSON.stringify(r.shrunk), "·", ((Date.now() - t0) / 1000).toFixed(0), "s");
+    }
+  } else if (mode === "glb") {
+    // node bake-new.mjs glb bicycle → preview/clips-bicycle.glb (check: npx tsx tools/motionref/body_overlap.mts public/star/people3d/player.glb --own=<it> --clips=bicycle)
+    fs.mkdirSync(previewDir, { recursive: true });
+    const f = path.join(previewDir, `clips-${arg.replace(/,/g, "_")}.glb`);
+    fs.writeFileSync(f, dataOf(await page.evaluate((n) => window.clipGlb(n), arg.split(","))));
+    console.log("wrote", f);
+  } else if (mode === "extra") {
+    // One more atlas for the named clips; both bodies; old atlases untouched (22 Oct 2026, the bicycle kick).
+    const names = arg.split(","), which = 2;
+    const dst = process.env.OUT ? path.resolve(process.env.OUT) : outDir;
+    fs.mkdirSync(dst, { recursive: true });
+    const idx0 = JSON.parse(fs.readFileSync(path.join(outDir, "index.json"), "utf8"));
+    const base = `http://127.0.0.1:${server.address().port}/bake-new.html`;
+    for (const [suffix, url, file, q] of [["", base + FIT, "index.json", 0.86], ["a", base + "?file=/star/people3d/toon-p1.glb", "index-a.json", 0.88]]) {
+      await page.goto(url);
+      await page.waitForFunction(() => window.bakerReady === true, null, { timeout: 120000 });
+      if (suffix === "a") console.log("Style A fit scale", (await page.evaluate((h) => window.fitHeight(h), idx0.standH)).toFixed(3));
+      const r = await page.evaluate(([n, w, s, qq]) => window.bakeExtra(n, w, s, qq), [names, which, suffix, q]);
+      const frag = JSON.parse(r.frag);
+      for (const [nm, url2] of [[frag.atlas.color, r.color], [frag.atlas.mask, r.mask]]) { const b = dataOf(url2); fs.writeFileSync(path.join(dst, nm), b); console.log(nm, (b.length / 1024).toFixed(1), "KB"); }
+      const p = path.join(outDir, file), idx = JSON.parse(fs.readFileSync(p, "utf8"));
+      const before = JSON.stringify({ atlas: idx.atlas, atlases: { ...idx.atlases, [which]: undefined }, standH: idx.standH });
+      idx.atlases = { ...(idx.atlases ?? {}), [which]: frag.atlas };
+      for (const [nm, cl] of Object.entries(frag.chars.player.clips)) {
+        const was = idx.chars.player.clips[nm];
+        if (was && was.atlas !== which) throw new Error(`refusing to overwrite clip player.${nm} in atlas ${was.atlas ?? 0}`);
+        idx.chars.player.clips[nm] = cl;
+        console.log(file, nm, cl.frames, "frames ·", cl.cells.map((c) => c[2] + "x" + c[3]).slice(0, cl.frames).join(" "));
+      }
+      if (JSON.stringify({ atlas: idx.atlas, atlases: { ...idx.atlases, [which]: undefined }, standH: idx.standH }) !== before) throw new Error("an older atlas entry changed");
+      fs.writeFileSync(path.join(dst, file), JSON.stringify(idx));
     }
   } else if (mode === "bake") {
     const res = await page.evaluate(() => window.bakeNew());

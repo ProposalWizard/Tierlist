@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { gradeContact } from "@/lib/star/shotModel";
 import { airContactRead, AIR_CENTRE_R, VOLLEY_SWEET } from "@/lib/star/airborneChance";
 import { headerJump } from "@/lib/star/aerial";
+import { bicycleBand, bicycleContactRead, bicycleMotionAt, bicyclePeriodS, BICYCLE_CENTRE_R } from "@/lib/star/bicycle";
 
 /**
  * How the ball is moving while you pick where to hit it (Mikey, 27 Sep 2026).
@@ -41,7 +42,7 @@ interface Props {
   power: number;
   /** `lift` (0 grass … 1 top of the arc) only for a ball in the air
    *  (float/bounce): how high it was when you hit it (lib/star/airborneChance.ts). */
-  onContact: (contact: { cx: number; cy: number; lift?: number }) => void;
+  onContact: (contact: { cx: number; cy: number; lift?: number; bicycle?: boolean }) => void;
   /** The three "how to read the ball" badges and the explanatory line under
    *  them — the tutorial copy, only actually needed the first time anyone
    *  sees this screen. TrialPenalty (the profile-setup trial) passes true;
@@ -80,6 +81,12 @@ interface Props {
    *  ball — the up/down lines fade out toward the sides, where a strike is a
    *  low curler. Absent: exactly the old screen. */
   field?: boolean;
+  /** A cross above your head, coming across you (lib/star/bicycle.ts
+   *  bicycleOffered): a BICYCLE button shows. Pressed, the ball drops across
+   *  you through a stricter height meter and the tap is a bicycle kick
+   *  (onContact's `bicycle: true`). `fromLeft`: the side the cross comes from.
+   *  Absent: exactly the screen as before. */
+  bicycle?: { fromLeft: boolean };
 }
 
 /** How long "TOO SLOW" shows before the scuffed kick is taken. */
@@ -90,7 +97,7 @@ const TOO_SLOW_MS = 350;
 export const STRIKE_ZONE_R = 1.18;
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, ballZ, hold = false, grades = false, knuckles = false, field = false }: Props) {
+export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, ballZ, hold = false, grades = false, knuckles = false, field = false, bicycle }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
@@ -100,6 +107,12 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
   const areaRef = useRef<HTMLDivElement>(null);
   // One sweep across takes 2.2s at technique 40, 3.4s at 100.
   const period = 2.2 + Math.max(0, Math.min(100, technique) - 40) / 60 * 1.2;
+  // Bicycle mode (the BICYCLE button pressed): the cross drops across you.
+  const [bike, setBike] = useState(false);
+  const bikeOn = bike && !!bicycle;
+  const bikeBand = bicycleBand(aerial);
+  const bikePeriod = bicyclePeriodS(aerial);
+  const bikeFromLeft = bicycle?.fromLeft ?? true;
   useEffect(() => {
     if (motion === "still") return;
     let raf = 0;
@@ -109,6 +122,19 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       if (locked.current) return; // freeze where it was hit
       const area = areaRef.current, mover = moverRef.current;
       if (!area || !mover) return;
+      if (bikeOn) {
+        const b = bicycleMotionAt((performance.now() - t0) / 1000, bikePeriod, bikeFromLeft);
+        mover.style.transform = `translate(${b.x * area.clientWidth}px, ${b.y * area.clientHeight}px)`;
+        liftRef.current = b.lift;
+        if (meterRef.current) meterRef.current.style.bottom = `calc(${(b.lift * 100).toFixed(1)}% - 3px)`;
+        const sh = shadowRef.current;
+        if (sh) {
+          const k = 1 - 0.45 * b.lift;
+          sh.style.transform = `translateX(calc(-50% + ${b.x * area.clientWidth}px)) scale(${k})`;
+          sh.style.opacity = String(0.35 + 0.65 * k);
+        }
+        return;
+      }
       const { x, y } = ballMotionAt(motion, (performance.now() - t0) / 1000, period);
       mover.style.transform = `translate(${x * area.clientWidth}px, ${y * area.clientHeight}px)`;
       // How high it is now, 0..1 of this motion's top (float sits ~0.42-0.5 up).
@@ -125,7 +151,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [motion, period]);
+  }, [motion, period, bikeOn, bikePeriod, bikeFromLeft]);
   const [spark, setSpark] = useState<{ left: number; top: number } | null>(null);
   const [graded, setGraded] = useState<{ label: string; good: boolean } | null>(null);
   const [timedOut, setTimedOut] = useState(false);
@@ -198,6 +224,13 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
     setSpark({ left: r + cx * r, top: r + cy * r });
     const air = motion === "float" || motion === "bounce";
     const lift = liftRef.current;
+    if (bikeOn) {
+      // A bicycle kick says how it came off (the same read the strike uses: bicycle.ts).
+      const rd = bicycleContactRead({ cx, cy, lift, aerial: aerial ?? technique });
+      setGraded({ label: rd.label, good: rd.good });
+      setTimeout(() => onContact({ cx, cy, lift, bicycle: true }), 520);
+      return;
+    }
     if (air) {
       // B10: a header or volley says how it came off (the same read the strike uses).
       const rd = airContactRead({ kind: motion === "float" ? "header" : "volley", lift, cx, cy, tech: technique, aerial },
@@ -274,16 +307,16 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
             textShadow: "0 3px 6px rgba(0,0,0,0.6)",
           }}
         >
-          {motion === "float" ? "Head it?" : motion === "bounce" ? "Volley it?" : "Strike it?"}
+          {bikeOn ? "Bicycle kick!" : motion === "float" ? "Head it?" : motion === "bounce" ? "Volley it?" : "Strike it?"}
         </div>
         {/* B10: what matters for a ball in the air, in one line. */}
         {(motion === "float" || motion === "bounce") && (
           <div data-air-hint className="mt-1.5 text-[11px] font-bold text-white/90" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
-            {motion === "float" ? "Top nods it down · the sides glance it · under loops it up" : "Hit the middle as it drops through the green"}
+            {bikeOn ? "Dead centre, as it drops through the green" : motion === "float" ? "Top nods it down · the sides glance it · under loops it up" : "Hit the middle as it drops through the green"}
           </div>
         )}
         {/* The jump (Aerial sets how high you go): the cross's height against your reach. */}
-        {jump && (
+        {jump && !bikeOn && (
           <div data-header-jump className="mt-1 text-[12px] font-black tracking-wide" style={{ color: jump.overM > 0.02 ? "#fca5a5" : "#bbf7d0", textShadow: "0 1px 3px rgba(0,0,0,0.85)" }}>
             {jump.jumpM < 0.03 ? "No jump needed" : `Jump ${jump.jumpM.toFixed(2)} m`}
             {jump.overM > 0.02 ? ` · ${jump.overM.toFixed(2)} m over your reach` : ` · max ${jump.maxJumpM.toFixed(2)} m`}
@@ -364,6 +397,33 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
 
       {/* B10: a volley's height meter — the ball's height now, and the green
           band where it is met sweetly as it drops (VOLLEY_SWEET). */}
+      {bikeOn && (
+        <div data-bicycle-meter className="absolute left-2.5 top-1/2 z-40 -translate-y-1/2 flex flex-col items-center gap-1.5 pointer-events-none">
+          <span className="text-white text-[9px] font-black uppercase tracking-[0.15em]" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+            Height
+          </span>
+          <div className="relative h-28 w-3 rounded-full bg-black/50 border border-white/10">
+            <div className="absolute left-0 right-0 rounded-sm bg-emerald-400/80"
+              style={{ bottom: `${bikeBand[0] * 100}%`, height: `${(bikeBand[1] - bikeBand[0]) * 100}%` }} />
+            <div ref={meterRef} className="absolute -left-1 -right-1 h-1.5 rounded-full bg-white shadow" style={{ bottom: "-3px" }} />
+          </div>
+        </div>
+      )}
+      {/* The BICYCLE button (and back to a header): only when this cross is
+          above your head and coming across you (bicycle.ts bicycleOffered). */}
+      {bicycle && !spark && (
+        <button
+          type="button"
+          data-bicycle-button={bikeOn ? "on" : "off"}
+          onPointerDown={(e) => { e.stopPropagation(); if (!locked.current) setBike((v) => !v); }}
+          className={`absolute left-3 bottom-[5%] z-50 rounded-xl border-2 px-3.5 py-2 font-black italic uppercase tracking-wide shadow-lg active:scale-95 ${
+            bikeOn ? "border-white/70 bg-black/60 text-white text-[13px]" : "border-amber-200 bg-gradient-to-b from-amber-400 to-orange-600 text-white text-[15px]"}`}
+          style={{ textShadow: "0 2px 3px rgba(0,0,0,0.55)", touchAction: "none" }}
+        >
+          {bikeOn ? "← Head it" : "Bicycle!"}
+        </button>
+      )}
+
       {motion === "bounce" && (
         <div data-volley-meter className="absolute left-2.5 top-1/2 z-40 -translate-y-1/2 flex flex-col items-center gap-1.5 pointer-events-none">
           <span className="text-white text-[9px] font-black uppercase tracking-[0.15em]" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
@@ -434,7 +494,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
               volley is struck clean (AIR_CENTRE_R either side). */}
           {(motion === "float" || motion === "bounce") && (
             <svg data-air-centre className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
-              <circle cx="0" cy="0" r={AIR_CENTRE_R + 0.08} fill="none" stroke="#fff" strokeOpacity="0.75" strokeWidth="0.035" strokeDasharray="0.07 0.05" />
+              <circle cx="0" cy="0" r={(bikeOn ? BICYCLE_CENTRE_R : AIR_CENTRE_R) + 0.08} fill="none" stroke="#fff" strokeOpacity="0.75" strokeWidth="0.035" strokeDasharray="0.07 0.05" />
             </svg>
           )}
 
