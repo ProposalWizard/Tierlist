@@ -110,6 +110,8 @@ export interface CelebPlan {
   moveAt: number;
   /** When it is all over and the match goes on (s after the goal). */
   totalS: number;
+  /** The move's own travel, shortened when there is no room before the flag (0..1). */
+  travelK: number;
 }
 
 /** Which corner: the nearer one on the goal line. */
@@ -126,19 +128,20 @@ export function planCelebration(from: Vec, move: CelebrationMove, pitchW = PITCH
   const D = Math.hypot(dx, dy);
   if (D < 1e-6) { dx = 0; dy = -1; } else { dx /= D; dy /= D; }
   const moveDist = spec.travel(spec.playS);
-  const room = Math.max(0, D - SHORT_OF_FLAG - moveDist);
+  const travelK = moveDist > 0 ? Math.max(0, Math.min(1, (D - SHORT_OF_FLAG) / moveDist)) : 1;
+  const room = Math.max(0, D - SHORT_OF_FLAG - moveDist * travelK);
   const runDist = Math.min(room, RUN_TOP * (CELEB_RUN_S - (ACCEL_S + DECEL_S) / 2));
   const runS = runDist <= 0.5 ? 0.4 : Math.max(0.9, Math.min(CELEB_RUN_S, runDist / (RUN_TOP * 0.82)));
-  const ve = Math.min(spec.enterSpeed, RUN_TOP);
+  const ve = Math.min(spec.enterSpeed * travelK, RUN_TOP);
   const tc = Math.max(0, runS - ACCEL_S - DECEL_S);
   const vmax = runDist <= 0 ? 0 : Math.max(ve, (runDist - (ve * DECEL_S) / 2) / (ACCEL_S / 2 + tc + DECEL_S / 2));
   const moveAt = CELEB_REACT_S + runS;
-  return { move, from: { ...from }, dir: { x: dx, y: dy }, corner, runDist, runS, vmax, moveAt, totalS: moveAt + spec.playS + CELEB_TAIL_S };
+  return { move, from: { ...from }, dir: { x: dx, y: dy }, corner, runDist, runS, vmax, moveAt, totalS: moveAt + spec.playS + CELEB_TAIL_S, travelK };
 }
 
 /** Distance along the run, `s` seconds into it (accelerate, cruise, slow to the move's own pace). */
 function runAlong(p: CelebPlan, s: number): { d: number; v: number } {
-  const ve = Math.min(CELEB_SPECS[p.move].enterSpeed, RUN_TOP);
+  const ve = Math.min(CELEB_SPECS[p.move].enterSpeed * (p.travelK ?? 1), RUN_TOP);
   const vm = p.vmax, ta = ACCEL_S, td = DECEL_S, tc = Math.max(0, p.runS - ta - td);
   if (p.runDist <= 0) return { d: 0, v: 0 };
   s = Math.max(0, Math.min(p.runS, s));
@@ -175,7 +178,8 @@ export function celebAt(p: CelebPlan, t: number): CelebState {
   }
   const u = Math.min(spec.playS, t - p.moveAt);
   const d0 = p.runDist;
-  const d = d0 + spec.travel(u);
-  const v = u < spec.playS ? (spec.travel(Math.min(spec.playS, u + 0.05)) - spec.travel(u)) / 0.05 : 0;
+  const k = p.travelK ?? 1;
+  const d = d0 + spec.travel(u) * k;
+  const v = u < spec.playS ? (k * (spec.travel(Math.min(spec.playS, u + 0.05)) - spec.travel(u))) / 0.05 : 0;
   return { ...at(d), phase: t - p.moveAt >= spec.playS ? "done" : "move", moveT: u, clipT: spec.from3d + u, speed: Math.max(0, v) };
 }

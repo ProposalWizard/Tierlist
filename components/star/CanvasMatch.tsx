@@ -6669,7 +6669,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const maybeBigMoment = () => {
     const sc = scenarioRef.current;
     const ok = matchModeRef.current && !replayOfRef.current && shootoutKickRef.current == null && !autoKickOf(sc)
-      && isBigMoment(matchMinuteRef.current, MATCH_DURATION, userScoreRef.current, oppScoreRef.current, goalInView(sc.kind));
+      && (isBigMoment(matchMinuteRef.current, MATCH_DURATION, userScoreRef.current, oppScoreRef.current, goalInView(sc.kind))
+        // development only (compiled out of the live site): a playtest can ask for one
+        || (offlineDevPlayEnabled() && goalInView(sc.kind) && !!(window as unknown as { __bigMomentNext?: boolean }).__bigMomentNext));
     // The same move carrying on (a pass that found its man): the heartbeat goes on, no second banner.
     if (ok && bigRef.current) return;
     endBigMoment();
