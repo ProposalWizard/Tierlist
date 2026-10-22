@@ -88,6 +88,16 @@ Branch `leo-realgoals` (origin/Leo merged in). All four parts built, checked and
 | A league path opened directly | 7.0–9.5 s | 6.0–7.5 s (loads only its own league) |
 The five league files (3.7 MB) now load only for a league path (its own file), Worldies, the All goals list, or a daily goal from a league. Any path view takes about 2 s longer than the home at 6× (1.0 s against 0.6 s at full speed); it is the same level-map screen as before tonight.
 
+**4. Home under 1 s** (hub ask, ~22:00 UK). The home now draws from a 28 KB index shipped with the page (`data/realmoments/rg_index.json`: each path's levels and stars, each daily goal's card), built by `npx tsx scripts/realmoments/build_rg_index.mts` (`--check` fails if it drifts from the data). The tiles and the daily card are in the server's first HTML. No data file loads for the home; a path loads only its own file; the daily goal's file loads when you press Play (the button reads "Loading the goal…" meanwhile); the match engine and the fixer load only when used.
+| 6× slower CPU, production build | Before tonight's fixes | After the first fix | Now |
+|---|---|---|---|
+| Home tiles on screen (first paint) | 4.8–5.2 s | 3.4–4.2 s | **0.39–0.55 s** |
+| Home tappable (scripts ready) | ~5 s | ~4 s | 1.9–2.8 s |
+| Data before the home | 6.3 MB | 1.4 MB | 0 (the index is in the page) |
+| Page first download | 1.15 MB | 1.15 MB | 811 KB |
+Not re-played after this last change beyond the load measure (tiles, daily card); the path and goal screens are the same code as the playthrough above.
+
 ## Files touched
 New: `lib/star/realGoalPaths.ts`, `lib/star/realGoalDaily.ts`, `app/star-real-goals-dev/BangerFixer.tsx`, `data/realmoments/bangers.json`, `scripts/realmoments/build_bangers.py`, `scripts/realmoments/bangers_drafts/*.json`, `app/star-shootout-dev/{page,layout}.tsx`, `tests/star/penaltyKeeperHabits.mts`, `scripts/star-sandbox/banger-stills.mjs`.
+New (late): `lib/star/realGoalIndex.ts`, `data/realmoments/rg_index.json`, `scripts/realmoments/build_rg_index.mts`, `scripts/star-sandbox/real-goals-loadtime.mjs`.
 Changed: `lib/star/realGoals.ts` (buildLevels options, banger kits, badges, crosser name, isTournament skips bangers), `lib/star/realMoments/{types,index}.ts` ("drafted" source), `app/api/star/real-moments/route.ts` (bangers), `app/star-real-goals-dev/{page.tsx,real-goals.css}`, `tests/star/realGoals.mts`, `lib/star/penaltyKeeper.ts`, `lib/star/keeperBrain.ts`, `components/star/{ShootoutPlay,EnginePlay}.tsx` (ShootoutPlay also: the match restarts every 3 kicks), `lib/adminRegistry.ts`, `lib/adminGuides.ts`.
