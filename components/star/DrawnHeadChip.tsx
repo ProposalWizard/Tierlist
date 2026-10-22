@@ -10,8 +10,10 @@ import { DEFAULT_FAKE_FACE_STYLE } from "@/lib/star/fakeFaceStyle";
  * 2026), so the chip shows the same drawn head the match draws on him: his
  * own skin and hair from his id, no photo. Drawn once (no animation loop).
  */
-export default function DrawnHeadChip({ id, shirt, shorts, trim, size }: {
+export default function DrawnHeadChip({ id, shirt, shorts, trim, size, skin }: {
   id: string; shirt: string; shorts: string; trim: string; size: number;
+  /** His own skin (your player's skinTone); absent = the game's default. */
+  skin?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function DrawnHeadChip({ id, shirt, shorts, trim, size }: {
     const r = size * 1.25;
     const crown = size * 0.1;
     const groundY = crown + r * FIGURE_HEIGHT_R;
-    drawFigureAt(g, size / 2, groundY, r, { shirt, shorts, trim, id }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { shadowR: 0 });
-  }, [id, shirt, shorts, trim, size]);
+    drawFigureAt(g, size / 2, groundY, r, { shirt, shorts, trim, id, skin }, DEFAULT_FACE_STYLE, DEFAULT_FAKE_FACE_STYLE, { shadowR: 0 });
+  }, [id, shirt, shorts, trim, size, skin]);
   return <canvas ref={ref} aria-hidden style={{ width: size, height: size, display: "block" }} />;
 }

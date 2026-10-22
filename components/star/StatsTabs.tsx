@@ -29,6 +29,7 @@ import IntlWorldPanel from "./IntlWorldPanel";
 import { ClubCard, StatBar, PressButton, RiseIn, useClubTheme } from "./ui";
 import { CardTitle } from "./screenKit";
 import TrophyCabinet from "./TrophyCabinet";
+import PlayerCard from "./PlayerCard";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const seasonLabel = (c: CareerState, s: number) => {
@@ -71,6 +72,8 @@ export default function StatsTabs({ career, onRenew, onOpen, hallRecords, startV
   const allLook = useAllSeasonsLook();
   return (
     <div className="pb-2">
+      {/* Your FIFA-style card, above the chips (Harry, 22 Oct 2026). */}
+      <PlayerCard career={career} />
       {/* One row of five chips: every view is one tap (was arrows, up to 3 taps). */}
       <div data-stats-row role="tablist" aria-label="Stats" className="mb-2 grid grid-cols-5 gap-1">
         {VIEWS.map((v) => {
