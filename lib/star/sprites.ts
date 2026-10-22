@@ -64,8 +64,6 @@ export type NewSpriteClip = (typeof NEW_PLAYER_CLIPS)[number] | (typeof NEW_KEEP
  */
 export const CELEB_PLAYER_CLIPS = ["celebHandsUp", "celebArmsOut", "celebKneeSlide", "celebFistPump", "celebJump", "celebRoar"] as const;
 export type CelebSpriteClip = (typeof CELEB_PLAYER_CLIPS)[number];
-/** Atlases that are never preloaded: fetched only when one of their clips is first asked for. */
-const LAZY_ATLASES = new Set([2]);
 
 export interface SpriteKit {
   shirt: string;
@@ -225,10 +223,10 @@ function loadAtlas(n: number): Promise<boolean> {
   return p;
 }
 
-/** Load and colour every later atlas in the background, after atlas 0 (idle time). */
 /** Atlases fetched only when one of their clips is first asked for (never in
  *  the idle preload): 2 the celebrations, 3 the bicycle kick (22 Oct 2026). */
 const LAZY_ATLASES: ReadonlySet<number> = new Set([2, 3]);
+/** Load and colour every later atlas in the background, after atlas 0 (idle time). */
 function preloadLaterAtlases(): void {
   const ns = Object.keys(index?.atlases ?? {}).map(Number).filter((n) => n >= 1 && !LAZY_ATLASES.has(n));
   if (!ns.length || typeof window === "undefined") return;
