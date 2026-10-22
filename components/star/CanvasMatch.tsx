@@ -129,7 +129,7 @@ function contactMotion(kind: string, seed: number): BallMotion {
   return "still";
 }
 
-/** The BICYCLE button is on: start loading its picture now (sprite atlas 2),
+/** The BICYCLE button is on: start loading its picture now (sprite atlas 3),
  *  so the move is ready by the time you strike. Returns the offer unchanged. */
 function withBicycleClip<T>(offer: T): T {
   if (offer) spriteClipReady("player", "bicycle");
