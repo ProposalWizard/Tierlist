@@ -49,6 +49,7 @@ import type { GoalTrack } from "@/lib/star/goalClip/track";
 import { enterTestArea } from "@/lib/star/testArea";
 import type { LeadIn, LeadMoment } from "@/lib/star/leadIn";
 import type { RealGoalView } from "@/lib/star/realGoalView";
+import type { Conditions } from "@/lib/star/weather";
 
 /**
  * Real squads, fetched once per club per page — the gallery can press Play a
@@ -245,7 +246,7 @@ const SQUAD_WAIT_MS = 4000;
 export default function EnginePlay({
   settings, seed = 1, openOn, bare = false, width,
   onChanceServed, onChanceResolved, onComplete, fitParent = false, onGoalClip, leadIn, scene,
-  dribbleControl, dribbleOnly, vfxOverride, realGoal, onBallStep,
+  dribbleControl, dribbleOnly, vfxOverride, realGoal, onBallStep, conditions: conditionsOverride,
 }: {
   /** The Play Area's dials. Absent: whatever this device has saved there —
    *  one set, shared by every test screen. */
@@ -299,6 +300,10 @@ export default function EnginePlay({
   realGoal?: RealGoalView;
   /** Watches the ball each physics step (read-only; CanvasMatch's `onBallStep`). */
   onBallStep?: (ball: { x: number; y: number; z: number }) => void;
+  /** The Weather test page (/star-weather-dev): play in these conditions
+   *  (wind with a direction, rain skid, pitch quality) instead of the real
+   *  game's roll. Absent: exactly as before. */
+  conditions?: Conditions;
 }) {
   // The test area: the shot spread cone is drawn here only (lib/star/testArea.ts).
   useEffect(() => enterTestArea(), []);
@@ -352,8 +357,8 @@ export default function EnginePlay({
     );
   }
 
-  const conditions = testConditions(s, career, built.fixture);
-  const weather = conditionsLabel(conditions);
+  const conditions = conditionsOverride ?? testConditions(s, career, built.fixture);
+  const weather = conditionsOverride ? null : conditionsLabel(conditions);
 
   return (
     // CanvasMatch's own column is Tailwind `max-w-sm` (384 px, the real
