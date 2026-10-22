@@ -40,14 +40,14 @@ Branch `leo-celebrations`. Plan parts 1 (goal celebrations) and 5 (big moments),
 - Tap to skip: 0.04 s.
 - Big-moment banner (`big-moment-banner.jpg`).
 - Goal video of a knee-slide goal: the tight camera follows the run, the slide and the arms up (`goal-video-knee-slide.jpg`).
+- 3D match view, knee slide after a real goal: the camera follows the run; he kneels with arms wide, then arms up (`celeb-3d-knee-slide-sequence.jpg`, `celeb-3d-knee-slide-close.jpg`; taken from a screen recording because 3D renders very slowly here). Overlay held 4.35 s in 3D (frames are slow in this sandbox).
 - Frame sheets of all six 2D moves (`sprites-celebs-*`), the fixed knee slide in 3D (`knee-slide-fixed-*`).
 - No page errors. The only console errors were 500s from data routes (the sandbox cannot reach the database), so squads were invented.
 
 ## Not seen / not measured
 - The goals were real strikes, but the ball was moved into the net by the test tool (the sandbox keeper saved every drag), so the slow motion in a real big-moment goal was not seen or timed.
 - Sound (crowd rise, heartbeat, roar, late call) cannot be heard here; only checked that nothing errors.
-- Hands Up and Jump not played in a match (only on the frame sheets).
-- 3D view: see below.
+- Hands Up and Jump not played in a match (only on the frame sheets). In 3D only the knee slide was played (the first 3D check, before the camera fix, showed the run leaving a fixed camera; fixed).
 
 ## Known issues
 - A team-mate making a run can stay near you in the goal video's tight shot (the match's runners carry on); he sometimes stands in front of you.
