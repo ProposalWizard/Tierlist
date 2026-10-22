@@ -108,7 +108,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "Headers and volleys now read your Aerial skill",
-              "detail": "Aerial & Acrobatics did the drill and the numbers, but a real match ignored it. A header or volley in a real match still used Technique. The match file was not wired to the new skill. That edit waited for Harry's Allow (engine rule RUL-ENG-001). A header or volley now reads Aerial instead of Technique. Tired legs lower it. At Aerial 60 nothing changes, so a player at 60 plays exactly as before. Merged as PR #755."
+              "detail": "Aerial & Acrobatics did the drill and the numbers, but a real match ignored it. A header or volley in a real match still used Technique. The match file was not wired to the new skill. It is a match-file change (RUL-ENG-001), made in this round. A header or volley now reads Aerial instead of Technique. Tired legs lower it. At Aerial 60 nothing changes, so a player at 60 plays exactly as before. Merged as PR #755."
             }
           ]
         },
