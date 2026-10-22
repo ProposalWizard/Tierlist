@@ -30,6 +30,7 @@ import { ClubCard, StatBar, PressButton, RiseIn, useClubTheme } from "./ui";
 import { CardTitle } from "./screenKit";
 import TrophyCabinet from "./TrophyCabinet";
 import PlayerCard from "./PlayerCard";
+import CareerGoalsGallery from "./CareerGoalsGallery";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const seasonLabel = (c: CareerState, s: number) => {
@@ -39,11 +40,14 @@ const seasonLabel = (c: CareerState, s: number) => {
 
 /** Five chips, one row (navigation round 1, Harry's answer 17, 21 Oct 2026):
  *  Season (with Status folded in), Career (All seasons + Country), Records,
- *  Trophies (the cabinet, 2 taps from Home, was 3), Contract. */
+ *  Trophies (the cabinet, 2 taps from Home, was 3), Contract. Goals added
+ *  22 Oct 2026 (Leo): every goal of the career, six chips. */
 const VIEWS = [
   { id: "season", label: "Season", icon: "📊" },
   { id: "career", label: "Career", icon: "🗓️" },
   { id: "records", label: "Records", icon: "🏅" },
+  // Every goal of the career (Leo, 22 Oct 2026): CareerGoalsGallery.
+  { id: "goals", label: "Goals", icon: "⚽" },
   { id: "trophies", label: "Trophies", icon: "🏆" },
   { id: "contract", label: "Contract", icon: "📝" },
 ] as const;
@@ -75,7 +79,7 @@ export default function StatsTabs({ career, onRenew, onOpen, hallRecords, startV
       {/* Your FIFA-style card, above the chips (Harry, 22 Oct 2026). */}
       <PlayerCard career={career} />
       {/* One row of five chips: every view is one tap (was arrows, up to 3 taps). */}
-      <div data-stats-row role="tablist" aria-label="Stats" className="mb-2 grid grid-cols-5 gap-1">
+      <div data-stats-row role="tablist" aria-label="Stats" className="mb-2 grid grid-cols-6 gap-1">
         {VIEWS.map((v) => {
           const on = v.id === view;
           return (
@@ -115,6 +119,7 @@ export default function StatsTabs({ career, onRenew, onOpen, hallRecords, startV
         {view === "records" && onOpen && (
           <PressButton variant="secondary" size="none" onClick={() => onOpen("achievements")} className="mt-2 w-full rounded-xl py-2.5 text-[11px] font-black">⭐ Achievements →</PressButton>
         )}
+        {view === "goals" && <CareerGoalsGallery career={career} />}
         {view === "trophies" && <TrophyCabinet trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} />}
       </RiseIn>
     </div>
