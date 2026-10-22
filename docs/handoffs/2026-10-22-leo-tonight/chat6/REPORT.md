@@ -11,7 +11,7 @@ Branch `leo-season-end`. Nothing merged to main or Leo. No patch notes (the hub 
 | C · Season awards night | After the rollover: a 3D night in a small function room (round tables, low stage, one lectern, a screen naming the award). Five awards in turn: Golden Boot, Assist King, Golden Glove, Young Player, Player of the Season. The host calls it, 3 nominees, the winner walks up from his table and lifts the cup; you, in your kit and face, when you win. Tap = next award, Skip all. Then the old awards page as before. A drawn room when 3D can't run. | Real career (3D) + test page |
 | D · Injuries plan | `docs/plans/2026-10-22-injuries-revamp-for-mikey.md`: kinds and weeks, risk by energy, going down in the match, rehab choice, coming back short of fitness, feed posts, file list, 10 questions with letters. No code. | — |
 | Under it | `career.goalLog`: one small row per goal of yours (about 120 bytes), written for every match you play. The season's recordings are kept from the newest-80 prune until its reel is made or skipped; the career's best 10 are always kept. | Playtest: 6 → 8 rows after 2 sim goals |
-| Bug-hunt find | A refresh on the awards screen landed on Home and skipped a forced contract renewal. Now a refresh on the reel or the awards night lands back on it. | Refresh playtest: see below |
+| Bug-hunt find | A refresh on the awards screen landed on Home and skipped a forced contract renewal. Now a refresh on the reel or the awards night lands back on it. | Refresh playtest: reel came back, awards night came back, Continue → contract renewal (`refresh-*.jpg`) |
 
 ## Numbers
 
@@ -49,6 +49,8 @@ Test-page stills: `reel-*.jpg` (with recordings, `reel-none-*` without, `reel-ze
 - The reel starts from the dashboard's "End of Season" button, the same way the Ballon d'Or did before (not straight after the last match).
 
 ## Known issues
+
+- **Start-up race (for the hub / bug hunt, not fixed here):** in the sandbox, a refresh on the reel, the Ballon d'Or or the awards night lands on Home, because the page saves its starting phase ("profile-setup", not resumable) and so deletes the saved phase before the career load reads it (`app/star-dev/page.tsx` the `hydrated` phase-save effect, ~line 920). The refresh playtest passed only with that delete held back for 6 s. With real sign-in the load is probably slower and it may not bite, but a fast one could. Cheap fix: read the saved phase before `hydrated` turns on, or save the phase only once the career is loaded. Left alone because the bug-hunt chat is changing that start-up code tonight. Also: `ladder` (Season Review) is not resumable; harmless while the contract has seasons left.
 
 - **For Harry (one-engine rule):** the reel screen draws recorded goals on a canvas every frame, like a video player. It runs no ball physics (it plays back recordings with the goal videos' own drawing code). The drawing call lives in `lib/star/goalClip/reelRender.ts` (`paintReelOn`), so the guard's canvas check does not list it. I did not add it to `KNOWN_CANVASES`. Harry may want to say whether that is fine.
 - **Same season-label slip elsewhere (not my files):** `lib/star/careerOverview.ts` `longSeason`/`shortSeason`, `hallRecords.ts` and `farewell.ts` use `startYear + season − 1`, so the Career Overview, Hall records and farewell probably say "2027/28" for a first season. Sent to the hub.
