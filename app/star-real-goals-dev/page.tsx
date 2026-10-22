@@ -23,11 +23,10 @@
  * own rules (lib/star/realMoments, "placed"). Credit: REAL_CREDIT.wyscout.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import PageGuide from "@/components/admin/PageGuide";
 import { BroadcastPage, Panel, Btn, Pill, Note } from "@/components/admin/broadcast/BroadcastPage";
 import "./real-goals.css";
-import EnginePlay from "@/components/star/EnginePlay";
-import Match3DLayer from "@/components/star/Match3DLayer";
 import type { ChanceResolved } from "@/components/star/CanvasMatch";
 import type { Scenario } from "@/lib/star/canvasEngine";
 import type { LeadIn } from "@/lib/star/leadIn";
@@ -47,7 +46,13 @@ import {
 import {
   dailyGoalId, dailyNumber, utcDate, recordDaily, currentStreak, beatToday, loadDaily, saveDaily, EMPTY_DAILY, type DailyState,
 } from "@/lib/star/realGoalDaily";
-import BangerFixer from "./BangerFixer";
+import RG_INDEX from "@/data/realmoments/rg_index.json";
+import type { RgCard, RgFileKey, RgIndex } from "@/lib/star/realGoalIndex";
+// The match and the fixer load only when a goal is played or the fixer opens (the home stays light).
+const BangerFixer = dynamic(() => import("./BangerFixer"), { ssr: false });
+// The real match loads only when a goal is played (chat 5: the home stays light on a slow phone).
+const EnginePlay = dynamic(() => import("@/components/star/EnginePlay"), { ssr: false, loading: () => <div className="rg-matchload">Loading the match…</div> });
+const Match3DLayer = dynamic(() => import("@/components/star/Match3DLayer"), { ssr: false });
 
 /** The striker you play as: an elite real scorer (Leo: "if im yamal'in it top bins"). Clear weather, no closing down. */
 const SETTINGS: PlaySettings = {
@@ -263,6 +268,12 @@ function PlayGoal({ goal, level, onClose, onResult, onNext }: {
 /** A small goal mouth with the real goal's spot: the card's picture (drawn from the real data). */
 function MiniMouth({ goal }: { goal: RealGoal }) {
   const e = realEnd(goal);
+  return <MouthDot end={[e.x, e.z]} />;
+}
+
+/** The goal mouth with one green dot at [x across, z up] (metres). */
+function MouthDot({ end }: { end: [number, number] }) {
+  const e = { x: end[0], z: end[1] };
   const W = 160, H = 74, l = 14, r = W - 14, top = 16, line = H - 10;
   const s = (r - l) / (POST_R - POST_L);
   const x = Math.max(l - 6, Math.min(r + 6, l + (e.x - POST_L) * s));
@@ -412,61 +423,57 @@ const PATH_KEY = "star-real-goals-path";
 type From = { kind: "path"; path: PathId; level: Level } | { kind: "list" } | { kind: "daily"; date: string };
 
 /** One path as a tile on the Real Goals home: its name, its stars, a bar. */
-function PathTile({ path, got, max, loading, onOpen }: { path: RgPath; got: number; max: number; loading: boolean; onOpen: () => void }) {
-  const pct = max ? Math.round((100 * got) / max) : 0;
+function PathTile({ path, got, max, onOpen }: { path: RgPath; got: number | null; max: number; onOpen: () => void }) {
+  const pct = max && got ? Math.round((100 * got) / max) : 0;
   return (
-    <button data-path-tile={path.id} className="rg-tile" onClick={onOpen} disabled={loading && !max}
+    <button data-path-tile={path.id} className="rg-tile" onClick={onOpen}
       style={{ background: `linear-gradient(135deg, ${path.colours[0]} 0%, ${path.colours[0]} 55%, ${path.colours[1]}55 100%)` }}>
       <span className="rg-tname">{path.name}</span>
       <span className="rg-tblurb">{path.blurb}</span>
-      <span className="rg-tfoot">
-        {max ? <>{STAR(1, 1, 14)} <b>{got}</b><i>/ {max}</i></> : <i>{loading ? "Loading…" : "No goals yet"}</i>}
-      </span>
+      <span className="rg-tfoot">{STAR(1, 1, 14)} <b>{got ?? "–"}</b><i>/ {max}</i></span>
       <span className="rg-tbar"><span style={{ width: `${pct}%`, background: path.colours[1] }} /></span>
     </button>
   );
 }
 
-/** The daily goal's card: today's goal, your streak, play it. */
-function DailyCard({ goal, date, daily, onPlay }: { goal: RealGoal | null; date: string; daily: DailyState; onPlay: () => void }) {
+/** The daily goal's card, drawn from the small index (no big file needed). */
+function DailyCard({ card, date, daily, ready, waiting, onPlay }: { card: RgCard | null; date: string; daily: DailyState; ready: boolean; waiting: boolean; onPlay: () => void }) {
   const streak = currentStreak(daily, date);
   const beat = beatToday(daily, date);
   const today = daily.days[date];
   return (
-    <section className="rg-daily" data-daily={goal?.id ?? "loading"}>
+    <section className="rg-daily" data-daily={card ? dailyGoalId(date) ?? "none" : "none"}>
       <div className="rg-dhead">
         <span className="rg-dlabel">Daily Real Goal #{dailyNumber(date)}</span>
-        <span className="rg-dstreak" data-streak={streak}>🔥 {streak} {streak === 1 ? "day" : "days"}<i> · best {daily.best}</i></span>
+        <span className="rg-dstreak" data-streak={ready ? streak : ""}>🔥 {ready ? streak : "–"} {streak === 1 ? "day" : "days"}<i> · best {ready ? daily.best : "–"}</i></span>
       </div>
-      {goal ? (
+      {card ? (
         <div className="rg-dbody">
-          <MiniMouth goal={goal} />
+          <MouthDot end={card.end} />
           <div className="rg-dinfo">
-            <b><Swatch team={goal.shot.team} size={12} /> {knownAs(goal, goal.shot.player)} {minuteOf(goal)}&apos;</b>
-            <span>{goal.x.home} {goal.x.score[0]}–{goal.x.score[1]} {goal.x.away}</span>
-            <span>{goal.x.label ?? goal.x.comp}</span>
+            <b><span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 4, background: card.kit[0], border: `2px solid ${card.kit[1]}`, verticalAlign: "-2px" }} /> {card.player} {card.minute}&apos;</b>
+            <span>{card.home} {card.score[0]}–{card.score[1]} {card.away}</span>
+            <span>{card.label}</span>
             {beat
               ? <span className="rg-ddone">✓ Beaten today {STAR(today?.stars ?? 0, 3, 12)} {today?.pct ?? 0}% · a new one tomorrow</span>
               : <span className="rg-dhint">Score it to {streak ? "keep" : "start"} your streak. The same goal for everyone today.</span>}
           </div>
         </div>
-      ) : <div className="rg-dinfo"><span>Loading today&apos;s goal…</span></div>}
-      {goal && <button className="rg-dplay" onClick={onPlay} data-play-daily>{beat ? "Play it again" : "Play today's goal"} ▶</button>}
+      ) : <div className="rg-dinfo"><span>No daily goal today.</span></div>}
+      {card && <button className="rg-dplay" onClick={onPlay} disabled={waiting} data-play-daily>{waiting ? "Loading the goal…" : beat ? "Play it again" : "Play today's goal"} ▶</button>}
     </section>
   );
 }
 
 export default function RealGoalsDev() {
-  const [goals, setGoals] = useState<RealGoal[] | null>(null);
-  // The 2017/18 league goals (Leo, 20 Oct 2026) and the Bangers (22 Oct 2026): loaded after the World Cup / Euro ones.
-  const [leagueByFile, setLeagueByFile] = useState<Partial<Record<LeagueFile, RealGoal[]>>>({});
-  const [bangers, setBangers] = useState<RealGoal[]>([]);
-  // The five league files (3.7 MB) load only when something needs them: a
-  // league path, Worldies, the All goals list, or a daily goal from a league.
-  // At a 6x slower phone CPU they held the home back 1.4 s (22 Oct 2026).
-  const [wantFiles, setWantFiles] = useState<LeagueFile[]>([]);
-  const asked = useRef(new Set<LeagueFile>());
-  const [bangersLoaded, setBangersLoaded] = useState(false);
+  // Every data file loads only when something needs it (chat 5, 22 Oct 2026):
+  // the home draws from the small index (rg_index.json) alone, so it is on
+  // screen in the first paint even on a slow phone. "wc" = World Cup + Euro.
+  const [loaded, setLoaded] = useState<Partial<Record<RgFileKey, RealGoal[]>>>({});
+  const [wantFiles, setWantFiles] = useState<RgFileKey[]>([]);
+  const asked = useRef(new Set<RgFileKey>());
+  const [ready, setReady] = useState(false);
+  const [pendingDaily, setPendingDaily] = useState(false);
   const [playParam, setPlayParam] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [tab, setTabState] = useState<"levels" | "all">("levels");
@@ -484,10 +491,7 @@ export default function RealGoalsDev() {
     setProgress(loadProgress());
     setPathProg(loadPathProgress());
     setDaily(loadDaily());
-    Promise.all([fetchRealFile<WyscoutShotFile>("shots"), fetchRealFile<RgFile>("goals")])
-      .then(([s, g]) => setGoals(joinGoals(s.shots, g.goals)))
-      .catch((e) => setError(String(e)));
-    fetchRealFile<RgFile & WyscoutShotFile>("bangers").then((b) => setBangers(joinGoals(b.shots, b.goals))).catch(() => setBangers([])).finally(() => setBangersLoaded(true));
+    setReady(true);
     const q = new URLSearchParams(window.location.search);
     let saved: string | null = null, savedPath: string | null = null;
     try { saved = localStorage.getItem(TAB_KEY); savedPath = localStorage.getItem(PATH_KEY); } catch { /* private */ }
@@ -505,24 +509,31 @@ export default function RealGoalsDev() {
     for (const f of wantFiles) {
       if (asked.current.has(f)) continue;
       asked.current.add(f);
-      fetchRealFile<RgFile & WyscoutShotFile>(f)
-        .then((r) => joinGoals(r.shots, r.goals))
-        .catch(() => [] as RealGoal[])
-        .then((gs) => setLeagueByFile((m) => ({ ...m, [f]: gs })));
+      const got = f === "wc"
+        ? Promise.all([fetchRealFile<WyscoutShotFile>("shots"), fetchRealFile<RgFile>("goals")]).then(([sh, g]) => joinGoals(sh.shots, g.goals))
+        : fetchRealFile<RgFile & WyscoutShotFile>(f).then((r) => joinGoals(r.shots, r.goals));
+      got.catch((e) => { setError(String(e)); return [] as RealGoal[]; })
+        .then((gs) => setLoaded((m) => ({ ...m, [f]: gs })));
     }
   }, [wantFiles]);
-  const leagueGoals = useMemo(() => LEAGUES.flatMap((l) => leagueByFile[l.file] ?? []), [leagueByFile]);
-  const allLeagues = LEAGUES.every((l) => leagueByFile[l.file]);
+  const goals = loaded.wc ?? null;
+  const bangers = useMemo(() => loaded.bangers ?? [], [loaded.bangers]);
+  const bangersLoaded = !!loaded.bangers;
+  const leagueGoals = useMemo(() => LEAGUES.flatMap((l) => loaded[l.file] ?? []), [loaded]);
+  const allLeagues = LEAGUES.every((l) => loaded[l.file]);
   const leaguesLoading = !allLeagues;
+  const want = (fs: RgFileKey[]) => { if (fs.some((f) => !asked.current.has(f))) setWantFiles((w) => Array.from(new Set([...w, ...fs]))); };
 
-  const everyGoal = useMemo(() => (goals ? [...bangers, ...goals, ...leagueGoals] : []), [goals, leagueGoals, bangers]);
+  const everyGoal = useMemo(() => [...bangers, ...(goals ?? []), ...leagueGoals], [goals, leagueGoals, bangers]);
   // Every path's stages. The World Cup path is exactly the old level map (its stars stay where they are).
   const paths = useMemo(() => {
     const m = new Map<PathId, Stage[]>();
     // Worldies need all five leagues; a league path only its own file.
-    for (const p of PATHS) m.set(p.id, p.id === "worldies" && !allLeagues ? [] : buildPath(p.id, everyGoal));
+    // Each path only once its own files are in (Worldies need all five leagues).
+    const has = (id: PathId) => id === "wc" ? !!goals : id === "bangers" ? bangersLoaded : id === "worldies" ? allLeagues : !!loaded[fileOfPath(id) as LeagueFile];
+    for (const p of PATHS) m.set(p.id, has(p.id) ? buildPath(p.id, everyGoal) : []);
     return m;
-  }, [everyGoal, allLeagues]);
+  }, [everyGoal, allLeagues, goals, bangersLoaded, loaded]);
   const progFor = useCallback((id: PathId): Progress => (id === "wc" ? progress : pathProg[id] ?? {}), [progress, pathProg]);
   const starsFn = useCallback((id: PathId) => (id === "wc" ? totalStars : (p: Progress) => pathStars(paths.get(id) ?? [], p)), [paths]);
 
@@ -533,22 +544,28 @@ export default function RealGoalsDev() {
 
   const dailyId = dailyGoalId(today);
   const dailyGoal = useMemo(() => everyGoal.find((g) => g.id === dailyId) ?? null, [everyGoal, dailyId]);
-  const needAll = tab === "all" || pathId === "worldies"
-    || (goals !== null && bangersLoaded && !dailyGoal && !!dailyId)
-    || (!!playParam && goals !== null && bangersLoaded && !everyGoal.some((g) => g.id === playParam));
-  const pathFile = pathId ? (fileOfPath(pathId) as LeagueFile | null) : null;
+  const dailyCard = dailyId ? (RG_INDEX as unknown as RgIndex).daily[dailyId] ?? null : null;
+  const ALL_FILES: RgFileKey[] = ["wc", "bangers", ...LEAGUES.map((l) => l.file)];
+  // What to load: the open path's own files, everything for the list or ?play=.
   useEffect(() => {
-    const want = needAll ? LEAGUES.map((l) => l.file) : pathFile ? [pathFile] : [];
-    if (want.some((f) => !asked.current.has(f))) setWantFiles(want);
-  }, [needAll, pathFile]);
+    if (tab === "all" || playParam) { want(ALL_FILES); return; }
+    if (!pathId) return;
+    want(pathId === "wc" ? ["wc"] : pathId === "bangers" ? ["bangers"] : pathId === "worldies" ? LEAGUES.map((l) => l.file) : [fileOfPath(pathId) as LeagueFile]);
+  }, [tab, pathId, playParam]);
+  useEffect(() => { if (fixOpen) want(["bangers"]); }, [fixOpen]);
+  // Today's goal: its file loads when you press play; it plays as soon as it is in.
+  useEffect(() => {
+    if (pendingDaily && dailyGoal) { setPendingDaily(false); setPlaying({ goal: dailyGoal, from: { kind: "daily", date: today } }); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  }, [pendingDaily, dailyGoal, today]);
+  const playDaily = () => { if (dailyGoal) { setPlaying({ goal: dailyGoal, from: { kind: "daily", date: today } }); window.scrollTo({ top: 0, behavior: "smooth" }); return; } if (dailyCard) { want([dailyCard.file]); setPendingDaily(true); } };
 
   // ?play=<id> opens a goal straight away (for checking one by eye).
   useEffect(() => {
-    if (!goals) return;
+    if (!everyGoal.length) return;
     const id = new URLSearchParams(window.location.search).get("play");
     const g = id ? everyGoal.find((q) => q.id === id) : null;
     if (g) setPlaying((p) => p ?? { goal: g, from: { kind: "list" } });
-  }, [goals, everyGoal]);
+  }, [everyGoal]);
 
   const onResult = useCallback((stars: number, pct: number) => {
     if (!playing) return;
@@ -570,22 +587,24 @@ export default function RealGoalsDev() {
     [pathId, stages, pathProgress, starsFn],
   );
   const play = (goal: RealGoal, from: From) => { setPlaying({ goal, from }); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const grand = PATHS.reduce((a, p) => a + ((paths.get(p.id) ?? []).length ? starsFn(p.id)(progFor(p.id)) : totalStars(progFor(p.id))), 0);
-  const grandMax = PATHS.reduce((a, p) => a + ((paths.get(p.id) ?? []).length ? pathMaxStars(paths.get(p.id)!) : p.id === "bangers" ? 0 : 150), 0);
+  // A path's own store only holds its own levels, so its stars are just its store's total.
+  const tileStars = (id: PathId) => totalStars(progFor(id));
+  const IDX = RG_INDEX as unknown as RgIndex;
+  const grand = PATHS.reduce((a, p) => a + tileStars(p.id), 0);
+  const grandMax = PATHS.reduce((a, p) => a + IDX.paths[p.id].max, 0);
   const curPath = pathId ? pathOf(pathId)! : null;
 
   return (
     <BroadcastPage
       title="Real Goals"
       sub="Score the real goals the way they really went in — World Cup 2018, Euro 2016, the 2017/18 leagues, and the famous bangers of 2010-2025."
-      actions={<div className="rg-total" data-total-stars>{STAR(1, 1, 22)} <b>{curPath ? starsFn(curPath.id)(pathProgress) : grand}</b><span>/ {curPath ? pathMaxStars(stages) || 150 : grandMax || 150}</span></div>}
+      actions={<div className="rg-total" data-total-stars>{STAR(1, 1, 22)} <b>{ready ? (curPath ? tileStars(curPath.id) : grand) : "–"}</b><span>/ {curPath ? IDX.paths[curPath.id].max : grandMax}</span></div>}
     >
       <PageGuide page="/star-real-goals-dev" />
       <div className="rg">
         {error && <Note>Could not load the goals: {error}</Note>}
-        {!goals && !error && <Note>Loading the goals…</Note>}
 
-        {goals && playing && (
+        {playing && (
           <PlayGoal
             key={`${playing.goal.id}-${playing.from.kind}`}
             goal={playing.goal}
@@ -597,24 +616,19 @@ export default function RealGoalsDev() {
           />
         )}
 
-        {goals && (
+        {(
           <>
             <div className="rg-tabs">
               <Pill on={tab === "levels"} onClick={() => setTab("levels")}>🗺️ Levels</Pill>
-              <Pill on={tab === "all"} onClick={() => setTab("all")}>🔎 All {everyGoal.length.toLocaleString("en-GB")}{leaguesLoading ? "…" : ""} goals</Pill>
+              <Pill on={tab === "all"} onClick={() => setTab("all")}>🔎 All {(allLeagues && goals && bangersLoaded ? everyGoal.length : 4686).toLocaleString("en-GB")} goals</Pill>
             </div>
             {tab === "all" && <GoalList goals={everyGoal} progress={progress} leaguesLoading={leaguesLoading} onPick={(g) => play(g, { kind: "list" })} />}
             {tab === "levels" && !curPath && (
               <>
-                {!playing && <DailyCard goal={dailyGoal} date={today} daily={daily} onPlay={() => dailyGoal && play(dailyGoal, { kind: "daily", date: today })} />}
+                {!playing && <DailyCard card={dailyCard} date={today} daily={daily} ready={ready} waiting={pendingDaily} onPlay={playDaily} />}
                 <div className="rg-tiles" data-path-home>
                   {PATHS.map((p) => {
-                    const st = paths.get(p.id) ?? [];
-                    // Not loaded yet: the stars come straight from the path's own store (only its levels write there).
-                    const got = st.length ? starsFn(p.id)(progFor(p.id)) : totalStars(progFor(p.id));
-                    const max = st.length ? pathMaxStars(st) : p.id === "bangers" ? 0 : 150;
-                    return <PathTile key={p.id} path={p} got={got} max={max}
-                      loading={p.id === "bangers" ? !bangersLoaded : false}
+                    return <PathTile key={p.id} path={p} got={ready ? tileStars(p.id) : null} max={IDX.paths[p.id].max}
                       onOpen={() => { setPathId(p.id); window.scrollTo({ top: 0 }); }} />;
                   })}
                 </div>
@@ -626,7 +640,7 @@ export default function RealGoalsDev() {
                   <button className="rg-back" onClick={() => setPathId(null)} data-back-paths>‹ All paths</button>
                   <h2 style={{ borderColor: curPath.colours[1] }}>{curPath.name}</h2>
                 </div>
-                {!stages.length && <Note>{(curPath.id === "bangers" ? !bangersLoaded : curPath.id === "worldies" ? !allLeagues : !leagueByFile[fileOfPath(curPath.id) as LeagueFile]) ? "Loading the goals…" : "No goals for this path yet."}</Note>}
+                {!stages.length && <Note>{(curPath.id === "wc" ? !goals : curPath.id === "bangers" ? !bangersLoaded : curPath.id === "worldies" ? !allLeagues : !loaded[fileOfPath(curPath.id) as LeagueFile]) ? "Loading the goals…" : "No goals for this path yet."}</Note>}
                 {!playing && heroLevel && <Hero level={heroLevel} progress={pathProgress} onPlay={() => play(heroLevel.goal, { kind: "path", path: curPath.id, level: heroLevel })} />}
                 <LevelMap stages={stages} progress={pathProgress} stars={starsFn(curPath.id)} onPick={(lv) => play(lv.goal, { kind: "path", path: curPath.id, level: lv })} />
               </div>
@@ -634,10 +648,10 @@ export default function RealGoalsDev() {
           </>
         )}
 
-        {bangers.length > 0 && (
+        {(
           <div className="rg-fix">
             <Btn onClick={() => setFixOpen((v) => !v)}>🛠 Fix a banger (admin) {fixOpen ? "▴" : "▾"}</Btn>
-            {fixOpen && <BangerFixer bangers={bangers} onPlay={(g) => play(g, { kind: "list" })} />}
+            {fixOpen && (bangersLoaded ? <BangerFixer bangers={bangers} onPlay={(g) => play(g, { kind: "list" })} /> : <Note>Loading the bangers…</Note>)}
           </div>
         )}
         <div data-credit className="rg-credit">{REAL_CREDIT.wyscout} {PICTURE_WORDS.placed}. Bangers: {REAL_CREDIT.drafted}</div>
