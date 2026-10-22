@@ -768,11 +768,12 @@ export const ADMIN_GUIDES = {
         ["A club's home pitch…", "Sets the pitch to that club's own pitch: Premier League perfect, small lower-league grounds poorer."],
         ["Pitch slider", "Pitch quality by hand, very poor to perfect."],
         ["Normal / ☀️ Dry spell", "A dry spell bakes a bad pitch: less bounce, slows fast, at worst the ball stops dead. No effect on a perfect pitch."],
+        ["Tame (recommended) / Harsh (first build)", "How hard a bad pitch is on the ball. Tame: it runs almost as normal, then grabs and stops at a crawl (14 in 100 normal passes die short on the worst dry pitch, 6 on a clear day). Harsh: the first build (87 in 100 die short), to compare."],
         ["Pre-match line", "What the pre-match screen would say, e.g. \"Pitch: poor, dry\". Shown on this page only."],
       ] },
       { group: "Shot and pass lab", items: [
         ["Ground pass / Driven shot / Lofted pass / Long ball", "Which strike to fly."],
-        ["Clear | These conditions", "The same strike from above on a clear day and in your conditions. White = in the air, yellow = rolling, red dot = first bounce, dashed = the clear day."],
+        ["Clear | These conditions", "The same strike from above on a clear day and in your conditions, at the same scale. White = in the air, yellow = rolling, red dot = first bounce, dashed = the clear day. The wind arrow sits on the side the ball is not blown to."],
         ["Side picture", "Height against distance: dashed clear, yellow now."],
         ["Measure 200 of each", "Flies 200 of every strike (slightly different each time) and shows the average change against clear."],
         ["Ball: Old / New", "Which ball the lab uses. It starts on the ball your Settings use."],
