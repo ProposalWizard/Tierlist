@@ -5234,7 +5234,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.fillStyle = "rgba(255,255,255,0.85)";
         ctx.font = `700 ${Math.max(11, Math.round(W * 0.03))}px system-ui, sans-serif`;
         ctx.textAlign = "center";
-        ctx.fillText("Keep running", ox, oy - rr - 8);
+        ctx.fillText("Keep running", ox, oy - rr - 8 - Math.max(12, Math.round(W * 0.032)));
+        // What the run is for (Mikey's playtest, 21 Oct 2026: "what does the
+        // running even do if you can't get the ball?"): steer into space, and
+        // the man on the ball may give it back to you.
+        ctx.font = `600 ${Math.max(10, Math.round(W * 0.026))}px system-ui, sans-serif`;
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        const hint = "Steer into space: he may pass it back";
+        const hx = Math.max(ox, ctx.measureText(hint).width / 2 + 6);
+        ctx.fillText(hint, hx, oy - rr - 8);
         ctx.textAlign = "left";
       }
     }

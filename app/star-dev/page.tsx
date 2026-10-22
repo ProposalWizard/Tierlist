@@ -2820,6 +2820,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     });
   }, [career]);
 
+  /** Buy one energy can and drink it at once (the not-in-the-squad card). */
+  const handleBuyAndUseCan = useCallback((can: KibCan) => {
+    const price = kibCanPrice(can, career?.contract.wage ?? 0);
+    if (!career || career.money < price || can.effect || career.energy >= 100) return;
+    sfx("can-open");
+    setCareer({ ...career, money: career.money - price, energy: Math.min(100, career.energy + can.restore) });
+  }, [career]);
+
   const handleBuyBoot = useCallback((boot: Boot) => {
     if (!career || career.money < boot.price) return;
     // Buying the SAME pair you're already wearing stacks the matches left
@@ -4946,6 +4954,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onWatchFromStands={handleWatchFromStands}
         onSimMatch={handleSimMatch}
         onUseCan={handleUseCan}
+        onBuyAndUseCan={handleBuyAndUseCan}
         onBenchMomentSeen={(key) => setCareer(c => (c ? { ...c, benchMomentSeen: key } : c))}
       />
     );

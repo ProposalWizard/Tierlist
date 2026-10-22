@@ -1,6 +1,6 @@
 import { buildScenario, goalInView, SCENARIO_KINDS, type Scenario, type Viewport } from "../../lib/star/canvasEngine";
 import { POST_L, POST_R } from "../../lib/star/pitch";
-import { frameForNewView, setPlayZoomOverride, playZoomOf, bodiesOf, setActionFit, framingFaults } from "../../lib/star/matchView";
+import { frameForNewView, setPlayZoomOverride, playZoomOf, bodiesOf, framedBodiesOf, setActionFit, framingFaults } from "../../lib/star/matchView";
 
 /**
  * CHANCE FRAMING: Zoom | Old (lib/star/chanceFraming.ts, Harry 9 Oct 2026).
@@ -68,7 +68,8 @@ for (const kind of SCENARIO_KINDS) for (let seed = 1; seed <= 40; seed++) for (c
   if (camMode === "old") {
     check(z.k >= 1, `${tag}: zoomed OUT (${z.k})`);
     if (z.k === 1) continue;
-    for (const p of bodiesOf(z.sc)) {
+    // A crowded chance frames the crowd (Mikey, 21 Oct 2026): far men may be off.
+    for (const p of framedBodiesOf(z.sc)) {
       check(p.x >= c.x1 + 0.9 - 1e-6 && p.x <= c.x2 - 0.9 + 1e-6 && p.y >= c.y1 + 1 - 1e-6 && p.y <= c.y2 + 1e-6,
         `${tag}: a man at (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) is cut off`);
     }
