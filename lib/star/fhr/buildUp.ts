@@ -772,7 +772,7 @@ function compactRoute(sc: Scenario, moment: LeadMoment, r: Rng, tp: FhrTempo, st
     // in a flag that no run could avoid (a quick ball is in the air ~0.6 s).
     if (last || through) {
       const D = lineEnd + 1.5 - cur.y;
-      if (D > 0) vv = Math.max(8, Math.min(vv, dist(from, cur) / (0.35 + D / COMPACT_RUN_ONTO)));
+      if (D > 0) vv = Math.max(8, dist(from, cur) / 2.6, Math.min(vv, dist(from, cur) / (0.35 + D / COMPACT_RUN_ONTO)));
     }
     add("pass", from, { v: vv, h, through, src: h > 0 || v >= COMPACT_LONG_V[0] ? "break" : "moves" });
   };
@@ -1661,7 +1661,8 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
     for (const ang of [0, 25, -25, 45, -45, 65, -65, 80, -80]) {
       const a = (ang * inward * Math.PI) / 180;
       const u = { x: Math.sin(a), y: Math.cos(a) }; // from his place, back up the pitch
-      for (let Trun = Math.min(durS - 0.3, 5.5); Trun >= 2; Trun -= 0.25) {
+      // (A whole short move is about 3 s: he may sprint in over 1.2 s and be seen for 0.7 s, not 2 and 1.)
+      for (let Trun = Math.min(durS - 0.3, 5.5); Trun >= (o.style ? 1.2 : 2); Trun -= 0.25) {
         const t0 = durS - Trun;
         // Speed through the build-up: a jog, then (from t0) up to a sprint over 0.6 s.
         const speedAt = (t: number) => (t < t0 ? vJog : vJog + (vRun - vJog) * smooth((t - t0) / 0.6));
@@ -1676,7 +1677,7 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
         if (!hidden) continue;
         let enter = -1;
         for (let i = i0; i <= N; i++) if (!offScreen(path[i], i, 0)) { enter = i; break; }
-        if (enter < 0 || (N - enter) / HZ < 1.0) continue;
+        if (enter < 0 || (N - enter) / HZ < (o.style ? 0.7 : 1.0)) continue;
         bestPlan = { path, enter };
         break;
       }
@@ -1928,7 +1929,8 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
   };
   const roles: Record<string, string> = {};
   for (const p of all) roles[p.key] = p.side === "keeper" ? "GK" : p.role;
-  const signature = shown.map((a) => `${a.type === "pass" ? "P" : "C"}${zoneOf(a.from)}`).join("-") + `>${zoneOf(R)}` + (spell ? "R" : "") + (called ? "OFF" : "");
+  // (A whole short move's style leads it: a long ball and a tiki move through the same zones are different moves.)
+  const signature = (o.style ? `${o.style[0].toUpperCase()}:` : "") + shown.map((a) => `${a.type === "pass" ? "P" : "C"}${zoneOf(a.from)}`).join("-") + `>${zoneOf(R)}` + (spell ? "R" : "") + (called ? "OFF" : "");
   const brk = moment.pattern === "transition";
   // The biggest moments say so (a level final, the 90th minute).
   const lastAttack = tp.drama >= 0.6 && (moment.minute ?? 0) >= 85;
