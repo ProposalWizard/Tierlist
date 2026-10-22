@@ -27,7 +27,7 @@ import { type Scenario } from "../canvasEngine";
 import { frameFromScenario, type Frame } from "../scenarioFrame";
 import {
   frameForNewView, turnWideChance, playZoomOf, playZoom,
-  NEW_FIGURE_SCALE, NEW_OUTFIELD_SHRINK, NEW_BALL_SCALE, figureGrow, newViewCanvasHeight, matchView,
+  NEW_FIGURE_SCALE, NEW_OUTFIELD_SHRINK, NEW_KEEPER_GROW, NEW_BALL_SCALE, figureGrow, newViewCanvasHeight, matchView,
 } from "../matchView";
 import { hasRunup } from "../penaltyRunup";
 import { standBackFor, yourRunupFor, penaltyRunupOf, freeKickRunupOf } from "../runupStyles";
@@ -96,7 +96,7 @@ export function matchStill(sc0: Scenario, hw: number, tiltSetting = matchView() 
     return {
       frame, tilt, hw, youHidden,
       figureScale: NEW_FIGURE_SCALE * NEW_OUTFIELD_SHRINK * g,
-      keeperScale: NEW_FIGURE_SCALE * g,
+      keeperScale: NEW_FIGURE_SCALE * NEW_KEEPER_GROW * g,
       ballScale: NEW_BALL_SCALE * g,
     };
   }
