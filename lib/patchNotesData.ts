@@ -47,8 +47,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "label": "famous goals added"
         },
         {
-          "value": "414 / 417",
-          "label": "tests passing"
+          "value": "422 / 430",
+          "label": "star test files passing (the 8 left fail on main too)"
         }
       ],
       "sections": [
@@ -138,7 +138,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "items": [
             {
               "title": "Harry",
-              "detail": "Match camera 1 px short at 372×704; a long-range drawing breaks a law; 'StatsBomb' in two patch notes; 3D training freeze; two chance tests failing on main after the build-up work."
+              "detail": "Match camera 1 px short at 372×704; a long-range drawing breaks a law; the removed data source's name in two patch notes; 3D training freeze; two chance tests failing on main after the build-up work."
             },
             {
               "title": "Everyone",
