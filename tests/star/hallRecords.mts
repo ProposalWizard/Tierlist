@@ -42,7 +42,8 @@ function entry(name: string, at: number, bests: { goalsSeason?: number; goals?: 
   check(season.history[0]?.value === 51, "the old holder keeps his number in the history");
   const career = book.find(r => r.def.id === "goals-career")!;
   check(career.holder.name === "Tom Ashworth" && career.history[0]?.name === "Jamie Calloway", "career goals: Ashworth took it from Calloway");
-  check(season.holder.seasonLabel === "2032/33", `a season record says which season (${season.holder.seasonLabel})`);
+  // The calendar's year (22 Oct 2026 bug hunt): startYear is the FIFA edition, so this read 2032/33 before.
+  check(season.holder.seasonLabel === "2031/32", `a season record says which season (${season.holder.seasonLabel})`);
   check(hallRecordBook([]).length === 0, "an empty Hall holds no records");
   check(!book.some(r => r.def.id === "ballon-dors"), "nobody won a Ballon d'Or: no record for it");
 }
