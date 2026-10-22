@@ -36,8 +36,11 @@ await pg.addInitScript(() => {
   try { new PerformanceObserver(l => { for (const e of l.getEntries()) window.__lt.push([e.startTime, e.duration]); }).observe({ type: "longtask", buffered: true }); } catch {}
 });
 await pg.goto(`${BASE}/star-dev`, { waitUntil: "domcontentloaded", timeout: 180000 });
-await pg.evaluate(async ({ career, clips }) => {
+const PLAYER = argv.includes("--player");
+await pg.evaluate(async ({ career, clips, player }) => {
   localStorage.clear();
+  // --player: a player's phone, not the team's (no admin tab).
+  if (player) localStorage.setItem("kib-admin-mode", "off");
   localStorage.setItem("star-career-v2::anon", JSON.stringify(career));
   localStorage.setItem("star-career-phase-v1::anon", JSON.stringify({ phase: "dashboard" }));
   localStorage.setItem("star-career-saved-at-v1::anon", String(Date.now()));
@@ -52,7 +55,7 @@ await pg.evaluate(async ({ career, clips }) => {
   for (const c of clips) tx.objectStore("clips").put(c);
   await new Promise(res => { tx.oncomplete = res; });
   db.close();
-}, seed);
+}, { ...seed, player: PLAYER });
 await pg.reload({ waitUntil: "networkidle", timeout: 180000 });
 await pg.waitForTimeout(4000);
 // Warm the feed's code once (dev server compiles on first use), then leave it.
@@ -166,7 +169,7 @@ cdp = await ctx.newCDPSession(pg);
 const reload = await openFeed("open-3-reload");
 
 const f = v => v === null || v === undefined ? "—" : `${Math.round(v)} ms`;
-console.log(`CPU ${RATE}× · 390×844 · posts in seed ${seed.career.media.posts.length}`);
+console.log(`${PLAYER ? "player view" : "admin view (team)"} · CPU ${RATE}× · 390×844 · posts in seed ${seed.career.media.posts.length}`);
 console.log(`open (first)     painted ${f(first.painted)} · posts drawn ${domPosts} · longest task while opening ${first.openLongest} ms · still ${f(first.still)} · first video ready ${f(first.video)}`);
 console.log(`long tasks 10 s after open: ${first.lt10s.length} (longest ${Math.max(0, ...first.lt10s)} ms, >100ms: ${first.lt10s.filter(x => x > 100).length})`);
 console.log(`scroll           ${JSON.stringify(scroll)}`);

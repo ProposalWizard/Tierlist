@@ -32,6 +32,27 @@ await pg.waitForTimeout(Number(val("--wait", "30000")));
 const px = Number(val("--scroll", "0"));
 if (px > 0) { await pg.evaluate(px => { const box = document.querySelector("[data-feed-scroll]"); if (box) box.scrollTop = px; }, px); await pg.waitForTimeout(4000); }
 if (px < 0) { await pg.evaluate(n => { const v = document.querySelectorAll("[data-goal-video]")[-n - 1]; v?.scrollIntoView({ block: "center" }); }, px); await pg.waitForTimeout(6000); }
+if (argv.includes("--poll")) {
+  // Find the Goal of the Month poll: scroll down until it is drawn.
+  const found = await pg.evaluate(async () => {
+    const box = document.querySelector("[data-feed-scroll]");
+    for (let i = 0; i < 120; i++) {
+      const a = Array.from(document.querySelectorAll("article")).find(x => /Goal of the Month\. /.test(x.innerText));
+      if (a) { a.scrollIntoView({ block: "start" }); return true; }
+      box.scrollTop += 300; await new Promise(r => setTimeout(r, 150));
+    }
+    return false;
+  });
+  console.log("poll found:", found);
+  await pg.waitForTimeout(3000);
+  await pg.screenshot({ path: val("--shot", "/tmp/look.jpg").replace(".jpg", "-poll.jpg"), type: "jpeg", quality: 70 });
+  const vote = pg.locator("article button").filter({ hasText: /^\s*Vote\s*$/ }).nth(1);
+  if (await vote.count()) { await vote.click(); await pg.waitForTimeout(2500); console.log("voted; 'You voted' shown:", await pg.locator("text=You voted").count()); }
+  else console.log("no Vote button");
+  await pg.screenshot({ path: val("--shot", "/tmp/look.jpg").replace(".jpg", "-voted.jpg"), type: "jpeg", quality: 70 });
+  const saved = await pg.evaluate(() => { const c = JSON.parse(localStorage.getItem("star-career-v2::anon")); const p = c.media.posts.find(x => x.eventId === "gotm-poll" && !x.graphic.closed); return p && p.graphic.userVote; });
+  console.log("vote saved in career:", saved);
+}
 const st = await pg.evaluate(() => ({
   slots: document.querySelectorAll("[data-feed-slot]").length,
   drawn: document.querySelectorAll('[data-feed-slot="drawn"]').length,

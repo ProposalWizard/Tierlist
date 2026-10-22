@@ -29,13 +29,35 @@ export function FeedWindow({ scroller, children }: { scroller: React.RefObject<H
     const root = scroller.current;
     if (!root || typeof IntersectionObserver === "undefined") return;
     const subs = new Map<Element, (near: boolean) => void>();
+    // Posts coming near are drawn ONE PER FRAME, nearest the screen first,
+    // so a fast scroll never builds five posts in one go (a 150-175 ms
+    // freeze on a slowed phone). Posts going away are emptied at once.
+    const queue = new Map<Element, number>();
+    let frame = 0;
+    const pump = () => {
+      frame = 0;
+      let best: Element | null = null, bestD = Infinity;
+      const mid = root.getBoundingClientRect();
+      const c = mid.top + mid.height / 2;
+      for (const [el] of Array.from(queue)) {
+        const r = el.getBoundingClientRect();
+        const d = Math.abs(r.top + r.height / 2 - c);
+        if (d < bestD) { bestD = d; best = el; }
+      }
+      if (best) { queue.delete(best); subs.get(best)?.(true); }
+      if (queue.size) frame = requestAnimationFrame(pump);
+    };
     const io = new IntersectionObserver(es => {
-      for (const e of es) subs.get(e.target)?.(e.isIntersecting);
+      for (const e of es) {
+        if (e.isIntersecting) queue.set(e.target, 1);
+        else { queue.delete(e.target); subs.get(e.target)?.(false); }
+      }
+      if (queue.size && !frame) frame = requestAnimationFrame(pump);
     }, { root, rootMargin: `${NEAR_PX}px 0px` });
     setWatch({
-      observe: (el, on) => { subs.set(el, on); io.observe(el); return () => { subs.delete(el); io.unobserve(el); }; },
+      observe: (el, on) => { subs.set(el, on); io.observe(el); return () => { subs.delete(el); queue.delete(el); io.unobserve(el); }; },
     });
-    return () => io.disconnect();
+    return () => { io.disconnect(); if (frame) cancelAnimationFrame(frame); };
   }, [scroller]);
   return <WatchCtx.Provider value={watch}>{children}</WatchCtx.Provider>;
 }
