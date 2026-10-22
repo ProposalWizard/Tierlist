@@ -38,6 +38,8 @@ export function primeMatchSound() {
   if (!ctx) return;
   if (ctx.state === "suspended") ctx.resume().catch(() => {});
   if (soundSet() === "arcade") MATCH_FILES.forEach(decodeFile);
+  // The header thump plays in every sound set (Match feel: New): loaded up front.
+  decodeFile("match-header");
 }
 
 // ── The Arcade set's files (Harry, 14 Oct 2026; scripts/sfx/arcade.py) ──
@@ -47,7 +49,7 @@ export function primeMatchSound() {
 // a Sound Board replacement is used when there is one.
 // Only the Arcade texture pack plays them (texturePack.ts soundSet); every
 // other pack keeps the sounds made in code, exactly as before.
-type MatchFile = "match-pass" | "match-goal" | "match-crowd";
+type MatchFile = "match-pass" | "match-goal" | "match-crowd" | "match-header";
 const MATCH_FILES: MatchFile[] = ["match-pass", "match-goal", "match-crowd"];
 const fileBuffers = new Map<MatchFile, AudioBuffer | null | "loading">();
 
@@ -67,8 +69,8 @@ function decodeFile(name: MatchFile) {
 }
 
 /** Play a decoded file now. False when it is not ready (the caller makes its own sound instead). */
-function playFile(name: MatchFile, gain: number): boolean {
-  if (!ctx || soundSet() !== "arcade") return false;
+function playFile(name: MatchFile, gain: number, anySet = false): boolean {
+  if (!ctx || (!anySet && soundSet() !== "arcade")) return false;
   const b = fileBuffers.get(name);
   if (!b || b === "loading") { decodeFile(name); return false; }
   try {
@@ -225,6 +227,19 @@ export function playStrike(power: number, gain: number, bass: number, scuff: boo
   noiseBurst(0.035 + 0.03 * p, (0.18 + 0.32 * p) * gain, 2600 + 1600 * p, 0.9, "bandpass");
   // Boot on turf.
   noiseBurst(0.07, 0.12 * gain, 900, 0.7, "lowpass");
+}
+
+/** Your header (headers piece 5, 22 Oct 2026): public/sfx/match-header.mp3, a
+ *  forehead-on-ball thump with a small crowd "ooh" under it (made in code:
+ *  scripts/sfx/header.py, CC0). Any sound set. Until the file has loaded, a
+ *  round thump made here instead. */
+export function playHeader(power: number, gain: number) {
+  if (!may("kick") || !(gain > 0)) return;
+  const p = Math.max(0, Math.min(1, power));
+  if (playFile("match-header", (0.75 + 0.35 * p) * gain, true)) return;
+  tone(210, 0.16, "sine", (0.5 + 0.3 * p) * gain, 90);
+  tone(540, 0.05, "sine", 0.18 * gain, 500);
+  noiseBurst(0.03, 0.2 * gain, 1400, 0.8, "lowpass");
 }
 
 /** The ball landing: a soft thud, heavier from higher up. */

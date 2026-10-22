@@ -181,10 +181,11 @@ export function arriveZ(kind: string): number {
 //     (REAL_HEADER_Z_DECILES), picked from the picture itself (no random number).
 //  Nobody is placed by it: it is only how high the ball is.
 //
-//  AIR_HEIGHT_VARIES switches all of it. It stays false until CanvasMatch.tsx
-//  passes the chance to airWaitZ (the ball while you aim: one line there,
-//  `airWaitZ(sc.kind, t, sc)`). Without that line the ball would arrive at its
-//  own height, hang at 1.85 m while you aim, then be struck from its own height.
+//  AIR_HEIGHT_VARIES switches all of it. On since 22 Oct 2026: CanvasMatch.tsx
+//  passes the chance to airWaitZ (the ball while you aim, `airWaitZ(sc.kind, t,
+//  sc)`), and a header met high is nodded down harder so the goal rate stays
+//  where it was (airborneChance.ts HEADER_Z_TAKEBACK_UP; measured with
+//  scripts/aerial/heights.mts, every level within 2 per 100).
 // ─────────────────────────────────────────────────────────────────────────
 
 /** The engine's own air heights (canvasEngine.ts HEADER_MIN_Z, HEADER_MAX_REACH_Z,
@@ -194,7 +195,17 @@ export const AIR_HEADER_MAX_Z = 2.6;
 export const AIR_VOLLEY_MIN_Z = 0.35;
 
 /** On: each header/volley chance has its own height (airZOf). Off: the kind's usual height. */
-export const AIR_HEIGHT_VARIES = false;
+export const AIR_HEIGHT_VARIES = true;
+/** For the measuring script only (scripts/aerial/heights.mts): switch the
+ *  heights on or off without editing the file. null = AIR_HEIGHT_VARIES. Kept
+ *  on globalThis so a script that loads this file twice (tsx: once as ESM,
+ *  once as CommonJS) still flips the one the strike reads. */
+const OVERRIDE_KEY = "__knowitballAirHeightVaries";
+export function setAirHeightVariesOverride(v: boolean | null): void { (globalThis as Record<string, unknown>)[OVERRIDE_KEY] = v; }
+export function airHeightVaries(): boolean {
+  const v = (globalThis as Record<string, unknown>)[OVERRIDE_KEY];
+  return typeof v === "boolean" ? v : AIR_HEIGHT_VARIES;
+}
 
 /** A header is met between these (m): research §5.4, real headers 1.5 to 2.6 m. */
 export const HEADER_Z_RANGE: readonly [number, number] = [1.5, AIR_HEADER_MAX_Z];
@@ -218,7 +229,7 @@ export interface AirHeighted { kind: string; airZ?: number }
 /** How high this chance's ball is when it reaches you (m). */
 export function airZOf(sc: AirHeighted): number {
   const base = arriveZ(sc.kind);
-  if (!AIR_HEIGHT_VARIES || !isAirKind(sc.kind)) return base;
+  if (!airHeightVaries() || !isAirKind(sc.kind)) return base;
   const z = sc.airZ;
   if (typeof z !== "number" || !Number.isFinite(z)) return base;
   return clampZ(z, sc.kind === "header" ? HEADER_Z_RANGE : VOLLEY_TOP_RANGE);

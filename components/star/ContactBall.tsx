@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { gradeContact } from "@/lib/star/shotModel";
 import { airContactRead, AIR_CENTRE_R, VOLLEY_SWEET } from "@/lib/star/airborneChance";
+import { headerJump } from "@/lib/star/aerial";
 
 /**
  * How the ball is moving while you pick where to hit it (Mikey, 27 Sep 2026).
@@ -62,6 +63,10 @@ interface Props {
   /** Your Aerial & Acrobatics, 0-100: read instead of technique for how a
    *  header or volley comes off (airborneChance.ts). Absent = technique, as before. */
   aerial?: number;
+  /** A header: how high the cross reaches you (m, airDrawings.ts airZOf). With
+   *  `aerial`, the screen says your jump ("Jump 0.62 m") and a ball above
+   *  your reach comes off at a stretch. Absent: as before. */
+  ballZ?: number;
   /** A feature's teaching pause (CanvasMatch `holdAt`): the clock waits
    *  until this goes false. Absent in the real match. */
   hold?: boolean;
@@ -85,7 +90,7 @@ const TOO_SLOW_MS = 350;
 export const STRIKE_ZONE_R = 1.18;
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, hold = false, grades = false, knuckles = false, field = false }: Props) {
+export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, ballZ, hold = false, grades = false, knuckles = false, field = false }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
@@ -195,7 +200,8 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
     const lift = liftRef.current;
     if (air) {
       // B10: a header or volley says how it came off (the same read the strike uses).
-      const rd = airContactRead({ kind: motion === "float" ? "header" : "volley", lift, cx, cy, tech: technique, aerial });
+      const rd = airContactRead({ kind: motion === "float" ? "header" : "volley", lift, cx, cy, tech: technique, aerial },
+        motion === "float" && ballZ !== undefined ? ballZ * (0.85 + 0.15 * lift) : undefined);
       setGraded({ label: rd.label, good: rd.good });
     } else if (grades) {
       const g = gradeContact({ cx, cy }, power, knuckles, field);
@@ -205,6 +211,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
     setTimeout(() => onContact(air ? { cx, cy, lift } : { cx, cy }), grades || air ? 420 : 200);
   };
 
+  const jump = motion === "float" && ballZ !== undefined && aerial !== undefined ? headerJump(ballZ, aerial) : null;
   const powerPct = Math.round(power * 100);
   const powerColor = powerPct < 40 ? "#22c55e" : powerPct < 75 ? "#eab308" : "#ef4444";
 
@@ -273,6 +280,13 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
         {(motion === "float" || motion === "bounce") && (
           <div data-air-hint className="mt-1.5 text-[11px] font-bold text-white/90" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
             {motion === "float" ? "Top nods it down · the sides glance it · under loops it up" : "Hit the middle as it drops through the green"}
+          </div>
+        )}
+        {/* The jump (Aerial sets how high you go): the cross's height against your reach. */}
+        {jump && (
+          <div data-header-jump className="mt-1 text-[12px] font-black tracking-wide" style={{ color: jump.overM > 0.02 ? "#fca5a5" : "#bbf7d0", textShadow: "0 1px 3px rgba(0,0,0,0.85)" }}>
+            {jump.jumpM < 0.03 ? "No jump needed" : `Jump ${jump.jumpM.toFixed(2)} m`}
+            {jump.overM > 0.02 ? ` · ${jump.overM.toFixed(2)} m over your reach` : ` · max ${jump.maxJumpM.toFixed(2)} m`}
           </div>
         )}
 
