@@ -191,6 +191,7 @@ import { useMatchRadarLook } from "@/lib/star/matchRadarLook";
 import { kitLabelOnDark } from "@/lib/star/kits";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills, fatigueCut, type EnergyMode } from "@/lib/star/energy";
+import { aerialOf } from "@/lib/star/aerial";
 import type { Playstyle } from "@/lib/star/types";
 import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import { setupKind, strikeKind, replayStrike, stepKind, enforceHardRules, type StrikeDecision } from "@/lib/star/kindRules";
@@ -9217,8 +9218,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       : switchOn("powerCurve")
       ? { ...strikeWith, power: strikingPower(strikeWith.power) }
       : strikeWith;
-    // Your technique softens a mis-hit header or volley (kept on the strike for the replay).
-    if (contact.air) contact = { ...contact, air: { ...contact.air, tech: launchWith.technique } };
+    // Your Aerial & Acrobatics (tired legs count) softens a mis-hit header or
+    // volley; technique stays as the fallback (kept on the strike for the replay).
+    if (contact.air) contact = { ...contact, air: { ...contact.air, tech: launchWith.technique, aerial: career ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current)))) : undefined } };
     // Snapshot everything a replay would need to reproduce this exact strike
     // — see GoalReplay and rngCallCountRef. Cheap and thrown away unless the
     // ball actually ends up in the net (resolveOutcome), so this costs
@@ -9864,6 +9866,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             onContact={(c) => handleContact(c)}
             motion={strikeMotion(scenarioRef.current.kind, seedRef.current)}
             technique={skills.technique}
+            aerial={career ? aerialOf(career.skills) : undefined}
             timeLimitS={contactTimerS ?? undefined}
             onTimeout={contactTimerS ? handleScuff : undefined}
             hold={held}

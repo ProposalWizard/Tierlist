@@ -160,7 +160,11 @@ Record each new link here so the next round can find the latest one:
 This is real, shipped, PRODUCTION code. Since 21 Oct 2026 the notes go live
 on their own first: `node scripts/patch-notes/ship.mjs <versions> --pr`
 (PRO-TEAM-007, RUL-TEAM-018); the feature code waits for Harry's push
-(RUL-TEAM-019). `BUILT_IN_PATCH_NOTES`
+(RUL-TEAM-019). **After a ship PR merges, merge main back into Harry at once,
+before the next Harry → main PR.** Otherwise both branches carry the same
+version line, git keeps both, and the duplicate key (TS1117) fails every live
+build while previews and local builds pass (21 Oct 2026: four live builds
+failed this way). `BUILT_IN_PATCH_NOTES`
 is a plain array of `PatchNote` objects (typed in `lib/patchNotes.ts`); the
 page renders straight from it, no database, no migration, nothing to run
 before it's live (see that file's own header for why — it was a Supabase
