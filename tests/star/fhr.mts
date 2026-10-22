@@ -29,7 +29,9 @@ import { leadInEntities, type LeadIn } from "../../lib/star/leadIn";
 import {
   fhrBuildUpFor, fhrWantsBuildUp, maxSpeed, fhrTempo, momentDrama,
   FHR_MIN_S, FHR_MAX_S, FHR_TOP_SPEED, FHR_RUNON_S, FHR_RUNON_MAX_M, FHR_BIG_MAX_S, COVER_CLEAR_M, COVER_MIN_BALL_Y, type FhrBuildUp,
+  FHR_COMPACT_BIG_MAX_S, FHR_STYLES, fhrStyleFor, type FhrStyle,
 } from "../../lib/star/fhr/buildUp";
+import { leadInCamera } from "../../lib/star/leadIn";
 import { fhrFoulBuildUpFor, fhrWantsFoul, FOUL_SHARE, type FhrFoulBuildUp } from "../../lib/star/fhr/foulBuildUp";
 import { testAreaBuildUp, snappyBuildUp, snappyCapS, fhrShareRoll, fhrBuildUpOn, FHR_BUILDUP_SHARE, FHR_SNAPPY_S, FHR_SNAPPY_FLOOR_S } from "../../lib/star/fhr/builders";
 import { standBackFor, yourRunupFor, penaltyRunupOf, freeKickRunupOf } from "../../lib/star/runupStyles";
@@ -211,10 +213,15 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
     }
     durs.push(l.durS);
     // A regain (B2b: the match's own, this minute) adds their spell: up to half of it longer.
-    if (l.regain) regains++;
-    const maxS = FHR_MAX_S + (l.regain ? 0.5 * l.regain.spellS + 0.6 : 0);
+    // 22 Oct 2026 (build-up mix): the career's short whole moves start after the
+    // regain (their 1.5-2.2 s spell would double a 3 s move; it was nearly always
+    // cut off anyway). The regain is still made and shown by the long move (the
+    // test pages' Length: Long), counted from fhrBuildUpFor below.
+    if (l.regain || (l.style && fhrBuildUpFor(c.sc, c.moment).regain)) regains++;
+    const maxS = l.style ? FHR_COMPACT_BIG_MAX_S + 0.6 : FHR_MAX_S + (l.regain ? 0.5 * l.regain.spellS + 0.6 : 0);
     // 22 Oct 2026: a cut build-up (trimmedS) may be as short as FHR_SNAPPY_FLOOR_S ("buildups are still too slow": 3 s cap).
-    const minS = (l as FhrBuildUp).trimmedS ? FHR_SNAPPY_FLOOR_S : FHR_MIN_S;
+    // 22 Oct 2026 (build-up mix): a whole short move (l.style) may be a single long ball, from 1.2 s.
+    const minS = l.style ? 1.2 : (l as FhrBuildUp).trimmedS ? FHR_SNAPPY_FLOOR_S : FHR_MIN_S;
     check(l.durS >= minS - 1e-9 && l.durS <= maxS + 1e-9, `${c.sc.kind}: build-up ${l.durS.toFixed(2)} s, not ${minS}–${maxS.toFixed(1)}`);
     // Ends exactly on the drawing: the ball and you at the hand-over (durS), and
     // the men still running (phase 3) once they have stopped (durS + runOnS).
@@ -268,7 +275,11 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
   check(setPieces > 5, "no set pieces served");
   G.__fhrStats = { open, called, regains, runOns, covers, setPieces, fouls, runSpeedMedian: runSpeeds[runSpeeds.length >> 1] };
   check(withProblems <= Math.ceil(open * 0.01), `${withProblems} of ${open} build-ups failed their own checks`);
-  check(sigs.size >= open * 0.85, `only ${sigs.size} distinct routes in ${open} build-ups`);
+  // 22 Oct 2026 (build-up mix): the career's short whole moves have 1-5 touches
+  // (a single long ball is one), so fewer of them differ by touch type and
+  // zone alone: 102 of 144 (71%) here, against 85%+ for the 4-8 s long moves
+  // this counted before. Each style's routes are still mostly its own.
+  check(sigs.size >= open * 0.65, `only ${sigs.size} distinct routes in ${open} build-ups`);
   durs.sort((a, b) => a - b);
   // B20 (A1): only the last FHR_SNAPPY_S of the move plays (was a median of ~6.4 s).
   check(durs[Math.floor(durs.length / 2)] > FHR_SNAPPY_S - 0.6 && durs[Math.floor(durs.length / 2)] <= FHR_SNAPPY_S + 0.3, `median build-up ${durs[Math.floor(durs.length / 2)].toFixed(2)} s`);
@@ -400,6 +411,52 @@ for (const f of ["lib/star/hiddenMatch.ts", "lib/star/canvasEngine.ts", "lib/sta
     check(fhrBuildUpOn(c0.sc, c0.moment) === null, "B20: a long shot that loses the roll gets no build-up");
     check(fhrBuildUpOn(c0.sc, c0.moment, undefined, { everyChance: true }) !== null, "B20: a test page's one picture still gets its build-up");
   }
+  forceFhrMode(null);
+}
+
+// ── The build-up mix (Harry, 22 Oct 2026: "shorter build ups shouldn't
+// necessarily mean less distance, there should be a mix of sped up kicking,
+// sometimes I still want fast long balls and tiki taka") ──
+// The career's build-up is a WHOLE short move in one of three styles, about
+// 3 s, never cut, never opening on a ball in the air, the ball on the screen.
+{
+  forceFhrMode("on");
+  const pool = servedChances({ count: 260, seed: 41 }).filter((c) => fhrWantsBuildUp(c.sc.kind, c.moment));
+  const mix: Record<string, number> = {}, ballM: number[] = [], durs: number[] = [];
+  let n = 0, cut = 0, midPass = 0, offFrames = 0, frames = 0, tikiPasses = 0, tikiN = 0, longBall = 0, longN = 0;
+  for (const c of pool) {
+    const l = fhrBuildUpOn(c.sc, c.moment, undefined, { everyChance: true }) as FhrBuildUp | null;
+    if (!l) continue;
+    n++;
+    mix[l.style ?? "none"] = (mix[l.style ?? "none"] ?? 0) + 1;
+    if (l.trimmedS) cut++;
+    // A move opens with a man on the ball: the first touch starts after a moment, never at t = 0.
+    if ((l.passStart?.[0] ?? 1) < 0.15) midPass++;
+    if (!l.offside) durs.push(l.durS);
+    let m = 0, prev = l.ballAt(0);
+    const cam = leadInCamera(l, []), fr = c.moment.frame ?? c.sc.viewport;
+    for (let t = 0; t <= l.durS + 1e-9; t += 1 / 30) {
+      const b = l.ballAt(t); m += Math.hypot(b.x - prev.x, b.y - prev.y); prev = b;
+      const v = cam.at(t, fr); frames++;
+      if (b.x < v.x1 || b.x > v.x2 || b.y < v.y1 || b.y > v.y2) offFrames++;
+    }
+    ballM.push(m);
+    if (l.style === "tiki") { tikiN++; if (!l.offside) tikiPasses += l.acts.filter((a) => a.type === "pass").length; }
+    if (l.style === "long") { longN++; if (l.acts.some((a) => a.type === "pass" && Math.hypot(a.to.x - a.from.x, a.to.y - a.from.y) >= 24)) longBall++; }
+    // The same chance, the same style.
+    check(fhrStyleFor(c.sc, c.moment) === fhrStyleFor(c.sc, c.moment), "the style roll is not the same every time");
+  }
+  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length);
+  for (const s of FHR_STYLES) check((mix[s] ?? 0) >= n * 0.15, `mix: only ${mix[s] ?? 0} of ${n} build-ups are ${s as FhrStyle}`);
+  check(!mix.none, `mix: ${mix.none} build-ups without a style (the long move cut short)`);
+  check(cut <= Math.ceil(n * 0.02), `mix: ${cut} of ${n} short moves were cut (they are made whole)`);
+  check(midPass === 0, `mix: ${midPass} of ${n} open on a ball in the air`);
+  check(mean(durs) >= 2.6 && mean(durs) <= 3.5, `mix: a build-up is ${mean(durs).toFixed(2)} s on average (want about 3)`);
+  check(mean(ballM) >= 32, `mix: the ball travels ${mean(ballM).toFixed(1)} m a build-up (the cut moves: about 25)`);
+  check(offFrames <= frames * 0.005, `mix: the ball is off the camera's frame ${(100 * offFrames / frames).toFixed(2)}% of the time`);
+  check(tikiN === 0 || tikiPasses / Math.max(1, tikiN) >= 3.5, `mix: tiki-taka has ${(tikiPasses / Math.max(1, tikiN)).toFixed(1)} passes a move`);
+  check(longN === 0 || longBall >= longN * 0.9, `mix: only ${longBall} of ${longN} long-ball moves have a ball of 24 m+`);
+  G.__fhrMix = { n, mix, meanS: mean(durs), ballM: mean(ballM) };
   forceFhrMode(null);
 }
 

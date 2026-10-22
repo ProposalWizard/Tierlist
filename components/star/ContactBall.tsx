@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { gradeContact } from "@/lib/star/shotModel";
-import { airContactRead, AIR_CENTRE_R, VOLLEY_SWEET } from "@/lib/star/airborneChance";
+import { airContactRead, airCentreR, VOLLEY_SWEET } from "@/lib/star/airborneChance";
 import { headerJump } from "@/lib/star/aerial";
 
 /**
@@ -431,10 +431,11 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
           />
 
           {/* B10: a ball in the air — the middle of it, where a header or a
-              volley is struck clean (AIR_CENTRE_R either side). */}
+              volley is struck clean (airCentreR either side: bigger with a
+              better Aerial, 22 Oct 2026). */}
           {(motion === "float" || motion === "bounce") && (
-            <svg data-air-centre className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
-              <circle cx="0" cy="0" r={AIR_CENTRE_R + 0.08} fill="none" stroke="#fff" strokeOpacity="0.75" strokeWidth="0.035" strokeDasharray="0.07 0.05" />
+            <svg data-air-centre data-air-centre-r={airCentreR(aerial).toFixed(3)} className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
+              <circle cx="0" cy="0" r={airCentreR(aerial) + 0.08} fill="none" stroke="#fff" strokeOpacity="0.75" strokeWidth="0.035" strokeDasharray="0.07 0.05" />
             </svg>
           )}
 

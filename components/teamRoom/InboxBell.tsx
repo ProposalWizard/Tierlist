@@ -26,7 +26,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
+import HEADLINES from "@/lib/patchNoteHeadlines.json";
 import { TEAM_ROOM } from "@/lib/teamRoom/config";
 import { patchAuthor, type PatchMeta } from "@/lib/teamRoom/extras";
 import { bellCount, inboxFor, noteMentionsFor, noteSeenKey, shortPatchTitle } from "@/lib/teamRoom/inbox";
@@ -38,7 +38,10 @@ import { useAdminLook } from "@/lib/adminLook";
 import { Av } from "./bits";
 import "./teamRoom.css";
 
-const META: PatchMeta[] = BUILT_IN_PATCH_NOTES.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
+// The small list (version, date, title, author; ~14 KB), not the ~1 MB notes:
+// this bell is on every admin page. Made from lib/patchNotesData.ts at build
+// time by scripts/patch-notes/build-headlines.mjs (22 Oct 2026).
+const META: PatchMeta[] = HEADLINES.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
 /** The event the Team board listens for, so a note opens in place there (no reload). */
 export const OPEN_PATCH_EVENT = "kib-open-patch";
 
