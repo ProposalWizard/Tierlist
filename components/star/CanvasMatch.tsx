@@ -6823,7 +6823,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // A bicycle kick of yours (bicycle.ts): its own banner, and the crowd
       // goes up twice, as for a hat-trick.
       const bikeGoal = res !== "rebound" && !!bicycleGoalOf(ballRef.current);
-      showAction(bikeGoal ? "BICYCLE KICK!" : "GOAL");
+      showAction(bikeGoal ? "BICYCLE!" : "GOAL");
       spawnGoalFx();
       if (bikeGoal) window.setTimeout(() => spawnGoalFx(), 450);
       if (soundSet() === "arcade") playGoalSting(); // the Arcade pack's goal sting

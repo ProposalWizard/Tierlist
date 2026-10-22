@@ -556,7 +556,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
           {spark && graded && (
             <div
               data-contact-grade={graded.label}
-              className={`kib-pop absolute left-1/2 -translate-x-1/2 -top-[22%] whitespace-nowrap rounded-lg px-3 py-1 text-lg font-black italic tracking-wider pointer-events-none select-none ${
+              className={`kib-pop absolute left-1/2 -translate-x-1/2 ${bikeOn ? "top-[108%]" : "-top-[22%]"} whitespace-nowrap rounded-lg px-3 py-1 text-lg font-black italic tracking-wider pointer-events-none select-none ${
                 graded.good ? "bg-emerald-500/90 text-white" : "bg-red-600/90 text-white"}`}
               style={{ textShadow: "0 2px 4px rgba(0,0,0,0.6)" }}
             >
