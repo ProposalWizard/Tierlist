@@ -122,12 +122,13 @@ async function openFeed(label) {
 }
 
 async function scrollFeed() {
+  await pg.evaluate(n => { window.__steps = n; }, Number(val("--steps", "400")));
   return pg.evaluate(async () => {
     const box = Array.from(document.querySelectorAll(".overflow-y-auto")).filter(el => el.querySelector("article")).sort((a, b) => (b.scrollHeight - b.clientHeight) - (a.scrollHeight - a.clientHeight))[0];
     if (!box) return null;
     const t0 = performance.now();
     let steps = 0;
-    while (box.scrollTop + box.clientHeight < box.scrollHeight - 2 && steps < 400) {
+    while (box.scrollTop + box.clientHeight < box.scrollHeight - 2 && steps < Number(window.__steps || 400)) {
       box.scrollTop += 120; steps++;
       await new Promise(r => requestAnimationFrame(() => r()));
       await new Promise(r => setTimeout(r, 30));
