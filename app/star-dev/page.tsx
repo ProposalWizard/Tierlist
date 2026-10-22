@@ -64,7 +64,7 @@ import { windowInterest, withRecall, withAgreedWage, markWalkedAway } from "@/li
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
-import { generateForMatch, generateForInternational, generateForCallUp, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, generateForRollover, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
+import { generateForMatch, generateForInternational, generateForCallUp, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, generateForRollover, hasFreshMedia, toggleLike, applyGoalOfMonthBoost } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { markGodMode, withGodMode } from "@/lib/star/godMode";
 import { moveToClub, squadPlayerFromHit, addToSquad, removeFromSquad, setDevStart, type PlayerSearchHit } from "@/lib/star/devTeam";
@@ -1559,6 +1559,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     next.media = nextFixture.kind === "international"
       ? generateForInternational(career, next, nextFixture, stats, nationOf(career), nationKits(nationOf(career)).home, nationStrength(nationOf(career)))
       : generateForMatch(career, next, nextFixture, stats);
+    // Goal of the Month you won: a small boost with the fans (media/goalOfMonth.ts).
+    { const b = applyGoalOfMonthBoost(next); next.relationships = b.relationships; next.media = b.media; }
     // …and so does the rest of the division, the same week — `next.results`
     // already carries every OTHER fixture `playLeagueWeek` simulated
     // alongside yours (empty on a cup/Europe/international week, when the
