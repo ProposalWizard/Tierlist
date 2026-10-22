@@ -1352,7 +1352,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
    * inside the nearest framed spot, so a stand between the camera and the pitch is
    * never drawn (Harry's corner still: the roof over two thirds of the screen).
    */
-  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, aimBall: null as { x: number; y: number } | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1, spWide: null as Match2DCamera | null };
+  const m2 = { key: "", pick: null as { elevDeg: number; fov: number } | null, sp: null as Match2DCamera | null, spKey: "", cornerA: null as Match2DCamera | null, aimBall: null as { x: number; y: number } | null, cornerStart: "" as "" | "B" | "C", cornerT0: -1, spWide: null as Match2DCamera | null, celebT0: -1 };
   /** The camera swipe (match2dCam.ts ORBIT): degrees turned round the ball now, where it is heading, a finger on it. */
   /** The turned camera's framing, eased frame to frame (match2dCam.ts solveTurnFit / easeFit). */
   const turn = { fit: null as TurnFit | null, want: null as TurnFit | null, key: "", at: 0 };
@@ -1449,6 +1449,16 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
         const A = land ? { ...m2.cornerA, tx: m2.cornerA.tx + (land.x - CX - m2.cornerA.tx) * CORNER_CAM.followLanding * 0.5, tz: m2.cornerA.tz + (land.y - m2.cornerA.tz) * CORNER_CAM.followLanding * 0.5 } : m2.cornerA;
         def = lerpCamera(m2.sp, A, e);
       }
+    }
+    // after your goal (lib/star/celebration.ts): the camera eases onto you and follows your run to the
+    // corner and your celebration, a little closer (it only moves; sizes stay absolute)
+    {
+      const you = f.celebrating ? f.figures.find((g) => g.sid === "you") : undefined;
+      if (you) {
+        if (m2.celebT0 < 0) m2.celebT0 = f.t;
+        const u = Math.min(1, (f.t - m2.celebT0) / 0.9), e = u * u * (3 - 2 * u);
+        def = { ...def, tx: def.tx + (you.x - CX - def.tx) * e, tz: def.tz + (you.y - def.tz) * e, D: def.D * (1 - 0.25 * e), minDepth: def.minDepth * (1 - 0.25 * e) };
+      } else m2.celebT0 = -1;
     }
     // room to drag back (match2dCam.ts keepDragRoom): while aiming, the ball's spot stays a full-power
     // drag above the screen's bottom in every framing (default, pinched, a corner's start view); the

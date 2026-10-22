@@ -2521,7 +2521,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // the corner, then the celebration equipped in the shop. `t0` is
   // performance.now() / 1000 at the goal. Picture only: it moves where YOU
   // are drawn (2D, the 3D frame, the goal video), never the engine.
-  const celebRef = useRef<{ plan: CelebPlan; t0: number } | null>(null);
+  const celebRef = useRef<{ plan: CelebPlan; t0: number; vp0?: Viewport } | null>(null);
   /** The hand-over waiting at the end of the celebration; a tap runs it now. */
   const celebNextRef = useRef<(() => void) | null>(null);
   const [celebOn, setCelebOn] = useState(false);
@@ -5495,6 +5495,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ring: nv && (phaseRef.current === "aim" || phaseRef.current === "runup") && (auto || youShown || ringOnBall)
           ? (ringOnBall ? { x: sc.ball.x, y: sc.ball.y } : { x: tx, y: ty }) : null,
         goalSide: phaseRef.current === "result" ? goalSideRef.current : null,
+        celebrating: phaseRef.current === "result" && !!celebRef.current,
         goalInView: goalInView(sc.kind) || goalOnCamera,
         orders: captainOrdersFrame(sc),
         runup: phaseRef.current === "runup" && runupRef.current ? { t: runupRef.current.t, runS: runupRef.current.runS } : null,
@@ -6580,10 +6581,17 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           if (ce.t >= BACK_EASE_S) camEaseRef.current = null;
         } else if (nvOk && celebRef.current && phaseRef.current === "result") {
           // After your goal the camera follows your run to the corner (never jumps).
-          const cs = celebState();
-          if (cs) {
-            const want = panToKeep(baseViewportRef.current, [cs], { x1: -4, x2: PITCH_W + 4, y1: -6, y2: 140 });
-            baseViewportRef.current = followStep(baseViewportRef.current, want, dt);
+          // It also eases in to 70% of the frame, centred on you, so the move reads on a phone.
+          const cs = celebState(), c = celebRef.current;
+          if (cs && c) {
+            const v = baseViewportRef.current;
+            c.vp0 ??= { ...v };
+            const w = (c.vp0.x2 - c.vp0.x1) * 0.7, h = (c.vp0.y2 - c.vp0.y1) * 0.7;
+            const cx = Math.max(-4 + w / 2, Math.min(PITCH_W + 4 - w / 2, cs.x));
+            const cy = Math.max(-6 + h / 2, cs.y);
+            const want = { x1: cx - w / 2, x2: cx + w / 2, y1: cy - h / 2, y2: cy + h / 2 };
+            const k = 1 - Math.exp(-2.6 * dt);
+            baseViewportRef.current = { x1: v.x1 + (want.x1 - v.x1) * k, x2: v.x2 + (want.x2 - v.x2) * k, y1: v.y1 + (want.y1 - v.y1) * k, y2: v.y2 + (want.y2 - v.y2) * k };
           }
         } else if (nvOk && playOnRef.current && phaseRef.current === "flight") {
           const sc = scenarioRef.current, po = playOnRef.current, b = ballRef.current;

@@ -157,6 +157,8 @@ export interface EngineFrame {
    * same moment. Absent when no lead-in is playing.
    */
   leadIn?: EngineFrameLeadIn | null;
+  /** After your goal: the run to the corner and your celebration are on (lib/star/celebration.ts). The 3D camera follows you. */
+  celebrating?: boolean;
 }
 
 export interface EngineFrameLeadIn {
