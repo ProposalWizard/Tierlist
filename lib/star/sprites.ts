@@ -20,7 +20,8 @@
  * Animations: Old it is never fetched. A clip with `mirrorOf` (the keeper's
  * left-side saves) is its right-side twin drawn flipped.
  *
- * A THIRD atlas (atlas-2.webp + mask-2.webp, and atlas-2a/mask-2a for Style A;
+ * A FOURTH atlas (atlas-3.webp + mask-3.webp, and atlas-3a/mask-3a for Style A;
+ * slot 3 because the goal celebrations use slot 2;
  * 22 Oct 2026) holds only the bicycle kick, so atlases 0 and 1 stayed byte for
  * byte as they were (tools/sprites/new/bake-new.mjs extra bicycle). It loads the
  * same way as atlas 1 (any `atlas: n` works).
