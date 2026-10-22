@@ -806,6 +806,8 @@ export const ADMIN_GUIDES = {
         ["Save to Drive", "Sends it to Drive (only shown if it didn't send by itself)."],
         ["Copy for Claude", "Copies \"Watch this recording: <link>\" to paste into a Claude chat."],
         ["Open in Drive ↗", "The video in your Drive."],
+        ["Send to Marketing", "Admins only. Puts the recording into the Marketing tab's private video storage (the Uploads page), not linked to a card, ready to open in the editing suite. Same limits as the Uploads page (500 MB a file, 30 files and 5 GB a day)."],
+        ["Open in Studio", "Shown once Send to Marketing has finished: opens the recording in Marketing → Studio."],
         ["Download", "Saves the video to this device instead."],
         ["Open the Breakdowns folder ↗", "Harry's Drive folder where every breakdown is saved."],
       ] },
@@ -823,6 +825,7 @@ export const ADMIN_GUIDES = {
       "Your own Google Drive, folder \"Knowitball screen recordings\" → a folder for whoever is picked under Who is recording (the site makes them the first time), named \"date · who · what it is about (length)\". The file is set to \"anyone with the link\" so Claude can fetch it. You can move the main folder anywhere in Drive; the site still finds it.",
       "The video goes from your browser straight to Google. The site keeps only its name and link (dev_recordings table), so that person's Claude chats break it down the next time they are messaged (scripts/hooks/recordings-hook.mjs). Needs dev_recordings.sql run once.",
       "Drive needs NEXT_PUBLIC_GOOGLE_CLIENT_ID on the site. Until it is set, recordings only download.",
+      "Send to Marketing: the file goes from your browser straight into the Marketing video storage (Cloudflare R2, private). It needs the R2 settings in Vercel; without them it says \"Storage not connected here\".",
       "Live share: once a second, when the screen changed, a small picture (720 px wide) goes to public storage (tierlist-images → live/<code>/), with what was said (transcript.json) and how it is going (state.json, including how much each picture changed). Only the newest 300 pictures (about 5 minutes) are kept. No table. Anyone with the code can open the pictures while they exist; Delete removes them all.",
       "Claude's side: npx tsx scripts/live-watch.mts <code> prints each line said with the picture on screen at that moment, a SCREEN line when the screen changes (new screen / part changed / small change), and keeps the newest picture in a file it can look at. Claude answers in its chat (about 5–20 s behind), and may comment without being asked. Nothing is said back on this page.",
     ],
@@ -2408,8 +2411,8 @@ export const ADMIN_GUIDES = {
     buttons: [
       { group: "Top of the page", items: [
         ["Marketing (game tab across the top)", "This area. Only Harry, Mikey and Leo see the tab; testers never do."],
-        ["Board | Client", "Switch between this board and the Knowitball client page."],
-        ["Soon: Calendar · Suite · Uploads · Scripts", "Not built yet: a line of text, not buttons. They come in later slices of the plan."],
+        ["Board | Client | Suite | Uploads", "Switch between this board, the Knowitball client page, the editing suite and the uploads page."],
+        ["Soon: Calendar · Scripts", "Not built yet: a line of text, not buttons. They come in later slices of the plan."],
         ["↻ Check now", "Reads the board again straight away. It also reads by itself about once a minute."],
       ] },
       { group: "The board", items: [
@@ -2432,7 +2435,7 @@ export const ADMIN_GUIDES = {
     what: "Knowitball set up as a client, the way a video studio keeps a client: who we are, our voice, audience, rules, brand, what each video taught us, and our best scripts. Admins only.",
     buttons: [
       { group: "On this page", items: [
-        ["Board | Client", "Switch between the production board and this page."],
+        ["Board | Client | Suite | Uploads", "Switch between the parts of the Marketing tab."],
         ["The record file ↗", "Opens the client record on GitHub."],
         ["A grey code (e.g. RUL-KIB-001)", "The Brain note each line comes from. Quote it when you want something changed."],
         ["To confirm (amber)", "A note still waiting for Harry's yes (for now: the audience)."],
@@ -2444,6 +2447,74 @@ export const ADMIN_GUIDES = {
     ],
     inGame: ["Nowhere. It guides how our videos are written and made."],
     dev: "app/admin/marketing/client/page.tsx · lib/marketing/clientRecord.ts (pure parts tested in tests/star/adminMarketing.mts) · marketing/clients/knowitball/client.md · brain/*/{FACT,RUL,REF}-KIB-*.md · next.config.mjs traces those files for Vercel",
+  },
+  "/admin/marketing/studio": {
+    title: "Studio",
+    what: "Where we edit our own videos. Editing: watch a cut on a timeline, leave review notes (fix, keep, check) and edits for Claude (cut this out, change this here, a change for the whole video), then press Done. Statics: coming later. Admins only.",
+    buttons: [
+      { group: "Top of the page", items: [
+        ["Board | Client | Studio | Uploads", "Switch between the parts of the Marketing tab."],
+        ["Editing | Statics Soon", "Editing is the editing suite. Statics is a placeholder for still pictures: not built yet (Harry said to wait)."],
+      ] },
+      { group: "Editing: the list", items: [
+        ["A cut (Open ›)", "Opens that video in the editing suite. Cuts are grouped by their video card on the board; \"has notes\" means someone has left notes or edits on it."],
+        ["No cut yet", "Board cards that are being made or edited but have no upload yet."],
+        ["○ Storage not connected here", "This copy of the site has no storage settings. On a computer running the game for development, it shows the videos already on that computer instead."],
+      ] },
+      { group: "Editing: one cut", items: [
+        ["‹ (top left of the dark panel)", "Back to the list of cuts. The name chips under the title switch to another cut of the same card."],
+        ["▶ / ❚❚ (or Space)", "Play and pause. Tapping the video does the same."],
+        ["‹1s ‹1f 1f› 1s› (or ← →)", "Step back or on by one second or one frame. On a narrow phone only the frame steps show."],
+        ["Zoom out / Zoom in", "Zoom the timeline. Zoomed in, swipe it sideways; it follows the playhead while playing."],
+        ["Original | Render 1, 2 …", "Shown once Claude has made a new version: which one plays. Notes and edits are always on the original."],
+        ["The timeline", "Times, a filmstrip, the sound wave, then the lanes: Video (shots), Audio, teal review notes, violet edits for Claude (striped = cut out), amber auto-QC (dashed = possible). Tap anywhere to move the playhead."],
+        ["Tap a shot or the sound", "Opens a small panel to change just that: volume, mute, fades, trim, speed, punch-in, swap, caption text. Save makes it an edit for Claude."],
+        ["For Claude | Review notes", "The two tabs. They are kept apart and never mixed."],
+        ["Add an edit at 0:05.6 / Add a note at 0:05.6 (or E / N)", "Pauses and opens a new one at the playhead."],
+        ["Change · Cut out · Whole video / Fix · Keep · Check", "The kind of edit, or the note's tag."],
+        ["From / To · Set to 0:05.6", "The stretch it is about. Set to puts the playhead's time in. The highlighted block on the timeline shows it."],
+        ["The mic in a text box", "Speak instead of typing (the browser's own speech-to-text; nothing is recorded)."],
+        ["Save for Claude / Save note / Save change", "Saves it for everyone at once."],
+        ["Lock & render", "On an edit: ask Claude to make just that one now. That stretch blurs \"In edit\" until Claude is done; nothing new can be added on it."],
+        ["Done: render all N edits → Render all", "Asks Claude to make every open edit in one pass."],
+        ["Edit / Delete / Remove cut", "Change or remove an edit or note (Undo shows for a few seconds)."],
+        ["Undo this edit", "On an edit Claude has made: ask Claude to take it back out."],
+        ["Copy notes", "Review notes tab: copies every note as plain lines, to paste into a chat or a message."],
+        ["Taste notes · Review note / Edit for Claude / Dismiss", "Up to three proposed changes; keep one as a note or an edit, or dismiss it."],
+        ["An amber QC block → Accept as edit / Dismiss", "A check the machine made (a shot under 1 s, loudness, a long quiet gap) with one proposed change."],
+      ] },
+    ],
+    saving: [
+      "Shared with Harry, Mikey and Leo, the moment you save: each cut's notes, edits and presses are one small file beside the video in our private video storage (Cloudflare R2). No database, nothing in the code, no deploy.",
+      "The site cannot wake a Claude chat. A press (Lock & render, Done, Undo) is saved as a request and the page says \"Saved for Claude\"; the next Claude chat that checks the suite picks it up (skill suite-inbox) and its progress bar shows here.",
+      "Two people saving the same cut at the same moment: the last save wins.",
+      "On a computer running the game for development, everything goes to a scratch folder on that computer only.",
+    ],
+    inGame: ["Nowhere. This is for making our own videos."],
+    needs: ["The four storage settings in Vercel: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET. Without them the page says \"Storage not connected here\". The filmstrip, lanes and QC files come from a helper script Claude runs (scripts/marketing/studio-prep.py); without them the page draws the filmstrip itself and shows plain Video and Audio lanes."],
+    dev: "app/admin/marketing/studio/page.tsx · components/admin/studio/* (ported suite: cut-editor, scrub-timeline, element-inspector, qc-panel, use-element-audio, mic-button) · lib/studio/* (pure rules + store.ts) · /api/admin/marketing/studio[/edits|/qc|/requests|/render|/strip|/stem/<lane>]?key= · scripts/marketing/{studio-prep.py,suite-notes.mts} · skills review-timeline, suite-inbox · tests/star/marketingStorage.mts",
+  },
+  "/admin/marketing/uploads": {
+    title: "Uploads",
+    what: "Put a video or a picture into our private video storage, straight from this device, and link it to a video card on the board. Admins only.",
+    buttons: [
+      { group: "On this page", items: [
+        ["● Storage connected / ○ Storage not connected here", "Whether this copy of the site can reach the storage. Connected also shows what you have used today against the daily limit."],
+        ["Video card", "Pick the board card this file belongs to, or leave it as Not linked to a card."],
+        ["Choose a file (or drop files on the box)", "Uploads it. A bar shows how far it has got. The file goes straight from your device to storage, never through the site."],
+        ["Open in Studio", "Opens that video in the Studio's editing suite."],
+        ["↻ Check now", "Reads the list from storage again."],
+      ] },
+    ],
+    saving: [
+      "Shared with Harry, Mikey and Leo: files go into our private video storage (Cloudflare R2, bucket kib-marketing). Nobody outside the admin can open them; a play link lasts one hour.",
+      "The list is read from the storage itself, so there is nothing else to keep in step.",
+      "Limits (to keep the bill at zero): one file up to 500 MB; videos (mp4, mov, webm) and pictures (jpg, png, webp, gif) only; 30 files and 5 GB per person per day, reset at midnight UK time. A link handed out counts even if the upload then fails.",
+      "A dropped connection means starting that file again (no resume yet). Use Wi-Fi for big files.",
+    ],
+    inGame: ["Nowhere. This is for making our own videos."],
+    needs: ["The four storage settings in Vercel: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET. The bucket's sharing rule (CORS) must allow PUT from knowitball.co.uk, or uploads stop at 0%."],
+    dev: "app/admin/marketing/uploads/page.tsx · components/admin/marketing/UploadsPanel.tsx · lib/marketing/uploadClient.ts · lib/marketing/{r2,mediaApi,storage,caller}.ts · /api/admin/marketing/{upload,upload/done,media} · tests/star/marketingStorage.mts",
   },
 
 } satisfies Record<string, AdminGuide>;
