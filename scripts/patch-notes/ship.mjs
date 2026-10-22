@@ -44,8 +44,10 @@ const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "
 const git = (a, cwd = ROOT) => execFileSync("git", a, { cwd, encoding: "utf8", maxBuffer: 1 << 28 });
 const DATA = "lib/patchNotesData.ts";
 const PAGES = "lib/patchNotePages.ts";
+/** The 🔔 Inbox's small list, made from DATA (scripts/patch-notes/build-headlines.mjs). */
+const HEADLINES = "lib/patchNoteHeadlines.json";
 /** The only paths a patch-notes-only branch may change. */
-export const ALLOWED = (p) => p === DATA || p === PAGES || p.startsWith("patch-notes/");
+export const ALLOWED = (p) => p === DATA || p === PAGES || p === HEADLINES || p.startsWith("patch-notes/");
 
 /* ── Reading the archive (TypeScript → plain data, no app code run) ──────── */
 const req = createRequire(path.join(ROOT, "package.json"));
@@ -144,6 +146,12 @@ async function main() {
     }
   }
   write(DATA, data);
+  // the bell's headlines, remade from the new archive (main keeps them current too)
+  if (W) {
+    const { writeHeadlines } = await import(new URL("./build-headlines.mjs", import.meta.url).href);
+    fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(W, "node_modules"));
+    try { await writeHeadlines(W); } finally { fs.unlinkSync(path.join(W, "node_modules")); }
+  }
 
   // 2. the kept pages' lines
   let pages = read(PAGES);
