@@ -47,12 +47,15 @@ const leadSigOf = (l: LeadIn | null) => {
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 const G = globalThis as Record<string, unknown>;
-const clearForces = () => { forceFhrMode(null); forceChancesMode(null); };
+// The rebuild is On by default since 22 Oct 2026, so "cleared" here means switched Off on purpose:
+// these checks compare Off with On, not the default.
+const clearForces = () => { forceFhrMode("off"); forceChancesMode(null); };
 
 // 1.
+forceFhrMode(null); forceChancesMode(null);
+check(FHR_DEFAULT === "on" && fhrMode() === "on", `a new phone reads ${fhrMode()}, not on (default On since 22 Oct 2026, Harry)`);
+check(LOOK_ROWS.fhr.standard === "on", "the Settings row must default to On (since 22 Oct 2026)");
 clearForces();
-check(FHR_DEFAULT === "off" && fhrMode() === "off", `a new phone reads ${fhrMode()}, not off`);
-check(LOOK_ROWS.fhr.standard === "off", "the Settings row must default to Off");
 
 // 2.
 check(chancesMode() === "old", `Off: Chances reads ${chancesMode()} on a new phone`);

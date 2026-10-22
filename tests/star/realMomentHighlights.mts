@@ -55,7 +55,7 @@ console.log("\n1. OFF CHANGES NOTHING");
 {
   clear();
   ok(REAL_MOMENTS_DEFAULT === "off" && realMomentsMode() === "off", "a new phone reads Off");
-  forceRealMomentsMode("on");
+  forceFhrMode("off"); forceRealMomentsMode("on"); // the rebuild is On by default since 22 Oct 2026, so switch it Off here
   ok(!realMomentsOn(), "On does nothing while the Full highlights rebuild is Off");
   forceFhrMode("on");
   ok(realMomentsOn(), "On counts once the rebuild is On");
