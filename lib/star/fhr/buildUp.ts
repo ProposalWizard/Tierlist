@@ -221,7 +221,7 @@ export function fhrTempo(m: LeadMoment, a?: FhrAdjust): FhrTempo {
 export type FhrStyle = "long" | "tiki" | "carry";
 export const FHR_STYLES: readonly FhrStyle[] = ["long", "tiki", "carry"];
 /** A whole short move is never longer than this on the screen (s); the ordinary one aims at about 3 s. */
-export const FHR_COMPACT_MAX_S = 4.2;
+export const FHR_COMPACT_MAX_S = 4;
 /** …at the biggest moment (one more pass). */
 export const FHR_COMPACT_BIG_MAX_S = 5;
 
@@ -684,7 +684,7 @@ export const COMPACT_LONG_V: readonly [number, number] = [18, 25];
 /** A dribble at pace (m/s): fast men carry it at 7–8. */
 export const COMPACT_CARRY_V: readonly [number, number] = [6.8, 7.4];
 /** A ball into space for your run (or the crosser's) is this much slower, so the run can be onside and still get there. */
-export const COMPACT_THROUGH_PACE = 0.82;
+export const COMPACT_THROUGH_PACE = 0.9;
 /**
  * In a whole short move a man of the chance is never further from his place in
  * it than he could cover at this average speed in the time the move takes
@@ -787,11 +787,14 @@ function compactRoute(sc: Scenario, moment: LeadMoment, r: Rng, tp: FhrTempo, st
     // straight onto the line had the camera gliding onto the chance's picture
     // while the ball was still in the air (up to 25% of the frames off the screen).
     if (!air && R.y < 10) {
-      const c = pointFrom(cur, 6, 10, -0.6, 0.6);
+      const c = pointFrom(cur, 5, 8, -0.6, 0.6);
       if (!c) return null;
       add("carry", c, { v: carryV() });
     }
-    if (isSwitch) {
+    if (air && dist(air.from, R) >= 24 && r() < 0.65) {
+      // The cross itself is a long ball (the crosser's drawn spot is 24 m+ away):
+      // a long diagonal into the box is the move, from where he stands.
+    } else if (isSwitch) {
       // Sometimes the switch finds a team-mate who gives it to you; else it lands on you.
       if (!air && back.length === 0 && r() < 0.3) {
         const p = pointFrom(cur, 8, 13, -1.3 * sideBoth(), 0.3 * sideBoth());
@@ -900,7 +903,7 @@ function compactRoute(sc: Scenario, moment: LeadMoment, r: Rng, tp: FhrTempo, st
   // ball of a long-ball move: that is the move — it may run over instead).
   const maxS = FHR_COMPACT_MAX_S + (FHR_COMPACT_BIG_MAX_S - FHR_COMPACT_MAX_S) * tp.drama;
   const isLongBall = (a: FhrAction) => a.type === "pass" && dist(a.from, a.to) >= 24;
-  while (durS > maxS && acts.length > 1 && !(style === "long" && isLongBall(acts[0]))) {
+  while (durS > maxS && acts.length > (style === "tiki" ? 4 : 1) && !(style === "long" && isLongBall(acts[0]))) {
     const cut = acts[1].t0 - hold;
     acts.shift();
     acts.forEach((a) => { a.t0 -= cut; a.t1 -= cut; });
@@ -1301,7 +1304,6 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
       if (o.style) path = nearHisPlace(path, p.end, Math.max(6, COMPACT_SPREAD_V * durS));
       if (maxSpeed(path) <= p.vmax * 0.82) break;
     }
-    if ((globalThis as Record<string, unknown>).__fhrDbg) console.log(`base ${p.key} v=${maxSpeed(path).toFixed(1)} vmax=${p.vmax.toFixed(1)} start→end ${dist(path[0], p.end).toFixed(1)}`);
     return path;
   };
   for (const [group, slots, side] of [[ours, slotOurs, "us"], [theirs, slotTheirs, "them"]] as const) {
@@ -1601,7 +1603,6 @@ function attempt(sc: Scenario, moment: LeadMoment, seed: number, tryNo: number, 
       // You may give it and go (a one-two): only the touch before the one you get back.
       if (p.key === "you" && (j !== spells.length - 3 || (!o.style && r() < 0.4))) continue;
       const res = onSpell(pressed(p.path, s, p.key), p.vmax, s, spotFor(p.key, s), true);
-      if ((globalThis as Record<string, unknown>).__fhrDbg) console.log(`spell ${j} ${p.key} again=${again} res=${!!res} d=${dist(p.path[idx(s.tIn)], spotFor(p.key, s)(s.tIn)).toFixed(1)} tIn=${s.tIn.toFixed(2)} pins=${res ? p.pin.some((pn, i) => pn && dist(res.path[i], p.path[i]) > 1e-6) : "-"}`);
       if (!res) continue;
       if (o.style && (again || p.key === "you") && p.pin.some((pn, i) => pn && dist(res.path[i], p.path[i]) > 1e-6)) continue;
       const skill = carry ? stat(p.who, "dribbling") : passLen > 22 ? stat(p.who, "passing") : 65;
