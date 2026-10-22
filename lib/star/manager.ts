@@ -232,9 +232,15 @@ export interface SackVerdict {
  * manager in year two. By his second season everyone answers to the same bar
  * regardless of what he arrived with.
  */
-export function sackCheck(career: CareerState, seasonScore: number): SackVerdict {
+export function sackCheck(career: CareerState, seasonScore: number, promoted = false): SackVerdict {
   const m = career.manager;
   if (!m) return { sacked: false, reason: "" };
+  // A manager who has just taken the club up is never sacked for it. The
+  // score reads the table against a target, and a big club that went up
+  // through the play-offs (6th, target 2nd) could score under the bar and
+  // be sacked "after a season below what the board wanted" (playtest,
+  // 22 Oct 2026).
+  if (promoted) return { sacked: false, reason: "" };
   const firstSeason = career.season - m.since < 1;
   const reputationAdjust = firstSeason ? (((m.reputation ?? 50) - 50) / 100) * 0.3 : 0;
   const bar = (firstSeason ? -0.72 : -0.45) + reputationAdjust;
