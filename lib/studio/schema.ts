@@ -1,7 +1,7 @@
 /**
  * lib/studio/schema.ts — the Studio's editing suite: the shapes of one cut's
  * notes and edits (ported 22 Oct 2026 from the editing suite in Harry's other
- * app, with every client, Frame.io and Notion part taken out).
+ * app, with every client part and every outside service taken out).
  *
  * PURE ON PURPOSE: the page and the API routes check with the same code.
  * One cut = one video in the Marketing storage (Cloudflare R2). Everything the

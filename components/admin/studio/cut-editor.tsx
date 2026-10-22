@@ -1116,7 +1116,7 @@ function Nudge({ label, onClick, text, dir }: { label: string; onClick: () => vo
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="inline-flex h-9 min-w-[34px] items-center justify-center rounded-md bg-surface-raised px-0.5 font-mono text-micro text-ink-secondary hover:text-ink sm:h-10 sm:min-w-[44px] sm:gap-0.5 sm:px-2"
+      className={`inline-flex h-9 min-w-[34px] items-center justify-center rounded-md bg-surface-raised px-0.5 font-mono text-micro text-ink-secondary hover:text-ink sm:h-10 sm:min-w-[44px] sm:gap-0.5 sm:px-2 ${text === "1s" ? "max-[440px]:hidden" : ""}`}
     >
       {dir < 0 && <ChevronLeft className="h-4 w-4" aria-hidden />}
       {text}
