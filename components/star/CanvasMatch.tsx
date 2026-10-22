@@ -150,7 +150,7 @@ import {
 } from "@/lib/star/runupStyles";
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
 import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
-import { isAirKind, airWaitZ } from "@/lib/star/airDrawings";
+import { isAirKind, airWaitZ, airZOf, HEADER_Z } from "@/lib/star/airDrawings";
 import { useFitWidth } from "./useFitWidth";
 import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
 import { bannerStyle, soundSet } from "@/lib/star/style3d/texturePack";
@@ -9222,7 +9222,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       : strikeWith;
     // Your Aerial & Acrobatics (tired legs count) softens a mis-hit header or
     // volley; technique stays as the fallback (kept on the strike for the replay).
-    if (contact.air) contact = { ...contact, air: { ...contact.air, tech: launchWith.technique, aerial: career ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current)))) : undefined } };
+    // A drill or test screen without a career may hand Aerial in on `skills` (the Head & Volley drill).
+    const skillAerial = (skills as KickSkills & { aerial?: number }).aerial;
+    if (contact.air) contact = { ...contact, air: { ...contact.air, tech: launchWith.technique, aerial: career ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current)))) : skillAerial } };
     // Snapshot everything a replay would need to reproduce this exact strike
     // — see GoalReplay and rngCallCountRef. Cheap and thrown away unless the
     // ball actually ends up in the net (resolveOutcome), so this costs
@@ -9869,7 +9871,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             onContact={(c) => handleContact(c)}
             motion={strikeMotion(scenarioRef.current.kind, seedRef.current)}
             technique={skills.technique}
-            aerial={career ? aerialOf(career.skills) : undefined}
+            aerial={career ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current)))) : (skills as KickSkills & { aerial?: number }).aerial}
+            // A header: how high the cross reaches you, so the screen can say your jump (aerial.ts headerJump).
+            ballZ={strikeMotion(scenarioRef.current.kind, seedRef.current) === "float" ? (scenarioRef.current.kind === "header" ? airZOf(scenarioRef.current) : HEADER_Z) : undefined}
             timeLimitS={contactTimerS ?? undefined}
             onTimeout={contactTimerS ? handleScuff : undefined}
             hold={held}

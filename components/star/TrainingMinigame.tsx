@@ -21,6 +21,7 @@ import {
   type Scenario,
 } from "@/lib/star/canvasEngine";
 import { CX } from "@/lib/star/pitch";
+import { setAirZ, type AirHeighted } from "@/lib/star/airDrawings";
 import {
   powerDrill, powerDrillForLevel, techniqueDrill, freeKickDrill,
   strikeSpot, conePositions, gateCrossing, gateQuality, shotQuality,
@@ -367,7 +368,7 @@ export function buildStrike(
   byLevel?: { trainingLevel: number; power: number },
 ): StrikeSetup {
   if (kind === "technique") return buildStrikeFrom(kind, { ...techniqueDrill(level, rep), pass: 0.25 }, rng);
-  if (kind === "aerial") return buildStrikeFrom(kind, { volley: rep % 2 === 1, keeperStrength: 20 + 0.76 * Math.max(0, level - 40) / 0.6, marker: level >= 55, pass: 0.5 }, rng);
+  if (kind === "aerial") return buildStrikeFrom(kind, { volley: rep % 2 === 1, keeperStrength: 20 + 0.76 * Math.max(0, level - 40) / 0.6, marker: level >= 55, pass: 0.5, ballZ: 1.75 + 0.8 * Math.max(0, Math.min(1, (level - 40) / 60)) }, rng);
   if (kind === "freeKick") return buildStrikeFrom(kind, { ...freeKickDrill(level, rep), pass: 0.5 }, rng);
   const cfg = byLevel ? powerDrillForLevel(byLevel.trainingLevel, rep, byLevel.power) : { ...powerDrill(level, rep), keeper: true };
   return buildStrikeFrom(kind, { ...cfg, pass: 0.5 }, rng);
@@ -388,12 +389,14 @@ export function buildStrikeFrom(kind: StrikeKind, row: StrikeLevel, rng: () => n
     sc.passTarget = null;
     sc.receiver = null;
     sc.secondaryRunners = [];
+    // A header: the level's cross height (the jump it needs: aerial.ts headerJump).
+    if (!cfg.volley && Number.isFinite(cfg.ballZ)) setAirZ(sc as Scenario & AirHeighted, cfg.ballZ);
     return {
       scenario: sc,
       viewport: strikeViewport(sc.ball),
       gate: null,
       gateCfg: null,
-      brief: `${cfg.volley ? "Volley" : "Header"}${cfg.marker ? " · marked" : ""}` + (cfg.pass > 0.5 ? " · near a post" : ""),
+      brief: `${cfg.volley ? "Volley" : `Header ${(Number.isFinite(cfg.ballZ) ? cfg.ballZ : 1.85).toFixed(2)} m`}${cfg.marker ? " · marked" : ""}` + (cfg.pass > 0.5 ? " · near a post" : ""),
       pass: cfg.pass,
     };
   }
@@ -593,6 +596,8 @@ function StrikeDrill({
     attempt(ok);
   }, [attempt]);
 
+  // Your Aerial rides on the kick skills, so the strike screen can show your jump.
+  const kickSkills = useMemo(() => ({ power: skills.power, technique: skills.technique, aerial: skills.aerial }), [skills.power, skills.technique, skills.aerial]);
   const instruction = kind === "aerial"
     ? "The cross is in the air. Drag back to aim, then meet it: head it on top of the ball, or volley it as it drops."
     : kind === "technique"
@@ -609,7 +614,7 @@ function StrikeDrill({
           onChanceResolved={onChanceResolved}
           onBallStep={onBallStep}
           markers={markers}
-          skills={{ power: skills.power, technique: skills.technique }}
+          skills={kickSkills}
           setPieceSkill={skills.freeKick}
           keeperStrength={keeperStrength}
           seed={seedRef.current}
