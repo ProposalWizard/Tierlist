@@ -104,9 +104,10 @@ export const NEW_VIEW_MAX_HW = 83 / 38;
 /** Never shorter than the classic 5:8 canvas. */
 export const NEW_VIEW_MIN_HW = 8 / 5;
 /** Figures: this much of their zoomed-out size. Was 0.8 (option D); Harry picked
- *  size option C on 21 Oct 2026 ("drop both shrinks"): 1, so men are ~27.8 px and
- *  the keeper ~22.8 px on a 390 × 844 phone (were 17.8 / 18.2). */
-export const NEW_FIGURE_SCALE = 1;
+ *  size option C on 21 Oct 2026 ("drop both shrinks": 1), then on 22 Oct found the
+ *  men "HUGE", so it is back to 0.8 with only the outfield shrink dropped: option B,
+ *  men ~22 px on a long-range chance on a 390 × 844 phone (C was ~28, A ~17.8). */
+export const NEW_FIGURE_SCALE = 0.8;
 /** Outfield players on top of NEW_FIGURE_SCALE. Was 0.8 (Harry, 9 Oct 2026: "I like
  *  0.8 but with the goalie at 1x"); dropped with option C (21 Oct 2026), so it is 1.
  *  The keeper is drawn at MATCH_KEEPER_R_SHARE of a man. */
