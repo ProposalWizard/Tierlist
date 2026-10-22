@@ -5697,7 +5697,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     const sc = scenarioRef.current;
     const live = (ph === "aim" || ph === "runup" || ph === "contact" || ph === "flight" || (ph === "result" && !dribbleRef.current && !tdRef.current))
       && goalInView(sc.kind);
-    if (live) {
+    // A goal keeps being recorded after the match moves on (the commentary
+    // comes back 1.8 s after it): the recorder cuts at POST_GOAL_S itself.
+    // Only a new chance (begin) or the match closing cuts it early.
+    if (live || (rec.recordingGoal && recSceneRef.current === sc)) {
       const bodies = 3 + sc.teammates.length + (sc.runner ? 1 : 0) + sc.secondaryRunners.length + sc.defenders.length;
       if (recSceneRef.current !== sc || rec.bodyIds().length !== bodies) {
         recSceneRef.current = sc;
