@@ -228,12 +228,15 @@ export default function SeasonReel({ career, onDone }: { career: CareerState; on
     const w = window as unknown as { __seasonReel?: unknown };
     w.__seasonReel = {
       duration: plan.duration,
-      segs: plan.segs.map((s) => ({ kind: s.kind, at: s.at, dur: s.dur, video: "shots" in s ? s.shots.length > 0 : false })),
+      segs: plan.segs.map((s) => ({ kind: s.kind, at: s.at, dur: s.dur, video: "shots" in s ? s.shots.length > 0 : false, quick: s.kind === "goal" && !!s.quick })),
       seek: (t: number, hold = true) => { clock.current = { base: t, startedAt: now(), running: !hold }; setPaused(hold); setEnded(false); setSeekTick((k) => k + 1); },
       audioReady: () => !!audioBuf,
+      // For measuring the mix (the test page): the soundtrack, and its crowd or music alone.
+      audio: () => audioBuf,
+      stem: (only: "crowd" | "music") => (tracks ? mixReelAudio(plan, tracks, timings, only) : Promise.resolve(null)),
     };
     return () => { delete w.__seasonReel; };
-  }, [plan, audioBuf]);
+  }, [plan, audioBuf, tracks, timings]);
 
   const tapVideo = () => {
     audioContext()?.resume().catch(() => { /* still blocked */ });
