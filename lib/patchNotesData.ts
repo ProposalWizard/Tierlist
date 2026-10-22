@@ -47,8 +47,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
           "label": "famous goals added"
         },
         {
-          "value": "414 / 417",
-          "label": "tests passing"
+          "value": "422 / 430",
+          "label": "star test files passing (the 8 left fail on main too)"
         }
       ],
       "sections": [
