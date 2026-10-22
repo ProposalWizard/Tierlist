@@ -494,12 +494,11 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
               volley is struck clean (airCentreR either side: bigger with a
               better Aerial, 22 Oct 2026). */}
           {(motion === "float" || motion === "bounce") && (
-            <svg data-air-centre className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
-              <circle cx="0" cy="0" r={(bikeOn ? BICYCLE_CENTRE_R : AIR_CENTRE_R) + 0.08} fill="none" stroke="#fff" strokeOpacity="0.75" strokeWidth="0.035" strokeDasharray="0.07 0.05" />
-            <svg data-air-centre data-air-centre-r={airCentreR(aerial).toFixed(3)} className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
-              {/* Gold with a dark edge so it reads on the white ball (Harry, 22 Oct 2026: the circle grows with Aerial). */}
-              <circle cx="0" cy="0" r={airCentreR(aerial) + 0.08} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth="0.06" />
-              <circle cx="0" cy="0" r={airCentreR(aerial) + 0.08} fill="none" stroke="#fde047" strokeOpacity="0.95" strokeWidth="0.035" strokeDasharray="0.07 0.05" />
+            <svg data-air-centre data-air-centre-r={(bikeOn ? BICYCLE_CENTRE_R : airCentreR(aerial)).toFixed(3)} className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
+              {/* Gold with a dark edge so it reads on the white ball (Harry, 22 Oct 2026: the circle grows with Aerial).
+                  A bicycle kick keeps its own, smaller middle (bicycle.ts). */}
+              <circle cx="0" cy="0" r={(bikeOn ? BICYCLE_CENTRE_R : airCentreR(aerial)) + 0.08} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth="0.06" />
+              <circle cx="0" cy="0" r={(bikeOn ? BICYCLE_CENTRE_R : airCentreR(aerial)) + 0.08} fill="none" stroke="#fde047" strokeOpacity="0.95" strokeWidth="0.035" strokeDasharray="0.07 0.05" />
             </svg>
           )}
 

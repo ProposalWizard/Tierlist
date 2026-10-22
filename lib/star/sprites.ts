@@ -29,7 +29,6 @@
  *
  * A FOURTH atlas (atlas-3.webp + mask-3.webp, and atlas-3a/mask-3a for Style A;
  * slot 3 because the goal celebrations use slot 2;
- * A FOURTH atlas (atlas-3.webp + mask-3.webp, and atlas-3a/mask-3a for Style A;
  * slot 2 is the celebrations' atlas, chat 1;
  * 22 Oct 2026) holds only the bicycle kick, so atlases 0 and 1 stayed byte for
  * byte as they were (tools/sprites/new/bake-new.mjs extra bicycle). It loads the

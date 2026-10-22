@@ -206,7 +206,6 @@ try {
   } else if (mode === "extra") {
     // One more atlas for the named clips; both bodies; old atlases untouched (22 Oct 2026, the bicycle kick).
     const names = arg.split(","), which = 3; // slot 3: slot 2 holds the goal celebrations (22 Oct 2026)
-    const names = arg.split(","), which = 3; // slot 2 is the celebrations' (chat 1)
     const dst = process.env.OUT ? path.resolve(process.env.OUT) : outDir;
     fs.mkdirSync(dst, { recursive: true });
     const idx0 = JSON.parse(fs.readFileSync(path.join(outDir, "index.json"), "utf8"));
