@@ -127,3 +127,27 @@ Object.assign(window.CLIPS, { getUpR: getUp, getUpL: mirrorOf(getUp) });
   drop("touch", 2, 7); drop("passKick", 1, 8, 1); drop("volley", 3, 8); drop("chipKick", 3, 8);
   drop("block", 2, 5); drop("shotKick", 4, 8.5); drop("clearance", 4, 8.5);
 }
+// ── Bicycle kick (Leo, 22 Oct 2026, chat 3: "do it WELL! proper good animation"). Its own atlas (2). ──
+// Right foot, overhead. `turnF`: he twists as he falls, so he lands lying across the line, not along it (a
+// man lying straight down the screen reads as a man standing); the baker twists him whichever way lays
+// him flatter across the screen for each facing. `turn: 180`: he is baked with his BACK to the facing, so the facing the game
+// passes (towards the ball / the goal) is where the ball goes, over his head. `Hips` x<0 tips the whole
+// body back about the hips (the pose system's whole-body pitch); `hips` y lifts or drops him.
+Object.assign(window.CLIPS, {
+  bicycle: { fps: 6, strikeFrame: 2, turn: 180, turnF: [0, 0, 0, 8, 18, 28, 32], poses: [
+    // 0 plant: the left knee swings up, the body starts to tip back, eyes on the ball
+    { ...arms(70, 60, -25, -15), LeftForeArm: [-20, 0, 0], RightForeArm: [-20, 0, 0], Hips: [-24, 0, -6], LeftUpLeg: [-85, 0, 0], LeftLeg: [60, 0, 0], RightUpLeg: [20, 0, 0], RightLeg: [24, 0, 0], Spine: [6, 0, 0], neck: [-16, 0, 0], hips: [0, 0.02, 0] },
+    // 1 take-off: the left leg high, the right leg leaves the grass, body half back
+    { ...arms(110, 100, 10, 10), LeftForeArm: [-15, 0, 0], RightForeArm: [-15, 0, 0], Hips: [-62, 0, -14], LeftUpLeg: [-84, 0, 0], LeftLeg: [45, 0, 0], RightUpLeg: [10, 0, 0], RightLeg: [70, 0, 0], Spine: [10, 0, 0], neck: [-4, 0, 0], hips: [0, 0.3, 0] },
+    // 2 STRIKE: head lower than hips in the air, legs scissored, the right boot up and over above his head
+    { ...arms(140, 135, 25, 25), LeftForeArm: [-10, 0, 0], RightForeArm: [-10, 0, 0], Hips: [-122, 0, -22], RightUpLeg: [-92, 0, 0], RightLeg: [6, 0, 0], RightFoot: [20, 0, 0], LeftUpLeg: [-8, 0, 0], LeftLeg: [55, 0, 0], Spine: [8, 0, 0], neck: [28, 0, 0], hips: [0, 0.45, 0] },
+    // 3 follow-through: the right leg snaps back down past the left, he starts to fall
+    { ...arms(130, 130, 45, 45), LeftForeArm: [-10, 0, 0], RightForeArm: [-10, 0, 0], Hips: [-100, 0, -20], RightUpLeg: [-70, 0, 0], RightLeg: [30, 0, 0], LeftUpLeg: [-46, 0, 0], LeftLeg: [40, 0, 0], Spine: [5, 0, 0], neck: [22, 0, 0], hips: [0, 0.12, 0] },
+    // 4 the fall: hands reach back and out to the grass first, legs up
+    { ...arms(125, 125, 65, 65), LeftForeArm: [-20, 0, 0], RightForeArm: [-20, 0, 0], Hips: [-95, 0, -12], RightUpLeg: [-62, 0, 0], RightLeg: [35, 0, 0], LeftUpLeg: [-46, 0, 0], LeftLeg: [50, 0, 0], Spine: [2, 0, 0], neck: [18, 0, 0], hips: [0, -0.5, 0] },
+    // 5 down flat on his back, legs coming down to the grass, arms out on the grass
+    { ...arms(160, 160, 30, 30), Hips: [-92, 0, -4], RightUpLeg: [-38, 0, 0], RightLeg: [35, 0, 0], LeftUpLeg: [-18, 0, 0], LeftLeg: [22, 0, 0], Spine: [8, 0, 0], neck: [14, 0, 0], hips: [0, -0.8, 0] },
+    // 6 sitting up to watch it go in, propped on his hands, one knee up
+    { ...arms(80, 80, 55, 55), Hips: [-82, 0, 0], RightUpLeg: [-4, 0, 0], RightLeg: [12, 0, 0], LeftUpLeg: [-22, 0, 0], LeftLeg: [70, 0, 0], Spine: [48, 0, 0], neck: [8, 0, 0], hips: [0, -0.8, 0] },
+  ] },
+});

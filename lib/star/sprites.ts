@@ -20,6 +20,11 @@
  * Animations: Old it is never fetched. A clip with `mirrorOf` (the keeper's
  * left-side saves) is its right-side twin drawn flipped.
  *
+ * A THIRD atlas (atlas-2.webp + mask-2.webp, and atlas-2a/mask-2a for Style A;
+ * 22 Oct 2026) holds only the bicycle kick, so atlases 0 and 1 stayed byte for
+ * byte as they were (tools/sprites/new/bake-new.mjs extra bicycle). It loads the
+ * same way as atlas 1 (any `atlas: n` works).
+ *
  * This module only draws pictures. No physics, no loop, no timing of its own:
  * the caller says which clip, how far into it, which way he faces.
  *
@@ -34,8 +39,8 @@ export type SpriteClip =
   | "ready" | "diveL" | "diveR"                      // keeper (and "jog")
   | NewSpriteClip;
 
-/** Animations: New only (atlas 1). */
-export const NEW_PLAYER_CLIPS = ["touch", "passKick", "shotKick", "volley", "chipKick", "header", "block", "clearance"] as const;
+/** Animations: New only (atlas 1; the bicycle kick in atlas 2). */
+export const NEW_PLAYER_CLIPS = ["touch", "passKick", "shotKick", "volley", "chipKick", "header", "block", "clearance", "bicycle"] as const;
 export const NEW_KEEPER_CLIPS = [
   "oneHandR", "oneHandL", "lowDiveR", "lowDiveL", "parryR", "parryL", "catchHold", "fumble", "getUpR", "getUpL",
 ] as const;
