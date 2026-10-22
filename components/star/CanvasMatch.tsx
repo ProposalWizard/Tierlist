@@ -71,7 +71,7 @@ import {
 } from "@/lib/star/matchCommentary";
 import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
-  playStrike, playThud, playClang, playGlove, playGoalSting,
+  playStrike, playThud, playClang, playGlove, playGoalSting, playHeader,
 } from "@/lib/star/matchSound";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
 import { goalZone, passGrade, missKind } from "@/lib/star/chanceRating";
@@ -180,7 +180,7 @@ import {
 import { shotPowerOn, contactFieldOn, feelPower, feelLift, struckAtGoal, fieldApplies } from "@/lib/star/shotFeel";
 import {
   matchFeelOn, feelDials, strikeFeel, squashAt, streakMetres, speedStretch, punchOffset,
-  keeperSetHop, keeperDiveArc, feelHaptic, type StrikeFeel,
+  keeperSetHop, keeperDiveArc, feelHaptic, HEADER_FEEL_FLOOR, type StrikeFeel,
 } from "@/lib/star/matchFeel";
 import { drawImpactBurst, drawDustPuff, drawSpeedStreak, drawGloveSpark, drawClang, drawNetBulge } from "@/lib/star/matchFeelDraw";
 import { drawVfx, drawVfxTrail, vfxShake, vfxZoom, vfxDurS, type VfxEvent, type VfxOverride, type VfxRecipe } from "@/lib/star/vfxLab";
@@ -5077,7 +5077,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (onTheSpot && !leadRef.current && isAirKind(sc.kind)) {
       const now = performance.now() / 1000;
       if (airT0Ref.current?.sc !== sc) airT0Ref.current = { sc, t0: now };
-      airZ = airWaitZ(sc.kind, now - airT0Ref.current.t0);
+      airZ = airWaitZ(sc.kind, now - airT0Ref.current.t0, sc);
       // …and a faint line from its shadow up to it, so the height reads at a
       // phone's size (the gap alone is a few pixels on a wide frame).
       if (airZ > 0.12) {
@@ -5534,7 +5534,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     feelFx("impact", p.x, p.y, p.z, f.flash, 0.28 + 0.14 * f.power, { vx: p.vx, vy: p.vy, power: f.power, turf: p.z < 0.3, scuff: f.scuff });
     feelSquash(f.squash, p.vx, p.vy);
     feelPunch(f.shakePx, 0.22 + 0.12 * f.power, p.vx, p.vy);
-    playStrike(f.power, f.gain, f.bass, f.scuff);
+    // A header: the head-on-ball thump (matchSound playHeader), firm enough to hear.
+    if (f.header) playHeader(Math.max(f.power, HEADER_FEEL_FLOOR), Math.max(f.gain, (0.35 + 0.75 * HEADER_FEEL_FLOOR) * feelDials().soundGain));
+    else playStrike(f.power, f.gain, f.bass, f.scuff);
     feelHaptic(f.hapticMs);
   };
   /** Called every frame first thing: true while the picture is held. */
@@ -9426,7 +9428,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const D = feelDials();
       const speed = Math.hypot(bl.vel.x, bl.vel.y, bl.vz);
       const grade = shotRead?.grade ?? gradeContact(contact, a.power, false).grade;
-      const f = strikeFeel(speed, grade, D);
+      // A header or volley gets its own beat, freeze, punch and sound (matchFeel AirFeel).
+      const f = strikeFeel(speed, grade, D, contact.air?.kind);
       const fl = feelRef.current;
       fl.pending = { f, x: bl.pos.x, y: bl.pos.y, z: bl.z, vx: bl.vel.x, vy: bl.vel.y };
       fl.windUp = f.windUpS;

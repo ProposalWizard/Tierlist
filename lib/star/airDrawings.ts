@@ -181,10 +181,11 @@ export function arriveZ(kind: string): number {
 //     (REAL_HEADER_Z_DECILES), picked from the picture itself (no random number).
 //  Nobody is placed by it: it is only how high the ball is.
 //
-//  AIR_HEIGHT_VARIES switches all of it. It stays false until CanvasMatch.tsx
-//  passes the chance to airWaitZ (the ball while you aim: one line there,
-//  `airWaitZ(sc.kind, t, sc)`). Without that line the ball would arrive at its
-//  own height, hang at 1.85 m while you aim, then be struck from its own height.
+//  AIR_HEIGHT_VARIES switches all of it. On since 22 Oct 2026: CanvasMatch.tsx
+//  passes the chance to airWaitZ (the ball while you aim, `airWaitZ(sc.kind, t,
+//  sc)`), and a header met high is nodded down harder so the goal rate stays
+//  where it was (airborneChance.ts HEADER_Z_TAKEBACK_UP; measured with
+//  scripts/aerial/heights.mts, every level within 2 per 100).
 // ─────────────────────────────────────────────────────────────────────────
 
 /** The engine's own air heights (canvasEngine.ts HEADER_MIN_Z, HEADER_MAX_REACH_Z,
