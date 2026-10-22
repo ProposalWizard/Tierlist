@@ -263,10 +263,10 @@ export function shotAt(shots: ReelShot[], into: number): { shot: ReelShot; i: nu
 /** A point on a loudness line (seconds, 0..1). */
 export interface LevelPoint { at: number; gain: number }
 
-export const MUSIC_TITLE = 0.55;
-export const MUSIC_UNDER = 0.32;
-export const MUSIC_DUCK = 0.14;
-export const MUSIC_END = 0.72;
+export const MUSIC_TITLE = 0.85;
+export const MUSIC_UNDER = 0.5;
+export const MUSIC_DUCK = 0.2;
+export const MUSIC_END = 1;
 
 /**
  * The music's loudness line: fades in under the title, sits under the goals,

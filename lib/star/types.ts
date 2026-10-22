@@ -1836,6 +1836,9 @@ export type StarPhase =
    *  Season, Team of the Season and every trophy this season handed out —
    *  shown once, right after the season rolls over. See SeasonAwardsScreen. */
   | "season-awards"
+  /** "Your season": the reel of every goal of the season just finished,
+   *  shown at the season end before the Ballon d'Or (SeasonReel.tsx). */
+  | "season-reel"
   /** LEGACY, and kept only so a save written before the five-stage trial
    *  still parses. It was one penalty taken until it went in; its screen is
    *  deleted, and the resume path in page.tsx moves anyone still carrying it

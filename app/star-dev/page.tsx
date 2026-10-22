@@ -224,6 +224,10 @@ const FreeAgentShell = lazyScreen(() => import("@/components/star/FreeAgentShell
 const TrialReward = lazyScreen(() => import("@/components/star/TrialReward"));
 const LadderScreen = lazyScreen(() => import("@/components/star/LadderScreen"));
 const SeasonAwardsScreen = lazyScreen(() => import("@/components/star/SeasonAwardsScreen"));
+// The season awards as a night in a small hall, then the screen above (Leo, 22 Oct 2026).
+const SeasonAwardsNight = lazyScreen(() => import("@/components/star/SeasonAwardsNight"));
+// "Your season": every goal of the season in one video (Leo, 22 Oct 2026).
+const SeasonReel = lazyScreen(() => import("@/components/star/SeasonReel"));
 const PotmWinModal = lazyScreen(() => import("@/components/star/PotmWinModal"));
 const LineupIntro = lazyScreen(() => import("@/components/star/LineupIntro"));
 const MatchWeek = lazyScreen(() => import("@/components/star/MatchWeek"));
@@ -278,7 +282,7 @@ const CaptainInOffice = lazyScreen(() => import("@/components/star/ManagerMoment
 const LAZY_PRELOAD = [
   VersusScreen, MatchWeek, LineupIntro, SettingsScreen, LadderScreen, MediaFeed, PressConference,
   TrainingLevelSelect, TrainingMinigame, TrainingPitchScreen, CupDrawReveal, KnockoutRoundup, PlayOffRoundup,
-  DeadlineDayRoundup, SeasonAwardsScreen, BallonDor, BallonDorNight, PotmWinModal, DilemmaModal,
+  DeadlineDayRoundup, SeasonAwardsScreen, SeasonAwardsNight, SeasonReel, BallonDor, BallonDorNight, PotmWinModal, DilemmaModal,
   ShowroomShop, Shop, CareerStore, AchievementsScreen, TrophiesScreen, ReputationScreen, SponsorsScreen,
   TransferHub, TransferSigning, RelegationMove, NegotiationScreen, LoanBrief, YouthTeam,
   ContractInOffice, ManagerNewsInOffice, CaptainInOffice, GlobalSettingsScreen, Casino, Investments,
@@ -1633,6 +1637,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const next = { ...awarded, lastSeasonAwardStats: computeSeasonAwardStats(awarded) };
     setCareer(next);
     setActiveNav(null);
+    // "Your season" first, then the Ballon d'Or (handleReelDone).
+    setPhase("season-reel");
+  }, []);
+  // The reel was watched or skipped: its recordings may now be pruned
+  // (goalLog.ts protectedClipIds), and on to the Ballon d'Or.
+  const handleReelDone = useCallback(() => {
+    setCareer(c => (c ? { ...c, reelDoneSeason: c.season } : c));
     setPhase("ballon-dor");
   }, []);
   const handleSeasonEnd = useCallback(() => {
@@ -3930,7 +3941,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "season-awards" && career?.lastSeasonAwardStats) {
-    return <SeasonAwardsScreen career={career} onContinue={handleSeasonAwardsContinue} />;
+    return <SeasonAwardsNight career={career} onContinue={handleSeasonAwardsContinue} />;
   }
 
   if (phase === "ladder" && career?.ladderNews) {
@@ -4457,6 +4468,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return <PressConference question={pressQuestion} onAnswer={handlePressAnswer} />;
   }
 
+  if (phase === "season-reel") {
+    return <SeasonReel career={career} onDone={handleReelDone} />;
+  }
   if (phase === "ballon-dor") {
     return <BallonDorNight career={career} onContinue={handleBallonDorContinue} />;
   }

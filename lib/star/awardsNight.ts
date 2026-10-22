@@ -54,8 +54,8 @@ export const ROOM = {
 
 /** Where a winner waits: the stage side of one of the two front tables. */
 const SEATS: readonly { x: number; z: number }[] = [
-  { x: -3.05, z: 2.2 }, { x: -2.55, z: 2.25 }, { x: -2.05, z: 2.3 },
-  { x: 0.05, z: 2.45 }, { x: 0.6, z: 2.5 },
+  { x: -3.0, z: 2.0 }, { x: -2.6, z: 2.0 }, { x: -2.2, z: 2.0 },
+  { x: 0.05, z: 2.22 }, { x: 0.55, z: 2.22 },
 ];
 
 export interface AwardCall {
@@ -119,7 +119,7 @@ export function nomineesFor(stats: SeasonAwardStats, key: SeasonAwardKey): Award
 }
 
 /** Lengths of each part of an award, seconds. */
-export const BEAT = { call: 1.6, nominees: 2.3, envelope: 1.1, toWalk: 0.25, walk: 2.5, moment: 1.6 } as const;
+export const BEAT = { call: 1.4, nominees: 2.1, envelope: 0.9, toWalk: 0.2, walk: 2.3, moment: 1.4 } as const;
 export const INTRO = 2.0;
 
 /** The night's plan from the season's award stats. Awards with no winner are left out. */
@@ -189,10 +189,11 @@ export interface WinnerPos { x: number; y: number; z: number; /** Facing (y rota
 /**
  * Where an award's winner is at time t: by his table until the walk, then
  * to the foot of the steps, up them, across to the spot, and turned to the room.
- * Seen from the moment his name is said to the end of his award.
+ * Seen from the start of his walk (the camera is on the screen as his name
+ * is said) to the end of his award.
  */
 export function winnerPosAt(a: AwardCall, t: number): WinnerPos {
-  const seen = t >= a.revealAt && t < a.end;
+  const seen = t >= a.walkFrom && t < a.end;
   const pts = [
     { x: a.seat.x, y: 0, z: a.seat.z },
     { x: ROOM.stepFoot.x, y: 0, z: ROOM.stepFoot.z },

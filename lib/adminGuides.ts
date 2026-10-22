@@ -245,6 +245,26 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Ballon d'Or night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts; the season awards components/star/SeasonAwardsScreen.tsx (lib/star/seasonAwards.ts computeSeasonAwardStats); the faces on the award cards components/star/Headshot3D.tsx, lib/star/headshot3d/.",
   },
+  "/star-awards-night-dev": {
+    title: "Season awards night",
+    what: "The season's awards read out in a small hall: the host calls each award, the three nominees show, then the winner walks up from his table and lifts the trophy. Made-up results: you win 2 of the 5 (Golden Boot, Player of the Season) and lose 3.",
+    buttons: [
+      { group: "The menu", items: [
+        ["Other names ▶", "The same results with other made-up rivals."],
+        ["3D / Drawn", "Which room ▶ Play the night uses: 3D as the game shows it, or drawn (what a phone that can't run 3D sees)."],
+        ["▶ Play the night", "The night on its own. At the end (or Skip all) it opens the awards page; Continue comes back here."],
+        ["As the game shows it", "Exactly what the game will show: the night (3D when this device can), then the awards page."],
+        ["The awards page after it", "The season awards page on its own (trophies, awards, Team of the Season)."],
+      ] },
+      { group: "During the night", items: [
+        ["Tap anywhere / Next award ›", "Goes straight to the next award."],
+        ["Skip all", "Ends the night and opens the awards page."],
+      ] },
+    ],
+    saving: ["Nothing is saved."],
+    inGame: ["Not yet: the game will show this night at the end of each season, in place of going straight to the season awards page (wired in by Leo's season-end chat). On a phone that can't run 3D it shows the drawn room."],
+    dev: "app/star-awards-night-dev/page.tsx; the screen components/star/SeasonAwardsNight.tsx (AwardsCeremony); the plan lib/star/awardsNight.ts (tests/star/awardsNight.mts); the 3D room lib/star/awardsNight3d.ts and its screen lib/star/awardsNightScreen.ts; the three nominees lib/star/seasonAwards.ts (SeasonAwardStats.nominees). Stills: window.__awardsNight.seek(t).",
+  },
   "/star-intl-dev": {
     title: "International world",
     what: "Every national team's competitions played out from August 2026 — Nations Leagues, qualifiers, the Euro, World Cup, Copa América, AFCON, Asian Cup, Gold Cup, OFC Nations Cup, friendlies — without playing a career.",
@@ -369,6 +389,31 @@ export const ADMIN_GUIDES = {
     inGame: ["Nowhere yet. This is a test page."],
     dev: "app/star-real-goals-dev/page.tsx; lib/star/realGoals.ts (levels, stars, accuracy, kits, names, ghost, build-up) and lib/star/realGoalView.ts (what the match is handed); CanvasMatch's `realGoal` prop (drawing only, TEST_ONLY in scripts/one-engine-guard.mjs); canvasEngine.ts Scenario.realLane (the real lane, off by default); data/realmoments/wyscout_shots.json + wyscout_goals.json (scripts/realmoments/extract_wyscout.py); the league goals in data/realmoments/wyscout_league_<england|spain|italy|germany|france>.json (scripts/realmoments/extract_wyscout_leagues.py); tests/star/realGoals.mts and tests/star/realGoals/ (harness, measure, buildup).",
   },
+  "/star-goals-gallery-dev": {
+    title: "Career goals",
+    what: "The Stats → Goals page with a made-up career: every goal with its minute, opponent, competition and season, a small picture, and its video when this browser has it. Also the Hall of Fame's Best goals.",
+    buttons: [
+      { group: "Career", items: [
+        ["80 goals · 4 seasons", "A made-up career of 80 goals. About one in three has a made video kept in this browser; a few say their video is on another phone; the rest were never recorded."],
+        ["600 goals", "A 20-season legend's worth of goals, to check the list stays quick."],
+        ["Old save", "A save from before goals were listed: the gentle empty page."],
+        ["Hall of Fame", "The career as the Hall of Fame keeps it: only its best 10 goals, in the Best goals list. ✕ closes it."],
+      ] },
+      { group: "The goals", items: [
+        ["All / Best 10 / ▶ Videos / a competition", "Which goals to list. All is grouped by season, newest first. Best 10 is the ten that go into the Hall of Fame."],
+        ["A goal", "Plays its video when this browser has it (pick the camera on top), else shows its facts card. ✕ closes it."],
+        ["▶ on a picture", "This goal's video is on this phone."],
+      ] },
+    ],
+    saving: [
+      "Nothing touches a career save. The made videos are kept in this browser only, in the same place the game keeps goal videos (the newest 80 are kept).",
+    ],
+    inGame: [
+      "Stats → Goals (the sixth chip) in the career shows the same list for your own goals, from 22 Oct 2026 on.",
+      "Hall of Fame → open a career → Best goals shows its best 10.",
+    ],
+    dev: "app/star-goals-gallery-dev/page.tsx; components/star/CareerGoalsGallery.tsx (gallery, BestGoalsList, BestGoalsSheet); the log lib/star/goalLog.ts; the Hall trims it in lib/star/hallOfFame.ts slimCareer; made videos lib/star/goalClip/synth.ts; tests tests/star/goalLog.mts.",
+  },
   "/star-goal-clips-dev": {
     title: "Goal videos",
     what: "Score a chance in the real match and watch the goal back as a video from three cameras, then save it. The same recordings the post-match feed plays.",
@@ -402,6 +447,35 @@ export const ADMIN_GUIDES = {
       "A browser that can make video (iPhone iOS 16.4 or later, Chrome, Edge, Firefox on a computer). Others show the plain picture with no play button.",
     ],
     dev: "app/star-goal-clips-dev/page.tsx; recorder lib/star/goalClip/recorder.ts (fed by CanvasMatch's onGoalClip); format track.ts; cameras cameras.ts; drawing scene.ts, render.ts; cuts edit.ts; the file encode.ts (WebCodecs + mp4-muxer / webm-muxer); storage store.ts (IndexedDB); the post components/star/media/GoalVideo.tsx.",
+  },
+  "/star-season-reel-dev": {
+    title: "Your season video",
+    what: "The video a player sees at the end of every season, before the awards: every goal of the season, the goal of the season slowed down, and the season's numbers. Here on a made-up season, so you can watch it without playing one.",
+    buttons: [
+      { group: "1 · The season", items: [
+        ["Club", "Whose colours and badge the video uses."],
+        ["Goals: 20 / 8 / 1 / No goals", "How many goals the made-up season has. No goals shows the title and the end card only."],
+        ["Recordings on this phone: Every goal / Some / No recordings", "Which goals have a recording. A goal with none (played on another phone, or simulated) shows as a drawn card with a mini pitch instead of video."],
+        ["Trophies won: None / 1 / 3", "The trophies on the end card."],
+      ] },
+      { group: "2 · Watch it", items: [
+        ["▶ Play the reel", "Opens the reel full screen, exactly as the player sees it."],
+      ] },
+      { group: "The reel", items: [
+        ["Tap the video", "Pause or play. At the end, plays it again."],
+        ["Skip (top right)", "Leaves at once. Reads Continue once the reel has finished. Back here on this page."],
+        ["Speaker", "Sound on or off: the crowd, the commentator over the goal of the season, and a music bed. The same switch as every goal video, remembered on this device."],
+        ["Save video", "Makes the video file on this phone (a count while it does), then opens the share menu (Save Video on an iPhone) or downloads it. If the phone asks, tap Save now."],
+        ["Continue", "Leaves the reel."],
+      ] },
+    ],
+    saving: [
+      "Nothing is saved. The made-up goals' recordings are made on this page and kept in this browser only.",
+      "A saved video goes wherever you save it: Photos, a message, your downloads.",
+    ],
+    inGame: ["At the end of every season, before the awards: Your season. Every goal you scored that season, in order."],
+    needs: ["A browser that can make video for Save video (iPhone iOS 16.4 or later, Chrome, Edge). The reel itself plays everywhere."],
+    dev: "app/star-season-reel-dev/page.tsx; the screen components/star/SeasonReel.tsx; plan lib/star/goalClip/reel.ts (tests/star/seasonReel.mts); drawing reelRender.ts; sound reelAudio.ts; file reelEncode.ts. Goals come from career.goalLog (lib/star/goalLog.ts).",
   },
   "/star-relgames-dev": {
     title: "Relationship games",
