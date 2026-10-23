@@ -74,6 +74,7 @@ RUL-ALL-009 | Play it before claiming it works: a type-check and a green suite c
 RUL-ALL-010 | Ask about the one ambiguous word; build the rest, then ask one question that can be answered in a word. | style,rule
 RUL-ALL-011 | When Harry points at a picture, name it back in one line (which picture you are copying) before building. | rule
 RUL-ALL-012 | Do not agree to be agreeable: before agreeing with a design call, find what argues against it. | rule
+RUL-DAT-001 | SQL for a person to run goes out as an artifact page (each file's name, one line on what it does, a Copy all button and the full text), never as links; build it with scripts/supabase/sql-page.py. | rule,data
 RUL-ENG-001 | The match engine may change, with a warning: the engine-warn hook asks every time with a red notice. | engine
 RUL-ENG-002 | Every screen except the real match mounts EnginePlay; a feature never gets its own loop. | engine,rule
 RUL-ENG-003 | The one-engine guard runs inside npm run build and blocks every Vercel deploy on a new copy of the loop. | engine,deploy
