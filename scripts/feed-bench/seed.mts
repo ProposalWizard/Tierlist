@@ -46,7 +46,16 @@ for (let m = 0; m < N; m++) {
     });
     const t = templates[(m + i) % 2];
     const createdAt = new Date(Date.UTC(2026, 9, 1, 0, made++)).toISOString();
-    clips.push({ id, createdAt, track: { ...t, meta: { ...t.meta, id, createdAt, minute: events[i].minute } } });
+    // The recording's labels follow this match (the moves are the stored ones).
+    const youHome = fixture.home;
+    const short = events[i].scorer.split(" ").slice(-1)[0];
+    clips.push({ id, createdAt, track: { ...t, meta: {
+      ...t.meta, id, createdAt, minute: events[i].minute, minuteLabel: String(events[i].minute),
+      home: youHome ? player.club : fixture.opponent, away: youHome ? fixture.opponent : player.club, youAreHome: youHome,
+      scorer: events[i].scorer, scorerShort: short, isYou: mine, assist: undefined,
+      season: c.season, week: fixture.week,
+      scoreAfter: (youHome ? [i + 1, 0] : [0, i + 1]) as [number, number],
+    } } });
   }
   const goals = events.filter(e => e.isUserGoal).length;
   const stats: MatchStats = {
