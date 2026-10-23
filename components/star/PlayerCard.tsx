@@ -4,8 +4,10 @@
  * YOUR PLAYER CARD — FIFA style (Harry, 22 Oct 2026: "we should be building a
  * 'card' with the players stats as we go"; picked: FIFA-style card).
  *
- * Overall, position, flag and badge down the left; your drawn head (photo
- * faces are off, FACT-UI-015); name; the six skills. Colour by tier
+ * Overall, position, flag and badge down the left; your own 3D footballer,
+ * head to waist, in your club kit (a still shot once from the Style A model,
+ * Headshot3D frame "card"; the drawn head until it lands or with no WebGL;
+ * photo faces are off, FACT-UI-015); name; the six skills. Colour by tier
  * (lib/star/playerCard.ts CARD_TIERS: bronze, silver, gold, special).
  *
  * Live: it reads the career, so it changes after every match and training.
@@ -24,6 +26,7 @@ import { skinToneHex, shortDisplayName } from "@/lib/star/playerIdentity";
 import ClubBadge from "./ClubBadge";
 import NationFlag from "./NationFlag";
 import DrawnHeadChip from "./DrawnHeadChip";
+import Headshot3D from "./Headshot3D";
 import { drawPlayerCardPng, FACE_MASK_CSS } from "./playerCardImage";
 
 /** Each tier's paint: the card's gradient, its edge, its ink. */
@@ -180,7 +183,11 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
           <span data-pc-img className="mt-1.5 block"><ClubBadge club={career.player.club} kit={kit} size={28} /></span>
         </div>
 
-        {/* The face: the same drawn head the match draws on you. */}
+        {/* The portrait: your own 3D footballer (the Style A man the shop and
+            garden show: Settings → Your look, your club's home kit), head to
+            waist, shot ONCE to a still and kept on the device
+            (lib/star/headshot3d, frame "card"). Until it lands, or with no
+            WebGL, the drawn head the match draws on you. */}
         {/* Soft edges so the shoulders melt into the card (FACE_FADE; the
             saved PNG cuts the same edges). */}
         <div
@@ -188,7 +195,10 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
           className="absolute overflow-hidden"
           style={{ right: 12, top: 24, width: 132, height: 128, WebkitMaskImage: FACE_MASK_CSS, maskImage: FACE_MASK_CSS, WebkitMaskComposite: "source-in", maskComposite: "intersect" }}
         >
-          <DrawnHeadChip id="you" shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={128} skin={skinToneHex(career.player.skinTone)} />
+          <Headshot3D
+            id="you" you frame="card" kit={kit} size={132} height={128}
+            fallback={<DrawnHeadChip id="you" shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={128} skin={skinToneHex(career.player.skinTone)} />}
+          />
         </div>
 
         {/* Name. */}
