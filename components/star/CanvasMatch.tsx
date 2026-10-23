@@ -211,7 +211,7 @@ import {
 import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
   matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf, turnWideChance,
-  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, NEW_KEEPER_GROW, MATCH_VIEW_DEFAULT, figureGrow,
+  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, NEW_KEEPER_GROW, MATCH_VIEW_DEFAULT, figureGrow, figureShrinkFor,
   playZoom, playZoomOf, playZoomProbe,
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
@@ -2928,8 +2928,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const keepRunCamRef = useRef(false);
   /** B14b: an eased widen in progress (from, to, seconds in, zoom at the start). */
   const camEaseRef = useRef<{ from: Viewport; to: Viewport; t: number; zoom0: number } | null>(null);
+  /** Headers and volleys (matchView.ts FIGURES_AT_FULL_VIEW): the men and the
+   *  ball drawn this much smaller, so they are the long-range size. 1 otherwise. */
+  const figShrinkRef = useRef(1);
   /** Figures and ball: divide their size by this (Z2 keeps them today's size). */
-  const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1);
+  const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1) / figShrinkRef.current;
 
   /**
    * Which way the frame is turned. "up" is the ordinary view; a crossing
@@ -2971,6 +2974,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
       viewportRef.current = { ...sc.viewport };
       baseViewportRef.current = { ...sc.viewport };
+      // A feature's own close camera (the Head & Volley drill): headers and
+      // volleys still draw the men the long-range size.
+      {
+        const v = sc.viewport, up = (sc.facing ?? "up") === "up";
+        figShrinkRef.current = newViewRef.current ? figureShrinkFor(sc.kind, up ? v.x2 - v.x1 : v.y2 - v.y1) : 1;
+      }
       return;
     }
     applyTilt(tiltForChance(sc));
@@ -2981,6 +2990,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     viewportRef.current = { ...cam };
     baseViewportRef.current = { ...cam };
     playZoomRef.current = playZoomOf(sc);
+    // Headers and volleys: the men the long-range size. The chance's own
+    // camera before the Zoom is what they would otherwise be sized against.
+    {
+      const up = (sc.facing ?? "up") === "up", across = up ? cam.x2 - cam.x1 : cam.y2 - cam.y1;
+      const zoomed = playZoom() === "z2" || playZoom() === "z2max";
+      figShrinkRef.current = figureShrinkFor(sc.kind, across * (zoomed ? playZoomRef.current : 1));
+    }
     if (playZoomProbe() && typeof window !== "undefined") {
       (window as unknown as { __zg?: unknown }).__zg = {
         sc, cam: { ...cam }, zoom: playZoomRef.current,
@@ -7307,6 +7323,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     viewportRef.current = topDownViewport(run);
     baseViewportRef.current = { ...viewportRef.current };
     playZoomRef.current = 1;
+    figShrinkRef.current = 1;
     return "tdDribble";
   };
 
@@ -8321,6 +8338,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       viewportRef.current = dribbleViewport(dribbleRef.current);
       baseViewportRef.current = { ...viewportRef.current };
       playZoomRef.current = 1;
+      figShrinkRef.current = 1;
       setPhase("dribble");
       onChanceServedRef.current?.({ kind: "dribble", minute: matchMinuteRef.current, reason: request.reason });
       logMoment(momentLine(), "you");
