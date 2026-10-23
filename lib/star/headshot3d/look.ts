@@ -20,7 +20,7 @@ import { playerLookFor } from "../playerLook";
 import type { ToonBody, ToonHead, ToonPick } from "../style3d/toon/bodies";
 
 /** Bump this when the camera, light, pose or expression change: every kept picture is then made again. */
-export const HEADSHOT_VERSION = 1;
+export const HEADSHOT_VERSION = 2; // 2: the even skin paint (toon/shader.ts TOON_SKIN_PAINT, 23 Oct 2026)
 
 /** The picture, in pixels (square). The biggest card shows it at 112 px wide (224 on a 2× phone). */
 export const HEADSHOT_PX = 256;

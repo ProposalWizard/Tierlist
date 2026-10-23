@@ -16,8 +16,11 @@
  */
 
 /** The face's soft edges, shared by the screen (a CSS mask) and the PNG:
- *  solid down to 62% of its height then fading out; 16% fade at each side. */
-export const FACE_FADE = { bottomFrom: 0.62, side: 0.16 };
+ *  solid down to 82% of its height then fading out; 5% fade at each side.
+ *  (Was 62% and 16%, 23 Oct 2026: the arms sit in those edges, so the card's
+ *  own colour showed through them — pale on silver, purple on a special card —
+ *  and his arms read a different skin colour from his face.) */
+export const FACE_FADE = { bottomFrom: 0.82, side: 0.05 };
 export const FACE_MASK_CSS =
   `linear-gradient(to bottom, #000 ${FACE_FADE.bottomFrom * 100}%, transparent 100%), ` +
   `linear-gradient(to right, transparent 0%, #000 ${FACE_FADE.side * 100}%, #000 ${100 - FACE_FADE.side * 100}%, transparent 100%)`;
