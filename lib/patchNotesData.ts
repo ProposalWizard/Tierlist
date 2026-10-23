@@ -27,6 +27,624 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.108",
+      "title": "Leo's tonight build: celebrations, fast feed, bicycle kicks, Real Goals, season end, 17 bugs (on branch Leo, not live)",
+      "publishedAt": "2026-10-22T23:15:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/PQvHUgssX7CAdad2jitPjA",
+      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. NOT live until Leo says push. Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; bicycle kicks; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. Harry: the match file and keeper were touched (additive, match tests pass); 6 team jobs. Mikey: 3 lines in manager.ts and an injuries plan for you.",
+      "stats": [
+        {
+          "value": "0.29 s",
+          "label": "feed opens on a cheap phone (was 1.5 s)"
+        },
+        {
+          "value": "17",
+          "label": "bugs fixed"
+        },
+        {
+          "value": "61",
+          "label": "famous goals added"
+        },
+        {
+          "value": "422 / 430",
+          "label": "star test files passing (the 8 left fail on main too)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Goal celebrations",
+              "detail": "Your goals only: run to the nearer corner, then the move equipped in the shop (6: Hands Up, Fist Pump, Jump, Roar, Aeroplane, Knee Slide). Tap skips. 2D, 3D and goal videos (2.5 s longer). Knee slide fixed (knees were together)."
+            },
+            {
+              "title": "Big moments",
+              "detail": "85'+ level or one down: banner, crowd rise, heartbeat; score = slow motion of the last 0.5 s (result unchanged), roar, 14 new late commentary lines."
+            },
+            {
+              "title": "Bicycle kicks",
+              "detail": "Only for a cross above your head moving across you. Offered by Aerial (1.4 in 40 matches at 40, 8.6 at 80+). Clean: 40 goals in 100. New 2D and 3D move. The 15 real overhead goals are back in Real Moments."
+            },
+            {
+              "title": "Goal of the Month",
+              "detail": "Monthly poll in the feed: your 3 best goals v 2 by others in your league. Fans vote, you vote once, a win adds fans."
+            },
+            {
+              "title": "Weather and pitch (test page only)",
+              "detail": "/star-weather-dev: wind with direction, rain skid, each club's pitch quality, dry spells. Real game unchanged (12/12 fingerprints). Found: the live heavy pitch already kills 56 in 100 normal passes."
+            },
+            {
+              "title": "Real Goals (test page)",
+              "detail": "8 paths, 411 levels; 61 bangers 2010-2025 (checked twice, 22 corrected) with an admin fixer; a daily goal with a streak; home 0.4-0.55 s on a cheap phone (was 4.8-5.2 s). Shootout keeper that reads your habits on /star-shootout-dev."
+            },
+            {
+              "title": "End of season",
+              "detail": "A season video of every goal; Stats → Goals gallery (best 10 in the Hall of Fame); a 3D season awards night (5 awards, ~44 s, skippable); an injuries plan for Mikey (docs only)."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Social feed speed",
+              "detail": "Cheap phone (6× slower CPU): open 1.5 → 0.29 s, worst scroll freeze 0.76 → 0.17 s, first video 47 → 12 s, reopened 1.9 → 0.56 s. Videos made off the main thread, kept on the phone, started at full time."
+            },
+            {
+              "title": "Refresh sent you Home",
+              "detail": "Now the Ballon d'Or, window list, talks and 'Deal agreed' come back. A refresh after 'Deal agreed' used to lose the transfer."
+            },
+            {
+              "title": "16 more bugs",
+              "detail": "No sack after promotion (Mikey's manager.ts, 3 lines); first season 2027/28 → 2026/27; talks header wage; welcome tour replaying; team-sheet manager name; line-up buttons overlap; see-through dropdown; setup step count; scout wording; offline badge retries; 'Promoted' in the window list; goal videos stopping early; cup accounts' wrong news; the admin tab eating a slow phone's CPU."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Touches other areas",
+          "items": [
+            {
+              "title": "Harry: match file and keeper",
+              "detail": "CanvasMatch.tsx (celebrations, big moments, bicycle, video length), keeperBrain.ts (bicycle delay, penalty habits: unchanged with no habit), canvasEngine.ts/ballPhysics.ts (weather, inert unless the test page sets it). All additive; match tests pass."
+            },
+            {
+              "title": "AdminNavPanel.tsx",
+              "detail": "The admin tab checked ~700 points every 0.5 s; now ~50, in idle time only."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Feed scroll",
+              "detail": "Still 11-16 hiccups of 0.14-0.17 s while scrolling (target none over 0.1 s)."
+            },
+            {
+              "title": "Not heard or not on a real phone",
+              "detail": "Big-moment and reel sound measured only; awards night frame rate not measured on a phone; no real squads in the sandbox."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Team jobs (6)",
+          "items": [
+            {
+              "title": "Harry",
+              "detail": "Match camera 1 px short at 372×704; a long-range drawing breaks a law; the removed data source's name in two patch notes; 3D training freeze; two chance tests failing on main after the build-up work."
+            },
+            {
+              "title": "Everyone",
+              "detail": "The save is ~1 MB and rewritten on every change."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.107h",
+      "title": "Harry's patch notes: Players Back To Size B, The Marketing Studio And Uploads, And Fewer Dropped Highlights",
+      "publishedAt": "2026-10-22T18:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "22 Oct. Players back to size B (PR #760): NEW_FIGURE_SCALE 1 to 0.8; men about 22 px on a phone long-range chance (was about 28, 1.56x the old), now 1.25x the old; keeper back to his old size; pitch unchanged. Marketing Studio and uploads (PR #761): Admin, Marketing tabs Board, Client, Studio, Uploads; direct-to-R2 uploads, 500 MB a file, 30 files and 5 GB per admin per day; Studio, Editing suite; Statics soon; recorder Send to Marketing. Highlights fix (PR #763): Match flow New chances back (striker even 6.29 to 6.46, strong 7.61 to 7.84); real moments about 1 in 10 (was 1 in 7); build-ups 4.9 s to about 3.1 s; foul lead-in about 6 s to about 3.5 s; offside 5.3 s to 4.4 s.",
+      "stats": [
+        {
+          "value": "28 → 22 px",
+          "label": "a man on a phone long-range chance"
+        },
+        {
+          "value": "500 MB",
+          "label": "max per uploaded file"
+        },
+        {
+          "value": "1 in 7 → 1 in 10",
+          "label": "real moments"
+        },
+        {
+          "value": "4.9 → 3.1 s",
+          "label": "one build-up"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Player size",
+              "detail": "Play a real match chance: men are about 22 px on a phone long-range chance (were about 28). The keeper is back to his old size."
+            },
+            {
+              "title": "Marketing tabs",
+              "detail": "Admin, Marketing: tabs Board, Client, Studio, Uploads."
+            },
+            {
+              "title": "Uploads",
+              "detail": "Admin, Marketing, Uploads: pick a video or picture and it goes straight to storage. Max 500 MB a file."
+            },
+            {
+              "title": "Studio, Editing",
+              "detail": "Admin, Marketing, Studio, Editing: open a cut. Timeline, filmstrip, waveform, For Claude and Review notes."
+            },
+            {
+              "title": "Lock and render, Done",
+              "detail": "In the suite: Lock & render, and Done."
+            },
+            {
+              "title": "Studio, Statics",
+              "detail": "Admin, Marketing, Studio, Statics: shows \"Soon\"."
+            },
+            {
+              "title": "Recorder",
+              "detail": "The admin recorder has a \"Send to Marketing\" button."
+            },
+            {
+              "title": "Highlights count",
+              "detail": "Match flow: New. A match should show as many chances as with Old."
+            },
+            {
+              "title": "Real moments",
+              "detail": "Real moments on: about 1 real moment in 10 chances (was 1 in 7)."
+            },
+            {
+              "title": "Build-ups",
+              "detail": "Highlights build-ups are about 3.1 s each (were 4.9 s)."
+            },
+            {
+              "title": "Fouls and offsides",
+              "detail": "A foul clip leads in about 3.5 s before the foul (was about 6 s). An offside leads in 4.4 s (was 5.3 s)."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Players back to size B (PR #760)",
+          "items": [
+            {
+              "title": "Men are smaller again, the keeper is back to his old size",
+              "detail": "Harry found the players \"HUGE\" in real match chances. The cause was B20's size C: both shrinks were dropped, so men came out 1.56 times the old size, about 28 px on a phone long-range chance. It was not the build-ups. NEW_FIGURE_SCALE went from 1 to 0.8. The outfield shrink stays dropped. Men are now about 22 px (1.25 times the old). The keeper is back to his old size. The pitch is unchanged. Merged as PR #760."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Marketing Studio and uploads (PR #761)",
+          "items": [
+            {
+              "title": "Admin, Marketing has four tabs: Board, Client, Studio, Uploads",
+              "detail": "Reasoned: videos and pictures for marketing had no home in the admin. Reasoned: nothing else held a cut, its notes and its files in one place. Admin, Marketing now has the tabs Board, Client, Studio and Uploads. Merged as PR #761."
+            },
+            {
+              "title": "Uploads go straight from the browser to private storage",
+              "detail": "Reasoned: a big video sent through the site would be slow and heavy for the site. Reasoned: so the file goes from the browser straight to Cloudflare R2, never through the site. A 15-minute signed link starts each upload.. Max 500 MB per file. Video and image only.. Max 30 files and 5 GB per admin per day.. The bucket is private. Playback uses 1-hour signed links.."
+            },
+            {
+              "title": "Studio, Editing: the newest editing suite",
+              "detail": "Reasoned: notes on a video lived in chat, away from the video. Reasoned: the suite puts the notes on the timeline, at the moment they are about. It comes from Harry's other tool. Timeline, filmstrip, waveform and lanes.. Two tabs that never mix: For Claude and Review notes .. Lock & render, and Done.. An auto-check lane, taste notes, and a mic.. The notes are saved as JSON next to the video in R2, not in the public code.."
+            },
+            {
+              "title": "Recorder: \"Send to Marketing\"",
+              "detail": "Reasoned: a recording had to be downloaded and uploaded by hand. Reasoned: the recorder now has a button that sends it to Marketing. The admin recorder has a \"Send to Marketing\" button."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: Highlights drop fewer chances and run shorter (PR #763)",
+          "items": [
+            {
+              "title": "Match flow: New dropped 3 to 4% of chances",
+              "detail": "With Match flow: New a match showed fewer chances than before: striker even 6.47 to 6.29 a match, strong 7.92 to 7.61. Only sim piece 4 dropped chances. Your miss's second ball was won in midfield, so the move never became a chance. The second ball is now won on the edge of their box. Striker even 6.46, strong 7.84. With Match flow: Old (the default) the count never changed: 4.5 to 7 chances a match is normal, and a sub appearance gives fewer."
+            },
+            {
+              "title": "Real moments: 1 in 7 is now about 1 in 10",
+              "detail": "With the toggle on, about 1 chance in 7 was a real moment (11.7 to 15.1%). Headers and volleys joined at \"1 in 4 of each kind\". Now 1 in 6 of each kind. That is about 1 in 10 (8.3 to 10.6%)."
+            },
+            {
+              "title": "Build-ups are shorter",
+              "detail": "Each build-up ran 4.9 s, 22 to 27 s a match. Reasoned: the build-ups were cut too long. About 3.1 s each, 14 to 17 s a match. Seen live: 2.4 to 2.9 s each, 13.9 s for 5."
+            },
+            {
+              "title": "Fouls and offsides lead in closer to the moment",
+              "detail": "A foul clip began about 6 s before the foul. An offside clip began 5.3 s before. Reasoned: the lead-in was longer than the moment needed. Fouls now start 0.8 s before the foul: the lead-in was about 6 s and is now about 3.5 s. Offsides start 0.6 s before the pass: 5.3 s down to 4.4 s."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Not tried with the real keys yet",
+              "detail": "The Studio and uploads were seen on a local build with no storage keys. A real upload needs Harry to send one video."
+            },
+            {
+              "title": "A dropped upload restarts",
+              "detail": "If an upload is cut, it starts again from the beginning."
+            },
+            {
+              "title": "Last save wins",
+              "detail": "If two people save the same cut at the same time, the last save wins."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Real upload test",
+              "detail": "Harry uploads one video to prove the keys work."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.107",
+      "title": "Leo's plan for tonight: 15 parts, 7 chats (approved, building)",
+      "publishedAt": "2026-10-22T17:45:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/RERQk9D5BLaDv14ebha8qf",
+      "summary": "Leo, 22 Oct. A plan, not a release: what 7 chats are building tonight on Leo's branches (nothing live until Leo says push). Goal celebrations bought in the shop (run to the corner, skippable, in videos); a fast social feed on slow phones; Goal of the Month; bicycle kicks (Aerial skill); weather and pitch quality changing the ball (test page first); big late moments; shootout keeper that reads your habits (test page); Real Goals league paths, 60 hand-written bangers 2010-2025 and a daily goal; a season video reel; a career goals gallery; a season awards night; an injuries plan for Mikey; a bug hunt. Harry: parts 3, 4 and 13 touch your areas (match file, ball physics, the night) — say if you object.",
+      "stats": [
+        {
+          "value": "15",
+          "label": "parts"
+        },
+        {
+          "value": "7",
+          "label": "chats building at once"
+        },
+        {
+          "value": "408 / 414",
+          "label": "tests passing on main tonight"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Being built tonight",
+          "items": [
+            {
+              "title": "Celebrations + big moments",
+              "detail": "Chat 1. Touches the match file (the engine warning will ask)."
+            },
+            {
+              "title": "Social feed speed + Goal of the Month + 2 video bugs",
+              "detail": "Chat 2."
+            },
+            {
+              "title": "Bicycle kicks",
+              "detail": "Chat 3. Touches the match file."
+            },
+            {
+              "title": "Weather and pitch",
+              "detail": "Chat 4. Test page only; the real match is unchanged."
+            },
+            {
+              "title": "Real Goals + shootout keeper test page",
+              "detail": "Chat 5."
+            },
+            {
+              "title": "Season reel, goals gallery, awards night, injuries plan",
+              "detail": "Chat 6."
+            },
+            {
+              "title": "Bug hunt",
+              "detail": "Chat 7. Match-engine bugs become team jobs, not fixes."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.106h",
+      "title": "Harry's patch notes: Aerial In Real Matches, Header Heights, The Player Card And Fairer Matches",
+      "publishedAt": "2026-10-22T16:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "22 Oct. Aerial & Acrobatics now counts in real matches: headers and volleys read Aerial, not Technique (tired legs lower it); at Aerial 60 nothing changes. Header heights: crosses 1.5 to 2.6 m (was always 1.85 m); jump 0.45 m at Aerial 40 to 0.75 m at 90; reach 2.14 / 2.32 / 2.50 m at Aerial 30 / 60 / 90; above reach is a stretched header. Goals per 100 headers at Aerial 30 / 60 / 90: 15.7 / 25.4 / 38.0 before, 14.1 / 24.9 / 36.3 now. Header feel with Match feel: New. A FIFA-style player card at the top of Stats (bronze under 65, silver 65 to 74, gold 75 to 87, special 88+). Sim piece 4: one shared match-inputs builder; even-match possession 44.5% to 49.8%, corners 3.94 v 5.37 to 5.43 v 5.65. Still to do: top v bottom 66.6% vs real 62%.",
+      "stats": [
+        {
+          "value": "4",
+          "label": "rounds live today (PRs #755 to #758)"
+        },
+        {
+          "value": "1.5-2.6 m",
+          "label": "cross height (was always 1.85 m)"
+        },
+        {
+          "value": "44.5 → 49.8%",
+          "label": "even-match possession"
+        },
+        {
+          "value": "4",
+          "label": "player card colours"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Aerial in real matches",
+              "detail": "Play a real match with a header or volley: it reads Aerial, not Technique. At Aerial 60 nothing changes."
+            },
+            {
+              "title": "Header heights",
+              "detail": "Crosses now come in between 1.5 and 2.6 m. Not always 1.85 m."
+            },
+            {
+              "title": "Jump and reach",
+              "detail": "Header strike screen: \"Jump 0.22 m · max 0.52 m\", or red \"0.10 m over your reach\" on a high cross."
+            },
+            {
+              "title": "Drill header levels",
+              "detail": "Training, Head & Volley: header levels climb from 1.75 m to 2.55 m."
+            },
+            {
+              "title": "Header feel",
+              "detail": "Settings, Match feel: New. Score a header: a longer beat, a short freeze, a camera punch and a header sound."
+            },
+            {
+              "title": "Player card",
+              "detail": "Stats: a FIFA-style card at the top with overall, position, face, surname, flag, badge and six numbers."
+            },
+            {
+              "title": "Card colour",
+              "detail": "A new career (overall 58) is bronze. Silver 65 to 74, gold 75 to 87, special 88 and up."
+            },
+            {
+              "title": "Card +N flash",
+              "detail": "Train a skill: a green +N flashes once on the card."
+            },
+            {
+              "title": "Save image",
+              "detail": "Player card, Save image: a PNG of the card."
+            },
+            {
+              "title": "Even-match flow",
+              "detail": "Match flow: New. Level teams share the ball and corners more evenly."
+            },
+            {
+              "title": "Old Match flow",
+              "detail": "Match flow: Old. Plays exactly as before."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Aerial & Acrobatics counts in real matches",
+          "items": [
+            {
+              "title": "Headers and volleys now read your Aerial skill",
+              "detail": "Aerial & Acrobatics did the drill and the numbers, but a real match ignored it. A header or volley in a real match still used Technique. The match file was not wired to the new skill. It is a match-file change (RUL-ENG-001), made in this round. A header or volley now reads Aerial instead of Technique. Tired legs lower it. At Aerial 60 nothing changes, so a player at 60 plays exactly as before. Merged as PR #755."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Header heights, jumping and header feel",
+          "items": [
+            {
+              "title": "Crosses come in at 1.5 to 2.6 m, and you jump to meet them",
+              "detail": "Every cross arrived at 1.85 m, whoever you were. Aerial did not change how high you could reach. Header height was one fixed number. The varying height was built but switched off in 0.105h until it was measured. Cross height now runs 1.5 to 2.6 m. Your jump depends on Aerial: 0.45 m at Aerial 40, 0.75 m at Aerial 90. Your reach is 2.14 m at Aerial 30, 2.32 m at 60 and 2.50 m at 90. A cross above your reach is a stretched header. Merged as PR #756."
+            },
+            {
+              "title": "The header strike screen shows your jump",
+              "detail": "You could not see why a header was easy or hard. The screen showed no jump. Height and reach were not on the strike screen. The header screen shows \"Jump 0.22 m · max 0.52 m\". When the ball is above your reach it shows red: \"0.10 m over your reach\". Drill header levels climb from 1.75 m to 2.55 m, so a high level asks for a real jump."
+            },
+            {
+              "title": "Header feel (Match feel: New only)",
+              "detail": "A header goal landed with the same weight as a ground shot. There was no sense of a leap. The moment was the same length and had no sound of its own. With Match feel: New a header gets a longer beat, a freeze of about 120 ms (never more than 150), a camera punch, and its own header sound. The sound is made in code and is CC0. Match feel: Old is unchanged."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Player card",
+          "items": [
+            {
+              "title": "A FIFA-style player card at the top of Stats",
+              "detail": "Stats opened on a list of numbers. Nothing showed who your player is at a glance. There was no one picture of your player. Overall, skills and face lived on separate screens. A card at the top of Stats: overall (the existing formula), position, the drawn face, surname, flag, badge, and six numbers: PAC, POW, TEC, VIS, FK and AIR. The colour follows overall: bronze under 65, silver 65 to 74, gold 75 to 87, special 88 and up. A new career at 58 is bronze. A green +N flashes once after a skill goes up. \"Save image\" draws a PNG of the card. Merged as PR #757."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Simulation rebuild, piece 4",
+          "items": [
+            {
+              "title": "One shared match-inputs builder, and level teams play level",
+              "detail": "An even match was not even. Level teams gave one side 44.5% of the ball, and corners ran 3.94 to 5.37. The real match, the radar, sim90, the ruler and \"Sim this match\" each built their own match inputs. They did not agree, and a bias sat in one of them. All five now use one shared builder. An even match: possession 44.5% → 49.8%; corners 3.94 v 5.37 → 5.43 v 5.65. Radars count possession one way. Merged as PR #758."
+            },
+            {
+              "title": "Your missed chance can win a corner or a second ball",
+              "detail": "A chance you missed in the final third just ended. Real football gives a corner or a loose ball. Nothing followed a miss. With Match flow: New, a missed chance in the final third can win a corner or a second ball. Match flow: Old plays exactly as before."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Top v bottom is still too even",
+              "detail": "Top v bottom possession is 66.6% against 62% in real football. Piece 4 fixed the even match. The strength gap is a later piece. Piece 5. Not changed yet."
+            },
+            {
+              "title": "The drill level label overlaps \"HEAD IT?\"",
+              "detail": "In the Head & Volley drill the level label sits a little over the \"HEAD IT?\" text. Seen on the drill screen; the cause is not looked into yet. Not changed yet."
+            },
+            {
+              "title": "The header sound has not been heard by a person",
+              "detail": "The header sound is made in code. Nobody has listened to it yet. A test can see a sound play but cannot judge how it sounds. Someone needs to listen with Match feel: New and say if it is right."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Sim piece 5",
+              "detail": "Top v bottom possession is 66.6% against 62% in real football."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.105h",
+      "title": "Harry's patch notes: Real Headers And Volleys, And The Aerial & Acrobatics Skill",
+      "publishedAt": "2026-10-21T20:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "21 Oct. Real headers and volleys: Real moments now serves 52 real headers and 102 real volleys as true headers and volleys, from the ball's real strike height. Before, about 130 of these air shots played as ground shots. 15 overheads are left out until acrobatics are built. With Real moments on you meet about 1 real header per 8 matches and 1 real volley per 5.4 matches. The goal-video close replay of a header or volley runs at 0.3x (was 0.4 to 0.6x). Placed real headed goals play as headers. Varying header height (1.5 to 2.6 m) is built but OFF: it needs a match-file change and a scoring measurement (in a small test elite headers went from 34.7% to 50%). Eye check: all 154 looked at; 7 have a defender nearer the goal line than an off-line keeper, which is real positioning. Aerial & Acrobatics: a sixth skill (Training card, level screen, Stats AIR, admin Training levels tab). Old saves start at 60% Power + 40% Technique, minimum 40 (Power 64 + Technique 58 gives 62); new careers start at 40. New Head & Volley drill: 30 levels (headers odd, volleys even), real engine, 3 tries, 30 energy. Goals per 100 at Aerial 30/60/90: headers 20.8/25.4/31.4 (before 21.2/25.4/32.5), volleys 25.0/28.3/31.8 (before 23.8/28.3/26.3). In real matches the skill takes effect only after one match-file edit awaiting Harry's Allow. Not counted in star rating or Star Points yet.",
+      "stats": [
+        {
+          "value": "52 + 102",
+          "label": "real headers and volleys now played in the air"
+        },
+        {
+          "value": "0.3x",
+          "label": "close replay of a header or volley (was 0.4 to 0.6x)"
+        },
+        {
+          "value": "30",
+          "label": "Head & Volley levels"
+        },
+        {
+          "value": "6",
+          "label": "skills (Aerial & Acrobatics is new)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Real headers and volleys",
+              "detail": "Real moments on: a header is played as a header and a volley as a volley, not a ground shot."
+            },
+            {
+              "title": "Close replay speed",
+              "detail": "Goal videos: a header or volley close replay runs at 0.3x."
+            },
+            {
+              "title": "Aerial & Acrobatics card",
+              "detail": "Training: a sixth card, Aerial & Acrobatics, \"Headers and volleys\"."
+            },
+            {
+              "title": "Old save start",
+              "detail": "An old save starts Aerial at 60% Power + 40% Technique, min 40 (64 and 58 gives 62)."
+            },
+            {
+              "title": "Stats AIR",
+              "detail": "Stats: the Skills row shows six skills, the last is AIR."
+            },
+            {
+              "title": "Head & Volley drill",
+              "detail": "Training, Aerial & Acrobatics: 30 levels, 3 tries, 30 energy, headers on odd levels, volleys on even."
+            },
+            {
+              "title": "Admin Training levels",
+              "detail": "Admin, Training levels tab: the Aerial levels are listed."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Real headers and volleys",
+          "items": [
+            {
+              "title": "Real headers and volleys are played in the air",
+              "detail": "Real moments had about 130 air shots (headers and volleys) that played as ground shots. The moment kept the shot but not the height the ball really had when it was struck, so the game treated it like a shot off the floor. Real moments now serves 52 real headers and 102 real volleys as true headers and volleys, from the ball's real strike height. 15 overheads are left out until acrobatics are built. With Real moments on you meet about 1 real header per 8 matches and 1 real volley per 5.4 matches."
+            },
+            {
+              "title": "Header and volley goal videos: close replay at 0.3x",
+              "detail": "The close replay of a header or volley ran at 0.4 to 0.6x. A header or volley is over in a moment. At 0.4 to 0.6x the contact was hard to see. The close replay now runs at 0.3x. Placed real headed goals also play as headers now."
+            },
+            {
+              "title": "Eye check of all 154",
+              "detail": "Numbers passing is not enough for a drawn chance (standing rule, 26 Sep). A sheet can pass every measure and still show a stranded player or a man behind the keeper. All 154 were looked at. 7 have a defender nearer the goal line than an off-line keeper. That is real positioning, so they stay."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Aerial & Acrobatics",
+          "items": [
+            {
+              "title": "A sixth skill: Aerial & Acrobatics",
+              "detail": "Headers and volleys had no skill of their own. They leaned on Power and Technique. A strong long shooter is not automatically good in the air. A new skill with its own Training card, level screen, Stats \"AIR\" and a tab in Admin, Training levels. An old save starts at 60% Power + 40% Technique, minimum 40 (Power 64 + Technique 58 gives 62). A new career starts at 40."
+            },
+            {
+              "title": "Head & Volley drill: 30 levels",
+              "detail": "Nothing trained the new skill. A skill needs a drill, like the other five. Head & Volley: 30 levels (headers on odd levels, volleys on even), on the real engine, 3 tries, 30 energy. A cross comes in, you drag back to aim, then head it or volley it past the keeper. First try 3 stars, second 2, third 1."
+            },
+            {
+              "title": "The skill changes how often you score",
+              "detail": "Aerial had no effect on goals. The skill has to matter or training it is pointless. Goals per 100 chances at Aerial 30 / 60 / 90: headers 20.8 / 25.4 / 31.4 (before 21.2 / 25.4 / 32.5), volleys 25.0 / 28.3 / 31.8 (before 23.8 / 28.3 / 26.3). The volley curve no longer falls at 90."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "In real matches the skill is not on yet",
+              "detail": "Aerial changes the drill and the numbers above, but a real match ignores it. It needs one edit to a match file, which waits for Harry's Allow (engine rule RUL-ENG-001). Takes effect after that edit. Not changed yet."
+            },
+            {
+              "title": "Varying header height is built but OFF",
+              "detail": "Real headers all use one height. A height of 1.5 to 2.6 m is built but switched off. It needs a match-file change and a scoring measurement first. In a small test elite headers went from 34.7% to 50%, too big a jump to switch on blind. Stays off until measured."
+            },
+            {
+              "title": "Not in star rating or Star Points yet",
+              "detail": "Aerial does not count towards the star rating or Star Points. Left out on purpose for now. Not changed."
+            },
+            {
+              "title": "15 overheads are not played",
+              "detail": "15 real overhead kicks are left out of Real moments. They return when acrobatics are built."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.103",
       "title": "Mikey's patch notes v0.20: Game music",
       "publishedAt": "2026-10-21T18:00:00Z",

@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Leo Tonight Built</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+</style>
+<style>
+  .ckl{list-style:none;margin:0;padding:0}
+  .ckl li{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .ckl li:last-child{border-bottom:0}
+  .ckl input{width:18px;height:18px;margin-top:3px;flex:0 0 auto;accent-color:var(--green)}
+  .ckl .w{color:var(--ink3);font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;margin:0 0 12px;min-width:0}
+  .card .k{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-top:8px}
+  .card .k:first-child{margin-top:0}
+  .card p{margin:2px 0 0;color:var(--ink2);font-size:14px}
+  .card .t{font-weight:800;font-size:16px;margin-bottom:8px}
+</style>
+</head><body>
+<div class="wrap">
+<header>
+  <span class="ver">LEO v0.20 · SITE 0.108 · ON LEO BRANCH, NOT LIVE</span>
+  <h1>Tonight's build: what was made</h1>
+  <p class="sub">Leo · 22 Oct 2026 · 7 chats, joined on branch Leo · goes live only when Leo says push · the plan was 0.107</p>
+</header>
+
+<div class="alert"><div class="t">Harry, Mikey: your areas were touched</div>
+<p><b>Match file</b> (<code>CanvasMatch.tsx</code>): celebrations, big moments, bicycle kick, a longer goal video. All additive; <code>canvasEngine.ts</code> is changed only for weather, and only on the test page. <b>Keeper</b> (<code>keeperBrain.ts</code>): bicycle reaction delay and penalty habits; with no habit he is exactly as before. <b>Mikey:</b> 3 lines in <code>manager.ts</code> (no sack after promotion) and an injuries plan for you. <b>Admin tab</b> (<code>AdminNavPanel.tsx</code>) made cheap on slow phones. Match tests all pass.</p></div>
+
+<div class="strip">
+  <div class="s"><b>7</b><span>chats joined into one branch</span></div>
+  <div class="s"><b>0.29 s</b><span>feed opens (was 1.5 s, cheap phone)</span></div>
+  <div class="s"><b>17</b><span>bugs fixed</span></div>
+  <div class="s"><b>61</b><span>famous goals 2010–2025 added</span></div>
+  <div class="s"><b>Build ✓</b><span>production build passes on the joined branch</span></div>
+</div>
+
+<h2 class="add"><i></i>1 · Goal celebrations</h2>
+<ul class="n">
+  <li><div class="hd">You score, you run to the corner, you celebrate</div><div class="dt">Only your own goals. Up to 2 s run to the nearer corner, then the move equipped in the shop. <b>Tap anywhere skips</b> (0.04 s). 2D, 3D and the goal video all show the same run.</div></li>
+  <li><div class="hd">Six in the shop</div><div class="dt">Hands Up, Fist Pump (new), Jump (new), Roar (new), Aeroplane, Knee Slide. The knee slide was fixed: his knees were pressed together; now 33 cm apart.</div></li>
+  <li><div class="hd">Goal videos run 2.5 s longer</div><div class="dt">The run and the move are in the video, even if you skipped in the match.</div></li>
+</ul>
+<div class="shots"><figure><img src="celeb-shop.jpg" alt="Celebration frames"><figcaption>The new 2D frames, all six moves.</figcaption></figure>
+<figure><img src="big-moment.jpg" alt="Big moment banner"><figcaption>Part 5: the Big Moment banner.</figcaption></figure></div>
+
+<h2 class="add"><i></i>2 · Big moments</h2>
+<ul class="n"><li><div class="hd">85' or later, level or one down, a chance for you</div><div class="dt">Red "BIG MOMENT" banner, the crowd rises, a heartbeat. Score: the last 0.5 s in slow motion (result unchanged), a big roar, one of 14 new late commentary lines ("Late, late, he's won it!"). Miss: a groan.</div></li></ul>
+
+<h2 class="fix"><i></i>3 · Social feed: fast on a cheap phone</h2>
+<div class="bars">
+<div class="bar"><span class="lb">Feed opens</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:19%"></div></div><span class="vv"><s>1.5 s</s> 0.29 s</span></div>
+<div class="bar"><span class="lb">Worst freeze</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:22%"></div></div><span class="vv"><s>0.76 s</s> 0.17 s</span></div>
+<div class="bar"><span class="lb">First video</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:26%"></div></div><span class="vv"><s>47 s</s> 12 s</span></div>
+<div class="bar"><span class="lb">Video, reopened</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:29%"></div></div><span class="vv"><s>1.9 s</s> 0.56 s</span></div>
+</div>
+<p class="pc">Production build, CPU slowed 6×, 390×844, 150 posts. Measured.</p>
+<ul class="n">
+  <li><div class="hd">How</div><div class="dt">Only posts near the screen are drawn. Videos are made off the main thread, kept on the phone (newest 40) and started at full time, so after a real match the video was ready 2–3 s after the feed opened.</div></li>
+  <li><div class="hd">Goal of the Month</div><div class="dt">A monthly poll: your 3 best goals against 2 by other players in your league. Fans vote; you get one vote; a win adds fans.</div></li>
+  <li><div class="hd">Two video bugs fixed</div><div class="dt">Videos no longer stop 1–2 s after the goal. Cup accounts no longer post other competitions' news.</div></li>
+  <li><div class="hd">Not met</div><div class="dt">Scrolling still has 11–16 hiccups of 0.14–0.17 s (target: none over 0.1 s).</div></li>
+</ul>
+<div class="shots"><figure><img src="feed-video.jpg" alt="Feed video"><figcaption>A goal video playing in the feed.</figcaption></figure>
+<figure><img src="gotm.jpg" alt="Goal of the Month"><figcaption>Goal of the Month, after a vote.</figcaption></figure></div>
+
+<h2 class="add"><i></i>4 · Bicycle kicks</h2>
+<ul class="n">
+  <li><div class="hd">Only for a cross above your head, moving across you</div><div class="dt">An orange "Bicycle!" button on the header screen. How often depends on Aerial: 1.4 times in 40 matches at Aerial 40, 8.6 at 80+.</div></li>
+  <li><div class="hd">Hard to hit, deadly when clean</div><div class="dt">Clean: 40 goals in 100 (a header from the same ball: 29–41). Badly timed: 15–25. New 2D and 3D animation; the crowd and the media treat it like a hat-trick.</div></li>
+  <li><div class="hd">The 15 real overhead goals are back in Real Moments</div></li>
+</ul>
+<div class="shots"><figure><img src="bike-button.jpg" alt="Bicycle button"><figcaption>The Bicycle! button.</figcaption></figure>
+<figure><img src="bike-goal.jpg" alt="Bicycle goal"><figcaption>A bicycle goal.</figcaption></figure></div>
+<figure><img src="bike-3d.jpg" alt="3D bicycle"><figcaption>The new 3D move, side view.</figcaption></figure>
+
+<h2 class="add"><i></i>5 · Weather and pitch <span class="pill p-amb">test page only</span></h2>
+<ul class="n">
+  <li><div class="hd">/star-weather-dev</div><div class="dt">Wind with a direction (a 10 m/s head wind cuts a long ball's carry by 8 m), rain makes the ball skid on, and each club has a pitch quality: lower leagues are worse, the Premier League is always perfect. In a dry spell a bad pitch kills the bounce.</div></li>
+  <li><div class="hd">"Stops dead" was too harsh, so it was softened</div><div class="dt">First build: 87 in 100 normal passes died short on the worst pitch. Now 14 (6 on a clear day).</div></li>
+  <li><div class="hd">Real game unchanged</div><div class="dt">12 of 12 ball fingerprints are identical. <b>Found:</b> the live game's heavy pitch already kills 56 in 100 normal passes.</div></li>
+</ul>
+<div class="shots"><figure><img src="dry-pitch.jpg" alt="Weather page"><figcaption>The weather test page.</figcaption></figure></div>
+
+<h2 class="add"><i></i>6 · Real Goals <span class="pill p-amb">test page</span></h2>
+<ul class="n">
+  <li><div class="hd">8 paths, 411 levels (was 1 path, 50)</div><div class="dt">World Cup &amp; Euro, the five big leagues of 2017/18, Worldies, Bangers. Each path has its own stars.</div></li>
+  <li><div class="hd">61 Bangers, 2010–2025</div><div class="dt">Written from public record and checked twice (22 corrected). Admin "Fix a banger" tool to correct a spot by eye.</div></li>
+  <li><div class="hd">Daily Real Goal</div><div class="dt">Same goal for everyone each day, with a streak. No leaderboard.</div></li>
+  <li><div class="hd">Home opens in 0.4–0.55 s on a cheap phone (was 4.8–5.2 s)</div></li>
+  <li><div class="hd">Shootout keeper reads your habits</div><div class="dt">/star-shootout-dev only. Same side 5 times: he saves the 5th 35% of the time (was 23%).</div></li>
+</ul>
+<div class="shots"><figure><img src="rg-home.jpg" alt="Real Goals home"><figcaption>The new home.</figcaption></figure>
+<figure><img src="rg-bangers.jpg" alt="Bangers"><figcaption>The Bangers path.</figcaption></figure>
+<figure><img src="shootout.jpg" alt="Shootout"><figcaption>The keeper reads you.</figcaption></figure></div>
+
+<h2 class="add"><i></i>7 · End of season</h2>
+<ul class="n">
+  <li><div class="hd">Your season video</div><div class="dt">Every goal of the season in order, a Goal of the Season, an end card with your numbers. Skip always on; save it in one tap.</div></li>
+  <li><div class="hd">Career goals gallery</div><div class="dt">Stats → Goals: every goal from tonight on. The best 10 go in the Hall of Fame.</div></li>
+  <li><div class="hd">Season awards night (3D)</div><div class="dt">A small room, five awards, three nominees each; the winner walks up. About 44 s, skippable.</div></li>
+  <li><div class="hd">Injuries plan for Mikey</div><div class="dt">A plan only, no code: <code>docs/plans/2026-10-22-injuries-revamp-for-mikey.md</code>.</div></li>
+</ul>
+<div class="shots"><figure><img src="reel.jpg" alt="Season reel"><figcaption>Goal of the Season in the reel.</figcaption></figure>
+<figure><img src="awards.jpg" alt="Awards night"><figcaption>You win the Golden Boot.</figcaption></figure>
+<figure><img src="gallery.jpg" alt="Goals gallery"><figcaption>Every goal you score.</figcaption></figure></div>
+
+<h2 class="fix"><i></i>8 · Bug hunt: 17 fixed</h2>
+<ul class="n">
+  <li><div class="hd">A refresh no longer throws you to Home</div><div class="dt">The Ballon d'Or, the transfer window, the talks and "Deal agreed" come back where you were. Before, a refresh after "Deal agreed" lost the transfer.</div></li>
+  <li><div class="hd">A manager is never sacked the summer he wins promotion</div><div class="dt">Mikey's area, 3 lines.</div></li>
+  <li><div class="hd">The rest</div><div class="dt">First season said 2027/28 (now 2026/27); talks header showed the wrong wage; the welcome tour replayed every visit; the team sheet showed a different manager; the line-up buttons overlapped; the league dropdown was see-through; setup said "Step 1 of 2" twice; the scout said "The through the gate…"; offline badges retried about 2,000 times; clubs up from Step 3 said "Finished 24th".</div></li>
+  <li><div class="hd">Tests: 414 of 417 pass</div><div class="dt">(Was 408 of 414.) The rest are Harry's area, sent as team jobs.</div></li>
+</ul>
+<div class="shots"><figure><img src="refresh-fix.jpg" alt="Refresh fix"><figcaption>Refresh on the Ballon d'Or: before (Home) → after (back on it).</figcaption></figure>
+<figure><img src="window-fix.jpg" alt="Window fix"><figcaption>"Pick a club" is now readable.</figcaption></figure></div>
+
+<h2 class="bug"><i></i>Known issues</h2>
+<ul class="n">
+  <li><div class="dt">Feed scrolling still has short hiccups (above). Sound for big moments and the reel was measured, not heard. A team-mate can stand in front of you in the celebration video. The bicycle goal video uses the general commentary call. Awards night frame rate not measured on a real phone. This sandbox had no real squads, so invented players were used throughout.</div></li>
+</ul>
+
+<h2 class="nxt"><i></i>Team jobs posted (6)</h2>
+<ul class="n">
+  <li><div class="dt"><b>Harry:</b> match camera 1 px short at 372×704; a long-range drawing breaks a law; the removed data source's name in two patch notes; 3D training freeze (Head/Volley ↔ Free Roam); two chance tests failing on main after the build-up work. <b>Everyone:</b> the save is about 1 MB and rewritten on every change.</div></li>
+</ul>
+
+<details><summary>Checks (measured)</summary>
+<p>Type check clean · one-engine guard: no new copies · star tests and production build on the joined branch: see below · weather: 12 of 12 ball fingerprints identical · celebrations: ordinary goal commentary unchanged, byte for byte · penalty keeper with no habits: 400 decisions and 300 kicks identical.</p>
+<p id="checks">On the joined branch: the production build passes. Of 430 star test files, 8 fail, and all 8 fail the same way on main (Harry's chance and camera work, or his old notes): chanceMaker, chanceJudge, freshness, kindMix, leadInGen, longRangeRules, match2dCam, realGoals. Four failures from tonight's join (credits, licences, headlines, test-page lock) were found and fixed.</p>
+</details>
+
+<footer>Leo v0.20 · site 0.108 · built by 7 Claude chats on branches leo-*, joined into Leo · plan: 0.107</footer>
+</div>
+</body></html>

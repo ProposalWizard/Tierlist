@@ -15,8 +15,8 @@ import {
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
-check(MATCH_FEEL_DEFAULT === "old", "Match feel starts on Old");
-check(matchFeelLook() === "old", "a phone with nothing stored reads Old (no localStorage here)");
+check(MATCH_FEEL_DEFAULT === "new", "Match feel starts on New (Harry, 22 Oct 2026)");
+check(matchFeelLook() === "new", "a phone with nothing stored reads New (no localStorage here)");
 
 // Scales with speed.
 const soft = strikeFeel(6, "clean"), mid = strikeFeel(17, "clean"), full = strikeFeel(30, "clean");
@@ -59,6 +59,21 @@ check(junk.hitStopMs === FEEL_DIAL_INFO.hitStopMs.max && junk.shakePx === 0 && j
 
 // The "random" dust is fixed: a still is the same every time.
 check(feelNoise(3, 7) === feelNoise(3, 7) && feelNoise(3, 7) >= 0 && feelNoise(3, 7) < 1, "fixed noise");
+
+// A header or volley (headers piece 5): a longer beat, a bigger freeze and
+// punch, the freeze never past 150 ms; a header plays the header thump; a
+// plain strike is exactly as before.
+{
+  const head = strikeFeel(12, "clean", undefined, "header"), plain12 = strikeFeel(12, "clean");
+  const vol = strikeFeel(24, "clean", undefined, "volley"), plain24 = strikeFeel(24, "clean");
+  check(head.header && !plain12.header && !vol.header, "only a header plays the header sound");
+  check(head.hitStopS > plain12.hitStopS && head.hitStopS <= 0.15 + 1e-9, `a header freezes longer, at most 150 ms (${(head.hitStopS * 1000).toFixed(0)} ms)`);
+  check(head.windUpS > plain12.windUpS && head.shakePx > plain12.shakePx, "a header: a longer beat before contact and a bigger punch");
+  check(vol.hitStopS > plain24.hitStopS && vol.hitStopS <= 0.15 + 1e-9 && vol.shakePx > plain24.shakePx, "a volley: a bigger freeze (≤ 150 ms) and punch");
+  check(JSON.stringify(strikeFeel(24, "clean", undefined, undefined)) === JSON.stringify(plain24), "no air flag: the strike's feel as before");
+  const big = { ...DEFAULT_FEEL_DIALS, hitStopMs: 200 };
+  check(strikeFeel(30, "clean", big, "header").hitStopS <= strikeFeel(30, "clean", big).hitStopS + 1e-9, "a dial set past 150 ms is never made longer by a header");
+}
 
 if (problems.length) {
   console.error("FAIL");

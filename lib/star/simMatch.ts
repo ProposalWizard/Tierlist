@@ -29,7 +29,7 @@
  * Pure: no React, no canvas, and never touches canvasEngine's physics.
  */
 
-import { canTakeCorners } from "./cornerReach";
+import { matchInputsFor, careerMatchSpec, opponentMatchStrength } from "./matchInputs";
 import type { CareerState, Fixture, MatchStats, GoalEvent, OppGoalEvent, SquadPlayer } from "./types";
 import {
   newMatch, advanceTo, advanceUntilInvolved, resolveScenario, lateSubQuota, noteServedKind,
@@ -42,10 +42,8 @@ import { pickWaveSizes } from "./firstPersonDribble";
 import { selectChance, newSelectionMemory } from "./scenarioSelect";
 import { withoutSwitchedOff, playableKind } from "./switchedOffKinds";
 import { mulberry32 } from "./season";
-import { oldMatchFlow } from "./gameplayVersion";
 import { finaliseMatch, fairRating } from "./matchStats";
 import { hookCheck, subComesOnNow, SUB_OFF_ENERGY, type SelectionVerdict, type HookReason } from "./selection";
-import { matchTeamStrength } from "./matchday";
 import { rollAddedTime, addedTimeSeed } from "./addedTime";
 import type { ChanceEntry, ChanceOutcome } from "./chanceLog";
 import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills } from "./energy";
@@ -116,7 +114,7 @@ export function simulateOwnMatch(career: CareerState, fixture: Fixture, o: SimOp
   };
   const position = career.playAs ?? career.player.position;
   const baseStrength = fixture.opponentStrength ?? career.league.find((t) => t.name === fixture.opponent)?.strength ?? 65;
-  const oppStrength = Math.max(20, Math.min(99, baseStrength + (fixture.home ? -3 : 4)));
+  const oppStrength = opponentMatchStrength(baseStrength, fixture.home);
   const sub = o.selection.status === "Substitute" && o.selection.onAt > 0;
 
   // Energy, charged minute by minute at Medium from the minute you are on.
@@ -128,38 +126,25 @@ export function simulateOwnMatch(career: CareerState, fixture: Fixture, o: SimOp
   const energyAt = (minute: number) => clampEnergy(startEnergy - Math.max(0, minute - enteredAt) * perMin);
 
   let subOn = false, subChances = 0;
-  // B20: the corner rule (Mikey, 20 Oct 2026; lib/star/cornerReach.ts), as the
-  // played match passes it: can your best corner reach the middle of the box,
-  // on the power and technique the shot uses (o.skills: boots included, as the
-  // played match gets them).
-  const takesCorners = canTakeCorners({ power: skills.power, technique: skills.technique });
-  const inputs = (): HiddenMatchInputs => ({
-    canTakeCorners: takesCorners,
-    teamStrength: matchTeamStrength(career, career.relationships.team, fixture),
+  // B20: the corner rule (Mikey, 20 Oct 2026; lib/star/cornerReach.ts) reads
+  // `kick` below: the power and technique the shot uses (o.skills: boots
+  // included, as the played match gets them).
+  // ONE SET OF MATCH INPUTS (lib/star/matchInputs.ts): read from the career
+  // exactly as the played match reads it (same context, live penalties, the
+  // same Match flow setting).
+  const inputs = (): HiddenMatchInputs => matchInputsFor(careerMatchSpec(career, fixture, {
     oppStrength,
-    playerSkill: (career.skills.power + career.skills.technique + career.skills.vision) / 3,
-    home: fixture.home,
-    pace: career.skills.pace,
-    freeKick: career.skills.freeKick,
+    teamFallback: career.relationships.team,
     position,
+    kick: { power: skills.power, technique: skills.technique },
     energy: energyAt(enteredAt),
     energyMode: mode,
     impactSub: sub,
-    talisman: !!career.ownedClubs?.[career.player.club]?.talisman,
-    fergie: { from: 90, to: whistle },
-    // The same match flow the played match uses (Settings → Match flow).
-    matchFlow: !oldMatchFlow(),
-    // v0.26: the same match context the played match passes.
-    context: {
-      playstyle: career.playstyle ?? "balanced",
-      teamRelationship: career.relationships.team,
-      fanRelationship: career.relationships.fans,
-      skills: { pace: career.skills.pace, power: career.skills.power, technique: career.skills.technique, vision: career.skills.vision },
-    },
+    addedTime: added,
     lateSub: subOn
       ? { enteredAt, owed: Math.max(0, lateSubQuota(enteredAt) - subChances), fitness: energyAt(enteredAt) }
       : undefined,
-  });
+  }));
 
   // Who is out there, named exactly as the real match names them.
   const startingXI = startingTeammateRoles(career, fixture);

@@ -33,7 +33,8 @@ import { useSyncExternalStore } from "react";
 
 export type MatchFeelLook = "new" | "old";
 export const MATCH_FEEL_KEY = "star-match-feel";
-export const MATCH_FEEL_DEFAULT: MatchFeelLook = "old";
+// Harry, 22 Oct 2026: "keep my highlights and match feel toggles on as default but keep the toggle".
+export const MATCH_FEEL_DEFAULT: MatchFeelLook = "new";
 
 let stored: MatchFeelLook | undefined;
 const listeners = new Set<() => void>();
@@ -224,7 +225,22 @@ export interface StrikeFeel {
   scuff: boolean;
   /** Milliseconds of phone buzz. 0 = none. */
   hapticMs: number;
+  /** A header: play the header thump (matchSound playHeader), not the boot. */
+  header: boolean;
 }
+
+/** What met the ball in the air, for the strike's feel (headers piece 5). */
+export type AirFeel = "header" | "volley" | undefined;
+
+/** A header lands at least this hard (0-1), whatever its pace: a header is
+ *  soft by nature (airborneChance HEADER_PACE ×0.72), but a firm one should
+ *  still be felt. */
+export const HEADER_FEEL_FLOOR = 0.6;
+/** × the wind-up, freeze and camera punch for a header / a volley. */
+export const HEADER_FEEL = { windUp: 1.6, hitStop: 1.6, shake: 1.5 } as const;
+export const VOLLEY_FEEL = { windUp: 1.2, hitStop: 1.25, shake: 1.25 } as const;
+/** An air strike's freeze never runs past this (s): subtle, asked for. */
+export const AIR_HIT_STOP_MAX_S = 0.15;
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
@@ -233,22 +249,29 @@ const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
  * hypot(vel.x, vel.y, vz). Soft touches stay soft: every amount scales with
  * power squared-ish, so a 6 m/s pass gets a whisper and a 30 m/s strike the lot.
  */
-export function strikeFeel(speed: number, grade: string | undefined, D: FeelDials = DEFAULT_FEEL_DIALS): StrikeFeel {
+export function strikeFeel(speed: number, grade: string | undefined, D: FeelDials = DEFAULT_FEEL_DIALS, air?: AirFeel): StrikeFeel {
   const lin = clamp01((speed - SOFT_STRIKE_MS) / (FULL_STRIKE_MS - SOFT_STRIKE_MS));
   const power = lin * (0.55 + 0.45 * lin); // eased: soft stays soft
   const quality = contactQuality(grade);
   const scuff = quality < 0.3;
-  const hit = power * (0.45 + 0.55 * quality); // a clean strike lands harder
+  let hit = power * (0.45 + 0.55 * quality); // a clean strike lands harder
+  // A header or volley (headers piece 5, research §7.2): a longer beat before
+  // the contact, a bigger freeze (never past AIR_HIT_STOP_MAX_S) and punch.
+  const m = air === "header" ? HEADER_FEEL : air === "volley" ? VOLLEY_FEEL : null;
+  if (air === "header" && !scuff) hit = Math.max(hit, HEADER_FEEL_FLOOR * (0.45 + 0.55 * quality));
+  const windUp = (D.windUpMs / 1000) * (0.25 + 0.75 * (air === "header" ? Math.max(power, HEADER_FEEL_FLOOR) : power));
+  const stop = (D.hitStopMs / 1000) * hit;
   return {
     power, quality, scuff,
-    windUpS: (D.windUpMs / 1000) * (0.25 + 0.75 * power),
-    hitStopS: (D.hitStopMs / 1000) * hit,
-    shakePx: D.shakePx * hit,
+    windUpS: m ? windUp * m.windUp : windUp,
+    hitStopS: m ? Math.min(Math.max(stop, AIR_HIT_STOP_MAX_S), stop * m.hitStop) : stop,
+    shakePx: D.shakePx * hit * (m ? m.shake : 1),
     flash: (0.25 + 0.95 * hit) * D.flashSize,
     squash: (0.25 + 0.75 * hit) * D.squash,
     gain: (0.35 + 0.75 * power) * D.soundGain,
     bass: scuff ? 0.2 : clamp01(0.3 + 0.7 * power),
-    hapticMs: power < 0.12 ? 0 : Math.round(D.hapticMs * (0.3 + 0.7 * hit)),
+    hapticMs: power < 0.12 && !m ? 0 : Math.round(D.hapticMs * (0.3 + 0.7 * hit)),
+    header: air === "header",
   };
 }
 

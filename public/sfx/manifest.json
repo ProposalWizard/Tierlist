@@ -815,6 +815,14 @@
       "kb": 3.7,
       "purpose": "Confirm / continue (Arcade texture pack)",
       "prompt": "Stadium set's warm chord (scripts/sfx/sources/stadium-confirm.mp3, made in code, CC0)."
+    },
+    {
+      "name": "match-header",
+      "file": "/sfx/match-header.mp3",
+      "duration": 0.99,
+      "kb": 12.0,
+      "purpose": "Your header in the live match (Match feel: New)",
+      "prompt": "Made in code: scripts/sfx/header.py (own work, CC0)."
     }
   ]
 }

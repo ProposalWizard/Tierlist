@@ -1,0 +1,12 @@
+HEADER — goals per 100 (1200 chances each)        30     60     90
+heights OFF (all 1.85 m)   goals      15.7   25.4   38.0
+                           on target  37.7   44.2   52.9
+heights ON  (1.5-2.6 m)   goals      14.1   24.9   36.3
+                           on target  38.3   46.6   55.7
+difference (ON - OFF)                 -1.6   -0.5   -1.7
+
+ON, goals per 100 by height band (n per band at 60 in brackets):
+  1.50-1.80 m   14.2   24.6   36.3   (281)
+  1.80-2.10 m   16.8   26.2   42.1   (309)
+  2.10-2.35 m   17.8   25.9   31.5   (321)
+  2.35-2.60 m    6.9   22.8   35.6   (289)

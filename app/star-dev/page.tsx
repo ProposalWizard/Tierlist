@@ -46,6 +46,7 @@ import { selectionFor } from "@/lib/star/selection";
 import { setPieceDuties } from "@/lib/star/setPieces";
 import { devInfoOn } from "@/lib/star/matchDayPrefs";
 import { simulateOwnMatch } from "@/lib/star/simMatch";
+import { opponentMatchStrength } from "@/lib/star/matchInputs";
 import { nextFixtureFor, fixtureLabel, nationOf, leaguePosition } from "@/lib/star/competitions";
 import { currentRound, lastSixteenIndex } from "@/lib/star/cups";
 import { currentTie } from "@/lib/star/euro";
@@ -4019,7 +4020,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const baseStrength = nextFixture.opponentStrength
       ?? career.league.find((t) => t.name === nextFixture.opponent)?.strength
       ?? 65;
-    const oppStrength = Math.max(20, Math.min(99, baseStrength + (nextFixture.home ? -3 : 4)));
+    // The same rule "Sim this match" uses (lib/star/matchInputs.ts).
+    const oppStrength = opponentMatchStrength(baseStrength, nextFixture.home);
     // Your worn boots actually count now: they add to the power/technique the shot
     // physics uses (capped at 100). This affects the SHOT, not the aim arrow — the
     // arrow is a fixed-scale drag indicator and never grows with power.

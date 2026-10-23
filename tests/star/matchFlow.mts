@@ -145,8 +145,14 @@ console.log(`   weak:   possession ${f(oldWeak.poss)} → ${f(weak.poss)}%, your
 check(strong.poss >= 63 && strong.poss <= 74, `the much stronger side has ${f(strong.poss)}% of the ball (63-74)`);
 check(weak.poss >= 26 && weak.poss <= 37, `the much weaker side has ${f(weak.poss)}% of the ball (26-37)`);
 check(strong.shots >= 20 && weak.shots >= 20, `shots stay football-like in a mismatch (${f(strong.shots)}, ${f(weak.shots)})`);
-check(Math.abs(strong.chances / oldStrong.chances - 1) <= 0.2 && Math.abs(weak.chances / oldWeak.chances - 1) <= 0.2,
-  `your chances in a mismatch move under 20% (${f(oldStrong.chances)} → ${f(strong.chances)}, ${f(oldWeak.chances)} → ${f(weak.chances)})`);
+// 25% (was 20%) since sim rebuild piece 4 (22 Oct 2026): with Match flow on,
+// your missed chance now ends like a team-mate's (a corner, or the second ball
+// won back a zone further out; hiddenMatch.ts missedMove). Before, it handed
+// the ball over IN their box, and a much stronger side won it straight back
+// there for another chance: 8.98 a match, now 8.43 (Old 10.77, where every
+// miss still ends that way). The Old fingerprint above is unchanged.
+check(Math.abs(strong.chances / oldStrong.chances - 1) <= 0.25 && Math.abs(weak.chances / oldWeak.chances - 1) <= 0.25,
+  `your chances in a mismatch move under 25% (${f(oldStrong.chances)} → ${f(strong.chances)}, ${f(oldWeak.chances)} → ${f(weak.chances)})`);
 
 if (problems.length) { console.log(`\n${problems.length} problem(s)`); process.exit(1); }
 console.log("\nmatch flow: all good");

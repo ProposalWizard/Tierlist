@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFhrMode } from "@/lib/star/fhr/toggle";
 import { setLookRow } from "@/lib/star/lookRows";
-import { REAL_MOMENT_SHARE_IN } from "@/lib/star/fhr/realMomentHighlights";
+import { REAL_MOMENT_SHARE_IN, REAL_MOMENT_OF_ALL_IN } from "@/lib/star/fhr/realMomentHighlights";
 import { FOUL_SHARE } from "@/lib/star/fhr/foulBuildUp";
 import { FHR_MIN_S, FHR_MAX_S, FHR_BIG_MAX_S } from "@/lib/star/fhr/buildUp";
 import { SegTabs } from "./screenKit";
@@ -31,7 +31,7 @@ export const FHR_PARTS: { name: string; tries: string }[] = [
   { name: "Players already moving", tries: "When the chance becomes yours, the other players are still running. They stop on their places while you aim, instead of everyone starting still." },
   { name: "An extra defender", tries: "When the defence is thin, a defender sprints back from off the screen and joins the chance, behind the ball." },
   { name: "Fouls before set pieces", tries: `About ${Math.round(FOUL_SHARE * 100)}% of free kicks and penalties first show the foul that won them, then everyone walks to his place.` },
-  { name: "Real moment highlights (its own switch)", tries: `About 1 in ${REAL_MOMENT_SHARE_IN} one-on-ones, tight angles and long shots is a real moment from a real match, every player where he really stood, with the real build-up first.` },
+  { name: "Real moment highlights (its own switch)", tries: `About 1 in ${REAL_MOMENT_SHARE_IN} one-on-ones, tight angles, long shots, headers and volleys (about 1 in ${REAL_MOMENT_OF_ALL_IN} of all open-play chances) is a real moment from a real match, every player where he really stood, with the real build-up first.` },
   { name: "Chances: New", tries: "On also turns Chances to New: chances follow the match (the right wing, the right kind)." },
 ];
 

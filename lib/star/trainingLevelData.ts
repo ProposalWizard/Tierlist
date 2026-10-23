@@ -126,6 +126,10 @@ export interface AerialLevel {
   marker: boolean;
   /** Score a try needs (0.5 = any goal; higher = nearer a post). */
   pass: number;
+  /** A header level: how high the cross reaches you (m). Above your reach
+   *  (aerial.ts headerReachM: 2.14 m at Aerial 30, 2.32 m at 60, 2.50 m at
+   *  90) the header is met at a stretch, so the top levels need a high jump. */
+  ballZ: number;
   seed?: number;
 }
 
@@ -206,6 +210,7 @@ export const LEVEL_FIELDS: { [S in TrainingSkill]: FieldSpec[] } = {
     { key: "keeperStrength", label: "Keeper strength", min: 0, max: 99, step: 1, int: true },
     { key: "marker", label: "Marker", min: 0, max: 1, step: 1, toggle: true },
     { key: "pass", label: "Score to pass", min: 0.5, max: 0.95, step: 0.05 },
+    { key: "ballZ", label: "Header: ball height (m)", min: 1.5, max: 2.6, step: 0.05 },
   ],
 };
 
@@ -421,6 +426,9 @@ function aerialDefault(n: number): AerialLevel {
     keeperStrength: lerp(20, 96, (n - 1) / (TRAINING_LEVELS - 1)),
     marker: n >= 7,
     pass: n >= 28 ? lerp(0.6, 0.7, (n - 28) / 2) : 0.5,
+    // The jump (Harry, 22 Oct 2026): 1.75 m (no jump) at level 1 up to 2.55 m
+    // at 30, which only an Aerial of about 87+ reaches cleanly.
+    ballZ: lerp(1.75, 2.55, (n - 1) / (TRAINING_LEVELS - 1)),
   };
 }
 

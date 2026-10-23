@@ -1,0 +1,4 @@
+match-header.mp3 — Knowitball's own work, made in code (numpy maths, no samples,
+no recordings) by scripts/sfx/header.py on 22 Oct 2026. Released under CC0 1.0
+(public domain dedication): https://creativecommons.org/publicdomain/zero/1.0/
+No outside source is used, so it needs no entry in lib/star/dataCredits.ts.

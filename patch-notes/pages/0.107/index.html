@@ -1,0 +1,368 @@
+<title>Leo Tonight Plan</title>
+<style>
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#fff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#4a6157;--ink3:#6b8176;
+      --green:#0f9d58;--amber:#a8730a;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+
+  header{padding:38px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    background:var(--green);color:#06170e;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(28px,7.5vw,40px);line-height:1.05;margin:12px 0 8px;letter-spacing:-.025em}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 24px}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 30px}
+  .s{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .s b{display:block;font-size:clamp(19px,4.6vw,25px);font-weight:800;letter-spacing:-.02em;color:var(--green);line-height:1.1}
+  .s span{display:block;font-size:11.5px;color:var(--ink3);margin-top:6px;line-height:1.35}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+    margin:36px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;font-style:normal}
+  .fix i{background:var(--green)} .fix{color:var(--green)}
+  .add i{background:var(--blue)} .add{color:var(--blue)}
+  .chg i{background:var(--violet)} .chg{color:var(--violet)}
+  .bug i{background:var(--amber)} .bug{color:var(--amber)}
+  .nxt i{background:var(--ink3)} .nxt{color:var(--ink3)}
+
+  ul.n{list-style:none;margin:0;padding:0}
+  ul.n>li{padding:11px 0;border-bottom:1px solid var(--line)}
+  ul.n>li:last-child{border-bottom:0}
+  .hd{font-weight:700;color:var(--ink)}
+  .dt{color:var(--ink2);font-size:14px;margin-top:3px}
+  .dt b{color:var(--ink)}
+
+  /* before → after bar */
+  .bars{margin:9px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(78px,96px) 1fr auto;gap:9px;align-items:center;
+    padding:3px 0;font-size:13px}
+  .bar .lb{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:16px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .fill.was{background:var(--line)}
+  .fill.now{background:var(--green);opacity:.85}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.warn{background:var(--amber)}
+  .vv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:none;opacity:.8}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;
+    color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";transition:transform .15s;display:inline-block;color:var(--ink3)}
+  details[open] summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details p:last-child{margin-bottom:0}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85em;
+    background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink);word-break:break-word}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;margin-left:7px;vertical-align:1px}
+  .p-red{background:rgba(255,107,107,.15);color:var(--red)}
+  .p-amb{background:rgba(245,185,66,.15);color:var(--amber)}
+
+  .alert{border:1px solid var(--line);border-left:3px solid var(--red);background:var(--card);
+    border-radius:var(--r);padding:13px 15px;margin:0 0 12px}
+  .alert .t{font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+  .alert p{margin:0;font-size:14px;color:var(--ink2)}
+
+  figure{margin:12px 0 2px}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:12px 0 2px}
+  .shots figure{margin:0}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+  .flow span{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink3)}
+  .flow span.done{color:var(--green)}
+  .flow span.cur{background:var(--green);color:#06170e;border-color:var(--green)}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+  td.s{color:var(--ink2)}
+  .p-grn{background:rgba(61,220,132,.15);color:var(--green)}
+  .p-blu{background:rgba(111,184,255,.15);color:var(--blue)}
+  .ck{list-style:none;margin:0;padding:0}
+  .ck li{padding:10px 0 10px 26px;border-bottom:1px solid var(--line);position:relative}
+  .ck li:last-child{border-bottom:0}
+  .ck li::before{content:"✓";position:absolute;left:2px;color:var(--green);font-weight:800}
+  .ck .q{font-weight:700}.ck .a{color:var(--ink2);font-size:14px;margin-top:2px}
+  .ltr{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:5px;background:var(--card2);border:1px solid var(--line);font-size:12px;margin-right:7px;color:var(--ink)}
+</style>
+<style>
+  .ckl{list-style:none;margin:0;padding:0}
+  .ckl li{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .ckl li:last-child{border-bottom:0}
+  .ckl input{width:18px;height:18px;margin-top:3px;flex:0 0 auto;accent-color:var(--green)}
+  .ckl .w{color:var(--ink3);font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;margin:0 0 12px;min-width:0}
+  .card .k{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-top:8px}
+  .card .k:first-child{margin-top:0}
+  .card p{margin:2px 0 0;color:var(--ink2);font-size:14px}
+  .card .t{font-weight:800;font-size:16px;margin-bottom:8px}
+</style>
+<style>
+  .call{border:1px solid var(--line);border-left:3px solid var(--amber);background:var(--card);border-radius:var(--r);padding:11px 14px;margin:10px 0 0}
+  .call .q{font-weight:800}
+  .call .o{color:var(--ink2);font-size:14px;margin-top:3px}
+  .call .rec{color:var(--green);font-size:13px;font-weight:700;margin-top:4px}
+  .who{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:2px}
+  .w-you{background:rgba(61,220,132,.15);color:var(--green)}
+  .w-ask{background:rgba(245,185,66,.15);color:var(--amber)}
+  .w-eng{background:rgba(255,107,107,.15);color:var(--red)}
+  .pic{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin:10px 0 4px;overflow:hidden}
+  .pic svg{display:block;width:100%;height:auto;max-width:100%}
+  .pc{font-size:12px;color:var(--ink3);margin-top:6px}
+  .chat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;margin:8px 0 0}
+  .chat b{color:var(--ink)} .chat span{color:var(--ink2);font-size:14px;display:block;margin-top:2px}
+  h3{font-size:18px;margin:26px 0 4px;letter-spacing:-.01em}
+  .idea{color:var(--ink2);font-size:14.5px;margin:0 0 6px}
+</style>
+<div class="wrap">
+<header>
+  <span class="ver">PLAN · APPROVED · BUILDING</span>
+  <h1>Tonight's build: what each part will do</h1>
+  <p class="sub">Leo · 22 Oct 2026 · approved by Leo ("all your picks go"), 7 chats building now</p>
+</header>
+
+<div class="alert" style="border-left-color:var(--amber)"><div class="t" style="color:var(--amber)">How to use this page</div>
+<p>Each numbered part says what the player will see, then a picture. The amber boxes are your calls: answer them with the letter (e.g. "1a yes, 3b B"). Anything you say no to is not built. At the bottom: which chat builds what.</p></div>
+
+<div class="strip">
+  <div class="s"><b>15</b><span>parts, from your picks</span></div>
+  <div class="s"><b>7 chats</b><span>at once, each in its own files</span></div>
+  <div class="s"><b>0</b><span>pushed to the live game until you say</span></div>
+</div>
+
+<!-- 1 -->
+<h2 class="add"><i></i>1 · GOAL CELEBRATIONS <span class="who w-you">your area</span><span class="who w-eng">match file: warns</span></h2>
+<p class="idea">You score. Your player peels away to the corner where the cameras and the fans are, then does the celebration you picked in the shop. The crowd roars. Tap anywhere to skip it.</p>
+<div class="pic"><svg viewBox="0 0 360 200" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<rect x="10" y="10" width="340" height="180" rx="8" fill="#1f6b35"/>
+<rect x="110" y="10" width="140" height="44" fill="none" stroke="#fff" stroke-opacity=".7"/>
+<rect x="150" y="2" width="60" height="9" fill="#fff" opacity=".85"/>
+<g fill="#cbd5e1" opacity=".55"><circle cx="330" cy="20" r="3"/><circle cx="340" cy="30" r="3"/><circle cx="345" cy="45" r="3"/><circle cx="335" cy="38" r="3"/><circle cx="345" cy="12" r="3"/></g>
+<text x="300" y="70" fill="#fff" font-size="11" opacity=".8">fans + cameras</text>
+<circle cx="180" cy="62" r="7" fill="#ef4444" stroke="#fff" stroke-width="2"/>
+<circle cx="180" cy="40" r="4" fill="#fff"/>
+<path d="M186 58 Q260 50 318 28" stroke="#fde047" stroke-width="3" fill="none" stroke-dasharray="6 5"/>
+<circle cx="322" cy="26" r="9" fill="#ef4444" stroke="#fde047" stroke-width="3"/>
+<text x="150" y="88" fill="#fff" font-size="12" font-weight="700">1 · scores</text>
+<text x="226" y="96" fill="#fde047" font-size="12" font-weight="700">2 · runs to the corner</text>
+<text x="200" y="130" fill="#fff" font-size="12" font-weight="700">3 · your celebration (knee slide…)</text>
+<rect x="110" y="152" width="140" height="28" rx="14" fill="#000" opacity=".55"/>
+<text x="180" y="171" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">Tap to skip ▸▸</text>
+</svg><div class="pc">A drawing. The run is about 2 seconds, the celebration about 2. A tap skips straight on.</div></div>
+<ul class="n">
+  <li><div class="hd">The shop sells real moves, not poses</div><div class="dt">Today the 3 shop celebrations (Hands up, Aeroplane, Knee slide) are only a pose on the shop figure; the match never uses them. They become real moves, plus 3 more made from moves the 3D match already has (Fist pump, Jump, Roar). Six to buy, one equipped.</div></li>
+  <li><div class="hd">In 2D and in 3D</div><div class="dt">The 2D match gets new drawn frames for each move. The 3D view plays the 3D move (today he jumps on the spot; tonight he runs to the corner first).</div></li>
+  <li><div class="hd">In the goal videos</div><div class="dt">A video of your goal runs on 2.5 s longer, so the run and the celebration are in it.</div></li>
+  <li><div class="hd">Only your own goals</div><div class="dt">Team-mates keep the short jump they do now.</div></li>
+</ul>
+<div class="call"><div class="q">1a · Every goal, or only the first goal of a match? (it adds about 4 s a goal unless skipped)</div><div class="rec">Recommend: every goal, skippable</div></div>
+<div class="call"><div class="q">1b · Knee slide has no 3D move yet. Make one by hand (keyframed, checked frame by frame), or drop it?</div><div class="rec">Recommend: make it</div></div>
+<div class="call"><div class="q">1c · Prices: shop coins, the same price ladder as the other accessories?</div><div class="rec">Recommend: yes (common / rare / legendary as now)</div></div>
+
+<!-- 2 -->
+<h2 class="fix"><i></i>2 · THE SOCIAL FEED: NO WAITING <span class="who w-you">your area</span></h2>
+<p class="idea">The phone opens at once and scrolls smoothly, even on an old phone. Videos never hold anything up.</p>
+<div class="pic"><svg viewBox="0 0 360 150" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<text x="0" y="16" fill="var(--ink2)" font-size="12" font-weight="700">TODAY</text>
+<rect x="0" y="24" width="360" height="34" rx="6" fill="var(--card2)"/>
+<rect x="4" y="28" width="120" height="26" rx="4" fill="var(--red)" opacity=".75"/><text x="64" y="45" fill="#fff" font-size="11" text-anchor="middle">make video while scrolling</text>
+<rect x="128" y="28" width="110" height="26" rx="4" fill="var(--amber)" opacity=".8"/><text x="183" y="45" fill="#111" font-size="11" text-anchor="middle">all 150 posts drawn</text>
+<rect x="242" y="28" width="114" height="26" rx="4" fill="var(--amber)" opacity=".6"/><text x="299" y="45" fill="#111" font-size="11" text-anchor="middle">a read per video</text>
+<text x="0" y="86" fill="var(--ink2)" font-size="12" font-weight="700">AFTER</text>
+<rect x="0" y="94" width="360" height="34" rx="6" fill="var(--card2)"/>
+<rect x="4" y="98" width="150" height="26" rx="4" fill="var(--green)" opacity=".8"/><text x="79" y="115" fill="#06170e" font-size="11" text-anchor="middle">still picture at once</text>
+<rect x="158" y="98" width="198" height="26" rx="4" fill="var(--green)" opacity=".55"/><text x="257" y="115" fill="#06170e" font-size="11" text-anchor="middle">video made off-screen, kept</text>
+</svg><div class="pc">What slows it now (found in the code), and what replaces it.</div></div>
+<ul class="n">
+  <li><div class="hd">Measured on a slowed-down phone first</div><div class="dt">The browser is set to a cheap phone's speed (6× slower) and the feed is timed before and after: opening, scrolling, first video. The page will show the numbers.</div></li>
+  <li><div class="hd">Only posts near the screen are drawn</div><div class="dt">Today all up to 150 posts are drawn at once.</div></li>
+  <li><div class="hd">Videos are made away from the scrolling</div><div class="dt">Made in a background worker, kept once made, so opening the feed again is instant. The still shows straight away; ▶ plays when ready.</div></li>
+  <li><div class="hd">Player pictures load during the match</div><div class="dt">Not when the feed opens.</div></li>
+</ul>
+<div class="call"><div class="q">2a · "Revamp" = speed only, or also a new look for the feed (layout, stories row, profile pages)?</div><div class="rec">Recommend: speed tonight; a new look is its own plan with pictures first</div></div>
+
+<!-- 3 -->
+<h2 class="add"><i></i>3 · BICYCLE KICKS <span class="who w-ask">tell Harry</span><span class="who w-eng">match file: warns</span></h2>
+<p class="idea">A cross comes in above your head and across you. A BICYCLE button appears on the strike screen. Time it right and it flies in; get it wrong and it goes anywhere.</p>
+<div class="pic"><svg viewBox="0 0 360 170" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<rect x="0" y="0" width="360" height="170" rx="8" fill="#1f6b35"/>
+<line x1="0" y1="150" x2="360" y2="150" stroke="#fff" stroke-opacity=".5"/>
+<circle cx="200" cy="140" r="9" fill="#ef4444" stroke="#fff" stroke-width="2"/>
+<line x1="200" y1="131" x2="200" y2="96" stroke="#fff" stroke-width="2"/>
+<text x="210" y="100" fill="#fff" font-size="10">head height</text>
+<path d="M30 70 Q120 30 196 74" stroke="#fde047" stroke-width="3" fill="none"/>
+<circle cx="196" cy="74" r="6" fill="#fff"/>
+<text x="30" y="60" fill="#fde047" font-size="11" font-weight="700">cross, above your head</text>
+<path d="M196 74 Q270 20 330 40" stroke="#fff" stroke-width="2" fill="none" stroke-dasharray="5 4"/>
+<text x="255" y="22" fill="#fff" font-size="11">overhead, back towards goal</text>
+<text x="12" y="166" fill="#fff" font-size="11" opacity=".85">✓ ball above head height, coming across you   ✗ ground balls, headers you meet facing it</text>
+</svg><div class="pc">When it is offered (a drawing).</div></div>
+<ul class="n">
+  <li><div class="hd">Your Aerial &amp; Acrobatics skill drives it</div><div class="dt">No new stat: the skill already exists. A higher skill = a wider timing window and a cleaner hit.</div></li>
+  <li><div class="hd">A real animation</div><div class="dt">Made frame by frame (no free motion-capture of a bicycle kick exists), checked so no arm or leg passes through the body, in 2D and 3D.</div></li>
+  <li><div class="hd">Real Goals' 15 overhead goals come back</div><div class="dt">They are left out today because the game had no overhead kick.</div></li>
+</ul>
+<div class="call"><div class="q">3a · "Moving right": do you mean the ball crossing from either side across you (A), or only crosses from your left going right (B)?</div><div class="rec">Recommend: A (either side, as long as it's above your head and across you)</div></div>
+<div class="call"><div class="q">3b · How often offered when it fits: always (A) or more often with a higher Aerial skill (B)?</div><div class="rec">Recommend: B (about 1 in 4 at Aerial 40, every time at 80+)</div></div>
+
+<!-- 4 -->
+<h2 class="chg"><i></i>4 · WEATHER AND THE PITCH CHANGE THE BALL <span class="who w-ask">tell Harry + Mikey</span><span class="who w-eng">ball physics</span></h2>
+<p class="idea">Weather already exists (clear, wind, rain, heavy rain) but it barely shows. Tonight it matters, and so does the pitch.</p>
+<div class="tw"><table style="min-width:0">
+<tr><th>Condition</th><th>The ball</th><th>Where</th></tr>
+<tr><td>Wind</td><td class="s">bends the ball the way the wind blows, more the higher and longer it flies; a wind arrow on screen</td><td class="s">any ground</td></tr>
+<tr><td>Rain</td><td class="s">skids: keeps its pace after a bounce, rolls further</td><td class="s">any ground</td></tr>
+<tr><td>Heavy rain</td><td class="s">a slow, wet pitch (as now, a bit stronger)</td><td class="s">any ground</td></tr>
+<tr><td>Bad dry pitch</td><td class="s">low bounce, slows fast; at worst it stops dead</td><td class="s">small grounds, lower leagues</td></tr>
+</table></div>
+<ul class="n">
+  <li><div class="hd">Each club gets a pitch quality</div><div class="dt">From its stadium and division: Premier League grounds are perfect, a National League ground in a dry spell can be poor. Shown on the pre-match screen ("Pitch: poor, dry").</div></li>
+  <li><div class="hd">Measured before and after</div><div class="dt">Goals a match in clear weather stay the same (the match tests must pass). Each condition's effect is measured over many shots.</div></li>
+</ul>
+<div class="call"><div class="q">4a · This changes how the ball moves in every match. Build it on a test page first (you try it), then move it into the game when you and Harry are happy?</div><div class="rec">Recommend: yes, test page first</div></div>
+
+<!-- 5 -->
+<h2 class="add"><i></i>5 · BIG MOMENTS <span class="who w-you">your area</span><span class="who w-eng">match file: warns</span></h2>
+<p class="idea">85th minute, level or one down, a chance falls to you. The game makes you feel it.</p>
+<ul class="n">
+  <li><div class="hd">Before the chance</div><div class="dt">A "BIG MOMENT" banner, the crowd rises, a heartbeat under the sound.</div></li>
+  <li><div class="hd">If you score</div><div class="dt">The last half-second of the shot in slow motion, a huge roar, and new commentary calls ("LATE, LATE, he's won it!"), made with the same offline voice as the goal videos.</div></li>
+  <li><div class="hd">If you miss</div><div class="dt">A groan and a held breath; nothing else changes.</div></li>
+</ul>
+<div class="call"><div class="q">5a · Which moments: 85'+ when level or one down (A), or also a goal that makes it safe when one up (B)?</div><div class="rec">Recommend: A</div></div>
+
+<!-- 6 -->
+<h2 class="add"><i></i>6 · SHOOTOUT KEEPER READS YOUR HABITS — TEST PAGE ONLY <span class="who w-you">your area</span></h2>
+<p class="idea">Shootouts you play kick by kick already exist. New: the keeper remembers where you put your last kicks and leans that way. Mix it up or get read. On a new test page only; the game is unchanged.</p>
+<div class="pic"><svg viewBox="0 0 360 120" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<rect x="70" y="10" width="220" height="80" fill="none" stroke="var(--ink)" stroke-width="3"/>
+<g fill="var(--green)"><circle cx="95" cy="70" r="7"/><circle cx="102" cy="58" r="7"/><circle cx="92" cy="40" r="7"/></g>
+<circle cx="270" cy="70" r="7" fill="var(--blue)"/>
+<text x="20" y="112" fill="var(--ink2)" font-size="12">3 of your 4 kicks went left → the keeper now leans left</text>
+<path d="M180 85 L120 60" stroke="var(--amber)" stroke-width="3" marker-end="url(#ar)"/>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--amber)"/></marker></defs>
+</svg></div>
+
+<!-- 7 -->
+<h2 class="add"><i></i>7 · REAL GOALS: LEAGUE PATHS AND BANGERS <span class="who w-you">your area</span></h2>
+<p class="idea">A level path for each league, like the World Cup one. And the famous goals you asked for.</p>
+<ul class="n">
+  <li><div class="hd">Paths: Premier League, La Liga, Serie A, Bundesliga, Ligue 1 (2017/18)</div><div class="dt">Each 5 stages × 10, easiest first, its own stars. Your World Cup stars stay.</div></li>
+  <li><div class="hd">"Worldies 17/18": the best goals in the data</div><div class="dt">The hardest goals (long range, top corner, low chance) from the 4,393, picked by the game.</div></li>
+  <li><div class="hd">The bangers from 2010-2025 do not exist in free data</div><div class="dt">Checked: no free, licensed data has famous goals from recent years (Champions League, Premier League...). The data we can use stops at 2018. The only way is to write them ourselves from public facts: scorer, match, minute, where it was struck, where it went in, the passes before. Defenders are placed by the game, as now.</div></li>
+</ul>
+<div class="call"><div class="q">7a · Write the bangers ourselves? About 60 famous goals (Puskás and Goal of the Season contenders, 2010-2025: Premier League, Champions League, La Liga…), each checked against its match report, plus a small admin page to fix any by dragging.</div><div class="o">Real names of players and clubs as labels only; no badges, photos or video clips.</div><div class="rec">Recommend: yes, 60 tonight, more later</div></div>
+
+<!-- 8 -->
+<h2 class="add"><i></i>8 · DAILY REAL GOAL <span class="who w-you">your area</span></h2>
+<p class="idea">One real goal a day, the same for everyone. Beat it to keep your streak. Kept on your phone.</p>
+<div class="call"><div class="q">8a · A leaderboard (best % today) needs a new database table and a guard against faked scores. Tonight, or later?</div><div class="rec">Recommend: later; streak on the phone tonight</div></div>
+
+<!-- 9 -->
+<h2 class="add"><i></i>9 · YOUR SEASON IN ONE VIDEO <span class="who w-you">your area</span></h2>
+<p class="idea">At the end of every season, before the awards: "Your season". Every goal you scored, the best camera of each, title cards (club, season, goals, assists), your celebrations, set to the game's own music. Save it or share it in one tap.</p>
+<div class="pic"><svg viewBox="0 0 360 70" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+<g font-size="10" font-weight="700" text-anchor="middle">
+<rect x="0" y="10" width="62" height="44" rx="5" fill="var(--violet)"/><text x="31" y="36" fill="#fff">TITLE</text>
+<rect x="66" y="10" width="62" height="44" rx="5" fill="var(--card2)" stroke="var(--line)"/><text x="97" y="36" fill="var(--ink)">goal 1</text>
+<rect x="132" y="10" width="62" height="44" rx="5" fill="var(--card2)" stroke="var(--line)"/><text x="163" y="36" fill="var(--ink)">goal 2…</text>
+<rect x="198" y="10" width="62" height="44" rx="5" fill="var(--amber)"/><text x="229" y="36" fill="#111">BEST GOAL</text>
+<rect x="264" y="10" width="96" height="44" rx="5" fill="var(--violet)"/><text x="312" y="36" fill="#fff">STATS + END</text></g>
+</svg><div class="pc">The order of the reel. About 60-90 seconds for a 20-goal season.</div></div>
+<ul class="n"><li><div class="hd">Your goals are kept for it</div><div class="dt">Today the phone keeps only the newest 80 goal recordings. A season's own goals are now always kept until the reel is made.</div></li></ul>
+
+<!-- 10 -->
+<h2 class="add"><i></i>10 · GOAL OF THE MONTH <span class="who w-you">your area</span></h2>
+<p class="idea">Every month, your 3 best goals appear in the feed as a poll with their videos. Fans vote; you can vote too. The winner gets a post and a small boost with the fans.</p>
+<div class="call"><div class="q">10a · Only your goals (A), or yours against 2 goals from other players in the league (B)?</div><div class="rec">Recommend: B (it can be lost, so winning means something); their goals are the game's made-up video goals</div></div>
+
+<!-- 11 -->
+<h2 class="add"><i></i>11 · CAREER GOALS GALLERY <span class="who w-you">your area</span></h2>
+<p class="idea">Stats → Goals: every goal of your career, with its video if it was recorded on this phone. Your best 10 go into the Hall of Fame with the career.</p>
+<div class="dt">Known limit: videos live on the phone that recorded them; another phone shows the goal's picture and facts.</div>
+
+<!-- 12 -->
+<h2 class="fix"><i></i>12 · TWO OLD GOAL-VIDEO BUGS <span class="who w-you">your area</span></h2>
+<ul class="n">
+  <li><div class="hd">A video stopped 1-2 s after the goal</div><div class="dt">The recording stopped when the match moved on; it was padded with everyone slowing to a stop. It now keeps recording the real players for the full time.</div></li>
+  <li><div class="hd">"The League" account labelled lower-league goals as Premier League</div><div class="dt">Checked again against old and new saves; fixed where it still happens.</div></li>
+</ul>
+
+<!-- 13 -->
+<h2 class="add"><i></i>13 · SEASON AWARDS NIGHT <span class="who w-ask">tell Harry</span></h2>
+<p class="idea">The season awards become a night like the Ballon d'Or: a host calls each award (Golden Boot, Assist King, Golden Glove, Young Player, Player of the Season), the three nominees, then the winner walks up. If it's you, you walk up. Tap to skip any award.</p>
+<div class="call"><div class="q">13a · Same room and look as the Ballon d'Or night (A), or a different room so the Ballon d'Or stays special (B)?</div><div class="rec">Recommend: B (a smaller hall, the same system)</div></div>
+
+<!-- 14 -->
+<h2 class="bug"><i></i>14 · INJURIES — A PLAN ONLY <span class="who w-ask">Mikey's call</span></h2>
+<p class="idea">Mikey switched injuries off on 4 Oct "until a revamp". Tonight: a written plan only, sent to Mikey. Nothing turned on.</p>
+<ul class="n">
+  <li><div class="hd">What the plan would propose</div><div class="dt">Kinds of injury (knock 1 week, strain 2-4, tear 6-12) more likely when tired; going down in the match; a rehab choice (rush back sooner with a risk of it coming back, or full rest); coming back below full fitness; feed posts. Rough numbers: about 1 injury in 20 matches.</div></li>
+</ul>
+<div class="call"><div class="q">14a · OK to send Mikey the plan (no code)?</div><div class="rec">Recommend: yes</div></div>
+
+<!-- 15 -->
+<h2 class="fix"><i></i>15 · BUG HUNT <span class="who w-you">fixes in your areas; the rest go to the team</span></h2>
+<ul class="n">
+  <li><div class="hd">Three whole careers played in a real browser</div><div class="dt">Every screen, every season end, transfers, awards, retirement. Every bug gets a still.</div></li>
+  <li><div class="hd">The failing tests</div><div class="dt" id="tests">Measured tonight: <b>408 of 414 pass, 6 fail</b>. Three share one cause (the new chance and header work: chance maker, chance judge, long-range rules); one is a stale record after the new Aerial skill (identity); one is the camera after today's player-size change; one is the removed data source named in old patch notes. Each gets a cause; match ones go to Harry as jobs.</div></li>
+  <li><div class="hd">The slowest screens today (Mikey's older Android, 22 Oct)</div><div class="dt">Phone feed is the worst: a frame every <b>167 ms</b> (target 21). Then garden 100, 2D match 83, stats 66. Part 2 fixes the feed; the rest go on the list.</div></li>
+  <li><div class="hd">Lag on a slow phone</div><div class="dt">Every main screen timed at a cheap phone's speed; the 10 slowest listed.</div></li>
+  <li><div class="hd">Refresh anywhere and lose nothing</div><div class="dt">Refresh mid-match, mid-ceremony, mid-transfer. Known: a refresh on some screens lands on Home.</div></li>
+</ul>
+<div class="call"><div class="q">15a · Bugs in Harry's or Mikey's files: fix and tell them (A), or only post them as team jobs (B)?</div><div class="rec">Recommend: B for anything in the match engine; A for small, clear fixes elsewhere</div></div>
+
+<!-- WHO -->
+<h2 class="nxt"><i></i>WHO BUILDS WHAT (7 CHATS, FROM YOUR GO)</h2>
+<div class="chat"><b>Chat 1 · After you score</b><span>1 Celebrations (shop, match, 3D, videos) + 5 Big moments. Same moment in the match, so one chat.</span></div>
+<div class="chat"><b>Chat 2 · The social feed</b><span>2 Speed + 10 Goal of the Month + 12 the two bugs.</span></div>
+<div class="chat"><b>Chat 3 · Bicycle kicks</b><span>3, with the animation.</span></div>
+<div class="chat"><b>Chat 4 · Weather and pitch</b><span>4, on a test page first.</span></div>
+<div class="chat"><b>Chat 5 · Real Goals</b><span>7 League paths + bangers + 8 Daily goal + 6 Shootout keeper test page.</span></div>
+<div class="chat"><b>Chat 6 · End of season</b><span>9 Season video + 11 Goals gallery + 13 Awards night + 14 Injuries plan.</span></div>
+<div class="chat"><b>Chat 7 · Bug hunt</b><span>15.</span></div>
+<ul class="n" style="margin-top:8px">
+  <li><div class="hd">Each chat works on its own branch and posts bars to the admin team board</div><div class="dt">Then this chat joins them up, runs the full build and checks, and writes the after patch notes with stills. The live game changes only when you say push.</div></li>
+  <li><div class="hd">Parts that change the match warn first</div><div class="dt">1, 3, 4 and 5 touch the match file or the ball. The engine warning will ask; the match tests run before anything joins up.</div></li>
+</ul>
+
+<details><summary>Where the findings come from (for checking)</summary>
+<p>Celebrations: the shop's 3 are poses only (catalogue.ts, AccessoryFigure.tsx); the 3D match already plays celebrate_fist / celebrate_jump on the spot (engineView.ts). Feed: up to 150 posts drawn at once, video made on the phone while scrolling (GoalVideo.tsx), a database read per video. Bicycle: plan docs/plans/2026-10-20-flair-bicycle.md; no overhead move exists anywhere. Weather: lib/star/weather.ts, ballPhysics.ts; wind only pushes the ball one way today; no pitch quality field. Shootouts: ShootoutPlay.tsx, penaltyKeeper.ts (reads only the current kick). Real Goals data: data/opendata/LICENCES.md (free data stops at 2018). Videos: KEEP_CLIPS = 80 (goalClip/store.ts). Injuries: injurySwitch.ts INJURIES_ON = false.</p>
+</details>
+
+<footer>Plan for review. Nothing built. Leo, 22 Oct 2026.</footer>
+</div>

@@ -9,8 +9,8 @@ const store = new Map<string, string>();
 
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { applyLevelResult, starsOf } from "../../lib/star/trainingLevels";
-import { aerialFromOld, aerialOf, aerialHeaderPace, aerialVolleyPace } from "../../lib/star/aerial";
-import { airContactRead, airForgiveness } from "../../lib/star/airborneChance";
+import { aerialFromOld, aerialOf, aerialHeaderPace, aerialVolleyPace, aerialJumpM, headerReachM, headerJump } from "../../lib/star/aerial";
+import { airContactRead, airForgiveness, headerStretch, airCentreR, AIR_CENTRE_R } from "../../lib/star/airborneChance";
 import { checkSave } from "../../lib/star/saveGuard";
 import { levelConfig, TRAINING_SKILLS, defaultTable } from "../../lib/star/trainingLevelData";
 import { computeStarRating } from "../../lib/star/rating";
@@ -72,6 +72,26 @@ const a30 = airContactRead({ ...hit, aerial: 30 }), a90 = airContactRead({ ...hi
 ok(Math.abs(a90.turnDeg) < Math.abs(a30.turnDeg), `a mis-hit volley goes ${Math.abs(a30.turnDeg).toFixed(1)}° off at Aerial 30, ${Math.abs(a90.turnDeg).toFixed(1)}° at 90`);
 ok(aerialHeaderPace(60) === 1 && aerialVolleyPace(60) === 1 && aerialHeaderPace(undefined) === 1, "pace ×1 at 60 and when absent");
 ok(aerialHeaderPace(30) < 1 && aerialHeaderPace(90) > 1, `header pace ×${aerialHeaderPace(30).toFixed(2)} at 30, ×${aerialHeaderPace(90).toFixed(2)} at 90`);
+
+// The jump (Harry, 22 Oct 2026): Aerial sets how high you jump; a cross above your reach is stretched.
+ok(Math.abs(aerialJumpM(40) - 0.45) < 1e-9 && Math.abs(aerialJumpM(90) - 0.75) < 1e-9, `jump 0.45 m at Aerial 40, 0.75 m at 90 (60: ${aerialJumpM(60).toFixed(2)} m)`);
+ok(headerReachM(30) < headerReachM(60) && headerReachM(60) < headerReachM(90), `reach ${headerReachM(30).toFixed(2)} / ${headerReachM(60).toFixed(2)} / ${headerReachM(90).toFixed(2)} m at 30 / 60 / 90`);
+ok(headerJump(1.6, 60).jumpM === 0 && headerJump(2.1, 60).overM === 0 && headerJump(2.5, 60).overM > 0.15, "a low ball needs no jump; 2.1 m is within Aerial 60's reach; 2.5 m is over it");
+const firm = { kind: "header" as const, lift: 0.9, cx: 0, cy: -0.3, aerial: 60 };
+ok(JSON.stringify(airContactRead(firm, 2.0)) === JSON.stringify(airContactRead(firm)), "within your reach: the clean header, exactly as before");
+const over = airContactRead(firm, 2.55);
+ok(over.label === "STRETCHED" || over.label === "JUST A TOUCH", `above your reach: ${over.label}, pace ×${over.pace.toFixed(2)}`);
+ok(over.pace < airContactRead(firm, 2.0).pace && headerStretch(2.55, 90) < headerStretch(2.55, 60), "stretched is softer, and a higher jump stretches less");
+ok(headerStretch(2.6, undefined) === 0 && headerStretch(undefined, 60) === 0, "no Aerial or no height: no stretch (older replays)");
+const top = levelConfig("aerial", 29) as { ballZ?: number; volley: boolean };
+ok(typeof top.ballZ === "number" && top.ballZ > headerReachM(60), `Head & Volley level 29 header at ${top.ballZ} m: over Aerial 60's reach`);
+
+// 22 Oct 2026 (Harry: "having a better aerial stat should make the circle to get perfect bigger").
+ok(airCentreR(60) === AIR_CENTRE_R && airCentreR(undefined) === AIR_CENTRE_R, "the perfect circle at Aerial 60 (and with no Aerial) is today's");
+ok(airCentreR(30) < airCentreR(60) - 0.05 && airCentreR(90) > airCentreR(60) + 0.05, `the perfect circle grows with Aerial: ${airCentreR(30).toFixed(2)} / ${airCentreR(60).toFixed(2)} / ${airCentreR(90).toFixed(2)}`);
+ok(airCentreR(0) >= 0.1 && airCentreR(100) <= 0.32, "the perfect circle is capped both ways");
+const edge = { kind: "header" as const, lift: 0.5, cx: 0.25, cy: 0 };
+ok(airContactRead({ ...edge, aerial: 90 }).turnDeg === 0 && airContactRead({ ...edge, aerial: 60 }).turnDeg !== 0, "a tap 0.25 off the middle is clean at Aerial 90, off line at 60");
 
 if (failed) { console.error(`\n${failed} FAILED`); process.exit(1); }
 console.log("\nPASS");

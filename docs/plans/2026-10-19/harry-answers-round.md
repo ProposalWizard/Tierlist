@@ -194,3 +194,15 @@ D1 replace match flow Old/New with the new formula, no toggle: yes. D2 long shot
 - 2 storage: Cloudflare R2 ("cloudflare would be good"); he needs the set-up steps explained. 3 yes (scripts/board public), 4 yes (admins only), 5 yes (first slice), client-kib tag yes.
 - Headers/volleys/acrobatics and navigation: asked how they go into the game. Navigation: "I wouldn't get rid of the phone stuff. We'll have stuff slowly unlock on the phone anyway" — keep the Phone apps; the Phone is where things unlock.
 - Asked how the sim rebuild got used; asked whether ALL admin pages got the updates.
+
+## 22 Oct 2026, ~12:20
+- Allow window: "why not just do it?" — the match-file prompt only stalls background helpers; the coordinator now applies match-file changes itself. Aerial wired into real matches (PR #755).
+- "some sort of aspect of heading should be jumping" — picked: jumping is INSIDE Aerial & Acrobatics (Aerial sets jump height; reach = standing contact + jump; crosses above reach are stretched/missed).
+- "we should be building a 'card' with the players stats as we go" — picked: FIFA-style card (overall, position, face, badge, flag, PAC POW TEC VIS FK AIR, bronze/silver/gold/special), top of Stats, live updates, save as image.
+
+## 22 Oct 2026, ~17:10
+- R2: "all values are in for Cloudflare - you can begin building" → Marketing slice 2 (uploads + editing suite) started.
+- "take the static studio build from zocial gen when it's done and port that as a separate area of marketing for thumbnails/anything image related" — queued (method only, no client material).
+- "PLAYERS ARE HUGE RIGHT NOW" — cause: B20 size option C (both shrinks dropped, men 1.56×), not the build-ups. Fixed to option B (PR #760).
+- "barely any highlights", "buildups are still too slow", "highlights are leaning too much towards real highlights when the toggle is on" — urgent investigation + fix started.
+- 22 Oct ~20:10, on the patch-note video skill: "the first one wasn't good enough to be viral, some of the stills directly from the patch notes are intriguing and we need to work on our hook. I will port over some skills from my other repo on building a client, scriptwriting, storytelling, ai videos etc at some point." → correction (20:15): he did NOT ask to start with a still, just "make it better"; he will feed reference videos of interesting hooks. Skill updated to say that.

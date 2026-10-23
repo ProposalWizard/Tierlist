@@ -40,7 +40,7 @@ import { classifyRelease } from "@/lib/star/dribbleGesture";
 import { PASS_RING } from "@/lib/star/firstPersonRender";
 import FirstPersonDribble, { type FpDribbleResult } from "./FirstPersonDribble";
 import { dribbleReward } from "@/lib/star/dribbleReward";
-import { oldBallPhysics, oldMatchFlow, gameplayVersion } from "@/lib/star/gameplayVersion";
+import { oldBallPhysics, gameplayVersion } from "@/lib/star/gameplayVersion";
 import { setHitboxes, hitboxesOn, showHitboxes } from "@/lib/star/hitbox";
 import { inTestArea } from "@/lib/star/testArea";
 import { setBallPhysics, realBallOn } from "@/lib/star/ballPhysics";
@@ -64,14 +64,14 @@ import { deflectBlock } from "@/lib/star/deflection";
 import { steerDeflectionFromOwnGoal, clearLooseWin } from "@/lib/star/defenderTouch";
 import { footSign, takerFootSign, drawnTakerAt, activeFoot } from "@/lib/star/kickFoot";
 import { clearYouSpot } from "@/lib/star/youSpot";
-import { canTakeCorners } from "@/lib/star/cornerReach";
+import { matchInputsFor, careerMatchSpec } from "@/lib/star/matchInputs";
 import type { PreferredFoot } from "@/lib/star/playerIdentity";
 import {
   commentaryBuildup, commentaryStrike, commentaryReceived, commentaryReceiverShot, commentaryResult,
 } from "@/lib/star/matchCommentary";
 import {
   primeMatchSound, setMatchSoundMuted, playKick, playNet, playPost, playSave, playWhistle, playCrowdSwell,
-  playStrike, playThud, playClang, playGlove, playGoalSting,
+  playStrike, playThud, playClang, playGlove, playGoalSting, playHeader,
 } from "@/lib/star/matchSound";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
 import { goalZone, passGrade, missKind } from "@/lib/star/chanceRating";
@@ -150,7 +150,7 @@ import {
 } from "@/lib/star/runupStyles";
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
 import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
-import { isAirKind, airWaitZ } from "@/lib/star/airDrawings";
+import { isAirKind, airWaitZ, airZOf, HEADER_Z } from "@/lib/star/airDrawings";
 import { useFitWidth } from "./useFitWidth";
 import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
 import { bannerStyle, soundSet } from "@/lib/star/style3d/texturePack";
@@ -158,7 +158,6 @@ import MikeyPopup, { useMikeyPopup, type PopupGoal } from "./MikeyPopup";
 import { mikeyPopupsLook, popupName, useMikeyPopupsLook } from "@/lib/star/mikeyPopups";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { creditChance, assistFor, noteMatePlays, probeMatePlays, type CreditDelta, type MatePlay } from "@/lib/star/credit";
-import { matchTeamStrength } from "@/lib/star/matchday";
 import { kitsFor, keeperKit, type MatchKits } from "@/lib/star/kits";
 import { competitionAbbrev } from "@/lib/star/competitions";
 import {
@@ -180,7 +179,7 @@ import {
 import { shotPowerOn, contactFieldOn, feelPower, feelLift, struckAtGoal, fieldApplies } from "@/lib/star/shotFeel";
 import {
   matchFeelOn, feelDials, strikeFeel, squashAt, streakMetres, speedStretch, punchOffset,
-  keeperSetHop, keeperDiveArc, feelHaptic, type StrikeFeel,
+  keeperSetHop, keeperDiveArc, feelHaptic, HEADER_FEEL_FLOOR, type StrikeFeel,
 } from "@/lib/star/matchFeel";
 import { drawImpactBurst, drawDustPuff, drawSpeedStreak, drawGloveSpark, drawClang, drawNetBulge } from "@/lib/star/matchFeelDraw";
 import { drawVfx, drawVfxTrail, vfxShake, vfxZoom, vfxDurS, type VfxEvent, type VfxOverride, type VfxRecipe } from "@/lib/star/vfxLab";
@@ -191,6 +190,7 @@ import { useMatchRadarLook } from "@/lib/star/matchRadarLook";
 import { kitLabelOnDark } from "@/lib/star/kits";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { energyFactorFor, energyPerMinute, clampEnergy, tiredKickSkills, fatigueCut, type EnergyMode } from "@/lib/star/energy";
+import { aerialOf } from "@/lib/star/aerial";
 import type { Playstyle } from "@/lib/star/types";
 import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSettings } from "@/lib/star/penaltyKeeper";
 import { setupKind, strikeKind, replayStrike, stepKind, enforceHardRules, type StrikeDecision } from "@/lib/star/kindRules";
@@ -211,7 +211,7 @@ import {
 import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
   matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf, turnWideChance,
-  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, MATCH_VIEW_DEFAULT, figureGrow,
+  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, NEW_KEEPER_GROW, MATCH_VIEW_DEFAULT, figureGrow,
   playZoom, playZoomOf, playZoomProbe,
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
@@ -1791,55 +1791,33 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
   const hiddenInputs = (): HiddenMatchInputs => {
     const car = careerRef.current;
-    return {
-      // Your CLUB's strength (Chelsea 83), not the team relationship (60 on
-      // day one) — see matchTeamStrength (lib/star/matchday.ts, item 0).
-      // The relationship keeps its own job: how team-mates combine inside a
-      // chance (buildScenario's teamRelationship, via teamRef below).
-      teamStrength: matchTeamStrength(car, teamRef.current, fixture),
+    // ONE SET OF MATCH INPUTS (lib/star/matchInputs.ts): the radar, sim90,
+    // the ruler and "Sim this match" build theirs the same way.
+    const live = {
       oppStrength: oppStrengthRef.current,
-      playerSkill: car ? (car.skills.power + car.skills.technique + car.skills.vision) / 3 : 55,
-      home: fixture?.home,
-      pace: careerRef.current?.skills.pace,
-      freeKick: careerRef.current?.skills.freeKick,
+      position: positionRef.current,
       // Can your best corner reach the middle of the box? Measured with the
       // match's own ball physics on your kicking skills (lib/star/cornerReach.ts).
-      canTakeCorners: canTakeCorners(skillsRef.current),
-      // So a corner/free kick/penalty is weighted by the position you play
-      // like every other chance is, instead of bypassing it — see
-      // buildRequest's dead-ball block in hiddenMatch.ts.
-      position: positionRef.current,
+      kick: skillsRef.current,
       energy: liveEnergyAt(matchMinuteRef.current),
       energyMode: energyModeRef.current,
       impactSub: startMinuteRef.current > 0,
-      // The talisman tactic — see clubPowers.ts's `setTalisman`. Only ever
-      // true while you're a majority owner of the club you're actually
-      // playing for right now, which `talisman` is stored against.
-      talisman: !!(car && car.ownedClubs?.[car.player.club]?.talisman),
-      // Settings → Look → Gameplay → Match flow: New — the unseen match
-      // against real numbers (shots, corners, possession; hiddenMatch.ts).
-      matchFlow: !oldMatchFlow(),
       // The farewell match: nearly every chance is yours.
-      ...(farewellRef.current ? { farewell: true } : {}),
-      // v0.26: playstyle, team-mates, fans and your stats shape the chances.
-      context: {
-        playstyle: playstyleRef.current,
-        ...(car ? {
-          teamRelationship: car.relationships.team,
-          fanRelationship: car.relationships.fans,
-          skills: { pace: car.skills.pace, power: car.skills.power, technique: car.skills.technique, vision: car.skills.vision },
-        } : {}),
-      },
-      // v0.15 item 6: penalties won in any move, not only yours.
-      livePenalties: true,
+      farewell: !!farewellRef.current,
       // Item 24: once you are on as a sub, your chances are squeezed into the
       // minutes left (allowing for your energy), and from 70' one is owed.
       lateSub: subOnRef.current
         ? { enteredAt: enteredAtRef.current, owed: Math.max(0, lateSubQuota(enteredAtRef.current) - subChancesRef.current), fitness: subFitnessRef.current }
         : undefined,
       // Added time: chasing in it, everyone goes forward (hiddenMatch.ts's FERGIE_*).
-      ...(ADDED > 0 ? { fergie: { from: MATCH_DURATION, to: MATCH_DURATION + ADDED } } : {}),
+      addedTime: ADDED,
+      fullTime: MATCH_DURATION,
     };
+    return matchInputsFor(car
+      // Your CLUB's strength (Chelsea 83), not the team relationship (60 on
+      // day one) — see matchTeamStrength (lib/star/matchday.ts, item 0).
+      ? careerMatchSpec(car, fixture, { ...live, teamFallback: teamRef.current, playstyle: playstyleRef.current })
+      : { ...live, teamStrength: teamRef.current, home: fixture?.home, skills: { power: 55, technique: 55, vision: 55 }, context: { playstyle: playstyleRef.current } });
   };
 
   // Translate what the physics produced into what the match needs to know.
@@ -4663,7 +4641,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // a save is being played.
       const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * (K ? K.reachK : 0.55);
       const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
-      const KR = R * MATCH_KEEPER_R_SHARE * kScale / (nv ? NEW_OUTFIELD_SHRINK : 1);   // smaller than an outfielder, smaller again far away; the keeper is not shrunk with the men
+      const KR = R * MATCH_KEEPER_R_SHARE * kScale * (nv ? NEW_KEEPER_GROW / NEW_OUTFIELD_SHRINK : 1);   // smaller again far away; the keeper is not shrunk with the men and stands about a man's height (NEW_KEEPER_GROW)
       // Capped just past flat — see MAX_KEEPER_LEAN. Purely the artwork:
       // nothing in the engine reads this rotation.
       // Animations: New — what he did with the ball (lib/star/actionAnim.ts):
@@ -5079,7 +5057,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (onTheSpot && !leadRef.current && isAirKind(sc.kind)) {
       const now = performance.now() / 1000;
       if (airT0Ref.current?.sc !== sc) airT0Ref.current = { sc, t0: now };
-      airZ = airWaitZ(sc.kind, now - airT0Ref.current.t0);
+      airZ = airWaitZ(sc.kind, now - airT0Ref.current.t0, sc);
       // …and a faint line from its shadow up to it, so the height reads at a
       // phone's size (the gap alone is a few pixels on a wide frame).
       if (airZ > 0.12) {
@@ -5544,7 +5522,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     feelFx("impact", p.x, p.y, p.z, f.flash, 0.28 + 0.14 * f.power, { vx: p.vx, vy: p.vy, power: f.power, turf: p.z < 0.3, scuff: f.scuff });
     feelSquash(f.squash, p.vx, p.vy);
     feelPunch(f.shakePx, 0.22 + 0.12 * f.power, p.vx, p.vy);
-    playStrike(f.power, f.gain, f.bass, f.scuff);
+    // A header: the head-on-ball thump (matchSound playHeader), firm enough to hear.
+    if (f.header) playHeader(Math.max(f.power, HEADER_FEEL_FLOOR), Math.max(f.gain, (0.35 + 0.75 * HEADER_FEEL_FLOOR) * feelDials().soundGain));
+    else playStrike(f.power, f.gain, f.bass, f.scuff);
     feelHaptic(f.hapticMs);
   };
   /** Called every frame first thing: true while the picture is held. */
@@ -9234,8 +9214,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       : switchOn("powerCurve")
       ? { ...strikeWith, power: strikingPower(strikeWith.power) }
       : strikeWith;
-    // Your technique softens a mis-hit header or volley (kept on the strike for the replay).
-    if (contact.air) contact = { ...contact, air: { ...contact.air, tech: launchWith.technique } };
+    // Your Aerial & Acrobatics (tired legs count) softens a mis-hit header or
+    // volley; technique stays as the fallback (kept on the strike for the replay).
+    // A drill or test screen without a career may hand Aerial in on `skills` (the Head & Volley drill).
+    const skillAerial = (skills as KickSkills & { aerial?: number }).aerial;
+    if (contact.air) contact = { ...contact, air: { ...contact.air, tech: launchWith.technique, aerial: career ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current)))) : skillAerial } };
     // Snapshot everything a replay would need to reproduce this exact strike
     // — see GoalReplay and rngCallCountRef. Cheap and thrown away unless the
     // ball actually ends up in the net (resolveOutcome), so this costs
@@ -9441,7 +9424,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const D = feelDials();
       const speed = Math.hypot(bl.vel.x, bl.vel.y, bl.vz);
       const grade = shotRead?.grade ?? gradeContact(contact, a.power, false).grade;
-      const f = strikeFeel(speed, grade, D);
+      // A header or volley gets its own beat, freeze, punch and sound (matchFeel AirFeel).
+      const f = strikeFeel(speed, grade, D, contact.air?.kind);
       const fl = feelRef.current;
       fl.pending = { f, x: bl.pos.x, y: bl.pos.y, z: bl.z, vx: bl.vel.x, vy: bl.vel.y };
       fl.windUp = f.windUpS;
@@ -9881,6 +9865,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             onContact={(c) => handleContact(c)}
             motion={strikeMotion(scenarioRef.current.kind, seedRef.current)}
             technique={skills.technique}
+            aerial={career ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current)))) : (skills as KickSkills & { aerial?: number }).aerial}
+            // A header: how high the cross reaches you, so the screen can say your jump (aerial.ts headerJump).
+            ballZ={strikeMotion(scenarioRef.current.kind, seedRef.current) === "float" ? (scenarioRef.current.kind === "header" ? airZOf(scenarioRef.current) : HEADER_Z) : undefined}
             timeLimitS={contactTimerS ?? undefined}
             onTimeout={contactTimerS ? handleScuff : undefined}
             hold={held}
