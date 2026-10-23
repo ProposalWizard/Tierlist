@@ -53,6 +53,7 @@ Branch `leo-celebrations`. Plan parts 1 (goal celebrations) and 5 (big moments),
 Your run and celebration in a goal video are drawn from the celebration plan (`goalClip/recorder.ts` writes your position from `celebAt` into every frame after the goal; `render.ts` picks the move's frames). They never rely on recorded movement after the goal, so the held picture during the commentary does not freeze them. Seen: a knee-slide goal video plays the run, the slide and the arms up to the end (`goal-video-knee-slide.jpg`). Other men in the shot do hold still after the recording ends.
 
 ## Known issues
+- In a goal video an opposing defender can stand on top of you during the knee slide: the other men hold still once the recording ends, and your run can end where one of them stands (seen in `film/celeb-video.mp4`).
 - A team-mate making a run can stay near you in the goal video's tight shot (the match's runners carry on); he sometimes stands in front of you.
 - Frame sheets are cached on a phone for a day (existing rule, next.config.mjs). A re-bake of atlas 2 under the same name can draw broken figures until the cache clears (seen once in testing with a stale cache; fine after clearing). Not a problem for the first release of these files.
 - Atlas 2 for the Current look is 474 KB (over the ~400 KB aim); it is not the live look.
@@ -69,3 +70,6 @@ Your run and celebration in a goal video are drawn from the celebration plan (`g
 New: `lib/star/celebration.ts`, `lib/star/bigMoment.ts`, `lib/star/lateCommentary.ts`, `tests/star/celebration.mts`, `tests/star/lateCommentary.mts`, `public/sfx/cl-late-*.mp3`, `cc-late-*.mp3`, `public/star/sprites/atlas-2*.webp`, `mask-2*.webp`, `tools/mocap3d/one-clip/`.
 Changed: `components/star/CanvasMatch.tsx` (shared), `lib/star/engineFrame.ts`, `lib/star/style3d/engineView.ts`, `lib/star/goalClip/{recorder,render,edit,track,audio,commentary,commentaryDurations}.ts`, `lib/star/matchSound.ts`, `lib/star/sprites.ts`, `lib/star/store/{catalogue,career}.ts`, `components/star/store/AccessoryFigure.tsx`, `public/star/anims3d/mocap*.glb`, `public/star/sprites/index*.json`, `public/sfx/manifest.json`, `lib/star/three3d/assetVersions.ts`, `tools/mocap3d/keyed.py`, `tools/sprites/new/*`, `tests/star/sprite3dClips.mts`, `docs/3D_HANDBOOK.md`.
 Merging note: atlas slot 2 is ours; the bicycle chat moves to slot 3 (hub).
+
+## Films (23 Oct, joined build d7056f15)
+`film/`: celeb-knee-slide-2d, celeb-aeroplane-2d, celeb-skip, celeb-3d, celeb-video, celeb-shop, big-moment (8.5–18.6 s, 0.5–1.3 MB each, H.264 390 wide, no sound, a .jpg each). Made by `scripts/film/scenes/` (celebrations.mjs, goal-video.mjs, shop-celebration.mjs, cut.py). The shop clip shows the joined build's old labels ("Wear"); this branch now says "Use after my goals".
