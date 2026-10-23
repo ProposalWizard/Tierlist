@@ -47,6 +47,9 @@ check(key !== headshotKey("sp_9", headshotLookFor({ id: "sp_9", kit: SPURS })), 
 check(key !== headshotKey("sp_10", base), "another man shares the key");
 check(key !== headshotKey("sp_9", { ...base, skin: "#000000" }), "a new skin kept the old picture");
 check(key !== headshotKey("sp_9", { ...base, head: base.head === "h1" ? "h2" : "h1" }), "a new head kept the old picture");
+// the player card's head-to-waist portrait is its own picture; the round headshot's key is unchanged by it
+check(headshotKey("sp_9", base, "head") === key, "the default frame is not the headshot");
+check(headshotKey("sp_9", base, "card") !== key, "the card portrait shares the headshot's key");
 check(headshotKey("you", yl) !== headshotKey("you", headshotLookFor({ id: "you", you: true, kit: ARSENAL }, { ...you, hair: "#17110D" })), "your new hair colour kept the old picture");
 
 // 5. The id rule cards use: you → "you", a squad id when known, else club|name (the PotM rule).

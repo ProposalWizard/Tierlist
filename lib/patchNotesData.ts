@@ -27,6 +27,128 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.108",
+      "title": "Leo's tonight build: celebrations, fast feed, bicycle kicks, Real Goals, season end, 17 bugs (on branch Leo, not live)",
+      "publishedAt": "2026-10-22T23:15:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/PQvHUgssX7CAdad2jitPjA",
+      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. NOT live until Leo says push. Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; bicycle kicks; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. Harry: the match file and keeper were touched (additive, match tests pass); 6 team jobs. Mikey: 3 lines in manager.ts and an injuries plan for you.",
+      "stats": [
+        {
+          "value": "0.29 s",
+          "label": "feed opens on a cheap phone (was 1.5 s)"
+        },
+        {
+          "value": "17",
+          "label": "bugs fixed"
+        },
+        {
+          "value": "61",
+          "label": "famous goals added"
+        },
+        {
+          "value": "422 / 430",
+          "label": "star test files passing (the 8 left fail on main too)"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "Goal celebrations",
+              "detail": "Your goals only: run to the nearer corner, then the move equipped in the shop (6: Hands Up, Fist Pump, Jump, Roar, Aeroplane, Knee Slide). Tap skips. 2D, 3D and goal videos (2.5 s longer). Knee slide fixed (knees were together)."
+            },
+            {
+              "title": "Big moments",
+              "detail": "85'+ level or one down: banner, crowd rise, heartbeat; score = slow motion of the last 0.5 s (result unchanged), roar, 14 new late commentary lines."
+            },
+            {
+              "title": "Bicycle kicks",
+              "detail": "Only for a cross above your head moving across you. Offered by Aerial (1.4 in 40 matches at 40, 8.6 at 80+). Clean: 40 goals in 100. New 2D and 3D move. The 15 real overhead goals are back in Real Moments."
+            },
+            {
+              "title": "Goal of the Month",
+              "detail": "Monthly poll in the feed: your 3 best goals v 2 by others in your league. Fans vote, you vote once, a win adds fans."
+            },
+            {
+              "title": "Weather and pitch (test page only)",
+              "detail": "/star-weather-dev: wind with direction, rain skid, each club's pitch quality, dry spells. Real game unchanged (12/12 fingerprints). Found: the live heavy pitch already kills 56 in 100 normal passes."
+            },
+            {
+              "title": "Real Goals (test page)",
+              "detail": "8 paths, 411 levels; 61 bangers 2010-2025 (checked twice, 22 corrected) with an admin fixer; a daily goal with a streak; home 0.4-0.55 s on a cheap phone (was 4.8-5.2 s). Shootout keeper that reads your habits on /star-shootout-dev."
+            },
+            {
+              "title": "End of season",
+              "detail": "A season video of every goal; Stats → Goals gallery (best 10 in the Hall of Fame); a 3D season awards night (5 awards, ~44 s, skippable); an injuries plan for Mikey (docs only)."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "Social feed speed",
+              "detail": "Cheap phone (6× slower CPU): open 1.5 → 0.29 s, worst scroll freeze 0.76 → 0.17 s, first video 47 → 12 s, reopened 1.9 → 0.56 s. Videos made off the main thread, kept on the phone, started at full time."
+            },
+            {
+              "title": "Refresh sent you Home",
+              "detail": "Now the Ballon d'Or, window list, talks and 'Deal agreed' come back. A refresh after 'Deal agreed' used to lose the transfer."
+            },
+            {
+              "title": "16 more bugs",
+              "detail": "No sack after promotion (Mikey's manager.ts, 3 lines); first season 2027/28 → 2026/27; talks header wage; welcome tour replaying; team-sheet manager name; line-up buttons overlap; see-through dropdown; setup step count; scout wording; offline badge retries; 'Promoted' in the window list; goal videos stopping early; cup accounts' wrong news; the admin tab eating a slow phone's CPU."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Touches other areas",
+          "items": [
+            {
+              "title": "Harry: match file and keeper",
+              "detail": "CanvasMatch.tsx (celebrations, big moments, bicycle, video length), keeperBrain.ts (bicycle delay, penalty habits: unchanged with no habit), canvasEngine.ts/ballPhysics.ts (weather, inert unless the test page sets it). All additive; match tests pass."
+            },
+            {
+              "title": "AdminNavPanel.tsx",
+              "detail": "The admin tab checked ~700 points every 0.5 s; now ~50, in idle time only."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Feed scroll",
+              "detail": "Still 11-16 hiccups of 0.14-0.17 s while scrolling (target none over 0.1 s)."
+            },
+            {
+              "title": "Not heard or not on a real phone",
+              "detail": "Big-moment and reel sound measured only; awards night frame rate not measured on a phone; no real squads in the sandbox."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Team jobs (6)",
+          "items": [
+            {
+              "title": "Harry",
+              "detail": "Match camera 1 px short at 372×704; a long-range drawing breaks a law; the removed data source's name in two patch notes; 3D training freeze; two chance tests failing on main after the build-up work."
+            },
+            {
+              "title": "Everyone",
+              "detail": "The save is ~1 MB and rewritten on every change."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.107h",
       "title": "Harry's patch notes: Players Back To Size B, The Marketing Studio And Uploads, And Fewer Dropped Highlights",
       "publishedAt": "2026-10-22T18:30:00Z",
