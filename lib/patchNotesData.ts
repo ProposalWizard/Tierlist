@@ -27,6 +27,282 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.110w",
+      "title": "Weekly round-up: 16 to 23 Oct, everything that reached main",
+      "publishedAt": "2026-10-23T16:40:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "One page for the week, for Harry. 35 pull requests merged into main from Fri 16 Oct to Fri 23 Oct (Harry 27, Leo 8), plus Mikey's rounds merged straight in. The week's 60 patch notes (v0.57 to v0.109) are condensed here by area; each line names the version that has the full detail. Biggest changes: the whole world season is played for real, the FA Cup has its ten real rounds, the transfer window, running after a chance (B14), real headers and volleys with the new Aerial & Acrobatics skill, players back to size B, the player card on Stats, Mikey's master plan (one bottom bar, a fuller Phone), and the admin's Team room, Inbox and Marketing Studio. Leo's tonight build (v0.108) is on branch Leo and is NOT live.",
+      "stats": [
+        {
+          "value": "35",
+          "label": "pull requests merged into main this week"
+        },
+        {
+          "value": "60",
+          "label": "patch notes this week (v0.57 to v0.109)"
+        },
+        {
+          "value": "3,792",
+          "label": "files changed on main this week"
+        },
+        {
+          "value": "1",
+          "label": "build not live yet: Leo's v0.108, on branch Leo"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Stats page: the FIFA-style card with your own 3D man",
+              "detail": "Career → Stats. v0.106h, v0.108h, v0.109."
+            },
+            {
+              "title": "One bottom bar on every career screen, and a fuller Phone",
+              "detail": "Home, then the bar and the Phone app. v0.109."
+            },
+            {
+              "title": "League: one page for every competition, plus 🌍 All leagues",
+              "detail": "League tab. v0.62, v0.109."
+            },
+            {
+              "title": "FA Cup with ten rounds",
+              "detail": "Play to the FA Cup in a lower-league career. v0.63."
+            },
+            {
+              "title": "Transfer window at the end of a season",
+              "detail": "Finish a season; Home → Transfers. v0.59."
+            },
+            {
+              "title": "Run after a pass (Auto run on a phone, W A S D on a computer)",
+              "detail": "Any open-play chance where you pass. v0.95h, v0.96h."
+            },
+            {
+              "title": "Headers and volleys, and the Aerial & Acrobatics skill",
+              "detail": "In a match and in Training → Head & Volley. v0.88, v0.105h, v0.106h."
+            },
+            {
+              "title": "Players back to size B, keeper back to a man's height",
+              "detail": "Any 2D chance on a phone. v0.107h, v0.108h."
+            },
+            {
+              "title": "Build-ups before chances, about 3 s each, three styles",
+              "detail": "Any match (Full highlights rebuild is on by default). v0.107h, v0.108h."
+            },
+            {
+              "title": "Game music switch",
+              "detail": "Settings → first card → Game music. v0.103."
+            },
+            {
+              "title": "Admin: Team board, Inbox bell, Marketing Studio",
+              "detail": "/admin. v0.82, v0.102h, v0.104h, v0.107h."
+            },
+            {
+              "title": "Real Goals test page: 4,625 real goals",
+              "detail": "/star-real-goals-dev. v0.58, v0.60, v0.61."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Career and season (Mikey)",
+          "items": [
+            {
+              "title": "The world season: every league and cup is played for real",
+              "detail": "Problem: only your own league was played. Fix: 7 English leagues, both cups, both shields, the Champions League and the Europa League play match by match on their real dates. Promotion and relegation come from those tables. League Two beat a Premier League club in a cup 34% of the time; now 8%. v0.62."
+            },
+            {
+              "title": "FA Cup: ten real rounds, each league joins at its real round",
+              "detail": "Was 6 rounds. 24 byes in the 3rd Qualifying Round, never your club. 20,029 soak matches, 0 broken states. v0.63."
+            },
+            {
+              "title": "Transfer window: clubs come to you each summer",
+              "detail": "Your season gets a letter, S to D. The letter decides how many leagues up a club can come from. League → Club → Negotiate. Fee priced by your league (a non-league striker no longer shows ★406m). v0.59."
+            },
+            {
+              "title": "The world ages",
+              "detail": "Players decline from 31, retire at 35 to 41 (keepers 37 to 43), and young players from the same country replace them. 211 nations wear their real kits (was 15). v0.59."
+            },
+            {
+              "title": "New pop-ups: Settings → Match → Pop-up pack: Classic | Broadcast",
+              "detail": "Broadcast is a goal scoreboard with a rolling score, scorer and assist, and TV captions. Default Classic. v0.63, v0.100h."
+            },
+            {
+              "title": "Game music: 11 original orchestral tracks",
+              "detail": "Off by default. Home, matches, full time and the Ballon d'Or night. 17% level in a match, 32% at home. v0.103."
+            },
+            {
+              "title": "Mikey's master plan, steps 1 to 5",
+              "detail": "One bottom bar everywhere and a cleaner Home; Stats shows the whole card and four tabs; League is one page for every competition; the Phone holds Relationships, Squad, Fixtures & results and real messages; the phone clock shows the real day. Phone back to Home 1.9 s → 0.3 s. v0.109."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "The match (Harry)",
+          "items": [
+            {
+              "title": "Running after a chance (B14)",
+              "detail": "Problem: a pass ended your part of the chance. Fix: it plays on in the same picture. Auto run on a phone, W A S D and Shift on a computer, and a stamina bar. 500 matches: your goals 0.98 → 1.04 a match. v0.95h, v0.96h."
+            },
+            {
+              "title": "Headers and volleys are back, then made real",
+              "detail": "Back on after being off since 24 Sep (v0.88). Then 52 real headers and 102 real volleys play in the air, not along the ground (v0.105h). Cross heights now vary 1.5 to 2.6 m (was always 1.85 m) (v0.106h)."
+            },
+            {
+              "title": "New skill: Aerial & Acrobatics, with a Head & Volley drill",
+              "detail": "30 drill levels. In real matches, headers and volleys read Aerial, not Technique. Goals per 100 headers at Aerial 30 / 60 / 90: 14.1 / 24.9 / 36.3. A gold perfect circle that grows with Aerial. v0.105h, v0.106h, v0.108h."
+            },
+            {
+              "title": "Build-ups before chances",
+              "detail": "Built behind a switch (v0.63h, v0.86, v0.93), cut from 32.2 to 21.6 s a match (v0.103h), then about 3 s each in three styles: long ball, tiki-taka, or a run then a pass. Real moments about 1 in 10 chances (was 1 in 7). On by default for new phones. v0.107h, v0.108h."
+            },
+            {
+              "title": "Player size: up to C, then back to B",
+              "detail": "Size C made men 1.56x bigger (v0.103h). It was too big, so they went back to B: about 22 px on a phone long-range chance (C was 28). Headers, volleys and the drill drew men 1.2 to 1.45x too big; now 22 px too. v0.107h, v0.108h."
+            },
+            {
+              "title": "Fairer even matches (sim piece 4)",
+              "detail": "One shared builder for match inputs. Even-match possession 44.5% → 49.8%. v0.106h."
+            },
+            {
+              "title": "Shots miss a third less; a midweek game pays a quarter-week extra",
+              "detail": "Mikey's playtest rounds, 22 Oct. Also: a player taken off in extra time stays off. v0.109."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Training, 3D and screens (Harry)",
+          "items": [
+            {
+              "title": "Training: 150 levels editable, Pick the Pass, drag-and-drop editor",
+              "detail": "Vision is rebuilt from 263 real passes. Levels play with the skills you would have by then. v0.71, v0.76, v0.77."
+            },
+            {
+              "title": "Fairer 3D keepers",
+              "detail": "Free Roam, Headers & Volleys and Wembley keepers save about 1 in 3 from a decent player (was 52 to 70%). v0.81."
+            },
+            {
+              "title": "3D looks: natural skin, blinking faces, 3D headshots on award screens",
+              "detail": "Yellow skin in the signing scene 94% → 0%. One even skin colour for every 3D man (face vs arm gap 13-28 → 0-2.4). v0.69, v0.79, v0.94, v0.108h."
+            },
+            {
+              "title": "Lower League Trophy, and cup screens that fit one page",
+              "detail": "120 clubs, 7 midweek rounds, 119 matches. The Trophy tab was a 56-row list; now one screen. v0.73, v0.80."
+            },
+            {
+              "title": "Navigation round 1 (New UI)",
+              "detail": "Back returns to where you came from. 8 back buttons → 1. Career overview 4 taps → 2. v0.104h."
+            },
+            {
+              "title": "Fixtures: 170 clashes → 0 over 45 seasons",
+              "detail": "v0.78. The ten-round FA Cup and the Trophy now share the calendar with 0 clashes (v0.97h)."
+            },
+            {
+              "title": "Eight screens drew the pitch too small",
+              "detail": "Now the real match's size: 366 px on a phone, 384 on a computer. v0.62h, v0.84."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Admin and team tools (Harry)",
+          "items": [
+            {
+              "title": "Admin home, split by game, four looks on one layout",
+              "detail": "57 admin and test pages in one list, 17 old pages deleted, a lock on every test page. 45 of 45 admin pages on the Broadcast frame. v0.57, v0.65, v0.68, v0.83."
+            },
+            {
+              "title": "Team room: board, chat, ideas, to-do, and admin lands on the Team board",
+              "detail": "Replies, @ and # tags, Shift+X pointing, read receipts. Jobs arrive by pushing team/jobs.json; phones buzz. v0.60h, v0.74, v0.82, v0.87, v0.90."
+            },
+            {
+              "title": "Inbox bell: unread patch notes, and a buzz for each new one",
+              "detail": "Patch notes now go live on their own, before the feature code. v0.102h."
+            },
+            {
+              "title": "Marketing tab and Marketing Studio, with uploads",
+              "detail": "Board, Client, Studio, Uploads. Up to 500 MB a file, 30 files and 5 GB per admin per day. v0.104h, v0.107h."
+            },
+            {
+              "title": "Lag test, live share and motion references",
+              "detail": "Lag test: 10 steps, about 5 minutes. Live share: a 6-letter code Claude can watch. 27 motion reference clips at /admin/motion-refs. v0.89, v0.91, v0.92."
+            },
+            {
+              "title": "The Brain: CLAUDE.md 441 KB → 43 KB",
+              "detail": "Working rules are now short notes in brain/ with one index. Blind test: 13 of 15 hits, 0 wrong. v0.98h."
+            },
+            {
+              "title": "Only main makes a Vercel deploy",
+              "detail": "Side branches made 92 of 104 builds on 22 Oct. PR #772, v0.108h."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Real data and Real Goals (Leo, Harry)",
+          "items": [
+            {
+              "title": "Free-licence data only",
+              "detail": "The licensed data was deleted: its licence does not allow a paid game. Real moments, Real shots and Real Goals were rebuilt on free data (Wyscout, SoccerTrack v2, SkillCorner, IDSSE). v0.64, v0.67."
+            },
+            {
+              "title": "Real Goals test page: 50 → 4,625 real goals",
+              "detail": "A level map with stars, the real move replayed with real names and kits, and every 2017/18 league goal of the top five leagues. Test page only; the career is unchanged. v0.58, v0.60, v0.61."
+            },
+            {
+              "title": "Visual Effects Lab (test page)",
+              "detail": "/star-vfx-lab-dev: 13 match moments, 123 editable effect cards. v0.58."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Still open (from this week's notes, not rechecked today)",
+          "items": [
+            {
+              "title": "Five-a-side: a pass never becomes a team-mate's shot",
+              "detail": "0 of 1,000; chance pictures 1 and 6 never score. Needs a gameplay call. v0.72."
+            },
+            {
+              "title": "3D: high-skill players blaze over",
+              "detail": "About 78% of firm shots from 12 to 20 m go over. v0.81."
+            },
+            {
+              "title": "3D headshots: blond hair also colours eyebrows and beard on dark skin",
+              "detail": "Team sheets are still drawn. v0.79."
+            },
+            {
+              "title": "Training levels page freezes on the second tab switch",
+              "detail": "v0.77."
+            },
+            {
+              "title": "A Championship club in Europe that wins everything needs 38 midweeks; a season has 34",
+              "detail": "v0.78. A club in the European knockout play-off also has two Tuesdays next to its FA Cup Fifth Round and Quarter-Final."
+            },
+            {
+              "title": "team_room_v2.sql was listed as waiting to be run",
+              "detail": "v0.74, v0.82. Check before relying on round-two features."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Not live yet",
+          "items": [
+            {
+              "title": "Leo's tonight build (v0.108) is on branch Leo",
+              "detail": "Goal celebrations from the shop, a faster social feed (1.5 s → 0.29 s on a cheap phone), Goal of the Month, bicycle kicks, Real Goals paths and 61 famous goals, a season video, a goals gallery, an awards night, 17 bug fixes. It touches the match file and the keeper. It goes live only when Leo says push. Plan: v0.107."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.108h",
       "title": "Harry's patch notes: Your 3D Man On The Player Card, Even 3D Skin, And Players Back To Normal Size",
       "publishedAt": "2026-10-23T05:00:00Z",
