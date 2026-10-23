@@ -144,7 +144,8 @@ export const BOSS_MEETING_TOUR: TourStep[] = [
  *  for it yet, the tour says so (price, how much more) and asks for no tap. */
 export function shopTour(line: string, canBuy: boolean): TourStep[] {
   return canBuy
-    ? [{ target: "tab-2", text: "The Shop", press: true }, { target: "shop-style", text: `${line}. Buy it in Style`, press: true }]
+    // The Shop hint is words now, not a button (Mikey, 23 Oct 2026): it says swipe.
+    ? [{ target: "tab-2", text: `Swipe left to the Shop. ${line}: buy it there` }]
     : [{ target: "tab-2", text: `Your next step is a phone. ${line}` }];
 }
 export const SHOP_TOUR: TourStep[] = shopTour("Your first phone", true);

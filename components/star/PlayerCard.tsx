@@ -56,8 +56,10 @@ function writeSeen(key: string, v: Record<string, number>) {
   try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* private mode: no flash memory */ }
 }
 
-export default function PlayerCard({ career, saveButton = true, aside }: {
+export default function PlayerCard({ career, saveButton = true, aside, scale = 1 }: {
   career: CareerState; saveButton?: boolean;
+  /** Draw the card smaller (the Stats page: 0.93, Mikey 23 Oct 2026). */
+  scale?: number;
   /** Beside the card, filling the gap to its right (the Stats tabs, Mikey 22 Oct 2026:
    *  "the card should be shown completely … whatever gap is left should be filled in
    *  with these tabs"). Save image then sits under it instead of on the card's corner. */
@@ -155,7 +157,8 @@ export default function PlayerCard({ career, saveButton = true, aside }: {
         .pc-plus { color: #fff; background: #16a34a; padding: 2px 4px; border-radius: 4px; animation: pcPlus 2.1s ease-out 1 both; }
         @media (prefers-reduced-motion: reduce) { .pc-flash { animation: none; color: #16a34a !important; } .pc-plus { animation: none; } }
       `}</style>
-      <div ref={cardRef} className="relative shrink-0" style={{ width: W, height: H }} aria-label={`${TIER_NAME[data.tier]} card, overall ${data.overall}`}>
+      <div className="relative shrink-0" style={{ width: W * scale, height: H * scale }}>
+      <div ref={cardRef} className="absolute left-0 top-0" style={{ width: W, height: H, transform: scale !== 1 ? `scale(${scale})` : undefined, transformOrigin: "0 0" }} aria-label={`${TIER_NAME[data.tier]} card, overall ${data.overall}`}>
         <svg data-pc-shape width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0" aria-hidden>
           <defs>
             <linearGradient id={`pc-g-${data.tier}`} x1="0" y1="0" x2="1" y2="1">
@@ -218,6 +221,7 @@ export default function PlayerCard({ career, saveButton = true, aside }: {
           <span data-pc-rect className="block w-px self-stretch" style={{ background: look.line }} />
           {half(CARD_STATS.slice(3))}
         </div>
+      </div>
       </div>
 
       {aside ? (

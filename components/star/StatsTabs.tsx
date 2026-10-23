@@ -85,7 +85,7 @@ export default function StatsTabs({ career, onRenew, hallRecords, startView, ach
   );
   return (
     <div className="pb-2">
-      <PlayerCard career={career} aside={tabs} />
+      <PlayerCard career={career} aside={tabs} saveButton={false} scale={0.93} />
       <RiseIn key={view} className="mt-2">
         {view === "stats" && <StatsTab career={career} />}
         {view === "records" && <Records career={career} glow={glow} hallRecords={hallRecords} />}
@@ -107,8 +107,8 @@ function Card({ title, children, note, glow }: { title: string; children: ReactN
 }
 
 /** A block that opens on a tap (Records: real-world and Hall of Fame start closed). */
-function Fold({ title, right, children, glow, id }: { title: string; right?: ReactNode; children: ReactNode; glow: string; id: string }) {
-  const [open, setOpen] = useState(false);
+function Fold({ title, right, children, glow, id, startOpen = false }: { title: string; right?: ReactNode; children: ReactNode; glow: string; id: string; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen);
   return (
     <ClubCard glow={glow} className="mt-2 p-0">
       <button onClick={() => setOpen(!open)} aria-expanded={open} data-fold={id} className="flex w-full items-center gap-2 px-2.5 py-2.5 text-left">
@@ -296,7 +296,9 @@ function Records({ career, glow, hallRecords }: { career: CareerState; glow: str
   const beaten = RECORDS.filter((r) => r.progress(career) >= r.value).length;
   return (
     <>
-      <Card glow={glow} title="Your bests" note={fresh ? "Furthest goal/assist and match bests start counting from now on this save." : undefined}>
+      {/* Open to start, folds away on a tap (Mikey, 23 Oct 2026). */}
+      <Fold id="bests" glow={glow} title="Your bests" startOpen>
+        {fresh && <div className="mb-1.5 text-[10px] font-bold text-white/55">Furthest goal/assist and match bests start counting from now on this save.</div>}
         <Row icon="🚀" label="Furthest goal" value={b.furthestGoal ? `${b.furthestGoal.metres} m` : "—"} sub={b.furthestGoal ? `v ${short(b.furthestGoal.opponent)} · ${s(b.furthestGoal.season)}` : undefined} />
         <Row icon="🎯" label="Furthest assist (your pass)" value={b.furthestAssist ? `${b.furthestAssist.metres} m` : "—"} sub={b.furthestAssist ? `v ${short(b.furthestAssist.opponent)} · ${s(b.furthestAssist.season)}` : undefined} />
         <Row icon="⚽" label="Most goals in a game" value={b.mostGoalsMatch ? String(b.mostGoalsMatch.goals) : "—"} sub={b.mostGoalsMatch ? `v ${short(b.mostGoalsMatch.opponent)} · ${s(b.mostGoalsMatch.season)}` : undefined} />
@@ -307,7 +309,7 @@ function Records({ career, glow, hallRecords }: { career: CareerState; glow: str
         <Row icon="💥" label="Biggest win" value={b.biggestWin ? `${b.biggestWin.us}–${b.biggestWin.them}` : "—"} sub={b.biggestWin ? `v ${short(b.biggestWin.opponent)} · ${s(b.biggestWin.season)}` : undefined} />
         <Row icon="🔥" label="Longest scoring run" value={career.feats?.bestScoringRun ? `${career.feats.bestScoringRun} games` : "—"} sub={career.feats?.bestScoringRunSeason ? s(career.feats.bestScoringRunSeason) : undefined} />
         <Row icon="🧢" label="Caps" value={String(career.caps ?? 0)} sub={(career.internationalGoals ?? 0) > 0 ? `${career.internationalGoals} international goals` : undefined} />
-      </Card>
+      </Fold>
       <Fold id="real" glow={glow} title="Real-world records" right={<span className="text-[10px] font-black text-white/60">{beaten} / {RECORDS.length}</span>}>
         {RECORDS.map((r) => {
           const p = r.progress(career);
