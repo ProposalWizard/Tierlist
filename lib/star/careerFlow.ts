@@ -64,6 +64,7 @@ import { resolveLadder, seasonLadder, membershipOf, estimateClubStrength, type L
 import { englishTopFlightTable } from "./englishTopFlight";
 import { worldAfterMatch, finishWorld, ratedTeams } from "./world";
 import { summariseWorld } from "./world/summary";
+import { withSeasonHistory } from "./world/history";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids, moveSquadsWithLadder } from "./leagueSquads";
 import { ageLeagueSquads, ageOwnSquad, clubLevelOf, worldSeedFor, AWAKE_DIVISIONS } from "./worldAgeing";
@@ -1864,6 +1865,7 @@ export function advanceSeason(
     // A new season's world opens at its first match (lib/star/world).
     world: undefined,
     lastWorld,
+    compHistory: withSeasonHistory(career.compHistory, lastWorld),
     lastTopFlight,
     fixtures: buildFixtures(clubs, career.player.club),
     league: buildLeague(clubs, career.player.club),
