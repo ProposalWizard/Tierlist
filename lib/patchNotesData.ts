@@ -27,6 +27,252 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.109",
+      "title": "Mikey v0.21: one bottom bar, Stats with your card, League for every competition, a fuller Phone",
+      "publishedAt": "2026-10-23T03:30:00Z",
+      "updatedAt": null,
+      "artifactUrl": "https://claude.ai/artifact/J1GDXrx1SSHrLTroCa3C2K",
+      "summary": "The master plan built: one bottom bar, a Stats page with your card and four tabs, League as one page for every competition, a Phone with Relationships, Squad, Fixtures & results and real messages.",
+      "stats": [
+        {
+          "value": "5",
+          "label": "master-plan steps built"
+        },
+        {
+          "value": "12/12 → 27/10",
+          "label": "phone clock on the same save"
+        },
+        {
+          "value": "211",
+          "label": "nations in the FIFA ranking view"
+        },
+        {
+          "value": "1.9 s → 0.3 s",
+          "label": "Phone back to Home"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "Bottom bar",
+              "detail": "League · Training · Home · Phone · Play on every screen"
+            },
+            {
+              "title": "Home",
+              "detail": "Rep/Fame left, Goals/Assists right; boots line above the cans; Settings → Home numbers"
+            },
+            {
+              "title": "Stats",
+              "detail": "swipe left of Home: card on the left, Stats · Records · Achievements · Contract"
+            },
+            {
+              "title": "League",
+              "detail": "bar → League: Table · Results ‹ Round › · Goals · Assists · History; Change ▾ → International"
+            },
+            {
+              "title": "Phone",
+              "detail": "Relationships, Squad, Fixtures & results apps; Messages → tap the gaffer's scout report"
+            },
+            {
+              "title": "Phone clock",
+              "detail": "top-left of the phone: the day of your last game"
+            },
+            {
+              "title": "Shots",
+              "detail": "about a third fewer wide misses"
+            },
+            {
+              "title": "Midweek games",
+              "detail": "a quarter-week's wage extra for each one you play"
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added",
+          "items": [
+            {
+              "title": "One bottom bar on every screen",
+              "detail": "League · Training · Home · Phone · Play, the same on Home, League, the Shop, Sponsors and every full screen. Home glows; the round Play button sits on the right. The Phone opens the boss's talk while it is due. (seen)"
+            },
+            {
+              "title": "The Stats page: your card and four tabs",
+              "detail": "Your card shows whole on the left, with Stats · Records · Achievements · Contract stacked beside it and Save image under them. (seen)",
+              "more": {
+                "summary": "What each tab holds",
+                "points": [
+                  "Stats: this season and your career side by side (Apps, Goals, Assists, Trophies), season by season (tap one for the awards you won), the cabinet, goals and assists by season, per club, one International row.",
+                  "Records: your bests open; real-world records and Hall of Fame folded shut.",
+                  "Achievements: one list, rarity only (Bronze, Silver, Gold, Legend), no XP, no box of its own. Your first steps leave once done.",
+                  "Contract: on paper, with both signatures, and Propose renewal."
+                ]
+              }
+            },
+            {
+              "title": "League is one page for every competition",
+              "detail": "Opens on your league's table. Tabs: Table, Results, Goals, Assists, History. Results opens on the latest round; ‹ › walks back through played rounds and on to future fixtures. (seen)",
+              "more": {
+                "summary": "More",
+                "points": [
+                  "Other leagues' past rounds are replayed from each round's own seed: all 6 matched the stored scores exactly (measured). Only each league's latest round has scorer names.",
+                  "History: winner and runner-up of every league and cup, each season. It fills in from the end of this season.",
+                  "Change ▾ → International: your nation, the full FIFA ranking (211 nations, yours lit), and every international competition with its group tables, rounds and finals. A competition appears once it is drawn.",
+                  "Scout, Awards, Squad, Fixtures and the separate Table page left League."
+                ]
+              }
+            },
+            {
+              "title": "International on the League page",
+              "detail": "Every international competition like a league: groups, ‹ Matchday ›, and every final the game has played. (seen)"
+            },
+            {
+              "title": "The Phone does the rest",
+              "detail": "New apps: Relationships, Squad, Fixtures & results. League and Awards left the phone. (seen)",
+              "more": {
+                "summary": "More",
+                "points": [
+                  "Fixtures & results: every game of the season in date order, league, cups and Europe, with score and W/D/L; the next game is lit and the list opens on it.",
+                  "Messages: the gaffer's scout report before each match (tap to read it), each sponsor offer (tap for Sponsors), and a team-mate when you are close to a record: \"You're only 2 matches away from Jamie Vardy's record\" on the test save."
+                ]
+              }
+            },
+            {
+              "title": "Left out for energy: drink a can",
+              "detail": "Under the manager's office: drink one, or buy and drink one, to make the bench. (seen)"
+            },
+            {
+              "title": "Run hint",
+              "detail": "Under the run joystick: \"Steer into space: he may pass it back\". (seen)"
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed",
+          "items": [
+            {
+              "title": "Home is cleaner",
+              "detail": "Rep and Fame on the left of your player, Goals and Assists on the right (Settings → Home numbers: Sides | Top). Your boots and what they give sit above the cans. The crests sit side by side. Removed: the record line, the transfer window line, the links row, non-urgent chips. (seen)"
+            },
+            {
+              "title": "Shots miss a third less",
+              "detail": "Sideways spread cut by a third. One-on-ones scored 46.9% → 48.1%. (measured)"
+            },
+            {
+              "title": "Midweek games pay extra",
+              "detail": "Every club game you play that is not on a Saturday pays 25% of the weekly wage on top. About 13 a season at the start. (measured)"
+            },
+            {
+              "title": "Crowded chances zoom in",
+              "detail": "Five or more men within 10 m of the ball: the camera frames the crowd. Header zoom 1.03 → 1.62, volley 1.12 → 1.60, one-on-one 1.17 → 1.47. (measured)"
+            },
+            {
+              "title": "The Shop's tabs moved to the top",
+              "detail": "Shop · For You · 3D · Boots · Sponsors are a strip under the header; the main bar is at the bottom. (seen)"
+            },
+            {
+              "title": "Top-down dribble view shows more",
+              "detail": "29 m → 40 m deep. (seen)"
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed",
+          "items": [
+            {
+              "title": "The phone's clock showed the wrong day",
+              "detail": "It read the date as if every week were a league week, so with cup and European games it ran ahead: 12/12 when the next match was Sat 31 Oct. Now 27/10, the day of your last game (a Tuesday Champions League match). (measured)",
+              "more": {
+                "summary": "Why",
+                "points": [
+                  "The clock counted the game's week number as a league matchweek. Cup and European games add weeks, so it drifted.",
+                  "Now it reads the real date of your last played fixture; before the first game, the day before it. lib/star/phoneClock.ts"
+                ]
+              }
+            },
+            {
+              "title": "Scorers are written once",
+              "detail": "\"Smith 5', Smith 15'\" is now \"Smith 5', 15'\" on every league's results. (not yet seen)",
+              "more": {
+                "summary": "Why",
+                "points": [
+                  "The All-leagues results printed the name before every goal; the old League screen already grouped them. Scorer names need squad data, which the test browser does not have, so this is not seen yet."
+                ]
+              }
+            },
+            {
+              "title": "Awards say the month, not the week",
+              "detail": "\"S1 wk 36\" is now \"Season 1 · February\", with the league's name: \"National League Player of the Month\". (seen)"
+            },
+            {
+              "title": "Going back to Home is quick again",
+              "detail": "Phone → Home took 1.9 s (it re-saved the player's picture every visit). Now 0.3 s. (measured)"
+            },
+            {
+              "title": "Extra time: a player taken off stays off",
+              "detail": "He was handed chances again in extra time after coming off at 84'. (measured)"
+            },
+            {
+              "title": "Music changes cleanly",
+              "detail": "A new track fades the old one out first: two tracks at once dropped from 2.1 s to 0.1 s. (measured)"
+            },
+            {
+              "title": "Smaller fixes from the first playtest",
+              "detail": "Stamina bar hidden on commentary and full time; the cup draw opens at full size; Swipe right on the Showroom goes Home; a chance closes live scores so you come back to the commentary; Premier League records count Premier League games only. (seen)"
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Scorer names on League results not seen yet",
+              "detail": "The test browser has no squad data. Check on the real site: League → Results.",
+              "pill": {
+                "text": "Low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "History is empty until a season ends",
+              "detail": "New saves start counting at the end of this season; older saves show the winners they kept.",
+              "pill": {
+                "text": "Low",
+                "tone": "amber"
+              }
+            },
+            {
+              "title": "Before launch: cookie consent, error reports, two database changes",
+              "detail": "No Accept/Reject pop-up yet for the visit counter (UK rules need one). Sentry has no project yet, so crashes go unreported. star_xp_config.sql and star_tuning_notes.sql still need running in Supabase.",
+              "pill": {
+                "text": "High",
+                "tone": "red"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Launch items",
+              "detail": "Waiting on Mikey's calls: cookie pop-up and Privacy page, Sentry setup, the two database changes, which roadmap base-game items go in."
+            },
+            {
+              "title": "Room in the database",
+              "detail": "Later, as decided."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.108",
       "title": "Leo's tonight build: celebrations, fast feed, bicycle kicks, Real Goals, season end, 17 bugs (on branch Leo, not live)",
       "publishedAt": "2026-10-22T23:15:00Z",
