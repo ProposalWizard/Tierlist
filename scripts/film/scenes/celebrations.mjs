@@ -84,12 +84,12 @@ await wait(6000);
 const celebOn = () => pg.evaluate(() => !!document.querySelector("[data-celebration]"));
 const marks = { clip: CLIP, move: MOVE };
 let done = false;
-while (!done && at() < (VIEW3D ? 1200 : 480)) {
+while (!done && at() < (VIEW3D ? 1500 : 900)) {
   const st = await pg.evaluate(() => ({ ph: window.__starMatch?.phase?.(), k: window.__starMatch?.kind?.() }));
   if (BIG) await pg.evaluate(() => { window.__bigMomentNext = true; });
   if (!st.ph || st.ph === "feed") {
     let clicked = false;
-    for (const re of [/play match|kick off/i, /team sheets/i, /second half|^next|play on|resume/i, /^▶ *play|^play$/i, /continue|tap to hear|^ok$|skip|close|done/i]) {
+    for (const re of [/full time/i, /get out there/i, /play match|kick off/i, /team sheets/i, /second half|^next|play on|resume/i, /^▶ *play|^play$/i, /continue|tap to hear|^ok$|skip|close|done/i]) {
       const b = pg.locator("button:visible").filter({ hasText: re }).first();
       if (await b.count()) { await b.click({ timeout: 2000 }).catch(() => {}); clicked = true; break; }
     }
@@ -102,8 +102,9 @@ while (!done && at() < (VIEW3D ? 1200 : 480)) {
   // A chance you can score from (the goal on screen): a real drag at goal, then the strike.
   const f = await pg.evaluate(() => ({ b: window.__starMatch.ball(), g: window.__starMatch.goal(), big: !!document.querySelector("[data-big-moment]") }));
   if (!f.g || !f.b) { await wait(300); continue; }
-  if (BIG && !f.big && !marks.banner) { await wait(300); continue; }
-  if (BIG && f.big && !marks.banner) { marks.banner = at(); log("banner"); await wait(1700); }
+  // A big moment: the banner is up as the chance opens. A chance without one is played out as a miss.
+  const miss = BIG && !f.big;
+  if (BIG && f.big) { marks.banner = at(); log("banner"); await wait(1700); if ((await pg.evaluate(() => window.__starMatch?.phase?.())) !== "aim") continue; Object.assign(f, await pg.evaluate(() => ({ b: window.__starMatch.ball(), g: window.__starMatch.goal() }))); }
   let dx = f.b.x - f.g.x, dy = f.b.y - f.g.y; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
   marks.aim = at();
   await pg.mouse.move(f.b.x, f.b.y); await pg.mouse.down();
@@ -113,19 +114,22 @@ while (!done && at() < (VIEW3D ? 1200 : 480)) {
   if (await ballBtn.count()) { const bb = await ballBtn.boundingBox(); if (bb) await pg.mouse.click(bb.x + bb.width / 2, bb.y + bb.width / 2); }
   marks.strike = at();
   // The test tool: the ball on target, far enough out (0.9 s) for a big moment's slow motion to show.
+  let placed = null;
   for (let i = 0; i < 30; i++) {
-    const ok = await pg.evaluate((big) => {
+    const ok = placed = await pg.evaluate((big) => {
       const m = window.__starMatch; if (m.phase() !== "flight") return null;
       const b = m.ballState();
-      const x = b.pos.x < 34 ? 31.2 : 36.8;
-      return big ? m.setBall({ x, y: 16, z: 0.9, vx: 0, vy: -18, vz: 3.2, shot: true }) : m.setBall({ x, y: 1.2, z: 0.6, vx: 0, vy: -24, vz: 0, shot: true });
-    }, BIG);
+      const x = b.pos.x < 34 ? 30.7 : 37.3;
+      if (big === "miss") return m.setBall({ x: 50, y: 6, z: 0.5, vx: 8, vy: -14, vz: 1, shot: true });
+      return big ? m.setBall({ x, y: 7.5, z: 1.3, vx: 0, vy: -15, vz: 3.9, shot: true }) : m.setBall({ x, y: 1.2, z: 0.6, vx: 0, vy: -24, vz: 0, shot: true });
+    }, miss ? "miss" : BIG);
     if (ok !== null) break;
     await wait(30);
   }
+  log("strike", JSON.stringify({ placed, ph: await pg.evaluate(() => window.__starMatch?.phase?.()), miss: BIG ? miss : undefined }));
   let t0 = null;
   for (let i = 0; i < 120; i++) { if (await celebOn()) { t0 = at(); break; } const ph = await pg.evaluate(() => window.__starMatch?.phase?.()); if (ph === "aim") break; await wait(50); }
-  if (t0 === null) { log("no goal; next chance"); marks.banner = undefined; continue; }
+  if (t0 === null || miss) { log("no goal; next chance"); marks.banner = undefined; if (t0 !== null) await wait(6000); continue; }
   marks.celebStart = t0; log("celebration");
   if (CLIP === "skip") {
     await wait(1500); marks.tap = at(); await pg.mouse.click(195, 420);
