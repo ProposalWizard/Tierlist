@@ -47,6 +47,7 @@ Harry's next chat (branch Harry).
 3. Run the 2 missing tables (with a yes), then confirm they exist.
 
 ## Watch out for
+- The Supabase connector works in cloud Claude chats since 23 Oct 2026 (project cagkgfketucousksgtbk); the CLAUDE.md "Pending Setup" line saying cloud connectors fail is out of date for Supabase.
 - Vercel free plan: 100 deploys a day; only main counts now.
 - Disk filled once on 23 Oct: remove finished worktrees.
 - `teamBoard.mts` and `patchNoteMedia.mts` each have one old failing check (not from this round).
