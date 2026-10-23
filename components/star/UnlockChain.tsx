@@ -12,6 +12,7 @@ import type { CareerState } from "@/lib/star/types";
 import { sfx } from "@/lib/star/sfx";
 import { APP_STORE, LOCK_HINT, FEATURE_INFO, stepsFor, phoneStepLine, phoneShortfall, appInstalled, hasSeen, isOpen, nextStep, stepDone, type Feature, type StepId } from "@/lib/star/unlocks";
 import { formatMoney } from "@/lib/star/money";
+import type { BeatText } from "@/lib/star/story";
 import { Burst, PressButton } from "./ui";
 import StylePicture from "./StylePicture";
 import { ffTimeout } from "./ui/fastForward";
@@ -42,12 +43,12 @@ export function LockIcon({ size = 14 }: { size?: number }) {
 }
 
 /** A swipe page (Stats, Shop) that is not open yet. */
-export function LockedPage({ title, feature }: { title: string; feature: Feature }) {
+export function LockedPage({ title, feature, hint }: { title: string; feature: Feature; /** This career's lock line (unlocks.ts lockHint). */ hint?: string }) {
   return (
     <div className="flex h-full min-h-[360px] flex-col items-center justify-center gap-2 px-6 text-center">
       <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white/[0.07] text-white/80 ring-1 ring-white/15"><LockIcon size={30} /></div>
       <div className="text-[18px] font-black text-white">{title} is locked</div>
-      <div className="text-[13px] font-bold text-amber-300">{LOCK_HINT[feature]}</div>
+      <div className="text-[13px] font-bold text-amber-300">{hint ?? LOCK_HINT[feature]}</div>
     </div>
   );
 }
@@ -146,6 +147,29 @@ export function UnlockPop({ features, onSeeAll, onClose }: { features: Feature[]
       </div>
       <PressButton variant="primary" size="none" pulse onClick={onSeeAll} data-tour="see-all" className="mt-3 w-full rounded-2xl py-2.5 text-[14px] font-black">See all achievements</PressButton>
       <button onClick={onClose} className="kib-press mt-2 w-full py-1 text-[12px] font-black uppercase tracking-widest text-white/60">Close</button>
+    </Sheet>
+  );
+}
+
+/**
+ * A STORY BEAT (Mikey, 23 Oct 2026, lib/star/story.ts): a person brings the
+ * next thing in, in their own words, with one button that takes you there.
+ * No Close: the story moves on only by its button.
+ */
+export function StoryBeatPop({ text, onGo }: { text: BeatText; onGo: () => void }) {
+  useEffect(() => { sfx("achievement-pop"); }, []);
+  return (
+    <Sheet z={95}>
+      <AchStyles />
+      <div data-story-beat className="flex items-center gap-2.5 text-left">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white/10 text-[26px] ring-1 ring-white/20">{text.icon}</span>
+        <span className="min-w-0">
+          <span className="block text-[11px] font-black uppercase tracking-[0.18em] text-amber-300">{text.who}</span>
+          <span className="block text-[20px] font-black leading-tight">{text.title}</span>
+        </span>
+      </div>
+      <div className="mt-3 rounded-2xl bg-white/[0.07] px-3 py-2.5 text-left text-[14px] font-bold leading-snug text-white ring-1 ring-white/10">{text.line}</div>
+      <PressButton variant="primary" size="none" pulse onClick={onGo} data-tour="beat-go" className="mt-3 w-full rounded-2xl py-2.5 text-[15px] font-black">{text.button}</PressButton>
     </Sheet>
   );
 }

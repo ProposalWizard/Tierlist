@@ -288,7 +288,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed, isNew }: {
         style={{ background: "rgba(255,255,255,.11)", backdropFilter: "blur(10px)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.18), 0 8px 20px -10px rgba(0,0,0,.8)" }}
       >
         {dock.map((a, i) => (
-          <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} fresh={!!isNew?.(a.id)} />
+          <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} off={!!installed && !installed(a.id)} fresh={!!isNew?.(a.id)} />
         ))}
       </div>
       {/* Back (PhoneFrame's nav bar) puts the phone down from here. */}

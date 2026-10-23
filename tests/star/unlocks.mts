@@ -31,7 +31,12 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
 const player = { firstName: "T", lastName: "P", age: 18, skinTone: "light", club: "Liverpool", clubBadge: null,
   position: "ST", nationality: "England", startYear: 2027 } as StarPlayer;
-const fresh = (): CareerState => makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier");
+// The v0.25 game-first order, as a save part-way through it has it. A career
+// started now is on the story order instead (tests/star/storyOrder.mts).
+const fresh = (): CareerState => {
+  const c = makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier");
+  return { ...c, unlocks: { ...c.unlocks!, story: undefined, trainingDay: undefined, open: ["league", "stats", "play"] } };
+};
 /** The v0.24 order (a save part-way through it): everything shut, no gameFirst. */
 const fresh24 = (): CareerState => { const c = fresh(); return { ...c, unlocks: { open: [], seen: [], drills: 0, pointsAtStart: c.unlocks!.pointsAtStart, apps: [] } }; };
 const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "relations", "phone"];

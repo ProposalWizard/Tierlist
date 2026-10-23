@@ -929,7 +929,7 @@ function BottomBar({ active, onPick, links, onOpen3D, guideCorner, place = "bott
   const link = (id: string) => links?.find((l) => l.id === id);
   const sponsors = link("sponsors"), three = link("shop3d");
   const Tab = ({ on, label, icon, onClick, locked, data }: { on: boolean; label: string; icon: React.ReactNode; onClick?: () => void; locked?: boolean; data: string }) => (
-    <button onClick={onClick} disabled={!onClick} data-bar-tab={data} aria-current={on ? "page" : undefined} aria-label={label}
+    <button onClick={onClick} disabled={!onClick} data-bar-tab={data} data-tour={`shop-tab-${data}`} aria-current={on ? "page" : undefined} aria-label={label}
       className={`kib-press relative flex min-w-0 flex-1 flex-col items-center justify-center gap-[3px] disabled:opacity-30 ${on ? "text-white" : "text-white/60"} ${locked ? "opacity-50" : ""}`}>
       {icon}
       <span className="text-[10px] font-bold leading-none">{locked ? `🔒 ${label}` : label}</span>
@@ -968,7 +968,7 @@ function CatStrip({ ci, onPick }: { ci: number; onPick: (i: number) => void }) {
         if (c.id === "boots") return null; // Boots has its own tab on the bar
         const on = i === ci;
         return (
-          <button key={c.id} onClick={() => onPick(i)} data-strip-cat={c.id} aria-current={on ? "true" : undefined}
+          <button key={c.id} onClick={() => onPick(i)} data-strip-cat={c.id} data-tour={`cat-${c.id}`} aria-current={on ? "true" : undefined}
             className="relative shrink-0 pb-1 text-[16px] font-extrabold transition-colors" style={{ color: on ? "#fff" : "rgba(255,255,255,.55)", textShadow: "0 1px 6px rgba(0,0,0,.8)" }}>
             {c.label}
             <span aria-hidden className="absolute inset-x-1/4 -bottom-[1px] h-[3px] rounded-full transition-opacity" style={{ background: on ? "#fff" : "transparent" }} />

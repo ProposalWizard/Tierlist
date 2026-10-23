@@ -719,7 +719,7 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
         </div>
       </div>
       <div className="mt-1.5 grid grid-cols-2 gap-1">
-        <PressButton variant="accent" accent={accent} size="none" disabled={!canUse} onClick={use}
+        <PressButton variant="accent" accent={accent} size="none" disabled={!canUse} onClick={use} data-tour={`can-use-${c.id}`}
           className="rounded-md py-1 text-[10.5px] font-black uppercase">
           {ready ? "✓" : full ? "Full" : "Use"}
         </PressButton>

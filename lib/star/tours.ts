@@ -50,11 +50,13 @@ const ENERGY_MODES: TourStep = { target: "energy", text: "In a match you pick Lo
 
 /** A new career's first screen. v0.25 (game first): energy, then "You've got
  *  a game today". No Skip on the last step (P2-55). */
-export function welcomeTour(gameFirst: boolean): TourStep[] {
+export function welcomeTour(gameFirst: boolean, story = false): TourStep[] {
   return [
     BAR.energy,
     ENERGY_MODES,
-    gameFirst
+    story
+      ? { target: "nav-play", text: "Game on Saturday. You're in the squad. Tap Play", press: true }
+      : gameFirst
       ? { target: "nav-play", text: "You've got a game today. Tap Play", press: true }
       : { target: "nav-training", text: "Go to training", press: true },
   ];
@@ -185,6 +187,21 @@ export const HELP_TOURS: Record<HelpScreen, TourStep[]> = {
   style: [{ target: "screen", text: "Buy things to raise your fame. More open as your star rating goes up" }],
   settings: [{ target: "screen", text: "Sound, the look of the game and your saves" }],
   achievements: [{ target: "screen", text: "Your first steps are at the top. Each one opens something new" }],
-  phone: [{ target: "screen", text: "Your phone. Messages, social media and an App Store for more apps" }],
+  phone: [{ target: "screen", text: "Your phone. Messages, fixtures, your squad and an App Store for more apps" }],
   sponsors: [{ target: "screen", text: "Sponsors pay you every week. Hit a deal's target and keep the brand happy" }],
 };
+
+/** The story's training day (lib/star/story.ts): one drill at a time. */
+const DRILL_NAME: Record<string, string> = { power: "Power", technique: "Technique", pace: "Pace", vision: "Vision", freeKick: "Free Kick", aerial: "Aerial & Acrobatics" };
+export function trainingDayTour(next: string, left: number, total: number): TourStep[] {
+  const done = total - left;
+  return [{ target: `skill-${next}`, text: done === 0
+    ? `Training day: every drill once, free. Start with ${DRILL_NAME[next] ?? next}. Tap it`
+    : `${done} of ${total} done. Next: ${DRILL_NAME[next] ?? next}. Tap it`, press: true }];
+}
+
+/** The story's first Shop visit: the cans, then the boots. */
+export const STORY_SHOP_TOUR: TourStep[] = [
+  { target: "cat-cans", text: "Cans give you energy for matches" },
+  { target: "shop-tab-boots", text: "Boots make your shots better. Tap Boots", press: true },
+];
