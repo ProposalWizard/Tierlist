@@ -172,3 +172,6 @@
   background: var(--ash-amber-soft); color: var(--ash-amber); font: inherit; font-size: 11.5px; font-weight: 800; cursor: pointer; width: fit-content; }
 .tb-toread svg { width: 13px; height: 13px; }
 .tb-toread.done { border-color: var(--ash-line); background: none; color: var(--ash-ink3); cursor: default; }
+
+/* Phone: in the chat the channel is the screen, so the big "Team chat" title steps aside (the toggle stays). */
+@media (max-width: 760px) { .tb[data-tab="chat"] .tb-head { display: none; } }

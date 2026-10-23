@@ -20,7 +20,7 @@
  * Channels and threads live in the message text (lib/teamRoom/channels.ts);
  * new channels, renames, reactions and DMs need team_room_v3.sql.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { TEAM_PEOPLE, TEAM_ROOM, type TeamPerson } from "@/lib/teamRoom/config";
 import { stamp } from "@/lib/teamRoom/logic";
 import { patchAuthor, patchReaders, quoteLine } from "@/lib/teamRoom/extras";
@@ -67,6 +67,21 @@ function Room({ first, onOpenPatch }: { first: RoomStart; onOpenPatch?: (version
   const channel: Channel | null = place.kind === "channel" ? channels.find((c) => c.slug === place.slug) ?? channels[0] : null;
   const slug = channel?.slug ?? null;
 
+  // The workspace fills the screen below where it starts (no page scroll; the chat scrolls inside).
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const fit = () => {
+      const el = box.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      el.style.height = `${Math.max(420, Math.round(window.innerHeight - top - 12))}px`;
+    };
+    fit();
+    const t = setTimeout(fit, 300);
+    window.addEventListener("resize", fit);
+    return () => { clearTimeout(t); window.removeEventListener("resize", fit); };
+  }, []);
+
   // The address follows where you are, so a link (or a phone buzz) opens the same place.
   useEffect(() => {
     try { window.history.replaceState(null, "", roomUrl(place, { t: thread })); } catch { /* old browser */ }
@@ -89,7 +104,7 @@ function Room({ first, onOpenPatch }: { first: RoomStart; onOpenPatch?: (version
   const pins = slug ? pinsIn(s.messages, slug) : [];
 
   return (
-    <div className="trw" data-thread={thread ? "true" : "false"}>
+    <div className="trw" ref={box} data-thread={thread ? "true" : "false"}>
       <aside className={`ash-panel trw-list${listOpen ? " open" : ""}`} aria-label="Channels and messages">
         <ChannelList channels={channels} place={place} onGo={go} onClose={() => setListOpen(false)} goTo={goTo} />
       </aside>

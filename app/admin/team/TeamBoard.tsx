@@ -130,7 +130,7 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
       {tab === "notes" ? (
         <div className="tb-notes"><PatchNotesArchive key={version ?? "latest"} initialVersion={version} /></div>
       ) : (
-        <div className="tb">
+        <div className="tb" data-tab={tab}>
           {tab === "team" && <PitchLines />}
           <header className="tb-head">
             <div>

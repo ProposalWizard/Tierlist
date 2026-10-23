@@ -28,7 +28,7 @@ export function Av({ p, sm, xs, off, title }: { p: TeamPerson; sm?: boolean; xs?
 }
 
 const LINK = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g;
-const AT = /(@(?:Harry|Mikey|Leo)\b)/gi;
+const AT = /(@(?:Harry|Mikey|Leo|everyone|all|team)\b)/gi;
 
 /** Text with web links clickable and @Harry / @Mikey / @Leo lit up (yours brighter). */
 export function Linked({ text, me }: { text: string; me?: TeamPerson | null }) {

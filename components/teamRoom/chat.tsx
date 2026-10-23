@@ -187,9 +187,9 @@ export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_V
 /** The short "run team_room_v3.sql" note, in place of a thing that needs it. */
 export function V3Note({ what, inline }: { what: string; inline?: boolean }) {
   return (
-    <p className={`tr-v3note${inline ? " inline" : ""}`} title={`Run ${TEAM_ROOM.sqlFileV3} once in the Supabase SQL Editor`}>
-      {what} need <code>team_room_v3.sql</code>. Run it once in the Supabase SQL Editor.
-    </p>
+    <div role="note" className={`tr-v3note${inline ? " tight" : ""}`} title={`Run ${TEAM_ROOM.sqlFileV3} once in the Supabase SQL Editor`}>
+      {what}: run <code>team_room_v3.sql</code> once in the Supabase SQL Editor first.
+    </div>
   );
 }
 
@@ -386,7 +386,7 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   const isDm = view.kind === "dm";
   const chName = view.kind === "dm" ? "" : listChannels(s.channelRows).find((c) => c.slug === view.slug)?.name ?? view.slug;
-  const placeholder = view.kind === "dm" ? `Message ${view.with} (only you two)…` : view.kind === "thread" ? "Reply in the thread… @ or #" : `Message #${chName}… @ or #`;
+  const placeholder = view.kind === "dm" ? `Message ${view.with}` : view.kind === "thread" ? "Reply in the thread" : `Message #${chName}`;
 
   const [hide, setHide] = useState(false);
   const tok = hide ? null : typingToken(text, caret);
