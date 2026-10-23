@@ -28,7 +28,7 @@ import type { PatchNote } from "./patchNotes";
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.109",
-      "title": "Mikey v0.21: one bottom bar, Stats with your card, League for every competition, a fuller Phone",
+      "title": "Mikey's patch notes v0.21: one bottom bar, Stats with your card, League for every competition, a fuller Phone",
       "publishedAt": "2026-10-23T03:30:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/J1GDXrx1SSHrLTroCa3C2K",
