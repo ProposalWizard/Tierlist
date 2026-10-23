@@ -4,8 +4,10 @@
  * YOUR PLAYER CARD — FIFA style (Harry, 22 Oct 2026: "we should be building a
  * 'card' with the players stats as we go"; picked: FIFA-style card).
  *
- * Overall, position, flag and badge down the left; your drawn head (photo
- * faces are off, FACT-UI-015); name; the six skills. Colour by tier
+ * Overall, position, flag and badge down the left; your own 3D footballer,
+ * head to waist, in your club kit (a still shot once from the Style A model,
+ * Headshot3D frame "card"; the drawn head until it lands or with no WebGL;
+ * photo faces are off, FACT-UI-015); name; the six skills. Colour by tier
  * (lib/star/playerCard.ts CARD_TIERS: bronze, silver, gold, special).
  *
  * Live: it reads the career, so it changes after every match and training.
@@ -16,7 +18,7 @@
  * on screen (playerCardImage.ts), and saves it as a PNG. html2canvas was
  * tried first and moved the text; see that file.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { CARD_STATS, cardData, cardGains, type CardStatKey, type CardTier } from "@/lib/star/playerCard";
 import { kitsOf } from "@/lib/star/kits";
@@ -24,6 +26,7 @@ import { skinToneHex, shortDisplayName } from "@/lib/star/playerIdentity";
 import ClubBadge from "./ClubBadge";
 import NationFlag from "./NationFlag";
 import DrawnHeadChip from "./DrawnHeadChip";
+import Headshot3D from "./Headshot3D";
 import { drawPlayerCardPng, FACE_MASK_CSS } from "./playerCardImage";
 
 /** Each tier's paint: the card's gradient, its edge, its ink. */
@@ -53,7 +56,13 @@ function writeSeen(key: string, v: Record<string, number>) {
   try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* private mode: no flash memory */ }
 }
 
-export default function PlayerCard({ career, saveButton = true }: { career: CareerState; saveButton?: boolean }) {
+export default function PlayerCard({ career, saveButton = true, aside }: {
+  career: CareerState; saveButton?: boolean;
+  /** Beside the card, filling the gap to its right (the Stats tabs, Mikey 22 Oct 2026:
+   *  "the card should be shown completely … whatever gap is left should be filled in
+   *  with these tabs"). Save image then sits under it instead of on the card's corner. */
+  aside?: ReactNode;
+}) {
   const data = useMemo(() => cardData(career), [career]);
   const look = LOOK[data.tier];
   const kit = kitsOf(career.player.club).home;
@@ -138,7 +147,7 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
   );
 
   return (
-    <div ref={wrapRef} className="relative flex justify-center py-1" data-player-card={data.tier}>
+    <div ref={wrapRef} className={`relative flex py-1 ${aside ? "items-stretch gap-2" : "justify-center"}`} data-player-card={data.tier}>
       <style>{`
         @keyframes pcFlash { 0% { color: #16a34a; text-shadow: 0 0 10px rgba(34,197,94,.9); } 70% { color: #16a34a; text-shadow: 0 0 6px rgba(34,197,94,.6); } 100% { text-shadow: none; } }
         @keyframes pcPlus { 0% { opacity: 0; transform: translateY(4px); } 12% { opacity: 1; transform: translateY(0); } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-4px); } }
@@ -180,7 +189,11 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
           <span data-pc-img className="mt-1.5 block"><ClubBadge club={career.player.club} kit={kit} size={28} /></span>
         </div>
 
-        {/* The face: the same drawn head the match draws on you. */}
+        {/* The portrait: your own 3D footballer (the Style A man the shop and
+            garden show: Settings → Your look, your club's home kit), head to
+            waist, shot ONCE to a still and kept on the device
+            (lib/star/headshot3d, frame "card"). Until it lands, or with no
+            WebGL, the drawn head the match draws on you. */}
         {/* Soft edges so the shoulders melt into the card (FACE_FADE; the
             saved PNG cuts the same edges). */}
         <div
@@ -188,7 +201,10 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
           className="absolute overflow-hidden"
           style={{ right: 12, top: 24, width: 132, height: 128, WebkitMaskImage: FACE_MASK_CSS, maskImage: FACE_MASK_CSS, WebkitMaskComposite: "source-in", maskComposite: "intersect" }}
         >
-          <DrawnHeadChip id="you" shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={128} skin={skinToneHex(career.player.skinTone)} />
+          <Headshot3D
+            id="you" you frame="card" kit={kit} size={132} height={128}
+            fallback={<DrawnHeadChip id="you" shirt={kit.shirt} shorts={kit.trim} trim={kit.trim} size={128} skin={skinToneHex(career.player.skinTone)} />}
+          />
         </div>
 
         {/* Name. */}
@@ -204,7 +220,25 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
         </div>
       </div>
 
-      {saveButton && (
+      {aside ? (
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5" data-card-aside>
+          {aside}
+          {saveButton && (
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving}
+              data-card-save
+              className="kib-press flex h-[30px] shrink-0 items-center justify-center gap-1.5 rounded-md text-[10px] font-black uppercase leading-none text-white"
+              style={{ background: "rgba(var(--sk-flat-rgb),.75)", boxShadow: "inset 0 0 0 1px var(--sk-edge)" }}
+              aria-label="Save image"
+            >
+              <span className="text-[14px] leading-none">⤓</span>
+              <span>{saving ? "Saving" : "Save image"}</span>
+            </button>
+          )}
+        </div>
+      ) : saveButton && (
         <button
           type="button"
           onClick={save}

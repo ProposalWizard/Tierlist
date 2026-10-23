@@ -41,6 +41,15 @@ export function toonBand(dotNL: number): readonly [number, number, number] {
   return TOON_BANDS.lit;
 }
 
+/**
+ * THE SKIN'S PAINT (tnSkinOf in TOON_HEAD below; Harry 23 Oct 2026, measured on the bench's skin sheet,
+ * /star-3d-bench-dev/skin + scripts/bench3d/skin.mjs). Skin = the picked tone × the file's own
+ * light and dark (relative to its skin average) ^ `shade`, kept between `lo` and `hi`, with `hue`
+ * of the file's own colour left in (lips and cheeks a touch warmer; 0 = none, 1 = the old way).
+ * `?skinpaint=0` on any page shows the old paint (the tone as a ratio on every colour channel).
+ */
+export const TOON_SKIN_PAINT = { shade: 0.85, lo: 0.35, hi: 1.3, hue: 0.2 } as const;
+
 const v3 = (a: readonly number[]) => `vec3(${a.map((x) => x.toFixed(3)).join(", ")})`;
 
 const TOON_HEAD = `
@@ -63,7 +72,7 @@ uniform vec3 uHomeSun;    // Home's sun, in view space
 uniform vec4 uSmall;      // a small man (smallMen.ts): flat cel (0/1), skin/hair map mip bias, -, -
 float tnLitEdge = 0.0;
 float tnFace = 0.0;       // this point is face skin (set before the lights)
-uniform vec4 uSkinFx;     // TOON_SKIN: mark skin for the post (0/1), probe (0/1), white balance on skin (0..1), -
+uniform vec4 uSkinFx;     // TOON_SKIN: mark skin for the post (0/1), probe (0/1/2), white balance on skin (0..1), even paint (0/1)
 uniform vec4 uRimFx;      // TOON_RIM: colour (linear), strength
 uniform vec3 uRimDirV;    // TOON_RIM: where it comes from, in the camera's own frame
 uniform vec4 uTfOn;       // the moving face (TOON_FACE): on (0/1), blink (0 open .. 1 shut), mouth open (0..1), mouth wide (0..1)
@@ -73,10 +82,27 @@ uniform vec4 uTfMouth;    // the mouth: centre x, the line between the lips (y),
 uniform vec3 uTfWhite, uTfLidC, uTfLash; // the eye white, the lid (the picture's own skin, linear), the lash line
 float tnSkin = 0.0;       // this point is bare skin (face, neck, arms, hands): set in the body
 float tfEyesK = 0.0;      // this point is in a moving face's eye (TOON_FACE)
+float tnRegion = 0.0;     // the probe's region (uSkinFx.y 2): 1 face, 2 neck, 3 upper arm, 4 forearm, 5 hand
 float tnTone = 0.0;       // skin, or a moving face's eye: lit and tone-mapped as skin (white balance, the post's skin curve)
 // The skin's share of a light's colour: a warm lamp or sun lights skin a little less warm than it lights
 // cloth (a camera's white balance on faces), so a golden-hour face stays the tone that was picked.
 vec3 tnSkinLight(vec3 c) { return mix(c, vec3(dot(c, vec3(0.299, 0.587, 0.114))), tnTone * uSkinFx.z); }
+// THE SKIN'S PAINT (TOON_SKIN_PAINT, Harry 23 Oct 2026: "fix this skin colour issue"): the picked tone,
+// shaded by how light or dark the file's own skin is at this point (its painted shading, brows' edge,
+// lips, nose), with only a little of the file's own hue (the painted cheeks, ears and chin were redder or
+// paler than the arms, and the old per-channel ratio carried that across onto every tone). Too bright
+// for the screen: brought down as one, so it keeps its hue (the old per-channel cap turned light skin yellow).
+vec3 tnSkinOf(vec3 c) {
+  if (uSkinFx.w < 0.5) return min(c * uSkinK, vec3(1.0));
+  const vec3 Y = vec3(0.2126, 0.7152, 0.0722);
+  float la = max(dot(uSkinAvg, Y), 1e-4);
+  float l = max(dot(c, Y), 1e-5);
+  float sh = clamp(pow(l / la, ${TOON_SKIN_PAINT.shade.toFixed(3)}), ${TOON_SKIN_PAINT.lo.toFixed(3)}, ${TOON_SKIN_PAINT.hi.toFixed(3)});
+  vec3 hue = clamp((c / l) / (uSkinAvg / la), vec3(0.6), vec3(1.6));
+  vec3 a = uSkinTone * sh * mix(vec3(1.0), hue, ${TOON_SKIN_PAINT.hue.toFixed(3)});
+  float m = max(a.r, max(a.g, a.b));
+  return m > 1.0 ? a / m : a;
+}
 #ifdef TN_ACES_SCREEN
 // Drawn straight to the screen through three's own ACES (Home, the signing and office, Low): skin is
 // handed over so that ACES gives it the curve by brightness only (its hue kept), the same as the post
@@ -103,7 +129,9 @@ vec3 tnSkinPreTone(vec3 c) {
 vec3 toonStep(float d) {
   if (uShade.x > 0.5) {
     // two soft bands: the shade side stays warm and readable, never a hard dark stripe
-    float dd = clamp(d + tnFace * uShade.y, 0.0, 1.0);
+    // the face's lift (no dark band across it) on all bare skin with the even paint: the neck, arms and
+    // hands took the shade band while the face sat in the lit one, so they read a darker, different skin
+    float dd = clamp(d + max(tnFace, tnSkin * uSkinFx.w) * uShade.y, 0.0, 1.0);
     return mix(${v3(TOON_SOFT.low)}, ${v3(TOON_SOFT.lit)}, smoothstep(${TOON_SOFT.edge[0].toFixed(3)}, ${TOON_SOFT.edge[1].toFixed(3)}, dd));
   }
   return d < ${TOON_BANDS.shadowBelow.toFixed(3)} ? vec3(0.0) : d < ${TOON_BANDS.midBelow.toFixed(3)} ? ${v3(TOON_BANDS.mid)} : ${v3(TOON_BANDS.lit)};
@@ -154,7 +182,7 @@ const TOON_FACE = `
         vec2 s = vec2(tfDy.y * d.x - tfDy.x * d.y, -tfDx.y * d.x + tfDx.x * d.y) / tfDet;
         vec2 uv2 = vMapUv + tfUx * s.x + tfUy * s.y;
         vec3 c2 = textureGrad(map, uv2, tfUx, tfUy).rgb;
-        c2 = mix(c2, min(c2 * uSkinK, vec3(1.0)), textureGrad(uMask, uv2, tfUx, tfUy).g);
+        c2 = mix(c2, tnSkinOf(c2), textureGrad(uMask, uv2, tfUx, tfUy).g);
         vec3 moved = mix(uTfWhite * mix(0.84, 1.0, smoothstep(0.85, 0.1, q.y)), c2, srcIn);
         col = mix(col, moved, inEye);
       }
@@ -164,7 +192,7 @@ const TOON_FACE = `
       float lidU = inX * smoothstep(edge - aq, edge + aq, q.y) * step(q.y, topY + 0.2);
       float low = mix(botY - 0.1, botY + 0.7 * kx, uTfGaze.w);
       float lidL = inX * (1.0 - smoothstep(low - aq, low + aq, q.y)) * step(botY - 0.2, q.y) * step(0.02, uTfGaze.w);
-      vec3 lidC = min(uTfLidC * uSkinK, vec3(1.0));
+      vec3 lidC = tnSkinOf(uTfLidC);
       float lid = max(lidU, lidL * step(0.02, uTfGaze.w)) * step(open, 0.985);
       col = mix(col, lidC, lid);
       tnSkin = max(tnSkin, lid);   // a lid is skin: the skin's own light and tone curve
@@ -210,12 +238,28 @@ const TOON_BODY = `
   // the generated model's own red shirt, where the mask calls it skin (a few texels at the collar and
   // the hem: the thin red line): far redder than any skin (skin's red is under 3× its green)
   if ((r.y < uFaceF.x - 0.02 || (r.y < uFaceF.x + 0.03 && r.z < uNeck.z)) && c.r > 5.0 * c.g && c.r > 4.0 * c.b && c.r > 0.06) { kit = 1.0; skin = 0.0; hairM = 0.0; }
+  // well above the collar nothing is kit, nor is the jaw's underside (it faces down and overhangs the
+  // collar: the chin is only ~2.5 cm above the collar line): the mask's kit specks round the jaw and
+  // chin took the shirt's colour (a white rim under the chin in a white kit, a red one in a red kit)
+  if (uSkinFx.w > 0.5 && kit > 0.0 && (r.y > uKit2.x + 0.03 || (r.y > uKit2.x - 0.015 && vRestN.y < -0.2 && r.z > uNeck.z + 0.03))) { skin = min(1.0, skin + kit * (1.0 - hairM)); kit = 0.0; }
   float lum = max(c.r, max(c.g, c.b));
   float shade = clamp(pow(max(c.g, 1e-4), 1.0 / 2.2) / 0.7, 0.25, 1.4);
   float head = smoothstep(uFaceF.x - 0.045, uFaceF.x - 0.025, r.y);
   vec3 col = c;
-  col = mix(col, min(c * uSkinK, vec3(1.0)), skin);
+  col = mix(col, tnSkinOf(c), skin);
   tnSkin = skin * (1.0 - hairM);
+  if (uSkinFx.w > 0.5) {
+    // on the head, what the mask leaves to the file's own paint and is skin-coloured (the lips, the line
+    // under the lower lip and round the chin) takes the picked tone too: left as painted, it stayed the
+    // file's light peach, a pale rim and a pink mouth on dark skin. The eyes' whites (grey), the irises,
+    // brows and lashes (dark) stay as painted.
+    float tnL = dot(c, vec3(0.2126, 0.7152, 0.0722)) / max(dot(uSkinAvg, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
+    float tnMx = max(c.r, max(c.g, c.b));
+    float tnSat = (tnMx - min(c.r, min(c.g, c.b))) / max(tnMx, 1e-4);
+    float tnLike = clamp(1.0 - kit - skin - hairM, 0.0, 1.0) * head * smoothstep(0.3, 0.5, tnL) * smoothstep(0.2, 0.35, tnSat);
+    col = mix(col, tnSkinOf(c), tnLike);
+    tnSkin = max(tnSkin, tnLike);
+  }
   col = mix(col, min(uHairK * (dot(c, vec3(0.2126, 0.7152, 0.0722)) / uHairL), vec3(1.0)), hairM);
   tnFace = skin * head * smoothstep(0.1, 0.5, vRestN.z);
   if (uShade.z > 0.5) {
@@ -233,6 +277,7 @@ ${TOON_FACE}
   vec3 tS = tL ? uShL : uShR; vec3 tE = tL ? uElL : uElR;
   float tTu = p3SegT(r, tS, tE);
   float onArm = step(0.12, abs(r.x)) * step(p3SegD(r, tS, tE, 0.0, 1.0), 0.11) * step(0.05, tTu);
+  if (uSkinFx.y > 1.5) tnRegion = r.y > uFaceF.x - 0.005 ? 1.0 : abs(r.x) < 0.12 ? 2.0 : tTu < 1.0 ? 3.0 : p3SegT(r, tE, tL ? uWrL : uWrR) < 0.97 ? 4.0 : 5.0;
   vec3 part;
   if (uSuit > 0.5) {
     part = uSuitCoat * shirtW + uSuitTrousers * (shortsW + socksW) + uShoes * bootW;
@@ -390,18 +435,21 @@ export const TOON_SKIN = {
   sat: 0.94,
   /** The skin fixes on (the bench's before/after: ?skinfix=0). */
   on: typeof window === "undefined" || new URLSearchParams(window.location.search).get("skinfix") !== "0",
+  /** The even skin paint (TOON_SKIN_PAINT) on (?skinpaint=0: the old per-channel ratio). */
+  paint: typeof window === "undefined" || new URLSearchParams(window.location.search).get("skinpaint") !== "0",
 };
 let skinUniform: { value: THREE.Vector4 } | null = null;
 function toonSkinUniform(T: Three): { value: THREE.Vector4 } {
-  skinUniform ??= { value: new T.Vector4(0, 0, TOON_SKIN.on ? TOON_SKIN.whiteBalance : 0, 0) };
+  skinUniform ??= { value: new T.Vector4(0, 0, TOON_SKIN.on ? TOON_SKIN.whiteBalance : 0, TOON_SKIN.paint ? 1 : 0) };
   return skinUniform;
 }
 /** A post pass is drawing the scene into its own picture (true) or done (false): skin marks itself in alpha. */
 export function setToonSkinMark(on: boolean): void { if (skinUniform) skinUniform.value.x = on && TOON_SKIN.on ? 1 : 0; }
 /** The skin fixes are on (the post passes read this too). */
 export const toonSkinFixOn = () => TOON_SKIN.on;
-/** The measuring probe: bare skin flat magenta. */
-export function setToonSkinProbe(on: boolean): void { if (skinUniform) skinUniform.value.y = on ? 1 : 0; }
+/** The measuring probe: bare skin flat magenta (true), or each region its own flat colour and the rest black
+ *  (2: face magenta, neck cyan, upper arm yellow, forearm green, hand blue; scripts/bench3d/skin.mjs). */
+export function setToonSkinProbe(on: boolean | 2): void { if (skinUniform) skinUniform.value.y = typeof on === "number" ? on : on ? 1 : 0; }
 if (typeof window !== "undefined") {
   (window as unknown as { __toonSkin?: unknown }).__toonSkin = {
     probe: setToonSkinProbe,
@@ -536,7 +584,8 @@ ${(T.ShaderChunk as Record<string, string>).map_fragment.replace("texture2D( map
   if (uRimFx.w > 0.0) {
     float rNdv = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
     float rK = pow(1.0 - rNdv, 2.4) * smoothstep(-0.3, 0.55, dot(normal, normalize(uRimDirV)));
-    outgoingLight += uRimFx.rgb * rK * uRimFx.w * (0.3 + diffuseColor.rgb);
+    // on skin the rim takes the skin's own colour (a flat 0.3 of white drew a pale ring round a dark jaw)
+    outgoingLight += uRimFx.rgb * rK * uRimFx.w * mix(0.3 + diffuseColor.rgb, 1.3 * diffuseColor.rgb, tnTone * uSkinFx.w);
   }
   if (uHome.x > 0.5) {
     // THE HOME PLAYER'S LIGHT (HOME_LIGHT): the man lit as Home lights him (ToonHomePlayer: a sky/grass
@@ -567,8 +616,9 @@ if (uHome.x > 0.5) gl_FragColor.a = 0.5;
 #ifdef TN_ACES_SCREEN
 if (tnTone > 0.5 && uSkinFx.z > 0.0 && uHome.x < 0.5) gl_FragColor.rgb = tnSkinPreTone(gl_FragColor.rgb);
 #endif
-if (uSkinFx.y > 0.5 && tnSkin > 0.5) gl_FragColor = vec4(3.0, 0.0, 3.0, 1.0);
+if (uSkinFx.y > 1.5) gl_FragColor = tnSkin > 0.5 ? vec4(tnRegion == 1.0 ? vec3(0.7, 0.0, 0.7) : tnRegion == 2.0 ? vec3(0.0, 0.7, 0.7) : tnRegion == 3.0 ? vec3(0.7, 0.7, 0.0) : tnRegion == 4.0 ? vec3(0.0, 0.7, 0.0) : vec3(0.0, 0.0, 0.7), 1.0) : vec4(0.0, 0.0, 0.0, 1.0);
+else if (uSkinFx.y > 0.5 && tnSkin > 0.5) gl_FragColor = vec4(3.0, 0.0, 3.0, 1.0);
 else if (uSkinFx.x > 0.5 && uHome.x < 0.5 && tnTone > 0.5) gl_FragColor.a = ${TOON_SKIN_MARK.toFixed(2)};`);
   };
-  mat.customProgramCacheKey = () => "people3d-toon-v11";
+  mat.customProgramCacheKey = () => "people3d-toon-v12";
 }

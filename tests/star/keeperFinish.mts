@@ -25,7 +25,9 @@ const ok = (c: boolean, what: string) => { if (!c) { failed++; console.error(`  
  *  on in the "oct13" config) was re-sourced to free tracking, so the Old
  *  keeper with Keeper pro on now stands where real keepers stand. Nothing in
  *  keeperFinish itself changed. */
-const OLD_HASH = "dd696eda";
+// 22 Oct 2026: the shots it fires changed (shotModel.ts spread cut by a third,
+// Mikey's playtest), not the keeper: was dd696eda.
+const OLD_HASH = "60cc6413";
 
 function fingerprint(): string {
   let h = 2166136261 >>> 0;

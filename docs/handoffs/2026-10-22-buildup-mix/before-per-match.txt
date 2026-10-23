@@ -1,0 +1,5 @@
+Before (Harry branch at 3a853dad), N=150 MODE=serve npx tsx scripts/star-sandbox/highlights-measure.mts
+ST flow=New: build-ups/match 4.93, mean 3.15 s, seconds/match 15.5, offside build-ups/match 0.41
+ST flow=Old: build-ups/match 5.32, mean 3.11 s, seconds/match 16.6, offside build-ups/match 0.31
+LW flow=New: build-ups/match 4.71, mean 3.11 s, seconds/match 14.7, offside build-ups/match 0.24
+LW flow=Old: build-ups/match 4.79, mean 3.10 s, seconds/match 14.9, offside build-ups/match 0.29

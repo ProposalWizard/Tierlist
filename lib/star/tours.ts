@@ -98,7 +98,9 @@ export const FIRST_GAME_TOUR: TourStep[] = [
 /** After the first game: go and meet the boss (P2-86, P2-87). v0.25: the
  *  manager's talk is what opens Relations. */
 export function bossTour(gameFirst: boolean): TourStep[] {
-  return [{ target: "nav-life", text: gameFirst ? "Your manager wants a word. Tap Relations" : "Time to meet your boss. Tap Relations", press: true }];
+  // Relations left the bar (master plan 1, 22 Oct 2026): the manager's word
+  // comes through the Phone, which opens his talk while it is due.
+  return [{ target: "nav-phone", text: gameFirst ? "Your manager wants a word. Tap Phone" : "Time to meet your boss. Tap Phone", press: true }];
 }
 export const BOSS_TOUR: TourStep[] = bossTour(false);
 

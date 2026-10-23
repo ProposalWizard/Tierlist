@@ -211,7 +211,7 @@ import {
 import { revealOnScreen, pinnedTopHeight } from "@/lib/revealOnScreen";
 import {
   matchView, frameForNewView, crossCutCamera, newViewCanvasHeight, engineFrameOf, turnWideChance,
-  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, MATCH_VIEW_DEFAULT, figureGrow,
+  NEW_FIGURE_SCALE, NEW_BALL_SCALE, NEW_OUTFIELD_SHRINK, NEW_KEEPER_GROW, MATCH_VIEW_DEFAULT, figureGrow, figureShrinkFor,
   playZoom, playZoomOf, playZoomProbe,
 } from "@/lib/star/matchView";
 import { drawMatchFigure } from "@/lib/star/matchFigure";
@@ -2044,6 +2044,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         } }, 10);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- extraTimeEligibility reads refs; the fixture is fixed for the match
   }, [matchMode, phase, displayScore, matchMinute, MATCH_DURATION]);
+  // A chance closes the live scores: after it you are back on the commentary,
+  // not the scores (Mikey's playtest, 21 Oct 2026).
+  useEffect(() => { if (phase !== "feed") setScoresOpen(false); }, [phase]);
   useEffect(() => { if (matchMode) setMusicMuted(muted); }, [matchMode, muted]);
   useEffect(() => () => { clearMusicScene("match"); setMusicMuted(false); }, []);
 
@@ -2928,8 +2931,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const keepRunCamRef = useRef(false);
   /** B14b: an eased widen in progress (from, to, seconds in, zoom at the start). */
   const camEaseRef = useRef<{ from: Viewport; to: Viewport; t: number; zoom0: number } | null>(null);
+  /** Headers and volleys (matchView.ts FIGURES_AT_FULL_VIEW): the men and the
+   *  ball drawn this much smaller, so they are the long-range size. 1 otherwise. */
+  const figShrinkRef = useRef(1);
   /** Figures and ball: divide their size by this (Z2 keeps them today's size). */
-  const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1);
+  const figZoomDiv = () => (playZoom() === "z2" || playZoom() === "z2max" ? playZoomRef.current : 1) / figShrinkRef.current;
 
   /**
    * Which way the frame is turned. "up" is the ordinary view; a crossing
@@ -2971,6 +2977,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
       viewportRef.current = { ...sc.viewport };
       baseViewportRef.current = { ...sc.viewport };
+      // A feature's own close camera (the Head & Volley drill): headers and
+      // volleys still draw the men the long-range size.
+      {
+        const v = sc.viewport, up = (sc.facing ?? "up") === "up";
+        figShrinkRef.current = newViewRef.current ? figureShrinkFor(sc.kind, up ? v.x2 - v.x1 : v.y2 - v.y1) : 1;
+      }
       return;
     }
     applyTilt(tiltForChance(sc));
@@ -2981,6 +2993,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     viewportRef.current = { ...cam };
     baseViewportRef.current = { ...cam };
     playZoomRef.current = playZoomOf(sc);
+    // Headers and volleys: the men the long-range size. The chance's own
+    // camera before the Zoom is what they would otherwise be sized against.
+    {
+      const up = (sc.facing ?? "up") === "up", across = up ? cam.x2 - cam.x1 : cam.y2 - cam.y1;
+      const zoomed = playZoom() === "z2" || playZoom() === "z2max";
+      figShrinkRef.current = figureShrinkFor(sc.kind, across * (zoomed ? playZoomRef.current : 1));
+    }
     if (playZoomProbe() && typeof window !== "undefined") {
       (window as unknown as { __zg?: unknown }).__zg = {
         sc, cam: { ...cam }, zoom: playZoomRef.current,
@@ -4638,7 +4657,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // a save is being played.
       const diveN = clamp(Math.abs(kk.dive) / 1.6, 0, 1) * 0.45 + lunge * (K ? K.reachK : 0.55);
       const sign = kk.saveLunge > 0 ? (kk.saveDir || 1) : (kk.dive === 0 ? 0 : Math.sign(kk.dive));
-      const KR = R * MATCH_KEEPER_R_SHARE * kScale / (nv ? NEW_OUTFIELD_SHRINK : 1);   // smaller than an outfielder, smaller again far away; the keeper is not shrunk with the men
+      const KR = R * MATCH_KEEPER_R_SHARE * kScale * (nv ? NEW_KEEPER_GROW / NEW_OUTFIELD_SHRINK : 1);   // smaller again far away; the keeper is not shrunk with the men and stands about a man's height (NEW_KEEPER_GROW)
       // Capped just past flat — see MAX_KEEPER_LEAN. Purely the artwork:
       // nothing in the engine reads this rotation.
       // Animations: New — what he did with the ball (lib/star/actionAnim.ts):
@@ -5209,7 +5228,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         ctx.fillStyle = "rgba(255,255,255,0.85)";
         ctx.font = `700 ${Math.max(11, Math.round(W * 0.03))}px system-ui, sans-serif`;
         ctx.textAlign = "center";
-        ctx.fillText("Keep running", ox, oy - rr - 8);
+        ctx.fillText("Keep running", ox, oy - rr - 8 - Math.max(12, Math.round(W * 0.032)));
+        // What the run is for (Mikey's playtest, 21 Oct 2026: "what does the
+        // running even do if you can't get the ball?"): steer into space, and
+        // the man on the ball may give it back to you.
+        ctx.font = `600 ${Math.max(10, Math.round(W * 0.026))}px system-ui, sans-serif`;
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        const hint = "Steer into space: he may pass it back";
+        const hx = Math.max(ox, ctx.measureText(hint).width / 2 + 6);
+        ctx.fillText(hint, hx, oy - rr - 8);
         ctx.textAlign = "left";
       }
     }
@@ -7307,17 +7334,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     viewportRef.current = topDownViewport(run);
     baseViewportRef.current = { ...viewportRef.current };
     playZoomRef.current = 1;
+    figShrinkRef.current = 1;
     return "tdDribble";
   };
 
-  /** Top-down: the frame follows you up the pitch, about 30 m deep, and sideways too, centred on
+  /** Top-down: the frame follows you up the pitch, about 40 m deep (was 29: "so zoomed in", Mikey's
+   *  playtest 21 Oct 2026), and sideways too, centred on
    *  you (Harry, 13 Oct 2026: "what happened to our top-down dribbling that was actually moving with
    *  the ball?" — it was fixed sideways at the pitch centre). Same width; never past a touchline.
    *  The picture only: the run's rules and the hidden match are untouched. */
   const topDownViewport = (run: FpRunState) => {
     const c = canvasRef.current;
     const aspect = c && c.height > 0 ? c.width / c.height : 5 / 8;
-    const y1 = run.y - 20, y2 = run.y + 9;
+    const y1 = run.y - 28, y2 = run.y + 12;
     const w = (y2 - y1) * aspect;
     const cx = Math.max(w / 2, Math.min(PITCH_W - w / 2, run.x));
     return { x1: cx - w / 2, x2: cx + w / 2, y1, y2 };
@@ -7566,7 +7595,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // Set pieces you do not take go to whoever does, and the match runs on.
     // runStretch keeps EVERY run's lines (lib/star/stretchRun.ts: the lost
     // goal that put the stats screen a goal ahead of the scoreboard).
-    let step = runStretch(st, baseInputs, rng, stretchEnd, mayTake, handedOver);
+    // Already taken off: extra time plays on without you, exactly like the
+    // minutes after you came off (Mikey's playtest, 21 Oct 2026: replaced at
+    // 84', then handed chances at 2-2 in extra time, energy frozen at 20).
+    let step = hookedRef.current
+      ? { events: [...handedOver, ...advanceTo(st, baseInputs, rng, matchCeilingRef.current)], request: null, fullTime: true }
+      : runStretch(st, baseInputs, rng, stretchEnd, mayTake, handedOver);
     /** Item 25: the stretch ran out because his legs did, not the clock. */
     const legsGone = !step.request && offAt < matchCeilingRef.current && st.minute >= offAt;
     if (legsGone) step = { ...step, fullTime: false };
@@ -8321,6 +8355,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       viewportRef.current = dribbleViewport(dribbleRef.current);
       baseViewportRef.current = { ...viewportRef.current };
       playZoomRef.current = 1;
+      figShrinkRef.current = 1;
       setPhase("dribble");
       onChanceServedRef.current?.({ kind: "dribble", minute: matchMinuteRef.current, reason: request.reason });
       logMoment(momentLine(), "you");
@@ -9691,7 +9726,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             (the dim part past the line is energy you no longer have); drains as
             you sprint, refills as you ease off. B14b: in the first corner of the
             pitch clear of the goal, the ball and every man (lib/star/barSpot.ts). */}
-        {stamUi && !leadInOn && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
+        {stamUi && !leadInOn && phase !== "feed" && phase !== "postmatch" && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
           <div
             data-stamina={stamUi.v.toFixed(2)}
             data-stamina-cap={stamUi.cap.toFixed(2)}

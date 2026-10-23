@@ -1,5 +1,5 @@
 import type { CareerState, MatchStats, GoalEvent, OppGoalEvent, Fixture } from "./types";
-import { wageForFixture } from "./wages";
+import { wageForFixture, midweekFeeFor } from "./wages";
 import { sponsorPayFor } from "./sponsorDeals";
 import { getTuning } from "./tuningStore";
 import { capRel } from "./relationships";
@@ -230,7 +230,8 @@ export function finaliseMatch(
   // whole week's club wage), no goal or assist bonus, and your manager, team-mates and fans at the club
   // do not move on it (the relationship deltas below are zeroed too).
   const intl = fixture?.kind === "international";
-  const wage = intl ? 0 : fixture ? wageForFixture(career, fixture) : career.contract.wage;
+  // Plus a quarter of the weekly wage for a midweek game you played (wages.ts midweekFeeFor).
+  const wage = intl ? 0 : fixture ? wageForFixture(career, fixture) + midweekFeeFor(career, fixture) : career.contract.wage;
   const goalBonus = intl ? 0 : goals * career.contract.goalBonus;
   const assistBonusPay = intl ? 0 : assists * career.contract.assistBonus;
   // Image-rights money from how well your sponsors are being served.
