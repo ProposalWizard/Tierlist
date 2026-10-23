@@ -60,6 +60,19 @@ function seasonBest(c: CareerState, id: string, live: (c: CareerState) => number
   return now === null ? locked : Math.max(locked, now);
 }
 
+/**
+ * Your Premier League career so far: league games played in the Premier
+ * League only (Mikey's playtest, 21 Oct 2026: 48 goals, 58 games and 56
+ * assists counted toward the PL records from League One). A save from before
+ * `careerPlStats` has no split: it keeps its old all-league numbers only if
+ * it has ever been in the Premier League, otherwise it starts from zero.
+ */
+export function plCareer(c: CareerState): { goals: number; assists: number; appearances: number } {
+  if (c.careerPlStats) return c.careerPlStats;
+  const everPl = divisionOf(c) === "premier" || (c.seasonHistory ?? []).some(h => h.division === "premier");
+  return everPl && c.careerLeagueStats ? c.careerLeagueStats : { goals: 0, assists: 0, appearances: 0 };
+}
+
 const plAssistsSeason = (c: CareerState) => (divisionOf(c) !== "premier" ? null : c.leagueSeasonStats?.assists ?? 0);
 const plGoalsSeason = (c: CareerState) => (divisionOf(c) !== "premier" ? null : c.leagueSeasonStats?.goals ?? 0);
 const plGoalsMatch = (c: CareerState) => {
@@ -114,7 +127,7 @@ export const RECORDS: RecordDef[] = [
     unit: "goals",
     scope: "career",
     description: "260 goals across a whole Premier League career — the competition's all-time top scorer.",
-    progress: (c) => c.careerLeagueStats?.goals ?? 0,
+    progress: (c) => plCareer(c).goals,
   },
   {
     id: "pl-appearances-career",
@@ -125,7 +138,7 @@ export const RECORDS: RecordDef[] = [
     unit: "appearances",
     scope: "career",
     description: "653 Premier League appearances across a nineteen-season career.",
-    progress: (c) => c.careerLeagueStats?.appearances ?? 0,
+    progress: (c) => plCareer(c).appearances,
   },
   // ── Roadmap #4 (11 Oct 2026) ──
   {
@@ -137,7 +150,7 @@ export const RECORDS: RecordDef[] = [
     unit: "assists",
     scope: "career",
     description: "162 Premier League assists, all for Manchester United.",
-    progress: (c) => c.careerLeagueStats?.assists ?? 0,
+    progress: (c) => plCareer(c).assists,
   },
   {
     id: "pl-scoring-run",

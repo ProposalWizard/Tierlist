@@ -1247,6 +1247,12 @@ export interface CareerState {
    */
   careerLeagueStats?: { goals: number; assists: number; appearances: number };
   /**
+   * The same running tally, Premier League games only (Mikey's playtest,
+   * 21 Oct 2026: the PL career records showed 48 goals from League One).
+   * Absent on an older save: records.ts plCareer() falls back.
+   */
+  careerPlStats?: { goals: number; assists: number; appearances: number };
+  /**
    * Your best-ever showing against each entry in the Records tab, keyed by
    * `RecordDef.id` — see lib/star/records.ts.
    *
@@ -1388,6 +1394,10 @@ export interface CareerState {
   /** Last season's final tables, top scorers, winners and play-offs, kept
    *  through the rollover for the "Last season" view. */
   lastWorld?: import("./world/types").WorldSummary;
+  /** Every league's and cup's winner and runner-up, one row per season
+   *  (League → History, Mikey 22 Oct 2026). Added at each rollover from
+   *  lastWorld; absent on older saves (lib/star/world/history.ts). */
+  compHistory?: import("./world/history").CompHistoryRow[];
   /** Last season's final Premier League table, best first (names) — who
    *  England sends to Europe this season (euro.ts seasonField). */
   lastTopFlight?: string[];

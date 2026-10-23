@@ -111,3 +111,4 @@ RUL-UI-002 | Unfinished work lives on a test page (a /star-*-dev page), not behi
 RUL-UI-003 | Existing switches stay until someone decides each one; never delete one unasked. | rule,ui
 RUL-UI-004 | "Preview" (game version) is used only when someone asks for it in those words; otherwise a change goes straight into the game. | rule,ui
 RUL-UI-005 | Harry's changes go straight into the game when he says push: no new New/Old row, no Preview entry. | deploy,ui
+RUL-UI-006 | "No scroll wheel inside a screen: just show it and you scroll down; never add a scroll wheel unless Mikey specifically says." | team,rule,ui

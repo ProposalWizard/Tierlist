@@ -28,11 +28,11 @@ import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { SetCard, SetToggle } from "./settingsKit";
 import FhrSwitchRow from "./FhrSwitchRow";
 import type { SelectionVerdict } from "@/lib/star/selection";
-import { MIN_ENERGY_TO_START } from "@/lib/star/selection";
+import { MIN_ENERGY_TO_START, MIN_ENERGY_TO_SUB, selectionFor } from "@/lib/star/selection";
 import type { Role } from "@/lib/star/formations";
 import { formationOf } from "@/lib/star/formations";
 import { offeredPositions, POSITION_NAMES, formationForClub } from "@/lib/star/teamsheet";
-import { KIB_CANS, type KibCan } from "@/lib/star/shopData";
+import { KIB_CANS, kibCanPrice, type KibCan } from "@/lib/star/shopData";
 import { loadLineup } from "@/lib/star/lineupStore";
 import { getSkipLineup } from "@/lib/star/lineupPrefs";
 import { matchdayFor } from "@/lib/star/teamsheet";
@@ -54,7 +54,7 @@ const Office3DCareer = dynamic(() => import("./Office3D").then((m) => m.Office3D
 /** How long the line-up draws in before it kicks off by itself. */
 const LINEUP_MS = 3800;
 
-export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMatchSelection, playAs, onPlayAs, onBack, onPlayMatch, onWatchFromStands, onSimMatch, onUseCan, onBenchMomentSeen }: {
+export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMatchSelection, playAs, onPlayAs, onBack, onPlayMatch, onWatchFromStands, onSimMatch, onUseCan, onBuyAndUseCan, onBenchMomentSeen }: {
   career: CareerState;
   nextFixture: Fixture;
   preMatchEnergy: number;
@@ -67,6 +67,8 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
   onWatchFromStands: () => void;
   onSimMatch: () => void;
   onUseCan: (id: KibCan["id"]) => void;
+  /** Buy one can and drink it at once (the not-in-the-squad card). */
+  onBuyAndUseCan?: (can: KibCan) => void;
   /** The "dropped to the bench" moment was seen for this fixture (saved, so
    *  Back and Play again doesn't say it twice). */
   onBenchMomentSeen?: (key: string) => void;
@@ -274,6 +276,11 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
   // The one prompt: low energy as you press Play, or left out of the squad.
   const can = KIB_CANS.find((c) => !c.effect) ?? KIB_CANS[0];
   const have = career.kibCans[can.id] ?? 0;
+  const price = kibCanPrice(can, career.contract.wage);
+  // Out of the squad only because of energy: with full legs he would be in.
+  const tiredOut = status === "Squad" && e < MIN_ENERGY_TO_SUB && !preMatchSelection?.away
+    && selectionFor({ ...career, energy: 100 }).status !== "Squad" && can.restore > 0;
+  const cansNeeded = Math.max(1, Math.ceil((MIN_ENERGY_TO_SUB - e) / Math.max(1, can.restore)));
   return (
     <div className="relative min-h-[100dvh] bg-[#05080f] text-white">
       <KitStyles />
@@ -290,6 +297,25 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
               <div className="mt-2 text-center text-[20px] font-black uppercase tracking-wide">{status === "Injured" ? "You're injured" : preMatchSelection?.away ? "Away with your country" : "Not in the squad"}</div>
               {preMatchSelection?.away && <div className="mt-1 text-center text-[13px] font-bold text-white">{preMatchSelection.reason}</div>}
               <PressButton variant="secondary" size="none" onClick={onWatchFromStands} className="mt-4 w-full py-3 text-[15px] font-black uppercase tracking-wide">🏟️ Watch from the stands</PressButton>
+              {/* Left out for energy alone (Mikey's playtest, 21 Oct 2026): the
+                  door stays, and under it a can gets you back in. Each can is
+                  drunk now; enough of them and the squad picks you again. */}
+              {tiredOut && (
+                <div data-squad-can className="mt-3 border-t border-white/15 pt-3">
+                  <div className="text-center text-[12px] font-bold text-white/85">
+                    Energy {e}. You need {MIN_ENERGY_TO_SUB} to be involved: {cansNeeded} {cansNeeded === 1 ? "can" : "cans"} (+{can.restore} each).
+                  </div>
+                  {have > 0 ? (
+                    <PressButton variant="gold" size="none" onClick={() => onUseCan(can.id)} className="mt-2 flex w-full items-center justify-center gap-2 py-3 text-[14px] font-black uppercase tracking-wide">
+                      <KibCanIcon can={can} className="h-7 w-[18px]" />Drink a can ×{have}
+                    </PressButton>
+                  ) : onBuyAndUseCan ? (
+                    <PressButton variant="gold" size="none" disabled={career.money < price} onClick={() => onBuyAndUseCan(can)} className="mt-2 flex w-full items-center justify-center gap-2 py-3 text-[14px] font-black uppercase tracking-wide">
+                      <KibCanIcon can={can} className="h-7 w-[18px]" />{career.money < price ? `Can ★${price}: not enough money` : `Buy & drink a can ★${price}`}
+                    </PressButton>
+                  ) : null}
+                </div>
+              )}
             </>
           ) : (
             <>

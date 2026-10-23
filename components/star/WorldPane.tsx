@@ -2,14 +2,22 @@
 import { useMemo, useState } from "react";
 import type { CareerState, LeagueTeam, LeagueResult } from "@/lib/star/types";
 import { ALL_DIVISIONS, divisionOf, leagueNameFor, type CareerDivision } from "@/lib/star/calendar";
-import { sortLeague } from "@/lib/star/season";
+import { sortLeague, buildSeasonFixtures } from "@/lib/star/season";
 import { sortEuro } from "@/lib/star/euro";
 import type { CupState } from "@/lib/star/cups";
 import { koAggregate, type EuroBracket } from "@/lib/star/euroBracket";
 import { worldOf, finishWorld, WORLD_LIVE } from "@/lib/star/world";
+import { worldRoundResults } from "@/lib/star/world/leagues";
+import { compHistoryFor } from "@/lib/star/world/history";
+import { intlCompetitions, intlCompView, fullRanking } from "@/lib/star/intl/compView";
+import { intlOf } from "@/lib/star/intl/career";
+import type { CompKind } from "@/lib/star/intl/world";
 import { topOf, ownLeagueTop, type ScorerRow } from "@/lib/star/world/summary";
 import type { WorldState, WorldSummary } from "@/lib/star/world/types";
-import { shortClub } from "@/lib/star/media/grammar";
+import { shortClub, groupedGoalLines } from "@/lib/star/media/grammar";
+import NationFlag from "./NationFlag";
+import IntlWorldPanel from "./IntlWorldPanel";
+import { NationTable, MatchRow, nationGlow } from "./IntlKit";
 import ClubBadge from "./ClubBadge";
 import { ClubCard, rgba, useClubTheme } from "./ui";
 import { SegTabs, CardTitle, youRowStyle } from "./screenKit";
@@ -23,13 +31,23 @@ import { SegTabs, CardTitle, youRowStyle } from "./screenKit";
  *
  * One chooser (a full-screen list, house style) and one tab row — never two
  * tab rows stacked.
+ *
+ * Since 22 Oct 2026 this IS the League page (master plan step 3, Mikey): it
+ * opens on your league's table; every competition has a History tab (winner
+ * and runner-up of each season); Results walks ‹ Round › back through played
+ * rounds and on to future fixtures, scorers written once ("Smith 5', 15'");
+ * and the picker has an International group: your nation, the FIFA ranking,
+ * and every international competition (lib/star/intl/compView.ts).
  */
 
 type Comp =
   | { key: string; kind: "league"; label: string; division: CareerDivision }
   | { key: string; kind: "euro"; label: string; competition: "Champions League" | "Europa League" }
   | { key: string; kind: "cup"; label: string; competition: "FA Cup" | "League Cup" }
-  | { key: string; kind: "shield"; label: string; competition: "Community Shield" | "Super Cup" };
+  | { key: string; kind: "shield"; label: string; competition: "Community Shield" | "Super Cup" }
+  | { key: string; kind: "intl"; label: string; comp: CompKind }
+  | { key: string; kind: "nation"; label: string }
+  | { key: string; kind: "ranking"; label: string };
 
 const COMPS: Comp[] = [
   ...ALL_DIVISIONS.map(d => ({ key: d, kind: "league" as const, label: leagueNameFor(d), division: d })),
@@ -84,7 +102,20 @@ function NowPane({ career, final, onLast }: { career: CareerState; final: boolea
   const yours = divisionOf(career);
   const [key, setKey] = useState<string>(yours);
   const [choosing, setChoosing] = useState(false);
-  const comp = COMPS.find(c => c.key === key) ?? COMPS[0];
+  const nation = useMemo(() => { try { return intlOf(career).nation; } catch { return null; } }, [career]);
+  const intl = useMemo<Comp[]>(() => {
+    if (!nation) return [];
+    let comps: CompKind[] = [];
+    try { comps = intlCompetitions(career); } catch { comps = []; }
+    return [
+      { key: "nation", kind: "nation", label: nation },
+      { key: "ranking", kind: "ranking", label: "FIFA ranking" },
+      ...comps.map(c => ({ key: `intl:${c}`, kind: "intl" as const, label: c, comp: c })),
+    ];
+  }, [career, nation]);
+  const all = [...COMPS, ...intl];
+  const groups = [...GROUPS, ...(intl.length ? [{ title: "International", keys: intl.map(c => c.key) }] : [])];
+  const comp = all.find(c => c.key === key) ?? all[0];
   const you = career.player.club;
 
   return (
@@ -97,7 +128,7 @@ function NowPane({ career, final, onLast }: { career: CareerState; final: boolea
         data-world-choose
       >
         <span className="flex items-center gap-2">
-          <span className="text-[17px]">{comp.kind === "league" ? "🏆" : comp.kind === "euro" ? "⭐" : "🥇"}</span>
+          <span className="text-[17px]">{comp.kind === "league" ? "🏆" : comp.kind === "euro" ? "⭐" : comp.kind === "nation" || comp.kind === "intl" || comp.kind === "ranking" ? "🌍" : "🥇"}</span>
           <span className="text-[15px] font-black text-white">{comp.label}</span>
           {comp.kind === "league" && comp.division === yours && <span className="rounded-full bg-amber-300 px-1.5 text-[9px] font-black uppercase text-gray-950">Yours</span>}
         </span>
@@ -108,10 +139,13 @@ function NowPane({ career, final, onLast }: { career: CareerState; final: boolea
 
       {comp.kind === "league" && <LeagueView career={career} world={world} division={comp.division} glow={glow} you={you} />}
       {comp.kind === "euro" && <EuroView career={career} world={world} competition={comp.competition} glow={glow} you={you} />}
-      {comp.kind === "cup" && <CupView cup={comp.competition === "FA Cup"
+      {comp.kind === "cup" && <CupView career={career} name={comp.competition} cup={comp.competition === "FA Cup"
         ? (career.cupState ?? []).find(c => c.competition === "FA Cup")
         : (career.cupState ?? []).find(c => c.competition === "League Cup") ?? world.leagueCup} glow={glow} you={you} />}
       {comp.kind === "shield" && <ShieldView career={career} world={world} competition={comp.competition} glow={glow} />}
+      {comp.kind === "nation" && <IntlWorldPanel career={career} />}
+      {comp.kind === "ranking" && <RankingView career={career} nation={nation} />}
+      {comp.kind === "intl" && <IntlCompPane key={comp.comp} career={career} comp={comp.comp} nation={nation} />}
 
       {choosing && (
         <div className="fixed inset-0 z-[80] overflow-y-auto bg-gray-950/95 px-4 pb-8 pt-4" data-world-chooser>
@@ -125,12 +159,12 @@ function NowPane({ career, final, onLast }: { career: CareerState; final: boolea
                 <span>📜 Last season</span><span className="text-[11px] text-amber-200">Tables, scorers, winners</span>
               </button>
             )}
-            {GROUPS.map(g => (
+            {groups.map(g => (
               <div key={g.title} className="mb-3">
                 <CardTitle className="mb-1 px-1" tone="text-amber-300">{g.title}</CardTitle>
                 <div className="space-y-1">
                   {g.keys.map(k => {
-                    const c = COMPS.find(x => x.key === k)!;
+                    const c = all.find(x => x.key === k)!;
                     const on = c.key === comp.key;
                     return (
                       <button
@@ -188,11 +222,15 @@ function Table({ rows, glow, you, zone }: { rows: LeagueTeam[]; glow: string; yo
   );
 }
 
-function Results({ results, glow, you, title }: { results: LeagueResult[]; glow: string; you: string; title: string }) {
+/** "Smith 5', 15'": each scorer once, every minute after the name (Mikey 33:10). */
+const goalLines = (gs: NonNullable<LeagueResult["hg"]>) =>
+  groupedGoalLines(gs, g => g.s, g => g.m).map(({ scorer, minutes }) => `${scorer} ${minutes.map(m => (m > 90 ? `90+${m - 90}'` : `${m}'`)).join(", ")}`);
+
+function Results({ results, glow, you, title }: { results: LeagueResult[]; glow: string; you: string; title?: string }) {
   if (!results.length) return <Empty text="No games played yet." />;
   return (
     <ClubCard glow={glow} className="p-1.5">
-      <CardTitle className="px-1 pb-1" tone="text-amber-300">{title}</CardTitle>
+      {title && <CardTitle className="px-1 pb-1" tone="text-amber-300">{title}</CardTitle>}
       <div className="space-y-1">
         {results.map(r => {
           const yours = r.home === you || r.away === you;
@@ -203,8 +241,8 @@ function Results({ results, glow, you, title }: { results: LeagueResult[]; glow:
               <span className={`truncate ${r.as > r.hs ? "font-black" : "text-white/85"}`}>{shortClub(r.away)}</span>
               {(r.hg?.length || r.ag?.length) ? (
                 <div className="col-span-3 grid grid-cols-2 gap-2 text-[9.5px] font-bold text-white/80">
-                  <div className="text-right">{(r.hg ?? []).map(g => `${g.s} ${g.m}'`).join(", ")}</div>
-                  <div>{(r.ag ?? []).map(g => `${g.s} ${g.m}'`).join(", ")}</div>
+                  <div className="space-y-0.5 text-right">{goalLines(r.hg ?? []).map(l => <div key={l}>{l}</div>)}</div>
+                  <div className="space-y-0.5">{goalLines(r.ag ?? []).map(l => <div key={l}>{l}</div>)}</div>
                 </div>
               ) : null}
             </div>
@@ -239,34 +277,111 @@ function Empty({ text }: { text: string }) {
 // ── A league ────────────────────────────────────────────────────────────────
 
 function LeagueView({ career, world, division, glow, you }: { career: CareerState; world: WorldState; division: CareerDivision; glow: string; you: string }) {
-  const [tab, setTab] = useState<"table" | "results" | "goals" | "assists">("table");
+  const [tab, setTab] = useState<"table" | "results" | "goals" | "assists" | "history">("table");
   const own = division === divisionOf(career);
   const lg = own ? null : world.leagues.find(l => l.division === division);
   const rows = own ? sortLeague(career.league) : lg ? sortLeague(lg.teams) : [];
-  const ownResults = (() => {
-    const all = career.results ?? [];
-    const last = Math.max(0, ...all.map(r => r.week));
-    return all.filter(r => r.week === last);
-  })();
-  const results = own ? ownResults : lg?.last ?? [];
-  const round = own ? (ownResults[0]?.week ?? 0) : lg?.played ?? 0;
   const goals = own ? ownLeagueTop(career, 0) : lg ? topOf(career, lg.scorers, 0) : [];
   const assists = own ? ownLeagueTop(career, 1) : lg ? topOf(career, lg.scorers, 1) : [];
   return (
     <div className="space-y-2">
-      <SegTabs value={tab} onChange={setTab} tabs={[["table", "Table"], ["results", "Results"], ["goals", "Goals"], ["assists", "Assists"]] as const} />
+      <SegTabs value={tab} onChange={setTab} tabs={[["table", "Table"], ["results", "Results"], ["goals", "Goals"], ["assists", "Assists"], ["history", "History"]] as const} />
       {tab === "table" && (rows.length ? <Table rows={rows} glow={glow} you={you} zone={(p, n) => zoneColour(division, p, n)} /> : <Empty text="No table for this league." />)}
-      {tab === "results" && <Results results={results} glow={glow} you={you} title={round ? `Round ${round}` : "Latest round"} />}
+      {tab === "results" && <LeagueRounds career={career} own={own} lg={lg ?? null} glow={glow} you={you} />}
       {tab === "goals" && <Scorers rows={goals} glow={glow} label="goals" />}
       {tab === "assists" && <Scorers rows={assists} glow={glow} label="assists" />}
+      {tab === "history" && <History career={career} comp={leagueNameFor(division)} glow={glow} you={you} />}
     </div>
+  );
+}
+
+/** ‹ Round 8 ›: back through played rounds, on to future fixtures (Mikey 33:42). Opens on the latest. */
+function RoundNav({ label, sub, onPrev, onNext }: { label: string; sub?: string; onPrev?: () => void; onNext?: () => void }) {
+  const btn = "kib-press grid h-9 w-9 shrink-0 place-items-center rounded-md bg-black/35 text-[18px] font-black text-white disabled:opacity-25";
+  return (
+    <div className="flex items-center gap-2" data-round-nav>
+      <button type="button" className={btn} onClick={onPrev} disabled={!onPrev} aria-label="Earlier round">‹</button>
+      <div className="min-w-0 flex-1 text-center">
+        <div className="truncate text-[14px] font-black text-white">{label}</div>
+        {sub && <div className="truncate text-[10px] font-bold text-white/70">{sub}</div>}
+      </div>
+      <button type="button" className={btn} onClick={onNext} disabled={!onNext} aria-label="Later round">›</button>
+    </div>
+  );
+}
+
+function LeagueRounds({ career, own, lg, glow, you }: { career: CareerState; own: boolean; lg: WorldState["leagues"][number] | null; glow: string; you: string }) {
+  const clubs = own ? career.league.map(t => t.name) : lg?.clubs ?? [];
+  const schedule = useMemo(() => buildSeasonFixtures(clubs), [clubs.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
+  const total = Math.max(0, ...schedule.map(f => f.week));
+  const playedUpTo = own ? Math.max(0, ...(career.results ?? []).map(r => r.week)) : lg?.played ?? 0;
+  const [round, setRound] = useState(Math.max(1, playedUpTo));
+  const results = useMemo<LeagueResult[]>(() => {
+    if (round > playedUpTo) return [];
+    if (own) return (career.results ?? []).filter(r => r.week === round);
+    return lg ? worldRoundResults(career, lg, round) : [];
+  }, [career, own, lg, round, playedUpTo]);
+  if (!total) return <Empty text="No fixtures for this league." />;
+  const ahead = round > playedUpTo;
+  const pairs = schedule.filter(f => f.week === round);
+  return (
+    <div className="space-y-2">
+      <RoundNav
+        label={`Round ${round}`}
+        sub={ahead ? "Still to play" : `of ${total}`}
+        onPrev={round > 1 ? () => setRound(round - 1) : undefined}
+        onNext={round < total ? () => setRound(round + 1) : undefined}
+      />
+      {ahead || !results.length ? (
+        <ClubCard glow={glow} className="p-1.5">
+          <div className="space-y-1">
+            {pairs.map(f => {
+              const yours = f.home === you || f.away === you;
+              return (
+                <div key={`${f.home}-${f.away}`} className={`grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 rounded-lg px-1.5 py-1.5 text-[11px] font-bold text-white ${yours ? "" : "bg-white/[0.04]"}`} style={yours ? youRowStyle(glow) : undefined}>
+                  <span className="truncate text-right">{shortClub(f.home)}</span>
+                  <span className="rounded-md bg-black/45 px-1.5 py-0.5 font-black">v</span>
+                  <span className="truncate">{shortClub(f.away)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </ClubCard>
+      ) : <Results results={results} glow={glow} you={you} />}
+    </div>
+  );
+}
+
+/** Every season's winner and runner-up (Mikey 24:44). */
+function History({ career, comp, glow, you }: { career: CareerState; comp: string; glow: string; you: string }) {
+  const rows = useMemo(() => compHistoryFor(career, comp), [career, comp]);
+  if (!rows.length) return <Empty text="No seasons finished yet. The winner and runner-up go here at the end of each season." />;
+  return (
+    <ClubCard glow={glow} className="p-1.5" data-history={comp}>
+      <div className="space-y-1">
+        {rows.map(r => {
+          const y = career.player.startYear + r.season - 1;
+          const mine = r.winner === you || r.runnerUp === you;
+          return (
+            <div key={r.season} className={`rounded-lg px-2 py-1.5 text-[11.5px] font-bold text-white ${mine ? "" : "bg-white/[0.04]"}`} style={mine ? youRowStyle(glow) : undefined}>
+              <div className="text-[9.5px] font-black uppercase tracking-wider text-amber-300">{String(y).slice(2)}/{String(y + 1).slice(2)}{r.score ? ` · final ${r.score}` : ""}</div>
+              <div className="mt-0.5 flex items-center gap-1.5">
+                <span>🏆</span><ClubBadge club={r.winner} size={16} />
+                <span className="min-w-0 flex-1 truncate font-black">{shortClub(r.winner)}</span>
+                {r.runnerUp && <span className="flex min-w-0 items-center gap-1 text-white/75"><span className="text-[9px] uppercase">2nd</span><ClubBadge club={r.runnerUp} size={14} /><span className="max-w-[7rem] truncate">{shortClub(r.runnerUp)}</span></span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </ClubCard>
   );
 }
 
 // ── Europe ──────────────────────────────────────────────────────────────────
 
 function EuroView({ career, world, competition, glow, you }: { career: CareerState; world: WorldState; competition: "Champions League" | "Europa League"; glow: string; you: string }) {
-  const [tab, setTab] = useState<"table" | "knockout" | "goals">("table");
+  const [tab, setTab] = useState<"table" | "knockout" | "goals" | "history">("table");
   const mine = career.euroState?.competition === competition ? career.euroState : null;
   const w = world.europe.find(e => e.competition === competition);
   const table = mine ? sortEuro(mine.table ?? mine.liveTable) : w ? sortEuro(w.table) : [];
@@ -277,10 +392,11 @@ function EuroView({ career, world, competition, glow, you }: { career: CareerSta
   return (
     <div className="space-y-2">
       {winner && <WinnerBar club={winner} glow={glow} />}
-      <SegTabs value={tab} onChange={setTab} tabs={[["table", "League phase"], ["knockout", "Knockout"], ["goals", "Goals"]] as const} />
+      <SegTabs value={tab} onChange={setTab} tabs={[["table", "League"], ["knockout", "Knockout"], ["goals", "Goals"], ["history", "History"]] as const} />
       {tab === "table" && (rows.length ? <Table rows={rows} glow={glow} you={you} zone={(p) => (p <= 8 ? "#10b981" : p <= 24 ? "#3b82f6" : "#ef4444")} /> : <Empty text="Not started yet." />)}
       {tab === "knockout" && (bracket ? <Bracket bracket={bracket} glow={glow} you={you} /> : <Empty text="The knockout starts after the league phase." />)}
       {tab === "goals" && (mine ? <Empty text="Scorers are kept for the competitions you're not in." /> : <Scorers rows={goals} glow={glow} label="goals" />)}
+      {tab === "history" && <History career={career} comp={competition} glow={glow} you={you} />}
     </div>
   );
 }
@@ -314,8 +430,18 @@ function Bracket({ bracket, glow, you }: { bracket: EuroBracket; glow: string; y
 
 // ── Cups and shields ────────────────────────────────────────────────────────
 
-function CupView({ cup, glow, you }: { cup?: CupState; glow: string; you: string }) {
-  if (!cup) return <Empty text="This cup isn't being played this season." />;
+function CupView({ career, name, cup, glow, you }: { career: CareerState; name: string; cup?: CupState; glow: string; you: string }) {
+  const [tab, setTab] = useState<"rounds" | "history">("rounds");
+  return (
+    <div className="space-y-2">
+      <SegTabs value={tab} onChange={setTab} tabs={[["rounds", "Rounds"], ["history", "History"]] as const} />
+      {tab === "history" ? <History career={career} comp={name} glow={glow} you={you} />
+        : !cup ? <Empty text="This cup isn't being played this season." /> : <CupRounds cup={cup} glow={glow} you={you} />}
+    </div>
+  );
+}
+
+function CupRounds({ cup, glow, you }: { cup: CupState; glow: string; you: string }) {
   return (
     <div className="space-y-2">
       {cup.winner && <WinnerBar club={cup.winner} glow={glow} />}
@@ -362,13 +488,17 @@ function CupView({ cup, glow, you }: { cup?: CupState; glow: string; you: string
 function ShieldView({ career, world, competition, glow }: { career: CareerState; world: WorldState; competition: "Community Shield" | "Super Cup"; glow: string }) {
   const yours = career.fixtures.find(f => f.competition === competition);
   const s = world.shields.find(x => x.competition === competition);
-  if (yours) {
-    const home = yours.home ? career.player.club : yours.opponent;
-    const away = yours.home ? yours.opponent : career.player.club;
-    return <ShieldCard glow={glow} home={home} away={away} hs={yours.played ? yours.homeScore : undefined} as={yours.played ? yours.awayScore : undefined} />;
-  }
-  if (!s) return <Empty text={`No ${competition} this season.`} />;
-  return <ShieldCard glow={glow} home={s.home} away={s.away} hs={s.hs} as={s.as} pens={s.pens} winner={s.winner} />;
+  const home = yours ? (yours.home ? career.player.club : yours.opponent) : null;
+  const away = yours ? (yours.home ? yours.opponent : career.player.club) : null;
+  return (
+    <div className="space-y-2">
+      {yours ? <ShieldCard glow={glow} home={home!} away={away!} hs={yours.played ? yours.homeScore : undefined} as={yours.played ? yours.awayScore : undefined} />
+        : s ? <ShieldCard glow={glow} home={s.home} away={s.away} hs={s.hs} as={s.as} pens={s.pens} winner={s.winner} />
+        : <Empty text={`No ${competition} this season.`} />}
+      <CardTitle className="px-1 pt-1" tone="text-amber-300">History</CardTitle>
+      <History career={career} comp={competition} glow={glow} you={career.player.club} />
+    </div>
+  );
 }
 
 function ShieldCard({ glow, home, away, hs, as, pens, winner }: { glow: string; home: string; away: string; hs?: number; as?: number; pens?: { home: number; away: number }; winner?: string }) {
@@ -393,6 +523,75 @@ function WinnerBar({ club, glow }: { club: string; glow: string }) {
       <span className="text-[13px] font-black text-white">{club}</span>
       <span className="ml-auto text-[10px] font-black uppercase tracking-wider text-amber-200">Winners</span>
     </div>
+  );
+}
+
+// ── International ───────────────────────────────────────────────────────────
+
+/** One international competition: its groups, ‹ Round › results, and every final. */
+function IntlCompPane({ career, comp, nation }: { career: CareerState; comp: CompKind; nation: string | null }) {
+  const v = useMemo(() => { try { return intlCompView(career, comp); } catch { return null; } }, [career, comp]);
+  const glow = nationGlow(nation ?? "England");
+  const [tab, setTab] = useState<"tables" | "results" | "history">(v && v.groups.length ? "tables" : "results");
+  const [round, setRound] = useState(v?.openAt ?? 0);
+  if (!v) return <Empty text="Not drawn yet." />;
+  const r = v.rounds[round];
+  return (
+    <div className="space-y-2" data-intl-comp={comp}>
+      <div className="px-1 text-[11px] font-black uppercase tracking-wider text-amber-300">{v.title}{v.yours && nation ? ` · ${nation} in it` : ""}</div>
+      <SegTabs value={tab} onChange={setTab} tabs={[["tables", "Tables"], ["results", "Results"], ["history", "History"]] as const} />
+      {tab === "tables" && (v.groups.length
+        ? v.groups.map(g => <NationTable key={g.title} group={g} nation={nation ?? ""} glow={glow} through={1} />)
+        : <Empty text="No groups in this one: it is all knockout." />)}
+      {tab === "results" && r && (
+        <div className="space-y-2">
+          <RoundNav label={r.name} sub={r.played ? `${round + 1} of ${v.rounds.length}` : "Still to play"}
+            onPrev={round > 0 ? () => setRound(round - 1) : undefined}
+            onNext={round < v.rounds.length - 1 ? () => setRound(round + 1) : undefined} />
+          <ClubCard glow={glow} className="p-1.5">
+            {r.matches.map((m, i) => <MatchRow key={m.id ?? i} m={m} glow={glow} nation={nation ?? ""} />)}
+          </ClubCard>
+        </div>
+      )}
+      {tab === "history" && (v.history.length ? (
+        <ClubCard glow={glow} className="p-1.5">
+          <div className="space-y-1">
+            {v.history.map((f, i) => (
+              <div key={i} className="rounded-lg bg-white/[0.04] px-2 py-1.5 text-[11.5px] font-bold text-white" style={f.winner === nation || f.runnerUp === nation ? youRowStyle(glow) : undefined}>
+                <div className="text-[9.5px] font-black uppercase tracking-wider text-amber-300">{f.year} · final {f.score}</div>
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <span>🏆</span><NationFlag nation={f.winner} width={18} rounded={2} />
+                  <span className="min-w-0 flex-1 truncate font-black">{f.winner}</span>
+                  <span className="text-[9px] uppercase text-white/75">2nd</span><NationFlag nation={f.runnerUp} width={16} rounded={2} />
+                  <span className="max-w-[7rem] truncate text-white/75">{f.runnerUp}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ClubCard>
+      ) : <Empty text="No final played yet. Each one is added here once it is played." />)}
+    </div>
+  );
+}
+
+/** The whole FIFA ranking, your nation lit. */
+function RankingView({ career, nation }: { career: CareerState; nation: string | null }) {
+  const rows = useMemo(() => { try { return fullRanking(career); } catch { return []; } }, [career]);
+  const glow = nationGlow(nation ?? "England");
+  if (!rows.length) return <Empty text="No ranking yet." />;
+  return (
+    <ClubCard glow={glow} className="p-1.5" data-fifa-ranking>
+      {rows.map((t, i) => {
+        const you = t.name === nation;
+        return (
+          <div key={t.name} className={`grid grid-cols-[30px_1fr_auto] items-center gap-1.5 rounded-md px-1.5 py-1.5 text-[11.5px] font-bold text-white ${you ? "" : i % 2 === 0 ? "bg-white/[0.035]" : ""}`} style={you ? youRowStyle(glow) : undefined}>
+            <span className="text-center font-black">{i + 1}</span>
+            <span className="flex min-w-0 items-center gap-1.5"><NationFlag nation={t.name} width={18} rounded={2} /><span className="truncate">{t.name}</span></span>
+            <span className="font-black tabular-nums text-white/85">{t.points.toLocaleString("en-GB")}</span>
+          </div>
+        );
+      })}
+    </ClubCard>
   );
 }
 

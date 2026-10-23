@@ -1,68 +1,42 @@
 "use client";
 
 /**
- * THE MATCH WEEK PAGE — fixtures and the league on ONE page (v0.23, W7;
- * Harry, 1 Oct 2026, P90: "we could do this fixture page with the league, and
- * you have a bell, like maybe in the middle somewhere, a bell to see if you
- * want to get notifications. Straight in, no yap at all.").
- *
- * One thin row of edge arrows flips between Results · Fixtures · Table ·
- * Scout · Awards · Squad (the league's own views, with Fixtures and Scout
- * brought back from the match-day page the line-up animation replaced). The
- * bottom bar is Back · 🔔 · Play: the bell opens the live-score list (the
- * same clubs as Settings → Live scores), with a dot while any are ticked.
- * The top HUD keeps your energy on screen.
+ * THE LEAGUE PAGE. Was the match-week page (v0.23, W7; Harry, 1 Oct 2026,
+ * P90) with edge arrows through Results · Fixtures · Table · Scout · Awards ·
+ * Squad. Since 22 Oct 2026 (master plan step 3, Mikey) it is one page: every
+ * league, cup and international competition from one picker (WorldPane), the
+ * live-score bell beside the title, the game's own bottom bar under it.
  */
 import { useEffect, useState } from "react";
 import type { CareerState, Fixture } from "@/lib/star/types";
 import { followedClubs, followedFixtures, toggleFollowedClub, setLiveScoreWeek } from "@/lib/star/matchDayPrefs";
-import LeagueScreen from "./LeagueScreen";
 import WorldPane from "./WorldPane";
 import ClubBadge from "./ClubBadge";
-import { FixturesPane, ScoutPane } from "./MatchWeekPanes";
 import { short } from "./HomeHub";
-import { BarButton, BottomBar, Chev, EdgeArrows, ScreenShell, useClubTheme } from "./ui";
-import type { CupId } from "@/lib/star/cups";
-import { lazyScreen } from "@/lib/star/lazyScreen";
+import { BarButton, BottomBar, Chev, ScreenShell, useClubTheme } from "./ui";
 
-/** A domestic cup's own screen (Table → the cup's tab → Open). */
-const CupScreen = lazyScreen(() => import("./CupScreen"));
 
-export const WEEK_VIEWS = [
-  { id: "results", label: "Results", icon: "📋" },
-  { id: "fixtures", label: "Fixtures", icon: "📅" },
-  { id: "table", label: "Table", icon: "🏆" },
-  // Every other league, cup and European competition (Mikey, 19 Oct 2026).
-  { id: "world", label: "All leagues", icon: "🌍" },
-  { id: "scout", label: "Scout", icon: "🔍" },
-  { id: "awards", label: "Awards", icon: "🥇" },
-  { id: "squad", label: "Squad", icon: "👥" },
-] as const;
-export type WeekView = (typeof WEEK_VIEWS)[number]["id"];
-let lastView: WeekView = "table";
-
-export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, initialView, onHelp }: {
+/** League is one page since 22 Oct 2026 (master plan step 3, Mikey): every
+ *  league, cup and international competition, from one picker (WorldPane).
+ *  The old views left: Table (the same as All leagues), Fixtures (the phone's
+ *  Fixtures & results app), Scout (a message from the gaffer), Awards (Goals
+ *  and Assists show it), Squad (the phone's Squad app). */
+export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, onHelp, bar }: {
   career: CareerState;
   /** The top HUD, so energy never leaves. */
   hud: React.ReactNode;
   nextFixture: Fixture | null;
   onBack: () => void;
   onPlay: () => void;
-  initialView?: WeekView;
   /** The "?": replays this page's pointer tour (same as the dashboard's "?"). */
   onHelp?: () => void;
+  /** The game's own bottom bar (MainBar.tsx). Given: it replaces Back · Alerts ·
+   *  Play (master plan 1, 22 Oct 2026), and the bell moves up beside the title. */
+  bar?: React.ReactNode;
 }) {
   const { glow } = useClubTheme(career);
-  const [view, setViewState] = useState<WeekView>(initialView ?? lastView);
-  const setView = (v: WeekView) => { lastView = v; setViewState(v); };
   const [bell, setBell] = useState(false);
-  // The cup's own screen, over this page; Back returns to the same tab.
-  const [cup, setCup] = useState<CupId | null>(null);
-  useEffect(() => { void CupScreen.preload().catch(() => {}); }, []);
   const [ticks, setTicks] = useState<string[]>(() => followedClubs());
-  const i = WEEK_VIEWS.findIndex((v) => v.id === view);
-  const here = WEEK_VIEWS[i];
-  const prev = WEEK_VIEWS[i - 1], next = WEEK_VIEWS[i + 1];
 
   // Tell the live-score pop-ups which week is coming, so a bell rung here for
   // one of this week's other games reaches the match.
@@ -71,41 +45,33 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
 
   return (
     <>
-    {cup && <CupScreen career={career} competition={cup} hud={hud} onBack={() => setCup(null)} onPlay={nextFixture ? onPlay : undefined} />}
-    {/* Kept mounted under the cup's screen, so Back lands on the same tab. */}
-    <div style={cup ? { display: "none" } : undefined}>
+    <div>
     <ScreenShell
       bare
       tone="pitch"
       glow={glow}
       title="League"
       hud={hud}
-      bottomBar={
+      bottomBar={bar ?? (
         <BottomBar cols="1fr 1fr 1fr">
           <BarButton icon={<Chev dir="left" size={16} className="text-amber-300" />} label="Back" onClick={onBack} />
           <BarButton icon="🔔" label="Alerts" onClick={() => setBell(true)} dot={rung} ariaLabel="Live score alerts" />
           <BarButton primary icon="▶" label="Play" onClick={onPlay} disabled={!nextFixture} />
         </BottomBar>
-      }
+      )}
     >
-      <div data-matchweek={view} data-tour="screen">
-        <EdgeArrows
-          className="mb-2"
-          prev={prev ? { icon: prev.icon, label: prev.label, onClick: () => setView(prev.id) } : undefined}
-          next={next ? { icon: next.icon, label: next.label, onClick: () => setView(next.id) } : undefined}
-        >
-          <span className="inline-flex items-center justify-center gap-1.5">
-            {here.label}
-            {onHelp && (
-              <button onClick={onHelp} data-help-button aria-label="Help — show me around" className="kib-press relative flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-gray-600 text-[14px] font-black leading-none text-amber-300 hover:bg-gray-500" style={{ borderRadius: 3 }}><span aria-hidden className="absolute -inset-[9px]" />?</button>
-            )}
-          </span>
-        </EdgeArrows>
-
-        {view === "fixtures" ? <FixturesPane career={career} next={nextFixture} />
-          : view === "scout" ? <ScoutPane career={career} fixture={nextFixture} />
-          : view === "world" ? <WorldPane career={career} />
-          : <LeagueScreen career={career} view={view} hideTabs onOpenCup={setCup} />}
+      <div data-matchweek="league" data-tour="screen">
+        <div className="mb-2 flex items-center justify-center gap-1.5 text-[15px] font-black uppercase tracking-wide text-white">
+          League
+          <button onClick={() => setBell(true)} data-alerts-bell aria-label="Live score alerts" className="kib-press relative flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-gray-600 text-[13px] leading-none hover:bg-gray-500" style={{ borderRadius: 3 }}>
+            <span aria-hidden className="absolute -inset-[9px]" />🔔
+            {rung && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />}
+          </button>
+          {onHelp && (
+            <button onClick={onHelp} data-help-button aria-label="Help — show me around" className="kib-press relative flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-gray-600 text-[14px] font-black leading-none text-amber-300 hover:bg-gray-500" style={{ borderRadius: 3 }}><span aria-hidden className="absolute -inset-[9px]" />?</button>
+          )}
+        </div>
+        <WorldPane career={career} />
       </div>
 
       {bell && <AlertsSheet career={career} ticks={ticks} onTick={(c) => setTicks(toggleFollowedClub(c))} onClose={() => setBell(false)} />}
