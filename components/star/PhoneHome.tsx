@@ -23,10 +23,11 @@
  * highlights one after another the way Infinite Highlights does, drawn
  * small enough to fit the phone's screen.
  */
+import { phoneClockLabel } from "@/lib/star/phoneClock";
 import { nextFixtureFor, byFixtureDate } from "@/lib/star/competitions";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
-import { divisionOf, fixtureDate, formatDateNumeric, fixtureDateLabel } from "@/lib/star/calendar";
+import { divisionOf, fixtureDateLabel } from "@/lib/star/calendar";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
 import { SCENARIO_KINDS, type Scenario } from "@/lib/star/canvasEngine";
@@ -102,9 +103,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
   const theme = useClubTheme(career);
   const [app, setApp] = useState<AppId | null>(null);
   const screenRef = useRef<HTMLDivElement>(null);
-  const dateLabel = formatDateNumeric(
-    fixtureDate(career.player.startYear, career.season, career.week, "saturday", divisionOf(career)),
-  ).replace(/\/\d{2}$/, "");
+  const dateLabel = phoneClockLabel(career);
 
   // The phone's size: a real phone's shape, but a little wider than the feed's
   // old 390:844 so the apps have room on a small screen.
