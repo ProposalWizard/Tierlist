@@ -393,3 +393,120 @@
 .tr-nlines button[aria-pressed="true"] { background: var(--ash-accent-soft); }
 .tr-nlines .ck { flex: 0 0 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--ash-line2); display: grid; place-items: center; font-size: 12px; font-weight: 900; color: var(--ash-accent); }
 .tr-notes .tr-add textarea { flex: 1; min-width: 0; resize: none; font: inherit; font-size: 15px; border-radius: 10px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); padding: 8px 10px; }
+
+/* ── Channels (Harry, 23 Oct 2026): a Slack-style workspace. ChatPage.tsx ── */
+.trw { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 12px; height: calc(100vh - 210px); height: calc(100dvh - 210px); min-height: 480px; }
+.trw[data-thread="true"] { grid-template-columns: 236px minmax(0, 1fr) minmax(300px, 380px); }
+.trw > * { min-width: 0; min-height: 0; }
+.trw-list { padding: 12px 10px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--ash-line2) transparent; }
+.trw-lwrap { display: flex; flex-direction: column; gap: 2px; }
+.trw-lhead { display: flex; align-items: center; gap: 8px; padding: 0 4px 10px; }
+.trw-lhead > b { font-size: 15px; font-weight: 900; flex: 1; }
+.trw-here { display: inline-flex; gap: 2px; }
+.trw-lclose { display: none; }
+.trw-list .tr-lbl { padding: 0 6px; }
+.trw-ch { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px; padding: 6px 8px; border: 0; border-radius: 8px; background: none;
+  color: var(--ash-ink2); font: inherit; font-size: 14.5px; text-align: left; cursor: pointer; }
+.trw-ch:hover { background: var(--ash-panel2); color: var(--ash-ink); }
+.trw-ch[aria-current="page"] { background: var(--ash-accent); color: var(--ash-accent-ink); }
+.trw-ch[aria-current="page"] .trw-hash { color: inherit; opacity: .8; }
+.trw-ch.unread .nm { color: var(--ash-ink); font-weight: 900; }
+.trw-ch[aria-current="page"].unread .nm { color: inherit; }
+.trw-ch .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trw-hash { width: 16px; text-align: center; color: var(--ash-ink3); font-weight: 900; flex: 0 0 auto; }
+.trw-n { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--ash-red); color: #fff; font-size: 11px; font-weight: 900; display: grid; place-items: center; flex: 0 0 auto; }
+.trw-at { min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--ash-amber); color: #1a1205; font-size: 11px; font-weight: 900; display: grid; place-items: center; flex: 0 0 auto; }
+.trw-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ash-ink3); flex: 0 0 auto; }
+.trw-dot.on { background: var(--ash-accent); border-color: var(--ash-accent); }
+.trw-addch { color: var(--ash-ink3); }
+.trw-addbox { display: flex; flex-direction: column; gap: 4px; padding: 4px 4px 6px; }
+.trw-addbox .tr-add input { padding: 7px 10px; font-size: 14px; }
+.trw-addbox .tr-btn { padding: 7px 11px; }
+.trw-list .tr-waiting { padding: 0 4px; }
+.trw-list .tr-muted { padding: 0 8px; font-size: 12.5px; }
+.trw-pushrow { margin-top: 14px; }
+.trw-pushrow .tr-push { font-size: 12px; padding: 8px 9px; }
+
+.trw-main, .trw-thread { display: flex; flex-direction: column; overflow: hidden; }
+.trw-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--ash-line); min-height: 54px; }
+.trw-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.trw-title > b { display: flex; align-items: center; gap: 4px; font-size: 16.5px; font-weight: 900; min-width: 0; }
+.trw-title > b .trw-hash { width: auto; }
+.trw-title > small { color: var(--ash-ink3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trw-edit { font-size: 13px; padding: 2px 6px; }
+.trw-lock { font-size: 11px; font-weight: 800; color: var(--ash-amber); background: var(--ash-amber-soft); border-radius: 6px; padding: 1px 6px; margin-left: 4px; }
+.trw-rename .tr-add input { padding: 6px 10px; font-size: 14px; }
+.trw-rename .tr-btn { padding: 6px 11px; }
+.trw-switch { display: none; position: relative; flex: 0 0 auto; width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); cursor: pointer; place-items: center; padding: 0; }
+.trw-switch .tr-badge { top: -6px; right: -6px; }
+.trw-tabs { margin: 8px 12px 0; flex: 0 0 auto; }
+.trw-tabs button { flex: 0 1 auto; }
+.trw-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.trw-body[data-tab="tool"], .trw-body[data-tab="pins"] { overflow-y: auto; }
+.trw-pad { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.trw-jobs .tr-todo { padding: 0; overflow: visible; }
+.trw-links .tr-pcard { margin-top: 0; padding: 12px; }
+.trw-links .tr-pcard .tx small { white-space: normal; }
+.trw-pinbtn { background: none; border: 0; padding: 0; color: var(--ash-ink); text-align: left; font: inherit; cursor: pointer; }
+.trw-receipts .trw-rc { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 10px; background: var(--ash-panel2); border: 1px solid var(--ash-line); }
+.trw-rc .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.trw-rc .tx small { color: var(--ash-ink3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trw-rc .faces { display: inline-flex; gap: 2px; }
+.trw-rc .tr-btn { padding: 6px 10px; font-size: 12.5px; min-height: 32px; }
+.trw-close { font-size: 16px; }
+.tr-thread-end { margin-top: 2px; }
+
+@media (max-width: 1100px) {
+  .trw[data-thread="true"] { grid-template-columns: 200px minmax(0, 1fr) minmax(280px, 340px); }
+  .trw { grid-template-columns: 200px minmax(0, 1fr); }
+}
+/* Phone: the channel is the screen; the list and a thread each cover it (Harry's rule: a chooser is a full-screen page). */
+@media (max-width: 760px) {
+  .trw, .trw[data-thread="true"] { grid-template-columns: minmax(0, 1fr); height: calc(100dvh - 176px); min-height: 420px; }
+  .trw-switch { display: grid; }
+  .trw-list { display: none; }
+  .trw-list.open, .trw-thread { display: flex; position: fixed; inset: 0; z-index: 95; border-radius: 0; border: 0; background: var(--ash-panel-solid);
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .trw-list.open { flex-direction: column; padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 16px; overflow-y: auto; }
+  .trw-list.open .trw-ch { min-height: 44px; font-size: 16px; }
+  .trw-lclose { display: inline-block; font-size: 18px; }
+  .trw-head { padding: 8px 10px; min-height: 52px; }
+  .trw-tabs { margin: 8px 10px 0; }
+}
+
+/* Reactions, thread line, the React picker */
+.tr-reacts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.tr-react { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 8px; border-radius: 13px; border: 1px solid var(--ash-line2); background: var(--ash-panel-solid);
+  color: var(--ash-ink2); font: inherit; font-size: 13px; cursor: pointer; }
+.tr-react b { font-size: 12px; font-weight: 800; }
+.tr-react[aria-pressed="true"] { border-color: var(--ash-accent); background: var(--ash-accent-soft); color: var(--ash-ink); }
+.tr-whoreact { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ash-ink3); }
+.tr-picker { display: flex; gap: 2px; margin-top: 6px; padding: 3px; border-radius: 14px; border: 1px solid var(--ash-line2); background: var(--ash-panel-solid); width: max-content; max-width: 100%; }
+.tr-picker button { width: 38px; height: 34px; border: 0; border-radius: 10px; background: none; font-size: 19px; cursor: pointer; }
+.tr-picker button:hover { background: var(--ash-panel2); }
+.tr-threadline { display: flex; align-items: center; gap: 7px; width: 100%; margin-top: 6px; padding: 5px 8px; border: 1px solid var(--ash-line); border-radius: 8px; background: none;
+  color: var(--ash-ink3); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.tr-threadline b { color: var(--ash-accent); font-weight: 800; }
+.tr-threadline:hover { border-color: var(--ash-accent); }
+.tr-threadline .faces { display: inline-flex; gap: 2px; }
+.tr-lockmark { font-size: 11px; }
+.tr-v3note { align-self: center; margin: 0; font-size: 12px; color: var(--ash-amber); background: var(--ash-amber-soft); border: 1px solid color-mix(in srgb, var(--ash-amber) 45%, transparent);
+  border-radius: 10px; padding: 8px 11px; text-align: center; max-width: 420px; }
+.tr-v3note.inline { align-self: stretch; text-align: left; margin-top: 6px; padding: 6px 9px; font-size: 11.5px; }
+.tr-v3note code { font-size: 11px; }
+
+/* Bot posts: the Patch notes bot (@everyone), the Jobs bot (✅), rows a future bot writes. */
+.tr-botav { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 8px; display: grid; place-items: center; font-size: 15px; background: var(--ash-panel2); border: 1px solid var(--ash-line2); }
+.tr-botbub { border-color: color-mix(in srgb, var(--ash-accent) 40%, transparent); max-width: min(92%, 560px); }
+.tr-bottag { font-size: 9.5px; font-weight: 900; letter-spacing: .08em; padding: 0 5px; border-radius: 4px; background: var(--ash-panel-solid); color: var(--ash-ink2); border: 1px solid var(--ash-line2); }
+.tr-bub p.tr-bott { font-weight: 800; font-size: 14.5px; }
+.tr-bub p.tr-botb { color: var(--ash-ink2); font-size: 13px; margin-top: 2px; }
+.tr-everyone { display: inline-block; font-weight: 900; color: var(--ash-amber); background: var(--ash-amber-soft); border-radius: 5px; padding: 0 4px; margin-right: 2px; }
+.tr-botfoot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.tr-botfoot .faces { display: inline-flex; gap: 2px; margin-right: auto; }
+.tr-botfoot .tr-btn { padding: 6px 11px; font-size: 12.5px; min-height: 32px; text-decoration: none; }
+.tr-bub .tr-botfoot a.tr-btn { color: var(--ash-ink); }
+
+/* The bubble's channel picker */
+.tr-popch { padding: 6px 10px 0; }
+.tr-popch select { width: 100%; border-radius: 9px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); padding: 7px 9px; font: inherit; font-size: 14px; font-weight: 700; }

@@ -17,11 +17,13 @@ import AdminShell, { type RoomTab } from "@/components/admin/shell/AdminShell";
 import IdeasBoard from "@/components/teamRoom/IdeasBoard";
 import ChatPage from "@/components/teamRoom/ChatPage";
 import { NoteCount, NotesThread, RoomGate, TodoList } from "@/components/teamRoom/parts";
-import { newGivenTasks, unreadChat, unreadNotes } from "@/lib/teamRoom/logic";
+import { newGivenTasks, unreadNotes } from "@/lib/teamRoom/logic";
+import { placeFrom } from "@/lib/teamRoom/channels";
+import { useRoomCounts } from "@/components/teamRoom/roomCounts";
 import { newPushedJobs } from "@/lib/teamRoom/jobs";
 import { useTeamRoom } from "@/lib/teamRoom/store";
 import { isTeamPerson, TEAM_ROOM, type TeamPerson as TeamPersonName } from "@/lib/teamRoom/config";
-import { patchUnread, waitingOnMe, type PatchMeta } from "@/lib/teamRoom/extras";
+import { patchUnread, pointsWaiting, type PatchMeta } from "@/lib/teamRoom/extras";
 import { compareVersionsDesc } from "@/lib/teamRoom/inbox";
 import { OPEN_PATCH_EVENT } from "@/components/teamRoom/InboxBell";
 import HEADLINES from "@/lib/patchNoteHeadlines.json";
@@ -60,13 +62,16 @@ const ROOM: { key: Exclude<RoomTab, "notes">; name: string; title: string }[] = 
   { key: "todo", name: "To-do", title: "My to-do" },
 ];
 
-export default function TeamBoard({ initialTab, initialVersion, initialMessage }: {
+export default function TeamBoard({ initialTab, initialVersion, initialMessage, initialPlace }: {
   initialTab: RoomTab; initialVersion?: string;
   /** ?m=<id>: a phone notification opened the chat on this message. */
   initialMessage?: number | null;
+  /** ?ch= / ?dm= / ?t=: the channel, DM or thread the chat opens on (23 Oct 2026). */
+  initialPlace?: { ch: string | null; dm: string | null; t: number | null };
 }) {
   const [tab, setTab] = useState<RoomTab>(initialTab);
   const room = useTeamRoom();
+  const counts = useRoomCounts();
   const [version, setVersion] = useState<string | undefined>(initialVersion);
   const [data, setData] = useState<TeamBoardData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +93,9 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage }
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 15_000); return () => clearInterval(id); }, []);
 
   // The address follows the tab, so a link to a patch note can be shared.
+  // In the chat the channel workspace keeps the address itself (?ch=, ?dm=, ?t=).
   useEffect(() => {
+    if (tab === "chat") return;
     const q = tab === "notes" ? `?tab=notes${version ? `&v=${encodeURIComponent(version)}` : ""}` : tab === "team" ? "" : `?tab=${tab}`;
     try { window.history.replaceState(null, "", `/admin/team${q}`); } catch { /* old browser */ }
   }, [tab, version]);
@@ -107,12 +114,13 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage }
   }, [data]);
 
   const pulls = data?.pulls ?? [];
-  const waiting = waitingOnMe(room.messages, room.me, room.marks, room.acks).length;
+  // Every channel's and DM's new messages, plus points waiting on you (channels.ts roomCounts).
+  const waiting = pointsWaiting(room.messages, room.me, room.acks).length;
   const toRead = (p: Person) => (isTeamPerson(p) ? patchUnread(PATCH_META, p, room.acks, TEAM_ROOM.patchReceiptsFrom).length : 0);
   const badges: Partial<Record<RoomTab, number>> = {
     team: unreadNotes(room.notes, room.me, room.read.pushNotes, "push"),
     ideas: unreadNotes(room.notes, room.me, room.read.notes, "idea"),
-    chat: (tab === "chat" ? 0 : unreadChat(room.messages, room.me, room.read.chat)) + waiting,
+    chat: (tab === "chat" ? 0 : counts.total - counts.patchToRead - counts.newJobs) + waiting,
     todo: tab === "todo" ? 0 : newGivenTasks(room.tasks, room.me, room.read.tasks) + newPushedJobs(room.jobs, room.tasks, room.me, room.seenJobs),
     notes: room.me ? toRead(room.me) + unreadNotes(room.notes, room.me, room.read.patchNotes, "patch") : 0,
   };
@@ -144,7 +152,11 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage }
           </nav>
 
           {tab === "ideas" && <IdeasBoard />}
-          {tab === "chat" && <ChatPage jumpTo={initialTab === "chat" ? initialMessage : null} />}
+          {tab === "chat" && (
+            <ChatPage onOpenPatch={openNote} first={initialTab === "chat" ? {
+              place: placeFrom({ ch: initialPlace?.ch, dm: initialPlace?.dm }), m: initialMessage ?? null, t: initialPlace?.t ?? null, v: initialVersion ?? null,
+            } : undefined} />
+          )}
           {tab === "todo" && <div className="tr ash-panel tb-todo"><RoomGate><TodoList /></RoomGate></div>}
           {tab === "team" && (<>
 

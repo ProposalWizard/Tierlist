@@ -32,9 +32,10 @@ import { BUNDLED_JOBS, TEAM_ROOM, isTeamPerson, type TeamPerson } from "@/lib/te
 import { fetchTeamJobs } from "@/lib/teamRoom/jobs";
 import type { TeamMessage, TeamTask } from "@/lib/teamRoom/logic";
 import {
-  RungBefore, TEST_PAYLOAD, jobsToRing, payloadForJob, payloadForMessage, payloadForNote, payloadForTask, ringsForMessage, ringsForNote, ringsForTask, withRungJobs,
+  RungBefore, TEST_PAYLOAD, jobsToRing, payloadForDm, payloadForJob, payloadForMessage, payloadForNote, payloadForTask, ringsForDm, ringsForMessage, ringsForNote, ringsForTask, withRungJobs,
   type PushPayload,
 } from "@/lib/teamRoom/notify";
+import { parseMessage } from "@/lib/teamRoom/extras";
 import { pushReady, ring, rungJobsOf, rungPatchesOf, saveRungJobs, saveRungPatches, teamAccounts } from "@/lib/teamRoom/notifyServer";
 import { patchesToRing, payloadForPatches, withRungPatches } from "@/lib/teamRoom/inbox";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
@@ -135,13 +136,24 @@ export async function POST(req: Request) {
     if (row.person !== me) return NextResponse.json({ error: "Only the sender can ring for a message." }, { status: 403 });
     if (!fresh(row.created_at)) return NextResponse.json({ ok: true, sent: 0, stale: true });
     if (!rungBefore.first(`m:${id}`)) return NextResponse.json({ ok: true, sent: 0, again: true });
-    const re = /^\[re:(\d{1,12})\]/.exec(row.body)?.[1];
+    // A reply may sit behind a channel tag ("[#ideas] [re:12] …"): parseMessage reads both.
+    const re = parseMessage(row.body).replyTo;
     let answers: { person: TeamPerson } | null = null;
     if (re) {
       const { data: a } = await sb.from("team_messages").select("person").eq("id", Number(re)).maybeSingle();
       if (a && isTeamPerson((a as { person: string }).person)) answers = { person: (a as { person: TeamPerson }).person };
     }
     rings = ringsForMessage(row, answers).map((r) => ({ person: r.person, payload: payloadForMessage(row, r.why) }));
+  } else if (body.table === "team_dms") {
+    // A private DM (team_room_v3.sql). The site's key can read it; the row rules
+    // keep it from everyone else. Only its sender rings, only for its one reader.
+    const { data: d } = await sb.from("team_dms").select("id, from_person, to_person, body, created_at").eq("id", id).maybeSingle();
+    const row = d as { id: number; from_person: TeamPerson; to_person: TeamPerson; body: string; created_at: string } | null;
+    if (!row) return NextResponse.json({ error: "No such message." }, { status: 404 });
+    if (row.from_person !== me) return NextResponse.json({ error: "Only the sender can ring for a message." }, { status: 403 });
+    if (!fresh(row.created_at)) return NextResponse.json({ ok: true, sent: 0, stale: true });
+    if (!rungBefore.first(`d:${id}`)) return NextResponse.json({ ok: true, sent: 0, again: true });
+    rings = ringsForDm(row).map((r) => ({ person: r.person, payload: payloadForDm(row) }));
   } else if (body.table === "team_tasks") {
     const { data: t } = await sb.from("team_tasks").select("id, owner, made_by, title, created_at").eq("id", id).maybeSingle();
     const row = t as (Pick<TeamTask, "id" | "owner" | "made_by" | "title" | "created_at">) | null;

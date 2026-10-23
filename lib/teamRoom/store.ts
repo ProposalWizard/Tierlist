@@ -8,6 +8,11 @@
  * straight to the database; the row rules in team_room.sql check who you are.
  * If the tables are missing, `missing` is true and the screens say which SQL
  * file to run instead of breaking.
+ *
+ * Channels (Harry, 23 Oct 2026): channels and threads live in the message
+ * text (lib/teamRoom/channels.ts), so they need no SQL. New/renamed
+ * channels, reactions, private DMs and bot rows need team_room_v3.sql;
+ * until it runs `v3` is "off" and those screens say so in place.
  */
 import { useSyncExternalStore } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -21,6 +26,10 @@ import {
 import { withAck, type AckKind, type ReadMarks, type TeamAck } from "./extras";
 import { markerJobId, markerTitle, parseJobs, type JobsRead, type TeamJob } from "./jobs";
 import { ringAfter, ringNewJobs } from "./push";
+import {
+  cleanName, isReaction, isSlug, listChannels, newChannelSlug, withReaction,
+  type BotRow, type ChannelReads, type ChannelRow, type Reaction, type TeamDm, type TeamReaction,
+} from "./channels";
 
 export interface TeamRoomState {
   status: "idle" | "loading" | "ready" | "missing" | "signedOut" | "error";
@@ -53,6 +62,17 @@ export interface TeamRoomState {
   jobsFrom: "github" | "bundled" | null;
   /** Pushed jobs you have had on screen in the To-do (this browser): the badge leaves them out. */
   seenJobs: string[];
+  /** Round three (team_room_v3.sql): "on" = channels/reactions/DMs shared; "off" = not run yet. */
+  v3: "unknown" | "on" | "off";
+  /** New and renamed channels (team_channels). */
+  channelRows: ChannelRow[];
+  reactions: TeamReaction[];
+  /** Your own private DMs only: the database's row rules never send anyone else's. */
+  dms: TeamDm[];
+  /** Posts a future bot wrote (team_bot_posts). */
+  botRows: BotRow[];
+  /** The newest message read in each channel and DM (this browser). */
+  chRead: ChannelReads;
 }
 
 const READ_KEY = "kib-team-read";
@@ -69,6 +89,7 @@ const SEEN_KEY = "kib-team-seen";
 const SEEN_JOBS_KEY = "kib-team-jobs-seen";
 const ACKS_KEY = "kib-team-acks";
 const LOCAL_NOTES_KEY = "kib-team-local-notes";
+const CH_READ_KEY = "kib-team-ch-read";
 function readJson<T>(key: string, fallback: T): T {
   try { const v = JSON.parse(localStorage.getItem(key) ?? "null"); return v ?? fallback; } catch { return fallback; }
 }
@@ -80,6 +101,7 @@ let state: TeamRoomState = {
   status: "idle", error: null, me: null, taken: [], messages: [], ideas: [], votes: [], tasks: [], notes: [],
   online: [], live: false, read: { chat: 0, tasks: 0, notes: 0, pushNotes: 0, patchNotes: 0 }, pageOpen: false,
   v2: "unknown", marks: {}, acks: [], pointing: false, jobs: [], jobsFrom: null, seenJobs: [],
+  v3: "unknown", channelRows: [], reactions: [], dms: [], botRows: [], chRead: {},
 };
 const listeners = new Set<() => void>();
 function set(patch: Partial<TeamRoomState> | ((s: TeamRoomState) => Partial<TeamRoomState>)) {
@@ -144,7 +166,32 @@ async function loadAll() {
     notes: [...((not.data ?? []) as TeamNote[]), ...readJson<TeamNote[]>(LOCAL_NOTES_KEY, [])],
   });
   await loadV2();
+  await loadV3();
   return true;
+}
+
+/** Round three's tables. Missing → "off": channels and threads still work (they live in the text). */
+async function loadV3() {
+  if (!sb) return;
+  const [ch, re, dm, bot] = await Promise.all([
+    sb.from("team_channels").select("slug, name, topic, made_by, created_at").order("created_at"),
+    sb.from("team_reactions").select("message_id, emoji, person, at"),
+    sb.from("team_dms").select("*").order("id", { ascending: false }).limit(TEAM_ROOM.loadMessages),
+    sb.from("team_bot_posts").select("*").order("id", { ascending: false }).limit(200),
+  ]);
+  const e = ch.error ?? re.error ?? dm.error ?? bot.error;
+  if (e) {
+    set({ v3: "off" });
+    if (!isMissing(e)) console.warn("Team room v3 could not load:", e.message);
+    return;
+  }
+  set({
+    v3: "on",
+    channelRows: (ch.data ?? []) as ChannelRow[],
+    reactions: ((re.data ?? []) as TeamReaction[]).filter((r) => isTeamPerson(r.person) && isReaction(r.emoji)).map((r) => ({ ...r, message_id: Number(r.message_id) })),
+    dms: ((dm.data ?? []) as TeamDm[]).reverse(),
+    botRows: ((bot.data ?? []) as BotRow[]).reverse(),
+  });
 }
 
 /** Round two's tables. Missing → "off": everything still works, kept on this device. */
@@ -195,7 +242,22 @@ function apply(table: string, c: Change) {
     set((s) => ({ acks: withAck(s.acks, a, !del) }));
     return;
   }
-  const key = ({ team_messages: "messages", team_ideas: "ideas", team_tasks: "tasks", team_notes: "notes" } as const)[table as "team_messages"];
+  if (table === "team_reactions") {
+    const r = row as unknown as TeamReaction;
+    if (!isTeamPerson(r.person) || !isReaction(r.emoji)) return;
+    set((s) => ({ reactions: withReaction(s.reactions, { ...r, message_id: Number(r.message_id) }, !del) }));
+    return;
+  }
+  if (table === "team_channels") {
+    const r = row as unknown as ChannelRow;
+    if (!isSlug(r.slug)) return;
+    set((s) => {
+      const rest = s.channelRows.filter((x) => x.slug !== r.slug);
+      return { channelRows: del ? rest : [...rest, r] };
+    });
+    return;
+  }
+  const key = ({ team_messages: "messages", team_ideas: "ideas", team_tasks: "tasks", team_notes: "notes", team_dms: "dms", team_bot_posts: "botRows" } as const)[table as "team_messages"];
   if (!key) return;
   set((s) => {
     const list = s[key] as { id: number }[];
@@ -211,6 +273,7 @@ function connect() {
   // asked to follow a missing table can refuse the whole subscription.
   const tables = ["team_messages", "team_ideas", "team_idea_votes", "team_tasks", "team_notes"];
   if (state.v2 === "on") tables.push("team_read_marks", "team_acks");
+  if (state.v3 === "on") tables.push("team_channels", "team_reactions", "team_dms", "team_bot_posts");
   for (const table of tables) {
     ch.on("postgres_changes" as never, { event: "*", schema: "public", table } as never, (p: Change) => apply(table, p));
   }
@@ -234,20 +297,23 @@ let demo = false;
 let demoId = 1000;
 // Read when the page first loads: pages tidy their address before the room starts.
 const DEMO_NO_V2 = typeof window !== "undefined" && /[?&]teamroom=nov2\b/.test(window.location.search);
+// ?teamroom=nov3 shows the screens as they are before team_room_v3.sql runs.
+const DEMO_NO_V3 = typeof window !== "undefined" && /[?&]teamroom=nov3\b/.test(window.location.search);
 function startDemo() {
   demo = true;
   sb = null;
   const room = demoRoom(Date.now());
   // ?teamroom=nov2 shows the screens as they are before team_room_v2.sql runs.
   const noV2 = DEMO_NO_V2;
-  set({ ...room, status: "ready", live: true, read: loadRead(), v2: noV2 ? "off" : "on" });
+  set({ ...room, status: "ready", live: true, read: loadRead(), v2: noV2 ? "off" : "on", v3: DEMO_NO_V3 ? "off" : "on", chRead: readJson<ChannelReads>(CH_READ_KEY, room.chRead) });
+  if (DEMO_NO_V3) set({ channelRows: [], reactions: [], dms: [], botRows: [] });
   if (noV2) set({ ...localV2(), notes: [...room.notes, ...readJson<TeamNote[]>(LOCAL_NOTES_KEY, [])] });
 }
 
 export function startTeamRoom() {
   if (started || typeof window === "undefined") return;
   started = true;
-  set({ status: "loading", read: loadRead(), seenJobs: readJson<string[]>(SEEN_JOBS_KEY, []) });
+  set({ status: "loading", read: loadRead(), seenJobs: readJson<string[]>(SEEN_JOBS_KEY, []), chRead: readJson<ChannelReads>(CH_READ_KEY, {}) });
   loadJobs();
   jobsPoll = setInterval(loadJobs, TEAM_ROOM.jobs.refreshMs);
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) { if (offlineDevPlayEnabled()) startDemo(); else set({ status: "error", error: "No database address set." }); return; }
@@ -329,9 +395,8 @@ export async function sendMessage(body: string, file: File | null, page: string 
   }
   const text = body.trim().slice(0, 2000);
   if (!text && !image_url) return { ok: false, error: "Type something first." };
-  const r = await insert("team_messages", "messages", { person: state.me, body: text, image_url, page: page?.slice(0, 200) ?? null }, "Message not sent.");
-  if (r.ok) markRead("chat");
-  return r;
+  // (Read marks are per channel now: the open channel marks itself read, channels.ts.)
+  return insert("team_messages", "messages", { person: state.me, body: text, image_url, page: page?.slice(0, 200) ?? null }, "Message not sent.");
 }
 
 export async function setPinned(id: number, pinned: boolean): Promise<Result> {
@@ -515,9 +580,7 @@ export async function sendText(body: string): Promise<Result> {
   if (!state.me) return { ok: false, error: "Pick your name first." };
   const text = body.trim().slice(0, 2000);
   if (!text) return { ok: false, error: "Type something first." };
-  const r = await insert("team_messages", "messages", { person: state.me, body: text, image_url: null, page: typeof window === "undefined" ? null : (window.location.pathname + window.location.search).slice(0, 200) }, "Not sent.");
-  if (r.ok) markRead("chat");
-  return r;
+  return insert("team_messages", "messages", { person: state.me, body: text, image_url: null, page: typeof window === "undefined" ? null : (window.location.pathname + window.location.search).slice(0, 200) }, "Not sent.");
 }
 export async function deleteNote(id: number): Promise<Result> {
   if (id < 0) { // kept on this device only (see saveLocalNote)
@@ -526,4 +589,99 @@ export async function deleteNote(id: number): Promise<Result> {
     return { ok: true };
   }
   return remove("team_notes", "notes", id, "Could not delete it.");
+}
+
+// ── Round three: channels, reactions, private DMs ──────────────────────
+const V3_NOTE = `Run ${TEAM_ROOM.sqlFileV3} once in the Supabase SQL Editor first.`;
+
+/** A channel or DM was on screen up to message `id` (this browser). Never goes backwards. */
+export function markChannelRead(key: string, id: number) {
+  if (!key || !Number.isFinite(id) || id <= 0 || (state.chRead[key] ?? 0) >= id) return;
+  const chRead = { ...state.chRead, [key]: id };
+  writeJson(CH_READ_KEY, chRead);
+  set({ chRead });
+}
+
+/** A new channel, named by you. Needs team_room_v3.sql. */
+export async function addChannel(name: string, topic = ""): Promise<Result & { slug?: string }> {
+  if (!state.me) return { ok: false, error: "Pick your name first." };
+  if (state.v3 !== "on") return { ok: false, error: V3_NOTE };
+  const made = newChannelSlug(name, listChannels(state.channelRows));
+  if (!made.ok) return made;
+  const row: ChannelRow = { slug: made.slug, name: made.name, topic: topic.trim().slice(0, 140) || null, made_by: state.me, created_at: new Date().toISOString() };
+  if (!demo) {
+    if (!sb) return { ok: false, error: "Not connected yet." };
+    const { error } = await sb.from("team_channels").insert({ slug: row.slug, name: row.name, topic: row.topic, made_by: row.made_by });
+    if (error) return fail(error, error.code === "23505" ? `#${row.slug} already exists.` : "Channel not made.");
+  }
+  set((s) => ({ channelRows: [...s.channelRows.filter((x) => x.slug !== row.slug), row] }));
+  return { ok: true, slug: row.slug };
+}
+
+/** Rename a channel (the six built-in ones too). Its messages stay: they are kept by its slug. */
+export async function renameChannel(slug: string, name: string, topic?: string): Promise<Result> {
+  if (!state.me) return { ok: false, error: "Pick your name first." };
+  if (state.v3 !== "on") return { ok: false, error: V3_NOTE };
+  const nm = cleanName(name);
+  if (!nm) return { ok: false, error: "Type a name first." };
+  const had = state.channelRows.find((x) => x.slug === slug);
+  const row: ChannelRow = { slug, name: nm, topic: topic === undefined ? had?.topic ?? null : topic.trim().slice(0, 140) || null, made_by: had?.made_by ?? state.me, created_at: had?.created_at ?? new Date().toISOString() };
+  if (!demo) {
+    if (!sb) return { ok: false, error: "Not connected yet." };
+    const { error } = had
+      ? await sb.from("team_channels").update({ name: row.name, topic: row.topic }).eq("slug", slug)
+      : await sb.from("team_channels").insert({ slug, name: row.name, topic: row.topic, made_by: state.me });
+    if (error) return fail(error, "Not renamed.");
+  }
+  set((s) => ({ channelRows: [...s.channelRows.filter((x) => x.slug !== slug), row] }));
+  return { ok: true };
+}
+
+/** Tap a reaction: add yours, or take it back. Needs team_room_v3.sql. */
+export async function toggleReaction(messageId: number, emoji: Reaction): Promise<Result> {
+  const me = state.me;
+  if (!me) return { ok: false, error: "Pick your name first." };
+  if (state.v3 !== "on") return { ok: false, error: V3_NOTE };
+  const has = state.reactions.some((r) => r.message_id === messageId && r.emoji === emoji && r.person === me);
+  const r: TeamReaction = { message_id: messageId, emoji, person: me, at: new Date().toISOString() };
+  if (!demo) {
+    if (!sb) return { ok: false, error: "Not connected yet." };
+    const { error } = has
+      ? await sb.from("team_reactions").delete().eq("message_id", messageId).eq("emoji", emoji).eq("person", me)
+      : await sb.from("team_reactions").insert({ message_id: messageId, emoji, person: me });
+    if (error && error.code !== "23505") return fail(error, "Reaction not saved.");
+  }
+  set((s) => ({ reactions: withReaction(s.reactions, r, !has) }));
+  return { ok: true };
+}
+
+/** A private message to one person. Only the two of you can read it (row rules in team_room_v3.sql). */
+export async function sendDm(to: TeamPerson, body: string): Promise<Result> {
+  const me = state.me;
+  if (!me) return { ok: false, error: "Pick your name first." };
+  if (to === me) return { ok: false, error: "Pick someone else." };
+  if (state.v3 !== "on") return { ok: false, error: V3_NOTE };
+  const text = body.trim().slice(0, 2000);
+  if (!text) return { ok: false, error: "Type something first." };
+  const row = { from_person: me, to_person: to, body: text };
+  if (demo) {
+    set((s) => ({ dms: upsertById(s.dms, { id: ++demoId, ...row, created_at: new Date().toISOString() }) }));
+    return { ok: true };
+  }
+  if (!sb) return { ok: false, error: "Not connected yet." };
+  const { data, error } = await sb.from("team_dms").insert(row).select().single();
+  if (error) return fail(error, "Message not sent.");
+  set((s) => ({ dms: upsertById(s.dms, data as TeamDm) }));
+  ringAfter("team_dms", data as Record<string, unknown>);
+  return { ok: true };
+}
+
+export async function deleteDm(id: number): Promise<Result> {
+  if (!demo) {
+    if (!sb) return { ok: false, error: "Not connected yet." };
+    const { error } = await sb.from("team_dms").delete().eq("id", id);
+    if (error) return fail(error, "Could not delete it.");
+  }
+  set((s) => ({ dms: s.dms.filter((d) => d.id !== id) }));
+  return { ok: true };
 }
