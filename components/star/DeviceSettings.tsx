@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type React from "react";
 import { useSfxOn, setSfxOn, sfx } from "@/lib/star/sfx";
 import { useGameMusicOn, setGameMusicOn } from "@/lib/star/gameMusic";
+import { useHomeTiles, setHomeTiles } from "@/lib/star/homeTiles";
 import { getSkipLineup, setSkipLineup } from "@/lib/star/lineupPrefs";
 import { loadFaceStyle, saveFaceStyle, type FaceStyle } from "@/lib/star/faceStyle";
 import { useMatchView3d, setMatchView3d } from "@/lib/star/matchView3d";
@@ -126,6 +127,8 @@ export function QuickSwitches({ glow, fullscreen }: {
       <SetToggle label="Sound effects" on={sfxNow} onClick={() => { const on = !sfxNow; setSfxOn(on); if (on) sfx("ui-confirm"); }} />
       {/* Mikey, 21 Oct 2026: off by default; music for the home screens, matches and results (lib/star/gameMusic.ts). */}
       <SetToggle label="Game music" on={musicNow} onClick={() => setGameMusicOn(!musicNow)} />
+      {/* Mikey, 22 Oct 2026: Rep and Fame left of the player, Goals and Assists right; "Top" puts the row back (lib/star/homeTiles.ts). */}
+      <HomeTilesRow />
       <div className="border-b border-white/10 py-2.5"><Quality3dRow /></div>
       <SetToggle label="Skip the line-up" on={skipLineup} onClick={flipSkipLineup} />
       {/* Harry, 20 Oct 2026: a toggle with a "?", on the first screen (also in the match's ⚙ and before kick-off). */}
@@ -298,5 +301,23 @@ export function SettingsTop({ glow, fullscreen }: {
       <SetSection className="mb-1.5 mt-1">Quick</SetSection>
       <QuickSwitches glow={glow} fullscreen={fullscreen} />
     </>
+  );
+}
+
+/** Settings → "Home numbers: Sides | Top" (lib/star/homeTiles.ts). */
+function HomeTilesRow() {
+  const now = useHomeTiles();
+  return (
+    <div className="flex items-center gap-2 border-b border-white/10 py-2.5" data-home-tiles-row>
+      <span className="flex-1 text-[14px] font-bold text-white">Home numbers</span>
+      <div className="flex overflow-hidden rounded-[4px]" role="radiogroup" aria-label="Home numbers">
+        {(["sides", "top"] as const).map((v) => (
+          <button key={v} role="radio" aria-checked={now === v} onClick={() => setHomeTiles(v)}
+            className={`kib-press px-3 py-1.5 text-[12px] font-black uppercase tracking-wide ${now === v ? "bg-amber-400 text-gray-950" : "bg-white/10 text-white"}`}>
+            {v === "sides" ? "Sides" : "Top"}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

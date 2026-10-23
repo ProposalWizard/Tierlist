@@ -187,6 +187,10 @@ interface Props {
   /** The rest of the shop (Sponsors, Casino, Store, the 3D shop): small doors at the
    *  end of the category rail. The shop's front page is gone (Harry, 9 Oct 2026: the
    *  framed-card grid was "horrendous"); the Showroom IS the shop. */
+  /** The game's own bottom bar (MainBar.tsx). Given: it sits at the bottom and the
+   *  shop's Shop · For You · 3D · Boots · Sponsors move to a strip at the top
+   *  (master plan 1, Mikey 22 Oct 2026: one bar on every screen). */
+  mainBar?: React.ReactNode;
   links?: ShopLink[];
   /** Dev benches only: keep the bottom-right corner clear for the page-guide eye. */
   guideCorner?: boolean;
@@ -219,7 +223,7 @@ export interface View {
   extra?: { label: string; disabled: boolean; run: () => void };
 }
 
-export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, focus, onKind, onUseCan, onOpen3D, startCat, links, guideCorner = false, barOption = "A", levelMark = "trophy", buyStyle = "auto", onOpenHome }: Props) {
+export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot, onBuyItem, onBuyFromBlackMarket, focus, onKind, onUseCan, onOpen3D, startCat, links, guideCorner = false, barOption = "A", levelMark = "trophy", buyStyle = "auto", onOpenHome, mainBar }: Props) {
   const bar = barOption;
   /** The bottom bar's two pages: For You (the TikTok feed) and Shop (the showroom). */
   const [tab, setTab] = useState<"foryou" | "shop">("shop");
@@ -631,13 +635,21 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
   const nItems = SHOWROOM_KEYS[cat.id].length;
   const openSheet = (c: CatId, k: string) => setSheet({ cat: c, key: k, level: viewOf(c, k).level });
   // what sits over the item: the header (+ the category strip in A, + the dots) and the bottom bar (+ the strip in C)
-  const topPx = 46 + (tab === "shop" && bar !== "C" ? STRIP_H : 0) + (tab === "shop" && view !== 5 ? 18 : 0);
+  const topPx = 46 + (mainBar ? TOP_TABS_H : 0) + (tab === "shop" && bar !== "C" ? STRIP_H : 0) + (tab === "shop" && view !== 5 ? 18 : 0);
   const botPx = TAB_H + (tab === "shop" && bar === "C" ? STRIP_H : 0);
   // the bottom bar has Sponsors, Casino and the 3D shop; the rest stay under More
   const moreLinks = (links ?? []).filter((l) => !ON_BAR.has(l.id));
   // Boots is its own tab on the bar (Harry, 12 Oct 2026: "it's quite a big aspect"), so the word strip leaves it out
   const onBoots = cat.id === "boots";
   if (!onBoots) lastNotBoots.current = ci;
+  const shopTabNow: "shop" | "foryou" | "boots" = tab === "foryou" ? "foryou" : onBoots ? "boots" : "shop";
+  const pickShopTab = (t: "shop" | "foryou" | "boots") => {
+    setMoreOpen(false); setPickOpen(false); setFameOpen(false);
+    if (t === "foryou") { setTab("foryou"); return; }
+    setTab("shop");
+    if (t === "boots") { if (!onBoots) openCat(BOOTS_I); }
+    else if (onBoots) openCat(lastNotBoots.current);
+  };
   const needStars = (key: string) => (lockOf?.(key) != null ? { need: styleUnlockStar(key), have: Math.floor(starsNow(career)) } : null);
 
   return (
@@ -758,6 +770,7 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
             {spent.n > 0 && <span key={spent.n} className="pointer-events-none absolute right-2 top-full text-[12px] font-black text-red-300" style={{ animation: "srSpent 1.4s ease-out both" }}>{spent.text}</span>}
           </button>
         </div>
+        {mainBar && <BottomBar place="top" active={shopTabNow} links={links} onOpen3D={onOpen3D} guideCorner={false} onPick={pickShopTab} />}
         {tab === "shop" && bar === "A" && (onBoots ? <div style={{ height: STRIP_H }} /> : <CatStrip ci={ci} onPick={openCat} />)}
         {tab === "shop" && bar === "B" && (
           <div className="pointer-events-auto flex items-center justify-center" style={{ height: STRIP_H }}>
@@ -834,14 +847,9 @@ export default function ShowroomShop({ career, kind, onBack, onBuyKib, onBuyBoot
           <CatStrip ci={ci} onPick={openCat} />
         </div>
       )}
-      <BottomBar active={tab === "foryou" ? "foryou" : onBoots ? "boots" : "shop"} links={links} onOpen3D={onOpen3D} guideCorner={guideCorner}
-        onPick={(t) => {
-          setMoreOpen(false); setPickOpen(false); setFameOpen(false);
-          if (t === "foryou") { setTab("foryou"); return; }
-          setTab("shop");
-          if (t === "boots") { if (!onBoots) openCat(BOOTS_I); }
-          else if (onBoots) openCat(lastNotBoots.current);
-        }} />
+      {mainBar
+        ? <div className="absolute inset-x-0 bottom-0 z-30" data-shop-main-bar><div className="mx-auto w-full max-w-md">{mainBar}</div></div>
+        : <BottomBar active={shopTabNow} links={links} onOpen3D={onOpen3D} guideCorner={guideCorner} onPick={pickShopTab} />}
 
       {sheet && <DetailSheet sheet={sheet} onClose={() => setSheet(null)} onPick={(lv) => setSheet({ ...sheet, level: lv })} career={career} homeLevel={homeLevel}
         bootLevels={bootLevels} banned={banned} soldOut={soldOut} onOpen3D={onOpen3D}
@@ -870,6 +878,8 @@ async function lastMatchHighlights(): Promise<HighlightAd | null> {
 
 /** The bottom bar's height (above the iPhone home bar). */
 const TAB_H = 64;
+/** The shop's own tabs as a strip under the header (with the game's main bar at the bottom). */
+const TOP_TABS_H = 40;
 /** The category text strip (A: under the header; C: above the bottom bar). */
 const STRIP_H = 38;
 const ON_BAR = new Set(["sponsors", "shop3d"]);
@@ -893,8 +903,10 @@ function BarIcon({ name, on }: { name: "foryou" | "shop" | "sponsors" | "boots";
 
 /** The bottom bar, TikTok-style: Shop · For You · 3D (the big centre button: the walk-around shop) · Boots · Sponsors.
  *  Harry, 12 Oct 2026. Casino moved off it, back under More (⋯) in the shop header. */
-function BottomBar({ active, onPick, links, onOpen3D, guideCorner }: {
+function BottomBar({ active, onPick, links, onOpen3D, guideCorner, place = "bottom" }: {
   active: "shop" | "foryou" | "boots"; onPick: (t: "shop" | "foryou" | "boots") => void; links?: ShopLink[]; onOpen3D?: () => void; guideCorner: boolean;
+  /** "top": a slim strip under the header, when the game's main bar is at the bottom. */
+  place?: "bottom" | "top";
 }) {
   const link = (id: string) => links?.find((l) => l.id === id);
   const sponsors = link("sponsors"), three = link("shop3d");
@@ -905,15 +917,16 @@ function BottomBar({ active, onPick, links, onOpen3D, guideCorner }: {
       <span className="text-[10px] font-bold leading-none">{locked ? `🔒 ${label}` : label}</span>
     </button>
   );
+  const top = place === "top";
   return (
-    <nav data-shop-tabs aria-label="Shop" className="absolute inset-x-0 bottom-0 z-30 border-t border-white/10 bg-[#05080f]"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-      <div className={`mx-auto flex max-w-[620px] items-stretch ${guideCorner ? "pr-11" : ""}`} style={{ height: TAB_H }}>
+    <nav data-shop-tabs={place} aria-label="Shop" className={top ? "pointer-events-auto relative z-30" : "absolute inset-x-0 bottom-0 z-30 border-t border-white/10 bg-[#05080f]"}
+      style={top ? undefined : { paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className={`mx-auto flex max-w-[620px] items-stretch ${guideCorner ? "pr-11" : ""} ${top ? "[&_svg]:h-[19px] [&_svg]:w-[19px]" : ""}`} style={{ height: top ? TOP_TABS_H : TAB_H }}>
         <Tab data="shop" on={active === "shop"} label="Shop" icon={<BarIcon name="shop" on={active === "shop"} />} onClick={() => onPick("shop")} />
         <Tab data="foryou" on={active === "foryou"} label="For You" icon={<BarIcon name="foryou" on={active === "foryou"} />} onClick={() => onPick("foryou")} />
         <div className="flex flex-1 items-center justify-center">
           <button onClick={three?.onClick ?? onOpen3D} disabled={!(three || onOpen3D)} data-bar-tab="shop3d" aria-label="3D shop"
-            className="kib-press relative grid h-[36px] w-[54px] place-items-center rounded-[11px] text-[15px] font-black text-[#05080f] disabled:opacity-30"
+            className={`kib-press relative grid place-items-center rounded-[11px] font-black text-[#05080f] disabled:opacity-30 ${top ? "h-[28px] w-[44px] text-[13px]" : "h-[36px] w-[54px] text-[15px]"}`}
             style={{ background: "#fff", boxShadow: "-4px 0 0 #22d3ee, 4px 0 0 #f43f5e" }}>3D</button>
         </div>
         <Tab data="boots" on={active === "boots"} label="Boots" icon={<BarIcon name="boots" on={active === "boots"} />} onClick={() => onPick("boots")} />

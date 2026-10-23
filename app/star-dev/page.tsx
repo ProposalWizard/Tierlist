@@ -113,6 +113,7 @@ import { POSITION_NAMES, matchdayFor } from "@/lib/star/teamsheet";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 // Swipe home screens — Stats · Home · Training (v0.15 item 34).
+import MainBar from "@/components/star/MainBar";
 import SwipeBack from "@/components/star/SwipeBack";
 import SwipePages from "@/components/star/SwipePages";
 import HomeHub, { daysToNext } from "@/components/star/HomeHub";
@@ -4494,6 +4495,34 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <TopHud career={career} screen={screen} onUseCan={handleUseCan} onOpenCans={() => setPhase("shop-kib")} onCareer={setCareer} />
     </>
   );
+  // The bottom bar's locks (MainBar.tsx). Relations left the bar (master plan 1,
+  // Mikey 22 Oct 2026): while the manager's talk is due, the Phone opens it,
+  // even before you own a phone, so the first steps still work.
+  const talkDue = managerTalkDue(career);
+  const phoneBroken = isOpen(career, "phone") && career.ownedItems.some(o => (o.baseId ?? o.id) === "phone" && o.seasonsLeft === 0);
+  const navLocked: Partial<Record<NavTab, string>> | undefined = career.unlocks ? {
+    ...(isOpen(career, "league") ? {} : { league: LOCK_HINT.league }),
+    ...(isOpen(career, "play") ? {} : { play: LOCK_HINT.play }),
+    ...(isOpen(career, "training") ? {} : { skills: LOCK_HINT.training }),
+    ...(talkDue || isOpen(career, "phone") ? {} : { media: LOCK_HINT.phone }),
+    // A phone lasts two seasons, then you need a new one (Harry, P103); a
+    // broken phone locks the Phone until you repair it in Style.
+    ...(!talkDue && phoneBroken ? { media: "Your phone broke — repair it in Style" } : {}),
+  } : undefined;
+  const navTo = (t: NavTab) => ((t === "media" || t === "life") && talkDue ? handleOpenRelationshipGame("boss") : handleNavigate(t));
+  /** The same bottom bar on every full screen (League, Shop, Sponsors, Achievements…). */
+  /** A full screen with the main bar under it, and room so its last line is never hidden. */
+  const withBar = (screen: React.ReactNode, active: NavTab | null = null) => (
+    <>{screen}<div aria-hidden className="h-[84px]" />{mainBar(active)}</>
+  );
+  const mainBarRaw = (active: NavTab | null) => (
+    <MainBar activeNav={active} onNavigate={navTo} onHome={() => handleNavigate("home")} locked={navLocked} mediaUnread={phoneUnread > 0} />
+  );
+  const mainBar = (active: NavTab | null) => (
+    <div className="fixed inset-x-0 bottom-0 z-40" data-main-bar-fixed>
+      <div className="mx-auto w-full max-w-md">{mainBarRaw(active)}</div>
+    </div>
+  );
   // The league and the fixtures on ONE page, with the live-score bell in the
   // bottom bar (v0.23 W7, P90) — components/star/MatchWeek.tsx. A full screen
   // like the shop: it carries its own HUD and bottom bar.
@@ -4503,6 +4532,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <MatchWeek
           career={career}
           hud={screenHud("league")}
+          bar={mainBar("league")}
           nextFixture={nextFixture}
           onBack={handleBackToDashboard}
           onPlay={() => handleNavigate("play")}
@@ -4563,6 +4593,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           <ShowroomShop
             career={career}
             kind={kind}
+            mainBar={mainBarRaw(null)}
             onBack={() => { if (goBackRemembered()) return; setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
             links={[
               { id: "sponsors", icon: "🤝", label: "Sponsors", locked: !isOpen(career, "sponsors"), onClick: () => { pushFrom({ phase, nav: "home" }, "sponsors"); setPhase("sponsors"); } },
@@ -4712,7 +4743,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   if (phase === "sponsors") return (
     <>
-      <SponsorsScreen career={career} onBack={handleBackToDashboard} act={sponsorActions} />
+      {withBar(<SponsorsScreen career={career} onBack={handleBackToDashboard} act={sponsorActions} />)}
       {firstHelp("sponsors") && <PointerTour key="first-sponsors" steps={HELP_TOURS.sponsors} onDone={helpSeen("sponsors")} />}
       {sponsorNote && (
         <div className="pointer-events-none fixed inset-x-0 top-3 z-[90] mx-auto w-fit max-w-[90%] rounded-xl border border-amber-300 bg-gray-950 px-4 py-2 text-center text-[13px] font-black text-white shadow-[0_0_18px_rgba(251,191,36,.45)]">{sponsorNote}</div>
@@ -4763,18 +4794,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       : !step && sponsorsNew && !hasSeen(career, "step-sponsors") ? "Sponsors are open" : null;
     return (
       <>
-        <AchievementsScreen
+        {withBar(<AchievementsScreen
           career={career}
           onBack={handleBackToDashboard}
           top={career.unlocks ? <UnlockChallenges career={career} onGo={goStep} /> : undefined}
-        />
+        />)}
         {career.unlocks && (firstHelp("achievements")
           ? <PointerTour key="first-achievements" steps={HELP_TOURS.achievements} onDone={helpSeen("achievements")} />
           : stepPrompt && <PointerTour key={`step-${step?.id ?? "sponsors"}`} steps={stepTour(stepPrompt)} onDone={() => {}} />)}
       </>
     );
   }
-  if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />;
+  if (phase === "trophies") return withBar(<TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />);
   if (phase === "garden") {
     return (
       <Garden3D
@@ -5115,7 +5146,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       career={career}
       onExit={handleExit}
       // v0.25: after the first game, Relations goes straight into the manager's talk.
-      onNavigate={(t) => (t === "life" && managerTalkDue(career) ? handleOpenRelationshipGame("boss") : handleNavigate(t))}
+      onNavigate={navTo}
       onSettings={openSettings}
       activeNav={phase === "skills" ? (trainingTab === "life" ? "life" : "skills") : activeNav}
       // A red dot while something on the phone is unread; it clears once you
@@ -5149,22 +5180,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // (Mikey, 28 Sep 2026); anywhere else it goes Home (Mikey, 29 Sep 2026).
       onHome={() => { if (!(swipeActive && homePage === 1)) handleNavigate("home"); }}
       atHome={swipeActive && homePage === 1}
-      locked={career.unlocks ? {
-        ...(isOpen(career, "league") ? {} : { league: LOCK_HINT.league }),
-        ...(isOpen(career, "play") ? {} : { play: LOCK_HINT.play }),
-        ...(isOpen(career, "relations") || managerTalkDue(career) ? {} : { life: LOCK_HINT.relations }),
-        ...(isOpen(career, "training") ? {} : { skills: LOCK_HINT.training }),
-        ...(isOpen(career, "phone") ? {} : { media: LOCK_HINT.phone }),
-        // A phone lasts two seasons, then you need a new one (Harry, P103).
-        // A broken phone locks the Phone button until you repair it in Style
-        // (Harry, 1 Oct 2026: "it should lock until u repair").
-        ...(isOpen(career, "phone") && career.ownedItems.some(o => (o.baseId ?? o.id) === "phone" && o.seasonsLeft === 0) ? { media: "Your phone broke — repair it in Style" } : {}),
-      } : undefined}
-      // The bottom-left button (v0.24, P2-68, P2-89): Achievements through the
-      // first steps, then the player's answer to "switch this to League?".
-      homeSlot={career.unlocks && isOpen(career, "achievements") && bottomLeft(career) === "achievements"
-        ? { active: false, onClick: () => setPhase("achievements"), label: "Achievements", icon: "⭐" }
-        : undefined}
+      locked={navLocked}
     >
       {/* ── The pointer tutorial (PointerTour.tsx, lib/star/tours.ts): one
           tour at a time, in order, pointing at the real screen. ── */}

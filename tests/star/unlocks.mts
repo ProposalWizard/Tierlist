@@ -223,7 +223,7 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   check(isOpen(c, "training") && isOpen(c, "achievements"), "a played first fixture opens Training and Achievements");
   check(!isOpen(c, "shop"), "the Shop does NOT open after game 1");
   check(!isOpen(c, "relations") && managerTalkDue(c), "Relations waits: the manager wants a word first");
-  check(nextStep(c)?.id === "boss-meeting" && bossTour(true)[0].target === "nav-life", "the next step is the boss, and its tour points at Relations");
+  check(nextStep(c)?.id === "boss-meeting" && bossTour(true)[0].target === "nav-phone", "the next step is the boss, and its tour points at the Phone (Relations left the bar)");
   // One drill before the boss: the Shop opens (one drill is the rule), and the boss is still next.
   const early = recordDrill(c);
   check(isOpen(early, "shop") && nextStep(early)?.id === "boss-meeting", "one drill before the boss: Shop open, and the boss is still next");

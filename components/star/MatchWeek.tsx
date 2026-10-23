@@ -41,7 +41,7 @@ export const WEEK_VIEWS = [
 export type WeekView = (typeof WEEK_VIEWS)[number]["id"];
 let lastView: WeekView = "table";
 
-export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, initialView, onHelp }: {
+export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, initialView, onHelp, bar }: {
   career: CareerState;
   /** The top HUD, so energy never leaves. */
   hud: React.ReactNode;
@@ -51,6 +51,9 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
   initialView?: WeekView;
   /** The "?": replays this page's pointer tour (same as the dashboard's "?"). */
   onHelp?: () => void;
+  /** The game's own bottom bar (MainBar.tsx). Given: it replaces Back · Alerts ·
+   *  Play (master plan 1, 22 Oct 2026), and the bell moves up beside the title. */
+  bar?: React.ReactNode;
 }) {
   const { glow } = useClubTheme(career);
   const [view, setViewState] = useState<WeekView>(initialView ?? lastView);
@@ -80,13 +83,13 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
       glow={glow}
       title="League"
       hud={hud}
-      bottomBar={
+      bottomBar={bar ?? (
         <BottomBar cols="1fr 1fr 1fr">
           <BarButton icon={<Chev dir="left" size={16} className="text-amber-300" />} label="Back" onClick={onBack} />
           <BarButton icon="🔔" label="Alerts" onClick={() => setBell(true)} dot={rung} ariaLabel="Live score alerts" />
           <BarButton primary icon="▶" label="Play" onClick={onPlay} disabled={!nextFixture} />
         </BottomBar>
-      }
+      )}
     >
       <div data-matchweek={view} data-tour="screen">
         <EdgeArrows
@@ -96,6 +99,12 @@ export default function MatchWeek({ career, hud, nextFixture, onBack, onPlay, in
         >
           <span className="inline-flex items-center justify-center gap-1.5">
             {here.label}
+            {bar && (
+              <button onClick={() => setBell(true)} data-alerts-bell aria-label="Live score alerts" className="kib-press relative flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-gray-600 text-[13px] leading-none hover:bg-gray-500" style={{ borderRadius: 3 }}>
+                <span aria-hidden className="absolute -inset-[9px]" />🔔
+                {rung && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />}
+              </button>
+            )}
             {onHelp && (
               <button onClick={onHelp} data-help-button aria-label="Help — show me around" className="kib-press relative flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-gray-600 text-[14px] font-black leading-none text-amber-300 hover:bg-gray-500" style={{ borderRadius: 3 }}><span aria-hidden className="absolute -inset-[9px]" />?</button>
             )}
