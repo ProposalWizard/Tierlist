@@ -1000,7 +1000,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return () => window.removeEventListener(PHONE_SEEN_EVENT, on);
   }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const phoneUnread = useMemo(() => (career ? phoneUnreadCount(career) : 0), [career, phoneSeenTick]);
+  const phoneUnread = useMemo(() => (career ? phoneUnreadCount(career, hallChaseLine(career, hallRecords)?.text ?? null) : 0), [career, phoneSeenTick, hallRecords]);
   const preMatchEnergy = career ? projectedEnergy(career) : 0;
   const preMatchSelection = career ? selectionFor({ ...career, energy: preMatchEnergy }) : null;
   // Item 24: the sub's planned minute and ladder show only with Settings →
@@ -5286,7 +5286,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <PhoneHome
           career={career}
           onToggleLike={handleToggleLike}
-          onLeave={(ph) => openHub(ph, FROM_PHONE)}
+          onLeave={(ph) => (ph === "relations" ? navTo("life") : openHub(ph, FROM_PHONE))}
+          hallChase={hallChaseLine(career, hallRecords)?.text ?? null}
           onClose={() => handleNavigate("home")}
           installed={career.unlocks ? (id) => appInstalled(career, id) : undefined}
           onInstall={(id) => setCareer(c => (c ? installApp(c, id) : c))}

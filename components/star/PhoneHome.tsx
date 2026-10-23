@@ -40,6 +40,7 @@ import PhoneFrame from "./PhoneFrame";
 import { AppStore } from "./UnlockChain";
 import MediaFeed from "./MediaFeed";
 import LeagueScreen from "./LeagueScreen";
+import { ScoutPane } from "./MatchWeekPanes";
 import EnginePlay from "./EnginePlay";
 import ClubBadge from "./ClubBadge";
 import type { ChanceResolved } from "./CanvasMatch";
@@ -47,15 +48,18 @@ import type { HubPhase } from "./HomeHub";
 import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
 import { ClubCard, CountUp, RiseIn, Glow, Badge, EmptySlots, glowOf, rgba, useClubTheme } from "./ui";
 
-type AppId = "social" | "kickabout" | "league" | "fixtures" | "messages" | "appstore";
-type Leave = HubPhase | "settings";
-interface App { id: AppId | Leave; label: string; icon: string; bg: [string, string] }
+type AppId = "social" | "kickabout" | "squad" | "fixtures" | "messages" | "appstore" | "scout";
+type Leave = HubPhase | "settings" | "relations";
+interface App { id: AppId | Leave; label: string; icon: string; bg: [string, string]; /** The open app's heading when longer than the icon's label. */ title?: string }
 
 const APPS: App[] = [
   { id: "social", label: "Social", icon: "💬", bg: ["#34d399", "#047857"] },
   { id: "kickabout", label: "Kickabout", icon: "⚽", bg: ["#a3e635", "#15803d"] },
-  { id: "league", label: "League", icon: "🏆", bg: ["#fcd34d", "#d97706"] },
-  { id: "fixtures", label: "Fixtures", icon: "📅", bg: ["#38bdf8", "#0369a1"] },
+  // League is in the bar; Relationships, Squad and Fixtures & results live
+  // here (master plan step 4, Mikey 22 Oct 2026).
+  { id: "relations", label: "Relationships", icon: "❤️", bg: ["#fb7185", "#be123c"] },
+  { id: "squad", label: "Squad", icon: "👥", bg: ["#fcd34d", "#d97706"] },
+  { id: "fixtures", label: "Fixtures", title: "Fixtures & results", icon: "📅", bg: ["#38bdf8", "#0369a1"] },
   { id: "messages", label: "Messages", icon: "💌", bg: ["#f472b6", "#e11d48"] },
   { id: "shop-kib", label: "Shop", icon: "🛍️", bg: ["#fb923c", "#ea580c"] },
   { id: "store", label: "Store", icon: "🛒", bg: ["#fcd34d", "#7c3aed"] },
@@ -64,20 +68,23 @@ const APPS: App[] = [
   { id: "ownership", label: "Owner", icon: "🏛️", bg: ["#818cf8", "#4338ca"] },
   { id: "garden", label: "Garden", icon: "🌳", bg: ["#22c55e", "#166534"] },
   ...(HOME3D_IN_CAREER ? [{ id: "home-3d", label: "Your house", icon: "🏠", bg: ["#f59e0b", "#92400e"] } as App] : []),
-  { id: "achievements", label: "Awards", icon: "⭐", bg: ["#a78bfa", "#6d28d9"] },
   { id: "settings", label: "Settings", icon: "⚙️", bg: ["#9ca3af", "#4b5563"] },
 ];
 /** The dock: the four apps that open inside the phone and get used most. */
 const DOCK = new Set<string>(["social", "messages", "fixtures", "kickabout"]);
-const INSIDE = new Set<string>(["social", "kickabout", "league", "fixtures", "messages", "appstore"]);
+const INSIDE = new Set<string>(["social", "kickabout", "squad", "fixtures", "messages", "appstore", "scout"]);
+/** The gaffer's scout report, opened from his message (not an icon on the grid). */
+const SCOUT_APP: App = { id: "scout", label: "Scout report", icon: "🔍", bg: ["#34d399", "#047857"] };
 /** Unlock chain (lib/star/unlocks.ts): the App Store, shown only on a new
  *  career's phone, where the apps it does not start with are added. */
 const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️", bg: ["#60a5fa", "#1d4ed8"] };
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
-const appOf = (id: AppId) => (id === "appstore" ? APP_STORE_ICON : APPS.find((a) => a.id === id)!);
+const appOf = (id: AppId) => (id === "appstore" ? APP_STORE_ICON : id === "scout" ? SCOUT_APP : APPS.find((a) => a.id === id)!);
 
-export default function PhoneHome({ career, onToggleLike, onLeave, onClose, installed, onInstall, isNew, onOpened }: {
+export default function PhoneHome({ career, onToggleLike, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase }: {
   career: CareerState;
+  /** Your Hall of Fame chase line, for the team-mate's record message (phoneUnread.ts). */
+  hallChase?: string | null;
   onToggleLike?: (postId: string) => void;
   onLeave: (ph: Leave) => void;
   /** Put the phone down: back to Home. Harry got stuck on the phone's home
@@ -118,7 +125,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
 
   // Badges. Read once the page is in the browser (localStorage), then kept
   // in state so opening an app clears its badge straight away.
-  const msgs = useMemo(() => buildMessages(career), [career]);
+  const msgs = useMemo(() => buildMessages(career, hallChase), [career, hallChase]);
   const [seenMsgs, setSeenMsgs] = useState<Set<string> | null>(null);
   const [socialSeen, setSocialSeen] = useState<number | null>(null);
   useEffect(() => {
@@ -174,13 +181,18 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
                 >
                   {app === "social" && <MediaFeed career={career} mode="browse" onToggleLike={onToggleLike} inPhone />}
                   {app === "kickabout" && <Kickabout ready />}
-                  {app === "league" && (
-                    <AppShell app={appOf("league")}>
-                      <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2 pb-2 text-[12px]"><LeagueScreen career={career} compact /></div>
+                  {app === "squad" && (
+                    <AppShell app={appOf("squad")}>
+                      <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2 pb-2 text-[12px]"><LeagueScreen career={career} compact view="squad" hideTabs /></div>
+                    </AppShell>
+                  )}
+                  {app === "scout" && (
+                    <AppShell app={appOf("scout")}>
+                      <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2 pb-2 text-[12px]"><ScoutPane career={career} fixture={nextFixtureFor(career)} /></div>
                     </AppShell>
                   )}
                   {app === "fixtures" && <Fixtures career={career} glow={theme.glow} />}
-                  {app === "messages" && <Messages msgs={msgs} />}
+                  {app === "messages" && <Messages msgs={msgs} onOpen={(to) => (to === "scout" ? setApp("scout") : onLeave("sponsors"))} />}
                   {app === "appstore" && <AppStore career={career} onInstall={(id) => onInstall?.(id)} />}
                 </div>
               )}
@@ -334,7 +346,7 @@ function AppShell({ app, children, right }: { app: App; children: React.ReactNod
         >
           {app.icon}
         </span>
-        <span className="flex-1 text-[14px] font-black tracking-tight text-white">{app.label}</span>
+        <span className="flex-1 text-[14px] font-black tracking-tight text-white">{app.title ?? app.label}</span>
         {right}
       </div>
       {children}
@@ -391,55 +403,67 @@ function Kickabout({ ready }: { ready: boolean }) {
   );
 }
 
+/**
+ * FIXTURES & RESULTS (Mikey, 22 Oct 2026, 40:25-41:30): every game of the
+ * season in date order, league, cups and Europe, from the first to the last.
+ * A played game shows its score; the next game is lit and the list opens on it.
+ */
+function fixtureLabel(f: CareerState["fixtures"][number]): { top: string; sub?: string } {
+  if (!f.competition || f.kind === "league") return { top: `MW${f.week}` };
+  const c = f.competition;
+  const top = /Champions/.test(c) ? "UCL" : /Europa/.test(c) ? "UEL" : /Conference/.test(c) ? "UECL"
+    : c === "FA Cup" ? "FA Cup" : c === "League Cup" ? "Lg Cup" : c.replace(/ (Cup|Shield)$/, "").slice(0, 8);
+  const sub = [f.round?.replace("League phase", "League").replace("Round of ", "R").replace("Matchday ", "MD"), f.leg ? `L${f.leg}` : ""].filter(Boolean).join(" ");
+  return { top, sub: sub || undefined };
+}
+
 function Fixtures({ career, glow }: { career: CareerState; glow: string }) {
   const list = [...career.fixtures].sort(byFixtureDate(career));
-  const upcoming = list.filter((f) => !f.played).slice(0, 12);
-  const played = list.filter((f) => f.played).slice(-4).reverse();
-  const row = (f: (typeof list)[number], i: number, next = false) => {
-    const date = fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career));
-    const us = f.home ? f.homeScore : f.awayScore, them = f.home ? f.awayScore : f.homeScore;
-    const res = f.played && us !== undefined && them !== undefined ? (us > them ? "W" : us === them ? "D" : "L") : null;
-    const tone = res === "W" ? "from-emerald-400 to-emerald-600" : res === "L" ? "from-red-500 to-red-700" : "from-gray-400 to-gray-600";
-    const body = (
-      <div className="flex items-center gap-2 px-2.5 py-1.5">
-        <span className="w-[44px] shrink-0 text-[9px] font-bold leading-tight text-white/60">{date}</span>
-        <ClubBadge club={f.opponent} kit={kitsOf(f.opponent, career.clubKits?.[f.opponent]).home} size={20} />
-        <span className="min-w-0 flex-1 truncate text-[12px] font-black text-white">{f.home ? "v" : "@"} {short(f.opponent)}</span>
-        <span className="max-w-[58px] shrink-0 truncate rounded-full bg-white/[0.08] px-1.5 py-[1px] text-[8px] font-black uppercase tracking-wide text-white/60">{f.competition ?? "League"}</span>
-        {f.played && (
-          <span className={`flex shrink-0 items-center gap-1 rounded-md bg-gradient-to-b ${tone} px-1.5 py-[1px] text-[11px] font-black tabular-nums text-white shadow`}>
-            {us}-{them}
-          </span>
-        )}
-      </div>
-    );
-    return (
-      <RiseIn key={`${f.week}-${f.opponent}-${f.kind}`} index={i} step={35}>
-        {next ? (
-          <ClubCard glow={glow} className="relative mx-2 mb-1 rounded-xl">
-            <span className="absolute -top-1.5 right-2 rounded-full bg-emerald-400 px-1.5 text-[8px] font-black uppercase tracking-widest text-gray-950">Next</span>
-            {body}
-          </ClubCard>
-        ) : (
-          <div className="mx-2 mb-1 rounded-xl bg-white/[0.05] ring-1 ring-white/[0.06]">{body}</div>
-        )}
-      </RiseIn>
-    );
-  };
+  const nextIdx = list.findIndex((f) => !f.played);
+  const nextRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { nextRef.current?.scrollIntoView({ block: "center" }); }, []);
   return (
     <AppShell app={appOf("fixtures")}>
-      <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto pb-1">
-        {played.length === 0 && upcoming.length === 0 && <EmptySlots rows={5} icon="📅" />}
-        {played.length > 0 && <div className="px-3 pb-1 pt-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/55">Results</div>}
-        {played.map((f, i) => row(f, i))}
-        {upcoming.length > 0 && <div className="px-3 pb-1 pt-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/55">Coming up</div>}
-        {upcoming.map((f, i) => row(f, played.length + i, i === 0))}
+      <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto py-1" data-phone-fixtures>
+        {list.length === 0 && <EmptySlots rows={5} icon="📅" />}
+        {list.map((f, i) => {
+          const date = fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career));
+          const us = f.home ? f.homeScore : f.awayScore, them = f.home ? f.awayScore : f.homeScore;
+          const res = f.played && us !== undefined && them !== undefined ? (us > them ? "W" : us === them ? "D" : "L") : null;
+          const tone = res === "W" ? "from-emerald-400 to-emerald-600" : res === "L" ? "from-red-500 to-red-700" : "from-gray-400 to-gray-600";
+          const next = i === nextIdx;
+          const body = (
+            <div className="flex items-center gap-2 px-2.5 py-1.5">
+              <span className="w-[50px] shrink-0 text-[9px] font-black leading-tight text-amber-200">
+                <span className="block truncate">{fixtureLabel(f).top}</span>
+                {fixtureLabel(f).sub && <span className="block truncate text-[8px] text-amber-200/70">{fixtureLabel(f).sub}</span>}
+              </span>
+              <ClubBadge club={f.opponent} kit={kitsOf(f.opponent, career.clubKits?.[f.opponent]).home} size={20} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[12px] font-black text-white">{short(f.opponent)} <span className="text-white/60">({f.home ? "H" : "A"})</span></span>
+                {!f.played && <span className="block truncate text-[9px] font-bold text-white/60">{date}</span>}
+              </span>
+              {res ? (
+                <span className={`flex shrink-0 items-center gap-1 rounded-md bg-gradient-to-b ${tone} px-1.5 py-[1px] text-[11px] font-black tabular-nums text-white shadow`}>
+                  {us}-{them} {res}
+                </span>
+              ) : next ? <span className="shrink-0 rounded-full bg-emerald-400 px-1.5 text-[8px] font-black uppercase tracking-widest text-gray-950">Next</span> : null}
+            </div>
+          );
+          return next ? (
+            <div key={`${f.week}-${f.opponent}-${f.kind}`} ref={nextRef} data-fixture-next>
+              <ClubCard glow={glow} className="relative mx-2 mb-1 rounded-xl">{body}</ClubCard>
+            </div>
+          ) : (
+            <div key={`${f.week}-${f.opponent}-${f.kind}`} className={`mx-2 mb-1 rounded-xl ring-1 ring-white/[0.06] ${f.played ? "bg-white/[0.05]" : "bg-white/[0.025]"}`}>{body}</div>
+          );
+        })}
       </div>
     </AppShell>
   );
 }
 
-function Messages({ msgs }: { msgs: Msg[] }) {
+function Messages({ msgs, onOpen }: { msgs: Msg[]; onOpen: (to: "scout" | "sponsors") => void }) {
   return (
     <AppShell app={appOf("messages")}>
       <div className="kib-noscroll min-h-0 flex-1 space-y-2 overflow-y-auto px-2.5 pt-2.5">
@@ -456,12 +480,23 @@ function Messages({ msgs }: { msgs: Msg[] }) {
               </span>
               <div className="min-w-0 max-w-[82%]">
                 <div className="mb-0.5 pl-1 text-[9.5px] font-black text-white/60">{m.from}</div>
-                <div
-                  className="rounded-2xl rounded-bl-md px-3 py-1.5 text-[11.5px] font-bold leading-snug text-white"
-                  style={{ background: "linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.07))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12)" }}
-                >
-                  {m.text}
-                </div>
+                {m.open ? (
+                  <button
+                    onClick={() => onOpen(m.open!)}
+                    data-msg-open={m.open}
+                    className="kib-press block rounded-2xl rounded-bl-md px-3 py-1.5 text-left text-[11.5px] font-bold leading-snug text-white"
+                    style={{ background: "linear-gradient(180deg, rgba(52,211,153,.32), rgba(16,185,129,.16))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(52,211,153,.4)" }}
+                  >
+                    {m.text} <span className="font-black text-emerald-200">→</span>
+                  </button>
+                ) : (
+                  <div
+                    className="rounded-2xl rounded-bl-md px-3 py-1.5 text-[11.5px] font-bold leading-snug text-white"
+                    style={{ background: "linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.07))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.12)" }}
+                  >
+                    {m.text}
+                  </div>
+                )}
               </div>
             </div>
           </RiseIn>
