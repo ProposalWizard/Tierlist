@@ -257,7 +257,7 @@ function aimFace(T: Three, people: People, p: Person3D, head: THREE.Bone, bindIn
 }
 
 /** One picture: dress the head's man in this look, aim the camera at his head, draw, encode. */
-async function shoot(r: Rig, look: HeadshotLook, frame: HeadshotFrame = "head"): Promise<Blob | null> {
+async function shoot(r: Rig, look: HeadshotLook, frame: HeadshotFrame = "head", lossless = false): Promise<Blob | null> {
   const { T, people, renderer, scene, cam } = r;
   const s = await sitterFor(r, look.head, look.body);
   const t0 = performance.now();
@@ -294,10 +294,29 @@ async function shoot(r: Rig, look: HeadshotLook, frame: HeadshotFrame = "head"):
   r.withRim(T, { color: L.rim, strength: L.rimStrength, from: L.rimFrom }, () => renderer.render(scene, cam));
   p.root.visible = false;
   const blob = await new Promise<Blob | null>((res) => {
-    try { renderer.domElement.toBlob((b) => res(b), "image/webp", 0.9); } catch { res(null); }
+    try { renderer.domElement.toBlob((b) => res(b), lossless ? "image/png" : "image/webp", 0.9); } catch { res(null); }
   });
   headshotStats.shotMs.push(Math.round(performance.now() - t0));
   return blob && blob.size > 200 ? blob : null;
+}
+
+/**
+ * The bench's skin sheet only (/star-3d-bench-dev/skin): one picture made now,
+ * never kept (PNG, so nothing is blurred), and the same picture with the skin
+ * probe's regions (face, neck, upper arm, forearm, hand each one flat colour:
+ * toon/shader.ts setToonSkinProbe(2)).
+ */
+export async function benchHeadshot(look: HeadshotLook, frame: HeadshotFrame = "card"): Promise<{ url: string; probe: string } | null> {
+  const r = await getRig();
+  if (!r) return null;
+  const { setToonSkinProbe } = await import("../style3d/toon/shader");
+  const toUrl = (blob: Blob) => new Promise<string>((res) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result)); fr.readAsDataURL(blob); });
+  const pic = await shoot(r, look, frame, true);
+  setToonSkinProbe(2);
+  let probe: Blob | null = null;
+  try { probe = await shoot(r, look, frame, true); } finally { setToonSkinProbe(false); }
+  if (!pic || !probe) return null;
+  return { url: await toUrl(pic), probe: await toUrl(probe) };
 }
 
 /** Nothing to make for a while: free the WebGL context (the files stay in the page's cache). */
