@@ -4776,22 +4776,23 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       />
     );
   }
+  // The first steps' story list leads to each thing (v0.24, P2-69): Go
+  // takes you there and that screen's tutorial runs. Shown on the
+  // Achievements screen and the Stats page's Achievements tab.
+  const goStep = (id: StepGo) => {
+    setCareer(c => (c ? markSeen(c, `step-${id}`) : c));
+    if (id === "first-two-sessions") handleNavigate("skills");
+    else if (id === "first-game") { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }
+    else if (id === "boss-meeting") { if (managerTalkDue(career)) handleOpenRelationshipGame("boss"); else handleNavigate("life"); }
+    else if (id === "buy-phone") {
+      if (shopLookNow === "new") { setActiveNav("home"); setPhase("shop-lifestyle"); }
+      else { setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }
+    }
+    else if (id === "sponsors") setPhase("sponsors");
+  };
   if (phase === "achievements") {
-    // The first steps' story list leads to each thing (v0.24, P2-69): Go
-    // takes you there and that screen's tutorial runs.
     const step = nextStep(career);
     const sponsorsNew = isOpen(career, "sponsors") && !hasSeen(career, "help-sponsors");
-    const goStep = (id: StepGo) => {
-      setCareer(c => (c ? markSeen(c, `step-${id}`) : c));
-      if (id === "first-two-sessions") handleNavigate("skills");
-      else if (id === "first-game") { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }
-      else if (id === "boss-meeting") { if (managerTalkDue(career)) handleOpenRelationshipGame("boss"); else handleNavigate("life"); }
-      else if (id === "buy-phone") {
-        if (shopLookNow === "new") { setActiveNav("home"); setPhase("shop-lifestyle"); }
-        else { setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }
-      }
-      else if (id === "sponsors") setPhase("sponsors");
-    };
     const stepPrompt = step && !hasSeen(career, `step-${step.id}`) ? step.prompt
       : !step && sponsorsNew && !hasSeen(career, "step-sponsors") ? "Sponsors are open" : null;
     return (
@@ -5039,7 +5040,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   };
   const FROM_PHONE: NavSpot = { phase: "media", nav: "media" };
   const FROM_RELATIONS: NavSpot = { phase: "skills", nav: "life", trainingTab: "life" };
-  const FROM_STATS: NavSpot = { phase: "dashboard", nav: "home", homePage: 0 };
   const FROM_SHOP_PAGE: NavSpot = { phase: "dashboard", nav: "home", homePage: 2 };
   const played1 = career.fixtures.some(f => f.played);
   // v0.24: something just opened — say so on Home, before anything else
@@ -5324,16 +5324,15 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           // The Shop is a shop, not a light-green page (v0.25, P44).
           tones={[undefined, undefined, "calm"]}
           // Small arrows at the bottom edge instead of a tab row (Harry, 1 Oct
-          // 2026); Stats' left arrow is the League, Home's pitch runs under them.
+          // 2026); Home's pitch runs under them. Stats has no left arrow: League is in the bar (Mikey, 22 Oct 2026).
           arrows={{
             icons: ["📊", "🏠", "🛍️"],
-            leftEnd: isOpen(career, "league") ? { icon: "🏆", label: "League", onClick: () => handleNavigate("league") } : undefined,
             bleed: [1],
           }}
         >
           {[
             isOpen(career, "stats")
-              ? <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onOpen={(ph) => { pushFrom(FROM_STATS, ph); setPhase(ph); }} hallRecords={hallRecords} />
+              ? <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} hallRecords={hallRecords} achievementsTop={career.unlocks ? <UnlockChallenges career={career} onGo={goStep} /> : undefined} />
               : <LockedPage key="stats" title="Stats" feature="stats" />,
             <HomeHub
               key="home"

@@ -10,6 +10,7 @@ import { reputationTier } from "@/lib/star/manager";
 import { leadingScorer } from "@/lib/star/recognition";
 import { clauseSummary } from "@/lib/star/contracts";
 import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
+import { awardWhen } from "@/lib/star/awardText";
 import { ClubCard, StatBar, PressButton, RiseIn, CountUp, rgba, useClubTheme } from "./ui";
 import { SegTabs, CardTitle } from "./screenKit";
 
@@ -262,7 +263,7 @@ export default function DashboardStats({ career, onRenew, view }: Props) {
                 {[...(career.awards ?? [])].reverse().slice(0, 5).map((a, i) => (
                   <div key={i} className="text-[11px] text-white">
                     <span className="font-black text-amber-200">{a.kind}</span>
-                    {" · S"}{a.season}{a.week ? ` wk ${a.week}` : ""} — {a.detail}
+                    {" · "}{awardWhen(career, a)}{a.detail ? ` — ${a.detail}` : ""}
                   </div>
                 ))}
                 {(career.awards ?? []).length > 5 && (

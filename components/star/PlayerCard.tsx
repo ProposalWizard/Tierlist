@@ -16,7 +16,7 @@
  * on screen (playerCardImage.ts), and saves it as a PNG. html2canvas was
  * tried first and moved the text; see that file.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { CareerState } from "@/lib/star/types";
 import { CARD_STATS, cardData, cardGains, type CardStatKey, type CardTier } from "@/lib/star/playerCard";
 import { kitsOf } from "@/lib/star/kits";
@@ -53,7 +53,13 @@ function writeSeen(key: string, v: Record<string, number>) {
   try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* private mode: no flash memory */ }
 }
 
-export default function PlayerCard({ career, saveButton = true }: { career: CareerState; saveButton?: boolean }) {
+export default function PlayerCard({ career, saveButton = true, aside }: {
+  career: CareerState; saveButton?: boolean;
+  /** Beside the card, filling the gap to its right (the Stats tabs, Mikey 22 Oct 2026:
+   *  "the card should be shown completely … whatever gap is left should be filled in
+   *  with these tabs"). Save image then sits under it instead of on the card's corner. */
+  aside?: ReactNode;
+}) {
   const data = useMemo(() => cardData(career), [career]);
   const look = LOOK[data.tier];
   const kit = kitsOf(career.player.club).home;
@@ -138,7 +144,7 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
   );
 
   return (
-    <div ref={wrapRef} className="relative flex justify-center py-1" data-player-card={data.tier}>
+    <div ref={wrapRef} className={`relative flex py-1 ${aside ? "items-stretch gap-2" : "justify-center"}`} data-player-card={data.tier}>
       <style>{`
         @keyframes pcFlash { 0% { color: #16a34a; text-shadow: 0 0 10px rgba(34,197,94,.9); } 70% { color: #16a34a; text-shadow: 0 0 6px rgba(34,197,94,.6); } 100% { text-shadow: none; } }
         @keyframes pcPlus { 0% { opacity: 0; transform: translateY(4px); } 12% { opacity: 1; transform: translateY(0); } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-4px); } }
@@ -204,7 +210,25 @@ export default function PlayerCard({ career, saveButton = true }: { career: Care
         </div>
       </div>
 
-      {saveButton && (
+      {aside ? (
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5" data-card-aside>
+          {aside}
+          {saveButton && (
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving}
+              data-card-save
+              className="kib-press flex h-[30px] shrink-0 items-center justify-center gap-1.5 rounded-md text-[10px] font-black uppercase leading-none text-white"
+              style={{ background: "rgba(var(--sk-flat-rgb),.75)", boxShadow: "inset 0 0 0 1px var(--sk-edge)" }}
+              aria-label="Save image"
+            >
+              <span className="text-[14px] leading-none">⤓</span>
+              <span>{saving ? "Saving" : "Save image"}</span>
+            </button>
+          )}
+        </div>
+      ) : saveButton && (
         <button
           type="button"
           onClick={save}

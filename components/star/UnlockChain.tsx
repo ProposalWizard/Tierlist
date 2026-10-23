@@ -249,6 +249,8 @@ export function UnlockChallenges({ career, onGo }: { career: CareerState; onGo: 
   const STEPS = stepsFor(career);
   const sponsorsOpen = isOpen(career, "sponsors");
   const sponsorsNew = sponsorsOpen && !hasSeen(career, "help-sponsors");
+  // Every step done and Sponsors seen: the list has nothing left to say (Mikey, 22 Oct 2026, 44:20).
+  if (!next && sponsorsOpen && !sponsorsNew) return null;
   return (
     <div className="mb-3 overflow-hidden rounded-2xl ring-1 ring-amber-300/30" style={{ background: "linear-gradient(180deg, rgba(251,191,36,.12), rgba(0,0,0,.25))" }}>
       <div className="flex items-center justify-between px-3 pt-2.5">

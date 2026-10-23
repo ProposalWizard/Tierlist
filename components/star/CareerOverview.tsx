@@ -407,7 +407,11 @@ function SeasonsPage({ o }: { o: CareerOverviewData }) {
 /** Every season, one row each: club, finish, trophies, goals, assists,
  *  rating. Tap a row for who won what that season. `newestFirst` for a
  *  career still being played (the in-game All seasons page). */
-export function SeasonList({ o, newestFirst = false }: { o: CareerOverviewData; newestFirst?: boolean }) {
+export function SeasonList({ o, newestFirst = false, awardsFor }: {
+  o: CareerOverviewData; newestFirst?: boolean;
+  /** Tap a season: the awards you won in it, named in full (lib/star/awardText.ts). */
+  awardsFor?: (season: number) => { title: string; sub: string }[];
+}) {
   const [open, setOpen] = useState<number | null>(null);
   const rows = newestFirst ? [...o.seasons].reverse() : o.seasons;
   return (
@@ -449,7 +453,7 @@ export function SeasonList({ o, newestFirst = false }: { o: CareerOverviewData; 
                 <><Blank w={22} /><Blank w={22} /><Blank w={28} /></>
               )}
             </button>
-            {isOpen && <SeasonDetail s={s} o={o} />}
+            {isOpen && <SeasonDetail s={s} o={o} won={awardsFor?.(s.season)} />}
           </div>
         );
       })}
@@ -458,7 +462,7 @@ export function SeasonList({ o, newestFirst = false }: { o: CareerOverviewData; 
   );
 }
 
-function SeasonDetail({ s, o }: { s: OverviewSeason; o: CareerOverviewData }) {
+function SeasonDetail({ s, o, won }: { s: OverviewSeason; o: CareerOverviewData; won?: { title: string; sub: string }[] }) {
   const w = s.world;
   const rows: { label: string; club?: string; person?: string }[] = w ? [
     { label: leagueNameFor(w.division), club: w.winners.league },
@@ -475,6 +479,19 @@ function SeasonDetail({ s, o }: { s: OverviewSeason; o: CareerOverviewData }) {
           <span><b className="text-white">{s.stats.apps}</b> apps</span>
           <span><b className="text-white">{s.stats.motm}</b> Star Man</span>
           {s.arrivedFrom && <span>from <b className="text-white">{short(s.arrivedFrom.club)}</b>{s.arrivedFrom.fee > 0 ? ` · ★${formatMoney(s.arrivedFrom.fee)}` : ""}</span>}
+        </div>
+      )}
+      {won && won.length > 0 && (
+        <div className="mb-2" data-season-awards>
+          <div className="text-[9.5px] font-black uppercase tracking-[0.18em] text-amber-300">Your awards {s.label}</div>
+          <div className="mt-1 space-y-0.5">
+            {won.map((a, k) => (
+              <div key={k} className="px-1.5 py-1" style={{ background: "rgba(251,191,36,.12)", boxShadow: "inset 0 0 0 1px rgba(251,191,36,.35)" }}>
+                <div className="truncate text-[11.5px] font-black text-white">{a.title}</div>
+                {a.sub && <div className="truncate text-[10px] font-bold text-amber-100/85">{a.sub}</div>}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <div className="text-[9.5px] font-black uppercase tracking-[0.18em] text-amber-300">Who won {s.label}</div>
