@@ -14,6 +14,7 @@ FACT-DAT-002 | [SUPERSEDED] star_xp_config.sql is PENDING, seen missing in the l
 FACT-DAT-003 | star_casino.sql: DO NOT RUN; the casino stays on the phone with CASINO_ON_SERVER false. | economy,data
 FACT-DAT-004 | Every other listed migration (draft, sofifa, security, star tables) is RUN, no action needed; full rows are in SESSION_LOG.md. | data
 FACT-DAT-005 | star_xp_config and star_tuning_notes were run live on 23 Oct 2026 (Claude via the Supabase connector, Harry's yes); update_login_streak now only updates the signed-in player. | data
+FACT-DAT-006 | The Supabase connector works in cloud Claude chats since 23 Oct 2026 (project cagkgfketucousksgtbk); CLAUDE.md's "Pending Setup" line saying cloud connectors fail is out of date for Supabase. | process,data
 FACT-ENG-001 | The guard also fails on a direct CanvasMatch mount, a grown KNOWN_COPIES list, a new canvas animation loop or a blind canary. | engine
 FACT-ENG-002 | Trial penalties, free kicks, training strike drills and the gauntlet mount EngineFeature; a difference is a named dial. | engine
 FACT-ENG-003 | Still copies, to port next: five-a-side only; the /star-match-dev fork was deleted (18 Oct 2026). | admin,engine
