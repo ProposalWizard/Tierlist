@@ -4,7 +4,7 @@ import { PITCH_W } from "../../lib/star/pitch";
 import {
   cameraFor, passersOf, frameForNewView, engineFrameOf, newViewCanvasHeight,
   NEW_VIEW_WIDTH_M, NEW_VIEW_KIND_WIDTH_M, NEW_VIEW_MAX_HW, NEW_VIEW_MIN_HW, MATCH_VIEW_DEFAULT,
-  setActionFit, actionFitOn,
+  setActionFit, actionFitOn, figureShrinkFor,
 } from "../../lib/star/matchView";
 
 /**
@@ -130,6 +130,13 @@ setActionFit(null);
 check(newViewCanvasHeight(366, 10000) === Math.round(366 * NEW_VIEW_MAX_HW), "tall phone: option D's height");
 check(newViewCanvasHeight(366, 200) === Math.round(366 * NEW_VIEW_MIN_HW), "short screen: never under 5:8");
 check(newViewCanvasHeight(366, 700) === 700, "fills the room it has");
+
+// Headers and volleys: men the long-range size (Harry, 23 Oct 2026: "crazy big guys").
+// Their 27 m camera (the drill's 26.25 m) would draw a man 38/27 times a long-range man.
+check(Math.abs(figureShrinkFor("header", 27) - 27 / NEW_VIEW_WIDTH_M) < 1e-9, "header on a 27 m camera: men shrunk to the 38 m size");
+check(Math.abs(figureShrinkFor("volley", 26.25) - 26.25 / NEW_VIEW_WIDTH_M) < 1e-9, "volley drill on 26.25 m: men shrunk to the 38 m size");
+check(figureShrinkFor("header", 45) === 1, "a camera wider than 38 m never grows the men");
+for (const k of ["long_range", "one_on_one", "penalty", "corner"] as const) check(figureShrinkFor(k, 27) === 1, `${k}: unchanged`);
 
 if (problems.length) {
   console.error(problems.slice(0, 20).join("\n"));
