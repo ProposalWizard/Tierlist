@@ -3,11 +3,11 @@
  * thing at a time, each one brought in by a person at the right moment:
  *
  *   0  Signing day   Home: your player, energy, Play. League and Play open.
- *                    "Game on Saturday. You're in the squad. Tap Play."
+ *                    "Your first game is next. You're in the squad. Tap Play."
  *   1  After game 1  The gaffer: "Come and see me" → his office (the talk).
- *                    Then "Training tomorrow": Training opens, and the
+ *                    Then "Time to train": Training opens, and the
  *                    training day is Power and Technique, free, one by one (Mikey, 24 Oct).
- *                    Then "You're ready for Saturday" → Play.
+ *                    Then "You're ready for the next game" → Play.
  *   2  After game 2  Energy is low: a free Basic can, and USE it on Home.
  *                    A team-mate gives you his cracked old phone: the Phone
  *                    opens (Messages, Fixtures, Squad, Relations); the first
@@ -120,8 +120,8 @@ export function beatText(c: CareerState, b: Beat): BeatText {
   const mate = teamMateName(c);
   switch (b) {
     case "boss": return { who: gaffer, icon: "🧢", title: "Come and see me", line: "Good first game, son. Come to my office, I want a word.", button: "Go to his office" };
-    case "training": return { who: gaffer, icon: "🧢", title: "Training tomorrow", line: "Training's open. Tomorrow you do two drills, Power and Technique, so I can see what you've got. They cost no energy.", button: "Go to training" };
-    case "ready": return { who: gaffer, icon: "🧢", title: "You're ready", line: "Great work. You're ready for the game on Saturday.", button: "Play" };
+    case "training": return { who: gaffer, icon: "🧢", title: "Time to train", line: "Training's open. Do two drills for me now, Power and Technique, so I can see what you've got. They cost no energy.", button: "Go to training" };
+    case "ready": return { who: gaffer, icon: "🧢", title: "You're ready", line: "Great work. You're ready for the next game.", button: "Play" };
     // "Claim your reward" once the Star Pass has a reward at level 2 (the
     // level ladder is the next build); until then it shows the Pass.
     case "starpass": return { who: "Star Pass", icon: "⭐", title: "You levelled up", line: "You're star level 2. Every level on the Star Pass gives you something. Take a look.", button: "Open the Star Pass" };

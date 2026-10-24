@@ -552,6 +552,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [chainPop, setChainPop] = useState<{ label: string; unlocked: string; phone?: boolean; stay?: boolean } | null>(null);
   // A "?" replay of the pointers for the screen you are on (never forced).
   const [helpTour, setHelpTour] = useState<TourStep[] | null>(null);
+  // The Star Pass is open from the top bar: the story waits until it shuts.
+  const [starPassOpen, setStarPassOpen] = useState(false);
   // ── v0.24 first steps (lib/star/unlocks.ts, lib/star/tours.ts) ──
   // The match's achievements, popped up over the post-match screen with no
   // Next button (P2-84).
@@ -5159,13 +5161,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   })();
   // The first hour as a story (lib/star/story.ts): a person brings the next
   // thing in, on Home, when nothing else is showing.
-  const beat: Beat | null = swipeActive && homePage === 1 && quiet && !tour && !energyToast && !potmWin ? storyBeat(career, starsNow(career)) : null;
+  const beat: Beat | null = swipeActive && homePage === 1 && quiet && !tour && !energyToast && !potmWin && !starPassOpen ? storyBeat(career, starsNow(career)) : null;
   const goBeat = (b: Beat) => {
     setCareer(c => (c ? ackBeat(c, b) : c));
     const point = (target: string, text: string) => setHelpTour([{ target, text, press: true }]);
     if (b === "boss") handleOpenRelationshipGame("boss");
     else if (b === "training") point("nav-training", "Tap Training");
-    else if (b === "ready") point("nav-play", "Game on Saturday. Tap Play");
+    else if (b === "ready") point("nav-play", "Next game. Tap Play");
     else if (b === "starpass") point("rating", "Tap your star level");
     else if (b === "can") point("can-use-basic", "Tap Use to drink it");
     else if (b === "phone") handleNavigate("media");
@@ -5223,6 +5225,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onUseCan={handleUseCan}
           onOpenCans={() => setPhase("shop-kib")}
           onCareer={setCareer}
+          onStarPass={setStarPassOpen}
         />
       }
       // The house always means Home (navigation round 1, Harry's answer 16,
@@ -5242,7 +5245,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       {swipeActive && newsQueue.length > 0 && !chainPop && newStar === null && (
         <BreakingNews key={newsQueue[0].headline} news={newsQueue[0]} onClose={() => setNewsQueue(q => q.slice(1))} />
       )}
-      {setPieceChat && !tour && !beat && (
+      {setPieceChat && !tour && !beat && !starPassOpen && (
         <ManagerChat
           key={setPieceChat.duties.join()}
           name={career.manager?.name || loadLineup(career.player.club)?.manager || "The manager"}

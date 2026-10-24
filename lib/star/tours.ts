@@ -55,7 +55,7 @@ export function welcomeTour(gameFirst: boolean, story = false): TourStep[] {
     BAR.energy,
     ENERGY_MODES,
     story
-      ? { target: "nav-play", text: "Game on Saturday. You're in the squad. Tap Play", press: true }
+      ? { target: "nav-play", text: "Your first game is next. You're in the squad. Tap Play", press: true }
       : gameFirst
       ? { target: "nav-play", text: "You've got a game today. Tap Play", press: true }
       : { target: "nav-training", text: "Go to training", press: true },
