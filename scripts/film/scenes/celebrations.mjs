@@ -17,6 +17,8 @@
 import { chromium } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
+import { installAudioTap } from "./audio-tap.mjs";
+import { startPcm, stopPcm } from "./audio-pcm.mjs";
 
 const [PORT, CLIP, OUT] = process.argv.slice(2);
 const arg = (f, d) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : d; };
@@ -34,7 +36,7 @@ const BIG = CLIP === "big-moment";
 const vidDir = path.join(OUT, `vid-${CLIP}`);
 fs.rmSync(vidDir, { recursive: true, force: true });
 const ctx = await chromium.launchPersistentContext(path.join(OUT, `prof-${CLIP}`), {
-  executablePath: CHROME, args: ["--disable-dev-shm-usage"],
+  executablePath: CHROME, args: ["--disable-dev-shm-usage", "--autoplay-policy=no-user-gesture-required"],
   viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, hasTouch: true, isMobile: true,
   ...(CLIP === "setup" ? {} : { recordVideo: { dir: vidDir, size: { width: 390, height: 844 } } }),
 });
@@ -65,6 +67,8 @@ if (CLIP === "setup") {
   process.exit(0);
 }
 
+// The game's own sound, recorded inside the page (audio-tap.mjs); the cut puts it under the clip.
+await installAudioTap(ctx);
 // Open on the seed, the move equipped, the view chosen.
 const seed = JSON.parse(fs.readFileSync(SEED, "utf8"));
 await pg.addInitScript(([seed, key, move, v3d]) => {
@@ -82,7 +86,9 @@ await pg.addInitScript(([seed, key, move, v3d]) => {
   if (v3d) window.__ev3dDiag = {}; // dev only (an object, as engineView.ts expects): lets the scene project the posts through the 3D camera
 }, [seed, KEY, MOVE, VIEW3D]);
 await pg.goto(`${BASE}/star-dev`, { waitUntil: "domcontentloaded", timeout: 300000 });
-await wait(6000);
+await wait(1500);
+const pcm = await startPcm(pg, at).catch((e) => { log("no audio tap:", e.message); return null; });
+await wait(4500);
 
 const celebOn = () => pg.evaluate(() => !!document.querySelector("[data-celebration]"));
 const marks = { clip: CLIP, move: MOVE };
@@ -189,6 +195,7 @@ while (!done && at() < (VIEW3D ? 3300 : 1700)) {
   done = true;
 }
 marks.errors = [...new Set(errors)];
+try { if (pcm) marks.audioAt = await stopPcm(pg, path.join(OUT, `${CLIP}.wav`), pcm); } catch (e) { log("audio not saved:", e.message); }
 fs.writeFileSync(path.join(OUT, `${CLIP}.json`), JSON.stringify(marks, null, 1));
 await ctx.close();
 const vids = fs.existsSync(vidDir) ? fs.readdirSync(vidDir).map((f) => path.join(vidDir, f)).sort((a, b) => fs.statSync(b).size - fs.statSync(a).size) : [];
