@@ -9,18 +9,51 @@
  * strike screen. Aiming reads where the ball and the posts are on the glass
  * (window.__starMatch, read-only, dev builds only).
  *
- * The match is seeded by the save (season*1000+week), so the same save and the
- * same inputs play the same way. The aims below were picked to score with
- * scripts/film/scenes/seedMatch-style saves (all skills 90).
+ * The match is seeded by the save (season*1000+week), but each page visit
+ * also draws a random "visit salt" that picks which drawing a chance is served
+ * from. loadSave pins the browser's random numbers (VISIT_SEED) so the same
+ * save serves the same chances; the aims below then score the same way.
+ * DEFAULT_AIMS[0] was found for the 24 Oct seedMatch.json save (Arsenal v Man
+ * City, Community Shield, 30-minute match, skills 90): 7 of 7 runs scored.
+ * Another save serves other chances: sweep aims for it (stopAfterChance).
+ * Energy: the cans the save owns are drunk first (an empty player is left out).
  */
 import { readFileSync } from "node:fs";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const CAREER_KEY = "star-career-v2::anon";
 
+/**
+ * The same page visit every run. The match is seeded by the save, but each
+ * page visit also draws a "visit salt" from crypto.getRandomValues
+ * (lib/star/chanceMaker.ts saltFor) that picks WHICH drawing a chance is
+ * served from, so two runs of the same save got different pictures. Here the
+ * browser's crypto random numbers (and Math.random) come from a fixed seed
+ * instead, so the same save serves the same chances. It picks the situation only: the ball, the
+ * keeper and the result are the game's own, untouched.
+ */
+export const VISIT_SEED = 0x5eed1;
+async function pinVisitRandom(page, seed) {
+  await page.addInitScript((seed) => {
+    let a = seed >>> 0;
+    const next = () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0); };
+    const orig = crypto.getRandomValues.bind(crypto);
+    crypto.getRandomValues = (arr) => {
+      if (!(arr instanceof Uint32Array || arr instanceof Uint8Array || arr instanceof Uint16Array || arr instanceof Int32Array)) return orig(arr);
+      const max = arr instanceof Uint8Array ? 256 : arr instanceof Uint16Array ? 65536 : 4294967296;
+      for (let i = 0; i < arr.length; i++) arr[i] = next() % max;
+      return arr;
+    };
+    // Math.random too (the run after a pass, playOnRngRef, still draws from it).
+    let b = (seed ^ 0x9e3779b9) >>> 0;
+    Math.random = () => { b = (b + 0x6d2b79f5) >>> 0; let t = b; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }, seed);
+}
+
 /** Open /star-dev with a save {career, clips} and wait for the Home screen. */
-export async function loadSave(page, baseUrl, savePath) {
+export async function loadSave(page, baseUrl, savePath, { visitSeed = VISIT_SEED } = {}) {
   const seed = JSON.parse(readFileSync(savePath, "utf8"));
+  if (visitSeed != null && !page.__visitPinned) { await pinVisitRandom(page, visitSeed); page.__visitPinned = true; }
   for (let attempt = 0; ; attempt++) {
     try {
       await page.goto(`${baseUrl}/star-dev`, { waitUntil: "domcontentloaded", timeout: 180000 });
@@ -72,7 +105,7 @@ const matchState = (page) => page.evaluate(() => {
   try {
     const f = m.frame();
     const get = (r) => f.men.find((x) => x.role === r);
-    return { phase: m.phase(), kind: m.kind(), ball: m.ball(), postL: get("postL"), postR: get("postR"), keeper: get("keeper"), you: get("you"), canvas: f.canvas, facing: f.facing };
+    return { phase: m.phase(), kind: m.kind(), auto: !!(f.sc && f.sc.autoKick), ball: m.ball(), postL: get("postL"), postR: get("postR"), keeper: get("keeper"), you: get("you"), canvas: f.canvas, facing: f.facing };
   } catch { return { phase: m.phase(), kind: m.kind() }; }
 });
 
@@ -103,24 +136,30 @@ async function waitFor(fn, ms, every = 250) {
   for (;;) { const v = await fn().catch(() => null); if (v) return v; if (Date.now() > end) return null; await sleep(every); }
 }
 
-/** The ball's spot on the glass, once the camera has stopped moving. */
-async function stableAim(page, ms = 15000) {
-  let prev = null, same = 0;
+/**
+ * Wait for the chance to settle, untouched: the build-up replay plays out to
+ * its drawn end, the run-on men reach their spots and the camera stops. Every
+ * man then stands on the same spot every run, whatever the frame rate, so the
+ * same aim plays the same way. (Skipping the build-up with a tap, or shooting
+ * while men still run, made each run's picture different.)
+ */
+async function stableAim(page, ms = 60000) {
+  let prev = "", same = 0;
   const end = Date.now() + ms;
   while (Date.now() < end) {
-    const s = await matchState(page);
-    if (!s || s.phase !== "aim") return s;
-    if (await page.evaluate(() => /Build-up\s*·\s*tap to skip/i.test(document.body.innerText))) {
-      // A build-up replay is watched, not played: one tap skips it.
-      const c = s.canvas; if (c) await page.mouse.click(c.x + c.w * 0.5, c.y + c.h * 0.92);
-      prev = null; same = 0; await sleep(400); continue;
-    }
-    if (s.ball && prev && Math.hypot(s.ball.x - prev.ball.x, s.ball.y - prev.ball.y) < 0.5
-        && Math.hypot(s.postL.cx - prev.postL.cx, s.postL.cy - prev.postL.cy) < 0.5) {
-      if (++same >= 3) return s;
-    } else same = 0;
-    prev = s;
-    await sleep(150);
+    const r = await page.evaluate(() => {
+      const m = window.__starMatch;
+      if (!m) return null;
+      const ph = m.phase();
+      if (ph !== "aim") return { ph };
+      const f = m.frame();
+      const sig = f.men.map((q) => `${q.x.toFixed(2)},${q.y.toFixed(2)}`).join(" ") + ` cam ${f.cam.x1.toFixed(2)},${f.cam.y1.toFixed(2)},${f.cam.x2.toFixed(2)},${f.cam.y2.toFixed(2)}`;
+      return { ph, sig, bu: /Build-up\s*·\s*tap to skip/i.test(document.body.innerText) };
+    }).catch(() => null);
+    if (!r || r.ph !== "aim") return await matchState(page);
+    if (!r.bu && r.sig === prev) { if (++same >= 4) return await matchState(page); } else same = 0;
+    prev = r.sig;
+    await sleep(200);
   }
   return await matchState(page);
 }
@@ -177,7 +216,12 @@ const scoreNow = (page) => page.evaluate(() => {
 
 /** The aims, one per chance in the order they come. Picked to score (see top). */
 export const DEFAULT_AIMS = [
-  { t: 0.8, power: 0.85, cy: 0.3 },
+  // Chance 1 (30+1', a tight angle from the left, ball 11 m wide of the near
+  // post): full power at the far post, struck above centre so it stays low.
+  // Scored 4 of 4 with VISIT_SEED; t 0.8-0.95 or a chip were saved or over.
+  { t: 1.0, power: 1.0, cy: -0.3 },
+  // Later chances: not tuned (the header at 30+4 was saved or blocked with
+  // every aim tried). A 1-1 goes to penalties, which the loop plays through.
   { t: 0.2, power: 0.85, cy: 0.3 },
   { t: 0.85, power: 0.75, cy: 0.3 },
   { t: 0.15, power: 0.75, cy: 0.3 },
@@ -187,7 +231,7 @@ export const DEFAULT_AIMS = [
  * From the Home screen: top up energy with the cans you own (a tired player is
  * left out), play the match, stop on Post Match Reactions.
  */
-export async function playToReactions(page, { log = () => {}, onFullTime, aims = DEFAULT_AIMS, mode = "HIGH", timeoutMs = 600000 } = {}) {
+export async function playToReactions(page, { log = () => {}, onFullTime, aims = DEFAULT_AIMS, mode = null, penaltyAim = { t: 0.85, power: 0.75, cy: -0.2 }, timeoutMs = 600000, stopAfterChance = 0, onStrike } = {}) {
   const t0 = Date.now();
   const goalsBefore = await careerGoals(page);
   await dismissDialogues(page, log);
@@ -196,31 +240,43 @@ export async function playToReactions(page, { log = () => {}, onFullTime, aims =
     const c = await readCareer(page);
     if (!c || c.energy >= 100 || !(c.kibCans?.basic > 0)) break;
     log(`energy ${c.energy}: using a can`);
-    await page.locator("button:visible").filter({ hasText: /^\s*USE\s*$/i }).first().click();
+    await page.locator("button:visible").filter({ hasText: /^\s*USE\s*$/i }).first().click({ timeout: 30000 });
     await waitFor(async () => (await readCareer(page))?.energy > c.energy, 5000);
     await sleep(500);
     await dismissDialogues(page, log);
   }
-  await page.locator("[data-tour=nav-play]:visible").first().click();
-  let chances = 0, modeSet = false, fullTimeSeen = false;
+  log("PLAY");
+  await page.locator("[data-tour=nav-play]:visible").first().click({ timeout: 30000 });
+  let chances = 0, modeSet = false, fullTimeSeen = false, fullTimeOrPens = false;
   const shots = [];
+  let beat = 0, lastSig = "";
   while (Date.now() - t0 < timeoutMs) {
+    if (Date.now() - beat > 10000) {
+      beat = Date.now();
+      const m = await matchState(page).catch(() => null);
+      const sig = JSON.stringify([m?.phase, m?.kind, (await buttons(page)).slice(0, 5)]);
+      if (sig !== lastSig) { log(`… ${sig}`); lastSig = sig; }
+    }
     const s = await matchState(page);
+    if (s && s.phase === "aim" && s.auto) { await sleep(300); continue; }   // somebody else's penalty: watch it
     if (s && s.phase === "aim" && !fullTimeSeen) {
       const st = await stableAim(page);
       if (st && st.phase === "aim" && st.ball && st.postL) {
-        const aim = aims[Math.min(chances, aims.length - 1)];
+        const inShootout = fullTimeOrPens;
+        const aim = inShootout ? penaltyAim : aims[Math.min(chances, aims.length - 1)];
         const before = await scoreNow(page);
         const minute = await page.evaluate(() => (document.body.innerText.match(/\b\d+(\+\d+)?'/) || [""])[0]);
         chances++;
         log(`chance ${chances} at ${minute}: ${st.kind} (score ${before})`);
         const ok = await takeChance(page, st, aim, log);
+        if (onStrike) await onStrike(chances, st);
         // Wait for the chance to finish (back to the feed or the next screen).
         await waitFor(async () => { const m = await matchState(page); return !m || m.phase === "feed" || m.phase === "postmatch" || (m.phase === "aim" && (await page.locator('div.cursor-pointer[style*="aspect-ratio"]').count()) === 0 && false); }, 30000, 200);
         const after = await scoreNow(page);
         const scored = !!(before && after && after[0] > before[0]);
         shots.push({ n: chances, minute, kind: st.kind, aim, struck: ok, scored });
         log(`  → ${scored ? "GOAL" : "no goal"} (score ${after})`);
+        if (stopAfterChance && chances >= stopAfterChance) return { stopped: true, chances, shots, ms: Date.now() - t0 };
         continue;
       }
     }
@@ -242,15 +298,18 @@ export async function playToReactions(page, { log = () => {}, onFullTime, aims =
       return { goalsByYou, score, ms: Date.now() - t0, chances, shots, result: last ? { for: last.goalsFor ?? last.scoreFor, against: last.goalsAgainst ?? last.scoreAgainst } : null };
     }
     const btn = await buttons(page);
-    if (!fullTimeSeen && btn.some((b) => /^FULL TIME/i.test(b))) {
+    // Full time: the FULL TIME button, or (after a shootout, which has none)
+    // the first result screen (MATCH RATING … CONTINUE).
+    if (!fullTimeSeen && (btn.some((b) => /^FULL TIME/i.test(b)) || btn.some((b) => /^MATCH RATING/i.test(b)))) {
       fullTimeSeen = true;
       log(`full time at ${((Date.now() - t0) / 1000).toFixed(0)}s`);
       if (onFullTime) await onFullTime();
     }
-    if (!modeSet && s && s.phase === "feed" && btn.some((b) => b === mode)) {
+    if (mode && !modeSet && s && s.phase === "feed" && btn.some((b) => b === mode)) {
       await clickText(page, new RegExp(`^${mode}$`)); modeSet = true; log(`energy mode ${mode}`);
     }
-    const clicked = await clickText(page, /^(Team sheets.*|KICK OFF.*|Play Match.*|Get out there.*|CONTINUE.*|Continue.*|FULL TIME.*|Next ▸|Got it|OK)$/);
+    if (btn.some((b) => /^PENALTIES/i.test(b))) fullTimeOrPens = true;
+    const clicked = await clickText(page, /^(Team sheets.*|KICK OFF.*|Play Match.*|Get out there.*|PENALTIES.*|CONTINUE.*|Continue.*|FULL TIME.*|Next ▸|Got it|OK)$/);
     if (clicked) { log(`click: ${clicked}`); await sleep(600); continue; }
     await sleep(300);
   }
