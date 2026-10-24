@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { gradeContact } from "@/lib/star/shotModel";
-import { airContactRead, airCentreR, VOLLEY_SWEET } from "@/lib/star/airborneChance";
+import { airContactRead, airCentreR, airLateContact, airStrikeTimerS, VOLLEY_SWEET } from "@/lib/star/airborneChance";
 import { headerJump } from "@/lib/star/aerial";
 
 /**
@@ -54,7 +54,8 @@ interface Props {
    * but a run-up penalty — there is no time limit, exactly as before.
    */
   timeLimitS?: number;
-  /** Called once if the countdown runs out before a tap (the kick is scuffed). */
+  /** Called once if the countdown runs out before a tap (the kick is scuffed).
+   *  A ball in the air never calls it: it is met late instead (onContact). */
   onTimeout?: () => void;
   /** How the ball moves on this screen; still when not given. */
   motion?: BallMotion;
@@ -84,6 +85,9 @@ interface Props {
 
 /** How long "TOO SLOW" shows before the scuffed kick is taken. */
 const TOO_SLOW_MS = 350;
+/** A header or volley: how long its verdict (NODDED DOWN …) shows before the
+ *  ball goes (was the ground strike's 420 ms; Harry, 0.108h: "quicker"). */
+const AIR_VERDICT_MS = 300;
 
 /** How far out from the ball's centre a touch still strikes it, in ball
  *  radii: the ball plus a margin reaching the countdown ring (1.14). */
@@ -95,6 +99,8 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
   const moverRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
   const liftRef = useRef(0);
+  /** Where the moving ball is across the screen (-0.12 … 0.12), for a late touch. */
+  const sweepXRef = useRef(0);
   // B10: the volley's height meter (its marker follows the ball's height).
   const meterRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
@@ -111,6 +117,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       if (!area || !mover) return;
       const { x, y } = ballMotionAt(motion, (performance.now() - t0) / 1000, period);
       mover.style.transform = `translate(${x * area.clientWidth}px, ${y * area.clientHeight}px)`;
+      sweepXRef.current = x;
       // How high it is now, 0..1 of this motion's top (float sits ~0.42-0.5 up).
       const top = motion === "float" ? 0.5 : motion === "bounce" ? 0.26 : 0.05;
       liftRef.current = Math.max(0, Math.min(1, -y / top));
@@ -133,7 +140,14 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
   const onTimeoutRef = useRef(onTimeout);
   onTimeoutRef.current = onTimeout;
 
-  const timed = !!timeLimitS && timeLimitS > 0;
+  // A ball in the air (Head it? / Volley it?) is always timed (Harry, 0.108h,
+  // 24 Oct 2026: "maybe have it be timed"): the run-up's own countdown, its
+  // length from your Aerial (airborneChance.ts airStrikeTimerS). Run out and
+  // you meet it late: a weak glance (header) or a scuffed volley, struck
+  // through the normal onContact, never a stall.
+  const airKind: "header" | "volley" | null = motion === "float" ? "header" : motion === "bounce" ? "volley" : null;
+  const limitS = timeLimitS && timeLimitS > 0 ? timeLimitS : airKind ? airStrikeTimerS(airKind, aerial) : undefined;
+  const timed = !!limitS && limitS > 0;
 
   // The clock starts on the second frame after this screen appears — i.e.
   // once it has actually been drawn — not the instant it mounts. A slow
@@ -149,17 +163,23 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
 
   // The deadline. A tap locks the screen (below) and a locked screen never
   // times out.
+  const onContactRef = useRef(onContact);
+  onContactRef.current = onContact;
   useEffect(() => {
-    if (!started || !timeLimitS || !(timeLimitS > 0)) return;
+    if (!started || !limitS || !(limitS > 0)) return;
     let fire = 0;
     const id = window.setTimeout(() => {
       if (locked.current) return;
       locked.current = true;
       setTimedOut(true);
-      fire = window.setTimeout(() => onTimeoutRef.current?.(), TOO_SLOW_MS);
-    }, timeLimitS * 1000);
+      fire = window.setTimeout(() => {
+        // A ball in the air: met late, off-centre, where it is now.
+        if (airKind && !(timeLimitS && timeLimitS > 0)) onContactRef.current(airLateContact(airKind, liftRef.current, sweepXRef.current));
+        else onTimeoutRef.current?.();
+      }, TOO_SLOW_MS);
+    }, limitS * 1000);
     return () => { window.clearTimeout(id); window.clearTimeout(fire); };
-  }, [started, timeLimitS]);
+  }, [started, limitS, airKind, timeLimitS]);
 
   // The ring and bar sit full until the clock starts, and stop where they
   // are the moment you tap (or run out).
@@ -208,7 +228,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       if (g.label) setGraded({ label: g.label, good: g.grade === "clean" || g.grade === "knuckle" || g.label === "CURLER" });
     }
     // A graded strike holds a beat longer so the verdict can be read.
-    setTimeout(() => onContact(air ? { cx, cy, lift } : { cx, cy }), grades || air ? 420 : 200);
+    setTimeout(() => onContact(air ? { cx, cy, lift } : { cx, cy }), air ? AIR_VERDICT_MS : grades ? 420 : 200);
   };
 
   const jump = motion === "float" && ballZ !== undefined && aerial !== undefined ? headerJump(ballZ, aerial) : null;
@@ -311,7 +331,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
                 ? { transformOrigin: "left center", transform: "scaleX(0)" }
                 : {
                   transformOrigin: "left center",
-                  animation: `kibCountBar ${timeLimitS}s linear forwards`,
+                  animation: `kibCountBar ${limitS}s linear forwards`,
                   animationPlayState: countdownState,
                 }}
             />
@@ -323,7 +343,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
       {timedOut && (
         <div className="absolute inset-x-0 top-[34%] z-50 flex justify-center pointer-events-none">
           <div className="kib-pop rounded-xl bg-black/70 px-4 py-2 text-3xl font-black italic tracking-wider text-red-300 drop-shadow-[0_3px_10px_rgba(0,0,0,0.9)]">
-            TOO SLOW!
+            {airKind ? "TOO LATE!" : "TOO SLOW!"}
           </div>
         </div>
       )}
@@ -481,7 +501,7 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
                   ? { transform: "rotate(-90deg)", transformOrigin: "50% 50%", strokeDashoffset: 100 }
                   : {
                     transform: "rotate(-90deg)", transformOrigin: "50% 50%",
-                    animation: `kibCountRing ${timeLimitS}s linear forwards`,
+                    animation: `kibCountRing ${limitS}s linear forwards`,
                     animationPlayState: countdownState,
                   }}
               />
