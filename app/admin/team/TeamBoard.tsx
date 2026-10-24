@@ -32,7 +32,8 @@ import type { DevStatus } from "@/lib/devStatus";
 import "./teamBoard.css";
 
 const REFRESH_MS = 60_000;
-const PATCH_META: PatchMeta[] = HEADLINES.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
+const PATCH_META: PatchMeta[] = (HEADLINES as { version: string; title: string; publishedAt: string; updatedAt?: string | null; updateNote?: string | null }[])
+  .map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt, updatedAt: n.updatedAt ?? null, updateNote: n.updateNote ?? null }));
 
 function ago(iso: string | null, now: number): string {
   if (!iso) return "—";
