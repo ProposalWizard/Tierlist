@@ -220,6 +220,7 @@ import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSe
 import { setupKind, strikeKind, replayStrike, stepKind, enforceHardRules, type StrikeDecision } from "@/lib/star/kindRules";
 import { drawMatchGoal } from "@/lib/star/matchGoal";
 import { GoalRecorder } from "@/lib/star/goalClip/recorder";
+import { leoUpdateOn } from "@/lib/star/leoUpdate";
 import { lateKindOf } from "@/lib/star/goalClip/commentary";
 import { planCelebration, celebAt, celebrationMoveFor, CELEB_SPECS, type CelebPlan } from "@/lib/star/celebration";
 import { ACCESSORIES } from "@/lib/star/store/catalogue";
@@ -5791,7 +5792,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // A goal keeps being recorded after the match moves on (the commentary
     // comes back 1.8 s after it): the recorder cuts at POST_GOAL_S itself.
     // Only a new chance (begin) or the match closing cuts it early.
-    if (live || (rec.recordingGoal && recSceneRef.current === sc)) {
+    // (Leo's 24 Oct update "bugFixes"; off, the recording stops with the phase as on main.)
+    if (live || (rec.recordingGoal && recSceneRef.current === sc && leoUpdateOn("bugFixes"))) {
       const bodies = 3 + sc.teammates.length + (sc.runner ? 1 : 0) + sc.secondaryRunners.length + sc.defenders.length;
       if (recSceneRef.current !== sc || rec.bodyIds().length !== bodies) {
         recSceneRef.current = sc;

@@ -16,6 +16,8 @@ import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/g
 import { putClip, pruneClips } from "@/lib/star/goalClip/store";
 import { warmVideoMaker } from "@/lib/star/goalClip/makeVideo";
 import { premakeFeedVideos } from "@/lib/star/goalClip/premake";
+import { setMediaUpdate } from "@/lib/star/media/updateFlags";
+import { leoUpdateOn } from "@/lib/star/leoUpdate";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
@@ -1249,10 +1251,21 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // never one a saved replay points at.
   const careerForClipsRef = useRef<CareerState | null>(null);
   careerForClipsRef.current = career;
+  // Leo's 24 Oct update → the media pass (lib/star/media/updateFlags.ts): the
+  // label fixes and Goal of the Month follow the switch; off = as on main.
+  useEffect(() => {
+    const sync = () => setMediaUpdate({ labelFixes: leoUpdateOn("bugFixes"), goalOfMonth: leoUpdateOn("goalOfMonth") });
+    sync();
+    window.addEventListener("kib-leo-update", sync);
+    window.addEventListener("storage", sync);
+    return () => { window.removeEventListener("kib-leo-update", sync); window.removeEventListener("storage", sync); };
+  }, []);
+
   // The goal-video maker starts during the match (speed pass, 22 Oct 2026):
   // its worker loads the figures then, so the feed after the match never waits.
   useEffect(() => {
     if (phase !== "match") return;
+    if (!leoUpdateOn("feedSpeed")) return; // Leo's 24 Oct update: off, as on main
     const t = setTimeout(() => warmVideoMaker(), 8000);
     return () => clearTimeout(t);
   }, [phase]);
@@ -1589,10 +1602,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       ? generateForInternational(career, next, nextFixture, stats, nationOf(career), nationKits(nationOf(career)).home, nationStrength(nationOf(career)))
       : generateForMatch(career, next, nextFixture, stats);
     // Goal of the Month you won: a small boost with the fans (media/goalOfMonth.ts).
-    { const b = applyGoalOfMonthBoost(next); next.relationships = b.relationships; next.media = b.media; }
+    if (leoUpdateOn("goalOfMonth")) { const b = applyGoalOfMonthBoost(next); next.relationships = b.relationships; next.media = b.media; }
     // Your match's videos start being made now, in the background, so they
     // are ready when the feed opens (lib/star/goalClip/premake.ts).
-    { const seen = new Set((career.media?.posts ?? []).map(p => p.id)); void premakeFeedVideos((next.media?.posts ?? []).filter(p => !seen.has(p.id))); }
+    if (leoUpdateOn("feedSpeed")) { const seen = new Set((career.media?.posts ?? []).map(p => p.id)); void premakeFeedVideos((next.media?.posts ?? []).filter(p => !seen.has(p.id))); }
     // …and so does the rest of the division, the same week — `next.results`
     // already carries every OTHER fixture `playLeagueWeek` simulated
     // alongside yours (empty on a cup/Europe/international week, when the
