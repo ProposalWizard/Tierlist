@@ -82,6 +82,14 @@ async function filmCaseInner(name, label, find, { prep, timer } = {}) {
   const small = raw.replace(".raw.mp4", ".small.mp4");
   spawnSync("ffmpeg", ["-y", "-loglevel", "error", "-i", raw, "-vf", "scale=390:-2:flags=lanczos,format=yuv420p", "-c:v", "libx264", "-preset", "slow", "-crf", "25", "-an", small]);
   muxAudio(small, aud, out, Math.max(0, a.startedAt - rec0));
+  // At most 25 s: a long walk to the screen keeps only its last 22 s (the
+  // tap, the burnt-in time and the goal playing).
+  const dur = Number(spawnSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", out], { encoding: "utf8" }).stdout);
+  if (dur > 25) {
+    const cut = out.replace(".mp4", ".cut.mp4");
+    spawnSync("ffmpeg", ["-y", "-loglevel", "error", "-sseof", "-22", "-i", out, "-c:v", "libx264", "-preset", "slow", "-crf", "25", "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", cut]);
+    spawnSync("mv", [cut, out]);
+  }
   rmSync(raw, { force: true }); rmSync(small, { force: true }); rmSync(aud, { force: true });
   const l = loudness(out);
   times[name].loudPeak = l.length ? l.reduce((m, x) => (x.db > m.db ? x : m), l[0]) : null;

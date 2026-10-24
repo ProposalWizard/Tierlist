@@ -313,11 +313,16 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     liveStop.current?.(); liveStop.current = null;
     if (liveSound.current) { try { liveSound.current.src.stop(); } catch { /* done */ } liveSound.current = null; }
   };
+  // One live session at a time; it ends only when it is no longer wanted
+  // (scrolled away, the file is ready, unmounted), never because a check
+  // finished meanwhile (that cancelled it half-started: 9 s on a slow phone).
+  const liveSession = useRef(0);
   useEffect(() => {
     // Playing live needs only the player worker, not the file encoder (canPlay).
     const want = wanted && !fill && status !== "ready" && !!edit && canPlay !== false && onView;
     if (!want) {
       if (liveState !== "off") {
+        liveSession.current++;
         stopLiveNow();
         if (status === "ready") seekTo.current = liveT.current;
         setLiveState("off");
@@ -326,16 +331,18 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
       return;
     }
     if (liveState !== "off" || !liveCanvasRef.current || !edit) return;
-    let cancelled = false;
+    const session = ++liveSession.current;
+    const current = () => liveSession.current === session;
     setLiveState("starting");
     const startedAt = performance.now();
-    void startLive(liveCanvasRef.current, edit, credit, () => {
-      if (cancelled) return;
+    const e = edit;
+    void startLive(liveCanvasRef.current, e, credit, () => {
+      if (!current()) return;
       setLiveState("playing");
       // Its sound, from the same second (mixed on the page, played alongside).
-      void mixAudio(planAudio(edit)).then(buf => {
+      void mixAudio(planAudio(e)).then(buf => {
         const c = audioContext();
-        if (!buf || !c || cancelled || !liveStop.current) return;
+        if (!buf || !c || !current() || !liveStop.current) return;
         if (c.state === "suspended") c.resume().catch(() => { /* needs a tap */ });
         const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
         const gain = c.createGain(); gain.gain.value = audible ? 1 : 0;
@@ -343,12 +350,11 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
         src.start(0, ((performance.now() - startedAt) / 1000) % Math.max(0.01, buf.duration));
         liveSound.current = { src, gain };
       }).catch(() => { /* silent */ });
-    }, t => { liveT.current = t; }).then(stop => {
-      if (cancelled) { stop?.(); return; }
+    }, t => { if (current()) liveT.current = t; }).then(stop => {
+      if (!current()) { stop?.(); return; }
       if (!stop) { setLiveState("off"); return; }
       liveStop.current = stop;
     });
-    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wanted, status, edit, canPlay, onView, liveGen]);
   useEffect(() => { if (liveSound.current) liveSound.current.gain.gain.value = audible ? 1 : 0; }, [audible]);
@@ -358,7 +364,7 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     if (edit && canPlay && !fill && (priority > 0 || autoStart) && status !== "ready") warmLive(key, edit, credit);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [edit, canPlay, key]);
-  useEffect(() => () => stopLiveNow(), []);
+  useEffect(() => () => { liveSession.current++; stopLiveNow(); }, []);
 
   useEffect(() => {
     // Opened to watch (a replay): wanted at once, so the live player starts

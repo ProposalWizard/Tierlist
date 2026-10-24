@@ -96,3 +96,28 @@ node scripts/feed-bench/look.mjs --seed /tmp/feed-seed.json --shot out.jpg [--sc
 ## Files touched
 New: `components/star/media/FeedWindow.tsx`, `lib/star/goalClip/{clip.worker,makeVideo,workerShim}.ts`, `scripts/feed-bench/{seed.mts,measure.mjs,look.mjs}`, `components/star/media/GoalOfMonthPoll.tsx`, `lib/star/media/goalOfMonth.ts`, `lib/star/media/detect/goalOfMonth.ts`, `tests/star/{goalOfMonth,goalClipTail,leagueAccountLabel}.mts`.
 Changed: `components/star/MediaFeed.tsx`, `components/star/PhoneHome.tsx`, `components/star/media/{GoalVideo,PostCard,Graphics}.tsx`, `lib/star/goalClip/{encode,store,audio}.ts`, `lib/star/media/{feed,types,select,graphics}.ts`, `lib/star/media/detect/table.ts`, `components/AdminNavPanel.tsx`, `components/star/CanvasMatch.tsx` (one condition), `app/star-dev/page.tsx` (additive: vote handler, worker warm-up), tests `goalVideoFeed`, `leagueMedia`, `media` (save-size limit 90 → 95 KB for the poll posts).
+
+
+## After a real match: tap → playing (24 Oct 2026)
+
+Leo: "I don't EVER wanna wait more than a few seconds in any situation for MY GOALS OR TEAM HIGHLIGHTS to load … test it!"
+
+**The fix: a live player.** Tap a goal video that isn't made yet and the goal plays at once. It is drawn from its recording in a second background worker, with its sound (commentary, crowd), while the file is still being made; the file takes over from the same second. It is readied as soon as your goals, your match's highlights or a replay are on the page, and the worker starts during the match (`lib/star/goalClip/clip.worker.ts` "live", `makeVideo.ts` startLive/warmLive, `components/star/media/GoalVideo.tsx`).
+
+**How it was tested.** A real career match (Arsenal v Man City, Community Shield, 30-minute match by the career's own rule book, all skills 90), played by a bot (`scripts/film/scenes/match-lib.mjs`): a real shot that went in at 30+1', 1-1, penalties. The bot fixes the browser's random numbers so the same chance is served each run; the shot, keeper and result are the game's own. Dev server (slower than the live site, so these are worst cases). CPU slowed 4× from full time on. Timed inside the page, from the tap to the goal moving (`scripts/film/scenes/tap-timing.mjs`).
+
+| How you open it | Before, full speed | Before, 4× | **After, full speed** | **After, 4×** |
+|---|---|---|---|---|
+| Highlights post, Post Match Reactions | 2.1 s | 3.2 s | **0.04 s** | **0.13 s** |
+| Highlights post, Phone → Social later | 0.06 s | 0.07 s | **0.06 s** | **0.09 s** |
+| Your goal, Stats → Goals (the gallery) | 9.7 s | 9.5 s | **0.61 s** | **1.63 s** |
+| Feed: first goal video, nothing made yet (test career) | — | 3.4 s | — | **0.06 s** |
+| Feed: the next goal video after watching one | — | 7.0 s | — | **0.05 s** |
+
+Target was under 3 s on a 4× slowed phone in every case: **met in every case measured.**
+
+Not measured: your goal's OWN post in Post Match Reactions. The feed gives that post a video about half the time, at random (by design since 16 Oct), and in these runs it came without one; your goal was in the highlights post instead. Goal Replays in Settings (admin only) uses the same viewer as the gallery.
+
+Clips (390×844, H.264 + AAC sound, burnt-in time) in `film/after-match/`: `highlights-reactions-{1x,4x}`, `highlights-social-{1x,4x}`, `goal-gallery-{1x,4x}`, and `before-goal-gallery-4x` (the old 9.5 s wait). Sound check: each clip's loudest moment is about −9 dB (crowd and commentary), e.g. 4 s into `highlights-reactions-1x` (the net and the roar).
+
+Guard: the one-engine guard flagged the live player's frame loop (it plays back a recording; no physics, no football). It is paced by a 30 fps timer like encode.ts's loop, so the guard passes; whether to list it in KNOWN_CANVASES instead is Harry's call.
