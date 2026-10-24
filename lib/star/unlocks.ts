@@ -244,7 +244,8 @@ export function recordMatchPlayed(c: CareerState): CareerState {
     if (games >= 1) u = openFeatures(u, ["training", "achievements"], ["training", "achievements"]);
     if (games >= SHOP_AFTER_GAMES || u.drills >= DRILLS_TO_OPEN_SHOP) u = openFeatures(u, ["shop"], ["shop"]);
   } else if (games >= 1 || u.open.includes("shop")) u = openFeatures(u, ["relations", "shop"], ["relations", "shop"]);
-  if (hasSponsorOffer(c)) u = openFeatures(u, ["sponsors"], ["sponsors"]);
+  // The story order: your agent's beat brings the first offer in (story.ts).
+  if (hasSponsorOffer(c) && !u.story) u = openFeatures(u, ["sponsors"], ["sponsors"]);
   const owed = !!u.gameFirst && u.drills >= DRILLS_TO_OPEN_SHOP && !c.achievements.includes("first-two-sessions");
   if (owed) return { ...withU(c, u), achievements: grant(c, "first-two-sessions") };
   return u === c.unlocks ? c : withU(c, u);

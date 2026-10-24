@@ -24,15 +24,15 @@
 import type { CareerState, CareerUnlocks } from "./types";
 import type { Feature } from "./unlocks";
 
-export type Beat = "boss" | "training" | "ready" | "can" | "phone" | "shop" | "stats" | "starpass";
+export type Beat = "boss" | "training" | "ready" | "can" | "phone" | "shop" | "stats" | "starpass" | "sponsor";
 
 /** The two drills of the training day (Mikey, 24 Oct 2026: "only do 2 drills, the power and technique"), in the order the pointer shows them. */
 export const TRAINING_DAY: string[] = ["power", "technique"];
 
 /** The order the beats come in. The first one that is due and not seen shows. */
-const ORDER: Beat[] = ["boss", "training", "ready", "starpass", "can", "phone", "shop", "stats"];
+const ORDER: Beat[] = ["boss", "training", "ready", "starpass", "can", "phone", "shop", "stats", "sponsor"];
 
-type C = Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">;
+type C = Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures" | "brands">;
 
 export function isStory(c: Pick<CareerState, "unlocks">): boolean {
   return !!c.unlocks?.story;
@@ -66,6 +66,8 @@ function due(c: C, b: Beat, stars: number): boolean {
     case "phone": return n >= 2;
     case "shop": return n >= 3;
     case "stats": return (c.careerStats?.goals ?? 0) >= 1;
+    // The offer is in your messages, so it comes once you have a phone.
+    case "sponsor": return seenBeat(c, "phone") && ((c.brands?.offers.length ?? 0) > 0 || (c.brands?.deals.length ?? 0) > 0);
   }
 }
 
@@ -86,6 +88,7 @@ const OPENS: Partial<Record<Beat, Feature[]>> = {
   phone: ["phone", "relations"],
   shop: ["shop"],
   stats: ["stats", "achievements"],
+  sponsor: ["sponsors"],
 };
 
 /** The beat was shown and its button pressed: mark it, open what it opens,
@@ -125,10 +128,19 @@ export function beatText(c: CareerState, b: Beat): BeatText {
     // "Claim your reward" once the Star Pass has a reward at level 2 (the
     // level ladder is the next build); until then it shows the Pass.
     case "starpass": return { who: "Star Pass", icon: "⭐", title: "You levelled up", line: "You're star level 2. Every level on the Star Pass gives you something. Take a look.", button: "Open the Star Pass" };
-    case "can": return { who: "The physio", icon: "🩺", title: "Your energy's low", line: `Two games in and you're at ${Math.round(c.energy ?? 0)}% energy. Here's a free can. Drink it.`, button: "Use the can" };
+    case "can": {
+      const e = Math.round(c.energy ?? 0);
+      return e < 75
+        ? { who: "The physio", icon: "🩺", title: "Your energy's low", line: `Two games in and you're at ${e}% energy. Here's a free can. Drink it.`, button: "Use the can" }
+        : { who: "The physio", icon: "🩺", title: "A can for you", line: `Two games in and you're at ${e}% energy. Here's a free can. When your energy drops, one can tops it up.`, button: "Use the can" };
+    }
     case "phone": return { who: mate, icon: "📱", title: "Have my old phone", line: "Here, take my old phone. The screen's cracked but it works. Your agent's already texted you.", button: "Open the phone" };
     case "shop": return { who: "The chairman", icon: "💷", title: "Wages are in", line: "Wages are in. The lads are off to the shop. Get yourself some cans and some boots.", button: "Go to the shop" };
     case "stats": return { who: gaffer, icon: "⚽", title: "Your first goal", line: "Your first goal is on your card. Your stats, records and achievements are open now.", button: "See your card" };
+    case "sponsor": {
+      const brand = c.brands?.offers[0]?.brand ?? "A brand";
+      return { who: "Your agent", icon: "💼", title: "A brand wants you", line: `${brand} want to sponsor you. I've sent you the offer. It's in your messages.`, button: "Open the phone" };
+    }
   }
 }
 

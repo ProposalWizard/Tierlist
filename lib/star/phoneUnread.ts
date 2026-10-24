@@ -1,4 +1,5 @@
 import { agentHello } from "./story";
+import { appInstalled } from "./unlocks";
 import type { CareerState } from "@/lib/star/types";
 import { nextFixtureFor } from "./competitions";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
@@ -103,6 +104,9 @@ export function readSocialSeen(): number {
 /** Everything unread on the phone: messages (sponsor offers are messages now) and social. */
 export function phoneUnreadCount(career: CareerState, hallChase?: string | null): number {
   const seen = readSeenMsgs();
+  // The cracked phone has no Social: its posts are not counted until you
+  // have an app that can show them (Mikey's playtest, 24 Oct 2026: 5 on the
+  // Phone button, 4 in Messages).
   return buildMessages(career, hallChase).filter((m) => !seen.has(msgKey(m))).length
-    + socialUnread(career, readSocialSeen());
+    + (appInstalled(career, "social") ? socialUnread(career, readSocialSeen()) : 0);
 }

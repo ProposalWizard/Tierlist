@@ -11,6 +11,7 @@ import { starsNow } from "../../lib/star/starPoints";
 import { isOpen, recordFirstMatch, recordBossMeeting, recordDrill, appInstalled, lockHint, recordPhoneBought } from "../../lib/star/unlocks";
 import { storyBeat, ackBeat, trainingDayOn, trainingDayLeft, recordTrainingDayDrill, TRAINING_DAY, type Beat } from "../../lib/star/story";
 import { buildMessages } from "../../lib/star/phoneUnread";
+import { setPieceTalkDue } from "../../lib/star/setPieceTalk";
 import type { CareerState, StarPlayer } from "../../lib/star/types";
 
 let fails = 0;
@@ -44,6 +45,7 @@ check(lockHint(c, "shop") === "After your third game", "Shop lock line says game
 
 // 1 · After game 1 (no goal): the gaffer, then training
 play(0);
+check(c.energy === 100, `before game 2 the rest days fill you up (energy ${c.energy})`);
 check(beat() === "boss", "game 1: the gaffer calls you in first");
 check(!isOpen(c, "training"), "game 1: Training still shut before the talk");
 c = ackBeat(c, "boss"); c = recordBossMeeting(c);
@@ -59,6 +61,7 @@ check(r[0] === "ready", `then 'You're ready for Saturday' (got ${r.join(",")})`)
 
 // 2 · After game 2: the can, then the phone
 play(0);
+check(c.energy < 100, `after game 2 rest is normal again (energy ${c.energy})`);
 const energyBefore = c.kibCans.basic;
 const r2 = drain();
 check(r2.indexOf("can") >= 0 && r2.indexOf("phone") > r2.indexOf("can"), `game 2: can then phone (got ${r2.join(",")})`);
@@ -74,11 +77,13 @@ const r3 = drain();
 check(r3.includes("shop") && isOpen(c, "shop"), `game 3: wages in, Shop opens (got ${r3.join(",")})`);
 check(!isOpen(c, "stats"), "no goal yet: Stats still shut");
 
+check(setPieceTalkDue(c) === null, "no penalty-taker talk during the first hour");
 // First goal
 play(1);
 const r4 = drain();
 check(r4.includes("stats") && isOpen(c, "stats") && isOpen(c, "achievements"), `first goal: Stats and Achievements open (got ${r4.join(",")})`);
 
+check(setPieceTalkDue(c) !== null, "after the first goal the manager can hand you set pieces");
 // Your own phone, bought later
 c = recordPhoneBought(c);
 check(appInstalled(c, "social") && appInstalled(c, "kickabout"), "your own phone adds Social and Kickabout");
@@ -87,6 +92,13 @@ check(appInstalled(c, "social") && appInstalled(c, "kickabout"), "your own phone
 play(2); play(1);
 check(drain().length === 0, "no beat comes twice");
 check(starsNow(c) >= 2 && c.unlocks!.seen.includes("beat-starpass"), "the Star Pass beat came by star level 2");
+
+// The first sponsor offer: the agent, then Sponsors opens
+c = { ...c, brands: { ...(c.brands ?? { offers: [], deals: [] }), offers: [{ id: "t", kind: "deal", brand: "Testco", category: "Boots", color: "#fff", weekly: 10, seasons: 1, targets: [] } as never] } as CareerState["brands"] };
+check(!isOpen(c, "sponsors"), "Sponsors still shut before the agent's message");
+check(beat() === "sponsor", "first offer: the agent's beat");
+c = ackBeat(c, "sponsor");
+check(isOpen(c, "sponsors") && beat() === null, "the agent's beat opens Sponsors, once");
 
 // An old save keeps its order
 const old: CareerState = { ...c, unlocks: { ...c.unlocks!, story: undefined } };

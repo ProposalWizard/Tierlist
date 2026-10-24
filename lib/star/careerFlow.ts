@@ -668,6 +668,10 @@ export function restRecoveryAfter(career: CareerState, settled: Fixture, fixture
   const days = restDaysBetween(from, to);
   const ownsProperty = (career.ownedItems ?? []).some(i => i.category === "property" && !isWornOut(i));
   const tier = career.player.club ? facilitiesFor(career, career.player.club).trainingGroundTier : 1;
+  // The story's first week (Mikey, 24 Oct 2026): before game 2 the rest days
+  // fill you right up, so no "low energy, use a can" comes before the physio
+  // hands you one after game 2 (lib/star/story.ts, the "can" beat).
+  if (career.unlocks?.story && !career.unlocks.seen.includes("beat-can") && (career.careerStats?.appearances ?? 0) < 1) return 100;
   // Happiness decides how well you recover (relationships.ts, Mikey 4 Oct 2026).
   return days * dailyRecovery(ownsProperty, tier) * happinessEnergyFactor(happinessOf(career));
 }

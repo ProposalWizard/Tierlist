@@ -5175,6 +5175,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // pressed), so these go straight in; each page's own tour takes over.
     else if (b === "shop") { setActiveNav("home"); setPhase(shopLookNow === "new" ? "shop-kib" : "dashboard"); if (shopLookNow !== "new") setHomePage(2); }
     else if (b === "stats") { setActiveNav("home"); setPhase("dashboard"); setHomePage(0); }
+    // The offer is in your messages: the phone, then Messages, then the offer.
+    else if (b === "sponsor") {
+      handleNavigate("media");
+      setHelpTour([
+        { target: "app-messages", text: "Your agent sent the offer. Tap Messages", press: true },
+        { target: "msg-sponsors", text: "Tap the offer to see it", press: true },
+      ]);
+    }
   };
   // First steps done: "Do you want to switch this to League as a shortcut?" (P2-89).
   const askSlot = swipeActive && homePage === 1 && quiet && !tour && !setPieceChat && !energyToast && slotQuestionDue(career);
