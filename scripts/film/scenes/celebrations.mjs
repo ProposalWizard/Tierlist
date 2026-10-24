@@ -89,7 +89,10 @@ let tries = 0;
 let done = false;
 while (!done && at() < (VIEW3D ? 3300 : 1700)) {
   const st = await pg.evaluate(() => ({ ph: window.__starMatch?.phase?.(), k: window.__starMatch?.kind?.() }));
-  if (BIG) await pg.evaluate(() => { window.__bigMomentNext = true; });
+  if (BIG) {
+    const up = await pg.evaluate(() => { window.__bigMomentNext = true; return !!document.querySelector("[data-big-moment]"); });
+    if (up && (!marks.bannerSeen || at() - marks.bannerSeen > 3)) { marks.bannerSeen = at(); log("banner up"); }
+  }
   if (!st.ph || st.ph === "feed") {
     let clicked = false;
     for (const re of [/full time/i, /get out there/i, /play match|kick off/i, /team sheets/i, /second half|^next|play on|resume/i, /^▶ *play|^play$/i, /continue|tap to hear|^ok$|skip|close|done/i]) {
@@ -137,7 +140,9 @@ while (!done && at() < (VIEW3D ? 3300 : 1700)) {
   const ballBtn = pg.locator('div.cursor-pointer[style*="aspect-ratio"]').first();
   if (await ballBtn.count()) { const bb = await ballBtn.boundingBox(); if (bb) await pg.mouse.click(bb.x + bb.width / 2, bb.y + bb.width / 2); }
   marks.strike = at();
-  const miss = BIG && !f.big;
+  // With the switch on, every chance with a goal in it is served as a big moment (the banner may
+  // already have gone during a build-up), so any goal of yours here is a big-moment goal.
+  const miss = false;
   log("try", tries, "strike", JSON.stringify({ pull, big: BIG ? !!f.big : undefined }));
   let t0 = null;
   // Wait for the result. A drag that never took (still aiming 1.5 s on) is not a shot: it is not counted.
