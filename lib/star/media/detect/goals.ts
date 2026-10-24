@@ -87,6 +87,19 @@ const SPECTACULAR: Detector = (r) => {
   return out.length ? out : null;
 };
 
+/**
+ * A bicycle kick (lib/star/bicycle.ts; Leo, 22 Oct 2026: "a clean bicycle goal
+ * is treated like a hat-trick in crowd and media"): the same importance as a
+ * hat-trick (76), its own story. Two in one match is one story.
+ */
+const BICYCLE_KICK: Detector = (r) => {
+  const gs = userGoals(r).filter(g => g.how === "bicycle");
+  if (!gs.length) return null;
+  return ev("bicycle-kick", you(r), 76, ["goal", "drama", "record"], {
+    ...base(r), minute: gs[0].minute, how: "bicycle", goals: gs.length,
+  }, "instant", "goal-of-the-season");
+};
+
 const FIRST_GOAL: Detector = (r, m) => {
   if (r.you.goals === 0) return null;
   if (r.you.careerGoals !== r.you.goals) return null;   // the first he has ever scored
@@ -137,6 +150,6 @@ const BLANK: Detector = (r, m) => {
 };
 
 export const GOAL_DETECTORS: Detector[] = [
-  HAUL, ONE_GOAL, OPENER, EQUALISER, WINNER, SPECTACULAR,
+  HAUL, ONE_GOAL, OPENER, EQUALISER, WINNER, SPECTACULAR, BICYCLE_KICK,
   FIRST_GOAL, FIRST_FOR_CLUB, GOAL_MILESTONE, ALL_THE_GOALS, BLANK,
 ];

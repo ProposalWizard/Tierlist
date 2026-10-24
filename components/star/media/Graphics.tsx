@@ -385,7 +385,7 @@ function PotmNominees({ s }: { s: Extract<GraphicSpec, { type: "potmNominees" }>
           Player of the Month
         </div>
         <div className="mt-1 text-[10px] font-bold text-white/75">
-          Premier League nominees — {s.month}
+          {s.league ? `${s.league} nominees` : "Nominees"} — {s.month}
         </div>
       </div>
 

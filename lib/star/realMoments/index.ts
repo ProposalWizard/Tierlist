@@ -39,7 +39,7 @@ export { buildUpOf, passesInTrack, trackLeadIn, type TrackSide, type BuildUpMan,
 
 export const REAL_MOMENTS_API = "/api/star/real-moments";
 export type RealFileName = "shots" | "tracked" | "tracks" | "goals"
-  | "league-england" | "league-spain" | "league-italy" | "league-germany" | "league-france";
+  | "league-england" | "league-spain" | "league-italy" | "league-germany" | "league-france" | "bangers";
 
 /** Fetch one of the files (browser). */
 export function fetchRealFile<T>(file: RealFileName): Promise<T> {

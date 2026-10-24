@@ -1,0 +1,449 @@
+<title>Card, Skin And Size</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one column, stacked cards, stills under their text. Tokens first, then components. */
+  :root{
+    --bg:#0b100e;--card:#141d18;--card2:#192520;--line:#24332b;
+    --ink:#f2f7f4;--ink2:#9fb6aa;--ink3:#6f8679;
+    --green:#3ddc84;--amber:#f5b942;--red:#ff6b6b;--blue:#6fb8ff;--violet:#b18cff;
+    --gbg:rgba(61,220,132,.14);--abg:rgba(245,185,66,.14);--rbg:rgba(255,107,107,.14);--bbg:rgba(111,184,255,.14);
+    --pill:#3ddc84;--pillink:#06170e;--r:12px;
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+      --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+      --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+      --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+      --pill:#0b7a43;--pillink:#ffffff;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f7f5;--card:#ffffff;--card2:#eef3f0;--line:#dae4de;
+    --ink:#0e1613;--ink2:#3f564c;--ink3:#5f766b;
+    --green:#0b7a43;--amber:#8f6200;--red:#c62828;--blue:#1565c0;--violet:#6a3fc0;
+    --gbg:rgba(11,122,67,.11);--abg:rgba(143,98,0,.12);--rbg:rgba(198,40,40,.10);--bbg:rgba(21,101,192,.10);
+    --pill:#0b7a43;--pillink:#ffffff;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-wrap:anywhere}
+  .wrap{max-width:760px;margin:0 auto;padding-block:0 64px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  a{color:var(--blue)}
+  header{padding:30px 0 4px}
+  .ver{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;background:var(--pill);color:var(--pillink);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(24px,6.6vw,34px);line-height:1.12;margin:12px 0 12px;letter-spacing:-.02em;text-wrap:balance}
+  .status{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-weight:700;font-size:14.5px}
+  .status i{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+  .sub{color:var(--ink3);font-size:13px;margin:0 0 14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+  .chip{display:inline-block;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink2);text-decoration:none}
+  .chip.hot{color:var(--amber);border-color:var(--amber)}
+  .back{display:inline-block;font-size:13px;font-weight:700;margin:0 0 4px}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  h2.fix{color:var(--green)} h2.fix i{background:var(--green)}
+  h2.add{color:var(--blue)} h2.add i{background:var(--blue)}
+  h2.chg{color:var(--violet)} h2.chg i{background:var(--violet)}
+  h2.bug{color:var(--amber)} h2.bug i{background:var(--amber)}
+  h2.nxt{color:var(--ink3)} h2.nxt i{background:var(--ink3)}
+  .snote{color:var(--ink3);font-size:13px;margin:-4px 0 12px}
+
+  .ck{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+  .ck li{padding:11px 14px;border-bottom:1px solid var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer}
+  .ck input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--green)}
+  .ck .q{font-weight:700;display:block}
+  .ck .a{display:block;color:var(--ink3);font-size:13.5px;margin-top:2px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px;min-width:0}
+  .ih{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 9px}
+  .ih b{font-size:16px;line-height:1.3}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .t-seen{background:var(--gbg);color:var(--green)}
+  .t-meas{background:var(--bbg);color:var(--blue)}
+  .t-reas{background:var(--abg);color:var(--amber)}
+  .t-no{background:var(--rbg);color:var(--red)}
+  .row{margin:0 0 9px;min-width:0}
+  .rl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin:0 0 2px}
+  .rl.p{color:var(--red)} .rl.w{color:var(--amber)} .rl.f{color:var(--green)} .rl.s{color:var(--blue)}
+  .row p{margin:0;color:var(--ink2);font-size:14.5px}
+  .row p b,.row li b{color:var(--ink)}
+  .row ul{margin:4px 0 0;padding-left:18px;color:var(--ink2);font-size:14.5px}
+  .row li{margin-bottom:4px}
+  .nr{color:var(--ink3);font-style:italic}
+  .tile{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+  .tile>b{display:block;font-size:15px}
+  .tile>p{margin:3px 0 0;color:var(--ink2);font-size:14.5px}
+
+  .bars{margin:8px 0 2px}
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:5px 0;font-size:13px}
+  .bar .bl{grid-column:1/-1;color:var(--ink2)}
+  .track{position:relative;height:19px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:0}
+  .fill{position:absolute;left:0;height:8px;border-radius:3px}
+  .fill.was{top:1px;background:var(--ink3);opacity:.55}
+  .fill.now{bottom:1px;background:var(--green);opacity:.9}
+  .track.solo{height:14px}
+  .track.solo .fill.now{top:0;bottom:0;height:auto}
+  .fill.now.warn{background:var(--amber)}
+  .fill.now.bad{background:var(--red)}
+  .fill.now.blue{background:var(--blue)}
+  .vv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:12.5px}
+  .vv s{color:var(--ink3);font-weight:400;text-decoration:line-through;opacity:.9}
+  .bnote{color:var(--ink3);font-size:12.5px;margin:2px 0 0}
+
+  figure{margin:12px 0 2px;min-width:0}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:var(--card2)}
+  figure figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  figure figcaption b{color:var(--ink2)}
+  figure.ph{max-width:270px;width:100%;margin-left:auto;margin-right:auto}
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px 14px;margin:10px 0 0}
+  .figs.wide{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+  .figs figure{margin:0}
+  .figs.pair{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .figs.pair figure.ph{max-width:none}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin:10px 0 0}
+  details[open]{padding-bottom:12px}
+  summary{cursor:pointer;list-style:none;padding:11px 0;font-size:13px;font-weight:700;color:var(--ink3);display:flex;align-items:center;gap:7px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\25B8";display:inline-block;color:var(--ink3);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details p{margin:0 0 9px;color:var(--ink2);font-size:14px}
+  details ul{margin:0 0 9px;padding-left:18px;color:var(--ink2);font-size:14px}
+  details li{margin-bottom:6px}
+  details .figs{margin-top:2px}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;vertical-align:1px}
+  .p-red{background:var(--rbg);color:var(--red)} .p-amb{background:var(--abg);color:var(--amber)}
+  .p-grn{background:var(--gbg);color:var(--green)} .p-blu{background:var(--bbg);color:var(--blue)}
+
+  .sbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px 12px}
+  .sbox h3{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;margin:14px 0 4px}
+  .sbox h3.g{color:var(--green)} .sbox h3.b{color:var(--blue)} .sbox h3.a{color:var(--amber)} .sbox h3.r{color:var(--red)}
+  .sbox ul{margin:0;padding-left:18px;color:var(--ink2);font-size:14px}
+  .sbox li{margin-bottom:4px}
+
+  .okbox{border:1px solid var(--line);border-left:4px solid var(--amber);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .okbox ol{margin:0;padding:0;list-style:none;counter-reset:q}
+  .okbox li{position:relative;padding:12px 0 12px 32px;border-bottom:1px solid var(--line);counter-increment:q}
+  .okbox li:last-child{border-bottom:0}
+  .okbox li::before{content:counter(q);position:absolute;left:0;top:12px;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .okbox .q{font-weight:700}
+  .okbox .opts{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .okbox .d{color:var(--ink2);font-size:14px;margin-top:4px}
+  .okbox .who{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-right:6px}
+
+  .vid{border:2px dashed var(--line);border-radius:var(--r);padding:12px 14px;background:var(--card)}
+  .vid b{color:var(--amber)}
+  .vid p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .vid ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:14px}
+
+  .cards{display:grid;gap:10px;margin:0}
+  .bcard{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;min-width:0}
+  .bcard .n{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 4px}
+  .bcard .n b{font-size:17px}
+  .bcard p{margin:0;color:var(--ink2);font-size:14.5px}
+  .bcard .go{display:inline-block;margin-top:8px;font-size:13px;font-weight:800;color:var(--blue)}
+  .bcard.soon{border-style:dashed;opacity:.85}
+
+  /* --- how these patch notes work --- */
+  .how{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 14px 10px;min-width:0}
+  .how svg{display:block;width:100%;max-width:340px;height:auto;margin:2px auto 10px}
+  .how ol{margin:0;padding-left:20px;color:var(--ink2);font-size:14.5px}
+  .how li{margin:0 0 6px}
+  .how li b{color:var(--ink)}
+  .how .mini{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px;vertical-align:1px}
+  .how .btn{display:inline-block;font-size:12.5px;font-weight:800;background:var(--pill);color:var(--pillink);padding:2px 9px;border-radius:999px;vertical-align:1px}
+  .how .where{margin:8px 0 0;font-size:13px;color:var(--ink3)}
+  /* --- already decided --- */
+  .donebox{border:1px solid var(--line);border-left:4px solid var(--green);background:var(--card);border-radius:var(--r);padding:2px 14px 6px}
+  .donebox ul{margin:0;padding:0;list-style:none}
+  .donebox li{padding:11px 0 11px 28px;border-bottom:1px solid var(--line);position:relative}
+  .donebox li:last-child{border-bottom:0}
+  .donebox li::before{content:"\2713";position:absolute;left:2px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--pillink);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .donebox .q{font-weight:700}
+  .donebox .d{color:var(--ink2);font-size:14px;margin-top:3px}
+  .donebox .by{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-right:6px}
+  /* --- video --- */
+  .clip{margin:12px 0 2px}
+  .clip video{display:block;width:100%;max-width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);background:#000}
+  .clip .look{font-size:13px;color:var(--ink2);margin:0 0 7px}
+  .clip .look b{color:var(--ink)}
+  .clip figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px}
+  .clip.ph{max-width:390px;margin-left:auto;margin-right:auto}
+  /* --- tabs (index) --- */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink2);font:inherit;font-size:13.5px;font-weight:800;padding:8px 13px;border-radius:999px;cursor:pointer;min-height:40px}
+  .tab[aria-selected="true"]{background:var(--pill);color:var(--pillink);border-color:var(--pill)}
+  .tab small{font-weight:700;opacity:.8;margin-left:4px}
+  .js .panel[hidden]{display:none}
+  .panel h3.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px}
+  .bcard .vtag{font-size:11px;font-weight:800;color:var(--ink3);letter-spacing:.04em}
+  .qlist{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:2px 14px}
+  .qlist ul{margin:0;padding:0;list-style:none}
+  .qlist li{padding:10px 0;border-bottom:1px solid var(--line);color:var(--ink2);font-size:14px}
+  .qlist li:last-child{border-bottom:0}
+  .qlist li b{color:var(--ink)}
+
+  /* --- steps (vertical list) --- */
+  .steps{list-style:none;margin:6px 0 0;padding:0;counter-reset:st}
+  .steps li{position:relative;padding:9px 0 9px 36px;border-bottom:1px solid var(--line);counter-increment:st;color:var(--ink2);font-size:14.5px;min-width:0}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(st);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .steps li b{color:var(--ink)}
+  .steps li.done::before{background:var(--green);border-color:var(--green);color:var(--pillink);content:"\2713"}
+  .steps li.next::before{background:var(--amber);border-color:var(--amber);color:var(--bg)}
+  .mock{border:2px solid var(--red);border-radius:var(--r);background:var(--rbg);padding:12px 14px;margin:10px 0 2px}
+  .mock b{display:block;color:var(--red);font-size:15px;letter-spacing:.02em}
+  .mock p{margin:4px 0 0;color:var(--ink2);font-size:14px}
+  .mock .mb{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .mock .mb span{font-size:13px;font-weight:800;padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink2)}
+  .mock .mb span.go{background:var(--card2)}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+
+  .clip .spd{display:flex;gap:6px;align-items:center;margin:7px 0 0;font-size:13px;color:var(--ink3)}
+  .clip .spd button{font:700 13px/1 system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+  .clip .spd button.on{background:var(--ink);color:var(--bg)}
+  .clip video{max-height:80vh;object-fit:contain}
+  .clip .look{background:var(--card2);border-radius:10px;padding:9px 12px}
+  .clip .look b{color:var(--green);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+  .row ul{margin-top:6px}
+</style>
+<div class="wrap">
+<header>
+  <br>
+  <span class="ver">22&ndash;23 OCT ROUND &middot; CARD, SKIN, SIZE</span>
+  <h1>Your own 3D man is on your player card, his skin is one colour, and every man on the pitch is back to normal size.</h1>
+  <p class="status"><i></i>Live: on main.</p>
+  <p class="sub">22&ndash;23 Oct 2026. In Admin &rarr; Patch notes this is <b>v0.108h</b>.</p>
+</header>
+
+<h2 class="nxt"><i></i>CHECK THESE</h2>
+<ul class="ck">
+<li><label><input type="checkbox" data-k="c0"><span><span class="q">3D man on the player card</span><span class="a">Stats: the card at the top shows your own 3D footballer in your club's home kit.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c1"><span><span class="q">Save image with the 3D man</span><span class="a">Stats &rarr; player card &rarr; Save image: the PNG has him in it.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c2"><span><span class="q">One skin colour</span><span class="a">Garden or shop: face, neck, arms and hands are the same colour, at a dark and a light tone.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c3"><span><span class="q">Player size</span><span class="a">Play a real match chance: men are normal size again (about 22 px on a phone long-range chance).</span></span></label></li>
+<li><label><input type="checkbox" data-k="c4"><span><span class="q">Keeper height</span><span class="a">Any chance: the keeper is a man's height, not a giant.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c5"><span><span class="q">Header and volley size</span><span class="a">A header or volley chance, and Training &rarr; Head &amp; Volley: men are the same size as every other chance.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c6"><span><span class="q">Build-ups</span><span class="a">Highlights: a build-up plays a whole move in about 3 s. Long ball, tiki-taka, or a run then a pass.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c7"><span><span class="q">Gold &quot;perfect&quot; circle</span><span class="a">Header or volley strike screen: the circle is gold and grows with Aerial.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c8"><span><span class="q">New defaults</span><span class="a">A new phone: Settings shows Full highlights rebuild and Match feel on. Both rows are still there.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c9"><span><span class="q">Move media to Cloudflare</span><span class="a">Admin &rarr; Patch notes &rarr; &quot;Move media to Cloudflare&quot;.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c10"><span><span class="q">Faster 🔔</span><span class="a">Admin: the 🔔 opens a short headline list.</span></span></label></li>
+<li><label><input type="checkbox" data-k="c11"><span><span class="q">Deploys from main only</span><span class="a">Vercel: only main makes a deploy. Side branches do not.</span></span></label></li>
+</ul>
+
+<h2 class="add"><i></i>1 &middot; ADDED: YOUR 3D MAN ON THE PLAYER CARD</h2>
+<div class="item">
+  <div class="ih"><b>The card now shows the same 3D man as the shop and the garden</b><span class="tag t-seen">seen</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>The player card on Stats showed a flat drawn head. Your 3D man from the shop and the garden was not on it.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>The card was built before it could draw a 3D man.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>The card draws <b>your own 3D footballer</b>, in <b>your club's home kit</b>. &quot;Save image&quot; puts him in the PNG too. If a phone cannot run 3D, the card shows the drawn head, as before.</p></div>
+  <div class="figs pair">
+    <figure class="ph"><img src="img/card-tan.jpg" alt="Player card with a 3D man, tan skin, red home kit." loading="lazy"><figcaption><b>Tan tone, red home kit.</b> Look at the face and arms: one colour.</figcaption></figure>
+    <figure class="ph"><img src="img/card-deep.jpg" alt="Player card with a 3D man, deep skin, white home kit." loading="lazy"><figcaption><b>Deep tone, a different club.</b> The kit follows your club.</figcaption></figure>
+  </div>
+</div>
+
+<h2 class="fix"><i></i>2 &middot; FIXED: 3D SKIN IS ONE EVEN COLOUR</h2>
+<div class="item">
+  <div class="ih"><b>Face, neck, arms and hands now match the tone you pick</b><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>On a 3D man the face was a different colour from the arms. On dark tones the face looked pale and grey next to the arms.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>The head and the body did not take their colour from the same place, so one tone came out as two colours.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>Face, neck, arms and hands now use one colour, the tone you pick. This is for <b>every 3D man everywhere</b>: shop, garden, cut scenes, the card and your team-mates.</p></div>
+  <div class="bars">
+    <div class="bar"><div class="bl">Garden: face against arm, how different they look (0 = the same)</div><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:9%"></div></div><div class="vv"><s>13&ndash;28</s> 0&ndash;2.4</div></div>
+  </div>
+  <p class="bnote">Before: clearly different. After: the same to the eye. (A gap under about 2.3 can't be seen.)</p>
+  <figure><img src="img/skin-faces.jpg" alt="Four 3D heads, before on top, after below." loading="lazy"><figcaption><b>Top row before, bottom row after.</b> Look at the neck line: before, the face is a shade off the neck; after, one colour.</figcaption></figure>
+  <div class="figs pair">
+    <figure class="ph"><img src="img/close-deep-before.jpg" alt="Deep tone in the garden, before: face paler than arms." loading="lazy"><figcaption><b>Before (deep).</b> Face paler than the arms.</figcaption></figure>
+    <figure class="ph"><img src="img/close-deep-after.jpg" alt="Deep tone in the garden, after: face matches the arms." loading="lazy"><figcaption><b>After (deep).</b> Face and arms match.</figcaption></figure>
+  </div>
+  <details><summary>More pictures (5)</summary>
+    <div class="figs pair">
+      <figure class="ph"><img src="img/garden-deep-before.jpg" alt="Garden from behind, deep tone, before." loading="lazy"><figcaption>Garden, deep, before.</figcaption></figure>
+      <figure class="ph"><img src="img/garden-deep-after.jpg" alt="Garden from behind, deep tone, after." loading="lazy"><figcaption>Garden, deep, after.</figcaption></figure>
+      <figure class="ph"><img src="img/garden-tan-before.jpg" alt="Garden from behind, tan tone, before." loading="lazy"><figcaption>Garden, tan, before.</figcaption></figure>
+      <figure class="ph"><img src="img/garden-tan-after.jpg" alt="Garden from behind, tan tone, after." loading="lazy"><figcaption>Garden, tan, after.</figcaption></figure>
+    </div>
+    <figure class="ph"><img src="img/garden-tan-phone.jpg" alt="The whole garden screen on a phone, tan tone, after." loading="lazy"><figcaption>The whole garden screen on a phone, tan, after.</figcaption></figure>
+  </details>
+</div>
+
+<h2 class="fix"><i></i>3 &middot; FIXED: PLAYERS BACK TO NORMAL SIZE</h2>
+<div class="item">
+  <div class="ih"><b>Men are size B again, and the keeper is a man's height</b><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>&quot;Players are huge.&quot; Men in a real match chance were 1.56 times their old size (size C). The keeper looked like a giant.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>Size C dropped both shrinks at once, so every man grew by more than half.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>Men are back to <b>size B</b>: about 22 px on a phone long-range chance. The keeper is back to a man's height. The pitch is the same.</p></div>
+  <div class="bars">
+    <div class="bar"><div class="bl">A man on a phone long-range chance (px)</div><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:79%"></div></div><div class="vv"><s>28</s> 22</div></div>
+  </div>
+  <figure><img src="img/size-compare.jpg" alt="Three phone chances: old size, size C, size B." loading="lazy"><figcaption><b>Left: the old size. Middle: size C (huge). Right: size B (now).</b> Compare the men to the box.</figcaption></figure>
+  <div class="clip ph">
+    <p class="look"><b>Look for</b>Men about the same height as the six-yard box is deep, not bigger.</p>
+    <video src="clips/size-long.mp4" poster="img/size-long.jpg" controls playsinline muted preload="none"></video>
+    <div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div>
+  </div>
+  <figure><img src="img/keeper-now.jpg" alt="One on one, tight angle and cutback: the keeper at a man's height." loading="lazy"><figcaption><b>The keeper now</b> (yellow) in three chances: the same height as the men.</figcaption></figure>
+  <div class="clip ph">
+    <p class="look"><b>Look for</b>The keeper is no taller than the striker.</p>
+    <video src="clips/keeper.mp4" poster="img/keeper.jpg" controls playsinline muted preload="none"></video>
+    <div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div>
+  </div>
+</div>
+
+<h2 class="fix"><i></i>4 &middot; FIXED: HEADERS AND VOLLEYS DREW MEN TOO BIG</h2>
+<div class="item">
+  <div class="ih"><b>Headers, volleys and the Head &amp; Volley drill now draw men the same size as every chance</b><span class="tag t-seen">seen</span><span class="tag t-meas">measured</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>On a header, a volley or the Head &amp; Volley drill, men were 1.2 to 1.45 times bigger than on other chances.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>These chances use a closer camera. A closer camera made the men bigger too.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>Men are drawn at the same size whatever the camera: <b>22 px on a phone</b>, the same as every chance.</p></div>
+  <div class="bars">
+    <div class="bar"><div class="bl">A man on a header chance (px, phone)</div><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:69%"></div></div><div class="vv"><s>26&ndash;32</s> 22</div></div>
+  </div>
+  <div class="figs pair">
+    <figure class="ph"><img src="img/hd-aim.jpg" alt="Header chance aim screen with men at normal size." loading="lazy"><figcaption><b>Header chance.</b> Men the same size as a long-range chance.</figcaption></figure>
+    <figure class="ph"><img src="img/air-drill.jpg" alt="Head and Volley drill level 9 with men at normal size." loading="lazy"><figcaption><b>Head &amp; Volley drill, level 9.</b> Same size again.</figcaption></figure>
+  </div>
+  <div class="clip ph">
+    <p class="look"><b>Look for</b>The men stay normal size as the cross comes in.</p>
+    <video src="clips/header.mp4" poster="img/header.jpg" controls playsinline muted preload="none"></video>
+    <div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div>
+  </div>
+</div>
+
+<h2 class="chg"><i></i>5 &middot; CHANGED: BUILD-UPS PLAY A WHOLE MOVE</h2>
+<div class="item">
+  <div class="ih"><b>A build-up is a real move in about 3 seconds, in three styles</b><span class="tag t-seen">seen</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>Every build-up looked the same, and none showed how the move started.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>There was one way to build up to a chance.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>Each build-up plays a whole move in about 3 s, in one of three styles:</p>
+    <ul><li><b>Long ball</b>: one fast pass over the top.</li><li><b>Tiki-taka</b>: about four short passes.</li><li><b>A run, then a pass</b>: a man carries it, then plays it in.</li></ul></div>
+  <div class="clip ph">
+    <p class="look"><b>Look for</b>Long ball: one quick pass forward, then the chance.</p>
+    <video src="clips/buildup-long.mp4" poster="img/buildup-long.jpg" controls playsinline muted preload="none"></video>
+    <div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div>
+  </div>
+  <div class="clip ph">
+    <p class="look"><b>Look for</b>Tiki-taka: short passes, then the chance.</p>
+    <video src="clips/buildup-tiki.mp4" poster="img/buildup-tiki.jpg" controls playsinline muted preload="none"></video>
+    <div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div>
+  </div>
+  <figure class="ph"><img src="img/mix-top.jpg" alt="Three frames each of a long ball, tiki-taka and a run-then-pass build-up." loading="lazy"><figcaption><b>Each row is one build-up</b>, start to end: long ball (3.4 s), tiki-taka (3.3 s, 4 passes), a run then a pass (2.6 s).</figcaption></figure>
+  <details><summary>More pictures (1): all six sample build-ups</summary>
+    <figure class="ph"><img src="img/mix-sheet.jpg" alt="Six sample build-ups, three frames each." loading="lazy"><figcaption>Six build-ups, 2.2 to 3.8 s each.</figcaption></figure>
+  </details>
+</div>
+
+<h2 class="chg"><i></i>6 &middot; CHANGED: BETTER AERIAL = BIGGER GOLD CIRCLE</h2>
+<div class="item">
+  <div class="ih"><b>The &quot;perfect&quot; circle on headers and volleys grows with Aerial, and is gold</b><span class="tag t-seen">seen</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>Aerial did not change how easy it was to hit the sweet spot. The circle was hard to see on the white ball.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>The circle was one size for everyone, and pale.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>Better Aerial = a bigger circle: <b>at Aerial 90 it is about 2.6 times the Aerial 30 size</b>. The circle is gold, so it shows on the ball.</p></div>
+  <figure class="ph"><img src="img/circle-sheet.jpg" alt="Header and volley strike screens at Aerial 30, 60 and 90." loading="lazy"><figcaption><b>Left to right: Aerial 30, 60, 90.</b> Watch the gold circle grow.</figcaption></figure>
+  <div class="clip ph">
+    <p class="look"><b>Look for</b>The gold circle on the ball.</p>
+    <video src="clips/aerial-circle.mp4" poster="img/aerial-circle.jpg" controls playsinline muted preload="none"></video>
+    <div class="spd">Speed <button class="on" data-r="1">1&times;</button><button data-r="0.5">&frac12;&times;</button><button data-r="0.25">&frac14;&times;</button></div>
+  </div>
+</div>
+
+<h2 class="chg"><i></i>7 &middot; CHANGED: TWO SETTINGS ON BY DEFAULT</h2>
+<div class="item">
+  <div class="ih"><b>Full highlights rebuild and Match feel start on for new phones</b><span class="tag t-reas">reasoned</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>The newest highlights and match feel were off unless you found the switch.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>Both were new and started off while they were tested.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>A new phone starts with both on. Both rows stay in Settings, so anyone can turn them off.</p></div>
+</div>
+
+<h2 class="add"><i></i>8 &middot; ADDED: PATCH-NOTE MEDIA TO CLOUDFLARE, LIGHTER 🔔</h2>
+<div class="item">
+  <div class="ih"><b>One button moves old patch-note pictures and clips to Cloudflare</b><span class="tag t-seen">seen</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>Every old patch-note picture and clip sits inside the site, which makes it heavier. The 🔔 loaded every note in full, so admin pages were slow.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>Patch-note media had nowhere else to live, and the 🔔 read the whole archive.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>Admin &rarr; Patch notes &rarr; <b>&quot;Move media to Cloudflare&quot;</b> copies them across. The 🔔 now loads a short headline list: admin pages are about <b>680 KB lighter</b>.</p></div>
+  <figure class="ph"><img src="img/r2-card.jpg" alt="The Cloudflare card: all 2,118 files moved, 100%." loading="lazy"><figcaption><b>The card after a run on a test copy</b>: 2,118 files, 175 MB. Taking them out of the site is a later step.</figcaption></figure>
+</div>
+
+<h2 class="chg"><i></i>9 &middot; CHANGED: ONLY MAIN MAKES A DEPLOY</h2>
+<div class="item">
+  <div class="ih"><b>Side branches no longer use up the daily deploys</b><span class="tag t-meas">measured</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>On 22 Oct Vercel hit its free limit of 100 builds a day, so live updates could stop.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>Every push to any branch made a build. Side branches made 92 of the 104 builds that day.</p></div>
+  <div class="row"><div class="rl f">Fix</div><p>Only main makes a Vercel deploy now.</p></div>
+  <div class="bars">
+    <div class="bar"><div class="bl">Builds on 22 Oct that came from side branches</div><div class="track solo"><div class="fill now bad" style="width:88%"></div></div><div class="vv">92 of 104</div></div>
+  </div>
+</div>
+
+<h2 class="bug"><i></i>KNOWN ISSUES</h2>
+<div class="item">
+  <div class="ih"><b>Penalties, cutbacks and one-on-ones still draw men up to about 31 px</b><span class="tag t-meas">measured</span><span class="pill p-amb">Harry to decide</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>On these chances men can be up to about 31 px on a phone, against 22 px on other chances.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>The same closer-camera effect that headers had.</p></div>
+  <div class="row"><div class="rl s">Status</div><p>Not changed. Harry decides if they get the same fix as headers.</p></div>
+</div>
+<div class="item">
+  <div class="ih"><b>The skin fix is seen on test pictures, not yet on a phone</b><span class="tag t-reas">recommend a look</span></div>
+  <div class="row"><div class="rl p">Problem</div><p>The even skin was checked on test renders only.</p></div>
+  <div class="row"><div class="rl w">Why</div><p>No one has opened the shop or garden on a real phone since the fix.</p></div>
+  <div class="row"><div class="rl s">Status</div><p>Recommended: look on a phone at one dark and one light tone, in the garden and on the card.</p></div>
+</div>
+
+<h2 class="bug"><i></i>SEEN / NOT SEEN</h2>
+<div class="sbox">
+  <h3 class="g">Seen on a screen</h3>
+  <ul><li>The 3D card at two tones and two clubs</li><li>Skin before and after: heads, garden, close-ups</li><li>Size A / C / B, the keeper, headers and the drill at size B</li><li>Six build-ups, the gold circle at Aerial 30 / 60 / 90</li><li>The Cloudflare card (test copy)</li></ul>
+  <h3 class="b">Measured (numbers)</h3>
+  <ul><li>Skin gap face against arm, 8 tones</li><li>Men in px on long-range and header chances</li><li>Vercel builds on 22 Oct</li></ul>
+  <h3 class="a">Reasoned, not seen</h3>
+  <ul><li>New-phone defaults for the two settings</li><li>The skin fix on a real phone</li></ul>
+</div>
+
+<h2 class="nxt"><i></i>NEXT</h2>
+<div class="item"><div class="row"><p><b>Penalties, cutbacks and one-on-ones.</b> Harry decides if men there go to 22 px too.</p></div></div>
+
+<details><summary>The numbers, if you want them</summary>
+  <ul>
+    <li>Size: old size about 17.6 px, size C about 28 px (1.56&times;), size B about 22 px (1.25&times; the old).</li>
+    <li>Headers, volleys, drill: 1.2 to 1.45&times; too big before; now 22 px on a phone.</li>
+    <li>Skin gap (colour difference, face against arm, garden): 13 to 28 before, 0 to 2.4 after.</li>
+    <li>Gold circle size: Aerial 30 = 0.11, 60 = 0.20, 90 = 0.29.</li>
+    <li>Cloudflare test run: 2,118 files, 175 MB. Admin pages about 680 KB lighter.</li>
+    <li>Vercel 22 Oct: 104 builds, 92 from side branches, limit 100 a day.</li>
+  </ul>
+</details>
+
+<footer>22&ndash;23 Oct 2026. All on main.</footer>
+</div>
+
+<script>
+(function(){
+  var K="kib-pn-0.108h-checks", s={};
+  try{ s=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){ s={}; }
+  var boxes=document.querySelectorAll('.ck input');
+  for(var i=0;i<boxes.length;i++){(function(b){
+    var id=b.getAttribute('data-k'); if(s[id]) b.checked=true;
+    b.addEventListener('change',function(){ s[id]=b.checked; try{ localStorage.setItem(K,JSON.stringify(s)); }catch(e){} });
+  })(boxes[i]);}
+  document.addEventListener('click',function(e){
+    var r=e.target.closest&&e.target.closest('.spd button'); if(!r) return;
+    var c=r.closest('.clip'), v=c.querySelector('video');
+    c.querySelectorAll('.spd button').forEach(function(x){ x.classList.toggle('on', x===r); });
+    if(v){ var rate=parseFloat(r.getAttribute('data-r')); v.playbackRate=rate; v.defaultPlaybackRate=rate; if(v.paused) v.play().catch(function(){}); }
+  });
+})();
+</script>

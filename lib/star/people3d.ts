@@ -335,6 +335,7 @@ uniform vec3 uShirt, uShorts, uSocks, uBoots, uTrim;
 uniform vec4 uLines;      // hem, sock top, boot top, -
 uniform vec4 uFaceF;      // chin, eye, brow, front z
 uniform vec3 uSkinK, uHairK;
+uniform vec3 uSkinTone, uSkinAvg; // the picked tone and the file's own skin average (linear)
 uniform float uHairL;
 uniform float uSkinRef;
 uniform sampler2D uNum;
@@ -449,7 +450,7 @@ function makeUniforms(T: Three, meta: PersonMeta) {
     uSocks: { value: new T.Color(1, 1, 1) }, uBoots: { value: new T.Color(0.02, 0.02, 0.025) }, uTrim: { value: new T.Color(0, 0, 0) },
     uLines: { value: new T.Vector4(meta.kit.hemY, meta.kit.sockY, meta.kit.bootY, 0) },
     uFaceF: { value: new T.Vector4(meta.face.chinY, meta.face.eyeY, meta.face.browY, meta.face.frontZ) },
-    uSkinK: { value: new T.Vector3(1, 1, 1) }, uHairK: { value: new T.Vector3(...meta.hairAvg) },
+    uSkinK: { value: new T.Vector3(1, 1, 1) }, uSkinTone: { value: new T.Vector3(...meta.skinAvg) }, uSkinAvg: { value: new T.Vector3(...meta.skinAvg) }, uHairK: { value: new T.Vector3(...meta.hairAvg) },
     uHairL: { value: 0.2126 * meta.hairAvg[0] + 0.7152 * meta.hairAvg[1] + 0.0722 * meta.hairAvg[2] },
     uSkinRef: { value: Math.max(...meta.skinAvg) },
     uNum: { value: blank as THREE.Texture }, uNumOn: { value: 0 },
@@ -980,6 +981,7 @@ export function dressPerson3d(T: Three, p: Person3D, look: PersonLook) {
     return new T.Vector3(Math.min(cap, c.r / avg[0]), Math.min(cap, c.g / avg[1]), Math.min(cap, c.b / avg[2]));
   };
   u.uSkinK.value = ratio(look.skin, m.skinAvg);
+  { const t = lin(T, look.skin); u.uSkinTone.value = new T.Vector3(t.r, t.g, t.b); }
   // Hair: the chosen colour, shaded strand by strand as the texture is.
   const hair = m.model === "manager"
     ? new T.Color(look.hair ?? "#3a2a20").lerp(new T.Color("#c9c9c9"), look.grey ?? 0.6)

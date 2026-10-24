@@ -77,9 +77,29 @@ The wall clock went to server compiles, memory crashes and bot retries.
 - Shared helpers (open with a seed, jump to a trial stage, find the ball,
   bot strike) live in `scripts/film/scenes/lib.mjs`.
 
-### 6. Make outcomes certain, not lucky
-- A clip that must show a win (a shootout, a drill pass) uses a dev-only seed
-  or flag that makes the result certain. Never retry a bot until it wins.
+### 6. Film the game as it really plays: never fake the shot
+Leo, 24 Oct 2026, on celebration clips where a test tool moved the ball onto
+the goal line after the strike: *"it looks like the player shoots and the ball
+immediately goes in … have you massively changed the game?"*
+- NEVER move the ball, change its flight, or set the result in a clip
+  (`__starMatch.setBall` and the like). The viewer can't tell a filming trick
+  from a game change, so a faked shot reads as a broken game.
+- A dev switch may only set up the SITUATION (which chance is served, the
+  minute, the score), never the outcome. Say in the caption when one was used.
+- If a clip needs a goal, take real shots until one really goes in, and film
+  that one whole: before the strike, the full flight, the keeper, the net.
+  Retrying for a real result is fine; faking it is not.
+- If a clip deliberately replays one fixed strike (a weather comparison), the
+  caption says so in plain words.
+
+### 6b. Sound is part of the clip
+Leo, 24 Oct 2026: *"why no sound? that's an important thing to hear to give
+feedback for in patch notes."* Playwright's recordVideo is silent. Any clip
+where sound matters (crowd, commentary, music, heartbeat, a sting) is filmed
+with the audio tap (`scripts/film/scenes/audio-tap.mjs`) and muxed in as AAC.
+You can't hear it here, so prove it: a loudness curve showing the peaks land
+on the right moments (the net, the roar, the call). Say plainly if a clip has
+no sound and why.
 - Hide dev-only bars while filming (a `film=1` flag), so no "DEV: SKIP" strip
   shows in the clips. Real players never see it.
 

@@ -121,6 +121,20 @@ export const NEW_KEEPER_GROW = 1.25;
  *  keeps its size (0.7 × the old 0.8 shrink = 0.56, ~5.6 px on a phone). */
 export const NEW_BALL_SCALE = 0.56;
 
+/** Headers and volleys: the men and the ball are drawn the long-range size
+ *  (size B, ~22 px on a 390 × 844 phone) whatever the camera. Harry, 23 Oct 2026:
+ *  "the headers and new skill still showing crazy big guys". Their own camera is
+ *  27 m across (NEW_VIEW_KIND_WIDTH_M), and the Head & Volley drill's 26 m, so the
+ *  men came out 1.2 to 1.45 times a long-range man. Only the pitch zooms now. */
+export const FIGURES_AT_FULL_VIEW: readonly ScenarioKind[] = ["header", "volley"];
+/** How much smaller than the camera would draw them: `across` is the metres
+ *  across the screen that the men are sized against (the chance's own camera
+ *  before any Zoom). 1 for every other kind, and never bigger than 1. */
+export function figureShrinkFor(kind: ScenarioKind, across: number): number {
+  if (!FIGURES_AT_FULL_VIEW.includes(kind) || !(across > 0)) return 1;
+  return Math.min(1, across / NEW_VIEW_WIDTH_M);
+}
+
 /** TEST ONLY: grow the men, the keeper and the ball together (goal unchanged).
  *  Set by /star-bigger-dev (Harry, 12 Oct 2026: "make this a test, I don't want it
  *  to just go into the game"). The real game never sets it, so it stays 1. */
@@ -437,7 +451,7 @@ export function frameForNewView(sc: Scenario, hw: number, keepPlayArea = false, 
   // build-up stay exactly as they were.
   if (playZoom() !== "off" && facing === "up" && goalInView(sc.kind)) {
     const z = zoomToPlay(base, sc, hw);
-    const zc = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, keyPointsOf(sc));
+    const zc = playZoom() === "z2max" ? z : fitCameraToTilt(z, facing, hw, tiltDeg, framedKeyPointsOf(sc));
     if (playZoom() === "z2" && actionFitOn()) {
       // Match camera: New (camera round 3). Every candidate camera is held to
       // the one rule — the action wholly on the glass, nobody else cut in
@@ -563,13 +577,53 @@ export function bodiesOf(sc: Scenario): Vec2[] {
  * aspect, so the canvas and the drag are untouched. Steps the zoom down
  * until it fits; 1 = no zoom.
  */
+/**
+ * A CROWDED CHANCE IS FRAMED ON THE CROWD (Mikey's playtest, 21 Oct 2026: "if
+ * a chance becomes this [close together] it should zoom in to this area, so I
+ * can actually see where to aim easier and the players around me").
+ *
+ * With the goal in the picture and at least CROWD_MIN men (you and the ball
+ * counted) within CROWD_NEAR_M of the ball, the camera frames only the men
+ * within CROWD_FRAME_M of the ball, plus the goal and keeper as always. A man
+ * further away may then be off the screen: he is not in the play.
+ */
+const CROWD_NEAR_M = 10;
+const CROWD_MIN = 5;
+const CROWD_FRAME_M = 10;
+
+/** Strikes at goal only: a cutback or a through ball is a pass to a man who
+ *  can be further away, and must stay in the picture. */
+const CROWD_KINDS: ScenarioKind[] = ["header", "volley", "one_on_one", "tight_angle", "long_range"];
+
+export function isCrowdedChance(sc: Scenario): boolean {
+  if (!CROWD_KINDS.includes(sc.kind)) return false;
+  const b = sc.ball;
+  return bodiesOf(sc).filter((p) => Math.hypot(p.x - b.x, p.y - b.y) <= CROWD_NEAR_M).length >= CROWD_MIN;
+}
+
+/** The men the Zoom frames: every body, or on a crowded chance the crowd. */
+export function framedBodiesOf(sc: Scenario): Vec2[] {
+  const all = bodiesOf(sc);
+  if (!isCrowdedChance(sc)) return all;
+  const b = sc.ball;
+  return all.filter((p) => p === sc.ball || p === sc.player || Math.hypot(p.x - b.x, p.y - b.y) <= CROWD_FRAME_M);
+}
+
+/** keyPointsOf, cut to the crowd on a crowded chance (goal and keeper kept). */
+export function framedKeyPointsOf(sc: Scenario): Vec2[] {
+  if (!isCrowdedChance(sc)) return keyPointsOf(sc);
+  const near = new Set(framedBodiesOf(sc));
+  const bodies = new Set(bodiesOf(sc));
+  return keyPointsOf(sc).filter((p) => !bodies.has(p) || near.has(p));
+}
+
 export function zoomToPlay(cam: Viewport, sc: Scenario, hw: number): Viewport {
   const facing = sc.facing ?? "up";
   const spanX = cam.x2 - cam.x1, spanY = cam.y2 - cam.y1;
   const across = facing === "up" ? spanX : spanY;
   const down = facing === "up" ? spanY : spanX;
   void hw;
-  const bodies = bodiesOf(sc).map((p) => fracOf(cam, facing, p));
+  const bodies = framedBodiesOf(sc).map((p) => fracOf(cam, facing, p));
   const key = goalInView(sc.kind)
     ? [{ x: sc.keeper.x, y: sc.keeper.y }, { x: POST_L, y: 0 }, { x: POST_R, y: 0 }].filter(onThePitch).map((p) => fracOf(cam, facing, p))
     : [];
@@ -780,7 +834,8 @@ export function framingPromise(sc: Scenario): { must: Vec2[]; extra: Vec2[] } {
     const must = passersOf(sc).filter(onThePitch);
     return { must, extra: bodiesOf(sc).filter((p) => !must.includes(p)) };
   }
-  return { must: keyPointsOf(sc), extra: [] };
+  // A crowded chance promises the crowd, the goal and the keeper (framedKeyPointsOf).
+  return { must: framedKeyPointsOf(sc), extra: [] };
 }
 
 /** A man's centre counts as wholly on the screen this far inside an edge (screen

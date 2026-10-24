@@ -180,7 +180,21 @@ export function withAck(acks: TeamAck[], a: TeamAck, on: boolean): TeamAck[] {
   return on ? [...rest, a] : rest;
 }
 
-export interface PatchMeta { version: string; title: string; publishedAt: string }
+export interface PatchMeta { version: string; title: string; publishedAt: string; updatedAt?: string | null; updateNote?: string | null }
+
+/**
+ * An updated patch note is news again (Leo, 24 Oct 2026: "if u update an old
+ * patch notes then make sure its clear … just make it like unread … or even
+ * push to front"). So a note's time is when it last changed, and its read
+ * receipt is per update: "0.108@2026-10-24T01:30:00Z" once it has been updated,
+ * plain "0.108" before. Reading the first version does not count for the update.
+ * Only a real update counts: an "updateNote" saying what changed and an update
+ * time after the publish time (older notes carry updatedAt = publishedAt).
+ */
+export const patchIsUpdated = (n: PatchMeta): boolean =>
+  !!n.updateNote && !!n.updatedAt && (Date.parse(n.updatedAt) || 0) > (Date.parse(n.publishedAt) || 0);
+export const patchTime = (n: PatchMeta): string => (patchIsUpdated(n) ? n.updatedAt! : n.publishedAt);
+export const patchReadKey = (n: PatchMeta): string => (patchIsUpdated(n) ? `${n.version}@${n.updatedAt}` : n.version);
 /** "Mikey's patch notes …" → Mikey. Nobody's name first → null. */
 export function patchAuthor(title: string): TeamPerson | null {
   const m = /^(harry|mikey|leo)['’]s\b/i.exec((title ?? "").trim());
@@ -194,14 +208,15 @@ export function patchAuthor(title: string): TeamPerson | null {
  */
 export function patchUnread(notes: PatchMeta[], person: TeamPerson, acks: TeamAck[], from: string): PatchMeta[] {
   const start = Date.parse(from) || 0;
-  return notes.filter((n) => (Date.parse(n.publishedAt) || 0) >= start && patchAuthor(n.title) !== person
-    && !acks.some((a) => a.kind === "patch" && a.target === n.version && a.person === person));
+  return notes.filter((n) => (Date.parse(patchTime(n)) || 0) >= start && patchAuthor(n.title) !== person
+    && !acks.some((a) => a.kind === "patch" && a.target === patchReadKey(n) && a.person === person));
 }
 
 /** Who has read a patch note: its author counts as having read it. */
 export function patchReaders(note: PatchMeta, acks: TeamAck[]): TeamPerson[] {
   const author = patchAuthor(note.title);
-  return TEAM_PEOPLE.filter((p) => p === author || acks.some((a) => a.kind === "patch" && a.target === note.version && a.person === p));
+  const key = patchReadKey(note);
+  return TEAM_PEOPLE.filter((p) => p === author || acks.some((a) => a.kind === "patch" && a.target === key && a.person === p));
 }
 
 /** The one line a reply shows of the message it answers. */

@@ -124,8 +124,11 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/draft/preview", "Draft design preview", "Draft screen redesigns, sample data", "old", "old", "Harry", "old", "none", "team"),
   P("/star-dev", "Play the game", "Road to Ballon d'Or, as players see it", "rbd", "career", "Shared", "live", "own", "open"),
   P("/star-retirement-dev", "Retirement screens", "Every end-of-career screen, with made-up or real saves", "rbd", "career", "Leo", "live", "own", "team"),
+  P("/star-awards-night-dev", "Season awards night", "The awards read out in a small 3D hall, made-up results", "rbd", "career", "Leo", "live", "none", "team"),
   P("/star-relgames-dev", "Relationship games", "Play the boss, team-mate and fan mini-games", "rbd", "career", "Mikey", "live", "none", "team"),
+  P("/star-goals-gallery-dev", "Career goals", "Stats → Goals with a made-up career; Hall of Fame best goals", "rbd", "career", "Leo", "live", "browser", "team"),
   P("/star-goal-clips-dev", "Goal videos", "Record a goal and turn it into a video with sound", "rbd", "career", "Leo", "live", "browser", "team"),
+  P("/star-season-reel-dev", "Your season video", "The end-of-season reel of every goal, on a made-up season", "rbd", "career", "Leo", "live", "none", "team"),
   P("/star-dev/media-lab", "Media lab", "Media-feed graphics bench", "rbd", "career", "Harry", "live", "none", "team"),
   P("/star-training-dev", "Training levels", "Play any training game at any level", "rbd", "career", "Mikey", "live", "none", "team"),
   P("/star-gallery-dev", "Scenario gallery", "Every chance as a picture; save, commit", "rbd", "chances", "Harry", "live", "repo", "admin"),
@@ -138,6 +141,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-sim90-dev", "Full match", "Full simulated 90 minutes", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-radar-dev", "Match radar", "Unseen match, minute by minute", "rbd", "match", "Harry", "live", "none", "team"),
   P("/star-fiveaside-dev", "Five-a-side", "Five-a-side chances, a full match with a radar, and 500 matches' numbers", "rbd", "match", "Harry", "live", "none", "team"),
+  P("/star-weather-dev", "Weather and pitch", "Wind, rain and each club's pitch change the ball: pick them, see the path, play it", "rbd", "match", "Leo", "live", "none", "team"),
   P("/star-pc-match-dev", "PC match + radar", "The real match with the whole pitch from above beside it, in 2D or 3D", "rbd", "match", "Harry", "live", "none", "team"),
   // "/star-dribble-dev" (First-person dribble): taken off the list (Harry, 19 Oct 2026: "remove as an admin page").
   P("/star-dribble-stick-dev", "Dribble on a stick", "Dribble steered by a stick", "rbd", "match", "Harry", "live", "none", "team"),
@@ -145,7 +149,8 @@ export const ADMIN_PAGES: AdminPage[] = [
   P("/star-sound-lab-dev", "Sound lab", "Hear, edit, rate match sounds", "rbd", "sound", "Leo", "live", "browser", "team"),
   P("/star-real-moments-dev", "Real moments", "Real positions (DFL, SkillCorner, Wyscout), playable", "rbd", "data", "Mikey", "live", "none", "admin"),
   P("/star-real-shots-dev", "Real shots", "WC 2018 / Euro 2016 + tracked shots, playable", "rbd", "data", "Harry", "live", "none", "admin"),
-  P("/star-real-goals-dev", "Real Goals", "Recreate real WC/Euro goals: levels, stars, accuracy, ghost", "rbd", "data", "Leo", "live", "browser", "admin"),
+  P("/star-real-goals-dev", "Real Goals", "Recreate real goals: WC/Euro, 5 league paths, Worldies, Bangers, daily goal", "rbd", "data", "Leo", "live", "browser", "admin"),
+  P("/star-shootout-dev", "Shootout habits", "A penalty shootout where the keeper learns where you put your kicks", "rbd", "match", "Leo", "live", "none", "team"),
   P("/star-intl-dev", "International world", "Call-ups, national managers and every international competition", "rbd", "data", "Mikey", "live", "none", "team"),
   P("/star-tournament-dev", "Tournaments", "Draw and play a whole Euros or World Cup in seconds", "rbd", "data", "Leo", "live", "none", "team"),
   P("/lineups", "Team sheets", "Every club's XI, bench, manager", "rbd", "data", "Harry", "live", "shared", "admin"),
@@ -291,11 +296,13 @@ export function relatedFor(path: string): { label: string; pages: AdminPage[] } 
  * other page is a TOOL. First sort by Claude, for Harry to correct.
  */
 export const TEST_PAGES = new Set<string>([
-  "/star-goal-clips-dev", "/star-update-dev", "/star-dribble-stick-dev", "/star-vfx-lab-dev", "/star-sound-lab-dev",
+  "/star-goal-clips-dev", "/star-goals-gallery-dev", "/star-update-dev", "/star-dribble-stick-dev", "/star-vfx-lab-dev", "/star-sound-lab-dev",
   "/star-real-moments-dev", "/star-real-shots-dev", "/star-real-goals-dev", "/star-intl-dev", "/star-tournament-dev",
   "/star-3d-area-dev", "/star-3d-area-dev/signing", "/star-3d-area-dev/office", "/star-shop3d-dev", "/star-garden3d-dev",
   "/star-home3d-dev", "/star-training3d-dev", "/star-anim3d-dev", "/star-people-dev", "/star-sprites-dev",
   "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev",
+  "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev", "/star-shootout-dev", "/star-weather-dev",
+  "/star-store-dev", "/star-wallet-dev", "/star-sim90-dev", "/star-radar-dev", "/star-relgames-dev", "/star-retirement-dev", "/star-awards-night-dev",
   "/star-animations-dev", "/star-fiveaside-dev", "/star-pc-match-dev",
 ]);
 export const isTestPage = (url: string) => TEST_PAGES.has(url);

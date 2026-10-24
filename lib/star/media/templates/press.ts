@@ -115,6 +115,11 @@ export const PRESS_TEMPLATES: Template[] = [
     graphic: "breaking", weight: 4,
   },
   {
+    id: "tb-bicycle", archetype: "tabloid", events: ["bicycle-kick"], requires: ["short"],
+    body: "OVERHEAD AND OUT OF THIS WORLD! {short|caps}'S BICYCLE KICK STUNS THE GROUND",
+    graphic: "breaking", weight: 5,
+  },
+  {
     id: "tb-late", archetype: "tabloid", events: ["late-winner"], requires: ["short", "minute"],
     body: "{short|caps} SINKS THEM AT {minute}!",
     graphic: "breaking", weight: 4,

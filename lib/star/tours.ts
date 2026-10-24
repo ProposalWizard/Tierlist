@@ -53,11 +53,13 @@ const ENERGY_MODES: TourStep = { target: "energy", text: "In a match you pick Lo
 /** `daysToGame`: days until the next match, as Home's next-match card counts
  *  them (HomeHub `daysToNext`). The tip said "today" while the card said
  *  "2 days" (22 Oct 2026 playtest); it now says what the card says. */
-export function welcomeTour(gameFirst: boolean, daysToGame = 0): TourStep[] {
+export function welcomeTour(gameFirst: boolean, daysToGame = 0, story = false): TourStep[] {
   return [
     BAR.energy,
     ENERGY_MODES,
-    gameFirst
+    story
+      ? { target: "nav-play", text: "Your first game is next. You're in the squad. Tap Play", press: true }
+      : gameFirst
       ? { target: "nav-play", text: `${gameWhen(daysToGame)}. Tap Play`, press: true }
       : { target: "nav-training", text: "Go to training", press: true },
   ];
@@ -108,7 +110,9 @@ export const FIRST_GAME_TOUR: TourStep[] = [
 /** After the first game: go and meet the boss (P2-86, P2-87). v0.25: the
  *  manager's talk is what opens Relations. */
 export function bossTour(gameFirst: boolean): TourStep[] {
-  return [{ target: "nav-life", text: gameFirst ? "Your manager wants a word. Tap Relations" : "Time to meet your boss. Tap Relations", press: true }];
+  // Relations left the bar (master plan 1, 22 Oct 2026): the manager's word
+  // comes through the Phone, which opens his talk while it is due.
+  return [{ target: "nav-phone", text: gameFirst ? "Your manager wants a word. Tap Phone" : "Time to meet your boss. Tap Phone", press: true }];
 }
 export const BOSS_TOUR: TourStep[] = bossTour(false);
 
@@ -152,7 +156,8 @@ export const BOSS_MEETING_TOUR: TourStep[] = [
  *  for it yet, the tour says so (price, how much more) and asks for no tap. */
 export function shopTour(line: string, canBuy: boolean): TourStep[] {
   return canBuy
-    ? [{ target: "tab-2", text: "The Shop", press: true }, { target: "shop-style", text: `${line}. Buy it in Style`, press: true }]
+    // The Shop hint is words now, not a button (Mikey, 23 Oct 2026): it says swipe.
+    ? [{ target: "tab-2", text: `Swipe left to the Shop. ${line}: buy it there` }]
     : [{ target: "tab-2", text: `Your next step is a phone. ${line}` }];
 }
 export const SHOP_TOUR: TourStep[] = shopTour("Your first phone", true);
@@ -192,6 +197,21 @@ export const HELP_TOURS: Record<HelpScreen, TourStep[]> = {
   style: [{ target: "screen", text: "Buy things to raise your fame. More open as your star rating goes up" }],
   settings: [{ target: "screen", text: "Sound, the look of the game and your saves" }],
   achievements: [{ target: "screen", text: "Your first steps are at the top. Each one opens something new" }],
-  phone: [{ target: "screen", text: "Your phone. Messages, social media and an App Store for more apps" }],
+  phone: [{ target: "screen", text: "Your phone. Messages, fixtures, your squad and an App Store for more apps" }],
   sponsors: [{ target: "screen", text: "Sponsors pay you every week. Hit a deal's target and keep the brand happy" }],
 };
+
+/** The story's training day (lib/star/story.ts): one drill at a time. */
+const DRILL_NAME: Record<string, string> = { power: "Power", technique: "Technique", pace: "Pace", vision: "Vision", freeKick: "Free Kick", aerial: "Aerial & Acrobatics" };
+export function trainingDayTour(next: string, left: number, total: number): TourStep[] {
+  const done = total - left;
+  return [{ target: `skill-${next}`, text: done === 0
+    ? `Training day: two drills, free. Start with ${DRILL_NAME[next] ?? next}. Tap it`
+    : `${done} of ${total} done. Next: ${DRILL_NAME[next] ?? next}. Tap it`, press: true }];
+}
+
+/** The story's first Shop visit: the cans, then the boots. */
+export const STORY_SHOP_TOUR: TourStep[] = [
+  { target: "cat-cans", text: "Cans give you energy for matches" },
+  { target: "shop-tab-boots", text: "Boots make your shots better. Tap Boots", press: true },
+];

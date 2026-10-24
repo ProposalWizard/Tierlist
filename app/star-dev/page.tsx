@@ -1,4 +1,5 @@
 "use client";
+import { protectedClipIds } from "@/lib/star/goalLog";
 import { preloadScene } from "@/lib/star/three3d/perf";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
 import { pitchFont } from "@/components/star/ui/pitchFont";
@@ -13,6 +14,8 @@ import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type Free
 import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competitionBetting";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
 import { putClip, pruneClips } from "@/lib/star/goalClip/store";
+import { warmVideoMaker } from "@/lib/star/goalClip/makeVideo";
+import { premakeFeedVideos } from "@/lib/star/goalClip/premake";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
@@ -64,7 +67,7 @@ import { windowInterest, withRecall, withAgreedWage, markWalkedAway } from "@/li
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
-import { generateForMatch, generateForInternational, generateForCallUp, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, generateForRollover, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
+import { generateForMatch, generateForInternational, generateForCallUp, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, generateForRollover, hasFreshMedia, toggleLike, applyGoalOfMonthBoost, voteGoalOfMonth } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { markGodMode, withGodMode } from "@/lib/star/godMode";
 import { moveToClub, squadPlayerFromHit, addToSquad, removeFromSquad, setDevStart, type PlayerSearchHit } from "@/lib/star/devTeam";
@@ -87,9 +90,10 @@ import { earnedBetween, addSeasonRecords, type EarnPop } from "@/lib/star/earnPo
 // The unlock chain a new career walks (Harry, 1 Oct 2026, P13-P40).
 import { needsYou, barBadges, needsInput, transferWindowWeeks, transferWindowLine, type NeedId } from "@/lib/star/needsYou";
 import { openFrom as navOpenFrom, backFrom as navBackFrom, ROOT_PHASES, type NavEntry, type NavSpot } from "@/lib/star/navReturn";
-import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, installApp, appInstalled, appIsNew, newAppCount, markAppOpened, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft, gameFirst, managerTalkDue, phoneShortfall, phoneStepLine, DRILLS_TO_OPEN_SHOP } from "@/lib/star/unlocks";
+import { isStory, storyBeat, ackBeat, beatText, trainingDayOn, trainingDayLeft, recordTrainingDayDrill, TRAINING_DAY, type Beat } from "@/lib/star/story";
+import { isOpen, hasSeen, markSeen, recordDrill, drillMessageDue, recordLeagueVisit, recordFirstMatch, recordBossMeeting, recordPhoneBought, lockHint, installApp, appInstalled, appIsNew, newAppCount, markAppOpened, LOCK_HINT, pendingAnnouncements, markAnnounced, nextStep, slotQuestionDue, setBottomLeft, bottomLeft, gameFirst, managerTalkDue, phoneShortfall, phoneStepLine, DRILLS_TO_OPEN_SHOP } from "@/lib/star/unlocks";
 import { applyGameGain } from "@/lib/star/relationshipGame";
-import { AchievementPop, UnlockChallenges, LockedPage, UnlockPop, AchievementToasts, SlotQuestion, type StepGo, type StarStep } from "@/components/star/UnlockChain";
+import { AchievementPop, UnlockChallenges, LockedPage, StoryBeatPop, UnlockPop, AchievementToasts, SlotQuestion, type StepGo, type StarStep } from "@/components/star/UnlockChain";
 
 /** Pop-up cards for achievement ids. */
 function achievementCards(ids: string[]): { label: string; description: string }[] {
@@ -103,7 +107,7 @@ import BreakingNews from "@/components/star/BreakingNews";
 import ManagerChat from "@/components/star/ManagerChat";
 import { signingNews, newsForMatch, type BreakingNews as News } from "@/lib/star/breakingNews";
 import { setPieceTalkDue, markSetPieceTold } from "@/lib/star/setPieceTalk";
-import { welcomeTour, LEAGUE_TOUR, LEAGUE_SCREEN_TOUR, FIRST_GAME_TOUR, shopTour, HELP_TOURS, TRAINING_TOUR, LEVEL_TOUR, ONE_MORE_DRILL_TOUR, bossTour, BOSS_MEETING_TOUR, relationsTour, PHONE_TOUR, REACTIONS_TOUR, stepTour, type HelpScreen, type TourStep } from "@/lib/star/tours";
+import { welcomeTour, LEAGUE_TOUR, LEAGUE_SCREEN_TOUR, FIRST_GAME_TOUR, shopTour, HELP_TOURS, TRAINING_TOUR, LEVEL_TOUR, ONE_MORE_DRILL_TOUR, bossTour, BOSS_MEETING_TOUR, relationsTour, PHONE_TOUR, REACTIONS_TOUR, stepTour, trainingDayTour, STORY_SHOP_TOUR, type HelpScreen, type TourStep } from "@/lib/star/tours";
 import { computeStarRating, growthMultiplier } from "@/lib/star/rating";
 import { sfx } from "@/lib/star/sfx";
 import { setMusicScene, clearMusicScene } from "@/lib/star/gameMusic";
@@ -114,6 +118,8 @@ import { POSITION_NAMES, matchdayFor } from "@/lib/star/teamsheet";
 import DashboardShell, { type NavTab } from "@/components/star/DashboardShell";
 import DashboardStats from "@/components/star/DashboardStats";
 // Swipe home screens — Stats · Home · Training (v0.15 item 34).
+import MainBar from "@/components/star/MainBar";
+import SwipeBack from "@/components/star/SwipeBack";
 import SwipePages from "@/components/star/SwipePages";
 import HomeHub, { daysToNext } from "@/components/star/HomeHub";
 import TopHud, { type HudScreen } from "@/components/star/ui/TopHud";
@@ -223,6 +229,10 @@ const FreeAgentShell = lazyScreen(() => import("@/components/star/FreeAgentShell
 const TrialReward = lazyScreen(() => import("@/components/star/TrialReward"));
 const LadderScreen = lazyScreen(() => import("@/components/star/LadderScreen"));
 const SeasonAwardsScreen = lazyScreen(() => import("@/components/star/SeasonAwardsScreen"));
+// The season awards as a night in a small hall, then the screen above (Leo, 22 Oct 2026).
+const SeasonAwardsNight = lazyScreen(() => import("@/components/star/SeasonAwardsNight"));
+// "Your season": every goal of the season in one video (Leo, 22 Oct 2026).
+const SeasonReel = lazyScreen(() => import("@/components/star/SeasonReel"));
 const PotmWinModal = lazyScreen(() => import("@/components/star/PotmWinModal"));
 const LineupIntro = lazyScreen(() => import("@/components/star/LineupIntro"));
 const MatchWeek = lazyScreen(() => import("@/components/star/MatchWeek"));
@@ -277,7 +287,7 @@ const CaptainInOffice = lazyScreen(() => import("@/components/star/ManagerMoment
 const LAZY_PRELOAD = [
   VersusScreen, MatchWeek, LineupIntro, SettingsScreen, LadderScreen, MediaFeed, PressConference,
   TrainingLevelSelect, TrainingMinigame, TrainingPitchScreen, CupDrawReveal, KnockoutRoundup, PlayOffRoundup,
-  DeadlineDayRoundup, SeasonAwardsScreen, BallonDor, BallonDorNight, PotmWinModal, DilemmaModal,
+  DeadlineDayRoundup, SeasonAwardsScreen, SeasonAwardsNight, SeasonReel, BallonDor, BallonDorNight, PotmWinModal, DilemmaModal,
   ShowroomShop, Shop, CareerStore, AchievementsScreen, TrophiesScreen, ReputationScreen, SponsorsScreen,
   TransferHub, TransferSigning, RelegationMove, NegotiationScreen, LoanBrief, YouthTeam,
   ContractInOffice, ManagerNewsInOffice, CaptainInOffice, GlobalSettingsScreen, Casino, Investments,
@@ -549,6 +559,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const [chainPop, setChainPop] = useState<{ label: string; unlocked: string; phone?: boolean; stay?: boolean } | null>(null);
   // A "?" replay of the pointers for the screen you are on (never forced).
   const [helpTour, setHelpTour] = useState<TourStep[] | null>(null);
+  // The Star Pass is open from the top bar: the story waits until it shuts.
+  const [starPassOpen, setStarPassOpen] = useState(false);
   // ── v0.24 first steps (lib/star/unlocks.ts, lib/star/tours.ts) ──
   // The match's achievements, popped up over the post-match screen with no
   // Next button (P2-84).
@@ -1000,7 +1012,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return () => window.removeEventListener(PHONE_SEEN_EVENT, on);
   }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const phoneUnread = useMemo(() => (career ? phoneUnreadCount(career) : 0), [career, phoneSeenTick]);
+  const phoneUnread = useMemo(() => (career ? phoneUnreadCount(career, hallChaseLine(career, hallRecords)?.text ?? null) : 0), [career, phoneSeenTick, hallRecords]);
   const preMatchEnergy = career ? projectedEnergy(career) : 0;
   const preMatchSelection = career ? selectionFor({ ...career, energy: preMatchEnergy }) : null;
   // Item 24: the sub's planned minute and ladder show only with Settings →
@@ -1179,7 +1191,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, []);
 
   const handleTrain = useCallback((skill: keyof Skills) => {
-    if (!career || trainingLeft(career) <= 0) return;
+    // The story's training day (story.ts): Power and Technique, free.
+    if (!career || (trainingLeft(career) <= 0 && !trainingDayOn(career))) return;
     setTrainingSkill(skill);
     setTrainingLevel(null);
     setPhase("training");
@@ -1236,10 +1249,20 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // never one a saved replay points at.
   const careerForClipsRef = useRef<CareerState | null>(null);
   careerForClipsRef.current = career;
+  // The goal-video maker starts during the match (speed pass, 22 Oct 2026):
+  // its worker loads the figures then, so the feed after the match never waits.
+  useEffect(() => {
+    if (phase !== "match") return;
+    const t = setTimeout(() => warmVideoMaker(), 8000);
+    return () => clearTimeout(t);
+  }, [phase]);
+
   const handleGoalClip = useCallback((track: GoalTrack) => {
     void putClip(track).then(() => {
       const c = careerForClipsRef.current;
       const keep = new Set([...(c?.savedReplays ?? []), ...(c?.recentGoals ?? [])].map(r => r.clipId).filter((x): x is string => !!x));
+      // A season's goals until its reel is made, and the career's best 10 (goalLog.ts).
+      for (const id of protectedClipIds(c)) keep.add(id);
       return pruneClips(keep);
     });
   }, []);
@@ -1260,13 +1283,15 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // thirds of a point, age makes no difference, and a pass also wins back
     // points lost to decay or age — see lib/star/trainingLevels.ts.
     const banked = applyLevelResult(career, trainingSkill, trainingLevel, stars).career;
+    // The story's training day: each drill once, no energy, no session.
+    const dayFree = trainingDayOn(career) && trainingDayLeft(career).includes(trainingSkill);
     const updated: CareerState = {
       ...banked,
       // This is the "trained it" clock decaySkills reads — a session
       // resets it regardless of how much it actually gained, same as
       // real training: showing up is what keeps a skill maintained.
       lastTrainedWeek: { ...career.lastTrainedWeek, [trainingSkill]: career.week },
-      energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
+      energy: dayFree ? career.energy : Math.max(0, career.energy - TRAINING_ENERGY_COST),
       // Recomputed below, once this session's achievement checks (a fresh
       // "max-technique" unlock, say) are final.
       starRating: career.starRating,
@@ -1276,10 +1301,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     toastRatingChange(starsNow(career), starsNow(updated));
     // A training session, not one of the week's actions (week.ts). Counted
     // for the unlock chain too: two drills open the League.
-    setCareer(recordDrill(spendTrainingSession(updated), starStatus(career).total, starsNow(career)));
+    setCareer(dayFree
+      ? recordTrainingDayDrill(recordDrill(updated, starStatus(career).total, starsNow(career)), trainingSkill)
+      : recordDrill(spendTrainingSession(updated), starStatus(career).total, starsNow(career)));
     // v0.25 (game first): the first drill is a first step, and opens the
     // Shop (v0.25.1, Harry: "drop it from 2 forced training drills to 1").
-    if (gameFirst(career) && career.unlocks!.drills + 1 === DRILLS_TO_OPEN_SHOP) {
+    if (gameFirst(career) && !isStory(career) && career.unlocks!.drills + 1 === DRILLS_TO_OPEN_SHOP) {
       setChainPop({ label: "Complete a training drill", unlocked: "Shop unlocked" });
     }
     setTrainingSkill(null);
@@ -1561,6 +1588,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     next.media = nextFixture.kind === "international"
       ? generateForInternational(career, next, nextFixture, stats, nationOf(career), nationKits(nationOf(career)).home, nationStrength(nationOf(career)))
       : generateForMatch(career, next, nextFixture, stats);
+    // Goal of the Month you won: a small boost with the fans (media/goalOfMonth.ts).
+    { const b = applyGoalOfMonthBoost(next); next.relationships = b.relationships; next.media = b.media; }
+    // Your match's videos start being made now, in the background, so they
+    // are ready when the feed opens (lib/star/goalClip/premake.ts).
+    { const seen = new Set((career.media?.posts ?? []).map(p => p.id)); void premakeFeedVideos((next.media?.posts ?? []).filter(p => !seen.has(p.id))); }
     // …and so does the rest of the division, the same week — `next.results`
     // already carries every OTHER fixture `playLeagueWeek` simulated
     // alongside yours (empty on a cup/Europe/international week, when the
@@ -1632,6 +1664,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const next = { ...awarded, lastSeasonAwardStats: computeSeasonAwardStats(awarded) };
     setCareer(next);
     setActiveNav(null);
+    // "Your season" first, then the Ballon d'Or (handleReelDone).
+    setPhase("season-reel");
+  }, []);
+  // The reel was watched or skipped: its recordings may now be pruned
+  // (goalLog.ts protectedClipIds), and on to the Ballon d'Or.
+  const handleReelDone = useCallback(() => {
+    setCareer(c => (c ? { ...c, reelDoneSeason: c.season } : c));
     setPhase("ballon-dor");
   }, []);
   const handleSeasonEnd = useCallback(() => {
@@ -1825,6 +1864,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // stays liked when you come back.
   const handleToggleLike = useCallback((postId: string) => {
     setCareer(c => (c ? toggleLike(c, postId) : c));
+  }, []);
+  // Goal of the Month: your vote in the poll (lib/star/media/goalOfMonth.ts).
+  const handleVote = useCallback((postId: string, index: number) => {
+    setCareer(c => (c ? voteGoalOfMonth(c, postId, index) : c));
   }, []);
 
   const handleMediaContinue = useCallback(() => {
@@ -2600,8 +2643,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // stuck there for good.
     const pending = loadStarPhase(scope);
     const seasonOver = saved.fixtures.every((f) => f.played);
+    if (pending?.phase === "season-reel" && seasonOver) {
+      setActiveNav(null);
+      setPhase("season-reel");
+      return;
+    }
     if (pending?.phase === "ballon-dor" && seasonOver) {
       setPhase("ballon-dor");
+      return;
+    }
+    if (pending?.phase === "season-awards" && saved.lastSeasonAwardStats) {
+      setActiveNav(null);
+      setPhase("season-awards");
       return;
     }
     if (pending?.phase === "contract-renewal") {
@@ -2851,6 +2904,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     });
   }, [career]);
 
+  /** Buy one energy can and drink it at once (the not-in-the-squad card). */
+  const handleBuyAndUseCan = useCallback((can: KibCan) => {
+    const price = kibCanPrice(can, career?.contract.wage ?? 0);
+    if (!career || career.money < price || can.effect || career.energy >= 100) return;
+    sfx("can-open");
+    setCareer({ ...career, money: career.money - price, energy: Math.min(100, career.energy + can.restore) });
+  }, [career]);
+
   const handleBuyBoot = useCallback((boot: Boot) => {
     if (!career || career.money < boot.price) return;
     // Buying the SAME pair you're already wearing stacks the matches left
@@ -2891,6 +2952,12 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     };
     // Unlock chain: buying the phone opens the Phone button, and takes you
     // straight back Home to see it (Harry, 1 Oct 2026, P38).
+    // The story order: the cracked phone is open already; your own adds apps.
+    if (base === "phone" && isStory(career)) {
+      setCareer(recordPhoneBought(bought));
+      setChainPop({ label: "Your own phone", unlocked: "Social, Kickabout and Your house are on it" });
+      return;
+    }
     if (base === "phone" && !isOpen(career, "phone")) {
       setCareer(recordPhoneBought(bought));
       setChainPop({ label: "Buy a phone", unlocked: "Phone and App Store unlocked", phone: true });
@@ -3359,6 +3426,17 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // led straight to Training — and its tour explains the page, then points
       // at Training. The tour is the announcement, so none waits on Home.
       if (gameFirst(career)) updated = markAnnounced(updated, ["relations"]);
+      // The story order: straight back Home, where the gaffer says
+      // "Training tomorrow" (story.ts, the "training" beat).
+      if (isStory(career)) {
+        checkAndSetAchievements(updated);
+        setCareer(spendAction(updated));
+        setRelationshipGameKind(null);
+        setHomePage(1);
+        setActiveNav("home");
+        setPhase("dashboard");
+        return;
+      }
       setChainPop(gameFirst(career)
         ? { label: "The manager's penalties", unlocked: "Relations unlocked", stay: true }
         : { label: "Have a meeting with your boss", unlocked: "Next: buy your first phone" });
@@ -3958,7 +4036,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "season-awards" && career?.lastSeasonAwardStats) {
-    return <SeasonAwardsScreen career={career} onContinue={handleSeasonAwardsContinue} />;
+    return <SeasonAwardsNight career={career} onContinue={handleSeasonAwardsContinue} />;
   }
 
   if (phase === "ladder" && career?.ladderNews) {
@@ -4284,7 +4362,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   if (phase === "media" && activeNav !== "media") {
     return (
       <>
-        <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} onToggleLike={handleToggleLike} />
+        <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} onToggleLike={handleToggleLike} onVote={handleVote} />
         {/* The first time: what this screen is (v0.24, P2-85). */}
         {career.unlocks && !hasSeen(career, "reactions-tut") && (
           <PointerTour key="reactions-tut" steps={REACTIONS_TOUR} onDone={() => setCareer(c => (c ? markSeen(c, "reactions-tut") : c))} />
@@ -4486,6 +4564,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return <PressConference question={pressQuestion} onAnswer={handlePressAnswer} />;
   }
 
+  if (phase === "season-reel") {
+    return <SeasonReel career={career} onDone={handleReelDone} />;
+  }
   if (phase === "ballon-dor") {
     return <BallonDorNight career={career} onContinue={handleBallonDorContinue} />;
   }
@@ -4519,6 +4600,35 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       <TopHud career={career} screen={screen} onUseCan={handleUseCan} onOpenCans={() => setPhase("shop-kib")} onCareer={setCareer} />
     </>
   );
+  // The bottom bar's locks (MainBar.tsx). Relations left the bar (master plan 1,
+  // Mikey 22 Oct 2026): while the manager's talk is due, the Phone opens it,
+  // even before you own a phone, so the first steps still work.
+  // The story order: the gaffer's beat calls you to his office; the Phone stays shut.
+  const talkDue = managerTalkDue(career) && !isStory(career);
+  const phoneBroken = isOpen(career, "phone") && career.ownedItems.some(o => (o.baseId ?? o.id) === "phone" && o.seasonsLeft === 0);
+  const navLocked: Partial<Record<NavTab, string>> | undefined = career.unlocks ? {
+    ...(isOpen(career, "league") ? {} : { league: lockHint(career, "league") }),
+    ...(isOpen(career, "play") ? {} : { play: lockHint(career, "play") }),
+    ...(isOpen(career, "training") ? {} : { skills: lockHint(career, "training") }),
+    ...(talkDue || isOpen(career, "phone") ? {} : { media: lockHint(career, "phone") }),
+    // A phone lasts two seasons, then you need a new one (Harry, P103); a
+    // broken phone locks the Phone until you repair it in Style.
+    ...(!talkDue && phoneBroken ? { media: "Your phone broke — repair it in Style" } : {}),
+  } : undefined;
+  const navTo = (t: NavTab) => ((t === "media" || t === "life") && talkDue ? handleOpenRelationshipGame("boss") : handleNavigate(t));
+  /** The same bottom bar on every full screen (League, Shop, Sponsors, Achievements…). */
+  /** A full screen with the main bar under it, and room so its last line is never hidden. */
+  const withBar = (screen: React.ReactNode, active: NavTab | null = null) => (
+    <>{screen}<div aria-hidden className="h-[84px]" />{mainBar(active)}</>
+  );
+  const mainBarRaw = (active: NavTab | null) => (
+    <MainBar activeNav={active} onNavigate={navTo} onHome={() => handleNavigate("home")} locked={navLocked} mediaUnread={phoneUnread > 0} />
+  );
+  const mainBar = (active: NavTab | null) => (
+    <div className="fixed inset-x-0 bottom-0 z-40" data-main-bar-fixed>
+      <div className="mx-auto w-full max-w-md">{mainBarRaw(active)}</div>
+    </div>
+  );
   // The league and the fixtures on ONE page, with the live-score bell in the
   // bottom bar (v0.23 W7, P90) — components/star/MatchWeek.tsx. A full screen
   // like the shop: it carries its own HUD and bottom bar.
@@ -4528,6 +4638,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <MatchWeek
           career={career}
           hud={screenHud("league")}
+          bar={mainBar("league")}
           nextFixture={nextFixture}
           onBack={handleBackToDashboard}
           onPlay={() => handleNavigate("play")}
@@ -4584,9 +4695,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return (
       <>
         {shopLookNow === "new" ? (
+          <SwipeBack onBack={() => { if (goBackRemembered()) return; setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}>
           <ShowroomShop
             career={career}
             kind={kind}
+            mainBar={mainBarRaw(null)}
             onBack={() => { if (goBackRemembered()) return; setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }}
             links={[
               { id: "sponsors", icon: "🤝", label: "Sponsors", locked: !isOpen(career, "sponsors"), onClick: () => { pushFrom({ phase, nav: "home" }, "sponsors"); setPhase("sponsors"); } },
@@ -4604,6 +4717,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
             onOpen3D={() => { setShopAtDoor(false); setPhase("shop-3d"); }}
             onOpenHome={HOME3D_IN_CAREER ? () => { setHomeFromGarden(false); setPhase("home-3d"); } : undefined}
           />
+          </SwipeBack>
         ) : (
         <Shop
           career={career}
@@ -4619,7 +4733,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         />
         )}
         {helpTour && <PointerTour key="help-shop" steps={helpTour} onDone={() => setHelpTour(null)} />}
-        {!helpTour && firstHelp(shopHelp) && <PointerTour key={`first-${shopHelp}`} steps={HELP_TOURS[shopHelp]} onDone={helpSeen(shopHelp)} />}
+        {/* The story's first Shop visit: the cans, then the boots. */}
+        {!helpTour && isStory(career) && shopLookNow === "new" && !hasSeen(career, "story-shop-tour")
+          ? <PointerTour key="story-shop" steps={STORY_SHOP_TOUR} onDone={() => setCareer(c => (c ? ["story-shop-tour", "help-cans", "help-boots"].reduce((a, k) => markSeen(a, k), c) : c))} />
+          : !helpTour && firstHelp(shopHelp) && <PointerTour key={`first-${shopHelp}`} steps={HELP_TOURS[shopHelp]} onDone={helpSeen(shopHelp)} />}
         {/* The phone flashes; one line says what it is (Harry, P102). */}
         {kind === "lifestyle" && !firstHelp(shopHelp) && career.unlocks && !isOpen(career, "phone") && !hasSeen(career, "phone-tip") && (
           <PointerTour
@@ -4735,7 +4852,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   if (phase === "sponsors") return (
     <>
-      <SponsorsScreen career={career} onBack={handleBackToDashboard} act={sponsorActions} />
+      {withBar(<SponsorsScreen career={career} onBack={handleBackToDashboard} act={sponsorActions} />)}
       {firstHelp("sponsors") && <PointerTour key="first-sponsors" steps={HELP_TOURS.sponsors} onDone={helpSeen("sponsors")} />}
       {sponsorNote && (
         <div className="pointer-events-none fixed inset-x-0 top-3 z-[90] mx-auto w-fit max-w-[90%] rounded-xl border border-amber-300 bg-gray-950 px-4 py-2 text-center text-[13px] font-black text-white shadow-[0_0_18px_rgba(251,191,36,.45)]">{sponsorNote}</div>
@@ -4766,38 +4883,39 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       />
     );
   }
+  // The first steps' story list leads to each thing (v0.24, P2-69): Go
+  // takes you there and that screen's tutorial runs. Shown on the
+  // Achievements screen and the Stats page's Achievements tab.
+  const goStep = (id: StepGo) => {
+    setCareer(c => (c ? markSeen(c, `step-${id}`) : c));
+    if (id === "first-two-sessions") handleNavigate("skills");
+    else if (id === "first-game") { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }
+    else if (id === "boss-meeting") { if (managerTalkDue(career)) handleOpenRelationshipGame("boss"); else handleNavigate("life"); }
+    else if (id === "buy-phone") {
+      if (shopLookNow === "new") { setActiveNav("home"); setPhase("shop-lifestyle"); }
+      else { setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }
+    }
+    else if (id === "sponsors") setPhase("sponsors");
+  };
   if (phase === "achievements") {
-    // The first steps' story list leads to each thing (v0.24, P2-69): Go
-    // takes you there and that screen's tutorial runs.
     const step = nextStep(career);
     const sponsorsNew = isOpen(career, "sponsors") && !hasSeen(career, "help-sponsors");
-    const goStep = (id: StepGo) => {
-      setCareer(c => (c ? markSeen(c, `step-${id}`) : c));
-      if (id === "first-two-sessions") handleNavigate("skills");
-      else if (id === "first-game") { setHomePage(1); setActiveNav("home"); setPhase("dashboard"); }
-      else if (id === "boss-meeting") { if (managerTalkDue(career)) handleOpenRelationshipGame("boss"); else handleNavigate("life"); }
-      else if (id === "buy-phone") {
-        if (shopLookNow === "new") { setActiveNav("home"); setPhase("shop-lifestyle"); }
-        else { setHomePage(2); setActiveNav("home"); setPhase("dashboard"); }
-      }
-      else if (id === "sponsors") setPhase("sponsors");
-    };
     const stepPrompt = step && !hasSeen(career, `step-${step.id}`) ? step.prompt
       : !step && sponsorsNew && !hasSeen(career, "step-sponsors") ? "Sponsors are open" : null;
     return (
       <>
-        <AchievementsScreen
+        {withBar(<AchievementsScreen
           career={career}
           onBack={handleBackToDashboard}
           top={career.unlocks ? <UnlockChallenges career={career} onGo={goStep} /> : undefined}
-        />
+        />)}
         {career.unlocks && (firstHelp("achievements")
           ? <PointerTour key="first-achievements" steps={HELP_TOURS.achievements} onDone={helpSeen("achievements")} />
           : stepPrompt && <PointerTour key={`step-${step?.id ?? "sponsors"}`} steps={stepTour(stepPrompt)} onDone={() => {}} />)}
       </>
     );
   }
-  if (phase === "trophies") return <TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />;
+  if (phase === "trophies") return withBar(<TrophiesScreen trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} onBack={handleBackToDashboard} />);
   if (phase === "garden") {
     return (
       <Garden3D
@@ -4977,6 +5095,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         onWatchFromStands={handleWatchFromStands}
         onSimMatch={handleSimMatch}
         onUseCan={handleUseCan}
+        onBuyAndUseCan={handleBuyAndUseCan}
         onBenchMomentSeen={(key) => setCareer(c => (c ? { ...c, benchMomentSeen: key } : c))}
       />
     );
@@ -5028,7 +5147,6 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   };
   const FROM_PHONE: NavSpot = { phase: "media", nav: "media" };
   const FROM_RELATIONS: NavSpot = { phase: "skills", nav: "life", trainingTab: "life" };
-  const FROM_STATS: NavSpot = { phase: "dashboard", nav: "home", homePage: 0 };
   const FROM_SHOP_PAGE: NavSpot = { phase: "dashboard", nav: "home", homePage: 2 };
   const played1 = career.fixtures.some(f => f.played);
   // v0.24: something just opened — say so on Home, before anything else
@@ -5069,7 +5187,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const seen = (...keys: string[]) => () => setCareer(c => (c ? keys.reduce((acc, k) => markSeen(acc, k), c) : c));
     // v0.25: energy explained here, at the very start; then "You've got a game
     // today" (game first) — no Skip, so Play is never missed.
-    if (onHome && !hasSeen(career, "tutorial")) return { key: "welcome", steps: welcomeTour(gameFirst(career), nextFixture ? daysToNext(career, nextFixture) : 0), skippable: !gameFirst(career), onDone: seen("tutorial", "help-home", "play-tip") };
+    // The story: the team-mate's boots come first, then the welcome pointer.
+    if (onHome && !hasSeen(career, "tutorial") && (!isStory(career) || hasSeen(career, "beat-boots"))) return { key: "welcome", steps: welcomeTour(gameFirst(career), nextFixture ? daysToNext(career, nextFixture) : 0, isStory(career)), skippable: !gameFirst(career), onDone: seen("tutorial", "help-home", "play-tip") };
+    // The story's training day: the pointer walks you through Power, then Technique.
+    if (onTraining && trainingDayOn(career)) {
+      const left = trainingDayLeft(career);
+      return { key: `day-${left[0]}`, steps: trainingDayTour(left[0], left.length, TRAINING_DAY.length), onDone: seen("help-training") };
+    }
     // Training (P2-56, P2-63, P2-65): what it is, each drill, then Power.
     if (onTraining && !hasSeen(career, "help-training")) return { key: "training", steps: TRAINING_TOUR, onDone: seen("help-training") };
     if (onTraining && !gameFirst(career) && career.unlocks.drills === 1 && !hasSeen(career, "drill1-msg")) return { key: "one-more", steps: ONE_MORE_DRILL_TOUR, onDone: seen("drill1-msg") };
@@ -5114,6 +5238,31 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (phase === "media" && activeNav === "media" && !hasSeen(career, "help-phone")) return { key: "first-phone", steps: HELP_TOURS.phone, onDone: seen("help-phone") };
     return null;
   })();
+  // The first hour as a story (lib/star/story.ts): a person brings the next
+  // thing in, on Home, when nothing else is showing.
+  const beat: Beat | null = swipeActive && homePage === 1 && quiet && !tour && !energyToast && !potmWin && !starPassOpen ? storyBeat(career, starsNow(career)) : null;
+  const goBeat = (b: Beat) => {
+    setCareer(c => (c ? ackBeat(c, b) : c));
+    const point = (target: string, text: string) => setHelpTour([{ target, text, press: true }]);
+    if (b === "boss") handleOpenRelationshipGame("boss");
+    else if (b === "training") point("nav-training", "Tap Training");
+    else if (b === "ready") point("nav-play", "Next game. Tap Play");
+    else if (b === "starpass") point("rating", "Tap your star level");
+    else if (b === "can") point("can-use-basic", "Tap Use to drink it");
+    else if (b === "phone") handleNavigate("media");
+    // The swipe hints are words, not buttons (a pointer there could not be
+    // pressed), so these go straight in; each page's own tour takes over.
+    else if (b === "shop") { setActiveNav("home"); setPhase(shopLookNow === "new" ? "shop-kib" : "dashboard"); if (shopLookNow !== "new") setHomePage(2); }
+    else if (b === "stats") { setActiveNav("home"); setPhase("dashboard"); setHomePage(0); }
+    // The offer is in your messages: the phone, then Messages, then the offer.
+    else if (b === "sponsor") {
+      handleNavigate("media");
+      setHelpTour([
+        { target: "app-messages", text: "Your agent sent the offer. Tap Messages", press: true },
+        { target: "msg-sponsors", text: "Tap the offer to see it", press: true },
+      ]);
+    }
+  };
   // First steps done: "Do you want to switch this to League as a shortcut?" (P2-89).
   const askSlot = swipeActive && homePage === 1 && quiet && !tour && !setPieceChat && !energyToast && slotQuestionDue(career);
   const trainingBody = (
@@ -5137,7 +5286,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       career={career}
       onExit={handleExit}
       // v0.25: after the first game, Relations goes straight into the manager's talk.
-      onNavigate={(t) => (t === "life" && managerTalkDue(career) ? handleOpenRelationshipGame("boss") : handleNavigate(t))}
+      onNavigate={navTo}
       onSettings={openSettings}
       activeNav={phase === "skills" ? (trainingTab === "life" ? "life" : "skills") : activeNav}
       // A red dot while something on the phone is unread; it clears once you
@@ -5163,6 +5312,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onUseCan={handleUseCan}
           onOpenCans={() => setPhase("shop-kib")}
           onCareer={setCareer}
+          onStarPass={setStarPassOpen}
         />
       }
       // The house always means Home (navigation round 1, Harry's answer 16,
@@ -5171,22 +5321,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // (Mikey, 28 Sep 2026); anywhere else it goes Home (Mikey, 29 Sep 2026).
       onHome={() => { if (!(swipeActive && homePage === 1)) handleNavigate("home"); }}
       atHome={swipeActive && homePage === 1}
-      locked={career.unlocks ? {
-        ...(isOpen(career, "league") ? {} : { league: LOCK_HINT.league }),
-        ...(isOpen(career, "play") ? {} : { play: LOCK_HINT.play }),
-        ...(isOpen(career, "relations") || managerTalkDue(career) ? {} : { life: LOCK_HINT.relations }),
-        ...(isOpen(career, "training") ? {} : { skills: LOCK_HINT.training }),
-        ...(isOpen(career, "phone") ? {} : { media: LOCK_HINT.phone }),
-        // A phone lasts two seasons, then you need a new one (Harry, P103).
-        // A broken phone locks the Phone button until you repair it in Style
-        // (Harry, 1 Oct 2026: "it should lock until u repair").
-        ...(isOpen(career, "phone") && career.ownedItems.some(o => (o.baseId ?? o.id) === "phone" && o.seasonsLeft === 0) ? { media: "Your phone broke — repair it in Style" } : {}),
-      } : undefined}
-      // The bottom-left button (v0.24, P2-68, P2-89): Achievements through the
-      // first steps, then the player's answer to "switch this to League?".
-      homeSlot={career.unlocks && isOpen(career, "achievements") && bottomLeft(career) === "achievements"
-        ? { active: false, onClick: () => setPhase("achievements"), label: "Achievements", icon: "⭐" }
-        : undefined}
+      locked={navLocked}
     >
       {/* ── The pointer tutorial (PointerTour.tsx, lib/star/tours.ts): one
           tour at a time, in order, pointing at the real screen. ── */}
@@ -5197,7 +5332,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       {swipeActive && newsQueue.length > 0 && !chainPop && newStar === null && (
         <BreakingNews key={newsQueue[0].headline} news={newsQueue[0]} onClose={() => setNewsQueue(q => q.slice(1))} />
       )}
-      {setPieceChat && !tour && (
+      {setPieceChat && !tour && !beat && !starPassOpen && (
         <ManagerChat
           key={setPieceChat.duties.join()}
           name={career.manager?.name || loadLineup(career.player.club)?.manager || "The manager"}
@@ -5214,6 +5349,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           onClose={() => setCareer(c => (c ? markAnnounced(c, announce) : c))}
         />
       )}
+      {beat && <StoryBeatPop key={beat} text={beatText(career, beat)} onGo={() => goBeat(beat)} />}
       {askSlot && (
         <SlotQuestion
           onLeague={() => setCareer(c => (c ? setBottomLeft(c, "league") : c))}
@@ -5290,7 +5426,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <PhoneHome
           career={career}
           onToggleLike={handleToggleLike}
-          onLeave={(ph) => openHub(ph, FROM_PHONE)}
+          onVote={handleVote}
+          onLeave={(ph) => (ph === "relations" ? navTo("life") : openHub(ph, FROM_PHONE))}
+          hallChase={hallChaseLine(career, hallRecords)?.text ?? null}
           onClose={() => handleNavigate("home")}
           installed={career.unlocks ? (id) => appInstalled(career, id) : undefined}
           onInstall={(id) => setCareer(c => (c ? installApp(c, id) : c))}
@@ -5328,17 +5466,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           // The Shop is a shop, not a light-green page (v0.25, P44).
           tones={[undefined, undefined, "calm"]}
           // Small arrows at the bottom edge instead of a tab row (Harry, 1 Oct
-          // 2026); Stats' left arrow is the League, Home's pitch runs under them.
+          // 2026); Home's pitch runs under them. Stats has no left arrow: League is in the bar (Mikey, 22 Oct 2026).
           arrows={{
             icons: ["📊", "🏠", "🛍️"],
-            leftEnd: isOpen(career, "league") ? { icon: "🏆", label: "League", onClick: () => handleNavigate("league") } : undefined,
             bleed: [1],
           }}
         >
           {[
             isOpen(career, "stats")
-              ? <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} onOpen={(ph) => { pushFrom(FROM_STATS, ph); setPhase(ph); }} hallRecords={hallRecords} />
-              : <LockedPage key="stats" title="Stats" feature="stats" />,
+              ? <StatsTabs key="stats" career={career} onRenew={() => setPhase("contract-renewal")} hallRecords={hallRecords} achievementsTop={career.unlocks ? <UnlockChallenges career={career} onGo={goStep} /> : undefined} />
+              : <LockedPage key="stats" title="Stats" feature="stats" hint={lockHint(career, "stats")} />,
             <HomeHub
               key="home"
               career={career}
@@ -5357,7 +5494,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
               ? (shopLookNow === "new"
                 ? <StoreLanding key="shop" career={career} onOpen={(ph) => openHub(ph, FROM_SHOP_PAGE)} sponsorsLock={isOpen(career, "sponsors") ? undefined : "Play well"} />
                 : <ShopPage key="shop" career={career} onOpen={(ph) => openHub(ph, FROM_SHOP_PAGE)} sponsorsLock={isOpen(career, "sponsors") ? undefined : "Play well"} />)
-              : <LockedPage key="shop" title="Shop" feature="shop" />,
+              : <LockedPage key="shop" title="Shop" feature="shop" hint={lockHint(career, "shop")} />,
           ]}
         </SwipePages>
       )}

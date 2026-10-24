@@ -124,3 +124,13 @@ export function advanceWorldLeagues(
   });
   return changed ? next : leagues;
 }
+
+/**
+ * One past round's scores, replayed (League → Results ‹ Round ›). A round's
+ * scores come only from its own seed and the season's fixed ratings, so this
+ * is exactly what was played. Only the latest round keeps scorers (`last`).
+ */
+export function worldRoundResults(career: CareerState, lg: WorldLeague, round: number): LeagueResult[] {
+  if (round === lg.played && lg.last) return lg.last;
+  return playWorldRound(career, lg, round, () => undefined).last ?? [];
+}

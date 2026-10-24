@@ -483,10 +483,11 @@ const unsigned = (o: Partial<StarPlayer> = {}) => player({ club: "", ...o });
       boot.power === was.power && boot.technique === was.technique && boot.pace === was.pace,
       `${g.player.club}: the starter boot's stats are untouched`,
     );
+    // Mikey, 24 Oct 2026: a new career opens with no boots; a team-mate hands
+    // over his old pair (5 games) before the first game (story.ts, tests/star/storyOrder.mts).
     check(
-      boot.matches === STARTER_BOOT_MATCHES && boot.matches === was.matches,
-      `${g.player.club}: the free pair is still worth ${was.matches} matches, not a brand-new boot off `
-      + `the shelf (got ${boot.matches})`,
+      boot.matches === 0 && STARTER_BOOT_MATCHES === was.matches,
+      `${g.player.club}: no boots of your own until the team-mate's pair (got ${boot.matches})`,
     );
     // Same treatment as the wage above: what is claimed is that the price
     // is DERIVED (it is whatever the catalogue's cheapest entry costs today,

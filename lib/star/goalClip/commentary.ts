@@ -170,6 +170,49 @@ export const REEL_LINES: CommentaryLine[] = [
   C("reel2", "Goals, goals, goals. Brilliant entertainment."),
 ];
 
+/**
+ * BIG LATE MOMENTS (Leo, 22 Oct 2026): a goal YOU score at 85 minutes or
+ * later when your side was level (it wins it) or one down (it levels it).
+ * The lead's call comes from these instead of CALLS; the co-commentator says
+ * one of LATE_REPLAY_LINES over the replay. No minute in the words: a
+ * recording made in advance cannot know it.
+ */
+export type LateKind = "winner" | "level";
+export const LATE_CALLS: Record<LateKind, CommentaryLine[]> = {
+  winner: [
+    L("late-1", "Late, late, he's won it!"),
+    L("late-2", "In the dying minutes! Unbelievable!"),
+    L("late-3", "Oh, he's won it! He's only gone and won it!"),
+    L("late-4", "Right at the death! That has to be the winner!"),
+    L("late-5", "Can you believe it? He's snatched it, late on!"),
+    L("late-6", "Last gasp! And this place has gone absolutely wild!"),
+  ],
+  level: [
+    L("late-7", "He's levelled it at the death!"),
+    L("late-8", "A late, late equaliser! They're not beaten yet!"),
+    L("late-9", "He's dragged them level, right at the end!"),
+    L("late-10", "At the very last, it's all square!"),
+  ],
+};
+export const LATE_REPLAY_LINES: CommentaryLine[] = [
+  C("late-1", "You can't write it. What a moment."),
+  C("late-2", "That's why you never, ever give up."),
+  C("late-3", "Look at the clock. Nerves of steel, that."),
+  C("late-4", "They'll be talking about that one for years."),
+];
+
+/**
+ * Is this a big late moment? Your goal, minute 85 or later, and before it
+ * your side was level (a winner) or one down (an equaliser). `us`/`them` are
+ * the score AFTER the goal. Undefined for every other goal.
+ */
+export function lateKindOf(minute: number, isYou: boolean, us: number, them: number): LateKind | undefined {
+  if (!isYou || !(minute >= 85)) return undefined;
+  if (us - them === 1) return "winner";
+  if (us === them) return "level";
+  return undefined;
+}
+
 /** Every line, for the generator and the Sound Board. */
 export function allCommentaryLines(): CommentaryLine[] {
   return [
@@ -177,6 +220,8 @@ export function allCommentaryLines(): CommentaryLine[] {
     ...Object.values(SCORE_LINES).flat(),
     ...Object.values(REPLAY_LINES).flat(),
     ...REEL_LINES,
+    ...Object.values(LATE_CALLS).flat(),
+    ...LATE_REPLAY_LINES,
   ];
 }
 
