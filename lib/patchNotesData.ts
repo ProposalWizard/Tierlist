@@ -446,12 +446,12 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     },
     {
       "version": "0.108",
-      "title": "Leo's tonight build: celebrations, fast feed, bicycle kicks, Real Goals, season end, 17 bugs (on branch Leo, not live)",
+      "title": "Leo's tonight build: celebrations, fast feed, bicycle kicks, Real Goals, season end, 17 bugs (on the site behind a switch)",
       "publishedAt": "2026-10-22T23:15:00Z",
-      "updatedAt": "2026-10-24T06:20:00Z",
-      "updateNote": "The 6 to-dos given to Harry and everyone were taken off the to-do list (Leo: only when needed, and ask him first); they are listed here as findings only.",
+      "updatedAt": "2026-10-24T19:20:00Z",
+      "updateNote": "Now on the live site, switched off for everyone: admins turn it on in Settings → Updates → \"Leo's 24 Oct update\", with one switch per part.",
       "artifactUrl": "https://claude.ai/artifact/PQvHUgssX7CAdad2jitPjA",
-      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. NOT live until Leo says push. Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; bicycle kicks; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. Harry: the match file and keeper were touched (additive, match tests pass); findings for him are listed, not given as to-dos. Mikey: 3 lines in manager.ts and an injuries plan for you.",
+      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. On the live site since 24 Oct behind Settings → Updates → \"Leo's 24 Oct update\" (admins, off by default, one switch per part). Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; bicycle kicks; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. Harry: the match file and keeper were touched (additive, match tests pass); findings for him are listed, not given as to-dos. Mikey: 3 lines in manager.ts and an injuries plan for you.",
       "stats": [
         {
           "value": "0.29 s",
