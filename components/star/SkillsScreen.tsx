@@ -172,7 +172,8 @@ function SkillCard({ skill, label, icon, desc, value, stars, canTrain, outOfSess
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-[15px] font-black leading-tight text-white">{label}</div>
-          <div className="text-[10.5px] font-bold leading-snug text-white/70">{desc}</div>
+          {/* The name only; what it does is on the skill's own page (Mikey's playtest, 24 Oct 2026). */}
+          <span className="sr-only">{desc}</span>
         </div>
         <div className="relative shrink-0 text-center">
           <div className="text-[24px] font-black leading-none tabular-nums" style={{ color: c2, textShadow: `0 0 12px ${rgba(c1, 0.7)}` }}>

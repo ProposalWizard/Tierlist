@@ -2021,6 +2021,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const phaseRef = useRef<Phase>("aim");
   const [phase, setPhaseState] = useState<Phase>("aim");
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
+  // A new career's very first chance (the story's first match): two short
+  // lines, "drag back… then let go" while aiming and "tap the part of the
+  // ball" on the strike screen, on that one chance only (Mikey's playtest,
+  // 24 Oct 2026). Pure display: nothing in the match reads it.
+  const coachChanceRef = useRef(0);
+  const prevPhaseForCoach = useRef<Phase>("aim");
+  useEffect(() => {
+    if (phase === "aim" && prevPhaseForCoach.current !== "aim") coachChanceRef.current += 1;
+    prevPhaseForCoach.current = phase;
+  }, [phase]);
+  // The count as of this render (the effect above catches up after it).
+  const coachChanceNow = coachChanceRef.current + (phase === "aim" && prevPhaseForCoach.current !== "aim" ? 1 : 0);
+  const coachFirstChance = !!career?.unlocks?.story && (career.careerStats?.appearances ?? 0) === 0 && coachChanceNow <= 1;
 
   // Game music (Settings → Game music, off by default; lib/star/gameMusic.ts).
   // A career match only: the score, the clock, a knockout and a dribble pick
@@ -9608,7 +9621,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             {statCell("Goals", `${stats.goals}`, "text-amber-300")}
             {statCell("Assists", `${stats.assists}`, "text-emerald-300")}
             {statCell("Pass", `${passPct}%`, "text-violet-300")}
-            {statCell("Avg Rat", regressForMinutes(
+            {statCell("Rating", regressForMinutes(
               // Item 26: the same formula the post-match screen uses (the old
               // box counted only lost dribbles as waste, the final counted
               // every chance — two different numbers for one match).
@@ -9866,6 +9879,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
         {/* Contact overlay. After a run-up it has a countdown
             (penaltyRunup.ts); run out and the kick is scuffed. */}
+        {coachFirstChance && (phase === "aim" || phase === "contact") && (
+          <div data-first-chance-coach className="pointer-events-none absolute inset-x-3 top-3 z-40 rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white"
+            style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
+            {phase === "aim" ? "Drag back from the ball to aim and control your power, then let go" : "Tap the part of the ball you want to kick"}
+          </div>
+        )}
         {phase === "contact" && aim && powerStrike && (
           <PowerShotContact power={aim.power} onStrike={(q) => {
             // Its own seeded draw, so the match's random stream is untouched.

@@ -146,7 +146,7 @@ export default function MatchCommentary({
               Scores <span aria-hidden className="text-[10px]">▸</span>
             </button>
           )}
-          <button onClick={onSpeed} aria-label={`Commentary speed ${speed}x`}
+          <button onClick={onSpeed} aria-label={`Commentary speed ${speed}x`} data-tour="match-speed"
             className="flex items-center gap-1.5 rounded-md border border-white/10 bg-gray-950 px-2 py-1">
             <span className={`font-black leading-none tabular-nums ${minuteLabel && minuteLabel.includes("+") ? "text-[12px] text-amber-300" : "text-sm text-white"}`}>{minuteLabel ?? minute}&#39;</span>
             <span className={`text-[9px] font-black leading-none ${speed > 1 ? "text-amber-300" : "text-white/45"}`}>{"▶".repeat(speed >= 8 ? 4 : speed === 4 ? 3 : speed)}</span>
@@ -234,6 +234,7 @@ export default function MatchCommentary({
           <div
             role="radiogroup"
             aria-label="Playstyle"
+            data-tour="match-playstyle"
             className="pointer-events-none absolute bottom-full right-2 z-20 mb-1.5 flex items-end gap-1"
           >
             {PLAYSTYLES.map(ps => {
@@ -310,7 +311,7 @@ export default function MatchCommentary({
             stats at the top of the match screen). Falls live as the clock
             runs, at the rate of the mode you pick — see lib/star/energy.ts. */}
         {onEnergyMode && (
-        <div className="shrink-0 border-t border-white/10 bg-gray-900 px-3 pt-2 pb-2.5">
+        <div data-tour="match-energy" className="shrink-0 border-t border-white/10 bg-gray-900 px-3 pt-2 pb-2.5">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-white">Energy</span>
             <div
@@ -412,8 +413,11 @@ function Line({ l, userKit, oppKit, added = 0, regulation = 90 }: { l: LogLine; 
   // one tone either side can carry now that the opponent's own goals are
   // named too (CanvasMatch.tsx's opponent-goal branch), so it reads
   // `isOpponent` the same way a plain "play" line already does.
+  // "chance" lines are your own team's move coming back to you ("Savic plays
+  // it back to …"): your kit too, not the bare green row (Mikey's playtest,
+  // 24 Oct 2026).
   const kit: Kit | null =
-    l.tone === "goal" || l.tone === "you" ? userKit
+    l.tone === "goal" || l.tone === "you" || l.tone === "chance" ? userKit
       : l.tone === "assist" ? (l.isOpponent ? oppKit : userKit)
         : l.tone === "oppGoal" ? oppKit
           : l.tone === "play" && l.isOpponent !== undefined ? (l.isOpponent ? oppKit : userKit)
@@ -432,7 +436,7 @@ function Line({ l, userKit, oppKit, added = 0, regulation = 90 }: { l: LogLine; 
         // now, not its own fixed shade.
         : l.tone === "assist" ? "pl-8 font-bold"
           : l.tone === "you" ? "font-bold"
-            : l.tone === "chance" ? "text-white font-bold"
+            : l.tone === "chance" ? "font-bold"
               // A plain line about a specific team's play (a near-miss, a
               // blocked shot) is coloured further down, straight from that
               // team's own shirt — a flat "text-white" here would fight the

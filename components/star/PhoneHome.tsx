@@ -49,7 +49,7 @@ import type { HubPhase } from "./HomeHub";
 import { HOME3D_IN_CAREER } from "@/lib/star/home3d/flag";
 import { ClubCard, CountUp, RiseIn, Glow, Badge, EmptySlots, glowOf, rgba, useClubTheme } from "./ui";
 
-type AppId = "social" | "kickabout" | "squad" | "fixtures" | "messages" | "appstore" | "scout";
+type AppId = "social" | "kickabout" | "squad" | "fixtures" | "messages" | "appstore" | "scout" | "relationships";
 type Leave = HubPhase | "settings" | "relations";
 interface App { id: AppId | Leave; label: string; icon: string; bg: [string, string]; /** The open app's heading when longer than the icon's label. */ title?: string }
 
@@ -80,10 +80,15 @@ const SCOUT_APP: App = { id: "scout", label: "Scout report", icon: "🔍", bg: [
  *  career's phone, where the apps it does not start with are added. */
 const APP_STORE_ICON: App = { id: "appstore", label: "App Store", icon: "🅰️", bg: ["#60a5fa", "#1d4ed8"] };
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
-const appOf = (id: AppId) => (id === "appstore" ? APP_STORE_ICON : id === "scout" ? SCOUT_APP : APPS.find((a) => a.id === id)!);
+const appOf = (id: AppId | "relations") => (id === "appstore" ? APP_STORE_ICON : id === "scout" ? SCOUT_APP : APPS.find((a) => a.id === (id === "relationships" ? "relations" : id))!);
 
-export default function PhoneHome({ career, onToggleLike, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase }: {
+export default function PhoneHome({ career, onToggleLike, onLeave, onClose, installed, onInstall, isNew, onOpened, hallChase, relations, relationsIntro }: {
   career: CareerState;
+  /** Relationships drawn INSIDE the phone, like Squad (Mikey's playtest, 24 Oct
+   *  2026). Absent: the app leaves the phone for the Relations page, as before. */
+  relations?: React.ReactNode;
+  /** Its one-line tour the first time it is opened. */
+  relationsIntro?: React.ReactNode;
   /** Your Hall of Fame chase line, for the team-mate's record message (phoneUnread.ts). */
   hallChase?: string | null;
   onToggleLike?: (postId: string) => void;
@@ -155,6 +160,7 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
 
   const open = (id: AppId | Leave, from?: HTMLElement | null) => {
     if (isNew?.(id)) onOpened?.(id);
+    if (id === "relations" && relations) { setApp("relationships"); return; }
     if (!INSIDE.has(id)) return onLeave(id as Leave);
     markSeen(id as AppId);
     // An app opens on the tap's own frame: no zoom out of the icon (Harry,
@@ -188,6 +194,12 @@ export default function PhoneHome({ career, onToggleLike, onLeave, onClose, inst
                   {app === "scout" && (
                     <AppShell app={appOf("scout")}>
                       <div className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2 pb-2 text-[12px]"><ScoutPane career={career} fixture={nextFixtureFor(career)} /></div>
+                    </AppShell>
+                  )}
+                  {app === "relationships" && relations && (
+                    <AppShell app={appOf("relations")}>
+                      <div data-tour="phone-relations" className="kib-noscroll min-h-0 flex-1 overflow-y-auto px-2 pb-2">{relations}</div>
+                      {relationsIntro}
                     </AppShell>
                   )}
                   {app === "fixtures" && <Fixtures career={career} glow={theme.glow} />}
@@ -429,7 +441,8 @@ function Fixtures({ career, glow }: { career: CareerState; glow: string }) {
           const date = fixtureDateLabel(career.player.startYear, career.season, f.week, f.kind, divisionOf(career));
           const us = f.home ? f.homeScore : f.awayScore, them = f.home ? f.awayScore : f.homeScore;
           const res = f.played && us !== undefined && them !== undefined ? (us > them ? "W" : us === them ? "D" : "L") : null;
-          const tone = res === "W" ? "from-emerald-400 to-emerald-600" : res === "L" ? "from-red-500 to-red-700" : "from-gray-400 to-gray-600";
+          // A draw is yellow-orange (Mikey's playtest, 24 Oct 2026: "not dark green").
+          const tone = res === "W" ? "from-emerald-400 to-emerald-600" : res === "L" ? "from-red-500 to-red-700" : "from-amber-400 to-orange-500";
           const next = i === nextIdx;
           const body = (
             <div className="flex items-center gap-2 px-2.5 py-1.5">
@@ -446,12 +459,13 @@ function Fixtures({ career, glow }: { career: CareerState; glow: string }) {
                 <span className={`flex shrink-0 items-center gap-1 rounded-md bg-gradient-to-b ${tone} px-1.5 py-[1px] text-[11px] font-black tabular-nums text-white shadow`}>
                   {us}-{them} {res}
                 </span>
-              ) : next ? <span className="shrink-0 rounded-full bg-emerald-400 px-1.5 text-[8px] font-black uppercase tracking-widest text-gray-950">Next</span> : null}
+              ) : null}
             </div>
           );
           return next ? (
             <div key={`${f.week}-${f.opponent}-${f.kind}`} ref={nextRef} data-fixture-next>
-              <ClubCard glow={glow} className="relative mx-2 mb-1 rounded-xl">{body}</ClubCard>
+              {/* The next game glows blue: no "Next" label (Mikey's playtest, 24 Oct 2026). */}
+              <div className="relative mx-2 mb-1 rounded-xl bg-sky-500/15" style={{ boxShadow: "inset 0 0 0 1.5px rgba(56,189,248,.9), 0 0 14px rgba(56,189,248,.55)" }}>{body}</div>
             </div>
           ) : (
             <div key={`${f.week}-${f.opponent}-${f.kind}`} className={`mx-2 mb-1 rounded-xl ring-1 ring-white/[0.06] ${f.played ? "bg-white/[0.05]" : "bg-white/[0.025]"}`}>{body}</div>
