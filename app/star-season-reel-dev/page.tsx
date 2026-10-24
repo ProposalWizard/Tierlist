@@ -39,7 +39,7 @@ const MATES = ["Saka", "Ødegaard", "Rice", "Martinelli", undefined];
 function fakeSeason(club: string, n: number, clips: Clips, trophies: number): { career: CareerState; tracks: number } {
   const player = {
     firstName: "Leo", lastName: "Vale", age: 22, skinTone: "light", club, clubBadge: null,
-    position: "ST", nationality: "England", startYear: 2026,
+    position: "ST", nationality: "England", startYear: 2027,
   } as unknown as StarPlayer;
   const base = makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier");
   const opps = PREMIER_LEAGUE_CLUBS.filter((c) => c !== club);
