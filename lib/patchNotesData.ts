@@ -30,10 +30,10 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.108",
       "title": "Leo's tonight build: celebrations, fast feed, bicycle kicks, Real Goals, season end, 17 bugs (on branch Leo, not live)",
       "publishedAt": "2026-10-22T23:15:00Z",
-      "updatedAt": "2026-10-24T05:55:00Z",
-      "updateNote": "Checked: the blank screen after full time in 3D was the filming script, not the game (3D on and off both go to the after-match screen, no errors). All 2D celebration clips are real shots with sound.",
+      "updatedAt": "2026-10-24T06:20:00Z",
+      "updateNote": "The 6 to-dos given to Harry and everyone were taken off the to-do list (Leo: only when needed, and ask him first); they are listed here as findings only.",
       "artifactUrl": "https://claude.ai/artifact/PQvHUgssX7CAdad2jitPjA",
-      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. NOT live until Leo says push. Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; bicycle kicks; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. Harry: the match file and keeper were touched (additive, match tests pass); 6 team jobs. Mikey: 3 lines in manager.ts and an injuries plan for you.",
+      "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. NOT live until Leo says push. Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; bicycle kicks; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. Harry: the match file and keeper were touched (additive, match tests pass); findings for him are listed, not given as to-dos. Mikey: 3 lines in manager.ts and an injuries plan for you.",
       "stats": [
         {
           "value": "0.29 s",
@@ -135,7 +135,7 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
         },
         {
           "kind": "next",
-          "title": "Team jobs (6)",
+          "title": "Found for Harry (not given as to-dos)",
           "items": [
             {
               "title": "Harry",
