@@ -71,5 +71,19 @@ New: `lib/star/celebration.ts`, `lib/star/bigMoment.ts`, `lib/star/lateCommentar
 Changed: `components/star/CanvasMatch.tsx` (shared), `lib/star/engineFrame.ts`, `lib/star/style3d/engineView.ts`, `lib/star/goalClip/{recorder,render,edit,track,audio,commentary,commentaryDurations}.ts`, `lib/star/matchSound.ts`, `lib/star/sprites.ts`, `lib/star/store/{catalogue,career}.ts`, `components/star/store/AccessoryFigure.tsx`, `public/star/anims3d/mocap*.glb`, `public/star/sprites/index*.json`, `public/sfx/manifest.json`, `lib/star/three3d/assetVersions.ts`, `tools/mocap3d/keyed.py`, `tools/sprites/new/*`, `tests/star/sprite3dClips.mts`, `docs/3D_HANDBOOK.md`.
 Merging note: atlas slot 2 is ours; the bicycle chat moves to slot 3 (hub).
 
-## Films (23 Oct, joined build d7056f15)
-`film/`: celeb-knee-slide-2d, celeb-aeroplane-2d, celeb-skip, celeb-3d, celeb-video, celeb-shop, big-moment (8.5–18.6 s, 0.5–1.3 MB each, H.264 390 wide, no sound, a .jpg each). Made by `scripts/film/scenes/` (celebrations.mjs, goal-video.mjs, shop-celebration.mjs, cut.py). The shop clip shows the joined build's old labels ("Wear"); this branch now says "Use after my goals".
+## Films (24 Oct, joined build ba2fb876) — real shots, with sound
+Every goal is a real drag and strike; nothing moves the ball (the first round's clips put the ball on the line with the dev test tool and looked like "the ball immediately goes in"; that line is gone from the scene, with a comment). `window.__bigMomentNext` (dev only) still marks the next chance as a big moment; the shot and its slow motion are the match's own.
+
+| Clip | Length | Size | Scored on | Sound check (goal sound vs first goal frame) |
+|---|---|---|---|---|
+| big-moment | 17.6 s | 1.17 MB | 2nd real shot of the run | heartbeat every 0.84 s; goal 11.15 s vs 11.17 s; roar to 14.4 s |
+| celeb-knee-slide-2d | 10.4 s | 0.79 MB | 3rd real shot (a real 90+1' big moment, level) | 3.84 s vs 3.87 s |
+| celeb-aeroplane-2d | 10.7 s | 0.76 MB | 8th real shot (2nd of the 3rd run) | 4.50 s vs 4.5 s |
+| celeb-skip | 9.2 s | 0.64 MB | 2nd real shot | strike 3.68 s, net 4.10 s vs 4.0 s |
+| celeb-video | 16.2 s | 1.74 MB | the 90+1' knee-slide goal's own video | goal call 2.0–4.0 s, replay lines 7–8.5 s, 12–13.5 s |
+| celeb-shop | 18.6 s | 0.60 MB | (no goal) | silent, as asked |
+| celeb-3d | — | — | **not re-filmed: the file on the branch is the old ball-moved take, invalid** | — |
+
+Sound: `audio-tap.mjs` (chat 2) gathers the game's Web Audio; `audio-pcm.mjs` records its raw samples on the audio clock fitted to real time (MediaRecorder dropped silent stretches); `cut.py --audio … --audio-at …` lays it under the clip with the measured 0.2 s screen-recording lag; `peaks.mjs` prints the loudness proof. AAC 128k. Game music is off by default, so no music is in the clips.
+
+3D: shots in the 3D view must be aimed through the 3D camera (fixed in the scene), but each 3D run here gets about three chances in seven minutes and the page hung after full time; no real 3D goal was landed in the time given. Banner options for Leo (no game change): `film/banner-options/` A, B, C, none.
