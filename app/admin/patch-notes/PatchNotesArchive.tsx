@@ -1,12 +1,13 @@
 "use client";
 
 import { linesOf, watchSelection } from "@/lib/teamRoom/patchQuote";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import { DEMOS, DEMO_CSS, DEMO_TOKENS } from "@/lib/patchNotesDemos";
 import { PATCH_NOTE_PAGES, patchNotePageUrl } from "@/lib/patchNotePages";
 import { PATCH_NOTE_REVIEWS, type PatchNoteReview } from "@/lib/patchNoteReviews";
 import { PatchReadBar, PatchRailFaces, PatchUnreadDot } from "@/components/teamRoom/PatchReceipts";
+import { patchIsUpdated, patchTime } from "@/lib/teamRoom/extras";
 import {
   SECTION_COLOR,
   barGroupCeiling,
@@ -66,7 +67,12 @@ export default function PatchNotesArchive({ initialVersion }: { initialVersion?:
   //
   // So there is no request here, no loading state and nothing to fail. The
   // page renders the moment it opens, offline included.
-  const notes = BUILT_IN_PATCH_NOTES;
+  // Newest CHANGE first: an updated note moves to the front, like a new one
+  // (Leo, 24 Oct 2026: "if u update an old patch notes then make sure its clear … push to front").
+  const notes = useMemo(() => BUILT_IN_PATCH_NOTES
+    .map((n, i) => ({ n, i }))
+    .sort((a, b) => (Date.parse(lastChange(b.n)) || 0) - (Date.parse(lastChange(a.n)) || 0) || a.i - b.i)
+    .map(({ n }) => n), []);
   // The team board opens a push's patch note here (initialVersion).
   const [selected, setSelected] = useState<string | null>(
     (initialVersion && notes.some((n) => n.version === initialVersion) ? initialVersion : null) ?? notes[0]?.version ?? null,
@@ -108,6 +114,13 @@ export default function PatchNotesArchive({ initialVersion }: { initialVersion?:
     </main>
   );
 }
+/** When a note last changed: its update, else when it went up. */
+const lastChange = (n: PatchNote) => patchTime(n);
+/** The small green UPDATED tag on a version that was changed after it went up. */
+function UpdatedTag() {
+  return <span className="ml-1.5 rounded-full bg-[#3ddc84] px-1.5 py-[1px] align-[1px] text-[9.5px] font-black uppercase tracking-wider text-[#06170e]">Updated</span>;
+}
+
 /** "Harry's patch notes: B6 Scene Studio" → "B6 Scene Studio" (the name after the author), so the rail says which version is which. */
 function railName(title: string): string {
   const m = /^(?:harry|mikey|leo)['’]s patch notes\s*(?:v[\d.]+)?\s*:\s*(.+)$/i.exec(title.trim());
@@ -134,6 +147,7 @@ function VersionRail({
               }`}
             >
               v{n.version}
+              {patchIsUpdated(n) && <UpdatedTag />}
               <PatchUnreadDot note={n} />
             </button>
           );
@@ -157,9 +171,9 @@ function VersionRail({
                 }`}
               >
                 <span className={`block text-sm font-extrabold ${on ? "text-[#3ddc84]" : INK}`}>
-                  v{n.version}
+                  v{n.version}{patchIsUpdated(n) && <UpdatedTag />}
                 </span>
-                <span className={`flex items-center justify-between gap-2 text-[11px] ${INK3}`}>{formatPatchDate(n.publishedAt)}<PatchRailFaces note={n} /></span>
+                <span className={`flex items-center justify-between gap-2 text-[11px] ${INK3}`}>{patchIsUpdated(n) ? `Updated ${formatPatchDate(n.updatedAt!)}` : formatPatchDate(n.publishedAt)}<PatchRailFaces note={n} /></span>
                 {railName(n.title) && <span className={`mt-0.5 block truncate text-[11.5px] ${INK2}`}>{railName(n.title)}</span>}
               </button>
             );
@@ -204,6 +218,12 @@ function VersionView({ note }: { note: PatchNote }) {
     : "The same notes as plain data.";
   return (
     <>
+      {patchIsUpdated(note) && (
+        <div className="mb-3 rounded-xl border border-[#3ddc84]/40 bg-[#3ddc84]/10 px-3.5 py-2.5 text-[13px]">
+          <span className="font-black uppercase tracking-wider text-[#3ddc84]">Updated {formatPatchDate(note.updatedAt!)}</span>
+          <span className={`ml-2 ${INK2}`}>{note.updateNote || "This version changed after it went up."} First went up {formatPatchDate(note.publishedAt)}. It counts as unread again until you read the update.</span>
+        </div>
+      )}
       <PatchReadBar note={note} lines={linesOf(note)} />
       {(hasPage || review) && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
