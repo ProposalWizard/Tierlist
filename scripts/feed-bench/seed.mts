@@ -70,6 +70,17 @@ for (let m = 0; m < N; m++) {
   if (rest.length) after.media = generateForLeagueWeek({ ...after }, rest);
   c = after;
 }
+// FILM_MATCH_MINUTES: the career's own match-length rule (ruleBook FA), so a
+// real match ends sooner. FILM_SKILLS: a strong player. Both are ordinary
+// career data; the match itself is the real one.
+if (process.env.FILM_MATCH_MINUTES) {
+  const fa = { ...((c as { ruleBook?: Record<string, object> }).ruleBook?.FA ?? {}), matchLengthMinutes: Number(process.env.FILM_MATCH_MINUTES) };
+  (c as { ruleBook?: Record<string, object> }).ruleBook = { ...((c as { ruleBook?: Record<string, object> }).ruleBook ?? {}), FA: fa };
+}
+if (process.env.FILM_SKILLS) {
+  const k = Number(process.env.FILM_SKILLS);
+  c.skills = Object.fromEntries(Object.keys(c.skills).map(x => [x, k])) as typeof c.skills;
+}
 // No first-time tours or locks in the way of the bench.
 delete (c as { unlocks?: unknown }).unlocks;
 const posts = mediaOf(c).posts;
