@@ -5,9 +5,11 @@
  *
  * clip: knee-slide-2d | aeroplane-2d | roar-2d | skip | knee-slide-3d | big-moment | setup
  *   setup       plays a fresh career to its first match and writes the seed save (outDir/seed.json)
- *   the others  open on the seed save, equip the move, play to your chance, strike it for real,
- *               then the dev test tool puts the ball on target so the goal is certain
- *               (window.__starMatch.setBall; needs NEXT_PUBLIC_STAR_OFFLINE_DEV=1 in the build)
+ *   the others  open on the seed save, equip the move, and take every chance for real (a full-power
+ *               drag at the far corner, a clean strike) until one goes in. Nothing moves the ball:
+ *               the goal, the flight and the slow motion are the match's own. big-moment sets
+ *               window.__bigMomentNext (dev only), which only marks the NEXT chance served as a big
+ *               moment; the shot is still real. Needs NEXT_PUBLIC_STAR_OFFLINE_DEV=1 in the build.
  *
  * Writes outDir/<clip>.webm (the raw recording) and outDir/<clip>.json (when the celebration
  * started and ended, seconds into the recording) for cut.py to trim. Phone size 390×844.
@@ -83,8 +85,9 @@ await wait(6000);
 
 const celebOn = () => pg.evaluate(() => !!document.querySelector("[data-celebration]"));
 const marks = { clip: CLIP, move: MOVE };
+let tries = 0;
 let done = false;
-while (!done && at() < (VIEW3D ? 1500 : 900)) {
+while (!done && at() < (VIEW3D ? 3300 : 1700)) {
   const st = await pg.evaluate(() => ({ ph: window.__starMatch?.phase?.(), k: window.__starMatch?.kind?.() }));
   if (BIG) await pg.evaluate(() => { window.__bigMomentNext = true; });
   if (!st.ph || st.ph === "feed") {
@@ -98,38 +101,57 @@ while (!done && at() < (VIEW3D ? 1500 : 900)) {
     await wait(1200);
     continue;
   }
+  // The match is over (post-match screens, no match on screen for a long while): give up this run.
+  if (!st.ph && marks.lastAim && at() - marks.lastAim > 70) { log("match over without the goal"); break; }
   if (st.ph !== "aim") { await wait(250); continue; }
-  // A chance you can score from (the goal on screen): a real drag at goal, then the strike.
+  marks.lastAim = at();
   const f = await pg.evaluate(() => ({ b: window.__starMatch.ball(), g: window.__starMatch.goal(), big: !!document.querySelector("[data-big-moment]") }));
   if (!f.g || !f.b) { await wait(300); continue; }
-  // A big moment: the banner is up as the chance opens. A chance without one is played out as a miss.
-  const miss = BIG && !f.big;
+  // A big moment: the banner is up as the chance opens. Any other chance is still a real shot.
   if (BIG && f.big) { marks.banner = at(); log("banner"); await wait(1700); if ((await pg.evaluate(() => window.__starMatch?.phase?.())) !== "aim") continue; Object.assign(f, await pg.evaluate(() => ({ b: window.__starMatch.ball(), g: window.__starMatch.goal() }))); }
-  let dx = f.b.x - f.g.x, dy = f.b.y - f.g.y; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
+  // REAL SHOTS ONLY (Leo, 23 Oct 2026: a clip that moved the ball onto the line looked like "the player
+  // shoots and the ball immediately goes in"). Nothing here touches the ball, its flight or the result:
+  // a full-power drag aimed at the corner away from the keeper, a clean strike, and the match decides.
+  // No goal: the next chance is the next try. Never add window.__starMatch.setBall back to a film scene.
+  tries++;
+  const aim = await pg.evaluate(() => {
+    const fr = window.__starMatch.frame();
+    const by = (r) => fr.men.find((m) => m.role === r);
+    const pl = by("postL"), pr = by("postR"), k = by("keeper"), b = by("ball");
+    if (!pl || !pr || !b) return null;
+    const right = k ? k.x < 34 : Math.random() < 0.5;            // the far side from the keeper
+    const j = Math.random() * 0.1;                                  // a little different every time
+    const u = right ? 0.82 + j : 0.18 - j;                          // just inside the post
+    return { tx: pl.cx + (pr.cx - pl.cx) * u, ty: pl.cy + (pr.cy - pl.cy) * u, bx: b.cx, by: b.cy };
+  });
+  if (!aim) { await wait(300); continue; }
+  let dx = aim.bx - aim.tx, dy = aim.by - aim.ty; const Ln = Math.hypot(dx, dy) || 1; dx /= Ln; dy /= Ln;
+  // the pull that gives about 85% power (the match's own drag rule)
+  let pull = 40;
+  const want = 0.8 + Math.random() * 0.15;
+  for (let i = 0; i < 24; i++) { const pw = await pg.evaluate(([x, y]) => window.__starMatch.power(x, y), [dx * pull, dy * pull]); if (pw >= want) break; pull += 6; }
   marks.aim = at();
-  await pg.mouse.move(f.b.x, f.b.y); await pg.mouse.down();
-  for (let i = 1; i <= 14; i++) { await pg.mouse.move(f.b.x + dx * 110 * i / 14, f.b.y + dy * 110 * i / 14); await wait(30); }
+  await pg.mouse.move(aim.bx, aim.by); await pg.mouse.down();
+  for (let i = 1; i <= 14; i++) { await pg.mouse.move(aim.bx + dx * pull * i / 14, aim.by + dy * pull * i / 14); await wait(30); }
   await pg.mouse.up(); await wait(600);
   const ballBtn = pg.locator('div.cursor-pointer[style*="aspect-ratio"]').first();
   if (await ballBtn.count()) { const bb = await ballBtn.boundingBox(); if (bb) await pg.mouse.click(bb.x + bb.width / 2, bb.y + bb.width / 2); }
   marks.strike = at();
-  // The test tool: the ball on target, far enough out (0.9 s) for a big moment's slow motion to show.
-  let placed = null;
-  for (let i = 0; i < 30; i++) {
-    const ok = placed = await pg.evaluate((big) => {
-      const m = window.__starMatch; if (m.phase() !== "flight") return null;
-      const b = m.ballState();
-      const x = b.pos.x < 34 ? 30.7 : 37.3;
-      if (big === "miss") return m.setBall({ x: 50, y: 6, z: 0.5, vx: 8, vy: -14, vz: 1, shot: true });
-      return big ? m.setBall({ x, y: 7.5, z: 1.3, vx: 0, vy: -15, vz: 3.9, shot: true }) : m.setBall({ x, y: 1.2, z: 0.6, vx: 0, vy: -24, vz: 0, shot: true });
-    }, miss ? "miss" : BIG);
-    if (ok !== null) break;
-    await wait(30);
-  }
-  log("strike", JSON.stringify({ placed, ph: await pg.evaluate(() => window.__starMatch?.phase?.()), miss: BIG ? miss : undefined }));
+  const miss = BIG && !f.big;
+  log("try", tries, "strike", JSON.stringify({ pull, big: BIG ? !!f.big : undefined }));
   let t0 = null;
-  for (let i = 0; i < 120; i++) { if (await celebOn()) { t0 = at(); break; } const ph = await pg.evaluate(() => window.__starMatch?.phase?.()); if (ph === "aim") break; await wait(50); }
+  // Wait for the result. A drag that never took (still aiming 1.5 s on) is not a shot: it is not counted.
+  let left = false;
+  for (let i = 0; i < 160; i++) {
+    if (await celebOn()) { t0 = at(); break; }
+    const ph = await pg.evaluate(() => window.__starMatch?.phase?.());
+    if (ph !== "aim") left = true;
+    if (ph === "aim" && (left || at() - marks.strike > 1.5)) break;
+    await wait(50);
+  }
+  if (!left && t0 === null) { tries--; log("the drag did not take; same chance again"); }
   if (t0 === null || miss) { log("no goal; next chance"); marks.banner = undefined; if (t0 !== null) await wait(6000); continue; }
+  marks.tries = tries;
   marks.celebStart = t0; log("celebration");
   if (CLIP === "skip") {
     await wait(1500); marks.tap = at(); await pg.mouse.click(195, 420);
