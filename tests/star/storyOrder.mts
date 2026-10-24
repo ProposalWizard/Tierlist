@@ -52,7 +52,7 @@ c = ackBeat(c, "training");
 check(isOpen(c, "training") && trainingDayOn(c), "training opens, the training day is on");
 check(!isOpen(c, "relations"), "Relations waits for the phone");
 for (const s of TRAINING_DAY) { c = recordTrainingDayDrill(recordDrill(c), s); }
-check(trainingDayLeft(c).length === 0 && !trainingDayOn(c), "all 6 drills done once: training day over");
+check(trainingDayLeft(c).length === 0 && !trainingDayOn(c), "both drills done: training day over");
 check(!isOpen(c, "shop"), "drills do not open the Shop on the story order");
 const r = drain();
 check(r[0] === "ready", `then 'You're ready for Saturday' (got ${r.join(",")})`);

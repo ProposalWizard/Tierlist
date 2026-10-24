@@ -1180,7 +1180,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }, []);
 
   const handleTrain = useCallback((skill: keyof Skills) => {
-    // The story's training day (story.ts): every drill once, free.
+    // The story's training day (story.ts): Power and Technique, free.
     if (!career || (trainingLeft(career) <= 0 && !trainingDayOn(career))) return;
     setTrainingSkill(skill);
     setTrainingLevel(null);
@@ -5108,7 +5108,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // v0.25: energy explained here, at the very start; then "You've got a game
     // today" (game first) — no Skip, so Play is never missed.
     if (onHome && !hasSeen(career, "tutorial")) return { key: "welcome", steps: welcomeTour(gameFirst(career), isStory(career)), skippable: !gameFirst(career), onDone: seen("tutorial", "help-home", "play-tip") };
-    // The story's training day: the pointer walks you through every drill once.
+    // The story's training day: the pointer walks you through Power, then Technique.
     if (onTraining && trainingDayOn(career)) {
       const left = trainingDayLeft(career);
       return { key: `day-${left[0]}`, steps: trainingDayTour(left[0], left.length, TRAINING_DAY.length), onDone: seen("help-training") };

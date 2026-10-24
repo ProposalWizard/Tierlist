@@ -196,7 +196,7 @@ const DRILL_NAME: Record<string, string> = { power: "Power", technique: "Techniq
 export function trainingDayTour(next: string, left: number, total: number): TourStep[] {
   const done = total - left;
   return [{ target: `skill-${next}`, text: done === 0
-    ? `Training day: every drill once, free. Start with ${DRILL_NAME[next] ?? next}. Tap it`
+    ? `Training day: two drills, free. Start with ${DRILL_NAME[next] ?? next}. Tap it`
     : `${done} of ${total} done. Next: ${DRILL_NAME[next] ?? next}. Tap it`, press: true }];
 }
 

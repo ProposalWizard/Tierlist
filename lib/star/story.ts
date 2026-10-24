@@ -6,7 +6,7 @@
  *                    "Game on Saturday. You're in the squad. Tap Play."
  *   1  After game 1  The gaffer: "Come and see me" → his office (the talk).
  *                    Then "Training tomorrow": Training opens, and the
- *                    training day is every drill once, free, one by one.
+ *                    training day is Power and Technique, free, one by one (Mikey, 24 Oct).
  *                    Then "You're ready for Saturday" → Play.
  *   2  After game 2  Energy is low: a free Basic can, and USE it on Home.
  *                    A team-mate gives you his cracked old phone: the Phone
@@ -26,8 +26,8 @@ import type { Feature } from "./unlocks";
 
 export type Beat = "boss" | "training" | "ready" | "can" | "phone" | "shop" | "stats" | "starpass";
 
-/** The six drills of the training day, in the order the pointer shows them. */
-export const TRAINING_DAY: string[] = ["power", "technique", "pace", "vision", "freeKick", "aerial"];
+/** The two drills of the training day (Mikey, 24 Oct 2026: "only do 2 drills, the power and technique"), in the order the pointer shows them. */
+export const TRAINING_DAY: string[] = ["power", "technique"];
 
 /** The order the beats come in. The first one that is due and not seen shows. */
 const ORDER: Beat[] = ["boss", "training", "ready", "starpass", "can", "phone", "shop", "stats"];
@@ -120,7 +120,7 @@ export function beatText(c: CareerState, b: Beat): BeatText {
   const mate = teamMateName(c);
   switch (b) {
     case "boss": return { who: gaffer, icon: "🧢", title: "Come and see me", line: "Good first game, son. Come to my office, I want a word.", button: "Go to his office" };
-    case "training": return { who: gaffer, icon: "🧢", title: "Training tomorrow", line: "Training's open. Tomorrow you do every drill once, so I can see what you've got. It costs no energy.", button: "Go to training" };
+    case "training": return { who: gaffer, icon: "🧢", title: "Training tomorrow", line: "Training's open. Tomorrow you do two drills, Power and Technique, so I can see what you've got. They cost no energy.", button: "Go to training" };
     case "ready": return { who: gaffer, icon: "🧢", title: "You're ready", line: "Great work. You're ready for the game on Saturday.", button: "Play" };
     // "Claim your reward" once the Star Pass has a reward at level 2 (the
     // level ladder is the next build); until then it shows the Pass.
