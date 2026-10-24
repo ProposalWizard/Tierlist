@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { GraphicSpec } from "@/lib/star/media/types";
 import { synthOf, tally } from "@/lib/star/media/detect/goalOfMonth";
 import { clipStyleFor, clipVariantFor, type PostAuthor } from "@/lib/star/media/clipStyle";
-import GoalVideo from "./GoalVideo";
+import GoalVideo from "./GoalVideoSwitch";
 
 /**
  * GOAL OF THE MONTH — the poll under a post (Leo, 22 Oct 2026, plan part 10).

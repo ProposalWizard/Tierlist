@@ -13,7 +13,7 @@
  * be skipped after a few seconds. No recordings on this device, no ads.
  */
 import { useEffect, useRef, useState } from "react";
-import GoalVideo from "../media/GoalVideo";
+import GoalVideo from "../media/GoalVideoSwitch";
 import type { CatId, View } from "./ShowroomShop";
 
 export interface FeedItem { cat: CatId; key: string; accent: string; label: string }
