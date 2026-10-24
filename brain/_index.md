@@ -107,7 +107,7 @@ RUL-TEAM-020 | Every deploy's patch notes are already live, shipped on their own
 RUL-TEAM-021 | In Mikey's chats, write or update patch notes only when Mikey says "create patch notes"; never on your own, not even at a deploy. | team,process,rule,deploy,style
 RUL-TEAM-022 | In Mikey's chats, never run a playtest unless Mikey asks; when one would really help, recommend it in one line and stop. | team,process,rule
 RUL-TEAM-023 | Everything goes on the admin page, always: every patch note and every update to one is shipped to the site and checked live; an update is marked (updatedAt + updateNote) so it shows UPDATED, moves to the front and is unread again. | admin,process,team
-RUL-TEAM-024 | Never add a to-do (team/jobs.json) for Harry, Mikey or everyone from a Leo chat without asking Leo first; findings go in the patch notes instead. | team,process,rule
+RUL-TEAM-024 | "Only give people todos if it is actually needed; if someone needs to do something, tell Leo first (no team/jobs.json from a Leo chat without his OK)." | team,process
 RUL-UI-001 | Decide, don't toggle: a new look or gameplay change is built as THE game, with no new New/Old row in Settings. | ui
 RUL-UI-002 | Unfinished work lives on a test page (a /star-*-dev page), not behind a switch in the real game. | ui,admin
 RUL-UI-003 | Existing switches stay until someone decides each one; never delete one unasked. | rule,ui

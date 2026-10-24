@@ -2,11 +2,11 @@
 id: RUL-TEAM-024
 type: ruling
 client: team
-tags: [team, process, rule]
+tags: [team, process]
 status: live
 date: 2026-10-24
 source: "docs/brain-sources/leo-no-todos-2026-10-24.md:3"
-summary: Never add a to-do (team/jobs.json) for Harry, Mikey or everyone from a Leo chat without asking Leo first; findings go in the patch notes instead.
+summary: "Only give people todos if it is actually needed; if someone needs to do something, tell Leo first (no team/jobs.json from a Leo chat without his OK)."
 ---
 A Leo chat that finds something for someone else (a failing test in their
 area, a slow screen, a question) writes it in its report and the patch notes
