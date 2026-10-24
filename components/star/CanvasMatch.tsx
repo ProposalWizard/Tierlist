@@ -175,7 +175,6 @@ import {
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
 import { airborneOn, airborneMotion, applyAirborne, bicycleMarkOf, bicycleGoalOf, type StrikeContact } from "@/lib/star/airborneChance";
 import { bicycleOfferFor } from "@/lib/star/bicycle";
-import { leoUpdateOn } from "@/lib/star/leoUpdate";
 import { isAirKind, airWaitZ, airZOf, HEADER_Z } from "@/lib/star/airDrawings";
 import { useFitWidth } from "./useFitWidth";
 import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
