@@ -314,7 +314,8 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     if (liveSound.current) { try { liveSound.current.src.stop(); } catch { /* done */ } liveSound.current = null; }
   };
   useEffect(() => {
-    const want = wanted && !fill && status !== "ready" && !!edit && canPlay === true && onView;
+    // Playing live needs only the player worker, not the file encoder (canPlay).
+    const want = wanted && !fill && status !== "ready" && !!edit && canPlay !== false && onView;
     if (!want) {
       if (liveState !== "off") {
         stopLiveNow();
@@ -360,6 +361,9 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
   useEffect(() => () => stopLiveNow(), []);
 
   useEffect(() => {
+    // Opened to watch (a replay): wanted at once, so the live player starts
+    // without waiting for the file encoder's check.
+    if (autoStart && !fill) setWanted(true);
     if (autoStart && edit && canPlay && status === "idle") void start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, edit, canPlay]);

@@ -21,7 +21,7 @@ import path from "node:path";
 import { showTouches, startRec, stopRec } from "../rec.mjs";
 import { installAudioTap, startAudio, stopAudio, muxAudio, loudness } from "./audio-tap.mjs";
 import { tapToPlaying, stopwatch } from "./tap-timing.mjs";
-import { loadSave, playToReactions } from "./match-lib.mjs";
+import { loadSave, playToReactions, dismissDialogues } from "./match-lib.mjs";
 import { spawnSync } from "node:child_process";
 
 const [base, savePath, outDir, rateArg] = process.argv.slice(2);
@@ -47,7 +47,15 @@ const match = await playToReactions(pg, { log: (m) => console.error("  ·", m), 
 const times = { rate: RATE, match };
 
 /** Film one case: scroll `find` into view, tap its video, hold, save clip + sound. */
-async function filmCase(name, label, find, { prep, timer } = {}) {
+async function filmCase(...args) {
+  try { await filmCaseInner(...args); } catch (e) { times[args[0]] = { ms: null, how: "error: " + String(e.message || e).slice(0, 120) }; }
+  if (times[args[0]]?.ms == null) {
+    await pg.screenshot({ path: path.join(outDir, `${args[0]}${tag}-FAIL.jpg`), type: "jpeg", quality: 60 }).catch(() => {});
+    console.error("  buttons:", (await pg.locator("button:visible").allInnerTexts().catch(() => [])).map(t => t.replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 16).join(" | "));
+  }
+  console.error("  CASE", args[0], JSON.stringify(times[args[0]]));
+}
+async function filmCaseInner(name, label, find, { prep, timer } = {}) {
   const raw = path.join(outDir, `${name}${tag}.raw.mp4`);
   const aud = path.join(outDir, `${name}${tag}.webm`);
   const rec = await startRec(pg);
@@ -80,8 +88,27 @@ async function filmCase(name, label, find, { prep, timer } = {}) {
   await pg.screenshot({ path: path.join(outDir, `${name}${tag}.jpg`), type: "jpeg", quality: 72 });
 }
 
+/** Through the cards between the match and Home (press, contract, awards…). */
+async function toHome() {
+  for (let i = 0; i < 14; i++) {
+    const nav = pg.locator('[data-tour="nav-phone"]').first();
+    const free = await nav.isVisible().catch(() => false)
+      && await nav.evaluate(el => { const r = el.getBoundingClientRect(); const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return !!t && (el === t || el.contains(t)); }).catch(() => false);
+    if (free) return true;
+    await dismissDialogues(pg, (m) => console.error("  ·", m)).catch(() => {});
+    const b = pg.locator("button:visible").filter({ hasText: /^\s*(Continue|CONTINUE|OK|Got it|GOT IT|Next|Done|Skip|Decline offer|CLOSE|Close)\b/ }).first();
+    if (await b.count()) await b.click().catch(() => {});
+    else await pg.keyboard.press("Escape").catch(() => {});
+    await pg.waitForTimeout(1300);
+  }
+  return false;
+}
+
 const byEvent = (ev) => async () => {
-  const a = pg.locator(`article[data-post-event="${ev}"]`).first();
+  // Older builds have no data-post-event: find the post by its words.
+  const words = { "match-highlights": /HIGHLIGHTS \|/, "your-highlights": /🎥/ }[ev];
+  const tagged = pg.locator(`article[data-post-event="${ev}"]`);
+  const a = (await pg.locator("article[data-post-event]").count()) ? tagged.first() : pg.locator("article").filter({ hasText: words }).first();
   if (!(await a.count())) {
     // Drawn only near the screen: scroll down until it is.
     for (let i = 0; i < 30 && !(await a.count()); i++) {
@@ -95,16 +122,25 @@ const byEvent = (ev) => async () => {
   return (await v.count()) ? v : null;
 };
 
+// Your goal's own post has a video about half the time (feed.ts, by design);
+// without it, the club's or a fan's post of your goal; else none.
+const yourGoal = async () => (await byEvent("your-highlights")())
+  ?? (await (async () => {
+    const vids = pg.locator('article:not([data-post-event="match-highlights"]) [data-goal-video]');
+    return (await vids.count()) ? vids.first() : null;
+  })());
 // A and B: on the Post Match Reactions screen.
-await filmCase("your-goal-reactions", "Your goal", byEvent("your-highlights"));
+await filmCase("your-goal-reactions", "Your goal", yourGoal);
 await pg.evaluate(() => document.querySelector("[data-feed-scroll]")?.scrollTo({ top: 0 }));
 await filmCase("highlights-reactions", "Highlights", byEvent("match-highlights"));
 
 // C: Continue, then Phone → Social, your goal again.
-await filmCase("your-goal-social", "Your goal (Social)", byEvent("your-highlights"), {
+await filmCase("highlights-social", "Highlights (Social, later)", byEvent("match-highlights"), {
   prep: async () => {
-    await pg.locator("button").filter({ hasText: /^\s*Continue/ }).first().click();
-    await pg.waitForSelector('[data-tour="nav-phone"]', { timeout: 60000 });
+    // Continue, then any screens in between (a press question, an award…).
+    if (!(await toHome())) {
+      await pg.screenshot({ path: path.join(outDir, `stuck${tag}.jpg`), type: "jpeg", quality: 60 });
+    }
     await pg.waitForTimeout(800);
     await pg.locator('[data-tour="nav-phone"]').first().click();
     await pg.waitForTimeout(900);
@@ -113,30 +149,38 @@ await filmCase("your-goal-social", "Your goal (Social)", byEvent("your-highlight
   },
 });
 
-// D: Goal Replays (Settings) → Watch your newest goal. Timed from the Watch tap.
-await filmCase("goal-replay", "Goal replay", async () => {
+// D: Stats → GOALS (the career goals gallery) → your goal. Timed from that tap.
+await filmCase("goal-gallery", "Goals gallery", async () => {
+  await toHome();
   const home = pg.locator("button").filter({ hasText: /^\s*HOME\s*$/i }).first();
-  if (await home.isEnabled().catch(() => false)) await home.click();
-  await pg.waitForTimeout(600);
-  await pg.locator('button[aria-label*="Settings" i], [data-tour="settings"]').first().click().catch(() => {});
+  if (await home.isEnabled().catch(() => false)) { await home.click(); await pg.waitForTimeout(800); }
+  await pg.locator('[data-tour="home"]').first().click().catch(() => {});
+  await pg.waitForTimeout(800);
+  // Stats (the carousel under the player) → GOALS (the gallery tab). Tapped
+  // where they sit on a 390×844 phone: both are swipe rows, which the test
+  // tool cannot click by name.
+  await pg.mouse.click(60, 765);
+  await pg.waitForTimeout(1500);
+  await pg.mouse.click(225, 442);
   await pg.waitForTimeout(1200);
-  for (const t of [/^\s*Dev/i, /Developer/i]) { const b = pg.locator("button").filter({ hasText: t }).first(); if (await b.count()) { await b.click().catch(() => {}); await pg.waitForTimeout(600); } }
-  const watch = pg.locator("button").filter({ hasText: /^\s*Watch\s*$/ }).first();
-  if (!(await watch.count())) return null;
-  await watch.scrollIntoViewIfNeeded();
-  await pg.waitForTimeout(600);
-  return watch;
+  const row = pg.locator("[data-goal-row]").first();
+  await row.waitFor({ timeout: 20000 }).catch(() => {});
+  if (!(await row.count())) return null;
+  await row.scrollIntoViewIfNeeded();
+  await pg.waitForTimeout(700);
+  return row;
 }, {
-  timer: async (watch) => {
-    const el = await watch.elementHandle();
+  timer: async (row) => {
+    const el = await row.elementHandle();
     return pg.evaluate(async (btn) => {
       const t0 = performance.now();
       btn.click();
       while (performance.now() - t0 < 60000) {
-        const v = document.querySelector("[data-goal-clip-viewer] [data-goal-video]");
+        const v = document.querySelector("[data-goal-sheet] [data-goal-video]");
         if (v?.querySelector('[data-goal-video-live="playing"]')) return { ms: Math.round(performance.now() - t0), how: "live" };
         const vid = v?.querySelector("video");
         if (vid && !vid.paused && vid.currentTime > 0.05) return { ms: Math.round(performance.now() - t0), how: "file" };
+        if (document.querySelector("[data-goal-sheet] [data-goal-facts]") && !document.querySelector("[data-goal-sheet] [data-goal-clip-viewer]") && performance.now() - t0 > 3000) return { ms: null, how: "no recording (facts card)" };
         await new Promise(r => requestAnimationFrame(() => r()));
       }
       return { ms: null, how: "timeout" };

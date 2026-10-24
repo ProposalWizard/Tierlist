@@ -113,7 +113,7 @@ const matchState = (page) => page.evaluate(() => {
 const bodyText = (page) => page.evaluate(() => document.body.innerText);
 
 /** Dismiss a talking-head dialogue (the agent's "a word", tour cards). */
-async function dismissDialogues(page, log) {
+export async function dismissDialogues(page, log) {
   for (let i = 0; i < 12; i++) {
     const o = await page.evaluate(() => {
       const el = Array.from(document.querySelectorAll(".fixed.inset-0")).find((e) => e.innerText.trim() && e.getBoundingClientRect().height > 0);
@@ -263,7 +263,8 @@ export async function playToReactions(page, { log = () => {}, onFullTime, aims =
       const st = await stableAim(page);
       if (st && st.phase === "aim" && st.ball && st.postL) {
         const inShootout = fullTimeOrPens;
-        const aim = inShootout ? penaltyAim : aims[Math.min(chances, aims.length - 1)];
+        // A penalty in the match is aimed like one in a shootout.
+        const aim = (inShootout || st.kind === "penalty") ? penaltyAim : aims[Math.min(chances, aims.length - 1)];
         const before = await scoreNow(page);
         const minute = await page.evaluate(() => (document.body.innerText.match(/\b\d+(\+\d+)?'/) || [""])[0]);
         chances++;
