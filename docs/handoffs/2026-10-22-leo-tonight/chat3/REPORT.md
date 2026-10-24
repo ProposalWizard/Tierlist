@@ -141,3 +141,24 @@ Re-checked in a browser at 390×844 (real overhead moment, ▶ Play): `atlas-3a.
 when the button appeared, a clean tap graded BICYCLE KICK!, no console or page errors. The figure in
 that run was too small in the recording to confirm its pose by eye (it was deflected). Tests
 sprite3dClips, spritesStyleA, bicycle, goalClip, actionLog and tsc pass.
+
+## Behind Leo's 24 Oct update switch (24 Oct 2026)
+
+Part "bicycle" of `lib/star/leoUpdate.ts` (Settings → Updates, admins, off by default). Checked at
+the call sites only; the pure bicycle functions and their tests are unchanged.
+- **The offer** (`CanvasMatch.tsx`, the strike screen's `bicycle` prop): off = no Bicycle! button,
+  the strike screen exactly as on main. Every other bicycle effect (the strike read, the keeper's later
+  reaction, the 2D/3D clip, the BICYCLE! banner, crowd, commentary, `how: "bicycle"`, the media story
+  and press question) only happens after the button is pressed, so it is off with it.
+- **The 15 overhead Real Moments in the career's highlights** (`realMomentHighlights.ts serveRealMoment`):
+  off = left out, as on main. The Real Moments test page still lists and plays them.
+- **Goal videos** (`goalClip/render.ts prepareClipSprites`): wait for the bicycle picture only when the
+  film has a bicycle in it (read off the recording, because the video worker cannot read the switch).
+  Off, no film has one, so nothing extra loads.
+- Stays as it is, with no effect when off: the 3D clip inside football.glb (+10 KB, never played), the
+  bicycle picture in sprite slot 3 (lazy: never fetched unless a bicycle is asked for), your player's
+  pose rule in CanvasMatch (only reached by a bicycle strike).
+Proved: tsc; one-engine guard; finishing, keeper (×6), aiming, outcomes, bicycle, airborne,
+airChances, realMoments (13 files), realMomentHighlights, goalClip all pass; production build with
+NEXT_PUBLIC_STAR_OFFLINE_DEV=1 on a real overhead moment: `switch-off.jpg` (Head it?, no button) and
+`switch-on.jpg` (the Bicycle! button). Driver: `scripts/film/scenes/bicycle-switch.mjs`.
