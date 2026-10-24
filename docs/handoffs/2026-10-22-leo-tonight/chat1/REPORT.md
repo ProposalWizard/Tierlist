@@ -87,3 +87,10 @@ Every goal is a real drag and strike; nothing moves the ball (the first round's 
 Sound: `audio-tap.mjs` (chat 2) gathers the game's Web Audio; `audio-pcm.mjs` records its raw samples on the audio clock fitted to real time (MediaRecorder dropped silent stretches); `cut.py --audio … --audio-at …` lays it under the clip with the measured 0.2 s screen-recording lag; `peaks.mjs` prints the loudness proof. AAC 128k. Game music is off by default, so no music is in the clips.
 
 3D: shots in the 3D view must be aimed through the 3D camera (fixed in the scene), but each 3D run here gets about three chances in seven minutes and the page hung after full time; no real 3D goal was landed in the time given. Banner options for Leo (no game change): `film/banner-options/` A, B, C, none.
+
+## Behind Leo's switch (24 Oct, `lib/star/leoUpdate.ts`)
+Off by default. With it off the match and shop are as on main.
+- **celebrations:** the run and move, the 5.4 s hold, tap to skip, the 3D move and camera, the goal video's extra 2.5 s and cut (all start from `startCelebration` in `CanvasMatch.tsx`); the 3 new shop items (hidden in `StoreView.tsx`, the old store, and the daily specials in `daily.ts`); the "Use after my goals" words and the accessories note (`CareerStore.tsx`, `store/career.ts`).
+- **bigMoments:** banner, crowd rise, heartbeat, slow motion, roar, late call, groan (`maybeBigMoment` in `CanvasMatch.tsx`), and the late lines in goal videos (`markGoalClip`).
+- **Stays on:** the item list in `catalogue.ts` (owned items keep working), the fixed knee-slide clip (only used by dev cut-scene pages outside a celebration), the new commentary files on the admin Sound Board, the admin Star Pass list.
+- Seen on a production build (`leo-switch/`): OFF, no banner on a big-moment chance and back to the feed 2 s after the goal; ON, the banner, then the run to the corner with "Tap to skip". Script: `scripts/film/scenes/leo-switch-stills.mjs`.

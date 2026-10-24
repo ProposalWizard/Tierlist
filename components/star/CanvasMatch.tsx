@@ -75,6 +75,7 @@ import {
   playCrowdRise, startHeartbeat, playBigRoar,
 } from "@/lib/star/matchSound";
 import { isBigMoment, headingIn, BIG_SLOW_RATE } from "@/lib/star/bigMoment";
+import { leoUpdateOn } from "@/lib/star/leoUpdate";
 import { playLateGoalCall, preloadLateGoalCalls } from "@/lib/star/lateCommentary";
 import { finaliseMatch, liveRating, regressForMinutes, fairRating } from "@/lib/star/matchStats";
 import { goalZone, passGrade, missKind } from "@/lib/star/chanceRating";
@@ -5825,7 +5826,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       weather: conditionsRef.current.weather !== "clear" ? conditionsRef.current.weather : undefined,
       season: careerRef.current?.season, week: careerRef.current?.week,
       // A big late moment (commentary.ts): the video calls it with the late lines.
-      ...(isYou ? (() => { const late = lateKindOf(matchMinuteRef.current, true, userScoreRef.current, oppScoreRef.current); return late ? { late } : {}; })() : {}),
+      ...(isYou && leoUpdateOn("bigMoments") ? (() => { const late = lateKindOf(matchMinuteRef.current, true, userScoreRef.current, oppScoreRef.current); return late ? { late } : {}; })() : {}),
     });
     // Your goal: the run to the corner and your move are in the video too.
     const cel = celebRef.current;
@@ -6730,7 +6731,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   /** A chance served: is it a big moment? The banner, the crowd rising, the heartbeat. */
   const maybeBigMoment = () => {
     const sc = scenarioRef.current;
-    const ok = matchModeRef.current && !replayOfRef.current && shootoutKickRef.current == null && !autoKickOf(sc)
+    // Leo's 24 Oct update, "bigMoments": off = no big moments at all (the old match).
+    const ok = leoUpdateOn("bigMoments") && matchModeRef.current && !replayOfRef.current && shootoutKickRef.current == null && !autoKickOf(sc)
       && (isBigMoment(matchMinuteRef.current, MATCH_DURATION, userScoreRef.current, oppScoreRef.current, goalInView(sc.kind))
         // development only (compiled out of the live site): a playtest can ask for one
         || (offlineDevPlayEnabled() && goalInView(sc.kind) && !!(window as unknown as { __bigMomentNext?: boolean }).__bigMomentNext));
@@ -6993,7 +6995,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       playCrowdSwell("cheer");
       if (bikeGoal) window.setTimeout(() => playCrowdSwell("cheer"), 750);
       // Your own goal in a real match: the run to the corner and your celebration.
-      if (!isShootoutKick && !auto && d.goals > 0 && matchModeRef.current && !replayOfRef.current) startCelebration(sc);
+      if (!isShootoutKick && !auto && d.goals > 0 && matchModeRef.current && !replayOfRef.current && leoUpdateOn("celebrations")) startCelebration(sc);
     } else if (res === "tackled" || res === "blocked") {
       // It says what happened, like a goal or a pass does. Losing the ball used
       // to resolve into a beat of nothing and then the next highlight, so you

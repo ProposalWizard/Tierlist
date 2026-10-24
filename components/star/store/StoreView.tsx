@@ -32,6 +32,8 @@ import {
   type StoreItem, type Rarity, type AccessoryItem, type AccessorySlot, type PriceContext, type AnimationSet,
 } from "@/lib/star/store/catalogue";
 import { dailySpecials, msUntilReset, formatCountdown } from "@/lib/star/store/daily";
+import { LEO_CELEBRATION_IDS } from "@/lib/star/store/catalogue";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 import BackButton from "../ui/BackButton";
 import { owns, priceNow, type StoreState, type Currency } from "@/lib/star/store/purchase";
 import {
@@ -249,7 +251,9 @@ export default function StoreView(p: StoreViewProps) {
     return () => window.clearTimeout(t);
   }, [toast]);
 
-  const shown = (it: StoreItem) => !hide?.(it);
+  // Leo's 24 Oct update, "celebrations": the three new celebrations (and their wording) only while it is on.
+  const celebsOn = useLeoUpdate("celebrations");
+  const shown = (it: StoreItem) => !hide?.(it) && (celebsOn || !LEO_CELEBRATION_IDS.has(it.id));
   const specials = useMemo(
     () => dailySpecials(dateKey).filter((s) => { const it = findItem(s.itemId); return !!it && !hide?.(it); }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -397,7 +401,7 @@ export default function StoreView(p: StoreViewProps) {
       </div>
 
       {open && (
-        <DetailSheet item={open} state={state} ctx={ctx} dateKey={dateKey} equippedWear={equippedWear} bought={bought}
+        <DetailSheet item={open} state={state} ctx={ctx} dateKey={dateKey} equippedWear={equippedWear} bought={bought} celebsOn={celebsOn}
           accessoriesNote={p.accessoriesNote} bootStatus={p.bootStatus}
           onClose={() => setOpenId(null)} onBuy={doBuy} onEquip={doEquip}
           onUnequip={p.onUnequip}
@@ -645,7 +649,8 @@ function CoinsTab({ state, wage, value, packs, onPack, onSwap }: {
   );
 }
 
-function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote, bootStatus, onClose, onBuy, onEquip, onUnequip, onUse, bought }: {
+function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote, bootStatus, onClose, onBuy, onEquip, onUnequip, onUse, bought, celebsOn = false }: {
+  celebsOn?: boolean;
   item: StoreItem; state: StoreState; ctx: PriceContext; dateKey: string; equippedWear: AccessoryItem[]; bought: number;
   accessoriesNote?: string; bootStatus?: (bootId: string) => string | null;
   onClose: () => void; onBuy: (id: string, c: Currency) => void; onEquip: (id: string) => void;
@@ -660,7 +665,7 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
   const wearing = inUse(item, state);
   const setWord = item.kind === "animation" ? (item.set === "penalty" ? "penalty" : "free-kick") : "";
   const desc = item.kind === "animation" ? `${item.set === "penalty" ? "Penalty" : "Free-kick"} run-up · ${item.blurb}`
-    : item.kind === "accessory" ? (item.slot === "celebration" ? "Celebration · after every goal you score" : `${SLOT_LABEL[item.slot]} · worn over your kit`)
+    : item.kind === "accessory" ? (celebsOn && item.slot === "celebration" ? "Celebration · after every goal you score" : `${SLOT_LABEL[item.slot]} · worn over your kit`)
       : item.kind === "boost" ? item.effect
         : `+${item.boot.power} power · +${item.boot.technique} technique · ${item.boot.matches} matches${item.boot.curve ? " · curves the ball" : ""}${item.boot.extraTouch ? " · extra touch" : ""}`;
 
@@ -721,9 +726,9 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
           {owned && !consumable && (item.kind === "animation" || item.kind === "accessory") && (
             wearing
               ? item.kind === "accessory"
-                ? <PressButton variant="secondary" size="none" onClick={() => onUnequip(item.slot)} className="rounded-2xl py-3 text-[15px] font-black">{item.slot === "celebration" ? "Stop using it" : "Take off"}</PressButton>
+                ? <PressButton variant="secondary" size="none" onClick={() => onUnequip(item.slot)} className="rounded-2xl py-3 text-[15px] font-black">{celebsOn && item.slot === "celebration" ? "Stop using it" : "Take off"}</PressButton>
                 : <div className="rounded-2xl bg-emerald-500/20 py-3 text-center text-[15px] font-black text-emerald-200">✓ Your {setWord} run-up</div>
-              : <PressButton variant="primary" size="none" pulse onClick={() => onEquip(item.id)} className="rounded-2xl py-3 text-[15px] font-black">{item.kind === "animation" ? `Use for ${setWord === "penalty" ? "penalties" : "free kicks"}` : item.kind === "accessory" && item.slot === "celebration" ? "Use after my goals" : "Wear"}</PressButton>
+              : <PressButton variant="primary" size="none" pulse onClick={() => onEquip(item.id)} className="rounded-2xl py-3 text-[15px] font-black">{item.kind === "animation" ? `Use for ${setWord === "penalty" ? "penalties" : "free kicks"}` : celebsOn && item.kind === "accessory" && item.slot === "celebration" ? "Use after my goals" : "Wear"}</PressButton>
           )}
           {owned && item.kind === "boot" && <div className="rounded-2xl bg-sky-500/15 py-3 text-center text-[14px] font-black text-sky-200">Owned</div>}
           {onUse && consumable && (state.inventory[item.id] ?? 0) > 0 && (

@@ -36,8 +36,10 @@ import { shopLevelFor } from "./testArea";
 /** The boosts that are only ideas so far — priced in the test area, not sold here. */
 export const NOT_IN_CAREER_YET = new Set<string>(["training-boost", "stat-can"]);
 
-/** The one line under accessories: the celebration is played after your goals; the rest are on your store figure only so far. */
-export const ACCESSORIES_IN_MATCH_NOTE = "Your celebration plays after every goal you score";
+/** The one line under accessories: they're on your store figure, not yet on the pitch. */
+export const ACCESSORIES_IN_MATCH_NOTE = "Shows in matches soon";
+/** The same line with Leo's 24 Oct "celebrations" switch on: the celebration plays after your goals. */
+export const ACCESSORIES_IN_MATCH_NOTE_LEO = "Your celebration plays after every goal you score";
 
 export interface CareerStoreResult { ok: boolean; career: CareerState; reason?: string }
 
