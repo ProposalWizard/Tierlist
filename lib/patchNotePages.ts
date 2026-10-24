@@ -20,12 +20,14 @@
  * A version with no entry here just shows the Text view, as before.
  */
 export const PATCH_NOTE_PAGES: Record<string, string> = {
+  "0.108h": "pages/0.108h/index.html",
   "0.108": "pages/0.108/index.html",
   "0.107h": "pages/0.107h/index.html",
   "0.107": "pages/0.107/index.html",
   "0.106h": "pages/0.106h/index.html",
   "0.105h": "pages/0.105h/index.html",
   "0.62": "mikey/v0.18.html",
+  "0.109": "mikey/v0.21.html",
   "0.103": "mikey/v0.20.html",
   "0.63": "mikey/v0.19.html",
   // VERSION KEYS MUST BE UNIQUE ACROSS HARRY, LEO AND MIKEY. Site versions

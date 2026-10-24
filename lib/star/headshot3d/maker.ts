@@ -25,7 +25,7 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { Person3D } from "../people3d";
 import type { ToonFaceRig } from "../style3d/toon/face";
 import type { ToonHead } from "../style3d/toon/bodies";
-import { HEADSHOT_PX, HEADSHOT_SHOT, HEADSHOT_LIGHT, headshotKey, type HeadshotLook } from "./look";
+import { HEADSHOT_PX, HEADSHOT_SHOT, HEADSHOT_LIGHT, CARD_SHOT, headshotKey, type HeadshotLook, type HeadshotFrame } from "./look";
 import { getHeadshot, putHeadshot, headshotFromMemory } from "./store";
 
 type Three = typeof import("three");
@@ -72,7 +72,7 @@ let noWebgl = false;
 let buildFails = 0;
 let idleTimer: ReturnType<typeof setTimeout> | null = null;
 const inflight = new Map<string, Promise<string | null>>();
-const queue: { key: string; look: HeadshotLook; done: (url: string | null) => void }[] = [];
+const queue: { key: string; look: HeadshotLook; frame: HeadshotFrame; done: (url: string | null) => void }[] = [];
 let pumping = false;
 
 /** Can this page make headshots at all? (false: no document, or WebGL failed once this visit). */
@@ -84,8 +84,8 @@ export function headshotsPossible(): boolean {
  * His headshot: the kept picture if this device has one, else made now (queued
  * behind the others). Null when it cannot be made: the card keeps the drawn head.
  */
-export function makeHeadshot(id: string, look: HeadshotLook): Promise<string | null> {
-  const key = headshotKey(id, look);
+export function makeHeadshot(id: string, look: HeadshotLook, frame: HeadshotFrame = "head"): Promise<string | null> {
+  const key = headshotKey(id, look, frame);
   const mem = headshotFromMemory(key);
   if (mem) return Promise.resolve(mem);
   const going = inflight.get(key);
@@ -94,7 +94,7 @@ export function makeHeadshot(id: string, look: HeadshotLook): Promise<string | n
     const kept = await getHeadshot(key);
     if (kept) { headshotStats.kept++; return kept; }
     if (!headshotsPossible()) return null;
-    return new Promise<string | null>((done) => { queue.push({ key, look, done }); void pump(); });
+    return new Promise<string | null>((done) => { queue.push({ key, look, frame, done }); void pump(); });
   })().finally(() => inflight.delete(key));
   inflight.set(key, p);
   return p;
@@ -111,7 +111,7 @@ async function pump() {
       try {
         const r = await getRig();
         if (r) {
-          const blob = await shoot(r, job.look);
+          const blob = await shoot(r, job.look, job.frame);
           if (blob) url = await putHeadshot(job.key, blob);
         }
       } catch (e) {
@@ -257,7 +257,7 @@ function aimFace(T: Three, people: People, p: Person3D, head: THREE.Bone, bindIn
 }
 
 /** One picture: dress the head's man in this look, aim the camera at his head, draw, encode. */
-async function shoot(r: Rig, look: HeadshotLook): Promise<Blob | null> {
+async function shoot(r: Rig, look: HeadshotLook, frame: HeadshotFrame = "head", lossless = false): Promise<Blob | null> {
   const { T, people, renderer, scene, cam } = r;
   const s = await sitterFor(r, look.head, look.body);
   const t0 = performance.now();
@@ -273,18 +273,50 @@ async function shoot(r: Rig, look: HeadshotLook): Promise<Blob | null> {
   const head = new T.Vector3();
   (p.bones.Head ?? p.bones.neck ?? p.root).getWorldPosition(head);
   const S = HEADSHOT_SHOT;
-  cam.position.set(head.x, head.y + S.camUp, head.z + S.distance);
-  cam.lookAt(head.x, head.y + S.aimUp, head.z);
+  const px = frame === "card" ? CARD_SHOT.px : HEADSHOT_PX;
+  renderer.setSize(px, px, false);
+  if (frame === "card") {
+    // head to waist: the same lens, stood back until crown and waistband both fit (measured off his bones)
+    const hips = new T.Vector3();
+    (p.bones.Hips ?? p.root).getWorldPosition(hips);
+    const top = head.y + CARD_SHOT.overHead, bottom = hips.y - CARD_SHOT.underHips;
+    const midY = (top + bottom) / 2, midX = (head.x + hips.x) / 2, midZ = (head.z + hips.z) / 2;
+    const dist = (top - bottom) / 2 / Math.tan((S.fov * Math.PI) / 360);
+    cam.position.set(midX, midY + S.camUp, midZ + dist);
+    cam.lookAt(midX, midY, midZ);
+  } else {
+    cam.position.set(head.x, head.y + S.camUp, head.z + S.distance);
+    cam.lookAt(head.x, head.y + S.aimUp, head.z);
+  }
   cam.updateMatrixWorld(true);
   for (const o of scene.children) if ((o as { isGroup?: boolean }).isGroup) o.visible = o === p.root;
   const L = HEADSHOT_LIGHT;
   r.withRim(T, { color: L.rim, strength: L.rimStrength, from: L.rimFrom }, () => renderer.render(scene, cam));
   p.root.visible = false;
   const blob = await new Promise<Blob | null>((res) => {
-    try { renderer.domElement.toBlob((b) => res(b), "image/webp", 0.9); } catch { res(null); }
+    try { renderer.domElement.toBlob((b) => res(b), lossless ? "image/png" : "image/webp", 0.9); } catch { res(null); }
   });
   headshotStats.shotMs.push(Math.round(performance.now() - t0));
   return blob && blob.size > 200 ? blob : null;
+}
+
+/**
+ * The bench's skin sheet only (/star-3d-bench-dev/skin): one picture made now,
+ * never kept (PNG, so nothing is blurred), and the same picture with the skin
+ * probe's regions (face, neck, upper arm, forearm, hand each one flat colour:
+ * toon/shader.ts setToonSkinProbe(2)).
+ */
+export async function benchHeadshot(look: HeadshotLook, frame: HeadshotFrame = "card"): Promise<{ url: string; probe: string } | null> {
+  const r = await getRig();
+  if (!r) return null;
+  const { setToonSkinProbe } = await import("../style3d/toon/shader");
+  const toUrl = (blob: Blob) => new Promise<string>((res) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result)); fr.readAsDataURL(blob); });
+  const pic = await shoot(r, look, frame, true);
+  setToonSkinProbe(2);
+  let probe: Blob | null = null;
+  try { probe = await shoot(r, look, frame, true); } finally { setToonSkinProbe(false); }
+  if (!pic || !probe) return null;
+  return { url: await toUrl(pic), probe: await toUrl(probe) };
 }
 
 /** Nothing to make for a while: free the WebGL context (the files stay in the page's cache). */

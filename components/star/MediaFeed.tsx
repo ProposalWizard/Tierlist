@@ -1,10 +1,10 @@
 "use client";
+import { phoneClockLabel } from "@/lib/star/phoneClock";
 import { useMemo, useRef, useState } from "react";
 import type { CareerState } from "@/lib/star/types";
 import type { Trend } from "@/lib/star/media/types";
 import { feedFor } from "@/lib/star/media/feed";
 import { formatVolume } from "@/lib/star/media/trending";
-import { divisionOf, fixtureDate, formatDateNumeric } from "@/lib/star/calendar";
 import PostCard, { FEED_LIST_CLASS } from "./media/PostCard";
 import { FeedWindow, FeedSlot } from "./media/FeedWindow";
 import type { StoredPost } from "@/lib/star/media/types";
@@ -111,9 +111,7 @@ export default function MediaFeed({ career, mode, onContinue, onToggleLike, onVo
   // year swallowed — a phone's status bar does not show a year anyway.
   // PhoneFrame now caps the label's width too, so this is belt and braces:
   // this one makes it read well, that one makes it impossible to break.
-  const dateLabel = formatDateNumeric(
-    fixtureDate(career.player.startYear, career.season, career.week, "saturday", divisionOf(career)),
-  ).replace(/\/\d{2}$/, "");
+  const dateLabel = phoneClockLabel(career);
 
   const app = (
     <>

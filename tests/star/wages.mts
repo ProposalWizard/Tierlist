@@ -1,4 +1,4 @@
-import { wageShareFor, wageForFixture } from "../../lib/star/wages";
+import { wageShareFor, wageForFixture, midweekFeeFor, MIDWEEK_FEE_SHARE } from "../../lib/star/wages";
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { PREMIER_LEAGUE_CLUBS, CHAMPIONSHIP_CLUBS } from "../../lib/star/clubs";
 import { dayFor, divisionOf } from "../../lib/star/calendar";
@@ -158,6 +158,19 @@ for (const [label, make] of [["Premier", premier], ["Championship", champ]] as c
     `a week should pay one week's wage give or take rounding, worst drift was ${worst}`,
   );
 }
+
+// ── A midweek game pays a quarter of a week on top (Mikey, 21 Oct 2026) ──
+const midweekCounts: string[] = [];
+for (const [name, make] of [["Premier League", premier], ["Championship", champ]] as const) {
+  const c = make();
+  const mid = c.fixtures.filter(f => midweekFeeFor(c, f) > 0);
+  const sat = c.fixtures.filter(f => (f.kind ?? "league") === "league" && dayFor(f.kind, f.week, divisionOf(c)) === "saturday");
+  check(mid.every(f => midweekFeeFor(c, f) === Math.round(c.contract.wage * MIDWEEK_FEE_SHARE)), `${name}: a midweek fee is a quarter of the weekly wage`);
+  check(sat.every(f => midweekFeeFor(c, f) === 0), `${name}: a Saturday game pays no midweek fee`);
+  check(midweekFeeFor(c, { week: 3, opponent: "France", home: true, kind: "international" } as Fixture) === 0, `${name}: an international pays no midweek fee`);
+  midweekCounts.push(`${name} ${mid.length} midweek games at the start of a season`);
+}
+console.log("  " + midweekCounts.join(", "));
 
 if (problems.length) {
   console.log("FAIL");

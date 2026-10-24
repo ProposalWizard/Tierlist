@@ -10,7 +10,7 @@ import { compareVersionsDesc, bellCount, inboxFor, noteMentionsFor, noteSeenKey,
 import { payloadForNote, ringsForNote, splitQuotes } from "@/lib/teamRoom/notify";
 import { cleanQuote, linesOf } from "@/lib/teamRoom/patchQuote";
 import { TEAM_ROOM } from "@/lib/teamRoom/config";
-import type { PatchMeta, TeamAck } from "@/lib/teamRoom/extras";
+import { patchReadKey, patchReaders, patchUnread, type PatchMeta, type TeamAck } from "@/lib/teamRoom/extras";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 import { PATCH_NOTE_PAGES } from "@/lib/patchNotePages";
 import fs from "node:fs";
@@ -91,6 +91,27 @@ console.log("Notes under a patch note: @ and quoted lines");
   ok(cleanQuote("  x ") === null && cleanQuote("two  words") === "two words" && (cleanQuote("y".repeat(300)) ?? "").length === 240, "a selection is cleaned and capped at 240");
 }
 
+console.log("An updated note is news again (Leo, 24 Oct 2026)");
+{
+  const UPD: PatchMeta[] = [
+    { version: "0.97h", title: "Harry's patch notes: Merge", publishedAt: "2026-10-21T09:00:00Z" },
+    { version: "0.62", title: "Leo's patch notes v0.20: Goals", publishedAt: "2026-10-20T09:00:00Z", updatedAt: "2026-10-21T12:00:00Z", updateNote: "Videos added" },
+    { version: "0.50", title: "Mikey's patch notes v0.9: Old", publishedAt: "2026-10-20T10:00:00Z", updatedAt: "2026-10-20T10:00:00Z" },
+  ];
+  ok(patchReadKey(UPD[0]) === "0.97h" && patchReadKey(UPD[1]) === "0.62@2026-10-21T12:00:00Z", "the receipt key is the version, plus the update time once updated");
+  ok(patchReadKey(UPD[2]) === "0.50" && vs(inboxFor(UPD, "Harry", [ack("Harry", "0.50"), ack("Harry", "0.62@2026-10-21T12:00:00Z")])) === "", "an old updatedAt with no updateNote is not an update (no flood of old notes)");
+  ok(vs(inboxFor(UPD, "Mikey", [ack("Mikey", "0.62"), ack("Mikey", "0.50")])) === "0.62,0.97h", "read before the update: unread again, and first (its update is the newest change)");
+  ok(vs(inboxFor(UPD, "Mikey", [ack("Mikey", "0.62@2026-10-21T12:00:00Z"), ack("Mikey", "0.50")])) === "0.97h", "reading the update clears it");
+  ok(patchReaders(UPD[1], [ack("Harry", "0.62")]).join(",") === "Leo", "a read of the old version does not show as read on the update (only its author)");
+  ok(patchUnread(UPD, "Harry", [ack("Harry", "0.62"), ack("Harry", "0.50")], "2026-10-20").map((n) => n.version).join(",") === "0.62", "the Team board counts it unread again");
+  const now = Date.parse("2026-10-21T12:30:00Z");
+  const r = patchesToRing(UPD, now, { Mikey: ["0.62", "0.97h", "0.50"] }, "2026-10-20", 6 * 3600_000).find((x) => x.person === "Mikey");
+  ok(!!r && vs(r.notes) === "0.62", "rung for the old version: the update buzzes again");
+  ok(payloadForPatches([UPD[1]]).title.startsWith("Updated patch notes from Leo"), "the buzz says Updated, not New");
+  const r2 = patchesToRing(UPD, now, { Mikey: ["0.62@2026-10-21T12:00:00Z", "0.97h", "0.50"] }, "2026-10-20", 6 * 3600_000).find((x) => x.person === "Mikey");
+  ok(!r2, "rung for the update already: no second buzz");
+}
+
 console.log("Version order and the real archive");
 {
   const sorted = ["0.94", "0.100h", "0.99h", "0.95h", "0.63h", "1.0", "0.9"].sort(compareVersionsDesc);
@@ -99,6 +120,8 @@ console.log("Version order and the real archive");
   ok(new Set(versions).size === versions.length, `every archive version is unique (${versions.length})`);
   const bad = BUILT_IN_PATCH_NOTES.filter((n) => Number.isNaN(Date.parse(n.publishedAt)));
   ok(bad.length === 0, "every archive note has a real publish time");
+  const badUpd = BUILT_IN_PATCH_NOTES.filter((n) => n.updateNote && !(Date.parse(n.updatedAt ?? "") > Date.parse(n.publishedAt)));
+  ok(badUpd.length === 0, `every note with an updateNote has an update time after it went up${badUpd.length ? ` (${badUpd.map((n) => n.version).join(", ")})` : ""}`);
   const missing = Object.entries(PATCH_NOTE_PAGES).filter(([, f]) => !fs.existsSync(`patch-notes/${f}`));
   ok(missing.length === 0, `every kept page exists${missing.length ? ` (missing: ${missing.map(([v]) => v).join(", ")})` : ""}`);
 }
