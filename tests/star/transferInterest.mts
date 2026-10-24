@@ -163,12 +163,15 @@ for (const l of good.leagues) for (const k of l.clubs) {
   const m = membershipOf(c);
   const everyone = new Set<string>([...c.league.map(t => t.name), ...m.premier, ...m.championship, ...m.leagueOne, ...m.leagueTwo,
     ...m.nationalLeague, ...m.nationalLeagueNorth, ...m.nationalLeagueSouth]);
-  const i = windowInterest(c, "summer");
+  const i = windowInterest(c, "summer", { step3Promoted: true });
   const listed = i.leagues.flatMap(l => l.clubs);
   const shown = listed.filter(x => !everyone.has(x.club));
   check(shown.length > 0, "some club up from Step 3 is on the list");
   check(shown.every(x => x.moved === "promoted"), `a club up from Step 3 is marked Promoted (${shown.filter(x => x.moved !== "promoted").map(x => x.club).join(", ")})`);
   console.log(`Clubs up from Step 3 on the summer list: ${shown.map(x => x.club).join(", ")}`);
+  // Switch off (Leo's 24 Oct update): the old list, no "Promoted" for them.
+  const off = windowInterest(c, "summer").leagues.flatMap(l => l.clubs).filter(x => !everyone.has(x.club));
+  check(off.every(x => x.moved !== "promoted"), "switch off: the old list (no Promoted for Step 3 clubs)");
 }
 
 // ── A club below offers what it can afford, never pulls out (Mikey, 19 Oct 2026) ──

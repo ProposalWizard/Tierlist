@@ -25,6 +25,7 @@ import { formatMoney } from "@/lib/star/money";
 import ClubBadge from "./ClubBadge";
 import { ScreenShell, FlatPanel, CountUp, RiseIn, BottomBar, BarButton, clubTheme, rgba } from "./ui";
 import { Rays } from "./ui/Screen";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 const GOLD = "#fbbf24";
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
@@ -35,7 +36,8 @@ const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|A
  */
 function SeasonTrack({ career, played, endLabel }: { career: CareerState; played: number; endLabel?: string }) {
   const cap = CAREER_SEASONS ?? Math.max(played + 1, 1);
-  const o = useMemo(() => careerOverview(career), [career]);
+  const calYears = useLeoUpdate("bugFixes"); // Leo's 24 Oct update: calendar season years
+  const o = useMemo(() => careerOverview(career, { calendarYears: calYears }), [career, calYears]);
   const firstAge = o.seasons[0]?.age ?? career.player.age - (career.season - 1);
   return (
     <div>

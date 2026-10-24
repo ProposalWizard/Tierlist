@@ -1725,6 +1725,10 @@ export function advanceSeason(
    * Loyalty simply does not apply this rollover when this is true.
    */
   justTransferred = false,
+  /** Leo's 24 Oct update, bug fixes (lib/star/leoUpdate.ts), read by the
+   *  caller: a manager who just won promotion is never sacked. Off (the
+   *  default, and every test and the soak) = the old rule. */
+  opts: { noSackAfterPromotion?: boolean } = {},
 ): { career: CareerState; newlyUnlocked: string[] } {
   // A loan spell is exactly the season it was made in — home before
   // anything else this rollover touches a squad, so every squad-carrying
@@ -1774,7 +1778,7 @@ export function advanceSeason(
   // The board's view of the manager, taken on the season the CLUB had rather
   // than the one you had — nobody is sacked because a forward was quiet.
   const sack = sackCheck(career, judgeSeason(career).score,
-    !justTransferred && !career.placement
+    !!opts.noSackAfterPromotion && !justTransferred && !career.placement
       && seasonClubMove(career.player.club, divisionOf(career), ladder) === "promoted");
 
   // Individual honours for the season that has just finished, taken BEFORE the
