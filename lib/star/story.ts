@@ -23,14 +23,15 @@
  */
 import type { CareerState, CareerUnlocks } from "./types";
 import type { Feature } from "./unlocks";
+import { BOOTS_CATALOGUE } from "./shopData";
 
-export type Beat = "boss" | "training" | "ready" | "can" | "phone" | "shop" | "stats" | "starpass" | "sponsor";
+export type Beat = "boots" | "boss" | "training" | "ready" | "can" | "phone" | "shop" | "stats" | "starpass" | "sponsor";
 
 /** The two drills of the training day (Mikey, 24 Oct 2026: "only do 2 drills, the power and technique"), in the order the pointer shows them. */
 export const TRAINING_DAY: string[] = ["power", "technique"];
 
 /** The order the beats come in. The first one that is due and not seen shows. */
-const ORDER: Beat[] = ["boss", "training", "ready", "starpass", "can", "phone", "shop", "stats", "sponsor"];
+const ORDER: Beat[] = ["boots", "boss", "training", "ready", "starpass", "can", "phone", "shop", "stats", "sponsor"];
 
 type C = Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures" | "brands">;
 
@@ -58,6 +59,7 @@ export function trainingDayOn(c: Pick<CareerState, "unlocks">): boolean {
 function due(c: C, b: Beat, stars: number): boolean {
   const n = games(c);
   switch (b) {
+    case "boots": return n === 0;
     case "boss": return n >= 1 && !c.achievements.includes("boss-meeting");
     case "training": return c.achievements.includes("boss-meeting");
     case "ready": return seenBeat(c, "training") && trainingDayLeft(c).length === 0 && n < 2;
@@ -102,6 +104,7 @@ export function ackBeat(c: CareerState, b: Beat): CareerState {
     open: [...c.unlocks.open, ...opens.filter((f) => !c.unlocks!.open.includes(f))],
   };
   let out: CareerState = { ...c, unlocks: u };
+  if (b === "boots") out = { ...out, currentBoot: storyBoots() };
   if (b === "can") out = { ...out, kibCans: { ...out.kibCans, basic: (out.kibCans?.basic ?? 0) + 1 } };
   if (b === "phone" && !out.achievements.includes("buy-phone")) out = { ...out, achievements: [...out.achievements, "buy-phone"] };
   return out;
@@ -116,12 +119,32 @@ export function recordTrainingDayDrill(c: CareerState, skill: string): CareerSta
 }
 
 /** The person, their words and the button, for the beat's sheet. */
-export interface BeatText { who: string; icon: string; title: string; line: string; button: string }
+/** The team-mate's old boots: the starter pair, 5 games left (Mikey, 24 Oct 2026). */
+export const STORY_BOOT_GAMES = 5;
+export function storyBoots(): CareerState["currentBoot"] {
+  return { ...BOOTS_CATALOGUE[0], matches: STORY_BOOT_GAMES };
+}
+
+export interface BeatText {
+  who: string; icon: string; title: string; line: string; button: string;
+  /** A pair of boots to show, with what they give (the "boots" beat). */
+  boot?: { name: string; pic: string; stats: string[]; games: number };
+}
 
 export function beatText(c: CareerState, b: Beat): BeatText {
   const gaffer = c.manager?.name ? `The gaffer, ${c.manager.name}` : "The gaffer";
   const mate = teamMateName(c);
   switch (b) {
+    case "boots": {
+      const b = storyBoots();
+      const stats = [b.power ? `Power +${b.power}` : "", b.technique ? `Technique +${b.technique}` : ""].filter(Boolean);
+      return {
+        who: mate, icon: "👟", title: "Have my old boots",
+        line: `Your first game's coming up. Take my old boots. They've got ${STORY_BOOT_GAMES} games left in them.`,
+        button: "Thanks!",
+        boot: { name: b.name, pic: `/star/shop2d/items/boot-${b.baseId ?? b.id}-L${b.level ?? 1}.webp`, stats, games: STORY_BOOT_GAMES },
+      };
+    }
     case "boss": return { who: gaffer, icon: "🧢", title: "Come and see me", line: "Good first game, son. Come to my office, I want a word.", button: "Go to his office" };
     case "training": return { who: gaffer, icon: "🧢", title: "Time to train", line: "Training's open. Do two drills for me now, Power and Technique, so I can see what you've got. They cost no energy.", button: "Go to training" };
     case "ready": return { who: gaffer, icon: "🧢", title: "You're ready", line: "Great work. You're ready for the next game.", button: "Play" };

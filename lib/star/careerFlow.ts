@@ -253,7 +253,9 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
     // contract — `attachClub` unlocks it when there genuinely is one.
     achievements: [],
     status: "1st Team",
-    currentBoot: starterBoot,
+    // The story order (every new career): no boots until a team-mate hands
+    // you his old pair before your first game (story.ts, the "boots" beat).
+    currentBoot: { ...starterBoot, matches: 0 },
     kibCans: { basic: 2, premium: 0, elite: 0 },
     ownedItems: [],
     girlfriend: null,

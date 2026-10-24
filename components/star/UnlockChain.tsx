@@ -169,6 +169,21 @@ export function StoryBeatPop({ text, onGo }: { text: BeatText; onGo: () => void 
         </span>
       </div>
       <div className="mt-3 rounded-2xl bg-white/[0.07] px-3 py-2.5 text-left text-[14px] font-bold leading-snug text-white ring-1 ring-white/10">{text.line}</div>
+      {text.boot && (
+        <div data-beat-boot className="mt-2.5 flex items-center gap-3 rounded-2xl bg-gradient-to-b from-amber-400/20 to-amber-500/5 p-2.5 text-left ring-1 ring-amber-300/40">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={text.boot.pic} alt="" draggable={false} className="h-20 w-24 shrink-0 select-none object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,.6)]" />
+          <div className="min-w-0">
+            <div className="text-[16px] font-black leading-tight text-white">{text.boot.name}</div>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {text.boot.stats.map((st) => (
+                <span key={st} className="rounded-full bg-emerald-500/25 px-2 py-0.5 text-[12px] font-black text-emerald-100 ring-1 ring-emerald-400/50">{st}</span>
+              ))}
+            </div>
+            <div className="mt-1 text-[12px] font-black text-amber-200">{text.boot.games} games left</div>
+          </div>
+        </div>
+      )}
       <PressButton variant="primary" size="none" pulse onClick={onGo} data-tour="beat-go" className="mt-3 w-full rounded-2xl py-2.5 text-[15px] font-black">{text.button}</PressButton>
     </Sheet>
   );

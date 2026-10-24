@@ -5109,7 +5109,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const seen = (...keys: string[]) => () => setCareer(c => (c ? keys.reduce((acc, k) => markSeen(acc, k), c) : c));
     // v0.25: energy explained here, at the very start; then "You've got a game
     // today" (game first) — no Skip, so Play is never missed.
-    if (onHome && !hasSeen(career, "tutorial")) return { key: "welcome", steps: welcomeTour(gameFirst(career), isStory(career)), skippable: !gameFirst(career), onDone: seen("tutorial", "help-home", "play-tip") };
+    // The story: the team-mate's boots come first, then the welcome pointer.
+    if (onHome && !hasSeen(career, "tutorial") && (!isStory(career) || hasSeen(career, "beat-boots"))) return { key: "welcome", steps: welcomeTour(gameFirst(career), isStory(career)), skippable: !gameFirst(career), onDone: seen("tutorial", "help-home", "play-tip") };
     // The story's training day: the pointer walks you through Power, then Technique.
     if (onTraining && trainingDayOn(career)) {
       const left = trainingDayLeft(career);

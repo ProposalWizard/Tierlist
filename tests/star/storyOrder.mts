@@ -40,7 +40,11 @@ const drain = (): Beat[] => {
 // 0 · Signing day
 check(isOpen(c, "league") && isOpen(c, "play"), "signing day: League and Play open");
 check(!isOpen(c, "training") && !isOpen(c, "stats") && !isOpen(c, "shop") && !isOpen(c, "phone"), "signing day: Training, Stats, Shop, Phone locked");
-check(beat() === null, "signing day: no beat before the first game");
+check(c.currentBoot.matches === 0, "signing day: no boots of your own");
+check(beat() === "boots", "signing day: a team-mate's boots come first");
+c = ackBeat(c, "boots");
+check(c.currentBoot.matches === 5 && (c.currentBoot.power ?? 0) > 0, `his old boots: 5 games, with stats (${c.currentBoot.name} ${c.currentBoot.matches})`);
+check(beat() === null, "then nothing more before the first game");
 check(lockHint(c, "shop") === "After your third game", "Shop lock line says game 3");
 
 // 1 · After game 1 (no goal): the gaffer, then training
