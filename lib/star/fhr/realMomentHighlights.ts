@@ -32,6 +32,7 @@
 import type { Scenario, ScenarioKind } from "../canvasEngine";
 import type { LeadIn, LeadMoment } from "../leadIn";
 import { isFullyReal, type RealShot, type RealTrack, type TrackedFile, type TrackFile, type TrackedMoment } from "../realMoments/types";
+import { leoUpdateOn } from "../leoUpdate";
 import { peopleOf, playKindForShot, scenarioForShot, frameHoldsShot, airKindOf } from "../realMoments/shots";
 import { trackLeadIn } from "../realMoments/track";
 import { inGame, pickOf } from "../realMoments/picks";
@@ -209,7 +210,9 @@ export function serveRealMoment(kind: ScenarioKind, rng: () => number, opts: { f
     void loadRealMomentPool();
     return null;
   }
-  const all = servable(pool, kind);
+  // The 15 real overhead kicks (bicycle chances) come back only with Leo's 24
+  // Oct update on (leoUpdate.ts "bicycle"); off, they are left out as before.
+  const all = servable(pool, kind).filter((m) => leoUpdateOn("bicycle") || airKindOf(m) !== "high");
   if (!all.length) return null;
   if (!opts.force && rng() >= (realMomentsEvery() ? 1 : REAL_MOMENT_SHARE)) return null;
   const seen = new Set(recent());

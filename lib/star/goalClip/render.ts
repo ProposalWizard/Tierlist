@@ -216,14 +216,17 @@ export function readableDive(
  * frame two hundred use the same drawings (a move that loaded half way
  * through would change the film between two plays). Waits at most `ms`.
  */
-export async function prepareClipSprites(moves: ClipMoves = "new", ms = 5000): Promise<void> {
+export async function prepareClipSprites(moves: ClipMoves = "new", ms = 5000, edit?: { tracks: { events: { mode?: string }[] }[] }): Promise<void> {
   await loadSprites();
   if (moves === "old") return;
   const t0 = Date.now();
   // One ask starts the second set of moves loading; then wait for it.
-  // The bicycle kick's own small atlas (2) too, so a bicycle goal's film never
-  // starts on the old kick and switches part way (bicycle.ts, 22 Oct 2026).
-  while (!(spriteClipReady("player", "shotKick") && spriteClipReady("keeper", "oneHandR") && spriteClipReady("player", "bicycle")) && Date.now() - t0 < ms) {
+  // A film with a bicycle kick in it (bicycle.ts, 22 Oct 2026; only possible
+  // with Leo's 24 Oct update on) waits for the bicycle's own small atlas (3)
+  // too, so it never starts on the old kick and switches part way. Any other
+  // film loads exactly what it did before.
+  const bike = !!edit?.tracks.some((tr) => tr.events.some((e) => e.mode === "bicycle"));
+  while (!(spriteClipReady("player", "shotKick") && spriteClipReady("keeper", "oneHandR") && (!bike || spriteClipReady("player", "bicycle"))) && Date.now() - t0 < ms) {
     await new Promise<void>(r => setTimeout(r, 60));
   }
 }
