@@ -5,7 +5,7 @@ import { getClips } from "@/lib/star/goalClip/store";
 import { makeEdit, editDuration, clipFileName, type ClipStyle } from "@/lib/star/goalClip/edit";
 import type { ClipCredit } from "@/lib/star/goalClip/render";
 import { saveVideo, videoSupported, type EncodedClip } from "@/lib/star/goalClip/encode";
-import { makeVideo, keptVideo, posterFor, workerReady, videosOnPage } from "@/lib/star/goalClip/makeVideo";
+import { makeVideo, keptVideo, posterFor, workerReady, videosOnPage, startLive, warmLive } from "@/lib/star/goalClip/makeVideo";
 import { goalVideoKey } from "@/lib/star/goalClip/premake";
 import { useAnimationsLook } from "@/lib/star/animLook";
 import { synthTrack, type SynthGoal } from "@/lib/star/goalClip/synth";
@@ -297,7 +297,79 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
     }
   };
 
+  // ── THE LIVE PLAYER (Leo, 24 Oct 2026: "I don't EVER wanna wait more than
+  // a few seconds … for MY GOALS OR TEAM HIGHLIGHTS"). Tapped before the file
+  // is made: the goal plays at once, drawn live from the recording in the
+  // player worker (makeVideo.ts startLive), with its sound; the moment the
+  // file is made it takes over from the same second.
+  const [liveState, setLiveState] = useState<"off" | "starting" | "playing">("off");
+  const [liveGen, setLiveGen] = useState(0);
+  const liveCanvasRef = useRef<HTMLCanvasElement>(null);
+  const liveStop = useRef<(() => void) | null>(null);
+  const liveT = useRef(0);
+  const liveSound = useRef<{ src: AudioBufferSourceNode; gain: GainNode } | null>(null);
+  const seekTo = useRef<number | null>(null);
+  const stopLiveNow = () => {
+    liveStop.current?.(); liveStop.current = null;
+    if (liveSound.current) { try { liveSound.current.src.stop(); } catch { /* done */ } liveSound.current = null; }
+  };
+  // One live session at a time; it ends only when it is no longer wanted
+  // (scrolled away, the file is ready, unmounted), never because a check
+  // finished meanwhile (that cancelled it half-started: 9 s on a slow phone).
+  const liveSession = useRef(0);
   useEffect(() => {
+    // Playing live needs only the player worker, not the file encoder (canPlay).
+    const want = wanted && !fill && status !== "ready" && !!edit && canPlay !== false && onView;
+    if (!want) {
+      if (liveState !== "off") {
+        liveSession.current++;
+        stopLiveNow();
+        if (status === "ready") seekTo.current = liveT.current;
+        setLiveState("off");
+        setLiveGen(g => g + 1);
+      }
+      return;
+    }
+    if (liveState !== "off" || !liveCanvasRef.current || !edit) return;
+    const session = ++liveSession.current;
+    const current = () => liveSession.current === session;
+    setLiveState("starting");
+    const startedAt = performance.now();
+    const e = edit;
+    void startLive(liveCanvasRef.current, e, credit, () => {
+      if (!current()) return;
+      setLiveState("playing");
+      // Its sound, from the same second (mixed on the page, played alongside).
+      void mixAudio(planAudio(e)).then(buf => {
+        const c = audioContext();
+        if (!buf || !c || !current() || !liveStop.current) return;
+        if (c.state === "suspended") c.resume().catch(() => { /* needs a tap */ });
+        const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+        const gain = c.createGain(); gain.gain.value = audible ? 1 : 0;
+        src.connect(gain); gain.connect(c.destination);
+        src.start(0, ((performance.now() - startedAt) / 1000) % Math.max(0.01, buf.duration));
+        liveSound.current = { src, gain };
+      }).catch(() => { /* silent */ });
+    }, t => { if (current()) liveT.current = t; }).then(stop => {
+      if (!current()) { stop?.(); return; }
+      if (!stop) { setLiveState("off"); return; }
+      liveStop.current = stop;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wanted, status, edit, canPlay, onView, liveGen]);
+  useEffect(() => { if (liveSound.current) liveSound.current.gain.gain.value = audible ? 1 : 0; }, [audible]);
+  // Your goals, your match's highlights and a replay you opened: the live
+  // player is readied for them as soon as they are on the page.
+  useEffect(() => {
+    if (edit && canPlay && !fill && (priority > 0 || autoStart) && status !== "ready") warmLive(key, edit, credit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edit, canPlay, key]);
+  useEffect(() => () => { liveSession.current++; stopLiveNow(); }, []);
+
+  useEffect(() => {
+    // Opened to watch (a replay): wanted at once, so the live player starts
+    // without waiting for the file encoder's check.
+    if (autoStart && !fill) setWanted(true);
     if (autoStart && edit && canPlay && status === "idle") void start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, edit, canPlay]);
@@ -445,6 +517,7 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
             playsInline
             muted
             loop
+            onLoadedMetadata={(ev) => { if (seekTo.current !== null) { ev.currentTarget.currentTime = seekTo.current; seekTo.current = null; } }}
             onClick={() => { const v = videoRef.current; if (v) { if (v.paused) { setWanted(true); void v.play(); } else v.pause(); } }}
             onPlay={(ev) => { const me = ev.currentTarget; onScreen.forEach(v => { if (v !== me && !v.paused) v.pause(); }); }}
             onPause={(ev) => stopSide(ev.currentTarget)}
@@ -464,6 +537,17 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
         {status === "ready" && url ? null : (
           <>
             <canvas ref={canvasRef} width={edit.w} height={edit.h} className="block h-full w-full" />
+            {/* The live player draws here (in its worker) until the file is made. */}
+            <canvas
+              key={liveGen}
+              ref={liveCanvasRef}
+              width={edit.w}
+              height={edit.h}
+              className="absolute inset-0 h-full w-full"
+              style={{ visibility: liveState === "playing" ? "visible" : "hidden" }}
+              data-goal-video-live={liveState}
+            />
+            {liveState === "playing" ? null : <>
             {badge && (
               <div className="absolute right-2 top-2 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
                 {badge}
@@ -493,6 +577,7 @@ export default function GoalVideo({ clipIds, synth, style, variant = 0, credit, 
                 </div>
               )}
             </button>
+            </>}
           </>
         )}
       </div>

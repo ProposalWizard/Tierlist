@@ -6,7 +6,7 @@
  */
 import "./workerShim";
 import { encodeEdit } from "./encode";
-import { posterMoment, type Edit } from "./edit";
+import { posterMoment, editDuration, type Edit } from "./edit";
 import { drawEditFrame, prepareClipSprites, type ClipCredit } from "./render";
 
 export interface WorkerJob {
@@ -24,7 +24,23 @@ export interface PosterJob {
   credit?: ClipCredit;
   settings: Record<string, string>;
 }
+/**
+ * THE LIVE PLAYER (Leo, 24 Oct 2026: "I don't EVER wanna wait more than a
+ * few seconds … for MY GOALS OR TEAM HIGHLIGHTS"). The goal drawn straight
+ * onto the post's canvas in real time, from the recording, while its file is
+ * still being made (in the other worker). Same drawing as the file.
+ */
+export interface LiveJob {
+  id: number;
+  kind: "live";
+  canvas: OffscreenCanvas;
+  edit: Edit;
+  credit?: ClipCredit;
+  settings: Record<string, string>;
+}
 export type WorkerReply =
+  | { id: number; kind: "live-first" }
+  | { id: number; kind: "live-t"; t: number }
   | { id: number; kind: "poster"; bitmap: ImageBitmap }
   | { id: number; kind: "ready"; ok: boolean }
   | { id: number; kind: "progress"; k: number }
@@ -46,10 +62,43 @@ function asBuffer(a: NonNullable<WorkerJob["audio"]>): AudioBuffer {
   } as unknown as AudioBuffer;
 }
 
+const lives = new Map<number, { stop: boolean }>();
+async function runLive(job: LiveJob): Promise<void> {
+  const me = { stop: false };
+  lives.set(job.id, me);
+  try {
+    g.__setWorkerSettings?.(job.settings);
+    await prepareClipSprites(job.edit.moves);
+    const ctx = job.canvas.getContext("2d", { alpha: false }) as unknown as CanvasRenderingContext2D | null;
+    if (!ctx || me.stop) return;
+    const dur = editDuration(job.edit);
+    const t0 = performance.now();
+    let first = true, lastT = 0;
+    // Paced by a timer, like encode.ts's frame loop: it plays back a
+    // recording (no physics, no football), at 30 frames a second.
+    const next = (f: () => void) => setTimeout(f, 1000 / 30);
+    await new Promise<void>((done) => {
+      const frame = () => {
+        if (me.stop) { done(); return; }
+        const t = ((performance.now() - t0) / 1000) % dur;
+        drawEditFrame(ctx, job.edit, t, job.credit);
+        if (first) { first = false; post({ id: job.id, kind: "live-first" }); }
+        if (Math.abs(t - lastT) > 0.25) { lastT = t; post({ id: job.id, kind: "live-t", t }); }
+        next(frame);
+      };
+      frame();
+    });
+  } catch (e) {
+    post({ id: job.id, kind: "error", message: String((e as Error)?.message ?? e) });
+  } finally {
+    lives.delete(job.id);
+  }
+}
+
 let chain: Promise<void> = Promise.resolve();
 /** Stills jump the queue: one is a single frame, a video is hundreds. */
 let posters: Promise<void> = Promise.resolve();
-self.onmessage = (ev: MessageEvent<WorkerJob | PosterJob | { kind: "ping"; moves?: Edit["moves"] }>) => {
+self.onmessage = (ev: MessageEvent<WorkerJob | PosterJob | LiveJob | { kind: "live-stop"; id: number } | { kind: "live-warm"; edit: Edit } | { kind: "ping"; moves?: Edit["moves"] }>) => {
   const kind = (ev.data as { kind?: string }).kind;
   if (kind === "ping") {
     // Load the figures now, before any video is asked for.
@@ -57,6 +106,23 @@ self.onmessage = (ev: MessageEvent<WorkerJob | PosterJob | { kind: "ping"; moves
     post({ id: -1, kind: "ready", ok: typeof g.VideoEncoder === "function" && typeof g.OffscreenCanvas === "function" && typeof g.document !== "undefined" });
     return;
   }
+  if (kind === "live") { void runLive(ev.data as LiveJob); return; }
+  if (kind === "live-warm") {
+    // One frame drawn off screen: the drawings load and the kits are coloured
+    // now, so a tap on this goal shows it at once.
+    const job = ev.data as { edit: Edit; credit?: ClipCredit; settings: Record<string, string> };
+    void (async () => {
+      try {
+        g.__setWorkerSettings?.(job.settings);
+        await prepareClipSprites(job.edit.moves);
+        const c = new OffscreenCanvas(job.edit.w, job.edit.h);
+        const ctx = c.getContext("2d") as unknown as CanvasRenderingContext2D | null;
+        if (ctx) drawEditFrame(ctx, job.edit, 0.5, job.credit);
+      } catch { /* the tap loads them instead */ }
+    })();
+    return;
+  }
+  if (kind === "live-stop") { const l = lives.get((ev.data as { id: number }).id); if (l) l.stop = true; return; }
   if (kind === "poster") {
     const job = ev.data as PosterJob;
     posters = posters.then(async () => {

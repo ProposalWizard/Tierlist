@@ -70,6 +70,7 @@ export function workerReady(moves: Edit["moves"] = "new"): Promise<boolean> {
 
 /** Start the worker early (it loads the figures before the first video is asked for). */
 export function warmVideoMaker(moves: Edit["moves"] = "new"): void {
+  void playerReady(moves);
   void workerReady(moves).then(ok => {
     if (!ok) { void prepareClipSprites(moves); return; }
   });
@@ -250,4 +251,61 @@ async function makeOne(
 /** True once the worker has failed (or never started): the page makes videos. */
 export function videosOnPage(): boolean {
   return broken;
+}
+
+// ── The live player (a second worker, so making files never slows it) ──────
+
+let player: Worker | null = null;
+let playerOk: Promise<boolean> | null = null;
+const liveWaiters = new Map<number, (m: WorkerReply) => void>();
+
+/** True when this phone can play a goal live in the player worker. */
+export function playerReady(moves: Edit["moves"] = "new"): Promise<boolean> {
+  if (playerOk) return playerOk;
+  playerOk = new Promise<boolean>((res) => {
+    if (typeof window === "undefined" || typeof Worker === "undefined" || typeof OffscreenCanvas === "undefined"
+      || typeof HTMLCanvasElement === "undefined" || !("transferControlToOffscreen" in HTMLCanvasElement.prototype)) { res(false); return; }
+    try { player = new Worker(new URL("./clip.worker.ts", import.meta.url)); } catch { res(false); return; }
+    const timer = setTimeout(() => res(false), 15_000);
+    player.onmessage = (ev: MessageEvent<WorkerReply>) => {
+      const m = ev.data;
+      if (m.id === -1 && m.kind === "ready") { clearTimeout(timer); res(m.ok); return; }
+      liveWaiters.get(m.id)?.(m);
+    };
+    player.onerror = () => { clearTimeout(timer); res(false); };
+    player.postMessage({ kind: "ping", moves });
+  });
+  return playerOk;
+}
+
+/**
+ * Play `edit` live on `canvas` (drawn in the player worker, in real time,
+ * looping). `onFirst` fires when the first frame is on screen; `onTime`
+ * reports the clip time a few times a second. Returns a stop function, or
+ * null when this phone cannot play live (the canvas is then untouched).
+ */
+export async function startLive(
+  canvas: HTMLCanvasElement, edit: Edit, credit: ClipCredit | undefined,
+  onFirst: () => void, onTime: (t: number) => void,
+): Promise<(() => void) | null> {
+  if (!(await playerReady(edit.moves)) || !player) return null;
+  let off: OffscreenCanvas;
+  try { off = canvas.transferControlToOffscreen(); } catch { return null; }
+  const id = nextId++;
+  liveWaiters.set(id, (m) => {
+    if (m.kind === "live-first") onFirst();
+    else if (m.kind === "live-t") onTime(m.t);
+  });
+  player.postMessage({ id, kind: "live", canvas: off, edit, credit, settings: settings() }, [off]);
+  return () => { liveWaiters.delete(id); player?.postMessage({ kind: "live-stop", id }); };
+}
+
+/** Get the live player ready for this goal (drawings loaded, kits coloured). */
+const warmed = new Set<string>();
+export function warmLive(key: string, edit: Edit, credit?: ClipCredit): void {
+  if (warmed.has(key)) return;
+  warmed.add(key);
+  void playerReady(edit.moves).then(ok => {
+    if (ok && player) player.postMessage({ kind: "live-warm", edit, credit, settings: settings() });
+  });
 }

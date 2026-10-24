@@ -46,7 +46,16 @@ for (let m = 0; m < N; m++) {
     });
     const t = templates[(m + i) % 2];
     const createdAt = new Date(Date.UTC(2026, 9, 1, 0, made++)).toISOString();
-    clips.push({ id, createdAt, track: { ...t, meta: { ...t.meta, id, createdAt, minute: events[i].minute } } });
+    // The recording's labels follow this match (the moves are the stored ones).
+    const youHome = fixture.home;
+    const short = events[i].scorer.split(" ").slice(-1)[0];
+    clips.push({ id, createdAt, track: { ...t, meta: {
+      ...t.meta, id, createdAt, minute: events[i].minute, minuteLabel: String(events[i].minute),
+      home: youHome ? player.club : fixture.opponent, away: youHome ? fixture.opponent : player.club, youAreHome: youHome,
+      scorer: events[i].scorer, scorerShort: short, isYou: mine, assist: undefined,
+      season: c.season, week: fixture.week,
+      scoreAfter: (youHome ? [i + 1, 0] : [0, i + 1]) as [number, number],
+    } } });
   }
   const goals = events.filter(e => e.isUserGoal).length;
   const stats: MatchStats = {
@@ -60,6 +69,17 @@ for (let m = 0; m < N; m++) {
   const rest = (after.results ?? []).filter(r => r.week === fixture.week && r.home !== player.club && r.away !== player.club);
   if (rest.length) after.media = generateForLeagueWeek({ ...after }, rest);
   c = after;
+}
+// FILM_MATCH_MINUTES: the career's own match-length rule (ruleBook FA), so a
+// real match ends sooner. FILM_SKILLS: a strong player. Both are ordinary
+// career data; the match itself is the real one.
+if (process.env.FILM_MATCH_MINUTES) {
+  const fa = { ...((c as { ruleBook?: Record<string, object> }).ruleBook?.FA ?? {}), matchLengthMinutes: Number(process.env.FILM_MATCH_MINUTES) };
+  (c as { ruleBook?: Record<string, object> }).ruleBook = { ...((c as { ruleBook?: Record<string, object> }).ruleBook ?? {}), FA: fa };
+}
+if (process.env.FILM_SKILLS) {
+  const k = Number(process.env.FILM_SKILLS);
+  c.skills = Object.fromEntries(Object.keys(c.skills).map(x => [x, k])) as typeof c.skills;
 }
 // No first-time tours or locks in the way of the bench.
 delete (c as { unlocks?: unknown }).unlocks;
