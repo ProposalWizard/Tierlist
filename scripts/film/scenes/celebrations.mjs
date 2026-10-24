@@ -85,7 +85,7 @@ await wait(6000);
 
 const celebOn = () => pg.evaluate(() => !!document.querySelector("[data-celebration]"));
 const marks = { clip: CLIP, move: MOVE };
-let tries = 0;
+let tries = 0, fails = 0;
 let done = false;
 while (!done && at() < (VIEW3D ? 3300 : 1700)) {
   const st = await pg.evaluate(() => ({ ph: window.__starMatch?.phase?.(), k: window.__starMatch?.kind?.() }));
@@ -134,8 +134,10 @@ while (!done && at() < (VIEW3D ? 3300 : 1700)) {
   const want = 0.8 + Math.random() * 0.15;
   for (let i = 0; i < 24; i++) { const pw = await pg.evaluate(([x, y]) => window.__starMatch.power(x, y), [dx * pull, dy * pull]); if (pw >= want) break; pull += 6; }
   marks.aim = at();
-  await pg.mouse.move(aim.bx, aim.by); await pg.mouse.down();
-  for (let i = 1; i <= 14; i++) { await pg.mouse.move(aim.bx + dx * pull * i / 14, aim.by + dy * pull * i / 14); await wait(30); }
+  // a drag that did not take starts a few px further along the pull the next time
+  const off = fails * 4;
+  await pg.mouse.move(aim.bx + dx * off, aim.by + dy * off); await pg.mouse.down();
+  for (let i = 1; i <= 14; i++) { await pg.mouse.move(aim.bx + dx * (off + pull * i / 14), aim.by + dy * (off + pull * i / 14)); await wait(VIEW3D ? 60 : 30); }
   await pg.mouse.up(); await wait(600);
   const ballBtn = pg.locator('div.cursor-pointer[style*="aspect-ratio"]').first();
   if (await ballBtn.count()) { const bb = await ballBtn.boundingBox(); if (bb) await pg.mouse.click(bb.x + bb.width / 2, bb.y + bb.width / 2); }
@@ -151,10 +153,13 @@ while (!done && at() < (VIEW3D ? 3300 : 1700)) {
     if (await celebOn()) { t0 = at(); break; }
     const ph = await pg.evaluate(() => window.__starMatch?.phase?.());
     if (ph !== "aim") left = true;
-    if (ph === "aim" && (left || at() - marks.strike > 1.5)) break;
+    if (ph === "aim" && (left || at() - marks.strike > (VIEW3D ? 6 : 1.5))) break;
     await wait(50);
   }
-  if (!left && t0 === null) { tries--; log("the drag did not take; same chance again"); }
+  if (!left && t0 === null) {
+    tries--; fails++; log("the drag did not take; same chance again");
+    if (fails >= 5) { log("this chance will not take a drag; giving up the run"); break; }
+  } else fails = 0;
   if (t0 === null || miss) { log("no goal; next chance"); marks.banner = undefined; if (t0 !== null) await wait(6000); continue; }
   marks.tries = tries;
   marks.celebStart = t0; log("celebration");
