@@ -12,6 +12,8 @@
 import { chromium } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
+import { installAudioTap } from "./audio-tap.mjs";
+import { startPcm, stopPcm } from "./audio-pcm.mjs";
 
 const [PORT, PROF, OUT, STYLE = "broadcast"] = process.argv.slice(2);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -25,11 +27,14 @@ const ctx = await chromium.launchPersistentContext(PROF, {
 });
 const T0 = Date.now();
 const at = () => (Date.now() - T0) / 1000;
+await installAudioTap(ctx);   // the video's own sound (crowd, net, commentary): see audio-pcm.mjs
 const pg = ctx.pages()[0] || (await ctx.newPage());
 const errors = [];
 pg.on("pageerror", (e) => errors.push(e.message));
 await pg.goto(`http://localhost:${PORT}/star-goal-clips-dev`, { waitUntil: "domcontentloaded", timeout: 300000 });
-await wait(7000);
+await wait(1500);
+const pcm = await startPcm(pg, at).catch(() => null);
+await wait(5500);
 const rows = await pg.locator("[data-clip-row]").allInnerTexts();
 console.log("recordings", rows.length, rows[0]);
 await pg.locator("[data-clip-row]").first().click();
@@ -46,6 +51,7 @@ const start = at();
 await pg.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 await wait(22000);
 const marks = { start, end: at(), box, rows: rows.slice(0, 3), errors };
+try { if (pcm) marks.audioAt = await stopPcm(pg, path.join(OUT, "goal-video.wav"), pcm); } catch (e) { marks.audioErr = e.message; }
 fs.writeFileSync(path.join(OUT, "goal-video.json"), JSON.stringify(marks, null, 1));
 await ctx.close();
 const vids = fs.readdirSync(vidDir).map((f) => path.join(vidDir, f)).sort((a, z) => fs.statSync(z).size - fs.statSync(a).size);
