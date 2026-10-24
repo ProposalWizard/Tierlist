@@ -30,8 +30,8 @@ export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
       "version": "0.108",
       "title": "Leo's tonight build: celebrations, fast feed, bicycle kicks, Real Goals, season end, 17 bugs (on branch Leo, not live)",
       "publishedAt": "2026-10-22T23:15:00Z",
-      "updatedAt": "2026-10-24T04:10:00Z",
-      "updateNote": "After a match your goal and the highlights now play at once (your goal from the Goals list 9.5 s to 1.6 s on a slow phone), with before/after clips; earlier today: real-shot celebration clips, sound, banner options.",
+      "updatedAt": "2026-10-24T04:45:00Z",
+      "updateNote": "Every 2D celebration clip is now a real shot with the game's sound (aeroplane, tap to skip and the goal video added); the 3D clip is not filmed yet, and a blank screen seen after full time in 3D is being checked.",
       "artifactUrl": "https://claude.ai/artifact/PQvHUgssX7CAdad2jitPjA",
       "summary": "Leo v0.20, 22 Oct. What the 7 chats built from plan 0.107, joined on branch Leo. NOT live until Leo says push. Goal celebrations from the shop (run to the corner, skippable, in videos) and big late moments; the social feed opens in 0.29 s on a cheap phone (was 1.5 s) plus Goal of the Month; bicycle kicks; weather and pitch quality (test page only); Real Goals paths, 61 bangers, a daily goal, a fast home; a season video, a goals gallery, a 3D awards night; 17 bugs fixed, including refresh sending you Home. Harry: the match file and keeper were touched (additive, match tests pass); 6 team jobs. Mikey: 3 lines in manager.ts and an injuries plan for you.",
       "stats": [
