@@ -38,8 +38,8 @@ import type { PenaltyRunupId, FreeKickRunupId } from "@/lib/star/runupStyles";
  */
 export const COUNTDOWN_FROM = 3;
 export const COUNTDOWN_STEP_MS = 550;
-/** After the last stage: "A scout has spotted you", then on (a tap skips the wait). */
-const FINAL_BEAT_MS = 2600;
+/** After the last stage: "A scout has spotted you", and on when you tap. */
+// FINAL_BEAT_MS (2600 ms) is gone: the scout card waits for a tap.
 
 /**
  * ── v0.23: A TUTORIAL, THEN A SHOOTOUT, THEN "A SCOUT HAS SPOTTED YOU" ──
@@ -175,10 +175,9 @@ export default function TrialSequence({
     onTrial(next);
     setCount(COUNTDOWN_FROM);
     setShowingResult(which);
-    if (trialComplete(next)) {
-      // "A scout has spotted you", then on.
-      window.setTimeout(() => completeOnce(next), FINAL_BEAT_MS);
-    }
+    // "A scout has spotted you" waits for your tap (Mikey's playtest, 24 Oct
+    // 2026: "it should wait for me to press the button"). It used to move on
+    // by itself after FINAL_BEAT_MS.
   }, [trial, onTrial, completeOnce, onEnding]);
 
   // The 3-2-1 between stages: ticks down, then walks into the next stage.

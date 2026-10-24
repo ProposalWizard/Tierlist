@@ -1265,14 +1265,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // points lost to decay or age — see lib/star/trainingLevels.ts.
     const banked = applyLevelResult(career, trainingSkill, trainingLevel, stars).career;
     // The story's training day: each drill once, no energy, no session.
-    const dayFree = trainingDayOn(career) && trainingDayLeft(career).includes(trainingSkill);
+    // The story's two drills cost energy and sessions like any other (Mikey,
+    // 24 Oct 2026: "instead of costing no energy it will cost a regular amount").
+    const dayDrill = trainingDayOn(career) && trainingDayLeft(career).includes(trainingSkill);
     const updated: CareerState = {
       ...banked,
       // This is the "trained it" clock decaySkills reads — a session
       // resets it regardless of how much it actually gained, same as
       // real training: showing up is what keeps a skill maintained.
       lastTrainedWeek: { ...career.lastTrainedWeek, [trainingSkill]: career.week },
-      energy: dayFree ? career.energy : Math.max(0, career.energy - TRAINING_ENERGY_COST),
+      energy: Math.max(0, career.energy - TRAINING_ENERGY_COST),
       // Recomputed below, once this session's achievement checks (a fresh
       // "max-technique" unlock, say) are final.
       starRating: career.starRating,
@@ -1282,9 +1284,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     toastRatingChange(starsNow(career), starsNow(updated));
     // A training session, not one of the week's actions (week.ts). Counted
     // for the unlock chain too: two drills open the League.
-    setCareer(dayFree
-      ? recordTrainingDayDrill(recordDrill(updated, starStatus(career).total, starsNow(career)), trainingSkill)
-      : recordDrill(spendTrainingSession(updated), starStatus(career).total, starsNow(career)));
+    const drilled = recordDrill(spendTrainingSession(updated), starStatus(career).total, starsNow(career));
+    setCareer(dayDrill ? recordTrainingDayDrill(drilled, trainingSkill) : drilled);
     // v0.25 (game first): the first drill is a first step, and opens the
     // Shop (v0.25.1, Harry: "drop it from 2 forced training drills to 1").
     if (gameFirst(career) && !isStory(career) && career.unlocks!.drills + 1 === DRILLS_TO_OPEN_SHOP) {
@@ -1825,7 +1826,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // players would rather go straight back to the dashboard than always
     // pass through the phone screen. A simmed match (item 36) always goes
     // straight back home.
-    if (!lastMatchStats?.simmed && getPostMatchReactionsEnabled() && hasFreshMedia(career)) { setPhase("media"); return; }
+    // No reactions before you have a phone to read them on (Mikey's playtest, 24 Oct 2026).
+    if (!lastMatchStats?.simmed && getPostMatchReactionsEnabled() && hasFreshMedia(career) && isOpen(career, "phone")) { setPhase("media"); return; }
     continueAfterMatch(career, !pressQuestion);
   }, [career, continueAfterMatch, pressQuestion, lastMatchStats]);
 
@@ -2881,7 +2883,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // The story order: the cracked phone is open already; your own adds apps.
     if (base === "phone" && isStory(career)) {
       setCareer(recordPhoneBought(bought));
-      setChainPop({ label: "Your own phone", unlocked: "Social, Kickabout and Your house are on it" });
+      setChainPop({ label: "Your own phone", unlocked: "Kickabout and Your house are on it" });
       return;
     }
     if (base === "phone" && !isOpen(career, "phone")) {
@@ -3993,7 +3995,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           />
           {/* The first time: start at level 1 (v0.24, P2-56). */}
           {career.unlocks && !hasSeen(career, "level-tut") && (
-            <PointerTour key="level-tut" steps={LEVEL_TOUR} onDone={() => setCareer(c => (c ? markSeen(c, "level-tut") : c))} />
+            <PointerTour forced={!!career?.unlocks?.story} key="level-tut" steps={isStory(career) ? [{ ...LEVEL_TOUR[0], text: "" }] : LEVEL_TOUR} onDone={() => setCareer(c => (c ? markSeen(c, "level-tut") : c))} />
           )}
         </PitchScope>
       );
@@ -4291,7 +4293,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} onToggleLike={handleToggleLike} />
         {/* The first time: what this screen is (v0.24, P2-85). */}
         {career.unlocks && !hasSeen(career, "reactions-tut") && (
-          <PointerTour key="reactions-tut" steps={REACTIONS_TOUR} onDone={() => setCareer(c => (c ? markSeen(c, "reactions-tut") : c))} />
+          <PointerTour forced={!!career?.unlocks?.story} key="reactions-tut" steps={REACTIONS_TOUR} onDone={() => setCareer(c => (c ? markSeen(c, "reactions-tut") : c))} />
         )}
       </>
     );
@@ -4567,9 +4569,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           // The "?" replays the League's pointer; not while the first-visit one is up.
           onHelp={career.unlocks && !hasSeen(career, "league-intro") ? undefined : () => setHelpTour(HELP_TOURS.league)}
         />
-        {helpTour && <PointerTour key="help-league" steps={helpTour} onDone={() => setHelpTour(null)} />}
+        {helpTour && <PointerTour forced={!!career?.unlocks?.story} key="help-league" steps={helpTour} onDone={() => setHelpTour(null)} />}
         {career.unlocks && !hasSeen(career, "league-intro") && (
-          <PointerTour
+          <PointerTour forced={!!career?.unlocks?.story}
             key="league-screen"
             steps={LEAGUE_SCREEN_TOUR}
             onDone={() => {
@@ -4654,14 +4656,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           focus={shopFocus && shopFocus.phase === phase ? shopFocus : null}
         />
         )}
-        {helpTour && <PointerTour key="help-shop" steps={helpTour} onDone={() => setHelpTour(null)} />}
+        {helpTour && <PointerTour forced={!!career?.unlocks?.story} key="help-shop" steps={helpTour} onDone={() => setHelpTour(null)} />}
         {/* The story's first Shop visit: the cans, then the boots. */}
         {!helpTour && isStory(career) && shopLookNow === "new" && !hasSeen(career, "story-shop-tour")
-          ? <PointerTour key="story-shop" steps={STORY_SHOP_TOUR} onDone={() => setCareer(c => (c ? ["story-shop-tour", "help-cans", "help-boots"].reduce((a, k) => markSeen(a, k), c) : c))} />
-          : !helpTour && firstHelp(shopHelp) && <PointerTour key={`first-${shopHelp}`} steps={HELP_TOURS[shopHelp]} onDone={helpSeen(shopHelp)} />}
+          ? <PointerTour forced={!!career?.unlocks?.story} key="story-shop" steps={STORY_SHOP_TOUR} onDone={() => setCareer(c => (c ? ["story-shop-tour", "help-cans", "help-boots"].reduce((a, k) => markSeen(a, k), c) : c))} />
+          : !helpTour && firstHelp(shopHelp) && <PointerTour forced={!!career?.unlocks?.story} key={`first-${shopHelp}`} steps={HELP_TOURS[shopHelp]} onDone={helpSeen(shopHelp)} />}
         {/* The phone flashes; one line says what it is (Harry, P102). */}
         {kind === "lifestyle" && !firstHelp(shopHelp) && career.unlocks && !isOpen(career, "phone") && !hasSeen(career, "phone-tip") && (
-          <PointerTour
+          <PointerTour forced={!!career?.unlocks?.story}
             key="phone-tip"
             steps={[{ target: "phone-tile", text: "Your phone — messages, social media and an App Store" }]}
             onDone={() => setCareer(c => (c ? markSeen(c, "phone-tip") : c))}
@@ -4775,7 +4777,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   if (phase === "sponsors") return (
     <>
       {withBar(<SponsorsScreen career={career} onBack={handleBackToDashboard} act={sponsorActions} />)}
-      {firstHelp("sponsors") && <PointerTour key="first-sponsors" steps={HELP_TOURS.sponsors} onDone={helpSeen("sponsors")} />}
+      {firstHelp("sponsors") && <PointerTour forced={!!career?.unlocks?.story} key="first-sponsors" steps={HELP_TOURS.sponsors} onDone={helpSeen("sponsors")} />}
       {sponsorNote && (
         <div className="pointer-events-none fixed inset-x-0 top-3 z-[90] mx-auto w-fit max-w-[90%] rounded-xl border border-amber-300 bg-gray-950 px-4 py-2 text-center text-[13px] font-black text-white shadow-[0_0_18px_rgba(251,191,36,.45)]">{sponsorNote}</div>
       )}
@@ -4832,8 +4834,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           top={career.unlocks ? <UnlockChallenges career={career} onGo={goStep} /> : undefined}
         />)}
         {career.unlocks && (firstHelp("achievements")
-          ? <PointerTour key="first-achievements" steps={HELP_TOURS.achievements} onDone={helpSeen("achievements")} />
-          : stepPrompt && <PointerTour key={`step-${step?.id ?? "sponsors"}`} steps={stepTour(stepPrompt)} onDone={() => {}} />)}
+          ? <PointerTour forced={!!career?.unlocks?.story} key="first-achievements" steps={HELP_TOURS.achievements} onDone={helpSeen("achievements")} />
+          : stepPrompt && <PointerTour forced={!!career?.unlocks?.story} key={`step-${step?.id ?? "sponsors"}`} steps={stepTour(stepPrompt)} onDone={() => {}} />)}
       </>
     );
   }
@@ -4911,8 +4913,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   if (phase === "settings") {
     return (
       <>
-      {helpTour && <PointerTour key="help-settings" steps={helpTour} onDone={() => setHelpTour(null)} />}
-      {!helpTour && firstHelp("settings") && <PointerTour key="first-settings" steps={HELP_TOURS.settings} onDone={helpSeen("settings")} />}
+      {helpTour && <PointerTour forced={!!career?.unlocks?.story} key="help-settings" steps={helpTour} onDone={() => setHelpTour(null)} />}
+      {!helpTour && firstHelp("settings") && <PointerTour forced={!!career?.unlocks?.story} key="first-settings" steps={HELP_TOURS.settings} onDone={helpSeen("settings")} />}
       <SettingsScreen
         career={career}
         onBack={settingsFromTitle ? handleExitToTitle : handleBackFromSettings}
@@ -5114,7 +5116,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // The story's training day: the pointer walks you through Power, then Technique.
     if (onTraining && trainingDayOn(career)) {
       const left = trainingDayLeft(career);
-      return { key: `day-${left[0]}`, steps: trainingDayTour(left[0], left.length, TRAINING_DAY.length), onDone: seen("help-training") };
+      return { key: `day-${left[0]}`, steps: [{ ...trainingDayTour(left[0], left.length, TRAINING_DAY.length)[0], text: "" }], onDone: seen("help-training") };
+    }
+    // Both drills done: the finger on Home, where the club shop's offer waits.
+    if (onTraining && isStory(career) && hasSeen(career, "beat-training") && trainingDayLeft(career).length === 0 && !hasSeen(career, "beat-candeal")) {
+      return { key: "day-done", steps: [{ target: "home", text: "", press: true }], onDone: () => {} };
     }
     // Training (P2-56, P2-63, P2-65): what it is, each drill, then Power.
     if (onTraining && !hasSeen(career, "help-training")) return { key: "training", steps: TRAINING_TOUR, onDone: seen("help-training") };
@@ -5134,7 +5140,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const bossNow = step?.id === "boss-meeting" && canAct(career);
     if (onRelations && !hasSeen(career, "help-relations")) {
       // v0.25.1: what the page is and what the bars do, then (training next) "Tap Training".
-      return { key: "relations", steps: bossNow ? [...HELP_TOURS.relations.slice(0, -1), ...BOSS_MEETING_TOUR] : relationsTour(gameFirst(career) && step?.id === "first-two-sessions"), onDone: seen("help-relations", ...(bossNow ? ["boss-tour"] : [])) };
+      return { key: "relations", steps: bossNow ? [...HELP_TOURS.relations, ...BOSS_MEETING_TOUR] : relationsTour(gameFirst(career) && step?.id === "first-two-sessions"), onDone: seen("help-relations", ...(bossNow ? ["boss-tour"] : [])) };
     }
     if (onRelations && bossNow && !hasSeen(career, "boss-tour")) return { key: "boss-meeting", steps: BOSS_MEETING_TOUR, onDone: seen("boss-tour") };
     // The boss met: the Shop, and the phone in it.
@@ -5166,16 +5172,16 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const goBeat = (b: Beat) => {
     setCareer(c => (c ? ackBeat(c, b) : c));
     const point = (target: string, text: string) => setHelpTour([{ target, text, press: true }]);
+    // Pointers with no words: the finger and the glow say it (Mikey's playtest, 24 Oct 2026).
     if (b === "boss") handleOpenRelationshipGame("boss");
-    else if (b === "training") point("nav-training", "Tap Training");
-    else if (b === "ready") point("nav-play", "Next game. Tap Play");
-    else if (b === "starpass") point("rating", "Tap your star level");
-    else if (b === "can") point("can-use-basic", "Tap Use to drink it");
-    else if (b === "phone") handleNavigate("media");
-    // The swipe hints are words, not buttons (a pointer there could not be
-    // pressed), so these go straight in; each page's own tour takes over.
+    else if (b === "training") point("nav-training", "");
+    else if (b === "starpass") point("rating", "");
+    else if (b === "can") point("can-use-basic", "");
+    // The phone is yours now: the finger points at it, you open it.
+    else if (b === "phone") point("nav-phone", "");
     else if (b === "shop") { setActiveNav("home"); setPhase(shopLookNow === "new" ? "shop-kib" : "dashboard"); if (shopLookNow !== "new") setHomePage(2); }
-    else if (b === "stats") { setActiveNav("home"); setPhase("dashboard"); setHomePage(0); }
+    // "Got it", then the finger on the words that lead to your card.
+    else if (b === "stats") point("tab-0", "");
     // The offer is in your messages: the phone, then Messages, then the offer.
     else if (b === "sponsor") {
       handleNavigate("media");
@@ -5250,7 +5256,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       {/* v0.25.1: the tour goes first. Each used to wait for the other, so with
           both due after game 1 (the boss prompt and the set-piece word)
           neither showed. The manager's word waits for the tour (!tour below). */}
-      {tour && <PointerTour key={tour.key} steps={tour.steps} skippable={tour.skippable} onDone={tour.onDone} />}
+      {tour && <PointerTour forced={!!career?.unlocks?.story} key={tour.key} steps={tour.steps} skippable={tour.skippable} onDone={tour.onDone} />}
       {swipeActive && newsQueue.length > 0 && !chainPop && newStar === null && (
         <BreakingNews key={newsQueue[0].headline} news={newsQueue[0]} onClose={() => setNewsQueue(q => q.slice(1))} />
       )}

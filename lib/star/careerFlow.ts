@@ -256,7 +256,9 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
     // The story order (every new career): no boots until a team-mate hands
     // you his old pair before your first game (story.ts, the "boots" beat).
     currentBoot: { ...starterBoot, matches: 0 },
-    kibCans: { basic: 2, premium: 0, elite: 0 },
+    // No KIB cans either: the first one is the club shop's half-price offer
+    // after your first training (story.ts, Mikey 24 Oct 2026).
+    kibCans: { basic: 0, premium: 0, elite: 0 },
     ownedItems: [],
     girlfriend: null,
     sponsors: SPONSOR_CATEGORIES.map((c) => ({ category: c, active: false })),

@@ -239,7 +239,9 @@ export default function TrialShootout({
     <div className="w-full">
       <ShootoutCard rig={rig} upNext={upNext} />
       <div className="relative">
-        <EngineFeature
+        {/* The first team-mate waits until you have read how it works (Mikey's
+            playtest, 24 Oct 2026: "why is he playing when I'm reading it?"). */}
+        {showTeach ? <div aria-hidden className="mx-auto w-full rounded-xl bg-emerald-800/60" style={{ aspectRatio: "9 / 14" }} /> : <EngineFeature
           openOn={openOn}
           onChanceResolved={onChanceResolved}
           skills={skills}
@@ -256,7 +258,7 @@ export default function TrialShootout({
           seed={seed}
           scene={{ teammates: false }}
           penaltyRunup={penaltyRunup}
-        />
+        />}
         {showTeach && (
           <TeachCard
             headline="Three kicks each. Yours is the last one."

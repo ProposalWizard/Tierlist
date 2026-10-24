@@ -63,9 +63,12 @@ function Hand({ down }: { down: boolean }) {
   );
 }
 
-export default function PointerTour({ steps, onDone, skippable = false }: {
+export default function PointerTour({ steps, onDone, skippable = false, forced = false }: {
   steps: TourStep[];
   onDone: () => void;
+  /** No "Later" on a press step: you have to do it (the story's first hour,
+   *  Mikey's playtest 24 Oct 2026: "this should be forceful"). */
+  forced?: boolean;
   /** A small Skip in the corner (the welcome tour has one; a replayed help tour just ends). */
   skippable?: boolean;
 }) {
@@ -218,7 +221,9 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
         />
         {place !== "inside" && <div className="kit-hand-bob fixed pointer-events-none" style={handStyle}><Hand down={above} /></div>}
       </>)}
-      <div
+      {/* A press step with no words is the finger and the glow alone (Mikey:
+          "we have enough with the finger being pointed there"). */}
+      {!(press && !step.text) && <div
         key={i}
         ref={bubbleRef}
         className="kit-rise fixed rounded-[6px] px-3 py-2.5 text-white"
@@ -226,7 +231,7 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
         onClick={press ? undefined : next}
       >
         <div className="text-[16px] font-black leading-snug">{step.text}</div>
-        {press && (
+        {press && !forced && (
           <div className="mt-1 flex justify-end">
             <button onClick={(e) => { e.stopPropagation(); setLater(true); }} className="kib-press text-[11px] font-black uppercase tracking-widest text-white/70">Later</button>
           </div>
@@ -239,7 +244,7 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
             {!press && <span className="text-[12px] font-black uppercase tracking-widest text-amber-300">{last ? "Got it" : "Next ▸"}</span>}
           </div>
         )}
-      </div>
+      </div>}
     </div>,
     document.body,
   );
