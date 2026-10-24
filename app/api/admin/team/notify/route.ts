@@ -37,6 +37,7 @@ import {
 } from "@/lib/teamRoom/notify";
 import { pushReady, ring, rungJobsOf, rungPatchesOf, saveRungJobs, saveRungPatches, teamAccounts } from "@/lib/teamRoom/notifyServer";
 import { patchesToRing, payloadForPatches, withRungPatches } from "@/lib/teamRoom/inbox";
+import { patchReadKey } from "@/lib/teamRoom/extras";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
 
 export const dynamic = "force-dynamic";
@@ -109,17 +110,17 @@ export async function POST(req: Request) {
 
   // New patch notes in the archive this deploy carries: one buzz each person, once per version.
   if (body.patches === true) {
-    const notes = BUILT_IN_PATCH_NOTES.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
+    const notes = BUILT_IN_PATCH_NOTES.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt, updatedAt: n.updatedAt, updateNote: n.updateNote }));
     const people = (Object.keys(accounts) as TeamPerson[]);
     const had: Partial<Record<TeamPerson, string[]>> = {};
     await Promise.all(people.map(async (p) => { had[p] = await rungPatchesOf(sb, accounts[p]!); }));
     const todo = patchesToRing(notes, Date.now(), had)
       .filter((t) => accounts[t.person])
-      .map((t) => ({ ...t, notes: t.notes.filter((n) => rungBefore.first(`p:${t.person}:${n.version}`)) }))
+      .map((t) => ({ ...t, notes: t.notes.filter((n) => rungBefore.first(`p:${t.person}:${patchReadKey(n)}`)) }))
       .filter((t) => t.notes.length);
     if (!todo.length) return NextResponse.json({ ok: true, sent: 0, patches: 0 });
     // Mark them first: two phones asking at once must not ring twice.
-    await Promise.all(todo.map((t) => saveRungPatches(sb, accounts[t.person]!, withRungPatches(had[t.person], t.notes.map((n) => n.version)))));
+    await Promise.all(todo.map((t) => saveRungPatches(sb, accounts[t.person]!, withRungPatches(had[t.person], t.notes.map((n) => patchReadKey(n))))));
     const d = await ring(sb, accounts, todo.map((t) => ({ person: t.person, payload: payloadForPatches(t.notes) })));
     return NextResponse.json({ ok: true, patches: todo.reduce((n, t) => n + t.notes.length, 0), ...d });
   }

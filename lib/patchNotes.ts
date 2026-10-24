@@ -104,6 +104,8 @@ export interface PatchNote {
   sections: PatchSection[];
   artifactUrl: string | null;
   updatedAt: string | null;
+  /** What the last update changed, one line (shown in green on the archive). Set with updatedAt. */
+  updateNote?: string;
 }
 
 /* ── Colours ──────────────────────────────────────────────────────────────
