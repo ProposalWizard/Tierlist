@@ -6005,7 +6005,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     runOnRef.current = null;
     setLeadInOn(false);
     if (leadCapRef.current !== null) { leadCapRef.current = null; setLeadCap(null); }
-    baseViewportRef.current = { ...viewportRef.current };
+    // The build-up's own camera at its end. (Not viewportRef: the frame loop
+    // has already put that back on the chance's frame before the lead-in
+    // steps, so copying it jumped the camera 6.9 m onto the OFFSIDE frame —
+    // filmed, Harry's 0.108h note "the camera can move in multiple movements".)
+    baseViewportRef.current = { ...L.cam.at(L.lead.durS, baseViewportRef.current) };
+    viewportRef.current = baseViewportRef.current;
     try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
     const sc = scenarioRef.current;
     setOutcome("offside");
