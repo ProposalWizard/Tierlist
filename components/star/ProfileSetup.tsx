@@ -11,6 +11,7 @@ import {
   MIN_SQUAD_NUMBER, MAX_SQUAD_NUMBER, clampSquadNumber,
 } from "@/lib/star/playerIdentity";
 import PortraitPicker from "./PortraitPicker";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 interface Props {
   onComplete: (player: StarPlayer, clubs: string[], division: CareerDivision) => void;
@@ -106,6 +107,7 @@ const DEFAULT_PREFERRED_NUMBER = 9;
 type SetupPane = "who" | "style";
 
 export default function ProfileSetup({ onComplete, onMainMenu }: Props) {
+  const fixesOn = useLeoUpdate("bugFixes"); // Leo's 24 Oct update; off = the old look
   const [step, setStep] = useState<1 | 2>(1);
   const [pane, setPane] = useState<SetupPane>("who");
   const [firstName, setFirstName] = useState("");
@@ -259,7 +261,7 @@ export default function ProfileSetup({ onComplete, onMainMenu }: Props) {
             {/* Three screens, counted as three: details, style, photo. The
                 count used to follow `step` (1-2), so details and style both
                 read "Step 1 of 2" (playtest, 22 Oct 2026). */}
-            Step {step === 2 ? 3 : pane === "who" ? 1 : 2} of 3
+            {fixesOn ? <>Step {step === 2 ? 3 : pane === "who" ? 1 : 2} of 3</> : <>Step {step} of 2</>}
             {step === 1 && (
               <span className="text-emerald-400/70"> · {pane === "who" ? "your details" : "your style"}</span>
             )}

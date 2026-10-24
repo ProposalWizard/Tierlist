@@ -2,7 +2,7 @@ import type { CareerDivision } from "./calendar";
 import { matchweeksFor } from "./calendar";
 import { offerWageFor, offerStanding, weeklyWageFor } from "./economy";
 import { startNegotiation, type NegotiationState } from "./negotiation";
-import { trialStagesFor, trialScore, type TrialProgress, type TrialStage } from "./trial";
+import { STAGE_LABEL, trialStagesFor, trialScore, type TrialProgress, type TrialStage } from "./trial";
 
 /**
  * THE CONVERSATION BEFORE THE CONTRACT.
@@ -191,8 +191,12 @@ export function managerTalkFor(args: {
   clubStrength: number;
   playerFirstName: string;
   rng: () => number;
+  /** Leo's 24 Oct update, bug fixes (read by the caller): "Your first touch
+   *  is…" instead of the drill title ("The through the gate is…"). */
+  scoutNouns?: boolean;
 }): ManagerTalk {
   const { trial, club, division, clubStrength, playerFirstName, rng } = args;
+  const stageWord = (st: TrialStage) => args.scoutNouns ? `Your ${SCOUT_STAGE_NOUN[st]}` : `The ${STAGE_LABEL[st].toLowerCase()}`;
   const score = trialScore(trial);
   const { best, worst } = bestAndWorst(trial);
 
@@ -212,12 +216,12 @@ export function managerTalkFor(args: {
 
   const onBest = best
     ? score >= 50
-      ? `Your ${SCOUT_STAGE_NOUN[best]} — that is the bit I keep thinking about.`
-      : `Your ${SCOUT_STAGE_NOUN[best]} was the one thing that stood up.`
+      ? `${stageWord(best)} — that is the bit I keep thinking about.`
+      : `${stageWord(best)} was the one thing that stood up.`
     : "";
 
   const onWorst = worst
-    ? `Your ${SCOUT_STAGE_NOUN[worst]} is nowhere near it yet. We would work on that every day.`
+    ? `${stageWord(worst)} is nowhere near it yet. We would work on that every day.`
     : "";
 
   const onClub = `We are ${club}. You would be training with us from Monday.`;

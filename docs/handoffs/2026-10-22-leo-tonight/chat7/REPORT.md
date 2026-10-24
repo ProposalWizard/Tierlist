@@ -127,3 +127,11 @@ For signed-in players on the live site, the start-up wipe mostly hit an empty ke
 
 ## Files touched
 `app/star-dev/page.tsx` (refresh fix, one tip line) · `lib/star/{clubLogos,breakingNews,transferInterest,careerOverview,hallRecords,farewell,manager,careerFlow,signingTalk,tours}.ts` · `components/star/{NegotiationScreen,LineupIntro,VersusScreen,MatchdayScreen,HallOfFame,PointerTour,ProfileSetup,MiniLeague,IntlKit,TransferHub}.tsx` · tests listed above · `team/jobs.json` · stills in this folder. No match-engine file was touched.
+
+## 24 Oct: behind Leo's switch
+Leo, 24 Oct: everything goes to main hidden behind Settings → Updates → "Leo's 24 Oct update" (`lib/star/leoUpdate.ts`). Switch off = the game exactly as before.
+- **Behind "Bug fixes (17)":** the 16 game fixes above. Screens read `useLeoUpdate("bugFixes")`; game rules get the switch from their caller and default to the old way (`advanceSeason` noSackAfterPromotion, `windowInterest` step3Promoted, `managerTalkFor` scoutNouns, `careerOverview` / `hallRecordBook` / `farewellSides` calendarYears). Their tests check both sides.
+- **Left on:** the admin tab placer (#17), an admin tool only. The 3 test-only fixes need no switch.
+- **Main moved under them:** the welcome tip's "in N days" only applies outside Mikey's story start (the story keeps its own "Your first game is next"). Stats (rebuilt) still uses the career overview, so its season years follow the switch. The new goals list has its own season labels, left alone. Nothing became moot.
+- **Seen (production build, phone size):** `gate/setup-off-vs-on.jpg` ("Step 1 of 2" → "Step 2 of 3"), `gate/refresh-ballondor-off-vs-on.jpg` (Home → back on the ceremony).
+- **Checks:** tsc clean, one-engine guard and production build passed, 28 test files passed, 20-season soak all held.

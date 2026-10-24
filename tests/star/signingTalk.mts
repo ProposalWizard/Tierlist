@@ -218,8 +218,14 @@ function trialAt(quality: number, seed = 4242) {
     });
     const talk = managerTalkFor({
       trial: t, club: clubsForDivision("league_two")[0], division: "league_two",
+      clubStrength: 55, playerFirstName: "Sam", rng: mulberry32(3), scoutNouns: true,
+    });
+    // Switch off (Leo's 24 Oct update): the old wording, drill titles and all.
+    const old = managerTalkFor({
+      trial: t, club: clubsForDivision("league_two")[0], division: "league_two",
       clubStrength: 55, playerFirstName: "Sam", rng: mulberry32(3),
     });
+    if (old.worst) check(old.lines.some(l => l.startsWith("The ") && l.includes("is nowhere near")), `switch off: the old "The …" wording (${old.worst})`);
     for (const line of talk.lines) {
       check(!/\bThe (through the gate|take him on|find the pass|free kicks|penalty shootout)\b/i.test(line),
         `scout line uses a drill title as a noun: "${line}"`);
