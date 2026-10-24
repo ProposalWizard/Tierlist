@@ -68,6 +68,9 @@ if (CLIP === "setup") {
 }
 
 // The game's own sound, recorded inside the page (audio-tap.mjs); the cut puts it under the clip.
+// The match's sound is all Web Audio. Keep <video> elements (the post-match feed's goal videos)
+// out of the tap: routing them through it crashed the page at full time here.
+await ctx.addInitScript(() => { window.addEventListener("play", (e) => { if (e.target instanceof HTMLMediaElement) e.stopPropagation(); }, true); });
 await installAudioTap(ctx);
 // Open on the seed, the move equipped, the view chosen.
 const seed = JSON.parse(fs.readFileSync(SEED, "utf8"));
