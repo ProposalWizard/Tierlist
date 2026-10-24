@@ -108,6 +108,14 @@ export function pressQuestionFor(
       "“They went in. That's all that matters.”");
   }
 
+  // A bicycle kick (bicycle.ts): the same press moment as a hat-trick.
+  if (stats.goalEvents?.some((g) => g.isUserGoal && g.how === "bicycle")) {
+    return standard("bicycle-kick", "OVERHEAD KICK", "A bicycle kick. Had you practised that?", 1.2,
+      "“Every day. I knew it was coming.”",
+      "“The cross was perfect. I just had to believe.”",
+      "“Honestly? I just threw myself at it.”");
+  }
+
   // A cheeky kick that didn't come off (see penaltyRunup.ts's cheekyStrike) —
   // the papers want to know if it was arrogance. It also costs a little
   // reputation (reputation.ts, `cheekyMiss`) whatever you say here.

@@ -1,4 +1,5 @@
 "use client";
+import { protectedClipIds } from "@/lib/star/goalLog";
 import { preloadScene } from "@/lib/star/three3d/perf";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
 import { pitchFont } from "@/components/star/ui/pitchFont";
@@ -225,6 +226,10 @@ const FreeAgentShell = lazyScreen(() => import("@/components/star/FreeAgentShell
 const TrialReward = lazyScreen(() => import("@/components/star/TrialReward"));
 const LadderScreen = lazyScreen(() => import("@/components/star/LadderScreen"));
 const SeasonAwardsScreen = lazyScreen(() => import("@/components/star/SeasonAwardsScreen"));
+// The season awards as a night in a small hall, then the screen above (Leo, 22 Oct 2026).
+const SeasonAwardsNight = lazyScreen(() => import("@/components/star/SeasonAwardsNight"));
+// "Your season": every goal of the season in one video (Leo, 22 Oct 2026).
+const SeasonReel = lazyScreen(() => import("@/components/star/SeasonReel"));
 const PotmWinModal = lazyScreen(() => import("@/components/star/PotmWinModal"));
 const LineupIntro = lazyScreen(() => import("@/components/star/LineupIntro"));
 const MatchWeek = lazyScreen(() => import("@/components/star/MatchWeek"));
@@ -279,7 +284,7 @@ const CaptainInOffice = lazyScreen(() => import("@/components/star/ManagerMoment
 const LAZY_PRELOAD = [
   VersusScreen, MatchWeek, LineupIntro, SettingsScreen, LadderScreen, MediaFeed, PressConference,
   TrainingLevelSelect, TrainingMinigame, TrainingPitchScreen, CupDrawReveal, KnockoutRoundup, PlayOffRoundup,
-  DeadlineDayRoundup, SeasonAwardsScreen, BallonDor, BallonDorNight, PotmWinModal, DilemmaModal,
+  DeadlineDayRoundup, SeasonAwardsScreen, SeasonAwardsNight, SeasonReel, BallonDor, BallonDorNight, PotmWinModal, DilemmaModal,
   ShowroomShop, Shop, CareerStore, AchievementsScreen, TrophiesScreen, ReputationScreen, SponsorsScreen,
   TransferHub, TransferSigning, RelegationMove, NegotiationScreen, LoanBrief, YouthTeam,
   ContractInOffice, ManagerNewsInOffice, CaptainInOffice, GlobalSettingsScreen, Casino, Investments,
@@ -745,7 +750,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   useEffect(() => {
     const init = async () => {
-      setHydrated(true);
+      // NOT hydrated here: loadCareerIntoState sets it once the phase is
+      // decided. Set here, the "profile-setup" first render wrote over (in
+      // practice REMOVED) the saved resumable phase before it was read.
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -1248,6 +1255,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     void putClip(track).then(() => {
       const c = careerForClipsRef.current;
       const keep = new Set([...(c?.savedReplays ?? []), ...(c?.recentGoals ?? [])].map(r => r.clipId).filter((x): x is string => !!x));
+      // A season's goals until its reel is made, and the career's best 10 (goalLog.ts).
+      for (const id of protectedClipIds(c)) keep.add(id);
       return pruneClips(keep);
     });
   }, []);
@@ -1645,6 +1654,13 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const next = { ...awarded, lastSeasonAwardStats: computeSeasonAwardStats(awarded) };
     setCareer(next);
     setActiveNav(null);
+    // "Your season" first, then the Ballon d'Or (handleReelDone).
+    setPhase("season-reel");
+  }, []);
+  // The reel was watched or skipped: its recordings may now be pruned
+  // (goalLog.ts protectedClipIds), and on to the Ballon d'Or.
+  const handleReelDone = useCallback(() => {
+    setCareer(c => (c ? { ...c, reelDoneSeason: c.season } : c));
     setPhase("ballon-dor");
   }, []);
   const handleSeasonEnd = useCallback(() => {
@@ -2197,6 +2213,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setPhase("transfer-signing");
   }, [phase]);
 
+  // A refresh on the signing screen goes back to the list the club came
+  // from, like a refresh in the talks does: the agreed deal is React state
+  // only, so the talks are had again. Runs after the phase save above (same
+  // commit, declared later), which has just removed the record for
+  // "transfer-signing"; left removed, the reload landed on Home with the
+  // season over and the window gone.
+  useEffect(() => {
+    if (!hydrated || phase !== "transfer-signing" || !pendingSignOffer) return;
+    saveStarPhase(pendingSignOffer.wasRelegationMove ? "relegation-move" : "season-transfer",
+      slotScope(scopeRef.current, activeSlotRef.current), undefined, wonBallonDor);
+  }, [hydrated, phase, pendingSignOffer, wonBallonDor]);
+
   const handleSigningDone = useCallback(() => {
     if (!career || !pendingSignOffer) return;
     const { offer, wasRelegationMove } = pendingSignOffer;
@@ -2216,7 +2244,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // talking about you and your old rival who has stopped caring.
     moved.media = generateForCareer(moved,
       { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.transferFee ?? offer.signingFee }, "transfer");
-    pushNews(signingNews(moved, offer.club));
+    // The card shows over next season: the new club's league, next season's age.
+    pushNews(signingNews(moved, offer.club, { division: offer.division ?? divisionOf(career), age: moved.player.age + 1 }));
     setCareer(moved);
     setTransferOffers([]);
     setPendingSignOffer(null);
@@ -2438,7 +2467,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    */
   // `chosen`: the copy the player picked on SaveClashPrompt — load exactly
   // that, without asking the cloud again.
-  const loadCareerIntoState = useCallback(async (slot: number, chosen?: CareerState) => {
+  // Returns "clash" when nothing was loaded yet (see loadCareerIntoState below).
+  const loadCareerAndDecidePhase = useCallback(async (slot: number, chosen?: CareerState): Promise<"clash" | void> => {
     setCloudLoading(true);
     resetTransientState();
     const scope = slotScope(scopeRef.current, slot);
@@ -2454,7 +2484,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         setCareer(null);
         setSaveClash(outcome.clash);
         setCloudLoading(false);
-        return;
+        return "clash";
       }
       saved = outcome.career;
     }
@@ -2603,8 +2633,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // stuck there for good.
     const pending = loadStarPhase(scope);
     const seasonOver = saved.fixtures.every((f) => f.played);
+    if (pending?.phase === "season-reel" && seasonOver) {
+      setActiveNav(null);
+      setPhase("season-reel");
+      return;
+    }
     if (pending?.phase === "ballon-dor" && seasonOver) {
       setPhase("ballon-dor");
+      return;
+    }
+    if (pending?.phase === "season-awards" && saved.lastSeasonAwardStats) {
+      setActiveNav(null);
+      setPhase("season-awards");
       return;
     }
     if (pending?.phase === "contract-renewal") {
@@ -2655,6 +2695,21 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setPhase("dashboard");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * The phase save (the effect that calls saveStarPhase) stays shut while a
+   * save is being loaded, and opens only once the load has DECIDED the phase.
+   * Opened any earlier, it wrote the phase on screen before the load
+   * ("profile-setup" at start-up; the old save's phase on a slot switch)
+   * into the slot being loaded, which REMOVES the resumable phase a refresh
+   * must return to. A save clash keeps it shut until the player picks a copy
+   * (the pick loads again, and opens it).
+   */
+  const loadCareerIntoState = useCallback(async (slot: number, chosen?: CareerState) => {
+    setHydrated(false);
+    const outcome = await loadCareerAndDecidePhase(slot, chosen);
+    if (outcome !== "clash") setHydrated(true);
+  }, [loadCareerAndDecidePhase]);
 
   // Sends whatever the OUTGOING save has right now to the cloud immediately,
   // rather than trusting the cloud-save effect's 3 s debounce to still be
@@ -3946,7 +4001,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "season-awards" && career?.lastSeasonAwardStats) {
-    return <SeasonAwardsScreen career={career} onContinue={handleSeasonAwardsContinue} />;
+    return <SeasonAwardsNight career={career} onContinue={handleSeasonAwardsContinue} />;
   }
 
   if (phase === "ladder" && career?.ladderNews) {
@@ -4442,6 +4497,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         counterpartLabel={talkOffer.club}
         kicker="Contract talks"
         valueLabel="Their wage offer, per week"
+        valueIsTheirOffer
         note="Every number here is a weekly wage."
         onDone={(finalWeekly) => {
           const weekly = finalWeekly === null ? null : Math.max(wageFloorFor(talkOffer.club, talkDivision), Math.round(finalWeekly));
@@ -4473,6 +4529,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return <PressConference question={pressQuestion} onAnswer={handlePressAnswer} />;
   }
 
+  if (phase === "season-reel") {
+    return <SeasonReel career={career} onDone={handleReelDone} />;
+  }
   if (phase === "ballon-dor") {
     return <BallonDorNight career={career} onContinue={handleBallonDorContinue} />;
   }
@@ -5056,7 +5115,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const seen = (...keys: string[]) => () => setCareer(c => (c ? keys.reduce((acc, k) => markSeen(acc, k), c) : c));
     // v0.25: energy explained here, at the very start; then "You've got a game
     // today" (game first) — no Skip, so Play is never missed.
-    if (onHome && !hasSeen(career, "tutorial")) return { key: "welcome", steps: welcomeTour(gameFirst(career)), skippable: !gameFirst(career), onDone: seen("tutorial", "help-home", "play-tip") };
+    if (onHome && !hasSeen(career, "tutorial")) return { key: "welcome", steps: welcomeTour(gameFirst(career), nextFixture ? daysToNext(career, nextFixture) : 0), skippable: !gameFirst(career), onDone: seen("tutorial", "help-home", "play-tip") };
     // Training (P2-56, P2-63, P2-65): what it is, each drill, then Power.
     if (onTraining && !hasSeen(career, "help-training")) return { key: "training", steps: TRAINING_TOUR, onDone: seen("help-training") };
     if (onTraining && !gameFirst(career) && career.unlocks.drills === 1 && !hasSeen(career, "drill1-msg")) return { key: "one-more", steps: ONE_MORE_DRILL_TOUR, onDone: seen("drill1-msg") };

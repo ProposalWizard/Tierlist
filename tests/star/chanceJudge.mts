@@ -156,8 +156,12 @@ function signature(list: Served[]): string {
  *  same reason the play-on fingerprints were re-pinned in 185fba28.
  *  Re-measured 20 Oct 2026 (was 239:bf6f261), B10: headers and volleys joined
  *  the even bag (lib/star/kindMix.ts), which Old deals. Checked: the same code
- *  with the two left out of the bag still gives 239:bf6f261. */
-const OLD_SIGNATURE = "239:e7c688f6";
+ *  with the two left out of the bag still gives 239:bf6f261.
+ *  Re-measured 22 Oct 2026 (was 239:e7c688f6), bug hunt: 712caeb3 (licensed
+ *  numbers re-sourced to free data: back-line shape, keeper depth, real mix)
+ *  moved it. Checked: its parent 712caeb3^ still gives 239:e7c688f6, and
+ *  712caeb3 itself gives 239:9e68dc38, so that data swap is the whole change. */
+const OLD_SIGNATURE = "239:9e68dc38";
 
 const pct = (n: number, d: number) => (d ? `${((100 * n) / d).toFixed(1)}%` : "  —  ");
 function stats(list: Served[]) {

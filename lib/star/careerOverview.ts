@@ -18,7 +18,7 @@
  * as `undefined`, never as a guess, and the screen shows it blacked out.
  */
 import type { CareerState, FarewellRecord, SeasonHistoryRow, Trophy } from "./types";
-import type { CareerDivision } from "./calendar";
+import { seasonStartYear, type CareerDivision } from "./calendar";
 import { careerVerdict, type CareerVerdict } from "./retirement";
 import { allSeasons } from "./careerRecords";
 import { ACHIEVEMENTS } from "./achievements";
@@ -27,15 +27,16 @@ import { fameOf } from "./fame";
 
 // ── Labels ───────────────────────────────────────────────────────────────────
 
-/** "26/27" — season 1 is the start year's season. */
+/** "26/27". `startYear` is the FIFA edition (2027 = the 2026/27 season), so
+ *  the calendar's seasonStartYear names the year, like every other screen. */
 export function shortSeason(startYear: number, season: number): string {
-  const y = startYear + season - 1;
+  const y = seasonStartYear(startYear, season);
   return `${String(y).slice(2)}/${String(y + 1).slice(2)}`;
 }
 
 /** "2026/27". */
 export function longSeason(startYear: number, season: number): string {
-  const y = startYear + season - 1;
+  const y = seasonStartYear(startYear, season);
   return `${y}/${String(y + 1).slice(2)}`;
 }
 
@@ -242,8 +243,8 @@ function yearsSpan(startYear: number, seasons: number[]): string {
     else runs.push([s, s]);
   }
   return runs.map(([a, b]) => {
-    const from = startYear + a - 1;
-    const to = startYear + b;
+    const from = seasonStartYear(startYear, a);
+    const to = seasonStartYear(startYear, b) + 1;
     return `${from}–${String(to).slice(2)}`;
   }).join(" · ");
 }
@@ -479,14 +480,15 @@ export function careerOverview(career: CareerState): CareerOverviewData {
   } : undefined;
 
   const firstHistory = (career.seasonHistory ?? []).map(r => r.season).sort((a, b2) => a - b2)[0];
-  const lastYear = startYear + lastSeason;
+  const firstYear = seasonStartYear(startYear, 1);
+  const lastYear = seasonStartYear(startYear, lastSeason) + 1;
 
   return {
     name: `${career.player.firstName} ${career.player.lastName}`,
     nation: career.player.nationality,
     position: career.player.position,
-    years: `${startYear}–${lastYear}`,
-    firstYear: startYear,
+    years: `${firstYear}–${lastYear}`,
+    firstYear,
     lastYear,
     ageAtEnd: career.player.age,
     seasonsPlayed: lastSeason,

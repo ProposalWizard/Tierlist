@@ -50,6 +50,10 @@ const fresh = (): CareerState => makeInitialCareer(player, [...PREMIER_LEAGUE_CL
   check(newsForMatch(after, after, fx, null).length === 0, "the second goal does not");
   const n = signingNews(before, "Brentford");
   check(n.headline.includes("SIGNS FOR") && n.headline.startsWith("YOUNGSTER"), "an 18-year-old signs as a youngster");
+  // A summer move: the card shows over NEXT season (new league, next age).
+  const m = signingNews(before, "Brackley Town", { division: "national_league_north", age: before.player.age + 1 });
+  check(m.line.includes("National League North"), "a summer move names the new club's league");
+  check(m.line.includes(`, ${before.player.age + 1},`), "and next season's age, as the HUD shows");
 }
 if (problems.length) { console.log("FAIL"); problems.forEach(p => console.log("  ✗ " + p)); process.exit(1); }
 console.log("PASS — set-piece chat and breaking news");

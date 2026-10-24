@@ -33,7 +33,8 @@ import { useSyncExternalStore } from "react";
 
 export type MatchFeelLook = "new" | "old";
 export const MATCH_FEEL_KEY = "star-match-feel";
-export const MATCH_FEEL_DEFAULT: MatchFeelLook = "old";
+// Harry, 22 Oct 2026: "keep my highlights and match feel toggles on as default but keep the toggle".
+export const MATCH_FEEL_DEFAULT: MatchFeelLook = "new";
 
 let stored: MatchFeelLook | undefined;
 const listeners = new Set<() => void>();

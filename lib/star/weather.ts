@@ -1,4 +1,5 @@
 import { mulberry32 } from "./season";
+import type { PitchWeatherExtras } from "./pitchWeather";
 
 /**
  * WEATHER AND THE STATE OF THE PITCH
@@ -17,7 +18,9 @@ import { mulberry32 } from "./season";
 
 export type Weather = "clear" | "wind" | "rain" | "heavy";
 
-export interface Conditions {
+/** The new wind/skid/pitch fields (pitchWeather.ts) are optional and never set
+ *  by `conditionsFor`, so the real game is unchanged; /star-weather-dev sets them. */
+export interface Conditions extends PitchWeatherExtras {
   weather: Weather;
   /** 0 perfect, 1 a bog. */
   pitch: number;

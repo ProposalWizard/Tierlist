@@ -281,7 +281,7 @@ export default function TransferHub({ career, interest, onNegotiate, onStay }: P
               </Chooser>
             </div>
 
-            {!club && <p className="mt-4 text-[14px] font-bold text-white" style={{ textShadow: SMALL_OUTLINE }}>Pick a club to see what they offer.</p>}
+            {!club && <p className="mt-4 inline-block rounded-md bg-black/75 px-3 py-1.5 text-[14px] font-bold text-white" style={{ textShadow: SMALL_OUTLINE }}>Pick a club to see what they offer.</p>}
 
             {/* The club you picked, lit in its own colours. */}
             {club && <div data-picked-club className="relative mt-3 overflow-hidden rounded-xl px-3 pb-3 pt-3" style={tile(clubGlow, 0.6)}>

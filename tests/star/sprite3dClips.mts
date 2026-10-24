@@ -15,7 +15,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { NEW_PLAYER_CLIPS, NEW_KEEPER_CLIPS } from "../../lib/star/sprites";
+import { CELEB_PLAYER_CLIPS, NEW_PLAYER_CLIPS, NEW_KEEPER_CLIPS } from "../../lib/star/sprites";
 import { NEW_CLIP_SHAPE, outfieldClipFor, outfieldSpriteClip, keeperDiveClipNew, keeperStandingClip, keeperGetUpT, sideOfDive } from "../../lib/star/sprite3dAnim";
 import { animDuration } from "../../lib/star/actionAnim";
 import type { BallActionKind, BallActionMode, SaveResult } from "../../lib/star/canvasEngine";
@@ -54,9 +54,12 @@ for (const [char, list, dirs] of [["player", NEW_PLAYER_CLIPS, 8], ["keeper", NE
       check(!!s && s.dirs === c.dirs && s.frames === c.frames, `${char}.${name} and ${c.mirrorOf} differ in shape`);
       check(!c.cells, `${char}.${name} mirrors and has its own cells too`);
     } else {
-      check(c.atlas === 1, `${char}.${name} is not in atlas 1`);
+      // the bicycle kick has its own atlas (3, 22 Oct 2026; slot 2 is the celebrations') so atlas 1 never had to be re-made
+      const want = name === "bicycle" ? 3 : 1, an = idx.atlases?.[String(want)];
+      check(c.atlas === want, `${char}.${name} is not in atlas ${want}`);
+      check(!!an && fs.existsSync(path.join(dir, an.color)) && fs.existsSync(path.join(dir, an.mask)), `atlas ${want}'s files are missing`);
       check((c.cells?.length ?? 0) === c.dirs * c.frames, `${char}.${name}: ${c.cells?.length} cells, want ${c.dirs * c.frames}`);
-      if (a1 && c.cells) inside(c.cells, a1.w, a1.h, `${char}.${name}`);
+      if (an && c.cells) inside(c.cells, an.w, an.h, `${char}.${name}`);
     }
     if (char === "player") {
       const sh = NEW_CLIP_SHAPE[name];
@@ -78,7 +81,9 @@ for (const char of ["player", "keeper"] as const) {
     check(c.dirs === want[0] && c.frames === want[1], `old ${char}.${name} changed shape`);
     if (c.cells) inside(c.cells, idx.atlas.w, idx.atlas.h, `old ${char}.${name}`);
   }
-  const extra = Object.keys(idx.chars[char].clips).filter((n) => !(OLD[char] as readonly string[]).includes(n) && !((char === "player" ? NEW_PLAYER_CLIPS : NEW_KEEPER_CLIPS) as readonly string[]).includes(n));
+  const extra = Object.keys(idx.chars[char].clips).filter((n) => !(OLD[char] as readonly string[]).includes(n) && !((char === "player" ? NEW_PLAYER_CLIPS : NEW_KEEPER_CLIPS) as readonly string[]).includes(n)
+    // After you score (Leo, 22 Oct 2026): the six celebrations, atlas 2.
+    && !(char === "player" && (CELEB_PLAYER_CLIPS as readonly string[]).includes(n) && idx.chars.player.clips[n]?.atlas === 2));
   check(extra.length === 0, `${char} has clips nobody knows: ${extra.join(", ")}`);
 }
 check(idx.atlas.color === "atlas-0.webp" && idx.atlas.mask === "mask-0.webp" /* lossless WebP, same pixels (12 Oct 2026) */ && idx.atlas.w === 1024 && idx.atlas.h === 1251, "atlas 0's entry changed");
@@ -89,7 +94,7 @@ check(fs.statSync(path.join(dir, "mask-0.png")).size === 342281, "mask-0.png cha
 const NEW = new Set<string>([...NEW_PLAYER_CLIPS, ...NEW_KEEPER_CLIPS]);
 const fps = (c: string) => idx.chars.player.clips[c]?.fps ?? 0;
 const kinds: BallActionKind[] = ["shot", "pass", "clearance", "block", "touch"];
-const modes: (BallActionMode | undefined)[] = [undefined, "ground", "volley", "header", "chip", "curl"];
+const modes: (BallActionMode | "bicycle" | undefined)[] = [undefined, "ground", "volley", "header", "chip", "curl", "bicycle"];
 let asked = 0;
 for (const kind of kinds) for (const mode of modes) {
   const a = { kind, mode };
@@ -113,6 +118,7 @@ for (const kind of kinds) for (const mode of modes) {
 check(outfieldClipFor({ kind: "save" }) === null, "a save is not an outfield clip");
 // Shots, passes and the rest are told apart.
 check(outfieldClipFor({ kind: "shot", mode: "volley" }) === "volley" && outfieldClipFor({ kind: "shot", mode: "chip" }) === "chipKick"
+  && outfieldClipFor({ kind: "shot", mode: "bicycle" }) === "bicycle" && outfieldClipFor({ kind: "touch", mode: "bicycle" }) === "touch"
   && outfieldClipFor({ kind: "shot", mode: "curl" }) === "shotKick" && outfieldClipFor({ kind: "pass", mode: "ground" }) === "passKick"
   && outfieldClipFor({ kind: "pass", mode: "header" }) === "header" && outfieldClipFor({ kind: "clearance", mode: "ground" }) === "clearance", "outfield mapping");
 
