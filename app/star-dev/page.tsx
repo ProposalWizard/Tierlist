@@ -1,5 +1,6 @@
 "use client";
 import { protectedClipIds } from "@/lib/star/goalLog";
+import { leoUpdateOn } from "@/lib/star/leoUpdate";
 import { preloadScene } from "@/lib/star/three3d/perf";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
 import { pitchFont } from "@/components/star/ui/pitchFont";
@@ -1262,7 +1263,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       const c = careerForClipsRef.current;
       const keep = new Set([...(c?.savedReplays ?? []), ...(c?.recentGoals ?? [])].map(r => r.clipId).filter((x): x is string => !!x));
       // A season's goals until its reel is made, and the career's best 10 (goalLog.ts).
-      for (const id of protectedClipIds(c)) keep.add(id);
+      // Leo's 24 Oct update only: off, the prune is exactly as before.
+      if (leoUpdateOn("seasonReel") || leoUpdateOn("goalsGallery")) for (const id of protectedClipIds(c)) keep.add(id);
       return pruneClips(keep);
     });
   }, []);
@@ -1664,8 +1666,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const next = { ...awarded, lastSeasonAwardStats: computeSeasonAwardStats(awarded) };
     setCareer(next);
     setActiveNav(null);
-    // "Your season" first, then the Ballon d'Or (handleReelDone).
-    setPhase("season-reel");
+    // "Your season" first, then the Ballon d'Or (handleReelDone). Leo's 24 Oct
+    // update only: off, straight to the Ballon d'Or as before.
+    setPhase(leoUpdateOn("seasonReel") ? "season-reel" : "ballon-dor");
   }, []);
   // The reel was watched or skipped: its recordings may now be pruned
   // (goalLog.ts protectedClipIds), and on to the Ballon d'Or.
@@ -2643,7 +2646,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // stuck there for good.
     const pending = loadStarPhase(scope);
     const seasonOver = saved.fixtures.every((f) => f.played);
-    if (pending?.phase === "season-reel" && seasonOver) {
+    if (pending?.phase === "season-reel" && seasonOver && leoUpdateOn("seasonReel")) {
       setActiveNav(null);
       setPhase("season-reel");
       return;
@@ -2652,7 +2655,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       setPhase("ballon-dor");
       return;
     }
-    if (pending?.phase === "season-awards" && saved.lastSeasonAwardStats) {
+    if (pending?.phase === "season-awards" && saved.lastSeasonAwardStats && (leoUpdateOn("awardsNight") || leoUpdateOn("bugFixes"))) {
       setActiveNav(null);
       setPhase("season-awards");
       return;
@@ -4036,7 +4039,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "season-awards" && career?.lastSeasonAwardStats) {
-    return <SeasonAwardsNight career={career} onContinue={handleSeasonAwardsContinue} />;
+    // The 3D awards night: Leo's 24 Oct update only; off, the awards page as before.
+    return leoUpdateOn("awardsNight")
+      ? <SeasonAwardsNight career={career} onContinue={handleSeasonAwardsContinue} />
+      : <SeasonAwardsScreen career={career} onContinue={handleSeasonAwardsContinue} />;
   }
 
   if (phase === "ladder" && career?.ladderNews) {

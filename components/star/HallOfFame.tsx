@@ -23,6 +23,7 @@ import { ShareLinkSheet, CompareFlow } from "./LegendShare";
 import ClubBadge from "./ClubBadge";
 import TrophyImage from "./TrophyImage";
 import { BestGoalsSheet } from "./CareerGoalsGallery";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 import { ScreenShell, RiseIn, BottomBar, BarButton, clubTheme, rgba } from "./ui";
 import { Rays } from "./ui/Screen";
 
@@ -55,6 +56,8 @@ export default function HallOfFame({ account, onBack, backLabel = "Back" }: {
   const [comparing, setComparing] = useState<{ start?: string } | null>(null);
   /** The career's best 10 goals, over its overview (Leo, 22 Oct 2026). */
   const [goalsOpen, setGoalsOpen] = useState(false);
+  // Best goals: Leo's 24 Oct update only (lib/star/leoUpdate.ts).
+  const goalsOn = useLeoUpdate("goalsGallery");
 
   useEffect(() => {
     let alive = true;
@@ -84,7 +87,7 @@ export default function HallOfFame({ account, onBack, backLabel = "Back" }: {
         actions={[
           { icon: "‹", label: "Hall of Fame", onClick: () => { setOpen(null); setGoalsOpen(false); window.scrollTo({ top: 0 }); } },
           { icon: "⚖️", label: "Compare", onClick: () => { setComparing({ start: opened.id }); window.scrollTo({ top: 0 }); } },
-          ...((opened.career.goalLog?.length ?? 0) > 0 ? [{ icon: "⚽", label: "Best goals", onClick: () => setGoalsOpen(true) }] : []),
+          ...(goalsOn && (opened.career.goalLog?.length ?? 0) > 0 ? [{ icon: "⚽", label: "Best goals", onClick: () => setGoalsOpen(true) }] : []),
           {
             icon: "🗑", label: "Remove", onClick: () => {
               void askConfirm(`Take ${opened.card.name} out of the Hall of Fame? This can't be undone.`, "Remove").then(ok => {
@@ -99,7 +102,7 @@ export default function HallOfFame({ account, onBack, backLabel = "Back" }: {
         ]}
       />
       {linkOpen && <ShareLinkSheet entry={opened} onClose={() => setLinkOpen(false)} />}
-      {goalsOpen && <BestGoalsSheet career={opened.career} onClose={() => setGoalsOpen(false)} />}
+      {goalsOn && goalsOpen && <BestGoalsSheet career={opened.career} onClose={() => setGoalsOpen(false)} />}
       </>
     );
   }
