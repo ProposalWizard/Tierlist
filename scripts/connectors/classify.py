@@ -15,7 +15,7 @@ NEVER = {"Supabase":{"pause_project","restore_project","create_project","delete_
   "Notion":{"notion-delete-pages","notion-delete-databases"},
   "Higgsfield":{"delete_project","delete_folder","participate_in_contest","cancel_trial_auto_renewal","unpublish_project"},
   "Adobe":{"boards_delete"}, "Claude Docs":{"delete"}, "Gmail":set(), "Google Drive":set()}
-FORCE_ASK = {"execute_sql","d1_database_query","scene_builder_3d_query_python","scene_builder_3d_run_python","sandbox_exec",
+FORCE_ASK = {"confirm_cost","execute_sql","d1_database_query","scene_builder_3d_query_python","scene_builder_3d_run_python","sandbox_exec",
   "website_secrets","website_repo_access","set_active_account","slack_get_file_upload_url","virality_predictor"}
 FORCE_READ = {"generate_typescript_types","create_visual_design_express_skill","html_export_readiness_skill","adobe_mandatory_init",
   "acrobat_readonly_proxy","website_db","generate_indd_mapping_prompt","models_explore","get_publishable_keys",
