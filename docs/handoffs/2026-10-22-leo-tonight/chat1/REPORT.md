@@ -82,7 +82,7 @@ Every goal is a real drag and strike; nothing moves the ball (the first round's 
 | celeb-skip | 9.2 s | 0.64 MB | 2nd real shot | strike 3.68 s, net 4.10 s vs 4.0 s |
 | celeb-video | 16.2 s | 1.74 MB | the 90+1' knee-slide goal's own video | goal call 2.0–4.0 s, replay lines 7–8.5 s, 12–13.5 s |
 | celeb-shop | 18.6 s | 0.60 MB | (no goal) | silent, as asked |
-| celeb-3d | — | — | **not re-filmed: the file on the branch is the old ball-moved take, invalid** | — |
+| celeb-3d | — | — | **not re-filmed; the old ball-moved take was removed from the branch** | — |
 
 Sound: `audio-tap.mjs` (chat 2) gathers the game's Web Audio; `audio-pcm.mjs` records its raw samples on the audio clock fitted to real time (MediaRecorder dropped silent stretches); `cut.py --audio … --audio-at …` lays it under the clip with the measured 0.2 s screen-recording lag; `peaks.mjs` prints the loudness proof. AAC 128k. Game music is off by default, so no music is in the clips.
 
