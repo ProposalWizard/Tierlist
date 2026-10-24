@@ -79,6 +79,7 @@ await pg.addInitScript(([seed, key, move, v3d]) => {
   localStorage.setItem(key, JSON.stringify(c));
   localStorage.setItem("star-career-saved-at-v1::anon", String(Date.now() + 1e6));
   localStorage.setItem("star-look-match-3d", v3d ? "on" : "off");
+  if (v3d) window.__ev3dDiag = {}; // dev only (an object, as engineView.ts expects): lets the scene project the posts through the 3D camera
 }, [seed, KEY, MOVE, VIEW3D]);
 await pg.goto(`${BASE}/star-dev`, { waitUntil: "domcontentloaded", timeout: 300000 });
 await wait(6000);
@@ -105,9 +106,11 @@ while (!done && at() < (VIEW3D ? 3300 : 1700)) {
     continue;
   }
   // The match is over (post-match screens, no match on screen for a long while): give up this run.
-  if (!st.ph && marks.lastAim && at() - marks.lastAim > 70) { log("match over without the goal"); break; }
+  if (marks.lastAim && at() - marks.lastAim > (VIEW3D ? 200 : 90)) { log("match over without the goal"); break; }
   if (st.ph !== "aim") { await wait(250); continue; }
   marks.lastAim = at();
+  // The 3D clip must really be 3D: a broken GPU profile quietly falls back to the 2D picture.
+  if (VIEW3D && !(await pg.evaluate(() => !!window.__engineView3dReady && !!window.__engineView3dBall))) { log("the 3D view is not drawing; giving up the run"); break; }
   const f = await pg.evaluate(() => ({ b: window.__starMatch.ball(), g: window.__starMatch.goal(), big: !!document.querySelector("[data-big-moment]") }));
   if (!f.g || !f.b) { await wait(300); continue; }
   // A big moment: the banner is up as the chance opens. Any other chance is still a real shot.
@@ -120,7 +123,16 @@ while (!done && at() < (VIEW3D ? 3300 : 1700)) {
   const aim = await pg.evaluate(() => {
     const fr = window.__starMatch.frame();
     const by = (r) => fr.men.find((m) => m.role === r);
-    const pl = by("postL"), pr = by("postR"), k = by("keeper"), b = by("ball");
+    let pl = by("postL"), pr = by("postR"), b = by("ball");
+    const k = by("keeper");
+    // In the 3D view the drag starts on the 3D ball (__starMatch.ball() is it) and is read through
+    // the 3D camera, so the posts are taken through the same camera (dev-only __ev3dProject).
+    const p3 = window.__ev3dProject, b3 = window.__engineView3dBall, c = document.querySelector("canvas")?.getBoundingClientRect();
+    if (p3 && b3 && pl && pr) {
+      const box = [...document.querySelectorAll("canvas")].map((e) => e.getBoundingClientRect()).sort((a, z) => z.width * z.height - a.width * a.height)[0] || c;
+      const q = (x) => { const v = p3(x, 0, 0); return { cx: box.left + v.X, cy: box.top + v.Y }; };
+      pl = { ...pl, ...q(pl.x) }; pr = { ...pr, ...q(pr.x) }; b = { ...b, cx: b3.x, cy: b3.y };
+    }
     if (!pl || !pr || !b) return null;
     const right = k ? k.x < 34 : Math.random() < 0.5;            // the far side from the keeper
     const j = Math.random() * 0.1;                                  // a little different every time
@@ -132,14 +144,17 @@ while (!done && at() < (VIEW3D ? 3300 : 1700)) {
   // the pull that gives about 85% power (the match's own drag rule)
   let pull = 40;
   const want = 0.8 + Math.random() * 0.15;
-  for (let i = 0; i < 24; i++) { const pw = await pg.evaluate(([x, y]) => window.__starMatch.power(x, y), [dx * pull, dy * pull]); if (pw >= want) break; pull += 6; }
+  if (VIEW3D) pull = 70 + Math.round(Math.random() * 20); // the 2D power reading does not apply to a drag read through the 3D camera
+  else for (let i = 0; i < 24; i++) { const pw = await pg.evaluate(([x, y]) => window.__starMatch.power(x, y), [dx * pull, dy * pull]); if (pw >= want) break; pull += 6; }
   marks.aim = at();
   // a drag that did not take starts a few px further along the pull the next time
   const off = fails * 4;
   await pg.mouse.move(aim.bx + dx * off, aim.by + dy * off); await pg.mouse.down();
   for (let i = 1; i <= 14; i++) { await pg.mouse.move(aim.bx + dx * (off + pull * i / 14), aim.by + dy * (off + pull * i / 14)); await wait(VIEW3D ? 60 : 30); }
   await pg.mouse.up(); await wait(600);
+  // the strike screen: in 3D on this machine it can take seconds to appear, so wait for it
   const ballBtn = pg.locator('div.cursor-pointer[style*="aspect-ratio"]').first();
+  for (let i = 0; i < (VIEW3D ? 40 : 8); i++) { if (await ballBtn.count()) break; await wait(250); }
   if (await ballBtn.count()) { const bb = await ballBtn.boundingBox(); if (bb) await pg.mouse.click(bb.x + bb.width / 2, bb.y + bb.width / 2); }
   marks.strike = at();
   // With the switch on, every chance with a goal in it is served as a big moment (the banner may
@@ -158,7 +173,7 @@ while (!done && at() < (VIEW3D ? 3300 : 1700)) {
   }
   if (!left && t0 === null) {
     tries--; fails++; log("the drag did not take; same chance again");
-    if (fails >= 5) { log("this chance will not take a drag; giving up the run"); break; }
+    if (fails >= (VIEW3D ? 4 : 5)) { log("this chance will not take a drag; giving up the run"); break; }
   } else fails = 0;
   if (t0 === null || miss) { log("no goal; next chance"); marks.banner = undefined; if (t0 !== null) await wait(6000); continue; }
   marks.tries = tries;
