@@ -11,7 +11,7 @@
  * whatever button it started on.
  */
 import { useRef, useState } from "react";
-import { ArrowButton, type EdgeArrow } from "./ui/Nav";
+import type { EdgeArrow } from "./ui/Nav";
 
 /** A TAP on a tab or an arrow turns the page on the same frame: no slide
  *  (Harry, 14 Oct 2026: "If I click on something, it should just go
@@ -148,18 +148,33 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
         </div>
       </div>
       {arrows && (
-        // The two edge arrows, along the bottom of the pages (above the bottom bar).
-        <div data-edge-arrows className="pointer-events-none absolute inset-x-0 bottom-1 z-20 flex items-end justify-between px-2">
-          <div className="pointer-events-auto">
-            {index > 0
-              ? <ArrowButton compact side="left" a={{ tour: `tab-${index - 1}`, icon: arrows.icons[index - 1], label: labels[index - 1], onClick: () => { setFromDrag(false); onIndex(index - 1); } }} />
-              : arrows.leftEnd ? <ArrowButton compact side="left" a={arrows.leftEnd} /> : null}
+        // The two edge hints, along the bottom of the pages (above the bottom
+        // bar). Words, not buttons (Mikey, 23 Oct 2026: "they should just be
+        // indicators … text that tells you to swipe that way"): a tap does
+        // nothing, a swipe turns the page. Under the bar, so the round Play
+        // button sits in front of the Shop hint.
+        <div data-edge-arrows className="pointer-events-none absolute inset-x-0 bottom-1 z-10 flex items-end justify-between px-2">
+          <div>
+            {index > 0 ? <SwipeHint side="left" tour={`tab-${index - 1}`} icon={arrows.icons[index - 1]} label={labels[index - 1]} /> : null}
           </div>
-          <div className="pointer-events-auto">
-            {index < 2 ? <ArrowButton compact side="right" a={{ tour: `tab-${index + 1}`, icon: arrows.icons[index + 1], label: labels[index + 1], onClick: () => { setFromDrag(false); onIndex(index + 1); } }} /> : null}
+          <div>
+            {index < 2 ? <SwipeHint side="right" tour={`tab-${index + 1}`} icon={arrows.icons[index + 1]} label={labels[index + 1]} /> : null}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** "‹ 📊 STATS": which page is that way. Plain text you swipe towards, never tapped. */
+function SwipeHint({ side, tour, icon, label }: { side: "left" | "right"; tour: string; icon: string; label: string }) {
+  return (
+    <div data-tour={tour} data-swipe-hint={side} aria-hidden
+      className={`flex h-[22px] items-center gap-1 px-1 text-white/70 ${side === "right" ? "flex-row-reverse" : ""}`}
+      style={{ textShadow: "0 1px 3px rgba(0,0,0,.85)" }}>
+      <span className="text-[12px] leading-none">{side === "left" ? "‹" : "›"}</span>
+      <span className="text-[11px] leading-none">{icon}</span>
+      <span className="text-[9.5px] font-semibold uppercase leading-none tracking-wide">{label}</span>
     </div>
   );
 }

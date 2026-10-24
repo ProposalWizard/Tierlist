@@ -35,7 +35,7 @@ import { mulberry32 } from "../../lib/star/season";
 import { makeChance } from "../../lib/star/chanceMaker";
 import { scenarioForShot, kindForShot, type TrackedFile, type RealShot } from "../../lib/star/realMoments";
 import {
-  frameForNewView, setPlayZoomOverride, playZoomOf, bodiesOf, keyPointsOf, onThePitch,
+  frameForNewView, setPlayZoomOverride, playZoomOf, bodiesOf, keyPointsOf, framedKeyPointsOf, isCrowdedChance, onThePitch,
   WIDE_TURN_KINDS, turnWideChance, setWideChancesOverride, setActionFit, framingFaults,
 } from "../../lib/star/matchView";
 import { tiltFor, canvasToScreen, visibleOnScreen } from "../../lib/star/cameraTilt";
@@ -85,7 +85,12 @@ console.log("\n2. A ONE-ON-ONE WITH A PARKED POACHER STILL ZOOMS IN");
     n++;
     // The poacher is one man; without him the camera is never wider than with him.
     // (Match camera New may pick a pan 1% different once the man is gone: 2.08 vs 2.09.)
-    if (playZoomOf(sc) >= playZoomOf(free) - 0.02 && playZoomOf(sc) > 1.001) zoomed++;
+    // A free follower can make the chance crowded (framed on the crowd, tighter
+    // still: Mikey, 21 Oct 2026); then the parked one only has to zoom at all.
+    const crowdOnly = isCrowdedChance(free) && !isCrowdedChance(sc);
+    // Both crowded: the pan can land a little differently (measured 0.045 at worst).
+    const slack = isCrowdedChance(free) ? 0.05 : 0.02;
+    if ((crowdOnly || playZoomOf(sc) >= playZoomOf(free) - slack) && playZoomOf(sc) > 1.001) zoomed++;
   }
   ok(zoomed === n, `parked poacher: zoomed in ${zoomed}/${n} (old code: 0 — the zoom gave up)`);
 }
@@ -124,7 +129,8 @@ for (const camMode of ["old", "new"] as const) {
       }
       if (playZoomOf(sc) <= 1.001) continue;
       n++;
-      for (const p of keyPointsOf(sc)) {
+      // A crowded chance frames the crowd: a man far from the ball may be off.
+      for (const p of framedKeyPointsOf(sc)) {
         const sx = (p.x - cam.x1) / (cam.x2 - cam.x1), sy = (p.y - cam.y1) / (cam.y2 - cam.y1);
         if (!visibleOnScreen(t, sx, sy, 0)) { cut++; break; }
       }

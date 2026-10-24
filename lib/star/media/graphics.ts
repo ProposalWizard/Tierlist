@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import { pick, surname, groupedGoalLines } from "./grammar";
 import { FAKE_FACES } from "../fakeFaces";
+import { divisionOf, leagueNameFor } from "../calendar";
 
 /**
  * GRAPHIC DATA, NOT PICTURES.
@@ -234,6 +235,9 @@ export function buildGraphic(
       return {
         type: "potmNominees",
         month: MONTH_NAMES[month],
+        // The division this career plays in: the card said "Premier League
+        // nominees" for every division (22 Oct 2026).
+        league: leagueNameFor(divisionOf(career)),
         nominees: race.map(c => ({
           name: c.name, club: c.club, goals: c.goals, assists: c.assists, isYou: c.isYou,
           // A photograph for the real footballers. For you: the one you took if
@@ -295,7 +299,7 @@ export function buildGraphic(
     case "trophy":
       return {
         type: "trophy",
-        competition: String(f.competition ?? "Premier League"),
+        competition: String(f.competition ?? r?.competition ?? leagueNameFor(divisionOf(career))),
         club: String(f.club ?? career.player.club),
         season: Number(f.season ?? career.season),
       };
@@ -453,6 +457,7 @@ function headlineFrom(e: FootballEvent, you: string): string {
   const short = String(f.short ?? surname(you));
   switch (e.id) {
     case "hat-trick": return `${short} hat-trick`;
+    case "bicycle-kick": return `${short} overhead kick`;
     case "four-goals": return `${short} scores four`;
     case "five-goals": return `${short} scores five`;
     case "late-winner": return `${short} wins it at ${f.minute}`;

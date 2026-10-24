@@ -1,0 +1,14 @@
+400 served chances, 313 with a build-up · 6742 ms
+ALL          n  313 · 3.07 s (p10 2.4, p90 3.9) · passes 1.90 · ball travels 25.4 m · move from 21.7 m · ball off screen 0.08% (worst 25.4%) · fastest man p50 7.9 p99 8.6 max 8.9 m/s (over 9: 0) · offside 32 · with problems 1
+open play    n  313 · 3.07 s (p10 2.4, p90 3.9) · passes 1.90 · ball travels 25.4 m · move from 21.7 m · ball off screen 0.08% (worst 25.4%) · fastest man p50 7.9 p99 8.6 max 8.9 m/s (over 9: 0) · offside 32 · with problems 1
+cut (old)    n  313 · 3.07 s (p10 2.4, p90 3.9) · passes 1.90 · ball travels 25.4 m · move from 21.7 m · ball off screen 0.08% (worst 25.4%) · fastest man p50 7.9 p99 8.6 max 8.9 m/s (over 9: 0) · offside 32 · with problems 1
+mix: cut (old) 100%
+  byline_cross     14 · 3.79 s · 29.3 m · cut (old) 14
+  tight_angle      31 · 3.13 s · 20.5 m · cut (old) 31
+  volley           54 · 3.02 s · 28.6 m · cut (old) 54
+  header           51 · 2.79 s · 29.2 m · cut (old) 51
+  long_range       47 · 2.97 s · 24.3 m · cut (old) 47
+  cutback          51 · 3.37 s · 22.1 m · cut (old) 51
+  buildup          28 · 2.93 s · 24.4 m · cut (old) 28
+  midfield_pass    25 · 2.83 s · 25.4 m · cut (old) 25
+  one_on_one       12 · 3.38 s · 24.3 m · cut (old) 12

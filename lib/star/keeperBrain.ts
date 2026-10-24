@@ -63,7 +63,7 @@
 import type { Ball, Scenario, KeeperClaim } from "./canvasEngine";
 import { keeperSaveRadius } from "./canvasEngine";
 import { CX, POST_L, POST_R } from "./pitch";
-import { decidePenaltyRead, penaltyReadFor, type PenaltyReadSettings } from "./penaltyKeeper";
+import { decidePenaltyRead, penaltyReadFor, sideWithHabit, type PenaltyReadSettings } from "./penaltyKeeper";
 import { testAreaSetting } from "./compareSwitches";
 import { oldKeepers, oldKeeperPro, oldKeeperFeel, oldKeeperFinish } from "./gameplayVersion";
 import { getTuning } from "./tuningStore";
@@ -540,6 +540,17 @@ export function keeperSaltFor(feature: boolean, random: () => number = Math.rand
 
 /** Does this chance have a brain? (A free kick, or a scene with no keeper, = no.) */
 export function hasBrain(sc: Scenario): boolean { return states.has(sc); }
+/**
+ * A strike he could not read off the body (a clean bicycle kick, bicycle.ts:
+ * your back is to him until the ball is gone): he reacts `s` seconds later.
+ * Only between brainStrike and his first move; nothing else changes and no
+ * random number is drawn, so a replay (same call after brainStrike) is the same.
+ */
+export function brainReactLater(sc: Scenario, s: number): void {
+  const st = states.get(sc);
+  if (!st || st.phase !== "wait" || !(s > 0)) return;
+  st.rt += s;
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 //  PHASE A — SET
@@ -681,9 +692,11 @@ export function brainRunUp(sc: Scenario, dt: number, runT: number, aimX: number)
     st.hopAt = go ? at : -1;
   }
   if (st.hopSide === 0 && st.hopAt >= 0 && runT >= st.hopAt) {
-    const read = (st.opts.penalty ?? penaltyReadFor(st.ab.rating)).readChance;
+    const pen = st.opts.penalty ?? penaltyReadFor(st.ab.rating);
     const aimedSide = Math.abs(aimX - k.x) < 0.5 ? (st.rng() < 0.5 ? -1 : 1) : Math.sign(aimX - k.x);
-    st.hopSide = st.rng() < read ? aimedSide : -aimedSide;
+    // sideWithHabit = the old `rng() < readChance ? aimed : other` when there
+    // is no shootout habit (penaltyKeeper.ts; /star-shootout-dev only).
+    st.hopSide = sideWithHabit(aimedSide, pen.readChance, st.rng(), pen.habit);
     st.hopFromX = k.x;
     st.setTarget = { x: k.x + st.hopSide * KEEPER_BRAIN.hopM, y: k.y };
     st.reason = "hopped";

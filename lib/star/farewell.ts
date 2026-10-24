@@ -33,6 +33,7 @@ import { kitsOf, type ClubKits } from "./kits";
 import { generateSquad, clubNameSeed } from "./squadData";
 import { shortNameOf } from "./realSquad";
 import { displayOverall } from "./rating";
+import { longSeason } from "./careerOverview";
 
 /** The minute you come off to the ovation. */
 export const FAREWELL_OFF_AT = 85;
@@ -56,10 +57,6 @@ const GROUPS = {
 const COVER_RIVALS: [Role[], number][] = [[GROUPS.gk, 2], [GROUPS.def, 6], [GROUPS.mid, 4], [GROUPS.fwd, 3]];
 const COVER_OURS: [Role[], number][] = [[GROUPS.gk, 2], [GROUPS.def, 5], [GROUPS.mid, 4], [GROUPS.fwd, 2]];
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-const longSeason = (startYear: number, season: number) => {
-  const y = startYear + season - 1;
-  return `${y}/${String(y + 1).slice(2)}`;
-};
 
 /** "Calloway XI". */
 export function farewellTeamName(career: Pick<CareerState, "player">): string {

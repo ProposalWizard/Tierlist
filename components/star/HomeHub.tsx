@@ -185,16 +185,20 @@ export default function HomeHub(p: Props) {
     // Settings → Look → "Home screen: New" (Harry, 9 Oct 2026): the stat
     // tiles go up top, the goal goes, he stands centre stage.
     // No goal to share the row with: he may stand taller (up to 360).
-    const size = playerSizeFor(room, rows, STATS_H + 4, 360);
+    // Master plan 2 (Mikey, 22 Oct 2026): the four numbers stand either side
+    // of him by default (Settings → Home numbers), the boots line sits over
+    // the cans, and the record line, the transfer-window line, the links row
+    // and the non-urgent chips are gone (the Phone carries those now).
+    const size = playerSizeFor(room, rows, STATS_H + 4 + BOOTS_H, 360);
     return (
       <div ref={ref} data-home-look="new" className="relative -mx-3 flex min-h-full flex-col overflow-hidden">
         <HomeScene sky={homeSkyFor(career, p.nextFixture)} />
         <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
+        {/* The four numbers in a row at the top (Mikey, 23 Oct 2026: no switch, top only). */}
         <RiseIn onPageActive index={1} className="relative z-10 mt-1 px-3"><StatTiles career={career} /></RiseIn>
         <div data-home-league className="relative z-20 mt-1">{duty ? <NationDropdown career={career} duty={duty} onOpen={p.onLeague} /> : <LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} />}</div>
-        <NeedsRow needs={p.needs} windowLine={p.windowLine} />
-        <HeroNew {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
-        <MiddleLinks career={career} onOpen={p.onOpen} />
+        <NeedsRow needs={urgentOnly(p.needs)} />
+        <HeroNew {...p} hallChase={null} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
       </div>
     );
   }
@@ -207,11 +211,18 @@ export default function HomeHub(p: Props) {
       <HomeScene sky={homeSkyFor(career, p.nextFixture)} />
       <RiseIn onPageActive index={0} className="relative z-10"><NextMatch {...p} glow={glow} /></RiseIn>
       <div data-home-league className="relative z-20 mt-1">{duty ? <NationDropdown career={career} duty={duty} onOpen={p.onLeague} /> : <LeagueDropdown career={career} glow={glow} onOpen={p.onLeague} />}</div>
-      <NeedsRow needs={p.needs} windowLine={p.windowLine} />
-      <Hero {...p} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
-      <MiddleLinks career={career} onOpen={p.onOpen} />
+      <NeedsRow needs={urgentOnly(p.needs)} />
+      <Hero {...p} hallChase={null} glow={glow} kitShirt={shirt} kitTrim={trim} figW={size.w} figH={size.h} />
     </div>
   );
+}
+
+/** Only what stops the season moving on stays on Home (master plan 2): the end
+ *  of the season and the boss's word. Sponsor offers, unread messages and the
+ *  rest are on the Phone. */
+function urgentOnly(needs: Props["needs"]): Props["needs"] {
+  if (!needs) return null;
+  return needs.need.id === "season-end" || needs.need.id === "boss-talk" ? { ...needs, more: 0 } : null;
 }
 
 // ── "Needs you": one chip, most urgent first (navigation round 1) ─────────
@@ -296,10 +307,12 @@ function NextMatch({ career, nextFixture, nextMatchDate, myTeam, glow }: Props &
         <span className="text-[10px] font-black uppercase leading-none tracking-[0.18em] text-emerald-300">Next match</span>
         <span className="truncate pl-2 text-[10px] font-black uppercase leading-none tracking-wider text-white/75">{comp}</span>
       </div>
-      <div className="relative mt-1 grid grid-cols-[1fr_44px_1fr] items-start">
-        <TeamSide club={home} kit={homeKit} you={home === myTeam} />
-        <div className="flex h-[34px] items-center justify-center text-[22px] font-black italic leading-none text-white/90" style={{ textShadow: "0 2px 6px rgba(0,0,0,.6)" }}>VS</div>
-        <TeamSide club={away} kit={awayKit} you={away === myTeam} />
+      {/* The two clubs side by side, centred, with a plain "v" (Mikey, 22 Oct
+          2026: "they're not even close together … some weird font which is slanted"). */}
+      <div className="relative mt-1 flex items-start justify-center gap-1" data-next-match-teams>
+        <div className="w-[104px]"><TeamSide club={home} kit={homeKit} you={home === myTeam} /></div>
+        <div className="flex h-[34px] w-[18px] items-center justify-center text-[16px] font-black leading-none text-white/90" style={{ textShadow: "0 2px 6px rgba(0,0,0,.6)" }}>v</div>
+        <div className="w-[104px]"><TeamSide club={away} kit={awayKit} you={away === myTeam} /></div>
       </div>
       <div className="relative mt-0.5 flex h-[16px] items-center gap-2">
         <span className="whitespace-nowrap text-[11px] font-black leading-none text-white">{nextMatchDate ?? `Week ${nextFixture.week}`}</span>
@@ -565,7 +578,7 @@ export function StatTiles({ career }: { career: CareerState }) {
 function StatTile({ t }: { t: Tile }) {
   const shown = useCountUp(t.value, 600);
   return (
-    <div data-stat={t.key} className="relative flex min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl px-1"
+    <div data-stat={t.key} className="relative flex min-w-0 flex-1 flex-col items-center justify-center overflow-hidden rounded-xl px-1"
       style={{
         background: `radial-gradient(90% 80% at 50% 0%, ${rgba(t.color, 0.38)} 0%, transparent 75%), rgba(5,8,15,.72)`,
         boxShadow: `inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 1.5px ${rgba(t.color, 0.6)}, 0 6px 14px -8px ${rgba(t.color, 0.8)}`,
@@ -581,6 +594,29 @@ function StatTile({ t }: { t: Tile }) {
           <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, t.bar))}%`, background: t.color }} />
         </div>
       )}
+    </div>
+  );
+}
+
+/** The boots line over the cans (Mikey, 22 Oct 2026: "just above [the Basic can]
+ *  it will say like boots, what they do"). */
+export const BOOTS_H = 24;
+function BootsLine({ career }: { career: CareerState }) {
+  const b = career.currentBoot;
+  const left = b?.matches ?? 0;
+  const gives = [b?.power ? `Pow +${b.power}` : "", b?.technique ? `Tec +${b.technique}` : "", b?.curve ? "Curve" : "", b?.extraTouch ? "Extra touch" : ""].filter(Boolean).join(" · ");
+  return (
+    <div data-home-boots className="relative z-10 mt-1 flex shrink-0 items-center" style={{ height: BOOTS_H }}>
+      <div className="flex max-w-full items-center gap-1.5 rounded-[4px] px-2 py-1 text-[11px] font-black leading-none text-white" style={{ background: "rgba(5,8,15,.72)", boxShadow: "inset 0 0 0 1px rgba(251,146,60,.55)" }}>
+        <span aria-hidden className="text-[13px] leading-none">👟</span>
+        {left > 0 ? (
+          <>
+            <span className="truncate">{b.name}</span>
+            {gives && <span className="whitespace-nowrap text-amber-200">{gives}</span>}
+            <span className="whitespace-nowrap text-white/70">· {left} {left === 1 ? "match" : "matches"} left</span>
+          </>
+        ) : <span className="text-amber-200">No boots: buy a pair in the Shop</span>}
+      </div>
     </div>
   );
 }
@@ -620,50 +656,10 @@ function HeroNew({ career, kitShirt, kitTrim, glow, figW, figH, onUseCan, onBuyC
           </div>
         )}
       </div>
-      <div data-home-cans className="relative z-10 mt-1.5 grid shrink-0 grid-cols-3 gap-1.5" style={{ height: CANS_H }}>
+      <BootsLine career={career} />
+      <div data-home-cans className="relative z-10 mt-1 grid shrink-0 grid-cols-3 gap-1.5" style={{ height: CANS_H }}>
         {KIB_CANS.map((c) => <CanTile key={c.id} can={c} career={career} e={career.energy ?? 100} onUse={onUseCan} onBuy={onBuyCan} mini bold />)}
       </div>
-    </div>
-  );
-}
-
-// ── 3. Achievements and Sponsors, two small links in the middle ────────────
-
-/** The two small links in the middle of Home's bottom strip: Achievements
- *  (v0.23.1, P26/P60: the bottom-left button is Home now, "it could just be on
- *  the homepage") and Sponsors (Harry, 1 Oct 2026, P66: "like being a little
- *  arrow in the bottom right instead"). Plain text, not pills, with a red
- *  count when sponsor offers are waiting. */
-function MiddleLinks({ career, onOpen }: { career: CareerState; onOpen: Props["onOpen"] }) {
-  const offers = brandsOf(career).offers.length;
-  const showAch = isOpen(career, "achievements");
-  const showSp = isOpen(career, "sponsors");
-  // Your house in 3D (Harry, 13 Oct 2026: "How do I actually access my home?"): always here.
-  const showHome = HOME3D_IN_CAREER;
-  if (!showAch && !showSp && !showHome) return null;
-  const text = "kib-press flex items-center gap-1 whitespace-nowrap px-1 py-1 text-[11px] font-black uppercase leading-none tracking-wide text-white";
-  const shadow = { textShadow: "0 1px 3px rgba(0,0,0,.95), 0 0 6px rgba(0,0,0,.8)" };
-  return (
-    <div className="absolute bottom-1 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5">
-      {showAch && (
-        <button type="button" data-tour="achievements" onClick={() => onOpen("achievements")} aria-label="Achievements" className={text} style={shadow}>
-          <span className="text-[14px] leading-none">⭐</span>
-          <span className="max-[439px]:hidden">Achievements</span>
-        </button>
-      )}
-      {showHome && (
-        <button type="button" data-home-my-home onClick={() => onOpen("home-3d")} aria-label="My home" className={text} style={shadow}>
-          <span className="text-[14px] leading-none">🏠</span>
-          My home
-        </button>
-      )}
-      {showSp && (
-        <button type="button" onClick={() => onOpen("sponsors")} aria-label={offers ? `Sponsors: ${offers} offer${offers === 1 ? "" : "s"} waiting` : "Sponsors"} className={text} style={shadow}>
-          Sponsors
-          {offers > 0 && <span className="grid h-[15px] min-w-[15px] place-items-center bg-red-500 px-1 text-[10px] leading-none text-white">{offers}</span>}
-          <span className="text-[17px] leading-none text-emerald-300">›</span>
-        </button>
-      )}
     </div>
   );
 }
@@ -705,8 +701,6 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
           <Shake trigger={drinking} className="absolute inset-0 flex items-end justify-center" style={{ filter: `drop-shadow(0 3px 6px ${rgba(accent, 0.65)}) drop-shadow(0 1px 1px rgba(0,0,0,.6))` }}>
             <KibCanIcon can={c} className="h-[38px] w-[22px]" />
           </Shake>
-          <span className={`absolute rounded-full text-center font-black tabular-nums text-gray-950 ${bold ? "-bottom-1.5 -right-3 min-w-[24px] px-1.5 text-[13px] leading-[18px]" : "-bottom-1 -right-1.5 min-w-[18px] px-1 text-[9.5px] leading-[14px]"}`}
-            style={{ background: `linear-gradient(180deg, ${tint(accent, 0.35)}, ${accent})`, boxShadow: `0 1px 4px ${rgba(accent, 0.6)}` }}>×{Math.round(shownCount)}</span>
           {drinking > 0 && (
             <div key={`d${drinking}`} className="pointer-events-none absolute inset-0">
               <Drips trigger={drinking} color={accent} />
@@ -715,12 +709,17 @@ export function CanTile({ can: c, career, e, onUse, onBuy, compact = false, mini
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <div className={`truncate font-black leading-tight text-white ${bold ? "text-[12.5px]" : "text-[11px]"}`}>{c.name.replace(" KIB Can", "")}</div>
+          {/* The count sits beside the name, never over the text (Mikey, 22 Oct 2026: the cans overlap). */}
+          <div className="flex min-w-0 items-center gap-1">
+            <span className={`truncate font-black leading-tight text-white ${bold ? "text-[12.5px]" : "text-[11px]"}`}>{c.name.replace(" KIB Can", "")}</span>
+            <span data-can-count className={`shrink-0 rounded-full text-center font-black tabular-nums text-gray-950 ${bold ? "min-w-[24px] px-1.5 text-[11.5px] leading-[16px]" : "min-w-[18px] px-1 text-[9.5px] leading-[14px]"}`}
+              style={{ background: `linear-gradient(180deg, ${tint(accent, 0.35)}, ${accent})`, boxShadow: `0 1px 4px ${rgba(accent, 0.6)}` }}>×{Math.round(shownCount)}</span>
+          </div>
           <div className="line-clamp-2 text-[9.5px] font-bold leading-[11px] text-white/80">{effect}</div>
         </div>
       </div>
       <div className="mt-1.5 grid grid-cols-2 gap-1">
-        <PressButton variant="accent" accent={accent} size="none" disabled={!canUse} onClick={use}
+        <PressButton variant="accent" accent={accent} size="none" disabled={!canUse} onClick={use} data-tour={`can-use-${c.id}`}
           className="rounded-md py-1 text-[10.5px] font-black uppercase">
           {ready ? "✓" : full ? "Full" : "Use"}
         </PressButton>

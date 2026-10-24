@@ -27,6 +27,13 @@
  * Animations: Old it is never fetched. A clip with `mirrorOf` (the keeper's
  * left-side saves) is its right-side twin drawn flipped.
  *
+ * A FOURTH atlas (atlas-3.webp + mask-3.webp, and atlas-3a/mask-3a for Style A;
+ * slot 3 because the goal celebrations use slot 2;
+ * slot 2 is the celebrations' atlas, chat 1;
+ * 22 Oct 2026) holds only the bicycle kick, so atlases 0 and 1 stayed byte for
+ * byte as they were (tools/sprites/new/bake-new.mjs extra bicycle). It loads the
+ * same way as atlas 1 (any `atlas: n` works).
+ *
  * This module only draws pictures. No physics, no loop, no timing of its own:
  * the caller says which clip, how far into it, which way he faces.
  *
@@ -42,8 +49,8 @@ export type SpriteClip =
   | NewSpriteClip
   | CelebSpriteClip;
 
-/** Animations: New only (atlas 1). */
-export const NEW_PLAYER_CLIPS = ["touch", "passKick", "shotKick", "volley", "chipKick", "header", "block", "clearance"] as const;
+/** Animations: New only (atlas 1; the bicycle kick in atlas 3). */
+export const NEW_PLAYER_CLIPS = ["touch", "passKick", "shotKick", "volley", "chipKick", "header", "block", "clearance", "bicycle"] as const;
 export const NEW_KEEPER_CLIPS = [
   "oneHandR", "oneHandL", "lowDiveR", "lowDiveL", "parryR", "parryL", "catchHold", "fumble", "getUpR", "getUpL",
 ] as const;
@@ -57,8 +64,6 @@ export type NewSpriteClip = (typeof NEW_PLAYER_CLIPS)[number] | (typeof NEW_KEEP
  */
 export const CELEB_PLAYER_CLIPS = ["celebHandsUp", "celebArmsOut", "celebKneeSlide", "celebFistPump", "celebJump", "celebRoar"] as const;
 export type CelebSpriteClip = (typeof CELEB_PLAYER_CLIPS)[number];
-/** Atlases that are never preloaded: fetched only when one of their clips is first asked for. */
-const LAZY_ATLASES = new Set([2]);
 
 export interface SpriteKit {
   shirt: string;
@@ -218,6 +223,9 @@ function loadAtlas(n: number): Promise<boolean> {
   return p;
 }
 
+/** Atlases fetched only when one of their clips is first asked for (never in
+ *  the idle preload): 2 the celebrations, 3 the bicycle kick (22 Oct 2026). */
+const LAZY_ATLASES: ReadonlySet<number> = new Set([2, 3]);
 /** Load and colour every later atlas in the background, after atlas 0 (idle time). */
 function preloadLaterAtlases(): void {
   const ns = Object.keys(index?.atlases ?? {}).map(Number).filter((n) => n >= 1 && !LAZY_ATLASES.has(n));

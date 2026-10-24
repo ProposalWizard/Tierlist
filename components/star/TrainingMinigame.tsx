@@ -261,7 +261,8 @@ function Shell({
             style={{ boxShadow: `0 0 0 1px ${rgba(glow, 0.45)}, 0 0 18px -4px ${rgba(glow, 0.6)}` }}>
             {children}
           </div>
-          <div className="relative mt-2 rounded-xl px-3 py-2 text-center text-[12px] font-black text-white"
+          {/* Right padding keeps the corner "?" off the words (Mikey's playtest, 24 Oct 2026). */}
+          <div className="relative mt-2 rounded-xl py-1.5 pl-3 pr-11 text-center text-[11.5px] font-black leading-snug text-white"
             style={{ background: "rgba(0,0,0,.35)", boxShadow: `inset 0 0 0 1px ${rgba(look.accent, 0.35)}` }}>
             {instruction}
           </div>
@@ -601,7 +602,7 @@ function StrikeDrill({
   const instruction = kind === "aerial"
     ? "The cross is in the air. Drag back to aim, then meet it: head it on top of the ball, or volley it as it drops."
     : kind === "technique"
-    ? "Drag back from the ball to aim and set power, then pick your spot on the ball to bend it through the cones."
+    ? "Drag back to aim and set power. Pick a spot on the ball to bend it through the cones."
     : kind === "freeKick"
       ? "Drag back to aim and set power, then strike it over the wall or round it."
       : "Drag back to aim and set power, then pick your spot on the ball.";

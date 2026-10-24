@@ -300,3 +300,4 @@ export function SettingsTop({ glow, fullscreen }: {
     </>
   );
 }
+

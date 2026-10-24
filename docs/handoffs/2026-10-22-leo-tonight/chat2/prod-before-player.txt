@@ -1,0 +1,10 @@
+player view · CPU 6× · 390×844 · posts in seed 150
+open (first)     painted 1494 ms · posts drawn 71 · longest task while opening 1104 ms · still 3018 ms · first video ready 46891 ms
+long tasks 10 s after open: 31 (longest 1104 ms, >100ms: 19)
+scroll           {"ms":14497,"steps":40,"height":10236,"longTasks":84,"longest":760,"over100":45,"total":12147}
+open (again)     painted 1245 ms · longest 573 ms · first video ready 1921 ms
+open (new visit) painted 1751 ms · longest 1200 ms · first video ready 48952 ms
+errors: Failed to fetch RSC payload for http://localhost:3201/tierlists. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3201/_next/static/chunks/86096-531b61d1bc2a62 | Failed to fetch RSC payload for http://localhost:3201/tenable. Falling back to browser navigation. TypeError: network error | Failed to fetch RSC payload for http://localhost:3201/draft. Falling back to browser navigation. TypeError: network error | Failed to fetch RSC payload for http://localhost:3201/. Falling back to browser navigation. TypeError: network error | Failed to fetch RSC payload for http://localhost:3201/tic-tac-toe. Falling back to browser navigation. TypeError: network error | club_logos read failed — every badge will fall back to initials: TypeError: Failed to fetch
+JSON {"first":{"painted":1493.8999999994412,"posts":71,"video":46890.59999999963,"still":3018,"t0":22253.700000000186,"openLongest":1104,"lt10s":[832,57,55,133,1104,87,98,806,68,196,63,1026,100,53,526,196,192,192,195,51,174,153,52,213,59,51,225,219,192,188,151]},"scroll":{"ms":14497,"steps":40,"height":10236,"longTasks":84,"longest":760,"over100":45,"total":12147},"again":{"painted":1245.2999999998137,"posts":71,"video":1920.699999999255,"still":1920.199999999255,"t0":90628.40000000037,"openLongest":573,"lt10s":[573,157]},"reload":{"painted":1751,"posts":71,"video":48951.799999999814,"still":3525.2000000001863,"t0":19936.5,"openLongest":1200,"lt10s":[1062,74,66,122,1200,74,64,64,51,107,858,50,55,79,1166,55,71,126,54,464,178,247,51,180,199,184,56,228,60,56,189,232,51,53,205]}}
+BROWSER GONE

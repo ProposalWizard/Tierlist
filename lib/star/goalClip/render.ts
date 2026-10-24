@@ -221,7 +221,9 @@ export async function prepareClipSprites(moves: ClipMoves = "new", ms = 5000): P
   if (moves === "old") return;
   const t0 = Date.now();
   // One ask starts the second set of moves loading; then wait for it.
-  while (!(spriteClipReady("player", "shotKick") && spriteClipReady("keeper", "oneHandR")) && Date.now() - t0 < ms) {
+  // The bicycle kick's own small atlas (2) too, so a bicycle goal's film never
+  // starts on the old kick and switches part way (bicycle.ts, 22 Oct 2026).
+  while (!(spriteClipReady("player", "shotKick") && spriteClipReady("keeper", "oneHandR") && spriteClipReady("player", "bicycle")) && Date.now() - t0 < ms) {
     await new Promise<void>(r => setTimeout(r, 60));
   }
 }

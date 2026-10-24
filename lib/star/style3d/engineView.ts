@@ -54,6 +54,7 @@ import { followStep } from "./figureFollow";
 import { kickStyleFor, type KickStyle } from "./kickStyle";
 import { TODS } from "./real/tod";
 import { bcPose } from "./broadcastCam";
+import { isBicycleMode } from "../bicycle";
 import { SIZE3D } from "./size3d";
 import { worldPack, onTexturePack } from "./texturePack";
 import { SMALL_MEN } from "./smallMen";
@@ -174,6 +175,8 @@ type Body = {
   kickOff?: [number, number];
   /** The kick being played (lib/star/style3d/kickStyle.ts): its clip, swing and hop, and seconds since the strike. */
   kickStyle?: KickStyle; kickT?: number;
+  /** A bicycle kick being played (lib/star/bicycle.ts): he faces away from where the ball went (it goes over his head). */
+  bikeYaw?: number;
   /** The power of the last aim (0..1): how far back the strike screen's backswing goes. */
   aimP?: number;
   /** You: the run-up-and-strike clip (kick_r / kick_l) is driving him (setPiece3d.ts). */
@@ -622,7 +625,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     if (r0) { p.bones.Hips.position.x = r0.x; p.bones.Hips.position.z = r0.z; }
   };
   /** The strike clips you can play, and which foot meets the ball in each. */
-  const STRIKES: Record<string, "R" | "L"> = { shot_r: "R", kick_l: "L", shot_low: "R", chip: "R", volley: "R", pass_inside: "R", pass_lofted: "R", kick_r: "R" };
+  // bicycle: the right foot above the head; only calibrated and measured here (footToBall never places him off it)
+  const STRIKES: Record<string, "R" | "L"> = { shot_r: "R", kick_l: "L", shot_low: "R", chip: "R", volley: "R", bicycle: "R", pass_inside: "R", pass_lofted: "R", kick_r: "R" };
   /**
    * You only, once, as your body is made: pose each strike clip at its contact moment (hips held,
    * as the match plays it) and note where the kicking foot is, in his own frame. You are then
@@ -754,6 +758,8 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     const has = (n: string) => b.play.has(n);
     switch (kind) {
       case "shot":
+        // a bicycle kick (bicycle.ts): the ball action's mode is a plain string here (BallActionMode has no "bicycle")
+        if (isBicycleMode(mode)) return has("bicycle") ? "bicycle" : "volley";
         if (mode === "header") return "header_stand";
         if (mode === "volley") return "volley";
         if (mode === "chip" && has("chip")) return "chip";
@@ -856,7 +862,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       const d = wrapPi(want - b.yaw);
       const aiming = fig.sid === "you" && (!!f.aim || f.phase === "aim" || f.phase === "runup" || f.phase === "contact");
       if (!aiming && !onceActive() && !b.windup && sp < MO.turnClipBelow && Math.abs(d) > MO.turnClipMin && f.t >= b.turnReady) startTurn(b, d, f.t);
-      else turnTo(b, want, dt, sp > 0.7 ? 7 : 4);
+      else turnTo(b, want, dt, b.state === "once:bicycle" ? 10 : sp > 0.7 ? 7 : 4);
     }
     // After your goal (lib/star/celebration.ts): the move you equipped, at exactly the 2D's moment
     // in it. The 2D moves him along the grass (a knee slide, a jog with his arms up); his hips stay put.
@@ -909,13 +915,20 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     }
     if (fig.kick && !b.kicking) {
       if (b.turn) { b.yaw = b.turn.start + (b.turn.h * b.turn.d) / b.turn.theta; b.turn = undefined; }
-      const st = kickStyleFor(f.ball && f.ball.live ? f.ball : null, foot === "kick_l", (n) => b.play.has(n));
-      const c = b.setRun && b.windup ? b.windup : b.play.has(st.clip) ? st.clip : foot;
+      let st = kickStyleFor(f.ball && f.ball.live ? f.ball : null, foot === "kick_l", (n) => b.play.has(n));
+      // your bicycle kick (bicycle.ts), when the frame says so: the overhead clip, from the spring, at its own pace
+      const bike = isBicycleMode(fig.act?.mode) && b.play.has("bicycle");
+      if (bike) {
+        st = { ...st, clip: "bicycle", backswing: 0.3, swing: 1.3, follow: 1, hop: 0 };
+        if (fig.act) b.lastAct = fig.act.start; // the act is this kick: never started twice
+        if (f.ball && Math.hypot(f.ball.vx, f.ball.vy) > 0.5) b.bikeYaw = yawOf(Math.atan2(-f.ball.vy, -f.ball.vx));
+      }
+      const c = bike ? "bicycle" : b.setRun && b.windup ? b.windup : b.play.has(st.clip) ? st.clip : foot;
       if (b.play.has(c)) {
         const cc = info(c)?.contact ?? contact;
         const a = b.p.actions[c];
         if (c === b.windup && b.state === `wind:${c}`) a.timeScale = st.swing; // loaded: swing through now, as hard as the kick
-        else b.play.play(c, { fade: 0.1, from: Math.max(0, cc - Math.min(st.backswing, b.windup ? 0.2 : MO.lateStart)), speed: st.swing, once: true });
+        else b.play.play(c, { fade: bike ? 0.16 : 0.1, from: Math.max(0, cc - (bike ? st.backswing : Math.min(st.backswing, b.windup ? 0.2 : MO.lateStart))), speed: st.swing, once: true });
         b.state = `once:${c}`;
         b.kickStyle = { ...st, clip: c }; b.kickT = 0;
         const sr = info("shot_r");
@@ -941,6 +954,7 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
       }
     }
     if (!f.goalSide) b.shotDone = undefined;
+    if (started && b.state === "once:bicycle" && b.bikeYaw === undefined && f.ball && Math.hypot(f.ball.vx, f.ball.vy) > 0.5) b.bikeYaw = yawOf(Math.atan2(-f.ball.vy, -f.ball.vx));
     if (!started && !onceActive() && !b.turn && !b.state.startsWith("wind:")) {
       if (f.goalSide && ((f.goalSide === "us") === (fig.team === "us"))) oneShotThenIdle(b, b.play.has("celebrate_jump") ? "celebrate_jump" : "celebrate_fist");
       else if (f.goalSide && b.play.has("dejected") && sp < 0.5) oneShotThenIdle(b, "dejected");
@@ -1086,6 +1100,9 @@ vSolidNy = normalize(mat3(modelMatrix) * objectNormal).y;`);
     }
     else if (fig.sid === "you" && (f.phase === "aim" || f.phase === "runup")) want = yawOf(Math.atan2(0 - b.y, CX - b.x));
     else if (bl && Math.hypot(bl.x - b.x, bl.y - b.y) > 0.4) want = yawOf(Math.atan2(bl.y - b.y, bl.x - b.x));
+    // a bicycle kick goes back over his head: he turns his back on where the ball went, quickly, as he springs
+    if (b.state === "once:bicycle" && b.bikeYaw !== undefined) want = b.bikeYaw;
+    else b.bikeYaw = undefined;
     if (mo) moveMocap(b, fig, f, dt, sp, want);
     else {
     if (want !== null) turnTo(b, want, dt, sp > 0.7 ? 7 : 4);

@@ -4,6 +4,8 @@ import { GAMEPLAY_SWITCHES, type GameplaySwitch } from "@/lib/star/gameplayVersi
 import { LOOK_ROWS, setLookRow, useLook, type LookRowId } from "@/lib/star/lookRows";
 import { LookRow, NEW_OLD } from "./DeviceSettings";
 import { SetCard, SetNote, SetSection } from "./settingsKit";
+import { useIsAdmin } from "@/lib/useIsAdmin";
+import LeoUpdateCard from "./LeoUpdateCard";
 
 /**
  * SETTINGS → UPDATES (Leo, 14 Oct 2026): "just add a tab to the settings page
@@ -74,12 +76,15 @@ const PILL: Record<string, string> = { new: "bg-emerald-400 text-gray-950", old:
 
 export default function UpdatesPanel({ glow }: { glow: string }) {
   const look = useLook();
+  // Leo's 24 Oct update: admins only (lib/star/leoUpdate.ts).
+  const isAdmin = useIsAdmin();
   const [open, setOpen] = useState<string | null>(UPDATES[0]?.id ?? null);
   const setAll = (u: Update, v: "new" | "old") => {
     for (const id of [...u.rows, ...(u.with ?? [])]) setLookRow(id, v === "new" ? LOOK_ROWS[id].newValue : LOOK_ROWS[id].oldValue);
   };
   return (
     <div data-updates-panel>
+      {isAdmin && <div className="mb-3 mt-1"><LeoUpdateCard glow={glow} /></div>}
       <SetSection className="mb-1.5 mt-1">Updates</SetSection>
       <SetNote dim className="mb-2 text-[11px]">
         Each update can be switched New or Old here. Old = the game before it. It changes your real matches on this phone only.
