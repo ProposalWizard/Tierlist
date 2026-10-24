@@ -230,7 +230,7 @@ function AppIcon({ app, size = 50, badge = 0, index = 0, onOpen, label = true, o
     </button>
   );
   return (
-    <button onClick={() => onOpen(app.id, ref.current)} className="kib-press flex min-w-0 flex-col items-center gap-1">
+    <button onClick={() => onOpen(app.id, ref.current)} data-tour={`app-${app.id}`} className="kib-press flex min-w-0 flex-col items-center gap-1">
       <span
         ref={ref}
         className="relative grid aspect-square place-items-center rounded-[28%]"
@@ -288,7 +288,7 @@ function Grid({ career, glow, badges, onOpen, onClose, installed, isNew }: {
         style={{ background: "rgba(255,255,255,.11)", backdropFilter: "blur(10px)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.18), 0 8px 20px -10px rgba(0,0,0,.8)" }}
       >
         {dock.map((a, i) => (
-          <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} fresh={!!isNew?.(a.id)} />
+          <AppIcon key={a.id} app={a} index={grid.length + i} badge={badges[a.id as AppId] ?? 0} onOpen={onOpen} off={!!installed && !installed(a.id)} fresh={!!isNew?.(a.id)} />
         ))}
       </div>
       {/* Back (PhoneFrame's nav bar) puts the phone down from here. */}
@@ -483,6 +483,7 @@ function Messages({ msgs, onOpen }: { msgs: Msg[]; onOpen: (to: "scout" | "spons
                   <button
                     onClick={() => onOpen(m.open!)}
                     data-msg-open={m.open}
+                    data-tour={`msg-${m.open}`}
                     className="kib-press block rounded-2xl rounded-bl-md px-3 py-1.5 text-left text-[11.5px] font-bold leading-snug text-white"
                     style={{ background: "linear-gradient(180deg, rgba(52,211,153,.32), rgba(16,185,129,.16))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(52,211,153,.4)" }}
                   >

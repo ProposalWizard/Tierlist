@@ -14,7 +14,8 @@ const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 const player = { firstName: "Harry", lastName: "Vale", age: 18, skinTone: "light", club: "Liverpool", clubBadge: null,
   position: "ST", nationality: "England", startYear: 2027 } as StarPlayer;
-const fresh = (): CareerState => makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier");
+// Not on the story order: there the penalty talk waits for the first goal (storyOrder.mts).
+const fresh = (): CareerState => { const c = makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier"); return { ...c, unlocks: { ...c.unlocks!, story: undefined } }; };
 
 {
   const c = fresh();

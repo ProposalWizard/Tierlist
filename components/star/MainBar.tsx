@@ -47,7 +47,7 @@ export default function MainBar({ activeNav = null, onNavigate, onHome, atHome =
   // Relationships lives in the Phone now, so its "needs you" dot shows there.
   const phoneDot = (mediaUnread || badges?.life === "dot") && !badges?.media;
   return (
-    <div data-main-bar className="sk-nav relative grid grid-cols-5 items-end gap-1 px-1.5 pb-1.5 pt-1 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50 shadow-[0_-6px_16px_-8px_rgba(0,0,0,.7)]" style={{ paddingBottom: "max(6px, env(safe-area-inset-bottom, 0px))" }}>
+    <div data-main-bar className="sk-nav relative z-30 grid grid-cols-5 items-end gap-1 px-1.5 pb-1.5 pt-1 bg-gradient-to-b from-gray-700 to-gray-800 border-t border-black/50 shadow-[0_-6px_16px_-8px_rgba(0,0,0,.7)]" style={{ paddingBottom: "max(6px, env(safe-area-inset-bottom, 0px))" }}>
       {lockNote && (
         <div className="pointer-events-none absolute inset-x-3 bottom-full mb-2 flex items-center gap-2 rounded-xl bg-gray-950/95 px-3 py-2 ring-1 ring-amber-300/40 shadow-lg">
           <span className="text-amber-300"><LockGlyph /></span>

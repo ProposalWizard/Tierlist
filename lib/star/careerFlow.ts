@@ -253,7 +253,9 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
     // contract — `attachClub` unlocks it when there genuinely is one.
     achievements: [],
     status: "1st Team",
-    currentBoot: starterBoot,
+    // The story order (every new career): no boots until a team-mate hands
+    // you his old pair before your first game (story.ts, the "boots" beat).
+    currentBoot: { ...starterBoot, matches: 0 },
     kibCans: { basic: 2, premium: 0, elite: 0 },
     ownedItems: [],
     girlfriend: null,
@@ -668,6 +670,10 @@ export function restRecoveryAfter(career: CareerState, settled: Fixture, fixture
   const days = restDaysBetween(from, to);
   const ownsProperty = (career.ownedItems ?? []).some(i => i.category === "property" && !isWornOut(i));
   const tier = career.player.club ? facilitiesFor(career, career.player.club).trainingGroundTier : 1;
+  // The story's first week (Mikey, 24 Oct 2026): before game 2 the rest days
+  // fill you right up, so no "low energy, use a can" comes before the physio
+  // hands you one after game 2 (lib/star/story.ts, the "can" beat).
+  if (career.unlocks?.story && !career.unlocks.seen.includes("beat-can") && (career.careerStats?.appearances ?? 0) < 1) return 100;
   // Happiness decides how well you recover (relationships.ts, Mikey 4 Oct 2026).
   return days * dailyRecovery(ownsProperty, tier) * happinessEnergyFactor(happinessOf(career));
 }

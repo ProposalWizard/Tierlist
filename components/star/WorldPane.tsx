@@ -9,7 +9,8 @@ import { koAggregate, type EuroBracket } from "@/lib/star/euroBracket";
 import { worldOf, finishWorld, WORLD_LIVE } from "@/lib/star/world";
 import { worldRoundResults } from "@/lib/star/world/leagues";
 import { compHistoryFor } from "@/lib/star/world/history";
-import { intlCompetitions, intlCompView, fullRanking } from "@/lib/star/intl/compView";
+import { intlCompetitions, intlCompView, intlCompScorers, fullRanking } from "@/lib/star/intl/compView";
+import { cupScorers } from "@/lib/star/world/cupScorers";
 import { intlOf } from "@/lib/star/intl/career";
 import type { CompKind } from "@/lib/star/intl/world";
 import { topOf, ownLeagueTop, type ScorerRow } from "@/lib/star/world/summary";
@@ -431,12 +432,16 @@ function Bracket({ bracket, glow, you }: { bracket: EuroBracket; glow: string; y
 // ── Cups and shields ────────────────────────────────────────────────────────
 
 function CupView({ career, name, cup, glow, you }: { career: CareerState; name: string; cup?: CupState; glow: string; you: string }) {
-  const [tab, setTab] = useState<"rounds" | "history">("rounds");
+  const [tab, setTab] = useState<"rounds" | "goals" | "assists" | "history">("rounds");
+  const sc = useMemo(() => cup ? cupScorers(career, name, cup.rounds.flatMap(r => r.ties.map(t => ({ round: r.name, home: t.home, away: t.away, hs: t.hs, as: t.as })))) : { goals: [], assists: [] }, [career, name, cup]);
   return (
     <div className="space-y-2">
-      <SegTabs value={tab} onChange={setTab} tabs={[["rounds", "Rounds"], ["history", "History"]] as const} />
+      <SegTabs value={tab} onChange={setTab} tabs={[["rounds", "Rounds"], ["goals", "Goals"], ["assists", "Assists"], ["history", "History"]] as const} />
       {tab === "history" ? <History career={career} comp={name} glow={glow} you={you} />
-        : !cup ? <Empty text="This cup isn't being played this season." /> : <CupRounds cup={cup} glow={glow} you={you} />}
+        : !cup ? <Empty text="This cup isn't being played this season." />
+        : tab === "goals" ? <Scorers rows={sc.goals} glow={glow} label="goals" />
+        : tab === "assists" ? <Scorers rows={sc.assists} glow={glow} label="assists" />
+        : <CupRounds cup={cup} glow={glow} you={you} />}
     </div>
   );
 }
@@ -490,13 +495,19 @@ function ShieldView({ career, world, competition, glow }: { career: CareerState;
   const s = world.shields.find(x => x.competition === competition);
   const home = yours ? (yours.home ? career.player.club : yours.opponent) : null;
   const away = yours ? (yours.home ? yours.opponent : career.player.club) : null;
+  const [tab, setTab] = useState<"final" | "goals" | "assists" | "history">("final");
+  const game = yours ? { round: "Final", home: home!, away: away!, hs: yours.played ? yours.homeScore : undefined, as: yours.played ? yours.awayScore : undefined }
+    : s ? { round: "Final", home: s.home, away: s.away, hs: s.hs, as: s.as } : null;
+  const sc = useMemo(() => cupScorers(career, competition, game ? [game] : []), [career, competition, game?.home, game?.hs, game?.as]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="space-y-2">
-      {yours ? <ShieldCard glow={glow} home={home!} away={away!} hs={yours.played ? yours.homeScore : undefined} as={yours.played ? yours.awayScore : undefined} />
+      <SegTabs value={tab} onChange={setTab} tabs={[["final", "Final"], ["goals", "Goals"], ["assists", "Assists"], ["history", "History"]] as const} />
+      {tab === "final" && (yours ? <ShieldCard glow={glow} home={home!} away={away!} hs={yours.played ? yours.homeScore : undefined} as={yours.played ? yours.awayScore : undefined} />
         : s ? <ShieldCard glow={glow} home={s.home} away={s.away} hs={s.hs} as={s.as} pens={s.pens} winner={s.winner} />
-        : <Empty text={`No ${competition} this season.`} />}
-      <CardTitle className="px-1 pt-1" tone="text-amber-300">History</CardTitle>
-      <History career={career} comp={competition} glow={glow} you={career.player.club} />
+        : <Empty text={`No ${competition} this season.`} />)}
+      {tab === "goals" && <Scorers rows={sc.goals} glow={glow} label="goals" />}
+      {tab === "assists" && <Scorers rows={sc.assists} glow={glow} label="assists" />}
+      {tab === "history" && <History career={career} comp={competition} glow={glow} you={career.player.club} />}
     </div>
   );
 }
@@ -532,15 +543,20 @@ function WinnerBar({ club, glow }: { club: string; glow: string }) {
 function IntlCompPane({ career, comp, nation }: { career: CareerState; comp: CompKind; nation: string | null }) {
   const v = useMemo(() => { try { return intlCompView(career, comp); } catch { return null; } }, [career, comp]);
   const glow = nationGlow(nation ?? "England");
-  const [tab, setTab] = useState<"tables" | "results" | "history">(v && v.groups.length ? "tables" : "results");
+  const drawn = !!v && v.rounds.length > 0;
+  const [tab, setTab] = useState<"tables" | "results" | "goals" | "assists" | "history">(!drawn ? "history" : v && v.groups.length ? "tables" : "results");
   const [round, setRound] = useState(v?.openAt ?? 0);
+  const sc = useMemo(() => { try { return intlCompScorers(career, comp); } catch { return { goals: [], assists: [] }; } }, [career, comp]);
   if (!v) return <Empty text="Not drawn yet." />;
   const r = v.rounds[round];
+  const asRows = (xs: { name: string; nation: string; n: number }[]) => xs.map((x, i) => ({ id: `${i}`, player: x.name, club: "", nation: x.nation, n: x.n }));
   return (
     <div className="space-y-2" data-intl-comp={comp}>
       <div className="px-1 text-[11px] font-black uppercase tracking-wider text-amber-300">{v.title}{v.yours && nation ? ` · ${nation} in it` : ""}</div>
-      <SegTabs value={tab} onChange={setTab} tabs={[["tables", "Tables"], ["results", "Results"], ["history", "History"]] as const} />
-      {tab === "tables" && (v.groups.length
+      <SegTabs value={tab} onChange={setTab} tabs={[["tables", "Tables"], ["results", "Results"], ["goals", "Goals"], ["assists", "Assists"], ["history", "History"]] as const} />
+      {!drawn && (tab === "tables" || tab === "results") && <Empty text="The next one isn't drawn yet. Its history is under History." />}
+      {(tab === "goals" || tab === "assists") && <NationScorers rows={asRows(tab === "goals" ? sc.goals : sc.assists)} glow={glow} label={tab} mine={nation} />}
+      {drawn && tab === "tables" && (v.groups.length
         ? v.groups.map(g => <NationTable key={g.title} group={g} nation={nation ?? ""} glow={glow} through={1} />)
         : <Empty text="No groups in this one: it is all knockout." />)}
       {tab === "results" && r && (
@@ -571,6 +587,24 @@ function IntlCompPane({ career, comp, nation }: { career: CareerState; comp: Com
         </ClubCard>
       ) : <Empty text="No final played yet. Each one is added here once it is played." />)}
     </div>
+  );
+}
+
+/** International scorers: a flag instead of a club badge; your nation lit. */
+function NationScorers({ rows, glow, label, mine }: { rows: { id: string; player: string; nation: string; n: number }[]; glow: string; label: string; mine: string | null }) {
+  if (!rows.length) return <Empty text="No goals named in this one yet this season." />;
+  return (
+    <ClubCard glow={glow} className="p-1.5">
+      <div className="space-y-1">
+        {rows.map((r, i) => (
+          <div key={r.id} className="grid grid-cols-[22px_1fr_auto] items-center gap-2 rounded-lg bg-white/[0.04] px-2 py-1.5 text-[12px] font-bold text-white" style={r.nation === mine ? youRowStyle(glow) : undefined}>
+            <span className="text-center font-black">{i + 1}</span>
+            <span className="flex min-w-0 items-center gap-1.5"><NationFlag nation={r.nation} width={18} rounded={2} /><span className="truncate">{r.player}</span></span>
+            <span className="font-black tabular-nums">{r.n} <span className="text-[9px] text-white/70">{label}</span></span>
+          </div>
+        ))}
+      </div>
+    </ClubCard>
   );
 }
 

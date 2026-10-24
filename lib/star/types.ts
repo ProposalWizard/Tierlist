@@ -871,6 +871,11 @@ export interface CareerUnlocks {
    *  after the first game, Relations after the manager's talk, the Shop by
    *  about game 3. Absent = the v0.24 order (a save part-way through it). */
   gameFirst?: boolean;
+  /** The first hour as a story (Mikey, 23 Oct 2026, lib/star/story.ts): each
+   *  feature is brought in by a person after a game. Only new careers. */
+  story?: boolean;
+  /** The story's training day: the drills done so far (each one once). */
+  trainingDay?: string[];
 }
 
 export interface CareerState {
