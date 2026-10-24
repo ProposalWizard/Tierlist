@@ -5,7 +5,7 @@ client: team
 tags: [admin, process, team]
 status: live
 date: 2026-10-24
-source: "Leo, 24 Oct 2026, in chat"
+source: "docs/brain-sources/leo-admin-page-2026-10-24.md:3-5"
 summary: Everything goes on the admin page, always: every patch note and every update to one is shipped to the site and checked live; an update is marked (updatedAt + updateNote) so it shows UPDATED, moves to the front and is unread again.
 ---
 Leo, 24 Oct 2026: *"i never want patch notes kept to me and you on this chat!
