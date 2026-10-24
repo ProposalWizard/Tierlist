@@ -133,120 +133,67 @@
   .card p{margin:2px 0 0;color:var(--ink2);font-size:14px}
   .card .t{font-weight:800;font-size:16px;margin-bottom:8px}
 </style>
-</head><body>
-<div class="wrap">
-<header>
-  <span class="ver">LEO v0.20 · SITE 0.108 · ON LEO BRANCH, NOT LIVE</span>
-  <h1>Tonight's build: what was made</h1>
-  <p class="sub">Leo · 22 Oct 2026 · 7 chats, joined on branch Leo · goes live only when Leo says push · the plan was 0.107</p>
+<style>
+.reel{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 12px;margin:10px -16px 4px;padding-left:16px;padding-right:16px;-webkit-overflow-scrolling:touch}
+.reel::-webkit-scrollbar{height:0}
+.clip{flex:0 0 64%;max-width:260px;scroll-snap-align:start;margin:0}
+.clip.wide{flex-basis:86%;max-width:420px}
+.clip.sq{flex-basis:72%;max-width:300px}
+.clip video{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:#000}
+.clip figcaption{font-size:12.5px;color:var(--ink2);margin-top:7px;line-height:1.4}
+.clip figcaption b{color:var(--ink);display:block;font-size:13px}
+.swipe{font-size:11.5px;color:var(--ink3);margin:2px 0 0}
+</style></head><body>
+<div class="wrap"><header>
+<span class="ver">LEO v0.20 · SITE 0.108 · ON LEO BRANCH, NOT LIVE YET</span>
+<h1>Tonight's build, filmed</h1>
+<p class="sub">Leo · 22–23 Oct 2026 · 7 chats, joined on branch Leo · every clip filmed on that joined build at phone size · goes live when Leo says push</p>
 </header>
-
 <div class="alert"><div class="t">Harry, Mikey: your areas were touched</div>
-<p><b>Match file</b> (<code>CanvasMatch.tsx</code>): celebrations, big moments, bicycle kick, a longer goal video. All additive; <code>canvasEngine.ts</code> is changed only for weather, and only on the test page. <b>Keeper</b> (<code>keeperBrain.ts</code>): bicycle reaction delay and penalty habits; with no habit he is exactly as before. <b>Mikey:</b> 3 lines in <code>manager.ts</code> (no sack after promotion) and an injuries plan for you. <b>Admin tab</b> (<code>AdminNavPanel.tsx</code>) made cheap on slow phones. Match tests all pass.</p></div>
-
+<p><b>Match file</b> (<code>CanvasMatch.tsx</code>): celebrations, big moments, bicycle kick, a longer goal video. All additive; <code>canvasEngine.ts</code> changes only for weather, and only on the test page. <b>Keeper</b> (<code>keeperBrain.ts</code>): bicycle reaction delay and penalty habits; with no habit he is exactly as before. <b>Mikey:</b> 3 lines in <code>manager.ts</code> (no sack after promotion) and an injuries plan for you (clip in part 7). <b>Admin tab</b> (<code>AdminNavPanel.tsx</code>) made cheap on slow phones. Match tests all pass.</p></div>
 <div class="strip">
-  <div class="s"><b>7</b><span>chats joined into one branch</span></div>
-  <div class="s"><b>0.29 s</b><span>feed opens (was 1.5 s, cheap phone)</span></div>
-  <div class="s"><b>17</b><span>bugs fixed</span></div>
-  <div class="s"><b>61</b><span>famous goals 2010–2025 added</span></div>
-  <div class="s"><b>Build ✓</b><span>production build passes on the joined branch</span></div>
+<div class="s"><b>0.29 s</b><span>feed opens on a cheap phone (was 1.5 s)</span></div>
+<div class="s"><b>17</b><span>bugs fixed</span></div>
+<div class="s"><b>61</b><span>famous goals 2010–2025</span></div>
+<div class="s"><b>Build ✓</b><span>production build passes</span></div>
 </div>
-
-<h2 class="add"><i></i>1 · Goal celebrations</h2>
-<ul class="n">
-  <li><div class="hd">You score, you run to the corner, you celebrate</div><div class="dt">Only your own goals. Up to 2 s run to the nearer corner, then the move equipped in the shop. <b>Tap anywhere skips</b> (0.04 s). 2D, 3D and the goal video all show the same run.</div></li>
-  <li><div class="hd">Six in the shop</div><div class="dt">Hands Up, Fist Pump (new), Jump (new), Roar (new), Aeroplane, Knee Slide. The knee slide was fixed: his knees were pressed together; now 33 cm apart.</div></li>
-  <li><div class="hd">Goal videos run 2.5 s longer</div><div class="dt">The run and the move are in the video, even if you skipped in the match.</div></li>
-</ul>
-<div class="shots"><figure><img src="celeb-shop.jpg" alt="Celebration frames"><figcaption>The new 2D frames, all six moves.</figcaption></figure>
-<figure><img src="big-moment.jpg" alt="Big moment banner"><figcaption>Part 5: the Big Moment banner.</figcaption></figure></div>
-
-<h2 class="add"><i></i>2 · Big moments</h2>
-<ul class="n"><li><div class="hd">85' or later, level or one down, a chance for you</div><div class="dt">Red "BIG MOMENT" banner, the crowd rises, a heartbeat. Score: the last 0.5 s in slow motion (result unchanged), a big roar, one of 14 new late commentary lines ("Late, late, he's won it!"). Miss: a groan.</div></li></ul>
-
+<p class="pc">Clips have no sound. They were filmed in a test sandbox with no database, so players and badges are invented, and a thin "ADMIN" tab shows at the left edge (players never see it).</p>
+<h2 class="add"><i></i>1 · Goal celebrations</h2><p class="idea">You score, you run to the corner, you do the move you bought in the shop. Tap anywhere to skip. Only your own goals.</p>
+<div class="reel"><figure class="clip "><video src="celeb-knee-slide-2d.mp4" poster="celeb-knee-slide-2d.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Knee slide</b>A real goal: he runs to the corner, the camera follows him in, knee slide, the match goes on.</figcaption></figure><figure class="clip "><video src="celeb-aeroplane-2d.mp4" poster="celeb-aeroplane-2d.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Aeroplane</b>The same, with the aeroplane.</figcaption></figure><figure class="clip "><video src="celeb-skip.mp4" poster="celeb-skip.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Tap to skip</b>A tap 1.5 s in: the celebration goes at once.</figcaption></figure><figure class="clip "><video src="celeb-3d.mp4" poster="celeb-3d.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>In the 3D view</b>The run and the knee slide (arms wide, then up). Real time.</figcaption></figure><figure class="clip wide"><video src="celeb-video.mp4" poster="celeb-video.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>In the goal video</b>The goal video follows his run and slide, then the replays.</figcaption></figure><figure class="clip "><video src="celeb-shop.mp4" poster="celeb-shop.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Buying one</b>Shop → Store → Roar → buy → use it. (The button now reads "Use after my goals".)</figcaption></figure></div><p class="swipe">Swipe for more → · tap a video for full screen</p>
+<ul class="n"><li><div class="hd">Six in the shop</div><div class="dt">Hands Up, Fist Pump (new), Jump (new), Roar (new), Aeroplane, Knee Slide. The knee slide was fixed: his knees were pressed together; now 33 cm apart.</div></li><li><div class="hd">Goal videos run 2.5 s longer</div><div class="dt">The run and the move are in the video, even if you skipped in the match.</div></li></ul>
+<h2 class="add"><i></i>2 · Big moments</h2><p class="idea">85' or later, level or one down, a chance for you: banner, crowd rising, heartbeat. Score it: the end of the shot in slow motion (the result is not changed), a roar and one of 14 new late commentary lines.</p>
+<div class="reel"><figure class="clip "><video src="big-moment.mp4" poster="big-moment.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>A late winner</b>BIG MOMENT banner → the strike → slow motion into the top corner → GOAL → the celebration.</figcaption></figure></div><p class="swipe">Swipe for more → · tap a video for full screen</p>
 <h2 class="fix"><i></i>3 · Social feed: fast on a cheap phone</h2>
 <div class="bars">
 <div class="bar"><span class="lb">Feed opens</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:19%"></div></div><span class="vv"><s>1.5 s</s> 0.29 s</span></div>
 <div class="bar"><span class="lb">Worst freeze</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:22%"></div></div><span class="vv"><s>0.76 s</s> 0.17 s</span></div>
 <div class="bar"><span class="lb">First video</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:26%"></div></div><span class="vv"><s>47 s</s> 12 s</span></div>
 <div class="bar"><span class="lb">Video, reopened</span><div class="track"><div class="fill was" style="width:100%"></div><div class="fill now" style="width:29%"></div></div><span class="vv"><s>1.9 s</s> 0.56 s</span></div>
-</div>
-<p class="pc">Production build, CPU slowed 6×, 390×844, 150 posts. Measured.</p>
-<ul class="n">
-  <li><div class="hd">How</div><div class="dt">Only posts near the screen are drawn. Videos are made off the main thread, kept on the phone (newest 40) and started at full time, so after a real match the video was ready 2–3 s after the feed opened.</div></li>
-  <li><div class="hd">Goal of the Month</div><div class="dt">A monthly poll: your 3 best goals against 2 by other players in your league. Fans vote; you get one vote; a win adds fans.</div></li>
-  <li><div class="hd">Two video bugs fixed</div><div class="dt">Videos no longer stop 1–2 s after the goal. Cup accounts no longer post other competitions' news.</div></li>
-  <li><div class="hd">Not met</div><div class="dt">Scrolling still has 11–16 hiccups of 0.14–0.17 s (target: none over 0.1 s).</div></li>
-</ul>
-<div class="shots"><figure><img src="feed-video.jpg" alt="Feed video"><figcaption>A goal video playing in the feed.</figcaption></figure>
-<figure><img src="gotm.jpg" alt="Goal of the Month"><figcaption>Goal of the Month, after a vote.</figcaption></figure></div>
-
-<h2 class="add"><i></i>4 · Bicycle kicks</h2>
-<ul class="n">
-  <li><div class="hd">Only for a cross above your head, moving across you</div><div class="dt">An orange "Bicycle!" button on the header screen. How often depends on Aerial: 1.4 times in 40 matches at Aerial 40, 8.6 at 80+.</div></li>
-  <li><div class="hd">Hard to hit, deadly when clean</div><div class="dt">Clean: 40 goals in 100 (a header from the same ball: 29–41). Badly timed: 15–25. New 2D and 3D animation; the crowd and the media treat it like a hat-trick.</div></li>
-  <li><div class="hd">The 15 real overhead goals are back in Real Moments</div></li>
-</ul>
-<div class="shots"><figure><img src="bike-button.jpg" alt="Bicycle button"><figcaption>The Bicycle! button.</figcaption></figure>
-<figure><img src="bike-goal.jpg" alt="Bicycle goal"><figcaption>A bicycle goal.</figcaption></figure></div>
-<figure><img src="bike-3d.jpg" alt="3D bicycle"><figcaption>The new 3D move, side view.</figcaption></figure>
-
-<h2 class="add"><i></i>5 · Weather and pitch <span class="pill p-amb">test page only</span></h2>
-<ul class="n">
-  <li><div class="hd">/star-weather-dev</div><div class="dt">Wind with a direction (a 10 m/s head wind cuts a long ball's carry by 8 m), rain makes the ball skid on, and each club has a pitch quality: lower leagues are worse, the Premier League is always perfect. In a dry spell a bad pitch kills the bounce.</div></li>
-  <li><div class="hd">"Stops dead" was too harsh, so it was softened</div><div class="dt">First build: 87 in 100 normal passes died short on the worst pitch. Now 14 (6 on a clear day).</div></li>
-  <li><div class="hd">Real game unchanged</div><div class="dt">12 of 12 ball fingerprints are identical. <b>Found:</b> the live game's heavy pitch already kills 56 in 100 normal passes.</div></li>
-</ul>
-<div class="shots"><figure><img src="dry-pitch.jpg" alt="Weather page"><figcaption>The weather test page.</figcaption></figure></div>
-
-<h2 class="add"><i></i>6 · Real Goals <span class="pill p-amb">test page</span></h2>
-<ul class="n">
-  <li><div class="hd">8 paths, 411 levels (was 1 path, 50)</div><div class="dt">World Cup &amp; Euro, the five big leagues of 2017/18, Worldies, Bangers. Each path has its own stars.</div></li>
-  <li><div class="hd">61 Bangers, 2010–2025</div><div class="dt">Written from public record and checked twice (22 corrected). Admin "Fix a banger" tool to correct a spot by eye.</div></li>
-  <li><div class="hd">Daily Real Goal</div><div class="dt">Same goal for everyone each day, with a streak. No leaderboard.</div></li>
-  <li><div class="hd">Home opens in 0.4–0.55 s on a cheap phone (was 4.8–5.2 s)</div></li>
-  <li><div class="hd">Shootout keeper reads your habits</div><div class="dt">/star-shootout-dev only. Same side 5 times: he saves the 5th 35% of the time (was 23%).</div></li>
-</ul>
-<div class="shots"><figure><img src="rg-home.jpg" alt="Real Goals home"><figcaption>The new home.</figcaption></figure>
-<figure><img src="rg-bangers.jpg" alt="Bangers"><figcaption>The Bangers path.</figcaption></figure>
-<figure><img src="shootout.jpg" alt="Shootout"><figcaption>The keeper reads you.</figcaption></figure></div>
-
+</div><p class="pc">Production build, phone slowed 6×, 150 posts. Measured.</p>
+<div class="reel"><figure class="clip "><video src="feed-scroll.mp4" poster="feed-scroll.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Scrolling 150 posts</b>Phone slowed 4×: top to "You're all caught up". Posts appear as you reach them, no empty boxes.</figcaption></figure><figure class="clip "><video src="feed-video.mp4" poster="feed-video.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>A goal video</b>The still shows at once, then it plays. (A first open on a slow phone takes a few seconds to make the video; after a real match it is made at full time.)</figcaption></figure><figure class="clip "><video src="gotm-vote.mp4" poster="gotm-vote.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Goal of the Month</b>Watch a goal, vote: the bars and "You voted".</figcaption></figure></div><p class="swipe">Swipe for more → · tap a video for full screen</p>
+<ul class="n"><li><div class="hd">Two video bugs fixed</div><div class="dt">Videos no longer stop 1–2 s after the goal. Cup accounts no longer post other competitions' news.</div></li><li><div class="hd">Not met</div><div class="dt">Scrolling still has short hiccups (11–16 of 0.14–0.17 s on a 6× slowed phone).</div></li></ul>
+<h2 class="add"><i></i>4 · Bicycle kicks</h2><p class="idea">Only for a cross above your head moving across you. An orange "Bicycle!" button on the header screen; how often depends on Aerial (1.4 times in 40 matches at 40, 8.6 at 80+). Clean: 40 goals in 100. A goal is treated like a hat-trick by the crowd and the media.</p>
+<div class="reel"><figure class="clip "><video src="bicycle-goal.mp4" poster="bicycle-goal.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>A bicycle goal</b>A real overhead moment: "Head it?" → Bicycle! → a clean tap → the bicycle in the match → goal → BICYCLE! banner.</figcaption></figure><figure class="clip "><video src="bicycle-miss.mp4" poster="bicycle-miss.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Mistimed</b>Same ball, tapped late: TOO LATE, no goal.</figcaption></figure><figure class="clip sq"><video src="bicycle-3d.mp4" poster="bicycle-3d.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>The 3D move</b>On the real body: real speed, then 3× slower, side and three-quarter views.</figcaption></figure><figure class="clip sq"><video src="bicycle-2d-close.mp4" poster="bicycle-2d-close.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>The 2D move</b>The 7 drawn frames looping, three directions: plant, strike over his head, land, sit up.</figcaption></figure></div><p class="swipe">Swipe for more → · tap a video for full screen</p>
+<h2 class="add"><i></i>5 · Weather and pitch <span class="pill p-amb">test page only</span></h2><p class="idea">Wind with a direction, rain skid, and each club's pitch quality (lower leagues worse; the Premier League always perfect). Each match clip replays the same strike, so only the weather changes. <b>Watch the ball: the small white dot.</b></p>
+<div class="reel"><figure class="clip "><video src="weather-page.mp4" poster="weather-page.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>The test page</b>Wind direction and a gale; a very poor dry pitch: the lab's long ball bends 13 m, the lofted pass stops short.</figcaption></figure><figure class="clip "><video src="wind-play.mp4" poster="wind-play.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Wind</b>One long ball three times: still air, a side gale (it angles away), a head gale (it drops short).</figcaption></figure><figure class="clip "><video src="dry-pitch-play.mp4" poster="dry-pitch-play.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Dry bad pitch</b>A lofted pass on a perfect pitch v a very poor dry one: it sits down and stops about 9 m sooner.</figcaption></figure><figure class="clip "><video src="rain-play.mp4" poster="rain-play.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Rain</b>A low pass: still air, rain (skids on), heavy rain (dies early).</figcaption></figure></div><p class="swipe">Swipe for more → · tap a video for full screen</p>
+<ul class="n"><li><div class="hd">Real game unchanged</div><div class="dt">12 of 12 ball fingerprints identical. Found: the live game's heavy pitch already kills 56 in 100 normal passes.</div></li></ul>
+<h2 class="add"><i></i>6 · Real Goals <span class="pill p-amb">test page</span></h2><p class="idea">8 paths and 411 levels (was 1 path, 50): the World Cup and Euro, the five big leagues of 2017/18, Worldies, and 61 Bangers from 2010–2025 (checked twice, 22 corrected). A daily goal with a streak. The home opens in 0.4–0.55 s on a cheap phone (was 4.8–5.2 s).</p>
+<div class="reel"><figure class="clip "><video src="rg-home.mp4" poster="rg-home.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>The new home</b>Phone slowed 6×: the daily card and the 8 path tiles are on screen at once. Scroll.</figcaption></figure><figure class="clip "><video src="rg-paths.mp4" poster="rg-paths.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>The paths</b>Premier League, Worldies and Bangers, each with its own stages and stars.</figcaption></figure><figure class="clip "><video src="rg-banger-play.mp4" poster="rg-banger-play.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Playing a banger</b>Sergi Roberto v PSG, the 6-1: the real move, the strike, GOAL, 44% and a star.</figcaption></figure><figure class="clip "><video src="rg-daily.mp4" poster="rg-daily.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Daily goal</b>Play today's goal, score, back home with the streak: "🔥 1 day · ✓ Beaten today".</figcaption></figure><figure class="clip "><video src="rg-fixer.mp4" poster="rg-fixer.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Fix a banger (admin)</b>Drag Charlie Adam's shot spot and where it went in, then play it.</figcaption></figure><figure class="clip "><video src="shootout-keeper.mp4" poster="shootout-keeper.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Shootout keeper reads you</b>Test page only. 4 kicks to the left: his read goes 0% → 100% "he now leans left". Sped up about 3×.</figcaption></figure></div><p class="swipe">Swipe for more → · tap a video for full screen</p>
 <h2 class="add"><i></i>7 · End of season</h2>
-<ul class="n">
-  <li><div class="hd">Your season video</div><div class="dt">Every goal of the season in order, a Goal of the Season, an end card with your numbers. Skip always on; save it in one tap.</div></li>
-  <li><div class="hd">Career goals gallery</div><div class="dt">Stats → Goals: every goal from tonight on. The best 10 go in the Hall of Fame.</div></li>
-  <li><div class="hd">Season awards night (3D)</div><div class="dt">A small room, five awards, three nominees each; the winner walks up. About 44 s, skippable.</div></li>
-  <li><div class="hd">Injuries plan for Mikey</div><div class="dt">A plan only, no code: <code>docs/plans/2026-10-22-injuries-revamp-for-mikey.md</code>.</div></li>
-</ul>
-<div class="shots"><figure><img src="reel.jpg" alt="Season reel"><figcaption>Goal of the Season in the reel.</figcaption></figure>
-<figure><img src="awards.jpg" alt="Awards night"><figcaption>You win the Golden Boot.</figcaption></figure>
-<figure><img src="gallery.jpg" alt="Goals gallery"><figcaption>Every goal you score.</figcaption></figure></div>
-
+<div class="reel"><figure class="clip "><video src="season-reel.mp4" poster="season-reel.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Your season video</b>Title card → goals with the counter → Goal of the Season, live then slow from behind the net → the end card. (Cut to 25 s; the real one is about 72 s.)</figcaption></figure><figure class="clip "><video src="goals-gallery.mp4" poster="goals-gallery.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Every goal you score</b>Stats → Goals: scroll, tap one to play it; Hall of Fame → Best goals.</figcaption></figure><figure class="clip "><video src="awards-night.mp4" poster="awards-night.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Season awards night (3D)</b>Golden Boot: the nominees, "YOU!", you walk up and lift it. Then Assist King, which a rival wins.</figcaption></figure><figure class="clip "><video src="injuries.mp4" poster="injuries.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Injuries plan for Mikey</b>A plan only, no game code: kinds and weeks, risk, rehab choice, feed posts, 10 questions with letters.</figcaption></figure></div><p class="swipe">Swipe for more → · tap a video for full screen</p>
 <h2 class="fix"><i></i>8 · Bug hunt: 17 fixed</h2>
-<ul class="n">
-  <li><div class="hd">A refresh no longer throws you to Home</div><div class="dt">The Ballon d'Or, the transfer window, the talks and "Deal agreed" come back where you were. Before, a refresh after "Deal agreed" lost the transfer.</div></li>
-  <li><div class="hd">A manager is never sacked the summer he wins promotion</div><div class="dt">Mikey's area, 3 lines.</div></li>
-  <li><div class="hd">The rest</div><div class="dt">First season said 2027/28 (now 2026/27); talks header showed the wrong wage; the welcome tour replayed every visit; the team sheet showed a different manager; the line-up buttons overlapped; the league dropdown was see-through; setup said "Step 1 of 2" twice; the scout said "The through the gate…"; offline badges retried about 2,000 times; clubs up from Step 3 said "Finished 24th".</div></li>
-  <li><div class="hd">Tests: 414 of 417 pass</div><div class="dt">(Was 408 of 414.) The rest are Harry's area, sent as team jobs.</div></li>
-</ul>
-<div class="shots"><figure><img src="refresh-fix.jpg" alt="Refresh fix"><figcaption>Refresh on the Ballon d'Or: before (Home) → after (back on it).</figcaption></figure>
-<figure><img src="window-fix.jpg" alt="Window fix"><figcaption>"Pick a club" is now readable.</figcaption></figure></div>
-
-<h2 class="bug"><i></i>Known issues</h2>
-<ul class="n">
-  <li><div class="dt">Feed scrolling still has short hiccups (above). Sound for big moments and the reel was measured, not heard. A team-mate can stand in front of you in the celebration video. The bicycle goal video uses the general commentary call. Awards night frame rate not measured on a real phone. This sandbox had no real squads, so invented players were used throughout.</div></li>
-</ul>
-
-<h2 class="nxt"><i></i>Team jobs posted (6)</h2>
-<ul class="n">
-  <li><div class="dt"><b>Harry:</b> match camera 1 px short at 372×704; a long-range drawing breaks a law; the removed data source's name in two patch notes; 3D training freeze (Head/Volley ↔ Free Roam); two chance tests failing on main after the build-up work. <b>Everyone:</b> the save is about 1 MB and rewritten on every change.</div></li>
-</ul>
-
+<div class="reel"><figure class="clip "><video src="refresh-ballondor.mp4" poster="refresh-ballondor.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Refresh on the Ballon d&#x27;Or</b>It comes back on the ceremony (it used to throw you to Home).</figcaption></figure><figure class="clip "><video src="refresh-deal.mp4" poster="refresh-deal.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Refresh after &quot;Deal agreed&quot;</b>Back on the window list, the move not lost (it used to lose the transfer).</figcaption></figure><figure class="clip "><video src="tour-once.mp4" poster="tour-once.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Welcome tour plays once</b>Through the tour, play, reload: it does not come back (it replayed every visit).</figcaption></figure><figure class="clip "><video src="talks-header.mp4" poster="talks-header.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Talks header</b>Their offer and the header now change together (they showed different wages).</figcaption></figure><figure class="clip "><video src="setup-steps.mp4" poster="setup-steps.jpg" muted playsinline loop preload="none" controls></video><figcaption><b>Setup steps</b>"Step 1, 2, 3 of 3" (it said "Step 1 of 2" twice).</figcaption></figure></div><p class="swipe">Swipe for more → · tap a video for full screen</p>
+<ul class="n"><li><div class="hd">Also fixed</div><div class="dt">A manager is never sacked the summer he wins promotion (Mikey's area, 3 lines); first season said 2027/28 (now 2026/27); the team sheet showed a different manager; line-up buttons overlapped; the league dropdown was see-through; "Pick a club" was hard to read; the scout said "The through the gate…"; offline badges retried about 2,000 times; clubs up from Step 3 said "Finished 24th"; the admin tab ate a slow phone's CPU.</div></li></ul>
+<h2 class="bug"><i></i>Known issues</h2><ul class="n"><li><div class="dt">Feed scrolling still has short hiccups. In the celebration goal video a defender can stand on top of you during the slide. The bicycle goal video uses the general commentary call. Sound (big moments, the season video) was measured, not heard. Nothing was tried on a real phone or with real squads.</div></li></ul>
+<h2 class="nxt"><i></i>Team jobs posted (6)</h2><ul class="n"><li><div class="dt"><b>Harry:</b> match camera 1 px short at 372×704; a long-range drawing breaks a law; the removed data source's name in two old patch notes; 3D training freeze (Head/Volley ↔ Free Roam); two chance tests failing on main after the build-up work. <b>Everyone:</b> the save is about 1 MB and rewritten on every change.</div></li></ul>
 <details><summary>Checks (measured)</summary>
-<p>Type check clean · one-engine guard: no new copies · star tests and production build on the joined branch: see below · weather: 12 of 12 ball fingerprints identical · celebrations: ordinary goal commentary unchanged, byte for byte · penalty keeper with no habits: 400 decisions and 300 kicks identical.</p>
-<p id="checks">On the joined branch: the production build passes. Of 430 star test files, 8 fail, and all 8 fail the same way on main (Harry's chance and camera work, or his old notes): chanceMaker, chanceJudge, freshness, kindMix, leadInGen, longRangeRules, match2dCam, realGoals. Four failures from tonight's join (credits, licences, headlines, test-page lock) were found and fixed.</p>
-</details>
-
+<p>Production build passes on the joined branch. Of 430 star test files, 8 fail, and all 8 fail the same way on main (Harry's chance and camera work, or his old notes): chanceMaker, chanceJudge, freshness, kindMix, leadInGen, longRangeRules, match2dCam, realGoals. Four failures from tonight's join (credits, licences, headlines, test-page lock) were found and fixed. Weather: 12 of 12 ball fingerprints identical. Penalty keeper with no habits: 400 decisions and 300 kicks identical.</p>
+<p>Not live yet: Vercel paused every deploy for 24 hours (the free plan's daily limit), so nothing new reached knowitball.co.uk tonight, Harry's merges included.</p></details>
 <footer>Leo v0.20 · site 0.108 · built by 7 Claude chats on branches leo-*, joined into Leo · plan: 0.107</footer>
 </div>
+<script>
+(function(){var vs=[].slice.call(document.querySelectorAll('video'));if(!('IntersectionObserver' in window))return;
+var io=new IntersectionObserver(function(es){es.forEach(function(e){var v=e.target;if(e.intersectionRatio>0.6){v.preload='auto';var p=v.play();if(p&&p.catch)p.catch(function(){});}else{v.pause();}});},{threshold:[0,0.6,1]});
+vs.forEach(function(v){io.observe(v);});})();
+</script>
 </body></html>

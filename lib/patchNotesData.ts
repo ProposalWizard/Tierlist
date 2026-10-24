@@ -27,6 +27,178 @@ import type { PatchNote } from "./patchNotes";
 /** Newest first — the order the archive shows them in. */
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
+      "version": "0.108h",
+      "title": "Harry's patch notes: Your 3D Man On The Player Card, Even 3D Skin, And Players Back To Normal Size",
+      "publishedAt": "2026-10-23T05:00:00Z",
+      "updatedAt": null,
+      "artifactUrl": null,
+      "summary": "22-23 Oct, all on main. Your own 3D footballer on the FIFA player card (Stats) in your club's home kit, in Save image too; drawn head if a phone can't do 3D. 3D skin one even colour for every 3D man (garden face vs arm gap 13-28 to 0-2.4: clearly different to the same). Players back to size B (about 22 px on a phone long-range chance, was 28) and the keeper back to a man's height. Headers, volleys and the Head & Volley drill drew men 1.2-1.45x too big; now 22 px like every chance. Build-ups play a whole move in about 3 s: long ball, tiki-taka, or a run then a pass. Better Aerial = bigger gold perfect circle. Full highlights rebuild and Match feel on by default for new phones. Move media to Cloudflare button; lighter bell (admin pages about 680 KB lighter). Only main makes a Vercel deploy (side branches made 92 of 104 builds on 22 Oct).",
+      "stats": [
+        {
+          "value": "3D",
+          "label": "your man on the player card"
+        },
+        {
+          "value": "13-28 → 0-2.4",
+          "label": "face vs arm colour gap"
+        },
+        {
+          "value": "28 → 22 px",
+          "label": "a man on a phone chance"
+        },
+        {
+          "value": "~3 s",
+          "label": "one build-up, three styles"
+        }
+      ],
+      "sections": [
+        {
+          "kind": "added",
+          "title": "Check these",
+          "items": [
+            {
+              "title": "3D man on the player card",
+              "detail": "Stats: the card at the top shows your own 3D footballer in your club's home kit."
+            },
+            {
+              "title": "Save image with the 3D man",
+              "detail": "Stats, player card, Save image: the PNG has him in it."
+            },
+            {
+              "title": "One skin colour",
+              "detail": "Garden or shop: face, neck, arms and hands are the same colour, at a dark and a light tone."
+            },
+            {
+              "title": "Player size",
+              "detail": "Play a real match chance: men are normal size again (about 22 px on a phone long-range chance)."
+            },
+            {
+              "title": "Keeper height",
+              "detail": "Any chance: the keeper is a man's height, not a giant."
+            },
+            {
+              "title": "Header and volley size",
+              "detail": "A header or volley chance, and Training, Head & Volley: men are the same size as every other chance."
+            },
+            {
+              "title": "Build-ups",
+              "detail": "Highlights: a build-up plays a whole move in about 3 s. Long ball, tiki-taka, or a run then a pass."
+            },
+            {
+              "title": "Gold perfect circle",
+              "detail": "Header or volley strike screen: the circle is gold and grows with Aerial."
+            },
+            {
+              "title": "New defaults",
+              "detail": "A new phone: Settings shows Full highlights rebuild and Match feel on. Both rows are still there."
+            },
+            {
+              "title": "Move media to Cloudflare",
+              "detail": "Admin, Patch notes: \"Move media to Cloudflare\"."
+            },
+            {
+              "title": "Faster bell",
+              "detail": "Admin: the bell opens a short headline list."
+            },
+            {
+              "title": "Deploys from main only",
+              "detail": "Vercel: only main makes a deploy. Side branches do not."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Your 3D man on the player card",
+          "items": [
+            {
+              "title": "The card shows the same 3D man as the shop and the garden",
+              "detail": "Problem: the card on Stats showed a flat drawn head. Fix: it draws your own 3D footballer in your club's home kit, and Save image puts him in the PNG. A phone that can't run 3D shows the drawn head, as before."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: 3D skin is one even colour",
+          "items": [
+            {
+              "title": "Face, neck, arms and hands match the tone you pick",
+              "detail": "Problem: the face was a different colour from the arms; on dark tones it looked pale. Fix: one colour from the tone you pick, for every 3D man everywhere (shop, garden, cut scenes, card, team-mates). Garden face against arm: clearly different (13-28) to the same (0-2.4). Seen on test renders."
+            }
+          ]
+        },
+        {
+          "kind": "fixed",
+          "title": "Fixed: Players back to normal size",
+          "items": [
+            {
+              "title": "Men are size B again, the keeper is a man's height",
+              "detail": "Problem: \"players are huge\": size C made men 1.56x the old size. Fix: back to size B, about 22 px on a phone long-range chance (was 28). The keeper is back to a man's height."
+            },
+            {
+              "title": "Headers, volleys and the drill drew men too big",
+              "detail": "Problem: men were 1.2 to 1.45x bigger on headers, volleys and the Head & Volley drill (their closer camera). Fix: men are drawn the same size whatever the camera, 22 px on a phone."
+            }
+          ]
+        },
+        {
+          "kind": "changed",
+          "title": "Changed: Highlights and headers",
+          "items": [
+            {
+              "title": "Build-ups play a whole move in about 3 s",
+              "detail": "Three styles: a fast long ball, tiki-taka (about four short passes), or a run then a pass."
+            },
+            {
+              "title": "Better Aerial = bigger gold circle",
+              "detail": "The perfect circle on headers and volleys grows with Aerial (0.11 at 30, 0.29 at 90) and is gold so it shows on the ball."
+            },
+            {
+              "title": "Two settings on by default",
+              "detail": "Full highlights rebuild and Match feel start on for new phones. Both rows stay in Settings."
+            }
+          ]
+        },
+        {
+          "kind": "added",
+          "title": "Added: Site and admin",
+          "items": [
+            {
+              "title": "Move patch-note media to Cloudflare",
+              "detail": "Admin, Patch notes, \"Move media to Cloudflare\" copies old pictures and clips across (test run: 2,118 files, 175 MB). The bell now loads a short headline list: admin pages about 680 KB lighter."
+            },
+            {
+              "title": "Only main makes a Vercel deploy",
+              "detail": "On 22 Oct side branches made 92 of 104 builds and hit the free 100-a-day limit. Now only main deploys."
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "title": "Known issues",
+          "items": [
+            {
+              "title": "Penalties, cutbacks and one-on-ones still draw men up to about 31 px",
+              "detail": "The same closer-camera effect headers had. Harry to decide."
+            },
+            {
+              "title": "Skin fix not yet seen on a phone",
+              "detail": "Seen on test renders only. Recommended: look on a phone at a dark and a light tone."
+            }
+          ]
+        },
+        {
+          "kind": "next",
+          "title": "Next",
+          "items": [
+            {
+              "title": "Penalties, cutbacks and one-on-ones",
+              "detail": "Harry decides if men there go to 22 px too."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.109",
       "title": "Mikey's patch notes v0.21: one bottom bar, Stats with your card, League for every competition, a fuller Phone",
       "publishedAt": "2026-10-23T03:30:00Z",
