@@ -70,11 +70,17 @@ export interface AirStrike {
    *  `tech` to soften a mis-hit, and it sets a header's pace. Absent (the
    *  match today, older replays) = exactly the strike as before. */
   aerial?: number;
+  /** A bicycle kick (lib/star/bicycle.ts): the BICYCLE button on a header
+   *  chance. Struck with the foot over your head, judged by
+   *  bicycleContactRead. Absent: a header or volley as before. */
+  style?: "bicycle";
 }
 export type StrikeContact = Contact & { air?: AirStrike };
 
 import { HEADER_Z, VOLLEY_MAX_Z, airZOf } from "./airDrawings";
 import { aerialHeaderPace, aerialVolleyPace, headerJump } from "./aerial";
+import { bicycleContactRead, BICYCLE_MODE } from "./bicycle";
+import type { BallActionMode } from "./canvasEngine";
 export { HEADER_Z, VOLLEY_MAX_Z };
 const HEADER_PACE = 0.72;          // a header is softer than a strike
 const VOLLEY_PACE = 1.06;          // a clean volley comes off hot
@@ -88,6 +94,23 @@ const VOLLEY_PACE = 1.06;          // a clean volley comes off hot
 
 /** Inside this far from the centre (in ball radii, sideways) nothing goes off line. */
 export const AIR_CENTRE_R = 0.2;
+
+/**
+ * THE PERFECT CIRCLE GROWS WITH AERIAL (Harry, 22 Oct 2026: "having a better
+ * aerial stat should make the circle to get perfect bigger"). The clean middle
+ * of a ball met in the air, in ball radii: AIR_CENTRE_R at Aerial 60 (exactly
+ * today's), AIR_CENTRE_PER_POINT more or less for every point either side,
+ * held between AIR_CENTRE_MIN_R and AIR_CENTRE_MAX_R. Aerial 30: 0.11, 60:
+ * 0.20, 90: 0.29. Absent (a strike without Aerial): AIR_CENTRE_R, as before.
+ * The circle on the contact screen is drawn from the same number.
+ */
+export const AIR_CENTRE_PER_POINT = 0.003;
+export const AIR_CENTRE_MIN_R = 0.1;
+export const AIR_CENTRE_MAX_R = 0.32;
+export function airCentreR(aerial?: number): number {
+  if (aerial === undefined || !Number.isFinite(aerial)) return AIR_CENTRE_R;
+  return Math.max(AIR_CENTRE_MIN_R, Math.min(AIR_CENTRE_MAX_R, AIR_CENTRE_R + (aerial - 60) * AIR_CENTRE_PER_POINT));
+}
 /** A header met on the very edge of the ball glances off this far (degrees), and loses this share of its pace. */
 export const HEADER_GLANCE_DEG = 22;
 export const HEADER_GLANCE_PACE = 0.35;
@@ -130,7 +153,8 @@ export function airContactRead(air: AirStrike, ballZ?: number): AirRead {
   // 2026); a strike without it (the match until it hands Aerial over) keeps
   // reading Technique, so nothing moves until then.
   const k = airForgiveness(air);
-  const side = Math.max(0, Math.abs(cx) - AIR_CENTRE_R) / (1 - AIR_CENTRE_R);
+  const R0 = airCentreR(air.aerial);
+  const side = Math.max(0, Math.abs(cx) - R0) / (1 - R0);
   // Met on the right side of the ball, it goes left (and the other way round),
   // the same way the engine curls it (positive spin bends it left).
   const away = cx > 0 ? -1 : cx < 0 ? 1 : 0;
@@ -199,6 +223,7 @@ export function applyAirborne(ball: Ball, scenario: Scenario, air: AirStrike | u
   // whenever heights do not vary, so the strike is then exactly as before.
   const aboveM = air.kind === "header" ? (top - HEADER_Z) * (0.85 + 0.15 * lift) : 0;
   const metZ = air.kind === "header" ? top * (0.85 + 0.15 * lift) : top * lift;
+  if (air.style === "bicycle") { applyBicycle(ball, scenario, air, top); return ball; }
   const read = airContactRead(air, metZ);
   if (air.kind === "header") {
     ball.z = metZ;
@@ -279,4 +304,49 @@ function offLine(ball: Ball, read: AirRead): void {
   }
   if (read.pace !== 1) ball.vel = { x: ball.vel.x * read.pace, y: ball.vel.y * read.pace };
   ball.vz += read.vzAdd;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  THE BICYCLE KICK (lib/star/bicycle.ts; Leo, 22 Oct 2026). A strike rule on
+//  top of `launch`, like the volley's: the engine is not changed.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** The bicycle's own mark on the struck ball, kept for the keeper and the media. */
+export interface BicycleMark { clean: boolean; label: string; keeperLateS: number }
+const bicycleMarks = new WeakMap<Ball, BicycleMark>();
+/** How this ball was struck, if it was a bicycle kick (else null). */
+export function bicycleMarkOf(ball: Ball | null | undefined): BicycleMark | null { return ball ? bicycleMarks.get(ball) ?? null : null; }
+
+/** A foot strike over your head: started from the cross's height, the
+ *  height taken back over the flight (as a volley's), then turned, slowed or
+ *  lifted by where and when you met it. The strike is written down as a
+ *  "bicycle" for the pictures (2D sprite, 3D clip). */
+function applyBicycle(ball: Ball, scenario: Scenario, air: AirStrike, top: number): void {
+  const read = bicycleContactRead({ cx: air.cx, cy: air.cy, lift: air.lift, aerial: air.aerial ?? air.tech });
+  // Met as it dropped through the band: the band's middle is your full stretch.
+  ball.z = Math.max(1.2, top * (0.75 + 0.25 * Math.max(0, Math.min(1, air.lift))));
+  const speed = Math.max(4, Math.abs(ball.vel.y));
+  const t = Math.max(0.25, Math.abs(ball.pos.y) / speed);
+  // A bicycle is struck downwards over your shoulder: the height comes back
+  // out over the flight, so a clean one arrives under the bar.
+  ball.vz = Math.min(ball.vz, 3) * 0.6 - ball.z / t;
+  ball.topspin = 0;
+  ball.spin *= 0.5;
+  offLine(ball, read);
+  ball.resting = false;
+  bicycleMarks.set(ball, { clean: read.good, label: read.label, keeperLateS: read.keeperLateS });
+  // Pictures only (canvasEngine BallAction: nothing in the engine reads it back).
+  const mine = [...(ball.actionLog ?? [])].reverse().find((x) => x.actor === "you" && (x.kind === "shot" || x.kind === "pass"));
+  if (mine) mine.mode = BICYCLE_MODE as unknown as BallActionMode;
+  markLanding(ball, scenario);
+}
+
+/** Was the last real touch on this ball your bicycle kick (a save or a block
+ *  on the way does not count as a touch)? The goal is then a bicycle goal. */
+export function bicycleGoalOf(ball: Ball | null | undefined): BicycleMark | null {
+  if (!ball) return null;
+  const mark = bicycleMarks.get(ball);
+  if (!mark) return null;
+  const last = [...(ball.actionLog ?? [])].reverse().find((x) => x.kind !== "save" && x.kind !== "block");
+  return last && last.actor === "you" && (last.mode as string) === BICYCLE_MODE ? mark : null;
 }

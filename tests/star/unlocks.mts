@@ -31,7 +31,12 @@ const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
 const player = { firstName: "T", lastName: "P", age: 18, skinTone: "light", club: "Liverpool", clubBadge: null,
   position: "ST", nationality: "England", startYear: 2027 } as StarPlayer;
-const fresh = (): CareerState => makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier");
+// The v0.25 game-first order, as a save part-way through it has it. A career
+// started now is on the story order instead (tests/star/storyOrder.mts).
+const fresh = (): CareerState => {
+  const c = makeInitialCareer(player, [...PREMIER_LEAGUE_CLUBS], "premier");
+  return { ...c, unlocks: { ...c.unlocks!, story: undefined, trainingDay: undefined, open: ["league", "stats", "play"] } };
+};
 /** The v0.24 order (a save part-way through it): everything shut, no gameFirst. */
 const fresh24 = (): CareerState => { const c = fresh(); return { ...c, unlocks: { open: [], seen: [], drills: 0, pointsAtStart: c.unlocks!.pointsAtStart, apps: [] } }; };
 const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "relations", "phone"];
@@ -145,10 +150,10 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   check(!slotQuestionDue(c), "no switch question before the first steps are done");
   c = recordPhoneBought(c);
   check(firstStepsDone(c) && nextStep(c) === null, "the phone finishes the first steps");
-  check(slotQuestionDue(c) && bottomLeft(c) === "achievements", "then the game asks to switch the button to League (P2-89)");
-  const yes = setBottomLeft(c, "league"), no = setBottomLeft(c, "achievements");
-  check(bottomLeft(yes) === "league" && !slotQuestionDue(yes), "yes: League, and the question is not asked again");
-  check(bottomLeft(no) === "achievements" && !slotQuestionDue(no), "no: Achievements stays, and the question is not asked again");
+  // Mikey, 21 Oct 2026: no question; League once the first steps are done,
+  // whatever an old save answered (Achievements stays in the swipe row).
+  check(!slotQuestionDue(c) && bottomLeft(c) === "league", "first steps done: the bottom-left is League, no question");
+  check(bottomLeft(setBottomLeft(c, "achievements")) === "league", "an old 'no' answer still gets League");
   const old = { ...c, unlocks: undefined };
   check(bottomLeft(old) === "league" && nextStep(old) === null && !slotQuestionDue(old), "an old save keeps League and has no first steps");
 }
@@ -223,7 +228,7 @@ const ALL: Feature[] = ["league", "stats", "play", "shop", "achievements", "rela
   check(isOpen(c, "training") && isOpen(c, "achievements"), "a played first fixture opens Training and Achievements");
   check(!isOpen(c, "shop"), "the Shop does NOT open after game 1");
   check(!isOpen(c, "relations") && managerTalkDue(c), "Relations waits: the manager wants a word first");
-  check(nextStep(c)?.id === "boss-meeting" && bossTour(true)[0].target === "nav-life", "the next step is the boss, and its tour points at Relations");
+  check(nextStep(c)?.id === "boss-meeting" && bossTour(true)[0].target === "nav-phone", "the next step is the boss, and its tour points at the Phone (Relations left the bar)");
   // One drill before the boss: the Shop opens (one drill is the rule), and the boss is still next.
   const early = recordDrill(c);
   check(isOpen(early, "shop") && nextStep(early)?.id === "boss-meeting", "one drill before the boss: Shop open, and the boss is still next");

@@ -10,6 +10,7 @@ import { reputationTier } from "@/lib/star/manager";
 import { leadingScorer } from "@/lib/star/recognition";
 import { clauseSummary } from "@/lib/star/contracts";
 import { divisionOf, leagueNameFor } from "@/lib/star/calendar";
+import { awardWhen } from "@/lib/star/awardText";
 import { ClubCard, StatBar, PressButton, RiseIn, CountUp, rgba, useClubTheme } from "./ui";
 import { SegTabs, CardTitle } from "./screenKit";
 
@@ -43,6 +44,9 @@ const ord = (n: number) => (n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "
 
 type StatsTab = "stats" | "contract" | "status";
 let lastTab: StatsTab = "stats";
+
+/** "0.86", or "—" before a first game. */
+const perGame = (n: number, games: number) => (games > 0 ? (n / games).toFixed(2) : "—");
 
 export default function DashboardStats({ career, onRenew, view }: Props) {
   const { glow } = useClubTheme(career);
@@ -78,27 +82,62 @@ export default function DashboardStats({ career, onRenew, view }: Props) {
 
       {tab === "stats" && (
         <RiseIn key="stats">
-          <ClubCard glow={glow} className="overflow-hidden">
-            <div className="grid grid-cols-3 border-b border-white/10 bg-black/30 py-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-white/60">
-              <div className="pl-3">Stats</div>
-              <div className="text-center">Season</div>
-              <div className="text-center">Career</div>
+          {/* Mikey's playtest, 21 Oct 2026: "this screen looks so ugly". Was a
+              plain three-column table. Now this season's numbers big, the
+              career total under each, then per-game rates and the rating. */}
+          <ClubCard glow={glow} className="overflow-hidden p-2.5">
+            <div className="mb-1.5 flex items-baseline justify-between px-0.5">
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">This season</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-200/90">Career below</span>
             </div>
-            {[
-              ["Appearances", career.seasonStats.appearances, career.careerStats.appearances],
-              ["Goals", career.seasonStats.goals, career.careerStats.goals],
-              ["Hat Tricks", career.seasonStats.hatTricks, career.careerStats.hatTricks],
-              ["Passes", career.seasonStats.passes, career.careerStats.passes],
-              ["Assists", career.seasonStats.assists, career.careerStats.assists],
-              ["Star Man", career.seasonStats.starMan, career.careerStats.starMan],
-              ["Average Rating", avgSeasonRating.toFixed(1), avgCareerRating.toFixed(1)],
-            ].map(([label, s, c], i) => (
-              <div key={String(label)} className={`grid grid-cols-3 items-center py-1.5 ${i % 2 === 0 ? "bg-white/[0.04]" : ""}`}>
-                <div className="pl-3 text-xs font-bold text-white/90">{label}</div>
-                <div className="text-center text-[14px] font-black tabular-nums text-white">{s}</div>
-                <div className="text-center text-[14px] font-black tabular-nums text-amber-200">{c}</div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {([
+                ["Goals", career.seasonStats.goals, career.careerStats.goals],
+                ["Assists", career.seasonStats.assists, career.careerStats.assists],
+                ["Apps", career.seasonStats.appearances, career.careerStats.appearances],
+              ] as const).map(([label, s, c]) => (
+                <div key={label} className="rounded-lg bg-black/30 px-2 py-2 text-center" style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.08)" }}>
+                  <div className="text-[28px] font-black leading-none tabular-nums text-white">{s}</div>
+                  <div className="mt-1 text-[10px] font-black uppercase tracking-wider text-white/75">{label}</div>
+                  <div className="mt-1 text-[11px] font-black tabular-nums text-amber-200">{c} <span className="text-[9px] text-amber-200/70">career</span></div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+              {([
+                ["Goals / game", perGame(career.seasonStats.goals, career.seasonStats.appearances)],
+                ["G+A / game", perGame(career.seasonStats.goals + career.seasonStats.assists, career.seasonStats.appearances)],
+                ["Passes", String(career.seasonStats.passes)],
+              ] as const).map(([label, v]) => (
+                <div key={label} className="rounded-lg bg-white/[0.05] px-2 py-1.5 text-center">
+                  <div className="text-[16px] font-black leading-none tabular-nums text-white">{v}</div>
+                  <div className="mt-1 text-[9.5px] font-black uppercase tracking-wider text-white/70">{label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-1.5 rounded-lg bg-white/[0.05] px-2.5 py-2">
+              <div className="flex items-baseline justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-white/75">Average rating</span>
+                <span className="text-[16px] font-black tabular-nums text-white">{avgSeasonRating ? avgSeasonRating.toFixed(1) : "—"}<span className="ml-1 text-[11px] text-amber-200">{avgCareerRating ? avgCareerRating.toFixed(1) : "—"} career</span></span>
               </div>
-            ))}
+              <div className="relative mt-1.5 h-2 rounded-full bg-white/10">
+                <div className="h-2 rounded-full" style={{ width: `${Math.min(100, (avgSeasonRating / 10) * 100)}%`, background: avgSeasonRating >= 7.5 ? "#34d399" : avgSeasonRating >= 6.5 ? "#fbbf24" : "#f87171" }} />
+                {avgCareerRating > 0 && <div className="absolute top-[-3px] h-[14px] w-[2px] bg-amber-200" style={{ left: `${Math.min(100, (avgCareerRating / 10) * 100)}%` }} title="Career average" />}
+              </div>
+            </div>
+            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+              {([
+                ["🎩", "Hat tricks", career.seasonStats.hatTricks, career.careerStats.hatTricks],
+                ["⭐", "Star Man", career.seasonStats.starMan, career.careerStats.starMan],
+              ] as const).map(([icon, label, s, c]) => (
+                <div key={label} className="flex items-center gap-2 rounded-lg bg-white/[0.05] px-2.5 py-1.5">
+                  <span className="text-[16px] leading-none">{icon}</span>
+                  <span className="flex-1 text-[11px] font-bold text-white/85">{label}</span>
+                  <span className="text-[15px] font-black tabular-nums text-white">{s}</span>
+                  <span className="text-[11px] font-black tabular-nums text-amber-200">/{c}</span>
+                </div>
+              ))}
+            </div>
           </ClubCard>
         </RiseIn>
       )}
@@ -224,7 +263,7 @@ export default function DashboardStats({ career, onRenew, view }: Props) {
                 {[...(career.awards ?? [])].reverse().slice(0, 5).map((a, i) => (
                   <div key={i} className="text-[11px] text-white">
                     <span className="font-black text-amber-200">{a.kind}</span>
-                    {" · S"}{a.season}{a.week ? ` wk ${a.week}` : ""} — {a.detail}
+                    {" · "}{awardWhen(career, a)}{a.detail ? ` — ${a.detail}` : ""}
                   </div>
                 ))}
                 {(career.awards ?? []).length > 5 && (

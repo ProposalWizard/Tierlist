@@ -227,6 +227,7 @@ function pose(ch, clip, time, facing, dive) {
     ch.inner.position.set(-dive.side * dive.carry * p, FIT.dy - dive.drop * p, 0);
   }
   ch.holder.updateMatrixWorld(true);
+  if (window.__postPose) { window.__postPose(ch); ch.holder.updateMatrixWorld(true); }
 }
 function restBones(ch) {
   ch.inner.traverse((o) => { if (o.isBone) o.userData.rest = { p: o.position.clone(), q: o.quaternion.clone(), s: o.scale.clone() }; });
@@ -561,21 +562,32 @@ window.clipSheet = async (spec) => {
     const def = window.CLIPS[nm]; const clip = await loadClip("js:" + nm, {});
     const n = def.poses.length;
     for (const d of ds.split(",").map(Number)) {
-      for (let i = 0; i < n; i++) cells.push(bakeFrame(chars[cn], clip, i, dirs[d], diveFor(def, i, n)));
+      for (let i = 0; i < n; i++) cells.push(bakeFrame(chars[cn], clip, i, facingOf(def, dirs[d], i), diveFor(def, i, n)));
       for (let i = n; i < cols; i++) cells.push({ color: small(1, 1), ax: 0, ay: 0, w: 1, h: 1 });
     }
   }
   return { ["sheet-" + cn + "-" + names.replace(/,/g, "_") + "-" + ds.replace(/,/g, "") + ".png"]: bigSheet(cells, cols).toDataURL() };
 };
+/** A clip baked turned round (`turn` degrees, the bicycle: his back to the facing). Every other clip: the facing as is. */
+window.facingOf = (def, fac, i = 0) => {
+  if (!def || !def.turn) return fac;
+  const t = (def.turn * Math.PI) / 180, f = def.turnF ? (def.turnF[i] * Math.PI) / 180 : 0;
+  // the twist goes whichever way lays his body further from straight up and down the screen
+  const flat = (a) => Math.abs(Math.cos(a));
+  const k = def.turnF ? (flat(fac + t - (def.turnF.at(-1) * Math.PI) / 180) > flat(fac + t + (def.turnF.at(-1) * Math.PI) / 180) + 1e-6 ? -1 : 1) : 1;
+  return fac + t + k * f;
+};
 window.diveFor = (def, i, n) => def.dive ? { side: def.dive, p: def.diveP ? def.diveP[i] : Math.min(1, (i / (n - 1)) * 1.25), ...DIVE, ...(def.diveOpts || {}) } : null;
 function bigSheet(cells, cols) {
-  const cw = 150, chh = 170, rows = Math.ceil(cells.length / cols);
+  // cells as tall as the tallest frame needs (a man lying down reaches below his anchor)
+  const up = Math.max(140, ...cells.map((f) => f.ay * 1.5 + 4)), dn = Math.max(30, ...cells.map((f) => (f.h - f.ay) * 1.5 + 4));
+  const cw = Math.max(150, ...cells.map((f) => f.w * 1.5 + 50)), chh = Math.ceil(up + dn), ay = Math.ceil(up), rows = Math.ceil(cells.length / cols);
   const c = small(cols * cw, rows * chh); const g = c.getContext("2d");
   g.fillStyle = "#3f8f3a"; g.fillRect(0, 0, c.width, c.height);
   cells.forEach((f, i) => { const x = (i % cols) * cw, y = Math.floor(i / cols) * chh;
-    g.imageSmoothingEnabled = false; g.drawImage(f.color, x + 75 - f.ax * 1.5, y + 140 - f.ay * 1.5, f.w * 1.5, f.h * 1.5);
-    g.imageSmoothingEnabled = true; g.drawImage(f.color, x + 130 - f.ax / 2, y + 160 - f.ay / 2, f.w / 2, f.h / 2);
-    g.fillStyle = "#f00"; g.fillRect(x + 74, y + 139, 3, 3); });
+    g.imageSmoothingEnabled = false; g.drawImage(f.color, x + cw / 2 - f.ax * 1.5, y + ay - f.ay * 1.5, f.w * 1.5, f.h * 1.5);
+    g.imageSmoothingEnabled = true; g.drawImage(f.color, x + cw - 20 - f.ax / 2, y + chh - 10 - f.ay / 2, f.w / 2, f.h / 2);
+    g.fillStyle = "#f00"; g.fillRect(x + cw / 2 - 1, y + ay - 1, 3, 3); });
   return c;
 }
 const NEW_PLAYER = ["touch", "passKick", "shotKick", "volley", "chipKick", "header", "block", "clearance"];
@@ -588,7 +600,7 @@ async function bakeNewChar(name, list, dirs) {
   for (const nm of list) {
     const def = window.CLIPS[nm]; const clip = await loadClip("js:" + nm, {}); const n = def.poses.length;
     const cl = { name: nm, fps: def.fps, loop: "once", dirs: dirs.length, frames: n, strikeFrame: def.strikeFrame, cells: [] };
-    for (const fac of dirs) for (let i = 0; i < n; i++) cl.cells.push(bakeFrame(chars[name], clip, i, fac, diveFor(def, i, n)));
+    for (const fac of dirs) for (let i = 0; i < n; i++) cl.cells.push(bakeFrame(chars[name], clip, i, facingOf(def, fac, i), diveFor(def, i, n)));
     out.push(cl);
   }
   return out;
@@ -613,6 +625,35 @@ window.bakeNew = async () => {
     for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / 63.75) * 63.75 | 0;
     mc.putImageData(im, 0, 0); }
   return { "atlas-1.webp": atl.col.toDataURL("image/webp", 0.86), "mask-1.png": atl.mask.toDataURL("image/png"), "frag.json": JSON.stringify(frag) };
+};
+/** A keyframed clip as a GLB on the body (skeleton + the clip), for tools/motionref/body_overlap.mts --own=. */
+window.clipGlb = async (names) => {
+  await ready;
+  const { GLTFExporter } = await import("three/addons/exporters/GLTFExporter.js");
+  const ch = chars.player; ch.mixer.stopAllAction();
+  ch.inner.traverse((o) => { if (o.isBone && o.userData.rest) { o.position.copy(o.userData.rest.p); o.quaternion.copy(o.userData.rest.q); } });
+  const clips = names.map((n) => { const c = window.makeClip(n); c.name = n; return c; });
+  const buf = await new GLTFExporter().parseAsync(ch.inner, { binary: true, animations: clips });
+  let bin = ""; const u8 = new Uint8Array(buf); for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode(...u8.subarray(i, i + 0x8000));
+  return "data:model/gltf-binary;base64," + btoa(bin);
+};
+/**
+ * ONE MORE ATLAS (the bicycle kick, 22 Oct 2026): bake only the named player
+ * clips into their own atlas `which`, so every old atlas file stays byte for
+ * byte as it was. Used for both bodies (the current one and Style A): the .mjs
+ * opens the page on the body and fits Style A's height first, as styleA does.
+ */
+window.bakeExtra = async (names, which, suffix, quality) => {
+  await ready;
+  const groups = [{ char: "player", clips: await bakeNewChar("player", names, DIRS8) }];
+  const atl = pack(groups, 512);
+  const frag = { atlas: { color: `atlas-${which}${suffix}.webp`, mask: `mask-${which}${suffix}.png`, w: atl.w, h: atl.h }, chars: { player: { clips: {} } } };
+  for (const c of groups[0].clips) frag.chars.player.clips[c.name] = { fps: c.fps, loop: c.loop, dirs: c.dirs, frames: c.frames, ...(c.strikeFrame != null ? { strikeFrame: c.strikeFrame } : {}), atlas: which,
+    cells: c.cells.map((f) => [f.px, f.py, f.w, f.h, +f.ax.toFixed(1), +f.ay.toFixed(1)]) };
+  { const mc = atl.mask.getContext("2d"); const im = mc.getImageData(0, 0, atl.w, atl.h); const d = im.data;
+    for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / 63.75) * 63.75 | 0;
+    mc.putImageData(im, 0, 0); }
+  return { color: atl.col.toDataURL("image/webp", quality), mask: atl.mask.toDataURL("image/png"), frag: JSON.stringify(frag) };
 };
 /**
  * STYLE A RE-SKIN (Harry, 9 Oct 2026: "adjust the current 2D to the new Style A
@@ -716,7 +757,7 @@ window.reskin = async (index, which) => {
       }
       dirs.forEach((fac, di) => { for (let i = 0; i < cl.frames; i++) {
         const [x, y, w, h, ax, ay] = cl.cells[di * cl.frames + i];
-        const f = bakeFixed(chars[cn], clip, times[i], fac, dives(i), w, h, ax, ay);
+        const f = bakeFixed(chars[cn], clip, times[i], which === 0 ? fac : facingOf(window.CLIPS[nm], fac, i), dives(i), w, h, ax, ay);
         cc.drawImage(f.color, x, y); mc.drawImage(f.mask, x, y); cells++;
         if (f.k < 0.999) shrunk[`${cn}.${nm}`] = Math.min(shrunk[`${cn}.${nm}`] ?? 1, +f.k.toFixed(2));
       } });
@@ -738,7 +779,7 @@ window.reskin = async (index, which) => {
  */
 window.rebakeA = async (index) => {
   await ready;
-  const out = { 0: [], 1: [] };
+  const out = { 0: [], 1: [] }; // later atlases (2 = the bicycle) are added as their clips come up
   const metas = {};
   for (const [cn, cv] of Object.entries(index.chars)) {
     show(cn); if (!chars[cn].holder.parent) scene.add(chars[cn].holder);
@@ -757,12 +798,12 @@ window.rebakeA = async (index) => {
         dives = (i) => diveFor(def, i, cl.frames);
       }
       const cells = [];
-      for (const fac of dirs) for (let i = 0; i < cl.frames; i++) cells.push(bakeFrame(chars[cn], clip, times[i], fac, dives(i)));
-      out[which].push({ cn, nm, cells });
+      for (const fac of dirs) for (let i = 0; i < cl.frames; i++) cells.push(bakeFrame(chars[cn], clip, times[i], which === 0 ? fac : facingOf(window.CLIPS[nm], fac, i), dives(i)));
+      (out[which] ??= []).push({ cn, nm, cells });
     }
   }
   const files = {}, atlases = {};
-  for (const which of [0, 1]) {
+  for (const which of Object.keys(out).map(Number)) {
     const groups = out[which].map((g) => ({ clips: [{ cells: g.cells }] }));
     const atl = pack(groups);
     { const mc = atl.mask.getContext("2d"); const im = mc.getImageData(0, 0, atl.w, atl.h); const d = im.data;
@@ -775,14 +816,176 @@ window.rebakeA = async (index) => {
   // the same index, cells swapped for the new ones
   const idx = JSON.parse(JSON.stringify(index));
   idx.atlas = atlases[0];
-  idx.atlases = { ...(idx.atlases ?? {}), 1: atlases[1] };
-  for (const which of [0, 1]) for (const g of out[which]) {
+  idx.atlases = { ...(idx.atlases ?? {}) };
+  for (const which of Object.keys(out).map(Number)) if (which > 0) idx.atlases[which] = atlases[which];
+  for (const which of Object.keys(out).map(Number)) for (const g of out[which]) {
     idx.chars[g.cn].clips[g.nm].cells = g.cells.map((f) => [f.px, f.py, f.w, f.h, +f.ax.toFixed(1), +f.ay.toFixed(1)]);
   }
   const standing = idx.chars.player.clips.idle.cells[2 * idx.chars.player.clips.idle.frames];
   idx.standH = standing[5];
   idx.style = "styleA";
   return { files, index: idx };
+};
+
+/**
+ * GOAL CELEBRATIONS (Leo, 22 Oct 2026: "After you score"). Six capture clips
+ * from anims3d/mocap.glb baked on the same body, camera, size, outline, kit
+ * masks and 8 facings as every other player clip, into atlas 2. The hips'
+ * height is brought to this body's (as people3d.ts does: rest Hips.y / the
+ * file's hipsY). Travel is taken out: the knee slide's 5.88 m run is zeroed
+ * (the game slides him along the grass itself); the others lose only their
+ * start-to-end drift, so a sway or lean stays.
+ */
+const CELEBS = [
+  { name: "celebHandsUp", file: "celebrate_safe", frames: 6, loop: "loop", spread: 4 },
+  // the capture runs a whole circle (out of the frame, and round to his back): baked
+  // running straight on the spot, arms out, so the facing the game gives is the one he shows
+  // times: off the moments its crossover steps bring the knees together (celebbones)
+  { name: "celebArmsOut", file: "celebrate_airplane", frames: 10, loop: "once", zero: true, noYaw: true, spread: 5, times: [0, 0.33, 0.6, 0.95, 1.35, 1.75, 1.95, 2.4, 2.7, 3.0] },
+  // times: even through the slide. (The knees used to press together between 1.3 s and
+  // 1.9 s and those frames were skipped; keyed.py's knee_slide was fixed on 22 Oct 2026:
+  // knees ~33 cm apart through the whole slide, measured with celebbones.)
+  { name: "celebKneeSlide", file: "knee_slide", frames: 9, loop: "once", zero: true, times: [0, 0.3, 0.6, 0.95, 1.3, 1.7, 2.1, 2.6, 3.2] },
+  { name: "celebFistPump", file: "celebrate_pump", frames: 8, loop: "once" },
+  { name: "celebJump", file: "celebrate_jump", frames: 7, loop: "once", spread: 4 },
+  { name: "celebRoar", file: "celebrate_roar", frames: 7, loop: "once" },
+];
+/** Legs a few degrees wider about his own forward line (spread, degrees each side): the
+ *  captures that stand feet together or run a crossover gait bring the boots or knees
+ *  into each other; a little wider keeps every limb clear (RUL-3D-005). */
+function spreadLegs(deg) {
+  if (!deg) return null;
+  const P = new THREE.Quaternion(), R = new THREE.Quaternion(), f = new THREE.Vector3();
+  return (ch) => {
+    f.set(0, 0, 1).applyQuaternion(ch.holder.quaternion);
+    for (const [nm, sg] of [["LeftUpLeg", 1], ["RightUpLeg", -1]]) {
+      let b = null; ch.inner.traverse((o) => { if (o.isBone && o.name === nm) b = o; });
+      if (!b) continue;
+      b.parent.getWorldQuaternion(P);
+      R.setFromAxisAngle(f, (sg * deg * Math.PI) / 180);
+      b.quaternion.premultiply(P.clone().invert().multiply(R).multiply(P));
+    }
+  };
+}
+async function celebClip(c, ch) {
+  window.__postPose = spreadLegs(c.spread);
+  if (!window.__mocapGltf) window.__mocapGltf = await parse(stripToAnimation(await fetchBuf("/star/anims3d/mocap.glb")));
+  const g = window.__mocapGltf;
+  const src = g.animations.find((a) => a.name === c.file);
+  if (!src) throw new Error("mocap has no " + c.file);
+  const clip = src.clone();
+  let hips = null; ch.inner.traverse((o) => { if (o.isBone && o.name === "Hips") hips = o; });
+  const k = hips.userData.rest.p.y / (g.scene.userData.hipsY || hips.userData.rest.p.y);
+  for (const tr of clip.tracks) {
+    if (!/\.position$/.test(tr.name)) continue;
+    const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= k;
+    if (/^Hips\.position$/.test(tr.name)) {
+      const n = tr.times.length, x0 = v[0], z0 = v[2], x1 = v[(n - 1) * 3], z1 = v[(n - 1) * 3 + 2];
+      for (let i = 0; i < n; i++) {
+        if (c.zero) { v[i * 3] = 0; v[i * 3 + 2] = 0; continue; }
+        const f = n > 1 ? i / (n - 1) : 0;
+        v[i * 3] -= x0 + (x1 - x0) * f; v[i * 3 + 2] -= z0 + (z1 - z0) * f;
+      }
+    }
+    tr.values = v;
+  }
+  if (c.noYaw) {
+    // take the hips' turn about the vertical out (keep the first frame's), so he stays facing one way
+    const tr = clip.tracks.find((t) => /^Hips\.quaternion$/.test(t.name));
+    const v = tr.values, q = new THREE.Quaternion(), tw = new THREE.Quaternion();
+    const twist = (qq) => { const t = new THREE.Quaternion(0, qq.y, 0, qq.w); return t.lengthSq() < 1e-9 ? new THREE.Quaternion() : t.normalize(); };
+    const t0 = twist(q.fromArray(v, 0));
+    for (let i = 0; i < v.length; i += 4) {
+      q.fromArray(v, i); tw.copy(twist(q));
+      q.premultiply(tw.invert()).premultiply(t0); q.toArray(v, i);
+    }
+  }
+  return clip;
+}
+function celebTimes(c, clip) {
+  // a once clip's last frame a hair before the end (at the end exactly the mixer wraps to the first pose)
+  const d = clip.duration, end = d - 1e-3;
+  if (c.times) return c.times.map((t) => Math.min(t, end));
+  return Array.from({ length: c.frames }, (_, i) => c.loop === "loop" ? (d * i) / c.frames : Math.min(end, (d * i) / (c.frames - 1)));
+}
+async function bakeCelebCells(only) {
+  await ready; show("player");
+  const out = [];
+  for (const c of CELEBS) {
+    if (only && !only.includes(c.name)) continue;
+    const clip = await celebClip(c, chars.player);
+    const ts = celebTimes(c, clip);
+    // a once clip's last frame is held: frames / duration plays it in its real length
+    const cl = { name: c.name, fps: +(c.frames / clip.duration).toFixed(3), loop: c.loop, dirs: 8, frames: c.frames, duration: +clip.duration.toFixed(3), t3d: ts.map((t) => +t.toFixed(3)), cells: [] };
+    for (const fac of DIRS8) for (const t of ts) cl.cells.push(bakeFrame(chars.player, clip, t, fac, null));
+    out.push(cl);
+  }
+  window.__postPose = null;
+  return out;
+}
+window.bakeCelebs = async (tag, q = 0.84) => {
+  const clips = await bakeCelebCells();
+  const atl = pack([{ clips }]);
+  { const mc = atl.mask.getContext("2d"); const im = mc.getImageData(0, 0, atl.w, atl.h); const d = im.data;
+    for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / 63.75) * 63.75 | 0;
+    mc.putImageData(im, 0, 0); }
+  const frag = { atlas: { color: `atlas-2${tag}.webp`, mask: `mask-2${tag}.webp`, w: atl.w, h: atl.h }, clips: {} };
+  // t3d (once clips): each frame's second in the 3D clip; the game shows the last frame at or before t
+  for (const c of clips) frag.clips[c.name] = { fps: c.fps, loop: c.loop, dirs: 8, frames: c.frames, atlas: 2, ...(c.loop === "once" ? { t3d: c.t3d } : {}),
+    cells: c.cells.map((f) => [f.px, f.py, f.w, f.h, +f.ax.toFixed(1), +f.ay.toFixed(1)]) };
+  const durations = Object.fromEntries(clips.map((c) => [c.name, c.duration]));
+  return { color: atl.col.toDataURL("image/webp", q), mask: atl.mask.toDataURL("image/png"), frag: JSON.stringify(frag), durations };
+};
+/** A look sheet of the celebrations: spec "clip,clip:dirIdx,dirIdx" (empty = all six, facing down). */
+window.celebSheet = async (spec = "") => {
+  const [names, ds] = spec.split(":");
+  const only = names ? names.split(",") : null;
+  const clips = await bakeCelebCells(only);
+  const dsel = (ds || "2").split(",").map(Number);
+  const cols = Math.max(...clips.map((c) => c.frames));
+  const cells = [];
+  for (const c of clips) for (const d of dsel) {
+    for (let i = 0; i < c.frames; i++) cells.push(c.cells[d * c.frames + i]);
+    for (let i = c.frames; i < cols; i++) cells.push({ color: small(1, 1), ax: 0, ay: 0, w: 1, h: 1 });
+  }
+  return { url: bigSheet(cells, cols).toDataURL(), cols };
+};
+/** Numbers per frame for one celebration: lowest point of the body, and key joints (metres, world). */
+window.celebBones = async (name, n = 17) => { // n = 0: the baked frames' times
+  await ready; show("player");
+  const c = CELEBS.find((x) => x.name === name);
+  const clip = await celebClip(c, chars.player);
+  const sk = chars.player.skinned, v = new THREE.Vector3(), out = [];
+  const B = (nm) => { let b = null; chars.player.inner.traverse((o) => { if (o.isBone && o.name === nm) b = o; }); return b; };
+  const names = ["Hips", "LeftUpLeg", "RightUpLeg", "LeftLeg", "RightLeg", "LeftFoot", "RightFoot", "LeftToeBase", "RightToeBase", "Spine2", "Head", "LeftForeArm", "RightForeArm", "LeftHand", "RightHand"];
+  const ts = n ? Array.from({ length: n }, (_, i) => (clip.duration * i) / (n - 1)) : celebTimes(c, clip);
+  for (const t of ts) {
+    pose(chars.player, clip, t, Math.PI / 2, null); sk.skeleton.update();
+    let minY = Infinity, maxY = -Infinity;
+    const cnt = sk.geometry.attributes.position.count;
+    for (let k = 0; k < cnt; k += 3) { sk.getVertexPosition(k, v); v.applyMatrix4(sk.matrixWorld); if (v.y < minY) minY = v.y; if (v.y > maxY) maxY = v.y; }
+    const j = {}; for (const nm of names) { const b = B(nm); if (b) { b.getWorldPosition(v); j[nm] = [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)]; } }
+    out.push({ t: +t.toFixed(2), minY: +minY.toFixed(3), maxY: +maxY.toFixed(3), ...j });
+  }
+  window.__postPose = null;
+  return out;
+};
+/** A big uncropped close-up of one celebration at given frame times, one facing (to check limbs). */
+window.celebClose = async (name, facing, n = 9, tilt = CFG.tilt) => { // n = 0: the baked frames' times
+  await ready; show("player");
+  setCamera(tilt);
+  const c = CELEBS.find((x) => x.name === name);
+  const clip = await celebClip(c, chars.player);
+  const urls = [];
+  const ts = n ? Array.from({ length: n }, (_, i) => (clip.duration * i) / (n - 1)) : celebTimes(c, clip);
+  for (const t of ts) {
+    pose(chars.player, clip, t, facing, null);
+    const col = renderer.domElement; renderer.setClearColor(0x3f8f3a, 1); chars.player.uniforms.uMode.value = 0; renderer.render(scene, cam);
+    const cv = small(col.width / 2, col.height / 2); cv.getContext("2d").drawImage(col, 0, 0, cv.width, cv.height);
+    urls.push(cv.toDataURL("image/jpeg", 0.85));
+  }
+  renderer.setClearColor(0x000000, 0); setCamera(CFG.tilt); window.__postPose = null;
+  return urls;
 };
 
 /** Rows of pairs: top = a, bottom = b, each at 2x bake size and zoomed 3x. */

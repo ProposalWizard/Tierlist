@@ -18,7 +18,6 @@ const TIER_LOOK: Record<AchievementTier, { label: string; icon: string; bg: stri
   hard: { label: "Gold", icon: "🥇", bg: "#a16207", fg: "#fef9c3", glow: "rgba(251,191,36,.7)" },
   legendary: { label: "Legend", icon: "🏆", bg: "#6d28d9", fg: "#ede9fe", glow: "rgba(167,139,250,.8)" },
 };
-import { RECORDS, recordBeaten } from "@/lib/star/records";
 import { formatMoney } from "@/lib/star/money";
 import { renewalWage, renewalMultiplier, RENEWAL_RAISE_PER_WIN, RENEWAL_SOURED_CUT } from "@/lib/star/economy";
 import { Burst, CountUp, FloatText, PressButton, Shine, StatBar, clubTheme, useTrigger } from "./ui";
@@ -140,96 +139,60 @@ export function SponsorsScreen({ career, onBack, onSign }: {
 // LEAGUE EVER HAS" — so it needs a progress bar rather than a checkmark, and
 // a source (RECORDS, records.ts) that carries the real number to chase, not
 // just a boolean.
+/**
+ * Every achievement, one list down the page (Mikey, 22 Oct 2026): no box that
+ * scrolls on its own (RUL-UI-006), and the rarity only, never the XP. Shown in
+ * the Stats page's Achievements tab and on the Achievements screen.
+ */
+export function AchievementList({ career, top }: { career: CareerState; top?: React.ReactNode }) {
+  const got = ACHIEVEMENTS.filter(a => career.achievements.includes(a.id)).length;
+  return (
+    <div data-achievement-list>
+      {top}
+      <div className="mb-2 flex items-center gap-2 px-1 text-xs font-bold text-white/80">
+        <span><span className="text-amber-300">{got}</span> / {ACHIEVEMENTS.length} unlocked</span>
+        <StatBar value={(got / Math.max(1, ACHIEVEMENTS.length)) * 100} colors={["#f59e0b", "#fde047"]} className="h-2 flex-1" />
+      </div>
+      <div className="kit-card overflow-hidden">
+        {ACHIEVEMENT_GROUPS.map((g) => {
+          const list = ACHIEVEMENTS.filter(a => a.group === g);
+          const n = list.filter(a => career.achievements.includes(a.id)).length;
+          return (
+            <div key={g}>
+              <div className="flex items-baseline justify-between bg-black/50 px-3 py-1.5" data-ach-group={g}>
+                <span className="text-[11px] font-black uppercase tracking-wide text-white">{g}</span>
+                <span className="text-[10px] font-black tabular-nums text-amber-300">{n} / {list.length}</span>
+              </div>
+              {list.map((a) => {
+                const unlocked = career.achievements.includes(a.id);
+                const t = TIER_LOOK[a.tier];
+                return (
+                  <div key={a.id} className={`flex items-center gap-3 border-b border-white/[0.06] p-3 ${unlocked ? "bg-amber-400/[0.07]" : ""}`}>
+                    <div className={`text-3xl ${unlocked ? "" : "opacity-20 grayscale"}`} style={unlocked ? { filter: `drop-shadow(0 0 8px ${t.glow})` } : undefined}>{t.icon}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-sm font-black ${unlocked ? "text-yellow-300" : "text-white/65"}`}>{a.label}</div>
+                      <div className={`text-[10px] ${unlocked ? "text-white/85" : "text-white/65"}`}>{a.description}</div>
+                    </div>
+                    <span data-ach-rarity className="shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-black uppercase" style={{ background: t.bg, color: t.fg }}>{t.label}</span>
+                    <div className="w-5 shrink-0 text-center text-lg font-black text-emerald-400">{unlocked ? "✓" : ""}</div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function AchievementsScreen({ career, onBack, top }: { career: CareerState; onBack: () => void; /** Shown above the list — the unlock chain's first steps (UnlockChain.tsx). */ top?: React.ReactNode }) {
-  const [tab, setTab] = useState<"achievements" | "records">("achievements");
-  const beaten = RECORDS.filter(r => recordBeaten(career, r)).length;
   const theme = clubTheme(career.player.club, career);
   return (
     <Screen glow={theme.glow}>
-      <div className="w-full flex-1 flex flex-col">
-        <ScreenHeader title={tab === "achievements" ? "Achievements" : "Records"} kicker="Your career" onBack={onBack} />
-
-        <div className="kit-tabs mb-3">
-          {(["achievements", "records"] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`kit-tab text-[11px] ${tab === t ? "kit-tab-on" : ""}`}
-            >
-              {t === "achievements" ? "Achievements" : "Records"}
-            </button>
-          ))}
-        </div>
-
-        {tab === "achievements" ? (
-          <>
-            {top}
-            <div className="kit-card overflow-hidden flex-1 overflow-y-auto max-h-[560px]">
-              {ACHIEVEMENT_GROUPS.map((g) => {
-                const list = ACHIEVEMENTS.filter(a => a.group === g);
-                const got = list.filter(a => career.achievements.includes(a.id)).length;
-                return (
-                  <div key={g}>
-                    <div className="sticky top-0 z-10 flex items-baseline justify-between bg-black/70 px-3 py-1.5 backdrop-blur" data-ach-group={g}>
-                      <span className="text-[11px] font-black uppercase tracking-wide text-white">{g}</span>
-                      <span className="text-[10px] font-black tabular-nums text-amber-300">{got} / {list.length}</span>
-                    </div>
-                    {list.map((a, i) => {
-                      const unlocked = career.achievements.includes(a.id);
-                      const t = TIER_LOOK[a.tier];
-                      return (
-                        <div key={a.id} className={`kit-rise flex items-center gap-3 p-3 border-b border-white/[0.06] ${unlocked ? "bg-amber-400/[0.07]" : ""}`} style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}>
-                          <div className={`text-3xl ${unlocked ? "" : "opacity-20 grayscale"}`} style={unlocked ? { filter: `drop-shadow(0 0 8px ${t.glow})` } : undefined}>{t.icon}</div>
-                          <div className="flex-1 min-w-0">
-                            <div className={`font-black text-sm ${unlocked ? "text-yellow-300" : "text-white/65"}`}>{a.label}</div>
-                            <div className={`text-[10px] ${unlocked ? "text-white/85" : "text-white/65"}`}>{a.description}</div>
-                          </div>
-                          <span className="shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-black uppercase" style={{ background: t.bg, color: t.fg }}>{t.label}</span>
-                          <div className="w-5 shrink-0 text-center text-emerald-400 font-black text-lg">{unlocked ? "✓" : ""}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="mt-2 text-xs text-center text-white/80 font-bold">
-              <span className="text-amber-300">{ACHIEVEMENTS.filter(a => career.achievements.includes(a.id)).length}</span> / {ACHIEVEMENTS.length} unlocked
-              <StatBar value={(ACHIEVEMENTS.filter(a => career.achievements.includes(a.id)).length / Math.max(1, ACHIEVEMENTS.length)) * 100} colors={["#f59e0b", "#fde047"]} className="mx-auto mt-1.5 h-2 w-40" />
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="kit-card overflow-hidden flex-1 overflow-y-auto max-h-[560px]">
-              {RECORDS.map((r, i) => {
-                const progress = r.progress(career);
-                const won = progress >= r.value;
-                const pct = Math.min(100, Math.round((progress / r.value) * 100));
-                return (
-                  <div key={r.id} className={`kit-rise p-3 border-b border-white/[0.06] ${won ? "bg-amber-400/[0.07]" : ""}`} style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}>
-                    <div className="flex items-start gap-3">
-                      <div className={`text-3xl ${won ? "" : "opacity-20 grayscale"}`}>🏅</div>
-                      <div className="flex-1">
-                        <div className={`font-black text-sm ${won ? "text-yellow-300" : "text-white/65"}`}>{r.label}</div>
-                        <div className={`text-[10px] ${won ? "text-white/85" : "text-white/65"}`}>
-                          {r.holder} · {r.value} {r.unit} ({r.achieved})
-                        </div>
-                      </div>
-                      {won && <div className="text-emerald-400 font-black text-lg">✓</div>}
-                    </div>
-                    <StatBar value={Math.max(3, pct)} colors={won ? ["#34d399", "#a3e635"] : ["#f59e0b", "#fde047"]} sheen={false} className="mt-2 h-2" />
-                    <div className="mt-1 text-[9px] font-bold text-white/70">
-                      Your best: {progress} / {r.value} {r.unit}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="mt-2 text-xs text-center text-white/75 font-bold">
-              {beaten} / {RECORDS.length} beaten
-            </div>
-          </>
-        )}
+      <div className="w-full flex-1">
+        <ScreenHeader title="Achievements" kicker="Your career" onBack={onBack} />
+        <AchievementList career={career} top={top} />
       </div>
     </Screen>
   );

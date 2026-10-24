@@ -1,36 +1,39 @@
 "use client";
 
 /**
- * THE LEFT SWIPE PAGE — Season · All seasons · Records.
+ * THE STATS PAGE (master plan step 2, Mikey 22 Oct 2026). Your card on the
+ * left, shown whole; the four tabs stacked in the gap to its right:
  *
- * PROTOTYPE (home-screen proto, 27 Sep 2026). Harry: "in the stats area have
- * multiple tabs in there - season stats should also have an all seasons tag
- * which includes stats overall and per club and all of your records (furthest
- * goal, furthest assist, most goals in a game, most in a season, motm awards,
- * potm, balon dors, trophies etc."
+ *   Stats        this season and your career side by side (plus trophies),
+ *                season by season (tap one: the awards you won in it), the
+ *                cabinet, goals and assists by season, per club, one
+ *                International row. Sharpness, energy, fame, standing, the
+ *                board, the manager, boots and skills are not on this page.
+ *   Records      your bests open; real-world records and Hall of Fame folded.
+ *   Achievements the whole list, rarity only (no XP), no box of its own.
+ *   Contract     on paper, like the one you signed.
  *
- * Numbers come from lib/star/careerRecords.ts. Where a record has no history
- * on an older save, one small line says counting started now.
+ * Numbers come from lib/star/careerOverview.ts and careerRecords.ts.
  */
-import { useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { CareerState } from "@/lib/star/types";
-import { allSeasons, perClubTotals, trophiesByCompetition } from "@/lib/star/careerRecords";
+import { careerOverview } from "@/lib/star/careerOverview";
 import { RECORDS } from "@/lib/star/records";
 import { hallChases, amount, surnameOf, type HallRecord } from "@/lib/star/hallRecords";
 import { CLUB_SHORT_NAMES } from "@/lib/star/clubs";
 import { kitsOf } from "@/lib/star/kits";
-import DashboardStats from "./DashboardStats";
-import AllSeasonsNew from "./AllSeasonsNew";
-import { useAllSeasonsLook } from "@/lib/star/allSeasonsLook";
+import { awardsInSeason } from "@/lib/star/awardText";
 import ClubBadge from "./ClubBadge";
 import NationFlag from "./NationFlag";
 import { nationOf } from "@/lib/star/competitions";
-import IntlWorldPanel from "./IntlWorldPanel";
-import { ClubCard, StatBar, PressButton, RiseIn, useClubTheme } from "./ui";
+import { ClubCard, StatBar, RiseIn, useClubTheme, clubTheme, rgba } from "./ui";
 import { CardTitle } from "./screenKit";
-import TrophyCabinet from "./TrophyCabinet";
 import PlayerCard from "./PlayerCard";
+import ContractPaper from "./ContractPaper";
+import { AchievementList } from "./SecondaryScreens";
+import { ArcChart, CabinetGrid, Heading, SeasonList } from "./CareerOverview";
 import CareerGoalsGallery from "./CareerGoalsGallery";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const seasonLabel = (c: CareerState, s: number) => {
@@ -38,95 +41,71 @@ const seasonLabel = (c: CareerState, s: number) => {
   return `${String(y).slice(2)}/${String(y + 1).slice(2)}`;
 };
 
-/** Five chips, one row (navigation round 1, Harry's answer 17, 21 Oct 2026):
- *  Season (with Status folded in), Career (All seasons + Country), Records,
- *  Trophies (the cabinet, 2 taps from Home, was 3), Contract. Goals added
- *  22 Oct 2026 (Leo): every goal of the career, six chips. */
 const VIEWS = [
-  { id: "season", label: "Season", icon: "📊" },
-  { id: "career", label: "Career", icon: "🗓️" },
+  { id: "stats", label: "Stats", icon: "📊" },
   { id: "records", label: "Records", icon: "🏅" },
-  // Every goal of the career (Leo, 22 Oct 2026): CareerGoalsGallery.
-  { id: "goals", label: "Goals", icon: "⚽" },
-  { id: "trophies", label: "Trophies", icon: "🏆" },
+  { id: "achievements", label: "Achievements", icon: "⭐" },
   { id: "contract", label: "Contract", icon: "📝" },
+  // Every goal of your career (Leo, 22 Oct 2026). Shown only with Leo's 24 Oct update on (lib/star/leoUpdate.ts).
+  { id: "goals", label: "Goals", icon: "⚽" },
 ] as const;
 type View = (typeof VIEWS)[number]["id"];
-let lastView: View = "season";
+let lastView: View = "stats";
 
-/**
- * THE STATS PAGE — one thin row, NSS-style (Harry, 1 Oct 2026, P46/P47/P96).
- * It had three stacked tab rows (Stats · Home · Shop, Season · All seasons ·
- * Records, Stats · Contract · Status): about 100px before any number showed.
- * Now: just "‹ Season ›" to change the view (Season, Contract, Status, All
- * seasons, Records). The League and Home arrows moved to the bottom edge with
- * the other page arrows (SwipePages). The Premier League mini-table is gone from here: Home
- * has it, and the League screen has the full table.
- */
-export default function StatsTabs({ career, onRenew, onOpen, hallRecords, startView }: {
-  career: CareerState; onRenew: () => void; onOpen?: (ph: "achievements" | "trophies") => void;
-  /** Open on this chip (e.g. the Home "Career" door). Otherwise the last one. */
+export default function StatsTabs({ career, onRenew, hallRecords, startView, achievementsTop }: {
+  career: CareerState; onRenew: () => void;
+  /** Open on this tab. Otherwise the last one. */
   startView?: View;
   /** Your own retired careers' records (lib/star/hallRecords.ts). */
   hallRecords?: HallRecord[];
+  /** Above the achievements: your first steps, until they are all done (UnlockChain.tsx). */
+  achievementsTop?: ReactNode;
 }) {
   const [view, setViewState] = useState<View>(startView ?? lastView);
   const setView = (v: View) => { lastView = v; setViewState(v); };
   const { glow } = useClubTheme(career);
-  const allLook = useAllSeasonsLook();
+  const goalsOn = useLeoUpdate("goalsGallery");
+  const views = VIEWS.filter((v) => v.id !== "goals" || goalsOn);
+  // The update switched off while on Goals: back to Stats.
+  const shown: View = view === "goals" && !goalsOn ? "stats" : view;
+  const tabs = (
+    <div data-stats-row role="tablist" aria-label="Stats" className="flex flex-1 flex-col gap-1.5">
+      {views.map((v) => {
+        const on = v.id === shown;
+        return (
+          <button
+            key={v.id}
+            role="tab"
+            aria-selected={on}
+            data-stats-chip={v.id}
+            onClick={() => setView(v.id)}
+            className={`kib-press flex min-h-[44px] flex-1 flex-col items-center justify-center gap-1 px-1 text-center text-[12px] font-black uppercase leading-none tracking-wide ${on ? "text-gray-950" : "text-white"}`}
+            style={on
+              ? { background: "linear-gradient(180deg, #fde047, #f59e0b)", borderRadius: 4, boxShadow: "inset 0 1px 0 rgba(255,255,255,.5)" }
+              : { background: "rgba(var(--sk-flat-rgb),.7)", borderRadius: 4, boxShadow: "inset 0 0 0 1px var(--sk-edge)" }}
+          >
+            <span className="text-[18px] leading-none">{v.icon}</span>
+            <span className="max-w-full truncate">{v.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
   return (
     <div className="pb-2">
-      {/* Your FIFA-style card, above the chips (Harry, 22 Oct 2026). */}
-      <PlayerCard career={career} />
-      {/* One row of five chips: every view is one tap (was arrows, up to 3 taps). */}
-      <div data-stats-row role="tablist" aria-label="Stats" className="mb-2 grid grid-cols-6 gap-[3px]">
-        {VIEWS.map((v) => {
-          const on = v.id === view;
-          return (
-            <button
-              key={v.id}
-              role="tab"
-              aria-selected={on}
-              data-stats-chip={v.id}
-              onClick={() => setView(v.id)}
-              className={`kib-press flex h-[38px] min-w-0 flex-col items-center justify-center gap-0.5 text-[9.5px] font-black uppercase leading-none tracking-tight ${on ? "text-gray-950" : "text-white"}`}
-              style={on
-                ? { background: "linear-gradient(180deg, #fde047, #f59e0b)", borderRadius: 3, boxShadow: "inset 0 1px 0 rgba(255,255,255,.5)" }
-                : { background: "rgba(var(--sk-flat-rgb),.7)", borderRadius: 3, boxShadow: "inset 0 0 0 1px var(--sk-edge)" }}
-            >
-              <span className="text-[13px] leading-none">{v.icon}</span>
-              <span className="max-w-full truncate">{v.label}</span>
-            </button>
-          );
-        })}
-      </div>
-      <RiseIn key={view}>
-        {view === "season" && (
-          <>
-            <DashboardStats career={career} onRenew={onRenew} view="stats" />
-            {/* Status (fitness, injury) folds into Season. */}
-            <div className="mt-2"><DashboardStats career={career} onRenew={onRenew} view="status" /></div>
-          </>
-        )}
-        {view === "contract" && <DashboardStats career={career} onRenew={onRenew} view="contract" />}
-        {view === "career" && (
-          <>
-            {allLook === "new" ? <AllSeasonsNew career={career} /> : <AllSeasons career={career} glow={glow} />}
-            <Country career={career} glow={glow} />
-          </>
-        )}
-        {view === "records" && <Records career={career} glow={glow} hallRecords={hallRecords} />}
-        {view === "records" && onOpen && (
-          <PressButton variant="secondary" size="none" onClick={() => onOpen("achievements")} className="mt-2 w-full rounded-xl py-2.5 text-[11px] font-black">⭐ Achievements →</PressButton>
-        )}
-        {view === "goals" && <CareerGoalsGallery career={career} />}
-        {view === "trophies" && <TrophyCabinet trophies={career.trophies} ballonDors={career.ballonDorWins} awards={career.awards} />}
+      <PlayerCard career={career} aside={tabs} saveButton={false} scale={0.93} />
+      <RiseIn key={shown} className="mt-2">
+        {shown === "stats" && <StatsTab career={career} />}
+        {shown === "records" && <Records career={career} glow={glow} hallRecords={hallRecords} />}
+        {shown === "achievements" && <AchievementList career={career} top={achievementsTop} />}
+        {shown === "contract" && <ContractPaper career={career} onRenew={onRenew} />}
+        {shown === "goals" && goalsOn && <CareerGoalsGallery career={career} />}
       </RiseIn>
     </div>
   );
 }
 
-function Card({ title, children, note, glow }: { title: string; children: React.ReactNode; note?: string; glow: string }) {
+function Card({ title, children, note, glow }: { title: string; children: ReactNode; note?: string; glow: string }) {
   return (
     <ClubCard glow={glow} className="mt-2 p-2.5">
       <CardTitle className="mb-1.5">{title}</CardTitle>
@@ -136,159 +115,126 @@ function Card({ title, children, note, glow }: { title: string; children: React.
   );
 }
 
-function Big({ label, value }: { label: string; value: string | number }) {
+/** A block that opens on a tap (Records: real-world and Hall of Fame start closed). */
+function Fold({ title, right, children, glow, id, startOpen = false }: { title: string; right?: ReactNode; children: ReactNode; glow: string; id: string; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen);
   return (
-    <div className="rounded-xl bg-gradient-to-b from-white/[0.14] to-white/[0.04] px-1 py-1.5 text-center" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 0 1px rgba(255,255,255,.08)" }}>
-      <div className="text-[18px] font-black leading-tight tabular-nums text-white">{value}</div>
-      <div className="text-[8.5px] font-black uppercase tracking-wider text-white/60">{label}</div>
+    <ClubCard glow={glow} className="mt-2 p-0">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} data-fold={id} className="flex w-full items-center gap-2 px-2.5 py-2.5 text-left">
+        <span className="w-3 text-[11px] text-white/70">{open ? "▾" : "▸"}</span>
+        <CardTitle className="flex-1">{title}</CardTitle>
+        {right}
+      </button>
+      {open && <div className="px-2.5 pb-2.5">{children}</div>}
+    </ClubCard>
+  );
+}
+
+/** This season big, your career under it (Mikey's drawing: "APPS 9 · 54"). */
+function SeasonCareer({ label, season, career, gold = false }: { label: string; season: number; career: number; gold?: boolean }) {
+  return (
+    <div className="rounded-lg bg-black/30 px-1 py-2 text-center" style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.08)" }}>
+      <div className={`text-[26px] font-black leading-none tabular-nums ${gold && season > 0 ? "text-amber-300" : "text-white"}`}>{season}</div>
+      <div className="mt-1 text-[9.5px] font-black uppercase tracking-wider text-white/75">{label}</div>
+      <div className="mt-1 text-[11px] font-black tabular-nums text-amber-200">{career} <span className="text-[9px] text-amber-200/70">career</span></div>
     </div>
   );
 }
 
-function AllSeasons({ career, glow }: { career: CareerState; glow: string }) {
-  const c = career.careerStats;
-  const avg = c.ratingCount > 0 ? (c.totalRating / c.ratingCount).toFixed(2) : "—";
-  const clubs = perClubTotals(career);
-  const seasons = allSeasons(career);
-  const noHistory = !(career.seasonArchive?.length);
+/** The Stats tab: numbers, seasons, cabinet, goals by season, per club, your country. */
+function StatsTab({ career }: { career: CareerState }) {
+  const o = useMemo(() => careerOverview(career), [career]);
+  const team = o.honours.filter((h) => h.competition !== "Ballon d'Or");
+  const awards = [...o.honours.filter((h) => h.competition === "Ballon d'Or"), ...o.individual];
+  const seasonTrophies = career.trophies.filter((t) => t.season === career.season).length;
+  return (
+    <div data-stats-tab>
+      <div className="mb-1 flex items-baseline justify-between px-0.5">
+        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70">This season</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-200/90">Career below</span>
+      </div>
+      <div className="grid grid-cols-4 gap-1.5">
+        <SeasonCareer label="Apps" season={career.seasonStats.appearances} career={career.careerStats.appearances} />
+        <SeasonCareer label="Goals" season={career.seasonStats.goals} career={career.careerStats.goals} />
+        <SeasonCareer label="Assists" season={career.seasonStats.assists} career={career.careerStats.assists} />
+        <SeasonCareer label="Trophies" season={seasonTrophies} career={career.trophies.length} gold />
+      </div>
+
+      <Heading>Season by season</Heading>
+      <SeasonList o={o} newestFirst awardsFor={(n) => awardsInSeason(career, n)} />
+
+      <Heading right={<span className="text-[11px] font-black text-amber-200">{o.totals.trophies}</span>}>The cabinet</Heading>
+      {team.length > 0 ? <CabinetGrid items={team} /> : <EmptyShelf />}
+      {awards.length > 0 && (
+        <>
+          <div className="mb-1.5 mt-3 text-[9.5px] font-black uppercase tracking-[0.18em] text-white/60">Your awards</div>
+          <CabinetGrid items={awards} />
+        </>
+      )}
+
+      <Heading>Goals &amp; assists by season</Heading>
+      <div className="px-1 py-1"><ArcChart o={o} /></div>
+
+      <Heading>Per club</Heading>
+      <div className="space-y-1">
+        {o.clubs.map((cl) => (
+          <div key={cl.club} className="flex items-center gap-2 px-2 py-1.5" style={{ background: `linear-gradient(90deg, ${rgba(clubTheme(cl.club).glow, 0.2)}, rgba(255,255,255,.03) 60%)`, boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)" }}>
+            <ClubBadge club={cl.club} kit={kitsOf(cl.club).home} size={22} />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[12.5px] font-black text-white">{short(cl.club)}</div>
+              <div className="text-[10px] font-bold text-white/60">{cl.years} · {cl.seasons} season{cl.seasons === 1 ? "" : "s"}</div>
+            </div>
+            <Nums cells={[["Apps", cl.apps], ["G", cl.goals], ["A", cl.assists]]} />
+          </div>
+        ))}
+      </div>
+
+      <International career={career} />
+      <div className="h-2" />
+    </div>
+  );
+}
+
+function Nums({ cells }: { cells: [string, number][] }) {
+  return (
+    <div className="flex shrink-0 gap-2 text-center">
+      {cells.map(([l, v]) => (
+        <div key={l} className="w-8">
+          <div className="sk-num text-[16px] leading-none tabular-nums text-white">{v}</div>
+          <div className="text-[8.5px] font-black uppercase tracking-wider text-white/55">{l}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** One row for your country (Mikey 22:31): the flag, caps, goals, assists, trophies. The
+ *  England tables, rankings and qualifiers live in League → International. */
+function International({ career }: { career: CareerState }) {
+  const nation = nationOf(career);
+  const rec = career.international;
+  const assists = (rec?.matches ?? []).reduce((s, m) => s + m.assists, 0);
+  const trophies = career.trophies.filter((t) => t.club === nation).length;
   return (
     <>
-      <Card glow={glow} title="Career totals">
-        <div className="grid grid-cols-5 gap-1">
-          <Big label="Apps" value={c.appearances} />
-          <Big label="Goals" value={c.goals} />
-          <Big label="Assists" value={c.assists} />
-          <Big label="Avg" value={avg} />
-          <Big label="MOTM" value={c.starMan} />
-        </div>
-      </Card>
-      <Card glow={glow} title="Per club" note={noHistory ? "Club and season history starts counting from this season." : undefined}>
-        {clubs.length === 0 ? (
-          <div className="text-[11px] font-bold text-white/50">No appearances yet.</div>
-        ) : (
-          <table className="w-full text-[11px] font-bold text-white">
-            <thead>
-              <tr className="text-[9px] uppercase tracking-wider text-white/50">
-                <th className="py-1 text-left">Club</th><th>Seasons</th><th>Apps</th><th>G</th><th>A</th>
-              </tr>
-            </thead>
-            <tbody>
-              {clubs.map((t) => (
-                <tr key={t.club} className="border-t border-white/5">
-                  <td className="py-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <ClubBadge club={t.club} kit={kitsOf(t.club).home} size={20} />
-                      <span className="truncate">{short(t.club)}</span>
-                    </div>
-                  </td>
-                  <td className="text-center tabular-nums">{t.seasons}</td>
-                  <td className="text-center tabular-nums">{t.apps}</td>
-                  <td className="text-center tabular-nums">{t.goals}</td>
-                  <td className="text-center tabular-nums">{t.assists}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Card>
-      <Card glow={glow} title="Season by season">
-        {seasons.length === 0 ? (
-          <div className="text-[11px] font-bold text-white/50">No seasons played yet.</div>
-        ) : (
-          <table className="w-full text-[11px] font-bold text-white">
-            <thead>
-              <tr className="text-[9px] uppercase tracking-wider text-white/50">
-                <th className="py-1 text-left">Season</th><th className="text-left">Club</th><th>Apps</th><th>G</th><th>A</th><th>Avg</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...seasons].reverse().map((r) => (
-                <tr key={r.season} className="border-t border-white/5">
-                  <td className="py-1.5 tabular-nums">{seasonLabel(career, r.season)}{r.live && <span className="ml-1 text-[9px] text-emerald-300">now</span>}</td>
-                  <td className="truncate">{short(r.club)}</td>
-                  <td className="text-center tabular-nums">{r.apps}</td>
-                  <td className="text-center tabular-nums">{r.goals}</td>
-                  <td className="text-center tabular-nums">{r.assists}</td>
-                  <td className="text-center tabular-nums text-amber-300">{r.avgRating ? r.avgRating.toFixed(1) : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Card>
+      <Heading>International</Heading>
+      <div data-intl-record className="flex items-center gap-2 px-2 py-1.5" style={{ background: "rgba(255,255,255,.04)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)" }}>
+        <div className="shrink-0 rounded-[3px] ring-1 ring-white/20"><NationFlag nation={nation} width={30} rounded={3} /></div>
+        <div className="min-w-0 flex-1 truncate text-[12.5px] font-black text-white">{nation}</div>
+        <Nums cells={[["Caps", career.caps ?? 0], ["G", career.internationalGoals ?? 0], ["A", assists], ["🏆", trophies]]} />
+      </div>
     </>
   );
 }
 
-/** The international record (lib/star/international.ts): caps, goals, the last call-up. */
-function Country({ career, glow }: { career: CareerState; glow: string }) {
-  const rec = career.international;
-  const nation = nationOf(career);
-  const last = rec?.last;
-  const lastLine = !last ? "No international break yet this career. The first is in September."
-    : last.called ? `Called up · ${last.competition} v ${last.opponent} (${seasonLabel(career, last.season)})`
-    : `Left out · ${last.competition} v ${last.opponent} (${seasonLabel(career, last.season)})`;
-  const honours = career.trophies.filter((t) => t.club === nation);
-  const t = career.tournament;
-  const tournLine = t && t.season === career.season
-    ? !t.entered ? `${nation} did not qualify for the ${t.competition}.`
-      : !t.selected ? `Left out of the ${t.competition} squad.`
-      : t.yourExit === "Winners" ? `${t.competition} winners! 🏆`
-      : t.yourExit ? `${t.competition}: out in the ${t.yourExit}.`
-      : `${t.competition}: still in it.`
-    : null;
-  const assists = (rec?.matches ?? []).reduce((s, m) => s + m.assists, 0);
+/** No trophies yet: four empty shelf places, blacked out (house rule). */
+function EmptyShelf() {
   return (
-    <>
-      <ClubCard glow={glow} className="mt-2 p-2.5">
-        <div data-intl-record className="flex items-center gap-2.5">
-          <div className="rounded-[4px] shadow-md ring-1 ring-white/20"><NationFlag nation={nation} width={54} rounded={4} /></div>
-          <div className="min-w-0">
-            <div className="truncate text-[18px] font-black uppercase leading-none text-white">{nation}</div>
-            <div className="mt-1 truncate text-[10px] font-bold text-white/65">{lastLine}</div>
-          </div>
-        </div>
-        <div className="mt-2.5 grid grid-cols-4 gap-1">
-          <Big label="Caps" value={career.caps ?? 0} />
-          <Big label="Goals" value={career.internationalGoals ?? 0} />
-          <Big label="Assists" value={assists} />
-          <Big label="Call-ups" value={rec?.callUps ?? 0} />
-        </div>
-        {tournLine && <div className="mt-2 text-[11px] font-black text-amber-200">{tournLine}</div>}
-      </ClubCard>
-      <IntlWorldPanel career={career} />
-      <Card glow={glow} title="Last internationals">
-        {!rec?.matches.length ? (
-          <div className="text-[11px] font-bold text-white/60">No caps yet. Get picked at an international break to play for {nation}.</div>
-        ) : (
-          <div data-intl-matches>
-            {rec.matches.map((m, i) => {
-              const res = m.us > m.them ? "W" : m.us < m.them ? "L" : "D";
-              return (
-                <div key={i} className="flex items-center gap-2 border-t border-white/5 py-1.5 first:border-t-0">
-                  <NationFlag nation={m.opponent} width={24} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[12px] font-black text-white">v {m.opponent}</div>
-                    <div className="truncate text-[9.5px] font-bold text-white/55">{m.competition} · {seasonLabel(career, m.season)}</div>
-                  </div>
-                  <span className={`grid h-[18px] w-[18px] place-items-center text-[10px] font-black text-white ${res === "W" ? "bg-emerald-500" : res === "L" ? "bg-red-600" : "bg-gray-500"}`}>{res}</span>
-                  <span className="w-9 text-center text-[12px] font-black tabular-nums text-white">{m.us}–{m.them}</span>
-                  <span className="w-8 text-center text-[11px] font-black">{m.goals ? `⚽${m.goals}` : m.assists ? `🅰️${m.assists}` : ""}</span>
-                  <span className="w-8 text-right text-[12px] font-black tabular-nums text-amber-300">{m.rating.toFixed(1)}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Card>
-      {honours.length > 0 && (
-        <Card glow={glow} title="Honours">
-          {honours.map((h, i) => (
-            <div key={i} className="flex items-center gap-2 py-1 text-[12px] font-black text-white">🏆 {h.competition} <span className="ml-auto text-[10px] text-white/55">{seasonLabel(career, h.season)}</span></div>
-          ))}
-        </Card>
-      )}
-    </>
+    <div className="grid grid-cols-4 gap-1.5">
+      {[0, 1, 2, 3].map((k) => (
+        <div key={k} className="h-[66px]" style={{ background: "rgba(0,0,0,.5)", boxShadow: "inset 0 -3px 0 rgba(120,72,24,.5), inset 0 0 0 1px rgba(255,255,255,.05)" }} />
+      ))}
+    </div>
   );
 }
 
@@ -313,13 +259,13 @@ function Row({ icon, label, value, sub }: { icon: string; label: string; value: 
 function HallRecordsCard({ career, glow, book }: { career: CareerState; glow: string; book: HallRecord[] }) {
   if (book.length === 0) {
     return (
-      <Card glow={glow} title="Hall of Fame records">
+      <Fold id="hall" glow={glow} title="Hall of Fame records">
         <div className="text-[11px] font-bold text-white/70">Retire a career: its bests become records for every career after it.</div>
-      </Card>
+      </Fold>
     );
   }
   return (
-    <Card glow={glow} title="Hall of Fame records">
+    <Fold id="hall" glow={glow} title="Hall of Fame records" right={<span className="text-[10px] font-black text-white/60">{book.length}</span>}>
       {hallChases(career, book).map(({ record, you, beaten, now }) => {
         const { def, holder, history } = record;
         const chase = def.scope === "season" ? now : you;
@@ -348,19 +294,20 @@ function HallRecordsCard({ career, glow, book }: { career: CareerState; glow: st
           </div>
         );
       })}
-    </Card>
+    </Fold>
   );
 }
 
 function Records({ career, glow, hallRecords }: { career: CareerState; glow: string; hallRecords?: HallRecord[] }) {
   const b = career.careerBests ?? {};
   const s = (n: number) => `Season ${seasonLabel(career, n)}`;
-  const potmWon = (career.potm ?? []).filter((m) => m.isYou);
-  const troph = trophiesByCompetition(career);
   const fresh = !career.careerBests;
+  const beaten = RECORDS.filter((r) => r.progress(career) >= r.value).length;
   return (
     <>
-      <Card glow={glow} title="Your bests" note={fresh ? "Furthest goal/assist and match bests start counting from now on this save." : undefined}>
+      {/* Open to start, folds away on a tap (Mikey, 23 Oct 2026). */}
+      <Fold id="bests" glow={glow} title="Your bests" startOpen>
+        {fresh && <div className="mb-1.5 text-[10px] font-bold text-white/55">Furthest goal/assist and match bests start counting from now on this save.</div>}
         <Row icon="🚀" label="Furthest goal" value={b.furthestGoal ? `${b.furthestGoal.metres} m` : "—"} sub={b.furthestGoal ? `v ${short(b.furthestGoal.opponent)} · ${s(b.furthestGoal.season)}` : undefined} />
         <Row icon="🎯" label="Furthest assist (your pass)" value={b.furthestAssist ? `${b.furthestAssist.metres} m` : "—"} sub={b.furthestAssist ? `v ${short(b.furthestAssist.opponent)} · ${s(b.furthestAssist.season)}` : undefined} />
         <Row icon="⚽" label="Most goals in a game" value={b.mostGoalsMatch ? String(b.mostGoalsMatch.goals) : "—"} sub={b.mostGoalsMatch ? `v ${short(b.mostGoalsMatch.opponent)} · ${s(b.mostGoalsMatch.season)}` : undefined} />
@@ -371,21 +318,8 @@ function Records({ career, glow, hallRecords }: { career: CareerState; glow: str
         <Row icon="💥" label="Biggest win" value={b.biggestWin ? `${b.biggestWin.us}–${b.biggestWin.them}` : "—"} sub={b.biggestWin ? `v ${short(b.biggestWin.opponent)} · ${s(b.biggestWin.season)}` : undefined} />
         <Row icon="🔥" label="Longest scoring run" value={career.feats?.bestScoringRun ? `${career.feats.bestScoringRun} games` : "—"} sub={career.feats?.bestScoringRunSeason ? s(career.feats.bestScoringRunSeason) : undefined} />
         <Row icon="🧢" label="Caps" value={String(career.caps ?? 0)} sub={(career.internationalGoals ?? 0) > 0 ? `${career.internationalGoals} international goals` : undefined} />
-      </Card>
-      {hallRecords && <HallRecordsCard career={career} glow={glow} book={hallRecords} />}
-      <Card glow={glow} title="Awards">
-        <Row icon="⭐" label="Man of the match" value={String(career.careerStats.starMan)} sub="Star Man — rating 8.5+ or two goals" />
-        <Row icon="📅" label="Player of the Month" value={String(potmWon.length)} sub={potmWon.slice(-2).map((m) => `${m.monthName} ${seasonLabel(career, m.season)}`).join(" · ") || undefined} />
-        <Row icon="🏅" label="Ballon d'Or" value={String(career.ballonDorWins)} />
-      </Card>
-      <Card glow={glow} title={`Trophies · ${career.trophies.length}`}>
-        {troph.length === 0 ? (
-          <div className="text-[11px] font-bold text-white/50">None yet.</div>
-        ) : troph.map((t) => (
-          <Row key={t.competition} icon="🏆" label={t.competition} value={`×${t.seasons.length}`} sub={t.seasons.map((n) => seasonLabel(career, n)).join(" · ")} />
-        ))}
-      </Card>
-      <Card glow={glow} title="Real-world records">
+      </Fold>
+      <Fold id="real" glow={glow} title="Real-world records" right={<span className="text-[10px] font-black text-white/60">{beaten} / {RECORDS.length}</span>}>
         {RECORDS.map((r) => {
           const p = r.progress(career);
           const pct = Math.min(100, Math.round((p / r.value) * 100));
@@ -399,7 +333,8 @@ function Records({ career, glow, hallRecords }: { career: CareerState; glow: str
             </div>
           );
         })}
-      </Card>
+      </Fold>
+      {hallRecords && <HallRecordsCard career={career} glow={glow} book={hallRecords} />}
     </>
   );
 }

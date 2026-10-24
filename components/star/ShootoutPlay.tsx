@@ -38,6 +38,10 @@ import { loadPlaySettings, sanitizePlaySettings } from "@/lib/star/playArea";
 import { startingTeammateRoles, onPitchToday, fillMissingFromFullRoster, opponentStartingXI } from "@/lib/star/teamsheet";
 import { fakeFaceFor, DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import type { CareerState, Fixture } from "@/lib/star/types";
+import {
+  aimedCrossX, pastKickFrom, readKickHabits,
+  type KeeperHabitRead, type PastKick, type PenaltyReadSettings,
+} from "@/lib/star/penaltyKeeper";
 
 type Keeper = { strength: number; id?: string; name?: string; shortName?: string; face?: string };
 interface Sides {
@@ -47,7 +51,7 @@ interface Sides {
 }
 
 /** Both sides' orders and keepers, off the same test career EnginePlay plays. */
-function sidesFor(career: CareerState, fixture: Fixture, keeperDial: number, realKeeper: boolean): Sides {
+function sidesFor(career: CareerState, fixture: Fixture, keeperDial: number, realKeeper: boolean, youTakeEvery = false): Sides {
   const roles = startingTeammateRoles(career, fixture);
   const ours = onPitchToday(fillMissingFromFullRoster(career.squad ?? [], roles, career), roles);
   const mates: PenaltyTaker[] = ours.map((p) => ({
@@ -83,7 +87,8 @@ function sidesFor(career: CareerState, fixture: Fixture, keeperDial: number, rea
   // A shootout can be over after three rounds, never sooner — so on this
   // screen, which exists to play your kick, you take one of the first three:
   // every shootout reaches you (final playtest: 0 kicks for you in 4).
-  const ourOrder = shootoutOrder(mates, you, 3), theirOrder = shootoutOrder(theirs);
+  // youTakeEvery (the habits test page): you take every one of your side's kicks.
+  const ourOrder = youTakeEvery ? [you] : shootoutOrder(mates, you, 3), theirOrder = shootoutOrder(theirs);
   const home = fixture.home !== false;
   return {
     homeClub: home ? career.player.club : fixture.opponent,
@@ -94,10 +99,25 @@ function sidesFor(career: CareerState, fixture: Fixture, keeperDial: number, rea
   };
 }
 
-export default function ShootoutPlay({ seed = 1, width, onExit }: {
+export default function ShootoutPlay({ seed = 1, width, onExit, readsHabits = false, onHabits, youTakeEvery = false, rememberKicks = false }: {
   seed?: number;
   width?: number;
   onExit?: () => void;
+  /**
+   * The keeper reads your habits (Leo, 22 Oct 2026; /star-shootout-dev only):
+   * your earlier kicks in this shootout go to the keeper facing YOUR kicks
+   * (lib/star/penaltyKeeper.ts `habit`). Absent/false: exactly as before.
+   */
+  readsHabits?: boolean;
+  /** Your kicks so far in this shootout (oldest first) and the keeper's read of
+   *  them, after every kick of yours and at a new shootout. Watching only. */
+  onHabits?: (kicks: PastKick[], read: KeeperHabitRead) => void;
+  /** You take every one of your side's kicks (the habits test page, so you
+   *  get enough kicks to be read). Absent/false: one slot in the order, as before. */
+  youTakeEvery?: boolean;
+  /** "Another shootout" keeps your kicks, so the keeper still remembers them
+   *  (the habits test page; it forgets on a remount). Absent/false: forgotten. */
+  rememberKicks?: boolean;
 }) {
   const s = useMemo(() => sanitizePlaySettings(loadPlaySettings()), []);
   const built = useMemo(() => buildTestCareer(s, seed), [s, seed]);
@@ -108,16 +128,40 @@ export default function ShootoutPlay({ seed = 1, width, onExit }: {
   stateRef.current = state;
   const [run, setRun] = useState(0);
   const [done, setDone] = useState(false);
+  // The match restarts every KICKS_PER_MOUNT kicks (onChanceResolved).
+  const [seg, setSeg] = useState(0);
+  const chancesRef = useRef(0);
+  // Your kicks this shootout, as you see them (penaltyKeeper.ts PastKick).
+  const [kicks, setKicks] = useState<PastKick[]>([]);
+  const kicksRef = useRef(kicks);
+  kicksRef.current = kicks;
+  const onHabitsRef = useRef(onHabits);
+  onHabitsRef.current = onHabits;
+  useEffect(() => { onHabitsRef.current?.(kicks, readKickHabits(kicks)); }, [kicks]);
+  // Where the ball is heading at the goal line and how high, from the last
+  // two ball steps that moved it towards goal (read-only, onBallStep).
+  const goalMidRef = useRef(0);
+  const flightRef = useRef<{ prev: { x: number; y: number; z: number } | null; cross: number | null; z: number; frozen?: boolean }>({ prev: null, cross: null, z: 0 });
+  const onBallStep = useCallback((b: { x: number; y: number; z: number }) => {
+    const f = flightRef.current;
+    const p = f.prev;
+    f.prev = { x: b.x, y: b.y, z: b.z };
+    if (f.frozen || !p || !(b.y < p.y - 1e-4)) return; // not flying towards goal
+    f.cross = aimedCrossX({ pos: { x: b.x, y: b.y }, vel: { x: b.x - p.x, y: b.y - p.y } } as Parameters<typeof aimedCrossX>[0]);
+    // Height AT the goal line: once it crosses, take it there and stop.
+    if (b.y <= 0 && p.y > 0) { const t = p.y / (p.y - b.y); f.z = p.z + (b.z - p.z) * t; f.frozen = true; }
+    else f.z = b.z;
+  }, []);
 
   useEffect(() => {
     if (!built) return;
     let live = true;
     const key = `${s.division}|${built.career.player.club}`;
-    const make = (c: CareerState) => { if (live) setSides(sidesFor(c, built.fixture, s.keeperStrength, s.realKeeper)); };
+    const make = (c: CareerState) => { if (live) setSides(sidesFor(c, built.fixture, s.keeperStrength, s.realKeeper, youTakeEvery)); };
     const fallback = setTimeout(() => make(built.career), 4000);
     realSquadsFor(built.career, key).then((real) => { clearTimeout(fallback); make({ ...built.career, ...real }); }, () => make(built.career));
     return () => { live = false; clearTimeout(fallback); };
-  }, [built, s]);
+  }, [built, s, youTakeEvery]);
 
   // Start every taker's and keeper's photo loading as soon as the orders are
   // known, so the browser has it by his turn (the match still shows a fake
@@ -146,6 +190,8 @@ export default function ShootoutPlay({ seed = 1, width, onExit }: {
     initDefenders(sc, rng);
     stageScene(sc, { teammates: false });
     clearForShootout(sc);
+    goalMidRef.current = (sc.goal.x1 + sc.goal.x2) / 2;
+    flightRef.current = { prev: null, cross: null, z: 0 };
     if (!taker.you && !st.over) {
       attachAutoKick(sc, {
         side: side === sd.yourSide ? "us" : "them", taker, plan: planPenalty(taker.rating, rng), keeper, context: "shootout",
@@ -158,13 +204,36 @@ export default function ShootoutPlay({ seed = 1, width, onExit }: {
     const sd = sidesRef.current;
     if (!sd || stateRef.current.over) return;
     const scored = info.outcome === "goal" || info.outcome === "rebound";
+    // One of YOUR kicks: remember where it went (the keeper's habit read).
+    const f = flightRef.current;
+    if (!info.autoKick && info.youShot) {
+      const cross = f.cross ?? info.ball?.x;
+      if (cross !== undefined && Number.isFinite(cross)) {
+        const k = pastKickFrom(cross, goalMidRef.current, f.z);
+        const list = [...kicksRef.current, k];
+        kicksRef.current = list;
+        setKicks(list);
+      }
+    }
     const next = takeNextKick(stateRef.current, scored, 11);
     stateRef.current = next;
     setState(next);
     if (next.over) window.setTimeout(() => setDone(true), 2600);
+    // Every kick is one chance of the match EnginePlay is playing, and that
+    // match ends (its FULL TIME card) after a handful of chances. A long
+    // shootout (sudden death, or you taking every kick) would run into it, so
+    // the match starts again every few kicks, once this kick's result has shown.
+    else if (++chancesRef.current >= KICKS_PER_MOUNT) {
+      chancesRef.current = 0;
+      window.setTimeout(() => setSeg((n) => n + 1), 2400);
+    }
   }, []);
 
-  const again = () => { const fresh = createShootout(); stateRef.current = fresh; setState(fresh); setDone(false); setRun((r) => r + 1); };
+  const again = () => { const fresh = createShootout(); stateRef.current = fresh; setState(fresh); setDone(false); setRun((r) => r + 1); chancesRef.current = 0; if (!rememberKicks) { kicksRef.current = []; setKicks([]); } };
+
+  // The keeper's habit read goes in only for YOUR kick, and only with the
+  // prop on and a real lean; otherwise nothing is passed — as before.
+  const habitRead = useMemo(() => readKickHabits(kicks), [kicks]);
 
   if (!built) return <div style={{ padding: 20, color: "#8a97aa" }}>No clubs in that division.</div>;
   if (!sides) {
@@ -173,6 +242,8 @@ export default function ShootoutPlay({ seed = 1, width, onExit }: {
   const side = nextShootoutSide(state);
   const order = side === "home" ? sides.home : sides.away;
   const up = order[nextTakerIndex(state, side, order.length)];
+  const penaltyRead: Partial<PenaltyReadSettings> | undefined =
+    readsHabits && up?.you && !state.over && habitRead.strength > 0 ? { habit: habitRead } : undefined;
   const homeColor = kits ? (built.fixture.home !== false ? kits.ours.shirt : kits.theirs.shirt) : undefined;
   const awayColor = kits ? (built.fixture.home !== false ? kits.theirs.shirt : kits.ours.shirt) : undefined;
 
@@ -199,11 +270,17 @@ export default function ShootoutPlay({ seed = 1, width, onExit }: {
           </div>
         </div>
       ) : (
-        <EnginePlay key={run} seed={seed} openOn={openOn} bare width={width} onChanceResolved={onChanceResolved} />
+        <EnginePlay
+          key={`${run}-${seg}`} seed={seed + seg} openOn={openOn} bare width={width} onChanceResolved={onChanceResolved}
+          onBallStep={onBallStep} penaltyRead={penaltyRead}
+        />
       )}
     </div>
   );
 }
+
+/** Kicks one EnginePlay match plays before it starts again (its match ends after a few more). */
+const KICKS_PER_MOUNT = 3;
 
 const btn: React.CSSProperties = {
   minHeight: 44, padding: "0 16px", borderRadius: 12, cursor: "pointer",

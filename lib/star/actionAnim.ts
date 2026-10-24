@@ -26,11 +26,14 @@
 import type { BallAction, BallActionKind, BallActionMode, SaveResult } from "./canvasEngine";
 import type { BodyPose } from "./fiveASide/render";
 import { DEFAULT_ANIM_DIALS, type AnimDials } from "./animDials";
+import { isBicycleMode, type BicycleMode } from "./bicycle";
 
 /** One man's current animation, as the match screen keeps it. */
 export interface ActorAnim {
   kind: BallActionKind;
-  mode?: BallActionMode;
+  /** How it was struck. "bicycle" is drawn as an overhead kick (lib/star/bicycle.ts);
+   *  the engine's own BallActionMode does not know it. */
+  mode?: BallActionMode | BicycleMode;
   save?: SaveResult;
   firstTime?: boolean;
   at?: { x: number; y: number; z: number };
@@ -44,11 +47,13 @@ export const TOUCH_S = 0.45;   // = RECEIVER_CONTROL_T: he controls it, then he 
 export const STRIKE_S = 0.42;  // a kick's follow-through
 export const HEADER_S = 0.55;  // up, meet it, down
 export const BLOCK_S = 0.6;    // leg out, hold, recover
+export const BICYCLE_S = 1.1;  // over his head, then the fall onto his back and sitting up (looks only: nothing waits on it)
 
 /** How long an outfield animation lasts. */
 export function animDuration(a: Pick<ActorAnim, "kind" | "mode">): number {
   if (a.kind === "touch") return TOUCH_S;
   if (a.kind === "block") return BLOCK_S;
+  if (isBicycleMode(a.mode)) return BICYCLE_S;
   if (a.mode === "header") return HEADER_S;
   return STRIKE_S;
 }
@@ -205,6 +210,17 @@ function outfieldBase(a: ActorAnim, elapsed: number, foot: number, D: AnimDials)
   }
 
   // A strike: shot, pass or clearance.
+  if (isBicycleMode(a.mode)) {
+    // The bicycle kick (the drawn figure, when the 3D sprites are not used): struck
+    // in the air with the kicking leg thrown high, then he falls and lies tipped
+    // over, arms out to break the fall. Elapsed 0 is the strike itself.
+    const fall = easeOut(clamp01(u / 0.45));      // 0 in the air → 1 down on the grass
+    const leg = 1 - clamp01((u - 0.08) / 0.4);   // the boot up over him, then down
+    return withFlash({
+      pose: { kick: 0.25 + 0.95 * leg, kickFoot: f, armSpread: 0.6 + 0.4 * fall, armLift: -0.05 - 0.35 * fall, legSwing: 0.3 * leg * f },
+      liftR: 0.7 * (1 - fall), lean: -f * 1.2 * fall, kickClipU: clamp01(0.6 + u * 1.6), ...none,
+    }, D, elapsed, false);
+  }
   if (a.mode === "header") {
     // A real jump: squat, up to meet it, back down. The head snaps through.
     const up = Math.sin(Math.PI * u);

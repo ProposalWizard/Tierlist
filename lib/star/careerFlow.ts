@@ -41,7 +41,7 @@ import { crownWithoutYou } from "./euro";
 import { BOOTS_CATALOGUE } from "./shopData";
 import { settleBets, betNewsLines } from "./competitionBetting";
 import { checkNewAchievements } from "./achievements";
-import { updatePersonalBests } from "./records";
+import { updatePersonalBests, plCareer } from "./records";
 import { computeStarRating, growthMultiplier } from "./rating";
 import { NEW_CAREER_REPUTATION, changeReputation, cheekyMissReputation } from "./reputation";
 import { freshUnlocks } from "./unlocks";
@@ -65,6 +65,7 @@ import { resolveLadder, seasonLadder, membershipOf, estimateClubStrength, type L
 import { englishTopFlightTable } from "./englishTopFlight";
 import { worldAfterMatch, finishWorld, ratedTeams } from "./world";
 import { summariseWorld } from "./world/summary";
+import { withSeasonHistory } from "./world/history";
 import { seedPlayOffs, settlePlayOffFixture, leagueSeasonComplete } from "./playoffs";
 import { resetLeagueSquads, syncLeagueStrengthFromSquads, growWonderkids, moveSquadsWithLadder } from "./leagueSquads";
 import { ageLeagueSquads, ageOwnSquad, clubLevelOf, worldSeedFor, AWAKE_DIVISIONS } from "./worldAgeing";
@@ -253,7 +254,9 @@ export function makeIdentity(player: StarPlayer, division: CareerDivision = "pre
     // contract — `attachClub` unlocks it when there genuinely is one.
     achievements: [],
     status: "1st Team",
-    currentBoot: starterBoot,
+    // The story order (every new career): no boots until a team-mate hands
+    // you his old pair before your first game (story.ts, the "boots" beat).
+    currentBoot: { ...starterBoot, matches: 0 },
     kibCans: { basic: 2, premium: 0, elite: 0 },
     ownedItems: [],
     girlfriend: null,
@@ -668,6 +671,10 @@ export function restRecoveryAfter(career: CareerState, settled: Fixture, fixture
   const days = restDaysBetween(from, to);
   const ownsProperty = (career.ownedItems ?? []).some(i => i.category === "property" && !isWornOut(i));
   const tier = career.player.club ? facilitiesFor(career, career.player.club).trainingGroundTier : 1;
+  // The story's first week (Mikey, 24 Oct 2026): before game 2 the rest days
+  // fill you right up, so no "low energy, use a can" comes before the physio
+  // hands you one after game 2 (lib/star/story.ts, the "can" beat).
+  if (career.unlocks?.story && !career.unlocks.seen.includes("beat-can") && (career.careerStats?.appearances ?? 0) < 1) return 100;
   // Happiness decides how well you recover (relationships.ts, Mikey 4 Oct 2026).
   return days * dailyRecovery(ownsProperty, tier) * happinessEnergyFactor(happinessOf(career));
 }
@@ -1076,6 +1083,12 @@ export function creditMatchResult(
       appearances: priorCareerLeague.appearances + 1,
     }
     : priorCareerLeague;
+  // Premier League games only, for the PL career records. An older save
+  // starts from what records.ts would have shown it (plCareer).
+  const priorPl = plCareer(career);
+  const careerPlStats = kind === "league" && !alreadyPlayed && divisionOf(career) === "premier"
+    ? { goals: priorPl.goals + stats.goals, assists: priorPl.assists + stats.assists, appearances: priorPl.appearances + 1 }
+    : priorPl;
 
   // ── Player of the Month ──
   //
@@ -1151,6 +1164,7 @@ export function creditMatchResult(
     thisSeasonClub: isInternational ? career.thisSeasonClub : career.player.club,
     leagueSeasonStats,
     careerLeagueStats,
+    careerPlStats,
     // Guarded on `alreadyPlayed`, same as every other tally in this
     // function — international caps/goals are no different from a club
     // appearance in that regard.
@@ -1759,7 +1773,9 @@ export function advanceSeason(
 
   // The board's view of the manager, taken on the season the CLUB had rather
   // than the one you had — nobody is sacked because a forward was quiet.
-  const sack = sackCheck(career, judgeSeason(career).score);
+  const sack = sackCheck(career, judgeSeason(career).score,
+    !justTransferred && !career.placement
+      && seasonClubMove(career.player.club, divisionOf(career), ladder) === "promoted");
 
   // Individual honours for the season that has just finished, taken BEFORE the
   // stats are reset — they are a verdict on those numbers.
@@ -1862,6 +1878,7 @@ export function advanceSeason(
     // A new season's world opens at its first match (lib/star/world).
     world: undefined,
     lastWorld,
+    compHistory: withSeasonHistory(career.compHistory, lastWorld),
     lastTopFlight,
     fixtures: buildFixtures(clubs, career.player.club),
     league: buildLeague(clubs, career.player.club),

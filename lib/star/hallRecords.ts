@@ -15,11 +15,7 @@
  */
 import type { CareerState } from "./types";
 import type { HallEntry } from "./hallOfFame";
-
-const longSeason = (startYear: number, season: number): string => {
-  const y = startYear + season - 1;
-  return `${y}/${String(y + 1).slice(2)}`;
-};
+import { longSeason } from "./careerOverview";
 
 export type HallRecordScope = "season" | "match" | "career";
 

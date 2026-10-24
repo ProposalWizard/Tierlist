@@ -31,6 +31,10 @@
  *   header_stand  1.1 s  jump, arch, neck snap at contact (0.50), land
  *   header_diving 1.3 s  launch flat out, head at contact (0.40) ~1.2 m up, land on the chest; body ends 0.8 m on
  *   volley        1.15 s side-on, right foot at contact (0.45) ~0.8 m up
+ *   bicycle       1.5 s  overhead kick (lib/star/bicycle.ts): springs off the right as the left swings up
+ *                        (`launch` 0.26), lies back, scissor, right instep through the ball above his
+ *                        head at contact (0.48; ~2.0–2.2 m up on the Style A bodies), arms wide, lands on
+ *                        the upper back with the hands down (`land` 0.90), lies, starts to sit up; ends 0.3 m back
  *   first_touch   0.85 s cushion with the right foot (0.32)
  *   chest_control 1.0 s  lean back, chest out (0.38), drop it
  *   thigh_control 0.9 s  right thigh up (0.30), kill it

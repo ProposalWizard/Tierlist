@@ -43,9 +43,22 @@ import { realMomentsOn, realMomentsEvery } from "./realMomentToggle";
 //  THE DIALS
 // ─────────────────────────────────────────────────────────────────────────
 
-/** 1 in this many open-play chances of a kind the real moments have is a real moment. */
-export const REAL_MOMENT_SHARE_IN = 4;
+/**
+ * 1 in this many open-play chances of a kind the real moments have is a real moment.
+ *
+ * 22 Oct 2026 (Harry: "leaning too much towards real highlights when the
+ * toggle is on"): 4 -> 6. It shipped (20 Oct) as 1 in 4 of three kinds (one-on-
+ * ones, tight angles, long shots), which was about 1 in 10 of ALL open-play
+ * chances (measured, 150 matches each, striker and winger, Match flow Old and
+ * New: 8.1-9.4% of served chances). The headers round (21 Oct) added headers and
+ * volleys to the kinds without moving this dial, and the share went to 12-16%
+ * (about 1 in 7). 1 in 6 of five kinds puts it back at about 1 in 10 of all
+ * open-play chances. Measure: scripts/star-sandbox/highlights-measure.mts.
+ */
+export const REAL_MOMENT_SHARE_IN = 6;
 export const REAL_MOMENT_SHARE = 1 / REAL_MOMENT_SHARE_IN;
+/** About 1 in this many of ALL open-play chances is a real moment (what the screens say; measured, not a dial). */
+export const REAL_MOMENT_OF_ALL_IN = 10;
 
 /**
  * The kinds a real moment can stand in for (the kind the match asked for must
@@ -69,8 +82,8 @@ export const REAL_MOMENT_MEMORY = 40;
 export function servedKindOf(m: TrackedMoment): ScenarioKind | null {
   if (m.what !== "shot" || !isFullyReal(m)) return null;
   // A foot shot above the waist or a ball above 2.6 m (a scissor or bicycle
-  // kick): acrobatics are not built yet.
-  if (airKindOf(m) === "high") return null;
+  // kick): served as a header chance with the BICYCLE button always on
+  // (realMoments/shots.ts kindForShot; bicycle.ts, 22 Oct 2026).
   const k = playKindForShot(m);
   return REAL_MOMENT_KINDS.includes(k) ? k : null;
 }
@@ -86,7 +99,7 @@ export function autoCheck(m: TrackedMoment, track: RealTrack | undefined): strin
   if (m.what !== "shot") return "a corner (only shots are served)";
   if (!isFullyReal(m)) return "not fully real";
   if (m.type !== "Open Play") return `a ${m.type.toLowerCase()} (open play only)`;
-  if (!servedKindOf(m)) return airKindOf(m) === "high" ? "struck overhead (acrobatics are not built yet)" : "not a kind the game serves";
+  if (!servedKindOf(m)) return "not a kind the game serves";
   if (Math.hypot(m.ball[0] - CX, m.ball[1]) > REAL_MOMENT_MAX_M) return `struck from more than ${REAL_MOMENT_MAX_M} m out`;
   const k = peopleOf(m).keeper;
   if (!k || k.y >= 12 || Math.abs(k.x - CX) >= 15) return "their keeper is not by his goal";
@@ -232,7 +245,47 @@ export function realMomentLeadIn(sc: Scenario, moment?: LeadMoment): LeadIn | nu
   const tr = realMomentPool()?.tracks[id];
   if (!tr) return null;
   const lead = trackLeadIn(tr, sc);
-  return { ...lead, skippable: true };
+  return { ...lastSecondsOf(lead, REAL_MOMENT_LEAD_S), skippable: true };
+}
+
+/**
+ * How much of a real moment's build-up plays (seconds): its last few, ending on
+ * the chance. 22 Oct 2026 (Harry: "buildups are still too slow"): the whole real
+ * window was ~4 s; now the same last 3 s every generated build-up plays
+ * (builders.ts FHR_SNAPPY_S).
+ */
+export const REAL_MOMENT_LEAD_S = 3;
+
+/**
+ * The same lead-in, shown only from `durS − capS`, at normal speed: it ends on
+ * the very same frame. `keepFrom`: start no later than this (a foul stays in view). A start inside a pass moves back to just before its kick
+ * (never more than 1.2 s longer), else forward to its arrival, so it never opens
+ * on a ball in the air.
+ */
+export function lastSecondsOf<L extends LeadIn>(lead: L, capS: number, o: { keepFrom?: number } = {}): L {
+  if (!(lead.durS > capS + 0.05)) return lead;
+  const ps = lead.passStart ?? [], pe = lead.passEnd ?? [];
+  let s = lead.durS - capS;
+  if (o.keepFrom !== undefined) s = Math.min(s, o.keepFrom);
+  else for (let i = 0; i < ps.length; i++) {
+    if (s > ps[i] && s < pe[i]) { const back = Math.max(0, ps[i] - 0.2); s = s - back <= 1.2 ? back : pe[i]; break; }
+  }
+  if (s <= 0.05 || s >= lead.durS - 1) return lead;
+  const dur = lead.durS - s;
+  const T = (t: number) => (t >= dur - 1e-9 ? lead.durS + Math.max(0, t - dur) : t + s);
+  const keep = pe.map((e) => e > s);
+  const out: L = {
+    ...lead,
+    durS: dur,
+    ballAt: (t: number) => lead.ballAt(T(t)),
+    posAt: (key: string, t: number) => lead.posAt(key, T(t)),
+    passStart: ps.filter((_, i) => keep[i]).map((t) => Math.max(0, t - s)),
+    passEnd: pe.filter((_, i) => keep[i]).map((t) => t - s),
+  };
+  if (lead.captionAt) out.captionAt = (t: number) => lead.captionAt!(T(t));
+  if (lead.onTick) out.onTick = (t: number, done: boolean) => lead.onTick!(T(t), done);
+  if (lead.whistleAt !== undefined) out.whistleAt = Math.max(0, lead.whistleAt - s);
+  return out;
 }
 
 /** Where a moment stands for the game: its pick, the automatic check, and whether it is in. */

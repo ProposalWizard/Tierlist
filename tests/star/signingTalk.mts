@@ -1,6 +1,6 @@
 import {
   managerTalkFor, fairWageFor, trialistStrength, standingFor,
-  weeklyToSeason, seasonToWeekly, seasonWeeks, agreedWeeklyWage, wageFloorFor,
+  weeklyToSeason, seasonToWeekly, seasonWeeks, agreedWeeklyWage, wageFloorFor, SCOUT_STAGE_NOUN,
   TRIALIST_STRENGTH_FLOOR, TRIALIST_STRENGTH_CEILING,
 } from "../../lib/star/signingTalk";
 import { makeOffer } from "../../lib/star/negotiation";
@@ -204,6 +204,29 @@ function trialAt(quality: number, seed = 4242) {
   const worstBig = Math.min(...big.map(c => fairWageFor(c, "premier", 76, 0)));
   check(bestTiny < worstBig,
     `a perfect trial in the National League never out-pays a poor one in the Premier League (${bestTiny} vs ${worstBig})`);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  THE SCOUT NAMES EACH STAGE AS A THING YOU HAVE, NOT A DRILL TITLE
+//  ("The through the gate is nowhere near it yet", 22 Oct 2026 playtest)
+// ═══════════════════════════════════════════════════════════════════════
+{
+  for (const worst of TRIAL_STAGES) {
+    let t = startTrial(77);
+    TRIAL_STAGES.forEach((stage, i) => {
+      t = recordStage(t, stage, stage === worst ? 0.1 : 0.5 + i * 0.1);
+    });
+    const talk = managerTalkFor({
+      trial: t, club: clubsForDivision("league_two")[0], division: "league_two",
+      clubStrength: 55, playerFirstName: "Sam", rng: mulberry32(3),
+    });
+    for (const line of talk.lines) {
+      check(!/\bThe (through the gate|take him on|find the pass|free kicks|penalty shootout)\b/i.test(line),
+        `scout line uses a drill title as a noun: "${line}"`);
+    }
+    if (talk.worst) check(talk.lines.some(l => l.includes(`Your ${SCOUT_STAGE_NOUN[talk.worst!]} is nowhere near`)),
+      `the worst stage (${talk.worst}) is named as "Your ${SCOUT_STAGE_NOUN[talk.worst]}"`);
+  }
 }
 
 if (problems.length) {

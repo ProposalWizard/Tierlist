@@ -1,0 +1,9 @@
+CPU 6× · 390×844 · posts in seed 150
+open (first)     painted 4739 ms · posts drawn 71 · longest task while opening 3368 ms · still 25141 ms · first video ready —
+long tasks 10 s after open: 4 (longest 3860 ms, >100ms: 4)
+scroll           {"ms":224677,"steps":40,"height":10226,"longTasks":173,"longest":5284,"over100":124,"total":222749}
+open (again)     painted 1466 ms · longest 553 ms · first video ready 1470 ms
+open (new visit) painted 4517 ms · longest 3062 ms · first video ready —
+errors: club_logos read failed — every badge will fall back to initials: TypeError: Failed to fetch
+JSON {"first":{"painted":4738.600000000093,"posts":71,"video":null,"still":25140.899999999907,"t0":22595.299999999814,"openLongest":3368,"lt10s":[537,3368,3230,3860]},"scroll":{"ms":224677,"steps":40,"height":10226,"longTasks":173,"longest":5284,"over100":124,"total":222749},"again":{"painted":1465.7999999998137,"posts":71,"video":1469.7000000001863,"still":1468.5,"t0":363136.7999999998,"openLongest":553,"lt10s":[553,53]},"reload":{"painted":4516.5,"posts":71,"video":null,"still":16175.600000000559,"t0":12715.799999999814,"openLongest":3062,"lt10s":[511,3062,2455,1979,2791]}}
+BROWSER GONE

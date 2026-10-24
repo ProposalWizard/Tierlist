@@ -18,7 +18,7 @@ import DrawnHeadChip from "./DrawnHeadChip";
 import type { CareerState } from "@/lib/star/types";
 import { playerOf } from "@/lib/star/potm";
 import { toonYou, subscribeToonYou } from "@/lib/star/style3d/toon/bodies";
-import { headshotLookFor, headshotKey, headshotIdFor, headshotView, type HeadshotKit, type HeadshotState } from "@/lib/star/headshot3d/look";
+import { headshotLookFor, headshotKey, headshotIdFor, headshotView, type HeadshotKit, type HeadshotState, type HeadshotFrame } from "@/lib/star/headshot3d/look";
 import { headshotFromMemory } from "@/lib/star/headshot3d/store";
 
 /** Cropping in (a small round chip) keeps this point still: the face's middle lands a little above the chip's. */
@@ -42,7 +42,7 @@ export function useHeadshotId(): IdOf {
   return useContext(IdCtx) ?? ((name, club, isYou) => headshotIdFor(name, club, isYou));
 }
 
-export default function Headshot3D({ id, you, position, skin, kit, size, zoom = 1, className, style, fallback }: {
+export default function Headshot3D({ id, you, position, skin, kit, size, height, frame = "head", zoom = 1, className, style, fallback }: {
   /** His stable id (squad id; "you" for you). The same id is the same face everywhere. */
   id: string;
   you?: boolean;
@@ -51,6 +51,10 @@ export default function Headshot3D({ id, you, position, skin, kit, size, zoom = 
   kit: HeadshotKit;
   /** Width and height on screen, px. */
   size: number;
+  /** Height on screen when it is not square (the square picture fills it, cropped evenly). */
+  height?: number;
+  /** "head": head and shoulders (round chips); "card": head to waist (the FIFA player card). */
+  frame?: HeadshotFrame;
   /** >1 crops in on the face (a small round chip), from the top. */
   zoom?: number;
   className?: string;
@@ -64,7 +68,7 @@ export default function Headshot3D({ id, you, position, skin, kit, size, zoom = 
     () => headshotLookFor({ id, you: isYou, position, skin, kit }, yourPick),
     [id, isYou, position, skin, kit.shirt, kit.trim, kit.shorts, yourPick], // eslint-disable-line react-hooks/exhaustive-deps
   );
-  const key = headshotKey(id, look);
+  const key = headshotKey(id, look, frame);
   const box = useRef<HTMLDivElement>(null);
   // a face made earlier this visit shows at once (no drawn head flashing first)
   const [shot, setShot] = useState<{ key: string; url: string | null; state: HeadshotState }>(() => {
@@ -79,7 +83,7 @@ export default function Headshot3D({ id, you, position, skin, kit, size, zoom = 
     if (!el) return;
     let dead = false;
     const ask = () => {
-      void import("@/lib/star/headshot3d/maker").then(({ makeHeadshot }) => makeHeadshot(id, look)).then((url) => {
+      void import("@/lib/star/headshot3d/maker").then(({ makeHeadshot }) => makeHeadshot(id, look, frame)).then((url) => {
         if (!dead) setShot({ key, url, state: url ? "ready" : "failed" });
       }).catch(() => { if (!dead) setShot({ key, url: null, state: "failed" }); });
     };
@@ -98,8 +102,8 @@ export default function Headshot3D({ id, you, position, skin, kit, size, zoom = 
   const wasDrawn = useRef(false);
   if (view === "drawn") wasDrawn.current = true;
   return (
-    <div ref={box} className={`relative shrink-0 overflow-hidden ${className ?? ""}`} style={{ width: size, height: size, ...style }}
-      data-headshot={id} data-headshot-view={view}>
+    <div ref={box} className={`relative shrink-0 overflow-hidden ${className ?? ""}`} style={{ width: size, height: height ?? size, ...style }}
+      data-headshot={id} data-headshot-view={view} data-headshot-frame={frame}>
       {view === "picture" ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={cur.url!} alt="" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full"

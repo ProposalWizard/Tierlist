@@ -10,7 +10,7 @@ const store = new Map<string, string>();
 import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { applyLevelResult, starsOf } from "../../lib/star/trainingLevels";
 import { aerialFromOld, aerialOf, aerialHeaderPace, aerialVolleyPace, aerialJumpM, headerReachM, headerJump } from "../../lib/star/aerial";
-import { airContactRead, airForgiveness, headerStretch } from "../../lib/star/airborneChance";
+import { airContactRead, airForgiveness, headerStretch, airCentreR, AIR_CENTRE_R } from "../../lib/star/airborneChance";
 import { checkSave } from "../../lib/star/saveGuard";
 import { levelConfig, TRAINING_SKILLS, defaultTable } from "../../lib/star/trainingLevelData";
 import { computeStarRating } from "../../lib/star/rating";
@@ -85,6 +85,13 @@ ok(over.pace < airContactRead(firm, 2.0).pace && headerStretch(2.55, 90) < heade
 ok(headerStretch(2.6, undefined) === 0 && headerStretch(undefined, 60) === 0, "no Aerial or no height: no stretch (older replays)");
 const top = levelConfig("aerial", 29) as { ballZ?: number; volley: boolean };
 ok(typeof top.ballZ === "number" && top.ballZ > headerReachM(60), `Head & Volley level 29 header at ${top.ballZ} m: over Aerial 60's reach`);
+
+// 22 Oct 2026 (Harry: "having a better aerial stat should make the circle to get perfect bigger").
+ok(airCentreR(60) === AIR_CENTRE_R && airCentreR(undefined) === AIR_CENTRE_R, "the perfect circle at Aerial 60 (and with no Aerial) is today's");
+ok(airCentreR(30) < airCentreR(60) - 0.05 && airCentreR(90) > airCentreR(60) + 0.05, `the perfect circle grows with Aerial: ${airCentreR(30).toFixed(2)} / ${airCentreR(60).toFixed(2)} / ${airCentreR(90).toFixed(2)}`);
+ok(airCentreR(0) >= 0.1 && airCentreR(100) <= 0.32, "the perfect circle is capped both ways");
+const edge = { kind: "header" as const, lift: 0.5, cx: 0.25, cy: 0 };
+ok(airContactRead({ ...edge, aerial: 90 }).turnDeg === 0 && airContactRead({ ...edge, aerial: 60 }).turnDeg !== 0, "a tap 0.25 off the middle is clean at Aerial 90, off line at 60");
 
 if (failed) { console.error(`\n${failed} FAILED`); process.exit(1); }
 console.log("\nPASS");

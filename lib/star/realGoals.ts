@@ -46,6 +46,17 @@ export interface RgExtra {
   keeper: string;
   period: string;
   move: RgMoveEv[];
+  /** Bangers only (data/realmoments/bangers.json, drafted by us from public record): */
+  label?: string;
+  /** How it was struck ("overhead kick", "volley"). */
+  technique?: string;
+  /** The match report the facts were checked against. */
+  source?: string;
+  source2?: string;
+  checked?: string;
+  note?: string;
+  /** "drafted from public record" — never licensed data. */
+  drafted?: string;
 }
 
 export interface RgFile { goals: RgExtra[] }
@@ -112,9 +123,16 @@ export const LEAGUES: { file: LeagueFile; comp: string; badge: string }[] = [
 export type LeagueFile = "league-england" | "league-spain" | "league-italy" | "league-germany" | "league-france";
 
 /** A World Cup or Euro goal (the level map is made of these). */
-export const isTournament = (g: RealGoal) => g.x.comp.startsWith("World Cup") || g.x.comp.startsWith("Euro");
+export const isTournament = (g: RealGoal) => !g.id.startsWith("bg-") && (g.x.comp.startsWith("World Cup") || g.x.comp.startsWith("Euro"));
+
+/** A banger's badge, from its competition's name ("Champions League 2017/18" → UCL). */
+const BANGER_BADGES: [string, string][] = [
+  ["Premier League", "PL"], ["La Liga", "LIGA"], ["Serie A", "SERIE A"], ["Bundesliga", "BUNDES"], ["Ligue 1", "L1"],
+  ["Champions League", "UCL"], ["Copa del Rey", "COPA"], ["World Cup", "WC"], ["Euro", "EURO"],
+];
 
 export function compBadge(g: RealGoal): string {
+  if (g.id.startsWith("bg-")) return BANGER_BADGES.find(([c]) => g.x.comp.startsWith(c))?.[1] ?? "INTL";
   const lg = LEAGUES.find((l) => l.comp === g.x.comp);
   if (lg) return lg.badge;
   return g.x.comp.startsWith("World Cup") ? "WC" : "EURO";
@@ -256,9 +274,31 @@ export const CLUB_KITS_1718: Record<string, { home: Kit; away: Kit }> = {
   Dijon: { home: k("#c8102e", "#ffffff"), away: k("#ffffff", "#c8102e") },
 };
 
-/** A side's kits: a nation, a 2017/18 club, a club the game knows, else grey. */
+/**
+ * The Bangers' sides the tables above do not have (22 Oct 2026): their usual
+ * home and change colours, by the name bangers.json uses. Names the data
+ * spells another way point at the same kit (Bayern Munich = Bayern München).
+ */
+export const BANGER_KITS: Record<string, { home: Kit; away: Kit }> = {
+  "Bayern Munich": CLUB_KITS_1718["Bayern München"],
+  "VfL Wolfsburg": CLUB_KITS_1718.Wolfsburg,
+  "FC Augsburg": CLUB_KITS_1718.Augsburg,
+  "AS Saint-Étienne": CLUB_KITS_1718["Saint-Étienne"],
+  "OGC Nice": CLUB_KITS_1718.Nice,
+  "AC Milan": CLUB_KITS_1718.Milan,
+  "Inter Milan": CLUB_KITS_1718.Internazionale,
+  "SV Darmstadt 98": { home: k("#004e9e", "#ffffff"), away: k("#ffffff", "#004e9e") },
+  "SC Bastia": { home: k("#0057a8", "#ffffff"), away: k("#ffffff", "#0057a8") },
+  Frosinone: { home: k("#f5d000", "#0047ab"), away: k("#0047ab", "#f5d000") },
+  Anderlecht: { home: k("#4b2a84", "#ffffff"), away: k("#ffffff", "#4b2a84") },
+  Kazakhstan: { home: k("#00afca", "#fec50c"), away: k("#fec50c", "#00afca") },
+  Netherlands: { home: k("#f36c21", "#111111"), away: k("#1b2a5c", "#f36c21") },
+  Scotland: { home: k("#1b2a5c", "#ffffff"), away: k("#ffffff", "#1b2a5c") },
+};
+
+/** A side's kits: a nation, a 2017/18 club, a banger's side, a club the game knows, else grey. */
 export function sideKits(team: string): { home: Kit; away: Kit } {
-  const own = NATION_KITS[team] ?? CLUB_KITS_1718[team];
+  const own = NATION_KITS[team] ?? CLUB_KITS_1718[team] ?? BANGER_KITS[team];
   if (own) return own;
   const c = kitsOf(team);
   return c === kitsOf("") ? FALLBACK : c;
@@ -395,6 +435,12 @@ export function dressFor(g: RealGoal): (sc: Scenario) => void {
     for (const r of sc.secondaryRunners) r.who = blank;
     for (const t of sc.teammates) t.who = blank;
     sc.follower.who = blank;
+    // A cross or a header: the commentary names the crosser. The real last
+    // passer (Nani for Rooney's overhead kick), never a test-club name.
+    if (sc.crosser) {
+      const last = [...g.x.move].reverse().find((e) => e[1] === "P" && e[5]);
+      sc.crosser = last && last[4] ? idFor(knownAs(g, last[4]), "") : undefined;
+    }
   };
 }
 
@@ -464,22 +510,39 @@ export const STAGE_GATES = [0, 6, 15, 26, 38];
  * bands by difficulty; each stage takes its band's featured goals first, then
  * the rest of the band spread evenly. Deterministic.
  */
-export function buildLevels(goals: RealGoal[]): Stage[] {
+export interface LevelOpts {
+  /** The stage names (one stage per name). Default: the World Cup rounds. */
+  names?: string[];
+  /** Levels in each stage. Default 10. */
+  perStage?: number;
+  /** Stars needed in all to open each stage. Default STAGE_GATES. */
+  gates?: number[];
+  /** Goals taken first in their band. Default FEATURED. */
+  featured?: Set<string>;
+}
+
+export function buildLevels(goals: RealGoal[], opts: LevelOpts = {}): Stage[] {
+  const names = opts.names ?? STAGE_NAMES;
+  const per = opts.perStage ?? LEVELS_PER_STAGE;
+  const gates = opts.gates ?? STAGE_GATES;
+  const featured = opts.featured ?? FEATURED_IDS;
   const sorted = goals.map((g) => ({ g, d: difficultyOf(g) })).sort((a, b) => a.d - b.d || a.g.id.localeCompare(b.g.id));
   const stages: Stage[] = [];
-  const band = sorted.length / STAGE_NAMES.length;
+  const band = sorted.length / names.length;
   let n = 0;
-  for (let s = 0; s < STAGE_NAMES.length; s++) {
+  for (let s = 0; s < names.length; s++) {
     const pool = sorted.slice(Math.round(s * band), Math.round((s + 1) * band));
-    const feat = pool.filter((q) => FEATURED_IDS.has(q.g.id));
-    const rest = pool.filter((q) => !FEATURED_IDS.has(q.g.id));
-    const want = Math.max(0, LEVELS_PER_STAGE - feat.length);
+    const feat = pool.filter((q) => featured.has(q.g.id));
+    const rest = pool.filter((q) => !featured.has(q.g.id));
+    const want = Math.max(0, per - feat.length);
     const step = rest.length / Math.max(1, want);
-    const picked = [...feat.slice(0, LEVELS_PER_STAGE)];
-    for (let i = 0; i < want && i < rest.length; i++) picked.push(rest[Math.floor(i * step + step / 2)]);
+    const picked = [...feat.slice(0, per)];
+    // A small pool (the Bangers) is taken whole; a big one is spread evenly.
+    if (rest.length <= want) picked.push(...rest);
+    else for (let i = 0; i < want; i++) picked.push(rest[Math.floor(i * step + step / 2)]);
     picked.sort((a, b) => a.d - b.d);
     stages.push({
-      n: s, name: STAGE_NAMES[s], gate: STAGE_GATES[s],
+      n: s, name: names[s], gate: gates[s] ?? 0,
       levels: picked.map((q) => ({ n: n++, stage: s, goal: q.g, difficulty: q.d })),
     });
   }
@@ -492,8 +555,8 @@ export type Progress = Record<string, { stars: number; best: number }>;
 export const totalStars = (p: Progress) => Object.values(p).reduce((a, v) => a + v.stars, 0);
 
 /** Is level `lv` open? Stage gate (total stars) and the level before it passed (★1+). */
-export function levelOpen(stages: Stage[], p: Progress, lv: Level): boolean {
-  if (totalStars(p) < stages[lv.stage].gate) return false;
+export function levelOpen(stages: Stage[], p: Progress, lv: Level, stars: (p: Progress) => number = totalStars): boolean {
+  if (stars(p) < stages[lv.stage].gate) return false;
   if (lv.n === 0) return true;
   const all = stages.flatMap((s) => s.levels);
   const prev = all[lv.n - 1];
