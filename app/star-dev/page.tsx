@@ -17,7 +17,6 @@ import { putClip, pruneClips } from "@/lib/star/goalClip/store";
 import { warmVideoMaker } from "@/lib/star/goalClip/makeVideo";
 import { premakeFeedVideos } from "@/lib/star/goalClip/premake";
 import { setMediaUpdate } from "@/lib/star/media/updateFlags";
-import { leoUpdateOn } from "@/lib/star/leoUpdate";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,

@@ -221,7 +221,6 @@ import { penaltyReadFor, decidePenaltyRead, applyPenaltyRead, type PenaltyReadSe
 import { setupKind, strikeKind, replayStrike, stepKind, enforceHardRules, type StrikeDecision } from "@/lib/star/kindRules";
 import { drawMatchGoal } from "@/lib/star/matchGoal";
 import { GoalRecorder } from "@/lib/star/goalClip/recorder";
-import { leoUpdateOn } from "@/lib/star/leoUpdate";
 import { lateKindOf } from "@/lib/star/goalClip/commentary";
 import { planCelebration, celebAt, celebrationMoveFor, CELEB_SPECS, type CelebPlan } from "@/lib/star/celebration";
 import { ACCESSORIES } from "@/lib/star/store/catalogue";
