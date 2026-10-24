@@ -1,6 +1,6 @@
 # Marketing & Production: the plan (21 Oct 2026)
 
-Status: PLAN ONLY. Nothing is built yet (RUL-TEAM-009: plan first, then one piece at a time).
+Status: slice 1 (tab, client, board, video-board skill, leak guard) LIVE 21 Oct. Slice 2 (22 Oct): pieces 4 and 5 built — Uploads straight to Cloudflare R2 with caps, and the Studio (Editing = the full ported editing suite, Statics = placeholder). See .claude/skills/review-timeline and docs/handoffs/2026-10-22-marketing-suite/.
 Asked by: Harry. Source of the method: his other app (a private copy, read only). No client material comes across.
 Stills: `docs/plans/2026-10-21-marketing-production/` (the other app's editing suite, loaded with OUR v01 video only).
 

@@ -94,6 +94,23 @@ const VOLLEY_PACE = 1.06;          // a clean volley comes off hot
 
 /** Inside this far from the centre (in ball radii, sideways) nothing goes off line. */
 export const AIR_CENTRE_R = 0.2;
+
+/**
+ * THE PERFECT CIRCLE GROWS WITH AERIAL (Harry, 22 Oct 2026: "having a better
+ * aerial stat should make the circle to get perfect bigger"). The clean middle
+ * of a ball met in the air, in ball radii: AIR_CENTRE_R at Aerial 60 (exactly
+ * today's), AIR_CENTRE_PER_POINT more or less for every point either side,
+ * held between AIR_CENTRE_MIN_R and AIR_CENTRE_MAX_R. Aerial 30: 0.11, 60:
+ * 0.20, 90: 0.29. Absent (a strike without Aerial): AIR_CENTRE_R, as before.
+ * The circle on the contact screen is drawn from the same number.
+ */
+export const AIR_CENTRE_PER_POINT = 0.003;
+export const AIR_CENTRE_MIN_R = 0.1;
+export const AIR_CENTRE_MAX_R = 0.32;
+export function airCentreR(aerial?: number): number {
+  if (aerial === undefined || !Number.isFinite(aerial)) return AIR_CENTRE_R;
+  return Math.max(AIR_CENTRE_MIN_R, Math.min(AIR_CENTRE_MAX_R, AIR_CENTRE_R + (aerial - 60) * AIR_CENTRE_PER_POINT));
+}
 /** A header met on the very edge of the ball glances off this far (degrees), and loses this share of its pace. */
 export const HEADER_GLANCE_DEG = 22;
 export const HEADER_GLANCE_PACE = 0.35;
@@ -136,7 +153,8 @@ export function airContactRead(air: AirStrike, ballZ?: number): AirRead {
   // 2026); a strike without it (the match until it hands Aerial over) keeps
   // reading Technique, so nothing moves until then.
   const k = airForgiveness(air);
-  const side = Math.max(0, Math.abs(cx) - AIR_CENTRE_R) / (1 - AIR_CENTRE_R);
+  const R0 = airCentreR(air.aerial);
+  const side = Math.max(0, Math.abs(cx) - R0) / (1 - R0);
   // Met on the right side of the ball, it goes left (and the other way round),
   // the same way the engine curls it (positive spin bends it left).
   const away = cx > 0 ? -1 : cx < 0 ? 1 : 0;

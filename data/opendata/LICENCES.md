@@ -179,6 +179,12 @@ holds them):
 
 > Real player positions from SoccerTrack v2 (Scott et al., arXiv 2025), CC BY 4.0. Changes made.
 
+> Famous goals drafted by Knowitball from public match reports (scorer, minute, score, where it was struck and went in); names as labels only.
+
+(That last line is for Real Goals' Bangers, `data/realmoments/bangers.json`,
+added 22 Oct 2026: not from any dataset, facts only, each goal with its own
+source link. See `data/realmoments/README.md`.)
+
 The SoccerTrack v2 moments (added 20 Oct 2026): every shot and corner of 6
 of its 10 filmed university matches (the other 4 hit Google Drive's download
 limit on 20 Oct; re-run the scripts to add them), all 22 men, the same 4 s of

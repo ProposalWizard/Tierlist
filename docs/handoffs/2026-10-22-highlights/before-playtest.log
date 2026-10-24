@@ -1,0 +1,56 @@
+trial simmed
+  stuck? buttons: ? | 1 | ⤓ SAVE IMAGE | 📊 SEASON | 🗓️ CAREER | 🏅 RECORDS | 🏆 TROPHIES | 📝 CONTRACT | 🏆 NATIONAL LEAGUE 19th ▾ | FULL | ★48 | USE | ★24 | USE | ★48 | 🏠 MY HOME | 📊 STATS | 🛍️ SHOP | 🏆 League | ⚽ Training | PLAY | ❤️ Relations | 📱 Phone | ADMIN | BALLON D'OR
+step: KICK OFF
+in match: true (56 s to get there)
+    [0.0 s] feed/- one_on_one
+    [18.6 s] aim/- long_range
+  chance 1: long_range at 18.6 s
+    [20.3 s] contact/- long_range
+    [20.6 s] flight/- long_range
+    [21.5 s] result/- long_range
+    [23.3 s] feed/- long_range
+    [26.6 s] aim/bu tight_angle
+    [30.6 s] aim/- tight_angle
+  build-up 1: 4.00 s wall (planned ? s, tight_angle, REAL moment)
+  chance 2: tight_angle at 30.6 s
+    [32.3 s] contact/- tight_angle
+    [32.6 s] flight/- tight_angle
+    [33.2 s] result/- tight_angle
+    [35.1 s] feed/- tight_angle
+    [37.3 s] aim/- penalty
+  chance 3: penalty at 37.3 s
+    [41.2 s] contact/- penalty
+    [41.5 s] flight/- penalty
+    [46.3 s] result/- penalty
+    [48.2 s] feed/- penalty
+  (stall 1: has true, phase feed, kind penalty; buttons: 2D | 48' ▶ | SCORES ▸ | LOW | MEDIUM | HIGH | BALLON D'OR | WEBSITE | STUDIO | MARKETING)
+    [65.1 s] aim/bu midfield_pass
+    [70.0 s] aim/- midfield_pass
+  build-up 2: 4.94 s wall (planned 5.03 s, midfield_pass)
+  chance 4: midfield_pass at 70.0 s
+    [71.7 s] contact/- midfield_pass
+    [71.9 s] flight/- midfield_pass
+    [73.3 s] result/- midfield_pass
+    [75.1 s] feed/- midfield_pass
+    [88.7 s] aim/bu long_range
+    [92.9 s] aim/- long_range
+  build-up 3: 4.24 s wall (planned 4.36 s, long_range)
+  chance 5: long_range at 92.9 s
+    [94.5 s] contact/- long_range
+    [94.8 s] flight/- long_range
+    [96.0 s] result/- long_range
+    [97.8 s] feed/- long_range
+    [109.9 s] aim/- penalty
+  chance 6: penalty at 109.9 s
+    [113.8 s] contact/- penalty
+    [114.1 s] flight/- penalty
+    [114.6 s] result/- penalty
+    [116.4 s] feed/- penalty
+    [134.7 s] null/- 
+  (stall 2: has false, phase null, kind null; buttons: Continue | Continue | 2.2K | 33 | Save video | 407 | 1.9K | 3.6K | 1.4K | 1.1K | 357 | 2.6K | 136 | 218)
+→ full time: 15/08 Post Match Reactions Continue League Table 🔥 9.8K posts Talking Points 🔥 7.5K posts Tamworth 🔥 6.9K posts Barrow 🔥 4.4K posts Boreham Wood 🔥 4.1K pos
+
+RESULT before: chances 6 (shots taken 6), build-ups 3, wall seconds in build-ups 13.2 (mean 4.39, min 4.00, max 4.94), page fps 59.2, match 145 s wall, score text "3-0"
+kinds: long_range, tight_angle, penalty, midfield_pass, long_range, penalty
+planned vs wall: ?/4.0 5.0/4.9 4.4/4.2
+errors: (none)

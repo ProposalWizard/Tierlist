@@ -358,7 +358,9 @@ function season(seed: number, weeks = 20): CareerState {
   for (let w = 1; w <= 120; w++) c = playOne(c, 91_000 + w);
   const bytes = JSON.stringify(c.media).length;
   check(mediaOf(c).posts.length <= 150, `the feed is capped (${mediaOf(c).posts.length})`);
-  check(bytes < 90_000, `and stays small enough for localStorage (${(bytes / 1024).toFixed(1)} KB after 120 matches)`);
+  // 95 KB, was 90 (22 Oct 2026): Goal of the Month polls carry five goals each
+  // (~1 KB a poll post); the old feed alone measured ~88.4 KB here.
+  check(bytes < 95_000, `and stays small enough for localStorage (${(bytes / 1024).toFixed(1)} KB after 120 matches)`);
   check(mediaOf(c).memory.recent.length <= 12, "memory stays bounded too");
 }
 

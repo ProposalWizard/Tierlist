@@ -15,8 +15,8 @@ import {
 const problems: string[] = [];
 const check = (ok: boolean, what: string) => { if (!ok) problems.push(what); };
 
-check(MATCH_FEEL_DEFAULT === "old", "Match feel starts on Old");
-check(matchFeelLook() === "old", "a phone with nothing stored reads Old (no localStorage here)");
+check(MATCH_FEEL_DEFAULT === "new", "Match feel starts on New (Harry, 22 Oct 2026)");
+check(matchFeelLook() === "new", "a phone with nothing stored reads New (no localStorage here)");
 
 // Scales with speed.
 const soft = strikeFeel(6, "clean"), mid = strikeFeel(17, "clean"), full = strikeFeel(30, "clean");

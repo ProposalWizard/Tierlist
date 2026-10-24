@@ -256,7 +256,10 @@ export default function ProfileSetup({ onComplete, onMainMenu }: Props) {
             {step === 1 ? (pane === "who" ? "Who are you?" : "Your style") : "Your photo"}
           </h1>
           <div className="mt-1 text-[11px] text-emerald-300 font-bold">
-            Step {step} of 2
+            {/* Three screens, counted as three: details, style, photo. The
+                count used to follow `step` (1-2), so details and style both
+                read "Step 1 of 2" (playtest, 22 Oct 2026). */}
+            Step {step === 2 ? 3 : pane === "who" ? 1 : 2} of 3
             {step === 1 && (
               <span className="text-emerald-400/70"> · {pane === "who" ? "your details" : "your style"}</span>
             )}

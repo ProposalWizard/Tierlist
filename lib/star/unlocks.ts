@@ -50,6 +50,7 @@
  */
 import type { CareerState, CareerUnlocks } from "./types";
 import { LIFESTYLE_ITEMS, LIFESTYLE_ALL_LEVELS } from "./shopData";
+import { storyLockHint } from "./story";
 
 export type Feature = "league" | "stats" | "play" | "shop" | "achievements" | "relations" | "phone" | "sponsors" | "training";
 
@@ -123,8 +124,14 @@ export const FEATURE_INFO: Record<Feature, { name: string; icon: string; line: s
 
 /** A new career's starting state. `points` = star points right now. */
 export function freshUnlocks(points = 0): CareerUnlocks {
-  // v0.25: the game comes first — League, Stats and Play are open at once.
-  return { open: ["league", "stats", "play"], seen: [], drills: 0, pointsAtStart: points, apps: [], gameFirst: true };
+  // The first hour as a story (Mikey, 23 Oct 2026, lib/star/story.ts):
+  // League and Play only; everything else is brought in by a person.
+  return { open: ["league", "play"], seen: [], drills: 0, pointsAtStart: points, apps: [], gameFirst: true, story: true, trainingDay: [] };
+}
+
+/** The lock line for a feature, on this career's order. */
+export function lockHint(c: Pick<CareerState, "unlocks">, f: Feature): string {
+  return storyLockHint(c, f) ?? LOCK_HINT[f];
 }
 
 export function isOpen(c: Pick<CareerState, "unlocks">, f: Feature): boolean {
@@ -133,7 +140,7 @@ export function isOpen(c: Pick<CareerState, "unlocks">, f: Feature): boolean {
   if (f === "training" && !c.unlocks.gameFirst) return true;
   // v0.25.1: one drill opens the Shop. A save that did its one drill under
   // the old two-drill rule is open at once, never stuck on a shut Shop.
-  if (f === "shop" && c.unlocks.gameFirst && c.unlocks.drills >= DRILLS_TO_OPEN_SHOP) return true;
+  if (f === "shop" && c.unlocks.gameFirst && !c.unlocks.story && c.unlocks.drills >= DRILLS_TO_OPEN_SHOP) return true;
   return c.unlocks.open.includes(f);
 }
 
@@ -196,7 +203,8 @@ export function recordDrill(c: CareerState, pointsBefore?: number, starsBefore?:
   const starsAtStart = c.unlocks.drills === 0 && starsBefore !== undefined ? starsBefore : c.unlocks.starsAtStart;
   if (c.unlocks.gameFirst) {
     let u: CareerUnlocks = { ...c.unlocks, drills, pointsAtStart, starsAtStart };
-    if (drills >= DRILLS_TO_OPEN_SHOP) u = openFeatures(u, ["shop"], ["shop"]);
+    // The story order: the chairman opens the Shop after game 3 (story.ts).
+    if (drills >= DRILLS_TO_OPEN_SHOP && !u.story) u = openFeatures(u, ["shop"], ["shop"]);
     return { ...withU(c, u), achievements: drills >= DRILLS_TO_OPEN_SHOP ? grant(c, "first-two-sessions") : c.achievements };
   }
   const open = drills >= DRILLS_TO_UNLOCK ? addTo(c.unlocks.open, "league", "stats", "play") : c.unlocks.open;
@@ -230,11 +238,14 @@ export function recordMatchPlayed(c: CareerState): CareerState {
   if (!c.unlocks) return c;
   const games = gamesPlayed(c);
   let u = c.unlocks;
-  if (u.gameFirst) {
+  // The story order: games open nothing by themselves; story.ts's beats do.
+  if (u.story) { /* sponsors only, below */ }
+  else if (u.gameFirst) {
     if (games >= 1) u = openFeatures(u, ["training", "achievements"], ["training", "achievements"]);
     if (games >= SHOP_AFTER_GAMES || u.drills >= DRILLS_TO_OPEN_SHOP) u = openFeatures(u, ["shop"], ["shop"]);
   } else if (games >= 1 || u.open.includes("shop")) u = openFeatures(u, ["relations", "shop"], ["relations", "shop"]);
-  if (hasSponsorOffer(c)) u = openFeatures(u, ["sponsors"], ["sponsors"]);
+  // The story order: your agent's beat brings the first offer in (story.ts).
+  if (hasSponsorOffer(c) && !u.story) u = openFeatures(u, ["sponsors"], ["sponsors"]);
   const owed = !!u.gameFirst && u.drills >= DRILLS_TO_OPEN_SHOP && !c.achievements.includes("first-two-sessions");
   if (owed) return { ...withU(c, u), achievements: grant(c, "first-two-sessions") };
   return u === c.unlocks ? c : withU(c, u);
@@ -244,6 +255,7 @@ export function recordMatchPlayed(c: CareerState): CareerState {
  *  and it opens the first game's features even when no appearance was counted. */
 export function recordFirstMatch(c: CareerState): CareerState {
   if (!c.unlocks) return c;
+  if (c.unlocks.story) return recordMatchPlayed(c);
   const u = c.unlocks.gameFirst
     ? openFeatures(c.unlocks, ["training", "achievements"], ["training", "achievements"])
     : openFeatures(c.unlocks, ["relations", "shop"], ["relations", "shop"]);
@@ -262,6 +274,9 @@ export function managerTalkDue(c: Pick<CareerState, "unlocks" | "achievements" |
  *  from before v0.24 still has it shut. */
 export function recordBossMeeting(c: CareerState): CareerState {
   if (!c.unlocks || c.achievements.includes("boss-meeting")) return c;
+  // The story order: the talk opens Training (the "training" beat), and
+  // Relations comes with the phone after game 2.
+  if (c.unlocks.story) return { ...c, achievements: grant(c, "boss-meeting") };
   return {
     // v0.25: the talk is what opens Relations, so it is announced.
     ...withU(c, openFeatures(c.unlocks, ["relations"], c.unlocks.gameFirst ? ["relations"] : [])),
@@ -271,6 +286,13 @@ export function recordBossMeeting(c: CareerState): CareerState {
 
 /** The phone was bought in Style. */
 export function recordPhoneBought(c: CareerState): CareerState {
+  // The story order: you already have a team-mate's cracked phone. Your own
+  // new phone brings the apps the old one could not run.
+  if (c.unlocks?.story) {
+    const extra = NEW_PHONE_APPS.filter((a) => !c.unlocks!.apps.includes(a));
+    const u = { ...c.unlocks, open: addTo(c.unlocks.open, "phone", "relations"), apps: [...c.unlocks.apps, ...extra] };
+    return { ...withU(c, u), achievements: grant(c, "buy-phone") };
+  }
   if (!c.unlocks || c.unlocks.open.includes("phone")) return c;
   return {
     ...withU(c, { ...c.unlocks, open: addTo(c.unlocks.open, "phone") }),
@@ -328,6 +350,8 @@ export const FIRST_STEPS_GAME_FIRST: FirstStep[] = [
 
 /** The first steps for this career, in its order. */
 export function stepsFor(c: Pick<CareerState, "unlocks">): FirstStep[] {
+  // The story order has no step list: people bring each thing in (story.ts).
+  if (c.unlocks?.story) return [];
   return c.unlocks?.gameFirst ? FIRST_STEPS_GAME_FIRST : FIRST_STEPS;
 }
 
@@ -376,20 +400,21 @@ export function firstStepsDone(c: Pick<CareerState, "unlocks" | "achievements" |
  * league as a shortcut?"
  *
  *   "league"       — League (locked until two drills on the v0.24 order), and every old save.
- *   "achievements" — once Achievements has opened, through the first steps,
- *                    and after them if the player says no to the switch.
+ *   "achievements" — once Achievements has opened, through the first steps only.
  */
 export type BottomLeft = "league" | "achievements";
 
 export function bottomLeft(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): BottomLeft {
   if (!c.unlocks || !c.unlocks.open.includes("achievements")) return "league";
-  if (c.unlocks.slot) return c.unlocks.slot;
-  return "achievements";
+  // Mikey's playtest, 21 Oct 2026: two Achievements buttons (this one and
+  // the swipe row's). Once the first steps are done this is League, always;
+  // Achievements stays in the swipe row. No question asked any more.
+  return firstStepsDone(c) ? "league" : "achievements";
 }
 
-/** Ask "switch this to League?" — first steps done, not asked yet. */
-export function slotQuestionDue(c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): boolean {
-  return !!c.unlocks && c.unlocks.open.includes("achievements") && !c.unlocks.slot && firstStepsDone(c);
+/** The "switch this to League?" question: retired (see bottomLeft). */
+export function slotQuestionDue(_c: Pick<CareerState, "unlocks" | "achievements" | "careerStats" | "fixtures">): boolean {
+  return false;
 }
 
 export function setBottomLeft(c: CareerState, slot: BottomLeft): CareerState {
@@ -429,7 +454,7 @@ export function styleLock(c: Pick<CareerState, "unlocks">, base: string, stars: 
 /** On the phone from the start (P39: "league and settings to start, plus
  *  your messages ... kickabout, social"). "Your house" (the 3D home, 9 Oct
  *  2026) is yours from day one: it is where you live, not a thing to buy. */
-export const STARTER_APPS = ["league", "settings", "social", "kickabout", "fixtures", "messages", "home-3d"];
+export const STARTER_APPS = ["league", "relations", "squad", "settings", "social", "kickabout", "fixtures", "messages", "home-3d"];
 
 /** In the App Store, to install. Apps are shortcuts, so they cost real money
  *  (Harry, 1 Oct 2026, P71: "paying to get these apps. These are essentially
@@ -446,8 +471,14 @@ export const APP_STORE: { id: string; label: string; icon: string; note: string;
   { id: "ownership", label: "Owner", icon: "🏛️", note: "Buy into clubs", price: 15000 },
 ];
 
+/** The story order: the cracked phone runs only these (Mikey, 23 Oct 2026). */
+export const STORY_STARTER_APPS = ["messages", "fixtures", "squad", "relations", "settings", "league"];
+/** ...and your own new phone, bought in the Shop, adds these. */
+export const NEW_PHONE_APPS = ["social", "kickabout", "home-3d"];
+
 export function appInstalled(c: Pick<CareerState, "unlocks">, id: string): boolean {
   if (!c.unlocks) return true;
+  if (c.unlocks.story) return STORY_STARTER_APPS.includes(id) || c.unlocks.apps.includes(id);
   return STARTER_APPS.includes(id) || c.unlocks.apps.includes(id);
 }
 

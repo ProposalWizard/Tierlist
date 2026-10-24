@@ -63,7 +63,7 @@
 import type { Ball, Scenario, KeeperClaim } from "./canvasEngine";
 import { keeperSaveRadius } from "./canvasEngine";
 import { CX, POST_L, POST_R } from "./pitch";
-import { decidePenaltyRead, penaltyReadFor, type PenaltyReadSettings } from "./penaltyKeeper";
+import { decidePenaltyRead, penaltyReadFor, sideWithHabit, type PenaltyReadSettings } from "./penaltyKeeper";
 import { testAreaSetting } from "./compareSwitches";
 import { oldKeepers, oldKeeperPro, oldKeeperFeel, oldKeeperFinish } from "./gameplayVersion";
 import { getTuning } from "./tuningStore";
@@ -692,9 +692,11 @@ export function brainRunUp(sc: Scenario, dt: number, runT: number, aimX: number)
     st.hopAt = go ? at : -1;
   }
   if (st.hopSide === 0 && st.hopAt >= 0 && runT >= st.hopAt) {
-    const read = (st.opts.penalty ?? penaltyReadFor(st.ab.rating)).readChance;
+    const pen = st.opts.penalty ?? penaltyReadFor(st.ab.rating);
     const aimedSide = Math.abs(aimX - k.x) < 0.5 ? (st.rng() < 0.5 ? -1 : 1) : Math.sign(aimX - k.x);
-    st.hopSide = st.rng() < read ? aimedSide : -aimedSide;
+    // sideWithHabit = the old `rng() < readChance ? aimed : other` when there
+    // is no shootout habit (penaltyKeeper.ts; /star-shootout-dev only).
+    st.hopSide = sideWithHabit(aimedSide, pen.readChance, st.rng(), pen.habit);
     st.hopFromX = k.x;
     st.setTarget = { x: k.x + st.hopSide * KEEPER_BRAIN.hopM, y: k.y };
     st.reason = "hopped";

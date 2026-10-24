@@ -81,6 +81,14 @@ export function airFinish(t: GoalTrack): boolean {
   return strike?.mode === "header" || strike?.mode === "volley";
 }
 
+/** Where a clip with your celebration cuts to the tight camera (a moment into your run), or null. */
+export function celebCut(t: GoalTrack): number | null {
+  const c = t.meta.celebration;
+  if (!c) return null;
+  const at = t.goalT + c.at + 0.7;
+  return at < trackDuration(t) - 0.5 ? at : null;
+}
+
 const replay = (track: number, angle: ClipAngle, w: { from: number; to: number }, rate: number, caption?: string): Shot =>
   ({ track, angle, from: w.from, to: w.to, rate, replay: true, ...(caption ? { caption } : {}) });
 
@@ -112,14 +120,22 @@ export function makeEdit(tracks: GoalTrack[], style: ClipStyle, moves: ClipMoves
       const slowTo = Math.min(dur, t.goalT + 0.25);
       if (slowFrom > 0.05) shots.push({ track: i, angle, from: 0, to: slowFrom, rate: 1, replay: false, caption: i === 0 ? TIKTOK_OPEN[v % TIKTOK_OPEN.length] : undefined });
       shots.push({ track: i, angle, from: slowFrom, to: slowTo, rate: 0.35, replay: false });
-      if (dur > slowTo + 0.05) shots.push({ track: i, angle, from: slowTo, to: dur, rate: 1, replay: false, caption: TIKTOK_HIT[(v + i) % TIKTOK_HIT.length] });
+      if (dur > slowTo + 0.05) shots.push({ track: i, angle: celebCut(t) !== null ? "tight" : angle, from: slowTo, to: dur, rate: 1, replay: false, caption: TIKTOK_HIT[(v + i) % TIKTOK_HIT.length] });
     });
     shots.push(replay(last, "net", closeWindow(lt), 0.5, "ONE MORE TIME"));
     return base;
   }
 
   const live: ClipAngle = style === "broadcast" ? "tv" : style === "reverse" ? (v % 2 ? "high" : "net") : "fan";
-  tracks.forEach((t, i) => shots.push({ track: i, angle: live, from: 0, to: trackDuration(t), rate: 1, replay: false }));
+  tracks.forEach((t, i) => {
+    // Your celebration: once you wheel away, the TV camera goes tight on you (not the fan's phone).
+    const cut = style === "fan" ? null : celebCut(t);
+    if (cut === null) shots.push({ track: i, angle: live, from: 0, to: trackDuration(t), rate: 1, replay: false });
+    else {
+      shots.push({ track: i, angle: live, from: 0, to: cut, rate: 1, replay: false });
+      shots.push({ track: i, angle: "tight", from: cut, to: trackDuration(t), rate: 1, replay: false });
+    }
+  });
   if (style === "fan") return base;
 
   if (style === "reverse") {

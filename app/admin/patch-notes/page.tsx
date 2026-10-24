@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
 import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import PatchNotesArchive from "./PatchNotesArchive";
+import MediaSyncPanel from "./MediaSyncPanel";
 import PageGuide from "@/components/admin/PageGuide";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 
@@ -39,6 +40,7 @@ export default async function PatchNotesPage() {
   return (
     <>
       <AdminTopBar title="Patch notes" />
+      <MediaSyncPanel />
       <PatchNotesArchive />
       <PageGuide page="/admin/patch-notes" />
     </>

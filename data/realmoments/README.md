@@ -142,3 +142,19 @@ same moments.
   spots are SkillCorner's estimate, not seen.
 - Wyscout's goal-mouth zones are 3 × 3, so a Real Goals "real spot" is the
   middle of its zone, not the exact spot.
+
+## bangers.json and rg_index.json (Leo, 22 Oct 2026)
+
+`bangers.json`: 61 famous goals, 2010–2025, for Real Goals' Bangers path. Not
+from any dataset: each goal is written by us from public match reports
+(facts only: scorer, sides, competition, date, minute, score, keeper, body
+part, shot spot, the passes before it). Names are labels only. Each row has
+its own `source` (a match-report URL), what was checked (`checked`) and what
+is uncertain (`note`); rows are marked `src: "drafted"`. Built by
+`python3 -I scripts/realmoments/build_bangers.py` from
+`scripts/realmoments/bangers_drafts/*.json`. Placements are estimates; fix one
+by eye with Real Goals → "Fix a banger" (`?fix=1`).
+
+`rg_index.json`: a small index for the Real Goals home (each path's levels and
+each daily goal's card), made from the Wyscout files and `bangers.json` by
+`npx tsx scripts/realmoments/build_rg_index.mts` (`--check` fails if it drifts).

@@ -158,5 +158,13 @@
     "toCommit": "06a9f8de",
     "url": "https://claude.ai/artifact/DrwirnxpBBqLzqqjmfipd3",
     "headline": "Game music: 11 original orchestral tracks for home, matches, full time and the Ballon d'Or night, behind a Settings switch"
+  },
+  {
+    "version": "0.21",
+    "date": "2026-10-23",
+    "fromCommit": "06a9f8de",
+    "toCommit": "e45a92d1",
+    "url": "https://claude.ai/artifact/J1GDXrx1SSHrLTroCa3C2K",
+    "headline": "The master plan built: one bottom bar, a Stats page with your card and four tabs, League as one page for every competition, a Phone with Relationships, Squad, Fixtures & results and real messages"
   }
 ]

@@ -114,8 +114,10 @@ export default function ToonHomePlayer({ career, width, height, where, kitShirt,
           face?.set({ face: toonFaceFor(st.face), blink: blinkAt(t, 5), talk: st.talk, gaze: st.juggle > 0.5 ? [gz[0] * 0.3, -0.75] : gz });
           homeSet.place(p, tr.yaw, st.juggle, juggleSpot(jInfo, st.juggleT) ?? HOME_BALL_REST, t);
           renderer.render(scene, cam);
-          // keep this first picture for the next visit's wait (read straight after the draw)
-          if (!snapped) { snapped = true; keepSnap(where, sig, renderer.domElement); }
+          // keep this first picture for the next visit's wait (read straight after the draw),
+          // only when the kept one is missing or out of date: encoding it cost 1.6 s on every
+          // return to Home (Mikey's playtest, 21 Oct 2026: "going back … you see how it took a second")
+          if (!snapped) { snapped = true; if (readSnap(where, sig) === null) keepSnap(where, sig, renderer.domElement); }
         };
         (window as unknown as { __homePlayer?: unknown }).__homePlayer = { draw: drawAt };
         const frame = (now: number) => {

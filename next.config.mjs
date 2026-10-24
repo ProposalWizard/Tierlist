@@ -29,6 +29,10 @@ const nextConfig = {
     outputFileTracingIncludes: {
       "/api/admin/patch-notes/page": ["./patch-notes/**/*"],
       "/api/admin/patch-notes/file/[...path]": ["./patch-notes/**/*"],
+      // The one-time "Move media to Cloudflare" button copies from its own
+      // bundled copy (lib/patchNoteMedia.ts). The follow-up commit drops the
+      // pictures from all three once the move is done.
+      "/api/admin/patch-notes/media-sync": ["./patch-notes/**/*"],
       // The real-moment test pages' data (Real moments, Real shots, Real Goals).
       "/api/star/real-moments": ["./data/realmoments/*.json"],
       // Marketing → Client reads the client record and its Brain notes at request time.

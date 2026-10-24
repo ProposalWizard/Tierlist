@@ -24,7 +24,7 @@ import { isTeamPerson, TEAM_ROOM, type TeamPerson as TeamPersonName } from "@/li
 import { patchUnread, waitingOnMe, type PatchMeta } from "@/lib/teamRoom/extras";
 import { compareVersionsDesc } from "@/lib/teamRoom/inbox";
 import { OPEN_PATCH_EVENT } from "@/components/teamRoom/InboxBell";
-import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
+import HEADLINES from "@/lib/patchNoteHeadlines.json";
 import "@/components/teamRoom/teamRoom.css";
 import PatchNotesArchive from "@/app/admin/patch-notes/PatchNotesArchive";
 import { perDay, type Person, type PullRequest, type Push, type PushCount, type TeamBoardData } from "@/lib/teamBoard";
@@ -32,7 +32,8 @@ import type { DevStatus } from "@/lib/devStatus";
 import "./teamBoard.css";
 
 const REFRESH_MS = 60_000;
-const PATCH_META: PatchMeta[] = BUILT_IN_PATCH_NOTES.map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt }));
+const PATCH_META: PatchMeta[] = (HEADLINES as { version: string; title: string; publishedAt: string; updatedAt?: string | null; updateNote?: string | null }[])
+  .map((n) => ({ version: n.version, title: n.title, publishedAt: n.publishedAt, updatedAt: n.updatedAt ?? null, updateNote: n.updateNote ?? null }));
 
 function ago(iso: string | null, now: number): string {
   if (!iso) return "—";

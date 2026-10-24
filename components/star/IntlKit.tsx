@@ -329,7 +329,7 @@ export function NationDropdown({ career, duty, onOpen }: { career: CareerState; 
         </span>
       </button>
       {open && g && (
-        <div className="absolute inset-x-0 top-full px-2 pt-1" style={{ background: "rgba(4,10,16,.9)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" }}>
+        <div className="absolute inset-x-0 top-full px-2 pt-1" style={{ background: "rgb(4,10,16)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" }}>
           <NationTable group={g} nation={duty.nation} glow={glow} />
           {onOpen && <button onClick={onOpen} className="kib-press my-1 w-full rounded-lg bg-white/10 py-1 text-[10.5px] font-black uppercase text-white">Full {duty.nation} page ›</button>}
         </div>

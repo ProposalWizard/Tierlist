@@ -5,7 +5,7 @@ import { makeInitialCareer } from "../../lib/star/careerFlow";
 import { NATIONAL_LEAGUE_NORTH_CLUBS, LEAGUE_TWO_CLUBS, PREMIER_LEAGUE_CLUBS } from "../../lib/star/clubs";
 import { leagueNameFor, type CareerDivision } from "../../lib/star/calendar";
 import { weeklyWageFor } from "../../lib/star/economy";
-import { seasonLadder } from "../../lib/star/promotion";
+import { seasonLadder, membershipOf } from "../../lib/star/promotion";
 import { NATIONAL_LEAGUE_CLUBS, LEAGUE_ONE_CLUBS } from "../../lib/star/clubs";
 import type { CareerState, StarPlayer, SeasonStats } from "../../lib/star/types";
 
@@ -155,6 +155,20 @@ for (const l of good.leagues) for (const k of l.clubs) {
   check(lower.length > 0, `a league below yours is listed after a great season (${i.leagues.map(l => l.division).join(", ")})`);
   console.log(`Summer list after an A season in the National League: ${i.leagues.map(l => `${leagueNameFor(l.division)} ${l.clubs.length}${l.clubs.some(x => x.moved) ? ` (${l.clubs.filter(x => x.moved).length} moved)` : ""}`).join(", ")}`);
   void LEAGUE_ONE_CLUBS;
+}
+
+// ── Clubs up from Step 3 say Promoted, not "Finished 24th" (playtest 22 Oct 2026) ──
+{
+  const c = withSeason({ ...careerAt("national_league_north", NATIONAL_LEAGUE_NORTH_CLUBS), starRating: 4 }, 44, 60, 15, 8.5, 20);
+  const m = membershipOf(c);
+  const everyone = new Set<string>([...c.league.map(t => t.name), ...m.premier, ...m.championship, ...m.leagueOne, ...m.leagueTwo,
+    ...m.nationalLeague, ...m.nationalLeagueNorth, ...m.nationalLeagueSouth]);
+  const i = windowInterest(c, "summer");
+  const listed = i.leagues.flatMap(l => l.clubs);
+  const shown = listed.filter(x => !everyone.has(x.club));
+  check(shown.length > 0, "some club up from Step 3 is on the list");
+  check(shown.every(x => x.moved === "promoted"), `a club up from Step 3 is marked Promoted (${shown.filter(x => x.moved !== "promoted").map(x => x.club).join(", ")})`);
+  console.log(`Clubs up from Step 3 on the summer list: ${shown.map(x => x.club).join(", ")}`);
 }
 
 // ── A club below offers what it can afford, never pulls out (Mikey, 19 Oct 2026) ──

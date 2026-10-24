@@ -21,7 +21,8 @@ import { creditLine } from "../dataCredits";
 /** [x, y] in our pitch metres. */
 export type XY = [number, number];
 
-export type RealSource = "dfl" | "skillcorner" | "soccertrack" | "wyscout";
+/** "drafted": a famous goal written by us from public record (Real Goals' Bangers, data/realmoments/bangers.json): placed, like Wyscout. */
+export type RealSource = "dfl" | "skillcorner" | "soccertrack" | "wyscout" | "drafted";
 
 /** The credit lines (data/opendata/LICENCES.md, "Real moments"; one list in lib/star/dataCredits.ts): show the ones a page uses. */
 export const REAL_CREDIT: Record<RealSource, string> = {
@@ -29,6 +30,7 @@ export const REAL_CREDIT: Record<RealSource, string> = {
   dfl: creditLine("dfl-moments"),
   skillcorner: creditLine("skillcorner-moments"),
   soccertrack: creditLine("soccertrack-moments"),
+  drafted: "Famous goals drafted by Knowitball from public match reports (scorer, minute, score, where it was struck and went in); names as labels only.",
 };
 
 /** One real pass of the move: [seconds before the shot, from, to, passer, recipient]. */
@@ -112,7 +114,7 @@ export interface TrackedFile { meta: { credit: Record<string, string> }; moments
 export interface TrackFile { tracks: Record<string, RealTrack> }
 
 /** Is every man in this picture where he really stood? */
-export const isFullyReal = (m: { src: RealSource }) => m.src !== "wyscout";
+export const isFullyReal = (m: { src: RealSource }) => m.src !== "wyscout" && m.src !== "drafted";
 
 /** The words the pages use for the two kinds of picture. */
 export const PICTURE_WORDS = {

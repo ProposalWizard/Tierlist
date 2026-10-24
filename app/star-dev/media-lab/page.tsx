@@ -78,7 +78,9 @@ export default function MediaLab() {
   // sample National League career and ★1,000,000; buying works on the sample.
   // `?contact=float` (or bounce / bobble / still) shows the strike screen with
   // the ball moving that way, for judging the movement. A tap resets it.
+  // `&aerial=30` (header/volley): your Aerial, which sizes the perfect circle (22 Oct 2026).
   const [contactPreview, setContactPreview] = useState<BallMotion | null>(null);
+  const [contactAerial, setContactAerial] = useState<number | undefined>(undefined);
   const [contactRun, setContactRun] = useState(0);
   const [shopPreview, setShopPreview] = useState<"kib" | "boots" | "lifestyle" | "landing" | null>(null);
   const [shopLookLab, setShopLookLab] = useState<"new" | "old" | "grid">("new");
@@ -97,6 +99,8 @@ export default function MediaLab() {
     setTrophiesOnly(q.has("trophies"));
     const cm = q.get("contact");
     if (cm === "still" || cm === "float" || cm === "bounce" || cm === "bobble") setContactPreview(cm);
+    const ae = Number(q.get("aerial"));
+    if (q.has("aerial") && Number.isFinite(ae)) setContactAerial(ae);
     const sk = q.get("shop");
     if (sk === "kib" || sk === "boots" || sk === "lifestyle" || sk === "landing") setShopPreview(sk);
     if (q.get("look") === "old" || q.get("look") === "grid") setShopLookLab(q.get("look") as "old" | "grid");
@@ -150,7 +154,7 @@ export default function MediaLab() {
   if (contactPreview) {
     return <>
       <div className="relative mx-auto w-full max-w-sm overflow-hidden" style={{ aspectRatio: "5 / 8" }}>
-        <ContactBall key={contactRun} power={0.6} motion={contactPreview} technique={40}
+        <ContactBall key={contactRun} power={0.6} motion={contactPreview} technique={40} aerial={contactAerial}
           onContact={() => window.setTimeout(() => setContactRun(r => r + 1), 900)} />
       </div>
       <PageGuide page="/star-dev/media-lab" />

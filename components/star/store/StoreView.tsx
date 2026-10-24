@@ -660,7 +660,7 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
   const wearing = inUse(item, state);
   const setWord = item.kind === "animation" ? (item.set === "penalty" ? "penalty" : "free-kick") : "";
   const desc = item.kind === "animation" ? `${item.set === "penalty" ? "Penalty" : "Free-kick"} run-up · ${item.blurb}`
-    : item.kind === "accessory" ? `${SLOT_LABEL[item.slot]} · worn over your kit`
+    : item.kind === "accessory" ? (item.slot === "celebration" ? "Celebration · after every goal you score" : `${SLOT_LABEL[item.slot]} · worn over your kit`)
       : item.kind === "boost" ? item.effect
         : `+${item.boot.power} power · +${item.boot.technique} technique · ${item.boot.matches} matches${item.boot.curve ? " · curves the ball" : ""}${item.boot.extraTouch ? " · extra touch" : ""}`;
 
@@ -721,9 +721,9 @@ function DetailSheet({ item, state, ctx, dateKey, equippedWear, accessoriesNote,
           {owned && !consumable && (item.kind === "animation" || item.kind === "accessory") && (
             wearing
               ? item.kind === "accessory"
-                ? <PressButton variant="secondary" size="none" onClick={() => onUnequip(item.slot)} className="rounded-2xl py-3 text-[15px] font-black">Take off</PressButton>
+                ? <PressButton variant="secondary" size="none" onClick={() => onUnequip(item.slot)} className="rounded-2xl py-3 text-[15px] font-black">{item.slot === "celebration" ? "Stop using it" : "Take off"}</PressButton>
                 : <div className="rounded-2xl bg-emerald-500/20 py-3 text-center text-[15px] font-black text-emerald-200">✓ Your {setWord} run-up</div>
-              : <PressButton variant="primary" size="none" pulse onClick={() => onEquip(item.id)} className="rounded-2xl py-3 text-[15px] font-black">{item.kind === "animation" ? `Use for ${setWord === "penalty" ? "penalties" : "free kicks"}` : "Wear"}</PressButton>
+              : <PressButton variant="primary" size="none" pulse onClick={() => onEquip(item.id)} className="rounded-2xl py-3 text-[15px] font-black">{item.kind === "animation" ? `Use for ${setWord === "penalty" ? "penalties" : "free kicks"}` : item.kind === "accessory" && item.slot === "celebration" ? "Use after my goals" : "Wear"}</PressButton>
           )}
           {owned && item.kind === "boot" && <div className="rounded-2xl bg-sky-500/15 py-3 text-center text-[14px] font-black text-sky-200">Owned</div>}
           {onUse && consumable && (state.inventory[item.id] ?? 0) > 0 && (
