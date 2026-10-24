@@ -29,6 +29,7 @@ import { drawFigureAt, figureRForHeight } from "../fiveASide/render";
 import { DEFAULT_FACE_STYLE } from "../faceStyle";
 import { DEFAULT_FAKE_FACE_STYLE } from "../fakeFaceStyle";
 import { frameAt, trackDuration, type GoalTrack, type FrameState } from "./track";
+import { planCelebration, celebAt, CELEB_SPECS, type CelebrationMove } from "../celebration";
 import { rigFor, type ClipAngle } from "./cameras";
 import {
   drawSky, drawPitch, drawStadium, drawFloodlights, drawGoalPart, drawCornerFlags, goalPartAnchor, toCam,
@@ -215,12 +216,17 @@ export function readableDive(
  * frame two hundred use the same drawings (a move that loaded half way
  * through would change the film between two plays). Waits at most `ms`.
  */
-export async function prepareClipSprites(moves: ClipMoves = "new", ms = 5000): Promise<void> {
+export async function prepareClipSprites(moves: ClipMoves = "new", ms = 5000, edit?: { tracks: { events: { mode?: string }[] }[] }): Promise<void> {
   await loadSprites();
   if (moves === "old") return;
   const t0 = Date.now();
   // One ask starts the second set of moves loading; then wait for it.
-  while (!(spriteClipReady("player", "shotKick") && spriteClipReady("keeper", "oneHandR")) && Date.now() - t0 < ms) {
+  // A film with a bicycle kick in it (bicycle.ts, 22 Oct 2026; only possible
+  // with Leo's 24 Oct update on) waits for the bicycle's own small atlas (3)
+  // too, so it never starts on the old kick and switches part way. Any other
+  // film loads exactly what it did before.
+  const bike = !!edit?.tracks.some((tr) => tr.events.some((e) => e.mode === "bicycle"));
+  while (!(spriteClipReady("player", "shotKick") && spriteClipReady("keeper", "oneHandR") && (!bike || spriteClipReady("player", "bicycle"))) && Date.now() - t0 < ms) {
     await new Promise<void>(r => setTimeout(r, 60));
   }
 }
@@ -370,8 +376,24 @@ function drawMan(
         facing = screenFacing(cam, toBall.x || 0.01, toBall.y);
       }
     }
-    // The man who scored, once it has gone in.
-    if (body.id === track.meta.scorerBody && t > track.goalT + 0.35) {
+    // Your celebration (celebration.ts): the run is the recording's own sprint;
+    // then the move you had equipped, at the same moment the match played it.
+    const cel = track.meta.celebration;
+    const celSt = cel && body.id === "you" && cel.move in CELEB_SPECS
+      ? celebAt(planCelebration({ x: cel.from[0], y: cel.from[1] }, cel.move as CelebrationMove), t - (track.goalT + cel.at)) : null;
+    if (cel && body.id === "you" && t >= track.goalT + cel.at) {
+      if (celSt && (celSt.phase === "move" || celSt.phase === "done")) {
+        const spec = CELEB_SPECS[cel.move as CelebrationMove];
+        const sp = spec.sprite as SpriteClip;
+        const ok = sp !== "celebrate" && spriteClipReady("player", sp);
+        clip = ok ? sp : "celebrate";
+        clipT = ok ? celSt.clipT : celSt.moveT;
+        lift = 0;
+        facing = spec.travel(spec.playS) > 0
+          ? screenFacing(cam, celSt.x - cel.from[0] || 0.01, celSt.y - cel.from[1])
+          : screenFacing(cam, -(cam.forward?.x ?? 0), -(cam.forward?.y ?? -1));
+      }
+    } else if (body.id === track.meta.scorerBody && t > track.goalT + 0.35) {
       clip = "celebrate";
       clipT = t - (track.goalT + 0.35);
       facing = screenFacing(cam, -(cam.forward?.x ?? 0), -(cam.forward?.y ?? -1));

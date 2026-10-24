@@ -23,6 +23,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { KitStyles } from "./ui";
 import type { TourStep } from "@/lib/star/tours";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 export type { TourStep } from "@/lib/star/tours";
 
@@ -98,6 +99,22 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
     setBox(null);
     if (i + 1 >= steps.length) finish(); else setI(i + 1);
   };
+  // The last step was on screen and the tour is now going away (its press
+  // started a match, or you left by another button): count it as done. Before
+  // (22 Oct 2026 playtest) the welcome tour's "Tap Play" could end with the
+  // tour gone and "tutorial" never saved, so it replayed on every Home visit
+  // for 20 seasons and blocked ⚙ and End of Season. "Later" still marks
+  // nothing. Refs, so React's dev double-mount never counts as a finish.
+  // Leo's 24 Oct update, bug fixes: off = the old tour (finish only via the
+  // 30 ms step, no finish on leaving). A ref, so the effects below read it now.
+  const fixesOn = useLeoUpdate("bugFixes");
+  const fixesRef = useRef(fixesOn);
+  fixesRef.current = fixesOn;
+  const finishRef = useRef(finish);
+  finishRef.current = finish;
+  const lastOnScreen = useRef(false);
+  useEffect(() => { lastOnScreen.current = !!box && !later && i === steps.length - 1; });
+  useEffect(() => () => { if (lastOnScreen.current && fixesRef.current) finishRef.current(); }, []);
   // Skip jumps to the next step you have to DO (the welcome tour's "Go to
   // training"), so skipping the words never skips the one thing you must
   // press (Harry, 2 Oct 2026, P2-55: no Skip on that one).
@@ -135,7 +152,9 @@ export default function PointerTour({ steps, onDone, skippable = false }: {
         off?.();
         el = found;
         if (step.press) {
-          const onPress = () => setTimeout(next, 30);
+          // The last press finishes at once, before the button's own
+          // handler can take you off this screen.
+          const onPress = () => { if (fixesRef.current && i + 1 >= steps.length) finish(); else setTimeout(next, 30); };
           found.addEventListener("click", onPress, true);
           off = () => found.removeEventListener("click", onPress, true);
         }

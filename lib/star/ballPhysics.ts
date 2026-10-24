@@ -34,6 +34,7 @@
  */
 import type { Ball } from "./canvasEngine";
 import { BALL_R, GOAL_H, POST_L, POST_R } from "./pitch";
+import { applyWind, skidKeep, grabDrop, type PitchWeatherExtras } from "./pitchWeather";
 
 let realOn = (() => {
   try { return typeof process !== "undefined" && process.env?.STAR_BALL_PHYSICS === "new"; } catch { return false; }
@@ -90,7 +91,7 @@ export const POST_CX_R = POST_R + POST_RADIUS;
 /** The bar's centre line height. */
 export const BAR_CZ = GOAL_H + POST_RADIUS;
 
-type Cond = { drag: number; friction: number; bounce: number; wind: number } | undefined;
+type Cond = ({ drag: number; friction: number; bounce: number; wind: number } & PitchWeatherExtras) | undefined;
 
 /** Multiply all three velocity components by this for one airborne step. */
 export function airDragFactor(vx: number, vy: number, vz: number, dragMul: number, dt: number): number {
@@ -149,6 +150,8 @@ export function integrateBallReal(ball: Ball, cond: Cond, dt: number): boolean {
     const k = airDragFactor(ball.vel.x, ball.vel.y, ball.vz, dragMul, dt);
     ball.vel.x *= k; ball.vel.y *= k; ball.vz *= k;
     if (cond?.wind) ball.vel.x += cond.wind * dt;
+    // Wind with a direction (test page only; absent in the real game).
+    if (cond?.windV) applyWind(ball, cond, dt);
   }
   // Spin dies away: slowly in the air, fast on the grass.
   if (ball.spin !== 0) ball.spin *= Math.exp(-dt / (airborne ? SPIN_TAU_AIR : SPIN_TAU_GROUND));
@@ -166,7 +169,9 @@ export function integrateBallReal(ball: Ball, cond: Cond, dt: number): boolean {
       const vh = Math.hypot(ball.vel.x, ball.vel.y);
       const b = bounceReal(ball.vz, vh, top, cond?.bounce ?? 1);
       ball.vz = b.vz;
-      ball.vel.x *= b.keep; ball.vel.y *= b.keep;
+      // A wet surface skids (test page only; absent in the real game).
+      const keep = cond?.skid ? skidKeep(b.keep, cond) : b.keep;
+      ball.vel.x *= keep; ball.vel.y *= keep;
       if (Math.abs(ball.spin) > 0.0001) {
         const sp = Math.hypot(ball.vel.x, ball.vel.y);
         if (sp > 0.01) {
@@ -187,7 +192,9 @@ export function integrateBallReal(ball: Ball, cond: Cond, dt: number): boolean {
   }
   if (ball.z <= 0.03 && !bounced && ball.vz <= 0.01) {
     const s = Math.hypot(ball.vel.x, ball.vel.y);
-    const drop = rollDrop(s, cond?.friction ?? 1, dragMul, dt);
+    let drop = rollDrop(s, cond?.friction ?? 1, dragMul, dt);
+    // A bad dry pitch grabs a slow ball (test page only; absent in the real game).
+    if (cond?.deadBelow) drop = grabDrop(drop, s, cond, dt);
     if (s <= drop) {
       ball.vel.x = 0; ball.vel.y = 0;
       ball.resting = true;

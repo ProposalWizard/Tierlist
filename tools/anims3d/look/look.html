@@ -1,0 +1,81 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"/three/build/three.module.js","three/addons/":"/three/examples/jsm/"}}</script>
+<style>html,body{margin:0;background:#dfe7df}</style></head><body>
+<script type="module">
+// One football clip on the real Style A body, frame by frame, for look.mjs.
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+const QS = new URLSearchParams(location.search);
+const W = +(QS.get("w") || 420), H = +(QS.get("h") || 420);
+const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+const load = (u) => new Promise((res, rej) => loader.load(u, res, undefined, rej));
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xdfe7df);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x88a088, 1.6));
+const sun = new THREE.DirectionalLight(0xffffff, 2.0); sun.position.set(2, 6, 3); sun.castShadow = true;
+Object.assign(sun.shadow.camera, { left: -3, right: 3, top: 3, bottom: -3 }); sun.shadow.mapSize.set(1024, 1024); scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshLambertMaterial({ color: 0x7fb07a }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const grid = new THREE.GridHelper(12, 24, 0x4d7a49, 0x5f8f5a); grid.position.y = 0.002; scene.add(grid);
+// height marks: a pole with a tick every half metre, 2 m in red
+const pole = new THREE.Group(); scene.add(pole);
+for (let i = 1; i <= 5; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.012, 0.012), new THREE.MeshBasicMaterial({ color: i === 4 ? 0xd02020 : 0x333333 })); m.position.y = i * 0.5; pole.add(m); }
+const ball = new THREE.Mesh(new THREE.SphereGeometry(0.11, 24, 16), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x222222 }));
+ball.castShadow = true; scene.add(ball);
+const cam = new THREE.PerspectiveCamera(30, W / H, 0.1, 50);
+const body = await load(QS.get("body") || "/star/people3d/toon-p1.glb");
+const clips = await load(QS.get("clips") || "/star/anims3d/football.glb");
+const q = body.scene.userData.quant;
+let skinned = null; body.scene.traverse((o) => { if (o.isSkinnedMesh) skinned = o; o.frustumCulled = false; o.castShadow = true; });
+if (q) {
+  const g = skinned.geometry, pos = g.getAttribute("position"), n = pos.count, P = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { P[i * 3] = pos.getX(i) * q.scale + q.offset[0]; P[i * 3 + 1] = pos.getY(i) * q.scale + q.offset[1]; P[i * 3 + 2] = pos.getZ(i) * q.scale + q.offset[2]; }
+  g.setAttribute("position", new THREE.BufferAttribute(P, 3));
+  const nor = g.getAttribute("normal"); if (nor) { const N = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const x = nor.getX(i), y = nor.getY(i), z = nor.getZ(i), l = Math.hypot(x, y, z) || 1; N[i * 3] = x / l; N[i * 3 + 1] = y / l; N[i * 3 + 2] = z / l; } g.setAttribute("normal", new THREE.BufferAttribute(N, 3)); }
+  const uv = g.getAttribute("uv"); if (uv) { const U = new Float32Array(n * 2); for (let i = 0; i < n; i++) { U[i * 2] = uv.getX(i); U[i * 2 + 1] = uv.getY(i); } g.setAttribute("uv", new THREE.BufferAttribute(U, 2)); }
+  const D = new THREE.Matrix4().makeScale(q.scale, q.scale, q.scale).setPosition(q.offset[0], q.offset[1], q.offset[2]), Di = D.clone().invert();
+  for (const m of skinned.skeleton.boneInverses) m.multiply(Di);
+}
+// colour by bone: kit shirt, shorts, socks, skin (the toon shader is the game's; this is a plain look)
+{
+  const g = skinned.geometry, si = g.getAttribute("skinIndex"), sw = g.getAttribute("skinWeight"), n = si.count, C = new Float32Array(n * 3);
+  const names = skinned.skeleton.bones.map((b) => b.name);
+  const col = (nm) => /Head|neck|Eye|Jaw/i.test(nm) ? [0.86, 0.66, 0.52] : /Hand|ForeArm/.test(nm) ? [0.86, 0.66, 0.52] : /UpLeg/.test(nm) ? [0.12, 0.12, 0.14] : /Leg$/.test(nm) ? [0.9, 0.9, 0.9] : /Foot|Toe/.test(nm) ? [0.1, 0.1, 0.1] : nm === "RightArm" || nm === "LeftArm" ? [0.80, 0.12, 0.12] : [0.80, 0.12, 0.12];
+  for (let i = 0; i < n; i++) { let b = 0, w = -1; for (let k = 0; k < 4; k++) { const x = sw.getComponent(i, k); if (x > w) { w = x; b = si.getComponent(i, k); } } const c = col(names[b]); C.set(c, i * 3); }
+  g.setAttribute("color", new THREE.BufferAttribute(C, 3));
+  skinned.material = new THREE.MeshLambertMaterial({ vertexColors: true });
+}
+scene.add(body.scene);
+const mixer = new THREE.AnimationMixer(body.scene);
+const meta = clips.scene.userData.clips || {};
+// as the game gives a body its clips (footballAnims.addClips): the hips' height brought to this body's
+{ let hips = null; body.scene.traverse((o) => { if (o.isBone && o.name === "Hips") hips = o; });
+  const k = hips.position.y / (clips.scene.userData.hipsY || hips.position.y);
+  for (const c of clips.animations) for (const tr of c.tracks) if (tr.name.endsWith(".position")) { const v = tr.values.slice(); for (let i = 0; i < v.length; i++) v[i] *= k; tr.values = v; } }
+window.lookReady = true;
+window.meta = meta;
+window.shot = (clip, t, view, showBall) => {
+  const c = clips.animations.find((a) => a.name === clip);
+  mixer.stopAllAction(); const a = mixer.clipAction(c); a.reset(); a.play(); a.paused = false;
+  mixer.setTime(Math.min(t, c.duration - 1e-4));
+  body.scene.updateMatrixWorld(true);
+  const m = meta[clip] || {}, cp = m.contactPoint;
+  ball.visible = !!(showBall && cp);
+  if (cp) { // on this body's own instep (the file's contactPoint is on the build skeleton), just beyond the laces
+    const A = new THREE.Vector3(), T = new THREE.Vector3();
+    body.scene.getObjectByName("RightFoot").getWorldPosition(A); body.scene.getObjectByName("RightToeBase").getWorldPosition(T);
+    const ip = A.clone().multiplyScalar(0.45).add(T.clone().multiplyScalar(0.55));
+    const out = T.clone().sub(A).normalize().cross(new THREE.Vector3(1, 0, 0)).multiplyScalar(-0.13);
+    ball.position.copy(ip).add(out); window.lastInstep = ip.toArray();
+  }
+  const tgt = new THREE.Vector3(0, 1.0, -0.2);
+  pole.position.set(view === "side" ? -0.9 : 1.6, 0, view === "side" ? 1.0 : -1.4);
+  if (view === "side") cam.position.set(-6.0, 1.1, -0.2); else cam.position.set(-3.9, 2.1, 4.0);
+  cam.lookAt(tgt); renderer.render(scene, cam);
+  return renderer.domElement.toDataURL("image/png");
+};
+</script></body></html>

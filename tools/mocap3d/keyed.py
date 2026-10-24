@@ -183,18 +183,40 @@ def sliding_tackle(rig, t):
 # flung wide with clenched fists, chest out, head back roaring; stops, arms up.
 KS_DROP = 0.55
 KS_END = 3.2
+KS_KNEE_Y = 0.065  # knee joint above the grass while kneeling (about the knee's own radius)
+KS_KNEE_OUT = 0.07  # each knee this far outside its hip joint
+KS_KNEE_FWD = 0.05  # and this far in front of it
+KS_ANKLE_Y = 0.11  # ankle joint above the grass, shin flat behind
+KS_TOE_DOWN = 0.0  # rad: the foot points straight back along the shin, level, laces down (toes below level put the boot into the grass)
+
+
+from rig import qrot as _qrot, euler as _euler  # noqa: E402
+
+
+def _w(x):
+    return float(min(1.0, max(0.0, x)))
 
 
 def knee_slide(rig, t):
     aL, aR = rest_ankle(rig, "L"), rest_ankle(rig, "R")
     th = (rig.L["thighL"] + rig.L["thighR"]) / 2
     hips0 = rig.restP[rig.b["hips"]][1]
-    kneel_y = (th + 0.06) - hips0  # hips over the knees, knees on the grass
-    down = K([(0, 0), (KS_DROP - 0.10, 0), (KS_DROP + 0.05, 1), (KS_END, 1)], t)
+    # the kneel, placed joint by joint (22 Oct 2026, RUL-3D-005): each knee a
+    # little outside its own hip (knees ~hip width plus a hand apart), a touch in
+    # front of it, the knee joint KS_KNEE_Y above the grass; the hips stand on
+    # the thighs above that, so the knees never press into each other or the grass
+    hip_drop = hips0 - (rig.restP[rig.b["thighL"]][1] + rig.restP[rig.b["thighR"]][1]) / 2
+    kneel_y = KS_KNEE_Y + np.sqrt(th * th - KS_KNEE_OUT ** 2 - KS_KNEE_FWD ** 2) + hip_drop - hips0
+    # blend weights are clamped to 0..1: K is Catmull-Rom and overshoots a long
+    # flat hold (down read 1.14 at 1.6 s, which pushed both ankle targets forward
+    # under the hips and folded the knees into each other, 5 cm apart; RUL-3D-005)
+    down = _w(K([(0, 0), (KS_DROP - 0.10, 0), (KS_DROP + 0.05, 1), (KS_END, 1)], t))
     lean = K([(0, 0.15), (KS_DROP, 0.10), (KS_DROP + 0.25, -0.22), (1.9, -0.32), (2.4, -0.15), (KS_END, -0.08)], t)
     hz = K([(0, 0), (0.18, 0.95), (0.36, 1.95), (KS_DROP, 2.90), (KS_DROP + 0.5, 4.60), (1.4, 5.55), (1.9, 5.85), (KS_END, 5.88)], t)
-    hy = K([(0, -0.03), (0.09, 0.0), (0.18, -0.05), (0.27, 0.0), (0.36, -0.05), (KS_DROP - 0.08, -0.08), (KS_DROP + 0.05, kneel_y - 0.02),
+    hy = K([(0, -0.03), (0.09, 0.0), (0.18, -0.05), (0.27, 0.0), (0.36, -0.05), (KS_DROP - 0.08, -0.08), (KS_DROP + 0.05, kneel_y - 0.005),
             (KS_DROP + 0.12, kneel_y + 0.01), (1.9, kneel_y), (KS_END, kneel_y + 0.02)], t)
+    if t > KS_DROP:
+        hy = max(hy, kneel_y - 0.005)  # the landing's bounce never sinks the knees into the grass
     off, rot = (0.0, hy, hz), (lean * 0.2, 0, 0)  # the lean is in the back, not the hips (the hips stay over the knees)
     p = {"hips": {"pos": off, "rot": rot}}
     p["spine"] = (lean * 0.9 + 0.1 * (1 - down), 0, 0)
@@ -204,15 +226,31 @@ def knee_slide(rig, t):
             (0.36, (aR[0], 0, aR[1] + 1.80)), (0.45, (aR[0], 0.25, aR[1] + 2.70)), (KS_DROP, (aR[0], 0.1, aR[1] + 3.0))], t)
     fl = K([(0, (aL[0], 0, aL[1])), (0.18, (aL[0], 0, aL[1])), (0.27, (aL[0], 0.25, aL[1] + 1.4)), (0.36, (aL[0], 0, aL[1] + 2.4)),
             (KS_DROP - 0.05, (aL[0], 0.05, aL[1] + 2.6)), (KS_DROP, (aL[0], 0.1, aL[1] + 2.9))], t)
-    sh = (rig.L["shinL"] + rig.L["shinR"]) / 2
+    from clips import body_at
     for s, f in (("L", fl), ("R", fr)):
-        a = aL if s == "L" else aR
-        knee = np.array([a[0] * 1.15, 0.0, hz + a[1] + 0.12])
-        kneel_ank = np.array([a[0] * 1.2, 0.06, knee[2] - sh * 0.96])
+        sh = rig.L["shin" + s]
+        hj = body_at(rig, off, rot, rig.restP[rig.b["thigh" + s]] - rig.restP[rig.b["hips"]])
+        knee = np.array([hj[0] + SX[s] * KS_KNEE_OUT, KS_KNEE_Y, hj[2] + KS_KNEE_FWD])
+        # shin flat on the grass straight behind the knee, laces down
+        rise = KS_ANKLE_Y - KS_KNEE_Y
+        kneel_ank = np.array([knee[0], KS_ANKLE_Y - rig.ankleY, knee[2] - np.sqrt(sh * sh - rise * rise) * 0.995])
         g = lerp(np.asarray(f, float), kneel_ank, down)
-        p["leg" + s] = leg(_clampY(g), pitch=lerp(0.0, 1.35, down), side=s, pole=(SX[s] * 0.1, -0.3, 1))
-    wide = K([(0, 0), (KS_DROP, 0.2), (KS_DROP + 0.25, 1), (1.9, 1), (2.3, 0), (KS_END, 0)], t)
-    upk = K([(0, 0), (1.9, 0), (2.3, 1), (KS_END, 1)], t)
+        g[1] = max(g[1], lerp(0.0, KS_ANKLE_Y - rig.ankleY, down))  # never into the grass
+        # bend toward the knee we want (character frame), from the stride's forward bend
+        mid = (hj + kneel_ank + np.array([0, rig.ankleY, 0])) / 2
+        kp = knee - mid
+        kp = kp / max(np.linalg.norm(kp), 1e-9)
+        pole = lerp(np.array([SX[s] * 0.1, -0.3, 1.0]), kp, down)
+        # foot pitch from the body's own rest foot (ankle -> ball): turned until it points back, laces down
+        ft = rig.restP[rig.b["toe" + s]] - rig.restP[rig.b["foot" + s]]
+        rest_down = np.arctan2(-ft[1], ft[2])
+        pitch = lerp(0.0, PI - KS_TOE_DOWN - rest_down, down)
+        # while the foot turns over on the drop the toes swing low: lift the ankle so they stay 2 cm clear
+        toe_y = _qrot(_euler(pitch), ft)[1]
+        g[1] = max(g[1], 0.02 - toe_y - rig.ankleY)
+        p["leg" + s] = leg(g, pitch=pitch, side=s, pole=tuple(float(x) for x in pole))
+    wide = _w(K([(0, 0), (KS_DROP, 0.2), (KS_DROP + 0.25, 1), (1.9, 1), (2.3, 0), (KS_END, 0)], t))
+    upk = _w(K([(0, 0), (1.9, 0), (2.3, 1), (KS_END, 1)], t))
     sw = K([(0, 0), (0.09, 1), (0.18, -1), (0.27, 1), (0.36, -1), (0.45, 1)], t) * (1 - wide)
     for s in "LR":
         k = SX[s] if s == "L" else -1

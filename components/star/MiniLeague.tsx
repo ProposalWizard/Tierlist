@@ -15,6 +15,7 @@ import { kitsOf } from "@/lib/star/kits";
 import ClubBadge from "./ClubBadge";
 import { useState } from "react";
 import { FlatPanel, rgba, tint, useCountUp } from "./ui";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "");
 const ordinal = (n: number) => (n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th");
@@ -80,6 +81,7 @@ export const LEAGUE_DROPDOWN_H = 24;
  * drop down over the stand, with Full table to open the League screen.
  */
 export function LeagueDropdown({ career, glow, onOpen }: { career: CareerState; glow: string; onOpen?: () => void }) {
+  const fixesOn = useLeoUpdate("bugFixes"); // Leo's 24 Oct update; off = the old look
   const [open, setOpen] = useState(false);
   const table = sortLeague(career.league);
   const me = table.findIndex((t) => t.name === career.player.club);
@@ -101,7 +103,7 @@ export function LeagueDropdown({ career, glow, onOpen }: { career: CareerState; 
         </span>
       </button>
       {open && (
-        <div className="absolute inset-x-0 top-full" style={{ background: "rgba(4,16,10,.86)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" }}>
+        <div className="absolute inset-x-0 top-full" style={{ background: fixesOn ? "rgb(4,16,10)" : "rgba(4,16,10,.86)", boxShadow: "0 8px 18px rgba(0,0,0,.5)" }}>
           <MiniLeague career={career} glow={glow} rows={5} onOpen={onOpen} />
         </div>
       )}

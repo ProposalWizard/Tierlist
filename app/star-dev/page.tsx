@@ -1,4 +1,6 @@
 "use client";
+import { protectedClipIds } from "@/lib/star/goalLog";
+import { leoUpdateOn, useLeoUpdate } from "@/lib/star/leoUpdate";
 import { preloadScene } from "@/lib/star/three3d/perf";
 import { useUiLook, useUiVersionOrNull } from "@/lib/star/uiLook";
 import { pitchFont } from "@/components/star/ui/pitchFont";
@@ -13,6 +15,9 @@ import { careerPenaltyRunup, careerFreeKickRunup, type PenaltyRunupId, type Free
 import { canPlaceCompetitionBet, type CompetitionBet } from "@/lib/star/competitionBetting";
 import { addRecentGoal, saveReplayToSlot, deleteSavedReplay } from "@/lib/star/goalReplays";
 import { putClip, pruneClips } from "@/lib/star/goalClip/store";
+import { warmVideoMaker } from "@/lib/star/goalClip/makeVideo";
+import { premakeFeedVideos } from "@/lib/star/goalClip/premake";
+import { setMediaUpdate } from "@/lib/star/media/updateFlags";
 import type { GoalTrack } from "@/lib/star/goalClip/track";
 import {
   saveCareer, clearCareer, saveStarPhase, loadStarPhase, saveCareerToCloud,
@@ -64,7 +69,7 @@ import { windowInterest, withRecall, withAgreedWage, markWalkedAway } from "@/li
 import { retirementCheck, retire } from "@/lib/star/retirement";
 import { type PressQuestion, type PressOption } from "@/lib/star/media";
 import type { MonthAward } from "@/lib/star/potm";
-import { generateForMatch, generateForInternational, generateForCallUp, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, generateForRollover, hasFreshMedia, toggleLike } from "@/lib/star/media/feed";
+import { generateForMatch, generateForInternational, generateForCallUp, generateForCareer, generateForLeagueWeek, generateForBoardroomSale, generateForRollover, hasFreshMedia, toggleLike, applyGoalOfMonthBoost, voteGoalOfMonth } from "@/lib/star/media/feed";
 import { skipTo, type SkipTarget } from "@/lib/star/devSkip";
 import { markGodMode, withGodMode } from "@/lib/star/godMode";
 import { moveToClub, squadPlayerFromHit, addToSquad, removeFromSquad, setDevStart, type PlayerSearchHit } from "@/lib/star/devTeam";
@@ -226,6 +231,10 @@ const FreeAgentShell = lazyScreen(() => import("@/components/star/FreeAgentShell
 const TrialReward = lazyScreen(() => import("@/components/star/TrialReward"));
 const LadderScreen = lazyScreen(() => import("@/components/star/LadderScreen"));
 const SeasonAwardsScreen = lazyScreen(() => import("@/components/star/SeasonAwardsScreen"));
+// The season awards as a night in a small hall, then the screen above (Leo, 22 Oct 2026).
+const SeasonAwardsNight = lazyScreen(() => import("@/components/star/SeasonAwardsNight"));
+// "Your season": every goal of the season in one video (Leo, 22 Oct 2026).
+const SeasonReel = lazyScreen(() => import("@/components/star/SeasonReel"));
 const PotmWinModal = lazyScreen(() => import("@/components/star/PotmWinModal"));
 const LineupIntro = lazyScreen(() => import("@/components/star/LineupIntro"));
 const MatchWeek = lazyScreen(() => import("@/components/star/MatchWeek"));
@@ -280,7 +289,7 @@ const CaptainInOffice = lazyScreen(() => import("@/components/star/ManagerMoment
 const LAZY_PRELOAD = [
   VersusScreen, MatchWeek, LineupIntro, SettingsScreen, LadderScreen, MediaFeed, PressConference,
   TrainingLevelSelect, TrainingMinigame, TrainingPitchScreen, CupDrawReveal, KnockoutRoundup, PlayOffRoundup,
-  DeadlineDayRoundup, SeasonAwardsScreen, BallonDor, BallonDorNight, PotmWinModal, DilemmaModal,
+  DeadlineDayRoundup, SeasonAwardsScreen, SeasonAwardsNight, SeasonReel, BallonDor, BallonDorNight, PotmWinModal, DilemmaModal,
   ShowroomShop, Shop, CareerStore, AchievementsScreen, TrophiesScreen, ReputationScreen, SponsorsScreen,
   TransferHub, TransferSigning, RelegationMove, NegotiationScreen, LoanBrief, YouthTeam,
   ContractInOffice, ManagerNewsInOffice, CaptainInOffice, GlobalSettingsScreen, Casino, Investments,
@@ -633,6 +642,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // Nothing is written back until the load has run, so the initial
   // "profile-setup" render cannot wipe a pending phase before we have read it.
   const [hydrated, setHydrated] = useState(false);
+  /** Leo's 24 Oct update → bug fixes (lib/star/leoUpdate.ts): off = the old behaviour. */
+  const bugFixesOn = useLeoUpdate("bugFixes");
   // Stays true while we check for a cloud save, so we show a spinner rather
   // than the new-career setup screen during the async fetch.
   const [cloudLoading, setCloudLoading] = useState(true);
@@ -722,7 +733,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   /** The end screen's Share link (a code for this career, Leo 6 Oct 2026):
    *  the same entry the Hall keeps (same id), made once when it opens. */
   const [linkEntry, setLinkEntry] = useState<HallEntry | null>(null);
-  const hallRecords = useMemo(() => hallRecordBook(hallEntries), [hallEntries]);
+  const hallRecords = useMemo(() => hallRecordBook(hallEntries, { calendarYears: bugFixesOn }), [hallEntries, bugFixesOn]);
   const hallRecordsRef = useRef(hallRecords);
   hallRecordsRef.current = hallRecords;
   useEffect(() => { if (titleScreenSkipped()) setTitleOpen(false); }, []);
@@ -748,7 +759,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
 
   useEffect(() => {
     const init = async () => {
-      setHydrated(true);
+      // With Leo's bug fixes on, NOT hydrated here: loadCareerIntoState sets
+      // it once the phase is decided. Set here (the old way, switch off), the
+      // "profile-setup" first render wrote over (in practice REMOVED) the
+      // saved resumable phase before it was read.
+      if (!leoUpdateOn("bugFixes")) setHydrated(true);
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -1240,10 +1255,32 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // never one a saved replay points at.
   const careerForClipsRef = useRef<CareerState | null>(null);
   careerForClipsRef.current = career;
+  // Leo's 24 Oct update → the media pass (lib/star/media/updateFlags.ts): the
+  // label fixes and Goal of the Month follow the switch; off = as on main.
+  useEffect(() => {
+    const sync = () => setMediaUpdate({ labelFixes: leoUpdateOn("bugFixes"), goalOfMonth: leoUpdateOn("goalOfMonth") });
+    sync();
+    window.addEventListener("kib-leo-update", sync);
+    window.addEventListener("storage", sync);
+    return () => { window.removeEventListener("kib-leo-update", sync); window.removeEventListener("storage", sync); };
+  }, []);
+
+  // The goal-video maker starts during the match (speed pass, 22 Oct 2026):
+  // its worker loads the figures then, so the feed after the match never waits.
+  useEffect(() => {
+    if (phase !== "match") return;
+    if (!leoUpdateOn("feedSpeed")) return; // Leo's 24 Oct update: off, as on main
+    const t = setTimeout(() => warmVideoMaker(), 8000);
+    return () => clearTimeout(t);
+  }, [phase]);
+
   const handleGoalClip = useCallback((track: GoalTrack) => {
     void putClip(track).then(() => {
       const c = careerForClipsRef.current;
       const keep = new Set([...(c?.savedReplays ?? []), ...(c?.recentGoals ?? [])].map(r => r.clipId).filter((x): x is string => !!x));
+      // A season's goals until its reel is made, and the career's best 10 (goalLog.ts).
+      // Leo's 24 Oct update only: off, the prune is exactly as before.
+      if (leoUpdateOn("seasonReel") || leoUpdateOn("goalsGallery")) for (const id of protectedClipIds(c)) keep.add(id);
       return pruneClips(keep);
     });
   }, []);
@@ -1569,6 +1606,11 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     next.media = nextFixture.kind === "international"
       ? generateForInternational(career, next, nextFixture, stats, nationOf(career), nationKits(nationOf(career)).home, nationStrength(nationOf(career)))
       : generateForMatch(career, next, nextFixture, stats);
+    // Goal of the Month you won: a small boost with the fans (media/goalOfMonth.ts).
+    if (leoUpdateOn("goalOfMonth")) { const b = applyGoalOfMonthBoost(next); next.relationships = b.relationships; next.media = b.media; }
+    // Your match's videos start being made now, in the background, so they
+    // are ready when the feed opens (lib/star/goalClip/premake.ts).
+    if (leoUpdateOn("feedSpeed")) { const seen = new Set((career.media?.posts ?? []).map(p => p.id)); void premakeFeedVideos((next.media?.posts ?? []).filter(p => !seen.has(p.id))); }
     // …and so does the rest of the division, the same week — `next.results`
     // already carries every OTHER fixture `playLeagueWeek` simulated
     // alongside yours (empty on a cup/Europe/international week, when the
@@ -1640,6 +1682,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const next = { ...awarded, lastSeasonAwardStats: computeSeasonAwardStats(awarded) };
     setCareer(next);
     setActiveNav(null);
+    // "Your season" first, then the Ballon d'Or (handleReelDone). Leo's 24 Oct
+    // update only: off, straight to the Ballon d'Or as before.
+    setPhase(leoUpdateOn("seasonReel") ? "season-reel" : "ballon-dor");
+  }, []);
+  // The reel was watched or skipped: its recordings may now be pruned
+  // (goalLog.ts protectedClipIds), and on to the Ballon d'Or.
+  const handleReelDone = useCallback(() => {
+    setCareer(c => (c ? { ...c, reelDoneSeason: c.season } : c));
     setPhase("ballon-dor");
   }, []);
   const handleSeasonEnd = useCallback(() => {
@@ -1834,6 +1884,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   const handleToggleLike = useCallback((postId: string) => {
     setCareer(c => (c ? toggleLike(c, postId) : c));
   }, []);
+  // Goal of the Month: your vote in the poll (lib/star/media/goalOfMonth.ts).
+  const handleVote = useCallback((postId: string, index: number) => {
+    setCareer(c => (c ? voteGoalOfMonth(c, postId, index) : c));
+  }, []);
 
   const handleMediaContinue = useCallback(() => {
     if (career) continueAfterMatch(career, !pressQuestion);
@@ -1999,7 +2053,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // though it never touches the relegation-move screen. See advanceSeason's
   // own doc on why this has to reach it.
   const rollOverSeason = useCallback((from: CareerState, userWon: boolean, forcedRelegationMove = false, justTransferred = false) => {
-    const { career: rolled, newlyUnlocked } = advanceSeason(from, userWon, justTransferred);
+    const { career: rolled, newlyUnlocked } = advanceSeason(from, userWon, justTransferred, { noSackAfterPromotion: leoUpdateOn("bugFixes") });
     // A loan runs for a season and then it is over, whichever way the target
     // went. `endLoan` leaves a youth spell alone — a youth-team player is
     // still a youth-team player in August — and only rewrites the contract
@@ -2094,7 +2148,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // The clubs interested in you (transferInterest.ts, 18 Oct 2026): your
     // season decides how high they come from. A loan that hit its number
     // brings the parent club in too.
-    const interest = withRecall(windowInterest(from, "summer"), loanRecallOffer(from), from);
+    const interest = withRecall(windowInterest(from, "summer", { step3Promoted: leoUpdateOn("bugFixes") }), loanRecallOffer(from), from);
     if (interest.leagues.length > 0) {
       setPhase("season-transfer");
       return;
@@ -2152,7 +2206,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     if (!career) return;
     if (career.farewell) { handleRetire(); return; }
     try {
-      const sides = farewellSides(career);
+      const sides = farewellSides(career, { calendarYears: leoUpdateOn("bugFixes") });
       setFarewell({ sides, career: farewellCareer(career, sides), fixture: farewellFixture(career, sides) });
       setFarewellStats(null);
       setPhase("farewell-invite");
@@ -2188,6 +2242,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setPhase("transfer-signing");
   }, [phase]);
 
+  // A refresh on the signing screen goes back to the list the club came
+  // from, like a refresh in the talks does: the agreed deal is React state
+  // only, so the talks are had again. Runs after the phase save above (same
+  // commit, declared later), which has just removed the record for
+  // "transfer-signing"; left removed, the reload landed on Home with the
+  // season over and the window gone.
+  useEffect(() => {
+    if (!hydrated || phase !== "transfer-signing" || !pendingSignOffer || !leoUpdateOn("bugFixes")) return;
+    saveStarPhase(pendingSignOffer.wasRelegationMove ? "relegation-move" : "season-transfer",
+      slotScope(scopeRef.current, activeSlotRef.current), undefined, wonBallonDor);
+  }, [hydrated, phase, pendingSignOffer, wonBallonDor]);
+
   const handleSigningDone = useCallback(() => {
     if (!career || !pendingSignOffer) return;
     const { offer, wasRelegationMove } = pendingSignOffer;
@@ -2207,7 +2273,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // talking about you and your old rival who has stopped caring.
     moved.media = generateForCareer(moved,
       { kind: "transfer", from: career.player.club, to: offer.club, fee: offer.transferFee ?? offer.signingFee }, "transfer");
-    pushNews(signingNews(moved, offer.club));
+    // The card shows over next season: the new club's league, next season's age.
+    pushNews(leoUpdateOn("bugFixes")
+      ? signingNews(moved, offer.club, { division: offer.division ?? divisionOf(career), age: moved.player.age + 1 })
+      : signingNews(moved, offer.club));
     setCareer(moved);
     setTransferOffers([]);
     setPendingSignOffer(null);
@@ -2429,7 +2498,8 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
    */
   // `chosen`: the copy the player picked on SaveClashPrompt — load exactly
   // that, without asking the cloud again.
-  const loadCareerIntoState = useCallback(async (slot: number, chosen?: CareerState) => {
+  // Returns "clash" when nothing was loaded yet (see loadCareerIntoState below).
+  const loadCareerAndDecidePhase = useCallback(async (slot: number, chosen?: CareerState): Promise<"clash" | void> => {
     setCloudLoading(true);
     resetTransientState();
     const scope = slotScope(scopeRef.current, slot);
@@ -2445,7 +2515,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         setCareer(null);
         setSaveClash(outcome.clash);
         setCloudLoading(false);
-        return;
+        return "clash";
       }
       saved = outcome.career;
     }
@@ -2594,8 +2664,18 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // stuck there for good.
     const pending = loadStarPhase(scope);
     const seasonOver = saved.fixtures.every((f) => f.played);
+    if (pending?.phase === "season-reel" && seasonOver && leoUpdateOn("seasonReel")) {
+      setActiveNav(null);
+      setPhase("season-reel");
+      return;
+    }
     if (pending?.phase === "ballon-dor" && seasonOver) {
       setPhase("ballon-dor");
+      return;
+    }
+    if (pending?.phase === "season-awards" && saved.lastSeasonAwardStats && (leoUpdateOn("awardsNight") || leoUpdateOn("bugFixes"))) {
+      setActiveNav(null);
+      setPhase("season-awards");
       return;
     }
     if (pending?.phase === "contract-renewal") {
@@ -2646,6 +2726,23 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     setPhase("dashboard");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * The phase save (the effect that calls saveStarPhase) stays shut while a
+   * save is being loaded, and opens only once the load has DECIDED the phase.
+   * Opened any earlier, it wrote the phase on screen before the load
+   * ("profile-setup" at start-up; the old save's phase on a slot switch)
+   * into the slot being loaded, which REMOVES the resumable phase a refresh
+   * must return to. A save clash keeps it shut until the player picks a copy
+   * (the pick loads again, and opens it).
+   */
+  const loadCareerIntoState = useCallback(async (slot: number, chosen?: CareerState) => {
+    // Switch off (Leo's update, bug fixes): the old way, hydrated untouched.
+    if (!leoUpdateOn("bugFixes")) { await loadCareerAndDecidePhase(slot, chosen); return; }
+    setHydrated(false);
+    const outcome = await loadCareerAndDecidePhase(slot, chosen);
+    if (outcome !== "clash") setHydrated(true);
+  }, [loadCareerAndDecidePhase]);
 
   // Sends whatever the OUTGOING save has right now to the cloud immediately,
   // rather than trusting the cloud-save effect's 3 s debounce to still be
@@ -3671,6 +3768,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       division: talking.division,
       clubStrength: talking.strength,
       playerFirstName: career.player.firstName,
+      scoutNouns: leoUpdateOn("bugFixes"),
       // Seeded off the trial, so re-opening this screen cannot re-roll a
       // better opening offer — the same anti-farming rule the offers
       // themselves are under.
@@ -3720,6 +3818,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       division: talking.division,
       clubStrength: talking.strength,
       playerFirstName: career.player.firstName,
+      scoutNouns: leoUpdateOn("bugFixes"),
       rng: mulberry32(career.trial.seed ^ 0x1a9b3),
     });
     return (
@@ -3962,7 +4061,10 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   }
 
   if (phase === "season-awards" && career?.lastSeasonAwardStats) {
-    return <SeasonAwardsScreen career={career} onContinue={handleSeasonAwardsContinue} />;
+    // The 3D awards night: Leo's 24 Oct update only; off, the awards page as before.
+    return leoUpdateOn("awardsNight")
+      ? <SeasonAwardsNight career={career} onContinue={handleSeasonAwardsContinue} />
+      : <SeasonAwardsScreen career={career} onContinue={handleSeasonAwardsContinue} />;
   }
 
   if (phase === "ladder" && career?.ladderNews) {
@@ -4288,7 +4390,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   if (phase === "media" && activeNav !== "media") {
     return (
       <>
-        <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} onToggleLike={handleToggleLike} />
+        <MediaFeed career={career} mode="moment" onContinue={handleMediaContinue} onToggleLike={handleToggleLike} onVote={handleVote} />
         {/* The first time: what this screen is (v0.24, P2-85). */}
         {career.unlocks && !hasSeen(career, "reactions-tut") && (
           <PointerTour key="reactions-tut" steps={REACTIONS_TOUR} onDone={() => setCareer(c => (c ? markSeen(c, "reactions-tut") : c))} />
@@ -4432,7 +4534,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
   // The transfer window: every club interested in you, New Star Soccer's
   // way (TransferHub.tsx). The summer only, at the end of the season.
   if (phase === "season-transfer") {
-    const interest = withRecall(windowInterest(career, "summer"), loanRecallOffer(career), career);
+    const interest = withRecall(windowInterest(career, "summer", { step3Promoted: leoUpdateOn("bugFixes") }), loanRecallOffer(career), career);
     return (
       <TransferHub
         career={career}
@@ -4458,6 +4560,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         counterpartLabel={talkOffer.club}
         kicker="Contract talks"
         valueLabel="Their wage offer, per week"
+        valueIsTheirOffer={bugFixesOn}
         note="Every number here is a weekly wage."
         onDone={(finalWeekly) => {
           const weekly = finalWeekly === null ? null : Math.max(wageFloorFor(talkOffer.club, talkDivision), Math.round(finalWeekly));
@@ -4489,6 +4592,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     return <PressConference question={pressQuestion} onAnswer={handlePressAnswer} />;
   }
 
+  if (phase === "season-reel") {
+    return <SeasonReel career={career} onDone={handleReelDone} />;
+  }
   if (phase === "ballon-dor") {
     return <BallonDorNight career={career} onContinue={handleBallonDorContinue} />;
   }
@@ -5110,7 +5216,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // v0.25: energy explained here, at the very start; then "You've got a game
     // today" (game first) — no Skip, so Play is never missed.
     // The story: the team-mate's boots come first, then the welcome pointer.
-    if (onHome && !hasSeen(career, "tutorial") && (!isStory(career) || hasSeen(career, "beat-boots"))) return { key: "welcome", steps: welcomeTour(gameFirst(career), isStory(career)), skippable: !gameFirst(career), onDone: seen("tutorial", "help-home", "play-tip") };
+    if (onHome && !hasSeen(career, "tutorial") && (!isStory(career) || hasSeen(career, "beat-boots"))) return { key: "welcome", steps: welcomeTour(gameFirst(career), bugFixesOn && nextFixture ? daysToNext(career, nextFixture) : 0, isStory(career)), skippable: !gameFirst(career), onDone: seen("tutorial", "help-home", "play-tip") };
     // The story's training day: the pointer walks you through Power, then Technique.
     if (onTraining && trainingDayOn(career)) {
       const left = trainingDayLeft(career);
@@ -5348,6 +5454,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
         <PhoneHome
           career={career}
           onToggleLike={handleToggleLike}
+          onVote={handleVote}
           onLeave={(ph) => (ph === "relations" ? navTo("life") : openHub(ph, FROM_PHONE))}
           hallChase={hallChaseLine(career, hallRecords)?.text ?? null}
           onClose={() => handleNavigate("home")}

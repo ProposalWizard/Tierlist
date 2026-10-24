@@ -245,6 +245,26 @@ export const ADMIN_GUIDES = {
     ],
     dev: "app/star-retirement-dev/page.tsx; screens components/star/CareerEnd.tsx, CareerOverview.tsx, HallOfFame.tsx, AllSeasonsNew.tsx, Farewell.tsx, LegendShare.tsx, ShareCard.tsx; the farewell lib/star/farewell.ts, guardOfHonour.ts, farewell3d.ts, the ovation ovation.ts, ovation3d.ts, ovationLook.ts; sharing lib/star/legendShare.ts, app/api/star/legend, app/legend/[code]; numbers lib/star/careerOverview.ts; the made-up careers lib/star/retirementPreview.ts; the Hall lib/star/hallOfFame.ts; the Ballon d'Or night components/star/BallonDorNight.tsx, lib/star/ballonDorNight.ts, ballonDor3d.ts, ballonDorNightLook.ts; the season awards components/star/SeasonAwardsScreen.tsx (lib/star/seasonAwards.ts computeSeasonAwardStats); the faces on the award cards components/star/Headshot3D.tsx, lib/star/headshot3d/.",
   },
+  "/star-awards-night-dev": {
+    title: "Season awards night",
+    what: "The season's awards read out in a small hall: the host calls each award, the three nominees show, then the winner walks up from his table and lifts the trophy. Made-up results: you win 2 of the 5 (Golden Boot, Player of the Season) and lose 3.",
+    buttons: [
+      { group: "The menu", items: [
+        ["Other names ▶", "The same results with other made-up rivals."],
+        ["3D / Drawn", "Which room ▶ Play the night uses: 3D as the game shows it, or drawn (what a phone that can't run 3D sees)."],
+        ["▶ Play the night", "The night on its own. At the end (or Skip all) it opens the awards page; Continue comes back here."],
+        ["As the game shows it", "Exactly what the game will show: the night (3D when this device can), then the awards page."],
+        ["The awards page after it", "The season awards page on its own (trophies, awards, Team of the Season)."],
+      ] },
+      { group: "During the night", items: [
+        ["Tap anywhere / Next award ›", "Goes straight to the next award."],
+        ["Skip all", "Ends the night and opens the awards page."],
+      ] },
+    ],
+    saving: ["Nothing is saved."],
+    inGame: ["Not yet: the game will show this night at the end of each season, in place of going straight to the season awards page (wired in by Leo's season-end chat). On a phone that can't run 3D it shows the drawn room."],
+    dev: "app/star-awards-night-dev/page.tsx; the screen components/star/SeasonAwardsNight.tsx (AwardsCeremony); the plan lib/star/awardsNight.ts (tests/star/awardsNight.mts); the 3D room lib/star/awardsNight3d.ts and its screen lib/star/awardsNightScreen.ts; the three nominees lib/star/seasonAwards.ts (SeasonAwardStats.nominees). Stills: window.__awardsNight.seek(t).",
+  },
   "/star-intl-dev": {
     title: "International world",
     what: "Every national team's competitions played out from August 2026 — Nations Leagues, qualifiers, the Euro, World Cup, Copa América, AFCON, Asian Cup, Gold Cup, OFC Nations Cup, friendlies — without playing a career.",
@@ -347,13 +367,15 @@ export const ADMIN_GUIDES = {
   },
   "/star-real-goals-dev": {
     title: "Real Goals (test)",
-    what: "A little game of real goals (Leo, 18 Oct 2026). Every non-penalty goal of the 2018 World Cup and Euro 2016 (232) and, since 20 Oct 2026, of the 2017/18 Premier League, La Liga, Serie A, Bundesliga and Ligue 1 (4,393 more), all from Wyscout's free data, played in the real match: the real move is replayed first, then the shot is yours. Score it, and the closer your ball crosses the line to where the real one went, the more stars. Wyscout has nobody's position off the ball, so the defenders and keeper are placed by the game's own rules.",
+    what: "A little game of real goals (Leo, 18 Oct 2026). Every non-penalty goal of the 2018 World Cup and Euro 2016 (232) and, since 20 Oct 2026, of the 2017/18 Premier League, La Liga, Serie A, Bundesliga and Ligue 1 (4,393 more), all from Wyscout's free data; since 22 Oct 2026 also 61 famous 'Bangers' from 2010-2025 that WE drafted from public record (match reports; free data stops at 2018), each marked so. All played in the real match: the real move is replayed first, then the shot is yours. Score it, and the closer your ball crosses the line to where the real one went, the more stars. Wyscout has nobody's position off the ball, so the defenders and keeper are placed by the game's own rules.",
     buttons: [
       { group: "Top", items: [
-        ["★ total (top right)", "Every star you have, out of 150 (50 levels × 3)."],
-        ["The big card · PLAY IT", "The next level to play: the first open level without three stars. Its picture shows where the real goal went in (green dot). PLAY IT opens it."],
-        ["🗺️ Levels", "The levels as rows, one row per stage (Group stage → The final), 10 goals each, easiest first (difficulty: the chance of a goal from our model, distance, a top corner, a header). ‹ › move a row along (on a phone, swipe it). Each card: level number, where the real goal went in, scorer and minute, who it was against, your stars, ▶ to play. A level opens when the one before it has a star; a stage opens at 6 / 15 / 26 / 38 stars in all."],
-        ["🔎 All 4,625 goals", "Every goal, searchable by player, team, match, stage or date. The chips under the search show one competition at a time (All, World Cup 2018, Euro 2016, Premier League, La Liga, Serie A, Bundesliga, Ligue 1), with how many goals each has. The league goals load a moment after the page (the count shows … until then); they are in this list only, not the level map. A league goal shows its match date where a tournament goal shows its round. The famous ones (Pavard v Argentina, Ronaldo's free kick v Spain, Kroos v Sweden, Shaqiri's overhead kick, Bale v Slovakia…) are first. More shows 20 more. The page remembers which of the two you had open."],
+        ["★ total (top right)", "On the home: every star you have on every path. Inside a path: that path's stars out of its own total."],
+        ["Daily Real Goal #n · PLAY TODAY'S GOAL", "One real goal a day, the same for everyone (it changes at midnight UK winter time / 1am summer time: UTC). Score it (★ or better) to keep your streak: 🔥 days in a row, and your best. Miss a day and it starts again at 1. Kept on this phone only; no leaderboard. Its stars do not count on the paths. The order is a fixed list (lib/star/realGoalDaily.ts DAILY_LIST, 121 days to 20 Feb 2027): add new goals at the end only."],
+        ["Path tiles", "One tile per path: World Cup & Euro (the old level map, its stars kept), Premier League, La Liga, Serie A, Bundesliga, Ligue 1 (2017/18, 50 goals each: Matchday 1 → Autumn → Winter → The run-in → Title decider), Worldies 17/18 (the 50 hardest league goals: 18-35 m, a 6% chance or less, into a corner or high; Long shots → Impossible) and Bangers (all 61, Classics → Goal of the decade). Each shows your stars on it. Tap one to open it; ‹ All paths goes back. Each path has its own stars and gates: stars from one path never open another."],
+        ["The big card · PLAY IT", "Inside a path: the next level to play (the first open level without three stars). Its picture shows where the real goal went in (green dot). PLAY IT opens it."],
+        ["🗺️ Levels", "The home (daily card + path tiles), then inside a path its levels as rows, one row per stage, 10 goals each (Bangers 13), easiest first (difficulty: the chance of a goal from our model, distance, a top corner, a header). ‹ › move a row along (on a phone, swipe it). Each card: level number, where the real goal went in, scorer and minute, who it was against, your stars, ▶ to play. A level opens when the one before it has a star; a stage opens at 6 / 15 / 26 / 38 of that path's stars (Bangers 8 / 20 / 34 / 49)."],
+        ["🔎 All 4,625 goals", "Every goal, searchable by player, team, match, stage or date. The chips under the search show one competition at a time (All, Bangers, World Cup 2018, Euro 2016, Premier League, La Liga, Serie A, Bundesliga, Ligue 1), with how many goals each has. The league goals load a moment after the page (the count shows … until then); they are in this list only, not the level map. A league goal shows its match date where a tournament goal shows its round. The famous ones (Pavard v Argentina, Ronaldo's free kick v Spain, Kroos v Sweden, Shaqiri's overhead kick, Bale v Slovakia…) are first. More shows 20 more. The page remembers which of the two you had open."],
       ] },
       { group: "Playing a goal", items: [
         ["The header", "The real score just before the goal, the minute, who you are and the body part."],
@@ -362,12 +384,46 @@ export const ADMIN_GUIDES = {
         ["🎥 TV / Behind him / Side-on", "The 3D camera (3D | 2D button in the match bar): the TV view, low behind the shooter, or turned side-on. Kept only while this page is open; your own camera lock comes back when you leave."],
         ["The match", "The real match. The real sides' names and kits (nations, and the 98 league clubs in their 2017/18 colours), the scorer's and the conceding keeper's real names: never the test club. You strike as an elite finisher (power 85, technique 95, curl boots), clear weather, nobody closes you down. Strike it along the real goal's line (within 60 cm across, 55 cm up, inside the posts) and nobody blocks it and the keeper does not save it. Off the line it plays as normal."],
         ["The result", "Goal or not, the % like the real goal (100% on the spot, 85% at 45 cm off, 60% at 80 cm), the stars (★ a goal, ★★ 60%+, ★★★ 85%+), and a picture of the goal mouth with the real spot (green) and yours (blue). ↺ Again: the same chance comes back, just shoot. Next level → once you have a star."],
+        ["Drafted from public record (pink line, Bangers only)", "This goal is not from licensed data: we wrote it from the match report named in its source. The scorer, minute, score and how it was struck are checked; the shot spot, where it went in and the passes are placed by hand from the description."],
         ["✕", "Closes the goal."],
       ] },
+      { group: "🛠 Fix a banger (admin, bottom of the page; ?fix=1 opens it)", items: [
+        ["The list", "Pick a banger (✎ = you changed it on this phone). Its facts, source and notes show under it."],
+        ["The pitch", "Goal at the top. Drag ⚽ (where it was struck) or a numbered dot (where each pass or run starts). The pink line is the shot."],
+        ["Where it went in", "The goal mouth as the shooter sees it: drag the dot to where it crossed the line."],
+        ["Play it ▶", "Plays the banger with your changes, at the top of the page."],
+        ["↺ Undo this goal's fixes", "Puts this banger back as it is in the file."],
+        ["⬇ Download bangers.json", "Saves the whole file with every fix on this phone applied (xG worked out again). Put it in data/realmoments/ and commit it to make the fixes stick for everyone."],
+      ] },
     ],
-    saving: ["Your stars and best % per goal are kept in this browser only (localStorage, star-real-goals-progress-v2; the old v1 stars were for the earlier, licensed goals (removed 19 Oct 2026) and are not carried over). Nothing goes to the database or the repo."],
+    saving: ["The new paths' stars (localStorage star-real-goals-paths-v1), the daily streak (star-real-goals-daily-v1) and banger fixes not yet downloaded (star-real-goals-banger-fixes-v1) are kept in this browser only. Nothing commits to the repo from this page: a banger fix sticks only when someone puts the downloaded file in data/realmoments/ and commits it.", "Your World Cup & Euro stars and best % per goal are kept in this browser only (localStorage, star-real-goals-progress-v2; the old v1 stars were for the earlier, licensed goals (removed 19 Oct 2026) and are not carried over). Nothing goes to the database or the repo."],
     inGame: ["Nowhere yet. This is a test page."],
-    dev: "app/star-real-goals-dev/page.tsx; lib/star/realGoals.ts (levels, stars, accuracy, kits, names, ghost, build-up) and lib/star/realGoalView.ts (what the match is handed); CanvasMatch's `realGoal` prop (drawing only, TEST_ONLY in scripts/one-engine-guard.mjs); canvasEngine.ts Scenario.realLane (the real lane, off by default); data/realmoments/wyscout_shots.json + wyscout_goals.json (scripts/realmoments/extract_wyscout.py); the league goals in data/realmoments/wyscout_league_<england|spain|italy|germany|france>.json (scripts/realmoments/extract_wyscout_leagues.py); tests/star/realGoals.mts and tests/star/realGoals/ (harness, measure, buildup).",
+    dev: "app/star-real-goals-dev/page.tsx + BangerFixer.tsx; lib/star/realGoalPaths.ts (paths, Worldies, per-path stars); lib/star/realGoalDaily.ts (daily list, streak); data/realmoments/bangers.json (scripts/realmoments/build_bangers.py from scripts/realmoments/bangers_drafts/); lib/star/realGoals.ts (levels, stars, accuracy, kits, names, ghost, build-up) and lib/star/realGoalView.ts (what the match is handed); CanvasMatch's `realGoal` prop (drawing only, TEST_ONLY in scripts/one-engine-guard.mjs); canvasEngine.ts Scenario.realLane (the real lane, off by default); data/realmoments/wyscout_shots.json + wyscout_goals.json (scripts/realmoments/extract_wyscout.py); the league goals in data/realmoments/wyscout_league_<england|spain|italy|germany|france>.json (scripts/realmoments/extract_wyscout_leagues.py); tests/star/realGoals.mts and tests/star/realGoals/ (harness, measure, buildup).",
+  },
+  "/star-goals-gallery-dev": {
+    title: "Career goals",
+    what: "The Stats → Goals page with a made-up career: every goal with its minute, opponent, competition and season, a small picture, and its video when this browser has it. Also the Hall of Fame's Best goals.",
+    buttons: [
+      { group: "Career", items: [
+        ["80 goals · 4 seasons", "A made-up career of 80 goals. About one in three has a made video kept in this browser; a few say their video is on another phone; the rest were never recorded."],
+        ["600 goals", "A 20-season legend's worth of goals, to check the list stays quick."],
+        ["Old save", "A save from before goals were listed: the gentle empty page."],
+        ["Hall of Fame", "The career as the Hall of Fame keeps it: only its best 10 goals, in the Best goals list. ✕ closes it."],
+      ] },
+      { group: "The goals", items: [
+        ["All / Best 10 / ▶ Videos / a competition", "Which goals to list. All is grouped by season, newest first. Best 10 is the ten that go into the Hall of Fame."],
+        ["A goal", "Plays its video when this browser has it (pick the camera on top), else shows its facts card. ✕ closes it."],
+        ["▶ on a picture", "This goal's video is on this phone."],
+      ] },
+    ],
+    saving: [
+      "Nothing touches a career save. The made videos are kept in this browser only, in the same place the game keeps goal videos (the newest 80 are kept).",
+    ],
+    inGame: [
+      "Stats → Goals (the sixth chip) in the career shows the same list for your own goals, from 22 Oct 2026 on.",
+      "Hall of Fame → open a career → Best goals shows its best 10.",
+    ],
+    dev: "app/star-goals-gallery-dev/page.tsx; components/star/CareerGoalsGallery.tsx (gallery, BestGoalsList, BestGoalsSheet); the log lib/star/goalLog.ts; the Hall trims it in lib/star/hallOfFame.ts slimCareer; made videos lib/star/goalClip/synth.ts; tests tests/star/goalLog.mts.",
   },
   "/star-goal-clips-dev": {
     title: "Goal videos",
@@ -402,6 +458,35 @@ export const ADMIN_GUIDES = {
       "A browser that can make video (iPhone iOS 16.4 or later, Chrome, Edge, Firefox on a computer). Others show the plain picture with no play button.",
     ],
     dev: "app/star-goal-clips-dev/page.tsx; recorder lib/star/goalClip/recorder.ts (fed by CanvasMatch's onGoalClip); format track.ts; cameras cameras.ts; drawing scene.ts, render.ts; cuts edit.ts; the file encode.ts (WebCodecs + mp4-muxer / webm-muxer); storage store.ts (IndexedDB); the post components/star/media/GoalVideo.tsx.",
+  },
+  "/star-season-reel-dev": {
+    title: "Your season video",
+    what: "The video a player sees at the end of every season, before the awards: every goal of the season, the goal of the season slowed down, and the season's numbers. Here on a made-up season, so you can watch it without playing one.",
+    buttons: [
+      { group: "1 · The season", items: [
+        ["Club", "Whose colours and badge the video uses."],
+        ["Goals: 20 / 8 / 1 / No goals", "How many goals the made-up season has. No goals shows the title and the end card only."],
+        ["Recordings on this phone: Every goal / Some / No recordings", "Which goals have a recording. A goal with none (played on another phone, or simulated) shows as a drawn card with a mini pitch instead of video."],
+        ["Trophies won: None / 1 / 3", "The trophies on the end card."],
+      ] },
+      { group: "2 · Watch it", items: [
+        ["▶ Play the reel", "Opens the reel full screen, exactly as the player sees it."],
+      ] },
+      { group: "The reel", items: [
+        ["Tap the video", "Pause or play. At the end, plays it again."],
+        ["Skip (top right)", "Leaves at once. Reads Continue once the reel has finished. Back here on this page."],
+        ["Speaker", "Sound on or off: the crowd, the commentator over the goal of the season, and a music bed. The same switch as every goal video, remembered on this device."],
+        ["Save video", "Makes the video file on this phone (a count while it does), then opens the share menu (Save Video on an iPhone) or downloads it. If the phone asks, tap Save now."],
+        ["Continue", "Leaves the reel."],
+      ] },
+    ],
+    saving: [
+      "Nothing is saved. The made-up goals' recordings are made on this page and kept in this browser only.",
+      "A saved video goes wherever you save it: Photos, a message, your downloads.",
+    ],
+    inGame: ["At the end of every season, before the awards: Your season. Every goal you scored that season, in order."],
+    needs: ["A browser that can make video for Save video (iPhone iOS 16.4 or later, Chrome, Edge). The reel itself plays everywhere."],
+    dev: "app/star-season-reel-dev/page.tsx; the screen components/star/SeasonReel.tsx; plan lib/star/goalClip/reel.ts (tests/star/seasonReel.mts); drawing reelRender.ts; sound reelAudio.ts; file reelEncode.ts. Goals come from career.goalLog (lib/star/goalLog.ts).",
   },
   "/star-relgames-dev": {
     title: "Relationship games",
@@ -759,6 +844,62 @@ export const ADMIN_GUIDES = {
     saving: ["Nothing. The list is part of the code: a new write-up is one line in the list file, added by Claude."],
     inGame: ["Nowhere. It is for the team."],
     dev: "app/admin/research/page.tsx · lib/research.ts (RESEARCH: one line per write-up; topic, date, by) · registered in lib/adminRegistry.ts (group research, Studio)",
+  },
+  "/star-shootout-dev": {
+    title: "Shootout habits",
+    what: "A penalty shootout on the real match where the keeper remembers where you put your earlier kicks and leans that way. Mix it up or get read. A test: the real game is unchanged.",
+    buttons: [
+      { group: "Top panel", items: [
+        ["Keeper reads habits: On / Off", "On: the keeper facing your kicks leans towards where most of your kicks went. Off: he reads only the kick in front of him, as in the real game. Your kicks are still listed either way."],
+        ["Reset", "Starts a brand-new shootout and forgets every kick you have taken."],
+        ["The bar (← Left · Middle · Right →)", "Which way he leans and how hard. Green = barely, amber = a fair bit, red = he is reading you. He needs 2 of your kicks before he leans, and a mixed-up taker is never read."],
+        ["Reading you N%", "How strongly he leans: 100% = the most he ever leans (then on 6 kicks in 10 he goes your usual way whatever your body says)."],
+        ["Your kicks", "Every kick you have taken since the last Reset: left, middle or right as YOU look at the goal, and low or high (under or over about halfway up the goal, where it crossed the line or met the keeper)."],
+      ] },
+      { group: "The shootout", items: [
+        ["Drag the ball", "Takes your penalty, exactly as in a match. On this page you take every kick for your side, so he gets enough kicks to read; the other side's kicks are taken for them."],
+        ["Another shootout", "After a shootout ends: a new one. He still remembers your kicks; only Reset forgets them."],
+      ] },
+      { group: "Page", items: [
+        ["Eye (bottom right)", "This guide."],
+        ["← (top left)", "Back to the Match tests group page."],
+      ] },
+    ],
+    saving: ["Nothing. Your kicks and the switch live on this screen only and are gone when you leave or press Reset."],
+    inGame: ["Nowhere yet: a test. Real shootouts keep today's keeper, who reads only the current kick."],
+    needs: ["Real squads need the normal Supabase connection; without it both sides are made-up players (the kicks still work)."],
+    dev: "app/star-shootout-dev/page.tsx · components/star/ShootoutPlay.tsx (`readsHabits`, `onHabits`) · components/star/EnginePlay.tsx (`penaltyRead` passed through) · lib/star/penaltyKeeper.ts (`readKickHabits`, `KICK_HABITS`, `habit`, `sideWithHabit`) · lib/star/keeperBrain.ts (the run-up hop uses `sideWithHabit`) · tests/star/penaltyKeeperHabits.mts",
+  },
+  "/star-weather-dev": {
+    title: "Weather and pitch",
+    what: "Try wind, rain and a bad pitch on the real ball before any of it goes into the game. The real game is unchanged.",
+    buttons: [
+      { group: "The day", items: [
+        ["☀️ Clear / 💨 Windy / 🌧️ Rain / ⛈️ Heavy rain", "The weather. Rain: the ball skids on after a bounce and rolls further. Heavy rain: a slow, wet pitch."],
+        ["The wind circle (tap a dot)", "Where the wind blows to. Up is towards the goal you attack. The yellow arrow shows it; longer = stronger."],
+        ["Wind slider", "Wind speed, 0 to 20 m/s (a breeze is about 5, a strong wind 10, a gale 17)."],
+        ["A club's home pitch…", "Sets the pitch to that club's own pitch: Premier League perfect, small lower-league grounds poorer."],
+        ["Pitch slider", "Pitch quality by hand, very poor to perfect."],
+        ["Normal / ☀️ Dry spell", "A dry spell bakes a bad pitch: less bounce, slows fast, at worst the ball stops dead. No effect on a perfect pitch."],
+        ["Tame (recommended) / Harsh (first build)", "How hard a bad pitch is on the ball. Tame: it runs almost as normal, then grabs and stops at a crawl (14 in 100 normal passes die short on the worst dry pitch, 6 on a clear day). Harsh: the first build (87 in 100 die short), to compare."],
+        ["Pre-match line", "What the pre-match screen would say, e.g. \"Pitch: poor, dry\". Shown on this page only."],
+      ] },
+      { group: "Shot and pass lab", items: [
+        ["Ground pass / Driven shot / Lofted pass / Long ball", "Which strike to fly."],
+        ["Clear | These conditions", "The same strike from above on a clear day and in your conditions, at the same scale. White = in the air, yellow = rolling, red dot = first bounce, dashed = the clear day. The wind arrow sits on the side the ball is not blown to."],
+        ["Side picture", "Height against distance: dashed clear, yellow now."],
+        ["Measure 200 of each", "Flies 200 of every strike (slightly different each time) and shows the average change against clear."],
+        ["Ball: Old / New", "Which ball the lab uses. It starts on the ball your Settings use."],
+      ] },
+      { group: "Play it", items: [
+        ["▶ Play it", "Plays chances from the real match in the conditions above."],
+        ["■ Stop", "Stops the match. Change a dial, then Play again."],
+        ["← (top left)", "Back to the Match group page."],
+      ] },
+    ],
+    saving: ["Nothing. The dials live on this screen only and reset when you leave."],
+    inGame: ["Nowhere yet. The career still plays in its own weather (clear, windy, rain, heavy pitch) with no direction to the wind and no club pitch. Moving this into the game is a later decision for Leo and Harry."],
+    dev: "app/star-weather-dev/page.tsx · lib/star/weatherLab.ts (dials → conditions, the lab) · lib/star/pitchWeather.ts (wind, skid, grab) · lib/star/pitchQuality.ts (each club's pitch) · tests/star/weatherFingerprint.mts (proof the real ball is unchanged) · scripts/weather/measure.mts",
   },
   "/star-tournament-dev": {
     title: "Tournaments",

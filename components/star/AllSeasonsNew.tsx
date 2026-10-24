@@ -18,11 +18,13 @@ import { kitsOf } from "@/lib/star/kits";
 import ClubBadge from "./ClubBadge";
 import { ArcChart, BigNumber, CabinetGrid, Heading, SeasonList } from "./CareerOverview";
 import { FlatPanel, clubTheme, rgba } from "./ui";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 const short = (club: string) => CLUB_SHORT_NAMES[club] ?? club.replace(/\s+(FC|AFC)$/i, "").replace(/^(FC|AFC)\s+/i, "");
 
 export default function AllSeasonsNew({ career }: { career: CareerState }) {
-  const o = useMemo(() => careerOverview(career), [career]);
+  const calYears = useLeoUpdate("bugFixes"); // Leo's 24 Oct update: calendar season years
+  const o = useMemo(() => careerOverview(career, { calendarYears: calYears }), [career, calYears]);
   const t = o.totals;
   // Team trophies, then yours (the Ballon d'Or leads them).
   const team = o.honours.filter(h => h.competition !== "Ballon d'Or");

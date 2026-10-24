@@ -4,6 +4,7 @@ import type { StoredPost } from "@/lib/star/media/types";
 import { relativeTime } from "@/lib/star/media/schedule";
 import Graphic from "./Graphics";
 import Avatar from "./Avatar";
+import GoalOfMonthPoll from "./GoalOfMonthPoll";
 
 /**
  * One post, laid out like a real social app rather than a card.
@@ -37,11 +38,13 @@ const ICON = { width: 17, height: 17, viewBox: "0 0 24 24", fill: "none", stroke
 /** The pink a liked heart turns — the same one real social apps use. */
 const LIKED = "#f91880";
 
-export default function PostCard({ post, now, onToggleLike }: {
+export default function PostCard({ post, now, onToggleLike, onVote }: {
   post: StoredPost;
   now: number;
   /** Tapping the heart. Absent: the heart is just a number, not a button. */
   onToggleLike?: (postId: string) => void;
+  /** Voting in a Goal of the Month poll (entry index). Absent: no Vote buttons. */
+  onVote?: (postId: string, index: number) => void;
 }) {
   const heartRef = useRef<SVGSVGElement>(null);
   const ringRef = useRef<HTMLSpanElement>(null);
@@ -66,7 +69,7 @@ export default function PostCard({ post, now, onToggleLike }: {
   };
 
   return (
-    <article className="flex gap-3 border-b border-white/10 px-3.5 pb-2.5 pt-3">
+    <article className="flex gap-3 border-b border-white/10 px-3.5 pb-2.5 pt-3" data-post-event={post.eventId}>
       <Avatar
         initials={post.author.initials}
         tint={post.author.tint}
@@ -94,7 +97,15 @@ export default function PostCard({ post, now, onToggleLike }: {
           {post.text}
         </p>
 
-        {post.graphic && !(post.graphic.type === "thumbnail" && !post.graphic.clips?.length && !post.graphic.synth?.length) && (
+        {post.graphic?.type === "gotmPoll" ? (
+          <div className="mt-2.5">
+            <GoalOfMonthPoll
+              spec={post.graphic}
+              author={post.author}
+              onVote={onVote ? (i: number) => onVote(post.id, i) : undefined}
+            />
+          </div>
+        ) : post.graphic && !(post.graphic.type === "thumbnail" && !post.graphic.clips?.length && !post.graphic.synth?.length) && (
           <div className="mt-2.5 overflow-hidden rounded-2xl">
             <Graphic spec={post.graphic} author={post.author} />
           </div>

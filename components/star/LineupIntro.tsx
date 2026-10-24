@@ -45,6 +45,7 @@ import dynamic from "next/dynamic";
 import { useBossRoomLook } from "@/lib/star/look3d";
 import { benchMomentFor } from "@/lib/star/managerMoments";
 import { ManagerSays } from "./ManagerMoments";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 // Left out of the squad: told in the manager's office when Settings → Look →
 // "Talk to your manager" is "3D office" (MANAGER_PLAN.md §2). The card's own
@@ -199,6 +200,38 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
     </div>
   ) : null;
 
+  const fixesOn = useLeoUpdate("bugFixes");
+  // Sim and Settings sit in the header's top-right corner, mirroring Back.
+  // They floated fixed on the right edge at 116/160 px, over the away crest
+  // and the Play as pill ("PLAY AS ST" cut off at 390 px, 22 Oct 2026).
+  // Settings before kick-off (Harry, 20 Oct 2026: "before a game, I can
+  // press settings and turn on full highlights rebuild"). Opening it stops
+  // the auto kick-off, like Play as.
+  const headerButtons = (
+    <>
+      {(status === "1st Team" || status === "Substitute") && (
+        <button
+          onClick={() => { went.current = true; onSimMatch(); }}
+          aria-label="Sim this match"
+          className="kib-press grid h-8 w-8 place-items-center text-[15px] font-black text-sky-100"
+          style={{ background: "rgba(3,7,18,.82)", borderRadius: 2, boxShadow: "inset 0 0 0 1px rgba(125,211,252,.55)" }}
+        >⏩</button>
+      )}
+      <button
+        data-prematch-settings
+        onClick={() => { setSettingsOpen(true); setHeld(true); }}
+        aria-label="Settings"
+        className="kib-press grid h-8 w-8 place-items-center text-white"
+        style={{ background: "rgba(3,7,18,.82)", borderRadius: 2, boxShadow: "inset 0 0 0 1px rgba(255,255,255,.45)" }}
+      >
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+        </svg>
+      </button>
+    </>
+  );
+
   if (benchHold && benchMoment) {
     return (
       <div data-bench-moment={benchMoment.reason}>
@@ -227,7 +260,8 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
           </div>
         )}
         <style>{`@keyframes kib-lineup-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } } @media (prefers-reduced-motion: reduce) { [data-lineup-intro] [style*="kib-lineup-fill"] { animation: none !important; } }`}</style>
-        {(status === "1st Team" || status === "Substitute") && (
+        {/* Switch off (Leo's 24 Oct update, bug fixes): the old floating buttons. */}
+        {!fixesOn && (status === "1st Team" || status === "Substitute") && (
           <button
             onClick={() => { went.current = true; onSimMatch(); }}
             aria-label="Sim this match"
@@ -235,9 +269,7 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
             style={{ background: "rgba(3,7,18,.82)", borderRadius: 2, boxShadow: "inset 0 0 0 1px rgba(125,211,252,.55)" }}
           >⏩</button>
         )}
-        {/* Settings before kick-off (Harry, 20 Oct 2026: "before a game, I can
-            press settings and turn on full highlights rebuild"). Opening it
-            stops the auto kick-off, like Play as. */}
+        {!fixesOn && (
         <button
           data-prematch-settings
           onClick={() => { setSettingsOpen(true); setHeld(true); }}
@@ -250,12 +282,14 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
           </svg>
         </button>
+        )}
         {settingsOpen && <PreMatchSettings glow={glow} onClose={() => setSettingsOpen(false)} />}
         <VersusScreen
           matchday={matchday}
           date={fixtureDateLabel(career.player.startYear, career.season, nextFixture.week, nextFixture.kind, divisionOf(career))}
           results={career.results}
           clubKits={(intlCareer ?? career).clubKits}
+          managers={fixesOn && career.manager ? { [career.player.club]: career.manager.name } : undefined}
           competition={
             !nextFixture.kind || nextFixture.kind === "league"
               ? `${leagueNameFor(divisionOf(career))} · Matchday ${nextFixture.week}`
@@ -265,6 +299,7 @@ export default function LineupIntro({ career, nextFixture, preMatchEnergy, preMa
           onBack={onBack}
           pitchCorner={playAsPicker}
           pitchCornerLeft={bootsWarning}
+          headerRight={fixesOn ? headerButtons : undefined}
         />
       </div>
     );

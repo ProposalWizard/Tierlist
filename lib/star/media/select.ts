@@ -1,4 +1,5 @@
 import type { FootballEvent, MediaAccount } from "./types";
+import { labelFixesOn } from "./updateFlags";
 import { rngFor, shuffle } from "./grammar";
 import { PLAYER_GOAL_CHANTS } from "./chants";
 
@@ -46,7 +47,7 @@ export function selectPairings(
   for (const e of events) {
     const importance = e.importance ?? e.baseImportance;
     for (const a of accounts) {
-      const s = interest(a, e) * allegiance(a, e, yourClub) * reach(a, importance);
+      const s = interest(a, e) * allegiance(a, e, yourClub) * reach(a, importance) * ownCompetition(a, e);
       if (s <= 0) continue;
       const rng = rngFor("sel", cycleId, e.id, a.id);
       scored.push({ event: e, account: a, score: s * importance * (0.75 + rng() * 0.5) });
@@ -113,6 +114,22 @@ export function selectPairings(
   }
 
   return out;
+}
+
+/**
+ * A league or competition account posts only about its own competition.
+ *
+ * Neither has an allegiance, so before 22 Oct 2026 any of them could take any
+ * event with the right tags: @FACup posted a League One club's league slide,
+ * @ChampionsLeague an FA Cup tie. An event with no competition on it (a
+ * career award, say) is still open to them.
+ */
+export function ownCompetition(a: MediaAccount, e: FootballEvent): number {
+  if (!labelFixesOn()) return 1;
+  if (a.archetype !== "league" && a.archetype !== "competition") return 1;
+  const comp = e.facts.competition;
+  if (typeof comp !== "string" || !comp) return 1;
+  return comp === a.name || comp.startsWith(a.name + " ") ? 1 : 0;
 }
 
 function interest(a: MediaAccount, e: FootballEvent): number {
