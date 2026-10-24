@@ -175,6 +175,7 @@ import {
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
 import { airborneOn, airborneMotion, applyAirborne, bicycleMarkOf, bicycleGoalOf, type StrikeContact } from "@/lib/star/airborneChance";
 import { bicycleOfferFor } from "@/lib/star/bicycle";
+import { leoUpdateOn } from "@/lib/star/leoUpdate";
 import { isAirKind, airWaitZ, airZOf, HEADER_Z } from "@/lib/star/airDrawings";
 import { useFitWidth } from "./useFitWidth";
 import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
@@ -10103,7 +10104,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             timeLimitS={contactTimerS ?? undefined}
             onTimeout={contactTimerS ? handleScuff : undefined}
             hold={held}
-            bicycle={withBicycleClip(bicycleOfferFor(scenarioRef.current, career ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current)))) : (skills as KickSkills & { aerial?: number }).aerial, seedRef.current))}
+            // Leo's 24 Oct update (leoUpdate.ts): off = no Bicycle! button, the strike screen as on main.
+            bicycle={!leoUpdateOn("bicycle") ? undefined : withBicycleClip(bicycleOfferFor(scenarioRef.current, career ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current)))) : (skills as KickSkills & { aerial?: number }).aerial, seedRef.current))}
           />
         )}
 
