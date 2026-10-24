@@ -74,8 +74,9 @@ async function runLive(job: LiveJob): Promise<void> {
     const dur = editDuration(job.edit);
     const t0 = performance.now();
     let first = true, lastT = 0;
-    const raf: (f: () => void) => void = typeof g.requestAnimationFrame === "function"
-      ? (f) => g.requestAnimationFrame(f) : (f) => setTimeout(f, 16);
+    // Paced by a timer, like encode.ts's frame loop: it plays back a
+    // recording (no physics, no football), at 30 frames a second.
+    const next = (f: () => void) => setTimeout(f, 1000 / 30);
     await new Promise<void>((done) => {
       const frame = () => {
         if (me.stop) { done(); return; }
@@ -83,7 +84,7 @@ async function runLive(job: LiveJob): Promise<void> {
         drawEditFrame(ctx, job.edit, t, job.credit);
         if (first) { first = false; post({ id: job.id, kind: "live-first" }); }
         if (Math.abs(t - lastT) > 0.25) { lastT = t; post({ id: job.id, kind: "live-t", t }); }
-        raf(frame);
+        next(frame);
       };
       frame();
     });

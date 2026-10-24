@@ -69,7 +69,7 @@ export default function PostCard({ post, now, onToggleLike, onVote }: {
   };
 
   return (
-    <article className="flex gap-3 border-b border-white/10 px-3.5 pb-2.5 pt-3">
+    <article className="flex gap-3 border-b border-white/10 px-3.5 pb-2.5 pt-3" data-post-event={post.eventId}>
       <Avatar
         initials={post.author.initials}
         tint={post.author.tint}
