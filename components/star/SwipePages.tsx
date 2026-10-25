@@ -150,15 +150,16 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
       {arrows && (
         // The two edge hints, along the bottom of the pages (above the bottom
         // bar). Words, not buttons (Mikey, 23 Oct 2026: "they should just be
-        // indicators … text that tells you to swipe that way"): a tap does
-        // nothing, a swipe turns the page. Under the bar, so the round Play
+        // indicators … text that tells you to swipe that way"); a swipe turns
+        // the page, and a tap on the words does too (24 Oct 2026, so the
+        // story's pointer can point at one). Under the bar, so the round Play
         // button sits in front of the Shop hint.
         <div data-edge-arrows className="pointer-events-none absolute inset-x-0 bottom-1 z-10 flex items-end justify-between px-2">
           <div>
-            {index > 0 ? <SwipeHint side="left" tour={`tab-${index - 1}`} icon={arrows.icons[index - 1]} label={labels[index - 1]} /> : null}
+            {index > 0 ? <SwipeHint onGo={() => { setFromDrag(false); onIndex(index - 1); }} side="left" tour={`tab-${index - 1}`} icon={arrows.icons[index - 1]} label={labels[index - 1]} /> : null}
           </div>
           <div>
-            {index < 2 ? <SwipeHint side="right" tour={`tab-${index + 1}`} icon={arrows.icons[index + 1]} label={labels[index + 1]} /> : null}
+            {index < 2 ? <SwipeHint onGo={() => { setFromDrag(false); onIndex(index + 1); }} side="right" tour={`tab-${index + 1}`} icon={arrows.icons[index + 1]} label={labels[index + 1]} /> : null}
           </div>
         </div>
       )}
@@ -166,11 +167,13 @@ export default function SwipePages({ index, onIndex, labels, children, inset = f
   );
 }
 
-/** "‹ 📊 STATS": which page is that way. Plain text you swipe towards, never tapped. */
-function SwipeHint({ side, tour, icon, label }: { side: "left" | "right"; tour: string; icon: string; label: string }) {
+/** "‹ 📊 STATS": which page is that way. Plain text you swipe towards. It
+ *  looks like words, not a button; a tap on it goes there too, so a pointer
+ *  can point at it (the story's "swipe to your card", Mikey 24 Oct 2026). */
+function SwipeHint({ side, tour, icon, label, onGo }: { side: "left" | "right"; tour: string; icon: string; label: string; onGo: () => void }) {
   return (
-    <div data-tour={tour} data-swipe-hint={side} aria-hidden
-      className={`flex h-[22px] items-center gap-1 px-1 text-white/70 ${side === "right" ? "flex-row-reverse" : ""}`}
+    <div data-tour={tour} data-swipe-hint={side} onClick={onGo} role="link" aria-label={`Go to ${label}`}
+      className={`pointer-events-auto flex h-[22px] cursor-pointer items-center gap-1 px-1 text-white/70 ${side === "right" ? "flex-row-reverse" : ""}`}
       style={{ textShadow: "0 1px 3px rgba(0,0,0,.85)" }}>
       <span className="text-[12px] leading-none">{side === "left" ? "‹" : "›"}</span>
       <span className="text-[11px] leading-none">{icon}</span>

@@ -58,6 +58,7 @@ import { pickBarCorner, type BarCorner, type Box as BarBox } from "@/lib/star/ba
 import { panToKeep, followStep, widenToHold, easeCam, BACK_EASE_S } from "@/lib/star/runCamera";
 import { takeEnergySpent, setLegsEnergy, barCap, moveKeyOf, keysScreenDir, noKeys, KEY_PUSH, type MoveKeys } from "@/lib/star/legs";
 import { afterPassStickOn } from "@/lib/star/afterPass";
+import { mechanicOpen, aerialIntroGame, mechanicDef, type Mechanic } from "@/lib/star/mechanics";
 import { dealDribble, dribbleLevelFor, newDribbleDeal, type DribbleDeal } from "@/lib/star/dribbleDeal";
 import { ruleBookFor } from "@/lib/star/ruleBook";
 import { deflectBlock } from "@/lib/star/deflection";
@@ -1074,6 +1075,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const [overlayTop, setOverlayTop] = useState(false);
   const careerRef = useRef(career);
   careerRef.current = career;
+  /** A new career's moves open one at a time (lib/star/mechanics.ts); every other save has them all. */
+  const mechOpen = (id: Mechanic) => mechanicOpen(careerRef.current, id);
   const preferredFootRef = useRef(preferredFoot);
   preferredFootRef.current = preferredFoot;
 
@@ -1485,6 +1488,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!d) return true;
     if (kind === "free_kick") return d.freeKicks;
     if (kind === "penalty") return d.penalties;
+    // A new career's corners wait for Technique and Vision (setPieces.ts).
+    if (kind === "corner") return d.corners ?? true;
     return true;
   };
   // The situation the simulation has just produced, consumed by the next
@@ -1847,11 +1852,20 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       addedTime: ADDED,
       fullTime: MATCH_DURATION,
     };
-    return matchInputsFor(car
+    const inputs = matchInputsFor(car
       // Your CLUB's strength (Chelsea 83), not the team relationship (60 on
       // day one) — see matchTeamStrength (lib/star/matchday.ts, item 0).
       ? careerMatchSpec(car, fixture, { ...live, teamFallback: teamRef.current, playstyle: playstyleRef.current })
       : { ...live, teamStrength: teamRef.current, home: fixture?.home, skills: { power: 55, technique: 55, vision: 55 }, context: { playstyle: playstyleRef.current } });
+    // A new career's corners wait for Technique and Vision 70 (setPieces.ts,
+    // Mikey 25 Oct 2026): until then a team-mate takes them.
+    const withCorners = dutiesRef.current?.corners === false ? { ...inputs, canTakeCorners: false } : inputs;
+    // A new career's headers, volleys and runs with the ball (mechanics.ts):
+    // none before they open, and game 4 brings one header and one volley.
+    const cc = careerRef.current;
+    return cc?.unlocks?.story
+      ? { ...withCorners, mechanics: { air: mechanicOpen(cc, "aerial"), airIntro: aerialIntroGame(cc), dribble: mechanicOpen(cc, "dribble") } }
+      : withCorners;
   };
 
   // Translate what the physics produced into what the match needs to know.
@@ -2055,6 +2069,57 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const phaseRef = useRef<Phase>("aim");
   const [phase, setPhaseState] = useState<Phase>("aim");
   const setPhase = (p: Phase) => { phaseRef.current = p; setPhaseState(p); };
+  // A new career's very first chance (the story's first match): two short
+  // lines, "drag back… then let go" while aiming and "tap the part of the
+  // ball" on the strike screen, on that one chance only (Mikey's playtest,
+  // 24 Oct 2026). Pure display: nothing in the match reads it.
+  const coachChanceRef = useRef(0);
+  const prevPhaseForCoach = useRef<Phase>("aim");
+  useEffect(() => {
+    if (phase === "aim" && prevPhaseForCoach.current !== "aim") coachChanceRef.current += 1;
+    prevPhaseForCoach.current = phase;
+  }, [phase]);
+  // The count as of this render (the effect above catches up after it).
+  const coachChanceNow = coachChanceRef.current + (phase === "aim" && prevPhaseForCoach.current !== "aim" ? 1 : 0);
+  const coachFirstChance = !!career?.unlocks?.story && (career.careerStats?.appearances ?? 0) === 0 && coachChanceNow <= 1;
+  // ...and the first HEADER of a new career gets its own two lines, whenever
+  // it comes (Mikey, 25 Oct 2026). Counted per career, kept on this device.
+  const isHeaderNow = scenarioRef.current?.kind === "header";
+  const [headerCoachDone, setHeaderCoachDone] = useState(() => {
+    try { return localStorage.getItem("star-first-header-coached") === "1"; } catch { return true; }
+  });
+  const coachFirstHeader = !!career?.unlocks?.story && isHeaderNow && !headerCoachDone && !coachFirstChance;
+  useEffect(() => {
+    if (coachFirstHeader && phase === "flight") {
+      setHeaderCoachDone(true);
+      try { localStorage.setItem("star-first-header-coached", "1"); } catch { /* fine */ }
+    }
+  }, [coachFirstHeader, phase]);
+  // The first time a new career meets a move that just opened (mechanics.ts):
+  // its volley, steering its run, sprinting. Once each, kept on this device
+  // (a new save clears it).
+  const [coached, setCoached] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem("star-first-coached") ?? "{}") as Record<string, boolean>; } catch { return {}; }
+  });
+  const isStoryCareer = !!career?.unlocks?.story;
+  const firstUse: { key: string; text: string } | null = !isStoryCareer || coachFirstChance || coachFirstHeader ? null
+    : scenarioRef.current?.kind === "volley" && (phase === "aim" || phase === "contact") && !coached.volley
+      ? { key: "volley", text: "A volley! Tap the ball as it drops, before the ring runs out. Its left side sends it right" }
+    : runLive && mechOpen("steer") && !coached.steer ? { key: "steer", text: mechanicDef("steer").firstUse ?? "" }
+    : runLive && mechOpen("sprint") && !coached.sprint ? { key: "sprint", text: mechanicDef("sprint").firstUse ?? "" }
+    : null;
+  const firstUseShown = useRef<string | null>(null);
+  useEffect(() => {
+    const was = firstUseShown.current;
+    firstUseShown.current = firstUse?.key ?? null;
+    if (was && was !== firstUse?.key) {
+      setCoached((c) => {
+        const next = { ...c, [was]: true };
+        try { localStorage.setItem("star-first-coached", JSON.stringify(next)); } catch { /* fine */ }
+        return next;
+      });
+    }
+  }, [firstUse?.key]);
 
   // Game music (Settings → Game music, off by default; lib/star/gameMusic.ts).
   // A career match only: the score, the clock, a knockout and a dribble pick
@@ -9067,7 +9132,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const poStickInput = (kind: "down" | "move" | "up", e: React.PointerEvent): boolean => {
     const po = playOnRef.current, c = canvasRef.current;
-    if (!po?.stick || !c) { poStickUiRef.current = null; return false; }
+    if (!po?.stick || !c || !mechOpen("steer")) { poStickUiRef.current = null; return false; }
     const rect = c.getBoundingClientRect();
     const rr = Math.min(rect.width, rect.height) * 0.13;
     if (kind === "down") {
@@ -9115,8 +9180,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   const applyRunKeys = () => {
     const po = playOnRef.current, c = canvasRef.current;
     if (!po?.stick || !c) return;
+    // A new career: W A S D from Pace 60, Shift from 65 (lib/star/mechanics.ts).
+    if (!mechOpen("steer")) return;
     const k = keysRef.current;
-    sprintPlayOn(po, k.sprint);
+    sprintPlayOn(po, k.sprint && mechOpen("sprint"));
     const d = keysScreenDir(k);
     if (d.x === 0 && d.y === 0) {
       if (keysSteeringRef.current) { keysSteeringRef.current = false; if (!poStickUiRef.current) steerPlayOn(po, 0, 0); }
@@ -9352,7 +9419,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         if (mi >= 0) { fpPass(run, mi, visionRef.current); return; }
         if (!run.duels) { fpSteer(run, run.laneTarget + 1.8 * g.side); return; }
       }
-      if (g.kind !== "none" && run.duels) fpFeint(run, g.kind, g.side);
+      // A new career's step-over waits for the skill moves update (mechanics.ts).
+      if (g.kind !== "none" && run.duels && !(g.kind === "stepover" && !mechOpen("skillMoves"))) fpFeint(run, g.kind, g.side);
       return;
     }
     // A flick is a direction and nothing else. Short taps are ignored so a
@@ -9467,7 +9535,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     setAim({ dir, power });
     // An armed power shot winds up first (shotModel.ts): the pitch keeps
     // moving for POWER_SHOT_WINDUP_S, then the green-circle screen opens.
-    if (powerArmedRef.current && knucklePowerOn() && aimedAtGoal(scenarioRef.current, dir)) {
+    if (powerArmedRef.current && knucklePowerOn() && mechOpen("powerShot") && aimedAtGoal(scenarioRef.current, dir)) {
       setPowerStrike(true);
       setPowerArmed(false);
       windUpRef.current = POWER_SHOT_WINDUP_S;
@@ -9589,7 +9657,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     // "Knuckleball & power shot") ── only ever your own kick. Both Old: the
     // plain `launch` below, exactly as before.
     const shotPro = !auto && shotsPro();
-    const shotKnuckle = !auto && knucklePowerOn();
+    const shotKnuckle = !auto && knucklePowerOn() && mechOpen("knuckle");
     // Oct 13: the contact field and the power curve's rise ride the same record.
     const shotField = !auto && contactFieldOn();
     const shotLift = feelPow ? feelLift(strikeWith.power) : 1;
@@ -9740,7 +9808,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       })) {
         playOnRngRef.current = mulberry32(((seedRef.current ^ Math.imul(rngCallCountRef.current + 1, 0x9e3779b1)) ^ 0x61a7) >>> 0);
         const bl = ballRef.current;
-        const stick = afterPassStickOn();
+        // A new career steers its run from Pace 60 (lib/star/mechanics.ts).
+        const stick = afterPassStickOn() && mechOpen("steer");
         // B20 (Harry, 21 Oct 2026: "your player runs after the ball while it's
         // being kicked whilst being in position"): you stay on the spot you were
         // standing on (youSpot.ts puts you beside the ball, ~1.4-1.6 m off it);
@@ -9968,7 +10037,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             {statCell("Goals", `${stats.goals}`, "text-amber-300")}
             {statCell("Assists", `${stats.assists}`, "text-emerald-300")}
             {statCell("Pass", `${passPct}%`, "text-violet-300")}
-            {statCell("Avg Rat", regressForMinutes(
+            {statCell("Rating", regressForMinutes(
               // Item 26: the same formula the post-match screen uses (the old
               // box counted only lost dribbles as waste, the final counted
               // every chance — two different numbers for one match).
@@ -10086,7 +10155,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             (the dim part past the line is energy you no longer have); drains as
             you sprint, refills as you ease off. B14b: in the first corner of the
             pitch clear of the goal, the ball and every man (lib/star/barSpot.ts). */}
-        {stamUi && !leadInOn && phase !== "feed" && phase !== "postmatch" && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
+        {stamUi && mechOpen("sprint") && !leadInOn && phase !== "feed" && phase !== "postmatch" && (runLive || ((phase === "aim" || phase === "result") && goalInView(scenarioRef.current.kind) && acceptsCaptainOrders(scenarioRef.current.kind))) && (
           <div
             data-stamina={stamUi.v.toFixed(2)}
             data-stamina-cap={stamUi.cap.toFixed(2)}
@@ -10151,7 +10220,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             lib/star/shotModel.ts). Arms the next shot at goal; bottom-left,
             clear of the ball's own pull room. Its own pointer-events-auto so
             a tap never starts an aim-drag underneath. */}
-        {knucklePowerOn() && phase === "aim" && !leadInOn && !windingUp && !replayOf
+        {knucklePowerOn() && mechOpen("powerShot") && phase === "aim" && !leadInOn && !windingUp && !replayOf
           && !["penalty", "free_kick", "corner", "byline_cross"].includes(scenarioRef.current.kind) && (
           <button
             onClick={() => setPowerArmed((v) => !v)}
@@ -10188,7 +10257,9 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
                   {tdRef.current?.stick
                     ? "Left thumb: push the stick to run with it. Flick it sideways to knock it past him. Right side: tap a team-mate to pass."
                     : tdRef.current?.duels
-                    ? "He backs off and shows you one way. Sell him a step-over or a dropped shoulder, then go the other way — or flick past him the moment he plants."
+                    ? (mechOpen("skillMoves")
+                      ? "He backs off and shows you one way. Sell him a step-over or a dropped shoulder, then go the other way — or flick past him the moment he plants."
+                      : "He backs off and shows you one way. Drop a shoulder, then go the other way — or flick past him the moment he plants.")
                     : "Drag to steer. Flick to burst past him."}
                 </span>
               </div>
@@ -10196,7 +10267,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
               <div className="absolute inset-x-0 bottom-0 px-2 pb-2">
                 <p className="bg-black/70 px-3 py-2 text-center text-[12px] font-bold leading-snug text-white">
                   {tdRef.current?.duels
-                    ? "Tap a side: drop the shoulder. Swipe down: step-over. Flick: knock it past as he plants."
+                    ? (mechOpen("skillMoves") ? "Tap a side: drop the shoulder. Swipe down: step-over. Flick: knock it past as he plants." : "Tap a side: drop the shoulder. Flick: knock it past as he plants.")
                     : "Drag to steer. Flick to burst past him. Tap a team-mate to pass."}
                 </p>
               </div>
@@ -10240,6 +10311,26 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
         {/* Contact overlay. After a run-up it has a countdown
             (penaltyRunup.ts); run out and the kick is scuffed. */}
+        {/* The coach lines sit clear of the skip pill and STAMINA (aim), the
+            power bar on the right, and a header's ball in mid-air (playtest 25 Oct). */}
+        {coachFirstHeader && (phase === "aim" || phase === "contact") && (
+          <div data-first-header-coach className={`pointer-events-none absolute z-40 ${phase === "aim" ? "inset-x-3 bottom-[64px]" : "left-3 right-14 bottom-[64px]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
+            style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
+            {phase === "aim" ? "A header! Wait for the cross" : "A header! Tap the ball before the ring runs out. Its left side sends it right"}
+          </div>
+        )}
+        {coachFirstChance && (phase === "aim" || phase === "contact") && (
+          <div data-first-chance-coach className={`pointer-events-none absolute z-40 ${phase === "aim" ? "inset-x-3 bottom-[64px]" : "left-3 right-14 top-[40%]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
+            style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
+            {phase === "aim" ? "Drag back from the ball to aim and control your power, then let go" : "Tap the part of the ball you want to kick"}
+          </div>
+        )}
+        {firstUse && (
+          <div data-first-use-coach={firstUse.key} className={`pointer-events-none absolute z-40 left-3 right-14 ${firstUse.key === "volley" ? "bottom-[64px]" : "top-[12%]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
+            style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
+            {firstUse.text}
+          </div>
+        )}
         {phase === "contact" && aim && powerStrike && (
           <PowerShotContact power={aim.power} onStrike={(q) => {
             // Its own seeded draw, so the match's random stream is untouched.
@@ -10252,7 +10343,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           <ContactBall
             power={aim.power}
             grades={shotsPro() && aimedAtGoal(scenarioRef.current, aim.dir)}
-            knuckles={knucklePowerOn()}
+            knuckles={knucklePowerOn() && mechOpen("knuckle")}
             field={contactFieldOn() && fieldApplies(scenarioRef.current.kind)}
             onContact={(c) => {
               // A header or volley (airTap.ts): no arrow, so the side of the ball you hit aims it.

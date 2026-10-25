@@ -20,6 +20,8 @@ import type { Selection } from "./selection";
 export interface SetPieceDuties {
   freeKicks: boolean;
   penalties: boolean;
+  /** Corners: on a new career they wait for Technique and Vision (absent = yours as before). */
+  corners?: boolean;
   /** What it would take to take the ones you are not on, for the skills screen. */
   freeKickNeeded: number;
   penaltyNeeded: number;
@@ -50,6 +52,13 @@ function clubStrength(career: CareerState): number {
  * `penaltyStarWeight` — how much each star counts towards the PENALTY duty
  * (free kicks always 4). Absent: `PENALTY_STAR_WEIGHT` (8, v0.15 item 6).
  */
+/** A new career's penalties come with this many goals. */
+export const STORY_PENALTY_GOALS = 10;
+/** A new career's free kicks need Technique and Vision at this (Mikey, 25 Oct 2026). */
+export const STORY_FREE_KICK_SKILL = 60;
+/** ...and its corners need them at this. */
+export const STORY_CORNER_SKILL = 70;
+
 export function setPieceDuties(
   career: CareerState, status: Selection = career.status, opts: { penaltyStarWeight?: number } = {},
 ): SetPieceDuties {
@@ -57,17 +66,21 @@ export function setPieceDuties(
   const freeKickNeeded = Math.max(30, Math.min(88, s - 12));
   const penaltyNeeded = Math.max(25, Math.min(80, s - 20));
   // You have to be on the pitch. A substitute can absolutely take a penalty.
-  // The story's first hour (Mikey, 24 Oct 2026): a new player earns set
-  // pieces with his first goal, not on day one, so the manager's "I'm making
-  // you our penalty taker" never lands in the tutorial (story.ts, setPieceTalk.ts).
-  const earned = !career.unlocks?.story || career.unlocks.seen.includes("beat-stats");
-  const onThePitch = status !== "Squad" && earned;
+  // A new career (the story order) earns set pieces instead of starting with
+  // them (Mikey's playtests, 24 Oct 2026): penalties at your 10th goal, free
+  // kicks once Technique and Vision both reach STORY_FREE_KICK_SKILL. So the
+  // manager's "I'm making you our penalty taker" never lands in the tutorial.
+  const story = !!career.unlocks?.story;
+  const pensEarned = !story || (career.careerStats?.goals ?? 0) >= STORY_PENALTY_GOALS;
+  const fksEarned = !story || ((career.skills?.technique ?? 0) >= STORY_FREE_KICK_SKILL && (career.skills?.vision ?? 0) >= STORY_FREE_KICK_SKILL);
+  const onThePitch = status !== "Squad";
   const eff = effectiveTaker(career);
   const penaltyStarWeight = opts.penaltyStarWeight ?? PENALTY_STAR_WEIGHT;
   const penaltyStanding = effectiveTaker(career, penaltyStarWeight);
   return {
-    freeKicks: onThePitch && eff >= freeKickNeeded,
-    penalties: onThePitch && penaltyStanding >= penaltyNeeded,
+    freeKicks: onThePitch && fksEarned && eff >= freeKickNeeded,
+    penalties: onThePitch && pensEarned && penaltyStanding >= penaltyNeeded,
+    corners: !story || ((career.skills?.technique ?? 0) >= STORY_CORNER_SKILL && (career.skills?.vision ?? 0) >= STORY_CORNER_SKILL),
     freeKickNeeded,
     penaltyNeeded,
     penaltyStanding,

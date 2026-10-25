@@ -261,11 +261,10 @@ function Shell({
             style={{ boxShadow: `0 0 0 1px ${rgba(glow, 0.45)}, 0 0 18px -4px ${rgba(glow, 0.6)}` }}>
             {children}
           </div>
-          {/* Right padding keeps the corner "?" off the words (Mikey's playtest, 24 Oct 2026). */}
-          <div className="relative mt-2 rounded-xl py-1.5 pl-3 pr-11 text-center text-[11.5px] font-black leading-snug text-white"
-            style={{ background: "rgba(0,0,0,.35)", boxShadow: `inset 0 0 0 1px ${rgba(look.accent, 0.35)}` }}>
-            {instruction}
-          </div>
+          {/* No instruction strip under the pitch: the drill's "How it works"
+              card has just said it (Mikey's playtest, 24 Oct 2026). The words
+              stay for screen readers. */}
+          <span className="sr-only">{instruction}</span>
         </div>
       </div>
     </div>
@@ -1083,7 +1082,8 @@ function TrainingMinigameInner({ skill, trainingLevel, skills, onComplete, onExi
   useEffect(() => {
     if (result !== null && !calledRef.current) {
       calledRef.current = true;
-      const t = setTimeout(() => onComplete(result), 1400);
+      // Long enough to see your stars (Mikey: "way too quick").
+      const t = setTimeout(() => onComplete(result), 3000);
       return () => clearTimeout(t);
     }
   }, [result, onComplete]);

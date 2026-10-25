@@ -26,27 +26,27 @@ export function DrillIntroOff({ children }: { children: React.ReactNode }) {
 
 const INTRO: Record<keyof Skills, { title: string; steps: string[] }> = {
   power: {
-    title: "Long Range",
-    steps: ["Drag back from the ball to aim and set power", "Pick where you strike the ball", "Score past the blockers and the keeper"],
+    title: "Power",
+    steps: ["Drag back from the ball to aim and set power", "Pick where you strike the ball", "Score past the keeper"],
   },
   technique: {
-    title: "Through the Gate",
-    steps: ["Drag back from the ball to aim and set power", "Strike it off-centre to bend it", "Get it between the two cones"],
+    title: "Technique",
+    steps: ["Drag back from the ball to aim and set power", "Get it between the two cones"],
   },
   freeKick: {
-    title: "Over the Wall",
+    title: "Free Kick",
     steps: ["Drag back from the ball to aim and set power", "Lift it over the wall or bend it round", "Score past the keeper"],
   },
   pace: {
-    title: "The Gauntlet",
+    title: "Pace",
     steps: ["Drag or tap left and right to pick the gap", "One man comes for the ball: wait for his ring to turn green", "Then flick the other way to knock it past him"],
   },
   vision: {
-    title: "Pick the Pass",
+    title: "Vision",
     steps: ["3, 2, 1, GO: a real moment from a match", "Who gets the pass? Not offside, not marked, nobody in the way", "Tap him before the bar runs out (later: kick it to him)"],
   },
   aerial: {
-    title: "Head & Volley",
+    title: "Aerial",
     steps: ["The cross comes in, then tap the ball", "Hit its left side to send it right", "Score past the keeper"],
   },
 };
@@ -136,11 +136,9 @@ function HowItWorks({ skill, compact = false }: { skill: keyof Skills; compact?:
   const it = INTRO[skill];
   return (
     <>
+      {/* The skill's name, the steps and the stars: no subtitle and no
+          picture (Mikey's playtest, 24 Oct 2026). */}
       <div className="mt-1 text-2xl font-black text-white">{it.title}</div>
-      <div className="mt-0.5 text-[12px] font-bold text-emerald-200">{WHY[skill]}</div>
-      <div className={`mt-2.5 overflow-hidden rounded-xl ${compact ? "mx-auto max-w-[200px]" : ""}`}>
-        <Picture skill={skill} />
-      </div>
       <ol className="mt-3 space-y-1.5">
         {it.steps.map((s, i) => (
           <li key={i} className="flex items-center gap-3">
@@ -196,7 +194,6 @@ export function DrillTutorial({ skill, onClose, first = false }: { skill: keyof 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-[11px] font-black uppercase tracking-widest text-amber-300">How it works</div>
-        {first && <div className="mt-1 text-[12.5px] font-bold text-white">Each drill is a small game. Do well and the skill goes up.</div>}
         <HowItWorks skill={skill} compact />
         <button
           onClick={onClose}
