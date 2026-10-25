@@ -284,3 +284,29 @@
 .trr-menu > button small { margin-left: auto; padding-left: 8px; }
 .trr-menu-note { display: block; padding: 6px 10px 4px; color: var(--ash-ink3); font-size: 11.5px; line-height: 1.35; }
 .trr-quiet { font-size: 11px; opacity: .7; flex: 0 0 auto; }
+
+/* #bugs: the Bug bot's report card (U4, the mood picture Harry liked): labelled fields, two wide buttons. */
+.trr-bug { margin-top: 6px; max-width: 560px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--ash-line2); background: var(--ash-panel2); display: flex; flex-direction: column; gap: 8px; }
+.trr-bug .h { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 17px !important; font-weight: 900; line-height: 1.3 !important; }
+.trr-bug .tag { font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 99px; background: var(--ash-amber-soft); color: var(--ash-amber); }
+.trr-bug .tag.ok { background: var(--ash-accent-soft); color: var(--ash-accent); }
+.trr-bug dl { margin: 0; display: grid; gap: 2px; }
+.trr-bug dt { color: var(--ash-ink3); font-size: 12.5px; margin-top: 6px; }
+.trr-bug dt:first-child { margin-top: 0; }
+.trr-bug dd { margin: 0; font-size: 14.5px; color: var(--ash-ink); overflow-wrap: anywhere; }
+.trr-bug dd small { color: var(--ash-ink3); font-size: 12px; }
+.trr-bug dd.words { white-space: pre-wrap; }
+.trr-bug .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.trr-bug .btns .tr-btn { min-height: 44px; font-size: 15px; border-radius: 10px; }
+.trr-bug .btns .hand { border: 1.5px solid var(--ash-accent); color: var(--ash-accent); background: var(--ash-accent-soft); }
+.trr-bug .btns .fix { background: var(--ash-accent); color: var(--ash-accent-ink); }
+.trr-bug .pick { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.trr-bug .pick button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 6px; min-height: 36px; border-radius: 99px; border: 1px solid var(--ash-line2); background: var(--ash-panel-solid); color: var(--ash-ink); font: inherit; font-weight: 800; cursor: pointer; }
+.trr-bug .pick button[aria-pressed="true"] { border-color: var(--ash-accent); background: var(--ash-accent-soft); }
+.trr-bug .pick small, .trr-bug .note { flex-basis: 100%; color: var(--ash-ink3); font-size: 12px; }
+.trr-bug .done { margin: 0; color: var(--ash-accent); font-weight: 800; font-size: 14px !important; display: flex; align-items: center; gap: 8px; }
+.trr-bug.fixed { opacity: .62; }
+.trr-bug.fixed .h { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.trr-buglist { display: flex; flex-direction: column; gap: 10px; }
+.trr-bugbar { margin: 0; font-size: 13px; font-weight: 800; color: var(--ash-ink2); }
+.trr-setup { padding: 10px 12px; border: 1px dashed var(--ash-line2); border-radius: 10px; }

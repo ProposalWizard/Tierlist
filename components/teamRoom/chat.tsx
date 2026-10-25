@@ -34,6 +34,8 @@ import { Av, Linked, PAGE_NAMES, nameOfPage, siteOrigins } from "./bits";
 import { PATCH_META } from "./roomCounts";
 import { readPrefs, setPrefs, toggleIn, useRoomPrefs } from "./roomPrefs";
 import { StatusBit } from "./roomFace";
+import { BugCard, useBugReport } from "./roomBugs";
+import "./room.css";
 
 const dayOf = (iso: string) => new Date(iso).toDateString();
 const dayLabel = (iso: string, now: number) => {
@@ -315,6 +317,8 @@ function BotRow({ b, now, day, onOpenPatch }: { b: BotPost; now: number; day: bo
   const readers = meta ? patchReaders(meta, s.acks) : [];
   const author = meta ? patchAuthor(meta.title) : null;
   const done = job ? jobDoneBy(s.tasks, job.id) : [];
+  // The Bug bot's post is a report card (roomBugs.tsx).
+  const bug = useBugReport(b.bot === "bug" ? b.postId : undefined);
   const run = async (f: () => Promise<{ ok: boolean; error?: string }>) => {
     setBusy(true); setErr(null);
     const r = await f();
@@ -325,11 +329,13 @@ function BotRow({ b, now, day, onOpenPatch }: { b: BotPost; now: number; day: bo
     <>
       {day && <span className="tr-day">{dayLabel(b.at, now)}</span>}
       <div className="tr-msg tr-botmsg" data-bot={b.key}>
-        <span className="tr-botav" aria-hidden>{b.bot === "patch-notes" ? "📣" : b.bot === "jobs" ? "🧰" : "🤖"}</span>
+        <span className="tr-botav" aria-hidden>{b.bot === "patch-notes" ? "📣" : b.bot === "jobs" ? "🧰" : b.bot === "bug" ? "🐞" : "🤖"}</span>
         <div className="tr-bub tr-botbub">
           <small><b>{b.name}</b><span className="tr-bottag">BOT</span><span>{stamp(b.at, now)}</span></small>
-          <p className="tr-bott">{b.everyone && <span className="tr-everyone">@everyone</span>} {b.title}</p>
-          {b.body && <p className="tr-botb">{b.body}</p>}
+          {bug ? <BugCard report={bug} /> : (<>
+            <p className="tr-bott">{b.everyone && <span className="tr-everyone">@everyone</span>} {b.title}</p>
+            {b.body && <p className="tr-botb">{b.body}</p>}
+          </>)}
           {meta && (
             <span className="tr-botfoot">
               <span className="faces" title={`Read by ${readers.join(", ") || "nobody yet"}`}>
@@ -359,7 +365,7 @@ function BotRow({ b, now, day, onOpenPatch }: { b: BotPost; now: number; day: bo
               {b.url && <a className="tr-btn ghost" href={b.url}>To-do</a>}
             </span>
           )}
-          {!meta && !job && b.url && <span className="tr-botfoot"><a className="tr-btn ghost" href={b.url}>Open</a></span>}
+          {!meta && !job && !bug && b.url && <span className="tr-botfoot"><a className="tr-btn ghost" href={b.url}>Open</a></span>}
           {err && <span className="tr-err">{err}</span>}
         </div>
       </div>

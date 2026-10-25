@@ -90,7 +90,7 @@ function onIncoming(x: Incoming) {
   } else {
     const b = x.row;
     if (typeof document !== "undefined" && document.visibilityState === "visible" && viewing === b.channel) return;
-    if (!popupFor({ me, sender: "bot" as TeamPerson, slug: b.channel, namesMe: !!b.everyone, prefs: st.bells, quiet, now })) return;
+    if (!popupFor({ me, sender: null, slug: b.channel, namesMe: !!b.everyone, prefs: st.bells, quiet, now })) return;
     const name = b.bot === "bug" ? "Bug bot" : `${b.bot} bot`;
     void show(`${name} in #${b.channel}`, b.title, `kib-bot-${b.channel}`, `${TEAM_ROOM.home}?tab=chat&ch=${b.channel}`);
   }

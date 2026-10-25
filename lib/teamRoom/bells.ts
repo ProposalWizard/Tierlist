@@ -92,7 +92,8 @@ export type BellWhy = "point" | "reply" | "mention" | "all" | "message";
  * Never the sender. Board order.
  */
 export function ringsWithBells(opts: {
-  sender: TeamPerson; slug: string; base: { person: TeamPerson; why: Exclude<BellWhy, "message"> }[];
+  /** null = a bot's post (nobody to leave out). */
+  sender: TeamPerson | null; slug: string; base: { person: TeamPerson; why: Exclude<BellWhy, "message"> }[];
   prefsOf: Partial<Record<TeamPerson, BellPrefs>>; quiet: readonly TeamPerson[]; now: number;
   /** A bot's post marked red (#health): Only red buzzes for it. */
   red?: boolean;
@@ -113,7 +114,7 @@ export function ringsWithBells(opts: {
 }
 
 /** Should THIS open tab show a computer pop-up for a message, by my bell? (The phone push uses ringsWithBells on the server.) */
-export function popupFor(opts: { me: TeamPerson; sender: TeamPerson; slug: string; namesMe: boolean; prefs: BellPrefs; quiet: boolean; now: number }): boolean {
+export function popupFor(opts: { me: TeamPerson; sender: TeamPerson | null; slug: string; namesMe: boolean; prefs: BellPrefs; quiet: boolean; now: number }): boolean {
   if (opts.sender === opts.me || opts.quiet || mutedNow(opts.prefs, opts.slug, opts.now)) return false;
   const bell = bellFor(opts.prefs, opts.slug);
   if (bell === "off") return false;
