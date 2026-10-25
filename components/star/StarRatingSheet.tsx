@@ -310,6 +310,12 @@ function RewardStop({ level, y, card, reached, next, claimable, claimed, onClaim
           {claimed && !top && (
             <span className="absolute grid h-6 w-6 place-items-center text-[13px] font-black text-gray-950" style={{ right: "6%", top: "8%", borderRadius: 4, background: "#4ade80", boxShadow: "0 0 10px rgba(74,222,128,.8)" }}>✓</span>
           )}
+          {/* On the road but not made yet (a celebration or run-up still needs its animation). */}
+          {card?.comingSoon && !claimed && !top && (
+            <span data-soon={level} className="absolute bottom-[2%] left-1/2 z-[6] -translate-x-1/2 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-white" style={{
+              borderRadius: 3, background: "rgba(15,23,42,.85)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.35)",
+            }}>Soon</span>
+          )}
           {claimable && (
             <button onClick={onClaim} data-claim={level} className="kib-press absolute bottom-[2%] left-1/2 z-[6] h-[38px] -translate-x-1/2 px-5 text-[14px] font-black uppercase tracking-[0.18em] text-gray-950" style={{
               borderRadius: 3, background: "linear-gradient(180deg, #fde047, #f59e0b)", boxShadow: "0 0 18px rgba(251,191,36,.75), inset 0 1px 0 rgba(255,255,255,.6)",

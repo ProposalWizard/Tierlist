@@ -37,7 +37,7 @@ export default function LockerSheet({ career, catalogue, onCareer, onClose }: {
   const [cat, setCat] = useState<RewardCategory>(() =>
     CATEGORIES.find((k) => catalogue.some((c) => c.category === k.id && ownsCard(career, c)))?.id ?? "penalty-runup");
   const cards = useMemo(() => {
-    const all = [...STANDARDS, ...catalogue].filter((c) => c.category === cat && c.status !== "idea");
+    const all = [...STANDARDS, ...catalogue].filter((c) => c.category === cat && (c.status !== "idea" || ownsCard(career, c)));
     return [...all.filter(owns), ...all.filter((c) => !owns(c))];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cat, catalogue, career]);
