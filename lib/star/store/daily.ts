@@ -13,7 +13,7 @@
  *
  * Pure. Tested in tests/star/storeDaily.mts.
  */
-import { ANIMATIONS, ACCESSORIES, BOOSTS, LEO_CELEBRATION_IDS, type Rarity } from "./catalogue";
+import { ANIMATIONS, ACCESSORIES, BOOSTS, LEO_CELEBRATION_IDS, STAR_PASS_CELEBRATION_IDS, type Rarity } from "./catalogue";
 
 export interface DailySpecial {
   itemId: string;
@@ -68,7 +68,8 @@ export function specialPool(): { cosmetics: { id: string; rarity: Rarity }[]; al
   const cosmetics = [
     ...ANIMATIONS.filter((a) => !a.free).map((a) => ({ id: a.id as string, rarity: a.rarity })),
     // Leo's 24 Oct celebrations are never a daily special: the specials stay exactly as before that update.
-    ...ACCESSORIES.filter((a) => !LEO_CELEBRATION_IDS.has(a.id)).map((a) => ({ id: a.id, rarity: a.rarity })),
+    // Nor are the Star Pass ones (won on the pass, never sold).
+    ...ACCESSORIES.filter((a) => !LEO_CELEBRATION_IDS.has(a.id) && !STAR_PASS_CELEBRATION_IDS.has(a.id)).map((a) => ({ id: a.id, rarity: a.rarity })),
   ];
   return { cosmetics, all: [...cosmetics.map((c) => c.id), ...BOOSTS.map((b) => b.id)] };
 }

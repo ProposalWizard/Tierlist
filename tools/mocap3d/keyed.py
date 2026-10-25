@@ -329,8 +329,11 @@ def _bend_dir(along, pole):
     return p / np.linalg.norm(p)
 
 
-def steady(fn):
+def steady(fn, pole_rate=None, line_rate=None):
+    """pole_rate / line_rate (rad/s): a clip whose whole body turns fast (the backflip) passes higher limits."""
     state = {"t": None, "prev": {}}
+    POLE_RATE = POLE_TURN_RATE if pole_rate is None else pole_rate
+    LINE_RATE = LINE_TURN_RATE if line_rate is None else line_rate
 
     def limit(rig, pose):
         _, _, ctx = _solve(rig, pose)
@@ -374,7 +377,7 @@ def steady(fn):
                     # (it does when a target passes through the hip / shoulder)
                     pa = prev[0]
                     ang = float(np.arccos(np.clip(np.dot(pa, along), -1, 1)))
-                    step = LINE_TURN_RATE * KEY_STEP
+                    step = LINE_RATE * KEY_STEP
                     if ang > step:
                         ax = np.cross(pa, along)
                         if np.linalg.norm(ax) < 1e-9:
@@ -389,7 +392,7 @@ def steady(fn):
                     if np.linalg.norm(pp) > 1e-6:
                         pp /= np.linalg.norm(pp)
                         ang = np.arctan2(np.dot(np.cross(pp, want), along), np.dot(pp, want))
-                        step = POLE_TURN_RATE * KEY_STEP
+                        step = POLE_RATE * KEY_STEP
                         p = _qrot(_qaxis(along, float(np.clip(ang, -step, step))), pp)
                         p /= np.linalg.norm(p)
                 state["prev"][part + s] = (along, p)
@@ -446,3 +449,7 @@ KEYED = {
 
 # every keyed clip goes through steady(): no knee or elbow swaps sides in one key
 KEYED = {name: (dur, loop, steady(fn), meta) for name, (dur, loop, fn, meta) in KEYED.items()}
+
+# the four Star Pass celebrations (keyed_celebs.py, 25 Oct 2026)
+from keyed_celebs import CELEB_KEYED  # noqa: E402
+KEYED.update({name: (dur, loop, steady(fn, **rates), meta) for name, (dur, loop, fn, meta, rates) in CELEB_KEYED.items()})

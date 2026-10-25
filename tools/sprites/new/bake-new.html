@@ -808,6 +808,14 @@ const CELEBS = [
   { name: "celebFistPump", file: "celebrate_pump", frames: 8, loop: "once" },
   { name: "celebJump", file: "celebrate_jump", frames: 7, loop: "once", spread: 4 },
   { name: "celebRoar", file: "celebrate_roar", frames: 7, loop: "once" },
+  // The Star Pass four (25 Oct 2026), keyed in tools/mocap3d/keyed_celebs.py, in their OWN atlas 3
+  // (atlas-3 / atlas-3a): atlas 2 and the six above stay byte for byte as they were.
+  // Times: the dance a frame every half beat (0.42 s beats) then the arms up; the flip dense through
+  // the air (takeoff 0.46 s, landing 1.08 s); the turn and the two jabs; the statue settles, then holds.
+  { name: "celebCornerFlag", file: "celebrate_corner_flag", frames: 10, loop: "once", group: 3, times: [0, 0.21, 0.42, 0.63, 0.84, 1.05, 1.26, 1.68, 2.73, 3.2] },
+  { name: "celebBackflip", file: "celebrate_backflip", frames: 12, loop: "once", zero: true, group: 3, times: [0, 0.28, 0.44, 0.55, 0.66, 0.77, 0.88, 0.98, 1.08, 1.25, 1.7, 2.6] },
+  { name: "celebOwnName", file: "celebrate_own_name", frames: 9, loop: "once", zero: true, group: 3, times: [0, 0.25, 0.45, 0.65, 0.9, 1.2, 1.45, 1.6, 3.0] },
+  { name: "celebStatue", file: "celebrate_statue", frames: 5, loop: "once", zero: true, group: 3, times: [0, 0.25, 0.45, 0.7, 2.6] },
 ];
 /** Legs a few degrees wider about his own forward line (spread, degrees each side): the
  *  captures that stand feet together or run a crossover gait bring the boots or knees
@@ -867,11 +875,12 @@ function celebTimes(c, clip) {
   if (c.times) return c.times.map((t) => Math.min(t, end));
   return Array.from({ length: c.frames }, (_, i) => c.loop === "loop" ? (d * i) / c.frames : Math.min(end, (d * i) / (c.frames - 1)));
 }
-async function bakeCelebCells(only) {
+async function bakeCelebCells(only, group) {
   await ready; show("player");
   const out = [];
   for (const c of CELEBS) {
     if (only && !only.includes(c.name)) continue;
+    if (group && (c.group ?? 2) !== group) continue;
     const clip = await celebClip(c, chars.player);
     const ts = celebTimes(c, clip);
     // a once clip's last frame is held: frames / duration plays it in its real length
@@ -882,15 +891,15 @@ async function bakeCelebCells(only) {
   window.__postPose = null;
   return out;
 }
-window.bakeCelebs = async (tag, q = 0.84) => {
-  const clips = await bakeCelebCells();
+window.bakeCelebs = async (tag, q = 0.84, group = 2) => {
+  const clips = await bakeCelebCells(null, group);
   const atl = pack([{ clips }]);
   { const mc = atl.mask.getContext("2d"); const im = mc.getImageData(0, 0, atl.w, atl.h); const d = im.data;
     for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / 63.75) * 63.75 | 0;
     mc.putImageData(im, 0, 0); }
-  const frag = { atlas: { color: `atlas-2${tag}.webp`, mask: `mask-2${tag}.webp`, w: atl.w, h: atl.h }, clips: {} };
+  const frag = { atlas: { color: `atlas-${group}${tag}.webp`, mask: `mask-${group}${tag}.webp`, w: atl.w, h: atl.h }, clips: {} };
   // t3d (once clips): each frame's second in the 3D clip; the game shows the last frame at or before t
-  for (const c of clips) frag.clips[c.name] = { fps: c.fps, loop: c.loop, dirs: 8, frames: c.frames, atlas: 2, ...(c.loop === "once" ? { t3d: c.t3d } : {}),
+  for (const c of clips) frag.clips[c.name] = { fps: c.fps, loop: c.loop, dirs: 8, frames: c.frames, atlas: group, ...(c.loop === "once" ? { t3d: c.t3d } : {}),
     cells: c.cells.map((f) => [f.px, f.py, f.w, f.h, +f.ax.toFixed(1), +f.ay.toFixed(1)]) };
   const durations = Object.fromEntries(clips.map((c) => [c.name, c.duration]));
   return { color: atl.col.toDataURL("image/webp", q), mask: atl.mask.toDataURL("image/png"), frag: JSON.stringify(frag), durations };
