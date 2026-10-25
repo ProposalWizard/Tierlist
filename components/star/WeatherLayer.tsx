@@ -19,35 +19,46 @@ export function windOnScreen(w: { x: number; y: number }, facing: Facing): { x: 
   return { x: w.x, y: w.y };
 }
 
+/** The drops: random but fixed (a seeded roll), so a match always rains the same way. */
+function drops(n: number): { x: number; y: number; w: number; h: number; t: number; delay: number; o: number }[] {
+  let a = 9137;
+  const r = () => { a = (Math.imul(a, 1664525) + 1013904223) >>> 0; return a / 4294967296; };
+  return Array.from({ length: n }, () => ({
+    x: r() * 110 - 5, y: r() * 100, w: 2 + r() * 1.4, h: 16 + r() * 26,
+    t: 0.55 + r() * 0.5, delay: -r() * 1.2, o: 0.55 + r() * 0.45,
+  }));
+}
+
 export default function WeatherLayer({ cond, facing }: { cond: Conditions; facing: Facing }) {
   const rain = cond.weather === "rain" ? 1 : cond.weather === "heavy" ? 2 : 0;
   const w = cond.windV;
   const speed = w ? Math.hypot(w.x, w.y) : 0;
   const s = w ? windOnScreen(w, facing) : null;
   const deg = s ? (Math.atan2(s.y, s.x) * 180) / Math.PI : 0;
-  // Rain falls slanted with the wind across the screen.
-  const slant = s ? Math.max(-25, Math.min(25, s.x * 1.6)) : 0;
+  // Rain falls slanted with the wind across the screen, and a touch slanted even in still air.
+  const slant = s ? Math.max(-25, Math.min(25, 6 + s.x * 1.6)) : 6;
   return (
     <div data-weather-layer={cond.weather} aria-hidden className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
       {rain > 0 && (
         <>
-          <style>{`@keyframes kib-rain { from { background-position: 0 0, 0 0; } to { background-position: ${-slant * 4}px 320px, ${-slant * 4}px 240px; } }
-            @media (prefers-reduced-motion: reduce) { [data-weather-layer] .kib-rain { animation: none !important; } }`}</style>
-          <div
-            className="kib-rain absolute -inset-[20%]"
-            style={{
-              // Light, but bold enough to survive a phone video (1 px streaks vanished in a recording).
-              opacity: rain === 2 ? 0.42 : 0.3,
-              transform: `rotate(${slant}deg)`,
-              backgroundImage: [
-                "repeating-linear-gradient(90deg, transparent 0 13px, rgba(220,235,255,.95) 13px 15px, transparent 15px 31px)",
-                "repeating-linear-gradient(90deg, transparent 0 21px, rgba(220,235,255,.75) 21px 23px, transparent 23px 43px)",
-              ].join(","),
-              WebkitMaskImage: "repeating-linear-gradient(180deg, #000 0 14px, transparent 14px 40px)",
-              maskImage: "repeating-linear-gradient(180deg, #000 0 14px, transparent 14px 40px)",
-              animation: `kib-rain ${rain === 2 ? 0.45 : 0.7}s linear infinite`,
-            }}
-          />
+          <style>{`@keyframes kib-drop { from { transform: translate(0, -60px); } to { transform: translate(${(-slant * 9).toFixed(0)}px, 900px); } }
+            @media (prefers-reduced-motion: reduce) { [data-weather-layer] .kib-drop { animation: none !important; } }`}</style>
+          {/* Single drops at random spots (fixed per match, no dice per frame), each its
+              own length, speed and start, all slanted with the wind: rain, not a grid. */}
+          <div className="absolute inset-0" style={{ transform: `rotate(${slant}deg)`, transformOrigin: "50% 0" }}>
+            {drops(rain === 2 ? 170 : 100).map((d, i) => (
+              <span
+                key={i}
+                className="kib-drop absolute block rounded-full"
+                style={{
+                  left: `${d.x}%`, top: `${d.y - 10}%`, width: d.w, height: d.h,
+                  background: "linear-gradient(180deg, rgba(220,235,255,0), rgba(225,238,255,.95))",
+                  opacity: (rain === 2 ? 0.75 : 0.6) * d.o,
+                  animation: `kib-drop ${(d.t * (rain === 2 ? 0.75 : 1)).toFixed(2)}s linear ${d.delay.toFixed(2)}s infinite`,
+                }}
+              />
+            ))}
+          </div>
           {/* A wet sheen: the pitch reads a touch darker and cooler. */}
           <div className="absolute inset-0" style={{ background: `rgba(20,40,70,${rain === 2 ? 0.16 : 0.09})` }} />
         </>

@@ -37,7 +37,7 @@ New ball:
 
 ## Clips (real play, the game's sound, production build, all watched)
 `docs/handoffs/2026-10-25-leo-overnight/chat4/`:
-- `rain-match.mp4` (15.8 s, 0.45 MB): the team sheet "Rain · poor, wet pitch", then the match with light rain; a long-range strike goes in (1-0), then a cross. Still: `rain-match.jpg`, `team-sheet-rain.jpg`.
+- `rain-match.mp4` (18.3 s): the team sheet "Rain · poor, wet pitch", then the match with light rain (single slanted drops); a long-range strike saved, then a cross. Still: `rain-match.jpg`, `team-sheet-rain.jpg`. Before/after of the rain look (hub note: it read like a grid): `rain-before-after.jpg`.
 - `wind-match.mp4` (15.3 s, 0.41 MB): the team sheet "Windy 12 m/s · poor pitch", then the match with the wind arrow; a lofted strike is saved, then a goal from range. Still: `wind-match.jpg`, `team-sheet-wind.jpg`.
 How: a fresh career (Maidstone, first match v Dover), Leo's update on (celebrations and big moments off to keep it on the weather). The weather is the fixture's own: the only thing set is the career's home city name, whose length is part of the weather roll ("Leeds" gives rain, "Margate" wind). Every chance is a real drag and strike; nothing moves the ball (`scripts/film/scenes/weather-match.mjs`).
 
@@ -47,7 +47,7 @@ How: a fresh career (Maidstone, first match v Dover), Leo's update on (celebrati
 - `app/star-dev/page.tsx`: one line, the real match's `conditions` prop (switch on: `matchConditions`; off: `conditionsFor` as before). The farewell match is unchanged.
 
 ## Not done / unsure
-- In the rain clip's last second the rain streaks look faintly visible over the commentary panel (the panel shows while the match is between phases); not fixed.
+- Rain look redone after the hub's note: single drops at random (fixed) spots, varied length and speed, slanted (6° in still air, more with the wind); not drawn over the strike screen or the commentary feed.
 - The wind's bending is real but hard to see in a real chance at the match camera (it shows best on long, high balls); the earlier test-page clips show it clearer.
 - Team-mates' and defenders' guesses of where the ball goes still ignore the wind (as before).
 - The unseen ninety minutes (hiddenMatch) ignore the weather; only chances you play feel it.
