@@ -32,28 +32,13 @@ function shouldSkipUsernameCheck(pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  const response = await updateSession(request);
+  // One login check per request (was two: updateSession asked Supabase, then
+  // this file built a second client and asked again). updateSession refreshes
+  // the cookie and says who is signed in.
+  const { response, userId } = await updateSession(request);
+  const user = userId ? { id: userId } : null;
 
   const { pathname } = request.nextUrl;
-
-  const { createServerClient } = await import("@supabase/ssr");
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
-        setAll() {},
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   if (pathname.startsWith("/tierlist") || pathname.startsWith("/create")) {
     if (!user) {
@@ -102,6 +87,9 @@ export async function middleware(request: NextRequest) {
 // Skip static files and Next internals to avoid unnecessary overhead.
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Also skips the game's own files in public/star, public/sfx and public/models
+    // (3D models, sounds, music, JSON): plain files that need no login check.
+    // No page lives under those three paths (/star-dev is "star-", not "star/").
+    "/((?!_next/static|_next/image|favicon.ico|star/|sfx/|models/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
