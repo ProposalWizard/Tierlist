@@ -1065,7 +1065,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     const created = { ...makeIdentity(player, division), trial: startTrial() };
     // A new save starts its matches at normal speed, not the last save's
     // (Mikey's playtest, 24 Oct 2026: "it should start at one time speed").
-    try { localStorage.removeItem("star-match-speed"); } catch { /* no storage */ }
+    try { localStorage.removeItem("star-match-speed"); localStorage.removeItem("star-first-header-coached"); } catch { /* no storage */ }
     setCareer(created);
     setPhase("trial-stages");
     // ── The squad fetches have MOVED to the signing ──

@@ -114,6 +114,9 @@ const OPP_DANGER: Zone[] = ["defensive", "own_box"];
 export interface HiddenMatchState {
   /** Commentary lines used lately this match, so they don't repeat. */
   usedLines?: string[];
+  /** Your chances so far in each half of normal time ([first, second]), for
+   *  the one-a-half guarantee (advanceUntilInvolved). */
+  halfChances?: [number, number];
   minute: number;
   possession: Side;
   zone: Zone;
@@ -1703,20 +1706,60 @@ export function advanceUntilInvolved(
   fullTime: number,
 ): { events: HiddenMatchEvent[]; request: ScenarioRequest | null; fullTime: boolean } {
   const events: HiddenMatchEvent[] = [];
+  /** A chance is yours: count it towards this half's guarantee. */
+  const counted = (request: ScenarioRequest) => {
+    const h = halfOf(state.minute);
+    if (h !== null) { const hc = state.halfChances ?? [0, 0]; hc[h] += 1; state.halfChances = hc; }
+    return request;
+  };
   while (state.minute < fullTime) {
     const step = tick(state, inputs, rng);
     events.push(...step.events);
-    if (step.request) return { events, request: step.request, fullTime: false };
+    if (step.request) return { events, request: counted(step.request), fullTime: false };
+    // At least one chance in each half of normal time on Medium or High
+    // energy (Mikey, 25 Oct 2026: "you should be guaranteed minimum one
+    // chance per half … that doesn't count for extra time"). The last minute
+    // of a half with none yet: the ball comes to you. Never on Low, never in
+    // extra time, and not in the farewell match (every chance is yours there).
+    const h = halfOf(state.minute);
+    const mode = modeAt(inputs, state.minute) ?? "medium";
+    if (h !== null && mode !== "low" && !inputs.farewell
+      && (state.halfChances ?? [0, 0])[h] === 0 && state.minute >= HALF_GUARANTEE_AT[h] && fullTime > state.minute) {
+      const request = halfGuaranteeChance(state, rng);
+      const t = state.radarTrace?.get(state.minute);
+      if (t) Object.assign(t, { yours: true, possession: state.possession, zone: state.zone });
+      return { events, request: counted(request), fullTime: false };
+    }
     // Item 24: a late sub's guaranteed chances arrive before the whistle.
     const owed = inputs.lateSub?.owed ?? 0;
     if (owed > 0 && fullTime - state.minute < owed * LATE_SUB_FORCE_GAP) {
       const request = lateSubChance(state, rng);
       const t = state.radarTrace?.get(state.minute);
       if (t) Object.assign(t, { yours: true, possession: state.possession, zone: state.zone });
-      return { events, request, fullTime: false };
+      return { events, request: counted(request), fullTime: false };
     }
   }
   return { events, request: null, fullTime: true };
+}
+
+/** Which half of normal time a minute is in (0 or 1), or null for extra time. */
+function halfOf(minute: number): 0 | 1 | null {
+  return minute < 45 ? 0 : minute < 90 ? 1 : null;
+}
+/** The minute each half's guaranteed chance comes, if none has yet. */
+const HALF_GUARANTEE_AT: [number, number] = [43, 88];
+
+/** The guaranteed chance: open play in the final third, yours, like a late sub's. */
+function halfGuaranteeChance(state: HiddenMatchState, rng: () => number): ScenarioRequest {
+  state.possession = "user";
+  const zone: Zone = rng() < 0.5 ? "box" : "attacking";
+  state.zone = zone;
+  state.sinceInvolved = 0;
+  const lane = state.lane ?? "centre";
+  return {
+    zone, kinds: kindsForZone(zone, lane), lane, pattern: "transition",
+    reason: "The ball finally breaks your way",
+  };
 }
 
 /**

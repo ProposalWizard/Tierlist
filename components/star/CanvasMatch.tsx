@@ -2039,6 +2039,19 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // The count as of this render (the effect above catches up after it).
   const coachChanceNow = coachChanceRef.current + (phase === "aim" && prevPhaseForCoach.current !== "aim" ? 1 : 0);
   const coachFirstChance = !!career?.unlocks?.story && (career.careerStats?.appearances ?? 0) === 0 && coachChanceNow <= 1;
+  // ...and the first HEADER of a new career gets its own two lines, whenever
+  // it comes (Mikey, 25 Oct 2026). Counted per career, kept on this device.
+  const isHeaderNow = scenarioRef.current?.kind === "header";
+  const [headerCoachDone, setHeaderCoachDone] = useState(() => {
+    try { return localStorage.getItem("star-first-header-coached") === "1"; } catch { return true; }
+  });
+  const coachFirstHeader = !!career?.unlocks?.story && isHeaderNow && !headerCoachDone && !coachFirstChance;
+  useEffect(() => {
+    if (coachFirstHeader && phase === "flight") {
+      setHeaderCoachDone(true);
+      try { localStorage.setItem("star-first-header-coached", "1"); } catch { /* fine */ }
+    }
+  }, [coachFirstHeader, phase]);
 
   // Game music (Settings → Game music, off by default; lib/star/gameMusic.ts).
   // A career match only: the score, the clock, a knockout and a dribble pick
@@ -9884,6 +9897,12 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
         {/* Contact overlay. After a run-up it has a countdown
             (penaltyRunup.ts); run out and the kick is scuffed. */}
+        {coachFirstHeader && (phase === "aim" || phase === "contact") && (
+          <div data-first-header-coach className="pointer-events-none absolute inset-x-3 top-3 z-40 rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white"
+            style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
+            {phase === "aim" ? "A header! Drag back to aim it at goal, then let go" : "Tap the top of the ball to head it down"}
+          </div>
+        )}
         {coachFirstChance && (phase === "aim" || phase === "contact") && (
           <div data-first-chance-coach className="pointer-events-none absolute inset-x-3 top-3 z-40 rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white"
             style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
