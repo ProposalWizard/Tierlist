@@ -153,11 +153,10 @@ import {
   RUNUP_MOTION, type RunupId, type PenaltyRunupId, type FreeKickRunupId, type StyledRunup, type RunupPose,
 } from "@/lib/star/runupStyles";
 import { createFaceImageCache, fallbackFaceFor } from "@/lib/star/faceImageCache";
-import { airborneOn, airborneMotion, applyAirborne, airContactRead, type StrikeContact } from "@/lib/star/airborneChance";
+import { airborneOn, airborneMotion, applyAirborne, type StrikeContact } from "@/lib/star/airborneChance";
 import { isAirKind, airWaitZ, airZOf, HEADER_Z } from "@/lib/star/airDrawings";
 import { crossDrawT, syntheticCross, headerBeat, headerLiftPx, headerBallLiftK, CROSS_TAIL_S, HEADER_RISE_S, HEAD_AT, type CrossPath } from "@/lib/star/headerBeat";
-import { airPickOn, airPickClock, airPickHeaderAnimE, airPickWindowS, airPickStrike, airCrossSide, airSweetBand, airPickAim, airPickCamera, airCamAt, AIR_PICK_APPROACH_S, AIR_PICK_RISE_S, AIR_CAM_GROW, type AirKind, type AirPick as AirPickChoice, type View as AirView } from "@/lib/star/airPick";
-import AirPick from "./AirPick";
+import { airTapOn, airTapAim, airTapStrike, AIR_TAP_OPEN_S, AIR_TAP_OPEN_NO_LEAD_S, type AirKind } from "@/lib/star/airTap";
 import { useFitWidth } from "./useFitWidth";
 import ArcadeBanner, { useArcadeBanner, type BannerSide } from "./ArcadeBanner";
 import { bannerStyle, soundSet } from "@/lib/star/style3d/texturePack";
@@ -1513,23 +1512,15 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
    */
   const crossTailRef = useRef<{ sc: Scenario; path: CrossPath; startS: number; t0: number } | null>(null);
   /** Your header after "Head it?": you move under it and jump, the ball comes onto your head (headerBeat). Drawing only. */
-  const headerBeatRef = useRef<{ sc: Scenario; e: number; last: number; rise: number; late: boolean; from: Vec2; to: Vec2; ballFrom: { x: number; y: number; z: number }; metZ: number; pick?: boolean } | null>(null);
-  /**
-   * A header or volley's moment (lib/star/airPick.ts, Harry 25 Oct 2026: "no
-   * arrow drawback, you see the chance, angle - the animation happens and then
-   * you get the timer"). Set when the chance becomes yours: `t` is the moment's
-   * clock (it stops while a feature holds and once you tap), `from`/`to` where
-   * your man moves from and to, `cam` the close camera it eases into. Drawing
-   * and timing only: the strike is handleContact's, as ever.
-   */
-  const airPickRef = useRef<{
-    sc: Scenario; kind: AirKind; t: number; windowS: number; aerial?: number; side: number;
-    path: CrossPath | null; from: Vec2; to: Vec2; opened: boolean; tapped: boolean;
-    cam: { from: AirView; to: AirView; zoom0: number } | null;
-    lastYou: Vec2 | null; lastBall: { x: number; y: number; z: number } | null;
-  } | null>(null);
-  const [airPickOpen, setAirPickOpen] = useState(false);
+  const headerBeatRef = useRef<{ sc: Scenario; e: number; last: number; rise: number; late: boolean; from: Vec2; to: Vec2; ballFrom: { x: number; y: number; z: number }; metZ: number } | null>(null);
   const leadTriedRef = useRef(false);
+  /** A header/volley (airTap.ts): how long the cross has crept in on this chance, and the chance whose ball screen opened. */
+  const airTapWaitRef = useRef<{ sc: Scenario; t: number } | null>(null);
+  const airTapOpenedRef = useRef<Scenario | null>(null);
+  /** The chance whose build-up has just handed over (a header/volley opens its ball screen sooner after one). */
+  const airTapLeadRef = useRef<Scenario | null>(null);
+  /** Where the ball was last DRAWN (a header's ball is drawn onto his head before it leaves): the trail follows this. */
+  const shownBallRef = useRef<{ x: number; y: number; z: number } | null>(null);
   /**
    * PLAYERS ALREADY MOVING (the lead-in's `runOnS`, Full highlights rebuild
    * phase 3): after the hand-over the men in `ents` keep running along the
@@ -3036,8 +3027,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       }
       viewportRef.current = { ...sc.viewport };
       baseViewportRef.current = { ...sc.viewport };
-      // A header/volley's close camera (airPick.ts) may have moved the zoom on the last chance.
-      playZoomRef.current = 1;
       // A feature's own close camera (a training drill, the Head & Volley
       // drill): the men are still drawn the long-range size.
       {
@@ -4592,13 +4581,13 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!auto && phaseRef.current === "aim" && !leadRef.current && !playOnRef.current
       && !hasRunup(sc.kind) && sceneRef.current?.you !== false && !youPlacedRef.current.has(sc)) {
       youPlacedRef.current.add(sc);
-      // A header or volley has no arrow to keep clear (airPick.ts): he stays
-      // where the chance has him, beside the ball, and moves under it.
-      if (isAirKind(sc.kind) && airPickOn()) { /* stays */ } else {
-      const vpNow = viewportRef.current;
-      const span = facingRef.current === "up" ? vpNow.y2 - vpNow.y1 : vpNow.x2 - vpNow.x1;
-      const spot = clearYouSpot({ ball: sc.ball, player: sc.player, foot: takerFoot, toPx, R, ballR: BALL_PX, arrowM: span * 0.132 * 1.05 });
-      sc.player.x = spot.x; sc.player.y = spot.y;
+      // A header or volley has no arrow to keep clear (lib/star/airTap.ts): he
+      // stays where the chance and its build-up put him (no jump at the hand-over).
+      if (!(isAirKind(sc.kind) && airTapOn())) {
+        const vpNow = viewportRef.current;
+        const span = facingRef.current === "up" ? vpNow.y2 - vpNow.y1 : vpNow.x2 - vpNow.x1;
+        const spot = clearYouSpot({ ball: sc.ball, player: sc.player, foot: takerFoot, toPx, R, ballR: BALL_PX, arrowM: span * 0.132 * 1.05 });
+        sc.player.x = spot.x; sc.player.y = spot.y;
       }
     }
     const drawnTaker = hasRunup(sc.kind) ? drawnTakerAt(sc.ball, sc.player, takerFoot) : { at: sc.player, mirrored: false };
@@ -4654,49 +4643,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     let youX = tx, youY = ty;
     let headerAnim: OutfieldAnimFrame | null = null;
     let headerBallAt: { x: number; y: number; z: number } | null = null;
-    // ── A header or volley's moment (lib/star/airPick.ts) ── before you tap:
-    // the cross comes the last of the way in (slow motion once the timer is
-    // up) while you move under it and go up (a volley: you set yourself as it
-    // drops). Drawing only.
-    const ap = !auto && airPickRef.current?.sc === sc && !airPickRef.current.tapped
-      && (phaseRef.current === "aim" || phaseRef.current === "contact") ? airPickRef.current : null;
-    if (ap) {
-      const c = airPickClock(ap.t, ap.windowS);
-      const mu = 1 - (1 - c.approachU) * (1 - c.approachU);
-      youX = ap.from.x + (ap.to.x - ap.from.x) * mu;
-      youY = ap.from.y + (ap.to.y - ap.from.y) * mu;
-      const p = ap.path ? ap.path.at(ap.path.durS - c.crossLeftS) : { x: sc.ball.x, y: sc.ball.y, z: airZOf(sc) };
-      if (ap.kind === "header") {
-        const animE = airPickHeaderAnimE(c, HEADER_S);
-        const fs = takerFoot >= 0 ? 1 : -1;
-        const ha: ActorAnim = { kind: "shot", mode: "header", start: 0, scene: sc };
-        const fr = outfieldAnimFrame(ha, animE, fs, animSet.dials);
-        const gTo = toPx(ap.to.x, ap.to.y);
-        const figH = R * gTo.scale * MATCH_FIGURE_HEIGHT_R;
-        const shownH = figH * (nv && matchPlayersLook() === "3d" ? SPRITE_HEIGHT_K : 1);
-        const pxPerM = heightScale * gTo.scale;
-        const apexLiftPx = headerLiftPx(airZOf(sc) * pxPerM, shownH);
-        const up = Math.sin(Math.PI * Math.min(1, animE / HEADER_S));
-        if (fr) {
-          headerAnim = { ...fr, liftR: (apexLiftPx * up) / figureRForHeight(figH) };
-          animNow.set("you", { a: ha, e: animE });
-        }
-        // The ball comes onto his head: drawn up toward it as the timer runs.
-        const headM = (apexLiftPx * up + HEAD_AT * shownH) / pxPerM;
-        const k = c.stage === "approach" ? 0.4 * c.approachU : 0.4 + 0.6 * c.windowU;
-        headerBallAt = { x: p.x, y: p.y, z: p.z + Math.max(0, headM - p.z) * k };
-      } else {
-        // A volley drops toward your foot through the timer, while he sets
-        // himself and draws the leg back (the match feel's own wind-up pose).
-        const w = c.stage === "approach" ? 0.3 * c.approachU : 0.3 + 0.7 * c.windowU;
-        const fs = takerFoot >= 0 ? 1 : -1;
-        headerAnim = { pose: { crouch: 0.22 * w, armSpread: 0.5 * w, armLift: -0.3, legSwing: -0.6 * w * fs }, liftR: 0, lean: -0.14 * w * fs, kickClipU: null, flash: 0, flashSize: 0, dust: false };
-        headerBallAt = { x: p.x, y: p.y, z: c.stage === "approach" ? p.z : p.z * (1 - 0.7 * c.windowU) };
-      }
-      ap.lastYou = { x: youX, y: youY };
-      ap.lastBall = headerBallAt;
-    }
-    const hb =!auto && headerBeatRef.current?.sc === sc && phaseRef.current !== "aim" ? headerBeatRef.current : null;
+    const hb = !auto && headerBeatRef.current?.sc === sc && phaseRef.current !== "aim" ? headerBeatRef.current : null;
     if (hb) {
       // The beat's clock stops while the picture freezes on the contact.
       const dtB = Math.max(0, Math.min(0.1, now - hb.last));
@@ -4747,7 +4694,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       // happening entirely between two frames.
       sid: "you",
       pose: headerAnim ? "receive" : hb ? poseFor("you", youX, youY) : kickPoseRef.current > 0 ? "kick" : poseFor("you", youX, youY),
-      anim: hb || ap ? headerAnim : youFeelAnim,
+      anim: hb ? headerAnim : youFeelAnim,
       phase: runPhase(tx),
       body: runBody,
       kickFoot: takerFoot,
@@ -5070,7 +5017,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     } else if (feelOn && feelBall && trail.length > 1) {
       const want = streakMetres(feelSpeed, feelDials());
       const pts: { x: number; y: number }[] = [];
-      const head = { x: feelBall.pos.x, y: feelBall.pos.y, z: Math.max(0, feelBall.z) };
+      const head = headerBallAt ? { x: headerBallAt.x, y: headerBallAt.y, z: Math.max(0, headerBallAt.z) } : { x: feelBall.pos.x, y: feelBall.pos.y, z: Math.max(0, feelBall.z) };
       let acc = 0, last = head;
       const toS = (q: { x: number; y: number; z: number }) => { const f = toPx(q.x, q.y); return { x: f.px, y: f.py - q.z * heightScale * f.scale }; };
       pts.push(toS(head));
@@ -5260,6 +5207,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     }
     const ballAt = headerBallAt ?? (ball ? { x: ball.pos.x, y: ball.pos.y, z: ball.z }
       : onTheSpot ? (crossAt ?? { x: sc.ball.x, y: sc.ball.y, z: leadRef.current?.z ?? airZ }) : null);
+    shownBallRef.current = ball && ballAt ? { x: ballAt.x, y: ballAt.y, z: ballAt.z } : null;
     if (ballAt) {
       const drawIt = () => drawBall(ballAt.x, ballAt.y, ballAt.z);
       if (figureQueue) figureQueue.push({ py: toPx(ballAt.x, ballAt.y).py, draw: drawIt });
@@ -5975,13 +5923,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         const hb = headerBeatRef.current;
         return hb && hb.sc === scenarioRef.current ? { e: hb.e, rise: hb.rise, late: hb.late, to: pitchToClient(hb.to) } : null;
       },
-      // a header/volley's moment (airPick.ts): its clock, the timer's share, the green band, and the goal to tap
-      airPick: () => {
-        const ap = airPickRef.current;
-        if (!ap || ap.sc !== scenarioRef.current) return null;
-        const c = airPickClock(ap.t, ap.windowS);
-        return { kind: ap.kind, t: ap.t, stage: c.stage, u: c.windowU, bandFrom: airSweetBand(ap.kind, ap.aerial)[0], windowS: ap.windowS, tapped: ap.tapped, keeperGx: (scenarioRef.current.keeper.x - CX) / (POST_R - CX), you: ap.lastYou ? pitchToClient(ap.lastYou) : null, ball: ap.lastBall ? pitchToClient(ap.lastBall) : null };
-      },
       // show a banner word now, as the match would (banner stills)
       banner: (text: string) => showAction(text),
       goal: () => pitchToClient({ x: CX, y: 0 }),
@@ -6055,9 +5996,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
   // exactly where the chance has them, and the chance starts.
   /** Where a header's cross is drawn right now while you aim (headerBeat.ts): null for any other chance. */
   const crossBallNow = (sc: Scenario): { x: number; y: number; z: number } | null => {
-    // A header or volley's moment (airPick.ts): where the moment drew it last.
-    const ap = airPickRef.current;
-    if (ap && ap.sc === sc && !ap.tapped && ap.lastBall) return ap.lastBall;
     if (sc.kind !== "header") return null;
     let ct = crossTailRef.current;
     if (!ct || ct.sc !== sc) {
@@ -6181,6 +6119,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     figShrinkRef.current = figShrinkBaseRef.current;
     leadRef.current = null;
     runOnRef.current = runEnts.length ? { lead: L.lead, t: 0, ents: runEnts, ends: runEnds } : null;
+    airTapLeadRef.current = sc;
     setLeadInOn(false);
     try { L.lead.onTick?.(L.lead.durS, true); } catch { /* an observer never breaks the match */ }
   };
@@ -6368,6 +6307,28 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           setPhase("contact");
         }
       }
+      // ── A header or volley: no arrow (lib/star/airTap.ts, Harry 25 Oct
+      // 2026: "skip straight to the ball-hitting animation ... where you just
+      // click on the ball"). Once the build-up has handed over, the cross
+      // creeps in for AIR_TAP_OPEN_S and the old "Head it?" / "Volley it?"
+      // ball screen opens, timed as ever. The tap aims it (airTapStrike).
+      {
+        const sc = scenarioRef.current;
+        if (phaseRef.current === "aim" && !leadRef.current && !playOnRef.current && !ballRef.current && !heldRef.current
+          && isAirKind(sc.kind) && airTapOn() && !autoKickOf(sc) && windUpRef.current === null && !draggingRef.current) {
+          const w = airTapWaitRef.current;
+          const t = w && w.sc === sc ? w.t + dt : 0;
+          airTapWaitRef.current = { sc, t };
+          // No build-up (the Head & Volley drill): a little longer, so the cross is seen coming in first.
+          if (t >= (airTapLeadRef.current === sc ? AIR_TAP_OPEN_S : AIR_TAP_OPEN_NO_LEAD_S) && airTapOpenedRef.current !== sc) {
+            airTapOpenedRef.current = sc;
+            setAim(airTapAim(sc.kind as AirKind, sc.ball, 0));
+            setPowerStrike(false);
+            setPhase("contact");
+            tryHold("contact");
+          }
+        }
+      }
       // v0.15 item 22: once the drag is committed, ordered runs
       // are under way and the presser is coming — until you let go. See
       // stepCommitted.
@@ -6412,9 +6373,6 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
           }
         }
       }
-
-      // ── A header or volley's moment (lib/star/airPick.ts) ──
-      stepAirPickRef.current?.(dt);
 
       // ── The cut, on a cross ──
       //
@@ -6834,7 +6792,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const b = ballRef.current;
       if (phaseRef.current === "flight" && b && !b.resting) {
         seamRef.current += (b.spin * 0.3 + Math.hypot(b.vel.x, b.vel.y) * 0.06) * dt;
-        trailRef.current.push({ x: b.pos.x, y: b.pos.y, z: b.z });
+        // Where the ball was last drawn (a header's is drawn onto his head
+        // before it leaves, then settles): the trail never kinks off the ball.
+        const sb = shownBallRef.current;
+        trailRef.current.push(sb ? { ...sb } : { x: b.pos.x, y: b.pos.y, z: b.z });
         if (trailRef.current.length > 16) trailRef.current.shift();
       } else if (trailRef.current.length) {
         trailRef.current.shift(); // let it dissolve after the play resolves
@@ -8387,7 +8348,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     ballRef.current = null;
     setAim(null);
     runupRef.current = null;
-    setContactTimerS(null); setAirPickOpen(false); airPickRef.current = null;
+    setContactTimerS(null);
+    airTapWaitRef.current = null; airTapOpenedRef.current = null;
     setOutcome(null);
     dragRef.current = null;
     draggingRef.current = false;
@@ -8432,7 +8394,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     ballRef.current = null;
     setAim(null);
     runupRef.current = null;
-    setContactTimerS(null); setAirPickOpen(false);
+    setContactTimerS(null);
+    airTapWaitRef.current = null; airTapOpenedRef.current = null;
     setOutcome(null);
     dragRef.current = null;
     draggingRef.current = false;
@@ -8577,7 +8540,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       ballRef.current = null;
       setAim(null);
       runupRef.current = null;
-      setContactTimerS(null); setAirPickOpen(false);
+      setContactTimerS(null);
+      airTapWaitRef.current = null; airTapOpenedRef.current = null;
       setOutcome(null);
       dragRef.current = null;
       draggingRef.current = false;
@@ -8664,7 +8628,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
         fpDribbleRef.current = rollDribbleRun(rng);
         setAim(null);
         runupRef.current = null;
-        setContactTimerS(null); setAirPickOpen(false);
+        setContactTimerS(null);
+        airTapWaitRef.current = null; airTapOpenedRef.current = null;
         setOutcome(null);
         dragRef.current = null;
         draggingRef.current = false;
@@ -8689,7 +8654,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       });
       setAim(null);
       runupRef.current = null;
-      setContactTimerS(null); setAirPickOpen(false);
+      setContactTimerS(null);
+      airTapWaitRef.current = null; airTapOpenedRef.current = null;
       setOutcome(null);
       dragRef.current = null;
       draggingRef.current = false;
@@ -8850,7 +8816,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     ballRef.current = null;
     setAim(null);
     runupRef.current = null;
-    setContactTimerS(null); setAirPickOpen(false); airPickRef.current = null;
+    setContactTimerS(null);
+    airTapWaitRef.current = null; airTapOpenedRef.current = null;
     setOutcome(null);
     dragRef.current = null;
     draggingRef.current = false;
@@ -9168,8 +9135,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (leadRef.current) { if (leadRef.current.lead.skippable) skipLeadIn(); return; }
     // Somebody else's penalty (v0.15 items 6/7): you watch it, you don't take it.
     if (phaseRef.current === "aim" && autoKickOf(scenarioRef.current)) return;
-    // A header or volley (airPick.ts): no arrow to drag; the moment comes to you.
-    if (phaseRef.current === "aim" && isAirKind(scenarioRef.current.kind) && airPickOn()) return;
+    // A header or volley (airTap.ts): no arrow to drag; the ball screen opens by itself.
+    if (phaseRef.current === "aim" && isAirKind(scenarioRef.current.kind) && airTapOn()) return;
     if (phaseRef.current === "tdDribble" && dribbleControlRef.current === "stick") { tdStickInput("down", e); return; }
     if (phaseRef.current === "tdDribble") {
       const run = tdRef.current;
@@ -9538,7 +9505,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     over?: { dir: { x: number; y: number }; power: number; skills?: KickSkills },
     extras?: ShotExtras,
   ) => {
-    // A header or volley's moment (airPick.ts) brings its own aim: where you tapped the goal.
+    // A header or volley with no arrow (airTap.ts) brings its aim from the tap.
     const a = over ? { dir: over.dir, power: over.power } : tapped.aim ?? aim;
     if (!a) return;
     // Struck while the men were still running after the hand-over (phase 3):
@@ -9638,14 +9605,11 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!over && contact.air?.kind === "header") {
       const bl = ballRef.current, sc = scenarioRef.current;
       const nowS = performance.now() / 1000;
-      // The moment (airPick.ts): he is already up, the ball nearly on his head; it
-      // carries on from exactly where it was drawn, over AIR_PICK_RISE_S.
-      const ap = airPickRef.current?.sc === sc && airPickRef.current.tapped ? airPickRef.current : null;
-      const from = (ap ? ap.lastBall : null) ?? crossBallNow(sc) ?? { x: bl.pos.x, y: bl.pos.y, z: bl.z };
+      const from = crossBallNow(sc) ?? { x: bl.pos.x, y: bl.pos.y, z: bl.z };
       headerBeatRef.current = {
-        sc, e: 0, last: nowS, rise: ap ? (matchFeelOn() ? AIR_PICK_RISE_S : 0) : matchFeelOn() ? HEADER_RISE_S : 0, late: tapped.late === true && !ap,
-        from: ap?.lastYou ? { ...ap.lastYou } : { x: sc.player.x, y: sc.player.y }, to: { x: bl.pos.x, y: bl.pos.y },
-        ballFrom: from, metZ: bl.z, pick: !!ap,
+        sc, e: 0, last: nowS, rise: matchFeelOn() ? HEADER_RISE_S : 0, late: tapped.late === true,
+        from: { x: sc.player.x, y: sc.player.y }, to: { x: bl.pos.x, y: bl.pos.y },
+        ballFrom: from, metZ: bl.z,
       };
     }
     // ── The keeper brain sees you strike it ── its own seeded stream (built
@@ -9811,7 +9775,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       const fl = feelRef.current;
       fl.pending = { f, x: bl.pos.x, y: bl.pos.y, z: bl.z, vx: bl.vel.x, vy: bl.vel.y };
       // Your header: the wind-up is the time you take to rise to the ball (headerBeat.ts HEADER_RISE_S).
-      const windUpS = headerBeatRef.current ? (headerBeatRef.current.pick ? Math.max(f.windUpS, AIR_PICK_RISE_S) : Math.max(f.windUpS, HEADER_RISE_S)) : f.windUpS;
+      const windUpS = headerBeatRef.current ? Math.max(f.windUpS, HEADER_RISE_S) : f.windUpS;
       fl.windUp = windUpS;
       fl.windUpTotal = windUpS;
       fl.hitStop = windUpS + f.hitStopS;
@@ -9825,91 +9789,10 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     kickPoseRef.current = KICK_POSE_S;
   };
   handleContactRef.current = handleContact;
-
-  // ── A header or volley's moment (lib/star/airPick.ts) ──────────────────
-  // Harry, 25 Oct 2026: "no arrow drawback, you see the chance, angle - the
-  // animation happens and then you get the timer to hit the ball in the right
-  // direction". The chance becomes yours: no drag. AIR_PICK_APPROACH_S of the
-  // cross and your man going up, the camera easing in close on him; then the
-  // timer (AirPick) in slow motion. One tap on the goal = where and when; the
-  // timer running out = the late touch. Either way it is struck through
-  // handleContact, the one path every kick takes. The old drag + "Head it?"
-  // screen is kept behind ?airpick=old.
   /** Your Aerial now (tired legs count), as the strike screen reads it. */
-  const airAerialRef = useRef<number | undefined>(undefined);
-  airAerialRef.current = career ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current)))) : (skills as KickSkills & { aerial?: number }).aerial;
-  const stepAirPickRef = useRef<((dt: number) => void) | null>(null);
-  stepAirPickRef.current = (dt: number) => {
-    const sc = scenarioRef.current;
-    const ph = phaseRef.current;
-    let ap = airPickRef.current;
-    if (ap && ap.sc !== sc) { airPickRef.current = ap = null; }
-    if (!ap) {
-      if (ph !== "aim" || leadRef.current || playOnRef.current || ballRef.current || !isAirKind(sc.kind) || !airPickOn()
-        || autoKickOf(sc) || aimCommitRef.current !== null || draggingRef.current || windUpRef.current !== null) return;
-      const kind = sc.kind as AirKind;
-      const aerial = airAerialRef.current;
-      // Where he goes: a header under the ball; a volley half a metre behind it.
-      const back = { x: sc.ball.x - CX, y: sc.ball.y }, bl = Math.hypot(back.x, back.y) || 1;
-      const to = kind === "header" ? { x: sc.ball.x, y: sc.ball.y } : { x: sc.ball.x + (back.x / bl) * 0.55, y: sc.ball.y + (back.y / bl) * 0.55 };
-      const cam = newViewRef.current && (sc.facing ?? "up") === "up"
-        ? { from: { ...baseViewportRef.current }, to: airPickCamera(baseViewportRef.current, sc.ball), zoom0: playZoomRef.current }
-        : null;
-      ap = airPickRef.current = {
-        sc, kind, t: 0, windowS: airPickWindowS(kind, aerial), aerial, side: airCrossSide(sc),
-        path: syntheticCross(sc), from: { x: sc.player.x, y: sc.player.y }, to, opened: false, tapped: false,
-        cam, lastYou: null, lastBall: null,
-      };
-    }
-    // The camera eases in through the approach and stays there for the strike.
-    if (ap.cam && (ph === "aim" || ph === "contact" || ph === "flight" || ph === "result")) {
-      const v = airCamAt(ap.cam.from, ap.cam.to, ap.t / AIR_PICK_APPROACH_S);
-      const s = (ap.cam.from.x2 - ap.cam.from.x1) / (v.x2 - v.x1);
-      baseViewportRef.current = v;
-      // The men grow by the square root of the zoom (airPick.ts AIR_CAM_GROW), not all of it.
-      playZoomRef.current = ap.cam.zoom0 * Math.pow(s, 1 - AIR_CAM_GROW);
-    }
-    if (ap.tapped || (ph !== "aim" && ph !== "contact") || heldRef.current) return;
-    ap.t += dt;
-    if (!ap.opened && ap.t >= AIR_PICK_APPROACH_S) {
-      ap.opened = true;
-      setAim(airPickAim(ap.kind, sc.ball, 0));
-      setPowerStrike(false);
-      setContactTimerS(null); setAirPickOpen(false);
-      setPhase("contact");
-      setAirPickOpen(true);
-      tryHold("contact");
-    }
-  };
-  /** 0..1 through the moment's timer (the AirPick bar reads the match's own clock). */
-  const airPickU = useCallback(() => {
-    const ap = airPickRef.current;
-    if (!ap) return 0;
-    return airPickClock(ap.t, ap.windowS).windowU;
-  }, []);
-  const airPickStrikeOf = (p: AirPickChoice) => {
-    const ap = airPickRef.current!;
-    return airPickStrike(ap.kind, p, ap.sc.ball, ap.aerial, ap.side);
-  };
-  const airPickRead = (p: AirPickChoice) => {
-    const ap = airPickRef.current;
-    if (!ap) return { label: "", good: true };
-    const st = airPickStrikeOf(p);
-    if (st.late) return { label: "TOO LATE", good: false };
-    const z = ap.kind === "header" ? airZOf(ap.sc) * (0.85 + 0.15 * st.lift) : undefined;
-    const r = airContactRead({ kind: ap.kind, lift: st.lift, cx: st.cx, cy: st.cy, tech: skills.technique, aerial: ap.aerial }, z);
-    return { label: r.label, good: r.good };
-  };
-  const onAirPick = (p: AirPickChoice) => {
-    const ap = airPickRef.current;
-    if (!ap || ap.tapped || ap.sc !== scenarioRef.current) return;
-    const st = airPickStrikeOf(p);
-    ap.tapped = true;
-    setAirPickOpen(false);
-    // A volley: he struck it where he stood for it.
-    if (ap.kind === "volley" && ap.lastYou) { ap.sc.player.x = ap.lastYou.x; ap.sc.player.y = ap.lastYou.y; }
-    handleContact({ cx: st.cx, cy: st.cy, lift: st.lift, late: st.late, aim: { dir: st.dir, power: st.power } });
-  };
+  const airAerialNow = (): number | undefined => career
+    ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current))))
+    : (skills as KickSkills & { aerial?: number }).aerial;
 
   /**
    * The strike screen's countdown ran out (the run-up): the kick happens
@@ -10122,9 +10005,7 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             // back in 3D, iOS Safari could draw or hit-test its near half
             // through the strike screen (Harry, 5 Oct 2026: only the bottom
             // of the ball took a tap). It keeps drawing; nothing else changes.
-            // The header/volley moment (AirPick) is see-through: the pitch stays
-            // in the picture, out of touch (AirPick takes the tap).
-            phase === "contact" ? (airPickOpen ? " pointer-events-none" : " invisible pointer-events-none") : ""}`}
+            phase === "contact" ? " invisible pointer-events-none" : ""}`}
         />
 
         {/* Added time on the pitch (item 30): the clock otherwise only lives on
@@ -10341,29 +10222,24 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
             handleContact(POWER_SHOT_CONTACT, undefined, { ...powerShotStrike(q, r), noKnuckle: true });
           }} />
         )}
-        {/* A header or volley's moment (lib/star/airPick.ts): the timer and the goal to tap. */}
-        {phase === "contact" && airPickOpen && airPickRef.current && (
-          <AirPick
-            kind={airPickRef.current.kind}
-            windowS={airPickRef.current.windowS}
-            bandFrom={airSweetBand(airPickRef.current.kind, airPickRef.current.aerial)[0]}
-            clock={airPickU}
-            keeperGx={(scenarioRef.current.keeper.x - CX) / (POST_R - CX)}
-            hold={held}
-            readOf={airPickRead}
-            onPick={onAirPick}
-          />
-        )}
-        {phase === "contact" && aim && !powerStrike && !airPickOpen && (
+        {phase === "contact" && aim && !powerStrike && (
           <ContactBall
             power={aim.power}
             grades={shotsPro() && aimedAtGoal(scenarioRef.current, aim.dir)}
             knuckles={knucklePowerOn()}
             field={contactFieldOn() && fieldApplies(scenarioRef.current.kind)}
-            onContact={(c) => handleContact(c)}
+            onContact={(c) => {
+              // A header or volley (airTap.ts): no arrow, so the side of the ball you hit aims it.
+              const sc = scenarioRef.current;
+              if (isAirKind(sc.kind) && airTapOn()) {
+                const st = airTapStrike(sc.kind as AirKind, sc.ball, c, airAerialNow());
+                handleContact({ ...st.contact, aim: st.aim });
+              } else handleContact(c);
+            }}
+            aimFromTap={isAirKind(scenarioRef.current.kind) && airTapOn()}
             motion={strikeMotion(scenarioRef.current.kind, seedRef.current)}
             technique={skills.technique}
-            aerial={career ? Math.round(aerialOf(career.skills) * (1 - fatigueCut(liveEnergyAt(matchMinuteRef.current)))) : (skills as KickSkills & { aerial?: number }).aerial}
+            aerial={airAerialNow()}
             // A header: how high the cross reaches you, so the screen can say your jump (aerial.ts headerJump).
             ballZ={strikeMotion(scenarioRef.current.kind, seedRef.current) === "float" ? (scenarioRef.current.kind === "header" ? airZOf(scenarioRef.current) : HEADER_Z) : undefined}
             timeLimitS={contactTimerS ?? undefined}

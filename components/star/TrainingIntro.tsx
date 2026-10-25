@@ -47,7 +47,7 @@ const INTRO: Record<keyof Skills, { title: string; steps: string[] }> = {
   },
   aerial: {
     title: "Head & Volley",
-    steps: ["The cross comes in: you meet it", "Tap the goal where you want it, in the green", "Score past the keeper"],
+    steps: ["The cross comes in, then tap the ball", "Hit its left side to send it right", "Score past the keeper"],
   },
 };
 

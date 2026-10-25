@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { gradeContact } from "@/lib/star/shotModel";
 import { airContactRead, airCentreR, airLateContact, airStrikeTimerS, VOLLEY_SWEET } from "@/lib/star/airborneChance";
 import { headerJump } from "@/lib/star/aerial";
+import { airTapCleanR, airTapContactCx, AIR_TAP_POST_CX } from "@/lib/star/airTap";
 
 /**
  * How the ball is moving while you pick where to hit it (Mikey, 27 Sep 2026).
@@ -77,6 +78,11 @@ interface Props {
   grades?: boolean;
   /** A hard strike through the dead centre knuckles (only with `grades`). */
   knuckles?: boolean;
+  /** A header or volley with no arrow (lib/star/airTap.ts, 25 Oct 2026): the
+   *  side of the ball you hit aims it (its left side sends it right). The
+   *  clean middle is drawn as a band across the ball, wider with Aerial,
+   *  with a tick where each post is. Absent: exactly the old screen. */
+  aimFromTap?: boolean;
   /** Contact field on (lib/star/shotFeel.ts, Oct 13): a faint guide on the
    *  ball — the up/down lines fade out toward the sides, where a strike is a
    *  low curler. Absent: exactly the old screen. */
@@ -94,7 +100,7 @@ const AIR_VERDICT_MS = 300;
 export const STRIKE_ZONE_R = 1.18;
 
 // Phase 2 — pick where on the ball to strike.
-export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, ballZ, hold = false, grades = false, knuckles = false, field = false }: Props) {
+export default function ContactBall({ power, onContact, tutorial, timeLimitS, onTimeout, motion = "still", technique = 50, aerial, ballZ, hold = false, grades = false, knuckles = false, field = false, aimFromTap = false }: Props) {
   const ballRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
@@ -220,7 +226,10 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
     const lift = liftRef.current;
     if (air) {
       // B10: a header or volley says how it came off (the same read the strike uses).
-      const rd = airContactRead({ kind: motion === "float" ? "header" : "volley", lift, cx, cy, tech: technique, aerial },
+      const kind = motion === "float" ? "header" : "volley";
+      // No arrow (airTap.ts): the side only aims it, until the edge of the clean band.
+      const readCx = aimFromTap ? airTapContactCx(kind, cx, aerial) : cx;
+      const rd = airContactRead({ kind, lift, cx: readCx, cy, tech: technique, aerial },
         motion === "float" && ballZ !== undefined ? ballZ * (0.85 + 0.15 * lift) : undefined);
       setGraded({ label: rd.label, good: rd.good });
     } else if (grades) {
@@ -299,7 +308,9 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
         {/* B10: what matters for a ball in the air, in one line. */}
         {(motion === "float" || motion === "bounce") && (
           <div data-air-hint className="mt-1.5 text-[11px] font-bold text-white/90" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
-            {motion === "float" ? "Top nods it down · the sides glance it · under loops it up" : "Hit the middle as it drops through the green"}
+            {aimFromTap
+              ? (motion === "float" ? "Hit its left side to send it right · top nods it down" : "Hit its left side to send it right · as it drops through the green")
+              : motion === "float" ? "Top nods it down · the sides glance it · under loops it up" : "Hit the middle as it drops through the green"}
           </div>
         )}
         {/* The jump (Aerial sets how high you go): the cross's height against your reach. */}
@@ -453,7 +464,21 @@ export default function ContactBall({ power, onContact, tutorial, timeLimitS, on
           {/* B10: a ball in the air — the middle of it, where a header or a
               volley is struck clean (airCentreR either side: bigger with a
               better Aerial, 22 Oct 2026). */}
-          {(motion === "float" || motion === "bounce") && (
+          {(motion === "float" || motion === "bounce") && aimFromTap && (() => {
+            // No arrow (airTap.ts): the clean band across the middle (wider
+            // with Aerial) and a tick where each post is aimed.
+            const W = airTapCleanR(motion === "float" ? "header" : "volley", aerial), H = airCentreR(aerial) + 0.08;
+            return (
+              <svg data-air-band data-air-band-w={W.toFixed(3)} className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
+                <rect x={-W} y={-H} width={2 * W} height={2 * H} rx={H} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth="0.06" />
+                <rect x={-W} y={-H} width={2 * W} height={2 * H} rx={H} fill="none" stroke="#fde047" strokeOpacity="0.95" strokeWidth="0.035" strokeDasharray="0.07 0.05" />
+                {[-AIR_TAP_POST_CX, AIR_TAP_POST_CX].map((x) => (
+                  <line key={x} x1={x} x2={x} y1={-H - 0.1} y2={H + 0.1} stroke="#fde047" strokeOpacity="0.9" strokeWidth="0.03" />
+                ))}
+              </svg>
+            );
+          })()}
+          {(motion === "float" || motion === "bounce") && !aimFromTap && (
             <svg data-air-centre data-air-centre-r={airCentreR(aerial).toFixed(3)} className="absolute inset-0 pointer-events-none" viewBox="-1 -1 2 2" aria-hidden="true">
               {/* Gold with a dark edge so it reads on the white ball (Harry, 22 Oct 2026: the circle grows with Aerial). */}
               <circle cx="0" cy="0" r={airCentreR(aerial) + 0.08} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth="0.06" />
