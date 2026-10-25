@@ -266,12 +266,14 @@ export interface BotPost {
   /** A patch note's version (its read receipts), or a pushed job's id (its ✅). */
   version?: string;
   jobId?: string;
+  /** A row a bot wrote (team_bot_posts.id): the Bug bot's card reads its marks by it. */
+  postId?: number;
 }
 
 /** A row a future bot (a Claude routine) wrote into team_bot_posts with the site's own key. */
-export interface BotRow { id: number; bot: string; channel: string; title: string; body: string; url: string | null; everyone: boolean; created_at: string }
+export interface BotRow { id: number; bot: string; channel: string; title: string; body: string; url: string | null; everyone: boolean; created_at: string; meta?: Record<string, unknown> | null }
 
-export const BOT_NAMES: Record<string, string> = { "patch-notes": "Patch notes bot", jobs: "Jobs bot" };
+export const BOT_NAMES: Record<string, string> = { "patch-notes": "Patch notes bot", jobs: "Jobs bot", bug: "Bug bot" };
 export const botName = (bot: string) => BOT_NAMES[bot] ?? `${bot.replace(/[-_]+/g, " ").replace(/^\w/, (c) => c.toUpperCase())} bot`;
 
 /** "Harry's patch notes: B14 Running" → "B14 Running". */
@@ -310,7 +312,7 @@ export function jobBotPosts(jobs: readonly TeamJob[]): BotPost[] {
 export function rowBotPosts(rows: readonly BotRow[]): BotPost[] {
   return rows.map((r) => ({
     key: `row:${r.id}`, bot: r.bot, name: botName(r.bot), channel: isSlug(r.channel) ? r.channel : GENERAL, at: r.created_at,
-    title: r.title, body: r.body, url: r.url && r.url.startsWith("/") ? r.url : null, everyone: !!r.everyone,
+    title: r.title, body: r.body, url: r.url && r.url.startsWith("/") ? r.url : null, everyone: !!r.everyone, postId: r.id,
   }));
 }
 

@@ -36,7 +36,8 @@ import {
   type PushPayload,
 } from "@/lib/teamRoom/notify";
 import { parseMessage } from "@/lib/teamRoom/extras";
-import { pushReady, ring, rungJobsOf, rungPatchesOf, saveRungJobs, saveRungPatches, teamAccounts } from "@/lib/teamRoom/notifyServer";
+import { bellsOf, pushReady, quietPeople, ring, rungJobsOf, rungPatchesOf, saveRungJobs, saveRungPatches, teamAccounts } from "@/lib/teamRoom/notifyServer";
+import { ringsWithBells } from "@/lib/teamRoom/bells";
 import { patchesToRing, payloadForPatches, withRungPatches } from "@/lib/teamRoom/inbox";
 import { patchReadKey } from "@/lib/teamRoom/extras";
 import { BUILT_IN_PATCH_NOTES } from "@/lib/patchNotesData";
@@ -144,7 +145,12 @@ export async function POST(req: Request) {
       const { data: a } = await sb.from("team_messages").select("person").eq("id", Number(re)).maybeSingle();
       if (a && isTeamPerson((a as { person: string }).person)) answers = { person: (a as { person: TeamPerson }).person };
     }
-    rings = ringsForMessage(row, answers).map((r) => ({ person: r.person, payload: payloadForMessage(row, r.why) }));
+    // Each person's 🔔 for this channel (25 Oct 2026): every message / only @mentions / off / muted,
+    // and nobody whose buzzes are paused (do not disturb, or a schedule).
+    const base = ringsForMessage(row, answers).filter((r): r is typeof r & { why: "point" | "reply" | "mention" | "all" } => r.why !== "task" && r.why !== "job" && r.why !== "message");
+    const [prefsOf, quiet] = await Promise.all([bellsOf(sb, accounts), quietPeople(sb)]);
+    rings = ringsWithBells({ sender: me, slug: parseMessage(row.body).channel ?? "general", base, prefsOf, quiet, now: Date.now() })
+      .map((r) => ({ person: r.person, payload: payloadForMessage(row, r.why) }));
   } else if (body.table === "team_dms") {
     // A private DM (team_room_v3.sql). The site's key can read it; the row rules
     // keep it from everyone else. Only its sender rings, only for its one reader.
@@ -154,7 +160,8 @@ export async function POST(req: Request) {
     if (row.from_person !== me) return NextResponse.json({ error: "Only the sender can ring for a message." }, { status: 403 });
     if (!fresh(row.created_at)) return NextResponse.json({ ok: true, sent: 0, stale: true });
     if (!rungBefore.first(`d:${id}`)) return NextResponse.json({ ok: true, sent: 0, again: true });
-    rings = ringsForDm(row).map((r) => ({ person: r.person, payload: payloadForDm(row) }));
+    const quiet = await quietPeople(sb);
+    rings = ringsForDm(row).filter((r) => !quiet.includes(r.person)).map((r) => ({ person: r.person, payload: payloadForDm(row) }));
   } else if (body.table === "team_tasks") {
     const { data: t } = await sb.from("team_tasks").select("id, owner, made_by, title, created_at").eq("id", id).maybeSingle();
     const row = t as (Pick<TeamTask, "id" | "owner" | "made_by" | "title" | "created_at">) | null;

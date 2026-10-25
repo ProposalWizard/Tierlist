@@ -37,7 +37,11 @@ import { V3Note } from "./chat";
 import { useBotPosts, useRoomCounts } from "./roomCounts";
 import { TOOL_TAB, ToolPanel } from "./roomTools";
 import { ActivityPanel, DmsPanel, JumpBox, LaterPanel, YouPanel } from "./roomPanels";
-import { PersonFace } from "./roomFace";
+import { LastPush, PersonFace, StatusBit, usePersonStatus, type LastPushes } from "./roomFace";
+import { ProfileCard } from "./roomProfile";
+import { BellIcon, BellMenu, useQuiet } from "./roomBells";
+import { setViewing, wirePopups } from "@/lib/teamRoom/popups";
+import { dmKey } from "@/lib/teamRoom/channels";
 import { LIST_W, THREAD_W, clamp, setPrefs, toggleIn, useRoomPrefs } from "./roomPrefs";
 import "./teamRoom.css";
 import "./room.css";
@@ -48,8 +52,10 @@ export interface RoomStart { place: RoomPlace; m: number | null; t: number | nul
 export type RoomView = "activity" | "later" | "you" | "dms";
 type Where = RoomPlace | { kind: "view"; view: RoomView };
 
-export default function ChatPage({ first, onOpenPatch, homeHref = TEAM_ROOM.home, onHome }: {
+export default function ChatPage({ first, onOpenPatch, homeHref = TEAM_ROOM.home, onHome, pushes = {} }: {
   first?: RoomStart; onOpenPatch?: (version: string) => void;
+  /** Each person's newest push (from the Team board), for the profile cards. */
+  pushes?: LastPushes;
   /** ⌂: back to the admin home (the Team board). */
   homeHref?: string; onHome?: () => void;
 }) {
@@ -57,7 +63,9 @@ export default function ChatPage({ first, onOpenPatch, homeHref = TEAM_ROOM.home
   return (
     <div className="tr trr-host">
       <RoomGate>
+        <LastPush.Provider value={pushes}>
         <Room first={first ?? { place: { kind: "channel", slug: GENERAL }, m: null, t: null, v: null }} onOpenPatch={onOpenPatch} homeHref={homeHref} onHome={onHome} />
+        </LastPush.Provider>
       </RoomGate>
     </div>
   );
@@ -122,6 +130,24 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
   // Drag widths live here while dragging, saved when the drag settles.
   const [listW, setListW] = useState<number | null>(null);
   const [threadW, setThreadW] = useState<number | null>(null);
+  // A person's little profile: hover a face or name for half a second (computer), tap it (phone).
+  const [profile, setProfile] = useState<{ p: TeamPerson; at: DOMRect | null; sheet: boolean } | null>(null);
+  const openProfile = useCallback((p: TeamPerson, at: DOMRect) => setProfile({ p, at, sheet: window.matchMedia("(max-width: 760px)").matches }), []);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onOver = (e: React.MouseEvent) => {
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    const el = (e.target as HTMLElement).closest<HTMLElement>("[data-person]");
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    if (!el || profile) return;
+    const p = el.dataset.person as TeamPerson;
+    hoverTimer.current = setTimeout(() => openProfile(p, el.getBoundingClientRect()), 500);
+  };
+  const onFaceClick = (e: React.MouseEvent) => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>(".tr-msg [data-person]");
+    if (!el) return;
+    e.stopPropagation();
+    openProfile(el.dataset.person as TeamPerson, el.getBoundingClientRect());
+  };
   const place: RoomPlace | null = where.kind === "view" ? null : where;
   const channel: Channel | null = place?.kind === "channel" ? channels.find((c) => c.slug === place.slug) ?? channels[0] : null;
   const slug = channel?.slug ?? null;
@@ -132,6 +158,9 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
     if (!place) return;
     try { window.history.replaceState(null, "", roomUrl(place, { t: thread })); } catch { /* old browser */ }
   }, [place, thread]);
+  // Computer pop-ups (U12): wired once; never for the channel or DM on screen.
+  useEffect(() => { wirePopups(); }, []);
+  useEffect(() => { setViewing(place ? (place.kind === "dm" ? dmKey(place.with) : place.slug) : null); return () => setViewing(null); }, [place]);
 
   const closeDrawer = () => setDrawer(false);
   const go = (w: Where) => { setWhere(w); setThread(null); setTab("messages"); setDrawer(false); setJump(null); };
@@ -192,7 +221,7 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
   return (
     <div className="trr" data-list={listShown ? "open" : "closed"} data-narrow={narrow} data-phone={phone} data-thread={thread && slug ? "true" : "false"}
       data-density={prefs.density} style={{ ["--trr-list" as string]: `${w}px`, ["--trr-thread" as string]: `${tw}px` }}
-      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} onMouseOver={onOver} onClickCapture={onFaceClick}>
       {narrow && drawer && <div className="trr-scrim" onClick={closeDrawer} aria-hidden />}
       <aside className="trr-list" aria-label="Channels and messages" aria-hidden={!listShown}>
         <ChannelList channels={channels} where={where} onGo={go} homeBtn={homeBtn} narrow={narrow}
@@ -225,6 +254,7 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
               <small>3{chBots ? ` · ${chBots} bot${chBots === 1 ? "" : "s"}` : ""}</small>
             </span>
           )}
+          {channel && <BellMenu channel={channel} />}
           {channel && <ChannelMenu channel={channel} />}
           <span className={`tr-live${s.live ? " on" : ""}`} title={s.live ? "Live" : "Live link off: checking once a minute"} />
         </header>
@@ -280,6 +310,7 @@ function Room({ first, onOpenPatch, homeHref, onHome }: { first: RoomStart; onOp
           <BottomTab on={view === "you"} label="You" icon={s.me ? <Av p={s.me} sm /> : <span aria-hidden>☺︎</span>} onClick={() => go({ kind: "view", view: "you" })} />
         </nav>
       )}
+      {profile && <ProfileCard p={profile.p} at={profile.at} sheet={profile.sheet} onClose={() => setProfile(null)} onMessage={(p) => go({ kind: "dm", with: p })} onStatus={() => go({ kind: "view", view: "you" })} />}
       {jumper && <JumpBox channels={channels} onClose={() => setJumper(false)} onGo={(w2) => { setJumper(false); go(w2); }} onJump={(id) => { setJumper(false); goTo(id); }} />}
     </div>
   );
@@ -397,7 +428,7 @@ function ChannelList({ channels, where, onGo, onClose, onSearch, homeBtn, narrow
     const on = where.kind === "channel" && where.slug === c.slug;
     return (
       <button key={c.slug} className={`trr-row${n.unread ? " unread" : ""}`} aria-current={on ? "page" : undefined} onClick={() => onGo({ kind: "channel", slug: c.slug })} title={c.topic}>
-        <span className="trw-hash">#</span><span className="nm">{c.name}</span>
+        <span className="trw-hash">#</span><span className="nm">{c.name}</span><QuietMark slug={c.slug} />
         {n.mentions > 0 && <span className="trr-n" title={`${n.mentions} for you`}>{n.mentions > 99 ? "99+" : n.mentions}</span>}
       </button>
     );
@@ -449,7 +480,7 @@ function ChannelList({ channels, where, onGo, onClose, onSearch, homeBtn, narrow
             const on = where.kind === "dm" && where.with === p;
             return (
               <button key={p} className={`trr-row${n ? " unread" : ""}`} aria-current={on ? "page" : undefined} onClick={() => onGo({ kind: "dm", with: p })} title={`Private messages with ${p}`}>
-                <PersonFace p={p} /><span className="nm">{p}</span>
+                <PersonFace p={p} /><span className="nm">{p} <StatusBit p={p} back /></span>
                 {n > 0 && <span className="trr-n">{n}</span>}
               </button>
             );
@@ -467,11 +498,22 @@ function ChannelList({ channels, where, onGo, onClose, onSearch, homeBtn, narrow
       </div>
       {s.me && (
         <button className="trr-me" onClick={() => onGo({ kind: "view", view: "you" })} aria-current={isView("you") ? "page" : undefined} title="Your status, buzzes and look">
-          <PersonFace p={s.me} /><span className="nm"><b>{s.me}</b><small>{s.online.includes(s.me) ? "Active" : "Away"}</small></span>
+          <PersonFace p={s.me} /><MeLine me={s.me} />
         </button>
       )}
     </div>
   );
+}
+
+/** 🔕 after a channel whose bell is Off or muted. */
+function QuietMark({ slug }: { slug: string }) {
+  return useQuiet(slug) ? <span className="trr-quiet" title="No buzzes from this channel (🔔 in its top bar)" aria-label="muted">🔕</span> : null;
+}
+
+/** Your name and status at the foot of the list. */
+function MeLine({ me }: { me: TeamPerson }) {
+  const { presence, line } = usePersonStatus(me);
+  return <span className="nm"><b>{me}</b><small>{line || { active: "Active", away: "Away", dnd: "Do not disturb", busy: "Busy" }[presence]} · set a status</small></span>;
 }
 
 /** The bots that exist, with their live line (what each one is doing). */
@@ -490,8 +532,4 @@ export function botMembers(bots: readonly BotPost[]) {
 
 const HomeIcon = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg>;
 const MenuIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden><path d="M4 7h16M4 12h16M4 17h16" /></svg>;
-export const BellIcon = ({ off }: { off?: boolean }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20.5a2.2 2.2 0 0 0 4 0" />{off && <path d="M4 4l16 16" />}
-  </svg>
-);
+export { BellIcon };

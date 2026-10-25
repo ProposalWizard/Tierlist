@@ -26,8 +26,8 @@ import { isJobMarker, jobOwners, type TeamJob } from "./jobs";
 import type { TeamMessage, TeamTask } from "./logic";
 
 /** Why someone gets the buzz. When several apply, the first in this list names it. */
-export type RingWhy = "point" | "reply" | "mention" | "all" | "task" | "job";
-const ORDER: RingWhy[] = ["point", "reply", "mention", "all", "task", "job"];
+export type RingWhy = "point" | "reply" | "mention" | "all" | "task" | "job" | "message";
+const ORDER: RingWhy[] = ["point", "reply", "mention", "all", "task", "job", "message"];
 
 /** What the worker shows. `url` opens on tap; `tag` groups a thread. */
 export interface PushPayload { title: string; body: string; tag: string; url: string; icon?: string }
@@ -118,16 +118,18 @@ export function chatTag(body: string): string {
 }
 
 export function payloadForMessage(m: Pick<TeamMessage, "id" | "person" | "body" | "image_url">, why: RingWhy): PushPayload {
+  const p = parseMessage(m.body);
   const title =
     why === "point" ? `${m.person} pointed at something for you`
       : why === "reply" ? `${m.person} replied to you`
         : why === "all" ? `${m.person} to the team`
-          : `${m.person} mentioned you`;
-  const p = parseMessage(m.body);
+          // A buzz only because the channel's 🔔 says every new message (bells.ts).
+          : why === "message" ? `${m.person} in #${p.channel ?? "general"}`
+            : `${m.person} mentioned you`;
   const where = p.channel && p.channel !== "general" ? ` in #${p.channel}` : "";
   // Opens the right channel, and the thread when it is a reply in one.
   const url = `${TEAM_ROOM.home}?tab=chat${p.channel && p.channel !== "general" ? `&ch=${p.channel}` : ""}&m=${m.id}${p.replyTo ? `&t=${p.replyTo}` : ""}`;
-  return { title: title + where, body: cut(quoteLine(m, 160), 160), tag: chatTag(m.body), url, icon: TEAM_ROOM.push.icon };
+  return { title: why === "message" ? title : title + where, body: cut(quoteLine(m, 160), 160), tag: chatTag(m.body), url, icon: TEAM_ROOM.push.icon };
 }
 
 /** A private DM rings the one person it is to (team_room_v3.sql, team_dms). */

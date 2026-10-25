@@ -177,6 +177,9 @@ export async function sendTest(): Promise<void> {
   } catch { set({ error: "Couldn't reach the site to send a test." }); }
 }
 
+/** This device's push state right now (the computer pop-ups stay quiet when push already covers it). */
+export const pushStateNow = (): PushState => view.state;
+
 export function usePush(): PushView {
   return useSyncExternalStore(
     (l) => { listeners.add(l); if (!checked) { checked = true; checkPush(); } return () => listeners.delete(l); },
@@ -195,7 +198,8 @@ function post(body: unknown) {
 export function ringAfter(table: "team_messages" | "team_tasks" | "team_notes" | "team_dms", row: { id?: unknown; body?: unknown; owner?: unknown; made_by?: unknown }) {
   const id = Number(row.id);
   if (!Number.isSafeInteger(id) || id <= 0) return;
-  if ((table === "team_messages" || table === "team_notes") && !mayRing(String(row.body ?? ""))) return;
+  // Every channel message may ring now: someone's 🔔 may say "every new message" (bells.ts, 25 Oct 2026).
+  if (table === "team_notes" && !mayRing(String(row.body ?? ""))) return;
   if (table === "team_tasks" && row.owner === row.made_by) return;
   post({ table, id }).catch(() => { /* a missed buzz never blocks the chat */ });
 }

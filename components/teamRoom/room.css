@@ -237,3 +237,50 @@
 .trr[data-thread="false"] .trr-main .trr-head, .trr-thread .trr-head { padding-right: 56px; }
 .trr[data-phone="true"] .trr-main .trr-head, .trr[data-phone="true"] .trr-thread .trr-head { padding-right: 8px; }
 .trr .tr-acts button[aria-pressed="true"] { background: var(--ash-accent-soft); }
+
+/* Status after a name (U0.2): the emoji, and "back at 5" while a schedule is on. */
+.trr-sbit { display: inline-flex; align-items: center; gap: 4px; margin-left: 3px; font-weight: 500; }
+.trr-sbit small { color: var(--ash-amber); font-size: 11px; font-weight: 800; white-space: nowrap; }
+.trr-row[aria-current="page"] .trr-sbit small { color: inherit; }
+.trr-face.big .tr-av { width: 44px; height: 44px; font-size: 18px; }
+.trr-face.big .trr-dot { width: 14px; height: 14px; right: -2px; bottom: -2px; border-width: 2.5px; }
+[data-person] { cursor: pointer; }
+
+/* The little profile: hover card (computer) or a sheet from the bottom (phone). 72 px face on the card. */
+.trr-pcard-scrim { position: fixed; inset: 0; z-index: 70; }
+.trr-pcard-scrim.dim { background: rgba(0,0,0,.4); }
+.trr-pcard { position: fixed; z-index: 71; width: 290px; padding: 14px; border-radius: 14px; background: var(--ash-panel-solid); border: 1px solid var(--ash-line2); box-shadow: var(--ash-shadow);
+  display: flex; flex-direction: column; gap: 8px; }
+.trr-pcard.sheet { left: 0; right: 0; bottom: 0; top: auto; width: auto; border-radius: 18px 18px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); }
+.trr-pcard .top { display: flex; align-items: center; gap: 12px; }
+.trr-pcard .top .tr-av { width: 72px; height: 72px; font-size: 28px; border-radius: 16px; }
+.trr-pcard .top .trr-dot { width: 18px; height: 18px; border-width: 3px; }
+.trr-pcard .tx { display: flex; flex-direction: column; min-width: 0; }
+.trr-pcard .tx b { font-size: 18px; }
+.trr-pcard .pr { font-size: 13px; font-weight: 800; color: var(--ash-ink3); }
+.trr-pcard .pr.active { color: var(--ash-accent); }
+.trr-pcard .pr.dnd { color: var(--ash-red); }
+.trr-pcard .pr.busy { color: var(--ash-amber); }
+.trr-pcard .line { margin: 0; font-size: 14px; color: var(--ash-ink); }
+.trr-pcard .line.muted { color: var(--ash-ink2); font-size: 13px; }
+.trr-pcard .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.trr-pcard .acts .tr-btn { padding: 7px 12px; font-size: 13px; text-decoration: none; }
+
+/* You → Update status */
+.trr-status { display: flex; flex-direction: column; gap: 8px; max-width: 520px; }
+.trr-emojis { display: flex; flex-wrap: wrap; gap: 4px; }
+.trr-emojis button { width: 40px; height: 40px; min-height: 40px; border-radius: 10px; border: 1px solid var(--ash-line); background: var(--ash-panel2); font-size: 19px; cursor: pointer; }
+.trr-emojis button[aria-pressed="true"] { border-color: var(--ash-accent); background: var(--ash-accent-soft); }
+.trr-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.trr-chips > small { color: var(--ash-ink3); font-size: 12px; font-weight: 800; margin-right: 2px; }
+.trr-chips button { border: 1px solid var(--ash-line2); background: var(--ash-panel2); color: var(--ash-ink); border-radius: 99px; padding: 5px 11px; min-height: 32px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.trr-chips button[aria-pressed="true"] { border-color: var(--ash-accent); background: var(--ash-accent-soft); }
+.trr-row-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* 🔔 menu (U12) */
+.trr-iconbtn.quiet { color: var(--ash-ink3); }
+.trr-bellmenu { min-width: 260px; }
+.trr-menu > button:disabled { opacity: .5; cursor: default; }
+.trr-menu > button small { margin-left: auto; padding-left: 8px; }
+.trr-menu-note { display: block; padding: 6px 10px 4px; color: var(--ash-ink3); font-size: 11.5px; line-height: 1.35; }
+.trr-quiet { font-size: 11px; opacity: .7; flex: 0 0 auto; }

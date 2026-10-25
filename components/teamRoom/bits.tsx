@@ -23,8 +23,9 @@ export function siteOrigins(): string[] {
   return [...own, "https://knowitball.co.uk", "https://www.knowitball.co.uk"];
 }
 
-export function Av({ p, sm, xs, off, title }: { p: TeamPerson; sm?: boolean; xs?: boolean; off?: boolean; title?: string }) {
-  return <span className={`tr-av ${p}${sm ? " sm" : ""}${xs ? " xs" : ""}${off ? " off" : ""}`} title={title ?? p}>{p[0]}</span>;
+export function Av({ p, sm, xs, off, title, card }: { p: TeamPerson; sm?: boolean; xs?: boolean; off?: boolean; title?: string; card?: boolean }) {
+  // `card`: in the Team room, hovering (or tapping) this face opens the person's little profile.
+  return <span className={`tr-av ${p}${sm ? " sm" : ""}${xs ? " xs" : ""}${off ? " off" : ""}`} title={card ? undefined : title ?? p} data-person={card ? p : undefined}>{p[0]}</span>;
 }
 
 const LINK = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g;

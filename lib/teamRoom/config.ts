@@ -27,6 +27,8 @@ export const TEAM_ROOM = {
   sqlFileV2: "supabase/migrations/team_room_v2.sql",
   /** Round three (23 Oct 2026): new/renamed channels, reactions, private DMs, bot rows. */
   sqlFileV3: "supabase/migrations/team_room_v3.sql",
+  /** Round four (25 Oct 2026): status and schedules, the first-open note, #bugs from players' reports. */
+  sqlFileV4: "supabase/migrations/team_room_v4.sql",
   /** Patch notes from this day on count as "still to read" (older ones show faces but never nag). */
   patchReceiptsFrom: "2026-10-18",
   /**

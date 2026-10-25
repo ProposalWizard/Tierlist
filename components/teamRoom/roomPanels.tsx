@@ -15,6 +15,7 @@ import PushToggle from "./PushToggle";
 import { useRoomCounts } from "./roomCounts";
 import { setPrefs, toggleIn, useRoomPrefs } from "./roomPrefs";
 import { PersonFace } from "./roomFace";
+import { StatusEditor } from "./roomProfile";
 
 const where = (m: TeamMessage, names: Map<string, string>) => {
   const c = channelOf(m.body);
@@ -95,10 +96,11 @@ export function YouPanel() {
     <div className="trw-pad trr-panel trr-you">
       {s.me && (
         <div className="trr-youcard">
-          <span className="trr-bigface"><Av p={s.me} /></span>
-          <span className="tx"><b>{s.me}</b><small>{s.online.includes(s.me) ? "● Active" : "○ Away"}</small></span>
+          <PersonFace p={s.me} big />
+          <span className="tx"><b>{s.me}</b><small>{s.online.includes(s.me) ? "● Active" : "○ Away"} · the others see your dot and status</small></span>
         </div>
       )}
+      <StatusEditor />
       <p className="tr-lbl" style={{ marginTop: 6 }}>Buzzes on this device</p>
       <PushToggle />
       <p className="tr-lbl" style={{ marginTop: 10 }}>Message look</p>

@@ -7,7 +7,10 @@
 import type { TeamPerson } from "./config";
 import type { TeamIdea, TeamMessage, TeamNote, TeamTask, TeamVote } from "./logic";
 import { pointUrl, type ReadMarks, type TeamAck } from "./extras";
-import type { ChannelReads, ChannelRow, TeamDm, TeamReaction } from "./channels";
+import type { BotRow, ChannelReads, ChannelRow, TeamDm, TeamReaction } from "./channels";
+import type { StatusRow } from "./status";
+import type { WelcomeRead, WelcomeRow } from "./welcome";
+import type { BugMark } from "./bugs";
 
 export function demoRoom(now: number) {
   const ago = (min: number) => new Date(now - min * 60_000).toISOString();
@@ -87,9 +90,30 @@ export function demoRoom(now: number) {
     // The Inbox's "Mentions" (21 Oct 2026): a note that @'s you, quoting a line.
     { id: 5, target_kind: "patch", target_id: "0.94", owner: "Harry", person: "Mikey", body: "> Pick a body\n@Harry C looks best to me, can we see it in a match?", created_at: ago(8) },
   ];
+  // Round four (25 Oct 2026): sample statuses, a schedule, the first-open note and two bug reports.
+  // Neutral sample words only (the repo is public).
+  const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);
+  const statuses: Partial<Record<TeamPerson, StatusRow>> = {
+    Mikey: { person: "Mikey", emoji: "🎬", text: "filming clips", clear_at: new Date(now + 3 * 3600_000).toISOString(), dnd_until: null, schedules: [], tz: null, updated_at: ago(30) },
+    Leo: {
+      person: "Leo", emoji: null, text: null, clear_at: null, dnd_until: null, tz: null, updated_at: ago(300),
+      // On now in the sample (from the hour before to three hours on), so the "back at" line shows.
+      schedules: [{ id: "s1", emoji: "💼", text: "Work", days: [0, 1, 2, 3, 4, 5, 6], from: `${String(Math.max(0, new Date(now).getHours() - 1)).padStart(2, "0")}:00`, to: `${String(Math.min(23, new Date(now).getHours() + 3)).padStart(2, "0")}:00`, pause: true }],
+    },
+  };
+  const welcome: WelcomeRow = {
+    body: "Welcome to the Team room, {name}. Chat, bugs, plans and bots now live here, in channels on the left.\n\nSet a status so the others know when you're free. Busy is fine.",
+    lines: { Mikey: "Sample line for Mikey.", Leo: "Sample line for Leo." }, version: 1, updated_at: ago(60), updated_by: "Harry",
+  };
+  const welcomeReads: WelcomeRead[] = [{ person: "Harry", version: 1, at: ago(60) }, { person: "Mikey", version: 1, at: ago(20) }];
+  const botRows: BotRow[] = [
+    { id: 481, bot: "bug", channel: "bugs", title: "Keeper froze mid dive in the cup semi", body: "Keeper froze mid dive in the cup semi\nSecond half, took the penalty, the keeper stopped mid dive.", url: "/star-dev", everyone: false, created_at: ago(95), meta: { page: "https://knowitball.co.uk/star-dev", signed_in: true } },
+    { id: 482, bot: "bug", channel: "bugs", title: "Shop button is off the screen on my phone", body: "Shop button is off the screen on my phone", url: "/star-dev", everyone: false, created_at: ago(7), meta: { page: "https://knowitball.co.uk/star-dev", signed_in: false } },
+  ];
+  const bugMarks: BugMark[] = [{ post_id: 481, handed_to: "Leo", fixed_by: null, fixed_at: null, updated_by: "Leo", updated_at: ago(80) }];
   const me: TeamPerson | null = fresh ? null : "Harry";
   return {
     me, taken: fresh ? (["Mikey"] as TeamPerson[]) : [], messages, ideas, votes, tasks, notes, online: ["Harry", "Mikey"] as TeamPerson[], marks, acks,
-    reactions, dms: me ? dms : [], channelRows, botRows: [], chRead,
+    reactions, dms: me ? dms : [], channelRows, botRows, chRead, statuses, welcome, welcomeReads, bugMarks,
   };
 }

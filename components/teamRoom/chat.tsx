@@ -33,6 +33,7 @@ import {
 import { Av, Linked, PAGE_NAMES, nameOfPage, siteOrigins } from "./bits";
 import { PATCH_META } from "./roomCounts";
 import { readPrefs, setPrefs, toggleIn, useRoomPrefs } from "./roomPrefs";
+import { StatusBit } from "./roomFace";
 
 const dayOf = (iso: string) => new Date(iso).toDateString();
 const dayLabel = (iso: string, now: number) => {
@@ -234,10 +235,10 @@ function MessageRow({ m, me, now, day, open, onOpen, onZoom, onReply, onThread, 
     <>
       {day && <span className="tr-day">{dayLabel(m.created_at, now)}</span>}
       <div className={`tr-msg${mine ? " me" : ""}${atMe ? " at-me" : ""}${flash ? " flash" : ""}${cont ? " cont" : ""}`} data-mid={m.id}>
-        {(!mine || flat) && !cont && <Av p={m.person} />}
+        {(!mine || flat) && !cont && <Av p={m.person} card={flat} />}
         <div className="tr-bub" data-open={open} onClick={onOpen}>
           <small>
-            {(!mine || flat) && !cont && <b>{m.person}</b>}<span className="tm">{stamp(m.created_at, now)}</span>
+            {(!mine || flat) && !cont && <b data-person={flat ? m.person : undefined}>{m.person}</b>}{flat && !cont && <StatusBit p={m.person} />}<span className="tm">{stamp(m.created_at, now)}</span>
             {m.page && <a className="tr-where" href={m.page} onClick={(e) => e.stopPropagation()} title={`Sent from ${m.page}`}>· {where}</a>}
             {m.pinned && <span className="tr-pinmark" title="Pinned">📌</span>}
             {dm && <span className="tr-lockmark" title="Private: only the two of you can read it">🔒</span>}

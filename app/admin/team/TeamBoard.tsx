@@ -115,6 +115,15 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
   }, [data]);
 
   const pulls = data?.pulls ?? [];
+  // Each person's newest push (merges left out), for the Team room's profile cards.
+  const lastPushes = useMemo(() => {
+    const out: Partial<Record<TeamPersonName, { at: string; title: string; version: string | null }>> = {};
+    for (const c of data?.people ?? []) {
+      const w = c.pushes.find((p) => !/^Merge\b/i.test(p.title));
+      if (w && isTeamPerson(c.person)) out[c.person] = { at: w.at, title: w.title, version: w.patch?.version ?? null };
+    }
+    return out;
+  }, [data]);
   // Every channel's and DM's new messages, plus points waiting on you (channels.ts roomCounts).
   const waiting = pointsWaiting(room.messages, room.me, room.acks).length;
   const toRead = (p: Person) => (isTeamPerson(p) ? patchUnread(PATCH_META, p, room.acks, TEAM_ROOM.patchReceiptsFrom).length : 0);
@@ -135,7 +144,7 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
     const fromLink = initialTab === tab;
     return (
       <div className="tr-vars trr-page" data-look={look}>
-        <ChatPage onOpenPatch={openNote} onHome={() => setTab("team")} first={{
+        <ChatPage onOpenPatch={openNote} onHome={() => setTab("team")} pushes={lastPushes} first={{
           place, m: fromLink ? initialMessage ?? null : null, t: fromLink ? initialPlace?.t ?? null : null, v: fromLink ? initialVersion ?? null : null,
           tab: tab === "chat" ? "messages" : "tool",
         }} />
