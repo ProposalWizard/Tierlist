@@ -83,6 +83,9 @@ await pg.addInitScript(([seed, key, move, v3d]) => {
   const id = "celeb-" + move;
   c.ownedAccessories = [...new Set([...(c.ownedAccessories || []), id])];
   c.equippedAccessories = { ...(c.equippedAccessories || {}), celebration: id };
+  // First-hour tours and pop-ups (25 Oct 2026) would sit over the match: a save with no
+  // unlock list reads as an old save that has seen them all (lib/star/unlocks.ts hasSeen).
+  delete c.unlocks;
   localStorage.setItem(key, JSON.stringify(c));
   localStorage.setItem("star-career-saved-at-v1::anon", String(Date.now() + 1e6));
   localStorage.setItem("star-look-match-3d", v3d ? "on" : "off");
@@ -107,7 +110,7 @@ while (!done && at() < (VIEW3D ? 3300 : 1700)) {
   }
   if (!st.ph || st.ph === "feed") {
     let clicked = false;
-    for (const re of [/full time/i, /get out there/i, /play match|kick off/i, /team sheets/i, /second half|^next|play on|resume/i, /^▶ *play|^play$/i, /continue|tap to hear|^ok$|skip|close|done/i]) {
+    for (const re of [/full time/i, /get out there/i, /play match|kick off/i, /team sheets/i, /second half|^next|play on|resume/i, /^▶ *play|^play$/i, /continue|tap to hear|^ok$|skip|close|done|^thanks/i]) {
       const b = pg.locator("button:visible").filter({ hasText: re }).first();
       if (await b.count()) { await b.click({ timeout: 2000 }).catch(() => {}); clicked = true; break; }
     }
