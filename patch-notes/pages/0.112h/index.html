@@ -493,7 +493,7 @@ button.ux-ib{font:inherit;font-size:14px;padding:0;cursor:pointer;line-height:1}
 <header>
   <span class="ver">v0.112h · 25 OCT · PLAN ONLY</span>
   <h1>Marketing studio plan</h1>
-  <p style="display:flex;align-items:center;gap:8px;margin:0 0 4px;font-weight:700;font-size:14.5px"><i style="width:9px;height:9px;border-radius:50%;background:var(--ink3);flex:none;display:inline-block"></i>Plan only. Nothing built or changed.</p>
+  <p style="display:flex;align-items:center;gap:8px;margin:0 0 4px;font-weight:700;font-size:14.5px"><i style="width:9px;height:9px;border-radius:50%;background:var(--ink3);flex:none;display:inline-block"></i>Plan only. Nothing here is built. (The guest account and ad pages from 0.110h now exist on the site, switched off.)</p>
   <p class="sub">What the Marketing tab has today, what was half-built, and the plan for Mikey: paste a TikTok link, and Claude logs it, breaks it down, writes our version and builds the video. Fits the Team room plan: #marketing is the chat, the Marketing tab is the workshop.</p>
 </header>
 
@@ -949,7 +949,7 @@ button.ux-ib{font:inherit;font-size:14px;padding:0;cursor:pointer;line-height:1}
 </details>
 
 <!-- ============ 5 ============ -->
-<div class="changed" style="margin:18px 0"><b class="t">Added (Harry, 25 Oct)</b>Guest accounts and ad landing pages belong here, in the Marketing studio. Their switch-on list lives here: (1) Cloudflare Turnstile human check for knowitball.co.uk, public key in Vercel, push live; (2) only then the secret key in Supabase bot protection; (3) run the guest SQL, allow guest sign-ins and account linking, timed jobs on; (4) the Vercel switch on. Each ad (e.g. League Two to the Ballon d'Or) is a campaign made here.</div>
+<div class="changed" style="margin:18px 0"><b class="t">Added (Harry, 25 Oct)</b>Guest accounts and ad landing pages belong here, in the Marketing studio. They are on the site now, switched off. Their switch-on list lives here: (1) Cloudflare Turnstile human check for knowitball.co.uk, public key in Vercel, push live; (2) only then the secret key in Supabase bot protection; (3) run the guest SQL, allow guest sign-ins and account linking, timed jobs on; (4) the Vercel switch on. Each ad (e.g. League Two to the Ballon d'Or) is a campaign made here.</div>
 <h2 class="nxt"><i></i>5 · Your calls</h2>
 <ul class="calls">
 <li><div class="q">1. Where do cards live?</div><div class="a"><span class="rec">Pick</span><b>A database table (Supabase).</b> The site must write cards: a paste, a hand move, a note. Today only a Claude push can change a card, which takes about a minute and needs git. Claude would write to the table too. <b>Other way:</b> keep <code>board.json</code> and only add "waiting links" from #marketing on top. This undoes the "just use pushes" way (RUL-TEAM-007) for this one board, so it is your call. <span class="src re">reasoned</span></div></li>
