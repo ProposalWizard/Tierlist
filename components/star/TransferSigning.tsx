@@ -9,6 +9,8 @@ import dynamic from "next/dynamic";
 import type { CareerState } from "@/lib/star/types";
 import { useSigning3d } from "@/lib/star/signing3d";
 import { loadLineup } from "@/lib/star/lineupStore";
+import { makeManager } from "@/lib/star/manager";
+import { useLeoUpdate } from "@/lib/star/leoUpdate";
 
 // The live 3D signing (Settings → Look → "Signing scene: 3D | Drawn", 3D by default), for a move too —
 // not only the first contract. Loaded only when it is switched on.
@@ -59,6 +61,11 @@ export default function TransferSigning({
   const theme = clubTheme(club);
   const signing3d = useSigning3d();
   const [failed3d, setFailed3d] = useState(false);
+  // Leo's bug fixes: the man who will be your manager. acceptOffer
+  // (transfers.ts) makes him the same way, from this career, for next season.
+  // Before, a club with no line-up on file read "THE MANAGER · MANAGER".
+  const fixesOn = useLeoUpdate("bugFixes");
+  const bossName = fixesOn && career ? makeManager(career, club, career.season + 1).name : (loadLineup(club)?.manager || "The manager");
 
   // The celebration holds for a beat, then the move goes through — once,
   // whether the timer or the Continue button gets there first.
@@ -85,7 +92,7 @@ export default function TransferSigning({
         career={career}
         club={club}
         playerName={playerName}
-        managerName={loadLineup(club)?.manager || "The manager"}
+        managerName={bossName}
         terms={terms}
         kind="transfer"
         onDone={finish}
