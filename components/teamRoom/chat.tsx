@@ -23,15 +23,16 @@ import {
   type MessageCard, type ReadMarks, type TeamAck,
 } from "@/lib/teamRoom/extras";
 import {
-  GENERAL, REACTIONS, channelOf, channelStream, dmAsMessage, dmKey, dmsWith, jobDoneBy, jobIsFor, listChannels, mergeStream, newestIn,
+  GENERAL, REACTIONS, channelOf, channelStream, parentOf, dmAsMessage, dmKey, dmsWith, jobDoneBy, jobIsFor, listChannels, mergeStream, newestIn,
   reactionsOn, threadOf, threadSummary, whoReacted,
   type BotPost, type Reaction, type StreamItem, type TeamReaction,
 } from "@/lib/teamRoom/channels";
 import {
-  deleteDm, deleteMessage, markChannelRead, markSeen, sendDm, sendMessage, setAck, setPinned, startPointing, tickJob, toggleReaction, useTeamRoom,
+  addTask, deleteDm, deleteMessage, markChannelRead, markSeen, sendDm, sendMessage, setAck, setPinned, startPointing, tickJob, toggleReaction, useTeamRoom,
 } from "@/lib/teamRoom/store";
 import { Av, Linked, PAGE_NAMES, nameOfPage, siteOrigins } from "./bits";
 import { PATCH_META } from "./roomCounts";
+import { readPrefs, setPrefs, toggleIn, useRoomPrefs } from "./roomPrefs";
 
 const dayOf = (iso: string) => new Date(iso).toDateString();
 const dayLabel = (iso: string, now: number) => {
@@ -63,6 +64,7 @@ export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_V
   jumpBot?: string | null;
 }) {
   const s = useTeamRoom();
+  const prefs = useRoomPrefs();
   const list = useRef<HTMLDivElement>(null);
   const [now, setNow] = useState(() => Date.now());
   const [zoom, setZoom] = useState<string | null>(null);
@@ -164,12 +166,16 @@ export function ChatThread({ visible = true, autoFocus, jumpTo, view = GENERAL_V
           if (it.kind === "bot") return <BotRow key={it.b.key} b={it.b} now={now} day={day} onOpenPatch={onOpenPatch} />;
           const m = it.m;
           const isParent = parent === m.id;
+          // The Team room groups a run of messages from one person (under 5 minutes apart): one face and name.
+          const pm = prev?.kind === "msg" ? prev.m : null;
+          const cont = threads && !day && !!pm && pm.person === m.person && (Date.parse(m.created_at) - Date.parse(pm.created_at)) < 5 * 60_000 && pm.id !== parent;
           return (
             <MessageRow key={`${isDm ? "d" : "m"}${m.id}`} m={m} me={s.me} now={now} marks={s.marks} acks={s.acks} origins={origins}
               day={day} reply={byId} flash={flash === m.id} dm={isDm} showSeen={general && !isDm}
               hideQuote={view.kind === "thread" && !isParent}
               summary={threads && view.kind === "channel" ? threadSummary(s.messages, m.id) : null}
-              reactions={isDm ? [] : s.reactions} canReact={!isDm} v3={s.v3 === "on"}
+              reactions={isDm ? [] : s.reactions} canReact={!isDm} v3={s.v3 === "on"} saved={prefs.later.includes(m.id)}
+              alsoFrom={view.kind === "channel" && threads ? parentOf(m) : null} flat={threads} cont={cont}
               open={openId === m.id} onOpen={() => setOpenId(openId === m.id ? null : m.id)} onZoom={setZoom}
               onReply={isParent || isDm ? null : () => reply(m)} onThread={onThread} onJump={jump} />
           );
@@ -193,11 +199,19 @@ export function V3Note({ what, inline }: { what: string; inline?: boolean }) {
   );
 }
 
-function MessageRow({ m, me, now, day, open, onOpen, onZoom, onReply, onThread, onJump, marks, acks, origins, reply, flash, dm, showSeen, hideQuote, summary, reactions, canReact, v3 }: {
+function MessageRow({ m, me, now, day, open, onOpen, onZoom, onReply, onThread, onJump, marks, acks, origins, reply, flash, dm, showSeen, hideQuote, summary, reactions, canReact, v3, saved = false, alsoFrom = null, flat = false, cont = false }: {
   m: TeamMessage; me: TeamPerson | null; now: number; day: boolean; open: boolean; onOpen: () => void; onZoom: (u: string) => void;
   onReply: (() => void) | null; onThread?: (id: number) => void; onJump: (id: number) => void; marks: ReadMarks; acks: TeamAck[]; origins: string[];
   reply: Map<number, TeamMessage> | null; flash: boolean; dm: boolean; showSeen: boolean; hideQuote: boolean;
   summary: ReturnType<typeof threadSummary> | null; reactions: TeamReaction[]; canReact: boolean; v3: boolean;
+  /** Saved for later (🔖, this device). */
+  saved?: boolean;
+  /** A thread reply shown in the channel ("Also send to #channel"): the message it answers. */
+  alsoFrom?: number | null;
+  /** The Team room: no bubbles, your own messages show your face and name too. */
+  flat?: boolean;
+  /** Same person as the message above, within 5 minutes: no face or name, the time shows on hover. */
+  cont?: boolean;
 }) {
   const mine = m.person === me;
   const [picking, setPicking] = useState(false);
@@ -219,17 +233,20 @@ function MessageRow({ m, me, now, day, open, onOpen, onZoom, onReply, onThread, 
   return (
     <>
       {day && <span className="tr-day">{dayLabel(m.created_at, now)}</span>}
-      <div className={`tr-msg${mine ? " me" : ""}${atMe ? " at-me" : ""}${flash ? " flash" : ""}`} data-mid={m.id}>
-        {!mine && <Av p={m.person} />}
+      <div className={`tr-msg${mine ? " me" : ""}${atMe ? " at-me" : ""}${flash ? " flash" : ""}${cont ? " cont" : ""}`} data-mid={m.id}>
+        {(!mine || flat) && !cont && <Av p={m.person} />}
         <div className="tr-bub" data-open={open} onClick={onOpen}>
           <small>
-            {!mine && <b>{m.person}</b>}<span>{stamp(m.created_at, now)}</span>
+            {(!mine || flat) && !cont && <b>{m.person}</b>}<span className="tm">{stamp(m.created_at, now)}</span>
             {m.page && <a className="tr-where" href={m.page} onClick={(e) => e.stopPropagation()} title={`Sent from ${m.page}`}>· {where}</a>}
             {m.pinned && <span className="tr-pinmark" title="Pinned">📌</span>}
             {dm && <span className="tr-lockmark" title="Private: only the two of you can read it">🔒</span>}
             {atMe && <span className="tr-atflag" title="You were named in this">@ you</span>}
           </small>
-          {p.replyTo && !hideQuote && (
+          {alsoFrom && p.also && (
+            <span className="tr-alsoline">replied to a thread: <button onClick={(e) => { e.stopPropagation(); onThread?.(alsoFrom); }}>{quoteLine(reply?.get(alsoFrom), 50) || "open it"}</button></span>
+          )}
+          {p.replyTo && !hideQuote && !(alsoFrom && p.also) && (
             <button className="tr-quote" onClick={(e) => { e.stopPropagation(); onJump(p.replyTo!); }} title="Go to the message this answers">
               <b>{original?.person ?? "Reply"}</b><span>{quoteLine(original)}</span>
             </button>
@@ -269,11 +286,16 @@ function MessageRow({ m, me, now, day, open, onOpen, onZoom, onReply, onThread, 
             </span>
           )}
           {note && (note === "v3" ? <V3Note what="Reactions" inline /> : <span className="tr-err">{note}</span>)}
+          {/* In the Team room a computer shows 😀 💬 🔖 ⋯ on hover (class "hv"); a tap (or ⋯) shows every action in line, with words. */}
           <span className="tr-acts">
-            {canReact && <button onClick={(e) => { e.stopPropagation(); setPicking(!picking); }} title="React: 👍 ✅ 👀 🔥 ❌" aria-expanded={picking}>🙂 React</button>}
-            {onReply && <button onClick={(e) => { e.stopPropagation(); onReply(); }} title={onThread ? "Reply in a thread" : "Reply to this message"}>↩ Reply</button>}
-            {!dm && <button onClick={(e) => { e.stopPropagation(); setPinned(m.id, !m.pinned); }} title={m.pinned ? "Unpin" : "Pin it for the team"}>{m.pinned ? "Unpin" : "📌 Pin"}</button>}
-            {mine && <button onClick={(e) => { e.stopPropagation(); if (dm) deleteDm(m.id); else deleteMessage(m.id); }} title="Delete your message">Delete</button>}
+            {canReact && <button className="hv" onClick={(e) => { e.stopPropagation(); setPicking(!picking); }} title="React: 👍 ✅ 👀 🔥 ❌" aria-label="React" aria-expanded={picking}>🙂<span className="t">React</span></button>}
+            {onReply && <button className="hv" onClick={(e) => { e.stopPropagation(); onReply(); }} title={onThread ? "Reply in a thread" : "Reply to this message"} aria-label={onThread ? "Reply in a thread" : "Reply"}>{onThread ? "💬" : "↩"}<span className="t">{onThread ? "Reply in thread" : "Reply"}</span></button>}
+            {!dm && <button className="hv" onClick={(e) => { e.stopPropagation(); setPrefs({ later: toggleIn(readPrefs().later, m.id) }); }} title={saved ? "Take it off Later" : "Save for later (Activity → Later)"} aria-label={saved ? "Saved for later" : "Save for later"} aria-pressed={saved}>🔖<span className="t">{saved ? "Saved" : "Save for later"}</span></button>}
+            {!dm && <button onClick={(e) => { e.stopPropagation(); setPinned(m.id, !m.pinned); }} title={m.pinned ? "Unpin" : "Pin it for the team"}>📌<span className="t">{m.pinned ? "Unpin" : "Pin"}</span></button>}
+            {!dm && me && <button onClick={async (e) => { e.stopPropagation(); const r = await addTask(`${quoteLine(m, 150)} (from ${m.person}, message ${m.id})`, me); setNote(r.ok ? "Added to your tasks in #todo." : r.error); }} title="Make it a task in #todo">✓<span className="t">Make a task</span></button>}
+            {!dm && <button onClick={async (e) => { e.stopPropagation(); try { await navigator.clipboard.writeText(`${window.location.origin}${TEAM_ROOM.home}?tab=chat${channelOf(m.body) !== GENERAL ? `&ch=${channelOf(m.body)}` : ""}&m=${m.id}`); setNote("Link copied."); } catch { setNote("Could not copy here."); } }} title="Copy a link to this message">🔗<span className="t">Copy link</span></button>}
+            {mine && <button onClick={(e) => { e.stopPropagation(); if (dm) deleteDm(m.id); else deleteMessage(m.id); }} title="Delete your message">🗑<span className="t">Delete</span></button>}
+            <button className="hv more" onClick={(e) => { e.stopPropagation(); onOpen(); }} title={open ? "Close" : "More: pin, task, copy link, delete"} aria-label="More">{open ? "✕" : "⋯"}<span className="t">{open ? "Close" : "More"}</span></button>
           </span>
         </div>
       </div>
@@ -380,6 +402,7 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
   const [err, setErr] = useState<string | null>(null);
   const [caret, setCaret] = useState(0);
   const [pick, setPick] = useState(0);
+  const [also, setAlso] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const box = useRef<HTMLTextAreaElement>(null);
   const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
@@ -438,11 +461,11 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
       r = await sendDm(view.with, composeBody(text, { links: links.map((l) => l.url) }));
     } else {
       const to = view.kind === "thread" ? view.parent : replyTo?.id;
-      const body = composeBody(text, { replyTo: to, links: links.map((l) => l.url), channel: view.slug });
+      const body = composeBody(text, { replyTo: to, links: links.map((l) => l.url), channel: view.slug, also: view.kind === "thread" && also });
       r = await sendMessage(body, file, typeof window === "undefined" ? null : window.location.pathname + window.location.search);
     }
     setBusy(false);
-    if (r.ok) { setText(""); setFile(null); setLinks([]); onClearReply(); if (box.current) box.current.style.height = "auto"; } else setErr(r.error);
+    if (r.ok) { setText(""); setFile(null); setLinks([]); setAlso(false); onClearReply(); if (box.current) box.current.style.height = "auto"; } else setErr(r.error);
   };
   const canSend = !busy && (!!text.trim() || !!file || links.length > 0);
   return (
@@ -502,6 +525,9 @@ function Composer({ autoFocus, replyTo, onClearReply, view }: { autoFocus?: bool
           }} />
         <button className="tr-send" onClick={send} disabled={!canSend}>{busy ? "…" : "Send"}</button>
       </div>
+      {view.kind === "thread" && (
+        <label className="tr-also"><input type="checkbox" checked={also} onChange={(e) => setAlso(e.target.checked)} /> Also send to #{chName}</label>
+      )}
       {err && <p className="tr-err" style={{ padding: "0 12px 8px" }}>{err}</p>}
     </div>
   );

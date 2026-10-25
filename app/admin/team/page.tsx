@@ -40,7 +40,8 @@ export default async function TeamPage({ searchParams }: { searchParams?: { tab?
     <>
       <TeamBoard initialTab={tab} initialVersion={searchParams?.v} initialMessage={Number(searchParams?.m) > 0 ? Number(searchParams?.m) : null}
         initialPlace={{ ch: searchParams?.ch ?? null, dm: searchParams?.dm ?? null, t: Number(searchParams?.t) > 0 ? Number(searchParams?.t) : null }} />
-      <PageGuide page="/admin/team" />
+      {/* In the Team room the eye sits top right (bottom right would cover Send); the room keeps 56 px free there. */}
+      <PageGuide page="/admin/team" corner={tab === "team" || tab === "notes" ? undefined : "top-right"} />
     </>
   );
 }

@@ -14,9 +14,9 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminShell, { type RoomTab } from "@/components/admin/shell/AdminShell";
-import IdeasBoard from "@/components/teamRoom/IdeasBoard";
+import { useAdminLook } from "@/lib/adminLook";
 import ChatPage from "@/components/teamRoom/ChatPage";
-import { NoteCount, NotesThread, RoomGate, TodoList } from "@/components/teamRoom/parts";
+import { NoteCount, NotesThread } from "@/components/teamRoom/parts";
 import { newGivenTasks, unreadNotes } from "@/lib/teamRoom/logic";
 import { placeFrom } from "@/lib/teamRoom/channels";
 import { useRoomCounts } from "@/components/teamRoom/roomCounts";
@@ -56,11 +56,10 @@ const liveness = (iso: string | null, now: number) =>
   !iso ? "off" : now - Date.parse(iso) < 30 * 60_000 ? "live" : now - Date.parse(iso) < 3 * 3600_000 ? "quiet" : "off";
 
 // Same order as the Team area's side menu (Team board, Team chat, Ideas, My to-do).
+// Since 25 Oct 2026 Ideas and To-do are channels in the Team room (#ideas, #todo).
 const ROOM: { key: Exclude<RoomTab, "notes">; name: string; title: string }[] = [
   { key: "team", name: "Board", title: "Team" },
-  { key: "chat", name: "Chat", title: "Team chat" },
-  { key: "ideas", name: "Ideas", title: "Ideas" },
-  { key: "todo", name: "To-do", title: "My to-do" },
+  { key: "chat", name: "Team room", title: "Team room" },
 ];
 
 export default function TeamBoard({ initialTab, initialVersion, initialMessage, initialPlace }: {
@@ -72,6 +71,7 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
 }) {
   const [tab, setTab] = useState<RoomTab>(initialTab);
   const room = useTeamRoom();
+  const look = useAdminLook();
   const counts = useRoomCounts();
   const [version, setVersion] = useState<string | undefined>(initialVersion);
   const [data, setData] = useState<TeamBoardData | null>(null);
@@ -121,11 +121,27 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
   const badges: Partial<Record<RoomTab, number>> = {
     team: unreadNotes(room.notes, room.me, room.read.pushNotes, "push"),
     ideas: unreadNotes(room.notes, room.me, room.read.notes, "idea"),
-    chat: (tab === "chat" ? 0 : counts.total - counts.patchToRead - counts.newJobs) + waiting,
+    // Red number = only @mentions and DMs (plan U0: other new messages just go bold in the room).
+    chat: counts.mentions + waiting,
     todo: tab === "todo" ? 0 : newGivenTasks(room.tasks, room.me, room.read.tasks) + newPushedJobs(room.jobs, room.tasks, room.me, room.seenJobs),
     notes: room.me ? toRead(room.me) + unreadNotes(room.notes, room.me, room.read.patchNotes, "patch") : 0,
   };
   const title = ROOM.find((r) => r.key === tab)?.title ?? "Team";
+  // The Team room (Harry, 25 Oct 2026): chat, ideas and to-do are channels in one
+  // full-screen room. No admin menu inside it: one ⌂ goes back to the Team board.
+  if (tab === "chat" || tab === "ideas" || tab === "todo") {
+    const place = tab === "ideas" ? { kind: "channel" as const, slug: "ideas" } : tab === "todo" ? { kind: "channel" as const, slug: "todo" }
+      : placeFrom({ ch: initialPlace?.ch, dm: initialPlace?.dm });
+    const fromLink = initialTab === tab;
+    return (
+      <div className="tr-vars trr-page" data-look={look}>
+        <ChatPage onOpenPatch={openNote} onHome={() => setTab("team")} first={{
+          place, m: fromLink ? initialMessage ?? null : null, t: fromLink ? initialPlace?.t ?? null : null, v: fromLink ? initialVersion ?? null : null,
+          tab: tab === "chat" ? "messages" : "tool",
+        }} />
+      </div>
+    );
+  }
   return (
     <AdminShell tab={tab} role="admin" badges={badges} onTab={(t) => { setTab(t); if (t !== "notes") setVersion(undefined); }}>
       {tab === "notes" ? (
@@ -152,13 +168,6 @@ export default function TeamBoard({ initialTab, initialVersion, initialMessage, 
             })}
           </nav>
 
-          {tab === "ideas" && <IdeasBoard />}
-          {tab === "chat" && (
-            <ChatPage onOpenPatch={openNote} first={initialTab === "chat" ? {
-              place: placeFrom({ ch: initialPlace?.ch, dm: initialPlace?.dm }), m: initialMessage ?? null, t: initialPlace?.t ?? null, v: initialVersion ?? null,
-            } : undefined} />
-          )}
-          {tab === "todo" && <div className="tr ash-panel tb-todo"><RoomGate><TodoList /></RoomGate></div>}
           {tab === "team" && (<>
 
           {error && <div className="tb-alert">{error}</div>}

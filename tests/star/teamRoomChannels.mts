@@ -29,10 +29,10 @@ const rows: ChannelRow[] = [
   { slug: "Bad Slug!", name: "x", topic: null, made_by: "Harry", created_at: at(0) },
 ];
 const list = listChannels(rows);
-ok(list.slice(0, 6).map((c) => c.slug).join() === BUILT_IN_CHANNELS.map((c) => c.slug).join(), "the six built-in channels come first, in order");
+ok(list.slice(0, 9).map((c) => c.slug).join() === BUILT_IN_CHANNELS.map((c) => c.slug).join(), "the nine presets come first, in order");
 ok(list.find((c) => c.slug === "ideas")?.name === "Ideas Lab" && list.find((c) => c.slug === "ideas")?.tool === "ideas", "a rename keeps the channel's tool");
-ok(list.slice(6).map((c) => c.slug).join() === "aaa,3d-world", "new channels follow, oldest first; a bad slug is left out");
-ok(listChannels([]).length === 6, "no rows: just the six");
+ok(list.slice(9).map((c) => c.slug).join() === "aaa,3d-world", "new channels follow, oldest first; a bad slug is left out");
+ok(listChannels([]).length === 9 && listChannels([]).map((c) => c.slug).join() === "general,ideas,todo,bugs,health,patch-notes,connectors,marketing,context", "no rows: just the nine presets, in the plan's order");
 ok(slugify("Match Engine!") === "match-engine" && slugify("#  ") === "" && slugify("x".repeat(40)).length === 30, "slugify");
 ok(cleanName("##  big   room ") === "big room", "a name is tidied");
 ok(newChannelSlug("Bugs", list).ok === false && newChannelSlug("", list).ok === false, "a taken or empty name is refused");
@@ -82,7 +82,7 @@ const counts = roomCounts({
 });
 ok(counts.channels.ideas.unread === 1 && counts.channels.ideas.mentions === 1, "counts: #ideas 1 new, 1 @");
 ok(counts.channels[PATCH_CHANNEL].unread === 2 && counts.channels[PATCH_CHANNEL].mentions === 2, "counts: unread patch notes are the bot's @everyone posts");
-ok(counts.channels[JOBS_CHANNEL].unread === 1, "counts: a new pushed job counts in #bugs");
+ok(counts.channels[JOBS_CHANNEL].unread === 1, "counts: a new pushed job counts in #todo (to-dos left #bugs, 25 Oct)");
 ok(counts.dms.Mikey === 1 && counts.dms.Leo === 0 && counts.dms.Harry === undefined, "counts: a DM per other person");
 ok(counts.total === 1 + 2 + 1 + 1 && counts.patchToRead === 2 && counts.newJobs === 1, "counts: the total, and the parts that have their own badge");
 ok(pinsIn([{ ...ms[1], pinned: true }, { ...ms[0], pinned: true }], "ideas").map((m) => m.id).join() === "2", "pins are per channel");
@@ -139,7 +139,7 @@ const pp = payloadForPatches([notes[0]]);
 ok(pp.title === "@everyone New patch notes from Leo · v0.62" && pp.url === "/admin/team?tab=chat&ch=patch-notes&v=0.62", "the buzz says @everyone and opens the bot's post");
 const job: TeamJob = { id: "lag", owner: "all", title: "Lag test", prompt: null, from: "Harry", added: at(5) };
 const jb = jobBotPosts([job, { ...job, id: "m1", owner: "Mikey", added: at(1) }]);
-ok(jb.map((b) => b.jobId).join() === "m1,lag" && jb.every((b) => b.channel === JOBS_CHANNEL), "the jobs bot: one post per pushed job in #bugs");
+ok(jb.map((b) => b.jobId).join() === "m1,lag" && jb.every((b) => b.channel === JOBS_CHANNEL), "the jobs bot: one post per pushed job in #todo");
 ok(jb[1].everyone && !jb[0].everyone, "a job for all says @everyone");
 const tasks: TeamTask[] = [
   { id: 1, owner: "Harry", made_by: "Harry", title: markerTitle(job), done_at: at(6), created_at: at(6) },
@@ -157,6 +157,18 @@ ok(placeFrom({ ch: "ideas" }).kind === "channel" && (placeFrom({ ch: "ideas" }) 
 ok((placeFrom({ dm: "mikey" }) as { with: string }).with === "Mikey" && placeFrom({ dm: "bob" }).kind === "channel", "?dm=mikey; an unknown name → #general");
 ok((placeFrom({ ch: "Bad!" }) as { slug: string }).slug === GENERAL, "a bad channel → #general");
 ok(roomUrl({ kind: "channel", slug: "general" }) === "/admin/team?tab=chat" && roomUrl({ kind: "channel", slug: "ideas" }, { t: 2 }) === "/admin/team?tab=chat&ch=ideas&t=2", "roomUrl");
+
+console.log("Also send to #channel (25 Oct 2026)");
+{
+  const body = composeBody("ship it", { replyTo: 4, channel: "bugs", also: true });
+  const pa = parseMessage(body);
+  ok(body === "[#bugs] [re:4] [also] ship it" && pa.also && pa.replyTo === 4 && pa.text === "ship it" && pa.channel === "bugs", "a reply with Also send keeps its tags in order");
+  ok(!parseMessage("[also] not a reply").also, "[also] only counts on a reply");
+  const parent = { id: 4, person: "Leo", body: "[#bugs] keeper bug", image_url: null, page: null, pinned: false, created_at: new Date(0).toISOString() } as TeamMessage;
+  const plain = { ...parent, id: 5, body: "[#bugs] [re:4] in the thread only" } as TeamMessage;
+  const also = { ...parent, id: 6, body } as TeamMessage;
+  ok(channelStream([parent, plain, also], "bugs").map((m) => m.id).join() === "4,6", "the channel shows the message and the Also-send reply, not the plain reply");
+}
 
 if (failed) { console.error(`\n${failed} failed`); process.exit(1); }
 console.log("\nAll channel checks passed.");

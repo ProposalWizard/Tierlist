@@ -32,14 +32,14 @@ import type { TeamMessage, TeamTask } from "./logic";
 /* ── Channels ─────────────────────────────────────────────────────────── */
 
 /** The tool a channel carries beside its messages. */
-export type ChannelTool = "pinned" | "ideas" | "marketing" | "context" | "jobs" | "patches" | "none";
+export type ChannelTool = "pinned" | "ideas" | "marketing" | "context" | "jobs" | "patches" | "bugs" | "none";
 
 export interface Channel {
   slug: string;
   name: string;
   topic: string;
   tool: ChannelTool;
-  /** One of the six the room starts with (can be renamed, never removed). */
+  /** One of the nine presets the room starts with (can be renamed, never removed). */
   builtIn: boolean;
 }
 
@@ -48,15 +48,27 @@ export interface ChannelRow { slug: string; name: string; topic: string | null; 
 
 export const GENERAL = "general";
 export const PATCH_CHANNEL = "patch-notes";
-export const JOBS_CHANNEL = "bugs";
+/** To-dos (typed and pushed jobs) live in #todo since 25 Oct 2026 ("To-dos leave #bugs, so #bugs is only bugs"). */
+export const JOBS_CHANNEL = "todo";
+export const TODO_CHANNEL = JOBS_CHANNEL;
+/** Players' bug reports post themselves here (the Bug bot, team_room_v4.sql). */
+export const BUGS_CHANNEL = "bugs";
 
+/**
+ * The nine presets (Harry, 25 Oct 2026: "channels down the side replace the
+ * separate sections"). Order as on the plan page. Presets can be renamed,
+ * muted and starred, never deleted.
+ */
 export const BUILT_IN_CHANNELS: readonly Channel[] = [
   { slug: GENERAL, name: "general", topic: "The team chat: anything and everything", tool: "pinned", builtIn: true },
   { slug: "ideas", name: "ideas", topic: "New ideas, votes and where each one is", tool: "ideas", builtIn: true },
+  { slug: JOBS_CHANNEL, name: "todo", topic: "Jobs for each of us: typed here or pushed in team/jobs.json", tool: "jobs", builtIn: true },
+  { slug: BUGS_CHANNEL, name: "bugs", topic: "Players' bug reports post themselves here", tool: "bugs", builtIn: true },
+  { slug: "health", name: "health", topic: "Is the site well: a morning post once the Health bot exists", tool: "none", builtIn: true },
+  { slug: PATCH_CHANNEL, name: "patch-notes", topic: "Every patch note as it ships, with who has read it", tool: "patches", builtIn: true },
+  { slug: "connectors", name: "connectors", topic: "Talk about the services we connect to (Supabase, Vercel, Higgsfield…)", tool: "none", builtIn: true },
   { slug: "marketing", name: "marketing", topic: "Videos: the Studio, uploads and the production board", tool: "marketing", builtIn: true },
   { slug: "context", name: "context", topic: "Facts and rulings that should become Brain notes", tool: "context", builtIn: true },
-  { slug: JOBS_CHANNEL, name: "bugs", topic: "Bugs, jobs and to-dos", tool: "jobs", builtIn: true },
-  { slug: PATCH_CHANNEL, name: "patch-notes", topic: "Every patch note as it ships, with who has read it", tool: "patches", builtIn: true },
 ];
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,29}$/;
@@ -71,7 +83,7 @@ export function slugify(name: string): string {
 export const cleanName = (name: string) => (name ?? "").replace(/^#+/, "").replace(/\s+/g, " ").trim().slice(0, 30);
 
 /**
- * Every channel: the six built-in ones first (with any rename saved), then
+ * Every channel: the nine presets first (with any rename saved), then
  * new ones in the order they were made. A saved row with a bad slug is left out.
  */
 export function listChannels(rows: readonly ChannelRow[]): Channel[] {
@@ -115,6 +127,9 @@ export function tagChannel(slug: string, body: string): string {
   return !isSlug(slug) || slug === GENERAL ? rest : `[#${slug}] ${rest}`;
 }
 
+/** A thread reply sent with "Also send to #channel" ticked shows in the channel too ("[also]" after its [re:…]). */
+export const alsoInChannel = (body: string) => parseMessage(body).also;
+
 /** The message a thread reply answers, or null for a message in the channel itself. */
 export const parentOf = (m: Pick<TeamMessage, "body">) => parseMessage(m.body).replyTo;
 
@@ -128,7 +143,7 @@ export function channelStream(messages: readonly TeamMessage[], slug: string): T
   return messages.filter((m) => {
     if (channelOf(m.body) !== slug) return false;
     const p = parentOf(m);
-    return !(p && ids.has(p));
+    return !(p && ids.has(p)) || alsoInChannel(m.body);
   });
 }
 
