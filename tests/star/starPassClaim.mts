@@ -25,7 +25,7 @@ check(JSON.stringify(claimableLevels(career(13), DEFAULT_PASS_LEVELS)) === "[2,4
 // Not made yet: shown as Soon, never claimable.
 check(!claimableLevels(career(100), DEFAULT_PASS_LEVELS).includes(44), "a coming-soon card (level 44) can't be claimed");
 check(claimLevel(career(50), 44, findCard("pass-corner-flag-dance", BUILT_IN_CATALOGUE)).starPassClaimed === undefined, "claiming a coming-soon card does nothing");
-check(claimableLevels(career(100), DEFAULT_PASS_LEVELS).length === 43, "43 of 50 can be claimed now (7 are coming soon)");
+check(claimableLevels(career(100), DEFAULT_PASS_LEVELS).length === 46, "46 of 50 can be claimed now (4 celebrations are coming soon)");
 
 // Claimable: reached, a card there, not claimed yet. (The old five-reward road, as a fixed example.)
 const OLD: Record<number, string> = { 5: "pass-hop-penalty", 10: "pass-red-sports-car", 15: "pass-star-ball", 20: "pass-slow-runup", 25: "pass-gold-aviators" };

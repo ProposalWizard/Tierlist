@@ -130,10 +130,11 @@ const PASS_DESIGNS: CatalogueItem[] = [
 /**
  * THE NEW STAR PASS REWARDS (Mikey, 25 Oct 2026: "apply this to the game
  * now"), from the Star Pass Concept page: a reward every 2 levels, each one
- * fitting where you are at that level. These are the 23 that were new ideas.
- * The things you collect can be claimed now and live in the Locker; their
- * tile is an emoji until their picture is made. The celebrations, run-ups and
- * signature boots show as "Soon" until their animations are made.
+ * fitting where you are at that level. These are the new ideas that are
+ * cards of their own; the Golden Run-up, The Leaf and Signature Boots are a
+ * run-up and an accessory, so their cards come from FROM_GAME below. The
+ * things you collect live in the Locker. The celebrations show as "Soon"
+ * until their animations are made.
  */
 const tile = (icon: string, color: string): RewardArt => ({ icon, color });
 const own = (slot: CollectibleSlot): RewardGrant => ({ kind: "collectible", slot });
@@ -150,14 +151,11 @@ const PASS_NEW: CatalogueItem[] = [
   { id: "pass-supercar", name: "Supercar", category: "vehicle", status: "idea", grant: own("vehicle"), art: tile("🏎️", "#f87171"), note: "A supercar. You are winning trophies now." },
   { id: "pass-trophy-wall", name: "Glass Trophy Wall", category: "cabinet", status: "idea", grant: own("trophy"), art: tile("🏆", "#fb923c"), note: "A wall to show every trophy you have won." },
   { id: "pass-own-celebration", name: "Your Own Celebration", category: "celebration", status: "idea", comingSoon: true, grant: own("trophy"), art: tile("🌟", "#f472b6"), note: "A pose with your name on it. Needs its animation." },
-  { id: "pass-signature-boots", name: "Signature Boots", category: "boots", status: "idea", comingSoon: true, grant: own("trophy"), art: tile("👟", "#a3e635"), note: "Boots with your name on them. Needs making." },
   { id: "pass-mansion", name: "Mansion", category: "home", status: "idea", grant: own("home"), art: tile("🏰", "#c084fc"), note: "A mansion with grounds. Ballon d'Or money." },
-  { id: "pass-golden-runup", name: "Golden Run-up", category: "penalty-runup", status: "idea", comingSoon: true, grant: own("trophy"), art: tile("✨", "#34d399"), note: "A penalty run-up that leaves a gold trail. Needs its animation." },
   { id: "pass-night-suit", name: "Ballon d'Or Night Suit", category: "outfit", status: "idea", grant: own("outfit"), art: tile("🤵", "#94a3b8"), note: "What you wear to the Ballon d'Or night." },
   { id: "pass-golden-ball", name: "Golden Match Ball", category: "ball", status: "idea", grant: own("ball"), art: tile("⚽", "#fbbf24"), note: "A solid-gold match ball." },
   { id: "pass-private-jet", name: "Private Jet", category: "vehicle", status: "idea", grant: own("vehicle"), art: tile("🛩️", "#f87171"), note: "Your own jet. Legend level." },
   { id: "pass-hof-plaque", name: "Hall of Fame Plaque", category: "cabinet", status: "idea", grant: own("trophy"), art: tile("🏅", "#fb923c"), note: "Your name in your club's hall of fame." },
-  { id: "pass-the-leaf", name: "The Leaf", category: "freekick-runup", status: "idea", comingSoon: true, grant: own("trophy"), art: tile("🍃", "#22d3ee"), note: "The legend's free kick: it dips and swerves late. Needs making." },
   { id: "pass-statue-pose", name: "Statue Pose", category: "celebration", status: "idea", comingSoon: true, grant: own("trophy"), art: tile("🗿", "#f472b6"), note: "Stand still like your own statue. Needs its animation." },
   { id: "pass-diamond-watch", name: "Diamond Watch", category: "watch", status: "idea", grant: own("watch"), art: tile("💎", "#e0f2fe"), note: "The best watch there is." },
   { id: "pass-golden-set", name: "The Golden Set", category: "cabinet", status: "idea", grant: own("trophy"), art: tile("👑", "#fbbf24"), note: "Gold boots, gold ball, gold car and your statue outside the ground. You finished the game." },
@@ -212,9 +210,9 @@ export const DEFAULT_PASS_LEVELS: Record<number, string> = {
   50: "pass-penthouse", 52: "runup-arc", 54: "pass-iced-chain", 56: "pass-european-ball",
   58: "runup-fk_angled_whip", 60: "acc-boots-gold", 62: "acc-armband-rainbow", 64: "pass-backflip",
   66: "pass-gold-watch", 68: "runup-fk_long_diagonal", 70: "pass-supercar", 72: "acc-armband-classic",
-  74: "pass-trophy-wall", 76: "pass-own-celebration", 78: "pass-signature-boots", 80: "pass-mansion",
-  82: "acc-gloves-gold", 84: "pass-golden-runup", 86: "pass-night-suit", 88: "pass-golden-ball",
-  90: "pass-private-jet", 92: "pass-hof-plaque", 94: "pass-the-leaf", 96: "pass-statue-pose",
+  74: "pass-trophy-wall", 76: "pass-own-celebration", 78: "acc-boots-signature", 80: "pass-mansion",
+  82: "acc-gloves-gold", 84: "runup-golden", 86: "pass-night-suit", 88: "pass-golden-ball",
+  90: "pass-private-jet", 92: "pass-hof-plaque", 94: "runup-fk_leaf", 96: "pass-statue-pose",
   98: "pass-diamond-watch", 100: "pass-golden-set",
 };
 

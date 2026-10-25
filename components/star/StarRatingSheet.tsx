@@ -33,6 +33,8 @@ import { DEFAULT_FAKE_FACE } from "@/lib/star/fakeFaces";
 import { BottomBar, BarButton, Chev } from "./ui";
 import Podium3D from "./Podium3D";
 import RewardReveal from "./RewardReveal";
+import { SignatureContext } from "./store/AccessoryFigure";
+import { signatureOf } from "@/lib/star/signatureBoots";
 import LockerSheet from "./LockerSheet";
 
 const ART = "/star/star-pass";
@@ -254,9 +256,12 @@ export default function StarRatingSheet({ career, onClose, onCareer }: {
       </BottomBar>
       {locker && <LockerSheet career={career} catalogue={catalogue} onCareer={onCareer} onClose={() => setLocker(false)} />}
       {reveal != null && cardAt(reveal) && (
-        <RewardReveal card={cardAt(reveal)!} level={reveal}
-          onLater={() => { onCareer?.(claimLevel(career, reveal, cardAt(reveal), st.stars)); setReveal(null); }}
-          onUse={() => { onCareer?.(equipCard(claimLevel(career, reveal, cardAt(reveal), st.stars), cardAt(reveal)!)); setReveal(null); }} />
+        // Signature Boots show your own name and number on the reveal too.
+        <SignatureContext.Provider value={signatureOf(career)}>
+          <RewardReveal card={cardAt(reveal)!} level={reveal}
+            onLater={() => { onCareer?.(claimLevel(career, reveal, cardAt(reveal), st.stars)); setReveal(null); }}
+            onUse={() => { onCareer?.(equipCard(claimLevel(career, reveal, cardAt(reveal), st.stars), cardAt(reveal)!)); setReveal(null); }} />
+        </SignatureContext.Provider>
       )}
     </div>,
     document.body,
