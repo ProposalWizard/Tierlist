@@ -15,6 +15,8 @@
  * Every name here is invented.
  */
 
+import type { CareerDivision } from "@/lib/star/calendar";
+
 export interface Campaign {
   /** The address: /play/<slug>. Lowercase words and dashes only. */
   slug: string;
@@ -43,6 +45,36 @@ export interface Campaign {
   };
   /** Link preview (TikTok/Instagram in-app browsers show it). */
   meta: { title: string; description: string };
+  /**
+   * The player's name is fixed (Harry, 25 Oct 2026: "unless it's a very
+   * specific reason to keep the name the same, I think always let them have
+   * it"). Absent or false = the landing page lets them type their own name,
+   * with `player`'s name filled in to start. Neither example sets it.
+   */
+  lockName?: boolean;
+  /**
+   * A custom start point (Harry: "If it's a league two ad, we could have a
+   * custom start point. Why not?"). The trial's one club offer comes from
+   * this division instead of the usual National League / North / South roll
+   * (TrialProgress.startDivision, lib/star/scoutedPlacement.ts). Absent = the
+   * normal roll.
+   */
+  startLeague?: CareerDivision;
+}
+
+/** Longest first or last name, the same as the game's set-up screen (ProfileSetup.tsx). */
+export const NAME_MAX = 20;
+
+/**
+ * The name typed on a landing page, tidied: extra spaces gone, cut to
+ * NAME_MAX. Null when either half is blank (the button then asks for a name).
+ * There is no rude-word list in the repo, so this checks only blank and length.
+ */
+export function cleanPlayerName(first: string, last: string): { firstName: string; lastName: string } | null {
+  const tidy = (s: string) => s.replace(/\s+/g, " ").trim().slice(0, NAME_MAX).trim();
+  const firstName = tidy(first), lastName = tidy(last);
+  if (!firstName || !lastName) return null;
+  return { firstName, lastName };
 }
 
 export const CAMPAIGNS: Campaign[] = [
@@ -60,6 +92,8 @@ export const CAMPAIGNS: Campaign[] = [
       title: "From League Two to the Ballon d'Or — play free",
       description: "Start as a 16-year-old striker and play your way to the Ballon d'Or. No sign-up.",
     },
+    // The trial's club comes from League Two, as the ad says.
+    startLeague: "league_two",
   },
   {
     slug: "wonderkid",

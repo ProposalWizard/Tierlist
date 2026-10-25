@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notGuest } from "@/lib/guest/config";
 
 export async function GET() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -53,7 +55,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

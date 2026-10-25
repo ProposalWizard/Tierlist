@@ -27,8 +27,10 @@
 -- Everything a signed-out visitor can do (read tierlists, vote anonymously,
 -- send feedback), plus their own Road to Ballon d'Or saves: star_careers,
 -- star_hall_of_fame and star_legend_shares are deliberately NOT in the list.
--- Their own XP/objective/stat rows are also left alone (they carry over when
--- the guest saves with Google, because the user id does not change).
+-- vote_tierlist_votes and feedback stay open too (one vote per account, the
+-- same as one per browser for a signed-out visitor).
+-- XP, objectives and stats ARE in the list (Harry, 25 Oct 2026: a guest is
+-- signed out for those); they start counting once the guest saves with Google.
 --
 -- NOT COVERED BY THIS FILE: server routes that use the service key bypass row
 -- rules entirely. Those check for guests in the code (lib/guest/config.ts
@@ -77,7 +79,15 @@ DECLARE
     'star_cutscene_edits', 'star_pass_config', 'star_xp_config',
     -- Payments and the casino (already server-only; belt and braces)
     'star_paid_items', 'star_wallet', 'star_wallet_ledger',
-    'star_entitlements', 'star_casino_plays'
+    'star_entitlements', 'star_casino_plays',
+    -- XP, objectives, stats and season rewards (Harry, 25 Oct 2026: a guest
+    -- is treated as signed out for these; the server routes match, see the
+    -- route table in the plan, section 11)
+    'user_xp', 'xp_events', 'user_objectives', 'user_stats', 'user_rewards',
+    'rewards', 'season_config', 'season_level_rewards',
+    -- Team test tools and football data (admin or tester only already)
+    'star_tuning_notes', 'star_scenario_corrections', 'star_real_moments_picks',
+    'sofifa_players', 'football_players', 'league_logos', 'nationality_flags'
   ];
 BEGIN
   FOREACH t IN ARRAY guest_free_tables LOOP
@@ -189,7 +199,8 @@ CREATE TRIGGER kib_guest_campaign_upgrade
 -- (no star_careers row), and have nothing in the gem wallet. Deleting the
 -- account removes its other rows too (their tables point at auth.users with
 -- ON DELETE CASCADE). At most 5,000 a night. Returns how many went.
--- Guests WITH a save are never deleted by this (an open question in the plan).
+-- Guests WITH a save are never deleted by this (Harry, 25 Oct 2026: kept; from
+-- day 7 the game asks them once a day to save with Google instead).
 
 CREATE OR REPLACE FUNCTION public.tidy_idle_guests()
 RETURNS integer

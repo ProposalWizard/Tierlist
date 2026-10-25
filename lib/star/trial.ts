@@ -468,6 +468,15 @@ export interface TrialProgress {
    * trial that has not reached it, and on every older save.
    */
   finalPenScored?: boolean;
+  /**
+   * Where the scout looks for you. Set only by an ad's ready-made career
+   * (lib/campaigns.ts `startLeague`; Harry, 25 Oct 2026: "If it's a league two
+   * ad, we could have a custom start point. Why not?"). The first trial's one
+   * offer then comes from a club in this division instead of the National
+   * League / North / South roll (lib/star/scoutedPlacement.ts). Absent on
+   * every normal career, which plays exactly as before.
+   */
+  startDivision?: import("./calendar").CareerDivision;
   startedAt: number;
   /**
    * A five-a-side left half-played.

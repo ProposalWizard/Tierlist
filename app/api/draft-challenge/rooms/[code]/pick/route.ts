@@ -14,6 +14,7 @@ import {
   takenKeysFrom,
 } from "@/lib/challengeRoom";
 import type { ChallengeRoomState } from "@/lib/challengeRoom";
+import { notGuest } from "@/lib/guest/config";
 
 /**
  * One pick in a multiplayer Challenge draft.
@@ -33,7 +34,8 @@ export async function POST(
   const isAuto = body.auto === true;
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return new Response("Unauthorized", { status: 401 });
 
   const service = createServiceClient();

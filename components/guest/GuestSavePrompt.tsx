@@ -4,11 +4,14 @@
  * components/guest/GuestSavePrompt.tsx — "Save your career — sign in with
  * Google", for a player on a guest account (lib/guest/config.ts).
  *
- * WHEN: at two moments only, each shown once (Later remembers it):
- *   1. after the first match (career has 1+ appearance),
- *   2. after the first season (season history has a row).
- * And straight away when Google said the account is already taken
- * (?guest_link=taken from /auth/callback).
+ * WHEN (lib/guest/promptSchedule.ts):
+ *   - days 0 to 6 of the guest account: two moments, each shown once (Later
+ *     remembers it): after the first match, after the first season;
+ *   - day 7 onwards (Harry, 25 Oct 2026: "prompted every day, maybe 7 days"):
+ *     once a day, the first time the game opens that day, with a small
+ *     "Guest · day N" note. Later closes it until tomorrow. No lock-out;
+ *   - straight away when Google said the account is already taken
+ *     (?guest_link=taken from /auth/callback).
  *
  * It lives inside the career's home shell (app/star-dev/page.tsx, next to the
  * Player of the Month pop-up), so it never covers a match.
@@ -22,8 +25,9 @@ import { createClient } from "@/lib/supabase/client";
 import type { CareerState } from "@/lib/star/types";
 import { guestAccountsOn, isGuestUser } from "@/lib/guest/config";
 import { signInToExistingAccount, track, upgradeGuestWithGoogle } from "@/lib/guest/start";
+import { DAILY_FROM_DAY, guestAgeDays, localDayKey, pickGuestPrompt, type GuestMilestone } from "@/lib/guest/promptSchedule";
 
-export type GuestSaveVariant = "first-match" | "first-season" | "taken";
+export type GuestSaveVariant = GuestMilestone | "daily" | "taken";
 
 const COPY: Record<GuestSaveVariant, { kicker: string; title: string; body: string }> = {
   "first-match": {
@@ -35,6 +39,11 @@ const COPY: Record<GuestSaveVariant, { kicker: string; title: string; body: stri
     kicker: "Season one done",
     title: "Don't lose this career",
     body: "A whole season is on this phone and nowhere else. One tap with Google keeps it safe.",
+  },
+  daily: {
+    kicker: "Guest",
+    title: "Save your career",
+    body: "It's still only on this phone. Clear your browser and it's gone. One tap with Google keeps it safe.",
   },
   taken: {
     kicker: "Already signed up",
@@ -54,8 +63,10 @@ function GoogleG() {
   );
 }
 
-export function GuestSaveSheet({ variant, playerLine, busy, error, onSave, onExisting, onLater }: {
+export function GuestSaveSheet({ variant, day, playerLine, busy, error, onSave, onExisting, onLater }: {
   variant: GuestSaveVariant;
+  /** The daily card's "Guest · day N". */
+  day?: number;
   /** e.g. "Jay Carter · 1 game · 1 goal" */
   playerLine?: string;
   busy?: boolean;
@@ -66,11 +77,12 @@ export function GuestSaveSheet({ variant, playerLine, busy, error, onSave, onExi
 }) {
   const c = COPY[variant];
   const taken = variant === "taken";
+  const kicker = variant === "daily" && day !== undefined ? `Guest · day ${day}` : c.kicker;
   return (
     <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 px-4 pb-6 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="guest-save-title">
       <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-gradient-to-b from-gray-800 to-gray-900 p-5 text-white shadow-2xl">
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-2xl" aria-hidden="true">{taken ? "🔑" : "☁️"}</div>
-        <p className="text-center text-[11px] font-black uppercase tracking-[0.18em] text-emerald-300">{c.kicker}</p>
+        <p className="text-center text-[11px] font-black uppercase tracking-[0.18em] text-emerald-300">{kicker}</p>
         <h2 id="guest-save-title" className="mt-1 text-center text-2xl font-black leading-tight">{c.title}</h2>
         <p className="mt-2 text-center text-sm leading-relaxed text-white/70">{c.body}</p>
         {playerLine && !taken && (
@@ -92,7 +104,7 @@ export function GuestSaveSheet({ variant, playerLine, busy, error, onSave, onExi
           </button>
         )}
         <button type="button" onClick={onLater} className="mt-2 w-full py-2 text-sm font-bold text-white/50">
-          Later
+          {variant === "daily" ? "Tomorrow" : "Later"}
         </button>
       </div>
     </div>
@@ -100,23 +112,37 @@ export function GuestSaveSheet({ variant, playerLine, busy, error, onSave, onExi
 }
 
 const DISMISS_KEY = "kib-guest-prompt-seen-v1";
+/** userId → the local day the daily card last showed. */
+const DAILY_KEY = "kib-guest-prompt-daily-v1";
 
-function seenFor(userId: string): GuestSaveVariant[] {
-  try {
-    const all = JSON.parse(localStorage.getItem(DISMISS_KEY) ?? "{}") as Record<string, GuestSaveVariant[]>;
-    return Array.isArray(all[userId]) ? all[userId] : [];
-  } catch { return []; }
+function readMap<T>(key: string): Record<string, T> {
+  try { return JSON.parse(localStorage.getItem(key) ?? "{}") as Record<string, T>; } catch { return {}; }
 }
-function markSeen(userId: string, v: GuestSaveVariant): void {
+function seenFor(userId: string): GuestMilestone[] {
+  const v = readMap<GuestMilestone[]>(DISMISS_KEY)[userId];
+  return Array.isArray(v) ? v : [];
+}
+function markSeen(userId: string, v: GuestMilestone): void {
   try {
-    const all = JSON.parse(localStorage.getItem(DISMISS_KEY) ?? "{}") as Record<string, GuestSaveVariant[]>;
+    const all = readMap<GuestMilestone[]>(DISMISS_KEY);
     all[userId] = Array.from(new Set([...(all[userId] ?? []), v]));
     localStorage.setItem(DISMISS_KEY, JSON.stringify(all));
   } catch { /* shown again next time: harmless */ }
 }
+function lastDailyFor(userId: string): string | null {
+  const v = readMap<string>(DAILY_KEY)[userId];
+  return typeof v === "string" ? v : null;
+}
+function markDaily(userId: string, day: string): void {
+  try {
+    const all = readMap<string>(DAILY_KEY);
+    all[userId] = day;
+    localStorage.setItem(DAILY_KEY, JSON.stringify(all));
+  } catch { /* shown again on the next open: harmless */ }
+}
 
 /** Which moment this career has reached, newest first. */
-export function guestMilestone(career: Pick<CareerState, "careerStats" | "seasonHistory"> | null): GuestSaveVariant | null {
+export function guestMilestone(career: Pick<CareerState, "careerStats" | "seasonHistory"> | null): GuestMilestone | null {
   if (!career) return null;
   if ((career.seasonHistory?.length ?? 0) >= 1) return "first-season";
   if ((career.careerStats?.appearances ?? 0) >= 1) return "first-match";
@@ -126,8 +152,11 @@ export function guestMilestone(career: Pick<CareerState, "careerStats" | "season
 export default function GuestSavePrompt({ career }: { career: CareerState | null }) {
   const on = guestAccountsOn();
   const [guestId, setGuestId] = useState<string | null>(null);
+  const [ageDays, setAgeDays] = useState<number | null>(null);
   const [taken, setTaken] = useState(false);
-  const [closed, setClosed] = useState<GuestSaveVariant | null>(null);
+  const [closed, setClosed] = useState<GuestMilestone | null>(null);
+  /** The daily card, decided once when the game opens (and recorded at once, so it is once a day). */
+  const [daily, setDaily] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -137,6 +166,12 @@ export default function GuestSavePrompt({ career }: { career: CareerState | null
     createClient().auth.getUser().then(({ data: { user } }) => {
       if (!live || !user || !isGuestUser(user)) return;
       setGuestId(user.id);
+      const now = Date.now();
+      const age = guestAgeDays(user.created_at, now);
+      setAgeDays(age);
+      const today = localDayKey(now);
+      const pick = pickGuestPrompt({ milestone: null, seen: [], ageDays: age, lastDaily: lastDailyFor(user.id), today });
+      if (pick?.kind === "daily") { markDaily(user.id, today); setDaily(pick.day); }
       const params = new URLSearchParams(window.location.search);
       if (params.get("guest_link") === "taken") {
         setTaken(true);
@@ -149,9 +184,15 @@ export default function GuestSavePrompt({ career }: { career: CareerState | null
   }, [on]);
 
   if (!on || !guestId) return null;
-  const milestone = guestMilestone(career);
-  const variant: GuestSaveVariant | null = taken ? "taken"
-    : milestone && !seenFor(guestId).includes(milestone) && closed !== milestone ? milestone : null;
+  let variant: GuestSaveVariant | null = null;
+  if (taken) variant = "taken";
+  else if (daily !== null) variant = "daily";
+  else if (ageDays === null || ageDays < DAILY_FROM_DAY) {
+    // Days 0 to 6: the two moments. (Day 7+ is daily only, decided above.)
+    const m = guestMilestone(career);
+    const pick = pickGuestPrompt({ milestone: m, seen: seenFor(guestId), ageDays, lastDaily: null, today: "" });
+    if (pick?.kind === "milestone" && closed !== pick.milestone) variant = pick.milestone;
+  }
   if (!variant) return null;
 
   const s = career?.careerStats;
@@ -161,13 +202,14 @@ export default function GuestSavePrompt({ career }: { career: CareerState | null
     : undefined;
 
   const later = () => {
-    track("guest_prompt_later", { variant });
+    track("guest_prompt_later", { variant, day: ageDays });
     if (variant === "taken") setTaken(false);
-    else { markSeen(guestId, variant); setClosed(variant); }
+    else if (variant === "daily") setDaily(null);
+    else if (variant) { markSeen(guestId, variant); setClosed(variant); }
   };
   const save = async () => {
     setBusy(true); setError(null);
-    const r = await upgradeGuestWithGoogle(window.location.pathname, variant);
+    const r = await upgradeGuestWithGoogle(window.location.pathname, variant ?? "prompt");
     if (r && !r.ok) { setBusy(false); setError(r.message); }
   };
   const existing = async () => {
@@ -175,5 +217,5 @@ export default function GuestSavePrompt({ career }: { career: CareerState | null
     await signInToExistingAccount(window.location.pathname);
   };
 
-  return <GuestSaveSheet variant={variant} playerLine={playerLine} busy={busy} error={error} onSave={save} onExisting={existing} onLater={later} />;
+  return <GuestSaveSheet variant={variant} day={daily ?? undefined} playerLine={playerLine} busy={busy} error={error} onSave={save} onExisting={existing} onLater={later} />;
 }

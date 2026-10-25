@@ -260,8 +260,9 @@ export const ADMIN_GUIDES = {
         ["/play/league-two-striker · /play/wonderkid", "Opens that ad landing page as a player would see it."],
       ] },
       { group: "The pictures", items: [
-        ["Ad landing pages", "Each landing page in a phone. Its button makes a guest account, records which ad it came from, and starts that player's trial. Here the button does nothing."],
-        ["Save your career", "The three versions of the prompt: after the first match, after the first season, and when the Google account is already taken. Here the buttons do nothing."],
+        ["Ad landing pages", "Each landing page in a phone. The player types their own name (filled in with the ad's name to start). Its button makes a guest account, records which ad it came from, and starts that player's trial. Here the button does nothing."],
+        ["Save your career", "The four versions of the prompt: after the first match, after the first season, the daily one from day 7, and when the Google account is already taken. Here the buttons do nothing."],
+        ["First club (custom start point)", "The club the trial's scout offers, for each ad, drawn with the real manager-talk screen. An ad with a start point (league-two-striker: League Two) always offers a club from that league; the others use the normal roll."],
       ] },
     ],
     saving: [
@@ -272,13 +273,13 @@ export const ADMIN_GUIDES = {
     inGame: [
       "Switch ON: the game's \"Sign in to play\" screen gets a Play now — no sign-up button first.",
       "The /play/<name> pages are the links to put in TikTok and Instagram ads.",
-      "Guests see Save your career after their first match and after their first season, on the home screens only.",
-      "A guest counts as signed out everywhere else: no tierlist making, no username, no buying in the shop.",
+      "Guests see Save your career after their first match and after their first season, on the home screens only. From day 7 of the guest account it shows once a day until they save with Google.",
+      "A guest counts as signed out everywhere else: no tierlist making, no username, no buying in the shop, no XP, objectives, draft records or tic-tac-toe scores.",
     ],
     needs: [
       "Vercel: NEXT_PUBLIC_GUEST_ACCOUNTS=on, then redeploy. Unset = off.",
       "Supabase → Authentication: \"Allow anonymous sign-ins\" ON and \"Allow manual linking\" ON.",
-      "Optional bot check: a Cloudflare Turnstile site key in NEXT_PUBLIC_TURNSTILE_SITE_KEY, and its secret in Supabase → Authentication → Attack Protection.",
+      "Human check: a Cloudflare Turnstile site key in NEXT_PUBLIC_TURNSTILE_SITE_KEY (Vercel), and its secret key in Supabase → Authentication → Bot and abuse protection (Attack Protection) → Turnstile. Site key first, then the secret.",
       "supabase/migrations/guest_accounts.sql (PENDING, not run): keeps guests out of team, community and leaderboard tables, records campaigns, and tidies idle guests each night.",
     ],
     dev: "app/star-guest-dev/page.tsx; switch lib/guest/config.ts; start/upgrade lib/guest/start.ts, captcha.ts, moveSaves.ts, campaignCareer.ts; campaigns lib/campaigns.ts; landing app/campaign/[campaign] (middleware.ts rewrites /play/<slug>); prompt components/guest/GuestSavePrompt.tsx, GuestPlayButton.tsx; hooks in app/star-dev/page.tsx; app/auth/callback/route.ts (guest_link=taken); SQL supabase/migrations/guest_accounts.sql; plan docs/plans/2026-10-25/guest-accounts-plan.md.",

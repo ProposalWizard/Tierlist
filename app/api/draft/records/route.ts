@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { checkRecordBody, EVENT_KEY, type RecordBody, type SavedRun } from "@/lib/draftRecordRules";
+import { notGuest } from "@/lib/guest/config";
 
 const MAX_PER_CATEGORY = 5;
 const ASCENDING_RECORD_TYPES = new Set(["goals_conceded"]);
@@ -18,7 +19,8 @@ export async function GET(req: Request) {
 
   if (personal === "true") {
     const authClient = await createClient();
-    const { data: { user } } = await authClient.auth.getUser();
+    const { data: { user: signedIn } } = await authClient.auth.getUser();
+    const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
@@ -122,7 +124,8 @@ interface CandidateRow {
  */
 export async function POST(req: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

@@ -5,6 +5,7 @@ import { attachSquadAttributes, fetchRoundPlayers, playerNameKey, shuffleArray }
 import type { AmPlayer, SquadPick } from "@/lib/americanDraft";
 import { computeTeamStrength } from "@/lib/seasonSimulator";
 import type { DraftPlayer } from "@/lib/seasonSimulator";
+import { notGuest } from "@/lib/guest/config";
 
 function genRoomCode(): string {
   const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -47,7 +48,8 @@ export async function POST(
   const { sofifa_id } = (await req.json()) as { sofifa_id: string };
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user: signedIn } } = await supabase.auth.getUser();
+  const user = notGuest(signedIn); // a guest counts as signed out (lib/guest/config.ts)
   if (!user) return new Response("Unauthorized", { status: 401 });
 
   const service = createServiceClient();
