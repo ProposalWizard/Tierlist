@@ -41,6 +41,21 @@ A ruling with no number is still a ruling. A ruling with a number is stronger.
 
 Newest first. Each is something that was actually said.
 
+### 25 Oct 2026 — headers and volleys: see it, then a timer (Harry)
+- **"The ball is way too far away from the guy and you don't get to really see
+  your guy - what should really happen on these highlights is no arrow
+  drawback, you see the chance, angle - the animation happens and then you get
+  the timer to hit the ball in the right direction - this does make the
+  perfect circle bit a bit confusing and that may just have to get revamped."**
+  Built (lib/star/airPick.ts, components/star/AirPick.tsx): no drag on a
+  header/volley; the camera eases in close (goal and net still at the top),
+  your man moves under it and goes up; then a see-through timer at the bottom
+  (a bar filling into a green band, wider with Aerial) over a drawn goal with
+  the keeper in it. One tap on the goal = where (the spot) and when (the
+  band). The perfect circle and the "Head it?" ball screen are gone from the
+  game (kept behind ?airpick=old). Controls for a moment like this sit at the
+  bottom, where the thumb is, in a flat band fading into the pitch (inferred).
+
 ### 20 Oct 2026 — the Team area is the admin's home (Harry)
 - **"The team area should be the default home area, and it should open on
   Team board, and have its own tab on the left."** Every way into the admin
