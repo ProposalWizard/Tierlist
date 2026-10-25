@@ -71,8 +71,9 @@ export const ANIMATION_SET_LABEL: Record<AnimationSet, string> = {
 
 const ANIMATION_RARITY: Record<AnimationId, Rarity> = {
   standard: "common", stroll: "rare", skip: "epic", sprint: "epic", stutter: "rare", two_step: "common", arc: "legendary",
+  golden: "legendary",
   fk_standard: "common", fk_power_stance: "legendary", fk_stance_sprint: "epic", fk_calm_curl: "legendary",
-  fk_stutter_curl: "epic", fk_angled_whip: "rare", fk_long_diagonal: "epic",
+  fk_stutter_curl: "epic", fk_angled_whip: "rare", fk_long_diagonal: "epic", fk_leaf: "legendary",
 };
 
 export const ANIMATIONS: AnimationItem[] = [
@@ -119,6 +120,8 @@ export interface AccessoryItem {
   stripes?: string[];
   /** A celebration: the pose it strikes. */
   celebration?: Celebration;
+  /** Signature Boots: your own name / squad number is written on them (lib/star/signatureBoots.ts). */
+  signature?: boolean;
 }
 
 export const ACCESSORIES: AccessoryItem[] = [
@@ -133,6 +136,10 @@ export const ACCESSORIES: AccessoryItem[] = [
   { kind: "accessory", id: "boots-blackout", name: "Blackout Boots", slot: "boots", rarity: "common", color: "#0a0a0a" },
   { kind: "accessory", id: "boots-volt", name: "Volt Boots", slot: "boots", rarity: "rare", color: "#d9f99d", color2: "#65a30d" },
   { kind: "accessory", id: "boots-gold", name: "Chrome Gold Boots", slot: "boots", rarity: "legendary", color: "#facc15", color2: "#a16207" },
+  // Star Pass reward (piece 4): white boots with a gold stripe and YOUR name
+  // (or squad number) on the side, drawn big in the store/Locker picture
+  // (AccessoryFigure's close-up); a small figure shows the colours alone.
+  { kind: "accessory", id: "boots-signature", name: "Signature Boots", slot: "boots", rarity: "legendary", color: "#f8fafc", color2: "#d4a017", signature: true },
   { kind: "accessory", id: "armband-classic", name: "Captain's Armband", slot: "armband", rarity: "rare", color: "#facc15", color2: "#111827" },
   { kind: "accessory", id: "armband-rainbow", name: "Rainbow Armband", slot: "armband", rarity: "epic", color: "#ef4444",
     stripes: ["#ef4444", "#f97316", "#facc15", "#22c55e", "#3b82f6", "#8b5cf6"] },

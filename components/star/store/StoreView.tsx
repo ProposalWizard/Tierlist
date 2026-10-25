@@ -158,7 +158,8 @@ function rarityOf(item: StoreItem): Rarity | null {
  * to the old drawing if its file can't load. Celebrations are poses, not objects, so they stay the drawn player.
  */
 export function storeRenderFor(item: StoreItem): string | null {
-  if (item.kind === "accessory") return item.slot === "celebration" ? null : `/shop/store/acc-${item.id}.webp`;
+  // Signature Boots have no studio render: their picture is drawn, with your name on it.
+  if (item.kind === "accessory") return item.slot === "celebration" || item.signature ? null : `/shop/store/acc-${item.id}.webp`;
   if (item.kind === "boost") return item.id === "training-boost" ? "/shop/store/boost-training.webp" : item.id === "stat-can" ? "/shop/store/boost-stat.webp" : null;
   return null;
 }
