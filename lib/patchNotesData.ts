@@ -28,7 +28,7 @@ import type { PatchNote } from "./patchNotes";
 export const BUILT_IN_PATCH_NOTES: PatchNote[] = [
     {
       "version": "0.110",
-      "title": "Leo's overnight build: 7 chats finishing the 24 Oct update (in progress, for you to judge)",
+      "title": "Leo's patch notes: overnight build, 7 chats finishing the 24 Oct update (in progress, for you to judge)",
       "publishedAt": "2026-10-25T02:05:00Z",
       "updatedAt": null,
       "artifactUrl": "https://claude.ai/artifact/4aeZs72kiGCS7r4xMgBg2A",
