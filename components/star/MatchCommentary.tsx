@@ -198,6 +198,7 @@ export default function MatchCommentary({
       {!radar && <button
         onClick={onSpeed}
         aria-label={`Commentary speed ${speed}x`}
+        data-tour="match-speed"
         className="absolute right-2 top-2 z-20 flex w-12 flex-col items-center justify-center rounded-lg border border-white/10 bg-gray-900/85 py-1 shadow-md backdrop-blur-sm transition hover:bg-gray-800"
       >
         <span className={`font-black leading-none tabular-nums ${minuteLabel && minuteLabel.includes("+") ? "text-[12px] text-amber-300" : "text-sm text-white"}`}>{minuteLabel ?? minute}&#39;</span>

@@ -9902,14 +9902,16 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
 
         {/* Contact overlay. After a run-up it has a countdown
             (penaltyRunup.ts); run out and the kick is scuffed. */}
+        {/* The coach lines sit clear of the skip pill and STAMINA (aim), the
+            power bar on the right, and a header's ball in mid-air (playtest 25 Oct). */}
         {coachFirstHeader && (phase === "aim" || phase === "contact") && (
-          <div data-first-header-coach className={`pointer-events-none absolute inset-x-3 z-40 ${phase === "aim" ? "bottom-3" : "top-[40%]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
+          <div data-first-header-coach className={`pointer-events-none absolute z-40 ${phase === "aim" ? "inset-x-3 bottom-[64px]" : "left-3 right-14 bottom-[64px]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
             style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
             {phase === "aim" ? "A header! Drag back to aim it at goal, then let go" : "Tap the top of the ball to head it down"}
           </div>
         )}
         {coachFirstChance && (phase === "aim" || phase === "contact") && (
-          <div data-first-chance-coach className={`pointer-events-none absolute inset-x-3 z-40 ${phase === "aim" ? "bottom-3" : "top-[40%]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
+          <div data-first-chance-coach className={`pointer-events-none absolute z-40 ${phase === "aim" ? "inset-x-3 bottom-[64px]" : "left-3 right-14 top-[40%]"} rounded-xl px-3 py-2 text-center text-[13px] font-black leading-snug text-white`}
             style={{ background: "rgba(5,8,15,.82)", boxShadow: "inset 0 0 0 2px #fde047, 0 8px 20px -8px rgba(0,0,0,.9)" }}>
             {phase === "aim" ? "Drag back from the ball to aim and control your power, then let go" : "Tap the part of the ball you want to kick"}
           </div>
