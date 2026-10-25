@@ -56,6 +56,27 @@ Newest first. Each is something that was actually said.
   game (kept behind ?airpick=old). Controls for a moment like this sit at the
   bottom, where the thumb is, in a flat band fading into the pitch (inferred).
 
+### 25 Oct 2026 — the Team room is Slack's layout, full screen (Harry)
+- **"It should just be a home icon rather than a whole column … the sidebar
+  comes out too far while open and needs to be closable."** Inside the Team
+  room there is no admin menu: one ⌂ in the channel list's header goes back to
+  the admin home. The list is 220 px (drag 180–320, double-click = 220), a
+  green « in its header (or Ctrl/⌘+Shift+D) closes it, ⌂ » in the chat's
+  header opens it, remembered per device. Phone: the list slides over 80%
+  (max 300 px); ✕, a tap outside or a swipe left closes it; bottom tabs Home ·
+  DMs · Activity · You. (components/teamRoom/ChatPage.tsx, room.css)
+- Channels replace the separate sections: 9 presets (#general, #ideas, #todo,
+  #bugs, #health, #patch-notes, #connectors, #marketing, #context), renamable,
+  never deleted. Red number only for @mentions and DMs; other new = bold.
+- Plain messages, no bubbles: 15 px on 22 px lines, 36 px faces (Compact 20
+  px), 16 px on a phone; a run from one person shows one face; hover bar
+  😀 💬 🔖 ⋯ on a computer, tap for actions in line on a phone.
+- **"The bug bot in this picture works really cool, I like that for ours."**
+  #bugs posts are report cards: labelled fields and two wide buttons, Hand to…
+  (outlined) and Mark fixed (filled green).
+- In the room the page guide's eye sits top right; the rightmost top bar keeps
+  56 px free for it (bottom right covered Send; inferred).
+
 ### 23 Oct 2026 — the Team chat is a Slack-style workspace (Harry)
 - **"Channels with all of the tools and things we already have available in
   team board … reactions, threads, private DMs, a bot that automatically
