@@ -20,6 +20,8 @@ import type { Selection } from "./selection";
 export interface SetPieceDuties {
   freeKicks: boolean;
   penalties: boolean;
+  /** Corners: on a new career they wait for Technique and Vision (absent = yours as before). */
+  corners?: boolean;
   /** What it would take to take the ones you are not on, for the skills screen. */
   freeKickNeeded: number;
   penaltyNeeded: number;
@@ -52,8 +54,10 @@ function clubStrength(career: CareerState): number {
  */
 /** A new career's penalties come with this many goals. */
 export const STORY_PENALTY_GOALS = 10;
-/** A new career's free kicks need Technique and Vision at this. */
-export const STORY_FREE_KICK_SKILL = 50;
+/** A new career's free kicks need Technique and Vision at this (Mikey, 25 Oct 2026). */
+export const STORY_FREE_KICK_SKILL = 60;
+/** ...and its corners need them at this. */
+export const STORY_CORNER_SKILL = 70;
 
 export function setPieceDuties(
   career: CareerState, status: Selection = career.status, opts: { penaltyStarWeight?: number } = {},
@@ -76,6 +80,7 @@ export function setPieceDuties(
   return {
     freeKicks: onThePitch && fksEarned && eff >= freeKickNeeded,
     penalties: onThePitch && pensEarned && penaltyStanding >= penaltyNeeded,
+    corners: !story || ((career.skills?.technique ?? 0) >= STORY_CORNER_SKILL && (career.skills?.vision ?? 0) >= STORY_CORNER_SKILL),
     freeKickNeeded,
     penaltyNeeded,
     penaltyStanding,

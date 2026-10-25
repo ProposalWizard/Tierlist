@@ -2,7 +2,7 @@ import {
   NATIONAL_LEAGUE_CLUBS, NATIONAL_LEAGUE_NORTH_CLUBS, NATIONAL_LEAGUE_SOUTH_CLUBS,
 } from "./clubs";
 import type { CareerDivision } from "./calendar";
-import { weeklyWageFor, goalBonusFor, assistBonusFor } from "./economy";
+import { goalBonusFor, assistBonusFor } from "./economy";
 import { scoutedClubStrength, type ScoutOffer } from "./scoutOffers";
 import { mulberry32 } from "./season";
 
@@ -32,10 +32,18 @@ import { mulberry32 } from "./season";
 export type ScoutedDivision = "national_league" | "national_league_north" | "national_league_south";
 
 /** Chance of each division, by whether the final shootout penalty went in. */
+// Mikey, 25 Oct 2026: "always starting National League North and South".
+// Half and half, whatever the final penalty did. (Was: scored 50% National
+// League / 25 / 25, missed 20 / 40 / 40.)
 export const SCOUTED_ODDS: Record<"scored" | "missed", Record<ScoutedDivision, number>> = {
-  scored: { national_league: 0.5, national_league_north: 0.25, national_league_south: 0.25 },
-  missed: { national_league: 0.2, national_league_north: 0.4, national_league_south: 0.4 },
+  scored: { national_league: 0, national_league_north: 0.5, national_league_south: 0.5 },
+  missed: { national_league: 0, national_league_north: 0.5, national_league_south: 0.5 },
 };
+
+/** Your first contract: ★35 a week, no haggling (Mikey, 24-25 Oct 2026). A
+ *  Basic KIB can is two weeks' wage, so the club shop's half-price first can
+ *  costs exactly what game 1 pays you. */
+export const FIRST_CONTRACT_WAGE = 35;
 
 const CLUBS_OF: Record<ScoutedDivision, readonly string[]> = {
   national_league: NATIONAL_LEAGUE_CLUBS,
@@ -107,7 +115,7 @@ export function scoutedOfferForTrial(trial: {
 }): ScoutOffer {
   const placement = scoutedPlacement(finalPenScoredOf(trial), mulberry32(trial.seed ^ SCOUT_SALT));
   const division: CareerDivision = placement.division;
-  const wage = weeklyWageFor(placement.club, division);
+  const wage = FIRST_CONTRACT_WAGE;
   return {
     club: placement.club,
     division,

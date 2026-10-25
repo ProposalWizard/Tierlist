@@ -27,7 +27,7 @@ import { offlineDevPlayEnabled } from "@/lib/star/devMode";
 import { mulberry32, sortLeague } from "@/lib/star/season";
 import { trialComplete, startTrial, trialScore, noteReload } from "@/lib/star/trial";
 import { trialOffers, clubsForDivision, SOURED_OFFER_SHARE, SOURED_PITCH, type ScoutOffer } from "@/lib/star/scoutOffers";
-import { scoutedOfferForTrial } from "@/lib/star/scoutedPlacement";
+import { scoutedOfferForTrial, FIRST_CONTRACT_WAGE } from "@/lib/star/scoutedPlacement";
 // ── The youth team, the reserves and the loan wildcard (lib/star/youth.ts) ──
 // Added as new phases beside the existing ones; nothing in the phase machine
 // below was reshaped for them.
@@ -3688,20 +3688,24 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
       // themselves are under.
       rng: mulberry32(career.trial.seed ^ 0x1a9b3),
     });
+    // A new career's first contract is fixed: ★35 a week, sign it, no
+    // haggling and no other clubs (Mikey, 25 Oct 2026).
+    const firstContract = isStory(career);
+    const talkShown = firstContract ? { ...talk, openingWeekly: FIRST_CONTRACT_WAGE } : talk;
     return (
       <ManagerTalk
-        talk={talk}
+        talk={talkShown}
         managerName={loadLineup(talking.club)?.manager || "The manager"}
-        onNegotiate={() => setPhase("wage-talk")}
+        onNegotiate={firstContract ? undefined : () => setPhase("wage-talk")}
         // Mikey, 28 Sep 2026: three clear choices — sign now at his first
         // number, negotiate, or look at the other clubs that came in.
         onAccept={() => {
-          const agreed = { ...career, agreedTerms: { club: talking.club, wage: talk.openingWeekly } };
+          const agreed = { ...career, agreedTerms: { club: talking.club, wage: talkShown.openingWeekly } };
           const offer = offersWithAgreedTerms(agreed, offersForTrial(agreed)).find(o => o.club === talking.club);
           if (offer) signTrialOffer(offer);
           else { setCareer(agreed); setPhase("scout-offers"); }
         }}
-        onSeeOthers={() => setPhase("scout-offers")}
+        onSeeOthers={firstContract ? undefined : () => setPhase("scout-offers")}
         onSettings={() => setPhase("settings")}
       />
     );

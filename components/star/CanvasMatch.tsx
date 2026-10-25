@@ -1476,6 +1476,8 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
     if (!d) return true;
     if (kind === "free_kick") return d.freeKicks;
     if (kind === "penalty") return d.penalties;
+    // A new career's corners wait for Technique and Vision (setPieces.ts).
+    if (kind === "corner") return d.corners ?? true;
     return true;
   };
   // The situation the simulation has just produced, consumed by the next
@@ -1813,11 +1815,14 @@ export default function CanvasMatch({ skills = { power: 55, technique: 55 }, can
       addedTime: ADDED,
       fullTime: MATCH_DURATION,
     };
-    return matchInputsFor(car
+    const inputs = matchInputsFor(car
       // Your CLUB's strength (Chelsea 83), not the team relationship (60 on
       // day one) — see matchTeamStrength (lib/star/matchday.ts, item 0).
       ? careerMatchSpec(car, fixture, { ...live, teamFallback: teamRef.current, playstyle: playstyleRef.current })
       : { ...live, teamStrength: teamRef.current, home: fixture?.home, skills: { power: 55, technique: 55, vision: 55 }, context: { playstyle: playstyleRef.current } });
+    // A new career's corners wait for Technique and Vision 70 (setPieces.ts,
+    // Mikey 25 Oct 2026): until then a team-mate takes them.
+    return dutiesRef.current?.corners === false ? { ...inputs, canTakeCorners: false } : inputs;
   };
 
   // Translate what the physics produced into what the match needs to know.

@@ -17,7 +17,8 @@ FACT-DAT-005 | Patch-note pictures live in the R2 bucket under patch-notes/<path
 FACT-ENG-001 | The guard also fails on a direct CanvasMatch mount, a grown KNOWN_COPIES list, a new canvas animation loop or a blind canary. | engine
 FACT-ENG-002 | Trial penalties, free kicks, training strike drills and the gauntlet mount EngineFeature; a difference is a named dial. | engine
 FACT-ENG-003 | Still copies, to port next: five-a-side only; the /star-match-dev fork was deleted (18 Oct 2026). | admin,engine
-FACT-ENG-004 | The engine-warn hook also asks, as SOMETHING MAY DRIFT, on CanvasMatch, EnginePlay, hiddenMatch and the other play-screen files. | engine
+FACT-ENG-004 | [SUPERSEDED] The engine-warn hook also asks, as SOMETHING MAY DRIFT, on CanvasMatch, EnginePlay, hiddenMatch and the other play-screen files. | engine
+FACT-ENG-005 | The engine-warn hook warns (no Allow prompt) on canvasEngine and on the play-screen drift files; its old ask() is kept to switch back. | engine
 FACT-KIB-001 | Knowitball as a client: three mates building the best football game ever; client code KIB. | client-kib
 FACT-KIB-002 | Audience: football fans 16 to 30 on TikTok, Reels and Shorts (Harry to confirm). | client-kib
 FACT-KIB-003 | Video format: 1080×1920 (9:16), 30 fps, H.264, AAC stereo; v01 ran 44.7 s at -13.4 LUFS. | client-kib
@@ -74,12 +75,13 @@ RUL-ALL-009 | Play it before claiming it works: a type-check and a green suite c
 RUL-ALL-010 | Ask about the one ambiguous word; build the rest, then ask one question that can be answered in a word. | style,rule
 RUL-ALL-011 | When Harry points at a picture, name it back in one line (which picture you are copying) before building. | rule
 RUL-ALL-012 | Do not agree to be agreeable: before agreeing with a design call, find what argues against it. | rule
-RUL-ENG-001 | The match engine may change, with a warning: the engine-warn hook asks every time with a red notice. | engine
+RUL-ENG-001 | [SUPERSEDED] The match engine may change, with a warning: the engine-warn hook asks every time with a red notice. | engine
 RUL-ENG-002 | Every screen except the real match mounts EnginePlay; a feature never gets its own loop. | engine,rule
 RUL-ENG-003 | The one-engine guard runs inside npm run build and blocks every Vercel deploy on a new copy of the loop. | engine,deploy
 RUL-ENG-004 | Never add to KNOWN_COPIES, raise CEILING, touch the canary or remove the guard unless asked in those words. | engine,rule
 RUL-ENG-005 | The real match (app/star-dev/page.tsx) is the only screen that mounts CanvasMatch directly. | engine
 RUL-ENG-006 | Shared mechanics, not a shared picture: a mode keeps the real ball and picks what is on the pitch with scene. | engine
+RUL-ENG-007 | The match engine may change; the engine-warn hook warns Claude and never stops to ask the person (Mikey, 25 Oct 2026). | engine,team,rule
 RUL-KIB-001 | Voice: short, cheeky, football-mad, numbers first ("9.8% to 47.6%"). | client-kib
 RUL-KIB-002 | Real game footage only, or marked "ILLUSTRATION" on screen. | client-kib
 RUL-KIB-003 | No real club badges or player photos in ads unless we have the right to use them. | client-kib
