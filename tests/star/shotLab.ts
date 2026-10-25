@@ -126,8 +126,6 @@ export interface LabOptions {
   perfect?: boolean;
   /** Called with the ball just after launch — the place a new strike rule hooks in. */
   afterLaunch?: (ball: E.Ball, sc: E.Scenario, thumb: Thumb, rng: () => number) => void;
-  /** Called right after the keeper brain sees the strike (a bicycle's late keeper). */
-  afterStrike?: (ball: E.Ball, sc: E.Scenario) => void;
   /** The Shots model (null = plain launch, today's game). */
   model?: { pro: boolean; knuckle: boolean } | null;
   /** The stat the ball is struck with (default: the v0.15 knee, strikingPower). */
@@ -197,7 +195,6 @@ export function shoot(kind: E.ScenarioKind, seed: number, o: LabOptions = {}): S
   o.afterLaunch?.(ball, sc, thumb, rng);
   const clean = cleanCrossing(sc, ball);
   B.brainStrike(sc, ball, (seed ^ 0x6b1e5) >>> 0);
-  o.afterStrike?.(ball, sc);
   const dec = strikeKind(sc, ball, mulberry32((seed ^ 0x6b1d) >>> 0), { keeperStrength: ks, power: skills.power, technique: skills.technique });
   let out: E.Outcome | null = null;
   for (let i = 0; i < 180 * 6 && !out; i++) {

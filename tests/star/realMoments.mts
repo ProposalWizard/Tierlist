@@ -16,7 +16,6 @@
  *
  * Run: npx tsx tests/star/realMoments.mts
  */
-import { bicycleOfferFor } from "../../lib/star/bicycle";
 import { readFileSync } from "node:fs";
 import {
   REAL_CREDIT, scenarioForShot, scenarioForCorner, frameHoldsShot, peopleOf, trackLeadIn, buildUpOf, isFullyReal,
@@ -165,24 +164,13 @@ console.log("\n7. REAL HEADERS AND VOLLEYS ARE PLAYED AS TRUE ONES (21 Oct 2026)
   const open = tShots.filter((s) => s.type === "Open Play");
   const by = (k: string | null) => open.filter((s) => airKindOf(s) === k);
   const heads = by("header"), vols = by("volley"), high = by("high");
-  console.log(`  open play: ${heads.length} headers, ${vols.length} volleys, ${high.length} overhead (played as bicycle chances), ${by(null).length} on the grass`);
+  console.log(`  open play: ${heads.length} headers, ${vols.length} volleys, ${high.length} overhead (not served), ${by(null).length} on the grass`);
   ok(heads.length >= 45 && vols.length >= 90, `the real air-ball shots are there (headers ${heads.length} ≥ 45, volleys ${vols.length} ≥ 90)`);
   ok(open.filter((s) => s.body === "Head").every((s) => airKindOf(s) === "header"), "every shot the source says was a header is a header");
   ok(heads.every((s) => playKindForShot(s) === "header" && kindForShot(s) === "header"), "a real header is played as a header (the ball hangs at your head)");
   ok(vols.every((s) => playKindForShot(s) === "volley"), "a real volley is played as a volley (the ball bounces)");
   ok(by(null).every((s) => playKindForShot(s) !== "header" && playKindForShot(s) !== "volley"), "a shot on the grass is never played as a header or a volley");
-  // Bicycle kicks (22 Oct 2026): a real overhead is a header chance with the BICYCLE button always on.
-  ok(high.every((s) => playKindForShot(s) === "header"), `an overhead shot plays as a header chance (${high.length})`);
-  {
-    let on = 0, holdsH = 0;
-    for (const s of high) {
-      const sc = scenarioForShot(s, { wideFrame: true });
-      if (bicycleOfferFor(sc as typeof sc & { overhead?: boolean }, 0, 1)) on++;
-      if (frameHoldsShot(s, sc.viewport)) holdsH++;
-    }
-    ok(on === high.length, `every real overhead offers the bicycle kick, even at Aerial 0: ${share(on, high.length)}`);
-    console.log(`  overhead pictures that hold their men and the goal: ${share(holdsH, high.length)}`);
-  }
+  ok(high.every((s) => playKindForShot(s) !== "header" && playKindForShot(s) !== "volley"), "an overhead shot is not a header or a volley (acrobatics: not built)");
   // A foot shot the source names (DFL) is never a header, however high.
   ok(open.filter((s) => s.src === "dfl" && s.body !== "Head").every((s) => airKindOf(s) !== "header"), "a DFL foot shot is never served as a header");
   // Its picture: the real men, the whole goal (frameHoldsShot), and its own height when the heights vary.

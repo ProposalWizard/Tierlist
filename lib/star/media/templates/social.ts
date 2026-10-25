@@ -52,16 +52,6 @@ export const SOCIAL_TEMPLATES: Template[] = [
     weight: 4,
   },
   {
-    id: "fan-bicycle", archetype: "fan", events: ["bicycle-kick"], requires: ["short"],
-    body: "{short|caps} WITH A BICYCLE KICK. I AM ON THE FLOOR. PUT IT IN THE LOUVRE",
-    weight: 5,
-  },
-  {
-    id: "fan-bicycle-2", archetype: "fan", events: ["bicycle-kick"],
-    body: "upside down. in the top corner. i need to lie down",
-    weight: 4,
-  },
-  {
     id: "fan-late", archetype: "fan", events: ["late-winner"], requires: ["minute"],
     body: "{minute}th minute. i have lost my voice. worth it",
     weight: 4,

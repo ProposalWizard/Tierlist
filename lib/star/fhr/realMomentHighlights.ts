@@ -32,7 +32,6 @@
 import type { Scenario, ScenarioKind } from "../canvasEngine";
 import type { LeadIn, LeadMoment } from "../leadIn";
 import { isFullyReal, type RealShot, type RealTrack, type TrackedFile, type TrackFile, type TrackedMoment } from "../realMoments/types";
-import { leoUpdateOn } from "../leoUpdate";
 import { peopleOf, playKindForShot, scenarioForShot, frameHoldsShot, airKindOf } from "../realMoments/shots";
 import { trackLeadIn } from "../realMoments/track";
 import { inGame, pickOf } from "../realMoments/picks";
@@ -83,8 +82,8 @@ export const REAL_MOMENT_MEMORY = 40;
 export function servedKindOf(m: TrackedMoment): ScenarioKind | null {
   if (m.what !== "shot" || !isFullyReal(m)) return null;
   // A foot shot above the waist or a ball above 2.6 m (a scissor or bicycle
-  // kick): served as a header chance with the BICYCLE button always on
-  // (realMoments/shots.ts kindForShot; bicycle.ts, 22 Oct 2026).
+  // kick): acrobatics are not built yet.
+  if (airKindOf(m) === "high") return null;
   const k = playKindForShot(m);
   return REAL_MOMENT_KINDS.includes(k) ? k : null;
 }
@@ -100,7 +99,7 @@ export function autoCheck(m: TrackedMoment, track: RealTrack | undefined): strin
   if (m.what !== "shot") return "a corner (only shots are served)";
   if (!isFullyReal(m)) return "not fully real";
   if (m.type !== "Open Play") return `a ${m.type.toLowerCase()} (open play only)`;
-  if (!servedKindOf(m)) return "not a kind the game serves";
+  if (!servedKindOf(m)) return airKindOf(m) === "high" ? "struck overhead (acrobatics are not built yet)" : "not a kind the game serves";
   if (Math.hypot(m.ball[0] - CX, m.ball[1]) > REAL_MOMENT_MAX_M) return `struck from more than ${REAL_MOMENT_MAX_M} m out`;
   const k = peopleOf(m).keeper;
   if (!k || k.y >= 12 || Math.abs(k.x - CX) >= 15) return "their keeper is not by his goal";
@@ -210,9 +209,7 @@ export function serveRealMoment(kind: ScenarioKind, rng: () => number, opts: { f
     void loadRealMomentPool();
     return null;
   }
-  // The 15 real overhead kicks (bicycle chances) come back only with Leo's 24
-  // Oct update on (leoUpdate.ts "bicycle"); off, they are left out as before.
-  const all = servable(pool, kind).filter((m) => leoUpdateOn("bicycle") || airKindOf(m) !== "high");
+  const all = servable(pool, kind);
   if (!all.length) return null;
   if (!opts.force && rng() >= (realMomentsEvery() ? 1 : REAL_MOMENT_SHARE)) return null;
   const seen = new Set(recent());

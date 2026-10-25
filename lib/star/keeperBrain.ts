@@ -540,17 +540,6 @@ export function keeperSaltFor(feature: boolean, random: () => number = Math.rand
 
 /** Does this chance have a brain? (A free kick, or a scene with no keeper, = no.) */
 export function hasBrain(sc: Scenario): boolean { return states.has(sc); }
-/**
- * A strike he could not read off the body (a clean bicycle kick, bicycle.ts:
- * your back is to him until the ball is gone): he reacts `s` seconds later.
- * Only between brainStrike and his first move; nothing else changes and no
- * random number is drawn, so a replay (same call after brainStrike) is the same.
- */
-export function brainReactLater(sc: Scenario, s: number): void {
-  const st = states.get(sc);
-  if (!st || st.phase !== "wait" || !(s > 0)) return;
-  st.rt += s;
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 //  PHASE A — SET
