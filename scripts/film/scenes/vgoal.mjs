@@ -140,6 +140,14 @@ for (let loop = 0; loop < 4000 && !done; loop++) {
     // keep the first two misses to look at (debugging the driver); throw the rest away
     if (tries <= 2) { const keep = path.join(OUT, `miss-${CLIP}-${tries}`); fs.rmSync(keep, { recursive: true, force: true }); fs.renameSync(dir, keep); } else fs.rmSync(dir, { recursive: true, force: true });
     dir = null;
+    // A big moment carries on to the next chances without a second banner (CanvasMatch
+    // maybeBigMoment), so for that clip a missed take reloads the page: the next chance
+    // opens as a big moment of its own, banner and all.
+    if (BIG) {
+      await pg.reload({ waitUntil: "domcontentloaded" });
+      await realWait(6000);
+      await vStart(pg);
+    }
     continue;
   }
   marks.celebFrame = (await pg.evaluate(() => window.__vclock.frame)) - frame0;
