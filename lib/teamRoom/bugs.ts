@@ -7,7 +7,7 @@
  * seconds and nobody copies it across. The card shows the report, the page it
  * came from and two buttons: Hand to… (pick Harry, Mikey or Leo: it becomes a
  * #todo task for them) and Mark fixed (greys the card: "Fixed by Leo").
- * Pure: tested in tests/star/teamRoomBugs.mts.
+ * Pure: tested in tests/star/teamRoomStatus.mts.
  */
 import { isTeamPerson, type TeamPerson } from "./config";
 import type { BotPost, BotRow } from "./channels";
