@@ -49,7 +49,7 @@ for (const aerial of [30, 60, 90]) {
 // 3.
 const cb = readFileSync(new URL("../../components/star/ContactBall.tsx", import.meta.url), "utf8");
 check(/airStrikeTimerS\(airKind, aerial\)/.test(cb), "ContactBall no longer times a ball in the air with airStrikeTimerS");
-check(/onContactRef\.current\(airLateContact\(/.test(cb), "running out on a ball in the air no longer strikes it late through onContact");
+check(/onContactRef\.current\(\{ \.\.\.airLateContact\(.*late: true \}\)/.test(cb), "running out on a ball in the air no longer strikes it late through onContact (marked late, for the header's drawing)");
 check(/onTimeoutRef\.current\?\.\(\)/.test(cb), "the penalty run-up's own timeout path is gone");
 check(/timeLimitS && timeLimitS > 0 \? timeLimitS/.test(cb), "the run-up's own countdown no longer wins over the air timer");
 
