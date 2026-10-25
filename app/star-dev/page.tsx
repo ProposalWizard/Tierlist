@@ -4075,11 +4075,14 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
     // Your boots, or a Premium/Elite KIB can drunk before this match.
     const canCurve = (bootMatchesLeft && !!career.currentBoot.curve) || !!career.kibAbility?.curve;
     const canExtraTouch = (bootMatchesLeft && !!career.currentBoot.extraTouch) || !!career.kibAbility?.extraTouch;
+    // The first-match tour holds the match while it shows, so the first
+    // chance never comes before its last step (playtest 25 Oct 2026).
+    const matchTourOn = matchTourReady && isStory(career) && (career.careerStats?.appearances ?? 0) === 0 && !hasSeen(career, "match-tour");
     return (
       <PitchScope>
        <div className="min-h-screen sk-shell bg-gray-950 text-white py-4 px-3">
         <div className="max-w-sm mx-auto">
-          <Match3DLayer tod={matchTodFor(career.season, nextFixture.week, career.homeCity)}>
+          <Match3DLayer tod={matchTodFor(career.season, nextFixture.week, career.homeCity)} hold={matchTourOn}>
           <CanvasMatch
             skills={{ power: effectivePower, technique: effectiveTechnique }}
             canCurve={canCurve}
@@ -4106,7 +4109,7 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           </Match3DLayer>
           {/* A new career's first match: the energy and Low/Medium/High, the
               play style and the speed, once (Mikey's playtest, 24 Oct 2026). */}
-          {matchTourReady && isStory(career) && (career.careerStats?.appearances ?? 0) === 0 && !hasSeen(career, "match-tour") && (
+          {matchTourOn && (
             <PointerTour forced key="match-tour" steps={[
               { target: "match-energy", text: "Your ENERGY. Pick Low, Medium or High. High: the ball comes to you more, but energy drops fast" },
               { target: "match-playstyle", text: "How you play: more attacking or more defensive" },

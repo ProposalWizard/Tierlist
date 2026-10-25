@@ -138,7 +138,10 @@ export default function PointerTour({ steps, onDone, skippable = false, forced =
         off?.();
         el = found;
         if (step.press) {
-          const onPress = () => setTimeout(next, 30);
+          // The last step finishes at once: its button often leaves the
+          // screen (Play), which unmounts the tour before a timeout fires, so
+          // the tour was never marked done and came back (playtest 25 Oct).
+          const onPress = () => { if (i + 1 >= steps.length) finish(); else setTimeout(next, 30); };
           found.addEventListener("click", onPress, true);
           off = () => found.removeEventListener("click", onPress, true);
         }
