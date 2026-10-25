@@ -4573,7 +4573,9 @@ function StarDevInner({ immersive }: { immersive: ReturnType<typeof useImmersive
           setPendingSignOffer({ offer: withAgreedWage(talkOffer, weekly), wasRelegationMove: false });
           setPhase("transfer-signing");
         }}
-        onSettings={() => setPhase("settings")}
+        // Leo's bug fixes: Settings' Back returns to these talks (the offer
+        // stays held), not Home with the window lost.
+        onSettings={() => { if (bugFixesOn) pushFrom({ phase, nav: activeNav, homePage, trainingTab }, "settings"); setPhase("settings"); }}
       />
     );
   }
